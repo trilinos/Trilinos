@@ -217,7 +217,7 @@ CommandLineProcessor::parse(
   for( int i = 1; i < argc; ++i ) {
     bool gov_return = get_opt_val( argv[i], &opt_name, &opt_val_str );
     if( !gov_return ) {
-      if(recogniseAllOptions()) {
+      if( !recogniseAllOptions() ) {
         if(procRank == 0) 
           print_bad_opt(i,argv,errout);
         return PARSE_UNRECOGNIZED_OPTION;
@@ -255,7 +255,7 @@ CommandLineProcessor::parse(
     if( itr == options_list_.end() ) {
       if(procRank == 0)
         print_bad_opt(i,argv,errout);
-      if( recogniseAllOptions() )
+      if( !recogniseAllOptions() )
         return PARSE_UNRECOGNIZED_OPTION;
       else
         continue;
@@ -298,13 +298,18 @@ CommandLineProcessor::parse(
     ++itr
     )
   {
-    const std::string     &opt_val_name = (*itr).first;
     const opt_val_val_t   &opt_val_val  = (*itr).second;
     if( opt_val_val.required && !opt_val_val.was_read ) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::logic_error
-        ,"Error, the option --"<<opt_val_name<<" was required but was not set!"
-        );
+      const std::string     &opt_val_name = (*itr).first;
+#define CLP_ERR_MSG \
+      "Error, the option --"<<opt_val_name<<" was required but was not set!"
+      if(errout)
+        *errout << std::endl << argv[0] << " : " << CLP_ERR_MSG << std::endl;
+      if( throwExceptions() ) {
+        TEUCHOS_TEST_FOR_EXCEPTION( true, ParseError, CLP_ERR_MSG );
+      }
+      return PARSE_ERROR;
+#undef CLP_ERR_MSG
     }
   }
   // Set the options of a default stream exists and if we are asked to
@@ -613,7 +618,7 @@ bool CommandLineProcessor::set_enum_value(
     if(errout)
       *errout << std::endl << argv[0] << " : " << CLP_ERR_MSG << std::endl;
     if( throwExceptions() ) {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, CLP_ERR_MSG );
+      TEUCHOS_TEST_FOR_EXCEPTION( true, UnrecognizedOption, CLP_ERR_MSG );
     }
     else {
       return false;
@@ -677,7 +682,7 @@ int CommandLineProcessor::find_enum_opt_index(
     itr       =  std::find( itr_begin, itr_end, opt_value );
   if( itr == itr_end ) {
 #define CLP_ERR_MSG \
-      ( recogniseAllOptions() ? "Error" : "Warning" ) \
+      ( !recogniseAllOptions() ? "Error" : "Warning" ) \
       << ", option --" << enum_opt_name << " was given an invalid " \
       "initial option value of " << opt_value << "!"
     if(errout)
@@ -724,12 +729,12 @@ void CommandLineProcessor::print_bad_opt(
 {
   const int j = argv_i;
 #define CLP_ERR_MSG \
-    ( recogniseAllOptions() ? "Error" : "Warning" ) \
+    ( !recogniseAllOptions() ? "Error" : "Warning" ) \
     << ", the " << j<<(j==1?"st":(j==2?"nd":(j==3?"rd":"th"))) \
     << " option \'" << argv[argv_i] << "\' was not recognized (use --help)!"
   if(errout)
     *errout << std::endl << argv[0] << " : " << CLP_ERR_MSG << std::endl;
-  if( recogniseAllOptions() && throwExceptions() )
+  if( !recogniseAllOptions() && throwExceptions() )
     TEUCHOS_TEST_FOR_EXCEPTION( true, UnrecognizedOption, CLP_ERR_MSG );
 #undef CLP_ERR_MSG
 }

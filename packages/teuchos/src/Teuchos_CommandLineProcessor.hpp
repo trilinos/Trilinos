@@ -96,6 +96,7 @@ public:
     PARSE_SUCCESSFUL              =  0 /*!< Parsing the command line was successful. */
     ,PARSE_HELP_PRINTED            =  1 /*!< The help statement was printed for the command line parser. */
     ,PARSE_UNRECOGNIZED_OPTION     =  2 /*!< The command line parser encountered an unrecognized option. */
+    ,PARSE_ERROR                   =  3 /*!< The command line parser encountered an error. */
   };
   
   //@}
