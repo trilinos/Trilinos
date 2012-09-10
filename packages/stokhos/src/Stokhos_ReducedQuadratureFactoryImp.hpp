@@ -197,6 +197,7 @@ reducedQuadrature_Q_Squared(
     ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
     TEUCHOS_ASSERT(ret == 0);
     std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
+    //print_matlab(std::cout, err2);
   }
   
   ordinal_type rank = 0;
@@ -320,6 +321,7 @@ reducedQuadrature_Q_Squared_CPQR(
     ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
     TEUCHOS_ASSERT(ret == 0);
     std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
+    //print_matlab(std::cout, err2);
   }
   
   ordinal_type rank = 0;
@@ -410,8 +412,7 @@ reducedQuadrature_Q2(
     ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
     TEUCHOS_ASSERT(ret == 0);
     std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
-    //std::ofstream file("disc_orthog_err.txt");
-    //print_matlab(file, err2);
+    //print_matlab(std::cout, err2);
   }
   
   ordinal_type rank = 0;
@@ -525,6 +526,7 @@ reducedQuadrature_Q2_CPQR(
     ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
     TEUCHOS_ASSERT(ret == 0);
     std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
+    //print_matlab(std::cout, err2);
   }
   
   ordinal_type rank = 0;
