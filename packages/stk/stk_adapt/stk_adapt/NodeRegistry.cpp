@@ -404,7 +404,7 @@ namespace stk {
             bool doPrint = false;
             std::vector<stk::mesh::Entity *> nodes(8,(stk::mesh::Entity *)0);
             unsigned nsz = 0;
-            bool do_spacing=true;
+            bool do_spacing=false;
 
             if (needed_entity_rank == m_eMesh.element_rank())
               {
