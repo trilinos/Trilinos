@@ -37,14 +37,18 @@
 //     long long, unsigned long long
 namespace Teuchos
 {
+#ifdef TEUCHOS_SERIALIZATIONTRAITS_UNSIGNED_CHAR
 template<typename Ordinal>
 class SerializationTraits<Ordinal,unsigned char>
   : public DirectSerializationTraits<Ordinal,unsigned char>
 {};
+#endif
+#ifdef TEUCHOS_SERIALIZATIONTRAITS_UNSIGNED_SHORT
 template<typename Ordinal>
 class SerializationTraits<Ordinal,unsigned short>
   : public DirectSerializationTraits<Ordinal,unsigned short>
 {};
+#endif
 #ifdef TEUCHOS_SERIALIZATIONTRAITS_UNSIGNED_INT
 template<typename Ordinal>
 class SerializationTraits<Ordinal,unsigned int>
