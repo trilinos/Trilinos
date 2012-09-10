@@ -420,17 +420,14 @@ void Ioss::GroupingEntity::count_attributes() const
   else {
     // If the set has a field named "attribute", then the number of
     // attributes is equal to the component count of that field...
-    if (field_exists("attribute")) {
-      Ioss::Field field = get_field("attribute");
-      attributeCount = field.raw_storage()->component_count();
-      return;
-    } else {
-      NameList results_fields;
-      field_describe(Ioss::Field::ATTRIBUTE, &results_fields);
+    NameList results_fields;
+    field_describe(Ioss::Field::ATTRIBUTE, &results_fields);
 
-      Ioss::NameList::const_iterator IF;
-      for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
-	std::string field_name = *IF;
+    Ioss::NameList::const_iterator IF;
+    for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
+      std::string field_name = *IF;
+      if (field_name != "attribute" ||
+	  (field_name == "attribute" && results_fields.size() == 1)) {
 	Ioss::Field field = get_field(field_name);
 	attributeCount += field.raw_storage()->component_count();
       }
