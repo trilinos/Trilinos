@@ -1889,7 +1889,7 @@ namespace stk {
 
                         double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
                         double iy = data[1]; // /double(nele);
-                        iy = iy*iy*iy;
+                        iy = iy*iy;
                         data[1] = iy; // *double(nele);
                       }
                   }
