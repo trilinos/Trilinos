@@ -66,6 +66,15 @@ namespace Teuchos {
  * opaqueWrapper() nonmember template function.  The <i>type</i> of an
  * RCP to an opaque object T is <tt>RCP<OpaqueWrapper<T> ></tt>.
  *
+ * \subsection Prerequisites
+ *
+ * In order to understand this documentation, you must first have
+ * learned how to use RCP (Teuchos' reference-counted pointer class)
+ * to manage dynamically allocated memory and other resources.  It
+ * also helps to be familiar with MPI (the Message Passing Interface
+ * for distributed-memory parallel programming), but this is not
+ * required.
+ *
  * \subsection What are opaque objects (a.k.a. handles)?
  *
  * Many different software libraries use the <i>opaque object</i> or
@@ -95,11 +104,12 @@ namespace Teuchos {
  * from Fortran, so that C, C++, and Fortran can all share the same
  * handle mechanism.  In fact, some MPI implementations (such as
  * MPICH, at least historically if not currently) simply implement
- * these handles all as integers.  (Presumably, such an implementation
- * would need to maintain a table on each process that maps the
- * integer value to a pointer to the corresponding object.)  For
- * example, MPI_Comm might be a typedef to int, and MPI_COMM_WORLD
- * might be a literal integer value:
+ * these handles all as integers.  (As the MPI standard's advice to
+ * implementers suggests, such an implementation would likely maintain
+ * a table for each MPI process that maps the integer value to a
+ * pointer to the corresponding object.)  For example, MPI_Comm might
+ * be a typedef to int, and MPI_COMM_WORLD might be a literal integer
+ * value:
  *
  \code
  typedef int MPI_Comm;
@@ -173,6 +183,7 @@ namespace Teuchos {
 
  \code
  MPI_Comm rawComm;
+ // We omit all arguments but the last of MPI_Comm_split, for clarity.
  int errCode = MPI_Comm_split (..., &rawComm);
  if (errCode != MPI_SUCCESS) {
    // Handle the error
@@ -183,7 +194,11 @@ namespace Teuchos {
  * The second argument to opaqueWrapper() is a "free" function.  It
  * takes a pointer to the opaque handle, and its return value (if any)
  * is ignored.  Users are responsible for knowing whether to provide a
- * free function to opaqueWrapper().
+ * free function to opaqueWrapper().  In this case, because we created
+ * an MPI_Comm dynamically using a communicator "constructor"
+ * function, the MPI_Comm must be "freed" after use.  RCP will
+ * automatically call the "free" function once the reference count of
+ * \c comm reaches zero.
  *
  * Users are not allowed to construct an OpaqueWrapper object
  * explicitly.  You must use the opaqueWrapper() nonmember function to
@@ -209,7 +224,10 @@ public:
   /// RCP will return the raw handle via this implicit type conversion
   /// operator:
   /// \code
+  /// // We omit the right-hand side of this assignment, for simplicity.
   /// RCP<OpaqueWrapper<T> > wrapped = ...;
+  /// // RCP's <tt>operator*</tt> returns OpaqueWrapper<T>&.
+  /// // In turn, the operator below automatically converts to T.
   /// T raw = *wrapped;
   /// \endcode
   operator Opaque () const
@@ -217,11 +235,12 @@ public:
   /// \brief Explicit type conversion from wrapper to raw handle.
   ///
   /// Users typically never have to convert directly from an
-  /// OpaqueWrapper to the raw handle that it wraps.
+  /// OpaqueWrapper to the raw handle that it wraps.  However,
+  /// in case they do, we provide this operator.
   Opaque operator()() const
     { return opaque_; }
 protected:
-  /// The actual handle.
+  /// \brief The actual handle.
   ///
   /// This is protected and not private so that OpaqueWrapperWithFree
   /// can access it.  In general, one should avoid using protected
@@ -263,22 +282,27 @@ private:
 template <class Opaque, class OpaqueFree>
 class OpaqueWrapperWithFree : public OpaqueWrapper<Opaque> {
 public:
+  //! Constructor: takes the opaque handle, and its free function.
   OpaqueWrapperWithFree( Opaque opaque, OpaqueFree opaqueFree )
     : OpaqueWrapper<Opaque>(opaque), opaqueFree_(opaqueFree)
-    {}
+  {}
+  //! Destructor: invokes the free function.
   ~OpaqueWrapperWithFree()
-    {
-      if(opaqueFree_) {
+  {
+    // FIXME (mfh 10 Sep 2012) This only works if the free function is
+    // a raw function pointer, not if it is a general "function object"
+    // (i.e., something callable via operator()).
+    if(opaqueFree_) {
 #ifdef TEUCHOS_OPAQUE_WRAPPER_ANNOUNCE_FREE
-        Teuchos::RCP<Teuchos::FancyOStream>
-          out = Teuchos::VerboseObjectBase::getDefaultOStream();
-        Teuchos::OSTab tab(out);
-        *out << "\nOpaqueWrapperWithFree::~OpaqueWrapperWithFree(): Freeing opaque object"
-             << " of type " << TypeNameTraits<Opaque>::name() << "!\n";
+      Teuchos::RCP<Teuchos::FancyOStream>
+	out = Teuchos::VerboseObjectBase::getDefaultOStream();
+      Teuchos::OSTab tab(out);
+      *out << "\nOpaqueWrapperWithFree::~OpaqueWrapperWithFree(): Freeing opaque object"
+	   << " of type " << TypeNameTraits<Opaque>::name() << "!\n";
 #endif // TEUCHOS_OPAQUE_WRAPPER_ANNOUNCE_FREE
-        opaqueFree_(&this->opaque_);
-      }
+      opaqueFree_(&this->opaque_);
     }
+  }
 private:
   //! Function (or function object) for freeing the handle.
   OpaqueFree opaqueFree_;
