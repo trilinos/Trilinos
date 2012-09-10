@@ -1680,7 +1680,7 @@ NNTI_result_t NNTI_gni_put (
     ep_hdl=conn->ep_hdl;
 
     nthread_lock(&gni_mem_hdl->wr_queue_lock);
-
+    nthread_lock(&nnti_wr_wrhash_lock);
     nthread_lock(&nnti_gni_lock);
 
     GNI_EpSetEventData(
@@ -1726,6 +1726,8 @@ NNTI_result_t NNTI_gni_put (
         }
     }
 
+    nthread_unlock(&nnti_gni_lock);
+
     wr->last_op  =GNI_OP_PUT_INITIATOR;
     wr->peer_instance=dest_buffer_hdl->buffer_owner.peer.NNTI_remote_process_t_u.gni.inst_id;
     log_debug(nnti_event_debug_level, "wr->peer_instance==%lu", wr->peer_instance);
@@ -1734,11 +1736,10 @@ NNTI_result_t NNTI_gni_put (
         send_rdma_wc(wr, src_buffer_hdl, dest_buffer_hdl);
     }
 
-    nthread_unlock(&nnti_gni_lock);
-
     gni_mem_hdl->wr_queue.push_back(wr);
     insert_wr_wrhash(wr);
 
+    nthread_unlock(&nnti_wr_wrhash_lock);
     nthread_unlock(&gni_mem_hdl->wr_queue_lock);
 
     log_debug(nnti_ee_debug_level, "exit");
@@ -1796,15 +1797,6 @@ NNTI_result_t NNTI_gni_get (
     assert(conn);
     ep_hdl=conn->ep_hdl;
 
-    nthread_lock(&gni_mem_hdl->wr_queue_lock);
-
-    nthread_lock(&nnti_gni_lock);
-
-    GNI_EpSetEventData(
-            ep_hdl,
-            hash6432shift((uint64_t)wr),
-            hash6432shift((uint64_t)src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
-
     wr->post_desc.local_addr            =dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.buf+dest_offset;
     wr->post_desc.local_mem_hndl.qword1 =dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword1;
     wr->post_desc.local_mem_hndl.qword2 =dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword2;
@@ -1840,6 +1832,15 @@ NNTI_result_t NNTI_gni_get (
         use_fma=true;
     }
 
+    nthread_lock(&gni_mem_hdl->wr_queue_lock);
+    nthread_lock(&nnti_wr_wrhash_lock);
+    nthread_lock(&nnti_gni_lock);
+
+    GNI_EpSetEventData(
+            ep_hdl,
+            hash6432shift((uint64_t)wr),
+            hash6432shift((uint64_t)src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
+
     if (use_fma) {
         log_debug(nnti_event_debug_level, "calling PostFma(fma get ; ep_hdl(%llu) transport_global_data.cq_hdl(%llu) local_mem_hdl(%llu, %llu) remote_mem_hdl(%llu, %llu))",
                 ep_hdl, transport_global_data.ep_cq_hdl,
@@ -1866,6 +1867,8 @@ NNTI_result_t NNTI_gni_get (
         }
     }
 
+    nthread_unlock(&nnti_gni_lock);
+
     wr->last_op  =GNI_OP_GET_INITIATOR;
     wr->peer_instance=src_buffer_hdl->buffer_owner.peer.NNTI_remote_process_t_u.gni.inst_id;
     log_debug(nnti_event_debug_level, "wr->peer_instance==%lu", wr->peer_instance);
@@ -1874,11 +1877,10 @@ NNTI_result_t NNTI_gni_get (
         send_rdma_wc(wr, dest_buffer_hdl, src_buffer_hdl);
     }
 
-    nthread_unlock(&nnti_gni_lock);
-
     gni_mem_hdl->wr_queue.push_back(wr);
     insert_wr_wrhash(wr);
 
+    nthread_unlock(&nnti_wr_wrhash_lock);
     nthread_unlock(&gni_mem_hdl->wr_queue_lock);
 
     log_debug(nnti_ee_debug_level, "exit");
@@ -1886,6 +1888,8 @@ NNTI_result_t NNTI_gni_get (
     return((NNTI_result_t)rc);
 }
 
+
+#define IS_OUT_OF_ORDER_WAITING(mem_hdl, q) ((mem_hdl->type == REQUEST_BUFFER) && (q->wc_buffer[q->req_processed].ack_received==1))
 
 /**
  * @brief Wait for <tt>remote_op</tt> on <tt>reg_buf</tt> to complete.
@@ -1913,8 +1917,6 @@ NNTI_result_t NNTI_gni_wait (
 
     gni_cq_handle_t cq_hdl=0;
     gni_cq_entry_t  ev_data;
-
-//    nnti_gni_work_completion wc;
 
     gni_return_t rc=GNI_RC_SUCCESS;
     long elapsed_time = 0;
@@ -1947,6 +1949,7 @@ NNTI_result_t NNTI_gni_wait (
     }
 
     if (is_buf_op_complete(reg_buf) == TRUE) {
+        /* the buffer op is complete.  skip to the end. */
         log_debug(nnti_event_debug_level, "buffer op already complete (reg_buf=%p)", reg_buf);
         nnti_rc = NNTI_OK;
     } else {
@@ -1963,55 +1966,38 @@ NNTI_result_t NNTI_gni_wait (
 
             check_listen_socket_for_new_connections();
 
-nthread_lock(&nnti_gni_lock);
-
             if (is_buf_op_complete(reg_buf) == TRUE) {
                 log_debug(nnti_event_debug_level, "buffer op already complete (reg_buf=%p)", reg_buf);
                 nnti_rc = NNTI_OK;
-nthread_unlock(&nnti_gni_lock);
                 break;
             }
 
             cq_hdl=get_cq(reg_buf);
+            if (cq_hdl == 0) {
+                log_debug(nnti_debug_level, "cq_hdl is 0.  continuing...");
+                continue;
+            }
 
-            if ((gni_mem_hdl->type == REQUEST_BUFFER) &&
-                (q_hdl->wc_buffer[q_hdl->req_processed].ack_received==1)) {
-//                log_debug(nnti_event_debug_level, "processing out of order on cq_hdl(%llu) (l.qw1=%llu l.qw2=%llu r.qw1=%llu r.qw2=%llu)",
-//                        (uint64_t)cq_hdl,
-//                        (uint64_t)wr->post_desc.local_mem_hndl.qword1,
-//                        (uint64_t)wr->post_desc.local_mem_hndl.qword2,
-//                        (uint64_t)wr->post_desc.remote_mem_hndl.qword1,
-//                        (uint64_t)wr->post_desc.remote_mem_hndl.qword2);
+            if (IS_OUT_OF_ORDER_WAITING(gni_mem_hdl, q_hdl)) {
+//            	(gni_mem_hdl->type == REQUEST_BUFFER) &&
+//                (q_hdl->wc_buffer[q_hdl->req_processed].ack_received==1)) {
+                /* this request was received out of order. no reason to wait. just process it. */
                 memset(&ev_data, 0, sizeof(ev_data));
-//                memset(&wc, 0, sizeof(nnti_gni_work_completion));
                 process_event(reg_buf, cq_hdl, &ev_data);
-//                log_debug(nnti_event_debug_level, "out of order processing complete on cq_hdl(%llu) (l.qw1=%llu l.qw2=%llu r.qw1=%llu r.qw2=%llu)",
-//                        (uint64_t)cq_hdl,
-//                        (uint64_t)wr->post_desc.local_mem_hndl.qword1,
-//                        (uint64_t)wr->post_desc.local_mem_hndl.qword2,
-//                        (uint64_t)wr->post_desc.remote_mem_hndl.qword1,
-//                        (uint64_t)wr->post_desc.remote_mem_hndl.qword2);
                 if (is_buf_op_complete(reg_buf) == TRUE) {
                     nnti_rc = NNTI_OK;
-nthread_unlock(&nnti_gni_lock);
                     break;
                 } else {
-nthread_unlock(&nnti_gni_lock);
                     continue;
                 }
             } else {
                 memset(&ev_data, 0, sizeof(ev_data));
-//                log_debug(nnti_event_debug_level, "calling CqWaitEvent(wait) on cq_hdl(%llu) (l.qw1=%llu l.qw2=%llu r.qw1=%llu r.qw2=%llu)",
-//                        (uint64_t)cq_hdl,
-//                        (uint64_t)wr->post_desc.local_mem_hndl.qword1,
-//                        (uint64_t)wr->post_desc.local_mem_hndl.qword2,
-//                        (uint64_t)wr->post_desc.remote_mem_hndl.qword1,
-//                        (uint64_t)wr->post_desc.remote_mem_hndl.qword2);
-//                log_debug(nnti_event_debug_level, "calling CqWaitEvent(wait)");
                 trios_start_timer(call_time);
-//                nthread_lock(&nnti_gni_lock);
+nthread_lock(&gni_mem_hdl->wr_queue_lock);
+                log_debug(nnti_cq_debug_level, "reg_buf=%p ; cq_hdl=%llu", reg_buf, (uint64_t)cq_hdl);
+nthread_lock(&nnti_gni_lock);
                 rc=GNI_CqWaitEvent_wrapper(cq_hdl, timeout_per_call, &ev_data);
-//                nthread_unlock(&nnti_gni_lock);
+nthread_unlock(&nnti_gni_lock);
                 print_cq_event(&ev_data);
                 trios_stop_timer("NNTI_gni_wait - CqWaitEvent", call_time);
                 log_debug(nnti_event_debug_level, "CqWaitEvent(wait) complete");
@@ -2024,6 +2010,8 @@ nthread_unlock(&nnti_gni_lock);
             }
             /* case 2: timed out */
             else if ((rc==GNI_RC_TIMEOUT) || (rc==GNI_RC_NOT_DONE)) {
+nthread_unlock(&gni_mem_hdl->wr_queue_lock);
+
                 elapsed_time = (trios_get_time_ms() - entry_time);
 
                 /* if the caller asked for a legitimate timeout, we need to exit */
@@ -2031,25 +2019,21 @@ nthread_unlock(&nnti_gni_lock);
                     log_debug(nnti_debug_level, "CqWaitEvent timed out...timeout(%d) elapsed_time(%d) exit_now(%d)",
                             timeout, elapsed_time, trios_exit_now());
                     nnti_rc = NNTI_ETIMEDOUT;
-nthread_unlock(&nnti_gni_lock);
                     break;
                 }
                 /* continue if the timeout has not expired */
                 log_debug(nnti_event_debug_level, "CqWaitEvent timedout...retrying...timeout(%d) elapsed_time(%d) exit_now(%d)",
                         timeout, elapsed_time, trios_exit_now());
-                //            if (elapsed_time >= 500) {
-                //                fprint_NNTI_buffer(logger_get_file(), "reg_buf",
-                //                        "NNTI_wait() timeout(5+ sec)", reg_buf);
-                //            }
 
-nthread_unlock(&nnti_gni_lock);
                 continue;
             }
             /* case 3: failure */
             else {
+nthread_unlock(&gni_mem_hdl->wr_queue_lock);
                 char errstr[1024];
                 uint32_t recoverable=0;
-                GNI_CqErrorStr(ev_data, errstr, 1024);
+                errstr[0]='\0';
+                GNI_CqErrorStr(ev_data, errstr, 1023);
                 GNI_CqErrorRecoverable(ev_data, &recoverable);
 
                 log_error(nnti_debug_level, "CqWaitEvent failed (cq_hdl=%llu ; rc=%d) (recoverable=%llu) : %s",
@@ -2071,19 +2055,26 @@ nthread_unlock(&nnti_gni_lock);
                             errstr,
                             GNI_CQ_GET_STATUS(ev_data));
                     nnti_rc=NNTI_EIO;
+nthread_unlock(&gni_mem_hdl->wr_queue_lock);
                     break;
                 }
 
                 wait_buf=decode_event_buffer(reg_buf, &ev_data);
-//                memset(&wc, 0, sizeof(nnti_gni_work_completion));
-                process_event(wait_buf, cq_hdl, &ev_data);
+                if (wait_buf != reg_buf) {
+                    gni_memory_handle *hdl=(gni_memory_handle *)wait_buf->transport_private;
+nthread_unlock(&gni_mem_hdl->wr_queue_lock);
+nthread_lock(&hdl->wr_queue_lock);
+                    process_event(wait_buf, cq_hdl, &ev_data);
+nthread_unlock(&hdl->wr_queue_lock);
+                } else {
+                    process_event(wait_buf, cq_hdl, &ev_data);
+nthread_unlock(&gni_mem_hdl->wr_queue_lock);
+                }
                 if (is_buf_op_complete(reg_buf) == TRUE) {
                     nnti_rc = NNTI_OK;
-nthread_unlock(&nnti_gni_lock);
                     break;
                 }
             }
-nthread_unlock(&nnti_gni_lock);
         }
     }
 
@@ -2942,6 +2933,8 @@ static void send_rdma_wc (
         use_fma=true;
     }
 
+nthread_lock(&nnti_gni_lock);
+
     if (use_fma) {
         log_debug(nnti_debug_level, "calling PostFma(fma wc ep_hdl(%llu) transport_global_data.cq_hdl(%llu), local_addr=%llu, remote_addr=%llu)",
                 ep_hdl, transport_global_data.ep_cq_hdl, wr->wc_post_desc.local_addr, wr->wc_post_desc.remote_addr);
@@ -2957,6 +2950,8 @@ static void send_rdma_wc (
         trios_stop_timer("PostRdma ack", call_time);
         if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "PostRdma(rdma wc) failed: %d", rc);
     }
+
+nthread_unlock(&nnti_gni_lock);
 
     log_debug(nnti_ee_debug_level, "exit");
 
@@ -3079,7 +3074,7 @@ static gni_cq_handle_t get_cq(const NNTI_buffer_t *reg_buf)
     gni_cq_handle_t           cq_hdl=0;
     gni_request_queue_handle *q_hdl=NULL;
 
-    log_debug(nnti_ee_debug_level, "enter");
+    log_debug(nnti_cq_debug_level, "enter");
 
     assert(reg_buf);
 
@@ -3145,16 +3140,20 @@ static gni_cq_handle_t get_cq(const NNTI_buffer_t *reg_buf)
     switch (gni_mem_hdl->type) {
         case PUT_SRC_BUFFER:
             if (wr->op_state==RDMA_WRITE_INIT) {
-                log_debug(nnti_cq_debug_level, "rdma initiator.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+                log_debug(nnti_cq_debug_level, "rdma put initiator.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
             } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
-                log_debug(nnti_cq_debug_level, "rdma initiator.  waiting on wc_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+                log_debug(nnti_cq_debug_level, "rdma put initiator.  waiting on wc_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+            } else {
+                log_debug(nnti_cq_debug_level, "rdma put initiator.  invalid op_state(%llu)", (uint64_t)wr->op_state);
             }
             break;
         case GET_DST_BUFFER:
             if (wr->op_state==RDMA_READ_INIT) {
-                log_debug(nnti_cq_debug_level, "rdma initiator.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+                log_debug(nnti_cq_debug_level, "rdma get initiator.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
             } else if (wr->op_state==RDMA_READ_NEED_ACK) {
-                log_debug(nnti_cq_debug_level, "rdma initiator.  waiting on wc_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+                log_debug(nnti_cq_debug_level, "rdma get initiator.  waiting on wc_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+            } else {
+                log_debug(nnti_cq_debug_level, "rdma get initiator.  invalid op_state(%llu)", (uint64_t)wr->op_state);
             }
             break;
         case SEND_BUFFER:
@@ -3163,20 +3162,26 @@ static gni_cq_handle_t get_cq(const NNTI_buffer_t *reg_buf)
                     conn=get_conn_instance(wr->peer_instance);
                     assert(conn);
                     log_debug(nnti_cq_debug_level, "send request using send op.  waiting on req_cq_hdl(%llu).", (uint64_t)conn->queue_local_attrs.req_cq_hdl);
-                } else {
+                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
                     log_debug(nnti_cq_debug_level, "send request using send op.  waiting on wc_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+                } else {
+                    log_debug(nnti_cq_debug_level, "send request using send op.  invalid op_state(%llu)", (uint64_t)wr->op_state);
                 }
             } else if (wr->last_op==GNI_OP_SEND_BUFFER) {
                 if (wr->op_state==RDMA_WRITE_INIT) {
                     log_debug(nnti_cq_debug_level, "send buffer using send op.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
                 } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
                     log_debug(nnti_cq_debug_level, "send buffer using send op.  waiting on wc_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+                } else {
+                    log_debug(nnti_cq_debug_level, "send buffer using send op.  invalid op_state(%llu)", (uint64_t)wr->op_state);
                 }
             } else if (wr->last_op==GNI_OP_PUT_INITIATOR) {
                 if (wr->op_state==RDMA_WRITE_INIT) {
                     log_debug(nnti_cq_debug_level, "send buffer using put op.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
                 } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
                     log_debug(nnti_cq_debug_level, "send buffer using put op.  waiting on wc_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+                } else {
+                    log_debug(nnti_cq_debug_level, "send buffer using put op.  invalid op_state(%llu)", (uint64_t)wr->op_state);
                 }
             }
             break;
@@ -3186,6 +3191,8 @@ static gni_cq_handle_t get_cq(const NNTI_buffer_t *reg_buf)
                     log_debug(nnti_cq_debug_level, "rdma target (get_src).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
                 } else if (wr->op_state==RDMA_READ_NEED_ACK) {
                     log_debug(nnti_cq_debug_level, "rdma target (get_src).  waiting on wc_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
+                } else {
+                    log_debug(nnti_cq_debug_level, "rdma target (get_src).  invalid op_state(%llu)", (uint64_t)wr->op_state);
                 }
             } else {
                 log_debug(nnti_cq_debug_level, "rdma target (get_src).  waiting on wc_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
@@ -3197,6 +3204,8 @@ static gni_cq_handle_t get_cq(const NNTI_buffer_t *reg_buf)
                     log_debug(nnti_cq_debug_level, "rdma target (put_dest).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
                 } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
                     log_debug(nnti_cq_debug_level, "rdma target (put_dest).  waiting on wc_mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
+                } else {
+                    log_debug(nnti_cq_debug_level, "rdma target (put_dest).  invalid op_state(%llu)", (uint64_t)wr->op_state);
                 }
             } else {
                 log_debug(nnti_cq_debug_level, "rdma target (put_dest/result/receive).  waiting on wc_mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
@@ -3208,6 +3217,8 @@ static gni_cq_handle_t get_cq(const NNTI_buffer_t *reg_buf)
                     log_debug(nnti_cq_debug_level, "rdma target (result/receive).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
                 } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
                     log_debug(nnti_cq_debug_level, "rdma target (result/receive).  waiting on wc_mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
+                } else {
+                    log_debug(nnti_cq_debug_level, "rdma target (result/receive).  invalid op_state(%llu)", (uint64_t)wr->op_state);
                 }
             } else {
                 log_debug(nnti_cq_debug_level, "rdma target (result/receive).  waiting on wc_mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
@@ -3221,6 +3232,8 @@ static gni_cq_handle_t get_cq(const NNTI_buffer_t *reg_buf)
                     log_debug(nnti_cq_debug_level, "rdma target (generic target).  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
                 } else if (wr->op_state==RDMA_TARGET_NEED_ACK) {
                     log_debug(nnti_cq_debug_level, "rdma target (generic target).  waiting on wc_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+                } else {
+                    log_debug(nnti_cq_debug_level, "rdma target (generic target).  invalid op_state(%llu)", (uint64_t)wr->op_state);
                 }
             } else {
                 if (config.use_rdma_events) {
@@ -3228,6 +3241,8 @@ static gni_cq_handle_t get_cq(const NNTI_buffer_t *reg_buf)
                         log_debug(nnti_cq_debug_level, "rdma target (generic target).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
                     } else if (wr->op_state==RDMA_TARGET_NEED_ACK) {
                         log_debug(nnti_cq_debug_level, "rdma target (generic target).  waiting on wc_mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
+                    } else {
+                        log_debug(nnti_cq_debug_level, "rdma target (generic target).  invalid op_state(%llu)", (uint64_t)wr->op_state);
                     }
                 } else {
                     log_debug(nnti_cq_debug_level, "rdma target (generic target).  waiting on wc_mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
@@ -3244,7 +3259,7 @@ static gni_cq_handle_t get_cq(const NNTI_buffer_t *reg_buf)
             break;
     }
 
-    log_debug(nnti_ee_debug_level, "exit");
+    log_debug(nnti_cq_debug_level, "exit (cq_hdl=%llu)", cq_hdl);
 
     return(cq_hdl);
 }
@@ -3282,8 +3297,24 @@ static const NNTI_buffer_t *decode_event_buffer(
         event_buf = get_buf_bufhash((uint32_t)gni_cq_get_inst_id(*ev_data));
         if (event_buf == NULL) {
             wr = get_wr_wrhash((uint32_t)gni_cq_get_inst_id(*ev_data));
-            assert(wr);
-            event_buf=wr->reg_buf;
+            if (wr==NULL) {
+                log_error(nnti_debug_level, "ev_data.inst_id does NOT match either a bufhash or a wrhash.  what happened?  where did this event come from?");
+                print_cq_event(ev_data);
+
+                buf_by_bufhash_iter_t bufhash_iter;
+                for (bufhash_iter=buffers_by_bufhash.begin(); bufhash_iter != buffers_by_bufhash.end(); bufhash_iter++) {
+                    log_error(nnti_debug_level, "bufhash_map key=%llu buf=%p", bufhash_iter->first, bufhash_iter->second);
+                }
+
+                wr_by_wrhash_iter_t wrhash_iter;
+                for (wrhash_iter=wr_by_wrhash.begin(); wrhash_iter != wr_by_wrhash.end(); wrhash_iter++) {
+                    log_error(nnti_debug_level, "wrhash_map key=%llu wr=%p", wrhash_iter->first, wrhash_iter->second);
+                }
+
+                assert(wr);
+            } else {
+                event_buf=wr->reg_buf;
+            }
         }
         assert(event_buf);
 
@@ -3349,7 +3380,9 @@ static int process_event(
                     log_debug(debug_level, "SEND request event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
 
                     log_debug(debug_level, "calling GetComplete(fma put send request)");
+                    nthread_lock(&nnti_gni_lock);
                     rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    nthread_unlock(&nnti_gni_lock);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(fma send request post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3359,7 +3392,9 @@ static int process_event(
                     log_debug(debug_level, "SEND request Work Completion completion - event_buf==%p", event_buf);
 
                     log_debug(debug_level, "calling GetComplete(send request)");
+                    nthread_lock(&nnti_gni_lock);
                     rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    nthread_unlock(&nnti_gni_lock);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(fma send request post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3374,7 +3409,9 @@ static int process_event(
                     log_debug(debug_level, "SEND buffer event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
 
                     log_debug(debug_level, "calling GetComplete(fma put send buffer)");
+                    nthread_lock(&nnti_gni_lock);
                     rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    nthread_unlock(&nnti_gni_lock);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(fma send buffer post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3384,7 +3421,9 @@ static int process_event(
                     log_debug(debug_level, "SEND buffer Work Completion completion - event_buf==%p", event_buf);
 
                     log_debug(debug_level, "calling GetComplete(send buffer ACK)");
+                    nthread_lock(&nnti_gni_lock);
                     rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    nthread_unlock(&nnti_gni_lock);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(fma send buffer ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3397,7 +3436,9 @@ static int process_event(
                     log_debug(debug_level, "RDMA write event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
 
                     log_debug(debug_level, "calling GetComplete(fma put send)");
+                    nthread_lock(&nnti_gni_lock);
                     rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    nthread_unlock(&nnti_gni_lock);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(fma put send post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3413,7 +3454,9 @@ static int process_event(
                     log_debug(debug_level, "RDMA write ACK (initiator) completion - event_buf==%p", event_buf);
 
                     log_debug(debug_level, "calling GetComplete(fma put send ACK)");
+                    nthread_lock(&nnti_gni_lock);
                     rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    nthread_unlock(&nnti_gni_lock);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(fma put send ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3430,7 +3473,9 @@ static int process_event(
                     log_debug(debug_level, "RDMA write event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
 
                     log_debug(debug_level, "calling GetComplete(rdma put src)");
+                    nthread_lock(&nnti_gni_lock);
                     rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    nthread_unlock(&nnti_gni_lock);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(put src post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3446,7 +3491,9 @@ static int process_event(
                     log_debug(debug_level, "RDMA write ACK (initiator) completion - event_buf==%p", event_buf);
 
                     log_debug(debug_level, "calling GetComplete(rdma put src ACK)");
+                    nthread_lock(&nnti_gni_lock);
                     rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    nthread_unlock(&nnti_gni_lock);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(put src ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3458,7 +3505,9 @@ static int process_event(
                 log_debug(debug_level, "RDMA write ACK (initiator) completion - event_buf==%p", event_buf);
 
                 log_debug(debug_level, "calling GetComplete(rdma put src ACK)");
+                nthread_lock(&nnti_gni_lock);
                 rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                nthread_unlock(&nnti_gni_lock);
                 if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(put src ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                 print_post_desc(wr->post_desc_ptr);
 
@@ -3474,7 +3523,9 @@ static int process_event(
                     log_debug(debug_level, "RDMA read event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
 
                     log_debug(debug_level, "calling GetComplete(rdma get dst)");
+                    nthread_lock(&nnti_gni_lock);
                     rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    nthread_unlock(&nnti_gni_lock);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(get dst post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3490,7 +3541,9 @@ static int process_event(
                     log_debug(debug_level, "RDMA read ACK (initiator) completion - event_buf==%p", event_buf);
 
                     log_debug(debug_level, "calling GetComplete(rdma get dst ACK)");
+                    nthread_lock(&nnti_gni_lock);
                     rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    nthread_unlock(&nnti_gni_lock);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(get dst ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3502,7 +3555,9 @@ static int process_event(
                 log_debug(debug_level, "RDMA read ACK (initiator) completion - event_buf==%p", event_buf);
 
                 log_debug(debug_level, "calling GetComplete(rdma get dst ACK)");
+                nthread_lock(&nnti_gni_lock);
                 rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                nthread_unlock(&nnti_gni_lock);
                 if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(get dst ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                 print_post_desc(wr->post_desc_ptr);
 
@@ -3684,7 +3739,9 @@ static int process_event(
                     log_debug(debug_level, "RDMA target event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
 
                     log_debug(debug_level, "calling GetComplete(rdma target (mem cq)");
+                    nthread_lock(&nnti_gni_lock);
                     rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    nthread_unlock(&nnti_gni_lock);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(post_desc_ptr) failed: %d", rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3700,7 +3757,9 @@ static int process_event(
                     log_debug(debug_level, "RDMA target ACK completion - event_buf==%p", event_buf);
 
                     log_debug(debug_level, "calling GetComplete(rdma target ACK)");
+                    nthread_lock(&nnti_gni_lock);
                     rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    nthread_unlock(&nnti_gni_lock);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(rdma target ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3930,7 +3989,7 @@ static gni_work_request *first_incomplete_wr(
 
     assert(gni_mem_hdl);
 
-    nthread_lock(&gni_mem_hdl->wr_queue_lock);
+//    nthread_lock(&gni_mem_hdl->wr_queue_lock);
 
     if (gni_mem_hdl->wr_queue.empty()) {
         log_debug(nnti_ee_debug_level, "work request queue is empty");
@@ -3949,7 +4008,7 @@ static gni_work_request *first_incomplete_wr(
         }
     }
 
-    nthread_unlock(&gni_mem_hdl->wr_queue_lock);
+//    nthread_unlock(&gni_mem_hdl->wr_queue_lock);
 
     log_debug(nnti_ee_debug_level, "exit (wr=%p)", wr);
     return(wr);
@@ -4898,7 +4957,7 @@ static NNTI_result_t insert_buf_bufhash(NNTI_buffer_t *buf)
     buffers_by_bufhash[h] = buf;
     nthread_unlock(&nnti_buf_bufhash_lock);
 
-    log_debug(nnti_debug_level, "bufhash buffer added (buf=%p)", buf);
+    log_debug(nnti_debug_level, "bufhash buffer added (buf=%p ; wr.hash=%llu)", buf, (uint64_t)h);
 
     return(rc);
 }
@@ -4928,6 +4987,7 @@ static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf)
     uint32_t h=hash6432shift((uint64_t)buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf);
     log_level debug_level = nnti_debug_level;
 
+    log_debug(debug_level, "deleting bufhash=%llu", (uint64_t)h);
     if (nthread_lock(&nnti_buf_bufhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (buffers_by_bufhash.find(h) != buffers_by_bufhash.end()) {
         buf = buffers_by_bufhash[h];
@@ -4945,13 +5005,15 @@ static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf)
 }
 static void print_bufhash_map()
 {
-    if (!logging_debug(nnti_debug_level)) {
+    log_level debug_level=nnti_debug_level;
+
+    if (!logging_debug(debug_level)) {
         return;
     }
 
     buf_by_bufhash_iter_t i;
     for (i=buffers_by_bufhash.begin(); i != buffers_by_bufhash.end(); i++) {
-        log_debug(nnti_debug_level, "bufhash_map key=%llu buf=%p", i->first, i->second);
+        log_debug(debug_level, "bufhash_map key=%llu buf=%p", i->first, i->second);
     }
 }
 
@@ -4960,10 +5022,10 @@ static NNTI_result_t insert_wr_wrhash(gni_work_request *wr)
     NNTI_result_t  rc=NNTI_OK;
     uint32_t h=hash6432shift((uint64_t)wr);
 
-    if (nthread_lock(&nnti_wr_wrhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
+//    if (nthread_lock(&nnti_wr_wrhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     assert(wr_by_wrhash.find(h) == wr_by_wrhash.end());
     wr_by_wrhash[h] = wr;
-    nthread_unlock(&nnti_wr_wrhash_lock);
+//    nthread_unlock(&nnti_wr_wrhash_lock);
 
     log_debug(nnti_debug_level, "wrhash work request added (wr=%p ; wr.hash=%llu)", wr, (uint64_t)h);
 
@@ -4995,6 +5057,7 @@ static gni_work_request *del_wr_wrhash(gni_work_request *wr)
     uint32_t h=hash6432shift((uint64_t)wr);
     log_level debug_level = nnti_debug_level;
 
+    log_debug(debug_level, "deleting wrhash=%llu", (uint64_t)h);
     if (nthread_lock(&nnti_wr_wrhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (wr_by_wrhash.find(h) != wr_by_wrhash.end()) {
         wr = wr_by_wrhash[h];
@@ -5012,13 +5075,15 @@ static gni_work_request *del_wr_wrhash(gni_work_request *wr)
 }
 static void print_wrhash_map()
 {
-    if (!logging_debug(nnti_debug_level)) {
+    log_level debug_level=nnti_debug_level;
+
+    if (!logging_debug(debug_level)) {
         return;
     }
 
     wr_by_wrhash_iter_t i;
     for (i=wr_by_wrhash.begin(); i != wr_by_wrhash.end(); i++) {
-        log_debug(nnti_debug_level, "wrhash_map key=%llu wr=%p", i->first, i->second);
+        log_debug(debug_level, "wrhash_map key=%llu wr=%p", i->first, i->second);
     }
 }
 
@@ -5827,7 +5892,9 @@ static int post_wait(
     for(i=0;i<=retries;i++) {
         log_debug(nnti_debug_level, "calling CqWaitEvent");
         trios_start_timer(call_time);
-        rc=GNI_CqWaitEvent_wrapper(cq_hdl, timeout, &ev_data);
+nthread_lock(&nnti_gni_lock);
+        rc=GNI_CqWaitEvent_wrapper (cq_hdl, timeout, &ev_data);
+nthread_unlock(&nnti_gni_lock);
         trios_stop_timer("post_wait - CqWaitEvent", call_time);
         if (rc==GNI_RC_SUCCESS) {
             break;
@@ -5838,7 +5905,9 @@ static int post_wait(
 
     log_debug(nnti_debug_level, "calling GetComplete");
     trios_start_timer(call_time);
+    nthread_lock(&nnti_gni_lock);
     rc=GNI_GetCompleted_wrapper (cq_hdl, ev_data, &post_desc_ptr);
+    nthread_unlock(&nnti_gni_lock);
     trios_stop_timer("post_wait - GetCompleted", call_time);
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted failed: %d", rc);
     print_post_desc(post_desc_ptr);
@@ -5894,7 +5963,9 @@ static int reset_req_index(
 
     log_debug(nnti_debug_level, "calling PostFma(reset index ep_hdl(%llu), local_addr=%llu, remote_addr=%llu)",
             reset_ep_hdl, post_desc.local_addr, post_desc.remote_addr);
+nthread_lock(&nnti_gni_lock);
     rc=GNI_PostFma(reset_ep_hdl, &post_desc);
+nthread_unlock(&nnti_gni_lock);
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "PostFma(reset index) failed: %d", rc);
 
     post_wait(reset_cq_hdl, 1000, 0);
@@ -5957,7 +6028,9 @@ static int fetch_add_buffer_offset(
     do {
         log_debug(debug_level, "calling PostFma(fetch add - req_index_ep_hdl(%llu), local_addr=%llu, remote_addr=%llu)",
                 local_req_queue_attrs->req_index_ep_hdl, post_desc.local_addr, (uint64_t)post_desc.remote_addr);
+nthread_lock(&nnti_gni_lock);
         rc=GNI_PostFma(local_req_queue_attrs->req_index_ep_hdl, &post_desc);
+nthread_unlock(&nnti_gni_lock);
         if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "PostFma(fetch add) failed: %d", rc);
 
         post_wait(local_req_queue_attrs->req_index_cq_hdl, 1000, 0);
@@ -5976,7 +6049,9 @@ static int fetch_add_buffer_offset(
             do {
                 log_debug(debug_level, "calling CqWaitEvent(unblock)");
                 trios_start_timer(call_time);
+nthread_lock(&nnti_gni_lock);
                 rc=GNI_CqWaitEvent_wrapper (local_req_queue_attrs->unblock_mem_cq_hdl, 1000, &ev_data);
+nthread_unlock(&nnti_gni_lock);
                 trios_stop_timer("unblock", call_time);
                 if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "CqWaitEvent(unblock) failed: %d", rc);
             } while (rc!=GNI_RC_SUCCESS);
@@ -5990,7 +6065,9 @@ static int fetch_add_buffer_offset(
                 log_debug(debug_level, "calling CqGetEvent(absorb extra unblocks)");
                 do {
                     log_debug(debug_level, "calling CqGetEvent(absorb extra unblocks)");
+nthread_lock(&nnti_gni_lock);
                     rc=GNI_CqGetEvent (local_req_queue_attrs->unblock_mem_cq_hdl, &ev_data);
+nthread_unlock(&nnti_gni_lock);
                     if (rc==GNI_RC_SUCCESS) {
                         extras_absorbed++;
 
@@ -6009,7 +6086,9 @@ static int fetch_add_buffer_offset(
 
             /* absorb one unblock message */
             log_debug(nnti_event_debug_level, "calling CqGetEvent(absorb one unblock)");
+nthread_lock(&nnti_gni_lock);
             rc=GNI_CqWaitEvent_wrapper (local_req_queue_attrs->unblock_mem_cq_hdl, 1000, &ev_data);
+nthread_unlock(&nnti_gni_lock);
             if (rc==GNI_RC_SUCCESS) {
                 ui64=gni_cq_get_data(ev_data);
                 ptr32=(uint32_t*)&ui64;
@@ -6226,6 +6305,8 @@ static int request_send(
     wr->wc.dest_offset=offset*server_q->req_size;
 
     nthread_lock(&gni_mem_hdl->wr_queue_lock);
+    nthread_lock(&nnti_wr_wrhash_lock);
+    nthread_lock(&nnti_gni_lock);
 
     log_debug(nnti_debug_level, "calling send_req()");
     trios_start_timer(call_time);
@@ -6239,9 +6320,12 @@ static int request_send(
     trios_stop_timer("send_req_wc", call_time);
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "send_req_wc() failed: %d", rc);
 
+    nthread_unlock(&nnti_gni_lock);
+
     gni_mem_hdl->wr_queue.push_back(wr);
     insert_wr_wrhash(wr);
 
+    nthread_unlock(&nnti_wr_wrhash_lock);
     nthread_unlock(&gni_mem_hdl->wr_queue_lock);
 
     wr->last_op      =GNI_OP_SEND_REQUEST;
@@ -6451,6 +6535,8 @@ static int buffer_send(
     wr->wc_dest_mem_hdl.qword2=dest_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.wc_mem_hdl.qword2;
 
     nthread_lock(&gni_mem_hdl->wr_queue_lock);
+    nthread_lock(&nnti_wr_wrhash_lock);
+    nthread_lock(&nnti_gni_lock);
 
     log_debug(nnti_debug_level, "calling send_buffer()");
     trios_start_timer(call_time);
@@ -6464,9 +6550,12 @@ static int buffer_send(
     trios_stop_timer("send_buffer_wc", call_time);
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "send_buffer_wc() failed: %d", rc);
 
+    nthread_unlock(&nnti_gni_lock);
+
     gni_mem_hdl->wr_queue.push_back(wr);
     insert_wr_wrhash(wr);
 
+    nthread_unlock(&nnti_wr_wrhash_lock);
     nthread_unlock(&gni_mem_hdl->wr_queue_lock);
 
     wr->last_op      =GNI_OP_SEND_BUFFER;
@@ -6491,6 +6580,7 @@ static int send_unblock(
 
 
     conn_by_inst_iter_t i;
+//    if (nthread_lock(&nnti_conn_instance_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     for (i=connections_by_instance.begin(); i != connections_by_instance.end(); i++) {
 
         //NNTI_instance_id key = i->first;
@@ -6519,7 +6609,9 @@ static int send_unblock(
 
         log_debug(nnti_debug_level, "calling PostCqWrite(send_unblock to instance(%llu))", conn->peer_instance);
         trios_start_timer(call_time);
+nthread_lock(&nnti_gni_lock);
         rc=GNI_PostCqWrite(local_req_queue_attrs->unblock_ep_hdl, &post_desc);
+nthread_unlock(&nnti_gni_lock);
         trios_stop_timer("send_unblock", call_time);
         if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "PostCqWrite(send_unblock, inst_id=%llu) failed: %d", conn->peer_instance, rc);
 
@@ -6528,6 +6620,7 @@ static int send_unblock(
         rc=GNI_EpUnbind (local_req_queue_attrs->unblock_ep_hdl);
         if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpUnbind(inst_id=%llu) failed: %d", conn->peer_instance, rc);
     }
+//    nthread_unlock(&nnti_conn_instance_lock);
 
     log_debug(nnti_ee_debug_level, "exit");
 
