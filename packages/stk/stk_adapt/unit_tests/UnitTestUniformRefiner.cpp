@@ -80,7 +80,7 @@ namespace stk {
   namespace adapt {
     namespace unit_tests {
 
-#define DO_TESTS 0
+#define DO_TESTS 1
 #if DO_TESTS
       static int print_infoLevel = 0;
 
@@ -1889,7 +1889,7 @@ namespace stk {
 
                         double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
                         double iy = data[1]; // /double(nele);
-                        iy = iy*iy;
+                        iy = iy*iy*iy;
                         data[1] = iy; // *double(nele);
                       }
                   }
@@ -1910,7 +1910,15 @@ namespace stk {
 
             // end_demo
           }
-
+#if 0
+    Math::Matrix rmx = Math::rotationMatrix(0, 30);
+    Math::Matrix rmy = Math::rotationMatrix(1, -45);
+    Math::Matrix rmz = Math::rotationMatrix(2, 30);
+    Math::Matrix rm;
+    rm =  rmy * rmz;
+    rm =  rmx * rm;
+    eMesh.transform_mesh(rm);
+#endif
       }
       //======================================================================================================================
       //======================================================================================================================
@@ -1991,6 +1999,62 @@ namespace stk {
             // end_demo
           }
 
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      // A cube with an indented bump on the bottom
+
+      STKUNIT_UNIT_TEST(unit1_uniformRefiner, hex_4)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size <= 3)
+          {
+            unsigned n = 12;
+            std::string gmesh_spec = toString(n)+"x"+toString(n)+"x"+toString(n)+std::string("|bbox:0,0,0,1,1,1|sideset:xXyYzZ");
+            PerceptMesh eMesh(3);
+            eMesh.new_mesh(percept::GMeshSpec(gmesh_spec));
+            Hex8_Hex8_8 break_hex_to_hex(eMesh);
+            eMesh.add_spacing_fields();
+            eMesh.commit();
+
+            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+
+            // cluster the mesh towards the bump
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+              {
+                  {
+                    stk::mesh::Bucket & bucket = **k ;
+
+                    const unsigned num_elements_in_bucket = bucket.size();
+                
+                    for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
+                      {
+                        stk::mesh::Entity& entity = bucket[iEntity];
+
+                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
+                        data[2] = data[2]*data[2];
+                      }
+                  }
+              }
+            SpacingFieldUtil sfu(eMesh);
+            sfu.compute_spacing_field();
+
+            save_or_diff(eMesh, output_files_loc+"hex_4_spc.0.e");
+
+            UniformRefiner breaker(eMesh, break_hex_to_hex, 0);
+            breaker.doBreak();
+
+            save_or_diff(eMesh, output_files_loc+"hex_4_spc.1.e");
+
+          }
       }
 
 #endif

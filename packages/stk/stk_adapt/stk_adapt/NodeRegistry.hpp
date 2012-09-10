@@ -1366,7 +1366,43 @@ namespace stk {
                   }
                 else
                   {
-                    for (unsigned ipts=0; ipts < nsz; ipts++)
+                    for (unsigned ipts=1; ipts < nsz; ipts++)
+                      {
+                        spc[ipts][isp] = spc[ipts][0];
+                      }
+                  }
+              }
+            else if (nsz == 8)
+              {
+                double alp01 = spacing_edge(0, 1, 2, nsp,  lspc, den_xyz, coord);
+                double alp32 = spacing_edge(3, 2, 2, nsp,  lspc, den_xyz, coord);
+                double alp45 = spacing_edge(4, 5, 2, nsp,  lspc, den_xyz, coord);
+                double alp76 = spacing_edge(7, 6, 2, nsp,  lspc, den_xyz, coord);
+                double x = 0.25*(alp01+alp32+alp45+alp76);
+                double alp12 = spacing_edge(1, 2, 2, nsp,  lspc, den_xyz, coord);
+                double alp03 = spacing_edge(0, 3, 2, nsp,  lspc, den_xyz, coord);
+                double alp56 = spacing_edge(5, 6, 2, nsp,  lspc, den_xyz, coord);
+                double alp47 = spacing_edge(4, 7, 2, nsp,  lspc, den_xyz, coord);
+                double y = 0.25*(alp12+alp03+alp56+alp47);
+                double alp04 = spacing_edge(0, 4, 2, nsp,  lspc, den_xyz, coord);
+                double alp15 = spacing_edge(1, 5, 2, nsp,  lspc, den_xyz, coord);
+                double alp26 = spacing_edge(2, 6, 2, nsp,  lspc, den_xyz, coord);
+                double alp37 = spacing_edge(3, 7, 2, nsp,  lspc, den_xyz, coord);
+                double z = 0.25*(alp04+alp15+alp26+alp37);
+                if (isp == 0)
+                  {
+                    spc[0][0] = (1-x)*(1-y)*(1-z);
+                    spc[1][0] = x*(1-y)*(1-z);
+                    spc[2][0] = x*y*(1-z);
+                    spc[3][0] = (1-x)*y*(1-z);
+                    spc[4][0] = (1-x)*(1-y)*z;
+                    spc[5][0] = x*(1-y)*z;
+                    spc[6][0] = x*y*z;
+                    spc[7][0] = (1-x)*y*z;
+                  }
+                else
+                  {
+                    for (unsigned ipts=1; ipts < nsz; ipts++)
                       {
                         spc[ipts][isp] = spc[ipts][0];
                       }
@@ -1394,7 +1430,7 @@ namespace stk {
             for (unsigned ipts=0; ipts < nsz; ipts++)
               {
                 spc[ipts][isp] /= sum;
-                if (nsz == 4 && isp == 1) 
+                if (1 && nsz == 8 && isp == 1) 
                   std::cout << "spc[" << ipts << "]= " << spc[ipts][isp] << std::endl;
               }
           }
@@ -1408,6 +1444,7 @@ namespace stk {
         stk::mesh::FieldBase *spacing_field    = m_eMesh.get_field("ref_spacing_field");
 
         int spatialDim = m_eMesh.get_spatial_dim();
+        int fieldDim = spatialDim;
         stk::mesh::EntityRank field_rank = stk::mesh::fem::FEMMetaData::NODE_RANK;
         {
           EXCEPTWATCH;
@@ -1418,9 +1455,10 @@ namespace stk {
               const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
               //mesh::Part& frpart = metaData.get_part(fr.ordinal());
               field_rank = fr.entity_rank();
-              spatialDim = fr.dimension() ;
+              fieldDim = fr.dimension() ;
             }
         }
+        // FIXME for interpolation of element fields
         if (field_rank != stk::mesh::fem::FEMMetaData::NODE_RANK)
           {
             if (field_rank == m_eMesh.element_rank())
@@ -1478,7 +1516,7 @@ namespace stk {
                 throw std::runtime_error("makeCentroid(field): bad node found 0.0");
               }
 
-            double c_p[] = {0.0, 0.0, 0.0};
+            std::vector<double> c_p(fieldDim,0);
             bool doPrint = false;
             std::vector<stk::mesh::Entity *> nodes(8,(stk::mesh::Entity *)0);
             unsigned nsz = 0;
@@ -1509,6 +1547,7 @@ namespace stk {
                     unsigned npts = elem_nodes.size();
                     nsz = npts;
                     nodes.resize(nsz, (stk::mesh::Entity *)0);
+                    c_p.resize(fieldDim,0);
                     //if (npts == 2) doPrint=true;
                     //double dnpts = elem_nodes.size();
                     for (unsigned ipts = 0; ipts < npts; ipts++)
@@ -1527,6 +1566,7 @@ namespace stk {
                 unsigned ipts=0;
                 nsz = subDimEntity.size();
                 nodes.resize(nsz, (stk::mesh::Entity *)0);
+                c_p.resize(fieldDim,0);
 
                 for (SubDimCell_SDSEntityType::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids, ++ipts)
                   {
@@ -1538,18 +1578,21 @@ namespace stk {
 
             {
               //if ( (spacing_field && (spacing_field != field) && subDimEntity.size() == 2))
-              bool do_spacing=false;
-              if (do_spacing && (spacing_field && (spacing_field != field) ) )
+              // FIXME for quadratic elements
+              bool do_spacing=true;
+              if (do_spacing && (nsz <= 8 && spacing_field && (spacing_field != field) ) )
                 {
                   EXCEPTWATCH;
                   unsigned ipts=0;
 
                   double * coord[8] = {0,0,0,0,0,0,0,0};
+                  double * field_data[8] = {0,0,0,0,0,0,0,0};
                   double * spacing[8] = {0,0,0,0,0,0,0,0};
 
                   for (ipts=0; ipts < nsz; ipts++)
                     {
-                      coord[ipts] = m_eMesh.field_data_inlined(field, *nodes[ipts]);
+                      coord[ipts] = m_eMesh.field_data_inlined(m_eMesh.get_coordinates_field(), *nodes[ipts]);
+                      field_data[ipts] = m_eMesh.field_data_inlined(field, *nodes[ipts]);
                       spacing[ipts] = m_eMesh.field_data_inlined(spacing_field, *nodes[ipts]);
                     }
 
@@ -1588,7 +1631,7 @@ namespace stk {
                         }
                     }
                   normalize_spacing(nsz, spatialDim, spc, den_xyz, coord);
-                  if (nsz==2 && (coord[1][0] < 1.e-3 && coord[0][0] < 1.e-3))
+                  if (0 && nsz==2 && (coord[1][0] < 1.e-3 && coord[0][0] < 1.e-3))
                     for (ipts=0; ipts < nsz; ipts++)
                       for (int isp = 0; isp < spatialDim; isp++)
                         {
@@ -1598,9 +1641,12 @@ namespace stk {
 
                   for (ipts=0; ipts < nsz; ipts++)
                     {
-                      for (int isp = 0; isp < spatialDim; isp++)
+                      if (field_data[ipts])
                         {
-                          c_p[isp] += coord[ipts][isp]*spc[ipts][isp];
+                          for (int isp = 0; isp < fieldDim; isp++)
+                            {
+                              c_p[isp] += field_data[ipts][isp]*spc[ipts][isp];
+                            }
                         }
                     }
 
@@ -1618,22 +1664,22 @@ namespace stk {
                           throw std::runtime_error("makeCentroid(field): bad node found 2.0");
                         }
                       //double *  coord = m_eMesh.field_data(field, *node, null_u);
-                      double *  coord = m_eMesh.field_data_inlined(field, *node);
+                      double *  field_data = m_eMesh.field_data_inlined(field, *node);
 
-                      if (doPrint && coord)
+                      if (doPrint && field_data)
                         {
                           //const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
                           //CellTopology cell_topo(cell_topo_data);
 
                           std::cout << "tmp NodeRegistry::makeCentroid(field) npts= " << subDimEntity.size() << " ipts= " << ipts
-                                    << " coord= " << coord[0] << " " << coord[1] << " " << coord[2] << std::endl;
+                                    << " field_data= " << field_data[0] << " " << field_data[1] << " " << field_data[2] << std::endl;
                         }
 
-                      if (coord)
+                      if (field_data)
                         {
-                          for (int isp = 0; isp < spatialDim; isp++)
+                          for (int isp = 0; isp < fieldDim; isp++)
                             {
-                              c_p[isp] += coord[isp]/dnpts;
+                              c_p[isp] += field_data[isp]/dnpts;
                             }
                         }
                     }
@@ -1649,7 +1695,7 @@ namespace stk {
 
               if (c_coord)
                 {
-                  for (int isp = 0; isp < spatialDim; isp++)
+                  for (int isp = 0; isp < fieldDim; isp++)
                     {
                       c_coord[isp] = c_p[isp];
                     }
