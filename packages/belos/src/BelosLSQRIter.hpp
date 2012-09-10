@@ -42,7 +42,7 @@
 #ifndef BELOS_LSQR_ITER_HPP
 #define BELOS_LSQR_ITER_HPP
 
-/*! \file LSQRIter.hpp
+/*! \file BelosLSQRIter.hpp
     \brief Belos concrete class that iterates LSQR.
 */
 
