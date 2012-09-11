@@ -71,12 +71,12 @@ static const char *orthogonalization_method_names[] = {
   "Householder", "Classical Gram-Schmidt", "Modified Gram-Schmidt" };
 
 // quadrature reduction methods
-enum Quadrature_Reduction_Method { NONE, QSQUARED, Q2 };
-static const int num_quad_reduction_method = 3;
+enum Quadrature_Reduction_Method { NONE, QSQUARED, QSQUARED2, Q2 };
+static const int num_quad_reduction_method = 4;
 static const Quadrature_Reduction_Method quad_reduction_method_values[] = { 
-  NONE, QSQUARED, Q2 };
+  NONE, QSQUARED, QSQUARED2, Q2 };
 static const char *quad_reduction_method_names[] = { 
-  "None", "Q Squared", "Q2" };
+  "None", "Q Squared", "Q Squared2", "Q2" };
 
 // solver methods
 enum Solver_Method { TRSM, GLPK, CLP, CLP_IP, QPOASES, BASIS_PURSUIT, ORTHOGONAL_MATCHING_PURSUIT };
@@ -149,8 +149,11 @@ int main(int argc, char **argv)
     double shift = 0.0;
     CLP.setOption("shift", &shift, "Shift location");
 
-    double rank_threshold = 1.0e-10;
+    double rank_threshold = 1.0e-12;
     CLP.setOption("rank_threshold", &rank_threshold, "Rank threshold");
+
+    double rank_threshold2 = 1.0e-12;
+    CLP.setOption("rank_threshold2", &rank_threshold2, "Rank threshold for Q2");
 
     double reduction_tolerance = 1.0e-12;
     CLP.setOption("reduction_tolerance", &reduction_tolerance, "Quadrature reduction tolerance");
@@ -237,6 +240,7 @@ int main(int argc, char **argv)
 	      << "\tpole                        = " << pole << std::endl
 	      << "\tshift                       = " << shift << std::endl
 	      << "\trank_threshold              = " << rank_threshold << std::endl
+	      << "\trank_threshold2             = " << rank_threshold2 << std::endl
 	      << "\treduction_tolerance         = " << reduction_tolerance 
 	      << std::endl
 	      << "\tverbose                     = " << verbose << std::endl
@@ -338,6 +342,7 @@ int main(int argc, char **argv)
     red_quad_params.set("Reduction Tolerance", reduction_tolerance);
     red_quad_params.set("Verbose", verbose);
     red_quad_params.set("Objective Value", objective_value);
+    red_quad_params.set("Q2 Rank Threshold", rank_threshold2);
     Stokhos::ReducedBasisFactory<int,double> factory(params);
     Teuchos::RCP< Stokhos::ReducedPCEBasis<int,double> > gs_basis = 
       factory.createReducedBasis(p2, pces, quad, Cijk);
