@@ -120,7 +120,7 @@ public:
 ///   vector(s) \f$b\f$ and solution vector(s) \f$x\f$.
 /// \tparam MV The multivector type; the type of the solution
 ///   vector(s) and right-hand side vector(s).
-/// \param OP The type of the matrix \f$A\f$ (and any preconditioner,
+/// \tparam OP The type of the matrix \f$A\f$ (and any preconditioner,
 ///   if one is provided).
 ///
 /// \warning Our LSQR implementation currently only compiles correctly
@@ -198,7 +198,7 @@ public:
 /// linear system and convergence of the (left-)preconditioned linear
 /// system.  LSQR does not implement detection of "loss of accuracy,"
 /// because it is unclear what this means for linear least squares in
-/// general.  This is LSQR solves a possibly inconsistent system in a
+/// general.  This LSQR solves a possibly inconsistent system in a
 /// least-squares sense.  
 ///
 /// \section References

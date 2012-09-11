@@ -7,7 +7,7 @@ provides a collection of iterative linear solver algorithms, which
 work for any combination of matrix, preconditioner, and vector types
 which make sense together.  
 
-%Belos' is <it>interoperable</it> because it accesses matrices,
+%Belos is interoperable because it accesses matrices,
 preconditioners, and vectors as opaque objects with simple interfaces.
 These interfaces do not depend on the internal representation of these
 objects.  %Belos' solvers only use matrices and preconditioners as
@@ -16,11 +16,11 @@ return the same number of vectors as output.  They only access vectors
 via a simple interface for adding vectors together or computing their
 inner products or norms.
 
-We provide implementations of operator and vector interfaces for
-Epetra, Tpetra, and Thyra objects.  As a result, any existing code
+Implementations of operator and vector interfaces for
+Epetra, Tpetra, and Thyra objects are provided.  As a result, any existing code
 employing Epetra, Tpetra, or Thyra operators and vectors (such as
 other packages in Trilinos) may also be used in conjunction with
-%Belos.  %Belos is <it>extensible</it> because users may define this
+%Belos.  %Belos is extensible because users may define this
 interface for their own operators and vectors.  This allows them to
 use any %Belos solver with their objects without changing a line of
 %Belos code.  Defining this interface requires only a modest effort,
@@ -45,9 +45,9 @@ programming for standard use cases.
 \section solvers Current Linear Solvers 
 
 %Belos provides a framework capable of solving a wide variety of
-linear systems of equations.  %Belos can currently solve complex and
-real, Hermitian and non-Hermitian, linear problems, via the following
-included solvers:
+linear systems of equations.  %Belos can currently solve 
+real-valued (often complex-valued), Hermitian and non-Hermitian, linear problems, 
+via the following included solvers:
 
    <ul>
    <li>Single-vector and block GMRES
@@ -65,30 +65,30 @@ included solvers:
      <li> <a href="http://www.csm.ornl.gov/~cbaker">Chris Baker</a>, Oak Ridge National Laboratory
      <li> <a href="http://www.sandia.gov/~maherou">Mike Heroux</a>, Sandia National Laboratory
      <li> David Day, Sandia National Laboratory
+     <li> <a href="http://www.cs.berkeley.edu/~mhoemmen/">Mark Hoemmen</a>, Sandia National Laboratory
      <li> <a href="http://www.math.ttu.edu/~vhowle">Vicki Howle</a>, Texas Tech University
      <li> <a href="http://www.sandia.gov/~rblehou">Rich Lehoucq</a>, Sandia National Laboratory
      <li> <a href="http://www.sandia.gov/~mlparks">Mike Parks</a>, Sandia National Laboratory
-     <li> <a href="http://www.cs.sandia.gov/~hkthorn/">Heidi Thornquist</a>, Sandia National Laboratory
-     <li> <a href="http://www.cs.berkeley.edu/~mhoemmen/">Mark Hoemmen</a>, Sandia National Laboratory
      <li> Nico Schloemer, Universitaet Antwerpen
+     <li> <a href="http://www.cs.sandia.gov/~hkthorn/">Heidi Thornquist</a>, Sandia National Laboratory
    </ul>
 
 \section starting_place Where to start
 
 A good place for new users to start is with Belos::SolverFactory.
-This factory class lets the user ask for the Belos solver they want by
+This factory class lets the user ask for the %Belos solver they want by
 its string name.  For example, you can ask for "GMRES" or "CG" by name
 and the SolverFactory will create that solver, without you needing to
-know the name of the corresponding class in Belos.  You may also pass
+know the name of the corresponding class in %Belos.  You may also pass
 parameters (via Teuchos::ParameterList) to the solver at this time.
 All solvers that SolverFactory creates implement the
-Belos::SolverManager interface (which see).
+Belos::SolverManager interface.
 
 \section belos_browser Browse all of Belos as a single doxygen collection
 
-You can browse all of Belos as a <A HREF="../../browser/doc/html/index.html">single
+You can browse all of %Belos as a <A HREF="../../browser/doc/html/index.html">single
 doxygen collection</A>. Warning, this is not the recommended way to learn
-about Belos software.  However, this is a good way to browse the <a
+about %Belos software.  However, this is a good way to browse the <a
 href="../../browser/doc/html/dirs.html">directory structure of belos</a>, to <a
 href="../../browser/doc/html/files.html">locate files</a>, etc.
 
