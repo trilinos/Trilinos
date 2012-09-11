@@ -84,5 +84,10 @@ INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/package_arch/TribitsProject.cm
 # Make Trilinos create <Package>Config.cmake files by default
 SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT ON)
 
+# Hide deprecated code by default (TEMPORARY ONLY)
+IF (${PROJECT_NAME}_HIDE_DEPRECATED_CODE STREQUAL "")
+  SET(${PROJECT_NAME}_HIDE_DEPRECATED_CODE ON)
+ENDIF()
+
 # Do all of the processing for this Tribits project
 TRIBITS_PROJECT()
