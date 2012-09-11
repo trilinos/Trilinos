@@ -1020,7 +1020,7 @@ int Epetra_FECrsMatrix::InputGlobalValues_RowMajor(
             const double* values,
             int mode)
 {
-  if(!RowMap().GlobalIndicesIsType<int_type>())
+  if(!RowMap().template GlobalIndicesIsType<int_type>())
   throw ReportError("Epetra_FECrsMatrix::InputGlobalValues_RowMajor mismatch between argument types (int/long long) and map type.", -1);
 
   int returncode = 0;
@@ -1073,7 +1073,7 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int_type* rows,
             const double*const* values,
             int format, int mode)
 {
-  if(!RowMap().GlobalIndicesIsType<int_type>())
+  if(!RowMap().template GlobalIndicesIsType<int_type>())
   throw ReportError("Epetra_FECrsMatrix::InputGlobalValues mismatch between argument types (int/long long) and map type.", -1);
 
   if (format != Epetra_FECrsMatrix::ROW_MAJOR &&
@@ -1123,7 +1123,7 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int_type* rows,
             const double* values,
             int format, int mode)
 {
-  if(!RowMap().GlobalIndicesIsType<int_type>())
+  if(!RowMap().template GlobalIndicesIsType<int_type>())
   throw ReportError("Epetra_FECrsMatrix::InputGlobalValues mismatch between argument types (int/long long) and map type.", -1);
 
   if (format == Epetra_FECrsMatrix::ROW_MAJOR) {
@@ -1154,7 +1154,7 @@ int Epetra_FECrsMatrix::InputNonlocalGlobalValues(int_type row,
               const double* values,
               int mode)
 {
-  if(!RowMap().GlobalIndicesIsType<int_type>())
+  if(!RowMap().template GlobalIndicesIsType<int_type>())
   throw ReportError("Epetra_FECrsMatrix::InputNonlocalGlobalValues mismatch between argument types (int/long long) and map type.", -1);
 
   // if we already have a nonlocal matrix object, this is easier...
@@ -1209,7 +1209,7 @@ int Epetra_FECrsMatrix::InputNonlocalGlobalValues(int_type row,
 template<typename int_type>
 int Epetra_FECrsMatrix::InsertNonlocalRow(int_type row, typename std::vector<int_type>::iterator iter)
 {
-  if(!RowMap().GlobalIndicesIsType<int_type>())
+  if(!RowMap().template GlobalIndicesIsType<int_type>())
   throw ReportError("Epetra_FECrsMatrix::InsertNonlocalRow mismatch between argument types (int/long long) and map type.", -1);
 
   std::vector<int_type>& nonlocalRows_var = nonlocalRows<int_type>();
@@ -1231,7 +1231,7 @@ int Epetra_FECrsMatrix::InputNonlocalValue(int rowoffset,
              int_type col, double value,
              int mode)
 {
-  if(!RowMap().GlobalIndicesIsType<int_type>())
+  if(!RowMap().template GlobalIndicesIsType<int_type>())
   throw ReportError("Epetra_FECrsMatrix::InputNonlocalValue mismatch between argument types (int/long long) and map type.", -1);
 
   std::vector<int_type>& colIndices = nonlocalCols<int_type>()[rowoffset];
