@@ -81,6 +81,11 @@
 #cmakedefine HAVE_TRIOS_PABLO 1
 
 /* ************************************************
+ * HPCToolkit configuration
+ * ************************************************ */
+#cmakedefine HAVE_TRIOS_HPCTOOLKIT 1
+
+/* ************************************************
  * XDR configuration
  * ************************************************ */
 #cmakedefine HAVE_TRIOS_XDR_U_INT16_T
