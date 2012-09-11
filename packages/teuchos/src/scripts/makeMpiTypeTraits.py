@@ -67,7 +67,13 @@ The first file contains the generic declaration and documentation of
 MpiTypeTraits, declarations of full specializations of MpiTypeTraits,
 and declarations and definitions of some partial specializations.
 The second file contains definitions of the full specializations of
-MpiTypeTraits.'''
+MpiTypeTraits.
+
+After creating these C++ files, one should copy them manually into the
+parent directory (teuchos/src).  They should also be listed in
+teuchos/src/CMakeLists.txt, conditionally if MPI is enabled.  Look for
+"IF (${PACKAGE_NAME}_ENABLE_MPI)", and append Teuchos_MpiTypeTraits.hpp
+to the HEADERS set and Teuchos_MpiTypeTraits.cpp to the SOURCES set.'''
 
 # We actually reuse templates, which is why we use string.Template
 # instead of "new"-style format statements.  This is hopefully more
