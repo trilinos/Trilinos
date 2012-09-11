@@ -42,11 +42,12 @@ cmake \
 \
     -D Trilinos_ENABLE_Trios:BOOL=ON \
     -D Trilinos_ENABLE_Triossupport:BOOL=ON \
-	-D Trilinos_ENABLE_Triosnnti:BOOL=ON \
-	-D Trilinos_ENABLE_Triosnssi:BOOL=ON \
-	-D Trilinos_ENABLE_Triosprograms:BOOL=ON \
-	-D Trilinos_ENABLE_Triostests:BOOL=ON \
-	-D Trilinos_ENABLE_Triosexamples:BOOL=ON \
+    -D Trilinos_ENABLE_Triosnnti:BOOL=ON \
+    -D Trilinos_ENABLE_Trioscommsplitter:BOOL=ON \
+    -D Trilinos_ENABLE_Triosnssi:BOOL=ON \
+    -D Trilinos_ENABLE_Triosprograms:BOOL=ON \
+    -D Trilinos_ENABLE_Triostests:BOOL=ON \
+    -D Trilinos_ENABLE_Triosexamples:BOOL=ON \
 \
    -D TPL_ENABLE_MPI:BOOL=ON \
    -D MPI_LIBRARY=mpich \
@@ -65,6 +66,10 @@ cmake \
 \
     -D TPL_ENABLE_Gemini:BOOL=ON \
     -D Gemini_INCLUDE_DIRS:FILEPATH="/opt/cray/gni-headers/default/include" \
+\
+    -D TPL_ENABLE_HPCToolkit:BOOL=ON \
+    -D HPCToolkit_INCLUDE_DIRS:FILEPATH="${HOME}/research/support/include" \
+    -D HPCToolkit_LIBRARY_DIRS:FILEPATH="${HOME}/research/support/lib/hpctoolkit" \
 \
     $EXTRA_ARGS \
 \
