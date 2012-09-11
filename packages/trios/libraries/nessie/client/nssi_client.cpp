@@ -63,6 +63,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 
 #include <vector>
 
@@ -80,7 +81,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "nssi_service_args.h"
 
 
-#include "nnti.h"
+#include "Trios_nnti.h"
 
 #define MIN_TIMEOUT 1000
 

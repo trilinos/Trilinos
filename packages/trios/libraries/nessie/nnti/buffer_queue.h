@@ -53,7 +53,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 #include "Trios_threads.h"
 
-#include "nnti.h"
+#include "Trios_nnti.h"
 
 #include <deque>
 

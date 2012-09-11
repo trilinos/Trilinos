@@ -31,6 +31,17 @@
 #include <map>
 #include <deque>
 
+#ifdef HAVE_TRIOS_HPCTOOLKIT
+#include <hpctoolkit.h>
+#define SAMPLING_IS_ACTIVE() hpctoolkit_sampling_is_active()
+#define SAMPLING_STOP() hpctoolkit_sampling_stop()
+#define SAMPLING_START() hpctoolkit_sampling_start()
+#else
+#define SAMPLING_IS_ACTIVE() 0
+#define SAMPLING_STOP()
+#define SAMPLING_START()
+#endif
+
 #include "nnti_gni.h"
 #include "nnti_utils.h"
 
@@ -832,10 +843,19 @@ NNTI_result_t NNTI_gni_init (
         }
 
         trios_start_timer(call_time);
+
+        // The hpctoolkit signal interferes with this operation.  This will disable
+        // signals from hpctoolkit.
+        bool sampling = SAMPLING_IS_ACTIVE();
+        if (sampling) SAMPLING_STOP();
+
         rc=GNI_CdmAttach (transport_global_data.cdm_hdl,
                 transport_global_data.alps_info.device_id,
                 (uint32_t*)&transport_global_data.alps_info.local_addr, /* ALPS and GNI disagree about the type of local_addr.  cast here. */
                 &transport_global_data.nic_hdl);
+
+        if (sampling) SAMPLING_START();
+
         trios_stop_timer("CdmAttach", call_time);
         if (rc!=GNI_RC_SUCCESS) {
             log_error(nnti_debug_level, "CdmAttach() failed: %d", rc);

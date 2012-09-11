@@ -38,7 +38,6 @@ TRIBITS_SUBPACKAGE(nnti)
 TriosProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/Trios_nnti_xdr.x)
 
 APPEND_SET(NNTI_NOINSTHEADERS
-  nnti.h
   nnti_gni.h
   nnti_ib.h
   nnti_mpi.h
@@ -51,6 +50,7 @@ APPEND_SET(NNTI_NOINSTHEADERS
 APPEND_SET(NNTI_HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/Trios_nnti_xdr.h
   Trios_nnti_fprint_types.h
+  Trios_nnti.h
 )
 
 APPEND_SET(NNTI_SOURCES

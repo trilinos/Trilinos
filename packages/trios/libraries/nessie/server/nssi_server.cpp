@@ -53,7 +53,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 #include "Trios_nssi_types.h"
 #include "Trios_nssi_xdr.h"
-#include "nnti.h"
+#include "Trios_nnti.h"
 
 #include <stdio.h>
 #ifdef HAVE_TRIOS_MALLOC_H
