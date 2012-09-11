@@ -1494,7 +1494,7 @@ int64_t DashSurfaceMesh::nodeset_node_count_proc(int64_t id) const
 }
 int64_t DashSurfaceMesh::sideset_side_count_proc(int64_t id) const
 {
-    return 1;
+    return element_count(id);
 }
 int64_t DashSurfaceMesh::communication_node_count_proc() const
 {
