@@ -165,7 +165,7 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     coords = new scalar_t * [coordDim];
     for (int i=0; i < coordDim; i++){
       coords[i] = new scalar_t [nLocalRows];
-      for (size_t j=0; j < nLocalRows; j++){
+      for (lno_t j=0; j < nLocalRows; j++){
         coords[i][j] = 100000*i + j;
       }
     }
@@ -178,7 +178,7 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
         rowWeights[i] = NULL;
       else{
         rowWeights[i] = new scalar_t [nLocalRows];
-        for (size_t j=0; j < nLocalRows; j++){
+        for (lno_t j=0; j < nLocalRows; j++){
           rowWeights[i][j] = 200000*i + j;
         }
       }
@@ -325,7 +325,7 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     }
   }
   else{  // round robin ids
-    gid_t myGid = rank;
+    gno_t myGid = rank;
     for (lno_t i=0; i < nLocalRows; i++, myGid += nprocs){
       if (vertexGids[i] != myGid){
         fail = 1;
@@ -391,7 +391,7 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   TEST_FAIL_AND_EXIT(*comm, wgts.size() == 0, "edge weights present", 1)
 
   num = 0;
-  for (size_t i=0; i < offsets.size()-1; i++){
+  for (ArrayView<const lno_t>::size_type i=0; i < offsets.size()-1; i++){
     size_t edgeListSize = offsets[i+1] - offsets[i];
     num += edgeListSize;
     size_t val = numNbors[i];
@@ -496,7 +496,6 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
     bool consecutiveIdsRequested, bool removeSelfEdges)
 {
   int rank = comm->getRank();
-  int nprocs = comm->getSize();
 
   if (rank==0){
     cout << endl << "=======================" << endl;

@@ -263,8 +263,6 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 
 #endif
 
-  ParameterList *general = &(this->env_->getParametersNonConst());
-
   // Determine which parameters are relevant here.
   // For now, assume parameters similar to Zoltan:
   //   MODEL = graph, hypergraph, geometric, ids
