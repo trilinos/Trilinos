@@ -482,7 +482,7 @@ namespace Iogn {
     bool doRotation;
   };
 
-class CustomMesh : public GeneratedMesh
+class DashSurfaceMesh : public GeneratedMesh
 {
 public:
     enum {
@@ -491,7 +491,7 @@ public:
         NUM_NODES_PER_QUAD_FACE =  4
     };
 
-    explicit CustomMesh(const std::vector<double>    &coordinates,
+    explicit DashSurfaceMesh(const std::vector<double>    &coordinates,
                         const std::vector< int64_t > &quadSurface1,
                         const std::vector< int64_t > &quadSurface2)
     : mCoordinates(coordinates),
@@ -499,7 +499,7 @@ public:
       mQuadSurface2(quadSurface2)
     {}
 
-    virtual ~CustomMesh() { }
+    virtual ~DashSurfaceMesh() { }
 
     virtual int64_t node_count() const;
     virtual int64_t node_count_proc() const;

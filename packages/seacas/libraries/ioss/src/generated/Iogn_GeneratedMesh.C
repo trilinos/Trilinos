@@ -1433,22 +1433,22 @@ namespace Iogn {
 #endif
   }
 
-  int64_t CustomMesh::node_count() const
+  int64_t DashSurfaceMesh::node_count() const
 {
     return mCoordinates.size()/SPATIAL_DIMENSION;
 }
 
-int64_t CustomMesh::node_count_proc() const
+int64_t DashSurfaceMesh::node_count_proc() const
 {
     return node_count();
 }
 
-int64_t CustomMesh::element_count() const
+int64_t DashSurfaceMesh::element_count() const
 {
     return (mQuadSurface1.size()+mQuadSurface2.size())/NUM_NODES_PER_QUAD_FACE;
 }
 
-int64_t CustomMesh::element_count(int64_t block_number) const
+int64_t DashSurfaceMesh::element_count(int64_t block_number) const
 {
     if(block_number == 1)
     {
@@ -1463,65 +1463,65 @@ int64_t CustomMesh::element_count(int64_t block_number) const
     return INVALID;
 }
 
-int64_t CustomMesh::block_count() const
+int64_t DashSurfaceMesh::block_count() const
 {
     return 2;
 }
 
-int64_t CustomMesh::nodeset_count() const
+int64_t DashSurfaceMesh::nodeset_count() const
 {
     return 0;
 }
 
-int64_t CustomMesh::sideset_count() const
+int64_t DashSurfaceMesh::sideset_count() const
 {
     return 2;
 }
 
-int64_t CustomMesh::element_count_proc() const
+int64_t DashSurfaceMesh::element_count_proc() const
 {
     return element_count();
 }
 
-int64_t CustomMesh::element_count_proc(int64_t block_number) const
+int64_t DashSurfaceMesh::element_count_proc(int64_t block_number) const
 {
     return element_count(block_number);
 }
 
-int64_t CustomMesh::nodeset_node_count_proc(int64_t id) const
+int64_t DashSurfaceMesh::nodeset_node_count_proc(int64_t id) const
 {
     return 0;
 }
-int64_t CustomMesh::sideset_side_count_proc(int64_t id) const
+int64_t DashSurfaceMesh::sideset_side_count_proc(int64_t id) const
 {
     return 1;
 }
-int64_t CustomMesh::communication_node_count_proc() const
+int64_t DashSurfaceMesh::communication_node_count_proc() const
 {
     return 0;
 }
 
-void CustomMesh::coordinates(double *coord) const
+void DashSurfaceMesh::coordinates(double *coord) const
 {
     std::copy(mCoordinates.begin(),mCoordinates.end(), coord);
 }
 
-void CustomMesh::coordinates(std::vector<double> &coord) const
+void DashSurfaceMesh::coordinates(std::vector<double> &coord) const
 {
     throw std::exception();
 }
 
-void CustomMesh::coordinates(int component, std::vector<double> &xyz) const
+void DashSurfaceMesh::coordinates(int component, std::vector<double> &xyz) const
 {
     throw std::exception();
 }
 
-void CustomMesh::coordinates(std::vector<double> &x, std::vector<double> &y, std::vector<double> &z) const
+void DashSurfaceMesh::coordinates(std::vector<double> &x, std::vector<double> &y, std::vector<double> &z) const
 {
     throw std::exception();
 }
 
-void CustomMesh::connectivity(int64_t block_number, int* connect) const
+void DashSurfaceMesh::connectivity(int64_t block_number, int* connect) const
 {
     switch(block_number)
     {
@@ -1536,13 +1536,13 @@ void CustomMesh::connectivity(int64_t block_number, int* connect) const
     }
 }
 
-std::pair<std::string, int> CustomMesh::topology_type(int64_t block_number) const
+std::pair<std::string, int> DashSurfaceMesh::topology_type(int64_t block_number) const
 {
     const int numNodesPerElement = 4;
     return std::make_pair(std::string("shell4"), numNodesPerElement);
 }
 
-void CustomMesh::sideset_elem_sides(int64_t setId, Int64Vector &elem_sides) const
+void DashSurfaceMesh::sideset_elem_sides(int64_t setId, Int64Vector &elem_sides) const
 {
     elem_sides.clear();
     size_t numElementsInSurface1 = mQuadSurface1.size()/NUM_NODES_PER_QUAD_FACE;
@@ -1567,17 +1567,17 @@ void CustomMesh::sideset_elem_sides(int64_t setId, Int64Vector &elem_sides) cons
     }
 }
 
-void CustomMesh::nodeset_nodes(int64_t nset_id, Int64Vector &nodes) const
+void DashSurfaceMesh::nodeset_nodes(int64_t nset_id, Int64Vector &nodes) const
 {
     return;
 }
 
-void CustomMesh::node_communication_map(MapVector &map, std::vector<int> &proc)
+void DashSurfaceMesh::node_communication_map(MapVector &map, std::vector<int> &proc)
 {
     return;
 }
 
-void CustomMesh::node_map(IntVector &map)
+void DashSurfaceMesh::node_map(IntVector &map)
 {
     map.resize(node_count());
     for(int i = 0; i < node_count(); i++)
@@ -1586,7 +1586,7 @@ void CustomMesh::node_map(IntVector &map)
     }
 }
 
-void CustomMesh::node_map(MapVector &map)
+void DashSurfaceMesh::node_map(MapVector &map)
 {
     map.resize(node_count());
     for(int i = 0; i < node_count(); i++)
@@ -1595,7 +1595,7 @@ void CustomMesh::node_map(MapVector &map)
     }
 }
 
-void CustomMesh::element_map(int block_number, IntVector &map) const
+void DashSurfaceMesh::element_map(int block_number, IntVector &map) const
 {
     size_t numElementsInSurface1 = mQuadSurface1.size() / NUM_NODES_PER_QUAD_FACE;
     size_t numElementsInSurface2 = mQuadSurface2.size() / NUM_NODES_PER_QUAD_FACE;
@@ -1618,7 +1618,7 @@ void CustomMesh::element_map(int block_number, IntVector &map) const
     }
 }
 
-void CustomMesh::element_map(int64_t block_number, MapVector &map) const
+void DashSurfaceMesh::element_map(int64_t block_number, MapVector &map) const
 {
     size_t numElementsInSurface1 = mQuadSurface1.size() / NUM_NODES_PER_QUAD_FACE;
     size_t numElementsInSurface2 = mQuadSurface2.size() / NUM_NODES_PER_QUAD_FACE;
@@ -1641,7 +1641,7 @@ void CustomMesh::element_map(int64_t block_number, MapVector &map) const
     }
 }
 
-void CustomMesh::element_map(MapVector &map) const
+void DashSurfaceMesh::element_map(MapVector &map) const
 {
     int count = element_count_proc();
     map.resize(count);
@@ -1652,7 +1652,7 @@ void CustomMesh::element_map(MapVector &map) const
     }
 }
 
-void CustomMesh::element_map(IntVector &map) const
+void DashSurfaceMesh::element_map(IntVector &map) const
 {
     int count = element_count_proc();
     map.resize(count);
