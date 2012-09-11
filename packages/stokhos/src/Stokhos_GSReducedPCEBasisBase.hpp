@@ -161,6 +161,7 @@ namespace Stokhos {
     virtual ordinal_type 
     buildReducedBasis(
       ordinal_type max_p, 
+      value_type threshold,
       const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& A, 
       const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& F,
       const Teuchos::Array<value_type>& weights, 

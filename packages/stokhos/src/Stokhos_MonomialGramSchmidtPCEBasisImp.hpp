@@ -60,6 +60,7 @@ ordinal_type
 Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type, value_type>::
 buildReducedBasis(
   ordinal_type max_p, 
+  value_type threshold, 
   const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& A, 
   const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& F,
   const Teuchos::Array<value_type>& weights, 
@@ -111,9 +112,9 @@ buildReducedBasis(
   for (int i=0; i<this->d+1; i++)
     piv[i] = 1;
   if (this->orthogonalization_method == "Modified Gram-Schmidt")
-    sz_ = CPQR_MGS_threshold(this->rank_threshold, B, weights, Q_, R, piv);
+    sz_ = CPQR_MGS_threshold(threshold, B, weights, Q_, R, piv);
   else if (this->orthogonalization_method == "Classical Gram-Schmidt")
-    sz_ = CPQR_CGS_threshold(this->rank_threshold, B, weights, Q_, R, piv);
+    sz_ = CPQR_CGS_threshold(threshold, B, weights, Q_, R, piv);
   else
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, 

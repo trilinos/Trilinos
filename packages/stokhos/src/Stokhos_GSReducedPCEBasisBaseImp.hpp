@@ -102,7 +102,8 @@ setup(
       F(i,j) = pce2[j]->evaluate(points[i], basis_values[i]);
 
   // Build the reduced basis
-  sz = buildReducedBasis(max_p, A, F, weights, terms, num_terms, Qp, Q);
+  sz = buildReducedBasis(max_p, rank_threshold, A, F, weights, terms, num_terms,
+			 Qp, Q);
 
   // Compute reduced quadrature rule
   Teuchos::ParameterList quad_params = params.sublist("Reduced Quadrature");
@@ -113,9 +114,12 @@ setup(
       quad_params.get<std::string>("Reduced Quadrature Method") == "Q2") {
     Teuchos::Array< Teuchos::Array<ordinal_type> > terms2;
     Teuchos::Array<ordinal_type> num_terms2;
+    value_type rank_threshold2 = quad_params.get("Q2 Rank Threshold", 
+						 rank_threshold);
     SDM Qp2;
     //ordinal_type sz2 = 
-    buildReducedBasis(2*max_p, A, F, weights, terms2, num_terms2, Qp2, Q2);
+    buildReducedBasis(2*max_p, rank_threshold2, A, F, weights, terms2, 
+		      num_terms2, Qp2, Q2);
   }
   reduced_quad = quad_factory.createReducedQuadrature(Q, Q2, F, weights);
 
