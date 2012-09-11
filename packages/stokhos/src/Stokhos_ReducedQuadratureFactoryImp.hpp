@@ -87,6 +87,10 @@ createReducedQuadrature(
       reducedQuadrature_Q_Squared(Q, F, weights, 
 				  red_weights, red_points, red_values);
   }
+  else if (reduction_method == "Q Squared2") {
+    reducedQuadrature_Q_Squared_CPQR2(Q, F, weights, 
+				      red_weights, red_points, red_values);
+  }
   else if (reduction_method == "Q2") {
     if (eliminate_dependent_rows)
       reducedQuadrature_Q2_CPQR(Q, Q2, F, weights, 
@@ -177,6 +181,10 @@ reducedQuadrature_Q_Squared(
   underdetermined_solver(Q2, e1, u, Teuchos::TRANS, Teuchos::UNDEF_TRI);
 
   if (verbose) {
+    std::cout << "sz = " << sz << std::endl;
+    std::cout << "nqp = " << nqp << std::endl;
+    std::cout << "sz2 = " << sz2 << std::endl;
+
     std::cout << "reduced weights = " << u << std::endl;
 
     // Check residual error ||e1-Q2^T*u||
@@ -197,7 +205,7 @@ reducedQuadrature_Q_Squared(
     ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
     TEUCHOS_ASSERT(ret == 0);
     std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
-    //print_matlab(std::cout, err2);
+    print_matlab(std::cout, err2);
   }
   
   ordinal_type rank = 0;
@@ -301,6 +309,10 @@ reducedQuadrature_Q_Squared_CPQR(
     u[piv[i]] = ut[i];
 
   if (verbose) {
+    std::cout << "sz = " << sz << std::endl;
+    std::cout << "nqp = " << nqp << std::endl;
+    std::cout << "sz2 = " << sz2 << std::endl;
+
     std::cout << "reduced weights = " << u << std::endl;
 
     // Check residual error ||e1-Q2^T*u||
@@ -321,7 +333,130 @@ reducedQuadrature_Q_Squared_CPQR(
     ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
     TEUCHOS_ASSERT(ret == 0);
     std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
-    //print_matlab(std::cout, err2);
+    print_matlab(std::cout, err2);
+  }
+  
+  ordinal_type rank = 0;
+  for (ordinal_type i=0; i<nqp; i++)
+    if (std::abs(u[i]) > reduction_tol) ++rank;
+
+  // Get reduced weights, points and values
+  reduced_weights =
+    Teuchos::rcp(new Teuchos::Array<value_type>(rank));
+  reduced_points =
+    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
+  reduced_values =
+    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(rank));
+  ordinal_type idx = 0;
+  for (ordinal_type i=0; i<nqp; i++) {
+    if (std::abs(u[i]) > reduction_tol) {
+      (*reduced_weights)[idx] = u[i];
+      (*reduced_points)[idx].resize(d);
+      for (ordinal_type j=0; j<d; j++)
+	(*reduced_points)[idx][j] = F(i,j);
+      (*reduced_values)[idx].resize(sz);
+      for (ordinal_type j=0; j<sz; j++)
+	(*reduced_values)[idx][j] = Q(i,j);
+      idx++;
+    }
+  }
+  
+  // idx may be less than rank if we obtained zero weights in solving
+  // the least-squares problem
+  TEUCHOS_ASSERT(idx <= rank);
+  if (idx < rank) {
+    rank = idx;
+    reduced_weights->resize(rank);
+    reduced_points->resize(rank);
+    reduced_values->resize(rank);
+  }
+}
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
+reducedQuadrature_Q_Squared_CPQR2(
+  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
+  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
+  const Teuchos::Array<value_type>& weights,
+  Teuchos::RCP< Teuchos::Array<value_type> >& reduced_weights,
+  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_points,
+  Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values
+  ) const
+{
+  ordinal_type sz = Q.numCols();
+  ordinal_type sz2 = sz*(sz+1)/2;
+  ordinal_type nqp = Q.numRows();
+  ordinal_type d = F.numCols();
+
+  // Compute Q-squared matrix with all possible products
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Q2(nqp, sz2);
+  ordinal_type jdx=0;
+  for (ordinal_type j=0; j<sz; j++) {
+    for (ordinal_type k=j; k<sz; k++) {
+      for (ordinal_type i=0; i<nqp; i++)
+	Q2(i,jdx) = Q(i,j)*Q(i,k);
+      jdx++;
+    }
+  }
+  TEUCHOS_ASSERT(jdx == sz2);
+
+  // Compute QR decomposition of Q2:  Q2*P = Z*R
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Z, R;
+  Teuchos::Array<ordinal_type> piv;
+  CPQR_Householder(Q2, Z, R, piv);
+  ordinal_type r = computeRank(R, reduction_tol);
+
+  // Get the first r columns of Q2*P
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> QQ2(nqp, r);
+  for (ordinal_type j=0; j<r; j++)
+    for (ordinal_type i=0; i<nqp; i++)
+      QQ2(i,j) = Q2(i,piv[j]);
+
+  if (verbose) {
+    std::cout << "Q2 rank = " << r << std::endl;
+  }
+
+  // Compute e_1 = QQ2^T*w which is our constraint
+  Teuchos::SerialDenseVector<ordinal_type,value_type> ee1(r);
+  Teuchos::SerialDenseVector<ordinal_type,value_type> w(
+    Teuchos::View, const_cast<value_type*>(&weights[0]), nqp);
+  ordinal_type ret = 
+    ee1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, QQ2, w, 0.0);
+  TEUCHOS_ASSERT(ret == 0);
+
+  // Solve problem
+  Teuchos::SerialDenseVector<ordinal_type,value_type> u(nqp);
+  underdetermined_solver(QQ2, ee1, u, Teuchos::TRANS, Teuchos::UNDEF_TRI);
+
+  if (verbose) {
+    std::cout << "sz = " << sz << std::endl;
+    std::cout << "nqp = " << nqp << std::endl;
+    std::cout << "sz2 = " << sz2 << std::endl;
+
+    std::cout << "reduced weights = " << u << std::endl;
+
+    // Check residual error ||e1-Q2^T*u||
+    Teuchos::SerialDenseVector<ordinal_type,value_type> err1(sz2);
+    ret = err1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q2, w, 0.0);
+    TEUCHOS_ASSERT(ret == 0);
+    ret = err1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q2, u, 1.0);
+    TEUCHOS_ASSERT(ret == 0);
+    std::cout << "||e1-Q2^T*u||_infty = " << err1.normInf() << std::endl;
+
+    // Check discrete orthogonality error ||I - Q^T*diag(u)*Q||
+    Teuchos::SerialDenseMatrix<ordinal_type,value_type> err2(sz, sz);
+    err2.putScalar(0.0);
+    for (ordinal_type i=0; i<sz; i++)
+      err2(i,i) = 1.0;
+    Teuchos::SerialDenseMatrix<ordinal_type,value_type> WQ(nqp, sz);
+    for (ordinal_type i=0; i<nqp; i++)
+      for (ordinal_type j=0; j<sz; j++)
+	WQ(i,j) = u[i]*Q(i,j);
+    ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
+    TEUCHOS_ASSERT(ret == 0);
+    std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
+    print_matlab(std::cout, err2);
   }
   
   ordinal_type rank = 0;
@@ -386,12 +521,19 @@ reducedQuadrature_Q2(
   ordinal_type ret = 
     e1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q2, w, 0.0);
   TEUCHOS_ASSERT(ret == 0);
+  // e1.putScalar(0.0);
+  // e1[0] = 1.0;
+  // ordinal_type ret;
 
   // Solve problem
   Teuchos::SerialDenseVector<ordinal_type,value_type> u(nqp);
   underdetermined_solver(Q2, e1, u, Teuchos::TRANS, Teuchos::UNDEF_TRI);
 
   if (verbose) {
+    std::cout << "sz = " << sz << std::endl;
+    std::cout << "nqp = " << nqp << std::endl;
+    std::cout << "sz2 = " << sz2 << std::endl;
+    
     std::cout << "reduced weights = " << u << std::endl;
 
     // Check residual error ||e1-B2^T*u||
@@ -412,7 +554,7 @@ reducedQuadrature_Q2(
     ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
     TEUCHOS_ASSERT(ret == 0);
     std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
-    //print_matlab(std::cout, err2);
+    print_matlab(std::cout, err2);
   }
   
   ordinal_type rank = 0;
@@ -506,6 +648,10 @@ reducedQuadrature_Q2_CPQR(
     u[piv[i]] = ut[i];
 
   if (verbose) {
+    std::cout << "sz = " << sz << std::endl;
+    std::cout << "nqp = " << nqp << std::endl;
+    std::cout << "sz2 = " << sz2 << std::endl;
+
     std::cout << "reduced weights = " << u << std::endl;
 
     // Check residual error ||e1-B2^T*u||
@@ -526,7 +672,7 @@ reducedQuadrature_Q2_CPQR(
     ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
     TEUCHOS_ASSERT(ret == 0);
     std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
-    //print_matlab(std::cout, err2);
+    print_matlab(std::cout, err2);
   }
   
   ordinal_type rank = 0;
