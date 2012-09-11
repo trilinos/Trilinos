@@ -165,13 +165,13 @@ IF(${PROJECT_NAME}_ENABLE_Epetra AND ${PROJECT_NAME}_ENABLE_EpetraExt)
     ADD_DIR_TO_NAME
     XHOSTTYPE AIX
     )
-#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#    Example_16
-#    SOURCES example_16.cpp
-#    DEPLIBS epetra epetraext 
-#    ARGS "1 10 10 10"
-#    NUM_MPI_PROCS 1
-#    PASS_REGULAR_EXPRESSION "TEST PASSED"
-#    ADD_DIR_TO_NAME
-#    )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Example_16
+    SOURCES example_16.cpp
+    DEPLIBS epetra epetraext 
+    ARGS "1 10 10 10"
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+    )
 ENDIF()
