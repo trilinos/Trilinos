@@ -107,11 +107,14 @@ public:
   /** \brief Default Constructor
    *
    * \param  throwExceptions
-   *               [in] If <tt>true</tt> then <tt>this->parse()</tt> with throw
+   *               [in] If <tt>true</tt> then <tt>this->parse()</tt> will throw
    *               exceptions instead of returning <tt>!=PARSE_SUCCESSFUL</tt>.
    * \param  recogniseAllOptions
-   *               [in] If <tt>true</tt> then <tt>this->parse()</tt> with simply
-   *               ignore options that it does not recognize.
+   *               [in] If <tt>true</tt> then <tt>this->parse()</tt> will return
+   *               the appropriate error for any option it does not recognize.
+   *               If <tt>false</tt>, then <tt>this->parse()</tt> will simply
+   *               ignore options that it does not recognize.  However, a warning will be
+   *               printed for any unrecognized option, but no errors will be returned.
    * \param  addOutputSetupOptions
    *               [in] If <tt>true</tt> then options will be automatically added
    *               to setup <tt>Teuchos::VerboseObjectBase::getDefaultOStream()</tt>.
@@ -140,7 +143,7 @@ public:
   /// Set if all options must be recognized or not.
   void recogniseAllOptions( const bool & recogniseAllOptions );
 
-  /// Returns true if all options are being recognized by the parser.
+  /// Returns true if all options must be recognized by the parser.
   bool recogniseAllOptions() const;
 
   /// Set if options will be automatically added to setup <tt>Teuchos::VerboseObjectBase::getDefaultOStream()</tt>.
