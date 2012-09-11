@@ -1435,28 +1435,44 @@ namespace Iogn {
 
   int64_t CustomMesh::node_count() const
 {
-    return 8;
+    return mCoordinates.size()/SPATIAL_DIMENSION;
 }
+
 int64_t CustomMesh::node_count_proc() const
 {
     return node_count();
 }
+
 int64_t CustomMesh::element_count() const
 {
-    return 2;
+    return (mQuadSurface1.size()+mQuadSurface2.size())/NUM_NODES_PER_QUAD_FACE;
 }
+
 int64_t CustomMesh::element_count(int64_t block_number) const
 {
-    return 1;
+    if(block_number == 1)
+    {
+        return mQuadSurface1.size()/NUM_NODES_PER_QUAD_FACE;
+    }
+    else if(block_number == 2)
+    {
+        return mQuadSurface2.size()/NUM_NODES_PER_QUAD_FACE;
+    }
+    throw std::exception();
+
+    return INVALID;
 }
+
 int64_t CustomMesh::block_count() const
 {
     return 2;
 }
+
 int64_t CustomMesh::nodeset_count() const
 {
     return 0;
 }
+
 int64_t CustomMesh::sideset_count() const
 {
     return 2;
@@ -1469,7 +1485,7 @@ int64_t CustomMesh::element_count_proc() const
 
 int64_t CustomMesh::element_count_proc(int64_t block_number) const
 {
-    return 1;
+    return element_count(block_number);
 }
 
 int64_t CustomMesh::nodeset_node_count_proc(int64_t id) const
@@ -1487,20 +1503,7 @@ int64_t CustomMesh::communication_node_count_proc() const
 
 void CustomMesh::coordinates(double *coord) const
 {
-    double coords[24] = {
-            0, 0, 0,
-            1, 0, 0,
-            1, 1, 0,
-            0, 1, 0,
-
-            0, 0, 0,
-            1, 0, 0,
-            1, 1, 0,
-            0, 1, 0};
-    for(int i = 0; i < 24; i++)
-    {
-        coord[i] = coords[i];
-    }
+    std::copy(mCoordinates.begin(),mCoordinates.end(), coord);
 }
 
 void CustomMesh::coordinates(std::vector<double> &coord) const
@@ -1523,16 +1526,10 @@ void CustomMesh::connectivity(int64_t block_number, int* connect) const
     switch(block_number)
     {
         case 1:
-            connect[0] = 1;
-            connect[1] = 2;
-            connect[2] = 3;
-            connect[3] = 4;
+            std::copy(mQuadSurface1.begin(),mQuadSurface1.end(), connect);
             return;
         case 2:
-            connect[0] = 5;
-            connect[1] = 6;
-            connect[2] = 7;
-            connect[3] = 8;
+            std::copy(mQuadSurface2.begin(),mQuadSurface2.end(), connect);
             return;
         default:
             throw std::exception();
@@ -1548,15 +1545,22 @@ std::pair<std::string, int> CustomMesh::topology_type(int64_t block_number) cons
 void CustomMesh::sideset_elem_sides(int64_t setId, Int64Vector &elem_sides) const
 {
     elem_sides.clear();
+    size_t numElementsInSurface1 = mQuadSurface1.size()/NUM_NODES_PER_QUAD_FACE;
     switch(setId)
     {
         case 1:
-            elem_sides.push_back(1);
-            elem_sides.push_back(0);
+            for(size_t i=0; i<numElementsInSurface1; ++i)
+            {
+                elem_sides.push_back(i+1);
+                elem_sides.push_back(0);
+            }
             return;
         case 2:
-            elem_sides.push_back(2);
-            elem_sides.push_back(1);
+            for(size_t i=0; i<mQuadSurface2.size()/NUM_NODES_PER_QUAD_FACE; ++i)
+            {
+                elem_sides.push_back(numElementsInSurface1+i+1);
+                elem_sides.push_back(1);
+            }
             return;
         default:
             throw std::exception();
@@ -1593,13 +1597,21 @@ void CustomMesh::node_map(MapVector &map)
 
 void CustomMesh::element_map(int block_number, IntVector &map) const
 {
+    size_t numElementsInSurface1 = mQuadSurface1.size() / NUM_NODES_PER_QUAD_FACE;
+    size_t numElementsInSurface2 = mQuadSurface2.size() / NUM_NODES_PER_QUAD_FACE;
     switch(block_number)
     {
         case 1:
-            map[0] = 1;
+            for(size_t i = 0; i < numElementsInSurface1; ++i)
+            {
+                map[i] = i + 1;
+            }
             return;
         case 2:
-            map[1] = 2;
+            for(size_t i = 0; i < numElementsInSurface2; ++i)
+            {
+                map[numElementsInSurface1 + i] = numElementsInSurface1 + i + 1;
+            }
             return;
         default:
             throw std::exception();
@@ -1608,13 +1620,21 @@ void CustomMesh::element_map(int block_number, IntVector &map) const
 
 void CustomMesh::element_map(int64_t block_number, MapVector &map) const
 {
+    size_t numElementsInSurface1 = mQuadSurface1.size() / NUM_NODES_PER_QUAD_FACE;
+    size_t numElementsInSurface2 = mQuadSurface2.size() / NUM_NODES_PER_QUAD_FACE;
     switch(block_number)
     {
         case 1:
-            map[0] = 1;
+            for(size_t i = 0; i < numElementsInSurface1; ++i)
+            {
+                map[i] = i + 1;
+            }
             return;
         case 2:
-            map[1] = 2;
+            for(size_t i = 0; i < numElementsInSurface2; ++i)
+            {
+                map[numElementsInSurface1 + i] = numElementsInSurface1 + i + 1;
+            }
             return;
         default:
             throw std::exception();
