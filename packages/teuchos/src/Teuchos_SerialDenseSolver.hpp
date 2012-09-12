@@ -51,6 +51,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 /*! \class Teuchos::SerialDenseSolver
   \brief A class for solving dense linear problems.
@@ -164,19 +165,29 @@ namespace Teuchos {
     //@{ 
     
     //! Causes equilibration to be called just before the matrix factorization as part of the call to \c factor.
-    /*! This function must be called before the factorization is performed. 
+    /*! \note This method must be called before the factorization is performed, otherwise it will have no effect. 
    */
     void factorWithEquilibration(bool flag) {equilibrate_ = flag; return;}
     
     //! If \c flag is true, causes all subsequent function calls to work with the transpose of \e this matrix, otherwise not.
+    /*! \note This interface will not work correctly for complex-valued linear systems, use solveWithTransposeFlag().
+    */
     void solveWithTranspose(bool flag) {transpose_ = flag; if (flag) TRANS_ = Teuchos::TRANS; else TRANS_ = Teuchos::NO_TRANS; return;}
     
+    //! All subsequent function calls will work with the transpose-type set by this method (\c Teuchos::NO_TRANS, \c Teuchos::TRANS, and \c Teuchos::CONJ_TRANS).
+    /*! \note This interface will allow correct behavior for complex-valued linear systems, solveWithTranspose() will not.
+    */
+    void solveWithTransposeFlag(Teuchos::ETransp trans) {TRANS_ = trans; if (trans != Teuchos::NO_TRANS) {  transpose_ = true; } }
+    
     //! Causes all solves to compute solution to best ability using iterative refinement.
+    /*! \note This method must be called before the factorization is performed, otherwise it will have no effect.
+    */
     void solveToRefinedSolution(bool flag) {refineSolution_ = flag; return;}
     
     //! Causes all solves to estimate the forward and backward solution error. 
-    /*! Error estimates will be in the arrays FERR and BERR, resp, after the solve step is complete.
-      These arrays are accessible via the FERR() and BERR() access functions.
+    /*! \note Error estimates will be in the arrays FERR and BERR, resp, after the solve step is complete.
+      These arrays are accessible via the FERR() and BERR() access functions.  This method must be called before
+      the factorization is performed, otherwise it will have no effect.
     */
     void estimateSolutionErrors(bool flag);
     //@}
@@ -210,24 +221,28 @@ namespace Teuchos {
     
     //! Equilibrates the \e this matrix.
     /*! 
+      \note This method will be called automatically in solve() method if factorWithEquilibration( true ) is called.
       \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
     */
     int equilibrateMatrix();
     
     //! Equilibrates the current RHS.
     /*! 
+      \note This method will be called automatically in solve() method if factorWithEquilibration( true ) is called.
       \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
     */
     int equilibrateRHS();
         
     //! Apply Iterative Refinement.
     /*! 
+      \note This method will be called automatically in solve() method if solveToRefinedSolution( true ) is called.
       \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
     */
     int applyRefinement();
     
     //! Unscales the solution vectors if equilibration was used to solve the system.
-    /*! 
+    /*!
+      \note This method will be called automatically in solve() method if factorWithEquilibration( true ) is called.
       \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
     */
     int unequilibrateLHS();
@@ -248,13 +263,13 @@ namespace Teuchos {
     //! Returns true if transpose of \e this matrix has and will be used.
     bool transpose() {return(transpose_);}
     
-    //! Returns true if matrix is factored (factor available via AF() and LDAF()).
+    //! Returns true if matrix is factored (factor available via getFactoredMatrix()).
     bool factored() {return(factored_);}
     
-    //! Returns true if factor is equilibrated (factor available via AF() and LDAF()).
+    //! Returns true if factor is equilibrated (factor available via getFactoredMatrix()).
     bool equilibratedA() {return(equilibratedA_);}
     
-    //! Returns true if RHS is equilibrated (RHS available via B() and LDB()).
+    //! Returns true if RHS is equilibrated (RHS available via getRHS()).
     bool equilibratedB() {return(equilibratedB_);}
     
     //! Returns true if the LAPACK general rules for equilibration suggest you should equilibrate the system.
@@ -263,7 +278,7 @@ namespace Teuchos {
     //! Returns true if forward and backward error estimated have been computed (available via FERR() and BERR()).
     bool solutionErrorsEstimated() {return(solutionErrorsEstimated_);}
     
-    //! Returns true if matrix inverse has been computed (inverse available via AF() and LDAF()).
+    //! Returns true if matrix inverse has been computed (inverse available via getFactoredMatrix()).
     bool inverted() {return(inverted_);}
     
     //! Returns true if the condition number of the \e this matrix has been computed (value available via ReciprocalConditionEstimate()).
@@ -340,7 +355,6 @@ namespace Teuchos {
   protected:
     
     void allocateWORK() { LWORK_ = 4*N_; WORK_.resize( LWORK_ ); return;}
-    void allocateIWORK() { IWORK_.resize( N_ ); return;}
     void resetMatrix();
     void resetVectors();
     
@@ -370,7 +384,6 @@ namespace Teuchos {
     OrdinalType LWORK_;
     
     std::vector<OrdinalType> IPIV_;
-    std::vector<int> IWORK_;
     
     MagnitudeType ANORM_;
     MagnitudeType RCOND_;
@@ -398,6 +411,22 @@ namespace Teuchos {
     SerialDenseSolver & operator=(const SerialDenseSolver<OrdinalType, ScalarType>& Source);
     
   };  
+
+  namespace details {
+  
+    // Helper traits to distinguish work arrays for real and complex-valued datatypes.
+    template<typename T>
+    struct lapack_traits {
+      typedef int iwork_type;
+    };
+
+    // Complex-valued specialization
+    template<typename T>
+    struct lapack_traits<std::complex<T> > {
+      typedef typename ScalarTraits<T>::magnitudeType iwork_type;
+    };
+
+  } // end namespace details
 
 //=============================================================================
 
@@ -645,12 +674,12 @@ int SerialDenseSolver<OrdinalType,ScalarType>::applyRefinement()
   FERR_.resize( NRHS );
   BERR_.resize( NRHS );
   allocateWORK();
-  allocateIWORK();
-  
+ 
   INFO_ = 0;
+  std::vector<typename details::lapack_traits<ScalarType>::iwork_type> GERFS_WORK( N_ );
   this->GERFS(ETranspChar[TRANS_], N_, NRHS, A_, LDA_, AF_, LDAF_, &IPIV_[0],
-	      RHS_->values(), RHS_->stride(), LHS_->values(), LHS_->stride(), 
-              &FERR_[0], &BERR_[0], &WORK_[0], &IWORK_[0], &INFO_);
+              RHS_->values(), RHS_->stride(), LHS_->values(), LHS_->stride(), 
+              &FERR_[0], &BERR_[0], &WORK_[0], &GERFS_WORK[0], &INFO_);
   
   solutionErrorsEstimated_ = true;
   reciprocalConditionEstimated_ = true;
@@ -828,11 +857,12 @@ int SerialDenseSolver<OrdinalType,ScalarType>::reciprocalConditionEstimate(Magni
   if (ierr!=0) return(ierr);
 
   allocateWORK();
-  allocateIWORK();
 
   // We will assume a one-norm condition number
   INFO_ = 0;
-  this->GECON( '1', N_, AF_, LDAF_, ANORM_, &RCOND_, &WORK_[0], &IWORK_[0], &INFO_);
+  std::vector<typename details::lapack_traits<ScalarType>::iwork_type> GECON_WORK( 2*N_ );
+  this->GECON( '1', N_, AF_, LDAF_, ANORM_, &RCOND_, &WORK_[0], &GECON_WORK[0], &INFO_);
+
   reciprocalConditionEstimated_ = true;
   Value = RCOND_;
 
