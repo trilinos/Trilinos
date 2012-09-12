@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_MONOMIAL_PROJ_SCHMIDT_PCE_BASIS_HPP
-#define STOKHOS_MONOMIAL_PROJ_SCHMIDT_PCE_BASIS_HPP
+#ifndef STOKHOS_MONOMIAL_GRAM_SCHMIDT_PCE_BASIS_HPP
+#define STOKHOS_MONOMIAL_GRAM_SCHMIDT_PCE_BASIS_HPP
 
 #include "Stokhos_GSReducedPCEBasisBase.hpp"
 
