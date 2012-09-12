@@ -106,7 +106,6 @@ ENDIF()
 # C) Add the libraries, tests, and examples
 #
 
-ADD_SUBDIRECTORY(gallery) # iff EXAMPLE or TEST ENABLED
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(adapters)
 ADD_SUBDIRECTORY(doc)

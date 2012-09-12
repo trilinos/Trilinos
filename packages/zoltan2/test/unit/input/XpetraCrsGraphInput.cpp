@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
   typedef Zoltan2::XpetraCrsGraphInput<tgraph_t>  adapter_t;
   typedef Zoltan2::PartitioningSolution<adapter_t> soln_t;
   soln_t solution(env, comm, idMap, weightDim);
-  solution.setParts(gidArray, solnParts);
+  solution.setParts(gidArray, solnParts, true);
 
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::CrsGraph

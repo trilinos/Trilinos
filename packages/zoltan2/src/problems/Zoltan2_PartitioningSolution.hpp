@@ -278,6 +278,14 @@ public:
    *      should be in partList[i].  The partList is allocated and written
    *      by the algorithm.
    *
+   *   \param dataDidNotMove The algorithm did not change the order of the
+   *      data provided by the model; that is, it did not move the data
+   *      to other processes or reorganize within the process.  Thus,
+   *      the gnoList and partList are ordered in the same way as the 
+   *      array provided by the model.  Setting this flag to true avoids
+   *      processing to remap the data to the original process that provided
+   *      the data.
+   *
    * The global numbers supplied by the algorithm do not need to be
    * those representing the global Ids of that process.  But
    * all global numbers should be assigned a part by exactly one
@@ -289,7 +297,7 @@ public:
    */
   
   void setParts(ArrayRCP<const gno_t> &gnoList, 
-    ArrayRCP<partId_t> &partList);
+    ArrayRCP<partId_t> &partList, bool dataDidNotMove);
   
   ////////////////////////////////////////////////////////////////////
   // Results that may be queried by the user, by migration methods,
@@ -461,6 +469,10 @@ private:
   bool             onePartPerProc_;   // either this is true...
   std::vector<int>      partDist_;      // or this is defined ...
   std::vector<partId_t> procDist_;      // or this is defined.
+  bool procDistEquallySpread_;        // if procDist_ is used and 
+                                      // #parts > #procs and
+                                      // num_local_parts is not specified,
+                                      // parts are evenly distributed to procs
 
   // In order to minimize the storage required for part sizes, we
   // have three different representations.
@@ -526,7 +538,8 @@ template <typename Adapter>
     : env_(env), comm_(comm), idMap_(idMap),
       nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  weightDim_(),
-      onePartPerProc_(false), partDist_(), procDist_(), 
+      onePartPerProc_(false), partDist_(), procDist_(),
+      procDistEquallySpread_(false),
       pSizeUniform_(), pCompactIndex_(), pSize_(),
       gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
       procs_()
@@ -559,6 +572,7 @@ template <typename Adapter>
       nGlobalParts_(0), nLocalParts_(0), 
       localFraction_(0),  weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
+      procDistEquallySpread_(false),
       pSizeUniform_(), pCompactIndex_(), pSize_(),
       gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0), 
       procs_()
@@ -1112,7 +1126,8 @@ template <typename Adapter>
 
 template <typename Adapter>
   void PartitioningSolution<Adapter>::setParts(
-    ArrayRCP<const gno_t> &gnoList, ArrayRCP<partId_t> &partList)
+    ArrayRCP<const gno_t> &gnoList, ArrayRCP<partId_t> &partList,
+    bool dataDidNotMove)
 {
   env_->debug(DETAILED_STATUS, "Entering setParts");
 
@@ -1134,143 +1149,173 @@ template <typename Adapter>
       
   nGlobalPartsSolution_ = gMax - gMin + 1;
 
-  // We send part information to the process that "owns" the global number.
+  if (dataDidNotMove) {
+    // Case where the algorithm provides the part list in the same order
+    // that it received the gnos.
 
-  ArrayView<gid_t> emptyView;
-  ArrayView<int> procList;
-
-  if (len){
-    int *tmp = new int [len];
-    env_->localMemoryAssertion(__FILE__, __LINE__, len, tmp);
-    procList = ArrayView<int>(tmp, len);
-  }
-
-  idMap_->gnoGlobalTranslate (gnoList.view(0,len), emptyView, procList);
-
-  int remotelyOwned = 0;
-  int rank = comm_->getRank();
-  int nprocs = comm_->getSize();
-
-  for (size_t i=0; !remotelyOwned && i < len; i++){
-    if (procList[i] != rank)
-      remotelyOwned = 1;
-  }
-
-  int anyRemotelyOwned=0;
-
-  try{
-    reduceAll<int, int>(*comm_, Teuchos::REDUCE_MAX, 1,
-      &remotelyOwned, &anyRemotelyOwned);
-  }
-  Z2_THROW_OUTSIDE_ERROR(*env_);
-
-  if (anyRemotelyOwned){
-
-    // Send the owners of these gnos their part assignments.
+    if (idMap_->gnosAreGids()){
+      gids_ = Teuchos::arcp_reinterpret_cast<const gid_t>(gnoList);
+    }
+    else{
+      gid_t *gidList = new gid_t [len];
+      env_->localMemoryAssertion(__FILE__, __LINE__, len, gidList);
+      ArrayView<gid_t> gidView(gidList, len);
   
-    lno_t *tmpCount = new lno_t [nprocs];
-    memset(tmpCount, 0, sizeof(lno_t) * nprocs);
-    env_->localMemoryAssertion(__FILE__, __LINE__, nprocs, tmpCount);
-    ArrayView<int> countOutBuf(tmpCount, nprocs);
+      const gno_t *gnos = gnoList.getRawPtr();
+      ArrayView<gno_t> gnoView(const_cast<gno_t *>(gnos), len);
 
-    ArrayView<gno_t> outBuf;
+      try{
+        idMap_->gidTranslate(gidView, gnoView, TRANSLATE_LIB_TO_APP);
+      }
+      Z2_FORWARD_EXCEPTIONS
+  
+      gids_ = arcp<const gid_t>(gidList, 0, len);
+    }
+    parts_ = partList;
+  }
+  else {
+    // Case where the algorithm moved the data.
+    // KDDKDD Should we require the algorithm to return the parts in
+    // KDDKDD the same order as the gnos provided by the model?
 
-    if (len > 0){
-      gno_t *tmpGno = new gno_t [len*2];
-      env_->localMemoryAssertion(__FILE__, __LINE__, len*2, tmpGno);
-      outBuf = ArrayView<gno_t>(tmpGno, len*2);
+    // We send part information to the process that "owns" the global number.
+
+    ArrayView<gid_t> emptyView;
+    ArrayView<int> procList;
+
+    if (len){
+      int *tmp = new int [len];
+      env_->localMemoryAssertion(__FILE__, __LINE__, len, tmp);
+      procList = ArrayView<int>(tmp, len);
+    }
+
+    idMap_->gnoGlobalTranslate (gnoList.view(0,len), emptyView, procList);
+
+    int remotelyOwned = 0;
+    int rank = comm_->getRank();
+    int nprocs = comm_->getSize();
+  
+    for (size_t i=0; !remotelyOwned && i < len; i++){
+      if (procList[i] != rank)
+        remotelyOwned = 1;
+    }
+
+    int anyRemotelyOwned=0;
+
+    try{
+      reduceAll<int, int>(*comm_, Teuchos::REDUCE_MAX, 1,
+        &remotelyOwned, &anyRemotelyOwned);
+    }
+    Z2_THROW_OUTSIDE_ERROR(*env_);
+
+    if (anyRemotelyOwned){
+
+      // Send the owners of these gnos their part assignments.
     
-      lno_t *tmpOff = new lno_t [nprocs+1];
-      env_->localMemoryAssertion(__FILE__, __LINE__, nprocs+1, tmpOff);
-      ArrayView<lno_t> offsetBuf(tmpOff, nprocs+1);
+      lno_t *tmpCount = new lno_t [nprocs];
+      memset(tmpCount, 0, sizeof(lno_t) * nprocs);
+      env_->localMemoryAssertion(__FILE__, __LINE__, nprocs, tmpCount);
+      ArrayView<int> countOutBuf(tmpCount, nprocs);
+  
+      ArrayView<gno_t> outBuf;
+  
+      if (len > 0){
+        gno_t *tmpGno = new gno_t [len*2];
+        env_->localMemoryAssertion(__FILE__, __LINE__, len*2, tmpGno);
+        outBuf = ArrayView<gno_t>(tmpGno, len*2);
+      
+        lno_t *tmpOff = new lno_t [nprocs+1];
+        env_->localMemoryAssertion(__FILE__, __LINE__, nprocs+1, tmpOff);
+        ArrayView<lno_t> offsetBuf(tmpOff, nprocs+1);
+      
+          for (size_t i=0; i < len; i++){
+          countOutBuf[procList[i]]+=2;
+        }
+      
+        offsetBuf[0] = 0;
+        for (int i=0; i < nprocs; i++)
+          offsetBuf[i+1] = offsetBuf[i] + countOutBuf[i];
+      
+        for (size_t i=0; i < len; i++){
+          int p = procList[i];
+          int off = offsetBuf[p];
+          outBuf[off] = gnoList[i];
+          outBuf[off+1] = static_cast<gno_t>(partList[i]);
+          offsetBuf[p]+=2;
+        }
     
-      for (size_t i=0; i < len; i++){
-        countOutBuf[procList[i]]+=2;
+        delete [] tmpOff;
       }
     
-      offsetBuf[0] = 0;
+      ArrayRCP<gno_t> inBuf;
+      ArrayRCP<int> countInBuf;
+    
+      try{
+        AlltoAllv<gno_t>(*comm_, *env_,
+          outBuf, countOutBuf, inBuf, countInBuf);
+      }
+      Z2_FORWARD_EXCEPTIONS;
+  
+      if (len)
+        delete [] outBuf.getRawPtr();
+  
+      delete [] countOutBuf.getRawPtr();
+  
+      gno_t newLen = 0;
       for (int i=0; i < nprocs; i++)
-        offsetBuf[i+1] = offsetBuf[i] + countOutBuf[i];
+        newLen += countInBuf[i];
+  
+      newLen /= 2;
+
+      ArrayRCP<partId_t> parts;
+      ArrayRCP<const gno_t> myGnos;
+
+      if (newLen > 0){
+  
+        gno_t *tmpGno = new gno_t [newLen];
+        env_->localMemoryAssertion(__FILE__, __LINE__, newLen, tmpGno);
     
-      for (size_t i=0; i < len; i++){
-        int p = procList[i];
-        int off = offsetBuf[p];
-        outBuf[off] = gnoList[i];
-        outBuf[off+1] = static_cast<gno_t>(partList[i]);
-        offsetBuf[p]+=2;
+        partId_t *tmpPart = new partId_t [newLen];
+        env_->localMemoryAssertion(__FILE__, __LINE__, newLen, tmpPart);
+    
+        int next = 0;
+        for (lno_t i=0; i < newLen; i++){
+          tmpGno[i] = inBuf[next++];
+          tmpPart[i] = inBuf[next++];
+        }
+  
+        parts = arcp(tmpPart, 0, newLen);
+        myGnos = arcp(tmpGno, 0, newLen);
       }
   
-      delete [] tmpOff;
+      gnoList = myGnos;
+      partList = parts;
+      len = newLen;
     }
   
-    ArrayRCP<gno_t> inBuf;
-    ArrayRCP<int> countInBuf;
+    delete [] procList.getRawPtr();
   
-    try{
-      AlltoAllv<gno_t>(*comm_, *env_,
-        outBuf, countOutBuf, inBuf, countInBuf);
+    if (idMap_->gnosAreGids()){
+      gids_ = Teuchos::arcp_reinterpret_cast<const gid_t>(gnoList);
     }
-    Z2_FORWARD_EXCEPTIONS;
-
-    if (len)
-      delete [] outBuf.getRawPtr();
-
-    delete [] countOutBuf.getRawPtr();
-
-    gno_t newLen = 0;
-    for (int i=0; i < nprocs; i++)
-      newLen += countInBuf[i];
-
-    newLen /= 2;
-
-    ArrayRCP<partId_t> parts;
-    ArrayRCP<const gno_t> myGnos;
-
-    if (newLen > 0){
-
-      gno_t *tmpGno = new gno_t [newLen];
-      env_->localMemoryAssertion(__FILE__, __LINE__, newLen, tmpGno);
+    else{
+      gid_t *gidList = new gid_t [len];
+      env_->localMemoryAssertion(__FILE__, __LINE__, len, gidList);
+      ArrayView<gid_t> gidView(gidList, len);
   
-      partId_t *tmpPart = new partId_t [newLen];
-      env_->localMemoryAssertion(__FILE__, __LINE__, newLen, tmpPart);
-  
-      int next = 0;
-      for (lno_t i=0; i < newLen; i++){
-        tmpGno[i] = inBuf[next++];
-        tmpPart[i] = inBuf[next++];
+      const gno_t *gnos = gnoList.getRawPtr();
+      ArrayView<gno_t> gnoView(const_cast<gno_t *>(gnos), len);
+
+      try{
+        idMap_->gidTranslate(gidView, gnoView, TRANSLATE_LIB_TO_APP);
       }
+      Z2_FORWARD_EXCEPTIONS
   
-      parts = arcp(tmpPart, 0, newLen);
-      myGnos = arcp(tmpGno, 0, newLen);
+      gids_ = arcp<const gid_t>(gidList, 0, len);
     }
 
-    gnoList = myGnos;
-    partList = parts;
-    len = newLen;
+    parts_ = partList;
   }
-
-  delete [] procList.getRawPtr();
-  
-  if (idMap_->gnosAreGids()){
-    gids_ = Teuchos::arcp_reinterpret_cast<const gid_t>(gnoList);
-  }
-  else{
-    gid_t *gidList = new gid_t [len];
-    env_->localMemoryAssertion(__FILE__, __LINE__, len, gidList);
-    ArrayView<gid_t> gidView(gidList, len);
-
-    const gno_t *gnos = gnoList.getRawPtr();
-    ArrayView<gno_t> gnoView(const_cast<gno_t *>(gnos), len);
-
-    try{
-      idMap_->gidTranslate(gidView, gnoView, TRANSLATE_LIB_TO_APP);
-    }
-    Z2_FORWARD_EXCEPTIONS
-
-    gids_ = arcp<const gid_t>(gidList, 0, len);
-  }
-
-  parts_ = partList;
 
   // Now determine which process gets each object, if not one-to-one.
 
@@ -1472,17 +1517,30 @@ template <typename Adapter>
     // still a solution.  We keep it on this process.
     procMin = procMax = comm_->getRank();
   }
-  if (onePartPerProc_){
+  else if (onePartPerProc_){
     procMin = procMax = int(partId);
   }
   else if (procDist_.size() > 0){
-    // find the first p such that procDist_[p] > partId
+    if (procDistEquallySpread_) {
+      // Avoid binary search.
+      double fProcs = comm_->getSize();
+      double fParts = nGlobalParts_;
+      double each = floor(fParts / fProcs);
+      procMin = partId * each;
+      while (procDist_[procMin+1] <= partId) procMin++;
+      while (procDist_[procMin] > partId) procMin--;
+      procMax = procMin;
+    }
+    else {
+      // find the first p such that procDist_[p] > partId.
+      // For now, do a binary search.
 
-    std::vector<partId_t>::const_iterator entry;
-    entry = std::upper_bound(procDist_.begin(), procDist_.end(), partId);
+      std::vector<partId_t>::const_iterator entry;
+      entry = std::upper_bound(procDist_.begin(), procDist_.end(), partId);
 
-    size_t procIdx = entry - procDist_.begin();
-    procMin = procMax = int(procIdx) - 1;
+      size_t procIdx = entry - procDist_.begin();
+      procMin = procMax = int(procIdx) - 1;
+    }
   }
   else{
     procMin = partDist_[partId];
@@ -1685,6 +1743,11 @@ template <typename Adapter>
         partDist_[numGlobalParts] == nprocs, COMPLEX_ASSERTION, comm_);
     }
     else if (fParts > fProcs){ 
+
+      // User did not specify local number of parts per proc; 
+      // Distribute the parts evenly among the procs.
+
+      procDistEquallySpread_ = true;
 
       try{
         procDist_.resize(size_t(fProcs+1));

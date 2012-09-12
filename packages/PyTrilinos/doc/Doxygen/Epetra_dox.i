@@ -83,6 +83,11 @@ rank proc is chosen as the \"owner\".
 
 Integer error code, set to 0 if successful. ";
 
+%feature("docstring")  Epetra_BasicDirectory::GetDirectoryEntries "int Epetra_BasicDirectory::GetDirectoryEntries(const Epetra_BlockMap
+&Map, const int NumEntries, const long long *GlobalEntries, int
+*Procs, int *LocalEntries, int *EntrySizes, bool
+high_rank_sharing_procs=false) const ";
+
 %feature("docstring")  Epetra_BasicDirectory::GIDsAllUniquelyOwned "bool Epetra_BasicDirectory::GIDsAllUniquelyOwned() const
 
 GIDsAllUniquelyOwned: returns true if all GIDs appear on just one
@@ -461,19 +466,29 @@ Returns the one norm of the global matrix. ";
 
 Returns the number of nonzero entries in the global matrix. ";
 
+%feature("docstring")  Epetra_BasicRowMatrix::NumGlobalNonzeros64 "virtual long long Epetra_BasicRowMatrix::NumGlobalNonzeros64() const
+";
+
 %feature("docstring")  Epetra_BasicRowMatrix::NumGlobalRows "virtual
 int Epetra_BasicRowMatrix::NumGlobalRows() const
 
 Returns the number of global matrix rows. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::NumGlobalRows64 "virtual long long Epetra_BasicRowMatrix::NumGlobalRows64() const ";
 
 %feature("docstring")  Epetra_BasicRowMatrix::NumGlobalCols "virtual
 int Epetra_BasicRowMatrix::NumGlobalCols() const
 
 Returns the number of global matrix columns. ";
 
+%feature("docstring")  Epetra_BasicRowMatrix::NumGlobalCols64 "virtual long long Epetra_BasicRowMatrix::NumGlobalCols64() const ";
+
 %feature("docstring")  Epetra_BasicRowMatrix::NumGlobalDiagonals "virtual int Epetra_BasicRowMatrix::NumGlobalDiagonals() const
 
 Returns the number of global nonzero diagonal entries. ";
+
+%feature("docstring")  Epetra_BasicRowMatrix::NumGlobalDiagonals64 "virtual long long Epetra_BasicRowMatrix::NumGlobalDiagonals64() const
+";
 
 %feature("docstring")  Epetra_BasicRowMatrix::NumMyNonzeros "virtual
 int Epetra_BasicRowMatrix::NumMyNonzeros() const
@@ -1067,6 +1082,15 @@ number of processors.
 
 Pointer to a Epetra_BlockMap object. ";
 
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(unsigned int NumGlobalElements, int
+ElementSize, int IndexBase, const Epetra_Comm &Comm) ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
+ElementSize, int IndexBase, const Epetra_Comm &Comm) ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(unsigned long long NumGlobalElements,
+int ElementSize, int IndexBase, const Epetra_Comm &Comm) ";
+
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int
 NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
 &Comm)
@@ -1101,6 +1125,18 @@ In:  Comm - Epetra_Comm communicator containing information on the
 number of processors.
 
 Pointer to a Epetra_BlockMap object. ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(unsigned int NumGlobalElements, int
+NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
+&Comm) ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
+NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
+&Comm) ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(unsigned long long NumGlobalElements,
+int NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
+&Comm) ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int
 NumMyElements, const int *MyGlobalElements, int ElementSize, int
@@ -1144,6 +1180,10 @@ In:  Comm - Epetra_Comm communicator containing information on the
 number of processors.
 
 Pointer to a Epetra_BlockMap object. ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
+NumMyElements, const long long *MyGlobalElements, int ElementSize, int
+IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int
 NumMyElements, const int *MyGlobalElements, const int
@@ -1189,6 +1229,10 @@ number of processors.
 
 Pointer to a Epetra_BlockMap object. ";
 
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
+NumMyElements, const long long *MyGlobalElements, const int
+*ElementSizeList, int IndexBase, const Epetra_Comm &Comm) ";
+
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(const Epetra_BlockMap &map)
 
 Epetra_BlockMap copy constructor. ";
@@ -1217,6 +1261,10 @@ not present on any processor, the corresponding PID will return as -1.
 ";
 
 %feature("docstring")  Epetra_BlockMap::RemoteIDList "int
+Epetra_BlockMap::RemoteIDList(int NumIDs, const long long *GIDList,
+int *PIDList, int *LIDList) const ";
+
+%feature("docstring")  Epetra_BlockMap::RemoteIDList "int
 Epetra_BlockMap::RemoteIDList(int NumIDs, const int *GIDList, int
 *PIDList, int *LIDList, int *SizeList) const
 
@@ -1229,17 +1277,33 @@ PIDList) the with processor that owns the GID for this map and returns
 the local index (in LIDList) of the GID on that processor. Finally it
 returns the element sizes in SizeList. ";
 
+%feature("docstring")  Epetra_BlockMap::RemoteIDList "int
+Epetra_BlockMap::RemoteIDList(int NumIDs, const long long *GIDList,
+int *PIDList, int *LIDList, int *SizeList) const ";
+
 %feature("docstring")  Epetra_BlockMap::LID "int
 Epetra_BlockMap::LID(int GID) const
 
 Returns local ID of global ID, return -1 if not found on this
 processor. ";
 
+%feature("docstring")  Epetra_BlockMap::LID "int
+Epetra_BlockMap::LID(unsigned int GID) const ";
+
+%feature("docstring")  Epetra_BlockMap::LID "int
+Epetra_BlockMap::LID(long long GID) const ";
+
+%feature("docstring")  Epetra_BlockMap::LID "int
+Epetra_BlockMap::LID(unsigned long long GID) const ";
+
 %feature("docstring")  Epetra_BlockMap::GID "int
 Epetra_BlockMap::GID(int LID) const
 
 Returns global ID of local ID, return IndexBase-1 if not found on this
 processor. ";
+
+%feature("docstring")  Epetra_BlockMap::GID64 "long long
+Epetra_BlockMap::GID64(int LID) const ";
 
 %feature("docstring")  Epetra_BlockMap::FindLocalElementID "int
 Epetra_BlockMap::FindLocalElementID(int PointID, int &ElementID, int
@@ -1254,6 +1318,12 @@ Epetra_BlockMap::MyGID(int GID_in) const
 Returns true if the GID passed in belongs to the calling processor in
 this map, otherwise returns false. ";
 
+%feature("docstring")  Epetra_BlockMap::MyGID "bool
+Epetra_BlockMap::MyGID(unsigned int GID_in) const ";
+
+%feature("docstring")  Epetra_BlockMap::MyGID "bool
+Epetra_BlockMap::MyGID(long long GID_in) const ";
+
 %feature("docstring")  Epetra_BlockMap::MyLID "bool
 Epetra_BlockMap::MyLID(int LID_in) const
 
@@ -1265,20 +1335,32 @@ Epetra_BlockMap::MinAllGID() const
 
 Returns the minimum global ID across the entire map. ";
 
+%feature("docstring")  Epetra_BlockMap::MinAllGID64 "long long
+Epetra_BlockMap::MinAllGID64() const ";
+
 %feature("docstring")  Epetra_BlockMap::MaxAllGID "int
 Epetra_BlockMap::MaxAllGID() const
 
 Returns the maximum global ID across the entire map. ";
+
+%feature("docstring")  Epetra_BlockMap::MaxAllGID64 "long long
+Epetra_BlockMap::MaxAllGID64() const ";
 
 %feature("docstring")  Epetra_BlockMap::MinMyGID "int
 Epetra_BlockMap::MinMyGID() const
 
 Returns the maximum global ID owned by this processor. ";
 
+%feature("docstring")  Epetra_BlockMap::MinMyGID64 "long long
+Epetra_BlockMap::MinMyGID64() const ";
+
 %feature("docstring")  Epetra_BlockMap::MaxMyGID "int
 Epetra_BlockMap::MaxMyGID() const
 
 Returns the maximum global ID owned by this processor. ";
+
+%feature("docstring")  Epetra_BlockMap::MaxMyGID64 "long long
+Epetra_BlockMap::MaxMyGID64() const ";
 
 %feature("docstring")  Epetra_BlockMap::MinLID "int
 Epetra_BlockMap::MinLID() const
@@ -1297,6 +1379,9 @@ Epetra_BlockMap::NumGlobalElements() const
 
 Number of elements across all processors. ";
 
+%feature("docstring")  Epetra_BlockMap::NumGlobalElements64 "long
+long Epetra_BlockMap::NumGlobalElements64() const ";
+
 %feature("docstring")  Epetra_BlockMap::NumMyElements "int
 Epetra_BlockMap::NumMyElements() const
 
@@ -1307,6 +1392,18 @@ Epetra_BlockMap::MyGlobalElements(int *MyGlobalElementList) const
 
 Puts list of global elements on this processor into the user-provided
 array. ";
+
+%feature("docstring")  Epetra_BlockMap::MyGlobalElements "int
+Epetra_BlockMap::MyGlobalElements(long long *MyGlobalElementList)
+const ";
+
+%feature("docstring")  Epetra_BlockMap::MyGlobalElementsPtr "int
+Epetra_BlockMap::MyGlobalElementsPtr(int *&MyGlobalElementList) const
+";
+
+%feature("docstring")  Epetra_BlockMap::MyGlobalElementsPtr "int
+Epetra_BlockMap::MyGlobalElementsPtr(long long *&MyGlobalElementList)
+const ";
 
 %feature("docstring")  Epetra_BlockMap::ElementSize "int
 Epetra_BlockMap::ElementSize() const
@@ -1340,6 +1437,9 @@ Epetra_BlockMap::NumGlobalPoints() const
 
 Number of global points for this map; equals the sum of all element
 sizes across all processors. ";
+
+%feature("docstring")  Epetra_BlockMap::NumGlobalPoints64 "long long
+Epetra_BlockMap::NumGlobalPoints64() const ";
 
 %feature("docstring")  Epetra_BlockMap::NumMyPoints "int
 Epetra_BlockMap::NumMyPoints() const
@@ -1380,6 +1480,26 @@ In other words, if a GID occurs in the map, it occurs only once on a
 single processor and nowhere else. This boolean test returns true if
 this property is true, otherwise it returns false. ";
 
+%feature("docstring")  Epetra_BlockMap::GlobalIndicesInt "bool
+Epetra_BlockMap::GlobalIndicesInt() const
+
+Returns true if map create with int NumGlobalElements. ";
+
+%feature("docstring")  Epetra_BlockMap::GlobalIndicesLongLong "bool
+Epetra_BlockMap::GlobalIndicesLongLong() const
+
+Returns true if map create with long long NumGlobalElements. ";
+
+%feature("docstring")  Epetra_BlockMap::GlobalIndicesIsType "bool
+Epetra_BlockMap::GlobalIndicesIsType< long long >() const ";
+
+%feature("docstring")  Epetra_BlockMap::GlobalIndicesTypeValid "bool
+Epetra_BlockMap::GlobalIndicesTypeValid() const ";
+
+%feature("docstring")  Epetra_BlockMap::GlobalIndicesTypeMatch "bool
+Epetra_BlockMap::GlobalIndicesTypeMatch(const Epetra_BlockMap &other)
+const ";
+
 %feature("docstring")  Epetra_BlockMap::ConstantElementSize "bool
 Epetra_BlockMap::ConstantElementSize() const
 
@@ -1416,6 +1536,9 @@ Epetra_BlockMap::MyGlobalElements() const
 
 Pointer to internal array containing list of global IDs assigned to
 the calling processor. ";
+
+%feature("docstring")  Epetra_BlockMap::MyGlobalElements64 "long long
+* Epetra_BlockMap::MyGlobalElements64() const ";
 
 %feature("docstring")  Epetra_BlockMap::FirstPointInElementList "int
 * Epetra_BlockMap::FirstPointInElementList() const
@@ -1703,6 +1826,26 @@ processors. Must be of size NumProc*Count.
 
 Count:  In On entry, contains the length of the list of MyVals. ";
 
+%feature("docstring")  Epetra_Comm::GatherAll "virtual int
+Epetra_Comm::GatherAll(long long *MyVals, long long *AllVals, int
+Count) const =0
+
+Epetra_Comm All Gather function.
+
+Take list of input values from all processors in the communicator and
+creates an ordered contiguous list of those values on each processor.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be sent to all
+processors.
+
+AllVals:  Out On exit, contains the list of values from all
+processors. Must be of size NumProc*Count.
+
+Count:  In On entry, contains the length of the list of MyVals. ";
+
 /*  Sum Methods  */
 
 %feature("docstring")  Epetra_Comm::SumAll "virtual int
@@ -1748,6 +1891,26 @@ Count:  In On entry, contains the length of the list of values. ";
 %feature("docstring")  Epetra_Comm::SumAll "virtual int
 Epetra_Comm::SumAll(long *PartialSums, long *GlobalSums, int Count)
 const =0
+
+Epetra_Comm Global Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the sum and returns the sum to all processors.
+
+Parameters:
+-----------
+
+PartialSums:  In On entry, contains the list of values, usually
+partial sums computed locally, to be summed across all processors.
+
+GlobalSums:  Out On exit, contains the list of values summed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_Comm::SumAll "virtual int
+Epetra_Comm::SumAll(long long *PartialSums, long long *GlobalSums, int
+Count) const =0
 
 Epetra_Comm Global Sum function.
 
@@ -1830,6 +1993,27 @@ all processors.
 
 Count:  In On entry, contains the length of the list of values. ";
 
+%feature("docstring")  Epetra_Comm::MaxAll "virtual int
+Epetra_Comm::MaxAll(long long *PartialMaxs, long long *GlobalMaxs, int
+Count) const =0
+
+Epetra_Comm Global Max function.
+
+Take list of input values from all processors in the communicator,
+computes the max and returns the max to all processors.
+
+Parameters:
+-----------
+
+PartialMaxs:  In On entry, contains the list of values, usually
+partial maxs computed locally; using these Partial Maxs, the max
+across all processors will be computed.
+
+GlobalMaxs:  Out On exit, contains the list of maxs computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
 %feature("docstring")  Epetra_Comm::MinAll "virtual int
 Epetra_Comm::MinAll(double *PartialMins, double *GlobalMins, int
 Count) const =0
@@ -1893,6 +2077,25 @@ all processors.
 
 Count:  In On entry, contains the length of the list of values. ";
 
+%feature("docstring")  Epetra_Comm::MinAll "virtual int
+Epetra_Comm::MinAll(long long *PartialMins, long long *GlobalMins, int
+Count) const =0
+
+Take list of input values from all processors in the communicator,
+computes the min and returns the min to all processors.
+
+Parameters:
+-----------
+
+PartialMins:  In On entry, contains the list of values, usually
+partial mins computed locally; using these Partial Mins, the min
+across all processors will be computed.
+
+GlobalMins:  Out On exit, contains the list of mins computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
 /*  Parallel Prefix Methods  */
 
 %feature("docstring")  Epetra_Comm::ScanSum "virtual int
@@ -1940,6 +2143,28 @@ Count:  In On entry, contains the length of the list of values. ";
 
 %feature("docstring")  Epetra_Comm::ScanSum "virtual int
 Epetra_Comm::ScanSum(long *MyVals, long *ScanSums, int Count) const =0
+
+Epetra_Comm Scan Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the scan sum and returns it to all processors such that
+processor i contains the sum of values from processor 0 up to and
+including processor i.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be summed across
+all processors.
+
+ScanSums:  Out On exit, contains the list of values summed across
+processors 0 through i.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_Comm::ScanSum "virtual int
+Epetra_Comm::ScanSum(long long *MyVals, long long *ScanSums, int
+Count) const =0
 
 Epetra_Comm Scan Sum function.
 
@@ -2070,6 +2295,11 @@ Increment Flop count for this object. ";
 
 %feature("docstring")  Epetra_CompObject::UpdateFlops "void
 Epetra_CompObject::UpdateFlops(long int Flops_in) const
+
+Increment Flop count for this object. ";
+
+%feature("docstring")  Epetra_CompObject::UpdateFlops "void
+Epetra_CompObject::UpdateFlops(long long Flops_in) const
 
 Increment Flop count for this object. ";
 
@@ -2467,6 +2697,10 @@ instances.
 
 IndicesAreGlobal()==true, StorageOptimized()==false ";
 
+%feature("docstring")  Epetra_CrsGraph::InsertGlobalIndices "int
+Epetra_CrsGraph::InsertGlobalIndices(long long GlobalRow, int
+NumIndices, long long *Indices) ";
+
 %feature("docstring")  Epetra_CrsGraph::RemoveGlobalIndices "int
 Epetra_CrsGraph::RemoveGlobalIndices(int GlobalRow, int NumIndices,
 int *Indices)
@@ -2488,7 +2722,11 @@ shared.
 IndicesAreGlobal()==true, StorageOptimized()==false ";
 
 %feature("docstring")  Epetra_CrsGraph::RemoveGlobalIndices "int
-Epetra_CrsGraph::RemoveGlobalIndices(int Row)
+Epetra_CrsGraph::RemoveGlobalIndices(long long GlobalRow, int
+NumIndices, long long *Indices) ";
+
+%feature("docstring")  Epetra_CrsGraph::RemoveGlobalIndices "int
+Epetra_CrsGraph::RemoveGlobalIndices(long long Row)
 
 Remove all indices from a specified global row of the graph.
 
@@ -2651,6 +2889,10 @@ Indices:  - (Out) Global column indices corresponding to values.
 
 Integer error code, set to 0 if successful. ";
 
+%feature("docstring")  Epetra_CrsGraph::ExtractGlobalRowCopy "int
+Epetra_CrsGraph::ExtractGlobalRowCopy(long long GlobalRow, int
+LenOfIndices, int &NumIndices, long long *Indices) const ";
+
 %feature("docstring")  Epetra_CrsGraph::ExtractMyRowCopy "int
 Epetra_CrsGraph::ExtractMyRowCopy(int LocalRow, int LenOfIndices, int
 &NumIndices, int *Indices) const
@@ -2685,16 +2927,20 @@ FillComplete() was not called).
 Parameters:
 -----------
 
-Row:  - (In) Local row number to get indices.
+Row:  - (In) Global row number to get indices.
 
 NumIndices:  - (Out) Number of Indices.
 
-Indices:  - (Out) Column indices corresponding to values.
+Indices:  - (Out) Global column indices corresponding to values.
 
 Integer error code, set to 0 if successful. Returns -1 if invalid row.
 Returns -2 if graph is completed.
 
 IndicesAreLocal()==false ";
+
+%feature("docstring")  Epetra_CrsGraph::ExtractGlobalRowView "int
+Epetra_CrsGraph::ExtractGlobalRowView(long long GlobalRow, int
+&NumIndices, long long *&Indices) const ";
 
 %feature("docstring")  Epetra_CrsGraph::ExtractMyRowView "int
 Epetra_CrsGraph::ExtractMyRowView(int LocalRow, int &NumIndices, int
@@ -2775,6 +3021,9 @@ Epetra_CrsGraph::MyGlobalRow(int GID) const
 Returns true of GID is owned by the calling processor, otherwise it
 returns false. ";
 
+%feature("docstring")  Epetra_CrsGraph::MyGlobalRow "bool
+Epetra_CrsGraph::MyGlobalRow(long long GID) const ";
+
 %feature("docstring")  Epetra_CrsGraph::HaveColMap "bool
 Epetra_CrsGraph::HaveColMap() const
 
@@ -2798,6 +3047,9 @@ Epetra_CrsGraph::NumGlobalRows() const
 
 Returns the number of matrix rows in global matrix. ";
 
+%feature("docstring")  Epetra_CrsGraph::NumGlobalRows64 "long long
+Epetra_CrsGraph::NumGlobalRows64() const ";
+
 %feature("docstring")  Epetra_CrsGraph::NumMyCols "int
 Epetra_CrsGraph::NumMyCols() const
 
@@ -2816,6 +3068,9 @@ Returns the number of matrix columns in global matrix.
 
 Filled()==true ";
 
+%feature("docstring")  Epetra_CrsGraph::NumGlobalCols64 "long long
+Epetra_CrsGraph::NumGlobalCols64() const ";
+
 %feature("docstring")  Epetra_CrsGraph::NumGlobalNonzeros "int
 Epetra_CrsGraph::NumGlobalNonzeros() const
 
@@ -2826,6 +3081,9 @@ appear on more than one processor, then those nonzeros will be counted
 more than once. If the user wishes to assemble a graph from
 overlapping data, they can use Epetra_FECrsGraph.  Filled()==true ";
 
+%feature("docstring")  Epetra_CrsGraph::NumGlobalNonzeros64 "long
+long Epetra_CrsGraph::NumGlobalNonzeros64() const ";
+
 %feature("docstring")  Epetra_CrsGraph::NumGlobalDiagonals "int
 Epetra_CrsGraph::NumGlobalDiagonals() const
 
@@ -2833,6 +3091,9 @@ Returns the number of diagonal entries in the global graph, based on
 global row/column index comparisons.
 
 Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::NumGlobalDiagonals64 "long
+long Epetra_CrsGraph::NumGlobalDiagonals64() const ";
 
 %feature("docstring")  Epetra_CrsGraph::NumMyDiagonals "int
 Epetra_CrsGraph::NumMyDiagonals() const
@@ -2852,6 +3113,9 @@ Epetra_CrsGraph::NumGlobalBlockRows() const
 
 Returns the number of Block matrix rows in global matrix. ";
 
+%feature("docstring")  Epetra_CrsGraph::NumGlobalBlockRows64 "long
+long Epetra_CrsGraph::NumGlobalBlockRows64() const ";
+
 %feature("docstring")  Epetra_CrsGraph::NumMyBlockCols "int
 Epetra_CrsGraph::NumMyBlockCols() const
 
@@ -2865,6 +3129,9 @@ Epetra_CrsGraph::NumGlobalBlockCols() const
 Returns the number of Block matrix columns in global matrix.
 
 Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::NumGlobalBlockCols64 "long
+long Epetra_CrsGraph::NumGlobalBlockCols64() const ";
 
 %feature("docstring")  Epetra_CrsGraph::NumMyBlockDiagonals "int
 Epetra_CrsGraph::NumMyBlockDiagonals() const
@@ -2882,12 +3149,17 @@ based on global row/column index comparisons.
 
 Filled()==true ";
 
+%feature("docstring")  Epetra_CrsGraph::NumGlobalBlockDiagonals64 "long long Epetra_CrsGraph::NumGlobalBlockDiagonals64() const ";
+
 %feature("docstring")  Epetra_CrsGraph::NumGlobalEntries "int
 Epetra_CrsGraph::NumGlobalEntries() const
 
 Returns the number of entries in the global graph.
 
 Filled()==true ";
+
+%feature("docstring")  Epetra_CrsGraph::NumGlobalEntries64 "long long
+Epetra_CrsGraph::NumGlobalEntries64() const ";
 
 %feature("docstring")  Epetra_CrsGraph::NumMyEntries "int
 Epetra_CrsGraph::NumMyEntries() const
@@ -2933,12 +3205,12 @@ Returns the number of indices in the local graph.
 Filled()==true ";
 
 %feature("docstring")  Epetra_CrsGraph::NumGlobalIndices "int
-Epetra_CrsGraph::NumGlobalIndices(int Row) const
+Epetra_CrsGraph::NumGlobalIndices(long long Row) const
 
 Returns the current number of nonzero entries in specified global row
 on this processor. ";
 
-%feature("docstring")  Epetra_CrsGraph::NumAllocatedGlobalIndices "int Epetra_CrsGraph::NumAllocatedGlobalIndices(int Row) const
+%feature("docstring")  Epetra_CrsGraph::NumAllocatedGlobalIndices "int Epetra_CrsGraph::NumAllocatedGlobalIndices(long long Row) const
 
 Returns the allocated number of nonzero entries in specified global
 row on this processor. ";
@@ -3073,11 +3345,17 @@ Epetra_CrsGraph::LRID(int GRID_in) const
 Returns the local row index for given global row index, returns -1 if
 no local row for this global row. ";
 
+%feature("docstring")  Epetra_CrsGraph::LRID "int
+Epetra_CrsGraph::LRID(long long GRID_in) const ";
+
 %feature("docstring")  Epetra_CrsGraph::GRID "int
 Epetra_CrsGraph::GRID(int LRID_in) const
 
 Returns the global row index for give local row index, returns
 IndexBase-1 if we don't have this local row. ";
+
+%feature("docstring")  Epetra_CrsGraph::GRID64 "long long
+Epetra_CrsGraph::GRID64(int LRID_in) const ";
 
 %feature("docstring")  Epetra_CrsGraph::LCID "int
 Epetra_CrsGraph::LCID(int GCID_in) const
@@ -3087,6 +3365,9 @@ Returns the local column index for given global column index, returns
 
 HaveColMap()==true (If HaveColMap()==false, returns -1) ";
 
+%feature("docstring")  Epetra_CrsGraph::LCID "int
+Epetra_CrsGraph::LCID(long long GCID_in) const ";
+
 %feature("docstring")  Epetra_CrsGraph::GCID "int
 Epetra_CrsGraph::GCID(int LCID_in) const
 
@@ -3095,11 +3376,17 @@ IndexBase-1 if we don't have this local column.
 
 HaveColMap()==true (If HaveColMap()==false, returns -1) ";
 
+%feature("docstring")  Epetra_CrsGraph::GCID64 "long long
+Epetra_CrsGraph::GCID64(int LCID_in) const ";
+
 %feature("docstring")  Epetra_CrsGraph::MyGRID "bool
 Epetra_CrsGraph::MyGRID(int GRID_in) const
 
 Returns true if the GRID passed in belongs to the calling processor in
 this map, otherwise returns false. ";
+
+%feature("docstring")  Epetra_CrsGraph::MyGRID "bool
+Epetra_CrsGraph::MyGRID(long long GRID_in) const ";
 
 %feature("docstring")  Epetra_CrsGraph::MyLRID "bool
 Epetra_CrsGraph::MyLRID(int LRID_in) const
@@ -3114,6 +3401,9 @@ Returns true if the GCID passed in belongs to the calling processor in
 this map, otherwise returns false.
 
 HaveColMap()==true (If HaveColMap()==false, returns -1) ";
+
+%feature("docstring")  Epetra_CrsGraph::MyGCID "bool
+Epetra_CrsGraph::MyGCID(long long GCID_in) const ";
 
 %feature("docstring")  Epetra_CrsGraph::MyLCID "bool
 Epetra_CrsGraph::MyLCID(int LCID_in) const
@@ -3576,6 +3866,10 @@ called.
 IndicesAreLocal()==false && IndicesAreContiguous()==false ";
 
 %feature("docstring")  Epetra_CrsMatrix::InsertGlobalValues "int
+Epetra_CrsMatrix::InsertGlobalValues(long long GlobalRow, int
+NumEntries, const double *Values, const long long *Indices) ";
+
+%feature("docstring")  Epetra_CrsMatrix::InsertGlobalValues "int
 Epetra_CrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
 double *Values, int *Indices)
 
@@ -3616,6 +3910,10 @@ called.
 
 IndicesAreLocal()==false && IndicesAreContiguous()==false ";
 
+%feature("docstring")  Epetra_CrsMatrix::InsertGlobalValues "int
+Epetra_CrsMatrix::InsertGlobalValues(long long GlobalRow, int
+NumEntries, double *Values, long long *Indices) ";
+
 %feature("docstring")  Epetra_CrsMatrix::ReplaceGlobalValues "int
 Epetra_CrsMatrix::ReplaceGlobalValues(int GlobalRow, int NumEntries,
 const double *Values, const int *Indices)
@@ -3641,6 +3939,10 @@ returned.
 
 IndicesAreLocal()==false && IndicesAreContiguous()==false ";
 
+%feature("docstring")  Epetra_CrsMatrix::ReplaceGlobalValues "int
+Epetra_CrsMatrix::ReplaceGlobalValues(long long GlobalRow, int
+NumEntries, const double *Values, const long long *Indices) ";
+
 %feature("docstring")  Epetra_CrsMatrix::SumIntoGlobalValues "int
 Epetra_CrsMatrix::SumIntoGlobalValues(int GlobalRow, int NumEntries,
 const double *Values, const int *Indices)
@@ -3665,6 +3967,10 @@ input value will be ignored and a positive warning code will be
 returned.
 
 IndicesAreLocal()==false && IndicesAreContiguous()==false ";
+
+%feature("docstring")  Epetra_CrsMatrix::SumIntoGlobalValues "int
+Epetra_CrsMatrix::SumIntoGlobalValues(long long GlobalRow, int
+NumEntries, const double *Values, const long long *Indices) ";
 
 %feature("docstring")  Epetra_CrsMatrix::InsertMyValues "int
 Epetra_CrsMatrix::InsertMyValues(int MyRow, int NumEntries, const
@@ -3881,6 +4187,10 @@ Integer error code, set to 0 if successful, non-zero if global row is
 not owned by calling process or if the number of entries in this row
 exceed the Length parameter. ";
 
+%feature("docstring")  Epetra_CrsMatrix::ExtractGlobalRowCopy "int
+Epetra_CrsMatrix::ExtractGlobalRowCopy(long long GlobalRow, int
+Length, int &NumEntries, double *Values, long long *Indices) const ";
+
 %feature("docstring")  Epetra_CrsMatrix::ExtractMyRowCopy "int
 Epetra_CrsMatrix::ExtractMyRowCopy(int MyRow, int Length, int
 &NumEntries, double *Values, int *Indices) const
@@ -3924,6 +4234,10 @@ NumEntries:  - (Out) Number of nonzero entries extracted.
 Values:  - (Out) Extracted values for this row.
 
 Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExtractGlobalRowCopy "int
+Epetra_CrsMatrix::ExtractGlobalRowCopy(long long GlobalRow, int
+Length, int &NumEntries, double *Values) const ";
 
 %feature("docstring")  Epetra_CrsMatrix::ExtractMyRowCopy "int
 Epetra_CrsMatrix::ExtractMyRowCopy(int MyRow, int Length, int
@@ -3986,6 +4300,10 @@ FillComplete() has already been called).
 
 IndicesAreGlobal()==true ";
 
+%feature("docstring")  Epetra_CrsMatrix::ExtractGlobalRowView "int
+Epetra_CrsMatrix::ExtractGlobalRowView(long long GlobalRow, int
+&NumEntries, double *&Values, long long *&Indices) const ";
+
 %feature("docstring")  Epetra_CrsMatrix::ExtractMyRowView "int
 Epetra_CrsMatrix::ExtractMyRowView(int MyRow, int &NumEntries, double
 *&Values, int *&Indices) const
@@ -4028,6 +4346,10 @@ NumEntries:  - (Out) Number of nonzero entries extracted.
 Values:  - (Out) Extracted values for this row.
 
 Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExtractGlobalRowView "int
+Epetra_CrsMatrix::ExtractGlobalRowView(long long GlobalRow, int
+&NumEntries, double *&Values) const ";
 
 %feature("docstring")  Epetra_CrsMatrix::ExtractMyRowView "int
 Epetra_CrsMatrix::ExtractMyRowView(int MyRow, int &NumEntries, double
@@ -4403,21 +4725,33 @@ Epetra_CrsMatrix::NumGlobalNonzeros() const
 
 Returns the number of nonzero entries in the global matrix. ";
 
+%feature("docstring")  Epetra_CrsMatrix::NumGlobalNonzeros64 "long
+long Epetra_CrsMatrix::NumGlobalNonzeros64() const ";
+
 %feature("docstring")  Epetra_CrsMatrix::NumGlobalRows "int
 Epetra_CrsMatrix::NumGlobalRows() const
 
 Returns the number of global matrix rows. ";
+
+%feature("docstring")  Epetra_CrsMatrix::NumGlobalRows64 "long long
+Epetra_CrsMatrix::NumGlobalRows64() const ";
 
 %feature("docstring")  Epetra_CrsMatrix::NumGlobalCols "int
 Epetra_CrsMatrix::NumGlobalCols() const
 
 Returns the number of global matrix columns. ";
 
+%feature("docstring")  Epetra_CrsMatrix::NumGlobalCols64 "long long
+Epetra_CrsMatrix::NumGlobalCols64() const ";
+
 %feature("docstring")  Epetra_CrsMatrix::NumGlobalDiagonals "int
 Epetra_CrsMatrix::NumGlobalDiagonals() const
 
 Returns the number of global nonzero diagonal entries, based on global
 row/column index comparisons. ";
+
+%feature("docstring")  Epetra_CrsMatrix::NumGlobalDiagonals64 "long
+long Epetra_CrsMatrix::NumGlobalDiagonals64() const ";
 
 %feature("docstring")  Epetra_CrsMatrix::NumMyNonzeros "int
 Epetra_CrsMatrix::NumMyNonzeros() const
@@ -4450,7 +4784,7 @@ row/column index comparisons.
 Filled()==true ";
 
 %feature("docstring")  Epetra_CrsMatrix::NumGlobalEntries "int
-Epetra_CrsMatrix::NumGlobalEntries(int Row) const
+Epetra_CrsMatrix::NumGlobalEntries(long long Row) const
 
 Returns the current number of nonzero entries in specified global row
 on this processor. ";
@@ -4604,11 +4938,17 @@ Epetra_CrsMatrix::LRID(int GRID_in) const
 Returns the local row index for given global row index, returns -1 if
 no local row for this global row. ";
 
+%feature("docstring")  Epetra_CrsMatrix::LRID "int
+Epetra_CrsMatrix::LRID(long long GRID_in) const ";
+
 %feature("docstring")  Epetra_CrsMatrix::GRID "int
 Epetra_CrsMatrix::GRID(int LRID_in) const
 
 Returns the global row index for give local row index, returns
 IndexBase-1 if we don't have this local row. ";
+
+%feature("docstring")  Epetra_CrsMatrix::GRID64 "long long
+Epetra_CrsMatrix::GRID64(int LRID_in) const ";
 
 %feature("docstring")  Epetra_CrsMatrix::LCID "int
 Epetra_CrsMatrix::LCID(int GCID_in) const
@@ -4618,6 +4958,9 @@ Returns the local column index for given global column index, returns
 
 HaveColMap()==true (If HaveColMap()==false, returns -1) ";
 
+%feature("docstring")  Epetra_CrsMatrix::LCID "int
+Epetra_CrsMatrix::LCID(long long GCID_in) const ";
+
 %feature("docstring")  Epetra_CrsMatrix::GCID "int
 Epetra_CrsMatrix::GCID(int LCID_in) const
 
@@ -4626,11 +4969,17 @@ IndexBase-1 if we don't have this local column.
 
 HaveColMap()==true (If HaveColMap()==false, returns -1) ";
 
+%feature("docstring")  Epetra_CrsMatrix::GCID64 "long long
+Epetra_CrsMatrix::GCID64(int LCID_in) const ";
+
 %feature("docstring")  Epetra_CrsMatrix::MyGRID "bool
 Epetra_CrsMatrix::MyGRID(int GRID_in) const
 
 Returns true if the GRID passed in belongs to the calling processor in
 this map, otherwise returns false. ";
+
+%feature("docstring")  Epetra_CrsMatrix::MyGRID "bool
+Epetra_CrsMatrix::MyGRID(long long GRID_in) const ";
 
 %feature("docstring")  Epetra_CrsMatrix::MyLRID "bool
 Epetra_CrsMatrix::MyLRID(int LRID_in) const
@@ -4646,6 +4995,9 @@ this map, otherwise returns false.
 
 HaveColMap()==true (If HaveColMap()==false, returns -1) ";
 
+%feature("docstring")  Epetra_CrsMatrix::MyGCID "bool
+Epetra_CrsMatrix::MyGCID(long long GCID_in) const ";
+
 %feature("docstring")  Epetra_CrsMatrix::MyLCID "bool
 Epetra_CrsMatrix::MyLCID(int LCID_in) const
 
@@ -4659,6 +5011,9 @@ Epetra_CrsMatrix::MyGlobalRow(int GID) const
 
 Returns true of GID is owned by the calling processor, otherwise it
 returns false. ";
+
+%feature("docstring")  Epetra_CrsMatrix::MyGlobalRow "bool
+Epetra_CrsMatrix::MyGlobalRow(long long GID) const ";
 
 /*  I/O Methods  */
 
@@ -5246,6 +5601,12 @@ rank proc is chosen as the \"owner\".
 
 Integer error code, set to 0 if successful. ";
 
+%feature("docstring")  Epetra_Directory::GetDirectoryEntries "virtual
+int Epetra_Directory::GetDirectoryEntries(const Epetra_BlockMap &Map,
+const int NumEntries, const long long *GlobalEntries, int *Procs, int
+*LocalEntries, int *EntrySizes, bool high_rank_sharing_procs=false)
+const =0 ";
+
 %feature("docstring")  Epetra_Directory::GIDsAllUniquelyOwned "virtual bool Epetra_Directory::GIDsAllUniquelyOwned() const =0
 
 GIDsAllUniquelyOwned: returns true if all GIDs appear on just one
@@ -5529,6 +5890,11 @@ NumExportIDs:  Out Number of IDs that need to be sent from this
 processor.
 
 ExportPIDs:  Out List of processors that will get the exported IDs. ";
+
+%feature("docstring")  Epetra_Distributor::CreateFromRecvs "virtual
+int Epetra_Distributor::CreateFromRecvs(const int &NumRemoteIDs, const
+long long *RemoteGIDs, const int *RemotePIDs, bool Deterministic, int
+&NumExportIDs, long long *&ExportGIDs, int *&ExportPIDs)=0 ";
 
 /*  Execute Gather/Scatter Operations (Constant size objects)  */
 
@@ -5923,6 +6289,10 @@ numCols:  Number of columns in the submatrix.
 cols:  List of column-indices that will be used for each row in the
 'rows' list. ";
 
+%feature("docstring")  Epetra_FECrsGraph::InsertGlobalIndices "int
+Epetra_FECrsGraph::InsertGlobalIndices(int numRows, const long long
+*rows, int numCols, const long long *cols) ";
+
 %feature("docstring")  Epetra_FECrsGraph::GlobalAssemble "int
 Epetra_FECrsGraph::GlobalAssemble(bool callFillComplete=true)
 
@@ -6092,11 +6462,19 @@ const double *Values, const int *Indices)
 
 override base-class Epetra_CrsMatrix::SumIntoGlobalValues method ";
 
+%feature("docstring")  Epetra_FECrsMatrix::SumIntoGlobalValues "int
+Epetra_FECrsMatrix::SumIntoGlobalValues(long long GlobalRow, int
+NumEntries, const double *Values, const long long *Indices) ";
+
 %feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
 Epetra_FECrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
 const double *Values, const int *Indices)
 
 override base-class Epetra_CrsMatrix::InsertGlobalValues method ";
+
+%feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
+Epetra_FECrsMatrix::InsertGlobalValues(long long GlobalRow, int
+NumEntries, const double *Values, const long long *Indices) ";
 
 %feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
 Epetra_FECrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
@@ -6104,12 +6482,20 @@ double *Values, int *Indices)
 
 override base-class Epetra_CrsMatrix::InsertGlobalValues method ";
 
+%feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
+Epetra_FECrsMatrix::InsertGlobalValues(long long GlobalRow, int
+NumEntries, double *Values, long long *Indices) ";
+
 %feature("docstring")  Epetra_FECrsMatrix::ReplaceGlobalValues "int
 Epetra_FECrsMatrix::ReplaceGlobalValues(int GlobalRow, int NumEntries,
 const double *Values, const int *Indices)
 
 override base-class Epetra_CrsMatrix::ReplaceGlobalValues method ";
 
+%feature("docstring")  Epetra_FECrsMatrix::ReplaceGlobalValues "int
+Epetra_FECrsMatrix::ReplaceGlobalValues(long long GlobalRow, int
+NumEntries, const double *Values, const long long *Indices) ";
+
 %feature("docstring")  Epetra_FECrsMatrix::SumIntoGlobalValues "int
 Epetra_FECrsMatrix::SumIntoGlobalValues(int numIndices, const int
 *indices, const double *values, int
@@ -6136,6 +6522,11 @@ format:  Specifies whether the data in 'values' is packed in column-
 major or row-major order. Valid values are
 Epetra_FECrsMatrix::ROW_MAJOR or Epetra_FECrsMatrix::COLUMN_MAJOR.
 This is an optional parameter, default value is COLUMN_MAJOR. ";
+
+%feature("docstring")  Epetra_FECrsMatrix::SumIntoGlobalValues "int
+Epetra_FECrsMatrix::SumIntoGlobalValues(int numIndices, const long
+long *indices, const double *values, int
+format=Epetra_FECrsMatrix::COLUMN_MAJOR) ";
 
 %feature("docstring")  Epetra_FECrsMatrix::SumIntoGlobalValues "int
 Epetra_FECrsMatrix::SumIntoGlobalValues(int numRows, const int *rows,
@@ -6168,6 +6559,11 @@ Epetra_FECrsMatrix::ROW_MAJOR or Epetra_FECrsMatrix::COLUMN_MAJOR.
 This is an optional parameter, default value is COLUMN_MAJOR. ";
 
 %feature("docstring")  Epetra_FECrsMatrix::SumIntoGlobalValues "int
+Epetra_FECrsMatrix::SumIntoGlobalValues(int numRows, const long long
+*rows, int numCols, const long long *cols, const double *values, int
+format=Epetra_FECrsMatrix::COLUMN_MAJOR) ";
+
+%feature("docstring")  Epetra_FECrsMatrix::SumIntoGlobalValues "int
 Epetra_FECrsMatrix::SumIntoGlobalValues(int numIndices, const int
 *indices, const double *const *values, int
 format=Epetra_FECrsMatrix::ROW_MAJOR)
@@ -6191,6 +6587,11 @@ format:  Specifies whether the data in 'values' is packed in column-
 major or row-major order. Valid values are
 Epetra_FECrsMatrix::ROW_MAJOR or Epetra_FECrsMatrix::COLUMN_MAJOR.
 This is an optional parameter, default value is ROW_MAJOR. ";
+
+%feature("docstring")  Epetra_FECrsMatrix::SumIntoGlobalValues "int
+Epetra_FECrsMatrix::SumIntoGlobalValues(int numIndices, const long
+long *indices, const double *const *values, int
+format=Epetra_FECrsMatrix::ROW_MAJOR) ";
 
 %feature("docstring")  Epetra_FECrsMatrix::SumIntoGlobalValues "int
 Epetra_FECrsMatrix::SumIntoGlobalValues(int numRows, const int *rows,
@@ -6220,6 +6621,11 @@ major or row-major order. Valid values are
 Epetra_FECrsMatrix::ROW_MAJOR or Epetra_FECrsMatrix::COLUMN_MAJOR.
 This is an optional parameter, default value is ROW_MAJOR. ";
 
+%feature("docstring")  Epetra_FECrsMatrix::SumIntoGlobalValues "int
+Epetra_FECrsMatrix::SumIntoGlobalValues(int numRows, const long long
+*rows, int numCols, const long long *cols, const double *const
+*values, int format=Epetra_FECrsMatrix::ROW_MAJOR) ";
+
 %feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
 Epetra_FECrsMatrix::InsertGlobalValues(int numIndices, const int
 *indices, const double *values, int
@@ -6245,6 +6651,11 @@ format:  Specifies whether the data in 'values' is packed in column-
 major or row-major order. Valid values are
 Epetra_FECrsMatrix::ROW_MAJOR or Epetra_FECrsMatrix::COLUMN_MAJOR.
 This is an optional parameter, default value is COLUMN_MAJOR. ";
+
+%feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
+Epetra_FECrsMatrix::InsertGlobalValues(int numIndices, const long long
+*indices, const double *values, int
+format=Epetra_FECrsMatrix::COLUMN_MAJOR) ";
 
 %feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
 Epetra_FECrsMatrix::InsertGlobalValues(int numRows, const int *rows,
@@ -6276,6 +6687,11 @@ Epetra_FECrsMatrix::ROW_MAJOR or Epetra_FECrsMatrix::COLUMN_MAJOR.
 This is an optional parameter, default value is COLUMN_MAJOR. ";
 
 %feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
+Epetra_FECrsMatrix::InsertGlobalValues(int numRows, const long long
+*rows, int numCols, const long long *cols, const double *values, int
+format=Epetra_FECrsMatrix::COLUMN_MAJOR) ";
+
+%feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
 Epetra_FECrsMatrix::InsertGlobalValues(int numIndices, const int
 *indices, const double *const *values, int
 format=Epetra_FECrsMatrix::ROW_MAJOR)
@@ -6298,6 +6714,11 @@ format:  Specifies whether the data in 'values' is packed in column-
 major or row-major order. Valid values are
 Epetra_FECrsMatrix::ROW_MAJOR or Epetra_FECrsMatrix::COLUMN_MAJOR.
 This is an optional parameter, default value is ROW_MAJOR. ";
+
+%feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
+Epetra_FECrsMatrix::InsertGlobalValues(int numIndices, const long long
+*indices, const double *const *values, int
+format=Epetra_FECrsMatrix::ROW_MAJOR) ";
 
 %feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
 Epetra_FECrsMatrix::InsertGlobalValues(int numRows, const int *rows,
@@ -6325,6 +6746,11 @@ format:  Specifies whether the data in 'values' is packed in column-
 major or row-major order. Valid values are
 Epetra_FECrsMatrix::ROW_MAJOR or Epetra_FECrsMatrix::COLUMN_MAJOR.
 This is an optional parameter, default value is ROW_MAJOR. ";
+
+%feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
+Epetra_FECrsMatrix::InsertGlobalValues(int numRows, const long long
+*rows, int numCols, const long long *cols, const double *const
+*values, int format=Epetra_FECrsMatrix::ROW_MAJOR) ";
 
 %feature("docstring")  Epetra_FECrsMatrix::ReplaceGlobalValues "int
 Epetra_FECrsMatrix::ReplaceGlobalValues(int numIndices, const int
@@ -6352,6 +6778,11 @@ format:  Specifies whether the data in 'values' is packed in column-
 major or row-major order. Valid values are
 Epetra_FECrsMatrix::ROW_MAJOR or Epetra_FECrsMatrix::COLUMN_MAJOR.
 This is an optional parameter, default value is COLUMN_MAJOR. ";
+
+%feature("docstring")  Epetra_FECrsMatrix::ReplaceGlobalValues "int
+Epetra_FECrsMatrix::ReplaceGlobalValues(int numIndices, const long
+long *indices, const double *values, int
+format=Epetra_FECrsMatrix::COLUMN_MAJOR) ";
 
 %feature("docstring")  Epetra_FECrsMatrix::ReplaceGlobalValues "int
 Epetra_FECrsMatrix::ReplaceGlobalValues(int numRows, const int *rows,
@@ -6384,6 +6815,11 @@ Epetra_FECrsMatrix::ROW_MAJOR or Epetra_FECrsMatrix::COLUMN_MAJOR.
 This is an optional parameter, default value is COLUMN_MAJOR. ";
 
 %feature("docstring")  Epetra_FECrsMatrix::ReplaceGlobalValues "int
+Epetra_FECrsMatrix::ReplaceGlobalValues(int numRows, const long long
+*rows, int numCols, const long long *cols, const double *values, int
+format=Epetra_FECrsMatrix::COLUMN_MAJOR) ";
+
+%feature("docstring")  Epetra_FECrsMatrix::ReplaceGlobalValues "int
 Epetra_FECrsMatrix::ReplaceGlobalValues(int numIndices, const int
 *indices, const double *const *values, int
 format=Epetra_FECrsMatrix::ROW_MAJOR)
@@ -6407,6 +6843,11 @@ format:  Specifies whether the data in 'values' is packed in column-
 major or row-major order. Valid values are
 Epetra_FECrsMatrix::ROW_MAJOR or Epetra_FECrsMatrix::COLUMN_MAJOR.
 This is an optional parameter, default value is ROW_MAJOR. ";
+
+%feature("docstring")  Epetra_FECrsMatrix::ReplaceGlobalValues "int
+Epetra_FECrsMatrix::ReplaceGlobalValues(int numIndices, const long
+long *indices, const double *const *values, int
+format=Epetra_FECrsMatrix::ROW_MAJOR) ";
 
 %feature("docstring")  Epetra_FECrsMatrix::ReplaceGlobalValues "int
 Epetra_FECrsMatrix::ReplaceGlobalValues(int numRows, const int *rows,
@@ -6436,6 +6877,11 @@ major or row-major order. Valid values are
 Epetra_FECrsMatrix::ROW_MAJOR or Epetra_FECrsMatrix::COLUMN_MAJOR.
 This is an optional parameter, default value is ROW_MAJOR. ";
 
+%feature("docstring")  Epetra_FECrsMatrix::ReplaceGlobalValues "int
+Epetra_FECrsMatrix::ReplaceGlobalValues(int numRows, const long long
+*rows, int numCols, const long long *cols, const double *const
+*values, int format=Epetra_FECrsMatrix::ROW_MAJOR) ";
+
 %feature("docstring")  Epetra_FECrsMatrix::SumIntoGlobalValues "int
 Epetra_FECrsMatrix::SumIntoGlobalValues(const
 Epetra_IntSerialDenseVector &indices, const Epetra_SerialDenseMatrix
@@ -6453,6 +6899,12 @@ as values.M() and values.N().
 values:  Sub-matrix of coefficients. Must be square.
 
 format:  Optional format specifier, defaults to COLUMN_MAJOR. ";
+
+%feature("docstring")  Epetra_FECrsMatrix::SumIntoGlobalValues "int
+Epetra_FECrsMatrix::SumIntoGlobalValues(const
+Epetra_LongLongSerialDenseVector &indices, const
+Epetra_SerialDenseMatrix &values, int
+format=Epetra_FECrsMatrix::COLUMN_MAJOR) ";
 
 %feature("docstring")  Epetra_FECrsMatrix::SumIntoGlobalValues "int
 Epetra_FECrsMatrix::SumIntoGlobalValues(const
@@ -6477,6 +6929,12 @@ values:  Sub-matrix of coefficients.
 
 format:  Optional format specifier, defaults to COLUMN_MAJOR. ";
 
+%feature("docstring")  Epetra_FECrsMatrix::SumIntoGlobalValues "int
+Epetra_FECrsMatrix::SumIntoGlobalValues(const
+Epetra_LongLongSerialDenseVector &rows, const
+Epetra_LongLongSerialDenseVector &cols, const Epetra_SerialDenseMatrix
+&values, int format=Epetra_FECrsMatrix::COLUMN_MAJOR) ";
+
 %feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
 Epetra_FECrsMatrix::InsertGlobalValues(const
 Epetra_IntSerialDenseVector &indices, const Epetra_SerialDenseMatrix
@@ -6495,6 +6953,12 @@ as values.M() and values.N().
 values:  Sub-matrix of coefficients. Must be square.
 
 format:  Optional format specifier, defaults to COLUMN_MAJOR. ";
+
+%feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
+Epetra_FECrsMatrix::InsertGlobalValues(const
+Epetra_LongLongSerialDenseVector &indices, const
+Epetra_SerialDenseMatrix &values, int
+format=Epetra_FECrsMatrix::COLUMN_MAJOR) ";
 
 %feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
 Epetra_FECrsMatrix::InsertGlobalValues(const
@@ -6519,6 +6983,12 @@ values:  Sub-matrix of coefficients.
 
 format:  Optional format specifier, defaults to COLUMN_MAJOR. ";
 
+%feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
+Epetra_FECrsMatrix::InsertGlobalValues(const
+Epetra_LongLongSerialDenseVector &rows, const
+Epetra_LongLongSerialDenseVector &cols, const Epetra_SerialDenseMatrix
+&values, int format=Epetra_FECrsMatrix::COLUMN_MAJOR) ";
+
 %feature("docstring")  Epetra_FECrsMatrix::ReplaceGlobalValues "int
 Epetra_FECrsMatrix::ReplaceGlobalValues(const
 Epetra_IntSerialDenseVector &indices, const Epetra_SerialDenseMatrix
@@ -6537,6 +7007,12 @@ as values.M() and values.N().
 values:  Sub-matrix of coefficients. Must be square.
 
 format:  Optional format specifier, defaults to COLUMN_MAJOR. ";
+
+%feature("docstring")  Epetra_FECrsMatrix::ReplaceGlobalValues "int
+Epetra_FECrsMatrix::ReplaceGlobalValues(const
+Epetra_LongLongSerialDenseVector &indices, const
+Epetra_SerialDenseMatrix &values, int
+format=Epetra_FECrsMatrix::COLUMN_MAJOR) ";
 
 %feature("docstring")  Epetra_FECrsMatrix::ReplaceGlobalValues "int
 Epetra_FECrsMatrix::ReplaceGlobalValues(const
@@ -6561,9 +7037,16 @@ values:  Sub-matrix of coefficients.
 
 format:  Optional format specifier, defaults to COLUMN_MAJOR. ";
 
+%feature("docstring")  Epetra_FECrsMatrix::ReplaceGlobalValues "int
+Epetra_FECrsMatrix::ReplaceGlobalValues(const
+Epetra_LongLongSerialDenseVector &rows, const
+Epetra_LongLongSerialDenseVector &cols, const Epetra_SerialDenseMatrix
+&values, int format=Epetra_FECrsMatrix::COLUMN_MAJOR) ";
+
 %feature("docstring")  Epetra_FECrsMatrix::GlobalAssemble "int
 Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete=true,
-Epetra_CombineMode combineMode=Add)
+Epetra_CombineMode combineMode=Add, bool
+save_off_and_reuse_map_exporter=false)
 
 Gather any overlapping/shared data into the non-overlapping
 partitioning defined by the Map that was passed to this matrix at
@@ -6592,7 +7075,7 @@ error-code 0 if successful, non-zero if some error occurs ";
 %feature("docstring")  Epetra_FECrsMatrix::GlobalAssemble "int
 Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map &domain_map, const
 Epetra_Map &range_map, bool callFillComplete=true, Epetra_CombineMode
-combineMode=Add)
+combineMode=Add, bool save_off_and_reuse_map_exporter=false)
 
 Gather any overlapping/shared data into the non-overlapping
 partitioning defined by the Map that was passed to this matrix at
@@ -6938,6 +7421,10 @@ Accumulate values into the vector, adding them to any values that
 already exist for the specified indices. ";
 
 %feature("docstring")  Epetra_FEVector::SumIntoGlobalValues "int
+Epetra_FEVector::SumIntoGlobalValues(int numIDs, const long long
+*GIDs, const double *values, int vectorIndex=0) ";
+
+%feature("docstring")  Epetra_FEVector::SumIntoGlobalValues "int
 Epetra_FEVector::SumIntoGlobalValues(const Epetra_IntSerialDenseVector
 &GIDs, const Epetra_SerialDenseVector &values, int vectorIndex=0)
 
@@ -6953,12 +7440,21 @@ list of values.
 values:  List of coefficient values. Must be the same length as the
 accompanying list of GIDs. ";
 
+%feature("docstring")  Epetra_FEVector::SumIntoGlobalValues "int
+Epetra_FEVector::SumIntoGlobalValues(const
+Epetra_LongLongSerialDenseVector &GIDs, const Epetra_SerialDenseVector
+&values, int vectorIndex=0) ";
+
 %feature("docstring")  Epetra_FEVector::ReplaceGlobalValues "int
 Epetra_FEVector::ReplaceGlobalValues(int numIDs, const int *GIDs,
 const double *values, int vectorIndex=0)
 
 Copy values into the vector overwriting any values that already exist
 for the specified indices. ";
+
+%feature("docstring")  Epetra_FEVector::ReplaceGlobalValues "int
+Epetra_FEVector::ReplaceGlobalValues(int numIDs, const long long
+*GIDs, const double *values, int vectorIndex=0) ";
 
 %feature("docstring")  Epetra_FEVector::ReplaceGlobalValues "int
 Epetra_FEVector::ReplaceGlobalValues(const Epetra_IntSerialDenseVector
@@ -6976,13 +7472,28 @@ list of values.
 values:  List of coefficient values. Must be the same length as the
 accompanying list of GIDs. ";
 
+%feature("docstring")  Epetra_FEVector::ReplaceGlobalValues "int
+Epetra_FEVector::ReplaceGlobalValues(const
+Epetra_LongLongSerialDenseVector &GIDs, const Epetra_SerialDenseVector
+&values, int vectorIndex=0) ";
+
 %feature("docstring")  Epetra_FEVector::SumIntoGlobalValues "int
 Epetra_FEVector::SumIntoGlobalValues(int numIDs, const int *GIDs,
 const int *numValuesPerID, const double *values, int vectorIndex=0) ";
 
+%feature("docstring")  Epetra_FEVector::SumIntoGlobalValues "int
+Epetra_FEVector::SumIntoGlobalValues(int numIDs, const long long
+*GIDs, const int *numValuesPerID, const double *values, int
+vectorIndex=0) ";
+
 %feature("docstring")  Epetra_FEVector::ReplaceGlobalValues "int
 Epetra_FEVector::ReplaceGlobalValues(int numIDs, const int *GIDs,
 const int *numValuesPerID, const double *values, int vectorIndex=0) ";
+
+%feature("docstring")  Epetra_FEVector::ReplaceGlobalValues "int
+Epetra_FEVector::ReplaceGlobalValues(int numIDs, const long long
+*GIDs, const int *numValuesPerID, const double *values, int
+vectorIndex=0) ";
 
 %feature("docstring")  Epetra_FEVector::GlobalAssemble "int
 Epetra_FEVector::GlobalAssemble(Epetra_CombineMode mode=Add, bool
@@ -7059,18 +7570,19 @@ Completely deletes a Epetra_Flops object. ";
 // File: classEpetra__HashTable.xml
 %feature("docstring") Epetra_HashTable "";
 
-%feature("docstring")  Epetra_HashTable::Epetra_HashTable "Epetra_HashTable::Epetra_HashTable(const int size, const unsigned int
-seed=(2654435761U)) ";
+%feature("docstring")  Epetra_HashTable::Epetra_HashTable "Epetra_HashTable< value_type >::Epetra_HashTable(const int size, const
+unsigned int seed=(2654435761U)) ";
 
-%feature("docstring")  Epetra_HashTable::Epetra_HashTable "Epetra_HashTable::Epetra_HashTable(const Epetra_HashTable &obj) ";
+%feature("docstring")  Epetra_HashTable::Epetra_HashTable "Epetra_HashTable< value_type >::Epetra_HashTable(const
+Epetra_HashTable &obj) ";
 
-%feature("docstring")  Epetra_HashTable::~Epetra_HashTable "Epetra_HashTable::~Epetra_HashTable() ";
+%feature("docstring")  Epetra_HashTable::~Epetra_HashTable "Epetra_HashTable< value_type >::~Epetra_HashTable() ";
 
-%feature("docstring")  Epetra_HashTable::Add "void
-Epetra_HashTable::Add(const int key, const int value) ";
+%feature("docstring")  Epetra_HashTable::Add "void Epetra_HashTable<
+value_type >::Add(const long long key, const value_type value) ";
 
-%feature("docstring")  Epetra_HashTable::Get "int
-Epetra_HashTable::Get(const int key) ";
+%feature("docstring")  Epetra_HashTable::Get "value_type
+Epetra_HashTable< value_type >::Get(const long long key) ";
 
 
 // File: classEpetra__Import.xml
@@ -7971,6 +8483,9 @@ the multi-vector. ";
 Epetra_IntVector::GlobalLength() const
 
 Returns the global vector length of vectors in the multi-vector. ";
+
+%feature("docstring")  Epetra_IntVector::GlobalLength64 "long long
+Epetra_IntVector::GlobalLength64() const ";
 
 /*  I/O methods  */
 
@@ -9547,6 +10062,12 @@ number of processors.
 
 Pointer to a Epetra_Map object. ";
 
+%feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(unsigned int NumMyElements, int
+IndexBase, const Epetra_Comm &Comm) ";
+
+%feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(long long NumMyElements, int
+IndexBase, const Epetra_Comm &Comm) ";
+
 %feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(const Epetra_LocalMap &map)
 
 Epetra_LocalMap copy constructor. ";
@@ -9554,6 +10075,682 @@ Epetra_LocalMap copy constructor. ";
 %feature("docstring")  Epetra_LocalMap::~Epetra_LocalMap "Epetra_LocalMap::~Epetra_LocalMap()
 
 Epetra_LocalMap destructor. ";
+
+
+// File: classEpetra__LongLongSerialDenseMatrix.xml
+%feature("docstring") Epetra_LongLongSerialDenseMatrix "
+
+Epetra_LongLongSerialDenseMatrix: A class for constructing and using
+general dense integer matrices.
+
+The Epetra_LongLongSerialDenseMatrix class enables the construction
+and use of integer-valued, general dense matrices.
+
+The Epetra_LongLongSerialDenseMatrix class is intended to provide very
+basic support for dense rectangular matrices.
+
+Constructing Epetra_LongLongSerialDenseMatrix Objects
+
+There are four Epetra_LongLongSerialDenseMatrix constructors. The
+first constructs a zero-sized object which should be made to
+appropriate length using the Shape() or Reshape() functions and then
+filled with the [] or () operators. The second constructs an object
+sized to the dimensions specified, which should be filled with the []
+or () operators. The third is a constructor that accepts user data as
+a 2D array, and the fourth is a copy constructor. The third
+constructor has two data access modes (specified by the
+Epetra_DataAccess argument): Copy mode - Allocates memory and makes a
+copy of the user-provided data. In this case, the user data is not
+needed after construction.
+
+View mode - Creates a \"view\" of the user data. In this case, the
+user data is required to remain intact for the life of the object.
+
+WARNING:  View mode is extremely dangerous from a data hiding
+perspective. Therefore, we strongly encourage users to develop code
+using Copy mode first and only use the View mode in a secondary
+optimization phase.  Epetra_LongLongSerialDenseMatrix constructors
+will throw an exception if an error occurrs. These exceptions will
+alway be negative integer values as follows: -1 Invalid dimension
+specified.
+
+-2 Shape returned non-zero.
+
+-3 Null pointer specified for user's data.
+
+-99 Internal Epetra_LongLongSerialDenseMatrix error. Contact
+developer.
+
+Other Epetra_LongLongSerialDenseMatrix functions that do not return an
+integer error code (such as operators () and [] ) will throw an
+exception if an error occurrs. These exceptions will be integer values
+as follows: -1 Invalid row specified.
+
+-2 Invalid column specified.
+
+-5 Invalid assignment (type mismatch).
+
+-99 Internal Epetra_LongLongSerialDenseMatrix error. Contact
+developer.
+
+b Extracting Data from Epetra_LongLongSerialDenseMatrix Objects
+
+Once a Epetra_LongLongSerialDenseMatrix is constructed, it is possible
+to view the data via access functions.
+
+WARNING:  Use of these access functions cam be extremely dangerous
+from a data hiding perspective.  Vector and Utility Functions
+
+Once a Epetra_LongLongSerialDenseMatrix is constructed, several
+mathematical functions can be applied to the object. Specifically:
+Multiplication.
+
+Norms.
+
+C++ includes: Epetra_LongLongSerialDenseMatrix.h ";
+
+/*  Constructor/Destructor Methods  */
+
+%feature("docstring")
+Epetra_LongLongSerialDenseMatrix::Epetra_LongLongSerialDenseMatrix "Epetra_LongLongSerialDenseMatrix::Epetra_LongLongSerialDenseMatrix()
+
+Default constructor; defines a zero size object.
+
+Epetra_LongLongSerialDenseMatrix objects defined by the default
+constructor should be sized with the Shape() or Reshape functions.
+Values should be defined by using the [] or () operators. ";
+
+%feature("docstring")
+Epetra_LongLongSerialDenseMatrix::Epetra_LongLongSerialDenseMatrix "Epetra_LongLongSerialDenseMatrix::Epetra_LongLongSerialDenseMatrix(int
+NumRows, int NumCols)
+
+Shaped constructor; defines a variable-sized object.
+
+Parameters:
+-----------
+
+In:  NumRows - Number of rows in object.
+
+In:  NumCols - Number of columns in object.
+
+Epetra_SerialDenseMatrix objects defined by the shaped constructor are
+already shaped to the dimensions given as a parameters. All values are
+initialized to 0. Calling this constructor is equivalent to using the
+default constructor, and then calling the Shape function on it. Values
+should be defined by using the [] or () operators. ";
+
+%feature("docstring")
+Epetra_LongLongSerialDenseMatrix::Epetra_LongLongSerialDenseMatrix "Epetra_LongLongSerialDenseMatrix::Epetra_LongLongSerialDenseMatrix(Epetra_DataAccess
+CV, long long *A, int LDA, int NumRows, int NumCols)
+
+Set object values from two-dimensional array.
+
+Parameters:
+-----------
+
+In:  Epetra_DataAccess - Enumerated type set to Copy or View.
+
+In:  A - Pointer to an array of integer numbers. The first vector
+starts at A. The second vector starts at A+LDA, the third at A+2*LDA,
+and so on.
+
+In:  LDA - The \"Leading Dimension\", or stride between vectors in
+memory.
+
+In:  NumRows - Number of rows in object.
+
+In:  NumCols - Number of columns in object.
+
+See Detailed Description section for further discussion. ";
+
+%feature("docstring")
+Epetra_LongLongSerialDenseMatrix::Epetra_LongLongSerialDenseMatrix "Epetra_LongLongSerialDenseMatrix::Epetra_LongLongSerialDenseMatrix(const
+Epetra_LongLongSerialDenseMatrix &Source)
+
+Epetra_LongLongSerialDenseMatrix copy constructor.
+
+This matrix will take on the data access mode of the Source matrix. ";
+
+%feature("docstring")
+Epetra_LongLongSerialDenseMatrix::~Epetra_LongLongSerialDenseMatrix "Epetra_LongLongSerialDenseMatrix::~Epetra_LongLongSerialDenseMatrix()
+
+Epetra_LongLongSerialDenseMatrix destructor. ";
+
+/*  Shaping/sizing Methods  */
+
+%feature("docstring")  Epetra_LongLongSerialDenseMatrix::Shape "int
+Epetra_LongLongSerialDenseMatrix::Shape(int NumRows, int NumCols)
+
+Set dimensions of a Epetra_LongLongSerialDenseMatrix object; init
+values to zero.
+
+Parameters:
+-----------
+
+In:  NumRows - Number of rows in object.
+
+In:  NumCols - Number of columns in object.
+
+Allows user to define the dimensions of a
+Epetra_LongLongSerialDenseMatrix at any point. This function can be
+called at any point after construction. Any values that were
+previously in this object are destroyed and the resized matrix starts
+off with all zero values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_LongLongSerialDenseMatrix::Reshape "int
+Epetra_LongLongSerialDenseMatrix::Reshape(int NumRows, int NumCols)
+
+Reshape a Epetra_LongLongSerialDenseMatrix object.
+
+Parameters:
+-----------
+
+In:  NumRows - Number of rows in object.
+
+In:  NumCols - Number of columns in object.
+
+Allows user to define the dimensions of a
+Epetra_LongLongSerialDenseMatrix at any point. This function can be
+called at any point after construction. Any values that were
+previously in this object are copied into the new shape. If the new
+shape is smaller than the original, the upper left portion of the
+original matrix (the principal submatrix) is copied to the new matrix.
+
+Integer error code, set to 0 if successful. ";
+
+/*  Data Accessor methods  */
+
+%feature("docstring")  Epetra_LongLongSerialDenseMatrix::OneNorm "long long Epetra_LongLongSerialDenseMatrix::OneNorm()
+
+Computes the 1-Norm of the this matrix.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_LongLongSerialDenseMatrix::InfNorm "long long Epetra_LongLongSerialDenseMatrix::InfNorm()
+
+Computes the Infinity-Norm of the this matrix. ";
+
+%feature("docstring")  Epetra_LongLongSerialDenseMatrix::Random "int
+Epetra_LongLongSerialDenseMatrix::Random()
+
+Set matrix values to random numbers.
+
+LongLongSerialDenseMatrix uses the random number generator provided by
+Epetra_Util. The matrix values will be set to random values on the
+interval (0, 2^31 - 1).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_LongLongSerialDenseMatrix::M "int
+Epetra_LongLongSerialDenseMatrix::M() const
+
+Returns row dimension of system. ";
+
+%feature("docstring")  Epetra_LongLongSerialDenseMatrix::N "int
+Epetra_LongLongSerialDenseMatrix::N() const
+
+Returns column dimension of system. ";
+
+%feature("docstring")  Epetra_LongLongSerialDenseMatrix::A "const
+long long* Epetra_LongLongSerialDenseMatrix::A() const
+
+Returns const pointer to the this matrix. ";
+
+%feature("docstring")  Epetra_LongLongSerialDenseMatrix::A "long
+long* Epetra_LongLongSerialDenseMatrix::A()
+
+Returns pointer to the this matrix. ";
+
+%feature("docstring")  Epetra_LongLongSerialDenseMatrix::LDA "int
+Epetra_LongLongSerialDenseMatrix::LDA() const
+
+Returns the leading dimension of the this matrix. ";
+
+%feature("docstring")  Epetra_LongLongSerialDenseMatrix::CV "Epetra_DataAccess Epetra_LongLongSerialDenseMatrix::CV() const
+
+Returns the data access mode of the this matrix. ";
+
+/*  I/O methods  */
+
+%feature("docstring")  Epetra_LongLongSerialDenseMatrix::Print "void
+Epetra_LongLongSerialDenseMatrix::Print(ostream &os) const
+
+Print service methods; defines behavior of ostream << operator. ";
+
+/*  Expert-only unsupported methods  */
+
+%feature("docstring")  Epetra_LongLongSerialDenseMatrix::MakeViewOf "int Epetra_LongLongSerialDenseMatrix::MakeViewOf(const
+Epetra_LongLongSerialDenseMatrix &Source)
+
+Reset an existing LongLongSerialDenseMatrix to point to another
+Matrix.
+
+Allows an existing LongLongSerialDenseMatrix to become a View of
+another matrix's data, regardless of the DataAccess mode of the Source
+matrix. It is assumed that the Source matrix is an independent matrix,
+and no checking is done to verify this.
+
+This is used by Epetra_CrsGraph in the OptimizeStorage method. It is
+used so that an existing (Copy) matrix can be converted to a View.
+This frees up memory that CrsGraph no longer needs.
+
+Parameters:
+-----------
+
+Source:  The LongLongSerialDenseMatrix this will become a view of.
+
+Integer error code, set to 0 if successful, and set to -1 if a type
+mismatch occured.
+
+WARNING:  This method is extremely dangerous and should only be used
+by experts. ";
+
+
+// File: classEpetra__LongLongSerialDenseVector.xml
+%feature("docstring") Epetra_LongLongSerialDenseVector "
+
+Epetra_LongLongSerialDenseVector: A class for constructing and using
+dense vectors.
+
+The Epetra_LongLongSerialDenseVector class enables the construction
+and use of integer-valued, dense vectors. It derives from the
+Epetra_LongLongSerialDenseMatrix class.
+
+The Epetra_LongLongSerialDenseVector class is intended to provide
+convenient vector notation but derives all signficant functionality
+from Epetra_LongLongSerialDenseMatrix.
+
+Constructing Epetra_LongLongSerialDenseVector Objects
+
+There are three Epetra_LongLongSerialDenseVector constructors. The
+first constructs a zero-length object which should be made to
+appropriate length using the Size() or Resize() functions and then
+filled with the [] or () operators. The second constructs an object
+sized to the dimension specified, which should be filled with the []
+or () operators. The third is a constructor that accepts user data as
+a 1D array, and the fourth is a copy constructor. The third
+constructor has two data access modes (specified by the
+Epetra_DataAccess argument): Copy mode - Allocates memory and makes a
+copy of the user-provided data. In this case, the user data is not
+needed after construction.
+
+View mode - Creates a \"view\" of the user data. In this case, the
+user data is required to remain intact for the life of the object.
+
+WARNING:  View mode is extremely dangerous from a data hiding
+perspective. Therefore, we strongly encourage users to develop code
+using Copy mode first and only use the View mode in a secondary
+optimization phase.  Extracting Data from
+Epetra_LongLongSerialDenseVector Objects
+
+Once a Epetra_LongLongSerialDenseVector is constructed, it is possible
+to view the data via access functions.
+
+WARNING:  Use of these access functions cam be extremely dangerous
+from a data hiding perspective.
+
+C++ includes: Epetra_LongLongSerialDenseVector.h ";
+
+/*  I/O methods  */
+
+%feature("docstring")  Epetra_LongLongSerialDenseVector::Print "void
+Epetra_LongLongSerialDenseVector::Print(ostream &os) const
+
+Print service methods; defines behavior of ostream << operator. ";
+
+/*  Expert-only unsupported methods  */
+
+%feature("docstring")  Epetra_LongLongSerialDenseVector::MakeViewOf "int Epetra_LongLongSerialDenseVector::MakeViewOf(const
+Epetra_LongLongSerialDenseVector &Source)
+
+Reset an existing LongLongSerialDenseVector to point to another
+Vector.
+
+Allows an existing LongLongSerialDenseVector to become a View of
+another vector's data, regardless of the DataAccess mode of the Source
+vector. It is assumed that the Source vector is an independent vector,
+and no checking is done to verify this.
+
+This is used by Epetra_CrsGraph in the OptimizeStorage method. It is
+used so that an existing (Copy) vector can be converted to a View.
+This frees up memory that CrsGraph no longer needs.
+
+Parameters:
+-----------
+
+Source:  The LongLongSerialDenseVector this will become a view of.
+
+Integer error code, set to 0 if successful.
+
+WARNING:  This method is extremely dangerous and should only be used
+by experts. ";
+
+%feature("docstring")
+Epetra_LongLongSerialDenseVector::Epetra_LongLongSerialDenseVector "Epetra_LongLongSerialDenseVector::Epetra_LongLongSerialDenseVector()
+
+Default constructor; defines a zero size object.
+
+Epetra_LongLongSerialDenseVector objects defined by the default
+constructor should be sized with the Size() or Resize functions.
+Values should be defined by using the [] or () operators. ";
+
+%feature("docstring")
+Epetra_LongLongSerialDenseVector::Epetra_LongLongSerialDenseVector "Epetra_LongLongSerialDenseVector::Epetra_LongLongSerialDenseVector(int
+Length_in)
+
+Sized constructor; defines a variable-sized object.
+
+Parameters:
+-----------
+
+In:  Length - Length of vector.
+
+Epetra_LongLongSerialDenseVector objects defined by the sized
+constructor are already sized to the dimension given as a parameter.
+All values are initialized to 0. Calling this constructor is
+equivalent to using the default constructor, and then calling the Size
+function on it. Values should be defined by using the [] or ()
+operators. ";
+
+%feature("docstring")
+Epetra_LongLongSerialDenseVector::Epetra_LongLongSerialDenseVector "Epetra_LongLongSerialDenseVector::Epetra_LongLongSerialDenseVector(Epetra_DataAccess
+CV_in, long long *Values_in, int Length_in)
+
+Set object values from one-dimensional array.
+
+Parameters:
+-----------
+
+In:  Epetra_DataAccess - Enumerated type set to Copy or View.
+
+In:  Values - Pointer to an array of integer numbers containing the
+values.
+
+In:  Length - Length of vector.
+
+See Detailed Description section for further discussion. ";
+
+%feature("docstring")
+Epetra_LongLongSerialDenseVector::Epetra_LongLongSerialDenseVector "Epetra_LongLongSerialDenseVector::Epetra_LongLongSerialDenseVector(const
+Epetra_LongLongSerialDenseVector &Source)
+
+Epetra_LongLongSerialDenseVector copy constructor. ";
+
+%feature("docstring")  Epetra_LongLongSerialDenseVector::Size "int
+Epetra_LongLongSerialDenseVector::Size(int Length_in)
+
+Set length of a Epetra_LongLongSerialDenseVector object; init values
+to zero.
+
+Parameters:
+-----------
+
+In:  Length - Length of vector object.
+
+Allows user to define the dimension of a
+Epetra_LongLongSerialDenseVector. This function can be called at any
+point after construction. Any values that were previously in this
+object are destroyed and the resized vector starts off with all zero
+values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_LongLongSerialDenseVector::Resize "int
+Epetra_LongLongSerialDenseVector::Resize(int Length_in)
+
+Resize a Epetra_LongLongSerialDenseVector object.
+
+Parameters:
+-----------
+
+In:  Length - Length of vector object.
+
+Allows user to define the dimension of a
+Epetra_LongLongSerialDenseVector. This function can be called at any
+point after construction. Any values that were previously in this
+object are copied into the new size. If the new shape is smaller than
+the original, the first Length values are copied to the new vector.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")
+Epetra_LongLongSerialDenseVector::~Epetra_LongLongSerialDenseVector "Epetra_LongLongSerialDenseVector::~Epetra_LongLongSerialDenseVector()
+
+Epetra_LongLongSerialDenseVector destructor. ";
+
+%feature("docstring")  Epetra_LongLongSerialDenseVector::Random "int
+Epetra_LongLongSerialDenseVector::Random()
+
+Set vector values to random numbers.
+
+LongLongSerialDenseVector uses the random number generator provided by
+Epetra_Util. The vector values will be set to random values on the
+interval (0, 2^31 - 1).
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_LongLongSerialDenseVector::Length "int
+Epetra_LongLongSerialDenseVector::Length() const
+
+Returns length of vector. ";
+
+%feature("docstring")  Epetra_LongLongSerialDenseVector::Values "long
+long* Epetra_LongLongSerialDenseVector::Values()
+
+Returns pointer to the values in vector. ";
+
+%feature("docstring")  Epetra_LongLongSerialDenseVector::Values "const long long* Epetra_LongLongSerialDenseVector::Values() const
+
+Returns const pointer to the values in vector. ";
+
+%feature("docstring")  Epetra_LongLongSerialDenseVector::CV "Epetra_DataAccess Epetra_LongLongSerialDenseVector::CV() const
+
+Returns the data access mode of the this vector. ";
+
+
+// File: classEpetra__LongLongVector.xml
+%feature("docstring") Epetra_LongLongVector "
+
+Epetra_LongLongVector: A class for constructing and using dense
+integer vectors on a parallel computer.
+
+The Epetra_LongLongVector class enables the construction and use of
+integer dense vectors in a distributed memory environment. The
+distribution of the dense vector is determined in part by a
+Epetra_Comm object and a Epetra_Map (or Epetra_LocalMap or
+Epetra_BlockMap).
+
+Distributed Global vs. Replicated Local Distributed Global Vectors -
+In most instances, a multi-vector will be partitioned across multiple
+memory images associated with multiple processors. In this case, there
+is a unique copy of each element and elements are spread across all
+processors specified by the Epetra_Comm communicator.
+
+Replicated Local Vectors - Some algorithms use vectors that are too
+small to be distributed across all processors. Replicated local
+vectors handle these types of situation.
+
+Constructing Epetra_LongLongVectors
+
+There are four Epetra_LongLongVector constructors. The first is a
+basic constructor that allocates space and sets all values to zero,
+the second is a copy constructor. The third and fourth constructors
+work with user data. These constructors have two data access modes:
+Copy mode - Allocates memory and makes a copy of the user-provided
+data. In this case, the user data is not needed after construction.
+
+View mode - Creates a \"view\" of the user data. In this case, the
+user data is required to remain intact for the life of the vector.
+
+WARNING:  View mode is extremely dangerous from a data hiding
+perspective. Therefore, we strongly encourage users to develop code
+using Copy mode first and only use the View mode in a secondary
+optimization phase.  All Epetra_LongLongVector constructors require a
+map argument that describes the layout of elements on the parallel
+machine. Specifically, map is a Epetra_Map, Epetra_LocalMap or
+Epetra_BlockMap object describing the desired memory layout for the
+vector.
+
+There are four different Epetra_LongLongVector constructors: Basic -
+All values are zero.
+
+Copy - Copy an existing vector.
+
+Copy from or make view of user int array.
+
+Extracting Data from Epetra_LongLongVectors
+
+Once a Epetra_LongLongVector is constructed, it is possible to extract
+a copy of the values or create a view of them.
+
+WARNING:  ExtractView functions are extremely dangerous from a data
+hiding perspective. For both ExtractView fuctions, there is a
+corresponding ExtractCopy function. We strongly encourage users to
+develop code using ExtractCopy functions first and only use the
+ExtractView functions in a secondary optimization phase.  There are
+two Extract functions: ExtractCopy - Copy values into a user-provided
+array.
+
+ExtractView - Set user-provided array to point to
+Epetra_LongLongVector data.
+
+WARNING:  A Epetra_Map, Epetra_LocalMap or Epetra_BlockMap object is
+required for all Epetra_LongLongVector constructors.
+
+C++ includes: Epetra_LongLongVector.h ";
+
+/*  Constructors/destructors  */
+
+%feature("docstring")  Epetra_LongLongVector::Epetra_LongLongVector "Epetra_LongLongVector::Epetra_LongLongVector(const Epetra_BlockMap
+&Map, bool zeroOut=true)
+
+Basic Epetra_LongLongVector constuctor.
+
+Creates a Epetra_LongLongVector object and, by default, fills with
+zero values.
+
+Parameters:
+-----------
+
+In:  Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+
+WARNING:  Note that, because Epetra_LocalMap derives from Epetra_Map
+and Epetra_Map derives from Epetra_BlockMap, this constructor works
+for all three types of Epetra map classes.
+
+Parameters:
+-----------
+
+In:  zeroOut - If true then the allocated memory will be zeroed out
+initialy. If false then this memory will not be touched which can be
+significantly faster.
+
+Pointer to a Epetra_LongLongVector. ";
+
+%feature("docstring")  Epetra_LongLongVector::Epetra_LongLongVector "Epetra_LongLongVector::Epetra_LongLongVector(const
+Epetra_LongLongVector &Source)
+
+Epetra_LongLongVector copy constructor. ";
+
+%feature("docstring")  Epetra_LongLongVector::Epetra_LongLongVector "Epetra_LongLongVector::Epetra_LongLongVector(Epetra_DataAccess CV,
+const Epetra_BlockMap &Map, long long *V)
+
+Set vector values from user array.
+
+Parameters:
+-----------
+
+In:  Epetra_DataAccess - Enumerated type set to Copy or View.
+
+In:  Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+
+In:  V - Pointer to an array of long long numbers..
+
+Integer error code, set to 0 if successful.  See Detailed Description
+section for further discussion. ";
+
+%feature("docstring")  Epetra_LongLongVector::~Epetra_LongLongVector "Epetra_LongLongVector::~Epetra_LongLongVector()
+
+Epetra_LongLongVector destructor. ";
+
+/*  Post-construction modification methods  */
+
+%feature("docstring")  Epetra_LongLongVector::PutValue "int
+Epetra_LongLongVector::PutValue(long long Value)
+
+Set all elements of the vector to Value. ";
+
+/*  Extraction methods  */
+
+%feature("docstring")  Epetra_LongLongVector::ExtractCopy "int
+Epetra_LongLongVector::ExtractCopy(long long *V) const
+
+Put vector values into user-provided array.
+
+Parameters:
+-----------
+
+Out:  V - Pointer to memory space that will contain the vector values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_LongLongVector::ExtractView "int
+Epetra_LongLongVector::ExtractView(long long **V) const
+
+Set user-provided address of V.
+
+Parameters:
+-----------
+
+Out:  V - Address of a pointer to that will be set to point to the
+values of the vector.
+
+Integer error code, set to 0 if successful. ";
+
+/*  Mathematical methods  */
+
+%feature("docstring")  Epetra_LongLongVector::MaxValue "long long
+Epetra_LongLongVector::MaxValue()
+
+Find maximum value.
+
+Maximum value across all processors. ";
+
+%feature("docstring")  Epetra_LongLongVector::MinValue "long long
+Epetra_LongLongVector::MinValue()
+
+Find minimum value.
+
+Minimum value across all processors. ";
+
+/*  Overloaded operators  */
+
+/*  Attribute access functions  */
+
+%feature("docstring")  Epetra_LongLongVector::Values "long long*
+Epetra_LongLongVector::Values() const
+
+Returns a pointer to an array containing the values of this vector. ";
+
+%feature("docstring")  Epetra_LongLongVector::MyLength "int
+Epetra_LongLongVector::MyLength() const
+
+Returns the local vector length on the calling processor of vectors in
+the multi-vector. ";
+
+%feature("docstring")  Epetra_LongLongVector::GlobalLength "long long
+Epetra_LongLongVector::GlobalLength() const
+
+Returns the global vector length of vectors in the multi-vector. ";
+
+/*  I/O methods  */
+
+%feature("docstring")  Epetra_LongLongVector::Print "void
+Epetra_LongLongVector::Print(ostream &os) const
+
+Print method. ";
 
 
 // File: classEpetra__Map.xml
@@ -9670,6 +10867,15 @@ number of processors.
 
 Pointer to a Epetra_Map object. ";
 
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(unsigned int NumGlobalElements, int IndexBase,
+const Epetra_Comm &Comm) ";
+
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int IndexBase,
+const Epetra_Comm &Comm) ";
+
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(unsigned long long NumGlobalElements, int
+IndexBase, const Epetra_Comm &Comm) ";
+
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(int NumGlobalElements, int NumMyElements, int
 IndexBase, const Epetra_Comm &Comm)
 
@@ -9698,6 +10904,15 @@ In:  Comm - Epetra_Comm communicator containing information on the
 number of processors.
 
 Pointer to a Epetra_Map object. ";
+
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(unsigned int NumGlobalElements, int
+NumMyElements, int IndexBase, const Epetra_Comm &Comm) ";
+
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int NumMyElements,
+int IndexBase, const Epetra_Comm &Comm) ";
+
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(unsigned long long NumGlobalElements, int
+NumMyElements, int IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(int NumGlobalElements, int NumMyElements, const
 int *MyGlobalElements, int IndexBase, const Epetra_Comm &Comm)
@@ -9735,6 +10950,10 @@ In:  Comm - Epetra_Comm communicator containing information on the
 number of processors.
 
 Pointer to a Epetra_Map object. ";
+
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int NumMyElements,
+const long long *MyGlobalElements, int IndexBase, const Epetra_Comm
+&Comm) ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(const Epetra_Map &map)
 
@@ -10150,6 +11369,26 @@ processors. Must by of size NumProc*Count.
 
 Count:  In On entry, contains the length of the list of MyVals. ";
 
+%feature("docstring")  Epetra_MpiComm::GatherAll "int
+Epetra_MpiComm::GatherAll(long long *MyVals, long long *AllVals, int
+Count) const
+
+Epetra_MpiComm All Gather function.
+
+Take list of input values from all processors in the communicator and
+creates an ordered contiguous list of those values on each processor.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values, to be sent to all
+processors.
+
+AllVals:  Out On exit, contains the list of values from all
+processors. Must by of size NumProc*Count.
+
+Count:  In On entry, contains the length of the list of MyVals. ";
+
 /*  Sum Methods  */
 
 %feature("docstring")  Epetra_MpiComm::SumAll "int
@@ -10195,6 +11434,26 @@ Count:  In On entry, contains the length of the list of values. ";
 %feature("docstring")  Epetra_MpiComm::SumAll "int
 Epetra_MpiComm::SumAll(long *PartialSums, long *GlobalSums, int Count)
 const
+
+Epetra_MpiComm Global Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the sum and returns the sum to all processors.
+
+Parameters:
+-----------
+
+PartialSums:  In On entry, contains the list of values, usually
+partial sums computed locally, to be summed across all processors.
+
+GlobalSums:  Out On exit, contains the list of values summed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiComm::SumAll "int
+Epetra_MpiComm::SumAll(long long *PartialSums, long long *GlobalSums,
+int Count) const
 
 Epetra_MpiComm Global Sum function.
 
@@ -10277,6 +11536,27 @@ all processors.
 
 Count:  In On entry, contains the length of the list of values. ";
 
+%feature("docstring")  Epetra_MpiComm::MaxAll "int
+Epetra_MpiComm::MaxAll(long long *PartialMaxs, long long *GlobalMaxs,
+int Count) const
+
+Epetra_MpiComm Global Max function.
+
+Take list of input values from all processors in the communicator,
+computes the max and returns the max to all processors.
+
+Parameters:
+-----------
+
+PartialMaxs:  In On entry, contains the list of values, usually
+partial maxs computed locally; using these Partial Maxs, the max
+across all processors will be computed.
+
+GlobalMaxs:  Out On exit, contains the list of maxs computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
 %feature("docstring")  Epetra_MpiComm::MinAll "int
 Epetra_MpiComm::MinAll(double *PartialMins, double *GlobalMins, int
 Count) const
@@ -10322,6 +11602,27 @@ Count:  In On entry, contains the length of the list of values. ";
 %feature("docstring")  Epetra_MpiComm::MinAll "int
 Epetra_MpiComm::MinAll(long *PartialMins, long *GlobalMins, int Count)
 const
+
+Epetra_MpiComm Global Min function.
+
+Take list of input values from all processors in the communicator,
+computes the min and returns the min to all processors.
+
+Parameters:
+-----------
+
+PartialMins:  In On entry, contains the list of values, usually
+partial mins computed locally; using these Partial Mins, the min
+across all processors will be computed.
+
+GlobalMins:  Out On exit, contains the list of mins computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiComm::MinAll "int
+Epetra_MpiComm::MinAll(long long *PartialMins, long long *GlobalMins,
+int Count) const
 
 Epetra_MpiComm Global Min function.
 
@@ -10387,6 +11688,28 @@ Count:  In On entry, contains the length of the list of values. ";
 
 %feature("docstring")  Epetra_MpiComm::ScanSum "int
 Epetra_MpiComm::ScanSum(long *MyVals, long *ScanSums, int Count) const
+
+Epetra_MpiComm Scan Sum function.
+
+Take list of input values from all processors in the communicator,
+computes the scan sum and returns it to all processors such that
+processor i contains the sum of values from processor 0 up to and
+including processor i.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be summed across
+all processors.
+
+ScanSums:  Out On exit, contains the list of values summed across
+processors 0 through i.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_MpiComm::ScanSum "int
+Epetra_MpiComm::ScanSum(long long *MyVals, long long *ScanSums, int
+Count) const
 
 Epetra_MpiComm Scan Sum function.
 
@@ -10597,6 +11920,11 @@ data IDs sent by the calling process.
 
 This method allocates the output arrays using new. The caller is
 responsible for deallocating them after use. ";
+
+%feature("docstring")  Epetra_MpiDistributor::CreateFromRecvs "int
+Epetra_MpiDistributor::CreateFromRecvs(const int &NumRemoteIDs, const
+long long *RemoteGIDs, const int *RemotePIDs, bool Deterministic, int
+&NumExportIDs, long long *&ExportGIDs, int *&ExportPIDs) ";
 
 /*  Execute Gather/Scatter Operations  */
 
@@ -11633,6 +12961,10 @@ associated with calling processor set to -1 if VectorIndex >=
 NumVectors(). ";
 
 %feature("docstring")  Epetra_MultiVector::ReplaceGlobalValue "int
+Epetra_MultiVector::ReplaceGlobalValue(long long GlobalRow, int
+VectorIndex, double ScalarValue) ";
+
+%feature("docstring")  Epetra_MultiVector::ReplaceGlobalValue "int
 Epetra_MultiVector::ReplaceGlobalValue(int GlobalBlockRow, int
 BlockRowOffset, int VectorIndex, double ScalarValue)
 
@@ -11661,6 +12993,10 @@ In:  ScalarValue - Value to add to existing value.
 Integer error code, set to 0 if successful, set to 1 if GlobalRow not
 associated with calling processor set to -1 if VectorIndex >=
 NumVectors(), set to -2 if BlockRowOffset is out-of-range. ";
+
+%feature("docstring")  Epetra_MultiVector::ReplaceGlobalValue "int
+Epetra_MultiVector::ReplaceGlobalValue(long long GlobalBlockRow, int
+BlockRowOffset, int VectorIndex, double ScalarValue) ";
 
 %feature("docstring")  Epetra_MultiVector::SumIntoGlobalValue "int
 Epetra_MultiVector::SumIntoGlobalValue(int GlobalRow, int VectorIndex,
@@ -11693,6 +13029,10 @@ associated with calling processor set to -1 if VectorIndex >=
 NumVectors(). ";
 
 %feature("docstring")  Epetra_MultiVector::SumIntoGlobalValue "int
+Epetra_MultiVector::SumIntoGlobalValue(long long GlobalRow, int
+VectorIndex, double ScalarValue) ";
+
+%feature("docstring")  Epetra_MultiVector::SumIntoGlobalValue "int
 Epetra_MultiVector::SumIntoGlobalValue(int GlobalBlockRow, int
 BlockRowOffset, int VectorIndex, double ScalarValue)
 
@@ -11721,6 +13061,10 @@ In:  ScalarValue - Value to add to existing value.
 Integer error code, set to 0 if successful, set to 1 if GlobalRow not
 associated with calling processor set to -1 if VectorIndex >=
 NumVectors(), set to -2 if BlockRowOffset is out-of-range. ";
+
+%feature("docstring")  Epetra_MultiVector::SumIntoGlobalValue "int
+Epetra_MultiVector::SumIntoGlobalValue(long long GlobalBlockRow, int
+BlockRowOffset, int VectorIndex, double ScalarValue) ";
 
 %feature("docstring")  Epetra_MultiVector::ReplaceMyValue "int
 Epetra_MultiVector::ReplaceMyValue(int MyRow, int VectorIndex, double
@@ -12309,6 +13653,9 @@ the multi-vector. ";
 Epetra_MultiVector::GlobalLength() const
 
 Returns the global vector length of vectors in the multi-vector. ";
+
+%feature("docstring")  Epetra_MultiVector::GlobalLength64 "long long
+Epetra_MultiVector::GlobalLength64() const ";
 
 %feature("docstring")  Epetra_MultiVector::Stride "int
 Epetra_MultiVector::Stride() const
@@ -14358,21 +15705,32 @@ int Epetra_RowMatrix::NumGlobalNonzeros() const =0
 
 Returns the number of nonzero entries in the global matrix. ";
 
+%feature("docstring")  Epetra_RowMatrix::NumGlobalNonzeros64 "virtual
+long long Epetra_RowMatrix::NumGlobalNonzeros64() const =0 ";
+
 %feature("docstring")  Epetra_RowMatrix::NumGlobalRows "virtual int
 Epetra_RowMatrix::NumGlobalRows() const =0
 
 Returns the number of global matrix rows. ";
+
+%feature("docstring")  Epetra_RowMatrix::NumGlobalRows64 "virtual
+long long Epetra_RowMatrix::NumGlobalRows64() const =0 ";
 
 %feature("docstring")  Epetra_RowMatrix::NumGlobalCols "virtual int
 Epetra_RowMatrix::NumGlobalCols() const =0
 
 Returns the number of global matrix columns. ";
 
+%feature("docstring")  Epetra_RowMatrix::NumGlobalCols64 "virtual
+long long Epetra_RowMatrix::NumGlobalCols64() const =0 ";
+
 %feature("docstring")  Epetra_RowMatrix::NumGlobalDiagonals "virtual
 int Epetra_RowMatrix::NumGlobalDiagonals() const =0
 
 Returns the number of global nonzero diagonal entries, based on global
 row/column index comparisons. ";
+
+%feature("docstring")  Epetra_RowMatrix::NumGlobalDiagonals64 "virtual long long Epetra_RowMatrix::NumGlobalDiagonals64() const =0 ";
 
 %feature("docstring")  Epetra_RowMatrix::NumMyNonzeros "virtual int
 Epetra_RowMatrix::NumMyNonzeros() const =0
@@ -14745,6 +16103,25 @@ processors. Must by of size NumProc*Count.
 
 Count:  In On entry, contains the length of the list of MyVals. ";
 
+%feature("docstring")  Epetra_SerialComm::GatherAll "int
+Epetra_SerialComm::GatherAll(long long *MyVals, long long *AllVals,
+int Count) const
+
+Epetra_SerialComm All Gather function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values, to be sent to all
+processors.
+
+AllVals:  Out On exit, contains the list of values from all
+processors. Must by of size NumProc*Count.
+
+Count:  In On entry, contains the length of the list of MyVals. ";
+
 /*  Sum Methods  */
 
 %feature("docstring")  Epetra_SerialComm::SumAll "int
@@ -14788,6 +16165,25 @@ Count:  In On entry, contains the length of the list of values. ";
 %feature("docstring")  Epetra_SerialComm::SumAll "int
 Epetra_SerialComm::SumAll(long *PartialSums, long *GlobalSums, int
 Count) const
+
+Epetra_SerialComm Global Sum function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+PartialSums:  In On entry, contains the list of values, usually
+partial sums computed locally, to be summed across all processors.
+
+GlobalSums:  Out On exit, contains the list of values summed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_SerialComm::SumAll "int
+Epetra_SerialComm::SumAll(long long *PartialSums, long long
+*GlobalSums, int Count) const
 
 Epetra_SerialComm Global Sum function.
 
@@ -14866,6 +16262,26 @@ all processors.
 
 Count:  In On entry, contains the length of the list of values. ";
 
+%feature("docstring")  Epetra_SerialComm::MaxAll "int
+Epetra_SerialComm::MaxAll(long long *PartialMaxs, long long
+*GlobalMaxs, int Count) const
+
+Epetra_SerialComm Global Max function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+PartialMaxs:  In On entry, contains the list of values, usually
+partial maxs computed locally; using these Partial Maxs, the max
+across all processors will be computed.
+
+GlobalMaxs:  Out On exit, contains the list of maxs computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
 %feature("docstring")  Epetra_SerialComm::MinAll "int
 Epetra_SerialComm::MinAll(double *PartialMins, double *GlobalMins, int
 Count) const
@@ -14926,6 +16342,26 @@ all processors.
 
 Count:  In On entry, contains the length of the list of values. ";
 
+%feature("docstring")  Epetra_SerialComm::MinAll "int
+Epetra_SerialComm::MinAll(long long *PartialMins, long long
+*GlobalMins, int Count) const
+
+Epetra_SerialComm Global Min function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+PartialMins:  In On entry, contains the list of values, usually
+partial mins computed locally; using these Partial Mins, the min
+across all processors will be computed.
+
+GlobalMins:  Out On exit, contains the list of mins computed across
+all processors.
+
+Count:  In On entry, contains the length of the list of values. ";
+
 /*  Parallel Prefix Methods  */
 
 %feature("docstring")  Epetra_SerialComm::ScanSum "int
@@ -14969,6 +16405,25 @@ Count:  In On entry, contains the length of the list of values. ";
 %feature("docstring")  Epetra_SerialComm::ScanSum "int
 Epetra_SerialComm::ScanSum(long *MyVals, long *ScanSums, int Count)
 const
+
+Epetra_SerialComm Scan Sum function.
+
+A copy for a serial communicator.
+
+Parameters:
+-----------
+
+MyVals:  In On entry, contains the list of values to be summed across
+all processors.
+
+ScanSums:  Out On exit, contains the list of values summed across
+processors 0 through i.
+
+Count:  In On entry, contains the length of the list of values. ";
+
+%feature("docstring")  Epetra_SerialComm::ScanSum "int
+Epetra_SerialComm::ScanSum(long long *MyVals, long long *ScanSums, int
+Count) const
 
 Epetra_SerialComm Scan Sum function.
 
@@ -16682,6 +18137,12 @@ NumExportIDs:  Out Number of IDs that need to be sent from this
 processor.
 
 ExportPIDs:  Out List of processors that will get the exported IDs. ";
+
+%feature("docstring")  Epetra_SerialDistributor::CreateFromRecvs "int
+Epetra_SerialDistributor::CreateFromRecvs(const int &NumRemoteIDs,
+const long long *RemoteGIDs, const int *RemotePIDs, bool
+Deterministic, int &NumExportIDs, long long *&ExportGIDs, int
+*&ExportPIDs) ";
 
 %feature("docstring")  Epetra_SerialDistributor::Do "int
 Epetra_SerialDistributor::Do(char *export_objs, int obj_size, int
@@ -18536,15 +19997,24 @@ Epetra_VbrMatrix::NumGlobalRows() const
 
 Returns the number of global matrix rows. ";
 
+%feature("docstring")  Epetra_VbrMatrix::NumGlobalRows64 "long long
+Epetra_VbrMatrix::NumGlobalRows64() const ";
+
 %feature("docstring")  Epetra_VbrMatrix::NumGlobalCols "int
 Epetra_VbrMatrix::NumGlobalCols() const
 
 Returns the number of global matrix columns. ";
 
+%feature("docstring")  Epetra_VbrMatrix::NumGlobalCols64 "long long
+Epetra_VbrMatrix::NumGlobalCols64() const ";
+
 %feature("docstring")  Epetra_VbrMatrix::NumGlobalNonzeros "int
 Epetra_VbrMatrix::NumGlobalNonzeros() const
 
 Returns the number of nonzero entries in the global matrix. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumGlobalNonzeros64 "long
+long Epetra_VbrMatrix::NumGlobalNonzeros64() const ";
 
 %feature("docstring")  Epetra_VbrMatrix::NumMyBlockRows "int
 Epetra_VbrMatrix::NumMyBlockRows() const
@@ -18581,15 +20051,23 @@ Epetra_VbrMatrix::NumGlobalBlockRows() const
 
 Returns the number of global Block matrix rows. ";
 
+%feature("docstring")  Epetra_VbrMatrix::NumGlobalBlockRows64 "long
+long Epetra_VbrMatrix::NumGlobalBlockRows64() const ";
+
 %feature("docstring")  Epetra_VbrMatrix::NumGlobalBlockCols "int
 Epetra_VbrMatrix::NumGlobalBlockCols() const
 
 Returns the number of global Block matrix columns. ";
 
+%feature("docstring")  Epetra_VbrMatrix::NumGlobalBlockCols64 "long
+long Epetra_VbrMatrix::NumGlobalBlockCols64() const ";
+
 %feature("docstring")  Epetra_VbrMatrix::NumGlobalBlockEntries "int
 Epetra_VbrMatrix::NumGlobalBlockEntries() const
 
 Returns the number of nonzero block entries in the global matrix. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumGlobalBlockEntries64 "long long Epetra_VbrMatrix::NumGlobalBlockEntries64() const ";
 
 %feature("docstring")  Epetra_VbrMatrix::NumGlobalBlockDiagonals "int
 Epetra_VbrMatrix::NumGlobalBlockDiagonals() const
@@ -18597,11 +20075,16 @@ Epetra_VbrMatrix::NumGlobalBlockDiagonals() const
 Returns the number of global nonzero block diagonal entries, based on
 global row/column index comparisions. ";
 
+%feature("docstring")  Epetra_VbrMatrix::NumGlobalBlockDiagonals64 "long long Epetra_VbrMatrix::NumGlobalBlockDiagonals64() const ";
+
 %feature("docstring")  Epetra_VbrMatrix::NumGlobalDiagonals "int
 Epetra_VbrMatrix::NumGlobalDiagonals() const
 
 Returns the number of global nonzero diagonal entries, based on global
 row/column index comparisions. ";
+
+%feature("docstring")  Epetra_VbrMatrix::NumGlobalDiagonals64 "long
+long Epetra_VbrMatrix::NumGlobalDiagonals64() const ";
 
 %feature("docstring")  Epetra_VbrMatrix::NumGlobalBlockEntries "int
 Epetra_VbrMatrix::NumGlobalBlockEntries(int Row) const
@@ -18723,11 +20206,17 @@ Epetra_VbrMatrix::LRID(int GRID_in) const
 Returns the local row index for given global row index, returns -1 if
 no local row for this global row. ";
 
+%feature("docstring")  Epetra_VbrMatrix::LRID "int
+Epetra_VbrMatrix::LRID(long long GRID_in) const ";
+
 %feature("docstring")  Epetra_VbrMatrix::GRID "int
 Epetra_VbrMatrix::GRID(int LRID_in) const
 
 Returns the global row index for give local row index, returns
 IndexBase-1 if we don't have this local row. ";
+
+%feature("docstring")  Epetra_VbrMatrix::GRID64 "long long
+Epetra_VbrMatrix::GRID64(int LRID_in) const ";
 
 %feature("docstring")  Epetra_VbrMatrix::LCID "int
 Epetra_VbrMatrix::LCID(int GCID_in) const
@@ -18735,17 +20224,26 @@ Epetra_VbrMatrix::LCID(int GCID_in) const
 Returns the local column index for given global column index, returns
 -1 if no local column for this global column. ";
 
+%feature("docstring")  Epetra_VbrMatrix::LCID "int
+Epetra_VbrMatrix::LCID(long long GCID_in) const ";
+
 %feature("docstring")  Epetra_VbrMatrix::GCID "int
 Epetra_VbrMatrix::GCID(int LCID_in) const
 
 Returns the global column index for give local column index, returns
 IndexBase-1 if we don't have this local column. ";
 
+%feature("docstring")  Epetra_VbrMatrix::GCID64 "long long
+Epetra_VbrMatrix::GCID64(int LCID_in) const ";
+
 %feature("docstring")  Epetra_VbrMatrix::MyGRID "bool
 Epetra_VbrMatrix::MyGRID(int GRID_in) const
 
 Returns true if the GRID passed in belongs to the calling processor in
 this map, otherwise returns false. ";
+
+%feature("docstring")  Epetra_VbrMatrix::MyGRID "bool
+Epetra_VbrMatrix::MyGRID(long long GRID_in) const ";
 
 %feature("docstring")  Epetra_VbrMatrix::MyLRID "bool
 Epetra_VbrMatrix::MyLRID(int LRID_in) const
@@ -18759,6 +20257,9 @@ Epetra_VbrMatrix::MyGCID(int GCID_in) const
 Returns true if the GCID passed in belongs to the calling processor in
 this map, otherwise returns false. ";
 
+%feature("docstring")  Epetra_VbrMatrix::MyGCID "bool
+Epetra_VbrMatrix::MyGCID(long long GCID_in) const ";
+
 %feature("docstring")  Epetra_VbrMatrix::MyLCID "bool
 Epetra_VbrMatrix::MyLCID(int LCID_in) const
 
@@ -18770,6 +20271,9 @@ Epetra_VbrMatrix::MyGlobalBlockRow(int GID) const
 
 Returns true of GID is owned by the calling processor, otherwise it
 returns false. ";
+
+%feature("docstring")  Epetra_VbrMatrix::MyGlobalBlockRow "bool
+Epetra_VbrMatrix::MyGlobalBlockRow(long long GID) const ";
 
 /*  I/O Methods  */
 
@@ -19376,6 +20880,10 @@ In:  Indices - Indices in global index space corresponding to Values.
 Integer error code, set to 0 if successful, set to 1 if one or more
 indices are not associated with calling processor. ";
 
+%feature("docstring")  Epetra_Vector::ReplaceGlobalValues "int
+Epetra_Vector::ReplaceGlobalValues(int NumEntries, const double
+*Values, const long long *Indices) ";
+
 %feature("docstring")  Epetra_Vector::ReplaceMyValues "int
 Epetra_Vector::ReplaceMyValues(int NumEntries, const double *Values,
 const int *Indices)
@@ -19636,6 +21144,38 @@ WARNING:  This method is extremely dangerous and should only be used
 by experts. ";
 
 
+// File: structEpetra__CrsGraphData_1_1IndexData_3_01int_01_4.xml
+%feature("docstring") Epetra_CrsGraphData::IndexData< int > " ";
+
+%feature("docstring")  Epetra_CrsGraphData::IndexData< int
+>::IndexData " Epetra_CrsGraphData::IndexData< int >::IndexData(int
+NumMyBlockRows, bool AllocSorted) ";
+
+%feature("docstring")  Epetra_CrsGraphData::IndexData< int >::Allocate
+" void Epetra_CrsGraphData::IndexData< int >::Allocate(int
+NumMyBlockRows, bool AllocSorted) ";
+
+%feature("docstring")  Epetra_CrsGraphData::IndexData< int
+>::Deallocate " void Epetra_CrsGraphData::IndexData< int
+>::Deallocate() ";
+
+
+// File: structEpetra__CrsGraphData_1_1IndexData_3_01long_01long_01_4.xml
+%feature("docstring") Epetra_CrsGraphData::IndexData< long long > " ";
+
+%feature("docstring")  Epetra_CrsGraphData::IndexData< long long
+>::IndexData " Epetra_CrsGraphData::IndexData< long long
+>::IndexData(int NumMyBlockRows, bool AllocSorted) ";
+
+%feature("docstring")  Epetra_CrsGraphData::IndexData< long long
+>::Allocate " void Epetra_CrsGraphData::IndexData< long long
+>::Allocate(int NumMyBlockRows, bool AllocSorted) ";
+
+%feature("docstring")  Epetra_CrsGraphData::IndexData< long long
+>::Deallocate " void Epetra_CrsGraphData::IndexData< long long
+>::Deallocate() ";
+
+
 // File: structEpetra__MapColoring_1_1ListItem.xml
 
 
@@ -19851,14 +21391,31 @@ epetra_map_create3(EPETRA_INT numGlobalElements, EPETRA_INT
 numLocalElements, int *updateList, EPETRA_INT indexBase,
 EPETRA_OBJECT_REF comm) ";
 
+%feature("docstring")  epetra_map_create1_64 "EPETRA_OBJECT_PTR
+MANGLE() epetra_map_create1_64(EPETRA_LONG_LONG numGlobalElements,
+EPETRA_INT indexBase, EPETRA_OBJECT_REF comm) ";
+
+%feature("docstring")  epetra_map_create2_64 "EPETRA_OBJECT_PTR
+MANGLE() epetra_map_create2_64(EPETRA_LONG_LONG numGlobalElements,
+EPETRA_INT numMyElements, EPETRA_INT indexBase, EPETRA_OBJECT_REF
+comm) ";
+
+%feature("docstring")  epetra_map_create3_64 "EPETRA_OBJECT_PTR
+MANGLE() epetra_map_create3_64(EPETRA_LONG_LONG numGlobalElements,
+EPETRA_INT numLocalElements, long long *updateList, EPETRA_INT
+indexBase, EPETRA_OBJECT_REF comm) ";
+
 %feature("docstring")  epetra_map_nummyelements "int MANGLE()
 epetra_map_nummyelements(EPETRA_OBJECT_REF map) ";
 
-%feature("docstring")  epetra_map_numglobalelements "int MANGLE()
-epetra_map_numglobalelements(EPETRA_OBJECT_REF map) ";
+%feature("docstring")  epetra_map_numglobalelements "long long
+MANGLE() epetra_map_numglobalelements(EPETRA_OBJECT_REF map) ";
 
 %feature("docstring")  epetra_map_myglobalelements "int* MANGLE()
 epetra_map_myglobalelements(EPETRA_OBJECT_REF map) ";
+
+%feature("docstring")  epetra_map_myglobalelements_64 "long long*
+MANGLE() epetra_map_myglobalelements_64(EPETRA_OBJECT_REF map) ";
 
 %feature("docstring")  epetra_map_comm "EPETRA_OBJECT_PTR MANGLE()
 epetra_map_comm(EPETRA_OBJECT_REF map) ";
@@ -19932,14 +21489,31 @@ epetra_map_create3(EPETRA_INT numGlobalEquations, EPETRA_INT
 numlocalEquations, int *updateList, EPETRA_INT indexBase,
 EPETRA_OBJECT_REF comm) ";
 
+%feature("docstring")  epetra_map_create1_64 "EPETRA_OBJECT_PTR
+MANGLE() epetra_map_create1_64(EPETRA_LONG_LONG numGlobalEquations,
+EPETRA_INT indexBase, EPETRA_OBJECT_REF comm) ";
+
+%feature("docstring")  epetra_map_create2_64 "EPETRA_OBJECT_PTR
+MANGLE() epetra_map_create2_64(EPETRA_LONG_LONG numGlobalEquations,
+EPETRA_INT numMyElements, EPETRA_INT indexBase, EPETRA_OBJECT_REF
+comm) ";
+
+%feature("docstring")  epetra_map_create3_64 "EPETRA_OBJECT_PTR
+MANGLE() epetra_map_create3_64(EPETRA_LONG_LONG numGlobalEquations,
+EPETRA_INT numlocalEquations, long long *updateList, EPETRA_INT
+indexBase, EPETRA_OBJECT_REF comm) ";
+
 %feature("docstring")  epetra_map_nummyelements "int MANGLE()
 epetra_map_nummyelements(EPETRA_OBJECT_REF map) ";
 
-%feature("docstring")  epetra_map_numglobalelements "int MANGLE()
-epetra_map_numglobalelements(EPETRA_OBJECT_REF map) ";
+%feature("docstring")  epetra_map_numglobalelements "long long
+MANGLE() epetra_map_numglobalelements(EPETRA_OBJECT_REF map) ";
 
 %feature("docstring")  epetra_map_myglobalelements "int* MANGLE()
 epetra_map_myglobalelements(EPETRA_OBJECT_REF map) ";
+
+%feature("docstring")  epetra_map_myglobalelements_64 "long long*
+MANGLE() epetra_map_myglobalelements_64(EPETRA_OBJECT_REF map) ";
 
 %feature("docstring")  epetra_map_comm "EPETRA_OBJECT_PTR MANGLE()
 epetra_map_comm(EPETRA_OBJECT_REF map) ";
@@ -20587,6 +22161,24 @@ uplo, Epetra_fcd trans, Epetra_fcd diag, const int *n, const int
 // File: Epetra__LocalMap_8h.xml
 
 
+// File: Epetra__LongLongSerialDenseMatrix_8cpp.xml
+
+
+// File: Epetra__LongLongSerialDenseMatrix_8h.xml
+
+
+// File: Epetra__LongLongSerialDenseVector_8cpp.xml
+
+
+// File: Epetra__LongLongSerialDenseVector_8h.xml
+
+
+// File: Epetra__LongLongVector_8cpp.xml
+
+
+// File: Epetra__LongLongVector_8h.xml
+
+
 // File: Epetra__Map_8cpp.xml
 
 
@@ -20763,7 +22355,7 @@ uplo, Epetra_fcd trans, Epetra_fcd diag, const int *n, const int
 
 // File: Epetra__Util_8cpp.xml
 %feature("docstring")  Epetra_Util_binary_search "int
-Epetra_Util_binary_search(int item, const int *list, int len, int
+Epetra_Util_binary_search(T item, const T *list, int len, int
 &insertPoint)
 
 Utility function to perform a binary-search on a list of data.
@@ -20784,6 +22376,14 @@ which item should be inserted in list such that order (sortedness)
 would be maintained.
 
 offset Location in list at which item was found. -1 if not found. ";
+
+%feature("docstring")  Epetra_Util_binary_search "int
+Epetra_Util_binary_search(int item, const int *list, int len, int
+&insertPoint) ";
+
+%feature("docstring")  Epetra_Util_binary_search "int
+Epetra_Util_binary_search(long long item, const long long *list, int
+len, int &insertPoint) ";
 
 %feature("docstring")  Epetra_Util_ExtractHbData "int
 Epetra_Util_ExtractHbData(Epetra_CrsMatrix *A, Epetra_MultiVector
@@ -20842,8 +22442,9 @@ ldrhs:  (Out) Stride between columns of lhs. ";
 
 
 // File: Epetra__Util_8h.xml
-%feature("docstring")  Epetra_Util_binary_search "EPETRA_LIB_DLL_EXPORT int Epetra_Util_binary_search(int item, const
-int *list, int len, int &insertPoint)
+%feature("docstring")  Epetra_Util_binary_search "int
+Epetra_Util_binary_search(T item, const T *list, int len, int
+&insertPoint)
 
 Utility function to perform a binary-search on a list of data.
 Important assumption: data is assumed to be sorted.
@@ -20863,6 +22464,12 @@ which item should be inserted in list such that order (sortedness)
 would be maintained.
 
 offset Location in list at which item was found. -1 if not found. ";
+
+%feature("docstring")  Epetra_Util_binary_search "EPETRA_LIB_DLL_EXPORT int Epetra_Util_binary_search(int item, const
+int *list, int len, int &insertPoint) ";
+
+%feature("docstring")  Epetra_Util_binary_search "EPETRA_LIB_DLL_EXPORT int Epetra_Util_binary_search(long long item,
+const long long *list, int len, int &insertPoint) ";
 
 %feature("docstring")  Epetra_Util_insert_empty_positions "int
 Epetra_Util_insert_empty_positions(T *&array, int &usedLength, int

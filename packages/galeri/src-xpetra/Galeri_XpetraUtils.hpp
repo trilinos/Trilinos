@@ -2,8 +2,8 @@
 //
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//           Galeri: Finite Element and Matrix Generation Package
+//                 Copyright (2006) ETHZ/Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -46,19 +46,19 @@
 /*
   Direct translation of Galeri coordinate generator.
 */
-#ifndef MUELU_GALLERYUTILS_HPP
-#define MUELU_GALLERYUTILS_HPP
+#ifndef GALERI_XPETRAUTILS_HPP
+#define GALERI_XPETRAUTILS_HPP
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Assert.hpp"
 
-#include "MueLu_VectorTraits.hpp"
+#include "Galeri_XpetraVectorTraits.hpp"
 
 #include <iostream>
 
-namespace MueLu {
-  
-  class GalleryUtils {
+namespace Galeri {
+  namespace Xpetra {
+  class Utils {
 
     public:
 
@@ -66,7 +66,7 @@ namespace MueLu {
     static Teuchos::RCP<MultiVector>
     CreateCartesianCoordinates(std::string const &coordType, RCP<const Map> const & map, Teuchos::ParameterList& list)
     {
-      using MueLu::Gallery::VectorTraits;
+      using Galeri::Xpetra::VectorTraits;
 
       Teuchos::RCP<MultiVector> coordinates;
 
@@ -87,7 +87,7 @@ namespace MueLu {
 
       if (coordType == "1D") {
         coordinates = VectorTraits<Map,MultiVector>::Build(map,1,false);
-        Teuchos::ArrayRCP<ArrayRCP<Scalar> > Coord(1);
+        Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > Coord(1);
         Coord[0] = coordinates->getDataNonConst(0);
 
         delta_x = lx / (nx - 1);
@@ -100,7 +100,7 @@ namespace MueLu {
       } else if (coordType == "2D") {
 
         coordinates = VectorTraits<Map,MultiVector>::Build(map,2,false);
-        Teuchos::ArrayRCP<ArrayRCP<Scalar> > Coord(2);
+        Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > Coord(2);
         Coord[0] = coordinates->getDataNonConst(0);
         Coord[1] = coordinates->getDataNonConst(1);
 
@@ -119,7 +119,7 @@ namespace MueLu {
       } else if (coordType == "3D") {
 
         coordinates = VectorTraits<Map,MultiVector>::Build(map,3,false);
-        Teuchos::ArrayRCP<ArrayRCP<Scalar> > Coord(3);
+        Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > Coord(3);
         Coord[0] = coordinates->getDataNonConst(0);
         Coord[1] = coordinates->getDataNonConst(1);
         Coord[2] = coordinates->getDataNonConst(2);
@@ -143,7 +143,7 @@ namespace MueLu {
 
       } else {
 
-        throw(std::runtime_error("in MueLu::GalleryUtils : `coordType' has incorrect value (" + coordType + ")"));
+        throw(std::runtime_error("in Galeri::Xpetra::Utils : `coordType' has incorrect value (" + coordType + ")"));
 
       } //if (coordType == ...
 
@@ -151,9 +151,8 @@ namespace MueLu {
 
     } // CreateCartesianCoordinates()
 
-  }; // class GalleryUtils
-} // namespace MueLu
+  }; // class Utils
+  } // namespace Xpetra
+} // namespace Galeri
 
-#define MUELU_GALLERYUTILS_SHORT
-
-#endif //ifndef MUELU_GALLERYUTILS_HPP
+#endif //ifndef GALERI_XPETRAUTILS_HPP

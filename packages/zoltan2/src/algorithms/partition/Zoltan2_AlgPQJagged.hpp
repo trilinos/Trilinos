@@ -2813,7 +2813,7 @@ void AlgPQJagged(
   }
 
   env->timerStart(MACRO_TIMERS, "PQJagged Solution_Part_Assignment");
-  solution->setParts(gnoList, partId);
+  solution->setParts(gnoList, partId, true);
   env->timerStop(MACRO_TIMERS, "PQJagged Solution_Part_Assignment");
 
 

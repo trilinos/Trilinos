@@ -3232,7 +3232,7 @@ SUPERLUDIST only works with square matrices. ";
 %feature("docstring")  Amesos_Superludist::UseTranspose "bool
 Amesos_Superludist::UseTranspose() const
 
-Always returns true. ";
+Always returns false. Superludist doesn't support transpose solve. ";
 
 %feature("docstring")  Amesos_Superludist::SetParameters "int
 Amesos_Superludist::SetParameters(Teuchos::ParameterList
@@ -3661,6 +3661,25 @@ int Amesos_TestRowMatrix::NumGlobalCols() const
 Returns the number of global matrix columns. ";
 
 %feature("docstring")  Amesos_TestRowMatrix::NumGlobalDiagonals "virtual int Amesos_TestRowMatrix::NumGlobalDiagonals() const
+
+Returns the number of global nonzero diagonal entries, based on global
+row/column index comparisons. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::NumGlobalNonzeros64 "virtual long long Amesos_TestRowMatrix::NumGlobalNonzeros64() const
+
+Returns the number of nonzero entries in the global matrix. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::NumGlobalRows64 "virtual
+long long Amesos_TestRowMatrix::NumGlobalRows64() const
+
+Returns the number of global matrix rows. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::NumGlobalCols64 "virtual
+long long Amesos_TestRowMatrix::NumGlobalCols64() const
+
+Returns the number of global matrix columns. ";
+
+%feature("docstring")  Amesos_TestRowMatrix::NumGlobalDiagonals64 "virtual long long Amesos_TestRowMatrix::NumGlobalDiagonals64() const
 
 Returns the number of global nonzero diagonal entries, based on global
 row/column index comparisons. ";

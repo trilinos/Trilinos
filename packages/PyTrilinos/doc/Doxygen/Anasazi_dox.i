@@ -3951,14 +3951,33 @@ This method calls ";
 // File: classAnasazi_1_1MultiVec.xml
 %feature("docstring") Anasazi::MultiVec "
 
-Anasazi's templated virtual class for constructing a multi-vector that
-can interface with the MultiVecTraits class used by the eigensolvers.
-
-A concrete implementation of this class is necessary. The user can
-create their own implementation if those supplied are not suitable for
-their needs.
+Interface for multivectors used by Anasazi's linear solvers.
 
 Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
+
+Parameters:
+-----------
+
+ScalarType:  The type of entries of the multivector.
+
+Anasazi accesses multivectors through a traits interface called
+MultiVecTraits. If you want to use Anasazi with your own multivector
+class MV, you may either specialize MultiVecTraits for MV, or you may
+wrap MV in your own class that implements MultiVec. Specializing
+MultiVecTraits works via compile-time polymorphism, whereas
+implementing the MultiVec interface works via run-time polymorphism.
+You may pick whichever option you like. However, specializing
+MultiVecTraits is the preferred method. This is because Anasazi's
+linear solvers always use a specialization of MultiVecTraits to access
+multivector operations. They only use MultiVec through a
+specialization of the MultiVecTraits traits class, which is
+implemented below in this header file.
+
+If you want your multivector class (or a wrapper thereof) to implement
+the MultiVec interface, you should inherit from MultiVec<ScalarType>,
+where ScalarType is the type of entries in the multivector. For
+example, a multivector with entries of type double would inherit from
+MultiVec<double>.
 
 C++ includes: AnasaziMultiVec.hpp ";
 
@@ -3966,12 +3985,12 @@ C++ includes: AnasaziMultiVec.hpp ";
 
 %feature("docstring")  Anasazi::MultiVec::MultiVec "Anasazi::MultiVec< ScalarType >::MultiVec()
 
-Anasazi::MultiVec constructor. ";
+Default constructor. ";
 
 %feature("docstring")  Anasazi::MultiVec::~MultiVec "virtual
 Anasazi::MultiVec< ScalarType >::~MultiVec()
 
-Anasazi::MultiVec destructor. ";
+Destructor (virtual for memory safety of derived classes). ";
 
 /*  Creation methods  */
 
@@ -3979,16 +3998,15 @@ Anasazi::MultiVec destructor. ";
 MultiVec<ScalarType>* Anasazi::MultiVec< ScalarType >::Clone(const int
 numvecs) const =0
 
-Creates a new empty Anasazi::MultiVec containing numvecs columns.
+Create a new MultiVec with numvecs columns.
 
-Pointer to the new multivector ";
+Pointer to the new multivector with uninitialized values. ";
 
 %feature("docstring")  Anasazi::MultiVec::CloneCopy "virtual
 MultiVec<ScalarType>* Anasazi::MultiVec< ScalarType >::CloneCopy()
 const =0
 
-Creates a new Anasazi::MultiVec and copies contents of *this into the
-new vector (deep copy).
+Create a new MultiVec and copy contents of *this into it (deep copy).
 
 Pointer to the new multivector ";
 
@@ -4002,16 +4020,6 @@ are indicated by the index.size() indices in index.
 
 Pointer to the new multivector ";
 
-%feature("docstring")  Anasazi::MultiVec::CloneView "virtual const
-MultiVec<ScalarType>* Anasazi::MultiVec< ScalarType >::CloneView(const
-std::vector< int > &index) const =0
-
-Creates a new Anasazi::MultiVec that shares the selected contents of
-*this. The index of the numvecs vectors shallow copied from *this are
-indicated by the indices given in index.
-
-Pointer to the new multivector ";
-
 %feature("docstring")  Anasazi::MultiVec::CloneViewNonConst "virtual
 MultiVec<ScalarType>* Anasazi::MultiVec< ScalarType
 >::CloneViewNonConst(const std::vector< int > &index)=0
@@ -4022,17 +4030,27 @@ indicated by the indices given in index.
 
 Pointer to the new multivector ";
 
-/*  Attribute methods  */
+%feature("docstring")  Anasazi::MultiVec::CloneView "virtual const
+MultiVec<ScalarType>* Anasazi::MultiVec< ScalarType >::CloneView(const
+std::vector< int > &index) const =0
+
+Creates a new Anasazi::MultiVec that shares the selected contents of
+*this. The index of the numvecs vectors shallow copied from *this are
+indicated by the indices given in index.
+
+Pointer to the new multivector ";
+
+/*  Dimension information methods  */
 
 %feature("docstring")  Anasazi::MultiVec::GetVecLength "virtual int
 Anasazi::MultiVec< ScalarType >::GetVecLength() const =0
 
-Obtain the vector length of *this. ";
+The number of rows in the multivector. ";
 
 %feature("docstring")  Anasazi::MultiVec::GetNumberVecs "virtual int
 Anasazi::MultiVec< ScalarType >::GetNumberVecs() const =0
 
-Obtain the number of vectors in *this. ";
+The number of vectors (i.e., columns) in the multivector. ";
 
 /*  Update methods  */
 
@@ -4050,6 +4068,17 @@ MultiVec< ScalarType > &A, ScalarType beta, const MultiVec< ScalarType
 
 Replace *this with alpha * A + beta * B. ";
 
+%feature("docstring")  Anasazi::MultiVec::MvScale "virtual void
+Anasazi::MultiVec< ScalarType >::MvScale(ScalarType alpha)=0
+
+Scale each element of the vectors in *this with alpha. ";
+
+%feature("docstring")  Anasazi::MultiVec::MvScale "virtual void
+Anasazi::MultiVec< ScalarType >::MvScale(const std::vector< ScalarType
+> &alpha)=0
+
+Scale each element of the i-th vector in *this with alpha[i]. ";
+
 %feature("docstring")  Anasazi::MultiVec::MvTransMv "virtual void
 Anasazi::MultiVec< ScalarType >::MvTransMv(ScalarType alpha, const
 MultiVec< ScalarType > &A, Teuchos::SerialDenseMatrix< int, ScalarType
@@ -4062,9 +4091,11 @@ A^T * ( *this). ";
 Anasazi::MultiVec< ScalarType >::MvDot(const MultiVec< ScalarType >
 &A, std::vector< ScalarType > &b) const =0
 
-Compute a vector b where the components are the individual dot-
-products, i.e. b[i] = A[i]^H* this[i] where A[i] is the i-th column of
-A. ";
+Compute the dot product of each column of *this with the corresponding
+column of A.
+
+Compute a vector b whose entries are the individual dot-products. That
+is, b[i] = A[i]^H * (*this)[i] where A[i] is the i-th column of A. ";
 
 /*  Norm method  */
 
@@ -4073,8 +4104,13 @@ Anasazi::MultiVec< ScalarType >::MvNorm(std::vector< typename
 Teuchos::ScalarTraits< ScalarType >::magnitudeType > &normvec) const
 =0
 
-Compute the 2-norm of each individual vector of *this. Upon return,
-normvec[i] holds the 2-norm of the i-th vector of *this. ";
+Compute the 2-norm of each vector in *this.
+
+Parameters:
+-----------
+
+normvec:  [out] On output, normvec[i] holds the 2-norm of the i-th
+vector of *this. ";
 
 /*  Initialization methods  */
 
@@ -4082,25 +4118,15 @@ normvec[i] holds the 2-norm of the i-th vector of *this. ";
 Anasazi::MultiVec< ScalarType >::SetBlock(const MultiVec< ScalarType >
 &A, const std::vector< int > &index)=0
 
-Copy the vectors in A to a set of vectors in *this. The numvecs
-vectors in A are copied to a subset of vectors in *this indicated by
-the indices given in index. ";
+Copy the vectors in A to a set of vectors in *this.
 
-%feature("docstring")  Anasazi::MultiVec::MvScale "virtual void
-Anasazi::MultiVec< ScalarType >::MvScale(ScalarType alpha)=0
-
-Scale each element of the vectors in *this with alpha. ";
-
-%feature("docstring")  Anasazi::MultiVec::MvScale "virtual void
-Anasazi::MultiVec< ScalarType >::MvScale(const std::vector< ScalarType
-> &alpha)=0
-
-Scale each element of the i-th vector in *this with alpha[i]. ";
+The numvecs vectors in A are copied to a subset of vectors in *this
+indicated by the indices given in index. ";
 
 %feature("docstring")  Anasazi::MultiVec::MvRandom "virtual void
 Anasazi::MultiVec< ScalarType >::MvRandom()=0
 
-Fill the vectors in *this with random numbers. ";
+Fill all the vectors in *this with random numbers. ";
 
 %feature("docstring")  Anasazi::MultiVec::MvInit "virtual void
 Anasazi::MultiVec< ScalarType >::MvInit(ScalarType alpha)=0
@@ -4118,11 +4144,48 @@ Print *this multivector to the os output stream. ";
 // File: classAnasazi_1_1MultiVecTraits.xml
 %feature("docstring") Anasazi::MultiVecTraits "
 
-Virtual base class which defines basic traits for the multi-vector
-type.
+Traits class which defines basic operations on multivectors.
 
-An adapter for this traits class must exist for the MV type. If not,
-this class will produce a compile-time error.
+Parameters:
+-----------
+
+ScalarType:  The type of the entries in the multivectors.
+
+MV:  The type of the multivectors themselves.
+
+This traits class tells Anasazi's solvers how to perform multivector
+operations for the multivector type MV. These operations include
+creating copies or views, finding the number of rows or columns (i.e.,
+vectors) in a given multivector, and computing inner products, norms,
+and vector sums. (Anasazi's solvers use the OperatorTraits traits
+class to apply operators to multivectors.)
+
+Anasazi gives users two different ways to tell its solvers how to
+compute with multivectors of a given type MV. The first and preferred
+way is for users to specialize MultiVecTraits, this traits class, for
+their given MV type. Anasazi provides specializations for MV =
+Epetra_MultiVector, Tpetra::MultiVector, and Thyra::MultiVectorBase.
+The second way is for users to make their multivector type (or a
+wrapper thereof) inherit from MultiVec. This works because Anasazi
+provides a specialization of MultiVecTraits for MultiVec. Specializing
+MultiVecTraits is more flexible because it does not require a
+multivector type to inherit from MultiVec; this is possible even if
+you do not have control over the interface of a class.
+
+If you have a different multivector type MV that you would like to use
+with Anasazi, and if that type does not inherit from MultiVec, then
+you must implement a specialization of MultiVecTraits for MV.
+Otherwise, this traits class will report a compile-time error
+(relating to UndefinedMultiVecTraits). Specializing MultiVecTraits for
+your MV type is not hard. Just look at the examples for
+Epetra_MultiVector (in anasazi/epetra/src/AnasaziEpetraAdapter.hpp)
+and Tpetra::MultiVector (in
+anasazi/tpetra/src/AnasaziTpetraAdapter.hpp).
+
+You do not need to write a specialization of MultiVecTraits if you are
+using Epetra, Tpetra, or Thyra multivectors. Anasazi already provides
+specializations for these types. Just relax and enjoy using the
+solvers!
 
 C++ includes: AnasaziMultiVecTraits.hpp ";
 
@@ -4364,12 +4427,17 @@ Print the mv multi-vector to the os output stream. ";
 %feature("docstring") Anasazi::MultiVecTraits< ScalarType, MultiVec<
 ScalarType > > "
 
-Template specialization of Anasazi::MultiVecTraits class using the
-Anasazi::MultiVec virtual base class.
+Specialization of MultiVecTraits for Belos::MultiVec.
 
-Any class that inherits from Anasazi::MultiVec will be accepted by the
-Anasazi templated solvers due to this interface to the
-Anasazi::MultiVecTraits class.
+Anasazi interfaces to every multivector implementation through a
+specialization of MultiVecTraits. Thus, we provide a specialization of
+MultiVecTraits for the MultiVec run-time polymorphic interface above.
+
+Parameters:
+-----------
+
+ScalarType:  The type of entries in the multivector; the template
+parameter of MultiVec.
 
 C++ includes: AnasaziMultiVec.hpp ";
 
@@ -4380,9 +4448,9 @@ ScalarType > >::Clone " static Teuchos::RCP<MultiVec<ScalarType> >
 Anasazi::MultiVecTraits< ScalarType, MultiVec< ScalarType >
 >::Clone(const MultiVec< ScalarType > &mv, const int numvecs)
 
-Creates a new empty  Anasazi::MultiVec containing numvecs columns.
+Create a new empty  MultiVec containing numvecs columns.
 
-Reference-counted pointer to the new  Anasazi::MultiVec. ";
+Reference-counted pointer to the new  MultiVec. ";
 
 %feature("docstring")  Anasazi::MultiVecTraits< ScalarType, MultiVec<
 ScalarType > >::CloneCopy " static Teuchos::RCP<MultiVec<ScalarType> >
@@ -4546,6 +4614,45 @@ ScalarType, MultiVec< ScalarType > >::MvPrint(const MultiVec<
 ScalarType > &mv, std::ostream &os)
 
 Print the mv multi-vector to the os output stream. ";
+
+
+// File: classAnasazi_1_1details_1_1MultiVecTsqrAdapter.xml
+%feature("docstring") Anasazi::details::MultiVecTsqrAdapter "
+
+TSQR adapter for MultiVec.
+
+TSQR (Tall Skinny QR factorization) is an orthogonalization kernel
+that is as accurate as Householder QR, yet requires only $2 \\\\log P$
+messages between $P$ MPI processes, independently of the number of
+columns in the multivector.
+
+TSQR works independently of the particular multivector implementation,
+and interfaces to the latter via an adapter class. Each multivector
+type MV needs its own adapter class. The specialization of
+MultiVecTraits for MV refers to its corresponding adapter class as its
+tsqr_adaptor_type [sic; sorry about the lack of standard spelling of
+\"adapter\"] typedef.
+
+This class is the TSQR adapter for MultiVec. It merely calls
+MultiVec's corresponding methods for TSQR functionality.
+
+C++ includes: AnasaziMultiVec.hpp ";
+
+%feature("docstring")
+Anasazi::details::MultiVecTsqrAdapter::factorExplicit "void
+Anasazi::details::MultiVecTsqrAdapter< ScalarType >::factorExplicit(MV
+&A, MV &Q, dense_matrix_type &R, const bool
+forceNonnegativeDiagonal=false)
+
+Compute QR factorization A = QR, using TSQR. ";
+
+%feature("docstring")
+Anasazi::details::MultiVecTsqrAdapter::revealRank "int
+Anasazi::details::MultiVecTsqrAdapter< ScalarType >::revealRank(MV &Q,
+dense_matrix_type &R, const magnitude_type &tol)
+
+Compute rank-revealing decomposition using results of
+factorExplicit(). ";
 
 
 // File: classAnasazi_1_1Operator.xml
@@ -6830,6 +6937,93 @@ eigenvalues. ";
 Output formatted description of stopping test to output stream. ";
 
 
+// File: classAnasazi_1_1details_1_1StubTsqrAdapter.xml
+%feature("docstring") Anasazi::details::StubTsqrAdapter "
+
+\"Stub\" TSQR adaptor for unsupported multivector types.
+
+TSQR (Tall Skinny QR factorization) is an orthogonalization kernel
+that is as accurate as Householder QR, yet requires only $2 \\\\log P$
+messages between $P$ MPI processes, independently of the number of
+columns in the multivector.
+
+TSQR works independently of the particular multivector implementation,
+and interfaces to the latter via an adapter class. Each multivector
+type MV needs its own adapter class. The specialization of
+MultiVecTraits for MV refers to its corresponding adapter class as its
+tsqr_adaptor_type [sic; sorry about the lack of standard spelling of
+\"adapter\"] typedef. For examples, please refer to the
+Epetra_MultiVector and Tpetra::MultiVector specializations of
+Anasazi::MultiVecTraits.
+
+Nevertheless, there may be multivector types for which a TSQR adapter
+has not yet been written. This \"stub\" adapter implements the
+interface that TSQR adapters must implement, but all of its methods
+throw std::logic_error to indicate that this is a stub. Thus, it
+allows Anasazi classes like TsqrOrthoManagerImpl to compile
+successfully for unsupported MV types. This in turn allows
+OrthoManagerFactory to be templated on the MV type.
+
+C++ includes: AnasaziStubTsqrAdapter.hpp ";
+
+%feature("docstring")
+Anasazi::details::StubTsqrAdapter::StubTsqrAdapter "Anasazi::details::StubTsqrAdapter< MultiVectorType
+>::StubTsqrAdapter(const Teuchos::RCP< Teuchos::ParameterList >
+&plist)
+
+Constructor (that accepts a parameter list).
+
+Parameters:
+-----------
+
+plist:  [in] List of parameters for configuring TSQR. The specific
+parameter keys that are read depend on the TSQR implementation. For
+details, call  getValidParameters() and examine the documentation
+embedded therein. ";
+
+%feature("docstring")
+Anasazi::details::StubTsqrAdapter::StubTsqrAdapter "Anasazi::details::StubTsqrAdapter< MultiVectorType
+>::StubTsqrAdapter()
+
+Default constructor (stub; throws std::logic_error). ";
+
+%feature("docstring")
+Anasazi::details::StubTsqrAdapter::StubTsqrAdapter "Anasazi::details::StubTsqrAdapter< MultiVectorType
+>::StubTsqrAdapter(const StubTsqrAdapter &rhs)
+
+Copy constructor (throws std::logic_error). ";
+
+%feature("docstring")
+Anasazi::details::StubTsqrAdapter::getValidParameters "Teuchos::RCP<const Teuchos::ParameterList>
+Anasazi::details::StubTsqrAdapter< MultiVectorType
+>::getValidParameters() const
+
+Get list of valid default parameters (stub; throws std::logic_error).
+";
+
+%feature("docstring")
+Anasazi::details::StubTsqrAdapter::setParameterList "void
+Anasazi::details::StubTsqrAdapter< MultiVectorType
+>::setParameterList(const Teuchos::RCP< Teuchos::ParameterList >
+&plist)
+
+Set parameters (stub; throws std::logic_error). ";
+
+%feature("docstring")
+Anasazi::details::StubTsqrAdapter::factorExplicit "void
+Anasazi::details::StubTsqrAdapter< MultiVectorType
+>::factorExplicit(MV &A, MV &Q, dense_matrix_type &R, const bool
+forceNonnegativeDiagonal=false)
+
+Compute QR factorization [Q,R] = qr(A,0) (stub; throws
+std::logic_error). ";
+
+%feature("docstring")  Anasazi::details::StubTsqrAdapter::revealRank "int Anasazi::details::StubTsqrAdapter< MultiVectorType
+>::revealRank(MV &Q, dense_matrix_type &R, const magnitude_type &tol)
+
+Rank-revealing decomposition (stub; does nothing). ";
+
+
 // File: classAnasazi_1_1SVQBOrthoManager.xml
 %feature("docstring") Anasazi::SVQBOrthoManager "
 
@@ -7964,9 +8158,11 @@ C++ includes: AnasaziDenseMatTraits.hpp ";
 // File: structAnasazi_1_1UndefinedMultiVecTraits.xml
 %feature("docstring") Anasazi::UndefinedMultiVecTraits "
 
-This is the default struct used by MultiVecTraits<ScalarType, MV>
-class to produce a compile time error when the specialization does not
-exist for multivector type MV.
+Used by MultiVecTraits to report lack of a specialization.
+
+MultiVecTraits<ScalarType, MV> uses this struct to produce a compile-
+time error when no specialization exists for the scalar type
+ScalarType and multivector type MV.
 
 C++ includes: AnasaziMultiVecTraits.hpp ";
 
@@ -7998,10 +8194,10 @@ ScalarType >::set(const typename Teuchos::ScalarTraits< ScalarType
 // File: namespaceAnasazi.xml
 /*  Anasazi Enumerations  */
 
-%feature("docstring")  Anasazi::Anasazi_Version "std::string
+%feature("docstring")  Anasazi::details::Anasazi_Version "std::string
 Anasazi::Anasazi_Version() ";
 
-%feature("docstring")  Anasazi::TestMultiVecTraits "bool
+%feature("docstring")  Anasazi::details::TestMultiVecTraits "bool
 Anasazi::TestMultiVecTraits(const Teuchos::RCP< OutputManager<
 ScalarType > > &om, const Teuchos::RCP< const MV > &A)
 
@@ -8010,7 +8206,7 @@ specialization and multivector implementation.
 
 Status of the test: true is success, false is error ";
 
-%feature("docstring")  Anasazi::TestOperatorTraits "bool
+%feature("docstring")  Anasazi::details::TestOperatorTraits "bool
 Anasazi::TestOperatorTraits(const Teuchos::RCP< OutputManager<
 ScalarType > > &om, const Teuchos::RCP< const MV > &A, const
 Teuchos::RCP< const OP > &M)
@@ -8019,6 +8215,9 @@ This function tests the correctness of an operator implementation with
 respect to an OperatorTraits specialization.
 
 Status of the test: true is successful, false otherwise. ";
+
+
+// File: namespaceAnasazi_1_1details.xml
 
 
 // File: AnasaziBasicEigenproblem_8hpp.xml
@@ -8145,6 +8344,9 @@ Status of the test: true is successful, false otherwise. ";
 
 
 // File: AnasaziStatusTestWithOrdering_8hpp.xml
+
+
+// File: AnasaziStubTsqrAdapter_8hpp.xml
 
 
 // File: AnasaziSVQBOrthoManager_8hpp.xml

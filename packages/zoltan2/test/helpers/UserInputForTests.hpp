@@ -59,8 +59,8 @@
 #include <Xpetra_CrsGraph.hpp>
 
 #include <MatrixMarket_Tpetra.hpp>
-#include <MueLu_MatrixFactory.hpp>
-#include <MueLu_GalleryParameters.hpp>
+#include <Galeri_XpetraMatrixFactory.hpp>
+#include <Galeri_XpetraParameters.hpp>
 
 #include <Kokkos_DefaultNode.hpp>
 
@@ -162,7 +162,7 @@ public:
    *
    * Problems can be "Laplace1D", "Laplace2D", "Star2D", "BigStar2D", 
    * "Laplace3D", "Brick3D" and "Identity".
-   * See Muelu::Gallery::CreateCrsMatrix() for more information
+   * See Galeri::Xpetra::CreateCrsMatrix() for more information
    * about problem types.
    */
   UserInputForTests(int x, int y, int z, string matrixType,
@@ -232,7 +232,7 @@ private:
   void readMatrixMarketFile(string path, string testData);
 
   // Build matrix M_ from a mesh and a problem type
-  // with Muelu::Gallery.
+  // with Galeri::Xpetra.
 
   void buildCrsMatrix(int xdim, int ydim, int zdim, string type);
 
@@ -693,7 +693,7 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
   string problemType)
 {
   Teuchos::CommandLineProcessor tclp;
-  MueLu::Gallery::Parameters<gno_t> params(tclp,
+  Galeri::Xpetra::Parameters<gno_t> params(tclp,
      xdim, ydim, zdim, problemType);
 
   RCP<const Tpetra::Map<lno_t, gno_t> > map =
@@ -714,7 +714,7 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
   }
 
   try{
-    M_ = MueLu::Gallery::CreateCrsMatrix<scalar_t, lno_t, gno_t, 
+    M_ = Galeri::Xpetra::CreateCrsMatrix<scalar_t, lno_t, gno_t, 
       Tpetra::Map<lno_t, gno_t>, 
       Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> >(params.GetMatrixType(),
          map, params.GetParameterList()); 

@@ -67,10 +67,9 @@
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_UseShortNames.hpp>
 
-// MueLu Gallery :
-#define XPETRA_ENABLED
-#include <MueLu_GalleryParameters.hpp>
-#include <MueLu_MatrixFactory.hpp>
+// Galeri
+#include <Galeri_XpetraParameters.hpp>
+#include <Galeri_XpetraMatrixFactory.hpp>
 
 //
 #include "MatrixVectorChecker.hpp"
@@ -89,7 +88,7 @@ int main(int argc, char *argv[])
   // Note: use --help to list available options.
   Teuchos::CommandLineProcessor clp(false);
   
-  MueLu::Gallery::Parameters<GO> matrixParameters(clp);   // manage parameters of the test case
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp);   // manage parameters of the test case
   Xpetra::Parameters xpetraParameters(clp);         // manage parameters of xpetra
   
   switch (clp.parse(argc,argv)) {
@@ -108,7 +107,7 @@ int main(int argc, char *argv[])
   /* CREATE INITAL MATRIX                                                           */
   /**********************************************************************************/
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<const Operator>   Op = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
+  RCP<const Operator>   Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
 
   // Using Galeri:
   //

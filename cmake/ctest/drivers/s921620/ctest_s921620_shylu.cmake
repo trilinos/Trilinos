@@ -63,7 +63,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../../Version.cmake")
 # Set the options specific to this build case
 #
 
-SET(BUILD_TYPE DEBUG)
+SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME "SHYLU_MPI")
 SET(Trilinos_TRACK ${Trilinos_TESTING_TRACK})
 SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
@@ -91,7 +91,7 @@ SET_DEFAULT( CTEST_PARALLEL_LEVEL "1" )
 
 # Only turn on PyTrilinos for shared libraries
 #SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES TriKota Optika)
-SET(Trilinos_PACKAGES ShyLU)
+SET(Trilinos_PACKAGES Amesos2 ShyLU)
 
 # Output of "mpicc --showme:compile" and "mpiCC --showme:compile"
 SET(MY_CFLAGS   "-m64")

@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
   ArrayRCP<partId_t> partList = arcp(partAssignments, 0, numIdsPerProc);
 
   try{
-    solution->setParts(gidArray, partList);
+    solution->setParts(gidArray, partList, true);
   }
   catch (std::exception &e){
     fail=10;

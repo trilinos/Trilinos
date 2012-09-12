@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
   typedef Zoltan2::XpetraMultiVectorInput<tvector_t> ia_t;
   typedef Zoltan2::PartitioningSolution<ia_t> soln_t;
   soln_t solution(env, comm, idMap, weightDim);
-  solution.setParts(gidArray, solnParts);
+  solution.setParts(gidArray, solnParts, true);
 
   std::vector<const scalar_t *> emptyWeights;
   std::vector<int> emptyStrides;

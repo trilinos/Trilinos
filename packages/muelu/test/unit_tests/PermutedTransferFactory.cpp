@@ -68,8 +68,7 @@
 
 #include "MueLu_UseDefaultTypes.hpp"
 
-#define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
-#include "MueLu_GalleryUtils.hpp"
+#include "Galeri_XpetraUtils.hpp"
 
 #include "MueLu_UseShortNames.hpp"
 
@@ -96,7 +95,7 @@ namespace MueLuTests {
     //build coordinates
     Teuchos::ParameterList list;
     list.set("nx",nx);
-    RCP<MultiVector> coordVector = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D",A->getRowMap(),list);
+    RCP<MultiVector> coordVector = Galeri::Xpetra::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D",A->getRowMap(),list);
     fineLevel.Set("Coordinates",coordVector);
 
 
