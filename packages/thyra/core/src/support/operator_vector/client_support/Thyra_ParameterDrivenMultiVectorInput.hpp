@@ -498,12 +498,12 @@ bool ParameterDrivenMultiVectorInput<Scalar>::readMultiVector(
   if( scaleBy_ != ST::one() && vectorWasRead ) {
     if( out.get() && trace )
       *out << "\nScaling \"" << mvName << "\" by " << scaleBy_ << " ...\n";
-    Vt_S(&*mv,scaleBy_);
+    Vt_S(Teuchos::ptr(mv), scaleBy_);
   }
   if( addScalar_ != ST::zero() && vectorWasRead ) {
     if( out.get() && trace )
       *out << "\nAdding scalar " << addScalar_ << " to \"" << mvName << "\" ...\n";
-    Vp_S(&*mv,addScalar_);
+    Vp_S(Teuchos::ptr(mv), addScalar_);
   }
   return vectorWasRead;
 }
@@ -519,7 +519,7 @@ bool ParameterDrivenMultiVectorInput<Scalar>::readVector(
   if( fileNameBase_.length() || explicitArray_.size() ) {
     if(!(*v).get())
       (*v) = createMember(this->vecSpc());
-    vectorWasRead = this->readMultiVector(vName,&*(*v));
+    vectorWasRead = this->readMultiVector(vName, &*(*v));
   }
   return vectorWasRead;
 }
