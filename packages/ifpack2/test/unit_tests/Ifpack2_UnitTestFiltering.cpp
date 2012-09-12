@@ -41,6 +41,9 @@
 #else
 #include <Teuchos_DefaultSerialComm.hpp>
 #endif
+#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_FancyOStream.hpp>
+
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Ifpack2_DiagonalFilter.hpp>
@@ -49,11 +52,10 @@
 #include <Ifpack2_SingletonFilter.hpp>
 #include <Ifpack2_SparsityFilter.hpp>
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Ifpack2_ReorderFilter.hpp>
 
-#include <Teuchos_FancyOStream.hpp>
-
-
+// Because Zoltan2 does something somewhat dangerous...
+#undef global_size_t
 
 using Tpetra::global_size_t;
 typedef tif_utest::Node Node;
@@ -177,6 +179,36 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
 
   // Diff
   TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
+
+
+  // ======================================== //
+  // create new matrices, with reordering
+  // ======================================== //
+#ifdef HAVE_IFPACK2_ZOLTAN2
+  // Fill the permulation with a local reversal
+  Zoltan2::OrderingSolution<LocalOrdinal,LocalOrdinal> Ordering((size_t)num_rows_per_proc,(size_t)num_rows_per_proc);
+  Teuchos::ArrayRCP<LocalOrdinal> l_perm=Ordering.getPermutationRCP();
+  for(LocalOrdinal i=0; i < (LocalOrdinal)num_rows_per_proc; i++){
+    l_perm[i] = (LocalOrdinal) (num_rows_per_proc - i);
+  }
+
+  // Now, build a reordering and a reverse reordering
+  Ifpack2::ReorderFilter<CRS> Reorder1(RCP<ROW >(&LocalA,false),
+				       RCP<Zoltan2::OrderingSolution<LocalOrdinal,LocalOrdinal> >(&Ordering,false));
+  Ifpack2::ReorderFilter<CRS> Reorder2(RCP<ROW >(&Reorder1,false),
+				       RCP<Zoltan2::OrderingSolution<LocalOrdinal,LocalOrdinal> >(&Ordering,false));
+
+  // Apply w/ double-reversed reordering
+  Reorder2.apply(x,y);
+
+  // Apply via local matrix
+  LocalA.apply(x,z);
+
+  // Diff
+  TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
+
+#endif
+
 
 }
 
