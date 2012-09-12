@@ -40,9 +40,6 @@
 
 /* Function prototypes */
 extern
-void print_usage(void);
-
-extern
 int token_compare(
   char *token,		/* The input character string */
   const char *key	/* The key to compare with token */
