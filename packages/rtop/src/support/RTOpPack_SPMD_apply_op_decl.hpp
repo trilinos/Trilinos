@@ -161,11 +161,11 @@ private:
  */
 template<class Scalar>
 class ReductTargetReductionOp
-  : public Teuchos::ReferenceTypeReductionOp<Teuchos_Index,ReductTarget>
+  : public Teuchos::ReferenceTypeReductionOp<Teuchos_Ordinal,ReductTarget>
 {
 public:
   /** \brief . */
-  typedef Teuchos_Index Ordinal;
+  typedef Teuchos_Ordinal Ordinal;
   /** \brief . */
   ReductTargetReductionOp(
     const Teuchos::RCP<const RTOpT<Scalar> >  &op

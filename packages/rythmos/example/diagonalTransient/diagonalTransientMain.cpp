@@ -217,11 +217,11 @@ int main(int argc, char *argv[])
     RCP<ParameterList>
       paramList = Teuchos::parameterList();
     if (paramsFileName.length())
-      updateParametersFromXmlFile( paramsFileName, &*paramList );
+      updateParametersFromXmlFile( paramsFileName, paramList.ptr() );
     if(extraParamsFile.length())
-      Teuchos::updateParametersFromXmlFile( "./"+extraParamsFile, &*paramList );
+      Teuchos::updateParametersFromXmlFile( "./"+extraParamsFile, paramList.ptr() );
     if (extraParamsString.length())
-      updateParametersFromXmlString( extraParamsString, &*paramList );
+      updateParametersFromXmlString( extraParamsString, paramList.ptr() );
 
     if (testExactSensitivity) {
       paramList->sublist(DiagonalTransientModel_name).set("Exact Solution as Response",true);

@@ -48,13 +48,13 @@
 #define MY_MAX(a,b) ( (a) > (b) ? (a) : (b) )
 
 void RTOp_parallel_calc_overlap(
-  Teuchos_Index global_dim_in, Teuchos_Index local_sub_dim_in, Teuchos_Index local_off_in
-  ,const Teuchos_Index first_ele_off_in, const Teuchos_Index sub_dim_in, const Teuchos_Index global_off_in
-  ,Teuchos_Index* overlap_first_local_ele_off, Teuchos_Index* overalap_local_sub_dim
-  ,Teuchos_Index* overlap_global_off
+  Teuchos_Ordinal global_dim_in, Teuchos_Ordinal local_sub_dim_in, Teuchos_Ordinal local_off_in
+  ,const Teuchos_Ordinal first_ele_off_in, const Teuchos_Ordinal sub_dim_in, const Teuchos_Ordinal global_off_in
+  ,Teuchos_Ordinal* overlap_first_local_ele_off, Teuchos_Ordinal* overalap_local_sub_dim
+  ,Teuchos_Ordinal* overlap_global_off
   )
 {
-  Teuchos_Index  global_sub_dim = 0;
+  Teuchos_Ordinal  global_sub_dim = 0;
 #ifdef RTOp_DEBUG
   assert( overlap_first_local_ele_off );
   assert( overalap_local_sub_dim );

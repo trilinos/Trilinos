@@ -1478,4 +1478,32 @@ void replaceValue(MultiVector & v,double currentValue,double newValue)
    }
 }
 
+void columnAverages(const MultiVector & v,std::vector<double> & averages)
+{
+   averages.resize(v->domain()->dim());
+
+   // sum over each column
+   Thyra::sums<double>(*v,averages);
+
+   // build averages
+   Thyra::Ordinal rows = v->range()->dim();
+   for(std::size_t i=0;i<averages.size();i++)
+      averages[i] = averages[i]/rows;
+}
+
+double average(const MultiVector & v)
+{
+   Thyra::Ordinal rows = v->range()->dim();
+   Thyra::Ordinal cols = v->domain()->dim();
+
+   std::vector<double> averages;
+   columnAverages(v,averages);
+
+   double sum = 0.0;
+   for(std::size_t i=0;i<averages.size();i++)
+      sum += averages[i] * rows;
+
+   return sum/(rows*cols);
+}
+
 }

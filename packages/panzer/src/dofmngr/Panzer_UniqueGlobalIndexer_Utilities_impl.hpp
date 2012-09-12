@@ -419,8 +419,14 @@ Teuchos::RCP<const Tpetra::Map<int,GlobalOrdinalT,Node> >
 ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
 getFieldMap(const std::string & fieldName) const
 {
-   int fieldNum = ugi_->getFieldNum(fieldName);
+   return getFieldMap(ugi_->getFieldNum(fieldName));
+}
 
+template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
+Teuchos::RCP<const Tpetra::Map<int,GlobalOrdinalT,Node> >
+ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
+getFieldMap(int fieldNum) const
+{
    if(fieldMaps_[fieldNum]==Teuchos::null) {
       // if neccessary build field vector
       if(fieldVector_==Teuchos::null)

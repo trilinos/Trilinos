@@ -203,6 +203,7 @@ public:
     const Ptr<Teuchos::FancyOStream> &out
     ) const;
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
   /** \name Depreicated. */
   //@{
 
@@ -217,7 +218,7 @@ public:
 
   //@}
 
-
+#endif // THYRA_HIDE_DEPRECATED_CODE
 private:
 
   LinearOpTester<Scalar> linearOpTester_;

@@ -113,7 +113,7 @@ TEUCHOS_UNIT_TEST(tExplicitOps, transpose)
 
    {
       std::stringstream ss;
-      const bool result = tester.compare( *aF, *F_T, &out );
+      const bool result = tester.compare( *aF, *F_T, Teuchos::ptrFromRef(out) );
       TEST_ASSERT(result);
    }
 }

@@ -142,9 +142,9 @@ public:
     {}
   /** \brief . */
   SparseSubVectorT(
-    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in, Teuchos_Index subNz_in,
+    Teuchos_Ordinal globalOffset_in, Teuchos_Ordinal subDim_in, Teuchos_Ordinal subNz_in,
     const ArrayRCP<const Scalar> &values_in, ptrdiff_t valuesStride_in,
-    const ArrayRCP<const Teuchos_Index> &indices_in, ptrdiff_t indicesStride_in,
+    const ArrayRCP<const Teuchos_Ordinal> &indices_in, ptrdiff_t indicesStride_in,
     ptrdiff_t localOffset_in, bool isSorted_in
     )
     :globalOffset_(globalOffset_in), subDim_(subDim_in), subNz_(subNz_in),
@@ -159,7 +159,7 @@ public:
     }
   /** \brief . */
   SparseSubVectorT(
-    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    Teuchos_Ordinal globalOffset_in, Teuchos_Ordinal subDim_in,
     const ArrayRCP<const Scalar> &values_in, ptrdiff_t valuesStride_in
     )
     :globalOffset_(globalOffset_in), subDim_(subDim_in), subNz_(subDim_in),
@@ -179,9 +179,9 @@ public:
     {}
   /** \brief . */
   void initialize(
-    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in, Teuchos_Index subNz_in,
+    Teuchos_Ordinal globalOffset_in, Teuchos_Ordinal subDim_in, Teuchos_Ordinal subNz_in,
     const ArrayRCP<const Scalar> &values_in, ptrdiff_t valuesStride_in,
-    const ArrayRCP<const Teuchos_Index> &indices_in, ptrdiff_t indicesStride_in,
+    const ArrayRCP<const Teuchos_Ordinal> &indices_in, ptrdiff_t indicesStride_in,
     ptrdiff_t localOffset_in, bool isSorted_in
     )
     {
@@ -198,8 +198,8 @@ public:
         // Note: localOffset can be +, -, or 0 so there is nothing to assert!
         if (isSorted_in) {
           for (int k = 0; k < subNz_in-1; ++k) {
-            const Teuchos_Index idx_k = indices_in[k*indicesStride_in];
-            const Teuchos_Index idx_kp1 = indices_in[(k+1)*indicesStride_in];
+            const Teuchos_Ordinal idx_k = indices_in[k*indicesStride_in];
+            const Teuchos_Ordinal idx_kp1 = indices_in[(k+1)*indicesStride_in];
             TEUCHOS_TEST_FOR_EXCEPTION( !(idx_k < idx_kp1), std::out_of_range,
               "Error indices["<<k<<"]="<<idx_k<<" >= indices["<<k+1<<"]="<<idx_kp1
               <<"!" );
@@ -219,7 +219,7 @@ public:
     }
   /** \brief . */
   void initialize(
-    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    Teuchos_Ordinal globalOffset_in, Teuchos_Ordinal subDim_in,
     const ArrayRCP<const Scalar> &values_in, ptrdiff_t valuesStride_in
     )
     {
@@ -234,14 +234,14 @@ public:
       indicesStride_ = 0; localOffset_ = 0; isSorted_ = false;
     }
   /** \brief . */
-  void setGlobalOffset(Teuchos_Index globalOffset_in) { globalOffset_ = globalOffset_in; } 
+  void setGlobalOffset(Teuchos_Ordinal globalOffset_in) { globalOffset_ = globalOffset_in; } 
   /** \brief Offset for the sub-vector into the global vector. */
-  Teuchos_Index globalOffset() const { return globalOffset_; } 
+  Teuchos_Ordinal globalOffset() const { return globalOffset_; } 
   /** \brief Dimension of the sub-vector. */
-  Teuchos_Index subDim() const { return subDim_; }
+  Teuchos_Ordinal subDim() const { return subDim_; }
   /** \brief Number of nonzero elements (<tt>subNz == subDim</tt> for dense
    * vectors). */
-  Teuchos_Index subNz() const { return subNz_; }
+  Teuchos_Ordinal subNz() const { return subNz_; }
   /** \brief Array (size min{|<tt>valueStride*subNz</tt>|,1}) for the values
    * in the vector. */
   const ArrayRCP<const Scalar> values() const { return values_; }
@@ -251,7 +251,7 @@ public:
    * <tt>Teuchos::null</tt>) for the indices of the nonzero elements in the
    * vector (sparse vectors only).
    */
-  const ArrayRCP<const Teuchos_Index> indices() const { return indices_; }
+  const ArrayRCP<const Teuchos_Ordinal> indices() const { return indices_; }
   /** \brief Stride between indices in indices[] (sparse vectors only). */
   ptrdiff_t indicesStride() const { return indicesStride_; }
   /** \brief Offset of indices[] into local sub-vector (sparse vectors
@@ -261,21 +261,22 @@ public:
    * otherwise it is sorted (sparse vectors only). */
   bool isSorted() const { return isSorted_; }
 private:
-  Teuchos_Index globalOffset_;
-  Teuchos_Index subDim_;
-  Teuchos_Index subNz_;
+  Teuchos_Ordinal globalOffset_;
+  Teuchos_Ordinal subDim_;
+  Teuchos_Ordinal subNz_;
   ArrayRCP<const Scalar> values_;
   ptrdiff_t valuesStride_;
-  ArrayRCP<const Teuchos_Index> indices_;
+  ArrayRCP<const Teuchos_Ordinal> indices_;
   ptrdiff_t indicesStride_;
   ptrdiff_t localOffset_;
   bool isSorted_;
 public:
+#ifndef RTOP_HIDE_DEPRECATED_CODE
   /** \brief Deprecated. */
   RTOP_DEPRECATED SparseSubVectorT(
-    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in, Teuchos_Index subNz_in,
+    Teuchos_Ordinal globalOffset_in, Teuchos_Ordinal subDim_in, Teuchos_Ordinal subNz_in,
     const Scalar values_in[], ptrdiff_t valuesStride_in,
-    const Teuchos_Index indices_in[], ptrdiff_t indicesStride_in,
+    const Teuchos_Ordinal indices_in[], ptrdiff_t indicesStride_in,
     ptrdiff_t localOffset_in, int isSorted_in
     )
     {
@@ -284,7 +285,7 @@ public:
     }
   /** \brief Deprecated. */
   RTOP_DEPRECATED SparseSubVectorT(
-    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    Teuchos_Ordinal globalOffset_in, Teuchos_Ordinal subDim_in,
     const Scalar values_in[], ptrdiff_t valuesStride_in
     )
     {
@@ -292,9 +293,9 @@ public:
     }
   /** \brief Deprecated. */
   RTOP_DEPRECATED void initialize(
-    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in, Teuchos_Index subNz_in,
+    Teuchos_Ordinal globalOffset_in, Teuchos_Ordinal subDim_in, Teuchos_Ordinal subNz_in,
     const Scalar values_in[], ptrdiff_t valuesStride_in,
-    const Teuchos_Index indices_in[], ptrdiff_t indicesStride_in,
+    const Teuchos_Ordinal indices_in[], ptrdiff_t indicesStride_in,
     ptrdiff_t localOffset_in, int isSorted_in
     )
     {
@@ -305,7 +306,7 @@ public:
     }
   /** \brief Deprecated. */
   RTOP_DEPRECATED void initialize(
-    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    Teuchos_Ordinal globalOffset_in, Teuchos_Ordinal subDim_in,
     const Scalar values_in[], ptrdiff_t valuesStride_in
     )
     {
@@ -316,6 +317,7 @@ public:
   /** \brief Deprecated. */
   RTOP_DEPRECATED void set_uninitialized()
     { uninitialize(); }
+#endif // RTOP_HIDE_DEPRECATED_CODE
 };
 
 

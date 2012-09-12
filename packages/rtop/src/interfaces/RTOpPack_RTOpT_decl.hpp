@@ -473,6 +473,8 @@ protected:
 
 public:
 
+#ifndef RTOP_HIDE_DEPRECATED_CODE
+
   /** \name Deprecated (NVI) */
   //@{
 
@@ -543,6 +545,8 @@ public:
     }
 
   //@}
+
+#endif // RTOP_HIDE_DEPRECATED_CODE
 
 private:
 

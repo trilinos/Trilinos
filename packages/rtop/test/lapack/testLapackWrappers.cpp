@@ -91,7 +91,7 @@ bool testLapackWrappers(
   using Teuchos::Array;
   using RTOpPack::SubMultiVectorView;
 
-  typedef Teuchos_Index Ordinal;
+  typedef Teuchos_Ordinal Ordinal;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   bool success = true;

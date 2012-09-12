@@ -85,17 +85,17 @@ public:
   /** \brief . */
   const RTOpPack::ConstSubVectorView<Scalar>& sv() const { return sv_; }
   /** \brief . */
-  Teuchos_Index globalOffset() const { return sv_.globalOffset(); }
+  Teuchos_Ordinal globalOffset() const { return sv_.globalOffset(); }
   /** \brief . */
-  Teuchos_Index subDim() const { return sv_.subDim(); }
+  Teuchos_Ordinal subDim() const { return sv_.subDim(); }
   /** \brief . */
   const ArrayRCP<const Scalar> values() const { return sv_.values(); }
   /** \brief . */
   ptrdiff_t stride() const { return sv_.stride(); }
   /** \brief . */
-  const Scalar& operator[](Teuchos_Index i) const { return sv_[i]; }
+  const Scalar& operator[](Teuchos_Ordinal i) const { return sv_[i]; }
   /** \brief . */
-  const Scalar& operator()(Teuchos_Index i) const { return sv_(i); }
+  const Scalar& operator()(Teuchos_Ordinal i) const { return sv_(i); }
 private:
   Teuchos::RCP<const SpmdVectorBase<Scalar> > v_;
   RTOpPack::ConstSubVectorView<Scalar>  sv_;
@@ -142,17 +142,17 @@ public:
   /** \brief . */
   const RTOpPack::SubVectorView<Scalar>& sv() const { return sv_; }
   /** \brief . */
-  Teuchos_Index globalOffset() const { return sv_.globalOffset(); }
+  Teuchos_Ordinal globalOffset() const { return sv_.globalOffset(); }
   /** \brief . */
-  Teuchos_Index subDim() const { return sv_.subDim(); }
+  Teuchos_Ordinal subDim() const { return sv_.subDim(); }
   /** \brief . */
   const ArrayRCP<const Scalar> values() const { return sv_.values(); }
   /** \brief . */
   ptrdiff_t stride() const { return sv_.stride(); }
   /** \brief . */
-  Scalar& operator[](Teuchos_Index i) const { return sv_[i]; }
+  Scalar& operator[](Teuchos_Ordinal i) const { return sv_[i]; }
   /** \brief . */
-  Scalar& operator()(Teuchos_Index i) const { return sv_(i); }
+  Scalar& operator()(Teuchos_Ordinal i) const { return sv_(i); }
 private:
   Teuchos::RCP<SpmdVectorBase<Scalar> > v_;
   RTOpPack::SubVectorView<Scalar>  sv_;

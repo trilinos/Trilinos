@@ -143,7 +143,7 @@ TEUCHOS_UNIT_TEST(tLU2x2InverseOp, exact_test)
    tester.show_all_tests(true);
 
    {
-      const bool result = tester.compare( *final_A, *A, &out);
+      const bool result = tester.compare( *final_A, *A, Teuchos::ptrFromRef(out));
       if (!result) {
          out << "Apply: FAILURE" << std::endl;
          success = false;

@@ -223,7 +223,7 @@ bool tPCDStrategy::test_PCDStrategy(int verbosity,std::ostream & os)
       // test the 0,0 block inverses: hat
       Teko::LinearOp hatInvA00 = strategy.getHatInvA00(blkA,state);
       ss.str("");
-      result = tester.compare( *hatInvA00, *invA00, &fos );
+      result = tester.compare( *hatInvA00, *invA00, Teuchos::ptrFromRef(fos) );
       TEST_ASSERT(result,
             std::endl << "   tPCDStrategy::test_PCDStrategy " << toString(status)
                       << " : Comparing invHatA00 operators");
@@ -233,7 +233,7 @@ bool tPCDStrategy::test_PCDStrategy(int verbosity,std::ostream & os)
       // test the 0,0 block inverses: tilde
       Teko::LinearOp tildeInvA00 = strategy.getTildeInvA00(blkA,state);
       ss.str("");
-      result = tester.compare( *tildeInvA00, *invA00, &fos );
+      result = tester.compare( *tildeInvA00, *invA00, Teuchos::ptrFromRef(fos) );
       TEST_ASSERT(result,
             std::endl << "   tPCDStrategy::test_PCDStrategy " << toString(status)
                       << " : Comparing invTildeA00 operators");
@@ -263,7 +263,7 @@ bool tPCDStrategy::test_PCDStrategy(int verbosity,std::ostream & os)
       // test the 0,0 block inverses: hat
       Teko::LinearOp invS_strategy = strategy.getInvS(blkA,state);
       ss.str("");
-      result = tester.compare( *invS_strategy, *invSchur, &fos );
+      result = tester.compare( *invS_strategy, *invSchur, Teuchos::ptrFromRef(fos) );
       TEST_ASSERT(result,
             std::endl << "   tPCDStrategy::test_PCDStrategy " << toString(status)
                       << " : Comparing invS operators");

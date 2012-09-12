@@ -163,7 +163,7 @@ bool testSubVectorView(
   }
 
   out << "\nCreating SubVectorView ...\n";
-  const Teuchos_Index globalOffset = 20;
+  const Teuchos_Ordinal globalOffset = 20;
   SubVectorView<Scalar> sv(globalOffset, subDim, values, stride);
 
   {
@@ -321,7 +321,7 @@ bool testSubVectorView(
 
   {
     out << "\nTest change of globalOffset ...\n";
-    const Teuchos_Index newGlobalOffset = globalOffset + 1;
+    const Teuchos_Ordinal newGlobalOffset = globalOffset + 1;
     csv.setGlobalOffset(newGlobalOffset);
     TEST_EQUALITY(csv.globalOffset(),newGlobalOffset);
   }
@@ -413,8 +413,8 @@ bool testSubMultiVectorView(
   }
 
   out << "\nCreating SubMultiVectorView ...\n";
-  const Teuchos_Index globalOffset = 20;
-  const Teuchos_Index colOffset = 15;
+  const Teuchos_Ordinal globalOffset = 20;
+  const Teuchos_Ordinal colOffset = 15;
   SubMultiVectorView<Scalar>
     smv(globalOffset, subDim, colOffset, numSubCols, values, leadingDim);
 
@@ -602,7 +602,7 @@ bool testSubMultiVectorView(
 
   {
     out << "\nTest change of globalOffset ...\n";
-    const Teuchos_Index newGlobalOffset = globalOffset + 1;
+    const Teuchos_Ordinal newGlobalOffset = globalOffset + 1;
     csmv.setGlobalOffset(newGlobalOffset);
     TEST_EQUALITY(csmv.globalOffset(),newGlobalOffset);
   }

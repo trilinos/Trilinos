@@ -313,6 +313,7 @@ public:
     const Ptr<FancyOStream> &out_arg
     ) const;
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
   /** \brief Deprecated. */
   //@{
 
@@ -361,6 +362,7 @@ public:
 
   //@}
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 private:
 
   void setDefaultTols();

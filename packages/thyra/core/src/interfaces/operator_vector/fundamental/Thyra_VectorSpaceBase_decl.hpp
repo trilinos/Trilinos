@@ -723,6 +723,7 @@ protected:
 
 public:
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
   /** \name Deprecated . */
   //@{
 
@@ -733,7 +734,7 @@ public:
     ) const;
 
   //@}
-
+#endif // THYRA_HIDE_DEPRECATED_CODE
 private:
   
   // Not defined and not to be called

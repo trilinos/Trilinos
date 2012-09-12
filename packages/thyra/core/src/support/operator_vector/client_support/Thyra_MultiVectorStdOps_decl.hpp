@@ -364,7 +364,7 @@ template<class Scalar>
 void V_StVpV( const Ptr<MultiVectorBase<Scalar> > &Z, const Scalar &alpha,
   const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y );
 
-
+#ifndef THYRA_HIDE_DEPRECATED_CODE
 /** \brief Deprecated. */
 template<class Scalar>
 THYRA_DEPRECATED
@@ -542,7 +542,7 @@ void V_StVpV(
   const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y 
   )
 { V_StVpV(Teuchos::ptr(Z), alpha, X, Y); }
-
+#endif // THYRA_HIDE_DEPRECATED_CODE
 
 } // end namespace Thyra
 

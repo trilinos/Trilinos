@@ -344,11 +344,9 @@ log_norm_inf(const Thyra::VectorBase<Scalar>& x)
   ROpLogNormInf<Scalar> log_norm_inf_op;
   RCP<RTOpPack::ReductTarget> log_norm_inf_targ = 
     log_norm_inf_op.reduct_obj_create();
-  const Thyra::VectorBase<Scalar>* vecs[] = { &x };
-  Thyra::applyOp<Scalar>(log_norm_inf_op,1,vecs,0,
-    (Thyra::VectorBase<Scalar>**)NULL,
-    log_norm_inf_targ.get());
-    
+  Thyra::applyOp<Scalar>(log_norm_inf_op,
+    Teuchos::tuple(Teuchos::ptrFromRef(x))(), Teuchos::null,
+    log_norm_inf_targ.ptr());
   return log_norm_inf_op(*log_norm_inf_targ);
 }
 

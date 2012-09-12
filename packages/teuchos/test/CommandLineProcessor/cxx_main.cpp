@@ -48,7 +48,7 @@ int main( int argc, char* argv[] )
 
   using Teuchos::CommandLineProcessor;
 
-  bool verbose = false;  // The first parsing will set this to true if --verbose was used
+  bool verbose = true;  
   bool parse_successful = true;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
@@ -56,9 +56,7 @@ int main( int argc, char* argv[] )
   // First create tests for a command line processor that doesn't throw exceptions.
   try {
     // Read options from the commandline
-    CommandLineProcessor  clp(false, true); // Don't throw exceptions
-
-    clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
+    CommandLineProcessor  clp(false, false); // Don't throw exceptions
 
     double rel_proc_speed = 1e-5; // Should 
     clp.setOption( "rel-proc-speed", &rel_proc_speed, "Relative processor speed (try around 1.0 for timing)." );
@@ -69,7 +67,7 @@ int main( int argc, char* argv[] )
     // Parse the current input, which should return succesful.
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if (verbose)
-      std::cout << "Test 1:  CommandLineProcessor - No exceptions - All options recognized: ";
+      std::cout << "Test 1:  CommandLineProcessor - No exceptions - All extra options ignored: ";
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL )
     {
       parse_successful = false;
@@ -85,7 +83,7 @@ int main( int argc, char* argv[] )
     // Now parse with this new option (which should not be passed in on the command line) 
     parse_return = clp.parse(argc,argv);
     if (verbose)
-      std::cout << "Test 2:  CommandLineProcessor - No exceptions - All options recognized - 1 required: ";
+      std::cout << "Test 2:  CommandLineProcessor - No exceptions - All extra options ignored - 1 required: ";
     if( parse_return != CommandLineProcessor::PARSE_ERROR )
     {
       parse_successful = false;
@@ -104,7 +102,7 @@ int main( int argc, char* argv[] )
   // Next create tests for a command line processor that does throw exceptions.
   // Read options from the commandline
   try {
-    CommandLineProcessor  clp2(true, true); // Throw exceptions
+    CommandLineProcessor  clp2(true, false); // Throw exceptions
 
     clp2.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
 
@@ -124,18 +122,18 @@ int main( int argc, char* argv[] )
   catch( CommandLineProcessor::ParseError &excpt ) {
     if(verbose)
       std::cout << "*** Caught EXPECTED standard exception : " << excpt.what() << std::endl
-                << "Test 3:  CommandLineProcessor - Throw exceptions - All options recognized - 1 required: PASSED" << std::endl;
+                << "Test 3:  CommandLineProcessor - Throw exceptions - All extra options ignored - 1 required: PASSED" << std::endl;
   }
   catch( ... ) {
     if(verbose)
       std::cout << "*** Caught UNEXPECTED unknown exception" << std::endl
-                << "Test 3:  CommandLineProcessor - Throw exceptions - All options recognized - 1 required: FAILED" << std::endl;
+                << "Test 3:  CommandLineProcessor - Throw exceptions - All extra options ignored - 1 required: FAILED" << std::endl;
     parse_successful = false;  // No exceptions should be thrown for this command line processor.
   }
 
   // Next create tests for a command line processor that doesn't throw exceptions, and doesn't recognize all options.
   try {
-    CommandLineProcessor  clp3(false, false); // Don't recognize all options
+    CommandLineProcessor  clp3(false, true); // Don't recognize all options
 
     // Parse the current input, which should not be successful because the test is run with "--verbose" argument.
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp3.parse(argc,argv);
@@ -177,7 +175,7 @@ int main( int argc, char* argv[] )
     if (verbose)
       std::cout << "Test 6 :  CommandLineProcessor - Throw exceptions - Extra options not recognized: ";
 
-    CommandLineProcessor  clp4(true, false); // Don't recognize all options AND throw exceptions
+    CommandLineProcessor  clp4(true, true); // Don't recognize all options AND throw exceptions (default mode)
 
     // Parse the current input, which should not be successful because the test is run with "--verbose" argument.
     clp4.parse(argc,argv);

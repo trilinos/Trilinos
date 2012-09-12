@@ -209,6 +209,7 @@ void writeParameterListToXmlFile(
   RCP<const DependencySheet> depSheet=null
   );
 
+#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
 
 //
 // Deprecated
@@ -248,6 +249,7 @@ void updateParametersFromXmlString(
   updateParametersFromXmlString(xmlStr, ptr(paramList));
 }
 
+#endif // TEUCHOS_HIDE_DEPRECATED_CODE
 
 } // namespace Teuchos
 

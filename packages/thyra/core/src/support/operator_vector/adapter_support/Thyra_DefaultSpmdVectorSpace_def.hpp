@@ -269,6 +269,7 @@ DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace()
 }
 
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
 // Deprecated
 
 template<class Scalar>
@@ -293,6 +294,7 @@ DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
 }
 
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 } // end namespace Thyra
 
 

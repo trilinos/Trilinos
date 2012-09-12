@@ -250,6 +250,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
 //  parallelConstructEmptyProc )
 
 
+//#ifndef THYRA_HIDE_DEPRECATED_CODE
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, deprecatedSerialConstruct,
   Scalar )
 {
@@ -286,6 +289,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, deprecatedParallelCon
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
   deprecatedParallelConstruct )
+
+
+//#endif // THYRA_HIDE_DEPRECATED_CODE
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, parallelFullExtract,
