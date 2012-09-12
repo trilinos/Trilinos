@@ -367,7 +367,7 @@ int main(int argc, char *argv[]) {
      if (MyPID == 0) {
       cout << "\nReading parameter list from the XML file \""<<xmlMeshInFileName<<"\" ...\n\n";
      }
-      Teuchos::updateParametersFromXmlFile(xmlMeshInFileName,&inputMeshList);
+     Teuchos::updateParametersFromXmlFile(xmlMeshInFileName, Teuchos::inoutArg(inputMeshList));
      if (MyPID == 0) {
       inputMeshList.print(cout,2,true,true);
       cout << "\n";
@@ -382,7 +382,7 @@ int main(int argc, char *argv[]) {
    if(xmlSolverInFileName.length()) {
      if (MyPID == 0)
         cout << "\nReading parameter list from the XML file \""<<xmlSolverInFileName<<"\" ...\n\n";
-     Teuchos::updateParametersFromXmlFile(xmlSolverInFileName,&inputSolverList);
+     Teuchos::updateParametersFromXmlFile(xmlSolverInFileName, Teuchos::inoutArg(inputSolverList));
    } else if (MyPID == 0) cout << "Using default solver values ..." << endl;
 
    // Get pamgen mesh definition
