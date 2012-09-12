@@ -1,61 +1,16 @@
 
 // File: index.xml
 
-// File: classA.xml
-%feature("docstring") A "";
-
-
-// File: classA_3_01int_00_01U_01_4.xml
-%feature("docstring") A< int, U > " ";
-
-
-// File: classB.xml
-%feature("docstring") B "";
-
-
 // File: classstk_1_1percept_1_1IntrepidManager_1_1Bases.xml
 %feature("docstring") stk::percept::IntrepidManager::Bases "
 
 these are the \"transformed_basis_values\" at each point in each cell
-in the work set ([C],[ B],[P]), or ([C],[ B],[P],[D]) for GRAD here we
-assume that [ B] is equivalent to [V]
+in the work set ([C],[B],[P]), or ([C],[B],[P],[D]) for GRAD here we
+assume that [B] is equivalent to [V]
 
 C++ includes: IntrepidManager.hpp ";
 
 %feature("docstring")  stk::percept::IntrepidManager::Bases::Bases "stk::percept::IntrepidManager::Bases::Bases(IM &im) ";
-
-
-// File: classBases.xml
-%feature("docstring") Bases "";
-
-%feature("docstring")  Bases::Bases "Bases< T, I, Topology,
-ReferenceElement >::Bases(T pt[Topology::dim]) ";
-
-%feature("docstring")  Bases::basis "T Bases< T, I, Topology,
-ReferenceElement >::basis(I i, T pt[Topology::dim]) ";
-
-
-// File: classBasis.xml
-%feature("docstring") Basis "";
-
-%feature("docstring")  Basis::Basis "Basis< T, I, Topology,
-ReferenceElement >::Basis() ";
-
-%feature("docstring")  Basis::Basis "Basis< T, I, Topology,
-ReferenceElement >::Basis(T pt[Topology::dim]) ";
-
-
-// File: classBasis_3_01T_00_01I_00_01Quadrilateral4_00_01StandardReferenceElement_01_4.xml
-%feature("docstring") Basis< T, I, Quadrilateral4,
-StandardReferenceElement > " ";
-
-%feature("docstring")  Basis< T, I, Quadrilateral4,
-StandardReferenceElement >::Basis " Basis< T, I, Quadrilateral4,
-StandardReferenceElement >::Basis(T pt[Base::topology::dim]) ";
-
-%feature("docstring")  Basis< T, I, Quadrilateral4,
-StandardReferenceElement >::basis " T Basis< T, I, Quadrilateral4,
-StandardReferenceElement >::basis(I i, T pt[Base::topology::dim]) ";
 
 
 // File: classIntrepid_1_1Basis__HGRAD__HEX__C2__Serendipity__FEM.xml
@@ -430,29 +385,6 @@ FVD basis evaluation: invocation of this method throws an exception.
 ";
 
 
-// File: classBasisBase.xml
-%feature("docstring") BasisBase "";
-
-%feature("docstring")  BasisBase::BasisBase "BasisBase< T, I,
-Topology, ReferenceElement >::BasisBase(T pt[Topology::dim]) ";
-
-%feature("docstring")  BasisBase::basis "T BasisBase< T, I, Topology,
-ReferenceElement >::basis(I i, T pt[Topology::dim]) ";
-
-
-// File: classBasisImpl.xml
-%feature("docstring") BasisImpl "";
-
-
-// File: classBasisImpl_3_01T_00_01I_00_01Quadrilateral4_00_01StandardReferenceElement_01_4.xml
-%feature("docstring") BasisImpl< T, I, Quadrilateral4,
-StandardReferenceElement > " ";
-
-%feature("docstring")  BasisImpl< T, I, Quadrilateral4,
-StandardReferenceElement >::basis " T BasisImpl< T, I, Quadrilateral4,
-StandardReferenceElement >::basis(I i, T pt[Quadrilateral4::dim]) ";
-
-
 // File: classstk_1_1percept_1_1BeamFixture.xml
 %feature("docstring") stk::percept::BeamFixture "
 
@@ -661,43 +593,6 @@ codomain_dimensions=Dimensions(), unsigned integration_order=0) ";
 &v) ";
 
 
-// File: classCPPArray.xml
-%feature("docstring") CPPArray "";
-
-%feature("docstring")  CPPArray::dimension "const unsigned CPPArray<
-D0, D1, D2, T >::dimension(const unsigned d) const ";
-
-%feature("docstring")  CPPArray::rank "const unsigned CPPArray< D0,
-D1, D2, T >::rank() const ";
-
-%feature("docstring")  CPPArray::dimension "const unsigned CPPArray<
-D0, D1, D2, T >::dimension(const unsigned d) ";
-
-%feature("docstring")  CPPArray::rank "const unsigned CPPArray< D0,
-D1, D2, T >::rank() const ";
-
-%feature("docstring")  CPPArray::CPPArray "CPPArray< D0, D1, D2, T
->::CPPArray() ";
-
-%feature("docstring")  CPPArray::init "void CPPArray< D0, D1, D2, T
->::init() ";
-
-%feature("docstring")  CPPArray::dimension "const unsigned CPPArray<
-D0, D1, D2, T >::dimension(const unsigned d) const ";
-
-%feature("docstring")  CPPArray::rank "const unsigned CPPArray< D0,
-D1, D2, T >::rank() const ";
-
-%feature("docstring")  CPPArray::CPPArray "CPPArray< D0, D1, D2, T
->::CPPArray() ";
-
-%feature("docstring")  CPPArray::dimension "const unsigned CPPArray<
-D0, D1, D2, T >::dimension(const unsigned d) const ";
-
-%feature("docstring")  CPPArray::rank "const unsigned CPPArray< D0,
-D1, D2, T >::rank() const ";
-
-
 // File: classstk_1_1percept_1_1IntrepidManager_1_1CubaturePoints.xml
 %feature("docstring") stk::percept::IntrepidManager::CubaturePoints "
 
@@ -729,10 +624,6 @@ stk::percept::IntrepidManager::CubatureWeights::CubatureWeights "stk::percept::I
 ([P]) ";
 
 
-// File: structDim.xml
-%feature("docstring") Dim "";
-
-
 // File: classstk_1_1percept_1_1Dimensions.xml
 %feature("docstring") stk::percept::Dimensions "";
 
@@ -743,10 +634,6 @@ stk::percept::IntrepidManager::CubatureWeights::CubatureWeights "stk::percept::I
 %feature("docstring")  stk::percept::Dimensions::Dimensions "stk::percept::Dimensions::Dimensions(int i0, int i1) ";
 
 %feature("docstring")  stk::percept::Dimensions::Dimensions "stk::percept::Dimensions::Dimensions(int i0, int i1, int i2) ";
-
-
-// File: classElementFunctor.xml
-%feature("docstring") ElementFunctor "";
 
 
 // File: classstk_1_1percept_1_1ElementOp.xml
@@ -924,16 +811,6 @@ each cell: ";
 
 // File: structstk_1_1percept_1_1unit__tests_1_1FindMapItem2.xml
 %feature("docstring") stk::percept::unit_tests::FindMapItem2 "";
-
-
-// File: classFlux__.xml
-%feature("docstring") Flux_ "";
-
-%feature("docstring")  Flux_::Flux_ "Flux_< Mu, Mu2, Temperature
->::Flux_(Mu mu, Mu2 mu2, Temperature temperature) ";
-
-%feature("docstring")  Flux_::Flux_ "Flux_< Mu, Mu2, Temperature
->::Flux_(Mu mu, Mu2 mu2, Temperature temperature) ";
 
 
 // File: classstk_1_1percept_1_1Function.xml
@@ -1298,10 +1175,6 @@ Jacobian's sign by testing it at all the cubature points ";
 %feature("docstring")  stk::percept::GMeshSpec::GMeshSpec "stk::percept::GMeshSpec::GMeshSpec(const std::string &name) ";
 
 
-// File: classGRAD.xml
-%feature("docstring") GRAD "";
-
-
 // File: classstk_1_1percept_1_1H1__NormOp.xml
 %feature("docstring") stk::percept::H1_NormOp "";
 
@@ -1387,10 +1260,6 @@ stk::percept::HeterogeneousFixture::HeterogeneousFixture "stk::percept::Heteroge
 comm, bool doCommit=true, bool do_sidesets=false) ";
 
 %feature("docstring")  stk::percept::HeterogeneousFixture::populate "void stk::percept::HeterogeneousFixture::populate() ";
-
-
-// File: classHex__.xml
-%feature("docstring") Hex_ "";
 
 
 // File: classstk_1_1adapt_1_1IAdapter.xml
@@ -1492,10 +1361,6 @@ Following these examples we show the prototype for the operations that
 are performed on these predicates.
 
 C++ includes: IElementBasedAdapterPredicate.hpp ";
-
-
-// File: structInit.xml
-%feature("docstring") Init "";
 
 
 // File: classstk_1_1percept_1_1IntrepidManager_1_1Integral.xml
@@ -1609,7 +1474,7 @@ stk::percept::IntegratedOp::init() ";
 |---------------------------|-----------|---------------------------------------------------------|
 | point | [P] | number of points stored in an MD array | | vertex |
 [V] | number of nodes stored in an MD aray | | field | [F] | number of
-fields stored in an MD array | | basis field | [ B] | number of basis
+fields stored in an MD array | | basis field | [B] | number of basis
 fields stored in an MD array | | cell | [C] | number of cells stored
 in an MD array | | field coordinate | [D] | space dimension | |
 derivative ordinal | [K] | cardinality of the set of kth derivatives |
@@ -1728,10 +1593,6 @@ stk::percept::IntrepidManager::JacobianInverse::JacobianInverse "stk::percept::I
 %feature("docstring")
 stk::percept::l2NormOpScalarFunction::l2NormOpScalarFunction "stk::percept::l2NormOpScalarFunction::l2NormOpScalarFunction(Function
 &f) ";
-
-
-// File: classLine__.xml
-%feature("docstring") Line_ "";
 
 
 // File: classstk_1_1percept_1_1LN__NormOp.xml
@@ -2049,26 +1910,6 @@ stk::percept::minMaxAve::finish(stk::mesh::BulkData &mesh) ";
 %feature("docstring")  stk::percept::minMaxAve::setStandardRanges "void stk::percept::minMaxAve::setStandardRanges() ";
 
 
-// File: classMu2__.xml
-%feature("docstring") Mu2_ "";
-
-%feature("docstring")  Mu2_::Mu2_ "Mu2_< Temperature
->::Mu2_(Temperature temperature) ";
-
-%feature("docstring")  Mu2_::Mu2_ "Mu2_< Temperature
->::Mu2_(Temperature temperature) ";
-
-
-// File: classMu__.xml
-%feature("docstring") Mu_ "";
-
-%feature("docstring")  Mu_::Mu_ "Mu_< Temperature >::Mu_(Temperature
-temperature) ";
-
-%feature("docstring")  Mu_::Mu_ "Mu_< Temperature >::Mu_(Temperature
-temperature) ";
-
-
 // File: classstk_1_1percept_1_1MultipleFieldFunction.xml
 %feature("docstring") stk::percept::MultipleFieldFunction "
 
@@ -2328,7 +2169,7 @@ makes coordinates of this new node be the centroid of its sub entity
 stk::mesh::Entity &element, stk::mesh::EntityRank needed_entity_rank,
 unsigned iSubDimOrd, stk::mesh::FieldBase *field)
 
-!stkmesh::Entity * node =
+!stk::mesh::Entity * node =
 get_entity_node_II(*m_eMesh.get_bulk_data(),Node, nodeId); ";
 
 %feature("docstring")  stk::adapt::NodeRegistry::makeCentroid "void
@@ -2338,10 +2179,7 @@ makes coordinates of this new node be the centroid of its sub entity -
 this version does it for all new nodes
 
 !element_p = get_entity_element(*m_eMesh.get_bulk_data(),
-m_eMesh.element_rank(), elementId);
-
-!stkmesh::Entity * node = get_entity_node_II(*m_eMesh.get_bulk_data(),
-mesh::Node, nodeId); ";
+m_eMesh.element_rank(), elementId); ";
 
 %feature("docstring")  stk::adapt::NodeRegistry::interpolateFields "void stk::adapt::NodeRegistry::interpolateFields(const
 stk::mesh::Entity &element, stk::mesh::EntityRank needed_entity_rank,
@@ -2378,7 +2216,7 @@ stk::adapt::NodeRegistry::getNewNodeAndOwningElement(SubDimCell_SDSEntityType
 %feature("docstring")  stk::adapt::NodeRegistry::getFromMapPtr "SubDimCellData* stk::adapt::NodeRegistry::getFromMapPtr(const
 SubDimCell_SDSEntityType &subDimEntity) const ";
 
-%feature("docstring")  stk::adapt::NodeRegistry::getFromMap "SubDimCellData& stk::adapt::NodeRegistry::getFromMap(const
+%feature("docstring")  stk::adapt::NodeRegistry::getFromMap "SubDimCellData & stk::adapt::NodeRegistry::getFromMap(const
 SubDimCell_SDSEntityType &subDimEntity) const ";
 
 %feature("docstring")  stk::adapt::NodeRegistry::putInMap "void
@@ -2686,10 +2524,6 @@ DATA_TYPE > &observer) ";
 stk::percept::Observer< DATA_TYPE >::notify(DATA_TYPE *data)=0 ";
 
 
-// File: classOnePointRule.xml
-%feature("docstring") OnePointRule "";
-
-
 // File: classstk_1_1percept_1_1ParallelMachineFinalize.xml
 %feature("docstring") stk::percept::ParallelMachineFinalize "";
 
@@ -2753,7 +2587,7 @@ Parameters:
 
 gmesh_spec:  ";
 
-%feature("docstring")  stk::percept::PerceptMesh::add_field "stk::mesh::FieldBase* stk::percept::PerceptMesh::add_field(const
+%feature("docstring")  stk::percept::PerceptMesh::add_field "stk::mesh::FieldBase * stk::percept::PerceptMesh::add_field(const
 std::string &name, const unsigned entity_rank, int vectorDimension=0,
 const std::string part_name=\"universal_part\")
 
@@ -3287,7 +3121,7 @@ double *x=0) ";
 entityRank, int count, std::vector< stk::mesh::Entity * >
 &requested_entities) ";
 
-%feature("docstring")  stk::percept::PerceptMesh::node_field_data "double*
+%feature("docstring")  stk::percept::PerceptMesh::node_field_data "double *
 stk::percept::PerceptMesh::node_field_data(stk::mesh::FieldBase
 *field, const mesh::EntityId node_id) ";
 
@@ -3546,10 +3380,6 @@ stk::percept::QuadFixture< Scalar, Topology
 &element_ids_on_this_processor) ";
 
 
-// File: structQuadrilateral4.xml
-%feature("docstring") Quadrilateral4 "";
-
-
 // File: structstk_1_1adapt_1_1RefinementInfoByType.xml
 %feature("docstring") stk::adapt::RefinementInfoByType "";
 
@@ -3658,7 +3488,7 @@ that are shared by child objects are only counted once. Every node of
 the parent is also one of the child nodes. ";
 
 %feature("docstring")
-stk::adapt::Elem::RefinementTopology::child_nodes "const UInt* const*
+stk::adapt::Elem::RefinementTopology::child_nodes "const UInt* const
 stk::adapt::Elem::RefinementTopology::child_nodes() const ";
 
 %feature("docstring")
@@ -3785,7 +3615,7 @@ ordinal_of_node_on_subcell; // ordinal of the node on the subcell
 num_nodes_on_subcell; // how many nodes exist on the subcell double
 parametric_coordinates[3]; };
 
-Bootstrapping this file: to create this file, run the regression test
+Bootstrapping thisfile: to create this file, run the regression test
 RegressionTestUniformRefiner.cpp :: generate_tables after putting in a
 dummy entry in ./sierra_element/GeneratedRefinementTable.hpp. The run
 will produce a local file, generated_refinement_tables.hpp which can
@@ -4418,10 +4248,6 @@ void stk::percept::Searcher::setupSearch() ";
 stk::percept::Searcher::~Searcher() ";
 
 
-// File: classSENS.xml
-%feature("docstring") SENS "";
-
-
 // File: classstk_1_1adapt_1_1SerializeNodeRegistry.xml
 %feature("docstring") stk::adapt::SerializeNodeRegistry "";
 
@@ -4430,22 +4256,6 @@ stk::adapt::SerializeNodeRegistry::SerializeNodeRegistry "stk::adapt::SerializeN
 &eMesh, NodeRegistry *nodeRegistry, std::string input_mesh_name,
 std::string output_mesh_name, int M, int iM, int W=1, int iW=0, int
 M_0=-1, int M_1=-1) ";
-
-
-// File: classstk_1_1adapt_1_1unit__tests_1_1SetRefineField.xml
-%feature("docstring") stk::adapt::unit_tests::SetRefineField "";
-
-%feature("docstring")
-stk::adapt::unit_tests::SetRefineField::SetRefineField "stk::adapt::unit_tests::SetRefineField::SetRefineField(percept::PerceptMesh
-&eMesh) ";
-
-%feature("docstring")
-stk::adapt::unit_tests::SetRefineField::init_elementOp "virtual void
-stk::adapt::unit_tests::SetRefineField::init_elementOp() ";
-
-%feature("docstring")
-stk::adapt::unit_tests::SetRefineField::fini_elementOp "virtual void
-stk::adapt::unit_tests::SetRefineField::fini_elementOp() ";
 
 
 // File: classstk_1_1adapt_1_1regression__tests_1_1SetRefineField.xml
@@ -4462,6 +4272,22 @@ void stk::adapt::regression_tests::SetRefineField::init_elementOp() ";
 %feature("docstring")
 stk::adapt::regression_tests::SetRefineField::fini_elementOp "virtual
 void stk::adapt::regression_tests::SetRefineField::fini_elementOp() ";
+
+
+// File: classstk_1_1adapt_1_1unit__tests_1_1SetRefineField.xml
+%feature("docstring") stk::adapt::unit_tests::SetRefineField "";
+
+%feature("docstring")
+stk::adapt::unit_tests::SetRefineField::SetRefineField "stk::adapt::unit_tests::SetRefineField::SetRefineField(percept::PerceptMesh
+&eMesh) ";
+
+%feature("docstring")
+stk::adapt::unit_tests::SetRefineField::init_elementOp "virtual void
+stk::adapt::unit_tests::SetRefineField::init_elementOp() ";
+
+%feature("docstring")
+stk::adapt::unit_tests::SetRefineField::fini_elementOp "virtual void
+stk::adapt::unit_tests::SetRefineField::fini_elementOp() ";
 
 
 // File: classstk_1_1adapt_1_1unit__tests_1_1SetUnrefineField.xml
@@ -4511,16 +4337,6 @@ Shape::area(void)=0 ";
 
 %feature("docstring")  Shape::perimeter "virtual double
 Shape::perimeter(void)=0 ";
-
-
-// File: classShape__.xml
-%feature("docstring") Shape_ "";
-
-%feature("docstring")  Shape_::Shape_ "Shape_< ElementType
->::Shape_(ElementType element_type) ";
-
-%feature("docstring")  Shape_::Shape_ "Shape_< ElementType
->::Shape_(ElementType element_type) ";
 
 
 // File: classstk_1_1percept_1_1ShardsInterfaceTable.xml
@@ -4659,10 +4475,6 @@ Square::area(void) ";
 Square::perimeter(void) ";
 
 
-// File: structStandardReferenceElement_3_01Quadrilateral4_01_4.xml
-%feature("docstring") StandardReferenceElement< Quadrilateral4 > " ";
-
-
 // File: structstk_1_1adapt_1_1STK__Adapt__Auto__Part.xml
 %feature("docstring") stk::adapt::STK_Adapt_Auto_Part "
 
@@ -4786,42 +4598,6 @@ SDSEntityType > >::hashCode() ";
 
 // File: structstk_1_1adapt_1_1SubDimCellCompare.xml
 %feature("docstring") stk::adapt::SubDimCellCompare "";
-
-
-// File: classstk_1_1utils_1_1SweepMesher.xml
-%feature("docstring") stk::utils::SweepMesher "
-
-A simple utility to product tensor product (line, quad, hex) meshes by
-sweeping as well as non-tensor product mesh by breaking into sub-
-elements (tri, tet, wedge, pyramid).
-
-Steve Kennon, Brian Carnes, Kevin Copps  Usage: initialize with a
-simple pair of node, element arrays, such as
-
-double coords[][3] = { {0,0,0}, {1,0,0}, {2,2,0}, {0,3,0}, {0,0,1},
-{1,0,1}, {2,2,1}, {0,3,1} };
-
-unsigned quad4Elems[] = { 0,1,2,3, 4,5,6,7 };
-
-SweepMesher tp; tp.initNodes(coords, 8); tp.initElems(elemType, // one
-of enum's defined below quad4Elems, 2);
-
-Then use sweep to create a hex mesh (this example breaks a quad to
-create two Tri's, then creates a mixed hex/wedge mesh)
-
-boost::array< double, 3> dir = {0,0,1}; std::vector<Transform *>
-xforms(1, &TransformDir( dir ) );
-
-// break one of the quads into tris unsigned quadElemIndex = 1;
-tp2.breakElem<SweepMesher::ET_Quad4,
-SweepMesher::ET_Tri3>(quadElemIndex); std::cout << \"after
-break\\\\n\"; tp2.dump();
-
-// sweep to make a hex mesh boost::array< double, 3> dir1 =
-{0,0,2.345}; xforms[0] = &TransformDir(dir1); tp2.sweep(
-SweepMesher::ET_Quad4, SweepMesher::ET_Hex8, xforms);
-
-C++ includes: SweepMesher.hpp ";
 
 
 // File: classstk_1_1percept_1_1SweepMesher.xml
@@ -4978,26 +4754,44 @@ stk::percept::SweepMesher::stkMeshCreateBulkAfterMetaCommit(stk::ParallelMachine
 stk::percept::SweepMesher::writeSTKMesh(const char *filename) ";
 
 
-// File: classTCoeff.xml
-%feature("docstring") TCoeff "";
+// File: classstk_1_1utils_1_1SweepMesher.xml
+%feature("docstring") stk::utils::SweepMesher "
 
-%feature("docstring")  TCoeff::TCoeff "TCoeff::TCoeff() ";
+A simple utility to product tensor product (line, quad, hex) meshes by
+sweeping as well as non-tensor product mesh by breaking into sub-
+elements (tri, tet, wedge, pyramid)
 
-%feature("docstring")  TCoeff::TCoeff "TCoeff::TCoeff() ";
+Steve Kennon, Brian Carnes, Kevin Copps  Usage: initialize with a
+simple pair of node, element arrays, such as
+
+double coords[][3] = { {0,0,0}, {1,0,0}, {2,2,0}, {0,3,0}, {0,0,1},
+{1,0,1}, {2,2,1}, {0,3,1} };
+
+unsigned quad4Elems[] = { 0,1,2,3, 4,5,6,7 };
+
+SweepMesher tp; tp.initNodes(coords, 8); tp.initElems(elemType, // one
+of enum's defined below quad4Elems, 2);
+
+Then use sweep to create a hex mesh (this example breaks a quad to
+create two Tri's, then creates a mixed hex/wedge mesh)
+
+boost::array< double, 3> dir = {0,0,1}; std::vector<Transform *>
+xforms(1, &TransformDir( dir ) );
+
+// break one of the quads into tris unsigned quadElemIndex = 1;
+tp2.breakElem<SweepMesher::ET_Quad4,
+SweepMesher::ET_Tri3>(quadElemIndex); std::cout << \"after
+break\\\\n\"; tp2.dump();
+
+// sweep to make a hex mesh boost::array< double, 3> dir1 =
+{0,0,2.345}; xforms[0] = &TransformDir(dir1); tp2.sweep(
+SweepMesher::ET_Quad4, SweepMesher::ET_Hex8, xforms);
+
+C++ includes: SweepMesher.hpp ";
 
 
 // File: classstk_1_1percept_1_1IntrepidManager_1_1temp.xml
 %feature("docstring") stk::percept::IntrepidManager::temp "";
-
-
-// File: classTemperature__.xml
-%feature("docstring") Temperature_ "";
-
-%feature("docstring")  Temperature_::Temperature_ "Temperature_<
-TCoeff, Shape >::Temperature_(TCoeff t, Shape shape) ";
-
-%feature("docstring")  Temperature_::Temperature_ "Temperature_<
-TCoeff, Shape >::Temperature_(TCoeff t, Shape shape) ";
 
 
 // File: classstk_1_1adapt_1_1TestLocalRefiner.xml
@@ -5894,7 +5688,7 @@ o10   /    |     Node #14 is at centroid of element       | IndexList<
 ,                                    o ------------------o    9  |
 0,1,5,4 has node 25 at center.... |                   IndexList< 2 , 6
 ,  14 > , | 11o   | 3        |   o   | |                   IndexList<
-3 , 7 ,  15 > >type |       o----------|-------o 2 |
+3 , 7 ,  15 > >::type |       o----------|-------o 2 |
 HexahedronEdgeNodeMap ; |      /           |      / | |     /   8
 |     / |   typedef |    /    o        |    / |     MakeTypeList<
 IndexList< 0, 1, 5, 4,   8, 13, 16, 12,   25 > , |   /        o12   |
@@ -5904,7 +5698,7 @@ IndexList< 0, 1, 5, 4,   8, 13, 16, 12,   25 > , |   /        o12   |
 IndexList< 0, 4, 7, 3,  12, 19, 15, 11,   23 > , |/                 |/
 |                   IndexList< 0, 3, 2, 1,  11, 10,  9,  8,   21 > , o
 ------------------o |                   IndexList< 4, 5, 6, 7,  16,
-17, 18, 19,   22 > >type       0                    1 |
+17, 18, 19,   22 > >::type       0                    1 |
 HexahedronFaceNodeMap ; | |
 
 C++ includes: UniformRefinerPattern_Hex8_Tet4_24.hpp ";
@@ -6014,7 +5808,7 @@ o10   /    |     Node #14 is at centroid of element       | IndexList<
 ,                                    o ------------------o    9  |
 0,1,5,4 has node 25 at center.... |                   IndexList< 2 , 6
 ,  14 > , | 11o   | 3        |   o   | |                   IndexList<
-3 , 7 ,  15 > >type |       o----------|-------o 2 |
+3 , 7 ,  15 > >::type |       o----------|-------o 2 |
 HexahedronEdgeNodeMap ; |      /           |      / | |     /   8
 |     / |   typedef |    /    o        |    / |     MakeTypeList<
 IndexList< 0, 1, 5, 4,   8, 13, 16, 12,   25 > , |   /        o12   |
@@ -6024,7 +5818,7 @@ IndexList< 0, 1, 5, 4,   8, 13, 16, 12,   25 > , |   /        o12   |
 IndexList< 0, 4, 7, 3,  12, 19, 15, 11,   23 > , |/                 |/
 |                   IndexList< 0, 3, 2, 1,  11, 10,  9,  8,   21 > , o
 ------------------o |                   IndexList< 4, 5, 6, 7,  16,
-17, 18, 19,   22 > >type       0                    1 |
+17, 18, 19,   22 > >::type       0                    1 |
 HexahedronFaceNodeMap ; | |
 
 C++ includes: UniformRefinerPattern_Hex8_Tet4_6_12.hpp ";
@@ -9165,59 +8959,6 @@ sub-elements of the refined element ";
 %feature("docstring") stk::percept::Util "";
 
 
-// File: classVector.xml
-%feature("docstring") Vector "";
-
-%feature("docstring")  Vector::init "void Vector< T >::init(double t,
-RefElem i) ";
-
-%feature("docstring")  Vector::init "void Vector< T, I >::init(T t, I
-i) ";
-
-%feature("docstring")  Vector::value "T Vector< T >::value() ";
-
-
-// File: classvector.xml
-%feature("docstring") vector "";
-
-%feature("docstring")  vector::init "void vector< T >::init(T t) ";
-
-%feature("docstring")  vector::value "T vector< T >::value() ";
-
-%feature("docstring")  vector::init "void vector< double
->::init(double t) ";
-
-
-// File: classvector1.xml
-%feature("docstring") vector1 "";
-
-%feature("docstring")  vector1::init "void vector1< T, V >::init(T t)
-";
-
-%feature("docstring")  vector1::init "void vector1< double, vector
->::init(double d) ";
-
-
-// File: classvector2.xml
-%feature("docstring") vector2 "";
-
-%feature("docstring")  vector2::init "void vector2< T, V >::init(T t)
-";
-
-%feature("docstring")  vector2::init "void vector2< double, vector
->::init(double d) ";
-
-
-// File: classVectorB.xml
-%feature("docstring") VectorB "";
-
-%feature("docstring")  VectorB::init "void VectorB< T, RefElem
->::init(T t, RefElem i) ";
-
-%feature("docstring")  VectorB::value "T VectorB< T, RefElem
->::value() ";
-
-
 // File: classstk_1_1percept_1_1Verifier.xml
 %feature("docstring") stk::percept::Verifier "";
 
@@ -9270,10 +9011,10 @@ stk::percept::IntrepidManager::WeightedMeasure::WeightedMeasure "stk::percept::I
 %feature("docstring") stk::percept::unit_tests::XF1 "";
 
 
-// File: namespace@303.xml
+// File: namespace@109.xml
 
 
-// File: namespace@313.xml
+// File: namespace@119.xml
 
 
 // File: namespaceIntrepid.xml
@@ -9344,11 +9085,6 @@ stk::adapt::dump_args(int argc, char **argv) ";
 
 %feature("docstring")  stk::adapt::Elem::doPrintSizes "static void
 stk::adapt::doPrintSizes() ";
-
-%feature("docstring")  stk::adapt::Elem::getChildVectorPtr "static
-const SameRankRelationValue*
-stk::adapt::getChildVectorPtr(SameRankRelation &repo,
-stk::mesh::Entity *parent) ";
 
 %feature("docstring")  stk::adapt::Elem::get_random_sequence "static
 std::vector<unsigned> stk::adapt::get_random_sequence(int min, int
@@ -9504,10 +9240,10 @@ stk::adapt::Elem::StdMeshObjTopologies::getRefinementEdgePermutation "const UInt
 Elem::CellTopology &cell_topology, UInt permutation_ordinal) ";
 
 
-// File: namespacestk_1_1adapt_1_1Elem_1_1@398.xml
+// File: namespacestk_1_1adapt_1_1Elem_1_1@187.xml
 
 
-// File: namespacestk_1_1adapt_1_1Elem_1_1@404.xml
+// File: namespacestk_1_1adapt_1_1Elem_1_1@193.xml
 
 
 // File: namespacestk_1_1adapt_1_1Elem_1_1StdMeshObjTopologies.xml
@@ -9841,9 +9577,9 @@ Face #3:
 Various Interior Faces of Children:
 
 11 13 11 10 12 9 * * *-------* *-------* / \\\\ / \\\\ \\\\ * / \\\\ *
-/ /26 \\\\ /28 \\\\  /  / / * \\\\ / * \\\\ \\\\ / \\\\ /
-12*-------*10 10*-------*12 * * \\\\ * / \\\\ * / 8 8  /  / \\\\ /
-\\\\ / * * 9 8
+/ /26 \\\\ /28 \\\\ \\\\30 / \\\\31 / / * \\\\ / * \\\\ \\\\ / \\\\ /
+12*-------*10 10*-------*12 * * \\\\ * / \\\\ * / 8 8 \\\\27 / \\\\29
+/ \\\\ / \\\\ / * * 9 8
 
 13 13 * * / \\\\ / \\\\ /32 \\\\ /33 \\\\ / * \\\\ / * \\\\ *-------*
 *-------* 10 9 11 12
@@ -9888,7 +9624,7 @@ typedef MakeTypeList< IndexList< 0, 1, 5, 4,   8, 13, 16, 12,   25 > ,
 IndexList< 1, 2, 6, 5,   9, 14, 17, 13,   24 > , IndexList< 2, 3, 7,
 6,  10, 15, 18, 14,   26 > , IndexList< 0, 4, 7, 3,  12, 19, 15, 11,
 23 > , IndexList< 0, 3, 2, 1,  11, 10,  9,  8,   21 > , IndexList< 4,
-5, 6, 7,  16, 17, 18, 19,   22 > >type HexahedronFaceNodeMap ;
+5, 6, 7,  16, 17, 18, 19,   22 > >::type HexahedronFaceNodeMap ;
 
 After refinement (new nodes = *):
 
@@ -10734,320 +10470,6 @@ set cell topology for the part block_hex_20 ";
 
 %feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(SubDimCell, test2) ";
 
-%feature("docstring")  stk::adapt::unit_tests::fixture_setup_0 "static void stk::adapt::unit_tests::fixture_setup_0()
-
-Creates meshes for use in later tests 1. Create hex mesh from a
-fixture and write it in Exodus format for use later. 2. Read the hex
-mesh and convert it to tet elements using stk_adapt/UniformRefiner,
-write it in Exodus format ";
-
-%feature("docstring")  stk::adapt::unit_tests::fixture_setup_1 "static void stk::adapt::unit_tests::fixture_setup_1()
-
-Creates meshes for use in later tests - quad meshes with and without
-sidesets. ";
-
-%feature("docstring")  stk::adapt::unit_tests::fixture_setup "static
-void stk::adapt::unit_tests::fixture_setup() ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-stk_fixture_workaround) ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_quad_to_quad_sierra_1_test)
-
-Refine a quad mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_tri_to_tri_sierra_1_test)
-
-Refine a triangle mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit_uniformRefiner,
-break_quad_to_quad_sierra)
-
-Refine quad elements uses the Sierra-ported tables from
-framework/{element,mesh_modification}
-
-!eMesh, \"./square_quad4_ref_sierra_out.e\"); ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit_uniformRefiner,
-break_quad_to_quad_sierra_1)
-
-Refine quad elements with beam elements for the \"side sets\". ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit_uniformRefiner,
-break_tri_to_tri_sierra)
-
-Create a triangle mesh using the QuadFixture with the option of
-breaking the quads into triangles Refine the triangle mesh, write the
-results. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit_uniformRefiner,
-hex8_hex8_8_1)
-
-Refine a hex8 mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit_uniformRefiner,
-wedge6_1)
-
-Create and write a wedge mesh using the WedgeFixture. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-beam_enrich)
-
-Create a Beam mesh and enrich it. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-beam_refine)
-
-Create a beam mesh and refine it. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-generate_tables)
-
-This code generates C++ tables used by stk_adapt - tables contain node
-numbering, parametric coordinates consistent with Intrepid, and
-related information needed by UniformRefiner. The generated code
-should be compared with and merged into
-<stk_adapt/sierra_element/GeneratedRefinementTable.hpp> as appropriate
-if there is a change in the tables in that package, or an additional
-element type is added. This comment is from the generated code and
-tells how to bootstrap this process. Bootstrapping this file: to
-create this file, run the regression test
-RegressionTestUniformRefiner.cpp :: generate_tables after putting in a
-dummy entry in ./sierra_element/GeneratedRefinementTable.hpp. The run
-will produce a local file, generated_refinement_tables.hpp which can
-be checked against the gold copy of GeneratedRefinementTable.hpp, then
-copied over it. Add a call below to generate the actual new table
-data. ";
-
-%feature("docstring")  stk::adapt::unit_tests::output_draw "static
-void stk::adapt::unit_tests::output_draw(std::string filename,
-std::string toFile)
-
-Code to generate Dot/Graphviz files representing the topology of
-element refinement based on the internal tables. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit_uniformRefiner, draw1)
-";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit_uniformRefiner, draw)
-";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_quad_to_tri_6)
-
-Convert a quad mesh to triangles with 6 triangles per quad. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_quad_to_tri_4)
-
-Convert a quad mesh to triangles with 4 triangles per quad. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_quad_to_quad)
-
-Refine a quad mesh using the \"standalone\" refinement pattern:
-UniformRefinerPattern<shards::Quadrilateral<4>,
-shards::Quadrilateral<4>, 4 > This pattern is an example (like the
-convert-type patterns) showing how to write a new pattern with no
-dependencies ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_quad_to_quad_sierra)
-
-Refine a quad mesh uses the Sierra-ported tables from
-framework/{element,mesh_modification} ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_quad_to_quad_sierra_sidesets)
-
-Refine a quad mesh with sidesets uses the Sierra-ported tables from
-framework/{element,mesh_modification} ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-hex8_tet4_24_1)
-
-Convert a hex mesh to tets using 24 tets per hex. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-hex8_tet4_6_12_1)
-
-Convert a hex mesh using 6 tets per hex. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-hex8_tet4_6_12_2)
-
-Convert a hex mesh using 6 tets per hex. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-quad4_quad4_4_test_1)
-
-Refine a quad mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_quad_to_quad_sierra_1)
-
-Refine a quad mesh; test the multiple refinement feature. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_quad_to_quad_sierra_2)
-
-Refine a quad mesh; test the multiple refinement feature. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_quad4_to_quad9)
-
-Enrich a quad mesh (convert linear Quad4 elements to quadratic Quad9).
-";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_quad4_to_quad8)
-
-Enrich a quad mesh (convert linear Quad4 elements to serendepity
-Quad8). ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_quad8_to_quad8)
-
-Refine a quad8/serendepity mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_quad4_to_quad9_to_quad9_0)
-
-Enrich a quad4 mesh to quad9 then refine it. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_quad4_to_quad9_to_quad9)
-
-Enrich a quad4 mesh to quad9 then refine it. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_tri_to_tri_sierra_0)
-
-Refine a triangle mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_tri_to_tri_sierra_1)
-
-Refine a triangle mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_tri3_to_tri6_sierra)
-
-Enrich a triangle mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_tri3_to_tri6_to_tri6_sierra)
-
-Enrich a triangle mesh then refine it. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_tet4_tet4_0)
-
-Refine a linear tet mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_tet4_tet4_1)
-
-Refine a linear tet mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_tet4_tet10_1)
-
-Enrich a linear tet mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-break_tet4_tet10_tet10_1)
-
-Enrich a linear tet mesh then refine it. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-hex8_hex8_8_1)
-
-Refine a linear hex mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-hex8_hex8_8_2)
-
-Refine a linear hex mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-hex8_hex27_1_1)
-
-Enrich a linear hex mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-hex8_hex27_1_2)
-
-Enrich a linear hex mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-hex8_hex20_1_1)
-
-Enrich a linear hex mesh to serendepity hex20 elements. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-hex8_hex20_1_2)
-
-Enrich a linear hex mesh to serendepity hex20 elements. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-hex20_hex20_1)
-
-Refine a serendepity hex20 mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-hex20_hex20_1_2)
-
-Refine a serendepity hex20 mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-hex27_hex27_0)
-
-Refine a quadratic hex27 mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-hex8_hex27_hex27_1)
-
-Refine a quadratic hex27 mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-wedge6_2)
-
-Refine a linear wedge mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-wedge6_enrich_1)
-
-Enrich a linear wedge mesh to serendepity Wedge15. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-wedge6_enrich_refine)
-
-Enrich a linear wedge mesh to serendepity Wedge15 then refine it. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-heterogeneous_mesh)
-
-Generate a heterogeneous mesh (tet, hex, wedge elements) then refine
-it. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-heterogeneous_mesh_enrich)
-
-Enrich a heterogeneous mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-heterogeneous_quadratic_refine)
-
-Refine the enriched heterogeneous mesh. ";
-
-%feature("docstring")  stk::adapt::unit_tests::STKUNIT_UNIT_TEST "stk::adapt::unit_tests::STKUNIT_UNIT_TEST(unit1_uniformRefiner,
-wedge6_wedge18_enrich)
-
-Enrich a wedge6 mesh to wedge18. ";
-
 
 // File: namespacestk_1_1diag.xml
 
@@ -11185,7 +10607,7 @@ Normal output stream. ";
 
 %feature("docstring")  stk::percept::interface_table::pout "std::ostream & stk::percept::pout()
 
-Per-processor output stream (See RuntimeDeferredx). ";
+Per-processor output stream (See RuntimeDeferredx) ";
 
 %feature("docstring")  stk::percept::interface_table::dout "std::ostream & stk::percept::dout()
 
@@ -11247,22 +10669,22 @@ stk::percept::SQR(T t) ";
 stk::percept::toInt(std::string t) ";
 
 
-// File: namespacestk_1_1percept_1_1@198.xml
+// File: namespacestk_1_1percept_1_1@10.xml
 
 
-// File: namespacestk_1_1percept_1_1@202.xml
+// File: namespacestk_1_1percept_1_1@110.xml
 
 
-// File: namespacestk_1_1percept_1_1@204.xml
+// File: namespacestk_1_1percept_1_1@111.xml
 
 
-// File: namespacestk_1_1percept_1_1@207.xml
+// File: namespacestk_1_1percept_1_1@13.xml
 
 
-// File: namespacestk_1_1percept_1_1@304.xml
+// File: namespacestk_1_1percept_1_1@4.xml
 
 
-// File: namespacestk_1_1percept_1_1@305.xml
+// File: namespacestk_1_1percept_1_1@8.xml
 
 
 // File: namespacestk_1_1percept_1_1interface__table.xml
@@ -12017,15 +11439,6 @@ ElementNodePointerFieldType &elem_node_coord, mesh::Part &hex_block)
 // File: Allocate_8cpp.xml
 
 
-// File: Basis_81_8hpp.xml
-
-
-// File: Basis_82_8hpp.xml
-
-
-// File: Basis_8hpp.xml
-
-
 // File: BeamFixture_8cpp.xml
 
 
@@ -12047,14 +11460,6 @@ ElementNodePointerFieldType &elem_node_coord, mesh::Part &hex_block)
 // File: CellTopology_8hpp.xml
 
 
-// File: build_81_8nogit_2CMakeFiles_2CompilerIdCXX_2CMakeCXXCompilerId_8cpp.xml
-%feature("docstring")  main "int main(int argc, char *argv[]) ";
-
-
-// File: build_8dir_2CMakeFiles_2CompilerIdCXX_2CMakeCXXCompilerId_8cpp.xml
-%feature("docstring")  main "int main(int argc, char *argv[]) ";
-
-
 // File: Colorer_8cpp.xml
 
 
@@ -12071,60 +11476,6 @@ ElementNodePointerFieldType &elem_node_coord, mesh::Part &hex_block)
 
 
 // File: ConstantFunction_8hpp.xml
-
-
-// File: cpp-templates_81_8cpp.xml
-%feature("docstring")  main "int main() ";
-
-
-// File: cpp-templates_82_8cpp.xml
-%feature("docstring")  main "int main() ";
-
-
-// File: cpp-templates_83_8cpp.xml
-%feature("docstring")  init "void init(T t, I i) ";
-
-%feature("docstring")  init "void init(T t, int i) ";
-
-%feature("docstring")  main "int main() ";
-
-
-// File: cpp-templates_84_8cpp.xml
-%feature("docstring")  basis1 "T basis1(BasisBase< T, I, Topology,
-ReferenceElement > &b, I i, T pt[Topology::dim]) ";
-
-%feature("docstring")  basis1 "double basis1(BasisBase< double, int,
-Quadrilateral4, StandardReferenceElement > &b, int i, double
-pt[Quadrilateral4::dim]) ";
-
-%feature("docstring")  main "int main() ";
-
-
-// File: cpp-templates_85_8cpp.xml
-%feature("docstring")  main "int main() ";
-
-
-// File: cpp-templates_8cpp.xml
-%feature("docstring")  main "int main() ";
-
-
-// File: CPPArray_8hpp.xml
-
-
-// File: CPPArray__unit_81_8cpp.xml
-%feature("docstring")  main "int main() ";
-
-
-// File: CPPArray__unit_81_8hpp.xml
-%feature("docstring")  init "static void init(double val[2], int
-dim[1]) ";
-
-
-// File: CPPArray__unit_8cpp.xml
-%feature("docstring")  init "static void init(double val[2], int
-dim[1]) ";
-
-%feature("docstring")  main "int main() ";
 
 
 // File: Dimensions_8cpp.xml
@@ -12158,12 +11509,6 @@ dim[1]) ";
 
 
 // File: FieldFunction_8hpp.xml
-
-
-// File: FiniteElement_81_8hpp.xml
-
-
-// File: FiniteElement_8hpp.xml
 
 
 // File: Fixture_8cpp.xml
@@ -12300,10 +11645,6 @@ dim[1]) ";
 %feature("docstring")  main "int main() ";
 
 
-// File: main_8cpp.xml
-%feature("docstring")  main "int main() ";
-
-
 // File: main1_8cpp.xml
 %feature("docstring")  main "int main(int argc, char **argv) ";
 
@@ -12364,10 +11705,6 @@ dim[1]) ";
 
 
 // File: Observable_8hpp.xml
-
-
-// File: old-shape_8hpp.xml
-%feature("docstring")  main "int main() ";
 
 
 // File: OptionMask_8hpp.xml
@@ -12565,42 +11902,6 @@ dim[1]) ";
 // File: RegressionTestUniformRefiner_8cpp.xml
 
 
-// File: build_81_8nogit_2packages_2rtop_2src_2RTOpPack__ROpGetSubVector_8hpp.xml
-
-
-// File: build_8dir_2packages_2rtop_2src_2RTOpPack__ROpGetSubVector_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2rtop_2src_2RTOpPack__RTOpSubRangeDecorator_8hpp.xml
-
-
-// File: build_8dir_2packages_2rtop_2src_2RTOpPack__RTOpSubRangeDecorator_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2rtop_2src_2RTOpPack__RTOpT_8hpp.xml
-
-
-// File: build_8dir_2packages_2rtop_2src_2RTOpPack__RTOpT_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2rtop_2src_2RTOpPack__RTOpTHelpers_8hpp.xml
-
-
-// File: build_8dir_2packages_2rtop_2src_2RTOpPack__RTOpTHelpers_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2rtop_2src_2RTOpPack__SPMD__apply__op_8hpp.xml
-
-
-// File: build_8dir_2packages_2rtop_2src_2RTOpPack__SPMD__apply__op_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2rtop_2src_2RTOpPack__TOpLinearCombination_8hpp.xml
-
-
-// File: build_8dir_2packages_2rtop_2src_2RTOpPack__TOpLinearCombination_8hpp.xml
-
-
 // File: RunEnvironment_8cpp.xml
 
 
@@ -12763,550 +12064,10 @@ dim[1]) ";
 **argv) ";
 
 
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__apply__op__helper_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__apply__op__helper_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2stratimikos_2adapters_2belos_2src_2Thyra__BelosLinearOpWithSolve_8hpp.xml
-
-
-// File: build_8dir_2packages_2stratimikos_2adapters_2belos_2src_2Thyra__BelosLinearOpWithSolve_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2stratimikos_2adapters_2belos_2src_2Thyra__BelosLinearOpWithSolveFactory_8hpp.xml
-
-
-// File: build_8dir_2packages_2stratimikos_2adapters_2belos_2src_2Thyra__BelosLinearOpWithSolveFactory_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultAddedLinearOp_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultAddedLinearOp_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultAdjointLinearOpWithSolve_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultAdjointLinearOpWithSolve_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultBlockedLinearOp_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultBlockedLinearOp_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultBlockedTriangularLinearOpWithSolve_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultBlockedTriangularLinearOpWithSolve_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultBlockedTriangularLinearOpWithSolveFactory_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultBlockedTriangularLinearOpWithSolveFactory_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultClusteredSpmdProductVector_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultClusteredSpmdProductVector_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultClusteredSpmdProductVectorSpace_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultClusteredSpmdProductVectorSpace_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultColumnwiseMultiVector_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultColumnwiseMultiVector_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultDiagonalLinearOp_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultDiagonalLinearOp_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultDiagonalLinearOpWithSolve_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultDiagonalLinearOpWithSolve_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultFiniteDifferenceModelEvaluator_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultFiniteDifferenceModelEvaluator_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultIdentityLinearOp_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultIdentityLinearOp_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultInverseLinearOp_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultInverseLinearOp_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultLinearOpSource_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultLinearOpSource_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultMultipliedLinearOp_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultMultipliedLinearOp_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultMultiVectorLinearOpWithSolve_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultMultiVectorLinearOpWithSolve_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultMultiVectorProductVector_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultMultiVectorProductVector_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultMultiVectorProductVectorSpace_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultMultiVectorProductVectorSpace_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultPreconditioner_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultPreconditioner_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultProductMultiVector_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultProductMultiVector_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultProductVector_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultProductVector_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultProductVectorSpace_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultProductVectorSpace_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultScaledAdjointLinearOp_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultScaledAdjointLinearOp_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultSerialDenseLinearOpWithSolve_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultSerialDenseLinearOpWithSolve_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultSerialDenseLinearOpWithSolveFactory_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultSerialDenseLinearOpWithSolveFactory_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultSpmdMultiVector_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultSpmdMultiVector_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultSpmdVector_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultSpmdVector_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultSpmdVectorSpace_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultSpmdVectorSpace_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultSpmdVectorSpaceFactory_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultSpmdVectorSpaceFactory_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DefaultZeroLinearOp_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DefaultZeroLinearOp_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DelayedLinearOpWithSolve_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DelayedLinearOpWithSolve_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DelayedLinearOpWithSolveFactory_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DelayedLinearOpWithSolveFactory_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__describeLinearOp_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__describeLinearOp_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2test_2nonlinear_2models_2Thyra__DiagonalQuadraticResponseOnlyModelEvaluator_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2test_2nonlinear_2models_2Thyra__DiagonalQuadraticResponseOnlyModelEvaluator_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2test_2nonlinear_2models_2Thyra__DiagonalScalarProd_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2test_2nonlinear_2models_2Thyra__DiagonalScalarProd_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__DirectionalFiniteDiffCalculator_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__DirectionalFiniteDiffCalculator_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__EuclideanScalarProd_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__EuclideanScalarProd_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2stratimikos_2adapters_2belos_2src_2Thyra__GeneralSolveCriteriaBelosStatusTest_8hpp.xml
-
-
-// File: build_8dir_2packages_2stratimikos_2adapters_2belos_2src_2Thyra__GeneralSolveCriteriaBelosStatusTest_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__LinearOpBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__LinearOpBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__LinearOpDefaultBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__LinearOpDefaultBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__LinearOpScalarProd_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__LinearOpScalarProd_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__LinearOpTester_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__LinearOpTester_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__LinearOpWithSolveBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__LinearOpWithSolveBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__LinearOpWithSolveFactoryBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__LinearOpWithSolveFactoryBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__LinearOpWithSolveTester_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__LinearOpWithSolveTester_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__ModelEvaluatorBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__ModelEvaluatorBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__MultiVectorAdapterBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__MultiVectorAdapterBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__MultiVectorBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__MultiVectorBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__MultiVectorDefaultBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__MultiVectorDefaultBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__MultiVectorStdOps_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__MultiVectorStdOps_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__MultiVectorStdOpsTester_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__MultiVectorStdOpsTester_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__MultiVectorTester_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__MultiVectorTester_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__PreconditionerFactoryBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__PreconditionerFactoryBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__ScalarProdBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__ScalarProdBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__ScalarProdVectorSpaceBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__ScalarProdVectorSpaceBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__ScaledAdjointLinearOpBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__ScaledAdjointLinearOpBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__ScaledModelEvaluator_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__ScaledModelEvaluator_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2test_2nonlinear_2models_2Thyra__Simple2DModelEvaluator_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2test_2nonlinear_2models_2Thyra__Simple2DModelEvaluator_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__SpmdMultiVectorBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__SpmdMultiVectorBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__SpmdMultiVectorSerializer_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__SpmdMultiVectorSerializer_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__SpmdVectorBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__SpmdVectorBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__SpmdVectorSpaceBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__SpmdVectorSpaceBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__SpmdVectorSpaceDefaultBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__SpmdVectorSpaceDefaultBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__VectorDefaultBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__VectorDefaultBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__VectorSpaceBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__VectorSpaceBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__VectorSpaceDefaultBase_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__VectorSpaceDefaultBase_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__VectorSpaceTester_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__VectorSpaceTester_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__VectorStdOps_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__VectorStdOps_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__VectorStdOpsTester_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__VectorStdOpsTester_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2thyra_2core_2src_2Thyra__VectorTester_8hpp.xml
-
-
-// File: build_8dir_2packages_2thyra_2core_2src_2Thyra__VectorTester_8hpp.xml
-
-
 // File: TopologyVerifier_8cpp.xml
 
 
 // File: TopologyVerifier_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__BlockCrsGraph_8hpp.xml
-
-
-// File: build_8dir_2packages_2tpetra_2src_2Tpetra__BlockCrsGraph_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__BlockMap_8hpp.xml
-
-
-// File: build_8dir_2packages_2tpetra_2src_2Tpetra__BlockMap_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__BlockMultiVector_8hpp.xml
-
-
-// File: build_8dir_2packages_2tpetra_2src_2Tpetra__BlockMultiVector_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__CrsGraph_8hpp.xml
-
-
-// File: build_8dir_2packages_2tpetra_2src_2Tpetra__CrsGraph_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__CrsMatrix_8hpp.xml
-
-
-// File: build_8dir_2packages_2tpetra_2src_2Tpetra__CrsMatrix_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__CrsMatrixMultiplyOp_8hpp.xml
-
-
-// File: build_8dir_2packages_2tpetra_2src_2Tpetra__CrsMatrixMultiplyOp_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__CrsMatrixSolveOp_8hpp.xml
-
-
-// File: build_8dir_2packages_2tpetra_2src_2Tpetra__CrsMatrixSolveOp_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__Directory_8hpp.xml
-
-
-// File: build_8dir_2packages_2tpetra_2src_2Tpetra__Directory_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__Map_8hpp.xml
-
-
-// File: build_8dir_2packages_2tpetra_2src_2Tpetra__Map_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2tpetra_2inout_2Tpetra__MatrixIO_8hpp.xml
-
-
-// File: build_8dir_2packages_2tpetra_2inout_2Tpetra__MatrixIO_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__MultiVector_8hpp.xml
-
-
-// File: build_8dir_2packages_2tpetra_2src_2Tpetra__MultiVector_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__RowMatrixTransposer_8hpp.xml
-
-
-// File: build_8dir_2packages_2tpetra_2src_2Tpetra__RowMatrixTransposer_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__VbrMatrix_8hpp.xml
-
-
-// File: build_8dir_2packages_2tpetra_2src_2Tpetra__VbrMatrix_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2tpetra_2src_2Tpetra__Vector_8hpp.xml
-
-
-// File: build_8dir_2packages_2tpetra_2src_2Tpetra__Vector_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2tpetra_2ext_2TpetraExt__BlockExtraction_8hpp.xml
-
-
-// File: build_8dir_2packages_2tpetra_2ext_2TpetraExt__BlockExtraction_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2tpetra_2ext_2TpetraExt__MatrixMatrix_8hpp.xml
-
-
-// File: build_8dir_2packages_2tpetra_2ext_2TpetraExt__MatrixMatrix_8hpp.xml
-
-
-// File: build_81_8nogit_2packages_2tpetra_2ext_2TpetraExt__MMHelpers_8hpp.xml
-
-
-// File: build_8dir_2packages_2tpetra_2ext_2TpetraExt__MMHelpers_8hpp.xml
 
 
 // File: TransformPath_8hpp.xml
@@ -13547,220 +12308,94 @@ char **argv) ";
 // File: group__stk__io__module.xml
 
 
-// File: parallel__node__registry.xml
+// File: parallel_node_registry.xml
 
 
 // File: deprecated.xml
 
 
-// File: dir_43b85d1b9756cd92573a05b256534e97.xml
+// File: dir_11f034dd7735221cdf627bf79f3072dc.xml
 
 
-// File: dir_39663f98425a89e72081ace7340e200d.xml
+// File: dir_3650b8648b98b754fdec60c37bf0dc95.xml
 
 
-// File: dir_28fe238ec277346dd5ac9abf6486ecdc.xml
+// File: dir_972ece956570245404e1b799a1859c28.xml
 
 
-// File: dir_c4f432dcc56274f262ee25f6c7e2797d.xml
+// File: dir_88a03661e184aeb19be31dcbf2058403.xml
 
 
-// File: dir_4cd0eb8fce7a6ee8ac0f33e12658ea31.xml
+// File: dir_86d9755b1d9028ac71e5cc1c36f168f1.xml
 
 
-// File: dir_6d019fe9a3e912022e34420a98559810.xml
+// File: dir_954e47fdee18c4918c689d29195f8395.xml
 
 
-// File: dir_93acfb67a15c26e3fe5fe49fc9b7326b.xml
+// File: dir_0941ebabbc452a1d3783e7c2234b0985.xml
 
 
-// File: dir_74894c83a9b783e238234574b90570d4.xml
+// File: dir_a25ddaaa64c8aa19203fd4d33d0c2425.xml
 
 
-// File: dir_ba265262617a39be59e5c0b75c304539.xml
+// File: dir_afc3b0b0577b2468d37f97703cc327d8.xml
 
 
-// File: dir_165c6557e1301ecb3c9f5905eec3b00b.xml
+// File: dir_0e473d907fbca9a6ade6d6c3de8bdff8.xml
 
 
-// File: dir_88acda998ade427962a1aa8508daf788.xml
+// File: dir_19d3ce17e8f9e372363f2114f3dbcd20.xml
 
 
-// File: dir_920c0bfc63489478efe34b800b46c97f.xml
+// File: dir_cdeef988af37fd61781324a92413ec46.xml
 
 
-// File: dir_0443bedd395825987c9352c6b26347a0.xml
+// File: dir_ce4d385d7da70846972fe7d1116aeaa9.xml
 
 
-// File: dir_c7c5b2cad158fb171fec82ab94b075cc.xml
+// File: dir_0831f8d588f2754b86cefbbc7533e6cb.xml
 
 
-// File: dir_33761180d013d3a426bf969aabed0981.xml
+// File: dir_2721ee84a542daf599cbb9e5a489547b.xml
 
 
-// File: dir_87355dd6c023fe3112a1eb08b5bd3d90.xml
+// File: dir_d3157ce94e39b061aa74600e8e4e431d.xml
 
 
-// File: dir_97ccff9159689a66d84f5690d42f6e91.xml
+// File: dir_0defabeaccbd07bbd140d268e2f41fd9.xml
 
 
-// File: dir_9ef0d9f94c5b08ad32905ee42c99da0b.xml
+// File: dir_939612a4f550c6384b6f75b967919c63.xml
 
 
-// File: dir_656d53a56da6f6249384b0180a8a3dc9.xml
+// File: dir_32031a3b22d1ae4e8f376ff6a496f3d0.xml
 
 
-// File: dir_0fb21209bb7281c17d4777c1420e9f9d.xml
+// File: dir_dc90e54d5d10f796f8c92cc919e361bc.xml
 
 
-// File: dir_5469e35ff415ec73490a0d10cd6a4da4.xml
+// File: dir_4467ffbefb08b7ba3cf95a1b2f780234.xml
 
 
-// File: dir_a0f0fc4a584be87a71e7cbd43b9a7c3b.xml
+// File: dir_6f07f491ab744074018df0847278a6ff.xml
 
 
-// File: dir_36ebc1658037cfbe2a3bddb93ac684c2.xml
+// File: dir_634d56cc0e1f94b03ae0bd7693bf304d.xml
 
 
-// File: dir_cd830b685ea2bb92ad9375e95f5a1d8c.xml
+// File: dir_aa698353c03beac8eec839f77dbd7cfc.xml
 
 
-// File: dir_84ad5f77c193d063050821de314d5ffb.xml
+// File: dir_c2e4336b4d72311dc5d317b35195bcbf.xml
 
 
-// File: dir_242febc40ebf037f72d55dec0deae29e.xml
+// File: dir_88e797595a8ec3f773d78a2377cad2f2.xml
 
 
-// File: dir_dd4251f6c1cd951b1931a0d3f29c3170.xml
+// File: dir_abab4e79a7a8ddb45125c4bf4e64cebe.xml
 
 
-// File: dir_c371071c4adb1bdceb3bdd8c7b9f6296.xml
-
-
-// File: dir_80e6ada6a090e8cbadc3d76932d1a232.xml
-
-
-// File: dir_224a14681bb5c169504c3ecec1f071a7.xml
-
-
-// File: dir_1ee449185ae9f96b294df79597402ef9.xml
-
-
-// File: dir_e64ab482b65c8c2adc5f5c6863c92f30.xml
-
-
-// File: dir_df3262facab5696542d8ae3effebf9e8.xml
-
-
-// File: dir_15365b9e2d352a1ca0edd7cbf7a3464a.xml
-
-
-// File: dir_410c1fe22e0084673b69062c6c54d879.xml
-
-
-// File: dir_073c6910f180136e38f3faaac4e2a78d.xml
-
-
-// File: dir_ff477d759c31d91d840e8f68d4d3307e.xml
-
-
-// File: dir_702756e862c498edd6b289e650bd4f23.xml
-
-
-// File: dir_d44f8c6f9fb6d7790031ce62a1900ecc.xml
-
-
-// File: dir_3108127aafc8f30586aa41e578b1c88a.xml
-
-
-// File: dir_45ee8ae98f67f343e71aedeb361668fe.xml
-
-
-// File: dir_2165f1784ae20b5da3935b09d83f066e.xml
-
-
-// File: dir_d558d26576acd1c39a83ffd0505d3402.xml
-
-
-// File: dir_5ac9855eb2a152d35b8c8730350743d8.xml
-
-
-// File: dir_33bc1e7d328ef6eaf2b5b327efca805e.xml
-
-
-// File: dir_fc26ebcb0c645981cb8a320bc0cf8db6.xml
-
-
-// File: dir_128b25ae309c0099aa78423b81222b12.xml
-
-
-// File: dir_e349b3b9e712ee09db2a3cb7f9ac55ed.xml
-
-
-// File: dir_b236f165722599467367314bd533ebb3.xml
-
-
-// File: dir_642888a80233615f89234a856e08879d.xml
-
-
-// File: dir_ed42a66720eeb3d62cedc9bc0b4314bc.xml
-
-
-// File: dir_036f272561d74278959e0ca0a17c87ce.xml
-
-
-// File: dir_b7b6fa893d7aa49fe64cc0c1725eb058.xml
-
-
-// File: dir_8476efa39462d68fa0fcb0fd9fbc6f41.xml
-
-
-// File: dir_bb76877bacd7903b45d18d5b03d8db4d.xml
-
-
-// File: dir_745a945aedff9456fe32200265e844a9.xml
-
-
-// File: dir_54419b89dba1c3538f7068ee95c894c4.xml
-
-
-// File: dir_e39d2153e012a72ddf68a6c835aa1fb2.xml
-
-
-// File: dir_3befe1e5fb3228176e604f3801f5b895.xml
-
-
-// File: dir_534e19014992359ef56b8dac61596d0e.xml
-
-
-// File: dir_be24f826505eaa65a3c6b4a01e254fe2.xml
-
-
-// File: dir_c3265abd3a68485f5633c533094a6871.xml
-
-
-// File: dir_b0b96e322f3cbdb53a38b8603baaa664.xml
-
-
-// File: dir_b88e0f0f53cb1d5e809f45e5b3718b5a.xml
-
-
-// File: dir_0cb005c1013ddf5c357d41a0c66cb4a8.xml
-
-
-// File: dir_eec3f98673451bab17591b540eb377d4.xml
-
-
-// File: dir_3a8e978858dd8ded4ec2aa714334a98d.xml
-
-
-// File: dir_64589e2da2495338c450da853bf13b83.xml
-
-
-// File: dir_e6076efb2092f98e23962f456d0814ea.xml
-
-
-// File: dir_3f187bb3e470ae6aaf7c43d405290954.xml
+// File: dir_19fbb4666aa3fd0c5547b10975f59150.xml
 
 
 // File: indexpage.xml
