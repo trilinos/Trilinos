@@ -15,7 +15,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   OrderingAMD
   SOURCES orderingAMD.cpp
   NUM_MPI_PROCS 4
-  COMM serial
+  COMM serial mpi
   ARGS
    "--inputFile=simple"
   PASS_REGULAR_EXPRESSION "PASS"

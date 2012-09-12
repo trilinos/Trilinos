@@ -212,6 +212,7 @@ int main(int narg, char** arg)
 
   ////// Create and solve ordering problem
   Zoltan2::OrderingProblem<SparseMatrixAdapter> problem(&adapter, &params);
+  problem.solve();
 
   ////// Basic metric checking of the ordering solution
   size_t checkLength;
