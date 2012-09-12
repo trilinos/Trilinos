@@ -168,8 +168,7 @@ int main(int argc, char *argv[]) {
   assert(Prec != Teuchos::null);
 
   // specify parameters for ILU
-  ifpackList.set("fact: drop tolerance", 1e-9);
-  ifpackList.set("fact: ilut level-of-fill", 1.0);
+  ifpackList.set("fact: level-of-fill", 1);
   // the combine mode is on the following:
   // "Add", "Zero", "Insert", "InsertAdd", "Average", "AbsMax"
   // Their meaning is as defined in file Epetra_CombineMode.h
