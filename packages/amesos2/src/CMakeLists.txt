@@ -230,6 +230,8 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     )
 ENDIF()
 
+ADD_SUBDIRECTORY(SuiteSparse/KLU2/Source)
+
 #
 # C) Define the targets for package's library(s)
 #
