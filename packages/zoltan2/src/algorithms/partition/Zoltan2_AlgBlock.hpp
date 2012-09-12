@@ -256,7 +256,7 @@ void AlgBlock(
 
   ArrayRCP<const gno_t> gnos = arcpFromArrayView(idList);
 
-  solution->setParts(gnos, gnoPart);
+  solution->setParts(gnos, gnoPart, true);
 
   env->debug(DETAILED_STATUS, string("Exiting AlgBlock"));
 }

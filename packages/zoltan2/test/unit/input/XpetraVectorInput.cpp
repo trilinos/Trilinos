@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
   typedef Zoltan2::XpetraVectorInput<tvector_t> adapter_t;
   Zoltan2::PartitioningSolution<adapter_t> solution(
     env, comm, idMap, weightDim);
-  solution.setParts(gidArray, solnParts);
+  solution.setParts(gidArray, solnParts, true);
 
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::Vector, no weights
