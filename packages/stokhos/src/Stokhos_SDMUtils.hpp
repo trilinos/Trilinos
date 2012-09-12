@@ -471,6 +471,149 @@ namespace Stokhos {
     ordinal_type nfixed = 0;
     for (ordinal_type j=0; j<n; j++) {
       if (piv_orig[j] != 0) {
+	if (j != nfixed) {
+	  scalar_type tmp = nrm(j);
+	  nrm(j) = nrm(nfixed);
+	  nrm(nfixed) = tmp;
+	  
+	  SDV Apvt = getCol(Teuchos::View, AA, j);
+	  SDV Aj = getCol(Teuchos::View, AA, nfixed);
+	  Atmp.assign(Apvt);
+	  Apvt.assign(Aj);
+	  Aj.assign(Atmp);
+	  
+	  ordinal_type t = piv[j];
+	  piv[j] = piv[nfixed];
+	  piv[nfixed] = t;
+	}
+	++nfixed;
+      }
+    }
+  
+    scalar_type sigma = 1.0 + rank_threshold;
+    scalar_type r_max = 0.0;
+    ordinal_type j=0;
+    R.putScalar(0.0);
+    while (j < k && sigma >= rank_threshold) {
+
+      SDV Aj = getCol(Teuchos::View, AA, j);
+      SDV Qj = getCol(Teuchos::View, Q, j);
+
+      // Find pivot column if we are passed the pre-pivot stage
+      if (j >= nfixed) {
+	ordinal_type pvt = j;
+	for (ordinal_type l=j+1; l<n; l++)
+	  if (nrm(l) > nrm(pvt))
+	    pvt = l;
+
+	// Interchange column j and pvt
+	if (pvt != j) {
+	  // scalar_type tmp = nrm(pvt);
+	  // nrm(pvt) = nrm(j);
+	  // nrm(j) = tmp;
+	  
+	  SDV Apvt = getCol(Teuchos::View, AA, pvt);
+	  Atmp.assign(Apvt);
+	  Apvt.assign(Aj);
+	  Aj.assign(Atmp);
+
+	  SDV Rpvt = getCol(Teuchos::View, R, pvt);
+	  SDV Rj = getCol(Teuchos::View, R, j);
+	  Rtmp.assign(Rpvt);
+	  Rpvt.assign(Rj);
+	  Rj.assign(Rtmp);
+
+	  ordinal_type t = piv[pvt];
+	  piv[pvt] = piv[j];
+	  piv[j] = t;
+	}
+      }
+      
+      Qj.assign(Aj);
+      R(j,j) = std::sqrt(detail::weighted_inner_product(Qj, Qj, w));
+      Qj.scale(1.0/R(j,j));
+      for (ordinal_type l=j+1; l<n; l++) {
+	SDV Al = getCol(Teuchos::View, AA, l);
+	scalar_type t = detail::weighted_inner_product(Qj, Al, w);
+	R(j,l) = t;
+	detail::saxpy(1.0, Al, -t, Qj);
+
+	// Update norms
+	//nrm(l) -= AA(j,l)*AA(j,l);
+	nrm(l) = detail::weighted_inner_product(Al, Al, w);
+      }	
+
+      if (std::abs(R(j,j)) > r_max)
+	r_max = R(j,j);
+      sigma = std::abs(R(j,j)/r_max);
+      j++;
+    }
+
+    ordinal_type rank = j;
+    if (sigma < rank_threshold)
+      rank--;
+    Q.reshape(m, rank);
+    R.reshape(rank, rank);
+
+    return rank;
+  }
+
+  //! Compute column-pivoted QR using modified Gram-Schmidt
+  /*!
+   * For A an m-by-n matrix, computes A*P = Q*R with R k-by-k upper triangular,
+   * Q m-by-k with orthonormal columns, and P an n-by-k permutation matrix.
+   * Here k <= min(m,n) is determined by a rank threshold tau provided by the
+   * user.  The resulting R will have cond(R) <= 1/tau.  P is returned in the
+   * pivot array \c piv and the rank k returned by the function.  Only the first
+   * k entries of \c piv will be set.  As with LAPACK, the user can require
+   * columns of A to be included in P by setting the corresponding entries
+   * of piv to be nonzero on input.  The orthogonality of Q is determined by
+   * the weight vector w, defining a weighted inner-product.
+   */
+  template <typename ordinal_type, typename scalar_type>
+  ordinal_type
+  CPQR_MGS_reorthog_threshold(
+    const scalar_type& rank_threshold,
+    const Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& A,
+    const Teuchos::Array<scalar_type>& w,
+    Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& Q,
+    Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& R,
+    Teuchos::Array<ordinal_type>& piv) 
+  {
+    using Teuchos::getCol;
+    typedef Teuchos::SerialDenseVector<ordinal_type,scalar_type> SDV;
+    typedef Teuchos::SerialDenseMatrix<ordinal_type,scalar_type> SDM;
+    ordinal_type m = A.numRows();
+    ordinal_type n = A.numCols();
+    ordinal_type k = std::min(m,n);
+
+    // pivoting requires changing A
+    SDM AA(Teuchos::Copy, A, m, n);
+
+    // Make sure Q is the right size
+    if (Q.numRows() != m || Q.numCols() != k)
+      Q.shape(m,k);
+    if (R.numRows() != m || R.numCols() != n)
+      R.shape(m,n);
+    if (piv.size() != n)
+      piv.resize(n);
+
+    // Compute column norms
+    SDV nrm(n);
+    for (ordinal_type j=0; j<n; j++) {
+      SDV Aj = getCol(Teuchos::View, AA, j);
+      nrm(j) = detail::weighted_inner_product(Aj, Aj, w);
+    }
+    SDV Atmp(m), Rtmp(k);
+
+    Teuchos::Array<ordinal_type> piv_orig(piv);
+    for (ordinal_type i=0; i<n; i++)
+      piv[i] = i;
+
+    // Prepivot any columns requested by setting piv[i] != 0
+    ordinal_type nfixed = 0;
+    for (ordinal_type j=0; j<n; j++) {
+      if (piv_orig[j] != 0) {
 	if (piv[j] != j) {
 	  scalar_type tmp = nrm(j);
 	  nrm(j) = nrm(nfixed);
@@ -530,7 +673,17 @@ namespace Stokhos {
       for (ordinal_type l=j+1; l<n; l++) {
 	SDV Al = getCol(Teuchos::View, AA, l);
 	scalar_type t = detail::weighted_inner_product(Qj, Al, w);
-	if (l<k) R(j,l) = t;
+	if (l<k) R(j,l) += t;
+	detail::saxpy(1.0, Al, -t, Qj);
+
+	// Update norms
+	//nrm(l) -= AA(j,l)*AA(j,l);
+	nrm(l) = detail::weighted_inner_product(Al, Al, w);
+      }	
+      for (ordinal_type l=n-1; l>j; l--) {
+	SDV Al = getCol(Teuchos::View, AA, l);
+	scalar_type t = detail::weighted_inner_product(Qj, Al, w);
+	if (l<k) R(j,l) += t;
 	detail::saxpy(1.0, Al, -t, Qj);
 
 	// Update norms
@@ -593,6 +746,7 @@ namespace Stokhos {
   }
 
   //! Compute thin weighted QR factorization using modified Gram-Schmidt
+  /*
   template <typename ordinal_type, typename scalar_type>
   void QR_MGS(
     ordinal_type k,
@@ -630,6 +784,95 @@ namespace Stokhos {
 	R(i,j) = detail::weighted_inner_product(Qi, Aj, w);
 	detail::saxpy(1.0, Qj, -R(i,j), Qi);  // Q(:,j) = 1.0*Q(:,j) - R(i,j)*Q(:,i)
       }
+    }
+  }
+  */
+
+  //! Compute thin weighted QR factorization using modified Gram-Schmidt
+  template <typename ordinal_type, typename scalar_type>
+  void QR_MGS(
+    ordinal_type k,
+    const Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>& A,
+    const Teuchos::Array<scalar_type>& w,
+    Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>& Q,
+    Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>& R)
+  {
+    using Teuchos::getCol;
+    typedef Teuchos::SerialDenseVector<ordinal_type,scalar_type> SDV;
+    typedef Teuchos::SerialDenseMatrix<ordinal_type,scalar_type> SDM;
+
+    // getCol() requires non-const SDM
+    SDM& Anc = const_cast<SDM&>(A);
+
+    // Make sure Q is the right size
+    ordinal_type m = A.numRows();
+    if (Q.numRows() != m || Q.numCols() != k)
+      Q.shape(m,k);
+    if (R.numRows() != k || R.numCols() != k)
+      R.shape(k,k);
+    
+    for (ordinal_type i=0; i<k; i++) {
+      SDV Ai = getCol(Teuchos::View, Anc, i);
+      SDV Qi = getCol(Teuchos::View, Q, i);
+      Qi.assign(Ai);
+    }
+    for (ordinal_type i=0; i<k; i++) {
+      SDV Qi = getCol(Teuchos::View, Q, i);
+      for (ordinal_type j=0; j<i; j++) {
+	SDV Qj = getCol(Teuchos::View, Q, j);
+	scalar_type v = detail::weighted_inner_product(Qi, Qj, w);
+	detail::saxpy(1.0, Qi, -v, Qj);  // Q(:,i) = 1.0*Q(:,i) - v*Q(:,j)
+	R(j,i) += v;
+      }
+      R(i,i) = std::sqrt(detail::weighted_inner_product(Qi, Qi, w));
+      Qi.scale(1.0/R(i,i));
+    }
+  }
+
+  //! Compute thin weighted QR factorization using modified Gram-Schmidt
+  template <typename ordinal_type, typename scalar_type>
+  void QR_MGS2(
+    ordinal_type k,
+    const Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>& A,
+    const Teuchos::Array<scalar_type>& w,
+    Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>& Q,
+    Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>& R)
+  {
+    using Teuchos::getCol;
+    typedef Teuchos::SerialDenseVector<ordinal_type,scalar_type> SDV;
+    typedef Teuchos::SerialDenseMatrix<ordinal_type,scalar_type> SDM;
+
+    // getCol() requires non-const SDM
+    SDM& Anc = const_cast<SDM&>(A);
+
+    // Make sure Q is the right size
+    ordinal_type m = A.numRows();
+    if (Q.numRows() != m || Q.numCols() != k)
+      Q.shape(m,k);
+    if (R.numRows() != k || R.numCols() != k)
+      R.shape(k,k);
+    
+    for (ordinal_type i=0; i<k; i++) {
+      SDV Ai = getCol(Teuchos::View, Anc, i);
+      SDV Qi = getCol(Teuchos::View, Q, i);
+      Qi.assign(Ai);
+    }
+    for (ordinal_type i=0; i<k; i++) {
+      SDV Qi = getCol(Teuchos::View, Q, i);
+      for (ordinal_type j=0; j<i; j++) {
+	SDV Qj = getCol(Teuchos::View, Q, j);
+	scalar_type v = detail::weighted_inner_product(Qi, Qj, w);
+	detail::saxpy(1.0, Qi, -v, Qj);  // Q(:,i) = 1.0*Q(:,i) - v*Q(:,j)
+	R(j,i) += v;
+      }
+      for (ordinal_type j=i-1; j>=0; j--) {
+	SDV Qj = getCol(Teuchos::View, Q, j);
+	scalar_type v = detail::weighted_inner_product(Qi, Qj, w);
+	detail::saxpy(1.0, Qi, -v, Qj);  // Q(:,i) = 1.0*Q(:,i) - v*Q(:,j)
+	R(j,i) += v;
+      }
+      R(i,i) = std::sqrt(detail::weighted_inner_product(Qi, Qi, w));
+      Qi.scale(1.0/R(i,i));
     }
   }
     
@@ -712,7 +955,9 @@ namespace Stokhos {
     Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> AA(
       Teuchos::View, A, m, k, 0, 0);
     Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> err(m,k);
-    err.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Q, R, 0.0);
+    ordinal_type ret = 
+      err.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Q, R, 0.0);
+    TEUCHOS_ASSERT(ret == 0);
     err -= AA;
     return err.normInf();
   }
@@ -739,8 +984,24 @@ namespace Stokhos {
       for (ordinal_type i=0; i<m; i++)
 	AP(i,j) = A(i,piv[j]);
     Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> err(m,k);
-    err.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Q, R, 0.0);
+
+    // std::cout << "AP(:,0) = [ ";
+    // for (ordinal_type i=0; i<m; i++)
+    //   std::cout << AP(i,0) << " ";
+    // std::cout << " ] " << std::endl;
+
+    ordinal_type ret = 
+      err.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Q, R, 0.0);
+    TEUCHOS_ASSERT(ret == 0);
+
+    // std::cout << "QR(:,0) = [ ";
+    // for (ordinal_type i=0; i<m; i++)
+    //   std::cout << err(i,0) << " ";
+    // std::cout << " ] " << std::endl;
+
     err -= AP;
+
+    print_matlab(std::cout, err);
 
     return err.normInf();
   }

@@ -84,7 +84,7 @@ setup(
   // Compute norms of each pce for rescaling
   Teuchos::Array<value_type> pce_norms(d, 0.0);
   for (ordinal_type j=0; j<d; j++) {
-    for (ordinal_type i=0; i<d; i++)
+    for (ordinal_type i=0; i<pce_sz; i++)
       pce_norms[j] += (*pce2[j])[i]*(*pce2[j])[i]*pce_basis->norm_squared(i);
     pce_norms[j] = std::sqrt(pce_norms[j]);
   }

@@ -47,12 +47,12 @@ static const char *quadrature_method_names[] = {
   "Tensor", "Sparse" };
 
 // reduced basis methods
-enum Reduced_Basis_Method { LANCZOS, MONOMIAL_PROJ_GS, MONOMIAL_GS, LANCZOS_GS };
-static const int num_reduced_basis_method = 4;
+enum Reduced_Basis_Method { LANCZOS, MONOMIAL_PROJ_GS, MONOMIAL_PROJ_GS2, MONOMIAL_GS, LANCZOS_GS };
+static const int num_reduced_basis_method = 5;
 static const Reduced_Basis_Method reduced_basis_method_values[] = { 
-  LANCZOS, MONOMIAL_PROJ_GS, MONOMIAL_GS, LANCZOS_GS };
+  LANCZOS, MONOMIAL_PROJ_GS, MONOMIAL_PROJ_GS2, MONOMIAL_GS, LANCZOS_GS };
 static const char *reduced_basis_method_names[] = { 
-  "Lanczos", "Monomial-Proj-GS", "Monomial-GS", "Lanczos-GS" };
+  "Lanczos", "Monomial-Proj-GS", "Monomial-Proj-GS2", "Monomial-GS", "Lanczos-GS" };
 
 // basis reduction methods
 enum Basis_Reduction_Method { BR_CPQR, SVD };
@@ -63,12 +63,12 @@ static const char *basis_reduction_method_names[] = {
   "Column-Pivoted QR", "SVD" };
 
 // orthogonalization methods
-enum Orthogonalization_Method { HOUSEHOLDER, CGS, MGS };
-static const int num_orthogonalization_method = 3;
+enum Orthogonalization_Method { HOUSEHOLDER, CGS, MGS, MGSRO, MGSNP, MGSNPRO };
+static const int num_orthogonalization_method = 6;
 static const Orthogonalization_Method orthogonalization_method_values[] = { 
-  HOUSEHOLDER, CGS, MGS };
+  HOUSEHOLDER, CGS, MGS, MGSRO, MGSNP, MGSNPRO };
 static const char *orthogonalization_method_names[] = { 
-  "Householder", "Classical Gram-Schmidt", "Modified Gram-Schmidt" };
+  "Householder", "Classical Gram-Schmidt", "Modified Gram-Schmidt", "Modified Gram-Schmidt with Reorthogonalization", "Modified Gram-Schmidt without Pivoting", "Modified Gram-Schmidt without Pivoting with Reorthogonalization"};
 
 // quadrature reduction methods
 enum Quadrature_Reduction_Method { NONE, QSQUARED, QSQUARED2, Q2 };
@@ -310,6 +310,8 @@ int main(int argc, char **argv)
     Teuchos::ParameterList params;
     if (reduced_basis_method == MONOMIAL_PROJ_GS)
       params.set("Reduced Basis Method", "Monomial Proj Gram-Schmidt");
+    else if (reduced_basis_method == MONOMIAL_PROJ_GS2)
+      params.set("Reduced Basis Method", "Monomial Proj Gram-Schmidt2");
     else if (reduced_basis_method == MONOMIAL_GS)
       params.set("Reduced Basis Method", "Monomial Gram-Schmidt");
     else if (reduced_basis_method == LANCZOS)
@@ -324,12 +326,8 @@ int main(int argc, char **argv)
       params.set("Basis Reduction Method", "Column-pivoted QR");
     else if (basis_reduction_method == SVD)
       params.set("Basis Reduction Method", "SVD");
-    if (orthogonalization_method == HOUSEHOLDER)
-      params.set("Orthogonalization Method", "Householder");
-    else if (orthogonalization_method == CGS)
-      params.set("Orthogonalization Method", "Classical Gram-Schmidt");
-    else if (orthogonalization_method == MGS)
-      params.set("Orthogonalization Method", "Modified Gram-Schmidt");
+    params.set("Orthogonalization Method", 
+	       orthogonalization_method_names[orthogonalization_method]);
     params.set("Rank Threshold", rank_threshold);
     Teuchos::ParameterList& red_quad_params = 
       params.sublist("Reduced Quadrature");

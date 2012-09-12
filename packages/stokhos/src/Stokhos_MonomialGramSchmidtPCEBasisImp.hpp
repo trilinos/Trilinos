@@ -109,12 +109,26 @@ buildReducedBasis(
   // "Q" in the QR factorization defines the new basis
   SDM R;
   Teuchos::Array<ordinal_type> piv(max_sz);
-  for (int i=0; i<this->d+1; i++)
-    piv[i] = 1;
+  // for (int i=0; i<this->d+1; i++)
+  //   piv[i] = 1;
   if (this->orthogonalization_method == "Modified Gram-Schmidt")
     sz_ = CPQR_MGS_threshold(threshold, B, weights, Q_, R, piv);
+  else if (this->orthogonalization_method == "Modified Gram-Schmidt with Reorthogonalization")
+    sz_ = CPQR_MGS_reorthog_threshold(threshold, B, weights, Q_, R, piv);
   else if (this->orthogonalization_method == "Classical Gram-Schmidt")
     sz_ = CPQR_CGS_threshold(threshold, B, weights, Q_, R, piv);
+  else if (this->orthogonalization_method == "Modified Gram-Schmidt without Pivoting") {
+    QR_MGS(max_sz, B, weights, Q_, R);
+    for (int i=0; i<max_sz; i++)
+      piv[i] = i;
+    sz_ = max_sz;
+  }
+  else if (this->orthogonalization_method == "Modified Gram-Schmidt without Pivoting with Reorthogonalization") {
+    QR_MGS2(max_sz, B, weights, Q_, R);
+    for (int i=0; i<max_sz; i++)
+      piv[i] = i;
+    sz_ = max_sz;
+  }
   else
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, 

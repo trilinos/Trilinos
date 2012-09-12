@@ -521,6 +521,7 @@ reducedQuadrature_Q2(
   ordinal_type ret = 
     e1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q2, w, 0.0);
   TEUCHOS_ASSERT(ret == 0);
+  std::cout << "constraint vector = " << e1 << std::endl;
   // e1.putScalar(0.0);
   // e1[0] = 1.0;
   // ordinal_type ret;
@@ -554,7 +555,20 @@ reducedQuadrature_Q2(
     ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
     TEUCHOS_ASSERT(ret == 0);
     std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
-    print_matlab(std::cout, err2);
+
+    // Check discrete orthogonality error ||I - Q2^T*diag(u)*Q2||
+    // Teuchos::SerialDenseMatrix<ordinal_type,value_type> err3(sz2, sz2);
+    // err3.putScalar(0.0);
+    // for (ordinal_type i=0; i<sz2; i++)
+    //   err3(i,i) = 1.0;
+    // Teuchos::SerialDenseMatrix<ordinal_type,value_type> WQ2(nqp, sz2);
+    // for (ordinal_type i=0; i<nqp; i++)
+    //   for (ordinal_type j=0; j<sz2; j++)
+    // 	WQ2(i,j) = w[i]*Q2(i,j);
+    // ret = err3.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q2, WQ2, 1.0);
+    // TEUCHOS_ASSERT(ret == 0);
+    // std::cout << "||I-Q2^T*diag(u)*Q2||_infty = " << err3.normInf() << std::endl;
+    // print_matlab(std::cout, err3);
   }
   
   ordinal_type rank = 0;
