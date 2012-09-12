@@ -217,11 +217,10 @@ CommandLineProcessor::parse(
   for( int i = 1; i < argc; ++i ) {
     bool gov_return = get_opt_val( argv[i], &opt_name, &opt_val_str );
     if( !gov_return ) {
-      if(recogniseAllOptions()) {
-        if(procRank == 0) 
-          print_bad_opt(i,argv,errout);
+      if(procRank == 0) 
+        print_bad_opt(i,argv,errout);
+      if( recogniseAllOptions() ) 
         return PARSE_UNRECOGNIZED_OPTION;
-      }
       else {
         continue;
       }
@@ -255,7 +254,7 @@ CommandLineProcessor::parse(
     if( itr == options_list_.end() ) {
       if(procRank == 0)
         print_bad_opt(i,argv,errout);
-      if( recogniseAllOptions() )
+      if( recogniseAllOptions() ) 
         return PARSE_UNRECOGNIZED_OPTION;
       else
         continue;
@@ -298,13 +297,18 @@ CommandLineProcessor::parse(
     ++itr
     )
   {
-    const std::string     &opt_val_name = (*itr).first;
     const opt_val_val_t   &opt_val_val  = (*itr).second;
     if( opt_val_val.required && !opt_val_val.was_read ) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::logic_error
-        ,"Error, the option --"<<opt_val_name<<" was required but was not set!"
-        );
+      const std::string     &opt_val_name = (*itr).first;
+#define CLP_ERR_MSG \
+      "Error, the option --"<<opt_val_name<<" was required but was not set!"
+      if(errout)
+        *errout << std::endl << argv[0] << " : " << CLP_ERR_MSG << std::endl;
+      if( throwExceptions() ) {
+        TEUCHOS_TEST_FOR_EXCEPTION( true, ParseError, CLP_ERR_MSG );
+      }
+      return PARSE_ERROR;
+#undef CLP_ERR_MSG
     }
   }
   // Set the options of a default stream exists and if we are asked to
@@ -613,7 +617,7 @@ bool CommandLineProcessor::set_enum_value(
     if(errout)
       *errout << std::endl << argv[0] << " : " << CLP_ERR_MSG << std::endl;
     if( throwExceptions() ) {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, CLP_ERR_MSG );
+      TEUCHOS_TEST_FOR_EXCEPTION( true, UnrecognizedOption, CLP_ERR_MSG );
     }
     else {
       return false;

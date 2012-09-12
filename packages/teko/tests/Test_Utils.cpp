@@ -140,9 +140,12 @@ void Print(std::ostream & os,const std::string & s,const RCP<const Thyra::MultiV
 RCP<Thyra::VectorBase<double> > BuildIVector(int j,const RCP<const Thyra::VectorSpaceBase<double> > & vs)
 {
    RCP<Thyra::VectorBase<double> > v = Thyra::createMember(vs);
-   Thyra::DetachedVectorView<double> view(v);
-   Thyra::assign<double>(&*v,0.0);
-   view[j] = 1.0;
+   Thyra::assign<double>(v.ptr(), 0.0);
+
+   {
+     Thyra::DetachedVectorView<double> view(v);
+     view[j] = 1.0;
+   }
 
    return v;
 }
@@ -162,7 +165,7 @@ void HardExtract(std::ostream & os,const RCP<const Thyra::LinearOpBase<double> >
       for(int j=0;j<ncols;j++) {
          const RCP<const Thyra::VectorBase<double> > ej = Teko::Test::BuildIVector(j,A->domain());
          const RCP<Thyra::VectorBase<double> > v = Thyra::createMember(A->range()); 
-         A->apply(Thyra::NONCONJ_ELE,*ej,&*v);
+         ::Thyra::apply(*A, Thyra::NOTRANS, *ej, v.ptr());
           
          // this for some reason messes up valgrind (2/9/09)
          double value = A->range()->scalarProd(*u,*v);

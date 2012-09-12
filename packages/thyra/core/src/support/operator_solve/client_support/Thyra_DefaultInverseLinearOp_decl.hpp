@@ -350,6 +350,7 @@ void DefaultInverseLinearOp<Scalar>::assertInitialized() const
 }
 
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
 //
 // Deprecated
 //
@@ -395,6 +396,7 @@ inverse(
 }
 
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 } // end namespace Thyra
 
 

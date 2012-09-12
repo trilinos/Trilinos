@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
     }
 
     // =================== Read input xml file =============================
-    Teuchos::updateParametersFromXmlFile(ipFileName, &driverList);
+    Teuchos::updateParametersFromXmlFile(ipFileName, Teuchos::inoutArg(driverList));
     isoList = driverList.sublist("Isorropia Input");
 
     // Get matrix market file name

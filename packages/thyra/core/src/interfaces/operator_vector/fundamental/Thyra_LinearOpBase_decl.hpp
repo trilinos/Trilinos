@@ -316,6 +316,7 @@ public:
 
   //@}
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
   /** \name Deprecated. */
   //@{
 
@@ -345,6 +346,7 @@ public:
 
   //@}
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 protected:
 
   /** \name Protected virtual functions to be overridden by subclasses. */
@@ -440,7 +442,7 @@ void apply(
   const double beta = 0.0
   );
 
-
+#ifndef THYRA_HIDE_DEPRECATED_CODE
 // Deprecated
 
 
@@ -481,6 +483,7 @@ THYRA_DEPRECATED void apply(
   const Scalar beta = static_cast<Scalar>(0.0)
   );
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 
 }	// end namespace Thyra
 
@@ -549,7 +552,7 @@ void Thyra::apply(
   apply<double>(M, M_trans, X, Y, alpha, beta);
 }
 
-
+#ifndef THYRA_HIDE_DEPRECATED_CODE
 // Deprecated
 
 
@@ -597,5 +600,6 @@ void Thyra::apply(
   apply(M, M_trans, X, Teuchos::ptr(Y), alpha, beta);
 }
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 
 #endif	// THYRA_LINEAR_OP_DECL_HPP

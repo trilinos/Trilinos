@@ -352,6 +352,7 @@ public:
 
   //@}
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
   /** \name Deprecated. */
   //@{
 
@@ -380,6 +381,7 @@ public:
 
   //@}
   
+#endif // THYRA_HIDE_DEPRECATED_CODE
 protected:
 
   // ///////////////////////////////////
@@ -482,7 +484,7 @@ DefaultProductVectorSpace<Scalar>::vecSpacesOffsets() const
 template<class Scalar>
 inline bool DefaultProductVectorSpace<Scalar>::hasBeenCloned() const
 {
-  return vecSpaces_.count() > 1;
+  return vecSpaces_.strong_count() > 1;
 }
 
 

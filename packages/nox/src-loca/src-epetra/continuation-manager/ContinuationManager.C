@@ -83,7 +83,7 @@ ContinuationManager(
   timeCounter(Epetra_Time(*aComm))
 {
   // Reading the parameter task from the file
-  Teuchos::updateParametersFromXmlFile(taskFileName,taskList.get());
+  Teuchos::updateParametersFromXmlFile(taskFileName, taskList.ptr());
 
   if (comm->MyPID()==0) {
     std::cout << std::endl << "#### Task Parameters from task file \"" << 

@@ -65,9 +65,6 @@ pltbgn.f pltblk.f pltcg2.f pltcnm.f pltcol.f pltcp2.f \
 pltcp3.f pltcpy.f pltcrs.f pltcur.f pltcv2.f pltcv3.f \
 pltd2g.f pltd2p.f pltdg2.f pltdp2.f pltdp3.f pltdrw.f \
 pltdv2.f pltdv3.f pltend.f pltesc.f pltflu.f pltfnt.f \
-plt_sanserif.f plt_roman.f plt_stick.f
-
-SRCS2 = \
 pltfrc.f pltfrm.f pltg2d.f pltgm2.f pltgm3.f pltgph.f \
 pltgtc.f pltgtd.f pltgtg.f pltgtm.f pltgtt.f pltgtv.f \
 plticl.f pltini.f pltino.f pltint.f pltiqc.f pltiqd.f \
@@ -87,15 +84,17 @@ pltsvm.f pltsvt.f pltsvv.f pltsym.f pltuwn.f pltvcm.f \
 pltvct.f pltvwg.f pltvwp.f pltvwv.f pltwai.f pltxhe.f \
 pltxhl.f pltxhn.f pltxse.f pltxsl.f pltxsn.f pltxtc.f \
 pltxth.f pltxts.f pltzcp.f pltzcv.f siorpt.f ttyifc.f \
-vecrgp.f vecrgs.f iand.f
+vecrgp.f vecrgs.f plt_init_font.f
+
+SRCSc = plt_font_data.c
 
 SRCSf = ${SRCSF:.F=.f}
 OBJSF = ${SRCSF:.F=.o}
 OBJS1 = ${SRCS1:.f=.o}
-OBJS2 = ${SRCS2:.f=.o}
-OBJSf = $(OBJS1) $(OBJS2)
+OBJSc = ${SRCSc:.c=.o}
+OBJS  = $(OBJS1) $(OBJSc)
 
-NormalLibraryTarget2($(LIB),$(OBJSF),$(OBJSf))
+NormalLibraryTarget2($(LIB),$(OBJSF),$(OBJS))
 
 InstallLibrary($(LIB),$(LIBDIR))
 

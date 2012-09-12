@@ -236,6 +236,7 @@ void DefaultAddedLinearOp<Scalar>::describe(
 }
 
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
 // Deprecated
 
 
@@ -259,6 +260,7 @@ DefaultAddedLinearOp<Scalar>::DefaultAddedLinearOp(
 }
 
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 // protected
 
 

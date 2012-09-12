@@ -43,7 +43,7 @@
 #include "Epetra_LongLongVector.h"
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
-#include <limits.h> // LLONG_MIN, LLONG_MAX
+#include <limits>
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 
@@ -165,7 +165,7 @@ int Epetra_LongLongVector::PutValue(long long Value) {
 }
 //=============================================================================
 long long Epetra_LongLongVector::MaxValue() {
-  long long result = LLONG_MIN; // smallest 64 bit int
+  long long result = std::numeric_limits<long long>::min(); // smallest 64 bit int
   int iend = MyLength();
   if (iend>0) result = Values_[0];
   for (int i=0; i<iend; i++) result = EPETRA_MAX(result, Values_[i]);
@@ -175,7 +175,7 @@ long long Epetra_LongLongVector::MaxValue() {
 }
 //=============================================================================
 long long Epetra_LongLongVector::MinValue() {
-  long long result = LLONG_MAX; // largest 64 bit int
+  long long result = std::numeric_limits<long long>::max(); // largest 64 bit int
   int iend = MyLength();
   if (iend>0) result = Values_[0];
   for (int i=0; i<iend; i++) result = EPETRA_MIN(result, Values_[i]);

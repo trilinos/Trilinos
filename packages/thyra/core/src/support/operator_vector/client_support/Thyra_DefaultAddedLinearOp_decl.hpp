@@ -215,6 +215,7 @@ public:
 
   //@}
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
   /** \brief Deprecated. */
   //@{
 
@@ -250,6 +251,7 @@ public:
 
   //@}
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 protected:
 
   /** @name Overridden from LinearOpBase */

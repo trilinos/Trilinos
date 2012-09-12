@@ -165,7 +165,7 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     coords = new scalar_t * [coordDim];
     for (int i=0; i < coordDim; i++){
       coords[i] = new scalar_t [nLocalRows];
-      for (size_t j=0; j < nLocalRows; j++){
+      for (lno_t j=0; j < nLocalRows; j++){
         coords[i][j] = 100000*i + j;
       }
     }
@@ -178,7 +178,7 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
         rowWeights[i] = NULL;
       else{
         rowWeights[i] = new scalar_t [nLocalRows];
-        for (size_t j=0; j < nLocalRows; j++){
+        for (lno_t j=0; j < nLocalRows; j++){
           rowWeights[i][j] = 200000*i + j;
         }
       }
@@ -224,7 +224,7 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     numNbors[i] = idx.size();
 
     for (lno_t j=0; j < idx.size(); j++){
-      if (j == i){
+      if (idx[j] == i){
         haveDiag[i] = true;
       }
       else{
@@ -275,11 +275,9 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
         num++;
   }
 
-#ifdef TODO_THIS_TEST_FAILS
   if (model->getLocalNumLocalEdges() != num)
     fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumLocalEdges", 1)
-#endif
 
   num = (removeSelfEdges ? (nGlobalNZ-numGlobalDiags) : nGlobalNZ);
 
@@ -327,7 +325,7 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     }
   }
   else{  // round robin ids
-    gid_t myGid = rank;
+    gno_t myGid = rank;
     for (lno_t i=0; i < nLocalRows; i++, myGid += nprocs){
       if (vertexGids[i] != myGid){
         fail = 1;
@@ -393,7 +391,7 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   TEST_FAIL_AND_EXIT(*comm, wgts.size() == 0, "edge weights present", 1)
 
   num = 0;
-  for (size_t i=0; i < offsets.size()-1; i++){
+  for (ArrayView<const lno_t>::size_type i=0; i < offsets.size()-1; i++){
     size_t edgeListSize = offsets[i+1] - offsets[i];
     num += edgeListSize;
     size_t val = numNbors[i];
@@ -431,9 +429,9 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   }
   TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList", 1)
 
-#ifdef TODO_THIS_TEST_FAILS
+#ifdef THIS_CODE_DOESNT_FAIL
   num = 0;
-  for (size_t i=0; i < localOffsets.size(); i++){
+  for (size_t i=0; i < localOffsets.size()-1; i++){
     size_t edgeListSize = localOffsets[i+1] - localOffsets[i];
     num += edgeListSize;
     size_t val = numLocalNbors[i];
@@ -452,7 +450,6 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     fail = 1;
 
   TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList size", 1)
-#endif
 
   if (nGlobalRows < 200){
     if (totalLocalNbors == 0){
@@ -464,6 +461,7 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
         localEdges.getRawPtr(), NULL, NULL, localOffsets.getRawPtr(), comm);
     }
   }
+#endif
 
   delete model;
 
@@ -498,7 +496,6 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
     bool consecutiveIdsRequested, bool removeSelfEdges)
 {
   int rank = comm->getRank();
-  int nprocs = comm->getSize();
 
   if (rank==0){
     cout << endl << "=======================" << endl;
@@ -555,6 +552,7 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
 
   // Do a round robin migration so that global IDs are not consecutive.
 
+#ifdef TODO_THESE_HAVE_BEEN_TESTED
   Array<gno_t> myNewRows;
   for (size_t i=rank; i < Mconsec->getGlobalNumRows(); i+=nprocs)
     myNewRows.push_back(i);
@@ -580,6 +578,8 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
     consecutiveIdsRequested, removeSelfEdges);
 #endif
 
+#endif
+
   delete input;
 }
 
@@ -601,7 +601,7 @@ int main(int argc, char *argv[])
     rowWeightDim, nnzDim, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
-#ifdef TODO_THESE_HAVE_BEEN TESTED
+#ifdef TODO_THESE_HAVE_BEEN_TESTED
   rowWeightDim = 1;
 
   testGraphModel(fname, 0, 0, 0, comm,

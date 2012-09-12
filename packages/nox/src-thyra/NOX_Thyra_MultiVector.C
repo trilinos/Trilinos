@@ -88,7 +88,7 @@ operator=(const NOX::Abstract::MultiVector& src)
 {
   const NOX::Thyra::MultiVector& source = 
     dynamic_cast<const NOX::Thyra::MultiVector&>(src);
-  ::Thyra::assign(thyraMultiVec.get(), *source.thyraMultiVec);
+  ::Thyra::assign(thyraMultiVec.ptr(), *source.thyraMultiVec);
   return *this;
 }
 
@@ -110,7 +110,7 @@ NOX::Abstract::MultiVector&
 NOX::Thyra::MultiVector::
 init(double value)
 {
-  ::Thyra::assign(thyraMultiVec.get(), value);
+  ::Thyra::assign(thyraMultiVec.ptr(), value);
   return *this;
 }
 
@@ -120,7 +120,7 @@ random(bool useSeed, int seed)
 {
   if (useSeed)
     ::Thyra::seed_randomize<double>(seed);
-  ::Thyra::randomize(-1.0, 1.0, thyraMultiVec.get());
+  ::Thyra::randomize(-1.0, 1.0, thyraMultiVec.ptr());
   return *this;
 }
 
@@ -137,10 +137,10 @@ setBlock(const NOX::Abstract::MultiVector& src, const vector<int>& index)
     v = thyraMultiVec->subView(::Thyra::Range1D(index[0],
 						index[index.size()-1]));
   else
-    v = thyraMultiVec->subView(index.size(), &index[0]);
+    v = thyraMultiVec->subView(Teuchos::arrayViewFromVector(index));
 
   // Assign
-  ::Thyra::assign(v.get(), *source.thyraMultiVec);
+  ::Thyra::assign(v.ptr(), *source.thyraMultiVec);
 
   return *this;
 }
@@ -168,8 +168,8 @@ augment(const NOX::Abstract::MultiVector& src)
 				     num_cols-1));
 
   // Assign
-  ::Thyra::assign(v1.get(), *thyraMultiVec);
-  ::Thyra::assign(v2.get(), *source.thyraMultiVec);
+  ::Thyra::assign(v1.ptr(), *thyraMultiVec);
+  ::Thyra::assign(v2.ptr(), *source.thyraMultiVec);
 
   // Set new multivector
   thyraMultiVec = new_mv;
@@ -201,7 +201,7 @@ NOX::Abstract::MultiVector&
 NOX::Thyra::MultiVector::
 scale(double gamma)
 {
-  ::Thyra::scale(gamma, thyraMultiVec.get());
+  ::Thyra::scale(gamma, thyraMultiVec.ptr());
   return *this;
 }
 
@@ -209,10 +209,12 @@ NOX::Abstract::MultiVector&
 NOX::Thyra::MultiVector::
 update(double alpha, const NOX::Abstract::MultiVector& a, double gamma)
 {
+  using Teuchos::tuple;
   const NOX::Thyra::MultiVector& aa = 
     dynamic_cast<const NOX::Thyra::MultiVector&>(a);
-  const ::Thyra::MultiVectorBase<double> *tv = aa.thyraMultiVec.get();
-  ::Thyra::linear_combination(1, &alpha, &tv, gamma, thyraMultiVec.get());
+  ::Thyra::linear_combination<double>(tuple(alpha)().getConst(),
+    tuple(aa.thyraMultiVec.ptr().getConst())(), gamma,
+    thyraMultiVec.ptr());
   return *this;
 }
 
@@ -224,14 +226,14 @@ update(double alpha,
        const NOX::Abstract::MultiVector& b,
        double gamma)
 {
+  using Teuchos::tuple;
   const NOX::Thyra::MultiVector& aa = 
     dynamic_cast<const NOX::Thyra::MultiVector&>(a);
   const NOX::Thyra::MultiVector& bb = 
     dynamic_cast<const NOX::Thyra::MultiVector&>(b);
-  double c[] = {alpha, beta};
-  const ::Thyra::MultiVectorBase<double>* z[] = {aa.thyraMultiVec.get(), 
-						 bb.thyraMultiVec.get()};
-  ::Thyra::linear_combination(2, c, z, gamma, thyraMultiVec.get());
+  ::Thyra::linear_combination<double>(tuple<double>(alpha, beta)().getConst(),
+    tuple(aa.thyraMultiVec.ptr().getConst(), bb.thyraMultiVec.ptr().getConst())(),
+    gamma, thyraMultiVec.ptr());
   return *this;
 }
 
@@ -249,23 +251,34 @@ update(Teuchos::ETransp transb, double alpha,
   Teuchos::RCP<const ::Thyra::MultiVectorBase<double> > bb;
   if (transb == Teuchos::NO_TRANS) {
     bb = ::Thyra::createMembersView(
-	aa.thyraMultiVec->domain(), 
-	RTOpPack::ConstSubMultiVectorView<double>(0,m,0,n,&b(0,0),b.stride()));
+      aa.thyraMultiVec->domain(), 
+      RTOpPack::ConstSubMultiVectorView<double>(
+        0, m, 0, n,
+        Teuchos::arcp(b.values(), 0, b.stride()*b.numCols(), false),
+        b.stride())
+      );
+    // rabartl: ToDo: This conversion from a NOX::Abstract::DenseMatrix to an
+    // RTOpPack::ConstSubMultiVectorView objects needs a utility function very
+    // badly!
   }
   else {
     // Make a copy of the transpose of b
     NOX::Abstract::MultiVector::DenseMatrix btrans(n, m);
-    for (int i=0; i<m; i++)
-      for (int j=0; j<n; j++)
-	btrans(j,i) = b(i,j);
+    for (int i=0; i<m; i++) {
+      for (int j=0; j<n; j++) {
+        btrans(j,i) = b(i,j);
+      }
+    }
     bb = ::Thyra::createMembersView(
-	aa.thyraMultiVec->domain(), 
-	RTOpPack::ConstSubMultiVectorView<double>(0,n,0,n,&btrans(0,0),
-						  btrans.stride()));
+      aa.thyraMultiVec->domain(), 
+      RTOpPack::ConstSubMultiVectorView<double>(0, n, 0, n,
+        Teuchos::arcp(btrans.values(), 0, btrans.stride() * btrans.numCols(), false),
+        btrans.stride())
+      );
   }
-  aa.thyraMultiVec->apply(::Thyra::NONCONJ_ELE, *bb, thyraMultiVec.get(),
-			  alpha, gamma);
-
+  ::Thyra::apply(*aa.thyraMultiVec, ::Thyra::NOTRANS, *bb, thyraMultiVec.ptr(),
+    alpha, gamma);
+  
   return *this;
 }
 
@@ -294,7 +307,7 @@ subCopy(const vector<int>& index) const
     mv = thyraMultiVec->subView(::Thyra::Range1D(index[0],
 						 index[index.size()-1]));
   else
-    mv = thyraMultiVec->subView(index.size(), &index[0]);
+    mv = thyraMultiVec->subView(Teuchos::arrayViewFromVector(index));
 
   return Teuchos::rcp(new NOX::Thyra::MultiVector(*mv));
 }
@@ -308,7 +321,7 @@ subView(const vector<int>& index) const
     mv = thyraMultiVec->subView(::Thyra::Range1D(index[0],
 						 index[index.size()-1]));
   else
-     mv = thyraMultiVec->subView(index.size(), &index[0]);
+    mv = thyraMultiVec->subView(Teuchos::arrayViewFromVector(index));
   
   return Teuchos::rcp(new NOX::Thyra::MultiVector(mv));
 }
@@ -317,12 +330,13 @@ void
 NOX::Thyra::MultiVector::
 norm(vector<double>& result, NOX::Abstract::Vector::NormType type) const
 {
+  using Teuchos::arrayViewFromVector;
   if (type == NOX::Abstract::Vector::TwoNorm)
-    ::Thyra::norms_2(*thyraMultiVec, &result[0]);
+    ::Thyra::norms_2<double>(*thyraMultiVec, arrayViewFromVector(result));
   else if (type == NOX::Abstract::Vector::OneNorm)
-    ::Thyra::norms_1(*thyraMultiVec, &result[0]);
+    ::Thyra::norms_1<double>(*thyraMultiVec, arrayViewFromVector(result));
   else
-    ::Thyra::norms_inf(*thyraMultiVec, &result[0]);
+    ::Thyra::norms_inf<double>(*thyraMultiVec, arrayViewFromVector(result));
 }
 
 void 
@@ -338,11 +352,15 @@ multiply(double alpha,
   int n = b.numCols();
   Teuchos::RCP< ::Thyra::MultiVectorBase<double> > bb =
     ::Thyra::createMembersView(
-	yy.thyraMultiVec->domain(), 
-	RTOpPack::SubMultiVectorView<double>(0,m,0,n,&b(0,0),b.stride()));
-    
-  yy.thyraMultiVec->applyTranspose(::Thyra::NONCONJ_ELE, *thyraMultiVec, 
-				   bb.get(), alpha, 0.0);
+      yy.thyraMultiVec->domain(), 
+      RTOpPack::SubMultiVectorView<double>(0, m, 0, n,
+        Teuchos::arcp(b.values(), 0, b.stride()*b.numCols(), false),
+        b.stride()
+        )
+      );
+  
+  ::Thyra::apply(*yy.thyraMultiVec, ::Thyra::CONJTRANS, *thyraMultiVec, 
+				   bb.ptr(), alpha, 0.0);
 }
 
 int 

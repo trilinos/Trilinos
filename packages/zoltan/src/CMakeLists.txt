@@ -464,6 +464,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Utilities/shared)
 APPEND_SET(NOINSTALLHEADERS
   Utilities/Communication/comm.h
   Utilities/DDirectory/DD.h
+  Utilities/DDirectory/DD_Memory.h
   Utilities/Timer/timer.h
   Utilities/shared/zoltan_util.h
   Utilities/shared/zoltan_id.h
@@ -490,6 +491,7 @@ APPEND_SET(SOURCES
   Utilities/DDirectory/DD_Update.c
   Utilities/DDirectory/DD_Stats.c
   Utilities/DDirectory/DD_Hash2.c
+  Utilities/DDirectory/DD_Memory.c
   Utilities/DDirectory/DD_Print.c
   Utilities/DDirectory/DD_Set_Neighbor_Hash_Fn2.c
   Utilities/DDirectory/DD_Set_Hash_Fn.c

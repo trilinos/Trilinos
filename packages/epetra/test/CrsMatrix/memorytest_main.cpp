@@ -212,6 +212,24 @@ int main(int argc, char *argv[])
     
   }
 
+  if(Comm.NumProc() == 1) {
+    
+    if (verbose) cout << "* Using Copy, Fixed number of indices per row and static profile + InsertGlobalValues() for a single row." << std::endl;
+    
+    Epetra_Map RowMap(1, 0, Comm);
+
+    // Test
+    Epetra_CrsMatrix    A(Copy, RowMap, 1, true);
+    std::vector<int>    Indices(1);
+    std::vector<double> Values(1);
+    Values[0] = 2;
+    Indices[0] = 0;
+    
+    A.InsertGlobalValues(0, 1, &Values[0], &Indices[0]);
+    A.FillComplete();
+    
+  }
+
   /*
     if (bool) {
     if (verbose) cout << endl << "tests FAILED" << endl << endl;

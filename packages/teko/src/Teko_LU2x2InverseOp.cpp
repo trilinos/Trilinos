@@ -66,18 +66,14 @@ LU2x2InverseOp::LU2x2InverseOp(const BlockedLinearOp & A,
    : A_(A), hatInvA00_(invA00), tildeInvA00_(invA00), invS_(invS), 
      A10_(A->getBlock(1,0)), A01_(A->getBlock(0,1))
 {
-   RCP<const VectorSpaceBase<double> > productArray[2];
+   using Teuchos::tuple;
+   using Thyra::productVectorSpace;
  
    // create and store range space
-   productArray[0] = hatInvA00_->range();
-   productArray[1] = invS_->range();
-   productRange_   = rcp(new DefaultProductVectorSpace<double>(2,&productArray[0]));
+   productRange_   = productVectorSpace<double>(tuple(hatInvA00_->range(), invS_->range())());
 
-   // create and store range space
-   productArray[0] = hatInvA00_->domain();
-   productArray[1] = invS_->domain(); 
-   productDomain_  = rcp(new DefaultProductVectorSpace<double>(2,&productArray[0]));
-      // "productVectorSpace" did not yield to me quick enough
+   // create and store domain space
+   productDomain_  = productVectorSpace<double>(tuple(hatInvA00_->domain(), invS_->domain())());
 }
 
 /** \brief This constructor explicitly takes the parts of \f$ A \f$ required to
@@ -98,18 +94,14 @@ LU2x2InverseOp::LU2x2InverseOp(const BlockedLinearOp & A,
    : A_(A), hatInvA00_(hatInvA00), tildeInvA00_(tildeInvA00), invS_(invS), 
      A10_(A->getBlock(1,0)), A01_(A->getBlock(0,1))
 {
-   RCP<const VectorSpaceBase<double> > productArray[2];
+   using Teuchos::tuple;
+   using Thyra::productVectorSpace;
  
    // create and store range space
-   productArray[0] = hatInvA00_->range();
-   productArray[1] = invS_->range();
-   productRange_   = rcp(new DefaultProductVectorSpace<double>(2,&productArray[0]));
+   productRange_  = productVectorSpace<double>(tuple(hatInvA00_->range(), invS_->range())());
 
-   // create and store range space
-   productArray[0] = hatInvA00_->domain();
-   productArray[1] = invS_->domain(); 
-   productDomain_  = rcp(new DefaultProductVectorSpace<double>(2,&productArray[0]));
-      // "productVectorSpace" did not yield to me quick enough
+   // create and store domain space
+   productDomain_ = productVectorSpace<double>(tuple(hatInvA00_->domain(), invS_->domain()));
 }
 
 void LU2x2InverseOp::implicitApply(const BlockedMultiVector & x, BlockedMultiVector & y,

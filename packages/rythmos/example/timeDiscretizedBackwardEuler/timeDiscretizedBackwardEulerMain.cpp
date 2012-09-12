@@ -174,9 +174,9 @@ int main(int argc, char *argv[])
     
     RCP<ParameterList> paramList = Teuchos::parameterList();
     if (paramsFileName.length())
-      updateParametersFromXmlFile( paramsFileName, &*paramList );
+      updateParametersFromXmlFile( paramsFileName, paramList.ptr() );
     if (extraParamsString.length())
-      updateParametersFromXmlString( extraParamsString, &*paramList );
+      updateParametersFromXmlString( extraParamsString, paramList.ptr() );
 
     paramList->validateParameters(*getValidParameters());
 

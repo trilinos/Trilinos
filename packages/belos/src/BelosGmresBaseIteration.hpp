@@ -42,7 +42,7 @@
 #ifndef __Belos_GmresBaseIteration_hpp
 #define __Belos_GmresBaseIteration_hpp
 
-/// \file BelosArnoldiIteration.hpp
+/// \file BelosGmresBaseIteration.hpp
 /// \brief Arnoldi iteration interface
 ///
 

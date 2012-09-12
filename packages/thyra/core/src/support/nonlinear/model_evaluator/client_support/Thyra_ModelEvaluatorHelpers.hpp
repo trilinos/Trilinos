@@ -220,7 +220,7 @@ void eval_g(
   const Ptr<VectorBase<Scalar> > &g_j
   );
 
-
+#ifndef THYRA_HIDE_DEPRECATED_CODE
 /** \brief Deprecated . */
 template<class Scalar>
 THYRA_DEPRECATED
@@ -234,7 +234,7 @@ void eval_g(
 {
   eval_g(model, l, p_l, j, Teuchos::ptr(g_j));
 }
-
+#endif // THYRA_HIDE_DEPRECATED_CODE
 
 /** \brief Evaluate <tt>g(j)(p,t))</tt>. */
 template<class Scalar>

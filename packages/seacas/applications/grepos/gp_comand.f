@@ -40,7 +40,7 @@ C=======================================================================
      &  IDESS, NEESS, NNESS, IXEESS, IXNESS,
      $  LTEESS, LTSESS, FACESS,
      &  XN, YN, ZN, XEXPL, YEXPL, ZEXPL, MODBLK,
-     *  ISATRB, ATRSCL,
+     *  ISATRB, ATRSCL, IEQUIV, MAPNOD,
      $  IELBST, INPSST, IESSST,
      *  NQAREC, QAREC, NINFO, INFREC, BLKTYP,
      *  ebname, nsname, ssname, atname,
@@ -99,7 +99,10 @@ C     --   Sets ROT3D, ROTMAT, ROTCEN of /XYZROT/
       INTEGER NUMLNK(*)
       INTEGER NUMATR(*)
       INTEGER IELBST(*), INPSST(*), IESSST(*), ITIMST(*)
+      INTEGER IEQUIV(*), MAPNOD(*)
 
+      logical glonod
+      
       INTEGER IDNPS(*), NNNPS(*), NDNPS(*), IXNNPS(*),
      $  IXDNPS(*), LTNNPS(*)
       REAL    FACNPS(*)
@@ -146,7 +149,7 @@ C     --   Sets ROT3D, ROTMAT, ROTCEN of /XYZROT/
       SAVE FIRST
 
       CHARACTER*(mxstln) MYNAME
-      CHARACTER*(mxstln) CMDTBL(37), LISTBL(14)
+      CHARACTER*(mxstln) CMDTBL(38), LISTBL(14)
       SAVE CMDTBL, LISTBL
 C     --CMDTBL - the valid commands table
       
@@ -161,7 +164,7 @@ C     --changing the table.
      6  'SMOOTH  ',  'SWAP    ', 'USERSUBROUTINE', 'SNAP    ',
      7  'MOVE    ',  'WARP    ', 'EXECUTE ', 'COMBINE ', 'CENTROIDS',
      8  'UNDELETE',  'KEEP    ', 'EQUIVALENCE', 'DEFORM  ',
-     9  'ELEMENTIZE','ROTATE  ',  '        ' /
+     9  'ELEMENTIZE','ROTATE  ', 'MERGE   ', '        ' /
       
       DATA LISTBL /
      *  'SSETS   ', 'SIDESETS', 'NSETS   ', 'NODESETS', 'VARS    ',
@@ -206,7 +209,10 @@ C... Initialization code that should only be executed once
 
 C... Node equivalencing
         equiv = .FALSE.
-        eqtoler = 0.0
+        eqtoler = -1.0
+        do i=1, numnp
+          iequiv(i) = i
+        end do
 
 C...  Initialize Material, NodeSet, SideSet status
 C     --      0 = same
@@ -839,17 +845,17 @@ C ... Field is character
               CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
               IF (MATSTR (WORD, 'HELP', 2)) THEN
                 CALL PRTERR('CMDREQ',
-     * 'REVOLVE ATTRIBUTE {index} BLOCK {id|ALL} {X|Y|Z} {angle}')
+     *'REVOLVE ATTRIBUTE {index} BLOCK {id|ALL} {X|Y|Z} {angle}')
                 CALL PRTERR('CMDREQ',
-     * 'REVOLVE ATTRIBUTE {index} TYPE {type} {X|Y|Z} {angle}')
+     *'REVOLVE ATTRIBUTE {index} TYPE {type} {X|Y|Z} {angle}')
                 CALL PRTERR('CMDREQ',
-     * 'REVOLVE ATTRIBUTE RESET')
+     *'REVOLVE ATTRIBUTE RESET')
               ELSE IF (MATSTR (WORD, 'RESET', 2)) THEN
                 REVATT = .FALSE.
                 CALL INIREA (3*3, 0.0, ROTATT)
                 DO I = 1, 3
                   ROTATT(I,I) = 1.0
-                  END DO
+                END DO
               ELSE
                 CALL PRTERR('CMDERR',
      *            'Expected keyword "RESET"')
@@ -920,17 +926,17 @@ C ... Now find block type
                 IX = (I-1) * 3
                 DO J = 1, 3
                   RNUM(IX+J) = ROTATT(I,J)
+                END DO
               END DO
-            END DO
-            CALL NUMSTR (9, 4, RNUM, RSTR, LR)
-            DO I = 1, 3
-              IX = (I-1) * 3
-              WRITE (*, 9940) ('   ', RSTR(IX+J)(:LR), J=1,3)
- 9940         FORMAT (1X, 20A)
-            END DO
-          ELSE
-            WRITE (*, 9940) 'No rotation defined for generated mesh'
-          END IF
+              CALL NUMSTR (9, 4, RNUM, RSTR, LR)
+              DO I = 1, 3
+                IX = (I-1) * 3
+                WRITE (*, 9940) ('   ', RSTR(IX+J)(:LR), J=1,3)
+ 9940           FORMAT (1X, 20A)
+              END DO
+            ELSE
+              WRITE (*, 9940) 'No rotation defined for generated mesh'
+            END IF
 C ... End of "revolve attribute" parsing
 
           ELSE
@@ -1306,9 +1312,58 @@ C=======================================================================
         VERB = ' '
 
 C=======================================================================
+      else if (verb .eq. 'MERGE') THEN
+C     ... Syntax: MERGE {global|local} Node {node_1} into node {node_2}
+        CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
+        if  (matstr(word, 'GLOBAL', 3)) then
+          glonod = .true.
+        else if  (matstr(word, 'LOCAL', 3)) then
+          glonod = .false.
+        else
+          CALL PRTERR ('CMDERR',
+     *      'Expected "global" or "local" following "merge"')
+          go to 420
+        end if
+c ... skip 'node'
+        CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
+        
+C ... Get the two nodes to be equivalenced...
+        CALL FFINTG (IFLD, INTYP, IFIELD, 'Node1', 0, node1, *420)
+C ... Skip 'node into'
+        CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
+        CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
+        CALL FFINTG (IFLD, INTYP, IFIELD, 'Node2', 0, node2, *420)
+
+        if (glonod) then
+          node1 = ng2l('node', node1, numnp, mapnod)
+          node2 = ng2l('node', node2, numnp, mapnod)
+        end if
+
+        if (node1 .gt. numnp .or. node2 .gt. numnp) then
+          CALL PRTERR ('CMDERR', 'Node index exceeds node count')
+        else
+C ... Grepos has requirement that the highest numbered node be removed
+C     in the equiv process.  However, in user specification, they want
+C     to specify which node is removed.  If it is the lower-numbered node,
+C     simply replace the coordinates of the higher numbered node with the 
+C     coordinates of the lower-numbered node.              
+          if (node1 .lt. node2) then
+            IEQUIV(node2) = -node1
+            xn(node1) = xn(node2)
+            if (ndim .ge. 2) yn(node1) = yn(node2)
+            if (ndim .eq. 3) zn(node1) = zn(node2)
+          else
+            IEQUIV(node1) = -node2
+          end if
+          equiv = .TRUE.
+          EQTOLER = -1.0
+        end if
+        verb = ' '
+        
       ELSE IF (VERB .EQ. 'EQUIVALENCE') THEN
 C     ... Syntax: EQUIVALENCE tolerance
 C     ... Syntax: EQUIVALENCE RESET
+        
         IF ((INTYP(IFLD) .EQ. 0) .OR. ((CFIELD(IFLD) .GE. 'A')
      &    .AND. (CFIELD(IFLD) .LE. 'Z'))) THEN
 C     ... Field is character
@@ -1316,9 +1371,13 @@ C     ... Field is character
           IF (MATSTR (WORD, 'RESET', 3)) THEN
             EQUIV = .FALSE.
             EQTOLER = 0.0
+            do i=1, numnp
+              iequiv(i) = i
+            end do
           ELSE
             CALL PRTERR ('CMDERR', 'Expected "RESET"')
           END IF
+          verb = ' '
         ELSE
           EQUIV = .TRUE.
           CALL FFREAL (IFLD, INTYP, RFIELD,
@@ -2058,3 +2117,40 @@ C========================================================================
       
       RETURN
       END
+
+C=======================================================================
+      integer function ng2l (type, idglo, numel, mapel)
+C=======================================================================
+
+C   --G2L locates the local node corresponding to the global id
+C   --
+C   --Parameters:
+C   --   TYPE - IN - 'node' or 'element'
+C   --   NUMEL - IN - the number of node/elements
+C   --   MAPEL - IN - the node/element number map
+
+C ... TYPE = Node or Element
+      CHARACTER*(*) TYPE
+      INTEGER MAPEL(*)
+
+      CHARACTER*128 STRA
+      LOGICAL FOUND
+
+      ng2l = idglo
+      found = .FALSE.
+      do i = 1, numel
+        if (idglo .eq. mapel(i)) then
+          ng2l = i
+          return
+        end if
+      end do
+
+      write (stra, 10000) type, idglo
+      call sqzstr(stra, lstra)
+      call prterr('WARNING', stra(:lstra))
+      RETURN
+
+10000  FORMAT (' No local ',A,' has global id equal to ',I10)
+      END
+
+

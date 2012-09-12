@@ -29,10 +29,10 @@
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
  * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES(INCLUDING, BUT NOT LIMITED TO,
  * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
  * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT(INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -62,46 +62,48 @@ extern "C" {
 #endif
 
 struct Zoltan_DD_Struct;
+
 typedef struct Zoltan_DD_Struct Zoltan_DD_Directory;
 
 
 /***********  Distributed Directory Function Prototypes ************/
 
-int Zoltan_DD_Create (Zoltan_DD_Directory **dd, MPI_Comm comm, 
- int num_gid,  /* number of ZOLTAN_ID_TYPEs in a GID */
- int num_lid,  /* number of ZOLTAN_ID_TYPEs in an LID (optional) */
- int user_length,  /* number of chars in the user data (optional) */
- int table_length, int debug_level) ;
+int Zoltan_DD_Create(Zoltan_DD_Directory **dd, MPI_Comm comm, 
+                     int num_gid, int num_lid, int user_length,
+                     int table_length, int debug_level);
 
 int Zoltan_DD_Copy_To(Zoltan_DD_Directory **toptr, Zoltan_DD_Directory *from);
+
 Zoltan_DD_Directory *Zoltan_DD_Copy(Zoltan_DD_Directory *from);
 
-void Zoltan_DD_Destroy (Zoltan_DD_Directory **dd) ;
+void Zoltan_DD_Destroy(Zoltan_DD_Directory **dd);
 
-int Zoltan_DD_Update (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
- ZOLTAN_ID_PTR lid, char *user, int *partition, int count) ;
+int Zoltan_DD_Update(Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
+                     ZOLTAN_ID_PTR lid, char *user, int *partition, int count);
 
-int Zoltan_DD_Find (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
- ZOLTAN_ID_PTR lid, char *data, int *partition, int count,
- int *owner) ;
+int Zoltan_DD_Find(Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
+                   ZOLTAN_ID_PTR lid, char *data, int *partition, int count,
+                   int *owner);
 
-int Zoltan_DD_GetLocalKeys(Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR* gid, int* size);
+int Zoltan_DD_Remove(Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
+                     int count);
 
-int Zoltan_DD_Remove (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
- int count) ;
+int Zoltan_DD_Set_Hash_Fn(Zoltan_DD_Directory *dd, ZOLTAN_HASH_FN *hash);
 
-int Zoltan_DD_Set_Hash_Fn (Zoltan_DD_Directory *dd, ZOLTAN_HASH_FN *hash);
+void Zoltan_DD_Stats(Zoltan_DD_Directory *dd);
 
-void Zoltan_DD_Stats (Zoltan_DD_Directory *dd) ;
+int Zoltan_DD_Set_Neighbor_Hash_Fn1(Zoltan_DD_Directory *dd, int size);
 
-int Zoltan_DD_Set_Neighbor_Hash_Fn1 (Zoltan_DD_Directory *dd, int size) ;
+int Zoltan_DD_Set_Neighbor_Hash_Fn2(Zoltan_DD_Directory *dd, int *proc,
+                                    int *low, int *high, int count);
 
-int Zoltan_DD_Set_Neighbor_Hash_Fn2 (Zoltan_DD_Directory *dd, int *proc,
- int *low, int *high, int count) ;
+int Zoltan_DD_Set_Neighbor_Hash_Fn3(Zoltan_DD_Directory *dd, int total);
 
-int Zoltan_DD_Set_Neighbor_Hash_Fn3 (Zoltan_DD_Directory *dd, int total) ;
+int Zoltan_DD_Print(Zoltan_DD_Directory *dd);
 
-int Zoltan_DD_Print (Zoltan_DD_Directory *dd) ;
+int Zoltan_DD_GetLocalKeys(Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR* gid, 
+                           int* size);
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

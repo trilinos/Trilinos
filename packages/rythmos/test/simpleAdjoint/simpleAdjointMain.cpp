@@ -293,7 +293,7 @@ int main(int argc, char *argv[])
     RCP<ParameterList>
       paramList = Teuchos::parameterList();
     if (paramsFileName.length())
-      updateParametersFromXmlFile( paramsFileName, &*paramList );
+      updateParametersFromXmlFile( paramsFileName, paramList.ptr() );
 
     paramList->validateParameters(*getValidParameters());
 

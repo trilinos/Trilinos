@@ -146,7 +146,7 @@ TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Direct_Solve)
       tester.show_all_tests(true);
       tester.set_all_error_tol(1e-14);
    
-      const bool result = tester.compare( *invA, *testInvA, &out);
+      const bool result = tester.compare( *invA, *testInvA, Teuchos::ptrFromRef(out));
       if (!result) {
          out << "Apply 0: FAILURE" << std::endl;
          success = false;
@@ -166,7 +166,7 @@ TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Direct_Solve)
       tester.show_all_tests(true);
       tester.set_all_error_tol(1e-14);
    
-      const bool result = tester.compare( *invA, *testInvA, &out);
+      const bool result = tester.compare( *invA, *testInvA, Teuchos::ptrFromRef(out));
       if (!result) {
          out << "Apply 0: FAILURE" << std::endl;
          success = false;
@@ -215,7 +215,7 @@ TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Block_Solve)
       tester.show_all_tests(true);
       tester.set_all_error_tol(1e-14);
    
-      const bool result = tester.compare( *cmpInvA, *testInvA, &out);
+      const bool result = tester.compare( *cmpInvA, *testInvA, Teuchos::ptrFromRef(out));
       if (!result) {
          out << "Apply 0: FAILURE" << std::endl;
          success = false;
@@ -235,7 +235,7 @@ TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Block_Solve)
       tester.show_all_tests(true);
       tester.set_all_error_tol(1e-14);
    
-      const bool result = tester.compare( *cmpInvA, *testInvA, &out);
+      const bool result = tester.compare( *cmpInvA, *testInvA, Teuchos::ptrFromRef(out));
       if (!result) {
          out << "Apply 0: FAILURE" << std::endl;
          success = false;

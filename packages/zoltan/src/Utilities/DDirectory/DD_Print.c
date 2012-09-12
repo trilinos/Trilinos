@@ -68,8 +68,9 @@ extern "C" {
 
 int Zoltan_DD_Print (
  Zoltan_DD_Directory *dd)        /* contains directory state information */
-   {
+{
    int      i,j;
+   DD_NodeIdx nodeidx;
    DD_Node *ptr;
    char    *yo = "Zoltan_DD_Print";
 
@@ -84,7 +85,9 @@ int Zoltan_DD_Print (
 
    /* walk linked list printing each node */
    for (i = 0; i < dd->table_length; i++)
-      for (ptr = dd->table[i]; ptr != NULL; ptr = ptr->next) {
+      for (nodeidx = dd->table[i]; nodeidx != -1;
+           nodeidx = dd->nodelist[nodeidx].next) {
+         ptr = dd->nodelist + nodeidx;
          printf ("ZOLTAN DD Print(%d): \tList %3d, \tGID ", dd->my_proc, i);
          printf("(");
          for (j = 0 ; j < dd->gid_length; j++)
@@ -103,7 +106,7 @@ int Zoltan_DD_Print (
    if (dd->debug_level > 4)
       ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL) ;
    return ZOLTAN_OK;
-   }
+}
 
 
 

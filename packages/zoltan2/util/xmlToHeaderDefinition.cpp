@@ -51,6 +51,7 @@
 #include <fstream>
 #include <exception>
 #include <string>
+#include <cstring>
 #include <sstream>
 
 using std::cout;
@@ -71,7 +72,7 @@ static string fixLine(string oldLine)
   string newLine;
   string quotedQuote("\\\"");
 
-  for (int i=0; i < oldLine.size(); i++){
+  for (size_t i=0; i < oldLine.size(); i++){
     char c = oldLine[i];
     if (c == quote[0])
       newLine.append(quotedQuote);

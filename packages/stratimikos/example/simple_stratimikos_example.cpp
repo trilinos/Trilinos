@@ -215,7 +215,7 @@ int main(int argc, char* argv[])
     // Augment parameters if appropriate
     if(extraParamsFile.length()) {
       Teuchos::updateParametersFromXmlFile( "./"+extraParamsFile,
-        &*linearSolverBuilder.getNonconstParameterList() );
+        linearSolverBuilder.getNonconstParameterList().ptr() );
     }
 
     // Create a linear solver factory given information read from the

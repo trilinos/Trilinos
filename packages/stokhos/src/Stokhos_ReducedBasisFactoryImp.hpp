@@ -28,6 +28,7 @@
 
 #include "Teuchos_TestForException.hpp"
 #include "Stokhos_MonomialProjGramSchmidtPCEBasis.hpp"
+#include "Stokhos_MonomialGramSchmidtPCEBasis.hpp"
 #include "Stokhos_ProductLanczosPCEBasis.hpp"
 #include "Stokhos_ProductLanczosGramSchmidtPCEBasis.hpp"
 
@@ -55,6 +56,9 @@ createReducedBasis(
 
   if (reduction_method == "Monomial Proj Gram-Schmidt")
     red_basis = Teuchos::rcp(new Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type,value_type>(p, pce, quad, params));
+
+  else if (reduction_method == "Monomial Gram-Schmidt")
+    red_basis = Teuchos::rcp(new Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type,value_type>(p, pce, quad, params));
 
   else if (reduction_method == "Product Lanczos")
     red_basis = Teuchos::rcp(new Stokhos::ProductLanczosPCEBasis<ordinal_type,value_type>(p, pce, quad, Cijk, params));

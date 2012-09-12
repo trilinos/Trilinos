@@ -828,7 +828,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
 
   double * diagonal = new double[num_verts];
 
-
+  
   for(int i = 0; i < max_num_entries; i++)
     {
       values[i]=0;
@@ -858,7 +858,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
 	    }
 	}
     }
-
+  
   // Create BGL graph                                                                           
   Graph g(edge_array, edge_array + num_edges, weights, num_verts);
   
@@ -869,7 +869,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
 
   // Run Kruskal, actually maximal weight ST since edges are negative                           
   kruskal_minimum_spanning_tree(g, std::back_inserter(spanning_tree));
-
+  
 
   std::vector<int> NumNz(num_verts,1);
 
@@ -880,12 +880,15 @@ int Ifpack_SupportGraph<T>::FindSupport()
       NumNz[source(*ei,g)] = NumNz[source(*ei,g)] + 1;
       NumNz[target(*ei,g)] = NumNz[target(*ei,g)] + 1;
     }
+  
+  
+  // Create an stl vector of stl vectors to hold indices and values (neighbour edges)
+  std::vector< std::vector< int > > Indices(num_verts);
+  //std::vector<int> Indices[num_verts];
+  //std::vector<double> Values[num_verts];
 
-
-  // Create an array of stl vectors to hold indices and values (neighbour edges)                
-  std::vector<int> Indices[num_verts];
-  std::vector<double> Values[num_verts];
-
+  std::vector< std::vector< double > > Values(num_verts);
+  
   for(int i = 0; i < num_verts; i++)
     {
       std::vector<int> temp(NumNz[i],0);
@@ -893,14 +896,13 @@ int Ifpack_SupportGraph<T>::FindSupport()
       Indices[i] = temp;
       Values[i] = temp2;
     }
-
+  
   int *l = new int[num_verts];
   for(int i = 0; i < num_verts; i++)
     {
       l[i] = 1;
     }
-
-
+  
   for(int i = 0; i < NumForests_; i++)
     {
       if(i > 0)
@@ -945,7 +947,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
 
     }
 
-
+  
   if(KeepDiag_ == 1)
     {
       for(int i = 0; i < num_verts; i++)
@@ -957,7 +959,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
   // Create the CrsMatrix for the support graph                                                 
   Support_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(),l, true));
 
-
+ 
   // Fill in the matrix with the stl vectors for each row                                       
   for(int i = 0; i < num_verts; i++)
     {
@@ -965,7 +967,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
 
       (*Support_).InsertGlobalValues(i,l[i],&Values[i][0],&Indices[i][0]);
     }
-
+ 
   (*Support_).FillComplete();
 
   //(*Support_).Print(std::cout);    

@@ -50,6 +50,7 @@ extern "C" {
 #endif
 
 
+#include <stddef.h>
 #include "zoltan_align.h"
 #include "zoltan_util.h"
 
@@ -67,6 +68,11 @@ extern "C" {
  */
 
 int Zoltan_Align(int a)
+{
+return((ZOLTAN_ALIGN_VAL + a) & ~ZOLTAN_ALIGN_VAL);
+}
+
+size_t Zoltan_Align_size_t(size_t a)
 {
 return((ZOLTAN_ALIGN_VAL + a) & ~ZOLTAN_ALIGN_VAL);
 }

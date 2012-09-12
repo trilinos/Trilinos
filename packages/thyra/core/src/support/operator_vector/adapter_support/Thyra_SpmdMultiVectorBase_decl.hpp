@@ -198,6 +198,7 @@ public:
 
   //@}
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
   /** \name Deprecated. */
   //@{
 
@@ -236,6 +237,7 @@ public:
 
   //@}
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 protected:
 
   /** @name Virtual functions to be overridden by sublcasses. */

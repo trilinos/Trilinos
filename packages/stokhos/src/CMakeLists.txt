@@ -72,14 +72,14 @@ SET(HEADERS ${HEADERS}
   Stokhos_CompletePolynomialBasisImp.hpp
   Stokhos_GramSchmidtBasis.hpp
   Stokhos_GramSchmidtBasisImp.hpp
-  Stokhos_MonomialGramSchmidtSimplexPCEBasis.hpp
-  Stokhos_MonomialGramSchmidtSimplexPCEBasisImp.hpp
-  Stokhos_MonomialGramSchmidtSimplexPCEBasis2.hpp
-  Stokhos_MonomialGramSchmidtSimplexPCEBasis2Imp.hpp
   Stokhos_ReducedPCEBasis.hpp
   Stokhos_SDMUtils.hpp
+  Stokhos_GSReducedPCEBasisBase.hpp
+  Stokhos_GSReducedPCEBasisBaseImp.hpp
   Stokhos_MonomialProjGramSchmidtPCEBasis.hpp
   Stokhos_MonomialProjGramSchmidtPCEBasisImp.hpp
+  Stokhos_MonomialGramSchmidtPCEBasis.hpp
+  Stokhos_MonomialGramSchmidtPCEBasisImp.hpp
   Stokhos_ProductLanczosPCEBasis.hpp
   Stokhos_ProductLanczosPCEBasisImp.hpp
   Stokhos_ProductLanczosGramSchmidtPCEBasis.hpp

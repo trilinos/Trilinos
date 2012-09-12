@@ -145,8 +145,10 @@ int main(int argc, char *argv[])
     outputLevel = min(max(outputLevel,-1),4);
 
     lowsfCreator.readParameters(out.get());
-    if(extraLSParamsFile.length())
-      Teuchos::updateParametersFromXmlFile( "./"+extraLSParamsFile, &*lowsfCreator.getNonconstParameterList() );
+    if (extraLSParamsFile.length()) {
+      Teuchos::updateParametersFromXmlFile( "./"+extraLSParamsFile, 
+        lowsfCreator.getNonconstParameterList().ptr() );
+    }
     *out << "\nThe parameter list after being read in:\n";
     lowsfCreator.getParameterList()->print(*out,2,true,false);
 

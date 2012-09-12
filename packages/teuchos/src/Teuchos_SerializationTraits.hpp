@@ -46,6 +46,7 @@
 #define TEUCHOS_SERIALIZATION_TRAITS_HPP
 
 #include "Teuchos_ConfigDefs.hpp"
+#include <climits> // SIZE_MAX, ULONG_MAX, etc.
 
 #ifdef HAVE_TEUCHOS_QD
 #include <qd/dd_real.h>
@@ -346,14 +347,34 @@ public:
     }
 };
 
+// Whether 'char' is signed or unsigned depends on the implementation.
+// However, on some systems (e.g., Clang 3.1 on Intel Mac), partially
+// specializing for signed char and unsigned char, but not for char,
+// does not work.  Thus, we include specializations for all three
+// possibilities.
 template<typename Ordinal>
 class SerializationTraits<Ordinal,char>
   : public DirectSerializationTraits<Ordinal,char>
 {};
 
 template<typename Ordinal>
+class SerializationTraits<Ordinal,signed char>
+  : public DirectSerializationTraits<Ordinal,signed char>
+{};
+
+template<typename Ordinal>
+class SerializationTraits<Ordinal,unsigned char>
+  : public DirectSerializationTraits<Ordinal,unsigned char>
+{};
+
+template<typename Ordinal>
 class SerializationTraits<Ordinal,short int>
   : public DirectSerializationTraits<Ordinal,short int>
+{};
+
+template<typename Ordinal>
+class SerializationTraits<Ordinal,unsigned short int>
+  : public DirectSerializationTraits<Ordinal,unsigned short int>
 {};
 
 template<typename Ordinal>
@@ -372,7 +393,7 @@ class SerializationTraits<Ordinal,long int>
 {};
 
 template<typename Ordinal>
-class SerializationTraits<Ordinal,long unsigned int>
+class SerializationTraits<Ordinal,unsigned long int>
   : public DirectSerializationTraits<Ordinal,long unsigned int>
 {};
 
@@ -386,6 +407,7 @@ class SerializationTraits<Ordinal,double>
   : public DirectSerializationTraits<Ordinal,double>
 {};
 
+// FIXME: How do we know that P1 and P2 are directly serializable?
 template<typename Ordinal, typename P1, typename P2>
 class SerializationTraits<Ordinal,std::pair<P1,P2> >
   : public DirectSerializationTraits<Ordinal,std::pair<P1,P2> >
@@ -417,11 +439,49 @@ class SerializationTraits<Ordinal,std::complex<double> >
 
 #endif // HAVE_TEUCHOS_COMPLEX
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#if defined(HAVE_TEUCHOS_LONG_LONG_INT)
 
+// Partial specialization for long long.
+// On platforms with sizeof(ptrdiff_t) <= sizeof(long long), 
+// this should take care of the ptrdiff_t specialization as well,
+// since we've covered all built-in signed integer types above 
+// with size <= sizeof(long long).
 template<typename Ordinal>
 class SerializationTraits<Ordinal, long long int>
   : public DirectSerializationTraits<Ordinal, long long int>
+{};
+
+// Partial specialization for unsigned long long.
+// On platforms with sizeof(size_t) <= sizeof(unsigned long long), 
+// this should take care of the size_t specialization as well,
+// since we've covered all built-in unsigned integer types above 
+// with size <= sizeof(unsigned long long).
+template<typename Ordinal>
+class SerializationTraits<Ordinal, unsigned long long int>
+  : public DirectSerializationTraits<Ordinal, unsigned long long int>
+{};
+
+// The C preprocessor does not allow "sizeof(T)" expressions in #if
+// statements, even if T is a built-in type.  Otherwise, we could test
+// for 'sizeof(size_t) > sizeof(unsigned long int)'.  The constants
+// below are defined in the <cstdint> header file.
+#elif SIZE_MAX > ULONG_MAX
+// We already have an unsigned long int specialization above.  If
+// Teuchos support for "long long" is enabled, then we've taken care
+// of all possible lengths of size_t: unsigned (char, short, int,
+// long, long long).  If "long long" is _not_ enabled, we need to
+// check if sizeof(size_t) > sizeof(unsigned long).  If so, then we
+// need a specialization for size_t.  Ditto for ptrdiff_t (which is a
+// signed type of the same length as size_t).
+
+template<typename Ordinal>
+class SerializationTraits<Ordinal, size_t>
+  : public DirectSerializationTraits<Ordinal, size_t>
+{};
+
+template<typename Ordinal>
+class SerializationTraits<Ordinal, ptrdiff_t>
+  : public DirectSerializationTraits<Ordinal, ptrdiff_t>
 {};
 
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
