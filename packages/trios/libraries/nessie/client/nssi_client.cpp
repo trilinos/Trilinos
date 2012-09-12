@@ -1214,6 +1214,9 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
 
     switch (req->status) {
 
+    case NSSI_REQUEST_NULL:
+        return rc;
+
     case NSSI_REQUEST_ERROR:
         log_debug(rpc_debug_level,"timedwait finished");
         *remote_rc = req->error_code;
