@@ -82,14 +82,19 @@ IF(TriKota_ENABLE_DakotaCMake)
   # because they will not be run in automated testing.  However, allow users
   # to enable them if they would really like.
   SET(DAKOTA_ENABLE_TESTS OFF CACHE BOOL "")
-  SET(PECOS_ENABLE_TESTS OFF CACHE BOOL "")
-  SET(LHS_ENABLE_TESTS OFF CACHE BOOL "")
-  SET(HOPSPACK_ENABLE_TESTS OFF CACHE BOOL "")
-  SET(OPTPP_ENABLE_TESTS OFF CACHE BOOL "")
+  SET(DAKOTA_ENABLE_TPL_TESTS OFF CACHE BOOL "")
   SET(HAVE_ACRO OFF CACHE BOOL "")
   SET(HAVE_AMPL OFF CACHE BOOL "")
   SET(HAVE_X_GRAPHICS OFF CACHE BOOL "")
   SET(HAVE_HOPSPACK OFF CACHE BOOL "")
+
+  # Instruct DAKOTA to install its non-standard content to alternate locations
+  SET(DAKOTA_EXAMPLES_INSTALL example/dakota CACHE FILEPATH
+      "Installation destination for DAKOTA examples/ dir")
+  SET(DAKOTA_TEST_INSTALL example/dakota CACHE FILEPATH
+      "Installation destination for DAKOTA test/ dir")
+  SET(DAKOTA_TOPFILES_INSTALL share/dakota/stable CACHE FILEPATH
+      "Installation destination for DAKOTA top-level files")
   
   # Configure Dakota and its packages
   MESSAGE("-->TriKota: Configuring Dakota using CMake")
