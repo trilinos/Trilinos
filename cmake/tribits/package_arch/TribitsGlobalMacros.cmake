@@ -222,7 +222,12 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
   
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_RUNTIME_DIR "bin"
     CACHE PATH
-    "Location where the runtime DLLs will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'bin'"
+    "Location where the runtime DLLs and designated programs will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'bin'"
+    )
+  
+  ADVANCED_SET(${PROJECT_NAME}_INSTALL_EXAMPLE_DIR "example"
+    CACHE PATH
+    "Location where assorted examples will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'example'"
     )
   
   IF(WIN32 AND NOT CYGWIN)
