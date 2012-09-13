@@ -94,15 +94,18 @@ namespace Tpetra {
    \tparam LocalOrdinal The type of local indices.  Same as the \c
      LocalOrdinal template parameter of \c Map objects used by this
      matrix.  (In Epetra, this is just \c int.)  The default type is
-     int, which should suffice for most users.
+     \c int, which should suffice for most users.  This type must be
+     big enough to store the local (per process) number of rows or
+     columns.
 
    \tparam GlobalOrdinal The type of global indices.  Same as the \c
      GlobalOrdinal template parameter of \c Map objects used by this
      matrix.  (In Epetra, this is just \c int.  One advantage of
      Tpetra over Epetra is that you can use a 64-bit integer type here
      if you want to solve big problems.)  The default type is
-     LocalOrdinal, which is OK if you know that the global number of
-     rows and columns in the matrix fits.
+     <tt>LocalOrdinal</tt>.  This type must be big enough to store the
+     global (over all processes in the communicator) number of rows or
+     columns.
 
    \tparam Node A class implementing on-node shared-memory parallel
      operations.  It must implement the
@@ -116,6 +119,12 @@ namespace Tpetra {
      The default \c LocalMatOps type should suffice for most users.
      The actual default type depends on your Trilinos build options.
 
+   \note If you use the default \c GlobalOrdinal type, which is \c
+     int, then the <i>global</i> number of rows or columns in the
+     matrix may be no more than \c INT_MAX, which for typical 32-bit
+     \c int is \f$2^31 - 1\f$ (about two billion).  If you want to
+     solve larger problems, you must use a 64-bit integer type here.
+
    This class implements a distributed-memory parallel sparse matrix,
    and provides sparse matrix-vector multiply (including transpose)
    and sparse triangular solve operations.  It provides access by rows
@@ -125,43 +134,48 @@ namespace Tpetra {
    interface like that of \c Epetra_CrsMatrix, but also allows
    insertion of data into nonowned rows, much like \c Epetra_FECrsMatrix.
 
-   \subsection Local vs. global indices
+   \section Kokkos_CrsMatrix_prereq Prerequisites
+
+   Before reading the rest of this documentation, it helps to know
+   something about the Teuchos memory management classes, in
+   particular Teuchos::RCP, Teuchos::ArrayRCP, and Teuchos::ArrayView.
+   You should also know a little bit about MPI (the Message Passing
+   Interface for distributed-memory programming).  You won't have to
+   use MPI directly to use CrsMatrix, but it helps to be familiar with
+   the general idea of distributed storage of data over a
+   communicator.  Finally, you should read the documentation of Map
+   and MultiVector.
+
+   \section Tpetra_CrsMatrix_local_vs_global Local vs. global indices and nonlocal insertion
 
    The distinction between local and global indices might confuse new
-   Tpetra users.  _Global_ indices represent the rows and columns
-   uniquely over the entire matrix, which may be distributed over
-   multiple processes.  _Local_ indices are local to the process that
-   owns them.  If global index G is owned by process P, then there is
-   a unique local index L on process P corresponding to G.  If the
-   local index L is valid on process P, then there is a unique global
-   index G owned by P corresponding to the pair (L, P).  However,
-   multiple processes might own the same global index (an "overlapping
-   Map"), so a global index G might correspond to multiple (L, P)
-   pairs.  In summary, local indices on a process correspond to matrix
-   rows or columns owned by that process.
-
-   We summarize the different between local and global indices because
-   many of CrsMatrix's methods for adding, modifying, or accessing
-   entries come in versions that take either local or global indices.
-   The matrix itself may store indices either as local or global.  You
+   Tpetra users.  Please refer to the documentation of Map for a
+   detailed explanation.  This is important because many of
+   CrsMatrix's methods for adding, modifying, or accessing entries
+   come in versions that take either local or global indices.  The
+   matrix itself may store indices either as local or global.  You
    should only use the method version corresponding to the current
-   state of the matrix.  For example, \c getGlobalRowView() returns a
+   state of the matrix.  For example, getGlobalRowView() returns a
    view to the indices represented as global; it is incorrect to call
-   this method if the matrix is storing indices as local.  Call the \c
-   isGloballyIndexed() or \c isLocallyIndexed() methods to find out
+   this method if the matrix is storing indices as local.  Call the
+   isGloballyIndexed() or isLocallyIndexed() methods to find out
    whether the matrix currently stores indices as local or global.
 
-   Method methods that work with global indices only allow operations
-   on indices owned by the calling process.  For example, methods that
-   take a global row index expect that row to be owned by the calling
-   process.  Access to nonlocal (i.e., not owned by the calling
-   process) rows requires performing an explicit communication via the
-   import/export capabilities of the \c CrsMatrix object; see \c
-   DistObject.  However, the method \c insertGlobalValues() is an
-   exception to this rule.  It allows you to add data to nonlocal
-   rows.  These data are stored locally and communicated to the
-   appropriate node on the next call to \c globalAssemble() or \c
-   fillComplete() (the latter calls the former).
+   All methods (but insertGlobalValues(); see below) that work with
+   global indices only allow operations on indices owned by the
+   calling process.  For example, methods that take a global row index
+   expect that row to be owned by the calling process.  Access to
+   nonlocal (i.e., not owned by the calling process) rows requires
+   performing an explicit communication via the Import / Export
+   capabilities of the CrsMatrix object.  See the documentation of
+   DistObject for more details.
+
+   The method insertGlobalValues() is an exception to this rule.  It
+   allows you to add data to nonlocal rows.  These data are stored
+   locally and communicated to the appropriate node on the next call
+   to globalAssemble() or fillComplete().  This means that CrsMatrix
+   provides the same nonlocal insertion functionality that in Epetra
+   is provided by Epetra_FECrsMatrix.
   */
   template <class Scalar,
             class LocalOrdinal  = int,

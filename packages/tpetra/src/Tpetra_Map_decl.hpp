@@ -66,67 +66,88 @@ namespace Tpetra {
   /// \brief Describes a parallel distribution of objects over processes.
   ///
   /// \tparam LocalOrdinal The type of local indices.  Should be an
-  ///   integer, and generally should be signed.  A good model of
-  ///   LocalOrdinal is \c int.
+  ///   integer, and generally should be signed.  A good model of \c
+  ///   LocalOrdinal is \c int.  (In Epetra, this is always just \c
+  ///   int.)
   ///
   /// \tparam GlobalOrdinal The type of global indices.  Should be an
   ///   integer, and generally should be signed.  Also,
-  ///   sizeof(GlobalOrdinal) should be greater than to equal to
-  ///   sizeof(LocalOrdinal).  For example, if LocalOrdinal = \c int,
-  ///   good models of GlobalOrdinal are \c int or \c ptrdiff_t.
+  ///   <tt>sizeof(GlobalOrdinal)</tt> should be greater than to equal
+  ///   to <tt>sizeof(LocalOrdinal)</tt>.  For example, if \c
+  ///   LocalOrdinal is \c int, good models of \c GlobalOrdinal are \c
+  ///   int, \c long, <tt>long long</tt> (if the configure-time option
+  ///   Teuchos_ENABLE_LONG_LONG was set), or \c ptrdiff_t.
   ///
   /// \tparam Node A class implementing on-node shared-memory parallel
-  ///   operations.  It must implement the \ref kokkos_node_api
-  ///   "Kokkos Node API."  The default \c Node type depends on your
-  ///   build options.
+  ///   operations.  It must implement the
+  ///   \ref kokkos_node_api "Kokkos Node API."
+  ///   The default \c Node type should suffice for most users.
+  ///   The actual default type depends on your Trilinos build options.
   ///
-  /// Map concepts
-  /// ============
+  /// This class describes a distribution of data elements over one or
+  /// more processes in a communicator.  Each element has a global
+  /// index (of type \c GlobalOrdinal) uniquely associated to it.
+  /// Each global index in the Map is "owned" by one or more processes
+  /// in the Map's communicator.  The user gets to decide what an
+  /// "element" means; examples include a row or column of a sparse
+  /// matrix (as in CrsMatrix), or a row of one or more vectors (as in
+  /// MultiVector).
   ///
-  /// Local and global indices
-  /// ------------------------
+  /// \section Kokkos_Map_prereq Prerequisites
+  ///
+  /// Before reading the rest of this documentation, it helps to know
+  /// something about the Teuchos memory management classes, in
+  /// particular Teuchos::RCP, Teuchos::ArrayRCP, and
+  /// Teuchos::ArrayView.  You should also know a little bit about MPI
+  /// (the Message Passing Interface for distributed-memory
+  /// programming).  You won't have to use MPI directly to use Map,
+  /// but it helps to be familiar with the general idea of distributed
+  /// storage of data over a communicator.
+  ///
+  /// \section Tpetra_Map_concepts Map concepts
+  ///
+  /// \subsection Tpetra_Map_local_vs_global Local and global indices
   ///
   /// The distinction between local and global indices and types might
-  /// confuse new Tpetra users.  _Global_ indices represent the
+  /// confuse new Tpetra users.  <i>Global</i> indices represent the
   /// elements of a distributed object (such as rows or columns of a
   /// CrsMatrix, or rows of a MultiVector) uniquely over the entire
   /// object, which may be distributed over multiple processes.
-  /// _Local_ indices are local to the process that owns them.  If
-  /// global index G is owned by process P, then there is a unique
+  /// <i>Local</i> indices are local to the process that owns them.
+  /// If global index G is owned by process P, then there is a unique
   /// local index L on process P corresponding to G.  If the local
   /// index L is valid on process P, then there is a unique global
   /// index G owned by P corresponding to the pair (L, P).  However,
   /// multiple processes might own the same global index (an
   /// "overlapping Map"), so a global index G might correspond to
   /// multiple (L, P) pairs.  In summary, local indices on a process
-  /// correspond to object elements owned by that process.
+  /// correspond to object elements (e.g., sparse matrix rows or
+  /// columns) owned by that process.
   ///
   /// Tpetra differs from Epetra in that local and global indices may
   /// have different types.  In Epetra, local and global indices both
   /// have type \c int.  In Tpetra, you get to pick the type of each.
-  /// For example, you can use a 64-bit integer GlobalOrdinal type to
-  /// solve problems with more than \f$2^{31}\f$ unknowns, but a
-  /// 32-bit integer LocalOrdinal type to save bandwidth in sparse
+  /// For example, you can use a 64-bit integer \c GlobalOrdinal type
+  /// to solve problems with more than \f$2^{31}\f$ unknowns, but a
+  /// 32-bit integer \c LocalOrdinal type to save bandwidth in sparse
   /// matrix-vector multiply.
   ///
-  /// Contiguous or noncontiguous
-  /// ---------------------------
+  /// \subsection Tpetra_Map_contig Contiguous or noncontiguous
   ///
-  /// A Map is _contiguous_ when each process' list of global IDs
+  /// A Map is <i>contiguous</i> when each process' list of global IDs
   /// forms an interval and is strictly increasing, and the globally
   /// minimum global ID equals the index base.  Map optimizes for the
   /// contiguous case.  In particular, noncontiguous Maps require
   /// communication in order to figure out which process owns a
-  /// particular global ID (getRemoteIndexList()).
+  /// particular global ID.  (This communication happens in
+  /// getRemoteIndexList().)
   ///
-  /// Globally distributed or locally replicated
-  /// ------------------------------------------
+  /// \subsection Tpetra_Map_dist_repl Globally distributed or locally replicated
   ///
-  /// "Globally distributed" means that _all_ of the following are
-  /// true:
+  /// "Globally distributed" means that <i>all</i> of the following
+  /// are true:
   ///
   /// 1. The map's communicator has more than one process.
-  ///
   /// 2. There is at least one process in the map's communicator,
   ///    whose local number of elements does not equal the number of
   ///    global elements.  (That is, not all the elements are
@@ -745,13 +766,13 @@ namespace Tpetra {
                                    const Teuchos::RCP<Node> &node);
 
   /** \brief Creates a one-to-one version of the given Map where each GID is owned by only one process.
-   
+
       The user must guarantee there are no duplicate GID on the same processor. Unexepected behavior may result.
 
       \relatesalso Map
    */
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > 
+  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createOneToOne(Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &M);
 } // Tpetra namespace
 

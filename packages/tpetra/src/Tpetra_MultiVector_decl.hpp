@@ -105,23 +105,30 @@ namespace Tpetra {
   /// \tparam LocalOrdinal The type of local indices.  Same as the \c
   ///   LocalOrdinal template parameter of \c Map objects used by this
   ///   matrix.  (In Epetra, this is just \c int.)  The default type is
-  ///   \c int, which should suffice for most users.
+  ///   \c int, which should suffice for most users.  This type must be
+  ///   big enough to store the local (per process) number of rows.
   ///
   /// \tparam GlobalOrdinal The type of global indices.  Same as the
   ///   \c GlobalOrdinal template parameter of \c Map objects used by
   ///   this matrix.  (In Epetra, this is just \c int.  One advantage
   ///   of Tpetra over Epetra is that you can use a 64-bit integer
   ///   type here if you want to solve big problems.)  The default
-  ///   type is \c LocalOrdinal.  Be aware that if \c LocalOrdinal is
-  ///   \c int, then the <i>global</i> number of rows or columns in
-  ///   the multivector may be no more than \c INT_MAX, which for
-  ///   typical 32-bit \c int is \f$2^31 - 1\f$ (about two billion).
+  ///   type is <tt>LocalOrdinal</tt>.  This type must be big enough
+  ///   to store the global (over all processes in the communicator)
+  ///   number of rows or columns.
   ///
   /// \tparam Node A class implementing on-node shared-memory parallel
   ///   operations.  It must implement the
   ///   \ref kokkos_node_api "Kokkos Node API."
   ///   The default \c Node type should suffice for most users.
   ///   The actual default type depends on your Trilinos build options.
+  ///
+  /// \note If you use the default \c GlobalOrdinal type, which is
+  ///   <tt>int</tt>, then the <i>global</i> number of rows or columns
+  ///   in the matrix may be no more than \c INT_MAX, which for
+  ///   typical 32-bit \c int is \f$2^31 - 1\f$ (about two billion).
+  ///   If you want to solve larger problems, you must use a 64-bit
+  ///   integer type here.
   ///
   /// \section Kokkos_MV_prereq Prerequisites
   ///
