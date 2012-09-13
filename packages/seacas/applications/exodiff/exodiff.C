@@ -134,8 +134,9 @@ void Print_Banner(const char *prefix)
   extern void Check_Compatible_Meshes( ExoII_Read<INT>& file1,
 				       ExoII_Read<INT>& file2,
 				       bool check_only,
-				       INT *node_map,
-				       INT *elmt_map );
+				       const INT *node_map,
+				       const INT *elmt_map,
+				       const INT *node_id_map);
 
   template <typename INT>
   int Create_File(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
@@ -521,11 +522,38 @@ bool exodiff(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
     // if the meshes are different in that type.
     Build_Variable_Names(file1, file2, &diff_flag);
 
+    // Get node and element number maps which map internal implicit ids into
+    // global ids...
+    // For now, assume that both files have the same map. At some point, need
+    // to actually use the maps to build the correspondence map from one file
+    // to the next...
+    const INT *node_id_map = NULL;
+    const INT *elem_id_map = NULL;
+    if (!interface.ignore_maps) {
+      file1.Load_Node_Map();
+      file1.Load_Elmt_Map();
+      node_id_map = file1.Get_Node_Map();
+      elem_id_map = file1.Get_Elmt_Map();
+      if (!interface.summary_flag)
+	Compare_Maps(file1, file2, node_map, elmt_map, interface.map_flag == PARTIAL);
+    } else {
+      node_id_map = new INT[file1.Num_Nodes()];
+      INT *tmp_map = const_cast<INT*>(node_id_map);
+      for (size_t i=0; i < file1.Num_Nodes(); i++) {
+	tmp_map[i] = i+1;
+      }
+      elem_id_map = new INT[file1.Num_Elmts()];
+      tmp_map = const_cast<INT*>(elem_id_map);
+      for (size_t i=0; i < file1.Num_Elmts(); i++) {
+	tmp_map[i] = i+1;
+      }
+    }
+    
     int out_file_id = -1;
     if (!interface.summary_flag) {
       string diffile_name  = interface.diff_file;
       Check_Compatible_Meshes( file1, file2, (diffile_name == ""),
-			       node_map, elmt_map );
+			       node_map, elmt_map, node_id_map );
       // Doesn't return if meshes are not compatible...
       
       out_file_id = Create_File(file1, file2, diffile_name, &diff_flag);
@@ -569,33 +597,6 @@ bool exodiff(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
 	blocks2[b] = file2.Get_Elmt_Block_by_Index(b);
     }
   
-    // Get node and element number maps which map internal implicit ids into
-    // global ids...
-    // For now, assume that both files have the same map. At some point, need
-    // to actually use the maps to build the correspondence map from one file
-    // to the next...
-    const INT *node_id_map = NULL;
-    const INT *elem_id_map = NULL;
-    if (!interface.ignore_maps) {
-      file1.Load_Node_Map();
-      file1.Load_Elmt_Map();
-      node_id_map = file1.Get_Node_Map();
-      elem_id_map = file1.Get_Elmt_Map();
-      if (!interface.summary_flag)
-	Compare_Maps(file1, file2, node_map, elmt_map, interface.map_flag == PARTIAL);
-    } else {
-      node_id_map = new INT[file1.Num_Nodes()];
-      INT *tmp_map = const_cast<INT*>(node_id_map);
-      for (size_t i=0; i < file1.Num_Nodes(); i++) {
-	tmp_map[i] = i+1;
-      }
-      elem_id_map = new INT[file1.Num_Elmts()];
-      tmp_map = const_cast<INT*>(elem_id_map);
-      for (size_t i=0; i < file1.Num_Elmts(); i++) {
-	tmp_map[i] = i+1;
-      }
-    }
-    
     // Diff attributes...
     if (!interface.ignore_attributes && elmt_map==NULL && !interface.summary_flag) {
       if (diff_element_attributes(file1, file2, elmt_map, elem_id_map, blocks2))
@@ -1249,7 +1250,7 @@ bool exodiff(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
 	      sprintf(buf, "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (node %zu)",
 		      name_length,
 		      name.c_str(), interface.node_var[n_idx].abrstr(),
-		      vals1[n], vals2[n], d, (size_t)id_map[n]);
+		      vals1[n], vals2[n2], d, (size_t)id_map[n]);
 	      std::cout << buf << std::endl;
 	    }
 	  } else {
@@ -1258,7 +1259,7 @@ bool exodiff(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
 	  if (interface.doNorms) {
 	    norm_d += (vals1[n]-vals2[n2])*(vals1[n]-vals2[n2]);
 	    norm_1 += vals1[n]*vals1[n];
-	    norm_2 += vals2[n]*vals2[n];
+	    norm_2 += vals2[n2]*vals2[n2];
 	  }
 	}
       } // End of node iteration...
