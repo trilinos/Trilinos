@@ -50,11 +50,8 @@
 using namespace std;
 
 namespace {
-  char buf[256];
-
   template <typename INT>
-  bool Check_Nodal(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
-		   const INT *node_map, const INT *id_map, bool check_only);
+  bool Check_Nodal(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, bool check_only);
   template <typename INT>
   bool Check_Elmt_Block(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, bool check_only);
   template <typename INT>
@@ -105,18 +102,18 @@ bool Check_Global(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2)
 
 template <typename INT>
 void Check_Compatible_Meshes(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, bool check_only,
-			     const INT *node_map, const INT *elmt_map, const INT *node_id_map)
+			     INT *node_map, INT *elmt_map)
 {
   bool is_diff = false;
   if (!Check_Global(file1, file2))
     is_diff = true;
   
-  if (!Check_Nodal(file1, file2, node_map, node_id_map, check_only))
-    is_diff = true;
-
-  if (!Check_Elmt_Block(file1, file2, check_only))
-    is_diff = true;
-
+  if (!interface.map_flag) {
+    if (!Check_Nodal(file1, file2, check_only))
+      is_diff = true;
+    if (!Check_Elmt_Block(file1, file2, check_only))
+      is_diff = true;
+  }
   if (!Check_Nodeset(file1, file2, node_map, check_only))
     is_diff = true;
 
@@ -131,20 +128,10 @@ void Check_Compatible_Meshes(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, boo
 
 namespace {
   template <typename INT>
-  bool Check_Nodal(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
-		   const INT *node_map, const INT *id_map, bool check_only)
+  bool Check_Nodal(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, bool check_only)
   {
     bool is_same = true;
   
-    if (interface.coord_tol.type != IGNORE && check_only) {
-      sprintf(buf, "Coordinates will be compared .. tol: %8g (%s), floor: %8g",
-	      interface.coord_tol.value, interface.coord_tol.typestr(), interface.coord_tol.floor);
-      std::cout << buf << std::endl;
-    } else {
-      std::cout << "Locations of nodes will not be compared." << std::endl;
-      return is_same;
-    }
-
     file1.Load_Nodal_Coordinates();
     file2.Load_Nodal_Coordinates();
 
@@ -157,56 +144,45 @@ namespace {
     double *y2 = x2, *z2 = x2;
     if (file2.Dimension() > 1) y2 = (double*)file2.Y_Coords();
     if (file2.Dimension() > 2) z2 = (double*)file2.Z_Coords();
-    
+  
     double max = 0.0, norm;
-    for (size_t n = 0; n < file1.Num_Nodes() && (is_same || interface.show_all_diffs); ++n) {
-      // Should this node be processed...
-      if (node_map == 0 || node_map[n]>=0){
-	INT n2 = node_map != 0 ? node_map[n] : n;
-	double dx = interface.coord_tol.Delta(x1[n], x2[n2]);
-	if (dx > interface.coord_tol.value) {
-	  sprintf(buf, "   x coord %s diff: %14.7e ~ %14.7e =%12.5e (node %zu)",
-		  interface.coord_tol.abrstr(),
-		  x1[n], x2[n2], dx, (size_t)id_map[n]);
-	  std::cout << buf << std::endl;
+    for (size_t n = 0; n < file1.Num_Nodes() && is_same; ++n) {
+      if (check_only) {
+	if (interface.coord_tol.Diff(x1[n], x2[n])) {
+	  std::cout << "exodiff: ERROR .. Files are different (x nodal coordinate "
+		    << (n+1) << ")" << std::endl;
 	  is_same = false;
 	}
-	norm = (x1[n] - x2[n2])*(x1[n] - x2[n2]);
-
-	if (file1.Dimension() > 1) {
-	  double dy = interface.coord_tol.Delta(y1[n], y2[n2]);
-	  if (dy > interface.coord_tol.value) {
-	    sprintf(buf, "   y coord %s diff: %14.7e ~ %14.7e =%12.5e (node %zu)",
-		    interface.coord_tol.abrstr(),
-		    y1[n], y2[n2], dy, (size_t)id_map[n]);
-	    std::cout << buf << std::endl;
+      }
+      norm = (x1[n] - x2[n])*(x1[n] - x2[n]);
+      if (file1.Dimension() > 1) {
+	if (check_only) {
+	  if (interface.coord_tol.Diff(y1[n], y2[n])) {
+	    std::cout << "exodiff: ERROR .. Files are different (y nodal coordinate "
+		      << (n+1) << ")" << std::endl;
 	    is_same = false;
 	  }
-	  norm += (y1[n] - y2[n2])*(y1[n] - y2[n2]);
 	}
-	
-	if (file1.Dimension() > 2) {
-	  double dz = interface.coord_tol.Delta(z1[n], z2[n2]);
-	  if (dz > interface.coord_tol.value) {
-	    sprintf(buf, "   z coord %s diff: %14.7e ~ %14.7e =%12.5e (node %zu)",
-		    interface.coord_tol.abrstr(),
-		    z1[n], z2[n2], dz, (size_t)id_map[n]);
-	    std::cout << buf << std::endl;
+	norm += (y1[n] - y2[n])*(y1[n] - y2[n]);
+      }
+      if (file1.Dimension() > 2) {
+	if (check_only) {
+	  if (interface.coord_tol.Diff(z1[n], z2[n])) {
+	    std::cout << "exodiff: ERROR .. Files are different (z nodal coordinate "
+		      << (n+1) << ")" << std::endl;
 	    is_same = false;
 	  }
-	  norm += (z1[n] - z2[n2])*(z1[n] - z2[n2]);
 	}
-	max = max < norm ? norm : max;
-      } // End of node iteration...
-
+	norm += (z1[n] - z2[n])*(z1[n] - z2[n]);
+      }
+      max = max < norm ? norm: max;
     }
-
-    if (!interface.quiet_flag && is_same && max > 0.0) {
+  
+    if (!interface.quiet_flag && !check_only) {
       max = sqrt(max);
-      std::cout << "Maximum difference between nodal coordinates = "
+      std::cout << "Maximum difference between Genesis nodal coordinates = "
 		<< max << std::endl;
     }
-
     file1.Free_Nodal_Coordinates();
     file2.Free_Nodal_Coordinates();
     return is_same;
@@ -235,11 +211,8 @@ namespace {
 	    is_same = false;
 	  } else {
 	    // Only do this check if Check_Elmt_Block_Params does not fail.
-	    // TODO: Pass in node_map and node_id_map...
-	    if (!interface.map_flag) {
-	      if (!Check_Elmt_Block_Connectivity(block1, block2))
-		is_same = false;
-	    }
+	    if (!Check_Elmt_Block_Connectivity(block1, block2))
+	      is_same = false;
 	  }
 	}
       }
@@ -536,10 +509,10 @@ namespace {
 
 }
 
-  template bool Check_Global(ExoII_Read<int>& file1, ExoII_Read<int>& file2);
-  template void Check_Compatible_Meshes(ExoII_Read<int>& file1, ExoII_Read<int>& file2, bool check_only,
-					const int *node_map, const int *elmt_map, const int *node_id_map);
+template bool Check_Global(ExoII_Read<int>& file1, ExoII_Read<int>& file2);
+template void Check_Compatible_Meshes(ExoII_Read<int>& file1, ExoII_Read<int>& file2, bool check_only,
+				      int *node_map, int *elmt_map);
 
-  template bool Check_Global(ExoII_Read<int64_t>& file1, ExoII_Read<int64_t>& file2);
-  template void Check_Compatible_Meshes(ExoII_Read<int64_t>& file1, ExoII_Read<int64_t>& file2, bool check_only,
-					const int64_t *node_map, const int64_t *elmt_map, const int64_t *node_id_map);
+template bool Check_Global(ExoII_Read<int64_t>& file1, ExoII_Read<int64_t>& file2);
+template void Check_Compatible_Meshes(ExoII_Read<int64_t>& file1, ExoII_Read<int64_t>& file2, bool check_only,
+				      int64_t *node_map, int64_t *elmt_map);
