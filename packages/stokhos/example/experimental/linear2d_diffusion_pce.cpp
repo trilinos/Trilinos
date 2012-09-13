@@ -159,6 +159,7 @@ int main(int argc, char *argv[]) {
 
   LocalOrdinal MyPID;
 
+
   try {
 
     // Create a communicator for Epetra objects
@@ -414,6 +415,9 @@ int main(int argc, char *argv[]) {
     typedef MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TrilinosSmoother;
     typedef MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SmootherFactory;
     typedef MueLu::FactoryManager<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> FactoryManager;
+  
+    //feenableexcept(FE_ALL_EXCEPT);
+    feenableexcept(FE_INVALID | FE_DIVBYZERO);
 
     RCP<Tpetra_Vector> p = Tpetra::createVector<Scalar>(model->get_p_map(0));
     RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(model->get_x_map());
@@ -530,9 +534,11 @@ int main(int argc, char *argv[]) {
       // coarse level solve
       ParameterList coarseParamList;
       coarseParamList.set("fact: level-of-fill", 0);
-      RCP<SmootherPrototype> coarsePrototype     = rcp( new TrilinosSmoother("ILUT", coarseParamList) );
+      //RCP<SmootherPrototype> coarsePrototype     = rcp( new TrilinosSmoother("ILUT", coarseParamList) );
+      RCP<SmootherPrototype> coarsePrototype     = rcp( new TrilinosSmoother("RILUK", coarseParamList) );
       RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarsePrototype, Teuchos::null) );
-      fm->SetFactory("CoarseSolver", coarseSolverFact);
+      //fm->SetFactory("CoarseSolver", coarseSolverFact);
+      fm->SetFactory("CoarseSolver", smooFact);
 
       //allow for larger aggregates
       typedef MueLu::UCAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
@@ -549,6 +555,7 @@ int main(int argc, char *argv[]) {
         fm->SetFactory("P", sapFactory);
       }
 
+      //H->Setup(*fm, 0, 1);
       H->Setup(*fm);
     }
 

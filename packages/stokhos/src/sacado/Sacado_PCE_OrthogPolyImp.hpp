@@ -750,7 +750,11 @@ bool
 operator==(const OrthogPoly<T,Storage>& a, 
 	   const OrthogPoly<T,Storage>& b)
 {
-  return a.coeff(0) == b.coeff(0);
+  int n = std::max(a.size(), b.size());
+  for (int i=0; i<n; i++)
+    if (a.coeff(i) != b.coeff(i))
+      return false;
+  return true;
 }
 
 template <typename T, typename Storage>
@@ -758,7 +762,12 @@ bool
 operator==(const typename OrthogPoly<T,Storage>::value_type& a, 
 	   const OrthogPoly<T,Storage>& b)
 {
-  return a == b.coeff(0);
+  if (a != b.coeff(0))
+    return false;
+  for (int i=1; i<b.size(); i++)
+    if (b.coeff(i) != T(0.0))
+      return false;
+  return true;
 }
 
 template <typename T, typename Storage>
@@ -766,7 +775,12 @@ bool
 operator==(const OrthogPoly<T,Storage>& a, 
 	   const typename OrthogPoly<T,Storage>::value_type& b)
 {
-  return a.coeff(0) == b;
+  if (a.coeff(0) != b)
+    return false;
+  for (int i=1; i<a.size(); i++)
+    if (a.coeff(i) != T(0.0))
+      return false;
+  return true;
 }
 
 template <typename T, typename Storage>
@@ -774,7 +788,7 @@ bool
 operator!=(const OrthogPoly<T,Storage>& a, 
 	   const OrthogPoly<T,Storage>& b)
 {
-  return a.coeff(0) != b.coeff(0);
+  return !(a == b);
 }
 
 template <typename T, typename Storage>
@@ -782,7 +796,7 @@ bool
 operator!=(const typename OrthogPoly<T,Storage>::value_type& a, 
 	   const OrthogPoly<T,Storage>& b)
 {
-  return a != b.coeff(0);
+  return !(a == b);
 }
 
 template <typename T, typename Storage>
@@ -790,7 +804,7 @@ bool
 operator!=(const OrthogPoly<T,Storage>& a, 
 	   const typename OrthogPoly<T,Storage>::value_type& b)
 {
-  return a.coeff(0) != b;
+  return !(a == b);
 }
 
 template <typename T, typename Storage>
