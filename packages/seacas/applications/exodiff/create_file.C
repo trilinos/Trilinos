@@ -181,14 +181,6 @@ int Create_File(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
       if (Tolerance::use_old_floor) {
 	std::cout << "WARNING: Using old definition of floor tolerance. |a-b|<floor.\n\n";
       }
-      if (interface.coord_tol.type != IGNORE) {
-	sprintf(buf, "Coordinates will be compared .. tol: %8g (%s), floor: %8g",
-		interface.coord_tol.value, interface.coord_tol.typestr(), interface.coord_tol.floor);
-	std::cout << buf << std::endl;
-      } else {
-	std::cout << "Locations of nodes will not be compared." << std::endl;
-      }
-      
       if (interface.time_tol.type != IGNORE) {
 	sprintf(buf, "Time step values will be compared .. tol: %8g (%s), floor: %8g",
 		interface.time_tol.value, interface.time_tol.typestr(), interface.time_tol.floor);
