@@ -207,20 +207,157 @@ namespace Kokkos {
 
 #endif
 
-  /** \brief A traits class providing a generic arithmetic interface for vectors and multivectors.
-    */
+  /// \class DefaultArithmetic
+  /// \brief Traits class providing a generic arithmetic interface for local multivectors.
+  ///
+  /// \tparam MV The local multivector type.  We provide a
+  ///   specialization for MultiVector.
   template <class MV>
   class DefaultArithmetic {
-    // nothing here
+  public:
+    //! Initialize all entries of \c A to the given constant value \c alpha.
+    static void Init (MV& A, typename MV::ScalarType alpha);
+
+    //! Set A to the reciprocal of B: <tt>B(i,j) = 1/A(i,j)</tt>.
+    static void Recip (MV& A, const MV& B);
+
+    /// \brief Set C to the scaled element-wise multiple of A and B.
+    ///
+    /// <tt>C(i,j) = scalarC * C(i,j) + scalarAB * B(i,j) * A(i,1)</tt>,
+    /// where the input multivector A has only 1 column.
+    static void ElemMult (MV& C, 
+			  typename MV::ScalarType scalarC,
+			  typename MV::ScalarType scalarAB,
+			  const MV& A,
+			  const MV& B);
+
+    //! Assign B to A: <tt>A(i,j) = B(i,j)</tt>.
+    static void Assign (MV& A, const MV& B);
+
+    //! Assign the given columns of B to A: <tt>A(i,j) = B(whichVectors[i],j)</tt>.
+    static void Assign (MV& A, const MV& B, const ArrayView<const size_t>& whichVectors);
+    
+    //! Compute the inner products of corresponding columns of A and B.
+    static void Dot (const MV& A, const MV& B, const ArrayView<typename MV::ScalarType> &dots);
+
+    //! Compute the inner product of A and B (assuming each has only one column).
+    static typename MV::ScalarType Dot (const MV& A, const MV& B);
+
+    /// \brief Compute the matrix-matrix product <tt>C = alpha*Op(A)*Op(B) + beta*C</tt>.
+    ///
+    /// \c Op(A) may be either \c A, its transpose, or its conjugate
+    /// transpose, depending on \c transA.  Likewise, \c Op(B) may be
+    /// either \c B, its transpose, or its conjugate transpose,
+    /// depending on \c transB.
+    static void 
+    GEMM (MV &C, Teuchos::ETransp transA, Teuchos::ETransp transB, 
+	  typename MV::ScalarType alpha, const MV &A, 
+	  const MV &B, typename MV::ScalarType beta);
+
+    //! Compute <tt>B = alpha * A + beta * B</tt>.
+    static void 
+    GESUM (MV& B, typename MV::ScalarType alpha, const MV& A, typename MV::ScalarType beta);
+
+    //! Compute <tt>C = alpha * A + beta * B + gamma * C</tt>.
+    static void 
+    GESUM (MV &C, typename MV::ScalarType alpha, const MV &A, 
+	   typename MV::ScalarType beta, const MV &B, typename MV::ScalarType gamma);
+
+    //! Compute the one-norm of each column of \c A.
+    static void Norm1 (const MV &A, const ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
+
+    //! Compute the one-norm of (the first column of) \c A.
+    static typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType Norm1 (const MV &A);
+
+    //! Compute the sum of each column of \c A.
+    static void Sum (const MV &A, const ArrayView<typename MV::ScalarType> &sums);
+    
+    //! Compute the sum of (the first column of) \c A.
+    static typename MV::ScalarType Sum (const MV& A);
+
+    //! Compute the infinity norm (element of maximum magnitude) of each column of \c A.
+    static void NormInf (const MV& A, const ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
+
+    //! Compute the infinity norm (element of maximum magnitude) of (the first column of) \c A.
+    static typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType 
+    NormInf (const MV& A);
+
+    //! Compute the square of the 2-norm of each column of \c A.
+    static void Norm2Squared (const MV &A, const ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
+
+    //! Compute the square of the 2-norm of (the first column of) \c A.
+    static typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType
+    Norm2Squared (const MV& A);
+
+    //! Compute the norm of (the first column of) \c A, weighted by the given vector of weights.
+    static typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType
+    WeightedNorm (const MV &A, const MV &weightVector);
+
+    //! Compute the norm of each column of \c A, weighted by the given vector of weights.
+    static void WeightedNorm (const MV &A, const MV &weightVector, const ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
+
+    //! Fill \c A with uniform random numbers.
+    static void Random (MV& A);
+
+    //! Compute <tt>A = abs(B)</tt>, elementwise.
+    static void Abs (MV &A, const MV &B);
+
+    //! Compute <tt>B = alpha * A</tt>.
+    static void Scale (MV &B, typename MV::ScalarType alpha, const MV &A);
+
+    //! Scale \c A in place by \c alpha: <tt>A = alpha * A</tt>.
+    static void Scale (MV &A, typename MV::ScalarType alpha);
+
+    /// \brief Tell \c A about its dimensions, and give it a pointer to its data.
+    ///
+    /// \param A [out] The multivector to tell about its dimensions and data.
+    /// \param numRows [in] Number of rows in A.
+    /// \param numCols [in] Number of columns in A.
+    /// \param values [in] Pointer to A's data.  This is a matrix
+    ///   stored in column-major format.  
+    /// \param stride [in] Stride between columns of the matrix.
+    ///
+    /// \pre <tt>stride >= numRows</tt> 
+    static void 
+    initializeValues (MV &A, size_t numRows, size_t numCols,
+		      const ArrayRCP<typename MV::ScalarType> &values,
+		      size_t stride);
+
+    //! Get a const pointer to A's data; the same pointer set by initializeValues().
+    static ArrayRCP<const typename MV::ScalarType> getValues (const MV &A);
+
+    //! Get a const pointer to the data of column \c j of \c A.
+    static ArrayRCP<const typename MV::ScalarType> 
+    getValues (const MV &A, size_t j);
+
+    //! Get a nonconst pointer to A's data; the same pointer set by initializeValues().
+    static ArrayRCP<typename MV::ScalarType> getValuesNonConst (MV &A);
+
+    //! Get a nonconst pointer to the data of column \c j of \c A.
+    static ArrayRCP<typename MV::ScalarType> 
+    getValuesNonConst (const MV &A, size_t j);
+
+    //! The number of rows in \c A.
+    static size_t getNumRows (const MV &A);
+
+    //! The number of columns in \c A.
+    static size_t getNumCols (const MV &A);
+
+    //! The (column) stride of \c A.
+    static size_t getStride (const MV &A);
+
+    //! The Kokkos Node instance with which \c A was created.
+    static RCP<typename MV::NodeType> getNode (const MV &A);
   };
 
-  /** \brief Partial specialization of class DefaultArithmetic for MultiVector<Scalar,Node>
-    */
+  /// \brief Partial specialization of DefaultArithmetic for MultiVector<Scalar,Node>.
+  ///
+  /// \tparam Scalar The type of entries of the multivector.
+  /// \tparam The Kokkos Node type.
   template <class Scalar, class Node>
   class DefaultArithmetic<MultiVector<Scalar,Node> > {
 
     public:
-      //! Initialize multivector to constant value.
       inline static void Init(MultiVector<Scalar,Node> &A, Scalar alpha) {
         const size_t nR = A.getNumRows();
         const size_t nC = A.getNumCols();
@@ -287,9 +424,6 @@ namespace Kokkos {
         }
       }
 
-      //! Set MultiVector to the scaled element-wise multiple of two others:
-      /** C(i,j) = scalarC * C(i,j) + scalarAB * B(i,j) * A(i,1) (A has only 1 column)
-       */
       inline static void ElemMult(MultiVector<Scalar,Node> &C, Scalar scalarC,
                                Scalar scalarAB,
                                const MultiVector<Scalar,Node> &A,
@@ -329,7 +463,6 @@ namespace Kokkos {
         }
       }
 
-      //! Assign one MultiVector to another
       inline static void Assign(MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &B) {
         const size_t nR = A.getNumRows();
         const size_t nC = A.getNumCols();
@@ -373,6 +506,48 @@ namespace Kokkos {
           }
         }
       }
+
+    static void 
+    Assign (MultiVector<Scalar,Node>& A, 
+	    const MultiVector<Scalar,Node>& B, 
+	    const ArrayView<const size_t>& whichVectors)
+    {
+      const size_t nR = A.getNumRows();
+      const size_t nC = A.getNumCols();
+      const size_t Astride = A.getStride();
+      const size_t Bstride = B.getStride();
+      const size_t numColsToCopy = static_cast<size_t> (whichVectors.size ());
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nR != B.getNumRows() || numColsToCopy > nC,
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Assign(A,B,whichVectors): "
+        "The MultiVectors A and B(whichVectors) do not have compatible dimensions.  "
+        "A is " << nR << " x " << nC << ", but B has "
+        << B.getNumRows() << ", and there are " << numColsToCopy 
+	<< " columns of B to copy into A.");
+      if (nR == 0 || numColsToCopy == 0) {
+        return; // Nothing to do!
+      }
+
+      RCP<Node> node = A.getNode();
+
+      // Make sure that the buffers don't go out of scope until the
+      // kernels are done.
+      ReadyBufferHelper<Node> rbh(node);
+      rbh.begin();
+      rbh.template addNonConstBuffer<Scalar> (A.getValuesNonConst ());
+      rbh.template addConstBuffer<Scalar> (B.getValues ());
+      rbh.end();
+
+      AssignOp<Scalar> wdp; // Reuse the struct for each loop iteration.
+      // One kernel invocation for each column of B to copy.
+      for (size_t j = 0; j < numColsToCopy; ++j) {
+        wdp.x = A.getValuesNonConst (j).getRawPtr ();
+	wdp.y = B.getValues (whichVectors[j]).getRawPtr ();
+	node->template parallel_for<AssignOp<Scalar> > (0, nR, wdp);
+      }
+    }
+
 
       inline static void Dot(const MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &B, const ArrayView<Scalar> &dots) {
         const size_t nR = A.getNumRows();
