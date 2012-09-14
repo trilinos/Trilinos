@@ -119,7 +119,7 @@ LocalFilter<MatrixType>::~LocalFilter() { }
 template<class MatrixType>
 const Teuchos::RCP<const Teuchos::Comm<int> > & LocalFilter<MatrixType>::getComm() const
 {
-  return A_->getComm();
+  return LocalComm_;
 }
 
 //==========================================================================
