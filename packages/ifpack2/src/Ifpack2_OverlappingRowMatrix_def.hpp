@@ -32,6 +32,8 @@
 #include "Ifpack2_OverlappingRowMatrix_decl.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
+#include "Teuchos_CommHelpers.hpp"
+
 namespace Ifpack2 {
 //==========================================================================
 // Standard constructor
@@ -67,12 +69,7 @@ OverlappingRowMatrix<MatrixType>::OverlappingRowMatrix(const Teuchos::RCP<const 
   RCP<MapType>         TmpMap;
   RCP<CrsMatrixType>   TmpMatrix; 
   RCP<ImportType>      TmpImporter;
-
-
-  // importing rows corresponding to elements that are 
-  // in ColMap, but not in RowMap 
-  RCP<const MapType> RowMap;
-  RCP<const MapType> ColMap;
+  RCP<const MapType>   RowMap, ColMap;
 
   // The big import loop
   for (int overlap = 0 ; overlap < OverlapLevel_ ; ++overlap) {
@@ -87,7 +84,7 @@ OverlappingRowMatrix<MatrixType>::OverlappingRowMatrix(const Teuchos::RCP<const 
     }
 
     size_t size = ColMap->getNodeNumElements() - RowMap->getNodeNumElements(); 
-    Array<GlobalOrdinal> list(size); 
+    Array<GlobalOrdinal> mylist(size); 
     size_t count = 0; 
 
     // define the set of rows that are in ColMap but not in RowMap 
@@ -98,14 +95,14 @@ OverlappingRowMatrix<MatrixType>::OverlappingRowMatrix(const Teuchos::RCP<const 
 	  = find(ExtElements.begin(),ExtElements.end(),GID); 
         if (pos == ExtElements.end()) { 
           ExtElements.push_back(GID);
-          list[count] = GID; 
+          mylist[count] = GID; 
           ++count; 
         } 
       } 
     }
     
     // Allocate & import new matrices, maps, etc.
-    TmpMap      = rcp(new MapType(global_invalid,list(),Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),A_->getComm(),A_->getNode()));
+    TmpMap      = rcp(new MapType(global_invalid,mylist(0,count-1),Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),A_->getComm(),A_->getNode()));
     TmpMatrix   = rcp(new CrsMatrixType(TmpMap,0));
     TmpImporter = rcp(new ImportType(A_->getRowMap(),TmpMap));
 
@@ -115,14 +112,13 @@ OverlappingRowMatrix<MatrixType>::OverlappingRowMatrix(const Teuchos::RCP<const 
 
   // build the map containing all the nodes (original
   // matrix + extended matrix)
-  Array<GlobalOrdinal> list(NumMyRowsA_ + ExtElements.size());
+  Array<GlobalOrdinal> mylist(NumMyRowsA_ + ExtElements.size());
   for (LocalOrdinal i = 0 ; (size_t)i < NumMyRowsA_ ; ++i)
-    list[i] = A_->getRowMap()->getGlobalElement(i);
+    mylist[i] = A_->getRowMap()->getGlobalElement(i);
   for (LocalOrdinal i = 0 ; i < ExtElements.size() ; ++i)
-    list[i + NumMyRowsA_] = ExtElements[i];
+    mylist[i + NumMyRowsA_] = ExtElements[i];
 
-
-  RowMap_= rcp(new MapType(global_invalid,list(),Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),A_->getComm(),A_->getNode()));
+  RowMap_= rcp(new MapType(global_invalid,mylist(),Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),A_->getComm(),A_->getNode()));
   ColMap_= RowMap_;
 
   // now build the map corresponding to all the external nodes
@@ -135,20 +131,21 @@ OverlappingRowMatrix<MatrixType>::OverlappingRowMatrix(const Teuchos::RCP<const 
   ExtMatrixCRS->doImport(*ACRS,*ExtImporter_,Tpetra::INSERT);
   ExtMatrixCRS->fillComplete(A_->getDomainMap(),RowMap_);
 
-  Importer_ = rcp(new ImportType(RowMap_,A_->getRowMap()));
+  Importer_ = rcp(new ImportType(A_->getRowMap(),RowMap_));
 
   // fix indices for overlapping matrix
   NumMyRowsB_ = ExtMatrix_->getNodeNumRows();
   NumMyRows_ = NumMyRowsA_ + NumMyRowsB_;
   NumMyCols_ = NumMyRows_;
-  
+
   NumMyDiagonals_ = A_->getNodeNumDiags() + ExtMatrix_->getNodeNumDiags(); 
   NumMyNonzeros_  = A_->getNodeNumEntries() + ExtMatrix_->getNodeNumEntries();
 
-
-  // CMS: Do this later when Teuchos::Comm gets redone
-  //  Tpetra::global_size_t NumMyNonzeros_tmp = NumMyNonzeros_;
-  //  A_->getComm().SumAll(&NumMyNonzeros_tmp,&NumGlobalNonzeros_,1);
+  // FIXME: Fix this later when Teuchos::Comm gets redone
+  Tpetra::global_size_t NumMyNonzeros_tmp = NumMyNonzeros_;
+  Teuchos::reduceAll<int,Tpetra::global_size_t>(*A_->getComm(),Teuchos::REDUCE_SUM,NumMyNonzeros_tmp,Teuchos::outArg(NumGlobalNonzeros_));  
+  Tpetra::global_size_t NumMyRows_tmp = NumMyRows_;
+  Teuchos::reduceAll<int,Tpetra::global_size_t>(*A_->getComm(),Teuchos::REDUCE_SUM,NumMyRows_tmp,Teuchos::outArg(NumGlobalRows_));  
 
   MaxNumEntries_ = A_->getNodeMaxNumRowEntries();  
   if (MaxNumEntries_ < ExtMatrix_->getNodeMaxNumRowEntries())
@@ -157,7 +154,6 @@ OverlappingRowMatrix<MatrixType>::OverlappingRowMatrix(const Teuchos::RCP<const 
   // Resize temp arrays
   Indices_.resize(MaxNumEntries_);
   Values_.resize(MaxNumEntries_);
-
 }
 
 
@@ -240,7 +236,7 @@ Teuchos::RCP<const Tpetra::RowGraph<typename MatrixType::local_ordinal_type, typ
 template<class MatrixType>
 global_size_t OverlappingRowMatrix<MatrixType>::getGlobalNumRows() const
 {
-  return A_->getGlobalNumRows();
+  return NumGlobalRows_;
 }
   
 //==========================================================================
@@ -248,7 +244,7 @@ global_size_t OverlappingRowMatrix<MatrixType>::getGlobalNumRows() const
 template<class MatrixType>
 global_size_t OverlappingRowMatrix<MatrixType>::getGlobalNumCols() const
 {
-  return A_->getGlobalNumCols();
+  return NumGlobalRows_;
 }
   
 //==========================================================================
@@ -2081,55 +2077,5 @@ Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   }
   return(0);
 }
-
-// ======================================================================
-int Ifpack_OverlappingRowMatrix::
-Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
-{
-  IFPACK_CHK_ERR(Multiply(UseTranspose(),X,Y));
-  return(0);
-}
-
-// ======================================================================
-int Ifpack_OverlappingRowMatrix::
-ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
-{
-  IFPACK_CHK_ERR(-1);
-}
-
-// ======================================================================
-#ifndef IFPACK_SUBCOMM_CODE
-# ifndef IFPACK_NODE_AWARE_CODE
-Epetra_RowMatrix& Ifpack_OverlappingRowMatrix::B() const
-{
-  return(*ExtMatrix_);
-}
-# endif
-#endif
-// ======================================================================
-const Epetra_BlockMap& Ifpack_OverlappingRowMatrix::Map() const
-{
-  return(*Map_);
-}
-
-// ======================================================================
-int Ifpack_OverlappingRowMatrix::
-ImportMultiVector(const Epetra_MultiVector& X, Epetra_MultiVector& OvX,
-                  Epetra_CombineMode CM)
-{
-  OvX.Import(X,*Importer_,CM);
-  return(0);
-}
-
-// ======================================================================
-int Ifpack_OverlappingRowMatrix::
-ExportMultiVector(const Epetra_MultiVector& OvX, Epetra_MultiVector& X,
-                  Epetra_CombineMode CM)
-{
-  X.Export(OvX,*Importer_,CM);
-  return(0);
-}
-
-
 
 #endif

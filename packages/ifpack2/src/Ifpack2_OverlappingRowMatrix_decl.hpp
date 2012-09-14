@@ -293,6 +293,7 @@ private:
   size_t NumMyDiagonals_;
   size_t NumMyNonzeros_;
 
+  Tpetra::global_size_t NumGlobalRows_;
   Tpetra::global_size_t NumGlobalNonzeros_;
   size_t MaxNumEntries_;
 
