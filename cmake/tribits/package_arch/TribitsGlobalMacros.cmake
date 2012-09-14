@@ -229,6 +229,17 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     CACHE PATH
     "Location where assorted examples will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'example'"
     )
+
+  IF ("${${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT}" STREQUAL "")
+    # Assume the TriBITS project wants to install headers and libraries by default
+    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT ON)
+  ENDIF()
+
+  ADVANCED_SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS
+    ${${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT}
+    CACHE BOOL
+    "Install libraries and headers (default is ${${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT}).  NOTE: Shared libraries are always installed since they are needed by executables."
+    )
   
   IF(WIN32 AND NOT CYGWIN)
     SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT OFF)
@@ -1388,7 +1399,7 @@ ENDMACRO()
 #
 # NOTE: This is done as a function so that the read-in version variables don't
 # bleed into the outer scope.
-#
+
 
 FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE
   REPOSITORY_NAME  REPOSITORY_DIR
@@ -1420,13 +1431,24 @@ FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE
     # Configure the file with everything set
     CONFIGURE_FILE(${${PROJECT_NAME}_TRIBITS_DIR}/Tribits_version.h.in
       ${OUTPUT_VERSION_HEADER_FILE})
+
+    SET(INSTALL_HEADERS ON)
+    IF (NOT ${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS)
+      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        MESSAGE(STATUS "Skipping installation if ${OUTPUT_VERSION_HEADER_FILE}"
+          " because '${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS' was set to true ...")
+      ENDIF()
+      SET(INSTALL_HEADERS OFF)
+    ENDIF()
       
-    # Install version header file
-    INSTALL(
-      FILES ${OUTPUT_VERSION_HEADER_FILE}
-      DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
-      COMPONENT ${PROJECT_NAME}
-      )
+    IF (INSTALL_HEADERS)
+      # Install version header file
+      INSTALL(
+        FILES ${OUTPUT_VERSION_HEADER_FILE}
+        DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
+        COMPONENT ${PROJECT_NAME}
+        )
+    ENDIF()
 
   ENDIF()
 
