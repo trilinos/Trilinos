@@ -81,20 +81,20 @@ namespace MueLu {
 //      7) print if  abs(y[i] - tCRS[i])/z[i] > 1.e-8
 template <typename Scalar,typename LocalOrdinal,typename GlobalOrdinal,typename Node, typename LocalMatOps>
 //int MatrixVectorChecker(const RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & mat) {
-int MatrixVectorChecker(const RCP<const Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & mat) {
+int MatrixVectorChecker(const Teuchos::RCP<const Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & mat) {
 #include "MueLu_UseShortNames.hpp"
 
   // const RCP<const Map> & colMap = mat->getColMap(); // unused
-  const RCP<const Map> & rowMap = mat->getRowMap();
-  const RCP<const Map> & domMap = mat->getDomainMap();
-  const RCP<const Map> & ranMap = mat->getRangeMap();
+  const Teuchos::RCP<const Map> & rowMap = mat->getRowMap();
+  const Teuchos::RCP<const Map> & domMap = mat->getDomainMap();
+  const Teuchos::RCP<const Map> & ranMap = mat->getRangeMap();
   const int myPID = rowMap->getComm()->getRank();
 
   // MyVector vv(domMap), yy(ranMap), ww(rowMap,true), zz(rowMap,true); 
-  RCP<Vector> vv = VectorFactory::Build(domMap); //TODO: RCP ?
-  RCP<Vector> yy = VectorFactory::Build(ranMap);
-  RCP<Vector> ww = VectorFactory::Build(rowMap,true);
-  RCP<Vector> zz = VectorFactory::Build(rowMap,true);
+  Teuchos::RCP<Vector> vv = VectorFactory::Build(domMap); //TODO: RCP ?
+  Teuchos::RCP<Vector> yy = VectorFactory::Build(ranMap);
+  Teuchos::RCP<Vector> ww = VectorFactory::Build(rowMap,true);
+  Teuchos::RCP<Vector> zz = VectorFactory::Build(rowMap,true);
 
   Teuchos::ArrayRCP<SC> v = vv->getDataNonConst(0);
   Teuchos::ArrayRCP<SC> y = yy->getDataNonConst(0);
