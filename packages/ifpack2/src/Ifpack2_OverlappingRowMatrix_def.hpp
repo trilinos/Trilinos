@@ -102,7 +102,7 @@ OverlappingRowMatrix<MatrixType>::OverlappingRowMatrix(const Teuchos::RCP<const 
     }
     
     // Allocate & import new matrices, maps, etc.
-    TmpMap      = rcp(new MapType(global_invalid,mylist(0,count-1),Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),A_->getComm(),A_->getNode()));
+    TmpMap      = rcp(new MapType(global_invalid,mylist(0,count),Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),A_->getComm(),A_->getNode()));
     TmpMatrix   = rcp(new CrsMatrixType(TmpMap,0));
     TmpImporter = rcp(new ImportType(A_->getRowMap(),TmpMap));
 
