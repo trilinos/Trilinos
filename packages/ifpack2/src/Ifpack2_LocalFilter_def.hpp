@@ -373,8 +373,13 @@ void LocalFilter<MatrixType>::getLocalRowView(LocalOrdinal LocalRow,
 template<class MatrixType> 
 void LocalFilter<MatrixType>::getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const
 {
-  // This is somewhat dubious as to how the maps match.
-  return A_->getLocalDiagCopy(diag);
+  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> temp(A_->getRowMap());
+  A_->getLocalDiagCopy(temp);
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       d_ptr = diag.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > t_ptr = temp.get2dView();
+
+  for(size_t i=0; i<NumRows_; i++)
+    d_ptr[0][i] = t_ptr[0][i];
 }
 
 //========================================================================== 
