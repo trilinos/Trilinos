@@ -67,7 +67,10 @@ Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > CreateOve
     OldGraph = OverlapGraph;
     OldRowMap = OverlapRowMap;
 
-    Teuchos::RCP<const ImportType> OverlapImporter = OldGraph->getImporter();
+    Teuchos::RCP<const ImportType> OverlapImporter; 
+    if(level==1) OverlapImporter = input_graph->getImporter();
+    else OverlapImporter = OldGraph->getImporter();
+
     OverlapRowMap = OverlapImporter->getTargetMap();
     if (level<OverlapLevel) {
       OverlapGraph = Teuchos::rcp( new GraphType(OverlapRowMap, 0) );
