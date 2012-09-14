@@ -65,6 +65,8 @@
 
 #include <Trios_nssi_server.h>  /* for nssi service functions */
 #include <Trios_logger.h>
+#include "Trios_nssi_fprint_types.h"
+#include "Trios_nnti_fprint_types.h"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"

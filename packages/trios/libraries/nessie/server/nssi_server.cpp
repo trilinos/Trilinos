@@ -56,6 +56,8 @@
 #include "Trios_nssi_server.h"
 
 #include "Trios_nssi_types.h"
+#include "Trios_nssi_fprint_types.h"
+#include "Trios_nnti_fprint_types.h"
 #include "Trios_nssi_xdr.h"
 #include "Trios_nnti.h"
 

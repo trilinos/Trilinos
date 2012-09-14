@@ -73,6 +73,9 @@ using namespace std;
 
 #include <Trios_nssi_client.h>
 
+#include "Trios_nssi_fprint_types.h"
+#include "Trios_nnti_fprint_types.h"
+
 #include "netcdf_args.h"
 #include "netcdf_debug.h"  /* netcdf_debug_level */
 #include "netcdf_config.h"
