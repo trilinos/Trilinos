@@ -105,10 +105,51 @@ namespace Tpetra {
 
     // copy data from the source MultiVector into this multivector
     RCP<Node> node = MVT::getNode(source.lclMV_);
-    const LocalOrdinal myLen = getLocalLength();
+    const LocalOrdinal myLen = source.getLocalLength();
     const size_t numVecs = source.getNumVectors();
 
 #if 0
+    if (source.isConstantStride ()) {
+      // On host-type Kokkos Nodes, allocBuffer() just calls the
+      // one-argument version of arcp to allocate memory.  This should
+      // not fill the memory by default, otherwise we would lose the
+      // first-touch allocation optimization.
+      ArrayRCP<Scalar> data = (myLen > 0) ?
+	node->template allocBuffer<Scalar> (myLen * numVecs) :
+	Teuchos::null;
+      const size_t stride = (myLen > 0) ? myLen : size_t (0);
+
+      // This just sets the dimensions, pointer, and stride of lclMV_.
+      MVT::initializeValues (lclMV_, myLen, numVecs, data, stride);
+      // This actually copies the data.  It uses the Node's
+      // parallel_for to copy, which should ensure first-touch
+      // allocation on systems that support it.  Assign() only works
+      // for copying the whole Kokkos::MultiVector, not when only
+      // selecting certain columns (via whichVectors_).
+      MVT::Assign (lclMV_, source.lclMV_);
+    }
+    else {
+      if (myLen > 0) {
+	// allocate data
+	ArrayRCP<Scalar> data = node->template allocBuffer<Scalar>(myLen*numVecs);
+	MVT::initializeValues(lclMV_,myLen,numVecs,data,myLen);
+	// copy data
+	{
+	  ArrayRCP<Scalar> dstdata = data;
+	  ArrayRCP<const Scalar> srcdata = MVT::getValues(source.lclMV_);
+	  for (size_t j = 0; j < numVecs; ++j) {
+	    ArrayRCP<const Scalar> srcj = source.getSubArrayRCP(srcdata,j);
+	    KOKKOS_NODE_TRACE("MultiVector::MultiVector(MV)")
+	      node->template copyBuffers<Scalar>(myLen,srcj,dstdata);
+	    dstdata += myLen;
+	  }
+	}
+      }
+      else {
+	MVT::initializeValues(lclMV_,0,numVecs,Teuchos::null,0);
+      }
+    }
+#else
     // On host-type Kokkos Nodes, allocBuffer() just calls the
     // one-argument version of arcp to allocate memory.  This should
     // not fill the memory by default, otherwise we would lose the
@@ -120,30 +161,15 @@ namespace Tpetra {
 
     // This just sets the dimensions, pointer, and stride of lclMV_.
     MVT::initializeValues (lclMV_, myLen, numVecs, data, stride);
-    // This actually copies the data.  It uses the Node's parallel_for
-    // to copy, which should ensure first-touch allocation on systems
-    // that support it.
-    MVT::Assign (lclMV_, source.lclMV_);
-#else
-    if (myLen > 0) {
-      // allocate data
-      ArrayRCP<Scalar> data = node->template allocBuffer<Scalar>(myLen*numVecs);
-      MVT::initializeValues(lclMV_,myLen,numVecs,data,myLen);
-      // copy data
-      {
-        ArrayRCP<Scalar> dstdata = data;
-        ArrayRCP<const Scalar> srcdata = MVT::getValues(source.lclMV_);
-        for (size_t j = 0; j < numVecs; ++j) {
-          ArrayRCP<const Scalar> srcj = source.getSubArrayRCP(srcdata,j);
-          KOKKOS_NODE_TRACE("MultiVector::MultiVector(MV)")
-          node->template copyBuffers<Scalar>(myLen,srcj,dstdata);
-          dstdata += myLen;
-        }
-      }
+    // This actually copies the data.  It uses the Node's
+    // parallel_for to copy, which should ensure first-touch
+    // allocation on systems that support it.
+    if (source.isConstantStride ()) {
+      MVT::Assign (lclMV_, source.lclMV_);
     }
     else {
-      MVT::initializeValues(lclMV_,0,numVecs,Teuchos::null,0);
-    }
+      MVT::Assign (lclMV_, source.lclMV_, source.whichVectors_);
+    }    
 #endif // 0
   }
 
