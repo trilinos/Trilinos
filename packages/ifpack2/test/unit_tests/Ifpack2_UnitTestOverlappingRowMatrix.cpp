@@ -55,6 +55,7 @@
 
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_OverlappingRowMatrix.hpp>
+#include <Ifpack2_CreateOverlapGraph.hpp>
 
 namespace {
 using Tpetra::global_size_t;
@@ -82,6 +83,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, Lo
 
   Teuchos::ParameterList GaleriList;
   int nx = 100; 
+  //    int nx = 6; 
+
   size_t numProcs = comm->getSize();
   size_t numElementsPerProc = nx*nx;
   GaleriList.set("nx", (GlobalOrdinal) nx);
@@ -98,17 +101,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, Lo
 
   TEST_INEQUALITY(A,Teuchos::null);
   
-  VectorType X(A->getRowMap()), Y(A->getRowMap());
+  VectorType X(A->getRowMap()), Y(A->getRowMap()), Z(A->getRowMap());
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > x_ptr = X.get2dViewNonConst();
 
   int OverlapLevel = 5;  
 
   // ======================================== //
   // Build the overlapping matrix using class //
-  // Ifpack2::OverlappingRowMatrix.             //
+  // Ifpack2::OverlappingRowMatrix.           //
   // ======================================== //
   Ifpack2::OverlappingRowMatrix<CrsType> B(A,OverlapLevel);
-  
+  size_t NumGlobalRowsB = B.getGlobalNumRows();
+  size_t NumGlobalNonzerosB = B.getGlobalNumEntries();  
+
+
   for (LocalOrdinal i = 0 ; (size_t)i < A->getNodeNumRows() ; ++i) 
     x_ptr[0][i] = 1.0* A->getRowMap()->getGlobalElement(i);
   Y.putScalar(0.0);
@@ -116,58 +122,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, Lo
   VectorType ExtX_B(B.getRowMap()), ExtY_B(B.getRowMap());
   ExtY_B.putScalar(0.0);
 
+  B.importMultiVector(X,ExtX_B);
+  B.apply(ExtX_B,ExtY_B);
+  B.exportMultiVector(ExtY_B,Y,Tpetra::ADD);
 
-
-
-
-#ifdef OLD_AND_BUSTED
-  IFPACK_CHK_ERR(B.ImportMultiVector(X,ExtX_B));
-  IFPACK_CHK_ERR(B.Multiply(false,ExtX_B,ExtY_B));
-  IFPACK_CHK_ERR(B.ExportMultiVector(ExtY_B,Y,Add));
-
-  double Norm_B;
-  Y.Norm2(&Norm_B);
-  if (Comm.MyPID() == 0)
-    cout << "Norm of Y using B = " << Norm_B << endl;
   
   // ================================================== //
-  //Build the overlapping matrix as an Epetra_CrsMatrix //
+  // Build the overlapping graph using                  //
+  // CreateOverlappingMatrix.                            //
   // ================================================== //
-
-  Time.ResetStartTime();
-  Epetra_CrsMatrix& C = 
-    *(Ifpack_CreateOverlappingCrsMatrix(&*A,OverlapLevel));
-  if (Comm.MyPID() == 0)
-    cout << "Time to create C = " << Time.ElapsedTime() << endl;
+  Teuchos::RCP<const CrsType> C = Ifpack2::CreateOverlapMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A,OverlapLevel);
 
   // simple checks on global quantities
-  int NumGlobalRowsC = C.NumGlobalRows();
-  int NumGlobalNonzerosC = C.NumGlobalNonzeros();
-  assert (NumGlobalRowsB == NumGlobalRowsC);
-  assert (NumGlobalNonzerosB == NumGlobalNonzerosC);
+  size_t NumGlobalRowsC = C->getGlobalNumRows();
+  size_t NumGlobalNonzerosC = C->getGlobalNumEntries();  
 
-  Epetra_Vector ExtX_C(C.RowMatrixRowMap());
-  Epetra_Vector ExtY_C(C.RowMatrixRowMap());
-  ExtY_C.PutScalar(0.0);
-  Y.PutScalar(0.0);
+  TEST_EQUALITY(NumGlobalRowsB,NumGlobalRowsC);
+  TEST_EQUALITY(NumGlobalNonzerosB,NumGlobalNonzerosC);
 
-  IFPACK_CHK_ERR(C.Multiply(false,X,Y));
+  C->apply(X,Z);
 
-  double Norm_C;
-  Y.Norm2(&Norm_C);
-  if (Comm.MyPID() == 0)
-    cout << "Norm of Y using C = " << Norm_C << endl;
+  TEST_COMPARE_FLOATING_ARRAYS(Y.get1dView(), Z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
 
-  if (IFPACK_ABS(Norm_B - Norm_C) > 1e-5)
-    IFPACK_CHK_ERR(-1);
-
-  // ======================= //
-  // now localize the matrix //
-  // ======================= //
-
-  Ifpack_LocalFilter D(Teuchos::rcp(&B, false));
-
-#endif
 }
 
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
