@@ -74,9 +74,15 @@ namespace Tpetra {
     const size_t myLen = getLocalLength();
     if (myLen > 0) {
       RCP<Node> node = map->getNode();
+      // On host-type Kokkos Nodes, allocBuffer() just calls the
+      // one-argument version of arcp to allocate memory.  This should
+      // not fill the memory by default, otherwise we would lose the
+      // first-touch allocation optimization.
       ArrayRCP<Scalar> data = node->template allocBuffer<Scalar>(myLen*NumVectors);
       MVT::initializeValues(lclMV_,myLen,NumVectors,data,myLen);
       if (zeroOut) {
+        // MVT uses the Kokkos Node's parallel_for in this case, for
+        // first-touch allocation (across rows).
         MVT::Init(lclMV_, Teuchos::ScalarTraits<Scalar>::zero());
       }
     }
@@ -101,25 +107,22 @@ namespace Tpetra {
     RCP<Node> node = MVT::getNode(source.lclMV_);
     const LocalOrdinal myLen = getLocalLength();
     const size_t numVecs = source.getNumVectors();
-    if (myLen > 0) {
-      // allocate data
-      ArrayRCP<Scalar> data = node->template allocBuffer<Scalar>(myLen*numVecs);
-      MVT::initializeValues(lclMV_,myLen,numVecs,data,myLen);
-      // copy data
-      {
-        ArrayRCP<Scalar> dstdata = data;
-        ArrayRCP<const Scalar> srcdata = MVT::getValues(source.lclMV_);
-        for (size_t j = 0; j < numVecs; ++j) {
-          ArrayRCP<const Scalar> srcj = source.getSubArrayRCP(srcdata,j);
-          KOKKOS_NODE_TRACE("MultiVector::MultiVector(MV)")
-          node->template copyBuffers<Scalar>(myLen,srcj,dstdata);
-          dstdata += myLen;
-        }
-      }
-    }
-    else {
-      MVT::initializeValues(lclMV_,0,numVecs,Teuchos::null,0);
-    }
+
+    // On host-type Kokkos Nodes, allocBuffer() just calls the
+    // one-argument version of arcp to allocate memory.  This should
+    // not fill the memory by default, otherwise we would lose the
+    // first-touch allocation optimization.
+    ArrayRCP<Scalar> data = (myLen > 0) ?
+      node->template allocBuffer<Scalar> (myLen * numVecs) :
+      Teuchos::null;
+    const size_t stride = (myLen > 0) ? myLen : size_t (0);
+
+    // This just sets the dimensions, pointer, and stride of lclMV_.
+    MVT::initializeValues (lclMV_, myLen, numVecs, data, stride);
+    // This actually copies the data.  It uses the Node's parallel_for
+    // to copy, which should ensure first-touch allocation on systems
+    // that support it.
+    MVT::Assign (lclMV_, source.lclMV_);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -260,6 +263,12 @@ namespace Tpetra {
       RCP<Node> node = MVT::getNode(lclMV_);
       ArrayRCP<Scalar> mydata = node->template allocBuffer<Scalar>(myLen*NumVectors);
       MVT::initializeValues(lclMV_,myLen,NumVectors,mydata,myLen);
+      // FIXME (mfh 13 Sep 2012) It would be better to use the Kokkos
+      // Node's copyToBuffer method to push data directly to the
+      // device pointer, rather than using an intermediate host
+      // buffer.  Also, we should have an optimization for the
+      // contiguous storage case (constant stride, and the stride
+      // equals the local number of rows).
       KOKKOS_NODE_TRACE("MultiVector::MultiVector(1D)")
       ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,myLen*NumVectors,mydata);
       typename ArrayView<const Scalar>::iterator srcit = A.begin();

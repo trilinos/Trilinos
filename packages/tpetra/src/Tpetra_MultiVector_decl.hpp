@@ -760,9 +760,16 @@ namespace Tpetra {
 
     /// \brief Indices of columns this multivector is viewing.
     ///
-    /// If this array has nonzero size, it contains the indices of
-    /// columns of another multivector, of which this multivector is a
-    /// view.
+    /// If this array has nonzero size, then this multivector is a
+    /// view of another multivector (the "original" multivector).  In
+    /// that case, whichVectors_ contains the indices of the columns
+    /// of the original multivector.  Furthermore, isConstantStride()
+    /// returns false in this case.
+    ///
+    /// If this array has zero size, then this multivector is not a
+    /// view of any other multivector.  Furthermore, the stride
+    /// between columns of this multivector is a constant: thus,
+    /// isConstantStride() returns true.
     Array<size_t> whichVectors_;
 
     //! @name View constructors, used only by nonmember constructors.
