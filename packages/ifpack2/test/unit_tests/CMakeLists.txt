@@ -36,6 +36,7 @@ Ifpack2_UnitTestFiltering.cpp
 Ifpack2_UnitTestPartitioning.cpp
 Ifpack2_UnitTestContainer.cpp
 Ifpack2_UnitTestBlockRelaxation.cpp
+Ifpack2_UnitTestOverlappingRowMatrix.cpp
 
   )
 
@@ -44,7 +45,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SOURCES ${SOURCES}
     ARGS ""
     COMM serial mpi
-    NUM_MPI_PROCS 1
     DEPLIBS tpetra kokkos teuchos
   )
 
