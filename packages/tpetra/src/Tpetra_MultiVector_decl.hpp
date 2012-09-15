@@ -199,16 +199,24 @@ namespace Tpetra {
   /// Views are not necessarily just encapsulated pointers.  The
   /// meaning of view depends in part on the Kokkos Node type (the
   /// Node template parameter).  This matters in particular if you are
-  /// running on a Graphics Processing Unit (GPU) by setting the Node
-  /// template parameter to a GPU Node.  In that case, views currently
+  /// running on a Graphics Processing Unit (GPU) device.  You can
+  /// tell at compile time whether you are running on a GPU by looking
+  /// at the Kokkos Node type.  (Currently, the only GPU Node type we
+  /// provide is Kokkos::ThrustGPUNode.  All other types are CPU
+  /// Nodes.)  If the Kokkos Node is a GPU Node type, then views
   /// always reside in host (CPU) memory, rather than device (GPU)
   /// memory.  When you ask for a view, it copies data from the device
-  /// to the host.  What happens next depends on whether the view is
+  /// to the host.  
+  ///
+  /// What happens next to your view depends on whether the view is
   /// const (read-only) or nonconst (read and write).  Const views
-  /// disappear (their host memory is allocated) when the
-  /// corresponding (ArrayRCP's) reference count goes to zero.  When a
-  /// nonconst view's reference count goes to zero, the view's data
-  /// are copied back to device memory.
+  /// disappear (their host memory is deallocated) when the
+  /// corresponding reference count (of the ArrayRCP) goes to zero.
+  /// (Since the data were not changed, there is no need to update the
+  /// original copy on the device.)  When a nonconst view's reference
+  /// count goes to zero, the view's data are copied back to device
+  /// memory, thus "pushing" your changes on the host back to the
+  /// device.
   ///
   /// These device-host-device copy semantics on GPUs mean that we can
   /// only promise that a view is a snapshot of the multivector's data
@@ -266,6 +274,31 @@ namespace Tpetra {
   /// than raw array access.  We have preferred in our design to
   /// expose what is expensive, by exposing data views and letting
   /// users control when to copy data between host and device.
+  ///
+  /// \subsection Kokkos_MV_device_kernels How do I access the data directly?
+  ///
+  /// "Directly" here means without views, using a device kernel if
+  /// the data reside on the GPU.
+  ///
+  /// There are two different options for direct access to the
+  /// multivector's data.  One is to use the optional RTI (Reduction /
+  /// Transformation Interface) subpackage of Tpetra.  You may enable
+  /// this at Trilinos configure time by setting the CMake Boolean
+  /// option \c Tpetra_ENABLE_RTI to \c ON.  Be aware that building
+  /// and using RTI requires that your C++ compiler support the
+  /// language features in the new C++11 standard.  RTI allows you to
+  /// implement arbitrary element-wise operations over a vector,
+  /// followed by arbitrary reductions over the elements of that
+  /// vector.  We recommend RTI for most users.
+  ///
+  /// Another option is to access the local data through its Kokkos
+  /// container data structure, Kokkos::MultiVector, and then use the
+  /// \ref kokkos_node_api "Kokkos Node API" to implement arbitrary
+  /// operations on the data.  We do not recommend this approach for
+  /// most users.  In particular, the local data structures are likely
+  /// to change over the next few releases.  If you find yourself
+  /// wanting to try this option, please contact the Tpetra developers
+  /// for recommendations.  We will be happy to work with you.
   ///
   /// \section Kokkos_MV_dist Parallel distribution of data
   ///
