@@ -42,6 +42,9 @@
 #ifndef KOKKOS_DEFAULTARITHMETIC_H
 #define KOKKOS_DEFAULTARITHMETIC_H
 
+/// \file Kokkos_DefaultArithmetic.hpp
+/// \brief Traits class for local multivector operations.
+
 #include <Teuchos_BLAS_types.hpp>
 #include <Teuchos_Assert.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
@@ -67,6 +70,7 @@
 #endif
 #include "Kokkos_SerialNode.hpp"
 #include <Teuchos_BLAS.hpp>
+
 
 namespace Kokkos {
 
