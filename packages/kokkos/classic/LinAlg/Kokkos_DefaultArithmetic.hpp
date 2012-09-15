@@ -518,8 +518,6 @@ namespace Kokkos {
     {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
-      const size_t Astride = A.getStride();
-      const size_t Bstride = B.getStride();
       const size_t numColsToCopy = static_cast<size_t> (whichVectors.size ());
       TEUCHOS_TEST_FOR_EXCEPTION(
         nR != B.getNumRows() || numColsToCopy > nC,
