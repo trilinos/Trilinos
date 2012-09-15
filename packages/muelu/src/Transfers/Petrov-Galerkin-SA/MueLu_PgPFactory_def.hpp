@@ -228,6 +228,8 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeRowBasedOmega(Level& fineLevel, Level &coarseLevel, const RCP<Operator>& A, const RCP<Operator>& P0, const RCP<Operator>& DinvAP0, RCP<Vector > & RowBasedOmega) const {
+  FactoryMonitor m(*this, "PgPFactory::ComputeRowBasedOmega", coarseLevel);
+
   Teuchos::RCP<Vector > Numerator = Teuchos::null;
   Teuchos::RCP<Vector > Denominator = Teuchos::null;
 
@@ -291,7 +293,6 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
 
     Numerator =   VectorFactory::Build(DinvADinvAP0->getColMap(),true);
     Denominator = VectorFactory::Build(DinvADinvAP0->getColMap(),true);
-
     MultiplyAll(DinvAP0, DinvADinvAP0, Numerator);
     MultiplySelfAll(DinvADinvAP0, Denominator);
   }
@@ -403,17 +404,16 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MultiplySelfAll(const RCP<Operator>& Op, Teuchos::RCP<Vector >& InnerProdVec) const {
-
   // note: InnerProdVec is based on column map of Op
   TEUCHOS_TEST_FOR_EXCEPTION(!InnerProdVec->getMap()->isSameAs(*Op->getColMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplySelfAll: map of InnerProdVec must be same as column map of operator. error");
 
   Teuchos::ArrayRCP< Scalar > InnerProd_local = InnerProdVec->getDataNonConst(0);
 
-  for(size_t n=0; n<Op->getNodeNumRows(); n++) {
-    Teuchos::ArrayView<const LocalOrdinal> lindices;
-    Teuchos::ArrayView<const Scalar> lvals;
-    Op->getLocalRowView(n, lindices, lvals);
+  Teuchos::ArrayView<const LocalOrdinal> lindices;
+  Teuchos::ArrayView<const Scalar> lvals;
 
+  for(size_t n=0; n<Op->getNodeNumRows(); n++) {
+    Op->getLocalRowView(n, lindices, lvals);
     for(size_t i=0; i<Teuchos::as<size_t>(lindices.size()); i++) {
       InnerProd_local[lindices[i]] += lvals[i]*lvals[i];
     }
@@ -441,7 +441,6 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Multipl
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MultiplyAll(const RCP<Operator>& left, const RCP<Operator>& right, Teuchos::RCP<Vector >& InnerProdVec) const {
-
   TEUCHOS_TEST_FOR_EXCEPTION(!left->getDomainMap()->isSameAs(*right->getDomainMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: domain maps of left and right do not match. Error.");
   TEUCHOS_TEST_FOR_EXCEPTION(!left->getRowMap()->isSameAs(*right->getRowMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: row maps of left and right do not match. Error.");
 
@@ -449,21 +448,23 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Multipl
 
     Teuchos::ArrayRCP< Scalar > InnerProd_local = InnerProdVec->getDataNonConst(0);
 
+    // declare variables
+    Teuchos::ArrayView<const LocalOrdinal> lindices_left;
+    Teuchos::ArrayView<const Scalar> lvals_left;
+    Teuchos::ArrayView<const LocalOrdinal> lindices_right;
+    Teuchos::ArrayView<const Scalar> lvals_right;
+
     for(size_t n=0; n<left->getNodeNumRows(); n++)
     {
-      Teuchos::ArrayView<const LocalOrdinal> lindices_left;
-      Teuchos::ArrayView<const Scalar> lvals_left;
-      left->getLocalRowView(n, lindices_left, lvals_left);
 
-      Teuchos::ArrayView<const LocalOrdinal> lindices_right;
-      Teuchos::ArrayView<const Scalar> lvals_right;
+      left->getLocalRowView (n, lindices_left,  lvals_left);
       right->getLocalRowView(n, lindices_right, lvals_right);
 
       for(size_t i=0; i<Teuchos::as<size_t>(lindices_left.size()); i++)
       {
+        GlobalOrdinal left_gid = left->getColMap()->getGlobalElement(lindices_left[i]);
         for(size_t j=0; j<Teuchos::as<size_t>(lindices_right.size()); j++)
         {
-          GlobalOrdinal left_gid = left->getColMap()->getGlobalElement(lindices_left[i]);
           GlobalOrdinal right_gid= right->getColMap()->getGlobalElement(lindices_right[j]);
           if(left_gid == right_gid)
           {
@@ -495,21 +496,21 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Multipl
   else if(InnerProdVec->getMap()->isSameAs(*right->getColMap())) {
     Teuchos::ArrayRCP< Scalar > InnerProd_local = InnerProdVec->getDataNonConst(0);
 
+    Teuchos::ArrayView<const LocalOrdinal> lindices_left;
+    Teuchos::ArrayView<const Scalar> lvals_left;
+    Teuchos::ArrayView<const LocalOrdinal> lindices_right;
+    Teuchos::ArrayView<const Scalar> lvals_right;
+
     for(size_t n=0; n<left->getNodeNumRows(); n++)
     {
-      Teuchos::ArrayView<const LocalOrdinal> lindices_left;
-      Teuchos::ArrayView<const Scalar> lvals_left;
       left->getLocalRowView(n, lindices_left, lvals_left);
-
-      Teuchos::ArrayView<const LocalOrdinal> lindices_right;
-      Teuchos::ArrayView<const Scalar> lvals_right;
       right->getLocalRowView(n, lindices_right, lvals_right);
 
       for(size_t i=0; i<Teuchos::as<size_t>(lindices_left.size()); i++)
       {
+        GlobalOrdinal left_gid = left->getColMap()->getGlobalElement(lindices_left[i]);
         for(size_t j=0; j<Teuchos::as<size_t>(lindices_right.size()); j++)
         {
-          GlobalOrdinal left_gid = left->getColMap()->getGlobalElement(lindices_left[i]);
           GlobalOrdinal right_gid= right->getColMap()->getGlobalElement(lindices_right[j]);
           if(left_gid == right_gid)
           {
