@@ -122,7 +122,7 @@ namespace Tpetra {
    \note If you use the default \c GlobalOrdinal type, which is \c
      int, then the <i>global</i> number of rows or columns in the
      matrix may be no more than \c INT_MAX, which for typical 32-bit
-     \c int is \f$2^31 - 1\f$ (about two billion).  If you want to
+     \c int is \f$2^{31} - 1\f$ (about two billion).  If you want to
      solve larger problems, you must use a 64-bit integer type here.
 
    This class implements a distributed-memory parallel sparse matrix,
