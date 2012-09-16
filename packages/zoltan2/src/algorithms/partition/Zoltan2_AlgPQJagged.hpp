@@ -118,9 +118,12 @@ public:
           inoutBuffer[next] = inBuffer[next];
     }
   }
-
-
 };
+  
+  
+
+
+  
 
 
 
@@ -169,7 +172,52 @@ namespace Zoltan2{
 
 //diffclock for temporary timing experiments.
 
+  partId_t concurrent = 0;
+  void sumMinMin(void *in, void *inout, int *count, MPI_Datatype *type) {   
+    
+    int k = *count;
+    int numCut = (k  - 1) / 4;
+    int total_part_count = numCut * 2 + 1;
+    int next = 0;
+    
+    float *inoutBuffer = (float *) inout;
+    float *inBuffer = (float *) in;
+    
+    
+    for(partId_t ii = 0; ii < concurrent ; ++ii){
+    for (long i=0; i < total_part_count; i++, next++)
+      inoutBuffer[next] += inBuffer[next];
+    
+    for (long i=0; i < numCut; i++, next++)
+      if (inoutBuffer[next] > inBuffer[next])
+        inoutBuffer[next] = inBuffer[next];
+    
+    for (long i=0; i < numCut; i++, next++)
+      if (inoutBuffer[next] > inBuffer[next])
+        inoutBuffer[next] = inBuffer[next];
+    }
+  }
+  
+  
+  void minMaxSum(void *in, void *inout, int *count, MPI_Datatype *type) {   
+//    long k = (*((int *) count));
+    int k = *count;
+    int num = k / 3;
+    int next = 0;
+    float *inoutBuffer = (float *) inout;
+    float *inBuffer = (float *) in;
+    
+    
+    for (long i=0; i < num; i++, next++)
+      if (inoutBuffer[next] > inBuffer[next])
+        inoutBuffer[next] = inBuffer[next];
+    for (long i=0; i < num; i++, next++)
+      if (inoutBuffer[next] < inBuffer[next])
+        inoutBuffer[next] = inBuffer[next];
+    for (long i=0; i < num; i++, next++)
+      inoutBuffer[next] += inBuffer[next];
 
+  }
 
 /*! \brief A helper class containing array representation of
  *  coordinate linked lists.
@@ -753,6 +801,8 @@ void pqJagged_getLocalMinMaxTotalCoord(
 }
 
 
+#define floatSized
+  
 /*! \brief Function that reduces global minimum and maximum coordinates with global total weight from given local arrays.
  * \param comm the communicator for the problem
  * \param env   library configuration and problem parameters
@@ -774,17 +824,32 @@ void pqJagged_getGlobalMinMaxTotalCoord(
   //reduce min for first concurrentPartCount elements, reduce max for next concurrentPartCount elements,
   //reduce sum for the last concurrentPartCount elements.
   if(comm->getSize()  > 1){
+    
+#ifndef floatSized
   Teuchos::PQJaggedCombinedMinMaxTotalReductionOp<int, scalar_t> reductionOp(
      concurrentPartCount,
      concurrentPartCount,
      concurrentPartCount);
-
+#endif
+    
+#ifdef floatSized
+    MPI_Op myop;
+    MPI_Op_create(minMaxSum, 0, &myop);   /* step 3 */
+#endif 
 
   try{
 
+    
+#ifdef floatSized
+
+    MPI_Allreduce(localMinMaxTotal, globalMinMaxTotal, 3 * concurrentPartCount, MPI_FLOAT, myop,MPI_COMM_WORLD);  
+#endif 
+#ifndef floatSized
     reduceAll<int, scalar_t>(*comm, reductionOp,
         3 * concurrentPartCount, localMinMaxTotal, globalMinMaxTotal
       );
+#endif
+    
   }
   Z2_THROW_OUTSIDE_ERROR(*env)
   }
@@ -1865,7 +1930,13 @@ void pqJagged_1D_Partition(
   scalar_t *cutCoordinates_tmp = cutCoordinates;
   partId_t noCuts = partNo - 1;
   size_t total_part_count = partNo + size_t (noCuts) ;
-
+  
+  
+#ifdef floatSized
+  MPI_Op myop;
+  MPI_Op_create(sumMinMin, 0, &myop);   /* step 3 */
+#endif 
+  
 
   scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
 
@@ -2001,12 +2072,23 @@ void pqJagged_1D_Partition(
       {
         if(comm->getSize() > 1){
         try{
-
+   
+       
+            
+#ifdef floatSized
+            
+            MPI_Allreduce(local_totalPartWeights_leftClosest_rightCloset, global_totalPartWeights_leftClosest_rightCloset, 
+                          
+                          (total_part_count + 2 * noCuts) * concurrentPartCount, MPI_FLOAT, myop,MPI_COMM_WORLD);  
+#endif 
+#ifndef floatSized
+            
           reduceAll<int, scalar_t>(*comm, reductionOp,
               (total_part_count + 2 * noCuts) * concurrentPartCount,
               local_totalPartWeights_leftClosest_rightCloset,
               global_totalPartWeights_leftClosest_rightCloset
           );
+#endif
 
           //cout << "reducing" << endl;
           /*
@@ -2636,6 +2718,12 @@ void AlgPQJagged(
                         "while it is being developed and tested.")
 
 #else
+
+  if(comm->getRank() == 0){
+    cout << "size of gno:" << sizeof(gno_t) << endl;
+    cout << "size of lno:" << sizeof(lno_t) << endl;
+    cout << "size of scalar_t:" << sizeof(scalar_t) << endl;
+  }
   env->timerStart(MACRO_TIMERS, "PQJagged Total");
 
 
@@ -2949,6 +3037,7 @@ void AlgPQJagged(
     for (; currentWorkPart < currentPartitionCount; currentWorkPart += concurrentPart){
 
       concurrentPart = min(currentPartitionCount - currentWorkPart, concurrentPartCount);
+      concurrent = concurrentPart;
       /*
       if(myRank == 0)
         cout << "i: " << i << " j:" << currentWorkPart << " ";
