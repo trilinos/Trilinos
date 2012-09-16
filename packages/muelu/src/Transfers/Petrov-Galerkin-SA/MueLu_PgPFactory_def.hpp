@@ -46,6 +46,8 @@
 #ifndef MUELU_PGPFACTORY_DEF_HPP
 #define MUELU_PGPFACTORY_DEF_HPP
 
+#include <vector>
+
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Import.hpp>
@@ -443,7 +445,126 @@ template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, clas
 void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MultiplyAll(const RCP<Operator>& left, const RCP<Operator>& right, Teuchos::RCP<Vector >& InnerProdVec) const {
   TEUCHOS_TEST_FOR_EXCEPTION(!left->getDomainMap()->isSameAs(*right->getDomainMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: domain maps of left and right do not match. Error.");
   TEUCHOS_TEST_FOR_EXCEPTION(!left->getRowMap()->isSameAs(*right->getRowMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: row maps of left and right do not match. Error.");
+#if 1 // 1=new "fast code, 0=old "slow", but safe code
+#if 0 // not necessary - remove me
+ if(InnerProdVec->getMap()->isSameAs(*left->getColMap())) {
+    // initialize NewRightLocal vector and assign all entries to
+    // left->getColMap()->getNodeNumElements() + 1
+    std::vector<LocalOrdinal> NewRightLocal(right->getColMap()->getNodeNumElements(),Teuchos::as<LocalOrdinal>(left->getColMap()->getNodeNumElements()+1));
 
+    LocalOrdinal i = 0;
+    for (size_t j=0; j < right->getColMap()->getNodeNumElements(); j++) {
+      while ( (i < Teuchos::as<LocalOrdinal>(left->getColMap()->getNodeNumElements())) &&
+              (left->getColMap()->getGlobalElement(i) < right->getColMap()->getGlobalElement(j)) ) i++;
+      if (left->getColMap()->getGlobalElement(i) == right->getColMap()->getGlobalElement(j)) {
+        NewRightLocal[j] = i;
+      }
+    }
+
+    Teuchos::ArrayRCP< Scalar > InnerProd_local = InnerProdVec->getDataNonConst(0);
+    std::vector<Scalar> temp_array(left->getColMap()->getNodeNumElements()+1,0.0);
+
+    for(size_t n=0; n<right->getNodeNumRows(); n++) {
+      Teuchos::ArrayView<const LocalOrdinal> lindices_left;
+      Teuchos::ArrayView<const Scalar> lvals_left;
+      Teuchos::ArrayView<const LocalOrdinal> lindices_right;
+      Teuchos::ArrayView<const Scalar> lvals_right;
+
+      left->getLocalRowView (n, lindices_left,  lvals_left);
+      right->getLocalRowView(n, lindices_right, lvals_right);
+
+      for(size_t j=0; j<Teuchos::as<size_t>(lindices_right.size()); j++) {
+        temp_array[NewRightLocal[lindices_right[j] ] ] = lvals_right[j];
+      }
+      for (size_t j=0; j < Teuchos::as<size_t>(lindices_left.size()); j++) {
+        InnerProd_local[lindices_left[j]] += temp_array[lindices_left[j] ]*lvals_left[j];
+      }
+      for (size_t j=0; j < Teuchos::as<size_t>(lindices_right.size()); j++) {
+        temp_array[NewRightLocal[lindices_right[j] ] ] = 0.0;
+      }
+    }
+    // exporter: overlapping map to nonoverlapping map (target map is unique)
+    Teuchos::RCP<const Export> exporter =
+        ExportFactory::Build(left->getColMap(), left->getDomainMap()); // TODO: change left to right?
+
+    Teuchos::RCP<Vector > nonoverlap =
+        VectorFactory::Build(left->getDomainMap()); // TODO: change left to right?
+
+    nonoverlap->doExport(*InnerProdVec,*exporter,Xpetra::ADD);
+
+    // importer: nonoverlapping map to overlapping map
+
+    // importer: source -> target maps
+    Teuchos::RCP<const Import > importer =
+        ImportFactory::Build(left->getDomainMap(),left->getColMap()); // TODO: change left to right?
+
+    // doImport target->doImport(*source, importer, action)
+    InnerProdVec->doImport(*nonoverlap,*importer,Xpetra::INSERT);
+
+
+  } else
+#endif // end remove me
+  if(InnerProdVec->getMap()->isSameAs(*right->getColMap())) {
+    size_t szNewLeftLocal = std::max(left->getColMap()->getNodeNumElements(),right->getColMap()->getNodeNumElements());
+    Teuchos::RCP<std::vector<LocalOrdinal> > NewLeftLocal = Teuchos::rcp(new std::vector<LocalOrdinal>(szNewLeftLocal,Teuchos::as<LocalOrdinal>(right->getColMap()->getMaxLocalIndex()+1)));
+
+    LocalOrdinal j = 0;
+    for (size_t i=0; i < left->getColMap()->getNodeNumElements(); i++) {
+      while ( (j < Teuchos::as<LocalOrdinal>(right->getColMap()->getNodeNumElements())) &&
+              (right->getColMap()->getGlobalElement(j) < left->getColMap()->getGlobalElement(i)) ) j++;
+      if (right->getColMap()->getGlobalElement(j) == left->getColMap()->getGlobalElement(i)) {
+        (*NewLeftLocal)[i] = j;
+      }
+    }
+
+    /*for (size_t i=0; i < right->getColMap()->getNodeNumElements(); i++) {
+      std::cout << "left col map: " << (*NewLeftLocal)[i] << " GID: " << left->getColMap()->getGlobalElement((*NewLeftLocal)[i]) << " GID: " << right->getColMap()->getGlobalElement(i) << " right col map: " << i << std::endl;
+    }*/
+
+    Teuchos::ArrayRCP< Scalar > InnerProd_local = InnerProdVec->getDataNonConst(0);
+    Teuchos::RCP<std::vector<Scalar> > temp_array = Teuchos::rcp(new std::vector<Scalar>(right->getColMap()->getMaxLocalIndex()+2,0.0));
+
+    for(size_t n=0; n<left->getNodeNumRows(); n++) {
+      Teuchos::ArrayView<const LocalOrdinal> lindices_left;
+      Teuchos::ArrayView<const Scalar> lvals_left;
+      Teuchos::ArrayView<const LocalOrdinal> lindices_right;
+      Teuchos::ArrayView<const Scalar> lvals_right;
+
+      left->getLocalRowView (n, lindices_left,  lvals_left);
+      right->getLocalRowView(n, lindices_right, lvals_right);
+
+      for(size_t i=0; i<Teuchos::as<size_t>(lindices_left.size()); i++) {
+        (*temp_array)[(*NewLeftLocal)[lindices_left[i] ] ] = lvals_left[i];
+      }
+      for (size_t i=0; i < Teuchos::as<size_t>(lindices_right.size()); i++) {
+        InnerProd_local[lindices_right[i]] += (*temp_array)[lindices_right[i] ] * lvals_right[i];
+      }
+      for (size_t i=0; i < Teuchos::as<size_t>(lindices_left.size()); i++) {
+        (*temp_array)[(*NewLeftLocal)[lindices_left[i] ] ] = 0.0;
+      }
+    }
+
+    // exporter: overlapping map to nonoverlapping map (target map is unique)
+    Teuchos::RCP<const Export> exporter =
+        ExportFactory::Build(right->getColMap(), right->getDomainMap()); // TODO: change left to right?
+
+    Teuchos::RCP<Vector> nonoverlap =
+        VectorFactory::Build(right->getDomainMap()); // TODO: change left to right?
+
+    nonoverlap->doExport(*InnerProdVec,*exporter,Xpetra::ADD);
+
+    // importer: nonoverlapping map to overlapping map
+
+    // importer: source -> target maps
+    Teuchos::RCP<const Import > importer =
+        ImportFactory::Build(right->getDomainMap(),right->getColMap()); // TODO: change left to right?
+    // doImport target->doImport(*source, importer, action)
+    InnerProdVec->doImport(*nonoverlap,*importer,Xpetra::INSERT);
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: map of InnerProdVec must be same as column map of left operator? Error.");
+  }
+
+#else // old "safe" code
   if(InnerProdVec->getMap()->isSameAs(*left->getColMap())) {
 
     Teuchos::ArrayRCP< Scalar > InnerProd_local = InnerProdVec->getDataNonConst(0);
@@ -542,6 +663,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Multipl
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: map of InnerProdVec must be same as column map of left or right operator? Error.");
   }
+#endif
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
