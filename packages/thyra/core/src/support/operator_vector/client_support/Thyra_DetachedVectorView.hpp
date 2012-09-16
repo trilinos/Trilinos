@@ -172,10 +172,10 @@ public:
   const RTOpPack::ConstSubVectorView<Scalar>& sv() const { return sv_; }
 
   /** \brief Returns the global offset for the explicit view. */
-  Teuchos_Index globalOffset() const { return sv_.globalOffset(); }
+  Teuchos_Ordinal globalOffset() const { return sv_.globalOffset(); }
 
   /** \brief Returns the dimension of the explicit view. */
-  Teuchos_Index subDim() const { return sv_.subDim(); }
+  Teuchos_Ordinal subDim() const { return sv_.subDim(); }
 
   /** \brief Return a pointer to a <tt>Scalar</tt> array containing the
    * explicit view.
@@ -190,12 +190,12 @@ public:
   /** \brief Zero-based indexing: Preconditions: <tt>values()!=NULL && (0 <= i
    * < subDim()-1)</tt>.
    */
-  const Scalar& operator[](Teuchos_Index i) const { return sv_[i]; }
+  const Scalar& operator[](Teuchos_Ordinal i) const { return sv_[i]; }
 
   /** \brief Zero-based indexing: Preconditions: <tt>values()!=NULL && (0 <= i
    * < subDim()-1)</tt>.
    */
-  const Scalar& operator()(Teuchos_Index i) const { return sv_(i); }
+  const Scalar& operator()(Teuchos_Ordinal i) const { return sv_(i); }
 
 private:
 
@@ -213,7 +213,7 @@ private:
       if( forceUnitStride && sv_s_.stride() != 1 ) {
         TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "I don't think non-unit stride has ever been tested!");
         //const ArrayRCP<Scalar> values = Teuchos::arcp(sv_s_.subDim());
-        //Teuchos_Index i; const Scalar *sv_v;
+        //Teuchos_Ordinal i; const Scalar *sv_v;
         //for( sv_v = sv_s_.values().get(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
         //  values[i] = *sv_v;
         //sv_.initialize(sv_s_.globalOffset(),sv_s_.subDim(),values,1);
@@ -343,7 +343,7 @@ public:
     {
       if( sv_s_.stride() != sv_.stride() ) {
         TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "I don't think non-unit stride has ever been tested!");
-        //Teuchos_Index i; Scalar *sv_v; const Scalar *values;
+        //Teuchos_Ordinal i; Scalar *sv_v; const Scalar *values;
         //for (
         //  sv_v = sv_s_.values().get(), values = sv_.values().get(), i=0;
         //  i < sv_s_.subDim();
@@ -363,10 +363,10 @@ public:
   const RTOpPack::SubVectorView<Scalar>& sv() const { return sv_; }
 
   /** \brief Returns the global offset for the explicit view. */
-  Teuchos_Index globalOffset() const { return sv_.globalOffset(); }
+  Teuchos_Ordinal globalOffset() const { return sv_.globalOffset(); }
 
   /** \brief Returns the dimension of the explicit view. */
-  Teuchos_Index subDim() const { return sv_.subDim(); }
+  Teuchos_Ordinal subDim() const { return sv_.subDim(); }
 
   /** \brief Return a pointer to a <tt>Scalar</tt> array containing the
    * explicit view.
@@ -381,11 +381,11 @@ public:
   /** \brief Zero-based indexing: Preconditions: <tt>values()!=NULL && (0 <= i
    * < subDim()-1)</tt>.
    */
-  Scalar& operator[](Teuchos_Index i) const { return sv_[i]; }
+  Scalar& operator[](Teuchos_Ordinal i) const { return sv_[i]; }
 
   /** \brief Zero-based indexing: Preconditions: <tt>values()!=NULL && (0 <= i
    * < subDim()-1)</tt>. */
-  Scalar& operator()(Teuchos_Index i) const { return sv_(i); }
+  Scalar& operator()(Teuchos_Ordinal i) const { return sv_(i); }
 
 private:
 
@@ -403,7 +403,7 @@ private:
       if( forceUnitStride && sv_s_.stride() != 1 ) {
         TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "I don't think non-unit stride has ever been tested!");
         //Scalar *values = new Scalar[sv_s_.subDim()];
-        //Teuchos_Index i; const Scalar *sv_v;
+        //Teuchos_Ordinal i; const Scalar *sv_v;
         //for( sv_v = sv_s_.values().get(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
         //  values[i] = *sv_v;
         //sv_.initialize(sv_s_.globalOffset(),sv_s_.subDim(),values,1);

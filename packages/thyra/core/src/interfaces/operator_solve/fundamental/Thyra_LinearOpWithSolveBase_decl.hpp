@@ -315,7 +315,7 @@ public:
   //@{
 
   // 2010/08/22: rabartl: To properly handle the new SolveCriteria struct with
-  // redution functionals (bug 4915) the function solveSupports() must be
+  // reduction functionals (bug 4915) the function solveSupports() must be
   // refactored.  Here is how this refactoring can be done incrementally and
   // safely:
   //
@@ -357,17 +357,17 @@ public:
   //
   //   (-) Run all tests.
   //
-  //   (-) Remove all of the eixsting solveSupportsSolveMeasureTypeImpl()
+  //   (-) Remove all of the existing solveSupportsSolveMeasureTypeImpl()
   //   overrides.
   //
   //   (-) Run all tests.
   //
-  //   (-) Clean up all deprecated working about calling
+  //   (-) Clean up all deprecated warnings about calling
   //   solveSupportsSolveMeasureType() and instead have them call
   //   solveSupports(...) with a SolveCritera object.
   //
-  // (*) Enter an item about this breaking backward compatiblilty for existing
-  // subclasses of LOWSB.
+  // (*) Enter a release notes item about this breaking backward compatiblilty
+  // for existing subclasses of LOWSB.
   //
   // This refactoring will be done by and by has bug 4915 is implemented.
   // 
@@ -457,6 +457,8 @@ public:
 
   //@}
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
+
   /** \name Deprecated. */
   //@{
 
@@ -502,6 +504,7 @@ public:
 
   //@}
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 protected:
 
   /** \name Protected virtual functions to be overridden by subclasses. */
@@ -535,6 +538,7 @@ protected:
 
 private:
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
   // Deprecated.  NOTE: I could not mark with THYRA_DEPRECATED because newer
   // versions of g++ give warnings when deprecated code calls other
   // depreciated code.
@@ -544,6 +548,7 @@ private:
     const BlockSolveCriteria<Scalar> blockSolveCriteria[]
     );
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 private:
   
   // Not defined and not to be called
@@ -581,6 +586,23 @@ bool solveSupports(
 }
 
 
+/** \brief Call <tt>solveSupportsSolveMeasureType()</tt> as a non-member
+ * function.
+ *
+ * \relates LinearOpWithSolveBase
+ */
+template<class Scalar>
+inline
+bool solveSupportsSolveMeasureType(
+  const LinearOpWithSolveBase<Scalar> &A,
+  const EOpTransp transp,
+  const SolveMeasureType &solveMeasureType
+  )
+{
+  return A.solveSupportsSolveMeasureType(transp, solveMeasureType);
+}
+
+
 /** \brief Call <tt>solve()</tt> as a non-member function
  *
  * \relates LinearOpWithSolveBase
@@ -599,24 +621,9 @@ SolveStatus<Scalar> solve(
 }
 
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
+
 // Deprecated
-
-
-/** \brief Call <tt>solveSupportsSolveMeasureType()</tt> as a non-member
- * function.
- *
- * \ingroup Thyra_deprecated_grp
- */
-template<class Scalar>
-inline
-bool solveSupportsSolveMeasureType(
-  const LinearOpWithSolveBase<Scalar> &A,
-  const EOpTransp transp,
-  const SolveMeasureType &solveMeasureType
-  )
-{
-  return A.solveSupportsSolveMeasureType(transp, solveMeasureType);
-}
 
 
 /** \brief Deprecated.
@@ -782,6 +789,7 @@ void solveTranspose(
   A.solveTranspose(conj,B,X,numBlocks,blockSolveCriteria,blockSolveStatus);
 }
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 
 } // namespace Thyra
 

@@ -48,6 +48,18 @@
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/kruskal_min_spanning_tree.hpp>
+#include <boost/graph/prim_minimum_spanning_tree.hpp>
+#include <boost/config.hpp>
+
+using Teuchos::RefCountPtr;
+using Teuchos::rcp;
+typedef std::pair<int, int> E;
+using namespace boost;
+
+typedef adjacency_list < vecS, vecS, undirectedS,
+  no_property, property < edge_weight_t, double > > Graph;
+typedef graph_traits < Graph >::edge_descriptor Edge;
+typedef graph_traits < Graph >::vertex_descriptor Vertex;
 
 
 
@@ -265,6 +277,24 @@ public virtual Ifpack_Preconditioner
  //@}
 
  protected:
+
+ // Finds the size of a subtree rooted at a vertex (work in progress)
+ int treecount(const std::vector<Vertex>& v, int *subtreesize, int node);
+
+ // Partitions the spanning tree (work in progress)
+ int treepartition(int *table, int* children, int *subtreesize, std::vector<int>& roots, 
+		   int node, int n, int t);
+
+ // Finds the largest edge between two trees (work in progress)
+ int largestbetween(int *table, int* children, const Graph& graph, const property_map<Graph, edge_weight_t>::type& map,
+		    int tree1, int tree2, double *largest, int *extrasource, int *extratarget, int num_verts);
+
+ // Finds a list of all the vertices of a tree rooted at input vertex (work in progress)
+ int findall(std::vector<int>& tree, int root, int *table, int *children, int num_verts);
+
+
+ //! Compute AMST support graph (work in progress).
+ int AMST();
  
  //! Compute the support graph.
  int FindSupport();
@@ -332,20 +362,11 @@ public virtual Ifpack_Preconditioner
  //! Contains the Offset to add to the diagonal of the support graph
  double Offset_;
 
- bool Augmentation_;
+ //! Contains the option to keep the diagonal of original matrix
+ int KeepDiag_;
 
 }; // class Ifpack_SupportGraph<T>
 
-
-using Teuchos::RefCountPtr;
-using Teuchos::rcp;
-typedef std::pair<int, int> E;
-using namespace boost;
-
-typedef adjacency_list < vecS, vecS, undirectedS,
-  no_property, property < edge_weight_t, double > > Graph;
-typedef graph_traits < Graph >::edge_descriptor Edge;
-typedef graph_traits < Graph >::vertex_descriptor Vertex;
 
 
 //==============================================================================
@@ -367,7 +388,7 @@ Matrix_(rcp(Matrix_in,false)),
   ApplyInverseFlops_(0.0),
   NumForests_(1),
   Offset_(1),
-  Augmentation_(false)
+  KeepDiag_(1)
 {
   
   Teuchos::ParameterList List_in;
@@ -375,8 +396,416 @@ Matrix_(rcp(Matrix_in,false)),
 }
 //============================================================================== 
 template<typename T>
+int Ifpack_SupportGraph<T>::treecount(const std::vector<Vertex>& v, int *subtreesize, int node)
+{
+  int parent = v[node];
+ 
+  if(node != parent)
+    {
+      subtreesize[node] = subtreesize[node] + 1;
+      treecount(v, subtreesize, parent);
+    }
+
+  return 0;
+}
+//==============================================================================
+template<typename T>
+int Ifpack_SupportGraph<T>::treepartition(int *table, int* children, int *subtreesize, 
+					  std::vector<int>& roots,int node, int n, int t)
+{
+  subtreesize[node] = 1;
+  for(int i = table[node]; i < table[node+1]; i++)
+    {
+      int child = children[i];
+    
+      if(subtreesize[child] > (n/t + 1))
+	{
+	  treepartition(table, children, subtreesize, roots, child, n, t);
+	}
+
+      if(subtreesize[child] > (n/t))
+	{
+	  children[i] = -children[i];
+	  roots.push_back(child);
+	  
+	}
+      else
+	{
+	  subtreesize[node] = subtreesize[node] + subtreesize[child];
+	}
+    }
+  return 0;
+}
+//==============================================================================
+template<typename T>
+int Ifpack_SupportGraph<T>::largestbetween(int* table, int* children, const Graph& graph, 
+					    const property_map<Graph, edge_weight_t>::type& map, 
+					    int tree1, int tree2,
+					   double *largest, int *extrasource, int *extratarget, int num_verts)
+{
+  std::vector <int> subtree1;
+  std::vector <int> subtree2;
+
+  if(tree1 < 0)
+    {
+      tree1 = -tree1;
+    }
+
+  if(tree2 < 0)
+    {
+      tree2 = -tree2;
+    }
+
+  subtree1.push_back(tree1);
+  subtree2.push_back(tree2);
+
+
+  findall(subtree1, tree1, table, children, num_verts);
+  findall(subtree2, tree2, table, children, num_verts);
+
+
+  for(int i = 0; i < subtree1.size(); i++)
+    {
+      for(int j = 0; j < subtree2.size(); j++)
+	{
+
+	  if(edge(subtree1[i], subtree2[j], graph).second)
+	    {                                                  
+
+	      double temp = get(map, edge(subtree1[i],subtree2[j], graph).first);                                                                                  
+
+	      if(temp < *largest)         
+		{
+		  *largest = temp;
+		  *extrasource = subtree1[i];
+		  *extratarget = subtree2[j];
+		}
+
+	    }    
+	}
+    }
+
+
+
+    return 0;
+}
+//==============================================================================
+template<typename T>
+int Ifpack_SupportGraph<T>::findall(std::vector<int>& tree, int root, int *table, int *children, int num_verts)
+{
+  int upper;
+  if(root == num_verts-1)
+    {
+      upper = num_verts;
+    }
+  else
+    {
+      upper = table[root+1];
+    }
+  for(int i = table[root]; i < upper; i++)
+    {
+      int child = children[i];
+     
+      if(child > 0)
+	{
+	  tree.push_back(child);
+	  findall(tree, child, table, children,num_verts);
+	}
+    }
+}
+//============================================================================== 
+template<typename T>
+int Ifpack_SupportGraph<T>::AMST()
+{
+  
+ 
+
+  // Extract matrix dimensions
+  int rows = (*Matrix_).NumGlobalRows();
+  int cols = (*Matrix_).NumGlobalCols();
+  int num_edges  = ((*Matrix_).NumMyNonzeros() - (*Matrix_).NumMyDiagonals())/2;
+
+  // Assert square matrix
+  IFPACK_CHK_ERR((rows == cols));
+
+  // Rename for clarity
+  int num_verts = rows;
+
+  double fill = .9;
+  int t = fill*pow(num_verts,.5);
+
+  // Create data structures for the BGL code and temp data structures for extraction 
+  E *edge_array = new E[num_edges];
+  double *weights = new double[num_edges];
+  double *shiftedweights = new double[num_edges];
+
+  int num_entries;
+  int max_num_entries = (*Matrix_).MaxNumEntries();
+  double *values = new double[max_num_entries];
+  int *indices = new int[max_num_entries];
+
+  double * diagonal = new double[num_verts];
+  double shift = 0;
+
+  for(int i = 0; i < max_num_entries; i++)
+    {
+      values[i]=0;
+      indices[i]=0;
+    }
+
+  // Extract from the epetra matrix keeping only one edge per pair (assume symmetric) 
+  int k = 0;
+  for(int i = 0; i < num_verts; i++)
+    {
+      (*Matrix_).ExtractMyRowCopy(i,max_num_entries,num_entries,values,indices);
+
+      for(int j = 0; j < num_entries; j++)
+        {
+
+          if(i == indices[j])
+            {
+              diagonal[i] = values[j];
+            }
+
+          if(i < indices[j])
+            {
+              edge_array[k] = E(i,indices[j]);
+              if(values[j] < shift)
+                shift = values[j];
+
+              weights[k] = values[j];
+
+              k++;
+            }
+        }
+    }
+
+  shift = shift - 1;
+
+  for(int i = 0; i < num_edges; i++)
+    {
+      shiftedweights[i] = weights[i] - shift;
+    }
+
+
+  std::vector<int> TreeNz(num_verts,1);
+
+  int *TotalNz = new int[num_verts];
+  for(int i = 0; i < num_verts; i++)
+    {
+      TotalNz[i] = 1;
+    }
+
+
+  Graph gtemp(edge_array, edge_array + num_edges, shiftedweights, num_verts);
+  //gtemp = Graph(edge_array, edge_array + num_edges, shiftedweights, num_verts);
+
+  property_map<Graph, edge_weight_t>::type weightmap = get(edge_weight, gtemp);
+
+  //weightmap = get(edge_weight, gtemp);
+
+  std::vector < Vertex > p(num_vertices(gtemp));
+  prim_minimum_spanning_tree(gtemp, &p[0]);
+
+  std::vector<int> roots;
+  int numchildren[num_verts];
+  int table[num_verts];
+  int children[num_verts];
+  int *subtreesize = new int[num_verts];
+  for(std::size_t i = 0; i != p.size(); ++i)
+    {
+      numchildren[i] = 0;
+      table[i] = 0;
+      children[i] = 0;
+      subtreesize[i] = 0;
+    }
+
+  for (std::size_t i = 0; i != p.size(); ++i)
+    {
+
+      if (p[i] != i)
+	{
+	  numchildren[p[i]] = numchildren[p[i]] + 1;
+	  TreeNz[p[i]] = TreeNz[p[i]] + 1;
+	  TreeNz[i] = TreeNz[i] + 1;
+	  TotalNz[p[i]] = TotalNz[p[i]] + 1;
+	  TotalNz[i] = TotalNz[i] + 1;
+	  //std::cout << "parent[" << i << "] = " << p[i] << std::endl;
+	}
+      else
+	{
+	  roots.push_back(i);
+	}
+    }
+
+
+
+
+  k = 0;
+ 
+  for (std::size_t i = 0; i != p.size(); ++i)
+    {
+      table[i] = k;
+      k = k + numchildren[i];
+    }
+ 
+ 
+  for (std::size_t i = 0; i != p.size(); ++i)
+    {
+      if(i != p[i])
+	{
+	  //	  std::cout << table[p[i]] << "    " << numchildren[p[i]] << "     " << table[p[i]] + numchildren[i] - 1 << std::endl;
+	  children[table[p[i]] + numchildren[p[i]] - 1] = i;
+	  numchildren[p[i]] = numchildren[p[i]] - 1;
+	}
+    }
+
+ 
+  for(std::size_t i = 0; i != p.size(); ++i)
+    {
+      treecount(p,subtreesize, i);
+    }
+
+ 
+  for(int i = 0; i < roots.size(); i++)
+    {
+      treepartition(table, children, subtreesize, roots, roots[i], num_verts, t);
+    }
+
+  /*
+  for(int i = 0; i < roots.size(); i++)
+    {
+      p[roots[i]] = i;
+      std::cout << roots[i] << std::endl;
+      }*/
+  /*
+  std::cout << "children" << std::endl;
+  for(std::size_t i = 0; i != p.size(); ++i)
+    {
+      std::cout << children[i] << std::endl;
+      }*/
+
+  std::vector<int> ExtraIndices[num_verts];
+  std::vector<double> ExtraValues[num_verts];
+
+  for(int i = 0; i < num_verts; i++)
+    {
+      std::vector<int> temp;
+      std::vector<double> temp2;
+      ExtraIndices[i] = temp;
+      ExtraValues[i] = temp2;
+    }
+
+
+
+  for(int i = 0; i < roots.size(); i++)
+    {
+      for(int j = i+1; j < roots.size(); j++)
+	{
+	  double largest = -shift;
+	  int extrasource = -1;
+	  int extratarget = -1;
+
+
+	  largestbetween(table, children, gtemp, weightmap, roots[i],roots[j],&largest,&extrasource,&extratarget,num_verts);
+
+	  if(largest < -shift)
+	    {
+
+	      if((p[extrasource] != extratarget) && (p[extratarget] != extrasource))
+		{
+
+		  ExtraIndices[extrasource].push_back(extratarget);
+		  ExtraIndices[extratarget].push_back(extrasource);
+		  ExtraValues[extrasource].push_back(largest+shift);
+		  ExtraValues[extratarget].push_back(largest+shift);
+		  TotalNz[extrasource] = TotalNz[extrasource] + 1;
+		  TotalNz[extratarget] = TotalNz[extratarget] + 1;
+		}
+	    } 
+	  
+	}
+	  
+	  
+
+    }
+
+
+  
+  Support_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(),TotalNz, true));
+
+
+  for(int i = 0; i < num_verts; i++)
+    {
+
+      std::vector<int> Indices(TotalNz[i],0);
+      std::vector<double> Values(TotalNz[i],0);
+     
+      int other;
+      int upper;
+      if(p[i] == i)
+	{
+	  upper = TreeNz[i] - 1;
+	      
+	}
+      else
+	{
+
+	  std::cout << TreeNz[i] << std::endl;
+	  upper = TreeNz[i] - 2;
+	  Indices[TreeNz[i]-1] = p[i];
+
+	  if(!edge(i,p[i],gtemp).second)
+	    {
+	      std::cout << "WTFFFFFF" << std::endl;
+	    }
+	  Values[TreeNz[i]-1] = get(weightmap, edge(i, p[i], gtemp).first) + shift;
+	}
+
+      for(int j = 0; j < upper; j++)
+	{
+
+	  other = children[table[i]+j];
+	  if(other < 0)
+	    other = -other;
+
+	  Indices[j+1] = other;
+	  Values[j+1] = get(weightmap, edge(i, other, gtemp).first) + shift;
+	}
+
+      int s = 0;
+      for(int j = TreeNz[i] + 1; j < TotalNz[i]; j++)
+	{
+	      std::cout << "extra" << std::endl;
+	      Indices[j] = ExtraIndices[i][s];
+	      Values[j] = ExtraValues[i][s];
+
+	      s++;
+
+	}
+		
+
+      Indices[0] = i;
+      Values[0] = diagonal[i];
+
+      (*Support_).InsertGlobalValues(i,TotalNz[i],&Values[0],&Indices[0]);
+
+    }
+
+  (*Support_).FillComplete();
+
+  //(*Support_).Print(std::cout);
+
+  delete subtreesize;
+  delete TotalNz;
+
+  return 0;
+}
+//============================================================================== 
+template<typename T>
 int Ifpack_SupportGraph<T>::FindSupport()
 {
+
   // Extract matrix dimensions                                                                  
   int rows = (*Matrix_).NumGlobalRows();
   int cols = (*Matrix_).NumGlobalCols();
@@ -391,7 +820,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
   // Create data structures for the BGL code and temp data structures for extraction            
   E *edge_array = new E[num_edges];
   double *weights = new double[num_edges];
-
+ 
   int num_entries;
   int max_num_entries = (*Matrix_).MaxNumEntries();
   double *values = new double[max_num_entries];
@@ -399,6 +828,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
 
   double * diagonal = new double[num_verts];
 
+  
   for(int i = 0; i < max_num_entries; i++)
     {
       values[i]=0;
@@ -421,17 +851,17 @@ int Ifpack_SupportGraph<T>::FindSupport()
 
 	  if(i < indices[j])
 	    {
-	      edge_array[k] = E(i+1,indices[j]+1);
+	      edge_array[k] = E(i,indices[j]);
 	      weights[k] = values[j];
 
 	      k++;
 	    }
 	}
     }
-
-
+  
   // Create BGL graph                                                                           
   Graph g(edge_array, edge_array + num_edges, weights, num_verts);
+  
 
   property_map < Graph, edge_weight_t >::type weight = get(edge_weight, g);
 
@@ -439,6 +869,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
 
   // Run Kruskal, actually maximal weight ST since edges are negative                           
   kruskal_minimum_spanning_tree(g, std::back_inserter(spanning_tree));
+  
 
   std::vector<int> NumNz(num_verts,1);
 
@@ -446,15 +877,18 @@ int Ifpack_SupportGraph<T>::FindSupport()
   for (std::vector < Edge >::iterator ei = spanning_tree.begin();
        ei != spanning_tree.end(); ++ei)
     {
-      NumNz[source(*ei,g)-1] = NumNz[source(*ei,g)-1] + 1;
-      NumNz[target(*ei,g)-1] = NumNz[target(*ei,g)-1] + 1;
+      NumNz[source(*ei,g)] = NumNz[source(*ei,g)] + 1;
+      NumNz[target(*ei,g)] = NumNz[target(*ei,g)] + 1;
     }
+  
+  
+  // Create an stl vector of stl vectors to hold indices and values (neighbour edges)
+  std::vector< std::vector< int > > Indices(num_verts);
+  //std::vector<int> Indices[num_verts];
+  //std::vector<double> Values[num_verts];
 
-
-  // Create an array of stl vectors to hold indices and values (neighbour edges)                
-  std::vector<int> Indices[num_verts];
-  std::vector<double> Values[num_verts];
-
+  std::vector< std::vector< double > > Values(num_verts);
+  
   for(int i = 0; i < num_verts; i++)
     {
       std::vector<int> temp(NumNz[i],0);
@@ -462,14 +896,13 @@ int Ifpack_SupportGraph<T>::FindSupport()
       Indices[i] = temp;
       Values[i] = temp2;
     }
-
+  
   int *l = new int[num_verts];
   for(int i = 0; i < num_verts; i++)
     {
       l[i] = 1;
     }
-
-
+  
   for(int i = 0; i < NumForests_; i++)
     {
       if(i > 0)
@@ -479,8 +912,8 @@ int Ifpack_SupportGraph<T>::FindSupport()
 	  for(std::vector < Edge >::iterator ei = spanning_tree.begin();
 	      ei != spanning_tree.end(); ++ei)
 	    {
-	      NumNz[source(*ei,g)-1] = NumNz[source(*ei,g)-1] + 1;
-	      NumNz[target(*ei,g)-1] = NumNz[target(*ei,g)-1] + 1;
+	      NumNz[source(*ei,g)] = NumNz[source(*ei,g)] + 1;
+	      NumNz[target(*ei,g)] = NumNz[target(*ei,g)] + 1;
 	    }
 	  for(int i = 0; i < num_verts; i++)
 	    {
@@ -492,97 +925,41 @@ int Ifpack_SupportGraph<T>::FindSupport()
       for (std::vector < Edge >::iterator ei = spanning_tree.begin();
 	   ei != spanning_tree.end(); ++ei)
 	{
-	  Values[source(*ei,g)-1][0] = Values[source(*ei,g)-1][0] - weight[*ei];
-	  Values[target(*ei,g)-1][0] = Values[target(*ei,g)-1][0] - weight[*ei];
-	  Indices[source(*ei,g)-1][0] = source(*ei,g)-1;
-	  Indices[target(*ei,g)-1][0] = target(*ei,g)-1;
+	  if(KeepDiag_ == 0)
+	    {
+	      Values[source(*ei,g)][0] = Values[source(*ei,g)][0] - weight[*ei];
+	      Values[target(*ei,g)][0] = Values[target(*ei,g)][0] - weight[*ei];
+	    }
+	  Indices[source(*ei,g)][0] = source(*ei,g);
+	  Indices[target(*ei,g)][0] = target(*ei,g);
 
-	  Indices[source(*ei,g)-1][l[source(*ei,g)-1]] = target(*ei,g)-1;
-	  Values[source(*ei,g)-1][l[source(*ei,g)-1]] = weight[*ei];
-	  l[source(*ei,g)-1] = l[source(*ei,g)-1] + 1;
 
-	  Indices[target(*ei,g)-1][l[target(*ei,g)-1]] = source(*ei,g)-1;
-	  Values[target(*ei,g)-1][l[target(*ei,g)-1]] = weight[*ei];
-	  l[target(*ei,g)-1] = l[target(*ei,g)-1] + 1;
+	  Indices[source(*ei,g)][l[source(*ei,g)]] = target(*ei,g);
+	  Values[source(*ei,g)][l[source(*ei,g)]] = weight[*ei];
+	  l[source(*ei,g)] = l[source(*ei,g)] + 1;
+
+	  Indices[target(*ei,g)][l[target(*ei,g)]] = source(*ei,g);
+	  Values[target(*ei,g)][l[target(*ei,g)]] = weight[*ei];
+	  l[target(*ei,g)] = l[target(*ei,g)] + 1;
 
 	  remove_edge(*ei,g);
 	}
 
     }
 
-  /*
-  if(Augmentation_)
-    {
-      double fill = .5;
-
-      int t = fill*pow(num_verts,.5);
-
-      double extraweights [t][t];
-      E **between = 0;
-      between = new E *[t];
-
-      for(int i = 0; i < t; i++)
-	{
-	  between[i] = new E[t];
-	  for(int j = 0; j < t; j++)
-	    {
-	      extraweights[i][j]=0;
-	    }
-	}
-
-      int region1;
-      int region2;
-
-      graph_traits<Graph>::edge_iterator ei, ei_end;
-      for (tie(ei, ei_end) = edges(g); ei != ei_end; ++ei)
-	{
-
-	  region1 = source(*ei,g) % t;
-	  region2 = target(*ei,g) % t;
-
-	  if(region1 > region2)
-	    {
-	      std::swap(region1,region2);
-	    }
-
-	  if(weight[*ei] < extraweights[region1][region2])
-	    {
-	      extraweights[region1][region2] = weight[*ei];
-	      between[region1][region2] = E(source(*ei,g),target(*ei,g));
-	    }
-	}
-
-      for(int i = 0; i < t; i++)
-	{
-	  for(int j = i+1; j < t; j++)
-	    {
-	      if(i != j && (extraweights[i][j] != 0))
-		{
-		  Indices[between[i][j].first-1].push_back(between[i][j].second-1);
-		  Values[between[i][j].first-1].push_back(extraweights[i][j]);
-		  l[between[i][j].first-1] = l[between[i][j].first-1] + 1;
-
-		  Indices[between[i][j].second-1].push_back(between[i][j].first-1);
-		  Values[between[i][j].second-1].push_back(extraweights[i][j]);
-		  l[between[i][j].second-1] = l[between[i][j].second-1] + 1;
-		}
-	    }
-	}
-
-      delete between;
-
-    }
-  */
   
-  for(int i = 0; i < num_verts; i++)
+  if(KeepDiag_ == 1)
     {
-      Values[i][0] = diagonal[i];
+      for(int i = 0; i < num_verts; i++)
+	{
+	  Values[i][0] = diagonal[i];
+	}
     }
-
+  
   // Create the CrsMatrix for the support graph                                                 
   Support_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(),l, true));
 
-
+ 
   // Fill in the matrix with the stl vectors for each row                                       
   for(int i = 0; i < num_verts; i++)
     {
@@ -590,10 +967,10 @@ int Ifpack_SupportGraph<T>::FindSupport()
 
       (*Support_).InsertGlobalValues(i,l[i],&Values[i][0],&Indices[i][0]);
     }
-
+ 
   (*Support_).FillComplete();
 
-  //(*Support_).Print(std::cout);                                                                     
+  //(*Support_).Print(std::cout);    
 
   delete edge_array;
   delete weights;
@@ -612,7 +989,8 @@ int Ifpack_SupportGraph<T>::SetParameters(Teuchos::ParameterList& List_in)
   List_ = List_in;
   NumForests_ = List_in.get("MST: forest number", NumForests_);
   Offset_ = List_in.get("MST: diagonal offset", Offset_);
-  Augmentation_ = List_in.get("MST: augmentation", Augmentation_);
+  KeepDiag_ = List_in.get("MST: keep diagonal", KeepDiag_);
+
   return(0);
 }
 //==============================================================================    
@@ -633,7 +1011,7 @@ int Ifpack_SupportGraph<T>::Initialize()
   Time_->ResetStartTime();
  
   FindSupport();
- 
+  //AMST();
   Inverse_ = Teuchos::rcp(new T(Support_.get()));
 
   IFPACK_CHK_ERR(Inverse_->Initialize());
@@ -719,7 +1097,9 @@ Print(std::ostream& os) const
    os << "Ifpack_SupportGraph: " << Label () << endl << endl;
   os << "Condition number estimate = " << Condest() << endl;
   os << "Global number of rows            = " << Matrix_->NumGlobalRows() << endl;
-  os << "Number of edges in support graph     = " << Support_->NumGlobalNonzeros()-Support_->NumGlobalDiagonals();
+  os << "Number of off diagonal entries in support graph matrix     = " << Support_->NumGlobalNonzeros()-Support_->NumGlobalDiagonals() << endl;
+  os << "Fraction of off diagonals of support graph/off diagonals of original     = "
+     << ((double)Support_->NumGlobalNonzeros()-Support_->NumGlobalDiagonals())/(Matrix_->NumGlobalNonzeros()-Matrix_->NumGlobalDiagonals());
   os << endl;
   os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
   os << "-----           -------   --------------       ------------     --------" << endl;

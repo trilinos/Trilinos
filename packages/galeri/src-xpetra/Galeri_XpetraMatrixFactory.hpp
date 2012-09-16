@@ -2,8 +2,8 @@
 //
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//           Galeri: Finite Element and Matrix Generation Package
+//                 Copyright (2006) ETHZ/Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -46,19 +46,19 @@
 /*
   Direct translation of parts of Galeri matrix generator.
 */
-#ifndef MUELU_MATRIXFACTORY_HPP
-#define MUELU_MATRIXFACTORY_HPP
+#ifndef GALERI_XPETRAMATRIXFACTORY_HPP
+#define GALERI_XPETRAMATRIXFACTORY_HPP
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Assert.hpp"
 
-#include "MueLu_MatrixTypes.hpp"
+#include "Galeri_XpetraMatrixTypes.hpp"
 
 #include <iostream>
 
-namespace MueLu {
+namespace Galeri {
   
-  namespace Gallery {
+  namespace Xpetra {
 
     using Teuchos::RCP;
 
@@ -180,9 +180,7 @@ namespace MueLu {
 
     } // CreateCrsMatrix()
 
-  } // namespace Gallery
-} // namespace MueLu
+  } // namespace Xpetra
+} // namespace Galeri
 
-#define MUELU_MATRIXFACTORY_SHORT
-
-#endif //ifndef MUELU_MATRIXFACTORY_HPP
+#endif //ifndef GALERI_XPETRAMATRIXFACTORY_HPP

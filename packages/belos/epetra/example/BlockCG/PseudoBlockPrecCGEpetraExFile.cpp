@@ -145,16 +145,16 @@ int main(int argc, char *argv[]) {
 
   // create the preconditioner. For valid PrecType values,
   // please check the documentation
-  std::string PrecType = "ILU"; // incomplete LU
-  int OverlapLevel = 1; // must be >= 0. If Comm.NumProc() == 1,
+  std::string PrecType = "ICT"; // incomplete Cholesky 
+  int OverlapLevel = 0; // must be >= 0. If Comm.NumProc() == 1,
                         // it is ignored.
 
   RCP<Ifpack_Preconditioner> Prec = Teuchos::rcp( Factory.Create(PrecType, &*A, OverlapLevel) );
   assert(Prec != Teuchos::null);
 
-  // specify parameters for ILU
+  // specify parameters for ICT
   ifpackList.set("fact: drop tolerance", 1e-9);
-  ifpackList.set("fact: level-of-fill", 1);
+  ifpackList.set("fact: ict level-of-fill", 1.0);
   // the combine mode is on the following:
   // "Add", "Zero", "Insert", "InsertAdd", "Average", "AbsMax"
   // Their meaning is as defined in file Epetra_CombineMode.h

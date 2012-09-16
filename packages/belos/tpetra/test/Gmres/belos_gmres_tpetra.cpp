@@ -68,9 +68,9 @@ namespace {
   getNode (Teuchos::RCP<Teuchos::ParameterList> params) {
     // "Num Threads" specifies the number of threads.  Defaults to an
     // automatically chosen value.
-    if (params.is_null())
+    if (params.is_null ()) {
       params = Teuchos::parameterList ();
-
+    }
     return Teuchos::rcp (new Kokkos::SerialNode (*params));
   }
 
@@ -81,9 +81,9 @@ namespace {
   getNode (Teuchos::RCP<Teuchos::ParameterList> params) {
     // "Num Threads" specifies the number of threads.  Defaults to an
     // automatically chosen value.
-    if (params.is_null())
+    if (params.is_null ()) {
       params = Teuchos::parameterList ();
-
+    }
     return Teuchos::rcp (new Kokkos::TBBNode (*params));
   }
 #endif // defined(HAVE_KOKKOSCLASSIC_TBB)
@@ -99,15 +99,15 @@ namespace {
     // and "Verbose" specifies verbosity (defaults to 0, but we set 1
     // as the default, so that you can see how many threads are being
     // used if you don't set a specific number.
-    if (params.is_null())
-      {
-	params = Teuchos::parameterList ();
-	int verbosity = 1;
-	params->set ("Verbose", verbosity);
-      }
-    else if (isParameterType<int>(*params, "Num Threads") && params->get<int>("Num Threads") == -1)
-      params->set ("Num Threads", static_cast<int>(0));
-
+    if (params.is_null ()) {
+      params = Teuchos::parameterList ();
+      int verbosity = 1;
+      params->set ("Verbose", verbosity);
+    }
+    else if (isParameterType<int> (*params, "Num Threads") && 
+	     params->get<int>("Num Threads") == -1) {
+      params->set ("Num Threads", static_cast<int> (0));
+    }
     return Teuchos::rcp (new Kokkos::TPINode (*params));
   }
 #endif // defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
@@ -160,20 +160,20 @@ namespace {
     // names themselves, in order to save space and time.  We use
     // size_type for the indices to avoid signed/unsigned comparisons.
     vector<size_type> theList;
-    for (size_type nameIndex = 0; nameIndex < numValidTypes; ++nameIndex)
-      {
-	if (msgType & validTypes[nameIndex])
-	  theList.push_back (nameIndex);
+    for (size_type nameIndex = 0; nameIndex < numValidTypes; ++nameIndex) {
+      if (msgType & validTypes[nameIndex]) {
+	theList.push_back (nameIndex);
       }
+    }
     ostringstream os;
-    for (size_type k = 0; k < theList.size(); ++k)
-      {
-	const size_type nameIndex = theList[k];
-	os << typeNames[nameIndex];
-	if (nameIndex < theList.size() - 1)
-	  os << ",";
+    for (size_type k = 0; k < theList.size (); ++k) {
+      const size_type nameIndex = theList[k];
+      os << typeNames[nameIndex];
+      if (nameIndex < theList.size () - 1) {
+	os << ",";
       }
-    return os.str();
+    }
+    return os.str ();
   }
 
   /// \class ProblemMaker
@@ -438,10 +438,8 @@ namespace {
 	}
       }
     }
-  };
-
-
-} // (anonymous namespace)
+  }; // class ProblemMaker
+} // namespace (anonymous)
 
 /// \fn main
 /// \brief Test driver for Belos' new GMRES implementations
@@ -455,8 +453,10 @@ main (int argc, char *argv[])
   using Teuchos::null;
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
+  using Teuchos::ptr;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::updateParametersFromXmlFileAndBroadcast;
   using std::cerr;
   using std::cout;
   using std::endl;
@@ -677,36 +677,34 @@ main (int argc, char *argv[])
   // was provided, fill in the list on Proc 0, and broadcast.
   RCP<ParameterList> params = Teuchos::parameterList();
   const bool readParamsFromFile = (xmlInFile != "");
-  if (readParamsFromFile)
-    {
-      err << "Reading solve parameters from XML file \"" 
-	  << xmlInFile << "\"...";
-      using Teuchos::updateParametersFromXmlFileAndBroadcast;
-      updateParametersFromXmlFileAndBroadcast (xmlInFile, params.getRawPtr(), 
-					       *comm);
-      err << "done." << endl;
+  if (readParamsFromFile) {
+    err << "Reading solve parameters from XML file \"" 
+	<< xmlInFile << "\"...";
 
-      // Set the verbosity level if it was specified in the XML file.
+    updateParametersFromXmlFileAndBroadcast (xmlInFile, ptr (params.getRawPtr ()), *comm);
+    err << "done." << endl;
+
+    // Set the verbosity level if it was specified in the XML file.
+    try {
+      const int verbLevel = params->get<int>("Verbosity");
+      verbosityLevel = verbLevel;
+    } catch (Teuchos::Exceptions::InvalidParameter&) {
+      // Do nothing; leave verbosityLevel at its default value
+    }
+
+    // Did the XML file set the "Output Frequency" parameter?  If
+    // so, and if the user didn't override at the command line, read
+    // it in.  If provided at the command line, it overrides
+    // whatever was in the XML file.
+    if (! setFrequencyAtCommandLine) {
       try {
-	const int verbLevel = params->get<int>("Verbosity");
-	verbosityLevel = verbLevel;
+	const int newFreq = params->get<int>("Output Frequency");
+	frequency = newFreq;
       } catch (Teuchos::Exceptions::InvalidParameter&) {
-	// Do nothing; leave verbosityLevel at its default value
-      }
-
-      // Did the XML file set the "Output Frequency" parameter?  If
-      // so, and if the user didn't override at the command line, read
-      // it in.  If provided at the command line, it overrides
-      // whatever was in the XML file.
-      if (! setFrequencyAtCommandLine) {
-	try {
-	  const int newFreq = params->get<int>("Output Frequency");
-	  frequency = newFreq;
-	} catch (Teuchos::Exceptions::InvalidParameter&) {
-	  // Do nothing; leave frequency at its (new) default value
-	}
+	// Do nothing; leave frequency at its (new) default value
       }
     }
+  }
 
   // Override the XML file's "Output Frequency" parameter in the
   // parameter list with the corresponding command-line argument, if
@@ -718,25 +716,25 @@ main (int argc, char *argv[])
   // In debug mode, set verbosity level to its maximum, including
   // Belos::Debug.  In verbose mode, include everything but
   // Belos::Debug.
-  if (verbose || debug)
-    { // Change verbosity level from its default.
-      if (verbose) {
-	verbosityLevel = Belos::IterationDetails | 
-	  Belos::OrthoDetails |
-	  Belos::FinalSummary |
-	  Belos::TimingDetails |
-	  Belos::StatusTestDetails |
-	  Belos::Warnings | 
-	  Belos::Errors;
-      } else if (debug) {
-	verbosityLevel = Belos::Debug |
-	  Belos::Warnings | 
-	  Belos::Errors;
-      }
-      err << "Setting \"Verbosity\" to " << msgTypeToString(verbosityLevel) 
-	  << endl;
-      params->set ("Verbosity", verbosityLevel);
+  if (verbose || debug) {
+    // Change verbosity level from its default.
+    if (verbose) {
+      verbosityLevel = Belos::IterationDetails | 
+	Belos::OrthoDetails |
+	Belos::FinalSummary |
+	Belos::TimingDetails |
+	Belos::StatusTestDetails |
+	Belos::Warnings | 
+	Belos::Errors;
+    } else if (debug) {
+      verbosityLevel = Belos::Debug |
+	Belos::Warnings | 
+	Belos::Errors;
     }
+    err << "Setting \"Verbosity\" to " << msgTypeToString(verbosityLevel) 
+	<< endl;
+    params->set ("Verbosity", verbosityLevel);
+  }
   //
   // Construct a node, since we have parameters now.
   //
@@ -889,27 +887,26 @@ main (int argc, char *argv[])
 
     // Display resulting residual norm(s) on Rank 0.
     for (std::vector<magnitude_type>::size_type k = 0;
-	 k < rhsNorms.size(); ++k)
-      {
-	out << "For problem " << k+1 << " of " << numEquations << ": " 
-	    << endl
-	    << "* ||b||_2 = " << rhsNorms[k] << endl
-	    << "* ||A x_guess - b||_2 ";
-	if (rhsNorms[k] == STM::zero()) {
-	  out << "= " << initResNorms[k] << endl;
-	} else {
-	  out << "/ ||b||_2 = "
-	      << initResNorms[k] / rhsNorms[k] << endl;
-	}
-	out << "* ||A x - b||_2 ";
-	if (rhsNorms[k] == STM::zero()) {
-	  out << "= " << finalResNorms[k] << endl;
-	} else {
-	  out << "/ ||b||_2 = "
-	      << finalResNorms[k] / rhsNorms[k] << endl;
-	}
-	out << "* ||x - x_exact||_2 = " << absSolNorms[k] << endl;
+	 k < rhsNorms.size(); ++k) {
+      out << "For problem " << k+1 << " of " << numEquations << ": " 
+	  << endl
+	  << "* ||b||_2 = " << rhsNorms[k] << endl
+	  << "* ||A x_guess - b||_2 ";
+      if (rhsNorms[k] == STM::zero()) {
+	out << "= " << initResNorms[k] << endl;
+      } else {
+	out << "/ ||b||_2 = "
+	    << initResNorms[k] / rhsNorms[k] << endl;
       }
+      out << "* ||A x - b||_2 ";
+      if (rhsNorms[k] == STM::zero()) {
+	out << "= " << finalResNorms[k] << endl;
+      } else {
+	out << "/ ||b||_2 = "
+	    << finalResNorms[k] / rhsNorms[k] << endl;
+      }
+      out << "* ||x - x_exact||_2 = " << absSolNorms[k] << endl;
+    }
 
     // Did the solution manager return a reasonable result
     // (Converged or Unconverged)?  (We allow the iterations not to
@@ -952,21 +949,18 @@ main (int argc, char *argv[])
   // Later, numFailed might signify the number of test(s) that failed.
   // For now, it's always zero.
   int numFailed = 0;
-  if (numFailed != 0)
-    {
-      if (verbose)
-	{
-	  err << "There were " << numFailed << " error" 
-	      << (numFailed != 1 ? "s." : ".") << endl;
-	}
-      out << "End Result: TEST FAILED" << endl;
-      return EXIT_FAILURE;
+  if (numFailed != 0) {
+    if (verbose) {
+      err << "There were " << numFailed << " error" 
+	  << (numFailed != 1 ? "s." : ".") << endl;
     }
-  else 
-    {
-      out << "End Result: TEST PASSED" << endl;
-      return EXIT_SUCCESS;
-    }
+    out << "End Result: TEST FAILED" << endl;
+    return EXIT_FAILURE;
+  }
+  else {
+    out << "End Result: TEST PASSED" << endl;
+    return EXIT_SUCCESS;
+  }
 }
 
 

@@ -357,6 +357,8 @@ struct map_list_head map;
 ZOLTAN_COMM_OBJ *comm, *comm_copy;
 
 
+  if (proc == 0) printf("Testing DDirectory\n");
+
   /* Load array of element globalIDs for elements on this processor. */
   /* Count number of neighboring elements not on this processor.     */
 
@@ -395,6 +397,7 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
    * Test DD copy functions
    */
 
+  if (proc == 0) printf("    Test DD_Copy\n");
   ddCopy = Zoltan_DD_Copy(dd);
 
   if (!ddCopy){
@@ -402,6 +405,7 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
     error = 1;
   }
 
+  if (proc == 0) printf("    Test DD_Copy_To\n");
   ierr = Zoltan_DD_Copy_To(&dd, ddCopy);
 
   if (ierr != ZOLTAN_OK){
@@ -415,12 +419,14 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
 
   Zoltan_DD_Set_Hash_Fn(ddCopy, zdrive_hash);
 
+  if (proc == 0) printf("    Test Update dd\n");
   ierr = Zoltan_DD_Update(dd, gids, lids, NULL, NULL, num_elems);
   if (ierr) {
     Gen_Error(0, "Fatal:  Error returned by Zoltan_DD_Update of dd");
     error = 1;
   }
 
+  if (proc == 0) printf("    Test Update ddCopy\n");
   ierr = Zoltan_DD_Update(ddCopy, gids, lids, NULL, NULL, num_elems);
   if (ierr) {
     Gen_Error(0, "Fatal:  Error returned by Zoltan_DD_Update ddCopy");
@@ -467,6 +473,7 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
     error = 1;
   }
 
+  if (proc == 0) printf("    Test Find ddCopy\n");
   ierr = Zoltan_DD_Find(ddCopy, nbor_gids, nbor_lids,
                         NULL, NULL, num_nbor, ownerlist);
   if (ierr) {
@@ -474,6 +481,7 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
     error = 1;
   }
 
+  if (proc == 0) printf("    Test Find dd\n");
   ierr = Zoltan_DD_Find(dd, nbor_gids, nbor_lids,
                         NULL, NULL, num_nbor, ownerlist);
   if (ierr) {
@@ -481,6 +489,7 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
     error = 1;
   }
  
+  if (proc == 0) printf("    Test Destroy\n");
   Zoltan_DD_Destroy(&dd);
   Zoltan_DD_Destroy(&ddCopy);
 

@@ -69,10 +69,10 @@ int main(int argc, char* argv[])
 
     Teuchos::ParameterList paramList;
     if(verbose) *out << "\nReading parameters from XML file \""<<inputFile<<"\" ...\n";
-    Teuchos::updateParametersFromXmlFile(inputFile,&paramList);
+    Teuchos::updateParametersFromXmlFile(inputFile, Teuchos::inOutArg(paramList));
     if(extraParams.length()) {
       if(verbose) *out << "\nAppending extra parameters from the XML string \""<<extraParams<<"\" ...\n";
-      Teuchos::updateParametersFromXmlString(extraParams,&paramList);
+      Teuchos::updateParametersFromXmlString(extraParams, Teuchos::inOutArg(paramList));
     }
     
     success

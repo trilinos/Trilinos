@@ -6,6 +6,7 @@ ADD_SUBDIRECTORIES(
   ParameterList # Put this first to define a test-only library
   BLAS
   Comm
+  CommandLineProcessor
   Containers
   Conditions
   CWrapperSupport

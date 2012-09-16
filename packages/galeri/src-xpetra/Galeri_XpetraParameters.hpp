@@ -2,8 +2,8 @@
 //
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//           Galeri: Finite Element and Matrix Generation Package
+//                 Copyright (2006) ETHZ/Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -43,19 +43,17 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_GALLERYPARAMETERS_HPP
-#define MUELU_GALLERYPARAMETERS_HPP
+#ifndef GALERI_XPETRAPARAMETERS_HPP
+#define GALERI_XPETRAPARAMETERS_HPP
 
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-#include "MueLu_Exceptions.hpp" // Dependency to MueLu should be remove
-
-namespace MueLu {
+namespace Galeri {
   
-  namespace Gallery {
+  namespace Xpetra {
     
     // TODO nx/ny/nz == GO or global_size_t ? But what is the best to do?
 
@@ -91,7 +89,7 @@ namespace MueLu {
           numGlobalElements = static_cast<GO>(nx_*ny_*nz_);
         //TODO else throw
 
-        if (numGlobalElements < 0) throw Exceptions::Overflow("Gallery: numGlobalElements < 0 (did you forget --ny for 2D problems?)");
+        if (numGlobalElements < 0) throw std::runtime_error("Gallery: numGlobalElements < 0 (did you forget --ny for 2D problems?)");
 
         return numGlobalElements;
       }
@@ -128,12 +126,12 @@ namespace MueLu {
       //! Print the object with some verbosity level to an FancyOStream object.
       void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const {
         using std::endl;
-        int vl = (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
-        if (vl == VERB_NONE) return;
+        int vl = (verbLevel == Teuchos::VERB_DEFAULT) ? Teuchos::VERB_LOW : verbLevel;
+        if (vl == Teuchos::VERB_NONE) return;
       
-        if (vl == VERB_LOW) { out << description() << endl; } else { out << Teuchos::Describable::description() << endl; }
+        if (vl == Teuchos::VERB_LOW) { out << description() << endl; } else { out << Teuchos::Describable::description() << endl; }
       
-        if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
+        if (vl ==Teuchos:: VERB_MEDIUM || vl == Teuchos::VERB_HIGH || vl == Teuchos::VERB_EXTREME) {
           Teuchos::OSTab tab1(out);
 
           out << "Matrix type: " << matrixType_ << endl

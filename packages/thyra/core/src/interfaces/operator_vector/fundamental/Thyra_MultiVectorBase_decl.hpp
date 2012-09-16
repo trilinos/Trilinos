@@ -1087,6 +1087,7 @@ protected:
 
 public:
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
   /** @name Deprecated public functions */
   //@{
 
@@ -1124,7 +1125,7 @@ public:
     ) const;
 
   //@}
-
+#endif // THYRA_HIDE_DEPRECATED_CODE
 private:
   
   // Not defined and not to be called
@@ -1186,7 +1187,7 @@ void applyOp(
       reduct_obj, primary_global_offset);
 }
 
-
+#ifndef THYRA_HIDE_DEPRECATED_CODE
 //
 // Deprecated non-members
 //
@@ -1252,6 +1253,7 @@ void applyOp(
       reduct_obj, primary_global_offset);
 }
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 
 } // namespace Thyra
 

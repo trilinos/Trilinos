@@ -377,7 +377,7 @@ namespace panzer {
      tester.num_random_vectors(200);
 
      {
-        const bool result = tester.compare( *tLinearOp, *eLinearOp, &out );
+        const bool result = tester.compare( *tLinearOp, *eLinearOp, Teuchos::ptrFromRef(out) );
         TEST_ASSERT(result);
      }
 

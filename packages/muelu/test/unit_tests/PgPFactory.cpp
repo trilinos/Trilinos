@@ -108,7 +108,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
 
   // create nonsymmetric tridiagonal matrix
   Scalar epsilon = 1e-3;
-  RCP<Operator> Op = MueLu::Gallery::TriDiag<SC,LO,GO,Map,CrsOperator>(map, nEle, 1.0, 1.0-epsilon, epsilon);
+  RCP<Operator> Op = Galeri::Xpetra::TriDiag<SC,LO,GO,Map,CrsOperator>(map, nEle, 1.0, 1.0-epsilon, epsilon);
 
   // build nullspace
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -287,7 +287,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
   const RCP<const Map> map = MapFactory::Build(lib, nEle, nIndexBase, comm);
 
 
-  RCP<CrsOperator> mtx = MueLu::Gallery::MatrixTraits<Map,CrsOperator>::Build(map, 3);
+  RCP<CrsOperator> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsOperator>::Build(map, 3);
 
   LocalOrdinal NumMyElements = map->getNodeNumElements();
   Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
@@ -488,7 +488,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ColumnBasedOmegas)
   matrixParameters.set("nx",nEle);
 
   // create nonsymmetric tridiagonal matrix
-  RCP<Operator> Op = MueLu::Gallery::TriDiag<SC,LO,GO,Map,CrsOperator>(map, nEle, 2.0, -1.0, -1.0);
+  RCP<Operator> Op = Galeri::Xpetra::TriDiag<SC,LO,GO,Map,CrsOperator>(map, nEle, 2.0, -1.0, -1.0);
 
   // build nullspace
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -649,7 +649,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegas)
   matrixParameters.set("nx",nEle);
 
   // create nonsymmetric tridiagonal matrix
-  RCP<Operator> Op = MueLu::Gallery::TriDiag<SC,LO,GO,Map,CrsOperator>(map, nEle, 2.0, -1.0, -1.0);
+  RCP<Operator> Op = Galeri::Xpetra::TriDiag<SC,LO,GO,Map,CrsOperator>(map, nEle, 2.0, -1.0, -1.0);
 
   // build nullspace
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -817,7 +817,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegasTransP)
   matrixParameters.set("nx",nEle);
 
   // create nonsymmetric tridiagonal matrix
-  RCP<Operator> Op = MueLu::Gallery::TriDiag<SC,LO,GO,Map,CrsOperator>(map, nEle, 2.0, -1.0, -1.0);
+  RCP<Operator> Op = Galeri::Xpetra::TriDiag<SC,LO,GO,Map,CrsOperator>(map, nEle, 2.0, -1.0, -1.0);
 
   // build nullspace
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -996,7 +996,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       const RCP<const Map> map = MapFactory::Build(lib, nEle, 0, comm);
       Teuchos::ParameterList matrixParameters;
       matrixParameters.set("nx",nEle);
-      RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>("Laplace1D", map, matrixParameters);
+      RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>("Laplace1D", map, matrixParameters);
 
       // build nullspace
       RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);

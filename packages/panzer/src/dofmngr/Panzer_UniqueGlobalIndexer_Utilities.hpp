@@ -226,6 +226,20 @@ public:
    Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> >
    getDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const;
 
+   /** Build a map that contains only global IDs associated with a particular field.
+     * This serves to go from a unique vector of all fields, to a vector
+     * containing the uniquely owned global ids for a single field.
+     */
+   Teuchos::RCP<const Tpetra::Map<int,GlobalOrdinalT,Node> >
+   getFieldMap(const std::string & fieldName) const;
+
+   /** Build a map that contains only global IDs associated with a particular field.
+     * This serves to go from a unique vector of all fields, to a vector
+     * containing the uniquely owned global ids for a single field.
+     */
+   Teuchos::RCP<const Tpetra::Map<int,GlobalOrdinalT,Node> >
+   getFieldMap(int fieldNum) const;
+
 protected:
    typedef Tpetra::Vector<int,int,GlobalOrdinalT,Node> IntVector;
    typedef Tpetra::Map<int,GlobalOrdinalT,Node> Map;

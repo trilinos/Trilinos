@@ -376,7 +376,7 @@ std::ostream& operator<<(std::ostream &out, const SolveCriteria<Scalar> &solveCr
   return out;
 }
 
-
+#ifndef THYRA_HIDE_DEPRECATED_CODE
 /** \brief Deprecated.
  *
  * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
@@ -396,7 +396,7 @@ struct THYRA_DEPRECATED BlockSolveCriteria {
     : solveCriteria(_solveCriteria), numRhs(_numRhs)
     {}
 };
-
+#endif // THYRA_HIDE_DEPRECATED_CODE
 
 /** \brief Exception type thrown on an catastrophic solve failure.
  *
@@ -615,7 +615,7 @@ void accumulateSolveStatus(
     overallSolveStatus->extraParameters = solveStatus.extraParameters;
 }
 
-
+#ifndef THYRA_HIDE_DEPRECATED_CODE
 /** \brief Deprecated.
  *
  * \relates SolveStatus
@@ -633,7 +633,7 @@ void accumulateSolveStatus(
     solveStatus, Teuchos::ptr(overallSolveStatus)
     );
 }
-
+#endif // THYRA_HIDE_DEPRECATED_CODE
 
 } // namespace Thyra
 

@@ -58,8 +58,7 @@
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 
-#define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
-#include "MueLu_GalleryUtils.hpp"
+#include "Galeri_XpetraUtils.hpp"
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Utilities.hpp"
@@ -130,7 +129,7 @@ namespace MueLuTests {
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
     matrixList.set("keepBCs",true); //keeps Dirichlet rows
-    RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
+    RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
     level.Set<RCP<Operator> >("A",Op);
 
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
@@ -265,7 +264,7 @@ namespace MueLuTests {
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
-    RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
+    RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
     level.Set<RCP<Operator> >("A",Op);
 
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
@@ -401,7 +400,7 @@ namespace MueLuTests {
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
-    RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
+    RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
     level.Set<RCP<Operator> >("A",Op);
 
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
@@ -528,7 +527,7 @@ namespace MueLuTests {
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
-    RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
+    RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
     level.Set<RCP<Operator> >("A",Op);
 
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
@@ -656,7 +655,7 @@ namespace MueLuTests {
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
-    RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
+    RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
     level.Set<RCP<Operator> >("A",Op);
 
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
@@ -821,7 +820,7 @@ namespace MueLuTests {
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
-    RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
+    RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Laplace2D",map,matrixList);
     level.Set<RCP<Operator> >("A",Op);
 
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;

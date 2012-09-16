@@ -149,7 +149,7 @@ TEUCHOS_UNIT_TEST( EpetraExtAddTransformer, diag_mat_Add )
   // B) Create the Thyra wrapped version
   //
   double scaleMat=3.7;
-  double scaleDiag=-2.9;
+  //double scaleDiag=-2.9;
 
  
   const RCP<const Thyra::LinearOpBase<double> > A = Thyra::scale<double>(scaleMat,Thyra::epetraLinearOp(crsMat));
@@ -244,7 +244,7 @@ TEUCHOS_UNIT_TEST( EpetraExtAddTransformer, id_mat_Add )
   // B) Create the Thyra wrapped version
   //
   double scaleMat=3.7;
-  double scaleDiag=-2.9;
+  //double scaleDiag=-2.9;
 
  
   const RCP<const Thyra::LinearOpBase<double> > A = Thyra::scale<double>(scaleMat,Thyra::epetraLinearOp(crsMat));

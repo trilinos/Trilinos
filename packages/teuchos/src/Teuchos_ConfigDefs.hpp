@@ -153,8 +153,8 @@ typedef TEUCHOS_ORDINAL_TYPE Teuchos_Ordinal;
 namespace Teuchos { typedef Teuchos_Ordinal Ordinal; }
 #endif /* __cplusplus */
 
-/* Deprecated (use Teuchos_Ordinal) */
-typedef Teuchos_Ordinal Teuchos_Index;
+/* Deprecated (use Teuchos_Ordinal instead) */
+TEUCHOS_DEPRECATED typedef Teuchos_Ordinal Teuchos_Index;
 
 /* Make error report silent by defining TEUCHOS_NO_ERROR_REPORTS */
 

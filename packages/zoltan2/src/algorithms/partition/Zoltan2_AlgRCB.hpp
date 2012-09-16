@@ -560,7 +560,7 @@ void AlgRCB(
     env->debug(VERBOSE_DETAILED_STATUS, oss.str());
   }
 
-  solution->setParts(gnoList, partId);
+  solution->setParts(gnoList, partId, false);
 #endif // INCLUDE_ZOLTAN2_EXPERIMENTAL
 }
 

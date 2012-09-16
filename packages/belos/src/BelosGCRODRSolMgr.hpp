@@ -80,6 +80,26 @@
  \ingroup belos_solver_framework
 
  \author Michael Parks and Heidi Thornquist
+
+ \tparam ScalarType The type of entries in the right-hand side
+   vector(s) \f$b\f$ and solution vector(s) \f$x\f$.
+ \tparam MV The multivector type; the type of the solution
+   vector(s) and right-hand side vector(s).
+ \tparam OP The type of the matrix \f$A\f$ (and any preconditioner,
+   if one is provided).
+
+ \warning This GCRODR implementation currently only supports
+   real-valued (not complex-valued) ScalarType types.  You may check
+   whether ScalarType is complex using the following code:
+   \code
+   if (Teuchos::ScalarTraits<ScalarType>::isComplex) {
+     // ScalarType is complex valued.
+   } else {
+     // ScalarType is real valued.
+  }
+   \endcode
+   This will be fixed in future releases.  It is not a limitation of
+   the GCRODR method itself, just of the current implementation.  
  */
 
 namespace Belos {

@@ -266,9 +266,10 @@ int main(int argc, char* argv[])
 
     RCP<ParameterList> paramList =
       Teuchos::getParametersFromXmlFile( baseDir+"/"+paramsFile );
-    if(extraParamsFile.length())
-      Teuchos::updateParametersFromXmlFile( baseDir+"/"+extraParamsFile, &*paramList );
-    if(showParams) {
+    if (extraParamsFile.length()) {
+      Teuchos::updateParametersFromXmlFile( baseDir+"/"+extraParamsFile, paramList.ptr() );
+    }
+    if (showParams) {
       *out << "\nRead in parameter list:\n\n";
       paramList->print(*out,PLPrintOptions().indent(2).showTypes(true));
     }

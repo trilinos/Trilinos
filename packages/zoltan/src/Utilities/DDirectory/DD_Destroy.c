@@ -60,13 +60,8 @@ extern "C" {
 
 /**********************  Zoltan_DD_Destroy()  *********************/
 
-void Zoltan_DD_Destroy (
- Zoltan_DD_Directory **dd)     /* contains directory state information */
-   {
-   int i;
-   DD_Node *ptr;
-   DD_Node *next;
-
+void Zoltan_DD_Destroy (Zoltan_DD_Directory **dd)
+{
    char *yo = "ZOLTAN_DD_Destroy";
 
    /* input sanity check */
@@ -77,12 +72,8 @@ void Zoltan_DD_Destroy (
    if ((*dd)->debug_level > 4)
       ZOLTAN_TRACE_IN ((*dd)->my_proc, yo, NULL);
 
-   /* for each linked list head, walk its list freeing memory */
-   for (i = 0; i < (*dd)->table_length; i++)
-      for (ptr = (*dd)->table[i]; ptr != NULL; ptr = next)  {
-         next = ptr->next;            /* save before deletion         */
-         ZOLTAN_FREE (&ptr);          /* destroy node                 */
-      }
+   ZOLTAN_FREE(&((*dd)->nodelist));
+   ZOLTAN_FREE(&((*dd)->nodedata));
 
    /* execute user registered cleanup function, if needed */
    if ((*dd)->cleanup != NULL)
@@ -95,7 +86,7 @@ void Zoltan_DD_Destroy (
 
    ZOLTAN_FREE (dd);                  /* free directory structure     */
    return;
-   }
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

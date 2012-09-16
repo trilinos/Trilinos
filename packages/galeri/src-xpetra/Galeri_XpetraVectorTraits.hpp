@@ -2,8 +2,8 @@
 //
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//           Galeri: Finite Element and Matrix Generation Package
+//                 Copyright (2006) ETHZ/Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -48,19 +48,18 @@
 */
 
 // TODO: rename variables (camelCase)
+#include "Galeri_config.h"
 
-#ifndef MUELU_VECTORTRAITS_HPP
-#define MUELU_VECTORTRAITS_HPP
+#ifndef GALERI_XPETRAVECTORTRAITS_HPP
+#define GALERI_XPETRAVECTORTRAITS_HPP
 
-#ifdef XPETRA_ENABLED
+#ifdef HAVE_GALERI_XPETRA
 #  include "Xpetra_Map.hpp"  // needed for specialized traits
 #endif
 
-#include "MueLu_ConfigDefs.hpp"
-
-namespace MueLu {
+namespace Galeri {
   
-  namespace Gallery {
+  namespace Xpetra {
     
     // Default traits
     template <class Map, class Vector>
@@ -72,7 +71,7 @@ namespace MueLu {
       }
     };
 
-#ifdef XPETRA_ENABLED
+#ifdef HAVE_GALERI_XPETRA
 
 /*
     // Specialized traits for     Map = Xpetra::Map<...>, Vector = Xpetra::Vector<...>
@@ -88,18 +87,18 @@ namespace MueLu {
 
     // Specialized traits for     Map = Xpetra::Map<...>, Vector = Xpetra::MultiVector<...>
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    class VectorTraits <Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node>, Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal, Node> >
+    class VectorTraits < ::Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node>, ::Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal, Node> >
     {
     public:
-      static RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal, Node> >
-        Build(const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > &map, size_t numVectors, bool zeroOut)
-      { return Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node>::Build(map, numVectors, zeroOut);};
+      static RCP< ::Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal, Node> >
+      Build(const RCP<const ::Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > &map, size_t numVectors, bool zeroOut)
+      { return ::Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node>::Build(map, numVectors, zeroOut);};
     };
 
 #endif
 
-  } // namespace Gallery
+  } // namespace Xpetra
 
-} // namespace MueLu
+} // namespace Galeri
 
-#endif //ifndef MUELU_VECTORTRAITS_HPP
+#endif //ifndef GALERI_XPETRAVECTORTRAITS_HPP

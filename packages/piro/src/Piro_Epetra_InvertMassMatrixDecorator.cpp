@@ -192,7 +192,7 @@ void Piro::Epetra::InvertMassMatrixDecorator::evalModel( const InArgs& inArgs,
       RCP<const Thyra::VectorBase<double> >
         b = Thyra::create_Vector( modelOutArgs.get_f(), A->range() );
 
-      lows->solve(Thyra::NONCONJ_ELE, *b, x.get());
+      ::Thyra::solve<double>(*lows, ::Thyra::NOTRANS, *b, x.ptr());
     }
     else { // Lump matrix into inverse of diagonal
       if (calcMassMatrix) {

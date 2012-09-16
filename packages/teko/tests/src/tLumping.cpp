@@ -161,7 +161,7 @@ bool tLumping::test_lumping(int verbosity,std::ostream & os)
    {
       std::stringstream ss;
       Teuchos::FancyOStream fos(rcpFromRef(ss),"      |||");
-      const bool result = tester.compare( *pB, *lumpedA, &fos );
+      const bool result = tester.compare( *pB, *lumpedA, Teuchos::ptrFromRef(fos) );
       TEST_ASSERT(result,
              std::endl << "   tLummping::test_lumping "
              << ": Testing basic lumping functionality");
@@ -217,7 +217,7 @@ bool tLumping::test_invLumping(int verbosity,std::ostream & os)
    {
       std::stringstream ss;
       Teuchos::FancyOStream fos(rcpFromRef(ss),"      |||");
-      const bool result = tester.compare( *pB, *lumpedA, &fos );
+      const bool result = tester.compare( *pB, *lumpedA, Teuchos::ptrFromRef(fos) );
       TEST_ASSERT(result,
              std::endl << "   tLummping::test_invLumping "
              << ": Testing basic inv lumping functionality");

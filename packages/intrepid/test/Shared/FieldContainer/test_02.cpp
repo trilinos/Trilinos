@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
       }
       
       // Now try to stuff this data into FieldContainer
-      myContainer.setValues(dataTeuchosArray);
+      myContainer.setValues(dataTeuchosArray());
     }
     catch (std::logic_error err) {
       *outStream  << err.what() << "\n";

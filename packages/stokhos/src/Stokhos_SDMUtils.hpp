@@ -242,6 +242,8 @@ namespace Stokhos {
    * columns of A to be included in P by setting the corresponding entries
    * of piv to be nonzero on input.
    *
+   * If \c make_R_square is \c false then R is k-by-n.
+   *
    * This ultimately uses the LAPACK column-pivoted QR function which
    * does a full QR factorization.  This then extracts the parts of Q, R, and P
    * determined by the threshold as described above.  As such, this function

@@ -1431,16 +1431,16 @@ namespace {
 		  printf("WARNING: On Processor %d Local Element %lu (%s) has a mechanism through Global Node %lu with Local Element %lu (%s)\n", 
 			 proc, 
 			 (size_t)local_number[ecnt], 
-			 elem_names[etype], 
+			 elem_name_from_enum(etype), 
 			 (size_t)node, 
 			 (size_t)local_number[el2], 
-			 elem_names[etype2]); 
+			 elem_name_from_enum(etype2)); 
 		  if(problem->mech_add_procs == 1) lb->vertex2proc[el2] = machine->num_procs;
 		}
 	      else 
 		{
 		  printf("WARNING: Element %lu (%s) has a mechanism through Node %lu with Element %lu (%s)\n", 
-			 (size_t)ecnt+1, elem_names[etype], (size_t)node, (size_t)el2+1, elem_names[etype2]); 
+			 (size_t)ecnt+1, elem_name_from_enum(etype), (size_t)node, (size_t)el2+1, elem_name_from_enum(etype2)); 
 		}
 	      num_found++;
 	    }

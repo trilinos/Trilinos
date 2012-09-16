@@ -71,7 +71,7 @@ MultiVectorBase<Scalar>::clone() const
   return this->clone_mv();
 }
 
-
+#ifndef THYRA_HIDE_DEPRECATED_CODE
 //
 // Deprecated public function
 //
@@ -133,7 +133,7 @@ void MultiVectorBase<Scalar>::applyOp(
     Teuchos::ptr(reduct_obj),
     primary_global_offset);
 }
-
+#endif // THYRA_HIDE_DEPRECATED_CODE
 
 } // end namespace Thyra
 

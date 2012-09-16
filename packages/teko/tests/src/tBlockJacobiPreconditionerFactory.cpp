@@ -289,7 +289,7 @@ bool tBlockJacobiPreconditionerFactory::test_initializePrec(int verbosity,std::o
      tester.show_all_tests(true);
      std::stringstream ss;
      Teuchos::FancyOStream fos(rcpFromRef(ss),"      |||");
-     const bool result = tester.compare( *invA[i], *op, &fos );
+     const bool result = tester.compare( *invA[i], *op, Teuchos::ptrFromRef(fos) );
      TEST_ASSERT(result,
             std::endl << "   tBlockJacobiPreconditionerFactory::test_initializePrec "
             << ": Comparing factory generated operator to correct operator");

@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
   typedef Zoltan2::XpetraCrsMatrixInput<tmatrix_t> adapter_t;
   typedef Zoltan2::PartitioningSolution<adapter_t> soln_t;
   soln_t solution(env, comm, idMap, weightDim);
-  solution.setParts(gidArray, solnParts);
+  solution.setParts(gidArray, solnParts, false);//could use true, but test false
 
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::CrsMatrix

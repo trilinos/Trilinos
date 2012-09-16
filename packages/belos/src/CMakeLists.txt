@@ -81,6 +81,7 @@ APPEND_SET(HEADERS
   BelosStatusTestOutput.hpp
   BelosStatusTestResNorm.hpp
   BelosStatusTestResNormOutput.hpp
+  BelosStubTsqrAdapter.hpp
   BelosTFQMRIter.hpp
   BelosTFQMRSolMgr.hpp
   BelosTypes.hpp

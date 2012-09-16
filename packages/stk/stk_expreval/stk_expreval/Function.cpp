@@ -11,20 +11,19 @@
 namespace stk {
 namespace expreval {
 
-  namespace bmth = boost::math;
-  namespace bmp  = bmth::policies;
+  namespace bmp  = boost::math::policies;
 
 typedef boost::math::
   weibull_distribution< double,
                        boost::math::policies::policy< bmp::overflow_error<bmp::ignore_error> > >
   weibull_dist;
 
-typedef bmth::
+typedef boost::math::
   gamma_distribution< double,
                        bmp::policy< bmp::overflow_error<bmp::ignore_error> > >
   gamma_dist;
 
-typedef bmth::
+typedef boost::math::
   normal_distribution< double,
                        bmp::policy< bmp::overflow_error<bmp::ignore_error> > >
   normal_dist;
@@ -310,15 +309,23 @@ extern "C" {
   /// Weibull distribution probability distribution function.
   double weibull_pdf(double x, double shape, double scale)
   {
+#if defined(__PATHSCALE__)
+    return 0.0;
+#else
     weibull_dist weibull1(shape, scale);
-    return bmth::pdf(weibull1, x);
+    return boost::math::pdf(weibull1, x);
+#endif
   }
 
   /// Normal (Gaussian) distribution probability distribution function.
   double normal_pdf(double x, double mean, double standard_deviation)
   {
+#if defined(__PATHSCALE__)
+    return 0.0;
+#else
     normal_dist normal1(mean, standard_deviation);
-    return bmth::pdf(normal1, x);
+    return boost::math::pdf(normal1, x);
+#endif
   }
 
   /// Uniform distribution probability distribution function.
@@ -339,21 +346,30 @@ extern "C" {
   /// Gamma continuous probability distribution function.
   inline double gamma_pdf(double x, double shape, double scale)
   {
-    gamma_dist gamma1(shape, scale);
-    return bmth::pdf(gamma1, x);
+#if defined(__PATHSCALE__)
+    return 0.0;
+#else
+    return boost::math::pdf(gamma_dist(shape,scale), x);
+#endif
   }
 
   inline double phi(double beta)
   {
-    normal_dist norm(0., 1.);
-    return bmth::pdf(norm, beta);
+#if defined(__PATHSCALE__)
+    return 0.0;
+#else
+    return boost::math::pdf(normal_dist(0.,1.), beta);
+#endif
   }
 
   /// Returns a probability < 0.5 for negative beta and a probability > 0.5 for positive beta.
   inline double Phi(double beta)
   {
-    normal_dist norm(0., 1.);
-    return bmth::cdf(norm, beta);
+#if defined(__PATHSCALE__)
+    return 0.0;
+#else
+    return boost::math::cdf(normal_dist(0.,1.), beta);
+#endif
   }
 
   inline double bounded_normal_pdf(double x, double mean, double std_dev, double lwr, double upr)

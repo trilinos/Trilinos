@@ -214,8 +214,9 @@ namespace Tpetra {
     ///   matrix with leading dimension ldr >= ncols.  On output: if
     ///   input is full rank, R is unchanged on output.  Otherwise, if
     ///   \f$R = U \Sigma V^*\f$ is the SVD of R, on output R is
-    ///   overwritten with $\Sigma \cdot V^*$.  This is also an ncols by
-    ///   ncols matrix, but may not necessarily be upper triangular.
+    ///   overwritten with \f$\Sigma \cdot V^*\f$.  This is also an
+    ///   ncols by ncols matrix, but may not necessarily be upper
+    ///   triangular.
     ///
     /// \param tol [in] Relative tolerance for computing the numerical
     ///   rank of the matrix R.

@@ -199,7 +199,7 @@ bool tNeumannSeries::test_simpleOp(int verbosity,std::ostream & os)
       Teko::LinearOp neuInv = Teko::buildInverse(*neumann,op);
       Teko::LinearOp dirInv = Teko::buildInverse(*direct,op);
 
-      const bool result = tester.compare( *neuInv, *dirInv, &fos );
+      const bool result = tester.compare( *neuInv, *dirInv, Teuchos::ptrFromRef(fos) );
       TEST_ASSERT(not result,
              std::endl << "   tNeumannSeries::test_simpleOp "
              << ": Comparing underresolved factory generated operator to correct operator");
@@ -225,7 +225,7 @@ bool tNeumannSeries::test_simpleOp(int verbosity,std::ostream & os)
       Teko::LinearOp neuInv = Teko::buildInverse(*neumann,op);
       Teko::LinearOp dirInv = Teko::buildInverse(*direct,op);
 
-      const bool result = tester.compare( *neuInv, *dirInv, &fos );
+      const bool result = tester.compare( *neuInv, *dirInv, Teuchos::ptrFromRef(fos) );
       TEST_ASSERT(result,
              std::endl << "   tNeumannSeries::test_simpleOp "
              << ": Comparing factory generated operator to correct operator");
@@ -265,7 +265,7 @@ bool tNeumannSeries::test_scaledOp(int verbosity,std::ostream & os)
       Teko::LinearOp neuInv = Teko::buildInverse(*neumann,op);
       Teko::LinearOp dirInv = Teko::buildInverse(*direct,op);
 
-      const bool result = tester.compare( *neuInv, *dirInv, &fos );
+      const bool result = tester.compare( *neuInv, *dirInv, Teuchos::ptrFromRef(fos) );
       TEST_ASSERT(result,
              std::endl << "   tNeumannSeries::test_scaledOp "
              << ": Comparing factory generated operator to correct operator");

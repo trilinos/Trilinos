@@ -6,7 +6,7 @@ Examples presents the MueLu interface API. Examples also demonstrates:
 
 If you want to access MueLu through Stratimikos, see ParameterList/Stratimikos.cpp.
 If you want to learn about available options to configure MueLu preconditioners, see NativeInterface/ or ParameterList/.
-Examples are not using MueLu::Gallery in a attempt to demonstrate how to use the linear algebra package interface.
+Examples are not using Galeri::Xpetra in a attempt to demonstrate how to use the linear algebra package interface.
 
 --
 

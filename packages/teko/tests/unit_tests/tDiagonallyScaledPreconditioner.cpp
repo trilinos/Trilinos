@@ -143,7 +143,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test)
    tester.show_all_tests(true);
    tester.set_all_error_tol(1e-14);
 
-   const bool result = tester.compare( *invA, *invExactA, &out);
+   const bool result = tester.compare( *invA, *invExactA, Teuchos::ptrFromRef(out));
    if (!result) {
       out << "Apply 0: FAILURE" << std::endl;
       success = false;
@@ -186,7 +186,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_row)
    Teko::ModifiableLinearOp invA_ml = Teko::buildInverse(*invFact_ml,A);
    Teko::ModifiableLinearOp invExactA = Teko::buildInverse(*subsolve,A);
 
-   result = tester.compare( *invA, *invExactA, &out);
+   result = tester.compare( *invA, *invExactA, Teuchos::ptrFromRef(out));
    if (!result) {
       out << "Apply 0: FAILURE" << std::endl;
       success = false;
@@ -198,7 +198,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_row)
    Teko::rebuildInverse(*invFact,A,invA);
    Teko::rebuildInverse(*invFact_ml,A,invA_ml); // here we tested repeatability using ML
 
-   result = tester.compare( *invA, *invExactA, &out);
+   result = tester.compare( *invA, *invExactA, Teuchos::ptrFromRef(out));
    if (!result) {
       out << "Apply 0: FAILURE" << std::endl;
       success = false;
@@ -239,7 +239,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column)
    Teko::ModifiableLinearOp invA_ml = Teko::buildInverse(*invFact_ml,A);
    Teko::ModifiableLinearOp invExactA = Teko::buildInverse(*subsolve,A);
 
-   result = tester.compare( *invA, *invExactA, &out);
+   result = tester.compare( *invA, *invExactA, Teuchos::ptrFromRef(out));
    if (!result) {
       out << "Apply 0: FAILURE" << std::endl;
       success = false;
@@ -251,11 +251,26 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column)
    Teko::rebuildInverse(*invFact,A,invA);
    Teko::rebuildInverse(*invFact_ml,A,invA_ml); // here we tested repeatability using ML
 
-   result = tester.compare( *invA, *invExactA, &out);
+   result = tester.compare( *invA, *invExactA, Teuchos::ptrFromRef(out));
    if (!result) {
       out << "Apply 0: FAILURE" << std::endl;
       success = false;
    }
    else
       out << "Apply 0: SUCCESS" << std::endl;
+}
+
+TEUCHOS_UNIT_TEST(tDiagonalOperator, replaceValues)
+{
+   #ifdef HAVE_MPI
+      Epetra_MpiComm Comm(MPI_COMM_WORLD);
+   #else
+      Epetra_SerialComm Comm;
+   #endif
+
+   RCP<Thyra::LinearOpBase<double> > A =  buildSystem(Comm,50);
+
+   Teko::MultiVector diag = Teko::getDiagonal(A,Teko::AbsRowSum);
+   Teko::replaceValue(diag,0.0,1.0);
+   Teko::LinearOp invDiagOp = Teko::buildInvDiagonal(diag);
 }

@@ -112,11 +112,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
 
    //! @name Constructor/Destructor
   //@{ 
-  //! Epetra_BasicRowMatrix constuctor.
-  /* This constructor requires a valid Epetra_Comm object as its only argument.  The constructor will use Comm to build
+  /*! @brief Epetra_BasicRowMatrix constructor.
+
+     This constructor requires a valid Epetra_Comm object as its only argument.  The constructor will use Comm to build
      Epetra_Maps objects: RowMap, ColMap, DomainMap and RangeMap.  However, these will be zero-length (trivial) maps that
-     \e must be reset by calling one of the two SetMap() methods listed below.
-     \param Comm (In) An Epetra_Comm containing a valid Comm object.
+     @e must be reset by calling one of the two SetMap() methods listed below.
+     @param[in] Comm An Epetra_Comm containing a valid Comm object.
   */
   Epetra_BasicRowMatrix(const Epetra_Comm & Comm);
 
@@ -126,12 +127,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
   
   //! @name Setup functions
   //@{ 
-  //! Set maps (Version 1); call this function or the next, but not both.
-  /* This method takes a row and column map.  On each processor these maps describe the global rows and columns, resp, 
+  /*! @brief Set maps (Version 1); call this function or the next, but not both.
+
+     This method takes a row and column map.  On each processor these maps describe the global rows and columns, resp, 
      that the processor will care about.  Note that the ColMap does not have to be one-to-one.  In other words, a column ID can appear
      on more than one processor.  The RowMap \e must be 1-to-1.
-     \param RowMap (In) An Epetra_Map containing on each processor a list of GIDs of rows that the processor cares about.
-     \param ColMap (In) An Epetra_Map containing on each processor a list of GIDs of columns that the processor cares about.
+     \param[in] RowMap An Epetra_Map containing on each processor a list of GIDs of rows that the processor cares about.
+     \param[in] ColMap An Epetra_Map containing on each processor a list of GIDs of columns that the processor cares about.
 
      In this method, the domain and range maps are assumed to be the same as the row map.  Note that this requires that 
      the global matrix be square.  If the matrix is not square, or the domain vectors or range vectors do not have the same layout
@@ -139,15 +141,16 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
   */
   void SetMaps(const Epetra_Map & RowMap, const Epetra_Map & ColMap);
 
-  //! Set maps (Version 2); call this function or the previous, but not both.
-  /* This constructor takes a row, column, domain and range map.  On each processor these maps describe the global rows, columns, domain
+  /*! @brief Set maps (Version 2); call this function or the previous, but not both.
+
+     This constructor takes a row, column, domain and range map.  On each processor these maps describe the global rows, columns, domain
      and range, resp, that the processor will care about.  The domain and range maps must be one-to-one, but note that the row and column
      maps do not have to be one-to-one.  In other words, a row ID can appear
      on more than one processor, as can a column ID.
-     \param RowMap (In) An Epetra_Map containing on each processor a list of GIDs of rows that the processor cares about.
-     \param ColMap (In) An Epetra_Map containing on each processor a list of GIDs of columns that the processor cares about.
-     \param DomainMap (In) An Epetra_Map describing the distribution of domain vectors and multivectors.
-     \param RangeMap (In) An Epetra_Map describing the distribution of range vectors and multivectors.
+     \param[in] RowMap An Epetra_Map containing on each processor a list of GIDs of rows that the processor cares about.
+     \param[in] ColMap An Epetra_Map containing on each processor a list of GIDs of columns that the processor cares about.
+     \param[in] DomainMap An Epetra_Map describing the distribution of domain vectors and multivectors.
+     \param[in] RangeMap An Epetra_Map describing the distribution of range vectors and multivectors.
 
   */
   void SetMaps(const Epetra_Map & RowMap, const Epetra_Map & ColMap, 
@@ -308,26 +311,29 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
   //! @name Attribute access functions
   //@{ 
 
-    //! Returns the infinity norm of the global matrix.
-    /* Returns the quantity \f$ \| A \|_\infty\f$ such that
+    /*! @brief Returns the infinity norm of the global matrix.
+
+       Returns the quantity \f$ \| A \|_\infty\f$ such that
        \f[\| A \|_\infty = \max_{1\lei\lem} \sum_{j=1}^n |a_{ij}| \f].
 
-     \warning This method is supported if and only if the Epetra_RowMatrix Object that was used to create this supports this method.
+     @warning This method is supported if and only if the Epetra_RowMatrix Object that was used to create this supports this method.
 
     */ 
     virtual double NormInf() const{if (!HaveNumericConstants_) ComputeNumericConstants(); return(NormInf_);}
 
-    //! Returns the one norm of the global matrix.
-    /* Returns the quantity \f$ \| A \|_1\f$ such that
+    /*! @brief Returns the one norm of the global matrix.
+
+       Returns the quantity \f$ \| A \|_1\f$ such that
        \f[\| A \|_1= \max_{1\lej\len} \sum_{i=1}^m |a_{ij}| \f].
 
-     \warning This method is supported if and only if the Epetra_RowMatrix Object that was used to create this supports this method.
+     @warning This method is supported if and only if the Epetra_RowMatrix Object that was used to create this supports this method.
 
     */ 
     virtual double NormOne() const{if (!HaveNumericConstants_) ComputeNumericConstants(); return(NormOne_);}
 
-    //! Returns the number of nonzero entries in the global matrix.
-    /* Note that if the data decomposition is defined such that some nonzeros
+    /*! @brief Returns the number of nonzero entries in the global matrix.
+
+       Note that if the data decomposition is defined such that some nonzeros
        appear on multiple processors, then those nonzeros will be counted
        multiple times.
     */

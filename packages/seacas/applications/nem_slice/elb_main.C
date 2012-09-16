@@ -37,7 +37,6 @@
  * Functions contained in this file:
  *	main()
  *	print_input()
- *	print_usage()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 #include <stddef.h>                     // for size_t
 #include <stdio.h>                      // for printf, NULL, fprintf, etc
@@ -59,8 +58,6 @@
 #include <sys/resource.h>
 #endif
 
-void print_usage(void);
-
 namespace {
   template <typename INT>
   void print_input(Machine_Description*,
@@ -70,12 +67,6 @@ namespace {
 		   Weight_Description<INT>*);
 }
 
-const char* elem_names[NULL_EL] = {"SPHERE", "BAR2", "BAR3", "QUAD4", "QUAD8", "QUAD9",
-			     "SHELL4", "SHELL8", "TRI3", "TRI6", "TSHELL3", "TSHELL6", "HEX8",
-			     "HEX20", "HEX27", "HEXSHELL", "TET4", "TET10", "TET8", "WEDGE6", "WEDGE15",
-			     "WEDGE16", "PYRAMID5", "PYRAMID13", "SHELL2", "SHELL3"};
-
-
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -84,7 +75,6 @@ const char* elem_names[NULL_EL] = {"SPHERE", "BAR2", "BAR3", "QUAD4", "QUAD8", "
  *----------------------------------------------------------------------------
  * Functions called:
  *	cmd_line_arg_parse()
- *	print_usage()
  *	read_cmd_file()
  *	check_inp_specs()
  *	print_input()
@@ -130,6 +120,8 @@ int main (int argc, char *argv[])
 
   /* check if the user just wants to know the version (or forcing 64-bit mode)*/
   bool int64com = false;
+  int  int64db = 0;
+
   for(int cnt=0; cnt < argc; cnt++) {
     if(strcmp(argv[cnt],"-V") == 0) {
       printf("%s version %s\n", UTIL_NAME, ELB_VERSION);
@@ -140,33 +132,30 @@ int main (int argc, char *argv[])
     }
   }
 
-  if(argc <= 1) {
-    print_usage();
-    exit(0);
-  }
+  if (argc > 2) {
+    /* Get the input mesh file so we can determine the integer size... */
+    /* Should be the last item on the command line */
+    char *mesh_file_name = argv[argc-1];
+  
+    /* Open file and get the integer size... */
+    int cpu_ws = 0;
+    int io_ws  = 0;
+    float vers = 00.0;
+    int exoid=ex_open(mesh_file_name, EX_READ, &cpu_ws, &io_ws, &vers);
+    if (exoid < 0) {
+      char ctemp[1024];
+      sprintf(ctemp, "fatal: unable to open input ExodusII file %s",
+	      mesh_file_name);
+      Gen_Error(0, ctemp);
+      return 0;
+    }
 
-  /* Get the input mesh file so we can determine the integer size... */
-  /* Should be the last item on the command line */
-  char *mesh_file_name = argv[argc-1];
+    int64db = ex_int64_status(exoid) & EX_ALL_INT64_DB;
+    ex_close(exoid);
   
-  /* Open file and get the integer size... */
-  int cpu_ws = 0;
-  int io_ws  = 0;
-  float vers = 00.0;
-  int exoid=ex_open(mesh_file_name, EX_READ, &cpu_ws, &io_ws, &vers);
-  if (exoid < 0) {
-    char ctemp[1024];
-    sprintf(ctemp, "fatal: unable to open input ExodusII file %s",
-            mesh_file_name);
-    Gen_Error(0, ctemp);
-    return 0;
-  }
+    ex_opts(EX_VERBOSE);
+  }  
 
-  int int64db = ex_int64_status(exoid) & EX_ALL_INT64_DB;
-  ex_close(exoid);
-  
-  ex_opts(EX_VERBOSE);
-  
   int status;
   if (int64db || int64com) {
     printf("Using 64-bit integer mode for decomposition...\n");
@@ -749,36 +738,3 @@ namespace {
   }
 }
 
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-/* This function prints out usage information for the utility.
- *---------------------------------------------------------------------------*/
-void print_usage(void)
-{
-
-  printf("\n");
-  printf("usage:\t%s [-h] [<-n|-e> -o <output file>", UTIL_NAME);
-  printf(" -m <machine description>\n");
-  printf("\t -l <load bal description> -s <eigen solver specs>\n");
-  printf("\t -w <weighting options> -g <group list> -f]\n");
-  printf("\t [-a <ascii file>] exoII_file\n\n");
-  printf(" -n\t\tperform a nodal based load balance\n");
-  printf(" -e\t\tperform an elemental based load balance\n");
-  printf(" -o NemI file\toutput NemesisI load-balance file name\n");
-  printf(" -m mach desc\tdescription of the machine to load balance for\n");
-  printf(" -l LB data\tload balance specifications\n");
-  printf(" -s Eigen specs\tEigen solver specifications\n");
-  printf(" -w weighting\tweighting specs for load balance\n");
-  printf(" -g groupings\tgrouping specifications for load balance\n");
-  printf(" -f\t\tuse face definition of adjacency\n");
-  printf(" -p\t\tuse partial definition of adjacency: \n");
-  printf("   \t\trequire only 3 matching quad face nodes\n");
-  printf("\t\t  OR\n");
-  printf(" -h\t\tusage information\n");
-  printf("\t\t  OR\n");
-  printf(" -a ascii file\tget info from ascii input file name\n");
-
-  return;
-
-} /*----------End print_usage()-------------*/

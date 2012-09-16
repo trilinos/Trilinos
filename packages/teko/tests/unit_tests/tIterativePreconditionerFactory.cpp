@@ -206,7 +206,7 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, inverse_test)
 
       Teko::LinearOp prec = Teko::buildInverse(*invFact,A);
 
-      const bool result = tester.compare( *prec, *iP, &out);
+      const bool result = tester.compare( *prec, *iP, Teuchos::ptrFromRef(out));
       if (!result) {
          out << "Apply 0: FAILURE" << std::endl;
          success = false;
@@ -240,7 +240,7 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, constructor_test)
 
       Teko::LinearOp prec = Teko::buildInverse(*invFact,A);
 
-      const bool result = tester.compare( *prec, *iP, &out);
+      const bool result = tester.compare( *prec, *iP, Teuchos::ptrFromRef(out));
       if (!result) {
          out << "Apply 0: FAILURE" << std::endl;
          success = false;
@@ -259,7 +259,7 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, constructor_test)
       Teko::LinearOp prec = Teko::buildInverse(*invFact,A);
       Teko::LinearOp exact = Teko::multiply(iP,Teko::add(I,Teko::multiply(Teko::add(I,ImAiP),ImAiP))); // iP*(I+(I+X)*X)
 
-      const bool result = tester.compare( *prec, *exact, &out);
+      const bool result = tester.compare( *prec, *exact, Teuchos::ptrFromRef(out));
       if (!result) {
          out << "Apply 2: FAILURE" << std::endl;
          success = false;

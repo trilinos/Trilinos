@@ -49,6 +49,7 @@
 #include <stdlib.h>
 
 #include "DD.h"
+#include "DD_Memory.h"
 
 
 #ifdef __cplusplus
@@ -211,8 +212,8 @@ int Zoltan_DD_Remove (
 static int DD_Remove_Local (Zoltan_DD_Directory *dd,
  ZOLTAN_ID_PTR gid)                /* GID to be removed (in)  */
 {
-   DD_Node **ptr;
-   DD_Node  *old;
+   DD_Node *ptr;
+   DD_NodeIdx nodeidx, prevnodeidx;
    int index;
    char *yo = "DD_Remove_Local";
 
@@ -230,17 +231,24 @@ static int DD_Remove_Local (Zoltan_DD_Directory *dd,
                             dd->hashdata, NULL);
 
    /* walk linked list until end looking for matching gid (key) */
-   for (ptr = dd->table + index; *ptr != NULL; ptr = &((*ptr)->next))
-      if (ZOLTAN_EQ_ID(dd->gid_length, gid, (*ptr)->gid) == TRUE)  {
+   prevnodeidx = -1;
+   for (nodeidx = dd->table[index]; nodeidx != -1;
+      nodeidx = dd->nodelist[nodeidx].next) {
+      ptr = dd->nodelist + nodeidx;
+      if (ZOLTAN_EQ_ID(dd->gid_length, gid, ptr->gid) == TRUE)  {
          /* found node to remove, need to preserve its next ptr */
-          old =  *ptr;
-         *ptr = (*ptr)->next;
-         ZOLTAN_FREE (&old);       /* now OK to delete node */
+         if (prevnodeidx != -1)
+            dd->nodelist[prevnodeidx].next = ptr->next;
+         else
+            dd->table[index] = ptr->next;
+         DD_Memory_Free_Node(dd, nodeidx);       /* now OK to delete node */
 
          if (dd->debug_level > 5)
             ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL);
          return ZOLTAN_OK;
       }
+      prevnodeidx = nodeidx;
+   }
 
    /* We get here only if the global ID has not been found */
    if (dd->debug_level > 5)

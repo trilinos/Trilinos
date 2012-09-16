@@ -173,8 +173,10 @@ int main(int argc, char *argv[])
 
 #ifdef Rythmos_ENABLE_Stratimikos
     lowsfCreator.readParameters(out.get());
-    if(extraLSParamsFile.length())
-      Teuchos::updateParametersFromXmlFile( "./"+extraLSParamsFile, &*lowsfCreator.getNonconstParameterList() );
+    if (extraLSParamsFile.length()) {
+      Teuchos::updateParametersFromXmlFile( "./"+extraLSParamsFile, 
+        lowsfCreator.getNonconstParameterList().ptr() );
+    }
     *out << "\nThe parameter list after being read in:\n";
     lowsfCreator.getParameterList()->print(*out,2,true,false);
 #endif

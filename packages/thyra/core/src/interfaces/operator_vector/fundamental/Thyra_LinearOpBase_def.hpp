@@ -60,7 +60,7 @@ LinearOpBase<Scalar>::clone() const
   return Teuchos::null;
 }
 
-
+#ifndef THYRA_HIDE_DEPRECATED_CODE
 // Deprecated
 
 
@@ -106,6 +106,7 @@ void LinearOpBase<Scalar>::applyTranspose(
   Thyra::apply(*this, applyTransposeConjToTrans(conj), X, Teuchos::ptr(Y), alpha, beta);
 }
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 
 }	// end namespace Thyra
 

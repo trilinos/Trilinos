@@ -42,9 +42,8 @@
 #ifndef BELOS_LSQR_SOLMGR_HPP
 #define BELOS_LSQR_SOLMGR_HPP
 
-/*! \file BelosLSQRSolMgr.hpp
- *  \brief The LSQRSolMgr provides a solver manager for the LSQR linear solver.
-*/
+/// \file BelosLSQRSolMgr.hpp
+/// \brief LSQRSolMgr: interface to the LSQR method.
 
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
@@ -67,16 +66,6 @@
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
 #endif
-
-/*! \class Belos::LSQRSolMgr
- *
- *  \brief The LSQRSolMgr managers the LSQR linear least squares solver.
-
- \ingroup belos_solver_framework
-
- \author David Day
-
- */
 
 namespace Belos {
 
@@ -124,37 +113,95 @@ public:
 };
 
 /// \class LSQRSolMgr
-/// \brief Implementation of the LSQR method for solving least-squares problems.
+/// \brief LSQR method (for linear systems and linear least-squares problems).
 /// \author Sarah Knepper and David Day
+/// 
+/// \tparam ScalarType The type of entries in the right-hand side
+///   vector(s) \f$b\f$ and solution vector(s) \f$x\f$.
+/// \tparam MV The multivector type; the type of the solution
+///   vector(s) and right-hand side vector(s).
+/// \tparam OP The type of the matrix \f$A\f$ (and any preconditioner,
+///   if one is provided).
 ///
-/// The LSQR method (Paige and Saunders 1982)
+/// \warning Our LSQR implementation currently only compiles correctly
+///   for real-valued (not complex) ScalarType types.  You may check
+///   whether ScalarType is complex using the following code:
+///   \code
+///   if (Teuchos::ScalarTraits<ScalarType>::isComplex) {
+///     // ScalarType is complex valued.
+///   } else {
+///     // ScalarType is real valued.
+////  }
+///   \endcode
+///   This may be fixed in future releases.  It is not a limitation of
+///   the LSQR method itself, just of our current implementation.  For
+///   now, you will not be able to compile any specialization of
+///   LSQRSolMgr for a complex-valued ScalarType type.
 ///
-/// LSQR solves a least-squares problem.  A converged preconditioned
-/// residual norm suffices for convergence, but is not necessary.
-/// LSQR sometimes returns a larger relative residual norm than what
-/// would have been returned by a linear solver.  For details on the
-/// stopping criteria, see the documentation of \c LSQRStatusTest,
-/// which implements the three-part stopping criterion recommended by
-/// Paige and Saunders.
+/// \section Algorithm
 ///
-/// If the linear problem to solve includes a preconditioner, then the
-/// least-squares problem is solved for the preconditioned linear
-/// system.  Preconditioning changes the least-squares problem (in the
-/// sense of changing the norms), and the solution depends on the
-/// preconditioner in this sense.
+/// LSQR (Paige and Saunders; see References) is an iterative method
+/// for solving linear least-squares problems and linear systems.  It
+/// can solve any of the following problems:
 ///
-/// In the context of linear least-squares problems, "preconditioning"
-/// refers to the regularization matrix.  In this solver, the
-/// regularization matrix is always a scalar multiple of the identity
-/// (standard form least squares).  
+/// 1. Solve \f$Ax=b\f$ for \f$x\f$
+/// 2. Find \f$x\f$ that minimizes \f$\|Ax - b\|_2^2\f$
+/// 3. Find \f$x\f$ that minimizes \f$\|Ax - b\|_2^2 + \lambda^2 \|x\|_2^2\f$
 ///
-/// The "loss of accuracy" concept is not yet implemented here,
-/// becuase it is unclear what this means for linear least squares.
-/// LSQR solves an inconsistent system in a least-squares sense.
-/// "Loss of accuracy" would correspond to the difference between the
-/// preconditioned residual and the unpreconditioned residual.
+/// The third problem above is the most general and includes the
+/// previous two.  This is the problem LSQR actually solves.  Here,
+/// \f$\lambda\f$ is a user-provided positive real constant (the
+/// "damping parameter") which regularizes the problem so that it
+/// always has a bounded solution, even if \f$A\f$ does not have full
+/// rank.
 ///
-/// References: 
+/// In the words of Paige and Saunders: "The method is based on the
+/// Golub-Kahan bidiagonalization process. It is algebraically
+/// equivalent to applying MINRES to the normal equation[s] \f$(A^T A
+/// + \lambda 2I)x = A^T b\f$, but has better numerical properties,
+/// especially if \f$A\f$ is ill-conditioned."  
+///
+/// LSQR has some special algorithmic properties:
+/// 
+/// 1. It reduces \f$\|b - A x\|_2\f$ (the two-norm of the residual)
+///    monotonically.
+/// 2. LSQR also computes a monotonically increasing estimate of the
+///    two-norm condition number of the matrix \f$A\f$.
+/// 
+/// Property #2 makes LSQR useful for mixed-precision algorithms.  If
+/// the matrix \f$A\f$ has condition number greater than the inverse
+/// of machine precision in the current working precision, one can
+/// reconstruct the problem to solve in the next higher precision and
+/// restart, possibly using the previous solution as an initial guess.
+///
+/// \section Preconditioning
+///
+/// If the linear problem to solve includes a preconditioner (in the
+/// LinearProblem object), then the least-squares problem is solved
+/// for the preconditioned linear system.  Preconditioning changes the
+/// least-squares problem (in the sense of changing the norms), and
+/// the solution depends on the preconditioner in this sense.  In the
+/// context of linear least-squares problems, "preconditioning" refers
+/// to the regularization matrix.  In this solver, the regularization
+/// matrix is always a scalar multiple of the identity (standard form
+/// least squares).
+///
+/// A converged preconditioned residual norm suffices for convergence,
+/// but is not necessary.  LSQR sometimes returns a larger relative
+/// residual norm than what would have been returned by a linear
+/// solver.  For details on the stopping criteria, see the
+/// documentation of \c LSQRStatusTest, which implements the
+/// three-part stopping criterion recommended by Paige and Saunders.
+///
+/// Some Belos solvers implement detection of "loss of accuracy."
+/// That refers to the difference between convergence of the original
+/// linear system and convergence of the (left-)preconditioned linear
+/// system.  LSQR does not implement detection of "loss of accuracy,"
+/// because it is unclear what this means for linear least squares in
+/// general.  This LSQR solves a possibly inconsistent system in a
+/// least-squares sense.  
+///
+/// \section References
 /// 
 /// C. C. Paige and M. A. Saunders, LSQR: An algorithm for sparse
 /// linear equations and sparse least squares, TOMS 8(1), 43-71

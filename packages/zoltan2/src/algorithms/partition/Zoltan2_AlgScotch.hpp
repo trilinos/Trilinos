@@ -352,7 +352,7 @@ void AlgPTScotch(
 
   ArrayRCP<const gno_t> gnos = arcpFromArrayView(vtxID);
 
-  solution->setParts(gnos, partList);
+  solution->setParts(gnos, partList, true);
 
   env->memory("Zoltan2-Scotch: After creating solution");
 

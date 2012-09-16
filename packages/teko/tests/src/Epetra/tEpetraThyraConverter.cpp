@@ -121,6 +121,7 @@ double compareEpetraMVToThyra(const Epetra_MultiVector & eX,
                             const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & tX,
                             int verbosity,std::ostream & os,int indexStart,int indexEnd)
 {
+   using Teuchos::outArg;
    if(indexStart<0) {
       indexStart = 0;
       indexEnd = eX.GlobalLength();
@@ -166,9 +167,10 @@ double compareEpetraMVToThyra(const Epetra_MultiVector & eX,
 */
       const Teuchos::RCP<const Thyra::SpmdMultiVectorBase<double> > spmd_tX
             = Teuchos::rcp_dynamic_cast<const Thyra::SpmdMultiVectorBase<double> >(tX);
+
       Thyra::Ordinal stride = 0;
-      const double * localBuffer = 0;
-      spmd_tX->getLocalData(&localBuffer,&stride);
+      Teuchos::ArrayRCP<const double> localBuffer;
+      spmd_tX->getLocalData(outArg(localBuffer), outArg(stride));
 
       TEST_MSG("         " << "stride = " << stride);
       TEST_MSG("         " << "checking elements");

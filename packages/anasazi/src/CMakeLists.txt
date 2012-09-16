@@ -90,6 +90,7 @@ APPEND_SET(HEADERS
   AnasaziStatusTestWithOrdering.hpp
   AnasaziStatusTestOutput.hpp
   AnasaziStatusTestResNorm.hpp
+  AnasaziStubTsqrAdapter.hpp
   AnasaziSVQBOrthoManager.hpp
   AnasaziTypes.hpp
   )

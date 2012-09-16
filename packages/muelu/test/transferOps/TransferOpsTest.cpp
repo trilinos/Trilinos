@@ -67,10 +67,9 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
 
-// Gallery
-#define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
-#include <MueLu_GalleryParameters.hpp>
-#include <MueLu_MatrixFactory.hpp>
+// Galeri
+#include <Galeri_XpetraParameters.hpp>
+#include <Galeri_XpetraMatrixFactory.hpp>
 
 // MueLu
 #include "MueLu_ConfigDefs.hpp"
@@ -115,7 +114,7 @@ Teuchos::RCP<Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal> > TriDiag(
         const Scalar a, const Scalar b, const Scalar c)
 {
 
-  Teuchos::RCP<Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal> > mtx = MueLu::Gallery::MatrixTraits<Xpetra::Map<LocalOrdinal, GlobalOrdinal>,Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal> >::Build(map, 3);
+  Teuchos::RCP<Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal> > mtx = Galeri::Xpetra::MatrixTraits<Xpetra::Map<LocalOrdinal, GlobalOrdinal>,Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal> >::Build(map, 3);
 
   LocalOrdinal NumMyElements = map->getNodeNumElements();
   Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();

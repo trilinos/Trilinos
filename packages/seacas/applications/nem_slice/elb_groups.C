@@ -152,7 +152,7 @@ int parse_groups(INT *el_blk_ids,
     printf("   block   #elems  group   type\n");
     for (i = 0; i < mesh->num_el_blks; i++) {
       printf("%8lu%8lu%8d%8s\n", (size_t)el_blk_ids[i], (size_t)mesh->eb_cnts[i], prob->group_no[i],
-	     elem_names[mesh->elem_type[first_el]]);
+	     elem_name_from_enum(mesh->elem_type[first_el]));
       first_el += mesh->eb_cnts[i];
     }
     printf("There are %d groups of blocks\n", prob->num_groups);

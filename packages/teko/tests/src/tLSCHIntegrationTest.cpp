@@ -195,24 +195,24 @@ bool tLSCHIntegrationTest::test_hScaling(int verbosity,std::ostream & os)
    Thyra::LinearOpTester<double> tester;
    tester.show_all_tests(true);
    Teuchos::FancyOStream fos(Teuchos::rcpFromRef(ss),"|||");
-   const bool result = tester.compare( *prec, *exact, &fos );
+   const bool result = tester.compare( *prec, *exact, Teuchos::ptrFromRef(fos) );
    TEST_ASSERT(result,
           std::endl << "   tLSCHIntegration::test_hScaling "
                     << ": Comparing preconditioner to exactly computed version");
 
-   const bool result2 = tester.compare( *H, *strategy->getHScaling(bA,*bps), &fos );
+   const bool result2 = tester.compare( *H, *strategy->getHScaling(bA,*bps), Teuchos::ptrFromRef(fos) );
    TEST_ASSERT(result2,
           std::endl << "   tLSCHIntegration::test_hScaling "
                     << ": Comparing scaling of H operator");
 
    const bool result3 = tester.compare( *build2x2(*comm,0.208333333333333,0.375, 0.375, 0.875),
-                          *strategy->getInvBQBt(bA,*bps), &fos );
+     *strategy->getInvBQBt(bA,*bps), Teuchos::ptrFromRef(fos) );
    TEST_ASSERT(result3,
           std::endl << "   tLSCHIntegration::test_hScaling "
                     << ": Comparing inv(BQBt) operator");
 
    const bool result4 = tester.compare( *build2x2(*comm, 0.077777777777778, 0.177777777777778, 0.177777777777778, 0.477777777777778),
-                          *strategy->getInvBHBt(bA,*bps), &fos );
+     *strategy->getInvBHBt(bA,*bps), Teuchos::ptrFromRef(fos) );
    TEST_ASSERT(result4,
           std::endl << "   tLSCHIntegration::test_hScaling "
                     << ": Comparing inv(BHBt) operator");

@@ -212,6 +212,7 @@ public:
 
   //@}
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
   /** @name Deprecated */
   //@{
 
@@ -226,6 +227,7 @@ public:
 
   //@}
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 protected:
 
   /** \name Protected pure virtual functions to be overridden */

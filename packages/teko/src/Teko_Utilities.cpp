@@ -706,7 +706,7 @@ const MultiVector getDiagonal(const Teko::LinearOp & A,const DiagonalType & dt)
    LinearOp diagOp = Teko::getDiagonalOp(A,dt);
 
    Teuchos::RCP<const Thyra::MultiVectorBase<double> > v = 
-         Teuchos::rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<double> >(A)->getDiag(); 
+         Teuchos::rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<double> >(diagOp)->getDiag(); 
    return Teuchos::rcp_const_cast<Thyra::MultiVectorBase<double> >(v);
 }
 
@@ -1417,15 +1417,20 @@ void clipLower(MultiVector & v,double lowerBound)
    using Teuchos::rcp_dynamic_cast;
 
    // cast so entries are accessible
-   RCP<Thyra::SpmdMultiVectorBase<double> > spmdMVec  
-      = rcp_dynamic_cast<Thyra::DefaultSpmdMultiVector<double> >(v);
-
-   Thyra::Ordinal i = 0;
-   Teuchos::ArrayRCP<double> values;
-   spmdMVec->getNonconstLocalData(Teuchos::ptrFromRef(values),Teuchos::ptrFromRef(i));
-   for(Teuchos::ArrayRCP<double>::size_type j=0;j<values.size();j++) {
-      if(values[j]<lowerBound)
-         values[j] = lowerBound;
+   // RCP<Thyra::SpmdMultiVectorBase<double> > spmdMVec  
+   //    = rcp_dynamic_cast<Thyra::DefaultSpmdMultiVector<double> >(v);
+   
+   for(Thyra::Ordinal i=0;i<v->domain()->dim();i++) {
+      RCP<Thyra::SpmdVectorBase<double> > spmdVec  
+         = rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(v->col(i),true);
+   
+      Teuchos::ArrayRCP<double> values;
+      // spmdMVec->getNonconstLocalData(Teuchos::ptrFromRef(values),Teuchos::ptrFromRef(i));
+      spmdVec->getNonconstLocalData(Teuchos::ptrFromRef(values));
+      for(Teuchos::ArrayRCP<double>::size_type j=0;j<values.size();j++) {
+         if(values[j]<lowerBound)
+            values[j] = lowerBound;
+      }
    }
 }
 
@@ -1435,16 +1440,70 @@ void clipUpper(MultiVector & v,double upperBound)
    using Teuchos::rcp_dynamic_cast;
 
    // cast so entries are accessible
-   RCP<Thyra::SpmdMultiVectorBase<double> > spmdMVec  
-      = rcp_dynamic_cast<Thyra::DefaultSpmdMultiVector<double> >(v);
-
-   Thyra::Ordinal i = 0;
-   Teuchos::ArrayRCP<double> values;
-   spmdMVec->getNonconstLocalData(Teuchos::ptrFromRef(values),Teuchos::ptrFromRef(i));
-   for(Teuchos::ArrayRCP<double>::size_type j=0;j<values.size();j++) {
-      if(values[j]>upperBound)
-         values[j] = upperBound;
+   // RCP<Thyra::SpmdMultiVectorBase<double> > spmdMVec  
+   //   = rcp_dynamic_cast<Thyra::DefaultSpmdMultiVector<double> >(v);
+   for(Thyra::Ordinal i=0;i<v->domain()->dim();i++) {
+      RCP<Thyra::SpmdVectorBase<double> > spmdVec  
+         = rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(v->col(i),true);
+   
+      Teuchos::ArrayRCP<double> values;
+      // spmdMVec->getNonconstLocalData(Teuchos::ptrFromRef(values),Teuchos::ptrFromRef(i));
+      spmdVec->getNonconstLocalData(Teuchos::ptrFromRef(values));
+      for(Teuchos::ArrayRCP<double>::size_type j=0;j<values.size();j++) {
+         if(values[j]>upperBound)
+            values[j] = upperBound;
+      }
    }
+}
+
+void replaceValue(MultiVector & v,double currentValue,double newValue)
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp_dynamic_cast;
+
+   // cast so entries are accessible
+   // RCP<Thyra::SpmdMultiVectorBase<double> > spmdMVec  
+   //    = rcp_dynamic_cast<Thyra::SpmdMultiVectorBase<double> >(v,true);
+   for(Thyra::Ordinal i=0;i<v->domain()->dim();i++) {
+      RCP<Thyra::SpmdVectorBase<double> > spmdVec  
+         = rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(v->col(i),true);
+   
+      Teuchos::ArrayRCP<double> values;
+      // spmdMVec->getNonconstLocalData(Teuchos::ptrFromRef(values),Teuchos::ptrFromRef(i));
+      spmdVec->getNonconstLocalData(Teuchos::ptrFromRef(values));
+      for(Teuchos::ArrayRCP<double>::size_type j=0;j<values.size();j++) {
+         if(values[j]==currentValue)
+            values[j] = newValue;
+      }
+   }
+}
+
+void columnAverages(const MultiVector & v,std::vector<double> & averages)
+{
+   averages.resize(v->domain()->dim());
+
+   // sum over each column
+   Thyra::sums<double>(*v,averages);
+
+   // build averages
+   Thyra::Ordinal rows = v->range()->dim();
+   for(std::size_t i=0;i<averages.size();i++)
+      averages[i] = averages[i]/rows;
+}
+
+double average(const MultiVector & v)
+{
+   Thyra::Ordinal rows = v->range()->dim();
+   Thyra::Ordinal cols = v->domain()->dim();
+
+   std::vector<double> averages;
+   columnAverages(v,averages);
+
+   double sum = 0.0;
+   for(std::size_t i=0;i<averages.size();i++)
+      sum += averages[i] * rows;
+
+   return sum/(rows*cols);
 }
 
 }

@@ -420,6 +420,9 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
 
    panzer::ArrayToFieldVector<short,int,Kokkos::DefaultNode::DefaultNodeType> atfv(globalIndexer);
 
+   Teuchos::RCP<const Tpetra::Map<int,int> > uMap = atfv.getFieldMap("U"); // these will be tested below!
+   Teuchos::RCP<const Tpetra::Map<int,int> > tMap = atfv.getFieldMap("T");
+
    std::map<std::string,IntFieldContainer> dataU, dataT;
    std::size_t numCols = 5;
    fillFieldContainer(globalIndexer->getFieldNum("U"),"block_0",*globalIndexer,dataU["block_0"],numCols);
@@ -470,6 +473,39 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
       else 
          TEUCHOS_ASSERT(false);
    }
+
+   if(myRank==0) {
+      TEST_EQUALITY(uMap->getNodeNumElements(),6);
+
+      TEST_EQUALITY(uMap->getGlobalElement(0),6);
+      TEST_EQUALITY(uMap->getGlobalElement(1),0);
+      TEST_EQUALITY(uMap->getGlobalElement(2),2);
+      TEST_EQUALITY(uMap->getGlobalElement(3),8);
+      TEST_EQUALITY(uMap->getGlobalElement(4),10);
+      TEST_EQUALITY(uMap->getGlobalElement(5),13);
+
+      TEST_EQUALITY(tMap->getNodeNumElements(),5);
+
+      TEST_EQUALITY(tMap->getGlobalElement(0),7);
+      TEST_EQUALITY(tMap->getGlobalElement(1),1);
+      TEST_EQUALITY(tMap->getGlobalElement(2),3);
+      TEST_EQUALITY(tMap->getGlobalElement(3),9);
+      TEST_EQUALITY(tMap->getGlobalElement(4),11);
+   }
+   else if(myRank==1) {
+      TEST_EQUALITY(uMap->getNodeNumElements(),4);
+
+      TEST_EQUALITY(uMap->getGlobalElement(0),4);
+      TEST_EQUALITY(uMap->getGlobalElement(1),12);
+      TEST_EQUALITY(uMap->getGlobalElement(2),15);
+      TEST_EQUALITY(uMap->getGlobalElement(3),14);
+
+      TEST_EQUALITY(tMap->getNodeNumElements(),1);
+
+      TEST_EQUALITY(tMap->getGlobalElement(0),5);
+   }
+   else 
+      TEUCHOS_ASSERT(false);
 }
 
 }

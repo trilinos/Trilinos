@@ -47,6 +47,7 @@
 
 namespace Thyra {
 
+#ifndef THYRA_HIDE_DEPRECATED_CODE
 
 // Deprecated
 
@@ -121,6 +122,7 @@ void LinearOpWithSolveBase<Scalar>::solveTranspose(
   }
 }
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 
 // Protected virtual functions to be overridden by subclasses
 
@@ -145,7 +147,7 @@ LinearOpWithSolveBase<Scalar>::solveSupportsSolveMeasureTypeImpl(
 
 // private:
 
-
+#ifndef THYRA_HIDE_DEPRECATED_CODE
 template<class Scalar>
 Ptr<const SolveCriteria<Scalar> >
 LinearOpWithSolveBase<Scalar>::convertBlockSolveCriteriaToSolveCritiera(
@@ -159,6 +161,7 @@ LinearOpWithSolveBase<Scalar>::convertBlockSolveCriteriaToSolveCritiera(
   return Teuchos::null;
 }
 
+#endif // THYRA_HIDE_DEPRECATED_CODE
 
 } // namespace Thyra
 
