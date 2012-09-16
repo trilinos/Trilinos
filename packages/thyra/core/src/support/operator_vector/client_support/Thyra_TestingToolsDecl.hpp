@@ -82,31 +82,6 @@ template <class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 relVectorErr( const VectorBase<Scalar> &v1, const VectorBase<Scalar> &v2 );
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-/** \brief Deprecated. */
-template<class Scalar>
-inline
-THYRA_DEPRECATED
-bool testRelErr(
-  const std::string &v1_name,
-  const Scalar &v1,
-  const std::string &v2_name,
-  const Scalar &v2,
-  const std::string &maxRelErr_error_name,
-  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_error,
-  const std::string &maxRelErr_warning_name,
-  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_warning,
-  std::ostream *out,
-  const std::string &leadingIndent = std::string("")
-  )
-{
-  // ToDo: Indent correctly!
-  return Teuchos::testRelErr(v1_name, v1, v2_name, v2,
-    maxRelErr_error_name, maxRelErr_error,
-    maxRelErr_warning_name, maxRelErr_warning,
-    Teuchos::ptr(out) );
-}
-#endif // THYRA_HIDE_DEPRECATED_CODE
 
 /** \brief Compute, check and optionally print the relative errors in two
  * scalar arays.
@@ -132,35 +107,6 @@ bool testRelErrors(
   const std::string &leadingIndent = std::string("")
   );
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-/** \brief Deprecated. */
-template<class Scalar1, class Scalar2, class ScalarMag>
-THYRA_DEPRECATED
-bool testRelErrors(
-  const int num_scalars,
-  const std::string &v1_name,
-  const Scalar1 v1[],
-  const std::string &v2_name,
-  const Scalar2 v2[],
-  const std::string &maxRelErr_error_name,
-  const ScalarMag &maxRelErr_error,
-  const std::string &maxRelErr_warning_name,
-  const ScalarMag &maxRelErr_warning,
-  std::ostream *out,
-  const std::string &leadingIndent = std::string("")
-  )
-{
-  using Teuchos::arrayView;
-  return testRelErrors(
-    v1_name, arrayView(v1, num_scalars),
-    v2_name, arrayView(v2, num_scalars),
-    maxRelErr_error_name, maxRelErr_error,
-    maxRelErr_warning_name, maxRelErr_warning,
-    Teuchos::ptr(out),
-    leadingIndent
-    );
-}
-#endif // THYRA_HIDE_DEPRECATED_CODE
 
 /** \brief Compute, check and optionally print the relative errors in two vectors.
  *
@@ -227,29 +173,6 @@ bool testMaxErrors(
   const std::string &leadingIndent = std::string("")
   );
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-/** \brief Deprecated. */
-template<class Scalar>
-THYRA_DEPRECATED
-bool testMaxErrors(
-  const int num_scalars,
-  const std::string &error_name,
-  const Scalar error[],
-  const std::string &max_error_name,
-  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &max_error,
-  const std::string &max_warning_name,
-  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &max_warning,
-  std::ostream *out,
-  const std::string &leadingIndent = std::string("")
-  )
-{
-  return testMaxErrors<Scalar>(error_name,
-    Teuchos::arrayView<const Scalar>(error, num_scalars),
-    max_error_name, max_error, max_warning_name, max_warning,
-    Teuchos::ptr(out), leadingIndent
-    );
-}
-#endif // THYRA_HIDE_DEPRECATED_CODE
 
 /** \brief Check a boolean result against expected result.
  *
@@ -265,22 +188,6 @@ bool testBoolExpr(
   const std::string &leadingIndent = std::string("")
   );
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-/** \brief Deprecated. */
-inline
-THYRA_DEPRECATED
-bool testBoolExpr(
-  const std::string &boolExprName,
-  const bool &boolExpr,
-  const bool &boolExpected,
-  std::ostream *out,
-  const std::string &leadingIndent = std::string("")
-  )
-{
-  return testBoolExpr(boolExprName, boolExpr, boolExpected,
-    Teuchos::ptr(out), leadingIndent);
-}
-#endif // THYRA_HIDE_DEPRECATED_CODE
 
 /** \brief Print summary outputting for a test or just <tt>passed</tt> or
  * <tt>failed</tt>.

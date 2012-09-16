@@ -106,50 +106,6 @@ prec(
 }
 
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-//
-// Deprecated
-//
-
-
-/** \brief Deprecated.
- *
- * \defgroup Thyra_deprecated_grp
- */
-template <class Scalar>
-THYRA_DEPRECATED
-void initializePrec(
-  const PreconditionerFactoryBase<Scalar> &precFactory,
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &fwdOp,
-  PreconditionerBase<Scalar> *prec,
-  const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
-  )
-{
-  initializePrec<Scalar>(precFactory, fwdOp, Teuchos::ptr(prec),
-    supportSolveUse);
-}
-
-
-/** \brief Deprecated.
- *
- * \defgroup Thyra_deprecated_grp
- */
-template <class Scalar>
-THYRA_DEPRECATED
-void uninitializePrec(
-  const PreconditionerFactoryBase<Scalar> &precFactory,
-  PreconditionerBase<Scalar> *prec,
-  Teuchos::RCP<const LinearOpBase<Scalar> > *fwdOp = NULL,
-  ESupportSolveUse *supportSolveUse = NULL
-  )
-{
-  using Teuchos::ptr;
-  uninitializePrec<Scalar>(precFactory, ptr(prec), ptr(fwdOp),
-    ptr(supportSolveUse));
-}
-
-
-#endif // THYRA_HIDE_DEPRECATED_CODE
 } // namespace Thyra
 
 

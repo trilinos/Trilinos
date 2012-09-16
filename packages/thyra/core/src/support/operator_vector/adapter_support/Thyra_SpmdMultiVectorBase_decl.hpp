@@ -198,46 +198,6 @@ public:
 
   //@}
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-  /** \name Deprecated. */
-  //@{
-
-  /** \brief Deprecated (use ArrayRCP version of getLocalData(...). */
-  THYRA_DEPRECATED void getLocalData( Scalar **localValues_out, Ordinal *leadingDim_out )
-    {
-      using Teuchos::outArg;
-      ArrayRCP<Scalar> localValues;
-      this->getNonconstLocalData(outArg(localValues), outArg(*leadingDim_out));
-      *localValues_out = localValues.getRawPtr();
-    }
-  
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED void commitLocalData( Scalar *localValues )
-    {
-      // Do nothing!
-    }
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED void getLocalData(
-    const Scalar **localValues_out, Ordinal *leadingDim_out
-    ) const
-    {
-      using Teuchos::outArg;
-      ArrayRCP<const Scalar> localValues;
-      this->getLocalData(outArg(localValues), outArg(*leadingDim_out));
-      *localValues_out = localValues.getRawPtr();
-
-    }
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED void freeLocalData( const Scalar *localValues ) const
-    {
-      // Do nothing!
-    }
-
-  //@}
-
-#endif // THYRA_HIDE_DEPRECATED_CODE
 protected:
 
   /** @name Virtual functions to be overridden by sublcasses. */

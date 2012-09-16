@@ -47,82 +47,6 @@
 
 namespace Thyra {
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-
-// Deprecated
-
-
-template<class Scalar>
-bool LinearOpWithSolveBase<Scalar>::solveSupportsConj(EConj conj) const
-{
-  return solveSupports(applyConjToTrans(conj));
-}
-
-
-template<class Scalar>
-bool LinearOpWithSolveBase<Scalar>::solveSupportsSolveMeasureType(
-  EConj conj, const SolveMeasureType& solveMeasureType) const
-{
-  return solveSupportsSolveMeasureType(applyConjToTrans(conj), solveMeasureType);
-}
-
-
-template<class Scalar>
-void LinearOpWithSolveBase<Scalar>::solve(
-  const EConj conj,
-  const MultiVectorBase<Scalar> &B,
-  MultiVectorBase<Scalar> *X,
-  const int numBlocks,
-  const BlockSolveCriteria<Scalar> blockSolveCriteria[],
-  SolveStatus<Scalar> blockSolveStatus[]
-  ) const
-{
-  const SolveStatus<Scalar> solveStatus =
-    this->solve(applyConjToTrans(conj), B, Teuchos::ptr(X),
-      convertBlockSolveCriteriaToSolveCritiera(numBlocks, blockSolveCriteria)
-      );
-  if (numBlocks) {
-    blockSolveStatus[0] = solveStatus;
-  }
-}
-
-
-template<class Scalar>
-bool LinearOpWithSolveBase<Scalar>::solveTransposeSupportsConj(EConj conj) const
-{
-  return solveSupports(applyTransposeConjToTrans(conj));
-}
-
-
-template<class Scalar>
-bool LinearOpWithSolveBase<Scalar>::solveTransposeSupportsSolveMeasureType(
-  EConj conj, const SolveMeasureType& solveMeasureType) const
-{
-  return solveSupportsSolveMeasureType(applyTransposeConjToTrans(conj),
-    solveMeasureType);
-}
-
-
-template<class Scalar>
-void LinearOpWithSolveBase<Scalar>::solveTranspose(
-  const EConj conj,
-  const MultiVectorBase<Scalar> &B,
-  MultiVectorBase<Scalar> *X,
-  const int numBlocks,
-  const BlockSolveCriteria<Scalar> blockSolveCriteria[],
-  SolveStatus<Scalar> blockSolveStatus[]
-  ) const
-{
-  const SolveStatus<Scalar> solveStatus =
-    this->solve(applyTransposeConjToTrans(conj), B, Teuchos::ptr(X),
-      convertBlockSolveCriteriaToSolveCritiera(numBlocks, blockSolveCriteria)
-      );
-  if (numBlocks) {
-    blockSolveStatus[0] = solveStatus;
-  }
-}
-
-#endif // THYRA_HIDE_DEPRECATED_CODE
 
 // Protected virtual functions to be overridden by subclasses
 
@@ -147,21 +71,6 @@ LinearOpWithSolveBase<Scalar>::solveSupportsSolveMeasureTypeImpl(
 
 // private:
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-template<class Scalar>
-Ptr<const SolveCriteria<Scalar> >
-LinearOpWithSolveBase<Scalar>::convertBlockSolveCriteriaToSolveCritiera(
-  const int numBlocks,
-  const BlockSolveCriteria<Scalar> blockSolveCriteria[]
-  )
-{
-  TEUCHOS_ASSERT(numBlocks == 0 || numBlocks == 1);
-  if (numBlocks == 1)
-    return Teuchos::ptrFromRef(blockSolveCriteria[0].solveCriteria);
-  return Teuchos::null;
-}
-
-#endif // THYRA_HIDE_DEPRECATED_CODE
 
 } // namespace Thyra
 

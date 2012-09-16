@@ -213,53 +213,6 @@ SpmdVectorBase<Scalar>::space() const
 }
 
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-// Deprecated
-
-
-template<class Scalar>
-void SpmdVectorBase<Scalar>::getLocalData( Scalar** localValues, Ordinal* stride )
-{
-#ifdef THYRA_DEBUG
-  TEUCHOS_ASSERT(localValues);
-  TEUCHOS_ASSERT(stride);
-#endif
-  ArrayRCP<Scalar> localValues_arcp;
-  this->getNonconstLocalData(Teuchos::outArg(localValues_arcp));
-  *localValues = localValues_arcp.getRawPtr();
-  *stride = 1;
-}
-
-
-template<class Scalar>
-void SpmdVectorBase<Scalar>::commitLocalData( Scalar* localValues )
-{
-  // Nothing to do!
-}
-
-
-template<class Scalar>
-void SpmdVectorBase<Scalar>::getLocalData( const Scalar** localValues, Ordinal* stride ) const
-{
-#ifdef THYRA_DEBUG
-  TEUCHOS_ASSERT(localValues);
-  TEUCHOS_ASSERT(stride);
-#endif
-  ArrayRCP<const Scalar> localValues_arcp;
-  this->getLocalData(Teuchos::outArg(localValues_arcp));
-  *localValues = localValues_arcp.getRawPtr();
-  *stride = 1;
-}
-
-
-template<class Scalar>
-void SpmdVectorBase<Scalar>::freeLocalData( const Scalar* values ) const
-{
-  // Nothing to do!
-}
-
-
-#endif // THYRA_HIDE_DEPRECATED_CODE
 // protected
 
 

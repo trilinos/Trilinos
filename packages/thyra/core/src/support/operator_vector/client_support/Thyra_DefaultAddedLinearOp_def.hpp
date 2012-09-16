@@ -236,31 +236,6 @@ void DefaultAddedLinearOp<Scalar>::describe(
 }
 
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-// Deprecated
-
-
-template<class Scalar>
-DefaultAddedLinearOp<Scalar>::DefaultAddedLinearOp(
-  const int numOps_in,
-  const RCP<LinearOpBase<Scalar> > Ops[]
-  )
-{
-  initialize(Teuchos::arrayView(Ops, numOps_in));
-}
-
-
-template<class Scalar>
-DefaultAddedLinearOp<Scalar>::DefaultAddedLinearOp(
-  const int numOps_in,
-  const RCP<const LinearOpBase<Scalar> > Ops[]
-  )
-{
-  initialize(Teuchos::arrayView(Ops, numOps_in));
-}
-
-
-#endif // THYRA_HIDE_DEPRECATED_CODE
 // protected
 
 

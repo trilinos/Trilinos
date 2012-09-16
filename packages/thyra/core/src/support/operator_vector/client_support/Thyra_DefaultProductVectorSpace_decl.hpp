@@ -352,36 +352,6 @@ public:
 
   //@}
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-  /** \name Deprecated. */
-  //@{
-
-  /** \brief Deprecated . */
-  THYRA_DEPRECATED
-  DefaultProductVectorSpace(
-    const int numBlocks_in,
-    const RCP<const VectorSpaceBase<Scalar> > vecSpaces_in[]
-    )
-    : numBlocks_(-1), dim_(-1)
-    {
-      using Teuchos::as;
-      initialize(Teuchos::arrayView(vecSpaces_in, as<Ordinal>(numBlocks_in)));
-    }
-
-  /** \brief Deprecated . */
-  THYRA_DEPRECATED
-  void initialize(
-    const int numBlocks_in,
-    const RCP<const VectorSpaceBase<Scalar> > vecSpaces_in[]
-    )
-    {
-      using Teuchos::as;
-      initialize(Teuchos::arrayView(vecSpaces_in, as<Ordinal>(numBlocks_in)));
-    }
-
-  //@}
-  
-#endif // THYRA_HIDE_DEPRECATED_CODE
 protected:
 
   // ///////////////////////////////////

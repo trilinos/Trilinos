@@ -269,32 +269,6 @@ DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace()
 }
 
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-// Deprecated
-
-template<class Scalar>
-DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
-  const Ordinal dim_in
-  )
-  :localSubDim_(-1), numProc_(-1), procRank_(-1)
-{
-  initialize(dim_in);
-  weakSelfPtr_ = Teuchos::rcpFromRef(*this);
-}
-
-template<class Scalar>
-DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
-  const RCP<const Teuchos::Comm<Ordinal> > &comm,
-  const Ordinal my_localSubDim, const Ordinal globalDim
-  )
-  :localSubDim_(-1), numProc_(-1), procRank_(-1)
-{
-  initialize(comm, my_localSubDim, globalDim);
-  weakSelfPtr_ = Teuchos::rcpFromRef(*this);
-}
-
-
-#endif // THYRA_HIDE_DEPRECATED_CODE
 } // end namespace Thyra
 
 
