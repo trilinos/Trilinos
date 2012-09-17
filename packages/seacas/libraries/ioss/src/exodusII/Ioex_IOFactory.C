@@ -34,6 +34,7 @@
 
 #include <exodusII/Ioex_DatabaseIO.h>   // for Ioex DatabaseIO
 #include <par_exo/Iopx_DatabaseIO.h>    // for Iopx DatabaseIO
+#include <tokenize.h>
 
 #include <stddef.h>                     // for NULL
 #include <string>                       // for string
@@ -43,6 +44,10 @@
 #include "Ioss_IOFactory.h"             // for IOFactory
 
 namespace Ioss { class DatabaseIO; }
+
+namespace {
+  std::string check_external_decomposition_property(MPI_Comm comm);
+}
 
 namespace Ioex {
 
@@ -76,40 +81,44 @@ namespace Ioex {
     bool decompose = false;
     if (db_usage == Ioss::READ_MODEL) {
       int proc_count = 1;
-      MPI_Comm_size(communicator, &proc_count);
+      if (communicator != MPI_COMM_NULL) {
+	MPI_Comm_size(communicator, &proc_count);
 
-      if (proc_count > 1) {
-	// Check for property...
-	if (properties.exists("DECOMPOSITION_METHOD")) {
-	  std::string method = properties.get("DECOMPOSITION_METHOD").get_string();
-	  if (method != "EXTERNAL") {
-	    decompose = true;
-	  }
-	} else {
-	  std::string method = check_external_decomposition_property(communicator);
-	  if (method != "EXTERNAL") {
-	    decompose = true;
+	if (proc_count > 1) {
+	  // Check for property...
+	  if (properties.exists("DECOMPOSITION_METHOD")) {
+	    std::string method = properties.get("DECOMPOSITION_METHOD").get_string();
+	    if (method != "EXTERNAL") {
+	      decompose = true;
+	    }
+	  } else {
+	    std::string method = check_external_decomposition_property(communicator);
+	    if (!method.empty() && method != "EXTERNAL") {
+	      decompose = true;
+	    }
 	  }
 	}
       }
+
+      if (decompose)
+	return new Iopx::DatabaseIO(NULL, filename, db_usage, communicator, properties);
+      else
+	return new Ioex::DatabaseIO(NULL, filename, db_usage, communicator, properties);
     }
-
-    if (decompose)
-      return new Iopx::DatabaseIO(NULL, filename, db_usage, communicator, properties);
-    else
-      return new Ioex::DatabaseIO(NULL, filename, db_usage, communicator, properties);
   }
+}
 
+namespace {
   std::string check_external_decomposition_property(MPI_Comm comm)
   {
     // Check environment variable IOSS_PROPERTIES. If it exists, parse
     // the contents and see if it specifies a decomposition method.
   
-    std::string decomp_method = "NONE";
+    std::string decomp_method;
     
     Ioss::ParallelUtils util(comm);
     std::string env_props;
-    if (util.get_environment("IOSS_PROPERTIES", env_props, isParallel)) {
+    if (util.get_environment("IOSS_PROPERTIES", env_props, true)) {
       // env_props string should be of the form
       // "PROP1=VALUE1:PROP2=VALUE2:..."
       std::vector<std::string> prop_val;
