@@ -222,7 +222,7 @@ private:
   void reduce_intrablock( const size_type tx , const size_type ty ) const
   {
     typedef const volatile value_type * cvvp ;
-    typedef                value_type * vp ;
+    typedef       volatile value_type * vvp ;
 
     extern __shared__ size_type shared_data[];
 
@@ -241,11 +241,11 @@ private:
 
       size_type * const data = shared_data + shared_data_offset(tx,ty) ;
 
-      ReduceTraits::join( *((vp) data), *((cvvp)( data + n16 )) );
-      ReduceTraits::join( *((vp) data), *((cvvp)( data +  n8 )) );
-      ReduceTraits::join( *((vp) data), *((cvvp)( data +  n4 )) );
-      ReduceTraits::join( *((vp) data), *((cvvp)( data +  n2 )) );
-      ReduceTraits::join( *((vp) data), *((cvvp)( data +  n1 )) );
+      ReduceTraits::join( *((vvp) data), *((cvvp)( data + n16 )) );
+      ReduceTraits::join( *((vvp) data), *((cvvp)( data +  n8 )) );
+      ReduceTraits::join( *((vvp) data), *((cvvp)( data +  n4 )) );
+      ReduceTraits::join( *((vvp) data), *((cvvp)( data +  n2 )) );
+      ReduceTraits::join( *((vvp) data), *((cvvp)( data +  n1 )) );
     }
 
     // Phase B: Use a single warp to reduce results from each warp.
@@ -267,15 +267,15 @@ private:
         if ( tx + 4 < m_warp_count ) {
           if ( tx + 8 < m_warp_count ) {
             if ( tx + 16 < m_warp_count ) {
-              ReduceTraits::join( *((vp) data) , *((cvvp)( data + n16 )) );
+              ReduceTraits::join( *((vvp) data) , *((cvvp)( data + n16 )) );
             }
-            ReduceTraits::join( *((vp) data) , *((cvvp)( data + n8 )) );
+            ReduceTraits::join( *((vvp) data) , *((cvvp)( data + n8 )) );
           }
-          ReduceTraits::join( *((vp) data) , *((cvvp)( data + n4 )) );
+          ReduceTraits::join( *((vvp) data) , *((cvvp)( data + n4 )) );
         }
-        ReduceTraits::join( *((vp) data) , *((cvvp)( data + n2 )) );
+        ReduceTraits::join( *((vvp) data) , *((cvvp)( data + n2 )) );
       }
-      ReduceTraits::join( *((vp) data) , *((cvvp)( data + n1 )) );
+      ReduceTraits::join( *((vvp) data) , *((cvvp)( data + n1 )) );
     }
   }
 
