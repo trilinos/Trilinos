@@ -31,6 +31,7 @@
 #include "Stokhos_MeanBasedPreconditioner.hpp"
 #include "Stokhos_ApproxGaussSeidelPreconditioner.hpp"
 #include "Stokhos_ApproxJacobiPreconditioner.hpp"
+#include "Stokhos_ApproxSchurComplementPreconditioner.hpp"
 #include "Stokhos_GaussSeidelPreconditioner.hpp"
 #include "Stokhos_KroneckerProductPreconditioner.hpp"
 #include "Stokhos_FullyAssembledPreconditioner.hpp"
@@ -81,6 +82,14 @@ build(const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm,
     Teuchos::RCP<Stokhos::AbstractPreconditionerFactory> prec_factory = 
       buildMeanPreconditionerFactory();
     sg_prec = Teuchos::rcp(new Stokhos::ApproxJacobiPreconditioner(
+			     sg_comm, sg_basis, epetraCijk, 
+			     base_map, sg_map, prec_factory, 
+			     params));
+  }
+  else if (prec_method == "Approximate Schur Complement") {
+    Teuchos::RCP<Stokhos::AbstractPreconditionerFactory> prec_factory = 
+      buildMeanPreconditionerFactory();
+    sg_prec = Teuchos::rcp(new Stokhos::ApproxSchurComplementPreconditioner(
 			     sg_comm, sg_basis, epetraCijk, 
 			     base_map, sg_map, prec_factory, 
 			     params));
