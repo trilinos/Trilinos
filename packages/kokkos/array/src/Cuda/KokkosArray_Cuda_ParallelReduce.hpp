@@ -505,12 +505,22 @@ public:
                 const FunctorType  & functor ,
                 const FinalizeType & finalize )
   {
-    const size_type warp_count = warp_count_max();
+    size_type warp_count = warp_count_max();
+
+    while ( Impl::CudaTraits::WarpSize * ( warp_count >> 1 ) > work_count )
+      warp_count >>= 1 ;
+
     const dim3 block( Impl::CudaTraits::WarpSize * warp_count , 1 , 1 );
 
     const dim3 grid(
+      std::min( block.x ,
+                size_type( ( work_count + block.x - 1 ) / block.x ) ) , 1 , 1 );
+
+/*
+    const dim3 grid(
       std::min( cuda_internal_maximum_grid_count() ,
                 size_type( ( work_count + block.x - 1 ) / block.x ) ) , 1 , 1 );
+*/
 
     const size_type shmem_size = ReduceType::shmem_size( warp_count );
 
@@ -535,8 +545,7 @@ public :
 
   FunctorAssignment( value_type & value )
     : m_host( & value )
-    , m_dev( (value_type *)( cuda_internal_scratch_space(0) +
-                             CudaTraits::WarpSize ) )
+    , m_dev( (value_type *)( cuda_internal_scratch_space(0) ) )
     {}
 
   template< typename ValueTypeDev >
