@@ -184,8 +184,6 @@ int TestAllClasses( const std::vector<std::string> AmesosClasses,
 	if ( ExpectedError == NumericallySingularMatrixError )  RunLapackTest = false ;   //  Bug #1227
 	if ( ( ReindexRowMap != 0  || ReindexColMap != 0 ) && row_map.DistributedGlobal() ) 
 	  RunLapackTest = false ;   //  Bug #969
-	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) 
-	  RunLapackTest = false ;   //  Bug #1403
 
 	if ( RunLapackTest && verbose) std::cout << " Testing LAPACK " << std::endl ; 
 	
