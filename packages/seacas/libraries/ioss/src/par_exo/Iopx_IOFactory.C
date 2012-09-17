@@ -30,7 +30,9 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <par_exo/Iopx_DatabaseIO.h>   // for DatabaseIO
+#include <exodusII/Ioex_DatabaseIO.h>   // for Ioex DatabaseIO
+#include <par_exo/Iopx_DatabaseIO.h>    // for Iopx DatabaseIO
+
 #include <par_exo/Iopx_IOFactory.h>    // for IOFactory
 
 #include <stddef.h>                     // for NULL
@@ -61,6 +63,15 @@ namespace Iopx {
 				       Ioss::DatabaseUsage db_usage,
 				       MPI_Comm communicator,
 				       const Ioss::PropertyManager &properties) const
-  { return new DatabaseIO(NULL, filename, db_usage, communicator, properties); }
+  {
+    int proc_count = 1;
+    MPI_Comm_size(communicator, &proc_count);
+    // READ_RESTART not officially supported.  Here just so gdsjaar can experiment
+    if (proc_count > 1 && (db_usage == Ioss::READ_MODEL || db_usage == Ioss::READ_RESTART)) {
+      return new Iopx::DatabaseIO(NULL, filename, db_usage, communicator, properties);
+    } else {
+      return new Ioex::DatabaseIO(NULL, filename, db_usage, communicator, properties);
+    }
+  }
 
 }
