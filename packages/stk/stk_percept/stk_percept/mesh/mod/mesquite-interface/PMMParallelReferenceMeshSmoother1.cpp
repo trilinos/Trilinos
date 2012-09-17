@@ -139,8 +139,8 @@ namespace stk {
         {
           return true;
         }
+      //grad_check = 1.e-8;
       if (m_num_invalid == 0 && (m_scaled_grad_norm < grad_check || (m_iter > 0 && m_dmax < grad_check && m_dnew < grad_check*grad_check*m_d0)))
-        //if (m_num_invalid == 0 && (m_scaled_grad_norm < 1.e-8 || (m_iter > 0 && m_dmax < 1.e-8 && m_dnew < gradNorm*gradNorm*m_d0)))
         //if (m_num_invalid == 0 && (m_scaled_grad_norm < gradNorm || (m_iter > 0 && m_dmax < gradNorm ) ) )
         {
           std::cout << "tmp srk untangle m_dnew= " << m_dnew << " m_total_metric = " << m_total_metric << std::endl;
