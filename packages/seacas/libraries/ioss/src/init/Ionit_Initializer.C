@@ -47,6 +47,12 @@
 // plugin architecture, there is no overhead for sierra when the plugin is
 // not loaded.  The #define test is left here for now in case developers
 // need to use it.
+
+// NOTE: (gdsjaar) -- Do *not* remove the NO_PARAVIEWIMESH_SUPPORT define.
+//                    The Ioss is used in more products than just Sierra,
+//                    so we cannot always rely on the paraview catalyst
+//                    plugin being available.
+
 #if !defined(NO_PARAVIEWIMESH_SUPPORT)
 #include <visualization/Iovs_IOFactory.h>
 #endif
