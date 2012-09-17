@@ -3457,13 +3457,20 @@ namespace Iopx {
       int64_t *element64 = NULL;
       int     *side32 = NULL;
       int64_t *side64 = NULL;
+
+      int     *elconn32 = NULL;
+      int64_t *elconn64 = NULL;
+      int     *fconn32 = NULL;
+      int64_t *fconn64 = NULL;
       
       if (int_byte_size_api() == 4) {
 	element32 = (int*)TOPTR(element);
 	side32 = (int*)TOPTR(side);
+	fconn32 = (int*)fconnect;
       } else {
 	element64 = (int64_t*)TOPTR(element);
 	side64 = (int64_t*)TOPTR(side);
+	fconn64 = (int64_t*)fconnect;
       }
 
       Ioss::IntVector side_elem_map; // Maps the side into the elements
@@ -3495,6 +3502,11 @@ namespace Iopx {
 	    if (elconsize < nelem * nelnode) {
 	      elconsize = nelem * nelnode;
 	      elconnect.resize(elconsize*int_byte_size_api());
+	      if (int_byte_size_api() == 4) {
+		elconn32 = (int*)TOPTR(elconnect);
+	      } else {
+		elconn64 = (int64_t*)TOPTR(elconnect);
+	      }
 	    }
 	    if (map_ids) {
 	      get_field_internal(block, block->get_field("connectivity"),
@@ -3522,12 +3534,11 @@ namespace Iopx {
 	    nfnodes = block->topology()->boundary_type(side_id)->number_nodes();
 	  }
 	  for (int inode = 0; inode < nfnodes; inode++) {
-	    int64_t global_node = elconnect[(elem_id-offset)*nelnode +
-					    side_elem_map[inode]];
+	    size_t index = (elem_id-offset)*nelnode + side_elem_map[inode];
 	    if (int_byte_size_api() == 4) {
-	      ((int*)fconnect)[ieb++] = global_node;
+	      fconn32[ieb++] = elconn32[index];
 	    } else {
-	      ((int64_t*)fconnect)[ieb++] = global_node;
+	      fconn64[ieb++] = elconn64[index];
 	    }
 	  }
 	}
