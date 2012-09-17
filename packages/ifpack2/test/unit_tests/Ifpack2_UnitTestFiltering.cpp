@@ -51,11 +51,7 @@
 #include <Ifpack2_DropFilter.hpp>
 #include <Ifpack2_SingletonFilter.hpp>
 #include <Ifpack2_SparsityFilter.hpp>
-
 #include <Ifpack2_ReorderFilter.hpp>
-
-// Because Zoltan2 does something somewhat dangerous...
-#undef global_size_t
 
 using Tpetra::global_size_t;
 typedef tif_utest::Node Node;
