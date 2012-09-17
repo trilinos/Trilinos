@@ -138,6 +138,7 @@ int main(int argc, char *argv[]) {
     }
     sgOpParams.set("Operator Method", "Matrix Free");
     sgPrecParams.set("Preconditioner Method", "Approximate Gauss-Seidel");
+    //sgPrecParams.set("Preconditioner Method", "Approximate Schur Complement");
     sgPrecParams.set("Symmetric Gauss-Seidel", symmetric);
     sgPrecParams.set("Mean Preconditioner Type", "ML");
     Teuchos::ParameterList& precParams = 
