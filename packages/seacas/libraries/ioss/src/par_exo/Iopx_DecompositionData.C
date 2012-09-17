@@ -16,6 +16,17 @@
 #include <set>
 
 namespace {
+  int exodus_byte_size_api(int exoid)
+  {
+    // Check byte-size of integers stored on the database...
+    int mode = ex_int64_status(exoid) & EX_ALL_INT64_API;
+    if (mode) {
+      return 8;
+    } else {
+      return 4;
+    }
+  }
+  
   inline size_t min(size_t x, size_t y)
   {
     return y ^ ((x^y) & -(x<y));
@@ -140,7 +151,6 @@ namespace {
 		   int ndim, double *geom, int *ierr)
   {
     // Return coordinates for objects.
-    // gids are array indices for coordinate arrays.
     Iopx::DecompositionData *zdata = (Iopx::DecompositionData *)(data);
   
     std::copy(zdata->centroids_.begin(), zdata->centroids_.end(), &geom[0]);
@@ -149,8 +159,9 @@ namespace {
     return;
   }
 
+  template <typename INT>
   void get_entity_dist(size_t proc_count, size_t my_proc, size_t entity_count,
-		       std::vector<Iopx::MY_INT> &dist, size_t *offset, size_t *count)
+		       std::vector<INT> &dist, size_t *offset, size_t *count)
   {
     size_t per_proc = entity_count / proc_count;
     size_t extra    = entity_count % proc_count;
@@ -284,7 +295,7 @@ namespace Iopx {
     std::vector<MY_INT> adjacency; // Size is sum of element connectivity sizes 
     generate_adjacency_list(exodusId, pointer, adjacency, info.num_elem_blk);
     
-    std::string method = "RCB";
+    std::string method = "LINEAR";
 
     if (properties.exists("DECOMPOSITION_METHOD")) {
       method = properties.get("DECOMPOSITION_METHOD").get_string();
@@ -300,6 +311,7 @@ namespace Iopx {
 	method != "RANDOM" &&
 	method != "KWAY" &&
 	method != "GEOM_KWAY" &&
+	method != "KWAY_GEOM" &&
 	method != "METIS_SFC") {
       std::ostringstream errmsg;
       errmsg << "ERROR: Invalid decomposition method specified: '" << method << "\n"
@@ -311,16 +323,29 @@ namespace Iopx {
     if (myProcessor == 0)
       std::cout << "\nUsing decomposition method " << method << "\n\n";
     
-    if (method == "RCB" || method == "RIB" || method == "HSFC" ||
-	method == "GEOM_KWAY" || method == "METIS_SFC") {
+    if (method == "RCB" ||
+	method == "RIB" ||
+	method == "HSFC" ||
+	method == "GEOM_KWAY" ||
+	method == "KWAY_GEOM" ||
+	method == "METIS_SFC") {
       calculate_element_centroids(exodusId, pointer, adjacency, node_dist);
     }
 
-    if (method == "KWAY" || method == "GEOM_KWAY" || method == "METIS_SFC") {
+    if (method == "KWAY" ||
+	method == "GEOM_KWAY" ||
+	method == "KWAY_GEOM" ||
+	method == "METIS_SFC") {
       metis_decompose(method, element_dist, pointer, adjacency);
-    } else if (method == "RCB" || method == "RIB" || method == "HSFC" ||
-	       method == "BLOCK" || method == "CYCLIC" || method == "RANDOM") {
+
+    } else if (method == "RCB" ||
+	       method == "RIB" ||
+	       method == "HSFC" ||
+	       method == "BLOCK" ||
+	       method == "CYCLIC" ||
+	       method == "RANDOM") {
       zoltan_decompose(method);
+
     } else if (method == "LINEAR") {
       simple_decompose(method, element_dist);
     }
@@ -346,24 +371,25 @@ namespace Iopx {
     // both owned and shared...
     get_local_node_list(pointer, adjacency, node_dist);
     
-    get_shared_node_list();
+    get_shared_node_list(MY_INT(0));
 
-    get_nodeset_data(exodusId, info.num_node_sets);
+    get_nodeset_data(exodusId, info.num_node_sets, (MY_INT)0);
 
     if (info.num_side_sets > 0) {
       // Create elemGTL map which is used for sidesets (also element sets)
       build_global_to_local_elem_map();
     }
     
-    get_sideset_data(exodusId, info.num_side_sets);
+    get_sideset_data(exodusId, info.num_side_sets, (MY_INT)0);
     
     // Have all the decomposition data needed (except for boundary
     // conditions...)
     // Can now populate the Ioss metadata...
   }
 
+  template <typename INT>
   void DecompositionData::simple_decompose(const std::string &method,
-					   const std::vector<Iopx::MY_INT> &element_dist)
+					   const std::vector<INT> &element_dist)
   {
     if (method == "LINEAR") {
       // The "ioss_decomposition" is the same as the "file_decomposition"
@@ -383,10 +409,11 @@ namespace Iopx {
     }
   }
 
+  template <typename INT>
   void DecompositionData::metis_decompose(const std::string &method,
-					  const std::vector<Iopx::MY_INT> &element_dist,
-					  const std::vector<Iopx::MY_INT> &pointer,
-					  const std::vector<Iopx::MY_INT> &adjacency)
+					  const std::vector<INT> &element_dist,
+					  const std::vector<INT> &pointer,
+					  const std::vector<INT> &adjacency)
   {
     idx_t wgt_flag = 0; // No weights
     idx_t *elm_wgt = NULL;
@@ -421,7 +448,7 @@ namespace Iopx {
 	exit(EXIT_FAILURE);
       }
     }
-    else if (method == "GEOM_KWAY") {
+    else if (method == "GEOM_KWAY" || method == "KWAY_GEOM") {
 
       idx_t *dual_xadj = NULL;
       idx_t *dual_adjacency = NULL;
@@ -436,7 +463,7 @@ namespace Iopx {
       }
 
       ct_assert(sizeof(double) == sizeof(real_t));
-      ct_assert(sizeof(MY_INT) == sizeof(idx_t));
+      assert(sizeof(INT) == sizeof(idx_t)); // Can't be compile-time assert due to double-definition issues.
 
       rc = ParMETIS_V3_PartGeomKway((idx_t*)TOPTR(element_dist), dual_xadj, dual_adjacency,
 				    elm_wgt, elm_wgt, &wgt_flag, &num_flag, &ndims, (real_t*)TOPTR(centroids_), &ncon, &nparts,
@@ -505,7 +532,7 @@ namespace Iopx {
     generate_index(importElementIndex);
 
     {
-      std::vector<MY_INT> tmp_disp(exportElementIndex);
+      std::vector<INT> tmp_disp(exportElementIndex);
       for (size_t i=0; i < elem_partition.size(); i++) {
 	if (elem_partition[i] != myProcessor) {
 	  exportElementMap[tmp_disp[elem_partition[i]]++] = elementOffset+i;
@@ -543,7 +570,7 @@ namespace Iopx {
     zz.Set_Param("LB_METHOD", method);
     zz.Set_Param("REMAP", "0");
     zz.Set_Param("RETURN_LISTS", "ALL");
-    //    zz.Set_Param("RETURN_LISTS", "PARTS");
+    zz.Set_Param("DEBUG_LEVEL", "1");
 
     int changes = 0;
     int num_global = 1;
@@ -631,21 +658,23 @@ namespace Iopx {
     }
   }
 
-  void DecompositionData::get_local_node_list(const std::vector<MY_INT> &pointer, const std::vector<MY_INT> &adjacency,
-					      const std::vector<MY_INT> &node_dist)
+  template <typename INT>
+  void DecompositionData::get_local_node_list(const std::vector<INT> &pointer,
+					      const std::vector<INT> &adjacency,
+					      const std::vector<INT> &node_dist)
   {
     // Get the connectivity of all imported elements...
     // First, determine how many nodes the exporting processors are
     // going to send me and how many nodes my exported elements
     // have...
 
-    std::vector<int> export_conn_size(processorCount);
-    std::vector<int> import_conn_size(processorCount);
+    std::vector<INT> export_conn_size(processorCount);
+    std::vector<INT> import_conn_size(processorCount);
     for (size_t p=0; p < processorCount; p++) {
       size_t el_begin = exportElementIndex[p];
       size_t el_end = exportElementIndex[p+1];
       for (size_t i=el_begin; i < el_end; i++) {
-	MY_INT elem = exportElementMap[i] - elementOffset;
+	INT elem = exportElementMap[i] - elementOffset;
 	size_t nnpe = pointer[elem+1] - pointer[elem];
 	export_conn_size[p] += nnpe;
       }
@@ -657,11 +686,11 @@ namespace Iopx {
     // Now fill the vectors with the nodes ...
     size_t exp_size = std::accumulate(export_conn_size.begin(), export_conn_size.end(), 0);
     size_t imp_size = std::accumulate(import_conn_size.begin(), import_conn_size.end(), 0);
-    std::vector<MY_INT> export_conn;
+    std::vector<INT> export_conn;
     export_conn.reserve(exp_size);
     
-    std::vector<MY_INT> export_disp(processorCount);
-    std::vector<MY_INT> import_disp(processorCount);
+    std::vector<INT> export_disp(processorCount);
+    std::vector<INT> import_disp(processorCount);
     for (size_t p=1; p < processorCount; p++) {
       export_disp[p] = export_disp[p-1] + export_conn_size[p-1];
       import_disp[p] = import_disp[p-1] + import_conn_size[p-1];
@@ -671,14 +700,14 @@ namespace Iopx {
       size_t el_begin = exportElementIndex[p];
       size_t el_end = exportElementIndex[p+1];
       for (size_t i=el_begin; i < el_end; i++) {
-	MY_INT elem = exportElementMap[i] - elementOffset;
+	INT elem = exportElementMap[i] - elementOffset;
 	for (size_t n = pointer[elem]; n < pointer[elem+1]; n++) {
 	  export_conn.push_back(adjacency[n]);
 	}
       }
     }
 
-    std::vector<MY_INT> nodes;
+    std::vector<INT> nodes;
 
     // Count number of nodes on local elements...
     size_t node_sum = 0;
@@ -690,13 +719,14 @@ namespace Iopx {
     node_sum += imp_size;
 
     {
-      std::vector<MY_INT> import_conn(imp_size);
+      std::vector<INT> import_conn(imp_size);
     
+      ct_assert(sizeof(INT) == sizeof(int));
       int err = MPI_Alltoallv(TOPTR(export_conn), TOPTR(export_conn_size), TOPTR(export_disp), MPI_INT,
 			      TOPTR(import_conn), TOPTR(import_conn_size), TOPTR(import_disp), MPI_INT, comm_);
 
       // Done with export_conn...
-      std::vector<MY_INT>().swap(export_conn);
+      std::vector<INT>().swap(export_conn);
       
       // Find list of unique nodes used by the elements on this
       // processor... adjacency list contains connectivity for local
@@ -725,7 +755,7 @@ namespace Iopx {
     nodeIndex.resize(processorCount+1);
     
     for (size_t i=0; i < nodes.size(); i++) {
-      MY_INT owning_processor = find_index_location(nodes[i], node_dist);
+      INT owning_processor = find_index_location(nodes[i], node_dist);
       nodeIndex[owning_processor]++;
     }
     importNodeCount.resize(nodeIndex.size());
@@ -785,7 +815,8 @@ namespace Iopx {
     }
   }
 
-  void DecompositionData::get_shared_node_list()
+  template <typename INT>
+  void DecompositionData::get_shared_node_list(INT /*dummy*/)
   {
     // Need a list of all "shared" nodes (nodes on more than one
     // processor) and the list of processors that they are on for the
@@ -797,7 +828,7 @@ namespace Iopx {
     // * iterate and create a vector of all shared nodes and the
     //   processor they are on..
     size_t local_node_count = nodeIndex[myProcessor+1]-nodeIndex[myProcessor];
-    std::vector<std::pair<MY_INT,int> > node_proc_list;
+    std::vector<std::pair<INT,int> > node_proc_list;
     node_proc_list.reserve(local_node_count + exportNodeMap.size());
 
     {
@@ -817,9 +848,9 @@ namespace Iopx {
     }
     std::sort(node_proc_list.begin(), node_proc_list.end());
     
-    std::vector<std::pair<MY_INT,int> > shared_nodes;
+    std::vector<std::pair<INT,int> > shared_nodes;
     for (size_t i=0; i < node_proc_list.size(); i++) {
-      MY_INT node = node_proc_list[i].first;
+      INT node = node_proc_list[i].first;
       if (i+1 < node_proc_list.size() && node_proc_list[i+1].first == node) {
 	shared_nodes.push_back(node_proc_list[i]);
       }
@@ -833,7 +864,7 @@ namespace Iopx {
     // are shared.
    
     // Determine the counts...
-    std::vector<int> send_comm_map_count(processorCount);
+    std::vector<INT> send_comm_map_count(processorCount);
     for (size_t i=0; i < shared_nodes.size(); i++) {
       size_t beg = i;
       size_t end = ++i;
@@ -853,12 +884,12 @@ namespace Iopx {
 
     // Determine total count... (including myProcessor for now just to
     // see whether it simplifies/complicates coding)
-    std::vector<int> send_comm_map_disp(processorCount+1);
+    std::vector<INT> send_comm_map_disp(processorCount+1);
     std::copy(send_comm_map_count.begin(), send_comm_map_count.end(), send_comm_map_disp.begin());
     generate_index(send_comm_map_disp);
     
-    std::vector<int> send_comm_map(send_comm_map_disp[processorCount]);
-    std::vector<int> nc_offset(processorCount);
+    std::vector<INT> send_comm_map(send_comm_map_disp[processorCount]);
+    std::vector<INT> nc_offset(processorCount);
 
     for (size_t i=0; i < shared_nodes.size(); i++) {
       size_t beg = i;
@@ -889,6 +920,7 @@ namespace Iopx {
     std::vector<int> recv_comm_map_disp(recv_comm_map_count);
     generate_index(recv_comm_map_disp);
     nodeCommMap.resize(recv_comm_map_disp[processorCount-1] + recv_comm_map_count[processorCount-1]);
+    ct_assert(sizeof(INT) == sizeof(int));
     MPI_Alltoallv(TOPTR(send_comm_map), TOPTR(send_comm_map_count), TOPTR(send_comm_map_disp), MPI_INT,
 		  TOPTR(nodeCommMap), TOPTR(recv_comm_map_count), TOPTR(recv_comm_map_disp), MPI_INT,
 		  comm_);
@@ -901,7 +933,7 @@ namespace Iopx {
   
   void DecompositionData::get_local_element_list(const ZOLTAN_ID_PTR &export_global_ids, size_t export_count)
   {
-    std::vector<MY_INT> elements(elementCount);
+    std::vector<size_t> elements(elementCount);
     for (size_t i=0; i < export_count; i++) {
       // flag all elements to be exported...
       size_t elem = export_global_ids[i];
@@ -916,9 +948,10 @@ namespace Iopx {
     }
   }
 
+  template <typename INT>
   void DecompositionData::generate_adjacency_list(int exodusId,
-						  std::vector<MY_INT> &pointer,
-						  std::vector<MY_INT> &adjacency,
+						  std::vector<INT> &pointer,
+						  std::vector<INT> &adjacency,
 						  size_t block_count)
   {
     // Range of elements currently handled by this processor [)
@@ -926,7 +959,8 @@ namespace Iopx {
     size_t p_end   = p_start + elementCount;
     
     std::vector<ex_block> ebs(block_count);
-    std::vector<MY_INT> ids(block_count);
+    std::vector<INT> ids(block_count);
+    assert(sizeof(INT) == exodus_byte_size_api(exodusId));
     ex_get_ids(exodusId, EX_ELEM_BLOCK, TOPTR(ids));
   
     size_t sum = 0; // Size of adjacency vector.
@@ -970,6 +1004,7 @@ namespace Iopx {
     offset = 0;
     sum = 0; // Size of adjacency vector.
 
+    assert(sizeof(INT) == exodus_byte_size_api(exodusId));
     for (size_t b=0; b < block_count; b++) {
       // Range of elements in element block b [)
       size_t b_start = offset;  // offset is index of first element in this block...
@@ -983,7 +1018,7 @@ namespace Iopx {
 	int64_t id =        ebs[b].id;
 
 	// Get the connectivity (raw) for this portion of elements...
-	std::vector<int> connectivity(overlap*element_nodes);
+	std::vector<INT> connectivity(overlap*element_nodes);
 	size_t blk_start = max(b_start, p_start) - b_start + 1;
 	std::cout << "Processor " << myProcessor << " has " << overlap << " elements on element block " << id << "\n";
 	int ierr = ex_get_n_conn(exodusId, EX_ELEM_BLOCK, id, blk_start, overlap, TOPTR(connectivity), NULL, NULL);
@@ -991,7 +1026,7 @@ namespace Iopx {
 	for (size_t elem = 0; elem < overlap; elem++) {
 	  pointer.push_back(adjacency.size());
 	  for (size_t k=0; k < element_nodes; k++) {
-	    MY_INT node = connectivity[el++]-1; // 0-based node
+	    INT node = connectivity[el++]-1; // 0-based node
 	    adjacency.push_back(node);
 	  }
 	}
@@ -1002,7 +1037,8 @@ namespace Iopx {
     
   }
 
-  void DecompositionData::get_nodeset_data(int exodusId, size_t set_count)
+  template <typename INT>
+  void DecompositionData::get_nodeset_data(int exodusId, size_t set_count, INT /*dummy*/)
   {
     // Issues:
     // 1. Large node count in nodeset(s) that could overwhelm a single
@@ -1039,16 +1075,18 @@ namespace Iopx {
     //    some extra memory we can afford to use without increasing
     //    the high-water mark.
     //    -- Read the nodeset node lists in groups of size
-    //       (3*globNodeCount/procCount*sizeof(double)/sizeof(MY_INT)) or
+    //       (3*globNodeCount/procCount*sizeof(double)/sizeof(INT)) or
     //       less.
 
     int root = 0; // Root processor that reads all nodeset bulk data (nodelists)
     
     node_sets.resize(set_count);
 
-    std::vector<std::vector<MY_INT> > set_nodelists(set_count);
+    assert(sizeof(INT) == exodus_byte_size_api(exodusId));
+
+    std::vector<std::vector<INT> > set_nodelists(set_count);
     std::vector<ex_set> sets(set_count);
-    std::vector<MY_INT> ids(set_count);
+    std::vector<INT> ids(set_count);
     ex_get_ids(exodusId, EX_NODE_SET, TOPTR(ids));
   
     for (size_t i=0; i < set_count; i++) {
@@ -1075,7 +1113,7 @@ namespace Iopx {
     // equalize the nodeCount among processors since some procs have 1
     // more node than others. For small models, assume we can handle
     // at least 10000 nodes.
-    //    size_t max_size = max(10000, (nodeCount / 2) * 2 * 3 *sizeof(double) / sizeof(MY_INT));
+    //    size_t max_size = max(10000, (nodeCount / 2) * 2 * 3 *sizeof(double) / sizeof(INT));
     
     bool subsetting = false; // nodelist_size > max_size;
     
@@ -1084,7 +1122,7 @@ namespace Iopx {
     } else {
       // Can handle reading all nodeset node lists on a single
       // processor simultaneously.
-      std::vector<MY_INT> nodelist(nodelist_size);
+      std::vector<INT> nodelist(nodelist_size);
 
       // Read the nodelists on root processor.
       if (myProcessor == root) {
@@ -1097,7 +1135,7 @@ namespace Iopx {
       }
 
       // Broadcast this data to all other processors...
-      int err = MPI_Bcast(TOPTR(nodelist), nodelist.size(), MPI_INT, root, comm_);
+      int err = MPI_Bcast(TOPTR(nodelist), sizeof(INT)*nodelist.size(), MPI_BYTE, root, comm_);
 
       // Each processor now has a complete list of all nodes in all
       // nodesets.
@@ -1109,7 +1147,7 @@ namespace Iopx {
 	size_t ns_end = ns_beg + sets[i].num_entry;
 
 	for (size_t n = ns_beg; n < ns_end; n++) {
-	  MY_INT node = nodelist[n];
+	  INT node = nodelist[n];
 	  // See if node owned by this processor...
 	  if (i_own_node(node)) {
 	    // Save node in this processors nodelist for this set.
@@ -1180,18 +1218,21 @@ namespace Iopx {
     }
   }
 
-  void DecompositionData::get_sideset_data(int exodusId, size_t set_count)
+  template <typename INT>
+  void DecompositionData::get_sideset_data(int exodusId, size_t set_count, INT /*dummy*/)
   {
     // Issues:
     // 0. See 'get_nodeset_data' for most issues.
+
+    assert(sizeof(INT) == exodus_byte_size_api(exodusId));
 
     int root = 0; // Root processor that reads all sideset bulk data (nodelists)
     
     side_sets.resize(set_count);
 
-    std::vector<std::vector<MY_INT> > set_elemlists(set_count);
+    std::vector<std::vector<INT> > set_elemlists(set_count);
     std::vector<ex_set> sets(set_count);
-    std::vector<MY_INT> ids(set_count);
+    std::vector<INT> ids(set_count);
     ex_get_ids(exodusId, EX_SIDE_SET, TOPTR(ids));
   
     for (size_t i=0; i < set_count; i++) {
@@ -1218,7 +1259,7 @@ namespace Iopx {
     // equalize the nodeCount among processors since some procs have 1
     // more node than others. For small models, assume we can handle
     // at least 10000 nodes.
-    //    size_t max_size = max(10000, (nodeCount / 2) * 2 * 3 *sizeof(double) / sizeof(MY_INT));
+    //    size_t max_size = max(10000, (nodeCount / 2) * 2 * 3 *sizeof(double) / sizeof(INT));
     
     bool subsetting = false; // elemlist_size > max_size;
     
@@ -1227,7 +1268,7 @@ namespace Iopx {
     } else {
       // Can handle reading all sideset elem lists on a single
       // processor simultaneously.
-      std::vector<MY_INT> elemlist(elemlist_size);
+      std::vector<INT> elemlist(elemlist_size);
 
       // Read the elemlists on root processor.
       if (myProcessor == root) {
@@ -1240,7 +1281,7 @@ namespace Iopx {
       }
 
       // Broadcast this data to all other processors...
-      int err = MPI_Bcast(TOPTR(elemlist), elemlist.size(), MPI_INT, root, comm_);
+      int err = MPI_Bcast(TOPTR(elemlist), sizeof(INT)*elemlist.size(), MPI_BYTE, root, comm_);
 
       // Each processor now has a complete list of all elems in all
       // sidesets.
@@ -1252,7 +1293,7 @@ namespace Iopx {
 	size_t ss_end = ss_beg + sets[i].num_entry;
 
 	for (size_t n = ss_beg; n < ss_end; n++) {
-	  MY_INT elem = elemlist[n];
+	  INT elem = elemlist[n];
 	  // See if elem owned by this processor...
 	  if (i_own_elem(elem)) {   	    
 	    // Save elem in this processors elemlist for this set.
@@ -1367,7 +1408,7 @@ namespace Iopx {
 
       if (count > 0) {
 	// At least 1 sideset has variable number of nodes per side...
-	std::vector<int> nodes_per_face(count);
+	std::vector<int> nodes_per_face(count);  // not INT
 	if (myProcessor == root) {
 	  size_t offset = 0;
 	  for (size_t i=0; i < set_count; i++) {
@@ -1400,22 +1441,23 @@ namespace Iopx {
     }
   }
 
+  template <typename INT>
   void DecompositionData::calculate_element_centroids(int exodusId,
-						      const std::vector<MY_INT> &pointer,
-						      const std::vector<MY_INT> &adjacency,
-						      const std::vector<MY_INT> &node_dist)
+						      const std::vector<INT> &pointer,
+						      const std::vector<INT> &adjacency,
+						      const std::vector<INT> &node_dist)
   {
     // recv_count is the number of nodes that I need to recv from the other processors
     // send_count is the number of nodes that I need to send to the other processors
-    std::vector<MY_INT> recv_count(processorCount);
-    std::vector<MY_INT> send_count(processorCount);
+    std::vector<INT> recv_count(processorCount);
+    std::vector<INT> send_count(processorCount);
     
-    std::vector<MY_INT> owner; // Size is sum of element connectivity sizes (same as adjacency list)
+    std::vector<INT> owner; // Size is sum of element connectivity sizes (same as adjacency list)
     owner.reserve(adjacency.size());
 
     for (size_t i=0; i < adjacency.size(); i++) {
-      MY_INT node = adjacency[i];
-      MY_INT owning_processor = find_index_location(node, node_dist);
+      INT node = adjacency[i];
+      INT owning_processor = find_index_location(node, node_dist);
       owner.push_back(owning_processor);
       recv_count[owning_processor]++;
     }
@@ -1431,8 +1473,8 @@ namespace Iopx {
 
     send_count[myProcessor] = 0;
     
-    std::vector<MY_INT> recv_disp(processorCount);
-    std::vector<MY_INT> send_disp(processorCount);
+    std::vector<INT> recv_disp(processorCount);
+    std::vector<INT> send_disp(processorCount);
     size_t sums = 0;
     size_t sumr = 0;
     for (size_t p=0; p < processorCount; p++) {
@@ -1446,20 +1488,21 @@ namespace Iopx {
     std::cout << "Processor " << myProcessor << " communicates " << sumr << " nodes from and " << sums << " nodes to other processors\n";
     
     // Build the list telling the other processors which of their nodes I will need data from...
-    std::vector<MY_INT> node_comm_recv(sumr);
-    std::vector<MY_INT> node_comm_send(sums);
+    std::vector<INT> node_comm_recv(sumr);
+    std::vector<INT> node_comm_send(sums);
     {
-      std::vector<MY_INT> recv_tmp(processorCount);
+      std::vector<INT> recv_tmp(processorCount);
       for (size_t i=0; i < owner.size(); i++) {
 	size_t proc = owner[i];
 	if (proc != myProcessor) {
-	  MY_INT node = adjacency[i];
+	  INT node = adjacency[i];
 	  size_t position = recv_disp[proc] + recv_tmp[proc]++;
 	  node_comm_recv[position] = node;
 	}
       }
     }
 
+    ct_assert(sizeof(INT) == sizeof(int));
     int err = MPI_Alltoallv(TOPTR(node_comm_recv), TOPTR(recv_count), TOPTR(recv_disp), MPI_INT,
 			    TOPTR(node_comm_send), TOPTR(send_count), TOPTR(send_disp), MPI_INT, comm_);
 
@@ -1524,7 +1567,7 @@ namespace Iopx {
     
     // Calculate the centroid into the DecompositionData structure 'centroids'
     centroids_.reserve(elementCount*spatialDimension);
-    std::vector<MY_INT> recv_tmp(processorCount);
+    std::vector<INT> recv_tmp(processorCount);
 
     for (size_t i=0; i < elementCount; i++) {
       size_t nnpe = pointer[i+1] - pointer[i];
@@ -1532,8 +1575,8 @@ namespace Iopx {
       double cy = 0.0;
       double cz = 0.0;
       for (j = pointer[i]; j < pointer[i+1]; j++) {
-	MY_INT node = adjacency[j];
-	MY_INT proc = owner[j];
+	INT node = adjacency[j];
+	INT proc = owner[j];
 	if (proc == myProcessor) {
 	  cx += x[node-nodeOffset];
 	  if (spatialDimension > 1)
@@ -1541,7 +1584,7 @@ namespace Iopx {
 	  if (spatialDimension > 2)
 	    cz += z[node-nodeOffset];
 	} else {
-	  MY_INT coffset = recv_disp[proc] + recv_tmp[proc];  recv_tmp[proc] += spatialDimension;
+	  INT coffset = recv_disp[proc] + recv_tmp[proc];  recv_tmp[proc] += spatialDimension;
 	  cx += coord_recv[coffset+0];
 	  if (spatialDimension > 1)
 	    cy += coord_recv[coffset+1];
@@ -1870,6 +1913,7 @@ namespace Iopx {
     if (elementOffset > fileBlockIndex[blk_seq])
       offset = elementOffset - fileBlockIndex[blk_seq];
 
+    assert(sizeof(INT) == exodus_byte_size_api(exodusId));
     std::vector<INT> file_conn(count * nnpe);
     int ierr = ex_get_n_conn(exodusId, EX_ELEM_BLOCK, id, offset+1, count, TOPTR(file_conn), NULL, NULL);
     communicate_block_data(TOPTR(file_conn), data, blk_seq, nnpe);

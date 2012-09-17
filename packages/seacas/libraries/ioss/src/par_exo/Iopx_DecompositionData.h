@@ -240,13 +240,16 @@ namespace Iopx {
     Ioss::PropertyManager properties;
 
     void zoltan_decompose(const std::string &method);
-    void metis_decompose(const std::string &method,
-			 const std::vector<Iopx::MY_INT> &element_dist,
-			 const std::vector<Iopx::MY_INT> &pointer,
-			 const std::vector<Iopx::MY_INT> &adjacency);
 
+    template <typename INT>
+    void metis_decompose(const std::string &method,
+			 const std::vector<INT> &element_dist,
+			 const std::vector<INT> &pointer,
+			 const std::vector<INT> &adjacency);
+
+    template <typename INT>
     void simple_decompose(const std::string &method,
-			  const std::vector<Iopx::MY_INT> &element_dist);
+			  const std::vector<INT> &element_dist);
     
     int get_one_set_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int attrib_index, double* attrib) const;
     int get_one_node_attr(int exoid, ex_entity_id obj_id, int attrib_index, double* attrib) const;
@@ -279,15 +282,29 @@ namespace Iopx {
     void build_global_to_local_elem_map();
     void get_element_block_communication(size_t num_elem_block);
     void get_element_block_counts(size_t num_elem_block);
-    void generate_adjacency_list(int exodusId, std::vector<MY_INT> &pointer, std::vector<MY_INT> &adjacency, size_t block_count);
-    void get_nodeset_data(int exodusId, size_t set_count);
-    void get_sideset_data(int exodusId, size_t set_count);
-    void calculate_element_centroids(int exodusId, const std::vector<MY_INT> &pointer, const std::vector<MY_INT> &adjacency,
-				     const std::vector<MY_INT> &node_dist);
+
+    template <typename INT>
+    void generate_adjacency_list(int exodusId, std::vector<INT> &pointer, std::vector<INT> &adjacency, size_t block_count);
+
+    template <typename INT>
+      void get_nodeset_data(int exodusId, size_t set_count, INT dummy);
+
+    template <typename INT>
+      void get_sideset_data(int exodusId, size_t set_count, INT dummy);
+
+    template <typename INT>
+    void calculate_element_centroids(int exodusId,
+				     const std::vector<INT> &pointer,
+				     const std::vector<INT> &adjacency,
+				     const std::vector<INT> &node_dist);
     void get_local_element_list(const ZOLTAN_ID_PTR &export_global_ids, size_t export_count);
-    void get_shared_node_list();
-    void get_local_node_list(const std::vector<MY_INT> &pointer, const std::vector<MY_INT> &adjacency,
-			     const std::vector<MY_INT> &node_dist);
+
+    template <typename INT>
+    void get_shared_node_list(INT dummy);
+
+    template <typename INT>
+    void get_local_node_list(const std::vector<INT> &pointer, const std::vector<INT> &adjacency,
+			     const std::vector<INT> &node_dist);
 
   };
 }
