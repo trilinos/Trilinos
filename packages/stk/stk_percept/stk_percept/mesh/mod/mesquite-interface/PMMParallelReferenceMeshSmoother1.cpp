@@ -28,6 +28,7 @@ namespace stk {
   namespace percept {
 
     static double sqrt_eps = std::sqrt(std::numeric_limits<double>::epsilon());
+    //static double sqrt_eps = 1.e-5;
 
     using namespace Mesquite;
     const bool do_tot_test = false;
@@ -128,17 +129,21 @@ namespace stk {
 
     bool PMMParallelReferenceMeshSmoother1::check_convergence()
     {
+      double grad_check = gradNorm;
       if (m_stage == 0 && (m_dnew == 0.0 || m_total_metric == 0.0))
         {
+          std::cout << "tmp srk untangle m_dnew= " << m_dnew << " m_total_metric = " << m_total_metric << std::endl;
           return true; // for untangle
         }
-      if (m_stage == 0 && m_num_invalid == 0 && (m_dmax < gradNorm || m_scaled_grad_norm < gradNorm))
+      if (m_stage == 0 && m_num_invalid == 0 && (m_dmax < grad_check || m_scaled_grad_norm < grad_check))
         {
           return true;
         }
-      //if (m_num_invalid == 0 && (m_scaled_grad_norm < gradNorm || (m_iter > 0 && m_dmax < gradNorm && m_dnew < gradNorm*gradNorm*m_d0)))
-      if (m_num_invalid == 0 && (m_scaled_grad_norm < gradNorm || (m_iter > 0 && m_dmax < gradNorm ) ) )
+      if (m_num_invalid == 0 && (m_scaled_grad_norm < grad_check || (m_iter > 0 && m_dmax < grad_check && m_dnew < grad_check*grad_check*m_d0)))
+        //if (m_num_invalid == 0 && (m_scaled_grad_norm < 1.e-8 || (m_iter > 0 && m_dmax < 1.e-8 && m_dnew < gradNorm*gradNorm*m_d0)))
+        //if (m_num_invalid == 0 && (m_scaled_grad_norm < gradNorm || (m_iter > 0 && m_dmax < gradNorm ) ) )
         {
+          std::cout << "tmp srk untangle m_dnew= " << m_dnew << " m_total_metric = " << m_total_metric << std::endl;
           return true;
         }      
       return false;
@@ -392,6 +397,7 @@ namespace stk {
 
         for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
+            // FIXME
             if (PerceptMesquiteMesh::select_bucket(**k, m_eMesh) && on_locally_owned_part(**k))
               {
                 stk::mesh::Bucket & bucket = **k ;
@@ -955,7 +961,7 @@ namespace stk {
 
     }
 
-    double PMMParallelReferenceMeshSmoother1::total_metric(Mesh *mesh, double alpha, double multiplicative_edge_scaling, bool& valid)
+    double PMMParallelReferenceMeshSmoother1::total_metric(Mesh *mesh, double alpha, double multiplicative_edge_scaling, bool& valid, int* num_invalid)
     {
       PerceptMesquiteMesh *pmm = dynamic_cast<PerceptMesquiteMesh *>(mesh);
       stk::mesh::FieldBase *coord_field = m_eMesh->get_coordinates_field();
@@ -969,6 +975,7 @@ namespace stk {
       int spatialDim = m_eMesh->get_spatial_dim();
 
       double mtot = 0.0;
+      int n_invalid=0;
 
       // cache coordinates
       m_eMesh->copy_field(coord_field_lagged, coord_field_current);
@@ -1032,6 +1039,7 @@ namespace stk {
 
                       bool local_valid = true;
                       double nm = nodal_metric(node, 0.0, coord_current, cg_d, local_valid);
+                      if (!local_valid) n_invalid++;
                       valid = valid && local_valid;
                       mtot += nm;
                     }
@@ -1057,6 +1065,8 @@ namespace stk {
                       stk::mesh::Entity& element = bucket[i_element];
                       bool local_valid=true;
                       double mm = metric(element, local_valid);
+                      if (!local_valid) n_invalid++;
+
                       valid = valid && local_valid;
                       if (do_print_elem_val) PRINT( "element= " << element.identifier() << " metric= " << mm );
                       if (do_print_elem_val && element.identifier() == 13) { std::cout << element.identifier() << " iter= " << m_iter << " element= " << element.identifier() << " metric= " << mm << std::endl;}
@@ -1071,6 +1081,12 @@ namespace stk {
 
       stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceSum<1>( & mtot ) );
       stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMin<1>( & valid ) );
+
+      if (num_invalid)
+        {
+          *num_invalid = n_invalid;
+          stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceSum<1>( num_invalid ) );
+        }
 
       return mtot;
       

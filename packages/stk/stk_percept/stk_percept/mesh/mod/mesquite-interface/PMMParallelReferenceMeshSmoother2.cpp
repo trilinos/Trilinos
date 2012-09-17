@@ -123,7 +123,8 @@ namespace stk {
                     double alpha = local_scale;  // m_scale
                     if (std::sqrt(norm_gradient2) > edge_length_ave*1.e-8)
                     {
-                      double metric_0 = nodal_metric(node, 0.0, coord_current, cg_d, total_valid);
+                      bool local_valid=true, local_valid_0=true, local_valid_1=true;
+                      double metric_0 = nodal_metric(node, 0.0, coord_current, cg_d, local_valid_0);
                       double metric=0.0;
                       //double sigma=0.95;
                       double tau = 0.5;
@@ -133,29 +134,40 @@ namespace stk {
                       bool converged = false;
                       while (!converged)
                         {
-                          metric = nodal_metric(node, alpha, coord_current, cg_d, total_valid);
+                          metric = nodal_metric(node, alpha, coord_current, cg_d, local_valid);
 
                           //converged = (metric > sigma*metric_0) && (alpha > 1.e-16);
                           double mfac = alpha*armijo_offset_factor;
                           converged = metric == 0.0 || (metric < metric_0 + mfac);
-                          if (m_untangled) converged = converged && total_valid;
+                          if (m_untangled) converged = converged && local_valid;
                           PRINT(  "tmp srk node= " << node.identifier() << " iter= " << m_iter
                                   << " alpha= " << alpha << " metric_0= " << metric_0 << " metric= " << metric << " diff= " << metric - (metric_0 + mfac) 
                                   << " m_untangled = " << m_untangled << " norm_gradient2= " << norm_gradient2
-                                  << " total_valid= " << total_valid );
+                                  << " local_valid= " << local_valid );
                           if (!converged)
                             alpha *= tau;
                           if (alpha < std::max(1.e-6*m_scale, 1.e-16))
-                            break;
+                            {
+                              PRINT_1(  "tmp srk not conv node= " << node.identifier() << " iter= " << m_iter
+                                      << " alpha= " << alpha << " metric_0= " << metric_0 << " metric= " << metric << " diff= " << metric - (metric_0 + mfac) 
+                                      << " m_untangled = " << m_untangled << " norm_gradient2= " << norm_gradient2
+                                      << " local_valid= " << local_valid    );
+
+                              break;
+                            }
                         }
                       //if (metric > sigma*metric_0)
                       if (!converged)
                         {
-                          double metric_1 = nodal_metric(node, 1.e-6, coord_current, cg_d, total_valid);
+                          double metric_0 = nodal_metric(node, 0.0, coord_current, cg_d, local_valid_0);
+                          double metric_1 = nodal_metric(node, 1.e-6, coord_current, cg_d, local_valid_1);
                           PRINT_1(  "tmp srk can't reduce metric, node= " << node.identifier() << " iter= " << m_iter
-                                  << " alpha= " << alpha << " metric_0= " << metric_0 << " metric[1.e-6]= " << metric_1 << " diff= " << metric_1 - metric_0
+                                  << " alpha= " << alpha << " metric_0= " << metric_0 << " metric[1.e-6]= " << metric_1 << " diff[want neg]= " << metric_1 - metric_0
                                   << "\n m_untangled = " << m_untangled << " norm_gradient2= " << norm_gradient2
-                                    << " total_valid= " << total_valid << " cg_d= " << cg_d[0] << " " << cg_d[1] << " edge_length_ave= " << edge_length_ave);
+                                    << " local_valid= " << local_valid 
+                                    << " local_valid_0= " << local_valid_0 
+                                    << " local_valid_1= " << local_valid_1 
+                                    << " cg_d= " << cg_d[0] << " " << cg_d[1] << " edge_length_ave= " << edge_length_ave);
                           alpha = 0.0;
                         }
                       else
@@ -196,11 +208,53 @@ namespace stk {
           } // bucket loop
       }
 
+      /// check for valid mesh
+      double alpha_global = 1.0;
+      if (m_stage == 1)
+      {
+        bool converged = false;
+        while (!converged)
+          {
+            int num_invalid=0;
+            double metric_new = total_metric(mesh, alpha_global, 1.0, total_valid, &num_invalid);
+            PRINT_1(  "tmp srk global alpha = " << alpha_global << " metric_new= " << metric_new << " total_valid= " << total_valid << " num_invalid= " << num_invalid);
+            if (total_valid)
+              {
+                converged = true;
+                break;
+              }
+            else
+              {
+                alpha_global *= 0.5;
+              }
+            if (alpha_global < 1.e-10)
+              {
+                break;
+              }
+          }
+        //if (metric > sigma*metric_0)
+        if (!converged)
+          {
+            bool local_valid_0=true, local_valid_1=true;
+            double metric_0 = total_metric(mesh,0.0, 1.0, local_valid_0);
+            double metric_1 = total_metric(mesh, 1.e-6, 1.0, local_valid_1);
+            PRINT_1(  "tmp srk can't get valid mesh... " 
+                      " metric_0= " << metric_0 << " metric[1.e-6]= " << metric_1 << " diff[want neg]= " << metric_1 - metric_0
+                      << "\n m_untangled = " << m_untangled 
+                      << " local_valid_0= " << local_valid_0 
+                      << " local_valid_1= " << local_valid_1 );
+          }
+      }
+
       /// x = x + alpha*d
       m_dmax=0.0;
-      update_node_positions(mesh, 1.0);
-      double metric_new = total_metric(mesh,0.0,1.0, total_valid);
-      PRINT_1( "tmp srk iter= "<< m_iter << " dmax= " << m_dmax << " alpha_min= " << alpha_min << " alpha_max= " << alpha_max);
+      update_node_positions(mesh, alpha_global);
+      double metric_new = total_metric(mesh,0.0, 1.0, total_valid);
+      PRINT_1( "tmp srk iter= "<< m_iter << " dmax= " << m_dmax << " alpha_min= " << alpha_min << " alpha_max= " << alpha_max << " total_valid= " << total_valid);
+      if (m_stage == 1 && !total_valid)
+        {
+          throw std::runtime_error("created bad mesh");
+        }
 
       //if (!reduced_metric || metric_new >= metric_orig) 
       if (!reduced_metric )
