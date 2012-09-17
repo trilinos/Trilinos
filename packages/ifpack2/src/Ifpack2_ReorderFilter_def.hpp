@@ -295,8 +295,8 @@ void ReorderFilter<MatrixType>::getLocalRowCopy(LocalOrdinal LocalRow,
   TEUCHOS_TEST_FOR_EXCEPTION((LocalRow < 0 || (size_t) LocalRow >=  A_->getNodeNumRows() || (size_t) Indices.size() <  A_->getNumEntriesInLocalRow(LocalRow)), std::runtime_error, "Ifpack2::ReorderFilter::getLocalRowCopy invalid row or array size.");
 
 
-  LocalOrdinal MyReorderedRow = reverseperm_[LocalRow];
-  A_->getLocalRowCopy(MyReorderedRow,Indices,Values,NumEntries);
+  LocalOrdinal MyOriginalRow = reverseperm_[LocalRow];
+  A_->getLocalRowCopy(MyOriginalRow,Indices,Values,NumEntries);
   // Do a col reindex via perm
   for (size_t i = 0 ; i < NumEntries ; ++i) {
     Indices[i] = perm_[Indices[i]];
@@ -398,6 +398,40 @@ template<class MatrixType>
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType ReorderFilter<MatrixType>::getFrobeniusNorm() const
 {
   throw std::runtime_error("Ifpack2::ReorderFilter does not implement getFrobeniusNorm.");
+}
+
+//==========================================================================  
+//! Permute multivector: original-to-reordered
+template<class MatrixType> 
+void ReorderFilter<MatrixType>::permuteOriginalToReordered(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &originalX, 
+							   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedY) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(originalX.getNumVectors() != reorderedY.getNumVectors(), std::runtime_error,
+			     "Ifpack2::ReorderFilter::permuteOriginalToReordered ERROR: X.getNumVectors() != Y.getNumVectors().");
+
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr = originalX.get2dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       y_ptr = reorderedY.get2dViewNonConst();
+
+  for(size_t k=0; k < originalX.getNumVectors(); k++)
+    for(LocalOrdinal i=0; (size_t)i< originalX.getLocalLength(); i++)
+      y_ptr[k][perm_[i]] = x_ptr[k][i];
+}							  
+  
+//==========================================================================  
+//! Permute multivector: reordered-to-original
+template<class MatrixType> 
+void ReorderFilter<MatrixType>::permuteReorderedToOriginal(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedX, 
+							   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &originalY) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(reorderedX.getNumVectors() != originalY.getNumVectors(), std::runtime_error,
+			     "Ifpack2::ReorderFilter::permuteReorderedToOriginal ERROR: X.getNumVectors() != Y.getNumVectors().");
+
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr = reorderedX.get2dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       y_ptr = originalY.get2dViewNonConst();
+
+  for(size_t k=0; k < reorderedX.getNumVectors(); k++)
+    for(LocalOrdinal i=0; (size_t)i< reorderedX.getLocalLength(); i++)
+      y_ptr[k][reverseperm_[i]] = x_ptr[k][i];
 }
 
 //==========================================================================  

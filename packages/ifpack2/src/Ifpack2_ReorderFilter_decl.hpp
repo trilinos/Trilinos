@@ -181,9 +181,9 @@ public:
   
   //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
   /*!
-    \param DropRow - (In) Global row number for which indices are desired.
-    \param Indices - (Out) Global column indices corresponding to values.
-    \param Values - (Out) Matrix values.
+    \param GlobalRow  - (In) Global row number for which indices are desired.
+    \param Indices    - (Out) Global column indices corresponding to values.
+    \param Values     - (Out) Matrix values.
     \param NumEntries - (Out) Number of indices.
     
     Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
@@ -197,13 +197,13 @@ public:
   
   //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
   /*!
-    \param DropRow - (In) Drop row number for which indices are desired.
-    \param Indices - (Out) Drop column indices corresponding to values.
-    \param Values - (Out) Matrix values.
+    \param LocalRow   - (In) Local row number for which indices are desired.
+    \param Indices    - (Out) Local column indices corresponding to values.
+    \param Values     - (Out) Matrix values.
     \param NumIndices - (Out) Number of indices.
     
     Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
-    with row \c DropRow. If \c DropRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is 
+    with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is 
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
   virtual void getLocalRowCopy(LocalOrdinal DropRow, 
@@ -216,9 +216,8 @@ public:
     \param GlobalRow - (In) Global row number for which indices are desired.
     \param Indices   - (Out) Global column indices corresponding to values.
     \param Values    - (Out) Row values
-    \pre <tt>isDroplyIndexed() == false</tt>
     \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
-    
+    \pre <tt>isLocallyIndexed() == false</tt>    
     Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
   */
   virtual void getGlobalRowView(GlobalOrdinal GlobalRow, 
@@ -227,15 +226,15 @@ public:
   
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
-    \param DropRow - (In) Drop row number for which indices are desired.
+    \param LocalRow - (In) Local row number for which indices are desired.
     \param Indices  - (Out) Global column indices corresponding to values.
     \param Values   - (Out) Row values
     \pre <tt>isGloballyIndexed() == false</tt>
-    \post <tt>indices.size() == getNumEntriesInDropRow(DropRow)</tt>
+    \post <tt>indices.size() == getNumEntriesInDropRow(LocalRow)</tt>
     
-    Note: If \c DropRow does not belong to this node, then \c indices is set to null.
+    Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
   */
-  virtual void getLocalRowView(LocalOrdinal DropRow, 
+  virtual void getLocalRowView(LocalOrdinal LocalRow, 
 			       Teuchos::ArrayView<const LocalOrdinal> &indices, 
 			       Teuchos::ArrayView<const Scalar> &values) const;
   
@@ -282,6 +281,8 @@ public:
     vary according to the values of \c alpha and \c beta. Specifically
     - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
     - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
+
+    This assumes that X and Y are in the *reordered* order.
   */
   virtual void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
 		     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
@@ -291,6 +292,16 @@ public:
   
   //! Indicates whether this operator supports applying the adjoint operator.
   virtual bool hasTransposeApply() const;
+
+
+  //! Permute multivector: original-to-reordered
+  virtual void permuteOriginalToReordered(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &originalX, 
+					  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedY) const;
+  
+  //! Permute multivector: reordered-to-original
+  virtual void permuteReorderedToOriginal(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedX, 
+					  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &originalY) const;
+
   
   //@}
   
@@ -332,8 +343,8 @@ private:
   //! Pointer to the matrix to be preconditioned.
   Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
   //! The reordering
-  Teuchos::ArrayRCP<LocalOrdinal> perm_;
-  Teuchos::ArrayRCP<LocalOrdinal> reverseperm_;
+  Teuchos::ArrayRCP<LocalOrdinal> perm_;        /* Original  -> Reordered  */
+  Teuchos::ArrayRCP<LocalOrdinal> reverseperm_; /* Reordered -> Original */
 
   //! Used in apply, to avoid allocation each time.
   mutable Teuchos::Array<LocalOrdinal> Indices_;
