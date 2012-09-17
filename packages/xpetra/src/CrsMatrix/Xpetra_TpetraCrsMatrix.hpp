@@ -57,6 +57,7 @@
 #include "Xpetra_TpetraMultiVector.hpp"
 #include "Xpetra_TpetraVector.hpp"
 #include "Xpetra_TpetraCrsGraph.hpp"
+//#include "Xpetra_TpetraRowMatrix.hpp"
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
@@ -68,7 +69,7 @@ namespace Xpetra {
 
   template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
   class TpetraCrsMatrix
-    : public CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+    : public CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>//, public TpetraRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   {
 
     // The following typedef are used by the XPETRA_DYNAMIC_CAST() macro.
