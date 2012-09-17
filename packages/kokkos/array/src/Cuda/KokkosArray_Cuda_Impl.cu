@@ -158,7 +158,6 @@ public:
 
   typedef Cuda::size_type size_type ;
 
-  std::vector<cudaStream_t> m_streams ;
   int                       m_cudaDev ;
   unsigned                  m_maxWarpCount ;
   unsigned                  m_maxBlock ;
@@ -178,8 +177,7 @@ public:
   ~CudaInternal();
 
   CudaInternal()
-    : m_streams() 
-    , m_cudaDev( -1 )
+    : m_cudaDev( -1 )
     , m_maxWarpCount( 0 )
     , m_maxBlock( 0 ) 
     , m_maxSharedWords( 0 )
@@ -191,8 +189,6 @@ public:
 
   size_type * scratch_space( const size_type size );
   size_type * scratch_flags( const size_type size );
-
-  void stream_resize( const size_type count );
 };
 
 CudaInternal::~CudaInternal()
@@ -271,12 +267,6 @@ void CudaInternal::initialize( int cuda_device_id )
     //----------------------------------
 
     m_maxBlock = cudaProp.maxGridSize[0] ;
-
-    //----------------------------------
-    // Allocate a parallel stream for each multiprocessor
-    // to support concurrent heterogeneous multi-functor execution.
-
-    stream_resize( cudaProp.multiProcessorCount );
 
     //----------------------------------
     // Multiblock reduction uses scratch flags for counters
@@ -367,39 +357,11 @@ CudaInternal::scratch_space( const Cuda::size_type count )
 
 //----------------------------------------------------------------------------
 
-void CudaInternal::stream_resize( const Cuda::size_type count )
-{
-  assert_initialized();
-
-  const size_type current_count = m_streams.size();
-
-  if ( current_count < count ) {
-
-    cudaDeviceSynchronize();
-
-    m_streams.resize( count );
-
-    for ( int i = current_count ; i < count ; ++i ) {
-      CUDA_SAFE_CALL( cudaStreamCreate(    & m_streams[i] ) );
-      CUDA_SAFE_CALL( cudaStreamSynchronize( m_streams[i] ) );
-    }
-  }
-}
-
-//----------------------------------------------------------------------------
-
 void CudaInternal::finalize()
 {
-  for ( size_t i = m_streams.size() ; i ; ) {
-    --i ;
-    CUDA_SAFE_CALL( cudaStreamSynchronize( m_streams[i] ) );
-    CUDA_SAFE_CALL( cudaStreamDestroy( m_streams[i] ) );
-  }
-
   CudaMemorySpace::decrement( m_scratchSpace );
   CudaMemorySpace::decrement( m_scratchFlags );
 
-  m_streams.clear();
   m_cudaDev            = -1 ;
   m_maxWarpCount       = 0 ;
   m_maxBlock           = 0 ; 
@@ -420,26 +382,6 @@ Cuda::size_type cuda_internal_maximum_grid_count()
 
 Cuda::size_type cuda_internal_maximum_shared_words()
 { return CudaInternal::singleton().m_maxSharedWords ; }
-
-Cuda::size_type cuda_internal_stream_count()
-{ return CudaInternal::singleton().m_streams.size(); }
-
-void cuda_internal_stream_resize( Cuda::size_type n )
-{ CudaInternal::raw_singleton().stream_resize( n ); } 
-
-cudaStream_t & cuda_internal_stream( Cuda::size_type i )
-{
-  CudaInternal & s = CudaInternal::raw_singleton();
-
-  if ( s.m_streams.size() <= i ) {
-    std::ostringstream msg ;
-    msg << "KokkosArray::Impl::cuda_internal_stream( " << i << " ) ERROR "
-        << "stream_count = " << s.m_streams.size() ;
-    throw std::logic_error( msg.str() );
-  }
-
-  return s.m_streams[i] ;
-}
 
 Cuda::size_type * cuda_internal_scratch_space( const Cuda::size_type count )
 { return CudaInternal::raw_singleton().scratch_space( count ); }
