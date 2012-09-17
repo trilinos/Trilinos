@@ -37,11 +37,9 @@ SET(HEADERS ${HEADERS}
   Ifpack_ILUT.h
   Ifpack_OverlapGraph.h
   Ifpack_ScalingType.h
-  Ifpack_CrsIct.h
   Ifpack_ICT.h
   Ifpack_IC.h
   Ifpack_IC_Utils.h
-  icrout_cholesky_mex.h
   ifp_parameters.h	
   Ifpack_Preconditioner.h
   Ifpack_CondestType.h
@@ -96,12 +94,10 @@ SET(SOURCES ${SOURCES}
   Ifpack_IKLU.cpp
   Ifpack_IKLU_Utils.cpp
   Ifpack_ILUT.cpp
-  Ifpack_CrsIct.cpp
   Ifpack_ICT.cpp
   Ifpack_IC.cpp
   Ifpack_IC_Utils.cpp
   Ifpack_OverlapGraph.cpp
-  icrout_cholesky_mex.c
   icrout_quicksort.c
   ifp_parameters.cpp
   Ifpack_DiagPreconditioner.cpp
