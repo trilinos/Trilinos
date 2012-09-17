@@ -1,0 +1,19 @@
+The Python scripts (.py) in this directory are for automatic code
+generation.  The scripts are meant only for Trilinos developers, to
+automate the process of writing code for certain tedious tasks (e.g.,
+specializing a traits class for many different built-in C++ types).
+The C++ files (.hpp and .cpp) in this directory are not meant to be
+built or used as header files; they are only for use by the Python
+scripts.  They provide string templates for the scripts to copy.
+
+The Python scripts do not typically run as part of the normal build
+process.  Trilinos developers execute the scripts manually to generate
+code, and then check the resulting code into the source repository.
+This appears to be common practice among different Trilinos packages.
+
+The scripts in this directory are subject to the same open-source
+license as the Teuchos package.  Please refer to teuchos/Copyright.txt
+for license details.  Interested users are welcome to examine the
+scripts in this directory, subject to the terms of this license.
+
+
