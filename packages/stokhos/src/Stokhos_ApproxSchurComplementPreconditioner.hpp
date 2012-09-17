@@ -43,8 +43,9 @@
 namespace Stokhos {
     
   /*! 
-   * \brief A stochastic preconditioner based on applying one iteration of
-   * approximate Gauss-Seidel.
+   * \brief A stochastic preconditioner based on applying the approximate
+   * Schur complement preconditioner as defined by Sousedik, Ghanem, and Phipps,
+   * Numerical Linear Algebra and Applications, 2012.
    */
   class ApproxSchurComplementPreconditioner : public Stokhos::SGPreconditioner {
       
@@ -130,16 +131,16 @@ namespace Stokhos {
 
   protected:
 
-    void compute_index(int l, int& n_begin, int& n_end) const;
+    void multiply_block(
+      const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& cijk,
+      double alpha,
+      const EpetraExt::BlockMultiVector& Input, 
+      EpetraExt::BlockMultiVector& Result) const;
 
-    void multiply_block(int row_begin, int row_end, int col_begin, int col_end,
-			double alpha,
-			const EpetraExt::BlockMultiVector& Input, 
-			EpetraExt::BlockMultiVector& Result) const;
-
-    void divide_diagonal_block(int row_begin, int row_end,
-			       const EpetraExt::BlockMultiVector& Input, 
-			       EpetraExt::BlockMultiVector& Result) const;
+    void divide_diagonal_block(
+      int row_begin, int row_end,
+      const EpetraExt::BlockMultiVector& Input, 
+      EpetraExt::BlockMultiVector& Result) const;
 
   private:
     
@@ -190,6 +191,16 @@ namespace Stokhos {
     //! Pointer to triple product
     Teuchos::RCP<const Cijk_type > Cijk;
 
+    //! Total polynomial order
+    int P;
+
+    //! Starting block indices
+    Teuchos::Array<int> block_indices;
+
+    //! Triple product tensor for each sub-block
+    Teuchos::Array< Teuchos::RCP<Cijk_type> > upper_block_Cijk;
+    Teuchos::Array< Teuchos::RCP<Cijk_type> > lower_block_Cijk;
+
     //! Flag indicating whether operator be scaled with <\psi_i^2>
     bool scale_op;
 
@@ -199,12 +210,6 @@ namespace Stokhos {
     //! Limit Gauss-Seidel loop to linear terms
     bool only_use_linear;
 
-    //! Starting k iterator
-    Cijk_type::k_iterator k_begin;
-
-    //! Ending k iterator
-    Cijk_type::k_iterator k_end;
-
     //! Maximum number of matvecs in Apply
     int max_num_mat_vec;
 
@@ -213,6 +218,9 @@ namespace Stokhos {
 
     //! Temporary vector for storing rhs in Gauss-Seidel loop
     mutable Teuchos::RCP<EpetraExt::BlockMultiVector> rhs_block;
+
+    mutable Teuchos::Array<double*> j_ptr;
+    mutable Teuchos::Array<int> mj_indices;
 
   }; // class ApproxSchurComplementPreconditioner
   
