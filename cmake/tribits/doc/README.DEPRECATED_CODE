@@ -251,6 +251,15 @@ what is no longer needed or wanted.
 NOTE: It is recommended to remove deprecated files first, then remove
 deprecated file fragments from remaining files.
 
+NOTE: It is recommended that before deprecated code is actually removed, that
+the TriBITS project set the variable <PROJECT_NAME>_HIDE_DEPRECATED_CODE be
+changed from OFF to ON so that downstream clients will see the effects of
+hiding the deprecated code before the code is actually removed.  In fact, this
+variable should be set several days to a week or more more before the code is
+actually removed.  This way, downstream code developers will get a "shock"
+about removal of the deprecated code but can manually set
+-D<PROJECT_NAME>_HIDE_DEPRECATED_CODE=OFF to keep building in the short term.
+
 4.a) Removing entire deprecated header and source files.
 
 To remove entire deprecated header and source files one just needs to first
@@ -267,6 +276,10 @@ CMakeLists.txt file leaving:
     APPEND_SET(SOURCES
       )
   ENDIF()
+
+To find which CMakeLists.txt files need to be modified, do a search like:
+
+  $ find . -name CMakeLists.txt -exec grep -nH HIDE_DEPRECATED_CODE {} \;
 
 Since more files may be deprecated later, it may be a good idea to leave the
 machinary for conditionally including deprecated files by leaving the above

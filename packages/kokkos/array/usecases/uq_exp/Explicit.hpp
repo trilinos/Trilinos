@@ -107,17 +107,17 @@ struct Fields {
   typedef typename KokkosArray::ParallelDataMap  parallel_data_map ;
 
 
-  typedef KokkosArray::View< Scalar[0]                  , device_type >  scalar_view ;
-  typedef KokkosArray::View< Scalar[0][0]               , device_type >  array_view ;
-  typedef KokkosArray::View< Scalar[0][0][ SpatialDim ] , device_type >  geom_array_view ;
-  typedef KokkosArray::View< Scalar[0][0][ K_F_SIZE ]   , device_type >  tensor_array_view ;
-  typedef KokkosArray::View< Scalar[0][0][ K_S_SIZE ]   , device_type >  sym_tensor_array_view ;
+  typedef KokkosArray::View< Scalar*                , device_type >  scalar_view ;
+  typedef KokkosArray::View< Scalar**               , device_type >  array_view ;
+  typedef KokkosArray::View< Scalar**[ SpatialDim ] , device_type >  geom_array_view ;
+  typedef KokkosArray::View< Scalar**[ K_F_SIZE ]   , device_type >  tensor_array_view ;
+  typedef KokkosArray::View< Scalar**[ K_S_SIZE ]   , device_type >  sym_tensor_array_view ;
 
-  typedef KokkosArray::View< Scalar[0][0][ SpatialDim ][ ElemNodeCount ] , device_type >
+  typedef KokkosArray::View< Scalar**[ SpatialDim ][ ElemNodeCount ] , device_type >
     elem_node_geom_view ;
 
-  typedef KokkosArray::View< Scalar ,    device_type > value_view ;
-  typedef KokkosArray::View< Scalar[0] , device_type > property_view ;
+  typedef KokkosArray::View< Scalar ,   device_type > value_view ;
+  typedef KokkosArray::View< Scalar* , device_type > property_view ;
 
   // Parameters:
   const unsigned num_nodes ;
@@ -633,7 +633,7 @@ static void driver( const char * label , comm::Machine machine ,
 
     PerformanceData perf , best ;
 
-    for ( size_t iuq = uq_count_beg ; iuq < uq_count_end ; ++iuq ) {
+    for ( size_t iuq = uq_count_beg ; iuq < uq_count_end ; iuq *= 2 ) {
 
       for( size_t j = 0; j < run_count ; j++ ) {
 

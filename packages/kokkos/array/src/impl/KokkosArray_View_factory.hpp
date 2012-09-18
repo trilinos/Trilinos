@@ -151,6 +151,8 @@ struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst > ,
   inline static
   void apply( const dst_type & dst , const src_type & src )
   {
+    typedef typename dst_type::shape_type shape_type ;
+
     if ( dst != src ) {
       assert_shapes_are_equal( dst.shape() , src.shape() );
 
@@ -159,7 +161,7 @@ struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst > ,
                 typename DeviceSrc::memory_space > (
         dst.ptr_on_device() ,
         src.ptr_on_device() ,
-        allocation_count( dst.shape() ) );
+        ShapeMap< shape_type >::allocation_count( dst.shape() ) );
     }
   }
 };

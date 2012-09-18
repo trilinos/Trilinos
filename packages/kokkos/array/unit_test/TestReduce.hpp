@@ -41,8 +41,6 @@
 //@HEADER
 */
 
-#include <gtest/gtest.h>
-
 #ifndef KOKKOSARRAY_MACRO_DEVICE
 #error "KOKKOSARRAY_MACRO_DEVICE undefined"
 #endif
