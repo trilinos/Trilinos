@@ -385,12 +385,18 @@ void ReorderFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdi
   }
 }
   
-
 //==========================================================================  
 template<class MatrixType> 
 bool ReorderFilter<MatrixType>::hasTransposeApply() const
 {
   return true;
+}
+
+//==========================================================================  
+template<class MatrixType> 
+bool ReorderFilter<MatrixType>::supportsRowViews() const
+{
+  return false;
 }
 
 //==========================================================================  

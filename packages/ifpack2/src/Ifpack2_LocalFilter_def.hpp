@@ -449,6 +449,13 @@ bool LocalFilter<MatrixType>::hasTransposeApply() const
 
 //==========================================================================  
 template<class MatrixType> 
+bool LocalFilter<MatrixType>::supportsRowViews() const
+{
+  return false;
+}
+
+//==========================================================================  
+template<class MatrixType> 
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType LocalFilter<MatrixType>::getFrobeniusNorm() const
 {
   throw std::runtime_error("Ifpack2::LocalFilter does not implement getFrobeniusNorm.");

@@ -626,6 +626,13 @@ bool OverlappingRowMatrix<MatrixType>::hasTransposeApply() const
   return true;
 }
 
+//==========================================================================
+template<class MatrixType> 
+bool OverlappingRowMatrix<MatrixType>::supportsRowViews() const
+{
+  return false;
+}
+
 
 } // namespace Ifpack2
 
