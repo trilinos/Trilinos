@@ -27,23 +27,27 @@
 //@HEADER
 */
 
-//-----------------------------------------------------
-// Ifpack2::BorderedOperator is a translation of the
-// LOCA_BorderedSolver_EpetraHouseholder
-// implementation written by Eric Phipps.
-// DMD.
-//------------------------------------------------------
-
-
-#ifndef IFPACK2_BORDEREDOPERATOR_HPP
-#define IFPACK2_BORDEREDOPERATOR_HPP
-
-//declaration:
 #include "Ifpack2_BorderedOperator_decl.hpp"
 
-//#ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-//definition:
-#include "Ifpack2_BorderedOperator_def.hpp"
-//#endif
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-#endif /* IFPACK2_BORDEREDOPERATOR_HPP */
+#include "Ifpack2_BorderedOperator_def.hpp"
+#include "Ifpack2_ExplicitInstantiationHelpers.hpp"
+
+namespace Ifpack2 {
+#ifdef HAVE_TPETRA_INST_FLOAT
+IFPACK2_INST(BorderedOperator,float,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+IFPACK2_INST(BorderedOperator,double,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+IFPACK2_INST(BorderedOperator,std::complex<float>,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+IFPACK2_INST(BorderedOperator,std::complex<double>,int,int);
+#endif
+}
+
+#endif
+
