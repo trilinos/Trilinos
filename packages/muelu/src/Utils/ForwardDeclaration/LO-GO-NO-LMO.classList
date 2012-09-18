@@ -9,3 +9,8 @@ AmalgamationInfo
 #Zoltan
 CheapAggregationAlgorithm
 ExperimentalAggregationFactory
+UncoupledAggregationFactory
+UncoupledAggregationAlgorithm
+MaxLinkAggregationAlgorithm
+EmergencyAggregationAlgorithm
+OnePtAggregationAlgorithm
