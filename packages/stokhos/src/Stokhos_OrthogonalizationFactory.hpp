@@ -79,10 +79,10 @@ namespace Stokhos {
 	  piv[i] = i;
 
 	if (verbose) {
-	  std::cout << "diag(sigma) = [ ";
-	  for (ordinal_type i=0; i<rank; i++)
-	    std::cout << sigma[i] << " ";
-	  std::cout << "]" << std::endl;
+	  // std::cout << "diag(sigma) = [ ";
+	  // for (ordinal_type i=0; i<rank; i++)
+	  //   std::cout << sigma[i] << " ";
+	  // std::cout << "]" << std::endl;
 	  
 	  std::cout << "rank = " << rank << std::endl;
 	}
@@ -126,15 +126,15 @@ namespace Stokhos {
 	  "Invalid orthogonalization method " << method);
 
 	if (verbose) {
-	  std::cout << "piv = [";
-	  for (ordinal_type i=0; i<rank; i++)
-	    std::cout << piv[i] << " ";
-	  std::cout << "]" << std::endl;
+	  // std::cout << "piv = [";
+	  // for (ordinal_type i=0; i<rank; i++)
+	  //   std::cout << piv[i] << " ";
+	  // std::cout << "]" << std::endl;
     
-	  std::cout << "diag(R) = [ ";
-	  for (ordinal_type i=0; i<rank; i++)
-	    std::cout << R(i,i) << " ";
-	  std::cout << "]" << std::endl;
+	  // std::cout << "diag(R) = [ ";
+	  // for (ordinal_type i=0; i<rank; i++)
+	  //   std::cout << R(i,i) << " ";
+	  // std::cout << "]" << std::endl;
 	  
 	  std::cout << "rank = " << rank << std::endl;
 
