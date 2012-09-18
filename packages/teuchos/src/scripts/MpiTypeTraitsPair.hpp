@@ -78,4 +78,15 @@ class MpiTypeTraits<std::pair<X, Y> > {
       "with the current state of MPI.");
     return std::make_pair (t, static_cast<size_t> (1));
   }
+
+  static void resizeForReceive (std::pair<X, Y>& packet, const std::pair<MPI_Datatype, size_t> typeInfo) {
+    // FIXME (mfh 18 Sep 2012) The right thing to do would be to
+    // extract from typeInfo the size of each element of the pair.
+
+    (void) typeInfo; // Silence compiler warnings for unused arguments.
+
+    MpiTypeTraits<X>::resizeForReceive (packet.first, MpiTypeTraits<X>::makeType (...));
+    MpiTypeTraits<Y>::resizeForReceive (packet.second, MpiTypeTraits<Y>::makeType (...));
+  }
+
 };

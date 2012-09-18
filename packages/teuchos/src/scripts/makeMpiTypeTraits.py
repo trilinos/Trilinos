@@ -85,48 +85,17 @@ import sys
 def emitCopyrightNotice ():
     '''Print the Teuchos package's copyright notice.
     This belongs at the top of every Teuchos header or source file.'''
-    
-    print '''// @HEADER
-// ***********************************************************************
-//
-//                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
-//
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
-'''
+
+    with open('../../Copyright.txt', 'r') as infile:
+	for line in infile:
+	    emit (line.rstrip ())
+
+def makeTemplateParameters (outerType, *paramList):
+    s = outerType + '<' + reduce (lambda x, y: str(x) + ', ' + str(y), paramList)
+    if s.endswith ('>'):
+        return s + ' >'
+    else:
+        return s + '>'
 
 def makeTypeMap ():
     '''Return the map from C++ Packet type to the corresponding MPI_Datatype.
@@ -146,16 +115,19 @@ need not and must not be freed after use, and comes built-in.'''
 
     # Many built-in C++ types have a simple conversion to their
     # standard MPI_Datatype values: Capitalize, replace each space
-    # with an underscore, and prepend MPI_.
+    # with an underscore, and prepend 'MPI_'.
     simpleNames = ['char', 'signed char', 'unsigned char',
 		   'short', 'unsigned short',
 		   'int', 'unsigned int',
 		   'long', 'unsigned long',
-		   'long long', 'unsigned long long', \
+		   'long long', 'unsigned long long',
 		   'size_t', 'ptrdiff_t',
 		   'float', 'double', 'long double']
     for name in simpleNames:
-        d.update ({name, ('MPI_' + name.upper ().replace (' ', '_'), 1)})
+        val = {'name': name, \
+	       'type': 'MPI_' + name.upper ().replace (' ', '_'), \
+	       'count': 1}
+        d.update ({name: val})
 
     # Other C++ types don't have a straightforward conversion.
     # MPI_CXX_COMPLEX is in the MPI 3.0 standard (thanks in small part
@@ -165,11 +137,19 @@ need not and must not be freed after use, and comes built-in.'''
     # implementation does not support the 3.0 standard.  We deal with
     # bool elsewhere as a separate case, since there is no basic MPI
     # datatype which standardly supports bool.
-    d.update ({'std::complex<float>': ('MPI_C_FLOAT_COMPLEX', 1), \
-	       'std::complex<double>': ('MPI_C_DOUBLE_COMPLEX', 1), \
-	       'std::complex<long double>': ('MPI_C_LONG_DOUBLE_COMPLEX', 1)})
+    for name in ['float', 'double', 'long double']:
+	newName = makeTemplateParameters ('std::complex', name)
+	newType = 'MPI_C_' + name.upper ().replace (' ', '_') + '_COMPLEX'
+	newCount = 1
+	d.update ({newName: {'name': newName, 'type': newType, 'count': newCount}})
+
+    # For std::pair<T,T> of built-in type T, we treat it like an array.
+    # Hopefully this doesn't violate any alignment rules.
     for name in simpleNames:
-        d.update ({'std::pair<' + name + ', ' + name + '>', d[name]})
+	pairName = makeTemplateParameters ('std::pair', name, name)
+	pairType = d[name]['type']
+	pairCount = d[name]['count']
+	d.update ({pairName: {'name': pairName, 'type': pairType, 'count': pairCount}})
     return d
 
 def emit (s, indent=0):
@@ -187,31 +167,35 @@ def emitGenericDecl (indent=0):
     
     with open('MpiTypeTraits.hpp', 'r') as infile:
 	for line in infile:
-	    emit (line, indent)
+	    emit (line.rstrip (), indent)
 	
 def emitSpecializationDecls (d, indent=0):
     '''Emit declarations of the specializations of MpiTypeTraits.
 
     d (dictionary): return value of makeTypeMap().
     indent (integer): the number of spaces to indent.'''
-    
+
+    # Special-case C++ types.
+    specialCases = ['long long', 'unsigned long long', 'ptrdiff_t', 'size_t']
+    specialCases = specialCases + [makeTemplateParameters ('std::pair', name, name) for name in specialCases]
+
     # It's a template template.  Whee!!!
     # Fill it in for each C++ type key of the dictionary.
-    tmpl = Template('''// Specialization of MpiTypeTraits<T> for T=${key}.
+    tmpl = Template('''// Specialization of MpiTypeTraits<T> for T=${name}.
 template<>
-class MpiTypeTraits< ${key} > {
+class MpiTypeTraits< ${name} > {
  public:
-  typedef ${key} packet_type;
+  typedef ${name} packet_type;
   static const bool needFree = false;
   static const bool globallyConsistent = true;
   static const bool globallyConsistentType = true;
 
-  static std::pair<MPI_Datatype, size_t> makeType (const ${key}& example);
+  static std::pair<MPI_Datatype, size_t> makeType (const ${name}& example);
 };
 ''')
-    for k,v in d.iteritems():
-        if k != 'long long' and k != 'unsigned long long' and k != 'size_t' and k != 'ptrdiff_t': # we handle these specially
-	    emit (tmpl.substitute (key=k), indent)
+    for k in d.keys():
+	if k not in specialCases:
+	    emit (tmpl.substitute (name=k), indent)
     emit ('''#if defined(HAVE_TEUCHOS_LONG_LONG_INT)
 
 // Partial specializations for long long and unsigned long long.
@@ -220,9 +204,11 @@ class MpiTypeTraits< ${key} > {
 // as well, since we've covered all built-in unsigned integer types
 // above with size <= sizeof(unsigned long long).
 ''', indent)
-    emit (tmpl.substitute (key='long long', value=d['long long'][0]), indent)
-    emit (tmpl.substitute (key='unsigned long long', \
-			   value=d['unsigned long long'][0]), indent)
+    emit (tmpl.substitute (name='long long'), indent)
+    emit (tmpl.substitute (name='unsigned long long'), indent)
+    emit (tmpl.substitute (name=makeTemplateParameters ('std::pair', 'long long', 'long long')), indent)
+    emit (tmpl.substitute (name=makeTemplateParameters ('std::pair', 'unsigned long long', 'unsigned long long')), indent)
+
     emit ('''// The C preprocessor does not allow "sizeof(T)" expressions in #if
 // statements, even if T is a built-in type.  Otherwise, we could test
 // for 'sizeof(size_t) > sizeof(unsigned long int)'.  The constants
@@ -237,8 +223,11 @@ class MpiTypeTraits< ${key} > {
 // need a specialization for size_t.  Ditto for ptrdiff_t (which is a
 // signed type of the same length as size_t).
 ''', indent)
-    emit (tmpl.substitute (key='ptrdiff_t', value=d['ptrdiff_t'][0]), indent)
-    emit (tmpl.substitute (key='size_t', value=d['size_t'][0]), indent)
+    emit (tmpl.substitute (name='ptrdiff_t'), indent)
+    emit (tmpl.substitute (name='size_t'), indent)
+    emit (tmpl.substitute (name=makeTemplateParameters ('std::pair', 'ptrdiff_t', 'ptrdiff_t')), indent)
+    emit (tmpl.substitute (name=makeTemplateParameters ('std::pair', 'size_t', 'size_t')), indent)
+    
     emit ('#endif // HAVE_TEUCHOS_LONG_LONG_INT\n', indent)
 
 def emitSpecializationDefs (d, indent=0):
@@ -246,18 +235,22 @@ def emitSpecializationDefs (d, indent=0):
 
     d (dictionary): return value of makeTypeMap().
     indent (integer): the number of spaces to indent.'''
+
+    # Special-case C++ types.
+    specialCases = ['long long', 'unsigned long long', 'ptrdiff_t', 'size_t']
+    specialCases = specialCases + [makeTemplateParameters ('std::pair', name, name) for name in specialCases]
     
     # It's a template template.  Whee!!!
     # Fill it in for each (C++ type, MPI_Datatype) pair in the dictionary.
-    tmpl = Template('''// Specialization of MpiTypeTraits<T> for T=${key}.
+    tmpl = Template('''// Specialization of MpiTypeTraits<T> for T=${name}.
 template<>
-MPI_Datatype MpiTypeTraits< ${key} >::makeType () {
+MPI_Datatype MpiTypeTraits< ${name} >::makeType () {
   return std::make_pair (${type}, static_cast<size_t> (${count}));
 }
 ''')
     for k,v in d.iteritems():
-        if k != 'long long' and k != 'unsigned long long' and k != 'size_t' and k != 'ptrdiff_t': # we handle these specially
-	    emit (tmpl.substitute (key=k, type=v[0], count=v[1]), indent)
+        if k not in specialCases:
+	    emit (tmpl.substitute (v), indent)
     emit ('''#if defined(HAVE_TEUCHOS_LONG_LONG_INT)
 
 // Partial specializations for long long and unsigned long long.
@@ -266,12 +259,11 @@ MPI_Datatype MpiTypeTraits< ${key} >::makeType () {
 // as well, since we've covered all built-in unsigned integer types
 // above with size <= sizeof(unsigned long long).
 ''', indent)
-    emit (tmpl.substitute (key='long long', \
-                           type=d['long long'][0], \
-                           count=d['long long'][1]), indent)
-    emit (tmpl.substitute (key='unsigned long long', \
-                           type=d['unsigned long long'][0]),
-                           count=d['unsigned long long'][1]), indent)
+    emit (tmpl.substitute (d['long long']), indent)
+    emit (tmpl.substitute (d['unsigned long long']), indent)
+    emit (tmpl.substitute (d[makeTemplateParameters ('std::pair', 'long long', 'long long')]), indent)
+    emit (tmpl.substitute (d[makeTemplateParameters ('std::pair', 'unsigned long long', 'unsigned long long')]), indent)
+    
     emit ('''// The C preprocessor does not allow "sizeof(T)" expressions in #if
 // statements, even if T is a built-in type.  Otherwise, we could test
 // for 'sizeof(size_t) > sizeof(unsigned long int)'.  The constants
@@ -286,12 +278,11 @@ MPI_Datatype MpiTypeTraits< ${key} >::makeType () {
 // need a specialization for size_t.  Ditto for ptrdiff_t (which is a
 // signed type of the same length as size_t).
 ''', indent)
-    emit (tmpl.substitute (key='ptrdiff_t', \
-			   type=d['ptrdiff_t'][0], \
-	                   count=d['ptrdiff_t'][1]), indent)
-    emit (tmpl.substitute (key='size_t', \
-			   type=d['size_t'][0], \
-			   count=d['size_t'][1]), indent)
+    emit (tmpl.substitute (d['ptrdiff_t']), indent)
+    emit (tmpl.substitute (d['size_t']), indent)
+    emit (tmpl.substitute (d[makeTemplateParameters ('std::pair', 'ptrdiff_t', 'ptrdiff_t')]), indent)
+    emit (tmpl.substitute (d[makeTemplateParameters ('std::pair', 'size_t', 'size_t')]), indent)
+    
     emit ('#endif // HAVE_TEUCHOS_LONG_LONG_INT\n', indent)
 
 def headerizeFilename (filename):
@@ -303,11 +294,14 @@ def headerizeFilename (filename):
 def emitStdPairDeclAndDef (indent=0):
     '''Emit decl. and def. of MpiTypeTraits<std::pair<X,Y> > partial specialization.
 
+    The partial specialization works when X and Y are different types.
+    It is not optimized for the case where X and Y are the same type.
+
     indent (integer): the number of spaces to indent.'''
 
     with open('MpiTypeTraitsPair.hpp', 'r') as infile:
 	for line in infile:
-	    emit (line, indent)
+	    emit (line.rstrip (), indent)
 
 def emitBoolDecl (indent=0):
     '''Emit declaration of the specialization of MpiTypeTraits for bool.
@@ -316,7 +310,7 @@ def emitBoolDecl (indent=0):
 
     with open('MpiTypeTraitsBool.hpp', 'r') as infile:
 	for line in infile:
-	    emit (line, indent)
+	    emit (line.rstrip (), indent)
 
 def emitDeclBody (d, indent=0):
     emitGenericDecl (indent)
@@ -331,7 +325,7 @@ def emitBoolDef (indent=0):
 
     with open('MpiTypeTraitsBool.cpp', 'r') as infile:
 	for line in infile:
-	    emit (line, indent)
+	    emit (line.rstrip (), indent)
 
 def emitDefBody (d, indent=0):
     emitSpecializationDefs (d, indent)

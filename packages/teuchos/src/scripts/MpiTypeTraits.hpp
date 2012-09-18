@@ -43,17 +43,17 @@
 /// that some MPI_Datatypes ("derived" ones) need to be freed after
 /// use by calling MPI_Type_free(), and others ("basic" ones, which
 /// come predefined by the MPI standard) need not and must not be
-/// freed in this way.
+/// freed in this way.  Finally, you should read the documentation of
+/// OpaqueWrapper.
 ///
 /// \section Teuchos_MpiTypeTraits_What What is an MPI_Datatype?
 ///
 /// MPI_Datatype is an <i>opaque handle</i> type.  It is typically
 /// implemented either as a pointer to a struct (whose definition you
 /// can't see or shouldn't rely upon), or as an integer index into a
-/// table.  For more details on how opaque handles and how to manage
-/// them, please see the documentation of OpaqueHandle.  We recommend
-/// using OpaqueHandle to manage the MPI_Datatype returned by
-/// makeType().
+/// table.  For more details on opaque handles and how to manage them,
+/// please see the documentation of OpaqueHandle.  We recommend using
+/// OpaqueHandle to manage the MPI_Datatype returned by makeType().
 ///
 /// \subsection Teuchos_MpiTypeTraits_What_DontIgnore Ignore MPI_Datatype at your own peril
 ///
@@ -99,7 +99,7 @@
 /// that they are valid for
 /// 1. all <i>instances</i> of Packet on an MPI process,
 /// 2. at all <i>times</i> in an execution of the program,
-/// 3. on all </i>MPI processes</i>.
+/// 3. on all <i>MPI processes</i>.
 ///
 /// These conditions do not hold for all \c Packet types.  This
 /// matters because in order for MPI to send, receive, or perform
@@ -218,18 +218,38 @@
 /// coordinate on the size of \c Packet instances, not on their
 /// MPI_Datatypes.  Thus, for sending or receiving a \c Packet array,
 /// it suffices to use the MPI_Datatype of the first instance in the
-/// array.  In this case, best practice is for the sending process to
-/// compute the sizes of all the instances in the array, and send the
-/// resulting total size first as a separate message.
+/// array.  In this case, best practice (when using a blocking
+/// receive) is for the sending process to compute the sizes of all
+/// the instances in the array, and send the resulting total size
+/// first as a separate message.  See Section \ref
+/// Teuchos_MpiTypeTraits_Three_HowToCoord for suggested
+/// implementation details.
 ///
 /// If \c globallyConsistentType is false, then different entries of
-/// an array of \c Packet instances may have inconsistent
-/// MPI_Datatypes.  Thus you cannot send the array directly using a
-/// single MPI_Send call, or receive it using a single MPI_Recv call.
-/// A good way to handle this case would be to use MPI_Pack on the
-/// sending process to pack each entry in turn into a send buffer of
-/// MPI_PACKED, and and MPI_Unpack on the receiving process to unpack
-/// the entries.
+/// an array of \c Packet may have inconsistent MPI_Datatypes.  Thus
+/// you cannot send the array directly using a single MPI_Send call,
+/// or receive it using a single MPI_Recv call.  A good way to handle
+/// this case would be to use MPI_Pack on the sending process to pack
+/// each entry in turn into a send buffer of MPI_PACKED, and and
+/// MPI_Unpack on the receiving process to unpack the entries.
+///
+/// We further subdivide the <tt>globallyConsistentType == false</tt>
+/// case into the following dichotomy:
+/// 1. Knowing the MPI_Datatype and count before a receive suffices
+///    for preparing the \c Packet (e.g., resizing) for the receive.
+/// 2. Knowing the MPI_Datatype and count before a receive does not
+///    suffice.  The received data actually has to come in before 
+///    the \c Packet can be prepared.
+/// 
+/// Case 2 is unusual for \c Packet types that most users want to send
+/// or receive.  It might happen if the data must be unpacked using
+/// MPI_Unpack(), and the initially unpacked data determine the
+/// <tt>Packet</tt>'s contents.  For example, one could encode
+/// <tt>Teuchos::any</tt> by packing it (using MPI_Pack()) with an
+/// initial header containing type info, which the receiving process
+/// must unpack and read before it knows what C++ type lives inside
+/// the <tt>Teuchos::any</tt>.  (We don't think this is a good idea,
+/// but it is possible.)
 ///
 /// \subsection Teuchos_MpiTypeTraits_Three_HowToCoord How to coordinate on the size
 ///
@@ -261,7 +281,6 @@
 /// the \c receive wrapper method.  Here is how the probe approach
 /// would work for a fully nonblocking receive on the receiving
 /// process:
-///
 /// 1. Start an MPI_Iprobe to get the message size.
 /// 2. The receive method returns a callback.
 /// 3. Invoking the callback first calls MPI_Wait on the MPI_Request
@@ -295,7 +314,7 @@
 /// Here is an example specialization for <tt>std::string</tt>:
 /// \code
 /// template<>
-/// MpiTypeTraits<std::string> {
+/// class MpiTypeTraits<std::string> {
 ///   // Don't use MPI_Type_free(); MPI_CHAR is a basic MPI_Datatype.
 ///   static const bool needFree = false; 
 ///   // Different strings may have different lengths.
@@ -377,16 +396,45 @@
 ///
 /// Users who want their MPI_Datatypes wrapped in this way may use the
 /// nonmember template function makeMpiType().
+///
+/// \subsection Teuchos_MpiTypeTraits_Design_Instance Why does makeType() need a \c Packet input?
+///
+/// In general, for maximum portability, one may need a Packet in
+/// order to compute its MPI_Datatype, even if \c
+/// <tt>globallyConsistentType == true</tt>.  This is because C++ does
+/// not provide a way to perform introspection on the layout of a
+/// class or struct, without actually having an instance of it.
+///
+/// The makeType() function could just assume that \c Packet is
+/// default constructible, and compute the MPI_Datatype and size of a
+/// default constructed instance.  However, this is wrong for at least
+/// two reasons:
+/// 1. If different instances of \c Packet may differ in size, then
+///    the size of a default constructed object may not be meaningful.
+///    A good example is <tt>std::string</tt>.
+/// 2. It requires that \c Packet be default constructible.  
+/// 
+/// \subsection Teuchos_MpiTypeTraits_Design_Assumptions What this class assumes about \c Packet
+///
+/// 1. <tt>Packet</tt>'s assignment operator (<tt>operator=()</tt>)
+///    does the right thing.  We don't need to include an extra
+///    <tt>copy()</tt> function here.
+/// 2. \c Packet is not immutable.  \c Packet instances may be modified
+///    after their construction.  (MPI assumes this anyway.)
 template<class Packet>
 class MpiTypeTraits {
  public:
   //! The type of the data being received and sent.
   typedef Packet packet_type;
   
-  /// Whether the MPI_Datatype returned by makeType() is derived or basic.
-  /// Derived types must be freed after use with MPI_Type_free(); basic types
-  /// must <i>not</i> be freed.  See the
-  /// <a href="http://www.mcs.anl.gov/research/projects/mpi/www/www3/MPI_Type_free.html">documentation of MPI_Type_free()</a>.
+  /// \brief Whether the MPI_Datatype returned by makeType() must be freed after use.
+  ///
+  /// Derived MPI_Datatype instances (which were created using one of
+  /// MPI's type constructor functions) must be freed after use by
+  /// calling MPI_Type_free().  Basic MPI_Datatype instances (which
+  /// come predefined by MPI) must <i>not</i> be freed.  See the
+  /// <a href="http://www.mcs.anl.gov/research/projects/mpi/www/www3/MPI_Type_free.html">documentation of MPI_Type_free()</a> 
+  /// for details.
   ///
   /// \note This is a compile-time constant so that you may use it as
   ///   a template parameter.  It is visible in the header fie so that
@@ -394,9 +442,9 @@ class MpiTypeTraits {
   ///   processes.
   static const bool needFree = false;
 
-  /// Whether all Packet instances on all MPI processes have a
-  /// consistent MPI_Datatype and size at all times in the program's
-  /// execution.
+  /// Whether the MPI_Datatype and size returned by makeType() are the
+  /// same for all \c Packet instances, for all MPI processes, at all
+  /// times in the program's execution.
   ///
   /// See the class documentation for a detailed explanation.
   static const bool globallyConsistent = false;
@@ -407,35 +455,15 @@ class MpiTypeTraits {
   ///
   /// See the class documentation for a detailed explanation.
   ///
-  /// \\note To Trilinos developers: If implementing a cache for
-  ///   MPI_Datatypes, you should not cache MPI_Datatypes
-  ///   corresponding to \c Packet types for which this is false.
+  /// \note To Trilinos developers: If implementing a cache for
+  ///   MPI_Datatype instances, you should not cache those
+  ///   orresponding to \c Packet types for which this is false.
   static const bool globallyConsistentType = false;
 
-  /// \\brief Return the MPI_Datatype and count corresponding to the Packet type.
-  ///
-  /// If globallyConsistentType is true, then you may use the returned
-  /// MPI_Datatype to send and receive objects of type Packet,
-  /// throughout the lifetime of the program.  Otherwise, we make no
-  /// guarantees that this is possible; for example, it may be
-  /// necessary to agree on the amount of data to send before sending
-  /// or receiving it.
-  ///
-  /// This function requires a \c Packet instance.  In general, for
-  /// maximum portability, one may need this in order to compute the
-  /// MPI_Datatype, even if \c globallyConsistentType is true.  For
-  /// example, one might compute the MPI_Datatype of an
-  /// <tt>std::pair<X,Y></tt> instance \c x using MPI_Type_struct, by
-  /// measuring address offsets of <tt>x.first</tt> and
-  /// <tt>x.second</tt> from the address of \c x itself.  C++ does not
-  /// provide a way to perform introspection on the layout of a class
-  /// or struct, without actually having an instance of it.  If this
-  /// function did not take a \c Packet instance, then \c Packet would
-  /// need to be default constructible (so that we could make an
-  /// actual \c Packet instance without knowing what its type is).
-  /// Furthermore, if \c globallyConsistent is false, then the
-  /// returned size depends on the particular instance.
+  //! Return the MPI_Datatype and count corresponding to the Packet type.
   static std::pair<MPI_Datatype, size_t> makeType (const Packet& example) {
+    (void) example; // Silence compiler warning for unused input.
+
     // Raise a compile-time error in case no specialization of this
     // traits class has been defined for the given Packet type.
     Packet::noSpecializationForThisType();
@@ -443,12 +471,48 @@ class MpiTypeTraits {
     // Return a valid value, so the compiler doesn't complain.
     return std::make_pair (MPI_TYPE_NULL, static_cast<size_t> (1));
   }
+
+  /// \brief Resize \c packet, if necessary, for a receive.
+  ///
+  /// \param packet [in/out] The Packet instance to resize.
+  /// \param typeInfo [in] The MPI_Datatype and size for the receive.
+  ///
+  /// The default implementation of this function does nothing.  This
+  /// suffices for any \c Packet type for which \c globallyConsistent
+  /// is true.  However, some \c Packet types require resizing in
+  /// order to fit an incoming receive.  A good example is
+  /// <tt>std::string</tt>.
+  ///
+  /// A type-generic receive implementation need only call this
+  /// function if <tt>globallyConsistent</tt> is false.  However, this
+  /// function must always be defined so that it is correct to call it
+  /// if <tt>globallyConsistent</tt> is true.
+  ///
+  /// Note that \c typeInfo may not necessarily be the return value of
+  /// <tt>makeType(packet)</tt> on input.  We have not received the
+  /// packet yet, so we do not know yet what its size should be.
+  /// We may not even know the incoming MPI_Datatype, if
+  /// <tt>globallyConsistentType == false</tt>.  If indeed
+  /// <tt>globallyConsistentType</tt> is false, then implementers may
+  /// have to work backwards from the given MPI_Datatype and size to
+  /// figure out how to resize the given packet.  For example, they
+  /// might have to call MPI_Type_get_envelope() or
+  /// MPI_Type_get_contents() to deconstruct the MPI_Datatype, detect
+  /// and reject invalid MPI_Datatype input, and match valid
+  /// MPI_Datatype input to \c Packet.  We consider this a case to be
+  /// avoided.  Whenever possible, specializations of MpiTypeTraits
+  /// should prefer a globally consistent MPI_Datatype whenever
+  /// possible.
+  static void resizeForReceive (Packet& packet, const std::pair<MPI_Datatype, size_t> typeInfo) {
+    (void) packet; // Silence compiler warnings for unused arguments.
+    (void) typeInfo;
+  }
 };
 
 /// \fn makeMpiType
 /// \brief Get MPI_Datatype (safely wrapped in OpaqueHandle) and size
 ///   for a \c Packet instance.
-/// \\tparam Packet The type of data being sent and received; same as
+/// \tparam Packet The type of data being sent and received; same as
 ///   the \c Packet template parameter of MpiTypeTraits.
 /// 
 /// Please refer to the documentation of MpiTypeTraits for details.
