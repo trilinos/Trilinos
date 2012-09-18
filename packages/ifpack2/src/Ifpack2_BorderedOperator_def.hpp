@@ -31,6 +31,8 @@
 #ifndef IFPACK2_BORDEREDOPERATOR_DEF_HPP
 #define IFPACK2_BORDEREDOPERATOR_DEF_HPP
 
+#include "Ifpack2_BorderedOperator_decl.hpp"
+
 namespace Ifpack2 {
 
 //Definitions for the BorderedOperator methods:

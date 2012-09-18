@@ -88,7 +88,7 @@ class BorderedOperator : virtual public Tpetra::Operator<Scalar,LocalOrdinal,Glo
     virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
 
 
-  bool hasTransposeApply() const;
+    bool hasTransposeApply() const;
 
 
     //! Applies the effect of the bordered operator.

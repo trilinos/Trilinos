@@ -7,6 +7,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 
+IF ({PACKAGE_NAME}_ENABLE_Galeri)
+
 TRIBITS_ADD_EXECUTABLE(
     BlockedTransferOperators
     SOURCES BlockedTransferOperators.cpp
@@ -35,6 +37,8 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
       )
   
 ENDIF()
+
+ENDIF() # Galeri
 
 # first ensure that these cmake boolean variables are defined
 #ASSERT_DEFINED(

@@ -69,6 +69,7 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/RowMatrix)
 #Note: Do not use */*.hpp. Append FakeKokkos/*.hpp only if Kokkos is disabled.
 APPEND_GLOB(HEADERS CrsGraph/*.hpp)
 APPEND_GLOB(HEADERS CrsMatrix/*.hpp)
+APPEND_GLOB(HEADERS RowMatrix/*.hpp)
 APPEND_GLOB(HEADERS Headers/*.hpp)
 APPEND_GLOB(HEADERS DistObject/*.hpp)
 APPEND_GLOB(HEADERS Export/*.hpp)

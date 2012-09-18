@@ -572,7 +572,7 @@ namespace fei {
     int getOwnedAndSharedIDs(int idtype,
                     int lenList,
                     int* IDs,
-                    int& numLocalIDs);
+                    int& numOwnedAndSharedIDs);
 
     /** Obtain a list of the locally owned identifiers.
      */

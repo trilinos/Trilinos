@@ -60,7 +60,7 @@ ENDIF()
 
 TRIBITS_ADD_LIBRARY(
   stk_util_diag
-  DEPLIBS stk_util_parallel
+  DEPLIBS stk_util_parallel stk_util_env
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

@@ -17,5 +17,5 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS
   "4000"
   NUM_MPI_PROCS 4
-  COMM mpi serial
+  COMM mpi
 )
