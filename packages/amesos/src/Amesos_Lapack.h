@@ -43,6 +43,7 @@
 #include "Epetra_SerialDenseSolver.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Import.h"
+#include "Epetra_Export.h"
 class Epetra_RowMatrix;
 class Epetra_LinearProblem;
 #include "Teuchos_RCP.hpp"
@@ -177,13 +178,13 @@ protected:
     return(Matrix()->NumMyRows());
   }
 
-  //! Returns a reference to serial map (that with all elements on process 0). Builds SerialMap_ if necessary or required.
+  //! Returns a reference to serial map (that with all elements on process 0).
   inline const Epetra_Map& SerialMap()
   {
     return(*(SerialMap_.get()));
   }
 
-  //! Returns a reference to serial matrix (that with all rows on process 0). Builds SerialMap_ if necessary or required.
+  //! Returns a reference to serial matrix (that with all rows on process 0).
   inline Epetra_RowMatrix& SerialMatrix()
   {
     return(*(SerialMatrix_.get()));
@@ -194,10 +195,22 @@ protected:
     return(*(SerialCrsMatrix_.get()));
   }
 
-  //! Returns a reference to the importer map. Builds SerialMap_ if necessary or required.
-  const Epetra_Import& Importer()
+  //! Returns a reference to the matrix importer (from row map to serial map).
+  const Epetra_Import& MatrixImporter()
   {
-    return(*(Importer_.get()));
+    return(*(MatrixImporter_.get()));
+  }
+
+  //! Returns a reference to the rhs exporter (from range map to serial map).
+  const Epetra_Export& RhsExporter()
+  {
+    return(*(RhsExporter_.get()));
+  }
+
+  //! Returns a reference to the solution importer (to domain map from serial map).
+  const Epetra_Import& SolutionImporter()
+  {
+    return(*(SolutionImporter_.get()));
   }
 
   Teuchos::RCP<Teuchos::ParameterList> pl_ ; 
@@ -222,7 +235,9 @@ protected:
   Teuchos::RCP<Epetra_RowMatrix> SerialMatrix_;
   Teuchos::RCP<Epetra_CrsMatrix> SerialCrsMatrix_;
   Teuchos::RCP<Epetra_Map> SerialMap_;
-  Teuchos::RCP<Epetra_Import> Importer_;
+  Teuchos::RCP<Epetra_Import> MatrixImporter_;
+  Teuchos::RCP<Epetra_Export> RhsExporter_;
+  Teuchos::RCP<Epetra_Import> SolutionImporter_;
 
   //! Dense matrix.
   Epetra_SerialDenseMatrix DenseMatrix_;

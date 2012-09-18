@@ -136,6 +136,68 @@ LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Phase_smallAggregates(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const {
+  Monitor m(*this, "Coarsen Uncoupled (CheapAggregationAlgorithm): Phase SmallAggregates");
+
+  // form new aggregates from non-aggregated nodes
+
+  // vertex ids for output
+  Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+  Teuchos::ArrayRCP<LocalOrdinal> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
+
+  const LocalOrdinal nRows = graph.GetNodeNumVertices();
+  LocalOrdinal nLocalAggregates = aggregates.GetNumAggregates(); // return number of local aggregates on current proc
+  const int myRank = graph.GetComm()->getRank();
+
+  // loop over all local rows
+  for (LocalOrdinal iNode=0; iNode<nRows; iNode++) {
+    if((aggStat[iNode] & NODEAGGREGATED) == false &&
+       (aggStat[iNode] & NODESMALLAGG)   == NODESMALLAGG) {
+      Aggregate ag;
+      ag.list.push_back(iNode);
+      ag.index = nLocalAggregates++;
+
+      coarse_aggStat[ag.index] |= NODESMALLAGG;       // mark coarse node as "1pt aggregate"
+
+      Teuchos::ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(iNode);
+      for(typename Teuchos::ArrayView<const LocalOrdinal>::const_iterator it = neighOfINode.begin(); it!=neighOfINode.end(); ++it) {
+        LocalOrdinal index = *it;
+        //if(graph.isLocalNeighborVertex(index) && aggStat[index] != SELECTED && aggStat[index] != BDRY) {
+        if(graph.isLocalNeighborVertex(index)
+           && (aggStat[index] & NODEAGGREGATED)==false
+           && (aggStat[index] & NODESMALLAGG)==NODESMALLAGG) {
+          ag.list.push_back(index);
+        }
+      } // loop over all columns
+
+      // finalize aggregate
+      for(size_t k=0; k<ag.list.size(); k++) {
+        //aggStat[ag.list[k]] = SELECTED;
+        aggStat[ag.list[k]] |= NODEAGGREGATED;
+        vertex2AggId[ag.list[k]] = ag.index;
+        procWinner[ag.list[k]] = myRank;
+      }
+    } // end if NOTSEL
+  }   // end for
+
+  // update aggregate object
+  aggregates.SetNumAggregates(nLocalAggregates);
+
+  // print aggregation information
+  PrintAggregationInformation("Phase SmallAggregates:", graph, aggregates, aggStat);
+
+  // collect some local information
+  LO nLocalAggregated    = 0;
+  LO nLocalNotAggregated = 0;
+  for (LO i = 0; i < nRows; i++) {
+    if ((aggStat[i] & NODEAGGREGATED) == false) nLocalAggregated++;
+    else nLocalNotAggregated++;
+  }
+
+  return nLocalNotAggregated;
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 LocalOrdinal CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Phase1(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const {
   Monitor m(*this, "Coarsen Uncoupled (CheapAggregationAlgorithm): Phase 1b");
 

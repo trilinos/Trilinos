@@ -257,53 +257,6 @@ protected:
 
 public:
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-  /** \name Deprecated. */
-  //@{
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED
-  DefaultMultipliedLinearOp(
-    const int numOps_in,
-    const RCP<LinearOpBase<Scalar> > Ops[]
-    )
-    {
-      initialize(Teuchos::arrayView(Ops, numOps_in));
-    }
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED
-  DefaultMultipliedLinearOp(
-    const int numOps_in,
-    const RCP<const LinearOpBase<Scalar> > Ops[]
-    )
-    {
-      initialize(Teuchos::arrayView(Ops, numOps_in));
-    }
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED
-  void initialize(
-    const int numOps_in,
-    const RCP<LinearOpBase<Scalar> > Ops[]
-    )
-    {
-      initialize(Teuchos::arrayView(Ops, numOps_in));
-    }
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED
-  void initialize(
-    const int numOps_in,
-    const RCP<const LinearOpBase<Scalar> > Ops[]
-    )
-    {
-      initialize(Teuchos::arrayView(Ops, numOps_in));
-    }
-
-  //@}
-
-#endif // THYRA_HIDE_DEPRECATED_CODE
 private:
 
   Array<Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > > Ops_;

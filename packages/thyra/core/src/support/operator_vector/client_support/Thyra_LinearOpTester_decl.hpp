@@ -313,56 +313,6 @@ public:
     const Ptr<FancyOStream> &out_arg
     ) const;
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-  /** \brief Deprecated. */
-  //@{
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED bool check(
-    const LinearOpBase<Scalar> &op,
-    MultiVectorRandomizerBase<Scalar> *rangeRandomizer,
-    MultiVectorRandomizerBase<Scalar> *domainRandomizer,
-    FancyOStream *out
-    ) const
-    {
-      using Teuchos::ptr;
-      return check(op, ptr(rangeRandomizer), ptr(domainRandomizer), ptr(out));
-    }
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED bool check(
-    const LinearOpBase<Scalar> &op,
-    FancyOStream *out
-    ) const
-    {
-      return check(op, Teuchos::ptr(out));
-    }
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED bool compare(
-    const LinearOpBase<Scalar> &op1,
-    const LinearOpBase<Scalar> &op2,
-    MultiVectorRandomizerBase<Scalar> *domainRandomizer,
-    FancyOStream *out_arg
-    ) const
-    {
-      using Teuchos::ptr;
-      return compare(op1, op2, ptr(domainRandomizer), ptr(out_arg));
-    }
- 
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED bool compare(
-    const LinearOpBase<Scalar> &op1,
-    const LinearOpBase<Scalar> &op2,
-    FancyOStream *out_arg
-    ) const
-    {
-      return compare(op1, op2, Teuchos::ptr(out_arg));
-    }
-
-  //@}
-
-#endif // THYRA_HIDE_DEPRECATED_CODE
 private:
 
   void setDefaultTols();

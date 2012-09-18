@@ -256,16 +256,12 @@ APPEND_SET(SOURCES
   Teuchos_stacktrace.cpp
   )
 
-IF (NOT ${PACKAGE_NAME}_HIDE_DEPRECATED_CODE)
-  APPEND_SET(HEADERS
-    Teuchos_ErrorPolling.hpp
-    Teuchos_MPIComm.hpp
-    )
-  APPEND_SET(SOURCES
-    Teuchos_ErrorPolling.cpp
-    Teuchos_MPIComm.cpp
-    )
-ENDIF()
+#IF (NOT ${PACKAGE_NAME}_HIDE_DEPRECATED_CODE)
+#  APPEND_SET(HEADERS
+#    )
+#  APPEND_SET(SOURCES
+#    )
+#ENDIF()
 
 # Set addition headers and source based on package-specific
 # configuration options

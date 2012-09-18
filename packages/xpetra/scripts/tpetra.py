@@ -70,7 +70,7 @@ def buildFuncLineTpetra( functionNode ):
     declStr = declStr.rstrip()
 
     if 'TPETRA_DEPRECATED' in type: return ''
-    if "const =0" in argsstring: return '' #hack for CrsMatrix
+#    if "const =0" in argsstring: return '' #hack for CrsMatrix
 
     # hack for MultiVector
 #    if name == "scale" and "Teuchos::ArrayView< const Scalar > alpha" in argsstring: return ''

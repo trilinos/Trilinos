@@ -63,11 +63,13 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/CrsGraph)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/MultiVector)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Vector)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/CrsMatrix)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/RowMatrix)
 
 #The HEADERS variable is the list of headers that will be copied to the install directory during "make install".
 #Note: Do not use */*.hpp. Append FakeKokkos/*.hpp only if Kokkos is disabled.
 APPEND_GLOB(HEADERS CrsGraph/*.hpp)
 APPEND_GLOB(HEADERS CrsMatrix/*.hpp)
+APPEND_GLOB(HEADERS RowMatrix/*.hpp)
 APPEND_GLOB(HEADERS Headers/*.hpp)
 APPEND_GLOB(HEADERS DistObject/*.hpp)
 APPEND_GLOB(HEADERS Export/*.hpp)

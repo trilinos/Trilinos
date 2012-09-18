@@ -121,6 +121,7 @@ namespace MueLu {
 
       // TODO: check return values of functions
       algo1_->PhaseOnePt(*graph,*aggregates,aggStat, coarse_aggStat);
+      algo1_->Phase_smallAggregates(*graph,*aggregates,aggStat, coarse_aggStat); // very experimental
       algo1_->Phase1(*graph,*aggregates,aggStat, coarse_aggStat);
       algo1_->Phase2_maxlink(*graph,*aggregates,aggStat, coarse_aggStat);
       algo1_->Phase3(*graph,*aggregates,aggStat, coarse_aggStat);

@@ -1120,12 +1120,12 @@ struct SubShape< Shape< Layout, ValueSize, 1, 0 > ,
       assert_shape_bounds( src , span.first );
       assert_shape_bounds( src , span.second - 1 );
       shape.N0     = span.second - span.first ;
-      shape.Stride = src.Stride ;
+      shape.Stride = 1 ;
       offset       = span.first ;
     }
     else {
       shape.N0     = 0 ;
-      shape.Stride = src.Stride ;
+      shape.Stride = 1 ;
       offset       = 0 ;
     }
   }

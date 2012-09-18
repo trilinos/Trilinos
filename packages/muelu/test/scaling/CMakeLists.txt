@@ -36,6 +36,7 @@ ELSE()
 ENDIF()
 #TODO: It is actually possible to build and test ScalingTest-Int also when LONG_LONG_INT=ON
 
+IF ({PACKAGE_NAME}_ENABLE_Galeri)
 IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2) OR 
     (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos))
   
@@ -59,11 +60,15 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
 
 ENDIF()
 
+ENDIF() # Galeri
+
 #
 # Tests
 #
 
 INCLUDE(XpetraAddTest)
+
+IF ({PACKAGE_NAME}_ENABLE_Galeri)
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos AND (NOT Teuchos_ENABLE_LONG_LONG_INT))
   XPETRA_ADD_TEST_EPETRA(${MueLu_ScalingTestName} 4)
@@ -72,3 +77,5 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 #  XPETRA_ADD_TEST_TPETRA(${MueLu_ScalingTestName} 4)
 ENDIF()
+
+ENDIF() # Galeri

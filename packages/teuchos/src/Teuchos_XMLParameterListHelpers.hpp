@@ -209,47 +209,6 @@ void writeParameterListToXmlFile(
   RCP<const DependencySheet> depSheet=null
   );
 
-#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
-
-//
-// Deprecated
-//
-
-
-/** \ingroup Teuchos_Depreicated_grp */
-TEUCHOS_DEPRECATED inline
-void updateParametersFromXmlFile(
-  const std::string &xmlFileName,
-  ParameterList *paramList
-  )
-{
-  updateParametersFromXmlFile(xmlFileName, ptr(paramList));
-}
-
-
-/** \ingroup Teuchos_Depreicated_grp */
-TEUCHOS_DEPRECATED inline
-void updateParametersFromXmlFileAndBroadcast(
-  const std::string &xmlFileName,
-  ParameterList *paramList,
-  const Comm<int> &comm
-  )
-{
-  updateParametersFromXmlFileAndBroadcast(xmlFileName, ptr(paramList), comm);
-}
-
-
-/** \ingroup Teuchos_Depreicated_grp */
-TEUCHOS_DEPRECATED inline
-void updateParametersFromXmlString(
-  const std::string &xmlStr,
-  ParameterList *paramList
-  )
-{
-  updateParametersFromXmlString(xmlStr, ptr(paramList));
-}
-
-#endif // TEUCHOS_HIDE_DEPRECATED_CODE
 
 } // namespace Teuchos
 

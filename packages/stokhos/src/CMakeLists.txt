@@ -147,6 +147,7 @@ SET(HEADERS ${HEADERS}
   Stokhos_MeanBasedPreconditioner.hpp
   Stokhos_ApproxGaussSeidelPreconditioner.hpp
   Stokhos_ApproxJacobiPreconditioner.hpp
+  Stokhos_ApproxSchurComplementPreconditioner.hpp
   Stokhos_KroneckerProductPreconditioner.hpp
   Stokhos_FullyAssembledPreconditioner.hpp
   Stokhos_SGPreconditionerFactory.hpp
@@ -220,6 +221,7 @@ SET(SOURCES ${SOURCES}
   Stokhos_MeanBasedPreconditioner.cpp
   Stokhos_ApproxGaussSeidelPreconditioner.cpp
   Stokhos_ApproxJacobiPreconditioner.cpp
+  Stokhos_ApproxSchurComplementPreconditioner.cpp
   Stokhos_KroneckerProductPreconditioner.cpp
   Stokhos_FullyAssembledPreconditioner.cpp
   Stokhos_SGPreconditionerFactory.cpp

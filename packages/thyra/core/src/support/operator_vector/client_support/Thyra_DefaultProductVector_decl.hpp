@@ -215,35 +215,6 @@ protected:
 
 public:
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-  /** \name Deprecated */
-  //@{
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED DefaultProductVector(
-    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace_in,
-    const RCP<VectorBase<Scalar> > vecs[]
-    )
-    :numBlocks_(0)
-    { initialize(productSpace_in, Teuchos::arrayView(vecs, productSpace_in->numBlocks())); }
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED void initialize(
-    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace_in,
-    const RCP<VectorBase<Scalar> > vecs[]
-    )
-    { initialize(productSpace_in, Teuchos::arrayView(vecs, productSpace_in->numBlocks())); }
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED void initialize(
-    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace_in,
-    const RCP<const VectorBase<Scalar> > vecs[]
-    )
-    { initialize(productSpace_in, Teuchos::arrayView(vecs, productSpace_in->numBlocks())); }
-
-  //@}
-
-#endif // THYRA_HIDE_DEPRECATED_CODE
 private:
 
   // //////////////////////////////
@@ -345,34 +316,6 @@ template<class Scalar>
 RCP<const ProductVectorBase<Scalar> >
 castOrCreateProductVectorBase(const RCP<const VectorBase<Scalar> > v);
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-/** \brief Deprecated. */
-template<class Scalar>
-THYRA_DEPRECATED
-RCP<DefaultProductVector<Scalar> >
-defaultProductVector(
-  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-  const RCP<VectorBase<Scalar> > vecs[]
-  )
-{
-  return defaultProductVector<Scalar>(
-    productSpace, Teuchos::arrayView(vecs, productSpace->numBlocks()));
-}
-
-
-/** \brief Deprecated. */
-template<class Scalar>
-THYRA_DEPRECATED
-RCP<DefaultProductVector<Scalar> >
-defaultProductVector(
-  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-  const RCP<const VectorBase<Scalar> > vecs[]
-  )
-{
-  return defaultProductVector<Scalar>(productSpace,
-    Teuchos::arrayView(vecs, productSpace->numBlocks()));
-}
-#endif // THYRA_HIDE_DEPRECATED_CODE
 
 } // namespace Thyra
 
