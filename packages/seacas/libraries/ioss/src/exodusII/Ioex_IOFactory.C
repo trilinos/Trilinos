@@ -99,12 +99,12 @@ namespace Ioex {
 	  }
 	}
       }
-
-      if (decompose)
-	return new Iopx::DatabaseIO(NULL, filename, db_usage, communicator, properties);
-      else
-	return new Ioex::DatabaseIO(NULL, filename, db_usage, communicator, properties);
     }
+
+    if (decompose)
+      return new Iopx::DatabaseIO(NULL, filename, db_usage, communicator, properties);
+    else
+      return new Ioex::DatabaseIO(NULL, filename, db_usage, communicator, properties);
   }
 }
 
