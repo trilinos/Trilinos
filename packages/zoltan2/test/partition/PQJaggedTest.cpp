@@ -182,7 +182,7 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts
   GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
 #ifdef HAVE_ZOLTAN2_OMP
   double end = omp_get_wtime();
-  cout << "GeometricGen Time:" << end - begin << endl;
+  //cout << "GeometricGen Time:" << end - begin << endl;
 #endif
   int coord_dim = gg->getCoordinateDimension();
   int weight_dim = gg->getWeightDimension();

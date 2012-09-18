@@ -100,6 +100,7 @@ namespace MueLu {
 	NODEAGGREGATED = 0x01,
 	NODENOTSEL     = 0x02,
 	NODEONEPT      = 0x04,
+	NODESMALLAGG   = 0x08,
 	NODESELECTED   = (NODENOTSEL) | (NODEAGGREGATED)
   };
 
@@ -147,6 +148,7 @@ namespace MueLu {
     /*! @brief Local aggregation. */
 
     LocalOrdinal PhaseOnePt(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const;
+    LocalOrdinal Phase_smallAggregates(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const;
     LocalOrdinal Phase1(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const; // local uncoupled coarsening (Phase 1b)
     LocalOrdinal Phase2_maxlink(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const;
     LocalOrdinal Phase3(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const; // local uncoupled coarsening (Phase 3)
