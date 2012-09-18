@@ -49,7 +49,7 @@
  */
 
 #include <Zoltan2_TestHelpers.hpp>
-#include <Zoltan2_BasicCoordinateInput.hpp>
+//#include <Zoltan2_BasicCoordinateInput.hpp>
 #include <Zoltan2_XpetraMultiVectorInput.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
@@ -175,15 +175,18 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts
   Teuchos::ParameterList geoparams("geo params");
 
   readGeoGenParams(paramFile, geoparams, comm);
-
+/*
 #ifdef HAVE_ZOLTAN2_OMP
   double begin = omp_get_wtime();
 #endif
+*/
   GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
+/*
 #ifdef HAVE_ZOLTAN2_OMP
   double end = omp_get_wtime();
   //cout << "GeometricGen Time:" << end - begin << endl;
 #endif
+*/
   int coord_dim = gg->getCoordinateDimension();
   int weight_dim = gg->getWeightDimension();
   lno_t numLocalPoints = gg->getNumLocalCoords(); gno_t numGlobalPoints = gg->getNumGlobalCoords();

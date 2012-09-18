@@ -76,7 +76,7 @@
 //imbalance calculation. Wreal / Wexpected - 1
 #define imbalanceOf(Wachieved, totalW, expectedRatio) \
     (Wachieved) / ((totalW) * (expectedRatio)) - 1
-
+//#define mpi_communication
 
 namespace Teuchos{
 template <typename Ordinal, typename T>
@@ -172,6 +172,7 @@ namespace Zoltan2{
 
 //diffclock for temporary timing experiments.
 
+#ifdef mpi_communication
   partId_t concurrent = 0;
   void sumMinMin(void *in, void *inout, int *count, MPI_Datatype *type) {   
     
@@ -218,6 +219,7 @@ namespace Zoltan2{
       inoutBuffer[next] += inBuffer[next];
 
   }
+#endif
 
 /*! \brief A helper class containing array representation of
  *  coordinate linked lists.
@@ -801,7 +803,6 @@ void pqJagged_getLocalMinMaxTotalCoord(
 }
 
 
-#define floatSized
   
 /*! \brief Function that reduces global minimum and maximum coordinates with global total weight from given local arrays.
  * \param comm the communicator for the problem
@@ -825,14 +826,14 @@ void pqJagged_getGlobalMinMaxTotalCoord(
   //reduce sum for the last concurrentPartCount elements.
   if(comm->getSize()  > 1){
     
-#ifndef floatSized
+#ifndef mpi_communication
   Teuchos::PQJaggedCombinedMinMaxTotalReductionOp<int, scalar_t> reductionOp(
      concurrentPartCount,
      concurrentPartCount,
      concurrentPartCount);
 #endif
     
-#ifdef floatSized
+#ifdef mpi_communication
     MPI_Op myop;
     MPI_Op_create(minMaxSum, 0, &myop);   /* step 3 */
 #endif 
@@ -840,11 +841,11 @@ void pqJagged_getGlobalMinMaxTotalCoord(
   try{
 
     
-#ifdef floatSized
+#ifdef mpi_communication
 
     MPI_Allreduce(localMinMaxTotal, globalMinMaxTotal, 3 * concurrentPartCount, MPI_FLOAT, myop,MPI_COMM_WORLD);  
 #endif 
-#ifndef floatSized
+#ifndef mpi_communication
     reduceAll<int, scalar_t>(*comm, reductionOp,
         3 * concurrentPartCount, localMinMaxTotal, globalMinMaxTotal
       );
@@ -1932,7 +1933,7 @@ void pqJagged_1D_Partition(
   size_t total_part_count = partNo + size_t (noCuts) ;
   
   
-#ifdef floatSized
+#ifdef mpi_communication
   MPI_Op myop;
   MPI_Op_create(sumMinMin, 0, &myop);   /* step 3 */
 #endif 
@@ -2075,13 +2076,13 @@ void pqJagged_1D_Partition(
    
        
             
-#ifdef floatSized
+#ifdef mpi_communication
             
             MPI_Allreduce(local_totalPartWeights_leftClosest_rightCloset, global_totalPartWeights_leftClosest_rightCloset, 
                           
                           (total_part_count + 2 * noCuts) * concurrentPartCount, MPI_FLOAT, myop,MPI_COMM_WORLD);  
 #endif 
-#ifndef floatSized
+#ifndef mpi_communication
             
           reduceAll<int, scalar_t>(*comm, reductionOp,
               (total_part_count + 2 * noCuts) * concurrentPartCount,
@@ -2718,12 +2719,13 @@ void AlgPQJagged(
                         "while it is being developed and tested.")
 
 #else
-
+/*
   if(comm->getRank() == 0){
     cout << "size of gno:" << sizeof(gno_t) << endl;
     cout << "size of lno:" << sizeof(lno_t) << endl;
     cout << "size of scalar_t:" << sizeof(scalar_t) << endl;
   }
+ */
   env->timerStart(MACRO_TIMERS, "PQJagged Total");
 
 
@@ -3031,13 +3033,15 @@ void AlgPQJagged(
       useBinarySearch = false;
     }
     
-    size_t total_part_count = partNo[i] * 2 + 1;
+//    size_t total_part_count = partNo[i] * 2 + 1;
 
     //run for all available parts.
     for (; currentWorkPart < currentPartitionCount; currentWorkPart += concurrentPart){
 
       concurrentPart = min(currentPartitionCount - currentWorkPart, concurrentPartCount);
+#ifdef mpi_communication
       concurrent = concurrentPart;
+#endif
       /*
       if(myRank == 0)
         cout << "i: " << i << " j:" << currentWorkPart << " ";
