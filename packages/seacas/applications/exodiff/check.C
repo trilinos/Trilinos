@@ -297,21 +297,21 @@ namespace {
     if (!( no_case_equals( block1->Elmt_Type(), block2->Elmt_Type() ) ) ) {
       if ( !interface.short_block_check ||
 	   !close_compare(block1->Elmt_Type(), block2->Elmt_Type()) ) {
-	std::cout << "exodiff: ERROR .. Block element types don't agree ("
+	std::cout << "exodiff: ERROR .. Block " << block1->Id() << ": element types don't agree ("
 		  << block1->Elmt_Type()
 		  << " != " << block2->Elmt_Type() << ")." << std::endl;
 	is_same = false;
       }
     }
     if (block1->Size() != block2->Size()) {
-      std::cout << "exodiff: ERROR .. Block number of elements doesn't agree ("
+      std::cout << "exodiff: ERROR .. Block " << block1->Id() << ": number of elements doesn't agree ("
 		<< block1->Size()
 		<< " != " << block2->Size() << ")."
 		<< std::endl;
       is_same = false;
     }
     if (block1->Num_Nodes_per_Elmt() != block2->Num_Nodes_per_Elmt()) {
-      std::cout << "exodiff: ERROR .. Block number of nodes per element doesn't agree ("
+      std::cout << "exodiff: ERROR .. Block " << block1->Id() << ": number of nodes per element doesn't agree ("
 		<< block1->Num_Nodes_per_Elmt()
 		<< " != " << block2->Num_Nodes_per_Elmt() << ")."
 		<< std::endl;
@@ -319,7 +319,7 @@ namespace {
     }
 #if 0
     if (block1->Num_Attributes() != block2->Num_Attributes()) {
-      std::cout << "exodiff: ERROR .. Block number of attributes doesn't agree ("
+      std::cout << "exodiff: ERROR .. Block " << block1->Id() << ": number of attributes doesn't agree ("
 		<< block1->Num_Attributes()
 		<< " != " << block2->Num_Attributes() << ")."
 		<< std::endl;
@@ -356,7 +356,8 @@ namespace {
       } else {
 	if (set1->Size() != set2->Size()) {
 	  std::cout << "exodiff: ERROR .. The node count for nodeset id " << set1->Id()
-		    << " is not the same in the two files.\n";
+		    << " is not the same in the two files ("
+		    << set1->Size() << " != " << set2->Size() << "\n";
 	  if (interface.pedantic)
 	    is_same = false;
 	}
