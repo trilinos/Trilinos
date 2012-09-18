@@ -49,7 +49,7 @@
  */
 
 #include <Zoltan2_TestHelpers.hpp>
-//#include <Zoltan2_BasicCoordinateInput.hpp>
+#include <Zoltan2_BasicCoordinateInput.hpp>
 #include <Zoltan2_XpetraMultiVectorInput.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
