@@ -30,6 +30,7 @@
 #include "Stokhos_BasisFactory.hpp"
 #include "Stokhos_QuadratureFactory.hpp"
 #include "Stokhos_CompletePolynomialBasis.hpp"
+#include "Stokhos_OrthogonalizationFactory.hpp"
 
 template <typename ordinal_type, typename value_type>
 Stokhos::MonomialProjGramSchmidtPCEBasis2<ordinal_type, value_type>::
@@ -46,8 +47,6 @@ MonomialProjGramSchmidtPCEBasis2(
   d(pce.size()),
   verbose(params.get("Verbose", false)),
   rank_threshold(params.get("Rank Threshold", 1.0e-12)),
-  basis_reduction_method(params.get("Basis Reduction Method", 
-				    "Column-pivoted QR")),
   orthogonalization_method(params.get("Orthogonalization Method", 
 				      "Householder"))
 {
@@ -68,6 +67,8 @@ MonomialProjGramSchmidtPCEBasis2(
   ordinal_type ret = 
     Q.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, A, Qp, 0.0);
   TEUCHOS_ASSERT(ret == 0);
+
+//print_matlab(std::cout << "Qp = ", Qp);
 
   // Compute reduced quadrature rule
   Teuchos::ParameterList quad_params = params.sublist("Reduced Quadrature");
@@ -106,20 +107,22 @@ MonomialProjGramSchmidtPCEBasis2(
       // quad2 = 
       // 	Stokhos::QuadratureFactory<ordinal_type,value_type>::create(quad_params);
 
-      // quad2 = Teuchos::rcp(new Stokhos::TensorProductQuadrature<ordinal_type,value_type>(cp_basis2));
-      // std::cout << "built new quadrature with total size " << quad2->size()
-      // 		<< std::endl;
+      quad2 = Teuchos::rcp(new Stokhos::TensorProductQuadrature<ordinal_type,value_type>(cp_basis2));
+      std::cout << "built new quadrature with total size " << quad2->size()
+      		<< std::endl;
 
-      // // Project pce to new basis
-      // for (ordinal_type i=0; i<d; i++)
-      // 	pce2[i].reset(basis2); // this keeps lower order coeffs and sets 
-      // 	                       // higher order ones to 0
+      // Project pce to new basis
+      for (ordinal_type i=0; i<d; i++) {
+      	pce2[i].reset(basis2); // this keeps lower order coeffs and sets 
+      	                       // higher order ones to 0
+      }
     }
 
     // Build Q matrix of order 2*max_p
     ordinal_type sz2 = 
       buildQ(2*max_p, rank_threshold2, pce2, quad2, terms2, num_terms2, 
 	     Qp2, A2, F2);
+    //print_matlab(std::cout << "Qp2 = ", Qp2);
 
     // Get quadrature data
     const Teuchos::Array<value_type>& weights = quad->getQuadWeights();
@@ -127,24 +130,28 @@ MonomialProjGramSchmidtPCEBasis2(
       quad->getQuadPoints(); 
     ordinal_type nqp = weights.size();
 
-    // // Original basis at quadrature points -- needed to transform expansions
-    // // in this basis back to original
-    // ordinal_type pce_sz2 = basis2->size();
-    // SDM AA(nqp, pce_sz2);
-    // Teuchos::Array<value_type> basis_vals(pce_sz2);
-    // for (ordinal_type i=0; i<nqp; i++) {
-    //   basis2->evaluateBases(points[i], basis_vals);
-    //   for (ordinal_type j=0; j<pce_sz2; j++)
-    // 	AA(i,j) = basis_vals[j];
-    // }
+    // Original basis at quadrature points -- needed to transform expansions
+    // in this basis back to original
+    ordinal_type pce_sz2 = basis2->size();
+    SDM AA(nqp, pce_sz2);
+    Teuchos::Array<value_type> basis_vals(pce_sz2);
+    for (ordinal_type i=0; i<nqp; i++) {
+      basis2->evaluateBases(points[i], basis_vals);
+      for (ordinal_type j=0; j<pce_sz2; j++)
+    	AA(i,j) = basis_vals[j];
+    }
     Q2.reshape(nqp, sz2);
-
-    // ret = Q2.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, AA, Qp2, 0.0);
-    // TEUCHOS_ASSERT(ret == 0);
-     ret = Q2.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, A2, Qp2, 0.0);
-     TEUCHOS_ASSERT(ret == 0);
-
+    ret = Q2.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, AA, Qp2, 0.0);
+    TEUCHOS_ASSERT(ret == 0);
     reduced_quad = quad_factory.createReducedQuadrature(Q, Q2, F, weights);
+
+    // // Get quadrature data
+    // const Teuchos::Array<value_type>& weights2 = quad2->getQuadWeights();
+    // ordinal_type nqp2 = weights2.size();
+    // Q2.reshape(nqp2, sz2);
+    // ret = Q2.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, A2, Qp2, 0.0);
+    // TEUCHOS_ASSERT(ret == 0);
+    // reduced_quad = quad_factory.createReducedQuadrature(Q, Q2, F2, weights2);
   } 
   else {
     const Teuchos::Array<value_type>& weights = quad->getQuadWeights();
@@ -188,7 +195,7 @@ buildQ(
   // Compute norms of each pce for rescaling
   Teuchos::Array<value_type> pce_norms(d, 0.0);
   for (ordinal_type j=0; j<d; j++) {
-    for (ordinal_type i=0; i<d; i++)
+    for (ordinal_type i=0; i<pce_sz_; i++)
       pce_norms[j] += (pce[j])[i]*(pce[j])[i]*pce_basis_->norm_squared(i);
     pce_norms[j] = std::sqrt(pce_norms[j]);
   }
@@ -249,73 +256,17 @@ buildQ(
   }
 
   // Compute our new basis -- each column of Qp is the coefficients of the
-  // new basis in the original basis
-  ordinal_type sz_;
-  if (basis_reduction_method == "Column-pivoted QR") {
-    // Compute QR factorization of Bp using column-pivoted QR
-    // By setting the first d+1 entries of piv, we enforce that they are
-    // permuted to the front of Bp*P
-    // "Q" in the QR factorization defines the new basis
-    Teuchos::Array<value_type> w(pce_sz_, 1.0);
-    SDM R;
-    Teuchos::Array<ordinal_type> piv(max_sz);
-    //for (int i=0; i<d+1; i++)
-    for (int i=0; i<max_sz; i++)
-      piv[i] = 1;
-    if (orthogonalization_method == "Householder")
-      sz_ = CPQR_Householder_threshold(threshold, Bp, w, Qp_, R, piv);
-    else if (orthogonalization_method == "Modified Gram-Schmidt")
-      sz_ = CPQR_MGS_threshold(threshold, Bp, w, Qp_, R, piv);
-    else if (orthogonalization_method == "Classical Gram-Schmidt")
-      sz_ = CPQR_CGS_threshold(threshold, Bp, w, Qp_, R, piv);
-    else
-      TEUCHOS_TEST_FOR_EXCEPTION(
-	true, std::logic_error, 
-	"Invalid orthogonalization method " << orthogonalization_method);
-
-    if (verbose) {
-      std::cout << "piv = [";
-      for (ordinal_type i=0; i<sz_; i++)
-	std::cout << piv[i] << " ";
-      std::cout << "]" << std::endl;
-    
-      std::cout << "diag(R) = [ ";
-      for (ordinal_type i=0; i<sz_; i++)
-	std::cout << R(i,i) << " ";
-      std::cout << "]" << std::endl;
-      
-      std::cout << "rank = " << sz_ << std::endl;
-
-      // Check Bpp = Qp_*R
-      std::cout << "||A*P-Q*R||_infty = " 
-		<< Stokhos::residualCPQRError(Bp,Qp_,R,piv) << std::endl;
-      
-      // Check Qp_^T*Qp_ = I
-      std::cout << "||I - Q^T*Q||_infty = " 
-		<< QROrthogonalizationError(Qp_) << std::endl;
-    }
-  }
-  else if (basis_reduction_method == "SVD") {
-    // Compute SVD of Bp using standard SVD algorithm
-    // "U" in the SVD defines the new basis
-    Teuchos::Array<value_type> sigma;
-    SDM Vt;
-    sz_ = svd_threshold(threshold, Bp, sigma, Qp_, Vt);
-
-    if (verbose) {
-      std::cout << "diag(sigma) = [ ";
-      for (ordinal_type i=0; i<sz_; i++)
-	std::cout << sigma[i] << " ";
-      std::cout << "]" << std::endl;
-      
-      std::cout << "rank = " << sz_ << std::endl;
-    }
-  }
-  else
-    TEUCHOS_TEST_FOR_EXCEPTION(
-	true, std::logic_error, 
-	"Invalid basis reduction method " << basis_reduction_method);
-
+  // new basis in the original basis.  Constraint pivoting so first d+1
+  // columns and included in Qp.
+  Teuchos::Array<value_type> w(pce_sz_, 1.0);
+  SDM R;
+  Teuchos::Array<ordinal_type> piv(max_sz);
+  for (int i=0; i<d+1; i++)
+    piv[i] = 1;
+  typedef Stokhos::OrthogonalizationFactory<ordinal_type,value_type> SOF;
+  ordinal_type sz_ = SOF::createOrthogonalBasis(
+    orthogonalization_method, threshold, verbose, Bp, w, Qp_, R, piv);
+  
   return sz_;
 }
 

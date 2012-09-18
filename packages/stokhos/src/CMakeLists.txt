@@ -74,6 +74,7 @@ SET(HEADERS ${HEADERS}
   Stokhos_GramSchmidtBasisImp.hpp
   Stokhos_ReducedPCEBasis.hpp
   Stokhos_SDMUtils.hpp
+  Stokhos_OrthogonalizationFactory.hpp
   Stokhos_GSReducedPCEBasisBase.hpp
   Stokhos_GSReducedPCEBasisBaseImp.hpp
   Stokhos_MonomialProjGramSchmidtPCEBasis.hpp

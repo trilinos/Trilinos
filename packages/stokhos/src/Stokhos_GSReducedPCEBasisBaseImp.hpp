@@ -42,8 +42,6 @@ GSReducedPCEBasisBase(
   d(pce.size()),
   verbose(params.get("Verbose", false)),
   rank_threshold(params.get("Rank Threshold", 1.0e-12)),
-  basis_reduction_method(params.get("Basis Reduction Method", 
-				    "Column-pivoted QR")),
   orthogonalization_method(params.get("Orthogonalization Method", 
 				      "Householder"))
 {

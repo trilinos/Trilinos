@@ -54,21 +54,13 @@ static const Reduced_Basis_Method reduced_basis_method_values[] = {
 static const char *reduced_basis_method_names[] = { 
   "Lanczos", "Monomial-Proj-GS", "Monomial-Proj-GS2", "Monomial-GS", "Lanczos-GS" };
 
-// basis reduction methods
-enum Basis_Reduction_Method { BR_CPQR, SVD };
-static const int num_basis_reduction_method = 2;
-static const Basis_Reduction_Method basis_reduction_method_values[] = { 
-  BR_CPQR, SVD };
-static const char *basis_reduction_method_names[] = { 
-  "Column-Pivoted QR", "SVD" };
-
 // orthogonalization methods
-enum Orthogonalization_Method { HOUSEHOLDER, CGS, MGS, MGSRO, MGSNP, MGSNPRO };
-static const int num_orthogonalization_method = 6;
+enum Orthogonalization_Method { HOUSEHOLDER, HOUSEHOLDER_NP, CGS, MGS, MGSRO, MGSNP, MGSNPRO };
+static const int num_orthogonalization_method = 7;
 static const Orthogonalization_Method orthogonalization_method_values[] = { 
-  HOUSEHOLDER, CGS, MGS, MGSRO, MGSNP, MGSNPRO };
+  HOUSEHOLDER, HOUSEHOLDER_NP, CGS, MGS, MGSRO, MGSNP, MGSNPRO };
 static const char *orthogonalization_method_names[] = { 
-  "Householder", "Classical Gram-Schmidt", "Modified Gram-Schmidt", "Modified Gram-Schmidt with Reorthogonalization", "Modified Gram-Schmidt without Pivoting", "Modified Gram-Schmidt without Pivoting with Reorthogonalization"};
+  "Householder", "Householder without Pivoting", "Classical Gram-Schmidt", "Modified Gram-Schmidt", "Modified Gram-Schmidt with Reorthogonalization", "Modified Gram-Schmidt without Pivoting", "Modified Gram-Schmidt without Pivoting with Reorthogonalization"};
 
 // quadrature reduction methods
 enum Quadrature_Reduction_Method { NONE, QSQUARED, QSQUARED2, Q2 };
@@ -175,20 +167,15 @@ int main(int argc, char **argv)
 		  num_reduced_basis_method, reduced_basis_method_values, 
 		  reduced_basis_method_names, "Reduced basis method");
 
-    Basis_Reduction_Method basis_reduction_method = BR_CPQR;
-    CLP.setOption("basis_reduction_method", &basis_reduction_method, 
-		  num_basis_reduction_method, basis_reduction_method_values, 
-		  basis_reduction_method_names, "Basis reduction method");
-
     Orthogonalization_Method orthogonalization_method = HOUSEHOLDER;
     CLP.setOption("orthogonalization_method", &orthogonalization_method, 
 		  num_orthogonalization_method, orthogonalization_method_values, 
 		  orthogonalization_method_names, "Orthogonalization method");
 
     Quadrature_Reduction_Method quad_reduction_method = QSQUARED;
-    CLP.setOption("quadrature_reduction_method", &quad_reduction_method, 
+    CLP.setOption("reduced_quadrature_method", &quad_reduction_method, 
 		  num_quad_reduction_method, quad_reduction_method_values, 
-		  quad_reduction_method_names, "Quadrature reduction method");
+		  quad_reduction_method_names, "Reduced quadrature method");
 
     Solver_Method solver_method = TRSM;
     CLP.setOption("solver_method", &solver_method, num_solver_method, 
@@ -216,9 +203,6 @@ int main(int argc, char **argv)
 	      << "\tlevel                       = " << level << std::endl
 	      << "\treduced_basis_method        = " 
 	      << reduced_basis_method_names[reduced_basis_method] 
-	      << std::endl
-	      << "\tbasis_reduction_method      = " 
-	      << basis_reduction_method_names[basis_reduction_method] 
 	      << std::endl
 	      << "\torthogonalization_method    = " 
 	      << orthogonalization_method_names[orthogonalization_method] 
@@ -287,11 +271,14 @@ int main(int argc, char **argv)
 								    quad));
 
     // Create approximation
+    Teuchos::Array<double> point(d, 1.0);
+    Teuchos::Array<double> basis_vals(basis->size());
+    basis->evaluateBases(point, basis_vals);
     Teuchos::Array<pce_type> x(d);
     for (int i=0; i<d; i++) {
       x[i].copyForWrite();
       x[i].reset(quad_exp);
-      x[i].term(i,1) = 1.0;
+      x[i].term(i,1) = 1.0 / basis_vals[i+1];
     }
     Teuchos::Array<pce_type> x2(d2);
     for (int i=0; i<d2; i++) {
@@ -322,10 +309,6 @@ int main(int argc, char **argv)
     params.set("Project", project);
     //params.set("Normalize", false);
     params.set("Use Old Stieltjes Method", use_stieltjes);
-    if (basis_reduction_method == BR_CPQR)
-      params.set("Basis Reduction Method", "Column-pivoted QR");
-    else if (basis_reduction_method == SVD)
-      params.set("Basis Reduction Method", "SVD");
     params.set("Orthogonalization Method", 
 	       orthogonalization_method_names[orthogonalization_method]);
     params.set("Rank Threshold", rank_threshold);
@@ -389,7 +372,7 @@ int main(int argc, char **argv)
     pce_type z2(quad_exp);
     gs_basis->transformToOriginalBasis(z_gs.coeff(), z2.coeff());
 
-    if (verbose) {
+    if (verbose && false) {
       std::cout << "z = " << std::endl << z;
       std::cout << "z2 = " << std::endl << z2;
       std::cout << "z_gs = " << std::endl << z_gs;

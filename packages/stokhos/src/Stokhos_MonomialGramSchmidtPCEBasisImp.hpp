@@ -27,6 +27,7 @@
 // @HEADER
 
 #include "Stokhos_SDMUtils.hpp"
+#include "Stokhos_OrthogonalizationFactory.hpp"
 
 template <typename ordinal_type, typename value_type>
 Stokhos::MonomialGramSchmidtPCEBasis<ordinal_type, value_type>::
@@ -100,61 +101,16 @@ buildReducedBasis(
   }
 
   // Compute our new basis -- each column of Q is the new basis evaluated
-  // at the original quadrature points
-  ordinal_type sz_;
-  
-  // Compute QR factorization of B using column-pivoted QR
-  // By setting the first d+1 entries of piv, we enforce that they are
-  // permuted to the front of B*P
-  // "Q" in the QR factorization defines the new basis
+  // at the original quadrature points.  Constraint pivoting so first d+1
+  // columns and included in Q.
   SDM R;
   Teuchos::Array<ordinal_type> piv(max_sz);
-  // for (int i=0; i<this->d+1; i++)
-  //   piv[i] = 1;
-  if (this->orthogonalization_method == "Modified Gram-Schmidt")
-    sz_ = CPQR_MGS_threshold(threshold, B, weights, Q_, R, piv);
-  else if (this->orthogonalization_method == "Modified Gram-Schmidt with Reorthogonalization")
-    sz_ = CPQR_MGS_reorthog_threshold(threshold, B, weights, Q_, R, piv);
-  else if (this->orthogonalization_method == "Classical Gram-Schmidt")
-    sz_ = CPQR_CGS_threshold(threshold, B, weights, Q_, R, piv);
-  else if (this->orthogonalization_method == "Modified Gram-Schmidt without Pivoting") {
-    QR_MGS(max_sz, B, weights, Q_, R);
-    for (int i=0; i<max_sz; i++)
-      piv[i] = i;
-    sz_ = max_sz;
-  }
-  else if (this->orthogonalization_method == "Modified Gram-Schmidt without Pivoting with Reorthogonalization") {
-    QR_MGS2(max_sz, B, weights, Q_, R);
-    for (int i=0; i<max_sz; i++)
-      piv[i] = i;
-    sz_ = max_sz;
-  }
-  else
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, 
-      "Invalid orthogonalization method " << this->orthogonalization_method);
-  
-  if (this->verbose) {
-    std::cout << "piv = [";
-    for (ordinal_type i=0; i<sz_; i++)
-      std::cout << piv[i] << " ";
-    std::cout << "]" << std::endl;
-    
-    std::cout << "diag(R) = [ ";
-    for (ordinal_type i=0; i<sz_; i++)
-      std::cout << R(i,i) << " ";
-    std::cout << "]" << std::endl;
-    
-    std::cout << "rank = " << sz_ << std::endl;
-    
-    // Check B = Q*R
-    std::cout << "||A*P-Q*R||_infty = " 
-	      << Stokhos::residualCPQRError(B,Q_,R,piv) << std::endl;
-    
-    // Check Q_^T*W*Q_ = I
-    std::cout << "||I - Q^T*W*Q||_infty = " 
-	      << weightedQROrthogonalizationError(Q_, weights) << std::endl;
-  }
+  for (int i=0; i<this->d+1; i++)
+    piv[i] = 1;
+  typedef Stokhos::OrthogonalizationFactory<ordinal_type,value_type> SOF;
+   ordinal_type sz_ = SOF::createOrthogonalBasis(
+    this->orthogonalization_method, threshold, this->verbose, B, weights, 
+    Q_, R, piv);
 
   // Compute Qp = A^T*W*Q
   SDM tmp(nqp, sz_);

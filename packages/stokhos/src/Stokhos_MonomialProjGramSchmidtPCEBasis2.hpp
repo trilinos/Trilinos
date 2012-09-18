@@ -227,9 +227,6 @@ namespace Stokhos {
     //! Rank threshold
     value_type rank_threshold;
 
-    //! Basis reduction method
-    std::string basis_reduction_method;
-
     //! Orthogonalization method
     std::string orthogonalization_method;
 
