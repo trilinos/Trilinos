@@ -36,7 +36,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-IFPACK_DEPRECATED void ifpack_quicksort (int *const pbase, double *const daux, size_t total_elems);
+void ifpack_multilist_sort (int *const pbase, double *const daux, size_t total_elems);
 #define QSORTLEN 20
 
 int main()
@@ -55,7 +55,7 @@ int main()
    for (i=0; i<QSORTLEN; i++)
        printf("%d  %f\n", h[i], d[i]);
 
-   ifpack_quicksort(h, d, QSORTLEN);
+   ifpack_multilist_sort(h, d, QSORTLEN);
 
    printf("after sorting\n");
    for (i=0; i<QSORTLEN; i++)
@@ -138,7 +138,7 @@ typedef struct
       smaller partition.  This *guarantees* no more than log (n)
       stack size is needed (actually O(1) in this case)!  */
 
-IFPACK_DEPRECATED void ifpack_quicksort (int *const pbase, double *const daux, size_t total_elems)
+void ifpack_multilist_sort (int *const pbase, double *const daux, size_t total_elems)
 {
   int itemp;
   double dtemp;

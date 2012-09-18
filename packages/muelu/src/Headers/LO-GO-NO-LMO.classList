@@ -10,3 +10,8 @@ ZoltanInterface
 AmalgamationInfo
 CheapAggregationAlgorithm
 ExperimentalAggregationFactory
+UncoupledAggregationFactory
+UncoupledAggregationAlgorithm
+MaxLinkAggregationAlgorithm
+EmergencyAggregationAlgorithm
+OnePtAggregationAlgorithm
