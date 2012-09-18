@@ -11,8 +11,6 @@
 
 #include <boost/program_options.hpp>
 
-#include <stk_util/parallel/Parallel.hpp>
-
 namespace stk {
 
 ///
@@ -28,7 +26,7 @@ namespace stk {
  * execution of the boost::parse_command_line() functions.
  *
  * @return	        an <b>boost::program_options::options_description</b> reference to the
- *                      program options to be used for all command line option descriptions. 
+ *                      program options to be used for all command line option descriptions.
  */
 boost::program_options::options_description &get_options_description();
 

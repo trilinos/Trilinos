@@ -2720,6 +2720,10 @@ void AlgPQJagged(
 
 #else
 /*
+  typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::lno_t lno_t;
+
   if(comm->getRank() == 0){
     cout << "size of gno:" << sizeof(gno_t) << endl;
     cout << "size of lno:" << sizeof(lno_t) << endl;
@@ -2730,10 +2734,6 @@ void AlgPQJagged(
 
 
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Init");
-  typedef typename Adapter::scalar_t scalar_t;
-  typedef typename Adapter::gno_t gno_t;
-
-  typedef typename Adapter::lno_t lno_t;
   const Teuchos::ParameterList &pl = env->getParameters();
 
   std::bitset<NUM_RCB_PARAMS> params;

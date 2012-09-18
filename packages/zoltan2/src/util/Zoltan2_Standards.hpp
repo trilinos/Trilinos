@@ -145,6 +145,7 @@ namespace Zoltan2{
 //////////////////////////////////////////////////////
 
 #define HELLO
+//#define HELLO printf("HELLO from %s:%i\n", __FILE__, __LINE__); // Turn on for debug 
 
 //////////////////////////////////////////////////////
 // Internal macros and methods
