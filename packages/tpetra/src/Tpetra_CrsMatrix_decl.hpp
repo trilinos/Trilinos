@@ -592,6 +592,10 @@ namespace Tpetra {
     */
     typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const;
 
+
+    //! Returns \c true if getLocalRowView() and getGlobalRowView() are valid for this class
+    virtual bool supportsRowViews() const; 
+
     //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
     /*!
       \param LocalRow - (In) Global row number for which indices are desired.
