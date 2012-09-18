@@ -2719,11 +2719,11 @@ void AlgPQJagged(
                         "while it is being developed and tested.")
 
 #else
-/*
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
 
+/*
   if(comm->getRank() == 0){
     cout << "size of gno:" << sizeof(gno_t) << endl;
     cout << "size of lno:" << sizeof(lno_t) << endl;
