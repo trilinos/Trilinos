@@ -529,7 +529,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
       AlgRCB<Adapter>(this->envConst_, problemComm_,
         this->coordinateModel_, solution_);
     }
-    else if (algorithm_ == string("PQJagged")){
+    else if (algorithm_ == string("pqjagged")){
     	AlgPQJagged<Adapter>(this->envConst_, problemComm_,
     	        this->coordinateModel_, solution_);
     }
@@ -664,7 +664,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     }
     else if (algorithm == string("rcb") ||
              algorithm == string("rib") ||
-             algorithm == string("PQJagged") ||
+             algorithm == string("pqjagged") ||
              algorithm == string("hsfc")){
 
       modelType_ = CoordinateModelType;
@@ -769,7 +769,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     }
     else if (inputType_ == CoordinateAdapterType){
       modelType_ = CoordinateModelType;
-      if(algorithm_ != string("PQJagged"))
+      if(algorithm_ != string("pqjagged"))
       algorithm_ = string("rcb");
     }
     else if (inputType_ == VectorAdapterType ||
@@ -940,7 +940,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       // this->env_ = rcp(new Environment(newParams, oldComm));
       ////////////////////////////////////////////////////////////////////////////
 
-      if(algorithm == string("PQJagged")){
+      if(algorithm == string("pqjagged")){
           //int coordinateCnt = this->coordinateModel_->getCoordinateDim();
           //cout << coordinateCnt << " " << pl.getPtr<Array <int> >("pqParts")->size() << endl;
           //exceptionThrow = coordinateCnt == pl.getPtr<Array <int> >("pqParts")->size();

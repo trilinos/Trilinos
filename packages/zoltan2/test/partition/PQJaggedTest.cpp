@@ -245,7 +245,7 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts
   params.set("pqParts", pqParts);
   params.set("timer_output_stream" , "std::cout");
   params.set("num_global_parts", numParts);
-  params.set("algorithm", "PQJagged");
+  params.set("algorithm", "pqjagged");
   params.set("compute_metrics", "true");
   params.set("imbalance_tolerance", double(imbalance));
   params.set("parallel_part_calculation_count", k);
@@ -354,7 +354,7 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numP
   }
 
   params.set("num_global_parts", numParts);
-  params.set("algorithm", "PQJagged");
+  params.set("algorithm", "pqjagged");
   params.set("compute_metrics", "true");
   params.set("imbalance_tolerance", double(imbalance));
   params.set("bisection_num_test_cuts", 7);
