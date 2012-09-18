@@ -7549,7 +7549,20 @@ namespace {
 	// Mark the names which were used so they aren't used for another field on this entity.
 	// Create a field of that variable type.
 	assert(type->component_count() == static_cast<int>(which_names.size()));
-	Ioss::Field field(base_name.substr(0,bn_len-1), Ioss::Field::REAL, type, fld_role, count);
+        // DBG-GR-STR: Contrary to the comment above, it is possible that a valid basename starts with
+        //             the suffix seperator. This can happen due to truncation of names before they
+        //             are written to the exodus file. Here we check if the (possibly truncated) name
+        //             starts with the suffix seperator. If so, we need to add it back in at the start
+        //             of the name.
+        //Ioss::Field field(base_name.substr(0,bn_len-1), Ioss::Field::REAL, type, fld_role, count);
+        std::string base_name_2 = "";
+        if (name[0] == suffix_separator) {
+          base_name_2 += suffix_separator;
+        }
+        base_name_2 += base_name;
+        size_t bn_len_2 = base_name_2.length(); // Length of basename portion only
+        Ioss::Field field(base_name_2.substr(0,bn_len_2-1), Ioss::Field::REAL, type, fld_role, count);
+        // DBG-GR-END
 	for (size_t i=0; i < which_names.size(); i++) {
 	  names[which_names[i]][0] = '\0';
 	}
