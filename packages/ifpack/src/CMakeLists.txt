@@ -98,7 +98,7 @@ SET(SOURCES ${SOURCES}
   Ifpack_IC.cpp
   Ifpack_IC_Utils.cpp
   Ifpack_OverlapGraph.cpp
-  icrout_quicksort.c
+  Ifpack_MultiListSort.c
   ifp_parameters.cpp
   Ifpack_DiagPreconditioner.cpp
   Ifpack_PointRelaxation.cpp
