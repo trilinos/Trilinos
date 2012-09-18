@@ -222,7 +222,7 @@ namespace {
     Ioss::ParallelUtils par_util(comm);
     common_nodes = par_util.global_minmax(common_nodes, Ioss::ParallelUtils::DO_MIN);
     
-    std::cerr << "Setting common_nodes to " << common_nodes << "\n";
+    //    std::cerr << "Setting common_nodes to " << common_nodes << "\n";
     return common_nodes;
   }
 }
@@ -289,7 +289,7 @@ namespace Iopx {
     get_entity_dist(processorCount, myProcessor, info.num_nodes,
 		    node_dist,    &nodeOffset,    &nodeCount);
 
-    std::cout << "Processor " << myProcessor << " has " << elementCount << " elements.\n";
+    //    std::cout << "Processor " << myProcessor << " has " << elementCount << " elements.\n";
     
     std::vector<MY_INT> pointer; // Index into adjacency, processor list for each element...
     std::vector<MY_INT> adjacency; // Size is sum of element connectivity sizes 
@@ -432,7 +432,7 @@ namespace Iopx {
     
     std::vector<idx_t> options(3);
     options[0] = 1; // Use my values instead of default
-    options[1] = PARMETIS_DBGLVL_TIME; 
+    options[1] = 0; // PARMETIS_DBGLVL_TIME; 
     options[2] = 1234567; // Random number seed
     
     if (method == "KWAY") {
@@ -440,7 +440,7 @@ namespace Iopx {
 					elm_wgt, &wgt_flag, &num_flag, &ncon, &common_nodes, &nparts,
 					TOPTR(tp_wgts), TOPTR(ub_vec), TOPTR(options), &edge_cuts, TOPTR(elem_partition),
 					&comm_);
-      std::cout << "Edge Cuts = " << edge_cuts << "\n";
+      //std::cout << "Edge Cuts = " << edge_cuts << "\n";
       if (rc != METIS_OK) {
 	std::ostringstream errmsg;
 	errmsg << "ERROR: Problem during call to ParMETIS_V3_PartMeshKWay decomposition\n";
@@ -469,7 +469,7 @@ namespace Iopx {
 				    elm_wgt, elm_wgt, &wgt_flag, &num_flag, &ndims, (real_t*)TOPTR(centroids_), &ncon, &nparts,
 				    TOPTR(tp_wgts), TOPTR(ub_vec), TOPTR(options), &edge_cuts, TOPTR(elem_partition), &comm_);
 
-      std::cout << "Edge Cuts = " << edge_cuts << "\n";
+      //std::cout << "Edge Cuts = " << edge_cuts << "\n";
       METIS_Free(dual_xadj);
       METIS_Free(dual_adjacency);
       
@@ -543,10 +543,10 @@ namespace Iopx {
     int err = MPI_Alltoallv(TOPTR(exportElementMap), TOPTR(exportElementCount), TOPTR(exportElementIndex), MPI_INT,
 			    TOPTR(importElementMap), TOPTR(importElementCount), TOPTR(importElementIndex), MPI_INT, comm_);
     
-    std::cout << "Processor " << myProcessor << ":\t"
-	      << elementCount-exp_size << " local, "
-	      << imp_size             << " imported and "
-	      << exp_size            << " exported elements\n";
+    //std::cout << "Processor " << myProcessor << ":\t"
+    //	      << elementCount-exp_size << " local, "
+    //	      << imp_size             << " imported and "
+    //	      << exp_size            << " exported elements\n";
   }
 
   void DecompositionData::zoltan_decompose(const std::string &method)
@@ -570,7 +570,7 @@ namespace Iopx {
     zz.Set_Param("LB_METHOD", method);
     zz.Set_Param("REMAP", "0");
     zz.Set_Param("RETURN_LISTS", "ALL");
-    zz.Set_Param("DEBUG_LEVEL", "1");
+    zz.Set_Param("DEBUG_LEVEL", "0");
 
     int changes = 0;
     int num_global = 1;
@@ -592,10 +592,10 @@ namespace Iopx {
 			      num_import, import_global_ids, import_local_ids, import_procs, import_to_part,
 			      num_export, export_global_ids, export_local_ids, export_procs, export_to_part);
 
-    std::cout << "Processor " << myProcessor << ":\t"
-	      << elementCount-num_export << " local, "
-	      << num_import                  << " imported and "
-	      << num_export                  << " exported elements\n";
+    //std::cout << "Processor " << myProcessor << ":\t"
+    //	      << elementCount-num_export << " local, "
+    //	      << num_import                  << " imported and "
+    //	      << num_export                  << " exported elements\n";
 
     // Don't need centroid data anymore... Free up space
     std::vector<double>().swap(centroids_);
@@ -1020,7 +1020,7 @@ namespace Iopx {
 	// Get the connectivity (raw) for this portion of elements...
 	std::vector<INT> connectivity(overlap*element_nodes);
 	size_t blk_start = max(b_start, p_start) - b_start + 1;
-	std::cout << "Processor " << myProcessor << " has " << overlap << " elements on element block " << id << "\n";
+	//std::cout << "Processor " << myProcessor << " has " << overlap << " elements on element block " << id << "\n";
 	int ierr = ex_get_n_conn(exodusId, EX_ELEM_BLOCK, id, blk_start, overlap, TOPTR(connectivity), NULL, NULL);
 	size_t el = 0;
 	for (size_t elem = 0; elem < overlap; elem++) {
@@ -1485,7 +1485,7 @@ namespace Iopx {
       sums += send_count[p];
     }
 
-    std::cout << "Processor " << myProcessor << " communicates " << sumr << " nodes from and " << sums << " nodes to other processors\n";
+    //std::cout << "Processor " << myProcessor << " communicates " << sumr << " nodes from and " << sums << " nodes to other processors\n";
     
     // Build the list telling the other processors which of their nodes I will need data from...
     std::vector<INT> node_comm_recv(sumr);
