@@ -63,7 +63,9 @@ void View< DataType , LayoutType , Cuda >::internal_private_create(
   const std::string & label ,
   const typename View< DataType , LayoutType , Cuda >::shape_type shape )
 {
-  const size_t count = Impl::allocation_count( shape );
+  typedef typename View< DataType , LayoutType , Cuda >::shape_type shape_type ;
+
+  const size_t count = Impl::ShapeMap<shape_type>::allocation_count( shape );
 
   oper_type::m_shape = shape ;
   oper_type::m_ptr_on_device = (value_type *)

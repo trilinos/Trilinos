@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     char file_name[100];
 
     int nProcs, myPID ;
-    Teuchos::ParameterList pLUList ;        // ParaLU parameters
+    Teuchos::RCP <Teuchos::ParameterList> pLUList ;        // ParaLU parameters
     Teuchos::ParameterList isoList ;        // Isorropia parameters
     Teuchos::ParameterList shyLUList ;    // ShyLU parameters
     string ipFileName = "ShyLU.xml";       // TODO : Accept as i/p
@@ -113,27 +113,27 @@ int main(int argc, char *argv[])
     }
 
     // =================== Read input xml file =============================
-    Teuchos::updateParametersFromXmlFile(ipFileName, &pLUList);
-    isoList = pLUList.sublist("Isorropia Input");
-    shyLUList = pLUList.sublist("ShyLU Input");
+    pLUList = Teuchos::getParametersFromXmlFile(ipFileName);
+    isoList = pLUList->sublist("Isorropia Input");
+    shyLUList = pLUList->sublist("ShyLU Input");
     shyLUList.set("Outer Solver Library", "Belos");
     // Get matrix market file name
-    string MMFileName = Teuchos::getParameter<string>(pLUList, "mm_file");
-    string prec_type = Teuchos::getParameter<string>(pLUList, "preconditioner");
-    int maxiters = Teuchos::getParameter<int>(pLUList, "Outer Solver MaxIters");
-    MT tol = Teuchos::getParameter<double>(pLUList, "Outer Solver Tolerance");
-    string rhsFileName = pLUList.get<string>("rhs_file", "");
+    string MMFileName = Teuchos::getParameter<string>(*pLUList, "mm_file");
+    string prec_type = Teuchos::getParameter<string>(*pLUList, "preconditioner");
+    int maxiters = Teuchos::getParameter<int>(*pLUList, "Outer Solver MaxIters");
+    MT tol = Teuchos::getParameter<double>(*pLUList, "Outer Solver Tolerance");
+    string rhsFileName = pLUList->get<string>("rhs_file", "");
 
 
-    int maxFiles = pLUList.get<int>("Maximum number of files to read in", 1);
-    int startFile = pLUList.get<int>("Number of initial file", 1);
+    int maxFiles = pLUList->get<int>("Maximum number of files to read in", 1);
+    int startFile = pLUList->get<int>("Number of initial file", 1);
     int file_number = startFile;
 
     if (myPID == 0)
     {
         cout << "Input :" << endl;
         cout << "ParaLU params " << endl;
-        pLUList.print(std::cout, 2, true, true);
+        pLUList->print(std::cout, 2, true, true);
         cout << "Matrix market file name: " << MMFileName << endl;
     }
 

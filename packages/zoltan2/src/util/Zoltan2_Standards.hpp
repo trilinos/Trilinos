@@ -75,8 +75,6 @@
 //////////////////////////////////////////
 // Frequently used Trilinos symbols
 
-#define global_size_t size_t
-
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
@@ -118,6 +116,9 @@ using Teuchos::ParameterList;
 using Teuchos::ParameterEntry;
 using Teuchos::reduceAll;
 using Teuchos::gatherAll;
+
+typedef size_t global_size_t;
+
 }
 
 //////////////////////////////////////////////////////

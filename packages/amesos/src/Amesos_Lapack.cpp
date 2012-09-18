@@ -154,8 +154,20 @@ int Amesos_Lapack::SymbolicFactorization()
     if (SerialMap_.get() == 0)
       AMESOS_CHK_ERR(-1);
 
-    Importer_ = rcp(new Epetra_Import(SerialMap(), Matrix()->RowMatrixRowMap()));
-    if (Importer_.get() == 0)
+    MatrixImporter_ = rcp(new Epetra_Import(SerialMap(), Matrix()->RowMatrixRowMap()));
+    if (MatrixImporter_.get() == 0)
+      AMESOS_CHK_ERR(-1);
+
+    const bool switchDomainRangeMaps = (UseTranspose_ != Matrix()->UseTranspose());
+
+    const Epetra_Map &rhsMap = switchDomainRangeMaps ? Matrix()->OperatorDomainMap() : Matrix()->OperatorRangeMap();
+    RhsExporter_ = rcp(new Epetra_Export(rhsMap, SerialMap()));
+    if (RhsExporter_.get() == 0)
+      AMESOS_CHK_ERR(-1);
+
+    const Epetra_Map &solutionMap = switchDomainRangeMaps ? Matrix()->OperatorRangeMap() : Matrix()->OperatorDomainMap();
+    SolutionImporter_ = rcp(new Epetra_Import(solutionMap, SerialMap()));
+    if (SolutionImporter_.get() == 0)
       AMESOS_CHK_ERR(-1);
   }
 
@@ -254,7 +266,7 @@ int Amesos_Lapack::SolveDistributed(Epetra_MultiVector& X,
   // with all elements on on process 0.
   Epetra_MultiVector SerialVector(SerialMap(),NumVectors);
   // import off-process data
-  AMESOS_CHK_ERR(SerialVector.Import(B,Importer(),Insert));
+  AMESOS_CHK_ERR(SerialVector.Export(B,RhsExporter(),Insert));
 
   VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_);
   ResetTimer();
@@ -279,7 +291,7 @@ int Amesos_Lapack::SolveDistributed(Epetra_MultiVector& X,
   SolveTime_ = AddTime("Total solve time", SolveTime_);
   ResetTimer();
 
-  AMESOS_CHK_ERR(X.Export(SerialVector,Importer(),Insert));
+  AMESOS_CHK_ERR(X.Import(SerialVector,SolutionImporter(),Insert));
 
   VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_);
   ++NumSolve_;
@@ -346,7 +358,7 @@ int Amesos_Lapack::DistributedToSerial()
   {
     SerialCrsMatrix_ = rcp(new Epetra_CrsMatrix(Copy,SerialMap(), 0));
     SerialMatrix_    = rcp(&SerialCrsMatrix(), false);
-    AMESOS_CHK_ERR(SerialCrsMatrix().Import(*Matrix(),Importer(),Insert));
+    AMESOS_CHK_ERR(SerialCrsMatrix().Import(*Matrix(),MatrixImporter(),Insert));
     AMESOS_CHK_ERR(SerialCrsMatrix().FillComplete());
   }
 
@@ -421,8 +433,8 @@ int Amesos_Lapack::GEEV(Epetra_Vector& Er, Epetra_Vector& Ei)
   {
     // I am not really sure that exporting the results make sense... 
     // It is just to be coherent with the other parts of the code.
-    Er.Export(*LocalEr, Importer(), Insert);
-    Ei.Export(*LocalEi, Importer(), Insert);
+    Er.Import(*LocalEr, Epetra_Import(Er.Map(), SerialMap()), Insert);
+    Ei.Import(*LocalEi, Epetra_Import(Ei.Map(), SerialMap()), Insert);
   }
 
   return(0);
