@@ -1267,7 +1267,7 @@ EndReporting:
 
   if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
     Zoltan_RB_stats(zz, timestop-timestart,&rcb->Dots,dotnum,part_sizes,
-                timers,counters,stats,reuse_count,rcbbox,reuse);
+                    timers,counters,stats,reuse_count,rcbbox,reuse);
 
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME) {
     if (zz->Proc == zz->Debug_Proc) {
