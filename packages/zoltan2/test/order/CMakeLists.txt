@@ -3,8 +3,7 @@ INCLUDE(TribitsAddExecutableAndTest)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Ordering1
   SOURCES ordering1.cpp
-  NUM_MPI_PROCS 4
-  COMM serial mpi
+  COMM serial
   ARGS
    "--inputFile=simple"
   PASS_REGULAR_EXPRESSION "PASS"
