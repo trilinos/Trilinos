@@ -1,0 +1,2 @@
+dot  -Tpdf quad.dot > quad.pdf
+kpdf quad.pdf

@@ -1,0 +1,37 @@
+graph Quadrilateral_4  {
+#   name= Quadrilateral_4
+#   n_vert = 4
+#   n_node = 4
+#   n_edge = 4
+#   n_face = 0
+#   n_side = 4
+  ratio=1;
+  layout=nop;
+  size="4,4";
+  bb="0,0,100,100";
+  node [color=Green, fontcolor=Blue, font=Courier,  width=0.125,  height=0.125, shape=circle, fontsize=6, fixedsize=true, penwidth=0.2]; 
+  0 [ pos="0,0"];
+  1 [ pos="60,0"];
+  2 [ pos="60,60"];
+  3 [ pos="0,60"];
+  0 -- 1 ; 
+  1 -- 2 ; 
+  2 -- 3 ; 
+  3 -- 0 ; 
+  0 [color=red, pos="0,0"];
+  4 [color=red, pos="30,0"];
+  8 [color=red, pos="30,30"];
+  7 [color=red, pos="0,30"];
+  4 [color=red, pos="30,0"];
+  1 [color=red, pos="60,0"];
+  5 [color=red, pos="60,30"];
+  8 [color=red, pos="30,30"];
+  8 [color=red, pos="30,30"];
+  5 [color=red, pos="60,30"];
+  2 [color=red, pos="60,60"];
+  6 [color=red, pos="30,60"];
+  7 [color=red, pos="0,30"];
+  8 [color=red, pos="30,30"];
+  6 [color=red, pos="30,60"];
+  3 [color=red, pos="0,60"];
+}

@@ -1,0 +1,26 @@
+
+INCLUDE(TribitsLibraryMacros)
+
+SET(HEADERS "")
+SET(SOURCES "")
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
+
+FILE(GLOB HEADERS *.hpp)
+FILE(GLOB SOURCES *.cpp)
+
+#
+# Define the targets for package's library(s)
+#
+
+TRIBITS_ADD_LIBRARY(
+  stk_algsup
+  NOINSTALLHEADERS ${HEADERS}
+  DEPLIBS stk_mesh_base
+  SOURCES ${SOURCES}
+  )
+
+INSTALL(FILES ${HEADERS} DESTINATION
+    ${CMAKE_INSTALL_PREFIX}/include/stk_algsup/)
+

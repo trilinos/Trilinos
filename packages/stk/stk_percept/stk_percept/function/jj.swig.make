@@ -1,0 +1,1 @@
+swig -python -c++ -I/scratch/srkenno/code/stk_encore -includeall -lembed.i StringFunction.i

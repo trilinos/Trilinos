@@ -1,0 +1,19 @@
+graph Triangle_3  {
+#   name= Triangle_3
+#   n_vert = 3
+#   n_node = 3
+#   n_edge = 3
+#   n_face = 0
+#   n_side = 3
+  ratio=1;
+  layout=nop;
+  size="4,4";
+  bb="0,0,100,100";
+  node [color=Green, fontcolor=Blue, font=Courier,  width=0.125,  height=0.125, shape=circle, fontsize=6, fixedsize=true, penwidth=0.2]; 
+  0 [ pos="0,0"];
+  1 [ pos="60,0"];
+  2 [ pos="0,60"];
+  0 -- 1 ; 
+  1 -- 2 ; 
+  2 -- 0 ; 
+}

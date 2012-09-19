@@ -1,0 +1,5 @@
+
+ADD_SUBDIRECTORY(stk_algsup)
+
+TRIBITS_ADD_TEST_DIRECTORIES(unit_tests)
+

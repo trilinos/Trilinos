@@ -1,0 +1,41 @@
+
+/** \addtogroup stk_mesh_bulk_data_parallel
+ *
+ *  Parallel distributed \ref stk::mesh::Entity "entities" have
+ *  relations to entities that cross proessor boundaries.
+ *  Such a cross-processor relation can be viewed as follows.
+ *
+ *  <b> ( domain_entity , domain_proc ) -> ( range_entity , range_proc ) </b>
+ *
+ *  Mesh-specific parallel communication operations use
+ *  a collection of cross-processor relations to determine what
+ *  information is sent or received among processors.
+ *  These operations send data from the domain_entity on the
+ *  domain_processor to the range_entity on the range_processor.
+ *  These communication operations are most efficient when all
+ *  message data between a given pair of processors is packaged
+ *  into a single message.
+ *
+ *  Efficient packing and unpacking of mesh-specific
+ *  parallel communication messages is supported by
+ *  structuring the cross-processor relations as follows.
+ *
+ *  Given a collection of cross-processor relations:
+ *
+ *  { <b>( ( domain_entity , domain_proc ) ->
+           ( range_entity , range_proc ) )</b>[k] }
+ *
+ *  Form the following two correlated vectors on the
+ *  domain and range processors.
+ *  - on the domain_proc : { ( domain_entity , range_proc )[k] }
+ *  - on the range_proc  : { ( range_entity , domain_proc )[k] }
+ *
+ *  Members of the domain processor's vector are ordered by the
+ *  domain entity key and then by range processor.
+ *  Members of the range processor's vector are ordered conformally
+ *  with the domain processor's ordering.
+ *  Thus message packing and unpacking can be performed by
+ *  iterating the cross-processor relation vectors.
+ */
+
+
