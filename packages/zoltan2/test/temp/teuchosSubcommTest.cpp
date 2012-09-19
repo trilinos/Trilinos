@@ -7,6 +7,10 @@
 // You can run this program with -f to free the communicator "manually" with
 // MPI_Comm_free.  That allows us to demonstrate that, without -f, the memory
 // is indeed leaked by Teuchos.  With -f, there are no memory leaks.
+//
+// Update!  I pushed a fix to Teuchos::Comm (adding MPI_Comm_free) to the 
+// opaqueWrappers as suggested by Siva.  Now there are no memory leaks, even
+// without the manual MPI_Comm_free.
 
 #include <stdio.h>
 #include <mpi.h>
@@ -49,10 +53,10 @@ int main(int narg, char **arg)
                                             = comm->createSubcommunicator(list);
     printf("weak: %d  strong: %d total: %d\n",
             a.weak_count(), a.strong_count(), a.total_count());
-    if (manual_comm_free) {
-      MPI_Comm ampi = Zoltan2::TeuchosConst2MPI(a);
-      MPI_Comm_free(&ampi);
-    }
+//    if (manual_comm_free) {
+//      MPI_Comm ampi = Zoltan2::TeuchosConst2MPI(a);
+//      MPI_Comm_free(&ampi);
+//    }
   }
   delete [] ids;
   if (me == 0)
