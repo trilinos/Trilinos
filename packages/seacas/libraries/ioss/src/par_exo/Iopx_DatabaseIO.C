@@ -374,7 +374,7 @@ namespace {
       // Filter out names of the form "basename_id" if the name
       // id doesn't match the id in the name...
       size_t base_size = basename.size();
-      if (std::strncmp(basename.c_str(), TOPTR(buffer), base_size) == 0) {
+      if (std::strncmp(basename.c_str(), &buffer[0], base_size) == 0) {
 	int64_t name_id = extract_id(TOPTR(buffer));
 	if (name_id > 0 && name_id != id) {
 	  // See if name is truly of form "basename_name_id"
@@ -910,12 +910,6 @@ namespace Iopx {
       exists = data.read_last_time_attribute(&last_time);
     }
 
-    if (exists) {
-      // Increase value slightly in case there is some small
-      // roundoff and to allow for floating point equality issues.
-      last_time *= 1.0001;
-    }
-
     // Only add states that are less than or equal to the
     // 'last_time' value which is either DBL_MAX or the value of
     // the last time successfully written to the database and
@@ -1424,7 +1418,6 @@ namespace Iopx {
 	add_results_fields(entity_type, io_block, iblk);
 	
 	if (entity_type == EX_ELEM_BLOCK) {
-	  Ioss::SerializeIO	serializeIO__(this);
 	  add_map_fields(get_file_pointer(), (Ioss::ElementBlock*)io_block, decomp.el_blocks[iblk].ioss_count());
 	}
       }
@@ -2314,7 +2307,7 @@ namespace Iopx {
 	// no Xs or distribution factors on a particular processor...
 
 	// Get exodusII Xset metadata
-	for (size_t ins=0; ins < count; ins++) {
+	for (int64_t ins=0; ins < count; ins++) {
 	  int64_t id = decomp.node_sets[ins].id();
 	  
 	  int num_attr = 0;
@@ -2873,8 +2866,6 @@ namespace Iopx {
 	size_t num_to_get = field.verify(data_size);
 
 	if (num_to_get > 0) {
-	  int64_t entity_count = cs->get_property("entity_count").get_int();
-
 	  // Return the <entity (node or side), processor> pair
 	  if (field.get_name() == "entity_processor") {
 
@@ -3297,8 +3288,9 @@ namespace Iopx {
       size_t comp_count = var_type->component_count();
       size_t var_index=0;
 
+      char field_suffix_separator = get_field_separator();
       for (size_t i=0; i < comp_count; i++) {
-	std::string var_name = var_type->label_name(field.get_name(), i+1, fieldSuffixSeparator);
+	std::string var_name = var_type->label_name(field.get_name(), i+1, field_suffix_separator);
 
 	// Read the variable...
 	int64_t id = get_id(ge, type, &ids_);
@@ -3355,8 +3347,9 @@ namespace Iopx {
       size_t comp_count = var_type->component_count();
       size_t var_index=0;
 
+      char field_suffix_separator = get_field_separator();
       for (size_t i=0; i < comp_count; i++) {
-	std::string var_name = var_type->label_name(field.get_name(), i+1, fieldSuffixSeparator);
+	std::string var_name = var_type->label_name(field.get_name(), i+1, field_suffix_separator);
 
 	// Read the variable...
 	int ierr = 0;
@@ -4633,8 +4626,9 @@ namespace Iopx {
 	  field_name += complex_suffix[complex_comp];
 	}
 
+	char field_suffix_separator = get_field_separator();
 	for (int i=0; i < comp_count; i++) {
-	  std::string var_name = var_type->label_name(field_name, i+1, fieldSuffixSeparator);
+	  std::string var_name = var_type->label_name(field_name, i+1, field_suffix_separator);
 
 	  if (m_variables[EX_NODE_BLOCK].find(var_name) == m_variables[EX_NODE_BLOCK].end()) {
 	    std::ostringstream errmsg;
@@ -4728,8 +4722,9 @@ namespace Iopx {
 	  field_name += complex_suffix[complex_comp];
 	}
 
+	char field_suffix_separator = get_field_separator();
 	for (int i=0; i < comp_count; i++) {
-	  std::string var_name = var_type->label_name(field_name, i+1, fieldSuffixSeparator);
+	  std::string var_name = var_type->label_name(field_name, i+1, field_suffix_separator);
 
 	  var_index = m_variables[type].find(var_name)->second;
 	  assert(var_index > 0);
@@ -4814,8 +4809,9 @@ namespace Iopx {
 	  field_name += complex_suffix[complex_comp];
 	}
 
+	char field_suffix_separator = get_field_separator();
 	for (int i=0; i < comp_count; i++) {
-	  std::string var_name = var_type->label_name(field_name, i+1, fieldSuffixSeparator);
+	  std::string var_name = var_type->label_name(field_name, i+1, field_suffix_separator);
 
 	  // If this is not a global variable, prepend the name to avoid
 	  // name collisions...
@@ -4855,9 +4851,10 @@ namespace Iopx {
       // and add suffix to base 'field_name'.  Look up index
       // of this name in 'm_variables[EX_GLOBAL]' map
       int comp_count = var_type->component_count();
+      char field_suffix_separator = get_field_separator();
       for (int i=0; i < comp_count; i++) {
 	std::string field_name = field.get_name();
-	std::string var_name = var_type->label_name(field_name, i+1, fieldSuffixSeparator);
+	std::string var_name = var_type->label_name(field_name, i+1, field_suffix_separator);
 
 	assert(m_variables[EX_GLOBAL].find(var_name) != m_variables[EX_GLOBAL].end());
 	int var_index = m_variables[EX_GLOBAL].find(var_name)->second;
@@ -5688,14 +5685,15 @@ namespace Iopx {
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
 	// Write attribute names (if any)...
-	write_attribute_names(get_file_pointer(), EX_NODE_SET,   get_region()->get_nodesets(),       fieldSuffixSeparator);
-	write_attribute_names(get_file_pointer(), EX_EDGE_SET,   get_region()->get_edgesets(),       fieldSuffixSeparator);
-	write_attribute_names(get_file_pointer(), EX_FACE_SET,   get_region()->get_facesets(),       fieldSuffixSeparator);
-	write_attribute_names(get_file_pointer(), EX_ELEM_SET,   get_region()->get_elementsets(),    fieldSuffixSeparator);
-	write_attribute_names(get_file_pointer(), EX_NODE_BLOCK, get_region()->get_node_blocks(),    fieldSuffixSeparator);
-	write_attribute_names(get_file_pointer(), EX_EDGE_BLOCK, get_region()->get_edge_blocks(),    fieldSuffixSeparator);
-	write_attribute_names(get_file_pointer(), EX_FACE_BLOCK, get_region()->get_face_blocks(),    fieldSuffixSeparator);
-	write_attribute_names(get_file_pointer(), EX_ELEM_BLOCK, get_region()->get_element_blocks(), fieldSuffixSeparator);
+	char field_suffix_separator = get_field_separator();
+	write_attribute_names(get_file_pointer(), EX_NODE_SET,   get_region()->get_nodesets(),       field_suffix_separator);
+	write_attribute_names(get_file_pointer(), EX_EDGE_SET,   get_region()->get_edgesets(),       field_suffix_separator);
+	write_attribute_names(get_file_pointer(), EX_FACE_SET,   get_region()->get_facesets(),       field_suffix_separator);
+	write_attribute_names(get_file_pointer(), EX_ELEM_SET,   get_region()->get_elementsets(),    field_suffix_separator);
+	write_attribute_names(get_file_pointer(), EX_NODE_BLOCK, get_region()->get_node_blocks(),    field_suffix_separator);
+	write_attribute_names(get_file_pointer(), EX_EDGE_BLOCK, get_region()->get_edge_blocks(),    field_suffix_separator);
+	write_attribute_names(get_file_pointer(), EX_FACE_BLOCK, get_region()->get_face_blocks(),    field_suffix_separator);
+	write_attribute_names(get_file_pointer(), EX_ELEM_BLOCK, get_region()->get_element_blocks(), field_suffix_separator);
       
 	// Write coordinate names...
 	char const *labels[3];
@@ -5893,7 +5891,7 @@ namespace Iopx {
 	  std::vector<Ioss::Field> fields;
 	  int64_t count = entity->get_property("entity_count").get_int();
 	  get_fields(count, names, nvar, Ioss::Field::TRANSIENT,
-		     fieldSuffixSeparator, local_truth, fields);
+		     get_field_separator(), local_truth, fields);
 
 	  std::vector<Ioss::Field>::const_iterator IF;
 	  for (IF = fields.begin(); IF != fields.end(); ++IF) {
@@ -6024,7 +6022,7 @@ namespace Iopx {
 	}
 	assert(index == static_cast<int>(m_variables[type].size()));
 	generate_block_truth_table(m_variables[type], m_truthTable[type], entities,
-				   fieldSuffixSeparator);
+				   get_field_separator());
       }
 
     int DatabaseIO::gather_names(ex_entity_type type,
@@ -6058,6 +6056,7 @@ namespace Iopx {
       int save_index = 0;
       Ioss::NameList::const_iterator IF;
 
+      char field_suffix_separator = get_field_separator();
       for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
 	std::string name = *IF;
 
@@ -6079,7 +6078,7 @@ namespace Iopx {
 	  }
 
 	  for (int i=1; i <= var_type->component_count(); i++) {
-	    std::string var_string = var_type->label_name(field_name, i, fieldSuffixSeparator);
+	    std::string var_string = var_type->label_name(field_name, i, field_suffix_separator);
 
 	    // Add to 'VariableNameMap variables' so can determine
 	    // exodusII index given a Sierra field name.  exodusII index
@@ -6120,6 +6119,7 @@ namespace Iopx {
       // next block, ...
       size_t offset = 0;
 
+      char field_suffix_separator = get_field_separator();
       Ioss::SideSetContainer sidesets = get_region()->get_sidesets();
       Ioss::SideSetContainer::const_iterator I;
 
@@ -6155,7 +6155,7 @@ namespace Iopx {
 	      }
 
 	      for (int i=1; i <= var_type->component_count(); i++) {
-		std::string var_string = var_type->label_name(field_name, i, fieldSuffixSeparator);
+		std::string var_string = var_type->label_name(field_name, i, field_suffix_separator);
 		// Find position of 'var_string' in 'm_variables[]'
 		VariableNameMap::iterator VN = m_variables[EX_SIDE_SET].find(var_string);
 		if (VN != m_variables[EX_SIDE_SET].end()) {
@@ -6357,7 +6357,7 @@ namespace Iopx {
 	if (names[0][0] != '\0' && names[0][0] != ' ' && std::isalnum(names[0][0])) {
 	  std::vector<Ioss::Field> attributes;
 	  get_fields(my_element_count, names, attribute_count,
-		     Ioss::Field::ATTRIBUTE, fieldSuffixSeparator, NULL,
+		     Ioss::Field::ATTRIBUTE, get_field_separator(), NULL,
 		     attributes);
 	  int offset = 1;
 	  std::vector<Ioss::Field>::const_iterator IF;

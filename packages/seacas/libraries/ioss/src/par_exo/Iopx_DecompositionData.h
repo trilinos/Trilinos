@@ -75,7 +75,7 @@ namespace Iopx {
       // contains global entity-list positions for all entities in this set on this processor. 
       std::vector<int> entitylist_map;
       std::vector<bool> hasEntities; // T/F if this set exists on processor p
-      size_t root_;  // Lowest number processor that has nodes for this nodest
+      int root_;  // Lowest number processor that has nodes for this nodest
       size_t fileCount; // Number of nodes in nodelist for file decomposition
       int64_t id_;
   public:

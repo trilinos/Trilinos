@@ -10,13 +10,15 @@ APPEND_GLOB(SOURCES ${DIR}/*.C)
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}/../"
   "${CMAKE_CURRENT_BINARY_DIR}/../"
+  "${Zoltan_INCLUDE_DIRS}"
 )
+
 
 TRIBITS_ADD_LIBRARY(
 	Iopx
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
-	DEPLIBS Ioss exodus nemesis
+	DEPLIBS Ioss exodus nemesis zoltan parmetis
 )
 
 IF (BUILD_TESTING)

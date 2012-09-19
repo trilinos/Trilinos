@@ -62,7 +62,7 @@ namespace {
   void generate_index(std::vector<T> &index)
   {
     T sum = 0;
-    for (T i=0; i < index.size()-1; i++) {
+    for (size_t i=0; i < index.size()-1; i++) {
       T cnt = index[i];
       index[i] = sum;
       sum += cnt;
@@ -137,7 +137,7 @@ namespace {
     assert(nlid_ent = element_count);
     
     for (size_t i = 0; i < element_count; i++) {
-      gids[i] = zdata->elementOffset + i;
+      gids[i] = element_offset + i;
       if (lids) lids[i] = i;
       if (wdim) wgts[i] = 1.0;
     }
@@ -359,7 +359,7 @@ namespace Iopx {
     // that remain locally owned...
     importPreLocalElemIndex = 0;
     for (size_t i=0; i < importElementMap.size(); i++) {
-      if (importElementMap[i] >= elementOffset)
+      if ((size_t)importElementMap[i] >= elementOffset)
 	break;
       importPreLocalElemIndex++;
     }
@@ -540,8 +540,8 @@ namespace Iopx {
       }
     }
 
-    int err = MPI_Alltoallv(TOPTR(exportElementMap), TOPTR(exportElementCount), TOPTR(exportElementIndex), MPI_INT,
-			    TOPTR(importElementMap), TOPTR(importElementCount), TOPTR(importElementIndex), MPI_INT, comm_);
+    MPI_Alltoallv(TOPTR(exportElementMap), TOPTR(exportElementCount), TOPTR(exportElementIndex), MPI_INT,
+		  TOPTR(importElementMap), TOPTR(importElementCount), TOPTR(importElementIndex), MPI_INT, comm_);
     
     //std::cout << "Processor " << myProcessor << ":\t"
     //	      << elementCount-exp_size << " local, "
@@ -588,9 +588,10 @@ namespace Iopx {
 
     num_global = 1;
     num_local  = 1;
-    int rc = zz.LB_Partition(changes, num_global, num_local,
-			      num_import, import_global_ids, import_local_ids, import_procs, import_to_part,
-			      num_export, export_global_ids, export_local_ids, export_procs, export_to_part);
+    // TODO: Check return value for error.
+    zz.LB_Partition(changes, num_global, num_local,
+		    num_import, import_global_ids, import_local_ids, import_procs, import_to_part,
+		    num_export, export_global_ids, export_local_ids, export_procs, export_to_part);
 
     //std::cout << "Processor " << myProcessor << ":\t"
     //	      << elementCount-num_export << " local, "
@@ -606,7 +607,7 @@ namespace Iopx {
     // Build exportElementMap...
     std::vector<std::pair<int,int> > export_map;
     export_map.reserve(num_export);
-    for (size_t i=0; i < num_export; i++) {
+    for (int i=0; i < num_export; i++) {
       export_map.push_back(std::make_pair(export_procs[i],export_global_ids[i]));
     }
 
@@ -614,7 +615,7 @@ namespace Iopx {
     exportElementMap.reserve(num_export);
     exportElementIndex.resize(processorCount+1);
     exportElementCount.resize(processorCount+1);
-    for (size_t i=0; i < num_export; i++) {
+    for (int i=0; i < num_export; i++) {
       exportElementMap.push_back(export_map[i].second);
       exportElementCount[export_map[i].first]++;
     }
@@ -627,7 +628,7 @@ namespace Iopx {
     importElementMap.reserve(num_import);
     importElementIndex.resize(processorCount+1);
     importElementCount.resize(processorCount+1);
-    for (size_t i=0; i < num_import; i++) {
+    for (int i=0; i < num_import; i++) {
       importElementMap.push_back(import_global_ids[i]);
       importElementCount[import_procs[i]]++;
     }
@@ -670,7 +671,7 @@ namespace Iopx {
 
     std::vector<INT> export_conn_size(processorCount);
     std::vector<INT> import_conn_size(processorCount);
-    for (size_t p=0; p < processorCount; p++) {
+    for (int p=0; p < processorCount; p++) {
       size_t el_begin = exportElementIndex[p];
       size_t el_end = exportElementIndex[p+1];
       for (size_t i=el_begin; i < el_end; i++) {
@@ -691,17 +692,17 @@ namespace Iopx {
     
     std::vector<INT> export_disp(processorCount);
     std::vector<INT> import_disp(processorCount);
-    for (size_t p=1; p < processorCount; p++) {
+    for (int p=1; p < processorCount; p++) {
       export_disp[p] = export_disp[p-1] + export_conn_size[p-1];
       import_disp[p] = import_disp[p-1] + import_conn_size[p-1];
     }
     
-    for (size_t p=0; p < processorCount; p++) {
+    for (int p=0; p < processorCount; p++) {
       size_t el_begin = exportElementIndex[p];
       size_t el_end = exportElementIndex[p+1];
       for (size_t i=el_begin; i < el_end; i++) {
 	INT elem = exportElementMap[i] - elementOffset;
-	for (size_t n = pointer[elem]; n < pointer[elem+1]; n++) {
+	for (INT n = pointer[elem]; n < pointer[elem+1]; n++) {
 	  export_conn.push_back(adjacency[n]);
 	}
       }
@@ -722,8 +723,8 @@ namespace Iopx {
       std::vector<INT> import_conn(imp_size);
     
       ct_assert(sizeof(INT) == sizeof(int));
-      int err = MPI_Alltoallv(TOPTR(export_conn), TOPTR(export_conn_size), TOPTR(export_disp), MPI_INT,
-			      TOPTR(import_conn), TOPTR(import_conn_size), TOPTR(import_disp), MPI_INT, comm_);
+      MPI_Alltoallv(TOPTR(export_conn), TOPTR(export_conn_size), TOPTR(export_disp), MPI_INT,
+		    TOPTR(import_conn), TOPTR(import_conn_size), TOPTR(import_disp), MPI_INT, comm_);
 
       // Done with export_conn...
       std::vector<INT>().swap(export_conn);
@@ -742,8 +743,8 @@ namespace Iopx {
     
     // Nodes on local elements...
     for (size_t i=0; i < localElementMap.size(); i++) {
-      size_t elem = localElementMap[i];
-      for (size_t n = pointer[elem]; n < pointer[elem+1]; n++) {
+      INT elem = localElementMap[i];
+      for (INT n = pointer[elem]; n < pointer[elem+1]; n++) {
 	nodes.push_back(adjacency[n]);
       }
     }
@@ -775,7 +776,7 @@ namespace Iopx {
     std::vector<int> import_nodes;
     import_nodes.reserve(import_sum);
     importNodeMap.reserve(import_sum);
-    for (size_t p=0; p < processorCount; p++) {
+    for (int p=0; p < processorCount; p++) {
       size_t beg = nodeIndex[p];
       size_t end = nodeIndex[p+1];
 
@@ -837,7 +838,7 @@ namespace Iopx {
       }
     }
     
-    for (size_t p=0; p < processorCount; p++) {
+    for (int p=0; p < processorCount; p++) {
       if (p == myProcessor)
 	continue;
       size_t beg = exportNodeIndex[p];
@@ -1021,7 +1022,7 @@ namespace Iopx {
 	std::vector<INT> connectivity(overlap*element_nodes);
 	size_t blk_start = max(b_start, p_start) - b_start + 1;
 	//std::cout << "Processor " << myProcessor << " has " << overlap << " elements on element block " << id << "\n";
-	int ierr = ex_get_n_conn(exodusId, EX_ELEM_BLOCK, id, blk_start, overlap, TOPTR(connectivity), NULL, NULL);
+	ex_get_n_conn(exodusId, EX_ELEM_BLOCK, id, blk_start, overlap, TOPTR(connectivity), NULL, NULL);
 	size_t el = 0;
 	for (size_t elem = 0; elem < overlap; elem++) {
 	  pointer.push_back(adjacency.size());
@@ -1135,7 +1136,7 @@ namespace Iopx {
       }
 
       // Broadcast this data to all other processors...
-      int err = MPI_Bcast(TOPTR(nodelist), sizeof(INT)*nodelist.size(), MPI_BYTE, root, comm_);
+      MPI_Bcast(TOPTR(nodelist), sizeof(INT)*nodelist.size(), MPI_BYTE, root, comm_);
 
       // Each processor now has a complete list of all nodes in all
       // nodesets.
@@ -1176,7 +1177,7 @@ namespace Iopx {
 	for (size_t i=0; i < set_count; i++) {
 	  node_sets[i].hasEntities.resize(processorCount);
 	  node_sets[i].root_ = processorCount;
-	  for (size_t p=0; p < processorCount; p++) {
+	  for (int p=0; p < processorCount; p++) {
 	    if (p < node_sets[i].root_ && has_nodes[p*set_count + i] != 0) {
 	      node_sets[i].root_ = p;
 	    }	    
@@ -1199,7 +1200,7 @@ namespace Iopx {
 	    ex_get_set_dist_fact(exodusId, EX_NODE_SET, sets[i].id, TOPTR(df));
 	    double val = df[0];
 	    df_valcon[2*i] = val;
-	    for (size_t j=1; j < sets[i].num_distribution_factor; j++) {
+	    for (int64_t j=1; j < sets[i].num_distribution_factor; j++) {
 	      if (val != df[j]) {
 		df_valcon[2*i+1] = 0;
 	      }
@@ -1281,28 +1282,30 @@ namespace Iopx {
       }
 
       // Broadcast this data to all other processors...
-      int err = MPI_Bcast(TOPTR(elemlist), sizeof(INT)*elemlist.size(), MPI_BYTE, root, comm_);
+      MPI_Bcast(TOPTR(elemlist), sizeof(INT)*elemlist.size(), MPI_BYTE, root, comm_);
 
       // Each processor now has a complete list of all elems in all
       // sidesets.
       // Determine which of these are owned by the current
       // processor...
-      size_t offset = 0;
-      for (size_t i=0; i < set_count; i++) {
-	size_t ss_beg = offset;
-	size_t ss_end = ss_beg + sets[i].num_entry;
+      {
+	size_t offset = 0;
+	for (size_t i=0; i < set_count; i++) {
+	  size_t ss_beg = offset;
+	  size_t ss_end = ss_beg + sets[i].num_entry;
 
-	for (size_t n = ss_beg; n < ss_end; n++) {
-	  INT elem = elemlist[n];
-	  // See if elem owned by this processor...
-	  if (i_own_elem(elem)) {   	    
-	    // Save elem in this processors elemlist for this set.
-	    // The saved data is this elems location in the global
-	    // elemlist for this set.
-	    side_sets[i].entitylist_map.push_back(n-offset);
+	  for (size_t n = ss_beg; n < ss_end; n++) {
+	    INT elem = elemlist[n];
+	    // See if elem owned by this processor...
+	    if (i_own_elem(elem)) {   	    
+	      // Save elem in this processors elemlist for this set.
+	      // The saved data is this elems location in the global
+	      // elemlist for this set.
+	      side_sets[i].entitylist_map.push_back(n-offset);
+	    }
 	  }
+	  offset = ss_end;
 	}
-	offset = ss_end;
       }
 
       // Each processor knows how many of the sideset elems it owns;
@@ -1322,7 +1325,7 @@ namespace Iopx {
 	for (size_t i=0; i < set_count; i++) {
 	  side_sets[i].hasEntities.resize(processorCount);
 	  side_sets[i].root_ = processorCount;
-	  for (size_t p=0; p < processorCount; p++) {
+	  for (int p=0; p < processorCount; p++) {
 	    if (p < side_sets[i].root_ && has_elems[p*set_count + i] != 0) {
 	      side_sets[i].root_ = p;
 	    }	    
@@ -1352,7 +1355,7 @@ namespace Iopx {
 	    ex_get_set_dist_fact(exodusId, EX_SIDE_SET, sets[i].id, TOPTR(df));
 	    double val = df[0];
 	    df_valcon[3*i] = val;
-	    for (size_t j=1; j < sets[i].num_distribution_factor; j++) {
+	    for (int64_t j=1; j < sets[i].num_distribution_factor; j++) {
 	      if (val != df[j]) {
 		df_valcon[3*i+1] = 0;
 		break;
@@ -1420,7 +1423,7 @@ namespace Iopx {
 	}
 
 	// Broadcast this data to all other processors...
-	err = MPI_Bcast(TOPTR(nodes_per_face), nodes_per_face.size(), MPI_INT, root, comm_);
+	MPI_Bcast(TOPTR(nodes_per_face), nodes_per_face.size(), MPI_INT, root, comm_);
 
 	// Each processor now has a list of the number of nodes per
 	// face for all sidesets that have a variable number. This can
@@ -1452,7 +1455,7 @@ namespace Iopx {
     std::vector<INT> recv_count(processorCount);
     std::vector<INT> send_count(processorCount);
     
-    std::vector<INT> owner; // Size is sum of element connectivity sizes (same as adjacency list)
+    std::vector<int> owner; // Size is sum of element connectivity sizes (same as adjacency list)
     owner.reserve(adjacency.size());
 
     for (size_t i=0; i < adjacency.size(); i++) {
@@ -1477,7 +1480,7 @@ namespace Iopx {
     std::vector<INT> send_disp(processorCount);
     size_t sums = 0;
     size_t sumr = 0;
-    for (size_t p=0; p < processorCount; p++) {
+    for (int p=0; p < processorCount; p++) {
       recv_disp[p] = sumr;
       sumr += recv_count[p];
 
@@ -1493,7 +1496,7 @@ namespace Iopx {
     {
       std::vector<INT> recv_tmp(processorCount);
       for (size_t i=0; i < owner.size(); i++) {
-	size_t proc = owner[i];
+	int proc = owner[i];
 	if (proc != myProcessor) {
 	  INT node = adjacency[i];
 	  size_t position = recv_disp[proc] + recv_tmp[proc]++;
@@ -1503,8 +1506,8 @@ namespace Iopx {
     }
 
     ct_assert(sizeof(INT) == sizeof(int));
-    int err = MPI_Alltoallv(TOPTR(node_comm_recv), TOPTR(recv_count), TOPTR(recv_disp), MPI_INT,
-			    TOPTR(node_comm_send), TOPTR(send_count), TOPTR(send_disp), MPI_INT, comm_);
+    MPI_Alltoallv(TOPTR(node_comm_recv), TOPTR(recv_count), TOPTR(recv_disp), MPI_INT,
+		  TOPTR(node_comm_send), TOPTR(send_count), TOPTR(send_disp), MPI_INT, comm_);
 
     // At this point, 'node_comm_send' contains the list of nodes that I need to provide
     // coordinate data for.
@@ -1512,8 +1515,8 @@ namespace Iopx {
     // DEBUG: == Check that all nodes in node_comm_send are in the range
     //           nodeOffset..nodeOffset+nodeCount
     for (size_t i=0; i < node_comm_send.size(); i++) {
-      assert(node_comm_send[i] >= nodeOffset &&
-	     node_comm_send[i] <  nodeOffset+nodeCount);
+      assert((size_t)node_comm_send[i] >= nodeOffset &&
+	     (size_t)node_comm_send[i] <  nodeOffset+nodeCount);
     }
     
     // Get my coordinate data using direct exodus calls
@@ -1541,15 +1544,15 @@ namespace Iopx {
     }
       
     // Send the coordinate data back to the processors that requested it...
-    for (size_t i=0; i < processorCount; i++) {
+    for (int i=0; i < processorCount; i++) {
       send_count[i] *= spatialDimension;
       recv_count[i] *= spatialDimension;
       send_disp[i]  *= spatialDimension;
       recv_disp[i]  *= spatialDimension;
     }
 
-    err = MPI_Alltoallv(TOPTR(coord_send), TOPTR(send_count), TOPTR(send_disp), MPI_DOUBLE,
-			TOPTR(coord_recv), TOPTR(recv_count), TOPTR(recv_disp), MPI_DOUBLE, comm_);
+    MPI_Alltoallv(TOPTR(coord_send), TOPTR(send_count), TOPTR(send_disp), MPI_DOUBLE,
+		  TOPTR(coord_recv), TOPTR(recv_count), TOPTR(recv_disp), MPI_DOUBLE, comm_);
 
     // Don't need coord_send data anymore ... clean out the vector.
     std::vector<double>().swap(coord_send);
@@ -1574,9 +1577,9 @@ namespace Iopx {
       double cx = 0.0;
       double cy = 0.0;
       double cz = 0.0;
-      for (j = pointer[i]; j < pointer[i+1]; j++) {
-	INT node = adjacency[j];
-	INT proc = owner[j];
+      for (INT jj = pointer[i]; jj < pointer[i+1]; jj++) {
+	INT node = adjacency[jj];
+	INT proc = owner[jj];
 	if (proc == myProcessor) {
 	  cx += x[node-nodeOffset];
 	  if (spatialDimension > 1)
@@ -1630,7 +1633,7 @@ namespace Iopx {
     std::vector<size_t> imp_index(num_elem_block); 
     for (size_t i=0; i < importElementMap.size(); i++) {
       size_t elem = importElementMap[i];
-      while (i >= importElementIndex[proc+1])
+      while (i >= (size_t)importElementIndex[proc+1])
 	proc++;
       
       b = find_index_location(elem, fileBlockIndex);
@@ -1650,7 +1653,7 @@ namespace Iopx {
     b = 0;
     for (size_t i=0; i < exportElementMap.size(); i++) {
       size_t elem = exportElementMap[i];
-      while (i >= exportElementIndex[proc+1])
+      while (i >= (size_t)exportElementIndex[proc+1])
 	proc++;
       
       b = find_index_location(elem, fileBlockIndex);
@@ -1704,7 +1707,7 @@ namespace Iopx {
     std::vector<int> import_count(importNodeCount);
     std::vector<int> import_disp(importNodeIndex);
     
-    for (size_t i=0; i < processorCount; i++) {
+    for (int i=0; i < processorCount; i++) {
       export_count[i] *= sizeof(T) * comp_count;
       export_disp[i] *= sizeof(T) * comp_count;
       import_count[i] *= sizeof(T) * comp_count;
@@ -1756,7 +1759,7 @@ namespace Iopx {
       std::vector<int> import_count(importElementCount);
       std::vector<int> import_disp(importElementIndex);
     
-      for (size_t i=0; i < processorCount; i++) {
+      for (int i=0; i < processorCount; i++) {
 	export_count[i] *= sizeof(T);
 	export_disp[i]  *= sizeof(T);
 	import_count[i] *= sizeof(T);
@@ -1799,7 +1802,7 @@ namespace Iopx {
       std::vector<int> import_count(importElementCount);
       std::vector<int> import_disp(importElementIndex);
     
-      for (size_t i=0; i < processorCount; i++) {
+      for (int i=0; i < processorCount; i++) {
 	export_count[i] *= sizeof(T) * comp_count;
 	export_disp[i]  *= sizeof(T) * comp_count;
 	import_count[i] *= sizeof(T) * comp_count;
@@ -1915,7 +1918,7 @@ namespace Iopx {
 
     assert(sizeof(INT) == exodus_byte_size_api(exodusId));
     std::vector<INT> file_conn(count * nnpe);
-    int ierr = ex_get_n_conn(exodusId, EX_ELEM_BLOCK, id, offset+1, count, TOPTR(file_conn), NULL, NULL);
+    ex_get_n_conn(exodusId, EX_ELEM_BLOCK, id, offset+1, count, TOPTR(file_conn), NULL, NULL);
     communicate_block_data(TOPTR(file_conn), data, blk_seq, nnpe);
 
     for (size_t i=0; i < blk.iossCount * nnpe; i++) {
@@ -1946,7 +1949,7 @@ namespace Iopx {
       std::vector<int> import_count(blk.importCount);
       std::vector<int> import_disp(blk.importIndex);
     
-      for (size_t i=0; i < processorCount; i++) {
+      for (int i=0; i < processorCount; i++) {
 	export_count[i] *= sizeof(T);
 	export_disp[i]  *= sizeof(T);
 	import_count[i] *= sizeof(T);
@@ -1977,7 +1980,7 @@ namespace Iopx {
       std::vector<int> import_count(blk.importCount);
       std::vector<int> import_disp(blk.importIndex);
     
-      for (size_t i=0; i < processorCount; i++) {
+      for (int i=0; i < processorCount; i++) {
 	export_count[i] *= sizeof(T) * comp_count;
 	export_disp[i]  *= sizeof(T) * comp_count;
 	import_count[i] *= sizeof(T) * comp_count;
@@ -2037,7 +2040,7 @@ namespace Iopx {
 
     if (set.root_ == myProcessor) {
       // Sending data to other processors...
-      for (size_t i=myProcessor+1; i < processorCount; i++) {
+      for (int i=myProcessor+1; i < processorCount; i++) {
 	if (set.hasEntities[i]) {
 	  // Send same data to all active processors...
 	  MPI_Send(file_data, size, MPI_BYTE, i, 111, comm_);
@@ -2140,6 +2143,17 @@ namespace Iopx {
 	}
       }
     }
+
+    std::ostringstream errmsg;
+    if (type != EX_NODE_SET && type != EX_SIDE_SET) {
+      errmsg << "ERROR: Invalid set type specified in get_decomp_set. Only node set or side set supported\n";
+    } else {
+      std::string typestr = type == EX_NODE_SET ? "node set" : "side set";
+      errmsg << "ERROR: Count not find " << typestr << " " << id << "\n";
+    }
+    std::cerr << errmsg.str();
+    exit(EXIT_FAILURE);
+    return node_sets[0];
   }
 
   size_t DecompositionData::get_block_seq(ex_entity_type type, ex_entity_id id) const
@@ -2151,6 +2165,7 @@ namespace Iopx {
 	}
       }
     }
+    return el_blocks.size();
   }
 
   size_t DecompositionData::get_block_element_count(size_t blk_seq) const

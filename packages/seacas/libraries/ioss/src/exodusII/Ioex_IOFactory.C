@@ -33,7 +33,9 @@
 #include <exodusII/Ioex_IOFactory.h>    // for Ioex IOFactory
 
 #include <exodusII/Ioex_DatabaseIO.h>   // for Ioex DatabaseIO
-#include <par_exo/Iopx_DatabaseIO.h>    // for Iopx DatabaseIO
+#if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
+#include <par_exo/Iopx_IOFactory.h>    // for Iopx DatabaseIO
+#endif
 #include <tokenize.h>
 
 #include <stddef.h>                     // for NULL
@@ -45,9 +47,11 @@
 
 namespace Ioss { class DatabaseIO; }
 
+#if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
 namespace {
   std::string check_external_decomposition_property(MPI_Comm comm);
 }
+#endif
 
 namespace Ioex {
 
@@ -70,6 +74,7 @@ namespace Ioex {
 				       MPI_Comm communicator,
 				       const Ioss::PropertyManager &properties) const
   {
+#if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
     // The "exodus" and "parallel_exodus" databases can both be accessed
     // from this factory.  The "parallel_exodus" is returned only if the following
     // are true:
@@ -101,13 +106,17 @@ namespace Ioex {
       }
     }
 
+    // Could call Iopx::DatabaseIO constructor directly, but that leads to some circular
+    // dependencies and other yuks.
     if (decompose)
-      return new Iopx::DatabaseIO(NULL, filename, db_usage, communicator, properties);
+      return Ioss::IOFactory::create("dof_exodus", filename, db_usage, communicator, properties);
     else
+#endif
       return new Ioex::DatabaseIO(NULL, filename, db_usage, communicator, properties);
   }
 }
 
+#if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
 namespace {
   std::string check_external_decomposition_property(MPI_Comm comm)
   {
@@ -143,3 +152,4 @@ namespace {
     return decomp_method;
   }
 }
+#endif

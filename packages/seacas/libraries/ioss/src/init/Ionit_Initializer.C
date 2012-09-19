@@ -34,7 +34,9 @@
 
 #if !defined(NO_EXODUS_SUPPORT)
 #include <exodusII/Ioex_IOFactory.h>
+#if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
 #include <par_exo/Iopx_IOFactory.h>
+#endif
 #endif
 #include <heartbeat/Iohb_DatabaseIO.h>
 #include <generated/Iogn_DatabaseIO.h>
@@ -67,7 +69,9 @@ namespace Ioss {
     {
 #if !defined(NO_EXODUS_SUPPORT)
       Ioex::IOFactory::factory();    // ExodusII
+#if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
       Iopx::IOFactory::factory();    // ExodusII
+#endif
 #endif
       Iohb::IOFactory::factory();   // HeartBeat
       Iogn::IOFactory::factory();  // Generated
