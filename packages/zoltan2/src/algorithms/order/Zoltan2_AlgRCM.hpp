@@ -75,6 +75,12 @@ int AlgRCM(
 
   HELLO;
 
+  // Check size of communicator: serial only.
+  // TODO: Remove this test when RCM works on local graph.
+  if (comm->getSize() > 1){
+    throw std::runtime_error("RCM currently only works in serial.");
+  }
+
   const size_t nVtx = model->getLocalNumVertices();
   lno_t *perm;
   perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
