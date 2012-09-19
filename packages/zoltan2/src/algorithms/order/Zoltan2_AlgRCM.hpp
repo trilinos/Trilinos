@@ -87,14 +87,16 @@ int AlgRCM(
   ArrayView<const lno_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > wgts;
 
-  model->getLocalEdgeList(edgeIds, offsets, wgts);
-  //model->getLocalEdgeList(edgeIds, offsets);
+  //model->getLocalEdgeList(edgeIds, offsets, wgts); // BUGGY!
+  // Use global graph for now. This only works in serial!
+  ArrayView<const int> procIds;
+  model->getEdgeList( edgeIds, procIds, offsets, wgts);
 
   //cout << "Debug: Local graph from getLocalEdgeList" << endl;
   //cout << "edgeIds: " << edgeIds << endl;
   //cout << "offsets: " << offsets << endl;
 
-  // TODO: Find pseudo-peripheral root vertex.
+  // TODO: Find min-degree (or pseudo-peripheral) root vertex.
   lno_t root = 0;
 
   // Do BFS from root
@@ -106,13 +108,14 @@ int AlgRCM(
 
     // Label connected component starting at root
     Q.push(root);
-    cout << "Debug: perm[" << root << "] = " << count << endl;
+    //cout << "Debug: perm[" << root << "] = " << count << endl;
     perm[root] = count++;
 
     while (Q.size()){
       // Get a vertex from the queue
       lno_t v = Q.front();
       Q.pop();
+      //cout << "Debug: v= " << v << ", offsets[v] = " << offsets[v] << endl;
 
       // Add unmarked nbors to queue
       // TODO: If edge weights, sort nbors by decreasing weight,
