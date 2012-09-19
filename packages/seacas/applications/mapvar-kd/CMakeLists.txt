@@ -9,10 +9,10 @@ INCLUDE_DIRECTORIES(
 )
 
 SET(HEADERS "")
-SET(SOURCES srchq-kd.f  srcht-kd.f   optkd.c  srchh-kd.f   srchs-kd.f   version-kd.f)
+APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.f)
+APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
 
-TRIBITS_ADD_LIBRARY(mapvar-kd_app_lib SOURCES ${SOURCES} DEPLIBS mapvarlib supes suplib exodus_for)
-TRIBITS_ADD_EXECUTABLE(mapvar-kd NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES mapvar-kd.f DEPLIBS mapvar-kd_app_lib COMM serial mpi)
+TRIBITS_ADD_EXECUTABLE(mapvar-kd NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES ${SOURCES} DEPLIBS mapvarlib supes suplib exodus_for COMM serial mpi)
 install_executable(mapvar-kd)
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()
