@@ -1598,7 +1598,7 @@ void pqJagged_1DPart_getPartWeights(
         }
         else {
           myPartWeights[j * 2 + 2] += w;
-          if (myRightClosest[j] > absdistance){
+          if (j >= 0 && myRightClosest[j] > absdistance){
     			  myRightClosest[j] = absdistance;
     		  }
           partIds[i] = j * 2 + 2;
@@ -1667,7 +1667,7 @@ void pqJagged_1DPart_getPartWeights(
         }
         else {
     	  myPartWeights[j * 2] += w;
-        if (myLeftClosest[j] > absdistance){
+        if (j < noCuts && myLeftClosest[j] > absdistance){
           myLeftClosest[j] = absdistance;
         }
         partIds[i] = j * 2 ;
