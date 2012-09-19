@@ -254,9 +254,7 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
     "Setting subpackage enable Trilinos_ENABLE_ThyraEpetra=OFF because parent package Trilinos_ENABLE_Thyra=OFF"
     "Setting subpackage enable Trilinos_ENABLE_ThyraEpetraExt=OFF because parent package Trilinos_ENABLE_Thyra=OFF"
     "Setting subpackage enable Trilinos_ENABLE_ThyraTpetra=OFF because parent package Trilinos_ENABLE_Thyra=OFF"
-    "WARNING: Setting Trilinos_ENABLE_Stratimikos=OFF which was 'ON' because Stratimikos has a required library dependence on disabled package ThyraCoreLibs"
-    "Final set of enabled packages:  0"
-    "Final set of non-enabled packages:  .+ Teuchos .+ Thyra .+ Stratimikos .+"
+    "ERROR: Setting Trilinos_ENABLE_Stratimikos=OFF which was 'ON' because Stratimikos has a required library dependence on disabled package ThyraCoreLibs"
   )
 
 
@@ -338,6 +336,17 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
     -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF
   PASS_REGULAR_EXPRESSION_ALL
     "Final set of enabled packages:  .*Panzer"
+  )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  EnablePanzer_DisableMPI
+  ARGS  -DTrilinos_ENABLE_Panzer=ON
+    -DTPL_ENABLE_MPI:BOOL=OFF
+    -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF
+  PASS_REGULAR_EXPRESSION_ALL
+    "ERROR: Setting Trilinos_ENABLE_Panzer=OFF which was 'ON' because Panzer has a required library dependence on disabled TPL MPI!"
+    "Configuring incomplete, errors occurred!"
   )
 
 
