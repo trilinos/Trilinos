@@ -89,7 +89,7 @@ int AlgRCM(
   }
 
   // Get local graph.
-  ArrayView<const lno_t> edgeIds;
+  ArrayView<const gno_t> edgeIds;
   ArrayView<const lno_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > wgts;
 
