@@ -327,12 +327,28 @@ void ILUT<MatrixType>::compute() {
   // start factorization //
   // =================== //
 
+  Teuchos::ArrayRCP<LocalOrdinal> ColIndicesARCP;
+  Teuchos::ArrayRCP<Scalar>       ColValuesARCP;
+  if(!A_->supportsRowViews()){
+    size_t maxnz=A_->getNodeMaxNumRowEntries();
+    ColIndicesARCP.resize(maxnz);
+    ColValuesARCP.resize(maxnz);
+  }
+
   for (LocalOrdinal row_i = 0 ; row_i < NumMyRows_ ; ++row_i) {
     Teuchos::ArrayView<const LocalOrdinal> ColIndicesA;
     Teuchos::ArrayView<const Scalar> ColValuesA;
+    size_t RowNnz;
 
-    A_->getLocalRowView(row_i, ColIndicesA, ColValuesA);
-    size_t RowNnz = ColIndicesA.size();
+    if(A_->supportsRowViews()) {
+      A_->getLocalRowView(row_i, ColIndicesA, ColValuesA);
+      RowNnz = ColIndicesA.size();
+    }
+    else {
+      A_->getLocalRowCopy(row_i,ColIndicesARCP(),ColValuesARCP(),RowNnz);
+      ColIndicesA=ColIndicesARCP(0,RowNnz);
+      ColValuesA =ColValuesARCP(0,RowNnz);
+    }
 
     // Always include the diagonal in the U factor. The value should get
     // set in the next loop below.
