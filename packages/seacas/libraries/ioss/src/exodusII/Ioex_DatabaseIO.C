@@ -350,7 +350,7 @@ namespace {
       // Filter out names of the form "basename_id" if the name
       // id doesn't match the id in the name...
       size_t base_size = basename.size();
-      if (std::strncmp(basename.c_str(), &buffer[0], base_size) == 0) {
+      if (std::strncmp(basename.c_str(), TOPTR(buffer), base_size) == 0) {
 	int64_t name_id = extract_id(TOPTR(buffer));
 	if (name_id > 0 && name_id != id) {
 	  // See if name is truly of form "basename_name_id"
@@ -3873,8 +3873,9 @@ namespace Ioex {
       size_t comp_count = var_type->component_count();
       size_t var_index=0;
 
+      char field_suffix_separator = get_field_separator();
       for (size_t i=0; i < comp_count; i++) {
-	std::string var_name = var_type->label_name(field.get_name(), i+1, fieldSuffixSeparator);
+	std::string var_name = var_type->label_name(field.get_name(), i+1, field_suffix_separator);
 
 	// Read the variable...
 	int64_t id = get_id(ge, type, &ids_);
@@ -3931,8 +3932,9 @@ namespace Ioex {
       size_t comp_count = var_type->component_count();
       size_t var_index=0;
 
+      char field_suffix_separator = get_field_separator();
       for (size_t i=0; i < comp_count; i++) {
-	std::string var_name = var_type->label_name(field.get_name(), i+1, fieldSuffixSeparator);
+	std::string var_name = var_type->label_name(field.get_name(), i+1, field_suffix_separator);
 
 	// Read the variable...
 	int ierr = 0;
@@ -4080,14 +4082,14 @@ namespace Ioex {
     }
 
     int64_t DatabaseIO::get_side_connectivity(const Ioss::SideBlock* fb,
-					      int64_t id, int64_t my_side_count,
+					      int64_t id, int64_t side_count,
 					      void *fconnect,
 					      bool map_ids) const
     {
       if (int_byte_size_api() == 4) {
-	return get_side_connectivity_internal(fb, id, my_side_count, (int*)fconnect, map_ids);
+	return get_side_connectivity_internal(fb, id, side_count, (int*)fconnect, map_ids);
       } else {
-	return get_side_connectivity_internal(fb, id, my_side_count, (int64_t*)fconnect, map_ids);
+	return get_side_connectivity_internal(fb, id, side_count, (int64_t*)fconnect, map_ids);
       }
     }
 
@@ -5176,8 +5178,9 @@ namespace Ioex {
 	  field_name += complex_suffix[complex_comp];
 	}
 
+	char field_suffix_separator = get_field_separator();
 	for (int i=0; i < comp_count; i++) {
-	  std::string var_name = var_type->label_name(field_name, i+1, fieldSuffixSeparator);
+	  std::string var_name = var_type->label_name(field_name, i+1, field_suffix_separator);
 
 	  if (m_variables[EX_NODE_BLOCK].find(var_name) == m_variables[EX_NODE_BLOCK].end()) {
 	    std::ostringstream errmsg;
@@ -5271,8 +5274,9 @@ namespace Ioex {
 	  field_name += complex_suffix[complex_comp];
 	}
 
+	char field_suffix_separator = get_field_separator();
 	for (int i=0; i < comp_count; i++) {
-	  std::string var_name = var_type->label_name(field_name, i+1, fieldSuffixSeparator);
+	  std::string var_name = var_type->label_name(field_name, i+1, field_suffix_separator);
 
 	  var_index = m_variables[type].find(var_name)->second;
 	  assert(var_index > 0);
@@ -5357,8 +5361,9 @@ namespace Ioex {
 	  field_name += complex_suffix[complex_comp];
 	}
 
+	char field_suffix_separator = get_field_separator();
 	for (int i=0; i < comp_count; i++) {
-	  std::string var_name = var_type->label_name(field_name, i+1, fieldSuffixSeparator);
+	  std::string var_name = var_type->label_name(field_name, i+1, field_suffix_separator);
 
 	  // If this is not a global variable, prepend the name to avoid
 	  // name collisions...
@@ -5397,10 +5402,12 @@ namespace Ioex {
       // get number of components, cycle through each component
       // and add suffix to base 'field_name'.  Look up index
       // of this name in 'm_variables[EX_GLOBAL]' map
+      char field_suffix_separator = get_field_separator();
+
       int comp_count = var_type->component_count();
       for (int i=0; i < comp_count; i++) {
 	std::string field_name = field.get_name();
-	std::string var_name = var_type->label_name(field_name, i+1, fieldSuffixSeparator);
+	std::string var_name = var_type->label_name(field_name, i+1, field_suffix_separator);
 
 	assert(m_variables[EX_GLOBAL].find(var_name) != m_variables[EX_GLOBAL].end());
 	int var_index = m_variables[EX_GLOBAL].find(var_name)->second;
@@ -6233,14 +6240,15 @@ namespace Ioex {
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
 	// Write attribute names (if any)...
-	write_attribute_names(get_file_pointer(), EX_NODE_SET,   get_region()->get_nodesets(),       fieldSuffixSeparator);
-	write_attribute_names(get_file_pointer(), EX_EDGE_SET,   get_region()->get_edgesets(),       fieldSuffixSeparator);
-	write_attribute_names(get_file_pointer(), EX_FACE_SET,   get_region()->get_facesets(),       fieldSuffixSeparator);
-	write_attribute_names(get_file_pointer(), EX_ELEM_SET,   get_region()->get_elementsets(),    fieldSuffixSeparator);
-	write_attribute_names(get_file_pointer(), EX_NODE_BLOCK, get_region()->get_node_blocks(),    fieldSuffixSeparator);
-	write_attribute_names(get_file_pointer(), EX_EDGE_BLOCK, get_region()->get_edge_blocks(),    fieldSuffixSeparator);
-	write_attribute_names(get_file_pointer(), EX_FACE_BLOCK, get_region()->get_face_blocks(),    fieldSuffixSeparator);
-	write_attribute_names(get_file_pointer(), EX_ELEM_BLOCK, get_region()->get_element_blocks(), fieldSuffixSeparator);
+	char field_suffix_separator = get_field_separator();
+	write_attribute_names(get_file_pointer(), EX_NODE_SET,   get_region()->get_nodesets(),       field_suffix_separator);
+	write_attribute_names(get_file_pointer(), EX_EDGE_SET,   get_region()->get_edgesets(),       field_suffix_separator);
+	write_attribute_names(get_file_pointer(), EX_FACE_SET,   get_region()->get_facesets(),       field_suffix_separator);
+	write_attribute_names(get_file_pointer(), EX_ELEM_SET,   get_region()->get_elementsets(),    field_suffix_separator);
+	write_attribute_names(get_file_pointer(), EX_NODE_BLOCK, get_region()->get_node_blocks(),    field_suffix_separator);
+	write_attribute_names(get_file_pointer(), EX_EDGE_BLOCK, get_region()->get_edge_blocks(),    field_suffix_separator);
+	write_attribute_names(get_file_pointer(), EX_FACE_BLOCK, get_region()->get_face_blocks(),    field_suffix_separator);
+	write_attribute_names(get_file_pointer(), EX_ELEM_BLOCK, get_region()->get_element_blocks(), field_suffix_separator);
       
 	// Write coordinate names...
 	char const *labels[3];
@@ -6452,7 +6460,7 @@ namespace Ioex {
 	  std::vector<Ioss::Field> fields;
 	  int64_t count = entity->get_property("entity_count").get_int();
 	  get_fields(count, names, nvar, Ioss::Field::TRANSIENT,
-		     fieldSuffixSeparator, local_truth, fields);
+		     get_field_separator(), local_truth, fields);
 
 	  std::vector<Ioss::Field>::const_iterator IF;
 	  for (IF = fields.begin(); IF != fields.end(); ++IF) {
@@ -6583,7 +6591,7 @@ namespace Ioex {
       }
       assert(index == static_cast<int>(m_variables[type].size()));
       generate_block_truth_table(m_variables[type], m_truthTable[type], entities,
-                                 fieldSuffixSeparator);
+                                 get_field_separator());
     }
 
     int DatabaseIO::gather_names(ex_entity_type type,
@@ -6637,8 +6645,9 @@ namespace Ioex {
 	    field_name += complex_suffix[complex_comp];
 	  }
 
+	  char field_suffix_separator = get_field_separator();
 	  for (int i=1; i <= var_type->component_count(); i++) {
-	    std::string var_string = var_type->label_name(field_name, i, fieldSuffixSeparator);
+	    std::string var_string = var_type->label_name(field_name, i, field_suffix_separator);
 
 	    // Add to 'VariableNameMap variables' so can determine
 	    // exodusII index given a Sierra field name.  exodusII index
@@ -6682,6 +6691,7 @@ namespace Ioex {
       Ioss::SideSetContainer sidesets = get_region()->get_sidesets();
       Ioss::SideSetContainer::const_iterator I;
 
+      char field_suffix_separator = get_field_separator();
       for (I=sidesets.begin(); I != sidesets.end(); ++I) {
 	Ioss::SideBlockContainer side_blocks = (*I)->get_side_blocks();
 	Ioss::SideBlockContainer::const_iterator J;
@@ -6714,7 +6724,7 @@ namespace Ioex {
 	      }
 
 	      for (int i=1; i <= var_type->component_count(); i++) {
-		std::string var_string = var_type->label_name(field_name, i, fieldSuffixSeparator);
+		std::string var_string = var_type->label_name(field_name, i, field_suffix_separator);
 		// Find position of 'var_string' in 'm_variables[]'
 		VariableNameMap::iterator VN = m_variables[EX_SIDE_SET].find(var_string);
 		if (VN != m_variables[EX_SIDE_SET].end()) {
@@ -6929,10 +6939,11 @@ namespace Ioex {
 	  Ioss::Utils::fixup_name(names[i]);
 	}
       
+	char field_suffix_separator = get_field_separator();
 	if (names[0][0] != '\0' && names[0][0] != ' ' && std::isalnum(names[0][0])) {
 	  std::vector<Ioss::Field> attributes;
 	  get_fields(my_element_count, names, attribute_count,
-		     Ioss::Field::ATTRIBUTE, fieldSuffixSeparator, NULL,
+		     Ioss::Field::ATTRIBUTE, field_suffix_separator, NULL,
 		     attributes);
 	  int offset = 1;
 	  std::vector<Ioss::Field>::const_iterator IF;
@@ -7549,20 +7560,7 @@ namespace {
 	// Mark the names which were used so they aren't used for another field on this entity.
 	// Create a field of that variable type.
 	assert(type->component_count() == static_cast<int>(which_names.size()));
-        // DBG-GR-STR: Contrary to the comment above, it is possible that a valid basename starts with
-        //             the suffix seperator. This can happen due to truncation of names before they
-        //             are written to the exodus file. Here we check if the (possibly truncated) name
-        //             starts with the suffix seperator. If so, we need to add it back in at the start
-        //             of the name.
-        //Ioss::Field field(base_name.substr(0,bn_len-1), Ioss::Field::REAL, type, fld_role, count);
-        std::string base_name_2 = "";
-        if (name[0] == suffix_separator) {
-          base_name_2 += suffix_separator;
-        }
-        base_name_2 += base_name;
-        size_t bn_len_2 = base_name_2.length(); // Length of basename portion only
-        Ioss::Field field(base_name_2.substr(0,bn_len_2-1), Ioss::Field::REAL, type, fld_role, count);
-        // DBG-GR-END
+	Ioss::Field field(base_name.substr(0,bn_len-1), Ioss::Field::REAL, type, fld_role, count);
 	for (size_t i=0; i < which_names.size(); i++) {
 	  names[which_names[i]][0] = '\0';
 	}

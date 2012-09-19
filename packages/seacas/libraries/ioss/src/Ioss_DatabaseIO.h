@@ -139,8 +139,8 @@ namespace Ioss {
       void set_logging(bool on_off) {doLogging = on_off;}
 
       virtual int maximum_symbol_length() const {return 0;} // Default is unlimited...
-      char get_field_separator() {return fieldSuffixSeparator;}
-      void set_field_separator(const char separator) {fieldSuffixSeparator = separator;}
+      char get_field_separator() const;
+      void set_field_separator(const char separator);
       void set_lower_case_variable_names(bool true_false) const {lowerCaseVariableNames = true_false;}
       void set_surface_split_type(Ioss::SurfaceSplitType split_type) {splitType = split_type;}
       Ioss::SurfaceSplitType get_surface_split_type() const {return splitType;}
@@ -218,7 +218,7 @@ namespace Ioss {
 
       DatabaseIO(Region *region, const std::string& filename,
 		 Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
-		 const Ioss::PropertyManager &props);
+		 const Ioss::PropertyManager &properties);
 
       /*! 
        * The properties member data contains properties that can be
@@ -290,8 +290,6 @@ namespace Ioss {
 
       mutable int overlayCount;
 
-      /// Character(s) to use between base name of field and component suffices.
-      char fieldSuffixSeparator;
       Ioss::SurfaceSplitType splitType;
       Ioss::DatabaseUsage dbUsage;
       mutable Ioss::DataSize dbIntSizeAPI;
