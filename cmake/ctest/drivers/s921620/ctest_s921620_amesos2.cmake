@@ -98,14 +98,14 @@ SET(MY_CFLAGS   "-m64")
 SET(MY_CXXFLAGS "-m64")
 
 # MPI info; needed for mpirun; also need this in path.
-set(MY_MPI "/usr/lib64/openmpi/1.4-gcc/")
+set(MY_MPI "/usr/lib64/openmpi/1.4-gcc")
 
 set(TDD_HTTP_PROXY "http://sonproxy.sandia.gov:80/")
 
 SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DTPL_ENABLE_MPI:BOOL=ON"
     "-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF"
-    "-DMPI_BIN_DIR:STRING=${MY_MPI}"
+    "-DMPI_BASE_DIR:STRING=${MY_MPI}"
     "-DCMAKE_C_FLAGS:STRING=${MY_CFLAGS}"
     "-DCMAKE_CXX_FLAGS:STRING=${MY_CXXFLAGS}"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON "
