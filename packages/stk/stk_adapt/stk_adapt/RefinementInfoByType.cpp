@@ -1,6 +1,6 @@
 
 #include <stk_adapt/RefinementInfoByType.hpp>
-#include <stk_util/util/PrintTable.hpp>
+#include <stk_util/diag/PrintTable.hpp>
 #include <stk_percept/stk_mesh.hpp>
 
 namespace stk {

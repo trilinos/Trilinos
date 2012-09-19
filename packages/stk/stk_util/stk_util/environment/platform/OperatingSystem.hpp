@@ -9,6 +9,8 @@
 #ifndef stk_util_environment_platform_OperatingSystem_hpp
 #define stk_util_environment_platform_OperatingSystem_hpp
 
+#include <string>
+
 namespace stk {
 
 ///

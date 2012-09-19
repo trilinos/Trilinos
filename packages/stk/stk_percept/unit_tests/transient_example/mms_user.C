@@ -1,5 +1,5 @@
 #include <stk_mms/stk_mms.h>
-#include <Slib_UserPlugin.h>
+#include <stk_util/diag/UserPlugin.hpp>
 
 namespace stk
 {

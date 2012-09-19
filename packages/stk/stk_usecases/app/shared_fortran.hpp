@@ -10,7 +10,7 @@
 #define SIERRA_shared_fortran_h
 
 #include <SIERRA_code_types.h>
-#include <Slib_Fortran.h>
+#include <stk_util/util/Fortran.hpp>
 
 
 extern "C" void

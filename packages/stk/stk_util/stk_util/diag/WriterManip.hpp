@@ -164,4 +164,14 @@ Writer &oct(Writer &dout);
 } // namespace diag
 } // namespace stk
 
+namespace sierra {
+namespace Diag {
+
+using stk::diag::setw;
+using stk::diag::setfill;
+using stk::diag::setprecision;
+
+} // namespace Diag
+} // namespace sierra
+
 #endif // STK_UTIL_DIAG_MANIP_HPP

@@ -32,8 +32,8 @@
 
 #include <Shards_BasicTopologies.hpp>
 
-//#include <Slib_ExceptionReport.h>
-//#include <Slib_StringUtil.h>
+//#include <stk_util/parallel/ExceptionReport.hpp>
+//#include <stk_util/diag/StringUtil.hpp>
 
 //#include <element/Elem_CellTopology.h>
 #include <stk_adapt/sierra_element/CellTopology.hpp>

@@ -9,7 +9,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include <stk_util/util/FormatTime.hpp>
+#include <stk_util/environment/FormatTime.hpp>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 

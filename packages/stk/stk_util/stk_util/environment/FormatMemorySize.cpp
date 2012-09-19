@@ -12,7 +12,7 @@
 
 #include <boost/lexical_cast.hpp>
 
-#include <stk_util/util/FormatMemorySize.hpp>
+#include <stk_util/environment/FormatMemorySize.hpp>
 
 namespace stk {
 

@@ -12,8 +12,8 @@
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/util/MallocUsed.h>
-#include <stk_util/util/FormatTime.hpp>
-#include <stk_util/util/FormatMemorySize.hpp>
+#include <stk_util/environment/FormatTime.hpp>
+#include <stk_util/environment/FormatMemorySize.hpp>
 
 namespace stk {
 namespace diag {

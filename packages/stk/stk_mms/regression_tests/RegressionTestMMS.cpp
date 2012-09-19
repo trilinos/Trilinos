@@ -9,7 +9,7 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 #include <stk_mms/stk_mms.h>
-#include <Slib_UserPlugin.h>
+#include <stk_util/diag/UserPlugin.hpp>
 
 namespace stk {
 namespace mms {

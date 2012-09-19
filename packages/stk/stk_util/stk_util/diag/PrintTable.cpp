@@ -11,7 +11,8 @@
 #include <sstream>
 #include <iomanip>
 
-#include <stk_util/util/PrintTable.hpp>
+#include <stk_util/diag/PrintTable.hpp>
+#include <stk_util/diag/Writer.hpp>
 #include <iostream>
 
 namespace stk {
@@ -65,6 +66,26 @@ PrintTable::calculate_column_widths() const
 
 
 PrintTable &
+PrintTable::at(
+  size_t        row,
+  size_t        col)
+{
+  for (Table::size_type i = m_table.size(); i <= row; ++i)
+    m_table.push_back(Row());
+  for (Row::size_type i = m_table[row].size(); i <= col; ++i) 
+    m_table[row].push_back(Cell());
+  
+  m_currentCell.m_string = std::string(m_currentCell.m_indent*2, ' ') + m_currentString.str();  
+  m_table[row][col] = m_currentCell;
+  
+  m_currentCell = Cell();
+  m_currentString.str("");
+
+  return *this;
+}
+
+
+PrintTable &
 PrintTable::end_col()
 {
   m_currentCell.m_string = std::string(m_currentCell.m_indent*2, ' ') + m_currentString.str();
@@ -91,26 +112,6 @@ PrintTable::end_row()
   if (!m_currentString.str().empty())
     end_col();
   m_table.push_back(Row());
-  return *this;
-}
-
-
-PrintTable &
-PrintTable::at(
-  size_t        row,
-  size_t        col)
-{
-  for (Table::size_type i = m_table.size(); i <= row; ++i)
-    m_table.push_back(Row());
-  for (Row::size_type i = m_table[row].size(); i <= col; ++i) 
-    m_table[row].push_back(Cell());
-  
-  m_currentCell.m_string = std::string(m_currentCell.m_indent*2, ' ') + m_currentString.str();  
-  m_table[row][col] = m_currentCell;
-  
-  m_currentCell = Cell();
-  m_currentString.str("");
-
   return *this;
 }
 
@@ -257,6 +258,56 @@ PrintTable::csvPrint(
   }
 
   return os;
+}
+
+
+diag::Writer &
+PrintTable::verbose_print(
+  diag::Writer &	dout) const
+{
+//   const ColumnWidthVector &column_width = calculate_column_widths();
+
+//   for (Table::const_iterator row_it = m_header.begin(); row_it != m_header.end(); ++row_it) {
+//     printRow(os, *row_it);
+//     os << '\n';
+//   }
+
+//   if (m_header.size() > 0)
+//     printHeaderBar(os);
+
+//   for (Table::const_iterator row_it = m_table.begin(); row_it != m_table.end(); ++row_it) {
+//     int i = 0;
+//     for (Row::const_iterator cell_it = (*row_it).begin(); cell_it != (*row_it).end(); ++cell_it, ++i)
+//       if ((*cell_it).m_flags & Cell::SPAN)
+//	dout << (*cell_it).m_string;
+//       else
+//	dout << std::setw(column_width[i]) << (*cell_it).m_string;
+//     dout << dendl;
+//   }
+
+  calculate_column_widths();
+
+  dout << m_title << std::endl;
+
+  for (Table::const_iterator row_it = m_header.begin(); row_it != m_header.end(); ++row_it) {
+    dout << "";
+    printRow(dout.getStream(), *row_it);
+    dout << diag::dendl;
+  }
+
+  if (m_header.size() > 0) {
+    dout << "";
+    printHeaderBar(dout.getStream());
+    dout << diag::dendl;
+  }
+
+  for (Table::const_iterator row_it = m_table.begin(); row_it != m_table.end(); ++row_it) {
+    dout << "";
+    printRow(dout.getStream(), *row_it);
+    dout << diag::dendl;
+  }
+
+  return dout;
 }
 
 } // namespace stk

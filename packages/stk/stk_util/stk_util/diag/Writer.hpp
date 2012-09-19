@@ -459,7 +459,7 @@ public:
    * @return      a <b>Writer</b> reference to this object
    */
   Writer& operator<<(std::ostream& (*f)(std::ostream&));
-#endif
+#endif // SWIG
   /**
    * @brief Member function <b>incTraceDepth</b> increments the tracing count.
    *
@@ -600,7 +600,7 @@ inline _setlinemask setlinemask(PrintMask line_mask) {
 inline Writer &operator<<(Writer &dout, _setlinemask set_line_mask) {
   return dout.setLineMask(set_line_mask.m_lineMask);
 }
-#endif
+#endif // SWIG
 
 /**
  * @brief Function <b>resetlinemask</b> calls the Writer::resetLineMask manipulator.
@@ -640,7 +640,7 @@ Writer &operator<<(Writer &dout, const short &x);
 Writer &operator<<(Writer &dout, const unsigned short &x);
 Writer &operator<<(Writer &dout, const long long &x);
 Writer &operator<<(Writer &dout, const unsigned long long &x);
-#endif
+#endif // SWIG
 /**
  * @brief Class <b>c_ptr_</b> simply stores a pointer to an object of type T.  This
  * allows pointers which want to be deferenced if they are not null to be output using
@@ -702,7 +702,7 @@ public:
 public:
   const T *  m_t;      ///< Pointer to object
   R (T::*m_pmf)() const;    ///< Function to call for dump
-#endif
+#endif // SWIG
 };
 
 /**
@@ -773,7 +773,7 @@ Writer &operator<<(Writer &dout, const c_ptr_func_<T, R> &c) {
 
   return dout;
 }
-#endif
+#endif // SWIG
 
 ///
 /// @}
@@ -781,5 +781,33 @@ Writer &operator<<(Writer &dout, const c_ptr_func_<T, R> &c) {
 
 } // namespace diag
 } // namespace stk
+
+#include <stk_util/diag/WriterManip.hpp>
+
+namespace sierra {
+
+
+using stk::diag::push;
+using stk::diag::pop;
+using stk::diag::dendl;
+using stk::diag::dflush;
+
+namespace Diag {
+
+using stk::diag::push;
+using stk::diag::pop;
+using stk::diag::dendl;
+using stk::diag::dflush;
+using stk::diag::setlinemask;
+using stk::diag::resetlinemask;
+using stk::diag::c_ptr;
+using stk::diag::c_ptr_func;
+using stk::diag::c_ptr_func_;
+
+}
+
+} // namespace sierra
+
+#include <stk_util/diag/WriterExt.hpp>
 
 #endif // STK_UTIL_DIAG_WRITER_HPP

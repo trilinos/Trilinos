@@ -244,4 +244,15 @@ private:
 
 } // namespace stk
 
+#ifdef STK_BUILT_IN_SIERRA
+#undef VERSION // Nice, Trilinos leaves us this gem
+
+namespace sierra {
+
+typedef stk::ProductRegistry ProductRegistry;
+
+} // namespace sierra
+#endif // STK_BUILT_IN_SIERRA
+
+
 #endif // STK_UTIL_ENVIRONMENT_PRODUCTREGISTRY_HPP
