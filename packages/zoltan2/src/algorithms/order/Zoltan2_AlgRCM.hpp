@@ -89,10 +89,11 @@ int AlgRCM(
   }
 
   // Get local graph.
-  ArrayView<const gno_t> edgeIds;
+  ArrayView<const gno_t> edgeIds; 
   ArrayView<const lno_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > wgts;
 
+  // TODO: edgeIds should be of type lno_t for getLocalEdgeList. Needs revisit.
   //model->getLocalEdgeList(edgeIds, offsets, wgts); // BUGGY!
   // Use global graph for now. This only works in serial!
   ArrayView<const int> procIds;
