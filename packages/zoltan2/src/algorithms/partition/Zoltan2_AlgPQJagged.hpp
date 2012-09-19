@@ -1247,7 +1247,7 @@ void getNewCoordinates(
  * \param myLeftClosest is the array holding the distances to the closest points to the cut lines from left for the calling thread..
  * \param myRightClosest is the array holding the distances to the closest points to the cut lines from right for the calling thread.
  * \param useBinarySearch is boolean parameter whether to search for cut lines with binary search of linear search.
- *
+ * \param partIds is the array that holds the part ids of the coordinates
  * kddnote:  The output of this function myPartWeights differs depending on whether 
  * kddnote:  binary or linear search is used.  Values in myPartWeights should be the
  * kddnote:  same only after accumulateThreadResults is done.
@@ -1759,7 +1759,6 @@ void pqJagged_1DPart_getPartWeights(
  * \param localMinMaxTotal is the array holding the local minimum and maximum coordinate and local total weight of each part.
  * \param totalPartWeights_leftClosest_rightCloset is the output array of accumulation, where total part weights (2P - 1),
  * then left closest distances (P -1), then right closest distance (P -1) are stored.
- * \param useBinarySearch is boolean parameter whether to search for cut lines with binary search of linear search.
  */
 template <typename scalar_t>
 void accumulateThreadResults(
@@ -1879,6 +1878,8 @@ void accumulateThreadResults(
  * \param allDone is the number of cut lines whose positions should be calculated.
  * \param myNonDoneCounts is one dimensional array holding the number of cut lines in each part whose positions should be calculated.
  * \param useBinarySearch is boolean parameter whether to search for cut lines with binary search of linear search.
+ * \param partIds is the array that holds the part ids of the coordinates
+ *
  */
 template <typename scalar_t, typename lno_t>
 void pqJagged_1D_Partition(
@@ -1923,7 +1924,7 @@ void pqJagged_1D_Partition(
     partId_t allDone,
     partId_t *myNonDoneCounts,
     bool useBinarySearch,
-    string dimension,
+//    string dimension,
     partId_t * partIds
 ){
 
@@ -2252,15 +2253,11 @@ void pqJagged_1D_Partition(
  * \param localPartWeights is the local totalweight of the processor.
  * \param partWeights is the two dimensional array holding the weight of parts for each thread. Assumes there are 2*P - 1 parts (cut lines are seperate parts).
  * \param nonRectelinearRatios is the two dimensional work array holding ratios of weights to be put left and right of the cut line.
-
- * \param coordinate_linked_list is the array with size as the number of coordinates.
- * \param coordinate_starts is the two dimensional array with size as the number of parts to be divided in current coordinate dimension. 1 dimension for each thread.
- * \param coordinate_ends is the two dimensional array with size as the number of parts to be divided in current coordinate dimension. 1 dimension for each thread.
  * \param partPointCounts is the two dimensional array holding the number of points in each part for each thread.
  *
  * \param newpartitionedPointPermutations is the indices of coordinates calculated for the partition on next dimension.
  * \param totalCounts are the number points in each output part.
- * \param useBinarySearch is boolean parameter whether to search for cut lines with binary search of linear search.
+ * \param partIds is the array that holds the part ids of the coordinates
  */
 template <typename lno_t, typename scalar_t>
 void getChunksFromCoordinates(
@@ -2719,11 +2716,10 @@ void AlgPQJagged(
                         "while it is being developed and tested.")
 
 #else
-  typedef typename Adapter::scalar_t scalar_t;
-  typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::lno_t lno_t;
-
 /*
+ *   typedef typename Adapter::scalar_t scalar_t;
+ *     typedef typename Adapter::gno_t gno_t;
+ *       typedef typename Adapter::lno_t lno_t;
   if(comm->getRank() == 0){
     cout << "size of gno:" << sizeof(gno_t) << endl;
     cout << "size of lno:" << sizeof(lno_t) << endl;
@@ -2734,6 +2730,10 @@ void AlgPQJagged(
 
 
   env->timerStart(MACRO_TIMERS, "PQJagged Problem_Init");
+  typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::gno_t gno_t;
+
+  typedef typename Adapter::lno_t lno_t;
   const Teuchos::ParameterList &pl = env->getParameters();
 
   std::bitset<NUM_RCB_PARAMS> params;
@@ -3173,7 +3173,7 @@ void AlgPQJagged(
           globalCutWeights,
           allDone,
           myNonDoneCount,
-          useBinarySearch, istring,
+          useBinarySearch, // istring,
           partIds
           );
       
