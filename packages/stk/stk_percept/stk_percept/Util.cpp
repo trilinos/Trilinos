@@ -12,6 +12,8 @@
 #include <iomanip>
 #include <algorithm>
 #include <locale>
+#include <malloc.h>
+#include <stdlib.h>
 
 #include <stk_percept/Util.hpp>
 #include <stk_percept/PerceptMesh.hpp>

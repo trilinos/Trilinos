@@ -1,5 +1,5 @@
-#ifndef STK_UTIL_DIAG_TRACE_HPP
-#define STK_UTIL_DIAG_TRACE_HPP
+#ifndef STK_UTIL_SIERRA_TRACE_HPP
+#define STK_UTIL_SIERRA_TRACE_HPP
 
 #include <cstring>
 #include <vector>
@@ -9,6 +9,7 @@
 
 #include <stk_util/diag/Writer_fwd.hpp>
 
+#include <ostream>
 
 #define SLIB_TRACE_COVERAGE
 
@@ -168,6 +169,11 @@ public:
 
     if (s_tracebackState == THROWING && !s_tracebackPreserve && !std::uncaught_exception())
       s_tracebackState = RUNNING;
+
+#ifdef SLIB_TRACE_COVERAGE
+    if (s_coverageEnabled)
+      ++s_coverage[function_spec];
+#endif
   }
 
 
@@ -236,6 +242,30 @@ public:
   }
 
   /**
+   * @brief Member function <b>enableCoverage</b> enables the collection of function
+   * call coverage data.  This is a very expensive operation, but allows function
+   * execution coverage data to be collected for testing.
+   *
+   * @param coverage_enabled	a <b>bool</b> value to set the coverage enabled
+   *				flag.
+   *
+   */
+  inline static void enableCoverage(bool coverage_enabled = true) {
+    s_coverageEnabled = coverage_enabled;
+  }
+
+  /**
+   * @brief Member function <b>coverageEnabled</b> returns true if coverage has been
+   * enabled.
+   *
+   * @return			a <b>bool</b> value of true if coverage has been
+   *				enabled.
+   */
+  inline static bool coverageEnabled() {
+    return s_coverageEnabled;
+  }
+
+  /**
    * @brief Member function <b>getTracebackState</b> returns the value of the
    * traceback state.
    *
@@ -244,6 +274,32 @@ public:
   inline static TracebackState getTracebackState() {
     return s_tracebackState;
   }
+
+  /**
+   * @brief Class <b>PrintCoverage</b> is a type holder class for printing the stack.
+   *
+   */
+  struct PrintCoverage
+  {};
+
+  /**
+   * @brief Member function <b>printCoverage</b> creates a
+   * <b>PrintCoverage</b> type holder class which enables
+   * <b>operator&lt;&lt;</b> to put an coverage to an ostream.
+   *
+   * @return			a <b>PrintCoverage</b> object.
+   */
+  static PrintCoverage printCoverage() {
+    return PrintCoverage();
+  }
+
+  /**
+   * @brief Member function <b>printCoverage</b> ...
+   *
+   * @param os		a <b>std::ostream</b> variable ...
+   * @return a <b>std::ostream</b> ...
+   */
+  static std::ostream &printCoverage(std::ostream &os);
 
   /**
    * @brief Member function <b>printTraceback</b> writes the traceback stack
@@ -256,6 +312,18 @@ public:
    */
   static std::string printTraceback(const TracebackStack &traceback_stack);
 
+  /**
+   * @brief Member function <b>verbose_print</b> dumps the function specification
+   * stack to the diagnostic writer.
+   *
+   * @param dout		a <b>Writer</b> reference to the diagnostic
+   *				writer to write to.
+   *
+   * @return			a <b>Writer</b> reference to the diagnostic
+   *				writer.
+   */
+  Writer &verbose_print(Writer &dout) const;
+
 private:
   static TracebackState    s_tracebackState;  ///< State of the traceback system
   static int      s_tracebackPreserve;  ///< Preserve traceback stack
@@ -264,6 +332,8 @@ private:
   static Stack      s_stack;    ///< Running functionspec stack
   static const char **    s_storedTop;    ///< Pointer to the top + 1 of the stored stack
   static Stack      s_storedStack;    ///< Stored functionspec stored stack
+  static bool			s_coverageEnabled;	///< Coverage is enabled
+  static Coverage		s_coverage;		///< Function usage coverage
 };
 
 
@@ -417,11 +487,40 @@ inline Writer &operator<<(Writer &dout, const Trace &diag_trace) {
   return diag_trace.verbose_print(dout);
 }
 
+/**
+ * @brief Member function <b>operator&lt;&lt;</b> writes the coverage to the output
+ * stream.
+ *
+ * @param os			a <b>std::ostream</b> reference to the output stream
+ *				to write to.
+ *
+ * @param print_coverage	a <b>Coverage</b> const reference to the coverage
+ *				to write.
+ *
+ * @return			a <b>std::ostream</b> reference to the output
+ *				stream.
+ */
+inline std::ostream &operator<<(std::ostream &os, const Traceback::PrintCoverage &) {
+  return Traceback::printCoverage(os);
+}
+
+
 } // namespace diag
 } // namespace stk
+
+namespace sierra {
+namespace Diag {
+
+typedef stk::diag::Tracespec Tracespec;
+typedef stk::diag::Traceback Traceback;
+typedef stk::diag::Trace Trace;
+
+} // namespace sierra 
+} // namespace Diag 
+
 
 ///
 /// @}
 ///
 
-#endif // STK_UTIL_DIAG_TRACE_HPP
+#endif // STK_UTIL_SIERRA_TRACE_HPP

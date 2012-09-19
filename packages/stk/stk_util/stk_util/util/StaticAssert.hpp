@@ -6,8 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef stk_util_util_StaticAssert_hpp
-#define stk_util_util_StaticAssert_hpp
+#ifndef STK_UTIL_UTIL_StaticAssert_hpp
+#define STK_UTIL_UTIL_StaticAssert_hpp
 
 namespace stk {
 
@@ -31,5 +31,5 @@ template<> struct StaticAssert<true> {
 
 } //namespace stk
 
-#endif
+#endif // STK_UTIL_UTIL_StaticAssert_hpp
 

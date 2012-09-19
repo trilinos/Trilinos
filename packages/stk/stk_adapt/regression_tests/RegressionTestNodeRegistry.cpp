@@ -17,7 +17,7 @@
 #include <math.h>
 
 #include <stk_util/environment/WallTime.hpp>
-#include <stk_util/util/PrintTable.hpp>
+#include <stk_util/diag/PrintTable.hpp>
 
 #include <Teuchos_ScalarTraits.hpp>
 

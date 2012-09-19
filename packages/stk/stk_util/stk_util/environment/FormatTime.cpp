@@ -6,7 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stk_util/util/FormatTime.hpp>
+#include <stk_util/environment/FormatTime.hpp>
 
 #include <sstream>
 #include <iomanip>

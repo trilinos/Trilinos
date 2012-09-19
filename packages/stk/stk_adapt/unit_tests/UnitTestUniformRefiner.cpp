@@ -9,7 +9,7 @@
 #include <stk_percept/Percept.hpp>
 
 #include <stk_util/environment/WallTime.hpp>
-#include <stk_util/util/PrintTable.hpp>
+#include <stk_util/diag/PrintTable.hpp>
 
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_RCP.hpp>
@@ -47,7 +47,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include <stk_util/environment/WallTime.hpp>
-#include <stk_util/util/PrintTable.hpp>
+#include <stk_util/diag/PrintTable.hpp>
 
 #include <stk_percept/Percept.hpp>
 #include <stk_percept/Util.hpp>

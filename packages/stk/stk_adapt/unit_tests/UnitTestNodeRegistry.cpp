@@ -7,7 +7,7 @@
 /*--------------------------------------------------------------------*/
 
 #include <stk_util/environment/WallTime.hpp>
-#include <stk_util/util/PrintTable.hpp>
+#include <stk_util/diag/PrintTable.hpp>
 
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>
