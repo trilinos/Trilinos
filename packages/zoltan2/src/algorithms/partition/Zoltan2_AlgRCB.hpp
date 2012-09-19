@@ -82,7 +82,7 @@ namespace Zoltan2{
 template <typename Adapter>
 void AlgRCB(
   const RCP<const Environment> &env,
-  RCP<Comm<int> > &comm,
+  RCP<Comm<int> > &problemComm,
   const RCP<const CoordinateModel<
     typename Adapter::base_adapter_t> > &coords, 
   RCP<PartitioningSolution<Adapter> > &solution
@@ -100,11 +100,10 @@ void AlgRCB(
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
 
-  // Make a copy for global ops at the end because 
+  // Make a copy of communicator because
   // we subdivide the communicator during the algorithm.
 
-  // TODO memory leak here.
-  RCP<Comm<int> > problemComm = comm->duplicate();
+  RCP<Comm<int> > comm = problemComm->duplicate();
 
   std::bitset<NUM_RCB_PARAMS> params;
 
@@ -453,9 +452,7 @@ void AlgRCB(
     }
 
     ArrayView<const int> idView(ids, groupSize);
-    // TODO - memory leak here.
-    RCP<Comm<int> > subComm = comm->createSubcommunicator(idView);
-    comm = subComm;
+    comm = comm->createSubcommunicator(idView);
 
     delete [] ids;
 
