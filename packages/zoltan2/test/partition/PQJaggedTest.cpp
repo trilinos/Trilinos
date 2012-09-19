@@ -551,6 +551,19 @@ int main(int argc, char *argv[])
       throw s;
     }
 
+    catch(char * s){
+      if(tcomm->getRank() == 0){
+        print_usage(argv[0]);
+      }
+      throw s; 
+    }
+    catch(char const * s){
+      if(tcomm->getRank() == 0){
+        print_usage(argv[0]);
+      }
+      throw s;
+    }
+
     switch (opt){
     case 0:
       testFromDataFile(tcomm,numParts, imbalance,fname,pqParts, k, force_binary, force_linear);
