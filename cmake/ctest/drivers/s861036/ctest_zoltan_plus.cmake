@@ -64,6 +64,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 #    Scotch are using 32-bit global IDs.
 
 SET(COMM_TYPE MPI)
+SET(TPL_ENABLE_MPI ON)
 SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME ZOLTAN_PLUS_USERS)
 SET(Trilinos_PACKAGES Zoltan)

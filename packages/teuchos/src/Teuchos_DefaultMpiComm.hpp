@@ -1168,11 +1168,16 @@ MpiComm<Ordinal>::createSubcommunicator(const ArrayView<const int> &ranks) const
     // throwing std::logic_error anyway, we can only promise
     // best-effort recovery; thus, we don't check the error code.
     (void) MPI_Group_free (&newGroup);
+    (void) MPI_Group_free (&thisGroup);
     throw;
   }
 
   // We don't need the group any more, so free it.
   err = MPI_Group_free (&newGroup);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::logic_error,
+    "Failed to free subgroup.  MPI_Group_free failed with error \""
+    << mpiErrorCodeToString (err) << "\".");
+  err = MPI_Group_free (&thisGroup);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::logic_error,
     "Failed to free subgroup.  MPI_Group_free failed with error \""
     << mpiErrorCodeToString (err) << "\".");

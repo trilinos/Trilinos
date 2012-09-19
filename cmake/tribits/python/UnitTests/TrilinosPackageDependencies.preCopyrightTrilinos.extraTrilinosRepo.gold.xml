@@ -405,6 +405,20 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
+  <Package name="Panzer" dir="packages/panzer" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Sacado,Phalanx,Intrepid,Thyra,Tpetra,Epetra,EpetraExt"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Stokhos"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Stratimikos"/>
+    <LIB_REQUIRED_DEP_TPLS value="MPI,Boost"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="panzer-regression@repo.site.gov"/>
+    </EmailAddresses>
+    <ParentPackage value=""/>
+  </Package>
   <Package name="Teko" dir="preCopyrightTrilinos/teko" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Thyra,EpetraExt,Stratimikos,AztecOO,ML,Ifpack,Amesos"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Isorropia"/>

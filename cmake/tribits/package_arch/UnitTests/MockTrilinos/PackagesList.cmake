@@ -85,6 +85,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Stratimikos         packages/stratimikos            PS
   RBGen               packages/rbgen                  PS
   Phalanx             packages/phalanx                SS
+  Panzer              packages/panzer                 SS
   )
 
 # NOTE: Sacado is really PS but for testing purpose it is made SS

@@ -75,6 +75,12 @@ int AlgRCM(
 
   HELLO;
 
+  // Check size of communicator: serial only.
+  // TODO: Remove this test when RCM works on local graph.
+  if (comm->getSize() > 1){
+    throw std::runtime_error("RCM currently only works in serial.");
+  }
+
   const size_t nVtx = model->getLocalNumVertices();
   lno_t *perm;
   perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
@@ -83,10 +89,11 @@ int AlgRCM(
   }
 
   // Get local graph.
-  ArrayView<const lno_t> edgeIds;
+  ArrayView<const gno_t> edgeIds; 
   ArrayView<const lno_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > wgts;
 
+  // TODO: edgeIds should be of type lno_t for getLocalEdgeList. Needs revisit.
   //model->getLocalEdgeList(edgeIds, offsets, wgts); // BUGGY!
   // Use global graph for now. This only works in serial!
   ArrayView<const int> procIds;

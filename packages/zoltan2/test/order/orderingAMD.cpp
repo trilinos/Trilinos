@@ -234,8 +234,19 @@ int main(int narg, char** arg)
   } catch (std::exception &e){
 #ifdef HAVE_ZOLTAN2_AMD
       // AMD is defined and still got an exception.
-      std::cout << "Exception from AMD Algorithm" << std::endl;
-      std::cout << "FAIL" << std::endl;
+      if (comm->getSize() != 1)
+      {
+          std::cout << "AMD is enabled. We do not support distributed matrices."
+             << "AMD Algorithm threw an exception."
+             << std::endl;
+          std::cout << "PASS" << std::endl;
+      }
+      else
+      {
+          std::cout << "Exception from AMD Algorithm" << std::endl;
+          std::cout << "FAIL" << std::endl;
+      }
+      return 0;
 #else
       std::cout << "AMD is not enabled. AMD Algorithm threw an exception."
          << std::endl;
