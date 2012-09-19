@@ -145,15 +145,15 @@ namespace Iohb {
   Ioss::DatabaseIO* IOFactory::make_IO(const std::string& filename,
 				       Ioss::DatabaseUsage db_usage,
 				       MPI_Comm communicator,
-				       const Ioss::PropertyManager &properties) const
-  { return new DatabaseIO(NULL, filename, db_usage, communicator, properties); }
+				       const Ioss::PropertyManager &props) const
+  { return new DatabaseIO(NULL, filename, db_usage, communicator, props); }
 
   // ========================================================================
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string& filename,
 			 Ioss::DatabaseUsage db_usage,
 			 MPI_Comm communicator,
-			 const Ioss::PropertyManager &properties) :
-    Ioss::DatabaseIO(region, filename, db_usage, communicator, properties),
+			 const Ioss::PropertyManager &props) :
+    Ioss::DatabaseIO(region, filename, db_usage, communicator, props),
     logStream(NULL), layout_(NULL), legend_(NULL),
     tsFormat("[%H:%M:%S]"), precision_(5), showLabels(true), showLegend(false), appendOutput(false),
     initialized_(false), streamNeedsDelete(false), fileFormat(DEFAULT)

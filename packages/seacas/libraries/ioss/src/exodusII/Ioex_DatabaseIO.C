@@ -350,7 +350,7 @@ namespace {
       // Filter out names of the form "basename_id" if the name
       // id doesn't match the id in the name...
       size_t base_size = basename.size();
-      if (std::strncmp(basename.c_str(), TOPTR(buffer), base_size) == 0) {
+      if (std::strncmp(basename.c_str(), &buffer[0], base_size) == 0) {
 	int64_t name_id = extract_id(TOPTR(buffer));
 	if (name_id > 0 && name_id != id) {
 	  // See if name is truly of form "basename_name_id"
@@ -4080,14 +4080,14 @@ namespace Ioex {
     }
 
     int64_t DatabaseIO::get_side_connectivity(const Ioss::SideBlock* fb,
-					      int64_t id, int64_t side_count,
+					      int64_t id, int64_t my_side_count,
 					      void *fconnect,
 					      bool map_ids) const
     {
       if (int_byte_size_api() == 4) {
-	return get_side_connectivity_internal(fb, id, side_count, (int*)fconnect, map_ids);
+	return get_side_connectivity_internal(fb, id, my_side_count, (int*)fconnect, map_ids);
       } else {
-	return get_side_connectivity_internal(fb, id, side_count, (int64_t*)fconnect, map_ids);
+	return get_side_connectivity_internal(fb, id, my_side_count, (int64_t*)fconnect, map_ids);
       }
     }
 

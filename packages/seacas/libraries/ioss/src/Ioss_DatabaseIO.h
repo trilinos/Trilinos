@@ -218,7 +218,7 @@ namespace Ioss {
 
       DatabaseIO(Region *region, const std::string& filename,
 		 Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
-		 const Ioss::PropertyManager &properties);
+		 const Ioss::PropertyManager &props);
 
       /*! 
        * The properties member data contains properties that can be
