@@ -66,6 +66,7 @@ int AlgAMD(
   const RCP<Teuchos::Comm<int> > &comm
 )
 {
+    // We don't need to check comm size here as we throw an exception always.
   throw std::runtime_error(
         "BUILD ERROR: AMD requested but not compiled into Zoltan2.\n"
         "Please set CMake flag Zoltan2_ENABLE_AMD:BOOL=ON.");
@@ -124,6 +125,13 @@ int AlgAMD(
   typedef typename Adapter::scalar_t scalar_t;
 
   int ierr= 0;
+
+  if (comm->getSize() != 1)
+  {
+      throw std::runtime_error(
+        "ERROR: AMD requested with distributed matrix.\n"
+        "This feature is not supported yet. Please use a local matrix.");
+  }
 
   const size_t nVtx = model->getLocalNumVertices();
 
