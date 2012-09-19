@@ -1281,13 +1281,9 @@ void EnhancedNumberValidator<T>::validate(ParameterEntry const &entry, std::stri
 
   TEUCHOS_TEST_FOR_EXCEPTION(anyValue.type() != typeid(T),
     Exceptions::InvalidParameterType,
-    "Aww shoot! Sorry bud, but it looks like the \"" <<
-    paramName << "\"" <<
-    " parameter in the \"" << sublistName
-    << "\" sublist didn't quite work out." << std::endl <<
-    "No need to fret though. I'm sure it's just a small mistake. "
-    "Maybe the information below "<<
-    "can help you figure out what went wrong." << std::endl << std::endl <<
+    "The \"" << paramName << "\"" <<
+    " parameter in the \"" << sublistName <<
+    "\" sublist is has an error." << std::endl << std::endl <<
     "Error: The value that you entered was the wrong type." << std::endl <<
     "Parameter: " << paramName << std::endl <<
     "Type specified: " << entryName << std::endl <<
@@ -1298,15 +1294,9 @@ void EnhancedNumberValidator<T>::validate(ParameterEntry const &entry, std::stri
     ? isValueInRange = true : isValueInRange=false;
   TEUCHOS_TEST_FOR_EXCEPTION(!(isValueInRange),
     Exceptions::InvalidParameterValue,
-    "Aww shoot! Sorry bud, but it looks like the \"" <<
-    paramName << "\"" <<
+    "The \"" << paramName << "\"" <<
     " parameter in the \"" << sublistName <<
-    "\" sublist didn't quite work "
-    "out." << std::endl <<
-    "No need to fret though. I'm sure it's just a small mistake. "
-    "Maybe the information below "<<
-    "can help you figure out what went wrong." << std::endl <<
-    std::endl <<
+    "\" sublist is has an error." << std::endl << std::endl <<
     "Error: The value that was entered doesn't fall with in " <<
     "the range set by the validator" << std::endl <<
     "Parameter: " << paramName  << std::endl <<
@@ -1679,14 +1669,9 @@ void TwoDArrayValidator<ValidatorType, EntryType>::validate(ParameterEntry const
   const std::string &entryName = entry.getAny(false).typeName();
   TEUCHOS_TEST_FOR_EXCEPTION(anyValue.type() != typeid(TwoDArray<EntryType>),
     Exceptions::InvalidParameterType,
-    "Aww shoot! Sorry bud, but it looks like the \"" <<
-    paramName << "\"" <<
+    "The \"" << paramName << "\"" <<
     " parameter in the \"" << sublistName <<
-    "\" sublist didn't quite work out." << std::endl <<
-    "No need to fret though. I'm sure it's just a small mistake. "
-    "Maybe the information below "<<
-    "can help you figure out what went wrong." << std::endl <<
-    std::endl <<
+    "\" sublist is has an error." << std::endl << std::endl <<
     "Error: The value you entered was the wrong type." << std::endl <<
     "Parameter: " << paramName << std::endl <<
     "Type specified: " << entryName << std::endl <<
@@ -1870,14 +1855,9 @@ void ArrayValidator<ValidatorType, EntryType>::validate(ParameterEntry const &en
   const std::string &entryName = entry.getAny(false).typeName();
   TEUCHOS_TEST_FOR_EXCEPTION(anyValue.type() != typeid(Array<EntryType>),
     Exceptions::InvalidParameterType,
-    "Aww shoot! Sorry bud, but it looks like the \"" <<
-    paramName << "\"" <<
+    "The \"" << paramName << "\"" <<
     " parameter in the \"" << sublistName <<
-    "\" sublist didn't quite work out." << std::endl <<
-    "No need to fret though. I'm sure it's just a small mistake. "
-    "Maybe the information below "<<
-    "can help you figure out what went wrong." << std::endl <<
-    std::endl <<
+    "\" sublist is has an error." << std::endl << std::endl <<
     "Error: The value you entered was the wrong type." << std::endl <<
     "Parameter: " << paramName << std::endl <<
     "Type specified: " << entryName << std::endl <<
