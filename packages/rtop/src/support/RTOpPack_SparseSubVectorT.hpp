@@ -271,53 +271,6 @@ private:
   ptrdiff_t localOffset_;
   bool isSorted_;
 public:
-#ifndef RTOP_HIDE_DEPRECATED_CODE
-  /** \brief Deprecated. */
-  RTOP_DEPRECATED SparseSubVectorT(
-    Teuchos_Ordinal globalOffset_in, Teuchos_Ordinal subDim_in, Teuchos_Ordinal subNz_in,
-    const Scalar values_in[], ptrdiff_t valuesStride_in,
-    const Teuchos_Ordinal indices_in[], ptrdiff_t indicesStride_in,
-    ptrdiff_t localOffset_in, int isSorted_in
-    )
-    {
-      initialize(globalOffset, subDim, subNz, values, valuesStride,
-        indices, indicesStride, localOffset, isSorted);
-    }
-  /** \brief Deprecated. */
-  RTOP_DEPRECATED SparseSubVectorT(
-    Teuchos_Ordinal globalOffset_in, Teuchos_Ordinal subDim_in,
-    const Scalar values_in[], ptrdiff_t valuesStride_in
-    )
-    {
-      initialize(globalOffset_in, subDim_in, values_in, valuesStride_in);
-    }
-  /** \brief Deprecated. */
-  RTOP_DEPRECATED void initialize(
-    Teuchos_Ordinal globalOffset_in, Teuchos_Ordinal subDim_in, Teuchos_Ordinal subNz_in,
-    const Scalar values_in[], ptrdiff_t valuesStride_in,
-    const Teuchos_Ordinal indices_in[], ptrdiff_t indicesStride_in,
-    ptrdiff_t localOffset_in, int isSorted_in
-    )
-    {
-      initialize(globalOffset_in, subDim_in, subNz_in,
-        Teuchos::arcp(values_in, 0, subNz_in*std::abs(valuesStride_in), false), valuesStride_in,
-        Teuchos::arcp(indices_in, 0, subNz_in*std::abs(indicesStride_in), false), indicesStride_in,
-        localOffset_in, isSorted_in);
-    }
-  /** \brief Deprecated. */
-  RTOP_DEPRECATED void initialize(
-    Teuchos_Ordinal globalOffset_in, Teuchos_Ordinal subDim_in,
-    const Scalar values_in[], ptrdiff_t valuesStride_in
-    )
-    {
-      initialize(globalOffset_in, subDim_in,
-        Teuchos::arcp(values_in, 0, subDim_in*std::abs(valuesStride_in), false),
-        valuesStride_in);
-    }
-  /** \brief Deprecated. */
-  RTOP_DEPRECATED void set_uninitialized()
-    { uninitialize(); }
-#endif // RTOP_HIDE_DEPRECATED_CODE
 };
 
 

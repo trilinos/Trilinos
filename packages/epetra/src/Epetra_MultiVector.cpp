@@ -459,7 +459,7 @@ template<typename int_type>
 int Epetra_MultiVector::ChangeGlobalValue(int_type GlobalBlockRow, int BlockRowOffset, 
              int VectorIndex, double ScalarValue, bool SumInto) {
 
-  if(!Map().GlobalIndicesIsType<int_type>())
+  if(!Map().template GlobalIndicesIsType<int_type>())
   throw ReportError("Epetra_MultiVector::ChangeGlobalValues mismatch between argument types (int/long long) and map type.", -1);
 
   // Convert GID to LID and call LID version

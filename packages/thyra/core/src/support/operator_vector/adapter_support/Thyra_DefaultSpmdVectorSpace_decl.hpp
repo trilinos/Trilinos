@@ -225,26 +225,6 @@ private:
 
 public:
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-  /** \name Deprecated */
-  //@{
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED
-  DefaultSpmdVectorSpace(
-    const Ordinal dim
-    );
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED
-  DefaultSpmdVectorSpace(
-    const RCP<const Teuchos::Comm<Ordinal> > &comm,
-    const Ordinal localSubDim, const Ordinal globalDim
-    );
-
-  //@}
- 
-#endif // THYRA_HIDE_DEPRECATED_CODE
 }; // end class DefaultSpmdVectorSpace
 
 

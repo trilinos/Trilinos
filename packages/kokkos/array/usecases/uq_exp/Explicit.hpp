@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 //
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//              Copyright (2012) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -107,17 +107,17 @@ struct Fields {
   typedef typename KokkosArray::ParallelDataMap  parallel_data_map ;
 
 
-  typedef KokkosArray::View< Scalar[0]                  , device_type >  scalar_view ;
-  typedef KokkosArray::View< Scalar[0][0]               , device_type >  array_view ;
-  typedef KokkosArray::View< Scalar[0][0][ SpatialDim ] , device_type >  geom_array_view ;
-  typedef KokkosArray::View< Scalar[0][0][ K_F_SIZE ]   , device_type >  tensor_array_view ;
-  typedef KokkosArray::View< Scalar[0][0][ K_S_SIZE ]   , device_type >  sym_tensor_array_view ;
+  typedef KokkosArray::View< Scalar*                , device_type >  scalar_view ;
+  typedef KokkosArray::View< Scalar**               , device_type >  array_view ;
+  typedef KokkosArray::View< Scalar**[ SpatialDim ] , device_type >  geom_array_view ;
+  typedef KokkosArray::View< Scalar**[ K_F_SIZE ]   , device_type >  tensor_array_view ;
+  typedef KokkosArray::View< Scalar**[ K_S_SIZE ]   , device_type >  sym_tensor_array_view ;
 
-  typedef KokkosArray::View< Scalar[0][0][ SpatialDim ][ ElemNodeCount ] , device_type >
+  typedef KokkosArray::View< Scalar**[ SpatialDim ][ ElemNodeCount ] , device_type >
     elem_node_geom_view ;
 
-  typedef KokkosArray::View< Scalar ,    device_type > value_view ;
-  typedef KokkosArray::View< Scalar[0] , device_type > property_view ;
+  typedef KokkosArray::View< Scalar ,   device_type > value_view ;
+  typedef KokkosArray::View< Scalar* , device_type > property_view ;
 
   // Parameters:
   const unsigned num_nodes ;
@@ -633,7 +633,7 @@ static void driver( const char * label , comm::Machine machine ,
 
     PerformanceData perf , best ;
 
-    for ( size_t iuq = uq_count_beg ; iuq < uq_count_end ; ++iuq ) {
+    for ( size_t iuq = uq_count_beg ; iuq < uq_count_end ; iuq *= 2 ) {
 
       for( size_t j = 0; j < run_count ; j++ ) {
 

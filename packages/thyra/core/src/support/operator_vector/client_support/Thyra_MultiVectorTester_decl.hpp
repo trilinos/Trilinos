@@ -203,22 +203,6 @@ public:
     const Ptr<Teuchos::FancyOStream> &out
     ) const;
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-  /** \name Depreicated. */
-  //@{
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED bool check(
-    const MultiVectorBase<Scalar>  &mv,
-    Teuchos::FancyOStream *out
-    ) const
-    {
-      return check(mv, Teuchos::ptr(out));
-    }
-
-  //@}
-
-#endif // THYRA_HIDE_DEPRECATED_CODE
 private:
 
   LinearOpTester<Scalar> linearOpTester_;

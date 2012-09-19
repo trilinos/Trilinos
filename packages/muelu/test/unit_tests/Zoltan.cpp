@@ -51,8 +51,7 @@
 
 #include "MueLu_ZoltanInterface.hpp"
 
-#define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
-#include "MueLu_GalleryUtils.hpp"
+#include "Galeri_XpetraUtils.hpp"
 
 #include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_ExportFactory.hpp"
@@ -141,7 +140,7 @@ namespace MueLuTests {
     Teuchos::ParameterList list;
     list.set("nx",nx);
     list.set("ny",ny);
-    RCP<MultiVector> XYZ = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",rowMap,list);
+    RCP<MultiVector> XYZ = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",rowMap,list);
     level.Set("Coordinates",XYZ);
 
     LO numPartitions = comm->getSize();
@@ -380,7 +379,7 @@ namespace MueLuTests {
     list.set("nx",nx);
     list.set("ny",ny);
     RCP<const Map> coalescedMap = MapFactory::createContigMap(TestHelpers::Parameters::getLib(), numGlobalElements/dofsPerNode, numMyNodes, comm);
-    RCP<MultiVector> XYZ = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",coalescedMap,list);
+    RCP<MultiVector> XYZ = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",coalescedMap,list);
 
     // XYZ are the "coalesce" coordinates as it has been generated for 1 DOF/node and we are using them for 3 DOFS/node
     // level.Set("Coordinates",XYZ); "Coordinates" == uncoalesce. "X,Y,ZCoordinates" == coalesce

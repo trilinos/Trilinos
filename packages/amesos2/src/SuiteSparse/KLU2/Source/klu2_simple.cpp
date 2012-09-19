@@ -67,6 +67,7 @@ int main (void)
     klu_free_numeric<double, int> (&Numeric, &Common) ;
     for (i = 0 ; i < n ; i++) printf ("x [%d] = %g\n", i, b [i]) ;
 
+#ifdef HAVE_TEUCHOS_COMPLEX
     std::cout << "Complex double case " << std::endl ;
     typedef std::complex<double> ComplexD ;
     klu_symbolic<ComplexD, int> *Symbolic_C ;
@@ -80,6 +81,7 @@ int main (void)
     klu_free_numeric<ComplexD, int> (&Numeric_C, &Common_C) ;
     for (i = 0 ; i < n ; i++) 
         std::cout << "x [" << i << "] = "<< b_cd[i] << std::endl ;
+#endif
 
     return (0) ;
 }

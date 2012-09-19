@@ -61,10 +61,9 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_CrsOperator.hpp>
 
-// Gallery
-#define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
-#include <MueLu_GalleryParameters.hpp>
-#include <MueLu_MatrixFactory.hpp>
+// Galeri
+#include <Galeri_XpetraParameters.hpp>
+#include <Galeri_XpetraMatrixFactory.hpp>
 
 // MueLu
 #include "MueLu_Hierarchy.hpp"
@@ -108,7 +107,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp(false);
   
-  MueLu::Gallery::Parameters<GO> matrixParameters(clp); // manage parameters of the test case
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp); // manage parameters of the test case
   Xpetra::Parameters xpetraParameters(clp);       // manage parameters of xpetra
 
   Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_DEFAULT;
@@ -120,6 +119,7 @@ int main(int argc, char *argv[]) {
   }
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+  case Teuchos::CommandLineProcessor::PARSE_ERROR:
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
   xpetraParameters.check();
 
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Operator> A = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Operator> A = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
 
   std::cout << std::endl << std::endl;
   //

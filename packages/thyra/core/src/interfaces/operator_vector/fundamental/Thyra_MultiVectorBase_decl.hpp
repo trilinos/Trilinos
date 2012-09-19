@@ -1087,45 +1087,6 @@ protected:
 
 public:
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-  /** @name Deprecated public functions */
-  //@{
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED RCP<const MultiVectorBase<Scalar> >
-  subView( const int numCols, const int cols[] ) const
-    { return subView( Teuchos::arrayView<const int>(cols,numCols) ); }
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED RCP<MultiVectorBase<Scalar> >
-  subView( const int numCols, const int cols[] )
-    { return subView( Teuchos::arrayView<const int>(cols,numCols) ); }
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED void applyOp(
-    const RTOpPack::RTOpT<Scalar> &primary_op,
-    const int num_multi_vecs,
-    const MultiVectorBase<Scalar>*const multi_vecs_in[],
-    const int num_targ_multi_vecs,
-    MultiVectorBase<Scalar>*const targ_multi_vecs_inout[],
-    RTOpPack::ReductTarget*const reduct_objs_inout[],
-    const Ordinal primary_global_offset
-    ) const;
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED void applyOp(
-    const RTOpPack::RTOpT<Scalar> &primary_op,
-    const RTOpPack::RTOpT<Scalar> &secondary_op,
-    const int num_multi_vecs,
-    const MultiVectorBase<Scalar>*const multi_vecs_in[],
-    const int num_targ_multi_vecs,
-    MultiVectorBase<Scalar>*const targ_multi_vecs_inout[],
-    RTOpPack::ReductTarget* reduct_obj,
-    const Ordinal primary_global_offset
-    ) const;
-
-  //@}
-#endif // THYRA_HIDE_DEPRECATED_CODE
 private:
   
   // Not defined and not to be called
@@ -1187,73 +1148,6 @@ void applyOp(
       reduct_obj, primary_global_offset);
 }
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-//
-// Deprecated non-members
-//
-
-
-/** \brief Deprecated.
- *
- * \relates MultiVectorBase
- */
-template<class Scalar>
-THYRA_DEPRECATED inline
-void applyOp(
-  const RTOpPack::RTOpT<Scalar> &primary_op,
-  const int num_multi_vecs,
-  const MultiVectorBase<Scalar>*const multi_vecs[],
-  const int num_targ_multi_vecs,
-  MultiVectorBase<Scalar>*const targ_multi_vecs[],
-  RTOpPack::ReductTarget*const reduct_objs[],
-  const Ordinal primary_global_offset = 0
-  )
-{
-  if(num_multi_vecs)
-    multi_vecs[0]->applyOp(
-      primary_op,
-      num_multi_vecs, multi_vecs, num_targ_multi_vecs, targ_multi_vecs,
-      reduct_objs, primary_global_offset);
-  else if(num_targ_multi_vecs)
-    targ_multi_vecs[0]->applyOp(
-      primary_op,
-      num_multi_vecs, multi_vecs, num_targ_multi_vecs, targ_multi_vecs,
-      reduct_objs, primary_global_offset);
-}
-
-
-/** \brief Deprecated.
- *
- * ToDo: Finish documentation!
- *
- * \relates MultiVectorBase
- */
-template<class Scalar>
-THYRA_DEPRECATED inline
-void applyOp(
-  const RTOpPack::RTOpT<Scalar> &primary_op,
-  const RTOpPack::RTOpT<Scalar> &secondary_op,
-  const int num_multi_vecs,
-  const MultiVectorBase<Scalar>*const multi_vecs[],
-  const int num_targ_multi_vecs,
-  MultiVectorBase<Scalar>*const targ_multi_vecs[],
-  RTOpPack::ReductTarget *reduct_obj,
-  const Ordinal primary_global_offset = 0
-  )
-{
-  if(num_multi_vecs)
-    multi_vecs[0]->applyOp(
-      primary_op, secondary_op,
-      num_multi_vecs, multi_vecs, num_targ_multi_vecs, targ_multi_vecs,
-      reduct_obj, primary_global_offset);
-  else if(num_targ_multi_vecs)
-    targ_multi_vecs[0]->applyOp(
-      primary_op, secondary_op,
-      num_multi_vecs, multi_vecs, num_targ_multi_vecs, targ_multi_vecs,
-      reduct_obj, primary_global_offset);
-}
-
-#endif // THYRA_HIDE_DEPRECATED_CODE
 
 } // namespace Thyra
 

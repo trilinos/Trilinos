@@ -63,6 +63,14 @@ namespace {
  * Need the number of dimensions in order to distinguish between
  * TRI elements in a 2d mesh from TRI elements in a 3d mesh.
  *****************************************************************************/
+const char* elem_name_from_enum(const E_Type elem_type) {
+  static const char* elem_names[NULL_EL] = {"SPHERE", "BAR2", "BAR3", "QUAD4", "QUAD8", "QUAD9",
+					    "SHELL4", "SHELL8", "TRI3", "TRI6", "TSHELL3", "TSHELL6", "HEX8",
+					    "HEX20", "HEX27", "HEXSHELL", "TET4", "TET10", "TET8", "WEDGE6", "WEDGE15",
+					    "WEDGE16", "PYRAMID5", "PYRAMID13", "SHELL2", "SHELL3"};
+  return elem_names[elem_type];
+}
+
 E_Type get_elem_type(const char *elem_name, const int num_nodes,
                      const int num_dim)
 {

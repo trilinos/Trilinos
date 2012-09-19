@@ -66,68 +66,12 @@ echo "
 #
 
 echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.6.1-mpi-debug-ss-options.cmake'
+-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.6.1-mpi-debug-ss-options.cmake,$DRIVERS_BASE_DIR/trilinos-tpls-gcc.4.6.1.cmake'
 " > MPI_DEBUG_SS.config
 
 echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.6.1-serial-release-ss-options.cmake'
+-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.6.1-serial-release-ss-options.cmake,$DRIVERS_BASE_DIR/trilinos-tpls-gcc.4.6.1.cmake'
 " > SERIAL_RELEASE_SS.config
-
-#
-# Hybrid GCC 4.5.1 / Intel 11 extra builds
-#
-# Just pass these in with:
-#
-#    --extra-builds=MPI_DEBUG_451_11,SERIAL_RELEASE_451_11,MPI_DEBUG_SS_451_11,SERIAL_RELEASE_SS_451_11
-#
-
-echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.5.1-mpi-debug-ps-options.cmake'
-" > MPI_DEBUG_451_11.config
-
-echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.5.1-serial-release-ps-options.cmake'
-" > SERIAL_RELEASE_451_11.config
-
-echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.5.1-mpi-debug-ss-options.cmake'
-" > MPI_DEBUG_SS_451_11.config
-
-echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.5.1-serial-release-ss-options.cmake'
-" > SERIAL_RELEASE_SS_451_11.config
-
-
-#
-# Extra intel builds added with --extra-builds=INTEL11_SERIAL_RELEASE,...
-#
-# NOTE: Since these are not required for pre-push testing purposes,
-# CASL developers can modify these and push the changes.
-#
-
-echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/intel-12.0.4-serial-release-ss-options.cmake'
--DTrilinos_ENABLE_SECONDARY_STABLE_CODE=ON
--DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF
-" > INTEL12_SERIAL_RELEASE.config
-
-echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/intel-12.0.4-serial-debug-ss-options.cmake'
--DTrilinos_ENABLE_SECONDARY_STABLE_CODE=ON
--DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF
-" > INTEL12_SERIAL_DEBUG.config
-
-echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/intel-11.1.064-serial-release-ss-options.cmake'
--DTrilinos_ENABLE_SECONDARY_STABLE_CODE=ON
--DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF
-" > INTEL11_SERIAL_RELEASE.config
-
-echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/intel-11.1.064-serial-debug-ss-options.cmake'
--DTrilinos_ENABLE_SECONDARY_STABLE_CODE=ON
--DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF
-" > INTEL11_SERIAL_DEBUG.config
 
 #
 # Invocation

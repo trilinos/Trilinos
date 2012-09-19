@@ -63,11 +63,6 @@
 #include <Xpetra_CrsOperator.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
-// Gallery
-#define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
-#include <MueLu_GalleryParameters.hpp>
-#include <MueLu_MatrixFactory.hpp>
-
 // MueLu
 #include "MueLu_FactoryManager.hpp"
 #include "MueLu_Hierarchy.hpp"

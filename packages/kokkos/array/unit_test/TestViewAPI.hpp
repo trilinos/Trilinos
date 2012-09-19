@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//              Copyright (2012) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
@@ -158,8 +158,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
     , rsh( right_shape::template create< memory_space >() )
     , left( lsh )
     , right( rsh )
-    , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
-    , right_alloc( KokkosArray::Impl::allocation_count( rsh ) )
+    , left_alloc(  KokkosArray::Impl::ShapeMap< left_shape >::allocation_count( lsh ) )
+    , right_alloc( KokkosArray::Impl::ShapeMap< right_shape >::allocation_count( rsh ) )
     {}
 
   static void apply()
@@ -255,8 +255,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
     , rsh( right_shape::template create< memory_space>() )
     , left( lsh )
     , right( rsh )
-    , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
-    , right_alloc( KokkosArray::Impl::allocation_count( rsh ) )
+    , left_alloc(  KokkosArray::Impl::ShapeMap< left_shape >::allocation_count( lsh ) )
+    , right_alloc( KokkosArray::Impl::ShapeMap< right_shape >::allocation_count( rsh ) )
     {}
 
   static void apply()
@@ -350,8 +350,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
     , rsh( right_shape::template create< memory_space >() )
     , left( lsh )
     , right( rsh )
-    , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
-    , right_alloc( KokkosArray::Impl::allocation_count( rsh ) )
+    , left_alloc(  KokkosArray::Impl::ShapeMap< left_shape >::allocation_count( lsh ) )
+    , right_alloc( KokkosArray::Impl::ShapeMap< right_shape >::allocation_count( rsh ) )
     {}
 
   static void apply()
@@ -443,8 +443,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
     , rsh( right_shape::template create< memory_space >() )
     , left( lsh )
     , right( rsh )
-    , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
-    , right_alloc( KokkosArray::Impl::allocation_count( rsh ) )
+    , left_alloc(  KokkosArray::Impl::ShapeMap< left_shape >::allocation_count( lsh ) )
+    , right_alloc( KokkosArray::Impl::ShapeMap< right_shape >::allocation_count( rsh ) )
     {}
 
   static void apply()
@@ -534,8 +534,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
     , rsh( right_shape::template create< memory_space >() )
     , left( lsh )
     , right( rsh )
-    , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
-    , right_alloc( KokkosArray::Impl::allocation_count( rsh ) )
+    , left_alloc(  KokkosArray::Impl::ShapeMap< left_shape >::allocation_count( lsh ) )
+    , right_alloc( KokkosArray::Impl::ShapeMap< right_shape >::allocation_count( rsh ) )
     {}
 
   static void apply()
@@ -623,8 +623,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
     , rsh( right_shape::template create< memory_space >() )
     , left( lsh )
     , right( rsh )
-    , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
-    , right_alloc( KokkosArray::Impl::allocation_count( rsh ) )
+    , left_alloc(  KokkosArray::Impl::ShapeMap< left_shape >::allocation_count( lsh ) )
+    , right_alloc( KokkosArray::Impl::ShapeMap< right_shape >::allocation_count( rsh ) )
     {}
 
   static void apply()
@@ -710,8 +710,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
     , rsh( right_shape::template create< memory_space >() )
     , left( lsh )
     , right( rsh )
-    , left_alloc(  KokkosArray::Impl::allocation_count( lsh ) )
-    , right_alloc( KokkosArray::Impl::allocation_count( rsh ) )
+    , left_alloc(  KokkosArray::Impl::ShapeMap< left_shape >::allocation_count( lsh ) )
+    , right_alloc( KokkosArray::Impl::ShapeMap< right_shape >::allocation_count( rsh ) )
     {}
 
   static void apply()

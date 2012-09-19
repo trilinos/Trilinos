@@ -67,14 +67,9 @@ BoolLogicCondition::BoolLogicCondition(ConstConditionList& conditions):
 {
   TEUCHOS_TEST_FOR_EXCEPTION(conditions_.size() ==0,
     InvalidConditionException,
-    "Sorry bud, but you gotta at least give "
-    "me one condition "
-    "when you're constructing a BoolLogicCondition. Looks like you didn't. "
-    "I'm just gonna "
-    "chalk it up a silly little mistake though. Take a look over your "
-    "conditions again and make sure "
-    "you don't ever give any of your BoolLogicConditions and empty "
-    "condition list." << std::endl << std::endl <<
+    "You must provide at least one condition "
+    "when you're constructing a BoolLogicCondition. "
+    << std::endl << std::endl <<
     "Error: Empty condition list given to a BoolLogicCondition "
     "constructor.");
 }

@@ -315,7 +315,7 @@ int Epetra_FEVector::inputValues(int numIDs,
                                  bool suminto,
                                  int vectorIndex)
 {
-  if(!Map().GlobalIndicesIsType<int_type>())
+  if(!Map().template GlobalIndicesIsType<int_type>())
   throw ReportError("Epetra_FEVector::inputValues mismatch between argument types (int/long long) and map type.", -1);
 
   int offset=0;
@@ -360,7 +360,7 @@ int Epetra_FEVector::inputNonlocalValues(int_type GID, int numValues,
                                          const double* values, bool suminto,
                                          int vectorIndex)
 {
-  if(!Map().GlobalIndicesIsType<int_type>())
+  if(!Map().template GlobalIndicesIsType<int_type>())
   throw ReportError("Epetra_FEVector::inputValues mismatch between argument types (int/long long) and map type.", -1);
 
   

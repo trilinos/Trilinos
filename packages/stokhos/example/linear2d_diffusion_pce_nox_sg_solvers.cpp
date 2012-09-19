@@ -87,13 +87,14 @@ const char *sg_op_names[] = { "Matrix-Free",
 			      "Fully-Assembled" };
 
 // Krylov preconditioning approaches
-enum SG_Prec { MEAN, GS, AGS, AJ, KP, NONE };
-const int num_sg_prec = 6;
-const SG_Prec sg_prec_values[] = { MEAN, GS, AGS, AJ, KP, NONE };
+enum SG_Prec { MEAN, GS, AGS, AJ, ASC, KP, NONE };
+const int num_sg_prec = 7;
+const SG_Prec sg_prec_values[] = { MEAN, GS, AGS, AJ, ASC, KP, NONE };
 const char *sg_prec_names[] = { "Mean-Based", 
 				"Gauss-Seidel", 
 				"Approx-Gauss-Seidel", 
 				"Approx-Jacobi", 
+				"Approx-Schur-Complement", 
 				"Kronecker-Product",
 				"None" };
 
@@ -523,6 +524,13 @@ int main(int argc, char *argv[]) {
       Teuchos::ParameterList& jacobiOpParams =
 	sgPrecParams.sublist("Jacobi SG Operator");
       jacobiOpParams.set("Only Use Linear Terms", true);
+    }
+    else if (precMethod == ASC)  {
+      sgPrecParams.set("Preconditioner Method", "Approximate Schur Complement");
+      sgPrecParams.set("Mean Preconditioner Type", "ML");
+      Teuchos::ParameterList& precParams =
+	sgPrecParams.sublist("Mean Preconditioner Parameters");
+      precParams = det_ML;
     }
     else if (precMethod == KP)  {
       sgPrecParams.set("Preconditioner Method", "Kronecker Product");

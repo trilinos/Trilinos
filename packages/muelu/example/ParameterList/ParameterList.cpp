@@ -52,6 +52,11 @@
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_UseShortNames.hpp>  
 
+// Galeri
+#include <Galeri_XpetraParameters.hpp>
+#include <Galeri_XpetraMatrixFactory.hpp>
+
+
 int main(int argc, char *argv[]) {
   using Teuchos::RCP; // reference count pointers
 
@@ -68,13 +73,14 @@ int main(int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp(false); // Note: 
 
-  MueLu::Gallery::Parameters<GO> matrixParameters(clp, 256); // manage parameters of the test case
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 256); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);      // manage parameters of xpetra
 
   std::string xmlFileName = "muelu_ParameterList.xml"; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default 'muelu_ParameterList.xml'");
 
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+  case Teuchos::CommandLineProcessor::PARSE_ERROR:
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
@@ -86,7 +92,7 @@ int main(int argc, char *argv[]) {
   //
 
   RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Operator>  A   = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Operator>  A   = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
 
   //
   // Construct a multigrid preconditioner

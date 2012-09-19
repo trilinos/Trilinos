@@ -80,11 +80,6 @@
 #include <Xpetra_StridedMapFactory.hpp>
 #include <Xpetra_StridedEpetraMap.hpp>
 
-// Gallery
-#define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
-#include <MueLu_GalleryParameters.hpp>
-#include <MueLu_MatrixFactory.hpp>
-
 // MueLu
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Memory.hpp"
@@ -422,6 +417,7 @@ int main(int argc, char *argv[]) {
 
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+  case Teuchos::CommandLineProcessor::PARSE_ERROR:
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }

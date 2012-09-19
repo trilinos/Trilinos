@@ -88,15 +88,15 @@ namespace Tpetra {
   /// 3 routines for local computations.  It may also reduce the
   /// number of parallel reductions.
   ///
-  /// The \c Vector class implements the MultiVector interface, so if
-  /// you only wish to work with a single vector at a time, you may
-  /// simply use \c Vector instead of MultiVector.  However, if you
-  /// are writing solvers or preconditioners, you would do better to
-  /// write to the MultiVector interface and always assume that each
-  /// MultiVector contains more than one vector.  This will make your
-  /// solver or preconditioner more compatible with other Trilinos
-  /// packages, and it will also let you exploit the performance
-  /// optimizations mentioned above.
+  /// The Vector class implements the MultiVector interface, so if you
+  /// only wish to work with a single vector at a time, you may simply
+  /// use Vector instead of MultiVector.  However, if you are writing
+  /// solvers or preconditioners, you would do better to write to the
+  /// MultiVector interface and always assume that each MultiVector
+  /// contains more than one vector.  This will make your solver or
+  /// preconditioner more compatible with other Trilinos packages, and
+  /// it will also let you exploit the performance optimizations
+  /// mentioned above.
   ///
   /// \tparam Scalar The type of the numerical entries of the vector(s).
   ///  (You can use real-valued or complex-valued types here, unlike in
@@ -105,15 +105,17 @@ namespace Tpetra {
   /// \tparam LocalOrdinal The type of local indices.  Same as the \c
   ///   LocalOrdinal template parameter of \c Map objects used by this
   ///   matrix.  (In Epetra, this is just \c int.)  The default type is
-  ///   int, which should suffice for most users.
+  ///   \c int, which should suffice for most users.  This type must be
+  ///   big enough to store the local (per process) number of rows.
   ///
   /// \tparam GlobalOrdinal The type of global indices.  Same as the
   ///   \c GlobalOrdinal template parameter of \c Map objects used by
   ///   this matrix.  (In Epetra, this is just \c int.  One advantage
   ///   of Tpetra over Epetra is that you can use a 64-bit integer
   ///   type here if you want to solve big problems.)  The default
-  ///   type is LocalOrdinal, which is OK if you know that the global
-  ///   number of rows and columns in the matrix fits.
+  ///   type is <tt>LocalOrdinal</tt>.  This type must be big enough
+  ///   to store the global (over all processes in the communicator)
+  ///   number of rows or columns.
   ///
   /// \tparam Node A class implementing on-node shared-memory parallel
   ///   operations.  It must implement the
@@ -121,11 +123,31 @@ namespace Tpetra {
   ///   The default \c Node type should suffice for most users.
   ///   The actual default type depends on your Trilinos build options.
   ///
-  /// \section Data layout and access
+  /// \note If you use the default \c GlobalOrdinal type, which is
+  ///   <tt>int</tt>, then the <i>global</i> number of rows or columns
+  ///   in the matrix may be no more than \c INT_MAX, which for
+  ///   typical 32-bit \c int is \f$2^{31} - 1\f$ (about two billion).
+  ///   If you want to solve larger problems, you must use a 64-bit
+  ///   integer type here.
   ///
-  /// \subsection Multivectors which view another multivector
+  /// \section Kokkos_MV_prereq Prerequisites
   ///
-  /// A multivector could be a _view_ of some subset of another
+  /// Before reading the rest of this documentation, it helps to know
+  /// something about the Teuchos memory management classes, in
+  /// particular Teuchos::RCP, Teuchos::ArrayRCP, and
+  /// Teuchos::ArrayView.  You may also want to know about the
+  /// differences between BLAS 1, 2, and 3 operations, and learn a
+  /// little bit about MPI (the Message Passing Interface for
+  /// distributed-memory programming).  You won't have to use MPI
+  /// directly to use MultiVector, but it helps to be familiar with
+  /// the general idea of distributed storage of data over a
+  /// communicator.
+  ///
+  /// \section Kokkos_MV_layout Data layout and access
+  ///
+  /// \subsection Kokkos_MV_noncontig Multivectors which view another multivector
+  ///
+  /// A multivector could be a <i>view</i> of some subset of another
   /// multivector's columns and rows.  A view is like a pointer; it
   /// provides access to the original multivector's data without
   /// copying the data.  There are no public constructors for creating
@@ -136,17 +158,18 @@ namespace Tpetra {
   /// example, given a multivector X with 43 columns, it is possible
   /// to have a multivector Y which is a view of columns 1, 3, and 42
   /// (zero-based indices) of X.  We call such multivectors
-  /// _noncontiguous_.  They have the the property that
+  /// <i>noncontiguous</i>.  They have the the property that
   /// isConstantStride() returns false.
   ///
   /// Noncontiguous multivectors lose some performance advantages.
   /// For example, local computations may be slower, since Tpetra
-  /// cannot use BLAS 3 routines on a noncontiguous multivectors
-  /// without copying into temporary contiguous storage.
-  /// Noncontiguous multivectors also affect the ability to access the
-  /// data in certain ways, which we will explain below.
+  /// cannot use BLAS 3 routines (e.g., matrix-matrix multiply) on a
+  /// noncontiguous multivectors without copying into temporary
+  /// contiguous storage.  Noncontiguous multivectors also affect the
+  /// ability to access the data in certain ways, which we will
+  /// explain below.
   ///
-  /// \subsection Views of a multivector's data
+  /// \subsection Kokkos_MV_views Views of a multivector's data
   ///
   /// We have unfortunately overloaded the term "view."  In the
   /// section above, we explained the idea of a "multivector which is
@@ -155,7 +178,7 @@ namespace Tpetra {
   /// values in a multivector, this is what you want.  All the
   /// instance methods which return an ArrayRCP of Scalar data, or an
   /// ArrayRCP of ArrayRCP of Scalar data, return views to the data.
-  /// These data are always _local_ data, meaning that the
+  /// These data are always <i>local</i> data, meaning that the
   /// corresponding rows of the multivector are owned by the calling
   /// process.  You can't use these methods to access remote data
   /// (rows that do not belong to the calling process).
@@ -170,22 +193,30 @@ namespace Tpetra {
   /// get a copy by calling get1dCopy().  A 2-D view presents the data
   /// as an array of arrays, one array per column (i.e., vector in the
   /// multivector).  The entries in each column are stored
-  /// contiguously.  You may get a 2-D view of _any_ multivector,
+  /// contiguously.  You may get a 2-D view of <i>any</i> multivector,
   /// whether or not it is noncontiguous.
   ///
   /// Views are not necessarily just encapsulated pointers.  The
   /// meaning of view depends in part on the Kokkos Node type (the
   /// Node template parameter).  This matters in particular if you are
-  /// running on a Graphics Processing Unit (GPU) by setting the Node
-  /// template parameter to a GPU Node.  In that case, views currently
+  /// running on a Graphics Processing Unit (GPU) device.  You can
+  /// tell at compile time whether you are running on a GPU by looking
+  /// at the Kokkos Node type.  (Currently, the only GPU Node type we
+  /// provide is Kokkos::ThrustGPUNode.  All other types are CPU
+  /// Nodes.)  If the Kokkos Node is a GPU Node type, then views
   /// always reside in host (CPU) memory, rather than device (GPU)
   /// memory.  When you ask for a view, it copies data from the device
-  /// to the host.  What happens next depends on whether the view is
+  /// to the host.  
+  ///
+  /// What happens next to your view depends on whether the view is
   /// const (read-only) or nonconst (read and write).  Const views
-  /// disappear (their host memory is allocated) when the
-  /// corresponding (ArrayRCP's) reference count goes to zero.  When a
-  /// nonconst view's reference count goes to zero, the view's data
-  /// are copied back to device memory.
+  /// disappear (their host memory is deallocated) when the
+  /// corresponding reference count (of the ArrayRCP) goes to zero.
+  /// (Since the data were not changed, there is no need to update the
+  /// original copy on the device.)  When a nonconst view's reference
+  /// count goes to zero, the view's data are copied back to device
+  /// memory, thus "pushing" your changes on the host back to the
+  /// device.
   ///
   /// These device-host-device copy semantics on GPUs mean that we can
   /// only promise that a view is a snapshot of the multivector's data
@@ -195,13 +226,13 @@ namespace Tpetra {
   /// only, no GPU) Kokkos Nodes, views may be just encapsulated
   /// pointers to the data, so modifying a nonconst view will change
   /// the original data.  For GPU Nodes, modifying a nonconst view
-  /// will _not_ change the original data until the view's reference
-  /// count goes to zero.  Furthermore, if the nonconst view's
-  /// reference count never goes to zero, the nonconst view will
-  /// _never_ be copied back to device memory, and thus the original
-  /// data will never be changed.
+  /// will <i>not</i> change the original data until the view's
+  /// reference count goes to zero.  Furthermore, if the nonconst
+  /// view's reference count never goes to zero, the nonconst view
+  /// will <i>never</i> be copied back to device memory, and thus the
+  /// original data will never be changed.
   ///
-  /// \subsection Why data views? Why won't you give me a raw pointer?
+  /// \subsection Kokkos_MV_why_views Why won't you give me a raw pointer?
   ///
   /// Tpetra was designed to allow different data representations
   /// underneath the same interface.  This lets Tpetra run correctly
@@ -231,10 +262,10 @@ namespace Tpetra {
   /// memory, and you are working on the host CPU).  This is why we
   /// require accessing the data through views.
   ///
-  /// \subsection Why no operator[]?
+  /// \subsection Kokkos_MV_why_no_square_brackets Why no operator[]?
   ///
-  /// The above section also explains why we do not offer a Scalar&
-  /// operator[] to access each entry of a vector directly.  Direct
+  /// The above section also explains why we do not offer a <tt>Scalar&
+  /// operator[]</tt> to access each entry of a vector directly.  Direct
   /// access on GPUs would require implicitly creating an internal
   /// host copy of the device data.  This would consume host memory,
   /// and it would not be clear when to write the resulting host data
@@ -244,13 +275,40 @@ namespace Tpetra {
   /// expose what is expensive, by exposing data views and letting
   /// users control when to copy data between host and device.
   ///
-  /// \section Parallel distribution of data
+  /// \subsection Kokkos_MV_device_kernels How do I access the data directly?
   ///
-  /// A MultiVector is a DistObject; its rows are distributed over
-  /// processes in the input Map's communicator.  This means that you
-  /// may use Import and Export to migrate between different
-  /// distributions.  Please refer to the documentation of Map,
-  /// Import, and Export for more information.
+  /// "Directly" here means without views, using a device kernel if
+  /// the data reside on the GPU.
+  ///
+  /// There are two different options for direct access to the
+  /// multivector's data.  One is to use the optional RTI (Reduction /
+  /// Transformation Interface) subpackage of Tpetra.  You may enable
+  /// this at Trilinos configure time by setting the CMake Boolean
+  /// option \c Tpetra_ENABLE_RTI to \c ON.  Be aware that building
+  /// and using RTI requires that your C++ compiler support the
+  /// language features in the new C++11 standard.  RTI allows you to
+  /// implement arbitrary element-wise operations over a vector,
+  /// followed by arbitrary reductions over the elements of that
+  /// vector.  We recommend RTI for most users.
+  ///
+  /// Another option is to access the local data through its Kokkos
+  /// container data structure, Kokkos::MultiVector, and then use the
+  /// \ref kokkos_node_api "Kokkos Node API" to implement arbitrary
+  /// operations on the data.  We do not recommend this approach for
+  /// most users.  In particular, the local data structures are likely
+  /// to change over the next few releases.  If you find yourself
+  /// wanting to try this option, please contact the Tpetra developers
+  /// for recommendations.  We will be happy to work with you.
+  ///
+  /// \section Kokkos_MV_dist Parallel distribution of data
+  ///
+  /// A MultiVector's rows are distributed over processes in its (row)
+  /// Map's communicator.  A MultiVector is a DistObject; the Map of
+  /// the DistObject tells which process in the communicator owns
+  /// which rows.  This means that you may use Import and Export
+  /// operations to migrate between different distributions.  Please
+  /// refer to the documentation of Map, Import, and Export for more
+  /// information.
   ///
   /// MultiVector includes methods that perform parallel all-reduces.
   /// These include inner products and various kinds of norms.  All of
@@ -735,9 +793,16 @@ namespace Tpetra {
 
     /// \brief Indices of columns this multivector is viewing.
     ///
-    /// If this array has nonzero size, it contains the indices of
-    /// columns of another multivector, of which this multivector is a
-    /// view.
+    /// If this array has nonzero size, then this multivector is a
+    /// view of another multivector (the "original" multivector).  In
+    /// that case, whichVectors_ contains the indices of the columns
+    /// of the original multivector.  Furthermore, isConstantStride()
+    /// returns false in this case.
+    ///
+    /// If this array has zero size, then this multivector is not a
+    /// view of any other multivector.  Furthermore, the stride
+    /// between columns of this multivector is a constant: thus,
+    /// isConstantStride() returns true.
     Array<size_t> whichVectors_;
 
     //! @name View constructors, used only by nonmember constructors.

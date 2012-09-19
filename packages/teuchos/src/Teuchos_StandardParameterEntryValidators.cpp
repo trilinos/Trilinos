@@ -403,12 +403,9 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
   any anyValue = entry.getAny(true);
   TEUCHOS_TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string) ),
     Exceptions::InvalidParameterType,
-    "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+    "The \"" << paramName << "\"" <<
     " parameter in the \"" << sublistName << 
-    "\" sublist didn't quite work out." << std::endl << std::endl <<
-    "No need to fret though. I'm sure it's just a small mistake. "
-    "Maybe the information below "
-    "can help you figure out what went wrong." << std::endl << std::endl <<
+    "\" sublist is has an error." << std::endl << std::endl <<
     "Error: The value that you entered was the wrong type." << std::endl <<
     "Parameter: " << paramName << std::endl << 
     "Type specified: " << entryName << std::endl <<
@@ -418,14 +415,9 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
     std::string fileName = getValue<std::string>(entry);
     TEUCHOS_TEST_FOR_EXCEPTION(!std::ifstream(fileName.c_str()),
       Exceptions::InvalidParameterValue,
-      "Aww shoot! Sorry bud, but it looks like the \"" 
-      << paramName << "\"" <<
+      "The \"" << paramName << "\"" <<
       " parameter in the \"" << sublistName << 
-      "\" sublist didn't quite work out." << std::endl << 
-      "No need to fret though. I'm sure it's just a small mistake. " <<
-      "Maybe the information below "<<
-      "can help you figure out what went wrong." << 
-      std::endl << std::endl <<
+      "\" sublist is has an error." << std::endl << std::endl <<
       "Error: The file must already exists. The value you entered does " <<
       "not corresspond to an existing file name." << std::endl <<
       "Parameter: " << paramName << std::endl <<
@@ -488,12 +480,9 @@ void StringValidator::validate(
   const std::string &entryName = entry.getAny(false).typeName();
   TEUCHOS_TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string)) ,
     Exceptions::InvalidParameterType,
-    "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+    "The \"" << paramName << "\"" <<
     " parameter in the \"" << sublistName << 
-    "\" sublist didn't quite work out." << std::endl <<
-    "No need to fret though. I'm sure it's just a small mistake. " <<
-    "Maybe the information below "<<
-    "can help you figure out what went wrong." << std::endl << std::endl <<
+    "\" sublist is has an error." << std::endl << std::endl <<
     "Error: The value that you entered was the wrong type." <<
     "Parameter: " << paramName << std::endl <<
     "Type specified: " << entryName << std::endl <<
@@ -505,14 +494,9 @@ void StringValidator::validate(
       validStrings_->end(), getValue<std::string>(entry));
     TEUCHOS_TEST_FOR_EXCEPTION(it == validStrings_->end(),
       Exceptions::InvalidParameterValue,
-      "Aww shoot! Sorry bud, but it looks like the \""
-      << paramName << "\"" <<
+      "The \"" << paramName << "\"" <<
       " parameter in the \"" << sublistName << 
-      "\" sublist didn't quite work out." << std::endl <<
-      "No need to fret though. I'm sure it's just a small mistake. "
-      "Maybe the information below "
-      "can help you figure out what went wrong." <<
-      std::endl << std::endl <<
+      "\" sublist is has an error." << std::endl << std::endl <<
       "Error: The value that was entered doesn't fall with in "
       "the range set by the validator." <<
       "Parameter: " << paramName << std::endl <<

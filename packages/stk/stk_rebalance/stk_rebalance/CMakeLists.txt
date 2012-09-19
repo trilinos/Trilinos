@@ -42,6 +42,7 @@ ENDIF()
 TRIBITS_ADD_LIBRARY(
   stk_rebalance
   NOINSTALLHEADERS ${HEADERS}
+  DEPLIBS stk_util_env stk_mesh_base
   SOURCES ${SOURCES}
   )
 

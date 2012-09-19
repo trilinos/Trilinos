@@ -95,6 +95,7 @@
 #define DGEEV_F77   F77_BLAS_MANGLE(sgeev,SGEEV)
 #define DGESVD_F77  F77_BLAS_MANGLE(sgesvd,SGESVD)
 #define DGGEV_F77   F77_BLAS_MANGLE(sggev,SGGEV)
+#define DGEEVX_F77  F77_BLAS_MANGLE(sgeevx,SGEEVX)
 #define DGGEVX_F77  F77_BLAS_MANGLE(sggevx,SGGEVX)
 #define DGEHRD_F77  F77_BLAS_MANGLE(sgehrd,SGEHRD)
 #define DHSEQR_F77  F77_BLAS_MANGLE(shseqr,SHSEQR)
@@ -158,8 +159,9 @@
 #define ZGELSS_F77   F77_BLAS_MANGLE(zgelss,ZGELSS)
 #define ZGEEV_F77   F77_BLAS_MANGLE(cgeev,CGEEV)
 #define ZGESVD_F77  F77_BLAS_MANGLE(cgesvd,CGESVD)
-//#define ZGGEV_F77   F77_BLAS_MANGLE(cggev,CGGEV)
-//#define ZGGEVX_F77  F77_BLAS_MANGLE(cggevx,CGGEVX)
+#define ZGGEV_F77   F77_BLAS_MANGLE(cggev,CGGEV)
+#define ZGEEVX_F77  F77_BLAS_MANGLE(cgeevx,CGEEVX)
+#define ZGGEVX_F77  F77_BLAS_MANGLE(cggevx,CGGEVX)
 #define ZGEHRD_F77  F77_BLAS_MANGLE(cgehrd,CGEHRD)
 #define ZHSEQR_F77  F77_BLAS_MANGLE(chseqr,CHSEQR)
 #define ZTREVC_F77  F77_BLAS_MANGLE(ctrevc,CTREVC)
@@ -220,6 +222,7 @@
 #define DGEEV_F77   F77_BLAS_MANGLE(dgeev,DGEEV)
 #define DGESVD_F77  F77_BLAS_MANGLE(dgesvd,DGESVD)
 #define DGGEV_F77   F77_BLAS_MANGLE(dggev,DGGEV)
+#define DGEEVX_F77  F77_BLAS_MANGLE(dgeevx,DGEEVX)
 #define DGGEVX_F77  F77_BLAS_MANGLE(dggevx,DGGEVX)
 #define DGEHRD_F77  F77_BLAS_MANGLE(dgehrd,DGEHRD)
 #define DHSEQR_F77  F77_BLAS_MANGLE(dhseqr,DHSEQR)
@@ -280,8 +283,9 @@
 #define ZGELSS_F77   F77_BLAS_MANGLE(zgelss,ZGELSS)
 #define ZGEEV_F77   F77_BLAS_MANGLE(zgeev,ZGEEV)
 #define ZGESVD_F77   F77_BLAS_MANGLE(zgesvd,ZGESVD)
-//#define ZGGEV_F77   F77_BLAS_MANGLE(zggev,ZGGEV)
-//#define ZGGEVX_F77  F77_BLAS_MANGLE(zggevx,ZGGEVX)
+#define ZGGEV_F77   F77_BLAS_MANGLE(zggev,ZGGEV)
+#define ZGEEVX_F77  F77_BLAS_MANGLE(zgeevx,ZGEEVX)
+#define ZGGEVX_F77  F77_BLAS_MANGLE(zggevx,ZGGEVX)
 #define ZGEHRD_F77  F77_BLAS_MANGLE(zgehrd,ZGEHRD)
 #define ZHSEQR_F77  F77_BLAS_MANGLE(zhseqr,ZHSEQR)
 #define ZTREVC_F77  F77_BLAS_MANGLE(ztrevc,ZTREVC)
@@ -342,6 +346,7 @@
 #define DGEEV_F77   F77_BLAS_MANGLE(dgeev,DGEEV)
 #define DGESVD_F77  F77_BLAS_MANGLE(dgesvd,DGESVD)
 #define DGGEV_F77   F77_BLAS_MANGLE(dggev,DGGEV)
+#define DGEEVX_F77  F77_BLAS_MANGLE(dgeevx,DGEEVX)
 #define DGGEVX_F77  F77_BLAS_MANGLE(dggevx,DGGEVX)
 #define DGEHRD_F77  F77_BLAS_MANGLE(dgehrd,DGEHRD)
 #define DHSEQR_F77  F77_BLAS_MANGLE(dhseqr,DHSEQR)
@@ -404,8 +409,9 @@
 #define ZGELSS_F77   F77_BLAS_MANGLE(zgelss,ZGELSS)
 #define ZGEEV_F77   F77_BLAS_MANGLE(zgeev,ZGEEV)
 #define ZGESVD_F77   F77_BLAS_MANGLE(zgesvd,ZGESVD)
-//#define ZGGEV_F77   F77_BLAS_MANGLE(zggev,ZGGEV)
-//#define ZGGEVX_F77  F77_BLAS_MANGLE(zggevx,ZGGEVX)
+#define ZGGEV_F77   F77_BLAS_MANGLE(zggev,ZGGEV)
+#define ZGEEVX_F77  F77_BLAS_MANGLE(zgeevx,ZGEEVX)
+#define ZGGEVX_F77  F77_BLAS_MANGLE(zggevx,ZGGEVX)
 #define ZGEHRD_F77  F77_BLAS_MANGLE(zgehrd,ZGEHRD)
 #define ZHSEQR_F77  F77_BLAS_MANGLE(zhseqr,ZHSEQR)
 #define ZTREVC_F77  F77_BLAS_MANGLE(ztrevc,ZTREVC)
@@ -505,6 +511,7 @@
 #define DGEEV_F77   F77_BLAS_MANGLE(dgeev,DGEEV)
 #define DGESVD_F77  F77_BLAS_MANGLE(dgesvd,DGESVD)
 #define DGGEV_F77   F77_BLAS_MANGLE(dggev,DGGEV)
+#define DGEEVX_F77  F77_BLAS_MANGLE(dgeevx,DGEEVX)
 #define DGGEVX_F77  F77_BLAS_MANGLE(dggevx,DGGEVX)
 #define DGEHRD_F77  F77_BLAS_MANGLE(dgehrd,DGEHRD)
 #define DHSEQR_F77  F77_BLAS_MANGLE(dhseqr,DHSEQR)
@@ -568,8 +575,9 @@
 //#define ZGGLSE_F77  F77_BLAS_MANGLE(zgglse,ZGGLSE)
 #define ZGEEV_F77   F77_BLAS_MANGLE(zgeev,ZGEEV)
 #define ZGESVD_F77   F77_BLAS_MANGLE(zgesvd,ZGESVD)
-//#define ZGGEV_F77   F77_BLAS_MANGLE(zggev,ZGGEV)
-//#define ZGGEVX_F77  F77_BLAS_MANGLE(zggevx,ZGGEVX)
+#define ZGGEV_F77   F77_BLAS_MANGLE(zggev,ZGGEV)
+#define ZGEEVX_F77  F77_BLAS_MANGLE(zgeevx,ZGEEVX)
+#define ZGGEVX_F77  F77_BLAS_MANGLE(zggevx,ZGGEVX)
 #define ZGEHRD_F77  F77_BLAS_MANGLE(zgehrd,ZGEHRD)
 #define ZHSEQR_F77  F77_BLAS_MANGLE(zhseqr,ZHSEQR)
 #define ZTREVC_F77  F77_BLAS_MANGLE(ztrevc,ZTREVC)
@@ -627,6 +635,7 @@
 #define SGEEV_F77   F77_BLAS_MANGLE(sgeev,SGEEV)
 #define SGESVD_F77  F77_BLAS_MANGLE(sgesvd,SGESVD)
 #define SGGEV_F77   F77_BLAS_MANGLE(sggev,SGGEV)
+#define SGEEVX_F77  F77_BLAS_MANGLE(sgeevx,SGEEVX)
 #define SGGEVX_F77  F77_BLAS_MANGLE(sggevx,SGGEVX)
 #define SGEHRD_F77  F77_BLAS_MANGLE(sgehrd,SGEHRD)
 #define SHSEQR_F77  F77_BLAS_MANGLE(shseqr,SHSEQR)
@@ -692,8 +701,9 @@
 //#define CGGLSE_F77  F77_BLAS_MANGLE(cgglse,CGGLSE)
 #define CGEEV_F77   F77_BLAS_MANGLE(cgeev,CGEEV)
 #define CGESVD_F77  F77_BLAS_MANGLE(cgesvd,CGESVD)
-//#define CGGEV_F77   F77_BLAS_MANGLE(cggev,CGGEV)
-//#define CGGEVX_F77  F77_BLAS_MANGLE(cggevx,CGGEVX)
+#define CGGEV_F77   F77_BLAS_MANGLE(cggev,CGGEV)
+#define CGEEVX_F77  F77_BLAS_MANGLE(cgeevx,CGEEVX)
+#define CGGEVX_F77  F77_BLAS_MANGLE(cggevx,CGGEVX)
 #define CGEHRD_F77  F77_BLAS_MANGLE(cgehrd,CGEHRD)
 #define CHSEQR_F77  F77_BLAS_MANGLE(chseqr,CHSEQR)
 #define CTREVC_F77  F77_BLAS_MANGLE(ctrevc,CTREVC)
@@ -800,8 +810,10 @@ void PREFIX DSYEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, double* a, const i
 void PREFIX DSYGV_F77(const int* itype, Teuchos_fcd, Teuchos_fcd, const int* n, double* a, const int* lda, double* B, const int* ldb, double* w, double* work, const int* lwork, int* info);
 void PREFIX DSTEQR_F77(Teuchos_fcd, const int* n, double* D, double* E, double* Z, const int* ldz, double* work, int* info);
 void PREFIX DGEEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, double* a, const int* lda, double* wr, double* wi, double* vl, const int* ldvl, double* vr, const int* ldvr, double* work, const int* lwork, int* info);
+void PREFIX DGGEV_F77(Teuchos_fcd, Teuchos_fcd, const int *n, double *A, const int *lda, double *B, const int *ldb, double *alphar, double *alphai, double *beta, double *vl, const int *ldvl, double *vr, const int *ldvr, double *work, const int *lwork, int *info);
 void PREFIX DGESVD_F77(Teuchos_fcd, Teuchos_fcd, const int* m, const int* n, double* a, const int* lda, double* s, double* u, const int* ldu, double* v, const int* ldv, double* work, const int* lwork, int* info);
 void PREFIX DGGEVX_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, double* a, const int* lda, double* b, const int* ldb, double* alphar, double* alphai, double* beta, double* vl, const int* ldvl, double* vr, const int* ldvr, int* ilo, int* ihi, double* lscale, double* rscale, double* abnrm, double* bbnrm, double* rconde, double* rcondv, double* work, const int* lwork, int* iwork, int* bwork, int* info);
+void PREFIX DGEEVX_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, double* a, const int* lda, double* alphar, double* alphai, double* vl, const int* ldvl, double* vr, const int* ldvr, int* ilo, int* ihi, double* scale, double* abnrm, double* rconde, double* rcondv, double* work, const int* lwork, int* iwork, int* info);
 void PREFIX DGEHRD_F77(const int* n, const int* ilo, const int* ihi, double* A, const int* lda, double* tau, double* work, const int* lwork, int* info);
 void PREFIX DHSEQR_F77(Teuchos_fcd job, Teuchos_fcd, const int* n, const int* ilo, const int* ihi, double* h, const int* ldh, double* wr, double* wi, double* z, const int* ldz, double* work, const int* lwork, int* info);
 void PREFIX DGEES_F77(Teuchos_fcd, Teuchos_fcd, int (*ptr2func)(double*, double*), const int* n, double* a, const int* lda, int*sdim, double* wr, double* wi, double* vs, const int* ldvs, double* work, const int* lwork, int* bwork, int* info);
@@ -811,7 +823,6 @@ void PREFIX DORGQR_F77(const int* m, const int* n, const int* k, double* a, cons
 void PREFIX DORMQR_F77(Teuchos_fcd, Teuchos_fcd, const int* m, const int* n, const int* k, double* a, const int* lda, const double* tau, double* C, const int* ldc, double* work, const int* lwork, int* info);
 void PREFIX DTREVC_F77(Teuchos_fcd, Teuchos_fcd, int* select, const int* n, const double* t, const int* ldt, double* vl, const int* ldvl, double* vr, const int* ldvr, const int* mm, int* m, double* work, int* info);
 void PREFIX DTREXC_F77(Teuchos_fcd, const int* n, double* t, const int* ldt, double* q, const int* ldq, int* ifst, int* ilst, double* work, int* info);
-void PREFIX DGGEV_F77(Teuchos_fcd, Teuchos_fcd, const int *n, double *A, const int *lda, double *B, const int *ldb, double *alphar, double *alphai, double *beta, double *vl, const int *ldvl, double *vr, const int *ldvr, double *work, const int *lwork, int *info);
 
 
 // Single precision LAPACK eigen solvers
@@ -821,8 +832,10 @@ void PREFIX SSYEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, float* a, const in
 void PREFIX SSYGV_F77(const int* itype, Teuchos_fcd, Teuchos_fcd, const int* n, float* a, const int* lda, float* B, const int* ldb, float* w, float* work, const int* lwork, int* info);
 void PREFIX SSTEQR_F77(Teuchos_fcd, const int* n, float* D, float* E, float* Z, const int* ldz, float* work, int* info);
 void PREFIX SGEEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, float* a, const int* lda, float* wr, float* wi, float* vl, const int* ldvl, float* vr, const int* ldvr, float* work, const int* lwork, int* info);
+void PREFIX SGGEV_F77(Teuchos_fcd, Teuchos_fcd, const int *n, float *A, const int *lda, float *B, const int *ldb, float *alphar, float *alphai, float *beta, float *vl, const int *ldvl, float *vr, const int *ldvr, float *work, const int *lwork, int *info);
 void PREFIX SGESVD_F77(Teuchos_fcd, Teuchos_fcd, const int* m, const int* n, float* a, const int* lda, float* s, float* u, const int* ldu, float* v, const int* ldv, float* work, const int* lwork, int* info);
 void PREFIX SGGEVX_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, float* a, const int* lda, float* b, const int* ldb, float* alphar, float* alphai, float* beta, float* vl, const int* ldvl, float* vr, const int* ldvr, int* ilo, int* ihi, float* lscale, float* rscale, float* abnrm, float* bbnrm, float* rconde, float* rcondv, float* work, const int* lwork, int* iwork, int* bwork, int* info);
+void PREFIX SGEEVX_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, float* a, const int* lda, float* wr, float* wi, float* vl, const int* ldvl, float* vr, const int* ldvr, int* ilo, int* ihi, float* scale, float* abnrm, float* rconde, float* rcondv, float* work, const int* lwork, int* iwork, int* info);
 void PREFIX SGEHRD_F77(const int* n, const int* ilo, const int* ihi, float* A, const int* lda, float* tau, float* work, const int* lwork, int* info);
 void PREFIX SHSEQR_F77(Teuchos_fcd job, Teuchos_fcd, const int* n, const int* ilo, const int* ihi, float* h, const int* ldh, float* wr, float* wi, float* z, const int* ldz, float* work, const int* lwork, int* info);
 void PREFIX SGEES_F77(Teuchos_fcd, Teuchos_fcd, int (*ptr2func)(float*, float*), const int* n, float* a, const int* lda, int* sdim, float* wr, float* wi, float* vs, const int* ldvs, float* work, const int* lwork, int* bwork, int* info);
@@ -832,7 +845,6 @@ void PREFIX SORGQR_F77(const int* m, const int* n, const int* k, float* a, const
 void PREFIX SORMQR_F77(Teuchos_fcd, Teuchos_fcd, const int* m, const int* n, const int* k, float* a, const int* lda, const float* tau, float* C, const int* ldc, float* work, const int* lwork, int* info);
 void PREFIX STREVC_F77(Teuchos_fcd, Teuchos_fcd, int* select, const int* n, const float* t, const int* ldt, float* vl, const int* ldvl, float* vr, const int* ldvr, const int* mm, int* m, float* work, int* info);
 void PREFIX STREXC_F77(Teuchos_fcd, const int* n, float* t, const int* ldt, float* q, const int* ldq, int* ifst, int* ilst, float* work, int* info);
-void PREFIX SGGEV_F77(Teuchos_fcd, Teuchos_fcd, const int *n, float *A, const int *lda, float *B, const int *ldb, float *alphar, float *alphai, float *beta, float *vl, const int *ldvl, float *vr, const int *ldvr, float *work, const int *lwork, int *info);
 
 void PREFIX SLARTG_F77(const float* f, const float* g, float* c, float* s, float* r);
 void PREFIX DLARTG_F77(const double* f, const double* g, double* c, double* s, double* r);
@@ -953,8 +965,10 @@ void PREFIX ZSTEQR_F77(Teuchos_fcd, const int* n, double* D, double* E, std::com
 void PREFIX ZHEEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, std::complex<double>* a, const int* lda, double* w, std::complex<double>* work, const int* lwork, double* rwork, int* info);
 void PREFIX ZHEGV_F77(const int* itype, Teuchos_fcd, Teuchos_fcd, const int* n, std::complex<double>* a, const int* lda, std::complex<double>* B, const int* ldb, double* w, std::complex<double>* work, const int* lwork, double *rwork, int* info);
 void PREFIX ZGEEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, std::complex<double>* a, const int* lda, std::complex<double>* w, std::complex<double>* vl, const int* ldvl, std::complex<double>* vr, const int* ldvr, std::complex<double>* work, const int* lwork, double* rwork, int* info);
+void PREFIX ZGGEV_F77(Teuchos_fcd, Teuchos_fcd, const int *n, std::complex<double> *A, const int *lda, std::complex<double> *B, const int *ldb, std::complex<double> *alpha, double *beta, double *vl, const int *ldvl, double *vr, const int *ldvr, double *work, const int *lwork, double *rwork, int *info);
 void PREFIX ZGESVD_F77(Teuchos_fcd, Teuchos_fcd, const int* m, const int* n, std::complex<double>* a, const int* lda, double* s, std::complex<double>* u, const int* ldu, std::complex<double>* v, const int* ldv, std::complex<double>* work, const int* lwork, double* rwork, int* info);
-//void PREFIX ZGGEVX_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, std::complex<double>* a, const int* lda, std::complex<double>* b, const int* ldb, std::complex<double>* alpha, std::complex<double>* beta, std::complex<double>* vl, const int* ldvl, std::complex<double>* vr, const int* ldvr, int* ilo, int* ihi, double* lscale, double* rscale, double* abnrm, double* bbnrm, double* rconde, double* rcondv, std::complex<double>* work, const int* lwork, int* iwork, int* bwork, int* info);
+void PREFIX ZGGEVX_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, std::complex<double>* a, const int* lda, std::complex<double>* b, const int* ldb, std::complex<double>* alpha, std::complex<double>* beta, std::complex<double>* vl, const int* ldvl, std::complex<double>* vr, const int* ldvr, int* ilo, int* ihi, double* lscale, double* rscale, double* abnrm, double* bbnrm, double* rconde, double* rcondv, std::complex<double>* work, const int* lwork, double* rwork, int* iwork, int* bwork, int* info);
+void PREFIX ZGEEVX_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, std::complex<double>* a, const int* lda, std::complex<double>* w, std::complex<double>* vl, const int* ldvl, std::complex<double>* vr, const int* ldvr, int* ilo, int* ihi, double* scale, double* abnrm, double* rconde, double* rcondv, std::complex<double>* work, const int* lwork, double* rwork, int* info);
 void PREFIX ZGEHRD_F77(const int* n, const int* ilo, const int* ihi, std::complex<double>* A, const int* lda, std::complex<double>* tau, std::complex<double>* work, const int* lwork, int* info);
 void PREFIX ZHSEQR_F77(Teuchos_fcd job, Teuchos_fcd, const int* n, const int* ilo, const int* ihi, std::complex<double>* h, const int* ldh, std::complex<double>* w, std::complex<double>* z, const int* ldz, std::complex<double>* work, const int* lwork, int* info);
 void PREFIX ZGEES_F77(Teuchos_fcd, Teuchos_fcd, int (*ptr2func)(std::complex<double>*), const int* n, std::complex<double>* a, const int* lda, int* sdim, std::complex<double>* w, std::complex<double>* vs, const int* ldvs, std::complex<double>* work, const int* lwork, double* rwork, int* bwork, int* info);
@@ -966,9 +980,11 @@ void PREFIX ZTREXC_F77(Teuchos_fcd, const int* n, std::complex<double>* t, const
 void PREFIX CSTEQR_F77(Teuchos_fcd, const int* n, float* D, float* E, std::complex<float>* Z, const int* ldz, float* work, int* info);
 void PREFIX CHEEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, std::complex<float>* a, const int* lda, float* w, std::complex<float>* work, const int* lwork, float* rwork, int* info);
 void PREFIX CHEGV_F77(const int* itype, Teuchos_fcd, Teuchos_fcd, const int* n, std::complex<float>* a, const int* lda, std::complex<float>* B, const int* ldb, float* w, std::complex<float>* work, const int* lwork, float *rwork, int* info);
-void PREFIX CGEEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, std::complex<float>* a, const int* lda, std::complex<float>* wr, std::complex<float>* vl, const int* ldvl, std::complex<float>* vr, const int* ldvr, std::complex<float>* work, const int* lwork, float* rwork, int* info);
+void PREFIX CGEEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, std::complex<float>* a, const int* lda, std::complex<float>* w, std::complex<float>* vl, const int* ldvl, std::complex<float>* vr, const int* ldvr, std::complex<float>* work, const int* lwork, float* rwork, int* info);
+void PREFIX CGGEV_F77(Teuchos_fcd, Teuchos_fcd, const int *n, std::complex<float> *A, const int *lda, std::complex<float> *B, const int *ldb, std::complex<float> *alpha, std::complex<float> *beta, std::complex<float> *vl, const int *ldvl, std::complex<float> *vr, const int *ldvr, std::complex<float> *work, const int *lwork, float *rwork, int *info);
 void PREFIX CGESVD_F77(Teuchos_fcd, Teuchos_fcd, const int* m, const int* n, std::complex<float>* a, const int* lda, float* s, std::complex<float>* u, const int* ldu, std::complex<float>* v, const int* ldv, std::complex<float>* work, const int* lwork, float* rwork, int* info);
-//void PREFIX CGGEVX_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, std::complex<float>* a, const int* lda, std::complex<float>* b, const int* ldb, std::complex<float>* alpha, std::complex<float>* beta, std::complex<float>* vl, const int* ldvl, std::complex<float>* vr, const int* ldvr, int* ilo, int* ihi, float* lscale, float* rscale, float* abnrm, float* bbnrm, float* rconde, float* rcondv, std::complex<float>* work, const int* lwork, int* iwork, int* bwork, int* info);
+void PREFIX CGEEVX_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, std::complex<float>* a, const int* lda, std::complex<float>* w, std::complex<float>* vl, const int* ldvl, std::complex<float>* vr, const int* ldvr, int* ilo, int* ihi, float* scale, float* abnrm, float* rconde, float* rcondv, std::complex<float>* work, const int* lwork, float* rwork, int* info);
+void PREFIX CGGEVX_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, std::complex<float>* a, const int* lda, std::complex<float>* b, const int* ldb, std::complex<float>* alpha, std::complex<float>* beta, std::complex<float>* vl, const int* ldvl, std::complex<float>* vr, const int* ldvr, int* ilo, int* ihi, float* lscale, float* rscale, float* abnrm, float* bbnrm, float* rconde, float* rcondv, std::complex<float>* work, const int* lwork, float* rwork, int* iwork, int* bwork, int* info);
 void PREFIX CGEHRD_F77(const int* n, const int* ilo, const int* ihi, std::complex<float>* A, const int* lda, std::complex<float>* tau, std::complex<float>* work, const int* lwork, int* info);
 void PREFIX CHSEQR_F77(Teuchos_fcd job, Teuchos_fcd, const int* n, const int* ilo, const int* ihi, std::complex<float>* h, const int* ldh, std::complex<float>* w, std::complex<float>* z, const int* ldz, std::complex<float>* work, const int* lwork, int* info);
 void PREFIX CGEES_F77(Teuchos_fcd, Teuchos_fcd, int (*ptr2func)(std::complex<float>*), const int* n, std::complex<float>* a, const int* lda, int* sdim, std::complex<float>* w, std::complex<float>* vs, const int* ldvs, std::complex<float>* work, const int* lwork, float* rwork, int* bwork, int* info);

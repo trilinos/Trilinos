@@ -77,6 +77,10 @@
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_UseShortNames.hpp>  
 
+// Galeri
+#include <Galeri_XpetraParameters.hpp>
+#include <Galeri_XpetraMatrixFactory.hpp>
+
 int main(int argc,char * argv[])
 {
   using Teuchos::RCP;
@@ -102,7 +106,7 @@ int main(int argc,char * argv[])
 
   Teuchos::CommandLineProcessor clp(false); 
 
-  MueLu::Gallery::Parameters<int> matrixParameters(clp, 256); // manage parameters of the test case
+  Galeri::Xpetra::Parameters<int> matrixParameters(clp, 256); // manage parameters of the test case
   // Xpetra::Parameters              xpetraParameters(clp);   // manage parameters of xpetra
   Xpetra::UnderlyingLib lib = Xpetra::UseEpetra; // Epetra only for the moment
 
@@ -110,6 +114,7 @@ int main(int argc,char * argv[])
 
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+  case Teuchos::CommandLineProcessor::PARSE_ERROR:
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
@@ -132,7 +137,7 @@ int main(int argc,char * argv[])
   //   RCP<const Epetra_Vector> b = rcp(ptrb);
   
   RCP<const Map> map = MapFactory::createUniformContigMap(lib, matrixParameters.GetNumGlobalElements(), comm);
-  RCP<const Epetra_CrsMatrix> A = MueLu::Gallery::CreateCrsMatrix<double, int, int, Map,  Xpetra::EpetraCrsMatrix>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList())->getEpetra_CrsMatrix();
+  RCP<const Epetra_CrsMatrix> A = Galeri::Xpetra::CreateCrsMatrix<double, int, int, Map,  Xpetra::EpetraCrsMatrix>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList())->getEpetra_CrsMatrix();
 
   //
   // Allocate vectors

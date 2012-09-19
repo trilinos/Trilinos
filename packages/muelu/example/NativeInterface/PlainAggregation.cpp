@@ -55,6 +55,10 @@
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_DirectSolver.hpp"
 
+// Galeri
+#include <Galeri_XpetraParameters.hpp>
+#include <Galeri_XpetraMatrixFactory.hpp>
+
 // Define template parameters
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
@@ -75,12 +79,14 @@ int main(int argc, char *argv[]) {
   //
 
   Teuchos::CommandLineProcessor  clp(false);
-  MueLu::Gallery::Parameters<GO> matrixParameters(clp, 81); // manage parameters of the test case
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 81); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);     // manage parameters of xpetra
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+  case Teuchos::CommandLineProcessor::PARSE_ERROR:
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
+  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   default:;
   }
   
@@ -97,7 +103,7 @@ int main(int argc, char *argv[]) {
   RCP<const Map> map = MapFactory::Build(lib, matrixParameters.GetNumGlobalElements(), 0, comm);
 
   // Matrix
-  RCP<Operator> A = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Operator> A = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
 
   // User defined nullspace
   RCP<MultiVector> nullSpace = VectorFactory::Build(map,1); nullSpace->putScalar((SC) 1.0);

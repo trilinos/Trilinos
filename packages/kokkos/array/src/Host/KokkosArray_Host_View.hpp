@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//              Copyright (2012) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
@@ -63,7 +63,9 @@ void View< DataType , LayoutType , Host >::internal_private_create(
   const std::string & label ,
   const View< DataType , LayoutType , Host >::shape_type shape )
 {
-  const size_t count = Impl::allocation_count( shape );
+  typedef typename View< DataType , LayoutType , Host >::shape_type shape_type ;
+
+  const size_t count = Impl::ShapeMap<shape_type>::allocation_count( shape );
 
   oper_type::m_shape = shape ;
   oper_type::m_ptr_on_device = (value_type *)

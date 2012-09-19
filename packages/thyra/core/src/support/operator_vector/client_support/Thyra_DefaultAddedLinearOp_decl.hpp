@@ -215,43 +215,6 @@ public:
 
   //@}
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-  /** \brief Deprecated. */
-  //@{
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED DefaultAddedLinearOp(
-    const int numOps,
-    const RCP<const LinearOpBase<Scalar> > Ops[]
-    );
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED DefaultAddedLinearOp(
-    const int numOps,
-    const RCP<LinearOpBase<Scalar> > Ops[]
-    );
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED void initialize(
-    const int numOps_in,
-    const RCP<LinearOpBase<Scalar> > Ops[]
-    )
-    {
-      initialize(Teuchos::arrayView(Ops, numOps_in));
-    }
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED void initialize(
-    const int numOps_in,
-    const RCP<const LinearOpBase<Scalar> > Ops[]
-    )
-    {
-      initialize(Teuchos::arrayView(Ops, numOps_in));
-    }
-
-  //@}
-
-#endif // THYRA_HIDE_DEPRECATED_CODE
 protected:
 
   /** @name Overridden from LinearOpBase */

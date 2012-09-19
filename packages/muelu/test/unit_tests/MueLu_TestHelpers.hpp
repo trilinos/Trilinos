@@ -70,9 +70,9 @@
 #include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_Level.hpp"
 
-// Gallery
-#include "MueLu_MatrixFactory.hpp"
-#include "MueLu_MatrixTypes.hpp"
+// Galeri
+#include "Galeri_XpetraMatrixFactory.hpp"
+#include "Galeri_XpetraMatrixTypes.hpp"
 
 #include "MueLu_NoFactory.hpp"
 
@@ -163,7 +163,7 @@ namespace MueLuTests {
 
         RCP<const Map> map = MapFactory::Build(lib, numGlobalElements, 0, comm);
 
-        RCP<Operator> Op = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>(matrixType,map,matrixList);
+        RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>(matrixType,map,matrixList);
         return Op;
       } // BuildMatrix()
 

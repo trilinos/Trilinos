@@ -43,6 +43,9 @@
 // ***********************************************************************
 //
 // @HEADER
+
+// WARNING: This code is experimental. Backwards compatibility should not be expected.
+
 #include "Xpetra_ConfigDefs.hpp"
 
 #ifdef HAVE_XPETRA_EPETRA

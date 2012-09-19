@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//              Copyright (2012) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
@@ -56,7 +56,7 @@ namespace KokkosArray {
 namespace Impl {
 
 //----------------------------------------------------------------------------
-/** \brief  The shape of a Kokkos Array with dynamic and static dimensions.
+/** \brief  The shape of a KokkosArray with dynamic and static dimensions.
  *          Dynamic dimensions are member values and static dimensions are
  *          'static const' values.
  *
@@ -1120,12 +1120,12 @@ struct SubShape< Shape< Layout, ValueSize, 1, 0 > ,
       assert_shape_bounds( src , span.first );
       assert_shape_bounds( src , span.second - 1 );
       shape.N0     = span.second - span.first ;
-      shape.Stride = src.Stride ;
+      shape.Stride = 1 ;
       offset       = span.first ;
     }
     else {
       shape.N0     = 0 ;
-      shape.Stride = src.Stride ;
+      shape.Stride = 1 ;
       offset       = 0 ;
     }
   }

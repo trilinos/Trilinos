@@ -37,7 +37,8 @@
 #include "Sacado_ConfigDefs.h"
 
 // Define some math functions that aren't usually in cmath
-#ifndef HAS_C99_TR1_CMATH
+#define HAS_GXX_CMATH_11 defined(_GLIBCXX_USE_C99_MATH_TR1) && defined(__GXX_EXPERIMENTAL_CXX0X__)
+#if !( HAS_GXX_CMATH_11 || defined(HAS_C99_TR1_CMATH) || defined(USER_DISABLE_SACADO_TR1_CMATH) )
 namespace std {
   inline float acosh(float x) { 
     return std::log(x + std::sqrt(x*x - float(1.0))); }

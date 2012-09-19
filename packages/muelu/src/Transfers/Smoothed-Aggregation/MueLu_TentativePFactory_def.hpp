@@ -363,7 +363,7 @@ namespace MueLu {
          // end default case (myAggSize >= NSDim)
       } else {  // sepcial handling for myAggSize < NSDim (i.e. 1pt nodes)
         // construct R by hand, i.e. keep first myAggSize rows untouched
-        GetOStream(Warnings0,0) << "TentativePFactory (WARNING): aggregate with " << myAggSize << " DOFs and nullspace dim " << NSDim << ". special handling of QR decomposition." << std::endl;
+        //GetOStream(Warnings0,0) << "TentativePFactory (WARNING): aggregate with " << myAggSize << " DOFs and nullspace dim " << NSDim << ". special handling of QR decomposition." << std::endl;
 
         // copy initial localQR values in temporary variable
         ArrayRCP<SC> tmplocalQR(localQRsize);

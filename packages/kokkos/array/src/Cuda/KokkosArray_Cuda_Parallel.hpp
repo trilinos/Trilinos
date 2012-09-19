@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 //
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//              Copyright (2012) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -97,11 +97,8 @@ Cuda::size_type cuda_internal_maximum_warp_count();
 Cuda::size_type cuda_internal_maximum_grid_count();
 Cuda::size_type cuda_internal_maximum_shared_words();
 
-Cuda::size_type cuda_internal_stream_count();
-cudaStream_t &  cuda_internal_stream( Cuda::size_type );
-
-Cuda::size_type * cuda_internal_reduce_multiblock_scratch_space();
-Cuda::size_type * cuda_internal_reduce_multiblock_scratch_flag();
+Cuda::size_type * cuda_internal_scratch_flags( Cuda::size_type count );
+Cuda::size_type * cuda_internal_scratch_space( Cuda::size_type count );
 
 template< typename ValueType >
 inline

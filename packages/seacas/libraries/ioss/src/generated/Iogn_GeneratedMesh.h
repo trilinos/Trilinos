@@ -32,7 +32,9 @@
 
 #ifndef IOSS_Iogn_GeneratedMesh_h
 #define IOSS_Iogn_GeneratedMesh_h
+
 #include <string>
+#include <map>
 #include <vector>
 #include <stdint.h>
 #include <iostream>
@@ -480,11 +482,24 @@ namespace Iogn {
     bool doRotation;
   };
 
-class CustomMesh : public GeneratedMesh
+class DashSurfaceMesh : public GeneratedMesh
 {
 public:
-    CustomMesh() { }
-    virtual ~CustomMesh() { }
+    enum {
+        INVALID                 = -1,
+        SPATIAL_DIMENSION       =  3,
+        NUM_NODES_PER_QUAD_FACE =  4
+    };
+
+    explicit DashSurfaceMesh(const std::vector<double>    &coordinates,
+                        const std::vector< int64_t > &quadSurface1,
+                        const std::vector< int64_t > &quadSurface2)
+    : mCoordinates(coordinates),
+      mQuadSurface1(quadSurface1),
+      mQuadSurface2(quadSurface2)
+    {}
+
+    virtual ~DashSurfaceMesh() { }
 
     virtual int64_t node_count() const;
     virtual int64_t node_count_proc() const;
@@ -513,6 +528,11 @@ public:
     virtual void element_map(int64_t block_number, MapVector &map) const;
     virtual void element_map(MapVector &map) const;
     virtual void element_map(IntVector &map) const;
+
+    const std::vector<double>    &mCoordinates;
+    const std::vector< int64_t > &mQuadSurface1;
+    const std::vector< int64_t > &mQuadSurface2;
+
 };
 }
 #endif

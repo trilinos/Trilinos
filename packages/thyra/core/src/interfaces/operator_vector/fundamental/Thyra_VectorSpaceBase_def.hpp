@@ -98,20 +98,6 @@ VectorSpaceBase<Scalar>::clone() const
   return Teuchos::null;
 }
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-// Deprecated
-
-template<class Scalar>
-void VectorSpaceBase<Scalar>::scalarProds(
-  const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
-  Scalar scalarProds_out[]
-  ) const
-{
-  this->scalarProds( X, Y,
-    Teuchos::arrayView(scalarProds_out, X.domain()->dim()) );
-}
-
-#endif // THYRA_HIDE_DEPRECATED_CODE
 
 } // end namespace Thyra
 

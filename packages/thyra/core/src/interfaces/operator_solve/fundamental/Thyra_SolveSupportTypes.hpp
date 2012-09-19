@@ -376,27 +376,6 @@ std::ostream& operator<<(std::ostream &out, const SolveCriteria<Scalar> &solveCr
   return out;
 }
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-/** \brief Deprecated.
- *
- * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
- */
-template <class Scalar>
-struct THYRA_DEPRECATED BlockSolveCriteria {
-  /** \brief Solve tolerance struct */
-  SolveCriteria<Scalar> solveCriteria;
-  /** \brief Number of RHS that solve tolerance applies to. */
-  int                     numRhs;
-  /** \brief . */
-  BlockSolveCriteria()
-    : solveCriteria(), numRhs(1)
-    {}
-  /** \brief . */
-  BlockSolveCriteria( const SolveCriteria<Scalar> &_solveCriteria, int _numRhs )
-    : solveCriteria(_solveCriteria), numRhs(_numRhs)
-    {}
-};
-#endif // THYRA_HIDE_DEPRECATED_CODE
 
 /** \brief Exception type thrown on an catastrophic solve failure.
  *
@@ -615,25 +594,6 @@ void accumulateSolveStatus(
     overallSolveStatus->extraParameters = solveStatus.extraParameters;
 }
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-/** \brief Deprecated.
- *
- * \relates SolveStatus
- */
-template <class Scalar>
-THYRA_DEPRECATED
-void accumulateSolveStatus(
-  const SolveCriteria<Scalar>, // ToDo: Never used, need to take this out!
-  const SolveStatus<Scalar> &solveStatus,
-  SolveStatus<Scalar> *overallSolveStatus
-  )
-{
-  accumulateSolveStatus(
-    SolveCriteria<Scalar>(),
-    solveStatus, Teuchos::ptr(overallSolveStatus)
-    );
-}
-#endif // THYRA_HIDE_DEPRECATED_CODE
 
 } // namespace Thyra
 

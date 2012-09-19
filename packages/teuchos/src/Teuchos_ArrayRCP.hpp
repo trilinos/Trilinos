@@ -490,15 +490,6 @@ ArrayView<T> ArrayRCP<T>::operator()() const
 
 // Implicit conversions
 
-#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
-
-template<class T> inline
-ArrayRCP<T>::operator ArrayView<T>() const
-{
-  return this->operator()();
-}
-
-#endif // TEUCHOS_HIDE_DEPRECATED_CODE
 
 template<class T> inline
 ArrayRCP<T>::operator ArrayRCP<const T>() const

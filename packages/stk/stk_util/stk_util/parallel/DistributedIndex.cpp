@@ -12,8 +12,6 @@
 #include <limits>
 #include <stdint.h>
 
-#include <stk_util/environment/ReportHandler.hpp>
-
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/DistributedIndex.hpp>
 
@@ -619,7 +617,9 @@ void DistributedIndex::update_keys(
                     m_key_usage.end() );
 
   // Check invariant that m_key_usage is sorted
-  ThrowAssertMsg( is_sorted_and_unique(m_key_usage), "Sorted&unique invariant violated!" );
+  if (!is_sorted_and_unique(m_key_usage)) {
+    throw std::runtime_error( "Sorted&unique invariant violated!" );
+  }
 }
 
 //----------------------------------------------------------------------

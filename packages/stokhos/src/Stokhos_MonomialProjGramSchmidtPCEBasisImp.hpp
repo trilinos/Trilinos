@@ -58,11 +58,15 @@ getName() const
 template <typename ordinal_type, typename value_type>
 ordinal_type
 Stokhos::MonomialProjGramSchmidtPCEBasis<ordinal_type, value_type>::
-buildReducedBasis(ordinal_type max_p, const SDM& A, const SDM& F,
-		  const Teuchos::Array<value_type>& weights, 
-		  Teuchos::Array< Teuchos::Array<ordinal_type> >& terms_,
-		  Teuchos::Array<ordinal_type>& num_terms_,
-		  SDM& Qp_, SDM& Q_)
+buildReducedBasis(
+  ordinal_type max_p, 
+  const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& A, 
+  const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& F,
+  const Teuchos::Array<value_type>& weights, 
+  Teuchos::Array< Teuchos::Array<ordinal_type> >& terms_,
+  Teuchos::Array<ordinal_type>& num_terms_,
+  Teuchos::SerialDenseMatrix<ordinal_type,value_type>& Qp_, 
+  Teuchos::SerialDenseMatrix<ordinal_type,value_type>& Q_)
 {
   // Compute basis terms -- 2-D array giving powers for each linear index
   ordinal_type max_sz;

@@ -71,69 +71,6 @@ MultiVectorBase<Scalar>::clone() const
   return this->clone_mv();
 }
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-//
-// Deprecated public function
-//
-
-
-template<class Scalar>
-void MultiVectorBase<Scalar>::applyOp(
-  const RTOpPack::RTOpT<Scalar> &primary_op,
-  const int num_multi_vecs,
-  const MultiVectorBase<Scalar>*const multi_vecs_in[],
-  const int num_targ_multi_vecs,
-  MultiVectorBase<Scalar>*const targ_multi_vecs_inout[],
-  RTOpPack::ReductTarget*const reduct_objs_inout[],
-  const Ordinal primary_global_offset
-  ) const
-{
-  Array<Ptr<const MultiVectorBase<Scalar> > > multi_vecs;
-  for (int k = 0; k < num_multi_vecs; ++k)
-    multi_vecs.push_back(Teuchos::ptr(multi_vecs_in[k]));
-  Array<Ptr<MultiVectorBase<Scalar> > > targ_multi_vecs;
-  for (int k = 0; k < num_targ_multi_vecs; ++k)
-    targ_multi_vecs.push_back(Teuchos::ptr(targ_multi_vecs_inout[k]));
-  Array<Ptr<RTOpPack::ReductTarget> > reduct_objs;
-  if (reduct_objs_inout) {
-    const int secondary_sub_dim = ( num_multi_vecs
-      ? multi_vecs[0]->domain() : targ_multi_vecs[0]->domain()
-      )->dim();
-    for (int k = 0; k < secondary_sub_dim; ++k)
-      reduct_objs.push_back(Teuchos::ptr(reduct_objs_inout[k]));
-  }
-  mvMultiReductApplyOpImpl(
-    primary_op,
-    multi_vecs, targ_multi_vecs,
-    reduct_objs, primary_global_offset);
-}
-
-
-template<class Scalar>
-void MultiVectorBase<Scalar>::applyOp(
-  const RTOpPack::RTOpT<Scalar> &primary_op,
-  const RTOpPack::RTOpT<Scalar> &secondary_op,
-  const int num_multi_vecs,
-  const MultiVectorBase<Scalar>*const multi_vecs_in[],
-  const int num_targ_multi_vecs,
-  MultiVectorBase<Scalar>*const targ_multi_vecs_inout[],
-  RTOpPack::ReductTarget* reduct_obj,
-  const Ordinal primary_global_offset
-  ) const
-{
-  Array<Ptr<const MultiVectorBase<Scalar> > > multi_vecs;
-  for (int k = 0; k < num_multi_vecs; ++k)
-    multi_vecs.push_back(Teuchos::ptr(multi_vecs_in[k]));
-  Array<Ptr<MultiVectorBase<Scalar> > > targ_multi_vecs;
-  for (int k = 0; k < num_targ_multi_vecs; ++k)
-    targ_multi_vecs.push_back(Teuchos::ptr(targ_multi_vecs_inout[k]));
-  mvSingleReductApplyOpImpl(
-    primary_op, secondary_op,
-    multi_vecs, targ_multi_vecs,
-    Teuchos::ptr(reduct_obj),
-    primary_global_offset);
-}
-#endif // THYRA_HIDE_DEPRECATED_CODE
 
 } // end namespace Thyra
 

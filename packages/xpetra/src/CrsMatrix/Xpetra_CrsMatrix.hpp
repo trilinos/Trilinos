@@ -51,6 +51,7 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
 #include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_RowMatrix.hpp"
 #include "Xpetra_DistObject.hpp"
 #include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_Vector.hpp"
@@ -59,7 +60,7 @@ namespace Xpetra {
 
   template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
   class CrsMatrix
-    : public DistObject< char, LocalOrdinal, GlobalOrdinal, Node > // TODO : public RowMatrix<>
+    : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>, public DistObject<char, LocalOrdinal,GlobalOrdinal,Node>
   {
 
   public:

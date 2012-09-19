@@ -212,22 +212,6 @@ public:
 
   //@}
 
-#ifndef THYRA_HIDE_DEPRECATED_CODE
-  /** @name Deprecated */
-  //@{
-
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED void getLocalData( Scalar** localValues, Ordinal* stride );
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED void commitLocalData( Scalar* localValues );
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED void getLocalData( const Scalar** localValues, Ordinal* stride ) const;
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED void freeLocalData( const Scalar* localValues ) const;
-
-  //@}
-
-#endif // THYRA_HIDE_DEPRECATED_CODE
 protected:
 
   /** \name Protected pure virtual functions to be overridden */

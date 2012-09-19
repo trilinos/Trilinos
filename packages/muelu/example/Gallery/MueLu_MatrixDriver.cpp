@@ -58,8 +58,8 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
-#include <MueLu_GalleryParameters.hpp>
-#include <MueLu_MatrixFactory.hpp> // TODO: rename MueLu Gallery
+#include <Galeri_XpetraParameters.hpp>
+#include <Galeri_XpetraMatrixFactory.hpp> 
 
 /*
   This driver simply generates a Tpetra matrix, prints it to screen, and exits.
@@ -87,10 +87,11 @@ int main(int argc, char** argv)
   // Note: use --help to list available options.
   Teuchos::CommandLineProcessor clp(false);
   
-  MueLu::Gallery::Parameters<GO> matrixParameters(clp);   // manage parameters of the test case
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp);   // manage parameters of the test case
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+  case Teuchos::CommandLineProcessor::PARSE_ERROR:
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
@@ -102,7 +103,7 @@ int main(int argc, char** argv)
   /* CREATE INITAL MATRIX                                                           */
   /**********************************************************************************/
   RCP<const Tpetra::Map<LO,GO> > map = rcp( new Tpetra::Map<LO,GO>(matrixParameters.GetNumGlobalElements(), 0, comm) );
-  RCP<Tpetra::CrsMatrix<SC,LO,GO> > A = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Tpetra::Map<LO,GO>, Tpetra::CrsMatrix<SC,LO,GO> >(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Tpetra::CrsMatrix<SC,LO,GO> > A = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Tpetra::Map<LO,GO>, Tpetra::CrsMatrix<SC,LO,GO> >(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
 
   /**********************************************************************************/
   /*                                                                                */

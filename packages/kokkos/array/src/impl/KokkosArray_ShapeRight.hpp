@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//              Copyright (2012) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
@@ -52,17 +52,41 @@
 namespace KokkosArray {
 namespace Impl {
 
-template < unsigned ValueSize , unsigned Rank ,
-           unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 ,
-           unsigned s4 , unsigned s5 , unsigned s6 , unsigned s7 >
-inline
-size_t allocation_count(
-  const Shape<LayoutRight,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> & shape )
+template < unsigned ValueSize >
+struct ShapeMap< Shape<LayoutRight,ValueSize,0> >
 {
-  return shape.N0 * shape.Stride ;
-}
+  typedef Shape<LayoutRight,ValueSize,0> shape_type ;
 
-//----------------------------------------------------------------------------
+  static inline
+  size_t allocation_count( const shape_type & ) { return 1 ; }
+
+  static inline
+  size_t offset( const shape_type & ) { return 0 ; }
+
+  template< class MemorySpace >
+  static inline
+  size_t stride( const shape_type & ) { return 1 ; }
+};
+
+template < unsigned ValueSize , unsigned s0 >
+struct ShapeMap< Shape<LayoutRight,ValueSize,1,s0> >
+{
+  typedef Shape<LayoutRight,ValueSize,1,s0> shape_type ;
+
+  static inline
+  size_t allocation_count( const shape_type & shape ) { return shape.N0 ; }
+
+  static inline
+  size_t offset( const shape_type & shape , const size_t i0 )
+  { assert_shape_bounds( shape, i0 ); return i0 ; }
+
+  // Stride is not used, hard-code to '1' for interoperability
+  // with other rank-1 arrays.
+  template< class MemorySpace >
+  static inline
+  size_t stride( const shape_type & ) { return 1 ; }
+};
+
 
 template < unsigned ValueSize , unsigned Rank ,
            unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 ,
@@ -72,9 +96,13 @@ struct ShapeMap< Shape<LayoutRight,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> >
   typedef Shape<LayoutRight,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> shape_type ;
 
   static inline
+  size_t allocation_count( const shape_type & shape )
+  { return shape.N0 * shape.Stride ; }
+
+  static inline
   size_t offset(
     const shape_type & shape ,
-    const size_t i0 = 0 , const size_t i1 = 0 ,
+    const size_t i0     , const size_t i1     ,
     const size_t i2 = 0 , const size_t i3 = 0 ,
     const size_t i4 = 0 , const size_t i5 = 0 ,
     const size_t i6 = 0 , const size_t i7 = 0 )

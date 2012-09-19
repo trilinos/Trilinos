@@ -3,6 +3,8 @@ INCLUDE(TribitsCopyFilesToBinaryDir)
 INCLUDE(XpetraAddTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
+IF ({PACKAGE_NAME}_ENABLE_Galeri)
+
 #
 #
 #
@@ -89,4 +91,6 @@ IF((${PACKAGE_NAME}_ENABLE_Stratimikos) AND
     COMM serial mpi
     )
   
+ENDIF()
+
 ENDIF()

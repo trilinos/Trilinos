@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
   int maxsubspace = 50;      // maximum number of blocks the solver can use for the subspace
   int maxrestarts = 15;      // number of restarts allowed 
   std::string filename("orsirr1.hb");
-  std::string precond("none");
+  std::string precond("right");
   MT tol = 1.0e-5;           // relative residual tolerance
   MT polytol = tol/10;       // relative residual tolerance for polynomial construction 
 
@@ -167,8 +167,7 @@ int main(int argc, char *argv[]) {
     assert(Prec != Teuchos::null);
 
     // specify parameters for ILU
-    ifpackList.set("fact: drop tolerance", 1e-9);
-    ifpackList.set("fact: ilut level-of-fill", 1.0);
+    ifpackList.set("fact: level-of-fill", 1);
     // the combine mode is on the following:
     // "Add", "Zero", "Insert", "InsertAdd", "Average", "AbsMax"
     // Their meaning is as defined in file Epetra_CombineMode.h

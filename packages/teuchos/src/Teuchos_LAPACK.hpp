@@ -341,7 +341,16 @@ namespace Teuchos
     //! Computes for an \c n by \c n real nonsymmetric matrix \c A, the eigenvalues and, optionally, the left and/or right eigenvectors.
     void GEEV(const char JOBVL, const char JOBVR, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* WR, ScalarType* WI, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
-    //! Computes for a pair of \c n by \c n nonsymmetric matrices (\c A,\c B) the generalized eigenvalues, and optionally, the left and/or right generalized eigenvectors.
+    /*! Computes for an \c n by \c n real nonsymmetric matrix \c A, the eigenvalues and, optionally, the left and/or right eigenvectors.
+        Optionally, it can compute a balancing transformation to improve the conditioning of the eigenvalues and eigenvectors.
+        \note (This is the function is only defined for \c ScalarType = \c float or \c double.)
+    */
+    void GEEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* WR, ScalarType* WI, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, OrdinalType* ilo, OrdinalType* ihi, MagnitudeType* SCALE, MagnitudeType* abnrm, MagnitudeType* RCONDE, MagnitudeType* RCONDV, ScalarType* WORK, const OrdinalType lwork, OrdinalType* IWORK, OrdinalType* info) const;
+
+    /*! Computes for a pair of \c n by \c n nonsymmetric matrices (\c A,\c B) the generalized eigenvalues, and optionally, the left and/or right generalized eigenvectors.
+        Optionally, it can compute a balancing transformation to improve the conditioning of the eigenvalues and eigenvectors.
+        \note (This is the function is only defined for \c ScalarType = \c float or \c double.)
+    */
     void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, MagnitudeType* ALPHAR, MagnitudeType* ALPHAI, ScalarType* BETA, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, OrdinalType* ilo, OrdinalType* ihi, MagnitudeType* LSCALE, MagnitudeType* RSCALE, MagnitudeType* abnrm, MagnitudeType* bbnrm, MagnitudeType* RCONDE, MagnitudeType* RCONDV, ScalarType* WORK, const OrdinalType lwork, OrdinalType* IWORK, OrdinalType* BWORK, OrdinalType* info) const;
 
     /*! Computes for a pair of \c n by \c n nonsymmetric matrices (\c A,\c B) the generalized eigenvalues, and optionally, the left and/or right generalized eigenvectors.
@@ -802,6 +811,12 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType, ScalarType>::GEEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* WR, ScalarType* WI, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, OrdinalType* ilo, OrdinalType* ihi, MagnitudeType* SCALE, MagnitudeType* abnrm, MagnitudeType* RCONDE, MagnitudeType* RCONDV, ScalarType* WORK, const OrdinalType lwork, OrdinalType* IWORK, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, MagnitudeType* S, ScalarType* U, const OrdinalType ldu, ScalarType* V, const OrdinalType ldv, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
@@ -1007,6 +1022,7 @@ namespace Teuchos
     void GEES(const char JOBVS, const char SORT, int (*ptr2func)(float*, float*), const int n, float* A, const int lda, int* sdim, float* WR, float* WI, float* VS, const int ldvs, float* WORK, const int lwork, int* BWORK, int* info) const;
     void GEES(const char JOBVS, const int n, float* A, const int lda, int* sdim, float* WR, float* WI, float* VS, const int ldvs, float* WORK, const int lwork, float* RWORK, int* BWORK, int* info) const;
     void GEEV(const char JOBVL, const char JOBVR, const int n, float* A, const int lda, float* WR, float* WI, float* VL, const int ldvl, float* VR, const int ldvr, float* WORK, const int lwork, int* info) const;
+    void GEEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, float* A, const int lda, float* WR, float* WI, float* VL, const int ldvl, float* VR, const int ldvr, int* ilo, int* ihi, float* SCALE, float* abnrm, float* RCONDE, float* RCONDV, float* WORK, const int lwork, int* IWORK, int* info) const;
     void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, float* A, const int lda, float* B, const int ldb, float* ALPHAR, float* ALPHAI, float* BETA, float* VL, const int ldvl, float* VR, const int ldvr, int* ilo, int* ihi, float* LSCALE, float* RSCALE, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, float* WORK, const int lwork, int* IWORK, int* BWORK, int* info) const;
     void GGEV(const char JOBVL, const char JOBVR, const int n, float *A, const int lda, float *B, const int ldb, float *ALPHAR, float *ALPHAI, float *BETA, float *VL, const int ldvl, float *VR, const int ldvr, float *WORK, const int lwork, int *info) const;
 
@@ -1122,6 +1138,7 @@ namespace Teuchos
     void GEES(const char JOBVS, const char SORT, int (*ptr2func)(double*, double*), const int n, double* A, const int lda, int* sdim, double* WR, double* WI, double* VS, const int ldvs, double* WORK, const int lwork, int* BWORK, int* info) const;
     void GEES(const char JOBVS, const int n, double* A, const int lda, int* sdim, double* WR, double* WI, double* VS, const int ldvs, double* WORK, const int lwork, double* RWORK, int* BWORK, int* info) const;
     void GEEV(const char JOBVL, const char JOBVR, const int n, double* A, const int lda, double* WR, double* WI, double* VL, const int ldvl, double* VR, const int ldvr, double* WORK, const int lwork, int* info) const;
+    void GEEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, double* A, const int lda, double* WR, double* WI, double* VL, const int ldvl, double* VR, const int ldvr, int* ilo, int* ihi, double* SCALE, double* abnrm, double* RCONDE, double* RCONDV, double* WORK, const int lwork, int* IWORK, int* info) const;
     void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, double* A, const int lda, double* B, const int ldb, double* ALPHAR, double* ALPHAI, double* BETA, double* VL, const int ldvl, double* VR, const int ldvr, int* ilo, int* ihi, double* LSCALE, double* RSCALE, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, double* WORK, const int lwork, int* IWORK, int* BWORK, int* info) const;
     void GGEV(const char JOBVL, const char JOBVR, const int n, double *A, const int lda, double *B, const int ldb, double *ALPHAR, double *ALPHAI, double *BETA, double *VL, const int ldvl, double *VR, const int ldvr, double *WORK, const int lwork, int *info) const;
 
@@ -1235,7 +1252,9 @@ namespace Teuchos
     void GEES(const char JOBVS, const char SORT, int (*ptr2func)(std::complex<float>*), const int n, std::complex<float>* A, const int lda, int* sdim, std::complex<float>* W, std::complex<float>* VS, const int ldvs, std::complex<float>* WORK, const int lwork, float* RWORK, int* BWORK, int* info) const;
     void GEES(const char JOBVS, const int n, std::complex<float>* A, const int lda, int* sdim, float* WR, float* WI, std::complex<float>* VS, const int ldvs, std::complex<float>* WORK, const int lwork, float* RWORK, int* BWORK, int* info) const;
     void GEEV(const char JOBVL, const char JOBVR, const int n, std::complex<float>* A, const int lda, std::complex<float>* W, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, std::complex<float>* WORK, const int lwork, float* RWORK, int* info) const;
-//    void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, float* ALPHAR, float* ALPHAI, std::complex<float>* BETA, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, int* ilo, int* ihi, float* LSCALE, float* RSCALE, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, std::complex<float>* work, const int lwork, int* IWORK, int* BWORK, int* info) const;
+    void GEEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<float>* A, const int lda, std::complex<float>* W, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, int* ilo, int* ihi, float* SCALE, float* abnrm, float* RCONDE, float* RCONDV, std::complex<float>* WORK, const int lwork, float* RWORK, int* info) const;
+    void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, std::complex<float>* ALPHA, std::complex<float>* BETA, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, int* ilo, int* ihi, float* LSCALE, float* RSCALE, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, std::complex<float>* WORK, const int lwork, float * RWORK, int* IWORK, int* BWORK, int* info) const;
+    void GGEV(const char JOBVL, const char JOBVR, const int n, std::complex<float> *A, const int lda, std::complex<float> *B, const int ldb, std::complex<float>* ALPHA, std::complex<float>* BETA, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, std::complex<float> *WORK, const int lwork, float* RWORK, int* info) const;
 
     // SVD routine
     void GESVD(const char JOBU, const char JOBVT, const int m, const int n, std::complex<float>* A, const int lda, float* S, std::complex<float>* U, const int ldu, std::complex<float>* V, const int ldv, std::complex<float>* WORK, const int lwork, float* RWORK, int* info) const;
@@ -1332,7 +1351,9 @@ namespace Teuchos
     void GEES(const char JOBVS, const char SORT, int (*ptr2func)(std::complex<double>*), const int n, std::complex<double>* A, const int lda, int* sdim, std::complex<double>* W, std::complex<double>* VS, const int ldvs, std::complex<double>* WORK, const int lwork, double* RWORK, int* BWORK, int* info) const;
     void GEES(const char JOBVS, const int n, std::complex<double>* A, const int lda, int* sdim, double* WR, double* WI, std::complex<double>* VS, const int ldvs, std::complex<double>* WORK, const int lwork, double* RWORK, int* BWORK, int* info) const;
     void GEEV(const char JOBVL, const char JOBVR, const int n, std::complex<double>* A, const int lda, std::complex<double>* W, std::complex<double>* VL, const int ldvl, std::complex<double>* VR, const int ldvr, std::complex<double>* WORK, const int lwork, double* RWORK, int* info) const;
-//    void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, double* ALPHAR, double* ALPHAI, std::complex<double>* BETA, std::complex<double>* VL, const int ldvl, std::complex<double>* VR, const int ldvr, int* ilo, int* ihi, double* LSCALE, double* RSCALE, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, std::complex<double>* work, const int lwork, int* IWORK, int* BWORK, int* info) const;
+    void GEEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<double>* A, const int lda, std::complex<double>* W, std::complex<double>* VL, const int ldvl, std::complex<double>* VR, const int ldvr, int* ilo, int* ihi, double* SCALE, double* abnrm, double* RCONDE, double* RCONDV, std::complex<double>* WORK, const int lwork, double* RWORK, int* info) const;
+    void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, std::complex<double>* ALPHA, std::complex<double>* BETA, std::complex<double>* VL, const int ldvl, std::complex<double>* VR, const int ldvr, int* ilo, int* ihi, double* LSCALE, double* RSCALE, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, std::complex<double>* work, const int lwork, double* RWORK, int* IWORK, int* BWORK, int* info) const;
+    void GGEV(const char JOBVL, const char JOBVR, const int n, std::complex<double> *A, const int lda, std::complex<double> *B, const int ldb, std::complex<double>* ALPHA, std::complex<double>* BETA, std::complex<double>* VL, const int ldvl, std::complex<double>*VR, const int ldvr, std::complex<double> *WORK, const int lwork, double* RWORK, int* info) const;
 
     // SVD routine
     void GESVD(const char JOBU, const char JOBVT, const int m, const int n, std::complex<double>* A, const int lda, double* S, std::complex<double>* U, const int ldu, std::complex<double>* V, const int ldv, std::complex<double>* WORK, const int lwork, double* RWORK, int* info) const;

@@ -54,6 +54,8 @@
 #include "md_getsubopt.h"               // for md_getsubopt
 
 namespace {
+  void print_usage(void);
+
   const std::string remove_extension(const std::string &filename)
   {
     // Strip off the extension
@@ -1931,3 +1933,32 @@ int check_inp_specs(std::string &exoII_inp_file,
   return 1;
 
 } /*-------------------End check_inp_specs()-----------------*/
+
+namespace {
+  void print_usage(void)
+  {
+    printf("\n");
+    printf("usage:\t%s [-h] [<-n|-e> -o <output file>", UTIL_NAME);
+    printf(" -m <machine description>\n");
+    printf("\t -l <load bal description> -s <eigen solver specs>\n");
+    printf("\t -w <weighting options> -g <group list> -f]\n");
+    printf("\t [-a <ascii file>] exoII_file\n\n");
+    printf(" -n\t\tperform a nodal based load balance\n");
+    printf(" -e\t\tperform an elemental based load balance\n");
+    printf(" -o NemI file\toutput NemesisI load-balance file name\n");
+    printf(" -m mach desc\tdescription of the machine to load balance for\n");
+    printf(" -l LB data\tload balance specifications\n");
+    printf(" -s Eigen specs\tEigen solver specifications\n");
+    printf(" -w weighting\tweighting specs for load balance\n");
+    printf(" -g groupings\tgrouping specifications for load balance\n");
+    printf(" -f\t\tuse face definition of adjacency\n");
+    printf(" -p\t\tuse partial definition of adjacency: \n");
+    printf("   \t\trequire only 3 matching quad face nodes\n");
+    printf("\t\t  OR\n");
+    printf(" -h\t\tusage information\n");
+    printf("\t\t  OR\n");
+    printf(" -a ascii file\tget info from ascii input file name\n");
+
+    return;
+  }
+}

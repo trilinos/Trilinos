@@ -63,6 +63,7 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 TRIBITS_ADD_LIBRARY(
 	stk_percept
 	HEADERS	${HEADERS}
+  DEPLIBS stk_mesh_fem stk_io_util stk_util_diag stk_search stk_expreval
 	SOURCES ${SOURCES}
 )
 
