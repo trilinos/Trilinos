@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//              Copyright (2012) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,17 +35,31 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 */
 
-#include <iostream>
+/* src/Intrepid_config.h.in.  Generated from configure.ac by autoheader.  */
 
-namespace Test {
+/* Define if want to build with intrepid enabled */
+#define HAVE_INTREPID_AMESOS
 
-void poisson_tpi(int , int , int ) { }
+/* Define if want to build with amesos enabled */
+/* #undef HAVE_INTREPID_AMESOS_UMFPACK */
 
-}
+/* Define if want to build intrepid-debug */
+/* #undef HAVE_INTREPID_DEBUG */
 
+/* Define if want to build intrepid-debug with inf and nan checking */
+/* #undef HAVE_INTREPID_DEBUG_INF_CHECK */
+
+/* Define if want to build with intrepid enabled */
+#define HAVE_INTREPID_EPETRA
+
+/* Define if want to build with intrepid enabled */
+#define HAVE_INTREPID_EPETRAEXT
+
+/* Define if want to build with intrepid enabled */
+/* #undef HAVE_INTREPID_SACADO */

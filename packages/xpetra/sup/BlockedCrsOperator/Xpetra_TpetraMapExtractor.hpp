@@ -50,6 +50,8 @@
  *      Author: wiesner
  */
 
+// WARNING: This code is experimental. Backwards compatibility should not be expected.
+
 #ifndef XPETRA_TPETRAMAPEXTRACTOR_HPP_
 #define XPETRA_TPETRAMAPEXTRACTOR_HPP_
 

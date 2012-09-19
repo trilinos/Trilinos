@@ -631,8 +631,9 @@ template<typename metric_t>
   }
 
   if (haveFname){
-    std::ofstream *oFile = new std::ofstream;
+    std::ofstream *oFile = NULL;
     if (iPrint){
+      oFile = new std::ofstream;
       std::string newFname;
       addNumberToFileName(rank, fname, newFname);
       try{

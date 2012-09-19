@@ -43,6 +43,9 @@
 // ***********************************************************************
 //
 // @HEADER
+
+// WARNING: This code is experimental. Backwards compatibility should not be expected.
+
 #ifndef XPETRA_STRIDEDMAPFACTORY_HPP
 #define XPETRA_STRIDEDMAPFACTORY_HPP
 

@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//              Copyright (2012) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,72 +35,58 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 */
 
-
 namespace Test {
 
-//Assume operatorIntegral, output is rank 3 , fields is rank 4 (contractFieldVector)
-template <class Scalar , class DeviceType >
-struct Integrate; 
+template< typename Scalar , class DeviceType>
+struct computeCellMeasure;
 
-template<class Scalar >
-struct Integrate<Scalar , KOKKOSARRAY_MACRO_DEVICE >
-{
-	typedef KOKKOSARRAY_MACRO_DEVICE 		device_type;
-	typedef device_type::size_type 		size_type;
-	
-	typedef typename KokkosArray::MDArrayView<Scalar,device_type> array_type;
-	typedef typename KokkosArray::MDArrayView<Scalar,KokkosArray::DeviceHost> host_array;
-	
-  private:
-	
-	array_type output;
-	array_type left;
-	array_type right;  
+template<typename Scalar>
+struct computeCellMeasure<Scalar, KOKKOSARRAY_MACRO_DEVICE>{
 
-	int numLeft;
-	int numRight;
-	int numPoints;
-	int dim;
-	
-  public:
-  
-	Integrate(	array_type 			& arg_output , 
-				const array_type	& arg_left ,
-				const array_type	& arg_right  ) : output(arg_output) , left(arg_left) , right(arg_right)
-	{
-		numLeft = left.dimension(1);
-		numRight = right.dimension(1);
-		numPoints = left.dimension(2);
-		dim = left.dimension(3);
-		if(output.rank() == 2) numLeft = 1;
+	typedef KOKKOSARRAY_MACRO_DEVICE     							device_type ;
+  	typedef typename KokkosArray::MDArrayView<Scalar,device_type> 	array_type ;
+
+	array_type inDet;
+	array_type inWeights;
+	array_type outVals;
+
+  	computeCellMeasure(	array_type & arg_outVals,
+						array_type & arg_inDet, 
+						array_type & arg_inWeights):
+		inDet		(arg_inDet), 
+		inWeights	(arg_inWeights), 
+		outVals		(arg_outVals)
+	{}
+
+
+	KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  	void operator()( int ielem )const {
+
+		for(unsigned int point = 0; point < outVals.dimension(1); point++){
+
+			outVals(ielem, point) = inDet(ielem, point) * inWeights(point);
+			
+		}// for, cubature
+
+		if(inDet(ielem, 0) < 0.0){			
+
+			for(unsigned int point = 0; point < outVals.dimension(1); point++){
+
+				outVals(ielem, point) *= -1;
+		
+			}// for, point
+
+		}// if
+
 	}
-  	
-  	//Assume compEngine is COMP_CPP, sumInto = false
-  	KOKKOSARRAY_MACRO_DEVICE_FUNCTION
-  	void operator()(size_type ielem) const 
-  	{
-		for (int lbf = 0; lbf < numLeft; lbf++) {
-        	for (int rbf = 0; rbf < numRight; rbf++) {
-            	Scalar tmpVal(0);
-              		for (int qp = 0; qp < numPoints; qp++) {
-                		for (int iVec = 0; iVec < dim; iVec++) {
-                  			tmpVal += left(ielem, lbf, qp, iVec)*right(ielem, rbf, qp, iVec);
-		                } //D-loop
-        		      } // P-loop
-           	   output(ielem, lbf, rbf) = tmpVal;
-	        } // R-loop
-		} // L-loop
-  	}
 
-};
+}; // struct
 
+} // namespace
 
-
-
-} // namespace Test

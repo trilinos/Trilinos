@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//              Copyright (2012) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,58 +35,17 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 */
 
+#include <iostream>
+
 namespace Test {
 
-template< typename Scalar , class DeviceType>
-struct computeCellMeasure;
+void poisson_tpi(int , int , int ) { }
 
-template<typename Scalar>
-struct computeCellMeasure<Scalar, KOKKOSARRAY_MACRO_DEVICE>{
-
-	typedef KOKKOSARRAY_MACRO_DEVICE     							device_type ;
-  	typedef typename KokkosArray::MDArrayView<Scalar,device_type> 	array_type ;
-
-	array_type inDet;
-	array_type inWeights;
-	array_type outVals;
-
-  	computeCellMeasure(	array_type & arg_outVals,
-						array_type & arg_inDet, 
-						array_type & arg_inWeights):
-		inDet		(arg_inDet), 
-		inWeights	(arg_inWeights), 
-		outVals		(arg_outVals)
-	{}
-
-
-	KOKKOSARRAY_MACRO_DEVICE_FUNCTION
-  	void operator()( int ielem )const {
-
-		for(unsigned int point = 0; point < outVals.dimension(1); point++){
-
-			outVals(ielem, point) = inDet(ielem, point) * inWeights(point);
-			
-		}// for, cubature
-
-		if(inDet(ielem, 0) < 0.0){			
-
-			for(unsigned int point = 0; point < outVals.dimension(1); point++){
-
-				outVals(ielem, point) *= -1;
-		
-			}// for, point
-
-		}// if
-
-	}
-
-}; // struct
-
-} // namespace
+}
 

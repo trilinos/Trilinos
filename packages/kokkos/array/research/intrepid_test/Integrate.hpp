@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//              Copyright (2012) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
@@ -46,10 +46,10 @@ namespace Test {
 
 //Assume operatorIntegral, output is rank 3 , fields is rank 4 (contractFieldVector)
 template <class Scalar , class DeviceType >
-struct FuncIntegrate; 
+struct Integrate; 
 
 template<class Scalar >
-struct FuncIntegrate<Scalar , KOKKOSARRAY_MACRO_DEVICE >
+struct Integrate<Scalar , KOKKOSARRAY_MACRO_DEVICE >
 {
 	typedef KOKKOSARRAY_MACRO_DEVICE 		device_type;
 	typedef device_type::size_type 		size_type;
@@ -70,7 +70,7 @@ struct FuncIntegrate<Scalar , KOKKOSARRAY_MACRO_DEVICE >
 	
   public:
   
-	FuncIntegrate(	array_type 			& arg_output , 
+	Integrate(	array_type 			& arg_output , 
 				const array_type	& arg_left ,
 				const array_type	& arg_right  ) : output(arg_output) , left(arg_left) , right(arg_right)
 	{
@@ -78,6 +78,7 @@ struct FuncIntegrate<Scalar , KOKKOSARRAY_MACRO_DEVICE >
 		numRight = right.dimension(1);
 		numPoints = left.dimension(2);
 		dim = left.dimension(3);
+		if(output.rank() == 2) numLeft = 1;
 	}
   	
   	//Assume compEngine is COMP_CPP, sumInto = false
