@@ -486,7 +486,7 @@ MpiComm<Ordinal>::MpiComm(const MpiComm<Ordinal>& other)
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
     "Teuchos::MpiComm copy constructor: MPI_Comm_dup failed with error \""
     << mpiErrorCodeToString (err) << "\".");
-  rawMpiComm_ = opaqueWrapper (newComm);
+  rawMpiComm_ = opaqueWrapper (newComm,MPI_Comm_free);
   setupMembersFromComm();
 }
 
@@ -1122,8 +1122,8 @@ MpiComm<Ordinal>::split(const int color, const int key) const
     return RCP< Comm<Ordinal> >();
   } else {
     return rcp(new MpiComm<Ordinal>(
-      rcp_implicit_cast<const OpaqueWrapper<MPI_Comm> >( opaqueWrapper(newComm) )
-      ) );
+                   rcp_implicit_cast<const OpaqueWrapper<MPI_Comm> >( 
+                                     opaqueWrapper(newComm,MPI_Comm_free))));
   }
 }
 
@@ -1181,8 +1181,8 @@ MpiComm<Ordinal>::createSubcommunicator(const ArrayView<const int> &ranks) const
     return RCP< Comm<Ordinal> >();
   } else {
     return rcp(new MpiComm<Ordinal>(
-      rcp_implicit_cast<const OpaqueWrapper<MPI_Comm> >( opaqueWrapper(newComm) )
-      ));
+                   rcp_implicit_cast<const OpaqueWrapper<MPI_Comm> >(
+                                     opaqueWrapper(newComm,MPI_Comm_free))));
   }
 }
 
