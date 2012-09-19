@@ -99,6 +99,7 @@ SET(MY_CXXFLAGS "-m64")
 
 # MPI info; needed for mpirun; also need this in path.
 set(MY_MPI "/usr/lib64/openmpi/1.4-gcc")
+set(TPL_ENABLE_MPI ON)
 
 set(TDD_HTTP_PROXY "http://sonproxy.sandia.gov:80/")
 
