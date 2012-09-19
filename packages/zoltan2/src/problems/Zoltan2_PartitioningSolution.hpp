@@ -1525,10 +1525,10 @@ template <typename Adapter>
       // Avoid binary search.
       double fProcs = comm_->getSize();
       double fParts = nGlobalParts_;
-      double each = floor(fParts / fProcs);
-      procMin = partId * each;
-      while (procDist_[procMin+1] <= partId) procMin++;
+      double each = fParts / fProcs;
+      procMin = int(partId / each);
       while (procDist_[procMin] > partId) procMin--;
+      while (procDist_[procMin+1] <= partId) procMin++;
       procMax = procMin;
     }
     else {

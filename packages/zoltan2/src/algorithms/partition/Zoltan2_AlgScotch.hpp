@@ -251,7 +251,8 @@ void AlgPTScotch(
   SCOTCH_stratInit(&stratstr);
 
   // Allocate & initialize PTScotch data structure.
-  SCOTCH_Dgraph *gr = SCOTCH_dgraphAlloc();  // Scotch distributed graph
+  //SCOTCH_Dgraph *gr = SCOTCH_dgraphAlloc();  // Scotch distributed graph
+  SCOTCH_Dgraph *gr = new SCOTCH_Dgraph;  // Scotch distributed graph
   ierr = SCOTCH_dgraphInit(gr, mpicomm);
 
   env->globalInputAssertion(__FILE__, __LINE__, "SCOTCH_dgraphInit", 
@@ -342,6 +343,7 @@ void AlgPTScotch(
 
   // Clean up PTScotch
   SCOTCH_dgraphExit(gr);
+  delete gr;
   SCOTCH_stratExit(&stratstr);
 
   // Load answer into the solution.
