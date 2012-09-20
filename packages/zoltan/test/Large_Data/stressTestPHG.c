@@ -73,7 +73,6 @@
 #include <getopt.h>
 #include <stdint.h>
 #include <math.h>
-#include <values.h>
 #include <sys/time.h>
 #include "zz_const.h"
 
