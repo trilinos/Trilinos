@@ -1187,7 +1187,7 @@ MpiComm<Ordinal>::createSubcommunicator(const ArrayView<const int> &ranks) const
   } else {
     return rcp(new MpiComm<Ordinal>(
                    rcp_implicit_cast<const OpaqueWrapper<MPI_Comm> >(
-                                     opaqueWrapper(newComm, MPI_Comm_free))));
+                                     opaqueWrapper(newComm,MPI_Comm_free))));
   }
 }
 
