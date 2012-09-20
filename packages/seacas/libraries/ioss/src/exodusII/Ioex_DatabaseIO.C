@@ -904,10 +904,6 @@ namespace Ioex {
       // all... Sync value among processors since could have a
       // corrupt step on only a single database.
       last_time = util().global_minmax(last_time, Ioss::ParallelUtils::DO_MIN);
-
-      // Increase value slightly in case there is some small
-      // roundoff and to allow for floating point equality issues.
-      last_time *= 1.0001;
     }
 
     // Only add states that are less than or equal to the
