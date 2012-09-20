@@ -37,9 +37,6 @@ C=======================================================================
 C=======================================================================
 
 C   --*** DBIEB1 *** (EXOLIB) Read database element block misc.
-C   --   Written by Amy Gilkey - revised 10/14/87
-C   --   Modified by Greg Sjaardema - 8/8/90
-C   --      ---Removed MAX from Dimension statements, Added NATRDM, NLNKDM
 C   --
 C   --DBIEB1 reads the element block connectivity and attribute information
 C   --from the database.  An error message is displayed if the end of file
@@ -70,7 +67,9 @@ C   --   *      - OUT - return statement if end of file or read error
       REAL ATRIB(NATRDM,*)
 
       IF ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'C') .GT. 0)) THEN
-         call exgelc(ndb, ielb, link, ierr)
+        if (numelb .gt. 0 .and. numlnk .gt. 0) then
+          call exgelc(ndb, ielb, link, ierr)
+        end if
       END IF
 
       IF ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'A') .GT. 0)) THEN
