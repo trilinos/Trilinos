@@ -481,12 +481,15 @@ MpiComm<Ordinal>::MpiComm(const MpiComm<Ordinal>& other)
 {
   TEUCHOS_TEST_FOR_EXCEPT(other.getRawMpiComm().get() == NULL);
   TEUCHOS_TEST_FOR_EXCEPT(*other.getRawMpiComm() == MPI_COMM_NULL);
+/*
   MPI_Comm newComm;
   const int err = MPI_Comm_dup (*other.getRawMpiComm(), &newComm);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
     "Teuchos::MpiComm copy constructor: MPI_Comm_dup failed with error \""
     << mpiErrorCodeToString (err) << "\".");
   rawMpiComm_ = opaqueWrapper (newComm,MPI_Comm_free);
+*/
+  rawMpiComm_ = other.rawMpiComm_;
   setupMembersFromComm();
 }
 
