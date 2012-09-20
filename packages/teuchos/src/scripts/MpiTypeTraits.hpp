@@ -5,18 +5,18 @@
 /// \section Teuchos_MpiTypeTraits_Summary Summary
 ///
 /// For a given C++ type Packet, this traits class tells you:
-/// 1. The corresponding MPI_Datatype and size (i.e., number of
+/// 1. The corresponding MPI_Datatype and count (i.e., number of
 ///    contiguous instances of that MPI_Datatype).  These tell MPI how
-///    to send and receive objects of type Packet.
+///    to send and receive objects of type \c Packet.
 /// 2. Whether the MPI_Datatype is a <i>basic</i> or <i>derived</i>
 ///    type.  Derived types must be freed after use, by calling
 ///    MPI_Type_free().  Basic types need not and must not be freed
 ///    after use.
-/// 3. Whether the MPI_Datatype and size are valid for all instances
+/// 3. Whether the MPI_Datatype and count are valid for all instances
 ///    of Packet on an MPI process, at all times in the program, on
-///    all MPI processes.  (These are three separate conditions.
-///    See the \ref Teuchos_MpiTypeTraits_Three "Three consistency conditions" 
-///    section for details.)
+///    all MPI processes.  (These are three separate conditions.  See
+///    Section \ref Teuchos_MpiTypeTraits_Three ("Three consistency
+///    conditions") for details.)
 ///
 /// This class is meant mainly for Trilinos packages such as Tpetra
 /// and Zoltan2, that use Comm (Teuchos' MPI wrapper) to communicate
@@ -28,23 +28,26 @@
 /// <tt> MpiTypeTraits<Packet> </tt> will not compile.  We provide
 /// specializations for many commonly used C++ types, including all
 /// standard built-in integer and floating-point types.  However, you
-/// must specialize any C++ Packet types we do not cover.  Be sure to
-/// check this header file for the list of specializations that we
-/// provide.  Duplicating an existing specialization will result in an
-/// error either at compile time or link time.
+/// must write a specialization for any \c Packet types we do not
+/// cover.  Be sure to check this header file for the list of
+/// specializations that we provide.  Duplicating an existing
+/// specialization will result in an error either at compile time or
+/// link time.
 ///
 /// \section Teuchos_MpiTypeTraits_Prereq Prerequisites
 ///
 /// In order to understand this documentation, you must first be
 /// familiar with MPI (the Message Passing Interface).  In particular,
-/// you should be aware that MPI uses an MPI_Datatype and a size to
+/// you should be aware that MPI uses an MPI_Datatype and a count to
 /// refer to the type and amount of data being sent, received, or
 /// accumulated in a communication operation.  You should understand
 /// that some MPI_Datatypes ("derived" ones) need to be freed after
 /// use by calling MPI_Type_free(), and others ("basic" ones, which
 /// come predefined by the MPI standard) need not and must not be
-/// freed in this way.  Finally, you should read the documentation of
-/// OpaqueWrapper.
+/// freed in this way.  Finally, you should know what an opaque handle
+/// is in the context of MPI, that MPI_Datatype is an example of an
+/// opaque handle, and that you can use Teuchos' OpaqueWrapper to
+/// handle opaque handles safely.
 ///
 /// \section Teuchos_MpiTypeTraits_What What is an MPI_Datatype?
 ///
@@ -94,9 +97,9 @@
 ///
 /// \section Teuchos_MpiTypeTraits_Three Three consistency conditions
 ///
-/// The MPI_Datatype and size corresponding to many built-in C++ \c
-/// Packet types, like \c int or \c double, have the pleasant property
-/// that they are valid for
+/// The MPI_Datatype and count corresponding to many built-in C++
+/// <tt>Packet</tt> types, like \c int or \c double, have the pleasant
+/// property that they are valid for
 /// 1. all <i>instances</i> of Packet on an MPI process,
 /// 2. at all <i>times</i> in an execution of the program,
 /// 3. on all <i>MPI processes</i>.
@@ -104,29 +107,34 @@
 /// These conditions do not hold for all \c Packet types.  This
 /// matters because in order for MPI to send, receive, or perform
 /// collectives correctly on objects of type \c Packet, the
-/// MPI_Datatypes and sizes must be consistent on all participating
+/// MPI_Datatypes and counts must be consistent on all participating
 /// processes.  (Note that we didn't say "the same," only
 /// "consistent."  It's possible to have different MPI_Datatypes on
-/// the sender and receiver; this is useful for doing things like
+/// the sender and receiver.  This is useful for doing things like
 /// transposing a matrix.  Read an MPI book for more examples.)
 ///
 /// The problem is that the receiving process needs to know how many
-/// data there are, and how to receive it.  If the MPI_Datatype and
-/// size are the same on both sender and receiver, the sender and
+/// data there are, and how to receive them.  If the MPI_Datatype and
+/// count are consistent on both sender and receiver, the sender and
 /// receiver need not coordinate, other than to do the actual send or
 /// receive.  Otherwise, correct communication requires coordination.
-/// For example, if the sizes differ on each end but the MPI_Datatypes
-/// do not, then one of the following must take place.  Either
-/// - the sending process sends two messages, first the size and then
+/// For example, if the counts differ on each end but the MPI_Datatype
+/// instances on each end are consistent, then one of the following
+/// must take place.  Either
+/// - the sending process sends two messages, first the count and then
 ///   the actual object, or
 /// - the sender sends without coordination, the receiving process
-///   executes a probe (MPI_Probe() or MPI_Iprobe()) to figure out the
-///   size, and then it receives the message.
+///   probes (via MPI_Probe) to figure out the count, and then it
+///   receives the message.
 ///
 /// The same problem can happen if the MPI_Datatypes are not
-/// consistent, even if the sizes are.  Both of these coordination
+/// consistent, even if the counts are.  Both of these coordination
 /// options cost convenience and performance.  Thus, it's important to
-/// know in advance whether coordination is necessary.  
+/// know in advance whether coordination is necessary.  Furthermore,
+/// coordination affects the ability to do nonblocking communication.
+/// For example, since an MPI_Irecv can't start without the message
+/// count, the receiver must block on the message containing the count
+/// before it can start the MPI_Irecv.
 ///
 /// \subsection Teuchos_MpiTypeTraits_Three_Ex Examples violating the consistency conditions
 ///
@@ -135,11 +143,11 @@
 ///
 /// The C++ Standard Library class <tt>std::string</tt> violates all
 /// three consistency conditions.  Different strings may have
-/// different lengths (#1), the length of an individual
-/// <tt>std::string</tt> instance may change (#2), and therefore of
-/// course, different strings may differ in length on different
-/// processes (#3).  We see that in general, violation of either #1 or
-/// #2 implies violation of #3.
+/// different lengths (and thus different counts of <tt>MPI_CHAR</tt>)
+/// (#1), the length of an individual <tt>std::string</tt> instance
+/// may change (#2), and therefore of course, different strings may
+/// differ in length on different processes (#3).  We see that in
+/// general, violation of either #1 or #2 implies violation of #3.
 ///
 /// Each instance of the arbitrary-precision real type provided by the
 /// MPFR library may have a different precision.  The precision is set
@@ -173,7 +181,9 @@
 /// to heterogeneous processors or compilers.  For example, our
 /// provided specializations of MpiTypeTraits assume that on all MPI
 /// processes, for all built-in C++ \c Packet types,
-/// <tt>sizeof(Packet)</tt> has the same value.
+/// <tt>sizeof(Packet)</tt> has the same value.  (This excludes
+/// built-in C++ types which have a size guaranteed by the language
+/// standard, such as \c char, \c float, and \c double.)
 ///
 /// It is technically possible to run on clusters with heterogeneous
 /// nodes, such that <tt>sizeof(Packet)</tt> for types such as \c
@@ -208,22 +218,19 @@
 ///   Different \c Packet instances may still have different sizes,
 ///   depending on whether \c globallyConsistent is true.
 ///
-/// If \c globallyConsistent is true, then the MPI_Datatype and size
+/// If \c globallyConsistent is true, then the MPI_Datatype and count
 /// returned by makeType() may be used to communicate \c Packet
-/// instances, without prior coordination of size information.  The
-/// sending process need not send the size first in a separate
+/// instances, without prior coordination of count information.  The
+/// sending process need not send the count first in a separate
 /// message, and the receiving process need not probe the size.
 ///
 /// If \c globallyConsistentType is true, then MPI processes need only
-/// coordinate on the size of \c Packet instances, not on their
-/// MPI_Datatypes.  Thus, for sending or receiving a \c Packet array,
-/// it suffices to use the MPI_Datatype of the first instance in the
-/// array.  In this case, best practice (when using a blocking
-/// receive) is for the sending process to compute the sizes of all
-/// the instances in the array, and send the resulting total size
-/// first as a separate message.  See Section \ref
-/// Teuchos_MpiTypeTraits_Three_HowToCoord for suggested
-/// implementation details.
+/// coordinate on the count, not the MPI_Datatype.  Thus, for sending
+/// or receiving a \c Packet array, it suffices to use the
+/// MPI_Datatype of the first instance in the array.  If users know
+/// that the count for a \c Packet instance won't change, they should
+/// save the count whenever possible for reuse, so as to avoid the
+/// extra coordination step.
 ///
 /// If \c globallyConsistentType is false, then different entries of
 /// an array of \c Packet may have inconsistent MPI_Datatypes.  Thus
@@ -248,50 +255,11 @@
 /// <tt>Teuchos::any</tt> by packing it (using MPI_Pack()) with an
 /// initial header containing type info, which the receiving process
 /// must unpack and read before it knows what C++ type lives inside
-/// the <tt>Teuchos::any</tt>.  (We don't think this is a good idea,
-/// but it is possible.)
-///
-/// \subsection Teuchos_MpiTypeTraits_Three_HowToCoord How to coordinate on the size
-///
-/// Suppose that you wanted to implement a generic MPI wrapper
-/// function for receiving any \c Packet type using a single function
-/// call.  For some <tt>Packet</tt> types, it is necessary for the
-/// sending and receiving processes to coordinate on the size.  We
-/// mentioned two approaches above: sending two messages, or probing.
-///
-/// The two-message approach is best if our receive wrapper method has
-/// blocking receive semantics (e.g., like MPI_Recv).  This is because
-/// the receiving process must block anyway on the first message with
-/// the size, in order to know the size before starting the second
-/// receive.  It is possible, however, to use the two-message approach
-/// for a nonblocking receive wrapper.  This can be done by sending
-/// the first size message nonblocking, then having the receive
-/// wrapper return a callback that keeps the MPI_Request from the
-/// first message.  Invoking the callback does the following:
-/// 1. Calls MPI_Wait on the size message's MPI_Request.
-/// 2. Uses the size to resize the Packet instance, if necessary.
-/// 3. Calls a blocking receive (e.g., MPI_Recv) on the second message
-///    (with the actual contents).
-///
-/// This procedure only "pretends" to be nonblocking, because the
-/// receiving process does not start receiving the second message
-/// until the first has been received.  The probe approach with
-/// MPI_Iprobe() allows fully nonblocking receives, but it has the
-/// disadvantage that the receive buffer size is not known on input to
-/// the \c receive wrapper method.  Here is how the probe approach
-/// would work for a fully nonblocking receive on the receiving
-/// process:
-/// 1. Start an MPI_Iprobe to get the message size.
-/// 2. The receive method returns a callback.
-/// 3. Invoking the callback first calls MPI_Wait on the MPI_Request
-///    returned by MPI_Iprobe, then does a blocking receive (e.g.,
-///    MPI_Recv) to receive the message.  (Since the MPI_Wait from
-///    MPI_Iprobe returned, the message has already arrived.)
-///
-/// Note that the sending process only needs to know whether to send
-/// one or two messages.  A nonblocking send wrapper need only
-/// initiate two MPI_Isend operations, the first with the size and the
-/// second with the actual data.
+/// the <tt>Teuchos::any</tt>.  (We don't think
+/// <tt>Packet=Teuchos::any</tt> this is a good idea, but it is
+/// technically possible.)  Case 1 is by far the most common for the
+/// kinds of C++ types that Trilinos users might want to communicate
+/// between MPI processes.
 ///
 /// \section Teuchos_MpiTypeTraits_Specialize How to write a specialization
 ///
@@ -305,11 +273,11 @@
 /// guarantees, or if later versions of the MPI standard add new basic
 /// MPI_Datatypes.
 ///
-/// The values of needFree, globallyConsistent, and
-/// globallyConsistentType in your specialization must be compile-time
-/// constants whose values are visible in the header file.  This lets
-/// them be used as template parameters.  It also ensures that their
-/// values are the same on all MPI processes.
+/// The values of \c needFree, \c globallyConsistent, and
+/// <tt>globallyConsistentType</tt> in your specialization must be
+/// compile-time constants whose values are visible in the header
+/// file.  This lets them be used as template parameters.  It also
+/// ensures that their values are the same on all MPI processes.
 ///
 /// Here is an example specialization for <tt>std::string</tt>:
 /// \code
@@ -318,6 +286,7 @@
 ///   // Don't use MPI_Type_free(); MPI_CHAR is a basic MPI_Datatype.
 ///   static const bool needFree = false; 
 ///   // Different strings may have different lengths.
+///   // We have to ask each string for its length at a particular time.
 ///   static const bool globallyConsistent = false; 
 ///   // All strings at all times on all MPI processes use MPI_CHAR.
 ///   static const bool globallyConsistentType = true; 
