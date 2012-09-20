@@ -1280,7 +1280,7 @@ int Epetra_CrsMatrix::OptimizeStorage() {
   else {
     //if already contiguous, we'll simply set All_Values_ to be
     //a copy of Values_[0].
-    if (All_Values_!=0) delete [] All_Values_;
+    if (All_Values_!=0 && All_Values_!=Values_[0]) delete [] All_Values_;
     All_Values_ = NumMyRows_ > 0 ? Values_[0] : NULL;
   }
   
