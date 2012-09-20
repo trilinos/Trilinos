@@ -2355,13 +2355,13 @@ void getChunksFromCoordinates(
        
     }
 
-    for(size_t ii = 0; ii < partNo; ++ii){
+    for(partId_t ii = 0; ii < partNo; ++ii){
       myPartPointCounts[ii] = 0;
     }
     
     
-#pragma omp barrier
 #ifdef HAVE_ZOLTAN2_OMP
+#pragma omp barrier
 #pragma omp for
 #endif
       for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){

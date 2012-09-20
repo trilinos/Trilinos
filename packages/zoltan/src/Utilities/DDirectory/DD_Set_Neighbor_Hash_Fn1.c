@@ -115,7 +115,8 @@ static unsigned int dd_nh1 (ZOLTAN_ID_PTR gid, int gid_length,
  unsigned int nproc, struct dd_nh1_struct* hashdata, ZOLTAN_HASH_FN *fn)
    {
    int id = (signed) *gid;
-   return (id < hashdata->max_gid) ? (id / hashdata->groupsize) : (id % nproc);
+   return (unsigned int) ((id < hashdata->max_gid) ? (id / hashdata->groupsize)
+                                                   : (id % nproc));
    }
 
 #ifdef __cplusplus
