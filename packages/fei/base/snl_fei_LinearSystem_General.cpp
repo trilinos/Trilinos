@@ -587,6 +587,9 @@ int snl_fei::LinearSystem_General::enforceEssentialBC_LinSysCore()
     double* bccoefs = &(essBCvalues_->coefs())[0];
     std::vector<double> ones(numEqns, 1.0);
 
+    for(int i=0; i<numEqns; ++i) {
+      std::cout << "essBCeqns["<<i<<"]: "<<eqns[i]<<", "<<bccoefs[i]<<FEI_ENDL;
+    }
     return(lscmatrix->getMatrix()->enforceEssentialBC(eqns, &ones[0],
 						    bccoefs, numEqns));
   }
