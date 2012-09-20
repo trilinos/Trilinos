@@ -420,8 +420,7 @@ RCP<Epetra_CrsGraph> UserInputForTests::getEpetraCrsGraph()
       colGids[j] = tcolMap->getGlobalElement(colLid[j]);
     eG_->InsertGlobalIndices(gids[i], rowSize[i], colGids.getRawPtr());
   }
-  if (!(eG_->Filled())) eG_->FillComplete();
-
+  eG_->FillComplete();
   return eG_;
 }
 
@@ -451,7 +450,7 @@ RCP<Epetra_CrsMatrix> UserInputForTests::getEpetraCrsMatrix()
     eM_->InsertGlobalValues(
       rowGid, rowSize, nz.getRawPtr(), colGid.getRawPtr());
   }
-  if (!(eM_->Filled())) eM_->FillComplete();
+  eM_->FillComplete();
   return eM_;
 }
 
