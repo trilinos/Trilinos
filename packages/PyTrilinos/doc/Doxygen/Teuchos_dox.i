@@ -1917,20 +1917,6 @@ std::string >(const std::string &name) const ";
 const std::string & > " void Teuchos::XMLObject::addAttribute< const
 std::string & >(const std::string &name, const std::string &value) ";
 
-%feature("docstring")
-Teuchos::Exceptions::updateParametersFromXmlFile "TEUCHOS_DEPRECATED
-void Teuchos::updateParametersFromXmlFile(const std::string
-&xmlFileName, ParameterList *paramList) ";
-
-%feature("docstring")
-Teuchos::Exceptions::updateParametersFromXmlFileAndBroadcast "TEUCHOS_DEPRECATED void
-Teuchos::updateParametersFromXmlFileAndBroadcast(const std::string
-&xmlFileName, ParameterList *paramList, const Comm< int > &comm) ";
-
-%feature("docstring")
-Teuchos::Exceptions::updateParametersFromXmlString "TEUCHOS_DEPRECATED void Teuchos::updateParametersFromXmlString(const
-std::string &xmlStr, ParameterList *paramList) ";
-
 
 // File: namespaceTeuchos_1_1Exceptions.xml
 
