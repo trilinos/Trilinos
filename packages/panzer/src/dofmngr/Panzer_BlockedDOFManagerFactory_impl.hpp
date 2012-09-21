@@ -117,7 +117,7 @@ buildBlocking(const std::string & fieldOrder,std::vector<std::vector<std::string
 
 template <typename LO,typename GO>
 Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,std::pair<int,GO> > > 
-BlockedDOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
+BlockedDOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
                             const std::string & fieldOrder) const
@@ -130,7 +130,7 @@ BlockedDOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
 
    // build the DOF manager for the problem
    Teuchos::RCP<panzer::BlockedDOFManager<LO,GO> > dofManager 
-         = Teuchos::rcp(new panzer::BlockedDOFManager<LO,GO>(connMngr,mpiComm));
+         = Teuchos::rcp(new panzer::BlockedDOFManager<LO,GO>(connMngr,*mpiComm));
 
    // by default assume orientations are not required
    bool orientationsRequired = false;

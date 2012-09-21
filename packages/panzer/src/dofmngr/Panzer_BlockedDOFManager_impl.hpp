@@ -384,13 +384,13 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::ve
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::setConnManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
 {
+   communicator_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(mpiComm)));
    // this kills any old connection manager as well as the old FEI objects
    resetIndices();
 
    connMngr_ = connMngr;
 
-   mpiComm_ = mpiComm;
-   communicator_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(mpiComm)));
+   mpiComm_ = *communicator_->getRawMpiComm();
 }
 
 /** \brief Reset the indicies for this DOF manager.

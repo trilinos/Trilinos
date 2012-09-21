@@ -339,7 +339,7 @@ namespace panzer_stk {
 
        panzer::BlockedDOFManagerFactory<int,int> globalIndexerFactory;
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > dofManager 
-         = globalIndexerFactory.buildUniqueGlobalIndexer(*(mpi_comm->getRawMpiComm()),physicsBlocks,conn_manager,field_order);
+         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
        globalIndexer = dofManager;
     
        Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > bloLinObjFactory
@@ -372,7 +372,7 @@ namespace panzer_stk {
        panzer::DOFManagerFactory<int,int> globalIndexerFactory;
        globalIndexerFactory.setUseDOFManager2(use_dofmanager2);
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
-         = globalIndexerFactory.buildUniqueGlobalIndexer(*(mpi_comm->getRawMpiComm()),physicsBlocks,conn_manager,field_order);
+         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
        globalIndexer = dofManager;
     
        linObjFactory = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpi_comm,dofManager));
@@ -971,7 +971,8 @@ namespace panzer_stk {
              const std::vector<double> & zcoords = callback->getZCoordsVector();
 
              // use epetra to write coordinates to matrix market files
-             Epetra_MpiComm ep_comm(*mpi_comm->getRawMpiComm());
+             Epetra_MpiComm ep_comm(*mpi_comm->getRawMpiComm()); // this is OK access to RawMpiComm becase its declared on the stack?
+                                                                 // and all users of this object are on the stack (within scope of mpi_comm)
              Epetra_Map map(-1,xcoords.size(),0,ep_comm);
 
              Teuchos::RCP<Epetra_Vector> vec;
@@ -1061,7 +1062,9 @@ namespace panzer_stk {
             const std::vector<double> & zcoords = plCall.getZCoordsVector();
 
             // use epetra to write coordinates to matrix market files
-            Epetra_MpiComm ep_comm(*mpi_comm->getRawMpiComm());
+            
+            Epetra_MpiComm ep_comm(*mpi_comm->getRawMpiComm()); // this is OK access to RawMpiComm becase its declared on the stack
+                                                                // and all users of this object are on the stack (within scope of mpi_comm)
             Epetra_Map map(-1,xcoords.size(),0,ep_comm);
 
             Teuchos::RCP<Epetra_Vector> vec;
