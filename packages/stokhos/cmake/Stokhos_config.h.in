@@ -64,7 +64,7 @@
 #cmakedefine HAVE_STOKHOS_BOOST
 
 /* Define if Kokkos is enabled */
-#cmakedefine HAVE_STOKHOS_KOKKOS
+#cmakedefine HAVE_STOKHOS_KOKKOSARRAY
 
 /* Define if MueLu is enabled */
 #cmakedefine HAVE_STOKHOS_MUELU

@@ -26,9 +26,9 @@
 // ***********************************************************************
 // @HEADER
 
-#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
-    ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
+#if ! defined(KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE)                  || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION)
 
 #error "Including <Sacado_MP_Vector_impl.hpp> without macros defined"
 
@@ -60,11 +60,11 @@ namespace Sacado {
      * the implementation through partial specialization.
      */
     template <typename T> 
-    class Expr<T,KOKKOS_MACRO_DEVICE> {
+    class Expr<T,KOKKOSARRAY_MACRO_DEVICE> {
     public:
 
       //! Node type
-      typedef KOKKOS_MACRO_DEVICE node_type;
+      typedef KOKKOSARRAY_MACRO_DEVICE node_type;
 
       //! Typename of derived object, returned by derived()
       /*!
@@ -78,7 +78,7 @@ namespace Sacado {
        * This assumes a CRTP pattern where T is infact derived from
        * Expr<T>.  This will only compile if this infact the case.
        */
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       const derived_type& derived() const {
 	return static_cast<const derived_type&>(*this);
       }
@@ -87,15 +87,15 @@ namespace Sacado {
 
     //! Vectorized evaluation class
     template <typename Storage> 
-    class Vector<Storage, KOKKOS_MACRO_DEVICE> : 
-      public Expr< Vector<Storage,KOKKOS_MACRO_DEVICE>,KOKKOS_MACRO_DEVICE > {
+    class Vector<Storage, KOKKOSARRAY_MACRO_DEVICE> : 
+      public Expr< Vector<Storage,KOKKOSARRAY_MACRO_DEVICE>,KOKKOSARRAY_MACRO_DEVICE > {
     public:
 
       //! Typename of storage class
       typedef Storage storage_type;
 
       //! Node type
-      typedef KOKKOS_MACRO_DEVICE node_type;
+      typedef KOKKOSARRAY_MACRO_DEVICE node_type;
 
       typedef typename storage_type::value_type value_type;
       typedef typename storage_type::ordinal_type ordinal_type;
@@ -121,30 +121,30 @@ namespace Sacado {
       /*!
        * Sets size to 1 and first coefficient to 0 (represents a constant).
        */
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       Vector() : s(1) {}
 
       //! Constructor with supplied value \c x
       /*!
        * Sets size to 1 and first coefficient to x (represents a constant).
        */
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       Vector(const value_type& x) : s(1) { s.init(x); }
 
       //! Constructor with specified size \c sz
       /*!
        * Creates array of size \c sz and initializes coeffiencts to 0.
        */
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       Vector(ordinal_type sz, const value_type& x) : s(sz,x) {}
 
       //! Copy constructor
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       Vector(const Vector& x) : s(x.s) {}
 
       //! Copy constructor from any Expression object
       template <typename S> 
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       Vector(const Expr<S,node_type>& xx) : 
 	s(xx.derived().size()) {
 	typedef typename Expr<S,node_type>::derived_type expr_type;
@@ -167,38 +167,38 @@ namespace Sacado {
       }
 
       //! Destructor
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       ~Vector() {}
 
       //! Initialize coefficients to value
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       void init(const value_type& v) { s.init(v); }
 
       //! Initialize coefficients to an array of values
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       void init(const value_type* v) { s.init(v); }
 
       //! Initialize coefficients from an Vector with different storage
       template <typename S, typename N>
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       void init(const Vector<S,N>& v) { 
 	s.init(v.s.coeff(), v.s.size()); 
       }
 
       //! Load coefficients to an array of values
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       void load(value_type* v) { s.load(v); }
 
       //! Load coefficients into an Vector with different storage
       template <typename S, typename N>
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       void load(Vector<S,N>& v) { s.load(v.s.coeff()); }
 
       //! Reset size
       /*!
        * Coefficients are preserved.  
        */
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       void reset(ordinal_type sz_new) {
 	ordinal_type sz = this->size();
 	s.resize(sz_new);
@@ -217,12 +217,12 @@ namespace Sacado {
        * shared and this method is not called, any changes to the coefficients
        * by coeff() or fastAccessCoeff() may change other vector objects.
        */
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       void copyForWrite() {  }
 
       //! Returns whether two ETV objects have the same values
       template <typename S>
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       bool isEqualTo(const Expr<S,node_type>& xx) const {
 	const typename Expr<S,node_type>::derived_type& x = xx.derived();
 	typedef IsEqual<value_type> IE;
@@ -239,14 +239,14 @@ namespace Sacado {
       //@{
 
       //! Assignment operator with constant right-hand-side
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       Vector& operator=(const value_type& x) {
 	s.init(x);
 	return *this;
       }
 
       //! Assignment with Vector right-hand-side
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       Vector& operator=(const Vector& x) {
 	s = x.s;
 	return *this;
@@ -254,7 +254,7 @@ namespace Sacado {
 
       //! Assignment with any expression right-hand-side
       template <typename S> 
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       Vector& operator=(const Expr<S,node_type>& xx) {
 	typedef typename Expr<S,node_type>::derived_type expr_type;
 	const expr_type& x = xx.derived();
@@ -284,11 +284,11 @@ namespace Sacado {
        */
 
       //! Returns storage object
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       const storage_type& storage() const { return s; }
 
       //! Returns storage object
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       storage_type& storage() { return s; }
 
       /*!
@@ -297,11 +297,11 @@ namespace Sacado {
       //@{
 
       //! Returns value
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       const_reference val() const { return s[0]; }
 
       //! Returns value
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       reference val() { return s[0]; }
 
       //@}
@@ -312,40 +312,40 @@ namespace Sacado {
       //@{
 
       //! Returns size of polynomial
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       ordinal_type size() const { return s.size();}
 
       //! Returns true if polynomial has size >= sz
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       bool hasFastAccess(ordinal_type sz) const { return s.size()>=sz;}
 
       //! Returns Hermite coefficient array
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       const_pointer coeff() const { return s.coeff();}
 
       //! Returns Hermite coefficient array
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       pointer coeff() { return s.coeff();}
 
       //! Returns degree \c i term with bounds checking
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       value_type coeff(ordinal_type i) const { 
 	return i<s.size() ? s[i] : s[0]; }
     
       //! Returns degree \c i term without bounds checking
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       reference fastAccessCoeff(ordinal_type i) { return s[i];}
 
       //! Returns degree \c i term without bounds checking
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       value_type fastAccessCoeff(ordinal_type i) const { return s[i];}
 
       template <int i>
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       value_type getCoeff() const { return s.template getCoeff<i>(); }
 
       template <int i>
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       reference getCoeff() { return s.template getCoeff<i>(); }
     
       //@}
@@ -356,7 +356,7 @@ namespace Sacado {
       //@{
 
       //! Addition-assignment operator with constant right-hand-side
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       Vector& operator += (const value_type& x) {
 	for (ordinal_type i=0; i<s.size(); i++)
 	  s[i] += x;
@@ -364,7 +364,7 @@ namespace Sacado {
       }
 
       //! Subtraction-assignment operator with constant right-hand-side
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       Vector& operator -= (const value_type& x) {
 	for (ordinal_type i=0; i<s.size(); i++)
 	  s[i] -= x;
@@ -372,7 +372,7 @@ namespace Sacado {
       }
 
       //! Multiplication-assignment operator with constant right-hand-side
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       Vector& operator *= (const value_type& x) {
 	for (ordinal_type i=0; i<s.size(); i++)
 	  s[i] *= x;
@@ -380,7 +380,7 @@ namespace Sacado {
       }
 
       //! Division-assignment operator with constant right-hand-side
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       Vector& operator /= (const value_type& x) {
 	for (ordinal_type i=0; i<s.size(); i++)
 	  s[i] /= x;
@@ -389,7 +389,7 @@ namespace Sacado {
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S> 
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       Vector& operator += (const Expr<S,node_type>& x) {
 	*this = *this + x;
 	return *this;
@@ -397,7 +397,7 @@ namespace Sacado {
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S> 
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       Vector& operator -= (const Expr<S,node_type>& x) {
 	*this = *this - x;
 	return *this;
@@ -405,7 +405,7 @@ namespace Sacado {
   
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S> 
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       Vector& operator *= (const Expr<S,node_type>& x) {
 	*this = *this * x;
 	return *this;
@@ -413,7 +413,7 @@ namespace Sacado {
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S> 
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       Vector& operator /= (const Expr<S,node_type>& x) {
 	*this = *this / x;
 	return *this;
@@ -421,7 +421,7 @@ namespace Sacado {
 
       //@}
 
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       std::string name() const { return "x"; }
 
     protected:
@@ -433,11 +433,11 @@ namespace Sacado {
 	storage_type& s;
 	const expr_type& x;
 
-	KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+	KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
 	StaticOp(storage_type& s_, const expr_type& x_) : s(s_), x(x_) {}
 
 	template <typename ArgT>
-	KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+	KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
 	void operator() (ArgT arg) const {
 	  const int Arg = ArgT::value;
 	  s.template getCoeff<Arg>() = x.template getCoeff<Arg>();
@@ -448,12 +448,12 @@ namespace Sacado {
     }; // class Vector
 
     template <typename Storage>
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     std::ostream& 
     operator << (std::ostream& os, 
-		 const Vector<Storage,KOKKOS_MACRO_DEVICE>& a)
+		 const Vector<Storage,KOKKOSARRAY_MACRO_DEVICE>& a)
     {
-      typedef typename Vector<Storage,KOKKOS_MACRO_DEVICE>::ordinal_type ordinal_type;
+      typedef typename Vector<Storage,KOKKOSARRAY_MACRO_DEVICE>::ordinal_type ordinal_type;
       
       os << "[ ";
       

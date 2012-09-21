@@ -28,9 +28,9 @@
 // ***********************************************************************
 // @HEADER
 
-#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
-    ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
+#if ! defined(KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE)                  || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION)
 
 #error "Including <Stokhos_mpl_for_each_impl.hpp> without macros defined"
 
@@ -41,10 +41,10 @@ namespace Stokhos {
   namespace mpl {
 
     template <class Seq, class Iter1, class Iter2>
-    struct for_each<Seq, KOKKOS_MACRO_DEVICE, Iter1, Iter2> {
-      typedef KOKKOS_MACRO_DEVICE node_type;
+    struct for_each<Seq, KOKKOSARRAY_MACRO_DEVICE, Iter1, Iter2> {
+      typedef KOKKOSARRAY_MACRO_DEVICE node_type;
       template <typename Op>
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       for_each(const Op& op) {
 	op(typename Sacado::mpl::deref<Iter1>::type());
 	for_each<Seq, node_type, typename Sacado::mpl::next<Iter1>::type, Iter2> f(op);
@@ -52,9 +52,9 @@ namespace Stokhos {
     };
 
     template <class Seq, class Iter1>
-    struct for_each<Seq, KOKKOS_MACRO_DEVICE, Iter1, Iter1> {
+    struct for_each<Seq, KOKKOSARRAY_MACRO_DEVICE, Iter1, Iter1> {
       template <typename Op>
-      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
       for_each(const Op& op) {}
     };
 

@@ -28,9 +28,9 @@
 // ***********************************************************************
 // @HEADER
 
-#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
-    ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
+#if ! defined(KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE)                  || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION)
 
 #error "Including <Stokhos_DynArrayTraits_impl.hpp> without macros defined"
 
@@ -45,14 +45,14 @@ namespace Stokhos {
    * \brief Dynamic array allocation class that works for any type
    */
   template <typename T>
-  struct DynArrayTraits<T, KOKKOS_MACRO_DEVICE, false> {
+  struct DynArrayTraits<T, KOKKOSARRAY_MACRO_DEVICE, false> {
 
     typedef T value_type;
-    typedef KOKKOS_MACRO_DEVICE node_type;
+    typedef KOKKOSARRAY_MACRO_DEVICE node_type;
 
     //! Fill array \c dest of length \c sz with value \c v
     static inline 
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void fill(T* dest, std::size_t sz, const T& v) {
       for (std::size_t i=0; i<sz; ++i)
 	*(dest++) = v;
@@ -60,7 +60,7 @@ namespace Stokhos {
 
     //! Copy array from \c src to \c dest of length \c sz
     static inline 
-     KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+     KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void copy(const T* src, T*  dest, std::size_t sz) {
       for (std::size_t i=0; i<sz; ++i)
 	*(dest++) = *(src++);
@@ -68,7 +68,7 @@ namespace Stokhos {
 
     //! Zero out array \c dest of length \c sz
     static inline 
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void zero(T* dest, std::size_t sz) {
       for (std::size_t i=0; i<sz; ++i)
 	*(dest++) = T(0.);
@@ -76,7 +76,7 @@ namespace Stokhos {
 
     //! Get memory for new array of length \c sz and fill with zeros
     static inline 
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     T* get_and_fill(std::size_t sz, const T& x = T(0.0)) {
       T* m = 0;
       if (sz > 0) {
@@ -93,7 +93,7 @@ namespace Stokhos {
      * entries from \c src
      */
     static inline 
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     T* get_and_fill(const T* src, std::size_t sz) {
       T* m = 0;
       if (sz > 0) {
@@ -107,7 +107,7 @@ namespace Stokhos {
 
     //! Destroy array elements and release memory
     static inline 
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void destroy_and_release(T* m, std::size_t sz) {
       T* e = m+sz;
       for (T* b = m; b!=e; b++)
@@ -121,28 +121,28 @@ namespace Stokhos {
    * i.e., fundamental or built-in types (float, double, etc...).
    */
   template <typename T>
-  struct DynArrayTraits<T,KOKKOS_MACRO_DEVICE,true> {
+  struct DynArrayTraits<T,KOKKOSARRAY_MACRO_DEVICE,true> {
 
     typedef T value_type;
-    typedef KOKKOS_MACRO_DEVICE node_type;
+    typedef KOKKOSARRAY_MACRO_DEVICE node_type;
 
     //! Copy array from \c src to \c dest of length \c sz
     static inline 
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void copy(const T* src, T* dest, std::size_t sz) {
       if (sz > 0) std::memcpy(dest,src,sz*sizeof(T));
     }
 
     //! Zero out array \c dest of length \c sz
     static inline 
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void zero(T* dest, std::size_t sz) {
       if (sz > 0) std::memset(dest,0,sz*sizeof(T));
     }
 
     //! Fill array \c dest of length \c sz with value \c v
     static inline 
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void fill(T* dest, std::size_t sz, const T& v) {
       //if (sz > 0) std::memset(dest,v,sz*sizeof(T));
       for (std::size_t i=0; i<sz; ++i)
@@ -151,7 +151,7 @@ namespace Stokhos {
 
     //! Get memory for new array of length \c sz and fill with zeros
     static inline 
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     T* get_and_fill(std::size_t sz, const T& x = T(0.0)) {
       T* m = 0;
       if (sz > 0) {
@@ -168,7 +168,7 @@ namespace Stokhos {
      * entries from \c src
      */
     static inline 
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     T* get_and_fill(const T* src, std::size_t sz) {
       T* m = 0;
       if (sz > 0) {
@@ -181,7 +181,7 @@ namespace Stokhos {
 
     //! Destroy array elements and release memory
     static inline 
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void destroy_and_release(T* m, std::size_t sz) {
       if (sz > 0) operator delete((void*) m);
     }
