@@ -128,6 +128,9 @@ namespace stk {
       // shape
       PMMSmootherMetricShapeB1 shape_b1_metric(eMesh);
 
+      // laplace
+      PMMSmootherMetricLaplace laplace_metric(eMesh);
+
       // scaled jacobian
       PMMSmootherMetricScaledJacobianElemental scaled_jac_metric(eMesh);
 
@@ -185,6 +188,7 @@ namespace stk {
 
                   //m_metric = &shape_metric;
                   m_metric = &shape_b1_metric;
+                  //m_metric = &laplace_metric;
                   //m_metric = &scaled_jac_metric;
 
                 }

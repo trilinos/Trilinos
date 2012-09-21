@@ -5,6 +5,7 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother1.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
 #include <stk_percept/mesh/mod/mesquite-interface/JacobianUtil.hpp>
+#include <stk_percept/mesh/mod/mesquite-interface/PMMMsqMatrix.hpp>
 #include <stk_percept/math/Math.hpp>
 
 #include <stk_mesh/base/FieldParallel.hpp>
@@ -28,9 +29,11 @@ namespace stk {
   namespace percept {
 
     static bool m_use_local_scaling = false;
+    static bool m_use_hessian_scaling = false;
 
-    static double sqrt_eps = std::sqrt(std::numeric_limits<double>::epsilon());
-    //static double sqrt_eps = 1.e-5;
+    static double macheps = std::numeric_limits<double>::epsilon();
+    static double sqrt_eps = std::sqrt(macheps);
+    static double cbrt_eps = std::pow(macheps, 1./3.);
 
     using namespace Mesquite;
     const bool do_tot_test = false;
@@ -142,7 +145,8 @@ namespace stk {
           return true;
         }
       //grad_check = 1.e-8;
-      if (m_num_invalid == 0 && (m_scaled_grad_norm < grad_check || (m_iter > 0 && m_dmax < grad_check && m_dnew < grad_check*grad_check*m_d0)))
+      double scaled_grad_norm = std::sqrt(m_dnew)/double(m_num_nodes);
+      if (m_num_invalid == 0 && (m_scaled_grad_norm < grad_check || (m_iter > 0 && m_dmax < grad_check && (m_dnew < grad_check*grad_check*m_d0 || scaled_grad_norm < grad_check) ) ) )
         //    if (m_num_invalid == 0 && (m_scaled_grad_norm < gradNorm || (m_iter > 0 && m_dmax < gradNorm ) ) )
         {
           std::cout << "tmp srk untangle m_dnew= " << m_dnew << " m_total_metric = " << m_total_metric << std::endl;
@@ -165,6 +169,7 @@ namespace stk {
       stk::mesh::FieldBase *coord_field_current   = coord_field;
       stk::mesh::FieldBase *cg_g_field    = eMesh->get_field("cg_g");
       stk::mesh::FieldBase *cg_d_field    = eMesh->get_field("cg_d");
+      stk::mesh::FieldBase *cg_h_field    = (m_use_hessian_scaling? eMesh->get_field("cg_h") : 0);
 
       stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
       stk::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
@@ -175,6 +180,7 @@ namespace stk {
 
       // g=0
       eMesh->nodal_field_set_value(cg_g_field, 0.0);
+      if (m_use_hessian_scaling) eMesh->nodal_field_set_value(cg_h_field, 0.0);
 
       if (m_metric->is_nodal())
         {
@@ -263,12 +269,16 @@ namespace stk {
                           m_metric->set_node(&node);
                           double *coord_current = PerceptMesh::field_data(coord_field_current, node);
                           double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+                          unsigned stride_h=0;
+                          double *cg_h = (m_use_hessian_scaling ? PerceptMesh::field_data(cg_h_field, node, &stride_h) : 0);
+                          if (m_use_hessian_scaling) VERIFY_OP_ON(int(stride_h), ==, spatialDim*spatialDim, "hmm");
                         
                           //double eps = 1.e-6;
                           double eps1 = sqrt_eps*edge_length_ave;
                           //if (m_metric->length_scaling_power() != 1.0) eps1 = std::pow(eps1, 1.0/m_metric->length_scaling_power());
 
                           double gsav[3]={0,0,0};
+                          //double hsav[3][3] = {{0,0,0}, {0,0,0}, {0,0,0}};
 
                           for (int idim=0; idim < spatialDim; idim++)
                             {
@@ -294,6 +304,7 @@ namespace stk {
                                   dd = (mp - mm)/(eps1);
                                 }
                               gsav[idim] = dd;
+
                               //if (std::fabs(mp) > 1.e-10) std::cout << "tmp srk mp = " << mp << " mm= " << mm << " dd= " << dd << std::endl;
 
                               m_scale = std::max(m_scale, std::abs(dd)/edge_length_ave);
@@ -306,6 +317,115 @@ namespace stk {
                                 {
                                   cg_g[idim] = 0.0;
                                 }
+                            }
+
+                          if (m_use_hessian_scaling)
+                            {
+                              /// 1st-order accurate formula: f_xi_xj = ( f(x + h ei + h ej) - f(x + h ei) - f(x + h ej) + f(x) ) / h^2
+
+                              MsqMatrix<2,2> H;
+
+                              double csav[3]={0,0,0};
+                              for (int idim=0; idim < spatialDim; idim++)
+                                {
+                                  csav[idim] = coord_current[idim];
+                                }
+
+                              double eps_hess = cbrt_eps;
+                              for (int idim=0; idim < spatialDim; idim++)
+                                {
+                                  for (int jdim=0; jdim < spatialDim; jdim++)
+                                    {
+                                      double cc_i = csav[idim];
+                                      double cc_j = csav[jdim];
+                                      bool fvalid=false;
+                                  
+                                      coord_current[idim] = cc_i;
+                                      coord_current[jdim] = cc_j;
+
+#if 0
+                                      coord_current[idim] +=  eps_hess;
+                                      coord_current[jdim] +=  eps_hess;
+                                      double fpp = metric(element, fvalid);
+
+                                      coord_current[idim] = cc_i + eps_hess;
+                                      coord_current[jdim] = cc_j + 0;
+                                      double fpm = metric(element, fvalid);
+
+                                      coord_current[idim] = cc_i + 0;
+                                      coord_current[jdim] = cc_j + eps_hess;
+                                      double fmp = metric(element, fvalid);
+
+                                      coord_current[idim] = cc_i + 0;
+                                      coord_current[jdim] = cc_j + 0;
+                                      double fmm = metric(element, fvalid);
+
+                                      // 1st-order accurate...
+                                      double f_xi_xj = (fpp - fpm - fmp + fmm)/(eps_hess*eps_hess);
+#else
+                                      double eps2 = eps_hess/2.0;
+
+                                      coord_current[idim] = cc_i;
+                                      coord_current[jdim] = cc_j;
+                                      coord_current[idim] +=  eps2;
+                                      coord_current[jdim] +=  eps2;
+                                      double fpp = metric(element, fvalid);
+
+                                      coord_current[idim] = cc_i;
+                                      coord_current[jdim] = cc_j;
+                                      coord_current[idim] -=  eps2;
+                                      coord_current[jdim] +=  eps2;
+                                      double fmp = metric(element, fvalid);
+
+                                      coord_current[idim] = cc_i;
+                                      coord_current[jdim] = cc_j;
+                                      coord_current[idim] +=  eps2;
+                                      coord_current[jdim] -=  eps2;
+                                      double fpm = metric(element, fvalid);
+
+                                      coord_current[idim] = cc_i;
+                                      coord_current[jdim] = cc_j;
+                                      coord_current[idim] -=  eps2;
+                                      coord_current[jdim] -=  eps2;
+                                      double fmm = metric(element, fvalid);
+
+                                      // 2nd-order accurate
+                                      double f_xi_xj = (fpp - fmp - fpm + fmm)/(4*eps2*eps2);
+#endif
+                                      // c-style ordering
+                                      cg_h[jdim + idim*spatialDim] += f_xi_xj;
+                                      H(idim,jdim) = f_xi_xj;
+                                      if (0 && m_stage==1) 
+                                      {
+                                        std::cout << "i,j= " << idim << " " << jdim << " fpp= " << fpp << " fpm= " << fpm << " fmp= " << fmp << " fmm= " << fmm << std::endl;
+                                        std::cout << "i,j= " << idim << " " << jdim << " f_xi_xj= " << f_xi_xj << " fpp-fmm= " << fpp-fmm << " fpm-fmm= " << fpm-fmm << " fmp-fmm= " << fmp-fmm << " eps_hess= " << eps_hess << std::endl;
+                                      }
+                                    }
+                                }
+                              for (int idim=0; idim < spatialDim; idim++)
+                                {
+                                  coord_current[idim] = csav[idim];
+                                }
+
+
+                              if (0 && m_stage==1)
+                              {
+                                double d = det(H);
+                                //a00 - Sqrt(4*a01*a10 + Power(a00 - a11,2)) + a11)/2., (a00 + Sqrt(4*a01*a10 + Power(a00 - a11,2)) + a11)/2.
+                      
+                                double disc=4*H(0,1)*H(1,0) + std::pow(H(0,0) - H(1,1),2);
+                                double eigen[] = {(H(0,0) - std::sqrt(disc) + H(1,1))/2.,
+                                                  (H(0,0) + std::sqrt(disc) + H(1,1))/2.};
+
+                                //if (std::abs(d) > 1.e-10 && (std::abs(gsav[0])+std::abs(gsav[1]) > 1.e-10))
+                                  //if (d > 1.e-10)
+                                  {
+                                    std::cout << "000 det(H) = " << d << " H= " << H << " eigen= " << eigen[0] << " " << eigen[1] << " disc= " << disc << " grad= " << gsav[0] << " " << gsav[1] << std::endl;
+                                    exit(1);
+                                  }
+                              }
+
+
                             }
 
                           // FIXME 
@@ -389,6 +509,8 @@ namespace stk {
       stk::mesh::FieldBase *cg_g_field    = eMesh->get_field("cg_g");
       stk::mesh::FieldBase *cg_s_field    = eMesh->get_field("cg_s");
       stk::mesh::FieldBase *cg_r_field    = eMesh->get_field("cg_r");
+
+      stk::mesh::FieldBase *cg_h_field    = (m_use_hessian_scaling? eMesh->get_field("cg_h") : 0);
 
       stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
       stk::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
@@ -478,6 +600,7 @@ namespace stk {
 
                     double edge_length_ave = nodal_edge_length_ave(node);
                     double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+                    double *cg_h = (m_use_hessian_scaling ? PerceptMesh::field_data(cg_h_field, node) : 0);
                         
                     double sum=0.0;
                     for (int idim=0; idim < spatialDim; idim++)
@@ -492,6 +615,40 @@ namespace stk {
                     sum /= edge_length_ave;
                     //sum /= (pw != 0 ? std::pow(edge_length_ave, pw) : edge_length_ave);
                     //m_scaled_grad_norm = std::max(m_scaled_grad_norm, sum);
+                    if ( m_use_hessian_scaling && spatialDim == 2 && m_stage==1)
+                      //if ( m_use_hessian_scaling && spatialDim == 2 )
+                    {
+                      m_scale = 1.0;
+                      MsqMatrix<2,2> H(cg_h), HI;
+                      double d = det(H);
+                      //a00 - Sqrt(4*a01*a10 + Power(a00 - a11,2)) + a11)/2., (a00 + Sqrt(4*a01*a10 + Power(a00 - a11,2)) + a11)/2.
+                      
+                      double disc=4*H(0,1)*H(1,0) + std::pow(H(0,0) - H(1,1),2);
+                      double eigen[] = {(H(0,0) - std::sqrt(disc) + H(1,1))/2.,
+                                        (H(0,0) + std::sqrt(disc) + H(1,1))/2.};
+
+                      //if (std::abs(d) > 1.e-10)
+                      //if (d > 1.e-10)
+                      if (s2 > 1.e-10 && (d < -1.e-6 || eigen[0] < -1.e-6 || eigen[1] < -1.e-6))
+                        {
+                          std::cout << "det(H) = " << d << " H= " << H << " eigen= " << eigen[0] << " " << eigen[1] << " disc= " << disc << " grad= " << s2 << std::endl;
+                          exit(1);
+                        }
+                      if (d > 1.e-10)
+                        {
+                          HI = inverse(H);
+                          double gn[] = { cg_g[0], cg_g[1] };
+                          cg_g[0] = HI(0,0)*gn[0] + HI(0,1)*gn[1];
+                          cg_g[1] = HI(1,0)*gn[0] + HI(1,1)*gn[1];
+                        }
+                      sum=0.0;
+                      for (int idim=0; idim < spatialDim; idim++)
+                        {
+                          sum += cg_g[idim]*cg_g[idim];
+                        }
+                      sum = std::sqrt(sum);
+                    }
+
                     if (sum > m_scaled_grad_norm)
                       {
                         m_scaled_grad_norm = sum;
@@ -499,6 +656,7 @@ namespace stk {
                         es1 = s1;
                         es2 = s2;
                       }
+
 
                     //if (m_use_local_scaling && m_stage==1)
                     if (m_use_local_scaling)
