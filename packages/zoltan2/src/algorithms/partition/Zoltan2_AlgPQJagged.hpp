@@ -3122,7 +3122,7 @@ void AlgPQJagged(
             for(lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
               
               lno_t i = partitionedPointCoordinates[ii];
-              partId_t pp = (pqCoord[i] - minCoordinate) / slice;
+              partId_t pp = partId_t((pqCoord[i] - minCoordinate) / slice);
               //if( pp >= partNo[i])
               //{
               //  partIds[i] = 0;
