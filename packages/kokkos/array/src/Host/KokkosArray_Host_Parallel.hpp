@@ -85,12 +85,12 @@ public:
   //----------------------------------------------------------------------
   /** \brief  This thread waits for each fan-in thread in the barrier.
    *
-   *  A parallel work function must call either barrier or reduce
+   *  A parallel work function must call return_barrier
    *  on all threads at the end of the work function.
    *  Entry condition: in the Active   state
    *  Exit  condition: in the Inactive state
    */
-  void barrier()
+  void return_barrier()
   {
     // The 'wait' function repeatedly polls the 'thread' state
     // which may reside in a different NUMA region.
@@ -107,22 +107,47 @@ public:
   }
 
   //----------------------------------------------------------------------
+  /** \brief  This thread waits for each fan-in thread in the barrier.
+   *          Once all threads have fanned in then fan-out reactivation.
+   *
+   *  A parallel work function must call barrier on all threads.
+   */
+  void barrier()
+  {
+    // The 'wait' function repeatedly polls the 'thread' state
+    // which may reside in a different NUMA region.
+    // Thus the fan is intra-node followed by inter-node
+    // to minimize inter-node memory access.
+
+    for ( unsigned i = 0 ; i < m_fan_count ; ++i ) {
+      // Wait until thread enters the 'Rendezvous' state
+      m_fan[i]->wait( HostThread::ThreadActive );
+    }
+
+    if ( m_thread_rank ) {
+      set(  HostThread::ThreadRendezvous );
+      wait( HostThread::ThreadRendezvous );
+    }
+
+    for ( unsigned i = m_fan_count ; 0 < i ; ) {
+      m_fan[--i]->set( HostThread::ThreadActive );
+    }
+  }
+
+  //----------------------------------------------------------------------
   /** \brief  This thread participates in the fan-in reduction.
    *
-   *  A parallel work function must call either barrier or reduce
-   *  on all threads at the end of the work function.
-   *  Entry condition: in the Active   state
-   *  Exit  condition: in the Inactive state
    */
-  template< class ReduceTraits >
+  template< class ReduceTraits , class Finalize >
   inline
-  bool reduce( typename ReduceTraits::value_type & update )
+  void reduce( typename ReduceTraits::value_type & update ,
+               const Finalize & finalize )
   {
     typedef typename ReduceTraits::value_type value_type ;
 
     // Fan-in reduction of other threads' reduction data.
     // 1) Wait for source thread to complete its work and
-    //    set its own state to 'Reducing'.
+    //    set its own state to 'Rendezvous'.
     // 2) Join source thread reduce data.
     // 3) Release source thread's reduction data and
     //    set the source thread's state to 'Inactive' state.
@@ -136,24 +161,27 @@ public:
       m_fan[i]->wait( HostThread::ThreadActive );
 
       ReduceTraits::join( update, *((const value_type *) m_fan[i]->m_reduce) );
-
-      m_fan[i]->set( HostThread::ThreadInactive );
     }
 
     if ( m_thread_rank ) {
       // If this is not the root thread then it will give its
       // reduction data to another thread.
-      // Set the reduction data and then set the 'Reducing' state.
+      // Set the reduction data and then set the 'Rendezvous' state.
       // Wait for the other thread to claim reduction data and
       // deactivate this thread.
 
       m_reduce = & update ;
-      set(  HostThread::ThreadReducing );
-      wait( HostThread::ThreadReducing );
+      set(  HostThread::ThreadRendezvous );
+      wait( HostThread::ThreadRendezvous );
       m_reduce = NULL ;
     }
+    else {
+      finalize( update );
+    }
 
-    return 0 == m_thread_rank ;
+    for ( unsigned i = m_fan_count ; 0 < i ; ) {
+      m_fan[--i]->set( HostThread::ThreadActive );
+    }
   }
 
   //----------------------------------------------------------------------
@@ -167,7 +195,7 @@ private:
   enum State { ThreadTerminating ///<  Exists, termination in progress
              , ThreadInactive    ///<  Exists, waiting for work
              , ThreadActive      ///<  Exists, performing work
-             , ThreadReducing    ///<  Exists, waiting for reduction
+             , ThreadRendezvous  ///<  Exists, waiting in a barrier or reduce
              };
 
   void set(  const State flag ) { m_state = flag ; }
@@ -201,6 +229,8 @@ public:
 
   virtual ~HostThreadWorker() {}
 
+  void execute() const ;
+
 protected:
 
   HostThreadWorker() {}
@@ -211,6 +241,26 @@ private:
 
   HostThreadWorker( const HostThreadWorker & );
   HostThreadWorker & operator = ( const HostThreadWorker & );
+};
+
+//----------------------------------------------------------------------------
+
+template< class WorkerType >
+struct HostParallelLaunch {
+
+  struct ThreadWorker : public HostThreadWorker {
+    const WorkerType & m_worker ;
+
+    void execute_on_thread( HostThread & thread ) const
+      { m_worker( thread ); thread.return_barrier(); }
+
+    inline explicit
+    ThreadWorker( const WorkerType & worker )
+      : m_worker( worker ) {}
+  };
+
+  HostParallelLaunch( const WorkerType & worker )
+  { ThreadWorker( worker ).execute(); }
 };
 
 //----------------------------------------------------------------------------
@@ -233,7 +283,7 @@ public:
 
     for ( ; x_end != x ; ++x , ++y ) { *x = (DstType) *y ; }
 
-    this_thread.barrier();
+    this_thread.return_barrier();
   }
 
   HostParallelCopy( DstType * dst , const SrcType * src ,
@@ -269,7 +319,7 @@ public:
 
     for ( ; x_end != x ; ++x ) { *x = m_src ; }
 
-    this_thread.barrier();
+    this_thread.return_barrier();
   }
 
   template< typename SrcType >

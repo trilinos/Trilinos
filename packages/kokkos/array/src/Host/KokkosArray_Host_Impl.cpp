@@ -434,6 +434,9 @@ void HostInternal::execute( const HostThreadWorker & worker )
 void HostThreadWorker::execute( const HostThreadWorker & worker )
 { HostInternal::singleton().execute( worker ); }
 
+void HostThreadWorker::execute() const
+{ HostInternal::singleton().execute( *this ); }
+
 //----------------------------------------------------------------------------
 
 } // namespace Impl

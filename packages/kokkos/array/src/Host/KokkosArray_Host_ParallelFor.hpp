@@ -71,7 +71,7 @@ private:
       m_work_functor( iwork );
     }
 
-    this_thread.barrier();
+    this_thread.return_barrier();
   }
 
   ParallelFor( const size_type work_count , const FunctorType & functor )
@@ -165,7 +165,7 @@ private:
       (*m)->apply( this_thread );
     }
 
-    this_thread.barrier();
+    this_thread.return_barrier();
   }
   
 public: 

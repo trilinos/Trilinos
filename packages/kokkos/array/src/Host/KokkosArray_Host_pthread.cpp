@@ -118,7 +118,7 @@ void HostWorkerBlock::execute_on_thread( HostThread & this_thread ) const
   pthread_mutex_lock(   & host_internal_pthread_mutex );
   pthread_mutex_unlock( & host_internal_pthread_mutex );
 
-  this_thread.barrier();
+  this_thread.return_barrier();
 }
 
 //----------------------------------------------------------------------------
@@ -170,7 +170,7 @@ bool Host::wake()
   if ( is_blocked ) {
     pthread_mutex_unlock( & Impl::host_internal_pthread_mutex );
 
-    h.m_master_thread.barrier();
+    h.m_master_thread.return_barrier();
 
     h.m_worker = NULL ;
 

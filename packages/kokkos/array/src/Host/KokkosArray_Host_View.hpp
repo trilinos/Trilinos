@@ -118,7 +118,7 @@ struct HostViewRemap< OutputView , InputView , 8 >
       output(i0,i1,i2,i3,i4,i5,i6,i7) = input(i0,i1,i2,i3,i4,i5,i6,i7);
     }}}}}}}}
 
-    this_thread.barrier();
+    this_thread.return_barrier();
   }
 };
 
@@ -148,7 +148,7 @@ struct HostViewRemap< OutputView , InputView , 7 >
       output(i0,i1,i2,i3,i4,i5,i6) = input(i0,i1,i2,i3,i4,i5,i6);
     }}}}}}}
 
-    this_thread.barrier();
+    this_thread.return_barrier();
   }
 };
 
@@ -177,7 +177,7 @@ struct HostViewRemap< OutputView , InputView , 6 >
       output(i0,i1,i2,i3,i4,i5) = input(i0,i1,i2,i3,i4,i5);
     }}}}}}
 
-    this_thread.barrier();
+    this_thread.return_barrier();
   }
 };
 
@@ -205,7 +205,7 @@ struct HostViewRemap< OutputView , InputView , 5 >
       output(i0,i1,i2,i3,i4) = input(i0,i1,i2,i3,i4);
     }}}}}
 
-    this_thread.barrier();
+    this_thread.return_barrier();
   }
 };
 
@@ -232,7 +232,7 @@ struct HostViewRemap< OutputView , InputView , 4 >
       output(i0,i1,i2,i3) = input(i0,i1,i2,i3);
     }}}}
 
-    this_thread.barrier();
+    this_thread.return_barrier();
   }
 };
 
@@ -258,7 +258,7 @@ struct HostViewRemap< OutputView , InputView , 3 >
       output(i0,i1,i2) = input(i0,i1,i2);
     }}}
 
-    this_thread.barrier();
+    this_thread.return_barrier();
   }
 };
 
@@ -283,7 +283,7 @@ struct HostViewRemap< OutputView , InputView , 2 >
       output(i0,i1) = input(i0,i1);
     }}
 
-    this_thread.barrier();
+    this_thread.return_barrier();
   }
 };
 
@@ -307,7 +307,7 @@ struct HostViewRemap< OutputView , InputView , 1 >
       output(i0) = input(i0);
     }
 
-    this_thread.barrier();
+    this_thread.return_barrier();
   }
 };
 

@@ -113,9 +113,8 @@ private:
     }
 
     // Fan-in reduction of other threads' reduction data:
-    if ( this_thread.reduce< ReduceTraits >( update ) ) {
-      m_finalize( update );
-    }
+    this_thread.reduce< ReduceTraits >( update , m_finalize );
+    this_thread.return_barrier();
   }
 
   ParallelReduce( const size_type      work_count ,
@@ -221,9 +220,8 @@ private:
     }
 
     // Fan-in reduction of other threads' reduction data:
-    if ( this_thread.reduce< ReduceTraits >( update ) ) {
-      m_finalize( update );
-    }
+    this_thread.reduce< ReduceTraits >( update , m_finalize );
+    this_thread.return_barrier();
   }
 
 public:
