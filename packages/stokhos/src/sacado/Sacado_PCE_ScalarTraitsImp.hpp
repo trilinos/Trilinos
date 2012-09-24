@@ -47,7 +47,9 @@ namespace Sacado {
     struct ScalarTraitsImp {
       typedef typename Sacado::ValueType<PCEType>::type ValueT;
 
-      typedef typename mpl::apply<PCEType,typename Teuchos::ScalarTraits<ValueT>::magnitudeType>::type magnitudeType;
+      typedef typename Teuchos::ScalarTraits<ValueT>::magnitudeType magnitudeType;
+      //typedef typename Teuchos::ScalarTraits<ValueT>::innerProductType innerProductType;
+      typedef ValueT innerProductType;
       typedef typename mpl::apply<PCEType,typename Teuchos::ScalarTraits<ValueT>::halfPrecision>::type halfPrecision;
       typedef typename mpl::apply<PCEType,typename Teuchos::ScalarTraits<ValueT>::doublePrecision>::type doublePrecision;
 
@@ -96,17 +98,18 @@ namespace Sacado {
 			   "Complex magnitude is not a differentiable "
 			   "function of complex inputs.");
 #endif
-	magnitudeType b(a.expansion());
-	b.val() = Teuchos::ScalarTraits<ValueT>::magnitude(a.val());
-	if (Teuchos::ScalarTraits<ValueT>::real(a.val()) >= 0)
-	  for (int i=1; i<a.size(); i++)
-	    b.fastAccessCoeff(i) = 
-	      Teuchos::ScalarTraits<ValueT>::magnitude(a.fastAccessCoeff(i));
-	else
-	  for (int i=1; i<a.size(); i++)
-	    b.fastAccessCoeff(i) = 
-	      -Teuchos::ScalarTraits<ValueT>::magnitude(a.fastAccessCoeff(i));
-	return b;
+	return a.two_norm();
+      }
+      static innerProductType innerProduct(const PCEType& a, const PCEType& b) {
+#ifdef TEUCHOS_DEBUG
+	TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+	  a, "Error, the input value to innerProduct(...) a = " << a << 
+	  " can not be NaN!" );
+	TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+	  b, "Error, the input value to innerProduct(...) b = " << b << 
+	  " can not be NaN!" );
+#endif
+	return a.inner_product(b);
       }
       static ValueT zero()  { 
 	return ValueT(0.0); 

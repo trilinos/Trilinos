@@ -343,6 +343,9 @@ IF (Stokhos_ENABLE_Sacado)
       SET(SOURCES ${SOURCES}
 	tpetra/tpetra_pce_instantiations.cpp
 	)
+      SET(HEADERS ${HEADERS}
+	tpetra/kokkos_pce_specializations.hpp
+	)
     ENDIF()
   ENDIF()
   IF (Stokhos_ENABLE_Ifpack2)

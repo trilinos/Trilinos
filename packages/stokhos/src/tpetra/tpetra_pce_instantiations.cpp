@@ -27,6 +27,7 @@
 // @HEADER
 
 #include "Stokhos_Sacado.hpp"
+#include "kokkos_pce_specializations.hpp"
 
 typedef Stokhos::StandardStorage<int,double> Storage;
 typedef Sacado::PCE::OrthogPoly<double,Storage> pce_type;
