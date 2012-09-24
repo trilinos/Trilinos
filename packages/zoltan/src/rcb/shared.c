@@ -833,7 +833,7 @@ int Zoltan_RB_Send_Dots_less_memory(
         }
       }
     }
-    Zoltan_quicksort_list_inc_int(proc_list, reorder, 0, outgoing - 1);
+    Zoltan_Comm_Sort_Ints(proc_list, reorder, outgoing);
   }
   else{
     firstStaying = 0;
