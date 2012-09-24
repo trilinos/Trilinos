@@ -417,7 +417,7 @@ void HostInternal::activate()
 }
 
 inline
-void HostInternal::execute( const HostThreadWorker<void> & worker )
+void HostInternal::execute( const HostThreadWorker & worker )
 {
   verify_inactive("execute(...)");
 
@@ -431,7 +431,7 @@ void HostInternal::execute( const HostThreadWorker<void> & worker )
   m_worker = NULL ;
 }
 
-void HostThreadWorker<void>::execute( const HostThreadWorker<void> & worker )
+void HostThreadWorker::execute( const HostThreadWorker & worker )
 { HostInternal::singleton().execute( worker ); }
 
 //----------------------------------------------------------------------------

@@ -76,7 +76,7 @@ protected:
               << ") X node_core_count(" << node_core_count
               << ")" << std::endl ;
 */
-    KokkosArray::Host::initialize( node_count , 2 );
+    KokkosArray::Host::initialize( node_count , 4 );
   }
 
   static void TearDownTestCase()

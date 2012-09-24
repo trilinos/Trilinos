@@ -93,14 +93,14 @@ struct HostViewRemap ;
 
 template< class OutputView , class InputView >
 struct HostViewRemap< OutputView , InputView , 8 >
-  : public HostThreadWorker<void>
+  : public HostThreadWorker
 {
   const OutputView output ;
   const InputView  input ;
 
   HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
     : output( arg_out ), input( arg_in )
-    { HostThreadWorker<void>::execute( *this ); }
+    { HostThreadWorker::execute( *this ); }
 
   void execute_on_thread( HostThread & this_thread ) const
   {
@@ -124,14 +124,14 @@ struct HostViewRemap< OutputView , InputView , 8 >
 
 template< class OutputView , class InputView >
 struct HostViewRemap< OutputView , InputView , 7 >
-  : public HostThreadWorker<void>
+  : public HostThreadWorker
 {
   const OutputView output ;
   const InputView  input ;
 
   HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
     : output( arg_out ), input( arg_in )
-    { HostThreadWorker<void>::execute( *this ); }
+    { HostThreadWorker::execute( *this ); }
 
   void execute_on_thread( HostThread & this_thread ) const
   {
@@ -154,14 +154,14 @@ struct HostViewRemap< OutputView , InputView , 7 >
 
 template< class OutputView , class InputView >
 struct HostViewRemap< OutputView , InputView , 6 >
-  : public HostThreadWorker<void>
+  : public HostThreadWorker
 {
   const OutputView output ;
   const InputView  input ;
 
   HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
     : output( arg_out ), input( arg_in )
-    { HostThreadWorker<void>::execute( *this ); }
+    { HostThreadWorker::execute( *this ); }
 
   void execute_on_thread( HostThread & this_thread ) const
   {
@@ -183,14 +183,14 @@ struct HostViewRemap< OutputView , InputView , 6 >
 
 template< class OutputView , class InputView >
 struct HostViewRemap< OutputView , InputView , 5 >
-  : public HostThreadWorker<void>
+  : public HostThreadWorker
 {
   const OutputView output ;
   const InputView  input ;
 
   HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
     : output( arg_out ), input( arg_in )
-    { HostThreadWorker<void>::execute( *this ); }
+    { HostThreadWorker::execute( *this ); }
 
   void execute_on_thread( HostThread & this_thread ) const
   {
@@ -211,14 +211,14 @@ struct HostViewRemap< OutputView , InputView , 5 >
 
 template< class OutputView , class InputView >
 struct HostViewRemap< OutputView , InputView , 4 >
-  : public HostThreadWorker<void>
+  : public HostThreadWorker
 {
   const OutputView output ;
   const InputView  input ;
 
   HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
     : output( arg_out ), input( arg_in )
-    { HostThreadWorker<void>::execute( *this ); }
+    { HostThreadWorker::execute( *this ); }
 
   void execute_on_thread( HostThread & this_thread ) const
   {
@@ -238,14 +238,14 @@ struct HostViewRemap< OutputView , InputView , 4 >
 
 template< class OutputView , class InputView >
 struct HostViewRemap< OutputView , InputView , 3 >
-  : public HostThreadWorker<void>
+  : public HostThreadWorker
 {
   const OutputView output ;
   const InputView  input ;
 
   HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
     : output( arg_out ), input( arg_in )
-    { HostThreadWorker<void>::execute( *this ); }
+    { HostThreadWorker::execute( *this ); }
 
   void execute_on_thread( HostThread & this_thread ) const
   {
@@ -264,14 +264,14 @@ struct HostViewRemap< OutputView , InputView , 3 >
 
 template< class OutputView , class InputView >
 struct HostViewRemap< OutputView , InputView , 2 >
-  : public HostThreadWorker<void>
+  : public HostThreadWorker
 {
   const OutputView output ;
   const InputView  input ;
 
   HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
     : output( arg_out ), input( arg_in )
-    { HostThreadWorker<void>::execute( *this ); }
+    { HostThreadWorker::execute( *this ); }
 
   void execute_on_thread( HostThread & this_thread ) const
   {
@@ -289,14 +289,14 @@ struct HostViewRemap< OutputView , InputView , 2 >
 
 template< class OutputView , class InputView >
 struct HostViewRemap< OutputView , InputView , 1 >
-  : public HostThreadWorker<void>
+  : public HostThreadWorker
 {
   const OutputView output ;
   const InputView  input ;
 
   HostViewRemap( const OutputView & arg_out , const InputView & arg_in )
     : output( arg_out ), input( arg_in )
-    { HostThreadWorker<void>::execute( *this ); }
+    { HostThreadWorker::execute( *this ); }
 
   void execute_on_thread( HostThread & this_thread ) const
   {
@@ -313,7 +313,7 @@ struct HostViewRemap< OutputView , InputView , 1 >
 
 template< class OutputView , class InputView >
 struct HostViewRemap< OutputView , InputView , 0 >
-  : public HostThreadWorker<void>
+  : public HostThreadWorker
 {
   const OutputView output ;
   const InputView  input ;

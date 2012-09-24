@@ -52,7 +52,7 @@
 namespace KokkosArray {
 namespace Impl {
 
-class HostWorkerBlock : public HostThreadWorker<void> {
+class HostWorkerBlock : public HostThreadWorker {
 public:
   void execute_on_thread( HostThread & ) const ;
 
@@ -97,7 +97,7 @@ protected:
   //! Array of all worker threads (including master); accessible to the threads.
   HostThread     * m_thread[ HostThread::max_thread_count ];
 
-  const HostThreadWorker<void> * volatile m_worker ;
+  const HostThreadWorker * volatile m_worker ;
 
   virtual ~HostInternal();
 
@@ -153,7 +153,7 @@ public:
 
   void finalize();
 
-  inline void execute( const HostThreadWorker<void> & worker );
+  inline void execute( const HostThreadWorker & worker );
 
   void driver( const size_t );
 

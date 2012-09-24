@@ -116,7 +116,7 @@ public:
    */
   template< class ReduceTraits >
   inline
-  void reduce( typename ReduceTraits::value_type & update )
+  bool reduce( typename ReduceTraits::value_type & update )
   {
     typedef typename ReduceTraits::value_type value_type ;
 
@@ -152,6 +152,8 @@ public:
       wait( HostThread::ThreadReducing );
       m_reduce = NULL ;
     }
+
+    return 0 == m_thread_rank ;
   }
 
   //----------------------------------------------------------------------
@@ -191,10 +193,7 @@ private:
 //----------------------------------------------------------------------------
 /** \brief  Base class for a parallel driver executing on a thread pool. */
 
-template< class ValueType = void > class HostThreadWorker ;
-
-template<>
-class HostThreadWorker<void> {
+struct HostThreadWorker {
 public:
 
   /** \brief  Virtual method called on threads */
@@ -214,29 +213,10 @@ private:
   HostThreadWorker & operator = ( const HostThreadWorker & );
 };
 
-template< class ValueType >
-class HostThreadWorker {
-public:
-
-  /** \brief  Virtual method called on threads */
-  virtual void execute_on_thread( HostThread & , ValueType & ) const = 0 ;
-
-  virtual ~HostThreadWorker() {}
-
-protected:
-
-  HostThreadWorker() {}
-
-private:
-
-  HostThreadWorker( const HostThreadWorker & );
-  HostThreadWorker & operator = ( const HostThreadWorker & );
-};
-
 //----------------------------------------------------------------------------
 
 template< typename DstType , typename SrcType  >
-class HostParallelCopy : public HostThreadWorker<void> {
+class HostParallelCopy : public HostThreadWorker {
 public:
 
         DstType * const m_dst ;
@@ -258,9 +238,9 @@ public:
 
   HostParallelCopy( DstType * dst , const SrcType * src ,
                     Host::size_type count )
-    : HostThreadWorker<void>()
+    : HostThreadWorker()
     , m_dst( dst ), m_src( src ), m_count( count )
-    { HostThreadWorker<void>::execute( *this ); }
+    { HostThreadWorker::execute( *this ); }
 };
 
 template< typename ValueType >
@@ -273,7 +253,7 @@ struct DeepCopy<ValueType,Host::memory_space,Host::memory_space> {
 
 
 template< typename DstType >
-class HostParallelFill : public HostThreadWorker<void> {
+class HostParallelFill : public HostThreadWorker {
 public:
 
   DstType * const m_dst ;
@@ -295,9 +275,9 @@ public:
   template< typename SrcType >
   HostParallelFill( DstType * dst , const SrcType & src ,
                     Host::size_type count )
-    : HostThreadWorker<void>()
+    : HostThreadWorker()
     , m_dst( dst ), m_src( src ), m_count( count )
-    { HostThreadWorker<void>::execute( *this ); }
+    { HostThreadWorker::execute( *this ); }
 };
 
 //----------------------------------------------------------------------------

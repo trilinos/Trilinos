@@ -53,7 +53,7 @@ namespace KokkosArray {
 namespace Impl {
 
 template< class FunctorType >
-class ParallelFor< FunctorType , Host > : public HostThreadWorker<void> {
+class ParallelFor< FunctorType , Host > : public HostThreadWorker {
 private:
 
   typedef Host::size_type  size_type ;
@@ -75,7 +75,7 @@ private:
   }
 
   ParallelFor( const size_type work_count , const FunctorType & functor )
-    : HostThreadWorker<void>()
+    : HostThreadWorker()
     , m_work_functor( functor )
     , m_work_count( work_count )
     {}
@@ -88,7 +88,7 @@ public:
   {
     ParallelFor driver( work_count , functor );
 
-    HostThreadWorker<void>::execute( driver );
+    HostThreadWorker::execute( driver );
   }
 };
 
@@ -102,7 +102,20 @@ namespace KokkosArray {
 namespace Impl {
 
 template< class FunctorType >
-class HostMultiFunctorParallelForMember : public HostThreadWorker<void> {
+class HostMultiFunctorParallelForMember ;
+
+template<>
+class HostMultiFunctorParallelForMember<void> {
+public:
+
+  virtual ~HostMultiFunctorParallelForMember() {}
+
+  virtual void apply( HostThread & ) const = 0 ;
+};
+
+template< class FunctorType >
+class HostMultiFunctorParallelForMember
+  : public HostMultiFunctorParallelForMember<void> {
 public:
   typedef Host::size_type size_type ;
 
@@ -118,7 +131,7 @@ public:
     , m_work_count(   work_count )
     {}
 
-  void execute_on_thread( HostThread & this_thread ) const
+  void apply( HostThread & this_thread ) const
   {
     const std::pair< size_type , size_type > range =
       this_thread.work_range( m_work_count );
@@ -133,10 +146,10 @@ public:
 
 template<>
 class MultiFunctorParallelFor< Host >
-  : public Impl::HostThreadWorker<void> {
+  : public Impl::HostThreadWorker {
 private:
   typedef Host::size_type               size_type ;
-  typedef Impl::HostThreadWorker<void>  worker_type ;
+  typedef Impl::HostMultiFunctorParallelForMember<void>  worker_type ;
   
   typedef std::vector< worker_type * > MemberContainer ;
 
@@ -149,7 +162,7 @@ private:
   {
     for ( MemberIterator m  = m_member_functors.begin() ;
                          m != m_member_functors.end() ; ++m ) {
-      (*m)->execute_on_thread( this_thread );
+      (*m)->apply( this_thread );
     }
 
     this_thread.barrier();
@@ -158,7 +171,7 @@ private:
 public: 
 
   MultiFunctorParallelFor()
-    : Impl::HostThreadWorker<void>()
+    : Impl::HostThreadWorker()
     , m_member_functors() {}
     
   ~MultiFunctorParallelFor()
@@ -181,7 +194,7 @@ public:
 
   void execute() const
   {
-    Impl::HostThreadWorker<void>::execute( *this );
+    Impl::HostThreadWorker::execute( *this );
   }
 };
 
