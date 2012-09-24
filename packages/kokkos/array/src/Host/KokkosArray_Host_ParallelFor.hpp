@@ -53,16 +53,15 @@ namespace KokkosArray {
 namespace Impl {
 
 template< class FunctorType >
-class ParallelFor< FunctorType , Host > : public HostThreadWorker {
-private:
+class ParallelFor< FunctorType , Host > {
+public:
 
   typedef Host::size_type  size_type ;
 
   const FunctorType m_work_functor ;
   const size_type   m_work_count ;
 
-  // virtual function from HostThreadWorker:
-  void execute_on_thread( HostThread & this_thread ) const
+  void operator()( HostThread & this_thread ) const
   {
     const std::pair< size_type , size_type > range =
       this_thread.work_range( m_work_count );
@@ -70,15 +69,12 @@ private:
     for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
       m_work_functor( iwork );
     }
-
-    this_thread.return_barrier();
   }
 
   ParallelFor( const size_type work_count , const FunctorType & functor )
-    : HostThreadWorker()
-    , m_work_functor( functor )
+    : m_work_functor( functor )
     , m_work_count( work_count )
-    {}
+    { HostParallelLaunch< ParallelFor >( *this ); }
 
 public:
 
@@ -87,8 +83,6 @@ public:
                        const FunctorType & functor )
   {
     ParallelFor driver( work_count , functor );
-
-    HostThreadWorker::execute( driver );
   }
 };
 
@@ -145,9 +139,8 @@ public:
 } // namespace Impl
 
 template<>
-class MultiFunctorParallelFor< Host >
-  : public Impl::HostThreadWorker {
-private:
+class MultiFunctorParallelFor< Host > {
+public:
   typedef Host::size_type               size_type ;
   typedef Impl::HostMultiFunctorParallelForMember<void>  worker_type ;
   
@@ -157,22 +150,17 @@ private:
 
   MemberContainer m_member_functors ;
 
-  // Virtual method defined in HostThreadWorker
-  void execute_on_thread( Impl::HostThread & this_thread ) const
+  void operator()( Impl::HostThread & this_thread ) const
   {
     for ( MemberIterator m  = m_member_functors.begin() ;
                          m != m_member_functors.end() ; ++m ) {
       (*m)->apply( this_thread );
     }
-
-    this_thread.return_barrier();
   }
   
 public: 
 
-  MultiFunctorParallelFor()
-    : Impl::HostThreadWorker()
-    , m_member_functors() {}
+  MultiFunctorParallelFor() : m_member_functors() {}
     
   ~MultiFunctorParallelFor()
   { 
@@ -194,7 +182,7 @@ public:
 
   void execute() const
   {
-    Impl::HostThreadWorker::execute( *this );
+    Impl::HostParallelLaunch< MultiFunctorParallelFor >( *this );
   }
 };
 

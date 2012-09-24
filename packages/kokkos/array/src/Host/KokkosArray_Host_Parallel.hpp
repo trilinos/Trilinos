@@ -266,14 +266,14 @@ struct HostParallelLaunch {
 //----------------------------------------------------------------------------
 
 template< typename DstType , typename SrcType  >
-class HostParallelCopy : public HostThreadWorker {
+class HostParallelCopy {
 public:
 
         DstType * const m_dst ;
   const SrcType * const m_src ;
   const Host::size_type m_count ;
 
-  void execute_on_thread( HostThread & this_thread ) const
+  void operator()( HostThread & this_thread ) const
   {
     std::pair<Host::size_type,Host::size_type> range =
       this_thread.work_range( m_count );
@@ -282,19 +282,17 @@ public:
     const SrcType * y     = m_src + range.first ;
 
     for ( ; x_end != x ; ++x , ++y ) { *x = (DstType) *y ; }
-
-    this_thread.return_barrier();
   }
 
   HostParallelCopy( DstType * dst , const SrcType * src ,
                     Host::size_type count )
-    : HostThreadWorker()
-    , m_dst( dst ), m_src( src ), m_count( count )
-    { HostThreadWorker::execute( *this ); }
+    : m_dst( dst ), m_src( src ), m_count( count )
+    { HostParallelLaunch< HostParallelCopy >( *this ); }
 };
 
 template< typename ValueType >
 struct DeepCopy<ValueType,Host::memory_space,Host::memory_space> {
+
   DeepCopy( ValueType * dst , const ValueType * src , size_t count )
   {
     HostParallelCopy< ValueType , ValueType >( dst , src , count );
@@ -303,14 +301,14 @@ struct DeepCopy<ValueType,Host::memory_space,Host::memory_space> {
 
 
 template< typename DstType >
-class HostParallelFill : public HostThreadWorker {
+class HostParallelFill {
 public:
 
   DstType * const m_dst ;
   const DstType   m_src ;
   const Host::size_type m_count ;
 
-  void execute_on_thread( HostThread & this_thread ) const
+  void operator()( HostThread & this_thread ) const
   {
     std::pair<Host::size_type,Host::size_type> range =
       this_thread.work_range( m_count );
@@ -318,19 +316,14 @@ public:
     DstType *       x     = m_dst + range.first ;
 
     for ( ; x_end != x ; ++x ) { *x = m_src ; }
-
-    this_thread.return_barrier();
   }
 
   template< typename SrcType >
   HostParallelFill( DstType * dst , const SrcType & src ,
                     Host::size_type count )
-    : HostThreadWorker()
-    , m_dst( dst ), m_src( src ), m_count( count )
-    { HostThreadWorker::execute( *this ); }
+    : m_dst( dst ), m_src( src ), m_count( count )
+    { HostParallelLaunch< HostParallelFill >( *this ); }
 };
-
-//----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
 
