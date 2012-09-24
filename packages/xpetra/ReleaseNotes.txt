@@ -1,0 +1,8 @@
+Xpetra Release Notes
+
+== Initial version released with Trilinos 11.0 ==
+Xpetra is a lightweight wrapper package that provides algorithm developers with a unified interface to the
+underlying sparse linear algebra library.
+Epetra and Tpetra are currently supported.
+Xpetra is used by the packages Zoltan2 and MueLu.
+Xpetra should be considered *EXPERIMENTAL* code.
