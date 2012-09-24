@@ -338,7 +338,7 @@ int main(int argc, char *argv[])
   bool doMemory=false;
   int numGlobalParts = nprocs;
   int dummyTimer=0;
-  int remap=0;
+  bool remap=0;
 
   CommandLineProcessor commandLine(false, true);
   commandLine.setOption("size", &numGlobalCoords, 
@@ -348,7 +348,7 @@ int main(int argc, char *argv[])
   commandLine.setOption("weightDim", &weightDim, 
     "Number of weights per coordinate, zero implies uniform weights.");
   commandLine.setOption("debug", &debugLevel, "Zoltan1 debug level");
-  commandLine.setOption("remap", &remap,
+  commandLine.setOption("remap", "no-remap", &remap,
     "Zoltan1 REMAP parameter; disabled by default for scalability testing");
   commandLine.setOption("timers", &dummyTimer, "ignored");
   commandLine.setOption(memoryOn.c_str(), memoryOff.c_str(), &doMemory,
