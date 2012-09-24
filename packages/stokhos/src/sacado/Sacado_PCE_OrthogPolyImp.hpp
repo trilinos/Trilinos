@@ -812,7 +812,7 @@ bool
 operator<=(const OrthogPoly<T,Storage>& a, 
 	   const OrthogPoly<T,Storage>& b)
 {
-  return a.coeff(0) <= b.coeff(0);
+  return a.two_norm() <= b.two_norm();
 }
 
 template <typename T, typename Storage>
@@ -820,7 +820,7 @@ bool
 operator<=(const typename OrthogPoly<T,Storage>::value_type& a, 
 	   const OrthogPoly<T,Storage>& b)
 {
-  return a <= b.coeff(0);
+  return a <= b.two_norm();
 }
 
 template <typename T, typename Storage>
@@ -828,7 +828,7 @@ bool
 operator<=(const OrthogPoly<T,Storage>& a, 
 	   const typename OrthogPoly<T,Storage>::value_type& b)
 {
-  return a.coeff(0) <= b;
+  return a.two_norm() <= b;
 }
 
 template <typename T, typename Storage>
@@ -836,7 +836,7 @@ bool
 operator>=(const OrthogPoly<T,Storage>& a, 
 	   const OrthogPoly<T,Storage>& b)
 {
-  return a.coeff(0) >= b.coeff(0);
+  return a.two_norm() >= b.two_norm();
 }
 
 template <typename T, typename Storage>
@@ -844,7 +844,7 @@ bool
 operator>=(const typename OrthogPoly<T,Storage>::value_type& a, 
 	   const OrthogPoly<T,Storage>& b)
 {
-  return a >= b.coeff(0);
+  return a >= b.two_norm();
 }
 
 template <typename T, typename Storage>
@@ -852,7 +852,7 @@ bool
 operator>=(const OrthogPoly<T,Storage>& a, 
 	   const typename OrthogPoly<T,Storage>::value_type& b)
 {
-  return a.coeff(0) >= b;
+  return a.two_norm() >= b;
 }
 
 template <typename T, typename Storage>
@@ -860,7 +860,7 @@ bool
 operator<(const OrthogPoly<T,Storage>& a, 
 	  const OrthogPoly<T,Storage>& b)
 {
-  return a.coeff(0) < b.coeff(0);
+  return a.two_norm() < b.two_norm();
 }
 
 template <typename T, typename Storage>
@@ -868,7 +868,7 @@ bool
 operator<(const typename OrthogPoly<T,Storage>::value_type& a, 
 	  const OrthogPoly<T,Storage>& b)
 {
-  return a < b.coeff(0);
+  return a < b.two_norm();
 }
 
 template <typename T, typename Storage>
@@ -876,7 +876,7 @@ bool
 operator<(const OrthogPoly<T,Storage>& a, 
 	  const typename OrthogPoly<T,Storage>::value_type& b)
 {
-  return a.coeff(0) < b;
+  return a.two_norm() < b;
 }
 
 template <typename T, typename Storage>
@@ -884,7 +884,7 @@ bool
 operator>(const OrthogPoly<T,Storage>& a, 
 	  const OrthogPoly<T,Storage>& b)
 {
-  return a.coeff(0) > b.coeff(0);
+  return a.two_norm() > b.two_norm();
 }
 
 template <typename T, typename Storage>
@@ -892,7 +892,7 @@ bool
 operator>(const typename OrthogPoly<T,Storage>::value_type& a, 
 	  const OrthogPoly<T,Storage>& b)
 {
-  return a > b.coeff(0);
+  return a > b.two_norm();
 }
 
 template <typename T, typename Storage>
@@ -900,7 +900,7 @@ bool
 operator>(const OrthogPoly<T,Storage>& a, 
 	  const typename OrthogPoly<T,Storage>::value_type& b)
 {
-  return a.coeff(0) > b;
+  return a.two_norm() > b;
 }
 
 template <typename T, typename Storage>
