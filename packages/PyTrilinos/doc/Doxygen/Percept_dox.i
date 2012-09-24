@@ -9083,6 +9083,19 @@ stk::adapt::adapt_main_full_options(int argc, char **argv) ";
 %feature("docstring")  stk::adapt::Elem::dump_args "static void
 stk::adapt::dump_args(int argc, char **argv) ";
 
+%feature("docstring")  stk::adapt::Elem::spacing_edge "static double
+stk::adapt::spacing_edge(unsigned iv0, unsigned iv1, unsigned nsz,
+unsigned nsp, double lspc[8][3], double den_xyz[3], double *coord[8])
+";
+
+%feature("docstring")  stk::adapt::Elem::normalize_spacing_0 "static
+void stk::adapt::normalize_spacing_0(unsigned nsz, unsigned nsp,
+double spc[8][3], double den_xyz[3]) ";
+
+%feature("docstring")  stk::adapt::Elem::normalize_spacing "static
+void stk::adapt::normalize_spacing(unsigned nsz, unsigned nsp, double
+spc[8][3], double den_xyz[3], double *coord[8]) ";
+
 %feature("docstring")  stk::adapt::Elem::doPrintSizes "static void
 stk::adapt::doPrintSizes() ";
 

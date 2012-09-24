@@ -40,47 +40,15 @@
 // ***********************************************************************
 // @HEADER
 
-#include <iostream>
-#include "Teuchos_RCP.hpp"
-#include "Panzer_BC.hpp"
-#include "Panzer_BCStrategy_TemplateManager.hpp"
+#include "Panzer_config.hpp"
 
-#undef PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER
-#define PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER(key, fClass, fType)				        \
-									\
-  struct fType ## _TemplateBuilder {					\
-    const panzer::BC& m_bc;						\
-    const Teuchos::RCP<panzer::GlobalData> m_global_data;               \
-    fType ## _TemplateBuilder(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data) : m_bc(bc), m_global_data(global_data) {} \
-									\
-    template<typename EvalT>						\
-    Teuchos::RCP<panzer::BCStrategyBase> build() const {           	\
-      fClass <EvalT>* ptr = new fClass <EvalT>(m_bc,m_global_data);   	\
-      return Teuchos::rcp(ptr);						\
-    }									\
-    									\
-  };
+#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 
-#define PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER_EXTRA(key, fClass, fType, extraSteps)				        \
-									\
-  struct fType ## _TemplateBuilder {					\
-    const panzer::BC& m_bc;						\
-    const Teuchos::RCP<panzer::GlobalData> m_global_data;               \
-    fType ## _TemplateBuilder(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data) : m_bc(bc), m_global_data(global_data) {} \
-									\
-    template<typename EvalT>						\
-    Teuchos::RCP<panzer::BCStrategyBase> build() const {           	\
-      fClass <EvalT>* ptr = new fClass <EvalT>(m_bc,m_global_data);   	\
-      { extraSteps }                                                    \
-      return Teuchos::rcp(ptr);						\
-    }									\
-    									\
-  };
+#include "Panzer_ExplicitTemplateInstantiation.hpp"
 
-#undef PANZER_BUILD_BCSTRATEGY_OBJECTS
-#define PANZER_BUILD_BCSTRATEGY_OBJECTS(key, fClass, fType)	        \
-  if (bc.strategy() == key) {						\
-    fType ## _TemplateBuilder builder(bc, global_data);			\
-      bcs_tm->buildObjects(builder);				        \
-      found = true;                                                     \
-    }
+#include "Panzer_Copy_decl.hpp"
+#include "Panzer_Copy_impl.hpp"
+
+PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::Copy)
+
+#endif

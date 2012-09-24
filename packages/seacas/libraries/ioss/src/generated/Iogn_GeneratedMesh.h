@@ -188,7 +188,7 @@ namespace Iogn {
     explicit GeneratedMesh(const std::string &parameters, int proc_count = 1, int my_proc = 0);
     GeneratedMesh(int64_t num_x, int64_t num_y, int64_t num_z, int proc_count = 1, int my_proc = 0);
     GeneratedMesh() { };
-    ~GeneratedMesh();
+    virtual ~GeneratedMesh();
 
     /**
      * Add a shell block along the specified face of the hex mesh.
@@ -491,10 +491,10 @@ public:
         NUM_NODES_PER_QUAD_FACE =  4
     };
 
-    explicit DashSurfaceMesh(const std::vector<double>    &coordinates,
+    explicit DashSurfaceMesh(const std::vector<double>    &coords,
                         const std::vector< int64_t > &quadSurface1,
                         const std::vector< int64_t > &quadSurface2)
-    : mCoordinates(coordinates),
+    : mCoordinates(coords),
       mQuadSurface1(quadSurface1),
       mQuadSurface2(quadSurface2)
     {}

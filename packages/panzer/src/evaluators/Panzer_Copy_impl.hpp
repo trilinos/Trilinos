@@ -40,47 +40,50 @@
 // ***********************************************************************
 // @HEADER
 
-#include <iostream>
-#include "Teuchos_RCP.hpp"
-#include "Panzer_BC.hpp"
-#include "Panzer_BCStrategy_TemplateManager.hpp"
+#ifndef PANZER_COPY_IMPL_HPP
+#define PANZER_COPY_IMPL_HPP
 
-#undef PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER
-#define PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER(key, fClass, fType)				        \
-									\
-  struct fType ## _TemplateBuilder {					\
-    const panzer::BC& m_bc;						\
-    const Teuchos::RCP<panzer::GlobalData> m_global_data;               \
-    fType ## _TemplateBuilder(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data) : m_bc(bc), m_global_data(global_data) {} \
-									\
-    template<typename EvalT>						\
-    Teuchos::RCP<panzer::BCStrategyBase> build() const {           	\
-      fClass <EvalT>* ptr = new fClass <EvalT>(m_bc,m_global_data);   	\
-      return Teuchos::rcp(ptr);						\
-    }									\
-    									\
-  };
+#include <cstddef>
+#include <string>
+#include <vector>
 
-#define PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER_EXTRA(key, fClass, fType, extraSteps)				        \
-									\
-  struct fType ## _TemplateBuilder {					\
-    const panzer::BC& m_bc;						\
-    const Teuchos::RCP<panzer::GlobalData> m_global_data;               \
-    fType ## _TemplateBuilder(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data) : m_bc(bc), m_global_data(global_data) {} \
-									\
-    template<typename EvalT>						\
-    Teuchos::RCP<panzer::BCStrategyBase> build() const {           	\
-      fClass <EvalT>* ptr = new fClass <EvalT>(m_bc,m_global_data);   	\
-      { extraSteps }                                                    \
-      return Teuchos::rcp(ptr);						\
-    }									\
-    									\
-  };
+namespace panzer {
 
-#undef PANZER_BUILD_BCSTRATEGY_OBJECTS
-#define PANZER_BUILD_BCSTRATEGY_OBJECTS(key, fClass, fType)	        \
-  if (bc.strategy() == key) {						\
-    fType ## _TemplateBuilder builder(bc, global_data);			\
-      bcs_tm->buildObjects(builder);				        \
-      found = true;                                                     \
-    }
+//**********************************************************************
+PHX_EVALUATOR_CTOR(Copy,p)
+{
+  std::string input_name = p.get<std::string>("Source Name");
+  std::string output_name = p.get<std::string>("Destination Name");
+  Teuchos::RCP<PHX::DataLayout> data_layout = p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
+  
+  input  = PHX::MDField<ScalarT>(input_name, data_layout);
+  output = PHX::MDField<ScalarT>(output_name, data_layout);
+  
+  this->addDependentField(input);
+  this->addEvaluatedField(output);
+ 
+  std::string n = "Copy Evaluator: " + input_name + " => " + output_name;
+  this->setName(n);
+}
+
+//**********************************************************************
+PHX_POST_REGISTRATION_SETUP(Copy,worksets,fm)
+{
+  this->utils.setFieldData(input,fm);
+  this->utils.setFieldData(output,fm);
+
+  TEUCHOS_ASSERT(input.size()==output.size());
+}
+
+//**********************************************************************
+PHX_EVALUATE_FIELDS(Copy,workset)
+{ 
+  for (typename PHX::MDField<ScalarT>::size_type i = 0; i < input.size(); ++i)
+    output[i] = input[i];
+}
+
+//**********************************************************************
+
+}
+
+#endif

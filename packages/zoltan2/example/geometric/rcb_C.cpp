@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
            new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia1, &params, 
                                                             MPI_COMM_WORLD);
 #else
-  Zoltan2::PartitioningProblem<inputAdapter_t> *problem1
+  Zoltan2::PartitioningProblem<inputAdapter_t> *problem1 =
            new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia1, &params);
 #endif
    

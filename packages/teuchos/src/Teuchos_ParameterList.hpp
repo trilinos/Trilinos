@@ -716,6 +716,9 @@ bool operator!=( const ParameterList& list1, const ParameterList& list2 )
  * example, two parameters can have the same values but not have the same
  * documentation strings or the same validators.
  *
+ * \note This test respects ordering of the ParameterList entries; the same values in a different 
+ *       order will result in \false.
+ *
  * \relates ParameterList
  */
 TEUCHOS_LIB_DLL_EXPORT bool haveSameValues( const ParameterList& list1, const ParameterList& list2 );

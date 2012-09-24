@@ -36,7 +36,6 @@ C=======================================================================
      &           NUMLNK, NUMATR, A, IA, KLINK, KATRIB, BLKTYP, *)
 C=======================================================================
 C   --*** DBIELB *** (EXOLIB) Read database element blocks
-C   --   Written by Amy Gilkey - revised 10/14/87
 C   --
 C   --DBIELB reads the element block information from the database.
 C   --An error message is displayed if the end of file is read.

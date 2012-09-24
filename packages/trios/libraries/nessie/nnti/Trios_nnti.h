@@ -1,7 +1,7 @@
 /**
- * @file nnti.h
+ * @file Trios_nnti.h
  *
- * @brief nnti.h
+ * @brief Trios_nnti.h
  *
  * @author Todd Kordenbrock (thkorde\@sandia.gov).
  * Created on: Jan 13, 2011

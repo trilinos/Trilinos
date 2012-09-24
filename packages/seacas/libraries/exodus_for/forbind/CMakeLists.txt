@@ -3,7 +3,6 @@ INCLUDE(FortranSettings)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
-  "${CMAKE_CURRENT_BINARY_DIR}/include"
 )
 
 SET(SOURCES "")

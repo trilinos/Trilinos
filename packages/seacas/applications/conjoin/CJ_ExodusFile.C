@@ -134,10 +134,6 @@ bool Excn::ExodusFile::initialize(const SystemInterface& si)
   filenames_.resize(si.inputFiles_.size());
   fileids_.resize(si.inputFiles_.size());
   
-  int int_byte_size_api = 4;
-  if (si.ints_64_bit())
-    int_byte_size_api = 8;
-  
   int overall_max_name_length = 0;
   for(size_t p = 0; p < si.inputFiles_.size(); p++) {
     std::string name = si.inputFiles_[p];

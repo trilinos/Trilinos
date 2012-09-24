@@ -923,7 +923,7 @@ namespace Ioxf {
     // of this name in 'nodalVariables' map
     int comp_count = var_type->component_count();
     for (int i=0; i < comp_count; i++) {
-      std::string var_name = var_type->label_name(field.get_name(), i+1, fieldSuffixSeparator);
+      std::string var_name = var_type->label_name(field.get_name(), i+1, get_field_separator());
       DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
 
       new_this->nodalVariables[var_name];
@@ -1001,7 +1001,7 @@ namespace Ioxf {
 	     << " Dimensions=\"" << nodeCount << " 3\">" << endl;
 
 	for (int j=0; j < comp_count; j++) {
-	  std::string var_name = var_type->label_name(field.get_name(), j+1, fieldSuffixSeparator);
+	  std::string var_name = var_type->label_name(field.get_name(), j+1, get_field_separator());
 
 	  *XML << "\t\t\t<DataStructure Format=\"HDF\" Dimensions=\"" << nodeCount << "\" DataType=\"Float\">" << endl;
 	  *XML << "\t\t\t\t" << hdfname.tailname()
@@ -1047,7 +1047,7 @@ namespace Ioxf {
     // of this name in 'elementVariables' map
     int comp_count = var_type->component_count();
     for (int i=0; i < comp_count; i++) {
-      std::string var_name = var_type->label_name(field.get_name(), i+1, fieldSuffixSeparator);
+      std::string var_name = var_type->label_name(field.get_name(), i+1, get_field_separator());
 
       // Transfer from 'variables' array.  Note that the
       // 'reorderElementMap has '1..numel' ids in it, but the 'temp'
@@ -1145,7 +1145,7 @@ namespace Ioxf {
     DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
 
     for (int i=0; i < comp_count; i++) {
-      std::string var_name = var_type->label_name(field.get_name(), i+1, fieldSuffixSeparator);
+      std::string var_name = var_type->label_name(field.get_name(), i+1, get_field_separator());
 
       // If this is an element block, need to prepend the block name
       // to avoid name collisions... May also need this for nodeblocks
@@ -1187,7 +1187,7 @@ namespace Ioxf {
     // of this name in 'globalVariables' map
     int comp_count = var_type->component_count();
     for (int i=0; i < comp_count; i++) {
-      std::string var_name = var_type->label_name(field.get_name(), i+1, fieldSuffixSeparator);
+      std::string var_name = var_type->label_name(field.get_name(), i+1, get_field_separator());
 
       DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
       int var_index = new_this->globalVariables[var_name];
@@ -2505,7 +2505,7 @@ namespace Ioxf {
       const Ioss::VariableType *var_type = field.transformed_storage();
 
       for (int i=1; i <= var_type->component_count(); i++) {
-	std::string var_string = var_type->label_name(field_name, i, fieldSuffixSeparator);
+	std::string var_string = var_type->label_name(field_name, i, get_field_separator());
 
 	// Add to 'VariableNameMap elementVariables' or
 	// 'VariableNameMap nodalVariables' so can determine exodusII
@@ -2616,7 +2616,7 @@ namespace Ioxf {
 	const Ioss::VariableType *var_type = field.transformed_storage();
 
 	for (int i=1; i <= var_type->component_count(); i++) {
-	  std::string var_string = var_type->label_name(field_name, i, fieldSuffixSeparator);
+	  std::string var_string = var_type->label_name(field_name, i, get_field_separator());
 
 	  // Find position of 'var_string' in 'elementVariables'
 	  VariableNameMap::iterator VN = elementVariables.find(var_string);
@@ -2686,7 +2686,7 @@ namespace Ioxf {
 	  const Ioss::VariableType *var_type = field.transformed_storage();
 
 	  for (int i=1; i <= var_type->component_count(); i++) {
-	    std::string var_string = var_type->label_name(field_name, i, fieldSuffixSeparator);
+	    std::string var_string = var_type->label_name(field_name, i, get_field_separator());
 	    // Find position of 'var_string' in 'elementVariables'
 	    VariableNameMap::iterator VN = sidesetVariables.find(var_string);
 	    if (VN != sidesetVariables.end()) {
@@ -2736,7 +2736,7 @@ namespace Ioxf {
 	const Ioss::VariableType *var_type = field.transformed_storage();
 
 	for (int i=1; i <= var_type->component_count(); i++) {
-	  std::string var_string = var_type->label_name(field_name, i, fieldSuffixSeparator);
+	  std::string var_string = var_type->label_name(field_name, i, get_field_separator());
 	  // Find position of 'var_string' in 'elementVariables'
 	  VariableNameMap::iterator VN = nodesetVariables.find(var_string);
 	  if (VN != nodesetVariables.end()) {

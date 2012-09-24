@@ -9,7 +9,7 @@
 #define NNTI_IB_H_
 
 
-#include "nnti.h"
+#include "Trios_nnti.h"
 #include "nnti_internal.h"
 
 

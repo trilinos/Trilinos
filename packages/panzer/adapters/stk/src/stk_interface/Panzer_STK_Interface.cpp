@@ -161,6 +161,9 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
    TEUCHOS_ASSERT(not initialized_);
    TEUCHOS_ASSERT(dimension_!=0); // no zero dimensional meshes!
 
+   if(mpiComm_==Teuchos::null)
+      mpiComm_ = getSafeCommunicator(parallelMach);
+
    if(!metaData_->is_FEM_initialized()) {
       // need for uniform adaptivity
       std::vector<std::string> entity_rank_names = stk::mesh::fem::entity_rank_names(dimension_);
@@ -172,7 +175,7 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
    stk::mesh::EntityRank elementRank = getElementRank();
    stk::mesh::EntityRank nodeRank = getNodeRank();
 
-   procRank_ = stk::parallel_machine_rank(parallelMach);
+   procRank_ = stk::parallel_machine_rank(*mpiComm_->getRawMpiComm());
 
    // associating the field with a part: universal part!
    stk::mesh::put_field( *coordinatesField_ , nodeRank, metaData_->universal_part(), getDimension());
@@ -222,7 +225,7 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
 
    metaData_->commit();
    if(bulkData_==Teuchos::null)
-      instantiateBulkData(parallelMach);
+      instantiateBulkData(*mpiComm_->getRawMpiComm());
 
    initialized_ = true;
 }
@@ -254,8 +257,10 @@ void STK_Interface::initializeFieldsInSTK(const std::map<std::pair<std::string,s
 void STK_Interface::instantiateBulkData(stk::ParallelMachine parallelMach)
 {
    TEUCHOS_ASSERT(bulkData_==Teuchos::null);
+   if(mpiComm_==Teuchos::null)
+      mpiComm_ = getSafeCommunicator(parallelMach);
 
-   bulkData_ = rcp(new stk::mesh::BulkData(stk::mesh::fem::FEMMetaData::get_meta_data(*metaData_),parallelMach));
+   bulkData_ = rcp(new stk::mesh::BulkData(stk::mesh::fem::FEMMetaData::get_meta_data(*metaData_),*mpiComm_->getRawMpiComm()));
 }
 
 void STK_Interface::beginModification()
@@ -336,7 +341,8 @@ void STK_Interface::addElement(const Teuchos::RCP<ElementDescriptor> & ed,stk::m
 void STK_Interface::writeToExodus(const std::string & filename)
 {
    #ifdef HAVE_IOSS
-      stk::ParallelMachine comm = bulkData_->parallel();
+      TEUCHOS_ASSERT(mpiComm_!=Teuchos::null);
+      stk::ParallelMachine comm = *mpiComm_->getRawMpiComm();
 
       Ioss::Init::Initializer io;
       stk::io::MeshData meshData;
@@ -352,7 +358,8 @@ void STK_Interface::writeToExodus(const std::string & filename)
 void STK_Interface::setupTransientExodusFile(const std::string & filename)
 {
    #ifdef HAVE_IOSS
-      stk::ParallelMachine comm = bulkData_->parallel();
+      TEUCHOS_ASSERT(mpiComm_!=Teuchos::null);
+      stk::ParallelMachine comm = *mpiComm_->getRawMpiComm();
 
       Ioss::Init::Initializer io;
       meshData_ = Teuchos::rcp(new stk::io::MeshData);
@@ -475,7 +482,8 @@ void STK_Interface::buildMaxEntityIds()
 
    TEUCHOS_ASSERT(entityRankCount<10);
 
-   stk::ParallelMachine mach = bulkData_->parallel();
+   // stk::ParallelMachine mach = bulkData_->parallel();
+   stk::ParallelMachine mach = *mpiComm_->getRawMpiComm();
 
    std::vector<stk::mesh::EntityId> local(commCount,0);
 
@@ -905,6 +913,17 @@ Teuchos::RCP<const shards::CellTopology> STK_Interface::getCellTopology(const st
    }
 
    return itr->second;
+}
+
+Teuchos::RCP<Teuchos::MpiComm<int> > STK_Interface::getSafeCommunicator(stk::ParallelMachine parallelMach) const
+{
+   MPI_Comm newComm;
+   const int err = MPI_Comm_dup (parallelMach, &newComm);
+   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+     "panzer::STK_Interface: MPI_Comm_dup failed with error \""
+     << Teuchos::mpiErrorCodeToString (err) << "\".");
+
+   return Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper (newComm,MPI_Comm_free)));
 }
 
 } // end namespace panzer_stk

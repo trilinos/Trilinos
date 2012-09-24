@@ -78,7 +78,13 @@
  * Tracing configuration
  * ************************************************ */
 #cmakedefine TRIOS_ENABLE_TRACING 1
+#cmakedefine TRIOS_ENABLE_PAPI @Trios_ENABLE_PAPI@
 #cmakedefine HAVE_TRIOS_PABLO 1
+
+/* ************************************************
+ * HPCToolkit configuration
+ * ************************************************ */
+#cmakedefine HAVE_TRIOS_HPCTOOLKIT 1
 
 /* ************************************************
  * XDR configuration

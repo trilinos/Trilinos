@@ -10,7 +10,7 @@
 
 #include "Trios_config.h"
 
-#include "nnti.h"
+#include "Trios_nnti.h"
 #include "nnti_internal.h"
 
 

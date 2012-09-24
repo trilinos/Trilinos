@@ -37,7 +37,6 @@ C=======================================================================
 C=======================================================================
 
 C   --*** DBPELB *** (EXOLIB) Print database element block summary
-C   --   Written by Amy Gilkey - revised 01/19/88
 C   --
 C   --DBPELB displays the database element block summary (block ID,
 C   --number of elements, element block name).

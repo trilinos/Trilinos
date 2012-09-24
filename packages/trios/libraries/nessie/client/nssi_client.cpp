@@ -63,6 +63,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 
 #include <vector>
 
@@ -80,7 +81,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "nssi_service_args.h"
 
 
-#include "nnti.h"
+#include "Trios_nnti.h"
 
 #define MIN_TIMEOUT 1000
 
@@ -1212,6 +1213,9 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
     trios_declare_timer(call_time);
 
     switch (req->status) {
+
+    case NSSI_REQUEST_NULL:
+        return rc;
 
     case NSSI_REQUEST_ERROR:
         log_debug(rpc_debug_level,"timedwait finished");

@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
                                                             MPI_COMM_WORLD);
 #else
   Zoltan2::PartitioningProblem<inputAdapter_t> *problem = 
-           new PartitioningProblem<inputAdapter_t>(&ia, &params);
+           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, &params);
 #endif
    
   ///////////////////////////////////////////////////////////////////////

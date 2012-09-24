@@ -85,7 +85,7 @@ template <typename Traits,typename LocalOrdinalT>
 BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
                               const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider)
-   : blockProvider_(gidProvider), blockedDOFManager_(gidProvider), comm_(comm)
+   : blockProvider_(gidProvider), blockedDOFManager_(gidProvider), comm_(comm), rawMpiComm_(Teuchos::null)
 { 
    for(std::size_t i=0;i<gidProvider->getFieldDOFManagers().size();i++)
       gidProviders_.push_back(gidProvider->getFieldDOFManagers()[i]);
@@ -101,9 +101,9 @@ template <typename Traits,typename LocalOrdinalT>
 BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
                               const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider)
-   : blockProvider_(gidProvider), blockedDOFManager_(gidProvider), comm_(Teuchos::null)
+   : blockProvider_(gidProvider), blockedDOFManager_(gidProvider), comm_(Teuchos::null), rawMpiComm_(comm->getRawMpiComm())
 { 
-   comm_ = Teuchos::rcp(new Epetra_MpiComm(*(comm->getRawMpiComm())));
+   comm_ = Teuchos::rcp(new Epetra_MpiComm(*rawMpiComm_));
 
    for(std::size_t i=0;i<gidProvider->getFieldDOFManagers().size();i++)
       gidProviders_.push_back(gidProvider->getFieldDOFManagers()[i]);

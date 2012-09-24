@@ -98,17 +98,17 @@ int main (int argc, char *argv[]){
   const char* ext=".exo";
 
   int   
-    i,j,k,n,n1,cpu_word_size,io_word_size,exo_file,err,
+    i,j,k,n,n1,cpu_word_size,io_word_size,exo_file,
     num_axes,num_nodes,num_elements,num_blocks,
     num_side_sets,num_node_sets,num_time_steps,
-    num_qa_lines,num_info_lines,num_global_vars,
+    num_global_vars,
     num_nodal_vars,num_element_vars,*ids,*iscr,
     *nsssides,*nssdfac,*elem_list,*side_list,
     *nnsnodes,*nnsdfac,*node_list;
 
   double
-    f,*scr,*x,*y,*z,
-    *cscr,*dscr,*escr;
+    *scr,*x,*y,*z,
+    *escr;
 
   char * blknames = NULL;
   int *num_elem_in_block = NULL;
@@ -164,50 +164,22 @@ int main (int argc, char *argv[]){
   matGetInt("nevars", 1, 1,&num_element_vars);
 
   /*export parameters */
-  err = ex_put_init(exo_file,line,
-		    num_axes,num_nodes,num_elements,num_blocks,
-		    num_node_sets,num_side_sets);
+  ex_put_init(exo_file,line,
+	      num_axes,num_nodes,num_elements,num_blocks,
+	      num_node_sets,num_side_sets);
   free(line);
   
   if ( num_global_vars > 0 ){
-    err=ex_put_variable_param(exo_file,EX_GLOBAL,num_global_vars);
+    ex_put_variable_param(exo_file,EX_GLOBAL,num_global_vars);
   }
   
   if ( num_nodal_vars > 0 ){
-    err=ex_put_variable_param(exo_file,EX_NODAL,num_nodal_vars);
+    ex_put_variable_param(exo_file,EX_NODAL,num_nodal_vars);
   }
   
   if ( num_element_vars > 0 ){
-    err=ex_put_variable_param(exo_file,EX_ELEM_BLOCK,num_element_vars);
+    ex_put_variable_param(exo_file,EX_ELEM_BLOCK,num_element_vars);
   }
-
-  /* QA records */
-  /* exo2mat does not seem to export QA records? */
-  num_qa_lines = 0;
-
-  /* information records */
-#if 0
-  if ( !matGetStr("info",str) ) {
-    num_info_lines = 0;
-    curr = str;
-    curr = strtok(curr,"\n");
-    while(curr!=NULL){
-      num_info_lines++;
-      curr=strtok(NULL,"\n");
-    }
-    str2 = (char **) calloc(num_info_lines,sizeof(char *));
-    /* We have to refetch the string because strtok breaks the original copy */
-    matGetStr("info",str);
-    curr = str;
-    curr = strtok(curr,"\n");
-    for (i=0;i<num_info_lines;i++){
-      str2[i]=curr;
-      curr=strtok(NULL,"\n");
-    }
-    err = ex_put_info(exo_file,num_info_lines,str2);
-    free(str2);
-  }
-#endif
 
   /* nodal coordinates */
   x = (double *) calloc(num_nodes,sizeof(double));
@@ -220,7 +192,7 @@ int main (int argc, char *argv[]){
   matGetDbl("y0", num_nodes, 1, y);
   if (num_axes == 3)
     matGetDbl("z0", num_nodes,1,z);
-  err = ex_put_coord(exo_file,x,y,z);
+  ex_put_coord(exo_file,x,y,z);
   free(x);
   free(y);
   if (num_axes == 3){ 
@@ -245,7 +217,7 @@ int main (int argc, char *argv[]){
     matGetInt("nssdfac",num_side_sets,1,nssdfac);
 
     for(i=0;i<num_side_sets;i++){
-      err = ex_put_set_param(exo_file,EX_SIDE_SET,ids[i],nsssides[i],nssdfac[i]);
+      ex_put_set_param(exo_file,EX_SIDE_SET,ids[i],nsssides[i],nssdfac[i]);
       elem_list = (int *) calloc(nsssides[i],sizeof(int));
       side_list = (int *) calloc(nsssides[i],sizeof(int));
       escr = (double *) calloc(nssdfac[i],sizeof(double));
@@ -255,13 +227,13 @@ int main (int argc, char *argv[]){
 
       sprintf(str,"ssside%02d",i+1);
       matGetInt(str,nsssides[i],1,side_list);
-      err = ex_put_set(exo_file,EX_SIDE_SET,ids[i],elem_list,side_list);
+      ex_put_set(exo_file,EX_SIDE_SET,ids[i],elem_list,side_list);
 
       free(elem_list);
       free(side_list);
       sprintf(str,"ssfac%02d",i+1);
       matGetDbl(str,nssdfac[i],1,escr);
-      err = ex_put_set_dist_fact(exo_file,EX_SIDE_SET,ids[i],escr);
+      ex_put_set_dist_fact(exo_file,EX_SIDE_SET,ids[i],escr);
       free(escr);      
     }
    
@@ -286,18 +258,18 @@ int main (int argc, char *argv[]){
     matGetInt("nnsdfac",num_node_sets,1,nnsdfac);
 
     for(i=0;i<num_node_sets;i++){
-      err = ex_put_set_param(exo_file,EX_NODE_SET,ids[i],nnsnodes[i],nnsdfac[i]);
+      ex_put_set_param(exo_file,EX_NODE_SET,ids[i],nnsnodes[i],nnsdfac[i]);
       node_list = (int *) calloc(nnsnodes[i],sizeof(int));
       escr = (double *) calloc(nnsdfac[i],sizeof(double));
            
       sprintf(str,"nsnod%02d",i+1);
       matGetInt(str,nnsnodes[i],1,node_list);
-      err = ex_put_set(exo_file,EX_NODE_SET,ids[i],node_list,NULL);
+      ex_put_set(exo_file,EX_NODE_SET,ids[i],node_list,NULL);
       free(node_list);
       
       sprintf(str,"nsfac%02d",i+1);
       matGetDbl(str,nnsdfac[i],1,escr);
-      err = ex_put_set_dist_fact(exo_file,EX_NODE_SET,ids[i],escr);
+      ex_put_set_dist_fact(exo_file,EX_NODE_SET,ids[i],escr);
       free(escr);      
     }
    
@@ -325,8 +297,8 @@ int main (int argc, char *argv[]){
     iscr = (int *) calloc(n*n1,sizeof(int));
     matGetInt(str,n1,n,iscr);
     num_elem_in_block[i]=n;
-    err = ex_put_elem_block(exo_file,ids[i],curr,n,n1,0);
-    err = ex_put_conn(exo_file,EX_ELEM_BLOCK,ids[i],iscr,NULL,NULL);
+    ex_put_elem_block(exo_file,ids[i],curr,n,n1,0);
+    ex_put_conn(exo_file,EX_ELEM_BLOCK,ids[i],iscr,NULL,NULL);
     free(iscr);
     curr = strtok(NULL, "\n");
   }
@@ -337,7 +309,7 @@ int main (int argc, char *argv[]){
     scr = (double *) calloc(num_time_steps,sizeof(double));
     matGetDbl( "time", num_time_steps, 1,scr);
     for (i=0;i<num_time_steps;i++){
-      err=ex_put_time(exo_file,i+1,&scr[i]);
+      ex_put_time(exo_file,i+1,&scr[i]);
     }
     free(scr); 
   }
@@ -351,7 +323,7 @@ int main (int argc, char *argv[]){
       str2[i]=curr;
       curr = strtok(NULL,"\n");
     }
-    err = ex_put_variable_names(exo_file, EX_GLOBAL, num_global_vars, str2);
+    ex_put_variable_names(exo_file, EX_GLOBAL, num_global_vars, str2);
     free(str2);
 
     {
@@ -366,7 +338,7 @@ int main (int argc, char *argv[]){
 	  matGetDbl(str,num_time_steps,1,temp);
 	  global_var_vals[j]=temp[i];}
 	
-	err = ex_put_var(exo_file,i+1,EX_GLOBAL,1,0,num_global_vars,global_var_vals);
+	ex_put_var(exo_file,i+1,EX_GLOBAL,1,0,num_global_vars,global_var_vals);
 	
       }
       free(temp);
@@ -385,7 +357,7 @@ int main (int argc, char *argv[]){
       str2[i]=curr;
       curr = strtok(NULL,"\n");
     }
-    err = ex_put_variable_names(exo_file, EX_NODAL, num_nodal_vars, str2);	
+    ex_put_variable_names(exo_file, EX_NODAL, num_nodal_vars, str2);	
     free(str2);
     {
       double * nodal_var_vals;
@@ -394,7 +366,7 @@ int main (int argc, char *argv[]){
 	sprintf(str,"nvar%02d",i+1);
 	matGetDbl(str,num_nodes,num_time_steps,nodal_var_vals);
 	for (j=0;j<num_time_steps;j++) {
-	  err = ex_put_var(exo_file,j+1,EX_NODAL,i+1,num_nodes,1,nodal_var_vals+num_nodes*j);
+	  ex_put_var(exo_file,j+1,EX_NODAL,i+1,num_nodes,1,nodal_var_vals+num_nodes*j);
 	}
 	free(nodal_var_vals); 
       }
@@ -411,7 +383,7 @@ int main (int argc, char *argv[]){
       str2[i]=curr;
       curr = strtok(NULL,"\n");
     }
-    err = ex_put_variable_names(exo_file, EX_ELEM_BLOCK, num_element_vars, str2);	
+    ex_put_variable_names(exo_file, EX_ELEM_BLOCK, num_element_vars, str2);	
     free(str2);
     {
       double * element_var_vals;
@@ -422,7 +394,7 @@ int main (int argc, char *argv[]){
 	n=0;       
 	for (j=0;j<num_time_steps;j++) {
 	  for (k=0;k<num_blocks;k++) {
-	    err = ex_put_var(exo_file,j+1,EX_ELEM_BLOCK, i+1,ids[k],num_elem_in_block[k],element_var_vals+n);
+	    ex_put_var(exo_file,j+1,EX_ELEM_BLOCK, i+1,ids[k],num_elem_in_block[k],element_var_vals+n);
 	    n=n+num_elem_in_block[k];
 	  }
 	}
@@ -435,13 +407,13 @@ int main (int argc, char *argv[]){
   /* node and element number maps */
   ids = (int *) calloc (num_nodes,sizeof(int));
   if ( !matGetInt("node_num_map",num_nodes,1,ids)){
-    err = ex_put_node_num_map(exo_file,ids);
+    ex_put_node_num_map(exo_file,ids);
   }
   free(ids);
 
   ids = (int *) calloc (num_elements,sizeof(int));
   if ( !matGetInt("elem_num_map",num_elements,1,ids)){
-    err = ex_put_elem_num_map(exo_file,ids);
+    ex_put_elem_num_map(exo_file,ids);
   }
   free(ids);
   free(num_elem_in_block);

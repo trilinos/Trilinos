@@ -243,7 +243,7 @@ int main (int argc, char *argv[])
     exo_version;
 
   double
-    f, *scr,*x,*y,*z;
+    *scr,*x,*y,*z;
 
   oname=0;
 

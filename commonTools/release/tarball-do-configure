@@ -86,6 +86,9 @@ cmake \
 -DTrilinos_ENABLE_Trios=ON \
 -DTrilinos_ENABLE_Triutils=ON \
 -DTrilinos_ENABLE_Zoltan=ON \
+-DTrilinos_ENABLE_Zoltan2=ON \
+-DTrilinos_ENABLE_Xpetra=ON \
+-DTrilinos_ENABLE_ShyLU=ON \
  \
 -D TPL_ENABLE_MATLAB=OFF \
  \

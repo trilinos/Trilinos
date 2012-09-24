@@ -3,12 +3,6 @@
 
 INCLUDE(CheckIncludeFiles)
 
-# Probe for header files
-CHECK_INCLUDE_FILES("mach/mach_time.h" HAVE_TRIOS_MACH_TIME_H)
-CHECK_INCLUDE_FILES("time.h" HAVE_TRIOS_TIME_H)
-CHECK_INCLUDE_FILES("sys/time.h" HAVE_TRIOS_SYS_TIME_H)
-CHECK_INCLUDE_FILES("papi.h" HAVE_TRIOS_PAPI_H)
-
 ########## CHECK FOR FUNCTIONS ############
 
 INCLUDE(CheckLibraryExists)

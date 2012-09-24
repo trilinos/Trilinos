@@ -46,7 +46,7 @@ namespace stk {
       virtual double run_one_iteration( Mesh* mesh,  MeshDomain *domain,
                                       MsqError& err );
 
-      virtual double total_metric(Mesh *mesh, double alpha, double multiplicative_edge_scaling, bool& valid);
+      virtual double total_metric(Mesh *mesh, double alpha, double multiplicative_edge_scaling, bool& valid, int *num_invalid=0);
       virtual double metric(stk::mesh::Entity& entity, bool& valid);
       virtual void update_node_positions(Mesh* mesh, double alpha);
       virtual bool check_convergence();

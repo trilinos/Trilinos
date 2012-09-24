@@ -57,6 +57,7 @@
 #include "Panzer_DOFManager.hpp"
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_DefaultMpiComm.hpp"
 
 #include <boost/unordered_set.hpp>
 
@@ -433,7 +434,7 @@ protected:
    bool fieldsRegistered_;
 
    Teuchos::RCP<const FieldPattern> geomPattern_;
-   Teuchos::RCP<Teuchos::Comm<int> > communicator_;
+   Teuchos::RCP<Teuchos::MpiComm<int> > communicator_;
 
    std::vector<Teuchos::RCP<DOFManager<LocalOrdinalT,GlobalOrdinalT> > > fieldBlockManagers_;
 
