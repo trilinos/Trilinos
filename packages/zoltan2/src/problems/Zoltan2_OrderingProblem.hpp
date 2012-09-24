@@ -169,30 +169,36 @@ void OrderingProblem<Adapter>::solve(bool newData)
   size_t nVtx = this->graphModel_->getLocalNumVertices();
 
   // TODO: Assuming one MPI process now. nVtx = ngids = nlids
-  this->solution_ = rcp(new OrderingSolution<gid_t, lno_t>(nVtx, nVtx));
+  try
+  {
+      this->solution_ = rcp(new OrderingSolution<gid_t, lno_t>(nVtx, nVtx));
+  }
+  Z2_FORWARD_EXCEPTIONS;
 
   // Determine which algorithm to use based on defaults and parameters.
-  // TODO: Use RCM if graph model is defined, otherwise use Natural.
+  // TODO: Use rcm if graph model is defined, otherwise use natural.
   // Need some exception handling here, too.
 
   string method = this->params_->template get<string>("order_method", "rcm");
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
   // TODO: Ignore case
+  try
+  {
   if (method.compare("rcm") == 0)
   {
       AlgRCM<base_adapter_t>(this->graphModel_, this->solution_, this->params_,
                       problemComm_);
   }
-  else if (method.compare("Natural") == 0)
+  else if (method.compare("natural") == 0)
   {
       AlgNatural<base_adapter_t>(this->identifierModel_, this->solution_, this->params_, problemComm_);
   }
-  else if (method.compare("Random") == 0)
+  else if (method.compare("random") == 0)
   {
       AlgRandom<base_adapter_t>(this->identifierModel_, this->solution_, this->params_, problemComm_);
   }
-  else if (method.compare("Minimum_Degree") == 0)
+  else if (method.compare("minimum_degree") == 0)
   {
       string pkg = this->params_->template get<string>("order_package", "amd");
       if (pkg.compare("amd") == 0)
@@ -201,6 +207,8 @@ void OrderingProblem<Adapter>::solve(bool newData)
                           problemComm_);
       }
   }
+  }
+  Z2_FORWARD_EXCEPTIONS;
 
 #ifdef HAVE_ZOLTAN2_MPI
 

@@ -153,27 +153,30 @@ int main(int argc, char *argv[])
   // Create a Zoltan2 partitioning problem
 
 #ifdef HAVE_ZOLTAN2_MPI
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, 
-    MPI_COMM_WORLD);
+  Zoltan2::PartitioningProblem<inputAdapter_t> *problem = 
+           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, &params, 
+                                                            MPI_COMM_WORLD);
 #else
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
+  Zoltan2::PartitioningProblem<inputAdapter_t> *problem = 
+           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, &params);
 #endif
    
   ///////////////////////////////////////////////////////////////////////
   // Solve the problem
 
-  problem.solve();
+  problem->solve();
 
   ///////////////////////////////////////////////////////////////////////
   // Check the solution.
 
   if (rank == 0)
-    problem.printMetrics(cout);
+    problem->printMetrics(cout);
 
   if (rank == 0)
     cout << "PASS" << endl;
 
   delete [] globalIds;
+  delete problem;
 #ifdef HAVE_ZOLTAN2_MPI
   MPI_Finalize();
 #endif

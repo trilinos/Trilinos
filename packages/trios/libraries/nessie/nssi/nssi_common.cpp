@@ -73,7 +73,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 #include "Trios_nssi_debug.h"
 
-#include "nnti.h"
+#include "Trios_nnti.h"
 
 
 nssi_config_t nssi_config;

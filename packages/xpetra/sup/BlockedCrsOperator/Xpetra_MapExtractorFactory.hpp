@@ -50,6 +50,8 @@
  *      Author: wiesner
  */
 
+// WARNING: This code is experimental. Backwards compatibility should not be expected.
+
 #ifndef XPETRA_MAPEXTRACTORFACTORY_HPP_
 #define XPETRA_MAPEXTRACTORFACTORY_HPP_
 

@@ -1559,7 +1559,7 @@ void DashSurfaceMesh::sideset_elem_sides(int64_t setId, Int64Vector &elem_sides)
             for(size_t i=0; i<mQuadSurface2.size()/NUM_NODES_PER_QUAD_FACE; ++i)
             {
                 elem_sides.push_back(numElementsInSurface1+i+1);
-                elem_sides.push_back(1);
+                elem_sides.push_back(0);
             }
             return;
         default:

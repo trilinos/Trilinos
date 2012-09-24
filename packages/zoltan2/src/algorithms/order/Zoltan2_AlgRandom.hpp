@@ -73,6 +73,15 @@ int AlgRandom(
 
   int ierr= 0;
 
+#ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
+
+  Z2_THROW_EXPERIMENTAL("Zoltan2 random ordering is strictly "
+                        "experimental software "
+                        "while it is being developed and tested.")
+  return ierr;
+
+#else //INCLUDE_ZOLTAN2_EXPERIMENTAL
+
   HELLO;
 
   // This is the classic Knuth shuffle, also known as Fisher-Yates shuffle.
@@ -105,6 +114,9 @@ int AlgRandom(
   }
 
   return ierr;
+
+#endif //INCLUDE_ZOLTAN2_EXPERIMENTAL
+
 }
 
 }

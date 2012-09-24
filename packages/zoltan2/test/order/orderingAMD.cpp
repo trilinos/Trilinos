@@ -200,25 +200,24 @@ int main(int narg, char** arg)
 
   ////// Specify problem parameters
   Teuchos::ParameterList params;
-
-  ////// Create an input adapter for the Tpetra matrix.
-  SparseMatrixAdapter adapter(origMatrix);
-
-#ifdef HAVE_ZOLTAN2_AMD
-#ifdef HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
-
-  params.set("order_method", "minimum_degree");
-  params.set("order_package", "amd");
-
-  ////// Create and solve ordering problem
-  Zoltan2::OrderingProblem<SparseMatrixAdapter> problem(&adapter, &params);
-  problem.solve();
-
   ////// Basic metric checking of the ordering solution
   size_t checkLength;
   size_t dummy;
   z2TestGO *checkGIDs;
   z2TestLO *checkPerm;
+
+  ////// Create an input adapter for the Tpetra matrix.
+  SparseMatrixAdapter adapter(origMatrix);
+
+  params.set("order_method", "minimum_degree");
+  params.set("order_package", "amd");
+
+  ////// Create and solve ordering problem
+  try
+  {
+  Zoltan2::OrderingProblem<SparseMatrixAdapter> problem(&adapter, &params);
+  problem.solve();
+
   Zoltan2::OrderingSolution<z2TestGO, z2TestLO> *soln = problem.getSolution();
 
   // Check that the solution is really a permutation
@@ -226,11 +225,35 @@ int main(int narg, char** arg)
   checkGIDs = soln->getGids(&dummy);
   checkPerm = soln->getPermutation(&dummy);
 
+  for (int ii = 0; ii < checkLength; ii++)
+      cout << checkPerm[ii] << " ";
+  cout << endl;
   // Verify that checkPerm is a permutation
   testReturn = validatePerm(checkLength, checkPerm);
 
-#endif // double int int
-#endif // HAVE_ZOLTAN2_AMD
+  } catch (std::exception &e){
+#ifdef HAVE_ZOLTAN2_AMD
+      // AMD is defined and still got an exception.
+      if (comm->getSize() != 1)
+      {
+          std::cout << "AMD is enabled. We do not support distributed matrices."
+             << "AMD Algorithm threw an exception."
+             << std::endl;
+          std::cout << "PASS" << std::endl;
+      }
+      else
+      {
+          std::cout << "Exception from AMD Algorithm" << std::endl;
+          std::cout << "FAIL" << std::endl;
+      }
+      return 0;
+#else
+      std::cout << "AMD is not enabled. AMD Algorithm threw an exception."
+         << std::endl;
+      std::cout << "PASS" << std::endl;
+      return 0;
+#endif
+  }
 
   if (me == 0) {
     if (testReturn)
@@ -238,5 +261,6 @@ int main(int narg, char** arg)
     else
       std::cout << "PASS" << std::endl;
   }
+  return 0;
 }
 

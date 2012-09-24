@@ -67,10 +67,9 @@ SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 
-SET(Trilinos_PACKAGES MueLu)
+SET(Trilinos_PACKAGES MueLu Amesos2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_Amesos2:BOOL=ON"
   "-DAmesos2_ENABLE_TESTS=ON"
   "-DAmesos2_ENABLE_EXAMPLES=ON"
 

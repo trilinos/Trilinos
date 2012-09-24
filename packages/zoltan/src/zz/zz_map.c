@@ -177,11 +177,11 @@ ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz,     /* just need this for error messages *
    * of ZOLTAN_ID_TYPEs, because Zoltan_Hash takes a tuple of ZOLTAN_ID_TYPEs.
    */
 
-  if (num_bytes < sizeof(ZOLTAN_ID_TYPE)){
+  if (num_bytes < (int)(sizeof(ZOLTAN_ID_TYPE))){
     map->num_zoltan_id_types = 1;
     map->zid = (ZOLTAN_ID_PTR)calloc(sizeof(ZOLTAN_ID_TYPE), 1);
   }
-  else if (num_bytes == sizeof(ZOLTAN_ID_TYPE)){
+  else if (num_bytes == (int)(sizeof(ZOLTAN_ID_TYPE))){
     map->num_zoltan_id_types = 1;
     map->zid = NULL;
   }

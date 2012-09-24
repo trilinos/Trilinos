@@ -47,36 +47,28 @@ static const char *quadrature_method_names[] = {
   "Tensor", "Sparse" };
 
 // reduced basis methods
-enum Reduced_Basis_Method { LANCZOS, MONOMIAL_PROJ_GS, MONOMIAL_GS, LANCZOS_GS };
-static const int num_reduced_basis_method = 4;
+enum Reduced_Basis_Method { LANCZOS, MONOMIAL_PROJ_GS, MONOMIAL_PROJ_GS2, MONOMIAL_GS, LANCZOS_GS };
+static const int num_reduced_basis_method = 5;
 static const Reduced_Basis_Method reduced_basis_method_values[] = { 
-  LANCZOS, MONOMIAL_PROJ_GS, MONOMIAL_GS, LANCZOS_GS };
+  LANCZOS, MONOMIAL_PROJ_GS, MONOMIAL_PROJ_GS2, MONOMIAL_GS, LANCZOS_GS };
 static const char *reduced_basis_method_names[] = { 
-  "Lanczos", "Monomial-Proj-GS", "Monomial-GS", "Lanczos-GS" };
-
-// basis reduction methods
-enum Basis_Reduction_Method { BR_CPQR, SVD };
-static const int num_basis_reduction_method = 2;
-static const Basis_Reduction_Method basis_reduction_method_values[] = { 
-  BR_CPQR, SVD };
-static const char *basis_reduction_method_names[] = { 
-  "Column-Pivoted QR", "SVD" };
+  "Lanczos", "Monomial-Proj-GS", "Monomial-Proj-GS2", "Monomial-GS", "Lanczos-GS" };
 
 // orthogonalization methods
-enum Orthogonalization_Method { HOUSEHOLDER, CGS, MGS };
-static const int num_orthogonalization_method = 3;
+enum Orthogonalization_Method { HOUSEHOLDER, HOUSEHOLDER_NP, CGS, MGS, MGSRO, MGSNP, MGSNPRO };
+static const int num_orthogonalization_method = 7;
 static const Orthogonalization_Method orthogonalization_method_values[] = { 
-  HOUSEHOLDER, CGS, MGS };
+  HOUSEHOLDER, HOUSEHOLDER_NP, CGS, MGS, MGSRO, MGSNP, MGSNPRO };
 static const char *orthogonalization_method_names[] = { 
-  "Householder", "Classical Gram-Schmidt", "Modified Gram-Schmidt" };
+  "Householder", "Householder without Pivoting", "Classical Gram-Schmidt", "Modified Gram-Schmidt", "Modified Gram-Schmidt with Reorthogonalization", "Modified Gram-Schmidt without Pivoting", "Modified Gram-Schmidt without Pivoting with Reorthogonalization"};
 
 // quadrature reduction methods
-enum Quadrature_Reduction_Method { NONE, QSQUARED, Q2 };
-static const int num_quad_reduction_method = 3;
+enum Quadrature_Reduction_Method { NONE, QSQUARED, QSQUARED2, Q2 };
+static const int num_quad_reduction_method = 4;
 static const Quadrature_Reduction_Method quad_reduction_method_values[] = { 
-  NONE, QSQUARED, Q2 };
+  NONE, QSQUARED, QSQUARED2, Q2 };
 static const char *quad_reduction_method_names[] = { 
-  "None", "Q Squared", "Q2" };
+  "None", "Q Squared", "Q Squared2", "Q2" };
 
 // solver methods
 enum Solver_Method { TRSM, GLPK, CLP, CLP_IP, QPOASES, BASIS_PURSUIT, ORTHOGONAL_MATCHING_PURSUIT };
@@ -149,8 +141,11 @@ int main(int argc, char **argv)
     double shift = 0.0;
     CLP.setOption("shift", &shift, "Shift location");
 
-    double rank_threshold = 1.0e-10;
+    double rank_threshold = 1.0e-12;
     CLP.setOption("rank_threshold", &rank_threshold, "Rank threshold");
+
+    double rank_threshold2 = 1.0e-12;
+    CLP.setOption("rank_threshold2", &rank_threshold2, "Rank threshold for Q2");
 
     double reduction_tolerance = 1.0e-12;
     CLP.setOption("reduction_tolerance", &reduction_tolerance, "Quadrature reduction tolerance");
@@ -172,20 +167,15 @@ int main(int argc, char **argv)
 		  num_reduced_basis_method, reduced_basis_method_values, 
 		  reduced_basis_method_names, "Reduced basis method");
 
-    Basis_Reduction_Method basis_reduction_method = BR_CPQR;
-    CLP.setOption("basis_reduction_method", &basis_reduction_method, 
-		  num_basis_reduction_method, basis_reduction_method_values, 
-		  basis_reduction_method_names, "Basis reduction method");
-
     Orthogonalization_Method orthogonalization_method = HOUSEHOLDER;
     CLP.setOption("orthogonalization_method", &orthogonalization_method, 
 		  num_orthogonalization_method, orthogonalization_method_values, 
 		  orthogonalization_method_names, "Orthogonalization method");
 
     Quadrature_Reduction_Method quad_reduction_method = QSQUARED;
-    CLP.setOption("quadrature_reduction_method", &quad_reduction_method, 
+    CLP.setOption("reduced_quadrature_method", &quad_reduction_method, 
 		  num_quad_reduction_method, quad_reduction_method_values, 
-		  quad_reduction_method_names, "Quadrature reduction method");
+		  quad_reduction_method_names, "Reduced quadrature method");
 
     Solver_Method solver_method = TRSM;
     CLP.setOption("solver_method", &solver_method, num_solver_method, 
@@ -214,9 +204,6 @@ int main(int argc, char **argv)
 	      << "\treduced_basis_method        = " 
 	      << reduced_basis_method_names[reduced_basis_method] 
 	      << std::endl
-	      << "\tbasis_reduction_method      = " 
-	      << basis_reduction_method_names[basis_reduction_method] 
-	      << std::endl
 	      << "\torthogonalization_method    = " 
 	      << orthogonalization_method_names[orthogonalization_method] 
 	      << std::endl
@@ -237,6 +224,7 @@ int main(int argc, char **argv)
 	      << "\tpole                        = " << pole << std::endl
 	      << "\tshift                       = " << shift << std::endl
 	      << "\trank_threshold              = " << rank_threshold << std::endl
+	      << "\trank_threshold2             = " << rank_threshold2 << std::endl
 	      << "\treduction_tolerance         = " << reduction_tolerance 
 	      << std::endl
 	      << "\tverbose                     = " << verbose << std::endl
@@ -283,11 +271,14 @@ int main(int argc, char **argv)
 								    quad));
 
     // Create approximation
+    Teuchos::Array<double> point(d, 1.0);
+    Teuchos::Array<double> basis_vals(basis->size());
+    basis->evaluateBases(point, basis_vals);
     Teuchos::Array<pce_type> x(d);
     for (int i=0; i<d; i++) {
       x[i].copyForWrite();
       x[i].reset(quad_exp);
-      x[i].term(i,1) = 1.0;
+      x[i].term(i,1) = 1.0 / basis_vals[i+1];
     }
     Teuchos::Array<pce_type> x2(d2);
     for (int i=0; i<d2; i++) {
@@ -306,6 +297,8 @@ int main(int argc, char **argv)
     Teuchos::ParameterList params;
     if (reduced_basis_method == MONOMIAL_PROJ_GS)
       params.set("Reduced Basis Method", "Monomial Proj Gram-Schmidt");
+    else if (reduced_basis_method == MONOMIAL_PROJ_GS2)
+      params.set("Reduced Basis Method", "Monomial Proj Gram-Schmidt2");
     else if (reduced_basis_method == MONOMIAL_GS)
       params.set("Reduced Basis Method", "Monomial Gram-Schmidt");
     else if (reduced_basis_method == LANCZOS)
@@ -316,16 +309,8 @@ int main(int argc, char **argv)
     params.set("Project", project);
     //params.set("Normalize", false);
     params.set("Use Old Stieltjes Method", use_stieltjes);
-    if (basis_reduction_method == BR_CPQR)
-      params.set("Basis Reduction Method", "Column-pivoted QR");
-    else if (basis_reduction_method == SVD)
-      params.set("Basis Reduction Method", "SVD");
-    if (orthogonalization_method == HOUSEHOLDER)
-      params.set("Orthogonalization Method", "Householder");
-    else if (orthogonalization_method == CGS)
-      params.set("Orthogonalization Method", "Classical Gram-Schmidt");
-    else if (orthogonalization_method == MGS)
-      params.set("Orthogonalization Method", "Modified Gram-Schmidt");
+    params.set("Orthogonalization Method", 
+	       orthogonalization_method_names[orthogonalization_method]);
     params.set("Rank Threshold", rank_threshold);
     Teuchos::ParameterList& red_quad_params = 
       params.sublist("Reduced Quadrature");
@@ -338,6 +323,7 @@ int main(int argc, char **argv)
     red_quad_params.set("Reduction Tolerance", reduction_tolerance);
     red_quad_params.set("Verbose", verbose);
     red_quad_params.set("Objective Value", objective_value);
+    red_quad_params.set("Q2 Rank Threshold", rank_threshold2);
     Stokhos::ReducedBasisFactory<int,double> factory(params);
     Teuchos::RCP< Stokhos::ReducedPCEBasis<int,double> > gs_basis = 
       factory.createReducedBasis(p2, pces, quad, Cijk);
@@ -386,7 +372,7 @@ int main(int argc, char **argv)
     pce_type z2(quad_exp);
     gs_basis->transformToOriginalBasis(z_gs.coeff(), z2.coeff());
 
-    if (verbose) {
+    if (verbose && false) {
       std::cout << "z = " << std::endl << z;
       std::cout << "z2 = " << std::endl << z2;
       std::cout << "z_gs = " << std::endl << z_gs;

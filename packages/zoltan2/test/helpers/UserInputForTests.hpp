@@ -421,7 +421,6 @@ RCP<Epetra_CrsGraph> UserInputForTests::getEpetraCrsGraph()
     eG_->InsertGlobalIndices(gids[i], rowSize[i], colGids.getRawPtr());
   }
   eG_->FillComplete();
-
   return eG_;
 }
 

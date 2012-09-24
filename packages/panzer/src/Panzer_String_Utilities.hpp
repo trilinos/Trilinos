@@ -46,6 +46,17 @@
 #include <vector>
 #include <string>
 
+#include "Panzer_config.hpp"
+
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
+
+#include "Panzer_SGUtilities.hpp"
+
+#ifdef HAVE_STOKHOS
+#include "Stokhos_OrthogPolyExpansion.hpp"
+#endif
+
 namespace panzer {
 
   //! Tokenize a string, put tokens in a vector
@@ -58,6 +69,47 @@ namespace panzer {
 
   //! Turn a vector of tokens into a vector of ints
   void TokensToInts(std::vector<int> & values,const std::vector<std::string> & tokens);
+
+  /** Read in a parameter field and return the correct scalar field. This parses
+    * both scalar type data and stochastic galerkin type data
+    */
+  template <typename ScalarT>
+  #ifdef HAVE_STOKHOS
+  ScalarT getScalarParameter(const std::string & field,const Teuchos::ParameterList & plist,const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > & expansion)
+  #else 
+  ScalarT getScalarParameter(const std::string & field,const Teuchos::ParameterList & plist)
+  #endif
+  {
+    #ifdef HAVE_STOKHOS
+      if(plist.isType<double>(field)) {
+        return plist.get<double>(field);
+      }
+      else if(plist.isType<std::string>(field)) {
+        ScalarT value;
+
+
+        // this is essentially only for stochastic galerkin
+        std::vector<std::string> coeffs_tok;
+        std::vector<double> coeffs;
+        panzer::StringTokenizer(coeffs_tok,plist.get<std::string>(field),",",true);
+        panzer::TokensToDoubles(coeffs,coeffs_tok);
+
+        if(coeffs.size()==1)
+           return coeffs[0];
+
+        // we only need expansion if more than one term is needed
+        TEUCHOS_ASSERT(expansion!=Teuchos::null);
+        panzer::sg_utils::vectorToValue(coeffs,expansion,value);
+
+        return value;
+      }
+      else {
+        TEUCHOS_ASSERT(false);
+      }
+    #else
+      return plist.get<double>(field);
+    #endif
+  }
 }
 
 #endif

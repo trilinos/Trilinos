@@ -19,6 +19,7 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING)
     ${Trilinos_SOURCE_PATH}/cmake/tribits/common_tools/git
     ${Trilinos_SOURCE_PATH}/cmake/CMakeKitwareBacklog.txt
     ${Trilinos_SOURCE_PATH}/cmake/TODO
+    ${Trilinos_SOURCE_PATH}/cmake/ctest
     ${Trilinos_SOURCE_PATH}/packages/ITAPS
     ${Trilinos_SOURCE_PATH}/packages/external
     ${Trilinos_SOURCE_PATH}/packages/jpetra

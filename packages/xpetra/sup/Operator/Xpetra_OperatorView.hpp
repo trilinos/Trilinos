@@ -43,6 +43,9 @@
 // ***********************************************************************
 //
 // @HEADER
+
+// WARNING: This code is experimental. Backwards compatibility should not be expected.
+
 #ifndef XPETRA_OPERATORVIEW_HPP
 #define XPETRA_OPERATORVIEW_HPP
 

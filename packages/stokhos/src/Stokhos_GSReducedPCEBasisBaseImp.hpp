@@ -42,8 +42,6 @@ GSReducedPCEBasisBase(
   d(pce.size()),
   verbose(params.get("Verbose", false)),
   rank_threshold(params.get("Rank Threshold", 1.0e-12)),
-  basis_reduction_method(params.get("Basis Reduction Method", 
-				    "Column-pivoted QR")),
   orthogonalization_method(params.get("Orthogonalization Method", 
 				      "Householder"))
 {
@@ -84,7 +82,7 @@ setup(
   // Compute norms of each pce for rescaling
   Teuchos::Array<value_type> pce_norms(d, 0.0);
   for (ordinal_type j=0; j<d; j++) {
-    for (ordinal_type i=0; i<d; i++)
+    for (ordinal_type i=0; i<pce_sz; i++)
       pce_norms[j] += (*pce2[j])[i]*(*pce2[j])[i]*pce_basis->norm_squared(i);
     pce_norms[j] = std::sqrt(pce_norms[j]);
   }
@@ -102,7 +100,8 @@ setup(
       F(i,j) = pce2[j]->evaluate(points[i], basis_values[i]);
 
   // Build the reduced basis
-  sz = buildReducedBasis(max_p, A, F, weights, terms, num_terms, Qp, Q);
+  sz = buildReducedBasis(max_p, rank_threshold, A, F, weights, terms, num_terms,
+			 Qp, Q);
 
   // Compute reduced quadrature rule
   Teuchos::ParameterList quad_params = params.sublist("Reduced Quadrature");
@@ -113,9 +112,12 @@ setup(
       quad_params.get<std::string>("Reduced Quadrature Method") == "Q2") {
     Teuchos::Array< Teuchos::Array<ordinal_type> > terms2;
     Teuchos::Array<ordinal_type> num_terms2;
+    value_type rank_threshold2 = quad_params.get("Q2 Rank Threshold", 
+						 rank_threshold);
     SDM Qp2;
     //ordinal_type sz2 = 
-    buildReducedBasis(2*max_p, A, F, weights, terms2, num_terms2, Qp2, Q2);
+    buildReducedBasis(2*max_p, rank_threshold2, A, F, weights, terms2, 
+		      num_terms2, Qp2, Q2);
   }
   reduced_quad = quad_factory.createReducedQuadrature(Q, Q2, F, weights);
 

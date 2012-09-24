@@ -501,14 +501,14 @@ void write_exo_mesh(
 
   accum_num_elements = 0;
   for (i=0; i<num_domains; i++) {
-
-    /* create the EXODUSII file */
-    get_file_name(file_name, "e", i, num_domains, NULL, temporary_name);
-
     int mymode = EX_MAPS_INT64_API|EX_BULK_INT64_API|EX_IDS_INT64_API;
     if (int64bit) {
       mymode |= EX_MAPS_INT64_DB|EX_BULK_INT64_DB|EX_IDS_INT64_DB;
     }
+
+    /* create the EXODUSII file */
+    get_file_name(file_name, "e", i, num_domains, NULL, temporary_name);
+
     exoid = ex_create (temporary_name, EX_CLOBBER|mymode, &CPU_word_size, &IO_word_size);
 
     if (exoid < 0) {

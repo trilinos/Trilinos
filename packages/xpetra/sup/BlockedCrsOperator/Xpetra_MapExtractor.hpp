@@ -50,6 +50,8 @@
  *      Author: tobias
  */
 
+// WARNING: This code is experimental. Backwards compatibility should not be expected.
+
 #ifndef XPETRA_MAPEXTRACTOR_HPP_
 #define XPETRA_MAPEXTRACTOR_HPP_
 

@@ -177,23 +177,25 @@ int main(int argc, char *argv[])
   // Create a Zoltan2 partitioning problem
 
 #ifdef HAVE_ZOLTAN2_MPI                   
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem1(&ia1, &params, 
-    MPI_COMM_WORLD);
+  Zoltan2::PartitioningProblem<inputAdapter_t> *problem1 = 
+           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia1, &params, 
+                                                            MPI_COMM_WORLD);
 #else
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem1(&ia1, &params);
+  Zoltan2::PartitioningProblem<inputAdapter_t> *problem1 =
+           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia1, &params);
 #endif
    
   // Solve the problem
 
-  problem1.solve();
+  problem1->solve();
    
   // Check the solution.
 
   if (rank == 0)
-    problem1.printMetrics(cout);
+    problem1->printMetrics(cout);
 
   if (rank == 0){
-    scalar_t imb = problem1.getImbalance();
+    scalar_t imb = problem1->getImbalance();
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
@@ -233,23 +235,25 @@ int main(int argc, char *argv[])
   // Create a Zoltan2 partitioning problem
 
 #ifdef HAVE_ZOLTAN2_MPI                   
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem2(
-    &ia2, &params, MPI_COMM_WORLD);
+  Zoltan2::PartitioningProblem<inputAdapter_t> *problem2 = 
+           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia2, &params,
+                                                            MPI_COMM_WORLD);
 #else
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem2(&ia2, &params);
+  Zoltan2::PartitioningProblem<inputAdapter_t> *problem2 =
+           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia2, &params);
 #endif
 
   // Solve the problem
 
-  problem2.solve();
+  problem2->solve();
 
   // Check the solution.
 
   if (rank == 0)
-    problem2.printMetrics(cout);
+    problem2->printMetrics(cout);
 
   if (rank == 0){
-    scalar_t imb = problem2.getImbalance();
+    scalar_t imb = problem2->getImbalance();
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
@@ -300,23 +304,25 @@ int main(int argc, char *argv[])
   // Create a Zoltan2 partitioning problem.
 
 #ifdef HAVE_ZOLTAN2_MPI                   
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem3(
-    &ia3, &params, MPI_COMM_WORLD);
+  Zoltan2::PartitioningProblem<inputAdapter_t> *problem3 = 
+           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia3, &params,
+                                                            MPI_COMM_WORLD);
 #else
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem3(&ia3, &params);
+  Zoltan2::PartitioningProblem<inputAdapter_t> *problem3 =
+           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia3, &params);
 #endif
 
   // Solve the problem
 
-  problem3.solve();
+  problem3->solve();
 
   // Check the solution.
 
   if (rank == 0)
-    problem3.printMetrics(cout);
+    problem3->printMetrics(cout);
 
   if (rank == 0){
-    scalar_t imb = problem3.getImbalance();
+    scalar_t imb = problem3->getImbalance();
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
@@ -330,11 +336,11 @@ int main(int argc, char *argv[])
   bool dataHasChanged = false;    // default is true
 
   params.set("partitioning_objective", "multicriteria_minimize_maximum_weight");
-  problem3.resetParameters(&params);
-  problem3.solve(dataHasChanged);    
+  problem3->resetParameters(&params);
+  problem3->solve(dataHasChanged);    
   if (rank == 0){
-    problem3.printMetrics(cout);
-    scalar_t imb = problem3.getImbalance();
+    problem3->printMetrics(cout);
+    scalar_t imb = problem3->getImbalance();
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
@@ -343,11 +349,11 @@ int main(int argc, char *argv[])
   }
 
   params.set("partitioning_objective", "multicriteria_balance_total_maximum");
-  problem3.resetParameters(&params);
-  problem3.solve(dataHasChanged);    
+  problem3->resetParameters(&params);
+  problem3->solve(dataHasChanged);    
   if (rank == 0){
-    problem3.printMetrics(cout);
-    scalar_t imb = problem3.getImbalance();
+    problem3->printMetrics(cout);
+    scalar_t imb = problem3->getImbalance();
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
@@ -374,7 +380,7 @@ int main(int argc, char *argv[])
   // Using the initial problem that did not have any weights, reset
   // parameter list, and give it some part sizes.
 
-  problem1.resetParameters(&params);
+  problem1->resetParameters(&params);
 
   zoltan2_partId_t *partIds = new zoltan2_partId_t [2];
   scalar_t *partSizes = new scalar_t [2];
@@ -382,7 +388,7 @@ int main(int argc, char *argv[])
   partIds[0] = rank*2;    partSizes[0] = 0;
   partIds[1] = rank*2+1;  partSizes[1] = 1;
 
-  problem1.setPartSizes(2, partIds, partSizes);
+  problem1->setPartSizes(2, partIds, partSizes);
 
   // Solve the problem.  The argument "dataHasChanged" indicates 
   // that we have not changed the input data, which allows the problem
@@ -390,12 +396,12 @@ int main(int argc, char *argv[])
 
   dataHasChanged = false;
 
-  problem1.solve(dataHasChanged);
+  problem1->solve(dataHasChanged);
 
   // Obtain the solution
 
   const Zoltan2::PartitioningSolution<inputAdapter_t> &solution4 =
-    problem1.getSolution();
+    problem1->getSolution();
 
   // Check it.  Part sizes should all be odd.
 
@@ -413,10 +419,10 @@ int main(int argc, char *argv[])
   // Check the solution.
 
   if (rank == 0)
-    problem1.printMetrics(cout);
+    problem1->printMetrics(cout);
 
   if (rank == 0){
-    scalar_t imb = problem1.getImbalance();
+    scalar_t imb = problem1->getImbalance();
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
@@ -434,6 +440,10 @@ int main(int argc, char *argv[])
 
   if (globalIds)
     delete [] globalIds;
+
+  delete problem1;
+  delete problem2;
+  delete problem3;
 
 #ifdef HAVE_ZOLTAN2_MPI
   MPI_Finalize();

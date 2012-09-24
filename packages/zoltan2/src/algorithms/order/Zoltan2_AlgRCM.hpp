@@ -75,6 +75,12 @@ int AlgRCM(
 
   HELLO;
 
+  // Check size of communicator: serial only.
+  // TODO: Remove this test when RCM works on local graph.
+  if (comm->getSize() > 1){
+    throw std::runtime_error("RCM currently only works in serial.");
+  }
+
   const size_t nVtx = model->getLocalNumVertices();
   lno_t *perm;
   perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
@@ -83,18 +89,21 @@ int AlgRCM(
   }
 
   // Get local graph.
-  ArrayView<const lno_t> edgeIds;
+  ArrayView<const gno_t> edgeIds; 
   ArrayView<const lno_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > wgts;
 
-  model->getLocalEdgeList(edgeIds, offsets, wgts);
-  //model->getLocalEdgeList(edgeIds, offsets);
+  // TODO: edgeIds should be of type lno_t for getLocalEdgeList. Needs revisit.
+  //model->getLocalEdgeList(edgeIds, offsets, wgts); // BUGGY!
+  // Use global graph for now. This only works in serial!
+  ArrayView<const int> procIds;
+  model->getEdgeList( edgeIds, procIds, offsets, wgts);
 
   //cout << "Debug: Local graph from getLocalEdgeList" << endl;
   //cout << "edgeIds: " << edgeIds << endl;
   //cout << "offsets: " << offsets << endl;
 
-  // TODO: Find pseudo-peripheral root vertex.
+  // TODO: Find min-degree (or pseudo-peripheral) root vertex.
   lno_t root = 0;
 
   // Do BFS from root
@@ -106,13 +115,14 @@ int AlgRCM(
 
     // Label connected component starting at root
     Q.push(root);
-    cout << "Debug: perm[" << root << "] = " << count << endl;
+    //cout << "Debug: perm[" << root << "] = " << count << endl;
     perm[root] = count++;
 
     while (Q.size()){
       // Get a vertex from the queue
       lno_t v = Q.front();
       Q.pop();
+      //cout << "Debug: v= " << v << ", offsets[v] = " << offsets[v] << endl;
 
       // Add unmarked nbors to queue
       // TODO: If edge weights, sort nbors by decreasing weight,

@@ -165,6 +165,13 @@ bool Info::Interface::parse_options(int argc, char **argv)
     }
   }
 
+  {
+    const char *temp = options_.retrieve("field_suffix_separator");
+    if (temp != NULL) {
+      fieldSuffixSeparator_ = temp[0];
+    }
+  }
+
   if (options_.retrieve("copyright")) {
     std::cerr << "\n"
 	      << "Copyright(C) 2012 Sandia Corporation.  Under the terms of Contract\n"

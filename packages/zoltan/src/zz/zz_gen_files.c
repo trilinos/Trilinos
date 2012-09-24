@@ -674,7 +674,8 @@ struct _gidht{
   struct _gidht *next;
 } *gidNode, *gidNext;
 struct _gidht **ht=NULL;
-int proc, myrank, nprocs, mask, i;
+int proc, myrank, nprocs, mask, i; 
+unsigned int ui;
 unsigned int nbits;
 ZOLTAN_ID_PTR merged_egids, idbuf;
 ZOLTAN_GNO_TYPE allEdges, numIds, nEdges;
@@ -732,7 +733,7 @@ MPI_Datatype zoltan_gno_mpi_type;
 
   mask = 1 << nbits;
 
-  for (i=0; i<nbits; i++){
+  for (ui=0; ui<nbits; ui++){
 
     mask >>= 1;
 

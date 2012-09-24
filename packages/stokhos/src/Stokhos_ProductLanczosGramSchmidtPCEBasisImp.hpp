@@ -32,6 +32,7 @@
 #include "Stokhos_LanczosProjPCEBasis.hpp"
 #include "Stokhos_QuadratureFactory.hpp"
 #include "Stokhos_ProductBasis.hpp"
+#include "Stokhos_OrthogonalizationFactory.hpp"
 
 template <typename ordinal_type, typename value_type>
 Stokhos::ProductLanczosGramSchmidtPCEBasis<ordinal_type, value_type>::
@@ -170,75 +171,19 @@ ProductLanczosGramSchmidtPCEBasis(
   }
 
   // Compute our new basis -- each column of Qp is the coefficients of the
-  // new basis in the original basis
-  std::string basis_reduction_method = 
-    params.get("Basis Reduction Method", "Column-pivoted QR");
+  // new basis in the original basis. Constraint pivoting so first d+1
+  // columns and included in Qp.
   value_type rank_threshold = params.get("Rank Threshold", 1.0e-12);
-  if (basis_reduction_method == "Column-pivoted QR") {
-    std::string  orthogonalization_method = 
-      params.get("Orthogonalization Method", "Householder");
-    // Compute QR factorization of A using column-pivoted QR
-    // By setting the first d+1 entries of piv, we enforce that they are
-    // permuted to the front of A*P
-    // "Q" in the QR factorization defines the new basis
-    Teuchos::Array<value_type> w(pce_sz, 1.0);
-    SDM R;
-    Teuchos::Array<ordinal_type> piv(sz);
-    for (int i=0; i<d+1; i++)
-      piv[i] = 1;
-    if (orthogonalization_method == "Householder")
-      sz = CPQR_Householder_threshold(rank_threshold, A, w, Qp, R, piv);
-    else if (orthogonalization_method == "Modified Gram-Schmidt")
-      sz = CPQR_MGS_threshold(rank_threshold, A, w, Qp, R, piv);
-    else if (orthogonalization_method == "Classical Gram-Schmidt")
-      sz = CPQR_CGS_threshold(rank_threshold, A, w, Qp, R, piv);
-    else
-      TEUCHOS_TEST_FOR_EXCEPTION(
-	true, std::logic_error, 
-	"Invalid orthogonalization method " << orthogonalization_method);
-
-    if (verbose) {
-      std::cout << "piv = [";
-      for (ordinal_type i=0; i<sz; i++)
-	std::cout << piv[i] << " ";
-      std::cout << "]" << std::endl;
-    
-      std::cout << "diag(R) = [ ";
-      for (ordinal_type i=0; i<sz; i++)
-	std::cout << R(i,i) << " ";
-      std::cout << "]" << std::endl;
-      
-      std::cout << "rank = " << sz << std::endl;
-
-      // Check Bpp = Qp*R
-      std::cout << "||A*P-Q*R||_infty = " 
-		<< Stokhos::residualCPQRError(A,Qp,R,piv) << std::endl;
-      
-      // Check Qp^T*Qp = I
-      std::cout << "||I - Q^T*Q||_infty = " 
-		<< QROrthogonalizationError(Qp) << std::endl;
-    }
-  }
-  else if (basis_reduction_method == "SVD") {
-    // Compute SVD of Bp using standard SVD algorithm
-    // "U" in the SVD defines the new basis
-    Teuchos::Array<value_type> sigma;
-    SDM Vt;
-    sz = svd_threshold(rank_threshold, A, sigma, Qp, Vt);
-
-    if (verbose) {
-      std::cout << "diag(sigma) = [ ";
-      for (ordinal_type i=0; i<sz; i++)
-	std::cout << sigma[i] << " ";
-      std::cout << "]" << std::endl;
-      
-      std::cout << "rank = " << sz << std::endl;
-    }
-  }
-  else
-    TEUCHOS_TEST_FOR_EXCEPTION(
-	true, std::logic_error, 
-	"Invalid basis reduction method " << basis_reduction_method);
+  std::string  orthogonalization_method = 
+    params.get("Orthogonalization Method", "Householder");
+  Teuchos::Array<value_type> w(pce_sz, 1.0);
+  SDM R;
+  Teuchos::Array<ordinal_type> piv(sz);
+  for (int i=0; i<d+1; i++)
+    piv[i] = 1;
+  typedef Stokhos::OrthogonalizationFactory<ordinal_type,value_type> SOF;
+  sz = SOF::createOrthogonalBasis(
+    orthogonalization_method, rank_threshold, verbose, A, w, Qp, R, piv);
 
   // Original basis at quadrature points -- needed to transform expansions
   // in this basis back to original

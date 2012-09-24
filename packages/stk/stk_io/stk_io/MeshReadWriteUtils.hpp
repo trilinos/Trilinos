@@ -55,6 +55,8 @@ namespace stk {
        * | INTEGER_SIZE_DB       | 4 or 8 indicating byte size of integers stored on the database.
        * | INTEGER_SIZE_API      | 4 or 8 indicating byte size of integers used in api functions.
        * | LOGGING               | (true/false) to enable/disable logging of field input/output
+       * | FIELD_SUFFIX_SEPARATOR| character separating field basename from suffix in auto field recognition.
+       * |                       | E.g., if '_' (default), then a_x, a_y, a_z would be a 3d vector field 'a'.
        */
       Ioss::PropertyManager m_property_manager;
 

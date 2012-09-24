@@ -95,7 +95,7 @@ Ioss::DatabaseIO::DatabaseIO(Ioss::Region* region, const std::string& filename,
 			     const Ioss::PropertyManager &props)
   : properties(props), commonSideTopology(NULL), DBFilename(filename), dbState(STATE_INVALID),
     isParallel(false), isSerialParallel(false), myProcessor(0), cycleCount(0), overlayCount(0),
-    fieldSuffixSeparator('_'), splitType(Ioss::SPLIT_BY_TOPOLOGIES),
+    splitType(Ioss::SPLIT_BY_TOPOLOGIES),
     dbUsage(db_usage),dbIntSizeAPI(USE_INT32_API),
     nodeGlobalIdBackwardCompatibility(false), lowerCaseVariableNames(true),
     util_(communicator), region_(region), isInput(is_input_event(db_usage)),
@@ -165,6 +165,27 @@ int Ioss::DatabaseIO::int_byte_size_api() const
 void Ioss::DatabaseIO::set_int_byte_size_api(Ioss::DataSize size) const
 {
   dbIntSizeAPI = size; // mutable
+}
+
+char Ioss::DatabaseIO::get_field_separator() const
+{
+  char suffix = '_'; // Default
+  if (properties.exists("FIELD_SUFFIX_SEPARATOR")) {
+    std::string tmp = properties.get("FIELD_SUFFIX_SEPARATOR").get_string();
+    suffix = tmp[0];
+  }
+  return suffix;
+}
+
+void Ioss::DatabaseIO::set_field_separator(const char separator)
+{
+  if (properties.exists("FIELD_SUFFIX_SEPARATOR")) {
+    properties.erase("FIELD_SUFFIX_SEPARATOR");
+  } 
+  char tmp[2];
+  tmp[0] = separator;
+  tmp[1] = 0;
+  properties.add(Ioss::Property("FIELD_SUFFIX_SEPARATOR", tmp));
 }
 
 void Ioss::DatabaseIO::verify_and_log(const Ioss::GroupingEntity *ge, const Ioss::Field& field) const

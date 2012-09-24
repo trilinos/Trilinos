@@ -11,7 +11,7 @@
 
 #include <string.h>
 
-#include "nnti.h"
+#include "Trios_nnti.h"
 #include "nnti_internal.h"
 
 #if defined(HAVE_TRIOS_PORTALS) || defined(HAVE_TRIOS_CRAYPORTALS)

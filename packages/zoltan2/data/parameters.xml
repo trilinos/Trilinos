@@ -398,7 +398,7 @@
 
     <Validator type="StringValidator" validatorId="25">
       <String value="rcb"/>
-      <String value="PQJagged"/>
+      <String value="pqjagged"/>
       <String value="rib"/>
       <String value="hsfc"/>
       <String value="patoh"/>

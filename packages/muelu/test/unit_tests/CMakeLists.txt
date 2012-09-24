@@ -86,57 +86,60 @@ IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
   )
 ENDIF()
 
-TRIBITS_ADD_EXECUTABLE(
-  UnitTests
-  SOURCES ${SOURCES}
-  COMM serial mpi
-  DEPLIBS muelu muelu-xpetra
-  )
-
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt
-    AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos)
-
-  TRIBITS_ADD_TEST(
+IF ({PACKAGE_NAME}_ENABLE_Galeri) #TMP
+  TRIBITS_ADD_EXECUTABLE(
     UnitTests
-    NAME "UnitTestsEpetra"
-    ARGS "--linAlgebra=0"
-    PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-    NUM_MPI_PROCS 1
+    SOURCES ${SOURCES}
     COMM serial mpi
+    DEPLIBS muelu muelu-xpetra
     )
+  
+  IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt
+      AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos)
+    
+    TRIBITS_ADD_TEST(
+      UnitTests
+      NAME "UnitTestsEpetra"
+      ARGS "--linAlgebra=0"
+      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+      NUM_MPI_PROCS 1
+      COMM serial mpi
+      )
+    
+    TRIBITS_ADD_TEST(
+      UnitTests
+      NAME "UnitTestsEpetra"
+      ARGS "--linAlgebra=0"
+      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+      NUM_MPI_PROCS 4
+      COMM mpi
+      )
+    
+  ENDIF()
 
-  TRIBITS_ADD_TEST(
-    UnitTests
-    NAME "UnitTestsEpetra"
-    ARGS "--linAlgebra=0"
-    PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-    NUM_MPI_PROCS 4
-    COMM mpi
-    )
+  IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+    
+    TRIBITS_ADD_TEST(
+      UnitTests
+      NAME "UnitTestsTpetra"
+      ARGS "--linAlgebra=1"
+      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+      NUM_MPI_PROCS 1
+      COMM serial mpi
+      )
+    
+    TRIBITS_ADD_TEST(
+      UnitTests
+      NAME "UnitTestsTpetra"
+      ARGS "--linAlgebra=1"
+      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+      NUM_MPI_PROCS 4
+      COMM mpi
+      )
+    
+  ENDIF()
 
-ENDIF()
-
-IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
-
-  TRIBITS_ADD_TEST(
-    UnitTests
-    NAME "UnitTestsTpetra"
-    ARGS "--linAlgebra=1"
-    PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-    )
-
-  TRIBITS_ADD_TEST(
-    UnitTests
-    NAME "UnitTestsTpetra"
-    ARGS "--linAlgebra=1"
-    PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
-    NUM_MPI_PROCS 4
-    COMM mpi
-    )
-
-ENDIF()
+ENDIF() # Galeri TMP
 
 ADD_SUBDIRECTORY(ParameterList/FactoryFactory/)
 ADD_SUBDIRECTORY(ParameterList/ParameterListInterpreter/)

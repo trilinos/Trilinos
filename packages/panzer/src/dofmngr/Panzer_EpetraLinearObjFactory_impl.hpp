@@ -71,9 +71,9 @@ EpetraLinearObjFactory<Traits,LocalOrdinalT>::EpetraLinearObjFactory(const Teuch
 template <typename Traits,typename LocalOrdinalT>
 EpetraLinearObjFactory<Traits,LocalOrdinalT>::EpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
                                                                      const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider)
-   : comm_(Teuchos::null), gidProvider_(gidProvider)
+   : comm_(Teuchos::null), gidProvider_(gidProvider), rawMpiComm_(comm->getRawMpiComm())
 { 
-   comm_ = Teuchos::rcp(new Epetra_MpiComm(*(comm->getRawMpiComm())));
+   comm_ = Teuchos::rcp(new Epetra_MpiComm(*rawMpiComm_));
 
    // build and register the gather/scatter evaluators with 
    // the base class.

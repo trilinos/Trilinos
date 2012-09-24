@@ -175,15 +175,18 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts
   Teuchos::ParameterList geoparams("geo params");
 
   readGeoGenParams(paramFile, geoparams, comm);
-
+/*
 #ifdef HAVE_ZOLTAN2_OMP
   double begin = omp_get_wtime();
 #endif
+*/
   GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
+/*
 #ifdef HAVE_ZOLTAN2_OMP
   double end = omp_get_wtime();
-  cout << "GeometricGen Time:" << end - begin << endl;
+  //cout << "GeometricGen Time:" << end - begin << endl;
 #endif
+*/
   int coord_dim = gg->getCoordinateDimension();
   int weight_dim = gg->getWeightDimension();
   lno_t numLocalPoints = gg->getNumLocalCoords(); gno_t numGlobalPoints = gg->getNumGlobalCoords();
@@ -245,7 +248,7 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts
   params.set("pqParts", pqParts);
   params.set("timer_output_stream" , "std::cout");
   params.set("num_global_parts", numParts);
-  params.set("algorithm", "PQJagged");
+  params.set("algorithm", "pqjagged");
   params.set("compute_metrics", "true");
   params.set("imbalance_tolerance", double(imbalance));
   params.set("parallel_part_calculation_count", k);
@@ -354,7 +357,7 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numP
   }
 
   params.set("num_global_parts", numParts);
-  params.set("algorithm", "PQJagged");
+  params.set("algorithm", "pqjagged");
   params.set("compute_metrics", "true");
   params.set("imbalance_tolerance", double(imbalance));
   params.set("bisection_num_test_cuts", 7);
@@ -542,6 +545,19 @@ int main(int argc, char *argv[])
         pqParts, opt,fname/*, paramFile*/, k, force_binary, force_linear);
     }
     catch(std::string s){
+      if(tcomm->getRank() == 0){
+        print_usage(argv[0]);
+      }
+      throw s;
+    }
+
+    catch(char * s){
+      if(tcomm->getRank() == 0){
+        print_usage(argv[0]);
+      }
+      throw s; 
+    }
+    catch(char const * s){
       if(tcomm->getRank() == 0){
         print_usage(argv[0]);
       }

@@ -101,7 +101,7 @@ C     --   Sets ROT3D, ROTMAT, ROTCEN of /XYZROT/
       INTEGER IELBST(*), INPSST(*), IESSST(*), ITIMST(*)
       INTEGER IEQUIV(*), MAPNOD(*)
 
-      logical glonod
+      logical glonod, absolute
       
       INTEGER IDNPS(*), NNNPS(*), NDNPS(*), IXNNPS(*),
      $  IXDNPS(*), LTNNPS(*)
@@ -1825,8 +1825,78 @@ C========================================================================
             IF (MATSTR (WORD, 'RESET', 1)) THEN
               NUMSNP = 0
               go to 380
+            ELSE IF (MATSTR (WORD, 'GLOBAL', 3) .OR.
+     *          MATSTR (WORD, 'LOCAL', 3)) THEN
+C ...           Syntax here is:
+C                   MOVE GLOBAL NODE {id} TO {x} {y} {z} (absolute move)
+C                   MOVE LOCAL  NODE {id} TO {x} {y} {z}
+C                   MOVE GLOBAL NODE {id} BY {x} {y} {z} (relative move)
+C                   MOVE LOCAL  NODE {id} BY {x} {y} {z}
+              glonod = .FALSE.
+              if (matstr(word, 'GLOBAL', 3)) glonod = .TRUE.
+
+c ... skip 'node'
+              CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
+              if (.NOT. MATSTR (WORD, 'NODE', 2)) THEN
+                call PRTERR('CMDERR',
+     *            'SYNTAX: Move {global|local} NODE {id} {TO|BY} x y z')
+                go to 390
+              end if
+
+C ... Get the id of the node to be moved
+              CALL FFINTG (IFLD, INTYP, IFIELD, 'Node', 0, node, *420)
+              if (glonod) then
+                node = ng2l('node', node, numnp, mapnod)
+              end if
+              if (node .le. 0 .or. node .gt. numnp) then
+                CALL PRTERR ('CMDERR', 'Node index exceeds node count')
+                go to 390
+              end if
+
+C ... See if absolute or relative
+              CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
+              absolute = .false.
+              if (MATSTR (WORD, 'TO', 2)) THEN
+                absolute = .true.
+              else if (MATSTR (WORD, 'BY', 2)) THEN
+                absolute = .false.
+              else
+                call PRTERR('CMDERR',
+     *            'Expected "TO" or "BY" in move command')
+              go to 390
+
+              end if
+
+              x = 0.0
+              y = 0.0
+              z = 0.0
+
+              CALL FFREAL (IFLD, INTYP, RFIELD,
+     &          'X value', 0.0, X, *420)
+              if (ndim .gt. 1) then
+                CALL FFREAL (IFLD, INTYP, RFIELD,
+     &            'Y value', 0.0, Y, *420)
+                if (ndim .gt. 2) then
+                  CALL FFREAL (IFLD, INTYP, RFIELD,
+     &              'Z value', 0.0, Z, *420)
+                end if
+              end if
+
+C ... Move the node...
+              if (absolute) then
+                xn(node) = x
+                if (ndim .ge. 2) yn(node) = y
+                if (ndim .eq. 3) zn(node) = z
+              else
+                xn(node) = xn(node) + x
+                if (ndim .ge. 2) yn(node) = yn(node) + y
+                if (ndim .eq. 3) zn(node) = zn(node) + z
+              end if
+              VERB = ' '
+              go to 420
             ELSE
-              call PRTERR('CMDERR', 'Expected "RESET" or sideset id')
+              call PRTERR('CMDERR',
+     *          'Expected "RESET", "GLOBAL", "LOCAL", or sideset id')
               go to 390
             END IF
           END IF
