@@ -70,25 +70,6 @@ SET(CTEST_TEST_TIMEOUT 900)
 SET(Trilinos_PACKAGES MueLu)
 SET(EXTRA_EXCLUDE_PACKAGES Kokkos Ifpack2 ML Tpetra Stratimikos Triutils AztecOO)
 
-SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF"
-
-  "-DEpetra_ENABLE_TESTS=OFF"
-  "-DEpetra_ENABLE_EXAMPLES=OFF"
-
-  "-DEpetraExt_ENABLE_TESTS=OFF"
-  "-DEpetraExt_ENABLE_EXAMPLES=OFF"
-
-  "-DIfpack_ENABLE_TESTS=OFF"
-  "-DIfpack_ENABLE_EXAMPLES=OFF"
-
-  "-DAmesos_ENABLE_TESTS=OFF"
-  "-DAmesos_ENABLE_EXAMPLES=OFF"
-
-  "-DBelos_ENABLE_TESTS=OFF"
-  "-DBelos_ENABLE_EXAMPLES=OFF"
-)
-
 #
 # Set the rest of the system-specific options and run the dashboard build/test
 #
