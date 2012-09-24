@@ -57,24 +57,6 @@
 // Scalar types
 #include "linear2d_diffusion_scalar_types.hpp"
 
-// MueLu includes
-#include "Stokhos_MueLu.hpp"
-#include "Stokhos_MueLu_QR_Interface_decl.hpp"
-#include "Stokhos_MueLu_QR_Interface_def.hpp"
-#include "MueLu_SmootherFactory.hpp"
-#include "MueLu_TrilinosSmoother.hpp"
-typedef Kokkos::DefaultNode::DefaultNodeType Node;
-typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
-//#include <MueLu_UseShortNames.hpp>
-
-#include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
-#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
-
-#include "Xpetra_MultiVectorFactory.hpp"
-#include "MueLu_Level.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
-#include "MueLu_SaPFactory.hpp"
-
 // Random field types
 enum SG_RF { UNIFORM, LOGNORMAL };
 const int num_sg_rf = 2;
@@ -128,9 +110,6 @@ const int num_prec_option = 2;
 const Prec_option Prec_option_values[] = { whole, linear };
 const char *prec_option_names[] = { "full", "linear"};
 
-// #define _GNU_SOURCE 1
-// #include <fenv.h>
-
 int main(int argc, char *argv[]) {
   typedef double MeshScalar;
   typedef double BasisScalar;
@@ -155,7 +134,6 @@ int main(int argc, char *argv[]) {
 
   LocalOrdinal MyPID;
 
-
   try {
 
     // Create a communicator for Epetra objects
@@ -174,17 +152,6 @@ int main(int argc, char *argv[]) {
 
     int n = 32;
     CLP.setOption("num_mesh", &n, "Number of mesh points in each direction");
-
-    // multigrid specific options
-    int minAggSize = 1;
-    CLP.setOption("min_agg_size", &minAggSize, "multigrid aggregate size");
-    int smootherSweeps = 3;
-    CLP.setOption("smoother_sweeps", &smootherSweeps, "# multigrid smoother sweeps");
-    int plainAgg=1;
-    CLP.setOption("plain_aggregation", &plainAgg, "plain aggregation");
-    LocalOrdinal nsSize=-1;
-    CLP.setOption("nullspace_size", &nsSize, "nullspace dimension");
-
 
     bool symmetric = false;
     CLP.setOption("symmetric", "unsymmetric", &symmetric, 
@@ -397,23 +364,6 @@ int main(int argc, char *argv[]) {
     typedef problem_type::Tpetra_Vector Tpetra_Vector;
     typedef problem_type::Tpetra_CrsMatrix Tpetra_CrsMatrix;
     typedef Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix> Writer;
-    //Xpetra matrices
-    typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_CrsMatrix;
-    typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Xpetra_MultiVector;
-    typedef Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> Xpetra_MultiVectorFactory;
-    typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_Operator;
-    typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_TpetraCrsMatrix;
-    typedef Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Xpetra_CrsOperator;
-    typedef Belos::MueLuOp<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Belos_MueLuOperator;
-    //MueLu typedefs
-    typedef MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> MueLu_Hierarchy;
-    typedef MueLu::SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SmootherPrototype;
-    typedef MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TrilinosSmoother;
-    typedef MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SmootherFactory;
-    typedef MueLu::FactoryManager<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> FactoryManager;
-  
-    //feenableexcept(FE_ALL_EXCEPT);
-    //feenableexcept(FE_INVALID | FE_DIVBYZERO);
 
     RCP<Tpetra_Vector> p = Tpetra::createVector<Scalar>(model->get_p_map(0));
     RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(model->get_x_map());
@@ -443,43 +393,23 @@ int main(int argc, char *argv[]) {
 
     // Create preconditioner
     typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tprec;
-    RCP<Belos_MueLuOperator> M;
-    RCP<MueLu_Hierarchy> H;
-    RCP<Xpetra_CrsMatrix> xcrsJ = rcp(new Xpetra_TpetraCrsMatrix(J));
-    RCP<Xpetra_Operator> xopJ = rcp(new Xpetra_CrsOperator(xcrsJ));
+    Teuchos::RCP<Tprec> M;
     if (prec_method != NONE) {
       ParameterList precParams;
       std::string prec_name = "RILUK";
-      precParams.set("fact: iluk level-of-fill", 1);
+      precParams.set("fact: iluk level-of-fill", 4);
       precParams.set("fact: iluk level-of-overlap", 0);
-      //Ifpack2::Factory factory;
-      RCP<Xpetra_Operator> xopJ0;
+
+      // std::string prec_name = "ILUT";
+      // precParams.set("fact: ilut level-of-fill", 10.0);
+      // precParams.set("fact: drop tolerance", 1.0e-16);
+      Ifpack2::Factory factory;
       if (prec_method == MEAN) {
-        RCP<Xpetra_CrsMatrix> xcrsJ0 = rcp(new Xpetra_TpetraCrsMatrix(J0));
-        xopJ0 = rcp(new Xpetra_CrsOperator(xcrsJ0));
-        //M = factory.create<Tpetra_CrsMatrix>(prec_name, J0);
+        M = factory.create<Tpetra_CrsMatrix>(prec_name, J0);
       } else if (prec_method == STOCHASTIC) {
-        xopJ0 = xopJ;
-        //M = factory.create<Tpetra_CrsMatrix>(prec_name, J);
+        M = factory.create<Tpetra_CrsMatrix>(prec_name, J);
       }
-      H = rcp(new MueLu_Hierarchy(xopJ0));
-      M = rcp(new Belos_MueLuOperator(H));
-      //M->setParameters(precParams);
-      if (nsSize!=-1) sz=nsSize;
-      RCP<Xpetra_MultiVector> Z = Xpetra_MultiVectorFactory::Build(xcrsJ->getDomainMap(), sz);
-      size_t n = Z->getLocalLength();
-      for (LocalOrdinal j=0; j<sz; ++j) {
-        ArrayRCP<Scalar> col = Z->getDataNonConst(j);
-        for (size_t i=0; i<n; ++i) {
-          col[i].reset(expansion);
-          col[i].copyForWrite();
-          col[i].fastAccessCoeff(j) = 1.0;
-        }
-      }
-      H->GetLevel(0)->Set("Nullspace", Z);
-      //RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      //fos->setOutputToRootOnly(-1);
-      //Z->describe(*fos);
+      M->setParameters(precParams);
     }
 
     // Evaluate model
@@ -504,55 +434,8 @@ int main(int argc, char *argv[]) {
 
     // compute preconditioner
     if (prec_method != NONE) {
-      //M->initialize();
-      //M->compute();
-
-      //override MueLu defaults via factory manager
-      RCP<FactoryManager> fm = rcp( new FactoryManager() );;
-
-      //smoother
-      ParameterList smootherParamList;
-      /*
-      smootherParamList.set("chebyshev: degree", smootherSweeps);
-      smootherParamList.set("chebyshev: ratio eigenvalue", (double) 20);
-      smootherParamList.set("chebyshev: max eigenvalue", (double) -1.0);
-      smootherParamList.set("chebyshev: min eigenvalue", (double) 1.0);
-      smootherParamList.set("chebyshev: zero starting solution", true);
-      RCP<SmootherPrototype> smooPrototype     = rcp( new TrilinosSmoother("CHEBYSHEV", smootherParamList) );
-      */
-      smootherParamList.set("relaxation: sweeps", smootherSweeps);
-      smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
-      RCP<SmootherPrototype> smooPrototype     = rcp( new TrilinosSmoother("RELAXATION", smootherParamList) );
-
-      RCP<SmootherFactory>   smooFact      = rcp( new SmootherFactory(smooPrototype) );
-      fm->SetFactory("Smoother", smooFact);
-
-      // coarse level solve
-      ParameterList coarseParamList;
-      coarseParamList.set("fact: level-of-fill", 0);
-      RCP<SmootherPrototype> coarsePrototype     = rcp( new TrilinosSmoother("ILUT", coarseParamList) );
-      //RCP<SmootherPrototype> coarsePrototype     = rcp( new TrilinosSmoother("RILUK", coarseParamList) );
-      RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarsePrototype, Teuchos::null) );
-      fm->SetFactory("CoarseSolver", coarseSolverFact);
-      //fm->SetFactory("CoarseSolver", smooFact);
-
-      //allow for larger aggregates
-      typedef MueLu::UCAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
-      MueLu_UCAggregationFactory;
-      RCP<MueLu_UCAggregationFactory> aggFact = rcp(new MueLu_UCAggregationFactory());
-      aggFact->SetMinNodesPerAggregate(minAggSize);
-      fm->SetFactory("Aggregates", aggFact);
-
-      //turn off damping
-      typedef MueLu::SaPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MueLu_SaPFactory;
-      if (plainAgg) {
-        RCP<MueLu_SaPFactory> sapFactory = rcp(new MueLu_SaPFactory);
-        sapFactory->SetDampingFactor( (Scalar) 0.0 );
-        fm->SetFactory("P", sapFactory);
-      }
-
-      //H->Setup(*fm, 0, 1);
-      H->Setup(*fm);
+      M->initialize();
+      M->compute();
     }
 
     // Setup Belos solver
@@ -564,15 +447,13 @@ int main(int argc, char *argv[]) {
     belosParams->set("Verbosity", 33);
     belosParams->set("Output Style", 1);
     belosParams->set("Output Frequency", 1);
+
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
-    typedef Belos::OperatorT<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > OP;
+    typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
     typedef Belos::OperatorTraits<Scalar,MV,OP> BOPT;
-    typedef Belos::MultiVecTraits<Scalar,MV> BMVT;
-    typedef Belos::MultiVecTraits<double,MV> BTMVT;
+    typedef Belos::MultiVecTraits<double,MV> BMVT;
     typedef Belos::LinearProblem<double,MV,OP> BLinProb;
-    typedef Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BXpetraOp;
-    RCP<OP> belosJ = rcp(new BXpetraOp(xopJ)); // Turns an Xpetra::Operator object into a Belos operator
-    RCP< BLinProb > problem = rcp(new BLinProb(belosJ, dx, f));
+    RCP< BLinProb > problem = rcp(new BLinProb(J, dx, f));
     if (prec_method != NONE)
       problem->setRightPrec(M);
     problem->setProblem();
@@ -584,8 +465,7 @@ int main(int argc, char *argv[]) {
     
     // Print initial residual norm
     std::vector<double> norm_f(1);
-    //BMVT::MvNorm(*f, norm_f);
-    BTMVT::MvNorm(*f, norm_f);
+    BMVT::MvNorm(*f, norm_f);
     if (MyPID == 0)
       std::cout << "\nInitial residual norm = " << norm_f[0] << std::endl;
 
@@ -610,8 +490,7 @@ int main(int argc, char *argv[]) {
     model->computeResponse(*x, *p, *g);
 
     // Print final residual norm
-    //BMVT::MvNorm(*f, norm_f);
-    BTMVT::MvNorm(*f, norm_f);
+    BMVT::MvNorm(*f, norm_f);
     if (MyPID == 0)
       std::cout << "\nFinal residual norm = " << norm_f[0] << std::endl;
 
