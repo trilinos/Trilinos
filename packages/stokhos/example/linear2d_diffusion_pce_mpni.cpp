@@ -430,7 +430,8 @@ int main(int argc, char *argv[]) {
     // std::cout << "\nResponse Expansion = " << std::endl;
     // std::cout.precision(12);
     // sg_g.print(std::cout);
-    std::cout << "\nResponse Mean =      " << std::endl << g_mean << std::endl;
+    std::cout << std::endl;
+    std::cout << "Response Mean =      " << std::endl << g_mean << std::endl;
     std::cout << "Response Std. Dev. = " << std::endl << g_std_dev << std::endl;
 
     if (status == NOX::StatusTest::Converged && MyPID == 0) 
