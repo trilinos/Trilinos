@@ -47,6 +47,9 @@ C=======================================================================
      *  namenv, nvarnp, INOD2EL, 
      *  SWPSS, SMOOTH, USRSUB, CENTRD, 
      &  NSTEPS, TIMES, ITIMST, A, IA, *)
+#if defined (__INTEL_COMPILER == 1300)
+cDEC$ OPTIMIZE:2
+#endif
 C=======================================================================
       
 C     --*** COMAND *** (GREPOS) Input and process commands
