@@ -228,20 +228,11 @@ typedef enum {
 #define GNI_OP_NEW_REQUEST    7
 #define GNI_OP_RECEIVE        8
 
-typedef enum {
-    BUFFER_INIT=0,
-    SEND_COMPLETE=1,
-    RECV_COMPLETE,
-    RDMA_WRITE_INIT,
-    RDMA_WRITE_NEED_ACK,
-    RDMA_WRITE_COMPLETE,
-    RDMA_READ_INIT,
-    RDMA_READ_NEED_ACK,
-    RDMA_READ_COMPLETE,
-    RDMA_TARGET_INIT,
-    RDMA_TARGET_NEED_ACK,
-    RDMA_TARGET_COMPLETE,
-    RDMA_COMPLETE
+
+typedef struct {
+    bool rdma_init;
+    bool rdma_complete;
+    bool wc_complete;
 } gni_op_state_t;
 
 #define SRQ_WQ_DEPTH 2048
@@ -345,7 +336,6 @@ typedef struct {
     const NNTI_buffer_t     *reg_buf;
 
     gni_post_descriptor_t    post_desc;
-//    gni_post_descriptor_t   *post_desc_ptr;
 
     nnti_gni_work_completion wc;
     gni_mem_handle_t         wc_mem_hdl;
@@ -437,8 +427,6 @@ static NNTI_result_t register_wc(
         gni_work_request *wr);
 static NNTI_result_t unregister_wc(
         gni_work_request *wr);
-static void reset_op_state(
-        const NNTI_buffer_t *reg_buf);
 static gni_cq_handle_t get_cq(
         const NNTI_buffer_t    *reg_buf,
         const gni_work_request *wr);
@@ -642,6 +630,8 @@ inline int DEQUEUE_POST_DESCRIPTOR(
         gni_cq_handle_t           cq_hdl,
         gni_cq_entry_t           *ev_data,
         gni_post_descriptor_t   **post_desc_ptr);
+inline int IS_RDMA_TARGET_BUFFER(
+        const gni_work_request *wr);
 
 
 
@@ -1689,7 +1679,7 @@ NNTI_result_t NNTI_gni_put (
     wr->post_desc.length                =src_length;
 
 
-    wr->op_state=RDMA_WRITE_INIT;
+    wr->op_state.rdma_init=true;
 
     if (!config.use_wr_pool) {
         wr->wc_registered  =FALSE;
@@ -1720,13 +1710,13 @@ NNTI_result_t NNTI_gni_put (
         use_fma=true;
     }
 
-nthread_lock(&gni_mem_hdl->wr_queue_lock);
-    gni_mem_hdl->wr_queue.push_back(wr);
-nthread_unlock(&gni_mem_hdl->wr_queue_lock);
+    nthread_lock(&gni_mem_hdl->wr_queue_lock);
+        gni_mem_hdl->wr_queue.push_back(wr);
+    nthread_unlock(&gni_mem_hdl->wr_queue_lock);
 
-nthread_lock(&nnti_wr_wrhash_lock);
-    insert_wr_wrhash(wr);
-nthread_unlock(&nnti_wr_wrhash_lock);
+    nthread_lock(&nnti_wr_wrhash_lock);
+        insert_wr_wrhash(wr);
+    nthread_unlock(&nnti_wr_wrhash_lock);
 
 
     nthread_lock(&nnti_gni_lock);
@@ -1836,7 +1826,7 @@ NNTI_result_t NNTI_gni_get (
     wr->post_desc.remote_mem_hndl.qword2=src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword2;
     wr->post_desc.length                =src_length;
 
-    wr->op_state=RDMA_READ_INIT;
+    wr->op_state.rdma_init=true;
 
     if (!config.use_wr_pool) {
         wr->wc_registered  =FALSE;
@@ -3174,26 +3164,16 @@ static gni_cq_handle_t get_cq(const NNTI_buffer_t *reg_buf, const gni_work_reque
             cq_hdl=transport_global_data.ep_cq_hdl;
             break;
         case SEND_BUFFER:
-            if (wr->last_op==GNI_OP_SEND_REQUEST) {
-                if (wr->op_state==RDMA_WRITE_INIT) {
-                    conn=get_conn_instance(wr->peer_instance);
-                    assert(conn);
-                    cq_hdl=conn->queue_local_attrs.req_cq_hdl;
-                } else {
-                    cq_hdl=transport_global_data.ep_cq_hdl;
-                }
-            } else if (wr->last_op==GNI_OP_SEND_BUFFER) {
-                if (wr->op_state==RDMA_WRITE_INIT) {
-                    cq_hdl=transport_global_data.ep_cq_hdl;
-                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
-                    cq_hdl=transport_global_data.ep_cq_hdl;
-                }
-            } else if (wr->last_op==GNI_OP_PUT_INITIATOR) {
-                if (wr->op_state==RDMA_WRITE_INIT) {
-                    cq_hdl=transport_global_data.ep_cq_hdl;
-                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
-                    cq_hdl=transport_global_data.ep_cq_hdl;
-                }
+            if ((wr->last_op==GNI_OP_SEND_REQUEST)   &&
+                (wr->op_state.rdma_init==true)       &&
+                (wr->op_state.rdma_complete==false)) {
+
+                conn=get_conn_instance(wr->peer_instance);
+                assert(conn);
+                cq_hdl=conn->queue_local_attrs.req_cq_hdl;
+            } else {
+
+                cq_hdl=transport_global_data.ep_cq_hdl;
             }
             break;
         case GET_SRC_BUFFER:
@@ -3207,6 +3187,7 @@ static gni_cq_handle_t get_cq(const NNTI_buffer_t *reg_buf, const gni_work_reque
 
                 cq_hdl=transport_global_data.ep_cq_hdl;
             } else {
+
                 cq_hdl=transport_global_data.mem_cq_hdl;
             }
             break;
@@ -3220,127 +3201,127 @@ static gni_cq_handle_t get_cq(const NNTI_buffer_t *reg_buf, const gni_work_reque
             break;
     }
 
-    switch (gni_mem_hdl->type) {
-        case PUT_SRC_BUFFER:
-            if (wr->op_state==RDMA_WRITE_INIT) {
-                log_debug(nnti_cq_debug_level, "rdma put initiator.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
-            } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
-                log_debug(nnti_cq_debug_level, "rdma put initiator.  waiting on wc_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
-            } else {
-                log_debug(nnti_cq_debug_level, "rdma put initiator.  invalid op_state(%llu)", (uint64_t)wr->op_state);
-            }
-            break;
-        case GET_DST_BUFFER:
-            if (wr->op_state==RDMA_READ_INIT) {
-                log_debug(nnti_cq_debug_level, "rdma get initiator.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
-            } else if (wr->op_state==RDMA_READ_NEED_ACK) {
-                log_debug(nnti_cq_debug_level, "rdma get initiator.  waiting on wc_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
-            } else {
-                log_debug(nnti_cq_debug_level, "rdma get initiator.  invalid op_state(%llu)", (uint64_t)wr->op_state);
-            }
-            break;
-        case SEND_BUFFER:
-            if (wr->last_op==GNI_OP_SEND_REQUEST) {
-                if (wr->op_state==RDMA_WRITE_INIT) {
-                    conn=get_conn_instance(wr->peer_instance);
-                    assert(conn);
-                    log_debug(nnti_cq_debug_level, "send request using send op.  waiting on req_cq_hdl(%llu).", (uint64_t)conn->queue_local_attrs.req_cq_hdl);
-                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
-                    log_debug(nnti_cq_debug_level, "send request using send op.  waiting on wc_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
-                } else {
-                    log_debug(nnti_cq_debug_level, "send request using send op.  invalid op_state(%llu)", (uint64_t)wr->op_state);
-                }
-            } else if (wr->last_op==GNI_OP_SEND_BUFFER) {
-                if (wr->op_state==RDMA_WRITE_INIT) {
-                    log_debug(nnti_cq_debug_level, "send buffer using send op.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
-                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
-                    log_debug(nnti_cq_debug_level, "send buffer using send op.  waiting on wc_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
-                } else {
-                    log_debug(nnti_cq_debug_level, "send buffer using send op.  invalid op_state(%llu)", (uint64_t)wr->op_state);
-                }
-            } else if (wr->last_op==GNI_OP_PUT_INITIATOR) {
-                if (wr->op_state==RDMA_WRITE_INIT) {
-                    log_debug(nnti_cq_debug_level, "send buffer using put op.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
-                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
-                    log_debug(nnti_cq_debug_level, "send buffer using put op.  waiting on wc_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
-                } else {
-                    log_debug(nnti_cq_debug_level, "send buffer using put op.  invalid op_state(%llu)", (uint64_t)wr->op_state);
-                }
-            }
-            break;
-        case GET_SRC_BUFFER:
-            if (config.use_rdma_events) {
-                if (wr->op_state==RDMA_READ_INIT) {
-                    log_debug(nnti_cq_debug_level, "rdma target (get_src).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
-                } else if (wr->op_state==RDMA_READ_NEED_ACK) {
-                    log_debug(nnti_cq_debug_level, "rdma target (get_src).  waiting on wc_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
-                } else {
-                    log_debug(nnti_cq_debug_level, "rdma target (get_src).  invalid op_state(%llu)", (uint64_t)wr->op_state);
-                }
-            } else {
-                log_debug(nnti_cq_debug_level, "rdma target (get_src).  waiting on wc_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
-            }
-            break;
-        case PUT_DST_BUFFER:
-            if (config.use_rdma_events) {
-                if (wr->op_state==RDMA_WRITE_INIT) {
-                    log_debug(nnti_cq_debug_level, "rdma target (put_dest).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
-                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
-                    log_debug(nnti_cq_debug_level, "rdma target (put_dest).  waiting on wc_mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
-                } else {
-                    log_debug(nnti_cq_debug_level, "rdma target (put_dest).  invalid op_state(%llu)", (uint64_t)wr->op_state);
-                }
-            } else {
-                log_debug(nnti_cq_debug_level, "rdma target (put_dest/result/receive).  waiting on wc_mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
-            }
-            break;
-        case RECEIVE_BUFFER:
-            if (config.use_rdma_events) {
-                if (wr->op_state==RDMA_WRITE_INIT) {
-                    log_debug(nnti_cq_debug_level, "rdma target (result/receive).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
-                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
-                    log_debug(nnti_cq_debug_level, "rdma target (result/receive).  waiting on wc_mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
-                } else {
-                    log_debug(nnti_cq_debug_level, "rdma target (result/receive).  invalid op_state(%llu)", (uint64_t)wr->op_state);
-                }
-            } else {
-                log_debug(nnti_cq_debug_level, "rdma target (result/receive).  waiting on wc_mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
-            }
-            break;
-        case RDMA_TARGET_BUFFER:
-            if ((wr->last_op==GNI_OP_GET_INITIATOR) ||
-                (wr->last_op==GNI_OP_PUT_INITIATOR)) {
-
-                if (wr->op_state==RDMA_TARGET_INIT) {
-                    log_debug(nnti_cq_debug_level, "rdma target (generic target).  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
-                } else if (wr->op_state==RDMA_TARGET_NEED_ACK) {
-                    log_debug(nnti_cq_debug_level, "rdma target (generic target).  waiting on wc_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
-                } else {
-                    log_debug(nnti_cq_debug_level, "rdma target (generic target).  invalid op_state(%llu)", (uint64_t)wr->op_state);
-                }
-            } else {
-                if (config.use_rdma_events) {
-                    if (wr->op_state==RDMA_TARGET_INIT) {
-                        log_debug(nnti_cq_debug_level, "rdma target (generic target).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
-                    } else if (wr->op_state==RDMA_TARGET_NEED_ACK) {
-                        log_debug(nnti_cq_debug_level, "rdma target (generic target).  waiting on wc_mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
-                    } else {
-                        log_debug(nnti_cq_debug_level, "rdma target (generic target).  invalid op_state(%llu)", (uint64_t)wr->op_state);
-                    }
-                } else {
-                    log_debug(nnti_cq_debug_level, "rdma target (generic target).  waiting on wc_mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
-                }
-            }
-            break;
-        case REQUEST_BUFFER:
-            log_debug(nnti_event_debug_level, "request queue.  waiting on wc_mem_cq_hdl(%llu).", (uint64_t)q_hdl->wc_mem_cq_hdl);
-            break;
-        case UNKNOWN_BUFFER:
-        default:
-            log_error(nnti_debug_level, "unknown buffer type(%llu).", gni_mem_hdl->type);
-            cq_hdl=(gni_cq_handle_t)-1;
-            break;
-    }
+//    switch (gni_mem_hdl->type) {
+//        case PUT_SRC_BUFFER:
+//            if (wr->op_state==RDMA_WRITE_INIT) {
+//                log_debug(nnti_cq_debug_level, "rdma put initiator.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+//            } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
+//                log_debug(nnti_cq_debug_level, "rdma put initiator.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+//            } else {
+//                log_debug(nnti_cq_debug_level, "rdma put initiator.  invalid op_state(%llu)", (uint64_t)wr->op_state);
+//            }
+//            break;
+//        case GET_DST_BUFFER:
+//            if (wr->op_state==RDMA_READ_INIT) {
+//                log_debug(nnti_cq_debug_level, "rdma get initiator.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+//            } else if (wr->op_state==RDMA_READ_NEED_ACK) {
+//                log_debug(nnti_cq_debug_level, "rdma get initiator.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+//            } else {
+//                log_debug(nnti_cq_debug_level, "rdma get initiator.  invalid op_state(%llu)", (uint64_t)wr->op_state);
+//            }
+//            break;
+//        case SEND_BUFFER:
+//            if (wr->last_op==GNI_OP_SEND_REQUEST) {
+//                if (wr->op_state==RDMA_WRITE_INIT) {
+//                    conn=get_conn_instance(wr->peer_instance);
+//                    assert(conn);
+//                    log_debug(nnti_cq_debug_level, "send request using send op.  waiting on req_cq_hdl(%llu).", (uint64_t)conn->queue_local_attrs.req_cq_hdl);
+//                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
+//                    log_debug(nnti_cq_debug_level, "send request using send op.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+//                } else {
+//                    log_debug(nnti_cq_debug_level, "send request using send op.  invalid op_state(%llu)", (uint64_t)wr->op_state);
+//                }
+//            } else if (wr->last_op==GNI_OP_SEND_BUFFER) {
+//                if (wr->op_state==RDMA_WRITE_INIT) {
+//                    log_debug(nnti_cq_debug_level, "send buffer using send op.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+//                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
+//                    log_debug(nnti_cq_debug_level, "send buffer using send op.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+//                } else {
+//                    log_debug(nnti_cq_debug_level, "send buffer using send op.  invalid op_state(%llu)", (uint64_t)wr->op_state);
+//                }
+//            } else if (wr->last_op==GNI_OP_PUT_INITIATOR) {
+//                if (wr->op_state==RDMA_WRITE_INIT) {
+//                    log_debug(nnti_cq_debug_level, "send buffer using put op.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+//                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
+//                    log_debug(nnti_cq_debug_level, "send buffer using put op.  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+//                } else {
+//                    log_debug(nnti_cq_debug_level, "send buffer using put op.  invalid op_state(%llu)", (uint64_t)wr->op_state);
+//                }
+//            }
+//            break;
+//        case GET_SRC_BUFFER:
+//            if (config.use_rdma_events) {
+//                if (wr->op_state==RDMA_READ_INIT) {
+//                    log_debug(nnti_cq_debug_level, "rdma target (get_src).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
+//                } else if (wr->op_state==RDMA_READ_NEED_ACK) {
+//                    log_debug(nnti_cq_debug_level, "rdma target (get_src).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
+//                } else {
+//                    log_debug(nnti_cq_debug_level, "rdma target (get_src).  invalid op_state(%llu)", (uint64_t)wr->op_state);
+//                }
+//            } else {
+//                log_debug(nnti_cq_debug_level, "rdma target (get_src).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
+//            }
+//            break;
+//        case PUT_DST_BUFFER:
+//            if (config.use_rdma_events) {
+//                if (wr->op_state==RDMA_WRITE_INIT) {
+//                    log_debug(nnti_cq_debug_level, "rdma target (put_dest).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
+//                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
+//                    log_debug(nnti_cq_debug_level, "rdma target (put_dest).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
+//                } else {
+//                    log_debug(nnti_cq_debug_level, "rdma target (put_dest).  invalid op_state(%llu)", (uint64_t)wr->op_state);
+//                }
+//            } else {
+//                log_debug(nnti_cq_debug_level, "rdma target (put_dest/result/receive).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
+//            }
+//            break;
+//        case RECEIVE_BUFFER:
+//            if (config.use_rdma_events) {
+//                if (wr->op_state==RDMA_WRITE_INIT) {
+//                    log_debug(nnti_cq_debug_level, "rdma target (result/receive).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
+//                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
+//                    log_debug(nnti_cq_debug_level, "rdma target (result/receive).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
+//                } else {
+//                    log_debug(nnti_cq_debug_level, "rdma target (result/receive).  invalid op_state(%llu)", (uint64_t)wr->op_state);
+//                }
+//            } else {
+//                log_debug(nnti_cq_debug_level, "rdma target (result/receive).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
+//            }
+//            break;
+//        case RDMA_TARGET_BUFFER:
+//            if ((wr->last_op==GNI_OP_GET_INITIATOR) ||
+//                (wr->last_op==GNI_OP_PUT_INITIATOR)) {
+//
+//                if (wr->op_state==RDMA_TARGET_INIT) {
+//                    log_debug(nnti_cq_debug_level, "rdma target (generic target).  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+//                } else if (wr->op_state==RDMA_TARGET_NEED_ACK) {
+//                    log_debug(nnti_cq_debug_level, "rdma target (generic target).  waiting on ep_cq_hdl(%llu).", (uint64_t)transport_global_data.ep_cq_hdl);
+//                } else {
+//                    log_debug(nnti_cq_debug_level, "rdma target (generic target).  invalid op_state(%llu)", (uint64_t)wr->op_state);
+//                }
+//            } else {
+//                if (config.use_rdma_events) {
+//                    if (wr->op_state==RDMA_TARGET_INIT) {
+//                        log_debug(nnti_cq_debug_level, "rdma target (generic target).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
+//                    } else if (wr->op_state==RDMA_TARGET_NEED_ACK) {
+//                        log_debug(nnti_cq_debug_level, "rdma target (generic target).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
+//                    } else {
+//                        log_debug(nnti_cq_debug_level, "rdma target (generic target).  invalid op_state(%llu)", (uint64_t)wr->op_state);
+//                    }
+//                } else {
+//                    log_debug(nnti_cq_debug_level, "rdma target (generic target).  waiting on mem_cq_hdl(%llu).", (uint64_t)transport_global_data.mem_cq_hdl);
+//                }
+//            }
+//            break;
+//        case REQUEST_BUFFER:
+//            log_debug(nnti_event_debug_level, "request queue.  waiting on wc_mem_cq_hdl(%llu).", (uint64_t)q_hdl->wc_mem_cq_hdl);
+//            break;
+//        case UNKNOWN_BUFFER:
+//        default:
+//            log_error(nnti_debug_level, "unknown buffer type(%llu).", gni_mem_hdl->type);
+//            cq_hdl=(gni_cq_handle_t)-1;
+//            break;
+//    }
 
     log_debug(nnti_cq_debug_level, "exit (cq_hdl=%llu)", cq_hdl);
 
@@ -3464,131 +3445,87 @@ static int process_event(
     debug_level=nnti_debug_level;
     switch (gni_mem_hdl->type) {
         case SEND_BUFFER:
-            if (wr->last_op==GNI_OP_SEND_REQUEST) {
-                if (wr->op_state==RDMA_WRITE_INIT) {
-                    log_debug(debug_level, "SEND request event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
+            if ((wr->last_op==GNI_OP_SEND_REQUEST) &&
+                (wr->op_state.rdma_init==true))    {
+
+                log_debug(debug_level, "SEND request event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
+
+                if (post_desc_ptr == &wr->post_desc) {
                     log_debug(debug_level, "SEND request completion - event_buf==%p", event_buf);
-                    if (post_desc_ptr != &wr->post_desc) {
-                        log_debug(debug_level, "SEND request completion - post_desc_ptr(%p) != &wr->post_desc(%p)", post_desc_ptr, &wr->post_desc);
-                    }
-                    wr->op_state=RDMA_WRITE_NEED_ACK;
-                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
+                    wr->op_state.rdma_complete=true;
+                } else if (post_desc_ptr == &wr->wc_post_desc) {
                     log_debug(debug_level, "SEND request Work Completion completion - event_buf==%p", event_buf);
-                    if (post_desc_ptr != &wr->wc_post_desc) {
-                        log_debug(debug_level, "SEND request Work Completion completion - post_desc_ptr(%p) != &wr->wc_post_desc(%p)", post_desc_ptr, &wr->wc_post_desc);
-                    }
-                    wr->op_state=SEND_COMPLETE;
-                    wr->wc.byte_offset=wr->wc.src_offset;
+                    wr->op_state.wc_complete=true;
+                } else {
+                    log_debug(debug_level, "SEND request - unknown post descriptor - post_desc_ptr(%p) != &wr->post_desc(%p) != &wr->wc_post_desc(%p)",
+                            post_desc_ptr, &wr->post_desc, &wr->wc_post_desc);
                 }
-            } else if (wr->last_op==GNI_OP_SEND_BUFFER) {
-                if (wr->op_state==RDMA_WRITE_INIT) {
-                    log_debug(debug_level, "SEND buffer event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
+                wr->wc.byte_offset=wr->wc.src_offset;
+            } else if ((wr->last_op==GNI_OP_SEND_BUFFER) &&
+                       (wr->op_state.rdma_init==true))   {
+
+                log_debug(debug_level, "SEND buffer event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
+
+                if (post_desc_ptr == &wr->post_desc) {
                     log_debug(debug_level, "SEND buffer completion - event_buf==%p", event_buf);
-                    if (post_desc_ptr != &wr->post_desc) {
-                        log_debug(debug_level, "SEND buffer completion - post_desc_ptr(%p) != &wr->post_desc(%p)", post_desc_ptr, &wr->post_desc);
-                    }
-                    wr->op_state=RDMA_WRITE_NEED_ACK;
-                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
+                    wr->op_state.rdma_complete=true;
+                } else if (post_desc_ptr == &wr->wc_post_desc) {
                     log_debug(debug_level, "SEND buffer Work Completion completion - event_buf==%p", event_buf);
-                    if (post_desc_ptr != &wr->wc_post_desc) {
-                        log_debug(debug_level, "SEND buffer Work Completion completion - post_desc_ptr(%p) != &wr->wc_post_desc(%p)", post_desc_ptr, &wr->wc_post_desc);
-                    }
-                    wr->op_state = RDMA_WRITE_COMPLETE;
-                    wr->wc.byte_offset=wr->wc.src_offset;
+                    wr->op_state.wc_complete=true;
+                } else {
+                    log_debug(debug_level, "SEND buffer - unknown post descriptor - post_desc_ptr(%p) != &wr->post_desc(%p) != &wr->wc_post_desc(%p)",
+                            post_desc_ptr, &wr->post_desc, &wr->wc_post_desc);
                 }
-            } else if (wr->last_op==GNI_OP_PUT_INITIATOR) {
-                if (wr->op_state==RDMA_WRITE_INIT) {
-                    log_debug(debug_level, "RDMA write event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
+                wr->wc.byte_offset=wr->wc.src_offset;
+            } else if ((wr->last_op==GNI_OP_PUT_INITIATOR) &&
+                       (wr->op_state.rdma_init==true))     {
+
+                log_debug(debug_level, "RDMA write event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
+
+                if (post_desc_ptr == &wr->post_desc) {
                     log_debug(debug_level, "RDMA write (initiator) completion - event_buf==%p", event_buf);
-                    if (config.use_rdma_target_ack) {
-                        if (post_desc_ptr != &wr->post_desc) {
-                            log_debug(debug_level, "RDMA write (initiator) completion - post_desc_ptr(%p) != &wr->post_desc(%p)", post_desc_ptr, &wr->post_desc);
-                        }
-                        wr->op_state=RDMA_WRITE_NEED_ACK;
-                    } else {
-                        if (post_desc_ptr != &wr->post_desc) {
-                            log_debug(debug_level, "RDMA write (initiator) completion - post_desc_ptr(%p) != &wr->post_desc(%p)", post_desc_ptr, &wr->post_desc);
-                        }
-                        wr->op_state = RDMA_WRITE_COMPLETE;
-                        wr->wc.byte_offset=wr->wc.src_offset;
-                    }
-                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
+                    wr->op_state.rdma_complete=true;
+                } else if (post_desc_ptr == &wr->wc_post_desc) {
                     log_debug(debug_level, "RDMA write ACK (initiator) completion - event_buf==%p", event_buf);
-                    if (post_desc_ptr != &wr->wc_post_desc) {
-                        log_debug(debug_level, "RDMA write ACK (initiator) completion - post_desc_ptr(%p) != &wr->wc_post_desc(%p)", post_desc_ptr, &wr->wc_post_desc);
-                    }
-                    wr->op_state = RDMA_WRITE_COMPLETE;
-                    wr->wc.byte_offset=wr->wc.src_offset;
+                    wr->op_state.wc_complete=true;
+                } else {
+                    log_debug(debug_level, "RDMA write - unknown post descriptor - post_desc_ptr(%p) != &wr->post_desc(%p) != &wr->wc_post_desc(%p)",
+                            post_desc_ptr, &wr->post_desc, &wr->wc_post_desc);
                 }
+                wr->wc.byte_offset=wr->wc.src_offset;
             }
             break;
         case PUT_SRC_BUFFER:
             wr->last_op=GNI_OP_PUT_INITIATOR;
-            if (config.use_rdma_events) {
-                if (wr->op_state==RDMA_WRITE_INIT) {
-                    log_debug(debug_level, "RDMA write event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
+            if (wr->op_state.rdma_init==true) {
+                log_debug(debug_level, "RDMA write event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
+                if (post_desc_ptr == &wr->post_desc) {
                     log_debug(debug_level, "RDMA write (initiator) completion - event_buf==%p", event_buf);
-                    if (config.use_rdma_target_ack) {
-                        if (post_desc_ptr != &wr->post_desc) {
-                            log_debug(debug_level, "RDMA write (initiator) completion - post_desc_ptr(%p) != &wr->post_desc(%p)", post_desc_ptr, &wr->post_desc);
-                        }
-                        wr->op_state=RDMA_WRITE_NEED_ACK;
-                    } else {
-                        if (post_desc_ptr != &wr->post_desc) {
-                            log_debug(debug_level, "RDMA write (initiator) completion - post_desc_ptr(%p) != &wr->wc_post_desc(%p)", post_desc_ptr, &wr->post_desc);
-                        }
-                        wr->op_state = RDMA_WRITE_COMPLETE;
-                        wr->wc.byte_offset=wr->wc.src_offset;
-                    }
-                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
+                    wr->op_state.rdma_complete=true;
+                } else if (post_desc_ptr == &wr->wc_post_desc) {
                     log_debug(debug_level, "RDMA write ACK (initiator) completion - event_buf==%p", event_buf);
-                    if (post_desc_ptr != &wr->wc_post_desc) {
-                        log_debug(debug_level, "RDMA write ACK (initiator) completion - post_desc_ptr(%p) != &wr->wc_post_desc(%p)", post_desc_ptr, &wr->wc_post_desc);
-                    }
-                    wr->op_state = RDMA_WRITE_COMPLETE;
-                    wr->wc.byte_offset=wr->wc.src_offset;
+                    wr->op_state.wc_complete=true;
+                } else {
+                    log_debug(debug_level, "RDMA write - unknown post descriptor - post_desc_ptr(%p) != &wr->post_desc(%p) != &wr->wc_post_desc(%p)",
+                            post_desc_ptr, &wr->post_desc, &wr->wc_post_desc);
                 }
-            } else {
-                log_debug(debug_level, "RDMA write ACK (initiator) completion - event_buf==%p", event_buf);
-                if (post_desc_ptr != &wr->wc_post_desc) {
-                    log_debug(debug_level, "RDMA write ACK (initiator) completion - post_desc_ptr(%p) != &wr->post_desc(%p)", post_desc_ptr, &wr->wc_post_desc);
-                }
-                wr->op_state = RDMA_WRITE_COMPLETE;
                 wr->wc.byte_offset=wr->wc.src_offset;
             }
             break;
         case GET_DST_BUFFER:
             wr->last_op=GNI_OP_GET_INITIATOR;
-            if (config.use_rdma_events) {
-                if (wr->op_state==RDMA_READ_INIT) {
-                    log_debug(debug_level, "RDMA read event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
+            if (wr->op_state.rdma_init==true) {
+                log_debug(debug_level, "RDMA read event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
+                if (post_desc_ptr == &wr->post_desc) {
                     log_debug(debug_level, "RDMA read (initiator) completion - event_buf==%p", event_buf);
-                    if (config.use_rdma_target_ack) {
-                        if (post_desc_ptr != &wr->post_desc) {
-                            log_debug(debug_level, "RDMA read (initiator) completion - post_desc_ptr(%p) != &wr->post_desc(%p)", post_desc_ptr, &wr->post_desc);
-                        }
-                        wr->op_state=RDMA_READ_NEED_ACK;
-                    } else {
-                        if (post_desc_ptr != &wr->post_desc) {
-                            log_debug(debug_level, "RDMA read (initiator) completion - post_desc_ptr(%p) != &wr->post_desc(%p)", post_desc_ptr, &wr->post_desc);
-                        }
-                        wr->op_state = RDMA_READ_COMPLETE;
-                        wr->wc.byte_offset=wr->wc.dest_offset;
-                    }
-                } else if (wr->op_state==RDMA_READ_NEED_ACK) {
+                    wr->op_state.rdma_complete=true;
+                } else if (post_desc_ptr == &wr->wc_post_desc) {
                     log_debug(debug_level, "RDMA read ACK (initiator) completion - event_buf==%p", event_buf);
-                    if (post_desc_ptr != &wr->wc_post_desc) {
-                        log_debug(debug_level, "RDMA read ACK (initiator) completion - post_desc_ptr(%p) != &wr->wc_post_desc(%p)", post_desc_ptr, &wr->wc_post_desc);
-                    }
-                    wr->op_state = RDMA_READ_COMPLETE;
-                    wr->wc.byte_offset=wr->wc.dest_offset;
+                    wr->op_state.wc_complete=true;
+                } else {
+                    log_debug(debug_level, "RDMA read - unknown post descriptor - post_desc_ptr(%p) != &wr->post_desc(%p) != &wr->wc_post_desc(%p)",
+                            post_desc_ptr, &wr->post_desc, &wr->wc_post_desc);
                 }
-            } else {
-                log_debug(debug_level, "RDMA read ACK (initiator) completion - event_buf==%p", event_buf);
-                if (post_desc_ptr != &wr->wc_post_desc) {
-                    log_debug(debug_level, "RDMA read ACK (initiator) completion - post_desc_ptr(%p) != &wr->wc_post_desc(%p)", post_desc_ptr, &wr->wc_post_desc);
-                }
-                wr->op_state = RDMA_READ_COMPLETE;
                 wr->wc.byte_offset=wr->wc.dest_offset;
             }
             break;
@@ -3609,7 +3546,8 @@ static int process_event(
 
                 wr->wc=q->wc_buffer[q->req_processed];
 
-                wr->op_state = RECV_COMPLETE;
+                wr->op_state.rdma_complete=true;
+                wr->op_state.wc_complete=true;
 
                 q->wc_buffer[q->req_processed].ack_received=0;
 
@@ -3633,7 +3571,8 @@ static int process_event(
 
                     wr->wc=q->wc_buffer[q->req_processed];
 
-                    wr->op_state = RECV_COMPLETE;
+                    wr->op_state.rdma_complete=true;
+                    wr->op_state.wc_complete=true;
 
                     q->wc_buffer[q->req_processed].ack_received=0;
 
@@ -3668,139 +3607,124 @@ static int process_event(
             break;
         case RECEIVE_BUFFER:
             wr->last_op=GNI_OP_PUT_TARGET;
+            log_debug(debug_level, "RDMA write event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
             if (config.use_rdma_events) {
-                if (wr->op_state==RDMA_WRITE_INIT) {
-                    log_debug(debug_level, "RDMA write event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
+                if ((wr->op_state.rdma_init    ==true)   &&
+                    (wr->op_state.rdma_complete==false)) {
                     log_debug(debug_level, "RDMA write (receive buffer) completion - event_buf==%p", event_buf);
-                    wr->op_state=RDMA_WRITE_NEED_ACK;
-                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
+                    wr->op_state.rdma_complete=true;
+                } else if ((wr->op_state.rdma_init    ==true)   &&
+                           (wr->op_state.rdma_complete==true)   &&
+                           (wr->op_state.wc_complete ==false)) {
                     log_debug(debug_level, "RDMA write ACK (receive buffer) completion - event_buf==%p", event_buf);
-                    wr->op_state = RDMA_WRITE_COMPLETE;
+                    wr->op_state.wc_complete=true;
                     wr->wc.byte_offset=wr->wc.dest_offset;
                 }
             } else {
                 log_debug(debug_level, "RDMA write ACK (receive buffer) completion - event_buf==%p", event_buf);
-                wr->op_state = RDMA_WRITE_COMPLETE;
+                wr->op_state.rdma_complete=true;
+                wr->op_state.wc_complete=true;
                 wr->wc.byte_offset=wr->wc.dest_offset;
             }
             break;
         case PUT_DST_BUFFER:
             wr->last_op=GNI_OP_PUT_TARGET;
+            log_debug(debug_level, "RDMA write event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
             if (config.use_rdma_events) {
-                if (wr->op_state==RDMA_WRITE_INIT) {
-                    log_debug(debug_level, "RDMA write event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
+                if ((wr->op_state.rdma_init    ==true)   &&
+                    (wr->op_state.rdma_complete==false)) {
                     log_debug(debug_level, "RDMA write (target) completion - event_buf==%p", event_buf);
                     if (config.use_rdma_target_ack) {
-                        wr->op_state=RDMA_WRITE_NEED_ACK;
+                        wr->op_state.rdma_complete=true;
                     } else {
-                        wr->op_state = RDMA_WRITE_COMPLETE;
+                        wr->op_state.rdma_complete=true;
                         wr->wc.byte_offset=wr->wc.dest_offset;
                     }
-                } else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
+                } else if ((wr->op_state.rdma_init    ==true)   &&
+                           (wr->op_state.rdma_complete==true)   &&
+                           (wr->op_state.wc_complete ==false)) {
                     log_debug(debug_level, "RDMA write ACK (target) completion - event_buf==%p", event_buf);
-                    wr->op_state = RDMA_WRITE_COMPLETE;
+                    wr->op_state.wc_complete=true;
                     wr->wc.byte_offset=wr->wc.dest_offset;
                 }
             } else {
                 log_debug(debug_level, "RDMA write ACK (target) completion - event_buf==%p", event_buf);
-                wr->op_state = RDMA_WRITE_COMPLETE;
+                wr->op_state.rdma_complete=true;
+                wr->op_state.wc_complete=true;
                 wr->wc.byte_offset=wr->wc.dest_offset;
             }
             break;
         case GET_SRC_BUFFER:
             wr->last_op=GNI_OP_GET_TARGET;
-//            if (config.rdma_mode==RDMA_CROSSOVER) {
-//                if (wr->op_state==RDMA_READ_INIT) {
-//                    log_debug(debug_level, "RDMA read event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
-//                    log_debug(debug_level, "RDMA read ACK (target) completion - event_buf==%p", event_buf);
-//
-//                    wr->op_state = RDMA_READ_COMPLETE;
-//                    wr->wc.byte_offset=wr->wc.src_offset;
-//                }
-//            } else {
-                if (config.use_rdma_events) {
-                    if (wr->op_state==RDMA_READ_INIT) {
-                        log_debug(debug_level, "RDMA read event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
-                        log_debug(debug_level, "RDMA read (target) completion - event_buf==%p", event_buf);
-                        if (config.use_rdma_target_ack) {
-                            wr->op_state=RDMA_READ_NEED_ACK;
-                        } else {
-                            wr->op_state = RDMA_READ_COMPLETE;
-                            wr->wc.byte_offset=wr->wc.src_offset;
-                        }
-                    } else if (wr->op_state==RDMA_READ_NEED_ACK) {
-                        log_debug(debug_level, "RDMA read ACK (target) completion - event_buf==%p", event_buf);
-                        wr->op_state = RDMA_READ_COMPLETE;
+            log_debug(debug_level, "RDMA read event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
+            if (config.use_rdma_events) {
+                if ((wr->op_state.rdma_init    ==true)   &&
+                    (wr->op_state.rdma_complete==false)) {
+                    log_debug(debug_level, "RDMA read (target) completion - event_buf==%p", event_buf);
+                    if (config.use_rdma_target_ack) {
+                        wr->op_state.rdma_complete=true;
+                    } else {
+                        wr->op_state.rdma_complete=true;
                         wr->wc.byte_offset=wr->wc.src_offset;
                     }
-                } else {
+                } else if ((wr->op_state.rdma_init    ==true)   &&
+                           (wr->op_state.rdma_complete==true)   &&
+                           (wr->op_state.wc_complete ==false)) {
                     log_debug(debug_level, "RDMA read ACK (target) completion - event_buf==%p", event_buf);
-                    wr->op_state = RDMA_READ_COMPLETE;
+                    wr->op_state.wc_complete=true;
                     wr->wc.byte_offset=wr->wc.src_offset;
                 }
-//            }
+            } else {
+                log_debug(debug_level, "RDMA read ACK (target) completion - event_buf==%p", event_buf);
+                wr->op_state.rdma_complete=true;
+                wr->op_state.wc_complete=true;
+                wr->wc.byte_offset=wr->wc.src_offset;
+            }
             break;
         case RDMA_TARGET_BUFFER:
-            log_debug(debug_level, "RDMA target completion - event_buf=%p, op_state=%d, last_op=%d",
+            log_debug(debug_level, "RDMA target event - event_buf=%p, op_state=%d, last_op=%d",
                     event_buf, wr->op_state, wr->last_op);
             if ((wr->last_op==GNI_OP_GET_INITIATOR) ||
                 (wr->last_op==GNI_OP_PUT_INITIATOR)) {
 
-                if (wr->op_state==RDMA_TARGET_INIT) {
-                    log_debug(debug_level, "RDMA target completion - event_buf==%p, op_state==%d", event_buf, wr->op_state);
-                    if (config.use_rdma_target_ack) {
-                        if (post_desc_ptr != &wr->post_desc) {
-                            log_debug(debug_level, "RDMA target completion - post_desc_ptr(%p) != &wr->post_desc(%p)", post_desc_ptr, &wr->post_desc);
-                        }
-                        wr->op_state=RDMA_TARGET_NEED_ACK;
+                if (wr->op_state.rdma_init==true) {
+                    if (post_desc_ptr == &wr->post_desc) {
+                        log_debug(debug_level, "RDMA target (initiator) completion - event_buf==%p", event_buf);
+                        wr->op_state.rdma_complete=true;
+                    } else if (post_desc_ptr == &wr->wc_post_desc) {
+                        log_debug(debug_level, "RDMA target ACK (initiator) completion - event_buf==%p", event_buf);
+                        wr->op_state.wc_complete=true;
                     } else {
-                        if (post_desc_ptr != &wr->post_desc) {
-                            log_debug(debug_level, "RDMA target completion - post_desc_ptr(%p) != &wr->post_desc(%p)", post_desc_ptr, &wr->post_desc);
-                        }
-                        wr->op_state = RDMA_TARGET_COMPLETE;
-                        wr->wc.byte_offset=wr->wc.dest_offset;
+                        log_debug(debug_level, "RDMA target (initiator) - unknown post descriptor - post_desc_ptr(%p) != &wr->post_desc(%p) != &wr->wc_post_desc(%p)",
+                                post_desc_ptr, &wr->post_desc, &wr->wc_post_desc);
                     }
-                } else if (wr->op_state==RDMA_TARGET_NEED_ACK) {
-                    log_debug(debug_level, "RDMA target ACK completion - event_buf==%p", event_buf);
-                    if (post_desc_ptr != &wr->wc_post_desc) {
-                        log_debug(debug_level, "RDMA target ACK completion - post_desc_ptr(%p) != &wr->wc_post_desc(%p)", post_desc_ptr, &wr->wc_post_desc);
-                    }
-                    wr->op_state = RDMA_TARGET_COMPLETE;
                     wr->wc.byte_offset=wr->wc.dest_offset;
                 }
-            } else {
-//                if (config.rdma_mode==RDMA_CROSSOVER) {
-//                    if (wr->op_state==RDMA_TARGET_INIT) {
-//
-//                        log_debug(debug_level, "RDMA target event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
-//                        log_debug(debug_level, "RDMA target completion - event_buf==%p", event_buf);
-//
-//                        wr->op_state = RDMA_TARGET_COMPLETE;
-//                        //                    wc->byte_len   =wr->wc.byte_len;
-//                        wr->wc.byte_offset=wr->wc.dest_offset;
-//                    }
-//                } else {
-                    if (config.use_rdma_events) {
-                        if (wr->op_state==RDMA_TARGET_INIT) {
 
-                            log_debug(debug_level, "RDMA target event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
-                            if (config.use_rdma_target_ack) {
-                                wr->op_state=RDMA_TARGET_NEED_ACK;
-                            } else {
-                                wr->op_state = RDMA_TARGET_COMPLETE;
-                                wr->wc.byte_offset=wr->wc.dest_offset;
-                            }
-                        } else if (wr->op_state==RDMA_TARGET_NEED_ACK) {
-                            log_debug(debug_level, "RDMA target ACK completion - event_buf==%p", event_buf);
-                            wr->op_state = RDMA_TARGET_COMPLETE;
-                            wr->wc.byte_offset=wr->wc.dest_offset;
+            } else {
+                if (config.use_rdma_events) {
+                    if ((wr->op_state.rdma_init==true)       &&
+                        (wr->op_state.rdma_complete==false)) {
+                        log_debug(debug_level, "RDMA target (target) completion - event_buf==%p", event_buf);
+                        if (config.use_rdma_target_ack) {
+                            wr->op_state.rdma_complete=true;
+                        } else {
+                            wr->op_state.rdma_complete=true;
+                            wr->wc.byte_offset=wr->wc.src_offset;
                         }
-                    } else {
-                        log_debug(debug_level, "RDMA target completion - event_buf==%p", event_buf);
-                        wr->op_state = RDMA_TARGET_COMPLETE;
-                        wr->wc.byte_offset=wr->wc.dest_offset;
+                    } else if ((wr->op_state.rdma_init==true)     &&
+                               (wr->op_state.rdma_complete==true) &&
+                               (wr->op_state.wc_complete==false)) {
+                        log_debug(debug_level, "RDMA target ACK (target) completion - event_buf==%p", event_buf);
+                        wr->op_state.wc_complete=true;
+                        wr->wc.byte_offset=wr->wc.src_offset;
                     }
-//                }
+                } else {
+                    log_debug(debug_level, "RDMA target ACK (target) completion - event_buf==%p", event_buf);
+                    wr->op_state.rdma_complete=true;
+                    wr->op_state.wc_complete=true;
+                    wr->wc.byte_offset=wr->wc.src_offset;
+                }
             }
             break;
     }
@@ -3840,19 +3764,8 @@ static NNTI_result_t post_recv_work_request(
         register_wc(wr);
     }
 
-    if (gni_mem_hdl->type==RECEIVE_BUFFER) {
-        wr->op_state=RDMA_WRITE_INIT;
-
-    } else if (gni_mem_hdl->type==GET_SRC_BUFFER) {
-        wr->op_state=RDMA_READ_INIT;
-
-    } else if (gni_mem_hdl->type==PUT_DST_BUFFER) {
-        wr->op_state=RDMA_WRITE_INIT;
-
-    } else if (gni_mem_hdl->type==RDMA_TARGET_BUFFER) {
-        wr->op_state=RDMA_TARGET_INIT;
-
-    }
+    memset(&wr->op_state, 0, sizeof(gni_op_state_t));
+    wr->op_state.rdma_init=true;
 
     nthread_lock(&gni_mem_hdl->wr_queue_lock);
     gni_mem_hdl->wr_queue.push_back(wr);
@@ -3879,23 +3792,12 @@ static NNTI_result_t repost_recv_work_request(
     assert(gni_mem_hdl);
 
     memset(&wr->wc, 0, sizeof(nnti_gni_work_completion));
+    memset(&wr->op_state, 0, sizeof(gni_op_state_t));
+
     wr->last_op       =0;
     wr->is_op_complete=FALSE;
-    wr->op_state      =BUFFER_INIT;
 
-    if (gni_mem_hdl->type==RECEIVE_BUFFER) {
-        wr->op_state=RDMA_WRITE_INIT;
-
-    } else if (gni_mem_hdl->type==GET_SRC_BUFFER) {
-        wr->op_state=RDMA_READ_INIT;
-
-    } else if (gni_mem_hdl->type==PUT_DST_BUFFER) {
-        wr->op_state=RDMA_WRITE_INIT;
-
-    } else if (gni_mem_hdl->type==RDMA_TARGET_BUFFER) {
-        wr->op_state=RDMA_TARGET_INIT;
-
-    }
+    wr->op_state.rdma_init  =true;
 
     gni_mem_hdl->wr_queue.push_back(wr);
 
@@ -3917,48 +3819,15 @@ static int8_t is_wr_complete(
     gni_mem_hdl=(gni_memory_handle *)wr->reg_buf->transport_private;
     assert(gni_mem_hdl);
 
-    switch (gni_mem_hdl->type) {
-        case SEND_BUFFER:
-            if ((wr->op_state == SEND_COMPLETE) ||
-                (wr->op_state == RDMA_WRITE_COMPLETE)) {
-                rc=TRUE;
-            }
-            break;
-        case PUT_SRC_BUFFER:
-            if (wr->op_state == RDMA_WRITE_COMPLETE) {
-                rc=TRUE;
-            }
-            break;
-        case GET_DST_BUFFER:
-            if (wr->op_state == RDMA_READ_COMPLETE) {
-                rc=TRUE;
-            }
-            break;
-        case REQUEST_BUFFER:
-            if (wr->op_state == RECV_COMPLETE) {
-                rc=TRUE;
-            }
-            break;
-        case RECEIVE_BUFFER:
-            if (wr->op_state == RDMA_WRITE_COMPLETE) {
-                rc=TRUE;
-            }
-            break;
-        case PUT_DST_BUFFER:
-            if (wr->op_state == RDMA_WRITE_COMPLETE) {
-                rc=TRUE;
-            }
-            break;
-        case GET_SRC_BUFFER:
-            if (wr->op_state == RDMA_READ_COMPLETE) {
-                rc=TRUE;
-            }
-            break;
-        case RDMA_TARGET_BUFFER:
-            if (wr->op_state == RDMA_TARGET_COMPLETE) {
-                rc=TRUE;
-            }
-            break;
+    if ((wr->op_state.rdma_init==true)      &&
+        (wr->op_state.rdma_complete==true)) {
+
+        if ((config.use_rdma_target_ack==false) &&
+            (IS_RDMA_TARGET_BUFFER(wr))) {
+            rc=TRUE;
+        } else if (wr->op_state.wc_complete==true) {
+            rc=TRUE;
+        }
     }
 
     log_debug(nnti_ee_debug_level, "exit (rc=%d)", rc);
@@ -5020,6 +4889,7 @@ static NNTI_result_t insert_buf_bufhash(NNTI_buffer_t *buf)
     nthread_unlock(&nnti_buf_bufhash_lock);
 
     log_debug(nnti_debug_level, "bufhash buffer added (buf=%p ; buf.hash=%llu)", buf, (uint64_t)h);
+    print_bufhash_map();
 
     return(rc);
 }
@@ -5040,7 +4910,7 @@ static NNTI_buffer_t *get_buf_bufhash(const uint32_t bufhash)
     }
 
     log_debug(nnti_debug_level, "buffer NOT found");
-//    print_bufhash_map();
+    print_bufhash_map();
 
     return(NULL);
 }
@@ -5062,6 +4932,7 @@ static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf)
         log_debug(debug_level, "buffer NOT found");
     }
     nthread_unlock(&nnti_buf_bufhash_lock);
+    print_bufhash_map();
 
     return(buf);
 }
@@ -5074,9 +4945,11 @@ static void print_bufhash_map()
     }
 
     buf_by_bufhash_iter_t i;
+    if (nthread_lock(&nnti_buf_bufhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     for (i=buffers_by_bufhash.begin(); i != buffers_by_bufhash.end(); i++) {
         log_debug(debug_level, "bufhash_map key=%llu buf=%p", i->first, i->second);
     }
+    nthread_unlock(&nnti_buf_bufhash_lock);
 }
 
 static NNTI_result_t insert_wr_wrhash(gni_work_request *wr)
@@ -5110,7 +4983,7 @@ static gni_work_request *get_wr_wrhash(const uint32_t wrhash)
     }
 
     log_debug(nnti_debug_level, "work request NOT found");
-//    print_wrhash_map();
+    print_wrhash_map();
 
     return(NULL);
 }
@@ -5132,6 +5005,7 @@ static gni_work_request *del_wr_wrhash(gni_work_request *wr)
         log_debug(debug_level, "work request NOT found");
     }
     nthread_unlock(&nnti_wr_wrhash_lock);
+    print_wrhash_map();
 
     return(wr);
 }
@@ -5143,10 +5017,12 @@ static void print_wrhash_map()
         return;
     }
 
+    if (nthread_lock(&nnti_wr_wrhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     wr_by_wrhash_iter_t i;
     for (i=wr_by_wrhash.begin(); i != wr_by_wrhash.end(); i++) {
         log_debug(debug_level, "wrhash_map key=%llu wr=%p", i->first, i->second);
     }
+    nthread_unlock(&nnti_wr_wrhash_lock);
 }
 
 static NNTI_result_t wr_pool_register(
@@ -5282,9 +5158,9 @@ static void wr_pool_target_push(gni_work_request *wr)
     log_debug(nnti_debug_level, "enter");
 
     memset(&wr->wc, 0, sizeof(nnti_gni_work_completion));
+    memset(&wr->op_state, 0, sizeof(gni_op_state_t));
     wr->last_op       =0;
     wr->is_op_complete=FALSE;
-    wr->op_state      =BUFFER_INIT;
 
     if (nthread_lock(&nnti_wr_pool_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     target_wr_pool.push_front(wr);
@@ -5302,9 +5178,9 @@ static void wr_pool_initiator_push(gni_work_request *wr)
     log_debug(nnti_debug_level, "enter");
 
     memset(&wr->wc, 0, sizeof(nnti_gni_work_completion));
+    memset(&wr->op_state, 0, sizeof(gni_op_state_t));
     wr->last_op       =0;
     wr->is_op_complete=FALSE;
-    wr->op_state      =BUFFER_INIT;
 
     if (nthread_lock(&nnti_wr_pool_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     initiator_wr_pool.push_front(wr);
@@ -6221,7 +6097,7 @@ static int send_req(
     set_post_desc(&wr->post_desc, REQUEST_BUFFER, reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.size);
 
     wr->last_op =GNI_OP_SEND_REQUEST;
-    wr->op_state=RDMA_WRITE_INIT;
+    wr->op_state.rdma_init=true;
 
     wr->post_desc.local_addr           =reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf;
     wr->post_desc.local_mem_hndl.qword1=reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword1;
@@ -6459,7 +6335,7 @@ static int send_buffer(
     set_post_desc(&wr->post_desc, RECEIVE_BUFFER, src_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.size);
 
     wr->last_op=GNI_OP_SEND_BUFFER;
-    wr->op_state=RDMA_WRITE_INIT;
+    wr->op_state.rdma_init=true;
 
     wr->post_desc.local_addr            =src_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.buf;
     wr->post_desc.local_mem_hndl.qword1 =src_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.mem_hdl.qword1;
@@ -7157,5 +7033,40 @@ inline int DEQUEUE_POST_DESCRIPTOR(
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted(DEQUEUE_POST_DESCRIPTOR post_desc_ptr(%p)) failed: %d", *post_desc_ptr, rc);
     print_post_desc(*post_desc_ptr);
 
+    return(rc);
+}
+
+inline int IS_RDMA_TARGET_BUFFER(
+        const gni_work_request *wr)
+{
+    int rc=GNI_RC_SUCCESS;
+    gni_memory_handle *hdl=(gni_memory_handle *)wr->reg_buf->transport_private;
+
+    switch (hdl->type) {
+        case REQUEST_BUFFER:
+        case RECEIVE_BUFFER:
+        case SEND_BUFFER:
+        case GET_DST_BUFFER:
+        case PUT_SRC_BUFFER:
+            rc=FALSE;
+            break;
+        case GET_SRC_BUFFER:
+        case PUT_DST_BUFFER:
+            rc=TRUE;
+            break;
+        case RDMA_TARGET_BUFFER:
+            if ((wr->last_op==GNI_OP_GET_TARGET) ||
+                (wr->last_op==GNI_OP_PUT_TARGET)) {
+                rc=TRUE;
+                break;
+            }
+        case UNKNOWN_BUFFER:
+        default:
+            log_error(nnti_debug_level, "Unknown buffer type: %d", hdl->type);
+            rc=FALSE;
+            break;
+    }
+
+    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
     return(rc);
 }
