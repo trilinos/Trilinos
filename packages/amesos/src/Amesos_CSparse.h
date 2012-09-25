@@ -194,11 +194,13 @@ private:
   int MtxConvTime_, MtxRedistTime_, VecRedistTime_;
   int SymFactTime_, NumFactTime_, SolveTime_;
 
+#ifdef HAVE_AMESOS_CSPARSE
   // Data for CSparse
   cs csMatrix;
   cs *csTranMatrix;
   css *csSymbolic;
   csn *csNumeric;
+#endif
 
   //int mtype_;
   //void* pt_[64];
