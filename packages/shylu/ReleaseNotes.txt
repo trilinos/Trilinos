@@ -1,0 +1,10 @@
+ShyLU Release Notes
+===================`
+
+Trilinos 11.0:
+--------------
+ShyLU is a hybrid direct-iterative preconditioner (solver)
+for general sparse linear systems, based on Schur complement approximation. 
+It uses a hybrid MPI+threads parallel execution model.
+- Initial public release. 
+- Should be used as Ifpack preconditioner (for now).

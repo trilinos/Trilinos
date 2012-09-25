@@ -1,3 +1,8 @@
+Release notes for Amesos2 in Trilinos 11.0 (Sept. 2012):
+--------------------------------------------------------
+ - Added support for Pardiso-MKL (multithreaded solver)
+ - Several bug fixes
+
 Release notes for Amesos2 in Trilinos 10.8 (Sept. 2011):
 --------------------------------------------------------
  - Initial Public release of Amesos2. Amesos2 provides a common interface to
