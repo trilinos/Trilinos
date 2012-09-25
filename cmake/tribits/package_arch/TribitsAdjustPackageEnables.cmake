@@ -722,13 +722,13 @@ FUNCTION(TRIBITS_PRIVATE_PRINT_DISABLE
   DEP_TYPE_STR  THING_DISALBED_TYPE  THING_DISABLED_NAME
   )
   IF (${ENABLE_BEING_DISABLED_VAR_NAME})
-    MESSAGE(
-      "\n***"
-      "\n*** WARNING: Setting ${ENABLE_BEING_DISABLED_VAR_NAME}=OFF"
+    MESSAGE(FATAL_ERROR
+      " ***\n"
+      " *** ERROR: Setting ${ENABLE_BEING_DISABLED_VAR_NAME}=OFF"
       " which was 'ON' because ${PACKAGE_WITH_SOMETHING_BEING_DISABLED} has"
       " a required ${DEP_TYPE_STR} dependence on disabled"
-      " ${THING_DISALBED_TYPE} ${THING_DISABLED_NAME}!"
-      "\n***\n"
+      " ${THING_DISALBED_TYPE} ${THING_DISABLED_NAME}!\n"
+      " ***\n"
       )
   ELSE()
     MESSAGE("-- "

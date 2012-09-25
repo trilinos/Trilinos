@@ -67,32 +67,8 @@ SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 900)
 
-#SET(Trilinos_PACKAGES MueLu Amesos2)
 SET(Trilinos_PACKAGES MueLu)
-
-SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF"
-
-  "-DTrilinos_ENABLE_Epetra:BOOL=ON"
-  "-DEpetra_ENABLE_TESTS=OFF"
-  "-DEpetra_ENABLE_EXAMPLES=OFF"
-
-  "-DTrilinos_ENABLE_EpetraExt:BOOL=ON"
-  "-DEpetraExt_ENABLE_TESTS=OFF"
-  "-DEpetraExt_ENABLE_EXAMPLES=OFF"
-
-  "-DTrilinos_ENABLE_Ifpack:BOOL=ON"
-  "-DIfpack_ENABLE_TESTS=OFF"
-  "-DIfpack_ENABLE_EXAMPLES=OFF"
-
-  "-DTrilinos_ENABLE_Amesos:BOOL=ON"
-  "-DAmesos_ENABLE_TESTS=OFF"
-  "-DAmesos_ENABLE_EXAMPLES=OFF"
-
-  "-DTrilinos_ENABLE_Belos:BOOL=ON"
-  "-DBelos_ENABLE_TESTS=OFF"
-  "-DBelos_ENABLE_EXAMPLES=OFF"
-)
+SET(EXTRA_EXCLUDE_PACKAGES Kokkos Ifpack2 ML Tpetra Stratimikos Triutils AztecOO)
 
 #
 # Set the rest of the system-specific options and run the dashboard build/test

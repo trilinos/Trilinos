@@ -214,6 +214,32 @@ int main(int argc, char *argv[])
 
   if(Comm.NumProc() == 1) {
     
+    if (verbose) cout << "* Using Copy, Static Graph()." << std::endl;
+    
+    Epetra_Map RowMap(1, 0, Comm);
+
+    // Test
+    Epetra_CrsGraph    G(Copy, RowMap, 1);
+    std::vector<int>    Indices(1);
+    Indices[0] = 0;
+    G.InsertGlobalIndices(0, 1, &Indices[0]);
+    G.FillComplete();
+    
+    Epetra_CrsMatrix    A(Copy, G);
+    std::vector<double> Values(1);
+    Values[0] = 2;
+    A.ReplaceGlobalValues(0, 1, &Values[0], &Indices[0]);
+    A.FillComplete();
+    double norminf = A.NormInf();
+    if (verbose) cout << "** Inf Norm of Matrix = " << norminf << "." << std::endl;
+    cout << A << std::endl;
+
+    
+  }
+
+
+  if(Comm.NumProc() == 1) {
+    
     if (verbose) cout << "* Using Copy, Fixed number of indices per row and static profile + InsertGlobalValues() for a single row." << std::endl;
     
     Epetra_Map RowMap(1, 0, Comm);

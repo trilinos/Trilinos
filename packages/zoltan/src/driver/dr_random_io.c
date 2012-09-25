@@ -103,7 +103,7 @@ int create_random_triangles(
   MESH_INFO_PTR mesh)
 {
   /* Local declarations. */
-  const char  *yo = "create_random_input";
+  const char  *yo = "create_random_triangles";
 
   int    i, j, w, nvtxs, gnvtxs, ntri;
   int    vwgt_dim=0, ewgt_dim=0;

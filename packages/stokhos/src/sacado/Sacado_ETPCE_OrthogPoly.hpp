@@ -197,6 +197,16 @@ namespace Sacado {
       //! Compute standard deviation of expansion
       value_type standard_deviation() const { return th_->standard_deviation(); }
 
+      //! Compute the two-norm of expansion
+      value_type two_norm() const { return th_->two_norm(); }
+
+      //! Compute the squared two-norm of expansion
+      value_type two_norm_squared() const { return th_->two_norm_squared(); }
+
+      //! Compute the L2 inner product of 2 PCEs
+      value_type inner_product(const OrthogPolyImpl& b) const { 
+	return th_->inner_product(b.getOrthogPolyApprox()); }
+
       //! Print approximation in basis
       std::ostream& print(std::ostream& os) const { return th_->print(os); }
 

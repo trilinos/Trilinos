@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
 
     // Belos parameter list
     int maxIts = 100;
-    double tol = 1e-8;
+    double tol = 1e-8; // FIXME: use command line option
     Teuchos::ParameterList belosList;
     belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
     belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested

@@ -60,6 +60,7 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_DefaultMpiComm.hpp"
 
 #include <boost/unordered_set.hpp>
 
@@ -473,7 +474,7 @@ protected:
    bool fieldsRegistered_;
 
    Teuchos::RCP<const FieldPattern> geomPattern_;
-   Teuchos::RCP<Teuchos::Comm<int> > communicator_;
+   Teuchos::RCP<Teuchos::MpiComm<int> > communicator_;
 
    bool requireOrientations_;
    // this vector will be # of local elements, by number of GIDs on element block

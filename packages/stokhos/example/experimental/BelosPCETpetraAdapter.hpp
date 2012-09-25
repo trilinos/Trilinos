@@ -392,7 +392,7 @@ namespace Belos {
       Teuchos::Array<Scalar> pce_dots(A.getNumVectors());
       A.dot(B, pce_dots);
       for (unsigned int i=0; i<A.getNumVectors(); i++)
-	dots[i] = pce_dots[i].coeff(0);
+      	dots[i] = pce_dots[i].coeff(0);
     }
 
     static void MvNorm(const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::vector<typename Teuchos::ScalarTraits<BaseScalar>::magnitudeType> &normvec, NormType type=TwoNorm)
@@ -401,27 +401,26 @@ namespace Belos {
       TEUCHOS_TEST_FOR_EXCEPTION(normvec.size() < (typename std::vector<int>::size_type)mv.getNumVectors(),std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::MvNorm(mv,normvec): normvec must have room for all norms.");
 #endif
-      //Teuchos::ArrayView<typename Teuchos::ScalarTraits<BaseScalar>::magnitudeType> av(normvec);
-      Teuchos::Array<Scalar> pce_norms(mv.getNumVectors());
+      Teuchos::ArrayView<typename Teuchos::ScalarTraits<BaseScalar>::magnitudeType> av(normvec);
+      //Teuchos::Array<Scalar> pce_norms(mv.getNumVectors());
       switch (type) {
         case OneNorm:
-	  // mv.norm1(av(0,mv.getNumVectors()));
-	  mv.norm1(pce_norms);
-	  for (unsigned int i=0; i<mv.getNumVectors(); i++)
-	    normvec[i] = pce_norms[i].coeff(0);
+	  mv.norm1(av(0,mv.getNumVectors()));
+	  // mv.norm1(pce_norms);
+	  // for (unsigned int i=0; i<mv.getNumVectors(); i++)
+	  //   normvec[i] = pce_norms[i].coeff(0);
           break;
         case TwoNorm:
-          //mv.norm2(av(0,mv.getNumVectors()));
-	  //mv.norm2(pce_norms);
-	  mv.dot(mv, pce_norms);
-	  for (unsigned int i=0; i<mv.getNumVectors(); i++)
-	    normvec[i] = std::sqrt(pce_norms[i].coeff(0));
+          mv.norm2(av(0,mv.getNumVectors()));
+	  // mv.dot(mv, pce_norms);
+	  // for (unsigned int i=0; i<mv.getNumVectors(); i++)
+	  //   normvec[i] = std::sqrt(pce_norms[i].coeff(0));
           break;
         case InfNorm:
-          //mv.normInf(av(0,mv.getNumVectors()));
-	  mv.normInf(pce_norms);
-	  for (unsigned int i=0; i<mv.getNumVectors(); i++)
-	    normvec[i] = pce_norms[i].coeff(0);
+          mv.normInf(av(0,mv.getNumVectors()));
+	  // mv.normInf(pce_norms);
+	  // for (unsigned int i=0; i<mv.getNumVectors(); i++)
+	  //   normvec[i] = pce_norms[i].coeff(0);
           break;
       }
       

@@ -88,24 +88,25 @@ DOFManager<LocalOrdinalT,GlobalOrdinalT>::DOFManager(const Teuchos::RCP<ConnMana
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::setConnManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
 {
+   // make sure you own an MPI comm
+   communicator_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(mpiComm)));
+
    // this kills any old connection manager as well as the old FEI objects
    resetIndices();
 
    connMngr_ = connMngr;
 
    // build fei components
-   feiFactory_ = Teuchos::rcp(new Factory_Trilinos(mpiComm));
+   feiFactory_ = Teuchos::rcp(new Factory_Trilinos(*communicator_->getRawMpiComm()));
 
    // build fei components
-   vectorSpace_ = feiFactory_->createVectorSpace(mpiComm,"problem_vs");
+   vectorSpace_ = feiFactory_->createVectorSpace(*communicator_->getRawMpiComm(),"problem_vs");
    matrixGraph_ = feiFactory_->createMatrixGraph(vectorSpace_,vectorSpace_,"problem_mg");
 
    nodeType_ = 0; 
    vectorSpace_->defineIDTypes(1,&nodeType_);
    edgeType_ = 1; 
    vectorSpace_->defineIDTypes(1,&edgeType_);
-
-   communicator_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(mpiComm)));
 }
 
 /** \brief Reset the indicies for this DOF manager.

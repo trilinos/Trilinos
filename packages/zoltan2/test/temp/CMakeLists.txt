@@ -19,3 +19,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 4
   COMM mpi
 )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  teuchosSubcommTest
+  SOURCES teuchosSubcommTest.cpp
+  ARGS
+  "4"
+  NUM_MPI_PROCS 4
+  COMM mpi
+)

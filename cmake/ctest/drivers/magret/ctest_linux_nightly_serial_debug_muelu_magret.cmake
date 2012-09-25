@@ -62,18 +62,14 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.magret.gcc.cmake")
 
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE DEBUG)
-SET(BUILD_DIR_NAME SERIAL_DEBUG_DEV_MueLu)
+SET(BUILD_DIR_NAME SERIAL_DEBUG_DEV_MueLuTEST)
 SET(CTEST_PARALLEL_LEVEL 8)
-SET(CTEST_TEST_TYPE Nightly)
+#SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 
-SET(Trilinos_PACKAGES MueLu)
+SET(Trilinos_PACKAGES MueLu Amesos2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_Amesos2:BOOL=ON"
-  "-DAmesos2_ENABLE_TESTS=ON"
-  "-DAmesos2_ENABLE_EXAMPLES=ON"
-
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
   "-DTPL_SuperLU_INCLUDE_DIRS=/home/jngaida/opt/stow/superlu/4.1/include"
   "-DTPL_SuperLU_LIBRARIES=/home/jngaida/opt/stow/superlu/4.1/lib64/libsuperlu_4.1.a"

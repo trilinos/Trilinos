@@ -184,7 +184,18 @@ C++ includes: Epetra_BasicRowMatrix.h ";
 
 %feature("docstring")  Epetra_BasicRowMatrix::Epetra_BasicRowMatrix "Epetra_BasicRowMatrix::Epetra_BasicRowMatrix(const Epetra_Comm &Comm)
 
-Epetra_BasicRowMatrix constuctor. ";
+Epetra_BasicRowMatrix constructor.
+
+This constructor requires a valid Epetra_Comm object as its only
+argument. The constructor will use Comm to build Epetra_Maps objects:
+RowMap, ColMap, DomainMap and RangeMap. However, these will be zero-
+length (trivial) maps that must be reset by calling one of the two
+SetMap() methods listed below.
+
+Parameters:
+-----------
+
+Comm:  An Epetra_Comm containing a valid Comm object. ";
 
 %feature("docstring")  Epetra_BasicRowMatrix::~Epetra_BasicRowMatrix "Epetra_BasicRowMatrix::~Epetra_BasicRowMatrix()
 
@@ -196,7 +207,28 @@ Epetra_BasicRowMatrix Destructor. ";
 Epetra_BasicRowMatrix::SetMaps(const Epetra_Map &RowMap, const
 Epetra_Map &ColMap)
 
-Set maps (Version 1); call this function or the next, but not both. ";
+Set maps (Version 1); call this function or the next, but not both.
+
+This method takes a row and column map. On each processor these maps
+describe the global rows and columns, resp, that the processor will
+care about. Note that the ColMap does not have to be one-to-one. In
+other words, a column ID can appear on more than one processor. The
+RowMap must be 1-to-1.
+
+Parameters:
+-----------
+
+RowMap:  An Epetra_Map containing on each processor a list of GIDs of
+rows that the processor cares about.
+
+ColMap:  An Epetra_Map containing on each processor a list of GIDs of
+columns that the processor cares about.
+
+In this method, the domain and range maps are assumed to be the same
+as the row map. Note that this requires that the global matrix be
+square. If the matrix is not square, or the domain vectors or range
+vectors do not have the same layout as the rows, then the second
+constructor should be called. ";
 
 %feature("docstring")  Epetra_BasicRowMatrix::SetMaps "void
 Epetra_BasicRowMatrix::SetMaps(const Epetra_Map &RowMap, const
@@ -204,7 +236,29 @@ Epetra_Map &ColMap, const Epetra_Map &DomainMap, const Epetra_Map
 &RangeMap)
 
 Set maps (Version 2); call this function or the previous, but not
-both. ";
+both.
+
+This constructor takes a row, column, domain and range map. On each
+processor these maps describe the global rows, columns, domain and
+range, resp, that the processor will care about. The domain and range
+maps must be one-to-one, but note that the row and column maps do not
+have to be one-to-one. In other words, a row ID can appear on more
+than one processor, as can a column ID.
+
+Parameters:
+-----------
+
+RowMap:  An Epetra_Map containing on each processor a list of GIDs of
+rows that the processor cares about.
+
+ColMap:  An Epetra_Map containing on each processor a list of GIDs of
+columns that the processor cares about.
+
+DomainMap:  An Epetra_Map describing the distribution of domain
+vectors and multivectors.
+
+RangeMap:  An Epetra_Map describing the distribution of range vectors
+and multivectors. ";
 
 /*  User-required implementation methods  */
 
@@ -455,16 +509,33 @@ returns false. ";
 %feature("docstring")  Epetra_BasicRowMatrix::NormInf "virtual double
 Epetra_BasicRowMatrix::NormInf() const
 
-Returns the infinity norm of the global matrix. ";
+Returns the infinity norm of the global matrix.
+
+Returns the quantity $ \\\\| A \\\\|_\\\\infty$ such that \\\\[\\\\| A
+\\\\|_\\\\infty = \\\\max_{1\\\\lei\\\\lem} \\\\sum_{j=1}^n |a_{ij}|
+\\\\].
+
+WARNING:  This method is supported if and only if the Epetra_RowMatrix
+Object that was used to create this supports this method. ";
 
 %feature("docstring")  Epetra_BasicRowMatrix::NormOne "virtual double
 Epetra_BasicRowMatrix::NormOne() const
 
-Returns the one norm of the global matrix. ";
+Returns the one norm of the global matrix.
+
+Returns the quantity $ \\\\| A \\\\|_1$ such that \\\\[\\\\| A
+\\\\|_1= \\\\max_{1\\\\lej\\\\len} \\\\sum_{i=1}^m |a_{ij}| \\\\].
+
+WARNING:  This method is supported if and only if the Epetra_RowMatrix
+Object that was used to create this supports this method. ";
 
 %feature("docstring")  Epetra_BasicRowMatrix::NumGlobalNonzeros "virtual int Epetra_BasicRowMatrix::NumGlobalNonzeros() const
 
-Returns the number of nonzero entries in the global matrix. ";
+Returns the number of nonzero entries in the global matrix.
+
+Note that if the data decomposition is defined such that some nonzeros
+appear on multiple processors, then those nonzeros will be counted
+multiple times. ";
 
 %feature("docstring")  Epetra_BasicRowMatrix::NumGlobalNonzeros64 "virtual long long Epetra_BasicRowMatrix::NumGlobalNonzeros64() const
 ";

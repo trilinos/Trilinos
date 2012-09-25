@@ -109,6 +109,7 @@ SET(KDD_LINKFLAGS "-m64 -L/opt/lam714-gcc346-pure/lib -llammpio -llammpi++ -llam
 
 # MPI info; needed for mpirun; also need this in path.
 set(KDD_MPI "/opt/lam714-gcc346-pure/bin")
+set(TPL_ENABLE_MPI ON)
 
 set(TDD_HTTP_PROXY "http://sonproxy.sandia.gov:80/")
 

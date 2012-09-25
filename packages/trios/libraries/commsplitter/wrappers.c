@@ -1,3 +1,4 @@
+#include "Trios_config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -10,6 +11,17 @@
 #include <mpi.h>
 
 #include "commsplitter.h"
+
+#ifdef HAVE_TRIOS_HPCTOOLKIT
+#include <hpctoolkit.h>
+#define SAMPLING_IS_ACTIVE() hpctoolkit_sampling_is_active()
+#define SAMPLING_STOP() hpctoolkit_sampling_stop()
+#define SAMPLING_START() hpctoolkit_sampling_start()
+#else
+#define SAMPLING_IS_ACTIVE() 0
+#define SAMPLING_STOP()
+#define SAMPLING_START()
+#endif
 
 
 #define COMMSPLITTER_PATH_MAX 1024
@@ -127,6 +139,10 @@ static int commsplitter_MPI_Init(int *argc, char ***argv)
     enabled_save = commsplitter_data.enabled;
     commsplitter_data.enabled = 0;
 
+    // stop hpctoolkit sampling (sometimes causes faults)
+    int sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+
     rc = PMPI_Init(argc, argv);
 
     commsplitter_data.enabled = enabled_save;
@@ -136,6 +152,8 @@ static int commsplitter_MPI_Init(int *argc, char ***argv)
     commsplitter_log("app_pathname is %s\n", commsplitter_data.app_pathname);
 
     rc=split_comm_world();
+
+    if (sampling) SAMPLING_START();
 
     return(rc);
 }
@@ -173,6 +191,7 @@ static int commsplitter_MPI_Init_thread(int *argc, char ***argv, int required, i
     enabled_save = commsplitter_data.enabled;
     commsplitter_data.enabled = 0;
 
+    SAMPLING_STOP();
     rc = PMPI_Init_thread(argc, argv, required, provided);
 
     commsplitter_data.enabled = enabled_save;
@@ -182,6 +201,7 @@ static int commsplitter_MPI_Init_thread(int *argc, char ***argv, int required, i
     commsplitter_log("app_pathname is %s\n", commsplitter_data.app_pathname);
 
     rc=split_comm_world();
+    SAMPLING_START();
 
     return(rc);
 }

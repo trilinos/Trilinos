@@ -27,7 +27,10 @@ namespace MESQUITE_NS {
 namespace stk {
   namespace percept {
 
+    static bool m_use_local_scaling = false;
+
     static double sqrt_eps = std::sqrt(std::numeric_limits<double>::epsilon());
+    //static double sqrt_eps = 1.e-5;
 
     using namespace Mesquite;
     const bool do_tot_test = false;
@@ -128,17 +131,21 @@ namespace stk {
 
     bool PMMParallelReferenceMeshSmoother1::check_convergence()
     {
+      double grad_check = gradNorm;
       if (m_stage == 0 && (m_dnew == 0.0 || m_total_metric == 0.0))
         {
+          std::cout << "tmp srk untangle m_dnew= " << m_dnew << " m_total_metric = " << m_total_metric << std::endl;
           return true; // for untangle
         }
-      if (m_stage == 0 && m_num_invalid == 0 && (m_dmax < gradNorm || m_scaled_grad_norm < gradNorm))
+      if (m_stage == 0 && m_num_invalid == 0 && (m_dmax < grad_check || m_scaled_grad_norm < grad_check))
         {
           return true;
         }
-      //if (m_num_invalid == 0 && (m_scaled_grad_norm < gradNorm || (m_iter > 0 && m_dmax < gradNorm && m_dnew < gradNorm*gradNorm*m_d0)))
-      if (m_num_invalid == 0 && (m_scaled_grad_norm < gradNorm || (m_iter > 0 && m_dmax < gradNorm ) ) )
+      //grad_check = 1.e-8;
+      if (m_num_invalid == 0 && (m_scaled_grad_norm < grad_check || (m_iter > 0 && m_dmax < grad_check && m_dnew < grad_check*grad_check*m_d0)))
+        //    if (m_num_invalid == 0 && (m_scaled_grad_norm < gradNorm || (m_iter > 0 && m_dmax < gradNorm ) ) )
         {
+          std::cout << "tmp srk untangle m_dnew= " << m_dnew << " m_total_metric = " << m_total_metric << std::endl;
           return true;
         }      
       return false;
@@ -369,7 +376,8 @@ namespace stk {
         PRINT("tmp srk m_scale= " << m_scale);
       }
         
-      get_scale(mesh, domain);
+      if (!m_use_local_scaling) 
+        get_scale(mesh, domain);
     }
 
     /// gets a global scale factor so that local gradient*scale is approximately the size of the local mesh edges
@@ -379,6 +387,8 @@ namespace stk {
       PerceptMesquiteMesh *pmm = dynamic_cast<PerceptMesquiteMesh *>(mesh);
       PerceptMesh *eMesh = pmm->getPerceptMesh();
       stk::mesh::FieldBase *cg_g_field    = eMesh->get_field("cg_g");
+      stk::mesh::FieldBase *cg_s_field    = eMesh->get_field("cg_s");
+      stk::mesh::FieldBase *cg_r_field    = eMesh->get_field("cg_r");
 
       stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
       stk::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
@@ -392,6 +402,7 @@ namespace stk {
 
         for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
+            // FIXME
             if (PerceptMesquiteMesh::select_bucket(**k, m_eMesh) && on_locally_owned_part(**k))
               {
                 stk::mesh::Bucket & bucket = **k ;
@@ -428,11 +439,17 @@ namespace stk {
           }
       }
 
-      {
-        stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_scale ) );
-        m_scale = (m_scale < 1.0) ? 1.0 : 1.0/m_scale;
-        PRINT("tmp srk m_scale= " << m_scale);
-      }
+      //if (m_use_local_scaling && m_stage==1)
+        if (m_use_local_scaling)
+        {
+          m_scale = 1.0;
+        }
+      else
+        {
+          stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_scale ) );
+          m_scale = (m_scale < 1.0) ? 1.0 : 1.0/m_scale;
+          PRINT("tmp srk m_scale= " << m_scale);
+        }
 
       // node loop
       m_scaled_grad_norm = 0.0;
@@ -482,6 +499,27 @@ namespace stk {
                         es1 = s1;
                         es2 = s2;
                       }
+
+                    //if (m_use_local_scaling && m_stage==1)
+                    if (m_use_local_scaling)
+                      {
+                        double *cg_r = PerceptMesh::field_data(cg_r_field, node);
+                        double *cg_s = PerceptMesh::field_data(cg_s_field, node);
+                        double len=0.0;
+                        for (int idim=0; idim < spatialDim; idim++)
+                          {
+                            len += cg_r[idim]*cg_r[idim];
+                          }                            
+                        len = std::sqrt(len);
+                        if (len > edge_length_ave)
+                          {
+                            for (int idim=0; idim < spatialDim; idim++)
+                              {
+                                cg_s[idim] = cg_r[idim]/len*edge_length_ave;
+                              }
+                          }
+                      }
+
                   }
               }
           }
@@ -519,7 +557,12 @@ namespace stk {
           /// r = -g
           eMesh->nodal_field_axpby(-1.0, cg_g_field, 0.0, cg_r_field);
           /// s = r  (allows for preconditioning later s = M^-1 r)
-          eMesh->copy_field(cg_s_field, cg_r_field);
+          //if (m_use_local_scaling && m_stage==1)
+          if (m_use_local_scaling)
+            get_scale(mesh, domain);
+          else
+            eMesh->copy_field(cg_s_field, cg_r_field);
+
           /// d = s
           eMesh->copy_field(cg_d_field, cg_s_field);
           /// dnew = r.d
@@ -581,6 +624,13 @@ namespace stk {
         if (!converged)
           {
             get_gradient(mesh, domain);
+            /// r = -g
+            eMesh->nodal_field_axpby(-1.0, cg_g_field, 0.0, cg_r_field);
+            //if (m_use_local_scaling && m_stage==1)
+            if (m_use_local_scaling)
+              get_scale(mesh, domain);
+            else
+              eMesh->copy_field(cg_s_field, cg_r_field);
             norm_gradient2 = eMesh->nodal_field_dot(cg_g_field, cg_g_field);
             m_grad_norm = std::sqrt(norm_gradient2);
 
@@ -717,8 +767,12 @@ namespace stk {
       /// dmid = r.s
       m_dmid = eMesh->nodal_field_dot(cg_r_field, cg_s_field);
 
-      /// s = r
-      eMesh->copy_field(cg_s_field, cg_r_field);
+      /// s = r  (allows for preconditioning later s = M^-1 r)
+      //if (m_use_local_scaling && m_stage==1)
+      if (m_use_local_scaling)
+        get_scale(mesh, domain);
+      else
+        eMesh->copy_field(cg_s_field, cg_r_field);
 
       /// dnew = r.s
       m_dnew = eMesh->nodal_field_dot(cg_r_field, cg_s_field);
@@ -955,7 +1009,7 @@ namespace stk {
 
     }
 
-    double PMMParallelReferenceMeshSmoother1::total_metric(Mesh *mesh, double alpha, double multiplicative_edge_scaling, bool& valid)
+    double PMMParallelReferenceMeshSmoother1::total_metric(Mesh *mesh, double alpha, double multiplicative_edge_scaling, bool& valid, int* num_invalid)
     {
       PerceptMesquiteMesh *pmm = dynamic_cast<PerceptMesquiteMesh *>(mesh);
       stk::mesh::FieldBase *coord_field = m_eMesh->get_coordinates_field();
@@ -969,6 +1023,7 @@ namespace stk {
       int spatialDim = m_eMesh->get_spatial_dim();
 
       double mtot = 0.0;
+      int n_invalid=0;
 
       // cache coordinates
       m_eMesh->copy_field(coord_field_lagged, coord_field_current);
@@ -1032,6 +1087,7 @@ namespace stk {
 
                       bool local_valid = true;
                       double nm = nodal_metric(node, 0.0, coord_current, cg_d, local_valid);
+                      if (!local_valid) n_invalid++;
                       valid = valid && local_valid;
                       mtot += nm;
                     }
@@ -1057,6 +1113,8 @@ namespace stk {
                       stk::mesh::Entity& element = bucket[i_element];
                       bool local_valid=true;
                       double mm = metric(element, local_valid);
+                      if (!local_valid) n_invalid++;
+
                       valid = valid && local_valid;
                       if (do_print_elem_val) PRINT( "element= " << element.identifier() << " metric= " << mm );
                       if (do_print_elem_val && element.identifier() == 13) { std::cout << element.identifier() << " iter= " << m_iter << " element= " << element.identifier() << " metric= " << mm << std::endl;}
@@ -1071,6 +1129,12 @@ namespace stk {
 
       stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceSum<1>( & mtot ) );
       stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMin<1>( & valid ) );
+
+      if (num_invalid)
+        {
+          *num_invalid = n_invalid;
+          stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceSum<1>( num_invalid ) );
+        }
 
       return mtot;
       

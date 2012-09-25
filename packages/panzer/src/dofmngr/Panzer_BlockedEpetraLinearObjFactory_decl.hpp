@@ -71,6 +71,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
+#include "Teuchos_OpaqueWrapper.hpp"
 
 namespace panzer {
 
@@ -299,6 +300,7 @@ protected:
 
    // storage for Epetra graphs and maps
    Teuchos::RCP<const Epetra_Comm> comm_;
+   Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm_;
    mutable std::vector<Teuchos::RCP<Epetra_Map> > maps_;
    mutable std::vector<Teuchos::RCP<Epetra_Map> > ghostedMaps_;
    mutable boost::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph> > graphs_ ;

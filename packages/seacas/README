@@ -15,6 +15,8 @@ SEACAS uses the following TPLS, some are optional:
 
 * pamgen -- http://trilinos.sandia.gov/packages/pamgen
 
+* matio -- https://sourceforge.net/projects/matio/
+
 ========================================================================
 CMake defines used to build SEACAS:
       -D Trilinos_ENABLE_SEACAS:BOOL=ON 
@@ -45,6 +47,10 @@ CMake defines used to build SEACAS:
       -D TPL_XDMF_INCLUDE_DIRS:PATH={path to xdmf includes}
       -D XDMF_LIBRARY_DIRS:PATH={path to xdmf library}
 
+  MAT2EXO and EXO2MAT:
+      -D Matio_LIBRARY_DIRS:PATH={path to matio library source}/lib
+      -D Matio_INCLUDE_DIRS:PATH={path to matio library source}/include
+
   SEACAS/ioss can be built either in serial mode or with mpi using the
   standard Trilinos configuration flag.  The exodus and nemesis
   libraries can be built either way, but they have no mpi-related
@@ -54,50 +60,49 @@ A script that can be used to build SEACAS is:
 --------------------------------cut here--------------------------------
 EXTRA_ARGS=$@
 
-export MPI_BASE_DIR=/usr/netpub/mpi/OpenMPI/1.4/64Bit/gnu
-FORTRAN_COMPILER=/usr/bin/gfortran
-
-# Have to set this to get TRY_RUN(...) commands to work
-export LD_LIBRARY_PATH=$MPI_BASE_DIR/lib:$LD_LIBRARY_PATH
-
 #MPI=ON
 MPI=OFF
 
 if [ "$MPI" == "ON" ]
 then
-  CXX=${MPI_BASE_DIR}/bin/mpiCC
-  CC=${MPI_BASE_DIR}/bin/mpicc
-  FC=${MPI_BASE_DIR}/bin/mpif77
+  CXX=mpiCC
+  CC=mpicc
+  FC=mpif77
 else
-  CXX=/opt/local/bin/g++-mp-4.5
-  CC=/opt/local/bin/gcc-mp-4.5
-  FC=/opt/local/bin/gcc-gfortran-mp-4.5
+  CXX=/opt/local/bin/g++-mp-4.8
+  CC=/opt/local/bin/gcc-mp-4.8
+  FC=/opt/local/bin/gfortran-mp-4.8
 fi
 
-ACCESS=/home/gdsjaar/src/SEACAS.git/netcdf-tmp/
+ACCESS=/path/to/libraries/SEACAS.git
+NETCDF=/path/to/libraries/netcdf-4.2.1.1
+MATIO=/path/to/libraries/matio-1.5.0
+
+rm -f CMakeCache.txt
 
 cmake  \
 -D BUILD_SHARED_LIBS:BOOL=OFF \
 -D CMAKE_CXX_COMPILER:FILEPATH=${CXX} \
 -D CMAKE_C_COMPILER:FILEPATH=${CC} \
 -D CMAKE_Fortran_COMPILER:FILEPATH=${FC} \
--D CMAKE_INSTALL_PREFIX:PATH=../install_gnu4.2.4ip \
--D CMAKE_INSTALL_PREFIX:PATH=/scratch/gdsjaar/TrilinosTest \
--D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
+-D CMAKE_INSTALL_PREFIX:PATH=../install_trilinos \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
 -D DART_TESTING_TIMEOUT:STRING=600 \
--D Netcdf_LIBRARY_DIRS:PATH=${ACCESS}/lib \
--D TPL_Boost_INCLUDE_DIRS:PATH=/Users/gdsjaar/src/Sierra/votd/TPLs_src/boost/ \
--D TPL_ENABLE_MATLAB:BOOL=OFF \
--D TPL_ENABLE_MPI:BOOL=${MPI} \
+-D Matio_LIBRARY_DIRS:PATH=${MATIO}/lib \
+-D Matio_INCLUDE_DIRS:PATH=${MATIO}/include \
+-D Netcdf_LIBRARY_DIRS:PATH=${NETCDF}/lib \
+-D TPL_Netcdf_INCLUDE_DIRS:PATH=${NETCDF}/include \
 -D TPL_ENABLE_Netcdf:BOOL=ON \
--D TPL_Netcdf_INCLUDE_DIRS:PATH=${ACCESS}/include \
--D Trilinos_EXTRA_LINK_FLAGS="-L${ACCESS}/lib -lhdf5_hl -lhdf5 -lz -lm" \
+-D TPL_ENABLE_Matio:BOOL=ON \
+-D TPL_ENABLE_MPI:BOOL=${MPI} \
 -D Trilinos_ENABLE_CHECKED_STL:BOOL=OFF \
 -D Trilinos_ENABLE_Pamgen:BOOL=ON \
 -D Trilinos_ENABLE_SEACAS:BOOL=ON \
 -D Trilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON \
+-D Trilinos_ENABLE_STK:BOOL=OFF \
+-D Trilinos_ENABLE_Sundance:BOOL=OFF \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_TrilinosCouplings:BOOL=OFF \
+-D Trilinos_ENABLE_TrilinosFramework:BOOL=OFF \
 $EXTRA_ARGS \
 ../
-
---------------------------------cut here--------------------------------

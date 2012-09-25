@@ -44,6 +44,7 @@
 #define __Panzer_STK_Interface_hpp__
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_DefaultMpiComm.hpp>
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -136,11 +137,17 @@ public:
 
    /** Initialize the mesh with the current dimension This also calls
      * commit on the meta data causing it to be frozen. Information
-     * about elements blocks has to be commited before this.
+     * about elements blocks has to be commited before this. If 
+     * parallel machine has already been specified through <code>instantiateBulkData</code>
+     * that communicator is used. Otherwise a new copy is constructed and
+     * will be used through out this mesh object's lifetime.
      */
    void initialize(stk::ParallelMachine parallelMach,bool setupIO=true);
 
    /** Build a bulk data object but don't do anything with it.
+     * If parallel machine has already been specified through <code>initialize</code>
+     * that communicator is used. Otherwise a new copy is constructed and will
+     * be used by default throughout the lifetime of this object.
      */
    void instantiateBulkData(stk::ParallelMachine parallelMach);
 
@@ -561,6 +568,12 @@ protected:
    void initializeFieldsInSTK(const std::map<std::pair<std::string,std::string>,SolutionFieldType*> & nameToField,
                              stk::mesh::EntityRank rank,bool setupIO);
 
+   /** Build a safely handled Teuchos MPI communicator from a parallel machine.
+     * This object asserts ownership of the communicator so that we can gurantee
+     * existence so the outer user can do whatever they'd like with the original.
+     */
+   Teuchos::RCP<Teuchos::MpiComm<int> > getSafeCommunicator(stk::ParallelMachine parallelMach) const;
+
    std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCs_;
 
    Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData_;
@@ -597,6 +610,8 @@ protected:
 
    unsigned procRank_;
    std::size_t currentLocalId_;
+
+   Teuchos::RCP<Teuchos::MpiComm<int> > mpiComm_;
 
    double initialStateTime_; // the time stamp at the time this object was constructed (default 0.0)
    double currentStateTime_; // the time stamp set by the user when writeToExodus is called (default 0.0)

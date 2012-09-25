@@ -202,6 +202,30 @@ namespace SDMUtilsUnitTest {
     success = test_QR(Stokhos::QR_MGS, m, n, rtol, atol, out);
   }
 
+  TEUCHOS_UNIT_TEST( Stokhos_SDMUtils, QR_MGS2_TallSkinny ) {
+    ordinal_type m = 100;
+    ordinal_type n = 35;
+    success = test_QR(Stokhos::QR_MGS2, m, n, rtol, atol, out);
+  }
+
+  TEUCHOS_UNIT_TEST( Stokhos_SDMUtils, QR_MGS2_ShortFat ) {
+    ordinal_type n = 100;
+    ordinal_type m = 35;
+    success = test_QR(Stokhos::QR_MGS2, m, n, rtol, atol, out);
+  }
+
+  TEUCHOS_UNIT_TEST( Stokhos_SDMUtils, QR_Householder_TallSkinny ) {
+    ordinal_type m = 100;
+    ordinal_type n = 35;
+    success = test_QR(Stokhos::QR_Householder, m, n, rtol, atol, out);
+  }
+
+  TEUCHOS_UNIT_TEST( Stokhos_SDMUtils, QR_Householder_ShortFat ) {
+    ordinal_type n = 100;
+    ordinal_type m = 35;
+    success = test_QR(Stokhos::QR_Householder, m, n, rtol, atol, out);
+  }
+
   TEUCHOS_UNIT_TEST( Stokhos_SDMUtils, CPQR_Householder_TallSkinny ) {
     ordinal_type m = 100;
     ordinal_type n = 35;
@@ -242,22 +266,6 @@ namespace SDMUtilsUnitTest {
 				 m, n, k, rtol, atol, out);
   }
 
-  TEUCHOS_UNIT_TEST( Stokhos_SDMUtils, CPQR_CGS_threshold_TallSkinny ) {
-    ordinal_type m = 100;
-    ordinal_type n = 35;
-    ordinal_type k = 20;
-    success = test_weighted_CPQR(Stokhos::CPQR_CGS_threshold, 
-				 m, n, k, rtol, atol, out);
-  }
-
-  TEUCHOS_UNIT_TEST( Stokhos_SDMUtils, CPQR_CGS_threshold_ShortFat ) {
-    ordinal_type n = 100;
-    ordinal_type m = 35;
-    ordinal_type k = 20;
-    success = test_weighted_CPQR(Stokhos::CPQR_CGS_threshold, 
-				 m, n, k, rtol, atol, out);
-  }
-
   TEUCHOS_UNIT_TEST( Stokhos_SDMUtils, CPQR_MGS_threshold_TallSkinny ) {
     ordinal_type m = 100;
     ordinal_type n = 35;
@@ -271,6 +279,22 @@ namespace SDMUtilsUnitTest {
     ordinal_type m = 35;
     ordinal_type k = 20;
     success = test_weighted_CPQR(Stokhos::CPQR_MGS_threshold, 
+				 m, n, k, rtol, atol, out);
+  }
+
+  TEUCHOS_UNIT_TEST( Stokhos_SDMUtils, CPQR_MGS_reorthog_threshold_TallSkinny ) {
+    ordinal_type m = 100;
+    ordinal_type n = 35;
+    ordinal_type k = 20;
+    success = test_weighted_CPQR(Stokhos::CPQR_MGS_reorthog_threshold, 
+				 m, n, k, rtol, atol, out);
+  }
+
+  TEUCHOS_UNIT_TEST( Stokhos_SDMUtils, CPQR_MGS_reorthog_threshold_ShortFat ) {
+    ordinal_type n = 100;
+    ordinal_type m = 35;
+    ordinal_type k = 20;
+    success = test_weighted_CPQR(Stokhos::CPQR_MGS_reorthog_threshold, 
 				 m, n, k, rtol, atol, out);
   }
 

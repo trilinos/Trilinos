@@ -62,13 +62,13 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &
   char *broadcast_string = NULL;
   int string_length = 0;
 
-  int rank = Ioss::ParallelUtils::parallel_rank();
+  int rank = parallel_rank();
   if (rank == 0) {
     result_string = std::getenv(name.c_str());
     string_length = result_string ? (int)std::strlen(result_string) : 0;
   }
 
-  if (sync_parallel) {
+  if (sync_parallel && parallel_size() > 1) {
     MPI_Bcast(&string_length, 1, MPI_INT, 0, communicator_);
 
     if (string_length > 0) {
@@ -127,7 +127,7 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, bool sync_par
     string_length = result_string ? (int)std::strlen(result_string) : 0;
   }
 
-  if (sync_parallel)
+  if (sync_parallel && parallel_size() > 1)
     MPI_Bcast(&string_length, 1, MPI_INT, 0, communicator_);
 
   return string_length > 0;

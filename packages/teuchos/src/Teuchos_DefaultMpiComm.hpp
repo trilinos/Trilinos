@@ -481,12 +481,15 @@ MpiComm<Ordinal>::MpiComm(const MpiComm<Ordinal>& other)
 {
   TEUCHOS_TEST_FOR_EXCEPT(other.getRawMpiComm().get() == NULL);
   TEUCHOS_TEST_FOR_EXCEPT(*other.getRawMpiComm() == MPI_COMM_NULL);
+/*
   MPI_Comm newComm;
   const int err = MPI_Comm_dup (*other.getRawMpiComm(), &newComm);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
     "Teuchos::MpiComm copy constructor: MPI_Comm_dup failed with error \""
     << mpiErrorCodeToString (err) << "\".");
-  rawMpiComm_ = opaqueWrapper (newComm);
+  rawMpiComm_ = opaqueWrapper (newComm,MPI_Comm_free);
+*/
+  rawMpiComm_ = other.rawMpiComm_;
   setupMembersFromComm();
 }
 
@@ -1122,8 +1125,8 @@ MpiComm<Ordinal>::split(const int color, const int key) const
     return RCP< Comm<Ordinal> >();
   } else {
     return rcp(new MpiComm<Ordinal>(
-      rcp_implicit_cast<const OpaqueWrapper<MPI_Comm> >( opaqueWrapper(newComm) )
-      ) );
+                   rcp_implicit_cast<const OpaqueWrapper<MPI_Comm> >( 
+                                     opaqueWrapper(newComm,MPI_Comm_free))));
   }
 }
 
@@ -1168,6 +1171,7 @@ MpiComm<Ordinal>::createSubcommunicator(const ArrayView<const int> &ranks) const
     // throwing std::logic_error anyway, we can only promise
     // best-effort recovery; thus, we don't check the error code.
     (void) MPI_Group_free (&newGroup);
+    (void) MPI_Group_free (&thisGroup);
     throw;
   }
 
@@ -1176,13 +1180,17 @@ MpiComm<Ordinal>::createSubcommunicator(const ArrayView<const int> &ranks) const
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::logic_error,
     "Failed to free subgroup.  MPI_Group_free failed with error \""
     << mpiErrorCodeToString (err) << "\".");
+  err = MPI_Group_free (&thisGroup);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::logic_error,
+    "Failed to free subgroup.  MPI_Group_free failed with error \""
+    << mpiErrorCodeToString (err) << "\".");
 
   if (newComm == MPI_COMM_NULL) {
     return RCP< Comm<Ordinal> >();
   } else {
     return rcp(new MpiComm<Ordinal>(
-      rcp_implicit_cast<const OpaqueWrapper<MPI_Comm> >( opaqueWrapper(newComm) )
-      ));
+                   rcp_implicit_cast<const OpaqueWrapper<MPI_Comm> >(
+                                     opaqueWrapper(newComm,MPI_Comm_free))));
   }
 }
 

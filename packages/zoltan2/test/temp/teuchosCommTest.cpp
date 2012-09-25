@@ -1,3 +1,6 @@
+// Test to evaluate the performance of Teuchos::Comm's reduceAll versus
+// direct MPI invocation of MPI_Allreduce for common data types int, double.
+
 #include <mpi.h>
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_DefaultComm.hpp"

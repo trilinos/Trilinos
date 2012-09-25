@@ -49,7 +49,7 @@
  */
 
 #include <Zoltan2_TestHelpers.hpp>
-//#include <Zoltan2_BasicCoordinateInput.hpp>
+#include <Zoltan2_BasicCoordinateInput.hpp>
 #include <Zoltan2_XpetraMultiVectorInput.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
@@ -545,6 +545,19 @@ int main(int argc, char *argv[])
         pqParts, opt,fname/*, paramFile*/, k, force_binary, force_linear);
     }
     catch(std::string s){
+      if(tcomm->getRank() == 0){
+        print_usage(argv[0]);
+      }
+      throw s;
+    }
+
+    catch(char * s){
+      if(tcomm->getRank() == 0){
+        print_usage(argv[0]);
+      }
+      throw s; 
+    }
+    catch(char const * s){
       if(tcomm->getRank() == 0){
         print_usage(argv[0]);
       }

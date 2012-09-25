@@ -338,6 +338,7 @@ int main(int argc, char *argv[])
   bool doMemory=false;
   int numGlobalParts = nprocs;
   int dummyTimer=0;
+  bool remap=0;
 
   CommandLineProcessor commandLine(false, true);
   commandLine.setOption("size", &numGlobalCoords, 
@@ -347,6 +348,8 @@ int main(int argc, char *argv[])
   commandLine.setOption("weightDim", &weightDim, 
     "Number of weights per coordinate, zero implies uniform weights.");
   commandLine.setOption("debug", &debugLevel, "Zoltan1 debug level");
+  commandLine.setOption("remap", "no-remap", &remap,
+    "Zoltan1 REMAP parameter; disabled by default for scalability testing");
   commandLine.setOption("timers", &dummyTimer, "ignored");
   commandLine.setOption(memoryOn.c_str(), memoryOff.c_str(), &doMemory,
     "do memory profiling");
@@ -462,6 +465,11 @@ int main(int argc, char *argv[])
   oss << debugLevel;
   Zoltan_Set_Param(zz, "DEBUG_LEVEL", oss.str().c_str());
 
+  if (remap)
+    Zoltan_Set_Param(zz, "REMAP", "1");
+  else
+    Zoltan_Set_Param(zz, "REMAP", "0");
+
   if (objective != balanceCount){
     oss.str("");
     oss << weightDim;
@@ -490,6 +498,7 @@ int main(int argc, char *argv[])
 
   MEMORY_CHECK(doMemory && rank==0, "Before Zoltan_LB_Partition");
 
+  if (rank == 0) std::cout << "Calling Zoltan_LB_Partition" << std::endl;
   aok = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
         &changes,        /* 1 if partitioning was changed, 0 otherwise */
         &numGidEntries,  /* Number of integers used for a global ID */
@@ -505,6 +514,7 @@ int main(int argc, char *argv[])
         &exportProcs,    /* Process to which I send each of the vertices */
         &exportToPart);  /* Partition to which each vertex will belong */
 
+  if (rank == 0) std::cout << "Returned from Zoltan_LB_Partition" << std::endl;
   MEMORY_CHECK(doMemory && rank==0, "After Zoltan_LB_Partition");
 
   /* Print the load-balance stats here */

@@ -70,6 +70,9 @@ extern "C" {
                 /** @brief The request is complete with an error. */
                 NSSI_REQUEST_ERROR = -1,
 
+                /** @brief The request has no/null status. */
+                NSSI_REQUEST_NULL = 0,
+
                 /** @brief The client is sending the request to server. */
                 NSSI_SENDING_REQUEST = 1,
 

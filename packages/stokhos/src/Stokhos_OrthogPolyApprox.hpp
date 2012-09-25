@@ -155,6 +155,9 @@ namespace Stokhos {
     //! Compute the squared two-norm of expansion
     value_type two_norm_squared() const;
 
+    //! Compute the L2 inner product of 2 PCEs
+    value_type inner_product(const OrthogPolyApprox& b) const;
+
     //! Print approximation in basis
     std::ostream& print(std::ostream& os) const;
 

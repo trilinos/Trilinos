@@ -213,6 +213,8 @@ int main(int narg, char** arg)
   SparseMatrixAdapter adapter(origMatrix);
 
   ////// Create and solve ordering problem
+  try
+  {
   Zoltan2::OrderingProblem<SparseMatrixAdapter> problem(&adapter, &params);
   cout << "Going to solve" << endl;
   problem.solve();
@@ -233,6 +235,21 @@ int main(int narg, char** arg)
   cout << "Going to validate the soln" << endl;
   // Verify that checkPerm is a permutation
   testReturn = validatePerm(checkLength, checkPerm);
+
+  } catch (std::exception &e){
+      if (comm->getSize() != 1)
+      {
+          std::cout << "RCM does not support distributed matrices."
+             << std::endl;
+          std::cout << "PASS" << std::endl;
+      }
+      else
+      {
+          std::cout << "Exception from RCM Algorithm" << std::endl;
+          std::cout << "FAIL" << std::endl;
+      }
+      return 0;
+  }
 
   if (me == 0) {
     if (testReturn)

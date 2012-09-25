@@ -52,8 +52,8 @@ int main(int argc, char *argv[]) {
   int n = 32;                        // spatial discretization (per dimension)
   int num_KL = 2;                    // number of KL terms
   int p = 3;                         // polynomial order
-  double mu = 0.1;                   // mean of exponential random field
-  double s = 0.2;                    // std. dev. of exponential r.f.
+  double mu = 0.2;                   // mean of exponential random field
+  double s = 0.1;                    // std. dev. of exponential r.f.
   bool nonlinear_expansion = false;  // nonlinear expansion of diffusion coeff
                                      // (e.g., log-normal)
   bool symmetric = false;            // use symmetric formulation
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
 
     // Create application
     Teuchos::RCP<twoD_diffusion_ME> model = 
-      Teuchos::rcp(new twoD_diffusion_ME(app_comm, n, num_KL, mu, s, basis, 
+      Teuchos::rcp(new twoD_diffusion_ME(app_comm, n, num_KL, s, mu, basis, 
 					 nonlinear_expansion, symmetric));
     
     // Setup stochastic Galerkin algorithmic parameters
@@ -165,12 +165,18 @@ int main(int argc, char *argv[]) {
 						 sgParams));
 
     // Set up stochastic parameters
+    // The current implementation of the model doesn't actually use these 
+    // values, but is hard-coded to certain uncertainty models
+    Teuchos::Array<double> point(num_KL, 1.0);
+    Teuchos::Array<double> basis_vals(sz);
+    basis->evaluateBases(point, basis_vals);
     Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_p_poly =
       sg_model->create_p_sg(0);
     for (int i=0; i<num_KL; i++) {
       sg_p_poly->term(i,0)[i] = 0.0;
-      sg_p_poly->term(i,1)[i] = 1.0;
+      sg_p_poly->term(i,1)[i] = 1.0 / basis_vals[i+1];
     }
+    std::cout << *sg_p_poly << std::endl;
 
     // Create vectors and operators
     Teuchos::RCP<const Epetra_Vector> sg_p = sg_p_poly->getBlockVector();
@@ -272,7 +278,8 @@ int main(int argc, char *argv[]) {
     // std::cout << "\nResponse Expansion = " << std::endl;
     // std::cout.precision(12);
     // sg_g_poly->print(std::cout);
-    std::cout << "\nResponse Mean =      " << std::endl << g_mean << std::endl;
+    std::cout << std::endl;
+    std::cout << "Response Mean =      " << std::endl << g_mean << std::endl;
     std::cout << "Response Std. Dev. = " << std::endl << g_std_dev << std::endl;
 
     // Determine if example passed

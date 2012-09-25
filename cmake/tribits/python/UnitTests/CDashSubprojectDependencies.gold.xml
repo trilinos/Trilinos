@@ -229,4 +229,30 @@
       <Email address="phalanx-regression@repo.site.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="Panzer">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="RTOp" type="ILR"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Shards" type="ILR"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="Tpetra" type="LR"/>
+    <Dependency name="EpetraExt" type="LR"/>
+    <Dependency name="Stokhos" type="LO"/>
+    <Dependency name="Sacado" type="LR"/>
+    <Dependency name="Thyra" type="LR"/>
+    <Dependency name="Isorropia" type="ITO"/>
+    <Dependency name="AztecOO" type="ITO"/>
+    <Dependency name="Galeri" type="ITO"/>
+    <Dependency name="Amesos" type="ITO"/>
+    <Dependency name="Intrepid" type="LR"/>
+    <Dependency name="Ifpack" type="ITO"/>
+    <Dependency name="ML" type="ITO"/>
+    <Dependency name="Belos" type="ITO"/>
+    <Dependency name="Stratimikos" type="TO"/>
+    <Dependency name="Phalanx" type="LR"/>
+    <EmailAddresses>
+      <Email address="panzer-regression@repo.site.gov"/>
+    </EmailAddresses>
+  </SubProject>
 </Project>

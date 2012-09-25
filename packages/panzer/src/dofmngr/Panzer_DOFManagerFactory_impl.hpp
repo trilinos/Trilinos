@@ -51,7 +51,7 @@ namespace panzer {
 
 template <typename LO,typename GO>
 Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
-DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
+DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
                             const std::string & fieldOrder) const
@@ -65,7 +65,7 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
 template <typename LO,typename GO>
 template <typename DOFManagerT>
 Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
-DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
+DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
                             const std::string & fieldOrder) const
@@ -76,7 +76,7 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
 
    // build the DOF manager for the problem
    Teuchos::RCP<DOFManagerT> dofManager 
-         = Teuchos::rcp(new DOFManagerT(connMngr,mpiComm));
+         = Teuchos::rcp(new DOFManagerT(connMngr,*mpiComm));
 
    // by default assume orientations are not required
    bool orientationsRequired = false;

@@ -64,7 +64,7 @@ extern "C" {
     
 int Zoltan_GenPrime(int stopafter, int *prime_num)
 {
-    const static int primes[MAX_PRIME]=
+    static const int primes[MAX_PRIME]=
         {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 37, 41, 47, 53, 59, 67, 79, 89,
          101, 113, 127, 149, 167, 191, 211, 233, 257, 283, 313, 347, 383, 431,
          479, 541, 599, 659, 727, 809, 907, 1009, 1117, 1229, 1361, 1499, 1657,

@@ -91,7 +91,7 @@ public:
   //@{
 
   //! Constructor.
-  UncoupledAggregationFactory(RCP<const FactoryBase> graphFact = Teuchos::null);
+  UncoupledAggregationFactory(RCP<const FactoryBase> graphFact = Teuchos::null, bool bMaxLinkAggregation = false, bool bEmergencyAggregation = true);
 
   //! Destructor.
   virtual ~UncoupledAggregationFactory() { }
@@ -101,7 +101,8 @@ public:
   //! @name Set/get methods.
   //@{
 
-  // Options algo1
+  // Options shared by all aggregation algorithms
+
   void SetOrdering(AggOptions::UncoupledOrdering ordering) {
     for(size_t a = 0; a < algos_.size(); a++) {
       algos_[a]->SetOrdering(ordering);
@@ -112,20 +113,22 @@ public:
       algos_[a]->SetMaxNeighAlreadySelected(maxNeighAlreadySelected);
     }
   }
-  AggOptions::UncoupledOrdering GetOrdering() const {
-    return algos_[0]->GetOrdering();
-  }
-  int GetMaxNeighAlreadySelected() const {
-    return algos_[0]->GetMaxNeighAlreadySelected();
-  }
-
-  // Options shared algo1 and algo2
   void SetMinNodesPerAggregate(int minNodesPerAggregate) {
     for(size_t a = 0; a < algos_.size(); a++) {
       algos_[a]->SetMinNodesPerAggregate(minNodesPerAggregate);
     }
   }
+
+  AggOptions::UncoupledOrdering GetOrdering() const {
+    TEUCHOS_TEST_FOR_EXCEPTION(algos_.size()==0,Exceptions::RuntimeError,"MueLu::UncoupledAggregationFactory::Build: no aggregation algorithms set. Call Append() before. Error.");
+    return algos_[0]->GetOrdering();
+  }
+  int GetMaxNeighAlreadySelected() const {
+    TEUCHOS_TEST_FOR_EXCEPTION(algos_.size()==0,Exceptions::RuntimeError,"MueLu::UncoupledAggregationFactory::Build: no aggregation algorithms set. Call Append() before. Error.");
+    return algos_[0]->GetMaxNeighAlreadySelected();
+  }
   int GetMinNodesPerAggregate() const {
+    TEUCHOS_TEST_FOR_EXCEPTION(algos_.size()==0,Exceptions::RuntimeError,"MueLu::UncoupledAggregationFactory::Build: no aggregation algorithms set. Call Append() before. Error.");
     return algos_[0]->GetMinNodesPerAggregate();
   }
 
@@ -146,13 +149,28 @@ public:
 
   //@}
 
+  //! @name Definition methods
+  //@{
+
+  /*! @brief Append a new aggregation algorithm to list of aggregation algorithms */
+  void Append(const RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & alg);
+
+  /*! @brief Remove all aggregation algorithms from list */
+  void ClearAggregationAlgorithms() { algos_.clear(); }
+  //@}
+
 private:
 
   //! Graph Factory
   RCP<const FactoryBase> graphFact_;
 
-  //! Algorithms
+  //! aggregation algorithms
   std::vector<RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > > algos_;
+
+  //! boolean flag: definition phase
+  //! if true, the aggregation algorithms still can be set and changed.
+  //! if false, no change in aggregation algorithms is possible any more
+  mutable bool bDefinitionPhase_;
 
 }; // class UncoupledAggregationFactory
 

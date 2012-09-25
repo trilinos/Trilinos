@@ -744,10 +744,10 @@ int main(int argc, char *argv[])
   if (vertex_part) free(vertex_part);
   if (vwgts) free(vwgts);
 
-  MPI_Reduce(&localMBytes, &avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Allreduce(&localMBytes, &avg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   avg /= (double)numProcs;
-  MPI_Reduce(&localMBytes, &max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&localMBytes, &min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+  MPI_Allreduce(&localMBytes, &max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+  MPI_Allreduce(&localMBytes, &min, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
 
   MPI_Finalize();
 

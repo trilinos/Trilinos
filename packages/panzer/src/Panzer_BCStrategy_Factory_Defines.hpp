@@ -61,6 +61,22 @@
     									\
   };
 
+#define PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER_EXTRA(key, fClass, fType, extraSteps)				        \
+									\
+  struct fType ## _TemplateBuilder {					\
+    const panzer::BC& m_bc;						\
+    const Teuchos::RCP<panzer::GlobalData> m_global_data;               \
+    fType ## _TemplateBuilder(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data) : m_bc(bc), m_global_data(global_data) {} \
+									\
+    template<typename EvalT>						\
+    Teuchos::RCP<panzer::BCStrategyBase> build() const {           	\
+      fClass <EvalT>* ptr = new fClass <EvalT>(m_bc,m_global_data);   	\
+      { extraSteps }                                                    \
+      return Teuchos::rcp(ptr);						\
+    }									\
+    									\
+  };
+
 #undef PANZER_BUILD_BCSTRATEGY_OBJECTS
 #define PANZER_BUILD_BCSTRATEGY_OBJECTS(key, fClass, fType)	        \
   if (bc.strategy() == key) {						\

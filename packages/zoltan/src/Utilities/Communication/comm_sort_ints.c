@@ -69,6 +69,9 @@ int  nvals)         /* length of these two arrays */
     int i;
     int top;         /* largest integer to sort, smallest is 0 by assumption */
     int err = ZOLTAN_OK;
+    int already_sorted = 1;  /* flag indicating whether vals_sort is
+                                already sorted; can exit early and skip
+                                memory allocations if it is.  */
 
     if (nvals < 1 || vals_sort == NULL  || vals_other == NULL)
        return ZOLTAN_FATAL;
@@ -77,9 +80,13 @@ int  nvals)         /* length of these two arrays */
        
     /* find largest value (sort sometimes used for non processor lists) */   
     top = vals_sort[0];
-    for (i = 1; i < nvals; i++)
-       if (top < vals_sort[i])
-           top = vals_sort[i];
+    for (i = 1; i < nvals; i++) {
+       if (vals_sort[i-1] > vals_sort[i]) already_sorted = 0;
+       if (top < vals_sort[i]) top = vals_sort[i];
+    }
+
+    if (already_sorted)
+       return ZOLTAN_OK;
 
     store      = (int*) ZOLTAN_CALLOC (top+2,  sizeof(int));
     copy_sort  = (int*) ZOLTAN_MALLOC (nvals * sizeof(int));
@@ -96,20 +103,20 @@ int  nvals)         /* length of these two arrays */
        for (i = 1; i < top+1; i++)
           p[i] += p[i-1];                   /* compute partial sums */
                                             /* assert: p[top] = nvals */
-                                              
+
        p = store;                           /* effectively shifts down by one */
        for (i = 0; i < nvals; i++)  {
           vals_sort  [p[copy_sort [i]]] = copy_sort [i];
           vals_other [p[copy_sort [i]]] = copy_other[i];
           ++p[copy_sort [i]];
-          }
        }
+    }
     else
        err =  ZOLTAN_MEMERR;
        
     Zoltan_Multifree (__FILE__, __LINE__, 3, &copy_sort, &copy_other, &store);
     return err;
-    }
+}
 
 
 #ifdef __cplusplus

@@ -74,10 +74,13 @@ SET(HEADERS ${HEADERS}
   Stokhos_GramSchmidtBasisImp.hpp
   Stokhos_ReducedPCEBasis.hpp
   Stokhos_SDMUtils.hpp
+  Stokhos_OrthogonalizationFactory.hpp
   Stokhos_GSReducedPCEBasisBase.hpp
   Stokhos_GSReducedPCEBasisBaseImp.hpp
   Stokhos_MonomialProjGramSchmidtPCEBasis.hpp
   Stokhos_MonomialProjGramSchmidtPCEBasisImp.hpp
+  Stokhos_MonomialProjGramSchmidtPCEBasis2.hpp
+  Stokhos_MonomialProjGramSchmidtPCEBasis2Imp.hpp
   Stokhos_MonomialGramSchmidtPCEBasis.hpp
   Stokhos_MonomialGramSchmidtPCEBasisImp.hpp
   Stokhos_ProductLanczosPCEBasis.hpp
@@ -339,6 +342,9 @@ IF (Stokhos_ENABLE_Sacado)
     IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
       SET(SOURCES ${SOURCES}
 	tpetra/tpetra_pce_instantiations.cpp
+	)
+      SET(HEADERS ${HEADERS}
+	tpetra/kokkos_pce_specializations.hpp
 	)
     ENDIF()
   ENDIF()
