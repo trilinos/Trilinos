@@ -1,41 +1,25 @@
-Release notes for Trilinos v11.
+Zoltan release notes for Trilinos v11.
+
+Highlights are listed below; for more details, see 
+Trilinos/packages/zoltan/doc/Zoltan_html/ug_html/ug_release.html .
 
 -  Zoltan is now released under Trilinos' BSD license.
 
--  The following features are no longer supported in Trilinos v11:
-   +  Zoltan v1.1 interface (as described in Zoltan include file lbi_const.h): 
-      users should upgrade their Zoltan interface and include file zoltan.h. 
-      Instructions are at the Zoltan FAQ page.
-   +  Partitioning method OCTPART: use partitioning method HSFC for similar 
-      partitions with faster partitioning time.
-   +  Use of DRUM as a Zoltan TPL: architecture-aware methods will be 
-      included in Zoltan2. 
+-  The following Zoltan features are no longer supported in Trilinos v11:
+   +  Zoltan v1 interface (as described in Zoltan include file lbi_const.h)
+   +  Partitioning method OCTPART: use partitioning method HSFC instead.
 
--  Improved memory usage in Zoltan Distributed Data Directories.  Memory is
-   now managed in a single block, eliminating excessive calls to malloc and
-   improving the runtime performance of the data directories and the
-   hierarchical partitioning algorithms that use them.
 
 -  Hierarchical partitioning received several performance, interface and 
-   testing improvements.  In particular, an easier-to-use interface has been 
+   testing improvements.  An easier-to-use interface has been 
    added using simple parameters (HIER_ASSIST, PLATFORM_NAME, TOPOLOGY)
    instead of callback functions; the callback function interface is still
-   supported.  Also, hierarchical partitioning can now be used with only
-   geometric partitioners and callbacks, whereas before it required 
-   graph-based callbacks as well.
+   supported. 
 
--  Reduced the memory usage of RCB and RIB when parameter KEEP_CUTS=0.
-
--  Increased use of point-to-point communication (instead of MPI_Alltoall)
-   in communication package for better performance on large number of 
-   processors.
+-  Memory usage in Zoltan Distributed Data Directories is improved, leading to
+   faster execution times for data directories and hierarchical partitioning.
 
 -  Compilation with gcc 4.7 is now supported.
 
--  Using MurmurHash for better hashing.  
-
 -  Zoltan supports PT-Scotch v5.1.12 and ParMETIS v4, as well as some older
    versions of these TPLs. 
-
--  Zoltan's graph build has been streamlined; if possible, use the parameter
-   "GRAPH_BUILD_TYPE" == "FAST_NO_DUP" for faster graph builds.
