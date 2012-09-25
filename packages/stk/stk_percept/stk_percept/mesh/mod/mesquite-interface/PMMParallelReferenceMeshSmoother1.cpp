@@ -149,7 +149,11 @@ namespace stk {
       if (m_num_invalid == 0 && (m_scaled_grad_norm < grad_check || (m_iter > 0 && m_dmax < grad_check && (m_dnew < grad_check*grad_check*m_d0 || scaled_grad_norm < grad_check) ) ) )
         //    if (m_num_invalid == 0 && (m_scaled_grad_norm < gradNorm || (m_iter > 0 && m_dmax < gradNorm ) ) )
         {
-          std::cout << "tmp srk untangle m_dnew= " << m_dnew << " m_total_metric = " << m_total_metric << std::endl;
+          std::cout << "tmp srk untangle m_dnew(scaled nnode) check= " << (scaled_grad_norm  < grad_check)
+                    << " m_scaled_grad_norm check= " << (m_scaled_grad_norm < grad_check) 
+                    << " m_dmax check= " << (m_dmax < grad_check)
+                    << " m_dnew check= " << (m_dnew < grad_check*grad_check*m_d0)
+                    << " m_total_metric = " << m_total_metric << std::endl;
           return true;
         }      
       return false;
@@ -265,6 +269,9 @@ namespace stk {
                           bool fixed = pmm->get_fixed_flag(&node);
                           if (fixed || isGhostNode)
                             continue;
+
+                          // FIXME
+                          //edge_length_ave = nodal_edge_length_ave(node);
 
                           m_metric->set_node(&node);
                           double *coord_current = PerceptMesh::field_data(coord_field_current, node);
@@ -561,8 +568,8 @@ namespace stk {
           }
       }
 
-      //if (m_use_local_scaling && m_stage==1)
-        if (m_use_local_scaling)
+      if (m_use_local_scaling && m_stage==1)
+        //  if (m_use_local_scaling)
         {
           m_scale = 1.0;
         }
@@ -608,6 +615,16 @@ namespace stk {
                         sum += cg_g[idim]*cg_g[idim];
                       }
                     sum = std::sqrt(sum);
+
+                    if (0 && m_stage == 1 && sum > edge_length_ave)
+                      {
+                        for (int idim=0; idim < spatialDim; idim++)
+                          {
+                            cg_g[idim] = cg_g[idim]/sum*edge_length_ave;
+                          }
+                        sum = 1.0;
+                      }
+
                     gn = std::max(gn, sum);
                     double s1 = sum;
                     //sum = std::pow(sum, m_metric->length_scaling_power());
@@ -658,8 +675,8 @@ namespace stk {
                       }
 
 
-                    //if (m_use_local_scaling && m_stage==1)
-                    if (m_use_local_scaling)
+                    if (m_use_local_scaling && m_stage==1)
+                      //if (m_use_local_scaling)
                       {
                         double *cg_r = PerceptMesh::field_data(cg_r_field, node);
                         double *cg_s = PerceptMesh::field_data(cg_s_field, node);
@@ -715,8 +732,8 @@ namespace stk {
           /// r = -g
           eMesh->nodal_field_axpby(-1.0, cg_g_field, 0.0, cg_r_field);
           /// s = r  (allows for preconditioning later s = M^-1 r)
-          //if (m_use_local_scaling && m_stage==1)
-          if (m_use_local_scaling)
+          if (m_use_local_scaling && m_stage==1)
+            //if (m_use_local_scaling)
             get_scale(mesh, domain);
           else
             eMesh->copy_field(cg_s_field, cg_r_field);
@@ -784,8 +801,8 @@ namespace stk {
             get_gradient(mesh, domain);
             /// r = -g
             eMesh->nodal_field_axpby(-1.0, cg_g_field, 0.0, cg_r_field);
-            //if (m_use_local_scaling && m_stage==1)
-            if (m_use_local_scaling)
+            if (m_use_local_scaling && m_stage==1)
+              //if (m_use_local_scaling)
               get_scale(mesh, domain);
             else
               eMesh->copy_field(cg_s_field, cg_r_field);
@@ -926,8 +943,8 @@ namespace stk {
       m_dmid = eMesh->nodal_field_dot(cg_r_field, cg_s_field);
 
       /// s = r  (allows for preconditioning later s = M^-1 r)
-      //if (m_use_local_scaling && m_stage==1)
-      if (m_use_local_scaling)
+      if (m_use_local_scaling && m_stage==1)
+        //if (m_use_local_scaling)
         get_scale(mesh, domain);
       else
         eMesh->copy_field(cg_s_field, cg_r_field);

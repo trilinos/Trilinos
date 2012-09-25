@@ -250,6 +250,7 @@ namespace stk {
         valid = true;
         JacobianUtil jacA, jacW;
 
+        int spatialDim = m_eMesh->get_spatial_dim();
         double A_ = 0.0, W_ = 0.0; // current and reference detJ
         jacA(A_, *m_eMesh, element, m_coord_field_current, m_topology_data);
         jacW(W_, *m_eMesh, element, m_coord_field_original, m_topology_data);
@@ -269,21 +270,47 @@ namespace stk {
             MsqMatrix<3,3>& W = jacW.m_J[i];
             MsqMatrix<3,3>& A = jacA.m_J[i];
 
+            // frob2 = h^2 + h^2 + 1
+            // frob21 = 2 h^2
+            // f = h sqrt(2)
+            // det = h*h
+            // met = f*f / (det*2) - 1
+            // frob3 = 3 h^2
+            // f = h sqrt(3)
+            // det = h*h*h
+            // met = f*f*f/(3^3/2 *det) - 1 = f*f*f/(3*sqrt(3)*det) - 1
             double shape_metric = 0.0;
             if (std::fabs(detAi) > 1.e-15)
               {
                 inverse(W, WI);
                 product(A, WI, T);
-                double f = Frobenius(T);
                 double d = det(T);
-                double den = 3 * MSQ_SQRT_THREE * d;
-                shape_metric = (f*f*f)/den - 1.0;
+                double f = my_sqr_Frobenius(T);
+                if (spatialDim==2)
+                  {
+                    // all our jacobians are 3D, with a 1 in the 3,3 slot for 2d, so we subtract it here
+                    f = f - 1.0;
+                    f = std::sqrt(f);
+                    double fac = 2.0;
+                    double den = fac * d;
+                    shape_metric = (f*f)/den - 1.0;
+                  }
+                else
+                  {
+                    f = std::sqrt(f);
+                    double fac = 3.0*std::sqrt(3.0);
+                    double den = fac * d;
+                    shape_metric = (f*f*f)/den - 1.0;
+                  }
                 //shape_metric = std::fabs(shape_metric);
                 //shape_metric = f/std::pow(den,1./3.) - 1.0;
               }
             val_shape += shape_metric;
+            //val_shape += std::fabs(shape_metric);
+            //val_shape += shape_metric*shape_metric;
           }
         val = val_shape;
+        //val = val_shape*val_shape;
         return val;
       }
 

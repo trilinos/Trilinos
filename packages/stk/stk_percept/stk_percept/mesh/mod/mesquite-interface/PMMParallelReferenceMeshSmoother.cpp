@@ -173,7 +173,8 @@ namespace stk {
               eMesh->save_as("anim_all."+toString(iter_all)+".e");
             }
 
-          for (int stage = 0; stage < 2; stage++)
+          int nstage=2;
+          for (int stage = 0; stage < nstage; stage++)
             {
               m_stage = stage;
               if (stage==0) 
