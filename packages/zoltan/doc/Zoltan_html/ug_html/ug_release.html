@@ -85,11 +85,12 @@ releases of Zoltan:
   <a href="#Release1.3">Zoltan Release v1.3</a>
 </blockquote>
 <hr>
-<h2><a name="Release3.7">Zoltan Release Notes v3.7: Summer 2012</a></h2>
+<h2><a name="Release3.7">Zoltan Release Notes v3.7: September 2012</a></h2>
 <ul>
 <li> The following features (deprecated in Trilinos v10.8) are no longer
 supported in Trilinos v11.
 <ul>
+<li>Zoltan is now released under Trilinos' BSD license.
 <li> Zoltan v1.1 interface (as described in Zoltan include file lbi_const.h):
 users should upgrade their Zoltan interface and include file zoltan.h.
 Instructions are at the <a href="../Zoltan_FAQ.html">Zoltan FAQ page</a>.
@@ -98,6 +99,27 @@ partitions with faster partitioning time.
 <li> Use of DRUM as a Zoltan TPL:  architecture-aware methods will be included
 in Zoltan2.
 </ul>
+<li> Improved memory usage in Zoltan Distributed Data Directories.  Memory is
+now managed in a single block, eliminating excessive calls to malloc and
+improving the runtime performance of the data directories and the
+hierarchical partitioning algorithms that use them.
+<li> Hierarchical partitioning received several performance, interface and 
+testing improvements.  In particular, an easier-to-use interface has been 
+added using simple parameters (HIER_ASSIST, PLATFORM_NAME, TOPOLOGY)
+instead of callback functions; the callback function interface is still
+supported.  Also, hierarchical partitioning can now be used with only
+geometric partitioners and callbacks, whereas before it required 
+graph-based callbacks as well.
+<li> Reduced the memory usage of RCB and RIB when parameter KEEP_CUTS=0.
+<li> Increased use of point-to-point communication (instead of MPI_Alltoall)
+in communication package for better performance on large number of 
+processors.
+<li> Compilation with gcc 4.7 is now supported.
+<li> Using MurmurHash for better hashing.  
+<li>  Zoltan supports PT-Scotch v5.1.12 and ParMETIS v4, as well as some older
+versions of these TPLs. 
+<li> Zoltan's graph build has been streamlined; if possible, use the parameter
+"GRAPH_BUILD_TYPE" == "FAST_NO_DUP" for faster graph builds.
 </ul>
 <hr>
 <h2><a name="Release3.6">Zoltan Release Notes v3.6: September 13, 2011</a></h2>

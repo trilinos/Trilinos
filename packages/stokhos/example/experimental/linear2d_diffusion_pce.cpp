@@ -137,10 +137,6 @@ int main(int argc, char *argv[]) {
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
   typedef Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
-  double g_mean_exp = 0.172988;      // expected response mean
-  double g_std_dev_exp = 0.0380007;  // expected response std. dev.
-  double g_tol = 1e-6;               // tolerance on determining success
-
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::Array;
@@ -614,6 +610,15 @@ int main(int argc, char *argv[]) {
     BTMVT::MvNorm(*f, norm_f);
     if (MyPID == 0)
       std::cout << "\nFinal residual norm = " << norm_f[0] << std::endl;
+
+    // Expected results for num_mesh=32
+    double g_mean_exp = 0.172988;      // expected response mean
+    double g_std_dev_exp = 0.0380007;  // expected response std. dev.
+    double g_tol = 1e-6;               // tolerance on determining success
+    if (n == 8) {
+      g_mean_exp = 1.327563e-01;
+      g_std_dev_exp = 2.949064e-02;
+    }
 
     double g_mean = g->get1dView()[0].mean();
     double g_std_dev = g->get1dView()[0].standard_deviation();

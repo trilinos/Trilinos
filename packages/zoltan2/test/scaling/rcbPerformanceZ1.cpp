@@ -498,6 +498,7 @@ int main(int argc, char *argv[])
 
   MEMORY_CHECK(doMemory && rank==0, "Before Zoltan_LB_Partition");
 
+  if (rank == 0) std::cout << "Calling Zoltan_LB_Partition" << std::endl;
   aok = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
         &changes,        /* 1 if partitioning was changed, 0 otherwise */
         &numGidEntries,  /* Number of integers used for a global ID */
@@ -513,6 +514,7 @@ int main(int argc, char *argv[])
         &exportProcs,    /* Process to which I send each of the vertices */
         &exportToPart);  /* Partition to which each vertex will belong */
 
+  if (rank == 0) std::cout << "Returned from Zoltan_LB_Partition" << std::endl;
   MEMORY_CHECK(doMemory && rank==0, "After Zoltan_LB_Partition");
 
   /* Print the load-balance stats here */
