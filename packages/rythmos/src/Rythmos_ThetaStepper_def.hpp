@@ -360,7 +360,7 @@ void ThetaStepper<Scalar>::setInitialCondition(
   }
   else {
     x_dot_ = createMember(x_->space());
-    assign(&*x_dot_,ST::zero());
+    assign(x_dot_.ptr(),ST::zero());
   }
 
   // t
@@ -432,9 +432,9 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
   }
 
   dt_ = dt;
-  V_StV( &*x_old_, Scalar(ST::one()), *x_ );
-  V_StV( &*x_dot_really_old_, Scalar(ST::one()), *x_dot_old_ );
-  V_StV( &*x_dot_old_,        Scalar(ST::one()), *x_dot_ );
+  V_StV( x_old_.ptr(), Scalar(ST::one()), *x_ );
+  V_StV( x_dot_really_old_.ptr(), Scalar(ST::one()), *x_dot_old_ );
+  V_StV( x_dot_old_.ptr(),        Scalar(ST::one()), *x_dot_ );
 
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
     *out << "\nSetting dt_ and old data ..." << std::endl;
@@ -482,8 +482,8 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
   const Scalar x_coeff = Scalar(-coeff_x_dot);
   const Scalar x_dot_old_coeff = Scalar( -(ST::one()-theta)/theta);
 
-  V_StV( &*x_dot_base_, x_coeff, *x_old_ );
-  Vp_StV( &*x_dot_base_, x_dot_old_coeff, *x_dot_old_);
+  V_StV( x_dot_base_.ptr(), x_coeff, *x_old_ );
+  Vp_StV( x_dot_base_.ptr(), x_dot_old_coeff, *x_dot_old_);
 
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
     *out << "\nx_dot_base_ = " << *x_dot_base_;
@@ -540,9 +540,9 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
 
   // x_dot = ( 1/(theta*dt) )*x + ( -1/(theta*dt) )*x_old + ( -(1-theta)/theta )*x_dot_old
 
-  V_StV(  &*x_dot_, Scalar( ST::one()/(theta*dt)), *x_ );
-  Vp_StV( &*x_dot_, Scalar(-ST::one()/(theta*dt)), *x_old_ );
-  Vp_StV( &*x_dot_, Scalar( -(ST::one()-theta)/theta), *x_dot_old_ );
+  V_StV(  x_dot_.ptr(), Scalar( ST::one()/(theta*dt)), *x_ );
+  Vp_StV( x_dot_.ptr(), Scalar(-ST::one()/(theta*dt)), *x_old_ );
+  Vp_StV( x_dot_.ptr(), Scalar( -(ST::one()-theta)/theta), *x_dot_old_ );
 
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
     *out << "\nUpdating x_dot_ ...\n";
@@ -694,17 +694,17 @@ void ThetaStepper<Scalar>::addPoints(
     int n = 0;
     t_ = time_vec[n];
     t_old_ = t_;
-    Thyra::V_V(&*x_,*x_vec[n]);
-    Thyra::V_V(&*x_dot_base_,*x_);
+    Thyra::V_V(x_.ptr(),*x_vec[n]);
+    Thyra::V_V(x_dot_base_.ptr(),*x_);
   }
   else {
     int n = time_vec.size()-1;
     int nm1 = time_vec.size()-2;
     t_ = time_vec[n];
     t_old_ = time_vec[nm1];
-    Thyra::V_V(&*x_,*x_vec[n]);
+    Thyra::V_V(x_.ptr(),*x_vec[n]);
     Scalar dt = t_ - t_old_;
-    Thyra::V_StV(&*x_dot_base_,Scalar(-ST::one()/dt),*x_vec[nm1]);
+    Thyra::V_StV(x_dot_base_.ptr(),Scalar(-ST::one()/dt),*x_vec[nm1]);
   }
 }
 
@@ -738,7 +738,7 @@ void ThetaStepper<Scalar>::getPoints(
   if (compareTimeValues(t_old_,t_)!=0) {
     Scalar dt = t_ - t_old_;
     x_temp = x_dot_base_->clone_v();
-    Thyra::Vt_S(&*x_temp,Scalar(-ST::one()*dt));  // undo the scaling
+    Thyra::Vt_S(x_temp.ptr(),Scalar(-ST::one()*dt));  // undo the scaling
   }
   defaultGetPoints<Scalar>(
       t_old_, constOptInArg(*x_temp), constOptInArg(*x_dot_old_),
@@ -1122,20 +1122,20 @@ void ThetaStepper<Scalar>::obtainPredictor_()
   switch (predictor_order) 
   {
     case 0:
-      V_StV(&*x_pre_, Scalar(ST::one()), *x_old_);
+      V_StV(x_pre_.ptr(), Scalar(ST::one()), *x_old_);
       break;
     case 1:
     {
-      V_StV(&*x_pre_, Scalar(ST::one()), *x_old_);
+      V_StV(x_pre_.ptr(), Scalar(ST::one()), *x_old_);
 
       TEUCHOS_TEST_FOR_EXCEPT (dt_ <= 0.0);
 
-      Vp_StV(&*x_pre_, dt_, *x_dot_old_);
+      Vp_StV(x_pre_.ptr(), dt_, *x_dot_old_);
     }
     break;
     case 2:
     {
-      V_StV(&*x_pre_, Scalar(ST::one()), *x_old_);
+      V_StV(x_pre_.ptr(), Scalar(ST::one()), *x_old_);
 
       TEUCHOS_TEST_FOR_EXCEPT (dt_ <= 0.0);
       TEUCHOS_TEST_FOR_EXCEPT (dt_old_ <= 0.0);
@@ -1148,8 +1148,8 @@ void ThetaStepper<Scalar>::obtainPredictor_()
 	*out << "x_dot_really_old_ = " << *x_dot_really_old_ << std::endl;
       }
       
-      Vp_StV( &*x_pre_, coeff_x_dot_old, *x_dot_old_);
-      Vp_StV( &*x_pre_, coeff_x_dot_really_old, *x_dot_really_old_);
+      Vp_StV( x_pre_.ptr(), coeff_x_dot_old, *x_dot_old_);
+      Vp_StV( x_pre_.ptr(), coeff_x_dot_really_old, *x_dot_really_old_);
     }
     break;
     default:
@@ -1162,7 +1162,7 @@ void ThetaStepper<Scalar>::obtainPredictor_()
   }
 
   // copy to current solution
-  V_StV(&*x_, Scalar(ST::one()), *x_pre_);
+  V_StV(x_.ptr(), Scalar(ST::one()), *x_pre_);
 }
 
 // 
