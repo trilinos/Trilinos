@@ -155,6 +155,7 @@ private:
   unsigned              m_gang_count ;
   unsigned              m_worker_rank ;
   unsigned              m_worker_count ;
+  unsigned              m_work_chunk ;
   const void * volatile m_reduce ;    ///< Reduction memory
   long         volatile m_state ;     ///< Thread control flag
 

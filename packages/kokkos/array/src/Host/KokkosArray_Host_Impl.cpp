@@ -73,6 +73,7 @@ HostThread::~HostThread()
   m_gang_count   = 0 ;
   m_worker_rank  = std::numeric_limits<unsigned>::max();
   m_worker_count = 0 ;
+  m_work_chunk   = 0 ;
   m_reduce       = 0 ;
 
   for ( unsigned i = 0 ; i < max_fan_count ; ++i ) { m_fan[i] = 0 ; }
@@ -87,6 +88,7 @@ HostThread::HostThread()
   m_gang_count   = 0 ;
   m_worker_rank  = std::numeric_limits<unsigned>::max();
   m_worker_count = 0 ;
+  m_work_chunk   = 0 ;
   m_reduce       = 0 ;
   m_state        = ThreadActive ;
 
@@ -96,16 +98,19 @@ HostThread::HostThread()
 std::pair< Host::size_type , Host::size_type >
 HostThread::work_range( const size_type work_count ) const
 {
-  const size_type reverse_rank    = m_thread_count - ( m_thread_rank + 1 );
-  const size_type work_per_thread = ( work_count + m_thread_count - 1 )
-                                    / m_thread_count ;
-  const size_type work_previous   = work_per_thread * reverse_rank ;
-  const size_type work_end        = work_count > work_previous
-                                  ? work_count - work_previous : 0 ;
+  const size_type chunk_count =
+    ( work_count + m_work_chunk - 1 ) / m_work_chunk ;
 
-  return std::pair<size_type,size_type>(
-    ( work_end > work_per_thread ?
-      work_end - work_per_thread : 0 ) , work_end );
+  const size_type work_per_thread =
+    m_work_chunk * (( chunk_count + m_thread_count - 1 ) / m_thread_count );
+
+  const size_type work_begin =
+    std::min( m_thread_rank * work_per_thread , work_count );
+
+  const size_type work_end =
+    std::min( work_begin + work_per_thread , work_count );
+
+  return std::pair<size_type,size_type>( work_begin , work_end );
 }
 
 void HostThread::barrier()
@@ -187,10 +192,11 @@ HostInternal::HostInternal()
   , m_node_count( 1 )
   , m_node_pu_count( 0 )
   , m_page_size( 0 )
-  , m_cache_line_size( 64 /* default alignment */ )
+  , m_cache_line_size( 64 /* default guess */ )
   , m_thread_count( 1 )
   , m_gang_count( 1 )
   , m_worker_count( 1 )
+  , m_work_chunk( m_cache_line_size / sizeof(void*) )
 {
   m_worker = NULL ;
 
@@ -203,11 +209,12 @@ HostInternal::HostInternal()
 
   m_master_thread.m_fan_count    = 0 ;
   m_master_thread.m_thread_rank  = 0 ;
-  m_master_thread.m_thread_count = 1 ;
+  m_master_thread.m_thread_count = m_thread_count ;
   m_master_thread.m_gang_rank    = 0 ;
-  m_master_thread.m_gang_count   = 1 ;
+  m_master_thread.m_gang_count   = m_gang_count ;
   m_master_thread.m_worker_rank  = 0 ;
-  m_master_thread.m_worker_count = 1 ;
+  m_master_thread.m_worker_count = m_worker_count ;
+  m_master_thread.m_work_chunk   = m_work_chunk ;
 
   for ( unsigned i = 0 ; i < HostThread::max_fan_count ; ++i ) {
     m_master_thread.m_fan[i] = 0 ;
@@ -225,10 +232,11 @@ bool HostInternal::initialize_thread(
 
   thread.m_thread_rank  = thread_rank ;
   thread.m_thread_count = m_thread_count ;
-  thread.m_worker_rank  = worker_rank ;
-  thread.m_worker_count = m_worker_count ;
   thread.m_gang_rank    = gang_rank ;
   thread.m_gang_count   = m_gang_count ;
+  thread.m_worker_rank  = worker_rank ;
+  thread.m_worker_count = m_worker_count ;
+  thread.m_work_chunk   = m_work_chunk ;
 
   {
     unsigned fan_count = 0 ;
