@@ -93,6 +93,88 @@ HostThread::HostThread()
   for ( unsigned i = 0 ; i < max_fan_count ; ++i ) { m_fan[i] = 0 ; }
 }
 
+std::pair< Host::size_type , Host::size_type >
+HostThread::work_range( const size_type work_count ) const
+{
+  const size_type reverse_rank    = m_thread_count - ( m_thread_rank + 1 );
+  const size_type work_per_thread = ( work_count + m_thread_count - 1 )
+                                    / m_thread_count ;
+  const size_type work_previous   = work_per_thread * reverse_rank ;
+  const size_type work_end        = work_count > work_previous
+                                  ? work_count - work_previous : 0 ;
+
+  return std::pair<size_type,size_type>(
+    ( work_end > work_per_thread ?
+      work_end - work_per_thread : 0 ) , work_end );
+}
+
+void HostThread::barrier()
+{
+  // The 'wait' function repeatedly polls the 'thread' state
+  // which may reside in a different NUMA region.
+  // Thus the fan is intra-node followed by inter-node
+  // to minimize inter-node memory access.
+
+  for ( unsigned i = 0 ; i < m_fan_count ; ++i ) {
+    // Wait until thread enters the 'Rendezvous' state
+    m_fan[i]->wait( HostThread::ThreadActive );
+  }
+
+  if ( m_thread_rank ) {
+    set(  HostThread::ThreadRendezvous );
+    wait( HostThread::ThreadRendezvous );
+  }
+
+  for ( unsigned i = m_fan_count ; 0 < i ; ) {
+    m_fan[--i]->set( HostThread::ThreadActive );
+  }
+}
+
+/** \brief  This thread waits for each fan-in thread to deactivate.  */
+void HostThreadWorker::fanin_deactivation( HostThread & thread ) const
+{
+  // The 'wait' function repeatedly polls the 'thread' state
+  // which may reside in a different NUMA region.
+  // Thus the fan is intra-node followed by inter-node
+  // to minimize inter-node memory access.
+
+  for ( unsigned i = 0 ; i < thread.m_fan_count ; ++i ) {
+    thread.m_fan[i]->wait( HostThread::ThreadActive );
+  }
+}
+
+void HostInternal::activate_threads()
+{
+  // Activate threads to call 'm_worker.execute_on_thread'
+  for ( unsigned i = m_thread_count ; 1 < i ; ) {
+    m_thread[--i]->set( HostThread::ThreadActive );
+  }
+}
+
+inline
+void HostInternal::execute( const HostThreadWorker & worker )
+{
+  verify_inactive("execute(...)");
+
+  // Worker threads are verified to be in the ThreadInactive state.
+
+  m_worker = & worker ;
+
+  activate_threads();
+
+  // Execute on the master thread,
+  worker.execute_on_thread( m_master_thread );
+
+  // Wait for fanin/fanout threads to self-deactivate.
+  worker.fanin_deactivation( m_master_thread );
+
+  // Worker threads are returned to the ThreadInactive state.
+  m_worker = NULL ;
+}
+
+void HostThreadWorker::execute() const
+{ HostInternal::singleton().execute( *this ); }
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -252,10 +334,16 @@ void HostInternal::driver( const size_t thread_rank )
 
         while ( HostThread::ThreadActive == this_thread.m_state ) {
 
-          // When the work is complete the state will be Inactive or Terminate
+          // Perform the work:
           m_worker->execute_on_thread( this_thread );
 
-          // If this_thread is in the Inactive state then wait for activation.
+          // Wait for fanin threads to self-deactivate:
+          m_worker->fanin_deactivation( this_thread );
+
+          // Deactivate this thread:
+          this_thread.set(  HostThread::ThreadInactive );
+
+          // Wait to be activated or terminated:
           this_thread.wait( HostThread::ThreadInactive );
         }
       }
@@ -406,36 +494,6 @@ void HostInternal::initialize( const unsigned gang_count ,
     throw std::runtime_error( msg.str() );
   }
 }
-
-//----------------------------------------------------------------------------
-
-void HostInternal::activate()
-{
-  for ( unsigned i = m_thread_count ; 1 < i ; ) {
-    m_thread[--i]->set( HostThread::ThreadActive );
-  }
-}
-
-inline
-void HostInternal::execute( const HostThreadWorker & worker )
-{
-  verify_inactive("execute(...)");
-
-  m_worker = & worker ;
-
-  activate();
-
-  // Will finalize with a barrier.
-  worker.execute_on_thread( m_master_thread );
-
-  m_worker = NULL ;
-}
-
-void HostThreadWorker::execute( const HostThreadWorker & worker )
-{ HostInternal::singleton().execute( worker ); }
-
-void HostThreadWorker::execute() const
-{ HostInternal::singleton().execute( *this ); }
 
 //----------------------------------------------------------------------------
 

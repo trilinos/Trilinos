@@ -187,11 +187,17 @@ TEST_F( host , host_thread )
   const int N = 1000 ;
   int flag = 0 ;
 
-  for ( int i = 0 ; i < 1000 ; ++i ) {
+  for ( int i = 0 ; i < N ; ++i ) {
     KokkosArray::Impl::HostParallelLaunch< HostFunctor >( HostFunctor( flag ) );
   }
 
   ASSERT_EQ( flag , N * 2 );
+
+  for ( int i = 0 ; i < 10 ; ++i ) {
+    KokkosArray::Host::sleep();
+    KokkosArray::Host::wake();
+  }
+
 }
 
 //----------------------------------------------------------------------------

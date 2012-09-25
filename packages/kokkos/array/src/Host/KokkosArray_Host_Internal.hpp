@@ -121,11 +121,11 @@ private:
   bool spawn_threads( const unsigned use_node_count ,
                       const unsigned use_node_thread_count );
 
-  void activate();
-
   bool spawn( const size_t );
 
   bool initialize_thread( const unsigned thread_rank, HostThread & thread );
+
+  void activate_threads();
 
 public:
   /// \brief Assert at run time that the calling worker thread is inactive.

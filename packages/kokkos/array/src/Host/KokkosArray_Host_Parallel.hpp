@@ -66,45 +66,8 @@ public:
   //----------------------------------------------------------------------
   /** \brief  Compute a range of work for this thread's rank */
 
-  inline
   std::pair< size_type , size_type >
-    work_range( const size_type work_count ) const
-  {
-    const size_type reverse_rank    = m_thread_count - ( m_thread_rank + 1 );
-    const size_type work_per_thread = ( work_count + m_thread_count - 1 )
-                                      / m_thread_count ;
-    const size_type work_previous   = work_per_thread * reverse_rank ;
-    const size_type work_end        = work_count > work_previous
-                                    ? work_count - work_previous : 0 ;
-
-    return std::pair<size_type,size_type>(
-      ( work_end > work_per_thread ?
-        work_end - work_per_thread : 0 ) , work_end );
-  }
-
-  //----------------------------------------------------------------------
-  /** \brief  This thread waits for each fan-in thread in the barrier.
-   *
-   *  A parallel work function must call return_barrier
-   *  on all threads at the end of the work function.
-   *  Entry condition: in the Active   state
-   *  Exit  condition: in the Inactive state
-   */
-  void return_barrier()
-  {
-    // The 'wait' function repeatedly polls the 'thread' state
-    // which may reside in a different NUMA region.
-    // Thus the fan is intra-node followed by inter-node
-    // to minimize inter-node memory access.
-
-    for ( unsigned i = 0 ; i < m_fan_count ; ++i ) {
-      m_fan[i]->wait( HostThread::ThreadActive );
-    }
-
-    if ( m_thread_rank ) {
-      set( HostThread::ThreadInactive );
-    }
-  }
+    work_range( const size_type work_count ) const ;
 
   //----------------------------------------------------------------------
   /** \brief  This thread waits for each fan-in thread in the barrier.
@@ -112,27 +75,7 @@ public:
    *
    *  A parallel work function must call barrier on all threads.
    */
-  void barrier()
-  {
-    // The 'wait' function repeatedly polls the 'thread' state
-    // which may reside in a different NUMA region.
-    // Thus the fan is intra-node followed by inter-node
-    // to minimize inter-node memory access.
-
-    for ( unsigned i = 0 ; i < m_fan_count ; ++i ) {
-      // Wait until thread enters the 'Rendezvous' state
-      m_fan[i]->wait( HostThread::ThreadActive );
-    }
-
-    if ( m_thread_rank ) {
-      set(  HostThread::ThreadRendezvous );
-      wait( HostThread::ThreadRendezvous );
-    }
-
-    for ( unsigned i = m_fan_count ; 0 < i ; ) {
-      m_fan[--i]->set( HostThread::ThreadActive );
-    }
-  }
+  void barrier();
 
   //----------------------------------------------------------------------
   /** \brief  This thread participates in the fan-in reduction.
@@ -216,6 +159,7 @@ private:
   long         volatile m_state ;     ///< Thread control flag
 
   friend class HostInternal ;
+  friend class HostThreadWorker ;
 };
 
 //----------------------------------------------------------------------------
@@ -224,18 +168,19 @@ private:
 struct HostThreadWorker {
 public:
 
-  /** \brief  Virtual method called on threads */
-  virtual void execute_on_thread( HostThread & ) const = 0 ;
-
   virtual ~HostThreadWorker() {}
 
   void execute() const ;
 
+  /** \brief  Virtual method called on threads */
+  virtual void execute_on_thread( HostThread & ) const = 0 ;
+
+  /** \brief Wait for fanin/fanout threads to deactivate themselves. */
+  void fanin_deactivation( HostThread & thread ) const ;
+
 protected:
 
   HostThreadWorker() {}
-
-  static void execute( const HostThreadWorker & );
 
 private:
 
@@ -247,20 +192,22 @@ private:
 
 template< class WorkerType >
 struct HostParallelLaunch {
+private:
 
   struct ThreadWorker : public HostThreadWorker {
     const WorkerType & m_worker ;
 
     void execute_on_thread( HostThread & thread ) const
-      { m_worker( thread ); thread.return_barrier(); }
+      { m_worker( thread ); }
 
-    inline explicit
     ThreadWorker( const WorkerType & worker )
       : m_worker( worker ) {}
   };
 
+public:
+
   HostParallelLaunch( const WorkerType & worker )
-  { ThreadWorker( worker ).execute(); }
+    { ThreadWorker( worker ).execute(); }
 };
 
 //----------------------------------------------------------------------------
