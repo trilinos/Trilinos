@@ -2,6 +2,14 @@
 Release Notes for Trilinos Package Teuchos
 ------------------------------------------
 
+
+Trilinos 11.0:
+--------------
+
+(*) Dropped deprecated code in Trilinos 10.12 (see general release notes on
+dropping deprecated code).
+
+
 Trilinos 10.13 (dev): 
 ----------------------
 
