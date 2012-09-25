@@ -169,9 +169,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
 
-    int error_flag = 0 ;
-
-    KokkosArray::parallel_reduce( 1 , driver , error_flag );
+    const int error_flag = KokkosArray::parallel_reduce( 1 , driver );
 
     ASSERT_EQ( error_flag , 0 );
   }
@@ -266,9 +264,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
 
-    int error_flag = 0 ;
-
-    KokkosArray::parallel_reduce( 1 , driver , error_flag );
+    const int error_flag = KokkosArray::parallel_reduce( 1 , driver );
 
     ASSERT_EQ( error_flag , 0 );
   }
@@ -361,9 +357,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
 
-    int error_flag = 0 ;
-
-    KokkosArray::parallel_reduce( 1 , driver , error_flag );
+    const int error_flag = KokkosArray::parallel_reduce( 1 , driver );
 
     ASSERT_EQ( error_flag , 0 );
   }
@@ -454,9 +448,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
 
-    int error_flag = 0 ;
-
-    KokkosArray::parallel_reduce( 1 , driver , error_flag );
+    const int error_flag = KokkosArray::parallel_reduce( 1 , driver );
 
     ASSERT_EQ( error_flag , 0 );
   }
@@ -545,9 +537,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
 
-    int error_flag = 0 ;
-
-    KokkosArray::parallel_reduce( 1 , driver , error_flag );
+    const int error_flag = KokkosArray::parallel_reduce( 1 , driver );
 
     ASSERT_EQ( error_flag , 0 );
   }
@@ -634,9 +624,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
 
-    int error_flag = 0 ;
-
-    KokkosArray::parallel_reduce( 1 , driver , error_flag );
+    const int error_flag = KokkosArray::parallel_reduce( 1 , driver );
 
     ASSERT_EQ( error_flag , 0 );
   }
@@ -721,9 +709,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
 
-    int error_flag = 0 ;
-
-    KokkosArray::parallel_reduce( 1 , driver , error_flag );
+    const int error_flag = KokkosArray::parallel_reduce( 1 , driver );
 
     ASSERT_EQ( error_flag , 0 );
   }

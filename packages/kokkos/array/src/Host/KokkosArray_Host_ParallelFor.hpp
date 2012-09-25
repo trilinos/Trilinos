@@ -53,7 +53,7 @@ namespace KokkosArray {
 namespace Impl {
 
 template< class FunctorType >
-class ParallelFor< FunctorType , Host > {
+class ParallelFor< FunctorType , Host , Host::size_type > {
 public:
 
   typedef Host::size_type  size_type ;
@@ -75,15 +75,6 @@ public:
     : m_work_functor( functor )
     , m_work_count( work_count )
     { HostParallelLaunch< ParallelFor >( *this ); }
-
-public:
-
-  inline
-  static void execute( const size_type     work_count ,
-                       const FunctorType & functor )
-  {
-    ParallelFor driver( work_count , functor );
-  }
 };
 
 } // namespace Impl

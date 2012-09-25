@@ -458,12 +458,31 @@ public:
 
   //----------------------------------------------------------------------
 
+  static 
+  size_type warp_count( const size_type work_count )
+  {
+    size_type nw = ReduceType::warp_count_max();
+
+    while ( Impl::CudaTraits::WarpSize * ( nw >> 1 ) > work_count ) nw >>= 1 ;
+
+    return nw ;
+  }
+
+  static
+  size_type block_count( const size_type work_count )
+  {
+    const size_type nt = Impl::CudaTraits::WarpSize * warp_count( work_count );
+
+    return std::min( nt , size_type( ( work_count + nt - 1 ) / nt ) );
+  }
+
 public:
 
   static
   size_type warp_count_max()
     { return ReduceType::warp_count_max(); }
 
+  // For the multi-functor reduce:
   ParallelReduce( const FunctorType  & functor ,
                   const FinalizeType & finalize ,
                   const size_type      work_count ,
@@ -476,11 +495,29 @@ public:
     , m_work_count(    work_count )
   {}
 
+  // For the multi-functor reduce:
+  ParallelReduce( const size_type      work_count ,
+                  const FunctorType  & functor ,
+                  const FinalizeType & finalize )
+    : m_work_functor(  functor )
+    , m_work_finalize( finalize )
+    , m_reduce_shared( warp_count(work_count) , 0 , block_count(work_count) )
+    , m_work_count(    work_count )
+  {
+    const size_type nw = warp_count( work_count );
+
+    const dim3 block( Impl::CudaTraits::WarpSize * nw , 1, 1 );
+    const dim3 grid( block_count(work_count) , 1 , 1 );
+    const size_type shmem_size = ReduceType::shmem_size( nw );
+
+    CudaParallelLaunch< ParallelReduce >( *this , grid , block , shmem_size );
+  }
+
   //--------------------------------------------------------------------------
 
   inline
   __device__
-  void execute_on_device() const
+  void operator()(void) const
   {
     value_type & value = ReduceType::value( threadIdx.x );
 
@@ -498,36 +535,6 @@ public:
       // Last block thread #0 has final value
       m_work_finalize( value );
     }
-  }
-
-  static
-  void execute( const size_t         work_count ,
-                const FunctorType  & functor ,
-                const FinalizeType & finalize )
-  {
-    size_type warp_count = warp_count_max();
-
-    while ( Impl::CudaTraits::WarpSize * ( warp_count >> 1 ) > work_count )
-      warp_count >>= 1 ;
-
-    const dim3 block( Impl::CudaTraits::WarpSize * warp_count , 1 , 1 );
-
-    const dim3 grid(
-      std::min( block.x ,
-                size_type( ( work_count + block.x - 1 ) / block.x ) ) , 1 , 1 );
-
-/*
-    const dim3 grid(
-      std::min( cuda_internal_maximum_grid_count() ,
-                size_type( ( work_count + block.x - 1 ) / block.x ) ) , 1 , 1 );
-*/
-
-    const size_type shmem_size = ReduceType::shmem_size( warp_count );
-
-    ParallelReduce driver( functor, finalize, work_count, warp_count, 0, grid.x );
-
-    CudaParallelLaunch< ParallelReduce >
-      ::execute( driver , grid , block , shmem_size );
   }
 };
 
@@ -580,7 +587,6 @@ public :
   { *m_view = value ; }
 };
 
-#if 1
 template< class FunctorType , class ReduceTraits , typename ValueType >
 class ParallelReduce< FunctorType , ReduceTraits ,
                       View< ValueType , Cuda , Cuda > , Cuda >
@@ -601,16 +607,14 @@ public:
       { *m_view = value ; }
   };
 
-  static
-  void execute( const size_t         work_count ,
-                const FunctorType  & functor ,
-                const view_type    & view )
+  ParallelReduce( const size_t         work_count ,
+                  const FunctorType  & functor ,
+                  const view_type    & view )
   {
     ParallelReduce< FunctorType , ReduceTraits, FunctorAssignment , Cuda >
-      ::execute( work_count , functor , FunctorAssignment( view ) );
+      ( work_count , functor , FunctorAssignment( view ) );
   }
 };
-#endif
 
 } // namespace Impl
 } // namespace KokkosArray
@@ -661,9 +665,9 @@ public:
   virtual ~CudaMultiFunctorParallelReduceMember() {}
 
   virtual
-  void execute( const FinalizeType & finalize ,
-                const size_type      global_block_offset ,
-                const size_type      global_block_count ) const = 0 ;
+  void apply( const FinalizeType & finalize ,
+              const size_type      global_block_offset ,
+              const size_type      global_block_count ) const = 0 ;
 };
 
 template < class FunctorType , class ReduceTraits , class FinalizeType >
@@ -690,9 +694,9 @@ public:
   {}
 
   virtual
-  void execute( const FinalizeType & finalize ,
-                const size_type      global_block_begin ,
-                const size_type      global_block_count ) const
+  void apply( const FinalizeType & finalize ,
+              const size_type      global_block_begin ,
+              const size_type      global_block_count ) const
   {
     const dim3 block( Impl::CudaTraits::WarpSize * base_type::m_warp_count , 1 , 1 );
 
@@ -776,7 +780,7 @@ public:
 
     for ( m = m_member_functors.begin() ; m != m_member_functors.end() ; ++m ) {
       MemberType & member = **m ;
-      member.execute( m_finalize , global_block_offset , global_block_count );
+      member.apply( m_finalize , global_block_offset , global_block_count );
       global_block_offset += member.m_block_count ;
     }
   }

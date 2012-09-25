@@ -56,62 +56,68 @@ namespace Impl {
 //----------------------------------------------------------------------------
 
 template< class FunctorType >
-class ParallelFor< FunctorType , Cuda > {
+class ParallelFor< FunctorType , Cuda , Cuda::size_type > {
 public:
 
   const FunctorType     m_work_functor ;
   const Cuda::size_type m_work_count ;  
-  const Cuda::size_type m_work_stride ;  
 
 private:
-
-  ParallelFor( const FunctorType    & functor ,
-               const Cuda::size_type  work_count ,
-               const Cuda::size_type  work_stride )
-    : m_work_functor( functor )
-    , m_work_count(  work_count )
-    , m_work_stride( work_stride )
-    {}
 
   ParallelFor();
   ParallelFor & operator = ( const ParallelFor & );
 
 public:
 
-  ParallelFor( const ParallelFor & rhs )
-    : m_work_functor( rhs.m_work_functor )
-    , m_work_count(   rhs.m_work_count )
-    , m_work_stride(  rhs.m_work_stride )
-    {}
-
   inline
   __device__
-  void execute_on_device() const
+  void operator()(void) const
   {
-    const Cuda::size_type work_count  = m_work_count ;
-    const Cuda::size_type work_stride = m_work_stride ;
+    const Cuda::size_type work_stride = blockDim.x * gridDim.x ;
 
     Cuda::size_type iwork = threadIdx.x + blockDim.x * blockIdx.x ;
 
-    for ( ; iwork < work_count ; iwork += work_stride ) {
+    for ( ; iwork < m_work_count ; iwork += work_stride ) {
       m_work_functor( iwork );
     }
   }
 
-  static void execute( const Cuda::size_type work_count ,
-                       const FunctorType & functor )
+
+  ParallelFor( const Cuda::size_type  work_count ,
+               const FunctorType    & functor )
+    : m_work_functor( functor )
+    , m_work_count(  work_count )
+    {
+      const Cuda::size_type grid_max = cuda_internal_maximum_grid_count();
+
+      const dim3 block( CudaTraits::WarpSize * cuda_internal_maximum_warp_count(), 1, 1);
+
+      dim3 grid( ( ( work_count + block.x - 1 ) / block.x ) , 1 , 1 );
+
+      if ( grid_max < grid.x ) grid.x = grid_max ;
+
+      CudaParallelLaunch< ParallelFor >( *this , grid , block , 0 );
+    }
+};
+
+//----------------------------------------------------------------------------
+
+template< class FunctorType >
+class ParallelFor< FunctorType , Cuda , CudaWorkConfig > {
+public:
+
+  ParallelFor( const CudaWorkConfig & work_config ,
+               const FunctorType    & functor )
   {
-    const Cuda::size_type grid_max = cuda_internal_maximum_grid_count();
+    const dim3 grid( work_config.grid[0] ,
+                     work_config.grid[1] ,
+                     work_config.grid[2] );
 
-    const dim3 block( CudaTraits::WarpSize * cuda_internal_maximum_warp_count(), 1, 1);
+    const dim3 block( work_config.block[0] ,
+                      work_config.block[1] ,
+                      work_config.block[2] );
 
-    dim3 grid( ( ( work_count + block.x - 1 ) / block.x ) , 1 , 1 );
-
-    if ( grid_max < grid.x ) grid.x = grid_max ;
-
-    const ParallelFor driver( functor , work_count , block.x * grid.x );
-
-    CudaParallelLaunch< ParallelFor >::execute( driver , grid , block , 0 );
+    CudaParallelLaunch< ParallelFor >( functor , grid , block , work_config.shared );
   }
 };
 

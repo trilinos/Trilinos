@@ -122,13 +122,6 @@ public:
     , m_finalize( finalize )
     , m_work_count( work_count )
     { HostParallelLaunch< ParallelReduce >( *this ); }
-
-  static void execute( const size_type      work_count ,
-                       const FunctorType  & functor ,
-                       const FinalizeType & finalize )
-  {
-    ParallelReduce driver( work_count , functor , finalize );
-  }
 };
 
 } // namespace Impl

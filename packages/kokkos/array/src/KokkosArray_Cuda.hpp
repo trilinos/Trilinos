@@ -137,6 +137,42 @@ public:
 
 /*--------------------------------------------------------------------------*/
 
+namespace KokkosArray {
+
+/** \brief Cuda-specific parallel work configuration */
+
+struct CudaWorkConfig {
+  Cuda::size_type  grid[3] ;   //< Grid dimensions
+  Cuda::size_type  block[3] ;  //< Block dimensions
+  Cuda::size_type  shared ;    //< Shared memory size
+
+  CudaWorkConfig();
+};
+
+template< class FunctorType >
+inline
+void parallel_for( const CudaWorkConfig & work_config ,
+                   const FunctorType    & functor )
+{
+  Impl::ParallelFor< FunctorType , Cuda >( work_config , functor );
+}
+
+template< class FunctorType , class FinalizeType >
+inline
+void parallel_reduce( const CudaWorkConfig & work_config ,
+                      const FunctorType    & functor ,
+                      const FinalizeType   & finalize );
+
+template< class FunctorType >
+inline
+typename FunctorType::value_type
+parallel_reduce( const CudaWorkConfig & work_config ,
+                 const FunctorType    & functor );
+
+} // namespace KokkosArray
+
+/*--------------------------------------------------------------------------*/
+
 #include <Cuda/KokkosArray_Cuda_MemorySpace.hpp>
 #include <Cuda/KokkosArray_Cuda_View.hpp>
 

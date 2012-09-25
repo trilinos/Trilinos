@@ -87,7 +87,7 @@ public:
   //
 
   __device__
-  void execute_on_device() const
+  void operator()(void) const
   {
     const size_type blockCount = m_A.graph.row_map.dimension(0) - 1 ;
 

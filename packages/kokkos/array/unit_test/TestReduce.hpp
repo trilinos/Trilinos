@@ -143,7 +143,7 @@ public:
                                       : (nw/2) * ( nw + 1 );
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
-      KokkosArray::parallel_reduce( nwork , functor_type( nwork ) , result[i] );
+      result[i] = KokkosArray::parallel_reduce( nwork , functor_type(nwork) );
     }
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
