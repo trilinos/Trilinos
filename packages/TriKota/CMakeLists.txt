@@ -76,6 +76,15 @@ IF(TriKota_ENABLE_DakotaCMake)
     ENDIF()
   ENDIF()
 
+  # Convey BLAS/LAPACK settings from TriBITS to Dakota.
+  # This may not suffice if other link directories are also needed.
+  IF(TPL_BLAS_LIBRARIES)
+    SET(BLAS_LIBS "${TPL_BLAS_LIBRARIES}")
+  ENDIF()
+  IF(TPL_LAPACK_LIBRARIES)
+    SET(LAPACK_LIBS "${TPL_LAPACK_LIBRARIES}")
+  ENDIF()
+
   # Turn off a bunch of Dakota non-TriBITS-complient tests when buliding
   # Dakota under Trilinos/TriKota.  Until these tests can be prefixed with
   # TriKota_ and given the correct label there is no reason to enale them
