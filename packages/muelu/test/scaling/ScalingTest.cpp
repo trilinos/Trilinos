@@ -350,9 +350,17 @@ int main(int argc, char *argv[]) {
     }
 
     smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList) );
+
+    /* test direct solve */
+    /*    if (maxLevels == 1) {
+          Teuchos::ParameterList amesosList;
+          amesosList.set("PrintTiming", true);
+          smooProto = rcp( new DirectSolver("", amesosList) );
+          }
+    */
+
     RCP<SmootherFactory> SmooFact;
-    if (maxLevels > 1) 
-      SmooFact = rcp( new SmootherFactory(smooProto) );
+    SmooFact = rcp( new SmootherFactory(smooProto) );
     AcfactFinal->setVerbLevel(Teuchos::VERB_HIGH);
 
     /*
@@ -365,45 +373,46 @@ int main(int argc, char *argv[]) {
     }
     */
 
-    FactoryManager M;
-
-    M.SetFactory("A",AcfactFinal);
-    M.SetFactory("Smoother",SmooFact);
-    M.SetFactory("Graph", GraphFact);
-
-    if (useExplicitR) {
+    if (maxLevels > 1) {
+      FactoryManager M;
+      
+      M.SetFactory("A",AcfactFinal);
+      M.SetFactory("Smoother",SmooFact);
+      M.SetFactory("Graph", GraphFact);
+      
+      if (useExplicitR) {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
-      M.SetFactory("P",permPFactory);
-      M.SetFactory("R",permRFactory);
-      M.SetFactory("Nullspace", permRFactory);
+        M.SetFactory("P",permPFactory);
+        M.SetFactory("R",permRFactory);
+        M.SetFactory("Nullspace", permRFactory);
 #else
-      M.SetFactory("P",SaPfact);
-      M.SetFactory("R",Rfact);
-      M.SetFactory("Ptent", PtentFact); // for nullspace
+        M.SetFactory("P",SaPfact);
+        M.SetFactory("R",Rfact);
+        M.SetFactory("Ptent", PtentFact); // for nullspace
 #endif
-    } else {
-      M.SetFactory("P",SaPfact);
-      M.SetFactory("R",Rfact);
+      } else {
+        M.SetFactory("P",SaPfact);
+        M.SetFactory("R",Rfact);
+      }
+      
+      int startLevel=0;
+      std::cout << startLevel << " " << maxLevels << std::endl;
+      H->Setup(M,startLevel,maxLevels);
+    }//maxLevels>1
+
+
+    if (maxLevels == 1) {
+
+
+
+      H->SetCoarsestSolver(*SmooFact, MueLu::BOTH);
     }
-
-    int startLevel=0;
-    H->Setup(M,startLevel,maxLevels);
-
+    
   } // end of Setup TimeMonitor
-
-  *out  << "======================\n Multigrid statistics \n======================" << std::endl;
-  status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
-
-  /* JG: COMMENTED OUT. Otherwise, LU factorization is done twice!!
-     Teuchos::ParameterList amesosList;
-     amesosList.set("PrintTiming", true);
-     RCP<DirectSolver> coarseProto = rcp( new DirectSolver("", amesosList) );
-     SmootherFactory coarseSolveFact(coarseProto);
-     
-     //SmootherFactory coarseSolveFact(smooProto);    //JJH lazy man's way to have a one-level method with smoother
-     H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
-  */
-
+  
+  //   *out  << "======================\n Multigrid statistics \n======================" << std::endl;
+  //   status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
+  
   // Define RHS
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
   RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);

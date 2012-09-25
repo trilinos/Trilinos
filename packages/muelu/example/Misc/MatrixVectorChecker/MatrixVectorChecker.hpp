@@ -55,6 +55,7 @@
 
 #include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_Map.hpp>
+#include <Xpetra_Operator.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
