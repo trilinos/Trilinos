@@ -28,5 +28,11 @@ TRIBITS_PACKAGE_DEF()
 
 TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
+TRIBITS_EXCLUDE_FILES(
+  classic/doc
+  classic/DistTSQR/doc
+  classic/LinAlg/doc/CrsRefactorNotesMay2012
+  )
+
 TRIBITS_PACKAGE_POSTPROCESS()
 
