@@ -84,7 +84,7 @@ buildStatusTests(const std::string& file_name ,
   
 #ifdef HAVE_TEUCHOS_EXTENDED
   Teuchos::ParameterList param_list;
-  const Teuchos::Ptr<Teuchos::ParameterList> param_list_ptr = &param_list;
+  const Teuchos::Ptr<Teuchos::ParameterList> param_list_ptr(&param_list);
   Teuchos::updateParametersFromXmlFile("input.xml", param_list_ptr);
   status_tests = this->buildStatusTests(param_list, globalData, tagged_tests);
 #else
