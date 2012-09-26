@@ -32,7 +32,7 @@ IF(Stokhos_ENABLE_Tpetra AND Stokhos_ENABLE_Belos AND Stokhos_ENABLE_Ifpack2 AND
      TRIBITS_ADD_TEST(
             Linear2D_Diffusion_IPCE_Ifpack2_Example
             NAME "Linear2D_Diffusion_IPCE_Ifpack2_Example_Direct"
-            ARGS "--division_method=Direct"
+            ARGS "--num_mesh=8 --division_method=Direct"
             COMM serial mpi
             NUM_MPI_PROCS 1 
             PASS_REGULAR_EXPRESSION "Example Passed!"
@@ -40,7 +40,7 @@ IF(Stokhos_ENABLE_Tpetra AND Stokhos_ENABLE_Belos AND Stokhos_ENABLE_Ifpack2 AND
        TRIBITS_ADD_TEST(
             Linear2D_Diffusion_IPCE_Ifpack2_Example
             NAME "Linear2D_Diffusion_IPCE_Ifpack2_Example_CG_Diag"
-            ARGS "--division_method=CG --divprec_method=Diag"
+            ARGS "--num_mesh=8 --division_method=CG --divprec_method=Diag"
             COMM serial mpi
             NUM_MPI_PROCS 1
             PASS_REGULAR_EXPRESSION "Example Passed!"
@@ -48,7 +48,7 @@ IF(Stokhos_ENABLE_Tpetra AND Stokhos_ENABLE_Belos AND Stokhos_ENABLE_Ifpack2 AND
       TRIBITS_ADD_TEST(
             Linear2D_Diffusion_IPCE_Ifpack2_Example
             NAME "Linear2D_Diffusion_IPCE_Ifpack2_Example_CG_Schur"
-            ARGS "--division_method=CG --divprec_method=Schur"
+            ARGS "--num_mesh=8 --division_method=CG --divprec_method=Schur"
             COMM serial mpi
             NUM_MPI_PROCS 1
             PASS_REGULAR_EXPRESSION "Example Passed!"

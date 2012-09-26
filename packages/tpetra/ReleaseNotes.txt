@@ -4,6 +4,7 @@ Release Notes for Trilinos Package Tpetra
 
 Trilinos 11.0: 
 --------------
+* Significant performance improvements to local sparse matrix-vector multiply on CPU nodes. 
 * Removed all deprecated methods.
 
 Trilinos 10.12:
