@@ -1045,21 +1045,21 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Node>
-  void CUSPARSEOps<Scalar,Node>::setGraphAndMatrix(const RCP<const CUSPARSECrsGraph<Node> > &graph, const RCP<const CUSPARSECrsMatrix<Scalar,Node> > &matrix)
+  void CUSPARSEOps<Scalar,Node>::setGraphAndMatrix(const RCP<const CUSPARSECrsGraph<Node> > &graph_in, const RCP<const CUSPARSECrsMatrix<Scalar,Node> > &matrix_in)
   {
     std::string tfecfFuncName("setGraphAndMatrix(graph,matrix)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         isInitialized_ == true,
         std::runtime_error, " operators already initialized.");
     // get cusparse data from the matrix
-    numRows_ = graph->getNumRows();
-    numCols_ = graph->getNumCols();
-    matdescr_ = graph->getMatDesc();
-    rowPtrs_ = graph->getDevPointers();
-    colInds_ = graph->getDevIndices();
-    rowVals_ = matrix->getDevValues();
+    numRows_ = graph_in->getNumRows();
+    numCols_ = graph_in->getNumCols();
+    matdescr_ = graph_in->getMatDesc();
+    rowPtrs_ = graph_in->getDevPointers();
+    colInds_ = graph_in->getDevIndices();
+    rowVals_ = matrix_in->getDevValues();
     numNZ_ = colInds_.size();
-    matrix->getAnalyses( aiNoTrans_, aiTrans_, aiConjTrans_ );
+    matrix_in->getAnalyses( aiNoTrans_, aiTrans_, aiConjTrans_ );
     isInitialized_ = true;
   }
 
