@@ -13,6 +13,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     SOURCES Aggregation.cpp
     ARGS ""
     COMM serial mpi
-    DEPLIBS muelu muelu-xpetra
+    DEPLIBS muelu xpetra
     )
 ENDIF()

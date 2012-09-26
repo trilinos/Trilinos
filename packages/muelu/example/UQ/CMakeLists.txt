@@ -10,7 +10,7 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Stokhos AND ${PACKAG
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     muestok
     SOURCES Simple.cpp
-    DEPLIBS muelu muelu-xpetra stokhos
+    DEPLIBS muelu xpetra stokhos
     NUM_MPI_PROCS 4
     COMM serial mpi
     )

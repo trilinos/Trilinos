@@ -52,8 +52,8 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 #
 
 TRIBITS_ADD_LIBRARY(
-  muelu-xpetra-sup
+  xpetra-sup
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS muelu-xpetra
+  DEPLIBS xpetra
   )

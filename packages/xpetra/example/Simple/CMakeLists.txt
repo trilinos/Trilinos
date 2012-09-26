@@ -7,13 +7,13 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
 	TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	  Xpetra_Laplace1D-Xpetra
 	  SOURCES Laplace1D-Xpetra.cpp
-	  DEPLIBS muelu-xpetra
+	  DEPLIBS xpetra
 	  )
 
 
 	TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	  Xpetra_Laplace1D-Tpetra
 	  SOURCES Laplace1D-Tpetra.cpp
-	  DEPLIBS muelu-xpetra
+	  DEPLIBS xpetra
 	  )
 ENDIF()

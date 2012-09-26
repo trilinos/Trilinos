@@ -10,21 +10,21 @@ IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
       CrashMe1
       SOURCES crashme1.cpp
       COMM serial mpi
-      DEPLIBS muelu muelu-xpetra
+      DEPLIBS muelu xpetra
       )
      
     #TRIBITS_ADD_EXECUTABLE(
     #  CrashMe
     #  SOURCES visualizeAggregates2.cpp
     #  COMM serial mpi
-    #  DEPLIBS muelu muelu-xpetra
+    #  DEPLIBS muelu xpetra
     #  )
  
     # TRIBITS_ADD_EXECUTABLE(
     #  CrashMe2
     #  SOURCES visualizeAggregates3.cpp
     #  COMM serial mpi
-    #  DEPLIBS muelu muelu-xpetra
+    #  DEPLIBS muelu xpetra
     #  )
     
     TRIBITS_COPY_FILES_TO_BINARY_DIR(CrashMe_example_copyfiles

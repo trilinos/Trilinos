@@ -13,7 +13,7 @@ TRIBITS_ADD_EXECUTABLE(
     BlockedTransferOperators
     SOURCES BlockedTransferOperators.cpp
     COMM serial mpi
-    DEPLIBS muelu muelu-xpetra
+    DEPLIBS muelu xpetra
   )
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack)
@@ -56,7 +56,7 @@ ENDIF() # Galeri
 #    SOURCES tsiexample.cpp
 #    ARGS ""
 #    COMM serial mpi
-#    DEPLIBS muelu muelu-xpetra
+#    DEPLIBS muelu xpetra
 #  )
   
 #TRIBITS_COPY_FILES_TO_BINARY_DIR(TSIExample_test_copyfiles

@@ -21,7 +21,7 @@ ASSERT_DEFINED(
 #     SOURCES amesos2.cpp
 #     ARGS ""
 #     COMM serial mpi
-#     DEPLIBS muelu muelu-xpetra
+#     DEPLIBS muelu xpetra
 #   )
 
 
@@ -30,5 +30,5 @@ ASSERT_DEFINED(
 #     SOURCES mainMergedSmoo.cpp
 #     ARGS ""
 #     COMM serial mpi
-#     DEPLIBS muelu muelu-xpetra
+#     DEPLIBS muelu xpetra
 #   )

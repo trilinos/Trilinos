@@ -13,7 +13,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     MatrixVectorCheckerExample
     SOURCES MatrixVectorCheckerExample.cpp
     COMM serial
-    DEPLIBS muelu muelu-xpetra
+    DEPLIBS muelu xpetra
     )
 
   IF (${PACKAGE_NAME}_ENABLE_Epetra)
@@ -54,7 +54,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
       read_MatrixMarket
       SOURCES MueLu_read_MatrixMarket.cpp
       COMM serial mpi
-      DEPLIBS muelu muelu-xpetra
+      DEPLIBS muelu xpetra
       )
   ENDIF()
 ENDIF()

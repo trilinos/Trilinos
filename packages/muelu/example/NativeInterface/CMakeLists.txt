@@ -6,6 +6,6 @@ IF ({PACKAGE_NAME}_ENABLE_Galeri)
     PlainAggregation
     SOURCES PlainAggregation.cpp
     COMM serial mpi
-    DEPLIBS muelu muelu-xpetra
+    DEPLIBS muelu xpetra
     )
 ENDIF()

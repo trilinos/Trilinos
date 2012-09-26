@@ -10,7 +10,7 @@ IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
     AggregationExample
     SOURCES AggregationExample.cpp
     COMM serial mpi
-    DEPLIBS muelu muelu-xpetra
+    DEPLIBS muelu xpetra
     )
   #  ENDIF()
 
@@ -19,7 +19,7 @@ IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
       VisualizeAggregates
       SOURCES visualizeAggregates.cpp
       COMM serial mpi
-      DEPLIBS muelu muelu-xpetra
+      DEPLIBS muelu xpetra
       )
     
     TRIBITS_COPY_FILES_TO_BINARY_DIR(VisualizeAggregates_example_copyfiles

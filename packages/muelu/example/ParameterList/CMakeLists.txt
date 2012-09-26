@@ -19,7 +19,7 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
   TRIBITS_ADD_EXECUTABLE(
     ParameterList
     SOURCES ParameterList.cpp
-    DEPLIBS muelu muelu-xpetra
+    DEPLIBS muelu xpetra
     COMM serial mpi
     )
 
@@ -34,7 +34,7 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
   TRIBITS_ADD_EXECUTABLE(
     MLParameterList
     SOURCES MLParameterList.cpp
-    DEPLIBS muelu muelu-xpetra
+    DEPLIBS muelu xpetra
     COMM serial mpi
     )
 
@@ -68,7 +68,7 @@ IF((${PACKAGE_NAME}_ENABLE_Stratimikos) AND
   TRIBITS_ADD_EXECUTABLE(
     Stratimikos
     SOURCES Stratimikos.cpp
-    DEPLIBS muelu muelu-xpetra muelu-adapters
+    DEPLIBS muelu xpetra muelu-adapters
     COMM serial mpi
     )
 
