@@ -9,6 +9,20 @@ Trilinos 11.0:
 (*) Dropped deprecated code in Trilinos 10.12 (see general release notes on
 dropping deprecated code).
 
+(*) Teuchos reference BLAS implementations have been corrected to mimic the
+behavior of their machine-specific counterparts.  See bugs 4262 and 5683.
+This includes fixing the interface to _GER so that the complex instantiation
+of that routine uses _GERU.  Also, _ASUM and _IAMAX were corrected to perform
+the correct calculations for complex-valued data types.
+
+(*) Fixed SerialDenseSolver class to correctly handle complex-valued data
+types.  See bug 5308.  
+
+(*) CommandLineProcessor now properly throws exceptions.  See bug 4668 and
+5387.  By default this tool throws exceptions and must recognize all the
+options it encounters on the command line.  This is enforced through the
+implementation now.  If exception throwing is disabled, then proper error
+codes will be returned to the user.
 
 Trilinos 10.13 (dev): 
 ----------------------
