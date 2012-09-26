@@ -258,7 +258,7 @@ template <typename User>
 
   Model<IdentifierInput<User> >::maxCount(*comm, userWeightDim_);
 
-  Array<const scalar_t *> wgts(userWeightDim_, NULL);
+  Array<const scalar_t *> wgts(userWeightDim_, (const scalar_t *)NULL);
   Array<int> wgtStrides(userWeightDim_, 0);
   Array<lno_t> weightArrayLengths(userWeightDim_, 0);
 
