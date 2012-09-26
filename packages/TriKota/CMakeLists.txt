@@ -16,8 +16,8 @@ TRIBITS_PACKAGE(TriKota DISABLE_STRONG_WARNINGS)
 #  "Build with Debug mode."
 #  OFF )
 
-SET(TriKota_ENABLE_DakotaCMake OFF CACHE BOOL 
-"Compile Dakota using CMake instead of the default autotools")
+SET(TriKota_ENABLE_DakotaCMake ON CACHE BOOL 
+    "Compile Dakota using CMake instead of the default autotools")
 
 #
 # C) Add the libraries, tests, and examples
