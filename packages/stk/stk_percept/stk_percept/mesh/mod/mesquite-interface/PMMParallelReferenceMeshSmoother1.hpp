@@ -31,13 +31,12 @@ namespace stk {
                                         double grad_norm =1.e-8,
                                         int parallel_iterations = 20)
         : PMMParallelReferenceMeshSmoother(inner_iterations, cpu_time, grad_norm, parallel_iterations),
-          m_max_edge_length_factor(max_edge_length_factor), m_scale(1.), m_pmm(0)
+          m_max_edge_length_factor(max_edge_length_factor),  m_pmm(0)
       {}
 
 
     protected:
       double m_max_edge_length_factor;
-      double m_scale;
 
       virtual void get_gradient( Mesh* mesh, MeshDomain *domain);
       virtual void get_scale( Mesh* mesh, MeshDomain *domain);
@@ -46,7 +45,7 @@ namespace stk {
       virtual double run_one_iteration( Mesh* mesh,  MeshDomain *domain,
                                       MsqError& err );
 
-      virtual double total_metric(Mesh *mesh, double alpha, double multiplicative_edge_scaling, bool& valid);
+      virtual double total_metric(Mesh *mesh, double alpha, double multiplicative_edge_scaling, bool& valid, int *num_invalid=0);
       virtual double metric(stk::mesh::Entity& entity, bool& valid);
       virtual void update_node_positions(Mesh* mesh, double alpha);
       virtual bool check_convergence();

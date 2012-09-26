@@ -123,10 +123,13 @@ namespace stk {
       PMMSmootherMetricUntangle untangle_metric(eMesh);
 
       // shape-size-orient smooth
-      PMMSmootherMetricShapeSizeOrient shape_metric(eMesh);
+      PMMSmootherMetricShapeSizeOrient shape_size_orient_metric(eMesh);
 
       // shape
       PMMSmootherMetricShapeB1 shape_b1_metric(eMesh);
+
+      // laplace
+      PMMSmootherMetricLaplace laplace_metric(eMesh);
 
       // scaled jacobian
       PMMSmootherMetricScaledJacobianElemental scaled_jac_metric(eMesh);
@@ -170,7 +173,8 @@ namespace stk {
               eMesh->save_as("anim_all."+toString(iter_all)+".e");
             }
 
-          for (int stage = 0; stage < 2; stage++)
+          int nstage=2;
+          for (int stage = 0; stage < nstage; stage++)
             {
               m_stage = stage;
               if (stage==0) 
@@ -183,8 +187,9 @@ namespace stk {
                   int num_invalid_1 = PMMParallelShapeImprover::parallel_count_invalid_elements(m_eMesh);
                   VERIFY_OP_ON(num_invalid_1, ==, 0, "Invalid elements exist for start of stage 2, aborting");
 
-                  //m_metric = &shape_metric;
+                  //m_metric = &shape_size_orient_metric;
                   m_metric = &shape_b1_metric;
+                  //m_metric = &laplace_metric;
                   //m_metric = &scaled_jac_metric;
 
                 }
@@ -209,9 +214,9 @@ namespace stk {
                   if (!get_parallel_rank())
                   {
                     std::cout << "P[" << get_parallel_rank() << "] " << "tmp srk iter= " << iter << " dmax= " << m_dmax << " m_dnew= " << m_dnew 
-                              << " m_d0= " << m_d0 << " m_alpha= " << m_alpha << " m_grad_norm= " << m_grad_norm << " m_scaled_grad_norm = " << m_scaled_grad_norm
+                              << " m_d0= " << m_d0 << " m_alpha= " << m_alpha << " m_scale= " << m_scale << " m_grad_norm= " << m_grad_norm << " m_scaled_grad_norm = " << m_scaled_grad_norm
                               << " num_invalid= " << num_invalid_0 
-                              << " m_global_metric= " << m_global_metric << " m_untangled= " << m_untangled
+                              << " m_global_metric= " << m_global_metric << " stage= " << stage << " m_untangled= " << m_untangled
                               << std::endl;
                   }
 

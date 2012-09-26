@@ -1035,6 +1035,13 @@ namespace stk {
 
                               } // iBreak
 
+                            if (number_refines == 0 && input_geometry != "" && smooth_geometry == 1)
+                              {
+                                breaker.setSmoothGeometry(true);
+                                breaker.snapAndSmooth(false, input_geometry);
+                              }
+                              
+
                             if (streaming_size)
                               {
 #if STK_ADAPT_HAVE_YAML_CPP
