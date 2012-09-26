@@ -9,7 +9,7 @@ EXECUTABLE="proxyapp.exe"
 INC_PATH="-I. -I../common -I../../src"
 CXX="g++"
 
-CXX_SOURCES="./*.cpp"
+CXX_SOURCES="./TestHost.cpp ./TestMain.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../common/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../../src/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../../src/Host/KokkosArray_Host_Impl.cpp"

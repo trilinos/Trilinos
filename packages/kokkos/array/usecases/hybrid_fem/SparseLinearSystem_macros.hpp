@@ -79,10 +79,8 @@ public:
                     const scalar_vector & x ,
                     const scalar_vector & y )
   {
-    value_type result = 0 ;
     Dot op ; op.x = x ; op.y = y ;
-    parallel_reduce( n , op , result );
-    return result ;
+    return parallel_reduce( n , op );
   }
 }; //Dot
 
@@ -118,10 +116,8 @@ public:
   value_type apply( const size_t n ,
                     const scalar_vector & x )
   {
-    value_type result = 0 ;
     Dot op ; op.x = x ;
-    parallel_reduce( n , op , result );
-    return result ;
+    return parallel_reduce( n , op );
   }
 }; //Dot
 

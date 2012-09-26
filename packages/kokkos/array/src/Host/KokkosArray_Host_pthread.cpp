@@ -117,8 +117,6 @@ void HostWorkerBlock::execute_on_thread( HostThread & this_thread ) const
 {
   pthread_mutex_lock(   & host_internal_pthread_mutex );
   pthread_mutex_unlock( & host_internal_pthread_mutex );
-
-  this_thread.barrier();
 }
 
 //----------------------------------------------------------------------------
@@ -152,7 +150,10 @@ bool Host::sleep()
 
     h.m_worker = & h.m_worker_block ;
 
-    h.activate();
+    // Activate threads so that they will proceed from
+    // spinning state to being blocked on the mutex.
+
+    h.activate_threads();
 
     is_blocked = true ;
   }
@@ -164,13 +165,13 @@ bool Host::wake()
 {
   Impl::HostInternal & h = Impl::HostInternal::singleton();
 
-  const bool is_blocked = & h.m_worker_block != h.m_worker ;
+  const bool is_blocked = & h.m_worker_block == h.m_worker ;
         bool is_ready   = NULL == h.m_worker ;
 
   if ( is_blocked ) {
     pthread_mutex_unlock( & Impl::host_internal_pthread_mutex );
 
-    h.m_master_thread.barrier();
+    h.m_worker_block.fanin_deactivation( h.m_master_thread );
 
     h.m_worker = NULL ;
 

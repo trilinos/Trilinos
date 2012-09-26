@@ -66,63 +66,31 @@ public:
   //----------------------------------------------------------------------
   /** \brief  Compute a range of work for this thread's rank */
 
-  inline
   std::pair< size_type , size_type >
-    work_range( const size_type work_count ) const
-  {
-    const size_type reverse_rank    = m_thread_count - ( m_thread_rank + 1 );
-    const size_type work_per_thread = ( work_count + m_thread_count - 1 )
-                                      / m_thread_count ;
-    const size_type work_previous   = work_per_thread * reverse_rank ;
-    const size_type work_end        = work_count > work_previous
-                                    ? work_count - work_previous : 0 ;
-
-    return std::pair<size_type,size_type>(
-      ( work_end > work_per_thread ?
-        work_end - work_per_thread : 0 ) , work_end );
-  }
+    work_range( const size_type work_count ) const ;
 
   //----------------------------------------------------------------------
   /** \brief  This thread waits for each fan-in thread in the barrier.
+   *          Once all threads have fanned in then fan-out reactivation.
    *
-   *  A parallel work function must call either barrier or reduce
-   *  on all threads at the end of the work function.
-   *  Entry condition: in the Active   state
-   *  Exit  condition: in the Inactive state
+   *  A parallel work function must call barrier on all threads.
    */
-  void barrier()
-  {
-    // The 'wait' function repeatedly polls the 'thread' state
-    // which may reside in a different NUMA region.
-    // Thus the fan is intra-node followed by inter-node
-    // to minimize inter-node memory access.
-
-    for ( unsigned i = 0 ; i < m_fan_count ; ++i ) {
-      m_fan[i]->wait( HostThread::ThreadActive );
-    }
-
-    if ( m_thread_rank ) {
-      set( HostThread::ThreadInactive );
-    }
-  }
+  void barrier();
 
   //----------------------------------------------------------------------
   /** \brief  This thread participates in the fan-in reduction.
    *
-   *  A parallel work function must call either barrier or reduce
-   *  on all threads at the end of the work function.
-   *  Entry condition: in the Active   state
-   *  Exit  condition: in the Inactive state
    */
-  template< class ReduceTraits >
+  template< class ReduceTraits , class Finalize >
   inline
-  void reduce( typename ReduceTraits::value_type & update )
+  void reduce( typename ReduceTraits::value_type & update ,
+               const Finalize & finalize )
   {
     typedef typename ReduceTraits::value_type value_type ;
 
     // Fan-in reduction of other threads' reduction data.
     // 1) Wait for source thread to complete its work and
-    //    set its own state to 'Reducing'.
+    //    set its own state to 'Rendezvous'.
     // 2) Join source thread reduce data.
     // 3) Release source thread's reduction data and
     //    set the source thread's state to 'Inactive' state.
@@ -136,21 +104,26 @@ public:
       m_fan[i]->wait( HostThread::ThreadActive );
 
       ReduceTraits::join( update, *((const value_type *) m_fan[i]->m_reduce) );
-
-      m_fan[i]->set( HostThread::ThreadInactive );
     }
 
     if ( m_thread_rank ) {
       // If this is not the root thread then it will give its
       // reduction data to another thread.
-      // Set the reduction data and then set the 'Reducing' state.
+      // Set the reduction data and then set the 'Rendezvous' state.
       // Wait for the other thread to claim reduction data and
       // deactivate this thread.
 
       m_reduce = & update ;
-      set(  HostThread::ThreadReducing );
-      wait( HostThread::ThreadReducing );
+      set(  HostThread::ThreadRendezvous );
+      wait( HostThread::ThreadRendezvous );
       m_reduce = NULL ;
+    }
+    else {
+      finalize( update );
+    }
+
+    for ( unsigned i = m_fan_count ; 0 < i ; ) {
+      m_fan[--i]->set( HostThread::ThreadActive );
     }
   }
 
@@ -165,7 +138,7 @@ private:
   enum State { ThreadTerminating ///<  Exists, termination in progress
              , ThreadInactive    ///<  Exists, waiting for work
              , ThreadActive      ///<  Exists, performing work
-             , ThreadReducing    ///<  Exists, waiting for reduction
+             , ThreadRendezvous  ///<  Exists, waiting in a barrier or reduce
              };
 
   void set(  const State flag ) { m_state = flag ; }
@@ -182,46 +155,29 @@ private:
   unsigned              m_gang_count ;
   unsigned              m_worker_rank ;
   unsigned              m_worker_count ;
+  unsigned              m_work_chunk ;
   const void * volatile m_reduce ;    ///< Reduction memory
   long         volatile m_state ;     ///< Thread control flag
 
   friend class HostInternal ;
+  friend class HostThreadWorker ;
 };
 
 //----------------------------------------------------------------------------
 /** \brief  Base class for a parallel driver executing on a thread pool. */
 
-template< class ValueType = void > class HostThreadWorker ;
-
-template<>
-class HostThreadWorker<void> {
+struct HostThreadWorker {
 public:
+
+  virtual ~HostThreadWorker() {}
+
+  void execute() const ;
 
   /** \brief  Virtual method called on threads */
   virtual void execute_on_thread( HostThread & ) const = 0 ;
 
-  virtual ~HostThreadWorker() {}
-
-protected:
-
-  HostThreadWorker() {}
-
-  static void execute( const HostThreadWorker & );
-
-private:
-
-  HostThreadWorker( const HostThreadWorker & );
-  HostThreadWorker & operator = ( const HostThreadWorker & );
-};
-
-template< class ValueType >
-class HostThreadWorker {
-public:
-
-  /** \brief  Virtual method called on threads */
-  virtual void execute_on_thread( HostThread & , ValueType & ) const = 0 ;
-
-  virtual ~HostThreadWorker() {}
+  /** \brief Wait for fanin/fanout threads to deactivate themselves. */
+  void fanin_deactivation( HostThread & thread ) const ;
 
 protected:
 
@@ -235,15 +191,37 @@ private:
 
 //----------------------------------------------------------------------------
 
+template< class WorkerType >
+struct HostParallelLaunch {
+private:
+
+  struct ThreadWorker : public HostThreadWorker {
+    const WorkerType & m_worker ;
+
+    void execute_on_thread( HostThread & thread ) const
+      { m_worker( thread ); }
+
+    ThreadWorker( const WorkerType & worker )
+      : m_worker( worker ) {}
+  };
+
+public:
+
+  HostParallelLaunch( const WorkerType & worker )
+    { ThreadWorker( worker ).execute(); }
+};
+
+//----------------------------------------------------------------------------
+
 template< typename DstType , typename SrcType  >
-class HostParallelCopy : public HostThreadWorker<void> {
+class HostParallelCopy {
 public:
 
         DstType * const m_dst ;
   const SrcType * const m_src ;
   const Host::size_type m_count ;
 
-  void execute_on_thread( HostThread & this_thread ) const
+  void operator()( HostThread & this_thread ) const
   {
     std::pair<Host::size_type,Host::size_type> range =
       this_thread.work_range( m_count );
@@ -252,19 +230,17 @@ public:
     const SrcType * y     = m_src + range.first ;
 
     for ( ; x_end != x ; ++x , ++y ) { *x = (DstType) *y ; }
-
-    this_thread.barrier();
   }
 
   HostParallelCopy( DstType * dst , const SrcType * src ,
                     Host::size_type count )
-    : HostThreadWorker<void>()
-    , m_dst( dst ), m_src( src ), m_count( count )
-    { HostThreadWorker<void>::execute( *this ); }
+    : m_dst( dst ), m_src( src ), m_count( count )
+    { HostParallelLaunch< HostParallelCopy >( *this ); }
 };
 
 template< typename ValueType >
 struct DeepCopy<ValueType,Host::memory_space,Host::memory_space> {
+
   DeepCopy( ValueType * dst , const ValueType * src , size_t count )
   {
     HostParallelCopy< ValueType , ValueType >( dst , src , count );
@@ -273,14 +249,14 @@ struct DeepCopy<ValueType,Host::memory_space,Host::memory_space> {
 
 
 template< typename DstType >
-class HostParallelFill : public HostThreadWorker<void> {
+class HostParallelFill {
 public:
 
   DstType * const m_dst ;
   const DstType   m_src ;
   const Host::size_type m_count ;
 
-  void execute_on_thread( HostThread & this_thread ) const
+  void operator()( HostThread & this_thread ) const
   {
     std::pair<Host::size_type,Host::size_type> range =
       this_thread.work_range( m_count );
@@ -288,19 +264,14 @@ public:
     DstType *       x     = m_dst + range.first ;
 
     for ( ; x_end != x ; ++x ) { *x = m_src ; }
-
-    this_thread.barrier();
   }
 
   template< typename SrcType >
   HostParallelFill( DstType * dst , const SrcType & src ,
                     Host::size_type count )
-    : HostThreadWorker<void>()
-    , m_dst( dst ), m_src( src ), m_count( count )
-    { HostThreadWorker<void>::execute( *this ); }
+    : m_dst( dst ), m_src( src ), m_count( count )
+    { HostParallelLaunch< HostParallelFill >( *this ); }
 };
-
-//----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
 

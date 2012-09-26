@@ -76,7 +76,7 @@ protected:
               << ") X node_core_count(" << node_core_count
               << ")" << std::endl ;
 */
-    KokkosArray::Host::initialize( node_count , 2 );
+    KokkosArray::Host::initialize( node_count , 4 );
   }
 
   static void TearDownTestCase()
@@ -155,5 +155,52 @@ TEST_F( host , view_remap )
   }}}}
 }
 
+//----------------------------------------------------------------------------
+
+struct HostFunctor {
+
+  typedef int value_type ;
+
+  volatile int & flag ;
+
+  static void join( volatile int & update , const volatile int & input )
+    { update += input ; }
+
+  void operator()( const value_type & value ) const
+    { flag += value + 1 ; }
+
+  HostFunctor( int & f ) : flag(f) {}
+
+  void operator()( KokkosArray::Impl::HostThread & thread ) const
+    {
+      int value = 0 ;
+      thread.barrier();
+      thread.barrier();
+      thread.reduce< HostFunctor >( value , *this );
+      thread.reduce< HostFunctor >( value , *this );
+      thread.barrier();
+    }
+};
+
+TEST_F( host , host_thread )
+{
+  const int N = 1000 ;
+  int flag = 0 ;
+
+  for ( int i = 0 ; i < N ; ++i ) {
+    KokkosArray::Impl::HostParallelLaunch< HostFunctor >( HostFunctor( flag ) );
+  }
+
+  ASSERT_EQ( flag , N * 2 );
+
+  for ( int i = 0 ; i < 10 ; ++i ) {
+    KokkosArray::Host::sleep();
+    KokkosArray::Host::wake();
+  }
+
+}
+
+//----------------------------------------------------------------------------
 
 } // namespace test
+

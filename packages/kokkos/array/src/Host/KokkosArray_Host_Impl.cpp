@@ -73,6 +73,7 @@ HostThread::~HostThread()
   m_gang_count   = 0 ;
   m_worker_rank  = std::numeric_limits<unsigned>::max();
   m_worker_count = 0 ;
+  m_work_chunk   = 0 ;
   m_reduce       = 0 ;
 
   for ( unsigned i = 0 ; i < max_fan_count ; ++i ) { m_fan[i] = 0 ; }
@@ -87,11 +88,97 @@ HostThread::HostThread()
   m_gang_count   = 0 ;
   m_worker_rank  = std::numeric_limits<unsigned>::max();
   m_worker_count = 0 ;
+  m_work_chunk   = 0 ;
   m_reduce       = 0 ;
   m_state        = ThreadActive ;
 
   for ( unsigned i = 0 ; i < max_fan_count ; ++i ) { m_fan[i] = 0 ; }
 }
+
+std::pair< Host::size_type , Host::size_type >
+HostThread::work_range( const size_type work_count ) const
+{
+  const size_type chunk_count =
+    ( work_count + m_work_chunk - 1 ) / m_work_chunk ;
+
+  const size_type work_per_thread =
+    m_work_chunk * (( chunk_count + m_thread_count - 1 ) / m_thread_count );
+
+  const size_type work_begin =
+    std::min( m_thread_rank * work_per_thread , work_count );
+
+  const size_type work_end =
+    std::min( work_begin + work_per_thread , work_count );
+
+  return std::pair<size_type,size_type>( work_begin , work_end );
+}
+
+void HostThread::barrier()
+{
+  // The 'wait' function repeatedly polls the 'thread' state
+  // which may reside in a different NUMA region.
+  // Thus the fan is intra-node followed by inter-node
+  // to minimize inter-node memory access.
+
+  for ( unsigned i = 0 ; i < m_fan_count ; ++i ) {
+    // Wait until thread enters the 'Rendezvous' state
+    m_fan[i]->wait( HostThread::ThreadActive );
+  }
+
+  if ( m_thread_rank ) {
+    set(  HostThread::ThreadRendezvous );
+    wait( HostThread::ThreadRendezvous );
+  }
+
+  for ( unsigned i = m_fan_count ; 0 < i ; ) {
+    m_fan[--i]->set( HostThread::ThreadActive );
+  }
+}
+
+/** \brief  This thread waits for each fan-in thread to deactivate.  */
+void HostThreadWorker::fanin_deactivation( HostThread & thread ) const
+{
+  // The 'wait' function repeatedly polls the 'thread' state
+  // which may reside in a different NUMA region.
+  // Thus the fan is intra-node followed by inter-node
+  // to minimize inter-node memory access.
+
+  for ( unsigned i = 0 ; i < thread.m_fan_count ; ++i ) {
+    thread.m_fan[i]->wait( HostThread::ThreadActive );
+  }
+}
+
+void HostInternal::activate_threads()
+{
+  // Activate threads to call 'm_worker.execute_on_thread'
+  for ( unsigned i = m_thread_count ; 1 < i ; ) {
+    m_thread[--i]->set( HostThread::ThreadActive );
+  }
+}
+
+inline
+void HostInternal::execute( const HostThreadWorker & worker )
+{
+  verify_inactive("execute(...)");
+
+  // Worker threads are verified to be in the ThreadInactive state.
+
+  m_worker = & worker ;
+
+  activate_threads();
+
+  // Execute on the master thread,
+  worker.execute_on_thread( m_master_thread );
+
+  // Wait for fanin/fanout threads to self-deactivate.
+  worker.fanin_deactivation( m_master_thread );
+
+  // Worker threads are returned to the ThreadInactive state.
+  m_worker = NULL ;
+}
+
+void HostThreadWorker::execute() const
+{ HostInternal::singleton().execute( *this ); }
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -105,10 +192,11 @@ HostInternal::HostInternal()
   , m_node_count( 1 )
   , m_node_pu_count( 0 )
   , m_page_size( 0 )
-  , m_cache_line_size( 64 /* default alignment */ )
+  , m_cache_line_size( 64 /* default guess */ )
   , m_thread_count( 1 )
   , m_gang_count( 1 )
   , m_worker_count( 1 )
+  , m_work_chunk( m_cache_line_size / sizeof(void*) )
 {
   m_worker = NULL ;
 
@@ -121,11 +209,12 @@ HostInternal::HostInternal()
 
   m_master_thread.m_fan_count    = 0 ;
   m_master_thread.m_thread_rank  = 0 ;
-  m_master_thread.m_thread_count = 1 ;
+  m_master_thread.m_thread_count = m_thread_count ;
   m_master_thread.m_gang_rank    = 0 ;
-  m_master_thread.m_gang_count   = 1 ;
+  m_master_thread.m_gang_count   = m_gang_count ;
   m_master_thread.m_worker_rank  = 0 ;
-  m_master_thread.m_worker_count = 1 ;
+  m_master_thread.m_worker_count = m_worker_count ;
+  m_master_thread.m_work_chunk   = m_work_chunk ;
 
   for ( unsigned i = 0 ; i < HostThread::max_fan_count ; ++i ) {
     m_master_thread.m_fan[i] = 0 ;
@@ -143,10 +232,11 @@ bool HostInternal::initialize_thread(
 
   thread.m_thread_rank  = thread_rank ;
   thread.m_thread_count = m_thread_count ;
-  thread.m_worker_rank  = worker_rank ;
-  thread.m_worker_count = m_worker_count ;
   thread.m_gang_rank    = gang_rank ;
   thread.m_gang_count   = m_gang_count ;
+  thread.m_worker_rank  = worker_rank ;
+  thread.m_worker_count = m_worker_count ;
+  thread.m_work_chunk   = m_work_chunk ;
 
   {
     unsigned fan_count = 0 ;
@@ -252,10 +342,16 @@ void HostInternal::driver( const size_t thread_rank )
 
         while ( HostThread::ThreadActive == this_thread.m_state ) {
 
-          // When the work is complete the state will be Inactive or Terminate
+          // Perform the work:
           m_worker->execute_on_thread( this_thread );
 
-          // If this_thread is in the Inactive state then wait for activation.
+          // Wait for fanin threads to self-deactivate:
+          m_worker->fanin_deactivation( this_thread );
+
+          // Deactivate this thread:
+          this_thread.set(  HostThread::ThreadInactive );
+
+          // Wait to be activated or terminated:
           this_thread.wait( HostThread::ThreadInactive );
         }
       }
@@ -406,33 +502,6 @@ void HostInternal::initialize( const unsigned gang_count ,
     throw std::runtime_error( msg.str() );
   }
 }
-
-//----------------------------------------------------------------------------
-
-void HostInternal::activate()
-{
-  for ( unsigned i = m_thread_count ; 1 < i ; ) {
-    m_thread[--i]->set( HostThread::ThreadActive );
-  }
-}
-
-inline
-void HostInternal::execute( const HostThreadWorker<void> & worker )
-{
-  verify_inactive("execute(...)");
-
-  m_worker = & worker ;
-
-  activate();
-
-  // Will finalize with a barrier.
-  worker.execute_on_thread( m_master_thread );
-
-  m_worker = NULL ;
-}
-
-void HostThreadWorker<void>::execute( const HostThreadWorker<void> & worker )
-{ HostInternal::singleton().execute( worker ); }
 
 //----------------------------------------------------------------------------
 

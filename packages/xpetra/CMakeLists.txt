@@ -47,6 +47,10 @@ TRIBITS_ADD_TEST_DIRECTORIES(test)
 
 TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
+TRIBITS_EXCLUDE_FILES(
+  test/BlockedCrsOperator
+  )
+
 #
 # D) Do standard postprocessing
 #

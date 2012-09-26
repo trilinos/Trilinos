@@ -396,7 +396,7 @@ int main(int argc, char *argv[]) {
       }
       
       int startLevel=0;
-      std::cout << startLevel << " " << maxLevels << std::endl;
+      //      std::cout << startLevel << " " << maxLevels << std::endl;
       H->Setup(M,startLevel,maxLevels);
     }//maxLevels>1
 

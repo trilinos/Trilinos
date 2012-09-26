@@ -840,7 +840,7 @@ namespace Belos {
     };
 
     //! Convert the given ERobustness enum value to a string.
-    std::string
+    inline std::string
     robustnessEnumToString (const ERobustness x)
     {
       const char* strings[] = {"None", "Some", "Lots"};
@@ -852,7 +852,7 @@ namespace Belos {
 
     //! Convert the given robustness string value to an ERobustness enum.
     ERobustness
-    robustnessStringToEnum (const std::string& x)
+    inline robustnessStringToEnum (const std::string& x)
     {
       const char* strings[] = {"None", "Some", "Lots"};
       for (int r = 0; r < static_cast<int> (ROBUSTNESS_INVALID); ++r) {
@@ -874,7 +874,7 @@ namespace Belos {
     /// The validator converts strings ("None", "Some", "Lots") to the
     /// corresponding ERobustness enum values.  It also includes
     /// documentation for each value.
-    Teuchos::RCP<Teuchos::ParameterEntryValidator>
+    inline Teuchos::RCP<Teuchos::ParameterEntryValidator>
     robustnessValidator ()
     {
       using Teuchos::stringToIntegralParameterEntryValidator;
