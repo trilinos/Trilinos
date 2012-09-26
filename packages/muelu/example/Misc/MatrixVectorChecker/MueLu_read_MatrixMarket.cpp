@@ -51,6 +51,8 @@
 
 // usage: ./driver.exe -f A.dat -rbm rbm.dat -i options.xml
 
+#include <MueLu_ConfigDefs.hpp>
+
 #ifdef HAVE_MPI
 #include <mpi.h>
 #include <Epetra_MpiComm.h>
@@ -88,7 +90,7 @@ int main(int argc, char *argv[])
 #endif
   int i=1;
   int mypid = Comm.MyPID();
-  char matrixFile[80] = "\0";
+  char matrixFile[80] = "mat_example.mm\0";
   char rbmFile[80] = "\0";
   char coordFile[80] = "\0";
   // char xmlFile[80] = "\0";
@@ -184,7 +186,7 @@ int main(int argc, char *argv[])
   double **xyz=0;
   if (coordVector) {
     xyz = new double*[coordVector->NumVectors()];
-    for (int i=0; i<coordVector->NumVectors(); i++) xyz[i] = mv+i*stride;
+    for (int ii=0; ii<coordVector->NumVectors(); ii++) xyz[ii] = mv+ii*stride;
   }
 
 
@@ -202,6 +204,7 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
 
+  std::cout << "TEST PASSED" << std::endl;
   return(EXIT_SUCCESS);
 
 } //main
@@ -258,5 +261,7 @@ void ML_Exit(int mypid, int code, const char *fmt,...)
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
+
+  std::cout << "TEST FAILED" << std::endl;
   exit(code);
 }

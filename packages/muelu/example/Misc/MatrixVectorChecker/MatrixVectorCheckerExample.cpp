@@ -119,10 +119,10 @@ int main(int argc, char *argv[])
   /**********************************************************************************/
 
   if ( MueLu::MatrixVectorChecker<SC,LO,GO,NO>(Op) ) {
-    std::cout << "OK !" << std::endl;
+    std::cout << "TEST PASSED" << std::endl;
     return EXIT_SUCCESS;
   } else {
-    std::cout << "FAILURE !" << std::endl;
+    std::cout << "TEST FAILED" << std::endl;
     return EXIT_FAILURE;
   }
 

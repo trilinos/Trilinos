@@ -21,13 +21,13 @@ last = length(aaa);
 temp = aaa(first:last); aaa(first:last) = temp(perm);
 temp = ccc(first:last); ccc(first:last) = temp(perm);
 
-fid = fopen('mat_example','w');
+fid = fopen('mat_example.mm','w');
 fprintf(fid,'%%%%MatrixMarket matrix coordinate real general\n');
 fprintf(fid,'%d %d %d\n',n,m,length(aaa));
 for i=1:length(aaa)
    fprintf(fid,'%6d %6d %20.13e\n',aaa(i),bbb(i),ccc(i));
 end;
 fclose(fid);
-!mpirun -np 11 ml_read_MatrixMarket.exe -f mat_example
-!rm -f mat_example
+!mpirun -np 11 ml_read_MatrixMarket.exe -f mat_example.mm
+!rm -f mat_example.mm
 end;
