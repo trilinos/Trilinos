@@ -187,7 +187,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     else if (strcasecmp(prob->params[i].Name, "NUM_LID_ENTRIES") == 0)
       Num_LID = atoi(prob->params[i].Val);
     else if (strcasecmp(prob->params[i].Name, "RETURN_LISTS") == 0)
-      Export_Lists_Special = (strstr(prob->params[i].Val,"partition") != NULL);
+      Export_Lists_Special = (strcasestr(prob->params[i].Val,"part") != NULL);
   }
 
   /* Set the load-balance method */
