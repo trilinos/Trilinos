@@ -35,6 +35,7 @@ namespace stk {
       }
       virtual double length_scaling_power() { return 1.0; }
       virtual double metric(stk::mesh::Entity& element, bool& valid)=0;
+      virtual double grad_metric(stk::mesh::Entity& element, bool& valid, double grad[8][3]) { return 0.0; }
 
       const CellTopologyData * m_topology_data ;
       void set_node(stk::mesh::Entity *node) { m_node=node; }
@@ -286,7 +287,7 @@ namespace stk {
                 product(A, WI, T);
                 double d = det(T);
                 double f = my_sqr_Frobenius(T);
-                if (spatialDim==2)
+                if (0 && spatialDim==2)
                   {
                     // all our jacobians are 3D, with a 1 in the 3,3 slot for 2d, so we subtract it here
                     f = f - 1.0;
@@ -309,6 +310,100 @@ namespace stk {
             //val_shape += std::fabs(shape_metric);
             //val_shape += shape_metric*shape_metric;
           }
+        val = val_shape;
+        //val = val_shape*val_shape;
+        return val;
+      }
+
+      /// computes metric and its gradient - see Mesquite::TShapeB1, TQualityMetric, TargetMetricUtil
+      virtual double grad_metric(stk::mesh::Entity& element, bool& valid, double grad[8][3])
+      {
+        JacobianUtil jacA, jacW;
+
+        int spatialDim = m_eMesh->get_spatial_dim();
+        double A_ = 0.0, W_ = 0.0; // current and reference detJ
+        jacA(A_, *m_eMesh, element, m_coord_field_current, m_topology_data);
+        jacW(W_, *m_eMesh, element, m_coord_field_original, m_topology_data);
+        //jacW(W_, *m_eMesh, element, m_coord_field_original, m_topology_data);
+        double val=0.0, val_shape=0.0;
+        MsqMatrix<3,3> Ident; 
+        identity(Ident);
+
+        MsqMatrix<3,3> WI, T;
+
+        for (int i=0; i < jacA.m_num_nodes; i++)
+          {
+            double detAi = jacA.m_detJ[i];
+            if (detAi < 0)
+              {
+                valid = false;
+              }
+            MsqMatrix<3,3>& W = jacW.m_J[i];
+            MsqMatrix<3,3>& A = jacA.m_J[i];
+
+            // frob2 = h^2 + h^2 + 1
+            // frob21 = 2 h^2
+            // f = h sqrt(2)
+            // det = h*h
+            // met = f*f / (det*2) - 1
+            // frob3 = 3 h^2
+            // f = h sqrt(3)
+            // det = h*h*h
+            // met = f*f*f/(3^3/2 *det) - 1 = f*f*f/(3*sqrt(3)*det) - 1
+            double shape_metric = 0.0;
+            if (std::fabs(detAi) > 1.e-15)
+              {
+                inverse(W, WI);
+                product(A, WI, T);
+                double d = det(T);
+                double f = my_sqr_Frobenius(T);
+                if (0 && spatialDim==2)
+                  {
+                    // all our jacobians are 3D, with a 1 in the 3,3 slot for 2d, so we subtract it here
+                    f = f - 1.0;
+                    f = std::sqrt(f);
+                    double fac = 2.0;
+                    double den = fac * d;
+                    shape_metric = (f*f)/den - 1.0;
+                  }
+                else
+                  {
+                    f = std::sqrt(f);
+                    double fac = 3.0*std::sqrt(3.0);
+                    double den = fac * d;
+                    shape_metric = (f*f*f)/den - 1.0;
+
+                    MsqMatrix<3,3>& wrt_A = jacA.m_dMetric_dA[i];
+                    {
+                      double norm = f;
+                      double iden = 1.0/den;
+                      double norm_cube = norm*norm*norm;
+                      //result = norm_cube * iden - 1.0;
+                      // wrt_T...
+                      wrt_A = T;
+                      wrt_A *= 3 * norm * iden;
+                      wrt_A -= norm_cube * iden/d * transpose_adj(T);
+                      // now convert to wrt_A
+                      wrt_A = wrt_A * transpose(WI);
+                    }
+                  }
+              }
+            val_shape += shape_metric;
+          }
+
+        // compute grad for all nodes
+        jacA.grad_metric_util( *m_eMesh, element, m_coord_field_current, m_topology_data);
+
+        // combine into total
+        for (int i=0; i < jacA.m_num_nodes; i++)
+          for (int j = 0; j < spatialDim; j++)
+            grad[i][j] = 0.0;
+
+        for (int k=0; k < jacA.m_num_nodes; k++)
+          for (int i=0; i < jacA.m_num_nodes; i++)
+            for (int j = 0; j < spatialDim; j++)
+              grad[i][j] += jacA.m_grad[k][i][j];
+
         val = val_shape;
         //val = val_shape*val_shape;
         return val;

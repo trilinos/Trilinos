@@ -259,6 +259,40 @@ namespace stk {
 
                       double edge_length_ave = m_eMesh->edge_length_ave(element, m_coord_field_original);
 
+                      const bool use_analytic_grad = false;
+                      const bool test_analytic_grad = false && m_stage==1;
+                      double analytic_grad[8][3];
+                      if ((test_analytic_grad || use_analytic_grad) && m_stage == 1)
+                        {
+                          //virtual double grad_metric(stk::mesh::Entity& element, bool& valid, double grad[8][3]) { return 0.0; }
+                          bool gmvalid = true;
+                          double gm = m_metric->grad_metric(element, gmvalid, analytic_grad);
+                          (void)gm;
+                          if (gmvalid && !test_analytic_grad)
+                            {
+                              for (unsigned inode=0; inode < num_node; inode++)
+                                {
+                                  mesh::Entity & node = * elem_nodes[ inode ].entity();
+
+                                  bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
+                                  bool node_locally_owned = (eMesh->get_rank() == node.owner_rank());
+                                  bool fixed = pmm->get_fixed_flag(&node);
+                                  if (fixed || isGhostNode)
+                                    continue;
+
+                                  double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+                                  for (int jdim=0; jdim < spatialDim; jdim++)
+                                    {
+                                      if (node_locally_owned)
+                                        cg_g[jdim] += analytic_grad[inode][jdim];
+                                      else
+                                        cg_g[jdim] = 0.0;
+                                    }
+                                }
+                            }
+                          if (!test_analytic_grad)
+                            continue;
+                        }
                       for (unsigned inode=0; inode < num_node; inode++)
                         {
                           mesh::Entity & node = * elem_nodes[ inode ].entity();
@@ -324,6 +358,22 @@ namespace stk {
                                 {
                                   cg_g[idim] = 0.0;
                                 }
+                            }
+                          if (test_analytic_grad)
+                            {
+                              double diff = std::max(std::fabs( analytic_grad[inode][0]-gsav[0]),std::fabs( analytic_grad[inode][1] -gsav[1]));
+                              if (spatialDim==3) diff = std::max(diff, std::fabs( analytic_grad[inode][2] -gsav[2]));
+                              double sc = std::max(std::fabs( analytic_grad[inode][0]),std::fabs( analytic_grad[inode][1] ));
+                              if (spatialDim==3) sc = std::max(sc, std::fabs( analytic_grad[inode][2] ));
+                              if (sc > 1.e-3 && diff > 1.e-3*sc) 
+                                {
+                                  std::cout << "analytic_grad= " << analytic_grad[inode][0] << " " << analytic_grad[inode][1] << " "
+                                            << " fd_grad= " << gsav[0] << " " << gsav[1] 
+                                            << " diff = " << analytic_grad[inode][0]-gsav[0] << " " << analytic_grad[inode][1] -gsav[1]
+                                            << std::endl;
+                                  //exit(1);
+                                }
+
                             }
 
                           if (m_use_hessian_scaling)

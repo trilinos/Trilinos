@@ -28,16 +28,23 @@ namespace stk {
 
     class JacobianUtil : public Mesquite::AveragingQM
     {
-      Vector3D mCoords[4];
 
     public:
-      double   m_detJ[8]; 
-      MsqMatrix<3,3> m_J[8];
+      typedef double Vec3D[3];
+      Vec3D mCoords[4];
+
+      enum { NELEM_TYPES = 10, NNODES_MAX = 8 };
+
+      double   m_detJ[NNODES_MAX]; 
+      MsqMatrix<3,3> m_J[NNODES_MAX];
+      //MsqMatrix<3,3> m_dJ[NNODES_MAX][NNODES_MAX][3];
+      //typedef MsqMatrix<3,3> dJdXn_i[NNODES_MAX][3];
+      //static dJdXn_i m_dJ[NELEM_TYPES][NNODES_MAX];
+      //static bool m_dJ_init;
+      MsqMatrix<3,3> m_dMetric_dA[NNODES_MAX];
+      double m_grad[NNODES_MAX][NNODES_MAX][3];
       int m_num_nodes;
       bool m_scale_to_unit;
-
-      bool jacobian_matrix_3D(double &detJ, MsqMatrix<3,3>& A, const Vector3D *x, const Vector3D &n, const Vector3D &d);
-      bool jacobian_matrix_2D(double &detJ, MsqMatrix<3,3>& A, const Vector3D *x, const Vector3D &n, const Vector3D &d);
 
       JacobianUtil() : 
         AveragingQM( QualityMetric::LINEAR ),
@@ -48,6 +55,16 @@ namespace stk {
 
       bool operator()(double& averageJ, PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::FieldBase *coord_field,
                       const CellTopologyData * topology_data_in = 0 );
+
+      bool grad_metric_util( PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::FieldBase *coord_field,
+                             const CellTopologyData * topology_data );
+
+    private:
+      bool jacobian_matrix_3D(double &detJ, MsqMatrix<3,3>& A, const Vec3D *x);
+      bool jacobian_matrix_2D(double &detJ, MsqMatrix<3,3>& A, const Vec3D *x);
+
+      void grad_util_2d(const MsqMatrix<3,3>& dMdA, double grad[NNODES_MAX][3], const int nnode, const int spd, const int *indices, const int nind);
+      void grad_util(const MsqMatrix<3,3>& dMdA, double grad[NNODES_MAX][3], const int nnode, const int spd, const int *indices, const int nind);
 
     };
   }
