@@ -92,7 +92,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level &currentLevel) {
-    Monitor m(*this, "Setup Smoother");
+    FactoryMonitor m(*this, "Setup Smoother", currentLevel);
     if (this->IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::Ifpack2Smoother::Setup(): Setup() has already been called";
 
     RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
