@@ -176,8 +176,8 @@ public:
     const size_type n =
       ( m_group_init_offset + block_count ) * ValueWordStride ;
 
-    m_scratch_flags = cuda_internal_scratch_flags( m_group_init_offset );
-    m_scratch_space = cuda_internal_scratch_space( n );
+    m_scratch_flags = cuda_internal_scratch_flags( m_group_init_offset * sizeof(size_type) );
+    m_scratch_space = cuda_internal_scratch_space( n * sizeof(size_type) );
 
 #if 0
 std::cout
@@ -552,7 +552,8 @@ public :
 
   FunctorAssignment( value_type & value )
     : m_host( & value )
-    , m_dev( (value_type *)( cuda_internal_scratch_space(0) ) )
+    , m_dev( (value_type *)
+             ( cuda_internal_scratch_space( sizeof(value_type)) ) )
     {}
 
   template< typename ValueTypeDev >

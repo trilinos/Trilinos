@@ -111,8 +111,9 @@ Cuda::size_type cuda_internal_maximum_warp_count();
 Cuda::size_type cuda_internal_maximum_grid_count();
 Cuda::size_type cuda_internal_maximum_shared_words();
 
-Cuda::size_type * cuda_internal_scratch_flags( Cuda::size_type count );
-Cuda::size_type * cuda_internal_scratch_space( Cuda::size_type count );
+Cuda::size_type * cuda_internal_scratch_flags( Cuda::size_type size );
+Cuda::size_type * cuda_internal_scratch_space( Cuda::size_type size );
+Cuda::size_type * cuda_internal_scratch_unified( Cuda::size_type size );
 
 template< typename ValueType >
 inline
