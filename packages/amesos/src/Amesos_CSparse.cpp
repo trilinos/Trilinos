@@ -126,6 +126,9 @@ int Amesos_CSparse::ConvertToSerial()
 //=============================================================================
 int Amesos_CSparse::ConvertToCSparse()
 {
+
+#ifdef HAVE_AMESOS_CSPARSE
+
   ResetTimer();
 
   if (Comm().MyPID() == 0) 
@@ -181,6 +184,10 @@ int Amesos_CSparse::ConvertToCSparse()
   MtxConvTime_ = AddTime("Total matrix conversion time", MtxConvTime_);
 
   return 0;
+#else
+  AMESOS_CHK_ERR(-1); // Don't have CSPARSE
+  return 1;
+#endif
 }
 
 //=============================================================================
@@ -206,6 +213,8 @@ int Amesos_CSparse::SetParameters( Teuchos::ParameterList &ParameterList)
 //=============================================================================
 int Amesos_CSparse::PerformSymbolicFactorization() 
 {
+#ifdef HAVE_AMESOS_CSPARSE
+
   ResetTimer();
 
   if (Comm().MyPID() == 0) 
@@ -224,11 +233,16 @@ int Amesos_CSparse::PerformSymbolicFactorization()
   SymFactTime_ = AddTime("Total symbolic factorization time", SymFactTime_);
 
   return 0;
+#else
+  AMESOS_CHK_ERR(-1); // Don't have CSPARSE
+  return 1;
+#endif
 }
 
 //=============================================================================
 int Amesos_CSparse::PerformNumericFactorization( ) 
 {
+#ifdef HAVE_AMESOS_CSPARSE
   ResetTimer();
 
   if (Comm().MyPID() == 0) 
@@ -243,6 +257,10 @@ int Amesos_CSparse::PerformNumericFactorization( )
   NumFactTime_ = AddTime("Total numeric factorization time", NumFactTime_);
 
   return 0;
+#else
+  AMESOS_CHK_ERR(-1); // Don't have CSPARSE
+  return 1;
+#endif
 }
 
 //=============================================================================
@@ -324,6 +342,7 @@ int Amesos_CSparse::NumericFactorization()
 //=============================================================================
 int Amesos_CSparse::Solve() 
 {
+#ifdef HAVE_AMESOS_CSPARSE
   Epetra_MultiVector* vecX = 0 ;
   Epetra_MultiVector* vecB = 0 ;
 
@@ -425,6 +444,10 @@ int Amesos_CSparse::Solve()
   ++NumSolve_;
 
   return(0) ;
+#else
+  AMESOS_CHK_ERR(-1); // Don't have CSPARSE
+  return 1;
+#endif
 }
 
 // ====================================================================== 
