@@ -37,6 +37,7 @@ namespace {
 	      const std::string &working_directory,
 	      const std::string &filename,
 	      const std::string &type,
+	      const std::string &decomp_method,
 	      int  compression_level,
 	      bool compression_shuffle,
 	      int  db_integer_size);
@@ -47,6 +48,7 @@ namespace bopt = boost::program_options;
 int main(int argc, char** argv)
 {
   std::string working_directory = "";
+  std::string decomp_method = "";
   std::string mesh = "";
   std::string type = "exodusii";
   size_t spatial_dimension = 3;
@@ -63,6 +65,8 @@ int main(int argc, char** argv)
   desc.add_options()
     ("directory,d",   bopt::value<std::string>(&working_directory),
      "working directory with trailing '/'" )
+    ("decomposition,D", bopt::value<std::string>(&decomp_method),
+     "decomposition method" )
     ("mesh",          bopt::value<std::string>(&mesh),
      "mesh file. Use name of form 'gen:NxMxL' to internally generate a hex mesh of size N by M by L intervals. See GeneratedMesh documentation for more options. Can also specify a filename. The generated mesh will be output to the file 'generated_mesh.out'" )
     ("dimension", bopt::value<size_t>(&spatial_dimension), "problem spatial dimension" )
@@ -86,8 +90,12 @@ int main(int argc, char** argv)
     mesh = mesh.substr(4, mesh.size());
     type = "generated";
   }
+  if (strncasecmp("dof:", mesh.c_str(), 4) == 0) {
+    mesh = mesh.substr(4, mesh.size());
+    type = "dof";
+  }
   driver(use_case_environment.m_comm, spatial_dimension,
-	 working_directory, mesh, type,
+	 working_directory, mesh, type, decomp_method,
 	 compression_level, compression_shuffle, db_integer_size);
 
   return 0;
@@ -99,6 +107,7 @@ namespace {
 	      const std::string &working_directory,
 	      const std::string &filename,
 	      const std::string &type,
+	      const std::string &decomp_method,
 	      int  compression_level,
 	      bool compression_shuffle,
 	      int  db_integer_size)
@@ -112,6 +121,10 @@ namespace {
     stk::io::MeshData mesh_data;
 
     bool use_netcdf4 = false;
+    if (!decomp_method.empty()) {
+      mesh_data.m_property_manager.add(Ioss::Property("DECOMPOSITION_METHOD", decomp_method));
+    }
+
     if (compression_level > 0) {
       mesh_data.m_property_manager.add(Ioss::Property("COMPRESSION_LEVEL", compression_level));
       use_netcdf4 = true;
