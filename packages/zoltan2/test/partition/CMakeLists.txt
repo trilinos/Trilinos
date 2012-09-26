@@ -1,4 +1,5 @@
 INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -43,3 +44,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
+
+# Command that copies files to the executable directory.
+TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_partition_tests
+  SOURCE_FILES
+    simple.mtx
+    simple_coord.mtx
+    GeomGenParam.txt
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../data
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+)
