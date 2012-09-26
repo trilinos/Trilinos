@@ -248,8 +248,6 @@ private:
 
   // Read Zoltan data that is in a .coords file.
   void getChacoCoords(FILE *fptr, string name);
-
-  static string shortPathName(std::ostringstream &oss, string dirName);
 };
 
 UserInputForTests::UserInputForTests(string path, string testData, 
@@ -505,8 +503,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
     = Kokkos::DefaultNode::getDefaultNode();
 
   if (verbose_ && tcomm_->getRank() == 0)
-    std::cout << "UserInputForTests, Read: " << 
-      shortPathName(fname, "test") << std::endl;
+    std::cout << "UserInputForTests, Read: " << fname.str() << std::endl;
 
   // This reader has some problems.  "Pattern" matrices
   // cannot be read.  Until the
@@ -547,7 +544,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
 
     if (verbose_)
       std::cout << "UserInputForTests, Read: " << 
-         shortPathName(fname, "test") << std::endl;
+         fname.str() << std::endl;
   
     int fail = 0;
     try{
@@ -808,14 +805,14 @@ void UserInputForTests::readZoltanTestData(string path, string testData)
       fileInfo[0] = 1;
       if (verbose_ && tcomm_->getRank() == 0)
         std::cout << "UserInputForTests, open " << 
-          shortPathName(chGraphFileName, "zoltan") << std::endl;
+          chGraphFileName << std::endl;
       
       coordFile = fopen(chCoordFileName.str().c_str(), "r");
       if (coordFile){
         fileInfo[1] = 1;
         if (verbose_ && tcomm_->getRank() == 0)
           std::cout << "UserInputForTests, open " << 
-            shortPathName(chCoordFileName, "zoltan") << std::endl;
+            chCoordFileName << std::endl;
       }
     }
   }
@@ -1176,18 +1173,6 @@ void UserInputForTests::getChacoCoords(FILE *fptr, string fname)
 
   xyz_ = toCoords;
 
-}
-
-string UserInputForTests::shortPathName(std::ostringstream &oss, string dirName)
-{
-  string shorterName(oss.str());
-  string slash("/");
-  string token = slash + dirName + slash;
-  
-  size_t pos = shorterName.find(token);
-  if (pos != string::npos)
-    shorterName = shorterName.substr(pos+1);
-  return shorterName;
 }
 
 #endif
