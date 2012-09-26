@@ -84,7 +84,8 @@ buildStatusTests(const std::string& file_name ,
   
 #ifdef HAVE_TEUCHOS_EXTENDED
   Teuchos::ParameterList param_list;
-  Teuchos::updateParametersFromXmlFile("input.xml", &param_list);
+  const Teuchos::Ptr<Teuchos::ParameterList> param_list_ptr(&param_list);
+  Teuchos::updateParametersFromXmlFile("input.xml", param_list_ptr);
   status_tests = this->buildStatusTests(param_list, globalData, tagged_tests);
 #else
   std::string msg = "Error - Teuchos Extended Support must be enabled to use the xml reader for parameter lists.  Please rebuild the Trilinos Teuchos library with --enable-teuchos-extended in teh configure script.";
