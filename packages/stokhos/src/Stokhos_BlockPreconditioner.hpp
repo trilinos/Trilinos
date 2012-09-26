@@ -1,5 +1,4 @@
 
-
 #ifndef STOKHOS_BLOCKPRECONDITIONER_HPP
 #define STOKHOS_BLOCKPRECONDITIONER_HPP
 
@@ -9,30 +8,38 @@
 
 namespace Stokhos {
 
-
-  class BlockPreconditioner : public Stokhos::Operator {
-
+  template <typename ordinal_type, typename value_type>
+  class BlockPreconditioner : 
+    public Stokhos::Operator<ordinal_type, value_type> {
   public:
 
     //! Constructor 
-    BlockPreconditioner(const Teuchos::SerialDenseMatrix<int,double> & K, const int p, const int m);
-    
+    BlockPreconditioner(
+      const Teuchos::SerialDenseMatrix<ordinal_type,value_type> & K, 
+      const ordinal_type p, const ordinal_type m);
   
     //! Destructor
     virtual ~BlockPreconditioner(); 
     
-  
-    virtual int ApplyInverse(const Teuchos::SerialDenseMatrix<int,double>& Input,
-                             Teuchos::SerialDenseMatrix<int,double>& Output, int m) const;
+    virtual ordinal_type ApplyInverse(
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Input, 
+      Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Result, 
+      ordinal_type m) const;
    
   protected:
-    const Teuchos::SerialDenseMatrix<int,double> & K;
-    const int p;
-    const int m;
+
+    ordinal_type facto(ordinal_type n) const;
+    ordinal_type siz (ordinal_type n, ordinal_type m) const;
+
+    const Teuchos::SerialDenseMatrix<ordinal_type,value_type> & K;
+    const ordinal_type p;
+    const ordinal_type m;
 
   }; // class BlockPreconditioner
 
 } // namespace Stokhos
+
+#include "Stokhos_BlockPreconditionerImp.hpp"
 
 #endif // STOKHOS_BLOCKPRECONDITIONER_HPP
 

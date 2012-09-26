@@ -8,25 +8,32 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace Stokhos {
-
-
-  class DiagPreconditioner : public Stokhos::Operator {
-
+  
+  template <typename ordinal_type, typename value_type>
+  class DiagPreconditioner : 
+    public Stokhos::Operator<ordinal_type,value_type> {
   public:
 
     //! Constructor 
-    DiagPreconditioner(const Teuchos::SerialDenseMatrix<int,double> & A);
+    DiagPreconditioner(
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A_) : A(A_) {}
     
-  
     //! Destructor
-    virtual ~DiagPreconditioner(); 
-    
+    virtual ~DiagPreconditioner() {} 
   
-    virtual int ApplyInverse(const Teuchos::SerialDenseMatrix<int,double>& Input,
-                             Teuchos::SerialDenseMatrix<int,double>& Output, int m) const;
+    virtual ordinal_type ApplyInverse(
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Input, 
+      Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Result, 
+      ordinal_type m) const {
+      ordinal_type n=Input.numRows();
+      for (ordinal_type i=0; i<n; i++){
+	Result(i,0)=Input(i,0)/A(i,i);
+      }
+      return 0;
+    }
    
   protected:
-    const Teuchos::SerialDenseMatrix<int,double> & A;
+    const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A;
   }; // class DiagPreconditioner
 
 } // namespace Stokhos

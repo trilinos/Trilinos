@@ -206,8 +206,10 @@ SET(HEADERS ${HEADERS}
   Stokhos_JacobiPreconditioner.hpp
   Stokhos_GSPreconditioner.hpp
   Stokhos_SchurPreconditioner.hpp
+  Stokhos_SchurPreconditionerImp.hpp
   Stokhos_InversePreconditioner.hpp
   Stokhos_BlockPreconditioner.hpp
+  Stokhos_BlockPreconditionerImp.hpp
   )
 
 SET(SOURCES ${SOURCES}
@@ -261,12 +263,6 @@ SET(SOURCES ${SOURCES}
   Stokhos_BasisInteractionGraph.cpp
   Stokhos_AdaptivityUtils.cpp
   Stokhos_AdaptivityManager.cpp
-  Stokhos_DiagPreconditioner.cpp
-  Stokhos_JacobiPreconditioner.cpp
-  Stokhos_GSPreconditioner.cpp
-  Stokhos_SchurPreconditioner.cpp
-  Stokhos_InversePreconditioner.cpp
-  Stokhos_BlockPreconditioner.cpp  
 )
 
 # Sacado
