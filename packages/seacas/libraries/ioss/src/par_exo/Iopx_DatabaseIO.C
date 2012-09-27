@@ -438,6 +438,14 @@ namespace Iopx {
 #endif
     
     if (!is_input()) {
+      // Check whether appending to existing file...
+      if (open_create_behavior() == Ioss::DB_APPEND) {
+	// Append to file if it already exists -- See if the file exists.
+	std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
+	Ioss::FileInfo file = Ioss::FileInfo(decoded_filename);
+	fileExists = file.exists();
+      }
+
       if (util().get_environment("EX_MINIMIZE_OPEN_FILES", isParallel)) {
 	std::cerr << "IOEX: Minimizing open files because EX_MINIMIZE_OPEN_FILES environment variable is set.\n";
 	minimizeOpenFiles = true;
@@ -595,21 +603,22 @@ namespace Iopx {
     // Returns the file_pointer used to access the file on disk.
     // Checks that the file is open and if not, opens it first.
 
-    if (Ioss::SerializeIO::isEnabled() && !Ioss::SerializeIO::inBarrier()) {
-      std::ostringstream errmsg;
-      errmsg << "Process " << Ioss::SerializeIO::getRank()
-	     << " is attempting to do I/O without serialized I/O";
-      IOSS_ERROR(errmsg);
-    }
+    if (Ioss::SerializeIO::isEnabled()) {
+      if (!Ioss::SerializeIO::inBarrier()) {
+	std::ostringstream errmsg;
+	errmsg << "Process " << Ioss::SerializeIO::getRank()
+	       << " is attempting to do I/O without serialized I/O";
+	IOSS_ERROR(errmsg);
+      }
 
-    if (Ioss::SerializeIO::isEnabled() && !Ioss::SerializeIO::inMyGroup()) {
-      std::ostringstream errmsg;
-      errmsg << "Process " << Ioss::SerializeIO::getRank()
-	     << " is attempting to do I/O while " << Ioss::SerializeIO::getOwner()
-	     << " owns the token";
-      IOSS_ERROR(errmsg);
+      if (!Ioss::SerializeIO::inMyGroup()) {
+	std::ostringstream errmsg;
+	errmsg << "Process " << Ioss::SerializeIO::getRank()
+	       << " is attempting to do I/O while " << Ioss::SerializeIO::getOwner()
+	       << " owns the token";
+	IOSS_ERROR(errmsg);
+      }
     }
-
 
     if (exodusFilePtr < 0) {
       int cpu_word_size = sizeof(double);
@@ -5379,12 +5388,14 @@ namespace Iopx {
       assert(state == dbState);
       switch (state) {
       case Ioss::STATE_DEFINE_MODEL:
-	if (!is_input())
+	if (!is_input() && open_create_behavior() != Ioss::DB_APPEND) {
 	  write_meta_data();
+	}
 	break;
       case Ioss::STATE_DEFINE_TRANSIENT:
-	if (!is_input())
+	if (!is_input() && open_create_behavior() != Ioss::DB_APPEND) {
 	  write_results_metadata();
+	}
 	break;
       default: // ignore everything else...
 	break;

@@ -170,8 +170,17 @@ size_t Ioss::Field::verify(size_t data_size) const
 
 void Ioss::Field::check_type(BasicType the_type) const
 {
-  if (type_ != the_type)
-    error_message(*this, the_type);
+  if (type_ != the_type) {
+    if (the_type == Ioss::Field::INTEGER && type_ == Ioss::Field::REAL) {
+      // If Ioss created the field by reading the database, it may
+      // think the field is a real but it is really an integer.  Make
+      // sure that the field type is correct here...
+      Ioss::Field *new_this = const_cast<Ioss::Field*>(this);
+      new_this->reset_type(the_type);
+    } else {
+      error_message(*this, the_type);
+    }
+  }
 }
 
 void Ioss::Field::reset_count(size_t new_count)

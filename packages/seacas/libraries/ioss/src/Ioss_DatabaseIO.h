@@ -92,6 +92,8 @@ namespace Ioss {
       bool is_input() const {return isInput;}
       Ioss::DatabaseUsage usage() const {return dbUsage;}
       
+      Ioss::IfDatabaseExistsBehavior open_create_behavior() const;
+      
       void set_region(Region* region) {region_ = region;}
 
       virtual void openDatabase() const {};

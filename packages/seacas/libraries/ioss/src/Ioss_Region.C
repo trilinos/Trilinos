@@ -92,17 +92,22 @@ namespace {
 
 namespace Ioss {
   Region::Region(DatabaseIO *iodatabase, const std::string& my_name)
-    : GroupingEntity(iodatabase, my_name, 1), currentState(-1), stateCount(0)
+    : GroupingEntity(iodatabase, my_name, 1), currentState(-1), stateCount(0),
+      modelDefined(false), transientDefined(false)
   {
     assert(iodatabase != NULL);
     iodatabase->set_region(this);
 
-    if (iodatabase->is_input()) {
-      // Read metadata -- populates GroupingEntity lists
+    if (iodatabase->usage() != Ioss::WRITE_HEARTBEAT &&
+	(iodatabase->is_input() || iodatabase->open_create_behavior() == Ioss::DB_APPEND)) {
+      // Read metadata -- populates GroupingEntity lists and transient data
       Region::begin_mode(STATE_DEFINE_MODEL);
       iodatabase->read_meta_data();
+      modelDefined = true;
+      transientDefined = true;
       Region::end_mode(STATE_DEFINE_MODEL);
-      Region::begin_mode(STATE_READONLY);
+      if (iodatabase->open_create_behavior() != Ioss::DB_APPEND)
+	Region::begin_mode(STATE_READONLY);
     }
     properties.add(Property(this,
 			    "node_block_count",    Property::INTEGER));
@@ -412,6 +417,10 @@ namespace Ioss {
 	  }
 	}
       }
+      modelDefined = true;
+    }
+    else if (current_state == STATE_DEFINE_TRANSIENT) {
+      transientDefined = true;
     }
 
     // Pass the 'end state' message on to the database so it can do any
@@ -439,7 +448,7 @@ namespace Ioss {
 	       << ", is not greater than previous time, " << stateTimes[stateTimes.size()-1]
 	       << " in\n"
 	       << get_database()->get_filename()
-	       << ". This may cause problems in applications that assume monotonically increasing time values.";
+	       << ". This may cause problems in applications that assume monotonically increasing time values.\n";
 	IOSS_WARNING << errmsg.str();
 	warning_output = true;
       }
