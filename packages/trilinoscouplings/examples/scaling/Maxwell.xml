@@ -1,0 +1,29 @@
+<ParameterList name="Maxwell Input">
+   <Parameter name="meshInput" type="string" value = "
+mesh
+  brick
+   zmin = 0.0
+   xmin = 0.0
+   ymin = 0.0
+   numz 1
+     zblock 1 2.0 interval 10 
+   numx 1
+     xblock 1 2.0 interval 10 
+   numy 1
+     yblock 1 2.0 interval 10 
+  end
+  set assign
+     sideset, ilo, 1
+     sideset, jlo, 2
+     sideset, klo, 3
+     sideset, ihi, 4
+     sideset, jhi, 5
+     sideset, khi, 6
+  end
+end"
+/>
+<!-- Need one mu for every block in the mesh numbered from 0.-->
+<!--   Total number of blocks in the mesh = numz*numx*numy.  -->
+  <Parameter name="mu0" type="double" value="1.0"/>
+  <Parameter name="sigma0" type="double" value="1.0"/>
+</ParameterList>
