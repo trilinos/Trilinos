@@ -361,7 +361,6 @@ int main(int argc, char *argv[]) {
       }
       // ifpackList.set("chebyshev: max eigenvalue", (double) -1.0);
       // ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
-      ifpackList.set("chebyshev: zero starting solution", true);
     }
 
     smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList) );
