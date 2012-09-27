@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
   int amgAsSolver=1;
   int amgAsPrecond=1;
   int useExplicitR=1;
-  int sweeps=1;
+  int sweeps=2;
   int maxCoarseSize=50;  //FIXME clp doesn't like long long int
   Scalar SADampingFactor=4./3;
   double tol = 1e-7;
@@ -353,10 +353,10 @@ int main(int argc, char *argv[]) {
 	ifpackList.set("chebyshev: ratio eigenvalue", (SC) 3);
       }
       else if (matrixParameters.GetMatrixType() == "Laplace2D") {
-	ifpackList.set("chebyshev: ratio eigenvalue", (SC) 9);
+	ifpackList.set("chebyshev: ratio eigenvalue", (SC) 7);
       }
       else if (matrixParameters.GetMatrixType() == "Laplace3D") {
-	ifpackList.set("chebyshev: ratio eigenvalue", (SC) 27);
+	ifpackList.set("chebyshev: ratio eigenvalue", (SC) 20);
       }
       // ifpackList.set("chebyshev: max eigenvalue", (double) -1.0);
       // ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
