@@ -185,6 +185,8 @@ int main(int argc, char *argv[]) {
 
   aztecSolver.Iterate(maxIts, tol);
 
+  //TODO: test solution
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
