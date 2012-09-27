@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
     //
     RCP<Epetra_CrsMatrix> eA; //duplicate code
     { // TODO: simplify this
-      RCP<CrsOperator>       xCrsOp  = Teuchos::rcp_dynamic_cast<CrsOperator>(A, true);
+      RCP<CrsMatrixWrap>       xCrsOp  = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
       RCP<CrsMatrix>         xCrsMtx = xCrsOp->getCrsMatrix();
       RCP<EpetraCrsMatrix>   eCrsMtx = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(xCrsMtx, true);
       eA = eCrsMtx->getEpetra_CrsMatrixNonConst();
@@ -263,7 +263,7 @@ int main(int argc, char *argv[]) {
 
     RCP<Epetra_CrsMatrix> eA;
     { // TODO: simplify this
-      RCP<CrsOperator>       xCrsOp  = Teuchos::rcp_dynamic_cast<CrsOperator>(A, true);
+      RCP<CrsMatrixWrap>       xCrsOp  = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
       RCP<CrsMatrix>         xCrsMtx = xCrsOp->getCrsMatrix();
       RCP<EpetraCrsMatrix>   eCrsMtx = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(xCrsMtx, true);
       eA = eCrsMtx->getEpetra_CrsMatrixNonConst();
