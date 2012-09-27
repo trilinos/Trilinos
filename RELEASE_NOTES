@@ -12,7 +12,7 @@ large-scale, complex multi-physics engineering and scientific problems.
 
 Packages:
 
-The Trilinos 11.0 general release contains 51 packages: Amesos, Amesos2,
+The Trilinos 11.0 general release contains 54 packages: Amesos, Amesos2,
 Anasazi, AztecOO, Belos, CTrilinos, Didasko, Epetra, EpetraExt, FEI,
 ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
 Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, NOX, Optika, OptiPack, Pamgen,
