@@ -132,6 +132,17 @@ Kokkos
   - Non-backwards compatible change: construction of Kokkos local graph objects
     requires specifying number of columns
 
+  - KokkosArray
+
+    - Initial release of experimental package for manycore performance-portable
+      kernels using multidimensional array API to transparently swap between
+      "array of structures" and "structure of arrays" as per the manycore device
+      needs.
+
+    - Proxy-application examples include hybrid parallel (MPI + KokkosArray)
+      nonlinear thermal conduction finite elements and explicit dynamics finite
+      elements.  These have been tested with pthreads and Cuda on the Cray XK6.
+
 RTOp
   - Dropped deprecated code in Trilinos 10.12 (see general release notes on
     dropping deprecated code).
