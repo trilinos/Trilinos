@@ -54,6 +54,14 @@
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #endif
 
+#ifdef HAVE_MUELU_AZTECOO
+#include <AztecOO.h>
+#endif
+
+#ifdef HAVE_MUELU_EPETRA
+#include <MueLu_EpetraOperator.hpp>
+#endif
+
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
 #include <MueLu_MLParameterListInterpreter.hpp>
@@ -69,6 +77,7 @@
 
 int main(int argc, char *argv[]) {
   using Teuchos::RCP;
+  using Teuchos::rcp;
 
   //
   // MPI initialization using Teuchos
@@ -80,6 +89,7 @@ int main(int argc, char *argv[]) {
   //
   // Parameters
   //
+  int nIts = 9;
 
   Teuchos::CommandLineProcessor clp(false); // Note: 
 
@@ -100,7 +110,7 @@ int main(int argc, char *argv[]) {
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
-  // TODO: -ml and --linAlgebra
+  // TODO: check -ml and --linAlgebra
 
   if (comm->getRank() == 0) { std::cout << xpetraParameters << matrixParameters; }
   if (ml && xpetraParameters.GetLib() == Xpetra::UseTpetra) {
@@ -127,17 +137,28 @@ int main(int argc, char *argv[]) {
     params = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   } else {
-    std::cout << "Hard-coded parameter list" << std::endl;
-      params = rcp(new Teuchos::ParameterList());
-      
-      params->set("max levels", 2);
-      
-      Teuchos::ParameterList & l0 = params->sublist("smoother: list (level 0)");
-      l0.set("smoother: damping factor", 0.9);
-      l0.set("smoother: sweeps", 1);
-      l0.set("smoother: pre or post", "both");
-      l0.set("smoother: type", "symmetric Gauss-Seidel");
+
+    std::cout << "Using hard-coded parameter list:" << std::endl;
+    params = rcp(new Teuchos::ParameterList());
+    
+    params->set("max levels", 2); //FIXME: does not work?
+    
+    //    params->set("smoother: damping factor", 0.9);
+    params->set("smoother: sweeps", 1);
+    params->set("smoother: pre or post", "both");
+    params->set("smoother: type", "symmetric Gauss-Seidel");
+    
+    /*      Teuchos::ParameterList & l0 = params->sublist("smoother: list (level 0)");
+            l0.set("smoother: damping factor", 0.9);
+            l0.set("smoother: sweeps", 1);
+            l0.set("smoother: pre or post", "both");
+            l0.set("smoother: type", "symmetric Gauss-Seidel");
+    */
+    
+    params->set("coarse: type","Amesos-KLU");
   }
+
+  std::cout << params << std::endl;
     
   if (muelu) {
 
@@ -162,20 +183,70 @@ int main(int argc, char *argv[]) {
     X->putScalar((Scalar) 0.0);
     B->setSeed(846930886); B->randomize();
     
-    // Use AMG directly as an iterative solver (not as a preconditionner)
-    int nIts = 9;
-    
+    // AMG as a standalone solver
+    H->IsPreconditioner(false);
     H->Iterate(*B, nIts, *X);
     
     // Print relative residual norm
     ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
     if (comm->getRank() == 0)
       std::cout << "||Residual|| = " << residualNorms << std::endl;
+
+#ifdef HAVE_MUELU_AZTECOO
+
+    // AMG as a preconditioner
+
+    //TODO: name mueluPrec and mlPrec not 
+
+
+    MueLu::EpetraOperator mueluPrec(H); // Wrap MueLu preconditioner into an Epetra Operator
+
+    //
+    // Solve Ax = b
+    //
+    RCP<Epetra_CrsMatrix> eA; //duplicate code
+    { // TODO: simplify this
+      RCP<CrsOperator>       xCrsOp  = Teuchos::rcp_dynamic_cast<CrsOperator>(A, true);
+      RCP<CrsMatrix>         xCrsMtx = xCrsOp->getCrsMatrix();
+      RCP<EpetraCrsMatrix>   eCrsMtx = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(xCrsMtx, true);
+      eA = eCrsMtx->getEpetra_CrsMatrixNonConst();
+    }
+
+    RCP<Epetra_Vector> eX = rcp(new Epetra_Vector(eA->RowMap()));
+    RCP<Epetra_Vector> eB = rcp(new Epetra_Vector(eA->RowMap()));
+    
+    eX->PutScalar((Scalar) 0.0);
+    eB->SetSeed(846930886); eB->Random();
+
+    Epetra_LinearProblem eProblem(eA.get(), eX.get(), eB.get());
+
+    // AMG as a standalone solver
+    AztecOO solver(eProblem);
+    solver.SetPrecOperator(&mueluPrec);
+    solver.SetAztecOption(AZ_solver, AZ_fixed_pt);
+    solver.SetAztecOption(AZ_output, 1);
+    
+    solver.Iterate(nIts, 1e-10);
+
+    { //TODO: simplify this
+      RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX)); 
+      RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(eB));
+      // Print relative residual norm
+      ST::magnitudeType residualNorms2 = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
+      if (comm->getRank() == 0)
+        std::cout << "||Residual|| = " << residualNorms2 << std::endl;
+    }
+
+    // TODO: AMG as a preconditioner (AZ_cg)
+#endif // HAVE_MUELU_AZTECOO
+
   }
 
 #if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
   if (ml) {
-    
+
+    std::cout << std::endl << std::endl << std::endl << std::endl << "**** ML ml ML ml ML" << std::endl << std::endl << std::endl << std::endl;
+
     //
     // Construct a multigrid preconditioner
     //
@@ -186,13 +257,52 @@ int main(int argc, char *argv[]) {
     RCP<EpetraCrsMatrix>  epetraCrsMtx  = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(crsMtx, true);
     RCP<const Epetra_CrsMatrix> epetra_CrsMtx = epetraCrsMtx->getEpetra_CrsMatrix();
 
-    RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*epetra_CrsMtx, *params));
+    RCP<Epetra_CrsMatrix> eA;
+    { // TODO: simplify this
+      RCP<CrsOperator>       xCrsOp  = Teuchos::rcp_dynamic_cast<CrsOperator>(A, true);
+      RCP<CrsMatrix>         xCrsMtx = xCrsOp->getCrsMatrix();
+      RCP<EpetraCrsMatrix>   eCrsMtx = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(xCrsMtx, true);
+      eA = eCrsMtx->getEpetra_CrsMatrixNonConst();
+    }
+
+    RCP<ML_Epetra::MultiLevelPreconditioner> mlPrec = rcp(new ML_Epetra::MultiLevelPreconditioner(*eA, *params));
     
+#ifdef HAVE_MUELU_AZTECOO
+
     //
     // Solve Ax = b
     //
-  }
-#endif
+    
+    RCP<Epetra_Vector> eX = rcp(new Epetra_Vector(eA->RowMap()));
+    RCP<Epetra_Vector> eB = rcp(new Epetra_Vector(eA->RowMap()));
+    
+    eX->PutScalar((Scalar) 0.0);
+    eB->SetSeed(846930886); eB->Random();
+
+    Epetra_LinearProblem eProblem(eA.get(), eX.get(), eB.get());
+
+    // AMG as a standalone solver
+    AztecOO solver(eProblem);
+    solver.SetPrecOperator(mlPrec.get());
+    solver.SetAztecOption(AZ_solver, AZ_fixed_pt);
+    solver.SetAztecOption(AZ_output, 1);
+    
+    solver.Iterate(nIts, 1e-10);
+
+    { //TODO: simplify this
+      RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX)); 
+      RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(eB));
+      // Print relative residual norm
+      ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
+      if (comm->getRank() == 0)
+        std::cout << "||Residual|| = " << residualNorms << std::endl;
+    }
+
+    // TODO: AMG as a preconditioner (AZ_cg)
+#endif // HAVE_MUELU_AZTECOO
+  } // if (ml)
+
+#endif // HAVE_MUELU_ML && HAVE_MUELU_EPETRA
 
   return EXIT_SUCCESS;
 }
