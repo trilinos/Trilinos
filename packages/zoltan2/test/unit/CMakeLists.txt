@@ -1,4 +1,5 @@
 INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 #
 # Tests for src/algorithms
