@@ -437,21 +437,23 @@ namespace MueLu {
     //Teuchos::Array<Magnitude> norms(1);
     bool zeroGuess=InitialGuessIsZero;
 
-    for (LO i=0; i<nIts; i++) {
+    RCP<Level> Fine = Levels_[startLevel];
 
-      RCP<Level> Fine = Levels_[startLevel];
-
-      if (startLevel == 0 && IsPrint(Statistics1) && !isPreconditioner_) {
-        Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> rn;
-        rn = Utils::ResidualNorm(*(Fine->Get< RCP<Matrix> >("A")), X, B);
-        GetOStream(Statistics1, 0) << "iter:    "
-                                   << std::setiosflags(std::ios::left)
-                                   << std::setprecision(3) << i
-                                   << "           residual = "
-                                   << std::setprecision(10) << rn
-                                   << std::endl;
-      }
-
+    // Print residual information before iterating
+    if (startLevel == 0 && IsPrint(Statistics1) && !isPreconditioner_) {
+      
+      Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> rn;
+      rn = Utils::ResidualNorm(*(Fine->Get< RCP<Operator> >("A")), X, B);
+      GetOStream(Statistics1, 0) << "iter:    "
+                                 << std::setiosflags(std::ios::left)
+                                 << std::setprecision(3) << 0 /* iter 0 */
+                                 << "           residual = "
+                                 << std::setprecision(10) << rn
+                                 << std::endl;
+    }
+    
+    for (LO i=1; i<=nIts; i++) {
+      
       //X.norm2(norms);
       if (Fine->Get< RCP<Matrix> >("A")->getDomainMap()->isCompatible(*(X.getMap())) == false) {
         std::ostringstream buf;
@@ -534,8 +536,20 @@ namespace MueLu {
         }
       }
       zeroGuess=false;
-    } //for (LO i=0; i<nIts; i++)
 
+      if (startLevel == 0 && IsPrint(Statistics1) && !isPreconditioner_) {
+        Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> rn;
+        rn = Utils::ResidualNorm(*(Fine->Get< RCP<Operator> >("A")), X, B);
+        GetOStream(Statistics1, 0) << "iter:    "
+                                   << std::setiosflags(std::ios::left)
+                                   << std::setprecision(3) << i
+                                   << "           residual = "
+                                   << std::setprecision(10) << rn
+                                   << std::endl;
+      }
+
+    } //for (LO i=0; i<nIts; i++)
+    
   } //Iterate()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
