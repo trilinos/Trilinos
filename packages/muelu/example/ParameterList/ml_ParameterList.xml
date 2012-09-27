@@ -1,10 +1,4 @@
 <ParameterList name="MultiLevelPreconditioner">
-  <Parameter name="aggregation: damping factor" type="double" value="1.333"/>
-  <Parameter name="smoother: type (level 0)" type="string" value="symmetric Gauss-Seidel"/>
-  <Parameter name="smoother: type (level 1)" type="string" value="IFPACK"/>
-  <Parameter name="smoother: ifpack type" type="string" value="ILU"/>
-  <Parameter name="smoother: ifpack overlap" type="int" value="1"/>
-  <ParameterList name="smoother: ifpack list">
-    <Parameter name="fact: level-of-fill" type="int" value="1"/>
-  </ParameterList>
+  <Parameter name="max levels" type="int" value="1"/>
+  <Parameter name="smoother: type" type="string" value="Amesos-KLU"/> <!--symmetric Gauss-Seidel"/> -->
 </ParameterList>

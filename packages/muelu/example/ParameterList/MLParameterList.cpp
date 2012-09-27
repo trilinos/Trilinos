@@ -89,6 +89,9 @@ int main(int argc, char *argv[]) {
   //
   // Parameters
   //
+
+  //TODO: FIXME: option by default does not work for MueLu/Tpetra
+
   int nIts = 9;
 
   Teuchos::CommandLineProcessor clp(false); // Note: 
@@ -144,9 +147,10 @@ int main(int argc, char *argv[]) {
     params->set("max levels", 2); //FIXME: does not work?
     
     //    params->set("smoother: damping factor", 0.9);
-    params->set("smoother: sweeps", 1);
-    params->set("smoother: pre or post", "both");
+    // params->set("smoother: sweeps", 1);
+    // params->set("smoother: pre or post", "both");
     params->set("smoother: type", "symmetric Gauss-Seidel");
+    params->set("coarse: type", "Amesos-KLU");
     
     /*      Teuchos::ParameterList & l0 = params->sublist("smoother: list (level 0)");
             l0.set("smoother: damping factor", 0.9);
@@ -158,7 +162,7 @@ int main(int argc, char *argv[]) {
     params->set("coarse: type","Amesos-KLU");
   }
 
-  std::cout << params << std::endl;
+  std::cout << *params << std::endl;
     
   if (muelu) {
 
@@ -198,7 +202,7 @@ int main(int argc, char *argv[]) {
 
     //TODO: name mueluPrec and mlPrec not 
 
-
+    H->IsPreconditioner(true);
     MueLu::EpetraOperator mueluPrec(H); // Wrap MueLu preconditioner into an Epetra Operator
 
     //
@@ -299,6 +303,8 @@ int main(int argc, char *argv[]) {
     }
 
     // TODO: AMG as a preconditioner (AZ_cg)
+#else
+    std::cout << "Enable AztecOO to see solution" << std::endl;
 #endif // HAVE_MUELU_AZTECOO
   } // if (ml)
 
@@ -306,3 +312,4 @@ int main(int argc, char *argv[]) {
 
   return EXIT_SUCCESS;
 }
+
