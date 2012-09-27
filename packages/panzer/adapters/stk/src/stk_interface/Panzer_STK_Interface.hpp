@@ -391,6 +391,8 @@ public:
    stk::mesh::Field<double> * getCellField(const std::string & fieldName,
                                            const std::string & blockId) const;
 
+   ProcIdFieldType * getProcessorIdField() { return processorIdField_; }
+
    //! Has <code>initialize</code> been called on this mesh object?
    bool isInitialized() const { return initialized_; }
 

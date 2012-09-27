@@ -95,7 +95,11 @@ STK_Interface::STK_Interface()
 STK_Interface::STK_Interface(unsigned dim)
    : dimension_(dim), initialized_(false), currentLocalId_(0)
 {
-   metaData_ = rcp(new stk::mesh::fem::FEMMetaData(dimension_));
+   std::vector<std::string> entity_rank_names = stk::mesh::fem::entity_rank_names(dimension_);
+   entity_rank_names.push_back("FAMILY_TREE");
+
+   metaData_ = rcp(new stk::mesh::fem::FEMMetaData());
+   metaData_->FEM_initialize(dimension_,entity_rank_names);
 
    initializeFromMetaData();
 }
@@ -163,14 +167,6 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
 
    if(mpiComm_==Teuchos::null)
       mpiComm_ = getSafeCommunicator(parallelMach);
-
-   if(!metaData_->is_FEM_initialized()) {
-      // need for uniform adaptivity
-      std::vector<std::string> entity_rank_names = stk::mesh::fem::entity_rank_names(dimension_);
-      entity_rank_names.push_back("FAMILY_TREE");
-
-      metaData_->FEM_initialize(dimension_,entity_rank_names);
-   }
 
    stk::mesh::EntityRank elementRank = getElementRank();
    stk::mesh::EntityRank nodeRank = getNodeRank();
