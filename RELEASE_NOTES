@@ -1,5 +1,273 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 11.0 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 11.0 general release contains 54 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, NOX, Optika, OptiPack, Pamgen,
+Phalanx, Piro, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, SEACAS, Shards,
+ShyLU*, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos, ThreadPool, Thyra,
+Tpetra, TriKota, TrilinosCouplings, Trios*, Triutils, Xpetra*, Zoltan, Zoltan2*.
+
+(* denotes package is being released externally as a part of Trilinos for the
+first time.)
+
+Framework Release Notes:
+
+  Transitioning due to removal of deprecated code:
+  ---------------------------------------------------------------
+
+  With the update from Trilinos 10.12 to 11.0, several deprecated classes,
+  function, macros, and files have been removed from the Trilinos 11.0 sources. 
+  If a client code was using these deprecated features and upgrades to 11.0, the
+  client code will no longer build.  To ease the transition of client code to
+  Trilinos 11.0, the following procedure is recommended:
+
+  1) Get the release tarball for Trilinos 10.12.
+
+  2) Do a build from scratch of the client application code against Trilinos
+  10.12 (making sure that deprecated warnings are enabled).  Save the full build
+  output to a file to be searched for deprecated warnings.
+
+  3) Search the build output of the client code for ‚Äúdeprecated‚Äù warnings
+  which give file names and line numbers for deprecated features.  For each
+  deprecated warning or feature:
+
+  3.a) Look at the Trilinos source code referenced in the ‚Äúdeprecated‚Äù
+  warning and see why the feature (or file) was deprecated and what instructions
+  there are for using an alternant implementation.  In many cases, the
+  deprecated function or macro will be calling a non-deprecated variation.
+
+  3.b) Change the client source code in smaller reasonable sized chucks (looping
+  back to step #3.a multiple times) to removed deprecated usage and re-build and
+  re-test incrementally to ensure the client code continues to build and run
+  correctly.
+
+  4) Once all deprecated code has been addressed through various iterations in
+  step #3, go back to step #2 to make sure that no deprecated warnings are
+  found.
+
+  5) Rebuild the client code against Trilinos 11.0.
+
+  For most deprecated features, the above algorithm will cleanly and safely
+  facilitate the upgrade of client code to Trilinos 11.0.  If, however, the
+  client code fails to build against Trilinos 11.0 in step #5 after removing all
+  deprecated warnings against 10.12, then a more difficult and risky upgrade
+  process may be necessary.  First, consult the release notes and tests and
+  examples for the Trilinos package causing the failures.  If that is not
+  helpful, email trilinos-users@software.sandia.gov for advice.
+
+  To see a discussion of the why and how of the management of deprecated code in
+  Trilinos, see Section 6.5 ‚ÄúRegulated Backward Compatibility: Details‚Äù in
+  the TriBITS Lifecycle Model technical report:
+
+      http://www.ornl.gov/~8vt/TribitsLifecycleModel_v1.0.pdf
+
+  Sorry for any inconvenience this transition to Trilinos 11.0 may cause due to
+  the removal of deprecated features and code.
+
+===============================================================================
+
+Package Release Notes:
+
+-------------------------------------------------------------------------------
+
+Amesos2
+  - Added support for Pardiso-MKL (multithreaded solver)
+
+  - Several bug fixes
+
+Epetra
+  Added support for 64-bit global indices
+  †
+  Epetra supports 64-bit global indices beginning with Trilinos Release 11.0
+  by using the "long long" datatype.† Epetra still supports 32-bit global
+  indices and the interface for using them remains the same.
+  †
+  - To construct Epetra objects for 64-bit indices, certain input arguments
+    must be "long long" instead of "int".† For example, compare
+    †
+    † 32: Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
+    ††††††††††††††††††††† const int *MyGlobalElements, ...)
+    † 64: Epetra_BlockMap(long long NumGlobalElements, int NumMyElements,
+    ††††††††††††††††††††† const long long *MyGlobalElements, ...)
+  †
+  - New member functions that return a long long value have a suffix "64".† For
+    example, GID64, NumGlobalNonzeros64, MaxAllGID64, etc.† These functions work
+    whether the underlying object is 32-bit or 64-bit based.† The older
+    non-suffixed functions work for 32-bit objects only.
+  †
+  - New classes added for "long long" data: Epetra_LongLongVector,
+    Epetra_LongLongSerialDenseVector, Epetra_LongLongSerialDenseMatrix.
+  †
+  - To build Epetra and dependent packages without any 64-bit support turn on
+    the CMake flag Trilinos_NO_64BIT_GLOBAL_INDICES.† Default is off.
+  †
+  - To enforce that a code is truly compatible with 64-bit Epetra
+    turn on the CMake flag Trilinos_NO_32BIT_GLOBAL_INDICES, and fix any
+    compile-time or run-time errors.† Default is off.
+  †
+  Epetra 64-bit support FAQ (compile problem)
+  †
+  Epetra-dependent code may not compile if it relied on automatic type
+  conversion to "int" from non-int types when constructing Epetra objects or
+  calling certain member functions.† This is because now there can be ambiguity
+  due to overloading.† Use explicit conversion to either "int" or "long long".
+
+Kokkos
+  - Non-backwards compatible change: row pointers for CRS objects are not longer
+    size_t; instead, they are the same Ordinal type as the columns indices
+
+  - Non-backwards compatible change: construction of Kokkos local graph objects
+    requires specifying number of columns
+
+  - KokkosArray
+
+    - Initial release of experimental package for manycore performance-portable
+      kernels using multidimensional array API to transparently swap between
+      "array of structures" and "structure of arrays" as per the manycore device
+      needs.
+
+    - Proxy-application examples include hybrid parallel (MPI + KokkosArray)
+      nonlinear thermal conduction finite elements and explicit dynamics finite
+      elements.  These have been tested with pthreads and Cuda on the Cray XK6.
+
+RTOp
+  - Dropped deprecated code in Trilinos 10.12 (see general release notes on
+    dropping deprecated code).
+
+ShyLU
+  - Initial public release for ShyLU. ShyLU is a hybrid direct-iterative
+    preconditioner (solver) for general sparse linear systems, based on Schur
+    complement approximation.  It uses a hybrid MPI+threads parallel execution
+    model.
+
+  - Should be used as Ifpack preconditioner (for now).
+
+Teuchos
+  - Dropped deprecated code in Trilinos 10.12 (see general release notes on
+    dropping deprecated code).
+
+  - Teuchos reference BLAS implementations have been corrected to mimic the
+    behavior of their machine-specific counterparts.  See bugs 4262 and 5683.
+    This includes fixing the interface to _GER so that the complex instantiation
+    of that routine uses _GERU.  Also, _ASUM and _IAMAX were corrected to
+    perform the correct calculations for complex-valued data types.
+
+  - Fixed SerialDenseSolver class to correctly handle complex-valued data
+    types.  See bug 5308.  
+
+  - CommandLineProcessor now properly throws exceptions.  See bug 4668 and
+    5387.  By default this tool throws exceptions and must recognize all the
+    options it encounters on the command line.  This is enforced through the
+    implementation now.  If exception throwing is disabled, then proper error
+    codes will be returned to the user.
+
+  - Filtering timer labels for global statistics and output
+
+    The computeGlobalTimerStatistics(), report(), and summarize() class
+    methods of TimeMonitor now support "filtering" timer labels.  See Bug
+    5301:
+
+    https://software.sandia.gov/bugzilla/show_bug.cgi?id=5301
+
+    Both methods take an optional "filter" string.  If nonempty, the
+    methods only print timers whose labels begin with that string.  
+
+    This feature could be used to implement "namespaces" for timers.
+    Trilinos packages may take advantage of this feature by prefixing the
+    timer name with the package name.  For example: "Teuchos: Timer 1".
+    Users may exploit this feature to reduce the volume of output.  The
+    implementation does not compute global statistics for timers that are
+    filtered out, so filtering could also reduce computation and
+    communication.
+
+  - YAML output option for timing results
+
+    The report() class method of TimeMonitor now has a YAML output option.
+    See Bug 5302:
+
+    https://software.sandia.gov/bugzilla/show_bug.cgi?id=5302
+
+    YAML (see yaml.org) is a recursive acronym for "YAML Ain't Markup
+    Language."  It "is a human-friendly data serialization standard for
+    all programming languages."  I've added YAML output on request of
+    Daniel Barnette (SNL), so that timing results can serve as input data
+    for his PylotDB (https://github.com/dwbarne/PYLOTDB) framework for
+    database creation, management, and analysis.  
+
+    YAML is not the default output format of report().  To specify YAML
+    output, give report() a ParameterList with the "Report format"
+    parameter set to "YAML".  I have provided two different variants of
+    YAML output: "compact" and "spacious".  The default is "spacious".
+    You may set this via the "YAML format" parameter.
+
+Thyra
+  - Dropped deprecated code in Trilinos 10.12 (see general release notes on
+    dropping deprecated code).
+
+Tpetra
+  - Significant performance improvements to local sparse matrix-vector multiply
+    on CPU nodes. 
+
+  - Removed all deprecated methods.
+
+Xpetra
+  - Initial public release of Xpetra. Xpetra is a lightweight wrapper package
+    that provides algorithm developers with a unified interface to the
+    underlying sparse linear algebra library.
+
+  - Epetra and Tpetra are currently supported.
+
+  - Xpetra is used by the packages Zoltan2 and MueLu.
+
+  - Xpetra should be considered *EXPERIMENTAL* code.
+
+Zoltan
+  Highlights are listed below; for more details, see 
+  Trilinos/packages/zoltan/doc/Zoltan_html/ug_html/ug_release.html .
+
+  -  Zoltan is now released under Trilinos' BSD license.
+
+  -  The following Zoltan features are no longer supported in Trilinos v11:
+     +  Zoltan v1 interface (as described in Zoltan include file lbi_const.h)
+     +  Partitioning method OCTPART: use partitioning method HSFC instead.
+
+
+  -  Hierarchical partitioning received several performance, interface and 
+     testing improvements.  An easier-to-use interface has been 
+     added using simple parameters (HIER_ASSIST, PLATFORM_NAME, TOPOLOGY)
+     instead of callback functions; the callback function interface is still
+     supported. 
+
+  -  Memory usage in Zoltan Distributed Data Directories is improved, leading to
+     faster execution times for data directories and hierarchical partitioning.
+
+  -  Compilation with gcc 4.7 is now supported.
+
+  -  Zoltan supports PT-Scotch v5.1.12 and ParMETIS v4, as well as some older
+     versions of these TPLs. 
+
+Zoltan2
+  - Initial public release of Zoltan2.  Zoltan2 is a redesign of the
+    Zoltan combinatorial scientific computing toolkit that uses templating and
+    Trilinos classes for tighter integration with Trilinos.  Zoltan2 supports
+    Epetra and Tpetra data structures through the Xpetra interface.
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 10.12 Release Notes                                        #
 #                                                                             #
 ###############################################################################

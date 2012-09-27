@@ -9,31 +9,38 @@
 
 namespace Stokhos {
 
-
-  class SchurPreconditioner : public Stokhos::Operator {
-
+  template <typename ordinal_type, typename value_type>
+  class SchurPreconditioner : 
+    public Stokhos::Operator<ordinal_type, value_type> {
   public:
 
     //! Constructor 
-    SchurPreconditioner(const Teuchos::SerialDenseMatrix<int,double> & K, const int p, const int m, const int diag);
+    SchurPreconditioner(
+      const Teuchos::SerialDenseMatrix<ordinal_type,value_type> & K, 
+      const ordinal_type p, const ordinal_type m, const ordinal_type diag);
     
-  
     //! Destructor
     virtual ~SchurPreconditioner(); 
     
-  
-    virtual int ApplyInverse(const Teuchos::SerialDenseMatrix<int,double>& Input,
-                             Teuchos::SerialDenseMatrix<int,double>& Output, int prec_iters) const;
+    virtual ordinal_type ApplyInverse(
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Input, 
+      Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Result, 
+      ordinal_type prec_iters) const;
       
   protected:
-    const Teuchos::SerialDenseMatrix<int,double> & K;
-    const int p;
-    const int m;
-    const int diag;
+    ordinal_type fact(ordinal_type n) const;
+    ordinal_type size(ordinal_type n, ordinal_type m) const;
+
+    const Teuchos::SerialDenseMatrix<ordinal_type,value_type> & K;
+    const ordinal_type p;
+    const ordinal_type m;
+    const ordinal_type diag;
 
   }; // class SchurPreconditioner
 
 } // namespace Stokhos
+
+#include "Stokhos_SchurPreconditionerImp.hpp"
 
 #endif // STOKHOS_SCHURPRECONDITIONER_HPP
 

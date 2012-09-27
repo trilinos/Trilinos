@@ -5,5 +5,5 @@ TRIBITS_ADD_EXECUTABLE(
   Verbose
   SOURCES Verbose.cpp
   COMM serial mpi
-  DEPLIBS muelu muelu-xpetra
+  DEPLIBS muelu xpetra
   )

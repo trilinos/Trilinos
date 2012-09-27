@@ -23,7 +23,7 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos2)
     SOURCES TransferOpsTest.cpp
     ARGS ""
     COMM serial mpi
-    DEPLIBS muelu muelu-xpetra muelu-adapters
+    DEPLIBS muelu xpetra muelu-adapters
   )
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
@@ -32,7 +32,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     SOURCES Condif2d_test.cpp
     ARGS ""
     COMM serial mpi
-    DEPLIBS muelu muelu-xpetra muelu-adapters
+    DEPLIBS muelu xpetra muelu-adapters
   )
 
 
@@ -41,7 +41,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     SOURCES Condif2d_test_with_filter.cpp
     ARGS ""
     COMM serial mpi
-    DEPLIBS muelu muelu-xpetra muelu-adapters
+    DEPLIBS muelu xpetra muelu-adapters
   )
   
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Condif2_example_copyfiles

@@ -18,7 +18,7 @@ IF(Stokhos_ENABLE_Tpetra AND Stokhos_ENABLE_Belos AND Stokhos_ENABLE_Ifpack2 AND
 	       twoD_diffusion_problem_tpetra_def.hpp
                BelosPCETpetraAdapter.hpp
        COMM serial mpi
-       DEPLIBS stokhos muelu muelu-xpetra
+       DEPLIBS stokhos muelu xpetra
       )
     TRIBITS_ADD_EXECUTABLE(
        Linear2D_Diffusion_IPCE_Ifpack2_Example

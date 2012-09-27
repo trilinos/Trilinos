@@ -35,25 +35,22 @@
 
 namespace Stokhos {
     
-
-  class Operator {
-      
+  template <typename ordinal_type, typename value_type>
+  class Operator {      
   public:
+
     //! Constructor
-     Operator() {} 
+    Operator() {} 
   
-   
     //! Destructor
     virtual ~Operator() {}
 
     //! Returns the result of a Operator inverse applied to a Teuchos::SerialDenseMatrix Input in Result.
+    virtual ordinal_type ApplyInverse(
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Input, 
+      Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Result, 
+      ordinal_type m) const = 0;
     
-    virtual int ApplyInverse(const Teuchos::SerialDenseMatrix<int, double>& Input, 
-                             Teuchos::SerialDenseMatrix<int, double>& Result, int m) const = 0;
-
-
-   
-   
   }; // class Operator
   
 } // namespace Stokhos

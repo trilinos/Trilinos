@@ -48,7 +48,6 @@
 #include "Teuchos_LAPACK.hpp"
 
 #include <iostream>
-#include <fstream>
 
 namespace Stokhos {
 
@@ -64,7 +63,14 @@ namespace Stokhos {
     //! Constructor
     CGDivisionExpansionStrategy(
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis_,
-      const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk_, const int prec_iter_, const double tol_, const int PrecNum_, const int max_it_, const int linear_, const int diag_, const int equil_);
+      const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk_, 
+      const ordinal_type prec_iter_, 
+      const value_type tol_, 
+      const ordinal_type PrecNum_, 
+      const ordinal_type max_it_, 
+      const ordinal_type linear_, 
+      const ordinal_type diag_, 
+      const ordinal_type equil_);
 
     //! Destructor
     virtual ~CGDivisionExpansionStrategy() {}
@@ -87,7 +93,18 @@ namespace Stokhos {
     CGDivisionExpansionStrategy& operator=(
       const CGDivisionExpansionStrategy& b);
 
-      int CG(const Teuchos::SerialDenseMatrix<int, double> &  A, Teuchos::SerialDenseMatrix<int,double> &  X, const Teuchos::SerialDenseMatrix<int,double> &   B, int max_iter, double tolerance, int prec_iter, int order, int dim, int PrecNum, const Teuchos::SerialDenseMatrix<int, double> &  M, int diag);
+    ordinal_type CG(
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type> &  A, 
+      Teuchos::SerialDenseMatrix<ordinal_type,value_type> & X, 
+      const Teuchos::SerialDenseMatrix<ordinal_type,value_type> & B, 
+      ordinal_type max_iter, 
+      value_type tolerance, 
+      ordinal_type prec_iter, 
+      ordinal_type order, 
+      ordinal_type dim, 
+      ordinal_type PrecNum, 
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type> & M, 
+      ordinal_type diag);
 
   protected:
 
@@ -104,19 +121,19 @@ namespace Stokhos {
     Teuchos::RCP< Teuchos::SerialDenseMatrix<ordinal_type,value_type> > A, X, B, M;
     
     //! Tolerance for CG
-    int prec_iter;
+    ordinal_type prec_iter;
 
-    double tol;
+    value_type tol;
  
-    int PrecNum;
+    ordinal_type PrecNum;
 
-    int max_it;
+    ordinal_type max_it;
 
-    int linear;
+    ordinal_type linear;
 
-    int diag;
+    ordinal_type diag;
 
-    int equil;
+    ordinal_type equil;
        
   }; // class CGDivisionExpansionStrategy
 
@@ -127,7 +144,13 @@ Stokhos::CGDivisionExpansionStrategy<ordinal_type,value_type,node_type>::
 CGDivisionExpansionStrategy(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis_,
   const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk_,
-  const int prec_iter_, const double tol_, const int PrecNum_, const int max_it_, const int linear_, const int diag_, const int equil_): 
+  const ordinal_type prec_iter_, 
+  const value_type tol_, 
+  const ordinal_type PrecNum_, 
+  const ordinal_type max_it_, 
+  const ordinal_type linear_, 
+  const ordinal_type diag_, 
+  const ordinal_type equil_): 
   basis(basis_),
   Cijk(Cijk_),
   prec_iter(prec_iter_),
@@ -146,7 +169,7 @@ CGDivisionExpansionStrategy(
 		     sz, 1));
   X = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type,value_type>(
 		     sz, 1));
-   M = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type,value_type>(
+  M = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type,value_type>(
                      sz, sz));
 
 }
@@ -207,80 +230,83 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
 	}
       }
     }
-// Compute B
+
+    // Compute B
     B->putScalar(0.0);
     for (ordinal_type i=0; i<pa; i++)
-        (*B)(i,0) = ca[i]*basis->norm_squared(i);
-Teuchos::SerialDenseMatrix<int,double> D(sz, 1);
-//Equilibrate the linear system
-if (equil == 1){
-	//Create diag mtx of max row entries
-	for (int i=0; i<sz; i++){
-		Teuchos::SerialDenseMatrix<int, double> r(Teuchos::View, *A, 1, sz, i, 0);
-		D(i,0)=sqrt(r.normOne());
-	}
+      (*B)(i,0) = ca[i]*basis->norm_squared(i);
 
-
-	//Compute inv(D)*A*inv(D)
-	for (int i=0; i<sz; i++){
-		for (int j=0; j<sz; j++){
-			(*A)(i,j)=(*A)(i,j)/(D(i,0)*D(j,0));
-	}}
-
-	//Scale b by inv(D)
-	for (int i=0; i<sz; i++){
-		(*B)(i,0)=(*B)(i,0)/D(i,0);
-      	}
-
-}
-
-if (linear == 1){
-//Compute M, the linear matrix to be used in the preconditioner
-
- pb = basis->dimension()+1;
-
- M->putScalar(0.0);
-    if (pb < Cijk->num_k())
-      k_end = Cijk->find_k(pb);
-    for (typename Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
-      k = index(k_it);
-      for ( typename Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it);
-           j_it != Cijk->j_end(k_it); ++j_it) {
-        j = index(j_it);
-        for ( typename Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
-             i_it  != Cijk->i_end(j_it); ++i_it) {
-          i = index(i_it);
-          cijk = value(i_it);
-          (*M)(i,j) += cijk*cb[k];
-        }
+    Teuchos::SerialDenseMatrix<ordinal_type,value_type> D(sz, 1);
+    //Equilibrate the linear system
+    if (equil == 1){
+      //Create diag mtx of max row entries
+      for (ordinal_type i=0; i<sz; i++){
+	Teuchos::SerialDenseMatrix<ordinal_type, value_type> r(Teuchos::View, *A, 1, sz, i, 0);
+	D(i,0)=sqrt(r.normOne());
       }
+
+
+      //Compute inv(D)*A*inv(D)
+      for (ordinal_type i=0; i<sz; i++){
+	for (ordinal_type j=0; j<sz; j++){
+	  (*A)(i,j)=(*A)(i,j)/(D(i,0)*D(j,0));
+	}
+      }
+
+      //Scale b by inv(D)
+      for (ordinal_type i=0; i<sz; i++){
+	(*B)(i,0)=(*B)(i,0)/D(i,0);
+      }
+
     }
 
- //Scale M
- if (equil == 1){
-     //Compute inv(D)*M*inv(D)
-	for (int i=0; i<sz; i++){
-        	for (int j=0; j<sz; j++){
-            		(*M)(i,j)=(*M)(i,j)/(D(i,0)*D(j,0));
-            }
- 	}
-  }
-         CG(*A,*X,*B, max_it, tol, prec_iter, basis->order(), basis->dimension(), PrecNum, *M, diag);
-}
+    if (linear == 1){
+      //Compute M, the linear matrix to be used in the preconditioner
 
-else{
-  
-	CG(*A,*X,*B, max_it, tol, prec_iter, basis->order(), basis->dimension(), PrecNum, *A, diag);
-}
-  
-if (equil == 1 ) {
-	//Rescale X 
-	for (int i=0; i<sz; i++){
-        	(*X)(i,0)=(*X)(i,0)/D(i,0);
-        }
-}
+      pb = basis->dimension()+1;
+
+      M->putScalar(0.0);
+      if (pb < Cijk->num_k())
+	k_end = Cijk->find_k(pb);
+      for (typename Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+	k = index(k_it);
+	for ( typename Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it);
+	      j_it != Cijk->j_end(k_it); ++j_it) {
+	  j = index(j_it);
+	  for ( typename Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+		i_it  != Cijk->i_end(j_it); ++i_it) {
+	    i = index(i_it);
+	    cijk = value(i_it);
+	    (*M)(i,j) += cijk*cb[k];
+	  }
+	}
+      }
+      
+      //Scale M
+      if (equil == 1){
+	//Compute inv(D)*M*inv(D)
+	for (ordinal_type i=0; i<sz; i++){
+	  for (ordinal_type j=0; j<sz; j++){
+	    (*M)(i,j)=(*M)(i,j)/(D(i,0)*D(j,0));
+	  }
+ 	}
+      }
+      CG(*A,*X,*B, max_it, tol, prec_iter, basis->order(), basis->dimension(), PrecNum, *M, diag);
+    }
+    
+    else{
+      
+      CG(*A,*X,*B, max_it, tol, prec_iter, basis->order(), basis->dimension(), PrecNum, *A, diag);
+    }
+    
+    if (equil == 1 ) {
+      //Rescale X 
+      for (ordinal_type i=0; i<sz; i++){
+	(*X)(i,0)=(*X)(i,0)/D(i,0);
+      }
+    }
    
-// Compute c
+    // Compute c
     for (ordinal_type i=0; i<pc; i++)
       cc[i] = alpha*(*X)(i,0) + beta*cc[i];
   }
@@ -292,63 +318,73 @@ if (equil == 1 ) {
  
 
 template <typename ordinal_type, typename value_type, typename node_type>
-int
+ordinal_type
 Stokhos::CGDivisionExpansionStrategy<ordinal_type,value_type,node_type>::
-CG(const Teuchos::SerialDenseMatrix<int, double> &  A, Teuchos::SerialDenseMatrix<int,double> &  X, const Teuchos::SerialDenseMatrix<int,double> &   B, int max_iter, double tolerance, int prec_iter, int order , int m, int PrecNum, const Teuchos::SerialDenseMatrix<int, double> &  M, int diag)
+CG(const Teuchos::SerialDenseMatrix<ordinal_type, value_type> & A, 
+   Teuchos::SerialDenseMatrix<ordinal_type,value_type> & X, 
+   const Teuchos::SerialDenseMatrix<ordinal_type,value_type> & B, 
+   ordinal_type max_iter, 
+   value_type tolerance, 
+   ordinal_type prec_iter, 
+   ordinal_type order , 
+   ordinal_type m, 
+   ordinal_type PrecNum, 
+   const Teuchos::SerialDenseMatrix<ordinal_type, value_type> & M, 
+   ordinal_type diag)
 
 {
-  int n = A.numRows();
-  int k=0;
-  double resid;
-  Teuchos::SerialDenseMatrix<int, double> Ax(n,1);
+  ordinal_type n = A.numRows();
+  ordinal_type k=0;
+  value_type resid;
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Ax(n,1);
   Ax.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1.0, A, X, 0.0);
-  Teuchos::SerialDenseMatrix<int, double> r(B);
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> r(B);
   r-=Ax;
   resid=r.normFrobenius();
-  Teuchos::SerialDenseMatrix<int, double> p(r);
-  Teuchos::SerialDenseMatrix<int, double> rho(1,1);
-  Teuchos::SerialDenseMatrix<int, double> oldrho(1,1);
-  Teuchos::SerialDenseMatrix<int, double> pAp(1,1);
-  Teuchos::SerialDenseMatrix<int, double> Ap(n,1);
-  double b;
-  double a;
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> p(r);
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> rho(1,1);
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> oldrho(1,1);
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> pAp(1,1);
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Ap(n,1);
+  value_type b;
+  value_type a;
   while (resid > tolerance && k < max_iter){
-    Teuchos::SerialDenseMatrix<int, double> z(r);
+    Teuchos::SerialDenseMatrix<ordinal_type, value_type> z(r);
     //Solve Mz=r
     if (PrecNum != 0){
-        if (PrecNum == 1){
-               Stokhos::DiagPreconditioner precond(M);
-               precond.ApplyInverse(r,z,prec_iter);
-          }
-  	else if (PrecNum == 2){
-        	Stokhos::JacobiPreconditioner precond(M);
-        	precond.ApplyInverse(r,z,2);
-          }
-  	else if (PrecNum == 3){
-        	Stokhos::GSPreconditioner precond(M,0);
-        	precond.ApplyInverse(r,z,1);
-          }
-        else if (PrecNum == 4){
-      		Stokhos::SchurPreconditioner precond(M, order, m, diag);
-                precond.ApplyInverse(r,z,prec_iter);            
-          }
+      if (PrecNum == 1){
+	Stokhos::DiagPreconditioner<ordinal_type, value_type> precond(M);
+	precond.ApplyInverse(r,z,prec_iter);
+      }
+      else if (PrecNum == 2){
+	Stokhos::JacobiPreconditioner<ordinal_type, value_type> precond(M);
+	precond.ApplyInverse(r,z,2);
+      }
+      else if (PrecNum == 3){
+	Stokhos::GSPreconditioner<ordinal_type, value_type> precond(M,0);
+	precond.ApplyInverse(r,z,1);
+      }
+      else if (PrecNum == 4){
+	Stokhos::SchurPreconditioner<ordinal_type, value_type> precond(M, order, m, diag);
+	precond.ApplyInverse(r,z,prec_iter);            
+      }
     }
     rho.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,1.0, r, z, 0.0);
-  
+    
 
     if (k==0){
-       p.assign(z);
-       rho.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, r, z, 0.0);  
-       }
+      p.assign(z);
+      rho.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, r, z, 0.0);  
+    }
     else {
-       b=rho(0,0)/oldrho(0,0);
-       p.scale(b);
-       p+=z; 
+      b=rho(0,0)/oldrho(0,0);
+      p.scale(b);
+      p+=z; 
     }
     Ap.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1.0, A, p, 0.0);
     pAp.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,1.0, p, Ap, 0.0);
     a=rho(0,0)/pAp(0,0);
-    Teuchos::SerialDenseMatrix<int, double> scalep(p);
+    Teuchos::SerialDenseMatrix<ordinal_type, value_type> scalep(p);
     scalep.scale(a);
     X+=scalep;
     Ap.scale(a);
@@ -356,9 +392,9 @@ CG(const Teuchos::SerialDenseMatrix<int, double> &  A, Teuchos::SerialDenseMatri
     oldrho.assign(rho);
     resid=r.normFrobenius();
     k++;
-    }                      
+  }                      
  
-  std::cout << "iteration count  " << k << std::endl;
+  //std::cout << "iteration count  " << k << std::endl;
   return 0; 
 }
 

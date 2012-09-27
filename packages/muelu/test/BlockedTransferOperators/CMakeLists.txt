@@ -7,13 +7,13 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 
-IF ({PACKAGE_NAME}_ENABLE_Galeri)
+IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
 TRIBITS_ADD_EXECUTABLE(
     BlockedTransferOperators
     SOURCES BlockedTransferOperators.cpp
     COMM serial mpi
-    DEPLIBS muelu muelu-xpetra
+    DEPLIBS muelu xpetra
   )
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack)
@@ -56,7 +56,7 @@ ENDIF() # Galeri
 #    SOURCES tsiexample.cpp
 #    ARGS ""
 #    COMM serial mpi
-#    DEPLIBS muelu muelu-xpetra
+#    DEPLIBS muelu xpetra
 #  )
   
 #TRIBITS_COPY_FILES_TO_BINARY_DIR(TSIExample_test_copyfiles

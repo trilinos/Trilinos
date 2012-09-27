@@ -92,7 +92,7 @@ TRIBITS_ADD_LIBRARY(
   muelu
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS muelu-xpetra muelu-xpetra-sup
+  DEPLIBS xpetra xpetra-sup
   )
  
 # for debugging

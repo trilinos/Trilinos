@@ -206,8 +206,10 @@ SET(HEADERS ${HEADERS}
   Stokhos_JacobiPreconditioner.hpp
   Stokhos_GSPreconditioner.hpp
   Stokhos_SchurPreconditioner.hpp
+  Stokhos_SchurPreconditionerImp.hpp
   Stokhos_InversePreconditioner.hpp
   Stokhos_BlockPreconditioner.hpp
+  Stokhos_BlockPreconditionerImp.hpp
   )
 
 SET(SOURCES ${SOURCES}
@@ -261,12 +263,6 @@ SET(SOURCES ${SOURCES}
   Stokhos_BasisInteractionGraph.cpp
   Stokhos_AdaptivityUtils.cpp
   Stokhos_AdaptivityManager.cpp
-  Stokhos_DiagPreconditioner.cpp
-  Stokhos_JacobiPreconditioner.cpp
-  Stokhos_GSPreconditioner.cpp
-  Stokhos_SchurPreconditioner.cpp
-  Stokhos_InversePreconditioner.cpp
-  Stokhos_BlockPreconditioner.cpp  
 )
 
 # Sacado
@@ -378,11 +374,15 @@ ENDIF()
 
 # CUDA/Thrust
 IF (Stokhos_ENABLE_Thrust)
-  # this is a manual include of Teuchos dirs, necessary because CUDA_COMPILE 
-  # doesn't recognize the package architecture system.
-  CUDA_INCLUDE_DIRECTORIES( 
-    ${Teuchos_INCLUDE_DIRS}
-  )
+  # this is a manual specification of include dirs, necessary because 
+  # CUDA_COMPILE doesn't recognize the package architecture system.
+  GET_PROPERTY(Stokhos_CUDA_INC_DIRS DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
+  LIST(APPEND Stokhos_CUDA_INC_DIRS ${Teuchos_INCLUDE_DIRS})
+  IF (${PACKAGE_NAME}_ENABLE_TriKota)
+    LIST(APPEND Stokhos_CUDA_INC_DIRS ${TriKota_INCLUDE_DIRS})
+  ENDIF()
+  #message("Stokhos_CUDA_INC_DIRS = ${Stokhos_CUDA_INC_DIRS}")
+  CUDA_INCLUDE_DIRECTORIES(${Stokhos_CUDA_INC_DIRS})
   CUDA_COMPILE(CUDA_SOURCES
     Stokhos_CUDAStorage.cu 
     Stokhos_CUDAQuadOrthogPolyExpansion.cu

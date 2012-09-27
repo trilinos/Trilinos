@@ -8,7 +8,7 @@
 #include "Stokhos_DiagPreconditioner.hpp"
 
 // CG
-int CG(const  Teuchos::SerialDenseMatrix<int, double> &  A, Teuchos::SerialDenseMatrix<int,double>   X,const Teuchos::SerialDenseMatrix<int,double> &   B, int max_iter, double tolerance, Stokhos::DiagPreconditioner prec)
+int CG(const  Teuchos::SerialDenseMatrix<int, double> &  A, Teuchos::SerialDenseMatrix<int,double>   X,const Teuchos::SerialDenseMatrix<int,double> &   B, int max_iter, double tolerance, Stokhos::DiagPreconditioner<int,double> prec)
 
 {
   int n; 
@@ -99,7 +99,7 @@ for (int i=0; i<A.numRows(); i++){
   double tolerance=1e-6;
   
 
-  Stokhos::DiagPreconditioner prec(A);
+  Stokhos::DiagPreconditioner<int,double> prec(A);
 
   CG(A,X,B,maxit,tolerance, prec);
  
