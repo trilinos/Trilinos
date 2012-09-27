@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
   clp.setOption("nnzImbalance",&nonzeroImbalance,"max allowable nonzero imbalance before repartitioning occurs");
     clp.setOption("precond",&amgAsPrecond,"apply multigrid as preconditioner");
     clp.setOption("saDamping",&SADampingFactor,"prolongator damping factor");
-  clp.setOption("smooType",&smooType,"smoother type ('sgs 'or 'cheby')");
+  clp.setOption("smooType",&smooType,"smoother type ('l1-sgs', 'sgs 'or 'cheby')");
     clp.setOption("sweeps",&sweeps,"sweeps to be used in SGS (or Chebyshev degree)");
   clp.setOption("timings",&printTimings,"print timings to screen");
     clp.setOption("tol",&tol,"stopping tolerance for Krylov method");
@@ -340,6 +340,11 @@ int main(int argc, char *argv[]) {
     if (smooType == "sgs") {
       ifpackType = "RELAXATION";
       ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
+    }
+    else if (smooType == "l1-sgs") {
+      ifpackType = "RELAXATION";
+      ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
+      ifpackList.set("relaxation: use l1",true);
     } else if (smooType == "cheby") {
       ifpackType = "CHEBYSHEV";
       ifpackList.set("chebyshev: degree", (LO) sweeps);
