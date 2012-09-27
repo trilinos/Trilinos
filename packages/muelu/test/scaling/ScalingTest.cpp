@@ -348,7 +348,16 @@ int main(int argc, char *argv[]) {
     } else if (smooType == "cheby") {
       ifpackType = "CHEBYSHEV";
       ifpackList.set("chebyshev: degree", (LO) sweeps);
-      ifpackList.set("chebyshev: ratio eigenvalue", (SC) 20);
+
+      if (matrixParameters.GetMatrixType() == "Laplace1D") {
+	ifpackList.set("chebyshev: ratio eigenvalue", (SC) 3);
+      }
+      else if (matrixParameters.GetMatrixType() == "Laplace2D") {
+	ifpackList.set("chebyshev: ratio eigenvalue", (SC) 9);
+      }
+      else if (matrixParameters.GetMatrixType() == "Laplace3D") {
+	ifpackList.set("chebyshev: ratio eigenvalue", (SC) 27);
+      }
       // ifpackList.set("chebyshev: max eigenvalue", (double) -1.0);
       // ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
       ifpackList.set("chebyshev: zero starting solution", true);
