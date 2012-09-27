@@ -443,7 +443,7 @@ namespace MueLu {
     if (startLevel == 0 && IsPrint(Statistics1) && !isPreconditioner_) {
       
       Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> rn;
-      rn = Utils::ResidualNorm(*(Fine->Get< RCP<Operator> >("A")), X, B);
+      rn = Utils::ResidualNorm(*(Fine->Get< RCP<Matrix> >("A")), X, B);
       GetOStream(Statistics1, 0) << "iter:    "
                                  << std::setiosflags(std::ios::left)
                                  << std::setprecision(3) << 0 /* iter 0 */
@@ -539,7 +539,7 @@ namespace MueLu {
 
       if (startLevel == 0 && IsPrint(Statistics1) && !isPreconditioner_) {
         Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> rn;
-        rn = Utils::ResidualNorm(*(Fine->Get< RCP<Operator> >("A")), X, B);
+        rn = Utils::ResidualNorm(*(Fine->Get< RCP<Matrix> >("A")), X, B);
         GetOStream(Statistics1, 0) << "iter:    "
                                    << std::setiosflags(std::ios::left)
                                    << std::setprecision(3) << i
