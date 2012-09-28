@@ -144,19 +144,9 @@ int main(int argc, char *argv[]) {
     std::cout << "Using hard-coded parameter list:" << std::endl;
     params = rcp(new Teuchos::ParameterList());
     
+    params->set("ML output",  10);
     params->set("max levels", 2);
-    
-    //    params->set("smoother: damping factor", 0.9);
-    // params->set("smoother: sweeps", 1);
-    // params->set("smoother: pre or post", "both");
     params->set("smoother: type", "symmetric Gauss-Seidel");
-    
-    /*      Teuchos::ParameterList & l0 = params->sublist("smoother: list (level 0)");
-            l0.set("smoother: damping factor", 0.9);
-            l0.set("smoother: sweeps", 1);
-            l0.set("smoother: pre or post", "both");
-            l0.set("smoother: type", "symmetric Gauss-Seidel");
-    */
     
     if (xpetraParameters.GetLib() == Xpetra::UseTpetra) // TODO: remove 'if' when Amesos2-KLU becomes available
       params->set("coarse: type","Amesos-Superlu");
