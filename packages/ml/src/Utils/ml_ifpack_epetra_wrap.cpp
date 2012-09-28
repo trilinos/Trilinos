@@ -63,6 +63,7 @@ namespace ML_Epetra{
   /***               Chebyshev                ***/
   /**********************************************/
   if(SmooType=="Chebyshev"){
+    bool allocated_inv_diagonal=false;
     int MaximumIterations = List.get("eigen-analysis: max iters", 10);
     string EigenType_ = List.get("eigen-analysis: type", "cg");
     double boost = List.get("eigen-analysis: boost for lambda max", 1.0);
@@ -74,6 +75,7 @@ namespace ML_Epetra{
     else{
       const Epetra_CrsMatrix* Acrs=dynamic_cast<const Epetra_CrsMatrix*>(A);
       if(!Acrs) return 0;
+      allocated_inv_diagonal=true;
       InvDiagonal_ = new Epetra_Vector(Acrs->RowMap());  
       Acrs->ExtractDiagonalCopy(*InvDiagonal_);
       for (int i = 0; i < InvDiagonal_->MyLength(); ++i)
@@ -110,6 +112,10 @@ namespace ML_Epetra{
     SmootherC_->SetParameters(IFPACKList);
     SmootherC_->Initialize();
     SmootherC_->Compute();
+
+    // Cleanup:  Since Chebyshev will keep it's own copy of the Inverse Diagonal...
+    if (allocated_inv_diagonal) delete InvDiagonal_;
+
     return SmootherC_;
   }
   /**********************************************/
