@@ -95,7 +95,7 @@ namespace MueLu {
   bool TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TentativeWithQR() { return QR_; }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level & coarseLevel) const { //TODO
+  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level & coarseLevel) const {
     return BuildP(fineLevel, coarseLevel);
   }
 
@@ -153,9 +153,6 @@ namespace MueLu {
 
     // Create a lookup table to determine the rows (fine DOFs) that belong to a given aggregate.
     // aggToRowMap[i][j] is the jth DOF in aggregate i
-    // TODO: aggToRowMap lives in the column map of A (with overlapping). Note: ComputeAggregateToRowMap
-    // returns the local DOFs, that are transformed to global Dofs using the col map later. Wouldn't it be
-    // smarter to compute the global dofs in ComputeAggregateToRowMap?
     ArrayRCP< ArrayRCP<GO> > aggToRowMap(numAggs);
     AmalgamationFactory::UnamalgamateAggregates(aggregates, amalgInfo, aggSizes, aggToRowMap);
 
@@ -298,7 +295,7 @@ namespace MueLu {
           // fineNS[j][n] is the nth entry in the jth NS vector
           try{
             //SC nsVal = fineNS[j][ colMap->getLocalElement(aggToRowMap[agg][k]) ]; // extract information from fine level NS
-            SC nsVal = fineNS[j][ nonUniqueMap->getLocalElement(aggToRowMap[agg][k]) ]; // extract information from fine level NS // TODO check me -> fineNS is built with nonUniqueMap
+            SC nsVal = fineNS[j][ nonUniqueMap->getLocalElement(aggToRowMap[agg][k]) ]; // extract information from fine level NS
             localQR[j* myAggSize + k] = nsVal;
             if (nsVal != 0.0) bIsZeroNSColumn = false;
           }
