@@ -1,4 +1,4 @@
 <ParameterList name="MultiLevelPreconditioner">
-  <Parameter name="max levels" type="int" value="1"/>
-  <Parameter name="smoother: type" type="string" value="Amesos-KLU"/> <!--symmetric Gauss-Seidel"/> -->
+  <Parameter name="max levels" type="int" value="2"/>
+  <Parameter name="smoother: type" type="string" value="symmetric Gauss-Seidel"/>
 </ParameterList>

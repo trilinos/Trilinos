@@ -94,3 +94,5 @@ IF((${PACKAGE_NAME}_ENABLE_Stratimikos) AND
 ENDIF()
 
 ENDIF()
+
+# TODO: add a test with the --xml option
