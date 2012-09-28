@@ -5742,6 +5742,11 @@ static int post_wait(
 
     log_debug(nnti_ee_debug_level, "enter");
 
+    // Turn off sampling for this function
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+
+
     memset(&ev_data, 0, sizeof(ev_data));
     for(i=0;i<=retries;i++) {
         log_debug(nnti_debug_level, "calling CqWaitEvent");
@@ -5761,6 +5766,10 @@ static int post_wait(
     trios_stop_timer("post_wait - GetCompleted", call_time);
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted failed: %d", rc);
     print_post_desc(post_desc_ptr);
+
+
+    // Turn sampling back on
+    if (sampling) SAMPLING_START();
 
     log_debug(nnti_ee_debug_level, "exit");
 
