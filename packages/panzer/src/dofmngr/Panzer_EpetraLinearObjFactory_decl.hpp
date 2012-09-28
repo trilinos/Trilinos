@@ -80,6 +80,11 @@ public:
                           const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider,
                           bool useDiscreteAdjoint=false);
 
+   EpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
+                          const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & rowProvider,
+                          const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & colProvider,
+                          bool useDiscreteAdjoint=false);
+
    virtual ~EpetraLinearObjFactory();
 
 /*************** Linear object factory methods *******************/
@@ -125,7 +130,7 @@ public:
    //! Use preconstructed scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatter() const
-   { return Teuchos::rcp(new ScatterResidual_Epetra<EvalT,Traits,LocalOrdinalT,int>(gidProvider_,useDiscreteAdjoint_)); }
+   { return Teuchos::rcp(new ScatterResidual_Epetra<EvalT,Traits,LocalOrdinalT,int>(gidProvider_,colGidProvider_,useDiscreteAdjoint_)); }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
@@ -182,8 +187,14 @@ public:
    //! get the map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getMap() const;
 
+   //! get the map from the matrix
+   virtual const Teuchos::RCP<Epetra_Map> getColMap() const;
+
    //! get the ghosted map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getGhostedMap() const;
+
+   //! get the ghosted map from the matrix
+   virtual const Teuchos::RCP<Epetra_Map> getGhostedColMap() const;
 
    //! get the graph of the crs matrix
    virtual const Teuchos::RCP<Epetra_CrsGraph> getGraph() const;
@@ -212,7 +223,9 @@ protected:
 
    // get the map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> buildMap() const;
+   virtual const Teuchos::RCP<Epetra_Map> buildColMap() const;
    virtual const Teuchos::RCP<Epetra_Map> buildGhostedMap() const;
+   virtual const Teuchos::RCP<Epetra_Map> buildGhostedColMap() const;
 
    // get the graph of the crs matrix
    virtual const Teuchos::RCP<Epetra_CrsGraph> buildGraph() const;
@@ -221,7 +234,9 @@ protected:
    // storage for Epetra graphs and maps
    Teuchos::RCP<const Epetra_Comm> comm_;
    mutable Teuchos::RCP<Epetra_Map> map_;
+   mutable Teuchos::RCP<Epetra_Map> cMap_;
    mutable Teuchos::RCP<Epetra_Map> ghostedMap_;
+   mutable Teuchos::RCP<Epetra_Map> cGhostedMap_;
    mutable Teuchos::RCP<Epetra_CrsGraph> graph_;
    mutable Teuchos::RCP<Epetra_CrsGraph> ghostedGraph_;
 
@@ -229,7 +244,10 @@ protected:
    mutable Teuchos::RCP<Epetra_Import> importer_;
    mutable Teuchos::RCP<Epetra_Export> exporter_;
 
+   bool hasColProvider_;
    Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > gidProvider_;
+   Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > colGidProvider_;
+   Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm_;
 
    mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > rangeSpace_;
    mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domainSpace_;

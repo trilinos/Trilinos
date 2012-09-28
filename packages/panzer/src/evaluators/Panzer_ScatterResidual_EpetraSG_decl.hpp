@@ -56,10 +56,13 @@ class ScatterResidual_Epetra<panzer::Traits::SGResidual,Traits,LO,GO>
     public panzer::CloneableEvaluator {
   
 public:
-  ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,bool=false) 
+  ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+                         const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
+                         bool=false) 
      : globalIndexer_(indexer) {}
   
   ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+                         const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
                          const Teuchos::ParameterList& p,bool=false);
   
   void postRegistrationSetup(typename Traits::SetupData d,
@@ -68,7 +71,7 @@ public:
   void evaluateFields(typename Traits::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterResidual_Epetra<panzer::Traits::SGResidual,Traits,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new ScatterResidual_Epetra<panzer::Traits::SGResidual,Traits,LO,GO>(globalIndexer_,Teuchos::null,pl)); }
 
 private:
   typedef typename panzer::Traits::SGResidual::ScalarT ScalarT;
@@ -102,10 +105,12 @@ class ScatterResidual_Epetra<panzer::Traits::SGJacobian,Traits,LO,GO>
   
 public:
   
-  ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,bool=false) 
+  ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+                         const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,bool=false)
      : globalIndexer_(indexer) {}
 
   ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+                         const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
                          const Teuchos::ParameterList& pl,bool=false);
   
   void postRegistrationSetup(typename Traits::SetupData d,
@@ -114,7 +119,7 @@ public:
   void evaluateFields(typename Traits::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterResidual_Epetra<panzer::Traits::SGJacobian,Traits,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new ScatterResidual_Epetra<panzer::Traits::SGJacobian,Traits,LO,GO>(globalIndexer_,Teuchos::null,pl)); }
 
 private:
 
