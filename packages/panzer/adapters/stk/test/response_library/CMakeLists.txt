@@ -16,5 +16,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES response_library.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   NUM_MPI_PROCS 2
+  XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov
   )
   
