@@ -20,7 +20,7 @@ namespace stk {
 
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) : URP<shards::Beam<2> , shards::Beam<3> >(eMesh)
       {
-        m_primaryEntityRank = eMesh.element_rank();
+        m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
 
         setNeededParts(eMesh, block_names, false);
         Elem::StdMeshObjTopologies::bootstrap();
@@ -40,7 +40,7 @@ namespace stk {
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
         needed_entities.resize(1);
-        needed_entities[0].first = m_eMesh.element_rank();
+        needed_entities[0].first = stk::mesh::MetaData::ELEMENT_RANK;
         setToOne(needed_entities);
       }
 

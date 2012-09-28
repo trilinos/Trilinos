@@ -150,7 +150,7 @@ namespace stk {
           throw std::logic_error("UniformRefinerPatternBase::set_parent_child_relations parent_elem is null");
         }
 
-      const unsigned FAMILY_TREE_RANK = eMesh.element_rank() + 1u;
+      const unsigned FAMILY_TREE_RANK = stk::mesh::MetaData::ELEMENT_RANK + 1u;
       stk::mesh::Entity* family_tree = 0;
       mesh::PairIterRelation parent_to_family_tree_relations = parent_elem.relations(FAMILY_TREE_RANK);
 #define DEBUG_MULTI_LEVEL 0
@@ -181,7 +181,7 @@ namespace stk {
           stk::mesh::EntityId family_tree_id = parent_id;
 
           // FIXME
-          if (parent_elem.entity_rank() != eMesh.element_rank())
+          if (parent_elem.entity_rank() != stk::mesh::MetaData::ELEMENT_RANK)
             {
               stk::mesh::EntityId FT_SHIFT_SIDE = 100000000000ull;
               if (family_tree_id > FT_SHIFT_SIDE) 
@@ -387,7 +387,7 @@ namespace stk {
     void UniformRefinerPatternBase::interpolateElementFields(percept::PerceptMesh& eMesh, stk::mesh::Entity& old_owning_elem, stk::mesh::Entity& newElement)
     {
       // FIXME
-//       if (old_owning_elem.entity_rank() != eMesh.element_rank())
+//       if (old_owning_elem.entity_rank() != stk::mesh::MetaData::ELEMENT_RANK)
 //         {
 //           return;
 //         }
@@ -448,10 +448,10 @@ namespace stk {
     bool UniformRefinerPatternBase::findSideRelations(percept::PerceptMesh& eMesh, stk::mesh::Entity* parent, stk::mesh::Entity* child)
     {
       VERIFY_OP_ON(parent->entity_rank(), ==, child->entity_rank(), "UniformRefinerPatternBase::findSideRelations: bad ranks");
-      if (parent->entity_rank() == eMesh.element_rank()) 
+      if (parent->entity_rank() == stk::mesh::MetaData::ELEMENT_RANK) 
         return true;
       
-      for (unsigned higher_order_rank = parent->entity_rank()+1u; higher_order_rank <= eMesh.element_rank(); higher_order_rank++)
+      for (unsigned higher_order_rank = parent->entity_rank()+1u; higher_order_rank <= stk::mesh::MetaData::ELEMENT_RANK; higher_order_rank++)
         {
           stk::mesh::PairIterRelation parent_to_elem_rels = parent->relations(higher_order_rank);
           VERIFY_OP_ON(parent_to_elem_rels.size(), <=, 1, "UniformRefinerPatternBase::findSideRelations bad number of side to elem relations");
@@ -521,7 +521,7 @@ namespace stk {
 
       if (permIndex >= 0)
         {
-          mesh::PairIterRelation rels = side_elem->relations(eMesh.element_rank());
+          mesh::PairIterRelation rels = side_elem->relations(stk::mesh::MetaData::ELEMENT_RANK);
 
           if (rels.size() > 1)
             {

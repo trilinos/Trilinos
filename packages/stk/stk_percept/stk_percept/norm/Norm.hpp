@@ -168,8 +168,8 @@ namespace stk
       void setCubDegree(unsigned cubDegree) { m_cubDegree= cubDegree; }
       unsigned getCubDegree() { return m_cubDegree; }
 
-      void set_is_surface_norm(bool is_surface_norm) { 
-        m_is_surface_norm = is_surface_norm; 
+      void set_is_surface_norm(bool is_surface_norm) {
+        m_is_surface_norm = is_surface_norm;
         error_check_is_surface_norm();
       }
       bool get_is_surface_norm() { return m_is_surface_norm; }
@@ -181,18 +181,19 @@ namespace stk
         return sfx_res.getValue();
       }
 
-      /// if a Selector is specified with part(s) that are not auto-declared, make sure all parts are 
+      /// if a Selector is specified with part(s) that are not auto-declared, make sure all parts are
       ///   of the same rank, and that m_is_surface_norm is set correctly (if not, warn...)
       void error_check_is_surface_norm()
       {
-        stk::mesh::EntityRank element_rank = mesh::MetaData::get(m_bulkData).element_rank();
+        stk::mesh::EntityRank element_rank = mesh::MetaData::ELEMENT_RANK;
+        stk::mesh::EntityRank side_rank    = mesh::MetaData::get(m_bulkData).side_rank();
         const stk::mesh::PartVector& parts = mesh::MetaData::get(m_bulkData).get_parts();
         stk::mesh::EntityRank all_ranks = 0;
         unsigned nparts = parts.size();
         for (unsigned ipart=0; ipart < nparts; ipart++)
           {
             stk::mesh::Part& part = *parts[ipart];
-            if (stk::mesh::is_auto_declared_part(part)) 
+            if (stk::mesh::is_auto_declared_part(part))
               continue;
 
             bool in_selector = (*m_selector)(part);
@@ -200,9 +201,9 @@ namespace stk
             //std::cout << "tmp srk Part= " << part.name() << " rank= " << rank << " in_selector= " << in_selector << std::endl;
             if (in_selector)
               {
-                if (rank == element_rank || rank == element_rank-1)
+                if (rank == element_rank || rank == side_rank)
                   {
-                    if (all_ranks == 0) 
+                    if (all_ranks == 0)
                       all_ranks = rank;
                     std::cout << "all_ranks= " << all_ranks << " rank= " << rank << std::endl;
                     if (rank != all_ranks)

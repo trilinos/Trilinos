@@ -17,7 +17,7 @@ namespace {
 
 inline stk::mesh::EntityRank get_element_rank(const stk::mesh::MetaData& meta_data)
 {
-  return meta_data.element_rank();
+  return stk::mesh::MetaData::ELEMENT_RANK;
 }
 
 inline stk::mesh::EntityRank get_element_rank(const stk::mesh::Part& part)

@@ -457,7 +457,7 @@ void verify_elem_node_coord(
 {
   typedef stk::mesh::Field<double*,stk::mesh::ElementNode> ElemNodeFieldType ;
 
-  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::get(mesh).element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   const std::vector<stk::mesh::Bucket*> & buckets = mesh.buckets( element_rank );
 

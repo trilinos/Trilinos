@@ -65,7 +65,7 @@ namespace stk {
 
         static std::vector<std::string> get_entity_rank_names(unsigned dim)
         {
-          std::vector<std::string> names = stk::mesh::entity_rank_names(dim);
+          std::vector<std::string> names = stk::mesh::entity_rank_names();
 #if PERCEPT_USE_FAMILY_TREE
           names.push_back("FAMILY_TREE");
 #endif
@@ -82,7 +82,7 @@ namespace stk {
                      unsigned nx , unsigned ny, bool generate_sidesets_in, bool debug_geom_side_sets_as_blocks_in=false )
           : meta_data(2, get_entity_rank_names(2) ),
             bulk_data(  meta_data, pm ),
-            quad_part( meta_data.declare_part("block_1", meta_data.element_rank() ) ),
+            quad_part( meta_data.declare_part("block_1", stk::mesh::MetaData::ELEMENT_RANK ) ),
             coord_field( meta_data.declare_field<CoordFieldType>("coordinates") ),
 #if PERCEPT_QF_USE_COORD_GATHER_FIELD
             coord_gather_field( meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates") ),
@@ -113,7 +113,7 @@ namespace stk {
           //put coord-gather-field on all elements:
           put_field(
                     coord_gather_field,
-                    meta_data.element_rank(),
+                    stk::mesh::MetaData::ELEMENT_RANK,
                     meta_data.universal_part(),
                     NodesPerElem
                     );
@@ -287,7 +287,7 @@ namespace stk {
         }
 
         stk::mesh::Entity * elem( unsigned ix , unsigned iy ) const
-      { return bulk_data.get_entity( meta_data.element_rank() , elem_id(ix,iy) ); }
+      { return bulk_data.get_entity( stk::mesh::MetaData::ELEMENT_RANK , elem_id(ix,iy) ); }
 
 
         void generate_sides_meta()
@@ -412,7 +412,7 @@ namespace stk {
                         }
                       if (NodesPerElem == 3 && elem(ix,iy) && i_side >=2 )
                         {
-                          mesh::Entity& element = *bulk_data.get_entity(meta_data.element_rank(), (NX*NY+1)+elem_id(ix, iy));
+                          mesh::Entity& element = *bulk_data.get_entity(stk::mesh::MetaData::ELEMENT_RANK, (NX*NY+1)+elem_id(ix, iy));
 
                           if (end != std::find(ibegin, end, elem_id(ix,iy)) )
                             {

@@ -38,11 +38,11 @@
 #include <typeinfo>
 #include <math.h>
 
-namespace stk 
+namespace stk
 {
-  namespace percept 
+  namespace percept
   {
-    namespace unit_tests 
+    namespace unit_tests
     {
 
 #define EXTRA_PRINT 0
@@ -139,7 +139,7 @@ namespace stk
             eMesh.save_as(input_files_loc+"quad_fixture_no_sidesets.e");
           }
       }
- 
+
       static void fixture_setup()
       {
         static bool is_setup = false;
@@ -153,7 +153,7 @@ namespace stk
       //=============================================================================
       //=============================================================================
 
-      /// generate a mesh with wedge elements 
+      /// generate a mesh with wedge elements
 
       STKUNIT_UNIT_TEST(unit_perceptMesh, wedge6_1)
       {
@@ -228,9 +228,9 @@ namespace stk
             const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( (eMesh.get_spatial_dim() == 2 ? eMesh.edge_rank() : eMesh.face_rank() ) );  // Note
             double sum = 0.0;
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
               {
-                if (in_surface_selector(**k)) 
+                if (in_surface_selector(**k))
                   {
                     stk::mesh::Bucket & bucket = **k ;
 
@@ -239,14 +239,14 @@ namespace stk
                     shards::CellTopology cell_topo(cell_topo_data);
 
                     const unsigned num_elements_in_bucket = bucket.size();
-                
+
                     for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                       {
                         stk::mesh::Entity& element = bucket[iElement];
 
-                        const stk::mesh::PairIterRelation& elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );  
+                        const stk::mesh::PairIterRelation& elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
 
-                        unsigned num_node = elem_nodes.size(); 
+                        unsigned num_node = elem_nodes.size();
                         for (unsigned inode=0; inode < num_node; inode++)
                           {
                             stk::mesh::Entity & node = *elem_nodes[ inode ].entity();
@@ -282,9 +282,8 @@ namespace stk
 
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        std::string expected_serialized_mesh_string = 
-          "P[0] ======================================================== P[0] ========================================================P[0] ========================================================P[0] PerceptMesh::print_info: quad fixtureP[0] Uses { Node = 169 Edge = 48 Face = 144 Elem = 0 }P[0] info>    Number of parts = 26 P[0] info>    Part subset info:  P[0] info>     Part[0]= {UNIVERSAL} topology = null primary_entity_rank = 4294967295 subsets = {{OWNS} , {SHARES} , {FEM_ROOT_CELL_TOPOLOGY_PART_Node} , {FEM_ROOT_CELL_TOPOLOGY_PART_Line_2} , {FEM_ROOT_CELL_TOPOLOGY_PART_Line_3} , {FEM_ROOT_CELL_TOPOLOGY_PART_Particle} , {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_3} , {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_6} , {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_4} , {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_4} , {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_8} , {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_9} , {FEM_ROOT_CELL_TOPOLOGY_PART_Beam_2} , {FEM_ROOT_CELL_TOPOLOGY_PART_Beam_3} , {FEM_ROOT_CELL_TOPOLOGY_PART_ShellLine_2} , {FEM_ROOT_CELL_TOPOLOGY_PART_ShellLine_3} , block_1 , surface_1 , surface_2 , surface_3 , surface_4 , surface_quad4_edge2d2_1 , surface_quad4_edge2d2_2 , surface_quad4_edge2d2_3 , surface_quad4_edge2d2_4}P[0] info>     Part[1]= {OWNS} topology = null primary_entity_rank = 4294967295 subsets = {}P[0] info>     Part[2]= {SHARES} topology = null primary_entity_rank = 4294967295 subsets = {}P[0] info>     Part[3]= {FEM_ROOT_CELL_TOPOLOGY_PART_Node} topology = Node primary_entity_rank = 0 subsets = {}P[0] info>     Part[4]= {FEM_ROOT_CELL_TOPOLOGY_PART_Line_2} topology = Line_2 primary_entity_rank = 1 subsets = {surface_quad4_edge2d2_1 , surface_quad4_edge2d2_2 , surface_quad4_edge2d2_3 , surface_quad4_edge2d2_4}P[0] info>     Part[5]= {FEM_ROOT_CELL_TOPOLOGY_PART_Line_3} topology = Line_3 primary_entity_rank = 1 subsets = {}P[0] info>     Part[6]= {FEM_ROOT_CELL_TOPOLOGY_PART_Particle} topology = Particle primary_entity_rank = 2 subsets = {}P[0] info>     Part[7]= {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_3} topology = Triangle_3 primary_entity_rank = 2 subsets = {}P[0] info>     Part[8]= {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_6} topology = Triangle_6 primary_entity_rank = 2 subsets = {}P[0] info>     Part[9]= {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_4} topology = Triangle_4 primary_entity_rank = 2 subsets = {}P[0] info>     Part[10]= {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_4} topology = Quadrilateral_4 primary_entity_rank = 2 subsets = {block_1}P[0] info>     Part[11]= {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_8} topology = Quadrilateral_8 primary_entity_rank = 2 subsets = {}P[0] info>     Part[12]= {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_9} topology = Quadrilateral_9 primary_entity_rank = 2 subsets = {}P[0] info>     Part[13]= {FEM_ROOT_CELL_TOPOLOGY_PART_Beam_2} topology = Beam_2 primary_entity_rank = 2 subsets = {}P[0] info>     Part[14]= {FEM_ROOT_CELL_TOPOLOGY_PART_Beam_3} topology = Beam_3 primary_entity_rank = 2 subsets = {}P[0] info>     Part[15]= {FEM_ROOT_CELL_TOPOLOGY_PART_ShellLine_2} topology = ShellLine_2 primary_entity_rank = 2 subsets = {}P[0] info>     Part[16]= {FEM_ROOT_CELL_TOPOLOGY_PART_ShellLine_3} topology = ShellLine_3 primary_entity_rank = 2 subsets = {}P[0] info>     Part[17]= block_1 topology = Quadrilateral_4 primary_entity_rank = 2 subsets = {}P[0] info>     Part[18]= surface_1 topology = null primary_entity_rank = 1 subsets = {surface_quad4_edge2d2_1}P[0] info>     Part[19]= surface_2 topology = null primary_entity_rank = 1 subsets = {surface_quad4_edge2d2_2}P[0] info>     Part[20]= surface_3 topology = null primary_entity_rank = 1 subsets = {surface_quad4_edge2d2_3}P[0] info>     Part[21]= surface_4 topology = null primary_entity_rank = 1 subsets = {surface_quad4_edge2d2_4}P[0] info>     Part[22]= surface_quad4_edge2d2_1 topology = Line_2 primary_entity_rank = 1 subsets = {}P[0] info>     Part[23]= surface_quad4_edge2d2_2 topology = Line_2 primary_entity_rank = 1 subsets = {}P[0] info>     Part[24]= surface_quad4_edge2d2_3 topology = Line_2 primary_entity_rank = 1 subsets = {}P[0] info>     Part[25]= surface_quad4_edge2d2_4 topology = Line_2 primary_entity_rank = 1 subsets = {} P[0] info>     Part Uses information:  P[0] info>     Part[0]= {UNIVERSAL} : Uses { Node = 169 Edge = 48 Face = 144 Elem = 0 }P[0] info>     Part[1]= {OWNS} : Uses { Node = 169 Edge = 48 Face = 144 Elem = 0 }P[0] info>     Part[2]= {SHARES} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[3]= {FEM_ROOT_CELL_TOPOLOGY_PART_Node} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[4]= {FEM_ROOT_CELL_TOPOLOGY_PART_Line_2} : Uses { Node = 48 Edge = 48 Face = 0 Elem = 0 }P[0] info>     Part[5]= {FEM_ROOT_CELL_TOPOLOGY_PART_Line_3} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[6]= {FEM_ROOT_CELL_TOPOLOGY_PART_Particle} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[7]= {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_3} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[8]= {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_6} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[9]= {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_4} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[10]= {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_4} : Uses { Node = 169 Edge = 48 Face = 144 Elem = 0 }P[0] info>     Part[11]= {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_8} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[12]= {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_9} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[13]= {FEM_ROOT_CELL_TOPOLOGY_PART_Beam_2} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[14]= {FEM_ROOT_CELL_TOPOLOGY_PART_Beam_3} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[15]= {FEM_ROOT_CELL_TOPOLOGY_PART_ShellLine_2} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[16]= {FEM_ROOT_CELL_TOPOLOGY_PART_ShellLine_3} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[17]= block_1 : Uses { Node = 169 Edge = 48 Face = 144 Elem = 0 }P[0] info>     Part[18]= surface_1 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 }P[0] info>     Part[19]= surface_2 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 }P[0] info>     Part[20]= surface_3 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 }P[0] info>     Part[21]= surface_4 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 }P[0] info>     Part[22]= surface_quad4_edge2d2_1 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 }P[0] info>     Part[23]= surface_quad4_edge2d2_2 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 }P[0] info>     Part[24]= surface_quad4_edge2d2_3 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 }P[0] info>     Part[25]= surface_quad4_edge2d2_4 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 }P[0] info>    Number of fields = 2P[0] info>    Field[0]= coordinates rank= 1P[0] info>    number of field restrictions= 1P[0] info>    field restriction 0 stride[0] = 2 type= 0 ord= 0 which corresponds to Part= {UNIVERSAL}P[0] info>    Field[1]= distribution_factors rank= 0P[0] info>    number of field restrictions= 0 P[0] ======================================================== P[0] ========================================================P[0] ========================================================";
-
+        std::string expected_serialized_mesh_string =
+          "P[0] ======================================================== P[0] ========================================================P[0] ========================================================P[0] PerceptMesh::print_info: quad fixtureP[0] Uses { Node = 169 Edge = 48 Face = 0 Elem = 144 FamilyTree = 0 }P[0] info>    Number of parts = 26 P[0] info>    Part subset info:  P[0] info>     Part[0]= {UNIVERSAL} topology = null primary_entity_rank = 4294967295 subsets = {{OWNS} , {SHARES} , {FEM_ROOT_CELL_TOPOLOGY_PART_Node} , {FEM_ROOT_CELL_TOPOLOGY_PART_Line_2} , {FEM_ROOT_CELL_TOPOLOGY_PART_Line_3} , {FEM_ROOT_CELL_TOPOLOGY_PART_Particle} , {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_3} , {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_6} , {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_4} , {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_4} , {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_8} , {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_9} , {FEM_ROOT_CELL_TOPOLOGY_PART_Beam_2} , {FEM_ROOT_CELL_TOPOLOGY_PART_Beam_3} , {FEM_ROOT_CELL_TOPOLOGY_PART_ShellLine_2} , {FEM_ROOT_CELL_TOPOLOGY_PART_ShellLine_3} , block_1 , surface_1 , surface_2 , surface_3 , surface_4 , surface_quad4_edge2d2_1 , surface_quad4_edge2d2_2 , surface_quad4_edge2d2_3 , surface_quad4_edge2d2_4}P[0] info>     Part[1]= {OWNS} topology = null primary_entity_rank = 4294967295 subsets = {}P[0] info>     Part[2]= {SHARES} topology = null primary_entity_rank = 4294967295 subsets = {}P[0] info>     Part[3]= {FEM_ROOT_CELL_TOPOLOGY_PART_Node} topology = Node primary_entity_rank = 0 subsets = {}P[0] info>     Part[4]= {FEM_ROOT_CELL_TOPOLOGY_PART_Line_2} topology = Line_2 primary_entity_rank = 1 subsets = {surface_quad4_edge2d2_1 , surface_quad4_edge2d2_2 , surface_quad4_edge2d2_3 , surface_quad4_edge2d2_4}P[0] info>     Part[5]= {FEM_ROOT_CELL_TOPOLOGY_PART_Line_3} topology = Line_3 primary_entity_rank = 1 subsets = {}P[0] info>     Part[6]= {FEM_ROOT_CELL_TOPOLOGY_PART_Particle} topology = Particle primary_entity_rank = 3 subsets = {}P[0] info>     Part[7]= {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_3} topology = Triangle_3 primary_entity_rank = 3 subsets = {}P[0] info>     Part[8]= {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_6} topology = Triangle_6 primary_entity_rank = 3 subsets = {}P[0] info>     Part[9]= {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_4} topology = Triangle_4 primary_entity_rank = 3 subsets = {}P[0] info>     Part[10]= {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_4} topology = Quadrilateral_4 primary_entity_rank = 3 subsets = {block_1}P[0] info>     Part[11]= {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_8} topology = Quadrilateral_8 primary_entity_rank = 3 subsets = {}P[0] info>     Part[12]= {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_9} topology = Quadrilateral_9 primary_entity_rank = 3 subsets = {}P[0] info>     Part[13]= {FEM_ROOT_CELL_TOPOLOGY_PART_Beam_2} topology = Beam_2 primary_entity_rank = 3 subsets = {}P[0] info>     Part[14]= {FEM_ROOT_CELL_TOPOLOGY_PART_Beam_3} topology = Beam_3 primary_entity_rank = 3 subsets = {}P[0] info>     Part[15]= {FEM_ROOT_CELL_TOPOLOGY_PART_ShellLine_2} topology = ShellLine_2 primary_entity_rank = 3 subsets = {}P[0] info>     Part[16]= {FEM_ROOT_CELL_TOPOLOGY_PART_ShellLine_3} topology = ShellLine_3 primary_entity_rank = 3 subsets = {}P[0] info>     Part[17]= block_1 topology = Quadrilateral_4 primary_entity_rank = 3 subsets = {}P[0] info>     Part[18]= surface_1 topology = null primary_entity_rank = 1 subsets = {surface_quad4_edge2d2_1}P[0] info>     Part[19]= surface_2 topology = null primary_entity_rank = 1 subsets = {surface_quad4_edge2d2_2}P[0] info>     Part[20]= surface_3 topology = null primary_entity_rank = 1 subsets = {surface_quad4_edge2d2_3}P[0] info>     Part[21]= surface_4 topology = null primary_entity_rank = 1 subsets = {surface_quad4_edge2d2_4}P[0] info>     Part[22]= surface_quad4_edge2d2_1 topology = Line_2 primary_entity_rank = 1 subsets = {}P[0] info>     Part[23]= surface_quad4_edge2d2_2 topology = Line_2 primary_entity_rank = 1 subsets = {}P[0] info>     Part[24]= surface_quad4_edge2d2_3 topology = Line_2 primary_entity_rank = 1 subsets = {}P[0] info>     Part[25]= surface_quad4_edge2d2_4 topology = Line_2 primary_entity_rank = 1 subsets = {} P[0] info>     Part Uses information:  P[0] info>     Part[0]= {UNIVERSAL} : Uses { Node = 169 Edge = 48 Face = 0 Elem = 144 FamilyTree = 0 }P[0] info>     Part[1]= {OWNS} : Uses { Node = 169 Edge = 48 Face = 0 Elem = 144 FamilyTree = 0 }P[0] info>     Part[2]= {SHARES} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[3]= {FEM_ROOT_CELL_TOPOLOGY_PART_Node} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[4]= {FEM_ROOT_CELL_TOPOLOGY_PART_Line_2} : Uses { Node = 48 Edge = 48 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[5]= {FEM_ROOT_CELL_TOPOLOGY_PART_Line_3} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[6]= {FEM_ROOT_CELL_TOPOLOGY_PART_Particle} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[7]= {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_3} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[8]= {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_6} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[9]= {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_4} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[10]= {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_4} : Uses { Node = 169 Edge = 48 Face = 0 Elem = 144 FamilyTree = 0 }P[0] info>     Part[11]= {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_8} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[12]= {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_9} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[13]= {FEM_ROOT_CELL_TOPOLOGY_PART_Beam_2} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[14]= {FEM_ROOT_CELL_TOPOLOGY_PART_Beam_3} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[15]= {FEM_ROOT_CELL_TOPOLOGY_PART_ShellLine_2} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[16]= {FEM_ROOT_CELL_TOPOLOGY_PART_ShellLine_3} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[17]= block_1 : Uses { Node = 169 Edge = 48 Face = 0 Elem = 144 FamilyTree = 0 }P[0] info>     Part[18]= surface_1 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[19]= surface_2 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[20]= surface_3 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[21]= surface_4 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[22]= surface_quad4_edge2d2_1 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[23]= surface_quad4_edge2d2_2 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[24]= surface_quad4_edge2d2_3 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>     Part[25]= surface_quad4_edge2d2_4 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 FamilyTree = 0 }P[0] info>    Number of fields = 2P[0] info>    Field[0]= coordinates rank= 1P[0] info>    number of field restrictions= 1P[0] info>    field restriction 0 stride[0] = 2 type= 0 ord= 0 which corresponds to Part= {UNIVERSAL}P[0] info>    Field[1]= distribution_factors rank= 0P[0] info>    number of field restrictions= 0 P[0] ======================================================== P[0] ========================================================P[0] ========================================================";
 
         const unsigned p_size = stk::parallel_machine_size( pm );
         //const unsigned p_rank = stk::parallel_machine_rank( pm );
@@ -346,14 +345,14 @@ namespace stk
 
             const std::vector<stk::mesh::Bucket*> & buckets = bulkData_1.buckets( stk::mesh::MetaData::NODE_RANK );
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
               {
-                //if (in_surface_selector(**k)) 
+                //if (in_surface_selector(**k))
                 {
                   stk::mesh::Bucket & bucket = **k ;
 
                   const unsigned num_elements_in_bucket = bucket.size();
-                
+
                   for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                     {
                       stk::mesh::Entity& entity = bucket[iEntity];
@@ -415,28 +414,28 @@ namespace stk
             stk::mesh::BulkData& bulkData = *eMesh.get_bulk_data();
             VectorFieldType* coordField = eMesh.get_coordinates_field();
 
-            const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( stk::mesh::MetaData::NODE_RANK );  
+            const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( stk::mesh::MetaData::NODE_RANK );
             // right-shear, theta=angle from vertical, dxdy=tan(theta)
             // up-shear, theta=angle from horizontal, dydx=tan(theta)
             // choose one or other, set other to 0.0
             double dxdy = std::tan(theta);
             double dydx = 0.0;
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
               {
-                //if (in_surface_selector(**k)) 
+                //if (in_surface_selector(**k))
                 {
                   stk::mesh::Bucket & bucket = **k ;
 
                   const unsigned num_nodes_in_bucket = bucket.size();
-                
+
                   for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
                     {
                       stk::mesh::Entity& node = bucket[iNode];
                       //stk::mesh::EntityId nid = node.identifier();
 
                       double * const coord = stk::mesh::field_data( *coordField , node );
-                  
+
                       coord[0] += dxdy*coord[1];
                       coord[1] += dydx*coord[0];
                     }

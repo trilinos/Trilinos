@@ -31,7 +31,7 @@ namespace stk {
       {
         m_primaryEntityRank = m_eMesh.face_rank();
         if (m_eMesh.get_spatial_dim() == 2)
-          m_primaryEntityRank = eMesh.element_rank();
+          m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
 
         setNeededParts(eMesh, block_names, true);
         Elem::StdMeshObjTopologies::bootstrap();
@@ -365,7 +365,7 @@ namespace stk {
 
         //std::cout << "tmp RefinerPattern_Tri3_Tri3_N::num_edges_marked= " << num_edges_marked << std::endl;
 
-        //nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
+        //nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::MetaData::ELEMENT_RANK, 0u);
         
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {

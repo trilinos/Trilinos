@@ -47,7 +47,7 @@ void use_case_5_generate_mesh_meta_data(
   stk::mesh::MetaData & meta_data ,
   VectorFieldType & node_coord )
 {
-  const stk::mesh::EntityRank element_rank = meta_data.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   mesh::Part & universal        = meta_data.universal_part();
   mesh::Part & block_hex        = meta_data.declare_part("hexes",element_rank);

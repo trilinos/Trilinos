@@ -81,7 +81,7 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
   //number of faces  and particles exist.
   try {
     stk::mesh::fixtures::HexFixture fixture( pm , nx , ny , nz );
-    const stk::mesh::EntityRank element_rank = fixture.m_fem_meta.element_rank();
+    const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
     const stk::mesh::EntityRank side_rank = fixture.m_fem_meta.side_rank();
 
     const unsigned p_rank = fixture.m_bulk_data.parallel_rank();

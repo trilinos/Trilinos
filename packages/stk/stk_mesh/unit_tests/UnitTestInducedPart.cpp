@@ -40,11 +40,10 @@ bool has_part(const Entity& entity, const Part& part)
                                                   \
   const unsigned spatial_dim = 2;                                       \
                                                                         \
-  std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names(spatial_dim); \
-  MetaData meta_data(spatial_dim, entity_rank_names);                \
+  MetaData meta_data(spatial_dim);                                      \
   Part& unranked_part = meta_data.declare_part("unranked_part");        \
-  Part& element_rank_part = meta_data.declare_part("element_rank_part", meta_data.element_rank()); \
-  Part& element_rank_superset_part = meta_data.declare_part("element_rank_superset_part", meta_data.element_rank()); \
+  Part& element_rank_part = meta_data.declare_part("element_rank_part", MetaData::ELEMENT_RANK); \
+  Part& element_rank_superset_part = meta_data.declare_part("element_rank_superset_part", MetaData::ELEMENT_RANK); \
   Part& side_rank_part = meta_data.declare_part("side_rank_part", meta_data.side_rank()); \
   Part& unranked_superset_part = meta_data.declare_part("unranked_superset_part"); \
   meta_data.declare_part_subset(unranked_superset_part, element_rank_part); \
@@ -58,7 +57,7 @@ bool has_part(const Entity& entity, const Part& part)
   stk::mesh::PartVector parts;                                          \
   parts.push_back(&unranked_part);                                       \
   parts.push_back(&element_rank_part);                                   \
-  Entity& elem = mesh.declare_entity(meta_data.element_rank(), 1 /*id*/, parts); \
+  Entity& elem = mesh.declare_entity(MetaData::ELEMENT_RANK, 1 /*id*/, parts); \
                                                                         \
   parts.clear();                                                        \
   parts.push_back(&side_rank_part);                                      \

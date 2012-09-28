@@ -49,7 +49,7 @@ bool test_unequal_weights( stk::ParallelMachine pm )
   stk::mesh::BulkData & bulk  = fixture.m_bulk_data;
 
   // Put weights field on all elements
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
   ScalarField & weight_field( fem_meta.declare_field< ScalarField >( "element_weights" ) );
   stk::mesh::put_field(weight_field , element_rank , fem_meta.universal_part() );
 

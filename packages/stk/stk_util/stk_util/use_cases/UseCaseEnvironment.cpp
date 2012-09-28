@@ -563,7 +563,7 @@ bool print_status(stk::ParallelMachine comm, bool success)
 
   int rank = stk::parallel_machine_rank(comm);
   if (rank == 0) {
-    std::cout << ( all_success ? "STK_USECASE_PASS" : "Use case failed.") << std::endl;
+    std::cout << ( all_success ? "STKUNIT_ALL_PASS" : "Use case failed.") << std::endl;
   }
 
   return all_success;

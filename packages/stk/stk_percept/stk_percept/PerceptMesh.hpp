@@ -110,7 +110,7 @@ namespace stk {
       typedef std::map<unsigned, BasisTypeRCP > BasisTableMap;
 
       static std::string s_omit_part;
-      
+
     public:
 
       //========================================================================================================================
@@ -243,19 +243,19 @@ namespace stk {
       }
 
       /// get a pointer to a node with given id
-      stk::mesh::Entity *get_node(const mesh::EntityId node_id) 
+      stk::mesh::Entity *get_node(const mesh::EntityId node_id)
       {
         return get_bulk_data()->get_entity(node_rank(), node_id);
       }
 
       /// get a pointer to an element with given id
-      stk::mesh::Entity *get_element(const mesh::EntityId element_id) 
+      stk::mesh::Entity *get_element(const mesh::EntityId element_id)
       {
         return get_bulk_data()->get_entity(element_rank(), element_id);
       }
 
       /// get a pointer to an entity with given id
-      stk::mesh::Entity *get_entity( mesh::EntityRank rank, const mesh::EntityId id) 
+      stk::mesh::Entity *get_entity( mesh::EntityRank rank, const mesh::EntityId id)
       {
         return get_bulk_data()->get_entity(rank, id);
       }
@@ -308,7 +308,7 @@ namespace stk {
        */
       stk::mesh::EntityRank element_rank() const
       {
-        return m_metaData->element_rank();
+        return stk::mesh::MetaData::ELEMENT_RANK;
       }
 
       /// set the current data in fields to the given Exodus step by reading from the database
@@ -353,7 +353,7 @@ namespace stk {
       /// copy field data from one field (field_src) to another (field_dest)
       void copy_field(stk::mesh::FieldBase* field_dest, stk::mesh::FieldBase* field_src);
 
-      /// axpby calculates: y = alpha*x + beta*y 
+      /// axpby calculates: y = alpha*x + beta*y
       void nodal_field_state_axpby(stk::mesh::FieldBase* field, double alpha, unsigned x_state, double beta, unsigned y_state);
 
       /// axpby calculates: y = alpha*x + beta*y
@@ -363,7 +363,7 @@ namespace stk {
       void nodal_field_state_axpbypgz(stk::mesh::FieldBase* field, double alpha, unsigned x_state, double beta, unsigned y_state, double gamma, unsigned z_state);
 
       /// axpbypgz calculates: z = alpha*x + beta*y + gamma*z
-      void nodal_field_axpbypgz(double alpha, stk::mesh::FieldBase* field_x, 
+      void nodal_field_axpbypgz(double alpha, stk::mesh::FieldBase* field_x,
                                 double beta, stk::mesh::FieldBase* field_y,
                                 double gamma, stk::mesh::FieldBase* field_z);
 
@@ -444,32 +444,32 @@ namespace stk {
 
       /// add some fields that are useful for debugging or for exporting meshes to Mesquite - must be
       ///   done before commit()
-      void addParallelInfoFields(bool elemental, bool nodal, 
+      void addParallelInfoFields(bool elemental, bool nodal,
                                  std::string elemental_proc_rank_name = "proc_rank",
                                  std::string nodal_fixed_flag="fixed", // boundary flag for telling Mesquite these nodes shouldn't be moved
-                                 std::string nodal_global_id_name="GLOBAL_ID", 
-                                 std::string nodal_proc_id_name="PROCESSOR_ID", 
+                                 std::string nodal_global_id_name="GLOBAL_ID",
+                                 std::string nodal_proc_id_name="PROCESSOR_ID",
                                  std::string nodal_local_id_name="LOCAL_ID");
 
       /// fill the fields from addParallelInfoFields with data from stk_mesh database
-      void populateParallelInfoFields(bool elemental, bool nodal, 
+      void populateParallelInfoFields(bool elemental, bool nodal,
                                       stk::mesh::Selector* fixed_node_selector=0,
                                       std::string elemental_proc_rank_name = "proc_rank",
                                       std::string nodal_fixed_flag="fixed", // boundary flag for telling Mesquite these nodes shouldn't be moved
-                                      std::string nodal_global_id_name="GLOBAL_ID", 
-                                      std::string nodal_proc_id_name="PROCESSOR_ID", 
+                                      std::string nodal_global_id_name="GLOBAL_ID",
+                                      std::string nodal_proc_id_name="PROCESSOR_ID",
                                       std::string nodal_local_id_name="LOCAL_ID");
 
       /**
-       * A family tree relation holds the parent/child relations for a refined mesh.  
-       * 
+       * A family tree relation holds the parent/child relations for a refined mesh.
+       *
        * Case 0: a single refinement of a parent P_0 and its children C_0_0, C_0_1,...,C_0_N leads to a new
        *  family tree entity FT_0 that has down relations to {P_0, C_0_0, C_0_1,...,C_0_N}
        *  The back pointers from P_0, C_0_0, ... are initially stored as the 0'th index of their relations,
-       *    i.e.: P_0.relations(FAMILY_TREE_RANK)[0] --> FT_0, 
+       *    i.e.: P_0.relations(FAMILY_TREE_RANK)[0] --> FT_0,
        *          C_0_0.relations(FAMILY_TREE_RANK)[0] --> FT_0, etc.
-       * Case 1: a previously refined child, say C_0_1, renamed to P_0_1, gets further refined leading to 
-       *  a new family tree entity, FT_1 
+       * Case 1: a previously refined child, say C_0_1, renamed to P_0_1, gets further refined leading to
+       *  a new family tree entity, FT_1
        *  pointing to:  {P_0_1, C_0_1_0, C_0_1_1,... }
        *  but, now the relations indexing changes (actually, we can't predict what it will be, thus the
        *  need for this function getFamilyTreeRelationIndex):
@@ -480,7 +480,7 @@ namespace stk {
        *    level (if there's only one level, or we are looking for the family tree associated with the element
        *    when it was a child for the first time), orthe "level 1" family tree (corresponding to Case 1
        *    where we are looking for the family tree of the element associated with it being a parent).
-       * 
+       *
        */
       unsigned getFamilyTreeRelationIndex(FamiltyTreeLevel level, const stk::mesh::Entity& element);
 

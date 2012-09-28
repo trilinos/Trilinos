@@ -20,7 +20,7 @@ namespace stk {
       {
         m_primaryEntityRank = eMesh.face_rank(); 
         if (m_eMesh.get_spatial_dim() == 2)
-          m_primaryEntityRank = eMesh.element_rank();
+          m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
 
         setNeededParts(eMesh, block_names, true);
       }
@@ -30,7 +30,7 @@ namespace stk {
       {
         needed_entities.resize(2);
         needed_entities[0].first = m_eMesh.edge_rank();    // edges have 2 nodes
-        needed_entities[1].first = m_eMesh.element_rank(); 
+        needed_entities[1].first = stk::mesh::MetaData::ELEMENT_RANK; 
         setToOne(needed_entities);
       }
 
@@ -72,7 +72,7 @@ namespace stk {
 
           }
 
-        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
+        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::MetaData::ELEMENT_RANK, 0u);
 
 
 // new_sub_entity_nodes[i][j]

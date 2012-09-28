@@ -244,7 +244,7 @@ void io_example( stk::ParallelMachine comm,
 
   //----------------------------------
   // Process Entity Types. Subsetting is possible.
-  stk::mesh::MetaData meta_data(3, stk::mesh::entity_rank_names(3) );
+  stk::mesh::MetaData meta_data(3);
   stk::mesh::Part & universal = meta_data.universal_part();
 #if IOTEST
   process_elementblocks(in_region, meta_data);
@@ -278,7 +278,7 @@ void io_example( stk::ParallelMachine comm,
 
   mesh::Part * block_1 = meta_data.get_part("block_1");
   stk::mesh::put_field(
-                       elem_centroid_field2 , meta_data.element_rank() , *block_1 , SpatialDim );
+                       elem_centroid_field2 , stk::mesh::MetaData::ELEMENT_RANK , *block_1 , SpatialDim );
 
 
   //--------------------------------
@@ -306,7 +306,7 @@ void io_example( stk::ParallelMachine comm,
   // This size is different for each element block.
 
   stk::mesh::put_field(
-                       elem_node_coord , meta_data.element_rank() , universal , shards::Hexahedron<8> ::node_count );
+                       elem_node_coord , stk::mesh::MetaData::ELEMENT_RANK , universal , shards::Hexahedron<8> ::node_count );
 
 
   //----------------------------------
@@ -408,7 +408,7 @@ void io_example( stk::ParallelMachine comm,
     process_input_request(in_region, bulk_data, step);
 
     // execute()
-    my_test (bulk_data, meta_data.element_rank() , coordinates_field, elem_centroid_field);
+    my_test (bulk_data, stk::mesh::MetaData::ELEMENT_RANK , coordinates_field, elem_centroid_field);
 
     // Write data from the stk::mesh fields out to the output database.a
     int out_step = out_region.add_state(time);

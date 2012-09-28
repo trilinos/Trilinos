@@ -50,7 +50,7 @@ namespace {
 
 inline stk::mesh::EntityRank get_element_rank(const stk::mesh::MetaData& meta_data)
 {
-  return meta_data.element_rank();
+  return stk::mesh::MetaData::ELEMENT_RANK;
 }
 
 inline stk::mesh::EntityRank get_element_rank(const stk::mesh::Part& part)
@@ -847,7 +847,7 @@ bool use_case_14a_driver(MPI_Comm comm,
 
     stk::mesh::Part & universal              = meta_data.universal_part();
     const stk::mesh::EntityRank node_rank    = stk::mesh::MetaData::NODE_RANK;
-    const stk::mesh::EntityRank element_rank = meta_data.element_rank();
+    const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
     // Nodal vector fields
     CartesianField &model_coordinates  = stk::mesh::put_field(meta_data.declare_field<CartesianField>("coordinates"),
                                                                                        node_rank, universal, SpatialDim);

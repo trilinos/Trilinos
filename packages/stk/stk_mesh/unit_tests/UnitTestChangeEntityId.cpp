@@ -17,9 +17,9 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id )
 {
   using namespace stk::mesh;
 
-  const unsigned NX = 50;
-  const unsigned NY = 50;
-  const unsigned NZ = 50;
+  const unsigned NX = 20;
+  const unsigned NY = 20;
+  const unsigned NZ = 20;
   const unsigned num_elems = NX * NY * NZ;
 
   fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
@@ -51,7 +51,7 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id )
   }
 
 
-  const BucketVector & elems = mesh.buckets(hf.m_fem_meta.element_rank());
+  const BucketVector & elems = mesh.buckets(MetaData::ELEMENT_RANK);
 
   std::vector<EntityId> old_ids;
   old_ids.reserve(num_elems);

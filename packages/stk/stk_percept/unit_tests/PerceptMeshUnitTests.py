@@ -226,7 +226,7 @@ class PerceptMeshUnitTests(unittest.TestCase):
         element = eMesh.get_element(1)
         self.assertTrue(element != 0)
 
-        element1 = eMesh.get_entity(eMesh.element_rank(), 1)
+        element1 = eMesh.get_entity(stk::mesh::MetaData::ELEMENT_RANK, 1)
         self.assertTrue(element == element1)
         
         #/// find node closest to given point

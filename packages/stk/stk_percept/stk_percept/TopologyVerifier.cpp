@@ -103,7 +103,7 @@ namespace stk
 
       //mesh::Selector select_owned( meta_data.locally_owned_part() );
 
-      const std::vector<mesh::Bucket*> & buckets = bulk.buckets(meta.element_rank() );
+      const std::vector<mesh::Bucket*> & buckets = bulk.buckets(stk::mesh::MetaData::ELEMENT_RANK );
 
       for ( std::vector<mesh::Bucket *>::const_iterator ik = buckets.begin() ; ik != buckets.end() ; ++ik )
         {
@@ -178,7 +178,7 @@ namespace stk
                     {
                       unsigned inodeOnPotBadEdgeInElem = cell_topo->edge[iedgeOrd].node[inodeOnPotBadEdge];
 
-                      const mesh::PairIterRelation node_elems = elem_nodes[inodeOnPotBadEdgeInElem].entity()->relations( meta.element_rank() );
+                      const mesh::PairIterRelation node_elems = elem_nodes[inodeOnPotBadEdgeInElem].entity()->relations( stk::mesh::MetaData::ELEMENT_RANK );
                       unsigned num_elems_on_node = node_elems.size();
 
                       for (unsigned iele = 0; iele < num_elems_on_node; iele++)

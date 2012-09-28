@@ -29,7 +29,7 @@ namespace stk {
                                          SetOfEntities& family_trees_to_be_removed, 
                                          SetOfEntities& parent_elements)
     {
-      const unsigned FAMILY_TREE_RANK = m_eMesh.element_rank() + 1u;
+      const unsigned FAMILY_TREE_RANK = stk::mesh::MetaData::ELEMENT_RANK + 1u;
 
       unsigned nchild_removed = 0;
 
@@ -52,7 +52,7 @@ namespace stk {
           unsigned child_ft_level_0 = m_eMesh.getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, *element_p);
 
           stk::mesh::Entity *family_tree = child_to_family_tree_relations[child_ft_level_0].entity();
-          stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(m_eMesh.element_rank());
+          stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(stk::mesh::MetaData::ELEMENT_RANK);
           if (family_tree_relations.size() == 0)
             {
               throw std::logic_error("Refiner::unrefineTheseElements family_tree_relations.size() == 0");
@@ -120,7 +120,7 @@ namespace stk {
     {
       if (getIgnoreSideSets()) return;
 
-      const unsigned FAMILY_TREE_RANK = m_eMesh.element_rank() + 1u;
+      const unsigned FAMILY_TREE_RANK = stk::mesh::MetaData::ELEMENT_RANK + 1u;
       for(SetOfEntities::iterator child_it = children_to_be_removed.begin();
           child_it != children_to_be_removed.end(); ++child_it)
         {
@@ -172,7 +172,7 @@ namespace stk {
 
     void Refiner::removeChildElements(SetOfEntities& children_to_be_removed)
     {
-      const unsigned FAMILY_TREE_RANK = m_eMesh.element_rank() + 1u;
+      const unsigned FAMILY_TREE_RANK = stk::mesh::MetaData::ELEMENT_RANK + 1u;
       for(SetOfEntities::iterator child_it = children_to_be_removed.begin();
           child_it != children_to_be_removed.end(); ++child_it)
         {
@@ -214,7 +214,7 @@ namespace stk {
               del =  m_eMesh.get_bulk_data()->destroy_entity( side_elem );
               if (1)
                 {
-                  stk::mesh::PairIterRelation rels = side_elem->relations(m_eMesh.element_rank());
+                  stk::mesh::PairIterRelation rels = side_elem->relations(stk::mesh::MetaData::ELEMENT_RANK);
                   for (unsigned irels=0; irels < rels.size(); irels++)
                     {
                       bool in_del = (elements_to_be_deleted.find(rels[irels].entity()) != elements_to_be_deleted.end());
@@ -341,7 +341,7 @@ namespace stk {
     {
       ElementUnrefineCollection elements_to_unref;
 
-      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
 
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
@@ -387,7 +387,7 @@ namespace stk {
       int print_filter_info = DEBUG_UNREF_1;
       if (print_filter_info)  std::cout << "P["<< m_eMesh.get_rank() << "] filterUnrefSet: initial set size = " << elements_to_unref.size() << std::endl;
       
-      const unsigned FAMILY_TREE_RANK = m_eMesh.element_rank() + 1u;
+      const unsigned FAMILY_TREE_RANK = stk::mesh::MetaData::ELEMENT_RANK + 1u;
       ElementUnrefineCollection elements_to_unref_copy;
 
       typedef std::set<stk::mesh::Entity *> SetOfEntities;
@@ -424,7 +424,7 @@ namespace stk {
               unsigned child_ft_level_0 = m_eMesh.getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
 
               stk::mesh::Entity *family_tree = child_to_family_tree_relations[child_ft_level_0].entity();
-              stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(m_eMesh.element_rank());
+              stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(stk::mesh::MetaData::ELEMENT_RANK);
               if (family_tree_relations.size() == 0)
                 {
                   throw std::logic_error("Refiner::filterUnrefSet family_tree_relations.size() == 0");
@@ -536,7 +536,7 @@ namespace stk {
       bool doTest=true;
 
       // mark kept nodes
-      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
 
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {

@@ -71,7 +71,7 @@ namespace stk
             BulkData mesh(meta_data, pm);
             //unsigned p_rank = mesh.parallel_rank();
             //unsigned p_size = mesh.parallel_size();
-            const EntityRank elem_rank = meta_data.element_rank();
+            const EntityRank elem_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
             // Begin modification cycle so we can create the entities and relations
             mesh.modification_begin();
@@ -165,17 +165,17 @@ namespace stk
                   unsigned elem_num_ghost = 5;  // edge #2
                   unsigned elem_20 = 20;
 
-                  stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local);
-                  stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_ghost);
+                  stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
+                  stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
                   if (p_rank == 2)
                     {
-                      element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_ghost);
-                      element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local);
+                      element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
+                      element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
                     }
                   if (p_rank == 0)
                     {
-                      element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_20);
-                      element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_20);
+                      element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_20);
+                      element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_20);
                     }
 
                   dw() << "P["<<p_rank<<"] elem_num_local = " << elem_num_local << DWENDL;
@@ -343,17 +343,17 @@ namespace stk
                   unsigned elem_num_local_proc_1 = elem_num_local;
                   unsigned elem_num_local_proc_2 = elem_num_ghost;
 
-                  stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local_proc_1);
-                  stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local_proc_2);
+                  stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local_proc_1);
+                  stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local_proc_2);
                   if (p_rank == 2)
                     {
-                      element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local_proc_2);
-                      element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local_proc_1);
+                      element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local_proc_2);
+                      element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local_proc_1);
                     }
                   if (p_rank == 0)
                     {
-                      element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local_proc_0);
-                      element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local_proc_0);
+                      element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local_proc_0);
+                      element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local_proc_0);
                     }
 
                   dw() << "P["<<p_rank<<"] elem_num_local = " << elem_num_local << DWENDL;
@@ -368,7 +368,7 @@ namespace stk
                   // choose edges to be used for new node locations (i.e., this would model a serendipity-like element with only edge Lagrange nodes)
                   std::vector<NeededEntityType> needed_entity_ranks(2);
                   needed_entity_ranks[0] = NeededEntityType(eMesh.edge_rank(), 1u);
-                  needed_entity_ranks[1] = NeededEntityType(eMesh.element_rank(), 1u);
+                  needed_entity_ranks[1] = NeededEntityType(stk::mesh::MetaData::ELEMENT_RANK, 1u);
 
                   /*
                    * 1st of three steps to create and associate new nodes - register need for new nodes, then check if node is remote, then get

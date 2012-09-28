@@ -80,14 +80,14 @@ STKUNIT_UNIT_TEST(nodeRegistry, createAddNodes_serial_and_1st_parallel)
   {
     unsigned elem_num=(12/p_size)*3*3;
 
-    const stk::mesh::Entity* element_1_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num);
+    const stk::mesh::Entity* element_1_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num);
     dw() << "P["<<p_rank<<"] element_1_p = " << element_1_p << DWENDL;
     stk::mesh::EntityRank stk_mesh_Edge = 1;
 
     NeededEntityType entity_rank(stk_mesh_Edge, 1u);
     unsigned iSubDimOrd = 0u;
 
-    const stk::mesh::Entity& element_1 = *eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num);
+    const stk::mesh::Entity& element_1 = *eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num);
 
     //nodeRegistry.getSubDimEntity(subDimEntity, element_1, entity_rank, iSubDimOrd);
     nodeRegistry.registerNeedNewNode(element_1, entity_rank, iSubDimOrd, true);
@@ -116,14 +116,14 @@ STKUNIT_UNIT_TEST(nodeRegistry, createAddNodes_serial_and_1st_parallel)
   {
     unsigned elem_num=1;
 
-    const stk::mesh::Entity* element_1_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num);
+    const stk::mesh::Entity* element_1_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num);
     std::cout << "P["<<p_rank<<"] element_1_p = " << element_1_p << std::endl;
     stk::mesh::EntityRank stk_mesh_Edge = 1;
 
     NeededEntityType entity_rank(stk_mesh_Edge, 1u);
     unsigned iSubDimOrd = 0u;
 
-    const stk::mesh::Entity& element_1 = *eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num);
+    const stk::mesh::Entity& element_1 = *eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num);
 
     nodeRegistry.registerNeedNewNode(element_1, entity_rank, iSubDimOrd, true);
 
@@ -213,13 +213,13 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_0)
     unsigned elem_num_local = (12/p_size)*3*3;
     unsigned elem_num_ghost = elem_num_local+(3*3);
 
-    const stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local);
-    const stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_ghost);
+    const stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
+    const stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
 
     if (p_rank == 1)
     {
-      element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_ghost);
-      element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local);
+      element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
+      element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
     }
 
     dw() << "P["<<p_rank<<"] elem_num_local = " << elem_num_local << DWENDL;
@@ -277,12 +277,12 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1)
     unsigned elem_num_local = (12/p_size)*3*3;
     unsigned elem_num_ghost = elem_num_local+(3*3);
 
-    stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local);
-    stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_ghost);
+    stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
+    stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
     if (p_rank == 1)
     {
-      element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_ghost);
-      element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local);
+      element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
+      element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
     }
 
     dw() << "P["<<p_rank<<"] elem_num_local = " << elem_num_local << DWENDL;
@@ -379,7 +379,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
   eMesh.new_mesh(percept::GMeshSpec(std::string("1x1x")+toString(p_size)+std::string("|bbox:0,0,0,1,1,1")));
 
   // prepare for adding some quadratic elements
-  mesh::Part& block_hex_20 = eMesh.get_fem_meta_data()->declare_part("block_hex_20", eMesh.element_rank());
+  mesh::Part& block_hex_20 = eMesh.get_fem_meta_data()->declare_part("block_hex_20", stk::mesh::MetaData::ELEMENT_RANK);
   /// set cell topology for the part block_hex_20
   mesh::set_cell_topology< shards::Hexahedron<20>  >( block_hex_20 );
   stk::io::put_io_part_attribute(block_hex_20);
@@ -401,12 +401,12 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
     if (p_size == 1)
       elem_num_ghost = 1;
 
-    stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local);
-    stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_ghost);
+    stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
+    stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
     if (p_rank == 1)
     {
-      element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_ghost);
-      element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local);
+      element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
+      element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
     }
 
     dw() << "P["<<p_rank<<"] elem_num_local = " << elem_num_local << DWENDL;
@@ -607,7 +607,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
   eMesh.new_mesh(percept::GMeshSpec(gmesh_spec));
 
   // prepare for breaking into tet elements
-  mesh::Part& block_tet_4 = eMesh.get_fem_meta_data()->declare_part("block_tet_4", eMesh.element_rank());
+  mesh::Part& block_tet_4 = eMesh.get_fem_meta_data()->declare_part("block_tet_4", stk::mesh::MetaData::ELEMENT_RANK);
   /// set cell topology for the part block_tet_4
   mesh::set_cell_topology< shards::Tetrahedron<4>  >( block_tet_4 );
   stk::io::put_io_part_attribute(block_tet_4);
@@ -629,12 +629,12 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
     if (p_size == 1)
       elem_num_ghost = 1;
 
-    stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local);
-    stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_ghost);
+    stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
+    stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
     if (p_rank == 1)
     {
-      element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_ghost);
-      element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local);
+      element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
+      element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
     }
 
     dw() << "P["<<p_rank<<"] elem_num_local = " << elem_num_local << DWENDL;
@@ -650,7 +650,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
 
     std::vector<NeededEntityType> needed_entity_ranks(2);
     needed_entity_ranks[0] = NeededEntityType(eMesh.face_rank(), 1u);
-    needed_entity_ranks[1] = NeededEntityType(eMesh.element_rank(), 1u);
+    needed_entity_ranks[1] = NeededEntityType(stk::mesh::MetaData::ELEMENT_RANK, 1u);
 
     /*
      * 1st of three steps to create and associate new nodes - register need for new nodes, then check if node is remote, then get

@@ -85,7 +85,7 @@ class QuadFixture
    * this element.
    */
   Entity * elem( unsigned x , unsigned y ) const
-  { return m_bulk_data.get_entity( m_fem_meta.element_rank(), elem_id(x, y)); }
+  { return m_bulk_data.get_entity( MetaData::ELEMENT_RANK, elem_id(x, y)); }
 
   /**
    * Thinking in terms of a 2D grid of nodes, compute the (x, y) position

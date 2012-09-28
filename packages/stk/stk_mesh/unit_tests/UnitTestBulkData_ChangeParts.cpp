@@ -45,10 +45,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
 
   // Single process, no sharing
 
-  // Meta data with entity ranks [0..9]
-  const unsigned spatial_dimension = 10;
-  std::vector<std::string> entity_names(spatial_dimension+1);
-  for ( size_t i = 0 ; i <= spatial_dimension ; ++i ) {
+  // Meta data with entity ranks [0..3]
+  const unsigned spatial_dimension = 3;
+  std::vector<std::string> entity_names(spatial_dimension+2); // extra rank name (simulate something like constraint)
+  for ( size_t i = 0 ; i < spatial_dimension+2 ; ++i ) {
     std::ostringstream name ;
     name << "EntityRank_" << i ;
     entity_names[i] = name.str();
@@ -87,19 +87,19 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
                                                no_parts);
 
   tmp[0] = & part_A_0 ;
-  Entity& entity_0_1 = bulk.declare_entity(0 /*entity rank*/, 1 /*id*/, tmp);
+  Entity& entity_0_1 = bulk.declare_entity(MetaData::NODE_RANK, 1 /*id*/, tmp);
   bulk.declare_relation( closure_entity , entity_0_1 , 0 /*local_rel_id*/ );
 
   tmp[0] = & part_A_1 ;
-  Entity& entity_1_1 = bulk.declare_entity(1 /*entity rank*/, 1 /*id*/, tmp);
+  Entity& entity_1_1 = bulk.declare_entity(MetaData::EDGE_RANK, 1 /*id*/, tmp);
   bulk.declare_relation( closure_entity , entity_1_1 , 1 /*local_rel_id*/ );
 
   tmp[0] = & part_A_2 ;
-  Entity& entity_2_1 = bulk.declare_entity(2 /*entity rank*/, 1 /*id*/, tmp);
+  Entity& entity_2_1 = bulk.declare_entity(MetaData::FACE_RANK, 1 /*id*/, tmp);
   bulk.declare_relation( closure_entity , entity_2_1 , 2 /*local_rel_id*/ );
 
   tmp[0] = & part_A_3 ;
-  Entity& entity_3_1 = bulk.declare_entity(3 /*entity rank*/, 1 /*id*/, tmp);
+  Entity& entity_3_1 = bulk.declare_entity(MetaData::ELEMENT_RANK, 1 /*id*/, tmp);
   bulk.declare_relation( closure_entity , entity_3_1 , 3 /*local_rel_id*/ );
 
   // Ensure that the supersets of the buckets containing the entities we
@@ -367,8 +367,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
   const unsigned p_rank     = stk::parallel_machine_rank( pm );
   const unsigned p_size     = stk::parallel_machine_size( pm );
   const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
-  const unsigned nLocalEdge = nPerProc ;
-  
+  const unsigned nLocalElement = nPerProc ;
+
   // Create the ring mesh
 
   RingFixture ring_mesh( pm , nPerProc , true /* generate parts */ );
@@ -388,32 +388,32 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
   Part & part_owns = ring_mesh.m_meta_data.locally_owned_part();
   Part & part_univ = ring_mesh.m_meta_data.universal_part();
 
-  // Check that local edges are in the expected parts. Note that the
-  // RingMesh puts each edge in its own part.
-  for ( unsigned i = 0 ; i < nLocalEdge ; ++i ) {
+  // Check that local elements are in the expected parts. Note that the
+  // RingMesh puts each element in its own part.
+  for ( unsigned i = 0 ; i < nLocalElement ; ++i ) {
     const unsigned n = i + nPerProc * p_rank ;
-    Entity * const edge = bulk.get_entity( 1 /*entity rank*/,
-                                           ring_mesh.m_edge_ids[n] );
-    STKUNIT_ASSERT( edge != NULL );
-    STKUNIT_ASSERT( edge->bucket().member( part_univ ) );
-    STKUNIT_ASSERT( edge->bucket().member( part_owns ) );
-    STKUNIT_ASSERT( edge->bucket().member( * ring_mesh.m_edge_parts[ n % ring_mesh.m_edge_parts.size() ] ) );
+    Entity * const element = bulk.get_entity( MetaData::ELEMENT_RANK /*entity rank*/,
+                                              ring_mesh.m_element_ids[n] );
+    STKUNIT_ASSERT( element != NULL );
+    STKUNIT_ASSERT( element->bucket().member( part_univ ) );
+    STKUNIT_ASSERT( element->bucket().member( part_owns ) );
+    STKUNIT_ASSERT( element->bucket().member( * ring_mesh.m_element_parts[ n % ring_mesh.m_element_parts.size() ] ) );
   }
 
   // Check that local nodes are in the expected parts. Note that the relations
-  // that nodes have to edges should cause induced membership of the node
-  // in the parts of both edges it touches.
+  // that nodes have to elements should cause induced membership of the node
+  // in the parts of both elements it touches.
   for ( unsigned i = 0 ; i < nLocalNode ; ++i ) {
     const unsigned n = ( i + nPerProc * p_rank ) % ring_mesh.m_node_ids.size();
     const unsigned e0 = n ;
-    const unsigned e1 = ( n + ring_mesh.m_edge_ids.size() - 1 ) % ring_mesh.m_edge_ids.size();
-    const unsigned ns = ring_mesh.m_edge_parts.size();
+    const unsigned e1 = ( n + ring_mesh.m_element_ids.size() - 1 ) % ring_mesh.m_element_ids.size();
+    const unsigned ns = ring_mesh.m_element_parts.size();
     const unsigned n0 = e0 % ns ;
     const unsigned n1 = e1 % ns ;
-    Part * const epart_0 = ring_mesh.m_edge_parts[ n0 < n1 ? n0 : n1 ];
-    Part * const epart_1 = ring_mesh.m_edge_parts[ n0 < n1 ? n1 : n0 ];
+    Part * const epart_0 = ring_mesh.m_element_parts[ n0 < n1 ? n0 : n1 ];
+    Part * const epart_1 = ring_mesh.m_element_parts[ n0 < n1 ? n1 : n0 ];
 
-    Entity * const node = bulk.get_entity( 0 , ring_mesh.m_node_ids[n] );
+    Entity * const node = bulk.get_entity( MetaData::NODE_RANK , ring_mesh.m_node_ids[n] );
     STKUNIT_ASSERT( node != NULL );
     if ( node->owner_rank() == p_rank ) {
       STKUNIT_ASSERT( node->bucket().member( part_univ ) );
@@ -431,20 +431,20 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
 
   bulk.modification_begin();
 
-  // On rank 0, change all locally owned edges to the extra-part then check
+  // On rank 0, change all locally owned elements to the extra-part then check
   // for correct part membership
   if ( 0 == p_rank ) {
-    for ( unsigned i = 0 ; i < nLocalEdge ; ++i ) {
+    for ( unsigned i = 0 ; i < nLocalElement ; ++i ) {
       const unsigned n = i + nPerProc * p_rank ;
 
-      PartVector add(1); add[0] = & ring_mesh.m_edge_part_extra ;
-      PartVector rem(1); rem[0] = ring_mesh.m_edge_parts[ n % ring_mesh.m_edge_parts.size() ];
+      PartVector add(1); add[0] = & ring_mesh.m_element_part_extra ;
+      PartVector rem(1); rem[0] = ring_mesh.m_element_parts[ n % ring_mesh.m_element_parts.size() ];
 
-      Entity * const edge = bulk.get_entity( 1 , ring_mesh.m_edge_ids[n] );
-      bulk.change_entity_parts( *edge , add , rem );
-      STKUNIT_ASSERT( edge->bucket().member( part_univ ) );
-      STKUNIT_ASSERT( edge->bucket().member( part_owns ) );
-      STKUNIT_ASSERT( edge->bucket().member(ring_mesh.m_edge_part_extra ) );
+      Entity * const element = bulk.get_entity( MetaData::ELEMENT_RANK , ring_mesh.m_element_ids[n] );
+      bulk.change_entity_parts( *element , add , rem );
+      STKUNIT_ASSERT( element->bucket().member( part_univ ) );
+      STKUNIT_ASSERT( element->bucket().member( part_owns ) );
+      STKUNIT_ASSERT( element->bucket().member(ring_mesh.m_element_part_extra ) );
     }
   }
 
@@ -455,17 +455,17 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
   for ( unsigned i = 0 ; i < nLocalNode ; ++i ) {
     const unsigned n = ( i + nPerProc * p_rank ) % ring_mesh.m_node_ids.size();
     const unsigned e0 = n ;
-    const unsigned e1 = ( n + ring_mesh.m_edge_ids.size() - 1 ) % ring_mesh.m_edge_ids.size();
-    const unsigned ns = ring_mesh.m_edge_parts.size();
+    const unsigned e1 = ( n + ring_mesh.m_element_ids.size() - 1 ) % ring_mesh.m_element_ids.size();
+    const unsigned ns = ring_mesh.m_element_parts.size();
     const unsigned n0 = e0 % ns ;
     const unsigned n1 = e1 % ns ;
-    Part * ep_0 = e0 < nLocalEdge ? & ring_mesh.m_edge_part_extra : ring_mesh.m_edge_parts[n0] ;
-    Part * ep_1 = e1 < nLocalEdge ? & ring_mesh.m_edge_part_extra : ring_mesh.m_edge_parts[n1] ;
+    Part * ep_0 = e0 < nLocalElement ? & ring_mesh.m_element_part_extra : ring_mesh.m_element_parts[n0] ;
+    Part * ep_1 = e1 < nLocalElement ? & ring_mesh.m_element_part_extra : ring_mesh.m_element_parts[n1] ;
 
     Part * epart_0 = ep_0->mesh_meta_data_ordinal() < ep_1->mesh_meta_data_ordinal() ? ep_0 : ep_1 ;
     Part * epart_1 = ep_0->mesh_meta_data_ordinal() < ep_1->mesh_meta_data_ordinal() ? ep_1 : ep_0 ;
 
-    Entity * const node = bulk.get_entity( 0 , ring_mesh.m_node_ids[n] );
+    Entity * const node = bulk.get_entity( MetaData::NODE_RANK , ring_mesh.m_node_ids[n] );
     STKUNIT_ASSERT( node != NULL );
     if ( node->owner_rank() == p_rank ) {
       STKUNIT_ASSERT( node->bucket().member( part_owns ) );

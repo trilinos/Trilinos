@@ -63,14 +63,14 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_nodes)
 
   STKUNIT_ASSERT( bulk.modification_begin() );
   for ( unsigned i = id_begin ; i < id_end ; ++i ) {
-    bulk.declare_entity( 0 , ids[i] , no_parts );
+    bulk.declare_entity( MetaData::NODE_RANK , ids[i] , no_parts );
   }
   STKUNIT_ASSERT( bulk.modification_end() );
 
   // Verify that I only have entities in my range:
 
   for ( unsigned i = 0 ; i < id_total ; ++i ) {
-    Entity * e = bulk.get_entity( 0 , ids[ i ] );
+    Entity * e = bulk.get_entity( MetaData::NODE_RANK , ids[ i ] );
     if ( id_begin <= i && i < id_end ) {
       STKUNIT_ASSERT( NULL != e );
       STKUNIT_ASSERT( p_rank == e->owner_rank() );
@@ -83,7 +83,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_nodes)
   // Delete one entity at a time.
 
   for ( unsigned i = id_begin ; i < id_end ; ++i ) {
-    Entity * e = bulk.get_entity( 0 , ids[ i ] );
+    Entity * e = bulk.get_entity( MetaData::NODE_RANK , ids[ i ] );
 
     STKUNIT_ASSERT( NULL != e );
 
@@ -96,10 +96,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_nodes)
     // should exist in the 'nil' set.
 
     if ( id_begin < i ) {
-      STKUNIT_ASSERT( NULL == bulk.get_entity( 0 , ids[ i - 1 ] ) );
+      STKUNIT_ASSERT( NULL == bulk.get_entity( MetaData::NODE_RANK , ids[ i - 1 ] ) );
     }
 
-    e = bulk.get_entity( 0 , ids[ i ] );
+    e = bulk.get_entity( MetaData::NODE_RANK , ids[ i ] );
     STKUNIT_ASSERT( NULL != e );
     STKUNIT_ASSERT( 0 == e->bucket().capacity() );
   }
@@ -121,10 +121,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestory_ring)
   const unsigned p_rank = stk::parallel_machine_rank( pm );
   const unsigned p_size = stk::parallel_machine_size( pm );
   // const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
-  const unsigned nLocalEdge = nPerProc ;
+  const unsigned nLocalElement = nPerProc ;
 
   const int spatial_dimension = 3;
-  MetaData meta( spatial_dimension, stk::mesh::entity_rank_names(spatial_dimension) );
+  MetaData meta( spatial_dimension );
 
   meta.commit();
 
@@ -140,7 +140,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestory_ring)
   { // No ghosting
     const bool aura_flag = false ;
 
-    RingFixture mesh( pm , nPerProc , false /* No edge parts */ );
+    RingFixture mesh( pm , nPerProc , false /* No element parts */ );
     mesh.m_meta_data.commit();
     BulkData& bulk = mesh.m_bulk_data;
 
@@ -156,28 +156,28 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestory_ring)
 
     // This process' first element in the loop
     // if a parallel mesh has a shared node
-    Entity * edge = bulk.get_entity( 1 , mesh.m_edge_ids[ nLocalEdge * p_rank ] );
-    Entity * node0 = edge->relations()[0].entity();
-    Entity * node1 = edge->relations()[1].entity();
+    Entity * element = bulk.get_entity( MetaData::ELEMENT_RANK , mesh.m_element_ids[ nLocalElement * p_rank ] );
+    Entity * node0 = element->relations()[0].entity();
+    Entity * node1 = element->relations()[1].entity();
 
-    const size_t node0_edges = node0->relations().size();
-    const size_t node1_edges = node1->relations().size();
+    const size_t node0_elements = node0->relations().size();
+    const size_t node1_elements = node1->relations().size();
 
-    STKUNIT_ASSERT( 1 <= node0_edges && node0_edges <= 2 );
-    STKUNIT_ASSERT( 1 <= node1_edges && node1_edges <= 2 );
+    STKUNIT_ASSERT( 1 <= node0_elements && node0_elements <= 2 );
+    STKUNIT_ASSERT( 1 <= node1_elements && node1_elements <= 2 );
 
-    STKUNIT_ASSERT( node0->relations()[0].entity() == edge ||
-                    node0->relations()[1].entity() == edge );
+    STKUNIT_ASSERT( node0->relations()[0].entity() == element ||
+                    node0->relations()[1].entity() == element );
 
-    STKUNIT_ASSERT( node1->relations()[0].entity() == edge ||
-                    node1->relations()[1].entity() == edge );
+    STKUNIT_ASSERT( node1->relations()[0].entity() == element ||
+                    node1->relations()[1].entity() == element );
 
     bulk.modification_begin();
 
     // Destroy the element:
-    bool result = bulk.destroy_entity( edge );
+    bool result = bulk.destroy_entity( element );
     STKUNIT_ASSERT( true == result );
-    STKUNIT_ASSERT( NULL == edge );
+    STKUNIT_ASSERT( NULL == element );
 
     // Destroy orphanned node:
     if ( node0->relations().size() == 0 ) {
@@ -191,15 +191,15 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestory_ring)
     STKUNIT_ASSERT( stk::unit_test::modification_end_wrapper(bulk, aura_flag) );
 
     if ( NULL != node0 ) {
-      STKUNIT_ASSERT_EQUAL( node0_edges - 1 , node0->relations().size() );
+      STKUNIT_ASSERT_EQUAL( node0_elements - 1 , node0->relations().size() );
     }
     if ( NULL != node1 ) {
-      STKUNIT_ASSERT_EQUAL( node1_edges - 1 , node1->relations().size() );
+      STKUNIT_ASSERT_EQUAL( node1_elements - 1 , node1->relations().size() );
     }
   }
   //------------------------------
   if ( 1 < p_size ) { // With ghosting
-    RingFixture mesh( pm , nPerProc , false /* No edge parts */ );
+    RingFixture mesh( pm , nPerProc , false /* No element parts */ );
     mesh.m_meta_data.commit();
     BulkData& bulk = mesh.m_bulk_data;
 
@@ -214,21 +214,21 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestory_ring)
     const unsigned nNotOwned = nPerProc * p_rank ;
 
     // The not-owned shared entity:
-    Entity * node = bulk.get_entity( 0 , mesh.m_node_ids[ nNotOwned ] );
+    Entity * node = bulk.get_entity( MetaData::NODE_RANK , mesh.m_node_ids[ nNotOwned ] );
 
     STKUNIT_ASSERT( node != NULL );
     STKUNIT_ASSERT_NE( p_rank , node->owner_rank() );
     STKUNIT_ASSERT_EQUAL( size_t(1) , node->sharing().size() );
     STKUNIT_ASSERT_EQUAL( size_t(2) , node->relations().size() );
 
-    EntityId node_edge_ids[2] ;
-    node_edge_ids[0] = node->relations()[0].entity()->identifier();
-    node_edge_ids[1] = node->relations()[1].entity()->identifier();
+    EntityId node_element_ids[2] ;
+    node_element_ids[0] = node->relations()[0].entity()->identifier();
+    node_element_ids[1] = node->relations()[1].entity()->identifier();
 
     bulk.modification_begin();
 
     // This process' first node in the loop is shared, destroy it
-    // First have to destroy attached edges.
+    // First have to destroy attached elements.
     // One will be owned and the other ghosted
 
     while ( node->relations().size() ) {
@@ -239,16 +239,16 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestory_ring)
 
     STKUNIT_ASSERT( bulk.modification_end() );
 
-    assert_is_destroyed( bulk.get_entity(0, mesh.m_node_ids[nNotOwned] ) );
-    assert_is_destroyed( bulk.get_entity(1, node_edge_ids[0] ) );
-    assert_is_destroyed( bulk.get_entity(1, node_edge_ids[1] ) );
+    assert_is_destroyed( bulk.get_entity(MetaData::NODE_RANK, mesh.m_node_ids[nNotOwned] ) );
+    assert_is_destroyed( bulk.get_entity(MetaData::ELEMENT_RANK, node_element_ids[0] ) );
+    assert_is_destroyed( bulk.get_entity(MetaData::ELEMENT_RANK, node_element_ids[1] ) );
 
     // assert that no entities are shared or ghosted
     STKUNIT_ASSERT( bulk.entity_comm().empty() );
   }
   //------------------------------
   if ( 1 < p_size ) { // With ghosting
-    RingFixture mesh( pm , nPerProc , false /* No edge parts */ );
+    RingFixture mesh( pm , nPerProc , false /* No element parts */ );
     mesh.m_meta_data.commit();
     BulkData& bulk = mesh.m_bulk_data;
 
@@ -264,8 +264,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestory_ring)
     const unsigned nOwned = ( nPerProc * ( p_rank + 1 ) ) % mesh.m_node_ids.size();
     const unsigned nNotOwned = nPerProc * p_rank ;
 
-    Entity * node_owned = bulk.get_entity( 0 , mesh.m_node_ids[ nOwned ] );
-    Entity * node_not_owned = bulk.get_entity( 0 , mesh.m_node_ids[ nNotOwned ] );
+    Entity * node_owned = bulk.get_entity( MetaData::NODE_RANK , mesh.m_node_ids[ nOwned ] );
+    Entity * node_not_owned = bulk.get_entity( MetaData::NODE_RANK , mesh.m_node_ids[ nNotOwned ] );
 
     STKUNIT_ASSERT( node_owned != NULL );
     STKUNIT_ASSERT( node_not_owned != NULL );
@@ -275,14 +275,14 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestory_ring)
     STKUNIT_ASSERT_EQUAL( size_t(1) , node_not_owned->sharing().size() );
     STKUNIT_ASSERT_EQUAL( size_t(2) , node_owned->relations().size() );
 
-    EntityId node_edge_ids[2] ;
-    node_edge_ids[0] = node_owned->relations()[0].entity()->identifier();
-    node_edge_ids[1] = node_owned->relations()[1].entity()->identifier();
+    EntityId node_element_ids[2] ;
+    node_element_ids[0] = node_owned->relations()[0].entity()->identifier();
+    node_element_ids[1] = node_owned->relations()[1].entity()->identifier();
 
     bulk.modification_begin();
 
     // This process' first node in the loop is shared, destroy it
-    // First have to destroy attached edges.
+    // First have to destroy attached elements.
     // One will be owned and the other ghosted
 
     while ( node_owned->relations().size() ) {
@@ -297,9 +297,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestory_ring)
     // has been transferred to this process.
 
     STKUNIT_ASSERT_EQUAL( p_rank , node_not_owned->owner_rank() );
-    assert_is_destroyed( bulk.get_entity(0, mesh.m_node_ids[ nOwned ] ) );
-    assert_is_destroyed( bulk.get_entity(1, node_edge_ids[0] ) );
-    assert_is_destroyed( bulk.get_entity(1, node_edge_ids[1] ) );
+    assert_is_destroyed( bulk.get_entity(MetaData::NODE_RANK, mesh.m_node_ids[ nOwned ] ) );
+    assert_is_destroyed( bulk.get_entity(MetaData::ELEMENT_RANK, node_element_ids[0] ) );
+    assert_is_destroyed( bulk.get_entity(MetaData::ELEMENT_RANK, node_element_ids[1] ) );
 
     // assert that no entities are shared or ghosted
     STKUNIT_ASSERT( bulk.entity_comm().empty() );

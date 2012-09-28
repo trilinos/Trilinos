@@ -76,8 +76,6 @@ class GearsFixture{
   MetaData meta_data;
   BulkData bulk_data;
 
-  const EntityRank element_rank;
-
   Part & cylindrical_coord_part;
   Part & hex_part;
   Part & wedge_part;

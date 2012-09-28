@@ -74,7 +74,7 @@ performance_driver(stk::ParallelMachine  comm,
 		   bool performance)
 {
   static const size_t spatial_dimension = 3;
-  
+
   stk::diag::WriterThrowSafe _write_throw_safe(dw());
 
   stk::diag::Timer timer("SearchPerformance", use_case::TIMER_SEARCH, use_case::timer());
@@ -143,7 +143,7 @@ performance_driver(stk::ParallelMachine  comm,
 
   if ((range.entity == "face" && range_use_universal_set) ||
       (same_mesh && domain.entity == "face" && domain_use_universal_set)) {
-    stk::mesh::skin_mesh( range_bulk_data, range_meta_data.element_rank(), range_skin_part);
+    stk::mesh::skin_mesh( range_bulk_data, stk::mesh::MetaData::ELEMENT_RANK, range_skin_part);
   }
 
   stk::mesh::MetaData *domain_meta_data = NULL;
@@ -166,7 +166,7 @@ performance_driver(stk::ParallelMachine  comm,
     stk::io::populate_bulk_data(*domain_bulk_data, domain_mesh_data);
 
     if (domain.entity == "face" && domain_use_universal_set) {
-      stk::mesh::skin_mesh( *domain_bulk_data, domain_meta_data->element_rank(), domain_skin_part);
+      stk::mesh::skin_mesh( *domain_bulk_data, stk::mesh::MetaData::ELEMENT_RANK, domain_skin_part);
     }
   } else {
     dw() << "Domain shares metadata and bulkdata with range...\n";
@@ -231,7 +231,7 @@ performance_driver(stk::ParallelMachine  comm,
       dw() << "Search algorithm " << order.m_algorithm << dendl;
       dw() << "range  " << range_vector  << stk::diag::dendl;
       dw() << "domain " << domain_vector << stk::diag::dendl;
-      stk::search_util::print_stk_mesh_relation_map(dw(), stk::mesh::entity_rank_names(spatial_dimension), relation);
+      stk::search_util::print_stk_mesh_relation_map(dw(), stk::mesh::entity_rank_names(), relation);
     }
     range_vector_size = range_vector.size();
     domain_vector_size = domain_vector.size();
@@ -273,7 +273,7 @@ performance_driver(stk::ParallelMachine  comm,
       dw() << "Search algorithm " << order.m_algorithm << dendl;
       dw() << "range  " << range_vector  << stk::diag::dendl;
       dw() << "domain " << domain_vector << stk::diag::dendl;
-      stk::search_util::print_stk_mesh_relation_map(dw(), stk::mesh::entity_rank_names(spatial_dimension), relation);
+      stk::search_util::print_stk_mesh_relation_map(dw(), stk::mesh::entity_rank_names(), relation);
     }
     range_vector_size = range_vector.size();
     domain_vector_size = domain_vector.size();

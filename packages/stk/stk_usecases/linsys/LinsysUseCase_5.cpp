@@ -95,14 +95,14 @@ bool use_case_5_driver( MPI_Comm comm ,
     //------------------------------------------------------------------
     // Declare the mesh meta data: element blocks and associated fields
 
-    stk::mesh::MetaData fem_meta(SpatialDim, stk::mesh::entity_rank_names(SpatialDim) ) ;
+    stk::mesh::MetaData fem_meta(SpatialDim) ;
     Ioss::Init::Initializer init_db;
 
     {
       std::cout << fem_meta.is_initialized() << endl;
     }
 
-    const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+    const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
     //--------------------------------
     // Element-block declarations typically occur when reading the

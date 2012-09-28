@@ -98,7 +98,7 @@ namespace stk
             {
               if (0 || EXTRA_PRINT)
                 std::cout << "relation[ " << i << "]= {" << relation[i].first << "} --> { " << relation[i].second << "}" << std::endl;
-              mesh::Entity *element = bulkData.get_entity(metaData.element_rank(), relation[i].second.ident);
+              mesh::Entity *element = bulkData.get_entity(stk::mesh::MetaData::ELEMENT_RANK, relation[i].second.ident);
               //bool loop_break = ... intentionally ignoring return value
               isIn(*element, bulkData);
               if (0 || EXTRA_PRINT) std::cout << "STKSearcher::findElement: found it= " << isIn.m_found_it << std::endl;

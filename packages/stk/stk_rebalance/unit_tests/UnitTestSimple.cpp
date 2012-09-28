@@ -85,7 +85,7 @@ MockPartition::get_new_partition(std::vector<stk::mesh::EntityProc> &new_partiti
 {
   const unsigned p_size = m_bulk_data.parallel_size();
   const unsigned p_rank = m_bulk_data.parallel_rank();
-  const stk::mesh::EntityRank element_rank = m_fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   new_partition.clear();
 
@@ -201,9 +201,9 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
 
   unsigned spatial_dimension = 2;
   stk::mesh::MetaData fem_meta;
-  fem_meta.initialize(spatial_dimension, stk::mesh::entity_rank_names(spatial_dimension) );
+  fem_meta.initialize(spatial_dimension);
   stk::mesh::BulkData bulk_data( fem_meta , comm , 100 );
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
   stk::mesh::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
   stk::mesh::Part & quad_part( fem_meta.declare_part("quad", quad_top ) );
   VectorField & coord_field( fem_meta.declare_field< VectorField >( "coordinates" ) );

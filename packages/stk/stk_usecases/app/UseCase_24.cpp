@@ -101,7 +101,7 @@ bool use_case_24_driver(
   // Declare the mesh meta data: element blocks and associated fields
   stk::mesh::MetaData fem_meta;
   fem_meta.initialize(SpatialDim);
-  const mesh::EntityRank element_rank = fem_meta.element_rank();
+  const mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
   const mesh::EntityRank side_rank    = fem_meta.side_rank();
   const mesh::EntityRank edge_rank    = mesh::MetaData::EDGE_RANK;
 
@@ -303,7 +303,7 @@ void use_case_24_boundary_algorithm(
   const VectorFieldType   & nodal_momentum_flux )
 {
   mesh::MetaData &fem_meta = mesh::MetaData::get(bulkData);
-  const mesh::EntityRank element_rank = fem_meta.element_rank();
+  const mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
   const mesh::EntityRank side_rank    = fem_meta.side_rank();
 
   // create intersection of faces and locally owned

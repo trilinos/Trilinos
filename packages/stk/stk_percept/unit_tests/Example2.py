@@ -70,7 +70,7 @@ class UseCases(unittest.TestCase):
             bulk = wedgeFixture.createMesh(MPI.COMM_WORLD, 4,3,2,0,1,0,1,0,1,"")   # create stk::mesh::BulkData from wedge fixture
             eMesh = PerceptMesh(wedgeFixture.getMetaData(), bulk, False)           # adopt bulk data
             scalarDimension = 0
-            proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+            proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
             breaker = Refiner(eMesh, WEDGE6_WEDGE15_1, proc_rank_field)
             eMesh.commit()
             wedgeFixture.createBulkAfterMetaCommit(MPI.COMM_WORLD)         # generate the mesh

@@ -153,7 +153,7 @@ void BulkData::require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) co
 {
   const size_t rank_count = m_mesh_meta_data.entity_rank_count();
   const bool ok_id   = entity_id_valid(ent_id);
-  const bool ok_rank = ent_rank < rank_count ;
+  const bool ok_rank = ent_rank < rank_count && !(ent_rank == MetaData::FACE_RANK && mesh_meta_data().spatial_dimension() == 2);
 
   ThrowRequireMsg( ok_rank,
                    "Bad key rank: " << ent_rank << " for id " << ent_id );
@@ -803,6 +803,7 @@ void BulkData::generate_new_entities(const std::vector<size_t>& requests,
     for (std::vector<KeyType>::const_iterator
         kitr = key_types.begin(); kitr != key_types.end(); ++kitr) {
       EntityKey key(&(*kitr));
+      require_good_rank_and_id(key.rank(), key.id());
       std::pair<Entity *, bool> result = m_entity_repo.internal_create_entity(key);
 
       //if an entity is declare with the declare_entity function in

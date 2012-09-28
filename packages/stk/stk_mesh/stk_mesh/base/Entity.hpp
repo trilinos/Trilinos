@@ -22,6 +22,7 @@
 
 #ifdef SIERRA_MIGRATION
 #include <stk_mesh/base/Relation.hpp>
+#include <stk_mesh/base/MetaData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -234,7 +235,13 @@ private:
    * Predefined derived type identifiers.
    */
   enum ObjectTypeEnum {
-    NODE = 0, EDGE = 1, FACE = 2, ELEMENT = 3, CONSTRAINT = 4, NUM_TYPES = 5, BASE_CLASS = 0x00ff
+    NODE    = MetaData::NODE_RANK,
+    EDGE    = MetaData::EDGE_RANK,
+    FACE    = MetaData::FACE_RANK,
+    ELEMENT = MetaData::ELEMENT_RANK,
+    CONSTRAINT = 4,
+    NUM_TYPES = 5,
+    BASE_CLASS = 0x00ff
   };
   static std::string TypeToString (ObjectTypeEnum type);
 

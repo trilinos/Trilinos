@@ -156,7 +156,7 @@ void boundary_analysis(const BulkData& bulk_data,
       continue;
     }
 
-    unsigned subcell_rank = closure_rank - 1;
+    unsigned subcell_rank = closure_rank == MetaData::ELEMENT_RANK ? bulk_data.mesh_meta_data().side_rank() : closure_rank - 1;
     PairIterRelation relations = curr_entity.relations(NODE_RANK);
 
     // iterate over the subcells of the current entity
@@ -164,7 +164,7 @@ void boundary_analysis(const BulkData& bulk_data,
       // find the entities (same rank as subcell) adjacent to this subcell
       unsigned subcell_identifier = nitr;
       get_adjacent_entities(curr_entity,
-                            closure_rank - 1,
+                            subcell_rank,
                             subcell_identifier,
                             adjacent_entities);
 

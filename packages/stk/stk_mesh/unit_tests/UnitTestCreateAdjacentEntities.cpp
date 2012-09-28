@@ -24,6 +24,8 @@
 #include <algorithm>
 #include <sstream>
 
+using stk::mesh::MetaData;
+
 STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x1x1 )
 {
   const size_t NX = 3;
@@ -62,10 +64,10 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x1x1 )
 
 STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
 {
-  const size_t elem_rank = 3;
-  const size_t face_rank = 2;
-  const size_t edge_rank = 1;
-  const size_t node_rank = 0;
+  const size_t elem_rank = MetaData::ELEMENT_RANK;
+  const size_t face_rank = MetaData::FACE_RANK;
+  const size_t edge_rank = MetaData::EDGE_RANK;
+  const size_t node_rank = MetaData::NODE_RANK;
 
   const size_t NX = 3;
   const size_t NY = 3;
@@ -147,9 +149,9 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
 
 STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3 )
 {
-  const size_t elem_rank = 2;
-  const size_t edge_rank = 1;
-  const size_t node_rank = 0;
+  const size_t elem_rank = MetaData::ELEMENT_RANK;
+  const size_t edge_rank = MetaData::EDGE_RANK;
+  const size_t node_rank = MetaData::NODE_RANK;
 
   const size_t NX = 3;
   const size_t NY = 3;

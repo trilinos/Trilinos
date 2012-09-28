@@ -63,7 +63,7 @@ namespace stk {
             {
               numSubDimNeededEntities = cell_topo_data->side_count;
             }
-          else if (needed_entity_rank == m_eMesh.element_rank())
+          else if (needed_entity_rank == stk::mesh::MetaData::ELEMENT_RANK)
             {
               numSubDimNeededEntities = 1;
             }
@@ -135,7 +135,7 @@ namespace stk {
     {
       ElementUnrefineCollection elements_to_unref;
 
-      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
 
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {

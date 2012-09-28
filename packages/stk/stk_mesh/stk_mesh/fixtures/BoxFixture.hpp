@@ -27,7 +27,7 @@ class  BoxFixture {
 public:
   BoxFixture(stk::ParallelMachine pm = MPI_COMM_WORLD,
              unsigned block_size = 1000,
-             const std::vector<std::string>& entity_names = stk::mesh::entity_rank_names(spatial_dimension));
+             const std::vector<std::string>& entity_names = stk::mesh::entity_rank_names());
 
   ~BoxFixture () {}
 

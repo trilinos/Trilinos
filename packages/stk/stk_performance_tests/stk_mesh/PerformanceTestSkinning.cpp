@@ -333,7 +333,7 @@ STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
 
     start_time = stk::wall_time();
     stk::mesh::fixtures::HexFixture fixture(pm,NX,NY,NZ);
-    const EntityRank element_rank = fixture.m_fem_meta.element_rank();
+    const EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
     const EntityRank side_rank = fixture.m_fem_meta.side_rank();
 
     stk::mesh::MetaData & fem_meta = fixture.m_fem_meta;

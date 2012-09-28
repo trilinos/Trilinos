@@ -18,7 +18,7 @@ namespace stk {
       {
         m_primaryEntityRank = m_eMesh.edge_rank();
         if (m_eMesh.get_spatial_dim() == 1)
-          m_primaryEntityRank = eMesh.element_rank();
+          m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
 
         setNeededParts(eMesh, block_names, false);  // different topologies
         Elem::StdMeshObjTopologies::bootstrap();
@@ -45,7 +45,7 @@ namespace stk {
       {
         needed_entities.resize(1);
         //needed_entities[0].first = m_eMesh.edge_rank(); 
-        needed_entities[0].first = (m_eMesh.get_spatial_dim() == 1 ? m_eMesh.element_rank() : m_eMesh.edge_rank());
+        needed_entities[0].first = (m_eMesh.get_spatial_dim() == 1 ? stk::mesh::MetaData::ELEMENT_RANK : m_eMesh.edge_rank());
         setToOne(needed_entities);
       }
 

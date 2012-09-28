@@ -211,7 +211,7 @@ use_case_2_driver(stk::ParallelMachine  comm,
 
   stk::mesh::BulkData range_bulk_data(range_meta_data, comm);
   stk::io::populate_bulk_data(range_bulk_data, range_mesh_data);
-  stk::mesh::skin_mesh(range_bulk_data, range_meta_data.element_rank(), range_skin_part);
+  stk::mesh::skin_mesh(range_bulk_data, stk::mesh::MetaData::ELEMENT_RANK, range_skin_part);
 
   stk::mesh::MetaData domain_meta_data( spatial_dimension );
   stk::io::MeshData domain_mesh_data;
@@ -224,7 +224,7 @@ use_case_2_driver(stk::ParallelMachine  comm,
 
   stk::mesh::BulkData domain_bulk_data(domain_meta_data, comm);
   stk::io::populate_bulk_data(domain_bulk_data, domain_mesh_data);
-  stk::mesh::skin_mesh(domain_bulk_data, domain_meta_data.element_rank(), domain_skin_part);
+  stk::mesh::skin_mesh(domain_bulk_data, stk::mesh::MetaData::ELEMENT_RANK, domain_skin_part);
 
   // For this use case, the domain consists of an axis-aligned
   // bounding box for each 'domain_entity' in the mesh.  The range is a

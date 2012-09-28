@@ -54,7 +54,7 @@ namespace stk {
             {
               numSubDimNeededEntities = cell_topo_data->side_count;
             }
-          else if (needed_entity_rank == m_eMesh.element_rank())
+          else if (needed_entity_rank == stk::mesh::MetaData::ELEMENT_RANK)
             {
               numSubDimNeededEntities = 1;
             }

@@ -59,7 +59,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
   MetaData& meta = fixture.fem_meta();
   BulkData& bulk = fixture.bulk_data();
 
-  const EntityRank element_rank = meta.element_rank();
+  const EntityRank element_rank = MetaData::ELEMENT_RANK;
 
   const unsigned p_rank = bulk.parallel_rank();
   const unsigned p_size = bulk.parallel_size();

@@ -49,7 +49,7 @@ namespace stk{
 
     HeterogeneousFixture::HeterogeneousFixture( stk::ParallelMachine comm, bool doCommit, bool do_sidesets ) :
       m_spatial_dimension(3)
-      , m_metaData(m_spatial_dimension, stk::mesh::entity_rank_names(m_spatial_dimension) )
+      , m_metaData(m_spatial_dimension, stk::mesh::entity_rank_names() )
       , m_bulkData(m_metaData, comm )
       , m_block_hex(        m_metaData.declare_part< Hex8 >(  "block_1" ))
       , m_block_wedge(      m_metaData.declare_part< Wedge6 >( "block_2" ))
@@ -63,7 +63,7 @@ namespace stk{
       , m_sideset_quad(0), m_sideset_quad_subset(0)
       , m_sideset_tri(0), m_sideset_tri_subset(0)
 
-      , m_elem_rank( m_metaData.element_rank() )
+      , m_elem_rank( stk::mesh::MetaData::ELEMENT_RANK )
       , m_coordinates_field( m_metaData.declare_field< VectorFieldType >( "coordinates" ))
       , m_centroid_field(    m_metaData.declare_field< VectorFieldType >( "centroid" ))
       , m_temperature_field( m_metaData.declare_field< ScalarFieldType >( "temperature" ))

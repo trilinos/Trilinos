@@ -104,7 +104,7 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
       std::vector<INT> elem_side ;
 
       stk::mesh::Part * const sb_part = fem_meta.get_part(block->name());
-      stk::mesh::EntityRank elem_rank = fem_meta.element_rank();
+      stk::mesh::EntityRank elem_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
       block->get_field_data("ids", side_ids);
       block->get_field_data("element_side", elem_side);
@@ -613,7 +613,7 @@ void create_input_mesh(const std::string &mesh_type,
   }
 
   size_t spatial_dimension = in_region->get_property("spatial_dimension").get_int();
-  initialize_spatial_dimension(fem_meta, spatial_dimension, stk::mesh::entity_rank_names(spatial_dimension));
+  initialize_spatial_dimension(fem_meta, spatial_dimension, stk::mesh::entity_rank_names());
 
   process_elementblocks(*in_region, fem_meta);
   process_nodeblocks(*in_region,    fem_meta);
@@ -742,11 +742,10 @@ void input_nodeblock_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
 
 void input_elementblock_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
 {
-  const stk::mesh::MetaData &fem_meta = stk::mesh::MetaData::get(bulk);
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
   for(size_t i=0; i < elem_blocks.size(); i++) {
     if (stk::io::include_entity(elem_blocks[i])) {
-      internal_process_input_request(elem_blocks[i], fem_meta.element_rank(), bulk);
+      internal_process_input_request(elem_blocks[i], stk::mesh::MetaData::ELEMENT_RANK, bulk);
     }
   }
 }

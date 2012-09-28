@@ -73,7 +73,7 @@ namespace stk
 
         mesh::FieldBase* pressure_field = eMesh.add_field("pressure", stk::mesh::MetaData::NODE_RANK, scalarDimension);
         eMesh.add_field("velocity", stk::mesh::MetaData::NODE_RANK, vectorDimension);
-        eMesh.add_field("element_volume", eMesh.element_rank(), scalarDimension);
+        eMesh.add_field("element_volume", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
 
         eMesh.commit();
 
@@ -229,7 +229,7 @@ namespace stk
 
         mesh::FieldBase* pressure_field = eMesh.add_field("pressure", stk::mesh::MetaData::NODE_RANK, scalarDimension);
         eMesh.add_field("velocity", stk::mesh::MetaData::NODE_RANK, vectorDimension);
-        eMesh.add_field("element_volume", eMesh.element_rank(), scalarDimension);
+        eMesh.add_field("element_volume", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
 
         eMesh.commit();
 
@@ -268,7 +268,7 @@ namespace stk
 
         eMesh.add_field("pressure", stk::mesh::MetaData::NODE_RANK, scalarDimension);
         eMesh.add_field("velocity", stk::mesh::MetaData::NODE_RANK, vectorDimension);
-        eMesh.add_field("element_volume", eMesh.element_rank(), scalarDimension);
+        eMesh.add_field("element_volume", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
 
         eMesh.commit();
 

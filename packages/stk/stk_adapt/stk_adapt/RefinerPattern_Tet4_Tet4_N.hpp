@@ -109,7 +109,7 @@ namespace stk {
       RefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Tetrahedron<4>, shards::Tetrahedron<4>  >(eMesh),
                                                                                                     m_face_breaker(0)
       {
-        m_primaryEntityRank = eMesh.element_rank();
+        m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
 
         setNeededParts(eMesh, block_names, true);
         Elem::StdMeshObjTopologies::bootstrap();
@@ -139,7 +139,7 @@ namespace stk {
         needed_entities.resize(2);
         needed_entities[0].first = m_eMesh.edge_rank();    
         needed_entities[0].second = 1u;
-        needed_entities[1].first = m_eMesh.element_rank();    
+        needed_entities[1].first = stk::mesh::MetaData::ELEMENT_RANK;    
         needed_entities[1].second = 1u;
 #else
         needed_entities.resize(1);
@@ -571,7 +571,7 @@ namespace stk {
 
         //std::cout << "tmp RefinerPattern_Tet4_Tet4_N::num_edges_marked= " << num_edges_marked << std::endl;
 
-        //nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
+        //nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::MetaData::ELEMENT_RANK, 0u);
         
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {

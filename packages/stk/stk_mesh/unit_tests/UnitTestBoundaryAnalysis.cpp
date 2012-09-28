@@ -28,6 +28,8 @@
 
 static const size_t NODE_RANK = stk::mesh::MetaData::NODE_RANK;
 
+using stk::mesh::MetaData;
+
 class UnitTestStkMeshBoundaryAnalysis {
 public:
   UnitTestStkMeshBoundaryAnalysis(stk::ParallelMachine pm) : m_comm(pm),  m_num_procs(0), m_rank(0)
@@ -93,7 +95,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   stk::mesh::MetaData& fem_meta = grid_mesh.fem_meta();
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
 
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank = MetaData::ELEMENT_RANK;
 
   // make shell part
   stk::mesh::CellTopology line_top(shards::getCellTopologyData<shards::ShellLine<2> >());
@@ -237,8 +239,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis_null_topology()
 
   //create new fem_meta, bulk and boundary for this test
   const int spatial_dimension = 3;
-  stk::mesh::MetaData fem_meta;
-  fem_meta.initialize(spatial_dimension, stk::mesh::entity_rank_names(spatial_dimension));
+  stk::mesh::MetaData fem_meta(spatial_dimension);
 
   const stk::mesh::EntityRank side_rank = fem_meta.side_rank();
 

@@ -123,7 +123,7 @@ namespace stk {
         m_eMesh(eMesh), m_nodeRegistry(nodeRegistry), m_input_mesh_name(input_mesh_name), m_output_mesh_name(output_mesh_name), m_filePrefix(input_mesh_name), 
         m_M(M), m_iM(iM), m_W(W), m_iW(iW), m_M_0(M_0 >= 0 ? M_0 : 0), m_M_1(M_1 >= 0 ? M_1 : M-1),
         m_entity_rank_names(eMesh.get_fem_meta_data()->entity_rank_names()),
-        m_id_max(m_entity_rank_names.size(), 0u),  FAMILY_TREE_RANK(eMesh.element_rank() + 1u),
+        m_id_max(m_entity_rank_names.size(), 0u),  FAMILY_TREE_RANK(stk::mesh::MetaData::ELEMENT_RANK + 1u),
         m_partMap(0), m_nodeMap(0), m_geomFile("")
       {
         size_t pos = m_filePrefix.find(".");

@@ -452,7 +452,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     //------------------------------------------------------------------
     // Declare the mesh meta data: element blocks and associated fields
 
-    mesh::MetaData mesh_meta_data(3, mesh::entity_rank_names(3) );
+    mesh::MetaData mesh_meta_data(3);
 
     //--------------------------------
     // Element-block declarations typically occur when reading the
@@ -461,7 +461,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     // with each element block.
 
     mesh::Part & universal = mesh_meta_data.universal_part();
-    mesh::Part & block_hex = mesh_meta_data.declare_part("block_1", mesh_meta_data.element_rank());
+    mesh::Part & block_hex = mesh_meta_data.declare_part("block_1", stk::mesh::MetaData::ELEMENT_RANK);
 
     /// set cell topology for the part block_1
     stk::mesh::set_cell_topology< shards::Hexahedron<8>  >( block_hex );
@@ -502,7 +502,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     // This size is different for each element block.
 
     stk::mesh::put_field(
-                         elem_node_coord , mesh_meta_data.element_rank() , block_hex , shards::Hexahedron<8> ::node_count );
+                         elem_node_coord , stk::mesh::MetaData::ELEMENT_RANK , block_hex , shards::Hexahedron<8> ::node_count );
 
     //--------------------------------
     // Commit (finalize) the meta data.  Is now ready to be used
@@ -665,7 +665,7 @@ void use_encr_case_1_generate_mesh(
 
             stk::mesh::declare_element( mesh , hex_block , elem_id , node_id );
 
-            mesh::Entity * const elem = mesh.get_entity( stk::mesh::MetaData::get(mesh).element_rank() , elem_id );
+            mesh::Entity * const elem = mesh.get_entity( stk::mesh::MetaData::ELEMENT_RANK, elem_id );
 
 
             if (!topoVerifier.isTopologyBad(*elem))

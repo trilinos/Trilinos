@@ -29,7 +29,7 @@ typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorField ;
 
 void fill_utest_mesh_meta_data(stk::mesh::MetaData& fem_meta, bool use_temperature)
 {
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   stk::mesh::Part& elem_block = fem_meta.declare_part( "block_1" , element_rank );
 
@@ -130,8 +130,7 @@ void fill_utest_mesh_bulk_data(stk::mesh::BulkData& bulk_data)
 
 void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& field, stk::linsys::LinearSystemInterface& ls)
 {
-  stk::mesh::MetaData & fem_meta = stk::mesh::MetaData::get(mesh);
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   const std::vector<stk::mesh::Bucket*>& mesh_buckets = mesh.buckets(element_rank);
 
@@ -203,8 +202,7 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& 
 
 void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& field, stk::linsys::DofMapper& dof_mapper, fei::Matrix& matrix, fei::Vector& rhs)
 {
-  stk::mesh::MetaData & fem_meta = stk::mesh::MetaData::get(mesh);
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   const std::vector<stk::mesh::Bucket*>& mesh_buckets = mesh.buckets(element_rank);
 

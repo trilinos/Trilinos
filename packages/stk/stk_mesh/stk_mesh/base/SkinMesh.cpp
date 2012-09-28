@@ -145,6 +145,7 @@ void add_owned_sides_to_map(
     const EntitySideVector & boundary,
     BoundaryMap & side_map)
 {
+  const EntityRank side_rank = mesh.mesh_meta_data().side_rank();
   for (stk::mesh::EntitySideVector::const_iterator itr = boundary.begin();
       itr != boundary.end(); ++itr) {
     const EntitySideComponent & inside = itr->inside;
@@ -155,7 +156,7 @@ void add_owned_sides_to_map(
     if ( inside_entity.owner_rank() == mesh.parallel_rank() &&
         outside.entity == NULL ) {
       // search through existing sides
-      PairIterRelation existing_sides = inside_entity.relations(element_rank -1);
+      PairIterRelation existing_sides = inside_entity.relations(side_rank);
       for (; existing_sides.first != existing_sides.second &&
           existing_sides.first->identifier() != side_ordinal ;
           ++existing_sides.first);
@@ -171,7 +172,7 @@ void add_owned_sides_to_map(
 
         side_key.first = get_subcell_nodes(
             inside_entity,
-            element_rank - 1, // subcell rank
+            side_rank, // subcell rank
             side_ordinal,     // subcell identifier
             side_key.second  // subcell nodes
             );
@@ -196,6 +197,7 @@ void add_non_owned_sides_to_map(
     const EntitySideVector & boundary,
     BoundaryMap & side_map)
 {
+  const EntityRank side_rank = mesh.mesh_meta_data().side_rank();
   for (stk::mesh::EntitySideVector::const_iterator itr = boundary.begin();
       itr != boundary.end(); ++itr) {
     const EntitySideComponent & inside = itr->inside;
@@ -207,7 +209,7 @@ void add_non_owned_sides_to_map(
     if ( inside_entity.owner_rank() != mesh.parallel_rank() &&
         outside.entity == NULL ) {
       // search through existing sides
-      PairIterRelation existing_sides = inside_entity.relations(element_rank -1);
+      PairIterRelation existing_sides = inside_entity.relations(side_rank);
       for (; existing_sides.first != existing_sides.second &&
           existing_sides.first->identifier() != side_ordinal ;
           ++existing_sides.first);
@@ -219,7 +221,7 @@ void add_non_owned_sides_to_map(
 
         side_key.first = get_subcell_nodes(
             inside_entity,
-            element_rank - 1, // subcell rank
+            side_rank, // subcell rank
             side_ordinal,     // subcell identifier
             side_key.second  // subcell nodes
             );
@@ -299,6 +301,7 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
   ThrowErrorMsgIf( mesh.synchronized_state() == BulkData::MODIFIABLE,
                    "mesh is not SYNCHRONIZED" );
 
+  const EntityRank side_rank = mesh.mesh_meta_data().side_rank();
   EntityVector elements_closure;
 
   // compute owned closure
@@ -323,7 +326,7 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
 
   // formulate request ids for the new sides
   std::vector<size_t> requests(MetaData::get(mesh).entity_rank_count(), 0);
-  requests[element_rank -1] = num_sides_to_create;
+  requests[side_rank] = num_sides_to_create;
 
   // create the new sides
   EntityVector requested_sides;
@@ -486,7 +489,7 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
           }
         }
       }
-      Entity & side = mesh.declare_entity(element_rank-1,generated_side_id,add_parts);
+      Entity & side = mesh.declare_entity(side_rank,generated_side_id,add_parts);
 
       //declare the side->node relations
       const EntityVector & nodes = side_key.second;

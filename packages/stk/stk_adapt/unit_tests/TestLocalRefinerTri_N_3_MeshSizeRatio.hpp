@@ -51,11 +51,11 @@ namespace stk {
       std::vector<unsigned> count ;
       stk::mesh::count_entities( selector, *eMesh.get_bulk_data(), count );
 
-      const double num_elems = (double) count[eMesh.element_rank()];
+      const double num_elems = (double) count[stk::mesh::MetaData::ELEMENT_RANK];
       local_error_tol /= sqrt(num_elems);
 
       std::vector<stk::mesh::Bucket*> buckets;
-      stk::mesh::get_buckets( selector, eMesh.get_bulk_data()->buckets( eMesh.element_rank() ), buckets );
+      stk::mesh::get_buckets( selector, eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK ), buckets );
       
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) {
 

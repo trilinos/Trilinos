@@ -74,7 +74,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
   MetaData& meta  = fixture1.fem_meta();
   MetaData& meta2 = fixture2.fem_meta();
   const int spatial_dimension = 3;
-  const EntityRank element_rank = meta.element_rank();
+  const EntityRank element_rank = MetaData::ELEMENT_RANK;
 
   BulkData& bulk  = fixture1.bulk_data();
   BulkData& bulk2 = fixture2.bulk_data();
@@ -172,7 +172,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
   const unsigned p_rank = stk::parallel_machine_rank( pm );
   const unsigned p_size = stk::parallel_machine_size( pm );
 
-  const unsigned nLocalEdge = nPerProc ;
+  const unsigned nLocalElement = nPerProc ;
   MetaData meta3( spatial_dimension );
 
   meta3.commit();
@@ -188,7 +188,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
   //------------------------------
   { // No ghosting
     bool aura_flag = false;
-    RingFixture mesh2( pm , nPerProc , false /* No edge parts */ );
+    RingFixture mesh2( pm , nPerProc , false /* No element parts */ );
     mesh2.m_meta_data.commit();
 
     mesh2.m_bulk_data.modification_begin();
@@ -203,25 +203,25 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
     // This process' first element in the loop
     // if a parallel mesh has a shared node
 
-    Entity * edgenew = mesh2.m_bulk_data.get_entity( 1 , mesh2.m_edge_ids[ nLocalEdge * p_rank ] );
+    Entity * elementnew = mesh2.m_bulk_data.get_entity( MetaData::ELEMENT_RANK , mesh2.m_element_ids[ nLocalElement * p_rank ] );
 
     mesh2.m_bulk_data.modification_begin();
     for ( unsigned p = 0 ; p < p_size ; ++p ) if ( p != p_rank ) {
-      STKUNIT_ASSERT_EQUAL( in_shared( *edgenew , p ), false );
-      STKUNIT_ASSERT_EQUAL( in_send_ghost( *edgenew , p ), false );
+      STKUNIT_ASSERT_EQUAL( in_shared( *elementnew , p ), false );
+      STKUNIT_ASSERT_EQUAL( in_send_ghost( *elementnew , p ), false );
     }
 
-    Entity * edgenew2 = mesh2.m_bulk_data.get_entity( 1 , mesh2.m_edge_ids[ nLocalEdge * p_rank ] );
-    STKUNIT_ASSERT_EQUAL( in_send_ghost( *edgenew2 , p_rank+100 ), false );
+    Entity * elementnew2 = mesh2.m_bulk_data.get_entity( MetaData::ELEMENT_RANK , mesh2.m_element_ids[ nLocalElement * p_rank ] );
+    STKUNIT_ASSERT_EQUAL( in_send_ghost( *elementnew2 , p_rank+100 ), false );
 
-    Entity * node3 = mesh2.m_bulk_data.get_entity( 0 , mesh2.m_node_ids[ nLocalEdge * p_rank ] );
+    Entity * node3 = mesh2.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh2.m_node_ids[ nLocalElement * p_rank ] );
     STKUNIT_ASSERT_EQUAL( in_shared( *node3 , p_rank+100 ), false );
   }
 
   { //ghosting
 
   if ( 1 < p_size ) { // With ghosting
-    RingFixture mesh3( pm , nPerProc , false /* No edge parts */ );
+    RingFixture mesh3( pm , nPerProc , false /* No element parts */ );
     mesh3.m_meta_data.commit();
 
     mesh3.m_bulk_data.modification_begin();
@@ -235,12 +235,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
     const unsigned nNotOwned = nPerProc * p_rank ;
 
     // The not-owned shared entity:
-    Entity * node3 = mesh3.m_bulk_data.get_entity( 0 , mesh3.m_node_ids[ nNotOwned ] );
-    Entity * node4 = mesh3.m_bulk_data.get_entity( 0 , mesh3.m_node_ids[ nNotOwned ] );
+    Entity * node3 = mesh3.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh3.m_node_ids[ nNotOwned ] );
+    Entity * node4 = mesh3.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh3.m_node_ids[ nNotOwned ] );
 
-    //EntityId node_edge_ids[2] ;
-    //node_edge_ids[0] = node3->relations()[0].entity()->identifier();
-    //node_edge_ids[1] = node3->relations()[1].entity()->identifier();
+    //EntityId node_element_ids[2] ;
+    //node_element_ids[0] = node3->relations()[0].entity()->identifier();
+    //node_element_ids[1] = node3->relations()[1].entity()->identifier();
 
     mesh3.m_bulk_data.modification_begin();
 
@@ -251,10 +251,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
     }
 
     //not owned and not shared
-    Entity * node5 = mesh3.m_bulk_data.get_entity( 0 , mesh3.m_node_ids[ nLocalEdge * p_rank ] );
+    Entity * node5 = mesh3.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh3.m_node_ids[ nLocalElement * p_rank ] );
 
-    //node_edge_ids[0] = node5->relations()[0].entity()->identifier();
-    //node_edge_ids[1] = node5->relations()[1].entity()->identifier();
+    //node_element_ids[0] = node5->relations()[0].entity()->identifier();
+    //node_element_ids[1] = node5->relations()[1].entity()->identifier();
 
     STKUNIT_ASSERT_EQUAL( in_shared( *node5 , p_rank+100 ), false );
     STKUNIT_ASSERT_EQUAL( in_send_ghost( *node4 , p_rank+100 ), false );
@@ -292,7 +292,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
   stk::mesh::PartVector empty_parts;
 
   // Create element
-  const EntityRank entity_rank = meta_data.element_rank();
+  const EntityRank entity_rank = MetaData::ELEMENT_RANK;
   Entity & elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
 
   // Create node
@@ -338,7 +338,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationAttribute)
   stk::mesh::PartVector empty_parts;
 
   // Create element
-  const EntityRank entity_rank = meta_data.element_rank();
+  const EntityRank entity_rank = MetaData::ELEMENT_RANK;
   Entity & elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
 
   // Create node
@@ -402,7 +402,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
     stk::mesh::PartVector empty_parts;
 
     // Create element
-    const EntityRank entity_rank = meta_data.element_rank();
+    const EntityRank entity_rank = MetaData::ELEMENT_RANK;
     Entity & elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
     elem_ptr = &elem;
 

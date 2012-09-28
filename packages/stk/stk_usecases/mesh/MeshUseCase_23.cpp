@@ -52,7 +52,7 @@ namespace {
 
 inline stk::mesh::EntityRank get_element_rank(const stk::mesh::MetaData& meta_data)
 {
-  return meta_data.element_rank();
+  return stk::mesh::MetaData::ELEMENT_RANK;
 }
 
 inline stk::mesh::EntityRank get_element_rank(const stk::mesh::Part& part)
@@ -224,7 +224,7 @@ void use_case_23_driver(
     // Declare the mesh meta data and bulk data.
 
     stk::mesh::MetaData mesh_meta_data( SpatialDim );
-    const stk::mesh::EntityRank element_rank = mesh_meta_data.element_rank();
+    const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
     stk::mesh::BulkData mesh_bulk_data( mesh_meta_data, MPI_COMM_WORLD, 1000 );
 
     //--------------------------------

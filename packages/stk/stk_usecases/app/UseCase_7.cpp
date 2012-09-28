@@ -198,9 +198,8 @@ bool use_case_7_driver(
 
   //------------------------------------------------------------------
   // Declare the mesh meta data: element blocks and associated fields
-  stk::mesh::MetaData fem_meta;
-  fem_meta.initialize(SpatialDim, stk::mesh::entity_rank_names(SpatialDim) ) ;
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  stk::mesh::MetaData fem_meta(SpatialDim, stk::mesh::entity_rank_names() ) ;
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   {
 

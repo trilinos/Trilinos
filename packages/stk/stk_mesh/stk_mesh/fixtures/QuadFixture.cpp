@@ -29,7 +29,7 @@ namespace fixtures {
 QuadFixture::QuadFixture( stk::ParallelMachine pm ,
                           unsigned nx , unsigned ny )
   : m_spatial_dimension(2),
-    m_fem_meta( m_spatial_dimension, entity_rank_names(m_spatial_dimension) ),
+    m_fem_meta( m_spatial_dimension ),
     m_bulk_data( m_fem_meta, pm ),
     m_quad_part( declare_part<shards::Quadrilateral<4> >(m_fem_meta, "quad_part" ) ),
     m_coord_field( m_fem_meta.declare_field<CoordFieldType>("Coordinates") ),
@@ -51,7 +51,7 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
   //put coord-gather-field on all elements:
   put_field(
       m_coord_gather_field,
-      m_fem_meta.element_rank(),
+      MetaData::ELEMENT_RANK,
       m_fem_meta.universal_part(),
       nodes_per_elem
       );

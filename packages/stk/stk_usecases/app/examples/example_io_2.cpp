@@ -326,7 +326,7 @@ namespace app {
     assert(io->type() == Ioss::SIDESET);
     const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
 
-    const stk::mesh::EntityRank element_rank = meta.element_rank();
+    const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
     int block_count = io->block_count();
     for (int i=0; i < block_count; i++) {

@@ -43,7 +43,7 @@ namespace stk {
       {
         subDimEntity.clear();
         // in the case of elements, we don't share any nodes so we just make a map of element id to node
-        if (needed_entity_rank == m_eMesh.element_rank())
+        if (needed_entity_rank == stk::mesh::MetaData::ELEMENT_RANK)
           {
             subDimEntity.insert( const_cast<stk::mesh::Entity*>(&element) );
             //!!subDimEntity.insert(element.identifier());
@@ -339,7 +339,7 @@ namespace stk {
         // FIXME for interpolation of element fields
         if (field_rank != stk::mesh::MetaData::NODE_RANK)
           {
-            if (field_rank == m_eMesh.element_rank())
+            if (field_rank == stk::mesh::MetaData::ELEMENT_RANK)
               {
                 
               }
@@ -385,7 +385,7 @@ namespace stk {
             // SPECIAL CASE
             if (subDimEntity.size() == 1)
               {
-                needed_entity_rank = m_eMesh.element_rank();
+                needed_entity_rank = stk::mesh::MetaData::ELEMENT_RANK;
               }
 
             if (nodeIds_onSE[0] == 0)
@@ -406,13 +406,13 @@ namespace stk {
             unsigned nsz = 0;
             bool do_spacing=false;
 
-            if (needed_entity_rank == m_eMesh.element_rank())
+            if (needed_entity_rank == stk::mesh::MetaData::ELEMENT_RANK)
               {
                 EXCEPTWATCH;
                 stk::mesh::Entity *element_p = 0;
                 {
                   SDSEntityType elementId = *subDimEntity.begin();
-                  //!!element_p = get_entity_element(*m_eMesh.get_bulk_data(), m_eMesh.element_rank(), elementId);
+                  //!!element_p = get_entity_element(*m_eMesh.get_bulk_data(), stk::mesh::MetaData::ELEMENT_RANK, elementId);
                   element_p = elementId;
                   if (!element_p)
                     {
@@ -456,7 +456,7 @@ namespace stk {
                   {
                     //exit(1);
                     //element_side_nodes( const stk::mesh::Entity & elem , int local_side_id, stk::mesh::EntityRank side_entity_rank, std::vector<stk::mesh::Entity *>& side_node_entities )
-                    stk::mesh::Entity *owning_element = m_eMesh.get_bulk_data()->get_entity(m_eMesh.element_rank(), owning_elementId);
+                    stk::mesh::Entity *owning_element = m_eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, owning_elementId);
                     VERIFY_OP_ON(owning_element, !=, 0, "hmmm");
                     std::vector<stk::mesh::Entity *> side_node_entities;
                     PerceptMesh::element_side_nodes(*owning_element, owning_elementSubDimOrd, m_eMesh.face_rank(), side_node_entities);

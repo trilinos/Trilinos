@@ -28,7 +28,7 @@ namespace stk {
       {
         m_primaryEntityRank = eMesh.face_rank(); 
         if (m_eMesh.get_spatial_dim() == 2)
-          m_primaryEntityRank = eMesh.element_rank();
+          m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
 
         setNeededParts(eMesh, block_names, true);
         Elem::StdMeshObjTopologies::bootstrap();
@@ -72,8 +72,8 @@ namespace stk {
       {
         needed_entities.resize(2);
         needed_entities[0] = NeededEntityType(m_eMesh.edge_rank(), 3u);
-        //needed_entities[1] = NeededEntityType( (m_eMesh.get_spatial_dim() == 2 ? m_eMesh.element_rank() : m_eMesh.face_rank()), 5u);
-        needed_entities[1] = NeededEntityType( (m_eMesh.get_spatial_dim() == 2 ? m_eMesh.element_rank() : m_eMesh.face_rank()), 9u);
+        //needed_entities[1] = NeededEntityType( (m_eMesh.get_spatial_dim() == 2 ? stk::mesh::MetaData::ELEMENT_RANK : m_eMesh.face_rank()), 5u);
+        needed_entities[1] = NeededEntityType( (m_eMesh.get_spatial_dim() == 2 ? stk::mesh::MetaData::ELEMENT_RANK : m_eMesh.face_rank()), 9u);
       }
 
       virtual unsigned getNumNewElemPerElem() { return 4; }

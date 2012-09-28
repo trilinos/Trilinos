@@ -28,7 +28,7 @@ namespace stk {
 
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Tetrahedron<10>, shards::Tetrahedron<10>  >(eMesh)
       {
-        m_primaryEntityRank = eMesh.element_rank();
+        m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
 
         setNeededParts(eMesh, block_names, true);
         Elem::StdMeshObjTopologies::bootstrap();
@@ -67,7 +67,7 @@ namespace stk {
         // 4 vertices
         needed_entities[0] = NeededEntityType(m_eMesh.edge_rank(), 3u); // 18
         needed_entities[1] = NeededEntityType(m_eMesh.face_rank(), 3u); // 12
-        needed_entities[2] = NeededEntityType(m_eMesh.element_rank(), 1u); // 1
+        needed_entities[2] = NeededEntityType(stk::mesh::MetaData::ELEMENT_RANK, 1u); // 1
         //setToOne(needed_entities);
       }
 

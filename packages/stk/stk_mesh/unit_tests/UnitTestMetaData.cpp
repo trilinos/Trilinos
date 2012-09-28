@@ -50,10 +50,9 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testMetaData )
 {
   //Test functions in MetaData.cpp
   const int spatial_dimension = 3;
-  const std::vector<std::string> & rank_names = stk::mesh::entity_rank_names(spatial_dimension);
-  MetaData metadata_committed(spatial_dimension, rank_names);
-  MetaData metadata_not_committed(spatial_dimension, rank_names);
-  MetaData metadata(spatial_dimension, rank_names);
+  MetaData metadata_committed(spatial_dimension);
+  MetaData metadata_not_committed(spatial_dimension);
+  MetaData metadata(spatial_dimension);
 
   Part &pa = metadata.declare_part( std::string("a") , 0 );
   Part &pb = metadata.declare_part( std::string("b") , 0 );
@@ -104,7 +103,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, rankHigherThanDefined )
 {
   //Test function entity_rank_name in MetaData.cpp
   const int spatial_dimension = 3;
-  const std::vector<std::string> & rank_names = stk::mesh::entity_rank_names(spatial_dimension);
+  const std::vector<std::string> & rank_names = stk::mesh::entity_rank_names();
   MetaData metadata(spatial_dimension, rank_names);
   int i = 2;
 
@@ -125,7 +124,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testEntityRepository )
   static const size_t spatial_dimension = 3;
 
   //Test Entity repository - covering EntityRepository.cpp/hpp
-  stk::mesh::MetaData meta ( spatial_dimension, stk::mesh::entity_rank_names(spatial_dimension) );
+  stk::mesh::MetaData meta ( spatial_dimension );
   stk::mesh::Part & part = meta.declare_part("another part");
 
   meta.commit();
@@ -145,14 +144,14 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testEntityRepository )
   for ( id_base = 0 ; id_base < 97 ; ++id_base )
   {
     int new_id = size * id_base + rank;
-    bulk.declare_entity( 0 , new_id+1 , add_part );
+    bulk.declare_entity( MetaData::NODE_RANK , new_id+1 , add_part );
   }
 
   int new_id = size * (++id_base) + rank;
-  stk::mesh::Entity & elem  = bulk.declare_entity( 3 , new_id+1 , add_part );
+  stk::mesh::Entity & elem  = bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+1 , add_part );
 
   //new_id = size * (++id_base) + rank;
-  // stk::mesh::Entity & elem2  = bulk.declare_entity( 3 , new_id+1 , add_part );
+  // stk::mesh::Entity & elem2  = bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+1 , add_part );
 
   bool use_memory_pool = false;
   stk::mesh::impl::EntityRepository e(use_memory_pool);
@@ -215,7 +214,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, declare_part_with_rank )
 {
   //MetaData constructor fails because there are no entity types:
   const int spatial_dimension = 3;
-  MetaData metadata(spatial_dimension, stk::mesh::entity_rank_names(spatial_dimension));
+  MetaData metadata(spatial_dimension);
   metadata.declare_part("foo");
   STKUNIT_ASSERT_NO_THROW(metadata.declare_part("foo",1));
   STKUNIT_ASSERT_NO_THROW(metadata.declare_part("foo",1));
@@ -232,7 +231,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, declare_attribute_no_delete )
   //Coverage of declare_attribute_no_delete in MetaData.hpp
   const CellTopologyData * singleton = NULL;
   const int spatial_dimension = 3;
-  MetaData metadata(spatial_dimension, stk::mesh::entity_rank_names(spatial_dimension));
+  MetaData metadata(spatial_dimension);
   Part &pa = metadata.declare_part( std::string("a") , 0 );
   metadata.declare_attribute_no_delete( pa, singleton);
   metadata.commit();

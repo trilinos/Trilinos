@@ -30,7 +30,7 @@ HexFixture::HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsign
     m_nx(nx),
     m_ny(ny),
     m_nz(nz),
-    m_fem_meta( m_spatial_dimension, entity_rank_names(m_spatial_dimension) ),
+    m_fem_meta( m_spatial_dimension ),
     m_bulk_data( m_fem_meta, pm ),
     m_hex_part( declare_part<shards::Hexahedron<8> >(m_fem_meta, "hex_part") ),
     m_node_part( m_fem_meta.declare_part("node_part", MetaData::NODE_RANK ) ),
@@ -50,7 +50,7 @@ HexFixture::HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsign
   //put coord-gather-field on all elements:
   put_field(
     m_coord_gather_field,
-    m_fem_meta.element_rank(),
+    MetaData::ELEMENT_RANK,
     m_fem_meta.universal_part(),
     nodes_per_elem);
 

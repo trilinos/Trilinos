@@ -147,7 +147,7 @@ void separate_wedge(
   fixture.bulk_data.modification_end();
 
   // Parallel collective call:
-  stk::mesh::skin_mesh( fixture.bulk_data, fixture.element_rank, &skin_part);
+  stk::mesh::skin_mesh( fixture.bulk_data, stk::mesh::MetaData::ELEMENT_RANK, &skin_part);
 
   // Parallel collective call:
   fixture.communicate_model_fields();
@@ -174,7 +174,7 @@ void find_and_shuffle_wedges_to_separate(
     fixture.wedge_part &
     fixture.meta_data.locally_owned_part();
 
-  const stk::mesh::BucketVector wedge_buckets = fixture.bulk_data.buckets(fixture.element_rank);
+  const stk::mesh::BucketVector wedge_buckets = fixture.bulk_data.buckets(stk::mesh::MetaData::ELEMENT_RANK);
 
   stk::mesh::get_selected_entities(
       select_wedge,
@@ -250,7 +250,7 @@ void populate_processor_id_field_data( stk::mesh::fixtures::GearsFixture & fixtu
   stk::mesh::Selector locally_owned_selector = fixture.meta_data.locally_owned_part();
 
   stk::mesh::BucketVector all_element_buckets =
-    fixture.bulk_data.buckets(fixture.element_rank);
+    fixture.bulk_data.buckets(stk::mesh::MetaData::ELEMENT_RANK);
   stk::mesh::BucketVector element_buckets;
 
   stk::mesh::get_buckets(
@@ -361,7 +361,7 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear )
   const unsigned p_rank = fixture.bulk_data.parallel_rank();
   std::srand(p_rank); // Seed pseudo-random generator based on processor rank.
 
-  stk::mesh::Part & skin_part = fixture.meta_data.declare_part("Skin_part",fixture.element_rank-1);
+  stk::mesh::Part & skin_part = fixture.meta_data.declare_part("Skin_part",stk::mesh::MetaData::ELEMENT_RANK-1);
 
   const unsigned ONE_STATE = 1;
   CartesianField & velocity_field = fixture.meta_data.declare_field<CartesianField>("velocity",ONE_STATE);
@@ -377,7 +377,7 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear )
 
   stk::mesh::put_field(
       processor_field,
-      fixture.element_rank,
+      stk::mesh::MetaData::ELEMENT_RANK,
       fixture.meta_data.universal_part()
       );
 
@@ -393,7 +393,7 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear )
   const stk::mesh::PartVector & parts = fixture.meta_data.get_parts();
   for ( stk::mesh::PartVector::const_iterator ip = parts.begin(); ip != parts.end(); ++ip ) {
     stk::mesh::Part & topo_part = **ip;
-    if(topo_part.primary_entity_rank() == fixture.element_rank-1 && std::string::npos!=topo_part.name().find("FEM_ROOT_CELL_TOPOLOGY_PART"))  {
+    if(topo_part.primary_entity_rank() == stk::mesh::MetaData::ELEMENT_RANK-1 && std::string::npos!=topo_part.name().find("FEM_ROOT_CELL_TOPOLOGY_PART"))  {
       std::string t;
       if      (t.npos != topo_part.name().find("Triangle_3"))      t = "skin_wedge6_tri3_1";
       else if (t.npos != topo_part.name().find("Triangle_6"))      t = "skin_wedge15_tri6_2";
@@ -405,7 +405,7 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear )
         t = topo_part.name()+std::string("_Skin_part");
         t.erase(t.find("FEM_ROOT_CELL_TOPOLOGY_PART"), sizeof("FEM_ROOT_CELL_TOPOLOGY_PART"));
       }
-      stk::mesh::Part & topo_skin_part = fixture.meta_data.declare_part(t, fixture.element_rank-1);
+      stk::mesh::Part & topo_skin_part = fixture.meta_data.declare_part(t, stk::mesh::MetaData::ELEMENT_RANK-1);
       skin_io_parts.insert(&topo_skin_part);
       stk::io::put_io_part_attribute(topo_skin_part);
       fixture.meta_data.declare_part_subset(topo_part, topo_skin_part);
@@ -413,7 +413,7 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear )
       if (   t == "skin_hex8_quad4_4" || t == "skin_hex20_quad8_5") {
         if  (t == "skin_hex8_quad4_4")   t = "skin_wedge6_quad4_4";
         else                             t = "skin_wedge15_quad4_8";
-        stk::mesh::Part & topo_skin_part2 = fixture.meta_data.declare_part(t, fixture.element_rank-1);
+        stk::mesh::Part & topo_skin_part2 = fixture.meta_data.declare_part(t, stk::mesh::MetaData::ELEMENT_RANK-1);
         skin_io_parts.insert(&topo_skin_part2);
         stk::io::put_io_part_attribute(topo_skin_part2);
         fixture.meta_data.declare_part_subset(topo_part, topo_skin_part2);
@@ -423,13 +423,13 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear )
   }
   stk::mesh::Selector surface_select = fixture.meta_data.locally_owned_part();
   {
-    stk::mesh::put_field( displacement, fixture.element_rank-1, skin_part);
+    stk::mesh::put_field( displacement, stk::mesh::MetaData::ELEMENT_RANK-1, skin_part);
     const stk::mesh::PartVector &surf_parts = skin_part.subsets();
     for ( stk::mesh::PartVector::const_iterator ip = surf_parts.begin(); ip != surf_parts.end(); ++ip ) {
       stk::mesh::Part & surf_part = **ip;
-      if (surf_part.primary_entity_rank() == fixture.element_rank-1) {
+      if (surf_part.primary_entity_rank() == stk::mesh::MetaData::ELEMENT_RANK-1) {
         surface_select |= surf_part;
-        stk::mesh::put_field( displacement, fixture.element_rank-1, surf_part);
+        stk::mesh::put_field( displacement, stk::mesh::MetaData::ELEMENT_RANK-1, surf_part);
       }
     }
   }
@@ -501,7 +501,7 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear )
 
     // update a face field
     stk::mesh::BucketVector face_buckets;
-    stk::mesh::BucketVector all_face_buckets = fixture.bulk_data.buckets(fixture.element_rank-1);
+    stk::mesh::BucketVector all_face_buckets = fixture.bulk_data.buckets(stk::mesh::MetaData::ELEMENT_RANK-1);
     stk::mesh::get_buckets( surface_select, all_face_buckets, face_buckets);
     for (stk::mesh::BucketVector::iterator b_itr = face_buckets.begin(); b_itr != face_buckets.end(); ++b_itr) {
       stk::mesh::Bucket & b = **b_itr;

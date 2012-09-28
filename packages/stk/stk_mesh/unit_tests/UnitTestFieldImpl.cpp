@@ -269,8 +269,7 @@ void UnitTestFieldImpl::testFieldRestriction()
     stride[i] = ( i + 1 ) * stride[i-1] ;
   }
 
-  std::vector< std::string > dummy_names(1);
-  dummy_names[0].assign("dummy");
+  std::vector< std::string > dummy_names(4, "dummy");
 
   MetaData meta_data(0 /*dim*/,dummy_names);
 

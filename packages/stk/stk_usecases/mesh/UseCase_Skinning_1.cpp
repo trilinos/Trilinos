@@ -49,7 +49,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
     stk::mesh::MetaData & fem_meta = fixture.m_fem_meta;
     stk::mesh::BulkData & mesh = fixture.m_bulk_data;
-    const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+    const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
     const stk::mesh::EntityRank side_rank    = fem_meta.side_rank();
 
     stk::mesh::Part & skin_part = fem_meta.declare_part("skin_part");
@@ -111,7 +111,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
     stk::mesh::MetaData & fem_meta = fixture.m_fem_meta;
     stk::mesh::BulkData & mesh = fixture.m_bulk_data;
-    const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+    const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
     const stk::mesh::EntityRank side_rank    = fem_meta.side_rank();
 
     stk::mesh::Part & skin_part = fem_meta.declare_part("skin_part");

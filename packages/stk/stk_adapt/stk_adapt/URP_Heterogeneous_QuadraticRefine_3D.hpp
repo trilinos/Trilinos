@@ -33,7 +33,7 @@ namespace stk {
 
       URP_Heterogeneous_QuadraticRefine_3D(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  m_eMesh(eMesh) 
       {
-        m_primaryEntityRank = eMesh.element_rank();
+        m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
 
         Elem::StdMeshObjTopologies::bootstrap();
 

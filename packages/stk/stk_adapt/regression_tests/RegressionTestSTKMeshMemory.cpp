@@ -133,7 +133,7 @@ STKUNIT_UNIT_TEST(adapt, count_memory)
       MemoryInfo mem_delta_elem_0, mem_delta_elem_1;
 
       eMesh.get_bulk_data()->modification_begin();
-      eMesh.createEntities(eMesh.element_rank(), num_new_tris, new_elements);
+      eMesh.createEntities(stk::mesh::MetaData::ELEMENT_RANK, num_new_tris, new_elements);
       eMesh.get_bulk_data()->modification_end();
 
       mem_delta_elem_0.get_increment();

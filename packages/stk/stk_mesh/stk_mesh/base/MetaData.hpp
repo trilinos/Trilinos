@@ -100,7 +100,7 @@ public:
     NODE_RANK = 0u,
     EDGE_RANK = 1u,
     FACE_RANK = 2u,
-    VOLUME_RANK = 3u
+    ELEMENT_RANK = 3u
   };
 
   inline static MetaData & get( const Part & part ) { return part.meta_data(); }
@@ -267,11 +267,6 @@ public:
   EntityRank side_rank() const
   {
     return m_spatial_dimension - 1;
-  }
-
-  EntityRank element_rank() const
-  {
-    return is_initialized() ? m_spatial_dimension : InvalidEntityRank;
   }
 
   /**
@@ -566,7 +561,8 @@ CellTopology get_cell_topology(const Bucket &bucket);
 /** Get the cell_topology off an entity */
 CellTopology get_cell_topology(const Entity &entity);
 
-std::vector<std::string> entity_rank_names(size_t spatial_dimension);
+/** Get default entity rank names */
+const std::vector<std::string>& entity_rank_names();
 
 /** \name  Declare field data allocation rules
  *  \{

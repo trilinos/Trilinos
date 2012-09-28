@@ -112,39 +112,39 @@ Destroy nodes and sides that are no longer attached to a live face
 */
 
 const int NUM_ITERATIONS = 7;
-const int NUM_RANK = 3;
+const int NUM_RANK = 4;
 
 typedef std::vector<stk::mesh::Entity *> EntityVector;
 
 // Validation constants:
 const int global_num_dead[NUM_ITERATIONS][NUM_RANK] =
-{ //nodes  edges  faces
-   {0,     0,     0 }, //0
-   {1,     3,     3 }, //1
-   {3,     6,     5 }, //2
-   {5,     10,    7 }, //3
-   {7,     14,    9 }, //4
-   {12,    20,    11}, //5
-   {25,    34,    16}  //6
+{ //nodes  edges  faces   elements
+  {0,     0,     0,   0 }, //0
+  {1,     3,     0,   3 }, //1
+  {3,     6,     0,   5 }, //2
+  {5,     10,    0,   7 }, //3
+  {7,     14,    0,   9 }, //4
+  {12,    20,    0,   11}, //5
+  {25,    34,    0,   16}  //6
 };
 
 // Validation constants:
 const int global_num_live[NUM_ITERATIONS][NUM_RANK] =
-{ //nodes  edges  faces
-   {25,    16,    16}, //0
-   {24,    20,    13}, //1
-   {22,    20,    11}, //2
-   {20,    20,    9 }, //3
-   {18,    18,    7 }, //4
-   {13,    14,    5 }, //5
-   {0,     0,     0 }  //6
+{ //nodes  edges  faces  elements
+  {25,    16,    0,     16}, //0
+  {24,    20,    0,     13}, //1
+  {22,    20,    0,     11}, //2
+  {20,    20,    0,     9 }, //3
+  {18,    18,    0,     7 }, //4
+  {13,    14,    0,     5 }, //5
+  {0,     0,     0,     0 }  //6
 };
 
 //----------------------------------------------------------------------------------
 
 //Generates a vector of entities to be killed in this iteration
-EntityVector entities_to_be_killed( 
-    const stk::mesh::BulkData & mesh, 
+EntityVector entities_to_be_killed(
+    const stk::mesh::BulkData & mesh,
     int iteration,
     stk::mesh::EntityRank entity_rank
     ) {
@@ -288,7 +288,6 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
         live_sides.push_back(entity_side(5,LEFT));
         live_sides.push_back(entity_side(1,LEFT));
 
-
         dead_sides.push_back(entity_side(4,TOP));
         dead_sides.push_back(entity_side(4,RIGHT));
         dead_sides.push_back(entity_side(9,LEFT));
@@ -328,7 +327,6 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
         live_sides.push_back(entity_side(5,BOTTOM));
         live_sides.push_back(entity_side(5,LEFT));
         live_sides.push_back(entity_side(1,LEFT));
-
 
         dead_sides.push_back(entity_side(2,TOP));
         dead_sides.push_back(entity_side(3,TOP));
@@ -371,7 +369,6 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
         live_sides.push_back(entity_side(5,BOTTOM));
         live_sides.push_back(entity_side(5,LEFT));
 
-
         dead_sides.push_back(entity_side(1,LEFT));
         dead_sides.push_back(entity_side(1,TOP));
         dead_sides.push_back(entity_side(1,RIGHT));
@@ -401,7 +398,6 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
         live_sides.push_back(entity_side(5,BOTTOM));
         live_sides.push_back(entity_side(5,RIGHT));
         live_sides.push_back(entity_side(5,TOP));
-
         live_sides.push_back(entity_side(8,TOP));
         live_sides.push_back(entity_side(8,RIGHT));
         live_sides.push_back(entity_side(12,RIGHT));
@@ -416,7 +412,6 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
         live_sides.push_back(entity_side(15,TOP));
         live_sides.push_back(entity_side(12,LEFT));
         live_sides.push_back(entity_side(8,LEFT));
-
 
         dead_sides.push_back(entity_side(1,LEFT));
         dead_sides.push_back(entity_side(1,RIGHT));
@@ -460,7 +455,6 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
         live_sides.push_back(entity_side(15,TOP));
         live_sides.push_back(entity_side(12,LEFT));
         live_sides.push_back(entity_side(8,LEFT));
-
 
         dead_sides.push_back(entity_side(1,LEFT));
         dead_sides.push_back(entity_side(1,RIGHT));
@@ -531,7 +525,8 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
 
   stk::mesh::BulkData& mesh = fixture.bulk_data();
   stk::mesh::Part & dead_part = *fixture.dead_part();
-  const stk::mesh::EntityRank element_rank = fixture.fem_meta().element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
+  const stk::mesh::EntityRank side_rank = mesh.mesh_meta_data().side_rank();
 
   // Select live or dead from owned, shared, and ghosted
   stk::mesh::Selector select_dead = dead_part ;
@@ -544,7 +539,7 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
     if (entity != NULL) {
       //make sure the side exist
       const unsigned side_ordinal = itr->side_ordinal;
-      stk::mesh::PairIterRelation existing_sides = entity->relations(entity->entity_rank()-1);
+      stk::mesh::PairIterRelation existing_sides = entity->relations(side_rank);
 
       for (; existing_sides.first != existing_sides.second &&
           existing_sides.first->identifier() != side_ordinal ;
@@ -568,7 +563,7 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
     //if (entity != NULL) {
       //make sure the side exist
       const unsigned side_ordinal = itr->side_ordinal;
-      stk::mesh::PairIterRelation existing_sides = entity->relations(entity->entity_rank()-1);
+      stk::mesh::PairIterRelation existing_sides = entity->relations(side_rank);
 
       for (; existing_sides.first != existing_sides.second &&
           existing_sides.first->identifier() != side_ordinal ;
@@ -582,15 +577,10 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
     }
   }
 
-
   return true;
 }
 
-
-
-
 //----------------------------------------------------------------------------------
-
 
 //Validates that the correct entites were killed in this iteration
 bool validate_iteration( stk::ParallelMachine pm, stk::mesh::fixtures::GridFixture & fixture, int iteration) {
@@ -607,8 +597,8 @@ bool validate_iteration( stk::ParallelMachine pm, stk::mesh::fixtures::GridFixtu
   stk::mesh::Selector select_dead = dead_part & fem_meta.locally_owned_part();
   stk::mesh::Selector select_live = !dead_part & fem_meta.locally_owned_part();
 
-  int num_dead[NUM_RANK] = {0, 0, 0};
-  int num_live[NUM_RANK] = {0, 0, 0};
+  int num_dead[NUM_RANK] = {0, 0, 0, 0};
+  int num_live[NUM_RANK] = {0, 0, 0, 0};
 
   for ( int i = 0; i < NUM_RANK ; ++i) {
     const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( stk::mesh::EntityRank(i) );
@@ -616,10 +606,11 @@ bool validate_iteration( stk::ParallelMachine pm, stk::mesh::fixtures::GridFixtu
     num_live[i] = count_selected_entities( select_live, buckets);
   }
 
-  stk::all_reduce(pm, stk::ReduceSum<3>(num_dead) & stk::ReduceSum<3>(num_live));
+  stk::all_reduce(pm, stk::ReduceSum<NUM_RANK>(num_dead) & stk::ReduceSum<NUM_RANK>(num_live));
 
   bool correct_dead = true;
   bool correct_live = true;
+  std::cout << std::endl;
 
   for (int i=0; i<NUM_RANK; ++i) {
     correct_dead &= global_num_dead[iteration][i] == num_dead[i];
@@ -632,6 +623,3 @@ bool validate_iteration( stk::ParallelMachine pm, stk::mesh::fixtures::GridFixtu
 
   return false;
 }
-
-
-

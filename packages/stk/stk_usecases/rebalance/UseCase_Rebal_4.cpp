@@ -153,7 +153,7 @@ void GreedySideset::determine_new_partition(bool &RebalancingNeeded) {
 
   stk::mesh::MetaData & fem_meta = stk::mesh::MetaData::get(bulk_data_);
   const stk::mesh::EntityRank side_rank = fem_meta.side_rank();
-  const stk::mesh::EntityRank elem_rank = fem_meta.element_rank();
+  const stk::mesh::EntityRank elem_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   // Select active ghosted side faces.
   stk::mesh::Selector selector(!fem_meta.locally_owned_part() &
@@ -206,11 +206,11 @@ enum { nx = 3, ny = 3 };
 bool test_greedy_sideset ( stk::ParallelMachine comm )
 {
   unsigned spatial_dimension = 2;
-  std::vector<std::string> rank_names = stk::mesh::entity_rank_names(spatial_dimension);
+  std::vector<std::string> rank_names = stk::mesh::entity_rank_names();
   stk::mesh::MetaData fem_meta;
   fem_meta.initialize(spatial_dimension, rank_names);
   stk::mesh::BulkData bulk_data( fem_meta , comm , 100 );
-  const stk::mesh::EntityRank element_rank    = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank    = stk::mesh::MetaData::ELEMENT_RANK;
   const stk::mesh::EntityRank node_rank       = stk::mesh::MetaData::NODE_RANK;
 
   stk::mesh::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
@@ -320,7 +320,7 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
     {
       stk::mesh::MetaData & fmeta = stk::mesh::MetaData::get(bulk_data);
       const stk::mesh::EntityRank side_rank = fmeta.side_rank();
-      const stk::mesh::EntityRank elem_rank = fmeta.element_rank();
+      const stk::mesh::EntityRank elem_rank = stk::mesh::MetaData::ELEMENT_RANK;
       const mesh::Entity *s = bulk_data.get_entity(side_rank,7);
       if (s) {
         const mesh::Entity & side = *s;
@@ -362,7 +362,7 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
   {
     stk::mesh::MetaData & fmeta = stk::mesh::MetaData::get(bulk_data);
     const stk::mesh::EntityRank side_rank = fmeta.side_rank();
-    const stk::mesh::EntityRank elem_rank = fmeta.element_rank();
+    const stk::mesh::EntityRank elem_rank = stk::mesh::MetaData::ELEMENT_RANK;
     mesh::Entity *s = bulk_data.get_entity(side_rank,7);
     if (s) {
       mesh::Entity & side = *s;

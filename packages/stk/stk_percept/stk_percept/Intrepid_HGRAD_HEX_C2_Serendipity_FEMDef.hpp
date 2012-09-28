@@ -36,30 +36,30 @@
 
 namespace Intrepid {
 
-  
+
   template<class Scalar, class ArrayScalar>
   Basis_HGRAD_HEX_C2_Serendipity_FEM<Scalar,ArrayScalar>::Basis_HGRAD_HEX_C2_Serendipity_FEM()
   {
     this -> basisCardinality_  = 20;
-    this -> basisDegree_       = 2;    
+    this -> basisDegree_       = 2;
     this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
     this -> basisType_         = BASIS_FEM_DEFAULT;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
   }
-  
-  
-  
+
+
+
   template<class Scalar, class ArrayScalar>
   void Basis_HGRAD_HEX_C2_Serendipity_FEM<Scalar, ArrayScalar>::initializeTags() {
-  
+
     // Basis-dependent intializations
     int tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-    int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+    int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
     int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
     int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
 
-    // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
+    // An array with local DoF tags assigned to basis functions, in the order of their local enumeration
     int tags[]  = { 0, 0, 0, 1,     // Nodes 0 to 7 follow vertex order of the topology
                     0, 1, 0, 1,
                     0, 2, 0, 1,
@@ -90,7 +90,7 @@ namespace Intrepid {
                     //                   2, 2, 0, 1,      // Node 26 -> face 2
 
     };
-  
+
     // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
     Intrepid::setOrdinalTagData(this -> tagToOrdinal_,
                                 this -> ordinalToTag_,
@@ -107,7 +107,7 @@ namespace Intrepid {
   void Basis_HGRAD_HEX_C2_Serendipity_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
                                                                           const ArrayScalar &  inputPoints,
                                                                           const EOperator      operatorType) const {
-  
+
     // Verify arguments
 #ifdef HAVE_INTREPID_DEBUG
     Intrepid::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
@@ -116,14 +116,14 @@ namespace Intrepid {
                                                         this -> getBaseCellTopology(),
                                                         this -> getCardinality() );
 #endif
-  
+
     // Number of evaluation points = dim 0 of inputPoints
-    int dim0 = inputPoints.dimension(0);  
-  
+    int dim0 = inputPoints.dimension(0);
+
     // Temporaries: (x,y,z) coordinates of the evaluation point
-    Scalar x = 0.0;                                    
-    Scalar y = 0.0;                                    
-    Scalar z = 0.0;                                    
+    Scalar x = 0.0;
+    Scalar y = 0.0;
+    Scalar z = 0.0;
     Scalar one = 1.0;
     Scalar two = 2.0;
 
@@ -132,7 +132,7 @@ namespace Intrepid {
     Scalar half = 1./2.;
 
     switch (operatorType) {
-    
+
     case OPERATOR_VALUE:
       for (int i0 = 0; i0 < dim0; i0++) {
         x = inputPoints(i0, 0);
@@ -183,10 +183,10 @@ namespace Intrepid {
         outputValues(17, i0)= one4th * one_p_s  * one_m_tt * one_p_u ;
         outputValues(18, i0)= one4th * one_m_ss * one_p_t  * one_p_u ;
         outputValues(19, i0)= one4th * one_m_s  * one_m_tt * one_p_u ;
-        
+
       }
       break;
-      
+
     case OPERATOR_GRAD:
     case OPERATOR_D1:
       for (int i0 = 0; i0 < dim0; i0++) {
@@ -211,7 +211,7 @@ namespace Intrepid {
         double s2_m1 = two * s - 1;
         double t2_m1 = two * t - 1;
         double u2_m1 = two * u - 1;
- 
+
         double s2_p1 = two * s + 1;
         double t2_p1 = two * t + 1;
         double u2_p1 = two * u + 1 ;
@@ -219,7 +219,7 @@ namespace Intrepid {
         double one_m_ss = one - s * s ;
         double one_m_tt = one - t * t ;
         double one_m_uu = one - u * u ;
-          
+
         //double one_m_2s = one - two * s ;
         //double one_m_2t = one - two * t ;
         //double one_m_2u = one - two * u ;
@@ -248,7 +248,7 @@ namespace Intrepid {
         outputValues(19, i0, 0)= -one4th * one_m_tt * one_p_u;
 
         // shape function derivative in the t direction
-         
+
         outputValues( 0, i0, 1)= -one8th * one_m_s  * one_m_u  * (-s-t2_p1-u);
         outputValues( 1, i0, 1)= -one8th * one_p_s  * one_m_u  * ( s-t2_p1-u);
         outputValues( 2, i0, 1)=  one8th * one_p_s  * one_m_u  * ( s+t2_m1-u);
@@ -271,7 +271,7 @@ namespace Intrepid {
         outputValues(19, i0, 1)=   -half * one_m_s  * one_p_u  * t;
 
         // shape function derivative in the u direction
-         
+
         outputValues( 0, i0, 2)= -one8th * one_m_s  * one_m_t  * (-s-t-u2_p1);
         outputValues( 1, i0, 2)= -one8th * one_p_s  * one_m_t  * ( s-t-u2_p1);
         outputValues( 2, i0, 2)= -one8th * one_p_s  * one_p_t  * ( s+t-u2_p1);
@@ -296,42 +296,42 @@ namespace Intrepid {
 
       }
       break;
-      
+
     case OPERATOR_CURL:
       TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_HEX_C2_Serendipity_FEM): CURL is invalid operator for rank-0 (scalar) functions in 3D");
       break;
-      
+
     case OPERATOR_DIV:
       TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_HEX_C2_Serendipity_FEM): DIV is invalid operator for rank-0 (scalar) functions in 3D");
       break;
-      
+
     case OPERATOR_D2:
       for (int i0 = 0; i0 < dim0; i0++) {
         x = inputPoints(i0,0);
         y = inputPoints(i0,1);
         z = inputPoints(i0,2);
-        
-        // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, D2Cardinality = 6) 
+
+        // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, D2Cardinality = 6)
         TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_D2), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_HEX_C2_Serendipity_FEM): OPERATOR_D2 not yet coded");
-        
+
       }
       break;
-      
+
     case OPERATOR_D3:
       for (int i0 = 0; i0 < dim0; i0++) {
         x = inputPoints(i0,0);
         y = inputPoints(i0,1);
         z = inputPoints(i0,2);
-                
+
         TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_D3), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_HEX_C2_Serendipity_FEM): OPERATOR_D3 not yet coded");
 
       }
       break;
-      
+
     case OPERATOR_D4:
       {
         // Non-zero entries have Dk (derivative cardinality) indices {3,4,5,7,8,12}, all other entries are 0.
@@ -342,20 +342,20 @@ namespace Intrepid {
 
       }
       break;
-      
+
     case OPERATOR_D5:
     case OPERATOR_D6:
       TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_HEX_C2_Serendipity_FEM): operator not supported");
       break;
-      
+
     case OPERATOR_D7:
     case OPERATOR_D8:
     case OPERATOR_D9:
     case OPERATOR_D10:
       {
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, DkCardinality)
-        int DkCardinality = Intrepid::getDkCardinality(operatorType, 
+        int DkCardinality = Intrepid::getDkCardinality(operatorType,
                                                        this -> basisCellTopology_.getDimension() );
         for(int dofOrd = 0; dofOrd < this -> basisCardinality_; dofOrd++) {
           for (int i0 = 0; i0 < dim0; i0++) {
@@ -366,7 +366,7 @@ namespace Intrepid {
         }
       }
       break;
-      
+
     default:
       TEUCHOS_TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_HEX_C2_Serendipity_FEM): Invalid operator type");
@@ -398,36 +398,36 @@ namespace Intrepid {
                         ">>> ERROR: (Intrepid::Basis_HGRAD_HEX_C2_Serendipity_FEM::getDofCoords) incorrect reference cell (1st) dimension in DofCoords array");
 #endif
 
-    DofCoords(0,0) = -1.0;   DofCoords(0,1) = -1.0; DofCoords(0,2) = -1.0;  
-    DofCoords(1,0) =  1.0;   DofCoords(1,1) = -1.0; DofCoords(1,2) = -1.0;  
-    DofCoords(2,0) =  1.0;   DofCoords(2,1) =  1.0; DofCoords(2,2) = -1.0;  
-    DofCoords(3,0) = -1.0;   DofCoords(3,1) =  1.0; DofCoords(3,2) = -1.0;  
-    DofCoords(4,0) = -1.0;   DofCoords(4,1) = -1.0; DofCoords(4,2) =  1.0;  
-    DofCoords(5,0) =  1.0;   DofCoords(5,1) = -1.0; DofCoords(5,2) =  1.0;  
-    DofCoords(6,0) =  1.0;   DofCoords(6,1) =  1.0; DofCoords(6,2) =  1.0;  
-    DofCoords(7,0) = -1.0;   DofCoords(7,1) =  1.0; DofCoords(7,2) =  1.0;  
+    DofCoords(0,0) = -1.0;   DofCoords(0,1) = -1.0; DofCoords(0,2) = -1.0;
+    DofCoords(1,0) =  1.0;   DofCoords(1,1) = -1.0; DofCoords(1,2) = -1.0;
+    DofCoords(2,0) =  1.0;   DofCoords(2,1) =  1.0; DofCoords(2,2) = -1.0;
+    DofCoords(3,0) = -1.0;   DofCoords(3,1) =  1.0; DofCoords(3,2) = -1.0;
+    DofCoords(4,0) = -1.0;   DofCoords(4,1) = -1.0; DofCoords(4,2) =  1.0;
+    DofCoords(5,0) =  1.0;   DofCoords(5,1) = -1.0; DofCoords(5,2) =  1.0;
+    DofCoords(6,0) =  1.0;   DofCoords(6,1) =  1.0; DofCoords(6,2) =  1.0;
+    DofCoords(7,0) = -1.0;   DofCoords(7,1) =  1.0; DofCoords(7,2) =  1.0;
 
-    DofCoords(8,0) =   0.0;   DofCoords(8,1) =  -1.0; DofCoords(8,2) =  -1.0;  
-    DofCoords(9,0) =   1.0;   DofCoords(9,1) =   0.0; DofCoords(9,2) =  -1.0;  
-    DofCoords(10,0) =  0.0;   DofCoords(10,1) =  1.0; DofCoords(10,2) = -1.0;  
-    DofCoords(11,0) = -1.0;   DofCoords(11,1) =  0.0; DofCoords(11,2) = -1.0;  
-    DofCoords(12,0) = -1.0;   DofCoords(12,1) = -1.0; DofCoords(12,2) =  0.0;  
-    DofCoords(13,0) =  1.0;   DofCoords(13,1) = -1.0; DofCoords(13,2) =  0.0;  
-    DofCoords(14,0) =  1.0;   DofCoords(14,1) =  1.0; DofCoords(14,2) =  0.0;  
-    DofCoords(15,0) = -1.0;   DofCoords(15,1) =  1.0; DofCoords(15,2) =  0.0;  
-    DofCoords(16,0) =  0.0;   DofCoords(16,1) = -1.0; DofCoords(16,2) =  1.0;  
-    DofCoords(17,0) =  1.0;   DofCoords(17,1) =  0.0; DofCoords(17,2) =  1.0;  
-    DofCoords(18,0) =  0.0;   DofCoords(18,1) =  1.0; DofCoords(18,2) =  1.0;  
-    DofCoords(19,0) = -1.0;   DofCoords(19,1) =  0.0; DofCoords(19,2) =  1.0;  
+    DofCoords(8,0) =   0.0;   DofCoords(8,1) =  -1.0; DofCoords(8,2) =  -1.0;
+    DofCoords(9,0) =   1.0;   DofCoords(9,1) =   0.0; DofCoords(9,2) =  -1.0;
+    DofCoords(10,0) =  0.0;   DofCoords(10,1) =  1.0; DofCoords(10,2) = -1.0;
+    DofCoords(11,0) = -1.0;   DofCoords(11,1) =  0.0; DofCoords(11,2) = -1.0;
+    DofCoords(12,0) = -1.0;   DofCoords(12,1) = -1.0; DofCoords(12,2) =  0.0;
+    DofCoords(13,0) =  1.0;   DofCoords(13,1) = -1.0; DofCoords(13,2) =  0.0;
+    DofCoords(14,0) =  1.0;   DofCoords(14,1) =  1.0; DofCoords(14,2) =  0.0;
+    DofCoords(15,0) = -1.0;   DofCoords(15,1) =  1.0; DofCoords(15,2) =  0.0;
+    DofCoords(16,0) =  0.0;   DofCoords(16,1) = -1.0; DofCoords(16,2) =  1.0;
+    DofCoords(17,0) =  1.0;   DofCoords(17,1) =  0.0; DofCoords(17,2) =  1.0;
+    DofCoords(18,0) =  0.0;   DofCoords(18,1) =  1.0; DofCoords(18,2) =  1.0;
+    DofCoords(19,0) = -1.0;   DofCoords(19,1) =  0.0; DofCoords(19,2) =  1.0;
 
-    //     DofCoords(20,0) =  0.0;   DofCoords(20,1) =  0.0; DofCoords(20,2) =  0.0;  
+    //     DofCoords(20,0) =  0.0;   DofCoords(20,1) =  0.0; DofCoords(20,2) =  0.0;
 
-    //     DofCoords(21,0) =  0.0;   DofCoords(21,1) =  0.0; DofCoords(21,2) = -1.0;  
-    //     DofCoords(22,0) =  0.0;   DofCoords(22,1) =  0.0; DofCoords(22,2) =  1.0;  
-    //     DofCoords(23,0) = -1.0;   DofCoords(23,1) =  0.0; DofCoords(23,2) =  0.0;  
-    //     DofCoords(24,0) =  1.0;   DofCoords(24,1) =  0.0; DofCoords(24,2) =  0.0;  
-    //     DofCoords(25,0) =  0.0;   DofCoords(25,1) = -1.0; DofCoords(25,2) =  0.0;  
-    //     DofCoords(26,0) =  0.0;   DofCoords(26,1) =  1.0; DofCoords(26,2) =  0.0;  
+    //     DofCoords(21,0) =  0.0;   DofCoords(21,1) =  0.0; DofCoords(21,2) = -1.0;
+    //     DofCoords(22,0) =  0.0;   DofCoords(22,1) =  0.0; DofCoords(22,2) =  1.0;
+    //     DofCoords(23,0) = -1.0;   DofCoords(23,1) =  0.0; DofCoords(23,2) =  0.0;
+    //     DofCoords(24,0) =  1.0;   DofCoords(24,1) =  0.0; DofCoords(24,2) =  0.0;
+    //     DofCoords(25,0) =  0.0;   DofCoords(25,1) = -1.0; DofCoords(25,2) =  0.0;
+    //     DofCoords(26,0) =  0.0;   DofCoords(26,1) =  1.0; DofCoords(26,2) =  0.0;
   }
 
 }// namespace Intrepid

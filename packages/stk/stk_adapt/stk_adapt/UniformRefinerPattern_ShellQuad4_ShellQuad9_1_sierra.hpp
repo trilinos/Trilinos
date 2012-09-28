@@ -35,7 +35,7 @@ namespace stk {
           {
             throw std::runtime_error("can't refine shell elements in 2D");
           }
-        m_primaryEntityRank = eMesh.element_rank();
+        m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
 
         setNeededParts(eMesh, block_names, false);  // different topologies
         Elem::StdMeshObjTopologies::bootstrap();
@@ -95,8 +95,8 @@ namespace stk {
         needed_entities[0].first  = m_eMesh.edge_rank();    
         needed_entities[0].second = 1u;
         // FIXME - this is a problem with the definition of what a needed entity rank is, and what an stk::mesh::Entity rank is
-        needed_entities[1].first  = m_eMesh.face_rank(); // FIXME m_eMesh.element_rank();
-        //needed_entities[1].first  = m_eMesh.element_rank();
+        needed_entities[1].first  = m_eMesh.face_rank(); // FIXME stk::mesh::MetaData::ELEMENT_RANK;
+        //needed_entities[1].first  = stk::mesh::MetaData::ELEMENT_RANK;
         needed_entities[1].second = 1u;
 
       }

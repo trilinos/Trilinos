@@ -177,27 +177,27 @@ bool use_case_14_driver(MPI_Comm comm,
 
     stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<> >());
     {
-      stk::mesh::Part & block_hex        = meta_data.declare_part("block_1", meta_data.element_rank());
+      stk::mesh::Part & block_hex        = meta_data.declare_part("block_1", stk::mesh::MetaData::ELEMENT_RANK);
       stk::mesh::set_cell_topology( block_hex, hex_top );
     }
     {
-      stk::mesh::Part & block_hex        = meta_data.declare_part("block_2", meta_data.element_rank());
+      stk::mesh::Part & block_hex        = meta_data.declare_part("block_2", stk::mesh::MetaData::ELEMENT_RANK);
       stk::mesh::set_cell_topology( block_hex, hex_top );
     }
     {
-      stk::mesh::Part & block_hex        = meta_data.declare_part("block_10", meta_data.element_rank());
+      stk::mesh::Part & block_hex        = meta_data.declare_part("block_10", stk::mesh::MetaData::ELEMENT_RANK);
       stk::mesh::set_cell_topology( block_hex, hex_top );
     }
     {
-      stk::mesh::Part & block_hex        = meta_data.declare_part("block_20", meta_data.element_rank());
+      stk::mesh::Part & block_hex        = meta_data.declare_part("block_20", stk::mesh::MetaData::ELEMENT_RANK);
       stk::mesh::set_cell_topology( block_hex, hex_top );
     }
     {
-      stk::mesh::Part & block_hex        = meta_data.declare_part("block_30", meta_data.element_rank());
+      stk::mesh::Part & block_hex        = meta_data.declare_part("block_30", stk::mesh::MetaData::ELEMENT_RANK);
       stk::mesh::set_cell_topology( block_hex, hex_top );
     }
     {
-      stk::mesh::Part & block_hex        = meta_data.declare_part("block_40", meta_data.element_rank());
+      stk::mesh::Part & block_hex        = meta_data.declare_part("block_40", stk::mesh::MetaData::ELEMENT_RANK);
       stk::mesh::set_cell_topology( block_hex, hex_top );
     }
 
@@ -213,7 +213,7 @@ bool use_case_14_driver(MPI_Comm comm,
            i != all_parts.end(); ++i) {
 
         mesh::Part * const part = *i ;
-	if ( part->primary_entity_rank() == meta_data.element_rank()) {
+	if ( part->primary_entity_rank() == stk::mesh::MetaData::ELEMENT_RANK) {
           const CellTopologyData *const topology = meta_data.get_cell_topology(*part).getCellTopologyData();
 	  if (topology->key == shards::Hexahedron<8>::key) {
 
@@ -275,7 +275,7 @@ bool use_case_14_driver(MPI_Comm comm,
     // Reference to all node and element buckets,
     // will select which ones we need later
 
-    const std::vector< stk::mesh::Bucket * > & element_buckets = bulk_data.buckets( meta_data.element_rank());
+    const std::vector< stk::mesh::Bucket * > & element_buckets = bulk_data.buckets( stk::mesh::MetaData::ELEMENT_RANK);
     const std::vector< stk::mesh::Bucket * > & node_buckets = bulk_data.buckets( stk::mesh::MetaData::NODE_RANK );
 
     // Selectors for buckets:
@@ -300,7 +300,7 @@ bool use_case_14_driver(MPI_Comm comm,
 
     MyHexInternalForceAlg elem_alg(fields, materialParameters,
 				   matmodel, meta_data);
-    MyNodalForceScatterAlg node_alg(fields, meta_data.element_rank());
+    MyNodalForceScatterAlg node_alg(fields, stk::mesh::MetaData::ELEMENT_RANK);
 
     for(int n=0; n<num_trials; ++n) {
       //

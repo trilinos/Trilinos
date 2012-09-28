@@ -390,7 +390,7 @@ namespace stk_example_io {
   // ========================================================================
   void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   {
-    const stk::mesh::EntityRank element_rank = meta.element_rank();
+    const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
     const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
     stk::io::default_part_processing(elem_blocks, meta, element_rank);
@@ -678,7 +678,7 @@ namespace stk_example_io {
     assert(sset->type() == Ioss::SIDESET);
 
     const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
-    const stk::mesh::EntityRank element_rank = meta.element_rank();
+    const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
     int block_count = sset->block_count();
     for (int i=0; i < block_count; i++) {

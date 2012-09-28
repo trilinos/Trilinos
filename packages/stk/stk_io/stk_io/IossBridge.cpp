@@ -424,7 +424,7 @@ stk::mesh::EntityRank part_primary_entity_rank(const stk::mesh::Part &part)
 
 stk::mesh::EntityRank element_rank(const stk::mesh::MetaData &meta)
 {
-  return meta.element_rank();
+  return stk::mesh::MetaData::ELEMENT_RANK;
 }
 
 stk::mesh::EntityRank side_rank(const stk::mesh::MetaData &meta)

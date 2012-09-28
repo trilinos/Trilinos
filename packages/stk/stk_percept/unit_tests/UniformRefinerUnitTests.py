@@ -20,7 +20,7 @@ def fixture_setup_0():
   eMesh = PerceptMesh()
   eMesh.open("exodus_files/"+input_files_loc+"hex_fixture.e")
   scalarDimension = 0
-  proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+  proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
   breaker = Refiner(eMesh, HEX8_TET4_24, proc_rank_field)
   eMesh.commit()
 
@@ -73,7 +73,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       isCommited = False
       eMesh = PerceptMesh(fixture.meta_data, fixture.bulk_data, isCommited)
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension)
       breaker = Refiner(eMesh, QUAD4_QUAD4_4, proc_rank_field)
       eMesh.commit()
@@ -94,7 +94,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       isCommited = False
       eMesh = PerceptMesh(fixture.meta_data, fixture.bulk_data, isCommited)
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension)
       breaker = Refiner(eMesh, TRI3_TRI3_4, proc_rank_field)
       eMesh.commit()
@@ -114,7 +114,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       fixture = QuadFixture_4(pm, nx, ny, True)
       eMesh = PerceptMesh(fixture.meta_data, fixture.bulk_data, False)
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, QUAD4_QUAD4_4_SIERRA, proc_rank_field)
       eMesh.commit()
       fixture.generate_mesh()
@@ -128,7 +128,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
     gmesh_spec = "4x4x"+str(4*p_size)+"|bbox:0,0,0,1,1,1"
     eMesh.new_mesh(GMeshSpec(gmesh_spec))
     scalarDimension = 0
-    proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+    proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
     breaker = Refiner(eMesh, HEX8_HEX8_8, proc_rank_field)
     eMesh.commit()
     breaker.doBreak
@@ -150,7 +150,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh()
       eMesh.open("exodus_files/beam.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       eMesh.save_as("beam_enrich_0.e")
       breaker = Refiner(eMesh, BEAM2_BEAM3_1, proc_rank_field)
       eMesh.commit()
@@ -175,7 +175,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh()
       eMesh.open("beam_0.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, BEAM2_BEAM2_2, proc_rank_field)
       eMesh.commit()
       breaker.setIgnoreSideSets(True)
@@ -189,7 +189,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(2)
       eMesh.open("quad_fixture.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, QUAD4_TRI3_6, proc_rank_field)
       eMesh.commit()
       eMesh.print_info("quad mesh")
@@ -206,7 +206,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(2)
       eMesh.open("quad_fixture.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, QUAD4_TRI3_4, proc_rank_field)
       eMesh.commit()
       eMesh.print_info("quad mesh")
@@ -223,7 +223,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(2)
       eMesh.open("quad_fixture_no_sidesets.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, QUAD4_QUAD4_4, proc_rank_field)
       eMesh.commit()
       eMesh.print_info("quad mesh")
@@ -239,7 +239,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(2)
       eMesh.open("quad_fixture.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, QUAD4_QUAD4_4_SIERRA, proc_rank_field)
       eMesh.commit()
       eMesh.print_info("quad mesh")
@@ -254,7 +254,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(2)
       eMesh.open("quad_fixture.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, QUAD4_QUAD4_4_SIERRA, proc_rank_field)
       eMesh.commit()
       eMesh.print_info("after refinement break_quad_to_quad_sierra_sidesets")
@@ -269,7 +269,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
     gmesh_spec = "1x1x" + str(p_size) + "|bbox:0,0,0,1,1," + str(p_size)
     eMesh.new_mesh(GMeshSpec(gmesh_spec))
     scalarDimension = 0
-    proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+    proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
     breaker = Refiner(eMesh, HEX8_TET4_24, proc_rank_field)
     eMesh.commit()
     eMesh.print_info()
@@ -284,7 +284,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
     gmesh_spec = "1x1x" + str(p_size) + "|bbox:0,0,0,1,1," + str(p_size)
     eMesh.new_mesh(GMeshSpec(gmesh_spec))
     scalarDimension = 0
-    proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+    proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
     breaker = Refiner(eMesh, HEX8_TET4_6_12, proc_rank_field)
     eMesh.commit()
     eMesh.print_info()
@@ -299,7 +299,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
     eMesh = PerceptMesh(3)
     eMesh.open("hex_fixture.e")
     scalarDimension = 0
-    proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+    proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
     breaker = Refiner(eMesh, HEX8_TET4_6_12, proc_rank_field)
     eMesh.commit()
     eMesh.print_info()
@@ -344,7 +344,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
          eMesh1 = PerceptMesh(2)
          eMesh1.open("quad_fixture_" + str(i) + ".e")
          scalarDimension = 0
-         proc_rank_field = eMesh1.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+         proc_rank_field = eMesh1.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
          breaker = Refiner(eMesh1, QUAD4_QUAD4_4_SIERRA, proc_rank_field)
          eMesh1.commit()
          breaker.doBreak()
@@ -372,7 +372,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
        eMesh1 = PerceptMesh(2)
        eMesh1.open("quad_fixture_mbreak_0.e")
        scalarDimension = 0
-       proc_rank_field = eMesh1.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+       proc_rank_field = eMesh1.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
        breaker = Refiner(eMesh1, QUAD4_QUAD4_4_SIERRA, proc_rank_field)
        eMesh1.commit()
        
@@ -396,7 +396,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
        isCommited = False
        eMesh = PerceptMesh(fixture.meta_data, fixture.bulk_data, isCommited)
        scalarDimension = 0
-       proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+       proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
        breaker = Refiner(eMesh, QUAD4_QUAD9_1, proc_rank_field)
        eMesh.commit()
        fixture.generate_mesh()
@@ -417,7 +417,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
        isCommited = False
        eMesh = PerceptMesh(fixture.meta_data, fixture.bulk_data, isCommited)
        scalarDimension = 0
-       proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+       proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
        breaker = Refiner(eMesh, QUAD4_QUAD8_1, proc_rank_field)
        eMesh.commit()
        fixture.generate_mesh()
@@ -434,7 +434,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(2)
       eMesh.open("quad_fixture_quad8_quad8_0.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, QUAD8_QUAD8_4, proc_rank_field)
       eMesh.commit()
       breaker.setIgnoreSideSets(False)
@@ -454,7 +454,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       isCommited = False
       eMesh = PerceptMesh(fixture.meta_data, fixture.bulk_data, isCommited)
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, QUAD4_QUAD9_1, proc_rank_field)
       eMesh.commit()
       fixture.generate_mesh()
@@ -463,7 +463,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
      
       em1 = PerceptMesh(2)
       em1.open("quad_1x1x_quad9_quad9_0.e")
-      proc_rank_field = em1.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = em1.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(em1, QUAD9_QUAD9_4, proc_rank_field)
       em1.commit()
       breaker.setIgnoreSideSets(True)
@@ -483,7 +483,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       isCommited = False
       eMesh = PerceptMesh(fixture.meta_data, fixture.bulk_data, isCommited)
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, QUAD4_QUAD9_1, proc_rank_field)
       eMesh.commit()
       fixture.generate_mesh()
@@ -493,7 +493,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       em1 = PerceptMesh(2)
       em1.open("quad_fixture_quad9_quad9_0.e")
       scalarDimension = 0
-      proc_rank_field = em1.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = em1.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(em1, QUAD9_QUAD9_4, proc_rank_field)
       em1.commit()
       breaker.doBreak()
@@ -527,7 +527,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       isCommited = False
       eMesh = PerceptMesh(fixture.meta_data, fixture.bulk_data, isCommited)
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       eMesh.add_field("proc_rank_ede", eMesh.edge_rank(), scalarDimension)
       breaker = Refiner(eMesh, TRI3_TRI3_4, proc_rank_field)
       eMesh.commit()
@@ -555,7 +555,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       isCommited = False
       eMesh = PerceptMesh(fixture.meta_data, fixture.bulk_data, isCommited)
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       eMesh.add_field("proc_rank_ede", eMesh.edge_rank(), scalarDimension)
       breaker = Refiner(eMesh, TRI3_TRI6_1, proc_rank_field)
       eMesh.commit()
@@ -575,7 +575,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(2)
       eMesh.open("quad_fixture_tri6_tri6_0.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       eMesh.add_field("proc_rank_ede", eMesh.edge_rank(), scalarDimension)
       breaker = Refiner(eMesh, TRI6_TRI6_4, proc_rank_field)
       eMesh.commit()  
@@ -597,7 +597,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(3)
       eMesh.open("tet_from_hex_fixture_0.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, TET4_TET4_8, proc_rank_field)
       eMesh.commit()
       eMesh.print_info("tet mesh")
@@ -618,7 +618,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(3)
       eMesh.open("tet_from_hex_fixture_0.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, TET4_TET10_1, proc_rank_field)
       eMesh.commit()
       eMesh.print_info("tet mesh")
@@ -633,7 +633,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(3)
       eMesh.open("tet_from_hex_fixture_0.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, TET4_TET10_1, proc_rank_field)
       eMesh.commit()
       eMesh.print_info("tet mesh")
@@ -644,7 +644,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(3)
       eMesh.open("tet10_1.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, TET10_TET10_8, proc_rank_field)
       eMesh.commit()
       breaker.doBreak()
@@ -657,7 +657,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
     gmesh_spec = "1x1x" + str(p_size) + "|bbox:0,0,0,1,1," + str(p_size)
     eMesh.new_mesh(GMeshSpec(gmesh_spec))
     scalarDimension = 0
-    proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+    proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
     breaker = Refiner(eMesh, HEX8_HEX8_8, proc_rank_field) 
     eMesh.commit()
     eMesh.print_info()
@@ -674,7 +674,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(3)
       eMesh.open("hex_fixture.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, HEX8_HEX8_8, proc_rank_field)
       eMesh.commit()
       eMesh.print_info()
@@ -692,7 +692,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(3)
       eMesh.open("hex_fixture.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, HEX8_HEX27_1, proc_rank_field)
       eMesh.commit()
       eMesh.print_info()
@@ -707,7 +707,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
     gmesh_spec = "1x1x" + str(p_size) + "|bbox:0,0,0,1,1," + str(p_size)
     eMesh.new_mesh(GMeshSpec(gmesh_spec))
     scalarDimension = 0
-    proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+    proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
     breaker = Refiner(eMesh, HEX8_HEX20_1, proc_rank_field)
     eMesh.commit()
     eMesh.print_info()
@@ -725,7 +725,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(3)
       eMesh.open("hex_fixture.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, HEX8_HEX20_1, proc_rank_field)
       eMesh.commit()
       eMesh.print_info()
@@ -741,7 +741,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
     if p_size <= 3:
       eMesh.open("hex20_hex20_cube1x1x"+str(p_size) + "_0.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, HEX20_HEX20_8, proc_rank_field)
       eMesh.commit()
       breaker.setRemoveOldElements(True)
@@ -756,7 +756,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(3)
       eMesh.open("hex20_hex20_0.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, HEX20_HEX20_8, proc_rank_field)
       eMesh.commit()
       eMesh.save_as("hex20_hex20_0.e")
@@ -771,7 +771,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
     gmesh_spec = "1x1x" + str(p_size) + "|bbox:0,0,0,1,1," + str(p_size)
     eMesh.new_mesh(GMeshSpec(gmesh_spec))
     
-    proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+    proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
     breaker = Refiner(eMesh, HEX8_HEX27_1, proc_rank_field)
     eMesh.commit()
     eMesh.print_info()
@@ -783,7 +783,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
     em1 = PerceptMesh(3)
     p_size = em1.get_parallel_size()
     em1.open("hex27_hex27_cube1x1x" + str(p_size) + "_0.e")
-    proc_rank_field = em1.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+    proc_rank_field = em1.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
     breaker = Refiner(em1, HEX27_HEX27_8, proc_rank_field)
     em1.commit()
     breaker.setIgnoreSideSets(True)
@@ -799,7 +799,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(3)
       eMesh.open("hex_fixture.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, HEX8_HEX27_1, proc_rank_field)
       eMesh.commit()
       eMesh.print_info()
@@ -810,7 +810,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(3)
       eMesh.open("hex8_27_1.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, HEX27_HEX27_8, proc_rank_field)
       eMesh.commit()
       breaker.setRemoveOldElements(True)
@@ -826,7 +826,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       wedgeFixture.createMesh(MPI.COMM_WORLD, 4,3,2,0,1,0,1,0,1, "swept_wedge_0.e")
       eMesh.open("swept_wedge_0.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, WEDGE6_WEDGE6_8, proc_rank_field)
       eMesh.commit()
       breaker.doBreak()
@@ -841,7 +841,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       wedgeFixture.createMesh(MPI.COMM_WORLD, 4,3,2,0,1,0,1,0,1, "swept_wedge_enrich_0.e")
       eMesh.open("swept_wedge_enrich_0.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, WEDGE6_WEDGE15_1, proc_rank_field)
       eMesh.commit()
       breaker.doBreak()
@@ -857,7 +857,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       wedgeFixture.createMesh(MPI.COMM_WORLD, 4,2,2,0,1,0,1,0,1, "tmp-swept-wedge_enrich_0.e")
       eMesh.open("tmp-swept-wedge_enrich_0.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, WEDGE6_WEDGE15_1, proc_rank_field)
       eMesh.commit()
       breaker.doBreak()
@@ -866,7 +866,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(3)
       eMesh.open("swept-wedge_2_enrich_refine_0.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, WEDGE15_WEDGE15_8, proc_rank_field)
       eMesh.commit()
       breaker.setIgnoreSideSets(True)
@@ -892,7 +892,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       eMesh = PerceptMesh(3)
       eMesh.open("heterogeneous_0.e")
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       #INCOMPLETE
 
   def test_wedge6_wedge18_enrich(self):
@@ -903,7 +903,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       bulk = wedgeFixture.createMesh(MPI.COMM_WORLD, 4,3,2,0,1,0,1,0,1,"")
       eMesh = PerceptMesh(wedgeFixture.getMetaData(), bulk, False)
       scalarDimension = 0
-      proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)
+      proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension)
       breaker = Refiner(eMesh, WEDGE6_WEDGE18_1, proc_rank_field)
       eMesh.commit()
       wedgeFixture.createBulkAfterMetaCommit(MPI.COMM_WORLD)

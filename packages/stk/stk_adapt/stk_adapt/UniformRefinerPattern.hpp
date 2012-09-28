@@ -979,7 +979,7 @@ namespace stk {
                       }
                   }
               }
-            else if (needed_entities[i_need].first == m_eMesh.element_rank())
+            else if (needed_entities[i_need].first == stk::mesh::MetaData::ELEMENT_RANK)
               {
                 EN[ centroid_node ] = CENTROID_N;
               }
@@ -992,7 +992,7 @@ namespace stk {
             stk::mesh::Entity& newElement = *(*element_pool);
 
             // FIXME
-            if (m_primaryEntityRank == m_eMesh.element_rank() &&  proc_rank_field)
+            if (m_primaryEntityRank == stk::mesh::MetaData::ELEMENT_RANK &&  proc_rank_field)
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 fdata[0] = double(newElement.owner_rank());
@@ -1238,7 +1238,7 @@ namespace stk {
               {
                 nSubDimEntities = cell_topo_data->side_count;
               }
-            else if (needed_entities[i_need].first == m_eMesh.element_rank())
+            else if (needed_entities[i_need].first == stk::mesh::MetaData::ELEMENT_RANK)
               {
                 nSubDimEntities = 1;
               }
@@ -1488,7 +1488,7 @@ namespace stk {
             int iChildRefTopo = iChild + iChildStart;
             stk::mesh::Entity& newElement = *(*element_pool);
 
-            if (m_primaryEntityRank == m_eMesh.element_rank() &&  proc_rank_field)
+            if (m_primaryEntityRank == stk::mesh::MetaData::ELEMENT_RANK &&  proc_rank_field)
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 fdata[0] = double(newElement.owner_rank());
@@ -2486,14 +2486,14 @@ namespace stk {
             stk::mesh::Part* active_elements_part = eMesh.get_non_const_part("refine_active_elements_part");
             if (!active_elements_part)
               {
-                stk::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part("refine_active_elements_part", eMesh.element_rank());
+                stk::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part("refine_active_elements_part", stk::mesh::MetaData::ELEMENT_RANK);
                 mesh::MetaData & meta = mesh::MetaData::get(part);
                 meta.declare_attribute_no_delete(part, &stk_adapt_auto_part);
               }
             stk::mesh::Part* inactive_elements_part = eMesh.get_non_const_part("refine_inactive_elements_part");
             if (!inactive_elements_part)
               {
-                stk::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part("refine_inactive_elements_part", eMesh.element_rank());
+                stk::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part("refine_inactive_elements_part", stk::mesh::MetaData::ELEMENT_RANK);
                 mesh::MetaData & meta = mesh::MetaData::get(part);
                 meta.declare_attribute_no_delete(part, &stk_adapt_auto_part);
               }
@@ -2562,7 +2562,7 @@ namespace stk {
                 if ( stk::mesh::is_auto_declared_part(*part) )
                   continue;
 
-                bool doThisPart = (block_names_ranks[m_eMesh.element_rank()].size() == 0);
+                bool doThisPart = (block_names_ranks[stk::mesh::MetaData::ELEMENT_RANK].size() == 0);
 
                 if (!doThisPart)
                   {
@@ -2648,7 +2648,7 @@ namespace stk {
                     stk::mesh::EntityRank switch_part_primary_entity_rank  =  part->primary_entity_rank() ;
 
                     if (switch_part_primary_entity_rank == eMesh.edge_rank() ||
-                        switch_part_primary_entity_rank == eMesh.element_rank() ||
+                        switch_part_primary_entity_rank == stk::mesh::MetaData::ELEMENT_RANK ||
                         switch_part_primary_entity_rank == eMesh.face_rank())
                       {
                         stk::mesh::Part *  block_to=0;

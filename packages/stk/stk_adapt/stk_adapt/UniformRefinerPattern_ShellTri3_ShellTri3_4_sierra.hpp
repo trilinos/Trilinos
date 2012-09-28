@@ -34,7 +34,7 @@ namespace stk {
           {
             throw std::runtime_error("can't refine shell elements in 2D");
           }
-        m_primaryEntityRank = eMesh.element_rank();
+        m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
 
         setNeededParts(eMesh, block_names, true);
         Elem::StdMeshObjTopologies::bootstrap();

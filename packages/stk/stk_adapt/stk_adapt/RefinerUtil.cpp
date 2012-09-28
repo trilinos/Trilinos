@@ -36,7 +36,7 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
       if (block[0] != '#')
       {
         if (block.substr(0,6) == "block_")
-          blocks[eMesh.element_rank()].push_back(block);
+          blocks[stk::mesh::MetaData::ELEMENT_RANK].push_back(block);
         else if (block.substr(0,8) == "surface_")
           blocks[eMesh.face_rank()].push_back(block);
       }
@@ -260,13 +260,13 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
                 
         //std::cout << "n1= " << n1 << " n2= " << n2 << std::endl;
         if (n1.length() > 6 && n1.substr(1,6) == "block_")
-          blocks[eMesh.element_rank()].push_back(n1);
+          blocks[stk::mesh::MetaData::ELEMENT_RANK].push_back(n1);
         else if (n1.length() > 8 && n1.substr(1,8) == "surface_")
           blocks[eMesh.face_rank()].push_back(n1);
         else
         {
           std::string pm = (inc?"+":"-");
-          blocks[eMesh.element_rank()].push_back(pm+"block_"+n2);
+          blocks[stk::mesh::MetaData::ELEMENT_RANK].push_back(pm+"block_"+n2);
         }
         if (last_one) 
         {
@@ -296,7 +296,7 @@ BlockNamesType RefinerUtil::correctBlockNamesForPartPartConsistency(percept::Per
 {
   if (EXTRA_PRINT_UR_GETBLOCKS) std::cout << "RefinerUtil::correctBlockNamesForPartPartConsistency..." << std::endl;
 
-  if (blocks[eMesh.element_rank()].size() == 0)
+  if (blocks[stk::mesh::MetaData::ELEMENT_RANK].size() == 0)
     return blocks;
 
   stk::mesh::EntityRank subDimRank = (eMesh.get_spatial_dim() == 3 ? eMesh.face_rank() : eMesh.edge_rank());
@@ -316,12 +316,12 @@ BlockNamesType RefinerUtil::correctBlockNamesForPartPartConsistency(percept::Per
       CellTopology surf_topo(part_cell_topo_data);
       //if (EXTRA_PRINT_UR_GETBLOCKS) std::cout << "tmp srk surfacePart= " << surfacePart->name() << " topo= " << (part_cell_topo_data?surf_topo.getName() : "NULL") << std::endl;
 
-      if (part_cell_topo_data && part->primary_entity_rank() == eMesh.element_rank() && surfacePart->primary_entity_rank() == subDimRank)
+      if (part_cell_topo_data && part->primary_entity_rank() == stk::mesh::MetaData::ELEMENT_RANK && surfacePart->primary_entity_rank() == subDimRank)
       {
         std::string partNamePlus = "+" + part->name();
-        std::vector<std::string>::iterator partInBlocks = std::find(blocks[eMesh.element_rank()].begin(), blocks[eMesh.element_rank()].end(), partNamePlus);
+        std::vector<std::string>::iterator partInBlocks = std::find(blocks[stk::mesh::MetaData::ELEMENT_RANK].begin(), blocks[stk::mesh::MetaData::ELEMENT_RANK].end(), partNamePlus);
         // if this part is not in the blocks list, skip it
-        if (partInBlocks == blocks[eMesh.element_rank()].end())
+        if (partInBlocks == blocks[stk::mesh::MetaData::ELEMENT_RANK].end())
         {
           //if (EXTRA_PRINT_UR_GETBLOCKS) std::cout << "tmp srk skipping part= " << partNamePlus << std::endl;
           continue;

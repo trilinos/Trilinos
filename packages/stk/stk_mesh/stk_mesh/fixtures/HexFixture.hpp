@@ -87,7 +87,7 @@ class HexFixture
    * element.
    */
   Entity * elem( unsigned x , unsigned y , unsigned z ) const {
-    return m_bulk_data.get_entity( m_fem_meta.element_rank(), elem_id(x, y, z) );
+    return m_bulk_data.get_entity( MetaData::ELEMENT_RANK, elem_id(x, y, z) );
   }
 
   /**

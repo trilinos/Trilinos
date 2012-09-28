@@ -373,8 +373,7 @@ void stkCallback_Centroid_Coord( void *data,
 void getNeighbors( const mesh::Entity & entity,
                    std::set<const mesh::Entity*> & nodes )
 {
-  stk::mesh::MetaData &fem_meta = stk::mesh::MetaData::get(entity);
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   nodes.clear();
 

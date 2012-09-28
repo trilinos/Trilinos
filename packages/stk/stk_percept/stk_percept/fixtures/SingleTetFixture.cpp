@@ -41,10 +41,10 @@ namespace stk{
                                         stk::mesh::EntityId elem_id_start
                                         ) :
       m_spatial_dimension(3)
-      , m_metaData(m_spatial_dimension, stk::mesh::entity_rank_names(m_spatial_dimension) )
+      , m_metaData(m_spatial_dimension)
       , m_bulkData(m_metaData, comm )
       , m_block_tet(        m_metaData.declare_part< Tet4 >( "block_1" ))
-      , m_elem_rank( m_metaData.element_rank() )
+      , m_elem_rank( stk::mesh::MetaData::ELEMENT_RANK )
       , m_coordinates_field( m_metaData.declare_field< VectorFieldType >( "coordinates" ))
       , m_npts(npts), m_points(points)
       , m_ntets(ntets), m_tetIds(tetIds)

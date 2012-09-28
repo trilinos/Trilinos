@@ -63,7 +63,7 @@ enum { nx = 4, ny = 4 };
 bool test_contact_surfaces( stk::ParallelMachine comm )
 {
   unsigned spatial_dimension = 2;
-  std::vector<std::string> rank_names = stk::mesh::entity_rank_names(spatial_dimension);
+  std::vector<std::string> rank_names = stk::mesh::entity_rank_names();
   const stk::mesh::EntityRank constraint_rank = rank_names.size();
   rank_names.push_back("Constraint");
 
@@ -71,7 +71,7 @@ bool test_contact_surfaces( stk::ParallelMachine comm )
   fem_meta.initialize(spatial_dimension, rank_names);
 
   stk::mesh::BulkData bulk_data( fem_meta, comm , 100 );
-  const stk::mesh::EntityRank element_rank    = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank    = stk::mesh::MetaData::ELEMENT_RANK;
   const stk::mesh::EntityRank side_rank       = fem_meta.side_rank();
   const stk::mesh::EntityRank node_rank       = stk::mesh::MetaData::NODE_RANK;
 

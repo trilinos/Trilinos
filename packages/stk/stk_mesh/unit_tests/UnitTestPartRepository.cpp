@@ -50,7 +50,7 @@ public:
 
 UnitTestPartRepository::UnitTestPartRepository()
   : spatial_dimension(3)
-  , meta( spatial_dimension, stk::mesh::entity_rank_names(spatial_dimension) )
+  , meta( spatial_dimension )
   , partRepo( &meta )
   , partRepo_1( &meta )
   , partRepo_2( &meta )

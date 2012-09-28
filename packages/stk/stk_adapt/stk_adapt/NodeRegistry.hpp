@@ -676,7 +676,7 @@ namespace stk {
                             //std::cout << "tmp P[" << m_eMesh.get_rank() << "] NodeRegistry::setAllReceivedNodeData id= " << nodeIds_onSE.m_entity_id_vector[ii] << std::endl;
                             node = & m_eMesh.get_bulk_data()->declare_entity(m_eMesh.node_rank(), nodeIds_onSE.m_entity_id_vector[ii], empty_parts);
 #if PERCEPT_USE_PSEUDO_ELEMENTS
-                            stk::mesh::Entity *elem = & m_eMesh.get_bulk_data()->declare_entity(m_eMesh.element_rank()+PSEUDO_ELEMENT_RANK_SHIFT,
+                            stk::mesh::Entity *elem = & m_eMesh.get_bulk_data()->declare_entity(stk::mesh::MetaData::ELEMENT_RANK+PSEUDO_ELEMENT_RANK_SHIFT,
                                                                                               nodeIds_onSE.m_entity_id_vector[ii]*PSEUDO_ELEMENT_MAGIC_NUMBER+m_eMesh.get_rank(),
                                                                                               empty_parts);
                             m_pseudo_entities.insert(elem);
@@ -884,7 +884,7 @@ namespace stk {
                 throw std::logic_error("NodeRegistry::checkForRemote logic: owning element info is wrong");
               }
 
-            unsigned erank = m_eMesh.element_rank();
+            unsigned erank = stk::mesh::MetaData::ELEMENT_RANK;
             erank = owning_elementRank;
             //VERIFY_OP(erank, <=, owning_elementRank , "erank...");
             stk::mesh::Entity * owning_element = get_entity_element(*m_eMesh.get_bulk_data(), erank, owning_elementId);
@@ -1146,7 +1146,7 @@ namespace stk {
 
         bool doPrint = false;
 
-        if (needed_entity_rank == m_eMesh.element_rank())
+        if (needed_entity_rank == stk::mesh::MetaData::ELEMENT_RANK)
           {
             const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
             unsigned npts = elem_nodes.size();
@@ -1326,7 +1326,7 @@ namespace stk {
 
 
                 bool found = true;
-                if (needed_entity_rank == m_eMesh.element_rank())
+                if (needed_entity_rank == stk::mesh::MetaData::ELEMENT_RANK)
                   {
                     const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
                     unsigned npts = elem_nodes.size();
@@ -1443,10 +1443,10 @@ namespace stk {
                     //
                     if( subDimEntity.size() == 1)
                       {
-                        needed_entity_rank = m_eMesh.element_rank();
+                        needed_entity_rank = stk::mesh::MetaData::ELEMENT_RANK;
                       }
 
-                    if (needed_entity_rank == m_eMesh.element_rank())
+                    if (needed_entity_rank == stk::mesh::MetaData::ELEMENT_RANK)
                       {
                         stk::mesh::Entity *element_p = 0;
                         {
@@ -1599,7 +1599,7 @@ namespace stk {
               {
                 numSubDimNeededEntities = cell_topo_data->side_count;
               }
-            else if (needed_entity_rank == m_eMesh.element_rank())
+            else if (needed_entity_rank == stk::mesh::MetaData::ELEMENT_RANK)
               {
                 numSubDimNeededEntities = 1;
               }
@@ -1629,7 +1629,7 @@ namespace stk {
       {
         subDimEntity.clear();
         // in the case of elements, we don't share any nodes so we just make a map of element id to node
-        if (needed_entity_rank == m_eMesh.element_rank())
+        if (needed_entity_rank == stk::mesh::MetaData::ELEMENT_RANK)
           {
             subDimEntity.insert( const_cast<stk::mesh::Entity*>(&element) );
             //!!subDimEntity.insert(element.identifier());
@@ -1724,7 +1724,7 @@ namespace stk {
             if (nodeIds_onSE.size())
               {
                 //!
-                unsigned erank = m_eMesh.element_rank();
+                unsigned erank = stk::mesh::MetaData::ELEMENT_RANK;
                 erank = stk::mesh::entity_rank(data.get<SDC_DATA_OWNING_ELEMENT_KEY>());
                 stk::mesh::Entity * owning_element = get_entity_element(*m_eMesh.get_bulk_data(), erank, owning_elementId);
                 //!
@@ -1762,7 +1762,7 @@ namespace stk {
                 stk::mesh::EntityId owning_elementId = stk::mesh::entity_id(data.get<SDC_DATA_OWNING_ELEMENT_KEY>());
                 NodeIdsOnSubDimEntityType& nodeIds_onSE = data.get<SDC_DATA_GLOBAL_NODE_IDS>();
 
-                stk::mesh::Entity * owning_element = m_eMesh.get_bulk_data()->get_entity(m_eMesh.element_rank(), owning_elementId);
+                stk::mesh::Entity * owning_element = m_eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, owning_elementId);
                 if (!owning_element)
                   throw std::logic_error("logic: hmmm #5.3");
                 bool isGhost = m_eMesh.isGhostElement(*owning_element);
@@ -2037,7 +2037,7 @@ namespace stk {
                 new_nodes[i] = & m_eMesh.get_bulk_data()->declare_entity(m_eMesh.node_rank(), ids[i], empty_parts);
 #if PERCEPT_USE_PSEUDO_ELEMENTS
                 unsigned proc_rank = m_eMesh.get_rank();
-                stk::mesh::Entity *elem = & m_eMesh.get_bulk_data()->declare_entity(m_eMesh.element_rank()+PSEUDO_ELEMENT_RANK_SHIFT, ids[i]*PSEUDO_ELEMENT_MAGIC_NUMBER+proc_rank, empty_parts);
+                stk::mesh::Entity *elem = & m_eMesh.get_bulk_data()->declare_entity(stk::mesh::MetaData::ELEMENT_RANK+PSEUDO_ELEMENT_RANK_SHIFT, ids[i]*PSEUDO_ELEMENT_MAGIC_NUMBER+proc_rank, empty_parts);
                 m_pseudo_entities.insert(elem);
                 m_eMesh.get_bulk_data()->declare_relation(*elem, *new_nodes[i], 0);
 #endif
@@ -2077,7 +2077,7 @@ namespace stk {
               }
 
             //!
-            unsigned erank = m_eMesh.element_rank();
+            unsigned erank = stk::mesh::MetaData::ELEMENT_RANK;
             erank = stk::mesh::entity_rank(data.get<SDC_DATA_OWNING_ELEMENT_KEY>());
             stk::mesh::Entity * owning_element = get_entity_element(*m_eMesh.get_bulk_data(), erank, owning_elementId);
             //!
@@ -2144,10 +2144,10 @@ namespace stk {
         stk::mesh::EntityRank  non_owning_elementRank                = stk::mesh::entity_rank(non_owning_elementKey);
 
         // create a new relation here?  no, we are going to delete this element, so we just register that the new node is attached to
-        //stk::mesh::Entity * element = m_eMesh.get_bulk_data()->get_entity(m_eMesh.element_rank(), non_owning_elementId);
+        //stk::mesh::Entity * element = m_eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, non_owning_elementId);
 
         //!
-        unsigned erank = m_eMesh.element_rank();
+        unsigned erank = stk::mesh::MetaData::ELEMENT_RANK;
         erank = non_owning_elementRank;
         stk::mesh::Entity * element = get_entity_element(*m_eMesh.get_bulk_data(), erank, non_owning_elementId);
         //!

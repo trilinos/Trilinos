@@ -242,7 +242,7 @@ namespace stk
         meta.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >("coordinates");
 
       mesh::Selector select_owned( meta.locally_owned_part() );
-      const std::vector<mesh::Bucket*> & buckets = bulk.buckets( meta.element_rank() );
+      const std::vector<mesh::Bucket*> & buckets = bulk.buckets( stk::mesh::MetaData::ELEMENT_RANK );
 
       //for ( std::vector<mesh::Bucket *>::const_iterator ik = buckets.begin() ; ik != buckets.end() ; ++ik )
       const stk::mesh::PartVector & all_parts = meta.get_parts();

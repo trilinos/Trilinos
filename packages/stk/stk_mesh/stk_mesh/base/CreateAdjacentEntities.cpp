@@ -23,7 +23,6 @@ namespace mesh {
 
 namespace {
 
-
 struct EntitySubcellComponent {
   public:
     EntitySubcellComponent()
@@ -46,8 +45,6 @@ struct EntitySubcellComponent {
     EntityRank subcell_rank;
     unsigned   subcell_id;
 };
-
-
 
 void get_entities_with_given_subcell(
   const CellTopologyData * subcell_topology,
@@ -78,8 +75,6 @@ void get_entities_with_given_subcell(
   }
 }
 
-
-
 // Check if 3d element topology topo is degenerate
 bool is_degenerate( const CellTopology & topo)
 {
@@ -102,12 +97,10 @@ bool relation_exist( const Entity & entity, EntityRank subcell_rank, RelationIde
   return found;
 }
 
-
-
-void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & entities_to_request) {
-
+void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & entities_to_request)
+{
   MetaData & fem_meta = MetaData::get(mesh);
-  const EntityRank element_rank = fem_meta.element_rank();
+  const EntityRank element_rank = MetaData::ELEMENT_RANK;
   const EntityRank side_rank = fem_meta.side_rank();
   const EntityRank edge_rank = MetaData::EDGE_RANK;
 
@@ -116,7 +109,6 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
   BucketVector element_buckets;
 
   get_buckets( select_owned, mesh.buckets(element_rank), element_buckets);
-
 
   for ( EntityRank subcell_rank = side_rank; subcell_rank >= edge_rank; --subcell_rank) {
     for (BucketVector::iterator bitr = element_buckets.begin();
@@ -128,7 +120,6 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
 
       ThrowErrorMsgIf( is_degenerate(topo),
           "stk::mesh::create_adjacent_entities(...) does not yet support degenerate topologies (i.e. shells and beams)");
-
 
       if ( !is_degenerate(topo) ) { // don't loop over shell elements
 
@@ -223,13 +214,12 @@ void request_entities(
   }
 
   ThrowRequire(b_itr == requested_entities_flat_vector.end());
-
 }
 
-void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_add_parts, std::vector<size_t> & entities_to_request) {
-
+void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_add_parts, std::vector<size_t> & entities_to_request)
+{
   MetaData & fem_meta = MetaData::get(mesh);
-  const EntityRank element_rank = fem_meta.element_rank();
+  const EntityRank element_rank = MetaData::ELEMENT_RANK;
   const EntityRank side_rank = fem_meta.side_rank();
   const EntityRank edge_rank = MetaData::EDGE_RANK;
 
@@ -274,7 +264,6 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
           for (size_t subcell_id = 0; subcell_id < subcell_count; ++subcell_id ) {
 
             if ( ! relation_exist( elem, subcell_rank, subcell_id) ) { //
-
 
               EntityVector subcell_nodes;
 
@@ -325,7 +314,6 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
               if (current_elem_has_lowest_id) {
                 Entity & subcell = * requested_entities[subcell_rank][entities_used[subcell_rank]++];
 
-
                 //declare the node relations for this subcell
                 for (size_t n = 0; n<subcell_nodes.size(); ++n) {
                   Entity & node = *subcell_nodes[n];
@@ -334,14 +322,12 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
 
                 mesh.declare_relation( elem, subcell, subcell_id);
 
-
                 PartVector empty_remove_parts;
 
                 PartVector add_parts = arg_add_parts;
                 add_parts.push_back( & fem_meta.get_cell_topology_root_part(topo.getCellTopologyData(subcell_rank,subcell_id)));
 
                 mesh.change_entity_parts(subcell, add_parts, empty_remove_parts);
-
               }
             }
           }
@@ -353,10 +339,10 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
   mesh.modification_end();
 }
 
-void complete_connectivity( BulkData & mesh ) {
-
+void complete_connectivity( BulkData & mesh )
+{
   MetaData & fem_meta = MetaData::get(mesh);
-  const EntityRank element_rank = fem_meta.element_rank();
+  const EntityRank element_rank = MetaData::ELEMENT_RANK;
   const EntityRank side_rank = fem_meta.side_rank();
   const EntityRank edge_rank = MetaData::EDGE_RANK;
 
@@ -374,9 +360,7 @@ void complete_connectivity( BulkData & mesh ) {
     mesh.modification_begin();
     for (EntityRank entity_rank = element_rank; entity_rank > subcell_rank; --entity_rank) {
 
-
       BucketVector entity_buckets;
-
 
       get_buckets(select_owned_or_shared, mesh.buckets(entity_rank),entity_buckets);
 
@@ -447,7 +431,6 @@ void complete_connectivity( BulkData & mesh ) {
     }
     mesh.modification_end();
   }
-
 }
 
 } // un-named namespace
@@ -470,9 +453,7 @@ void create_adjacent_entities( BulkData & mesh, PartVector & arg_add_parts)
   // to complete the connectivity (with degenerate elements) we require that
   // polarity information to be stored on each relation
 
-
   complete_connectivity(mesh);
-
 
   MetaData & fem_meta = MetaData::get(mesh);
   const size_t num_ranks = fem_meta.entity_rank_count();
@@ -484,8 +465,6 @@ void create_adjacent_entities( BulkData & mesh, PartVector & arg_add_parts)
 
 
   complete_connectivity(mesh);
-
-
 }
 
 }

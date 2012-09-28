@@ -17,7 +17,7 @@ namespace fixtures {
 SelectorFixture::~SelectorFixture() {}
 
 SelectorFixture::SelectorFixture()
-  : m_meta_data( 0 /*dim*/, std::vector<std::string>(1, std::string("MyEntityRank")) )
+  : m_meta_data( 0 /*dim*/ )
   , m_bulk_data( m_meta_data , MPI_COMM_WORLD )
   , m_partA( m_meta_data.declare_part( "PartA" , 0 ) )
   , m_partB( m_meta_data.declare_part( "PartB" , 0 ) )
@@ -88,7 +88,7 @@ void SelectorFixture::generate_mesh()
 VariableSelectorFixture::~VariableSelectorFixture() {}
 
 VariableSelectorFixture::VariableSelectorFixture(int NumParts)
-  : m_MetaData( 0 /*dim*/, std::vector<std::string>(1, std::string("MyEntityRank")) )
+  : m_MetaData( 0 /*dim*/, std::vector<std::string>(4, std::string("MyEntityRank")) )
   , m_BulkData( m_MetaData , MPI_COMM_WORLD )
   , m_declared_part_vector()
 {

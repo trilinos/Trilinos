@@ -35,6 +35,7 @@
 
 using stk::mesh::EntityId;
 using stk::mesh::EntityRank;
+using stk::mesh::MetaData;
 
 //---------------------------------------------------------------------------------------
 
@@ -47,11 +48,11 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinPocket)
   const unsigned p_size = stk::parallel_machine_size( pm );
 
   stk::mesh::MetaData fem_meta;
-  fem_meta.initialize(SpatialDim, stk::mesh::entity_rank_names(SpatialDim));
+  fem_meta.initialize(SpatialDim);
   stk::mesh::BulkData bulk_data( fem_meta , pm );
   stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
-  const EntityRank element_rank = fem_meta.element_rank();
+  const EntityRank element_rank = MetaData::ELEMENT_RANK;
   const EntityRank side_rank    = fem_meta.side_rank();
 
   //create and skin a 2 hex-element mesh with a pocket
@@ -114,11 +115,11 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinTwoStackedShells)
   const unsigned p_size = stk::parallel_machine_size( pm );
 
   stk::mesh::MetaData fem_meta;
-  fem_meta.initialize(SpatialDim, stk::mesh::entity_rank_names(SpatialDim));
+  fem_meta.initialize(SpatialDim);
   stk::mesh::BulkData bulk_data( fem_meta , pm );
   stk::mesh::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
   stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
-  const EntityRank element_rank = fem_meta.element_rank();
+  const EntityRank element_rank = MetaData::ELEMENT_RANK;
   const EntityRank side_rank    = fem_meta.side_rank();
 
   fem_meta.commit();
@@ -188,11 +189,11 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShells)
   const unsigned p_size = stk::parallel_machine_size( pm );
 
   stk::mesh::MetaData fem_meta;
-  fem_meta.initialize(SpatialDim, stk::mesh::entity_rank_names(SpatialDim));
+  fem_meta.initialize(SpatialDim);
   stk::mesh::BulkData bulk_data( fem_meta , pm );
   stk::mesh::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
   stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
-  const EntityRank element_rank = fem_meta.element_rank();
+  const EntityRank element_rank = MetaData::ELEMENT_RANK;
   const EntityRank side_rank    = fem_meta.side_rank();
 
   fem_meta.commit();
@@ -343,13 +344,13 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinShellOnHex)
   const unsigned p_size = stk::parallel_machine_size( pm );
 
   stk::mesh::MetaData fem_meta;
-  fem_meta.initialize(SpatialDim, stk::mesh::entity_rank_names(SpatialDim));
+  fem_meta.initialize(SpatialDim);
   stk::mesh::BulkData bulk_data( fem_meta , pm );
   stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
   stk::mesh::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
   stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
-  const EntityRank element_rank = fem_meta.element_rank();
+  const EntityRank element_rank = MetaData::ELEMENT_RANK;
   const EntityRank side_rank    = fem_meta.side_rank();
 
   //create and skin a hex element mesh with a shell on the first side of the hex
@@ -439,13 +440,13 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinInvertedShellOnHex)
   const unsigned p_size = stk::parallel_machine_size( pm );
 
   stk::mesh::MetaData fem_meta;
-  fem_meta.initialize(SpatialDim, stk::mesh::entity_rank_names(SpatialDim));
+  fem_meta.initialize(SpatialDim);
   stk::mesh::BulkData bulk_data( fem_meta , pm );
   stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
   stk::mesh::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
   stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
-  const EntityRank element_rank = fem_meta.element_rank();
+  const EntityRank element_rank = MetaData::ELEMENT_RANK;
   const EntityRank side_rank    = fem_meta.side_rank();
 
   //create and skin a hex element mesh with an inverted shell
@@ -536,13 +537,13 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShellOnHex)
   const unsigned p_size = stk::parallel_machine_size( pm );
 
   stk::mesh::MetaData fem_meta;
-  fem_meta.initialize(SpatialDim, stk::mesh::entity_rank_names(SpatialDim));
+  fem_meta.initialize(SpatialDim);
   stk::mesh::BulkData bulk_data( fem_meta , pm );
   stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
   stk::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
   stk::mesh::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
   stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
-  const EntityRank element_rank = fem_meta.element_rank();
+  const EntityRank element_rank = MetaData::ELEMENT_RANK;
   const EntityRank side_rank    = fem_meta.side_rank();
 
   //create and skin a hex element mesh with 3 shells on the first side of the hex

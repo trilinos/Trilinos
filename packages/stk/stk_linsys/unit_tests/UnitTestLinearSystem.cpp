@@ -112,7 +112,7 @@ STKUNIT_UNIT_TEST(UnitTestLinearSystem, test1)
   stk::mesh::Selector select_used = fem_meta.locally_owned_part() | fem_meta.globally_shared_part() ;
   std::vector<unsigned> count;
   stk::mesh::count_entities(select_used, bulk_data, count);
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
   STKUNIT_ASSERT_EQUAL( count[NODE_RANK],    (unsigned)20 );
@@ -221,7 +221,7 @@ STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
   stk::mesh::Selector select_used = fem_meta.locally_owned_part() | fem_meta.globally_shared_part() ;
   std::vector<unsigned> count;
   stk::mesh::count_entities(select_used, bulk_data, count);
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
   STKUNIT_ASSERT_EQUAL( count[NODE_RANK],    (unsigned)20 );

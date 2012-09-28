@@ -30,7 +30,7 @@
 // template<typename Element>
 //   void clone(const VectorOfInt& oldElems, VectorOfInt& newElems, VectorOfCoord& nodePool, VectorOfCoord& newNodes, Transform& xform)
 // {
-  
+
 // }
 
 SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Tag1 )
@@ -41,7 +41,7 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Tag1 )
 
 namespace stk
 {
-  namespace percept 
+  namespace percept
   {
     using namespace util;
 
@@ -95,7 +95,7 @@ namespace stk
       { 17 , 13 , 21 } };
 
 
-      
+
 
 
     template<> void SweepMesher::breakElement<shards_Quadrilateral_4, shards_Triangle_3>(unsigned elemIndex)
@@ -196,7 +196,7 @@ namespace stk
       loc_trifaces[3][1][1] = wedge_topo->side[4].node[1];
       loc_trifaces[3][1][2] = wedge_topo->side[4].node[2];
 
-      // find max valence 
+      // find max valence
       unsigned vmaxIndx = 0;
       unsigned vmax = valences[0];
       bool all3 = true;
@@ -213,12 +213,12 @@ namespace stk
 
       if (vmax == 3)
         {
-          /// Rare case where all valences are 3 (each face is broken in same twisting direction - this is the classic 
+          /// Rare case where all valences are 3 (each face is broken in same twisting direction - this is the classic
           /// "un-tetrahedralizable" configuration, the Schonhardt prism) - in this case, we have to add a Steiner point.
           /// The point can be added along one face's diagonal midpoint, but this introduces a need to investigate neighbors,
           /// so, we simply choose to create more tets by using the centroid as the Steiner point.
           /// (cf. http://www.ams.org/journals/spmj/2005-16-04/S1061-0022-05-00872-1/S1061-0022-05-00872-1.pdf
-          /// St. Petersburg Math. J. Tom. 16 (2004), vyp. 4	Vol. 16 (2005), No. 4, Pages 673–690 S 1061-0022(05)00872-1 
+          /// St. Petersburg Math. J. Tom. 16 (2004), vyp. 4	Vol. 16 (2005), No. 4, Pages 673–690 S 1061-0022(05)00872-1
           /// Article electronically published on June 24, 2005
           /// REGULAR TRIANGULATIONS AND STEINER POINTS
           /// M. YU. ZVAGELSKI I, A. V. PROSKURNIKOV, AND YU. R. ROMANOVSKI I
@@ -351,7 +351,7 @@ namespace stk
           valences[loc_trifaces[iHexFaceOrd][1][2]]++;
         }
 
-      // find max valence 
+      // find max valence
       unsigned vmaxIndx = 0;
       unsigned vmax = valences[0];
       for (unsigned iv = 1; iv < 8; iv++)
@@ -448,7 +448,7 @@ namespace stk
 
     static std::vector<std::string> get_entity_rank_names(unsigned dim)
     {
-      std::vector<std::string> names = stk::mesh::entity_rank_names(dim);
+      std::vector<std::string> names = stk::mesh::entity_rank_names();
 #if PERCEPT_USE_FAMILY_TREE
       names.push_back("FAMILY_TREE");
 #endif
@@ -470,7 +470,7 @@ namespace stk
         {
           if (m_elems[ieletype].size() > 0)
             {
-              m_parts[ieletype] = &(m_metaData->declare_part( std::string("block_").append(std::string(m_elemInfo[ieletype].name)) , m_metaData->element_rank() ));
+              m_parts[ieletype] = &(m_metaData->declare_part( std::string("block_").append(std::string(m_elemInfo[ieletype].name)) , stk::mesh::MetaData::ELEMENT_RANK ));
             }
         }
       m_coordinates_field = &m_metaData->declare_field< VectorFieldType >( "coordinates" );
@@ -491,11 +491,11 @@ namespace stk
       stk::mesh::Part & universal = m_metaData->universal_part();
 
       put_field( *m_coordinates_field , stk::mesh::MetaData::NODE_RANK , universal );
-  
+
       m_metaData->declare_field_relation(
                                          *m_element_node_coordinates_field ,
                                          stk::mesh::get_element_node_stencil(3) ,
-                                         *m_coordinates_field 
+                                         *m_coordinates_field
                                          );
 
       for (unsigned ieletype = 0; ieletype < NUM_ELEM_TYPES; ieletype++)
@@ -503,12 +503,12 @@ namespace stk
           if (m_elems[ieletype].size() > 0)
             {
 #if 0
-              std::cout << "shards::Hexahedron<> ::node_count = " << shards::Hexahedron<> ::node_count 
+              std::cout << "shards::Hexahedron<> ::node_count = " << shards::Hexahedron<> ::node_count
                         << " " << m_elemInfo[ieletype].node_count << std::endl;
-              std::cout << "shards::Wedge<> ::node_count = " << shards::Wedge<> ::node_count 
+              std::cout << "shards::Wedge<> ::node_count = " << shards::Wedge<> ::node_count
                         << " " << m_elemInfo[ieletype].node_count << std::endl;
 #endif
-              put_field( *m_element_node_coordinates_field, m_metaData->element_rank(), *m_parts[ieletype], m_elemInfo[ieletype].node_count);
+              put_field( *m_element_node_coordinates_field, stk::mesh::MetaData::ELEMENT_RANK, *m_parts[ieletype], m_elemInfo[ieletype].node_count);
             }
         }
     }
@@ -530,7 +530,7 @@ namespace stk
               stk::mesh::Part & part =  *m_parts[ieletype];
               unsigned nodes_per_elem = m_elemInfo[ieletype].vertex_count;
               unsigned numElems = m_elems[ieletype].size()/nodes_per_elem;
-                
+
               //std::cout << " elems[" << m_elemInfo[ieletype].name << "] = " << numElems << std::endl;
 
               for (unsigned jelem = 0; jelem < numElems; jelem++, ++elem_id)
@@ -580,20 +580,20 @@ namespace stk
               const unsigned expected_num_elems = numElems;
               //const unsigned expected_num_edges = 0;
               // const unsigned expected_num_faces = 0;
-  
+
               //bool result = true;
               std::vector<unsigned> entity_counts;
               stk::mesh::Selector selector(part);
               stk::mesh::count_entities( selector, bulkData , entity_counts );
               if (0) std::cout << "num_nodes = " << entity_counts[0] << " " << expected_num_nodes << std::endl;
-              if (0) std::cout << "num_elems = " << entity_counts[m_metaData->element_rank()] << " " << expected_num_elems << std::endl;
-                
+              if (0) std::cout << "num_elems = " << entity_counts[stk::mesh::MetaData::ELEMENT_RANK] << " " << expected_num_elems << std::endl;
+
 
               if (
-                  //(entity_counts[stk::mesh::MetaData::NODE_RANK] != expected_num_nodes) ||  
+                  //(entity_counts[stk::mesh::MetaData::NODE_RANK] != expected_num_nodes) ||
                   //(entity_counts[Edge] != expected_num_edges) ||
                   //(entity_counts[Face] != expected_num_faces) ||
-                  (entity_counts[m_metaData->element_rank()] != expected_num_elems)
+                  (entity_counts[stk::mesh::MetaData::ELEMENT_RANK] != expected_num_elems)
                   ) {
                 std::cerr<< "Error, the  entity counts are incorrect!" << std::endl;
                 //result = false;

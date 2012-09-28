@@ -93,7 +93,7 @@ use_case_1_driver(
   filename = working_directory + domain_mesh_filename;
   stk::io::create_input_mesh(domain_mesh_type, domain_mesh_filename, comm,
 			     domain_meta_data, domain_mesh_data);
-  const stk::mesh::EntityRank element_rank = domain_meta_data.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
   stk::mesh::Part & block_hex        = domain_meta_data.declare_part("block_1", element_rank);
   stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<> >());
   stk::mesh::set_cell_topology( block_hex, hex_top );

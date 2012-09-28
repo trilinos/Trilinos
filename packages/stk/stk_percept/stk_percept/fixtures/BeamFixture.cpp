@@ -35,10 +35,10 @@ namespace stk{
 
     BeamFixture::BeamFixture( stk::ParallelMachine comm, bool doCommit ) :
       m_spatial_dimension(3)
-      , m_metaData(m_spatial_dimension, stk::mesh::entity_rank_names(m_spatial_dimension) )
+      , m_metaData(m_spatial_dimension )
       , m_bulkData(m_metaData, comm )
       , m_block_beam( m_metaData.declare_part< Beam2 >( "block_2" ) )
-      , m_elem_rank( m_metaData.element_rank() )
+      , m_elem_rank( stk::mesh::MetaData::ELEMENT_RANK )
       , m_coordinates_field( m_metaData.declare_field< VectorFieldType >( "coordinates" ))
       , m_centroid_field(    m_metaData.declare_field< VectorFieldType >( "centroid" ))
       , m_temperature_field( m_metaData.declare_field< ScalarFieldType >( "temperature" ))

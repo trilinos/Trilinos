@@ -186,46 +186,6 @@ unsigned get_spatial_dimension(const Entity& entity)
    2 (not 3). etc.
 */
 
-#ifdef SIERRA_MIGRATION
-
-inline
-unsigned convert_fmwk_rank_to_stk(unsigned fmwk_rank, unsigned spatial_dim)
-{
-  ThrowAssert(spatial_dim > 0);
-  ThrowAssert(spatial_dim < 4);
-  ThrowAssert(fmwk_rank <= 4); // up to four basic entities types and constraints
-  static int map2Stk[4][5] = { {-1,-1,-1,-1, 4},
-                               { 0,-1,-1, 1, 4},
-                               { 0, 1,-1, 2, 4},
-                               { 0, 1, 2, 3, 4}};
-  int stk_rank = map2Stk[spatial_dim][fmwk_rank];
-
-  return static_cast<unsigned>(stk_rank);
-}
-
-inline
-unsigned convert_stk_rank_to_fmwk(unsigned stk_rank,  unsigned spatial_dim)
-{
-  ThrowAssert(spatial_dim > 0);
-  ThrowAssert(spatial_dim < 4);
-  ThrowAssert(stk_rank <= 4); // up to four basic entities types and constraints
-  static int map2Fmwk[4][5]={ {-1,-1,-1,-1, 4},
-                              { 0, 3,-1,-1, 4},
-                              { 0, 1, 3,-1, 4},
-                              { 0, 1, 2, 3, 4}};
-  int fmwk_rank=map2Fmwk[spatial_dim][stk_rank];
-
-  return static_cast<unsigned>(fmwk_rank);
-}
-
-inline
-unsigned stk_get_derived_type(const Entity& entity)
-{
-  return convert_stk_rank_to_fmwk(entity.entity_rank(), get_spatial_dimension(entity));
-}
-
-#endif
-
 /** \} */
 
 } //namespace mesh

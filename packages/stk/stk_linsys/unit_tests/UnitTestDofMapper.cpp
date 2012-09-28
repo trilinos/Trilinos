@@ -40,7 +40,7 @@ void testDofMapper( MPI_Comm comm )
   stk::mesh::MetaData fem_meta;
   fem_meta.initialize(spatial_dimension);
 
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   stk::mesh::BulkData bulk_data( fem_meta, comm, bucket_size );
 

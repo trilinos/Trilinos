@@ -33,7 +33,7 @@ namespace {
 STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
 {
   const int spatial_dimension = 3;
-  MetaData m(spatial_dimension, stk::mesh::entity_rank_names(spatial_dimension));
+  MetaData m(spatial_dimension);
   PartRepository partRepo(&m);
   PartRepository partRepo2(&m);
   PartRepository partRepo3(&m);
@@ -174,22 +174,21 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
 
   //Test to cover assert_same_universe in PartRepository - Part is not in the same universe
   {
-      std::vector< std::string > dummy_names(1);
-      dummy_names[0].assign("dummy");
+    std::vector< std::string > dummy_names(4, "dummy");
 
-      stk::mesh::MetaData meta2(0 /*dim*/, dummy_names );
+    stk::mesh::MetaData meta2(0 /*dim*/, dummy_names );
 
-      stk::mesh::Part &part_not_in_same_universe = meta2.declare_part ( "part_not_in_same_universe");
-      meta2.commit();
+    stk::mesh::Part &part_not_in_same_universe = meta2.declare_part ( "part_not_in_same_universe");
+    meta2.commit();
 
-       intersection4.push_back( &part_not_in_same_universe );
+    intersection4.push_back( &part_not_in_same_universe );
 
-      PartVector::const_iterator i =  intersection4.begin() ;
-      Part * const p = *i ;
-      STKUNIT_ASSERT_THROW(
-           partRepo3.declare_subset(*parts[5], *p),
-           std::runtime_error
-           );
+    PartVector::const_iterator i =  intersection4.begin() ;
+    Part * const p = *i ;
+    STKUNIT_ASSERT_THROW(
+      partRepo3.declare_subset(*parts[5], *p),
+      std::runtime_error
+                         );
   }
 
   //Test to cover assert_not_superset in PartRepository - parts[11] is not a superset of parts[7]
@@ -275,7 +274,7 @@ STKUNIT_UNIT_TEST(UnitTestPart, testPartNotaSubset)
 {
   //Test to cover assert_contain in PartRepository - Part is not a subset
   const int spatial_dimension = 3;
-  MetaData m(spatial_dimension, stk::mesh::entity_rank_names(spatial_dimension));
+  MetaData m(spatial_dimension);
   PartVector intersection;
   PartRepository partRepo(&m);
 
@@ -295,7 +294,7 @@ STKUNIT_UNIT_TEST(UnitTestPart, testPartNotaSubset)
 STKUNIT_UNIT_TEST(UnitTestPart, testPartVector)
 {
   const int spatial_dimension = 3;
-  MetaData m(spatial_dimension, stk::mesh::entity_rank_names(spatial_dimension));
+  MetaData m(spatial_dimension);
   PartRepository partRepo(&m);
 
   Part * const pa =  partRepo.declare_part( std::string("a") , 0 );

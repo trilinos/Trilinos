@@ -80,7 +80,7 @@ namespace stk {
        {
          EXCEPTWATCH;
 
-         m_primaryEntityRank = eMesh.element_rank();
+         m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
 
          setNeededParts(eMesh, block_names, false);
 
@@ -101,7 +101,7 @@ namespace stk {
       {
         needed_entities.resize(2);
         needed_entities[0].first = m_eMesh.face_rank();
-        needed_entities[1].first = m_eMesh.element_rank();  
+        needed_entities[1].first = stk::mesh::MetaData::ELEMENT_RANK;  
         setToOne(needed_entities);
 
       }
@@ -160,15 +160,15 @@ namespace stk {
 
           }
 
-        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
-        nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
-        nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
+        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::MetaData::ELEMENT_RANK, 0u);
+        nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::MetaData::ELEMENT_RANK, 0u);
+        nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::MetaData::ELEMENT_RANK, 0u);
         
 
         //#define C 14
 
 // new_sub_entity_nodes[i][j]
-#define CENTROID_N NN(m_eMesh.element_rank(), 0)  
+#define CENTROID_N NN(stk::mesh::MetaData::ELEMENT_RANK, 0)  
 
         unsigned iele = 0;
         for (unsigned i_face = 0; i_face < 6; i_face++)

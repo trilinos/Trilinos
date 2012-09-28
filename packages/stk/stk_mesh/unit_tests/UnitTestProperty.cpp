@@ -30,8 +30,8 @@ namespace {
 STKUNIT_UNIT_TEST(UnitTestProperty, testProperty)
 {
   const int spatial_dimension = 3;
-  MetaData meta_data(spatial_dimension, stk::mesh::entity_rank_names(spatial_dimension));
-  MetaData meta_data2(spatial_dimension, stk::mesh::entity_rank_names(spatial_dimension));
+  MetaData meta_data(spatial_dimension);
+  MetaData meta_data2(spatial_dimension);
   unsigned size = 0;
   unsigned EntityRank = 0;
 

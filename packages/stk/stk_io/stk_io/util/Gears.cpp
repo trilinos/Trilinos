@@ -75,7 +75,7 @@ Gear::Gear( stk::mesh::MetaData & S ,
             const int      turn_direction )
   : m_mesh_meta_data( S ),
     m_mesh( NULL ),
-    m_gear( S.declare_part(std::string("Gear_").append(name), m_mesh_meta_data.element_rank()) ),
+    m_gear( S.declare_part(std::string("Gear_").append(name), stk::mesh::MetaData::ELEMENT_RANK) ),
     m_surf( S.declare_part(std::string("Surf_").append(name), m_mesh_meta_data.side_rank()) ),
     m_gear_coord( gear_fields.gear_coord ),
     m_model_coord(gear_fields.model_coord )
@@ -161,7 +161,7 @@ void Gear::mesh( stk::mesh::BulkData & M )
 {
   stk::mesh::EntityRank element_rank;
   stk::mesh::EntityRank side_rank    ;
-  element_rank = m_mesh_meta_data.element_rank();
+  element_rank = stk::mesh::MetaData::ELEMENT_RANK;
   side_rank    = m_mesh_meta_data.side_rank();
 
   M.modification_begin();

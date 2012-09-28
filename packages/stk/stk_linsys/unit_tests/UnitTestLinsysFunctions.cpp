@@ -102,7 +102,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
   fem_meta.initialize(spatial_dimension);
   fem_meta2.initialize(spatial_dimension);
 
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   stk::mesh::BulkData bulk_data( fem_meta, comm, bucket_size );
   stk::mesh::BulkData bulk_data2( fem_meta2, comm, bucket_size );
@@ -278,7 +278,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test2)
   stk::mesh::Selector selector = ( fem_meta.locally_owned_part() | fem_meta.globally_shared_part() ) & *fem_meta.get_part("block_1");
   std::vector<unsigned> count;
   stk::mesh::count_entities(selector, bulk_data, count);
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
   STKUNIT_ASSERT_EQUAL( count[NODE_RANK],     (unsigned)20 );
@@ -346,7 +346,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test3)
   stk::mesh::Selector selector = ( fem_meta.locally_owned_part() | fem_meta.globally_shared_part() ) & *fem_meta.get_part("block_1");
   std::vector<unsigned> count;
   stk::mesh::count_entities(selector, bulk_data, count);
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
   STKUNIT_ASSERT_EQUAL( count[NODE_RANK],     (unsigned)20 );

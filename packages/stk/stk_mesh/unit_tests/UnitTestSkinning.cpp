@@ -33,6 +33,8 @@
 
 static const size_t NODE_RANK = stk::mesh::MetaData::NODE_RANK;
 
+using stk::mesh::MetaData;
+
 class UnitTestStkMeshSkinning {
 public:
   UnitTestStkMeshSkinning(stk::ParallelMachine pm) : m_comm(pm),  m_num_procs(0), m_rank(0)
@@ -60,9 +62,9 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testSingleShell )
 {
   const int spatial_dimension = 3;
   stk::mesh::MetaData fem_meta;
-  fem_meta.initialize(spatial_dimension, stk::mesh::entity_rank_names(spatial_dimension));
+  fem_meta.initialize(spatial_dimension);
   stk::mesh::BulkData bulk_data( fem_meta, MPI_COMM_WORLD );
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank = MetaData::ELEMENT_RANK;
 
   const unsigned p_rank = bulk_data.parallel_rank();
 
@@ -124,7 +126,7 @@ void UnitTestStkMeshSkinning::test_skinning()
 
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
   stk::mesh::MetaData& fem_meta = grid_mesh.fem_meta();
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank = MetaData::ELEMENT_RANK;
 
   // Create a part for the skin and the shells
   stk::mesh::Part & skin_part = fem_meta.declare_part("skin_part");

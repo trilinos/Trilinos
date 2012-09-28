@@ -85,10 +85,10 @@ namespace stk
 	
             eMesh.new_mesh(percept::GMeshSpec(config_mesh));
             int vectorDimension = 0;
-            stk::mesh::FieldBase *element_color_field = eMesh.add_field("element_colors", eMesh.element_rank(), vectorDimension);
+            stk::mesh::FieldBase *element_color_field = eMesh.add_field("element_colors", stk::mesh::MetaData::ELEMENT_RANK, vectorDimension);
             eMesh.commit();
 
-            std::vector<mesh::EntityRank> mer;  mer.push_back(eMesh.element_rank());
+            std::vector<mesh::EntityRank> mer;  mer.push_back(stk::mesh::MetaData::ELEMENT_RANK);
             Colorer meshColorer(mer);
             unsigned elementType = 0u;
             meshColorer.color(eMesh, &elementType, 0, element_color_field);
@@ -112,7 +112,7 @@ namespace stk
           {
             eMesh.open(input_files_loc+"break_test._.quad._.square._.square_quad4.e");
             int vectorDimension = 0;
-            stk::mesh::FieldBase *element_color_field = eMesh.add_field("element_colors", eMesh.element_rank(), vectorDimension);
+            stk::mesh::FieldBase *element_color_field = eMesh.add_field("element_colors", stk::mesh::MetaData::ELEMENT_RANK, vectorDimension);
             eMesh.commit();
 
             std::vector<mesh::EntityRank> mer;  mer.push_back(eMesh.face_rank());

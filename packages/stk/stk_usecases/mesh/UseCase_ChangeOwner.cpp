@@ -36,7 +36,7 @@ Grid2D_Fixture::Grid2D_Fixture( stk::ParallelMachine comm )
     m_bulk_data( m_fem_meta_data , comm , 100 ),
     m_quad_part( stk::mesh::declare_part<Quad4>( m_fem_meta_data, "quad")),
     m_coord_field( m_fem_meta_data.declare_field< VectorField >( "coordinates" ) ),
-    m_elem_rank( m_fem_meta_data.element_rank() ),
+    m_elem_rank( stk::mesh::MetaData::ELEMENT_RANK ),
     m_node_rank( stk::mesh::MetaData::NODE_RANK )
 {
   stk::mesh::put_field( m_coord_field , m_node_rank , m_fem_meta_data.universal_part() );
@@ -212,11 +212,11 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
 
   if ( p_size != 2 ) { return success ; }
 
-  std::vector<std::string> rank_names = stk::mesh::entity_rank_names(spatial_dimension);
+  std::vector<std::string> rank_names = stk::mesh::entity_rank_names();
   const stk::mesh::EntityRank constraint_rank = rank_names.size();
   rank_names.push_back("Constraint");
   stk::mesh::MetaData fem_meta_data( spatial_dimension, rank_names );
-  const stk::mesh::EntityRank element_rank = fem_meta_data.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   VectorField * coordinates_field =
     & put_field(
@@ -352,7 +352,7 @@ bool test_change_owner_2( stk::ParallelMachine pm )
   if ( p_size != 3 ) { return true ; }
 
   stk::mesh::MetaData fem_meta_data( spatial_dimension );
-  const stk::mesh::EntityRank element_rank = fem_meta_data.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   VectorField * coordinates_field =
     & put_field(
@@ -477,7 +477,7 @@ bool test_change_owner_3( stk::ParallelMachine pm )
   const unsigned p_size = stk::parallel_machine_size( pm );
 
   stk::mesh::MetaData fem_meta_data( spatial_dimension );
-  const stk::mesh::EntityRank element_rank = fem_meta_data.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   VectorField * coordinates_field =
     & put_field(

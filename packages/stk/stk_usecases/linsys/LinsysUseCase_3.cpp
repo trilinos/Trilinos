@@ -87,10 +87,9 @@ bool use_case_3_driver( MPI_Comm comm ,
     //------------------------------------------------------------------
     // Declare the mesh meta data: element blocks and associated fields
 
-    stk::mesh::MetaData fem_meta;
-    fem_meta.initialize(SpatialDim, stk::mesh::entity_rank_names(SpatialDim) ) ;
+    stk::mesh::MetaData fem_meta(SpatialDim) ;
 
-    const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+    const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
     //--------------------------------
     // Element-block declarations typically occur when reading the

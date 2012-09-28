@@ -203,7 +203,7 @@ namespace stk {
 
     bool MeshUtil::facesConsistent(percept::PerceptMesh& eMesh)
     {
-      const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( eMesh.element_rank() );
+      const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
 
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
@@ -237,7 +237,7 @@ namespace stk {
 
     void MeshUtil::checkTopology(percept::PerceptMesh& eMesh)
     {
-      const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( eMesh.element_rank() );
+      const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
 
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {

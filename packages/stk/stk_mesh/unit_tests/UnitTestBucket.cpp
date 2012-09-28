@@ -83,7 +83,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
   stk::mesh::fixtures::BoxFixture fixture(pm, max_bucket_size, entity_names);
   MetaData& meta = fixture.fem_meta();
   BulkData& bulk = fixture.bulk_data();
-  const EntityRank element_rank = meta.element_rank();
+  const EntityRank element_rank = MetaData::ELEMENT_RANK;
   // Create two scalar fields, temperature and volume. Put temperature
   // on all the nodes and put volume on all the elements.
   unsigned number_of_states = 4;
@@ -177,7 +177,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
   const int spatial_dimension = 3;
 
   MetaData meta( spatial_dimension );
-  const EntityRank element_rank = meta.element_rank();
+  const EntityRank element_rank = MetaData::ELEMENT_RANK;
   const EntityRank edge_rank    = MetaData::EDGE_RANK;
 
   PartVector involved_parts(2) ;
@@ -206,7 +206,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
   for ( int id_base = 0 ; id_base < 99 ; ++id_base )
   {
     int new_id = size * id_base + rank + 1;
-    bulk.declare_entity( 3 , new_id , add_part4 );
+    bulk.declare_entity( MetaData::ELEMENT_RANK , new_id , add_part4 );
     bulk.declare_entity( NODE_RANK , new_id , no_part );
   }
 
@@ -264,7 +264,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
 
   const int spatial_dimension = 3;
   MetaData meta( spatial_dimension );
-  const EntityRank element_rank = meta.element_rank();
+  const EntityRank element_rank = MetaData::ELEMENT_RANK;
 
   PartVector involved_parts(2) ;
   involved_parts[0] = & meta.universal_part();
@@ -288,7 +288,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
   for ( int id_base = 0 ; id_base < 99 ; ++id_base )
   {
     int new_id = size * id_base + rank;
-    bulk.declare_entity( 3 , new_id+1 , add_part4 );
+    bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+1 , add_part4 );
   }
 
   bulk.modification_end();

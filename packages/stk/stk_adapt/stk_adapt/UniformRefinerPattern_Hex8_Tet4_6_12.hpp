@@ -83,7 +83,7 @@ namespace stk {
       {
         EXCEPTWATCH;
 
-        m_primaryEntityRank = eMesh.element_rank();
+        m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
 
         setNeededParts(eMesh, block_names, false);
 
@@ -102,7 +102,7 @@ namespace stk {
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
         needed_entities.resize(1);
-        needed_entities[0].first = m_eMesh.element_rank();  
+        needed_entities[0].first = stk::mesh::MetaData::ELEMENT_RANK;  
         setToOne(needed_entities);
       }
 
@@ -141,7 +141,7 @@ namespace stk {
         // for cases that have a single center node, we just compute the new node's quantities here instead of globally
         //stk::mesh::Entity * node = get_bulk_data()->get_entity( Node, node_id );
 
-#define CENTROID_N NN(m_eMesh.element_rank(), 0)  
+#define CENTROID_N NN(stk::mesh::MetaData::ELEMENT_RANK, 0)  
 
 #if STK_ADAPT_URP_LOCAL_NODE_COMPS
         nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), Element, 0u);

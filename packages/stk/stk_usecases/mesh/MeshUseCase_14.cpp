@@ -50,7 +50,7 @@ namespace {
 
 inline stk::mesh::EntityRank get_element_rank(const stk::mesh::MetaData& meta_data)
 {
-  return meta_data.element_rank();
+  return stk::mesh::MetaData::ELEMENT_RANK;
 }
 
 inline stk::mesh::EntityRank get_element_rank(const stk::mesh::Part& part)
@@ -265,7 +265,7 @@ void use_case_14_driver(
     // Declaring the element blocks and associating an element traits
     // with each element block.
 
-    stk::mesh::Part & block_hex = mesh_meta_data.declare_part("block_1", mesh_meta_data.element_rank());
+    stk::mesh::Part & block_hex = mesh_meta_data.declare_part("block_1", stk::mesh::MetaData::ELEMENT_RANK);
 
     stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<> >());
     stk::mesh::set_cell_topology( block_hex, hex_top );
@@ -389,7 +389,7 @@ void use_case_14_driver(
 
   stk::mesh::Selector select_owned( stk::mesh::MetaData::get(mesh_bulk_data).locally_owned_part() );
 
-  const std::vector< stk::mesh::Bucket * > & element_buckets = mesh_bulk_data.buckets(mesh_meta_data.element_rank());
+  const std::vector< stk::mesh::Bucket * > & element_buckets = mesh_bulk_data.buckets(stk::mesh::MetaData::ELEMENT_RANK);
 
   unsigned maximum_bucket_size = 0 ;
   for ( std::vector< stk::mesh::Bucket * >::const_iterator
@@ -790,8 +790,7 @@ void use_case_14_generate_mesh(
   stk::mesh::Part & hex_block ,
   const unsigned shell_side[][2] )
 {
-  stk::mesh::MetaData &fem = stk::mesh::MetaData::get(mesh);
-  const stk::mesh::EntityRank element_rank = fem.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
   mesh.modification_begin();
 
   const unsigned parallel_size = mesh.parallel_size();

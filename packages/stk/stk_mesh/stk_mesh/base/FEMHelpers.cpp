@@ -81,7 +81,7 @@ Entity & declare_element( BulkData & mesh ,
   PartVector empty ;
   PartVector add( 1 ); add[0] = & part ;
 
-  const EntityRank entity_rank = fem_meta.element_rank();
+  const EntityRank entity_rank = MetaData::ELEMENT_RANK;
 
   Entity & elem = mesh.declare_entity( entity_rank, elem_id, add );
 

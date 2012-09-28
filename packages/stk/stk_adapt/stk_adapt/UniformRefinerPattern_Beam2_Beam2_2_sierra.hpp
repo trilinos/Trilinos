@@ -18,7 +18,7 @@ namespace stk {
       {
         //         m_primaryEntityRank = m_eMesh.edge_rank();
         //         if (m_eMesh.get_spatial_dim() == 1)
-        m_primaryEntityRank = eMesh.element_rank();
+        m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
 
         setNeededParts(eMesh, block_names, true);
         Elem::StdMeshObjTopologies::bootstrap();

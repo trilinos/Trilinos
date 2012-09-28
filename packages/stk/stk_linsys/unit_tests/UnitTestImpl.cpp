@@ -29,7 +29,7 @@ void testImpl( MPI_Comm comm )
 {
   //First create and initialize a MetaData to use in our testing:
 
-  stk::mesh::MetaData meta_data( spatial_dimension, stk::mesh::entity_rank_names(spatial_dimension) );
+  stk::mesh::MetaData meta_data( spatial_dimension );
 
   const unsigned number_of_states = 1;
 

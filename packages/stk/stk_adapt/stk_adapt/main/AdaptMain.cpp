@@ -275,7 +275,7 @@ namespace stk {
       eMesh.get_bulk_data()->modification_begin();
 
       std::cout << "creating " << n_elements << " elements..." <<std::endl;
-      eMesh.createEntities( eMesh.element_rank(), n_elements, new_elements);
+      eMesh.createEntities( stk::mesh::MetaData::ELEMENT_RANK, n_elements, new_elements);
       std::cout << "... done creating " << n_elements << " elements" << std::endl;
 
       std::cout << "creating " << n_nodes << " nodes..." <<std::endl;
@@ -898,7 +898,7 @@ namespace stk {
                         stk::mesh::FieldBase* proc_rank_field_ptr = 0;
                         if (proc_rank_field)
                           {
-                            proc_rank_field_ptr = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+                            proc_rank_field_ptr = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
                           }
 
 #if STK_ADAPT_HAVE_YAML_CPP

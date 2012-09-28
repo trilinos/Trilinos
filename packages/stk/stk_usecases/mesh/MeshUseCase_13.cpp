@@ -100,7 +100,7 @@ void use_case_13_driver( MPI_Comm comm )
     // Declare the mesh meta data and bulk data.
 
     mesh::MetaData mesh_meta_data( SpatialDim );
-    const stk::mesh::EntityRank element_rank = mesh_meta_data.element_rank();
+    const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
     const stk::mesh::EntityRank side_rank    = mesh_meta_data.side_rank();
     const stk::mesh::EntityRank edge_rank    = stk::mesh::MetaData::EDGE_RANK;
     mesh::BulkData mesh_bulk_data( mesh_meta_data, MPI_COMM_WORLD );
@@ -266,7 +266,7 @@ void use_case_13_algorithm(
 {
   const mesh::MetaData & meta_data = mesh::MetaData::get(M);
 
-  const stk::mesh::EntityRank element_rank = meta_data.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   {
     // Communicate the element field data that we care about
@@ -467,8 +467,7 @@ unsigned determine_local_side_id( const mesh::Entity & elem , mesh::Entity & sid
 void use_case_13_generate_sides(
   mesh::BulkData & mesh , const bool skin_only )
 {
-  const mesh::MetaData & meta_data = mesh::MetaData::get(mesh);
-  const stk::mesh::EntityRank element_rank = meta_data.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
   const unsigned p_rank = mesh.parallel_rank();
 
   mesh.modification_begin();

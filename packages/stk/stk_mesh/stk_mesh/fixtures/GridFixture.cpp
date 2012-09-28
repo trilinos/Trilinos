@@ -43,7 +43,7 @@ namespace fixtures {
 
 GridFixture::GridFixture(stk::ParallelMachine pm)
   : m_spatial_dimension(2)
-  , m_fem_meta( m_spatial_dimension, entity_rank_names(m_spatial_dimension) )
+  , m_fem_meta( m_spatial_dimension )
   , m_bulk_data( m_fem_meta, pm )
   , m_quad_part( declare_part<shards::Quadrilateral<4> >(m_fem_meta, "quad_part") )
   , m_dead_part( m_fem_meta.declare_part("dead_part"))
@@ -58,7 +58,7 @@ void GridFixture::generate_grid()
   const unsigned num_quad_faces = 16;
   const unsigned p_rank = m_bulk_data.parallel_rank();
   const unsigned p_size = m_bulk_data.parallel_size();
-  const EntityRank element_rank = m_fem_meta.element_rank();
+  const EntityRank element_rank = MetaData::ELEMENT_RANK;
   std::vector<Entity*> all_entities;
 
   // assign ids, quads, nodes, then shells

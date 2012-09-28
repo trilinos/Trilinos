@@ -43,14 +43,14 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
 #endif
 
   unsigned spatial_dimension = 2;
-  std::vector<std::string> rank_names = stk::mesh::entity_rank_names(spatial_dimension);
+  std::vector<std::string> rank_names = stk::mesh::entity_rank_names();
   const stk::mesh::EntityRank constraint_rank = rank_names.size();
   rank_names.push_back("Constraint");
 
   stk::mesh::MetaData fem_meta;
   fem_meta.initialize( spatial_dimension, rank_names );
   stk::mesh::BulkData bulk_data( fem_meta , comm , 100 );
-  const stk::mesh::EntityRank element_rank    = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank    = stk::mesh::MetaData::ELEMENT_RANK;
 
   stk::mesh::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
   stk::mesh::Part & quad_part( fem_meta.declare_part("quad", quad_top ) );

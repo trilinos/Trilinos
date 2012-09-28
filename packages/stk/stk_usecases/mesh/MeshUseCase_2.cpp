@@ -69,7 +69,7 @@ UseCase_2_Mesh::UseCase_2_Mesh( stk::ParallelMachine comm ) :
   , m_coordinates_field( m_fem_metaData.declare_field< VectorFieldType >( "coordinates" ))
   , m_temperature_field( m_fem_metaData.declare_field< ScalarFieldType >( "temperature" ))
   , m_volume_field( m_fem_metaData.declare_field< ScalarFieldType >( "volume" ))
-  , m_elem_rank( m_fem_metaData.element_rank() )
+  , m_elem_rank( stk::mesh::MetaData::ELEMENT_RANK )
   , m_side_rank( m_fem_metaData.side_rank() )
   , m_edge_rank( MetaData::EDGE_RANK )
   , m_node_rank( MetaData::NODE_RANK )

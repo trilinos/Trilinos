@@ -140,7 +140,7 @@ namespace stk {
         SingleTetFixture::Point node_coord_data[4] = {{0,0,0},{0,0,0},{0,0,0},{0,0,0}};
         static  SingleTetFixture::TetIds tetra_node_ids[] = { {0, 1, 2, 3} };
 
-        const vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( eMesh.element_rank() );
+        const vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
 
         for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
@@ -218,7 +218,7 @@ namespace stk {
           Hex8_Tet4_24 break_hex_to_tet(eMesh);
 
           int scalarDimension = 0; // a scalar
-          stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+          stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
 
           eMesh.commit();
 
@@ -751,7 +751,7 @@ namespace stk {
               eMesh.open(input_files_loc+"tet_fixture_NxNxN.e");
               Local_Tet4_Tet4_N break_tet(eMesh);
               int scalarDimension = 0; // a scalar
-              stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+              stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
               eMesh.commit();
 
               TestLocalRefinerTet_N_4 breaker(eMesh, break_tet, proc_rank_field);
@@ -818,7 +818,7 @@ namespace stk {
 
             Local_Tri3_Tri3_2 break_tri_to_tri_2(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
@@ -869,7 +869,7 @@ namespace stk {
 
             Local_Tri3_Tri3_2 break_tri_to_tri_2(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
@@ -922,7 +922,7 @@ namespace stk {
             Local_Tri3_Tri3_2 break_tri_to_tri_2(eMesh);
             //Local_Tri3_Tri3_N break_tri_to_tri_2(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
@@ -972,7 +972,7 @@ namespace stk {
 
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
@@ -1033,7 +1033,7 @@ namespace stk {
 
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
@@ -1100,7 +1100,7 @@ namespace stk {
 
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
@@ -1173,7 +1173,7 @@ namespace stk {
 
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
@@ -1272,7 +1272,7 @@ namespace stk {
 
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
@@ -1346,7 +1346,7 @@ namespace stk {
 
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
@@ -1407,7 +1407,7 @@ namespace stk {
 
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
@@ -1481,7 +1481,7 @@ namespace stk {
 
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
@@ -1630,8 +1630,8 @@ namespace stk {
 
             Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
-            stk::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            stk::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             eMesh.commit();
 
             fixture.generate_mesh();
@@ -1775,12 +1775,12 @@ namespace stk {
 
 	  Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
 	  int scalarDimension = 0;
-	  stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+	  stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
 	  eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
 
 	  // field for elem mesh size ratio (non-dimensional)
 	  ScalarFieldType * elem_ratio_field =
-	    (ScalarFieldType *) eMesh.add_field("elem_ratio", eMesh.element_rank(), scalarDimension);
+	    (ScalarFieldType *) eMesh.add_field("elem_ratio", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
 	  assert(elem_ratio_field);
 
 	  eMesh.commit();
@@ -1839,7 +1839,7 @@ namespace stk {
 
 	  Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
 	  const int scalarDimension = 0;
-	  stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+	  stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
 	  eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
 
 	  // field for nodal Hessian field
@@ -1911,7 +1911,7 @@ namespace stk {
 
             // delete the first element
             eMesh.get_bulk_data()->modification_begin();
-            stk::mesh::Entity* element_0 = &( (**(eMesh.get_bulk_data()->buckets(eMesh.element_rank()).begin()))[0]);
+            stk::mesh::Entity* element_0 = &( (**(eMesh.get_bulk_data()->buckets(stk::mesh::MetaData::ELEMENT_RANK).begin()))[0]);
             if ( ! eMesh.get_bulk_data()->destroy_entity( element_0 ) )
               {
                 throw std::logic_error("failed in deleting element");
@@ -1919,12 +1919,12 @@ namespace stk {
             eMesh.get_bulk_data()->modification_end();
 
             // single element left
-            //stk::mesh::Entity& element = (**(eMesh.get_bulk_data()->buckets(eMesh.element_rank()).begin()))[0];
+            //stk::mesh::Entity& element = (**(eMesh.get_bulk_data()->buckets(stk::mesh::MetaData::ELEMENT_RANK).begin()))[0];
 
             eMesh.save_as(output_files_loc+"tri_face_0.e");
 
             // single element left
-            stk::mesh::Entity& element = (**(eMesh.get_bulk_data()->buckets(eMesh.element_rank()).begin()))[0];
+            stk::mesh::Entity& element = (**(eMesh.get_bulk_data()->buckets(stk::mesh::MetaData::ELEMENT_RANK).begin()))[0];
             std::cout << "element = " << element << std::endl;
 
             mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);

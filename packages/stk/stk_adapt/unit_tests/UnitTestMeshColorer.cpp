@@ -71,10 +71,10 @@ STKUNIT_UNIT_TEST(mesh_colorer, test1)
   percept::PerceptMesh eMesh(3u);
   eMesh.new_mesh(percept::GMeshSpec(config_mesh));
   int vectorDimension = 0;
-  mesh::FieldBase *element_color_field = eMesh.add_field("element_colors", eMesh.element_rank(), vectorDimension);
+  mesh::FieldBase *element_color_field = eMesh.add_field("element_colors", stk::mesh::MetaData::ELEMENT_RANK, vectorDimension);
   eMesh.commit();
 
-  std::vector<mesh::EntityRank> mer;  mer.push_back(eMesh.element_rank());
+  std::vector<mesh::EntityRank> mer;  mer.push_back(stk::mesh::MetaData::ELEMENT_RANK);
   Colorer meshColorer(mer);
   unsigned elementType = 0u;
   meshColorer.color(eMesh, &elementType, 0, element_color_field);

@@ -44,7 +44,7 @@ typedef shards::Wedge<18>       Wedge18;
 UseCase_4_Mesh::UseCase_4_Mesh( stk::ParallelMachine comm, bool doCommit ) :
   m_fem_metaData( SpatialDim )
   , m_bulkData( m_fem_metaData , comm )
-  , m_elem_rank( m_fem_metaData.element_rank() )
+  , m_elem_rank( stk::mesh::MetaData::ELEMENT_RANK )
   , m_side_rank( m_fem_metaData.side_rank() )
   , m_node_rank( MetaData::NODE_RANK )
   , m_block_hex27( stk::mesh::declare_part<Hex27>( m_fem_metaData, "block_1"))

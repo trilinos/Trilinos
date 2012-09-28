@@ -21,6 +21,7 @@
 #include <stk_mesh/base/FieldData.hpp>
 
 using stk::mesh::Part;
+using stk::mesh::MetaData;
 
 // UnitTestBulkData_new is the beginnings of a refactoring of the bulk
 // data unit test.  It relies on a customized BoxFixture to rapidly
@@ -240,8 +241,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyExplicitAddInducedPart )
 
   bulk.modification_begin();
 
-  stk::mesh::Entity &new_cell = bulk.declare_entity ( 3 , fixture.comm_rank()+1 , empty_vector );
-  stk::mesh::Entity &new_node = bulk.declare_entity ( 0 , fixture.comm_rank()+1 , empty_vector );
+  stk::mesh::Entity &new_cell = bulk.declare_entity ( MetaData::ELEMENT_RANK , fixture.comm_rank()+1 , empty_vector );
+  stk::mesh::Entity &new_node = bulk.declare_entity ( MetaData::NODE_RANK , fixture.comm_rank()+1 , empty_vector );
 
   bulk.declare_relation ( new_cell , new_node , 1 );
 
@@ -422,7 +423,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRa
 
   bulk.modification_begin();
 
-  stk::mesh::Entity  &e = bulk.declare_entity ( 3 , fixture.comm_rank()+1 , add_parts );
+  stk::mesh::Entity  &e = bulk.declare_entity ( MetaData::ELEMENT_RANK , fixture.comm_rank()+1 , add_parts );
   bulk.modification_end();
 
   bulk.modification_begin();
@@ -659,14 +660,14 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyPartsOnCreate )
 
    bulk.modification_begin();
 
-   stk::mesh::Entity &node = bulk.declare_entity ( 0 , fixture.comm_rank()+1 ,create_vector );
+   stk::mesh::Entity &node = bulk.declare_entity ( MetaData::NODE_RANK , fixture.comm_rank()+1 ,create_vector );
    bulk.modification_end();
 
    STKUNIT_ASSERT ( node.bucket().member ( part_a ) );
 
    bulk.modification_begin();
    create_vector.push_back ( &part_b );
-   stk::mesh::Entity &node2 = bulk.declare_entity ( 0 , fixture.comm_size() + fixture.comm_rank() + 1 , create_vector );
+   stk::mesh::Entity &node2 = bulk.declare_entity ( MetaData::NODE_RANK , fixture.comm_size() + fixture.comm_rank() + 1 , create_vector );
    bulk.modification_end();
 
    STKUNIT_ASSERT ( node2.bucket().member ( part_a ) );
@@ -738,8 +739,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
 
   const int spatial_dimension = 3;
 
-  stk::mesh::MetaData fem_meta;
-  fem_meta.initialize(spatial_dimension, stk::mesh::entity_rank_names ( spatial_dimension ));
+  stk::mesh::MetaData fem_meta(spatial_dimension);
 
   stk::mesh::CellTopology tet_top(shards::getCellTopologyData<shards::Tetrahedron<4> >());
   stk::mesh::Part & part_a = fem_meta.declare_part( "block_a", tet_top );
@@ -775,7 +775,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
   unsigned rank_count2 = stk::parallel_machine_rank( MPI_COMM_WORLD );
   int new_id2 = size2 + rank_count2;
 
-  stk::mesh::Entity &elem2 = bulk.declare_entity ( 3 , new_id2+1 ,create_vector );
+  stk::mesh::Entity &elem2 = bulk.declare_entity ( MetaData::ELEMENT_RANK , new_id2+1 ,create_vector );
   STKUNIT_ASSERT_EQUAL( elem2.bucket().member ( part_a ), true );
 
   unsigned size = stk::parallel_machine_size( MPI_COMM_WORLD );
@@ -785,7 +785,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
   for ( id_base = 0 ; id_base < 99 ; ++id_base )
   {
     int new_id = size * id_base + rank_count;
-    stk::mesh::Entity &new_node = bulk.declare_entity( 0 , new_id+1 , empty_vector );
+    stk::mesh::Entity &new_node = bulk.declare_entity( MetaData::NODE_RANK , new_id+1 , empty_vector );
     STKUNIT_ASSERT_EQUAL( new_node.bucket().member ( part_a_0 ), false );
   }
 
@@ -940,13 +940,13 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testUninitializedMetaData )
   stk::mesh::MetaData meta; // Construct, but do not initialize
   stk::mesh::BulkData bulk(meta, pm);
 
-  meta.initialize(2, stk::mesh::entity_rank_names(2 /*spatial-dim*/));
+  meta.initialize(2);
 
   meta.commit();
 
   bulk.modification_begin();
 
-  STKUNIT_ASSERT_THROW( bulk.declare_entity(0, /*rank*/
+  STKUNIT_ASSERT_THROW( bulk.declare_entity(MetaData::NODE_RANK,
                                             1, /*id*/
                                             stk::mesh::PartVector() ),
                         std::logic_error);

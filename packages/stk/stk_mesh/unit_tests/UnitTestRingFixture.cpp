@@ -41,18 +41,18 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
   MetaData& meta = fixture.m_meta_data;
   BulkData& bulk = fixture.m_bulk_data;
 
-  const stk::mesh::EntityRank element_rank = meta.element_rank();
+  const stk::mesh::EntityRank element_rank = MetaData::ELEMENT_RANK;
 
   meta.commit();
 
   const unsigned p_rank     = bulk.parallel_rank();
   const unsigned p_size     = bulk.parallel_size();
-  const unsigned nPerProc   = fixture.m_num_edge_per_proc ;
+  const unsigned nPerProc   = fixture.m_num_element_per_proc ;
   const unsigned id_total   = nPerProc * p_size ;
   const unsigned id_begin   = nPerProc * p_rank ;
   const unsigned id_end     = nPerProc * ( p_rank + 1 );
   const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
-  const unsigned nLocalEdge = nPerProc ;
+  const unsigned nLocalElement = nPerProc ;
   const unsigned n_extra    = 1 < p_size ? 2 : 0 ;
 
   bulk.modification_begin();
@@ -66,7 +66,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
   std::vector<unsigned> local_count;
   stk::mesh::count_entities( select_used , bulk , local_count );
   STKUNIT_ASSERT_EQUAL( local_count[NODE_RANK]     , nLocalNode );
-  STKUNIT_ASSERT_EQUAL( local_count[element_rank] , nLocalEdge );
+  STKUNIT_ASSERT_EQUAL( local_count[element_rank] , nLocalElement );
 
   std::vector<Entity*> all_nodes;
   get_entities( bulk, NODE_RANK, all_nodes);
@@ -85,8 +85,8 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
   // Verify declarations and sharing two end nodes:
 
   stk::mesh::count_entities( select_used , bulk , local_count );
-  STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode );
-  STKUNIT_ASSERT_EQUAL( local_count[1] , nLocalEdge );
+  STKUNIT_ASSERT_EQUAL( local_count[MetaData::NODE_RANK] , nLocalNode );
+  STKUNIT_ASSERT_EQUAL( local_count[MetaData::ELEMENT_RANK] , nLocalElement );
 
   if ( 1 < p_size ) {
     const unsigned n0 = id_end < id_total ? id_begin : 0 ;
@@ -111,30 +111,30 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
   STKUNIT_ASSERT( bulk.modification_end());
 
   stk::mesh::count_entities( select_used , bulk , local_count );
-  STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode );
-  STKUNIT_ASSERT_EQUAL( local_count[1] , nLocalEdge );
+  STKUNIT_ASSERT_EQUAL( local_count[MetaData::NODE_RANK] , nLocalNode );
+  STKUNIT_ASSERT_EQUAL( local_count[MetaData::ELEMENT_RANK] , nLocalElement );
 
   stk::mesh::count_entities( select_all , bulk , local_count );
-  STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode + n_extra );
-  STKUNIT_ASSERT_EQUAL( local_count[1] , nLocalEdge + n_extra );
+  STKUNIT_ASSERT_EQUAL( local_count[MetaData::NODE_RANK] , nLocalNode + n_extra );
+  STKUNIT_ASSERT_EQUAL( local_count[MetaData::ELEMENT_RANK] , nLocalElement + n_extra );
 
   bulk.modification_begin();
   fixture.fixup_node_ownership();
   STKUNIT_ASSERT(bulk.modification_end());
 
-  // Make sure that edge->owner_rank() == edge->node[1]->owner_rank()
+  // Make sure that element->owner_rank() == element->node[1]->owner_rank()
   if ( 1 < p_size ) {
     stk::mesh::count_entities( select_all , bulk , local_count );
-    STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode + n_extra );
-    STKUNIT_ASSERT_EQUAL( local_count[1] , nLocalEdge + n_extra );
+    STKUNIT_ASSERT_EQUAL( local_count[MetaData::NODE_RANK] , nLocalNode + n_extra );
+    STKUNIT_ASSERT_EQUAL( local_count[MetaData::ELEMENT_RANK] , nLocalElement + n_extra );
 
     stk::mesh::count_entities( select_used , bulk , local_count );
-    STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode );
-    STKUNIT_ASSERT_EQUAL( local_count[1] , nLocalEdge );
+    STKUNIT_ASSERT_EQUAL( local_count[MetaData::NODE_RANK] , nLocalNode );
+    STKUNIT_ASSERT_EQUAL( local_count[MetaData::ELEMENT_RANK] , nLocalElement );
 
     stk::mesh::count_entities( select_owned , bulk , local_count );
-    STKUNIT_ASSERT_EQUAL( local_count[0] , nPerProc );
-    STKUNIT_ASSERT_EQUAL( local_count[1] , nPerProc );
+    STKUNIT_ASSERT_EQUAL( local_count[MetaData::NODE_RANK] , nPerProc );
+    STKUNIT_ASSERT_EQUAL( local_count[MetaData::ELEMENT_RANK] , nPerProc );
   }
 }
 
@@ -150,12 +150,12 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
 
   const unsigned p_rank     = bulk.parallel_rank();
   const unsigned p_size     = bulk.parallel_size();
-  const unsigned nPerProc   = ring.m_num_edge_per_proc ;
+  const unsigned nPerProc   = ring.m_num_element_per_proc ;
   const unsigned id_total   = nPerProc * p_size ;
   const unsigned id_begin   = nPerProc * p_rank ;
   const unsigned id_end     = nPerProc * ( p_rank + 1 );
   const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
-  const unsigned nLocalEdge = nPerProc ;
+  const unsigned nLocalElement = nPerProc ;
 
   const unsigned p_send  = ( p_rank + 1 ) % p_size ;
   const unsigned id_send = id_end - 2 ;
@@ -167,17 +167,17 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
   std::vector<unsigned> local_count ;
   std::vector<EntityProc> change ;
 
-  Entity * send_edge_1 = bulk.get_entity( 1 , ring.m_edge_ids[ id_send ] );
-  Entity * send_edge_2 = bulk.get_entity( 1 , ring.m_edge_ids[ id_send + 1 ] );
-  Entity * send_node_1 = send_edge_1->relations()[1].entity();
-  Entity * send_node_2 = send_edge_2->relations()[1].entity();
-  Entity * recv_edge_1 = bulk.get_entity( 1 , ring.m_edge_ids[ id_recv ] );
-  Entity * recv_edge_2 = bulk.get_entity( 1 , ring.m_edge_ids[ id_recv + 1 ] );
+  Entity * send_element_1 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_send ] );
+  Entity * send_element_2 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_send + 1 ] );
+  Entity * send_node_1 = send_element_1->relations()[1].entity();
+  Entity * send_node_2 = send_element_2->relations()[1].entity();
+  Entity * recv_element_1 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_recv ] );
+  Entity * recv_element_2 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_recv + 1 ] );
 
-  STKUNIT_ASSERT( NULL != send_edge_1 && p_rank == send_edge_1->owner_rank() );
-  STKUNIT_ASSERT( NULL != send_edge_2 && p_rank == send_edge_2->owner_rank() );
-  STKUNIT_ASSERT( NULL == recv_edge_1 || p_rank != recv_edge_1->owner_rank() );
-  STKUNIT_ASSERT( NULL == recv_edge_2 || p_rank != recv_edge_2->owner_rank() );
+  STKUNIT_ASSERT( NULL != send_element_1 && p_rank == send_element_1->owner_rank() );
+  STKUNIT_ASSERT( NULL != send_element_2 && p_rank == send_element_2->owner_rank() );
+  STKUNIT_ASSERT( NULL == recv_element_1 || p_rank != recv_element_1->owner_rank() );
+  STKUNIT_ASSERT( NULL == recv_element_2 || p_rank != recv_element_2->owner_rank() );
 
   if ( p_rank == send_node_1->owner_rank() ) {
     EntityProc entry( send_node_1 , p_send );
@@ -188,38 +188,38 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
     change.push_back( entry );
   }
   {
-    EntityProc entry( send_edge_1 , p_send );
+    EntityProc entry( send_element_1 , p_send );
     change.push_back( entry );
   }
   {
-    EntityProc entry( send_edge_2 , p_send );
+    EntityProc entry( send_element_2 , p_send );
     change.push_back( entry );
   }
 
-  send_edge_1 = NULL ;
-  send_edge_2 = NULL ;
+  send_element_1 = NULL ;
+  send_element_2 = NULL ;
   send_node_1 = NULL ;
   send_node_2 = NULL ;
-  recv_edge_1 = NULL ;
-  recv_edge_2 = NULL ;
+  recv_element_1 = NULL ;
+  recv_element_2 = NULL ;
 
   STKUNIT_ASSERT( bulk.modification_begin() );
   bulk.change_entity_owner( change );
   STKUNIT_ASSERT( stk::unit_test::modification_end_wrapper( bulk , generate_aura ) );
 
-  send_edge_1 = bulk.get_entity( 1 , ring.m_edge_ids[ id_send ] );
-  send_edge_2 = bulk.get_entity( 1 , ring.m_edge_ids[ id_send + 1 ] );
-  recv_edge_1 = bulk.get_entity( 1 , ring.m_edge_ids[ id_recv ] );
-  recv_edge_2 = bulk.get_entity( 1 , ring.m_edge_ids[ id_recv + 1 ] );
+  send_element_1 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_send ] );
+  send_element_2 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_send + 1 ] );
+  recv_element_1 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_recv ] );
+  recv_element_2 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_recv + 1 ] );
 
-  STKUNIT_ASSERT( NULL == send_edge_1 || p_rank != send_edge_1->owner_rank() );
-  STKUNIT_ASSERT( NULL == send_edge_2 || p_rank != send_edge_2->owner_rank() );
-  STKUNIT_ASSERT( NULL != recv_edge_1 && p_rank == recv_edge_1->owner_rank() );
-  STKUNIT_ASSERT( NULL != recv_edge_2 && p_rank == recv_edge_2->owner_rank() );
+  STKUNIT_ASSERT( NULL == send_element_1 || p_rank != send_element_1->owner_rank() );
+  STKUNIT_ASSERT( NULL == send_element_2 || p_rank != send_element_2->owner_rank() );
+  STKUNIT_ASSERT( NULL != recv_element_1 && p_rank == recv_element_1->owner_rank() );
+  STKUNIT_ASSERT( NULL != recv_element_2 && p_rank == recv_element_2->owner_rank() );
 
   stk::mesh::count_entities( select_used , bulk , local_count );
-  STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode );
-  STKUNIT_ASSERT_EQUAL( local_count[1] , nLocalEdge );
+  STKUNIT_ASSERT_EQUAL( local_count[MetaData::NODE_RANK] , nLocalNode );
+  STKUNIT_ASSERT_EQUAL( local_count[MetaData::ELEMENT_RANK] , nLocalElement );
 
   unsigned count_shared = 0 ;
   for ( std::vector<Entity*>::const_iterator

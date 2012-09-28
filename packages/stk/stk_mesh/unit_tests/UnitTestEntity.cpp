@@ -78,7 +78,7 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
 {
   //Test Entity repository - covering EntityRepository.cpp/hpp
   const int spatial_dimension = 3;
-  MetaData meta(spatial_dimension, stk::mesh::entity_rank_names(spatial_dimension));
+  MetaData meta(spatial_dimension);
   Part & part = meta.declare_part( "another part");
   MPI_Barrier( MPI_COMM_WORLD );
   ParallelMachine pm = MPI_COMM_WORLD;
@@ -102,11 +102,11 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
   for ( id_base = 0 ; id_base < 97 ; ++id_base )
   {
     int new_id =  size * id_base +  rank;
-     bulk.declare_entity( 0 , new_id+1 ,  add_part );
+    bulk.declare_entity( MetaData::NODE_RANK , new_id+1 ,  add_part );
   }
 
   int new_id =  size * (++id_base) +  rank;
-  stk::mesh::Entity & elem  =  bulk.declare_entity( 3 , new_id+1 ,  add_part );
+  stk::mesh::Entity & elem  =  bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+1 ,  add_part );
 
   bool use_memory_pool = false;
   stk::mesh::impl::EntityRepository e(use_memory_pool);
@@ -135,9 +135,9 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
 
   //Checking internal_create_entity
 
-  e.internal_create_entity( stk::mesh::EntityKey( 3, 2 ));
-  e.internal_create_entity( stk::mesh::EntityKey( 3, 5 ));
-  e.internal_create_entity( stk::mesh::EntityKey( 3, 7 ));
+  e.internal_create_entity( stk::mesh::EntityKey( MetaData::ELEMENT_RANK, 2 ));
+  e.internal_create_entity( stk::mesh::EntityKey( MetaData::ELEMENT_RANK, 5 ));
+  e.internal_create_entity( stk::mesh::EntityKey( MetaData::ELEMENT_RANK, 7 ));
 
   //Checking get_entity with invalid key - no rank or id
   {
@@ -148,20 +148,20 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
   }
 
   // stk::mesh::impl::EntityRepository::EntityMap eMap;
-  stk::mesh::Entity & elem2  =  bulk.declare_entity( 3 , new_id+8 ,  add_part );
-  stk::mesh::Entity & elem3  =  bulk.declare_entity( 3 , new_id+9 ,  add_part );
-  stk::mesh::Entity & elem4  =  bulk.declare_entity( 3 , new_id+10 ,  add_part );
+  stk::mesh::Entity & elem2  =  bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+8 ,  add_part );
+  stk::mesh::Entity & elem3  =  bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+9 ,  add_part );
+  stk::mesh::Entity & elem4  =  bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+10 ,  add_part );
 
-  e.internal_create_entity( stk::mesh::EntityKey( 3, new_id+8 ));
-  e.internal_create_entity( stk::mesh::EntityKey( 3, new_id+9 ));
-  e.internal_create_entity( stk::mesh::EntityKey( 3, new_id+10 ));
+  e.internal_create_entity( stk::mesh::EntityKey( MetaData::ELEMENT_RANK, new_id+8 ));
+  e.internal_create_entity( stk::mesh::EntityKey( MetaData::ELEMENT_RANK, new_id+9 ));
+  e.internal_create_entity( stk::mesh::EntityKey( MetaData::ELEMENT_RANK, new_id+10 ));
 
   typedef std::map<EntityKey,Entity*> EntityMap;
   EntityMap entity_map_array;
 
-  entity_map_array[stk::mesh::EntityKey( 3, new_id+8 )] = &elem2;
-  entity_map_array[stk::mesh::EntityKey( 3, new_id+9 )] = &elem3;
-  entity_map_array[stk::mesh::EntityKey( 3, new_id+10 )] = &elem4;
+  entity_map_array[stk::mesh::EntityKey( MetaData::ELEMENT_RANK, new_id+8 )] = &elem2;
+  entity_map_array[stk::mesh::EntityKey( MetaData::ELEMENT_RANK, new_id+9 )] = &elem3;
+  entity_map_array[stk::mesh::EntityKey( MetaData::ELEMENT_RANK, new_id+10 )] = &elem4;
 
   //Coverage of destroy_later in EntityRepository.cpp
   Bucket *nil_bucket =  bulk.buckets(3)[0];

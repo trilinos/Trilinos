@@ -110,7 +110,7 @@ bool use_case_7_driver( MPI_Comm comm ,
     // Declaring the element blocks and associating an element traits
     // with each element block.
 
-    const stk::mesh::EntityRank element_rank = mesh_meta_data.element_rank();
+    const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
     stk::mesh::Part & universal        = mesh_meta_data.universal_part();
     stk::mesh::Part & block_hex        = mesh_meta_data.declare_part("block_1", element_rank);
     stk::mesh::Part & block_quad_shell = mesh_meta_data.declare_part("block_2", element_rank);
@@ -524,8 +524,7 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh,
                                         fei::Matrix& matrix,
                                         fei::Vector& rhs)
 {
-  stk::mesh::MetaData &fem = stk::mesh::MetaData::get(mesh);
-  const stk::mesh::EntityRank element_rank = fem.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   const std::vector<stk::mesh::Bucket*>& mesh_buckets = mesh.buckets(element_rank);
 

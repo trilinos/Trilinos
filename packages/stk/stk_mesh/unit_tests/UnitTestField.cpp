@@ -25,9 +25,11 @@
 #include <boost/range.hpp>
 #include <boost/foreach.hpp>
 
+using stk::mesh::MetaData;
+
 namespace {
 
-const stk::mesh::EntityRank NODE_RANK = stk::mesh::MetaData::NODE_RANK;
+const stk::mesh::EntityRank NODE_RANK = MetaData::NODE_RANK;
 
 typedef shards::ArrayDimTag::size_type size_type;
 
@@ -329,7 +331,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelectorAnd)
 
   rank_one_field  & f0 = meta_data.declare_field< rank_one_field >( name0 );
 
-  stk::mesh::EntityRank elem_rank = meta_data.element_rank();
+  stk::mesh::EntityRank elem_rank = MetaData::ELEMENT_RANK;
   stk::mesh::Part & elements = meta_data.declare_part("Elements", elem_rank);
   stk::mesh::Part & hex8s = meta_data.declare_part("Hex8", elem_rank );
   stk::mesh::Part & tet4s = meta_data.declare_part("Tet4", elem_rank );
@@ -401,7 +403,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelectorInvalid)
 
   rank_one_field  & f0 = meta_data.declare_field< rank_one_field >( name0 );
 
-  stk::mesh::EntityRank elem_rank = meta_data.element_rank();
+  stk::mesh::EntityRank elem_rank = MetaData::ELEMENT_RANK;
   stk::mesh::Part & hex8s = meta_data.declare_part("Hex8", elem_rank );
 
   stk::mesh::Part & universal_part = meta_data.universal_part();

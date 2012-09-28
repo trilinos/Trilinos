@@ -25,7 +25,7 @@ typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorField ;
 
 void fill_utest_mesh_meta_data(stk::mesh::MetaData& fem_meta)
 {
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
   stk::mesh::Part& elem_block = fem_meta.declare_part( "block_1" , element_rank );
 

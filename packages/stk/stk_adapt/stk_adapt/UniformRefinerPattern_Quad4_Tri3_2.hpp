@@ -19,7 +19,7 @@ namespace stk {
          EXCEPTWATCH;
          m_primaryEntityRank = eMesh.face_rank();
          if (m_eMesh.get_spatial_dim() == 2)
-           m_primaryEntityRank = eMesh.element_rank();
+           m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
 
          setNeededParts(eMesh, block_names, false);
 
@@ -30,7 +30,7 @@ namespace stk {
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
         needed_entities.resize(0);
-        //needed_entities[0] = (m_eMesh.get_spatial_dim() == 2 ? m_eMesh.element_rank() :  m_eMesh.face_rank());
+        //needed_entities[0] = (m_eMesh.get_spatial_dim() == 2 ? stk::mesh::MetaData::ELEMENT_RANK :  m_eMesh.face_rank());
         setToOne(needed_entities);
       }
 
@@ -97,7 +97,7 @@ namespace stk {
           {
             stk::mesh::Entity& newElement = *(*element_pool);
 
-            if (proc_rank_field && element.entity_rank() == m_eMesh.element_rank())
+            if (proc_rank_field && element.entity_rank() == stk::mesh::MetaData::ELEMENT_RANK)
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 fdata[0] = double(newElement.owner_rank());

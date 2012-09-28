@@ -248,8 +248,8 @@ namespace stk
 
             Local_Tet4_Tet4_N break_tet_to_tet_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
-            stk::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            stk::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
 
             eMesh.commit();
 
@@ -354,8 +354,8 @@ namespace stk
 
             Local_Tet4_Tet4_N break_tet_to_tet_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
-            stk::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            stk::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             eMesh.commit();
 
             if (0)
@@ -549,8 +549,8 @@ namespace stk
 
             Local_Tet4_Tet4_N break_tet_to_tet_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
-            stk::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            stk::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             stk::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
             eMesh.commit();
 
@@ -625,8 +625,8 @@ namespace stk
 
             Local_Tet4_Tet4_N break_tet_to_tet_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
-            stk::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            stk::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             stk::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
             eMesh.commit();
 
@@ -748,8 +748,8 @@ namespace stk
 
             Local_Tet4_Tet4_N break_tet_to_tet_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field    = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
-            stk::mesh::FieldBase* refine_field       = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field    = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            stk::mesh::FieldBase* refine_field       = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             stk::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
             eMesh.commit();
 
@@ -881,8 +881,8 @@ namespace stk
 
             Local_Tet4_Tet4_N break_tet_to_tet_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field    = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
-            stk::mesh::FieldBase* refine_field       = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* proc_rank_field    = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            stk::mesh::FieldBase* refine_field       = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             stk::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
             eMesh.commit();
 
