@@ -60,7 +60,7 @@
 template<typename Traits,typename LO,typename GO>
 panzer::ScatterResidual_Epetra<panzer::Traits::SGResidual, Traits,LO,GO>::
 ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
-                       const Teuchos::ParameterList& p)
+                       const Teuchos::ParameterList& p,bool useDiscreteAdjoint)
   : globalIndexer_(indexer) 
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
@@ -174,7 +174,7 @@ evaluateFields(typename Traits::EvalData workset)
 template<typename Traits,typename LO,typename GO>
 panzer::ScatterResidual_Epetra<panzer::Traits::SGJacobian, Traits,LO,GO>::
 ScatterResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
-                       const Teuchos::ParameterList& p)
+                       const Teuchos::ParameterList& p,bool useDiscreteAdjoint)
    : globalIndexer_(indexer)
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
