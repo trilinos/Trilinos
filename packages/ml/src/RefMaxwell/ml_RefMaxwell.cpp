@@ -17,6 +17,8 @@
 #include "Teuchos_ArrayRCP.hpp"
 
 #include "EpetraExt_RowMatrixOut.h"
+#include "ml_ifpack_epetra_wrap.h"
+
 using Teuchos::rcp;
 using Teuchos::ArrayRCP;
 
@@ -509,41 +511,27 @@ int ML_Epetra::RefMaxwellPreconditioner::ApplyInverse(const Epetra_MultiVector& 
 // ================================================ ====== ==== ==== == = 
 int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList &List){  
 
-  string smoother=List.get("smoother: type","Hiptmair");
+  string smoother=List.get("smoother: type","Chebyshev");
   int smoother_sweeps=List.get("smoother: sweeps",2);
-  int edge_sweeps=List.get("subsmoother: edge sweeps",2);
-  int node_sweeps=List.get("subsmoother: node sweeps",2);  
   int output=List.get("ML output",0);
 
-  /* Smoother info output */
-  int NumGlobalRows=SM_Matrix_->NumGlobalRows();
-  int NumGlobalNNZ=SM_Matrix_->NumGlobalNonzeros();
-  if(verbose_ && !Comm_->MyPID()) {
-    char msg[80];
-    sprintf(msg,"%s","Smoother: (refmaxwell top) :");
-    printf("%s # global rows = %d, # estim. global nnz = %d\n",msg,NumGlobalRows,NumGlobalNNZ);
-    if(smoother=="Hiptmair")
-      printf("%s %s %d (e=%d/n=%d)\n",msg,smoother.c_str(),smoother_sweeps,edge_sweeps,node_sweeps);
-    else if(smoother=="IFPACK"){
-      string MyIfpackType = List.get("smoother: ifpack type","SORa");     
-      Teuchos::ParameterList & IfpackList=List.sublist("smoother: ifpack list");
-      if(MyIfpackType == "SORa"){
-	printf("%s IFPACK/SORa(%3.1f,%3.1f), sweeps = %d\n",msg,IfpackList.get("sora: alpha",1.5),IfpackList.get("sora: gamma",1.0),IfpackList.get("sora: sweeps",1));
-	if(IfpackList.get("sora: oaz boundaries",false))
-	  printf("%s oaz boundary handling enabled\n",msg);
-	if(IfpackList.get("sora: use interproc damping",false))
-	  printf("%s interproc damping enabled\n",msg);
-      }
-      else
-	printf("%s %s %d\n",msg,MyIfpackType.c_str(),smoother_sweeps);	
-    }
-    else 
-      printf("%s %s %d\n",msg,smoother.c_str(),smoother_sweeps);
-  }/*end if*/
-
-
   if(smoother == "Hiptmair"){
+    /* Smoother info output */
+    int NumGlobalRows=SM_Matrix_->NumGlobalRows();
+    int NumGlobalNNZ=SM_Matrix_->NumGlobalNonzeros();
+    if(verbose_ && !Comm_->MyPID()) {
+      int edge_sweeps=List.get("subsmoother: edge sweeps",2);
+      int node_sweeps=List.get("subsmoother: node sweeps",2);  
+      char msg[80];
+      sprintf(msg,"%s","RefMaxwell (level 0):");
+      printf("%s # global rows = %d, # estim. global nnz = %d\n",msg,NumGlobalRows,NumGlobalNNZ);     
+      printf("%s %s %d (e=%d/n=%d)\n",msg,smoother.c_str(),smoother_sweeps,edge_sweeps,node_sweeps);
+    }
+
     /* Setup Teuchos Lists - Hiptmair */
+    int edge_sweeps=List.get("subsmoother: edge sweeps",2);
+    int node_sweeps=List.get("subsmoother: node sweeps",2);  
+
     Teuchos::ParameterList PreList;
     PreList.setName("refmaxwell: edge presmoother");
     PreList.set("coarse: type",smoother);
@@ -577,8 +565,12 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
         PreList.set("coarse: type",smoother);
         PostList.set("coarse: type",smoother);
       }/*end if*/
+#ifdef HAVE_ML_IFPACK
+      IfSmoother=ML_Gen_Smoother_Ifpack_Epetra(const_cast<Epetra_CrsMatrix*>(&*SM_Matrix_),0,List_,"RefMaxwell (level 0): ",verbose_);
+#else
       PreEdgeSmoother  = new MultiLevelPreconditioner(*SM_Matrix_,PreList);
       PostEdgeSmoother = new MultiLevelPreconditioner(*SM_Matrix_,PostList);    
+#endif
     }/*end if*/
     else{
       PreEdgeSmoother  = new MultiLevelPreconditioner(*SM_Matrix_,*D0_Matrix_,*TMT_Matrix_,PreList,true,true);
@@ -586,67 +578,10 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
     }/*end if*/
   }/*end if*/
 #ifdef HAVE_ML_IFPACK
-  else if(smoother=="IFPACK"){
-    /* Setup for direct IFPACK smoothing */
-    smoother=List.get("smoother: ifpack type","SORa");
-    Ifpack Factory;
-    IfSmoother = Factory.Create(smoother,const_cast<Epetra_CrsMatrix*>(SM_Matrix_),0);
-    IfSmoother->SetParameters(List.sublist("smoother: ifpack list"));
-    ML_CHK_ERR(IfSmoother->Compute());
-  }
-#endif
-  else{
-    /* Setup Teuchos Lists - Chebyshev / SGS */
-    Teuchos::ParameterList PreList;
-    PreList.setName("refmaxwell: edge presmoother");
-    PreList.set("coarse: type",List.get("smoother: type","symmetric Gauss-Seidel"));
-    PreList.set("coarse: sweeps",List.get("smoother: sweeps",2));
-    PreList.set("coarse: Chebyshev alpha",List.get("smoother: Chebyshev alpha",30.0));
-    PreList.set("coarse: MLS alpha",List.get("smoother: MLS alpha",30.0));
-    PreList.set("coarse: damping factor",List.get("smoother: SGS damping factor",1.0));  
-    PreList.set("PDE equations",1);
-    PreList.set("max levels",1);    
-    PreList.set("smoother: Block Chebyshev number of blocks",List.get("smoother: Block Chebyshev number of blocks",-1));
-    PreList.set("smoother: Block Chebyshev block list",List.get("smoother: Block Chebyshev block list",(int*)0));
-    PreList.set("smoother: Block Chebyshev block starts",List.get("smoother: Block Chebyshev block starts",(int*)0));
-
-    // Ifpack smoothing
-    PreList.set("smoother: ifpack list",List.sublist("smoother: ifpack list"));
-    PreList.set("smoother: ifpack type",List.get("smoother: ifpack type","ILU"));
-
-    // Self smoothing
-    PreList.set("smoother: self overlap",List.get("smoother: self overlap",0));
-    PreList.set("smoother: self list",List.sublist("smoother: self list"));
-
-    // Aztec smoothing
-    Teuchos::RCP<std::vector<int> >    ridummy;
-    Teuchos::RCP<std::vector<double> > rddummy;
-    if(List.isParameter("smoother: Aztec options"))
-      PreList.set("smoother: Aztec options",List.get("smoother: Aztec options",ridummy));
-    if(List.isParameter("smoother: Aztec params"))
-      PreList.set("smoother: Aztec params",List.get("smoother: Aztec params",rddummy));
-    PreList.set("smoother: Aztec as solver",List.get("smoother: Aztec as solver",false));
-
-    // Normal Equations smoothing
-    PreList.set("smoother: chebyshev solve normal equations",List.get("smoother: chebyshev solve normal equations",false));
-
-    Teuchos::ParameterList PostList(PreList);
-    PostList.setName("refmaxwell: edge postsmoother");
-    PreList.set("coarse: pre or post","pre");
-    PreList.set("smoother: pre or post","pre");
-    PreList.set("zero starting solution", false);
-    PreList.set("ML label","(1,1) block fine pre-smoother");
-    PreList.set("ML output",output);
-    PostList.set("coarse: pre or post","post");
-    PostList.set("smoother: pre or post","post"); 
-    PostList.set("zero starting solution", false);
-    PostList.set("ML label","(1,1) block fine post-smoother");
-    PostList.set("ML output",output);
-    PostList.set("smoother: Gauss-Seidel efficient symmetric",List.get("smoother: Gauss-Seidel efficient symmetric",false));
-    
-    PreEdgeSmoother  = new MultiLevelPreconditioner(*SM_Matrix_,PreList);
-    PostEdgeSmoother  = new MultiLevelPreconditioner(*SM_Matrix_,PreList);
+  else {
+    IfSmoother=ML_Gen_Smoother_Ifpack_Epetra(const_cast<Epetra_CrsMatrix*>(&*SM_Matrix_),0,List_,"RefMaxwell (level 0): ",verbose_);
   }/*end else*/
+#endif
          
   return 0;
 }/*end SetEdgeSmoother*/
@@ -930,6 +865,8 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   
   /* Build Teuchos List: Overall */  
   SetDefaults("maxwell",ListRF,0,0,false);
+  ListRF.set("smoother: type","Chebyshev");
+  ListRF.set("smoother: sweeps",2);
   ListRF.set("refmaxwell: 11solver","edge matrix free");
   ListRF.set("refmaxwell: 11list",List11);
   ListRF.set("refmaxwell: 22solver","multilevel");

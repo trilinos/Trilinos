@@ -56,7 +56,7 @@ namespace ML_Epetra{
   if(Arow) Nnz=Arow->NumGlobalNonzeros();
 
   if(verbose && !A->Comm().MyPID())
-    cout <<printMsg<<" # global rows = "<<Nrows<<" # estim. global nnz = "<<Nnz<<endl;
+    cout <<printMsg<<"# global rows = "<<Nrows<<" # estim. global nnz = "<<Nnz<<endl;
 
 
   /**********************************************/
