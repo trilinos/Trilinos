@@ -983,6 +983,7 @@ int main(int argc, char *argv[]) {
      }
      EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
 
+#ifdef DUMP_DATA_MORE
     // Put element to node mapping in multivector for output
      Epetra_Map   globalMapElem(numElemsGlobal, numElems, 0, Comm);
      Epetra_MultiVector elem2node(globalMapElem, numNodesPerElem);
@@ -1017,6 +1018,7 @@ int main(int argc, char *argv[]) {
 
     // Define multi-vector for cell edge sign (fill during cell loop)
      Epetra_MultiVector edgeSign(globalMapElem, numEdgesPerElem);
+#endif
 
     if(MyPID==0) {Time.ResetStartTime();}
 #endif
@@ -1228,7 +1230,7 @@ int main(int argc, char *argv[]) {
             worksetEdgeSigns(cellCounter,7)=-1.0*worksetEdgeSigns(cellCounter,7);
         }
 
-#ifdef DUMP_DATA
+#ifdef DUMP_DATA_MORE
        for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
           edgeSign[iedge][cell] = worksetEdgeSigns(cellCounter,iedge); 
        }
@@ -1625,9 +1627,11 @@ int main(int argc, char *argv[]) {
     EpetraExt::VectorToMatrixMarketFile("ecoordy.dat",EDGE_Y);
     EpetraExt::VectorToMatrixMarketFile("ecoordz.dat",EDGE_Z);     
 
-    // Edge signs
-    EpetraExt::MultiVectorToMatrixMarketFile("edge_signs.dat",edgeSign,0,0,false);
 
+    // Edge signs
+#ifdef DUMP_DATA_MORE
+    EpetraExt::MultiVectorToMatrixMarketFile("edge_signs.dat",edgeSign,0,0,false);
+#endif
 
     EpetraExt::RowMatrixToMatlabFile("mag_k1_matrix.dat",StiffMatrixC);
     EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassMatrixC);
@@ -1698,6 +1702,7 @@ int main(int argc, char *argv[]) {
                   << " sec \n"; Time.ResetStartTime();}
 
 #ifdef DUMP_DATA
+ EpetraExt::RowMatrixToMatlabFile("mag_m0_matrix.dat",MassMatrixG);
  EpetraExt::RowMatrixToMatlabFile("edge_matrix.dat",StiffMatrixC);
 #endif
 #undef DUMP_DATA
