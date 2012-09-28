@@ -74,9 +74,11 @@ class EpetraLinearObjFactory : public LinearObjFactory<Traits>
 public:
 
    EpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
-                          const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider);
+                          const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider,
+                          bool useDiscreteAdjoint=false);
    EpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                          const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider);
+                          const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider,
+                          bool useDiscreteAdjoint=false);
 
    virtual ~EpetraLinearObjFactory();
 
@@ -123,7 +125,7 @@ public:
    //! Use preconstructed scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatter() const
-   { return Teuchos::rcp(new ScatterResidual_Epetra<EvalT,Traits,LocalOrdinalT,int>(gidProvider_)); }
+   { return Teuchos::rcp(new ScatterResidual_Epetra<EvalT,Traits,LocalOrdinalT,int>(gidProvider_,useDiscreteAdjoint_)); }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
@@ -228,10 +230,11 @@ protected:
    mutable Teuchos::RCP<Epetra_Export> exporter_;
 
    Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > gidProvider_;
-   Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm_;
 
    mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > rangeSpace_;
    mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domainSpace_;
+ 
+   bool useDiscreteAdjoint_;
 };
 
 }

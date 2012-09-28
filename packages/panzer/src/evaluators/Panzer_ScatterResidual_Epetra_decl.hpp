@@ -91,11 +91,11 @@ class ScatterResidual_Epetra<panzer::Traits::Residual,Traits,LO,GO>
     public panzer::CloneableEvaluator {
   
 public:
-  ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) 
+  ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,bool=false) 
      : globalIndexer_(indexer) {}
   
   ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
-                         const Teuchos::ParameterList& p);
+                         const Teuchos::ParameterList& p,bool=false);
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
@@ -130,6 +130,8 @@ private:
   std::string globalDataKey_; // what global data does this fill?
 
   Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
+
+  bool useDiscreteAdjoint_;
 };
 
 // **************************************************************
@@ -143,11 +145,11 @@ class ScatterResidual_Epetra<panzer::Traits::Jacobian,Traits,LO,GO>
   
 public:
   
-  ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) 
-     : globalIndexer_(indexer) {}
+  ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,bool useDiscreteAdjoint=false) 
+     : globalIndexer_(indexer), useDiscreteAdjoint_(useDiscreteAdjoint)  {}
 
   ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
-                         const Teuchos::ParameterList& pl);
+                         const Teuchos::ParameterList& pl,bool useDiscreteAdjoint=false);
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
@@ -157,7 +159,7 @@ public:
   void evaluateFields(typename Traits::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterResidual_Epetra<panzer::Traits::Jacobian,Traits,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new ScatterResidual_Epetra<panzer::Traits::Jacobian,Traits,LO,GO>(globalIndexer_,pl,useDiscreteAdjoint_)); }
 
 private:
 
@@ -185,6 +187,9 @@ private:
   Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
 
   ScatterResidual_Epetra();
+
+  bool useDiscreteAdjoint_;
+
 };
 
 }

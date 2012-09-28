@@ -56,11 +56,11 @@ class ScatterResidual_Epetra<panzer::Traits::SGResidual,Traits,LO,GO>
     public panzer::CloneableEvaluator {
   
 public:
-  ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) 
+  ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,bool=false) 
      : globalIndexer_(indexer) {}
   
   ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
-                         const Teuchos::ParameterList& p);
+                         const Teuchos::ParameterList& p,bool=false);
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
@@ -102,11 +102,11 @@ class ScatterResidual_Epetra<panzer::Traits::SGJacobian,Traits,LO,GO>
   
 public:
   
-  ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) 
+  ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,bool=false) 
      : globalIndexer_(indexer) {}
 
   ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
-                         const Teuchos::ParameterList& pl);
+                         const Teuchos::ParameterList& pl,bool=false);
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
