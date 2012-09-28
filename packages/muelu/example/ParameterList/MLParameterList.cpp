@@ -150,7 +150,6 @@ int main(int argc, char *argv[]) {
     // params->set("smoother: sweeps", 1);
     // params->set("smoother: pre or post", "both");
     params->set("smoother: type", "symmetric Gauss-Seidel");
-    params->set("coarse: type", "Amesos");
     
     /*      Teuchos::ParameterList & l0 = params->sublist("smoother: list (level 0)");
             l0.set("smoother: damping factor", 0.9);
