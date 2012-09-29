@@ -73,12 +73,12 @@ namespace MueLu {
 #elif defined(HAVE_AMESOS_SUPERLUDIST)
       type_ = "Superludist"; // 3. default smoother (if Superludist is available)
 #elif defined(HAVE_AMESOS_UMFPACK)
-      type_ = "Umfpack"; // 4. default smoother (if Umfpack is available)
+      type_ = "Umfpack";     // 4. default smoother (if Umfpack is available)
 #endif
     } // if(type_ == "")
 
     // check for valid direct solver type
-    TEUCHOS_TEST_FOR_EXCEPTION(type_ != "Superlu" && type_ != "Superludist" && type_ != "Klu" && type_ != "Amesos_Klu" && type_ != "Umfpack" && type_ != "Amesos_Umfpack", Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): type of Amesos direct solver can be 'Klu'/'Amesos_Klu', 'Superlu', 'Superludist' or 'Umfpack'/'Amesos_Umfpack'");
+    TEUCHOS_TEST_FOR_EXCEPTION(type_ != "Superlu" && type_ != "Superludist" && type_ != "Klu" && type_ != "Amesos_Klu" && type_ != "Umfpack" && type_ != "Amesos_Umfpack", Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Solver '" + type_ + "' not supported");
     if (type_ == "Superlu") {
 #if not defined(HAVE_AMESOS_SUPERLU)
       TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without SuperLU. Cannot define a solver by default for this AmesosSmoother object");

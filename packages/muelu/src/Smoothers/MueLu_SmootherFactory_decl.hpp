@@ -129,9 +129,9 @@ namespace MueLu {
       PostSmoother    = ChebySmoother(10,1/30)
       SmootherFactory = SmootherFactory([], PostSmoother);
     */
-    //Note: Teuchos::null as parameter allowed (= no smoother) but must be explicitly defined (no parameter default value)
+    //Note: Teuchos::null as parameter allowed (= no smoother)
     //Note: precondition: input smoother must not be Setup()
-    SmootherFactory(RCP<SmootherPrototype> preAndPostSmootherPrototype);
+    SmootherFactory(RCP<SmootherPrototype> preAndPostSmootherPrototype = Teuchos::null);
 
     SmootherFactory(RCP<SmootherPrototype> preSmootherPrototype, RCP<SmootherPrototype> postSmootherPrototype);
 
