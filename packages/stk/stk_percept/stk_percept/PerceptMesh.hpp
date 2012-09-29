@@ -378,6 +378,8 @@ namespace stk {
       /// @note Only available when Percept is configured with STK_PERCEPT_HAS_GEOMETRY
       void remove_geometry_blocks_on_output(std::string geometry_file_name);
 
+      /// dump a vtk file for the mesh surrounding the given node 
+      void dump_vtk(stk::mesh::Entity& node, std::string filename);
 
 #ifndef SWIG
       //========================================================================================================================

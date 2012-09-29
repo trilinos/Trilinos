@@ -35,7 +35,7 @@ namespace stk {
       }
       virtual double length_scaling_power() { return 1.0; }
       virtual double metric(stk::mesh::Entity& element, bool& valid)=0;
-      virtual double grad_metric(stk::mesh::Entity& element, bool& valid, double grad[8][3]) { return 0.0; }
+      virtual double grad_metric(stk::mesh::Entity& element, bool& valid, double grad[8][3]) { throw std::runtime_error("not impl"); return 0.0; }
 
       const CellTopologyData * m_topology_data ;
       void set_node(stk::mesh::Entity *node) { m_node=node; }
@@ -302,6 +302,8 @@ namespace stk {
                     double fac = 3.0*std::sqrt(3.0);
                     double den = fac * d;
                     shape_metric = (f*f*f)/den - 1.0;
+                    //shape_metric = f*f*f;
+                    shape_metric = shape_metric*det(W);
                   }
                 //shape_metric = std::fabs(shape_metric);
                 //shape_metric = f/std::pow(den,1./3.) - 1.0;
@@ -377,14 +379,17 @@ namespace stk {
                     {
                       double norm = f;
                       double iden = 1.0/den;
-                      double norm_cube = norm*norm*norm;
                       //result = norm_cube * iden - 1.0;
                       // wrt_T...
                       wrt_A = T;
                       wrt_A *= 3 * norm * iden;
+
+                      double norm_cube = norm*norm*norm;
                       wrt_A -= norm_cube * iden/d * transpose_adj(T);
+
                       // now convert to wrt_A
                       wrt_A = wrt_A * transpose(WI);
+                      wrt_A = wrt_A * det(W);
                     }
                   }
               }
@@ -408,6 +413,154 @@ namespace stk {
         //val = val_shape*val_shape;
         return val;
       }
+
+    };
+
+    /** |T-I|^2/ (2 det(T)) */
+
+    class PMMSmootherMetricShapeSizeOrientB1 : public PMMSmootherMetric
+    {
+    public:
+      PMMSmootherMetricShapeSizeOrientB1(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) {}
+
+      virtual double length_scaling_power() { return 1.0; }
+      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      {
+        valid = true;
+        JacobianUtil jacA, jacW;
+
+        //int spatialDim = m_eMesh->get_spatial_dim();
+        double A_ = 0.0, W_ = 0.0; // current and reference detJ
+        jacA(A_, *m_eMesh, element, m_coord_field_current, m_topology_data);
+        jacW(W_, *m_eMesh, element, m_coord_field_original, m_topology_data);
+        double val=0.0, val_shape=0.0;
+        MsqMatrix<3,3> Ident; 
+        identity(Ident);
+
+        MsqMatrix<3,3> WI, T;
+
+        for (int i=0; i < jacA.m_num_nodes; i++)
+          {
+            double detAi = jacA.m_detJ[i];
+            if (detAi < 0)
+              {
+                valid = false;
+              }
+            MsqMatrix<3,3>& W = jacW.m_J[i];
+            MsqMatrix<3,3>& A = jacA.m_J[i];
+
+            double shape_metric = 0.0;
+            if (std::fabs(detAi) > 1.e-15)
+              {
+                inverse(W, WI);
+                product(A, WI, T);
+
+                /** |T-I|^2/ (2 det(T)) */
+
+                double d = det(T);
+                double f = my_sqr_Frobenius(T-Ident)/(2*d);
+                shape_metric = f*det(W);
+
+#if 0
+                double n = Frobenius(T);
+                double tau = d;
+                shape_metric = n*n*n - 3*MSQ_SQRT_THREE*( std::log(tau) + 1 );
+
+                n = Frobenius(A - W);
+                shape_metric = n*n*n - det(W)*3*MSQ_SQRT_THREE*( std::log(detAi) + 1 );
+
+                shape_metric = my_sqr_Frobenius( A - 1/detAi * transpose_adj(A) * transpose(W) * W );
+#endif
+              }
+            val_shape += shape_metric;
+            //val_shape += std::fabs(shape_metric);
+            //val_shape += shape_metric*shape_metric;
+          }
+        val = val_shape;
+        //val = val_shape*val_shape;
+        return val;
+      }
+
+
+    };
+
+    class PMMSmootherMetricShapeC1 : public PMMSmootherMetric
+    {
+    public:
+      PMMSmootherMetricShapeC1(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) {}
+
+      virtual double length_scaling_power() { return 1.0; }
+      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      {
+        valid = true;
+        JacobianUtil jacA, jacW;
+
+        int spatialDim = m_eMesh->get_spatial_dim();
+        double A_ = 0.0, W_ = 0.0; // current and reference detJ
+        jacA(A_, *m_eMesh, element, m_coord_field_current, m_topology_data);
+        jacW(W_, *m_eMesh, element, m_coord_field_original, m_topology_data);
+        double val=0.0, val_shape=0.0;
+        MsqMatrix<3,3> Ident; 
+        identity(Ident);
+
+        MsqMatrix<3,3> WI, T;
+
+        for (int i=0; i < jacA.m_num_nodes; i++)
+          {
+            double detAi = jacA.m_detJ[i];
+            if (detAi < 0)
+              {
+                //valid = false;
+              }
+            MsqMatrix<3,3>& W = jacW.m_J[i];
+            MsqMatrix<3,3>& A = jacA.m_J[i];
+
+            // frob2 = h^2 + h^2 + 1
+            // frob21 = 2 h^2
+            // f = h sqrt(2)
+            // det = h*h
+            // met = f*f / (det*2) - 1
+            // frob3 = 3 h^2
+            // f = h sqrt(3)
+            // det = h*h*h
+            // met = f*f*f/(3^3/2 *det) - 1 = f*f*f/(3*sqrt(3)*det) - 1
+            double shape_metric = 0.0;
+            //            if (std::fabs(detAi) > 1.e-15)
+              {
+                inverse(W, WI);
+                //product(A, WI, T);
+                T = A;
+                double d = det(T);
+                double f = my_sqr_Frobenius(T);
+                if (0 && spatialDim==2)
+                  {
+                    // all our jacobians are 3D, with a 1 in the 3,3 slot for 2d, so we subtract it here
+                    f = f - 1.0;
+                    f = std::sqrt(f);
+                    double fac = 2.0;
+                    double den = fac * d;
+                    shape_metric = (f*f)/den - 1.0;
+                  }
+                else
+                  {
+                    f = std::sqrt(f);
+                    double fac = 3.0*std::sqrt(3.0);
+                    double den = fac * d;
+                    //shape_metric = (f*f*f)/den - 1.0;
+                    shape_metric = (f*f*f) - den;
+                  }
+                //shape_metric = std::fabs(shape_metric);
+                //shape_metric = f/std::pow(den,1./3.) - 1.0;
+              }
+            val_shape += shape_metric;
+            //val_shape += std::fabs(shape_metric);
+            //val_shape += shape_metric*shape_metric;
+          }
+        val = val_shape;
+        //val = val_shape*val_shape;
+        return val;
+      }
+
 
     };
 

@@ -128,6 +128,10 @@ namespace stk {
       // shape
       PMMSmootherMetricShapeB1 shape_b1_metric(eMesh);
 
+      PMMSmootherMetricShapeC1 shape_c1_metric(eMesh);
+
+      PMMSmootherMetricShapeSizeOrientB1 shape_size_orient_b1_metric(eMesh);
+
       // laplace
       PMMSmootherMetricLaplace laplace_metric(eMesh);
 
@@ -141,6 +145,7 @@ namespace stk {
       //double omegas[] = {0.001, 1.0};
       //double omegas[] = { 0.001, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.2, 0.4, 0.45,0.46,0.47,0.48,0.49,0.5,0.52,0.54,0.56,0.59, 0.6, 0.8, 1.0};
       double omegas[] = { 1.0};
+      //double omegas[] = { 0.001, 0.01, 0.1, 0.2, 0.4, 1.0};
       //double omegas[] = {0.0, 0.001, 0.01, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18, 0.19, 0.2, 0.4, 0.6, 0.8, 1.0};
       int nomega = sizeof(omegas)/sizeof(omegas[0]);
       
@@ -188,7 +193,9 @@ namespace stk {
                   VERIFY_OP_ON(num_invalid_1, ==, 0, "Invalid elements exist for start of stage 2, aborting");
 
                   //m_metric = &shape_size_orient_metric;
+                  //m_metric = &shape_size_orient_b1_metric;
                   m_metric = &shape_b1_metric;
+                  //m_metric = &shape_c1_metric;
                   //m_metric = &laplace_metric;
                   //m_metric = &scaled_jac_metric;
 

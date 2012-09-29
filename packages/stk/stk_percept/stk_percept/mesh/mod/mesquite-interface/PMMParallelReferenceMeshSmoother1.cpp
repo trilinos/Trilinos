@@ -18,7 +18,7 @@
 #define DEBUG_PRINT 0
 #define PRINT(a) do { if (DEBUG_PRINT && !m_eMesh->get_rank()) std::cout << "P[" << m_eMesh->get_rank() <<"] " << a << std::endl; } while(0)
 #define PRINT_1(a) do { if (!m_eMesh->get_rank()) std::cout << "P[" << m_eMesh->get_rank() <<"] " << a << std::endl; } while(0)
-#define PRINT_2(a) do {  std::cout << "P[" << m_eMesh->get_rank() <<"] " << a << " "; } while(0)
+#define PRINT_2(a) do {  std::cout << "P[" << m_eMesh->get_rank() <<"] " << a << std::endl; } while(0)
 
 namespace MESQUITE_NS {
 
@@ -93,19 +93,24 @@ namespace stk {
           coord_current[i] += dt;  
         }
 
+      stk::mesh::Selector on_locally_owned_part =  ( m_eMesh->get_fem_meta_data()->locally_owned_part() );
+
       stk::mesh::PairIterRelation node_elems = node.relations(m_eMesh->element_rank());
       for (unsigned i_elem=0; i_elem < node_elems.size(); i_elem++)
         {
           stk::mesh::Entity& element = *node_elems[i_elem].entity();
-          bool local_valid = true;
-          double val = m_metric->metric(element, local_valid);
-          if (combine == COP_SUM)
-            nm += val;
-          else if (combine == COP_MAX)
-            nm = std::max(nm, val);
-          else if (combine == COP_MIN)
-            nm = std::min(nm, val);
-          valid = valid && local_valid;
+          if (PerceptMesquiteMesh::select_bucket(element.bucket(), m_eMesh) && on_locally_owned_part(element.bucket()))
+            {
+              bool local_valid = true;
+              double val = m_metric->metric(element, local_valid);
+              if (combine == COP_SUM)
+                nm += val;
+              else if (combine == COP_MAX)
+                nm = std::max(nm, val);
+              else if (combine == COP_MIN)
+                nm = std::min(nm, val);
+              valid = valid && local_valid;
+            }
         }
       for (int i=0; i < spatialDim; i++)
         {
@@ -259,7 +264,7 @@ namespace stk {
 
                       double edge_length_ave = m_eMesh->edge_length_ave(element, m_coord_field_original);
 
-                      const bool use_analytic_grad = false;
+                      const bool use_analytic_grad = true;
                       const bool test_analytic_grad = false && m_stage==1;
                       double analytic_grad[8][3];
                       if ((test_analytic_grad || use_analytic_grad) && m_stage == 1)
@@ -636,6 +641,8 @@ namespace stk {
       double el=1.e+10, es1=0, es2=0;
       //double pw=std::max(m_metric->length_scaling_power() - 1.0,0.0);
 
+      stk::mesh::Entity *node_max = 0;
+
       {
         const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->node_rank() );
 
@@ -719,6 +726,7 @@ namespace stk {
                     if (sum > m_scaled_grad_norm)
                       {
                         m_scaled_grad_norm = sum;
+                        node_max = &node;
                         el = edge_length_ave;
                         es1 = s1;
                         es2 = s2;
@@ -751,8 +759,45 @@ namespace stk {
       }
 
       {
+        double scgn=m_scaled_grad_norm;
         stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_scaled_grad_norm ) );
         PRINT("tmp srk m_scaled_grad_norm= " << m_scaled_grad_norm << " gn= " << gn << " el= " << el << " es1= " << es1 << " es2=  " << es2);
+
+        bool debug_1=false;
+        if (debug_1 && m_scaled_grad_norm == scgn && m_stage==1)
+          {
+            PRINT_2(" tmp srk max occurs on proc= " << m_eMesh->get_rank());
+            {
+              stk::mesh::Entity& node = *node_max;
+              static int file_i = 0;
+              std::string file = "dump_vtk_"+toString(file_i)+".vtk";
+              ++file_i;
+              m_eMesh->dump_vtk(node, file);
+              bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
+              bool fixed = pmm->get_fixed_flag(&node);
+              PRINT_2(" tmp srk fixed= " << fixed << " isGhostNode= " << isGhostNode);
+              if (fixed || isGhostNode)
+                {
+                }
+              else
+                {
+                  //               stk::mesh::PairIterRelation node_elems = node.relations(m_eMesh->element_rank());
+                  //               for (unsigned ielem=0; ielem < node_elems.size(); ielem++)
+                  //                 {
+                  //                   stk::mesh::Entity& element = *node_elems[ielem].entity();
+                  
+                  //                 }
+                  //double PMMParallelReferenceMeshSmoother1::nodal_metric(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid)
+                  double *coord_current = PerceptMesh::field_data(m_coord_field_current, node);
+
+                  double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+                  bool valid=true;
+                  double nm = nodal_metric(node, 0.0, coord_current, cg_g, valid);
+                  double nm1 = nodal_metric(node, -1.e-6/m_scaled_grad_norm, coord_current, cg_g, valid);
+                  PRINT_2(" tmp srk nm= " << nm << " nm1= " << nm1 << " diff[expect neg]= " << nm1-nm << " grad= " << cg_g[0] << " " << cg_g[1] << " " << cg_g[2]);
+                }
+            }
+          }
       }
 
     }
@@ -1011,7 +1056,6 @@ namespace stk {
         cg_beta = (m_dnew - m_dmid) / m_dold;
 
       PRINT("tmp srk beta = " << cg_beta);
-
 
       // FIXME
       int N = m_num_nodes;

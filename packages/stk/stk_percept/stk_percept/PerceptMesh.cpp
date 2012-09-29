@@ -3932,6 +3932,126 @@ namespace stk {
 #endif
     }
 
+    static int vtk_type(stk::mesh::Entity& element)
+    {
+      const CellTopologyData * topology_data = PerceptMesh::get_cell_topology(element);
+      switch(topology_data->key) 
+        {
+        case shards::Triangle<3>::key:
+          return 5;
+        case shards::Quadrilateral<4>::key:
+          return 9;
+        case shards::Tetrahedron<4>::key:
+          return 10;
+        case shards::Pyramid<5>::key:
+          return 14;
+        case shards::Wedge<6>::key:
+          return 13;
+        case shards::Hexahedron<8>::key:
+          return 12;
+
+          // unimplemented
+        case shards::Node::key:
+        case shards::Particle::key:
+        case shards::Line<2>::key:
+        case shards::Line<3>::key:
+        case shards::ShellLine<2>::key:
+        case shards::ShellLine<3>::key:
+        case shards::Beam<2>::key:
+        case shards::Beam<3>::key:
+      
+        case shards::Triangle<4>::key:
+        case shards::Triangle<6>::key:
+        case shards::ShellTriangle<3>::key:
+        case shards::ShellTriangle<6>::key:
+      
+        case shards::Quadrilateral<8>::key:
+        case shards::Quadrilateral<9>::key:
+        case shards::ShellQuadrilateral<4>::key:
+        case shards::ShellQuadrilateral<8>::key:
+        case shards::ShellQuadrilateral<9>::key:
+      
+        case shards::Tetrahedron<8>::key:
+        case shards::Tetrahedron<10>::key:
+        case shards::Tetrahedron<11>::key:
+      
+        case shards::Hexahedron<20>::key:
+        case shards::Hexahedron<27>::key:
+      
+        case shards::Pyramid<13>::key:
+        case shards::Pyramid<14>::key:
+      
+        case shards::Wedge<15>::key:
+        case shards::Wedge<18>::key:
+      
+        case shards::Pentagon<5>::key:
+        case shards::Hexagon<6>::key:
+          break;
+        }
+      return 0;
+    }
+
+    void PerceptMesh::dump_vtk(stk::mesh::Entity& node, std::string filename)
+    {
+      typedef std::map<stk::mesh::Entity *, unsigned> NodeMap;
+      NodeMap node_map;
+      unsigned nnode_per_elem=0;
+
+      stk::mesh::PairIterRelation node_elems = node.relations(element_rank());
+      for (unsigned ielem = 0; ielem < node_elems.size(); ielem++)
+        {
+          stk::mesh::Entity& element = *node_elems[ielem].entity();
+          stk::mesh::PairIterRelation elem_nodes = element.relations(node_rank());
+          nnode_per_elem = elem_nodes.size(); // FIXME for hetero mesh
+          for (unsigned inode = 0; inode < elem_nodes.size(); inode++)
+            {
+              stk::mesh::Entity& node_i = *elem_nodes[inode].entity();
+              node_map[&node_i] = 0;  // just add to the list
+            }
+        }
+      unsigned ii=0;
+      for (NodeMap::iterator inode=node_map.begin(); inode != node_map.end(); ++inode)
+        {
+          //stk::mesh::Entity& node_i = *inode->first;
+          inode->second = ii++;
+        }
+      std::ofstream file(filename.c_str());
+      file << "# vtk DataFile Version 2.0\nDump vtk\nASCII\nDATASET UNSTRUCTURED_GRID\nPOINTS " << node_map.size() << " double\n";
+      
+      for (NodeMap::iterator inode=node_map.begin(); inode != node_map.end(); ++inode)
+        {
+          stk::mesh::Entity& node_i = *inode->first;
+          double *coord = PerceptMesh::field_data(get_coordinates_field(), node_i);
+          for (int idim=0; idim < get_spatial_dim(); idim++)
+            {
+              file << coord[idim] << " ";
+            }
+          file << "\n";
+        }
+      file << "CELLS " << node_elems.size() << " " << node_elems.size()*(nnode_per_elem+1) << "\n";
+      for (unsigned ielem = 0; ielem < node_elems.size(); ielem++)
+        {
+          stk::mesh::Entity& element = *node_elems[ielem].entity();
+          stk::mesh::PairIterRelation elem_nodes = element.relations(node_rank());
+          file << nnode_per_elem << " ";
+          for (unsigned inode = 0; inode < elem_nodes.size(); inode++)
+            {
+              stk::mesh::Entity& node_i = *elem_nodes[inode].entity();
+              unsigned id = node_map[&node_i];
+              file << id << " ";
+            }
+          file << "\n";
+        }
+      file << "CELL_TYPES " << node_elems.size() << "\n";
+      for (unsigned ielem = 0; ielem < node_elems.size(); ielem++)
+        {
+          stk::mesh::Entity& element = *node_elems[ielem].entity();
+          file << vtk_type(element) << "\n";
+        }      
+    }
+
+    //====================================================================================================================================
+    //====================================================================================================================================
     //====================================================================================================================================
     /**
      * A family tree relation holds the parent/child relations for a refined mesh.  

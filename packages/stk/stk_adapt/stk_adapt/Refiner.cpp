@@ -1256,10 +1256,10 @@ namespace stk {
 
     void Refiner::snapAndSmooth(bool geomSnap, std::string geomFile)
     {
-      std::cout << " geomFile= " << geomFile << " geomSnap= " << geomSnap << std::endl;
+      //std::cout << " geomFile= " << geomFile << " geomSnap= " << geomSnap << std::endl;
 #if defined( STK_PERCEPT_HAS_GEOMETRY )
       if (geomFile == "") return;
-      std::cout << " 2 geomFile= " << geomFile << " geomSnap= " << geomSnap << std::endl;
+      //std::cout << " 2 geomFile= " << geomFile << " geomSnap= " << geomSnap << std::endl;
 
       //SMOOTHING_OPTIONS option = SNAP_PLUS_SMOOTH;
       SMOOTHING_OPTIONS option = USE_LINE_SEARCH_WITH_MULTIPLE_STATES;

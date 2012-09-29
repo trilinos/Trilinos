@@ -158,7 +158,7 @@ namespace stk {
       double detW_min = std::numeric_limits<double>::max();
       double shapeA_max = 0.0;
       double shapeW_max = 0.0;
-      const bool get_mesh_diagnostics = false;
+      const bool get_mesh_diagnostics = true;
 
       int num_invalid=0;
       // element loop
