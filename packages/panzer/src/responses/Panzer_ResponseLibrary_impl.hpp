@@ -370,60 +370,6 @@ evaluateVolumeFieldManagers(const panzer::AssemblyEngineInArgs & ae_in,
    }
 }
 
-template <typename TraitsT>
-template <typename EvalT>
-void ResponseLibrary<TraitsT>::
-evaluateVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& worksets,
-                            const panzer::AssemblyEngineInArgs & ae_in,
-                            const Teuchos::Comm<int> & comm)
-{
-  int idx = Sacado::mpl::find<TypeSeq,EvalT>::value;
-
-  GlobalEvaluationDataContainer preEvalData;
-  preEvalData.addDataObject("Solution Gather Container",ae_in.ghostedContainer_);
-  ae_in.fillGlobalEvaluationDataContainer(preEvalData);
-
-  typedef panzer::LinearObjContainer LOC;
-  linObjFactory_->globalToGhostContainer(*(ae_in.container_),*(ae_in.ghostedContainer_),LOC::X | LOC::DxDt);
-
-  std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >::const_iterator itr;
-  for(itr=worksets.begin();itr!=worksets.end();++itr) {
-    const std::string & eBlock = itr->first;
-    std::vector<panzer::Workset> & w = *(itr->second);
-
-    Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = volFieldManagers_[eBlock];
-
-    if(fm!=Teuchos::null) {
-       fm->preEvaluate<EvalT>(preEvalData);
-   
-       // Loop over worksets in this element block
-       for (std::size_t i = 0; i < w.size(); ++i) {
-         panzer::Workset& workset = w[i];
-   
-         workset.ghostedLinContainer = ae_in.ghostedContainer_;
-         workset.linContainer = ae_in.container_;
-         workset.alpha = ae_in.alpha;
-         workset.beta = ae_in.beta;
-         workset.time = ae_in.time;
-         workset.evaluate_transient_terms = ae_in.evaluate_transient_terms;
-
-         fm->evaluateFields<EvalT>(workset);
-       }
-   
-       fm->postEvaluate<EvalT>(0);
-   
-       // perform global communication
-       const RespContVector & contVector = *rsvdVolResp_.find(eBlock)->second;
-   
-       // if not container has been constructed, don't build
-       // a field manager
-       if(contVector[idx]!=Teuchos::null) 
-          contVector[idx]->globalReduction(comm);
-    }
-  }
-
-}
-
 //! Write out all volume containers to a stream
 template <typename TraitsT>
 void ResponseLibrary<TraitsT>::

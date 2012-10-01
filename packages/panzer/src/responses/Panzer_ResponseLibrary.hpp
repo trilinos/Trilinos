@@ -194,13 +194,6 @@ public:
    /** Evaluate all the volume field managers of a particular evaluator type.
      */
    template <typename EvalT>
-   void evaluateVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& worksets,
-                                    const panzer::AssemblyEngineInArgs & ae_in,
-                                    const Teuchos::Comm<int> & comm);
-
-   /** Evaluate all the volume field managers of a particular evaluator type.
-     */
-   template <typename EvalT>
    void evaluateVolumeFieldManagers(const panzer::AssemblyEngineInArgs & ae_in,
                                     const Teuchos::Comm<int> & comm);
 
