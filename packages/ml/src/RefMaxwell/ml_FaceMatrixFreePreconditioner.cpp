@@ -10,48 +10,17 @@
 #include "ml_epetra_utils.h"
 #include "ml_mat_formats.h"
 #include "ml_RefMaxwell_11_Operator.h"
+#include "ml_RefMaxwell_Utils.h"
 #include "ml_ifpack_epetra_wrap.h"
 
 #define ABS(x)((x)>0?(x):-(x))
 
 #define NO_OUTPUT
-extern void IVOUT(const Epetra_IntVector & A, const char * of);
 
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_MultiVectorOut.h"
 #include "EpetraExt_VectorOut.h"
 // ================================================ ====== ==== ==== == =
-static int CSR_getrow_ones(ML_Operator *data, int N_requested_rows, int requested_rows[],
-   int allocated_space, int columns[], double values[], int row_lengths[])
-{
-   register int    *bindx, j;
-   int     *rowptr,  row, itemp;
-   struct ML_CSR_MSRdata *input_matrix;
-   ML_Operator *mat_in;
-
-   row            = *requested_rows;
-   mat_in = (ML_Operator *) data;
-   input_matrix = (struct ML_CSR_MSRdata *) ML_Get_MyGetrowData(mat_in);
-   rowptr = input_matrix->rowptr;
-   itemp = rowptr[row];
-   *row_lengths = rowptr[row+1] - itemp;
-
-
-   if (*row_lengths > allocated_space) {
-    ML_avoid_unused_param( (void *) &N_requested_rows);
-    return(0);
-  }
-
-   bindx  = &(input_matrix->columns[itemp]);
-   for (j = 0 ; j < *row_lengths; j++) {
-      *columns++ = *bindx++;
-   }
-   for (j = 0 ; j < *row_lengths; j++) {
-      *values++  = 1;
-   }
-   return(1);
-}
-
 inline void cross_product(const double *a,const double *b,double *c){
   c[0] = a[1]*b[2]-a[2]*b[1];
   c[1] = a[2]*b[0]-a[0]*b[2];
@@ -275,67 +244,6 @@ int ML_Epetra::FaceMatrixFreePreconditioner::BuildNullspace(Epetra_MultiVector *
   return 0;
 }
 
-
-// ================================================ ====== ==== ==== == = 
-int ML_Epetra::FaceMatrixFreePreconditioner::NodeAggregate(ML_Aggregate_Struct *&MLAggr,ML_Operator *&P,ML_Operator* TMT_ML,int &NumAggregates){
-  /* Pull Teuchos Options */
-  string CoarsenType = List_.get("aggregation: type", "Uncoupled");
-  double Threshold   = List_.get("aggregation: threshold", 0.0);  
-  int    NodesPerAggr = List_.get("aggregation: nodes per aggregate", 
-                                  ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate());
-
-  string PrintMsg_ = "FMFP (Level 0): ";
-
-  ML_Aggregate_Create(&MLAggr);
-  ML_Aggregate_Set_MaxLevels(MLAggr, 2);
-  ML_Aggregate_Set_StartLevel(MLAggr, 0);
-  ML_Aggregate_Set_Threshold(MLAggr, Threshold);
-  ML_Aggregate_Set_MaxCoarseSize(MLAggr,1);
-  MLAggr->cur_level = 0;
-  ML_Aggregate_Set_Reuse(MLAggr); 
-  MLAggr->keep_agg_information = 1;  
-  P = ML_Operator_Create(ml_comm_);
-  
-  /* Process Teuchos Options */
-  if (CoarsenType == "Uncoupled")
-    ML_Aggregate_Set_CoarsenScheme_Uncoupled(MLAggr);
-  else if (CoarsenType == "Uncoupled-MIS"){
-    ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(MLAggr);
-  }
-  else if (CoarsenType == "METIS"){
-    ML_Aggregate_Set_CoarsenScheme_METIS(MLAggr);
-    ML_Aggregate_Set_NodesPerAggr(0, MLAggr, 0, NodesPerAggr);
-  }/*end if*/
-  else {
-    if(!Comm_->MyPID()) printf("FMFP: Unsupported (1,1) block aggregation type(%s), resetting to uncoupled-mis\n",CoarsenType.c_str());
-    ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(MLAggr);
-  }
-
-  /* Aggregate Nodes */
-  int printlevel=ML_Get_PrintLevel();
-  ML_Set_PrintLevel(10);
-  NumAggregates = ML_Aggregate_Coarsen(MLAggr, TMT_ML, &P, ml_comm_);
-  ML_Set_PrintLevel(printlevel);
-
-  if (NumAggregates == 0){
-    cerr << "Found 0 aggregates, perhaps the problem is too small." << endl;
-    ML_CHK_ERR(-2);
-  }/*end if*/
-  else if(very_verbose_) printf("[%d] FMFP: %d aggregates created invec_leng=%d\n",Comm_->MyPID(),NumAggregates,P->invec_leng);
-
-  int globalAggs;
-  Comm_->SumAll(&NumAggregates,&globalAggs,1);
-  if( verbose_ && !Comm_->MyPID()) {
-    std::cout << PrintMsg_ << "Aggregation threshold = " << Threshold << std::endl;
-    std::cout << PrintMsg_ << "Global aggregates = " << globalAggs << std::endl;
-    //ML_Aggregate_Print_Complexity(MLAggr);
-  }
-
-
-  if(P==0) {fprintf(stderr,"%s","ERROR: No tentative prolongator found\n");ML_CHK_ERR(-5);}
-  return 0;
-}  
-
 // ================================================ ====== ==== ==== == = 
 //! Build the face-to-node prolongator described by Bochev, Siefert, Tuminaro, Xu and Zhu (2007).
 int ML_Epetra::FaceMatrixFreePreconditioner::PBuildSparsity(ML_Operator *P, Epetra_CrsMatrix *&Psparse){
@@ -376,8 +284,8 @@ int ML_Epetra::FaceMatrixFreePreconditioner::BuildProlongator()
   ML_Aggregate_Struct *MLAggr=0;
   ML_Operator *P=0;
   int NumAggregates;
-  NodeAggregate(MLAggr,P,TMT_ML,NumAggregates);
-  if(!P) {if(!Comm_->MyPID()) printf("ERROR: Building nodal P\n");ML_CHK_ERR(-1);}
+  int rv=ML_Epetra::RefMaxwell_Aggregate_Nodes(*TMT_Matrix_,List_,ml_comm_,std::string("FMFP (level 0) :"),MLAggr,P,NumAggregates);
+  if(rv || !P) {if(!Comm_->MyPID()) printf("ERROR: Building nodal P\n");ML_CHK_ERR(-1);}
 
   /* Build 1-unknown sparsity of prolongator */
   Epetra_CrsMatrix *Psparse=0;
