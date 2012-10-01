@@ -86,7 +86,7 @@ namespace MueLu {
       //only one nullspace vector, so normalize by hand
       Magnitude dtemp=0;
       //scalar type might be complex, so take absolute value.
-      for (LocalOrdinal k=0; k<myAggSize; ++k) {dtemp += Teuchos::ScalarTraits<Magnitude>::magnitude(localQR[k])*Teuchos::ScalarTraits<Magnitude>::magnitude(localQR[k]);}
+      for (LocalOrdinal k=0; k<myAggSize; ++k) {dtemp += Teuchos::ScalarTraits<Scalar>::magnitude(localQR[k])*Teuchos::ScalarTraits<Scalar>::magnitude(localQR[k]);}
       dtemp = Teuchos::ScalarTraits<Magnitude>::squareroot(dtemp);
       tau_[0] = localQR[0];
       localQR[0] = dtemp;
@@ -101,8 +101,8 @@ namespace MueLu {
       // so we cast to avoid compiler warnings.  Taking a look at the NETLIB reference implementation
       // CGEQRF (complex), work[0] is assigned an integer, so it's safe to take the magnitude.
       // Scalar type might be complex, so take absolute value.
-      if ( Teuchos::ScalarTraits<Magnitude>::magnitude(work_[0]) > workSize_) {
-        workSize_ = Teuchos::as<int>(Teuchos::ScalarTraits<Magnitude>::magnitude(work_[0]));
+      if ( Teuchos::ScalarTraits<Scalar>::magnitude(work_[0]) > workSize_) {
+        workSize_ = Teuchos::as<int>(Teuchos::ScalarTraits<Scalar>::magnitude(work_[0]));
         work_ = ArrayRCP<Scalar>(workSize_);
       }
     }
@@ -114,7 +114,7 @@ namespace MueLu {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
     if (NSDim_ == 1) {
       //again, only one nullspace vector, so calculate Q by hand
-      Magnitude dtemp = Teuchos::ScalarTraits<Magnitude>::magnitude(localQR[0]);
+      Magnitude dtemp = Teuchos::ScalarTraits<Scalar>::magnitude(localQR[0]);
       localQR[0] = tau_[0];
       dtemp = 1 / dtemp;
       for (LocalOrdinal i=0; i<myAggSize; ++i)
@@ -132,8 +132,8 @@ namespace MueLu {
       // LAPACK may have determined a better length for the work array.  Returns it in work[0],
       // so we cast to avoid compiler warnings.
       // Scalar type might be complex, so take absolute value.
-      if ( Teuchos::ScalarTraits<Magnitude>::magnitude(work_[0]) > workSize_) {
-        workSize_ = Teuchos::as<int>(Teuchos::ScalarTraits<Magnitude>::magnitude(work_[0]));
+      if ( Teuchos::ScalarTraits<Scalar>::magnitude(work_[0]) > workSize_) {
+        workSize_ = Teuchos::as<int>(Teuchos::ScalarTraits<Scalar>::magnitude(work_[0]));
         work_ = ArrayRCP<Scalar>(workSize_);
       }
     }
