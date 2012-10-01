@@ -40,11 +40,11 @@ Framework Release Notes:
   10.12 (making sure that deprecated warnings are enabled).  Save the full build
   output to a file to be searched for deprecated warnings.
 
-  3) Search the build output of the client code for “deprecated” warnings
+  3) Search the build output of the client code for "deprecated" warnings
   which give file names and line numbers for deprecated features.  For each
   deprecated warning or feature:
 
-  3.a) Look at the Trilinos source code referenced in the “deprecated”
+  3.a) Look at the Trilinos source code referenced in the "deprecated"
   warning and see why the feature (or file) was deprecated and what instructions
   there are for using an alternant implementation.  In many cases, the
   deprecated function or macro will be calling a non-deprecated variation.
@@ -69,7 +69,7 @@ Framework Release Notes:
   helpful, email trilinos-users@software.sandia.gov for advice.
 
   To see a discussion of the why and how of the management of deprecated code in
-  Trilinos, see Section 6.5 “Regulated Backward Compatibility: Details” in
+  Trilinos, see Section 6.5 "Regulated Backward Compatibility: Details" in
   the TriBITS Lifecycle Model technical report:
 
       http://www.ornl.gov/~8vt/TribitsLifecycleModel_v1.0.pdf
