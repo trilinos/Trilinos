@@ -1731,7 +1731,7 @@ namespace Iopx {
   // The following function is used if reading all element data on a processor instead of
   // just an element blocks worth...
   template void DecompositionData::communicate_element_data(int *file_data, int *ioss_data, size_t comp_count) const;
-  template void DecompositionData::communicate_element_data(long *file_data, long *ioss_data, size_t comp_count) const;
+  template void DecompositionData::communicate_element_data(int64_t *file_data, int64_t *ioss_data, size_t comp_count) const;
   template void DecompositionData::communicate_element_data(double *file_data, double *ioss_data, size_t comp_count) const;
 
   template <typename T>
