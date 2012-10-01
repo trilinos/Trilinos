@@ -1711,11 +1711,11 @@ NNTI_result_t NNTI_gni_put (
     }
 
     nthread_lock(&gni_mem_hdl->wr_queue_lock);
-        gni_mem_hdl->wr_queue.push_back(wr);
+    gni_mem_hdl->wr_queue.push_back(wr);
     nthread_unlock(&gni_mem_hdl->wr_queue_lock);
 
     nthread_lock(&nnti_wr_wrhash_lock);
-        insert_wr_wrhash(wr);
+    insert_wr_wrhash(wr);
     nthread_unlock(&nnti_wr_wrhash_lock);
 
 
@@ -3792,11 +3792,11 @@ static NNTI_result_t repost_recv_work_request(
     assert(gni_mem_hdl);
 
     memset(&wr->wc, 0, sizeof(nnti_gni_work_completion));
-    memset(&wr->op_state, 0, sizeof(gni_op_state_t));
 
     wr->last_op       =0;
     wr->is_op_complete=FALSE;
 
+    memset(&wr->op_state, 0, sizeof(gni_op_state_t));
     wr->op_state.rdma_init  =true;
 
     gni_mem_hdl->wr_queue.push_back(wr);
