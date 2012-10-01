@@ -61,7 +61,9 @@ END {
     for (j in linalg) {
       printf("%10.4f   ",tallies[i,linalg[j]]);
     }
-    printf("%8.2f   ",tallies[i,"Tpetra"] / tallies[i,"Epetra"]);
+    if (tallies[i,"Epetra"] != 0) {
+      printf("%8.2f   ",tallies[i,"Tpetra"] / tallies[i,"Epetra"]);
+    }
     printf("\n");
   }
 }
