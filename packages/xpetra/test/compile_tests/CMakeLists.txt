@@ -7,5 +7,5 @@ TRIBITS_ADD_EXECUTABLE(
   XpetraCompilationTests
   SOURCES ${SOURCES}
   COMM serial mpi
-  DEPLIBS muelu-xpetra
+  DEPLIBS xpetra
   )

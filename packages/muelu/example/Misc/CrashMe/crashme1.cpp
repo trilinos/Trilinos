@@ -71,7 +71,7 @@
 // Xpetra
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
@@ -136,10 +136,10 @@ int main(int argc, char *argv[]) {
   RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
   RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
 
-  // Epetra_CrsMatrix -> Xpetra::Operator
+  // Epetra_CrsMatrix -> Xpetra::Matrix
   RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
-  RCP<CrsOperator> crsOp = Teuchos::rcp(new CrsOperator(exA));
-  RCP<Operator> Op = Teuchos::rcp_dynamic_cast<Operator>(crsOp);
+  RCP<CrsMatrixWrap> crsOp = Teuchos::rcp(new CrsMatrixWrap(exA));
+  RCP<Matrix> Op = Teuchos::rcp_dynamic_cast<Matrix>(crsOp);
 
   // Epetra_Vector -> Xpetra::Vector
   RCP<Vector> xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));
@@ -335,7 +335,7 @@ void ExportAggregates(const Teuchos::RCP<Level>& level, const MueLu::FactoryBase
     return;
   }
   Teuchos::RCP<Aggregates> aggregates = level->Get< Teuchos::RCP<Aggregates> >("Aggregates",aggFact);
-  Teuchos::RCP<Operator> Op = level->Get<Teuchos::RCP<Operator> >("A");
+  Teuchos::RCP<Matrix> Op = level->Get<Teuchos::RCP<Matrix> >("A");
 
   Teuchos::RCP<LOVector>vertex2AggId_vector = aggregates->GetVertex2AggId();
   Teuchos::RCP<LOVector>procWinner_vector = aggregates->GetProcWinner();

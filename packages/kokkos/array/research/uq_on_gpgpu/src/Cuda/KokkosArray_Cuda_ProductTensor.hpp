@@ -325,7 +325,7 @@ public:
   //   shmem_size >= max( shared_tensor_size , shared_coeff_size )
   //
   __device__
-  void execute_on_device() const
+  void operator()(void) const
   {
     // Coalesced read of A and x coefficients into shared memory:
     const size_type iCoeff = threadIdx.x + WARP_SIZE * threadIdx.y ;
@@ -478,7 +478,7 @@ public:
       : m_A( A ), m_x( x ), m_y( y ) {}
 
     __device__
-    void execute_on_device() const
+    void operator()(void) const
     {
       VectorScalar * const sh = kokkos_impl_cuda_shared_memory<VectorScalar>();
 
@@ -565,7 +565,7 @@ public:
       : m_A( A ), m_x( x ), m_y( y ) {}
 
     __device__
-    void execute_on_device() const
+    void operator()(void) const
     {
       volatile VectorScalar * const sh =
         kokkos_impl_cuda_shared_memory<VectorScalar>();

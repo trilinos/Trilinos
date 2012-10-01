@@ -85,7 +85,7 @@ namespace MueLuTests {
 
     Level fineLevel, coarseLevel; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
-    RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
+    RCP<Matrix> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
     fineLevel.Set("A",Op);
 
     TentativePFactory tentpFactory;
@@ -106,9 +106,9 @@ namespace MueLuTests {
     coarseLevel.Request("A",&rap);
     rap.Build(fineLevel,coarseLevel);
 
-    RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A");
-    RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", &sapFactory);
-    RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", &transPFactory);
+    RCP<Matrix> A = fineLevel.Get< RCP<Matrix> >("A");
+    RCP<Matrix> P = coarseLevel.Get< RCP<Matrix> >("P", &sapFactory);
+    RCP<Matrix> R = coarseLevel.Get< RCP<Matrix> >("R", &transPFactory);
 
     RCP<MultiVector> workVec1 = MultiVectorFactory::Build(P->getRangeMap(),1);
     RCP<MultiVector> workVec2 = MultiVectorFactory::Build(Op->getRangeMap(),1);
@@ -121,7 +121,7 @@ namespace MueLuTests {
     Op->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
     R->apply(*workVec2,*result1,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
-    RCP<Operator> coarseOp = coarseLevel.Get< RCP<Operator> >("A", &rap);
+    RCP<Matrix> coarseOp = coarseLevel.Get< RCP<Matrix> >("A", &rap);
 
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(R->getRangeMap(),1);
@@ -163,7 +163,7 @@ namespace MueLuTests {
     fineLevel.SetFactoryManager(defManager);
     coarseLevel.SetFactoryManager(defManager);
 
-    RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(19*comm->getSize());
+    RCP<Matrix> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(19*comm->getSize());
     fineLevel.Set("A",Op);
 
     TentativePFactory tentpFactory;
@@ -185,9 +185,9 @@ namespace MueLuTests {
     coarseLevel.Request(rap);
     rap.Build(fineLevel,coarseLevel);
 
-    RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A");
-    RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", &sapFactory);
-    RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", &transPFactory);
+    RCP<Matrix> A = fineLevel.Get< RCP<Matrix> >("A");
+    RCP<Matrix> P = coarseLevel.Get< RCP<Matrix> >("P", &sapFactory);
+    RCP<Matrix> R = coarseLevel.Get< RCP<Matrix> >("R", &transPFactory);
 
     //std::string filename = "A.dat";
     //Utils::Write(filename,Op);
@@ -208,7 +208,7 @@ namespace MueLuTests {
     Op->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
     P->apply(*workVec2,*result1,Teuchos::TRANS,(SC)1.0,(SC)0.0);
 
-    RCP<Operator> coarseOp = coarseLevel.Get< RCP<Operator> >("A", &rap);
+    RCP<Matrix> coarseOp = coarseLevel.Get< RCP<Matrix> >("A", &rap);
 
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(P->getDomainMap(),1);

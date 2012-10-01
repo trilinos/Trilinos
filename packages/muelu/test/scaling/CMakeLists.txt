@@ -36,7 +36,7 @@ ELSE()
 ENDIF()
 #TODO: It is actually possible to build and test ScalingTest-Int also when LONG_LONG_INT=ON
 
-IF ({PACKAGE_NAME}_ENABLE_Galeri)
+IF (${PACKAGE_NAME}_ENABLE_Galeri)
 IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2) OR 
     (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos))
   
@@ -44,14 +44,14 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     ${MueLu_ScalingTestName}
     SOURCES ScalingTest.cpp
     COMM serial mpi
-    DEPLIBS muelu muelu-xpetra muelu-adapters
+    DEPLIBS muelu xpetra muelu-adapters
     )
   
   TRIBITS_ADD_EXECUTABLE( #TODO: to be add to nightly tests
     ScalingTestParamList  #TODO: Suffix Int/LongInt when done in the source code
     SOURCES ScalingTestParamList.cpp
     COMM serial mpi
-    DEPLIBS muelu muelu-xpetra muelu-adapters
+    DEPLIBS muelu xpetra muelu-adapters
     )
   
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ScalingTestParamList_cp
@@ -68,7 +68,7 @@ ENDIF() # Galeri
 
 INCLUDE(XpetraAddTest)
 
-IF ({PACKAGE_NAME}_ENABLE_Galeri)
+IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos AND (NOT Teuchos_ENABLE_LONG_LONG_INT))
   XPETRA_ADD_TEST_EPETRA(${MueLu_ScalingTestName} 4)

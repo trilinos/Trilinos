@@ -48,7 +48,7 @@
 
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
-#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_Import_fwd.hpp>
 #include <Xpetra_ImportFactory_fwd.hpp>
 #include <Xpetra_Export_fwd.hpp>
@@ -140,11 +140,11 @@ namespace MueLu {
 
   private:
 
-    void MultiplySelfAll(const RCP<Operator>& Op, Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& InnerProdVec) const;
+    void MultiplySelfAll(const RCP<Matrix>& Op, Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& InnerProdVec) const;
 
-    void MultiplyAll(const RCP<Operator>& left, const RCP<Operator>& right, Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& InnerProdVec) const;
+    void MultiplyAll(const RCP<Matrix>& left, const RCP<Matrix>& right, Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& InnerProdVec) const;
 
-    void ComputeRowBasedOmega(Level& fineLevel, Level &coarseLevel, const RCP<Operator>& A, const RCP<Operator>& P0, const RCP<Operator>& DinvAP0, RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & RowBasedOmega) const;
+    void ComputeRowBasedOmega(Level& fineLevel, Level &coarseLevel, const RCP<Matrix>& A, const RCP<Matrix>& P0, const RCP<Matrix>& DinvAP0, RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & RowBasedOmega) const;
 
   private:
 

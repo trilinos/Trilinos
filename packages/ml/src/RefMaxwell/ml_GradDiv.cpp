@@ -377,7 +377,6 @@ int ML_Epetra::SetDefaultsGradDiv(Teuchos::ParameterList & inList,bool OverWrite
   Teuchos::ParameterList & List22_=inList.sublist("graddiv: 22list");
   Teuchos::ParameterList & List11c_=List11_.sublist("face matrix free: coarse");
   Teuchos::ParameterList & List22c_=List22_.sublist("edge matrix free: coarse");
-  Teuchos::ParameterList & ListIf_=inList.sublist("smoother: ifpack list");
 
   /* (1,1) coarse */
   ML_Epetra::SetDefaults("SA",List11c);

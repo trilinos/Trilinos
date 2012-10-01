@@ -71,7 +71,7 @@ namespace MueLu {
 
     Example
     \code
-    Teuchos::RCP<Xpetra::BlockedCrsOperator<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsOperator<Scalar,LO,GO>(mapExtractor,mapExtractor,10));
+    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(mapExtractor,mapExtractor,10));
     // ... let bOp be a 2x2 blocked operator ...
     bOp->fillComplete();
 
@@ -81,8 +81,8 @@ namespace MueLu {
     // define factory for accessing block (1,1) in blocked operator A
     RCP<SubBlockAFactory> A22Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 1, 1));
 
-    RCP<Operator> A11 = level.Get<RCP<Operator> >("A", A11Fact); // extract (0,0) block from blocked operator A
-    RCP<Operator> A22 = level.Get<RCP<Operator> >("A", A22Fact); // extract (1,1) block from blocked operator A
+    RCP<Matrix> A11 = level.Get<RCP<Matrix> >("A", A11Fact); // extract (0,0) block from blocked operator A
+    RCP<Matrix> A22 = level.Get<RCP<Matrix> >("A", A22Fact); // extract (1,1) block from blocked operator A
     \endcode
   */
 

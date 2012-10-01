@@ -108,7 +108,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
 
   // create nonsymmetric tridiagonal matrix
   Scalar epsilon = 1e-3;
-  RCP<Operator> Op = Galeri::Xpetra::TriDiag<SC,LO,GO,Map,CrsOperator>(map, nEle, 1.0, 1.0-epsilon, epsilon);
+  RCP<Matrix> Op = Galeri::Xpetra::TriDiag<SC,LO,GO,Map,CrsMatrixWrap>(map, nEle, 1.0, 1.0-epsilon, epsilon);
 
   // build nullspace
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -196,8 +196,8 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
   TEST_EQUALITY(coarseLevel->GetKeepFlag("PostSmoother",SmooFact.get()), 0);
   TEST_EQUALITY(coarseLevel->GetKeepFlag("R",Rfact.get()), 0);
 
-  RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P");
-  RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R");
+  RCP<Matrix> P1 = coarseLevel->Get< RCP<Matrix> >("P");
+  RCP<Matrix> R1 = coarseLevel->Get< RCP<Matrix> >("R");
   RCP<Level> coarseLevel2 = H->GetLevel(2);
   coarseLevel2->print(out);
   TEST_EQUALITY(coarseLevel2->IsRequested("A",MueLu::NoFactory::get()), false);
@@ -230,8 +230,8 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
   TEST_EQUALITY(coarseLevel->GetKeepFlag("PreSmoother",SmooFact.get()), 0);
   TEST_EQUALITY(coarseLevel->GetKeepFlag("PostSmoother",SmooFact.get()), 0);
   TEST_EQUALITY(coarseLevel->GetKeepFlag("R",Rfact.get()), 0);
-  RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P");
-  RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R");
+  RCP<Matrix> P2 = coarseLevel2->Get< RCP<Matrix> >("P");
+  RCP<Matrix> R2 = coarseLevel2->Get< RCP<Matrix> >("R");
 
   // Define RHS
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
@@ -286,8 +286,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
   GO nIndexBase = 10;
   const RCP<const Map> map = MapFactory::Build(lib, nEle, nIndexBase, comm);
 
-
-  RCP<CrsOperator> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsOperator>::Build(map, 3);
+  RCP<CrsMatrixWrap> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsMatrixWrap>::Build(map, 3);
 
   LocalOrdinal NumMyElements = map->getNodeNumElements();
   Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
@@ -347,7 +346,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
 
   std::cout << map->getIndexBase() << std::endl;
 
-  RCP<Operator> Op = Teuchos::rcp_dynamic_cast<Operator>(mtx);
+  RCP<Matrix> Op = Teuchos::rcp_dynamic_cast<Matrix>(mtx);
 
   // build nullspace
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -488,7 +487,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ColumnBasedOmegas)
   matrixParameters.set("nx",nEle);
 
   // create nonsymmetric tridiagonal matrix
-  RCP<Operator> Op = Galeri::Xpetra::TriDiag<SC,LO,GO,Map,CrsOperator>(map, nEle, 2.0, -1.0, -1.0);
+  RCP<Matrix> Op = Galeri::Xpetra::TriDiag<SC,LO,GO,Map,CrsMatrixWrap>(map, nEle, 2.0, -1.0, -1.0);
 
   // build nullspace
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -543,13 +542,13 @@ TEUCHOS_UNIT_TEST(PgPFactory, ColumnBasedOmegas)
   coarseLevel->print(out);
   TEST_EQUALITY(coarseLevel->IsRequested("A",MueLu::NoFactory::get()), false);
 
-  RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P");
-  RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R");
+  RCP<Matrix> P1 = coarseLevel->Get< RCP<Matrix> >("P");
+  RCP<Matrix> R1 = coarseLevel->Get< RCP<Matrix> >("R");
   RCP<Level> coarseLevel2 = H->GetLevel(2);
   coarseLevel2->print(out);
   TEST_EQUALITY(coarseLevel2->IsRequested("A",MueLu::NoFactory::get()), false);
-  RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P");
-  RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R");
+  RCP<Matrix> P2 = coarseLevel2->Get< RCP<Matrix> >("P");
+  RCP<Matrix> R2 = coarseLevel2->Get< RCP<Matrix> >("R");
 
   // Define RHS
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
@@ -649,7 +648,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegas)
   matrixParameters.set("nx",nEle);
 
   // create nonsymmetric tridiagonal matrix
-  RCP<Operator> Op = Galeri::Xpetra::TriDiag<SC,LO,GO,Map,CrsOperator>(map, nEle, 2.0, -1.0, -1.0);
+  RCP<Matrix> Op = Galeri::Xpetra::TriDiag<SC,LO,GO,Map,CrsMatrixWrap>(map, nEle, 2.0, -1.0, -1.0);
 
   // build nullspace
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -710,13 +709,13 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegas)
   coarseLevel->print(out);
   TEST_EQUALITY(coarseLevel->IsRequested("A",MueLu::NoFactory::get()), false);
 
-  RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P");
-  RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R");
+  RCP<Matrix> P1 = coarseLevel->Get< RCP<Matrix> >("P");
+  RCP<Matrix> R1 = coarseLevel->Get< RCP<Matrix> >("R");
   RCP<Level> coarseLevel2 = H->GetLevel(2);
   coarseLevel2->print(out);
   TEST_EQUALITY(coarseLevel2->IsRequested("A",MueLu::NoFactory::get()), false);
-  RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P");
-  RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R");
+  RCP<Matrix> P2 = coarseLevel2->Get< RCP<Matrix> >("P");
+  RCP<Matrix> R2 = coarseLevel2->Get< RCP<Matrix> >("R");
 
   // Define RHS
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
@@ -817,7 +816,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegasTransP)
   matrixParameters.set("nx",nEle);
 
   // create nonsymmetric tridiagonal matrix
-  RCP<Operator> Op = Galeri::Xpetra::TriDiag<SC,LO,GO,Map,CrsOperator>(map, nEle, 2.0, -1.0, -1.0);
+  RCP<Matrix> Op = Galeri::Xpetra::TriDiag<SC,LO,GO,Map,CrsMatrixWrap>(map, nEle, 2.0, -1.0, -1.0);
 
   // build nullspace
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -878,13 +877,13 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegasTransP)
   coarseLevel->print(out);
   TEST_EQUALITY(coarseLevel->IsRequested("A",MueLu::NoFactory::get()), false);
 
-  RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P");
-  RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R");
+  RCP<Matrix> P1 = coarseLevel->Get< RCP<Matrix> >("P");
+  RCP<Matrix> R1 = coarseLevel->Get< RCP<Matrix> >("R");
   RCP<Level> coarseLevel2 = H->GetLevel(2);
   coarseLevel2->print(out);
   TEST_EQUALITY(coarseLevel2->IsRequested("A",MueLu::NoFactory::get()), false);
-  RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P");
-  RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R");
+  RCP<Matrix> P2 = coarseLevel2->Get< RCP<Matrix> >("P");
+  RCP<Matrix> R2 = coarseLevel2->Get< RCP<Matrix> >("R");
 
   // Define RHS
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
@@ -996,7 +995,8 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       const RCP<const Map> map = MapFactory::Build(lib, nEle, 0, comm);
       Teuchos::ParameterList matrixParameters;
       matrixParameters.set("nx",nEle);
-      RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>("Laplace1D", map, matrixParameters);
+
+      RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>("Laplace1D", map, matrixParameters);
 
       // build nullspace
       RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -1077,8 +1077,8 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       TEST_EQUALITY(coarseLevel->IsAvailable("PreSmoother",SmooFact.get()), false);
       TEST_EQUALITY(coarseLevel->IsAvailable("PostSmoother",SmooFact.get()), false);
       TEST_EQUALITY(coarseLevel->IsAvailable("R",Rfact.get()), false);
-      RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P");
-      RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R");
+      RCP<Matrix> P1 = coarseLevel->Get< RCP<Matrix> >("P");
+      RCP<Matrix> R1 = coarseLevel->Get< RCP<Matrix> >("R");
       TEST_EQUALITY(P1->getGlobalNumRows(), 63);
       TEST_EQUALITY(P1->getGlobalNumCols(), 21);
       TEST_EQUALITY(R1->getGlobalNumRows(), 21);
@@ -1112,14 +1112,14 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       TEST_EQUALITY(coarseLevel2->GetKeepFlag("PreSmoother",SmooFact.get()), 0);
       TEST_EQUALITY(coarseLevel2->GetKeepFlag("PostSmoother",SmooFact.get()), 0);
       TEST_EQUALITY(coarseLevel2->GetKeepFlag("R",Rfact.get()), 0);
-      RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P");
-      RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R");
+      RCP<Matrix> P2 = coarseLevel2->Get< RCP<Matrix> >("P");
+      RCP<Matrix> R2 = coarseLevel2->Get< RCP<Matrix> >("R");
       TEST_EQUALITY(P2->getGlobalNumRows(), 21);
       TEST_EQUALITY(P2->getGlobalNumCols(), 7);
       TEST_EQUALITY(R2->getGlobalNumRows(), 7);
       TEST_EQUALITY(R2->getGlobalNumCols(), 21);
 
-      Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > PtentTPtent = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P1,true,P1,false);
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtentTPtent = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P1,true,P1,false);
       TEST_EQUALITY(PtentTPtent->getGlobalMaxNumRowEntries()-3<1e-12, true);
       TEST_EQUALITY(P1->getGlobalMaxNumRowEntries()-2<1e-12, true);
       TEST_EQUALITY(P2->getGlobalMaxNumRowEntries()-2<1e-12, true);

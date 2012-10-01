@@ -139,9 +139,9 @@ int main(int argc, char *argv[]) {
   // Construct a multigrid preconditioner
   //
 
-  // Turns a Epetra_CrsMatrix into a MueLu::Operator
+  // Turns a Epetra_CrsMatrix into a MueLu::Matrix
   RCP<Xpetra::CrsMatrix<SC, LO, GO, NO, LMO> > mueluA_ = rcp(new Xpetra::EpetraCrsMatrix(A)); //TODO: should not be needed
-  RCP<Xpetra::Operator <SC, LO, GO, NO, LMO> > mueluA  = rcp(new Xpetra::CrsOperator<SC, LO, GO, NO, LMO>(mueluA_));
+  RCP<Xpetra::Matrix <SC, LO, GO, NO, LMO> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<SC, LO, GO, NO, LMO>(mueluA_));
 
   // Multigrid Hierarchy
   RCP<Hierarchy> H = rcp(new Hierarchy(mueluA));
@@ -184,6 +184,8 @@ int main(int argc, char *argv[]) {
   double tol = 1e-4;
 
   aztecSolver.Iterate(maxIts, tol);
+
+  //TODO: test solution
 
 #ifdef HAVE_MPI
   MPI_Finalize();

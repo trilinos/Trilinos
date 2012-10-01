@@ -758,7 +758,8 @@ int Zoltan_RB_Send_Dots_less_memory(
   ZOLTAN_ID_PTR *lidpt,             /* pointer to Local_IDs array.  */
   struct Dot_Struct *dotpt,         /* pointer to Dots info. */
   int **dotmark,                    /* which side of median for each dot */
-  int *proc_list,                   /* list of processors to send dots to GETS REORDERED*/
+  int *proc_list,                   /* list of processors to send dots to; 
+                                       GETS REORDERED*/
   int outgoing,                     /* message exchange counters */
   int *dotnum,                      /* number of dots */
   int *dotmax,                      /* max # of dots arrays can hold */
@@ -783,8 +784,10 @@ int Zoltan_RB_Send_Dots_less_memory(
   MPI_Comm local_comm
 )
 {
-/* Routine to send outgoing dots to their new processors.  On very large problems,
- * we run out of memory when allocating the entire Dot_Struct array of outgoing dots.
+/* Routine to send outgoing dots to their new processors.  
+ * On very large problems,
+ * we run out of memory when allocating the entire Dot_Struct
+ * array of outgoing dots.
  * This is slower but uses the minimum amount of memory.
  */
 
@@ -811,7 +814,7 @@ int Zoltan_RB_Send_Dots_less_memory(
   }
 
   /* Re-order the data to be sent so that data per proc is contiguous.  This
-   * saves memory in Zoltan_Comm_*.  The proc_list input array is reordered here.
+   * saves memory in Zoltan_Comm_*. The proc_list input array is reordered here.
    */
 
   if (outgoing > 0){
@@ -821,7 +824,8 @@ int Zoltan_RB_Send_Dots_less_memory(
     }
   
     firstStaying = *dotnum;       /* location of first dot that is staying */
-    startIncoming = *dotnum - outgoing; /* location of first incoming dot in new array*/
+    startIncoming = *dotnum - outgoing; 
+                            /* location of first incoming dot in new array */
   
     for (i=0,j=0; i < *dotnum; i++){
       if ((*dotmark)[i] != set) {  /* going */
@@ -833,16 +837,19 @@ int Zoltan_RB_Send_Dots_less_memory(
         }
       }
     }
-    Zoltan_quicksort_list_inc_int(proc_list, reorder, 0, outgoing - 1);
+    Zoltan_Comm_Sort_Ints(proc_list, reorder, outgoing);
   }
   else{
     firstStaying = 0;
     startIncoming = *dotnum;
   }
 
-  /* Create comm object TODO64 - in Zoltan_Comm verify that incoming fits in an integer */
+  /* Create comm object
+   * TODO64 - in Zoltan_Comm verify that incoming fits in an integer
+   */
 
-  ierr = Zoltan_Comm_Create(&cobj, outgoing, proc_list, local_comm, message_tag, &incoming);
+  ierr = Zoltan_Comm_Create(&cobj, outgoing, proc_list, local_comm,
+                            message_tag, &incoming);
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_Comm_Create.");
@@ -882,7 +889,8 @@ int Zoltan_RB_Send_Dots_less_memory(
     ierr = reallocate_dot_structure(dotpt, *dotmax);
 
     if (ierr != ZOLTAN_OK){
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "insufficient memory in reallocate_dot_structure\n");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                         "insufficient memory in reallocate_dot_structure\n");
       goto End;
     }
 
@@ -949,8 +957,9 @@ int Zoltan_RB_Send_Dots_less_memory(
     if (num_lid_entries){
 
       /***** Send/receive local IDs *****/
-      ierr = send_receive_ids(*lidpt, num_lid_entries, outgoing, *dotnum, sendbuf,
-                      firstStaying, reorder, *dotmark, set, cobj, message_tag++);
+      ierr = send_receive_ids(*lidpt, num_lid_entries, outgoing, *dotnum,
+                              sendbuf, firstStaying, reorder, *dotmark, set,
+                              cobj, message_tag++);
 
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
     }
@@ -961,8 +970,9 @@ int Zoltan_RB_Send_Dots_less_memory(
   if (dotpt->nWeights > 0){
 
     ierr = send_receive_weights(dotpt->Weight, dotpt->nWeights,
-               outgoing, *dotnum, sendbuf,
-               firstStaying, reorder, *dotmark, set, cobj, message_tag++);
+                                outgoing, *dotnum, sendbuf,
+                                firstStaying, reorder, *dotmark, set,
+                                cobj, message_tag++);
   
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
   }
@@ -970,21 +980,24 @@ int Zoltan_RB_Send_Dots_less_memory(
   /***** Send/receive process owning the dot *****/
 
   ierr = send_receive_ints(dotpt->Proc, outgoing, *dotnum, sendbuf,
-                firstStaying, reorder, *dotmark, set, cobj, message_tag++);
+                           firstStaying, reorder, *dotmark, set,
+                           cobj, message_tag++);
   
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
 
   /***** Send/receive dot's original part *****/
 
   ierr = send_receive_ints(dotpt->Input_Part, outgoing, *dotnum, sendbuf,
-                firstStaying, reorder, *dotmark, set, cobj, message_tag++);
+                           firstStaying, reorder, *dotmark, set,
+                           cobj, message_tag++);
   
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
 
   /***** Send/receive dot's new part *****/
 
   ierr = send_receive_ints(dotpt->Part, outgoing, *dotnum, sendbuf,
-                firstStaying, reorder, *dotmark, set, cobj, message_tag++);
+                           firstStaying, reorder, *dotmark, set,
+                           cobj, message_tag++);
   
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
 
@@ -992,7 +1005,8 @@ int Zoltan_RB_Send_Dots_less_memory(
 
   if (dotpt->Size){
     ierr = send_receive_ints(dotpt->Size, outgoing, *dotnum, sendbuf,
-                firstStaying, reorder, *dotmark, set, cobj, message_tag++);
+                             firstStaying, reorder, *dotmark, set,
+                             cobj, message_tag++);
   
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
   }
@@ -1882,8 +1896,11 @@ static int reallocate_dot_structure(struct Dot_Struct *dots, int newsize)
   return ierr;
 }
 
-static int send_receive_ids(ZOLTAN_ID_TYPE *c, int num_ids, int outgoing, int total, char *sendbuf,
-          int firstStaying, int *reorder, int *dotmark, int set, ZOLTAN_COMM_OBJ *cobj, int message_tag)
+
+static int send_receive_ids(ZOLTAN_ID_TYPE *c, int num_ids, int outgoing, 
+                            int total, char *sendbuf, int firstStaying, 
+                            int *reorder, int *dotmark, int set, 
+                            ZOLTAN_COMM_OBJ *cobj, int message_tag)
 {
   int i, j, next;
   ZOLTAN_ID_TYPE *idval, *from;
@@ -1912,9 +1929,11 @@ static int send_receive_ids(ZOLTAN_ID_TYPE *c, int num_ids, int outgoing, int to
     next = total;
   }
 
-  return Zoltan_Comm_Do(cobj, message_tag, sendbuf, sizeof(ZOLTAN_ID_TYPE) * num_ids, 
+  return Zoltan_Comm_Do(cobj, message_tag, sendbuf,
+                        sizeof(ZOLTAN_ID_TYPE) * num_ids, 
                         (char *)(c + (next * num_ids)));
 }
+
 static int send_receive_ints(int *c, int outgoing, int total, char *sendbuf,
           int firstStaying, int *reorder, int *dotmark, int set, ZOLTAN_COMM_OBJ *cobj, int message_tag)
 {
@@ -1938,10 +1957,14 @@ static int send_receive_ints(int *c, int outgoing, int total, char *sendbuf,
     next = total;
   }
 
-  return Zoltan_Comm_Do(cobj, message_tag, sendbuf, sizeof(int), (char *)(c + next));
+  return Zoltan_Comm_Do(cobj, message_tag, sendbuf, sizeof(int),
+                        (char *)(c + next));
 }
-static int send_receive_weights(double *c, int wgtdim, int outgoing, int total, char *sendbuf,
-          int firstStaying, int *reorder, int *dotmark, int set, ZOLTAN_COMM_OBJ *cobj, int message_tag)
+
+static int send_receive_weights(double *c, int wgtdim, int outgoing, 
+                                int total, char *sendbuf,
+                                int firstStaying, int *reorder, int *dotmark, 
+                                int set, ZOLTAN_COMM_OBJ *cobj, int message_tag)
 {
   int i, j, next;
   double *dval;
@@ -1967,10 +1990,14 @@ static int send_receive_weights(double *c, int wgtdim, int outgoing, int total, 
     next = total*wgtdim;
   }
 
-  return Zoltan_Comm_Do(cobj, message_tag, sendbuf, sizeof(double)*wgtdim, (char *)(c + next));
+  return Zoltan_Comm_Do(cobj, message_tag, sendbuf, sizeof(double)*wgtdim,
+                        (char *)(c + next));
 }
-static int send_receive_doubles(double *c, int outgoing, int total, char *sendbuf,
-          int firstStaying, int *reorder, int *dotmark, int set, ZOLTAN_COMM_OBJ *cobj, int message_tag)
+
+static int send_receive_doubles(double *c, int outgoing, int total,
+                                char *sendbuf, int firstStaying, int *reorder,
+                                int *dotmark, int set, ZOLTAN_COMM_OBJ *cobj,
+                                int message_tag)
 {
   int i, next;
   double *dval;
@@ -1992,7 +2019,8 @@ static int send_receive_doubles(double *c, int outgoing, int total, char *sendbu
     next = total;
   }
 
-  return Zoltan_Comm_Do(cobj, message_tag, sendbuf, sizeof(double), (char *)(c + next));
+  return Zoltan_Comm_Do(cobj, message_tag, sendbuf, sizeof(double),
+                        (char *)(c + next));
 }
 
 /*****************************************************************************/

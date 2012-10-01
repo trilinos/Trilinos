@@ -73,7 +73,7 @@ namespace MueLuTests {
     Level aLevel;
     TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(aLevel);
 
-    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2); //can be an empty operator
+    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2); //can be an empty operator
 
     aLevel.Set("Hitchhiker's Guide", 42);
     int fff = aLevel.Get<int>("Hitchhiker's Guide");
@@ -92,15 +92,15 @@ namespace MueLuTests {
     TEST_EQUALITY(hhh, "Greetings to MueMat");
 
     aLevel.Set("A",A);
-    RCP<Operator> newA = aLevel.Get< RCP<Operator> >("A");
+    RCP<Matrix> newA = aLevel.Get< RCP<Matrix> >("A");
     TEST_EQUALITY(newA, A);
 
     aLevel.Set("R", A);
-    RCP<Operator> newR = aLevel.Get< RCP<Operator> >("R");
+    RCP<Matrix> newR = aLevel.Get< RCP<Matrix> >("R");
     TEST_EQUALITY(newR, A); //TODO from JG: must be tested using another matrix !
 
     aLevel.Set("P", A);
-    RCP<Operator> newP = aLevel.Get< RCP<Operator> >("P");
+    RCP<Matrix> newP = aLevel.Get< RCP<Matrix> >("P");
     TEST_EQUALITY(newP, A);
 
     aLevel.SetLevelID(42);
@@ -112,7 +112,7 @@ namespace MueLuTests {
     Level l;
     l.SetLevelID(0);
 
-    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
+    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
     l.Set("A", A);
 
     RCP<FactoryManager> facManager = rcp(new FactoryManager());
@@ -136,7 +136,7 @@ namespace MueLuTests {
     RCP<FactoryManager> facManager = rcp(new FactoryManager());
     l.SetFactoryManager(facManager);
 
-    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
+    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
     l.Set("A", A);
 
     RCP<FactoryBase> graphFact = rcp(new CoalesceDropFactory());
@@ -165,7 +165,7 @@ namespace MueLuTests {
     RCP<FactoryManager> facManager = rcp(new FactoryManager());
     l.SetFactoryManager(facManager);
 
-    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
+    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
     l.Set("A", A);
 
     RCP<FactoryBase> graphFact = rcp(new CoalesceDropFactory());
@@ -201,7 +201,7 @@ namespace MueLuTests {
     RCP<FactoryManager> facManager = rcp(new FactoryManager());
     l.SetFactoryManager(facManager);
 
-    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(144);
+    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(144);
     l.Set("A", A);
 
     RCP<CoalesceDropFactory>  graphFact = rcp(new CoalesceDropFactory());
@@ -265,7 +265,7 @@ namespace MueLuTests {
     RCP<FactoryManager> facManager = rcp(new FactoryManager());
     l.SetFactoryManager(facManager);
 
-    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(144);
+    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(144);
     l.Set("A", A);
 
     RCP<CoalesceDropFactory>  graphFact = rcp(new CoalesceDropFactory());

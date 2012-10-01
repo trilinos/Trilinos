@@ -322,10 +322,7 @@ HostInternalHWLOC::HostInternalHWLOC()
 
     if ( cache_line_size ) {
       HostInternal::m_cache_line_size = cache_line_size ;
-    }
-    else {
-      // Make a guess at an upper bound ...
-      HostInternal::m_cache_line_size = 64 ;
+      HostInternal::m_work_chunk      = cache_line_size / sizeof(void*);
     }
   }
 }

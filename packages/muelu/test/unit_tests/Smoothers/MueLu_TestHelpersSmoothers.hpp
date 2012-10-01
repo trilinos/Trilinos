@@ -47,7 +47,7 @@
 #define MUELU_TEST_HELPERS_SMOOTHERS_H
 
 #include <Teuchos_FancyOStream.hpp>
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherBase.hpp"

@@ -89,7 +89,7 @@ namespace MueLuTests {
     Level fineLevel, coarseLevel;
     TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
     GO nx = 199;
-    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(nx);
+    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(nx);
     fineLevel.Set("A",A);
 
     //build coordinates

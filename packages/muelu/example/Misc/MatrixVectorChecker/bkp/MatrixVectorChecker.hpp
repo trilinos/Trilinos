@@ -84,8 +84,8 @@ int MatrixVectorChecker(const Epetra_RowMatrix & Mat) {
 
   const Epetra_Map & ColMap = Mat.RowMatrixColMap();
   const Epetra_Map & RowMap = Mat.RowMatrixRowMap();
-  const Epetra_Map & DomMap = Mat.OperatorDomainMap();
-  const Epetra_Map & RanMap = Mat.OperatorRangeMap();
+  const Epetra_Map & DomMap = Mat.MatrixDomainMap();
+  const Epetra_Map & RanMap = Mat.MatrixRangeMap();
   const int           MyPID = RowMap.Comm().MyPID();
   Epetra_Vector v(DomMap),y(RanMap), w(RowMap,true), z(RowMap,true), t(RowMap);
   v.Random();

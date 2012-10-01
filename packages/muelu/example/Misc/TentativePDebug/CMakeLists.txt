@@ -10,20 +10,20 @@ IF ({PACKAGE_NAME}_ENABLE_Galeri)
     tentativePtest
     SOURCES tentativePtest.cpp
     COMM serial mpi
-    DEPLIBS muelu muelu-xpetra muelu-adapters
+    DEPLIBS muelu xpetra muelu-adapters
     )
   
   TRIBITS_ADD_EXECUTABLE(
     SaPtest
     SOURCES SaPtest.cpp
     COMM serial mpi
-    DEPLIBS muelu muelu-xpetra muelu-adapters
+    DEPLIBS muelu xpetra muelu-adapters
     )
   
   TRIBITS_ADD_EXECUTABLE(
     PgPtest
     SOURCES PgPtest.cpp
     COMM serial mpi
-    DEPLIBS muelu muelu-xpetra muelu-adapters
+    DEPLIBS muelu xpetra muelu-adapters
     )
 ENDIF()

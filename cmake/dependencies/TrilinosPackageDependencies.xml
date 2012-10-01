@@ -1289,9 +1289,9 @@
   </Package>
   <Package name="MueLu" dir="packages/muelu" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Xpetra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,Amesos2,Belos,Epetra,EpetraExt,KokkosClassic,Ifpack,Ifpack2,ML,Tpetra,Zoltan,Stratimikos"/>
-    <TEST_REQUIRED_DEP_PACKAGES value="Galeri"/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Tpetra"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,Amesos2,Epetra,EpetraExt,KokkosClassic,Ifpack,Ifpack2,ML,Tpetra,Zoltan,Stratimikos"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="AztecOO,Epetra,EpetraExt,Galeri,Tpetra,Belos"/>
     <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>

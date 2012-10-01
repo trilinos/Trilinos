@@ -37,10 +37,6 @@
 #include "EpetraExt_SolverMap_CrsMatrix.h"
 #endif
 
-#ifdef HAVE_ML_IFPACK
-#include "Ifpack_Preconditioner.h"
-#endif
-
 namespace ML_Epetra
 {
 
@@ -244,7 +240,7 @@ namespace ML_Epetra
     MultiLevelPreconditioner *PreEdgeSmoother;
     MultiLevelPreconditioner *PostEdgeSmoother;
 #ifdef HAVE_ML_IFPACK
-    Ifpack_Preconditioner *IfSmoother;
+    Epetra_Operator *IfSmoother;
 #endif    
 
     //! Solver mode

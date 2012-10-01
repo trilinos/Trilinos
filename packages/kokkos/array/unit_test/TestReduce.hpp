@@ -134,17 +134,23 @@ public:
 
   void run_test( const size_type & nwork )
   {
-    value_type result ;
+    enum { Repeat = 100 };
 
-    KokkosArray::parallel_reduce( nwork , functor_type( nwork ) , result );
+    value_type result[ Repeat ];
 
     const unsigned long nw   = nwork ;
     const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )
                                       : (nw/2) * ( nw + 1 );
 
-    ASSERT_EQ( result.value[0], (ScalarType) nw);
-    ASSERT_EQ( result.value[1], (ScalarType) nsum);
-    ASSERT_EQ( result.value[2], (ScalarType) nsum);
+    for ( unsigned i = 0 ; i < Repeat ; ++i ) {
+      result[i] = KokkosArray::parallel_reduce( nwork , functor_type(nwork) );
+    }
+
+    for ( unsigned i = 0 ; i < Repeat ; ++i ) {
+      ASSERT_EQ( result[i].value[0], (ScalarType) nw);
+      ASSERT_EQ( result[i].value[1], (ScalarType) nsum);
+      ASSERT_EQ( result[i].value[2], (ScalarType) nsum);
+    }
   }
 };
 

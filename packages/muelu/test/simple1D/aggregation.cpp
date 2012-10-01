@@ -60,7 +60,7 @@
 /* CREATE INITAL MATRIX                                                           */
 /**********************************************************************************/
 #include <Xpetra_Map.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
   // Default is Laplace1D with nx = 8748.
   // It's a nice size for 1D and perfect aggregation. (6561=3^8)
   //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
-  MueLu::Gallery::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
   Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
 
   // custom parameters
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
+  RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
   /**********************************************************************************/
   /*                                                                                */
   /**********************************************************************************/

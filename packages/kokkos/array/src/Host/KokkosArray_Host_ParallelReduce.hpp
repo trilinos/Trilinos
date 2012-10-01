@@ -86,9 +86,9 @@ public:
 };
 
 template< class FunctorType , class ReduceTraits , class FinalizeType >
-class ParallelReduce< FunctorType , ReduceTraits , FinalizeType , Host >
-  : public HostThreadWorker<void> {
-private:
+class ParallelReduce< FunctorType , ReduceTraits , FinalizeType , Host > {
+public:
+
   typedef          Host::size_type           size_type ;
   typedef typename ReduceTraits ::value_type value_type ;
 
@@ -96,8 +96,7 @@ private:
   const FinalizeType  m_finalize ;
   const size_type     m_work_count ;
 
-  // Virtual method defined in HostThreadWorker
-  void execute_on_thread( HostThread & this_thread ) const
+  void operator()( HostThread & this_thread ) const
   {
     value_type update ; // This thread's reduction value
 
@@ -113,33 +112,16 @@ private:
     }
 
     // Fan-in reduction of other threads' reduction data:
-    this_thread.reduce< ReduceTraits >( update );
-
-    if ( 0 == this_thread.rank() ) {
-      // Root of the fan-in reduction
-      m_finalize( update );
-    }
+    this_thread.reduce< ReduceTraits >( update , m_finalize );
   }
 
   ParallelReduce( const size_type      work_count ,
                   const FunctorType  & functor ,
                   const FinalizeType & finalize )
-    : HostThreadWorker<void>()
-    , m_work_functor( functor )
+    : m_work_functor( functor )
     , m_finalize( finalize )
     , m_work_count( work_count )
-    {}
-
-public:
-
-  static void execute( const size_type      work_count ,
-                       const FunctorType  & functor ,
-                       const FinalizeType & finalize )
-  {
-    ParallelReduce driver( work_count , functor , finalize );
-
-    HostThreadWorker<void>::execute( driver );
-  }
+    { HostParallelLaunch< ParallelReduce >( *this ); }
 };
 
 } // namespace Impl
@@ -154,9 +136,18 @@ namespace Impl {
 template< class FunctorType , typename ValueType >
 class HostMultiFunctorParallelReduceMember ;
 
+template< typename ValueType >
+struct HostMultiFunctorParallelReduceMember<void,ValueType> {
+
+  virtual ~HostMultiFunctorParallelReduceMember() {}
+
+  virtual void apply( HostThread & , ValueType & ) const = 0 ;
+};
+
+
 template< class FunctorType , typename ValueType >
 class HostMultiFunctorParallelReduceMember
-  : public HostThreadWorker<ValueType> {
+  : public HostMultiFunctorParallelReduceMember<void,ValueType> {
 public:
   typedef Host::size_type size_type ;
     
@@ -173,8 +164,8 @@ public:
     {}
     
   // virtual method
-  void execute_on_thread( HostThread & this_thread ,
-                          ValueType & update ) const
+  void apply( HostThread & this_thread ,
+              ValueType & update ) const
   {
     const std::pair<size_type,size_type> range =
       this_thread.work_range( m_work_count );
@@ -188,12 +179,12 @@ public:
 } // namespace Impl
   
 template< class ReduceTraits , class FinalizeType >
-class MultiFunctorParallelReduce< ReduceTraits , FinalizeType , Host >
-  : public Impl::HostThreadWorker<void> {
-private:
+class MultiFunctorParallelReduce< ReduceTraits , FinalizeType , Host > {
+public:
+
   typedef          Host::size_type            size_type ;
   typedef typename ReduceTraits ::value_type  value_type ;
-  typedef Impl::HostThreadWorker<value_type>  worker_type ;
+  typedef Impl::HostMultiFunctorParallelReduceMember<void,value_type> worker_type ;
 
   typedef std::vector< worker_type * > MemberContainer ;
 
@@ -202,8 +193,7 @@ private:
   MemberContainer m_member_functors ;
   FinalizeType    m_finalize ;
 
-  // Virtual method defined in HostThreadWorker
-  void execute_on_thread( Impl::HostThread & this_thread ) const
+  void operator()( Impl::HostThread & this_thread ) const
   {
     value_type update ; // This thread's reduction value
 
@@ -211,16 +201,11 @@ private:
 
     for ( MemberIterator m  = m_member_functors.begin() ;
                          m != m_member_functors.end() ; ++m ) {
-      (*m)->execute_on_thread( this_thread , update );
+      (*m)->apply( this_thread , update );
     }
 
     // Fan-in reduction of other threads' reduction data:
-    this_thread.reduce< ReduceTraits >( update );
-
-    if ( 0 == this_thread.rank() ) {
-      // Root of the fan-in reduction
-      m_finalize( update );
-    }
+    this_thread.reduce< ReduceTraits >( update , m_finalize );
   }
 
 public:
@@ -228,7 +213,7 @@ public:
   MultiFunctorParallelReduce( const FinalizeType & finalize )
     : m_member_functors()
     , m_finalize( finalize )
-    {}
+    { }
 
   ~MultiFunctorParallelReduce()
   {
@@ -250,7 +235,7 @@ public:
 
   void execute() const
   {
-    Impl::HostThreadWorker<void>::execute( *this );
+    Impl::HostParallelLaunch< MultiFunctorParallelReduce >( *this );
   }
 };
 

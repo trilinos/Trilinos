@@ -48,15 +48,15 @@
 
 #include <Teuchos_ScalarTraits.hpp> 
 
-#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
 #include <Xpetra_ImportFactory_fwd.hpp>
-#include <Xpetra_CrsOperator_fwd.hpp>
+#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_PFactory.hpp"
@@ -224,8 +224,8 @@ namespace MueLu {
 
     - FIXME There is no attempt to detect if the aggregate is too small to support the NS.
     */
-    void MakeTentative(const Operator& fineA, const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const MultiVector & fineNullspace, //-> INPUT
-                       RCP<MultiVector> & coarseNullspace, RCP<Operator> & Ptentative) const;                  //-> OUTPUT
+    void MakeTentative(const Matrix& fineA, const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const MultiVector & fineNullspace, //-> INPUT
+                       RCP<MultiVector> & coarseNullspace, RCP<Matrix> & Ptentative) const;                  //-> OUTPUT
 
   private:
     RCP<const FactoryBase> aggregatesFact_; //! Factory that creates aggregates

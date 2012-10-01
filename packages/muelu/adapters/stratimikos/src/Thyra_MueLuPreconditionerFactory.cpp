@@ -59,8 +59,8 @@
 #include "Teuchos_AbstractFactoryStd.hpp"
 #include "Xpetra_EpetraCrsMatrix.hpp"
 #include "Xpetra_CrsMatrix.hpp"
-#include "Xpetra_Operator.hpp"
-#include "Xpetra_CrsOperator.hpp"
+#include "Xpetra_Matrix.hpp"
+#include "Xpetra_CrsMatrixWrap.hpp"
 
 #include "MueLu_EpetraOperator.hpp"
 #include "MueLu_ParameterListInterpreter.hpp"
@@ -242,11 +242,11 @@ void MueLuPreconditionerFactory::initializePrec(
     timer.start(true);
     // Create the initial preconditioner: DO NOT compute it yet
 
-    // Turns a Epetra_CrsMatrix into a MueLu::Operator
+    // Turns a Epetra_CrsMatrix into a Xpetra::Matrix
     RCP<Epetra_CrsMatrix> epetraFwdCrsMatNonConst = rcp_const_cast<Epetra_CrsMatrix>(epetraFwdCrsMat); // !! TODO: MueLu interface should accept const matrix as input.
 
     RCP<Xpetra::CrsMatrix<double, int, int, NO, LMO> > mueluAcrs = rcp(new Xpetra::EpetraCrsMatrix(epetraFwdCrsMatNonConst)); //TODO: should not be needed
-    RCP<Xpetra::Operator <double, int, int, NO, LMO> > mueluA  = rcp(new Xpetra::CrsOperator<double, int, int, NO, LMO>(mueluAcrs));
+    RCP<Xpetra::Matrix <double, int, int, NO, LMO> >   mueluA    = rcp(new Xpetra::CrsMatrixWrap<double, int, int, NO, LMO>(mueluAcrs));
 
     const RCP<MueLu::Hierarchy<double,int, int, NO, LMO > > muelu_hierarchy = mueluFactory.CreateHierarchy();
     muelu_hierarchy->GetLevel(0)->Set("A", mueluA);

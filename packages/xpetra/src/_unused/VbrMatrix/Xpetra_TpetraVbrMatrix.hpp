@@ -77,7 +77,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name Operator Methods
+    //! @name Matrix Methods
     //@{
 
     //! Returns the Map associated with the domain of this operator.

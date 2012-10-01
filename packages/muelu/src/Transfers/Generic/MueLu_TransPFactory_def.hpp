@@ -49,7 +49,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Time.hpp>
 
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include "MueLu_TransPFactory_decl.hpp"
 #include "MueLu_Utilities.hpp"
@@ -81,15 +81,15 @@ namespace MueLu {
 
     Teuchos::OSTab tab(this->getOStream());
     Teuchos::ParameterList matrixList;
-    RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_.get());
+    RCP<Matrix> P = coarseLevel.Get< RCP<Matrix> >("P", PFact_.get());
 
     //doesn't work -- bug in EpetraExt?
-    //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getRangeMap(),matrixList);
-    //      RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getDomainMap(),matrixList);
-    //RCP<Operator> R = Utils::TwoMatrixMultiply(P,true,I,false); //doesn't work -- bug in EpetraExt?
-    //      RCP<Operator> R = Utils::TwoMatrixMultiply(I,false,P,true);
+    //RCP<Matrix> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrixWrap>("Identity",P->getRangeMap(),matrixList);
+    //      RCP<CrsMatrixWrap> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrixWrap>("Identity",P->getDomainMap(),matrixList);
+    //RCP<Matrix> R = Utils::TwoMatrixMultiply(P,true,I,false); //doesn't work -- bug in EpetraExt?
+    //      RCP<Matrix> R = Utils::TwoMatrixMultiply(I,false,P,true);
 
-    RCP<Operator> R = Utils2::Transpose(P,true);
+    RCP<Matrix> R = Utils2::Transpose(P,true);
 
     coarseLevel.Set("R", R, this);
     

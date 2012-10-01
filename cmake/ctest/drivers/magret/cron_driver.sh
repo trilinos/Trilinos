@@ -12,6 +12,7 @@ export TDD_PARALLEL_LEVEL=2
 # Trilinos settings:
 #
 
+# Submission mode for the *TrilinosDriver* dashboard
 export TDD_CTEST_TEST_TYPE=Nightly
 
 #export CTEST_DO_SUBMIT=FALSE

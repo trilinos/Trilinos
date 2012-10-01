@@ -640,20 +640,20 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
-    <Dependency name="Epetra" type="ITR"/>
+    <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="LO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="LO"/>
     <Dependency name="EpetraExt" type="LO"/>
     <Dependency name="Xpetra" type="LR"/>
     <Dependency name="Isorropia" type="ILO"/>
-    <Dependency name="AztecOO" type="ILO"/>
-    <Dependency name="Galeri" type="TR"/>
+    <Dependency name="AztecOO" type="TO"/>
+    <Dependency name="Galeri" type="TO"/>
     <Dependency name="Amesos2" type="LO"/>
     <Dependency name="Amesos" type="LO"/>
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="ML" type="LO"/>
-    <Dependency name="Belos" type="LO"/>
+    <Dependency name="Belos" type="TO"/>
     <Dependency name="Anasazi" type="ILO"/>
     <Dependency name="Zoltan2" type="ILO"/>
     <Dependency name="Ifpack2" type="LO"/>

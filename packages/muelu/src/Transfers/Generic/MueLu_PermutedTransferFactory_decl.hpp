@@ -46,8 +46,8 @@
 #ifndef MUELU_PERMUTEDTRANSFER_FACTORY_DECL_HPP
 #define MUELU_PERMUTEDTRANSFER_FACTORY_DECL_HPP
 
-#include <Xpetra_Operator_fwd.hpp>
-#include <Xpetra_OperatorFactory_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_MatrixFactory_fwd.hpp>
 #include "Xpetra_Vector_fwd.hpp"
 #include "Xpetra_VectorFactory_fwd.hpp"
 #include "Xpetra_MultiVector_fwd.hpp"

@@ -5,7 +5,7 @@
 //        MueLu: A package for multigrid based preconditioning
 //                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation, 
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,8 @@
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
 // PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
@@ -48,7 +48,7 @@
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 
@@ -74,15 +74,30 @@
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 
+// Note: do not add options that are only recognized by MueLu.
+
+// TODO: this parameter list interpreter should force MueLu to use default ML parameters
+// - Ex: smoother sweep=2 by default for ML
+
+// Read a parameter value from a parameter list and store it into a variable named 'varName'
+#define MUELU_READ_PARAM(paramList, paramStr, varType, defaultValue, varName) \
+varType varName = defaultValue; if (paramList.isParameter(paramStr)) varName = paramList.get<varType>(paramStr);
+
+// Read a parameter value from a paraeter list and copy it into a new parameter list (with another parameter name)
+#define MUELU_COPY_PARAM(paramList, paramStr, varType, defaultValue, outParamList, outParamStr) \
+  if (paramList.isParameter(paramStr))                                  \
+    outParamList.set<varType>(outParamStr, paramList.get<varType>(paramStr)); \
+  else outParamList.set<varType>(outParamStr, defaultValue);            \
+
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLParameterListInterpreter(Teuchos::ParameterList & paramList,std::vector<RCP<FactoryBase> > factoryList) : nullspace_(NULL), TransferFacts_(factoryList), blksize_(1) {
+  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLParameterListInterpreter(Teuchos::ParameterList & paramList, std::vector<RCP<FactoryBase> > factoryList) : nullspace_(NULL), TransferFacts_(factoryList), blksize_(1) {
     SetParameterList(paramList);
   }
   
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLParameterListInterpreter(const std::string & xmlFileName,std::vector<RCP<FactoryBase> > factoryList) : nullspace_(NULL), TransferFacts_(factoryList), blksize_(1) {
+  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLParameterListInterpreter(const std::string & xmlFileName, std::vector<RCP<FactoryBase> > factoryList) : nullspace_(NULL), TransferFacts_(factoryList), blksize_(1) {
     Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile(xmlFileName);
     SetParameterList(*paramList);
   }
@@ -92,40 +107,45 @@ namespace MueLu {
 
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); // TODO: use internal out (GetOStream())
 
-    // Read in common parameters
-    int    maxLevels             = 10;   // multigrid parameters
-    int    verbosityLevel        = 10;   // verbosity level
-    int    maxCoarseSize         = 50;
-    int    nDofsPerNode          = 1;    // coalesce and drop parameters
-    //double agg_threshold         = 0.0;  // aggregation parameters
-    double agg_damping           = 4/3;
-    //int    agg_smoothingsweeps   = 1;
-    int    minPerAgg             = 3;    // optimal for 2d
-    int    maxNbrAlreadySelected = 0;
-    std::string agg_type         = "Uncoupled";
-    bool   bEnergyMinimization = false;  // PGAMG
+    //
+    // Read top-level of the parameter list
+    //
 
-    if(paramList.isParameter("max levels"))                      maxLevels           = paramList.get<int>("max levels");
-    if(paramList.isParameter("ML output"))                       verbosityLevel      = paramList.get<int>("ML output");
-    if(paramList.isParameter("coarse: max size"))                maxCoarseSize       = paramList.get<int>("coarse: max size");
-    if(paramList.isParameter("PDE equations"))                   nDofsPerNode        = paramList.get<int>("PDE equations");
-    //if(paramList.isParameter("aggregation: threshold"))          agg_threshold       = paramList.get<double>("aggregation: threshold");
-    if(paramList.isParameter("aggregation: damping factor"))     agg_damping         = paramList.get<double>("aggregation: damping factor");
-    //if(paramList.isParameter("aggregation: smoothing sweeps"))   agg_smoothingsweeps = paramList.get<int>   ("aggregation: smoothing sweeps");
-    if(paramList.isParameter("aggregation: type"))               agg_type            = paramList.get<std::string> ("aggregation: type");
-    //if(paramList.isParameter("aggregation: nodes per aggregate")) minPerAgg        = paramList.get<int>("aggregation: nodes per aggregate");
-    if(paramList.isParameter("energy minimization: enable"))     bEnergyMinimization = paramList.get<bool>("energy minimization: enable");
+    // default values == ML defaults
+    MUELU_READ_PARAM(paramList, "ML output",                                int,                   0,       verbosityLevel);
+    MUELU_READ_PARAM(paramList, "max levels",                               int,                  10,       maxLevels);
+    MUELU_READ_PARAM(paramList, "PDE equations",                            int,                   1,       nDofsPerNode);
+                                                                                                                                                                                                 
+    MUELU_READ_PARAM(paramList, "coarse: max size",                         int,                 128,       maxCoarseSize);
+                                                                                                                                                                                                   
+    MUELU_READ_PARAM(paramList, "aggregation: type",                std::string,         "Uncoupled",       agg_type);
+    MUELU_READ_PARAM(paramList, "aggregation: threshold",                double,                 0.0,       agg_threshold);
+    MUELU_READ_PARAM(paramList, "aggregation: damping factor",           double, (double)4/(double)3,       agg_damping);
+    MUELU_READ_PARAM(paramList, "aggregation: smoothing sweeps",         double,                   1,       agg_smoothingsweeps);
+    MUELU_READ_PARAM(paramList, "aggregation: nodes per aggregate",         int,                   1,       minPerAgg);
+          
+    MUELU_READ_PARAM(paramList, "null space: type",                 std::string,   "default vectors",       nullspaceType);
+    MUELU_READ_PARAM(paramList, "null space: dimension",                    int,                  -1,       nullspaceDim); // TODO: ML default not in documentation
+    MUELU_READ_PARAM(paramList, "null space: vectors",                   double*,               NULL,       nullspaceVec); // TODO: ML default not in documentation
 
-    // Operator option
+    MUELU_READ_PARAM(paramList, "energy minimization: enable",             bool,               false,       bEnergyMinimization);
+
+    //
+    //
+    //
+
+    int maxNbrAlreadySelected = 0;
+
+    // Matrix option
     blksize_ = nDofsPerNode;
 
     // Translate verbosity parameter
     Teuchos::EVerbosityLevel eVerbLevel = Teuchos::VERB_NONE;
-    if(verbosityLevel == 0)  eVerbLevel = Teuchos::VERB_NONE;
-    if(verbosityLevel >  0 ) eVerbLevel = Teuchos::VERB_LOW;
-    if(verbosityLevel >  4 ) eVerbLevel = Teuchos::VERB_MEDIUM;
-    if(verbosityLevel >  7 ) eVerbLevel = Teuchos::VERB_HIGH;
-    if(verbosityLevel >  9 ) eVerbLevel = Teuchos::VERB_EXTREME;
+    if (verbosityLevel == 0) eVerbLevel = Teuchos::VERB_NONE;
+    if (verbosityLevel >  0) eVerbLevel = Teuchos::VERB_LOW;
+    if (verbosityLevel >  4) eVerbLevel = Teuchos::VERB_MEDIUM;
+    if (verbosityLevel >  7) eVerbLevel = Teuchos::VERB_HIGH;
+    if (verbosityLevel >  9) eVerbLevel = Teuchos::VERB_EXTREME;
 
     TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled", Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter::Setup(): parameter \"aggregation: type\": only 'Uncoupled' aggregation is supported.");
 
@@ -135,7 +155,7 @@ namespace MueLu {
     //dropFact->SetVerbLevel(toMueLuVerbLevel(eVerbLevel));
 
     RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-    if(verbosityLevel > 3) { // TODO fix me: Setup is a static function: we cannot use GetOStream without an object...
+    if (verbosityLevel > 3) { // TODO fix me: Setup is a static function: we cannot use GetOStream without an object...
       *out << "========================= Aggregate option summary  =========================" << std::endl;
       *out << "min Nodes per aggregate :               " << minPerAgg << std::endl;
       *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
@@ -156,13 +176,13 @@ namespace MueLu {
       // tentative prolongation operator (PA-AMG)
       PFact = PtentFact; //rcp( new TentativePFactory() );
       RFact = rcp( new TransPFactory() );
-    } else if(agg_damping != 0.0 && bEnergyMinimization == false) {
+    } else if (agg_damping != 0.0 && bEnergyMinimization == false) {
       // smoothed aggregation (SA-AMG)
       RCP<SaPFactory> SaPFact =  rcp( new SaPFactory(PtentFact) );
       SaPFact->SetDampingFactor(agg_damping);
       PFact  = SaPFact;
       RFact  = rcp( new TransPFactory() );
-    } else if(bEnergyMinimization == true) {
+    } else if (bEnergyMinimization == true) {
       // Petrov Galerkin PG-AMG smoothed aggregation (energy minimization in ML)
       PFact  = rcp( new PgPFactory(PtentFact) );
       RFact  = rcp( new GenericRFactory() );
@@ -172,44 +192,30 @@ namespace MueLu {
     for (size_t i = 0; i<TransferFacts_.size(); i++) {
       AcFact->AddTransferFactory(TransferFacts_[i]);
     }
-
-    RCP<SmootherFactory> coarsestSmooFact;
-    coarsestSmooFact = GetCoarsestSolverFactory(paramList);
+    
+    std::string t("coarse");
+    RCP<SmootherFactory> coarsestSmooFact = GetSmootherFactory(paramList, t); // TODO: missing AFact input arg.
 
     //
-    //
+    // Nullspace factory
     //
 
     // Set fine level nullspace
     // extract pre-computed nullspace from ML parameter list
     // store it in nullspace_ and nullspaceDim_
-    if(paramList.isParameter("null space: type")) {
-      std::string type = "";
-      type = paramList.get<std::string>("null space: type");
-      TEUCHOS_TEST_FOR_EXCEPTION(type != "pre-computed", Exceptions::RuntimeError, "MueLu::Interpreter: no valid nullspace (no pre-computed null space). error.");
+    if (nullspaceType != "default vectors") {
+      TEUCHOS_TEST_FOR_EXCEPTION(nullspaceType != "pre-computed", Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: no valid nullspace (no pre-computed null space). error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(nullspaceDim  == -1,             Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: no valid nullspace (nullspace dim == -1). error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(nullspaceVec  == NULL,           Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: no valid nullspace (nullspace == NULL). You have to provide a valid fine-level nullspace in \'null space: vectors\'");
 
-      int dimns = -1;
-      if(paramList.isParameter("null space: dimension")) dimns = paramList.get<int>("null space: dimension");
-      TEUCHOS_TEST_FOR_EXCEPTION(dimns == -1, Exceptions::RuntimeError, "MueLu::Interpreter: no valid nullspace (nullspace dim = -1). error.");
-
-      //TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("null space: add default vectors"), Exceptions::RuntimeError, "MueLu::Interpreter: The parameter \'null space: add default vectors\' is not supported by MueLu::MLParameterListInterpreter (yet)");
-      // TODO throw a warning
-      //if(paramList.isParameter("null space: add default vectors"))
-      // GetOStream(Warnings0,0) << "MueLu::Interpreter: The parameter \'null space: add default vectors\' is not supported by MueLu::MLParameterListInterpreter (yet)" << std::endl;
-
-      double* nsdata = NULL;
-      if(paramList.isParameter("null space: vectors")) nsdata = paramList.get<double*>("null space: vectors");
-      TEUCHOS_TEST_FOR_EXCEPTION(nsdata == NULL, Exceptions::RuntimeError, "MueLu::Interpreter: no valid nullspace (nsdata = NULL). You have to provide a valid fine-level nullspace in \'null space: vectors\'");
-
-      nullspaceDim_ = dimns;
-      nullspace_    = nsdata;
+      nullspaceDim_ = nullspaceDim;
+      nullspace_    = nullspaceVec;
     }
 
-    // nullspace factory
-    Teuchos::RCP<NullspaceFactory> nspFact = Teuchos::rcp(new NullspaceFactory("Nullspace",PtentFact));
+    Teuchos::RCP<NullspaceFactory> nspFact = Teuchos::rcp(new NullspaceFactory("Nullspace", PtentFact));
 
     //
-    //
+    // Hierarchy + FactoryManager
     //
 
     // Hierarchy options
@@ -218,10 +224,10 @@ namespace MueLu {
     this->maxCoarseSize_   = maxCoarseSize;
 
     // Prepare factory managers
-    for(int levelID=0; levelID < maxLevels; levelID++) {
-      RCP<SmootherFactory> SmooFactFine   = GetSmootherFactory(paramList, levelID);
+    for (int levelID=0; levelID < maxLevels; levelID++) {
+      RCP<SmootherFactory> SmooFactFine   = GetSmootherFactory(paramList, std::string("smoother"), levelID); // TODO: missing AFact input arg.
       RCP<FactoryManager> manager = rcp(new FactoryManager());
-      if(SmooFactFine != Teuchos::null)
+      if (SmooFactFine != Teuchos::null)
     	manager->SetFactory("Smoother" ,  SmooFactFine);    // Hierarchy.Setup uses TOPSmootherFactory, that only needs "Smoother"
       manager->SetFactory("CoarseSolver", coarsestSmooFact);
       manager->SetFactory("Graph", dropFact);
@@ -244,14 +250,14 @@ namespace MueLu {
     // if nullspace_ has already been extracted from ML parameter list
     if (nullspace_ != NULL) {
       RCP<Level> fineLevel = H.GetLevel(0);
-      const RCP<const Map> rowMap = fineLevel->Get< RCP<Operator> >("A")->getRowMap();
+      const RCP<const Map> rowMap = fineLevel->Get< RCP<Matrix> >("A")->getRowMap();
       RCP<MultiVector> nullspace = MultiVectorFactory::Build(rowMap, nullspaceDim_, true);
       
       for ( size_t i=0; i < Teuchos::as<size_t>(nullspaceDim_); i++) {
         Teuchos::ArrayRCP<Scalar> nullspacei = nullspace->getDataNonConst(i);
         const size_t              myLength   = nullspace->getLocalLength();
 
-        for(size_t j = 0; j < myLength; j++) {
+        for (size_t j = 0; j < myLength; j++) {
           nullspacei[j] = nullspace_[i*myLength + j];
         }
       }
@@ -262,191 +268,144 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetCoarsestSolverFactory(const Teuchos::ParameterList & paramList, const RCP<FactoryBase> & AFact) {
+  RCP<MueLu::SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetSmootherFactory(const Teuchos::ParameterList & topLevelParamList, const std::string & smootherTypeStr, const int levelID, const RCP<FactoryBase> & AFact) {
 
-#if (defined(HAVE_MUELU_EPETRA) && defined( HAVE_MUELU_AMESOS)) || (defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)) // FIXME: test is wrong (ex: compiled with Epetra&&Tpetra&&Amesos2 but without Amesos => error running Epetra problem)
-    std::string type = ""; // use default defined by AmesosSmoother or Amesos2Smoother
-#else
-    std::string type = "symmetric Gauss-Seidel"; // use a sym Gauss-Seidel (with no damping) as fallback "coarse solver" (TODO: needs Ifpack(2))
-#endif
-
-    if(paramList.isParameter("coarse: type")) type = paramList.get<std::string>("coarse: type");
-
-    RCP<SmootherPrototype> smooProto;
-    std::string ifpackType;
-    Teuchos::ParameterList ifpackList;
-    RCP<SmootherFactory> SmooFact;
-
-    if(type == "Jacobi") {
-      if(paramList.isParameter("coarse: sweeps"))
-        ifpackList.set<int>("relaxation: sweeps", paramList.get<int>("coarse: sweeps"));
-      else ifpackList.set<int>("relaxation: sweeps", 1);
-      if(paramList.isParameter("coarse: damping factor"))
-        ifpackList.set("relaxation: damping factor", paramList.get<double>("coarse: damping factor"));
-      else ifpackList.set("relaxation: damping factor", 1.0);
-      ifpackType = "RELAXATION";
-      ifpackList.set("relaxation: type", "Jacobi");
-      smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0, AFact) );
-    } else if(type == "Gauss-Seidel") {
-      if(paramList.isParameter("coarse: sweeps"))
-        ifpackList.set<int>("relaxation: sweeps", paramList.get<int>("coarse: sweeps"));
-      else ifpackList.set<int>("relaxation: sweeps", 1);
-      if(paramList.isParameter("coarse: damping factor"))
-        ifpackList.set("relaxation: damping factor", paramList.get<double>("coarse: damping factor"));
-      else ifpackList.set("relaxation: damping factor", 1.0);
-      ifpackType = "RELAXATION";
-      ifpackList.set("relaxation: type", "Gauss-Seidel");
-      smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0, AFact) );
-    } else if (type == "symmetric Gauss-Seidel") {
-      if(paramList.isParameter("coarse: sweeps"))
-        ifpackList.set<int>("relaxation: sweeps", paramList.get<int>("coarse: sweeps"));
-      else ifpackList.set<int>("relaxation: sweeps", 1);
-      if(paramList.isParameter("coarse: damping factor"))
-        ifpackList.set("relaxation: damping factor", paramList.get<double>("coarse: damping factor"));
-      else ifpackList.set("relaxation: damping factor", 1.0);
-      ifpackType = "RELAXATION";
-      ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-      smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0, AFact) );
-    } else if (type == "Chebyshev") {
-      ifpackType = "CHEBYSHEV";
-      if(paramList.isParameter("coarse: sweeps"))
-        ifpackList.set("chebyshev: degree", paramList.get<int>("coarse: sweeps"));
-      if(paramList.isParameter("coarse: Chebyshev alpha"))
-        ifpackList.set("chebyshev: alpha", paramList.get<double>("coarse: Chebyshev alpha"));
-      smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0, AFact) );
-    } else if(type == "IFPACK") {
-#ifdef HAVE_MUELU_IFPACK
-      // TODO change to TrilinosSmoother as soon as Ifpack2 supports all preconditioners from Ifpack
-      ifpackType = paramList.get<std::string>("coarse: ifpack type");
-      if(ifpackType == "ILU") {
-        ifpackList.set<int>("fact: level-of-fill", (int)paramList.get<double>("coarse: ifpack level-of-fill"));
-        ifpackList.set("partitioner: overlap", paramList.get<int>("coarse: ifpack overlap"));
-        smooProto = MueLu::GetIfpackSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(ifpackType, ifpackList, paramList.get<int>("coarse: ifpack overlap"), AFact);
-      }
-      else
-        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Interpreter: unknown ML smoother type " + type + " (IFPACK) not supported by MueLu. Only ILU is supported.");
-#else // HAVE_MUELU_IFPACK
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Interpreter: MueLu compiled without Ifpack support");
-#endif // HAVE_MUELU_IFPACK
-    } else if(type == "Amesos-Superlu") {
-      smooProto = Teuchos::rcp( new DirectSolver("Superlu",Teuchos::ParameterList(),AFact) );
-    } else if(type == "Amesos-Superludist") {
-      smooProto = Teuchos::rcp( new DirectSolver("Superludist",Teuchos::ParameterList(),AFact) );
-    } else if(type == "Amesos-KLU") {
-      smooProto = Teuchos::rcp( new DirectSolver("Klu",Teuchos::ParameterList(),AFact) );
-    } else if(type == "Amesos-UMFPACK") {
-      smooProto = Teuchos::rcp( new DirectSolver("Umfpack",Teuchos::ParameterList(),AFact) );
-    } else if(type == "") {
-      smooProto = Teuchos::rcp( new DirectSolver("",Teuchos::ParameterList(),AFact) );
-    } else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Interpreter: unknown coarsest solver type. '" << type << "' not supported by MueLu.");
-    }
-
-    // create smoother factory
-    TEUCHOS_TEST_FOR_EXCEPTION(smooProto == Teuchos::null, Exceptions::RuntimeError, "MueLu::Interpreter: no smoother prototype. fatal error.");
-    SmooFact = rcp( new SmootherFactory(smooProto) );
-
-    // check if pre- and postsmoothing is set
-    std::string preorpost = "both";
-    if(paramList.isParameter("coarse: pre or post")) preorpost = paramList.get<std::string>("coarse: pre or post");
-
-    if (preorpost == "pre") {
-      SmooFact->SetSmootherPrototypes(smooProto, Teuchos::null);
-    } else if(preorpost == "post") {
-      SmooFact->SetSmootherPrototypes(Teuchos::null, smooProto);
-    }
-
-    return SmooFact;
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetSmootherFactory(const Teuchos::ParameterList & paramList, int level, const RCP<FactoryBase> & AFact) {
-
-    char levelchar[11];
-    sprintf(levelchar,"(level %d)",level);
-    std::string levelstr(levelchar);
-
-    if(paramList.isSublist("smoother: list " + levelstr)==false)
-      return Teuchos::null;
-    //TEUCHOS_TEST_FOR_EXCEPTION(paramList.isSublist("smoother: list " + levelstr)==false, Exceptions::RuntimeError, "MueLu::Interpreter: no ML smoother parameter list for level. error.");
-
-    std::string type = paramList.sublist("smoother: list " + levelstr).get<std::string>("smoother: type");
-    TEUCHOS_TEST_FOR_EXCEPTION(type.empty(), Exceptions::RuntimeError, "MueLu::Interpreter: no ML smoother type for level. error.");
-
-    const Teuchos::ParameterList smolevelsublist = paramList.sublist("smoother: list " + levelstr);
-    RCP<SmootherPrototype> smooProto;
-    std::string ifpackType;
-    Teuchos::ParameterList ifpackList;
-    RCP<SmootherFactory> SmooFact;
-
-    if(type == "Jacobi") {
-      if(smolevelsublist.isParameter("smoother: sweeps"))
-        ifpackList.set<int>("relaxation: sweeps", smolevelsublist.get<int>("smoother: sweeps"));
-      if(smolevelsublist.get<double>("smoother: damping factor"))
-        ifpackList.set("relaxation: damping factor", smolevelsublist.get<double>("smoother: damping factor"));
-      ifpackType = "RELAXATION";
-      ifpackList.set("relaxation: type", "Jacobi");
-      smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0, AFact) );
-    } else if(type == "Gauss-Seidel") {
-      if(smolevelsublist.isParameter("smoother: sweeps"))
-        ifpackList.set<int>("relaxation: sweeps", smolevelsublist.get<int>("smoother: sweeps"));
-      if(smolevelsublist.get<double>("smoother: damping factor"))
-        ifpackList.set("relaxation: damping factor", smolevelsublist.get<double>("smoother: damping factor"));
-      ifpackType = "RELAXATION";
-      ifpackList.set("relaxation: type", "Gauss-Seidel");
-      smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0, AFact) );
-    } else if (type == "symmetric Gauss-Seidel") {
-      if(smolevelsublist.isParameter("smoother: sweeps"))
-        ifpackList.set<int>("relaxation: sweeps", smolevelsublist.get<int>("smoother: sweeps"));
-      if(smolevelsublist.get<double>("smoother: damping factor"))
-        ifpackList.set("relaxation: damping factor", smolevelsublist.get<double>("smoother: damping factor"));
-      ifpackType = "RELAXATION";
-      ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-      smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0, AFact) );
-    } else if (type == "Chebyshev") {
-      ifpackType = "CHEBYSHEV";
-      if(smolevelsublist.isParameter("smoother: sweeps"))
-        ifpackList.set("chebyshev: degree", smolevelsublist.get<int>("smoother: sweeps"));
-      smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0, AFact) );
-      // TODO what about the other parameters
-    } else if(type == "IFPACK") {
-#ifdef HAVE_MUELU_IFPACK
-      // TODO change to TrilinosSmoother as soon as Ifpack2 supports all preconditioners from Ifpack
-      ifpackType = paramList.sublist("smoother: list " + levelstr).get<std::string>("smoother: ifpack type");
-      if(ifpackType == "ILU") {
-        ifpackList.set<int>("fact: level-of-fill", (int)smolevelsublist.get<double>("smoother: ifpack level-of-fill"));
-        ifpackList.set("partitioner: overlap", smolevelsublist.get<int>("smoother: ifpack overlap"));
-        smooProto = MueLu::GetIfpackSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(ifpackType, ifpackList,smolevelsublist.get<int>("smoother: ifpack overlap"),AFact);
-      }
-      else
-        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Interpreter: unknown ML smoother type " + type + " (IFPACK) not supported by MueLu. Only ILU is supported.");
-#else // HAVE_MUELU_IFPACK
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Interpreter: MueLu compiled without Ifpack support");
-#endif // HAVE_MUELU_IFPACK
-    } else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Interpreter: unknown ML smoother type " + type + " not supported by MueLu.");
-    }
-
-    // create smoother factory
-    //smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList) );
-    SmooFact = rcp( new SmootherFactory(smooProto) );
-
-    // check if pre- and postsmoothing is set
-    std::string preorpost = "both";
-    if(smolevelsublist.isParameter("smoother: pre or post")) preorpost = smolevelsublist.get<std::string>("smoother: pre or post");
-
-    if (preorpost == "pre") {
-      SmooFact->SetSmootherPrototypes(smooProto, Teuchos::null);
-    } else if(preorpost == "post") {
-      SmooFact->SetSmootherPrototypes(Teuchos::null, smooProto);
-    }
-
-    // DEBUG only
-    /*RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      RCP<TrilinosSmoother> tSmooProto = Teuchos::rcp_dynamic_cast<TrilinosSmoother>(smooProto);
-      std::cout << "SmooProto " << level << std::endl;
-      tSmooProto->print(*out, toMueLuVerbLevel(Teuchos::VERB_EXTREME));*/
     //
+    // Select the parameter list to be parsed 
+    //
+
+    Teuchos::ParameterList paramList; // parameter list that will be parsed
+    std::string levelStr;             // string uses to identify the sub parameter list that will be parsed
+
+    if (smootherTypeStr == "smoother") {
+      TEUCHOS_TEST_FOR_EXCEPT(levelID == -1);
+
+      char levelChar[11];
+      sprintf(levelChar, "(level %d)", levelID);
+      levelStr = levelChar;
+    
+      if (paramList.isSublist(smootherTypeStr + ": list " + levelStr) == false)
+        return Teuchos::null;
+      //TEUCHOS_TEST_FOR_EXCEPTION(paramList.isSublist("smoother: list " + levelStr)==false, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: no ML smoother parameter list for level. error.");
+      
+      paramList = paramList.sublist("smoother: list " + levelStr);
+  
+    } else if (smootherTypeStr == "coarse") {
+
+      levelStr = "";
+      paramList = topLevelParamList;
+
+    } else {
+
+      TEUCHOS_TEST_FOR_EXCEPT(true);
+
+    }
+
+    //
+    // Get 'type'
+    //
+
+    //TODO: fix defaults!!
+
+    // Default coarse grid smoother
+    std::string type;
+    if (smootherTypeStr == "coarse") {
+#if (defined(HAVE_MUELU_EPETRA) && defined( HAVE_MUELU_AMESOS)) || (defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)) // FIXME: test is wrong (ex: compiled with Epetra&&Tpetra&&Amesos2 but without Amesos => error running Epetra problem)
+      type = ""; // use default defined by AmesosSmoother or Amesos2Smoother
+#else
+      type = "symmetric Gauss-Seidel"; // use a sym Gauss-Seidel (with no damping) as fallback "coarse solver" (TODO: needs Ifpack(2))
+#endif
+    } else {
+      // TODO: default smoother?
+      type = "";
+    }
+
+    if (paramList.isParameter(smootherTypeStr + ": type")) type = paramList.get<std::string>(smootherTypeStr + ": type");
+    TEUCHOS_TEST_FOR_EXCEPTION(type.empty(), Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: no ML smoother type for level. error.");
+
+    //
+    // Create the smoother prototype
+    //
+
+    RCP<SmootherPrototype> smooProto;
+    std::string ifpackType;
+    Teuchos::ParameterList smootherParamList;
+
+    if (type == "Jacobi" || type == "Gauss-Seidel" || type == "symmetric Gauss-Seidel") {
+      if (type == "symmetric Gauss-Seidel") type = "Symmetric Gauss-Seidel"; // FIXME
+
+      ifpackType = "RELAXATION";
+      smootherParamList.set("relaxation: type", type);
+
+      MUELU_COPY_PARAM(paramList, smootherTypeStr + ": sweeps",            int,   2, smootherParamList, "relaxation: sweeps");
+      MUELU_COPY_PARAM(paramList, smootherTypeStr + ": damping factor", double, 1.0, smootherParamList, "relaxation: damping factor");
+
+      smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0, AFact) );
+
+    } else if (type == "Chebyshev") {
+
+      ifpackType = "CHEBYSHEV";
+
+      MUELU_COPY_PARAM(paramList, smootherTypeStr + ": sweeps",          int, 2,  smootherParamList, "chebyshev: degree");
+      MUELU_COPY_PARAM(paramList, smootherTypeStr + ": Chebyshev alpha", int, 30, smootherParamList, "chebyshev: alpha");
+
+      smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0, AFact) );
+
+    } else if (type == "IFPACK") { // TODO: this option is not described in the ML Guide v5.0
+
+#ifdef HAVE_MUELU_IFPACK
+      ifpackType = paramList.get<std::string>(smootherTypeStr + ": ifpack type");
+
+      if (ifpackType == "ILU") {
+        MUELU_COPY_PARAM(paramList, smootherTypeStr + ": ifpack level-of-fill", int, 2,  smootherParamList, "fact: level-of-fill");
+        MUELU_COPY_PARAM(paramList, smootherTypeStr + ": ifpack overlap",       int, 2,  smootherParamList, "partitioner: overlap");
+
+        // TODO change to TrilinosSmoother as soon as Ifpack2 supports all preconditioners from Ifpack
+        smooProto = MueLu::GetIfpackSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(ifpackType, smootherParamList, paramList.get<int>(smootherTypeStr + ": ifpack overlap"), AFact);
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: unknown ML smoother type " + type + " (IFPACK) not supported by MueLu. Only ILU is supported.");
+      }
+#else // HAVE_MUELU_IFPACK
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: MueLu compiled without Ifpack support");
+#endif // HAVE_MUELU_IFPACK
+
+    } else if (type.length() > strlen("Amesos") && type.substr(0, strlen("Amesos")) == "Amesos") {  /* catch Amesos-* */
+      std::string solverType = type.substr(strlen("Amesos")+1);  /* ("Amesos-KLU" -> "KLU") */
+
+      // Validator: following upper/lower case is what is allowed by ML
+      bool valid = false;
+      const int  validatorSize = 5;
+      std::string validator[validatorSize] = {"Superlu", "Superludist", "KLU", "UMFPACK"}; /* TODO: should "" be allowed? */
+      for (int i=0; i < validatorSize; i++) { if (validator[i] == solverType) valid = true; }
+      TEUCHOS_TEST_FOR_EXCEPTION(!valid, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: unknown smoother type. '" << type << "' not supported.");
+
+      // FIXME: MueLu should accept any Upper/Lower case. Not the case for the moment
+      std::transform(solverType.begin()+1, solverType.end(), solverType.begin()+1, ::tolower);
+
+      smooProto = Teuchos::rcp( new DirectSolver(solverType, Teuchos::ParameterList(), AFact) );
+
+    } else {
+
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: unknown smoother type. '" << type << "' not supported by MueLu.");
+
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(smooProto == Teuchos::null, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: no smoother prototype. fatal error.");
+
+    //
+    // Create the smoother factory
+    //
+
+    RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory() );
+
+    // Set parameters of the smoother factory
+    MUELU_READ_PARAM(paramList, smootherTypeStr + ": pre or post", std::string, "both", preOrPost);
+    if (preOrPost == "both") {
+      SmooFact->SetSmootherPrototypes(smooProto, smooProto);
+    } else if (preOrPost == "pre") {
+      SmooFact->SetSmootherPrototypes(smooProto, Teuchos::null);
+    } else if (preOrPost == "post") {
+      SmooFact->SetSmootherPrototypes(Teuchos::null, smooProto);
+    }
 
     return SmooFact;
   }
@@ -454,7 +413,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddTransferFactory(const RCP<FactoryBase>& factory) {
     // check if it's a TwoLevelFactoryBase based transfer factory
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<TwoLevelFactoryBase>(factory) == Teuchos::null,Exceptions::BadCast, "Transfer factory is not derived from TwoLevelFactoryBase. Since transfer factories will be handled by the RAPFactory they have to be derived from TwoLevelFactoryBase!");
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<TwoLevelFactoryBase>(factory) == Teuchos::null, Exceptions::BadCast, "Transfer factory is not derived from TwoLevelFactoryBase. Since transfer factories will be handled by the RAPFactory they have to be derived from TwoLevelFactoryBase!");
     TransferFacts_.push_back(factory);
   }
 
@@ -464,7 +423,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupOperator(Operator & Op) const {
+  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupMatrix(Matrix & Op) const {
       Op.SetFixedBlockSize(blksize_);
   }
 
@@ -472,3 +431,5 @@ namespace MueLu {
 
 #define MUELU_MLPARAMETERLISTINTERPRETER_SHORT
 #endif /* MUELU_MLPARAMETERLISTINTERPRETER_DEF_HPP */
+
+//TODO: see if it can be factorized with ML interpreter (ex: generation of Ifpack param list)

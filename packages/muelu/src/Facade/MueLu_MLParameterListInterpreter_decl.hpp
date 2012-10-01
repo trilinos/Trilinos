@@ -43,19 +43,13 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_Interpreter_decl.hpp
- *
- *  Created on: Dec 7, 2011
- *      Author: wiesner
- */
 
 #ifndef MUELU_MLPARAMETERLISTINTERPRETER_DECL_HPP
 #define MUELU_MLPARAMETERLISTINTERPRETER_DECL_HPP
 
 #include <Teuchos_ParameterList.hpp>
 
-#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -87,6 +81,7 @@ namespace MueLu {
   /*!
     @class MLParameterListInterpreter class.
     @brief Class that accepts ML-style parameters and builds a MueLu preconditioner.
+    This interpreter uses the same default values as ML. This allows to compare ML/MueLu results
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
@@ -143,11 +138,11 @@ namespace MueLu {
     //! @brief static helper functions that also can be used from outside for translating ML parameters into MueLu objects
     //@{
 
-    //! Read coarse solver options and build the corresponding smoother factory
-    static RCP<SmootherFactory> GetCoarsestSolverFactory(const Teuchos::ParameterList & params, const RCP<FactoryBase> & AFact = Teuchos::null);
-
     //! Read smoother options and build the corresponding smoother factory
-    static RCP<SmootherFactory> GetSmootherFactory(const Teuchos::ParameterList & params, int level, const RCP<FactoryBase> & AFact = Teuchos::null);
+    // @param smootherType: "smoother" or "coarse"
+    // @param level: level number (must be specified if smootherType == "smootherType")
+    // @param AFact: Factory used by smoother to find 'A'
+    static RCP<SmootherFactory> GetSmootherFactory(const Teuchos::ParameterList & topLevelParamList, const std::string & smootherType, const int levelID = -1, const RCP<FactoryBase> & AFact = Teuchos::null);
 
     //@}
 
@@ -160,7 +155,7 @@ namespace MueLu {
     to add some factories that write out some debug information etc. which are not handled by the ML
     Parameter List itself. See information about the RAPFactory::AddTransferFactory method, too!
     */
-    void AddTransferFactory(const RCP<FactoryBase>& factory);
+    void AddTransferFactory(const RCP<FactoryBase> & factory);
 
     //! Returns number of transfer factories.
     size_t NumTransferFactories() const;
@@ -181,12 +176,12 @@ namespace MueLu {
     //! capabibilities of ML.
     std::vector<RCP<FactoryBase> > TransferFacts_;
 
-    //@{ Operator configuration
+    //@{ Matrix configuration
 
-    //! Setup Operator object
-    virtual void SetupOperator(Operator & Op) const;
+    //! Setup Matrix object
+    virtual void SetupMatrix(Matrix & Op) const;
 
-    //! Operator configuration storage
+    //! Matrix configuration storage
     int blksize_;
 
     //@}

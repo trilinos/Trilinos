@@ -151,7 +151,7 @@ namespace MueLu {
 
     //@{
     /*! @brief Get data without decrementing associated storage counter (i.e., read-only access).
-     *   Usage: Level->Get< RCP<Operator> >("A", factory)
+     *   Usage: Level->Get< RCP<Matrix> >("A", factory)
      *   if factory == NULL => use default factory
      *
      *  @param[in] const std::string& ename

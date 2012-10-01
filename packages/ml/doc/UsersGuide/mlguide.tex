@@ -1217,6 +1217,9 @@ factorization methods from \ifpack.  See Ifpack manual
 these methods.  See \S\ref{smoothing parameters} for associated
 \ML\ parameter list options.\\
 %
+\verb!IFPACK!          & Additive Schwarz smoother.  The subdomain solver should be specified by
+also setting {\tt smoother: ifpack type}.\\
+%
 \verb!Aztec!                     & Use \aztecoo's built-in preconditioners as
 smoothers. Or, if {\tt smoother: Aztec as solver} is {\tt true},  use
 an \aztecoo\ Krylov method as smoother.
@@ -1236,7 +1239,8 @@ more information.
 \\
 \hline
 \end{tabular}
-\caption{{\sf ML\_Epetra::MultiLevelPreconditioner}: Commonly used smoothers.
+\caption{{\sf ML\_Epetra::MultiLevelPreconditioner}: Commonly used smoothers.  Note that these
+smoothers can also be used as coarse grid solvers.
 Unless otherwise noted, number of sweeps is specified with {\tt smoother: sweeps}.
 In {\tt Gauss-Seidel} and {\tt symmetric Gauss-Seidel},
 \ifpack\ implementation is automatically used (if available)
@@ -1335,6 +1339,7 @@ Specify damping with {\tt coarse: damping factor}.\\
 \end{tabular}
 \caption{{\sf ML\_Epetra::MultiLevelPreconditioner}: Commonly used coarse
 matrix solvers.
+{\bf Note:} any smoother in Table \ref{tab:ml:smoother} can also be used as a coarse grid solver.
 Unless otherwise noted, number of sweeps is specified with {\tt coarse: sweeps}.
 To use Amesos solvers, 
 \ML\ must be configured with {\tt with-ml\_amesos}, and Amesos must
@@ -1780,6 +1785,13 @@ reference-counted pointer to {\sc Aztec}'s params vector (only for {\tt Aztec}
   solvers will be used as smoothers. If false, only the {\sc Aztec}'s
   preconditioner function will be used as smoother (only for {\tt Aztec}
   smoother). Default: {\tt false}.}
+
+\choicebox{\tt smoother: ifpack type $\star$}
+{
+[{\tt string}]
+When the smoother type is {\tt IFPACK} (additive Schwarz), this option specifies the subdomain solver.
+Default: {\tt Amesos}.
+}
 
 \choicebox{\tt smoother: ifpack level-of-fill $\star$}
 {

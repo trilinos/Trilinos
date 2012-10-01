@@ -62,7 +62,7 @@
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
+  RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
   /**********************************************************************************/
   /*                                                                                */
   /**********************************************************************************/
@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList status;
   status = H->FullPopulate(*Pfact,*Rfact,*Acfact,*SmooFact,0,maxLevels);
   //RCP<MueLu::Level> coarseLevel = H.GetLevel(1);
-  //RCP<Operator> P = coarseLevel->template Get< RCP<Operator> >("P");
+  //RCP<Matrix> P = coarseLevel->template Get< RCP<Matrix> >("P");
   //fileName = "Pfinal.mm";
   //Utils::Write(fileName,P);
   if (comm->getRank() == 0) {

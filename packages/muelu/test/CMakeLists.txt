@@ -3,7 +3,7 @@ TRIBITS_ADD_TEST_DIRECTORIES(simple1D)
 TRIBITS_ADD_TEST_DIRECTORIES(structure2D)
 TRIBITS_ADD_TEST_DIRECTORIES(scaling)
 TRIBITS_ADD_TEST_DIRECTORIES(profiling)
-TRIBITS_ADD_TEST_DIRECTORIES(BlockedTransferOperators)
+TRIBITS_ADD_TEST_DIRECTORIES(blockedtransfer)
 TRIBITS_ADD_TEST_DIRECTORIES(navierstokes)
 #TRIBITS_ADD_TEST_DIRECTORIES(transferOps)
 
@@ -22,6 +22,6 @@ SET(SOURCES "")
 #    SOURCES ${SOURCES}
 #    ARGS ""
 #    COMM serial
-#    DEPLIBS muelu muelu-xpetra
+#    DEPLIBS muelu xpetra
 #  )
 

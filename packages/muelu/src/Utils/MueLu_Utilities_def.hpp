@@ -74,8 +74,8 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_BlockedCrsOperator.hpp>
-#include <Xpetra_OperatorFactory.hpp>
+#include <Xpetra_BlockedCrsMatrix.hpp>
+#include <Xpetra_MatrixFactory.hpp>
 
 #include <MueLu_Utilities_decl.hpp>
 
@@ -97,7 +97,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_EPETRA
   //defined after Utils class
   template<typename SC,typename LO,typename GO,typename NO, typename LMO>
-  RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator(RCP<Epetra_CrsMatrix> &epAB);
+  RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB);
 #endif
 
 #ifdef HAVE_MUELU_EPETRA
@@ -138,12 +138,12 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2EpetraCrs(RCP<Operator> Op) {
+  RCP<const Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2EpetraCrs(RCP<Matrix> Op) {
     RCP<const Epetra_CrsMatrix> A;
     // Get the underlying Epetra Mtx
-    RCP<const CrsOperator> crsOp = rcp_dynamic_cast<const CrsOperator>(Op);
+    RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
     if (crsOp == Teuchos::null)
-      throw(Exceptions::BadCast("Cast from Xpetra::Operator to Xpetra::CrsOperator failed"));
+      throw(Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
     RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
     const RCP<const EpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const EpetraCrsMatrix>(tmp_CrsMtx);
     if (tmp_ECrsMtx == Teuchos::null)
@@ -154,12 +154,12 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstEpetraCrs(RCP<Operator> Op) {
+  RCP<Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstEpetraCrs(RCP<Matrix> Op) {
     RCP<Epetra_CrsMatrix> A;
     // Get the underlying Epetra Mtx
-    RCP<const CrsOperator> crsOp = rcp_dynamic_cast<const CrsOperator>(Op);
+    RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
     if (crsOp == Teuchos::null)
-      throw(Exceptions::BadCast("Cast from Xpetra::Operator to Xpetra::CrsOperator failed"));
+      throw(Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
     RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
     const RCP<const EpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const EpetraCrsMatrix>(tmp_CrsMtx);
     if (tmp_ECrsMtx == Teuchos::null)
@@ -218,12 +218,12 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2TpetraCrs(RCP<Operator> Op) {
+  RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2TpetraCrs(RCP<Matrix> Op) {
     RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A;
     // Get the underlying Tpetra Mtx
-    RCP<const CrsOperator> crsOp = rcp_dynamic_cast<const CrsOperator>(Op);
+    RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
     if (crsOp == Teuchos::null)
-      throw(Exceptions::BadCast("Cast from Xpetra::Operator to Xpetra::CrsOperator failed"));
+      throw(Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
     RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
     const RCP<const TpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const TpetraCrsMatrix>(tmp_CrsMtx);
     if (tmp_ECrsMtx == Teuchos::null)
@@ -234,12 +234,12 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstTpetraCrs(RCP<Operator> Op) {
+  RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstTpetraCrs(RCP<Matrix> Op) {
     RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A;
     // Get the underlying Tpetra Mtx
-    RCP<const CrsOperator> crsOp = rcp_dynamic_cast<const CrsOperator>(Op);
+    RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
     if (crsOp == Teuchos::null)
-      throw(Exceptions::BadCast("Cast from Xpetra::Operator to Xpetra::CrsOperator failed"));
+      throw(Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
     RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
     const RCP<const TpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const TpetraCrsMatrix>(tmp_CrsMtx);
     if (tmp_ECrsMtx == Teuchos::null)
@@ -252,8 +252,8 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixMultiply(RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > const &A, bool transposeA,
-                                         RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > const &B, bool transposeB,
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixMultiply(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > const &A, bool transposeA,
+                                         RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > const &B, bool transposeB,
                                          bool doFillComplete,
                                          bool doOptimizeStorage)
   {
@@ -263,10 +263,10 @@ static double t0=0,t1=0;
 t0 = MPI_Wtime();
 #endif
 
-    RCP<Operator> C;
+    RCP<Matrix> C;
     //TODO Can we come up with an estimate for nnz-per-row for result C?
-    if(transposeA) C = OperatorFactory::Build(A->getDomainMap(), 1);
-    else C = OperatorFactory::Build(A->getRowMap(), 1);
+    if(transposeA) C = MatrixFactory::Build(A->getDomainMap(), 1);
+    else C = MatrixFactory::Build(A->getRowMap(), 1);
 
     if (!A->isFillComplete())
       throw(Exceptions::RuntimeError("A is not fill-completed"));
@@ -296,7 +296,7 @@ t0 = MPI_Wtime();
 //#define USE_JHU_ML_MULTIPLY
 #ifdef USE_JHU_ML_MULTIPLY // Jonathan's ML-MULTIPLY
 
-            //ML matrix multiply wrap that uses ML_Operator_WrapEpetraCrsMatrix
+            //ML matrix multiply wrap that uses ML_Matrix_WrapEpetraCrsMatrix
             ML_Comm* comm;
             ML_Comm_Create(&comm);
             if (comm->ML_mypid == 0)
@@ -310,26 +310,26 @@ t0 = MPI_Wtime();
             //in order to use ML, there must be no indices missing from the matrix column maps.
             EpetraExt::CrsMatrix_SolverMap AcolMapTransform;
             Epetra_CrsMatrix *transA = &(AcolMapTransform(*epA));
-            ML_Operator *mlA = ML_Operator_Create(comm);
-            ML_Operator_WrapEpetraCrsMatrix(transA,mlA);
+            ML_Matrix *mlA = ML_Matrix_Create(comm);
+            ML_Matrix_WrapEpetraCrsMatrix(transA,mlA);
 
             EpetraExt::CrsMatrix_SolverMap BcolMapTransform;
             Epetra_CrsMatrix *transB = &(BcolMapTransform(*epB));
-            ML_Operator *mlB = ML_Operator_Create(comm);
-            ML_Operator_WrapEpetraCrsMatrix(transB,mlB);
+            ML_Matrix *mlB = ML_Matrix_Create(comm);
+            ML_Matrix_WrapEpetraCrsMatrix(transB,mlB);
 
-            ML_Operator *mlAB = ML_Operator_Create(comm);
+            ML_Matrix *mlAB = ML_Matrix_Create(comm);
             ML_2matmult(mlA,mlB,mlAB,ML_CSR_MATRIX);
     
             /* Wrap back */
             int nnz;
             double time;
             Epetra_CrsMatrix *result;
-            ML_Operator2EpetraCrsMatrix(mlAB,result,nnz,false,time,0,false);
+            ML_Matrix2EpetraCrsMatrix(mlAB,result,nnz,false,time,0,false);
             result->OptimizeStorage();
-            ML_Operator_Destroy(&mlA);
-            ML_Operator_Destroy(&mlB);
-            ML_Operator_Destroy(&mlAB);
+            ML_Matrix_Destroy(&mlA);
+            ML_Matrix_Destroy(&mlB);
+            ML_Matrix_Destroy(&mlAB);
             ML_Comm_Destroy(&comm);
 
             RCP<Epetra_CrsMatrix> epAB(result);
@@ -337,7 +337,7 @@ t0 = MPI_Wtime();
 
             RCP<Epetra_CrsMatrix> epAB = MLTwoMatrixMultiply(*epA, *epB);
 #endif
-            C = Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(epAB);
+            C = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(epAB);
           }
           break;
 #endif // HAVE_MUELU_ML
@@ -527,20 +527,20 @@ if (mypid == 0)
 #endif //ifdef HAVE_MUELU_EPETRAEXT
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixMultiplyBlock(RCP<BlockedCrsOperator> const &A, bool transposeA,
-                                                        RCP<Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > const &B, bool transposeB,
+  RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixMultiplyBlock(RCP<BlockedCrsMatrix> const &A, bool transposeA,
+                                                        RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > const &B, bool transposeB,
                                                         bool doFillComplete,
                                                         bool doOptimizeStorage)
   {
     if(transposeA || transposeB)
-      throw(Exceptions::RuntimeError("TwoMatrixMultiply for BlockedCrsOperator not implemented for transposeA==true or transposeB==true"));
+      throw(Exceptions::RuntimeError("TwoMatrixMultiply for BlockedCrsMatrix not implemented for transposeA==true or transposeB==true"));
 
     // todo make sure that A and B are filled and completed
 
     RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rgmapextractor = A->getRangeMapExtractor();
     RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > domapextractor = B->getDomainMapExtractor();
 
-    RCP<BlockedCrsOperator> C = rcp(new BlockedCrsOperator(rgmapextractor,
+    RCP<BlockedCrsMatrix> C = rcp(new BlockedCrsMatrix(rgmapextractor,
                                                            domapextractor,
                                                            33 /* TODO fix me */));
 
@@ -550,18 +550,18 @@ if (mypid == 0)
         // loop over all block columns of B
         for(size_t j=0; j<B->Cols(); ++j)
           {
-            // empty CrsOperator
-            RCP<Operator> Cij = OperatorFactory::Build(A->getRangeMap(i), 33 /* TODO fix me */);
+            // empty CrsMatrixWrap
+            RCP<Matrix> Cij = MatrixFactory::Build(A->getRangeMap(i), 33 /* TODO fix me */);
 
             // loop for calculating entry C_{ij}
             for(size_t l=0; l<B->Rows(); ++l)
               {
                 RCP<CrsMatrix> crmat1 = A->getMatrix(i,l);
                 RCP<CrsMatrix> crmat2 = B->getMatrix(l,j);
-                RCP<CrsOperator> crop1 = rcp(new CrsOperator(crmat1));
-                RCP<CrsOperator> crop2 = rcp(new CrsOperator(crmat2));
+                RCP<CrsMatrixWrap> crop1 = rcp(new CrsMatrixWrap(crmat1));
+                RCP<CrsMatrixWrap> crop2 = rcp(new CrsMatrixWrap(crmat2));
 
-                RCP<Operator> temp = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::TwoMatrixMultiply(crop1, false, crop2, false);
+                RCP<Matrix> temp = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::TwoMatrixMultiply(crop1, false, crop2, false);
 
                 // sum up
                 MueLu::Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(temp, false, 1.0, Cij, 1.0);
@@ -569,9 +569,9 @@ if (mypid == 0)
 
             Cij->fillComplete(B->getDomainMap(j), A->getRangeMap(i));
 
-            RCP<CrsOperator> crsCij = Teuchos::rcp_dynamic_cast<CrsOperator>(Cij);
+            RCP<CrsMatrixWrap> crsCij = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Cij);
             TEUCHOS_TEST_FOR_EXCEPTION( Cij==Teuchos::null, Xpetra::Exceptions::BadCast,
-                                        "OperatorFactory failed in generating a CrsOperator." );
+                                        "MatrixFactory failed in generating a CrsMatrixWrap." );
 
             RCP<CrsMatrix> crsMatCij = crsCij->getCrsMatrix();
             C->setMatrix(i,j,crsMatCij);
@@ -580,21 +580,21 @@ if (mypid == 0)
       }
 
     if(doFillComplete)
-      C->fillComplete();  // call default fillComplete for BlockCrsOperator objects
+      C->fillComplete();  // call default fillComplete for BlockCrsMatrixWrap objects
 
     return C;
   } // TwoMatrixMultiplyBlock
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MatrixPrint(RCP<Operator> const &Op) {
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MatrixPrint(RCP<Matrix> const &Op) {
     std::string label = "unlabeled operator";
     MatrixPrint(Op, label);
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MatrixPrint(RCP<Operator> const &Op, std::string const &label) {
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MatrixPrint(RCP<Matrix> const &Op, std::string const &label) {
 #ifdef HAVE_MUELU_EPETRAEXT 
     RCP<const Epetra_CrsMatrix> epOp = Op2EpetraCrs(Op);
     int mypid = epOp->RowMap().Comm().MyPID();
@@ -616,7 +616,7 @@ if (mypid == 0)
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildMatrixDiagonal(RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > const &A)
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildMatrixDiagonal(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > const &A)
   {
     const RCP<const Map> rowmap = A->getRowMap();
     //std::vector<SC> diag(A->getNodeNumRows());
@@ -637,7 +637,7 @@ if (mypid == 0)
       }
     }
 
-    RCP< Operator > D = rcp( new CrsOperator(rowmap, 1) );
+    RCP< Matrix > D = rcp( new CrsMatrixWrap(rowmap, 1) );
     std::vector<GO> diagInd(1);
     Teuchos::ArrayView<GO> iv(&diagInd[0],1);
     //for (size_t i=0; i< A->getNodeNumRows(); ++i)
@@ -654,7 +654,7 @@ if (mypid == 0)
   } //BuildMatrixDiagonal()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixDiagonal(RCP<Operator> const &A)
+  Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixDiagonal(RCP<Matrix> const &A)
   {
     const RCP<const Map> rowmap = A->getRowMap();
     size_t locSize = rowmap->getNodeNumElements();
@@ -678,7 +678,7 @@ if (mypid == 0)
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ScaleMatrix(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse)
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ScaleMatrix(RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse)
   {
 #ifdef HAVE_MUELU_TPETRA
     RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpOp;
@@ -703,7 +703,7 @@ if (mypid == 0)
 
 #ifdef UNUSED // and does not work with SC=complex
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildMatrixInverseDiagonal(RCP<Operator> const &A)
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildMatrixInverseDiagonal(RCP<Matrix> const &A)
   {
     const RCP<const Map> rowmap = A->getRowMap();
     //std::vector<SC> diag(A->getNodeNumRows());
@@ -723,7 +723,7 @@ if (mypid == 0)
       }
     }
 
-    RCP< Operator > D = rcp( new CrsOperator(rowmap, 1) );
+    RCP< Matrix > D = rcp( new CrsMatrixWrap(rowmap, 1) );
     std::vector<GO> diagInd(1);
     Teuchos::ArrayView<GO> iv(&diagInd[0],1);
     //for (size_t i=0; i< A->getNodeNumRows(); ++i)
@@ -745,7 +745,7 @@ if (mypid == 0)
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
-  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ResidualNorm(Operator const &Op, MultiVector const &X, MultiVector const &RHS)
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS)
   {
     //if (X.getNumVectors() != RHS.getNumVectors())
     //  throw(Exceptions::RuntimeError("Number of solution vectors != number of right-hand sides"));
@@ -759,7 +759,7 @@ if (mypid == 0)
     
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Residual(Operator const &Op, MultiVector const &X, MultiVector const &RHS)
+  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Residual(Matrix const &Op, MultiVector const &X, MultiVector const &RHS)
   {
     SC one = 1.0;
     SC negone = -1.0;
@@ -775,8 +775,8 @@ if (mypid == 0)
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(std::string const & fileName, Operator const & Op) {
-    CrsOperator const & crsOp = dynamic_cast<CrsOperator const &>(Op);
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(std::string const & fileName, Matrix const & Op) {
+    CrsMatrixWrap const & crsOp = dynamic_cast<CrsMatrixWrap const &>(Op);
     RCP<const CrsMatrix> tmp_CrsMtx = crsOp.getCrsMatrix();
 #ifdef HAVE_MUELU_EPETRAEXT
     const RCP<const EpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const EpetraCrsMatrix>(tmp_CrsMtx);
@@ -906,7 +906,7 @@ if (mypid == 0)
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Scalar Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PowerMethod(Operator const &A, bool scaleByDiag,
+  Scalar Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PowerMethod(Matrix const &A, bool scaleByDiag,
                                                                                     LO niters, Magnitude tolerance, bool verbose, unsigned int seed)
   {
     if ( !(A.getRangeMap()->isSameAs(*(A.getDomainMap()))) ) {
@@ -960,7 +960,7 @@ if (mypid == 0)
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse,
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix(RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse,
                                bool doFillComplete,
                                bool doOptimizeStorage)
   {
@@ -988,7 +988,7 @@ if (mypid == 0)
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix_Tpetra(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector,
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix_Tpetra(RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector,
                                bool doFillComplete,
                                bool doOptimizeStorage)
   {
@@ -1075,17 +1075,17 @@ if (mypid == 0)
 
 #ifdef HAVE_MUELU_EPETRA
 //   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-//   RCP<Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator(RCP<Epetra_CrsMatrix> &epAB) {
-//     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
+//   RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB) {
+//     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
 //     return Teuchos::null;
 //   }
 
 
 //   template<>
-//   inline RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> &epAB) {
+//   inline RCP<Xpetra::CrsMatrixWrap<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> &epAB) {
 //     RCP<Xpetra::EpetraCrsMatrix> tmpC1 = rcp(new Xpetra::EpetraCrsMatrix(epAB));
 //     RCP<Xpetra::CrsMatrix<double,int,int,KDNT,KDKSO> > tmpC2 = rcp_implicit_cast<Xpetra::CrsMatrix<double,int,int,KDNT,KDKSO> >(tmpC1);
-//     RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > tmpC3 = rcp(new Xpetra::CrsOperator<double,int,int,KDNT,KDKSO>(tmpC2));
+//     RCP<Xpetra::CrsMatrixWrap<double,int,int,KDNT,KDKSO> > tmpC3 = rcp(new Xpetra::CrsMatrixWrap<double,int,int,KDNT,KDKSO>(tmpC2));
 //     return tmpC3;
 //   }
 #endif
@@ -1097,7 +1097,7 @@ if (mypid == 0)
 //   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose)
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Transpose(RCP<Matrix> const &Op, bool const & optimizeTranspose)
   {
 #ifdef HAVE_MUELU_EPETRAEXT
     std::string TorE = "epetra";
@@ -1134,7 +1134,7 @@ if (mypid == 0)
       RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A=Utils<Scalar, LocalOrdinal, GlobalOrdinal>::simple_Transpose(tpetraOp);
       RCP<TpetraCrsMatrix> AA = rcp(new TpetraCrsMatrix(A) );
       RCP<CrsMatrix> AAA = rcp_implicit_cast<CrsMatrix>(AA);
-      RCP<Operator> AAAA = rcp( new CrsOperator(AAA) );
+      RCP<Matrix> AAAA = rcp( new CrsMatrixWrap(AAA) );
       AAAA->fillComplete(Op->getRangeMap(),Op->getDomainMap());
       return AAAA;
 #else
@@ -1149,7 +1149,7 @@ if (mypid == 0)
   } //Transpose
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix_Epetra(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector,
+  void Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix_Epetra(RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector,
                                bool doFillComplete,
                                bool doOptimizeStorage)
   {
@@ -1157,7 +1157,7 @@ if (mypid == 0)
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(RCP<Operator> const &A, bool transposeA, SC alpha, RCP<Operator> &B, SC beta)
+  void Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(RCP<Matrix> const &A, bool transposeA, SC alpha, RCP<Matrix> &B, SC beta)
   {
     if ( !(A->getRowMap()->isSameAs(*(B->getRowMap()))) ) {
       throw(Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same."));
@@ -1180,16 +1180,16 @@ if (mypid == 0)
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(RCP<Operator> const &A, bool const &transposeA, SC const &alpha,
-                           RCP<Operator> const &B, bool const &transposeB, SC const &beta,
-                           RCP<Operator> &C)
+  void Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(RCP<Matrix> const &A, bool const &transposeA, SC const &alpha,
+                           RCP<Matrix> const &B, bool const &transposeB, SC const &beta,
+                           RCP<Matrix> &C)
   {
     if ( !(A->getRowMap()->isSameAs(*(B->getRowMap()))) ) {
       throw(Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same."));
     }
     if (C==Teuchos::null)
       //FIXME 5 is a complete guess as to the #nonzeros per row
-      C = rcp( new CrsOperator(A->getRowMap(), 5) );
+      C = rcp( new CrsMatrixWrap(A->getRowMap(), 5) );
 
     if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
       throw(Exceptions::RuntimeError("You cannot use Epetra::MatrixMatrix::Add with Scalar!=double or Ordinal!=int"));

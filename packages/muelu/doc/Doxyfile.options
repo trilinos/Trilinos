@@ -12,7 +12,7 @@ TAGFILES += \
   $(TRILINOS_HOME)/packages/common/tag_files/epetraext.tag=$(TRILINOS_HOME)/packages/epetraext/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/epetra/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/tpetra.tag=$(TRILINOS_HOME)/packages/tpetra/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/muelu-xpetra.tag=$(TRILINOS_HOME)/packages/xpetra/doc/html 
+  $(TRILINOS_HOME)/packages/common/tag_files/xpetra.tag=$(TRILINOS_HOME)/packages/xpetra/doc/html 
 #
 # Use MathJax for nice rescaling of LaTeX output. Needs a fairly recent version of doxygen.
 #

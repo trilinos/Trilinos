@@ -62,7 +62,7 @@ struct CudaTraits {
   typedef unsigned long
     ConstantGlobalBufferType[ ConstantMemoryCapacity / sizeof(unsigned long) ];
 
-  enum { ConstantMemoryUseThreshold = 0x000400 /* 1k bytes */ };
+  enum { ConstantMemoryUseThreshold = 0x000100 /* 256 bytes */ };
 
   static inline
 #if defined( __CUDACC__ )
@@ -86,6 +86,20 @@ struct CudaTraits {
 } // namespace KokkosArray
 
 //----------------------------------------------------------------------------
+
+namespace KokkosArray {
+
+inline
+CudaWorkConfig::CudaWorkConfig()
+{
+  grid[0] = grid[1] = grid[2] = 1 ;
+  block[1] = block[2] = 1 ;
+  block[0] = 6 * Impl::CudaTraits::WarpSize ;
+  shared = 0 ;
+}
+
+} // namespace KokkosArray
+
 //----------------------------------------------------------------------------
 
 #if defined( __CUDACC__ )
@@ -97,8 +111,9 @@ Cuda::size_type cuda_internal_maximum_warp_count();
 Cuda::size_type cuda_internal_maximum_grid_count();
 Cuda::size_type cuda_internal_maximum_shared_words();
 
-Cuda::size_type * cuda_internal_scratch_flags( Cuda::size_type count );
-Cuda::size_type * cuda_internal_scratch_space( Cuda::size_type count );
+Cuda::size_type * cuda_internal_scratch_flags( Cuda::size_type size );
+Cuda::size_type * cuda_internal_scratch_space( Cuda::size_type size );
+Cuda::size_type * cuda_internal_scratch_unified( Cuda::size_type size );
 
 template< typename ValueType >
 inline
@@ -160,14 +175,14 @@ static void cuda_parallel_launch_constant_memory()
   const DriverType & driver =
     *((const DriverType *) kokkos_impl_cuda_constant_memory_buffer );
 
-  driver.execute_on_device();
+  driver();
 }
 
 template< class DriverType >
 __global__
 static void cuda_parallel_launch_local_memory( const DriverType driver )
 {
-  driver.execute_on_device();
+  driver();
 }
 
 template < class DriverType ,
@@ -178,30 +193,30 @@ template < class DriverType >
 struct CudaParallelLaunch< DriverType , true > {
 
   inline
-  static void execute( const DriverType & driver ,
-                       const dim3       & grid ,
-                       const dim3       & block ,
-                       const int          shmem )
-    {
-      // Copy functor to constant memory on the device
-      cudaMemcpyToSymbol( kokkos_impl_cuda_constant_memory_buffer , & driver , sizeof(DriverType) );
+  CudaParallelLaunch( const DriverType & driver ,
+                      const dim3       & grid ,
+                      const dim3       & block ,
+                      const int          shmem )
+  {
+    // Copy functor to constant memory on the device
+    cudaMemcpyToSymbol( kokkos_impl_cuda_constant_memory_buffer , & driver , sizeof(DriverType) );
 
-      // Invoke the driver function on the device
-      cuda_parallel_launch_constant_memory< DriverType ><<< grid , block , shmem >>>();
-    }
+    // Invoke the driver function on the device
+    cuda_parallel_launch_constant_memory< DriverType ><<< grid , block , shmem >>>();
+  }
 };
 
 template < class DriverType >
 struct CudaParallelLaunch< DriverType , false > {
 
   inline
-  static void execute( const DriverType & driver ,
-                       const dim3       & grid ,
-                       const dim3       & block ,
-                       const int          shmem )
-    {
-      cuda_parallel_launch_local_memory< DriverType ><<< grid , block , shmem >>>( driver );
-    }
+  CudaParallelLaunch( const DriverType & driver ,
+                      const dim3       & grid ,
+                      const dim3       & block ,
+                      const int          shmem )
+  {
+    cuda_parallel_launch_local_memory< DriverType ><<< grid , block , shmem >>>( driver );
+  }
 };
 
 //----------------------------------------------------------------------------
@@ -230,7 +245,7 @@ public:
 
   inline
   __device__
-  void execute_on_device() const
+  void operator()(void) const
   {
     Cuda::size_type i = threadIdx.x + blockDim.x * blockIdx.x ;
     for ( ; i < m_count ; i += m_stride ) {

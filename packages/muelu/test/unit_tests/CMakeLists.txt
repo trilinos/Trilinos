@@ -86,12 +86,12 @@ IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
   )
 ENDIF()
 
-IF ({PACKAGE_NAME}_ENABLE_Galeri) #TMP
+IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
   TRIBITS_ADD_EXECUTABLE(
     UnitTests
     SOURCES ${SOURCES}
     COMM serial mpi
-    DEPLIBS muelu muelu-xpetra
+    DEPLIBS muelu xpetra
     )
   
   IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt

@@ -47,7 +47,7 @@
 #define MUELU_HIERARCHY_DEF_HPP
 
 #include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include "MueLu_Hierarchy_decl.hpp"
 #include "MueLu_Level.hpp"
@@ -71,7 +71,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy(const RCP<Operator> & A)
+  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy(const RCP<Matrix> & A)
     :  maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true)
   {
     RCP<Level> Finest = rcp( new Level() );
@@ -253,9 +253,9 @@ namespace MueLu {
 
     // Test if we reach the end of the hierarchy
     {
-      RCP<Operator> Ac;
+      RCP<Matrix> Ac;
       if (level.IsAvailable("A")) {
-        Ac = level.Get<RCP<Operator> >("A");
+        Ac = level.Get<RCP<Matrix> >("A");
         // sumCoarseNnz += Ac->getGlobalNumEntries();
       } else {
         //TODO: happen when Ac factory = do nothing (ie: SetSmoothers)
@@ -334,7 +334,7 @@ namespace MueLu {
     manager.Clean();
 
     // Gather statistics
-    //TODO    Xpetra::global_size_t fineNnz = Levels_[startLevel]->Get< RCP<Operator> >("A")->getGlobalNumEntries();
+    //TODO    Xpetra::global_size_t fineNnz = Levels_[startLevel]->Get< RCP<Matrix> >("A")->getGlobalNumEntries();
     //TODO    Xpetra::global_size_t totalNnz = fineNnz + sumCoarseNnz;
 
     Teuchos::ParameterList status;
@@ -437,30 +437,32 @@ namespace MueLu {
     //Teuchos::Array<Magnitude> norms(1);
     bool zeroGuess=InitialGuessIsZero;
 
-    for (LO i=0; i<nIts; i++) {
+    RCP<Level> Fine = Levels_[startLevel];
 
-      RCP<Level> Fine = Levels_[startLevel];
-
-      if (startLevel == 0 && IsPrint(Statistics1) && !isPreconditioner_) {
-        Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> rn;
-        rn = Utils::ResidualNorm(*(Fine->Get< RCP<Operator> >("A")), X, B);
-        GetOStream(Statistics1, 0) << "iter:    "
-                                   << std::setiosflags(std::ios::left)
-                                   << std::setprecision(3) << i
-                                   << "           residual = "
-                                   << std::setprecision(10) << rn
-                                   << std::endl;
-      }
-
+    // Print residual information before iterating
+    if (startLevel == 0 && IsPrint(Statistics1) && !isPreconditioner_) {
+      
+      Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> rn;
+      rn = Utils::ResidualNorm(*(Fine->Get< RCP<Matrix> >("A")), X, B);
+      GetOStream(Statistics1, 0) << "iter:    "
+                                 << std::setiosflags(std::ios::left)
+                                 << std::setprecision(3) << 0 /* iter 0 */
+                                 << "           residual = "
+                                 << std::setprecision(10) << rn
+                                 << std::endl;
+    }
+    
+    for (LO i=1; i<=nIts; i++) {
+      
       //X.norm2(norms);
-      if (Fine->Get< RCP<Operator> >("A")->getDomainMap()->isCompatible(*(X.getMap())) == false) {
+      if (Fine->Get< RCP<Matrix> >("A")->getDomainMap()->isCompatible(*(X.getMap())) == false) {
         std::ostringstream buf;
         buf << startLevel;
         std::string msg = "Level " + buf.str() + ": level A's domain map is not compatible with X";
         throw(Exceptions::Incompatible(msg));
       }
 
-      if (Fine->Get< RCP<Operator> >("A")->getRangeMap()->isCompatible(*(B.getMap())) == false) {
+      if (Fine->Get< RCP<Matrix> >("A")->getRangeMap()->isCompatible(*(B.getMap())) == false) {
         std::ostringstream buf;
         buf << startLevel;
         std::string msg = "Level " + buf.str() + ": level A's range map is not compatible with B";
@@ -495,17 +497,17 @@ namespace MueLu {
           GetOStream(Warnings0, 0) << "Warning: Level " <<  startLevel << ": No PreSmoother!" << std::endl;
         }
 
-        RCP<MultiVector> residual = Utils::Residual(*(Fine->Get< RCP<Operator> >("A")), X, B);
+        RCP<MultiVector> residual = Utils::Residual(*(Fine->Get< RCP<Matrix> >("A")), X, B);
 
-        RCP<Operator> P = Coarse->Get< RCP<Operator> >("P");
-        RCP<Operator> R;
+        RCP<Matrix> P = Coarse->Get< RCP<Matrix> >("P");
+        RCP<Matrix> R;
         RCP<MultiVector> coarseRhs, coarseX;
         if (implicitTranspose_) {
           coarseRhs = MultiVectorFactory::Build(P->getDomainMap(), X.getNumVectors());
           coarseX   = MultiVectorFactory::Build(P->getDomainMap(), X.getNumVectors());
           P->apply(*residual, *coarseRhs, Teuchos::TRANS, 1.0, 0.0);
         } else {
-          R = Coarse->Get< RCP<Operator> >("R");
+          R = Coarse->Get< RCP<Matrix> >("R");
           coarseRhs = MultiVectorFactory::Build(R->getRangeMap(), X.getNumVectors());
           coarseX   = MultiVectorFactory::Build(R->getRangeMap(), X.getNumVectors());
           R->apply(*residual, *coarseRhs, Teuchos::NO_TRANS, 1.0, 0.0);
@@ -534,8 +536,20 @@ namespace MueLu {
         }
       }
       zeroGuess=false;
-    } //for (LO i=0; i<nIts; i++)
 
+      if (startLevel == 0 && IsPrint(Statistics1) && !isPreconditioner_) {
+        Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> rn;
+        rn = Utils::ResidualNorm(*(Fine->Get< RCP<Matrix> >("A")), X, B);
+        GetOStream(Statistics1, 0) << "iter:    "
+                                   << std::setiosflags(std::ios::left)
+                                   << std::setprecision(3) << i
+                                   << "           residual = "
+                                   << std::setprecision(10) << rn
+                                   << std::endl;
+      }
+
+    } //for (LO i=0; i<nIts; i++)
+    
   } //Iterate()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

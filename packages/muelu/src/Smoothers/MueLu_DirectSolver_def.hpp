@@ -47,7 +47,7 @@
 #define MUELU_DIRECTSOLVER_DEF_HPP
 
 #include <Xpetra_Utils.hpp>
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include "MueLu_DirectSolver_decl.hpp"
 
@@ -75,7 +75,7 @@ namespace MueLu {
     if (SmootherPrototype::IsSetup() == true) VerboseObject::GetOStream(Warnings0, 0) << "Warning: MueLu::DirectSolver::Setup(): Setup() has already been called";
     TEUCHOS_TEST_FOR_EXCEPTION(s_ != Teuchos::null, Exceptions::RuntimeError, "IsSetup() == false but s_ != Teuchos::null. This does not make sense");
 
-    Xpetra::UnderlyingLib lib = currentLevel.Get< RCP<Operator> >("A", AFact_.get())->getRowMap()->lib();
+    Xpetra::UnderlyingLib lib = currentLevel.Get< RCP<Matrix> >("A", AFact_.get())->getRowMap()->lib();
 
     if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_AMESOS2

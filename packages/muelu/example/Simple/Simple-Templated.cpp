@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
   Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
 
   // Create a CrsMatrix using the map, with a dynamic allocation of 3 entries per row
-  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal> > A = rcp(new Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal>(map, 3));
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal> > A = rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal>(map, 3));
 
   // Add rows one-at-a-time
   for (size_t i = 0; i < numMyElements; i++) {

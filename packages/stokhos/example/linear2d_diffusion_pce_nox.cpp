@@ -167,11 +167,16 @@ int main(int argc, char *argv[]) {
 						 sgParams));
 
     // Set up stochastic parameters
+    // The current implementation of the model doesn't actually use these 
+    // values, but is hard-coded to certain uncertainty models
+    Teuchos::Array<double> point(num_KL, 1.0);
+    Teuchos::Array<double> basis_vals(sz);
+    basis->evaluateBases(point, basis_vals);
     Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_p_init =
       sg_model->create_p_sg(0);
     for (int i=0; i<num_KL; i++) {
       sg_p_init->term(i,0)[i] = 0.0;
-      sg_p_init->term(i,1)[i] = 1.0;
+      sg_p_init->term(i,1)[i] = 1.0 / basis_vals[i+1];
     }
     sg_model->set_p_sg_init(0, *sg_p_init);
 
@@ -330,7 +335,8 @@ int main(int argc, char *argv[]) {
     // std::cout << "\nResponse Expansion = " << std::endl;
     // std::cout.precision(12);
     // sg_g_poly->print(std::cout);
-    std::cout << "\nResponse Mean =      " << std::endl << g_mean << std::endl;
+    std::cout << std::endl;
+    std::cout << "Response Mean =      " << std::endl << g_mean << std::endl;
     std::cout << "Response Std. Dev. = " << std::endl << g_std_dev << std::endl;
 
     // Determine if example passed

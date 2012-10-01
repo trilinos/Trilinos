@@ -284,8 +284,8 @@ namespace MueLu {
 
         if (needs_.IsAvailable(*it, *kt)) {
           std::string strType = needs_.GetType(*it, *kt); // Variable type
-          if (strType.find("Xpetra::Operator") != std::string::npos) {
-            outputter.outputField("Operator" );
+          if (strType.find("Xpetra::Matrix") != std::string::npos) {
+            outputter.outputField("Matrix" );
             outputter.outputField("available");
           } else if (strType.find("Xpetra::MultiVector") != std::string::npos) {
             outputter.outputField("Vector");

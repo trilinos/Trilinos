@@ -166,7 +166,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name Methods implementing Operator
+    //! @name Methods implementing Matrix
     //@{
 
     //! Computes the sparse matrix-multivector multiplication.

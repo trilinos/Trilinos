@@ -1,0 +1,25 @@
+Zoltan release notes for Trilinos v11.
+
+Highlights are listed below; for more details, see 
+Trilinos/packages/zoltan/doc/Zoltan_html/ug_html/ug_release.html .
+
+-  Zoltan is now released under Trilinos' BSD license.
+
+-  The following Zoltan features are no longer supported in Trilinos v11:
+   +  Zoltan v1 interface (as described in Zoltan include file lbi_const.h)
+   +  Partitioning method OCTPART: use partitioning method HSFC instead.
+
+
+-  Hierarchical partitioning received several performance, interface and 
+   testing improvements.  An easier-to-use interface has been 
+   added using simple parameters (HIER_ASSIST, PLATFORM_NAME, TOPOLOGY)
+   instead of callback functions; the callback function interface is still
+   supported. 
+
+-  Memory usage in Zoltan Distributed Data Directories is improved, leading to
+   faster execution times for data directories and hierarchical partitioning.
+
+-  Compilation with gcc 4.7 is now supported.
+
+-  Zoltan supports PT-Scotch v5.1.12 and ParMETIS v4, as well as some older
+   versions of these TPLs. 

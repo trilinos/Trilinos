@@ -48,7 +48,7 @@
 
 #include "MueLu_DemoFactory_decl.hpp"
 
-// #include <Xpetra_Operator.hpp>
+// #include <Xpetra_Matrix.hpp>
 
 #include "MueLu_Level.hpp"
 // #include "MueLu_Monitor.hpp"

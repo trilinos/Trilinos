@@ -77,8 +77,8 @@ namespace MueLu {
     @code
       RCP<SingleLevelFactory> Afact;
       Level currentLevel;
-      RCP<Operator> thisLevelA;
-      thisLevelA = currentLevel.Get<Operator>("A",Afact.get());
+      RCP<Matrix> thisLevelA;
+      thisLevelA = currentLevel.Get<Matrix>("A",Afact.get());
     @endcode
 
     @todo If Afact is null (actually, Teuchos::null), then the FactoryManager associated with currentLevel will determine whether a default factory has

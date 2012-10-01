@@ -50,7 +50,7 @@
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "Xpetra_MultiVector_fwd.hpp"
 #include "Xpetra_MultiVectorFactory_fwd.hpp"
-#include "Xpetra_Operator.hpp"
+#include "Xpetra_Matrix.hpp"
 #include "MueLu_MultiVectorTransferFactory_fwd.hpp"
 
 namespace MueLu {
@@ -74,7 +74,7 @@ namespace MueLu {
     /*! @brief Constructor.
 
        @param vectorName The name of the quantity to be restricted.
-       @param restrictionName The name of the restriction Operator.
+       @param restrictionName The name of the restriction Matrix.
 
        The operator associated with <tt>projectionName</tt> will be applied to the MultiVector associated with
        <tt>vectorName</tt>.
@@ -109,9 +109,9 @@ namespace MueLu {
   private:
     //! name of MultiVector to be transfered.
     std::string vectorName_;
-    //! name of Operator that will do the transfering.
+    //! name of Matrix that will do the transfering.
     std::string restrictionName_;
-    //! factory that generates the transfer Operator.
+    //! factory that generates the transfer Matrix.
     RCP<const FactoryBase> restrictionFact_;
 
     static ArrayRCP<SC> expandCoordinates(ArrayRCP<SC> coord, LocalOrdinal blksize);

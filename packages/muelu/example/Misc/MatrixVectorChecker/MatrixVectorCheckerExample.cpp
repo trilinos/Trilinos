@@ -61,7 +61,7 @@
 #include <Xpetra_Parameters.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
   /* CREATE INITAL MATRIX                                                           */
   /**********************************************************************************/
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<const Operator>   Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
+  RCP<const Matrix>   Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
 
   // Using Galeri:
   //
@@ -119,10 +119,10 @@ int main(int argc, char *argv[])
   /**********************************************************************************/
 
   if ( MueLu::MatrixVectorChecker<SC,LO,GO,NO>(Op) ) {
-    std::cout << "OK !" << std::endl;
+    std::cout << "TEST PASSED" << std::endl;
     return EXIT_SUCCESS;
   } else {
-    std::cout << "FAILURE !" << std::endl;
+    std::cout << "TEST FAILED" << std::endl;
     return EXIT_FAILURE;
   }
 

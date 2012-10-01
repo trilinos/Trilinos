@@ -28,9 +28,9 @@
 // ***********************************************************************
 // @HEADER
 
-#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
-    ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
+#if ! defined(KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE)                  || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION)
 
 #error "Including <Stokhos_LocalStorage_impl.hpp> without macros defined"
 
@@ -40,7 +40,7 @@ namespace Stokhos {
 
   //! Statically allocated storage class
   template <typename ordinal_t, typename value_t>
-  class LocalStorage<ordinal_t, value_t, 2, KOKKOS_MACRO_DEVICE> {
+  class LocalStorage<ordinal_t, value_t, 2, KOKKOSARRAY_MACRO_DEVICE> {
   public:
 
     static const int Num = 2;
@@ -51,7 +51,7 @@ namespace Stokhos {
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef KOKKOS_MACRO_DEVICE node_type;
+    typedef KOKKOSARRAY_MACRO_DEVICE node_type;
     typedef value_type& reference;
     typedef const value_type& const_reference;
     typedef value_type* pointer;
@@ -64,7 +64,7 @@ namespace Stokhos {
     };
 
     //! Constructor
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     LocalStorage(const ordinal_type& sz,
 		 const value_type& x = value_type(0.0)) { 
       c0 = x;
@@ -78,14 +78,14 @@ namespace Stokhos {
     //! Default assignment operator
 
     //! Initialize values to a constant value
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void init(const_reference v) { 
       c0 = v;
       c1 = v;
     }
 
     //! Initialize values to an array of values
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void init(const_pointer v, const ordinal_type& sz = 0) {
       ordinal_type my_sz = sz;
       if (sz == 0) my_sz = Num;
@@ -94,27 +94,27 @@ namespace Stokhos {
     }
 
     //! Load values to an array of values
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void load(pointer v) { 
       v[0] = c0;
       v[1] = c1;
     }
 
     //! Resize to new size (values are preserved)
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void resize(const ordinal_type& sz) {}
 
     //! Reset storage to given array, size, and stride
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void shallowReset(pointer v, const ordinal_type& sz, 
 		      const ordinal_type& stride, bool owned) {}
 
     //! Return size
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     static ordinal_type size() { return Num; }
 
     //! Coefficient access
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     const_reference operator[] (const ordinal_type& i) const { 
       if (i == 0) return c0;
       else if (i == 1) return c1;
@@ -122,7 +122,7 @@ namespace Stokhos {
     }
 
     //! Coefficient access
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     reference operator[] (const ordinal_type& i) { 
       if (i == 0) return c0;
       else if (i == 1) return c1;
@@ -130,25 +130,25 @@ namespace Stokhos {
     }
 
     template <int i>
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     reference getCoeff() {
       if (i == 0) return c0;
       else return c1;
     }
 
     template <int i>
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     const_reference getCoeff() const {
       if (i == 0) return c0;
       else return c1;
     }
 
     //! Get coefficients
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     const_pointer coeff() const { return &c0; }
 
     //! Get coefficients
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     pointer coeff() { return &c0; }
 
   private:
@@ -160,7 +160,7 @@ namespace Stokhos {
 
   //! Statically allocated storage class
   template <typename ordinal_t, typename value_t>
-  class LocalStorage<ordinal_t, value_t, 4, KOKKOS_MACRO_DEVICE> {
+  class LocalStorage<ordinal_t, value_t, 4, KOKKOSARRAY_MACRO_DEVICE> {
   public:
 
     static const int Num = 4;
@@ -171,7 +171,7 @@ namespace Stokhos {
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef KOKKOS_MACRO_DEVICE node_type;
+    typedef KOKKOSARRAY_MACRO_DEVICE node_type;
     typedef value_type& reference;
     typedef const value_type& const_reference;
     typedef value_type* pointer;
@@ -184,7 +184,7 @@ namespace Stokhos {
     };
 
     //! Constructor
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     LocalStorage(const ordinal_type& sz,
 		 const value_type& x = value_type(0.0)) { 
       c0 = x;
@@ -200,7 +200,7 @@ namespace Stokhos {
     //! Default assignment operator
 
     //! Initialize values to a constant value
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void init(const_reference v) { 
       c0 = v;
       c1 = v;
@@ -209,7 +209,7 @@ namespace Stokhos {
     }
 
     //! Initialize values to an array of values
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void init(const_pointer v, const ordinal_type& sz = 0) {
       ordinal_type my_sz = sz;
       if (sz == 0) my_sz = Num;
@@ -220,7 +220,7 @@ namespace Stokhos {
     }
 
     //! Load values to an array of values
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void load(pointer v) { 
       v[0] = c0;
       v[1] = c1;
@@ -229,20 +229,20 @@ namespace Stokhos {
     }
 
     //! Resize to new size (values are preserved)
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void resize(const ordinal_type& sz) {}
 
     //! Reset storage to given array, size, and stride
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void shallowReset(pointer v, const ordinal_type& sz, 
 		      const ordinal_type& stride, bool owned) {}
 
     //! Return size
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     static ordinal_type size() { return Num; }
 
     //! Coefficient access
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     const_reference operator[] (const ordinal_type& i) const { 
       if (i == 0) return c0;
       else if (i == 1) return c1;
@@ -252,7 +252,7 @@ namespace Stokhos {
     }
 
     //! Coefficient access
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     reference operator[] (const ordinal_type& i) { 
       if (i == 0) return c0;
       else if (i == 1) return c1;
@@ -262,7 +262,7 @@ namespace Stokhos {
     }
 
     template <int i>
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     reference getCoeff() {
       if (i == 0) return c0;
       else if (i == 1) return c1;
@@ -271,7 +271,7 @@ namespace Stokhos {
     }
 
     template <int i>
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     const_reference getCoeff() const {
       if (i == 0) return c0;
       else if (i == 1) return c1;
@@ -280,11 +280,11 @@ namespace Stokhos {
     }
 
     //! Get coefficients
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     const_pointer coeff() const { return &c0; }
 
     //! Get coefficients
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     pointer coeff() { return &c0; }
 
   private:
@@ -296,7 +296,7 @@ namespace Stokhos {
 
   //! Statically allocated storage class
   template <typename ordinal_t, typename value_t>
-  class LocalStorage<ordinal_t, value_t, 8, KOKKOS_MACRO_DEVICE> {
+  class LocalStorage<ordinal_t, value_t, 8, KOKKOSARRAY_MACRO_DEVICE> {
   public:
 
     static const int Num = 8;
@@ -307,7 +307,7 @@ namespace Stokhos {
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef KOKKOS_MACRO_DEVICE node_type;
+    typedef KOKKOSARRAY_MACRO_DEVICE node_type;
     typedef value_type& reference;
     typedef const value_type& const_reference;
     typedef value_type* pointer;
@@ -320,7 +320,7 @@ namespace Stokhos {
     };
 
     //! Constructor
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     LocalStorage(const ordinal_type& sz,
 		 const value_type& x = value_type(0.0)) { 
       c0 = x;
@@ -340,7 +340,7 @@ namespace Stokhos {
     //! Default assignment operator
 
     //! Initialize values to a constant value
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void init(const_reference v) { 
       c0 = v;
       c1 = v;
@@ -353,7 +353,7 @@ namespace Stokhos {
     }
 
     //! Initialize values to an array of values
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void init(const_pointer v, const ordinal_type& sz = 0) {
       ordinal_type my_sz = sz;
       if (sz == 0) my_sz = Num;
@@ -368,7 +368,7 @@ namespace Stokhos {
     }
 
     //! Load values to an array of values
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void load(pointer v) { 
       v[0] = c0;
       v[1] = c1;
@@ -381,20 +381,20 @@ namespace Stokhos {
     }
 
     //! Resize to new size (values are preserved)
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void resize(const ordinal_type& sz) {}
 
     //! Reset storage to given array, size, and stride
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     void shallowReset(pointer v, const ordinal_type& sz, 
 		      const ordinal_type& stride, bool owned) {}
 
     //! Return size
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     static ordinal_type size() { return Num; }
 
     //! Coefficient access
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     const_reference operator[] (const ordinal_type& i) const { 
       if (i == 0) return c0;
       else if (i == 1) return c1;
@@ -408,7 +408,7 @@ namespace Stokhos {
     }
 
     //! Coefficient access
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     reference operator[] (const ordinal_type& i) { 
       if (i == 0) return c0;
       else if (i == 1) return c1;
@@ -422,7 +422,7 @@ namespace Stokhos {
     }
 
     template <int i>
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     reference getCoeff() {
       if (i == 0) return c0;
       else if (i == 1) return c1;
@@ -435,7 +435,7 @@ namespace Stokhos {
     }
 
     template <int i>
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     const_reference getCoeff() const {
       if (i == 0) return c0;
       else if (i == 1) return c1;
@@ -448,11 +448,11 @@ namespace Stokhos {
     }
 
     //! Get coefficients
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     const_pointer coeff() const { return &c0; }
 
     //! Get coefficients
-    KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
     pointer coeff() { return &c0; }
 
   private:

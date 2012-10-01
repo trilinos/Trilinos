@@ -51,7 +51,7 @@
 
 #include <Xpetra_ConfigDefs.hpp>  // global_size_t
 #include <Xpetra_MultiVector_fwd.hpp>
-#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -99,7 +99,7 @@ namespace MueLu {
     Hierarchy();
 
     //! Constructor
-    Hierarchy(const RCP<Operator> & A);
+    Hierarchy(const RCP<Matrix> & A);
 
     //! Destructor.
     virtual ~Hierarchy();

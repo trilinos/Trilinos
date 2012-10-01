@@ -69,7 +69,7 @@
 // Xpetra
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
@@ -144,10 +144,10 @@ int main(int argc, char *argv[]) {
   RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
   RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
 
-  // Epetra_CrsMatrix -> Xpetra::Operator
+  // Epetra_CrsMatrix -> Xpetra::Matrix
   RCP<Xpetra::CrsMatrix<double, int, int> > exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
-  RCP<Xpetra::CrsOperator<double, int, int> > crsOp = Teuchos::rcp(new Xpetra::CrsOperator<double, int, int>(exA));
-  RCP<Xpetra::Operator<double, int, int> > Op = Teuchos::rcp_dynamic_cast<Xpetra::Operator<double, int, int> >(crsOp);
+  RCP<Xpetra::CrsMatrixWrap<double, int, int> > crsOp = Teuchos::rcp(new Xpetra::CrsMatrixWrap<double, int, int>(exA));
+  RCP<Xpetra::Matrix<double, int, int> > Op = Teuchos::rcp_dynamic_cast<Xpetra::Matrix<double, int, int> >(crsOp);
 
   // Epetra_Vector -> Xpetra::Vector
   RCP<Xpetra::Vector<double,int,int> > xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));

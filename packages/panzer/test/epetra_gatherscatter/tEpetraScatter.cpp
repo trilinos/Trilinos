@@ -100,7 +100,7 @@ TEUCHOS_UNIT_TEST(tEpetraScatter, constructor)
 
    // test residual scatter evaluator
    {
-      panzer::ScatterResidual_Epetra<Residual,panzer::Traits,int,int> scatterResidual(Teuchos::null,scatterParams);
+      panzer::ScatterResidual_Epetra<Residual,panzer::Traits,int,int> scatterResidual(Teuchos::null,Teuchos::null,scatterParams);
 
       const std::vector<RCP<PHX::FieldTag> > & evalFields = scatterResidual.evaluatedFields();
       TEST_EQUALITY(evalFields.size(),1); // this is a dummy holder for the sake of the field manager
@@ -120,7 +120,7 @@ TEUCHOS_UNIT_TEST(tEpetraScatter, constructor)
 
    // test jacobian scatter evaluator
    {
-      panzer::ScatterResidual_Epetra<Jacobian,panzer::Traits,int,int> scatterJacobian(Teuchos::null,scatterParams);
+      panzer::ScatterResidual_Epetra<Jacobian,panzer::Traits,int,int> scatterJacobian(Teuchos::null,Teuchos::null,scatterParams);
 
       const std::vector<RCP<PHX::FieldTag> > & evalFields = scatterJacobian.evaluatedFields();
       TEST_EQUALITY(evalFields.size(),1); // this is a dummy holder for the sake of the field manager

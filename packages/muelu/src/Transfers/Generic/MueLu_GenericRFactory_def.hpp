@@ -46,7 +46,7 @@
 #ifndef MUELU_GENERICRFACTORY_DEF_HPP
 #define MUELU_GENERICRFACTORY_DEF_HPP
 
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include "MueLu_GenericRFactory_decl.hpp"
 
@@ -78,7 +78,7 @@ namespace MueLu {
     // however, here we have to run the code in PFact.Build again,
     // so we have to request the dependencies of PFact first!
     // The dependencies are (automatically) cleaned up after the second
-    // run of PFact.Build in coarseLevel.Get<RCP<Operator> >("R",PFact.get())!
+    // run of PFact.Build in coarseLevel.Get<RCP<Matrix> >("R",PFact.get())!
     coarseLevel.DeclareDependencies(PFact.get());
 
     coarseLevel.DeclareInput("R", PFact.get(), this);  // we expect the prolongation operator factory to produce "R" as output
@@ -103,7 +103,7 @@ namespace MueLu {
     PFact->setRestrictionMode(true);     // switch prolongator factory to restriction mode
 
     //PFact->Build(fineLevel, coarseLevel);  // call PFactory::Build explicitely
-    RCP<Operator> R = coarseLevel.Get<RCP<Operator> >("R",PFact.get());
+    RCP<Matrix> R = coarseLevel.Get<RCP<Matrix> >("R",PFact.get());
 
     PFact->setRestrictionMode(rmode);    // reset restriction mode flag
 

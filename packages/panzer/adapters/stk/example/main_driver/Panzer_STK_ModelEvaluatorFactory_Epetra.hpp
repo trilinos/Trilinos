@@ -216,6 +216,7 @@ namespace panzer_stk {
     #ifdef HAVE_TEKO 
     Teuchos::RCP<Teko::RequestHandler> m_req_handler;
     #endif
+    bool useDiscreteAdjoint;
   };
 
 }

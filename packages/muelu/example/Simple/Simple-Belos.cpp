@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
   Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
 
   // Create a CrsMatrix using the map, with a dynamic allocation of 3 entries per row
-  RCP<Operator> A = rcp(new CrsOperator(map, 3));
+  RCP<Matrix> A = rcp(new CrsMatrixWrap(map, 3));
 
   // Add rows one-at-a-time
   for (size_t i = 0; i < numMyElements; i++) {
@@ -151,12 +151,12 @@ int main(int argc, char *argv[]) {
   B->setSeed(846930886); B->randomize();
   //B->putScalar((Scalar) 1.0);
 
-  // Operator and Multivector type that will be used with Belos
+  // Matrix and Multivector type that will be used with Belos
   typedef MultiVector          MV;
   typedef Belos::OperatorT<MV> OP;
 
   // Define Operator and Preconditioner
-  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Operator object into a Belos operator
+  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
   RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
 
   // Construct a Belos LinearProblem object

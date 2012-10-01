@@ -71,13 +71,13 @@
 // Xpetra
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
 #include <Xpetra_MapExtractorFactory.hpp>
-#include <Xpetra_BlockedCrsOperator.hpp>
+#include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
 #include <Xpetra_StridedEpetraMap.hpp>
 
@@ -476,7 +476,7 @@ int main(int argc, char *argv[]) {
 
   /////////////////////////////////////// build blocked transfer operator
   // using the map extractor
-  Teuchos::RCP<Xpetra::BlockedCrsOperator<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsOperator<Scalar,LO,GO>(map_extractor,map_extractor,10));
+  Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(map_extractor,map_extractor,10));
   bOp->setMatrix(0,0,xA11);
   bOp->setMatrix(0,1,xA12);
   bOp->setMatrix(1,0,xA21);
@@ -493,7 +493,7 @@ int main(int argc, char *argv[]) {
   //////////////////////////////////////////////////////// finest Level
   RCP<MueLu::Level> Finest = H->GetLevel();
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  Finest->Set("A",Teuchos::rcp_dynamic_cast<Operator>(bOp));
+  Finest->Set("A",Teuchos::rcp_dynamic_cast<Matrix>(bOp));
 
   /////////////////////////////////////////////// define subblocks of A
   // make A11 block and A22 block available as variable "A" generated

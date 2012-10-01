@@ -51,7 +51,7 @@
 
 #include <Teuchos_Array.hpp>
 
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_HierarchyFactory.hpp"
@@ -121,11 +121,11 @@ namespace MueLu {
     virtual void SetupHierarchy(Hierarchy & H) const {
       TEUCHOS_TEST_FOR_EXCEPTION(!H.GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError, "No fine level operator");
 
-      // Setup Operator
+      // Setup Matrix
       // TODO: I should certainly undo this somewhere...
       RCP<Level> l = H.GetLevel(0);
-      RCP<Operator> Op = l->Get<RCP<Operator> >("A");
-      SetupOperator(*Op);
+      RCP<Matrix> Op = l->Get<RCP<Matrix> >("A");
+      SetupMatrix(*Op);
       SetupExtra(H);
 
       // Setup Hierarchy
@@ -155,11 +155,11 @@ namespace MueLu {
 
   protected: //TODO: access function
 
-    //! Setup Operator object
-    virtual void SetupOperator(Operator & Op) const { }
+    //! Setup Matrix object
+    virtual void SetupMatrix(Matrix & Op) const { }
 
     //! Setup extra data
-    // TODO: merge with SetupOperator ?
+    // TODO: merge with SetupMatrix ?
     virtual void SetupExtra(Hierarchy & H) const { }
 
     // Hierarchy parameters

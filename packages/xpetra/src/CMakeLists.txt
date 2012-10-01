@@ -93,7 +93,7 @@ APPEND_SET(HEADERS ${DIR}/Xpetra_config.hpp)
 #
 
 TRIBITS_ADD_LIBRARY(
-  muelu-xpetra
+  xpetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

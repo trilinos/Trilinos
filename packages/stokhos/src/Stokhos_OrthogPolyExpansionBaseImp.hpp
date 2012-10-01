@@ -631,10 +631,8 @@ fabs(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::OrthogPolyExpansionBase::fabs(OPA)");
 #endif
-  if (a[0] >= 0)
-    c = a;
-  else
-    unaryMinus(c,a);
+  c.init(0.0);
+  c[0] = a.two_norm();
 }
 
 template <typename ordinal_type, typename value_type, typename node_type>
@@ -646,10 +644,8 @@ abs(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::OrthogPolyExpansionBase::abs(OPA)");
 #endif
-  if (a[0] >= 0)
-    c = a;
-  else
-    unaryMinus(c,a);
+  c.init(0.0);
+  c[0] = a.two_norm();
 }
 
 template <typename ordinal_type, typename value_type, typename node_type>
@@ -662,7 +658,7 @@ max(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::OrthogPolyExpansionBase::max(OPA,OPA)");
 #endif
-  if (a[0] >= b[0])
+  if (a.two_norm() >= b.two_norm())
     c = a;
   else
     c = b;
@@ -678,7 +674,7 @@ max(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::OrthogPolyExpansionBase::max(const,OPA)");
 #endif
-  if (a >= b[0]) {
+  if (a >= b.two_norm()) {
     c = OrthogPolyApprox<ordinal_type, value_type, node_type>(basis);
     c[0] = a;
   }
@@ -696,7 +692,7 @@ max(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::OrthogPolyExpansionBase::max(OPA,const)");
 #endif
-  if (a[0] >= b)
+  if (a.two_norm() >= b)
     c = a;
   else {
     c = OrthogPolyApprox<ordinal_type, value_type, node_type>(basis);
@@ -714,7 +710,7 @@ min(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::OrthogPolyExpansionBase::min(OPA,OPA)");
 #endif
-  if (a[0] <= b[0])
+  if (a.two_norm() <= b.two_norm())
     c = a;
   else
     c = b;
@@ -730,7 +726,7 @@ min(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::OrthogPolyExpansionBase::min(const,OPA)");
 #endif
-  if (a <= b[0]) {
+  if (a <= b.two_norm()) {
     c = OrthogPolyApprox<ordinal_type, value_type, node_type>(basis);
     c[0] = a;
   }
@@ -748,7 +744,7 @@ min(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::OrthogPolyExpansionBase::min(OPA,const)");
 #endif
-  if (a[0] <= b)
+  if (a.two_norm() <= b)
     c = a;
   else {
     c = OrthogPolyApprox<ordinal_type, value_type, node_type>(basis);

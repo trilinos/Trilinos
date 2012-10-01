@@ -91,7 +91,7 @@ namespace Belos {
     //@{ 
     
     //! Default constructor
-    XpetraOp(const RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & Op) : Op_(Op) {}
+    XpetraOp(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & Op) : Op_(Op) {}
     
     //! Destructor.
     virtual ~XpetraOp() {};
@@ -141,7 +141,7 @@ namespace Belos {
 
   private:
   
-    RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Op_;
+    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Op_;
   };
 
   template <> 
@@ -164,7 +164,7 @@ namespace Belos {
 
   public:
 
-    XpetraOp(const RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & Op) : Op_(Op) {}
+    XpetraOp(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & Op) : Op_(Op) {}
     
     virtual ~XpetraOp() {};
 
@@ -220,7 +220,7 @@ namespace Belos {
 
   private:
   
-    RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Op_;
+    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Op_;
   };
 
 } // namespace Belos

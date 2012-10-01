@@ -60,7 +60,7 @@
 namespace MueLuTests {
 
   // Little utility to generate aggregates.
-  RCP<Aggregates> gimmeAggregates(RCP<Operator> const &A, RCP<AmalgamationInfo> & amalgInfo)
+  RCP<Aggregates> gimmeAggregates(RCP<Matrix> const &A, RCP<AmalgamationInfo> & amalgInfo)
   {
     Level level;
     TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
@@ -137,7 +137,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(Aggregates, JustAggregation)
   {
     out << "version: " << MueLu::Version() << std::endl;
-    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(15);
+    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(15);
     RCP<AmalgamationInfo> amalgInfo = Teuchos::rcp(new AmalgamationInfo);
     RCP<Aggregates> aggregates = gimmeAggregates(A, amalgInfo);
     TEST_EQUALITY(aggregates != Teuchos::null, true);
@@ -149,7 +149,7 @@ namespace MueLuTests {
   {
       out << "version: " << MueLu::Version() << std::endl;
 
-      RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(36);
+      RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(36);
       RCP<const Map> rowmap = A->getRowMap();
       RCP<AmalgamationInfo> amalgInfo = Teuchos::rcp(new AmalgamationInfo);
       RCP<Aggregates> aggregates = gimmeAggregates(A, amalgInfo);

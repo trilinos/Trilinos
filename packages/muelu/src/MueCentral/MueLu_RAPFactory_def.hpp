@@ -46,10 +46,10 @@
 #ifndef MUELU_RAPFACTORY_DEF_HPP
 #define MUELU_RAPFACTORY_DEF_HPP
 
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_CrsOperator.hpp>
-#include <Xpetra_OperatorFactory.hpp>
-#include <Xpetra_BlockedCrsOperator.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_MatrixFactory.hpp>
+#include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
@@ -81,7 +81,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PrintMatrixInfo(const Operator & Ac, const std::string & msgTag) const {
+  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag) const {
     GetOStream(Statistics0, 0) << msgTag 
                                << " # global rows = "      << Ac.getGlobalNumRows()
                                << ", estim. global nnz = " << Ac.getGlobalNumEntries()
@@ -89,7 +89,7 @@ namespace MueLu {
   }
   
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PrintLoadBalancingInfo(const Operator & Ac, const std::string & msgTag) const {
+  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PrintLoadBalancingInfo(const Matrix & Ac, const std::string & msgTag) const {
     // TODO: provide a option to skip this (to avoid global communication)
 
     //nonzero imbalance
@@ -121,7 +121,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {  //FIXME make fineLevel const!!
-    typedef Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOperatorClass; // TODO move me
+    typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsMatrixClass; // TODO move me
 
     { //scoping
       FactoryMonitor m(*this, "Computing Ac", coarseLevel);
@@ -132,18 +132,18 @@ namespace MueLu {
       // Inputs: A, P
       //
 
-      RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
-      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_.get());
+      RCP<Matrix> A = fineLevel.Get< RCP<Matrix> >("A", AFact_.get());
+      RCP<Matrix> P = coarseLevel.Get< RCP<Matrix> >("P", PFact_.get());
 
       //
       // Build Ac = RAP
       //
-      RCP<Operator> Ac;
+      RCP<Matrix> Ac;
 
-      const RCP<BlockedCrsOperatorClass> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOperatorClass>(A);
+      const RCP<BlockedCrsMatrixClass> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrixClass>(A);
       if( bA != Teuchos::null) {
-        RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
-        Ac = BuildRAPBlock(R, A, P, levelID); // Triple matrix product for BlockedCrsOperatorClass
+        RCP<Matrix> R = coarseLevel.Get< RCP<Matrix> >("R", RFact_.get());
+        Ac = BuildRAPBlock(R, A, P, levelID); // Triple matrix product for BlockedCrsMatrixClass
 	// TODO add plausibility check
       } else {
 
@@ -152,11 +152,11 @@ namespace MueLu {
         //
         if ( coarseLevel.IsAvailable("A",PFact_.get()) && coarseLevel.IsAvailable("Importer",RFact_.get()) ) {
           SubFactoryMonitor m1(*this, "Rebalancing existing Ac", levelID);
-          Ac = coarseLevel.Get< RCP<Operator> >("A", PFact_.get());
-          RCP<Operator> newAc = OperatorFactory::Build(P->getDomainMap(), Ac->getGlobalMaxNumRowEntries());
-          RCP<CrsOperator> crsOp = rcp_dynamic_cast<CrsOperator>(newAc);
+          Ac = coarseLevel.Get< RCP<Matrix> >("A", PFact_.get());
+          RCP<Matrix> newAc = MatrixFactory::Build(P->getDomainMap(), Ac->getGlobalMaxNumRowEntries());
+          RCP<CrsMatrixWrap> crsOp = rcp_dynamic_cast<CrsMatrixWrap>(newAc);
           RCP<CrsMatrix> crsMtx = crsOp->getCrsMatrix();
-          RCP<CrsOperator> origOp = rcp_dynamic_cast<CrsOperator>(Ac);
+          RCP<CrsMatrixWrap> origOp = rcp_dynamic_cast<CrsMatrixWrap>(Ac);
           RCP<CrsMatrix> origMtx = origOp->getCrsMatrix();
           RCP<const Import> permImporter = coarseLevel.Get< RCP<const Import> >("Importer",RFact_.get());
           crsMtx->doImport(*origMtx, *permImporter,Xpetra::INSERT);
@@ -172,7 +172,7 @@ namespace MueLu {
         } else if (coarseLevel.IsAvailable("A",PFact_.get())) {
           // Ac already built by the load balancing process and no load balancing needed
           SubFactoryMonitor m1(*this, "Ac already computed", levelID);
-          Ac = coarseLevel.Get< RCP<Operator> >("A", PFact_.get());
+          Ac = coarseLevel.Get< RCP<Matrix> >("A", PFact_.get());
         } 
         // <<<<<<<< refactoring needed
         
@@ -184,7 +184,7 @@ namespace MueLu {
             Ac = BuildRAPImplicit(A, P, levelID);
           } else {
             // explicit version
-            RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
+            RCP<Matrix> R = coarseLevel.Get< RCP<Matrix> >("R", RFact_.get());
             Ac = BuildRAPExplicit(R, A, P, levelID);
           }
 
@@ -209,10 +209,10 @@ namespace MueLu {
   } //Build()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPExplicit(const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P, int levelID) const {
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPExplicit(const RCP<Matrix>& R, const RCP<Matrix>& A, const RCP<Matrix>& P, int levelID) const {
     SubFactoryMonitor m(*this, "Build RAP explicitly", levelID);
 
-    RCP<Operator> AP;
+    RCP<Matrix> AP;
     {
       SubFactoryMonitor m2(*this, "MxM: A x P", levelID);
       AP = Utils::TwoMatrixMultiply(A, false, P, false);
@@ -220,7 +220,7 @@ namespace MueLu {
       //Utils::Write(filename, AP);
     }
 
-    RCP<Operator> RAP;
+    RCP<Matrix> RAP;
     {
       SubFactoryMonitor m2(*this, "MxM: R x (AP)", levelID);
       RAP = Utils::TwoMatrixMultiply(R, false, AP, false, true, false);  // FIXME: no optimization of storage since insertLocalValues cannot be called after fillComplete when values are optimized out (Epetra)
@@ -235,12 +235,12 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPImplicit(const RCP<Operator>& A, const RCP<Operator>& P, int levelID) const {
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPImplicit(const RCP<Matrix>& A, const RCP<Matrix>& P, int levelID) const {
     SubFactoryMonitor m(*this, "Build RAP implicitly", levelID);
 
     GetOStream(Warnings0, 0) << "The implicitTranspose_ flag within RAPFactory for Epetra in parallel produces wrong results" << std::endl;
-    RCP<Operator> AP  = Utils::TwoMatrixMultiply(A, false, P, false);
-    RCP<Operator> RAP = Utils::TwoMatrixMultiply(P, true, AP, false, true, false); // FIXME: no optimization of storage since insertLocalValues cannot be called after fillComplete when values are optimized out (Epetra)
+    RCP<Matrix> AP  = Utils::TwoMatrixMultiply(A, false, P, false);
+    RCP<Matrix> RAP = Utils::TwoMatrixMultiply(P, true, AP, false, true, false); // FIXME: no optimization of storage since insertLocalValues cannot be called after fillComplete when values are optimized out (Epetra)
 
     if(checkAc_) CheckMainDiagonal(RAP);
        
@@ -249,22 +249,22 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPBlock(const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P, int levelID) const {
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPBlock(const RCP<Matrix>& R, const RCP<Matrix>& A, const RCP<Matrix>& P, int levelID) const {
     SubFactoryMonitor m(*this, "Build RAP block", levelID);
     
-    typedef Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOperatorClass;
-    const RCP<BlockedCrsOperatorClass> bR = Teuchos::rcp_dynamic_cast<BlockedCrsOperatorClass>(R);
-    const RCP<BlockedCrsOperatorClass> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOperatorClass>(A);
-    const RCP<BlockedCrsOperatorClass> bP = Teuchos::rcp_dynamic_cast<BlockedCrsOperatorClass>(P);
-    TEUCHOS_TEST_FOR_EXCEPTION(bA==Teuchos::null, Exceptions::BadCast, "MueLu::RAPFactory::BuildRAPblock: input matrix A is not of type BlockedCrsOperator! error.");
-    TEUCHOS_TEST_FOR_EXCEPTION(bP==Teuchos::null, Exceptions::BadCast, "MueLu::RAPFactory::BuildRAPblock: input matrix P is not of type BlockedCrsOperator! error.");
-    TEUCHOS_TEST_FOR_EXCEPTION(bR==Teuchos::null, Exceptions::BadCast, "MueLu::RAPFactory::BuildRAPblock: input matrix R is not of type BlockedCrsOperator! error.");
+    typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsMatrixClass;
+    const RCP<BlockedCrsMatrixClass> bR = Teuchos::rcp_dynamic_cast<BlockedCrsMatrixClass>(R);
+    const RCP<BlockedCrsMatrixClass> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrixClass>(A);
+    const RCP<BlockedCrsMatrixClass> bP = Teuchos::rcp_dynamic_cast<BlockedCrsMatrixClass>(P);
+    TEUCHOS_TEST_FOR_EXCEPTION(bA==Teuchos::null, Exceptions::BadCast, "MueLu::RAPFactory::BuildRAPblock: input matrix A is not of type BlockedCrsMatrix! error.");
+    TEUCHOS_TEST_FOR_EXCEPTION(bP==Teuchos::null, Exceptions::BadCast, "MueLu::RAPFactory::BuildRAPblock: input matrix P is not of type BlockedCrsMatrix! error.");
+    TEUCHOS_TEST_FOR_EXCEPTION(bR==Teuchos::null, Exceptions::BadCast, "MueLu::RAPFactory::BuildRAPblock: input matrix R is not of type BlockedCrsMatrix! error.");
     if(implicitTranspose_) GetOStream(Warnings0, 0) << "No support for implicitTranspose_ flag within RAPFactory for blocked matrices" << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION(bA->Cols()!=bP->Rows(), Exceptions::BadCast, "MueLu::RAPFactory::BuildRAPblock: block matrix dimensions do not match. error.");
     TEUCHOS_TEST_FOR_EXCEPTION(bA->Rows()!=bR->Cols(), Exceptions::BadCast, "MueLu::RAPFactory::BuildRAPblock: block matrix dimensions do not match. error.");
 
-    RCP<BlockedCrsOperatorClass> bAP  = Utils::TwoMatrixMultiplyBlock(bA, false, bP, false, true, true);
-    RCP<BlockedCrsOperatorClass> bRAP = Utils::TwoMatrixMultiplyBlock(bR, false, bAP, false, true, true);
+    RCP<BlockedCrsMatrixClass> bAP  = Utils::TwoMatrixMultiplyBlock(bA, false, bP, false, true, true);
+    RCP<BlockedCrsMatrixClass> bRAP = Utils::TwoMatrixMultiplyBlock(bR, false, bAP, false, true, true);
 
     // TODO add CheckMainDiagonal for Blocked operator
     PrintMatrixInfo(*bRAP, "Ac (blocked)");
@@ -272,7 +272,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CheckMainDiagonal(RCP<Operator> & Ac) const {
+  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CheckMainDiagonal(RCP<Matrix> & Ac) const {
     // plausibility check: no zeros on diagonal
     LO lZeroDiags = 0;
     RCP<Vector> diagVec = VectorFactory::Build(Ac->getRowMap());

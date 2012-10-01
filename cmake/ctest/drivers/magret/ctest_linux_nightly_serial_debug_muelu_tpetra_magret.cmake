@@ -67,32 +67,10 @@ SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES MueLu Tpetra Ifpack2 Amesos2 Belos)
-SET(EXTRA_EXCLUDE_PACKAGES Epetra Triutils)
+SET(Trilinos_PACKAGES MueLu)
+SET(EXTRA_EXCLUDE_PACKAGES ML Epetra Triutils Zoltan)
 
 SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF"
-
-  "-DTpetra_ENABLE_TESTS=OFF"
-  "-DTpetra_ENABLE_EXAMPLES=OFF"
-
-  "-DIfpack2_ENABLE_TESTS=OFF"
-  "-DIfpack2_ENABLE_EXAMPLES=OFF"
-
-  "-DAmesos2_ENABLE_TESTS=OFF"
-  "-DAmesos2_ENABLE_EXAMPLES=OFF"
-
-  "-DBelos_ENABLE_TESTS=OFF"
-  "-DBelos_ENABLE_EXAMPLES=OFF"
-
-  "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
-  "-DEpetra_ENABLE_TESTS=OFF"
-#  "-DEpetra_ENABLE_EXAMPLES=OFF"
-
-  "-DTrilinos_ENABLE_Triutils:BOOL=OFF"
-  "-DTriutils_ENABLE_TESTS=OFF"
-#  "-DTriutils_ENABLE_EXAMPLES=OFF"
-
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
   "-DTPL_SuperLU_INCLUDE_DIRS=/home/jngaida/opt/stow/superlu/4.1/include"
   "-DTPL_SuperLU_LIBRARIES=/home/jngaida/opt/stow/superlu/4.1/lib64/libsuperlu_4.1.a"

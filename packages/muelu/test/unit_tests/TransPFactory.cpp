@@ -87,7 +87,7 @@ namespace MueLuTests {
     //TEST_EQUALITY(coarseLevel.GetPreviousLevel().get(), &fineLevel);
     // --
 
-    RCP<Operator> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
+    RCP<Matrix> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
     fineLevel.Set("A",Op);
 
     SaPFactory sapFactory;
@@ -102,8 +102,8 @@ namespace MueLuTests {
     sapFactory.BuildP(fineLevel,coarseLevel);
     transPFact.BuildR(fineLevel,coarseLevel);
 
-    RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", &sapFactory);
-    RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", &transPFact);
+    RCP<Matrix> P = coarseLevel.Get< RCP<Matrix> >("P", &sapFactory);
+    RCP<Matrix> R = coarseLevel.Get< RCP<Matrix> >("R", &transPFact);
 
     RCP<MultiVector> result1 = MultiVectorFactory::Build(P->getDomainMap(),1);
     RCP<MultiVector> result2  = MultiVectorFactory::Build(R->getRangeMap(),1);

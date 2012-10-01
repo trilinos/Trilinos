@@ -31,7 +31,7 @@
 
 #include "Stokhos_ConfigDefs.h"
 
-#ifdef HAVE_STOKHOS_KOKKOS
+#ifdef HAVE_STOKHOS_KOKKOSARRAY
 
 #include "KokkosClassic_config.h"
 
@@ -46,6 +46,6 @@
 
 #include "Sacado_MP_Vector.hpp"
 
-#endif // HAVE_STOKHOS_KOKKOS
+#endif // HAVE_STOKHOS_KOKKOSARRAY
 
 #endif // STOKHOS_SACADO_KOKKOS_HPP

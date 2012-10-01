@@ -124,10 +124,10 @@ namespace MueLu {
       RCP<const MapExtractorClass> mapextractor = currentLevel.Get< RCP<const MapExtractorClass> >("SegAMapExtractor",MueLu::NoFactory::get());
 
       // fetch matrix/operator from level
-      RCP<Operator> Ain = currentLevel.Get< RCP<Operator> >(varName_, factory_);
+      RCP<Matrix> Ain = currentLevel.Get< RCP<Matrix> >(varName_, factory_);
 
-      // create new empty Operator
-      RCP<CrsOperator> Aout = rcp(new CrsOperator(Ain->getRowMap(),Ain->getGlobalMaxNumRowEntries(),Xpetra::StaticProfile));
+      // create new empty Matrix
+      RCP<CrsMatrixWrap> Aout = rcp(new CrsMatrixWrap(Ain->getRowMap(),Ain->getGlobalMaxNumRowEntries(),Xpetra::StaticProfile));
 
       GetOStream(Runtime0, 0) << "Segregation filter for " << varName_ << " with " << mapextractor_->NumMaps() << " blocks" << std::endl;
 
@@ -204,7 +204,7 @@ namespace MueLu {
       exit(0);
 #endif
 
-      currentLevel.Set(varName_, Teuchos::rcp_dynamic_cast<Operator>(Aout), this);
+      currentLevel.Set(varName_, Teuchos::rcp_dynamic_cast<Matrix>(Aout), this);
     }
 
     //@}

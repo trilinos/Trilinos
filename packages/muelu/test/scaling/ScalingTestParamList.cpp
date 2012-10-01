@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
   RCP<TimeMonitor> tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
 
   RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Operator> A   = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Matrix> A   = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
     
   RCP<MultiVector> coordinates;
   if (matrixParameters.GetMatrixType() == "Laplace1D") {
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
     H->IsPreconditioner(true);
 
     // Define Operator and Preconditioner
-    Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Operator object into a Belos operator
+    Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
     Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
 
     // Construct a Belos LinearProblem object
@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
 
     // Belos parameter list
     int maxIts = 100;
-    double tol = 1e-8;
+    double tol = 1e-8; // FIXME: use command line option
     Teuchos::ParameterList belosList;
     belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
     belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested

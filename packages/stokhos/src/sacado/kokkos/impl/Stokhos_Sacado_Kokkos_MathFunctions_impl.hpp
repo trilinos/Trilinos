@@ -26,9 +26,9 @@
 // ***********************************************************************
 // @HEADER
 
-#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
-    ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
+#if ! defined(KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE)                  || \
+    ! defined(KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION)
 
 #error "Including <Stokhos_Sacado_Kokkos_MathFucntions_impl.hpp> without macros defined"
 
@@ -42,7 +42,8 @@ namespace Sacado {							\
     template <typename T, typename N> class Expr;			\
 									\
     template <typename T>						\
-    FADOP< T,KOKKOS_MACRO_DEVICE > OP (const Expr<T,KOKKOS_MACRO_DEVICE>&); \
+    FADOP< T,KOKKOSARRAY_MACRO_DEVICE >					\
+    OP (const Expr<T,KOKKOSARRAY_MACRO_DEVICE>&);			\
   }									\
 }                                                                       \
                                                                         \
@@ -79,21 +80,21 @@ namespace Sacado {							\
     template <typename T, typename N> class Expr;			\
 									\
     template <typename T1, typename T2>					\
-    FADOP< T1, T2, KOKKOS_MACRO_DEVICE >				\
-    OP (const Expr<T1,KOKKOS_MACRO_DEVICE>&,				\
-	const Expr<T2,KOKKOS_MACRO_DEVICE>&);				\
-									\
+    FADOP< T1, T2, KOKKOSARRAY_MACRO_DEVICE >				\
+    OP (const Expr<T1,KOKKOSARRAY_MACRO_DEVICE>&,			\
+	const Expr<T2,KOKKOSARRAY_MACRO_DEVICE>&);			\
+    									\
     template <typename T>						\
-    FADOP< typename T::value_type, T, KOKKOS_MACRO_DEVICE >		\
+    FADOP< typename T::value_type, T, KOKKOSARRAY_MACRO_DEVICE >	\
     OP (const typename T::value_type&,					\
-	const Expr<T,KOKKOS_MACRO_DEVICE>&);				\
-									\
+	const Expr<T,KOKKOSARRAY_MACRO_DEVICE>&);			\
+    									\
     template <typename T>						\
-    FADOP< T, typename T::value_type, KOKKOS_MACRO_DEVICE >		\
-    OP (const Expr<T,KOKKOS_MACRO_DEVICE>&,				\
+    FADOP< T, typename T::value_type, KOKKOSARRAY_MACRO_DEVICE >	\
+    OP (const Expr<T,KOKKOSARRAY_MACRO_DEVICE>&,			\
 	const typename T::value_type&);					\
   }									\
-									\
+  									\
 }									\
                                                                         \
 namespace std {                                                         \

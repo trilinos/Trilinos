@@ -131,6 +131,7 @@ namespace panzer_stk {
       pl->sublist("Boundary Conditions").disableRecursiveValidation();
       pl->sublist("Solution Control").disableRecursiveValidation();
       pl->sublist("Solver Factories").disableRecursiveValidation();
+      pl->set<bool>("Use Discrete Adjoint",false);
       pl->sublist("Mesh").disableRecursiveValidation();
       pl->sublist("Initial Conditions").disableRecursiveValidation();
       pl->sublist("Initial Conditions").sublist("Transient Parameters").disableRecursiveValidation();
@@ -238,6 +239,8 @@ namespace panzer_stk {
 	is_transient = true;
     }
 
+    bool useDiscreteAdjoint = p.get<bool>("Use Discrete Adjoint");
+    
     // build physics blocks
 
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
@@ -375,7 +378,7 @@ namespace panzer_stk {
          = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
        globalIndexer = dofManager;
     
-       linObjFactory = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpi_comm,dofManager));
+       linObjFactory = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpi_comm,dofManager,useDiscreteAdjoint));
     }
 
     TEUCHOS_ASSERT(globalIndexer!=Teuchos::null);
@@ -972,7 +975,7 @@ namespace panzer_stk {
 
              // use epetra to write coordinates to matrix market files
              Epetra_MpiComm ep_comm(*mpi_comm->getRawMpiComm()); // this is OK access to RawMpiComm becase its declared on the stack?
-                                                                 // and all users of this object are on the stack (within scope of mpi_comm)
+                                                                 // and all users of this object are on the stack (within scope of mpi_comm
              Epetra_Map map(-1,xcoords.size(),0,ep_comm);
 
              Teuchos::RCP<Epetra_Vector> vec;
@@ -1062,9 +1065,8 @@ namespace panzer_stk {
             const std::vector<double> & zcoords = plCall.getZCoordsVector();
 
             // use epetra to write coordinates to matrix market files
-            
-            Epetra_MpiComm ep_comm(*mpi_comm->getRawMpiComm()); // this is OK access to RawMpiComm becase its declared on the stack
-                                                                // and all users of this object are on the stack (within scope of mpi_comm)
+            Epetra_MpiComm ep_comm(*mpi_comm->getRawMpiComm()); // this is OK access to RawMpiComm becase its declared on the stack?
+                                                                // and all users of this object are on the stack (within scope of mpi_comm
             Epetra_Map map(-1,xcoords.size(),0,ep_comm);
 
             Teuchos::RCP<Epetra_Vector> vec;

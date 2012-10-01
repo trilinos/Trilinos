@@ -44,6 +44,8 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Panzer_config.hpp>
 
+// #define ENABLE_UNIFORM
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 
@@ -114,11 +116,15 @@ void SquareQuadMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::P
    buildElements(parallelMach,mesh);
 
    // finish up the edges
+#ifndef ENABLE_UNIFORM
    mesh.buildSubcells();
+#endif
    mesh.buildLocalElementIDs();
 
    // now that edges are built, sidsets can be added
+#ifndef ENABLE_UNIFORM
    addSideSets(mesh);
+#endif
 
    // add nodesets
    addNodeSets(mesh);
@@ -214,10 +220,12 @@ void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK
    }
 
    // add sidesets 
+#ifndef ENABLE_UNIFORM
    mesh.addSideset("left",side_ctd);
    mesh.addSideset("right",side_ctd);
    mesh.addSideset("top",side_ctd);
    mesh.addSideset("bottom",side_ctd);
+#endif
 
    // add nodesets
    mesh.addNodeset("lower_left");

@@ -58,8 +58,8 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_BlockedCrsOperator.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 
 #include "MueLu_BlockedGaussSeidelSmoother_decl.hpp"
@@ -104,15 +104,15 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level &currentLevel) {
-    //typedef Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOOperator;
+    //typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOMatrix;
 
     FactoryMonitor m(*this, "Setup blocked Gauss-Seidel Smoother", currentLevel);
     if (SmootherPrototype::IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::BlockedGaussSeidelSmoother::Setup(): Setup() has already been called";
 
     // extract blocked operator A from current level
-    A_ = currentLevel.Get< RCP<Operator> >("A", AFact_.get()); // A needed for extracting map extractors
-    RCP<BlockedCrsOperator> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOperator>(A_);
-    TEUCHOS_TEST_FOR_EXCEPTION(bA==Teuchos::null, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: input matrix A is not of type BlockedCrsOperator! error.");
+    A_ = currentLevel.Get< RCP<Matrix> >("A", AFact_.get()); // A needed for extracting map extractors
+    RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+    TEUCHOS_TEST_FOR_EXCEPTION(bA==Teuchos::null, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: input matrix A is not of type BlockedCrsMatrix! error.");
 
     // plausibility check
     TEUCHOS_TEST_FOR_EXCEPTION(bA->Rows() != FactManager_.size(), Exceptions::RuntimeError, "MueLu::BlockedPFactory::Build: number of block rows of A does not match number of SubFactoryManagers. error.");
@@ -138,7 +138,7 @@ namespace MueLu {
       Inverse_.push_back(Smoo);
 
       // extract i-th diagonal block Aii -> determine block
-      RCP<Operator> Aii = currentLevel.Get< RCP<Operator> >("A",(*it)->GetFactory("A").get());
+      RCP<Matrix> Aii = currentLevel.Get< RCP<Matrix> >("A",(*it)->GetFactory("A").get());
       for(size_t i = 0; i<rangeMapExtractor_->NumMaps(); i++) {
         if(rangeMapExtractor_->getMap(i)->isSameAs(*(Aii->getRangeMap()))) {
           // map found: i is the true block row index

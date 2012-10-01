@@ -56,9 +56,9 @@
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_ExportFactory.hpp>
-#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 
-#include <Xpetra_BlockedCrsOperator.hpp>
+#include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MapExtractor.hpp>
@@ -121,10 +121,10 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::De
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level &coarseLevel) const {
-  typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OperatorClass;
+  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> MatrixClass;
   typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixClass;
-  typedef Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOperatorClass;
-  typedef Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOOperator;
+  typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixWrapClass;
+  typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOMatrix;
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> MapClass;
   typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactoryClass;
   typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorClass;
@@ -135,16 +135,16 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
   //std::ostringstream buf; buf << coarseLevel.GetLevelID();
 
   // Level Get
-  RCP<Operator> A     = fineLevel.  Get< RCP<Operator> >("A", AFact_.get()); // IMPORTANT: use main factory manager for getting A
-  RCP<BlockedCrsOOperator> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOOperator>(A);
-  TEUCHOS_TEST_FOR_EXCEPTION(bA==Teuchos::null, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: input matrix A is not of type BlockedCrsOperator! error.");
+  RCP<Matrix> A     = fineLevel.  Get< RCP<Matrix> >("A", AFact_.get()); // IMPORTANT: use main factory manager for getting A
+  RCP<BlockedCrsOMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOMatrix>(A);
+  TEUCHOS_TEST_FOR_EXCEPTION(bA==Teuchos::null, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: input matrix A is not of type BlockedCrsMatrix! error.");
 
   // plausibility check
   TEUCHOS_TEST_FOR_EXCEPTION(bA->Rows() != FactManager_.size(), Exceptions::RuntimeError, "MueLu::BlockedPFactory::Build: number of block rows of A does not match number of SubFactoryManagers. error.");
   TEUCHOS_TEST_FOR_EXCEPTION(bA->Cols() != FactManager_.size(), Exceptions::RuntimeError, "MueLu::BlockedPFactory::Build: number of block cols of A does not match number of SubFactoryManagers. error.");
 
   // build blocked prolongator
-  std::vector<RCP<Operator> > subBlockP;
+  std::vector<RCP<Matrix> > subBlockP;
   std::vector<RCP<const MapClass> > subBlockPRangeMaps;
   std::vector<RCP<const MapClass    > > subBlockPDomainMaps;
   std::vector<GO> fullRangeMapVector;
@@ -161,10 +161,10 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
     SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   *it);
     SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), *it);
     if(!restrictionMode_) {
-      subBlockP.push_back(coarseLevel.Get<RCP<Operator> >("P", (*it)->GetFactory("P").get())); // create and return block P operator
+      subBlockP.push_back(coarseLevel.Get<RCP<Matrix> >("P", (*it)->GetFactory("P").get())); // create and return block P operator
     }
     else {
-      subBlockP.push_back(coarseLevel.Get<RCP<Operator> >("R", (*it)->GetFactory("R").get())); // create and return block R operator
+      subBlockP.push_back(coarseLevel.Get<RCP<Matrix> >("R", (*it)->GetFactory("R").get())); // create and return block R operator
     }
 
     // check if prolongator/restrictor operators have strided maps
@@ -218,9 +218,9 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
   Teuchos::RCP<const MapExtractorClass> rangeMapExtractor  = MapExtractorFactoryClass::Build(fullRangeMap, subBlockPRangeMaps);
   Teuchos::RCP<const MapExtractorClass> domainMapExtractor = MapExtractorFactoryClass::Build(fullDomainMap, subBlockPDomainMaps);
 
-  Teuchos::RCP<BlockedCrsOOperator> bP = Teuchos::rcp(new BlockedCrsOOperator(rangeMapExtractor,domainMapExtractor,10));
+  Teuchos::RCP<BlockedCrsOMatrix> bP = Teuchos::rcp(new BlockedCrsOMatrix(rangeMapExtractor,domainMapExtractor,10));
   for(size_t i = 0; i<subBlockPRangeMaps.size(); i++) {
-    Teuchos::RCP<CrsOperatorClass> crsOpii = Teuchos::rcp_dynamic_cast<CrsOperatorClass>(subBlockP[i]);
+    Teuchos::RCP<CrsMatrixWrapClass> crsOpii = Teuchos::rcp_dynamic_cast<CrsMatrixWrapClass>(subBlockP[i]);
     Teuchos::RCP<CrsMatrixClass> crsMatii = crsOpii->getCrsMatrix();
     bP->setMatrix(i,i,crsMatii);
   }
@@ -235,14 +235,14 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
   if(!restrictionMode_)
   {
     // prolongation factory is in prolongation mode
-    coarseLevel.Set("P", Teuchos::rcp_dynamic_cast<OperatorClass>(bP), this);
+    coarseLevel.Set("P", Teuchos::rcp_dynamic_cast<MatrixClass>(bP), this);
   }
   else
   {
     // prolongation factory is in restriction mode
     // we do not have to transpose the blocked R operator since the subblocks on the diagonal
     // are already valid R subblocks
-    coarseLevel.Set("R", Teuchos::rcp_dynamic_cast<OperatorClass>(bP), this);
+    coarseLevel.Set("R", Teuchos::rcp_dynamic_cast<MatrixClass>(bP), this);
   }
 
 }

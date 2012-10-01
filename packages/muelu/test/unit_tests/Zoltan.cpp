@@ -104,7 +104,7 @@ namespace MueLuTests {
     RCP<const Map> map = MapFactory::createUniformContigMap(TestHelpers::Parameters::getLib(), numGlobalElements, comm);
     const size_t numMyElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
-    RCP<Operator> A = rcp(new CrsOperator(map, 1)); // Force underlying linear algebra library to allocate more
+    RCP<Matrix> A = rcp(new CrsMatrixWrap(map, 1)); // Force underlying linear algebra library to allocate more
                                                     // memory on the fly.  While not super efficient, this
                                                     // ensures that no zeros are being stored.  Thus, from
                                                     // Zoltan's perspective the matrix is imbalanced.
@@ -339,7 +339,7 @@ namespace MueLuTests {
 
     const size_t numMyElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
-    RCP<Operator> A = rcp(new CrsOperator(map, 1)); // Force underlying linear algebra library to allocate more
+    RCP<Matrix> A = rcp(new CrsMatrixWrap(map, 1)); // Force underlying linear algebra library to allocate more
                                                     // memory on the fly.  While not super efficient, this
                                                     // ensures that no zeros are being stored.  Thus, from
                                                     // Zoltan's perspective the matrix is imbalanced.

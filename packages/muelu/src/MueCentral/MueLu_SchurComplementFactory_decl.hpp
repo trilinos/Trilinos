@@ -60,9 +60,9 @@
 
 //Xpetra
 #include <Xpetra_MapExtractor_fwd.hpp>
-#include <Xpetra_CrsOperator_fwd.hpp>
+#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_CrsMatrix_fwd.hpp>
-//#include <Xpetra_Operator.hpp>
+//#include <Xpetra_Matrix.hpp>
 #include "Xpetra_Map_fwd.hpp"
 #include "Xpetra_StridedMap_fwd.hpp"
 

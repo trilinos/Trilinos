@@ -17,7 +17,7 @@ IF ((${PACKAGE_NAME}_ENABLE_Amesos AND ${PACKAGE_NAME}_ENABLE_Ifpack) OR (${PACK
     MultipleFactoryManager
     SOURCES MultipleFactoryManager.cpp
     COMM serial mpi
-    DEPLIBS muelu muelu-xpetra
+    DEPLIBS muelu xpetra
     )
 
 ENDIF()

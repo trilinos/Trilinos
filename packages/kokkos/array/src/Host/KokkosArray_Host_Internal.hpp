@@ -52,7 +52,7 @@
 namespace KokkosArray {
 namespace Impl {
 
-class HostWorkerBlock : public HostThreadWorker<void> {
+class HostWorkerBlock : public HostThreadWorker {
 public:
   void execute_on_thread( HostThread & ) const ;
 
@@ -93,11 +93,12 @@ protected:
   unsigned         m_thread_count ;  // Number of threads
   unsigned         m_gang_count ;    // Number of NUMA nodes used
   unsigned         m_worker_count ;  // Number of threads per NUMA node
+  unsigned         m_work_chunk ;    // Granularity of work partitioning
   HostThread       m_master_thread ;
   //! Array of all worker threads (including master); accessible to the threads.
   HostThread     * m_thread[ HostThread::max_thread_count ];
 
-  const HostThreadWorker<void> * volatile m_worker ;
+  const HostThreadWorker * volatile m_worker ;
 
   virtual ~HostInternal();
 
@@ -121,11 +122,11 @@ private:
   bool spawn_threads( const unsigned use_node_count ,
                       const unsigned use_node_thread_count );
 
-  void activate();
-
   bool spawn( const size_t );
 
   bool initialize_thread( const unsigned thread_rank, HostThread & thread );
+
+  void activate_threads();
 
 public:
   /// \brief Assert at run time that the calling worker thread is inactive.
@@ -153,7 +154,7 @@ public:
 
   void finalize();
 
-  inline void execute( const HostThreadWorker<void> & worker );
+  inline void execute( const HostThreadWorker & worker );
 
   void driver( const size_t );
 

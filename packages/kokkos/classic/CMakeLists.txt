@@ -196,18 +196,6 @@ ENDIF()
 ######################################################################
 
 #
-# Exclude files for source package.
-#
-
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
-
-TRIBITS_EXCLUDE_FILES(
-  doc
-  DistTSQR/doc
-  LinAlg/doc/CrsRefactorNotesMay2012
-  )
-
-#
 # D) Do standard postprocessing
 #
 

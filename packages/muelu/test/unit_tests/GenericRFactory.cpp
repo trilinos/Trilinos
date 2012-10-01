@@ -104,7 +104,8 @@ namespace MueLuTests {
     const RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), nEle, 0, comm);
     Teuchos::ParameterList matrixParameters;
     matrixParameters.set("nx",nEle);
-    RCP<Operator> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>("Laplace1D", map, matrixParameters);
+
+    RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>("Laplace1D", map, matrixParameters);
 
     // build nullspace
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -155,11 +156,11 @@ namespace MueLuTests {
     H->Setup(M, 0, maxLevels);
 
     RCP<Level> coarseLevel = H->GetLevel(1);
-    RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P");
-    RCP<Operator> R1 = coarseLevel->Get< RCP<Operator> >("R");
+    RCP<Matrix> P1 = coarseLevel->Get< RCP<Matrix> >("P");
+    RCP<Matrix> R1 = coarseLevel->Get< RCP<Matrix> >("R");
     RCP<Level> coarseLevel2 = H->GetLevel(2);
-    RCP<Operator> P2 = coarseLevel2->Get< RCP<Operator> >("P");
-    RCP<Operator> R2 = coarseLevel2->Get< RCP<Operator> >("R");
+    RCP<Matrix> P2 = coarseLevel2->Get< RCP<Matrix> >("P");
+    RCP<Matrix> R2 = coarseLevel2->Get< RCP<Matrix> >("R");
 
     TEST_EQUALITY(Finest->IsAvailable("PreSmoother"), true);
     TEST_EQUALITY(Finest->IsAvailable("PostSmoother"), true);
@@ -184,8 +185,8 @@ namespace MueLuTests {
     // note: the Epetra matrix-matrix multiplication using implicit transpose is buggy in parallel case
     //       (for multiplication of a square matrix with a rectangular matrix)
     //       however it seems to work for two rectangular matrices
-    Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > RP = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(R1,false,P1,false);
-    Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > PtP = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P1,true,P1,false);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > RP = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(R1,false,P1,false);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtP = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P1,true,P1,false);
 
     RCP<Vector> x = VectorFactory::Build(RP->getDomainMap());
     RCP<Vector> bRP  = VectorFactory::Build(RP->getRangeMap());
@@ -197,8 +198,8 @@ namespace MueLuTests {
 
     TEST_EQUALITY(bRP->norm1() - bPtP->norm1() < 1e-12, true);
 
-    Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > RP2 = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(R2,false,P2,false);
-    Teuchos::RCP<Xpetra::Operator<Scalar,LO,GO> > PtP2 = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P2,true,P2,false);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > RP2 = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(R2,false,P2,false);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtP2 = MueLu::Utils<Scalar,LO,GO>::TwoMatrixMultiply(P2,true,P2,false);
 
     x = VectorFactory::Build(RP2->getDomainMap());
     bRP  = VectorFactory::Build(RP2->getRangeMap());
@@ -213,7 +214,7 @@ namespace MueLuTests {
 
     //R1->describe(*fos,Teuchos::VERB_EXTREME);
 
-    /*RCP<CrsOperator> crsP1 = rcp_dynamic_cast<CrsOperator>(P1);
+    /*RCP<CrsMatrixWrap> crsP1 = rcp_dynamic_cast<CrsMatrixWrap>(P1);
     RCP<CrsMatrix> crsMat = crsP1->getCrsMatrix();
     RCP<Xpetra::EpetraCrsMatrix> epcrsMat = rcp_dynamic_cast<Xpetra::EpetraCrsMatrix>(crsMat);
     RCP<Epetra_CrsMatrix> epMat = epcrsMat->getEpetra_CrsMatrixNonConst();
@@ -237,7 +238,7 @@ namespace MueLuTests {
     for (int i=1; i<5; i++) {
       // generate problem
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-      RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(50*i*comm->getSize());
+      RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(50*i*comm->getSize());
 
       // Multigrid Hierarchy
       Hierarchy H(A);

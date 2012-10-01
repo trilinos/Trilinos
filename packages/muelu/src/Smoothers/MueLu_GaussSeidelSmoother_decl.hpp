@@ -46,7 +46,7 @@
 #ifndef MUELU_GAUSSSEIDELSMOOTHER_DECL_HPP
 #define MUELU_GAUSSSEIDELSMOOTHER_DECL_HPP
 
-#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_GaussSeidelSmoother_fwd.hpp"
@@ -104,7 +104,7 @@ namespace MueLu {
 
     LO nSweeps_;       // < ! sweeps
     SC omega_;         // < ! relaxation parameter
-    RCP <Operator> A_;
+    RCP <Matrix> A_;
 
   }; //class GaussSeidelSmoother
 

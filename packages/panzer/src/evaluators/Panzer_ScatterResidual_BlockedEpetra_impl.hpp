@@ -333,10 +333,6 @@ evaluateFields(typename Traits::EvalData workset)
    std::vector<LO> LIDs;
    std::vector<double> jacRow;
 
-   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-   out.setOutputToRootOnly(-1);
-   out.setShowProcRank(true);
-
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;

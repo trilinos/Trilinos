@@ -320,7 +320,7 @@ public:
   }
 
   __device__
-  void execute_on_device() const
+  void operator()(void) const
   {
     // Require: m_graph.block_length == blockDim.x
 

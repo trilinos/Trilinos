@@ -20,14 +20,14 @@ ADD_SUBDIRECTORIES(
 # VbrMatrix
 
 # Tests specifically written for Xpetra:
-  Operator
+  Matrix
   )
 
 # uncomment this to ensure Xpetra header files include all necessary dependencies
 #ADD_SUBDIRECTORY(compile_tests)
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
+IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
   ADD_SUBDIRECTORIES(
-    BlockedCrsOperator
+    BlockedCrsMatrix
   )
 ENDIF()

@@ -133,13 +133,13 @@ dependencies.
   ${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES
   
     The list of *direct* package dependencies that are required for the
-    libraries built by ${PACKAGE_NAME}.  These should not include indiect
+    libraries built by ${PACKAGE_NAME}.  These should not include indirect
     dependencies but it is harmless to list these also.
   
   ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES
   
     The list of *direct* package dependencies that are only optional for the
-    libraries built by ${PACKAGE_NAME}.  These should not include indiect
+    libraries built by ${PACKAGE_NAME}.  These should not include indirect
     dependencies but it is harmless to list these also.
   
   ${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES
@@ -147,7 +147,7 @@ dependencies.
     The list of *direct* package dependencies that are required for the
     tests/examples built by ${PACKAGE_NAME}.  This list should not contain
     any of the packages listed in ${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES.
-    These should not include indiect dependencies but it is harmless to list
+    These should not include indirect dependencies but it is harmless to list
     these also.
   
   ${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES
@@ -157,7 +157,7 @@ dependencies.
     any of the packages listed in ${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES,
     ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES, or
     ${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES.  These should not include
-    indiect dependencies but it is harmless to list these also.
+    indirect dependencies but it is harmless to list these also.
 
 Given the above variables, the following derived variables are then set:
 

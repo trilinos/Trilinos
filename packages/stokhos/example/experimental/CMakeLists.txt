@@ -18,28 +18,37 @@ IF(Stokhos_ENABLE_Tpetra AND Stokhos_ENABLE_Belos AND Stokhos_ENABLE_Ifpack2 AND
 	       twoD_diffusion_problem_tpetra_def.hpp
                BelosPCETpetraAdapter.hpp
        COMM serial mpi
-       DEPLIBS stokhos muelu muelu-xpetra
+       DEPLIBS stokhos muelu xpetra
+      )
+    TRIBITS_ADD_EXECUTABLE(
+       Linear2D_Diffusion_IPCE_Ifpack2_Example
+       SOURCES linear2d_diffusion_pce_ifpack2.cpp 
+               twoD_diffusion_problem_tpetra.hpp 
+	       twoD_diffusion_problem_tpetra_def.hpp
+               BelosPCETpetraAdapter.hpp
+       COMM serial mpi
+       DEPLIBS stokhos
       )
      TRIBITS_ADD_TEST(
-            Linear2D_Diffusion_IPCE_Example
-            NAME "Linear2D_Diffusion_IPCE_Example_Direct"
-            ARGS "--division_method=Direct"
+            Linear2D_Diffusion_IPCE_Ifpack2_Example
+            NAME "Linear2D_Diffusion_IPCE_Ifpack2_Example_Direct"
+            ARGS "--num_mesh=8 --division_method=Direct"
             COMM serial mpi
             NUM_MPI_PROCS 1 
             PASS_REGULAR_EXPRESSION "Example Passed!"
           )
        TRIBITS_ADD_TEST(
-            Linear2D_Diffusion_IPCE_Example
-            NAME "Linear2D_Diffusion_IPCE_Example_CG_Diag"
-            ARGS "--division_method=CG --divprec_method=Diag"
+            Linear2D_Diffusion_IPCE_Ifpack2_Example
+            NAME "Linear2D_Diffusion_IPCE_Ifpack2_Example_CG_Diag"
+            ARGS "--num_mesh=8 --division_method=CG --divprec_method=Diag"
             COMM serial mpi
             NUM_MPI_PROCS 1
             PASS_REGULAR_EXPRESSION "Example Passed!"
           )
       TRIBITS_ADD_TEST(
-            Linear2D_Diffusion_IPCE_Example
-            NAME "Linear2D_Diffusion_IPCE_Example_CG_Schur"
-            ARGS "--division_method=CG --divprec_method=Schur"
+            Linear2D_Diffusion_IPCE_Ifpack2_Example
+            NAME "Linear2D_Diffusion_IPCE_Ifpack2_Example_CG_Schur"
+            ARGS "--num_mesh=8 --division_method=CG --divprec_method=Schur"
             COMM serial mpi
             NUM_MPI_PROCS 1
             PASS_REGULAR_EXPRESSION "Example Passed!"

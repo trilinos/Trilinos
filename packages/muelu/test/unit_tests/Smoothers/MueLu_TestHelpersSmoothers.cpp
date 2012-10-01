@@ -76,7 +76,7 @@ namespace MueLuTests {
     }
 
     // SmootherBase test
-    ST::magnitudeType testApply(const Operator& A, const SmootherBase & smoother, MultiVector & X, const MultiVector & RHS, Teuchos::FancyOStream & out, bool & success) {
+    ST::magnitudeType testApply(const Matrix& A, const SmootherBase & smoother, MultiVector & X, const MultiVector & RHS, Teuchos::FancyOStream & out, bool & success) {
       Array<ST::magnitudeType> norms(1);
 
       RHS.norm2(norms);
@@ -97,7 +97,7 @@ namespace MueLuTests {
     }
 
     // SmootherBase test
-    ST::magnitudeType testApply_X1_RHS0(const Operator& A, const SmootherBase & smoother, Teuchos::FancyOStream & out, bool & success) {
+    ST::magnitudeType testApply_X1_RHS0(const Matrix& A, const SmootherBase & smoother, Teuchos::FancyOStream & out, bool & success) {
       RCP<MultiVector> X   = MultiVectorFactory::Build(A.getDomainMap(),1);
       RCP<MultiVector> RHS = MultiVectorFactory::Build(A.getRangeMap(),1);
       X->putScalar((SC) 1.0);
@@ -107,7 +107,7 @@ namespace MueLuTests {
     }
     
     // SmootherBase test
-    ST::magnitudeType testApply_X0_RandomRHS(const Operator& A, const SmootherBase & smoother, Teuchos::FancyOStream & out, bool & success) {
+    ST::magnitudeType testApply_X0_RandomRHS(const Matrix& A, const SmootherBase & smoother, Teuchos::FancyOStream & out, bool & success) {
       RCP<MultiVector> X   = MultiVectorFactory::Build(A.getDomainMap(),1);
       RCP<MultiVector> RHS = MultiVectorFactory::Build(A.getRangeMap(),1);
 
@@ -129,7 +129,7 @@ namespace MueLuTests {
     }
 
     // SmootherPrototype helper function
-    void setupSmoother(RCP<Operator>& A, SmootherPrototype & smoother, Teuchos::FancyOStream & out, bool & success) {
+    void setupSmoother(RCP<Matrix>& A, SmootherPrototype & smoother, Teuchos::FancyOStream & out, bool & success) {
       Level level; TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
       level.Set("A", A);
       smoother.Setup(level);
@@ -137,7 +137,7 @@ namespace MueLuTests {
 
     // SmootherPrototype test
     ST::magnitudeType testApply_A125_X1_RHS0(SmootherPrototype & smoother, Teuchos::FancyOStream & out, bool & success) {
-      Teuchos::RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
+      Teuchos::RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
 
       setupSmoother(A, smoother, out, success);
       return testApply_X1_RHS0(*A, smoother, out, success); // in MueLuTests::SmootherBase
@@ -145,7 +145,7 @@ namespace MueLuTests {
 
     // SmootherPrototype test
     ST::magnitudeType testApply_A125_X0_RandomRHS(SmootherPrototype & smoother, Teuchos::FancyOStream & out, bool & success) {
-      Teuchos::RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
+      Teuchos::RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
       
       setupSmoother(A, smoother, out, success);
       return testApply_X0_RandomRHS(*A, smoother, out, success); // in MueLuTests::SmootherBase

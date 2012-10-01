@@ -65,7 +65,7 @@
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_CrsMatrix.hpp>
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include <Xpetra_Parameters.hpp>
 
@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
 
   {
-    RCP<Operator> A = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, Operator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+    RCP<Matrix> A = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, Matrix>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
     
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     if (comm->getRank() == 0)

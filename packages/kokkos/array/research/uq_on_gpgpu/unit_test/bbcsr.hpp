@@ -173,7 +173,7 @@ public:
   }
 
   __device__
-  void execute_on_device() const
+  void operator()(void) const
   {
     extern __shared__ Cuda::size_type shared_data[] ;
 

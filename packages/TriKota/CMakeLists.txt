@@ -16,8 +16,8 @@ TRIBITS_PACKAGE(TriKota DISABLE_STRONG_WARNINGS)
 #  "Build with Debug mode."
 #  OFF )
 
-SET(TriKota_ENABLE_DakotaCMake OFF CACHE BOOL 
-"Compile Dakota using CMake instead of the default autotools")
+SET(TriKota_ENABLE_DakotaCMake ON CACHE BOOL 
+    "Compile Dakota using CMake instead of the default autotools")
 
 #
 # C) Add the libraries, tests, and examples
@@ -74,6 +74,15 @@ IF(TriKota_ENABLE_DakotaCMake)
       SET(Boost_INCLUDE_DIR ${Boost_INCLUDE_DIRS} CACHE FILEPATH 
 	"Boost include directory set by TriKota")
     ENDIF()
+  ENDIF()
+
+  # Convey BLAS/LAPACK settings from TriBITS to Dakota.
+  # This may not suffice if other link directories are also needed.
+  IF(TPL_BLAS_LIBRARIES)
+    SET(BLAS_LIBS "${TPL_BLAS_LIBRARIES}")
+  ENDIF()
+  IF(TPL_LAPACK_LIBRARIES)
+    SET(LAPACK_LIBS "${TPL_LAPACK_LIBRARIES}")
   ENDIF()
 
   # Turn off a bunch of Dakota non-TriBITS-complient tests when buliding

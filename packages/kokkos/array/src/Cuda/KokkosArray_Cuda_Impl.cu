@@ -111,6 +111,12 @@ void cuda_internal_error_throw( cudaError e , const char * name )
 //   int pciBusID;
 //   int pciDeviceID;
 //   int tccDriver;
+//   int asyncEngineCount;
+//   int unifiedAddressing;
+//   int memoryClockRate;
+//   int memoryBusWidth;
+//   int l2CacheSize;
+//   int maxThreadsPerMultiProcessor;
 // };
 
 
@@ -158,14 +164,17 @@ public:
 
   typedef Cuda::size_type size_type ;
 
-  int                       m_cudaDev ;
-  unsigned                  m_maxWarpCount ;
-  unsigned                  m_maxBlock ;
-  unsigned                  m_maxSharedWords ;
-  size_type                 m_scratchSpaceCount ;
-  size_type                 m_scratchFlagsCount ;
-  size_type               * m_scratchSpace ;
-  size_type               * m_scratchFlags ;
+  int         m_cudaDev ;
+  unsigned    m_maxWarpCount ;
+  unsigned    m_maxBlock ;
+  unsigned    m_maxSharedWords ;
+  size_type   m_scratchSpaceCount ;
+  size_type   m_scratchFlagsCount ;
+  size_type   m_scratchUnifiedCount ;
+  size_type   m_scratchUnifiedSupported ;
+  size_type * m_scratchSpace ;
+  size_type * m_scratchFlags ;
+  size_type * m_scratchUnified ;
 
   static       CudaInternal & raw_singleton();
   static const CudaInternal & singleton();
@@ -183,17 +192,23 @@ public:
     , m_maxSharedWords( 0 )
     , m_scratchSpaceCount( 0 )
     , m_scratchFlagsCount( 0 )
+    , m_scratchUnifiedCount( 0 )
+    , m_scratchUnifiedSupported( 0 )
     , m_scratchSpace( 0 )
     , m_scratchFlags( 0 )
+    , m_scratchUnified( 0 )
     {}
 
   size_type * scratch_space( const size_type size );
   size_type * scratch_flags( const size_type size );
+  size_type * scratch_unified( const size_type size );
 };
 
 CudaInternal::~CudaInternal()
 {
-  if ( m_scratchSpace || m_scratchFlags) {
+  if ( m_scratchSpace ||
+       m_scratchFlags ||
+       m_scratchUnified ) {
     std::cerr << "KokkosArray::Cuda ERROR: Failed to call KokkosArray::Cuda::finalize()"
               << std::endl ;
     std::cerr.flush();
@@ -269,12 +284,25 @@ void CudaInternal::initialize( int cuda_device_id )
     m_maxBlock = cudaProp.maxGridSize[0] ;
 
     //----------------------------------
+
+    m_scratchUnifiedSupported = cudaProp.unifiedAddressing ;
+
+    if ( ! m_scratchUnifiedSupported ) {
+      std::cout << "KokkosArray::Cuda device "
+                << cudaProp.name << " capability "
+                << cudaProp.major << "." << cudaProp.minor
+                << " does not support unified virtual address space"
+                << std::endl ;
+    }
+
+    //----------------------------------
     // Multiblock reduction uses scratch flags for counters
     // and scratch space for partial reduction values.
     // Allocate some initial space.  This will grow as needed.
 
-    (void) scratch_flags( 2 * m_maxWarpCount * Impl::CudaTraits::WarpSize );
-    (void) scratch_space( 2 * m_maxBlock );
+    (void) scratch_unified( 16 * sizeof(size_type) );
+    (void) scratch_flags( m_maxWarpCount * Impl::CudaTraits::WarpSize * 2 * sizeof(size_type) );
+    (void) scratch_space( m_maxBlock * 2 * sizeof(size_type) );
   }
   else {
 
@@ -301,58 +329,96 @@ void CudaInternal::initialize( int cuda_device_id )
 
 //----------------------------------------------------------------------------
 
+typedef Cuda::size_type ScratchGrain[ Impl::CudaTraits::WarpSize ] ;
+
 Cuda::size_type *
-CudaInternal::scratch_flags( const Cuda::size_type count )
+CudaInternal::scratch_flags( const Cuda::size_type size )
 {
-  enum { WordSize = sizeof(size_type) };
+  enum { sizeGrain = sizeof(ScratchGrain) };
 
   assert_initialized();
 
-  if ( m_scratchFlagsCount < count ) {
+  if ( m_scratchFlagsCount * sizeGrain < size ) {
 
     cudaDeviceSynchronize();
 
     CudaMemorySpace::decrement( m_scratchFlags );
   
-    m_scratchFlagsCount = count ;
+    m_scratchFlagsCount = ( size + sizeGrain - 1 ) / sizeGrain ;
 
     m_scratchFlags = (size_type *)
       CudaMemorySpace::allocate(
         std::string("InternalScratchFlags") ,
-        typeid( size_type ),
-        sizeof( size_type ),
-        count );
+        typeid( ScratchGrain ),
+        sizeof( ScratchGrain ),
+        m_scratchFlagsCount );
 
-    CUDA_SAFE_CALL( cudaMemset( m_scratchFlags , 0 , WordSize * count ) );
+    CUDA_SAFE_CALL(
+      cudaMemset( m_scratchFlags , 0 , m_scratchFlagsCount * sizeGrain ) );
   }
 
   return m_scratchFlags ;
 }
 
 Cuda::size_type *
-CudaInternal::scratch_space( const Cuda::size_type count )
+CudaInternal::scratch_space( const Cuda::size_type size )
 {
-  enum { WordSize = sizeof(size_type) };
+  enum { sizeGrain = sizeof(ScratchGrain) };
 
   assert_initialized();
 
-  if ( m_scratchSpaceCount < count ) {
+  if ( m_scratchSpaceCount * sizeGrain < size ) {
 
     cudaDeviceSynchronize();
 
     CudaMemorySpace::decrement( m_scratchSpace );
   
-    m_scratchSpaceCount = count ;
+    m_scratchSpaceCount = ( size + sizeGrain - 1 ) / sizeGrain ;
 
     m_scratchSpace = (size_type *)
       CudaMemorySpace::allocate(
         std::string("InternalScratchSpace") ,
-        typeid( size_type ),
-        sizeof( size_type ),
-        count );
+        typeid( ScratchGrain ),
+        sizeof( ScratchGrain ),
+        m_scratchSpaceCount );
   }
 
   return m_scratchSpace ;
+}
+
+Cuda::size_type *
+CudaInternal::scratch_unified( const Cuda::size_type size )
+{
+  enum { sizeGrain = sizeof(ScratchGrain) };
+
+  assert_initialized();
+
+  if ( m_scratchUnifiedSupported ) {
+
+    const bool allocate   = m_scratchUnifiedCount * sizeGrain < size ;
+    const bool deallocate = m_scratchUnified && ( 0 == size || allocate );
+
+    if ( deallocate ) {
+
+      cudaDeviceSynchronize();
+
+      cudaFreeHost( m_scratchUnified );
+
+      m_scratchUnified = 0 ;
+      m_scratchUnifiedCount = 0 ;
+    }
+
+    if ( allocate ) {
+
+      m_scratchFlagsCount = ( size + sizeGrain - 1 ) / sizeGrain ;
+
+      cudaHostAlloc( (void **)( & m_scratchUnified ) ,
+                     m_scratchFlagsCount * sizeGrain ,
+                     cudaHostAllocDefault );
+    }
+  }
+
+  return m_scratchUnified ;
 }
 
 //----------------------------------------------------------------------------
@@ -361,6 +427,7 @@ void CudaInternal::finalize()
 {
   CudaMemorySpace::decrement( m_scratchSpace );
   CudaMemorySpace::decrement( m_scratchFlags );
+  (void) scratch_unified( 0 );
 
   m_cudaDev            = -1 ;
   m_maxWarpCount       = 0 ;
@@ -383,11 +450,14 @@ Cuda::size_type cuda_internal_maximum_grid_count()
 Cuda::size_type cuda_internal_maximum_shared_words()
 { return CudaInternal::singleton().m_maxSharedWords ; }
 
-Cuda::size_type * cuda_internal_scratch_space( const Cuda::size_type count )
-{ return CudaInternal::raw_singleton().scratch_space( count ); }
+Cuda::size_type * cuda_internal_scratch_space( const Cuda::size_type size )
+{ return CudaInternal::raw_singleton().scratch_space( size ); }
 
-Cuda::size_type * cuda_internal_scratch_flags( const Cuda::size_type count )
-{ return CudaInternal::raw_singleton().scratch_flags( count ); }
+Cuda::size_type * cuda_internal_scratch_flags( const Cuda::size_type size )
+{ return CudaInternal::raw_singleton().scratch_flags( size ); }
+
+Cuda::size_type * cuda_internal_scratch_unified( const Cuda::size_type size )
+{ return CudaInternal::raw_singleton().scratch_unified( size ); }
 
 } // namespace Impl
 } // namespace KokkosArray

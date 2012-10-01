@@ -69,9 +69,12 @@
 template<typename Traits,typename LO,typename GO>
 panzer::ScatterResidual_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
-                       const Teuchos::ParameterList& p)
+                       const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
+                       const Teuchos::ParameterList& p,
+                       bool useDiscreteAdjoint)
   : globalIndexer_(indexer) 
   , globalDataKey_("Residual Scatter Container")
+  , useDiscreteAdjoint_(useDiscreteAdjoint)
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -192,9 +195,13 @@ evaluateFields(typename Traits::EvalData workset)
 template<typename Traits,typename LO,typename GO>
 panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 ScatterResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
-                       const Teuchos::ParameterList& p)
+                       const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
+                       const Teuchos::ParameterList& p,
+                       bool useDiscreteAdjoint)
    : globalIndexer_(indexer)
+   , colGlobalIndexer_(cIndexer) 
    , globalDataKey_("Residual Scatter Container")
+   , useDiscreteAdjoint_(useDiscreteAdjoint)
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -224,6 +231,12 @@ ScatterResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & i
 
   if (p.isType<std::string>("Global Data Key"))
      globalDataKey_ = p.get<std::string>("Global Data Key");
+  if (p.isType<bool>("Use Discrete Adjoint"))
+     useDiscreteAdjoint = p.get<bool>("Use Discrete Adjoint");
+
+  // discrete adjoint does not work with non-square matrices
+  if(useDiscreteAdjoint)
+  { TEUCHOS_ASSERT(colGlobalIndexer_==Teuchos::null); }
 
   this->setName(scatterName+" Scatter Residual (Jacobian)");
 }
@@ -268,9 +281,16 @@ template<typename Traits,typename LO,typename GO>
 void panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-   std::vector<GO> GIDs;
+   std::vector<GO> rGIDs;
    std::vector<int> cLIDs, rLIDs;
    std::vector<double> jacRow;
+
+   Teuchos::RCP<std::vector<GO> > cGIDs_mem;
+   bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
+   if(useColumnIndexer)
+     cGIDs_mem = Teuchos::rcp(new std::vector<GO>);
+
+   std::vector<GO> & cGIDs = (useColumnIndexer ? *cGIDs_mem : rGIDs);
 
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
@@ -280,7 +300,7 @@ evaluateFields(typename Traits::EvalData workset)
    //       = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
    Teuchos::RCP<Epetra_Vector> r = epetraContainer_->get_f(); 
    Teuchos::RCP<Epetra_CrsMatrix> Jac = epetraContainer_->get_A();
-
+   
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets" may be expensive.  However the
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs
@@ -290,15 +310,17 @@ evaluateFields(typename Traits::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      globalIndexer_->getElementGIDs(cellLocalId,GIDs,blockId); 
+      globalIndexer_->getElementGIDs(cellLocalId,rGIDs,blockId); 
+      if(useColumnIndexer)
+        colGlobalIndexer_->getElementGIDs(cellLocalId,cGIDs,blockId); 
 
       // caculate the local IDs for this element
-      rLIDs.resize(GIDs.size());
-      cLIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++) {
-         rLIDs[i] = Jac->RowMap().LID(GIDs[i]);
-         cLIDs[i] = Jac->ColMap().LID(GIDs[i]);
-      }
+      rLIDs.resize(rGIDs.size());
+      cLIDs.resize(cGIDs.size());
+      for(std::size_t i=0;i<rGIDs.size();i++) 
+         rLIDs[i] = Jac->RowMap().LID(rGIDs[i]);
+      for(std::size_t i=0;i<cGIDs.size();i++) 
+         cLIDs[i] = Jac->ColMap().LID(cGIDs[i]);
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
@@ -321,14 +343,22 @@ evaluateFields(typename Traits::EvalData workset)
             for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
                jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex);
             // TEUCHOS_ASSERT_EQUALITY(jacRow.size(),GIDs.size());
-    
+            
             // Sum Jacobian
             //int err = Jac->SumIntoMyValues(row, scatterField.size(), &jacRow[0],&cLIDs[0]);
-            int err = Jac->SumIntoMyValues(row,
+            if(useDiscreteAdjoint_) {
+               for(std::size_t c=0;c<cLIDs.size();c++) {
+                  int err = Jac->SumIntoMyValues(cLIDs[c], 1, &jacRow[c],&row);
+                  TEUCHOS_ASSERT_EQUALITY(err,0);
+               }
+            }
+            else {
+               int err = Jac->SumIntoMyValues(row,
 					   scatterField.size(),
 					   panzer::ptrFromStlVector(jacRow),
 					   panzer::ptrFromStlVector(cLIDs));
-            TEUCHOS_ASSERT_EQUALITY(err,0);
+               TEUCHOS_ASSERT_EQUALITY(err,0);
+            }
          } // end rowBasisNum
       } // end fieldIndex
    }

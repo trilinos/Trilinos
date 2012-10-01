@@ -1,0 +1,22 @@
+Trilinos v11 is the initial release of Zoltan2.  Zoltan2 is a redesign of the
+Zoltan combinatorial scientific computing toolkit that uses templating and
+Trilinos classes for tighter integration with Trilinos.  Zoltan2 supports
+Epetra and Tpetra data structures through the Xpetra interface.
+
+Capabilities that are supported by default in Zoltan2:
+   Minimum-degree data ordering using the AMD TPL
+   Reverse Cuthill-McKee data ordering
+   Graph partitioning using the Scotch TPL
+   Block partitioning
+
+Experimental capabilities are supported only if the following CMake option 
+is used; these capabilities are under development.
+  -D Zoltan2_ENABLE_Experimental:BOOL=ON
+
+Experimental capabilities include:
+   Recursive Coordinate Bisection geometric partitioning
+   Multidimensional-Jagged geometric partitioning
+   Spectral data ordering
+   Increasing degree data ordering
+   Natural data ordering
+   Random data ordering

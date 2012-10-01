@@ -50,8 +50,8 @@
 #include "Xpetra_VectorFactory.hpp"
 #include "Xpetra_MultiVector.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_OperatorFactory.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_Import.hpp>
 #include <Xpetra_ImportFactory.hpp>
 
@@ -119,8 +119,8 @@ namespace MueLu {
     if (PorR_ == MueLu::INTERPOLATION) {
       GetOStream(Warnings0, 0) <<  "Jamming A into Level " << coarseLevel.GetLevelID() << " w/ generating factory "
                                << this << std::endl;
-      RCP<Operator> A = coarseLevel.Get< RCP<Operator> >("A",initialAFact_.get());
-      coarseLevel.Set< RCP<Operator> >("A",A,this);
+      RCP<Matrix> A = coarseLevel.Get< RCP<Matrix> >("A",initialAFact_.get());
+      coarseLevel.Set< RCP<Matrix> >("A",A,this);
       comm = A->getRowMap()->getComm();
     }
 
@@ -140,7 +140,7 @@ namespace MueLu {
 
       case MueLu::INTERPOLATION:
         { //case scoping
-          RCP<Operator> originalP = coarseLevel.Get< RCP<Operator> >("P",initialTransferFact_.get());
+          RCP<Matrix> originalP = coarseLevel.Get< RCP<Matrix> >("P",initialTransferFact_.get());
           if (permImporter != Teuchos::null) {
             SubFactoryMonitor m1(*this, "Rebalancing prolongator", coarseLevel.GetLevelID());
             //TODO see note below about domain/range map of R and its implications for P.
@@ -150,12 +150,12 @@ namespace MueLu {
             ArrayRCP<size_t> nnzPerRow(originalP->getNodeNumRows(),0);
             for (size_t i=0; i<originalP->getNodeNumRows(); ++i)
               nnzPerRow[i] = originalP->getNumEntriesInLocalRow(i);
-            RCP<Operator> permutedP = OperatorFactory::Build(originalP->getRowMap(), nnzPerRow, Xpetra::StaticProfile);
+            RCP<Matrix> permutedP = MatrixFactory::Build(originalP->getRowMap(), nnzPerRow, Xpetra::StaticProfile);
             //P needs to be fillCompleted again.  To achieve this, I just copy P using the trivial importer.
             RCP<Import> trivialImporter = ImportFactory::Build( originalP->getRowMap(), originalP->getRowMap());
-            RCP<CrsOperator> crsOp = rcp_dynamic_cast<CrsOperator>(permutedP);
+            RCP<CrsMatrixWrap> crsOp = rcp_dynamic_cast<CrsMatrixWrap>(permutedP);
             RCP<CrsMatrix> crsMtx = crsOp->getCrsMatrix();
-            RCP<CrsOperator> origOp = rcp_dynamic_cast<CrsOperator>(originalP);
+            RCP<CrsMatrixWrap> origOp = rcp_dynamic_cast<CrsMatrixWrap>(originalP);
             RCP<CrsMatrix> origMtx = origOp->getCrsMatrix();
             RCP<SubFactoryMonitor> m2 = rcp( new SubFactoryMonitor(*this, "Rebalancing prolongator -- import only",
                                                                    coarseLevel.GetLevelID()) );
@@ -166,7 +166,7 @@ namespace MueLu {
             permutedP->fillComplete(permImporter->getTargetMap(), originalP->getRangeMap() );
             m2 = Teuchos::null;
             originalP = Teuchos::null;
-            coarseLevel.Set< RCP<Operator> >("P",permutedP,this);
+            coarseLevel.Set< RCP<Matrix> >("P",permutedP,this);
 
             ///////////////////////// EXPERIMENTAL
             // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.
@@ -175,7 +175,7 @@ namespace MueLu {
             ///////////////////////// EXPERIMENTAL
 
           } else {
-            coarseLevel.Set< RCP<Operator> >("P",originalP,this);
+            coarseLevel.Set< RCP<Matrix> >("P",originalP,this);
           } //if (permImporter != Teuchos::null) {...} else {...}
         } //case scoping
         break;
@@ -183,7 +183,7 @@ namespace MueLu {
       case MueLu::RESTRICTION:
         { //case scoping
           //TODO how do we handle implicitly transposed restriction operators?
-          RCP<Operator> originalR = coarseLevel.Get< RCP<Operator> >("R",initialTransferFact_.get());
+          RCP<Matrix> originalR = coarseLevel.Get< RCP<Matrix> >("R",initialTransferFact_.get());
           if (permImporter != Teuchos::null) {
             SubFactoryMonitor m2(*this, "Rebalancing restriction", coarseLevel.GetLevelID());
             RCP<SubFactoryMonitor> m1 = rcp( new SubFactoryMonitor(*this, "Rebalancing restriction -- allocate new R", coarseLevel.GetLevelID()) );
@@ -211,11 +211,11 @@ namespace MueLu {
             for (size_t i=0; i<permutedNnzPerRowVec->getLocalLength(); ++i) 
               permutedNnzPerRow[i] = Teuchos::as<size_t,double>(tmpData[i]);
 
-            RCP<Operator> permutedR = OperatorFactory::Build(permImporter->getTargetMap(), permutedNnzPerRow, Xpetra::StaticProfile);
+            RCP<Matrix> permutedR = MatrixFactory::Build(permImporter->getTargetMap(), permutedNnzPerRow, Xpetra::StaticProfile);
             permutedNnzPerRow = Teuchos::null;
-            RCP<CrsOperator> crsOp = rcp_dynamic_cast<CrsOperator>(permutedR);
+            RCP<CrsMatrixWrap> crsOp = rcp_dynamic_cast<CrsMatrixWrap>(permutedR);
             RCP<CrsMatrix> crsMtx = crsOp->getCrsMatrix();
-            RCP<CrsOperator> origOp = rcp_dynamic_cast<CrsOperator>(originalR);
+            RCP<CrsMatrixWrap> origOp = rcp_dynamic_cast<CrsMatrixWrap>(originalR);
             RCP<CrsMatrix> origMtx = origOp->getCrsMatrix();
             m1 = Teuchos::null;
             m1 = rcp( new SubFactoryMonitor(*this, "Rebalancing restriction -- import", coarseLevel.GetLevelID()) );
@@ -228,9 +228,9 @@ namespace MueLu {
             m1 = Teuchos::null;
             m1 = rcp( new SubFactoryMonitor(*this, "Rebalancing restriction -- fillComplete", coarseLevel.GetLevelID()) );
             permutedR->fillComplete( originalR->getDomainMap() , permImporter->getTargetMap() );
-            //coarseLevel.Set< RCP<Operator> >("newR",permutedR,this);
+            //coarseLevel.Set< RCP<Matrix> >("newR",permutedR,this);
             m1 = Teuchos::null;
-            coarseLevel.Set< RCP<Operator> >("R",permutedR,this);
+            coarseLevel.Set< RCP<Matrix> >("R",permutedR,this);
 
             ///////////////////////// EXPERIMENTAL
             // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.
@@ -259,7 +259,7 @@ namespace MueLu {
               m1 = Teuchos::null;
             }
           } else {
-            coarseLevel.Set< RCP<Operator> >("R",originalR,this);
+            coarseLevel.Set< RCP<Matrix> >("R",originalR,this);
             if (coarseLevel.IsAvailable("Nullspace",nullspaceFact_.get())) {
               RCP<MultiVector> nullspace  = coarseLevel.Get< RCP<MultiVector> >("Nullspace",nullspaceFact_.get());
               coarseLevel.Set< RCP<MultiVector> >("Nullspace",nullspace, this);

@@ -287,10 +287,44 @@ Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 two_norm_squared() const
 {
   value_type nrm = 0.0;
-  for (ordinal_type i=0; i<static_cast<ordinal_type>(coeff_.size()); i++) {
-    nrm += coeff_[i]*coeff_[i]*basis_->norm_squared(i);
+  if (basis_ == Teuchos::null) { // Check for special case of constants
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      coeff_.size() != 1, std::logic_error, 
+      "basis_ == null && coeff_.size() > 1");
+    nrm = coeff_[0]*coeff_[0];
+  }
+  else {
+    for (ordinal_type i=0; i<static_cast<ordinal_type>(coeff_.size()); i++)
+      nrm += coeff_[i]*coeff_[i]*basis_->norm_squared(i);
   }
   return nrm;
+}
+
+template <typename ordinal_type, typename value_type, typename storage_type> 
+value_type
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
+inner_product(const Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>& b) const
+{
+  // Check a and b are compatible
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    basis_ == Teuchos::null && coeff_.size() != 1, std::logic_error, 
+    "basis_ == null && coeff_.size() > 1");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    b.basis_ == Teuchos::null && b.coeff_.size() != 1, std::logic_error, 
+      "b.basis_ == null && b.coeff_.size() > 1");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    coeff_.size() != b.coeff_.size() && 
+    (coeff_.size() != 1 || b.coeff_.size() != 1), std::logic_error, 
+    "Coefficient array sizes do not match");
+
+  value_type v = 0.0;
+  if (coeff_.size() == 1 || b.coeff_.size() == 1)
+    v = coeff_[0]*b.coeff_[0];
+  else
+    for (ordinal_type i=0; i<static_cast<ordinal_type>(coeff_.size()); i++)
+      v += coeff_[i]*b.coeff_[i]*basis_->norm_squared(i);
+
+  return v;
 }
 
 template <typename ordinal_type, typename value_type, typename storage_type> 

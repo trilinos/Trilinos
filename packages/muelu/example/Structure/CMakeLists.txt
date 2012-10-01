@@ -10,7 +10,7 @@ IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
     Structure2D
     SOURCES Structure2D_epetra.cpp
     COMM serial mpi
-    DEPLIBS muelu muelu-xpetra
+    DEPLIBS muelu xpetra
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Structure2d_example_copyfiles

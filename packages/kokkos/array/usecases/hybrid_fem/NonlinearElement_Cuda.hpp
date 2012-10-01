@@ -120,7 +120,7 @@ public:
     const dim3 block( BlockDimX , BlockDimY , 1 );
     const dim3 grid( grid_count , 1 , 1 );
 
-    KokkosArray::Impl::CudaParallelLaunch< ElementComputation >::execute( *this , grid , block , shmem );
+    KokkosArray::Impl::CudaParallelLaunch< ElementComputation >( *this , grid , block , shmem );
   }
 
 public:
@@ -333,7 +333,7 @@ public:
   }
 
   KOKKOSARRAY_MACRO_DEVICE_FUNCTION
-  void execute_on_device() const
+  void operator()(void) const
   {
     extern __shared__ WorkSpace work_data[] ;
 
