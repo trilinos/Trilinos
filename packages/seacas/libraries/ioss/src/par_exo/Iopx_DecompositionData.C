@@ -1675,7 +1675,7 @@ namespace Iopx {
   }
 
   template void DecompositionData::communicate_node_data(int *file_data, int *ioss_data, size_t comp_count) const;
-  template void DecompositionData::communicate_node_data(long *file_data, long *ioss_data, size_t comp_count) const;
+  template void DecompositionData::communicate_node_data(int64_t *file_data, int64_t *ioss_data, size_t comp_count) const;
   template void DecompositionData::communicate_node_data(double *file_data, double *ioss_data, size_t comp_count) const;
 
   template <typename T>
@@ -1899,7 +1899,7 @@ namespace Iopx {
   }
   
   template void DecompositionData::get_block_connectivity(int exodusId, int *data, int64_t id, size_t blk_seq, size_t nnpe) const;
-  template void DecompositionData::get_block_connectivity(int exodusId, long *data, int64_t id, size_t blk_seq, size_t nnpe) const;
+  template void DecompositionData::get_block_connectivity(int exodusId, int64_t *data, int64_t id, size_t blk_seq, size_t nnpe) const;
 
   template <typename INT>
   void DecompositionData::get_block_connectivity(int exodusId, INT *data, int64_t id, size_t blk_seq, size_t nnpe) const
@@ -1926,7 +1926,7 @@ namespace Iopx {
     }
   }
 
-  template void DecompositionData::communicate_block_data(long *file_data,   long *ioss_data, size_t blk_seq, size_t comp_count) const;
+  template void DecompositionData::communicate_block_data(int64_t *file_data,   int64_t *ioss_data, size_t blk_seq, size_t comp_count) const;
   template void DecompositionData::communicate_block_data(int *file_data,    int *ioss_data,  size_t blk_seq, size_t comp_count) const;
   template void DecompositionData::communicate_block_data(double *file_data, double *ioss_data, size_t blk_seq, size_t comp_count) const;
 
@@ -2006,7 +2006,7 @@ namespace Iopx {
     }
   }
 
-  template void DecompositionData::communicate_set_data(long *file_data,   long *ioss_data,
+  template void DecompositionData::communicate_set_data(int64_t *file_data,   int64_t *ioss_data,
 							const SetDecompositionData &set, size_t comp_count) const;
   template void DecompositionData::communicate_set_data(int *file_data,    int *ioss_data,
 							const SetDecompositionData &set, size_t comp_count) const;
