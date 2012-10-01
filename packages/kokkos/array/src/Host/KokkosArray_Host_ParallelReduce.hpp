@@ -60,12 +60,14 @@ class FunctorAssignment< ValueType , Host >
 {
 public:
 
-  ValueType & m_result ;
+  typedef ValueType value_type ;
 
-  FunctorAssignment( ValueType & result )
+  value_type & m_result ;
+
+  FunctorAssignment( value_type & result )
     : m_result( result ) {}
 
-  void operator()( const ValueType & value ) const
+  void operator()( const value_type & value ) const
     { m_result = value ; }
 };
 
@@ -74,33 +76,38 @@ class FunctorAssignment< View< ValueType , LayoutType , Host > , Host >
 {
 public:
 
-  typedef View< ValueType , LayoutType , Host > view_type ;
+  typedef ValueType value_type ;
+  typedef View< value_type , LayoutType , Host > view_type ;
 
   view_type m_result ;
 
   FunctorAssignment( const view_type & view )
     : m_result( view ) {}
 
-  void operator()( const ValueType & value ) const
+  void operator()( const value_type & value ) const
     { *m_result = value ; }
 };
 
-template< class FunctorType , class ReduceTraits , class FinalizeType >
-class ParallelReduce< FunctorType , ReduceTraits , FinalizeType , Host > {
+//----------------------------------------------------------------------------
+
+void host_resize_reduce( unsigned );
+
+template< class FunctorType , class ValueOper , class FinalizeType >
+class ParallelReduce< FunctorType , ValueOper , FinalizeType , Host > {
 public:
 
-  typedef          Host::size_type           size_type ;
-  typedef typename ReduceTraits ::value_type value_type ;
+  typedef ReduceOperator< ValueOper , FinalizeType >  reduce_oper ;
+  typedef          Host::size_type         size_type ;
+  typedef typename ValueOper::value_type  value_type ;
 
   const FunctorType   m_work_functor ;
-  const FinalizeType  m_finalize ;
+  const reduce_oper   m_reduce ;
   const size_type     m_work_count ;
 
   void operator()( HostThread & this_thread ) const
   {
-    value_type update ; // This thread's reduction value
-
-    ReduceTraits::init( update );
+    // This thread's reduction value, initialized
+    value_type & update = this_thread.value( m_reduce );
 
     // Iterate this thread's work
 
@@ -112,16 +119,19 @@ public:
     }
 
     // Fan-in reduction of other threads' reduction data:
-    this_thread.reduce< ReduceTraits >( update , m_finalize );
+    this_thread.reduce( m_reduce );
   }
 
   ParallelReduce( const size_type      work_count ,
                   const FunctorType  & functor ,
                   const FinalizeType & finalize )
     : m_work_functor( functor )
-    , m_finalize( finalize )
+    , m_reduce( finalize )
     , m_work_count( work_count )
-    { HostParallelLaunch< ParallelReduce >( *this ); }
+    {
+      host_resize_reduce( m_reduce.value_size() );
+      HostParallelLaunch< ParallelReduce >( *this );
+    }
 };
 
 } // namespace Impl
@@ -178,12 +188,13 @@ public:
 
 } // namespace Impl
   
-template< class ReduceTraits , class FinalizeType >
-class MultiFunctorParallelReduce< ReduceTraits , FinalizeType , Host > {
+template< class ValueOper , class FinalizeType >
+class MultiFunctorParallelReduce< ValueOper , FinalizeType , Host > {
 public:
 
-  typedef          Host::size_type            size_type ;
-  typedef typename ReduceTraits ::value_type  value_type ;
+  typedef Impl::ReduceOperator< ValueOper , FinalizeType > reduce_oper ;
+  typedef          Host::size_type         size_type ;
+  typedef typename ValueOper::value_type  value_type ;
   typedef Impl::HostMultiFunctorParallelReduceMember<void,value_type> worker_type ;
 
   typedef std::vector< worker_type * > MemberContainer ;
@@ -191,13 +202,11 @@ public:
   typedef typename MemberContainer::const_iterator MemberIterator ;
 
   MemberContainer m_member_functors ;
-  FinalizeType    m_finalize ;
+  reduce_oper     m_reduce ;
 
   void operator()( Impl::HostThread & this_thread ) const
   {
-    value_type update ; // This thread's reduction value
-
-    ReduceTraits::init( update );
+    value_type & update = this_thread.value( m_reduce );
 
     for ( MemberIterator m  = m_member_functors.begin() ;
                          m != m_member_functors.end() ; ++m ) {
@@ -205,14 +214,14 @@ public:
     }
 
     // Fan-in reduction of other threads' reduction data:
-    this_thread.reduce< ReduceTraits >( update , m_finalize );
+    this_thread.reduce( m_reduce );
   }
 
 public:
 
   MultiFunctorParallelReduce( const FinalizeType & finalize )
     : m_member_functors()
-    , m_finalize( finalize )
+    , m_reduce( finalize )
     { }
 
   ~MultiFunctorParallelReduce()
@@ -235,6 +244,7 @@ public:
 
   void execute() const
   {
+    Impl::host_resize_reduce( m_reduce.value_size() );
     Impl::HostParallelLaunch< MultiFunctorParallelReduce >( *this );
   }
 };

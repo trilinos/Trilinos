@@ -160,6 +160,9 @@ struct HostFunctor {
 
   volatile int & flag ;
 
+  static void init( int & update )
+    { update = 0 ; }
+
   static void join( volatile int & update , const volatile int & input )
     { update += input ; }
 
@@ -170,11 +173,17 @@ struct HostFunctor {
 
   void operator()( KokkosArray::Impl::HostThread & thread ) const
     {
-      int value = 0 ;
+      const KokkosArray::Impl::ReduceOperator< HostFunctor , HostFunctor >
+        reduce(*this);
+
+      int & value = thread.value( reduce );
+
+      (void) value ; // avoid compiler warning about unused variable.
+
       thread.barrier();
       thread.barrier();
-      thread.reduce< HostFunctor >( value , *this );
-      thread.reduce< HostFunctor >( value , *this );
+      thread.reduce( reduce );
+      thread.reduce( reduce );
       thread.barrier();
     }
 };
