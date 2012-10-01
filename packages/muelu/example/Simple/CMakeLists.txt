@@ -17,22 +17,6 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra  AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     COMM serial mpi
     )
   
-  #Simple-LongInt
-  IF(Teuchos_ENABLE_LONG_LONG_INT)
-
-    IF(NOT ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION) #FIXME
-      #FIXME no Tpetra instantiation for long long int
-      
-      TRIBITS_ADD_EXECUTABLE_AND_TEST(
-        Simple-LongInt
-        SOURCES Simple-LongInt.cpp
-        DEPLIBS muelu xpetra
-        NUM_MPI_PROCS 4
-        COMM serial mpi
-        )
-    ENDIF()
-  ENDIF()
-
   #Simple-Templated
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Simple-Templated
@@ -67,8 +51,27 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra  AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
 
 ENDIF()
 
+#Simple-LongInt
 IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+  IF(Teuchos_ENABLE_LONG_LONG_INT)
+    
+    IF(NOT ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION) #FIXME
+      #FIXME no Tpetra instantiation for long long int
+      
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        Simple-LongInt
+        SOURCES Simple-LongInt.cpp
+        DEPLIBS muelu xpetra
+        NUM_MPI_PROCS 4
+        COMM serial mpi
+        )
+      
+    ENDIF()
+  ENDIF()
+ENDIF()
 
+IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+  
   #Simple-Tpetra
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Simple-Tpetra
