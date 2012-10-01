@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -103,9 +103,168 @@ struct ParallelDataMap {
   }
 };
 
-template< class ArrayType , class Rank = void > struct PackArray ;
+//----------------------------------------------------------------------------
+//PackArray
+//----------------------------------------------------------------------------
+template< class ArrayType , class Rank = void >
+struct PackArray ;
+
+template< typename DeviceType, typename ValueType >
+struct PackArray< View< ValueType[] , DeviceType > , void >
+{
+  typedef DeviceType                         device_type ;
+  typedef typename DeviceType::size_type     size_type ;
+  typedef View< ValueType[] , device_type >  array_type ;
+  typedef View< ValueType[] , device_type >  buffer_type ;
+
+private:
+
+  buffer_type  output ;
+  array_type   input ;
+  size_type    base ;
+
+public:
+
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  void operator()( const size_type i ) const
+  { output[i] = input(base+i); }
+
+  inline
+  static
+  void pack( const buffer_type & arg_output ,
+             const size_type     arg_begin ,
+             const size_type     arg_count ,
+             const array_type  & arg_input )
+  {
+    PackArray op ;
+    op.output = arg_output ;
+    op.input  = arg_input ;
+    op.base   = arg_begin ;
+    parallel_for( arg_count , op );
+  }
+};
+
+template< typename DeviceType, typename ValueType , unsigned N1 >
+struct PackArray< View< ValueType[][N1] , DeviceType > , void >
+{
+  typedef DeviceType                                  device_type ;
+  typedef typename DeviceType::size_type              size_type ;
+  typedef View< ValueType[][N1] , device_type >       array_type ;
+  typedef View< ValueType[] , device_type >           buffer_type ;
+
+private:
+
+  buffer_type  output ;
+  array_type   input ;
+  size_type    base ;
+
+public:
+
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  void operator()( const size_type i ) const
+  {
+    for ( size_type j = 0 , k = i * N1 ; j < N1 ; ++j , ++k ) {
+      output[k] = input(base+i,j);
+    }
+  }
+
+  inline static
+  void pack( const buffer_type & arg_output ,
+             const size_type     arg_begin ,
+             const size_type     arg_count ,
+             const array_type  & arg_input )
+  {
+    if ( arg_count ) {
+      PackArray op ;
+      op.output = arg_output ;
+      op.input  = arg_input ;
+      op.base   = arg_begin ;
+      parallel_for( arg_count , op );
+    }
+  }
+};
+
+//----------------------------------------------------------------------------
+//UnpackArray
+//----------------------------------------------------------------------------
 template< class ArrayType , class Rank = void > struct UnpackArray ;
 
+template< typename DeviceType, typename ValueType >
+struct UnpackArray< View< ValueType[] , DeviceType > , void >
+{
+  typedef DeviceType                         device_type ;
+  typedef typename DeviceType::size_type     size_type ;
+  typedef View< ValueType[] , device_type >  array_type ;
+  typedef View< ValueType[] , device_type >  buffer_type ;
+
+private:
+
+  array_type   output ;
+  buffer_type  input ;
+  size_type    base ;
+
+public:
+
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  void operator()( const size_type i ) const
+  { output(base+i) = input[i]; }
+
+  inline
+  static
+  void unpack( const array_type  & arg_output ,
+               const buffer_type & arg_input ,
+               const size_type     arg_begin ,
+               const size_type     arg_count )
+  {
+    UnpackArray op ;
+    op.output = arg_output ;
+    op.input  = arg_input ;
+    op.base   = arg_begin ;
+    parallel_for( arg_count , op );
+  }
+};
+
+template< typename DeviceType, typename ValueType , unsigned N1 >
+struct UnpackArray< View< ValueType[][N1] , DeviceType > , void >
+{
+  typedef DeviceType                                  device_type ;
+  typedef typename DeviceType::size_type              size_type ;
+  typedef View< ValueType[] , device_type >           buffer_type ;
+  typedef View< ValueType[][N1] , device_type >       array_type ;
+
+private:
+
+  array_type   output ;
+  buffer_type  input ;
+  size_type    base ;
+
+public:
+
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  void operator()( const size_type i ) const
+  {
+    for ( size_type j = 0 , k = i * N1 ; j < N1 ; ++j , ++k ) {
+      output(base+i,j) = input(k);
+    }
+  }
+
+  inline
+  static
+  void unpack( const array_type  & arg_output ,
+               const buffer_type & arg_input ,
+               const size_type     arg_begin ,
+               const size_type     arg_count )
+  {
+    if ( arg_count ) {
+      UnpackArray op ;
+      op.output = arg_output ;
+      op.input  = arg_input ;
+      op.base   = arg_begin ;
+      parallel_for( arg_count , op );
+    }
+  }
+};
+//----------------------------------------------------------------------------
 template< class ValueType , class Device , class DataMap >
 class AsyncExchange ;
 
@@ -114,7 +273,7 @@ class AsyncExchange ;
 //----------------------------------------------------------------------------
 // Application call procedure:
 //
-// construct: AsyncExchange object 
+// construct: AsyncExchange object
 // * pack send buffer on device
 // initiate: copy send buffer from device to host
 // * dispatch asynchronous local work
@@ -211,7 +370,7 @@ public:
                           std::string("AsyncExchange send_msg_buffer") ,
                           arg_chunk * send_count_max );
 
-    // MPI asynchronous receive request handles:    
+    // MPI asynchronous receive request handles:
     recv_request.assign( recv_msg_count , MPI_REQUEST_NULL );
   }
 
@@ -308,7 +467,7 @@ public:
             << " size "     << recv_size
             << " expected " << expected_size
             << " from P"    << expected_proc ;
-        throw std::runtime_error( msg.str() ); 
+        throw std::runtime_error( msg.str() );
       }
     }
 

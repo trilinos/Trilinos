@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,28 +35,25 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
 namespace Test {
 
-template< class DeviceType > struct HexSimpleFill ;
-
-//each element is a unit cube
-template<>
-struct HexSimpleFill< KOKKOSARRAY_MACRO_DEVICE >
+template< class DeviceType >
+struct HexSimpleFill
 {
-  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
-  typedef device_type::size_type  size_type ;
+  typedef DeviceType device_type ;
+  typedef typename device_type::size_type  size_type ;
 
   // 3D array : ( ParallelWork , Space , Node )
 
   enum { NSpace = 3 , NNode = 8 };
 
-  typedef KokkosArray::View< double[][NSpace][NNode] , device_type > 
+  typedef KokkosArray::View< double[][NSpace][NNode] , device_type >
     elem_coord_type ;
 
   elem_coord_type coords ;
@@ -64,7 +61,7 @@ struct HexSimpleFill< KOKKOSARRAY_MACRO_DEVICE >
   HexSimpleFill( const elem_coord_type & arg_coords )
     : coords( arg_coords ) {}
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void operator()( size_type ielem ) const
   {
     coords(ielem,0,0) = 0.;
@@ -104,24 +101,23 @@ struct HexSimpleFill< KOKKOSARRAY_MACRO_DEVICE >
 
 //----------------------------------------------------------------------------
 
-template< class DeviceType > struct HexGrad ;
 
 #define TEST_HEXGRAD_NORMAL 0
 
-template<>
-struct HexGrad< KOKKOSARRAY_MACRO_DEVICE >
+template< class DeviceType >
+struct HexGrad
 {
-  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
-  typedef device_type::size_type  size_type ;
+  typedef DeviceType device_type ;
+  typedef typename device_type::size_type  size_type ;
 
   // 3D array : ( ParallelWork , Space , Node )
 
   enum { NSpace = 3 , NNode = 8 };
 
-  typedef KokkosArray::View< double[][NSpace][NNode] , device_type > 
+  typedef KokkosArray::View< double[][NSpace][NNode] , device_type >
     elem_coord_type ;
 
-  typedef KokkosArray::View< double[][NSpace][NNode] , device_type > 
+  typedef KokkosArray::View< double[][NSpace][NNode] , device_type >
     elem_grad_type ;
 
   elem_coord_type  coords ;
@@ -133,14 +129,14 @@ struct HexGrad< KOKKOSARRAY_MACRO_DEVICE >
     , grad_op( arg_grad_op )
     {}
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void operator()( size_type ielem ) const
   {
     // Repeated re-use of nodal coordinates,
     // copy them into local storage.
-        
+
     double a[NNode];
-    
+
     //Z
     a[0] = coords(ielem,2,0);
     a[1] = coords(ielem,2,1);
@@ -150,7 +146,7 @@ struct HexGrad< KOKKOSARRAY_MACRO_DEVICE >
     a[5] = coords(ielem,2,5);
     a[6] = coords(ielem,2,6);
     a[7] = coords(ielem,2,7);
-    
+
     // z difference vectors
     float R42=(a[3] - a[1]);
     float R52=(a[4] - a[1]);
@@ -159,7 +155,7 @@ struct HexGrad< KOKKOSARRAY_MACRO_DEVICE >
     float R63=(a[5] - a[2]);
     float R83=(a[7] - a[2]);
     float R86=(a[7] - a[5]);
-    
+
     float R31=(a[2] - a[0]);
     float R61=(a[5] - a[0]);
     float R74=(a[6] - a[3]);
@@ -175,7 +171,7 @@ struct HexGrad< KOKKOSARRAY_MACRO_DEVICE >
     float t4 =(R86 + R42);
     float t5 =(R83 + R52);
     float t6 =(R75 + R31);
-    
+
     //Y
     a[0] = coords(ielem,1,0);
     a[1] = coords(ielem,1,1);
@@ -187,16 +183,16 @@ struct HexGrad< KOKKOSARRAY_MACRO_DEVICE >
     a[7] = coords(ielem,1,7);
 
 
-    grad_op(ielem,0,0) = (a[1] *  t1) - (a[2] * R42) - (a[3] *  t5)  + (a[4] *  t4) + (a[5] * R52) - (a[7] * R54);  
-    grad_op(ielem,0,1) = (a[2] *  t2) + (a[3] * R31) - (a[0] *  t1)  - (a[5] *  t6) + (a[6] * R63) - (a[4] * R61);  
-    grad_op(ielem,0,2) = (a[3] *  t3) + (a[0] * R42) - (a[1] *  t2)  - (a[6] *  t4) + (a[7] * R74) - (a[5] * R72);  
-    grad_op(ielem,0,3) = (a[0] *  t5) - (a[1] * R31) - (a[2] *  t3)  + (a[7] *  t6) + (a[4] * R81) - (a[6] * R83);  
-    grad_op(ielem,0,4) = (a[5] *  t3) + (a[6] * R86) - (a[7] *  t2)  - (a[0] *  t4) - (a[3] * R81) + (a[1] * R61);  
-    grad_op(ielem,0,5) = (a[6] *  t5) - (a[4] *  t3)  - (a[7] * R75) + (a[1] *  t6) - (a[0] * R52) + (a[2] * R72);  
-    grad_op(ielem,0,6) = (a[7] *  t1) - (a[5] *  t5)  - (a[4] * R86) + (a[2] *  t4) - (a[1] * R63) + (a[3] * R83);  
-    grad_op(ielem,0,7) = (a[4] *  t2) - (a[6] *  t1)  + (a[5] * R75) - (a[3] *  t6) - (a[2] * R74) + (a[0] * R54);  
+    grad_op(ielem,0,0) = (a[1] *  t1) - (a[2] * R42) - (a[3] *  t5)  + (a[4] *  t4) + (a[5] * R52) - (a[7] * R54);
+    grad_op(ielem,0,1) = (a[2] *  t2) + (a[3] * R31) - (a[0] *  t1)  - (a[5] *  t6) + (a[6] * R63) - (a[4] * R61);
+    grad_op(ielem,0,2) = (a[3] *  t3) + (a[0] * R42) - (a[1] *  t2)  - (a[6] *  t4) + (a[7] * R74) - (a[5] * R72);
+    grad_op(ielem,0,3) = (a[0] *  t5) - (a[1] * R31) - (a[2] *  t3)  + (a[7] *  t6) + (a[4] * R81) - (a[6] * R83);
+    grad_op(ielem,0,4) = (a[5] *  t3) + (a[6] * R86) - (a[7] *  t2)  - (a[0] *  t4) - (a[3] * R81) + (a[1] * R61);
+    grad_op(ielem,0,5) = (a[6] *  t5) - (a[4] *  t3)  - (a[7] * R75) + (a[1] *  t6) - (a[0] * R52) + (a[2] * R72);
+    grad_op(ielem,0,6) = (a[7] *  t1) - (a[5] *  t5)  - (a[4] * R86) + (a[2] *  t4) - (a[1] * R63) + (a[3] * R83);
+    grad_op(ielem,0,7) = (a[4] *  t2) - (a[6] *  t1)  + (a[5] * R75) - (a[3] *  t6) - (a[2] * R74) + (a[0] * R54);
 
-    
+
     R42=(a[3] - a[1]);
     R52=(a[4] - a[1]);
     R54=(a[4] - a[3]);
@@ -230,17 +226,17 @@ struct HexGrad< KOKKOSARRAY_MACRO_DEVICE >
     a[5] = coords(ielem,0,5);
     a[6] = coords(ielem,0,6);
     a[7] = coords(ielem,0,7);
-    
+
 	// Z grad
-    grad_op(ielem,1,7) = (a[4] *  t2) - (a[6] *  t1)  + (a[5] * R75) - (a[3] *  t6) - (a[2] * R74) + (a[0] * R54);  
-    grad_op(ielem,1,6) = (a[7] *  t1) - (a[5] *  t5)  - (a[4] * R86) + (a[2] *  t4) - (a[1] * R63) + (a[3] * R83);  
-    grad_op(ielem,1,5) = (a[6] *  t5) - (a[4] *  t3)  - (a[7] * R75) + (a[1] *  t6) - (a[0] * R52) + (a[2] * R72);  
-    grad_op(ielem,1,4) = (a[5] *  t3) + (a[6] * R86) - (a[7] *  t2)  - (a[0] *  t4) - (a[3] * R81) + (a[1] * R61);  
-    grad_op(ielem,1,3) = (a[0] *  t5) - (a[1] * R31) - (a[2] *  t3)  + (a[7] *  t6) + (a[4] * R81) - (a[6] * R83);  
-    grad_op(ielem,1,2) = (a[3] *  t3) + (a[0] * R42) - (a[1] *  t2)  - (a[6] *  t4) + (a[7] * R74) - (a[5] * R72);  
-    grad_op(ielem,1,1) = (a[2] *  t2) + (a[3] * R31) - (a[0] *  t1)  - (a[5] *  t6) + (a[6] * R63) - (a[4] * R61);  
-    grad_op(ielem,1,0) = (a[1] *  t1) - (a[2] * R42) - (a[3] *  t5)  + (a[4] *  t4) + (a[5] * R52) - (a[7] * R54);  
-    
+    grad_op(ielem,1,7) = (a[4] *  t2) - (a[6] *  t1)  + (a[5] * R75) - (a[3] *  t6) - (a[2] * R74) + (a[0] * R54);
+    grad_op(ielem,1,6) = (a[7] *  t1) - (a[5] *  t5)  - (a[4] * R86) + (a[2] *  t4) - (a[1] * R63) + (a[3] * R83);
+    grad_op(ielem,1,5) = (a[6] *  t5) - (a[4] *  t3)  - (a[7] * R75) + (a[1] *  t6) - (a[0] * R52) + (a[2] * R72);
+    grad_op(ielem,1,4) = (a[5] *  t3) + (a[6] * R86) - (a[7] *  t2)  - (a[0] *  t4) - (a[3] * R81) + (a[1] * R61);
+    grad_op(ielem,1,3) = (a[0] *  t5) - (a[1] * R31) - (a[2] *  t3)  + (a[7] *  t6) + (a[4] * R81) - (a[6] * R83);
+    grad_op(ielem,1,2) = (a[3] *  t3) + (a[0] * R42) - (a[1] *  t2)  - (a[6] *  t4) + (a[7] * R74) - (a[5] * R72);
+    grad_op(ielem,1,1) = (a[2] *  t2) + (a[3] * R31) - (a[0] *  t1)  - (a[5] *  t6) + (a[6] * R63) - (a[4] * R61);
+    grad_op(ielem,1,0) = (a[1] *  t1) - (a[2] * R42) - (a[3] *  t5)  + (a[4] *  t4) + (a[5] * R52) - (a[7] * R54);
+
 
     R42=(a[3] - a[1]);
     R52=(a[4] - a[1]);
@@ -257,7 +253,7 @@ struct HexGrad< KOKKOSARRAY_MACRO_DEVICE >
     R72=(a[6] - a[1]);
     R75=(a[6] - a[4]);
     R81=(a[7] - a[0]);
-    
+
     t1=(R63 + R54);
     t2=(R61 + R74);
     t3=(R72 + R81);
@@ -265,7 +261,7 @@ struct HexGrad< KOKKOSARRAY_MACRO_DEVICE >
     t4 =(R86 + R42);
     t5 =(R83 + R52);
     t6 =(R75 + R31);
-    
+
     //Z
     a[0] = coords(ielem,2,0);
     a[1] = coords(ielem,2,1);
@@ -277,15 +273,15 @@ struct HexGrad< KOKKOSARRAY_MACRO_DEVICE >
     a[7] = coords(ielem,2,7);
 
 
-    grad_op(ielem,2,0)  = (a[1] *  t1) - (a[2] * R42) - (a[3] *  t5)  + (a[4] *  t4) + (a[5] * R52) - (a[7] * R54); 
-    grad_op(ielem,2,1)  = (a[2] *  t2) + (a[3] * R31) - (a[0] *  t1)  - (a[5] *  t6) + (a[6] * R63) - (a[4] * R61); 
-    grad_op(ielem,2,2)  = (a[3] *  t3) + (a[0] * R42) - (a[1] *  t2)  - (a[6] *  t4) + (a[7] * R74) - (a[5] * R72); 
-    grad_op(ielem,2,3)  = (a[0] *  t5) - (a[1] * R31) - (a[2] *  t3)  + (a[7] *  t6) + (a[4] * R81) - (a[6] * R83); 
-    grad_op(ielem,2,4)  = (a[5] *  t3) + (a[6] * R86) - (a[7] *  t2)  - (a[0] *  t4) - (a[3] * R81) + (a[1] * R61); 
-    grad_op(ielem,2,5)  = (a[6] *  t5) - (a[4] *  t3)  - (a[7] * R75) + (a[1] *  t6) - (a[0] * R52) + (a[2] * R72); 
-    grad_op(ielem,2,6)  = (a[7] *  t1) - (a[5] *  t5)  - (a[4] * R86) + (a[2] *  t4) - (a[1] * R63) + (a[3] * R83); 
-    grad_op(ielem,2,7)  = (a[4] *  t2) - (a[6] *  t1)  + (a[5] * R75) - (a[3] *  t6) - (a[2] * R74) + (a[0] * R54); 
-    
+    grad_op(ielem,2,0)  = (a[1] *  t1) - (a[2] * R42) - (a[3] *  t5)  + (a[4] *  t4) + (a[5] * R52) - (a[7] * R54);
+    grad_op(ielem,2,1)  = (a[2] *  t2) + (a[3] * R31) - (a[0] *  t1)  - (a[5] *  t6) + (a[6] * R63) - (a[4] * R61);
+    grad_op(ielem,2,2)  = (a[3] *  t3) + (a[0] * R42) - (a[1] *  t2)  - (a[6] *  t4) + (a[7] * R74) - (a[5] * R72);
+    grad_op(ielem,2,3)  = (a[0] *  t5) - (a[1] * R31) - (a[2] *  t3)  + (a[7] *  t6) + (a[4] * R81) - (a[6] * R83);
+    grad_op(ielem,2,4)  = (a[5] *  t3) + (a[6] * R86) - (a[7] *  t2)  - (a[0] *  t4) - (a[3] * R81) + (a[1] * R61);
+    grad_op(ielem,2,5)  = (a[6] *  t5) - (a[4] *  t3)  - (a[7] * R75) + (a[1] *  t6) - (a[0] * R52) + (a[2] * R72);
+    grad_op(ielem,2,6)  = (a[7] *  t1) - (a[5] *  t5)  - (a[4] * R86) + (a[2] *  t4) - (a[1] * R63) + (a[3] * R83);
+    grad_op(ielem,2,7)  = (a[4] *  t2) - (a[6] *  t1)  + (a[5] * R75) - (a[3] *  t6) - (a[2] * R74) + (a[0] * R54);
+
   }
 
   //--------------------------------------------------------------------------

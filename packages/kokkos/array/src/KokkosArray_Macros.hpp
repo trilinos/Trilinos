@@ -1,13 +1,15 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//
+//                             KokkosArray
+//         Manycore Performance-Portable Multidimensional Arrays
+//
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,46 +37,67 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
-#include <iostream>
-#include <iomanip>
-#include <sys/time.h>
+#ifndef KOKKOSARRAY_MACROS_HPP
+#define KOKKOSARRAY_MACROS_HPP
 
-#include <KokkosArray_Value.hpp>
-#include <KokkosArray_MultiVector.hpp>
-#include <KokkosArray_MDArray.hpp>
+namespace KokkosArray {
 
-#include <KokkosArray_Host.hpp>
-#include <KokkosArray_Cuda.hpp>
+class Host;
+class Cuda;
 
-#include <impl/KokkosArray_Cuda_macros.hpp>
-#include <explicit_dynamics_app.hpp>
-#include <impl/KokkosArray_Clear_macros.hpp>
-
-__global__ void dummy_kernel(){}
-
-namespace Test{
-
-void test_Cuda(int beg, int end, int runs){
-
-  KokkosArray::Cuda::initialize();
-
-  cudaFuncSetCacheConfig(dummy_kernel, cudaFuncCachePreferL1);
-  dummy_kernel<<<1, 1>>>();
-
-  std::cout << "KokkosArray Cuda: " << std::endl;
+} //namespace KokkosArray
 
 
-  explicit_dynamics::driver<float,KokkosArray::Cuda>("Cuda-float", beg, end, runs);
-  explicit_dynamics::driver<double,KokkosArray::Cuda>("Cuda-double", beg, end, runs);
+#if defined( __CUDACC__ ) //on cuda
 
-  KokkosArray::Cuda::finalize();
-}
+#define KOKKOSARRAY_INLINE_FUNCTION inline __device__ __host__
+#define KOKKOSARRAY_INLINE_DEVICE_FUNCTION inline __device__
 
-}// namespace
+#define KOKKOSARRAY_CHECK_EXPR(expr) do{/*expr;*/}while(false)
 
+namespace KokkosArray { namespace Impl {
+
+template <typename MemorySpace>
+struct Restrict_Function_To_Device
+{ static void fail() {} };
+
+template<>
+struct Restrict_Function_To_Device<KokkosArray::Cuda>
+{ static void success() {} };
+
+}} //namespace KokkosArray::Impl
+
+
+#else //on host
+
+#define KOKKOSARRAY_INLINE_FUNCTION inline
+#define KOKKOSARRAY_INLINE_DEVICE_FUNCTION inline
+
+#ifdef  KOKKOSARRAY_EXPRESSION_CHECK
+#define KOKKOSARRAY_CHECK_EXPR(expr) do{expr;}while(false)
+#else
+#define KOKKOSARRAY_CHECK_EXPR(expr) do{/*expr;*/}while(false)
+#endif
+
+namespace KokkosArray { namespace Impl {
+
+template <typename MemorySpace>
+struct Restrict_Function_To_Device
+{ static void fail() {} };
+
+template<>
+struct Restrict_Function_To_Device<KokkosArray::Host>
+{ static void success() {} };
+
+}} //namespace KokkosArray::Impl
+
+#endif
+
+
+#endif // KOKKOSARRAY_MACROS_HPP

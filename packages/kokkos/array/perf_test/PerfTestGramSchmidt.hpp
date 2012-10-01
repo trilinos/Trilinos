@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -47,16 +47,10 @@
 //----------------------------------------------------------------------------
 
 template< typename Scalar , class DeviceType >
-struct ModifiedGramSchmidt ;
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-template< typename Scalar >
-struct ModifiedGramSchmidt< Scalar , KOKKOSARRAY_MACRO_DEVICE >
+struct ModifiedGramSchmidt
 {
-  typedef KOKKOSARRAY_MACRO_DEVICE     device_type ;
-  typedef device_type::size_type  size_type ;
+  typedef DeviceType  device_type ;
+  typedef typename device_type::size_type  size_type ;
 
   typedef KokkosArray::View< Scalar** ,
                              KokkosArray::LayoutLeft ,
@@ -82,7 +76,7 @@ struct ModifiedGramSchmidt< Scalar , KOKKOSARRAY_MACRO_DEVICE >
       , inv( argInv )
       {}
 
-    KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+    KOKKOSARRAY_INLINE_DEVICE_FUNCTION
     void operator()( Scalar & result ) const
     {
       const Scalar value = sqrt( result );
@@ -103,7 +97,7 @@ struct ModifiedGramSchmidt< Scalar , KOKKOSARRAY_MACRO_DEVICE >
       , tmp( argTmp )
       {}
 
-    KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+    KOKKOSARRAY_INLINE_DEVICE_FUNCTION
     void operator()( Scalar & result ) const
     {
        *Rjk  = result ;

@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -47,11 +47,11 @@
 #include <KokkosArray_View.hpp>
 #include <Host/KokkosArray_Host_Parallel.hpp>
 
-#include <KokkosArray_Host_macros.hpp>
+#include <impl/KokkosArray_Host_macros.hpp>
 #include <impl/KokkosArray_ViewOperLeft_macros.hpp>
 #include <impl/KokkosArray_ViewOperRight_macros.hpp>
 #include <impl/KokkosArray_View_macros.hpp>
-#include <KokkosArray_Clear_macros.hpp>
+#include <impl/KokkosArray_Clear_macros.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

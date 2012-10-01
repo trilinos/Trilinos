@@ -11,10 +11,10 @@
 
 #include <KokkosArray_Cuda.hpp>
 
-#include <KokkosArray_Cuda_macros.hpp>
+#include <impl/KokkosArray_Cuda_macros.hpp>
 #include <ParallelDataMap_macros.hpp>
 #include <Explicit_macros.hpp>
-#include <KokkosArray_Clear_macros.hpp>
+#include <impl/KokkosArray_Clear_macros.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

@@ -53,21 +53,21 @@
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_Cuda.hpp>
 
-#include <KokkosArray_Host_macros.hpp>
+#include <impl/KokkosArray_Host_macros.hpp>
 #include <impl/KokkosArray_ProductTensor_macros.hpp>
 #include <impl/KokkosArray_LegendrePolynomial_macros.hpp>
 #include <impl/KokkosArray_StochasticProductTensor_macros.hpp>
 #include <impl/KokkosArray_SymmetricDiagonalSpec_macros.hpp>
-#include <KokkosArray_Clear_macros.hpp>
+#include <impl/KokkosArray_Clear_macros.hpp>
 
 #include <Host/KokkosArray_Host_ProductTensor.hpp>
 
-#include <KokkosArray_Cuda_macros.hpp>
+#include <impl/KokkosArray_Cuda_macros.hpp>
 #include <impl/KokkosArray_ProductTensor_macros.hpp>
 #include <impl/KokkosArray_LegendrePolynomial_macros.hpp>
 #include <impl/KokkosArray_StochasticProductTensor_macros.hpp>
 #include <impl/KokkosArray_SymmetricDiagonalSpec_macros.hpp>
-#include <KokkosArray_Clear_macros.hpp>
+#include <impl/KokkosArray_Clear_macros.hpp>
 
 
 #include <Cuda/KokkosArray_Cuda_SymmetricDiagonalSpec.hpp>

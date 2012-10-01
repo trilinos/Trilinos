@@ -11,15 +11,15 @@
 
 #include <KokkosArray_Host.hpp>
 
-#include <KokkosArray_Host_macros.hpp>
+#include <impl/KokkosArray_Host_macros.hpp>
 #include <ParallelDataMap_macros.hpp>
 #include <Explicit_macros.hpp>
-#include <KokkosArray_Clear_macros.hpp>
+#include <impl/KokkosArray_Clear_macros.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-void test_host_explicit( comm::Machine machine , 
+void test_host_explicit( comm::Machine machine ,
                          size_t numa_node_count ,
                          size_t numa_node_thread_count ,
                          size_t elem_count_begin ,

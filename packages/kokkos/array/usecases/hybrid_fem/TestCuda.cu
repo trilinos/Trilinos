@@ -7,7 +7,7 @@
 #include <KokkosArray_Cuda.hpp>
 #include <KokkosArray_Host.hpp>
 
-#include <KokkosArray_Cuda_macros.hpp>
+#include <impl/KokkosArray_Cuda_macros.hpp>
 #include <ParallelDataMap_macros.hpp>
 #include <TestBoxMeshFixture_macros.hpp>
 #include <SparseLinearSystem_macros.hpp>
@@ -17,7 +17,7 @@
 #include <NonLinear_macros.hpp>
 #include <NonlinearElement_macros.hpp>
 #include <Explicit_macros.hpp>
-#include <KokkosArray_Clear_macros.hpp>
+#include <impl/KokkosArray_Clear_macros.hpp>
 
 // Cuda tailored version of the nonlinear quadratic element computation
 #include <NonlinearElement_Cuda.hpp>

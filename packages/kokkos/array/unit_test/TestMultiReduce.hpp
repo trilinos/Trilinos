@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,17 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
 #include <gtest/gtest.h>
-
-#ifndef KOKKOSARRAY_MACRO_DEVICE
-#error "KOKKOSARRAY_MACRO_DEVICE undefined"
-#endif
 
 #include <stdexcept>
 #include <sstream>
@@ -68,10 +64,7 @@ public:
     ScalarType value[3] ;
   };
 
-#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
-
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void init( value_type & dst )
   {
     dst.value[0] = 0 ;
@@ -79,8 +72,7 @@ public:
     dst.value[2] = 0 ;
   }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void join( volatile value_type & dst ,
                     const volatile value_type & src )
   {
@@ -89,20 +81,15 @@ public:
     dst.value[2] += src.value[2] ;
   }
 
-#endif /* defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION ) */
-
 };
 
 
 template< typename ScalarType , class DeviceType >
-class ReduceMultiFunctor ;
-
-template< typename ScalarType >
-class ReduceMultiFunctor< ScalarType , KOKKOSARRAY_MACRO_DEVICE >
+class ReduceMultiFunctor
 {
 public:
-  typedef KOKKOSARRAY_MACRO_DEVICE    device_type ;
-  typedef device_type::size_type size_type ;
+  typedef DeviceType  device_type ;
+  typedef typename device_type::size_type size_type ;
 
   typedef ReduceMultiFunctorTraits< ScalarType , device_type > reduce_traits ;
   typedef typename reduce_traits::value_type value_type ;
@@ -121,9 +108,7 @@ public:
     , work_begin( rhs.work_begin )
     {}
 
-#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
-
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void operator()( size_type iwork , value_type & dst ) const
   {
     const size_type ival = iwork + work_begin ;
@@ -132,8 +117,6 @@ public:
     dst.value[2] += work_total - ival ;
   }
 
-#endif /* defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION ) */
-
 };
 
 } // namespace Test
@@ -141,14 +124,11 @@ public:
 namespace {
 
 template< typename ScalarType , class DeviceType >
-class TestReduceMulti ;
-
-template< typename ScalarType >
-class TestReduceMulti< ScalarType , KOKKOSARRAY_MACRO_DEVICE >
+class TestReduceMulti
 {
 public:
-  typedef KOKKOSARRAY_MACRO_DEVICE    device_type ;
-  typedef device_type::size_type size_type ;
+  typedef DeviceType    device_type ;
+  typedef typename device_type::size_type size_type ;
 
   typedef Test::ReduceMultiFunctorTraits< ScalarType , device_type > reduce_traits ;
   typedef typename reduce_traits::value_type value_type ;

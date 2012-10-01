@@ -67,7 +67,7 @@ SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES MueLu)
+SET(Trilinos_PACKAGES MueLu Xpetra)
 SET(EXTRA_EXCLUDE_PACKAGES Kokkos Ifpack2 ML Tpetra Stratimikos Triutils AztecOO)
 
 #

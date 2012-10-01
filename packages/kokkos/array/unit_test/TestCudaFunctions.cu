@@ -56,15 +56,11 @@
 
 #include <TestViewImpl.hpp>
 
-#include <KokkosArray_Cuda_macros.hpp>
-
 #include <TestViewAPI.hpp>
 #include <TestCrsArray.hpp>
 
 #include <TestReduce.hpp>
 #include <TestMultiReduce.hpp>
-
-#include <KokkosArray_Clear_macros.hpp>
 
 namespace Test {
 

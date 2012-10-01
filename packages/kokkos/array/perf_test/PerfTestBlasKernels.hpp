@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -112,26 +112,23 @@ void dot( const ConstVectorType & X ,
 
 } /* namespace KokkosArray */
 
-#endif /* #ifndef KOKKOSARRAY_BLAS_KERNELS_HPP */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-
-#if defined( KOKKOSARRAY_MACRO_DEVICE ) && defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
 
 namespace KokkosArray {
 
-template< class Type >
-struct Dot< Type , KOKKOSARRAY_MACRO_DEVICE >
+template< class Type , class Device >
+struct Dot
 {
-  typedef KOKKOSARRAY_MACRO_DEVICE device_type ;
+  typedef Device device_type ;
 
-  typedef typename 
+  typedef typename
     Impl::StaticAssertSame< Impl::unsigned_< 1 > ,
                             Impl::unsigned_< Type::Rank > >::type ok_rank ;
 
 
-  typedef typename 
+  typedef typename
     Impl::StaticAssertSame< device_type ,
                             typename Type::device_type >::type ok_device ;
 
@@ -144,30 +141,30 @@ struct Dot< Type , KOKKOSARRAY_MACRO_DEVICE >
   Type X ;
   Type Y ;
 #endif
-  
+
   Dot( const Type & arg_x , const Type & arg_y )
     : X(arg_x) , Y(arg_y) { }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
-  void operator()( int i , value_type & update ) const 
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  void operator()( int i , value_type & update ) const
     { update += X[i] * Y[i]; }
-    
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & source )
     { update += source; }
-    
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 };
 
-template< class Type >
-struct DotSingle< Type , KOKKOSARRAY_MACRO_DEVICE >
+template< class Type , class Device >
+struct DotSingle
 {
-  typedef KOKKOSARRAY_MACRO_DEVICE device_type ;
+  typedef Device device_type ;
 
-  typedef typename 
+  typedef typename
     Impl::StaticAssertSame< Impl::unsigned_< 1 > ,
                             Impl::unsigned_< Type::Rank > >::type ok_rank ;
 
@@ -185,27 +182,27 @@ struct DotSingle< Type , KOKKOSARRAY_MACRO_DEVICE >
 
   DotSingle( const Type & arg_x ) : X(arg_x) {}
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
-  void operator()( int i , value_type & update ) const 
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  void operator()( int i , value_type & update ) const
     {
       const typename Type::value_type x = X[i]; update += x * x ;
     }
-    
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & source )
     { update += source; }
-    
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 };
 
 
-template< class ScalarType , class VectorType >
-struct Scale< ScalarType , VectorType , KOKKOSARRAY_MACRO_DEVICE >
+template< class ScalarType , class VectorType , class Device>
+struct Scale
 {
-  typedef KOKKOSARRAY_MACRO_DEVICE device_type ;
+  typedef Device device_type ;
 
   typedef typename
     Impl::StaticAssertSame< device_type ,
@@ -222,7 +219,7 @@ struct Scale< ScalarType , VectorType , KOKKOSARRAY_MACRO_DEVICE >
                             Impl::unsigned_< ScalarType::Rank > >::type
       ok_scalar_rank ;
 
-  typedef typename 
+  typedef typename
     Impl::StaticAssertSame< Impl::unsigned_< 1 > ,
                             Impl::unsigned_< VectorType::Rank > >::type
       ok_vector_rank ;
@@ -238,8 +235,8 @@ struct Scale< ScalarType , VectorType , KOKKOSARRAY_MACRO_DEVICE >
   Scale( const ScalarType & arg_alpha , const VectorType & arg_Y )
     : alpha( arg_alpha ), Y( arg_Y ) {}
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
-  void operator()( int i ) const 
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  void operator()( int i ) const
     {
       Y[i] *= *alpha ;
     }
@@ -248,10 +245,11 @@ struct Scale< ScalarType , VectorType , KOKKOSARRAY_MACRO_DEVICE >
 
 template< class ScalarType ,
           class ConstVectorType ,
-          class VectorType >
-struct AXPBY< ScalarType , ConstVectorType , VectorType , KOKKOSARRAY_MACRO_DEVICE >
+          class VectorType,
+          class Device>
+struct AXPBY
 {
-  typedef KOKKOSARRAY_MACRO_DEVICE device_type ;
+  typedef Device device_type ;
 
   typedef typename
     Impl::StaticAssertSame< device_type ,
@@ -299,8 +297,8 @@ struct AXPBY< ScalarType , ConstVectorType , VectorType , KOKKOSARRAY_MACRO_DEVI
          const VectorType      & arg_Y )
     : alpha( arg_alpha ), beta( arg_beta ), X( arg_X ), Y( arg_Y ) {}
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
-  void operator()( int i ) const 
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  void operator()( int i ) const
     {
       Y[i] = *alpha * X[i] + *beta * Y[i] ;
     }
@@ -308,6 +306,4 @@ struct AXPBY< ScalarType , ConstVectorType , VectorType , KOKKOSARRAY_MACRO_DEVI
 
 } /* namespace KokkosArray */
 
-#endif /* #if defined( KOKKOSARRAY_MACRO_DEVICE ) &&
-              defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION ) */
-
+#endif /* #ifndef KOKKOSARRAY_BLAS_KERNELS_HPP */
