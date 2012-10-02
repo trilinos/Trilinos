@@ -217,20 +217,11 @@ evaluateBCs(const panzer::BCType bc_type,
       panzer::LessBC>& bc_field_managers = 
       m_field_manager_builder->getBCFieldManagers();
   
-    const std::map<panzer::BC,
-      Teuchos::RCP<std::map<unsigned,panzer::Workset> >,
-      panzer::LessBC>& bc_worksets = 
-      m_field_manager_builder->getBCWorksets();
-
     // Must do all neumann before all dirichlet so we need a double loop
     // here over all bcs
     typedef typename std::map<panzer::BC, 
       std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
       panzer::LessBC>::const_iterator bcfm_it_type;
-
-    typedef typename std::map<panzer::BC,
-      Teuchos::RCP<std::map<unsigned,panzer::Workset> >,
-      panzer::LessBC>::const_iterator bcwkst_it_type;
 
     // loop over bcs
     for (bcfm_it_type bcfm_it = bc_field_managers.begin(); 
@@ -239,8 +230,6 @@ evaluateBCs(const panzer::BCType bc_type,
       const panzer::BC& bc = bcfm_it->first;
       const std::map<unsigned,PHX::FieldManager<panzer::Traits> > bc_fm = 
 	bcfm_it->second;
-
-
    
       Teuchos::RCP<const std::map<unsigned,panzer::Workset> > bc_wkst_ptr = wkstContainer->getSideWorksets(bc);
       TEUCHOS_TEST_FOR_EXCEPTION(bc_wkst_ptr == Teuchos::null, std::logic_error,

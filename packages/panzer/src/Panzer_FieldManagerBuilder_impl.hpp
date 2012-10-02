@@ -92,7 +92,6 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(
                             "panzer::FMB::setupVolumeFieldManagers: method function getWorksetContainer() returns null. "
                             "Plase call setWorksetContainer() before calling this method");
 
-  worksets_.clear();
   phx_volume_field_managers_.clear();
 
   std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator blkItr;
@@ -118,7 +117,6 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(
 
     // make sure to add the field manager & workset to the list 
     element_block_names_.push_back(blockId);
-    worksets_.push_back(setupData.worksets_);
     phx_volume_field_managers_.push_back(fm); 
   }
 }
@@ -167,15 +165,13 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
     if(currentWkst==Teuchos::null) // if there is nothing to do...do nothing!
        continue;
 
-    bc_worksets_[*bc] = currentWkst;
-
     // Build one FieldManager for each local side workset for each dirichlet bc
     std::map<unsigned,PHX::FieldManager<panzer::Traits> >& field_managers = 
       bc_field_managers_[*bc];
 
     // Loop over local face indices and setup each field manager
     for (std::map<unsigned,panzer::Workset>::const_iterator wkst = 
-	   bc_worksets_[*bc]->begin(); wkst != bc_worksets_[*bc]->end();
+	 currentWkst->begin(); wkst != currentWkst->end();
 	 ++wkst) {
 
       PHX::FieldManager<panzer::Traits>& fm = field_managers[wkst->first];

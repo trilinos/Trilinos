@@ -92,18 +92,10 @@ namespace panzer {
     const std::vector<std::string> &
       getElementBlockNames() const {return element_block_names_;}
 
-    const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& 
-      getWorksets() const {return worksets_;}
-
     const std::map<panzer::BC, 
 		   std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
 		   panzer::LessBC>& 
       getBCFieldManagers() const {return bc_field_managers_;}
-
-    const std::map<panzer::BC,
-		   Teuchos::RCP<std::map<unsigned,panzer::Workset> >,
-		   panzer::LessBC>&
-      getBCWorksets() const {return bc_worksets_;}
 
     // The intention of the next set of functions is to simplify and eventually
     // replace the setup routine above. Its not clear that these functions
@@ -145,9 +137,6 @@ namespace panzer {
       */
     std::vector<std::string> element_block_names_;
     
-    //! Volume fill worksets for each element block.
-    std::vector< Teuchos::RCP<std::vector<panzer::Workset> > > worksets_;
-
     /*! \brief Field managers for the boundary conditions
 
         key is a panzer::BC object.  value is a map of
@@ -157,17 +146,6 @@ namespace panzer {
     std::map<panzer::BC, 
       std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
       panzer::LessBC> bc_field_managers_;
-
-    /*! \brief Worksets for the boundary conditions
-
-        key is a panzer::BC object.  value is a map of
-        worksets where the key is the local side index used by
-        intrepid.  All elemenst of a boundary are in one workset for
-        each local side of the sideset.
-    */
-    std::map<panzer::BC,
-      Teuchos::RCP<std::map<unsigned,panzer::Workset> >,
-      panzer::LessBC> bc_worksets_;
 
     Teuchos::RCP<WorksetContainer> worksetContainer_;
   };

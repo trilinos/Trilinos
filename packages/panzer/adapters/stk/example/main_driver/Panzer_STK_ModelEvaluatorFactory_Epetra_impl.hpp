@@ -524,7 +524,7 @@ namespace panzer_stk {
         bloc->set_x(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(nomValues.get_x()));
       }
       
-      panzer::evaluateInitialCondition(fmb->getWorksets(), phx_ic_field_managers, loc, 0.0);
+      panzer::evaluateInitialCondition(*wkstContainer->getVolumeWorksets(), phx_ic_field_managers, loc, 0.0);
 
       // Write the epetra vector into the STK mesh: use response library
       //////////////////////////////////////////////////////////////////////////
