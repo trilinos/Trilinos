@@ -180,6 +180,8 @@ namespace std
 %include "Percept_dox.i"
 
 //from Teuchos
+%include Teuchos_config.h
+%ignore Teuchos::RCP::count;
 %include Teuchos_RCPDecl.hpp
 %template(RCPFunction) Teuchos::RCP<stk::percept::Function>;
 
