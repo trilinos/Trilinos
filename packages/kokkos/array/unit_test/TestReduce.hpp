@@ -127,7 +127,7 @@ public:
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void join( volatile ScalarType dst[] ,
                     const volatile ScalarType src[] ,
-                    const size_type )
+                    const size_type n )
   {
     dst[0] += src[0] ;
     dst[1] += src[1] ;
@@ -135,7 +135,7 @@ public:
   }
 
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
-  void operator()( size_type iwork , value_type dst ) const
+  void operator()( size_type iwork , ScalarType dst[] ) const
   {
     dst[0] += 1 ;
     dst[1] += iwork + 1 ;
@@ -191,7 +191,6 @@ public:
     typedef Test::RuntimeReduceFunctor< ScalarType , device_type > functor_type ;
     typedef KokkosArray::Impl::ParallelReduceFunctorValue< ScalarType[] , device_type > finalize_type ;
 
-#if 0
     enum { Repeat = 100 };
 
     ScalarType result[ Repeat ][3] ;
@@ -212,7 +211,6 @@ public:
       ASSERT_EQ( result[i][1], (ScalarType) nsum);
       ASSERT_EQ( result[i][2], (ScalarType) nsum);
     }
-#endif
   }
 };
 

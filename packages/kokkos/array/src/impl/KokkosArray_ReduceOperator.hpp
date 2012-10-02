@@ -80,6 +80,10 @@ public:
   typedef ValueType    value_type ;
   typedef value_type & reference_type ;
 
+  inline static
+  unsigned value_size( const FinalizeFunctor & )
+  { return sizeof(value_type); }
+
   KOKKOSARRAY_INLINE_FUNCTION
   explicit ReduceOperator( const FinalizeFunctor & finalize )
   : m_finalize( finalize )
@@ -142,16 +146,19 @@ public:
   typedef MemberType   value_type[] ;
   typedef MemberType * reference_type ;
 
-  KOKKOSARRAY_INLINE_FUNCTION
+  inline static
+  unsigned value_size( const FinalizeFunctor & f )
+  { return sizeof(MemberType) * f.value_count ; }
+
   explicit ReduceOperator( const FinalizeFunctor & finalize )
     : m_finalize( finalize )
     {}
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ReduceOperator( const ReduceOperator & rhs )
     : m_finalize( rhs.m_finalize ) {}
   
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   unsigned value_size() const
     { return sizeof(MemberType) * m_finalize.value_count ; }
 
@@ -176,7 +183,7 @@ public:
   void finalize( const void * input ) const
   {
     typedef const MemberType * cvp ;
-    m_finalize( *cvp(input) );
+    m_finalize( cvp(input) );
   }
 };
 
@@ -207,6 +214,10 @@ public:
 
   typedef typename ValueOper::value_type  value_type ;
   typedef value_type & reference_type ;
+
+  inline static
+  unsigned value_size( const view_type & )
+  { return sizeof(value_type); }
 
   KOKKOSARRAY_INLINE_FUNCTION
   explicit ReduceOperator( const view_type & view )

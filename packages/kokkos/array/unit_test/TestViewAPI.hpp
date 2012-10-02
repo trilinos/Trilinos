@@ -43,7 +43,6 @@
 
 #include <gtest/gtest.h>
 
-#include <stdio.h>
 #include <stdexcept>
 #include <sstream>
 #include <iostream>

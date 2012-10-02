@@ -93,7 +93,7 @@ public:
 
   void result( value_type result ) const
   {
-    MemberType * const ptr = host_scratch_reduce();
+    MemberType * const ptr = (MemberType *) host_scratch_reduce();
 
     for ( Host::size_type i = 0 ; i < value_count ; ++i ) result[i] = ptr[i] ;
   }
@@ -116,7 +116,7 @@ public:
   void operator()( HostThread & this_thread ) const
   {
     // This thread's reduction value, initialized
-    value_type & update = this_thread.value( m_reduce );
+    typename reduce_oper::reference_type update = this_thread.value( m_reduce );
 
     // Iterate this thread's work
 
