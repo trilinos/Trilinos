@@ -1625,7 +1625,6 @@ NNTI_result_t NNTI_ib_wait (
 
             memset(&wc, 0, sizeof(struct ibv_wc));
             trios_start_timer(call_time);
-//nthread_lock(&nnti_ib_lock);
             ibv_rc = ibv_poll_cq(cq, 1, &wc);
             trios_stop_timer("NNTI_ib_wait - ibv_poll_cq", call_time);
             if (ibv_rc < 0) {
@@ -1651,7 +1650,6 @@ NNTI_result_t NNTI_ib_wait (
                 wait_buf=decode_event_buffer(reg_buf, &wc);
                 if (wait_buf != reg_buf) {
                     ib_memory_handle *hdl=(ib_memory_handle *)wait_buf->transport_private;
-//nthread_unlock(&ib_mem_hdl->wr_queue_lock);
 nthread_lock(&hdl->wr_queue_lock);
                     ib_work_request *wait_wr=decode_work_request(&wc);
                     if (wait_wr == NULL) {
@@ -1667,16 +1665,13 @@ log_debug(nnti_debug_level, "wr==%p ; lock==%p", wr, &wr->lock);
 nthread_lock(&wr->lock);
                     process_event(reg_buf, &wc);
 nthread_unlock(&wr->lock);
-//nthread_unlock(&ib_mem_hdl->wr_queue_lock);
                 }
-//nthread_unlock(&nnti_ib_lock);
 
                 if (is_buf_op_complete(reg_buf) == TRUE) {
                     nnti_rc = NNTI_OK;
                     break;
                 }
             } else {
-//nthread_unlock(&nnti_ib_lock);
 retry:
                 check_listen_socket_for_new_connections();
 
@@ -1687,9 +1682,7 @@ retry:
                 }
 
                 trios_start_timer(call_time);
-//nthread_lock(&nnti_ib_lock);
                 rc = poll_comp_channel(comp_channel, cq, timeout_per_call);
-//nthread_unlock(&nnti_ib_lock);
                 trios_stop_timer("NNTI_ib_wait - poll_comp_channel", call_time);
                 /* case 1: success */
                 if (rc == NNTI_OK) {
@@ -1886,7 +1879,6 @@ NNTI_result_t NNTI_ib_waitany (
 
             memset(&wc, 0, sizeof(struct ibv_wc));
             trios_start_timer(call_time);
-nthread_lock(&nnti_ib_lock);
             ibv_rc = ibv_poll_cq(transport_global_data.data_cq, 1, &wc);
             trios_stop_timer("NNTI_ib_waitany - ibv_poll_cq", call_time);
             if (ibv_rc < 0) {
@@ -1910,15 +1902,25 @@ nthread_lock(&nnti_ib_lock);
                 }
 
                 wait_buf=decode_event_buffer(buf_list[0], &wc);
+                ib_memory_handle *hdl=(ib_memory_handle *)wait_buf->transport_private;
+nthread_lock(&hdl->wr_queue_lock);
+                ib_work_request *wait_wr=decode_work_request(&wc);
+                if (wait_wr == NULL) {
+                    wait_wr=first_incomplete_wr(hdl);
+                }
+nthread_unlock(&hdl->wr_queue_lock);
+log_debug(nnti_debug_level, "wait_wr==%p ; lock==%p", wait_wr, &wait_wr->lock);
+nthread_lock(&wait_wr->lock);
                 process_event(wait_buf, &wc);
-nthread_unlock(&nnti_ib_lock);
+nthread_unlock(&wait_wr->lock);
+//                wait_buf=decode_event_buffer(buf_list[0], &wc);
+//                process_event(wait_buf, &wc);
 
                 if (is_any_buf_op_complete(buf_list, buf_count, which) == TRUE) {
                     nnti_rc = NNTI_OK;
                     break;
                 }
             } else {
-nthread_unlock(&nnti_ib_lock);
 retry:
                 check_listen_socket_for_new_connections();
 
@@ -1929,9 +1931,7 @@ retry:
                 }
 
                 trios_start_timer(call_time);
-nthread_lock(&nnti_ib_lock);
                 rc = poll_comp_channel(transport_global_data.data_comp_channel, transport_global_data.data_cq, timeout_per_call);
-nthread_unlock(&nnti_ib_lock);
                 trios_stop_timer("NNTI_ib_waitany - poll_comp_channel", call_time);
                 /* case 1: success */
                 if (rc == NNTI_OK) {
@@ -1958,7 +1958,7 @@ nthread_unlock(&nnti_ib_lock);
                 /* case 3: poll was interupted */
                 else if (rc==NNTI_EAGAIN) {
                     nnti_rc = NNTI_EAGAIN;
-                    break;
+                    goto retry;
                 }
                 /* case 4: failure */
                 else {
@@ -2121,7 +2121,6 @@ NNTI_result_t NNTI_ib_waitall (
 
             memset(&wc, 0, sizeof(struct ibv_wc));
             trios_start_timer(call_time);
-nthread_lock(&nnti_ib_lock);
             ibv_rc = ibv_poll_cq(transport_global_data.data_cq, 1, &wc);
             trios_stop_timer("NNTI_ib_waitany - ibv_poll_cq", call_time);
             if (ibv_rc < 0) {
@@ -2145,15 +2144,25 @@ nthread_lock(&nnti_ib_lock);
                 }
 
                 wait_buf=decode_event_buffer(buf_list[0], &wc);
+                ib_memory_handle *hdl=(ib_memory_handle *)wait_buf->transport_private;
+nthread_lock(&hdl->wr_queue_lock);
+                ib_work_request *wait_wr=decode_work_request(&wc);
+                if (wait_wr == NULL) {
+                    wait_wr=first_incomplete_wr(hdl);
+                }
+nthread_unlock(&hdl->wr_queue_lock);
+log_debug(nnti_debug_level, "wait_wr==%p ; lock==%p", wait_wr, &wait_wr->lock);
+nthread_lock(&wait_wr->lock);
                 process_event(wait_buf, &wc);
-nthread_unlock(&nnti_ib_lock);
+nthread_unlock(&wait_wr->lock);
+//                wait_buf=decode_event_buffer(buf_list[0], &wc);
+//                process_event(wait_buf, &wc);
 
                 if (is_all_buf_ops_complete(buf_list, buf_count) == TRUE) {
                     nnti_rc = NNTI_OK;
                     break;
                 }
             } else {
-nthread_unlock(&nnti_ib_lock);
 retry:
                 check_listen_socket_for_new_connections();
 
@@ -2164,9 +2173,7 @@ retry:
                 }
 
                 trios_start_timer(call_time);
-nthread_lock(&nnti_ib_lock);
                 rc = poll_comp_channel(transport_global_data.data_comp_channel, transport_global_data.data_cq, timeout_per_call);
-nthread_unlock(&nnti_ib_lock);
                 trios_stop_timer("NNTI_ib_waitany - poll_comp_channel", call_time);
                 /* case 1: success */
                 if (rc == NNTI_OK) {
@@ -2193,7 +2200,7 @@ nthread_unlock(&nnti_ib_lock);
                 /* case 3: poll was interupted */
                 else if (rc==NNTI_EAGAIN) {
                     nnti_rc = NNTI_EAGAIN;
-                    break;
+                    goto retry;
                 }
                 /* case 4: failure */
                 else {
