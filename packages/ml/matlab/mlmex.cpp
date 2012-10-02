@@ -468,14 +468,10 @@ int ml_epetra_data_pack::setup(int N,int* rowind,int* colptr, double* vals){
   int i,j;
   int *rnz;
   
-  /* Nonzero counts for Epetra */
-  rnz=new int[N];
-  for(i=0;i<N;i++) rnz[i]=rowind[i+1]-rowind[i];  
-  
   /* Epetra Setup */
   Comm= new Epetra_SerialComm;
   Map=new Epetra_Map(N,0,*Comm);
-  A=new Epetra_CrsMatrix(Copy,*Map,rnz);
+  A=new Epetra_CrsMatrix(Copy,*Map,0);
   
   /* Do the matrix assembly */
   for(i=0;i<N;i++)
