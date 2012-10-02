@@ -230,8 +230,9 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
 
   Teuchos::ParameterList user_data("User Data");
 
-  fmb->setupVolumeFieldManagers(*wkstContainer,physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
-  fmb->setupBCFieldManagers(*wkstContainer,bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+  fmb->setWorksetContainer(wkstContainer);
+  fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+  fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
   panzer::AssemblyEngine_TemplateManager<panzer::Traits,short,int> ae_tm;
   panzer::AssemblyEngine_TemplateBuilder<short,int> builder(fmb,linObjFactory);

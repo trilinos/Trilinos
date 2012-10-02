@@ -79,9 +79,18 @@ namespace panzer {
 
     void print(std::ostream& os) const;
 
+    void setWorksetContainer(const Teuchos::RCP<WorksetContainer> & wc)
+    { worksetContainer_ = wc; }
+
+    Teuchos::RCP<WorksetContainer> getWorksetContainer() const
+    { return worksetContainer_; }
+
     const 
       std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >&
       getVolumeFieldManagers() const {return phx_volume_field_managers_;}
+
+    const std::vector<std::string> &
+      getElementBlockNames() const {return element_block_names_;}
 
     const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& 
       getWorksets() const {return worksets_;}
@@ -105,8 +114,7 @@ namespace panzer {
     /** Setup the volume field managers. This uses the passed in <code>dofManager</code>
       * and sets it for permenant use.
       */
-    void setupVolumeFieldManagers(WorksetContainer & wkstContainer, 
-                                  const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+    void setupVolumeFieldManagers(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
 				  const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
 				  const Teuchos::ParameterList& closure_models,
                                   const LinearObjFactory<panzer::Traits> & lo_factory,
@@ -114,8 +122,7 @@ namespace panzer {
 
     /** Build the BC field managers.
       */
-    void setupBCFieldManagers(WorksetContainer & wkstContainer,
-                              const std::vector<panzer::BC> & bcs,
+    void setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
                               const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
 	                      const panzer::EquationSetFactory & eqset_factory,
 			      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
@@ -132,6 +139,11 @@ namespace panzer {
     //! Phalanx volume field managers for each element block.
     std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >
       phx_volume_field_managers_;
+
+    /** \brief Matches volume field managers so you can determine
+      *        the element block name for each field manager.
+      */
+    std::vector<std::string> element_block_names_;
     
     //! Volume fill worksets for each element block.
     std::vector< Teuchos::RCP<std::vector<panzer::Workset> > > worksets_;
@@ -157,6 +169,7 @@ namespace panzer {
       Teuchos::RCP<std::map<unsigned,panzer::Workset> >,
       panzer::LessBC> bc_worksets_;
 
+    Teuchos::RCP<WorksetContainer> worksetContainer_;
   };
 
 template<typename LO, typename GO>

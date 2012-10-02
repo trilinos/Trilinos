@@ -189,8 +189,9 @@ namespace panzer {
     user_data.sublist("Panzer Data").set("DOF Manager", dofManager);
     user_data.sublist("Panzer Data").set("Linear Object Factory", lof);
 
-    fmb.setupVolumeFieldManagers(*wkstContainer,physics_blocks,cm_factory,closure_models,*elof,user_data);
-    fmb.setupBCFieldManagers(*wkstContainer,bcs,physics_blocks,eqset_factory,cm_factory,bc_factory,closure_models,*elof,user_data);
+    fmb.setWorksetContainer(wkstContainer);
+    fmb.setupVolumeFieldManagers(physics_blocks,cm_factory,closure_models,*elof,user_data);
+    fmb.setupBCFieldManagers(bcs,physics_blocks,eqset_factory,cm_factory,bc_factory,closure_models,*elof,user_data);
 
     Teuchos::ParameterList ic_closure_models("Initial Conditions");
     ic_closure_models.sublist("eblock-0_0").sublist("TEMPERATURE").set<double>("Value",3.0);

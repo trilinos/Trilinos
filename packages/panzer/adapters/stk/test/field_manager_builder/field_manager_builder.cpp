@@ -172,8 +172,9 @@ namespace panzer {
 
     Teuchos::ParameterList user_data("User Data");
 
-    fmb.setupVolumeFieldManagers(*wkstContainer,physics_blocks,cm_factory,closure_models,elof,user_data);
-    fmb.setupBCFieldManagers(*wkstContainer,bcs,physics_blocks,eqset_factory,cm_factory,bc_factory,closure_models,elof, user_data);
+    fmb.setWorksetContainer(wkstContainer);
+    fmb.setupVolumeFieldManagers(physics_blocks,cm_factory,closure_models,elof,user_data);
+    fmb.setupBCFieldManagers(bcs,physics_blocks,eqset_factory,cm_factory,bc_factory,closure_models,elof, user_data);
 
     // run tests
     /////////////////////////////////

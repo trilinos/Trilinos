@@ -43,8 +43,9 @@
 #ifndef PANZER_ASSEMBLY_ENGINE_HPP
 #define PANZER_ASSEMBLY_ENGINE_HPP
 
-#include "Panzer_Base.hpp"
 #include "Teuchos_RCP.hpp"
+
+#include "Panzer_Base.hpp"
 #include "Panzer_BC.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_LinearObjFactory.hpp"
@@ -72,7 +73,7 @@ namespace panzer {
     void evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& input_arguments);
 
     Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> > getManagerBuilder()
-      { return m_field_manager_builder; }
+    { return m_field_manager_builder; }
     
   protected:
       
@@ -94,7 +95,6 @@ namespace panzer {
 
       Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > 
       m_lin_obj_factory;
-    
   };
   
 }
