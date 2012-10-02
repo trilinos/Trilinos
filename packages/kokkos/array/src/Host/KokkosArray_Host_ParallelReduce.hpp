@@ -55,42 +55,50 @@
 namespace KokkosArray {
 namespace Impl {
 
-template< typename ValueType >
-class FunctorAssignment< ValueType , Host >
-{
-public:
-
-  typedef ValueType value_type ;
-
-  value_type & m_result ;
-
-  FunctorAssignment( value_type & result )
-    : m_result( result ) {}
-
-  void operator()( const value_type & value ) const
-    { m_result = value ; }
-};
-
-template< typename ValueType , class LayoutType >
-class FunctorAssignment< View< ValueType , LayoutType , Host > , Host >
-{
-public:
-
-  typedef ValueType value_type ;
-  typedef View< value_type , LayoutType , Host > view_type ;
-
-  view_type m_result ;
-
-  FunctorAssignment( const view_type & view )
-    : m_result( view ) {}
-
-  void operator()( const value_type & value ) const
-    { *m_result = value ; }
-};
+void host_resize_scratch_reduce( unsigned );
+void * host_scratch_reduce();
 
 //----------------------------------------------------------------------------
 
-void host_resize_reduce( unsigned );
+template< typename ValueType >
+class ParallelReduceFunctorValue< ValueType , Host >
+{
+public:
+  typedef ValueType value_type ;
+
+  ParallelReduceFunctorValue() {}
+
+  inline void operator()( const value_type & ) const {}
+
+  value_type result() const
+  {
+    value_type * const ptr = (value_type*) host_scratch_reduce();
+    return *ptr ;
+  }
+};
+
+template< typename MemberType >
+class ParallelReduceFunctorValue< MemberType[] , Host >
+{
+public:
+  typedef MemberType    value_type[] ;
+  const Host::size_type value_count ;
+
+  inline void operator()( const MemberType input[] ) const {}
+
+  ParallelReduceFunctorValue( Host::size_type n )
+    : value_count(n)
+    {}
+
+  void result( value_type result ) const
+  {
+    MemberType * const ptr = host_scratch_reduce();
+
+    for ( Host::size_type i = 0 ; i < value_count ; ++i ) result[i] = ptr[i] ;
+  }
+};
+
+//----------------------------------------------------------------------------
 
 template< class FunctorType , class ValueOper , class FinalizeType >
 class ParallelReduce< FunctorType , ValueOper , FinalizeType , Host > {
@@ -129,7 +137,7 @@ public:
     , m_reduce( finalize )
     , m_work_count( work_count )
     {
-      host_resize_reduce( m_reduce.value_size() );
+      host_resize_scratch_reduce( m_reduce.value_size() );
       HostParallelLaunch< ParallelReduce >( *this );
     }
 };
@@ -244,7 +252,7 @@ public:
 
   void execute() const
   {
-    Impl::host_resize_reduce( m_reduce.value_size() );
+    Impl::host_resize_scratch_reduce( m_reduce.value_size() );
     Impl::HostParallelLaunch< MultiFunctorParallelReduce >( *this );
   }
 };

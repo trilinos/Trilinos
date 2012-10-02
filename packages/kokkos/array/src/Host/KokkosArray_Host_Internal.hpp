@@ -92,7 +92,8 @@ protected:
   unsigned         m_gang_count ;    // Number of NUMA nodes used
   unsigned         m_worker_count ;  // Number of threads per NUMA node
   unsigned         m_work_chunk ;    // Granularity of work partitioning
-  unsigned         m_reduce_size ;   // Sizeof reduction memory
+  unsigned         m_reduce_scratch_size ;   // Sizeof reduction memory
+  void           * m_reduce_scratch ;
   HostThread       m_master_thread ;
   //! Array of all worker threads (including master); accessible to the threads.
   HostThread     * m_thread[ HostThread::max_thread_count ];
@@ -161,7 +162,9 @@ public:
 
   bool is_master_thread() const ;
 
-  void resize_reduce( unsigned size );
+  void * reduce_scratch() const ;
+
+  void resize_reduce_scratch( unsigned size );
   void resize_reduce_thread( HostThread & thread ) const ;
 
   //! Access the one HostInternal instance.

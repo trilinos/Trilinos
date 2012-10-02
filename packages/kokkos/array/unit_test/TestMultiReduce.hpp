@@ -137,25 +137,21 @@ public:
 
 
   //------------------------------------
-  TestReduceMulti( const size_type nwork ,
-                       const size_type nfunctor )
-  { run_test(nwork, nfunctor); }
+  TestReduceMulti( const size_type nwork , const size_type nfunctor )
+    { run_test(nwork, nfunctor); }
 
-  void run_test( const size_type nwork ,
-                       const size_type nfunctor )
+  void run_test( const size_type nwork , const size_type nfunctor )
   {
-    value_type result ;
+    typedef KokkosArray::Impl
+      ::ParallelReduceFunctorValue< value_type , device_type >
+         result_functor_type ;
 
-    { // Destruction of the 'result_functor_type' copies result
-      // data from the device to the host, as necessary.
+    const result_functor_type result_functor ;
 
-      typedef KokkosArray::Impl
-                ::FunctorAssignment< value_type , device_type >
-                  result_functor_type ;
-
-      result_functor_type result_functor( result );
-
-      KokkosArray::MultiFunctorParallelReduce< reduce_traits , result_functor_type , device_type >
+    {
+      KokkosArray::MultiFunctorParallelReduce< reduce_traits ,
+                                               result_functor_type ,
+                                               device_type >
         reduce_op( result_functor );
 
       for ( size_type j = 0 ; j < nfunctor ; ) {
@@ -168,6 +164,8 @@ public:
 
       reduce_op.execute();
     }
+
+    value_type result = result_functor.result();
 
     const unsigned long nw   = nwork ;
     const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )

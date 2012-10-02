@@ -458,8 +458,8 @@ class ParallelReduce< FunctorType , ValueOper , FinalizeType , Cuda >
 {
 public:
 
-  typedef          Cuda                      device_type ;
-  typedef          Cuda::size_type           size_type ;
+  typedef          Cuda                   device_type ;
+  typedef          Cuda::size_type        size_type ;
   typedef typename ValueOper::value_type  value_type ;
 
   typedef CudaReduceShared< ValueOper , FinalizeType > ReduceType ;
@@ -511,6 +511,8 @@ public:
     , m_work_count(    work_count )
   {}
 
+  //--------------------------------------------------------------------------
+
   ParallelReduce( const size_type      work_count ,
                   const FunctorType  & functor ,
                   const FinalizeType & finalize )
@@ -552,80 +554,89 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename ValueType >
-class FunctorAssignment< ValueType , Cuda >
-{
-public :
-  typedef ValueType value_type ;
-
-  value_type * m_host ;
-  value_type * m_dev ;
-
-  FunctorAssignment( value_type & value )
-    : m_host( & value )
-    , m_dev( (value_type *)
-             ( cuda_internal_scratch_space( sizeof(value_type)) ) )
-    {}
-
-  template< typename ValueTypeDev >
-  __device__
-  void operator()( const ValueTypeDev & value ) const
-  { *m_dev = value ; }
-
-  ~FunctorAssignment()
-  {
-    CudaMemorySpace
-      ::copy_to_host_from_device( m_host , m_dev , sizeof(value_type) );
-  }
-};
-
-template< typename ValueType >
-class FunctorAssignment< View< ValueType , Cuda , Cuda > , Cuda >
-{
-public :
-
-  typedef ValueType value_type ;
-  typedef View< value_type , Cuda , Cuda > view_type ;
-
-  view_type m_view ;
-
-  FunctorAssignment( const view_type & view )
-    : m_view( view )
-    {}
-
-  template< typename ValueTypeDev >
-  __device__
-  void operator()( const ValueTypeDev & value ) const
-  { *m_view = value ; }
-};
-
-template< class FunctorType , class ValueOper , typename ValueType >
-class ParallelReduce< FunctorType , ValueOper ,
-                      View< ValueType , Cuda , Cuda > , Cuda >
+class ParallelReduceFunctorValue< ValueType , Cuda >
 {
 public:
+  typedef ValueType value_type ;
 
-  typedef View< ValueType , Cuda , Cuda >  view_type ;
+  __device__
+  void operator()( const value_type & value ) const
+    {
+      if ( m_unified ) *m_unified = value ;
+      else             *m_global  = value ;
+    }
 
-  struct FunctorAssignment
+  ParallelReduceFunctorValue()
+    : m_unified( (value_type*)
+                 cuda_internal_scratch_unified( sizeof(value_type) ) )
+    , m_global( (value_type*)
+                 cuda_internal_scratch_space( sizeof(value_type) ) )
+    {}
+
+  value_type result() const
   {
-    view_type m_view ;
-
-    FunctorAssignment( const view_type & view ) : m_view( view ) {}
-
-    template< typename ValueTypeDev >
-    __device__
-    void operator()( const ValueTypeDev & value ) const
-      { *m_view = value ; }
-  };
-
-  ParallelReduce( const size_t         work_count ,
-                  const FunctorType  & functor ,
-                  const view_type    & view )
-  {
-    ParallelReduce< FunctorType , ValueOper, FunctorAssignment , Cuda >
-      ( work_count , functor , FunctorAssignment( view ) );
+    Cuda::fence();
+    if ( m_unified ) {
+      return *m_unified ;
+    }
+    else {
+      ValueType r ;
+      CudaMemorySpace
+        ::copy_to_host_from_device( & r , m_global , sizeof(value_type) );
+      return r ;
+    }
   }
+
+private:
+
+  value_type * m_unified ;
+  value_type * m_global ;
+
 };
+
+template< typename MemberType >
+class ParallelReduceFunctorValue< MemberType[] , Cuda >
+{
+public:
+  typedef MemberType     value_type[] ;
+  const Cuda::size_type  value_count ;
+
+  __device__
+  void operator()( const MemberType input[] ) const
+    {
+      MemberType * const v = m_unified ? m_unified : m_global ;
+      for ( Cuda::size_type i = 0 ; i < value_count ; ++i ) v[i] = input[i] ;
+    }
+
+  ParallelReduceFunctorValue( Cuda::size_type n )
+    : value_count( n )
+    , m_unified( (value_type*)
+                 cuda_internal_scratch_unified( sizeof(value_type) * n ) )
+    , m_global( (value_type*)
+                 cuda_internal_scratch_space( sizeof(value_type) * n ) )
+    {}
+
+  void result( value_type result ) const
+  {
+    Cuda::fence();
+    if ( m_unified ) {
+      for ( Cuda::size_type i = 0 ; i < value_count ; ++i )
+        result[i] = m_unified[i] ;
+    }
+    else {
+      CudaMemorySpace
+        ::copy_to_host_from_device( result , m_global , sizeof(value_type) * value_count );
+    }
+  }
+
+private:
+
+  value_type * m_unified ;
+  value_type * m_global ;
+
+};
+
+//----------------------------------------------------------------------------
 
 } // namespace Impl
 } // namespace KokkosArray
