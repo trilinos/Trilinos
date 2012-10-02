@@ -325,8 +325,8 @@ int main(int argc,char * argv[])
    // setup field manager builder
    /////////////////////////////////////////////////////////////
 
-   Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
-         Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+   Teuchos::RCP<panzer::FieldManagerBuilder> fmb = 
+         Teuchos::rcp(new panzer::FieldManagerBuilder);
    fmb->setWorksetContainer(wkstContainer);
    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
    fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,

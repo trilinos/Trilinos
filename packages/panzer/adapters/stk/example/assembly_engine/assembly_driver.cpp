@@ -135,8 +135,8 @@ int main(int argc,char * argv[])
 
    // other declarations
    const std::size_t workset_size = 20;
-   Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
-         Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+   Teuchos::RCP<panzer::FieldManagerBuilder> fmb = 
+         Teuchos::rcp(new panzer::FieldManagerBuilder);
 
    RCP<panzer_stk::STK_Interface> mesh;
    int base_cell_dimension = -1;

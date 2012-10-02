@@ -40,14 +40,18 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_FIELD_MANAGER_BUILDER_IMPL_HPP
-#define PANZER_FIELD_MANAGER_BUILDER_IMPL_HPP
-
 #include <vector>
 #include <string>
 #include <sstream>
+
+#include "Panzer_FieldManagerBuilder.hpp"
+
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldManager.hpp"
+
+#include "Teuchos_FancyOStream.hpp"
+
+#include "Shards_CellTopology.hpp"
 
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_ConnManager.hpp"
@@ -59,9 +63,7 @@
 #include "Panzer_BCStrategy_Factory.hpp"
 #include "Panzer_BCStrategy_TemplateManager.hpp"
 #include "Panzer_CellData.hpp"
-#include "Shards_CellTopology.hpp"
 #include "Panzer_InputPhysicsBlock.hpp"
-#include "Teuchos_FancyOStream.hpp"
 #include "Panzer_StlMap_Utilities.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 
@@ -69,16 +71,14 @@
 
 //=======================================================================
 //=======================================================================
-template<typename LO, typename GO>
-void panzer::FieldManagerBuilder<LO,GO>::print(std::ostream& os) const
+void panzer::FieldManagerBuilder::print(std::ostream& os) const
 {
-  os << "panzer::FieldManagerBuilder<LO,GO> output:  Not implemented yet!";
+  os << "panzer::FieldManagerBuilder output:  Not implemented yet!";
 }
 
 //=======================================================================
 //=======================================================================
-template<typename LO, typename GO>
-void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(
+void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
                                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks, 
 					    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
 					    const Teuchos::ParameterList& closure_models,
@@ -107,7 +107,8 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(
     pb->buildAndRegisterEquationSetEvaluators(*fm, user_data);
     pb->buildAndRegisterGatherAndOrientationEvaluators(*fm,lo_factory,user_data);
     pb->buildAndRegisterDOFProjectionsToIPEvaluators(*fm,user_data);
-    pb->buildAndRegisterScatterEvaluators(*fm,lo_factory,user_data);
+    if(!physicsBlockScatterDisabled())
+      pb->buildAndRegisterScatterEvaluators(*fm,lo_factory,user_data);
     pb->buildAndRegisterClosureModelEvaluators(*fm,cm_factory,closure_models,user_data);
 
     // build the setup data using passed in information
@@ -123,8 +124,7 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(
 
 //=======================================================================
 //=======================================================================
-template<typename LO, typename GO>
-void panzer::FieldManagerBuilder<LO,GO>::
+void panzer::FieldManagerBuilder::
 setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
                      const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
 	             const panzer::EquationSetFactory & eqset_factory,
@@ -210,8 +210,7 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
 
 //=======================================================================
 //=======================================================================
-template<typename LO, typename GO>
-void panzer::FieldManagerBuilder<LO,GO>::
+void panzer::FieldManagerBuilder::
 writeVolumeGraphvizDependencyFiles(std::string filename_prefix,
 				   const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks) const
 {  
@@ -226,11 +225,8 @@ writeVolumeGraphvizDependencyFiles(std::string filename_prefix,
 
 //=======================================================================
 //=======================================================================
-template<typename LO, typename GO>
-std::ostream& panzer::operator<<(std::ostream& os, const panzer::FieldManagerBuilder<LO,GO>& rfd)
+std::ostream& panzer::operator<<(std::ostream& os, const panzer::FieldManagerBuilder& rfd)
 {
   rfd.print(os);
   return os;
 }
-
-#endif

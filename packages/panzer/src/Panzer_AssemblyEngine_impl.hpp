@@ -54,7 +54,7 @@
 //===========================================================================
 template <typename EvalT,typename LO,typename GO>
 panzer::AssemblyEngine<EvalT,LO,GO>::
-AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb,
+AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof)
   : m_field_manager_builder(fmb), m_lin_obj_factory(lof)
 { 

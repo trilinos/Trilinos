@@ -92,7 +92,7 @@ namespace panzer {
   bool testEqualityOfEpetraVectorValues(Epetra_Vector& a, Epetra_Vector& b, double tolerance, bool write_to_cout = false);
 
   void buildAssemblyPieces(bool parameter_on,
-                           Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > & fmb,  
+                           Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,  
                            Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary, 
                            Teuchos::RCP<panzer::GlobalData> & gd,
                            Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof);
@@ -102,7 +102,7 @@ namespace panzer {
     using Teuchos::RCP;
 
     bool parameter_on = true;
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb;  
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb;  
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary; 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof;
     Teuchos::RCP<panzer::GlobalData> gd;
@@ -246,7 +246,7 @@ namespace panzer {
   }
 
   void buildAssemblyPieces(bool parameter_on,
-                           Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > & fmb,  
+                           Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,  
                            Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary, 
                            Teuchos::RCP<panzer::GlobalData> & gd,
                            Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof
@@ -269,7 +269,7 @@ namespace panzer {
     std::vector<panzer::BC> bcs;
     testInitialzation(ipb, bcs);
 
-    fmb = Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+    fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
 
     // build physics blocks
     //////////////////////////////////////////////////////////////

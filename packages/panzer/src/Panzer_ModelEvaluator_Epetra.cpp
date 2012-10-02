@@ -90,7 +90,7 @@ public:
 
 
 panzer::ModelEvaluator_Epetra::
-ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
+ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                       const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
 		      const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
 		      const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
@@ -130,7 +130,7 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
 }
 
 panzer::ModelEvaluator_Epetra::
-ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
+ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                       const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
 		      const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
 		      const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
@@ -162,7 +162,7 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
 
 #ifdef HAVE_STOKHOS
 panzer::ModelEvaluator_Epetra::
-ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
+ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                       const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
 		      const Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> >& lof,
 		      const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
@@ -890,7 +890,7 @@ copyEpetraIntoThyra(const Epetra_MultiVector& x, const Teuchos::Ptr<Thyra::Vecto
 
 
 Teuchos::RCP<panzer::ModelEvaluator_Epetra> 
-panzer::buildEpetraME(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
+panzer::buildEpetraME(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                       const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
       	              const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
 	              const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,

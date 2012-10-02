@@ -70,14 +70,19 @@ namespace PHX {
 
 namespace panzer {
 
-  template <typename LO, typename GO>
   class FieldManagerBuilder {
 
   public:
 
     typedef std::map<unsigned,panzer::Workset> BCFaceWorksetMap;
 
+    FieldManagerBuilder(bool disablePhysicsBlockScatter=false)
+      : disablePhysicsBlockScatter_(disablePhysicsBlockScatter) {}
+
     void print(std::ostream& os) const;
+
+    bool physicsBlockScatterDisabled() const
+    { return disablePhysicsBlockScatter_; }
 
     void setWorksetContainer(const Teuchos::RCP<WorksetContainer> & wc)
     { worksetContainer_ = wc; }
@@ -148,13 +153,17 @@ namespace panzer {
       panzer::LessBC> bc_field_managers_;
 
     Teuchos::RCP<WorksetContainer> worksetContainer_;
+
+    /** Set to false by default, enables/disables physics block scattering in
+      * newly created field managers.
+      */
+    bool disablePhysicsBlockScatter_;
   };
 
-template<typename LO, typename GO>
-std::ostream& operator<<(std::ostream& os, const panzer::FieldManagerBuilder<LO,GO>& rfd);
+std::ostream& operator<<(std::ostream& os, const panzer::FieldManagerBuilder & rfd);
 
 } // namespace panzer
 
-#include "Panzer_FieldManagerBuilder_impl.hpp"
+// #include "Panzer_FieldManagerBuilder_impl.hpp"
 
 #endif

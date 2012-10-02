@@ -244,7 +244,7 @@ namespace panzer_stk {
     // build physics blocks
 
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
     panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                block_ids_to_cell_topo,
 			       physics_id_to_input_physics_blocks,

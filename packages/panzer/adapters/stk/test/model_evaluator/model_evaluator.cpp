@@ -116,7 +116,7 @@ namespace panzer {
   bool testEqualityOfEpetraVectorValues(Epetra_Vector& a, Epetra_Vector& b, double tolerance, bool write_to_cout = false);
 
   void buildAssemblyPieces(bool parameter_on,
-                           Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > & fmb,  
+                           Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,  
                            Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary, 
                            Teuchos::RCP<panzer::GlobalData> & gd,
                            Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > & ep_lof
@@ -133,7 +133,7 @@ namespace panzer {
     // panzer::pauseToAttach();
 
     bool parameter_on = true;
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb;  
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb;  
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary; 
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof;
     Teuchos::RCP<panzer::GlobalData> gd;
@@ -248,13 +248,13 @@ namespace panzer {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb_off;  
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb_off;  
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary_off; 
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof_off;
     Teuchos::RCP<panzer::GlobalData> gd_off;
     buildAssemblyPieces(false,fmb_off,rLibrary_off,gd_off,ep_lof_off);
 
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb_on;  
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb_on;  
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary_on; 
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof_on;
     Teuchos::RCP<panzer::GlobalData> gd_on;
@@ -378,7 +378,7 @@ namespace panzer {
     RCP<panzer::ModelEvaluator_Epetra> me;
     {
       bool parameter_on = true;
-      Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb;  
+      Teuchos::RCP<panzer::FieldManagerBuilder> fmb;  
       Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary; 
       Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof;
       Teuchos::RCP<panzer::GlobalData> gd;
@@ -459,7 +459,7 @@ namespace panzer {
     Teuchos::RCP<Epetra_Vector> ghosted_distributed_parameter;
     {
       bool parameter_on = true;
-      Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb;  
+      Teuchos::RCP<panzer::FieldManagerBuilder> fmb;  
       Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary; 
       Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof;
       Teuchos::RCP<panzer::GlobalData> gd;
@@ -541,7 +541,7 @@ namespace panzer {
     RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 
     bool parameter_on = true;
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb;  
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb;  
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary; 
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof;
     Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> > sg_lof;
@@ -830,7 +830,7 @@ namespace panzer {
   }
 
   void buildAssemblyPieces(bool parameter_on,
-                           Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > & fmb,  
+                           Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,  
                            Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary, 
                            Teuchos::RCP<panzer::GlobalData> & gd,
                            Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > & ep_lof
@@ -857,7 +857,7 @@ namespace panzer {
     std::vector<panzer::BC> bcs;
     testInitialzation(ipb, bcs);
 
-    fmb = Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+    fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
 
     // build physics blocks
     //////////////////////////////////////////////////////////////

@@ -108,8 +108,8 @@ namespace panzer {
     std::vector<panzer::BC> bcs;
     testInitialzation(*mesh, ipb, bcs);
 
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
-      Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb = 
+      Teuchos::rcp(new panzer::FieldManagerBuilder);
 
     // build physics blocks
     //////////////////////////////////////////////////////////////
@@ -367,8 +367,8 @@ namespace panzer {
     std::vector<panzer::BC> bcs;
     testInitialzation_multiblock(*mesh, ipb, bcs);
 
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
-      Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb = 
+      Teuchos::rcp(new panzer::FieldManagerBuilder);
 
     // build physics blocks
     //////////////////////////////////////////////////////////////

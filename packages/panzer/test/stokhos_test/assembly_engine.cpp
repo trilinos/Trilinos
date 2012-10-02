@@ -161,8 +161,8 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   std::vector<panzer::BC> bcs;
   testInitialzation(ipb, bcs);
 
-  Teuchos::RCP<panzer::FieldManagerBuilder<short,int> > fmb = 
-    Teuchos::rcp(new panzer::FieldManagerBuilder<short,int>);
+  Teuchos::RCP<panzer::FieldManagerBuilder> fmb = 
+    Teuchos::rcp(new panzer::FieldManagerBuilder);
 
   // build physics blocks
   //////////////////////////////////////////////////////////////

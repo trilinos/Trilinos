@@ -69,7 +69,7 @@
 
 template<typename Scalar, typename LO, typename GO, typename NODE>
 panzer::ModelEvaluator<Scalar,LO,GO,NODE>::
-ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb,
+ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
                const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
                const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
