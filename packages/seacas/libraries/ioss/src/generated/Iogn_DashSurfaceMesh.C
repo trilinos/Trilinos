@@ -7,28 +7,28 @@ namespace Iogn
 
 int64_t DashSurfaceMesh::node_count() const
 {
-    return mCoordinates.size()/SPATIAL_DIMENSION;
+    return mDashSurfaceData.globalNumberOfNodes;
 }
 
 int64_t DashSurfaceMesh::node_count_proc() const
 {
-    return node_count();
+    return mDashSurfaceData.coordinates.size()/SPATIAL_DIMENSION;
 }
 
 int64_t DashSurfaceMesh::element_count() const
 {
-    return (mQuadSurface1.size()+mQuadSurface2.size())/NUM_NODES_PER_QUAD_FACE;
+    return mDashSurfaceData.globalNumberOfElements;
 }
 
-int64_t DashSurfaceMesh::element_count(int64_t block_number) const
+int64_t DashSurfaceMesh::element_count(int64_t surfaceNumber) const
 {
-    if(block_number == 1)
+    if(surfaceNumber == 1)
     {
-        return mQuadSurface1.size()/NUM_NODES_PER_QUAD_FACE;
+        return mDashSurfaceData.globalNumberOfElementsSurface1;
     }
-    else if(block_number == 2)
+    if(surfaceNumber == 2)
     {
-        return mQuadSurface2.size()/NUM_NODES_PER_QUAD_FACE;
+        return mDashSurfaceData.globalNumberOfElementsSurface2;
     }
     throw std::exception();
 
@@ -37,7 +37,7 @@ int64_t DashSurfaceMesh::element_count(int64_t block_number) const
 
 int64_t DashSurfaceMesh::block_count() const
 {
-    return 2;
+    return NUMBER_OF_SURFACES;
 }
 
 int64_t DashSurfaceMesh::nodeset_count() const
@@ -47,27 +47,39 @@ int64_t DashSurfaceMesh::nodeset_count() const
 
 int64_t DashSurfaceMesh::sideset_count() const
 {
-    return 2;
+    return NUMBER_OF_SURFACES;
 }
 
 int64_t DashSurfaceMesh::element_count_proc() const
 {
-    return element_count();
+    return (mDashSurfaceData.surface1Connectivity.size() + mDashSurfaceData.surface2Connectivity.size())/NUM_NODES_PER_QUAD_FACE;
 }
 
 int64_t DashSurfaceMesh::element_count_proc(int64_t block_number) const
 {
-    return element_count(block_number);
+    if(block_number == 1)
+    {
+        return mDashSurfaceData.surface1Connectivity.size()/NUM_NODES_PER_QUAD_FACE;
+    }
+    else if(block_number == 2)
+    {
+        return mDashSurfaceData.surface2Connectivity.size()/NUM_NODES_PER_QUAD_FACE;
+    }
+    throw std::exception();
+
+    return INVALID;
 }
 
 int64_t DashSurfaceMesh::nodeset_node_count_proc(int64_t id) const
 {
     return 0;
 }
+
 int64_t DashSurfaceMesh::sideset_side_count_proc(int64_t id) const
 {
-    return element_count(id);
+    return element_count_proc(id);
 }
+
 int64_t DashSurfaceMesh::communication_node_count_proc() const
 {
     return 0;
@@ -75,7 +87,7 @@ int64_t DashSurfaceMesh::communication_node_count_proc() const
 
 void DashSurfaceMesh::coordinates(double *coord) const
 {
-    std::copy(mCoordinates.begin(),mCoordinates.end(), coord);
+    std::copy(mDashSurfaceData.coordinates.begin(),mDashSurfaceData.coordinates.end(), coord);
 }
 
 void DashSurfaceMesh::coordinates(std::vector<double> &coord) const
@@ -98,10 +110,10 @@ void DashSurfaceMesh::connectivity(int64_t block_number, int* connect) const
     switch(block_number)
     {
         case 1:
-            std::copy(mQuadSurface1.begin(),mQuadSurface1.end(), connect);
+            std::copy(mDashSurfaceData.surface1Connectivity.begin(),mDashSurfaceData.surface1Connectivity.end(), connect);
             return;
         case 2:
-            std::copy(mQuadSurface2.begin(),mQuadSurface2.end(), connect);
+            std::copy(mDashSurfaceData.surface2Connectivity.begin(),mDashSurfaceData.surface2Connectivity.end(), connect);
             return;
         default:
             throw std::exception();
@@ -117,20 +129,21 @@ std::pair<std::string, int> DashSurfaceMesh::topology_type(int64_t block_number)
 void DashSurfaceMesh::sideset_elem_sides(int64_t setId, Int64Vector &elem_sides) const
 {
     elem_sides.clear();
-    size_t numElementsInSurface1 = mQuadSurface1.size()/NUM_NODES_PER_QUAD_FACE;
+    size_t numElementsInSurface1 = element_count_proc(1);
+    size_t numElementsInSurface2 = element_count_proc(2);
     switch(setId)
     {
         case 1:
             for(size_t i=0; i<numElementsInSurface1; ++i)
             {
-                elem_sides.push_back(i+1);
+                elem_sides.push_back(mDashSurfaceData.elementGlobalIds[i]);
                 elem_sides.push_back(0);
             }
             return;
         case 2:
-            for(size_t i=0; i<mQuadSurface2.size()/NUM_NODES_PER_QUAD_FACE; ++i)
+            for(size_t i=0; i<numElementsInSurface2; ++i)
             {
-                elem_sides.push_back(numElementsInSurface1+i+1);
+                elem_sides.push_back(mDashSurfaceData.elementGlobalIds[numElementsInSurface1+i]);
                 elem_sides.push_back(0);
             }
             return;
@@ -151,38 +164,42 @@ void DashSurfaceMesh::node_communication_map(MapVector &map, std::vector<int> &p
 
 void DashSurfaceMesh::node_map(IntVector &map)
 {
-    map.resize(node_count());
-    for(int i = 0; i < node_count(); i++)
+    int size = node_count_proc();
+    map.resize(size);
+
+    for(int i = 0; i < size; i++)
     {
-        map[i] = i + 1;
+        map[i] = mDashSurfaceData.nodeGlobalIds[i];
     }
 }
 
 void DashSurfaceMesh::node_map(MapVector &map)
 {
-    map.resize(node_count());
-    for(int i = 0; i < node_count(); i++)
+    int size = node_count_proc();
+    map.resize(size);
+
+    for(int i = 0; i < size; i++)
     {
-        map[i] = i + 1;
+        map[i] = mDashSurfaceData.nodeGlobalIds[i];
     }
 }
 
 void DashSurfaceMesh::element_map(int block_number, IntVector &map) const
 {
-    size_t numElementsInSurface1 = mQuadSurface1.size() / NUM_NODES_PER_QUAD_FACE;
-    size_t numElementsInSurface2 = mQuadSurface2.size() / NUM_NODES_PER_QUAD_FACE;
+    size_t numElementsInSurface1 = element_count_proc(1);
+    size_t numElementsInSurface2 = element_count_proc(2);
     switch(block_number)
     {
         case 1:
             for(size_t i = 0; i < numElementsInSurface1; ++i)
             {
-                map[i] = i + 1;
+                map[i] = mDashSurfaceData.elementGlobalIds[i];
             }
             return;
         case 2:
             for(size_t i = 0; i < numElementsInSurface2; ++i)
             {
-                map[numElementsInSurface1 + i] = numElementsInSurface1 + i + 1;
+                map[numElementsInSurface1 + i] = mDashSurfaceData.elementGlobalIds[numElementsInSurface1 + i];
             }
             return;
         default:
@@ -192,20 +209,20 @@ void DashSurfaceMesh::element_map(int block_number, IntVector &map) const
 
 void DashSurfaceMesh::element_map(int64_t block_number, MapVector &map) const
 {
-    size_t numElementsInSurface1 = mQuadSurface1.size() / NUM_NODES_PER_QUAD_FACE;
-    size_t numElementsInSurface2 = mQuadSurface2.size() / NUM_NODES_PER_QUAD_FACE;
+    size_t numElementsInSurface1 = element_count_proc(1);
+    size_t numElementsInSurface2 = element_count_proc(2);
     switch(block_number)
     {
         case 1:
             for(size_t i = 0; i < numElementsInSurface1; ++i)
             {
-                map[i] = i + 1;
+                map[i] = mDashSurfaceData.elementGlobalIds[i];
             }
             return;
         case 2:
             for(size_t i = 0; i < numElementsInSurface2; ++i)
             {
-                map[numElementsInSurface1 + i] = numElementsInSurface1 + i + 1;
+                map[numElementsInSurface1 + i] = mDashSurfaceData.elementGlobalIds[numElementsInSurface1 + i];
             }
             return;
         default:
@@ -220,7 +237,7 @@ void DashSurfaceMesh::element_map(MapVector &map) const
 
     for(int i = 0; i < count; i++)
     {
-        map[i] = i + 1;
+        map[i] = mDashSurfaceData.elementGlobalIds[i];
     }
 }
 
@@ -231,7 +248,7 @@ void DashSurfaceMesh::element_map(IntVector &map) const
 
     for(int i = 0; i < count; i++)
     {
-        map[i] = i + 1;
+        map[i] = mDashSurfaceData.elementGlobalIds[i];
     }
 }
 

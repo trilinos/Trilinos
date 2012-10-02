@@ -5,22 +5,63 @@
 
 namespace Iogn {
 
+enum {
+    INVALID                 = -1,
+    NUMBER_OF_SURFACES      =  2,
+    SPATIAL_DIMENSION       =  3,
+    NUM_NODES_PER_QUAD_FACE =  4
+};
+
+struct DashSurfaceData {
+    std::vector<double> &coordinates;
+    std::vector<int64_t> &surface1Connectivity;
+    std::vector<int64_t> &surface2Connectivity;
+
+    int globalNumberOfNodes;
+    int globalNumberOfElements;
+
+    int globalNumberOfElementsSurface1;
+    int globalNumberOfElementsSurface2;
+
+    std::vector<int> elementGlobalIds;
+    std::vector<int> nodeGlobalIds;
+
+    DashSurfaceData(std::vector<double> &coords, std::vector<int64_t> &connectivity1, std::vector<int64_t> &connectivity2)
+    : coordinates(coords), surface1Connectivity(connectivity1), surface2Connectivity(connectivity2)
+    {
+        this->setSerialDefaults();
+    }
+
+  private:
+
+    void setSerialDefaults()
+    {
+        globalNumberOfNodes = coordinates.size()/SPATIAL_DIMENSION;
+
+        globalNumberOfElementsSurface1 = surface1Connectivity.size()/NUM_NODES_PER_QUAD_FACE;
+        globalNumberOfElementsSurface2 = surface2Connectivity.size()/NUM_NODES_PER_QUAD_FACE;
+        globalNumberOfElements = globalNumberOfElementsSurface1 + globalNumberOfElementsSurface2;
+
+        elementGlobalIds.resize(globalNumberOfElements);
+        nodeGlobalIds.resize(globalNumberOfNodes);
+
+        for (size_t i=0; i<elementGlobalIds.size();i++)
+        {
+            elementGlobalIds[i] = i+1;
+        }
+
+        for (size_t i=0; i<nodeGlobalIds.size();i++)
+        {
+            nodeGlobalIds[i] = i+1;
+        }
+    }
+};
+
 class DashSurfaceMesh : public GeneratedMesh
 {
 public:
-    enum {
-        INVALID                 = -1,
-        SPATIAL_DIMENSION       =  3,
-        NUM_NODES_PER_QUAD_FACE =  4
-    };
 
-    explicit DashSurfaceMesh(const std::vector<double>    &coords,
-                        const std::vector< int64_t > &quadSurface1,
-                        const std::vector< int64_t > &quadSurface2)
-    : mCoordinates(coords),
-      mQuadSurface1(quadSurface1),
-      mQuadSurface2(quadSurface2)
-    {}
+    explicit DashSurfaceMesh(DashSurfaceData &dashSurfaceData) : mDashSurfaceData(dashSurfaceData) { }
 
     virtual ~DashSurfaceMesh() { }
 
@@ -66,9 +107,7 @@ public:
     virtual void element_map(std::vector<int> &map) const;
 
 private:
-    const std::vector<double>    &mCoordinates;
-    const std::vector< int64_t > &mQuadSurface1;
-    const std::vector< int64_t > &mQuadSurface2;
+    DashSurfaceData & mDashSurfaceData;
 
 };
 
