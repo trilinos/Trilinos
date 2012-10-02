@@ -608,12 +608,13 @@ public:
       for ( Cuda::size_type i = 0 ; i < value_count ; ++i ) v[i] = input[i] ;
     }
 
+  explicit
   ParallelReduceFunctorValue( Cuda::size_type n )
     : value_count( n )
     , m_unified( (value_type*)
-                 cuda_internal_scratch_unified( sizeof(value_type) * n ) )
+                 cuda_internal_scratch_unified( sizeof(MemberType) * n ) )
     , m_global( (value_type*)
-                 cuda_internal_scratch_space( sizeof(value_type) * n ) )
+                 cuda_internal_scratch_space( sizeof(MemberType) * n ) )
     {}
 
   void result( value_type result ) const
@@ -625,7 +626,7 @@ public:
     }
     else {
       CudaMemorySpace
-        ::copy_to_host_from_device( result , m_global , sizeof(value_type) * value_count );
+        ::copy_to_host_from_device( result , m_global , sizeof(MemberType) * value_count );
     }
   }
 

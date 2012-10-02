@@ -86,6 +86,7 @@ public:
 
   inline void operator()( const MemberType input[] ) const {}
 
+  explicit
   ParallelReduceFunctorValue( Host::size_type n )
     : value_count(n)
     {}
