@@ -71,7 +71,26 @@ namespace stk {
       R(2,1);
       R(2,2);
 #undef R
+    }
 
+    // z = ||x * y||^2 (return Frobenius norm of product of x,y
+    inline void product_norm( const Mesquite::MsqMatrix<3,3>& x, const Mesquite::MsqMatrix<3,3>& y, double& z )
+    {
+      z = 0.0;
+      double t=0.0;
+#define R(i,j)    t = x(i,0)*y(0,j) + x(i,1)*y(1,j) + x(i,2)*y(2,j); z += t*t
+      R(0,0);
+      R(0,1);
+      R(0,2);
+
+      R(1,0);
+      R(1,1);
+      R(1,2);
+
+      R(2,0);
+      R(2,1);
+      R(2,2);
+#undef R
     }
 
     // z = x + y

@@ -65,7 +65,7 @@ namespace stk {
         }
     }
 
-    bool JacobianUtil::jacobian_matrix_2D(double &detJ, MsqMatrix<3,3>& A, const JacobianUtil::Vec3D *x)
+    bool JacobianUtil::jacobian_matrix_2D(double &detJ, MsqMatrix<3,3>& A, const double *x[3])
     {
       /* Calculate A */
       // x_xi, x_eta, x_zeta => A(ixyz, ixietazeta) = dx_i/dxi_j
@@ -77,29 +77,10 @@ namespace stk {
       A(1,1) = (x[2][1] - x[0][1]);
       A(1,2) = 0;
 
-      A(2,0) = (x[1][2] - x[0][2]);
-      A(2,1) = (x[2][2] - x[0][2]);
+      A(2,0) = 0; // (x[1][2] - x[0][2]);
+      A(2,1) = 0; // (x[2][2] - x[0][2]);
       A(2,2) = 1.0;
-      if (m_scale_to_unit) scale_to_unit(A);
-
-      detJ = det(A);
-      return detJ < MSQ_MIN;
-    }
-
-    bool JacobianUtil::jacobian_matrix_3D(double &detJ, MsqMatrix<3,3>& A, const JacobianUtil::Vec3D *x)
-    {
-      A(0,0) = (x[1][0] - x[0][0]);  
-      A(0,1) = (x[2][0] - x[0][0]);
-      A(0,2) = (x[3][0] - x[0][0]);
-
-      A(1,0) = (x[1][1] - x[0][1]);
-      A(1,1) = (x[2][1] - x[0][1]);
-      A(1,2) = (x[3][1] - x[0][1]);
-
-      A(2,0) = (x[1][2] - x[0][2]);
-      A(2,1) = (x[2][2] - x[0][2]);
-      A(2,2) = (x[3][2] - x[0][2]);
-      if (m_scale_to_unit) scale_to_unit(A);
+      //if (m_scale_to_unit) scale_to_unit(A);
 
       detJ = det(A);
       return detJ < MSQ_MIN;
@@ -155,7 +136,7 @@ namespace stk {
     bool JacobianUtil::operator()(double& m,  PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::FieldBase *coord_field,
                                   const CellTopologyData * topology_data )
     {
-      MsqError err;
+      static MsqError err;
       static MsqMatrix<3,3> J;
 
       //static Vector3D n;			// Surface normal for 2D objects
@@ -167,11 +148,13 @@ namespace stk {
       bool metric_valid = false;
       if (!topology_data) topology_data = stk::percept::PerceptMesh::get_cell_topology(element);
 
-      stk::mesh::PairIterRelation v_i = element.relations(eMesh.node_rank());
+      const stk::mesh::PairIterRelation v_i = element.relations(eMesh.node_rank());
       m_num_nodes = v_i.size();
 
       //#define VERTEX_2D(vi) vector_2D( eMesh.field_data(coord_field, *vi.entity() ) )
       //#define VERTEX_3D(vi) vector_3D( eMesh.field_data(coord_field, *vi.entity() ) )
+      const double *x2d[3] = {0,0,0};
+      //const double *x3d[4] = {0,0,0,0};
 
 #define VERTEX(vi)  stk::mesh::field_data( *static_cast<const VectorFieldType *>(coord_field) , *vi.entity() )
 
@@ -179,40 +162,41 @@ namespace stk {
         {
         case shards::Triangle<3>::key:
           //n[0] = 0; n[1] = 0; n[2] = 1;
-          set2d(mCoords[0], VERTEX(v_i[0]));
-          set2d(mCoords[1], VERTEX(v_i[1]));
-          set2d(mCoords[2], VERTEX(v_i[2]));
-          metric_valid = jacobian_matrix_2D(m, J, mCoords);
+          x2d[0] = VERTEX(v_i[0]);
+          x2d[1] = VERTEX(v_i[1]);
+          x2d[2] = VERTEX(v_i[2]);
+          metric_valid = jacobian_matrix_2D(m, J, x2d);
           for (i = 0; i < 3; i++) { m_detJ[i] = m; m_J[i] = J; }
           break;
     
         case shards::Quadrilateral<4>::key:
           //n[0] = 0; n[1] = 0; n[2] = 1;
           for (i = 0; i < 4; ++i) {
-            set2d(mCoords[0], VERTEX(v_i[locs_hex[i][0]]));
-            set2d(mCoords[1], VERTEX(v_i[locs_hex[i][1]]));
-            set2d(mCoords[2], VERTEX(v_i[locs_hex[i][2]]));
-            metric_valid = jacobian_matrix_2D(m_detJ[i], m_J[i], mCoords);
+            x2d[0] =  VERTEX(v_i[locs_hex[i][0]]);
+            x2d[1] =  VERTEX(v_i[locs_hex[i][1]]);
+            x2d[2] =  VERTEX(v_i[locs_hex[i][2]]);
+            metric_valid = jacobian_matrix_2D(m_detJ[i], m_J[i], x2d);
           }
           m = average_metrics(m_detJ, 4, err); MSQ_ERRZERO(err);
           break;
 
         case shards::Tetrahedron<4>::key:
-          set3d(mCoords[0], VERTEX(v_i[0]));
-          set3d(mCoords[1], VERTEX(v_i[1]));
-          set3d(mCoords[2], VERTEX(v_i[2]));
-          set3d(mCoords[3], VERTEX(v_i[3]));
-          metric_valid = jacobian_matrix_3D(m, J, mCoords);
-          for (i = 0; i < 4; i++) { m_detJ[i] = m; m_J[i] = J; }
+          metric_valid = jacobian_matrix_3D(m, m_J[0],
+                                            VERTEX(v_i[0]),
+                                            VERTEX(v_i[1]),
+                                            VERTEX(v_i[2]),
+                                            VERTEX(v_i[3]) );
+          m_detJ[0] = m;
+          for (i = 1; i < 4; i++) { m_detJ[i] = m; m_J[i] = m_J[0]; }
           break;
 
         case shards::Pyramid<5>::key:
           for (i = 0; i < 4; ++i) {
-            set3d(mCoords[0], VERTEX(v_i[ i     ]));
-            set3d(mCoords[1], VERTEX(v_i[(i+1)%4]));
-            set3d(mCoords[2], VERTEX(v_i[(i+3)%4]));
-            set3d(mCoords[3], VERTEX(v_i[ 4     ]));
-            metric_valid = jacobian_matrix_3D(m_detJ[i], m_J[i], mCoords);
+            metric_valid = jacobian_matrix_3D(m_detJ[i], m_J[i], 
+                                              VERTEX(v_i[ i     ]),
+                                              VERTEX(v_i[(i+1)%4]),
+                                              VERTEX(v_i[(i+3)%4]),
+                                              VERTEX(v_i[ 4     ]));
           }
           // FIXME
           m_J[4] = (m_J[0]+m_J[1]+m_J[2]+m_J[3]);
@@ -223,22 +207,22 @@ namespace stk {
 
         case shards::Wedge<6>::key:
           for (i = 0; i < 6; ++i) {
-            set3d(mCoords[0], VERTEX(v_i[locs_prism[i][0]]));
-            set3d(mCoords[1], VERTEX(v_i[locs_prism[i][1]]));
-            set3d(mCoords[2], VERTEX(v_i[locs_prism[i][2]]));
-            set3d(mCoords[3], VERTEX(v_i[locs_prism[i][3]]));
-            metric_valid = jacobian_matrix_3D(m_detJ[i], m_J[i], mCoords);
+            metric_valid = jacobian_matrix_3D(m_detJ[i], m_J[i],
+                                              VERTEX(v_i[locs_prism[i][0]]),
+                                              VERTEX(v_i[locs_prism[i][1]]),
+                                              VERTEX(v_i[locs_prism[i][2]]),
+                                              VERTEX(v_i[locs_prism[i][3]]));
           }
           m = average_metrics(m_detJ, 6, err); MSQ_ERRZERO(err);
           break;
 
         case shards::Hexahedron<8>::key:
           for (i = 0; i < 8; ++i) {
-            set3d(mCoords[0], VERTEX(v_i[locs_hex[i][0]]));
-            set3d(mCoords[1], VERTEX(v_i[locs_hex[i][1]]));
-            set3d(mCoords[2], VERTEX(v_i[locs_hex[i][2]]));
-            set3d(mCoords[3], VERTEX(v_i[locs_hex[i][3]]));
-            metric_valid = jacobian_matrix_3D(m_detJ[i], m_J[i], mCoords);
+            metric_valid = jacobian_matrix_3D(m_detJ[i], m_J[i], 
+                                              VERTEX(v_i[locs_hex[i][0]]),
+                                              VERTEX(v_i[locs_hex[i][1]]),
+                                              VERTEX(v_i[locs_hex[i][2]]),
+                                              VERTEX(v_i[locs_hex[i][3]]));
           }
           m = average_metrics(m_detJ, 8, err); MSQ_ERRZERO(err);
           break;

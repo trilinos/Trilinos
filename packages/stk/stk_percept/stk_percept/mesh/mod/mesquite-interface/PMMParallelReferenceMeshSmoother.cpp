@@ -204,8 +204,12 @@ namespace stk {
               for (int iter = 0; iter < innerIter; ++iter, ++iter_all)
                 {
                   m_iter = iter;
-                  int num_invalid_0 = PMMParallelShapeImprover::parallel_count_invalid_elements(m_eMesh);
-                  m_num_invalid = num_invalid_0;
+                  m_num_invalid = PMMParallelShapeImprover::parallel_count_invalid_elements(m_eMesh);
+                  int num_invalid_0 = m_num_invalid;
+                  if (!m_untangled && m_num_invalid == 0)
+                    {
+                      m_untangled = true;
+                    }
 
                   //               if (!get_parallel_rank() && num_invalid_0) 
                   //                 std::cout << "\ntmp srk PMMParallelReferenceMeshSmoother num_invalid current= " << num_invalid_0 
@@ -215,13 +219,13 @@ namespace stk {
                   m_global_metric = run_one_iteration(mesh, domain, err);
 
                   sync_fields(iter);
-                  num_invalid_0 = PMMParallelShapeImprover::parallel_count_invalid_elements(m_eMesh);
-                  m_num_invalid = num_invalid_0;
+                  //num_invalid_0 = PMMParallelShapeImprover::parallel_count_invalid_elements(m_eMesh);
+                  //m_num_invalid = num_invalid_0;
                   bool conv = check_convergence();
                   if (!get_parallel_rank())
                   {
                     std::cout << "P[" << get_parallel_rank() << "] " << "tmp srk iter= " << iter << " dmax= " << m_dmax << " m_dnew= " << m_dnew 
-                              << " m_d0= " << m_d0 << " m_alpha= " << m_alpha << " m_scale= " << m_scale << " m_grad_norm= " << m_grad_norm << " m_scaled_grad_norm = " << m_scaled_grad_norm
+                              << " m_d0= " << m_d0 << " m_alpha= " << m_alpha << " m_scale= " << m_scale << " m_grad_norm= " << m_grad_norm << " m_grad_norm_scaled = " << m_grad_norm_scaled
                               << " num_invalid= " << num_invalid_0 
                               << " m_global_metric= " << m_global_metric << " stage= " << stage << " m_untangled= " << m_untangled
                               << std::endl;

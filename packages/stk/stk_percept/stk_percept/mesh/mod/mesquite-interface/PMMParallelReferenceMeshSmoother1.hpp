@@ -53,6 +53,7 @@ namespace stk {
       double nodal_metric(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d,  bool& valid );
       void nodal_gradient(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d,  bool& valid, double *ng);
       double nodal_edge_length_ave(stk::mesh::Entity& node);
+      void get_edge_lengths(PerceptMesh * eMesh);
       
       PerceptMesquiteMesh *m_pmm;
 

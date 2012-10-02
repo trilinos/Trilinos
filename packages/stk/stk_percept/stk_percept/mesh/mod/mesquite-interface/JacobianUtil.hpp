@@ -60,8 +60,25 @@ namespace stk {
                              const CellTopologyData * topology_data );
 
     private:
-      bool jacobian_matrix_3D(double &detJ, MsqMatrix<3,3>& A, const Vec3D *x);
-      bool jacobian_matrix_2D(double &detJ, MsqMatrix<3,3>& A, const Vec3D *x);
+      inline bool jacobian_matrix_3D(double &detJ, MsqMatrix<3,3>& A, const double *x0, const double *x1, const double *x2, const double *x3)
+      {
+        A(0,0) = (x1[0] - x0[0]);  
+        A(0,1) = (x2[0] - x0[0]);
+        A(0,2) = (x3[0] - x0[0]);
+
+        A(1,0) = (x1[1] - x0[1]);
+        A(1,1) = (x2[1] - x0[1]);
+        A(1,2) = (x3[1] - x0[1]);
+
+        A(2,0) = (x1[2] - x0[2]);
+        A(2,1) = (x2[2] - x0[2]);
+        A(2,2) = (x3[2] - x0[2]);
+        //if (m_scale_to_unit) scale_to_unit(A);
+
+        detJ = det(A);
+        return detJ < MSQ_MIN;
+      }
+      bool jacobian_matrix_2D(double &detJ, MsqMatrix<3,3>& A, const double *x[3]);
 
       void grad_util_2d(const MsqMatrix<3,3>& dMdA, double grad[NNODES_MAX][3], const int nnode, const int spd, const int *indices, const int nind);
       void grad_util(const MsqMatrix<3,3>& dMdA, double grad[NNODES_MAX][3], const int nnode, const int spd, const int *indices, const int nind);

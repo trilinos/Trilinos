@@ -145,17 +145,17 @@ namespace stk {
           std::cout << "tmp srk untangle m_dnew= " << m_dnew << " m_total_metric = " << m_total_metric << std::endl;
           return true; // for untangle
         }
-      if (m_stage == 0 && m_num_invalid == 0 && (m_dmax < grad_check || m_scaled_grad_norm < grad_check))
+      if (m_stage == 0 && m_num_invalid == 0 && (m_dmax < grad_check || m_grad_norm_scaled < grad_check))
         {
           return true;
         }
       //grad_check = 1.e-8;
       double scaled_grad_norm = std::sqrt(m_dnew)/double(m_num_nodes);
-      if (m_num_invalid == 0 && (m_scaled_grad_norm < grad_check || (m_iter > 0 && m_dmax < grad_check && (m_dnew < grad_check*grad_check*m_d0 || scaled_grad_norm < grad_check) ) ) )
-        //    if (m_num_invalid == 0 && (m_scaled_grad_norm < gradNorm || (m_iter > 0 && m_dmax < gradNorm ) ) )
+      if (m_num_invalid == 0 && (m_grad_norm_scaled < grad_check || (m_iter > 0 && m_dmax < grad_check && (m_dnew < grad_check*grad_check*m_d0 || scaled_grad_norm < grad_check) ) ) )
+        //    if (m_num_invalid == 0 && (m_grad_norm_scaled < gradNorm || (m_iter > 0 && m_dmax < gradNorm ) ) )
         {
           std::cout << "tmp srk untangle m_dnew(scaled nnode) check= " << (scaled_grad_norm  < grad_check)
-                    << " m_scaled_grad_norm check= " << (m_scaled_grad_norm < grad_check) 
+                    << " m_grad_norm_scaled check= " << (m_grad_norm_scaled < grad_check) 
                     << " m_dmax check= " << (m_dmax < grad_check)
                     << " m_dnew check= " << (m_dnew < grad_check*grad_check*m_d0)
                     << " m_total_metric = " << m_total_metric << std::endl;
@@ -179,6 +179,7 @@ namespace stk {
       stk::mesh::FieldBase *cg_g_field    = eMesh->get_field("cg_g");
       stk::mesh::FieldBase *cg_d_field    = eMesh->get_field("cg_d");
       stk::mesh::FieldBase *cg_h_field    = (m_use_hessian_scaling? eMesh->get_field("cg_h") : 0);
+      stk::mesh::FieldBase *cg_edge_length_field    = eMesh->get_field("cg_edge_length");
 
       stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
       stk::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
@@ -211,7 +212,9 @@ namespace stk {
                           continue;
                         }
 
-                      double edge_length_ave = nodal_edge_length_ave(node);
+                      double edge_length_ave = 0; //nodal_edge_length_ave(node);
+                      double *cg_edge_length = PerceptMesh::field_data(cg_edge_length_field, node);
+                      edge_length_ave = cg_edge_length[0];
 
                       double *coord_current = PerceptMesh::field_data(coord_field_current, node);
                       double *cg_d = PerceptMesh::field_data(cg_d_field, node);
@@ -262,7 +265,7 @@ namespace stk {
                       const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
                       unsigned num_node = elem_nodes.size();
 
-                      double edge_length_ave = m_eMesh->edge_length_ave(element, m_coord_field_original);
+                      double edge_length_ave = 0; // m_eMesh->edge_length_ave(element, m_coord_field_original);
 
                       const bool use_analytic_grad = true;
                       const bool test_analytic_grad = false && m_stage==1;
@@ -310,7 +313,10 @@ namespace stk {
                             continue;
 
                           // FIXME
+                          double *cg_edge_length = PerceptMesh::field_data(cg_edge_length_field, node);
+
                           //edge_length_ave = nodal_edge_length_ave(node);
+                          edge_length_ave = cg_edge_length[0];
 
                           m_metric->set_node(&node);
                           double *coord_current = PerceptMesh::field_data(coord_field_current, node);
@@ -554,8 +560,10 @@ namespace stk {
 
       {
         stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_scale ) );
-        m_scale = (m_scale < 1.0) ? 1.0 : 1.0/m_scale;
-        PRINT("tmp srk m_scale= " << m_scale);
+        //!! FIXME 
+        //m_scale = (m_scale < 1.0) ? 1.0 : 1.0/m_scale;
+        m_scale = 1.0/m_scale;
+        PRINT_1("tmp srk get_grad m_scale= " << m_scale);
       }
         
       if (!m_use_local_scaling) 
@@ -571,6 +579,7 @@ namespace stk {
       stk::mesh::FieldBase *cg_g_field    = eMesh->get_field("cg_g");
       stk::mesh::FieldBase *cg_s_field    = eMesh->get_field("cg_s");
       stk::mesh::FieldBase *cg_r_field    = eMesh->get_field("cg_r");
+      stk::mesh::FieldBase *cg_edge_length_field    = eMesh->get_field("cg_edge_length");
 
       stk::mesh::FieldBase *cg_h_field    = (m_use_hessian_scaling? eMesh->get_field("cg_h") : 0);
 
@@ -599,11 +608,14 @@ namespace stk {
                     const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
                     unsigned num_node = elem_nodes.size();
 
-                    double edge_length_ave = m_eMesh->edge_length_ave(element, m_coord_field_original);
+                    double edge_length_ave = 0; //m_eMesh->edge_length_ave(element, m_coord_field_original);
 
                     for (unsigned inode=0; inode < num_node; inode++)
                       {
                         mesh::Entity & node = * elem_nodes[ inode ].entity();
+
+                        double *cg_edge_length = PerceptMesh::field_data(cg_edge_length_field, node);
+                        edge_length_ave = cg_edge_length[0];
 
                         bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
                         VERIFY_OP_ON(isGhostNode, ==, false, "hmmmm");
@@ -631,12 +643,14 @@ namespace stk {
       else
         {
           stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_scale ) );
-          m_scale = (m_scale < 1.0) ? 1.0 : 1.0/m_scale;
-          PRINT("tmp srk m_scale= " << m_scale);
+          //!! FIXME  
+          //m_scale = (m_scale < 1.0) ? 1.0 : 1.0/m_scale;
+          m_scale = 1.0/m_scale;
+          PRINT_1("tmp srk get_scale m_scale= " << m_scale);
         }
 
       // node loop
-      m_scaled_grad_norm = 0.0;
+      m_grad_norm_scaled = 0.0;
       double gn=0.0;
       double el=1.e+10, es1=0, es2=0;
       //double pw=std::max(m_metric->length_scaling_power() - 1.0,0.0);
@@ -662,7 +676,10 @@ namespace stk {
                     if (fixed || isGhostNode)
                       continue;
 
-                    double edge_length_ave = nodal_edge_length_ave(node);
+                    double edge_length_ave = 0; //nodal_edge_length_ave(node);
+                    double *cg_edge_length = PerceptMesh::field_data(cg_edge_length_field, node);
+                    edge_length_ave = cg_edge_length[0];
+
                     double *cg_g = PerceptMesh::field_data(cg_g_field, node);
                     double *cg_h = (m_use_hessian_scaling ? PerceptMesh::field_data(cg_h_field, node) : 0);
                         
@@ -688,7 +705,7 @@ namespace stk {
                     double s2 = sum;
                     sum /= edge_length_ave;
                     //sum /= (pw != 0 ? std::pow(edge_length_ave, pw) : edge_length_ave);
-                    //m_scaled_grad_norm = std::max(m_scaled_grad_norm, sum);
+                    //m_grad_norm_scaled = std::max(m_grad_norm_scaled, sum);
                     if ( m_use_hessian_scaling && spatialDim == 2 && m_stage==1)
                       //if ( m_use_hessian_scaling && spatialDim == 2 )
                     {
@@ -723,9 +740,9 @@ namespace stk {
                       sum = std::sqrt(sum);
                     }
 
-                    if (sum > m_scaled_grad_norm)
+                    if (sum > m_grad_norm_scaled)
                       {
-                        m_scaled_grad_norm = sum;
+                        m_grad_norm_scaled = sum;
                         node_max = &node;
                         el = edge_length_ave;
                         es1 = s1;
@@ -759,12 +776,12 @@ namespace stk {
       }
 
       {
-        double scgn=m_scaled_grad_norm;
-        stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_scaled_grad_norm ) );
-        PRINT("tmp srk m_scaled_grad_norm= " << m_scaled_grad_norm << " gn= " << gn << " el= " << el << " es1= " << es1 << " es2=  " << es2);
+        double scgn=m_grad_norm_scaled;
+        stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_grad_norm_scaled ) );
+        PRINT("tmp srk m_grad_norm_scaled= " << m_grad_norm_scaled << " gn= " << gn << " el= " << el << " es1= " << es1 << " es2=  " << es2);
 
         bool debug_1=false;
-        if (debug_1 && m_scaled_grad_norm == scgn && m_stage==1)
+        if (debug_1 && m_grad_norm_scaled == scgn && m_stage==1)
           {
             PRINT_2(" tmp srk max occurs on proc= " << m_eMesh->get_rank());
             {
@@ -793,13 +810,42 @@ namespace stk {
                   double *cg_g = PerceptMesh::field_data(cg_g_field, node);
                   bool valid=true;
                   double nm = nodal_metric(node, 0.0, coord_current, cg_g, valid);
-                  double nm1 = nodal_metric(node, -1.e-6/m_scaled_grad_norm, coord_current, cg_g, valid);
+                  double nm1 = nodal_metric(node, -1.e-6/m_grad_norm_scaled, coord_current, cg_g, valid);
                   PRINT_2(" tmp srk nm= " << nm << " nm1= " << nm1 << " diff[expect neg]= " << nm1-nm << " grad= " << cg_g[0] << " " << cg_g[1] << " " << cg_g[2]);
                 }
             }
           }
       }
 
+    }
+
+    void PMMParallelReferenceMeshSmoother1::get_edge_lengths(PerceptMesh * eMesh)
+    {
+      stk::mesh::FieldBase *cg_edge_length_field    = eMesh->get_field("cg_edge_length");
+      stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
+      stk::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
+
+      const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->node_rank() );
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          if (on_locally_owned_part(**k))
+            {
+              stk::mesh::Bucket & bucket = **k ;
+              const unsigned num_nodes_in_bucket = bucket.size();
+
+              for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
+                {
+                  stk::mesh::Entity& node = bucket[i_node];
+                  double *cg_edge_length = PerceptMesh::field_data(cg_edge_length_field, node);
+
+                  if (on_locally_owned_part(node) || on_globally_shared_part(node))
+                    {
+                      double edge_length_ave = nodal_edge_length_ave(node);
+                      cg_edge_length[0] = edge_length_ave;
+                    }
+                }
+            }
+        }
     }
 
     double PMMParallelReferenceMeshSmoother1::run_one_iteration( Mesh* mesh, MeshDomain *domain,
@@ -820,6 +866,8 @@ namespace stk {
 
       if (m_iter == 0)
         {
+          get_edge_lengths(m_eMesh);
+
           m_dmax = 0.0;
 
           //PRINT_1("tmp srk get_gradient at m_iter=0");
@@ -855,14 +903,16 @@ namespace stk {
       m_total_metric = metric_check;
       if (check_convergence() || metric_check == 0.0)
         {
-          PRINT_1( "tmp srk already converged m_dnew= " << m_dnew << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_scaled_grad_norm= " << m_scaled_grad_norm);
+          PRINT_1( "tmp srk already converged m_dnew= " << m_dnew << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_grad_norm_scaled= " << m_grad_norm_scaled);
           //update_node_positions
           return total_metric(mesh,0.0,1.0, total_valid);
         }
 
       /// line search
       bool restarted=false;
-      double alpha = m_scale;
+      //!! FIXME
+      //double alpha = m_scale;
+      double alpha = m_scale/10.;
       {
         double metric_0 = total_metric(mesh, 0.0, 1.0, total_valid);
         double metric=0.0;
@@ -906,7 +956,9 @@ namespace stk {
 
             armijo_offset_factor = c0*norm_gradient2;
 
-            alpha=m_scale;
+            //!! FIXME
+            //alpha = m_scale;
+            alpha = m_scale/10.;
             /// d = -g
             eMesh->nodal_field_axpby(-1.0, cg_g_field, 0.0, cg_d_field);
             restarted = true;
@@ -940,10 +992,10 @@ namespace stk {
         if (!converged)
           {
             PRINT_1( "can't reduce metric 2nd time = " << metric << " metric_0 + armijo_offset " << metric_0+alpha*armijo_offset_factor << " norm_gradient = " << std::sqrt(norm_gradient2) << " m_scale= " << m_scale);
-            PRINT_1( "tmp srk 2nd m_dnew= " << m_dnew << " m_dmax= " << m_dmax << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_scaled_grad_norm= " << m_scaled_grad_norm);
+            PRINT_1( "tmp srk 2nd m_dnew= " << m_dnew << " m_dmax= " << m_dmax << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_grad_norm_scaled= " << m_grad_norm_scaled);
             if (check_convergence())
               {
-                PRINT_1( "tmp srk 2nd already converged m_dnew= " << m_dnew << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_scaled_grad_norm= " << m_scaled_grad_norm);
+                PRINT_1( "tmp srk 2nd already converged m_dnew= " << m_dnew << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_grad_norm_scaled= " << m_grad_norm_scaled);
                 return total_metric(mesh,0.0,1.0, total_valid);
               }
             debug_print(0);

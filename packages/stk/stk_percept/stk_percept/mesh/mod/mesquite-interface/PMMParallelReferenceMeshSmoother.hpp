@@ -38,7 +38,7 @@ namespace stk {
 
           m_scale(0),
           m_dmax(0),
-          m_dnew(0), m_dold(0), m_d0(0), m_dmid(0), m_dd(0), m_alpha(0), m_grad_norm(0), m_scaled_grad_norm(0),
+          m_dnew(0), m_dold(0), m_d0(0), m_dmid(0), m_dd(0), m_alpha(0), m_grad_norm(0), m_grad_norm_scaled(0),
           m_total_metric(0),
           m_stage(0),
           m_omega(0),
@@ -85,7 +85,7 @@ namespace stk {
 
       double m_scale;
       double m_dmax;
-      double m_dnew, m_dold, m_d0, m_dmid, m_dd, m_alpha, m_grad_norm, m_scaled_grad_norm;
+      double m_dnew, m_dold, m_d0, m_dmid, m_dd, m_alpha, m_grad_norm, m_grad_norm_scaled;
       double m_total_metric;
       int m_stage;
       double m_omega;

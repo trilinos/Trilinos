@@ -3636,6 +3636,9 @@ namespace stk {
 
       // hessian
       add_field("cg_h", node_rank(), scalarDimension*scalarDimension);
+
+      // edge length
+      add_field("cg_edge_length", node_rank(), 0);
     }
 
     void PerceptMesh::add_spacing_fields()

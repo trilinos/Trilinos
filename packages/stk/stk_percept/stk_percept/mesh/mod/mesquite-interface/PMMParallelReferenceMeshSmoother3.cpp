@@ -39,11 +39,11 @@ namespace stk {
         {
           return true; // for untangle
         }
-      if (m_stage == 0 && m_num_invalid == 0 && (m_dmax < gradNorm || m_scaled_grad_norm < gradNorm))
+      if (m_stage == 0 && m_num_invalid == 0 && (m_dmax < gradNorm || m_grad_norm_scaled < gradNorm))
         {
           return true;
         }
-      if (m_num_invalid == 0 && (m_scaled_grad_norm < gradNorm || (m_iter > 0 && m_dmax < gradNorm && m_dnew < gradNorm*gradNorm*m_d0)))
+      if (m_num_invalid == 0 && (m_grad_norm_scaled < gradNorm || (m_iter > 0 && m_dmax < gradNorm && m_dnew < gradNorm*gradNorm*m_d0)))
         {
           return true;
         }      
@@ -113,7 +113,7 @@ namespace stk {
       }
 
       // node loop
-      m_scaled_grad_norm = 0.0;
+      m_grad_norm_scaled = 0.0;
       double gn=0.0;
       double el=1.e+10, es1=0, es2=0;
       //double pw=std::max(m_metric->length_scaling_power() - 1.0,0.0);
@@ -152,10 +152,10 @@ namespace stk {
                     double s2 = sum;
                     sum /= edge_length_ave;
                     //sum /= (pw != 0 ? std::pow(edge_length_ave, pw) : edge_length_ave);
-                    //m_scaled_grad_norm = std::max(m_scaled_grad_norm, sum);
-                    if (sum > m_scaled_grad_norm)
+                    //m_grad_norm_scaled = std::max(m_grad_norm_scaled, sum);
+                    if (sum > m_grad_norm_scaled)
                       {
-                        m_scaled_grad_norm = sum;
+                        m_grad_norm_scaled = sum;
                         el = edge_length_ave;
                         es1 = s1;
                         es2 = s2;
@@ -166,8 +166,8 @@ namespace stk {
       }
 
       {
-        stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_scaled_grad_norm ) );
-        PRINT("tmp srk m_scaled_grad_norm= " << m_scaled_grad_norm << " gn= " << gn << " el= " << el << " es1= " << es1 << " es2=  " << es2);
+        stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_grad_norm_scaled ) );
+        PRINT("tmp srk m_grad_norm_scaled= " << m_grad_norm_scaled << " gn= " << gn << " el= " << el << " es1= " << es1 << " es2=  " << es2);
       }
 
     }
@@ -216,7 +216,7 @@ namespace stk {
       m_total_metric = metric_check;
       if (check_convergence() || metric_check == 0.0)
         {
-          PRINT_1( "tmp srk already converged m_dnew= " << m_dnew << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_scaled_grad_norm= " << m_scaled_grad_norm);
+          PRINT_1( "tmp srk already converged m_dnew= " << m_dnew << " gradNorm= " << gradNorm << " m_d0= " << m_d0 << " m_grad_norm_scaled= " << m_grad_norm_scaled);
           //update_node_positions
           return total_metric(mesh,0.0,1.0, total_valid);
         }
