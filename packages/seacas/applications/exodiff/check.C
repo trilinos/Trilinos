@@ -89,13 +89,13 @@ bool Check_Global(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2)
       is_same = false;
     }
   }
-  if (!interface.map_flag && file1.Num_Elmt_Blocks() != file2.Num_Elmt_Blocks()) {
+  if (file1.Num_Elmt_Blocks() != file2.Num_Elmt_Blocks()) {
     if(interface.map_flag != PARTIAL){
-      std::cout << "exodiff: ERROR .. Number of blocks doesn't agree." << std::endl;
+      std::cout << "exodiff: ERROR .. Number of element blocks doesn't agree." << std::endl;
       is_same = false;
     }
   }
-  if (!interface.map_flag && file1.Num_Times() != file2.Num_Times() && !interface.quiet_flag) {
+  if (file1.Num_Times() != file2.Num_Times() && !interface.quiet_flag) {
     std::cout << "exodiff: WARNING First file has " << file1.Num_Times()
 	      << " result times while the second file has " << file2.Num_Times()
 	      << ".\n\n";
