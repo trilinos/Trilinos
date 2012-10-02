@@ -67,6 +67,7 @@ struct ModifiedGramSchmidt
   // Reduction   : result = dot( Q(:,j) , Q(:,j) );
   // PostProcess : R(j,j) = result ; inv = 1 / result ;
   struct InvNorm2 {
+    typedef Scalar value_type ;
     value_view  Rjj ;
     value_view  inv ;
 
@@ -77,7 +78,7 @@ struct ModifiedGramSchmidt
       {}
 
     KOKKOSARRAY_INLINE_DEVICE_FUNCTION
-    void operator()( Scalar & result ) const
+    void operator()( const value_type & result ) const
     {
       const Scalar value = sqrt( result );
       *Rjj = value ;
@@ -87,6 +88,7 @@ struct ModifiedGramSchmidt
 
   // PostProcess : tmp = - ( R(j,k) = result );
   struct DotM {
+    typedef Scalar value_type ;
 
     value_view  Rjk ;
     value_view  tmp ;
@@ -98,7 +100,7 @@ struct ModifiedGramSchmidt
       {}
 
     KOKKOSARRAY_INLINE_DEVICE_FUNCTION
-    void operator()( Scalar & result ) const
+    void operator()( const value_type & result ) const
     {
        *Rjk  = result ;
        *tmp  = - result ;

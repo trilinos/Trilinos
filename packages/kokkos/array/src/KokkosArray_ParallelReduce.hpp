@@ -174,11 +174,7 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION
   unsigned value_size() const { return sizeof(value_type); }
 
-  KOKKOSARRAY_INLINE_FUNCTION
-  reference_type reference( void * ptr ) const
-  { return *( (ValueType*) ptr ); };
-
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void join( void * update , const void * input ) const
   {
     typedef       volatile value_type * vvp ;
@@ -187,7 +183,7 @@ public:
     ValueOper::join( *vvp(update) , *cvvp(input) );
   }
 
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   reference_type init( void * update ) const
   {
     reference_type ref = *((value_type*) update);
@@ -195,7 +191,7 @@ public:
     return ref ;
   }
 
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void finalize( const void * input ) const
   {
     typedef const value_type * cvp ;
@@ -236,19 +232,15 @@ public:
     : m_finalize( finalize )
     {}
 
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   ReduceOperator( const ReduceOperator & rhs )
     : m_finalize( rhs.m_finalize ) {}
   
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   unsigned value_size() const
     { return sizeof(MemberType) * m_finalize.value_count ; }
 
-  KOKKOSARRAY_INLINE_FUNCTION
-  reference_type reference( void * ptr ) const
-    { return (MemberType*) ptr ; };
-
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void join( void * update , const void * input ) const
   {
     typedef       volatile MemberType * vvp ;
@@ -257,7 +249,7 @@ public:
     ValueOper::join( vvp(update) , cvvp(input) , m_finalize.value_count );
   }
 
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   reference_type init( void * update ) const
   {
     reference_type ref = (reference_type) update ;
@@ -265,7 +257,7 @@ public:
     return ref ;
   }
 
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void finalize( const void * input ) const
   {
     typedef const MemberType * cvp ;
