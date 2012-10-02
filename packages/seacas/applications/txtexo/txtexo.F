@@ -35,6 +35,9 @@ C=======================================================================
       PROGRAM TXTEXO
 C=======================================================================
 
+#if defined(__INTEL_COMPILER) 
+cDEC$ OPTIMIZE:0
+#endif
 C     --*** TXTEXO *** (TXTEXO) TEXT to EXODUS translator
 C     --   Written by Amy Gilkey - revised 03/02/88
 C     --
