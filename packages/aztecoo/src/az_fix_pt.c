@@ -151,9 +151,14 @@ void AZ_fix_pt(double b[], double x[], double weight[], int options[],
   
   N            = data_org[AZ_N_internal] + data_org[AZ_N_border];
   precond_flag = options[AZ_precond];
-  epsilon      = params[AZ_tol];
   proc         = proc_config[AZ_node];
   print_freq   = options[AZ_print_freq];
+
+  /* Initialize some values in convergence info struct */
+  convergence_info->print_info = print_freq;
+  convergence_info->iteration = 0;
+  convergence_info->sol_updated = 1; /* fix pt always updates solution */
+  convergence_info->epsilon = params[AZ_tol]; /* test against this */
 
   /* allocate space for necessary vectors */
 
@@ -185,7 +190,7 @@ void AZ_fix_pt(double b[], double x[], double weight[], int options[],
     (void) AZ_printf_out("%siter:    0           residual = %e\n",
                    prefix,scaled_r_norm);
 
-  converged = scaled_r_norm < epsilon;
+  converged = scaled_r_norm < convergence_info->epsilon;
   status[AZ_first_precond] = AZ_second();
 
   for (iter = 1; iter <= options[AZ_max_iter] && !converged; iter++ ) {
@@ -219,7 +224,7 @@ void AZ_fix_pt(double b[], double x[], double weight[], int options[],
           (void) AZ_printf_out("%siter: %4d           residual = %e\n", 
 		     prefix, iter, scaled_r_norm);
 
-       converged = scaled_r_norm < epsilon;
+       converged = scaled_r_norm < convergence_info->epsilon;
        if (options[AZ_check_update_size] & converged)
           converged = AZ_compare_update_vs_soln(N, -1.,alpha, res, x,
                                            params[AZ_update_reduction],
@@ -232,6 +237,7 @@ void AZ_fix_pt(double b[], double x[], double weight[], int options[],
   }
 
   iter--;
+  convergence_info->iteration = iter;
   if ( (iter%print_freq != 0) && (options[AZ_output] != AZ_none)
        && (options[AZ_output] != AZ_warnings) ) {
     AZ_compute_residual(b, x, res, proc_config, Amat);
