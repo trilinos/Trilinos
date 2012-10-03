@@ -266,8 +266,9 @@ void CudaInternal::initialize( int cuda_device_id )
     // Copying the kernel to constant memory and then launching with
     // thread count == 1024 would work fine.
     // All compute capabilities support at least 16 warps (512 threads).
+    // However, we have found that 8 warps typically gives better performance.
 
-    m_maxWarpCount = 16 ;
+    m_maxWarpCount = 8 ;
 
     // m_maxWarpCount = cudaProp.maxThreadsPerBlock / Impl::CudaTraits::WarpSize ;
 

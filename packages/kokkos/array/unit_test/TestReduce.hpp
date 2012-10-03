@@ -264,6 +264,12 @@ public:
     ASSERT_EQ( host_result(0), (ScalarType) nw);
     ASSERT_EQ( host_result(1), (ScalarType) nsum);
     ASSERT_EQ( host_result(2), (ScalarType) nsum);
+
+    KokkosArray::parallel_reduce( nwork , functor_type(nwork) , host_result );
+
+    ASSERT_EQ( host_result(0), (ScalarType) nw);
+    ASSERT_EQ( host_result(1), (ScalarType) nsum);
+    ASSERT_EQ( host_result(2), (ScalarType) nsum);
   }
 };
 

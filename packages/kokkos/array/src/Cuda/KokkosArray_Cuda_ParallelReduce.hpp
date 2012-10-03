@@ -970,6 +970,45 @@ public:
   }
 };
 
+template< class FunctorType , class ValueOper , class LayoutType >
+class ParallelReduce<
+    FunctorType ,
+    ValueOper , 
+    View< typename FunctorType::value_type , LayoutType , Host > ,
+    Cuda >
+{
+public:
+
+  typedef typename FunctorType::value_type value_type ;
+
+  typedef View< value_type , LayoutType , Host > host_view_type ;
+
+  ParallelReduce( const Cuda::size_type  work_count ,
+                  const FunctorType    & functor ,
+                  const host_view_type & host_view )
+  {
+    if ( functor.value_count != host_view.dimension_0() ) {
+      std::ostringstream msg ;
+      msg << "KokkosArray::parallel_reduce( <array_type> ) ERROR "
+          << "given incompatible array lengths: functor.value_count("
+          << functor.value_count
+          << ") != view.dimension_0("
+          << host_view.dimension_0() << ")" ;
+      throw std::runtime_error(msg.str());
+    }
+
+    typedef Impl::ParallelReduceFunctorValue< value_type , Cuda >
+      FinalizeType ;
+
+    const FinalizeType finalize( functor.value_count );
+
+    ParallelReduce< FunctorType , ValueOper , FinalizeType , Cuda >
+      ( work_count , functor , finalize );
+
+    finalize.result( host_view.ptr_on_device() );
+  }
+};
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
