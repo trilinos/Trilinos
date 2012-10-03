@@ -234,7 +234,7 @@ MACRO(TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
   ENDIF()
 
   #
-  # Separate out separate lists of package names and directoires
+  # Separate out separate lists of package names and directories
   #
 
   # Get the total number of packages defined  

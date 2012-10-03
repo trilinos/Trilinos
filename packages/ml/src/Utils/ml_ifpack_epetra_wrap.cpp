@@ -60,56 +60,109 @@ namespace ML_Epetra{
 
 
   /**********************************************/
-  /***               Chebyshev                ***/
+  /***      Chebyshev (Including Block)       ***/
   /**********************************************/
-  if(SmooType=="Chebyshev"){
+  if(SmooType=="Chebyshev" || SmooType=="MLS" || SmooType=="IFPACK-Chebyshev" || SmooType=="IFPACK-Block Chebyshev"){
+    bool allocated_inv_diagonal=false;
     int MaximumIterations = List.get("eigen-analysis: max iters", 10);
     string EigenType_ = List.get("eigen-analysis: type", "cg");
     double boost = List.get("eigen-analysis: boost for lambda max", 1.0);
     double alpha = List.get("chebyshev: alpha",30.0001);  
+    Epetra_Vector *InvDiagonal_=0;
 
-    /* Grab Diagonal & invert if not provided */
-    Epetra_Vector *InvDiagonal_;
-    if(InvDiagonal) InvDiagonal_=const_cast<Epetra_Vector *>(InvDiagonal);
-    else{
-      const Epetra_CrsMatrix* Acrs=dynamic_cast<const Epetra_CrsMatrix*>(A);
-      if(!Acrs) return 0;
-      InvDiagonal_ = new Epetra_Vector(Acrs->RowMap());  
-      Acrs->ExtractDiagonalCopy(*InvDiagonal_);
-      for (int i = 0; i < InvDiagonal_->MyLength(); ++i)
-	if ((*InvDiagonal_)[i] != 0.0)
-	  (*InvDiagonal_)[i] = 1.0 / (*InvDiagonal_)[i];   
+    /* Block Chebyshev stuff if needed */    
+    int  MyCheby_nBlocks=     List.get("smoother: Block Chebyshev number of blocks",0);
+    int* MyCheby_blockIndices=List.get("smoother: Block Chebyshev block list",(int*)0);
+    int* MyCheby_blockStarts= List.get("smoother: Block Chebyshev block starts",(int*)0);
+    bool MyCheby_NE=          List.get("smoother: chebyshev solve normal equations",false);
+
+    if(SmooType == "IFPACK-Block Chebyshev" && MyCheby_blockIndices && MyCheby_blockStarts){
+      // If we're using Block Chebyshev, it can compute it's own eigenvalue estimate..
+      Teuchos::ParameterList PermuteList,BlockList;
+      BlockList.set("apply mode","invert");
+      PermuteList.set("number of local blocks",MyCheby_nBlocks);
+      PermuteList.set("block start index",MyCheby_blockStarts);
+      //        if(is_lid) PermuteList.set("block entry lids",Blockids_);
+      //NTS: Add LID support
+      PermuteList.set("block entry gids",MyCheby_blockIndices);        
+      PermuteList.set("blockdiagmatrix: list",BlockList);
+      
+      IFPACKList.set("chebyshev: use block mode",true);
+      IFPACKList.set("chebyshev: block list",PermuteList);
+      IFPACKList.set("chebyshev: eigenvalue max iterations",10);
+      
+      // EXPERIMENTAL: Cheby-NE
+      IFPACKList.set("chebyshev: solve normal equations",MyCheby_NE);
+    }
+    else {
+      /* Non-Blocked Chebyshev */
+      /* Grab Diagonal & invert if not provided */
+      if(InvDiagonal) InvDiagonal_=const_cast<Epetra_Vector *>(InvDiagonal);
+      else{
+	const Epetra_CrsMatrix* Acrs=dynamic_cast<const Epetra_CrsMatrix*>(A);
+	if(!Acrs) return 0;
+	allocated_inv_diagonal=true;
+	InvDiagonal_ = new Epetra_Vector(Acrs->RowMap());  
+	Acrs->ExtractDiagonalCopy(*InvDiagonal_);
+	for (int i = 0; i < InvDiagonal_->MyLength(); ++i)
+	  if ((*InvDiagonal_)[i] != 0.0)
+	    (*InvDiagonal_)[i] = 1.0 / (*InvDiagonal_)[i];   
+      }
+
+      /* Do the eigenvalue estimation*/
+      if (EigenType_ == "power-method") Ifpack_Chebyshev::PowerMethod(*A,*InvDiagonal_,MaximumIterations,lambda_max);
+      else if(EigenType_ == "cg") Ifpack_Chebyshev::CG(*A,*InvDiagonal_,MaximumIterations,lambda_min,lambda_max);
+      else ML_CHK_ERR(0); // not recognized
+    
+      lambda_min=lambda_max / alpha;      
+
+      /* Setup the Smoother's List*/
+      IFPACKList.set("chebyshev: min eigenvalue", lambda_min);
+      IFPACKList.set("chebyshev: max eigenvalue", boost * lambda_max);
+      IFPACKList.set("chebyshev: ratio eigenvalue",alpha);
+      IFPACKList.set("chebyshev: operator inv diagonal", InvDiagonal_);
     }
 
-    /* Do the eigenvalue estimation*/
-    if (EigenType_ == "power-method") Ifpack_Chebyshev::PowerMethod(*A,*InvDiagonal_,MaximumIterations,lambda_max);
-    else if(EigenType_ == "cg") Ifpack_Chebyshev::CG(*A,*InvDiagonal_,MaximumIterations,lambda_min,lambda_max);
-    else ML_CHK_ERR(0); // not recognized
-    
-    lambda_min=lambda_max / alpha;
-    
-    /* Setup the Smoother's List*/
-    IFPACKList.set("chebyshev: min eigenvalue", lambda_min);
-    IFPACKList.set("chebyshev: max eigenvalue", boost * lambda_max);
-    IFPACKList.set("chebyshev: ratio eigenvalue",alpha);
-    IFPACKList.set("chebyshev: operator inv diagonal", InvDiagonal_);
+    /* Setup the Smoother's List*/    
+    IFPACKList.set("chebyshev: ratio eigenvalue", alpha);
     IFPACKList.set("chebyshev: degree", Sweeps);
     IFPACKList.set("chebyshev: zero starting solution",false);
 
-    if(verbose && !A->Comm().MyPID()){
-      cout << printMsg << "MLS/Chebyshev, polynomial order = "
-	   <<  Sweeps
-	   << ", alpha = " << alpha << endl;
-      cout << printMsg << "lambda_min = " << lambda_min
-             << ", lambda_max = " << boost*lambda_max << endl;
-    }
-
-
+    // Setup
     SmootherC_= new Ifpack_Chebyshev(A);
     if (SmootherC_ == 0) return 0;
     SmootherC_->SetParameters(IFPACKList);
     SmootherC_->Initialize();
     SmootherC_->Compute();
+
+    // Grab the lambda's if needed
+    if(SmooType=="IFPACK-Block Chebyshev"){
+      lambda_min=SmootherC_->GetLambdaMin();
+      lambda_max=SmootherC_->GetLambdaMax();
+    }    
+
+    // Smoother Info Output
+    if(verbose && !A->Comm().MyPID()){
+      if(SmooType=="IFPACK-Block Chebyshev") {
+	cout << printMsg << "MLS/Block-Chebyshev, polynomial order = "
+	     <<  Sweeps
+	     << ", alpha = " << alpha << endl;
+	cout << printMsg << "lambda_min = " << lambda_min
+	     << ", lambda_max = " << lambda_max << endl;
+      }
+      else {
+	cout << printMsg << "MLS/Chebyshev, polynomial order = "
+	     <<  Sweeps
+	     << ", alpha = " << alpha << endl;
+	cout << printMsg << "lambda_min = " << lambda_min
+             << ", lambda_max = " << boost*lambda_max << endl;
+      }
+    }
+
+
+    // Cleanup:  Since Chebyshev will keep it's own copy of the Inverse Diagonal...
+    if (allocated_inv_diagonal) delete InvDiagonal_;
+
     return SmootherC_;
   }
   /**********************************************/

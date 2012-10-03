@@ -330,21 +330,21 @@ void CudaInternal::initialize( int cuda_device_id )
 //----------------------------------------------------------------------------
 
 typedef Cuda::size_type ScratchGrain[ Impl::CudaTraits::WarpSize ] ;
+enum { sizeScratchGrain = sizeof(ScratchGrain) };
+
 
 Cuda::size_type *
 CudaInternal::scratch_flags( const Cuda::size_type size )
 {
-  enum { sizeGrain = sizeof(ScratchGrain) };
-
   assert_initialized();
 
-  if ( m_scratchFlagsCount * sizeGrain < size ) {
+  if ( m_scratchFlagsCount * sizeScratchGrain < size ) {
 
     cudaDeviceSynchronize();
 
     CudaMemorySpace::decrement( m_scratchFlags );
   
-    m_scratchFlagsCount = ( size + sizeGrain - 1 ) / sizeGrain ;
+    m_scratchFlagsCount = ( size + sizeScratchGrain - 1 ) / sizeScratchGrain ;
 
     m_scratchFlags = (size_type *)
       CudaMemorySpace::allocate(
@@ -354,7 +354,7 @@ CudaInternal::scratch_flags( const Cuda::size_type size )
         m_scratchFlagsCount );
 
     CUDA_SAFE_CALL(
-      cudaMemset( m_scratchFlags , 0 , m_scratchFlagsCount * sizeGrain ) );
+      cudaMemset( m_scratchFlags , 0 , m_scratchFlagsCount * sizeScratchGrain ) );
   }
 
   return m_scratchFlags ;
@@ -363,17 +363,15 @@ CudaInternal::scratch_flags( const Cuda::size_type size )
 Cuda::size_type *
 CudaInternal::scratch_space( const Cuda::size_type size )
 {
-  enum { sizeGrain = sizeof(ScratchGrain) };
-
   assert_initialized();
 
-  if ( m_scratchSpaceCount * sizeGrain < size ) {
+  if ( m_scratchSpaceCount * sizeScratchGrain < size ) {
 
     cudaDeviceSynchronize();
 
     CudaMemorySpace::decrement( m_scratchSpace );
   
-    m_scratchSpaceCount = ( size + sizeGrain - 1 ) / sizeGrain ;
+    m_scratchSpaceCount = ( size + sizeScratchGrain - 1 ) / sizeScratchGrain ;
 
     m_scratchSpace = (size_type *)
       CudaMemorySpace::allocate(
@@ -389,18 +387,16 @@ CudaInternal::scratch_space( const Cuda::size_type size )
 Cuda::size_type *
 CudaInternal::scratch_unified( const Cuda::size_type size )
 {
-  enum { sizeGrain = sizeof(ScratchGrain) };
-
   assert_initialized();
 
   if ( m_scratchUnifiedSupported ) {
 
-    const bool allocate   = m_scratchUnifiedCount * sizeGrain < size ;
+    const bool allocate   = m_scratchUnifiedCount * sizeScratchGrain < size ;
     const bool deallocate = m_scratchUnified && ( 0 == size || allocate );
 
-    if ( deallocate ) {
+    if ( allocate || deallocate ) cudaDeviceSynchronize();
 
-      cudaDeviceSynchronize();
+    if ( deallocate ) {
 
       cudaFreeHost( m_scratchUnified );
 
@@ -410,10 +406,10 @@ CudaInternal::scratch_unified( const Cuda::size_type size )
 
     if ( allocate ) {
 
-      m_scratchFlagsCount = ( size + sizeGrain - 1 ) / sizeGrain ;
+      m_scratchUnifiedCount = ( size + sizeScratchGrain - 1 ) / sizeScratchGrain ;
 
       cudaHostAlloc( (void **)( & m_scratchUnified ) ,
-                     m_scratchFlagsCount * sizeGrain ,
+                     m_scratchUnifiedCount * sizeScratchGrain ,
                      cudaHostAllocDefault );
     }
   }

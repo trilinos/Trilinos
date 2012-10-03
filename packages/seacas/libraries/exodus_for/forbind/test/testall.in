@@ -122,7 +122,7 @@ ${PREFIX} ${BINDIR}/f_testrd_nsid${SUFFIX} | grep -v version | diff - ${SRCDIR}/
 
 # test_nem - nemesis routines
 echo "test_nem ..."
-${PREFIX} ${BINDIR}/f_test_nem
+${PREFIX} ${BINDIR}/f_test_nem${SUFFIX} | diff - ${SRCDIR}/test_nem.dmp | tee test_nem.res
 
 echo "************************************************************************"
 echo "************************************************************************"

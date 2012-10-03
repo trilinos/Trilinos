@@ -150,9 +150,6 @@ namespace ML_Epetra
     //! Forms the coarse matrix, given the build prolongator.
     int FormCoarseMatrix();
 
-    //! Nodal Aggregation
-    int NodeAggregate(ML_Aggregate_Struct *&MLAggr,ML_Operator *&P,ML_Operator*TMT_ML,int &NumAggregates);
-    
     //! Build the 1-unknown sparsity pattern
     int PBuildSparsity(ML_Operator *P, Epetra_CrsMatrix *&Psparse);
 

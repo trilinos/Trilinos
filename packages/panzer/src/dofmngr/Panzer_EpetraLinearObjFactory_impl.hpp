@@ -370,7 +370,7 @@ const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits,LocalOrdinalT>::get
 template <typename Traits,typename LocalOrdinalT>
 const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getColMap() const
 {
-   if(cMap_==Teuchos::null) cMap_ = buildMap();
+   if(cMap_==Teuchos::null) cMap_ = buildColMap();
 
    return cMap_;
 }

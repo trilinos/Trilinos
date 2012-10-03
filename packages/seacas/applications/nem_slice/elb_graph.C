@@ -687,7 +687,7 @@ namespace {
     graph->start[problem->num_vertices] = graph->adj.size();
     graph->nadj = graph->adj.size();
 
-    if (graph->start[problem->num_vertices] != graph->nadj) {
+    if ((size_t)graph->start[problem->num_vertices] != graph->nadj) {
       // Possibly an integer overflow... Output error message and stop.
       std::ostringstream errmsg;
       errmsg << "fatal: Graph adjacency edge count (" << graph->nadj << ") exceeds chaco 32-bit integer range.\n";

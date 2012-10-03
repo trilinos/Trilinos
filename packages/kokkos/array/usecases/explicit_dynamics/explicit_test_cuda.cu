@@ -52,9 +52,9 @@
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_Cuda.hpp>
 
-#include <KokkosArray_Cuda_macros.hpp>
+#include <impl/KokkosArray_Cuda_macros.hpp>
 #include <explicit_dynamics_app.hpp>
-#include <KokkosArray_Clear_macros.hpp>
+#include <impl/KokkosArray_Clear_macros.hpp>
 
 __global__ void dummy_kernel(){}
 

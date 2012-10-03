@@ -36,7 +36,7 @@ int       Using_Main = FALSE;	/* Is main routine being called? */
 int 
 interface (
     int nvtxs,		/* number of vertices in full graph */
-    size_t *start,		/* start of edge list for each vertex */
+    int *start,		/* start of edge list for each vertex */
     int *adjacency,		/* edge list data */
     int *vwgts,		/* weights for all vertices */
     float *ewgts,		/* weights for all edges */
@@ -74,7 +74,7 @@ interface (
     float   **coords;		/* coordinates for vertices if used */
     int      *vptr;		/* loops through vertex weights */
     int       flag;		/* return code from balance */
-    size_t    nedges;		/* number of edges in graph */
+    int       nedges;		/* number of edges in graph */
     int       using_vwgts;	/* are vertex weights being used? */
     int       using_ewgts;	/* are edge weights being used? */
     int       nsets_tot=0;	/* total number of sets being created */
@@ -169,11 +169,6 @@ interface (
 	time = seconds();
 	flag = reformat(start, adjacency, nvtxs, &nedges, vwgts, ewgts, &graph);
 
-	if ((int)nedges != nedges) {
-	  strout("\nERROR: Graph is too large for chaco to handle. Number of edges exceeds 32-bit integer range.\n", nedges);
-	  flag = 1;
-	  goto skip;
-	}
 	if (flag) {
 	    strout("\nERROR: No room to reformat graph.\n");
 	    goto skip;

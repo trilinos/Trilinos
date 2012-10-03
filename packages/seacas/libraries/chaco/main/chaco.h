@@ -152,7 +152,7 @@ extern "C" {
 #endif
 
 extern int interface(int       nvtxs,                /* number of vertices in full graph */
-		     size_t   *start,                /* start of edge list for each vertex */
+		     int      *start,                /* start of edge list for each vertex */
 		     int      *adjacency,            /* edge list data */
 		     int      *vwgts,                /* weights for all vertices */
 		     float    *ewgts,                /* weights for all edges */

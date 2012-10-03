@@ -10,6 +10,7 @@
 #include "ml_epetra_utils.h"
 #include "ml_mat_formats.h"
 #include "ml_RefMaxwell_11_Operator.h"
+#include "ml_RefMaxwell_Utils.h"
 #include "ml_ifpack_epetra_wrap.h"
 #ifdef ML_MPI
 #include "Epetra_MpiComm.h"
@@ -17,44 +18,9 @@
 
 #define ABS(x)((x)>0?(x):-(x))
 
-#define NO_OUTPUT
-extern void IVOUT(const Epetra_IntVector & A, const char * of);
-
 //#define ENABLE_FAST_PTAP // This has a bug.  Leave it off for now -CMS
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_MultiVectorOut.h"
-
-// ================================================ ====== ==== ==== == =
-int CSR_getrow_ones(ML_Operator *data, int N_requested_rows, int requested_rows[],
-   int allocated_space, int columns[], double values[], int row_lengths[])
-{
-   register int    *bindx, j;
-   int     *rowptr,  row, itemp;
-   struct ML_CSR_MSRdata *input_matrix;
-   ML_Operator *mat_in;
-
-   row            = *requested_rows;
-   mat_in = (ML_Operator *) data;
-   input_matrix = (struct ML_CSR_MSRdata *) ML_Get_MyGetrowData(mat_in);
-   rowptr = input_matrix->rowptr;
-   itemp = rowptr[row];
-   *row_lengths = rowptr[row+1] - itemp;
-
-
-   if (*row_lengths > allocated_space) {
-    ML_avoid_unused_param( (void *) &N_requested_rows);
-    return(0);
-  }
-
-   bindx  = &(input_matrix->columns[itemp]);
-   for (j = 0 ; j < *row_lengths; j++) {
-      *columns++ = *bindx++;
-   }
-   for (j = 0 ; j < *row_lengths; j++) {
-      *values++  = 1;
-   }
-   return(1);
-}
 
 
 // ================================================ ====== ==== ==== == = 
@@ -236,7 +202,7 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
     dim=(xcoord!=0) + (ycoord!=0) + (zcoord!=0);    
 
     /* Sanity Checks */
-    if(dim == 0 || (!xcoord && (ycoord || zcoord) || (xcoord && !ycoord && zcoord))){
+    if(dim == 0 || ((!xcoord && (ycoord || zcoord)) || (xcoord && !ycoord && zcoord))){
       cerr<<"Error: Coordinates not defined and no nullspace is provided.  One of these are *necessary* for the EdgeMatrixFreePreconditioner (found "<<dim<<" coordinates).\n";
       exit(-1);
     }/*end if*/
@@ -274,69 +240,19 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
 }/*end BuildNullspace*/
 
 
-
-
 // ================================================ ====== ==== ==== == = 
 //! Build the edge-to-vector-node prolongator described in Bochev, Hu, Siefert and Tuminaro (2006).
 int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_MultiVector & nullspace)
 {
 
-  ML_Operator* TMT_ML = ML_Operator_Create(ml_comm_);
-
-  /* Wrap TMT_Matrix in a ML_Operator */
-  ML_Operator_WrapEpetraCrsMatrix(const_cast<Epetra_CrsMatrix*>(&*TMT_Matrix_),TMT_ML);
-      
-
-  /* Pull Teuchos Options */
-  string CoarsenType = List_.get("aggregation: type", "Uncoupled");
-  double Threshold   = List_.get("aggregation: threshold", 0.0);  
-  int    NodesPerAggr = List_.get("aggregation: nodes per aggregate", 
-                                  ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate());
-
-  /* Setup the Aggregation */
+  /* Do the aggregation */
   ML_Aggregate_Struct * MLAggr;
-  ML_Aggregate_Create(&MLAggr);
-  ML_Aggregate_Set_MaxLevels(MLAggr, 2);
-  ML_Aggregate_Set_StartLevel(MLAggr, 0);
-  ML_Aggregate_Set_Threshold(MLAggr, Threshold);
-  ML_Aggregate_Set_MaxCoarseSize(MLAggr,1);
-  MLAggr->cur_level = 0;
-  ML_Aggregate_Set_Reuse(MLAggr);
-  MLAggr->keep_agg_information = 1;  
-  ML_Operator *P = ML_Operator_Create(ml_comm_);
-  
-  /* Process Teuchos Options */
-  if (CoarsenType == "Uncoupled")
-    ML_Aggregate_Set_CoarsenScheme_Uncoupled(MLAggr);
-  else if (CoarsenType == "Uncoupled-MIS"){
-    ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(MLAggr);
-  }
-  else if (CoarsenType == "METIS"){
-    ML_Aggregate_Set_CoarsenScheme_METIS(MLAggr);
-    ML_Aggregate_Set_NodesPerAggr(0, MLAggr, 0, NodesPerAggr);
-  }/*end if*/
-  else {
-    if(!Comm_->MyPID()) printf("EMFP: Unsupported (1,1) block aggregation type(%s), resetting to uncoupled-mis\n",CoarsenType.c_str());
-    ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(MLAggr);
-  }
+  ML_Operator *P;
+  int NumAggregates;
+  int rv=ML_Epetra::RefMaxwell_Aggregate_Nodes(*TMT_Matrix_,List_,ml_comm_,std::string("EMFP (level 0) :"),
+					       MLAggr,P,NumAggregates);
+  if(rv!=0) ML_CHK_ERR(-2);
 
-  /* Aggregate Nodes */
-  int NumAggregates = ML_Aggregate_Coarsen(MLAggr, TMT_ML, &P, ml_comm_);
-  if (NumAggregates == 0){
-    cerr << "Found 0 aggregates, perhaps the problem is too small." << endl;
-    ML_CHK_ERR(-2);
-  }/*end if*/
-  else if(very_verbose_) printf("[%d] EMFP: %d aggregates created invec_leng=%d\n",Comm_->MyPID(),NumAggregates,P->invec_leng);
-
-  
-  if(very_verbose_) printf("[%d] Num Aggregates = %d\n",Comm_->MyPID(),NumAggregates);
-  if(P==0) {fprintf(stderr,"%s","ERROR: No tentative prolongator found\n");ML_CHK_ERR(-5);}
-  
-#ifndef NO_OUTPUT
-  /* DEBUG: Dump aggregates, prolongator */ 
-  Epetra_IntVector AGG(View,*NodeDomainMap_,MLAggr->aggr_info[0]);
-  IVOUT(AGG,"agg.dat");  
-#endif
   
   /* Create wrapper to do abs(T) */
   // NTS: Assume D0 has already been reindexed by now.
@@ -404,9 +320,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
 #endif
   
   /* Cleanup */
-  ML_qr_fix_Destroy();
   ML_Aggregate_Destroy(&MLAggr);
-  ML_Operator_Destroy(&TMT_ML);
   ML_Operator_Destroy(&P);
   ML_Operator_Destroy(&AbsD0_ML);
   ML_Operator_Destroy(&AbsD0P);

@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -59,6 +59,67 @@ namespace TestFEMesh {
 
 template< class ViewType >
 struct VerifyUnpack  ;
+
+template< typename DeviceType, typename T >
+struct VerifyUnpack< KokkosArray::View< T[][3] , DeviceType > >
+{
+  typedef DeviceType     device_type ;
+  typedef typename device_type::size_type  size_type ;
+  typedef size_type               value_type ;
+
+  typedef KokkosArray::View< T[] ,    device_type > buffer_type ;
+  typedef KokkosArray::View< T[][3] , device_type > array_type ;
+
+private:
+
+  array_type  node_coords ;
+  buffer_type buffer ;
+  size_type   node_begin ;
+
+public:
+
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  static void init( value_type & update )
+  { update = 0 ; }
+
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  static void join( volatile value_type & update ,
+                    const volatile value_type & source )
+  { update += source ; }
+
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  void operator()( const size_type i , value_type & update ) const
+  {
+    const size_type node_id = i + node_begin ;
+    const size_type k = i * 3 ;
+
+    const long xb = buffer[k];
+    const long yb = buffer[k+1];
+    const long zb = buffer[k+2];
+    const long xn = node_coords(node_id,0);
+    const long yn = node_coords(node_id,1);
+    const long zn = node_coords(node_id,2);
+
+    if ( xb != xn || yb != yn || zb != zn ) {
+      printf("TestFEMesh::VerifyUnpack failed at %d : node %d : { %ld %ld %ld } != { %ld %ld %ld }\n",
+             (int)i,(int)node_id, xb,yb,zb, xn, yn, zn );
+      ++update ;
+    }
+  }
+
+  static inline
+  size_type unpack( const array_type  & arg_node_coords ,
+                    const size_type     arg_node_begin ,
+                    const size_type     arg_node_count ,
+                    const buffer_type & arg_buffer )
+  {
+    VerifyUnpack op ;
+    op.node_coords = arg_node_coords ;
+    op.buffer      = arg_buffer ;
+    op.node_begin  = arg_node_begin ;
+    return KokkosArray::parallel_reduce( arg_node_count , op );
+  }
+};
 
 }
 

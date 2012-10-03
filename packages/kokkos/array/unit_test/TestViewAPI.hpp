@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,19 +35,14 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
 #include <gtest/gtest.h>
 
-#ifndef KOKKOSARRAY_MACRO_DEVICE
-#error "KOKKOSARRAY_MACRO_DEVICE undefined"
-#endif
-
-#include <stdio.h>
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
@@ -56,15 +51,13 @@
 
 namespace {
 
-template< typename T, class > class TestViewAPI ;
-template< typename T, class > class TestViewOperator ;
 
 /*--------------------------------------------------------------------------*/
 
-template< typename T >
-struct TestViewOperator< T , KOKKOSARRAY_MACRO_DEVICE >
+template< typename T, class DeviceType>
+struct TestViewOperator
 {
-  typedef KOKKOSARRAY_MACRO_DEVICE  device_type ;
+  typedef DeviceType  device_type ;
 
   static const unsigned N = 100 ;
   static const unsigned D = 3 ;
@@ -90,7 +83,7 @@ struct TestViewOperator< T , KOKKOSARRAY_MACRO_DEVICE >
     KokkosArray::parallel_for( N , TestViewOperator() );
   }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void operator()( const unsigned i ) const
   {
     const unsigned X = 0 ;
@@ -127,12 +120,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
 
   typedef int value_type ;
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -165,7 +158,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
   static void apply()
   {
     TestViewOperator_LeftAndRight driver ;
-   
+
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
 
@@ -174,7 +167,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void operator()( const size_type i , value_type & update ) const
   {
     long offset ;
@@ -222,12 +215,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
 
   typedef int value_type ;
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -260,7 +253,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
   static void apply()
   {
     TestViewOperator_LeftAndRight driver ;
-   
+
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
 
@@ -269,7 +262,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void operator()( const size_type i , value_type & update ) const
   {
     long offset ;
@@ -315,12 +308,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
 
   typedef int value_type ;
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -353,7 +346,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
   static void apply()
   {
     TestViewOperator_LeftAndRight driver ;
-   
+
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
 
@@ -362,7 +355,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void operator()( const size_type i , value_type & update ) const
   {
     long offset ;
@@ -406,12 +399,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
 
   typedef int value_type ;
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -444,7 +437,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
   static void apply()
   {
     TestViewOperator_LeftAndRight driver ;
-   
+
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
 
@@ -453,7 +446,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void operator()( const size_type i , value_type & update ) const
   {
     long offset ;
@@ -495,12 +488,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
 
   typedef int value_type ;
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -533,7 +526,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
   static void apply()
   {
     TestViewOperator_LeftAndRight driver ;
-   
+
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
 
@@ -542,7 +535,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void operator()( const size_type i , value_type & update ) const
   {
     long offset ;
@@ -582,12 +575,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
 
   typedef int value_type ;
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -620,7 +613,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
   static void apply()
   {
     TestViewOperator_LeftAndRight driver ;
-   
+
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
 
@@ -629,7 +622,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void operator()( const size_type i , value_type & update ) const
   {
     long offset ;
@@ -667,12 +660,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
 
   typedef int value_type ;
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -705,7 +698,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
   static void apply()
   {
     TestViewOperator_LeftAndRight driver ;
-   
+
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.lsh ) <= driver.left_alloc );
     ASSERT_TRUE( (long) KokkosArray::Impl::cardinality_count( driver.rsh ) <= driver.right_alloc );
 
@@ -714,7 +707,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void operator()( const size_type i , value_type & update ) const
   {
     long offset ;
@@ -743,11 +736,11 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
 
 /*--------------------------------------------------------------------------*/
 
-template<typename T>
-class TestViewAPI< T, KOKKOSARRAY_MACRO_DEVICE >
+template< typename T, class DeviceType >
+class TestViewAPI
 {
 public:
-  typedef KOKKOSARRAY_MACRO_DEVICE  device ;
+  typedef DeviceType  device ;
   typedef KokkosArray::Host    host ;
 
   TestViewAPI()

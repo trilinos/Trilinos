@@ -180,11 +180,31 @@ void HostInternal::execute( const HostThreadWorker & worker )
 void HostThreadWorker::execute() const
 { HostInternal::singleton().execute( *this ); }
 
+void HostInternal::execute_serial( const HostThreadWorker & worker )
+{
+  verify_inactive("execute_serial(...)");
+
+  // Worker threads are verified to be in the ThreadInactive state.
+
+  m_worker = & worker ;
+
+  for ( unsigned i = m_thread_count ; 1 < i ; ) {
+    --i ;
+    m_thread[i]->set(  HostThread::ThreadActive );
+    m_thread[i]->wait( HostThread::ThreadActive );
+  }
+
+  // Execute on the master thread,
+  worker.execute_on_thread( m_master_thread );
+
+  // Worker threads are returned to the ThreadInactive state.
+  m_worker = NULL ;
+}
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-HostInternal::~HostInternal()
-{}
+HostInternal::~HostInternal() {}
 
 HostInternal::HostInternal()
   : m_worker_block()
@@ -197,6 +217,8 @@ HostInternal::HostInternal()
   , m_gang_count( 1 )
   , m_worker_count( 1 )
   , m_work_chunk( m_cache_line_size / sizeof(void*) )
+  , m_reduce_scratch_size( 0 )
+  , m_reduce_scratch( 0 )
 {
   m_worker = NULL ;
 
@@ -220,6 +242,70 @@ HostInternal::HostInternal()
     m_master_thread.m_fan[i] = 0 ;
   }
 }
+
+//----------------------------------------------------------------------------
+
+inline
+void HostInternal::resize_reduce_thread( HostThread & thread ) const
+{
+  if ( thread.m_reduce ) {
+    free( thread.m_reduce );
+    thread.m_reduce = 0 ;
+  }
+
+  if ( m_reduce_scratch_size ) {
+    thread.m_reduce = malloc( m_reduce_scratch_size );
+
+    // Guaranteed multiple of 'unsigned'
+
+    unsigned * ptr = (unsigned *)( thread.m_reduce );
+    unsigned * const end = ptr + m_reduce_scratch_size / sizeof(unsigned );
+  
+    // touch on this thread
+    while ( ptr < end ) *ptr++ = 0 ;
+  }
+}
+
+struct HostWorkerResizeReduce : public HostThreadWorker
+{
+  void execute_on_thread( HostThread & ) const ;
+
+  ~HostWorkerResizeReduce() {}
+  HostWorkerResizeReduce() {}
+};
+
+void HostWorkerResizeReduce::execute_on_thread( HostThread & thread ) const
+{ HostInternal::singleton().resize_reduce_thread( thread ); }
+
+
+inline
+void * HostInternal::reduce_scratch() const
+{ return m_reduce_scratch ; }
+
+inline
+void HostInternal::resize_reduce_scratch( unsigned size )
+{
+  if ( 0 == size || m_reduce_scratch_size < size ) {
+    // Round up to cache line size:
+    const unsigned rem = size % m_cache_line_size ;
+
+    if ( rem ) size += m_cache_line_size - rem ;
+  
+    m_reduce_scratch_size = size ;
+
+    const HostWorkerResizeReduce work ;
+
+    execute_serial( work );
+
+    m_reduce_scratch = m_master_thread.m_reduce ;
+  }
+}
+
+void host_resize_scratch_reduce( unsigned size )
+{ HostInternal::singleton().resize_reduce_scratch( size ); }
+
+void * host_scratch_reduce()
+{ return HostInternal::singleton().reduce_scratch(); }
 
 //----------------------------------------------------------------------------
 
@@ -285,6 +371,8 @@ bool HostInternal::bind_thread( const unsigned thread_rank ) const
 void HostInternal::finalize()
 {
   verify_inactive("finalize()");
+
+  resize_reduce_scratch( 0 );
 
   // Release and clear worker threads:
   while ( 1 < m_thread_count ) {
@@ -501,6 +589,8 @@ void HostInternal::initialize( const unsigned gang_count ,
 
     throw std::runtime_error( msg.str() );
   }
+
+  resize_reduce_scratch( 1024 );
 }
 
 //----------------------------------------------------------------------------

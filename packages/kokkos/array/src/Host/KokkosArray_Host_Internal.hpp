@@ -82,8 +82,6 @@ public:
 class HostInternal {
 protected:
 
-  enum { THREAD_COUNT_MAX = 1023 };
-
   HostWorkerBlock  m_worker_block ;
   int              m_node_rank ;     // Rank of the process' NUMA node, if set
   unsigned         m_node_count ;    // Count of NUMA nodes
@@ -94,6 +92,8 @@ protected:
   unsigned         m_gang_count ;    // Number of NUMA nodes used
   unsigned         m_worker_count ;  // Number of threads per NUMA node
   unsigned         m_work_chunk ;    // Granularity of work partitioning
+  unsigned         m_reduce_scratch_size ;   // Sizeof reduction memory
+  void           * m_reduce_scratch ;
   HostThread       m_master_thread ;
   //! Array of all worker threads (including master); accessible to the threads.
   HostThread     * m_thread[ HostThread::max_thread_count ];
@@ -128,6 +128,8 @@ private:
 
   void activate_threads();
 
+  void execute_serial( const HostThreadWorker & worker );
+
 public:
   /// \brief Assert at run time that the calling worker thread is inactive.
   ///
@@ -159,6 +161,11 @@ public:
   void driver( const size_t );
 
   bool is_master_thread() const ;
+
+  void * reduce_scratch() const ;
+
+  void resize_reduce_scratch( unsigned size );
+  void resize_reduce_thread( HostThread & thread ) const ;
 
   //! Access the one HostInternal instance.
   static HostInternal & singleton();

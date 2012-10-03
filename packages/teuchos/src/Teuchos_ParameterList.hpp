@@ -490,7 +490,7 @@ public:
    * sublist in <tt>*this</tt> are compared against.
    *
    * \param depth [in] Determines the number of levels of depth that the
-   * validation will recurse into.  A value of <tt>dpeth=0</tt> means that
+   * validation will recurse into.  A value of <tt>depth=0</tt> means that
    * only the top level parameters and sublists will be checked.  Default:
    * <tt>depth = large number</tt>.
    *
@@ -541,7 +541,7 @@ public:
    * sublist in <tt>*this</tt> are compared against.
    *
    * \param depth [in] Determines the number of levels of depth that the
-   * validation will recurse into.  A value of <tt>dpeth=0</tt> means that
+   * validation will recurse into.  A value of <tt>depth=0</tt> means that
    * only the top level parameters and sublists will be checked.  Default:
    * <tt>depth = large number</tt>.
    *

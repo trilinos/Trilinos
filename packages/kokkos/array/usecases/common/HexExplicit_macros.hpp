@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -46,10 +46,7 @@
 namespace Explicit {
 
 template < class Device >
-struct Hex8Functions ;
-
-template<>
-struct Hex8Functions< KOKKOSARRAY_MACRO_DEVICE >
+struct Hex8Functions
 {
   static const unsigned SpatialDim    = 3 ;
   static const unsigned ElemNodeCount = 8 ;
@@ -90,8 +87,7 @@ struct Hex8Functions< KOKKOSARRAY_MACRO_DEVICE >
   //--------------------------------------------------------------------------
 
   template< typename Scalar >
-  static inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  static KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   Scalar dot8( const Scalar * a , const Scalar * b )
   { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3] +
            a[4] * b[4] + a[5] * b[5] + a[6] * b[6] + a[7] * b[7] ; }
@@ -99,8 +95,7 @@ struct Hex8Functions< KOKKOSARRAY_MACRO_DEVICE >
   //--------------------------------------------------------------------------
 
   template< typename CoordScalarType , typename Scalar >
-  static inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  static KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void grad( const CoordScalarType x[] ,
              const CoordScalarType z[] ,
                    Scalar grad_y[] )
@@ -108,29 +103,29 @@ struct Hex8Functions< KOKKOSARRAY_MACRO_DEVICE >
     const Scalar R42=(x[3] - x[1]);
     const Scalar R52=(x[4] - x[1]);
     const Scalar R54=(x[4] - x[3]);
-  
+
     const Scalar R63=(x[5] - x[2]);
     const Scalar R83=(x[7] - x[2]);
     const Scalar R86=(x[7] - x[5]);
-  
+
     const Scalar R31=(x[2] - x[0]);
     const Scalar R61=(x[5] - x[0]);
     const Scalar R74=(x[6] - x[3]);
-  
+
     const Scalar R72=(x[6] - x[1]);
     const Scalar R75=(x[6] - x[4]);
     const Scalar R81=(x[7] - x[0]);
-  
+
     const Scalar t1=(R63 + R54);
     const Scalar t2=(R61 + R74);
     const Scalar t3=(R72 + R81);
-  
+
     const Scalar t4 =(R86 + R42);
     const Scalar t5 =(R83 + R52);
     const Scalar t6 =(R75 + R31);
-  
+
     //  Calculate Y gradient from X and Z data
-  
+
     grad_y[0] = (z[1] *  t1) - (z[2] * R42) - (z[3] *  t5)  + (z[4] *  t4) + (z[5] * R52) - (z[7] * R54);
     grad_y[1] = (z[2] *  t2) + (z[3] * R31) - (z[0] *  t1)  - (z[5] *  t6) + (z[6] * R63) - (z[4] * R61);
     grad_y[2] = (z[3] *  t3) + (z[0] * R42) - (z[1] *  t2)  - (z[6] *  t4) + (z[7] * R74) - (z[5] * R72);
@@ -140,10 +135,9 @@ struct Hex8Functions< KOKKOSARRAY_MACRO_DEVICE >
     grad_y[6] = (z[7] *  t1) - (z[5] *  t5)  - (z[4] * R86) + (z[2] *  t4) - (z[1] * R63) + (z[3] * R83);
     grad_y[7] = (z[4] *  t2) - (z[6] *  t1)  + (z[5] * R75) - (z[3] *  t6) - (z[2] * R74) + (z[0] * R54);
   }
-  
+
   template< typename CoordScalarType , typename Scalar >
-  static inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  static KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void grad( const CoordScalarType x[] ,
              const CoordScalarType y[] ,
              const CoordScalarType z[] ,
@@ -159,8 +153,7 @@ struct Hex8Functions< KOKKOSARRAY_MACRO_DEVICE >
   //--------------------------------------------------------------------------
 
   template< typename Scalar >
-  static inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  static KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void polar_decomp( const Scalar dt ,
                      const Scalar v_gr[] ,
                            Scalar stretch[] /* INOUT */ ,
@@ -310,8 +303,7 @@ struct Hex8Functions< KOKKOSARRAY_MACRO_DEVICE >
   //--------------------------------------------------------------------------
 
   template< typename Scalar >
-  static inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  static KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void rotate_tensor( const Scalar str_ten[] ,
                       const Scalar rot[] ,
                             Scalar rot_str[] )
@@ -343,8 +335,7 @@ struct Hex8Functions< KOKKOSARRAY_MACRO_DEVICE >
   //--------------------------------------------------------------------------
 
   template< typename Scalar >
-  static inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  static KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void rotate_tensor_backward( const Scalar s_n[] ,
                                const Scalar r_n[] ,
                                      Scalar rot_stress[] )
@@ -376,8 +367,7 @@ struct Hex8Functions< KOKKOSARRAY_MACRO_DEVICE >
   //--------------------------------------------------------------------------
 
   template< typename Scalar , typename ScalarStress >
-  static inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  static KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void update_stress( const Scalar dt ,
                       const Scalar two_mu ,
                       const Scalar bulk_modulus ,
@@ -400,8 +390,7 @@ struct Hex8Functions< KOKKOSARRAY_MACRO_DEVICE >
   //--------------------------------------------------------------------------
 
   template< typename Scalar >
-  static inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  static KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void comp_force( const Scalar vx[] ,
                    const Scalar vy[] ,
                    const Scalar vz[] ,

@@ -9,6 +9,7 @@
 #include "ml_epetra.h"
 #include "ml_epetra_utils.h"
 #include "ml_MultiLevelPreconditioner.h"
+#include "ml_RefMaxwell_Utils.h"
 #include "ml_EdgeMatrixFreePreconditioner.h"
 #include "ml_FaceMatrixFreePreconditioner.h"
 #include "ml_ValidateParameters.h"
@@ -18,10 +19,6 @@
 using Teuchos::rcp;
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
-
-
-// ================================================ ====== ==== ==== == = 
-extern double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);
 
 // ================================================ ====== ==== ==== == = 
 ML_Epetra::GradDivPreconditioner::GradDivPreconditioner(const Epetra_CrsMatrix & K2_Matrix,

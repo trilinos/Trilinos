@@ -181,8 +181,7 @@ int generate_loadbal(Machine_Description* machine,
   int     flag=0, arch=0, refine=0, num_level=0, totalproc=0, glob_method=0;
   int     start_proc = 0;
 
-  size_t *tmp_start=NULL;
-  INT    *tmp_adj=NULL;
+  INT    *tmp_start=NULL, *tmp_adj=NULL;
   int    *tmp_vwgts=NULL;
   size_t tmp_nv;
   int    *nprocg=NULL, *nelemg=NULL, *nadjg=NULL;
@@ -472,7 +471,7 @@ int generate_loadbal(Machine_Description* machine,
       exit(-1);
     }
     else
-      flag = interface(problem->num_vertices, (size_t*)TOPTR(graph->start), (int*)TOPTR(graph->adj),
+      flag = interface(problem->num_vertices, (int*)TOPTR(graph->start), (int*)TOPTR(graph->adj),
                        TOPTR(weight->vertices), TOPTR(weight->edges), x_ptr, y_ptr, z_ptr,
                        (char*)assignfile, (char *)NULL, lb->vertex2proc, tmp_arch,
                        tmp_lev, dim, goal, glob_method, refine,
@@ -525,7 +524,7 @@ int generate_loadbal(Machine_Description* machine,
      * to pass into Chaco
      */
     if (problem->alloc_graph == ELB_TRUE) {
-      tmp_start = (size_t *) malloc((max_vtx + 1) * sizeof(size_t));
+      tmp_start = (INT *) malloc((max_vtx + 1) * sizeof(INT));
       tmp_adj = (INT *) malloc(max_adj * sizeof(INT));
       if (!tmp_start || !tmp_adj) {
         Gen_Error(0, "fatal: insufficient memory");
@@ -778,7 +777,7 @@ int generate_loadbal(Machine_Description* machine,
       else {
         printf("===================Call Chaco===========================\n");
         time1 = get_time();
-        flag = interface(tmp_nv, (size_t*)tmp_start, (int*)tmp_adj,
+        flag = interface(tmp_nv, (int*)tmp_start, (int*)tmp_adj,
                          tmp_vwgts, tmp_ewgts, tmp_x, tmp_y, tmp_z,
                          (char*)assignfile, (char *)NULL, tmp_v2p, arch,
                          num_level, tmpdim, goal, glob_method, refine,
