@@ -45,6 +45,8 @@
 #define KOKKOSARRAY_PARALLELREDUCE_HPP
 
 #include <cstddef>
+#include <stdexcept>
+#include <sstream>
 #include <KokkosArray_Macros.hpp>
 #include <impl/KokkosArray_ReduceOperator.hpp>
 
@@ -157,6 +159,8 @@ parallel_reduce( const size_t work_count ,
   return finalize.result();
 }
 
+//----------------------------------------------------------------------------
+
 template< class FunctorType , class FinalizeType >
 void parallel_reduce( const size_t work_count ,
                       const FunctorType & functor ,
@@ -167,6 +171,42 @@ void parallel_reduce( const size_t work_count ,
   Impl::ParallelReduce< FunctorType, FunctorType, FinalizeType, device_type >
     ( work_count , functor , finalize );
 }
+
+//----------------------------------------------------------------------------
+
+template< class FunctorType , typename MemberType >
+void parallel_reduce( const size_t work_count ,
+                      const FunctorType & functor ,
+                      MemberType value[] ,
+                      const unsigned count )
+{
+  typedef typename FunctorType::device_type device_type ;
+  typedef typename FunctorType::value_type  value_type ;
+
+  typedef
+    typename Impl::StaticAssertSame< value_type , MemberType[] >::type
+      ok_match_type ;
+
+  if ( functor.value_count != count ) {
+    std::ostringstream msg ;
+    msg << "KokkosArray::parallel_reduce( <array_type> ) ERROR "
+        << "given incompatible array lengths: functor.value_count("
+        << functor.value_count << ") != count(" << count << ")" ;
+    throw std::runtime_error(msg.str());
+  }
+
+  typedef Impl::ParallelReduceFunctorValue< value_type , device_type >
+    FinalizeType ; 
+
+  const FinalizeType finalize( functor.value_count );
+
+  Impl::ParallelReduce< FunctorType, FunctorType, FinalizeType, device_type >
+    ( work_count , functor , finalize );
+
+  finalize.result( value );
+}
+
+//----------------------------------------------------------------------------
 
 } // namespace KokkosArray
 

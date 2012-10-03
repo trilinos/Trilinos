@@ -208,13 +208,10 @@ public:
   void run_test_dynamic( const size_type & nwork )
   {
     typedef Test::RuntimeReduceFunctor< ScalarType , device_type > functor_type ;
-    typedef KokkosArray::Impl::ParallelReduceFunctorValue< ScalarType[] , device_type > finalize_type ;
 
     enum { Repeat = 100 };
 
     ScalarType result[ Repeat ][3] ;
-
-    const finalize_type finalize(3);
 
     const unsigned long nw   = nwork ;
     const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )
@@ -222,11 +219,7 @@ public:
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
 
-//      KokkosArray::parallel_reduce( nwork , functor_type(nwork) , result[i]  );
-
-      KokkosArray::parallel_reduce( nwork , functor_type(nwork) , finalize );
-
-      finalize.result( result[i] );
+      KokkosArray::parallel_reduce( nwork , functor_type(nwork) , result[i] , 3 );
     }
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {

@@ -896,7 +896,6 @@ public:
   typedef          Cuda::size_type        size_type ;
   typedef typename ValueOper::value_type  value_type ;
 
-  // typedef CudaReduceShared< ValueOper , FinalizeType , true > ReduceType ;
   typedef CudaReduceShared< ValueOper , FinalizeType > ReduceType ;
 
   //----------------------------------------------------------------------
@@ -1107,7 +1106,6 @@ public:
   typedef CudaMultiFunctorParallelReduceMember<void,ValueOper,FinalizeType> base_type ;
   typedef ParallelReduce< FunctorType , ValueOper , FinalizeType , Cuda >  driver_type ;
   
-  // typedef Impl::CudaReduceShared< ValueOper , FinalizeType , true > ReduceType ;
   typedef Impl::CudaReduceShared< ValueOper , FinalizeType > ReduceType ;
 
   typedef Cuda            device_type ;
@@ -1153,7 +1151,6 @@ public:
 
 private:
 
-  // typedef Impl::CudaReduceShared< ValueOper , FinalizeType , true > ReduceType ;
   typedef Impl::CudaReduceShared< ValueOper , FinalizeType > ReduceType ;
 
   typedef Impl::CudaMultiFunctorParallelReduceMember< void , ValueOper , FinalizeType > MemberType ;
