@@ -194,19 +194,17 @@ public:
  *          ValueOper::join( update , input )
  *          View< ValueOper::value_type , ... >
  */
-template < class ValueOper , class LayoutType , class DeviceType >
+template < class ValueOper , typename ValueType , class LayoutType , class DeviceType >
 struct ReduceOperator< ValueOper ,
-                       View< typename ValueOper::value_type ,
-                             LayoutType ,
-                             DeviceType > >
+                       View< ValueType , LayoutType , DeviceType > ,
+                       ValueType >
 {
 private:
 
   ReduceOperator();
   ReduceOperator & operator = ( const ReduceOperator & );
 
-  typedef View< typename ValueOper::value_type , LayoutType , DeviceType >
-    view_type ;
+  typedef View< ValueType , LayoutType , DeviceType > view_type ;
 
   view_type m_view ;
 
@@ -249,6 +247,74 @@ public:
   {
     typedef const value_type * cvp ;
     *m_view = *cvp(input);
+  }
+};
+
+//----------------------------------------------------------------------------
+/** \brief  The reduce operator is the aggregate of
+ *          ValueOper::value_type
+ *          ValueOper::init( update , value_count )
+ *          ValueOper::join( update , input , value_count )
+ *          View< value_type , ... >
+ */
+template < class ValueOper , typename MemberType , class LayoutType , class DeviceType >
+struct ReduceOperator< ValueOper ,
+                       View< MemberType[] , LayoutType , DeviceType > ,
+                       MemberType[] >
+{
+private:
+
+  ReduceOperator();
+  ReduceOperator & operator = ( const ReduceOperator & );
+
+  typedef View< MemberType[] , LayoutType , DeviceType > view_type ;
+
+  view_type m_view ;
+
+public:
+
+  typedef MemberType   value_type[] ;
+  typedef MemberType * reference_type ;
+
+  inline static
+  unsigned value_size( const view_type & v )
+  { return sizeof(MemberType) * v.dimension_0(); }
+
+  explicit ReduceOperator( const view_type & v )
+    : m_view( v )
+    {}
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  ReduceOperator( const ReduceOperator & rhs )
+    : m_view( rhs.m_view ) {}
+  
+  KOKKOSARRAY_INLINE_FUNCTION
+  unsigned value_size() const
+    { return sizeof(MemberType) * m_view.dimension_0(); }
+
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  void join( void * update , const void * input ) const
+  {
+    typedef       volatile MemberType * vvp ;
+    typedef const volatile MemberType * cvvp ;
+
+    ValueOper::join( vvp(update) , cvvp(input) , m_view.dimension_0() );
+  }
+
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  reference_type init( void * update ) const
+  {
+    reference_type ref = (reference_type) update ;
+    ValueOper::init( ref , m_view.dimension_0() );
+    return ref ;
+  }
+
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  void finalize( const void * input ) const
+  {
+    const MemberType * const v = (const MemberType *) input ;
+    for ( typename DeviceType::size_type
+          i = 0 ; i < m_view.dimension_0() ; ++i ) { m_view(i) = v[i] ; }
   }
 };
 

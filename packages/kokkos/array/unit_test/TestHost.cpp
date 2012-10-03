@@ -115,6 +115,10 @@ TEST_F( host, double_reduce_dynamic ) {
   TestReduceDynamic< double ,   KokkosArray::Host >( 1000000 );
 }
 
+TEST_F( host, long_reduce_dynamic_view ) {
+  TestReduceDynamicView< long ,   KokkosArray::Host >( 1000000 );
+}
+
 TEST_F( host, long_multi_reduce) {
   TestReduceMulti< long , KokkosArray::Host >( 1000000 , 7 );
 }
