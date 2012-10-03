@@ -125,7 +125,7 @@ void AZ_fix_pt(double b[], double x[], double weight[], int options[],
   double       alpha = 1.0;
   double       *res, actual_residual = -1.0;
   double       rec_residual;
-  double       scaled_r_norm, epsilon;
+  double       scaled_r_norm;
   int          *data_org, str_leng, first_time = AZ_TRUE;
   double       *dummy = (double *) 0;
   char         label[64],suffix[32], prefix[64];
