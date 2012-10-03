@@ -62,7 +62,7 @@ namespace ML_Epetra{
   /**********************************************/
   /***      Chebyshev (Including Block)       ***/
   /**********************************************/
-  if(SmooType=="Chebyshev" || SmooType=="IFPACK-Chebyshev" || SmooType=="IFPACK-Block Chebyshev"){
+  if(SmooType=="Chebyshev" || SmooType=="MLS" || SmooType=="IFPACK-Chebyshev" || SmooType=="IFPACK-Block Chebyshev"){
     bool allocated_inv_diagonal=false;
     int MaximumIterations = List.get("eigen-analysis: max iters", 10);
     string EigenType_ = List.get("eigen-analysis: type", "cg");
