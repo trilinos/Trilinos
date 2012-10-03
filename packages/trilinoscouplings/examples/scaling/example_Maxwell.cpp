@@ -1729,6 +1729,7 @@ int main(int argc, char *argv[]) {
    List22.set("ML output",10);
    List11c.set("coarse: type","Amesos-KLU");
    List11c.set("ML output",10);
+   List11c.set("PDE equations",3);
    Epetra_FEVector xh(rhsVector);
 
    MassMatrixC.SetLabel("M1");
