@@ -84,8 +84,12 @@ void test_device_cuda_crsarray() {
 
 void test_device_cuda_reduce() {
   TestReduce< long ,   KokkosArray::Cuda >( 10000000 );
-  TestReduce< long ,   KokkosArray::Cuda >( 1000000 );
   TestReduce< double , KokkosArray::Cuda >( 1000000 );
+}
+
+void test_device_cuda_reduce_dynamic() {
+  TestReduceDynamic< long ,   KokkosArray::Cuda >( 10000000 );
+  TestReduceDynamic< double , KokkosArray::Cuda >( 1000000 );
 }
 
 void test_device_cuda_multi_reduce() {

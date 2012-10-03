@@ -100,11 +100,16 @@ template< typename ScalarType , class DeviceType >
 class RuntimeReduceFunctor
 {
 public:
-  typedef DeviceType                       device_type ;
+  // Required for functor:
+  typedef DeviceType  device_type ;
+  typedef ScalarType  value_type[] ;
+  const unsigned      value_count ;
+
+
+  // Unit test details:
+
   typedef typename device_type::size_type  size_type ;
 
-  typedef ScalarType  value_type[] ;
-  const size_type     value_count ;
   const size_type     nwork ;
 
   RuntimeReduceFunctor( const size_type & arg_nwork )
@@ -159,7 +164,6 @@ public:
   TestReduce( const size_type & nwork )
   {
     run_test(nwork);
-    run_test_runtime(nwork);
   }
 
   void run_test( const size_type & nwork )
@@ -185,8 +189,23 @@ public:
       ASSERT_EQ( result[i].value[2], (ScalarType) nsum);
     }
   }
+};
 
-  void run_test_runtime( const size_type & nwork )
+template< typename ScalarType , class DeviceType >
+class TestReduceDynamic
+{
+public:
+  typedef DeviceType    device_type ;
+  typedef typename device_type::size_type size_type ;
+
+  //------------------------------------
+
+  TestReduceDynamic( const size_type & nwork )
+  {
+    run_test_dynamic(nwork);
+  }
+
+  void run_test_dynamic( const size_type & nwork )
   {
     typedef Test::RuntimeReduceFunctor< ScalarType , device_type > functor_type ;
     typedef KokkosArray::Impl::ParallelReduceFunctorValue< ScalarType[] , device_type > finalize_type ;
@@ -202,7 +221,11 @@ public:
                                       : (nw/2) * ( nw + 1 );
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
+
+//      KokkosArray::parallel_reduce( nwork , functor_type(nwork) , result[i]  );
+
       KokkosArray::parallel_reduce( nwork , functor_type(nwork) , finalize );
+
       finalize.result( result[i] );
     }
 
