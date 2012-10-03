@@ -110,7 +110,7 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
 
-  panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,lof);
+  panzer::AssemblyEngine_TemplateBuilder builder(fmb,lof);
   ae_tm_.buildObjects(builder);
 
   // Setup parameters
@@ -150,7 +150,7 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
 
-  panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,lof);
+  panzer::AssemblyEngine_TemplateBuilder builder(fmb,lof);
   ae_tm_.buildObjects(builder);
 
   // Setup parameters
@@ -179,7 +179,7 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
 
-  panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,lof);
+  panzer::AssemblyEngine_TemplateBuilder builder(fmb,lof);
   ae_tm_.buildObjects(builder);
 
   // Setup parameters

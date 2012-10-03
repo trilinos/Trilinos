@@ -58,7 +58,7 @@ namespace panzer {
 namespace panzer {
 
   //! Class for the matrix and residual fill.
-  template <typename EvalT, typename LO, typename GO>
+  template <typename EvalT>
     class AssemblyEngine : public panzer::Base {
 
   public:    

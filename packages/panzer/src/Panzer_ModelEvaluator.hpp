@@ -179,7 +179,7 @@ private: // data members
 
   Teuchos::RCP<panzer::FieldManagerBuilder> fmb_;
   mutable Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_; // These objects are basically the same
-  mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits,LO,GO> ae_tm_;     // they control and provide access to evaluate
+  mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm_;     // they control and provide access to evaluate
   std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_;
 
   mutable Teuchos::Array<panzer::ParamVec> parameter_vector_;

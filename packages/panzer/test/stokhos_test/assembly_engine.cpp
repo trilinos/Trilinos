@@ -234,8 +234,8 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
   fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
-  panzer::AssemblyEngine_TemplateManager<panzer::Traits,short,int> ae_tm;
-  panzer::AssemblyEngine_TemplateBuilder<short,int> builder(fmb,linObjFactory);
+  panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm;
+  panzer::AssemblyEngine_TemplateBuilder builder(fmb,linObjFactory);
   ae_tm.buildObjects(builder);
 
   // setup deterministic linear object containers

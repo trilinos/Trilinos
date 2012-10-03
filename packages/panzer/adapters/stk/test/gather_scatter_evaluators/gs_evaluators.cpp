@@ -206,8 +206,8 @@ namespace panzer {
 
     fmb->writeVolumeGraphvizDependencyFiles("field_manager",physicsBlocks);
 
-    panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm;
-    panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,linObjFactory);
+    panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm;
+    panzer::AssemblyEngine_TemplateBuilder builder(fmb,linObjFactory);
     ae_tm.buildObjects(builder);
 
     RCP<panzer::EpetraLinearObjContainer> eGhosted 

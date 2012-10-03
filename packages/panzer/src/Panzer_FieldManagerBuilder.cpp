@@ -77,13 +77,13 @@ void panzer::FieldManagerBuilder::print(std::ostream& os) const
 }
 
 //=======================================================================
-//=======================================================================
 void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
                                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks, 
 					    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
 					    const Teuchos::ParameterList& closure_models,
                                             const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
-					    const Teuchos::ParameterList& user_data)
+					    const Teuchos::ParameterList& user_data,
+                                            const GenericEvaluatorFactory & gEvalFact)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -110,6 +110,9 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
     if(!physicsBlockScatterDisabled())
       pb->buildAndRegisterScatterEvaluators(*fm,lo_factory,user_data);
     pb->buildAndRegisterClosureModelEvaluators(*fm,cm_factory,closure_models,user_data);
+ 
+    // register additional model evaluator from the generic evaluator factory
+    gEvalFact.registerEvaluators(*fm,*pb);
 
     // build the setup data using passed in information
     Traits::SetupData setupData;
@@ -120,6 +123,18 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
     element_block_names_.push_back(blockId);
     phx_volume_field_managers_.push_back(fm); 
   }
+}
+
+//=======================================================================
+void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
+                                            const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks, 
+					    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+					    const Teuchos::ParameterList& closure_models,
+                                            const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
+					    const Teuchos::ParameterList& user_data)
+{
+   EmptyEvaluatorFactory eef;
+   setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,lo_factory,user_data,eef);
 }
 
 //=======================================================================

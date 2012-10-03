@@ -52,8 +52,8 @@
 
 //===========================================================================
 //===========================================================================
-template <typename EvalT,typename LO,typename GO>
-panzer::AssemblyEngine<EvalT,LO,GO>::
+template <typename EvalT>
+panzer::AssemblyEngine<EvalT>::
 AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof)
   : m_field_manager_builder(fmb), m_lin_obj_factory(lof)
@@ -63,8 +63,8 @@ AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
 
 //===========================================================================
 //===========================================================================
-template <typename EvalT,typename LO,typename GO>
-void panzer::AssemblyEngine<EvalT,LO,GO>::
+template <typename EvalT>
+void panzer::AssemblyEngine<EvalT>::
 evaluate(const panzer::AssemblyEngineInArgs& in)
 {
   typedef LinearObjContainer LOC;
@@ -103,8 +103,8 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
 
 //===========================================================================
 //===========================================================================
-template <typename EvalT,typename LO,typename GO>
-void panzer::AssemblyEngine<EvalT,LO,GO>::
+template <typename EvalT>
+void panzer::AssemblyEngine<EvalT>::
 evaluateVolume(const panzer::AssemblyEngineInArgs& in)
 {
   const std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > &
@@ -146,8 +146,8 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
 
 //===========================================================================
 //===========================================================================
-template <typename EvalT,typename LO,typename GO>
-void panzer::AssemblyEngine<EvalT,LO,GO>::
+template <typename EvalT>
+void panzer::AssemblyEngine<EvalT>::
 evaluateNeumannBCs(const panzer::AssemblyEngineInArgs& in)
 {
   this->evaluateBCs(panzer::BCT_Neumann, in);
@@ -155,8 +155,8 @@ evaluateNeumannBCs(const panzer::AssemblyEngineInArgs& in)
 
 //===========================================================================
 //===========================================================================
-template <typename EvalT,typename LO,typename GO>
-void panzer::AssemblyEngine<EvalT,LO,GO>::
+template <typename EvalT>
+void panzer::AssemblyEngine<EvalT>::
 evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
 {
   typedef LinearObjContainer LOC;
@@ -196,8 +196,8 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
 
 //===========================================================================
 //===========================================================================
-template <typename EvalT,typename LO,typename GO>
-void panzer::AssemblyEngine<EvalT,LO,GO>::
+template <typename EvalT>
+void panzer::AssemblyEngine<EvalT>::
 evaluateBCs(const panzer::BCType bc_type,
 	    const panzer::AssemblyEngineInArgs& in,
             const Teuchos::RCP<LinearObjContainer> preEval_loc)

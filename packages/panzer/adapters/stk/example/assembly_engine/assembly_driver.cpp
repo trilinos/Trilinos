@@ -277,8 +277,8 @@ int main(int argc,char * argv[])
    /////////////////////////////////////////////////////////////
 
    // build assembly engine
-   panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm;
-   panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,linObjFactory);
+   panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm;
+   panzer::AssemblyEngine_TemplateBuilder builder(fmb,linObjFactory);
    ae_tm.buildObjects(builder);
 
    // setup linear algebra and solve 

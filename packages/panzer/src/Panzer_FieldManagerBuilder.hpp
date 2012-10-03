@@ -70,6 +70,17 @@ namespace PHX {
 
 namespace panzer {
 
+  class GenericEvaluatorFactory {
+  public:
+    virtual bool registerEvaluators(PHX::FieldManager<panzer::Traits> & fm, const PhysicsBlock & pb) const = 0;
+  };
+
+  class EmptyEvaluatorFactory : public GenericEvaluatorFactory {
+  public:
+    bool registerEvaluators(PHX::FieldManager<panzer::Traits> & fm, const PhysicsBlock & pb) const 
+    { return false; }
+  };
+
   class FieldManagerBuilder {
 
   public:
@@ -94,6 +105,19 @@ namespace panzer {
       std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >&
       getVolumeFieldManagers() const {return phx_volume_field_managers_;}
 
+    //! Look up field manager by an element block ID
+    Teuchos::RCP< PHX::FieldManager<panzer::Traits> >
+    getVolumeFieldManager(const std::string & blockId) const 
+    {
+       const std::vector<std::string> & blockNames = getElementBlockNames();
+       std::vector<std::string>::const_iterator itr = std::find(blockNames.begin(),blockNames.end(),blockId);
+       TEUCHOS_ASSERT(itr!=blockNames.end());
+
+       // get volume field manager associated with the block ID
+       int index = itr - blockNames.begin();
+       return getVolumeFieldManagers()[index];
+    }
+
     const std::vector<std::string> &
       getElementBlockNames() const {return element_block_names_;}
 
@@ -116,6 +140,13 @@ namespace panzer {
 				  const Teuchos::ParameterList& closure_models,
                                   const LinearObjFactory<panzer::Traits> & lo_factory,
 				  const Teuchos::ParameterList& user_data);
+
+    void setupVolumeFieldManagers(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+				  const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+				  const Teuchos::ParameterList& closure_models,
+                                  const LinearObjFactory<panzer::Traits> & lo_factory,
+				  const Teuchos::ParameterList& user_data,
+                                  const GenericEvaluatorFactory & gEvalFact);
 
     /** Build the BC field managers.
       */
@@ -163,7 +194,5 @@ namespace panzer {
 std::ostream& operator<<(std::ostream& os, const panzer::FieldManagerBuilder & rfd);
 
 } // namespace panzer
-
-// #include "Panzer_FieldManagerBuilder_impl.hpp"
 
 #endif

@@ -97,7 +97,7 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
 
   TEUCHOS_ASSERT(lof_!=Teuchos::null);
 
-  panzer::AssemblyEngine_TemplateBuilder<LO,GO> builder(fmb,lof);
+  panzer::AssemblyEngine_TemplateBuilder builder(fmb,lof);
   ae_tm_.buildObjects(builder);
 
   //
