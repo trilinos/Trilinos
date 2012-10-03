@@ -111,7 +111,7 @@ namespace MueLu {
     // Read top-level of the parameter list
     //
 
-    // default values == ML defaults
+    // hard-coded default values == ML defaults according to the manual
     MUELU_READ_PARAM(paramList, "ML output",                                int,                   0,       verbosityLevel);
     MUELU_READ_PARAM(paramList, "max levels",                               int,                  10,       maxLevels);
     MUELU_READ_PARAM(paramList, "PDE equations",                            int,                   1,       nDofsPerNode);
@@ -121,7 +121,7 @@ namespace MueLu {
     MUELU_READ_PARAM(paramList, "aggregation: type",                std::string,         "Uncoupled",       agg_type);
     MUELU_READ_PARAM(paramList, "aggregation: threshold",                double,                 0.0,       agg_threshold);
     MUELU_READ_PARAM(paramList, "aggregation: damping factor",           double, (double)4/(double)3,       agg_damping);
-    MUELU_READ_PARAM(paramList, "aggregation: smoothing sweeps",         double,                   1,       agg_smoothingsweeps);
+    MUELU_READ_PARAM(paramList, "aggregation: smoothing sweeps",            int,                   1,       agg_smoothingsweeps);
     MUELU_READ_PARAM(paramList, "aggregation: nodes per aggregate",         int,                   1,       minPerAgg);
           
     MUELU_READ_PARAM(paramList, "null space: type",                 std::string,   "default vectors",       nullspaceType);
@@ -194,7 +194,7 @@ namespace MueLu {
     }
     
     std::string t("coarse");
-    RCP<SmootherFactory> coarsestSmooFact = GetSmootherFactory(paramList, t); // TODO: missing AFact input arg.
+    RCP<SmootherFactory> coarsestSmooFact = GetSmootherFactory(paramList, std::string("coarse")); // TODO: missing AFact input arg.
 
     //
     // Nullspace factory
