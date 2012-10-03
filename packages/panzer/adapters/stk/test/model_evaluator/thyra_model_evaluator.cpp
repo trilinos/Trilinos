@@ -116,7 +116,7 @@ namespace panzer {
       typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
       typedef Thyra::VectorBase<double> VectorType;
       typedef Thyra::LinearOpBase<double> OperatorType;
-      typedef panzer::ModelEvaluator<double,int,int,Kokkos::DefaultNode::DefaultNodeType> PME;
+      typedef panzer::ModelEvaluator<double,Kokkos::DefaultNode::DefaultNodeType> PME;
 
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = true;

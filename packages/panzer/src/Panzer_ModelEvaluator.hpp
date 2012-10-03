@@ -67,14 +67,12 @@ template<typename> class ResponseLibrary;
 template<typename> class LinearObjFactory;
 class GlobalData;
 
-template<typename Scalar, typename LO, typename GO, typename NODE>
+template<typename Scalar, typename NODE>
 class ModelEvaluator
   : public Thyra::StateFuncModelEvaluatorBase<Scalar>
 {
 public:
 
-//   typedef typename panzer::Traits<T>::lid_type LO;
-//   typedef typename panzer::Traits<T>::gid_type GO;
 //   typedef typename panzer::Traits<T>::node_type NODE;
 
 public:
