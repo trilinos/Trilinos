@@ -61,6 +61,7 @@
 #include "Panzer_FieldManagerBuilder.hpp"
 
 #include "Panzer_AssemblyEngine_InArgs.hpp"
+#include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 
 #include "Panzer_WorksetContainer.hpp"
@@ -185,9 +186,6 @@ public:
    template <typename EvalT>
    void evaluateVolumeFieldManagers(const panzer::AssemblyEngineInArgs & ae_in,
                                     const Teuchos::Comm<int> & comm);
-   template <typename EvalT>
-   void evaluateVolumeFieldManagers2(const panzer::AssemblyEngineInArgs & ae_in,
-                                    const Teuchos::Comm<int> & comm);
 
    /** @} */
 
@@ -259,6 +257,7 @@ private:
    Teuchos::RCP<UniqueGlobalIndexerBase> globalIndexer_;
    Teuchos::RCP<LinearObjFactory<TraitsT> > linObjFactory_;
    Teuchos::RCP<FieldManagerBuilder> fmb_;
+   AssemblyEngine_TemplateManager<panzer::Traits> ae_tm_;
 };
 
 }
