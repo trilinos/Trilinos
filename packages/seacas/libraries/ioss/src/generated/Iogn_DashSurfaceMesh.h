@@ -14,8 +14,8 @@ enum {
 
 struct DashSurfaceData {
     std::vector<double> &coordinates;
-    std::vector<int64_t> &surface1Connectivity;
-    std::vector<int64_t> &surface2Connectivity;
+    std::vector<int> &surface1Connectivity;
+    std::vector<int> &surface2Connectivity;
 
     int globalNumberOfNodes;
     int globalNumberOfElements;
@@ -26,7 +26,7 @@ struct DashSurfaceData {
     std::vector<int> elementGlobalIds;
     std::vector<int> nodeGlobalIds;
 
-    DashSurfaceData(std::vector<double> &coords, std::vector<int64_t> &connectivity1, std::vector<int64_t> &connectivity2)
+    DashSurfaceData(std::vector<double> &coords, std::vector<int> &connectivity1, std::vector<int> &connectivity2)
     : coordinates(coords), surface1Connectivity(connectivity1), surface2Connectivity(connectivity2)
     {
         this->setSerialDefaults();
