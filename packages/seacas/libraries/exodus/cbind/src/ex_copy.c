@@ -800,11 +800,7 @@ cpy_coord_val(int in_id,int out_id,char *var_nm,
 void update_internal_structs( int out_exoid, ex_inquiry inqcode, struct list_item** ctr_list )
 {
   int i;
-  int number;
-  float fdum;
-  char* cdum = 0;
-
-  ex_inquire (out_exoid, inqcode, &number, &fdum, cdum);
+  int number = ex_inquire_int (out_exoid, inqcode);
 
   if (number > 0) {
     for (i=0; i<number; i++)
