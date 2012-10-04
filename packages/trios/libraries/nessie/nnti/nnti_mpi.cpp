@@ -338,11 +338,6 @@ NNTI_result_t NNTI_mpi_init (
     int name_len=0;
 
 
-//    char transport[NNTI_URL_LEN];
-//    char address[NNTI_URL_LEN];
-//    char memdesc[NNTI_URL_LEN];
-//    char *sep;
-
     log_debug(nnti_debug_level, "enter");
 
     assert(trans_hdl);
@@ -357,22 +352,6 @@ NNTI_result_t NNTI_mpi_init (
 
         if (my_url != NULL) {
             log_error(nnti_debug_level,"The MPI transport does not accept a URL at init.  Ignoring URL.");
-//            if ((rc=nnti_url_get_transport(my_url, transport, NNTI_URL_LEN)) != NNTI_OK) {
-//                return(rc);
-//            }
-//            if (0!=strcmp(transport, "mpi")) {
-//                return(NNTI_EINVAL);
-//            }
-//
-//            if ((rc=nnti_url_get_address(my_url, address, NNTI_URL_LEN)) != NNTI_OK) {
-//                return(rc);
-//            }
-//
-//            if ((rc=nnti_url_get_memdesc(my_url, memdesc, NNTI_URL_LEN)) != NNTI_OK) {
-//                return(rc);
-//            }
-//
-//            nid=strtol(address, NULL, 0);
         }
 
 
@@ -474,13 +453,10 @@ NNTI_result_t NNTI_mpi_connect (
         const int               timeout,
         NNTI_peer_t            *peer_hdl)
 {
-//    int rc=0;
     NNTI_result_t nnti_rc=NNTI_OK;
 
     char transport[NNTI_URL_LEN];
     char address[NNTI_URL_LEN];
-//    char memdesc[NNTI_URL_LEN];
-//    char *sep;
 
     int peer_rank;
 
@@ -501,10 +477,6 @@ NNTI_result_t NNTI_mpi_connect (
         if ((nnti_rc=nnti_url_get_address(url, address, NNTI_URL_LEN)) != NNTI_OK) {
             return(nnti_rc);
         }
-
-//        if ((rc=nnti_url_get_memdesc(url, memdesc, NNTI_URL_LEN)) != NNTI_OK) {
-//            return(rc);
-//        }
 
         peer_rank=strtol(address, NULL, 0);
     } else {
@@ -1063,15 +1035,11 @@ NNTI_result_t NNTI_mpi_wait (
     mpi_memory_handle *mpi_mem_hdl=NULL;
     mpi_work_request  *wr=NULL;
 
-//    const NNTI_buffer_t  *wait_buf=NULL;
-
     long elapsed_time=0;
     long timeout_per_call;
     MPI_Status event;
     int done=FALSE;
 
-//    MPI_Request *reqs     =NULL;
-//    uint32_t     req_count=0;
     int          which_req=0;
 
     log_level debug_level=nnti_debug_level;
@@ -1146,12 +1114,6 @@ NNTI_result_t NNTI_mpi_wait (
                         break;
                     }
 
-//                    trios_start_timer(call_time);
-//                    nnti_sleep(timeout_per_call);
-//                    trios_stop_timer("NNTI_mpi_wait - nnti_sleep", call_time);
-//
-//                    elapsed_time += timeout_per_call;
-
                     /* continue if the timeout has not expired */
                     /* log_debug(debug_level, "timedout... continuing"); */
 
@@ -1225,33 +1187,6 @@ NNTI_result_t NNTI_mpi_wait (
         }
     }
 
-
-//    if (nnti_rc == NNTI_OK) {
-//        mpi_mem_hdl=(mpi_memory_handle *)reg_buf->transport_private;
-//        assert(mpi_mem_hdl);
-//        wr=mpi_mem_hdl->wr_queue.front();
-//        assert(wr);
-//
-//        log_debug(nnti_debug_level, "status->offset=%llu, status->length=%llu",
-//                (uint64_t)status->offset, (uint64_t)status->length);
-//        uint32_t index=status->offset/status->length;
-//        log_debug(nnti_debug_level, "status->offset=%llu, status->length=%llu, index=%llu",
-//                (uint64_t)status->offset, (uint64_t)status->length, (uint64_t)index);
-//
-//        mpi_mem_hdl->wr_queue.pop_front();
-//        del_wr_wrhash(wr);
-//        free(wr);
-//
-//        if (mpi_mem_hdl->type == REQUEST_BUFFER) {
-//            mpi_request_queue_handle *q_hdl=&transport_global_data.req_queue;
-//            post_recv_work_request(
-//                    (NNTI_buffer_t *)reg_buf,
-//                    NNTI_MPI_REQUEST_TAG,
-//                    (index*q_hdl->req_size),
-//                    q_hdl->req_size,
-//                    &q_hdl->requests[index]);
-//        }
-//    }
 
     if (logging_debug(debug_level)) {
         fprint_NNTI_status(logger_get_file(), "status",
@@ -1396,10 +1331,6 @@ NNTI_result_t NNTI_mpi_waitany (
                         break;
                     }
 
-//                    nnti_sleep(timeout_per_call);
-//
-//                    elapsed_time += timeout_per_call;
-
                     /* continue if the timeout has not expired */
                     /* log_debug(debug_level, "timedout... continuing"); */
 
@@ -1423,12 +1354,6 @@ NNTI_result_t NNTI_mpi_waitany (
         }
     }
 
-
-//    if ((rc!=PTL_OK) && (wr->last_event.ni_fail_type != PTL_NI_OK)) {
-//        log_error(debug_level, "NI reported error: ni_fail_type=%s",
-//                PtlNIFailStr(transport_global_data.ni_h, wr->last_event.ni_fail_type));
-//        nnti_rc = NNTI_EIO;
-//    }
 
     create_status(buf_list[*which], remote_op, nnti_rc, status);
 
@@ -1585,10 +1510,6 @@ NNTI_result_t NNTI_mpi_waitall (
                         break;
                     }
 
-//                    nnti_sleep(timeout_per_call);
-//
-//                    elapsed_time += timeout_per_call;
-
                     /* continue if the timeout has not expired */
                     /* log_debug(debug_level, "timedout... continuing"); */
 
@@ -1613,14 +1534,6 @@ NNTI_result_t NNTI_mpi_waitall (
             }
         }
     }
-
-//    mpi_mem_hdl=(mpi_memory_handle *)buf_list[0]->transport_private;
-//    if ((rc!=PTL_OK) && (wr->last_event.ni_fail_type != PTL_NI_OK)) {
-//        log_error(debug_level, "NI reported error: ni_fail_type=%s",
-//                PtlNIFailStr(transport_global_data.ni_h, wr->last_event.ni_fail_type));
-//        nnti_rc = NNTI_EIO;
-//    }
-
 
 
     for (uint32_t i=0;i<buf_count;i++) {
@@ -1660,7 +1573,6 @@ cleanup:
 NNTI_result_t NNTI_mpi_fini (
         const NNTI_transport_t *trans_hdl)
 {
-//    PtlFini();
     nthread_lock_fini(&nnti_mpi_lock);
     nthread_lock_fini(&nnti_buf_bufhash_lock);
     nthread_lock_fini(&nnti_wr_wrhash_lock);
@@ -1672,128 +1584,6 @@ NNTI_result_t NNTI_mpi_fini (
 
 
 
-
-
-
-//static mpi_work_request *decode_work_request(
-//        const MPI_Status *event)
-//{
-//    log_level debug_level = nnti_debug_level;
-//
-//    const NNTI_buffer_t *event_buf=NULL;
-//    mpi_memory_handle *mpi_mem_hdl=NULL;
-//    mpi_work_request  *wr=NULL;
-//    mpi_work_request  *debug_wr=NULL;
-//
-//    log_debug(debug_level, "enter");
-//
-//    event_buf=(NNTI_buffer_t *)event->md.user_ptr;
-//    assert(event_buf);
-//    mpi_mem_hdl=(mpi_memory_handle *)event_buf->transport_private;
-//    assert(mpi_mem_hdl);
-//
-//    wr_queue_iter_t i;
-//    for (i=mpi_mem_hdl->wr_queue.begin(); i != mpi_mem_hdl->wr_queue.end(); i++) {
-//        assert(*i);
-//        if (is_wr_complete(*i) == FALSE) {
-//            // work request is incomplete, check if it matches this event
-//            switch(mpi_mem_hdl->type) {
-//                case REQUEST_BUFFER:
-//                    if (((*i)->src_offset == event->offset) &&
-//                        ((*i)->length == event->mlength)) {
-//
-//                        wr=*i;
-//                    } else {
-//                        log_debug(debug_level, "work request doesn't match (wr=%p)", *i);
-//                    }
-//                    break;
-//                case SEND_BUFFER:
-//                case PUT_SRC_BUFFER:
-//                    if (((*i)->src_offset == event->offset) &&
-//                        ((*i)->length == event->mlength)) {
-//
-//                        wr=*i;
-//                    } else {
-//                        log_debug(debug_level, "work request doesn't match (wr=%p)", *i);
-//                    }
-//                    break;
-//                case GET_DST_BUFFER:
-//                    if (((*i)->dst_offset == event->offset) &&
-//                        ((*i)->length == event->mlength)) {
-//
-//                        wr=*i;
-//                    } else {
-//                        log_debug(debug_level, "work request doesn't match (wr=%p)", *i);
-//                    }
-//                    break;
-//                case RECEIVE_BUFFER:
-//                case GET_SRC_BUFFER:
-//                case PUT_DST_BUFFER:
-//                case RDMA_TARGET_BUFFER:
-//                    wr=*i;
-//                    break;
-//                default:
-//                    log_debug(debug_level, "unknown event type %d (event_buf==%p)", mpi_mem_hdl->type, event_buf);
-//                    break;
-//            }
-//            if (wr) {
-//                break;
-//            }
-//        } else {
-//            log_debug(debug_level, "work request is already complete (wr=%p)", *i);
-//        }
-//    }
-//
-//    if (!wr) {
-//        for (i=mpi_mem_hdl->wr_queue.begin(); i != mpi_mem_hdl->wr_queue.end(); i++) {
-//            debug_wr=*i;
-//            log_debug(LOG_ALL, "e.offset=%llu, e.rlength=%llu, e.mlength=%llu, wr=%p, wr.length=%llu, wr.src_offset=%llu, wr.dst_offset=%llu, wr.is_complete=%d",
-//                    (uint64_t)event->offset, (uint64_t)event->rlength, (uint64_t)event->mlength,
-//                    debug_wr,
-//                    (uint64_t)debug_wr->length, (uint64_t)debug_wr->src_offset, (uint64_t)debug_wr->dst_offset,
-//                    (is_wr_complete(debug_wr)==TRUE));
-//        }
-//    }
-//    assert(wr);
-//
-//    log_debug(debug_level, "exit (wr==%p)", wr);
-//
-//    return(wr);
-//}
-
-//static const NNTI_buffer_t *decode_event_buffer(
-//        const NNTI_buffer_t *wait_buf,
-//        const MPI_Status    *event)
-//{
-//    const NNTI_buffer_t *event_buf=NULL;
-//    mpi_memory_handle *mpi_mem_hdl=NULL;
-//
-//    log_debug(nnti_debug_level, "enter");
-//
-//    if ((wait_buf != NULL) && (wait_buf->transport_private != NULL) && (((mpi_memory_handle *)wait_buf->transport_private)->type == REQUEST_BUFFER)) {
-//        event_buf=wait_buf;
-//        mpi_mem_hdl=(mpi_memory_handle *)event_buf->transport_private;
-//        assert(mpi_mem_hdl);
-//
-//        log_debug(nnti_debug_level, "the wait buffer is a REQUEST BUFFER, so event.md.user_ptr is the index of the request buffer.");
-//    } else {
-//        event_buf=(NNTI_buffer_t *)event->md.user_ptr;
-//        mpi_mem_hdl=(mpi_memory_handle *)event_buf->transport_private;
-//        assert(mpi_mem_hdl);
-//
-//        if (event_buf == wait_buf) {
-//            log_debug(nnti_debug_level, "the wc matches the wait buffer (eq=%d, user_ptr=%p, wait_buf=%p)",
-//                    mpi_mem_hdl->eq_h, (void *)event->md.user_ptr, wait_buf);
-//        } else {
-//            log_debug(nnti_debug_level, "the wc does NOT match the wait buffer (eq=%d, user_ptr=%p, wait_buf=%p)",
-//                    mpi_mem_hdl->eq_h, (void *)event->md.user_ptr, wait_buf);
-//        }
-//    }
-//
-//    log_debug(nnti_debug_level, "exit (event_buf==%p)", event_buf);
-//
-//    return(event_buf);
-//}
 
 
 static int check_target_buffer_progress()
@@ -1890,13 +1680,6 @@ static int process_event(
     mpi_mem_hdl=(mpi_memory_handle *)reg_buf->transport_private;
     assert(mpi_mem_hdl);
 
-//    if (mpi_mem_hdl->type != REQUEST_BUFFER) {
-//        wr = decode_work_request(event);
-//    } else {
-//        wr=mpi_mem_hdl->wr_queue.front();
-//    }
-
-//    wr=mpi_mem_hdl->wr_queue.front();
     wr=first_incomplete_wr(mpi_mem_hdl);
     assert(wr);
 
