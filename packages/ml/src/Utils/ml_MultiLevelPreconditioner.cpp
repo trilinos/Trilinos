@@ -1043,8 +1043,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   if (List_.name() == "ANONYMOUS") List_.setName("ML preconditioner");
 
-  std::string XMLFileName = List_.get("XML input file","ml_ParameterList.xml");
-  if (List_.get("read XML", false)) ReadXML(XMLFileName,List_,Comm());
+  if (List_.get("read XML", false)) {
+    std::string XMLFileName = List_.get("XML input file","ml_ParameterList.xml");
+    ReadXML(XMLFileName,List_,Comm());
+  }
 
   if (List_.get("ML debug mode", false)) ML_BreakForDebugger(*Comm_);
   int ProcID;
@@ -2246,7 +2248,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
         std::cout << msg << "Epetra_CrsMatrix detected, using "
              << "Ifpack implementation" << std::endl;
       std::string IfpackType = "point relaxation stand-alone";
-      ParameterList& IfpackList = List_.sublist("smoother: ifpack list");;
+      ParameterList& IfpackList = List_.sublist("smoother: ifpack list");
       IfpackList.set("relaxation: type", "Gauss-Seidel");
       IfpackList.set("relaxation: sweeps", NumSmootherSteps);
       IfpackList.set("relaxation: damping factor", Omega);
@@ -2276,7 +2278,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
         std::cout << msg << "Epetra_CrsMatrix detected, using "
              << "Ifpack implementation" << std::endl;
       std::string IfpackType = "point relaxation stand-alone";
-      ParameterList& IfpackList = List_.sublist("smoother: ifpack list");;
+      ParameterList& IfpackList = List_.sublist("smoother: ifpack list");
       IfpackList.set("relaxation: type", "symmetric Gauss-Seidel");
       IfpackList.set("relaxation: sweeps", NumSmootherSteps);
       IfpackList.set("relaxation: damping factor", Omega);
