@@ -85,6 +85,7 @@
 
 namespace panzer_stk {
 
+/*
 TEUCHOS_UNIT_TEST(tUniformRef, stk_fixture)
 {
    typedef stk::mesh::Field<int> ProcIdFieldType;
@@ -151,8 +152,8 @@ TEUCHOS_UNIT_TEST(tUniformRef, stk_fixture)
 
    mesh->writeToExodus("newmesh.exo");
 }
+*/
 
-/*
 TEUCHOS_UNIT_TEST(tUniformRef, stk_exodus)
 {
    typedef stk::mesh::Field<int> ProcIdFieldType;
@@ -216,6 +217,5 @@ TEUCHOS_UNIT_TEST(tUniformRef, stk_exodus)
 
    mesh->writeToExodus("newmesh.exo");
 }
-*/
 
 }
