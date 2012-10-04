@@ -3,19 +3,29 @@
 
 #include <generated/Iogn_GeneratedMesh.h>
 
-namespace Iogn {
+namespace Iogn
+{
 
-enum {
+enum
+{
     INVALID                 = -1,
     NUMBER_OF_SURFACES      =  2,
     SPATIAL_DIMENSION       =  3,
     NUM_NODES_PER_QUAD_FACE =  4
 };
 
-struct DashSurfaceData {
+struct SharedNode
+{
+    SharedNode() : nodeId(-1), procId(-1) {}
+    int nodeId;
+    int procId;
+};
+
+struct DashSurfaceData
+{
     const std::vector<double> &coordinates;
-    const std::vector<int> &surface1Connectivity;
-    const std::vector<int> &surface2Connectivity;
+    const std::vector<int64_t> &surface1Connectivity;
+    const std::vector<int64_t> &surface2Connectivity;
 
     int globalNumberOfNodes;
     int globalNumberOfElements;
@@ -26,8 +36,12 @@ struct DashSurfaceData {
     std::vector<int> elementGlobalIds;
     std::vector<int> nodeGlobalIds;
 
-    DashSurfaceData(const std::vector<double> &coords, const std::vector<int> &connectivity1, const std::vector<int> &connectivity2)
-    : coordinates(coords), surface1Connectivity(connectivity1), surface2Connectivity(connectivity2)
+
+    std::vector<SharedNode> *sharedNodes;
+
+    DashSurfaceData(const std::vector<double> &coords, const std::vector<int64_t> &connectivity1, const std::vector<int64_t> &connectivity2)
+    : coordinates(coords), surface1Connectivity(connectivity1), surface2Connectivity(connectivity2),
+      sharedNodes(0)
     {
         this->setSerialDefaults();
     }

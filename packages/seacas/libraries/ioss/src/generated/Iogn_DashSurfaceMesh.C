@@ -82,7 +82,10 @@ int64_t DashSurfaceMesh::sideset_side_count_proc(int64_t id) const
 
 int64_t DashSurfaceMesh::communication_node_count_proc() const
 {
-    return 0;
+    if ( mDashSurfaceData.sharedNodes )
+        return mDashSurfaceData.sharedNodes->size();
+    else
+       return 0;
 }
 
 void DashSurfaceMesh::coordinates(double *coord) const
@@ -159,6 +162,13 @@ void DashSurfaceMesh::nodeset_nodes(int64_t nset_id, Int64Vector &nodes) const
 
 void DashSurfaceMesh::node_communication_map(MapVector &map, std::vector<int> &proc)
 {
+    if ( mDashSurfaceData.sharedNodes == 0 ) return;
+
+    for (unsigned int i=0;i<mDashSurfaceData.sharedNodes->size();i++)
+    {
+        map[i] = (*mDashSurfaceData.sharedNodes)[i].nodeId;
+        proc[i] = (*mDashSurfaceData.sharedNodes)[i].procId;
+    }
     return;
 }
 
