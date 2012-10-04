@@ -24,8 +24,8 @@ struct SharedNode
 struct DashSurfaceData
 {
     const std::vector<double> &coordinates;
-    const std::vector<int64_t> &surface1Connectivity;
-    const std::vector<int64_t> &surface2Connectivity;
+    const std::vector<int> &surface1Connectivity;
+    const std::vector<int> &surface2Connectivity;
 
     int globalNumberOfNodes;
     int globalNumberOfElements;
@@ -39,7 +39,7 @@ struct DashSurfaceData
 
     std::vector<SharedNode> *sharedNodes;
 
-    DashSurfaceData(const std::vector<double> &coords, const std::vector<int64_t> &connectivity1, const std::vector<int64_t> &connectivity2)
+    DashSurfaceData(const std::vector<double> &coords, const std::vector<int> &connectivity1, const std::vector<int> &connectivity2)
     : coordinates(coords), surface1Connectivity(connectivity1), surface2Connectivity(connectivity2),
       sharedNodes(0)
     {
