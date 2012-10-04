@@ -92,6 +92,11 @@ void test_device_cuda_reduce_dynamic() {
   TestReduceDynamic< double , KokkosArray::Cuda >( 1000000 );
 }
 
+void test_device_cuda_reduce_dynamic_view() {
+  TestReduceDynamicView< long ,   KokkosArray::Cuda >( 10000000 );
+  TestReduceDynamicView< double , KokkosArray::Cuda >( 1000000 );
+}
+
 void test_device_cuda_multi_reduce() {
   TestReduceMulti< long , KokkosArray::Cuda >( 1000000 , 7 );
 }

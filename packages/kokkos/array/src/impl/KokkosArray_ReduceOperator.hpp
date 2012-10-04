@@ -52,6 +52,94 @@ namespace KokkosArray {
 namespace Impl {
 
 //----------------------------------------------------------------------------
+/** \brief  Define a facade for a finalize functor type
+ *          and verify that the reduction value type is compatible.
+ *
+ *  By default the finalize functor type is passed through.
+ *  A compatible View type is given a finalize functor facade.
+ */
+template< class FinalizeType , class ValueType >
+struct ReduceOperatorFinalize {
+
+  typedef typename
+    StaticAssertSame< typename FinalizeType::value_type , ValueType >
+      ::type ok_type ;
+
+  typedef FinalizeType type ;
+
+  // Only instantiate this function if it is called
+  template< class F >
+  inline static
+  unsigned value_count( const F & f )
+    {
+      typedef
+        typename StaticAssertSame< FinalizeType , F >::type ok_functor_type ;
+
+      return f.value_count ;
+    }
+};
+
+template < class DataType , class LayoutType , class DeviceType ,
+           class ScalarType >
+struct ReduceOperatorFinalize< View< DataType , LayoutType , DeviceType > ,
+                               ScalarType >
+{
+  typedef View< DataType , LayoutType , DeviceType > view_type ;
+
+  typedef typename
+    StaticAssertSame< typename view_type::value_type , ScalarType >
+      ::type ok_type ;
+
+  struct type {
+
+    const view_type m_view ;
+
+    typedef typename view_type::device_type  device_type ;
+    typedef ScalarType                       value_type ;
+
+    type( const view_type & v ) : m_view( v ) {}
+
+    KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+    void operator()( const ScalarType & input ) const
+      { *m_view = input ; }
+  };
+};
+
+template < class DataType , class LayoutType , class DeviceType ,
+           class ScalarType >
+struct ReduceOperatorFinalize< View< DataType , LayoutType , DeviceType > ,
+                               ScalarType[] >
+{
+  typedef View< DataType , LayoutType , DeviceType > view_type ;
+
+  typedef typename
+    StaticAssertSame< typename view_type::value_type , ScalarType >
+      ::type ok_type ;
+
+  typedef typename
+    StaticAssert< view_type::Rank == 1 >::type ok_rank ;
+
+  inline static
+  unsigned value_count( const view_type & v ) { return v.dimension_0(); }
+
+  struct type {
+
+    const view_type m_view ;
+
+    typedef typename view_type::device_type  device_type ;
+    typedef ScalarType                       value_type[] ;
+    const unsigned                           value_count ;
+
+    type( const view_type & v )
+      : m_view( v ), value_count( v.dimension_0() ) {}
+
+    KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+    void operator()( const ScalarType input[] ) const
+    { for ( unsigned i = 0 ; i < value_count ; ++i ) m_view(i) = input[i] ; }
+  };
+};
+
+//----------------------------------------------------------------------------
 /** \brief  The reduce operator is the aggregate of
  *          ValueOper::value_type
  *          ValueOper::init( update )
@@ -68,12 +156,10 @@ private:
   ReduceOperator();
   ReduceOperator & operator = ( const ReduceOperator & );
 
-  typedef typename
-    StaticAssertSame< ValueType , 
-                      typename FinalizeFunctor::value_type >
-      ::type ok_finalize ;
+  typedef ReduceOperatorFinalize< FinalizeFunctor , ValueType >
+    wrapper_type ;
 
-  FinalizeFunctor m_finalize ;
+  const typename wrapper_type::type  m_finalize ;
 
 public:
 
@@ -82,39 +168,35 @@ public:
 
   inline static
   unsigned value_size( const FinalizeFunctor & )
-  { return sizeof(value_type); }
+    { return sizeof(value_type); }
 
   KOKKOSARRAY_INLINE_FUNCTION
   explicit ReduceOperator( const FinalizeFunctor & finalize )
-  : m_finalize( finalize )
-  {}
+    : m_finalize( finalize ) {}
 
   KOKKOSARRAY_INLINE_FUNCTION
   unsigned value_size() const { return sizeof(value_type); }
 
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void join( void * update , const void * input ) const
-  {
-    typedef       volatile value_type * vvp ;
-    typedef const volatile value_type * cvvp ;
+    {
+      typedef       volatile value_type * vvp ;
+      typedef const volatile value_type * cvvp ;
 
-    ValueOper::join( *vvp(update) , *cvvp(input) );
-  }
+      ValueOper::join( *vvp(update) , *cvvp(input) );
+    }
 
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   reference_type init( void * update ) const
-  {
-    reference_type ref = *((value_type*) update);
-    ValueOper::init( ref );
-    return ref ;
-  }
+    {
+      reference_type ref = *((value_type*) update);
+      ValueOper::init( ref );
+      return ref ;
+    }
 
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void finalize( const void * input ) const
-  {
-    typedef const value_type * cvp ;
-    m_finalize( *cvp(input) );
-  }
+    { m_finalize( *( (const value_type *) input ) ); }
 };
 
 //----------------------------------------------------------------------------
@@ -134,12 +216,10 @@ private:
   ReduceOperator();
   ReduceOperator & operator = ( const ReduceOperator & );
 
-  typedef typename
-    StaticAssertSame< MemberType[] , 
-                      typename FinalizeFunctor::value_type >
-      ::type ok_finalize ;
+  typedef ReduceOperatorFinalize< FinalizeFunctor , MemberType[] >
+    wrapper_type ;
 
-  FinalizeFunctor m_finalize ;
+  const typename wrapper_type::type  m_finalize ;
 
 public:
 
@@ -148,108 +228,35 @@ public:
 
   inline static
   unsigned value_size( const FinalizeFunctor & f )
-  { return sizeof(MemberType) * f.value_count ; }
+    { return sizeof(MemberType) * wrapper_type::value_count( f ); }
 
   explicit ReduceOperator( const FinalizeFunctor & finalize )
-    : m_finalize( finalize )
-    {}
+    : m_finalize( finalize ) {}
 
-  KOKKOSARRAY_INLINE_FUNCTION
-  ReduceOperator( const ReduceOperator & rhs )
-    : m_finalize( rhs.m_finalize ) {}
-  
   KOKKOSARRAY_INLINE_FUNCTION
   unsigned value_size() const
     { return sizeof(MemberType) * m_finalize.value_count ; }
 
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void join( void * update , const void * input ) const
-  {
-    typedef       volatile MemberType * vvp ;
-    typedef const volatile MemberType * cvvp ;
+    {
+      typedef       volatile MemberType * vvp ;
+      typedef const volatile MemberType * cvvp ;
 
-    ValueOper::join( vvp(update) , cvvp(input) , m_finalize.value_count );
-  }
-
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
-  reference_type init( void * update ) const
-  {
-    reference_type ref = (reference_type) update ;
-    ValueOper::init( ref , m_finalize.value_count );
-    return ref ;
-  }
-
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
-  void finalize( const void * input ) const
-  {
-    typedef const MemberType * cvp ;
-    m_finalize( cvp(input) );
-  }
-};
-
-//----------------------------------------------------------------------------
-/** \brief  The reduce operator is the aggregate of
- *          ValueOper::value_type
- *          ValueOper::init( update )
- *          ValueOper::join( update , input )
- *          View< ValueOper::value_type , ... >
- */
-template < class ValueOper , class LayoutType , class DeviceType >
-struct ReduceOperator< ValueOper ,
-                       View< typename ValueOper::value_type ,
-                             LayoutType ,
-                             DeviceType > >
-{
-private:
-
-  ReduceOperator();
-  ReduceOperator & operator = ( const ReduceOperator & );
-
-  typedef View< typename ValueOper::value_type , LayoutType , DeviceType >
-    view_type ;
-
-  view_type m_view ;
-
-public:
-
-  typedef typename ValueOper::value_type  value_type ;
-  typedef value_type & reference_type ;
-
-  inline static
-  unsigned value_size( const view_type & )
-  { return sizeof(value_type); }
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  explicit ReduceOperator( const view_type & view )
-  : m_view( view )
-  {}
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  unsigned value_size() const { return sizeof(value_type); }
-
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
-  void join( void * update , const void * input ) const
-  {
-    typedef       volatile value_type * vvp ;
-    typedef const volatile value_type * cvvp ;
-
-    ValueOper::join( *vvp(update) , *cvvp(input) );
-  }
+      ValueOper::join( vvp(update) , cvvp(input) , m_finalize.value_count );
+    }
 
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   reference_type init( void * update ) const
-  {
-    reference_type ref = *((value_type*) update);
-    ValueOper::init( ref );
-    return ref ;
-  }
+    {
+      reference_type ref = (reference_type) update ;
+      ValueOper::init( ref , m_finalize.value_count );
+      return ref ;
+    }
 
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void finalize( const void * input ) const
-  {
-    typedef const value_type * cvp ;
-    *m_view = *cvp(input);
-  }
+    { m_finalize( (const MemberType *) input ); }
 };
 
 } // namespace Impl

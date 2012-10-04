@@ -154,7 +154,8 @@ inline
 void parallel_for( const CudaWorkConfig & work_config ,
                    const FunctorType    & functor )
 {
-  Impl::ParallelFor< FunctorType , Cuda >( work_config , functor );
+  Impl::ParallelFor< FunctorType , Cuda , CudaWorkConfig >
+    ( work_config , functor );
 }
 
 template< class FunctorType , class FinalizeType >

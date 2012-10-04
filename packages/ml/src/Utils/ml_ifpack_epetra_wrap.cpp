@@ -62,7 +62,7 @@ namespace ML_Epetra{
   /**********************************************/
   /***      Chebyshev (Including Block)       ***/
   /**********************************************/
-  if(SmooType=="Chebyshev" || SmooType=="IFPACK-Chebyshev" || SmooType=="IFPACK-Block Chebyshev"){
+  if(SmooType=="Chebyshev" || SmooType=="MLS" || SmooType=="IFPACK-Chebyshev" || SmooType=="IFPACK-Block Chebyshev"){
     bool allocated_inv_diagonal=false;
     int MaximumIterations = List.get("eigen-analysis: max iters", 10);
     string EigenType_ = List.get("eigen-analysis: type", "cg");
@@ -181,6 +181,7 @@ namespace ML_Epetra{
     IFPACKList.set("relaxation: type", IFPACKList.get("relaxation: type",MyRelaxType));
     IFPACKList.set("relaxation: sweeps", Sweeps);
     IFPACKList.set("relaxation: damping factor", omega);
+    IFPACKList.set("relaxation: zero starting solution",false);
 
     if(verbose && !A->Comm().MyPID()){
       cout << printMsg << IFPACKList.get("relaxation: type",MyRelaxType).c_str()<<" (sweeps="
@@ -211,6 +212,7 @@ namespace ML_Epetra{
     IFPACKList.set("relaxation: type", IFPACKList.get("relaxation: type",MyRelaxType));
     IFPACKList.set("relaxation: sweeps", Sweeps);
     IFPACKList.set("relaxation: damping factor", omega);
+    IFPACKList.set("relaxation: zero starting solution",false);
    
     if(verbose && !A->Comm().MyPID()){
       cout << printMsg << "block " << IFPACKList.get("relaxation: type",MyRelaxType).c_str()<<" (sweeps="

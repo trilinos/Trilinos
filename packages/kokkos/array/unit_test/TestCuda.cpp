@@ -67,6 +67,7 @@ extern void test_device_cuda_view_api();
 extern void test_device_cuda_crsarray();
 extern void test_device_cuda_reduce();
 extern void test_device_cuda_reduce_dynamic();
+extern void test_device_cuda_reduce_dynamic_view();
 extern void test_device_cuda_multi_reduce();
 
 TEST_F( cuda, view_impl )
@@ -92,6 +93,11 @@ TEST_F( cuda, reduce )
 TEST_F( cuda, reduce_dynamic )
 {
   test_device_cuda_reduce_dynamic();
+}
+
+TEST_F( cuda, reduce_dynamic_view )
+{
+  test_device_cuda_reduce_dynamic_view();
 }
 
 TEST_F( cuda, multi_reduce )
