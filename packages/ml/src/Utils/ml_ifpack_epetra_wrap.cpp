@@ -181,6 +181,7 @@ namespace ML_Epetra{
     IFPACKList.set("relaxation: type", IFPACKList.get("relaxation: type",MyRelaxType));
     IFPACKList.set("relaxation: sweeps", Sweeps);
     IFPACKList.set("relaxation: damping factor", omega);
+    IFPACKList.set("relaxation: zero starting solution",false);
 
     if(verbose && !A->Comm().MyPID()){
       cout << printMsg << IFPACKList.get("relaxation: type",MyRelaxType).c_str()<<" (sweeps="
