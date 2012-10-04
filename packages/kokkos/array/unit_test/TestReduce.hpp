@@ -242,6 +242,7 @@ public:
   TestReduceDynamicView( const size_type & nwork )
   {
     run_test_dynamic(nwork);
+    run_test_dynamic_ptr(nwork);
   }
 
   void run_test_dynamic( const size_type & nwork )
@@ -264,6 +265,38 @@ public:
     ASSERT_EQ( host_result(0), (ScalarType) nw);
     ASSERT_EQ( host_result(1), (ScalarType) nsum);
     ASSERT_EQ( host_result(2), (ScalarType) nsum);
+
+    KokkosArray::parallel_reduce( nwork , functor_type(nwork) , host_result );
+
+    ASSERT_EQ( host_result(0), (ScalarType) nw);
+    ASSERT_EQ( host_result(1), (ScalarType) nsum);
+    ASSERT_EQ( host_result(2), (ScalarType) nsum);
+  }
+
+  void run_test_dynamic_ptr( const size_type & nwork )
+  {
+    typedef Test::RuntimeReduceFunctor< ScalarType , device_type > functor_type ;
+
+    typedef KokkosArray::View< ScalarType* , DeviceType > result_type ;
+    typedef typename result_type::HostMirror result_host_type ;
+
+    result_type result("result",3);
+    result_host_type host_result = KokkosArray::create_mirror( result );
+
+    const unsigned long nw   = nwork ;
+    const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )
+                                      : (nw/2) * ( nw + 1 );
+
+    KokkosArray::parallel_reduce( nwork , functor_type(nwork) , result );
+    KokkosArray::deep_copy( host_result , result );
+
+    ASSERT_EQ( host_result(0), (ScalarType) nw);
+    ASSERT_EQ( host_result(1), (ScalarType) nsum);
+    ASSERT_EQ( host_result(2), (ScalarType) nsum);
+
+    host_result(0) = 0 ;
+    host_result(1) = 0 ;
+    host_result(2) = 0 ;
 
     KokkosArray::parallel_reduce( nwork , functor_type(nwork) , host_result );
 

@@ -105,9 +105,11 @@ struct CudaReduceShared_AnalyzeSize
 
 template< class MemberType >
 struct CudaReduceShared_AnalyzeSize< MemberType[] >
-{
-  enum { WarpCount = 0 };
-};
+{ enum { WarpCount = 0 }; };
+
+template< class MemberType >
+struct CudaReduceShared_AnalyzeSize< MemberType* >
+{ enum { WarpCount = 0 }; };
 
 //----------------------------------------------------------------------------
 
@@ -970,23 +972,32 @@ public:
   }
 };
 
-template< class FunctorType , class ValueOper , class LayoutType >
-class ParallelReduce<
-    FunctorType ,
-    ValueOper , 
-    View< typename FunctorType::value_type , LayoutType , Host > ,
-    Cuda >
+/* Reduction into a view on the host */
+
+template< class FunctorType , class ValueOper ,
+          class ValueType , class LayoutType >
+class ParallelReduce< FunctorType ,
+                      ValueOper , 
+                      View< ValueType , LayoutType , Host > ,
+                      Cuda >
 {
 public:
 
   typedef typename FunctorType::value_type value_type ;
 
-  typedef View< value_type , LayoutType , Host > host_view_type ;
+  typedef View< ValueType , LayoutType , Host > host_view_type ;
 
   ParallelReduce( const Cuda::size_type  work_count ,
                   const FunctorType    & functor ,
                   const host_view_type & host_view )
   {
+    typedef typename
+      StaticAssertSame< typename host_view_type::value_type[] , value_type >
+        ::type ok_match_type ;
+
+    typedef typename
+      StaticAssert< host_view_type::Rank == 1 >::type ok_rank ;
+
     if ( functor.value_count != host_view.dimension_0() ) {
       std::ostringstream msg ;
       msg << "KokkosArray::parallel_reduce( <array_type> ) ERROR "
@@ -1012,88 +1023,101 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+template< typename T >
+struct CudaReduceResult {
+
+  inline static
+  T * device_pointer( const Cuda::size_type count )
+  {
+    T * ptr = (T*) cuda_internal_scratch_unified( sizeof(T) * count );
+    if ( 0 == ptr ) {
+      ptr = (T*) cuda_internal_scratch_space( sizeof(T) * count );
+    }
+    return ptr ;
+  }
+
+  inline static
+  void copy_to_host( T host_pointer[] , const Cuda::size_type count )
+  {
+    Cuda::fence();
+    T * ptr = (T*) cuda_internal_scratch_unified( sizeof(T) * count );
+    if ( 0 != ptr ) {
+      for ( Cuda::size_type i = 0 ; i < count ; ++i )
+        host_pointer[i] = ptr[i] ;
+    }
+    else {
+      ptr = (T*) cuda_internal_scratch_space( sizeof(T) * count );
+      CudaMemorySpace
+        ::copy_to_host_from_device( host_pointer , ptr , sizeof(T) * count );
+    }
+  }
+
+  inline static
+  T return_to_host()
+  {
+    Cuda::fence();
+    T * ptr = (T*) cuda_internal_scratch_unified( sizeof(T) );
+    if ( 0 != ptr ) {
+      return *ptr ;
+    }
+    else {
+      ptr = (T*) cuda_internal_scratch_space( sizeof(T) );
+      T value ;
+      CudaMemorySpace::copy_to_host_from_device( & value , ptr , sizeof(T) );
+      return value ;
+    }
+  }
+};
+
 template< typename ValueType >
 class ParallelReduceFunctorValue< ValueType , Cuda >
 {
 private:
-  static const Cuda::size_type value_size = sizeof(ValueType);
-
+  ValueType * const m_dev ; 
 public:
+
   typedef ValueType value_type ;
 
   __device__
+  inline
   void operator()( const value_type & value ) const
-    {
-      if ( m_unified ) *m_unified = value ;
-      else             *m_global  = value ;
-    }
+    { *m_dev = value ; }
 
+  inline
   ParallelReduceFunctorValue()
-    : m_unified( (value_type*) cuda_internal_scratch_unified( value_size ) )
-    , m_global( (value_type*) cuda_internal_scratch_space( value_size ) )
-    {}
+    : m_dev( CudaReduceResult<value_type>::device_pointer(1) ) {}
 
+  inline
   value_type result() const
-  {
-    Cuda::fence();
-    if ( m_unified ) {
-      return *m_unified ;
-    }
-    else {
-      ValueType r ;
-      CudaMemorySpace::copy_to_host_from_device( & r , m_global , value_size );
-      return r ;
-    }
-  }
-
-private:
-
-  value_type * m_unified ;
-  value_type * m_global ;
-
+  { return CudaReduceResult<value_type>::return_to_host(); }
 };
 
 template< typename MemberType >
 class ParallelReduceFunctorValue< MemberType[] , Cuda >
 {
+private:
+  MemberType * const m_dev ; 
 public:
+
   typedef MemberType     value_type[] ;
   const Cuda::size_type  value_count ;
 
   __device__
+  inline
   void operator()( const MemberType input[] ) const
     {
-      MemberType * const v = m_unified ? m_unified : m_global ;
-      for ( Cuda::size_type i = 0 ; i < value_count ; ++i ) v[i] = input[i] ;
+      for ( Cuda::size_type i = 0 ; i < value_count ; ++i )
+        m_dev[i] = input[i] ;
     }
 
   explicit
   ParallelReduceFunctorValue( Cuda::size_type n )
-    : value_count( n )
-    , m_unified( (MemberType*)
-                 cuda_internal_scratch_unified( sizeof(MemberType) * n ) )
-    , m_global( (MemberType*)
-                 cuda_internal_scratch_space( sizeof(MemberType) * n ) )
+    : m_dev( CudaReduceResult<MemberType>::device_pointer(n) )
+    , value_count( n )
     {}
 
-  void result( value_type result ) const
-  {
-    Cuda::fence();
-    if ( m_unified ) {
-      for ( Cuda::size_type i = 0 ; i < value_count ; ++i )
-        result[i] = m_unified[i] ;
-    }
-    else {
-      CudaMemorySpace
-        ::copy_to_host_from_device( result , m_global , sizeof(MemberType) * value_count );
-    }
-  }
-
-private:
-
-  MemberType * m_unified ;
-  MemberType * m_global ;
-
+  void result( MemberType result[] ) const
+  { CudaReduceResult<MemberType>::copy_to_host( result , value_count ); }
 };
 
 //----------------------------------------------------------------------------
