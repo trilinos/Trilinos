@@ -195,7 +195,8 @@ C     --Determine the show option
         if (idefst .gt. 0) then
           call intstr(1, 0, IDEFST, STRA,  LR1)
           WRITE (*, 40)
-     &      'Deform at step ', STRA(:LR1)
+     &      'Deform at step ', STRA(:LR1),
+     *      '. Displacements at that step will be set to zero.'
         else
           write (*,*) 'Deformation turned off (RESET)'
         end if
