@@ -906,7 +906,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& Domai
     i += count;
   }
 
-  A2->FillComplete(DomainMap, RangeMap);
+  A2->GlobalAssemble(DomainMap, RangeMap);
 
   A = A2;
 }
