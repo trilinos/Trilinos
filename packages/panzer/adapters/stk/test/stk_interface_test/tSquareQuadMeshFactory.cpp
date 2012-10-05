@@ -683,21 +683,37 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, sideset_nodeset)
    mesh->getNodesetNames(nodesets);
 
    TEST_EQUALITY(sidesets.size(),4);
-   TEST_EQUALITY(nodesets.size(),1);
+   TEST_EQUALITY(nodesets.size(),2);
 
    std::vector<stk::mesh::Entity *> nodes;
+   std::vector<stk::mesh::Entity *> nodes_o;
    mesh->getMyNodes("lower_left","eblock-0_0",nodes); 
+   mesh->getMyNodes("origin","eblock-0_0",nodes_o); 
    if(rank==0) {
-      std::vector<std::size_t> localNodeIds;
-      std::vector<stk::mesh::Entity*> elements;
+      { 
+         std::vector<std::size_t> localNodeIds;
+         std::vector<stk::mesh::Entity*> elements;
 
-      TEST_EQUALITY(nodes.size(),1);
-      workset_utils::getNodeElements(*mesh,"eblock-0_0",nodes,localNodeIds,elements);
+         TEST_EQUALITY(nodes.size(),1);
+         workset_utils::getNodeElements(*mesh,"eblock-0_0",nodes,localNodeIds,elements);
 
-      TEST_EQUALITY(localNodeIds.size(),1);
-      TEST_EQUALITY(elements.size(),1);
-      TEST_EQUALITY(elements[0]->identifier(),1);
-      TEST_EQUALITY(localNodeIds[0],0);
+         TEST_EQUALITY(localNodeIds.size(),1);
+         TEST_EQUALITY(elements.size(),1);
+         TEST_EQUALITY(elements[0]->identifier(),1);
+         TEST_EQUALITY(localNodeIds[0],0);
+      }
+      { 
+         std::vector<std::size_t> localNodeIds;
+         std::vector<stk::mesh::Entity*> elements;
+
+         TEST_EQUALITY(nodes.size(),1);
+         workset_utils::getNodeElements(*mesh,"eblock-0_0",nodes_o,localNodeIds,elements);
+
+         TEST_EQUALITY(localNodeIds.size(),1);
+         TEST_EQUALITY(elements.size(),1);
+         TEST_EQUALITY(elements[0]->identifier(),1);
+         TEST_EQUALITY(localNodeIds[0],0);
+      }
    }
    else {
       TEST_EQUALITY(nodes.size(),0);
