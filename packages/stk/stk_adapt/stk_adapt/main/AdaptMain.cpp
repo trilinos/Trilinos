@@ -510,7 +510,7 @@ namespace stk {
       int query_only = 0;
       int progress_meter = 0;
       int smooth_geometry = 0;
-      int refine_to_spacing = 0;
+      int respect_spacing = 1;
       //double min_spacing_factor = 0.25; // range [0,0.5]
       int remove_geometry_blocks = 0;
       int sync_io_regions = 1;
@@ -570,6 +570,7 @@ namespace stk {
       run_environment.clp.setOption("query_only"               , &query_only               , "query only, no refinement done");
       run_environment.clp.setOption("progress_meter"           , &progress_meter           , "progress meter on or off");
       run_environment.clp.setOption("smooth_geometry"          , &smooth_geometry          , "smooth geometry - moves nodes after geometry projection to try to avoid bad meshes");
+      run_environment.clp.setOption("respect_spacing"          , &respect_spacing          , "respect the initial mesh spacing during refinement");
       run_environment.clp.setOption("remove_geometry_blocks"   , &remove_geometry_blocks   , "remove geometry blocks from output Exodus file after refinement/geometry projection");
       run_environment.clp.setOption("sync_io_regions"          , &sync_io_regions          , "synchronize input/output region's Exodus id's");
       run_environment.clp.setOption("delete_parents"           , &delete_parents           , "DEBUG: delete parents from a nested, multi-refine mesh - used for debugging");
@@ -722,7 +723,10 @@ namespace stk {
           std::string mesh_name = Ioss::Utils::decode_filename(input_mesh_save, 0, m_M);
           eMesh.open(mesh_name);
           if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
-          if (refine_to_spacing == 1) eMesh.add_spacing_fields();
+          if (respect_spacing == 1) {
+            eMesh.set_respect_spacing(true);
+            eMesh.add_spacing_fields();
+          }
           s_spatialDim = eMesh.get_spatial_dim();
           VERIFY_OP_ON(s_spatialDim, >=, 2, "AdaptMain bad spatial_dim");
         }
@@ -850,7 +854,10 @@ namespace stk {
                       {
                         eMesh.open(input_mesh);
                         if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
-                        if (refine_to_spacing == 1) eMesh.add_spacing_fields();
+                        if (respect_spacing == 1) {
+                          eMesh.set_respect_spacing(true);
+                          eMesh.add_spacing_fields();
+                        }
                         if (!sync_io_regions) eMesh.set_sync_io_regions(false);
                         if (!s_spatialDim) s_spatialDim = eMesh.get_spatial_dim();
 
@@ -873,7 +880,10 @@ namespace stk {
                                     eMesh.close();
                                     eMesh.open(input_mesh);
                                     if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
-                                    if (refine_to_spacing == 1) eMesh.add_spacing_fields();
+                                    if (respect_spacing == 1) {
+                                      eMesh.set_respect_spacing(true);
+                                      eMesh.add_spacing_fields();
+                                    }
                                   }
                               }
             

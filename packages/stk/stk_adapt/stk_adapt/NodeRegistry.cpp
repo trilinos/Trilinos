@@ -16,6 +16,10 @@ namespace Teuchos
 namespace stk {
   namespace adapt {
 
+    // FIXME
+    //double m_min_spacing_factor = 0.5;
+    static double m_min_spacing_factor = 0.05;
+
 #if !NODE_REGISTRY_MAP_ACCESSORS_INLINED
     SubDimCellData& NodeRegistry::getFromMap(SubDimCell_EntityId& subDimEntity)
     {
@@ -147,14 +151,13 @@ namespace stk {
           {
             alp1[ipts] /= sum;
           }
-        return 1.0-alp1[0];
-        //return alp1[0];
+        double candidate_alpha = 1.0-alp1[0];
+        if (candidate_alpha < m_min_spacing_factor) candidate_alpha=m_min_spacing_factor;
+        return candidate_alpha;
       }
 
       static void normalize_spacing_0(unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3])
       {
-        //double m_min_spacing_factor = 0.5;
-        double m_min_spacing_factor = 0.0;
         for (unsigned isp = 0; isp < nsp; isp++)
           {
             double den = 0.0;
@@ -196,6 +199,30 @@ namespace stk {
 
           }
       }
+
+
+      static void check_for_min_spacing(unsigned nsz, unsigned nsp, double weights[8][3])
+      {
+        VERIFY_OP_ON(nsz, ==, 2, "bad nsz");
+        for (unsigned isp = 0; isp < nsp; isp++)
+          {
+            int ifnd = -1;
+            for (unsigned ipts=0; ipts < nsz; ipts++)
+              {
+                if (weights[ipts][isp] > 1.0 - m_min_spacing_factor)
+                  {
+                    //weights[ipts][isp] = 1.0 - m_min_spacing_factor;
+                    ifnd = ipts;
+                  }
+              }
+            if (ifnd >= 0)
+              {
+                weights[ifnd][isp] = 1.0 - m_min_spacing_factor;
+                weights[(ifnd+1)%2][isp] = m_min_spacing_factor;
+              }
+          }
+      }
+
 
       static void normalize_spacing(unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3], double *coord[8])
       {
@@ -286,7 +313,7 @@ namespace stk {
                       }
                   }
               }
-            else
+            else if (nsz == 2)
               {
                 for (unsigned ipts=0; ipts < nsz; ipts++)
                   {
@@ -299,7 +326,13 @@ namespace stk {
                       }
                     spc[ipts][isp] = (lspc[ipts][isp] + lsum1*fac)/(facden*lsum);
                   }
+                check_for_min_spacing(nsz, nsp, spc);
               }
+            else
+              {
+                throw std::logic_error("nsz wrong - logic error");
+              }
+            // these values end up as weights on the coordinates 
             double sum=0.0;
             for (unsigned ipts=0; ipts < nsz; ipts++)
               {
@@ -317,6 +350,7 @@ namespace stk {
       /// makes coordinates of this new node be the centroid of its sub entity - this version does it for all new nodes
       void NodeRegistry::makeCentroid(stk::mesh::FieldBase *field)
       {
+        bool do_respect_spacing = m_eMesh.get_respect_spacing();
         EXCEPTWATCH;
         //unsigned *null_u = 0;
         stk::mesh::FieldBase *spacing_field    = m_eMesh.get_field("ref_spacing_field");
@@ -404,7 +438,6 @@ namespace stk {
             bool doPrint = false;
             std::vector<stk::mesh::Entity *> nodes(8,(stk::mesh::Entity *)0);
             unsigned nsz = 0;
-            bool do_spacing=false;
 
             if (needed_entity_rank == stk::mesh::MetaData::ELEMENT_RANK)
               {
@@ -452,7 +485,7 @@ namespace stk {
                 nodes.resize(nsz, (stk::mesh::Entity *)0);
                 c_p.resize(fieldDim,0);
 
-                if (do_spacing && nsz == 4 &&  spatialDim == 3)
+                if (do_respect_spacing && nsz == 4 &&  spatialDim == 3)
                   {
                     //exit(1);
                     //element_side_nodes( const stk::mesh::Entity & elem , int local_side_id, stk::mesh::EntityRank side_entity_rank, std::vector<stk::mesh::Entity *>& side_node_entities )
@@ -481,7 +514,7 @@ namespace stk {
             {
               //if ( (spacing_field && (spacing_field != field) && subDimEntity.size() == 2))
               // FIXME for quadratic elements
-              if (do_spacing && (nsz <= 8 && spacing_field && (spacing_field != field) ) )
+              if (do_respect_spacing && (nsz <= 8 && spacing_field && (spacing_field != field) ) )
                 {
                   EXCEPTWATCH;
                   unsigned ipts=0;

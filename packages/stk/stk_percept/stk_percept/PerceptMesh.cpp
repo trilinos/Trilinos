@@ -68,30 +68,6 @@ namespace stk {
     // ctor constructor
     //========================================================================================================================
     /// high-level interface
-
-#if 0
-    PerceptMesh::PerceptMesh( stk::ParallelMachine comm) :
-      m_metaData(NULL),
-      m_bulkData(NULL),
-      m_fixture(NULL),
-      m_iossRegion(NULL),
-      m_iossMeshData_created(false),
-      m_sync_io_regions(true),
-      m_coordinatesField(NULL),
-      m_spatialDim(0),
-      m_ownData(false),
-      m_isCommitted(false),
-      m_isOpen(false),
-      m_isInitialized(false),
-      m_isAdopted(false),
-      m_dontCheckState(false),
-      m_filename(),
-      m_comm(comm)
-    {
-      init( m_comm);
-    }
-#endif
-
     PerceptMesh::PerceptMesh(size_t spatialDimension, stk::ParallelMachine comm) :
       m_metaData(NULL),
       m_bulkData(NULL),
@@ -112,6 +88,7 @@ namespace stk {
       m_streaming_size(0),
       m_searcher(0)
       ,m_num_coordinate_field_states(1)
+      ,m_do_respect_spacing(false)
     {
       init( m_comm);
     }

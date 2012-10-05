@@ -78,7 +78,7 @@ namespace stk {
   namespace adapt {
     namespace unit_tests {
 
-#define DO_TESTS 0
+#define DO_TESTS 1
 #if DO_TESTS
       static int print_infoLevel = 0;
 
@@ -1867,6 +1867,7 @@ namespace stk {
             //             std::cout << "proc_rank_field_edge rank= " << proc_rank_field_edge->rank() << std::endl;
 
             eMesh.add_spacing_fields();
+            eMesh.set_respect_spacing(true);
             //fixture.meta_data.commit();
             eMesh.commit();
 
@@ -1955,6 +1956,7 @@ namespace stk {
             //             std::cout << "proc_rank_field_edge rank= " << proc_rank_field_edge->rank() << std::endl;
 
             eMesh.add_spacing_fields();
+            eMesh.set_respect_spacing(true);
             //fixture.meta_data.commit();
             eMesh.commit();
 
@@ -2021,6 +2023,7 @@ namespace stk {
             eMesh.new_mesh(percept::GMeshSpec(gmesh_spec));
             Hex8_Hex8_8 break_hex_to_hex(eMesh);
             eMesh.add_spacing_fields();
+            eMesh.set_respect_spacing(true);
             eMesh.commit();
 
             const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::NODE_RANK );

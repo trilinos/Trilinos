@@ -381,6 +381,10 @@ namespace stk {
       /// dump a vtk file for the mesh surrounding the given node 
       void dump_vtk(stk::mesh::Entity& node, std::string filename);
 
+      /// choose to respect the mesh spacing in the refined mesh
+      void set_respect_spacing(bool do_respect_spacing=true) { m_do_respect_spacing = do_respect_spacing; }
+      bool get_respect_spacing() { return m_do_respect_spacing; }
+
 #ifndef SWIG
       //========================================================================================================================
       // low-level interfaces
@@ -693,6 +697,8 @@ namespace stk {
 
       // state manipulation - set to 3 to enable smoothing for example
       unsigned                              m_num_coordinate_field_states;
+
+      bool                                  m_do_respect_spacing;
 
     private:
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
