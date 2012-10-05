@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
 
     if (doAll) {
       switch (iTest) {
-       case 0: inputFile="input_Solve_NOX_2.xml"; break;
+       case 0: inputFile="input_Solve_NOX_3.xml"; break;
        case 1: inputFile="input_Solve_LOCA_1.xml"; break;
        case 2: inputFile="input_Solve_Rythmos_2.xml"; break;
        default : cout << "iTest logic error " << endl; exit(-1);
@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
       outArgs.set_g(1,gx);
 
       RCP<Thyra::MultiVectorBase<double> > dgdp =
-        Thyra::createMembers(*thyraModel->get_x_space(),numParams);
+        Thyra::createMembers(*piro->get_g_space(0),numParams);
       if (computeSens) outArgs.set_DgDp(0, 0, dgdp);
 
       // Now, solve the problem and return the responses

@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,14 +36,20 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
-#include <cmath>
+#include "Piro_NOXSolver.hpp"
 
-//#include "Piro_NOXSolver.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_TestForException.hpp"
 
+#include <stdexcept>
+#include <cstddef>
+
+// TODO: Remove with debugging statements
+#include <iostream>
 
 template <typename Scalar>
 Piro::NOXSolver<Scalar>::
@@ -136,9 +142,9 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::NOXSolver<Scalar>::createOutArg
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> model_outargs = model->createOutArgs();
   for (int i=0; i<num_g; i++)
     for (int j=0; j<num_p; j++)
-      if (!model_outargs.supports( Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, i, j).none())
-        outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, i, j,
-             Thyra::ModelEvaluatorBase::DerivativeSupport( Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL));
+      if (!model_outargs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, i, j).none())
+        outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, i, j,
+             Thyra::ModelEvaluatorBase::DerivativeSupport(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM));
 
   return outArgs;
 }
@@ -151,94 +157,132 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  //*out << "In eval Modle " << endl;
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      num_p > 1,
+      std::logic_error,
+      "More than 1 parameter not yet supported");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      num_g > 1,
+      std::logic_error,
+      "More than 1 response not yet supported");
 
   // Parse InArgs
-
+  // TODO: Handle case num_p > 1
   RCP<const Thyra::VectorBase<Scalar> > p_in;
-  if (num_p > 0) p_in = inArgs.get_p(0);
+  if (num_p > 0) {
+    p_in = inArgs.get_p(0);
+  }
 
-  // Parse OutArgs: always 1 extra
-  RCP< Thyra::VectorBase<Scalar> > g_out; 
-  if (num_g > 0) g_out = outArgs.get_g(0); 
-  RCP< Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g); 
+  // Parse OutArgs
+  RCP< Thyra::VectorBase<Scalar> > g_out;
+  // TODO: Handle case num_g > 1
+  if (num_g > 0) {
+    g_out = outArgs.get_g(0);
+  }
+  // By convention, response at index num_g is the solution vector
+  RCP< Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g);
 
-  // Parse out-args for sensitivity calculation
+  // TODO: Parse out-args for sensitivity calculation
 
+  // Solve the underlying model
+  {
+    RCP< ::Thyra::VectorBase<double> >
+      initial_guess = model->getNominalValues().get_x()->clone_v();
 
-  ::Thyra::SolveCriteria<double> solve_criteria;
-  ::Thyra::SolveStatus<double> solve_status;
+    const ::Thyra::SolveCriteria<double> solve_criteria;
+    const ::Thyra::SolveStatus<double> solve_status =
+      solver->solve(initial_guess.get(), &solve_criteria, NULL);
 
-  RCP< ::Thyra::VectorBase<double> >
-    initial_guess = model->getNominalValues().get_x()->clone_v();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        solve_status.solveStatus != ::Thyra::SOLVE_STATUS_CONVERGED,
+        std::runtime_error,
+        "Nonlinear solver failed to converge");
+  }
 
-  solve_status = solver->solve(initial_guess.get(), &solve_criteria, NULL);
+  // Return the final solution as the last response
+  const RCP<const Thyra::VectorBase<Scalar> > finalSolution = solver->get_current_x();
+  if (Teuchos::nonnull(gx_out)) {
+    Thyra::copy(*finalSolution, gx_out.ptr());
+  }
 
-//   if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED)
-//     std::cout << "Test passed!" << std::endl;
+  // Compute responses at final solution
+  // TODO: Handle case num_g > 1
+  if (Teuchos::nonnull(g_out)) {
+     // Setup input
+     Thyra::ModelEvaluatorBase::InArgs<Scalar> model_inargs = model->createInArgs();
+     {
+       model_inargs.set_x(finalSolution);
+       if (num_p > 0) {
+         model_inargs.set_p(0, p_in);
+       }
+     }
 
-  // return the final solution as an additional g-vector, if requested
-  RCP<const Thyra::VectorBase<Scalar> > finalSolution = solver->get_current_x();
-
-  if (gx_out != Teuchos::null)  Thyra::copy(*finalSolution, gx_out.ptr());
-
-  if (g_out != Teuchos::null) {
-     // As post-processing step, calc responses at final solution
-     Thyra::ModelEvaluatorBase::InArgs<Scalar>  model_inargs = model->createInArgs();
+     // Setup output
      Thyra::ModelEvaluatorBase::OutArgs<Scalar> model_outargs = model->createOutArgs();
-     model_inargs.set_x(finalSolution);
-     if (num_p > 0)  model_inargs.set_p(0, p_in);
-     if (g_out != Teuchos::null) {
-       Thyra::put_scalar(0.0,g_out.ptr());
+     {
        model_outargs.set_g(0, g_out);
      }
 
      model->evalModel(model_inargs, model_outargs);
   }
 
-/*********************  NEED TO CONVERT TO THYRA *******************
-  RCP< Thyra::MultiVectorBase<Scalar> > dgdp_out;
-  if (num_p>0 && num_g>0)
-    dgdp_out = outArgs.get_DgDp(0,0).getMultiVector();
+  // TODO: Handle case num_g > 1 or num_p > 1
+  if (num_p > 0 && num_g > 0) {
+    const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv = outArgs.get_DgDp(0, 0);
+    const RCP<Thyra::MultiVectorBase<Scalar> > dgdp_mv = dgdp_deriv.getMultiVector();
 
-  if (dgdp_out == Teuchos::null) {
+    if (Teuchos::nonnull(dgdp_mv)) {
+      Thyra::ModelEvaluatorBase::InArgs<Scalar> model_inargs = model->createInArgs();
+      {
+        model_inargs.set_x(finalSolution);
+        if (num_p > 0) {
+          model_inargs.set_p(0, p_in);
+        }
+      }
 
-     Teuchos::RCP<Epetra_MultiVector> dgdx
-          = Teuchos::rcp(new Epetra_MultiVector(finalSolution->Map(),
-                                                   dgdp_out->GlobalLength()));
-     Teuchos::Array<int> p_indexes =
-       outArgs.get_DgDp(0,0).getDerivativeMultiVector().getParamIndexes();
- 
-     EpetraExt::ModelEvaluator::DerivativeMultiVector dmv_dgdp(dgdp_out,
-                                                               DERIV_MV_BY_COL,
-                                                               p_indexes);
- 
-     EpetraExt::ModelEvaluator::InArgs model_inargs = model->createInArgs();
-     EpetraExt::ModelEvaluator::OutArgs model_outargs = model->createOutArgs();
-     model_inargs.set_x(finalSolution);
-     model_inargs.set_p(0, p_in);
+      Thyra::ModelEvaluatorBase::OutArgs<Scalar> model_outargs = model->createOutArgs();
+      const Thyra::ModelEvaluatorBase::DerivativeSupport dpdg_support =
+        model_outargs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, 0, 0);
+      TEUCHOS_TEST_FOR_EXCEPT(!dpdg_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM));
 
-     if (g_out != Teuchos::null) {
-       g_out->PutScalar(0.0);
-       model_outargs.set_g(0, g_out);
-     }
-     model_outargs.set_DgDp(0,0,dmv_dgdp);
-     model_outargs.set_DgDx(0,dgdx);
+      model_outargs.set_DgDp(0, 0, dgdp_deriv);
 
-     model->evalModel(model_inargs, model_outargs);
+      const RCP<Thyra::MultiVectorBase<Scalar> > dfdp_mv =
+        Thyra::createMembers(model->get_f_space(), model->get_p_space(0));
+      model_outargs.set_DfDp(0,
+          Thyra::ModelEvaluatorBase::Derivative<Scalar>(dfdp_mv, Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM));
 
- 
-     // (3) Calculate dg/dp = dg/dx*dx/dp + dg/dp
-     // This may be the transpose of what we want since we specified
-     // we want dg/dp by column in createOutArgs().
-     // In this case just interchange the order of dgdx and dxdp
-     // We should really probably check what the underlying ME does
+      const RCP<Thyra::MultiVectorBase<Scalar> > dgdx_mv =
+        Thyra::createMembers(model->get_x_space(), model->get_g_space(0));
+      model_outargs.set_DgDx(0,
+          Thyra::ModelEvaluatorBase::Derivative<Scalar>(dgdx_mv, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM));
 
-     if (Teuchos::VERB_MEDIUM <= solnVerbLevel) cout << " dgdx \n" << *dgdx << endl;
-     if (Teuchos::VERB_MEDIUM <= solnVerbLevel) cout << " dxdp \n" << *dxdp << endl;
+      const RCP<Thyra::LinearOpWithSolveBase<Scalar> > jacobian =
+        model->create_W();
+      model_outargs.set_W(jacobian);
 
-     dgdp_out->Multiply('T', 'N', 1.0, *dgdx, *dxdp, 1.0);
-   }
-*********************/
+      model->evalModel(model_inargs, model_outargs);
+
+      const RCP<Thyra::MultiVectorBase<Scalar> > dxdp_mv =
+        Thyra::createMembers(model->get_x_space(), model->get_p_space(0));
+      assign(dxdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+
+      const Thyra::SolveCriteria<Scalar> defaultSolveCriteria;
+      const Thyra::SolveStatus<Scalar> solveStatus =
+        Thyra::solve(*jacobian, Thyra::NOTRANS, *dfdp_mv, dxdp_mv.ptr(), Teuchos::ptr(&defaultSolveCriteria));
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          solveStatus.solveStatus == Thyra::SOLVE_STATUS_UNCONVERGED,
+          std::runtime_error,
+          "Jacobian solver failed to converge");
+
+      Thyra::apply(
+          *dgdx_mv,
+          Thyra::TRANS,
+          *dxdp_mv,
+          dgdp_mv.ptr(),
+          -Teuchos::ScalarTraits<Scalar>::one(),
+          Teuchos::ScalarTraits<Scalar>::one());
+    }
+  }
 }
-

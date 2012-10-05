@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -104,7 +104,7 @@ class NOXSolver
    Teuchos::RCP< Thyra::ModelEvaluatorDefaultBase<Scalar> > model;
    Teuchos::RCP<Teuchos::FancyOStream> out;
 
-  Teuchos::RCP< ::Thyra::NOXNonlinearSolver> solver;
+   Teuchos::RCP< ::Thyra::NOXNonlinearSolver> solver;
 
    int num_p;
    int num_g;
