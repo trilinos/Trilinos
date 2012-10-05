@@ -17,7 +17,7 @@ namespace stk {
   namespace adapt {
 
     // FIXME
-    //double m_min_spacing_factor = 0.5;
+    //static double m_min_spacing_factor = 0.5;  // reproduce (mostly) old behavior (centroids will be slightly diff)
     static double m_min_spacing_factor = 0.05;
 
 #if !NODE_REGISTRY_MAP_ACCESSORS_INLINED
@@ -350,8 +350,8 @@ namespace stk {
       /// makes coordinates of this new node be the centroid of its sub entity - this version does it for all new nodes
       void NodeRegistry::makeCentroid(stk::mesh::FieldBase *field)
       {
-        bool do_respect_spacing = m_eMesh.get_respect_spacing();
         EXCEPTWATCH;
+        bool do_respect_spacing = m_eMesh.get_respect_spacing();
         //unsigned *null_u = 0;
         stk::mesh::FieldBase *spacing_field    = m_eMesh.get_field("ref_spacing_field");
 

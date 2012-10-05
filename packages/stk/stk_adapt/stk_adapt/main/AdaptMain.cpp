@@ -42,6 +42,14 @@
 
 #include <stk_adapt/SerializeNodeRegistry.hpp>
 
+// FIXME
+#if defined ( STK_PERCEPT_HAS_MESQUITE )
+#define StackTraceTmp StackTrace
+#undef StackTrace
+#include <stk_percept/mesh/mod/mesquite-interface/SpacingFieldUtil.hpp>
+#define StackTrace StackTraceTmp
+#endif
+
 #define ALLOW_MEM_TEST 1
 
 extern double s_timers[10]; // = {0,0,0,0,0,0,0,0,0,0};
@@ -922,6 +930,12 @@ namespace stk {
                           }
 #endif
                         eMesh.commit();
+
+                        if (respect_spacing)
+                          {
+                            SpacingFieldUtil sfu(eMesh);
+                            sfu.compute_spacing_field();
+                          }
 
                         if (print_memory_usage)
                           memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.get_bulk_data(), 0, "after file open");
