@@ -148,8 +148,9 @@ ENDIF(PyTrilinos_ENABLE_NOX)
 #  ENDIF(NOX_ENABLE_Epetra)
 #ENDIF(NOX_ENABLE_LOCA)
 
-# Python interpreter and header files are required
+# Python interpreter, library, and header files are required.
 FIND_PACKAGE(PythonInterp 2.2 REQUIRED)
+FIND_PACKAGE(PythonLibs 2.2 REQUIRED)
 FIND_PACKAGE(PythonInclude REQUIRED)
 
 # Python module numpy is required

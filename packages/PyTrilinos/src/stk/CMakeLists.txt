@@ -1,9 +1,10 @@
 # the stk project
 PROJECT(PyPercept)
 
-# we need python to build
-FIND_PACKAGE(PythonLibs 2.2 REQUIRED)
-FIND_PACKAGE(PythonInclude REQUIRED)
+# The Python packages are already FIND_PACKAGEd
+# in PyTrilinos' main CMakeLists.txt.
+#FIND_PACKAGE(PythonLibs 2.2 REQUIRED)
+#FIND_PACKAGE(PythonInclude REQUIRED)
 
 FIND_PATH(MPI4PY_INCLUDE_DIR mpi4py HINTS ${PYTHON_INCLUDE_DIRS}/../../lib/python2.7/site-packages/mpi4py/include DOC "path to mpi4py include directory")
 
