@@ -50,6 +50,8 @@
 #include <impl/KokkosArray_Shape.hpp>
 #include <impl/KokkosArray_AnalyzeShape.hpp>
 
+#include <KokkosArray_MemoryManagement.hpp>
+
 #include <KokkosArray_Macros.hpp>
 
 namespace KokkosArray {
@@ -66,12 +68,17 @@ struct View_create_requires_non_const_data_type ;
 
 //----------------------------------------------------------------------------
 
-template< class DataType , class LayoutType , class DeviceType = LayoutType >
+template<  class DataType
+         , class LayoutType
+         , class DeviceType = LayoutType
+         , class MemoryManagementType = typename DefaultMemoryManagement<DeviceType>::type
+        >
 class View {
 public:
   typedef DataType    data_type ;
   typedef LayoutType  layout_type ;
   typedef DeviceType  device_type ;
+  typedef MemoryManagementType memory_management_type;
 
   typedef View< data_type , layout_type , Host >  HostMirror ;
 
