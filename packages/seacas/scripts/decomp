@@ -178,7 +178,6 @@ txtrst=$(tput sgr0)       # Text reset
 
 echo "==========================================================="
 echo "| Sandia Engineering Analysis Access procedure for: decomp "
-echo "| Version: 2012/07/20                                      "
 echo "==========================================================="
 
 
@@ -291,6 +290,15 @@ then
   echo ${txtrst}
   echo
   usage
+fi
+
+if [ $processors -eq 1 ]
+then
+    echo ${txtgrn}
+    echo "INFO: No decomposition needed for --processors = 1"
+    echo ${txtrst}
+    echo
+    exit 0
 fi
 
 ########################################################################
