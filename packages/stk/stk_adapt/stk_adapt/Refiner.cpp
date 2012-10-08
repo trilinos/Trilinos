@@ -1031,7 +1031,9 @@ namespace stk {
       //std::cout << "tmp dump_elements 3" << std::endl;
       //m_eMesh.dump_elements();
 
+#if defined( STK_PERCEPT_HAS_MESQUITE ) && defined(STK_PERCEPT_HAS_GEOMETRY)
       snapAndSmooth(m_geomSnap, m_geomFile);
+#endif
 
       /**/                                                TRACE_PRINT( "Refiner:doBreak ... done");
 

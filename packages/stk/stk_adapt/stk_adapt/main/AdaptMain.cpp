@@ -931,11 +931,13 @@ namespace stk {
 #endif
                         eMesh.commit();
 
+#if !defined(__IBMCPP__) && defined(STK_PERCEPT_HAS_MESQUITE)
                         if (respect_spacing)
                           {
                             SpacingFieldUtil sfu(eMesh);
                             sfu.compute_spacing_field();
                           }
+#endif
 
                         if (print_memory_usage)
                           memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.get_bulk_data(), 0, "after file open");
