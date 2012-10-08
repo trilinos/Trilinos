@@ -287,7 +287,7 @@ void destroy_dependent_ghosts( BulkData & mesh , Entity * entity )
     destroy_dependent_ghosts( mesh , e );
   }
 
-  mesh.destroy_entity( entity );
+  mesh.destroy_entity( *entity );
 }
 
 // Entities with sharing information that are not in the owned closure
@@ -525,7 +525,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
         if ( ! in_owned_closure( *entity , m_parallel_rank ) ) {
 
-          const bool destroy_entity_successful = destroy_entity(entity);
+          const bool destroy_entity_successful = destroy_entity(*entity);
           ThrowRequireMsg(destroy_entity_successful,
               "Could not destroy ghost entity " << print_entity_key(entity));
         }

@@ -3503,7 +3503,7 @@ namespace stk {
                 }
             }
 
-          if ( ! get_bulk_data()->destroy_entity( elem ) )
+          if ( ! get_bulk_data()->destroy_entity( *elem ) )
             {
               throw std::logic_error("PerceptMesh::delete_side_sets couldn't remove element, destroy_entity returned false for elem.");
             }

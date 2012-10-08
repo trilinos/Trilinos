@@ -327,7 +327,7 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
 
       stk::mesh::Entity * c1 = bulk_data.get_entity( constraint_rank, 1 );
 
-      ThrowErrorMsgIf( !bulk_data.destroy_entity( c1 ),
+      ThrowErrorMsgIf( !bulk_data.destroy_entity( *c1 ),
                        "failed to destroy constraint" );
     }
 

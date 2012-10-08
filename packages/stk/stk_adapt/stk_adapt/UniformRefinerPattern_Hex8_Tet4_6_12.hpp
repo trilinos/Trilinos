@@ -8,59 +8,59 @@ namespace stk {
   namespace adapt {
 
     /** From Shards_BasicTopologies.hpp
-     * 
-     * \brief Topological traits: Dimension = 3, Sides = 6, Edges = 12,              
-     *         Vertices = 8, and Nodes = 8, 20, or 27.                               
-     *                                                                               
-     *  <PRE>                                                                        
-     *   Linear 8-Node Hexahedron node locations.                                    
-     *                                                                               
-     *          7                    6                                               
-     *           o------------------o                                                
-     *          /|                 /|                                                
-     *         / |                / |                                                
-     *        /  |               /  |                                                
-     *       /   |              /   |                                                
-     *      /    |             /    |                                                
-     *     /     |            /     |                                                
-     *  4 /      |         5 /      |                                                
-     *   o------------------o       |                                                
-     *   |       |          |       |                                                
-     *   |     3 o----------|-------o 2                                              
-     *   |      /           |      /                                                 
-     *   |     /            |     /                                                  
-     *   |    /             |    /                                                   
-     *   |   /              |   /                                                    
-     *   |  /               |  /                                                     
-     *   | /                | /                                                      
-     *   |/                 |/                                                       
-     *   o------------------o                                                        
-     *  0                    1                                                       
-     *                                                                               
-     *                                                                               
-     *   face numbering for symmetric hex to tet break pattern                      |   typedef                                                                  
-     *                                                                              |     MakeTypeList< IndexList< 0 , 1 ,   8 > ,                               
-     *           7                                                                  |                   IndexList< 1 , 2 ,   9 > ,                               
-     *            o------------------o 6                                            |                   IndexList< 2 , 3 ,  10 > ,                               
-     *           /|                 /|                                              |                   IndexList< 3 , 0 ,  11 > ,                               
-     *          / |                / |                                              |                   IndexList< 4 , 5 ,  16 > ,                               
-     *         /  |   13          /  |                                              |                   IndexList< 5 , 6 ,  17 > ,                               
-     *        /   |    o         /   |                                              |                   IndexList< 6 , 7 ,  18 > ,                               
-     *       /    |       o10   /    |     Node #14 is at centroid of element       |                   IndexList< 7 , 4 ,  19 > ,                               
-     *      /     |            /     |                                              |                   IndexList< 0 , 4 ,  12 > ,                               
-     *   4 /      |         5 /      |     "2D surface" containing nodes            |                   IndexList< 1 , 5 ,  13 > ,                               
-     *    o------------------o    9  |      0,1,5,4 has node 25 at center....       |                   IndexList< 2 , 6 ,  14 > ,                               
-     *    | 11o   | 3        |   o   |                                              |                   IndexList< 3 , 7 ,  15 > >::type                         
-     *    |       o----------|-------o 2                                            |     HexahedronEdgeNodeMap ;                                                
-     *    |      /           |      /                                               |                                                                            
-     *    |     /   8        |     /                                                |   typedef                                                                  
-     *    |    /    o        |    /                                                 |     MakeTypeList< IndexList< 0, 1, 5, 4,   8, 13, 16, 12,   25 > ,         
-     *    |   /        o12   |   /                                                  |                   IndexList< 1, 2, 6, 5,   9, 14, 17, 13,   24 > ,         
-     *    |  /               |  /                                                   |                   IndexList< 2, 3, 7, 6,  10, 15, 18, 14,   26 > ,         
-     *    | /                | /                                                    |                   IndexList< 0, 4, 7, 3,  12, 19, 15, 11,   23 > ,         
-     *    |/                 |/                                                     |                   IndexList< 0, 3, 2, 1,  11, 10,  9,  8,   21 > ,         
-     *    o------------------o                                                      |                   IndexList< 4, 5, 6, 7,  16, 17, 18, 19,   22 > >::type   
-     *   0                    1                                                     |     HexahedronFaceNodeMap ;                                                
+     *
+     * \brief Topological traits: Dimension = 3, Sides = 6, Edges = 12,
+     *         Vertices = 8, and Nodes = 8, 20, or 27.
+     *
+     *  <PRE>
+     *   Linear 8-Node Hexahedron node locations.
+     *
+     *          7                    6
+     *           o------------------o
+     *          /|                 /|
+     *         / |                / |
+     *        /  |               /  |
+     *       /   |              /   |
+     *      /    |             /    |
+     *     /     |            /     |
+     *  4 /      |         5 /      |
+     *   o------------------o       |
+     *   |       |          |       |
+     *   |     3 o----------|-------o 2
+     *   |      /           |      /
+     *   |     /            |     /
+     *   |    /             |    /
+     *   |   /              |   /
+     *   |  /               |  /
+     *   | /                | /
+     *   |/                 |/
+     *   o------------------o
+     *  0                    1
+     *
+     *
+     *   face numbering for symmetric hex to tet break pattern                      |   typedef
+     *                                                                              |     MakeTypeList< IndexList< 0 , 1 ,   8 > ,
+     *           7                                                                  |                   IndexList< 1 , 2 ,   9 > ,
+     *            o------------------o 6                                            |                   IndexList< 2 , 3 ,  10 > ,
+     *           /|                 /|                                              |                   IndexList< 3 , 0 ,  11 > ,
+     *          / |                / |                                              |                   IndexList< 4 , 5 ,  16 > ,
+     *         /  |   13          /  |                                              |                   IndexList< 5 , 6 ,  17 > ,
+     *        /   |    o         /   |                                              |                   IndexList< 6 , 7 ,  18 > ,
+     *       /    |       o10   /    |     Node #14 is at centroid of element       |                   IndexList< 7 , 4 ,  19 > ,
+     *      /     |            /     |                                              |                   IndexList< 0 , 4 ,  12 > ,
+     *   4 /      |         5 /      |     "2D surface" containing nodes            |                   IndexList< 1 , 5 ,  13 > ,
+     *    o------------------o    9  |      0,1,5,4 has node 25 at center....       |                   IndexList< 2 , 6 ,  14 > ,
+     *    | 11o   | 3        |   o   |                                              |                   IndexList< 3 , 7 ,  15 > >::type
+     *    |       o----------|-------o 2                                            |     HexahedronEdgeNodeMap ;
+     *    |      /           |      /                                               |
+     *    |     /   8        |     /                                                |   typedef
+     *    |    /    o        |    /                                                 |     MakeTypeList< IndexList< 0, 1, 5, 4,   8, 13, 16, 12,   25 > ,
+     *    |   /        o12   |   /                                                  |                   IndexList< 1, 2, 6, 5,   9, 14, 17, 13,   24 > ,
+     *    |  /               |  /                                                   |                   IndexList< 2, 3, 7, 6,  10, 15, 18, 14,   26 > ,
+     *    | /                | /                                                    |                   IndexList< 0, 4, 7, 3,  12, 19, 15, 11,   23 > ,
+     *    |/                 |/                                                     |                   IndexList< 0, 3, 2, 1,  11, 10,  9,  8,   21 > ,
+     *    o------------------o                                                      |                   IndexList< 4, 5, 6, 7,  16, 17, 18, 19,   22 > >::type
+     *   0                    1                                                     |     HexahedronFaceNodeMap ;
      *                                                                              |
      * </PRE>                                                                       |
      *
@@ -102,7 +102,7 @@ namespace stk {
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
         needed_entities.resize(1);
-        needed_entities[0].first = stk::mesh::MetaData::ELEMENT_RANK;  
+        needed_entities[0].first = stk::mesh::MetaData::ELEMENT_RANK;
         setToOne(needed_entities);
       }
 
@@ -115,7 +115,7 @@ namespace stk {
 #if USE_FACE_BREAKER_H8_T4_6
         if (1)
           {
-            //             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 4, Specialization > *face_breaker = 
+            //             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 4, Specialization > *face_breaker =
             //               new UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 4, Specialization > (eMesh);
             bp[1] = m_face_breaker;
           }
@@ -125,7 +125,7 @@ namespace stk {
       /// NOTE: we create additional un-used elements if the Hex8 can be broken into 6 tets
       virtual unsigned getNumNewElemPerElem() { return 12u; }
 
-      void 
+      void
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                         stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
@@ -141,7 +141,7 @@ namespace stk {
         // for cases that have a single center node, we just compute the new node's quantities here instead of globally
         //stk::mesh::Entity * node = get_bulk_data()->get_entity( Node, node_id );
 
-#define CENTROID_N NN(stk::mesh::MetaData::ELEMENT_RANK, 0)  
+#define CENTROID_N NN(stk::mesh::MetaData::ELEMENT_RANK, 0)
 
 #if STK_ADAPT_URP_LOCAL_NODE_COMPS
         nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), Element, 0u);
@@ -196,7 +196,7 @@ namespace stk {
                   loc_qfaces[iHexFaceOrd][iFaceNodeOrd] = face.node[jFaceNodeOrd];
                 }
               if (0)
-                std::cout << "tmp hex face[" << iHexFaceOrd << "] = " 
+                std::cout << "tmp hex face[" << iHexFaceOrd << "] = "
                           << element_globalIds[loc_qfaces[iHexFaceOrd][0]] << " "
                           << element_globalIds[loc_qfaces[iHexFaceOrd][1]] << " "
                           << element_globalIds[loc_qfaces[iHexFaceOrd][2]] << " "
@@ -218,7 +218,7 @@ namespace stk {
               valences[loc_trifaces[iHexFaceOrd][1][2]]++;
             }
 
-          // find max valence 
+          // find max valence
           unsigned vmaxIndx = 0;
           unsigned vmax = valences[0];
           for (unsigned iv = 1; iv < 8; iv++)
@@ -264,7 +264,7 @@ namespace stk {
                       //                           m_elems[shards_Tetrahedron_4].push_back(element_globalIds[loc_trifaces[iQuadFace][kTriOnQuadFace][jTriNodeIndex]]);
                       //                         }
 
-                      new_elements[iele++] = tet_tuple_type(CENTROID_N, 
+                      new_elements[iele++] = tet_tuple_type(CENTROID_N,
                                                             element_globalIds[loc_trifaces[iQuadFace][kTriOnQuadFace][0]],
                                                             element_globalIds[loc_trifaces[iQuadFace][kTriOnQuadFace][1]],
                                                             element_globalIds[loc_trifaces[iQuadFace][kTriOnQuadFace][2]]);
@@ -355,7 +355,7 @@ namespace stk {
               {
                 // destroy un-needed elems
                 // elems_to_destroy.push_back(*element_pool);  ++element_pool;
-                eMesh.get_bulk_data()->destroy_entity(*element_pool);
+                eMesh.get_bulk_data()->destroy_entity(**element_pool);
                 ++element_pool;
               }
             //nodes_to_destroy.push_back(CENTROID_N)
@@ -366,11 +366,11 @@ namespace stk {
               }
             else
               {
-                eMesh.get_bulk_data()->destroy_entity(node);
+                eMesh.get_bulk_data()->destroy_entity(*node);
               }
           }
       }
-      
+
     };
 #undef CENTROID_N
 

@@ -629,7 +629,7 @@ namespace stk {
         for (SetOfEntities::iterator it = m_pseudo_entities.begin(); it != m_pseudo_entities.end(); ++it)
           {
             stk::mesh::Entity *pseudo_elem = *it;
-            bool did_destroy = m_eMesh.get_bulk_data()->destroy_entity(pseudo_elem);
+            bool did_destroy = m_eMesh.get_bulk_data()->destroy_entity(*pseudo_elem);
             VERIFY_OP_ON(did_destroy, ==, true, "NodeRegistry::removePseudoEntities couldn't destroy");
           }
       }
@@ -2031,7 +2031,7 @@ namespace stk {
                 ids[i] = (num_times_called*100000) + i + (num_times_called*100000)*1000*m_eMesh.get_parallel_rank();
 #else
                 ids[i] = new_nodes[i]->identifier();
-                bool did_destroy = m_eMesh.get_bulk_data()->destroy_entity(new_nodes[i]);
+                bool did_destroy = m_eMesh.get_bulk_data()->destroy_entity(*new_nodes[i]);
                 VERIFY_OP_ON(did_destroy, ==, true, "createNewNodesInParallel couldn't destroy");
 #endif
                 new_nodes[i] = & m_eMesh.get_bulk_data()->declare_entity(m_eMesh.node_rank(), ids[i], empty_parts);

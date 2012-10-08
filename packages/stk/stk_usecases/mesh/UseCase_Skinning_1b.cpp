@@ -78,7 +78,7 @@ void destroy_entity_and_create_particles(
       downward_relations.push_back(current_entity);
     }
 
-    fixture.m_bulk_data.destroy_entity( elem );
+    fixture.m_bulk_data.destroy_entity( *elem );
 
     // destroy the related entities if they are not connected to any
     // higher order entities
@@ -87,7 +87,7 @@ void destroy_entity_and_create_particles(
       stk::mesh::Entity * current_entity = *itr;
 
       if (current_entity->relations(element_rank).empty()) {
-        fixture.m_bulk_data.destroy_entity( current_entity );
+        fixture.m_bulk_data.destroy_entity( *current_entity );
       }
     }
   }

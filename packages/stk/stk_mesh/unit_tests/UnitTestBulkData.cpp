@@ -1278,12 +1278,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting)
   if (p_rank == 1)
     {
       Entity *this_elem = mesh.get_entity(MetaData::ELEMENT_RANK, 2);
-      if (!mesh.destroy_entity(this_elem)) exit(2);
+      if (!mesh.destroy_entity(*this_elem)) exit(2);
     }
   if (p_rank == 2)
     {
       Entity *this_elem = mesh.get_entity(MetaData::ELEMENT_RANK, 3);
-      if (!mesh.destroy_entity(this_elem)) exit(2);
+      if (!mesh.destroy_entity(*this_elem)) exit(2);
     }
   mesh.modification_end();
 

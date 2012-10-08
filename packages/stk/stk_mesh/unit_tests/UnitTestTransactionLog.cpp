@@ -257,7 +257,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkDelete)
 
   bulk.reset_transaction ( stk::mesh::Transaction::BULK );
   bulk.modification_begin ();
-  bulk.destroy_entity ( new_entity );
+  bulk.destroy_entity ( *new_entity );
   bulk.modification_end ();
 
   STKUNIT_ASSERT ( bulk.get_transaction_log().get_deleted_buckets(0).size() == 0 );
@@ -388,7 +388,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalInsert)
   bulk.change_entity_parts ( *entities[1] , add_part );
 
   // Delete one entity to ensure the entity disappears from log
-  bulk.destroy_entity ( entities[3] );
+  bulk.destroy_entity ( *entities[3] );
   bulk.modification_end();
 
   // The first three entities should exist in the insert buckets in
@@ -534,7 +534,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalDelete)
   // Record the old parts for testing later
   deleted_cell->bucket().supersets ( old_parts );
   stk::mesh::EntityId  deleted_cell_id = deleted_cell->identifier();
-  bulk.destroy_entity ( deleted_cell );
+  bulk.destroy_entity ( *deleted_cell );
   bulk.modification_end();
 
   // Verify that the element is deleted

@@ -157,9 +157,9 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
   STKUNIT_ASSERT ( cell_to_delete != NULL );
   cell_to_delete_copy = cell_to_delete;
   bulk.modification_begin();
-  bulk.destroy_entity ( cell_to_delete );
+  bulk.destroy_entity ( *cell_to_delete );
   // Destroying an already destroyed entity returns false
-  STKUNIT_ASSERT( false == bulk.destroy_entity( cell_to_delete_copy ) );
+  STKUNIT_ASSERT( false == bulk.destroy_entity( *cell_to_delete_copy ) );
   bulk.modification_end();
 }
 

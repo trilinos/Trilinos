@@ -520,7 +520,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
         if ( entity != e ) {
           entity = e ;
           if ( ! member_of_owned_closure( *e , p_rank ) ) {
-            ThrowRequireMsg( destroy_entity( e ),
+            ThrowRequireMsg( destroy_entity( *e ),
                 "Failed to destroy entity " << print_entity_key(e) );
           }
         }

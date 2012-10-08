@@ -297,7 +297,7 @@ public:
    *  \return  True if the request for destruction is accepted; i.e.,
    *           if the entity is not the 'to' member of a relation.
    */
-  bool destroy_entity( Entity * & entity );
+  bool destroy_entity( Entity & entity );
 
   //------------------------------------
 

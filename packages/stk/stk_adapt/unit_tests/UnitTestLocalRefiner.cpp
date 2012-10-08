@@ -1912,7 +1912,7 @@ namespace stk {
             // delete the first element
             eMesh.get_bulk_data()->modification_begin();
             stk::mesh::Entity* element_0 = &( (**(eMesh.get_bulk_data()->buckets(stk::mesh::MetaData::ELEMENT_RANK).begin()))[0]);
-            if ( ! eMesh.get_bulk_data()->destroy_entity( element_0 ) )
+            if ( ! eMesh.get_bulk_data()->destroy_entity( *element_0 ) )
               {
                 throw std::logic_error("failed in deleting element");
               }

@@ -88,7 +88,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_nodes)
     STKUNIT_ASSERT( NULL != e );
 
     bulk.modification_begin();
-    STKUNIT_ASSERT( bulk.destroy_entity( e ) );
+    STKUNIT_ASSERT( bulk.destroy_entity( *e ) );
     bulk.modification_end();
 
     // Due to change logging the previously deleted entity
@@ -175,18 +175,18 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestory_ring)
     bulk.modification_begin();
 
     // Destroy the element:
-    bool result = bulk.destroy_entity( element );
+    bool result = bulk.destroy_entity( *element );
+    element = NULL;
     STKUNIT_ASSERT( true == result );
-    STKUNIT_ASSERT( NULL == element );
 
     // Destroy orphanned node:
     if ( node0->relations().size() == 0 ) {
-      STKUNIT_ASSERT( bulk.destroy_entity( node0 ) );
-      STKUNIT_ASSERT( NULL == node0 );
+      STKUNIT_ASSERT( bulk.destroy_entity( *node0 ) );
+      node0 = NULL;
     }
     if ( node1->relations().size() == 0 ) {
-      STKUNIT_ASSERT( bulk.destroy_entity( node1 ) );
-      STKUNIT_ASSERT( NULL == node1 );
+      STKUNIT_ASSERT( bulk.destroy_entity( *node1 ) );
+      node1 = NULL;
     }
     STKUNIT_ASSERT( stk::unit_test::modification_end_wrapper(bulk, aura_flag) );
 
@@ -233,9 +233,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestory_ring)
 
     while ( node->relations().size() ) {
       Entity * e = node->relations().back().entity();
-      STKUNIT_ASSERT( bulk.destroy_entity( e ) );
+      STKUNIT_ASSERT( bulk.destroy_entity( *e ) );
     }
-    STKUNIT_ASSERT( bulk.destroy_entity( node ) );
+    STKUNIT_ASSERT( bulk.destroy_entity( *node ) );
 
     STKUNIT_ASSERT( bulk.modification_end() );
 
@@ -287,11 +287,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestory_ring)
 
     while ( node_owned->relations().size() ) {
       Entity * e = node_owned->relations().back().entity();
-      STKUNIT_ASSERT( bulk.destroy_entity( e ) );
+      STKUNIT_ASSERT( bulk.destroy_entity( *e ) );
     }
-    STKUNIT_ASSERT( bulk.destroy_entity( node_owned ) );
+    STKUNIT_ASSERT( bulk.destroy_entity( *node_owned ) );
 
-    STKUNIT_ASSERT( bulk.modification_end()  );
+    STKUNIT_ASSERT( bulk.modification_end() );
 
     // Ownership of the other process' owned, shared, and destroyed node
     // has been transferred to this process.

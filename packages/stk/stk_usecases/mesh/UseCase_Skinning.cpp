@@ -116,11 +116,11 @@ void copy_nodes_and_break_relations( stk::mesh::BulkData     & mesh,
     mesh.copy_entity_fields( *entity, *new_entity);
 
     if (entity->relations().empty()) {
-      mesh.destroy_entity(entity);
+      mesh.destroy_entity(*entity);
     }
 
     if (new_entity->relations().empty()) {
-      mesh.destroy_entity(new_entity);
+      mesh.destroy_entity(*new_entity);
     }
 
 

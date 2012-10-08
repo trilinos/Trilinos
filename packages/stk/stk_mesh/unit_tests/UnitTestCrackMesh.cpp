@@ -37,7 +37,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy2D )
 
     if ( elem && p_rank == elem->owner_rank() ) {
       stk::mesh::Entity * tmp = elem ;
-      fixture.m_bulk_data.destroy_entity( tmp );
+      fixture.m_bulk_data.destroy_entity( *tmp );
     }
 
     fixture.m_bulk_data.modification_end();
@@ -72,7 +72,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy3D )
 
     if ( elem && p_rank == elem->owner_rank() ) {
       stk::mesh::Entity * tmp = elem ;
-      fixture.m_bulk_data.destroy_entity( tmp );
+      fixture.m_bulk_data.destroy_entity( *tmp );
     }
 
     fixture.m_bulk_data.modification_end();

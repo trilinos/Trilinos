@@ -56,7 +56,7 @@ void delete_skin( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, Entit
   mesh.modification_begin();
 
   for ( stk::mesh::EntityVector::iterator i = skin_entities.begin(); i != skin_entities.end(); ++i) {
-    mesh.destroy_entity(*i);
+    mesh.destroy_entity(**i);
   }
 
   mesh.modification_end();
@@ -181,11 +181,11 @@ void copy_nodes_and_break_relations( stk::mesh::BulkData     & mesh,
     mesh.copy_entity_fields( *entity, *new_entity);
 
     if (entity->relations().empty()) {
-      mesh.destroy_entity(entity);
+      mesh.destroy_entity(*entity);
     }
 
     if (new_entity->relations().empty()) {
-      mesh.destroy_entity(new_entity);
+      mesh.destroy_entity(*new_entity);
     }
 
 

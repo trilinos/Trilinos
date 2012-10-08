@@ -52,7 +52,7 @@ bool
 remove_entity( mesh_traits<stk::mesh::BulkData>::entity_key entity,
                stk::mesh::BulkData & mesh )
 {
-  return mesh.destroy_entity(entity);
+  return mesh.destroy_entity(*entity);
 }
 
 // Add relation from entity_from to entity_to with position

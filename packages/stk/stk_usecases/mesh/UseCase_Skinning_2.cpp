@@ -63,7 +63,7 @@ void destroy_entity_closure( stk::mesh::BulkData & mesh, stk::mesh::Entity * ent
     }
   }
 
-  mesh.destroy_entity(entity);
+  mesh.destroy_entity(*entity);
 }
 
 }

@@ -695,10 +695,8 @@ void BulkData::internal_change_entity_parts(
 
 //----------------------------------------------------------------------
 
-bool BulkData::destroy_entity( Entity * & entity_in )
+bool BulkData::destroy_entity( Entity & entity )
 {
-  Entity & entity = *entity_in ;
-
   TraceIfWatching("stk::mesh::BulkData::destroy_entity", LOG_ENTITY, entity.key());
   DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
 
@@ -762,8 +760,6 @@ bool BulkData::destroy_entity( Entity * & entity_in )
   // Set the calling entity-pointer to NULL;
   // hopefully the user-code will clean up any outstanding
   // references to this entity.
-
-  entity_in = NULL ;
 
   return true ;
 }

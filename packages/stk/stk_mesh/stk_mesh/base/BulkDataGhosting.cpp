@@ -123,7 +123,7 @@ void BulkData::destroy_all_ghosting()
 
     if ( in_receive_ghost( *entity ) ) {
       m_entity_comm_map.comm_clear(entity->key());
-      destroy_entity( entity );
+      destroy_entity( *entity );
       *ie = NULL ;
     }
     else {
@@ -336,7 +336,7 @@ void BulkData::internal_change_ghosting(
       removed = true ;
       *i = NULL ; // No longer communicated
       if ( remove_recv ) {
-        ThrowRequireMsg( destroy_entity( entity ),
+        ThrowRequireMsg( destroy_entity( *entity ),
                          " FAILED attempt to destroy entity: " << print_entity_key(entity) );
       }
     }

@@ -207,10 +207,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
       Entity *elem1 = mesh.get_entity(MetaData::ELEMENT_RANK, 201);
       Entity *elem2 = mesh.get_entity(MetaData::ELEMENT_RANK, 100);
 
-      bool did_it_elem = mesh.destroy_entity(elem1);
-      did_it_elem = did_it_elem & mesh.destroy_entity(elem2);
+      bool did_it_elem = mesh.destroy_entity(*elem1);
+      did_it_elem = did_it_elem & mesh.destroy_entity(*elem2);
       STKUNIT_ASSERT(did_it_elem);
-      bool did_it = mesh.destroy_entity(node1);
+      bool did_it = mesh.destroy_entity(*node1);
       STKUNIT_ASSERT(did_it);
     }
 
