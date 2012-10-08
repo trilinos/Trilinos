@@ -893,6 +893,13 @@ void STK_Interface::printMetaData(std::ostream & os) const
          os << "      " << bcVector[i]->getString() << "\n";
       os << std::endl;
    }
+
+   // print all available fields in meta data
+   os << "   Fields = ";
+   const stk::mesh::FieldVector & fv = metaData_->get_fields(); 
+   for(std::size_t i=0;i<fv.size();i++) 
+      os << "\"" << fv[i]->name() << "\" ";
+   os << std::endl;
 }
 
 Teuchos::RCP<const shards::CellTopology> STK_Interface::getCellTopology(const std::string & eBlock) const

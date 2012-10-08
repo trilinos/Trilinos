@@ -109,6 +109,10 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
    stk::io::create_input_mesh("exodusii", fileName_, parallelMach,
                                     *femMetaData, *meshData); 
 
+   // read in other transient fields, these will be useful later when
+   // trying to read other fields for use in solve
+   stk::io::define_input_fields(*meshData,*femMetaData);
+
    // store mesh data pointer for later use in initializing 
    // bulk data
    metaData.declare_attribute_with_delete(meshData);

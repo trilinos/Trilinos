@@ -91,7 +91,7 @@ buildElementDescriptor(stk::mesh::EntityId elmtId,std::vector<stk::mesh::EntityI
 
 class STK_Interface {
 public:
-   typedef int ProcIdData;
+   typedef double ProcIdData; // ECC: Not sure why?
    typedef stk::mesh::Field<double> SolutionFieldType;
    typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
    typedef stk::mesh::Field<ProcIdData> ProcIdFieldType;
