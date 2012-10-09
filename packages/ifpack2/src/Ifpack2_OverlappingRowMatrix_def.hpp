@@ -92,7 +92,7 @@ OverlappingRowMatrix<MatrixType>::OverlappingRowMatrix(const Teuchos::RCP<const 
       GlobalOrdinal GID = ColMap->getGlobalElement(i); 
       if (A_->getRowMap()->getLocalElement(GID) ==  global_invalid) { 
 	typename Array<GlobalOrdinal>::iterator pos 
-	  = find(ExtElements.begin(),ExtElements.end(),GID); 
+	  = std::find(ExtElements.begin(),ExtElements.end(),GID); 
         if (pos == ExtElements.end()) { 
           ExtElements.push_back(GID);
           mylist[count] = GID; 
