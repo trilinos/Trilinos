@@ -751,6 +751,25 @@ namespace Ioex {
 
   void DatabaseIO::read_meta_data()
   {
+    // If this is a HISTORY file, there isn't really any metadata
+    // Other than a single node and single element.  Just hardwire
+    // it here (needed when appending to existing history file)
+    if (dbUsage == Ioss::WRITE_HISTORY) {
+      if (myProcessor == 0) {
+	nodeCount = 1;
+	elementCount = 1;
+	Ioss::NodeBlock *nb = new Ioss::NodeBlock(this, "nodeblock_1", 1, 3);
+	get_region()->add(nb);
+
+	// Element Block
+	Ioss::ElementBlock *eb = new Ioss::ElementBlock(this, "e1", "sphere", 1);
+	eb->property_add(Ioss::Property("id", 1));
+	get_region()->add(eb);
+	add_region_fields();
+      }
+      return;
+    }
+
     {
       Ioss::SerializeIO	serializeIO__(this);
 
