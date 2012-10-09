@@ -6816,7 +6816,7 @@ namespace Ioex {
       }
     }
 
-    // Handle special output time requests -- primarily restart (cycle, keep, overwrite)
+    // Handle special output time requests -- primarily restart (cycle, overwrite)
     // Given the global region step, return the step on the database...
     int DatabaseIO::get_database_step(int global_step) const
     {
