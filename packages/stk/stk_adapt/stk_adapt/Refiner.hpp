@@ -172,10 +172,10 @@ namespace stk {
         //,END_OPTIONS
       };
 
-      void snapAndSmooth(bool geomSnap, std::string geomFile);
-
       void smoothGeometry(MeshGeometry& mesh_geometry, SMOOTHING_OPTIONS option);
 #endif
+
+      void snapAndSmooth(bool geomSnap, std::string geomFile);
 
       void deleteParentElements();
 
