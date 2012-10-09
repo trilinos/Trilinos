@@ -1,5 +1,5 @@
 #include <stk_percept/Percept.hpp>
-#if !defined(__IBMCPP__) && defined(STK_PERCEPT_HAS_MESQUITE)
+#if !defined(__IBMCPP__) 
 
 
 #include <stk_percept/mesh/mod/smoother/ReferenceMeshSmoother1.hpp>
@@ -556,7 +556,7 @@ namespace stk {
         //!! FIXME 
         //m_scale = (m_scale < 1.0) ? 1.0 : 1.0/m_scale;
         m_scale = 1.0/m_scale;
-        PRINT_1("tmp srk get_grad m_scale= " << m_scale);
+        //PRINT_1("tmp srk get_grad m_scale= " << m_scale);
       }
         
       if (!m_use_local_scaling) 
@@ -638,7 +638,7 @@ namespace stk {
           //!! FIXME  
           //m_scale = (m_scale < 1.0) ? 1.0 : 1.0/m_scale;
           m_scale = 1.0/m_scale;
-          PRINT_1("tmp srk get_scale m_scale= " << m_scale);
+          //PRINT_1("tmp srk get_scale m_scale= " << m_scale);
         }
 
       // node loop

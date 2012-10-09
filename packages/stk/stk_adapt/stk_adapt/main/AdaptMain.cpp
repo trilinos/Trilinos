@@ -42,13 +42,7 @@
 
 #include <stk_adapt/SerializeNodeRegistry.hpp>
 
-// FIXME
-#if defined ( STK_PERCEPT_HAS_MESQUITE )
-#define StackTraceTmp StackTrace
-#undef StackTrace
-#include <stk_percept/mesh/mod/mesquite-interface/SpacingFieldUtil.hpp>
-#define StackTrace StackTraceTmp
-#endif
+#include <stk_percept/mesh/mod/smoother/SpacingFieldUtil.hpp>
 
 #define ALLOW_MEM_TEST 1
 
@@ -931,13 +925,11 @@ namespace stk {
 #endif
                         eMesh.commit();
 
-#if !defined(__IBMCPP__) && defined(STK_PERCEPT_HAS_MESQUITE)
                         if (respect_spacing)
                           {
                             SpacingFieldUtil sfu(eMesh);
                             sfu.compute_spacing_field();
                           }
-#endif
 
                         if (print_memory_usage)
                           memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.get_bulk_data(), 0, "after file open");

@@ -10,7 +10,7 @@
 
 
 #include <stk_percept/Percept.hpp>
-#if !defined(__IBMCPP__) && defined(STK_PERCEPT_HAS_MESQUITE)
+#if !defined(__IBMCPP__) 
 
 namespace stk {
   namespace percept {

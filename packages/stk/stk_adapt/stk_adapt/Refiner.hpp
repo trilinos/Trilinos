@@ -162,7 +162,7 @@ namespace stk {
       bool
       getAlwaysInitializeNodeRegistry() { return m_alwaysInitNodeRegistry; }
 
-#if defined( STK_PERCEPT_HAS_MESQUITE ) && defined(STK_PERCEPT_HAS_GEOMETRY)
+#if  defined(STK_PERCEPT_HAS_GEOMETRY)
 
       enum SMOOTHING_OPTIONS {
         // snaps and discards original coord field, tries to smooth

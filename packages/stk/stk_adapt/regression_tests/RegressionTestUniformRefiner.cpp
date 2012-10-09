@@ -54,16 +54,9 @@
 #include <stk_percept/fixtures/WedgeFixture.hpp>
 
 // smoothing tests
-#define StackTraceTmp StackTrace
-#undef StackTrace
-#include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
-#include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMeshDomain.hpp>
-#include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother.hpp>
-#include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
-#include <stk_percept/mesh/mod/mesquite-interface/PMMShapeImprover.hpp>
-#include <stk_percept/mesh/mod/mesquite-interface/PMMParallelShapeImprover.hpp>
-#include <stk_percept/mesh/mod/mesquite-interface/PMMShapeSizeOrientImprover.hpp>
-#define StackTrace StackTraceTmp
+#include <stk_percept/mesh/mod/smoother/MeshSmoother.hpp>
+#include <stk_percept/mesh/mod/smoother/ReferenceMeshSmoother1.hpp>
+
 
 // this is for testing the local-refine refactoring
 #define UNIFORM_REFINER UniformRefiner
@@ -3079,7 +3072,8 @@ namespace stk
 
       // A cube with an indented bump on the bottom, new parallel smoother, convert to tet
 
-      STKUNIT_UNIT_TEST(regr_perceptMesquite, tet_4)
+      // regr_perceptMeshSmoother.tet_4
+      STKUNIT_UNIT_TEST(regr_perceptMeshSmoother, tet_4)
       {
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
@@ -3170,18 +3164,14 @@ namespace stk
             std::cout << "tmp srk doing Shape smoothing for tet_4 case..." << std::endl;
 
             //bool do_jacobi = true;
-            Mesquite::MsqDebug::disable(1);
-            //Mesquite::MsqDebug::enable(2);
-            //Mesquite::MsqDebug::enable(3);
 
             int  msq_debug             = 0; // 1,2,3 for more debug info
             bool always_smooth         = true;
             int innerIter = 1001;
 
             {
-              PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
-              stk::percept::PMMParallelShapeImprover pmmpsi(innerIter, 1.e-4, 1);
-              pmmpsi.run(pmm, 0, always_smooth, msq_debug);
+              stk::percept::ReferenceMeshSmoother1 pmmpsi(&eMesh, &boundarySelector, 0, innerIter, 1.e-4, 1);
+              pmmpsi.run( always_smooth, msq_debug);
             }
 
             eMesh.save_as(output_files_loc+"tet_4_si_smooth.1.e");

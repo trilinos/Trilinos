@@ -9,7 +9,7 @@
 
 #include <stk_percept/Percept.hpp>
 
-#if defined( STK_PERCEPT_HAS_GEOMETRY ) && defined(STK_PERCEPT_HAS_MESQUITE)
+#if defined( STK_PERCEPT_HAS_GEOMETRY )
 
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/Util.hpp>
@@ -35,47 +35,9 @@
 //#include <stk_percept/mesh/geometry/kernel/MeshGeometry.hpp>
 //#include <stk_percept/mesh/geometry/kernel/GeometryFactory.hpp>
 
-// place Mesquite-related headers between the StackTrace redefinitions
-#define StackTraceTmp StackTrace
-#undef StackTrace
-#include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMesh.hpp>
-#include <stk_percept/mesh/mod/mesquite-interface/PerceptMesquiteMeshDomain.hpp>
-#include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother.hpp>
-#include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
-#include <stk_percept/mesh/mod/mesquite-interface/PMMShapeImprover.hpp>
-#include <stk_percept/mesh/mod/mesquite-interface/PMMParallelShapeImprover.hpp>
-
-#include <stk_percept/mesh/mod/mesquite-interface/SpacingFieldUtil.hpp>
-
-#include <MsqDebug.hpp>
-
-#include "MeshImpl.hpp"
-#include "MsqTimer.hpp"
-#include "Mesquite.hpp"
-#include "MsqError.hpp"
-#include "Vector3D.hpp"
-#include "InstructionQueue.hpp"
-#include "LaplaceWrapper.hpp"
-#include "PatchData.hpp"
-#include "TerminationCriterion.hpp"
-#include "QualityAssessor.hpp"
-
-/* Mesquite includes */
-#include "ParallelMeshImpl.hpp"
-#include "ParallelHelper.hpp"
-
-
-// algorithms
-#include "Randomize.hpp"
-#include "ConditionNumberQualityMetric.hpp"
-#include "UntangleBetaQualityMetric.hpp"
-#include "LPtoPTemplate.hpp"
-#include "LInfTemplate.hpp"
-#include "SteepestDescent.hpp"
-#include "ConjugateGradient.hpp"
-#include "PlanarDomain.hpp"
-
-#define StackTrace StackTraceTmp
+#include <stk_percept/mesh/mod/smoother/MeshSmoother.hpp>
+#include <stk_percept/mesh/mod/smoother/ReferenceMeshSmoother1.hpp>
+#include <stk_percept/mesh/mod/smoother/SpacingFieldUtil.hpp>
 
 #include <iostream>
 #include <cstdlib>
@@ -94,11 +56,12 @@ namespace stk
   {
     namespace unit_tests 
     {
-      Mesquite::MeshImpl *create_mesquite_mesh(PerceptMesh *eMesh, stk::mesh::Selector *boundarySelector);
-
 
 #define DO_TESTS 0
 #if DO_TESTS
+
+      Mesquite::MeshImpl *create_mesquite_mesh(PerceptMesh *eMesh, stk::mesh::Selector *boundarySelector);
+
 
 #define EXTRA_PRINT 0
       static int s_par_size_max = 2;
@@ -296,9 +259,6 @@ namespace stk
             stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
 
             //bool do_jacobi = true;
-            //Mesquite::MsqDebug::enable(1);
-            //Mesquite::MsqDebug::enable(2);
-            //Mesquite::MsqDebug::enable(3);
             if (p_size == 1)
               {
                 PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);

@@ -1,5 +1,5 @@
 #include <stk_percept/Percept.hpp>
-#if !defined(__IBMCPP__) && defined(STK_PERCEPT_HAS_MESQUITE)
+#if !defined(__IBMCPP__) 
 
 #include <stk_percept/mesh/mod/smoother/MeshSmoother.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>

@@ -22,13 +22,7 @@
 #include <stk_percept/function/ConstantFunction.hpp>
 #include <stk_percept/PerceptMesh.hpp>
 
-#if defined ( STK_PERCEPT_HAS_MESQUITE )
-
-#define StackTraceTmp StackTrace
-#undef StackTrace
-#include <stk_percept/mesh/mod/mesquite-interface/SpacingFieldUtil.hpp>
-#define StackTrace StackTraceTmp
-#endif
+#include <stk_percept/mesh/mod/smoother/SpacingFieldUtil.hpp>
 
 #include <stk_adapt/UniformRefinerPattern.hpp>
 #include <stk_adapt/UniformRefiner.hpp>
@@ -1832,7 +1826,7 @@ namespace stk {
       //======================================================================================================================
       //======================================================================================================================
 
-#if defined ( STK_PERCEPT_HAS_MESQUITE )
+#if defined ( STK_PERCEPT_HAS_GEOMETRY )
 
       /// Refine a triangle mesh with spacing
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_quad_to_quad_sierra_spc)
