@@ -64,6 +64,7 @@ packages/epetra/src/NEW/
 packages/epetra/src/new_Epetra_CrsGraph.cpp
 packages/jpetra.tar.gz
 packages/kokkos/doc/.DS_Store
+packages/kokkos/classic/doc/html/
 CHECKINS
 XPETRA_MPI_THREADED/
 ALL_OMP_GCC/
