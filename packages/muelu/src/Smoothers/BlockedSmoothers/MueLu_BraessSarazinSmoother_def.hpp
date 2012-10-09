@@ -157,6 +157,18 @@ namespace MueLu {
     // Create the inverse of the diagonal of F
     RCP<Vector> diagFVector = VectorFactory::Build(F_->getRowMap());
     F_->getLocalDiagCopy(*diagFVector);       // extract diagonal of F
+
+    ////////// EXPERIMENTAL
+    // fix zeros on diagonal
+    /*Teuchos::ArrayRCP< Scalar > diagFdata = diagFVector->getDataNonConst(0);
+    for(size_t t = 0; t < diagFdata.size(); t++) {
+      if(diagFdata[t] == 0.0) {
+        std::cout << "fixed zero diagonal entry" << std::endl;
+        diagFdata[t] = 1.0;
+      }
+    }*/
+    ////////// EXPERIMENTAL
+
     diagFVector->reciprocal(*diagFVector);    // build reciprocal
     diagFinv_ = diagFVector;
 
@@ -170,6 +182,8 @@ namespace MueLu {
   void BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::BraessSarazinSmoother::Apply(): Setup() has not been called");
+
+    //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
 
     // TODO change notation for v and p
     RCP<MultiVector> vtemp = MultiVectorFactory::Build(F_->getRowMap(),1);
@@ -203,12 +217,14 @@ namespace MueLu {
 
       //Pressure correction, using the preconditioner
       RCP<MultiVector> q = MultiVectorFactory::Build(Z_->getRowMap(),1); // TODO think about this.
+      q->putScalar(0.0);  // just for safety
       smoo_->Apply(*q,*qrhs);
 
       //Update
       vtemp->putScalar(0.0);
       G_->apply(*q,*vtemp);
       vtemp->update(1.0,*rvel,-1.0); //velres - G*q
+
       RCP<MultiVector> vx = MultiVectorFactory::Build(F_->getRowMap(),1);
       vx->elementWiseMultiply(1.0/omega_,*diagFinv_,*vtemp,1.0);
 

@@ -227,8 +227,6 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
 
   bP->fillComplete();
 
-  // TODO use strided maps for map extractor objects!!!!
-
   //bP->describe(*fos,Teuchos::VERB_EXTREME);
 
   // Level Set
