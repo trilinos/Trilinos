@@ -208,7 +208,8 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
 	bcs_type->setup(*side_pb,user_data);
 	bcs_type->buildAndRegisterEvaluators(fm,*side_pb,cm_factory,closure_models,user_data);
 	bcs_type->buildAndRegisterGatherAndOrientationEvaluators(fm,*side_pb,lo_factory,user_data);
-	bcs_type->buildAndRegisterScatterEvaluators(fm,*side_pb,lo_factory,user_data);
+        if(!physicsBlockScatterDisabled())
+  	  bcs_type->buildAndRegisterScatterEvaluators(fm,*side_pb,lo_factory,user_data);
       }
 
       // Setup the fieldmanager
