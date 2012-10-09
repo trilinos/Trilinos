@@ -150,8 +150,8 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
       TEST_EQUALITY(gids.size(),12);
       TEST_EQUALITY(gids[0],0); TEST_EQUALITY(gids[1],1); TEST_EQUALITY(gids[2],2);
       TEST_EQUALITY(gids[3],3); TEST_EQUALITY(gids[4],4); TEST_EQUALITY(gids[5],5);
-      TEST_EQUALITY(gids[6],6); TEST_EQUALITY(gids[7],7); TEST_EQUALITY(gids[8],8);
-      TEST_EQUALITY(gids[9],9); TEST_EQUALITY(gids[10],10); TEST_EQUALITY(gids[11],11);
+      TEST_EQUALITY(gids[6],9); TEST_EQUALITY(gids[7],10); TEST_EQUALITY(gids[8],11);
+      TEST_EQUALITY(gids[9],6); TEST_EQUALITY(gids[10],7); TEST_EQUALITY(gids[11],8);
 
       for(std::size_t i=0;i<p_offsets.size();i++) {
          TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
@@ -161,10 +161,10 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
    
       dofManager->getElementGIDs(1,gids);
       TEST_EQUALITY(gids.size(),12);
-      TEST_EQUALITY(gids[0],9); TEST_EQUALITY(gids[1],10); TEST_EQUALITY(gids[2],11);
-      TEST_EQUALITY(gids[3],6); TEST_EQUALITY(gids[4],7); TEST_EQUALITY(gids[5],8);
-      TEST_EQUALITY(gids[6], 12); TEST_EQUALITY(gids[7],13); TEST_EQUALITY(gids[8],14);
-      TEST_EQUALITY(gids[9],15); TEST_EQUALITY(gids[10],16); TEST_EQUALITY(gids[11],17);
+      TEST_EQUALITY(gids[0],6); TEST_EQUALITY(gids[1],7); TEST_EQUALITY(gids[2],8);
+      TEST_EQUALITY(gids[3],9); TEST_EQUALITY(gids[4],10); TEST_EQUALITY(gids[5],11);
+      TEST_EQUALITY(gids[6],15); TEST_EQUALITY(gids[7],16); TEST_EQUALITY(gids[8],17);
+      TEST_EQUALITY(gids[9],12); TEST_EQUALITY(gids[10],13); TEST_EQUALITY(gids[11],14);
 
       for(std::size_t i=0;i<p_offsets.size();i++) {
          TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
@@ -180,7 +180,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
       TEST_EQUALITY(gids[0],3); TEST_EQUALITY(gids[1],4); TEST_EQUALITY(gids[2],5);
       TEST_EQUALITY(gids[3],18); TEST_EQUALITY(gids[4],19); TEST_EQUALITY(gids[5],20);
       TEST_EQUALITY(gids[6],21); TEST_EQUALITY(gids[7],22); TEST_EQUALITY(gids[8],23);
-      TEST_EQUALITY(gids[9],6); TEST_EQUALITY(gids[10],7); TEST_EQUALITY(gids[11],8);
+      TEST_EQUALITY(gids[9],9); TEST_EQUALITY(gids[10],10); TEST_EQUALITY(gids[11],11);
 
       for(std::size_t i=0;i<p_offsets.size();i++) {
          TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
@@ -190,10 +190,10 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
    
       dofManager->getElementGIDs(1,gids);
       TEST_EQUALITY(gids.size(),12);
-      TEST_EQUALITY(gids[0],6); TEST_EQUALITY(gids[1],7); TEST_EQUALITY(gids[2],8);
+      TEST_EQUALITY(gids[0],9); TEST_EQUALITY(gids[1],10); TEST_EQUALITY(gids[2],11);
       TEST_EQUALITY(gids[3],21); TEST_EQUALITY(gids[4],22); TEST_EQUALITY(gids[5],23);
       TEST_EQUALITY(gids[6],24); TEST_EQUALITY(gids[7],25); TEST_EQUALITY(gids[8],26);
-      TEST_EQUALITY(gids[9],12); TEST_EQUALITY(gids[10],13); TEST_EQUALITY(gids[11],14);
+      TEST_EQUALITY(gids[9],15); TEST_EQUALITY(gids[10],16); TEST_EQUALITY(gids[11],17);
 
       for(std::size_t i=0;i<p_offsets.size();i++) {
          TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
@@ -358,8 +358,8 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, shared_owned_indices)
 
       std::sort(ownedAndShared.begin(),ownedAndShared.end());
       ownedAndSharedCorrect &= (ownedAndShared[0] == 1);
-      ownedAndSharedCorrect &= (ownedAndShared[1] == 2);
-      ownedAndSharedCorrect &= (ownedAndShared[2] == 4);
+      ownedAndSharedCorrect &= (ownedAndShared[1] == 3);
+      ownedAndSharedCorrect &= (ownedAndShared[2] == 5);
       for(std::size_t i=0;i<3;i++) {
          ownedAndSharedCorrect &= (ownedAndShared[i+3] == (int) i+6);
       }
@@ -409,27 +409,34 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, multiple_dof_managers)
 
       dofManager_temp->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),4);
-      TEST_EQUALITY(gids[0],0); TEST_EQUALITY(gids[1],1); 
-      TEST_EQUALITY(gids[2],2);
-      TEST_EQUALITY(gids[3],3); 
+      TEST_EQUALITY(gids[0],0); 
+      TEST_EQUALITY(gids[1],1); 
+      TEST_EQUALITY(gids[2],3);
+      TEST_EQUALITY(gids[3],2); 
    
       dofManager_temp->getElementGIDs(1,gids);
       TEST_EQUALITY(gids.size(),4);
-      TEST_EQUALITY(gids[0],3); TEST_EQUALITY(gids[1],2); TEST_EQUALITY(gids[2],4);
-      TEST_EQUALITY(gids[3],5);
+      TEST_EQUALITY(gids[0],2); 
+      TEST_EQUALITY(gids[1],3); 
+      TEST_EQUALITY(gids[2],5);
+      TEST_EQUALITY(gids[3],4);
    }
    else if(myRank==1) {
       std::vector<int> gids;
 
       dofManager_temp->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),4);
-      TEST_EQUALITY(gids[0],1); TEST_EQUALITY(gids[1],6); TEST_EQUALITY(gids[2],7);
-      TEST_EQUALITY(gids[3],2); 
+      TEST_EQUALITY(gids[0],1); 
+      TEST_EQUALITY(gids[1],6); 
+      TEST_EQUALITY(gids[2],7);
+      TEST_EQUALITY(gids[3],3); 
    
       dofManager_temp->getElementGIDs(1,gids);
       TEST_EQUALITY(gids.size(),4);
-      TEST_EQUALITY(gids[0],2); TEST_EQUALITY(gids[1],7); TEST_EQUALITY(gids[2],8);
-      TEST_EQUALITY(gids[3],4);
+      TEST_EQUALITY(gids[0],3); 
+      TEST_EQUALITY(gids[1],7); 
+      TEST_EQUALITY(gids[2],8);
+      TEST_EQUALITY(gids[3],5);
    }
    else
       TEUCHOS_ASSERT(false);
