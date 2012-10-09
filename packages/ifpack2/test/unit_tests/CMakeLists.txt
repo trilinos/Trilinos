@@ -37,6 +37,7 @@ Ifpack2_UnitTestPartitioning.cpp
 Ifpack2_UnitTestContainer.cpp
 Ifpack2_UnitTestBlockRelaxation.cpp
 Ifpack2_UnitTestOverlappingRowMatrix.cpp
+Ifpack2_UnitTestAdditiveSchwarz.cpp
 
   )
 
