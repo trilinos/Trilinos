@@ -44,7 +44,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     DEPLIBS muelu xpetra muelu-adapters
   )
   
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(Condif2_example_copyfiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Condif2_example_cp
   SOURCE_FILES Condif2Mat.mat Condif2Rhs.mat
   )
 ENDIF()

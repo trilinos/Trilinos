@@ -19,7 +19,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM mpi serial
   )
   
-TRIBITS_COPY_FILES_TO_BINARY_DIR(transpose_test_example_copyfiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(transpose_test_example_cp
   SOURCE_FILES Test.mat
   )
 

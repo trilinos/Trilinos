@@ -60,7 +60,7 @@ ENDIF() # Galeri
 #    DEPLIBS muelu xpetra
 #  )
   
-#TRIBITS_COPY_FILES_TO_BINARY_DIR(TSIExample_test_copyfiles
+#TRIBITS_COPY_FILES_TO_BINARY_DIR(TSIExample_test_cp
 #SOURCE_FILES TSImatrix.out TSIbvector.out nspvector.out
 #)
   

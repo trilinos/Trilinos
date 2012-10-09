@@ -45,7 +45,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
       COMM serial mpi
       DEPLIBS muelu xpetra
       )
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(Navier2D_test_copyfiles
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(Navier2D_test_cp
       SOURCE_FILES A5932_re1000.txt b5932_re1000.txt
       )
   ENDIF()

@@ -47,7 +47,7 @@ IF(Trilinos_ENABLE_AztecOO)
 	)
 ENDIF()
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(Structure2d_test_copyfiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Structure2d_test_cp
 SOURCE_FILES stru2d_A.txt stru2d_b.txt stru2d_ns.txt nodes0.txt MueLu_Agg2VTK.py
 )
   

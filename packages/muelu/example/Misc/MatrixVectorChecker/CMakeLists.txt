@@ -63,6 +63,6 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
   ENDIF()
 ENDIF()
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(read_MatrixMarket_example_copyfiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(read_MatrixMarket_example_cp
   SOURCE_FILES mat_example.mm #rgen.m
 )
