@@ -3,8 +3,6 @@
 
 #include "JacobianUtil.hpp"
 
-#include <MeanRatioFunctions.hpp>
-
 #include "mpi.h"
 
 namespace stk {

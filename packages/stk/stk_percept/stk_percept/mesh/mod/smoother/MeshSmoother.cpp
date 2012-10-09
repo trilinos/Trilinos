@@ -8,13 +8,6 @@
 //#include <stk_percept/mesh/mod/smoother/ReferenceMeshSmoother3.hpp>
 #include <stk_percept/mesh/mod/smoother/SmootherMetric.hpp>
 
-#include "PMeanPTemplate.hpp"
-#include "TQualityMetric.hpp"
-#include "AddQualityMetric.hpp"
-
-#include "TShapeB1.hpp"
-#include "TShapeNB1.hpp"
-
 #include "mpi.h"
 
 #define DEBUG_PRINT 0
