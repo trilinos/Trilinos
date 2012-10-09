@@ -53,3 +53,31 @@ namespace MueLuTests {
   Xpetra::Parameters TestHelpers::Parameters::xpetraParameters = Xpetra::Parameters(Teuchos::UnitTestRepository::getCLP());
 
 }
+
+namespace MueLuTests {
+  namespace TestHelpers {
+
+  ArrayRCP<std::string> GetFileList(const std::string & dirPath, const std::string & filter) {
+
+    RCP<std::vector<std::string> > files = rcp(new std::vector<std::string>());
+
+    DIR *dir;
+    struct dirent *dirEntry;
+
+    dir = opendir(dirPath.c_str());
+    TEUCHOS_TEST_FOR_EXCEPTION(dir == NULL, MueLu::Exceptions::RuntimeError, "GetFileList(" + dirPath + "):" + strerror(errno));
+
+    while ((dirEntry = readdir(dir)) != NULL) {
+      std::string dirEntryS(dirEntry->d_name);
+
+      if (dirEntryS.rfind(filter) != string::npos)
+        files->push_back(std::string(dirEntryS));
+    }
+
+    closedir(dir);
+
+    return arcp(files);
+  }
+
+  }
+}
