@@ -53,10 +53,13 @@
 #include <Zoltan2_Standards.hpp>
 
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_RowMatrix.hpp>
 #include <Tpetra_CrsGraph.hpp>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_CrsGraph.h>
 #include <Xpetra_CrsMatrix.hpp>
+#include <Xpetra_RowMatrix.hpp>
+#include <Xpetra_TpetraRowMatrix.hpp>
 #include <Xpetra_CrsGraph.hpp>
 
 namespace Zoltan2{
@@ -154,6 +157,8 @@ class BasicUserTypes{
  *  \li Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>
  *  \li Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>
  *  \li Epetra_CrsGraph
+ *  \li Xpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
+ *  \li Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
  *  \li Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
  *  \li Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
  *  \li Epetra_Vector
@@ -252,6 +257,34 @@ struct InputTraits<Epetra_CrsMatrix>
   typedef int gid_t;
   typedef Kokkos::DefaultNode::DefaultNodeType node_t;
   static inline string name() {return "Epetra_CrsMatrix";}
+};
+
+template <typename Scalar,
+          typename LocalOrdinal,
+          typename GlobalOrdinal,
+          typename Node>
+struct InputTraits<Xpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+{
+  typedef Scalar        scalar_t;
+  typedef LocalOrdinal  lno_t;
+  typedef GlobalOrdinal gno_t;
+  typedef GlobalOrdinal gid_t;
+  typedef Node          node_t;
+  static inline string name() {return "Xpetra::RowMatrix";}
+};
+
+template <typename Scalar,
+          typename LocalOrdinal,
+          typename GlobalOrdinal,
+          typename Node>
+struct InputTraits<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+{
+  typedef Scalar        scalar_t;
+  typedef LocalOrdinal  lno_t;
+  typedef GlobalOrdinal gno_t;
+  typedef GlobalOrdinal gid_t;
+  typedef Node          node_t;
+  static inline string name() {return "Tpetra::RowMatrix";}
 };
 
 template <typename LocalOrdinal,
