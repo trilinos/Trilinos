@@ -47,6 +47,7 @@
 #define MUELU_RAPFACTORY_DECL_HPP
 
 #include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
@@ -147,6 +148,7 @@ namespace MueLu {
     
     //! @name internal plausibility check methods
     void CheckMainDiagonal(RCP<Matrix> & Ac) const;
+    void CheckMainDiagonal(RCP<CrsMatrix> & Ac) const; ///< CrsMatrix version for blocked matrices
     //@}
 
     //! P Factory
