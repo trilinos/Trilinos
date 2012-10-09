@@ -1245,10 +1245,10 @@ namespace stk {
 #endif
 #endif
 
+#if defined( STK_PERCEPT_HAS_GEOMETRY )
     void Refiner::snapAndSmooth(bool geomSnap, std::string geomFile)
     {
       //std::cout << " geomFile= " << geomFile << " geomSnap= " << geomSnap << std::endl;
-#if defined( STK_PERCEPT_HAS_GEOMETRY )
       if (geomFile == "") return;
       //std::cout << " 2 geomFile= " << geomFile << " geomSnap= " << geomSnap << std::endl;
 
@@ -1315,8 +1315,8 @@ namespace stk {
         break;
       }
 
-#endif
     }
+#endif
 
 #if  defined(STK_PERCEPT_HAS_GEOMETRY)
     void Refiner::smoothGeometry(MeshGeometry& mesh_geometry, SMOOTHING_OPTIONS option)
