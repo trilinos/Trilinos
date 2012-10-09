@@ -48,6 +48,10 @@
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
+#ifdef MUELU_HAVE_ML
+#include <ml_epetra_utils.h> // ML_CreateSublists
+#endif
+
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -103,8 +107,9 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetParameterList(const Teuchos::ParameterList & paramList) {
-
+  void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetParameterList(const Teuchos::ParameterList & paramList_in) {
+    Teuchos::ParameterList paramList = paramList_in;
+    
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); // TODO: use internal out (GetOStream())
 
     //
@@ -129,6 +134,28 @@ namespace MueLu {
     MUELU_READ_PARAM(paramList, "null space: vectors",                   double*,               NULL,       nullspaceVec); // TODO: ML default not in documentation
 
     MUELU_READ_PARAM(paramList, "energy minimization: enable",             bool,               false,       bEnergyMinimization);
+
+    //
+    // Validate parameter list
+    //
+
+    {
+      bool validate = paramList.get("ML validate parameter list", true); /* true = default in ML */
+      if (validate) {
+      
+#ifdef MUELU_HAVE_ML
+        // Validate parameter list using ML validator
+        int  depth = paramList.get("ML validate depth", 5); /* 5 = default in ML */
+        TEUCHOS_TEST_FOR_EXCEPTION(!ValidateMLPParameters(paramList_, depth), Exceptions::RuntimeError,
+                                   "ERROR: ML's Teuchos::ParameterList contains incorrect parameter!");
+#else
+        // If no validator available: issue a warning and set parameter value to false in the output list
+        *out << "Warning: MueLu_ENABLE_ML=OFF. The parameter list cannot be validated" << std::endl;
+        paramList.set("ML validate parameter list", false);
+
+#endif // MUELU_HAVE_ML
+      } // if(validate)
+    } // scope
 
     //
     //
