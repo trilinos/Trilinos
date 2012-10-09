@@ -56,6 +56,7 @@
 
 namespace MueLu {
 
+  ///////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Aggregates(const Graph & graph) {
     nAggregates_  = 0;
@@ -68,6 +69,22 @@ namespace MueLu {
     
     isRoot_ = Teuchos::ArrayRCP<bool>(graph.GetImportMap()->getNodeNumElements());
     for (size_t i=0; i < graph.GetImportMap()->getNodeNumElements(); i++)
+      isRoot_[i] = false;
+  }
+
+  ///////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Aggregates(const RCP<const Map> & map) {
+    nAggregates_ = 0;
+
+    vertex2AggId_ = LOVectorFactory::Build(map);
+    vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
+
+    procWinner_ = LOVectorFactory::Build(map);
+    procWinner_->putScalar(MUELU_UNASSIGNED);
+
+    isRoot_ = Teuchos::ArrayRCP<bool>(map->getNodeNumElements());
+    for (size_t i=0; i < map->getNodeNumElements(); i++)
       isRoot_[i] = false;
   }
 
