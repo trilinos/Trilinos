@@ -489,8 +489,10 @@ int AdditiveSchwarz<MatrixType,LocalInverseType>::getOverlapLevel() const
 template<class MatrixType,class LocalInverseType>
 void AdditiveSchwarz<MatrixType,LocalInverseType>::setup() 
 {  
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
   typedef typename Xpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpetraMatrixType;
   typedef typename Xpetra::TpetraRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpetraTpetraMatrixType;
+#endif
 
   Teuchos::RCP<LocalMatrixType> ActiveMatrix;
 
