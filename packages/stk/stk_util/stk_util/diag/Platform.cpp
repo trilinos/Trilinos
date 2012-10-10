@@ -24,10 +24,10 @@
 #include <stk_util/util/FeatureTest.hpp>
 #include <stk_util/diag/Env.hpp>
 #include <stk_util/diag/Platform.hpp>
-#include <stk_util/parallel/Exception.hpp>
-#include <stk_util/parallel/ExceptionReport.hpp>
+#include <stk_util/diag/Exception.hpp>
+#include <stk_util/diag/ExceptionReport.hpp>
 #include <stk_util/parallel/MPI.hpp>
-#include <stk_util/parallel/mpih.hpp>
+#include <stk_util/diag/mpih.hpp>
 #include <stk_util/environment/ProductRegistry.hpp>
 
 #include <stk_util/diag/Writer.hpp>

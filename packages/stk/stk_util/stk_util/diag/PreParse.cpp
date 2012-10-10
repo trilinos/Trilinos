@@ -1,6 +1,6 @@
 #include <stk_util/diag/PreParse.hpp>
 #include <stk_util/diag/Env.hpp>
-#include <stk_util/parallel/Exception.hpp>
+#include <stk_util/diag/Exception.hpp>
 
 //----------------------------------------------------------------------
 

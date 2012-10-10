@@ -32,7 +32,7 @@
 
 #include <Shards_BasicTopologies.hpp>
 
-//#include <stk_util/parallel/ExceptionReport.hpp>
+//#include <stk_util/diag/ExceptionReport.hpp>
 //#include <stk_util/diag/StringUtil.hpp>
 
 //#include <element/Elem_CellTopology.h>

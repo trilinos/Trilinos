@@ -6,7 +6,7 @@
 #include <stk_util/environment/RuntimeDoomed.hpp>
 
 #include <stk_util/util/Fortran.hpp>
-#include <stk_util/parallel/Exception.hpp>
+#include <stk_util/diag/Exception.hpp>
 
 
 /**

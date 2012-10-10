@@ -17,7 +17,6 @@
 #include <stk_util/util/Bootstrap.hpp>
 
 #include <stk_util/util/FeatureTest.hpp>
-#include <stk_util/diag/Option.hpp>
 #include <stk_util/diag/Writer_fwd.hpp>
 
 namespace sierra {

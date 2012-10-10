@@ -18,7 +18,7 @@
 #include <parser/Prsr_Parser.h>
 #include <parser/Prsr_DiagWriter.h>
 #include <parser/Prsr_SDDMLexer.h>
-#include <stk_util/parallel/Exception.hpp>
+#include <stk_util/diag/Exception.hpp>
 
 using sierra::Diag::dendl;
 using sierra::Diag::pop;

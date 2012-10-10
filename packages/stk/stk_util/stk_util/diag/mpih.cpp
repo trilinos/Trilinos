@@ -19,9 +19,9 @@
 */
 
 #include <MPIH_Include.h>
-#include <stk_util/parallel/mpih.hpp>
+#include <stk_util/diag/mpih.hpp>
 #include <stk_util/diag/Env.hpp>
-#include <stk_util/parallel/ExceptionReport.hpp>
+#include <stk_util/diag/ExceptionReport.hpp>
 #include <stk_util/environment/ProductRegistry.hpp>
 #include <stk_util/diag/Trace.hpp>
 

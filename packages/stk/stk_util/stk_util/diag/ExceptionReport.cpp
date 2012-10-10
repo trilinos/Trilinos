@@ -16,7 +16,7 @@
 
 #include <stk_util/diag/StringUtil.hpp>
 #include <stk_util/diag/Trace.hpp>
-#include <stk_util/parallel/ExceptionReport.hpp>
+#include <stk_util/diag/ExceptionReport.hpp>
 #include <stk_util/diag/Env.hpp>
 
 namespace sierra {

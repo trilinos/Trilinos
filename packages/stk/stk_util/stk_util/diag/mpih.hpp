@@ -21,7 +21,7 @@
 #include <vector>
 #include <mpi.h>
 
-#include <stk_util/parallel/Exception.hpp>
+#include <stk_util/diag/Exception.hpp>
 
 #include <MPIH_Include.h>
 

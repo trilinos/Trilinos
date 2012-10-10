@@ -20,13 +20,13 @@
 
 #include <stk_util/diag/Env.hpp>
 #include <stk_util/diag/Platform.hpp>
-#include <stk_util/parallel/Exception.hpp>
-#include <stk_util/parallel/ExceptionReport.hpp>
-#include <stk_util/parallel/ExceptionIos.hpp>
+#include <stk_util/diag/Exception.hpp>
+#include <stk_util/diag/ExceptionReport.hpp>
+#include <stk_util/diag/ExceptionIos.hpp>
 #include <stk_util/diag/String.hpp>
 #include <stk_util/diag/Trace.hpp>
 
-#include <stk_util/parallel/mpih.hpp>
+#include <stk_util/diag/mpih.hpp>
 
 namespace sierra {
 
