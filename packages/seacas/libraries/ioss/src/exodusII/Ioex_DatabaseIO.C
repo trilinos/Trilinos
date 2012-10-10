@@ -801,6 +801,13 @@ namespace Ioex {
 
     add_region_fields();
 
+    if (!is_input() && open_create_behavior() == Ioss::DB_APPEND) {
+      get_map(EX_NODE_BLOCK);
+      get_map(EX_EDGE_BLOCK);
+      get_map(EX_FACE_BLOCK);
+      get_map(EX_ELEM_BLOCK);
+    }
+
     // This closes the file.  It will be automatically opened the next time the file is
     // accessed and it solves some issues with initial condition
     // data...
@@ -1150,7 +1157,7 @@ namespace Ioex {
     if (nodeMap.empty()) {
       nodeMap.resize(nodeCount+1);
 
-      if (is_input()) {
+      if (is_input() || open_create_behavior() == Ioss::DB_APPEND) {
 	bool backward_compat = get_node_global_id_backward_compatibility() &&
 	  !isParallel && dbUsage == Ioss::READ_MODEL;
 	if (!backward_compat) {
@@ -1249,7 +1256,7 @@ namespace Ioex {
     if (elementMap.empty()) {
       elementMap.resize(elementCount+1);
 
-      if (is_input()) {
+      if (is_input() || open_create_behavior() == Ioss::DB_APPEND) {
 	bool backward_compat = get_node_global_id_backward_compatibility() &&
 	  !isParallel && dbUsage == Ioss::READ_MODEL;
 	if (!backward_compat) {
@@ -1350,7 +1357,7 @@ namespace Ioex {
     if (faceMap.empty()) {
       faceMap.resize(faceCount+1);
 
-      if (is_input()) {
+      if (is_input() || open_create_behavior() == Ioss::DB_APPEND) {
 	Ioss::SerializeIO	serializeIO__(this);
 	
 	int error = 0;
@@ -1404,7 +1411,7 @@ namespace Ioex {
     if (edgeMap.empty()) {
       edgeMap.resize(edgeCount+1);
 
-      if (is_input()) {
+      if (is_input() || open_create_behavior() == Ioss::DB_APPEND) {
 	Ioss::SerializeIO	serializeIO__(this);
 	
 	int error = 0;
@@ -5218,7 +5225,11 @@ namespace Ioex {
 	  ssize_t k = 0;
 	  ssize_t num_out = 0;
 	  for (ssize_t j=(re_im*i)+complex_comp; j < re_im*count*comp_count; j+=(re_im*comp_count)) {
-	    int64_t where = reorderNodeMap[k++];
+	    int64_t where;
+	    if (reorderNodeMap.empty())
+	      where = k++;
+	    else
+	      where = reorderNodeMap[k++];
 	    if (where >= 0) {
 	      assert(where < count);
 	      if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
@@ -5316,7 +5327,10 @@ namespace Ioex {
 	    // Map to storage location.
 
 	    if (type == EX_ELEM_BLOCK)
-	      where = reorderElementMap[k++] - eb_offset;
+	      if (!reorderElementMap.empty())
+		where = reorderElementMap[k++] - eb_offset;
+	      else
+		where = k++ - eb_offset;
 	    else
 	      where = k++;
 
