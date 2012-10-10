@@ -85,6 +85,7 @@ public:
 
   typedef View< data_type , layout_type , Host, memory_management_type >  HostMirror ;
 
+  typedef typename analysis::scalar_type      scalar_type ;
   typedef typename analysis::value_type       value_type ;
   typedef typename LayoutType::array_layout   array_layout ;
   typedef typename device_type::memory_space  memory_space ;
@@ -94,7 +95,8 @@ public:
 private:
 
   typedef Impl::ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
-                          value_type , shape_type > oper_type ;
+                          typename analysis::value_type ,
+                          shape_type > oper_type ;
 
   template< class , class , class , class> friend class View ;
 
@@ -150,7 +152,7 @@ public:
   /*------------------------------------------------------------------*/
   inline
   KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
-  value_type * ptr_on_device() const { return oper_type::m_ptr_on_device ; }
+  scalar_type * ptr_on_device() const { return oper_type::m_ptr_on_device ; }
 
   /*------------------------------------------------------------------*/
   /** \brief Query shape */
@@ -203,7 +205,7 @@ private:
 
   inline
   KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
-  void internal_private_assign( const shape_type & shape , value_type * ptr )
+  void internal_private_assign( const shape_type & shape , scalar_type * ptr )
   {
     oper_type::m_shape          = shape ;
     oper_type::m_ptr_on_device  = ptr ;
@@ -269,13 +271,13 @@ public:
   View( const View< rhsType , rhsLayout , rhsMemory, rhsMemManagement > & rhs )
     {
       typedef View< rhsType , rhsLayout , rhsMemory , rhsMemManagement > rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type  rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -295,13 +297,13 @@ public:
   View & operator = ( const View< rhsType , rhsLayout , rhsMemory, rhsMemManagement > & rhs )
     {
       typedef View< rhsType , rhsLayout , rhsMemory, rhsMemManagement > rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -326,13 +328,13 @@ public:
         const ArgType0 & arg0 )
     {
       typedef View< rhsType , rhsLayout , rhsMemory , rhsMemManagement > rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -353,13 +355,13 @@ public:
         const ArgType1 & arg1 )
     {
       typedef View< rhsType , rhsLayout , rhsMemory , rhsMemManagement> rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -381,13 +383,13 @@ public:
         const ArgType2 & arg2 )
     {
       typedef View< rhsType , rhsLayout , rhsMemory , rhsMemManagement > rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -411,13 +413,13 @@ public:
         const ArgType3 & arg3 )
     {
       typedef View< rhsType , rhsLayout , rhsMemory , rhsMemManagement > rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -442,13 +444,13 @@ public:
         const ArgType4 & arg4 )
     {
       typedef View< rhsType , rhsLayout , rhsMemory , rhsMemManagement > rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -474,13 +476,13 @@ public:
         const ArgType5 & arg5 )
     {
       typedef View< rhsType , rhsLayout , rhsMemory , rhsMemManagement > rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -509,13 +511,13 @@ public:
         const ArgType6 & arg6 )
     {
       typedef View< rhsType , rhsLayout , rhsMemory , rhsMemManagement > rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -545,13 +547,13 @@ public:
         const ArgType7 & arg7 )
     {
       typedef View< rhsType , rhsLayout , rhsMemory , rhsMemManagement > rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -572,20 +574,20 @@ public:
 
   View( const std::string & label , const shape_type shape )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( label , shape );
   }
 
   explicit View( const std::string & label )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( label , shape_type::template create<memory_space>() );
   }
 
   View( const std::string & label ,
         const size_t n0 )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( label , shape_type::template create<memory_space>(n0) );
   }
 
@@ -593,7 +595,7 @@ public:
         const size_t n0 ,
         const size_t n1 )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( label , shape_type::template create<memory_space>(n0,n1) );
   }
 
@@ -602,7 +604,7 @@ public:
         const size_t n1 ,
         const size_t n2 )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( label , shape_type::template create<memory_space>(n0,n1,n2) );
   }
 
@@ -612,7 +614,7 @@ public:
         const size_t n2 ,
         const size_t n3 )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( label , shape_type::template create<memory_space>(n0,n1,n2,n3) );
   }
 
@@ -623,7 +625,7 @@ public:
         const size_t n3 ,
         const size_t n4 )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4) );
   }
 
@@ -635,7 +637,7 @@ public:
         const size_t n4 ,
         const size_t n5 )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5) );
   }
 
@@ -648,7 +650,7 @@ public:
         const size_t n5 ,
         const size_t n6 )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5,n6) );
   }
 
@@ -662,7 +664,7 @@ public:
         const size_t n6 ,
         const size_t n7 )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( label , shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5,n6,n7) );
   }
 
@@ -705,6 +707,7 @@ public:
 
   typedef View< data_type , layout_type , Host, memory_management_type >  HostMirror ;
 
+  typedef typename analysis::scalar_type      scalar_type ;
   typedef typename analysis::value_type       value_type ;
   typedef typename LayoutType::array_layout   array_layout ;
   typedef typename device_type::memory_space  memory_space ;
@@ -714,7 +717,8 @@ public:
 private:
 
   typedef Impl::ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
-                          value_type , shape_type > oper_type ;
+                          typename analysis::value_type ,
+                          shape_type > oper_type ;
 
   template< class , class , class , class> friend class View ;
 
@@ -770,7 +774,7 @@ public:
   /*------------------------------------------------------------------*/
   inline
   KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
-  value_type * ptr_on_device() const { return oper_type::m_ptr_on_device ; }
+  scalar_type * ptr_on_device() const { return oper_type::m_ptr_on_device ; }
 
   /*------------------------------------------------------------------*/
   /** \brief Query shape */
@@ -823,7 +827,7 @@ private:
 
   inline
   KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
-  void internal_private_assign( const shape_type & shape , value_type * ptr )
+  void internal_private_assign( const shape_type & shape , scalar_type * ptr )
   {
     oper_type::m_shape          = shape ;
     oper_type::m_ptr_on_device  = ptr ;
@@ -838,7 +842,7 @@ private:
 
   inline
   KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
-  void internal_private_create( value_type * data_ptr ,
+  void internal_private_create( scalar_type * data_ptr ,
                                 const shape_type shape )
   {
     oper_type::m_ptr_on_device = data_ptr;
@@ -890,13 +894,13 @@ public:
   View( const View< rhsType , rhsLayout , rhsMemory, rhsMemManagement > & rhs )
     {
       typedef View< rhsType , rhsLayout , rhsMemory , rhsMemManagement > rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -916,13 +920,13 @@ public:
   View & operator = ( const View< rhsType , rhsLayout , rhsMemory, rhsMemManagement > & rhs )
     {
       typedef View< rhsType , rhsLayout , rhsMemory, rhsMemManagement > rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -947,13 +951,13 @@ public:
         const ArgType0 & arg0 )
     {
       typedef View< rhsType , rhsLayout , rhsMemory , rhsMemManagement > rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -974,13 +978,13 @@ public:
         const ArgType1 & arg1 )
     {
       typedef View< rhsType , rhsLayout , rhsMemory , rhsMemManagement> rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -1002,13 +1006,13 @@ public:
         const ArgType2 & arg2 )
     {
       typedef View< rhsType , rhsLayout , rhsMemory , rhsMemManagement > rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -1032,13 +1036,13 @@ public:
         const ArgType3 & arg3 )
     {
       typedef View< rhsType , rhsLayout , rhsMemory , rhsMemManagement > rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -1063,13 +1067,13 @@ public:
         const ArgType4 & arg4 )
     {
       typedef View< rhsType , rhsLayout , rhsMemory , rhsMemManagement > rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -1095,13 +1099,13 @@ public:
         const ArgType5 & arg5 )
     {
       typedef View< rhsType , rhsLayout , rhsMemory , rhsMemManagement > rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -1130,13 +1134,13 @@ public:
         const ArgType6 & arg6 )
     {
       typedef View< rhsType , rhsLayout , rhsMemory , rhsMemManagement > rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -1166,13 +1170,13 @@ public:
         const ArgType7 & arg7 )
     {
       typedef View< rhsType , rhsLayout , rhsMemory , rhsMemManagement > rhs_view ;
-      typedef typename rhs_view::value_type   rhs_value_type ;
+      typedef typename rhs_view::scalar_type   rhs_scalar_type ;
       typedef typename rhs_view::shape_type   rhs_shape_type ;
       typedef typename rhs_view::memory_space rhs_memory_space ;
 
       typedef typename
-        Impl::SubviewAssignable< value_type , memory_space ,
-                                 rhs_value_type , rhs_memory_space >::type
+        Impl::SubviewAssignable< scalar_type , memory_space ,
+                                 rhs_scalar_type , rhs_memory_space >::type
           ok_assign ;
 
       // SubShape<*,*> only exists for valid subshapes:
@@ -1191,64 +1195,64 @@ public:
   /*------------------------------------------------------------------*/
   /* Creation with allocation of memory on the device */
 
-  View( value_type * data_ptr , const shape_type shape )
+  View( scalar_type * data_ptr , const shape_type shape )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( data_ptr , shape );
   }
 
-  explicit View( value_type * data_ptr )
+  explicit View( scalar_type * data_ptr )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( data_ptr , shape_type::template create<memory_space>() );
   }
 
-  View( value_type * data_ptr ,
+  View( scalar_type * data_ptr ,
         const size_t n0 )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( data_ptr , shape_type::template create<memory_space>(n0) );
   }
 
-  View( value_type * data_ptr ,
+  View( scalar_type * data_ptr ,
         const size_t n0 ,
         const size_t n1 )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( data_ptr , shape_type::template create<memory_space>(n0,n1) );
   }
 
-  View( value_type * data_ptr ,
+  View( scalar_type * data_ptr ,
         const size_t n0 ,
         const size_t n1 ,
         const size_t n2 )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( data_ptr , shape_type::template create<memory_space>(n0,n1,n2) );
   }
 
-  View( value_type * data_ptr ,
+  View( scalar_type * data_ptr ,
         const size_t n0 ,
         const size_t n1 ,
         const size_t n2 ,
         const size_t n3 )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( data_ptr , shape_type::template create<memory_space>(n0,n1,n2,n3) );
   }
 
-  View( value_type * data_ptr ,
+  View( scalar_type * data_ptr ,
         const size_t n0 ,
         const size_t n1 ,
         const size_t n2 ,
         const size_t n3 ,
         const size_t n4 )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( data_ptr , shape_type::template create<memory_space>(n0,n1,n2,n3,n4) );
   }
 
-  View( value_type * data_ptr ,
+  View( scalar_type * data_ptr ,
         const size_t n0 ,
         const size_t n1 ,
         const size_t n2 ,
@@ -1256,11 +1260,11 @@ public:
         const size_t n4 ,
         const size_t n5 )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( data_ptr , shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5) );
   }
 
-  View( value_type * data_ptr ,
+  View( scalar_type * data_ptr ,
         const size_t n0 ,
         const size_t n1 ,
         const size_t n2 ,
@@ -1269,11 +1273,11 @@ public:
         const size_t n5 ,
         const size_t n6 )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( data_ptr , shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5,n6) );
   }
 
-  View( value_type * data_ptr ,
+  View( scalar_type * data_ptr ,
         const size_t n0 ,
         const size_t n1 ,
         const size_t n2 ,
@@ -1283,7 +1287,7 @@ public:
         const size_t n6 ,
         const size_t n7 )
   {
-    View_create_requires_non_const_data_type< value_type >::success();
+    View_create_requires_non_const_data_type< scalar_type >::success();
     internal_private_create( data_ptr , shape_type::template create<memory_space>(n0,n1,n2,n3,n4,n5,n6,n7) );
   }
 

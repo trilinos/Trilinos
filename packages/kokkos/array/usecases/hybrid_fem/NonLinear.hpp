@@ -162,8 +162,8 @@ public:
 
 template< typename Scalar , class FixtureType >
 PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
-                     const int global_max_x ,
-                     const int global_max_y ,
+                     const int , // global_max_x ,
+                     const int , // global_max_y ,
                      const int global_max_z ,
                      const bool print_error )
 {
@@ -213,7 +213,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   //------------------------------------
   // Sparse linear system types:
 
-  typedef KokkosArray::View< Scalar[] , device_type >     vector_type ;
+  typedef KokkosArray::View< Scalar* , device_type >     vector_type ;
   typedef KokkosArray::CrsMatrix< Scalar , device_type >  matrix_type ;
   typedef typename matrix_type::graph_type                matrix_graph_type ;
   typedef typename matrix_type::coefficients_type         matrix_coefficients_type ;
@@ -309,7 +309,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
       // Import off-processor nodal solution values
       // for residual and jacobian computations
 
-      KokkosArray::AsyncExchange< typename vector_type::value_type , device_type ,
+      KokkosArray::AsyncExchange< typename vector_type::scalar_type , device_type ,
                                   KokkosArray::ParallelDataMap >
         exchange( mesh.parallel_data_map , 1 );
 

@@ -132,7 +132,7 @@ public:
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   static void join( volatile ScalarType dst[] ,
                     const volatile ScalarType src[] ,
-                    const size_type n )
+                    const size_type )
   {
     dst[0] += src[0] ;
     dst[1] += src[1] ;
@@ -299,6 +299,16 @@ public:
     host_result(2) = 0 ;
 
     KokkosArray::parallel_reduce( nwork , functor_type(nwork) , host_result );
+
+    ASSERT_EQ( host_result(0), (ScalarType) nw);
+    ASSERT_EQ( host_result(1), (ScalarType) nsum);
+    ASSERT_EQ( host_result(2), (ScalarType) nsum);
+
+    host_result(0) = 0 ;
+    host_result(1) = 0 ;
+    host_result(2) = 0 ;
+
+    KokkosArray::parallel_reduce( nwork , functor_type(nwork) , host_result.ptr_on_device(), 3 );
 
     ASSERT_EQ( host_result(0), (ScalarType) nw);
     ASSERT_EQ( host_result(1), (ScalarType) nsum);

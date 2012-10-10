@@ -51,7 +51,7 @@ struct Dot< Scalar , KOKKOSARRAY_MACRO_DEVICE , Impl::unsigned_<2> >
 {
   typedef KOKKOSARRAY_MACRO_DEVICE          device_type;
   typedef device_type::size_type       size_type;
-  typedef View<Scalar[], device_type>  scalar_vector;  
+  typedef View<Scalar*, device_type>  scalar_vector;  
   typedef double                       value_type;
 
 private:
@@ -89,7 +89,7 @@ struct Dot< Scalar , KOKKOSARRAY_MACRO_DEVICE , Impl::unsigned_<1> >
 {
   typedef KOKKOSARRAY_MACRO_DEVICE          device_type;
   typedef device_type::size_type       size_type;
-  typedef View<Scalar[], device_type>  scalar_vector;  
+  typedef View<Scalar*, device_type>  scalar_vector;  
   typedef View < double, device_type>  result_type ;  
   typedef double                       value_type;
 
@@ -128,7 +128,7 @@ struct FILL<Scalar , KOKKOSARRAY_MACRO_DEVICE >
 {
   typedef KOKKOSARRAY_MACRO_DEVICE          device_type ;
   typedef device_type::size_type       size_type ;
-  typedef View<Scalar[], device_type>  scalar_vector ;
+  typedef View<Scalar*, device_type>  scalar_vector ;
 
 private:
 
@@ -160,7 +160,7 @@ struct WAXPBY<Scalar , KOKKOSARRAY_MACRO_DEVICE >
 {
   typedef KOKKOSARRAY_MACRO_DEVICE          device_type ;
   typedef device_type::size_type       size_type ;
-  typedef View<Scalar[], device_type>  scalar_vector ;
+  typedef View<Scalar*, device_type>  scalar_vector ;
 
 private:
 
@@ -202,7 +202,7 @@ struct AXPBY<Scalar , KOKKOSARRAY_MACRO_DEVICE >
 {
   typedef KOKKOSARRAY_MACRO_DEVICE          device_type ;
   typedef device_type::size_type       size_type ;
-  typedef View<Scalar[], device_type>  scalar_vector ;
+  typedef View<Scalar*, device_type>  scalar_vector ;
 
 private:
 

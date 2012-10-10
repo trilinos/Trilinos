@@ -140,19 +140,19 @@ KOKKOSARRAY_BINARYEXPRESSIONTYPE(int,unsigned int)
 // Assigment operators:
 
 #define KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR  +=
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR
 
 #define KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR  -=
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR
 
 #define KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR  *=
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR
 
 #define KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR  /=
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR
 
 //----------------------------------------------------------------------------
@@ -160,19 +160,19 @@ KOKKOSARRAY_BINARYEXPRESSIONTYPE(int,unsigned int)
 
 #define KOKKOSARRAY_ARRAY_UNARY_OPERATOR_CLASS  ArrayProxyMinus
 #define KOKKOSARRAY_ARRAY_UNARY_OPERATOR        -
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_UNARY_OPERATOR
 #undef  KOKKOSARRAY_ARRAY_UNARY_OPERATOR_CLASS
 
 #define KOKKOSARRAY_ARRAY_UNARY_OPERATOR_CLASS  ArrayProxyPlus
 #define KOKKOSARRAY_ARRAY_UNARY_OPERATOR        +
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_UNARY_OPERATOR
 #undef  KOKKOSARRAY_ARRAY_UNARY_OPERATOR_CLASS
 
 #define KOKKOSARRAY_ARRAY_UNARY_OPERATOR_CLASS  ArrayProxyNot
 #define KOKKOSARRAY_ARRAY_UNARY_OPERATOR        !
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_UNARY_OPERATOR
 #undef  KOKKOSARRAY_ARRAY_UNARY_OPERATOR_CLASS
 
@@ -181,31 +181,31 @@ KOKKOSARRAY_BINARYEXPRESSIONTYPE(int,unsigned int)
 
 #define KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS  ArrayProxyAddition
 #define KOKKOSARRAY_ARRAY_BINARY_OPERATOR        +
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_BINARY_OPERATOR
 #undef  KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
 
 #define KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS  ArrayProxySubtraction
 #define KOKKOSARRAY_ARRAY_BINARY_OPERATOR        -
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_BINARY_OPERATOR
 #undef  KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
 
 #define KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS  ArrayProxyMultiplication
 #define KOKKOSARRAY_ARRAY_BINARY_OPERATOR        *
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_BINARY_OPERATOR
 #undef  KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
 
 #define KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS  ArrayProxyDivision
 #define KOKKOSARRAY_ARRAY_BINARY_OPERATOR        /
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_BINARY_OPERATOR
 #undef  KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
 
 #define KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS  ArrayProxyModulo
 #define KOKKOSARRAY_ARRAY_BINARY_OPERATOR        %
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_BINARY_OPERATOR
 #undef  KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
 
@@ -296,37 +296,37 @@ struct ArrayWeakOrdering
 
 #define KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR       ==
 #define KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR_EVAL  equal
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR_EVAL
 #undef  KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
 
 #define KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR       !=
 #define KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR_EVAL  not_equal
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR_EVAL
 #undef  KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
 
 #define KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR       <
 #define KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR_EVAL  less
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR_EVAL
 #undef  KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
 
 #define KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR       >
 #define KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR_EVAL  greater
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR_EVAL
 #undef  KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
 
 #define KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR       <=
 #define KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR_EVAL  less_or_equal
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR_EVAL
 #undef  KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
 
 #define KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR       >=
 #define KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR_EVAL  greater_or_equal
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR_EVAL
 #undef  KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
 
@@ -336,7 +336,7 @@ struct ArrayWeakOrdering
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS   ArrayProxyAbs
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION         abs
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER  std::abs
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS
@@ -344,7 +344,7 @@ struct ArrayWeakOrdering
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS   ArrayProxyFabs
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION         fabs
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER  std::fabs
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS
@@ -352,7 +352,7 @@ struct ArrayWeakOrdering
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS   ArrayProxySqrt
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION         sqrt
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER  std::sqrt
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS
@@ -360,7 +360,7 @@ struct ArrayWeakOrdering
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS   ArrayProxyExp
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION         exp
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER  std::exp
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS
@@ -368,7 +368,7 @@ struct ArrayWeakOrdering
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS   ArrayProxyLog
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION         log
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER  std::log
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS
@@ -376,7 +376,7 @@ struct ArrayWeakOrdering
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS   ArrayProxyLog10
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION         log10
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER  std::log10
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS
@@ -384,7 +384,7 @@ struct ArrayWeakOrdering
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS   ArrayProxySin
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION         sin
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER  std::sin
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS
@@ -392,7 +392,7 @@ struct ArrayWeakOrdering
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS   ArrayProxyCos
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION         cos
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER  std::cos
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS
@@ -400,7 +400,7 @@ struct ArrayWeakOrdering
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS   ArrayProxyTan
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION         tan
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER  std::tan
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS
@@ -408,7 +408,7 @@ struct ArrayWeakOrdering
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS   ArrayProxyAcos
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION         acos
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER  std::acos
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS
@@ -416,7 +416,7 @@ struct ArrayWeakOrdering
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS   ArrayProxyAsin
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION         asin
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER  std::asin
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS
@@ -424,7 +424,7 @@ struct ArrayWeakOrdering
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS   ArrayProxyAtan
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION         atan
 #define KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER  std::atan
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION
 #undef  KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS
@@ -435,7 +435,7 @@ struct ArrayWeakOrdering
 #define KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS   ArrayProxyMin
 #define KOKKOSARRAY_ARRAY_BINARY_FUNCTION         min
 #define KOKKOSARRAY_ARRAY_BINARY_FUNCTION_MEMBER  std::min
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_BINARY_FUNCTION_MEMBER
 #undef  KOKKOSARRAY_ARRAY_BINARY_FUNCTION
 #undef  KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS
@@ -443,7 +443,7 @@ struct ArrayWeakOrdering
 #define KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS   ArrayProxyMax
 #define KOKKOSARRAY_ARRAY_BINARY_FUNCTION         max
 #define KOKKOSARRAY_ARRAY_BINARY_FUNCTION_MEMBER  std::max
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_BINARY_FUNCTION_MEMBER
 #undef  KOKKOSARRAY_ARRAY_BINARY_FUNCTION
 #undef  KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS
@@ -451,7 +451,7 @@ struct ArrayWeakOrdering
 #define KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS   ArrayProxyAtan2
 #define KOKKOSARRAY_ARRAY_BINARY_FUNCTION         atan2
 #define KOKKOSARRAY_ARRAY_BINARY_FUNCTION_MEMBER  std::atan2
-#include <impl/KokkosArray_ArrayExp_macros.hpp>
+#include <impl/KokkosEmbed_ArrayExp_macros.hpp>
 #undef  KOKKOSARRAY_ARRAY_BINARY_FUNCTION_MEMBER
 #undef  KOKKOSARRAY_ARRAY_BINARY_FUNCTION
 #undef  KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS

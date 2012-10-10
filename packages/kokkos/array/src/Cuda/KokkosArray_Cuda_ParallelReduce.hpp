@@ -992,7 +992,7 @@ public:
                   const host_view_type & host_view )
   {
     typedef typename
-      StaticAssertSame< typename host_view_type::value_type[] , value_type >
+      StaticAssertSame< typename host_view_type::scalar_type[] , value_type >
         ::type ok_match_type ;
 
     typedef typename

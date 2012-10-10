@@ -85,6 +85,8 @@ struct Restrict_Function_To_Device
  *  identifying compilation for 'compute_XY' architecture.
  */
 
+#define KOKKOSARRAY_RESTRICT_CODE_TO_DEVICE
+
 /*  If compiling for device code cannot do expression checking */
 
 #if defined( KOKKOSARRAY_EXPRESSION_CHECK )
@@ -124,12 +126,16 @@ struct Restrict_Function_To_Device<KokkosArray::Cuda>
 #define KOKKOSARRAY_INLINE_FUNCTION         inline
 #define KOKKOSARRAY_INLINE_DEVICE_FUNCTION  inline
 
+#define KOKKOSARRAY_RESTRICT_CODE_TO_DEVICE
+
 //----------------------------------------------------------------------------
 
 #else //on host
 
-#define KOKKOSARRAY_INLINE_FUNCTION inline
-#define KOKKOSARRAY_INLINE_DEVICE_FUNCTION inline
+#define KOKKOSARRAY_INLINE_FUNCTION         inline
+#define KOKKOSARRAY_INLINE_DEVICE_FUNCTION  inline
+
+#define KOKKOSARRAY_RESTRICT_CODE_TO_DEVICE
 
 namespace KokkosArray { namespace Impl {
 

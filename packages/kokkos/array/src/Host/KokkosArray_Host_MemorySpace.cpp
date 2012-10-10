@@ -92,9 +92,9 @@ HostMemoryImpl::~HostMemoryImpl()
 
 void * HostMemorySpace::allocate(
   const std::string    & label ,
-  const std::type_info & value_type ,
-  const size_t           value_size ,
-  const size_t           value_count )
+  const std::type_info & scalar_type ,
+  const size_t           scalar_size ,
+  const size_t           scalar_count )
 {
   HostMemoryImpl & s = HostMemoryImpl::singleton();
 
@@ -107,22 +107,22 @@ void * HostMemorySpace::allocate(
 
   void * ptr = 0 ;
 
-  if ( 0 < value_size * value_count ) {
+  if ( 0 < scalar_size * scalar_count ) {
 
-    ptr = malloc( value_size * value_count );
+    ptr = malloc( scalar_size * scalar_count );
 
     if ( 0 == ptr ) {
       std::ostringstream msg ;
       msg << "KokkosArray::Impl::HostMemorySpace::allocate( "
           << label
-          << " , " << value_type.name()
-          << " , " << value_size
-          << " , " << value_count
+          << " , " << scalar_type.name()
+          << " , " << scalar_size
+          << " , " << scalar_count
           << " ) FAILED memory allocation" ;
       throw std::runtime_error( msg.str() );
     }
 
-    s.m_allocations.track( ptr, & value_type, value_size, value_count, label );
+    s.m_allocations.track( ptr, & scalar_type, scalar_size, scalar_count, label );
   }
 
   return ptr ;
@@ -159,20 +159,20 @@ void HostMemorySpace::print_memory_view( std::ostream & o )
 
 
 size_t HostMemorySpace::preferred_alignment(
-  size_t value_size , size_t value_count )
+  size_t scalar_size , size_t scalar_count )
 {
   const size_t alignment = Host::detect_cache_line_size();
 
   // If the array is larger than the cache line
   // then align the count on cache line boundary.
 
-  if ( alignment < value_size * value_count &&
-       0 == alignment % value_size ) {
-    const size_t align = alignment / value_size ;
-    const size_t rem   = value_count % align ;
-    if ( rem ) value_count += align - rem ;
+  if ( alignment < scalar_size * scalar_count &&
+       0 == alignment % scalar_size ) {
+    const size_t align = alignment / scalar_size ;
+    const size_t rem   = scalar_count % align ;
+    if ( rem ) scalar_count += align - rem ;
   }
-  return value_count ;
+  return scalar_count ;
 }
 
 /*--------------------------------------------------------------------------*/

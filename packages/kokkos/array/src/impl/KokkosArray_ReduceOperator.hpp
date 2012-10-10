@@ -87,7 +87,7 @@ struct ReduceOperatorFinalize< View< DataType , LayoutType , DeviceType > ,
   typedef View< DataType , LayoutType , DeviceType > view_type ;
 
   typedef typename
-    StaticAssertSame< typename view_type::value_type , ScalarType >
+    StaticAssertSame< typename view_type::scalar_type , ScalarType >
       ::type ok_type ;
 
   struct type {
@@ -113,7 +113,7 @@ struct ReduceOperatorFinalize< View< DataType , LayoutType , DeviceType > ,
   typedef View< DataType , LayoutType , DeviceType > view_type ;
 
   typedef typename
-    StaticAssertSame< typename view_type::value_type , ScalarType >
+    StaticAssertSame< typename view_type::scalar_type , ScalarType >
       ::type ok_type ;
 
   typedef typename

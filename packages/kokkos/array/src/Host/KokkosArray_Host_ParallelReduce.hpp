@@ -84,7 +84,7 @@ public:
   typedef MemberType    value_type[] ;
   const Host::size_type value_count ;
 
-  inline void operator()( const MemberType input[] ) const {}
+  inline void operator()( const MemberType [] ) const {}
 
   explicit
   ParallelReduceFunctorValue( Host::size_type n )

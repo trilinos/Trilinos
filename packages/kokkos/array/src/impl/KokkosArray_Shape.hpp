@@ -63,7 +63,7 @@ namespace Impl {
  *  The upper bound on the array rank is eight.
  */
 template< class Layout ,
-          unsigned ValueSize ,
+          unsigned ScalarSize ,
           unsigned Rank ,
           unsigned s0  = 1 ,
           unsigned s1  = 1 ,
@@ -123,7 +123,7 @@ bool operator != ( const Shape<xLayout,xSize,xRank,
 
 void assert_shapes_are_equal_throw(
   const std::type_info & x_layout ,
-  const unsigned x_value_size ,
+  const unsigned x_scalar_size ,
   const unsigned x_rank , const unsigned x_stride ,
   const unsigned x_N0 , const unsigned x_N1 ,
   const unsigned x_N2 , const unsigned x_N3 ,
@@ -131,7 +131,7 @@ void assert_shapes_are_equal_throw(
   const unsigned x_N6 , const unsigned x_N7 ,
 
   const std::type_info & y_layout ,
-  const unsigned y_value_size ,
+  const unsigned y_scalar_size ,
   const unsigned y_rank , const unsigned y_stride ,
   const unsigned y_N0 , const unsigned y_N1 ,
   const unsigned y_N2 , const unsigned y_N3 ,
@@ -155,10 +155,10 @@ void assert_shapes_are_equal(
   if ( x != y ) {
     assert_shapes_are_equal_throw(
       typeid(typename x_type::array_layout),
-      x_type::value_size ,
+      x_type::scalar_size ,
       x_type::rank, x.Stride, x.N0, x.N1, x.N2, x.N3, x.N4, x.N5, x.N6, x.N7,
       typeid(typename y_type::array_layout),
-      y_type::value_size ,
+      y_type::scalar_size ,
       y_type::rank, y.Stride, y.N0, y.N1, y.N2, y.N3, y.N4, y.N5, y.N6, y.N7 );
   }
 }
@@ -182,10 +182,10 @@ void assert_shapes_equal_dimension(
        x.N4 != y.N4 || x.N5 != y.N5 || x.N6 != y.N6 || x.N7 != y.N7 ) {
     assert_shapes_are_equal_throw(
       typeid(typename x_type::array_layout),
-      x_type::value_size ,
+      x_type::scalar_size ,
       x_type::rank, x.Stride, x.N0, x.N1, x.N2, x.N3, x.N4, x.N5, x.N6, x.N7,
       typeid(typename y_type::array_layout),
-      y_type::value_size ,
+      y_type::scalar_size ,
       y_type::rank, y.Stride, y.N0, y.N1, y.N2, y.N3, y.N4, y.N5, y.N6, y.N7 );
   }
 }
@@ -244,16 +244,37 @@ void assert_shape_bounds( const ShapeType & shape ,
   }
 }
 
+#if defined( KOKKOSARRAY_EXPRESSION_CHECK )
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( S , I0 ) assert_shape_bounds(S,I0);
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( S , I0 , I1 ) assert_shape_bounds(S,I0,i1);
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_3( S , I0 , I1 , I2 ) assert_shape_bounds(S,I0,I1,I2);
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_4( S , I0 , I1 , I2 , I3 ) assert_shape_bounds(S,I0,I1,I2,I3);
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_5( S , I0 , I1 , I2 , I3 , I4 ) assert_shape_bounds(S,I0,I1,I2,I3,I4);
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_6( S , I0 , I1 , I2 , I3 , I4 , I5 ) assert_shape_bounds(S,I0,I1,I2,I3,I4,I5);
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_7( S , I0 , I1 , I2 , I3 , I4 , I5 , I6 ) assert_shape_bounds(S,I0,I1,I2,I3,I4,I5,I6);
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_8( S , I0 , I1 , I2 , I3 , I4 , I5 , I6 , I7 ) assert_shape_bounds(S,I0,I1,I2,I3,I4,I5,I6,I7);
+#else
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( S , I0 ) /* */
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( S , I0 , I1 ) /* */
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_3( S , I0 , I1 , I2 ) /* */
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_4( S , I0 , I1 , I2 , I3 ) /* */
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_5( S , I0 , I1 , I2 , I3 , I4 ) /* */
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_6( S , I0 , I1 , I2 , I3 , I4 , I5 ) /* */
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_7( S , I0 , I1 , I2 , I3 , I4 , I5 , I6 ) /* */
+#define KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_8( S , I0 , I1 , I2 , I3 , I4 , I5 , I6 , I7 ) /* */
+#endif
+
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 // Specialization and optimization for the Rank 0 shape.
 
-template < class Layout , unsigned ValueSize >
-struct Shape< Layout , ValueSize , 0, 1,1,1,1, 1,1,1,1 >
+template < class Layout , unsigned ScalarSize >
+struct Shape< Layout , ScalarSize , 0, 1,1,1,1, 1,1,1,1 >
 {
   typedef Layout  array_layout ;
 
-  static const unsigned value_size   = ValueSize ;
+  static const unsigned scalar_size   = ScalarSize ;
   static const unsigned rank_dynamic = 0 ;
   static const unsigned rank         = 0 ;
   static const unsigned StaticN0     = 1 ;
@@ -289,7 +310,7 @@ struct Shape< Layout , ValueSize , 0, 1,1,1,1, 1,1,1,1 >
 // All-static dimension array
 
 template < class Layout ,
-           unsigned ValueSize ,
+           unsigned ScalarSize ,
            unsigned Rank ,
            unsigned s0 , 
            unsigned s1 , 
@@ -302,7 +323,7 @@ template < class Layout ,
 struct Shape {
   typedef Layout  array_layout ;
 
-  static const unsigned value_size   = ValueSize ;
+  static const unsigned scalar_size   = ScalarSize ;
   static const unsigned rank_dynamic = 0 ;
   static const unsigned rank         = Rank ;
   static const unsigned StaticN0     = s0 ;
@@ -346,7 +367,7 @@ struct Shape {
 
 // 1 == dynamic_rank <= rank <= 8
 template < class Layout ,
-           unsigned ValueSize ,
+           unsigned ScalarSize ,
            unsigned Rank ,
            unsigned s1 , 
            unsigned s2 , 
@@ -355,11 +376,11 @@ template < class Layout ,
            unsigned s5 , 
            unsigned s6 , 
            unsigned s7 >
-struct Shape< Layout , ValueSize , Rank , 0,s1,s2,s3, s4,s5,s6,s7 >
+struct Shape< Layout , ScalarSize , Rank , 0,s1,s2,s3, s4,s5,s6,s7 >
 {
   typedef Layout  array_layout ;
 
-  static const unsigned value_size   = ValueSize ;
+  static const unsigned scalar_size   = ScalarSize ;
   static const unsigned rank_dynamic = 1 ;
   static const unsigned rank         = Rank ;
   static const unsigned StaticN0     = 0 ;
@@ -395,7 +416,7 @@ struct Shape< Layout , ValueSize , Rank , 0,s1,s2,s3, s4,s5,s6,s7 >
 
   template< unsigned SrcN0 >
   static inline
-  Shape create( const Shape< array_layout , value_size , rank ,
+  Shape create( const Shape< array_layout , scalar_size , rank ,
                              SrcN0 , N1, N2, N3, N4, N5, N6, N7 > input )
   {
     Shape shape ;
@@ -406,18 +427,18 @@ struct Shape< Layout , ValueSize , Rank , 0,s1,s2,s3, s4,s5,s6,s7 >
 };
 
 // 2 == dynamic_rank <= rank <= 8
-template < class Layout , unsigned ValueSize , unsigned Rank ,
+template < class Layout , unsigned ScalarSize , unsigned Rank ,
            unsigned s2 , 
            unsigned s3 , 
            unsigned s4 , 
            unsigned s5 , 
            unsigned s6 , 
            unsigned s7 >
-struct Shape< Layout , ValueSize , Rank , 0,0,s2,s3, s4,s5,s6,s7 >
+struct Shape< Layout , ScalarSize , Rank , 0,0,s2,s3, s4,s5,s6,s7 >
 {
   typedef Layout  array_layout ;
 
-  static const unsigned value_size   = ValueSize ;
+  static const unsigned scalar_size   = ScalarSize ;
   static const unsigned rank_dynamic = 2 ;
   static const unsigned rank         = Rank ;
   static const unsigned StaticN0     = 0 ;
@@ -455,7 +476,7 @@ struct Shape< Layout , ValueSize , Rank , 0,0,s2,s3, s4,s5,s6,s7 >
 
   template< unsigned SrcN0 , unsigned SrcN1 >
   static inline
-  Shape create( const Shape< array_layout , value_size , rank ,
+  Shape create( const Shape< array_layout , scalar_size , rank ,
                              SrcN0 , SrcN1, N2, N3, N4, N5, N6, N7 > input )
   {
     Shape shape ;
@@ -467,17 +488,17 @@ struct Shape< Layout , ValueSize , Rank , 0,0,s2,s3, s4,s5,s6,s7 >
 };
 
 // 3 == dynamic_rank <= rank <= 8
-template < class Layout , unsigned Rank , unsigned ValueSize ,
+template < class Layout , unsigned Rank , unsigned ScalarSize ,
            unsigned s3 , 
            unsigned s4 , 
            unsigned s5 , 
            unsigned s6 , 
            unsigned s7 >
-struct Shape< Layout , ValueSize , Rank , 0,0,0,s3, s4,s5,s6,s7>
+struct Shape< Layout , ScalarSize , Rank , 0,0,0,s3, s4,s5,s6,s7>
 {
   typedef Layout  array_layout ;
 
-  static const unsigned value_size   = ValueSize ;
+  static const unsigned scalar_size   = ScalarSize ;
   static const unsigned rank_dynamic = 3 ;
   static const unsigned rank         = Rank ;
   static const unsigned StaticN0     = 0 ;
@@ -517,7 +538,7 @@ struct Shape< Layout , ValueSize , Rank , 0,0,0,s3, s4,s5,s6,s7>
 
   template< unsigned SrcN0 , unsigned SrcN1 , unsigned SrcN2 >
   static inline
-  Shape create( const Shape< array_layout , value_size , rank ,
+  Shape create( const Shape< array_layout , scalar_size , rank ,
                              SrcN0,SrcN1,SrcN2,N3,N4,N5,N6,N7 > input )
   {
     Shape shape ;
@@ -530,16 +551,16 @@ struct Shape< Layout , ValueSize , Rank , 0,0,0,s3, s4,s5,s6,s7>
 };
 
 // 4 == dynamic_rank <= rank <= 8
-template < class Layout , unsigned ValueSize , unsigned Rank ,
+template < class Layout , unsigned ScalarSize , unsigned Rank ,
            unsigned s4 , 
            unsigned s5 , 
            unsigned s6 , 
            unsigned s7 >
-struct Shape< Layout , ValueSize , Rank, 0,0,0,0, s4,s5,s6,s7 >
+struct Shape< Layout , ScalarSize , Rank, 0,0,0,0, s4,s5,s6,s7 >
 {
   typedef Layout  array_layout ;
 
-  static const unsigned value_size   = ValueSize ;
+  static const unsigned scalar_size   = ScalarSize ;
   static const unsigned rank_dynamic = 4 ;
   static const unsigned rank         = Rank ;
   static const unsigned StaticN0     = 0 ;
@@ -581,7 +602,7 @@ struct Shape< Layout , ValueSize , Rank, 0,0,0,0, s4,s5,s6,s7 >
 
   template< unsigned SrcN0 , unsigned SrcN1 , unsigned SrcN2 , unsigned SrcN3 >
   static inline
-  Shape create( const Shape< array_layout , value_size , rank ,
+  Shape create( const Shape< array_layout , scalar_size , rank ,
                              SrcN0,SrcN1,SrcN2,SrcN3,N4,N5,N6,N7 > input )
   {
     Shape shape ;
@@ -595,15 +616,15 @@ struct Shape< Layout , ValueSize , Rank, 0,0,0,0, s4,s5,s6,s7 >
 };
 
 // 5 == dynamic_rank <= rank <= 8
-template < class Layout , unsigned ValueSize , unsigned Rank ,
+template < class Layout , unsigned ScalarSize , unsigned Rank ,
            unsigned s5 , 
            unsigned s6 , 
            unsigned s7 >
-struct Shape< Layout , ValueSize , Rank , 0,0,0,0, 0,s5,s6,s7 >
+struct Shape< Layout , ScalarSize , Rank , 0,0,0,0, 0,s5,s6,s7 >
 {
   typedef Layout  array_layout ;
 
-  static const unsigned value_size   = ValueSize ;
+  static const unsigned scalar_size   = ScalarSize ;
   static const unsigned rank_dynamic = 5 ;
   static const unsigned rank         = Rank ;
   static const unsigned StaticN0     = 0 ;
@@ -648,7 +669,7 @@ struct Shape< Layout , ValueSize , Rank , 0,0,0,0, 0,s5,s6,s7 >
   template< unsigned SrcN0 , unsigned SrcN1 , unsigned SrcN2 , unsigned SrcN3 ,
             unsigned SrcN4 >
   static inline
-  Shape create( const Shape< array_layout , value_size , rank ,
+  Shape create( const Shape< array_layout , scalar_size , rank ,
                              SrcN0,SrcN1,SrcN2,SrcN3,SrcN4,N5,N6,N7 > input )
   {
     Shape shape ;
@@ -663,14 +684,14 @@ struct Shape< Layout , ValueSize , Rank , 0,0,0,0, 0,s5,s6,s7 >
 };
 
 // 6 == dynamic_rank <= rank <= 8
-template < class Layout , unsigned ValueSize , unsigned Rank ,
+template < class Layout , unsigned ScalarSize , unsigned Rank ,
            unsigned s6 , 
            unsigned s7 >
-struct Shape< Layout , ValueSize , Rank , 0,0,0,0, 0,0,s6,s7 >
+struct Shape< Layout , ScalarSize , Rank , 0,0,0,0, 0,0,s6,s7 >
 {
   typedef Layout  array_layout ;
 
-  static const unsigned value_size   = ValueSize ;
+  static const unsigned scalar_size   = ScalarSize ;
   static const unsigned rank_dynamic = 6 ;
   static const unsigned rank         = Rank ;
   static const unsigned StaticN0     = 0 ;
@@ -717,7 +738,7 @@ struct Shape< Layout , ValueSize , Rank , 0,0,0,0, 0,0,s6,s7 >
   template< unsigned SrcN0 , unsigned SrcN1 , unsigned SrcN2 , unsigned SrcN3 ,
             unsigned SrcN4 , unsigned SrcN5 >
   static inline
-  Shape create( const Shape< array_layout , value_size , rank ,
+  Shape create( const Shape< array_layout , scalar_size , rank ,
                              SrcN0,SrcN1,SrcN2,SrcN3,SrcN4,SrcN5,N6,N7 > input )
   {
     Shape shape ;
@@ -733,13 +754,13 @@ struct Shape< Layout , ValueSize , Rank , 0,0,0,0, 0,0,s6,s7 >
 };
 
 // 7 == dynamic_rank <= rank <= 8
-template < class Layout , unsigned ValueSize , unsigned Rank ,
+template < class Layout , unsigned ScalarSize , unsigned Rank ,
            unsigned s7 >
-struct Shape< Layout , ValueSize , Rank , 0,0,0,0, 0,0,0,s7 >
+struct Shape< Layout , ScalarSize , Rank , 0,0,0,0, 0,0,0,s7 >
 {
   typedef Layout  array_layout ;
 
-  static const unsigned value_size   = ValueSize ;
+  static const unsigned scalar_size   = ScalarSize ;
   static const unsigned rank_dynamic = 7 ;
   static const unsigned rank         = Rank ;
   static const unsigned StaticN0     = 0 ;
@@ -788,7 +809,7 @@ struct Shape< Layout , ValueSize , Rank , 0,0,0,0, 0,0,0,s7 >
   template< unsigned SrcN0 , unsigned SrcN1 , unsigned SrcN2 , unsigned SrcN3 ,
             unsigned SrcN4 , unsigned SrcN5 , unsigned SrcN6 >
   static inline
-  Shape create( const Shape< array_layout , value_size , rank ,
+  Shape create( const Shape< array_layout , scalar_size , rank ,
                              SrcN0,SrcN1,SrcN2,SrcN3,SrcN4,SrcN5,SrcN6,N7 > input )
   {
     Shape shape ;
@@ -805,12 +826,12 @@ struct Shape< Layout , ValueSize , Rank , 0,0,0,0, 0,0,0,s7 >
 };
 
 // 8 == dynamic_rank <= rank <= 8
-template < class Layout , unsigned ValueSize >
-struct Shape< Layout , ValueSize , 8 , 0,0,0,0, 0,0,0,0 >
+template < class Layout , unsigned ScalarSize >
+struct Shape< Layout , ScalarSize , 8 , 0,0,0,0, 0,0,0,0 >
 {
   typedef Layout  array_layout ;
 
-  static const unsigned value_size   = ValueSize ;
+  static const unsigned scalar_size   = ScalarSize ;
   static const unsigned rank_dynamic = 8 ;
   static const unsigned rank         = 8 ;
 
@@ -852,7 +873,7 @@ struct Shape< Layout , ValueSize , 8 , 0,0,0,0, 0,0,0,0 >
   template< unsigned SrcN0 , unsigned SrcN1 , unsigned SrcN2 , unsigned SrcN3 ,
             unsigned SrcN4 , unsigned SrcN5 , unsigned SrcN6 , unsigned SrcN7 >
   static inline
-  Shape create( const Shape< array_layout , value_size , rank ,
+  Shape create( const Shape< array_layout , scalar_size , rank ,
                              SrcN0,SrcN1,SrcN2,SrcN3,
                              SrcN4,SrcN5,SrcN6,SrcN7 > input )
   {
@@ -882,23 +903,23 @@ namespace Impl {
 template< class DstShape , class SrcShape >
 struct SubShape ;
 
-template< class Layout , unsigned ValueSize , unsigned Rank ,
+template< class Layout , unsigned ScalarSize , unsigned Rank ,
           unsigned DstN0 , unsigned DstN1 , unsigned DstN2 , unsigned DstN3 ,
           unsigned DstN4 , unsigned DstN5 , unsigned DstN6 , unsigned DstN7 ,
           unsigned SrcN0 , unsigned SrcN1 , unsigned SrcN2 , unsigned SrcN3 ,
           unsigned SrcN4 , unsigned SrcN5 , unsigned SrcN6 , unsigned SrcN7 >
-struct SubShape< Shape< Layout , ValueSize , Rank ,
+struct SubShape< Shape< Layout , ScalarSize , Rank ,
                         DstN0 , DstN1 , DstN2 , DstN3 ,
                         DstN4 , DstN5 , DstN6 , DstN7 > ,
-                 Shape< Layout , ValueSize , Rank ,
+                 Shape< Layout , ScalarSize , Rank ,
                         SrcN0 , SrcN1 , SrcN2 , SrcN3 ,
                         SrcN4 , SrcN5 , SrcN6 , SrcN7 > >
 {
-  typedef Shape< Layout , ValueSize , Rank ,
+  typedef Shape< Layout , ScalarSize , Rank ,
                  DstN0 , DstN1 , DstN2 , DstN3 ,
                  DstN4 , DstN5 , DstN6 , DstN7 > DstShape ;
 
-  typedef Shape< Layout , ValueSize , Rank ,
+  typedef Shape< Layout , ScalarSize , Rank ,
                  SrcN0 , SrcN1 , SrcN2 , SrcN3 ,
                  SrcN4 , SrcN5 , SrcN6 , SrcN7 > SrcShape ;
 
@@ -919,13 +940,13 @@ struct SubShape< Shape< Layout , ValueSize , Rank ,
 //----------------------------------------------------------------------------
 // Shape and offset for a single member:
 
-template< class DstLayout , unsigned ValueSize ,
+template< class DstLayout , unsigned ScalarSize ,
           class SrcLayout , unsigned s0 >
-struct SubShape< Shape< DstLayout, ValueSize, 0 > ,
-                 Shape< SrcLayout, ValueSize, 1, s0 > >
+struct SubShape< Shape< DstLayout, ScalarSize, 0 > ,
+                 Shape< SrcLayout, ScalarSize, 1, s0 > >
 {
-  typedef Shape< DstLayout, ValueSize, 0 > DstShape ;
-  typedef Shape< SrcLayout, ValueSize, 1, s0 > SrcShape ;
+  typedef Shape< DstLayout, ScalarSize, 0 > DstShape ;
+  typedef Shape< SrcLayout, ScalarSize, 1, s0 > SrcShape ;
 
   typedef SubShape type ;
 
@@ -938,13 +959,13 @@ struct SubShape< Shape< DstLayout, ValueSize, 0 > ,
   }
 };
 
-template< class DstLayout , unsigned ValueSize ,
+template< class DstLayout , unsigned ScalarSize ,
           class SrcLayout , unsigned s0 , unsigned s1 >
-struct SubShape< Shape< DstLayout, ValueSize, 0 > ,
-                 Shape< SrcLayout, ValueSize, 2, s0,s1 > >
+struct SubShape< Shape< DstLayout, ScalarSize, 0 > ,
+                 Shape< SrcLayout, ScalarSize, 2, s0,s1 > >
 {
-  typedef Shape< DstLayout, ValueSize, 0 > DstShape ;
-  typedef Shape< SrcLayout, ValueSize, 2, s0,s1 > SrcShape ;
+  typedef Shape< DstLayout, ScalarSize, 0 > DstShape ;
+  typedef Shape< SrcLayout, ScalarSize, 2, s0,s1 > SrcShape ;
 
   typedef SubShape type ;
 
@@ -957,13 +978,13 @@ struct SubShape< Shape< DstLayout, ValueSize, 0 > ,
   }
 };
 
-template< class DstLayout , unsigned ValueSize ,
+template< class DstLayout , unsigned ScalarSize ,
           class SrcLayout , unsigned s0 , unsigned s1 , unsigned s2 >
-struct SubShape< Shape< DstLayout, ValueSize, 0 > ,
-                 Shape< SrcLayout, ValueSize, 3, s0,s1,s2 > >
+struct SubShape< Shape< DstLayout, ScalarSize, 0 > ,
+                 Shape< SrcLayout, ScalarSize, 3, s0,s1,s2 > >
 {
-  typedef Shape< DstLayout, ValueSize, 0 > DstShape ;
-  typedef Shape< SrcLayout, ValueSize, 3, s0,s1,s2 > SrcShape ;
+  typedef Shape< DstLayout, ScalarSize, 0 > DstShape ;
+  typedef Shape< SrcLayout, ScalarSize, 3, s0,s1,s2 > SrcShape ;
 
   typedef SubShape type ;
 
@@ -977,14 +998,14 @@ struct SubShape< Shape< DstLayout, ValueSize, 0 > ,
   }
 };
 
-template< class DstLayout , unsigned ValueSize ,
+template< class DstLayout , unsigned ScalarSize ,
           class SrcLayout ,
           unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 >
-struct SubShape< Shape< DstLayout, ValueSize, 0 > ,
-                 Shape< SrcLayout, ValueSize, 4, s0,s1,s2,s3 > >
+struct SubShape< Shape< DstLayout, ScalarSize, 0 > ,
+                 Shape< SrcLayout, ScalarSize, 4, s0,s1,s2,s3 > >
 {
-  typedef Shape< DstLayout, ValueSize, 0 > DstShape ;
-  typedef Shape< SrcLayout, ValueSize, 4, s0,s1,s2,s3 > SrcShape ;
+  typedef Shape< DstLayout, ScalarSize, 0 > DstShape ;
+  typedef Shape< SrcLayout, ScalarSize, 4, s0,s1,s2,s3 > SrcShape ;
 
   typedef SubShape type ;
 
@@ -998,15 +1019,15 @@ struct SubShape< Shape< DstLayout, ValueSize, 0 > ,
   }
 };
 
-template< class DstLayout , unsigned ValueSize ,
+template< class DstLayout , unsigned ScalarSize ,
           class SrcLayout ,
           unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 ,
           unsigned s4 >
-struct SubShape< Shape< DstLayout, ValueSize, 0 > ,
-                 Shape< SrcLayout, ValueSize, 5, s0,s1,s2,s3, s4 > >
+struct SubShape< Shape< DstLayout, ScalarSize, 0 > ,
+                 Shape< SrcLayout, ScalarSize, 5, s0,s1,s2,s3, s4 > >
 {
-  typedef Shape< DstLayout, ValueSize, 0 > DstShape ;
-  typedef Shape< SrcLayout, ValueSize, 5, s0,s1,s2,s3, s4 > SrcShape ;
+  typedef Shape< DstLayout, ScalarSize, 0 > DstShape ;
+  typedef Shape< SrcLayout, ScalarSize, 5, s0,s1,s2,s3, s4 > SrcShape ;
 
   typedef SubShape type ;
 
@@ -1021,15 +1042,15 @@ struct SubShape< Shape< DstLayout, ValueSize, 0 > ,
   }
 };
 
-template< class DstLayout , unsigned ValueSize ,
+template< class DstLayout , unsigned ScalarSize ,
           class SrcLayout ,
           unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 ,
           unsigned s4 , unsigned s5 >
-struct SubShape< Shape< DstLayout, ValueSize, 0 > ,
-                 Shape< SrcLayout, ValueSize, 6, s0,s1,s2,s3, s4,s5 > >
+struct SubShape< Shape< DstLayout, ScalarSize, 0 > ,
+                 Shape< SrcLayout, ScalarSize, 6, s0,s1,s2,s3, s4,s5 > >
 {
-  typedef Shape< DstLayout, ValueSize, 0 > DstShape ;
-  typedef Shape< SrcLayout, ValueSize, 6, s0,s1,s2,s3, s4,s5 > SrcShape ;
+  typedef Shape< DstLayout, ScalarSize, 0 > DstShape ;
+  typedef Shape< SrcLayout, ScalarSize, 6, s0,s1,s2,s3, s4,s5 > SrcShape ;
 
   typedef SubShape type ;
 
@@ -1044,15 +1065,15 @@ struct SubShape< Shape< DstLayout, ValueSize, 0 > ,
   }
 };
 
-template< class DstLayout , unsigned ValueSize ,
+template< class DstLayout , unsigned ScalarSize ,
           class SrcLayout ,
           unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 ,
           unsigned s4 , unsigned s5 , unsigned s6 >
-struct SubShape< Shape< DstLayout, ValueSize, 0 > ,
-                 Shape< SrcLayout, ValueSize, 7, s0,s1,s2,s3, s4,s5,s6 > >
+struct SubShape< Shape< DstLayout, ScalarSize, 0 > ,
+                 Shape< SrcLayout, ScalarSize, 7, s0,s1,s2,s3, s4,s5,s6 > >
 {
-  typedef Shape< DstLayout, ValueSize, 0 > DstShape ;
-  typedef Shape< SrcLayout, ValueSize, 7, s0,s1,s2,s3, s4,s5,s6 > SrcShape ;
+  typedef Shape< DstLayout, ScalarSize, 0 > DstShape ;
+  typedef Shape< SrcLayout, ScalarSize, 7, s0,s1,s2,s3, s4,s5,s6 > SrcShape ;
 
   typedef SubShape type ;
 
@@ -1068,15 +1089,15 @@ struct SubShape< Shape< DstLayout, ValueSize, 0 > ,
   }
 };
 
-template< class DstLayout , unsigned ValueSize ,
+template< class DstLayout , unsigned ScalarSize ,
           class SrcLayout ,
           unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 ,
           unsigned s4 , unsigned s5 , unsigned s6 , unsigned s7 >
-struct SubShape< Shape< DstLayout, ValueSize, 0 > ,
-                 Shape< SrcLayout, ValueSize, 8, s0,s1,s2,s3, s4,s5,s6,s7 > >
+struct SubShape< Shape< DstLayout, ScalarSize, 0 > ,
+                 Shape< SrcLayout, ScalarSize, 8, s0,s1,s2,s3, s4,s5,s6,s7 > >
 {
-  typedef Shape< DstLayout, ValueSize, 0 > DstShape ;
-  typedef Shape< SrcLayout, ValueSize, 8, s0,s1,s2,s3, s4,s5,s6,s7 > SrcShape ;
+  typedef Shape< DstLayout, ScalarSize, 0 > DstShape ;
+  typedef Shape< SrcLayout, ScalarSize, 8, s0,s1,s2,s3, s4,s5,s6,s7 > SrcShape ;
 
   typedef SubShape type ;
 
@@ -1095,12 +1116,12 @@ struct SubShape< Shape< DstLayout, ValueSize, 0 > ,
 //----------------------------------------------------------------------------
 // Shape and offset for a span of a rank-1 array.
 
-template< class Layout , unsigned ValueSize >
-struct SubShape< Shape< Layout, ValueSize, 1, 0 > ,
-                 Shape< Layout, ValueSize, 1, 0 > >
+template< class Layout , unsigned ScalarSize >
+struct SubShape< Shape< Layout, ScalarSize, 1, 0 > ,
+                 Shape< Layout, ScalarSize, 1, 0 > >
 {
-  typedef Shape< Layout, ValueSize, 1, 0 > DstShape ;
-  typedef Shape< Layout, ValueSize, 1, 0 > SrcShape ;
+  typedef Shape< Layout, ScalarSize, 1, 0 > DstShape ;
+  typedef Shape< Layout, ScalarSize, 1, 0 > SrcShape ;
 
   typedef SubShape type ;
 
@@ -1133,11 +1154,11 @@ struct SubShape< Shape< Layout, ValueSize, 1, 0 > ,
 
 //----------------------------------------------------------------------------
 
-template< class Layout , unsigned ValueSize , unsigned Rank ,
+template< class Layout , unsigned ScalarSize , unsigned Rank ,
           unsigned s0 , unsigned s1 , unsigned s2 , unsigned s3 ,
           unsigned s4 , unsigned s5 , unsigned s6 , unsigned s7 >
 size_t cardinality_count(
-  const Shape<Layout,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> & shape )
+  const Shape<Layout,ScalarSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> & shape )
 {
   return shape.N0 * shape.N1 * shape.N2 * shape.N3 *
          shape.N4 * shape.N5 * shape.N6 * shape.N7 ;

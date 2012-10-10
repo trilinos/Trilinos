@@ -54,7 +54,7 @@ namespace Impl {
 
 void assert_shapes_are_equal_throw(
   const std::type_info & x_layout ,
-  const unsigned x_value_size ,
+  const unsigned x_scalar_size ,
   const unsigned x_rank , const unsigned x_stride ,
   const unsigned x_N0 , const unsigned x_N1 ,
   const unsigned x_N2 , const unsigned x_N3 ,
@@ -62,7 +62,7 @@ void assert_shapes_are_equal_throw(
   const unsigned x_N6 , const unsigned x_N7 ,
 
   const std::type_info & y_layout ,
-  const unsigned y_value_size ,
+  const unsigned y_scalar_size ,
   const unsigned y_rank , const unsigned y_stride ,
   const unsigned y_N0 , const unsigned y_N1 ,
   const unsigned y_N2 , const unsigned y_N3 ,
@@ -73,7 +73,7 @@ void assert_shapes_are_equal_throw(
 
   msg << "KokkosArray::Impl::assert_shape_are_equal_throw( {"
       << " layout(" << x_layout.name()
-      << ") value_size(" << x_value_size
+      << ") scalar_size(" << x_scalar_size
       << ") rank(" << x_rank
       << ") stride(" << x_stride
       << ") dimension(" ;
@@ -87,7 +87,7 @@ void assert_shapes_are_equal_throw(
   if ( 7 < x_rank ) { msg << " " << x_N7 ; }
   msg << " ) } != { "
       << " layout(" << y_layout.name()
-      << ") value_size(" << y_value_size
+      << ") scalar_size(" << y_scalar_size
       << ") rank(" << y_rank
       << ") stride(" << y_stride
       << ") dimension(" ;
