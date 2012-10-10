@@ -42,6 +42,7 @@
 #endif
 
 // Xpetra / Galeri
+#ifdef HAVE_IFPACK2_XPETRA
 #include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
 #include <Xpetra_Parameters.hpp>
@@ -51,6 +52,7 @@
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #include <Galeri_XpetraMatrixFactory.hpp>
 #include <Galeri_XpetraMatrixTypes.hpp>
+#endif
 
 
 #include <Ifpack2_UnitTestHelpers.hpp>
@@ -68,6 +70,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, Lo
   std::string version = Ifpack2::Version();
   out << "Ifpack2::Version(): " << version << std::endl;
 
+#ifdef HAVE_IFPACK2_XPETRA
   // Typedefs
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>       CrsType;
   typedef Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XCrsType;
@@ -143,7 +146,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, Lo
   C->apply(X,Z);
 
   TEST_COMPARE_FLOATING_ARRAYS(Y.get1dView(), Z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
-
+#endif
 }
 
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
