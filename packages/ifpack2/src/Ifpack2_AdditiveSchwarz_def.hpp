@@ -30,14 +30,15 @@
 #define IFPACK2_ADDITIVESCHWARZ_DEF_HPP
 
 #include "Ifpack2_AdditiveSchwarz_decl.hpp"
+
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
 #include "Xpetra_RowMatrix.hpp"
 #include "Xpetra_TpetraRowMatrix.hpp"
-#ifdef HAVE_IFPACK2_ZOLTAN2
 #include "Zoltan2_XpetraRowMatrixInput.hpp"
 #include "Zoltan2_OrderingProblem.hpp"
 #endif
-#include "Ifpack2_Condest.hpp"
 
+#include "Ifpack2_Condest.hpp"
 #include "Ifpack2_OverlappingRowMatrix_def.hpp"
 #include "Ifpack2_LocalFilter_def.hpp"
 #include "Ifpack2_ReorderFilter_def.hpp"
@@ -237,7 +238,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setParameters(const Teuchos::
   // Note: Unlike Ifpack we'll use a "schwarz: reordering list" to give to Zoltan2...
   UseReordering_ = List_.get("schwarz: use reordering",false);
 
-#ifndef HAVE_IFPACK2_ZOLTAN2
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
   // If we don't have Zoltan2, we just turn the reordering off completely...
   UseReordering_=false;
 #endif
@@ -527,7 +528,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup()
 
   // Do reordering
   if (UseReordering_) {
-#ifdef HAVE_IFPACK2_ZOLTAN2
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
     // Unlike Ifpack, Zoltan2 does all the dirty work here.
     Teuchos::ParameterList zlist = List_.sublist("schwarz: reordering list");
     XpetraTpetraMatrixType XpetraMatrix(ActiveMatrix);
