@@ -57,25 +57,26 @@
 
 namespace KokkosArray {
 
-template< typename ValueType , unsigned Count ,
-          class ProxyLHS , class ProxyRHS >
-Array< ValueType , Count , ProxyLHS > &
+template< typename T, unsigned N, class ProxyLHS, class ProxyRHS >
+KOKKOSARRAY_INLINE_FUNCTION
+Array< T , N , ProxyLHS > &
 operator KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR
-  ( Array< ValueType , Count , ProxyLHS > & lhs ,
-    Array< ValueType , Count , ProxyRHS > & rhs )
+  ( Array< T , N , ProxyLHS > & lhs ,
+    Array< T , N , ProxyRHS > & rhs )
 {
-  for ( unsigned i = 0 ; i < Count ; ++i ) {
+  for ( unsigned i = 0 ; i < N ; ++i ) {
     lhs[i] KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR rhs[i] ;
   }
   return lhs ;
 }
 
-template< typename ValueType , unsigned Count , class Proxy , class RHS >
-Array< ValueType , Count , Proxy > &
+template< typename T , unsigned N , class Proxy , class RHS >
+KOKKOSARRAY_INLINE_FUNCTION
+Array< T , N , Proxy > &
 operator KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR
-  ( Array< ValueType , Count , Proxy > & lhs , const RHS rhs )
+  ( Array< T , N , Proxy > & lhs , const RHS rhs )
 {
-  for ( unsigned i = 0 ; i < Count ; ++i ) {
+  for ( unsigned i = 0 ; i < N ; ++i ) {
     lhs[i] KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR rhs ;
   }
   return lhs ;
@@ -95,13 +96,13 @@ namespace KokkosArray {
 
 template< class > struct KOKKOSARRAY_ARRAY_UNARY_OPERATOR_CLASS {};
 
-template< typename TypeRHS , unsigned Count , class ProxyRHS >
-class Array< TypeRHS , Count ,
+template< typename TypeRHS , unsigned N , class ProxyRHS >
+class Array< TypeRHS , N ,
              KOKKOSARRAY_ARRAY_UNARY_OPERATOR_CLASS< ProxyRHS > >
 {
 private:
 
-  const Array< TypeRHS , Count , ProxyRHS > rhs ;
+  const Array< TypeRHS , N , ProxyRHS > rhs ;
 
   Array();
   Array & operator = ( const Array & );
@@ -116,7 +117,7 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION
   TypeRHS operator[]( const iType & i ) const
     {
-      array_check_bounds(i,Count);
+      array_check_bounds(i,N);
       return KOKKOSARRAY_ARRAY_UNARY_OPERATOR rhs[i] ;
     }
 
@@ -129,28 +130,30 @@ public:
   }
 };
 
-template< typename TypeRHS , unsigned Count , class ProxyRHS >
-Array< TypeRHS , Count ,
+template< typename TypeRHS , unsigned N , class ProxyRHS >
+KOKKOSARRAY_INLINE_FUNCTION
+Array< TypeRHS , N ,
        KOKKOSARRAY_ARRAY_UNARY_OPERATOR_CLASS
        < typename ArrayProxy< ProxyRHS >::type > >
 operator KOKKOSARRAY_ARRAY_UNARY_OPERATOR
-  ( const Array< TypeRHS , Count , ProxyRHS > & a )
+  ( const Array< TypeRHS , N , ProxyRHS > & a )
 {
   return 
-    Array< TypeRHS , Count ,
+    Array< TypeRHS , N ,
            KOKKOSARRAY_ARRAY_UNARY_OPERATOR_CLASS
            < typename ArrayProxy< ProxyRHS >::type > >( a );
 }
 
-template< typename TypeRHS , unsigned Count , class ProxyRHS >
-Array< TypeRHS , Count ,
+template< typename TypeRHS , unsigned N , class ProxyRHS >
+KOKKOSARRAY_INLINE_FUNCTION
+Array< TypeRHS , N ,
        KOKKOSARRAY_ARRAY_UNARY_OPERATOR_CLASS
        < typename ArrayProxy< volatile ProxyRHS >::type > >
 operator KOKKOSARRAY_ARRAY_UNARY_OPERATOR
-  ( const volatile Array< TypeRHS , Count , ProxyRHS > & a )
+  ( const volatile Array< TypeRHS , N , ProxyRHS > & a )
 {
   return 
-    Array< TypeRHS , Count ,
+    Array< TypeRHS , N ,
            KOKKOSARRAY_ARRAY_UNARY_OPERATOR_CLASS
            < typename ArrayProxy< volatile ProxyRHS >::type > >( a );
 }
@@ -181,17 +184,17 @@ struct KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS {};
 //----------------------------------------------------------------------------
 // ArrayExp <= cv-ArrayExp OP cv-ArrayExp   [4]
 
-template< typename ValueType , unsigned Count ,
+template< typename T , unsigned N ,
           typename TypeLHS , class ProxyLHS ,
           typename TypeRHS , class ProxyRHS >
-class Array< ValueType , Count ,
+class Array< T , N ,
              KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
              <TypeLHS,ProxyLHS, TypeRHS,ProxyRHS> >
 {
 private:
 
-  const Array< TypeLHS , Count , ProxyLHS > lhs ;
-  const Array< TypeRHS , Count , ProxyRHS > rhs ;
+  const Array< TypeLHS , N , ProxyLHS > lhs ;
+  const Array< TypeRHS , N , ProxyRHS > rhs ;
 
   Array();
   Array & operator = ( const Array & );
@@ -205,7 +208,7 @@ public:
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
-  ValueType operator[]( const iType & i ) const
+  T operator[]( const iType & i ) const
     { return lhs[i] KOKKOSARRAY_ARRAY_BINARY_OPERATOR rhs[i] ; }
 
   void print_expression( std::ostream & s ) const
@@ -223,72 +226,76 @@ public:
   { ERROR__cannot_assign_value_to_constant_expression< Array >(); }
 };
 
-template< typename TypeLHS , unsigned Count , class ProxyLHS ,
+template< typename TypeLHS , unsigned N , class ProxyLHS ,
           typename TypeRHS ,                  class ProxyRHS >
-Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , Count ,
+KOKKOSARRAY_INLINE_FUNCTION
+Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , N ,
        KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
        < TypeLHS , typename ArrayProxy< ProxyLHS >::type ,
          TypeRHS , typename ArrayProxy< ProxyRHS >::type > >
 operator KOKKOSARRAY_ARRAY_BINARY_OPERATOR
-  ( const Array< TypeLHS , Count , ProxyLHS > & lhs ,
-    const Array< TypeRHS , Count , ProxyRHS > & rhs )
+  ( const Array< TypeLHS , N , ProxyLHS > & lhs ,
+    const Array< TypeRHS , N , ProxyRHS > & rhs )
 {
   return 
-    Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , Count ,
+    Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , N ,
            KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
            < TypeLHS , typename ArrayProxy< ProxyLHS >::type ,
              TypeRHS , typename ArrayProxy< ProxyRHS >::type > >
       ( lhs , rhs );
 }
 
-template< typename TypeLHS , unsigned Count , class ProxyLHS ,
+template< typename TypeLHS , unsigned N , class ProxyLHS ,
           typename TypeRHS ,                  class ProxyRHS >
-Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , Count ,
+KOKKOSARRAY_INLINE_FUNCTION
+Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , N ,
        KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
        < TypeLHS , typename ArrayProxy<          ProxyLHS >::type ,
          TypeRHS , typename ArrayProxy< volatile ProxyRHS >::type > >
 operator KOKKOSARRAY_ARRAY_BINARY_OPERATOR
-  ( const          Array< TypeLHS , Count , ProxyLHS > & lhs ,
-    const volatile Array< TypeRHS , Count , ProxyRHS > & rhs )
+  ( const          Array< TypeLHS , N , ProxyLHS > & lhs ,
+    const volatile Array< TypeRHS , N , ProxyRHS > & rhs )
 {
   return 
-    Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , Count ,
+    Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , N ,
            KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
            < TypeLHS , typename ArrayProxy<          ProxyLHS >::type ,
              TypeRHS , typename ArrayProxy< volatile ProxyRHS >::type > >
       ( lhs , rhs );
 }
 
-template< typename TypeLHS , unsigned Count , class ProxyLHS ,
+template< typename TypeLHS , unsigned N , class ProxyLHS ,
           typename TypeRHS ,                  class ProxyRHS >
-Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , Count ,
+KOKKOSARRAY_INLINE_FUNCTION
+Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , N ,
        KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
        < TypeLHS , typename ArrayProxy< volatile ProxyLHS >::type ,
          TypeRHS , typename ArrayProxy<          ProxyRHS >::type > >
 operator KOKKOSARRAY_ARRAY_BINARY_OPERATOR
-  ( const volatile Array< TypeLHS , Count , ProxyLHS > & lhs ,
-    const          Array< TypeRHS , Count , ProxyRHS > & rhs )
+  ( const volatile Array< TypeLHS , N , ProxyLHS > & lhs ,
+    const          Array< TypeRHS , N , ProxyRHS > & rhs )
 {
   return 
-    Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , Count ,
+    Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , N ,
            KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
            < TypeLHS , typename ArrayProxy< volatile ProxyLHS >::type ,
              TypeRHS , typename ArrayProxy<          ProxyRHS >::type > >
       ( lhs , rhs );
 }
 
-template< typename TypeLHS , unsigned Count , class ProxyLHS ,
+template< typename TypeLHS , unsigned N , class ProxyLHS ,
           typename TypeRHS ,                  class ProxyRHS >
-Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , Count ,
+KOKKOSARRAY_INLINE_FUNCTION
+Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , N ,
        KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
        < TypeLHS , typename ArrayProxy< volatile ProxyLHS >::type ,
          TypeRHS , typename ArrayProxy< volatile ProxyRHS >::type > >
 operator KOKKOSARRAY_ARRAY_BINARY_OPERATOR
-  ( const volatile Array< TypeLHS , Count , ProxyLHS > & lhs ,
-    const volatile Array< TypeRHS , Count , ProxyRHS > & rhs )
+  ( const volatile Array< TypeLHS , N , ProxyLHS > & lhs ,
+    const volatile Array< TypeRHS , N , ProxyRHS > & rhs )
 {
   return 
-    Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , Count ,
+    Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , N ,
            KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
            < TypeLHS , typename ArrayProxy< volatile ProxyLHS >::type ,
              TypeRHS , typename ArrayProxy< volatile ProxyRHS >::type > >
@@ -299,16 +306,17 @@ operator KOKKOSARRAY_ARRAY_BINARY_OPERATOR
 // scalar OP cv-array
 
 template< typename TypeLHS ,
-          typename TypeRHS , unsigned Count , class ProxyRHS >
-Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , Count ,
+          typename TypeRHS , unsigned N , class ProxyRHS >
+KOKKOSARRAY_INLINE_FUNCTION
+Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , N ,
        KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
        < TypeLHS , ArrayProxyValue ,
          TypeRHS , typename ArrayProxy< ProxyRHS >::type > >
 operator KOKKOSARRAY_ARRAY_BINARY_OPERATOR
-  ( const TypeLHS & lhs , const Array< TypeRHS , Count , ProxyRHS > & rhs )
+  ( const TypeLHS & lhs , const Array< TypeRHS , N , ProxyRHS > & rhs )
 {
   return 
-    Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , Count ,
+    Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , N ,
            KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
            < TypeLHS , ArrayProxyValue ,
              TypeRHS , typename ArrayProxy< ProxyRHS >::type > >
@@ -316,17 +324,18 @@ operator KOKKOSARRAY_ARRAY_BINARY_OPERATOR
 }
 
 template< typename TypeLHS ,
-          typename TypeRHS , unsigned Count , class ProxyRHS >
-Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , Count ,
+          typename TypeRHS , unsigned N , class ProxyRHS >
+KOKKOSARRAY_INLINE_FUNCTION
+Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , N ,
        KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
        < TypeLHS , ArrayProxyValue ,
          TypeRHS , typename ArrayProxy< volatile ProxyRHS >::type > >
 operator KOKKOSARRAY_ARRAY_BINARY_OPERATOR
   ( const TypeLHS & lhs ,
-    const volatile Array< TypeRHS , Count , ProxyRHS > & rhs )
+    const volatile Array< TypeRHS , N , ProxyRHS > & rhs )
 {
   return 
-    Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , Count ,
+    Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , N ,
            KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
            < TypeLHS , ArrayProxyValue ,
              TypeRHS , typename ArrayProxy< volatile ProxyRHS >::type > >
@@ -336,35 +345,37 @@ operator KOKKOSARRAY_ARRAY_BINARY_OPERATOR
 //----------------------------------------------------------------------------
 // cv-array OP scalar
 
-template< typename TypeLHS , unsigned Count , class ProxyLHS ,
+template< typename TypeLHS , unsigned N , class ProxyLHS ,
           typename TypeRHS >
-Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , Count ,
+KOKKOSARRAY_INLINE_FUNCTION
+Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , N ,
        KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
        < TypeLHS , typename ArrayProxy< ProxyLHS >::type ,
          TypeRHS , ArrayProxyValue > >
 operator KOKKOSARRAY_ARRAY_BINARY_OPERATOR
-  ( const Array< TypeLHS , Count , ProxyLHS > & lhs , const TypeRHS & rhs )
+  ( const Array< TypeLHS , N , ProxyLHS > & lhs , const TypeRHS & rhs )
 {
   return 
-    Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , Count ,
+    Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , N ,
            KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
            < TypeLHS , typename ArrayProxy< ProxyLHS >::type ,
              TypeRHS , ArrayProxyValue > >
       ( lhs , rhs );
 }
 
-template< typename TypeLHS , unsigned Count , class ProxyLHS ,
+template< typename TypeLHS , unsigned N , class ProxyLHS ,
           typename TypeRHS >
-class Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , Count ,
+KOKKOSARRAY_INLINE_FUNCTION
+class Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , N ,
              KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
              < TypeLHS , typename ArrayProxy< volatile ProxyLHS >::type ,
                TypeRHS , ArrayProxyValue > >
 operator KOKKOSARRAY_ARRAY_BINARY_OPERATOR
-  ( const volatile Array< TypeLHS , Count , ProxyLHS > & lhs ,
+  ( const volatile Array< TypeLHS , N , ProxyLHS > & lhs ,
     const TypeRHS & rhs )
 {
   return 
-    Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , Count ,
+    Array< typename BinaryExpressionType<TypeLHS,TypeRHS>::type , N ,
            KOKKOSARRAY_ARRAY_BINARY_OPERATOR_CLASS
            < TypeLHS , typename ArrayProxy< volatile ProxyLHS >::type ,
              TypeRHS , ArrayProxyValue > >
@@ -399,14 +410,14 @@ struct KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS {};
 //----------------------------------------------------------------------------
 // ArrayExp <= cv-ArrayExp OP cv-ArrayExp   [4]
 
-template< typename ValueType , unsigned Count , class LHS , class RHS >
-class Array< ValueType , Count ,
+template< typename T , unsigned N , class LHS , class RHS >
+class Array< T , N ,
              KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS < LHS , RHS > >
 {
 private:
 
-  const Array< ValueType , Count , LHS > lhs ;
-  const Array< ValueType , Count , RHS > rhs ;
+  const Array< T , N , LHS > lhs ;
+  const Array< T , N , RHS > rhs ;
 
   Array();
   Array & operator = ( const Array & );
@@ -420,7 +431,7 @@ public:
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
-  ValueType operator[]( const iType & i ) const
+  T operator[]( const iType & i ) const
     { return KOKKOSARRAY_ARRAY_BINARY_FUNCTION_MEMBER( lhs[i] , rhs[i] ); }
 
   void print_expression( std::ostream & s ) const
@@ -438,68 +449,72 @@ public:
 };
 
 
-template< typename ValueType , unsigned Count , class LHS , class RHS >
-Array< ValueType , Count ,
+template< typename T , unsigned N , class LHS , class RHS >
+KOKKOSARRAY_INLINE_FUNCTION
+Array< T , N ,
        KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS
          < typename ArrayProxy< LHS >::type ,
            typename ArrayProxy< RHS >::type > >
 KOKKOSARRAY_ARRAY_BINARY_FUNCTION
-  ( const Array< ValueType , Count , LHS > & lhs ,
-    const Array< ValueType , Count , RHS > & rhs )
+  ( const Array< T , N , LHS > & lhs ,
+    const Array< T , N , RHS > & rhs )
 {
   return 
-    Array< ValueType , Count ,
+    Array< T , N ,
            KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS
              < typename ArrayProxy< LHS >::type ,
                typename ArrayProxy< RHS >::type > >
       ( lhs , rhs );
 }
 
-template< typename ValueType , unsigned Count , class LHS , class RHS >
-Array< ValueType , Count ,
+template< typename T , unsigned N , class LHS , class RHS >
+KOKKOSARRAY_INLINE_FUNCTION
+Array< T , N ,
        KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS
          < typename ArrayProxy< volatile LHS >::type ,
            typename ArrayProxy< volatile RHS >::type > >
 KOKKOSARRAY_ARRAY_BINARY_FUNCTION
-  ( const volatile Array< ValueType , Count , LHS > & lhs ,
-    const volatile Array< ValueType , Count , RHS > & rhs )
+  ( const volatile Array< T , N , LHS > & lhs ,
+    const volatile Array< T , N , RHS > & rhs )
 {
   return 
-    Array< ValueType , Count ,
+    Array< T , N ,
            KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS
              < typename ArrayProxy< volatile LHS >::type ,
                typename ArrayProxy< volatile RHS >::type > >
       ( lhs , rhs );
 }
 
-template< typename ValueType , unsigned Count , class LHS , class RHS >
-Array< ValueType , Count ,
+template< typename T , unsigned N , class LHS , class RHS >
+KOKKOSARRAY_INLINE_FUNCTION
+Array< T , N ,
        KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS
          < typename ArrayProxy<          LHS >::type ,
            typename ArrayProxy< volatile RHS >::type > >
 KOKKOSARRAY_ARRAY_BINARY_FUNCTION
-  ( const          Array< ValueType , Count , LHS > & lhs ,
-    const volatile Array< ValueType , Count , RHS > & rhs )
+  ( const          Array< T , N , LHS > & lhs ,
+    const volatile Array< T , N , RHS > & rhs )
 {
   return 
-    Array< ValueType , Count ,
+    Array< T , N ,
            KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS
              < typename ArrayProxy<          LHS >::type ,
                typename ArrayProxy< volatile RHS >::type > >
       ( lhs , rhs );
 }
 
-template< typename ValueType , unsigned Count , class LHS , class RHS >
-Array< ValueType , Count ,
+template< typename T , unsigned N , class LHS , class RHS >
+KOKKOSARRAY_INLINE_FUNCTION
+Array< T , N ,
        KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS
          < typename ArrayProxy< volatile LHS >::type ,
            typename ArrayProxy<          RHS >::type > >
 KOKKOSARRAY_ARRAY_BINARY_FUNCTION
-  ( const volatile Array< ValueType , Count , LHS > & lhs ,
-    const          Array< ValueType , Count , RHS > & rhs )
+  ( const volatile Array< T , N , LHS > & lhs ,
+    const          Array< T , N , RHS > & rhs )
 {
   return 
-    Array< ValueType , Count ,
+    Array< T , N ,
            KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS
              < typename ArrayProxy< volatile LHS >::type ,
                typename ArrayProxy<          RHS >::type > >
@@ -509,14 +524,14 @@ KOKKOSARRAY_ARRAY_BINARY_FUNCTION
 //----------------------------------------------------------------------------
 // scalar OP cv-array
 
-template< typename ValueType , unsigned Count , class RHS >
-class Array< ValueType , Count ,
-             KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS < ValueType , RHS > >
+template< typename T , unsigned N , class RHS >
+class Array< T , N ,
+             KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS < T , RHS > >
 {
 private:
 
-  const ValueType lhs ;
-  const Array< ValueType , Count , RHS > rhs ;
+  const T lhs ;
+  const Array< T , N , RHS > rhs ;
 
   Array();
   Array & operator = ( const Array & );
@@ -530,7 +545,7 @@ public:
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
-  ValueType operator[]( const iType & i ) const
+  T operator[]( const iType & i ) const
     { return KOKKOSARRAY_ARRAY_BINARY_FUNCTION_MEMBER( lhs , rhs[i] ); }
 
   void print_expression( std::ostream & s ) const
@@ -543,46 +558,48 @@ public:
 };
 
 
-template< typename LHS , typename ValueType , unsigned Count , class Proxy >
-Array< ValueType , Count ,
+template< typename LHS , typename T , unsigned N , class Proxy >
+KOKKOSARRAY_INLINE_FUNCTION
+Array< T , N ,
        KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS
-       < ValueType , typename ArrayProxy< Proxy >::type > >
+       < T , typename ArrayProxy< Proxy >::type > >
 KOKKOSARRAY_ARRAY_BINARY_FUNCTION
-  ( const LHS & lhs , const Array< ValueType , Count , Proxy > & rhs )
+  ( const LHS & lhs , const Array< T , N , Proxy > & rhs )
 {
   return 
-    Array< ValueType , Count ,
+    Array< T , N ,
            KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS
-             < ValueType , typename ArrayProxy< Proxy >::type > >
+             < T , typename ArrayProxy< Proxy >::type > >
       ( lhs , rhs );
 }
 
-template< typename LHS , typename ValueType , unsigned Count , class Proxy >
-Array< ValueType , Count ,
+template< typename LHS , typename T , unsigned N , class Proxy >
+KOKKOSARRAY_INLINE_FUNCTION
+Array< T , N ,
        KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS
-       < ValueType , typename ArrayProxy< volatile Proxy >::type > >
+       < T , typename ArrayProxy< volatile Proxy >::type > >
 KOKKOSARRAY_ARRAY_BINARY_FUNCTION
   ( const LHS & lhs ,
-    const volatile Array< ValueType , Count , Proxy > & rhs )
+    const volatile Array< T , N , Proxy > & rhs )
 {
   return 
-    Array< ValueType , Count ,
+    Array< T , N ,
            KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS
-           < ValueType , typename ArrayProxy< volatile Proxy >::type > >
+           < T , typename ArrayProxy< volatile Proxy >::type > >
       ( lhs , rhs );
 }
 
 //----------------------------------------------------------------------------
 // cv-array OP scalar
 
-template< typename ValueType , unsigned Count , class LHS >
-class Array< ValueType , Count ,
-             KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS < LHS , ValueType > >
+template< typename T , unsigned N , class LHS >
+class Array< T , N ,
+             KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS < LHS , T > >
 {
 private:
 
-  const Array< ValueType , Count , LHS > lhs ;
-  const ValueType rhs ;
+  const Array< T , N , LHS > lhs ;
+  const T rhs ;
 
   Array();
   Array & operator = ( const Array & );
@@ -596,7 +613,7 @@ public:
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
-  ValueType operator[]( const iType & i ) const
+  T operator[]( const iType & i ) const
     { return KOKKOSARRAY_ARRAY_BINARY_FUNCTION_MEMBER( lhs[i] , rhs ); }
 
   void print_expression( std::ostream & s ) const
@@ -608,32 +625,34 @@ public:
   }
 };
 
-template< typename ValueType , unsigned Count , class Proxy , typename RHS >
-Array< ValueType , Count ,
+template< typename T , unsigned N , class Proxy , typename RHS >
+KOKKOSARRAY_INLINE_FUNCTION
+Array< T , N ,
        KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS
-       < typename ArrayProxy< Proxy >::type , ValueType > >
+       < typename ArrayProxy< Proxy >::type , T > >
 KOKKOSARRAY_ARRAY_BINARY_FUNCTION
-  ( const Array< ValueType , Count , Proxy > & lhs , const RHS & rhs )
+  ( const Array< T , N , Proxy > & lhs , const RHS & rhs )
 {
   return 
-    Array< ValueType , Count ,
+    Array< T , N ,
            KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS
-           < typename ArrayProxy< Proxy >::type , ValueType > >
+           < typename ArrayProxy< Proxy >::type , T > >
       ( lhs , rhs );
 }
 
-template< typename ValueType , unsigned Count , class Proxy , typename RHS >
-Array< ValueType , Count ,
+template< typename T , unsigned N , class Proxy , typename RHS >
+KOKKOSARRAY_INLINE_FUNCTION
+Array< T , N ,
        KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS
-       < typename ArrayProxy< volatile Proxy >::type , ValueType > >
+       < typename ArrayProxy< volatile Proxy >::type , T > >
 KOKKOSARRAY_ARRAY_BINARY_FUNCTION
-  ( const volatile Array< ValueType , Count , Proxy > & lhs ,
+  ( const volatile Array< T , N , Proxy > & lhs ,
     const RHS & rhs )
 {
   return 
-    Array< ValueType , Count ,
+    Array< T , N ,
            KOKKOSARRAY_ARRAY_BINARY_FUNCTION_CLASS
-           < typename ArrayProxy< volatile Proxy >::type , ValueType > >
+           < typename ArrayProxy< volatile Proxy >::type , T > >
       ( lhs , rhs );
 }
 
@@ -662,15 +681,16 @@ namespace KokkosArray {
 //----------------------------------------------------------------------------
 // bool <= cv-ArrayExp OP cv-ArrayExp   [4]
 
-template< typename TypeLHS , unsigned Count , class ProxyLHS ,
+template< typename TypeLHS , unsigned N , class ProxyLHS ,
           typename TypeRHS ,                  class ProxyRHS >
+KOKKOSARRAY_INLINE_FUNCTION
 bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
-  ( const Array< TypeRHS , Count , ProxyLHS > & lhs ,
-    const Array< TypeLHS , Count , ProxyRHS > & rhs )
+  ( const Array< TypeRHS , N , ProxyLHS > & lhs ,
+    const Array< TypeLHS , N , ProxyRHS > & rhs )
 {
-  typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type ValueType ;
+  typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type T ;
 
-  typedef Impl::ArrayWeakOrdering<ValueType,Count> WeakOrdering ;
+  typedef Impl::ArrayWeakOrdering<T,N> WeakOrdering ;
 
   const typename WeakOrdering::Result result =
     WeakOrdering::compare_array_array( lhs , rhs );
@@ -678,15 +698,16 @@ bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
   return WeakOrdering::KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR_EVAL( result );
 }
 
-template< typename TypeLHS , unsigned Count , class ProxyLHS ,
+template< typename TypeLHS , unsigned N , class ProxyLHS ,
           typename TypeRHS ,                  class ProxyRHS >
+KOKKOSARRAY_INLINE_FUNCTION
 bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
-  ( const volatile Array< TypeRHS , Count , ProxyLHS > & lhs ,
-    const volatile Array< TypeLHS , Count , ProxyRHS > & rhs )
+  ( const volatile Array< TypeRHS , N , ProxyLHS > & lhs ,
+    const volatile Array< TypeLHS , N , ProxyRHS > & rhs )
 {
-  typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type ValueType ;
+  typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type T ;
 
-  typedef Impl::ArrayWeakOrdering<ValueType,Count> WeakOrdering ;
+  typedef Impl::ArrayWeakOrdering<T,N> WeakOrdering ;
 
   const typename WeakOrdering::Result result =
     WeakOrdering::compare_array_array( lhs , rhs );
@@ -694,15 +715,16 @@ bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
   return WeakOrdering::KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR_EVAL( result );
 }
 
-template< typename TypeLHS , unsigned Count , class ProxyLHS ,
+template< typename TypeLHS , unsigned N , class ProxyLHS ,
           typename TypeRHS ,                  class ProxyRHS >
+KOKKOSARRAY_INLINE_FUNCTION
 bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
-  ( const          Array< TypeRHS , Count , ProxyLHS > & lhs ,
-    const volatile Array< TypeLHS , Count , ProxyRHS > & rhs )
+  ( const          Array< TypeRHS , N , ProxyLHS > & lhs ,
+    const volatile Array< TypeLHS , N , ProxyRHS > & rhs )
 {
-  typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type ValueType ;
+  typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type T ;
 
-  typedef Impl::ArrayWeakOrdering<ValueType,Count> WeakOrdering ;
+  typedef Impl::ArrayWeakOrdering<T,N> WeakOrdering ;
 
   const typename WeakOrdering::Result result =
     WeakOrdering::compare_array_array( lhs , rhs );
@@ -710,15 +732,16 @@ bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
   return WeakOrdering::KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR_EVAL( result );
 }
 
-template< typename TypeLHS , unsigned Count , class ProxyLHS ,
+template< typename TypeLHS , unsigned N , class ProxyLHS ,
           typename TypeRHS ,                  class ProxyRHS >
+KOKKOSARRAY_INLINE_FUNCTION
 bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
-  ( const volatile Array< TypeRHS , Count , ProxyLHS > & lhs ,
-    const          Array< TypeLHS , Count , ProxyRHS > & rhs )
+  ( const volatile Array< TypeRHS , N , ProxyLHS > & lhs ,
+    const          Array< TypeLHS , N , ProxyRHS > & rhs )
 {
-  typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type ValueType ;
+  typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type T ;
 
-  typedef Impl::ArrayWeakOrdering<ValueType,Count> WeakOrdering ;
+  typedef Impl::ArrayWeakOrdering<T,N> WeakOrdering ;
 
   const typename WeakOrdering::Result result =
     WeakOrdering::compare_array_array( lhs , rhs );
@@ -730,13 +753,14 @@ bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
 // scalar OP cv-array
 
 template< typename TypeLHS ,
-          typename TypeRHS , unsigned Count , class ProxyRHS >
+          typename TypeRHS , unsigned N , class ProxyRHS >
+KOKKOSARRAY_INLINE_FUNCTION
 bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
-  ( const TypeLHS & lhs , const Array< TypeRHS , Count , ProxyRHS > & rhs )
+  ( const TypeLHS & lhs , const Array< TypeRHS , N , ProxyRHS > & rhs )
 {
-  typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type ValueType ;
+  typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type T ;
 
-  typedef Impl::ArrayWeakOrdering<ValueType,Count> WeakOrdering ;
+  typedef Impl::ArrayWeakOrdering<T,N> WeakOrdering ;
 
   const typename WeakOrdering::Result result =
     WeakOrdering::compare_value_array( lhs , rhs );
@@ -745,14 +769,15 @@ bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
 }
 
 template< typename TypeLHS ,
-          typename TypeRHS , unsigned Count , class ProxyRHS >
+          typename TypeRHS , unsigned N , class ProxyRHS >
+KOKKOSARRAY_INLINE_FUNCTION
 bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
   ( const TypeLHS & lhs ,
-    const volatile Array< TypeRHS , Count , ProxyRHS > & rhs )
+    const volatile Array< TypeRHS , N , ProxyRHS > & rhs )
 {
-  typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type ValueType ;
+  typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type T ;
 
-  typedef Impl::ArrayWeakOrdering<ValueType,Count> WeakOrdering ;
+  typedef Impl::ArrayWeakOrdering<T,N> WeakOrdering ;
 
   const typename WeakOrdering::Result result =
     WeakOrdering::compare_value_array( lhs , rhs );
@@ -763,16 +788,16 @@ bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
 //----------------------------------------------------------------------------
 // cv-array OP scalar
 
-template< typename TypeLHS , unsigned Count , class ProxyLHS ,
+template< typename TypeLHS , unsigned N , class ProxyLHS ,
           typename TypeRHS >
-bool
-operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
-  ( const Array< TypeLHS , Count , ProxyLHS > & lhs ,
+KOKKOSARRAY_INLINE_FUNCTION
+bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
+  ( const Array< TypeLHS , N , ProxyLHS > & lhs ,
     const TypeRHS & rhs )
 {
-  typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type ValueType ;
+  typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type T ;
 
-  typedef Impl::ArrayWeakOrdering<ValueType,Count> WeakOrdering ;
+  typedef Impl::ArrayWeakOrdering<T,N> WeakOrdering ;
 
   const typename WeakOrdering::Result result =
     WeakOrdering::compare_array_value( lhs , rhs );
@@ -780,16 +805,16 @@ operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
   return WeakOrdering::KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR_EVAL( result );
 }
 
-template< typename TypeLHS , unsigned Count , class ProxyLHS ,
+template< typename TypeLHS , unsigned N , class ProxyLHS ,
           typename TypeRHS >
-bool
-operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
-  ( const volatile Array< TypeLHS , Count , ProxyLHS > & lhs ,
+KOKKOSARRAY_INLINE_FUNCTION
+bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
+  ( const volatile Array< TypeLHS , N , ProxyLHS > & lhs ,
     const TypeRHS & rhs )
 {
-  typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type ValueType ;
+  typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type T ;
 
-  typedef Impl::ArrayWeakOrdering<ValueType,Count> WeakOrdering ;
+  typedef Impl::ArrayWeakOrdering<T,N> WeakOrdering ;
 
   const typename WeakOrdering::Result result =
     WeakOrdering::compare_array_value( lhs , rhs );
@@ -815,14 +840,14 @@ namespace KokkosArray {
 
 template< class > struct KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS {};
 
-template< typename ValueType , unsigned Count , class LHS >
-class Array< ValueType , Count , KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS< LHS > >
+template< typename T , unsigned N , class LHS >
+class Array< T , N , KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS< LHS > >
 {
 private:
 
   typedef typename ArrayProxy< LHS >::type ProxyLHS ;
 
-  const Array<ValueType,Count,ProxyLHS > lhs ;
+  const Array<T,N,ProxyLHS > lhs ;
 
   Array();
   Array & operator = ( const Array & );
@@ -831,14 +856,14 @@ public:
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
-  ValueType operator[]( const iType & i ) const
+  T operator[]( const iType & i ) const
     { 
-      array_check_bounds(i,Count);
+      array_check_bounds(i,N);
       return KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER( lhs[i] );
     }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  Array( const Array<ValueType,Count,LHS> & arg ) : lhs( arg ) {}
+  Array( const Array<T,N,LHS> & arg ) : lhs( arg ) {}
 
   void print_expression( std::ostream & s ) const
   {
@@ -849,15 +874,15 @@ public:
   }
 };
 
-template< typename ValueType , unsigned Count , class LHS >
-class Array< ValueType , Count ,
+template< typename T , unsigned N , class LHS >
+class Array< T , N ,
       KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS< volatile LHS > >
 {
 private:
 
   typedef typename ArrayProxy< volatile LHS >::type ProxyLHS ;
 
-  const Array<ValueType,Count,ProxyLHS > lhs ;
+  const Array<T,N,ProxyLHS > lhs ;
 
   Array();
   Array & operator = ( const Array & );
@@ -866,14 +891,14 @@ public:
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
-  ValueType operator[]( const iType & i ) const
+  T operator[]( const iType & i ) const
     { 
-      array_check_bounds(i,Count);
+      array_check_bounds(i,N);
       return KOKKOSARRAY_ARRAY_UNARY_FUNCTION_MEMBER( lhs[i] );
     }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  Array( const volatile Array<ValueType,Count,LHS> & arg ) : lhs( arg ) {}
+  Array( const volatile Array<T,N,LHS> & arg ) : lhs( arg ) {}
 
   void print_expression( std::ostream & s ) const
   {
@@ -884,25 +909,27 @@ public:
   }
 };
 
-template< typename ValueType , unsigned Count , class Proxy >
-Array< ValueType , Count ,
+template< typename T , unsigned N , class Proxy >
+KOKKOSARRAY_INLINE_FUNCTION
+Array< T , N ,
        KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS < Proxy > >
 KOKKOSARRAY_ARRAY_UNARY_FUNCTION
-  ( const Array< ValueType , Count , Proxy > & a )
+  ( const Array< T , N , Proxy > & a )
 {
   return 
-    Array< ValueType , Count ,
+    Array< T , N ,
            KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS < Proxy > >( a );
 }
 
-template< typename ValueType , unsigned Count , class Proxy >
-Array< ValueType , Count ,
+template< typename T , unsigned N , class Proxy >
+KOKKOSARRAY_INLINE_FUNCTION
+Array< T , N ,
        KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS < volatile Proxy > >
 KOKKOSARRAY_ARRAY_UNARY_FUNCTION
-  ( const volatile Array< ValueType , Count , Proxy > & a )
+  ( const volatile Array< T , N , Proxy > & a )
 {
   return 
-    Array< ValueType , Count ,
+    Array< T , N ,
            KOKKOSARRAY_ARRAY_UNARY_FUNCTION_CLASS < volatile Proxy > >( a );
 }
 
