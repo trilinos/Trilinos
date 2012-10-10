@@ -43,6 +43,7 @@
 #include "Ifpack2_LocalFilter_def.hpp"
 #include "Ifpack2_ReorderFilter_def.hpp"
 #include "Ifpack2_SingletonFilter_def.hpp"
+#ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 
 namespace Ifpack2 {
