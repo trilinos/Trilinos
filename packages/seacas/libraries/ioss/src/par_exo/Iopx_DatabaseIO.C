@@ -3564,10 +3564,10 @@ namespace Iopx {
       const Ioss::ElementTopology *ftopo = fb->topology();
       int nfnodes = ftopo->number_nodes();
 
-      if (number_distribution_factors == 0 && my_side_count > 0) {
-	// Fill in the array with '1.0'...
+      if (set.distributionFactorConstant) {
+	// Fill in the array with the constant value...
 	for (int64_t i=0; i < nfnodes * my_side_count; i++)
-	  dist_fact[i] = 1.0;
+	  dist_fact[i] = set.distributionFactorValue;
 	return 0;
       }
 
@@ -3602,6 +3602,9 @@ namespace Iopx {
 	    break;
 	  }
 	}
+
+	constant = util().global_minmax(constant ? 1 : 0, Ioss::ParallelUtils::DO_MIN);
+
 	if (constant) {
 	  if (value == 0.0)
 	    value = 1.0;  // Take care of some buggy mesh generators

@@ -1340,8 +1340,8 @@ namespace Iopx {
       // "read" with no communication.
       std::vector<double> df_valcon(3*set_count);
       // df_valcon[3*i + 0] = if df constant, this is the constant value
-      // df_valcon[3*i + 0] = 1 if df constant, 0 if variable
-      // df_valcon[3*i + 0] = value = nodecount if all faces have same node count;
+      // df_valcon[3*i + 1] = 1 if df constant, 0 if variable
+      // df_valcon[3*i + 2] = value = nodecount if all faces have same node count;
       //                    = -1 if variable
       //                      (0 if df values are constant)
 	
@@ -1362,7 +1362,7 @@ namespace Iopx {
 	      }
 	    }
 	    std::vector<double>().swap(df);
-	    if (df_valcon[3*i+1] == 1.0) {
+	    if (df_valcon[3*i+1] == 1.0) { // df are constant.
 	      df_valcon[3*i+2] = 0.0;
 	    } else {
 
@@ -1389,12 +1389,10 @@ namespace Iopx {
 	
       // Tell other processors
       MPI_Bcast(TOPTR(df_valcon), df_valcon.size(), MPI_DOUBLE, root, comm_);
-      std::vector<int> df_nodes_per_side(set_count);
       for (size_t i=0; i < set_count; i++) {
-	//	side_sets[i].distributionFactorCount    = sets[i].num_distribution_factor;
 	side_sets[i].distributionFactorValue    = df_valcon[3*i+0];
 	side_sets[i].distributionFactorConstant = (df_valcon[3*i+1] == 1.0);
-	df_nodes_per_side[i] = (int)df_valcon[3*i+2];
+	side_sets[i].distributionFactorValsPerEntity = (int)df_valcon[3*i+2];
       }
 
       // See if need to communicate the nodes_per_side data on any
@@ -1402,10 +1400,10 @@ namespace Iopx {
       // set here...
       size_t count = 0;
       for (size_t i=0; i < set_count; i++) {
-	if (df_nodes_per_side[i] < 0) {
+	if (side_sets[i].distributionFactorValsPerEntity < 0) {
 	  count += side_sets[i].file_count();
 	} else {
-	  side_sets[i].distributionFactorCount =  side_sets[i].ioss_count() * df_nodes_per_side[i];
+	  side_sets[i].distributionFactorCount =  side_sets[i].ioss_count() * side_sets[i].distributionFactorValsPerEntity;
 	}
       }
 
@@ -1415,7 +1413,7 @@ namespace Iopx {
 	if (myProcessor == root) {
 	  size_t offset = 0;
 	  for (size_t i=0; i < set_count; i++) {
-	    if (df_nodes_per_side[i] < 0) {
+	    if (side_sets[i].distributionFactorValsPerEntity < 0) {
 	      ex_get_side_set_node_count(exodusId, sets[i].id, &nodes_per_face[offset]);
 	      offset += side_sets[i].file_count();
 	    }
@@ -1430,7 +1428,7 @@ namespace Iopx {
 	// be used to determine the df field size on the ioss_decomp.
 	size_t offset = 0;
 	for (size_t i=0; i < set_count; i++) {
-	  if (df_nodes_per_side[i] < 0) {
+	  if (side_sets[i].distributionFactorValsPerEntity < 0) {
 	    int *npf = &nodes_per_face[offset];
 	    offset += side_sets[i].file_count();
 	    size_t my_count = 0;
@@ -2337,6 +2335,12 @@ namespace Iopx {
   int DecompositionData::get_set_mesh_var(int exodusId, ex_entity_type type, ex_entity_id id,
 					  const Ioss::Field& field, T* ioss_data) const 
   {
+    // Sideset Distribution Factor data can be very complicated.
+    // For some sanity, handle all requests for those in a separate routine...
+    if (type == EX_SIDE_SET && field.get_name() == "distribution_factors") {
+      return handle_sset_df(exodusId, id, field, ioss_data);
+    }
+
     const SetDecompositionData &set = get_decomp_set(type, id);
 
     std::vector<T> file_data;
@@ -2425,7 +2429,7 @@ namespace Iopx {
 	    set_param[0].distribution_factor_list = TOPTR(file_data);
 	    ierr = ex_get_sets(exodusId, 1, set_param);
 	  } else {
-	    assert(1==0 && "Internal error -- unhandled sset df case");
+	    assert(1==0 && "Internal error -- should not be here -- sset df");
 	  }
 	}
       } else {
@@ -2452,4 +2456,187 @@ namespace Iopx {
     }    
     return ierr;
   }
+
+  template <typename T>
+  int DecompositionData::handle_sset_df(int exodusId, ex_entity_id id, const Ioss::Field& field, T* ioss_data) const 
+  {
+    int ierr = 0;
+
+    // Sideset Distribution Factor data can be very complicated.
+    // For some sanity, handle all requests for those here.  Only handles sidesets distribution_factors field.
+    assert(field.get_name() == "distribution_factors");
+
+    const SetDecompositionData &set = get_decomp_set(EX_SIDE_SET, id);
+    
+    // See if df are constant and the read/comm can be skipped...
+    if (set.distributionFactorConstant) {
+      // Fill in the ioss decomp with the constant value...
+      for (size_t i=0; i < set.distributionFactorCount; i++) {
+	ioss_data[i] = set.distributionFactorValue;
+      }
+      return 0;
+    }
+
+    // See if this set only exists on a single processor.
+    //    In that case, the file_data is the same as the ioss_data
+    //    and we can read the data directly into ioss_data and return...
+    size_t proc_active = std::accumulate(set.hasEntities.begin(), set.hasEntities.end(), 0);
+    if (proc_active == 1) {
+      if (myProcessor == set.root_) {
+	ex_set set_param[1];
+	set_param[0].id = id;
+	set_param[0].type = EX_SIDE_SET;
+	set_param[0].entry_list = NULL;
+	set_param[0].extra_list = NULL;
+	set_param[0].distribution_factor_list = NULL;
+	ierr = ex_get_sets(exodusId, 1, set_param);
+	if (set_param[0].num_distribution_factor == 0) {
+	  // This should have been caught above.
+	  assert(1==0 && "Internal error in handle_sset_df");
+	} else {
+	  // Read data directly into ioss_data.
+	  set_param[0].distribution_factor_list = ioss_data;
+	  ierr = ex_get_sets(exodusId, 1, set_param);
+	}
+      }
+      return 0;
+    }
+    
+    // At this point, we have nonconstant distribution factors on
+    // a sideset split among 2 or more processors...
+    // Two alternatives exist:
+    // 1. Constant face topology in sideset (e.g., all quad or all tri) [EASY, COMMON]
+    // 2. Non-constant face topology in sideset (e.g., mix of quad/tri/...) [HARD, RARE?]
+
+    if (set.distributionFactorValsPerEntity > 0) {
+      // Constant face topology in sideset
+      // Simply read the values in the file decomposition and
+      // communicate with a comp count of set.distributionFactorValsPerEntity.
+      std::vector<T> file_data;
+      if (myProcessor == set.root_) {
+	assert(set.distributionFactorValsPerEntity*set.fileCount == set.distributionFactorCount);
+	file_data.resize(set.distributionFactorCount);
+
+	ex_set set_param[1];
+	set_param[0].id = id;
+	set_param[0].type = EX_SIDE_SET;
+	set_param[0].entry_list = NULL;
+	set_param[0].extra_list = NULL;
+	set_param[0].distribution_factor_list = TOPTR(file_data);
+	ierr = ex_get_sets(exodusId, 1, set_param);
+      }
+      if (ierr >= 0)
+	communicate_set_data(TOPTR(file_data), ioss_data, set, set.distributionFactorValsPerEntity);
+
+      return ierr;
+    }
+
+    // non-constant face topology in sideset, non-constant df on faces.
+    // Get total number of df on file for this sset...
+    size_t df_count = 0;
+    if (myProcessor == set.root_) {
+      ex_set set_param[1];
+      set_param[0].id = id;
+      set_param[0].type = EX_SIDE_SET;
+      set_param[0].entry_list = NULL;
+      set_param[0].extra_list = NULL;
+      set_param[0].distribution_factor_list = NULL;
+      ierr = ex_get_sets(exodusId, 1, set_param);
+      df_count = set_param[0].num_distribution_factor;
+    }
+    
+    // Get the node-count-per-face for all faces in this set...
+    std::vector<int> nodes_per_face(set.file_count()+1);
+    if (myProcessor == set.root_) {
+      ex_get_side_set_node_count(exodusId, set.id_, TOPTR(nodes_per_face));
+      nodes_per_face[set.file_count()] = df_count;
+    }
+    
+    // Send this data to the other processors
+    
+    // NOTE That a processor either sends or receives, but never both,
+    // so this will not cause a deadlock...
+    if (myProcessor != set.root_ && set.hasEntities[myProcessor]) {
+      MPI_Status  status;
+      int result = MPI_Recv(TOPTR(nodes_per_face), nodes_per_face.size(), MPI_INT,
+			    set.root_, 222, comm_, &status);
+
+      if (result != MPI_SUCCESS) {
+	std::ostringstream errmsg;
+	errmsg << "ERROR: MPI_Recv error on processor " << myProcessor
+	       << " receiving nodes_per_face sideset data";
+	std::cerr << errmsg.str();
+      }
+      df_count = nodes_per_face[nodes_per_face.size()-1];
+    }
+
+    if (set.root_ == myProcessor) {
+      // Sending data to other processors...
+      for (int i=myProcessor+1; i < processorCount; i++) {
+	if (set.hasEntities[i]) {
+	  // Send same data to all active processors...
+	  MPI_Send(TOPTR(nodes_per_face), nodes_per_face.size(), MPI_INT, i, 222, comm_);
+	}
+      }
+    }
+
+    // Now, read the df on the root processor and send it to the other active
+    // processors for this set...
+    std::vector<double> file_data;
+    if (myProcessor == set.root_) {
+      file_data.resize(df_count);
+
+      ex_set set_param[1];
+      set_param[0].id = id;
+      set_param[0].type = EX_SIDE_SET;
+      set_param[0].entry_list = NULL;
+      set_param[0].extra_list = NULL;
+      set_param[0].distribution_factor_list = TOPTR(file_data);
+      ierr = ex_get_sets(exodusId, 1, set_param);
+    }
+
+    // Send this data to the other processors
+    
+    if (myProcessor != set.root_ && set.hasEntities[myProcessor]) {
+      file_data.resize(df_count);
+      MPI_Status  status;
+      int result = MPI_Recv(TOPTR(file_data), file_data.size(), MPI_DOUBLE,
+			    set.root_, 333, comm_, &status);
+
+      if (result != MPI_SUCCESS) {
+	std::ostringstream errmsg;
+	errmsg << "ERROR: MPI_Recv error on processor " << myProcessor
+	       << " receiving nodes_per_face sideset data";
+	std::cerr << errmsg.str();
+      }
+    }
+
+    if (set.root_ == myProcessor) {
+      // Sending data to other processors...
+      for (int i=myProcessor+1; i < processorCount; i++) {
+	if (set.hasEntities[i]) {
+	  // Send same data to all active processors...
+	  MPI_Send(TOPTR(file_data), file_data.size(), MPI_DOUBLE, i, 333, comm_);
+	}
+      }
+    }
+
+    // Now, each active processor for this set needs to step through the df
+    // data in file_data and transfer the data it owns to ioss_data.
+    if (set.hasEntities[myProcessor]) {
+      // Convert nodes_per_face into an offset into the df array...
+      generate_index(nodes_per_face);
+      
+      size_t k = 0;
+      for (size_t i=0; i < set.ioss_count(); i++) {
+	size_t index = set.entitylist_map[i];
+	size_t beg = nodes_per_face[index];
+	size_t end = nodes_per_face[index+1];
+	for (size_t j=beg; j < end; j++) {
+	  ioss_data[k++] = file_data[j];
+	}
+      }
+    }
+  }
 }
+

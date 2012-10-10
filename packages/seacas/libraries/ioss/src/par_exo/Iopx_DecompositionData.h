@@ -64,6 +64,7 @@ namespace Iopx {
   public:
     SetDecompositionData() :
       root_(0), fileCount(0), id_(0), distributionFactorCount(0),
+      distributionFactorValsPerEntity(-1),
       distributionFactorValue(0.0), distributionFactorConstant(false)
       {}
       
@@ -80,6 +81,7 @@ namespace Iopx {
       int64_t id_;
   public:
       size_t distributionFactorCount;
+      int    distributionFactorValsPerEntity; // number of df / element or node. -1 if nonconstant.
       double distributionFactorValue; // If distributionFactorConstant == true, the constant value
       bool distributionFactorConstant; // T if all distribution factors the same value.
   };
@@ -251,6 +253,9 @@ namespace Iopx {
     void simple_decompose(const std::string &method,
 			  const std::vector<INT> &element_dist);
     
+    template <typename T>
+      int handle_sset_df(int exodusId, ex_entity_id id, const Ioss::Field& field, T *ioss_data) const ;
+
     int get_one_set_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int attrib_index, double* attrib) const;
     int get_one_node_attr(int exoid, ex_entity_id obj_id, int attrib_index, double* attrib) const;
     int get_one_elem_attr(int exoid, ex_entity_id obj_id, int attrib_index, double* attrib) const;
