@@ -72,7 +72,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOr
   zlist.set("order_method","rcm"); 
   params.set("fact: ilut level-of-fill", 1.0);
   params.set("fact: drop tolerance", 0.0);
-#if defined(HAVE_IFPACK2_XPETRA) && HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
   params.set("schwarz: use reordering",true);
   params.set("schwarz: reordering list",zlist);
 #else
@@ -134,7 +134,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOr
   zlist.set("order_method","rcm"); 
   params.set("fact: ilut level-of-fill", 1.0);
   params.set("fact: drop tolerance", 0.0);
-#if defined(HAVE_IFPACK2_XPETRA) && HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
   params.set("schwarz: use reordering",true);
   params.set("schwarz: reordering list",zlist);
 #else
