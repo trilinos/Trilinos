@@ -52,18 +52,18 @@ int64_t DashSurfaceMesh::sideset_count() const
 
 int64_t DashSurfaceMesh::element_count_proc() const
 {
-    return (mDashSurfaceData.surface1Connectivity.size() + mDashSurfaceData.surface2Connectivity.size())/NUM_NODES_PER_QUAD_FACE;
+    return (mDashSurfaceData.surfaceBConnectivity.size() + mDashSurfaceData.surfaceAConnectivity.size())/NUM_NODES_PER_QUAD_FACE;
 }
 
 int64_t DashSurfaceMesh::element_count_proc(int64_t block_number) const
 {
     if(block_number == 1)
     {
-        return mDashSurfaceData.surface1Connectivity.size()/NUM_NODES_PER_QUAD_FACE;
+        return mDashSurfaceData.surfaceBConnectivity.size()/NUM_NODES_PER_QUAD_FACE;
     }
     else if(block_number == 2)
     {
-        return mDashSurfaceData.surface2Connectivity.size()/NUM_NODES_PER_QUAD_FACE;
+        return mDashSurfaceData.surfaceAConnectivity.size()/NUM_NODES_PER_QUAD_FACE;
     }
     throw std::exception();
 
@@ -113,10 +113,10 @@ void DashSurfaceMesh::connectivity(int64_t block_number, int* connect) const
     switch(block_number)
     {
         case 1:
-            std::copy(mDashSurfaceData.surface1Connectivity.begin(),mDashSurfaceData.surface1Connectivity.end(), connect);
+            std::copy(mDashSurfaceData.surfaceBConnectivity.begin(),mDashSurfaceData.surfaceBConnectivity.end(), connect);
             return;
         case 2:
-            std::copy(mDashSurfaceData.surface2Connectivity.begin(),mDashSurfaceData.surface2Connectivity.end(), connect);
+            std::copy(mDashSurfaceData.surfaceAConnectivity.begin(),mDashSurfaceData.surfaceAConnectivity.end(), connect);
             return;
         default:
             throw std::exception();

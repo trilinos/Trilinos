@@ -24,8 +24,8 @@ struct SharedNode
 struct DashSurfaceData
 {
     const std::vector<double> &coordinates;
-    const std::vector<int> &surface1Connectivity;
-    const std::vector<int> &surface2Connectivity;
+    const std::vector<int> &surfaceAConnectivity;
+    const std::vector<int> &surfaceBConnectivity;
 
     int globalNumberOfNodes;
     int globalNumberOfElements;
@@ -40,7 +40,7 @@ struct DashSurfaceData
     std::vector<SharedNode> *sharedNodes;
 
     DashSurfaceData(const std::vector<double> &coords, const std::vector<int> &connectivity1, const std::vector<int> &connectivity2)
-    : coordinates(coords), surface1Connectivity(connectivity1), surface2Connectivity(connectivity2),
+    : coordinates(coords), surfaceAConnectivity(connectivity1), surfaceBConnectivity(connectivity2),
       sharedNodes(0)
     {
         this->setSerialDefaults();
@@ -52,8 +52,8 @@ struct DashSurfaceData
     {
         globalNumberOfNodes = coordinates.size()/SPATIAL_DIMENSION;
 
-        globalNumberOfElementsSurface1 = surface1Connectivity.size()/NUM_NODES_PER_QUAD_FACE;
-        globalNumberOfElementsSurface2 = surface2Connectivity.size()/NUM_NODES_PER_QUAD_FACE;
+        globalNumberOfElementsSurface1 = surfaceBConnectivity.size()/NUM_NODES_PER_QUAD_FACE;
+        globalNumberOfElementsSurface2 = surfaceAConnectivity.size()/NUM_NODES_PER_QUAD_FACE;
         globalNumberOfElements = globalNumberOfElementsSurface1 + globalNumberOfElementsSurface2;
 
         elementGlobalIds.resize(globalNumberOfElements);
