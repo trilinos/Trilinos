@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include <Epetra_ConfigDefs.h>
 #include <Epetra_FEVbrMatrix.h>
 #include <Epetra_BlockMap.h>
 #include <Epetra_Map.h>

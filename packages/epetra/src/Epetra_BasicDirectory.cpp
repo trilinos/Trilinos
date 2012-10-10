@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_BasicDirectory.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
@@ -58,9 +59,13 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BlockMap & Map)
     entryOnMultipleProcs_(false),
     LocalIndexList_(0),
     SizeList_(0),
-    SizeIsConst_(true),
-    AllMinGIDs_int_(0),
-    AllMinGIDs_LL_(0)
+    SizeIsConst_(true)
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+    ,AllMinGIDs_int_(0)
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    ,AllMinGIDs_LL_(0)
+#endif
 {
   // Test for simple cases
 
@@ -78,6 +83,7 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BlockMap & Map)
 
     int NumProc = Map.Comm().NumProc();
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 	if(Map.GlobalIndicesInt())
 	{
        AllMinGIDs_int_ = new int[NumProc+1];
@@ -85,7 +91,10 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BlockMap & Map)
        Map.Comm().GatherAll(&MinMyGID, AllMinGIDs_int_, 1);
        AllMinGIDs_int_[NumProc] = (int) (1 + Map.MaxAllGID64()); // Set max cap
 	}
-	else if(Map.GlobalIndicesLongLong())
+	else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    if(Map.GlobalIndicesLongLong())
 	{
        AllMinGIDs_LL_ = new long long[NumProc+1];
        long long MinMyGID = Map.MinMyGID64();
@@ -93,6 +102,7 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BlockMap & Map)
        AllMinGIDs_LL_[NumProc] = 1 + Map.MaxAllGID64(); // Set max cap
 	}
 	else
+#endif
 		throw "Epetra_BasicDirectory::Epetra_BasicDirectory: Unknown map index type";
   }
 
@@ -128,9 +138,13 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BasicDirectory & Direc
     entryOnMultipleProcs_(false),
     LocalIndexList_(0),
     SizeList_(0),
-    SizeIsConst_(Directory.SizeIsConst_),
-    AllMinGIDs_int_(0),
-    AllMinGIDs_LL_(0)
+    SizeIsConst_(Directory.SizeIsConst_)
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+    ,AllMinGIDs_int_(0)
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    ,AllMinGIDs_LL_(0)
+#endif
 {
   if (Directory.DirectoryMap_!=0) DirectoryMap_ = new Epetra_Map(Directory.DirectoryMap());
 
@@ -148,16 +162,20 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BasicDirectory & Direc
     SizeList_ = new int[Dir_NumMyElements];
     for (int i=0; i<Dir_NumMyElements; i++) SizeList_[i] = Directory.SizeList_[i];
     }
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if (Directory.AllMinGIDs_int_!=0) {
        int NumProc = DirectoryMap_->Comm().NumProc();
        AllMinGIDs_int_ = new int[NumProc+1];
        for (int i=0; i<NumProc+1; i++) AllMinGIDs_int_[i] = Directory.AllMinGIDs_int_[i];
 	}
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if (Directory.AllMinGIDs_LL_!=0) {
        int NumProc = DirectoryMap_->Comm().NumProc();
        AllMinGIDs_LL_ = new long long[NumProc+1];
        for (int i=0; i<NumProc+1; i++) AllMinGIDs_LL_[i] = Directory.AllMinGIDs_LL_[i];
 	}
+#endif
 
   if (Directory.numProcLists_ > 0) {
     int num = Directory.numProcLists_;
@@ -200,15 +218,19 @@ Epetra_BasicDirectory::~Epetra_BasicDirectory()
   if( ProcList_ != 0 ) delete [] ProcList_;
   if( LocalIndexList_ != 0 ) delete [] LocalIndexList_;
   if( SizeList_ != 0 ) delete [] SizeList_;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if( AllMinGIDs_int_ != 0 ) delete [] AllMinGIDs_int_;
+  AllMinGIDs_int_ = 0;
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if( AllMinGIDs_LL_ != 0 ) delete [] AllMinGIDs_LL_;
+  AllMinGIDs_LL_ = 0;
+#endif
 
   DirectoryMap_ = 0;
   ProcList_ = 0 ;
   LocalIndexList_ = 0;
   SizeList_ = 0;
-  AllMinGIDs_int_ = 0;
-  AllMinGIDs_LL_ = 0;
 }
 
 //==============================================================================

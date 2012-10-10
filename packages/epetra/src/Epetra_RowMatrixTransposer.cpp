@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_RowMatrixTransposer.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"

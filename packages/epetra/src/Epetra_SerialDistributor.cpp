@@ -128,6 +128,7 @@ int Epetra_SerialDistributor::CreateFromRecvs( const int & NumRemoteIDs,
 //CreateFromRecvs Method
 // - create communication plan given a known list of procs to recv from
 //---------------------------------------------------------------------------
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_SerialDistributor::CreateFromRecvs( const int & NumRemoteIDs,
 				   const long long * RemoteGIDs,
 			           const int * RemotePIDs,
@@ -146,6 +147,7 @@ int Epetra_SerialDistributor::CreateFromRecvs( const int & NumRemoteIDs,
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
 }
+#endif
 
 //==============================================================================
 // GSComm_Comm Do method

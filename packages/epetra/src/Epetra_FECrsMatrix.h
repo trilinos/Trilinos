@@ -44,6 +44,7 @@
 #ifndef EPETRA_FECRSMATRIX_H
 #define EPETRA_FECRSMATRIX_H
 
+#include <Epetra_ConfigDefs.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_CombineMode.h>
 
@@ -51,7 +52,11 @@
 
 class Epetra_Map;
 class Epetra_IntSerialDenseVector;
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 class Epetra_LongLongSerialDenseVector;
+#endif
+
 class Epetra_SerialDenseMatrix;
 class Epetra_FECrsGraph;
 
@@ -779,10 +784,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 
    bool ignoreNonLocalEntries_;
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
    std::vector<int> nonlocalRows_int_;
    std::vector<std::vector<int> > nonlocalCols_int_;
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
    std::vector<long long> nonlocalRows_LL_;
    std::vector<std::vector<long long> > nonlocalCols_LL_;
+#endif
 
    template<typename int_type> std::vector<int_type>& nonlocalRows();
    template<typename int_type> std::vector<std::vector<int_type> >& nonlocalCols();
@@ -814,25 +823,33 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 
 };//class Epetra_FECrsMatrix
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 template<> inline std::vector<int>& Epetra_FECrsMatrix::nonlocalRows<int>()
 {
   return nonlocalRows_int_;
 }
+#endif
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 template<> inline std::vector<long long>& Epetra_FECrsMatrix::nonlocalRows<long long>()
 {
   return nonlocalRows_LL_;
 }
+#endif
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 template<> inline std::vector<std::vector<int> >& Epetra_FECrsMatrix::nonlocalCols<int>()
 {
   return nonlocalCols_int_;
 }
+#endif
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 template<> inline std::vector<std::vector<long long> >& Epetra_FECrsMatrix::nonlocalCols<long long>()
 {
   return nonlocalCols_LL_;
 }
+#endif
 
 
 #endif /* EPETRA_FECRSMATRIX_H */

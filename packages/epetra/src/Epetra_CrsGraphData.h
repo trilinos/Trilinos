@@ -44,11 +44,15 @@
 #ifndef EPETRA_CRSGRAPHDATA_H
 #define EPETRA_CRSGRAPHDATA_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Data.h"
 #include "Epetra_DataAccess.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_IntSerialDenseVector.h"
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 #include "Epetra_LongLongSerialDenseVector.h"
+#endif
 
 // include STL vector
 #include <vector>

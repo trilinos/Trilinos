@@ -44,6 +44,8 @@
 #ifndef EPETRA_C_WRAPPERS_H
 #define EPETRA_C_WRAPPERS_H
 
+#include "Epetra_ConfigDefs.h"
+
 #ifdef EPETRA_FORTRAN
 
 typedef double     * EPETRA_DOUBLE;

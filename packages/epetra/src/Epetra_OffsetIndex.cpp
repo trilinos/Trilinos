@@ -39,6 +39,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_OffsetIndex.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_Import.h"

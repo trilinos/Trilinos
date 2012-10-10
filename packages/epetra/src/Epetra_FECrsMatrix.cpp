@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include <Epetra_ConfigDefs.h>
 #include <Epetra_FECrsMatrix.h>
 #include <Epetra_IntSerialDenseVector.h>
 #include <Epetra_SerialDenseMatrix.h>
@@ -58,10 +59,14 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     nonlocalRows_int_(),
     nonlocalCols_int_(),
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     nonlocalRows_LL_(),
     nonlocalCols_LL_(),
+#endif
     nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
@@ -83,10 +88,14 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     nonlocalRows_int_(),
     nonlocalCols_int_(),
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     nonlocalRows_LL_(),
     nonlocalCols_LL_(),
+#endif
     nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
@@ -109,10 +118,14 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     nonlocalRows_int_(),
     nonlocalCols_int_(),
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     nonlocalRows_LL_(),
     nonlocalCols_LL_(),
+#endif
     nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
@@ -135,10 +148,14 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     nonlocalRows_int_(),
     nonlocalCols_int_(),
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     nonlocalRows_LL_(),
     nonlocalCols_LL_(),
+#endif
     nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
@@ -159,10 +176,14 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     nonlocalRows_int_(),
     nonlocalCols_int_(),
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     nonlocalRows_LL_(),
     nonlocalCols_LL_(),
+#endif
     nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
@@ -183,10 +204,14 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     nonlocalRows_int_(),
     nonlocalCols_int_(),
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     nonlocalRows_LL_(),
     nonlocalCols_LL_(),
+#endif
     nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (graph.UseNonlocalGraph() && graph.nonlocalGraph_ != 0),
@@ -206,10 +231,14 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(const Epetra_FECrsMatrix& src)
    myFirstRow_(0),
    myNumRows_(0),
    ignoreNonLocalEntries_(false),
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
    nonlocalRows_int_(),
    nonlocalCols_int_(),
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
    nonlocalRows_LL_(),
    nonlocalCols_LL_(),
+#endif
    nonlocalCoefs_(),
    workData_(128),
    nonlocalMatrix_ (NULL),
@@ -237,28 +266,36 @@ Epetra_FECrsMatrix& Epetra_FECrsMatrix::operator=(const Epetra_FECrsMatrix& src)
   myNumRows_ = src.myNumRows_;
   ignoreNonLocalEntries_ = src.ignoreNonLocalEntries_;
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if (src.RowMap().GlobalIndicesInt() && nonlocalRows_int_.size() < 1) {
     return( *this );
   }
+#endif
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if (src.RowMap().GlobalIndicesLongLong() && nonlocalRows_LL_.size() < 1) {
     return( *this );
   }
+#endif
 
   if (useNonlocalMatrix_ && src.nonlocalMatrix_ != 0) {
     *nonlocalMatrix_ = *src.nonlocalMatrix_;
     return( *this );
   }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if (src.RowMap().GlobalIndicesInt()) {
     nonlocalRows_int_ = src.nonlocalRows_int_;
     nonlocalCols_int_ = src.nonlocalCols_int_;
   }
+#endif
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if (src.RowMap().GlobalIndicesLongLong()) {
     nonlocalRows_LL_ = src.nonlocalRows_LL_;
     nonlocalCols_LL_ = src.nonlocalCols_LL_;
   }
+#endif
 
   nonlocalCoefs_= src.nonlocalCoefs_;
 
@@ -274,15 +311,19 @@ Epetra_FECrsMatrix::~Epetra_FECrsMatrix()
 //----------------------------------------------------------------------------
 void Epetra_FECrsMatrix::DeleteMemory()
 {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if (RowMap().GlobalIndicesInt()) {
     nonlocalRows_int_.clear();
     nonlocalCols_int_.clear();
   }
+#endif
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if (RowMap().GlobalIndicesLongLong()) {
     nonlocalRows_LL_.clear();
     nonlocalCols_LL_.clear();
   }
+#endif
 
   nonlocalCoefs_.clear();
 

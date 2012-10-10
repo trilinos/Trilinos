@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_LongLongSerialDenseMatrix.h"
 #include "Epetra_Util.h"
 

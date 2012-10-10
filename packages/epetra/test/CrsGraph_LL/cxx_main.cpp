@@ -549,7 +549,7 @@ int checkCopyAndAssignment(Epetra_Comm& Comm, bool verbose) {
 
 	// create initial Map and Graph
 	const int NumIndicesPerRow = 10;
-	const int NumGlobalElements = 50;
+	const long long NumGlobalElements = 50;
 	const int IndexBase = 0;
 	Epetra_Map Map1(NumGlobalElements, IndexBase, Comm);
 	Epetra_CrsGraph Graph1(Copy, Map1, NumIndicesPerRow);
