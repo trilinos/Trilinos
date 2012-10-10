@@ -45,6 +45,7 @@
 #include "Ifpack2_SingletonFilter_def.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
+#endif
 
 namespace Ifpack2 {
 
