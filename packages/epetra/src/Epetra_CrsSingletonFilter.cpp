@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Map.h"
 #include "Epetra_Util.h"
 #include "Epetra_Export.h"
@@ -48,7 +49,11 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 #include "Epetra_LongLongVector.h"
+#endif
+
 #include "Epetra_Comm.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_MapColoring.h"

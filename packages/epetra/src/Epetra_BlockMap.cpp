@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Directory.h"
@@ -110,15 +111,6 @@ Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int Element_Size,
   const bool IsLongLong = true;
   ConstructAutoUniform(NumGlobal_Elements, Element_Size, Index_Base, comm, IsLongLong);
 }
-Epetra_BlockMap::Epetra_BlockMap(unsigned long long NumGlobal_Elements, int Element_Size, int Index_Base, const Epetra_Comm& comm)
-  : Epetra_Object("Epetra::BlockMap"),
-    BlockMapData_(0)
-{
-  const bool IsLongLong = true;
-  assert(NumGlobal_Elements <= (unsigned long long) std::numeric_limits<long long>::max());
-  ConstructAutoUniform(static_cast<long long>(NumGlobal_Elements), Element_Size, Index_Base, comm, IsLongLong);
-}
-
 #endif
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -128,15 +120,6 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int Element_Size, int I
 {
   const bool IsLongLong = false;
   ConstructAutoUniform((long long)NumGlobal_Elements, Element_Size, Index_Base, comm, IsLongLong);
-}
-
-Epetra_BlockMap::Epetra_BlockMap(unsigned int NumGlobal_Elements, int Element_Size, int Index_Base, const Epetra_Comm& comm)
-  : Epetra_Object("Epetra::BlockMap"),
-    BlockMapData_(0)
-{
-  const bool IsLongLong = false;
-  assert(NumGlobal_Elements <= (unsigned int) std::numeric_limits<int>::max());
-  ConstructAutoUniform(static_cast<long long>(NumGlobal_Elements), Element_Size, Index_Base, comm, IsLongLong);
 }
 #endif
 //==============================================================================
@@ -223,16 +206,6 @@ Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int NumMy_Element
   const bool IsLongLong = true;
   ConstructUserLinear(NumGlobal_Elements, NumMy_Elements, Element_Size,Index_Base, comm, IsLongLong);
 }
-
-Epetra_BlockMap::Epetra_BlockMap(unsigned long long NumGlobal_Elements, int NumMy_Elements, 
-      int Element_Size, int Index_Base, const Epetra_Comm& comm)
-  : Epetra_Object("Epetra::BlockMap"),
-    BlockMapData_(0)
-{
-  const bool IsLongLong = true;
-  assert(NumGlobal_Elements <= (unsigned long long) std::numeric_limits<long long>::max());
-  ConstructUserLinear(static_cast<long long>(NumGlobal_Elements), NumMy_Elements, Element_Size,Index_Base, comm, IsLongLong);
-}
 #endif
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -243,16 +216,6 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
 {
   const bool IsLongLong = false;
   ConstructUserLinear((long long)NumGlobal_Elements, NumMy_Elements, Element_Size,Index_Base, comm, IsLongLong);
-}
-
-Epetra_BlockMap::Epetra_BlockMap(unsigned int NumGlobal_Elements, int NumMy_Elements, 
-      int Element_Size, int Index_Base, const Epetra_Comm& comm)
-  : Epetra_Object("Epetra::BlockMap"),
-    BlockMapData_(0)
-{
-  const bool IsLongLong = false;
-  assert(NumGlobal_Elements <= (unsigned int) std::numeric_limits<int>::max());
-  ConstructUserLinear(static_cast<long long>(NumGlobal_Elements), NumMy_Elements, Element_Size,Index_Base, comm, IsLongLong);
 }
 #endif
 
@@ -998,33 +961,31 @@ int Epetra_BlockMap::LID(long long gid) const
   return (int) (gid - BlockMapData_->MinMyGID_); // Can compute with an offset
   }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(BlockMapData_->GlobalIndicesInt_) {
     if( (int) gid >= BlockMapData_->MyGlobalElements_int_[0] &&
       (int) gid <= BlockMapData_->LastContiguousGID_ ) {
     return (int) gid - BlockMapData_->MyGlobalElements_int_[0];
     }
   }
-  else if(BlockMapData_->GlobalIndicesLongLong_) {
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(BlockMapData_->GlobalIndicesLongLong_) {
     if( gid >= BlockMapData_->MyGlobalElements_LL_[0] &&
       gid <= BlockMapData_->LastContiguousGID_ ) {
     return (int) ( gid - BlockMapData_->MyGlobalElements_LL_[0] );
     }
   }
-  else {
-  throw ReportError("Epetra_BlockMap::LID ERROR, GlobalIndices type unknown.",-1);
-  }
+  else
+#endif
+    throw ReportError("Epetra_BlockMap::LID ERROR, GlobalIndices type unknown.",-1);
 
 #ifdef EPETRA_BLOCKMAP_NEW_LID
   return BlockMapData_->LIDHash_->Get( gid );
 #else
   return(BlockMapData_->LID_[gid - BlockMapData_->MinMyGID_]); // Find it in LID array  
 #endif
-}
-
-int Epetra_BlockMap::LID(unsigned long long gid) const
-{
-  assert(gid <= (unsigned long long) std::numeric_limits<long long>::max());
-  return LID(static_cast<long long>(gid));
 }
 #endif
 
@@ -1060,13 +1021,6 @@ int Epetra_BlockMap::LID(int gid) const
   return(BlockMapData_->LID_[gid - BlockMapData_->MinMyGID_]); // Find it in LID array  
 #endif
 }
-
-int Epetra_BlockMap::LID(unsigned int gid) const
-{
-  assert(gid <= (unsigned int) std::numeric_limits<int>::max());
-  return LID(static_cast<int>(gid));
-}
-
 #endif
 
 //==============================================================================
@@ -1083,19 +1037,20 @@ long long Epetra_BlockMap::GID64(int lid) const
     return(lid + BlockMapData_->MinMyGID_); // Can compute with an offset
   }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(BlockMapData_->GlobalIndicesInt_)
   {
     return(BlockMapData_->MyGlobalElements_int_[lid]); // Find it in MyGlobalElements array
   }
-  else if(BlockMapData_->GlobalIndicesLongLong_)
-  {
-#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-    return(BlockMapData_->MyGlobalElements_LL_[lid]); // Find it in MyGlobalElements array
-#else
-  throw ReportError("Epetra_BlockMap::GID64 ERROR, GlobalIndices long long but no API for it.",-1);
+  else
 #endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(BlockMapData_->GlobalIndicesLongLong_)
+  {
+    return(BlockMapData_->MyGlobalElements_LL_[lid]); // Find it in MyGlobalElements array
   }
-
+  else
+#endif
   throw ReportError("Epetra_BlockMap::GID64 ERROR, GlobalIndices type unknown.",-1);
 }
 

@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
 
   try {
     if (verbose) cout << "Checking Epetra_BlockMap(-2, ElementSize, IndexBase, Comm)" << endl;
-    Epetra_BlockMap TestMap(-2, ElementSize, IndexBase, Comm);
+    Epetra_BlockMap TestMap(-2LL, ElementSize, IndexBase, Comm);
   }
   catch (int Error) {
     if (Error != -1) {
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 
   try {
     if (verbose) cout << "Checking Epetra_BlockMap(2, 3, ElementSize, IndexBase, Comm)" << endl;
-    Epetra_BlockMap TestMap(2, 3, ElementSize, IndexBase, Comm);
+    Epetra_BlockMap TestMap(2LL, 3, ElementSize, IndexBase, Comm);
   }
   catch (int Error) {
     if (Error != -4) {

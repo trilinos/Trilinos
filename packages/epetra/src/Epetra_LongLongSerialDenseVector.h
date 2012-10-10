@@ -44,6 +44,7 @@
 #ifndef EPETRA_LONGLONGSERIALDENSEVECTOR_H
 #define EPETRA_LONGLONGSERIALDENSEVECTOR_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h" 
 #include "Epetra_LongLongSerialDenseMatrix.h"
 

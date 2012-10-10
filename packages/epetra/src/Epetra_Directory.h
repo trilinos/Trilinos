@@ -44,6 +44,8 @@
 #ifndef EPETRA_DIRECTORY_H
 #define EPETRA_DIRECTORY_H
 
+#include "Epetra_ConfigDefs.h"
+
 class Epetra_BlockMap;  // Compiler needs forward reference
 class Epetra_Map;
 

@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
@@ -52,7 +53,11 @@
 #include "Epetra_Map.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_IntSerialDenseVector.h"
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 #include "Epetra_LongLongSerialDenseVector.h"
+#endif
+
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_OffsetIndex.h"
 

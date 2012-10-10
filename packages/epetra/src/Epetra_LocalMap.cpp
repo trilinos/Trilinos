@@ -42,10 +42,10 @@
 
 #include "Epetra_LocalMap.h"
 #include "Epetra_Comm.h"
-#include <limits.h> // INT_MAX
 #include <assert.h>
 
 //============================================================================
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 Epetra_LocalMap::Epetra_LocalMap(int numMyElements, int indexBase, 
 				 const Epetra_Comm& comm)
   // LocalMap is just a special case of Map
@@ -55,18 +55,9 @@ Epetra_LocalMap::Epetra_LocalMap(int numMyElements, int indexBase,
   if (CheckInput()!=0)
     throw ReportError("Replicated Local Map not the same size on all PEs",-1);
 }
+#endif
 //============================================================================
-Epetra_LocalMap::Epetra_LocalMap(unsigned int numMyElements, int indexBase, 
-				 const Epetra_Comm& comm)
-  // LocalMap is just a special case of Map
-	: Epetra_Map(numMyElements, static_cast<int>(numMyElements), indexBase, comm) 
-{
-  assert(numMyElements <= (unsigned int) INT_MAX);
-  SetLabel("Epetra::LocalMap");
-  if (CheckInput()!=0)
-    throw ReportError("Replicated Local Map not the same size on all PEs",-1);
-}
-//============================================================================
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 Epetra_LocalMap::Epetra_LocalMap(long long numMyElements, int indexBase, 
 				 const Epetra_Comm& comm)
   // LocalMap is just a special case of Map
@@ -76,6 +67,7 @@ Epetra_LocalMap::Epetra_LocalMap(long long numMyElements, int indexBase,
   if (CheckInput()!=0)
     throw ReportError("Replicated Local Map not the same size on all PEs",-1);
 }
+#endif
 //============================================================================
 Epetra_LocalMap::Epetra_LocalMap(const Epetra_LocalMap& map)
 	: Epetra_Map(map) 

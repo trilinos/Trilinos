@@ -44,9 +44,13 @@
 #ifndef EPETRA_BLOCKMAPDATA_H
 #define EPETRA_BLOCKMAPDATA_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Data.h"
 #include "Epetra_IntSerialDenseVector.h"
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 #include "Epetra_LongLongSerialDenseVector.h"
+#endif
 
 class Epetra_Comm;
 class Epetra_Directory;
@@ -79,7 +83,9 @@ class Epetra_BlockMapData : public Epetra_Data {
   mutable Epetra_Directory* Directory_;
 
   Epetra_IntSerialDenseVector LID_;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Epetra_IntSerialDenseVector MyGlobalElements_int_;
+#endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   Epetra_LongLongSerialDenseVector MyGlobalElements_LL_;
 #endif
