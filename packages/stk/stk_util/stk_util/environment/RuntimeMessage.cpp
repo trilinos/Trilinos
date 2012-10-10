@@ -289,12 +289,14 @@ add_deferred_message(
 
 void
 report_deferred_messages(
-  ParallelMachine       comm)
+  MPI_Comm       comm)
 {
 #ifdef STK_HAS_MPI
   const int p_root = 0 ;
-  const int p_size = parallel_machine_size(comm);
-  const int p_rank = parallel_machine_rank(comm);
+  int p_size = 1;
+  MPI_Comm_size(comm, &p_size);
+  int p_rank = 0;
+  MPI_Comm_rank(comm, &p_rank);
 
   for (DeferredMessageVector::iterator it = s_deferredMessageVector.begin(); it != s_deferredMessageVector.end(); ++it)
     (*it).m_rank = p_rank;
@@ -396,7 +398,7 @@ report_deferred_messages(
 
 void
 aggregate_messages(
-  ParallelMachine       comm,
+  MPI_Comm       comm,
   std::ostringstream &  os,
   const char *          separator)
 {
@@ -405,8 +407,10 @@ aggregate_messages(
   os.str("");
   
   const int p_root = 0 ;
-  const int p_size = parallel_machine_size(comm);
-  const int p_rank = parallel_machine_rank(comm);
+  int p_size = 1;
+  MPI_Comm_size(comm, &p_size);
+  int p_rank = 0;
+  MPI_Comm_rank(comm, &p_rank);
   
   int result ;
 
