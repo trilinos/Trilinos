@@ -11,10 +11,16 @@ INCLUDE(TrilinosCreateClientTemplateHeaders)
 # src
 #
 
-SET(HEADERS "") #*.hpp
-#APPEND_GLOB(HEADERS *.hpp)
+# Note about the use of wildcard in CMakeLists.txt: CMake dont't know
+# when new files is added. You need to re-run CMake manually to
+# regenerate a build system incorporating the new file.
+# YOU MUST ALSO TOUCH A CMAKE CONFIGURATION FILE WHEN YOU PUSH THE NEW
+# FILE TO FORCE THE RECONFIGURE ON OTHER PEOPLE'S BUILDS.
 
-SET(SOURCES mac.cpp XpetraExt_MatrixMatrix.hpp) # Avoid empty library (MacOs 'ar' utility doesn't work on empty library).
+SET(HEADERS "")
+APPEND_GLOB(HEADERS *.hpp)
+
+SET(SOURCES mac.cpp) # Avoid empty library (MacOs 'ar' utility doesn't work on empty library).
 APPEND_GLOB(SOURCES *.cpp)
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
