@@ -899,8 +899,7 @@ namespace Iovs {
 
       if (nodeMap[0] != -1) {
         //std::cout << "DatabaseIO::handle_node_ids nodeMap tagged serial, doing build_reverse_map\n";
-        Ioss::Map::build_reverse_map(&reverseNodeMap, &nodeMap[1], num_to_get, 0,
-                                     "node", myProcessor);
+        Ioss::Map::build_reverse_map(&reverseNodeMap, &nodeMap[1], num_to_get, 0, myProcessor);
       } else {
         //std::cout << "DatabaseIO::handle_node_ids nodeMap tagged NOT serial, NOT doing build_reverse_map\n";
       }
@@ -1081,7 +1080,7 @@ namespace Iovs {
 	if (db_state == Ioss::STATE_MODEL) {
           //std::cout << "DatabaseIO::handle_block_ids state model, update reverseEntityMap\n";
 	  Ioss::Map::build_reverse_map(&reverseEntityMap, &entityMap[eb_offset+1], num_to_get,
-				       eb_offset, eb->type_string(), my_processor);
+				       eb_offset, my_processor);
 
           //took out the write to database stuff here
 	} else {

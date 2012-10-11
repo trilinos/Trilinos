@@ -88,27 +88,31 @@ namespace Ioss {
     int64_t global_to_local(int64_t global, bool must_exist = true) const;
     int64_t local_to_global(int64_t local) const;
 
+    void build_reverse_map(int processor);
+
     static void build_reverse_map(ReverseMapContainer *Map, const int64_t *ids,
-				  int64_t num_to_get, int64_t offset,
-				  const std::string& type, int processor);
+				  int64_t num_to_get, int64_t offset, int processor);
 
     static void build_reverse_map(ReverseMapContainer *Map, const int *ids,
-				  int num_to_get, int offset,
-				  const std::string& type, int processor);
+				  int num_to_get, int offset, int processor);
+
+    void build_reorder_map(int64_t start, int64_t count);
 
     // Determines whether the input map is sequential (map[i] == i)
     // Assumes that map is '1-based', size stored in [0]
     static bool is_sequential(const MapContainer& the_map);
 
     static void verify_no_duplicate_ids(ReverseMapContainer &reverse_map,
-					const std::string &type, int processor);
+					int processor);
 
     int64_t  entityCount;
     bool sequentialG2L; // true if reverse node map is sequential (local==global)
     bool entityReordered;
-    MapContainer forwardMap;
-    ReverseMapContainer reverseMap;
-    MapContainer reorderMap;
+
+    MapContainer        map;
+    MapContainer        reorder;
+    ReverseMapContainer reverse;
+
   private:
     Map(const Map& from); // do not implement
     Map& operator=(const Map& from); // do not implement

@@ -278,17 +278,33 @@ namespace {
 
   void map_id_data(void *data, const Ioss::Field &field, size_t count, const Ioss::MapContainer &map, size_t offset)
   {
-    if (field.get_type() == Ioss::Field::INTEGER) {
-      int *ids = static_cast<int*>(data);
-      
-      for (size_t i=0; i < count; i++) {
-	ids[i] = map[offset + 1 + i];
+    if (Ioss::Map::is_sequential(map)) {
+      if (field.get_type() == Ioss::Field::INTEGER) {
+	int *ids = static_cast<int*>(data);
+	
+	for (size_t i=0; i < count; i++) {
+	  ids[i] = offset + 1 + i;
+	}
+      } else {
+	int64_t *ids = static_cast<int64_t*>(data);
+	
+	for (size_t i=0; i < count; i++) {
+	  ids[i] = offset + 1 + i;
+	}
       }
     } else {
-      int64_t *ids = static_cast<int64_t*>(data);
+      if (field.get_type() == Ioss::Field::INTEGER) {
+	int *ids = static_cast<int*>(data);
       
-      for (size_t i=0; i < count; i++) {
-	ids[i] = map[offset + 1 + i];
+	for (size_t i=0; i < count; i++) {
+	  ids[i] = map[offset + 1 + i];
+	}
+      } else {
+	int64_t *ids = static_cast<int64_t*>(data);
+	
+	for (size_t i=0; i < count; i++) {
+	  ids[i] = map[offset + 1 + i];
+	}
       }
     }
   }
@@ -948,53 +964,75 @@ namespace Iopx {
 
   const Ioss::MapContainer& DatabaseIO::get_map(ex_entity_type type) const
   {
-    if (type == EX_NODE_BLOCK || type == EX_NODE_SET) {
-      return get_node_map();
-    } else if (type == EX_ELEM_BLOCK || type == EX_ELEM_SET) {
-      return get_element_map();
-    } else if (type == EX_FACE_BLOCK || type == EX_FACE_SET) {
-      return get_face_map();
-    } else if (type == EX_EDGE_BLOCK || type == EX_EDGE_SET) {
-      return get_edge_map();
-    }
-    std::ostringstream errmsg;
-    errmsg << "INTERNAL ERROR: Invalid map type. "
-           << "Something is wrong in the Iopx::DatabaseIO::get_map() function. "
-           << "Please report.\n";
-    IOSS_ERROR(errmsg);
-  }
+    switch (type) {
+    case EX_NODE_BLOCK:
+    case EX_NODE_SET:
+      return get_map(nodeMap, nodeCount,
+		     decomp.nodeOffset, decomp.nodeCount,
+		     EX_NODE_MAP, EX_INQ_NODE_MAP);
 
-  const Ioss::MapContainer& DatabaseIO::get_node_map() const
+    case EX_ELEM_BLOCK:
+    case EX_ELEM_SET:
+      return get_map(elemMap, elementCount,
+		     decomp.elementOffset, decomp.elementCount,
+		     EX_ELEM_MAP, EX_INQ_ELEM_MAP);
+
+    case EX_FACE_BLOCK:
+    case EX_FACE_SET:
+      return get_map(faceMap, faceCount,
+		     0, 0,
+		     EX_FACE_MAP, EX_INQ_FACE_MAP);
+
+    case EX_EDGE_BLOCK:
+    case EX_EDGE_SET:
+      return get_map(edgeMap, edgeCount,
+		     0, 0,
+		     EX_EDGE_MAP, EX_INQ_EDGE_MAP);
+
+    default:
+      std::ostringstream errmsg;
+      errmsg << "INTERNAL ERROR: Invalid map type. "
+	     << "Something is wrong in the Iopx::DatabaseIO::get_map() function. "
+	     << "Please report.\n";
+      IOSS_ERROR(errmsg);
+    }      
+  }
+  
+  const Ioss::MapContainer& DatabaseIO::get_map(Ioss::Map &entity_map,
+						int64_t entityCount,
+						int64_t file_offset, int64_t file_count,
+						ex_entity_type entity_type,
+						ex_inquiry inquiry_type) const
   {
     // Allocate space for node number map and read it in...
     // Can be called multiple times, allocate 1 time only
-    if (nodeMap.empty()) {
-      nodeMap.resize(nodeCount+1);
+    if (entity_map.map.empty()) {
+      entity_map.map.resize(entityCount+1);
 
       if (is_input()) {
 	DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
 	Ioss::SerializeIO	serializeIO__(this);
-	Ioss::MapContainer file_data(decomp.nodeCount);
+	Ioss::MapContainer file_data(file_count);
 	int error = 0;
 	// Check whether there is a "original_global_id_map" map on
 	// the database. If so, use it instead of the "node_num_map".
 	bool map_read = false;
-	int map_count = ex_inquire_int(get_file_pointer(), EX_INQ_NODE_MAP);
+	int map_count = ex_inquire_int(get_file_pointer(), inquiry_type);
 	if (map_count > 0) {
 	  char **names = get_exodus_names(map_count, maximumNameLength);
-	  int ierr = ex_get_names(get_file_pointer(), EX_NODE_MAP, names);
+	  int ierr = ex_get_names(get_file_pointer(), entity_type, names);
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, -1);
 
 	  if (map_count == 1 && Ioss::Utils::case_strcmp(names[0], "original_global_id_map") == 0) {
 	    if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
-	      error = ex_get_partial_num_map(get_file_pointer(), EX_NODE_MAP, 1,
-					     decomp.nodeOffset+1, decomp.nodeCount, TOPTR(file_data));
+	      error = ex_get_partial_num_map(get_file_pointer(), entity_type, 1,
+					     file_offset+1, file_count, TOPTR(file_data));
 	    } else {
 	      // Ioss stores as 64-bit, read as 32-bit and copy over...
-	      Ioss::IntVector tmp_map(decomp.nodeCount);
-	      error = ex_get_partial_num_map(get_file_pointer(), EX_NODE_MAP, 1,
-					     decomp.nodeOffset+1, decomp.nodeCount, TOPTR(tmp_map));
+	      Ioss::IntVector tmp_map(file_count);
+	      error = ex_get_partial_num_map(get_file_pointer(), entity_type, 1,
+					     file_offset+1, file_count, TOPTR(tmp_map));
 	      std::copy(tmp_map.begin(), tmp_map.end(), file_data.begin());
 	    }
 	    if (error >= 0) {
@@ -1006,253 +1044,51 @@ namespace Iopx {
 
 	if (!map_read) {
 	  if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
-	    error = ex_get_partial_id_map(get_file_pointer(), EX_NODE_MAP,
-					  decomp.nodeOffset+1, decomp.nodeCount, TOPTR(file_data));
+	    error = ex_get_partial_id_map(get_file_pointer(), entity_type,
+					  file_offset+1, file_count, TOPTR(file_data));
 	  } else {
 	    // Ioss stores as 64-bit, read as 32-bit and copy over...
-	    Ioss::IntVector tmp_map(decomp.nodeCount);
-	    error = ex_get_partial_id_map(get_file_pointer(), EX_NODE_MAP,
-					  decomp.nodeOffset+1, decomp.nodeCount, TOPTR(tmp_map));
+	    Ioss::IntVector tmp_map(file_count);
+	    error = ex_get_partial_id_map(get_file_pointer(), entity_type,
+					  file_offset+1, file_count, TOPTR(tmp_map));
 	    std::copy(tmp_map.begin(), tmp_map.end(), file_data.begin());
 	  }
 	}
 
 	if (error >= 0) {
-	  new_this->decomp.communicate_node_data(TOPTR(file_data), &nodeMap[1], 1);
+	  if (entity_type == EX_NODE_MAP)
+	    new_this->decomp.communicate_node_data(TOPTR(file_data), &entity_map.map[1], 1);
+	  else if (entity_type == EX_ELEM_MAP)
+	    new_this->decomp.communicate_element_data(TOPTR(file_data), &entity_map.map[1], 1);
 	} else {
 	  // Clear out the vector...
-	  Ioss::MapContainer().swap(nodeMap);
+	  Ioss::MapContainer().swap(entity_map.map);
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  map_read = false;
 	}
 
 	// Check for sequential node map.
 	// If not, build the reverse G2L node map...
-	nodeMap[0] = -1;
-	for (int64_t i=1; i < nodeCount+1; i++) {
-	  if (i != nodeMap[i]) {
-	    nodeMap[0] = 1;
+	entity_map.map[0] = -1;
+	for (int64_t i=1; i < entityCount+1; i++) {
+	  if (i != entity_map.map[i]) {
+	    entity_map.map[0] = 1;
 	    break;
 	  }
 	}
 
-	if (nodeMap[0] == 1) {
-	  Ioss::Map::build_reverse_map(&reverseNodeMap, &nodeMap[1], nodeCount, 0,
-				       "NodeBlock", myProcessor);
-	}
+	entity_map.build_reverse_map(myProcessor);
 
       } else {
-	// Output database; nodeMap not set yet... Build a default map.
-	for (int64_t i=1; i < nodeCount+1; i++) {
-	  nodeMap[i] = i;
+	// Output database; entity_map.map not set yet... Build a default map.
+	for (int64_t i=1; i < entityCount+1; i++) {
+	  entity_map.map[i] = i;
 	}
 	// Sequential map
-	nodeMap[0] = -1;
+	entity_map.map[0] = -1;
       }
     }
-    return nodeMap;
-  }
-
-  const Ioss::MapContainer& DatabaseIO::get_element_map() const
-  {
-    // Allocate space for elemente number map and read it in...
-    // Can be called multiple times, allocate 1 time only
-    if (elementMap.empty()) {
-      elementMap.resize(elementCount+1);
-
-      if (is_input()) {
-	int error = 0;
-	Ioss::MapContainer file_data(decomp.elementCount);
-
-	DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
-	Ioss::SerializeIO	serializeIO__(this);
-	  
-	// Check whether there is a "original_global_id_map" map on
-	// the database. If so, use it instead of the "elem_num_map".
-	bool map_read = false;
-	int map_count = ex_inquire_int(get_file_pointer(), EX_INQ_ELEM_MAP);
-	if (map_count > 0) {
-	  int max_name_length = ex_inquire_int(get_file_pointer(), EX_INQ_DB_MAX_USED_NAME_LENGTH);
-	  char **names = get_exodus_names(map_count, max_name_length);
-	  int ierr = ex_get_names(get_file_pointer(), EX_ELEM_MAP, names);
-	  if (ierr < 0)
-	    exodus_error(get_file_pointer(), __LINE__, -1);
-
-	  if (map_count == 1 && Ioss::Utils::case_strcmp(names[0], "original_global_id_map") == 0) {
-	    if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
-	      error = ex_get_partial_num_map(get_file_pointer(), EX_ELEM_MAP, 1,
-					     decomp.elementOffset+1, decomp.elementCount, TOPTR(file_data));
-	    } else {
-	      // Ioss stores as 64-bit, read as 32-bit and copy over...
-	      Ioss::IntVector tmp_map(decomp.elementCount);
-	      error = ex_get_partial_num_map(get_file_pointer(), EX_ELEM_MAP, 1,
-					     decomp.elementOffset+1, decomp.elementCount, TOPTR(tmp_map));
-	      if (error >= 0)
-		std::copy(tmp_map.begin(), tmp_map.end(), file_data.begin());
-	    }
-	    if (error >= 0) {
-	      map_read = true;
-	    }
-	  }
-	  delete_exodus_names(names, map_count);
-	}
-
-	if (!map_read) {
-	  if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
-	    error = ex_get_partial_id_map(get_file_pointer(), EX_ELEM_MAP,
-					  decomp.elementOffset+1,decomp.elementCount, TOPTR(file_data));
-	  } else {
-	    // Ioss stores as 64-bit, read as 32-bit and copy over...
-	    Ioss::IntVector tmp_map(decomp.elementCount);
-	    error = ex_get_partial_id_map(get_file_pointer(), EX_ELEM_MAP,
-					  decomp.elementOffset+1,decomp.elementCount, TOPTR(tmp_map));
-	    if (error >= 0)
-	      std::copy(tmp_map.begin(), tmp_map.end(), file_data.begin());
-	  }
-	}
-
-	if (error < 0) {
-	  // Clear out the vector...
-	  Ioss::MapContainer().swap(elementMap);
-	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	}
-
-	new_this->decomp.communicate_element_data(TOPTR(file_data), &elementMap[1], 1);
-	
-	// Check for sequential element map.
-	// If not, build the reverse G2L element map...
-	elementMap[0] = -1;
-	for (int64_t i=1; i < elementCount+1; i++) {
-	  if (i != elementMap[i]) {
-	    elementMap[0] = 1;
-	    break;
-	  }
-	}
-
-	if (elementMap[0] == 1) {
-	  Ioss::Map::build_reverse_map(&reverseElementMap,
-				       &elementMap[1], elementCount, 0,
-				       "element", myProcessor);
-	}
-
-      } else {
-	// Output database; elementMap not set yet... Build a default map.
-	for (int64_t i=1; i < elementCount+1; i++) {
-	  elementMap[i] = i;
-	}
-	// Sequential map
-	elementMap[0] = -1;
-      }
-    }
-    return elementMap;
-  }
-
-  const Ioss::MapContainer& DatabaseIO::get_face_map() const
-  {
-    // Allocate space for face number map and read it in...
-    // Can be called multiple times, allocate 1 time only
-    if (faceMap.empty()) {
-      faceMap.resize(faceCount+1);
-
-      if (is_input()) {
-	Ioss::SerializeIO	serializeIO__(this);
-	
-	int error = 0;
-	if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
-	  error = ex_get_id_map(get_file_pointer(), EX_FACE_MAP, &faceMap[1]);
-	} else {
-	  // Ioss stores as 64-bit, read as 32-bit and copy over...
-	  Ioss::IntVector tmp_map(faceMap.size());
-	  error = ex_get_id_map(get_file_pointer(), EX_FACE_MAP, &tmp_map[1]);
-	  if (error >= 0)
-	    std::copy(tmp_map.begin(), tmp_map.end(), faceMap.begin());
-	}
-	if (error < 0) {
-	  // Clear out the vector...
-	  Ioss::MapContainer().swap(faceMap);
-	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	}
-	
-	// Check for sequential face map.
-	// If not, build the reverse G2L face map...
-	faceMap[0] = -1;
-	for (int64_t i=1; i < faceCount+1; i++) {
-	  if (i != faceMap[i]) {
-	    faceMap[0] = 1;
-	    break;
-	  }
-	}
-	
-	if (faceMap[0] == 1) {
-	  Ioss::Map::build_reverse_map(&reverseFaceMap,
-				       &faceMap[1], faceCount, 0,
-				       "face", myProcessor);
-	}
-	
-      } else {
-	// Output database; faceMap not set yet... Build a default map.
-	for (int64_t i=1; i < faceCount+1; i++) {
-	  faceMap[i] = i;
-	}
-	// Sequential map
-	faceMap[0] = -1;
-      }
-    }
-    return faceMap;
-  }
-
-  const Ioss::MapContainer& DatabaseIO::get_edge_map() const
-  {
-    // Allocate space for edge number map and read it in...
-    // Can be called multiple times, allocate 1 time only
-    if (edgeMap.empty()) {
-      edgeMap.resize(edgeCount+1);
-
-      if (is_input()) {
-	Ioss::SerializeIO	serializeIO__(this);
-	
-	int error = 0;
-	if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
-	  error = ex_get_id_map(get_file_pointer(), EX_EDGE_MAP, &edgeMap[1]);
-	} else {
-	  // Ioss stores as 64-bit, read as 32-bit and copy over...
-	  Ioss::IntVector tmp_map(edgeMap.size());
-	  error = ex_get_id_map(get_file_pointer(), EX_EDGE_MAP, &tmp_map[1]);
-	  if (error >= 0)
-	    std::copy(tmp_map.begin(), tmp_map.end(), edgeMap.begin());
-	}
-	if (error < 0) {
-	  // Clear out the vector...
-	  Ioss::MapContainer().swap(edgeMap);
-	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	}
-	
-	// Check for sequential edge map.
-	// If not, build the reverse G2L edge map...
-	edgeMap[0] = -1;
-	for (int64_t i=1; i < edgeCount+1; i++) {
-	  if (i != edgeMap[i]) {
-	    edgeMap[0] = 1;
-	    break;
-	  }
-	}
-	
-	if (edgeMap[0] == 1) {
-	  Ioss::Map::build_reverse_map(&reverseEdgeMap,
-				       &edgeMap[1], edgeCount, 0,
-				       "edge", myProcessor);
-	}
-	
-      } else {
-	// Output database; edgeMap not set yet... Build a default map.
-	for (int64_t i=1; i < edgeCount+1; i++) {
-	  edgeMap[i] = i;
-	}
-	// Sequential map
-	edgeMap[0] = -1;
-      }
-    }
-    return edgeMap;
+    return entity_map.map;
   }
 
   void DatabaseIO::get_nodeblocks() 
@@ -2431,7 +2267,7 @@ namespace Iopx {
 	    else if (field.get_name() == "ids") {
 	      // Map the local ids in this node block
 	      // (1...node_count) to global node ids.
-	      map_id_data(data, field, num_to_get, get_node_map(), 0);
+	      map_id_data(data, field, num_to_get, get_map(EX_NODE_BLOCK), 0);
 	    }
 
 	    else if (field.get_name() == "connectivity") {
@@ -2494,7 +2330,7 @@ namespace Iopx {
 	    // The element_node index varies fastet
 
 	    decomp.get_block_connectivity(get_file_pointer(), (int*)data, id, order, element_nodes);
-	    map_connectivity_data(data, field, num_to_get*element_nodes, get_node_map());
+	    map_connectivity_data(data, field, num_to_get*element_nodes, get_map(EX_NODE_BLOCK));
 	  }
 #if 0
 	  else if (field.get_name() == "connectivity_face") {
@@ -2504,7 +2340,7 @@ namespace Iopx {
 	    // The element_face index varies fastest
 	    if (my_element_count > 0) {
 	      get_connectivity_data(get_file_pointer(), data, EX_ELEM_BLOCK, id, 2);
-	      map_connectivity_data(data, field, num_to_get*face_count, get_face_map());
+	      map_connectivity_data(data, field, num_to_get*face_count, get_map(EX_FACE_BLOCK));
 	    }
 	  }
 	  else if (field.get_name() == "connectivity_edge") {
@@ -2514,7 +2350,7 @@ namespace Iopx {
 	    // The element_edge index varies fastest
 	    if (my_element_count > 0) {
 	      get_connectivity_data(get_file_pointer(), data, EX_ELEM_BLOCK, id, 1);
-	      map_connectivity_data(data, field, num_to_get*edge_count, get_edge_map());
+	      map_connectivity_data(data, field, num_to_get*edge_count, get_map(EX_EDGE_BLOCK));
 	    }
 	  }
 #endif
@@ -2531,7 +2367,7 @@ namespace Iopx {
 	  else if (field.get_name() == "ids") {
 	    // Map the local ids in this element block
 	    // (eb_offset+1...eb_offset+1+my_element_count) to global element ids.
-	    map_id_data(data, field, num_to_get, get_element_map(), eb->get_offset());
+	    map_id_data(data, field, num_to_get, get_map(EX_ELEM_BLOCK), eb->get_offset());
 	  }
 	  else if (field.get_name() == "skin") {
 	    // This is (currently) for the skinned body. It maps the
@@ -2628,7 +2464,7 @@ namespace Iopx {
 	      // The face_node index varies fastet
 	      if (my_face_count > 0) {
 		get_connectivity_data(get_file_pointer(), data, EX_FACE_BLOCK, id, 0);
-		map_connectivity_data(data, field, num_to_get*face_nodes, get_node_map());
+		map_connectivity_data(data, field, num_to_get*face_nodes, get_map(EX_NODE_BLOCK));
 	      }
 	    }
 	    else if (field.get_name() == "connectivity_edge") {
@@ -2638,7 +2474,7 @@ namespace Iopx {
 	      // The face_edge index varies fastest
 	      if (my_face_count > 0) {
 		get_connectivity_data(get_file_pointer(), data, EX_FACE_BLOCK, id, 1);
-		map_connectivity_data(data, field, num_to_get*edge_count, get_edge_map());
+		map_connectivity_data(data, field, num_to_get*edge_count, get_map(EX_EDGE_BLOCK));
 	      }
 	    }
 	    else if (field.get_name() == "connectivity_raw") {
@@ -2707,7 +2543,7 @@ namespace Iopx {
 	      // The edge_node index varies fastet
 	      if (my_edge_count > 0) {
 		get_connectivity_data(get_file_pointer(), data, EX_EDGE_BLOCK, id, 0);
-		map_connectivity_data(data, field, num_to_get*edge_nodes, get_node_map());
+		map_connectivity_data(data, field, num_to_get*edge_nodes, get_map(EX_NODE_BLOCK));
 	      }
 	    }
 	    else if (field.get_name() == "connectivity_raw") {
@@ -2886,7 +2722,7 @@ namespace Iopx {
 	      // Convert local node id to global node id and store in 'data'
 	      if (int_byte_size_api() == 4) {
 		int* entity_proc = static_cast<int*>(data);
-		const Ioss::MapContainer &map = get_node_map();
+		const Ioss::MapContainer &map = get_map(EX_NODE_BLOCK);
 
 		size_t j=0;
 		for (size_t i=0; i < decomp.nodeCommMap.size(); i+=2) {
@@ -2896,7 +2732,7 @@ namespace Iopx {
 		}
 	      } else {
 		int64_t* entity_proc = static_cast<int64_t*>(data);
-		const Ioss::MapContainer &map = get_node_map();
+		const Ioss::MapContainer &map = get_map(EX_NODE_BLOCK);
 
 		size_t j=0;
 		for (size_t i=0; i < decomp.nodeCommMap.size(); i+=2) {
@@ -3027,7 +2863,7 @@ namespace Iopx {
 	  // map from local_to_global prior to generating the side  id...
 
 	  // Get the element number map (1-based)...
-	  const Ioss::MapContainer &map = get_element_map();
+	  const Ioss::MapContainer &map = get_map(EX_ELEM_BLOCK);
 
 	  // Allocate space for local side number and element numbers
 	  // numbers.
@@ -3873,8 +3709,8 @@ namespace Iopx {
 		// Map element connectivity from global node id to local node id.
 		// Do it in 'data' ...
 		
-		assert(!nodeMap.empty());
-		if (nodeMap[0] != -1) {
+		assert(!nodeMap.map.empty());
+		if (nodeMap.map[0] != -1) {
 		  int element_nodes =
 		    eb->get_property("topology_node_count").get_int();
 		  assert(field.transformed_storage()->component_count() == element_nodes);
@@ -3901,7 +3737,7 @@ namespace Iopx {
 	      if (my_element_count > 0) {
 		// Map element connectivity from global edge id to local edge id.
 		// Do it in 'data' ...
-		if (edgeMap[0] != -1) {
+		if (edgeMap.map[0] != -1) {
 		  int element_edges = field.transformed_storage()->component_count();
 
 		  if (field.get_type() == Ioss::Field::INTEGER) {
@@ -3926,7 +3762,7 @@ namespace Iopx {
 	      if (my_element_count > 0) {
 		// Map element connectivity from global face id to local face id.
 		// Do it in 'data' ...
-		if (faceMap[0] != -1) {
+		if (faceMap.map[0] != -1) {
 		  int element_faces = field.transformed_storage()->component_count();
 
 		  if (field.get_type() == Ioss::Field::INTEGER) {
@@ -4069,8 +3905,8 @@ namespace Iopx {
 		// Map face connectivity from global node id to local node id.
 		// Do it in 'data' ...
 
-		assert(!nodeMap.empty());
-		if (nodeMap[0] != -1) {
+		assert(!nodeMap.map.empty());
+		if (nodeMap.map[0] != -1) {
 		  int face_nodes = eb->get_property("topology_node_count").get_int();
 		  assert(field.transformed_storage()->component_count() == face_nodes);
 
@@ -4096,7 +3932,7 @@ namespace Iopx {
 		// Map face connectivity from global edge id to local edge id.
 		// Do it in 'data' ...
 		
-		if (edgeMap[0] != -1) {
+		if (edgeMap.map[0] != -1) {
 		  int face_edges = field.transformed_storage()->component_count();
 		  
 		  if (field.get_type() == Ioss::Field::INTEGER) {
@@ -4174,8 +4010,8 @@ namespace Iopx {
 		// Map edge connectivity from global node id to local node id.
 		// Do it in 'data' ...
 
-		assert(!nodeMap.empty());
-		if (nodeMap[0] != -1) {
+		assert(!nodeMap.map.empty());
+		if (nodeMap.map[0] != -1) {
 		  int edge_nodes = eb->get_property("topology_node_count").get_int();
 		  assert(field.transformed_storage()->component_count() == edge_nodes);
 
@@ -4235,36 +4071,36 @@ namespace Iopx {
       /*!
        * There are two modes we need to support in this routine:
        * 1. Initial definition of node map (local->global) and
-       * reverseNodeMap (global->local).
+       * nodeMap.reverse (global->local).
        * 2. Redefinition of node map via 'reordering' of the original
        * map when the nodes on this processor are the same, but their
        * order is changed (or count because of ghosting)
        *
-       * So, there will be two maps the 'nodeMap' map is a 'direct lookup'
+       * So, there will be two maps the 'nodeMap.map' map is a 'direct lookup'
        * map which maps current local position to global id and the
-       * 'reverseNodeMap' is an associative lookup which maps the
+       * 'nodeMap.reverse' is an associative lookup which maps the
        * global id to 'original local'.  There is also a
-       * 'reorderNodeMap' which is direct lookup and maps current local
+       * 'nodeMap.reorder' which is direct lookup and maps current local
        * position to original local.
 
        * The ids coming in are the global ids; their position is the
        * "local id-1" (That is, data[0] contains the global id of local
        * node 1 in this node block).
        *
-       * int local_position = reverseNodeMap[NodeMap[i+1]]
-       * (the nodeMap and reverseNodeMap are 1-based)
+       * int local_position = nodeMap.reverse[NodeMap[i+1]]
+       * (the nodeMap.map and nodeMap.reverse are 1-based)
        *
        * To determine which map to update on a call to this function, we
        * use the following hueristics:
        * -- If the database state is 'STATE_MODEL:', then update the
-       *    'reverseNodeMap' and 'nodeMap'
+       *    'nodeMap.reverse' and 'nodeMap.map'
        *
        * -- If the database state is not STATE_MODEL, then leave the
-       *    'reverseNodeMap' and 'nodeMap' alone since they correspond to the
+       *    'nodeMap.reverse' and 'nodeMap.map' alone since they correspond to the
        *    information already written to the database. [May want to add a
        *    STATE_REDEFINE_MODEL]
        *
-       * -- In both cases, update the reorderNodeMap
+       * -- In both cases, update the nodeMap.reorder
        *
        * NOTE: The mapping is done on TRANSIENT fields only; MODEL fields
        *       should be in the orginal order...
@@ -4272,41 +4108,38 @@ namespace Iopx {
       assert(num_to_get == nodeCount);
     
       if (dbState == Ioss::STATE_MODEL) {
-	if (nodeMap.empty()) {
-	  nodeMap.resize(nodeCount+1);
-	  nodeMap[0] = -1;
+	if (nodeMap.map.empty()) {
+	  nodeMap.map.resize(nodeCount+1);
+	  nodeMap.map[0] = -1;
 	}
 
-	if (nodeMap[0] == -1) {
+	if (nodeMap.map[0] == -1) {
 	  if (int_byte_size_api() == 4) {
 	    int *ids32 = static_cast<int*>(ids);
 	    for (ssize_t i=0; i < num_to_get; i++) {
-	      nodeMap[i+1] = ids32[i];
+	      nodeMap.map[i+1] = ids32[i];
 	      if (i+1 != ids32[i]) {
 		assert(ids32[i] != 0);
-		nodeMap[0] = 1;
+		nodeMap.map[0] = 1;
 	      }
 	    }
 	  } else {
 	    int64_t *ids64 = static_cast<int64_t*>(ids);
 	    for (ssize_t i=0; i < num_to_get; i++) {
-	      nodeMap[i+1] = ids64[i];
+	      nodeMap.map[i+1] = ids64[i];
 	      if (i+1 != ids64[i]) {
 		assert(ids64[i] != 0);
-		nodeMap[0] = 1;
+		nodeMap.map[0] = 1;
 	      }
 	    }
 	  }
 	}
 
-	if (nodeMap[0] != -1) {
-	  Ioss::Map::build_reverse_map(&reverseNodeMap, &nodeMap[1], num_to_get, 0,
-				       "node", myProcessor);
-	}
+	nodeMap.build_reverse_map(myProcessor);
 
 	// Only a single nodeblock and all set
 	if (num_to_get == nodeCount) {
-	  assert(nodeMap[0] == -1 || reverseNodeMap.size() == (size_t)nodeCount);
+	  assert(nodeMap.map[0] == -1 || nodeMap.reverse.size() == (size_t)nodeCount);
 	}
 	assert(get_region()->get_property("node_block_count").get_int() == 1);
 
@@ -4380,66 +4213,10 @@ namespace Iopx {
 	assert(offset == var_count * block_count);
       }
     
-      int64_t internal_global_to_local(Ioss::ReverseMapContainer &reverseEntityMap, bool sequential,
-				       size_t entity_count, int64_t global)
-      {
-	int64_t local = global;
-	if (!sequential) {
-	  std::pair<RMapI, RMapI> iter = std::equal_range(reverseEntityMap.begin(),
-							  reverseEntityMap.end(),
-							  global,
-							  Ioss::IdPairCompare());
-	  if (iter.first == iter.second) {
-	    std::ostringstream errmsg;
-	    errmsg << "Element with global id equal to " << global
-		   << " does not exist in this mesh on this processor\n";
-	    IOSS_ERROR(errmsg);
-	  }
-	  local = (iter.first)->second;
-	}
-	if (local > (ssize_t)entity_count || local <= 0) {
-	  std::ostringstream errmsg;
-	  errmsg << "Entity (element, face, edge, node) with global id equal to " << global
-		 << " returns a local id of " << local
-		 << " which is invalid. This should not happen, please report.\n";
-	  IOSS_ERROR(errmsg);
-	}
-	return local;
-      }
-
-      void build_entity_reorder_map(Ioss::MapContainer &entityMap,
-				    Ioss::ReverseMapContainer &reverseEntityMap,
-				    Ioss::MapContainer &reorderEntityMap,
-				    int64_t start, int64_t count)
-      {
-	// Note: To further add confusion, the reorderEntityaMap is 0-based
-	// and the reverseEntityMap and entityMap are 1-baed. This is
-	// just a consequence of how they are intended to be used...
-	//
-	// start is based on a 0-based array -- start of the reorderMap to build.
-      
-	if (reorderEntityMap.empty())
-	  reorderEntityMap.resize(entityMap.size()-1);
-      
-	int64_t my_end = start+count;
-	for (int64_t i=start; i < my_end; i++) {
-	  int64_t global_id = entityMap[i+1];
-	  int64_t orig_local_id = internal_global_to_local(reverseEntityMap, entityMap[0] == -1, entityMap.size()-1, global_id) - 1;
-	
-	  // If we assume that partial output is not being used (it
-	  // currently isn't in Sierra), then the reordering should only be
-	  // a permutation of the original ordering within this entity block...
-	  assert(orig_local_id >= start && orig_local_id <= my_end);
-	  reorderEntityMap[i] = orig_local_id;
-	}
-      }
-    
       size_t handle_block_ids(const Ioss::EntityBlock *eb,
 			      ex_entity_type map_type,
 			      Ioss::State db_state,
-			      Ioss::MapContainer &entityMap,
-			      Ioss::ReverseMapContainer &reverseEntityMap,
-			      Ioss::MapContainer &reorderEntityMap,
+			      Ioss::Map &entity_map,
 			      void* ids, size_t int_byte_size, size_t num_to_get, int file_pointer, int my_processor)
       {
 	/*!
@@ -4447,16 +4224,16 @@ namespace Iopx {
 	 *
 	 * There are two modes we need to support in this routine:
 	 * 1. Initial definition of element map (local->global) and
-	 * reverseElementMap (global->local).
+	 * elemMap.reverse (global->local).
 	 * 2. Redefinition of element map via 'reordering' of the original
 	 * map when the elements on this processor are the same, but their
 	 * order is changed.
 	 *
-	 * So, there will be two maps the 'elementMap' map is a 'direct lookup'
+	 * So, there will be two maps the 'elemMap.map' map is a 'direct lookup'
 	 * map which maps current local position to global id and the
-	 * 'reverseElementMap' is an associative lookup which maps the
+	 * 'elemMap.reverse' is an associative lookup which maps the
 	 * global id to 'original local'.  There is also a
-	 * 'reorderElementMap' which is direct lookup and maps current local
+	 * 'elemMap.reorder' which is direct lookup and maps current local
 	 * position to original local.
 
 	 * The ids coming in are the global ids; their position is the
@@ -4464,29 +4241,29 @@ namespace Iopx {
 	 * element 1 in this element block).  The 'model-local' id is
 	 * given by eb_offset + 1 + position:
 	 *
-	 * int local_position = reverseElementMap[ElementMap[i+1]]
-	 * (the elementMap and reverseElementMap are 1-based)
+	 * int local_position = elemMap.reverse[ElementMap[i+1]]
+	 * (the elemMap.map and elemMap.reverse are 1-based)
 	 *
 	 * But, this assumes 1..numel elements are being output at the same
 	 * time; we are actually outputting a blocks worth of elements at a
 	 * time, so we need to consider the block offsets.
 	 * So... local-in-block position 'i' is index 'eb_offset+i' in
-	 * 'elementMap' and the 'local_position' within the element
+	 * 'elemMap.map' and the 'local_position' within the element
 	 * blocks data arrays is 'local_position-eb_offset'.  With this, the
 	 * position within the data array of this element block is:
 	 *
 	 * int eb_position =
-	 * reverseElementMap[elementMap[eb_offset+i+1]]-eb_offset-1
+	 * elemMap.reverse[elemMap.map[eb_offset+i+1]]-eb_offset-1
 	 *
 	 * To determine which map to update on a call to this function, we
 	 * use the following hueristics:
 	 * -- If the database state is 'Ioss::STATE_MODEL:', then update the
-	 *    'reverseElementMap'.
+	 *    'elemMap.reverse'.
 	 * -- If the database state is not Ioss::STATE_MODEL, then leave
-	 *    the 'reverseElementMap' alone since it corresponds to the
+	 *    the 'elemMap.reverse' alone since it corresponds to the
 	 *    information already written to the database. [May want to add
 	 *    a Ioss::STATE_REDEFINE_MODEL]
-	 * -- Always update elementMap to match the passed in 'ids'
+	 * -- Always update elemMap.map to match the passed in 'ids'
 	 *    array.
 	 *
 	 * NOTE: the maps are built an element block at a time...
@@ -4494,7 +4271,7 @@ namespace Iopx {
 	 *       should be in the orginal order...
 	 */
 
-	// Overwrite this portion of the 'elementMap', but keep other
+	// Overwrite this portion of the 'elemMap.map', but keep other
 	// parts as they were.  We are adding elements starting at position
 	// 'eb_offset+offset' and ending at
 	// 'eb_offset+offset+num_to_get'. If the entire block is being
@@ -4506,9 +4283,9 @@ namespace Iopx {
 	  int *ids32 = static_cast<int*>(ids);
 	  for (size_t i=0; i < num_to_get; i++) {
 	    ssize_t local_id = eb_offset + i + 1;
-	    entityMap[local_id] = ids32[i];
+	    entity_map.map[local_id] = ids32[i];
 	    if (local_id != ids32[i]) {
-	      entityMap[0] = 1;
+	      entity_map.map[0] = 1;
 	      assert(ids32[i] != 0);
 	    }
 	  }
@@ -4516,9 +4293,9 @@ namespace Iopx {
 	  int64_t *ids64 = static_cast<int64_t*>(ids);
 	  for (size_t i=0; i < num_to_get; i++) {
 	    ssize_t local_id = eb_offset + i + 1;
-	    entityMap[local_id] = ids64[i];
+	    entity_map.map[local_id] = ids64[i];
 	    if (local_id != ids64[i]) {
-	      entityMap[0] = 1;
+	      entity_map.map[0] = 1;
 	      assert(ids64[i] != 0);
 	    }
 	  }
@@ -4526,8 +4303,8 @@ namespace Iopx {
 
 	// Now, if the state is Ioss::STATE_MODEL, update the reverseEntityMap
 	if (db_state == Ioss::STATE_MODEL) {
-	  Ioss::Map::build_reverse_map(&reverseEntityMap, &entityMap[eb_offset+1], num_to_get,
-				       eb_offset, eb->type_string(), my_processor);
+	  Ioss::Map::build_reverse_map(&entity_map.reverse, &entity_map.map[eb_offset+1], num_to_get,
+				       eb_offset, my_processor);
 
 	  // Output this portion of the entity number map
 	  int ierr = ex_put_partial_id_map(file_pointer, map_type, eb_offset+1, num_to_get, ids);
@@ -4538,8 +4315,7 @@ namespace Iopx {
 	// the current topologies local order to the local order
 	// stored in the database...  This is 0-based and used for
 	// remapping output and input TRANSIENT fields.
-	build_entity_reorder_map(entityMap, reverseEntityMap, reorderEntityMap,
-                                 eb_offset, num_to_get);
+	entity_map.build_reorder_map(eb_offset, num_to_get);
 	return num_to_get;
       }
     }
@@ -4547,51 +4323,44 @@ namespace Iopx {
     int64_t  DatabaseIO::global_to_local(ex_entity_type type, int64_t global) const
     {
       if (type == EX_NODE_BLOCK || type == EX_NODE_SET) {
-	assert(!nodeMap.empty());
-	return internal_global_to_local(reverseNodeMap, nodeMap[0] == -1, nodeCount, global);
+	return nodeMap.global_to_local(global);
       } else if (type == EX_ELEM_BLOCK || type == EX_ELEM_SET) {
-	assert(!elementMap.empty());
-	return internal_global_to_local(reverseElementMap, elementMap[0] == -1, elementCount, global);
+	return elemMap.global_to_local(global);
       } else if (type == EX_FACE_BLOCK || type == EX_FACE_SET) {
-	assert(!faceMap.empty());
-	return internal_global_to_local(reverseFaceMap, faceMap[0] == -1, faceCount, global);
+	return faceMap.global_to_local(global);
       } else if (type == EX_EDGE_BLOCK || type == EX_EDGE_SET) {
-	assert(!edgeMap.empty());
-	return internal_global_to_local(reverseEdgeMap, edgeMap[0] == -1, edgeCount, global);
+	return edgeMap.global_to_local(global);
       }
       return 0;
     }
 
     int64_t DatabaseIO::handle_element_ids(const Ioss::ElementBlock *eb, void* ids, size_t num_to_get)
     {
-      if (elementMap.empty()) {
-	elementMap.resize(elementCount+1);
-	elementMap[0] = -1;
+      if (elemMap.map.empty()) {
+	elemMap.map.resize(elementCount+1);
+	elemMap.map[0] = -1;
       }
-      return handle_block_ids(eb, EX_ELEM_MAP, dbState,
-			      elementMap, reverseElementMap, reorderElementMap,
+      return handle_block_ids(eb, EX_ELEM_MAP, dbState, elemMap,
 			      ids, int_byte_size_api(), num_to_get, get_file_pointer(), myProcessor);
     }
 
     int64_t DatabaseIO::handle_face_ids(const Ioss::FaceBlock *eb, void* ids, size_t num_to_get)
     {
-      if (faceMap.empty()) {
-	faceMap.resize(faceCount+1);
-	faceMap[0] = -1;
+      if (faceMap.map.empty()) {
+	faceMap.map.resize(faceCount+1);
+	faceMap.map[0] = -1;
       }
-      return handle_block_ids(eb, EX_FACE_MAP, dbState,
-			      faceMap, reverseFaceMap, reorderFaceMap,
+      return handle_block_ids(eb, EX_FACE_MAP, dbState, faceMap,
 			      ids, int_byte_size_api(), num_to_get, get_file_pointer(), myProcessor);
     }
 
     int64_t DatabaseIO::handle_edge_ids(const Ioss::EdgeBlock *eb, void* ids, size_t num_to_get)
     {
-      if (edgeMap.empty()) {
-	edgeMap.resize(edgeCount+1);
-	edgeMap[0] = -1;
+      if (edgeMap.map.empty()) {
+	edgeMap.map.resize(edgeCount+1);
+	edgeMap.map[0] = -1;
       }
-      return handle_block_ids(eb, EX_EDGE_MAP, dbState,
-			      edgeMap, reverseEdgeMap, reorderEdgeMap,
+      return handle_block_ids(eb, EX_EDGE_MAP, dbState, edgeMap,
 			      ids, int_byte_size_api(), num_to_get, get_file_pointer(), myProcessor);
     }
 
@@ -4654,7 +4423,7 @@ namespace Iopx {
 	  ssize_t k = 0;
 	  ssize_t num_out = 0;
 	  for (ssize_t j=(re_im*i)+complex_comp; j < re_im*count*comp_count; j+=(re_im*comp_count)) {
-	    int64_t where = reorderNodeMap[k++];
+	    int64_t where = nodeMap.reorder[k++];
 	    if (where >= 0) {
 	      assert(where < count);
 	      if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
@@ -4742,7 +4511,7 @@ namespace Iopx {
 	  assert(var_index > 0);
 
 	  // Transfer from 'variables' array.  Note that the
-	  // 'reorderElementMap has '1..numel' ids in it, but the 'temp'
+	  // 'elemMap.reorder has '1..numel' ids in it, but the 'temp'
 	  // array is stored in 'element block local id space', so we need
 	  // to add/subtract the element block offset to keep things
 	  // straight.
@@ -4752,7 +4521,7 @@ namespace Iopx {
 	    // Map to storage location.
 
 	    if (type == EX_ELEM_BLOCK)
-	      where = reorderElementMap[k++] - eb_offset;
+	      where = elemMap.reorder[k++] - eb_offset;
 	    else
 	      where = k++;
 
@@ -4932,8 +4701,8 @@ namespace Iopx {
 	      // Do it in 'data' ...
 
 	      if (field.get_name() == "ids") {
-		assert(!nodeMap.empty());
-		if (nodeMap[0] != -1) {
+		assert(!nodeMap.map.empty());
+		if (nodeMap.map[0] != -1) {
 		  if (int_byte_size_api() == 4) {
 		    int* ids = static_cast<int*>(data);
 		    for (size_t i=0; i < num_to_get; i++) {
@@ -5366,7 +5135,7 @@ namespace Iopx {
     int64_t DatabaseIO::node_local_to_global(int64_t local)  const
     {
       assert(local <= nodeCount && local > 0);
-      const Ioss::MapContainer &node_map = get_node_map();
+      const Ioss::MapContainer &node_map = get_map(EX_NODE_BLOCK);
       int64_t global = node_map[local];
       return global;
     }
@@ -5374,7 +5143,7 @@ namespace Iopx {
     int64_t DatabaseIO::element_local_to_global(int64_t local)  const
     {
       assert(local <= elementCount && local > 0);
-      const Ioss::MapContainer &element_map = get_element_map();
+      const Ioss::MapContainer &element_map = get_map(EX_ELEM_BLOCK);
       int64_t global = element_map[local];
       return global;
     }
@@ -6225,11 +5994,11 @@ namespace Iopx {
 
 
       // Note: To further add confusion,
-      // the reorderNodeMap and new_ids are 0-based
-      // the reverseNodeMap and nodeMap are 1-based. This is
+      // the nodeMap.reorder and new_ids are 0-based
+      // the nodeMap.reverse and nodeMap.map are 1-based. This is
       // just a consequence of how they are intended to be used...
 
-      reorderNodeMap.resize(count);
+      nodeMap.reorder.resize(count);
 
       if (int_byte_size_api() == 4) {
 	int *new_ids = static_cast<int*>(ids);
@@ -6239,7 +6008,7 @@ namespace Iopx {
 	  // This will return 0 if node is not found in list.
 	  int orig_local_id = node_global_to_local(global_id, false) - 1;
 	  
-	  reorderNodeMap[i] = orig_local_id;
+	  nodeMap.reorder[i] = orig_local_id;
 	}
       } else {
 	int64_t *new_ids = static_cast<int64_t*>(ids);
@@ -6249,7 +6018,7 @@ namespace Iopx {
 	  // This will return 0 if node is not found in list.
 	  int64_t orig_local_id = node_global_to_local(global_id, false) - 1;
 	  
-	  reorderNodeMap[i] = orig_local_id;
+	  nodeMap.reorder[i] = orig_local_id;
 	}
       }
     }

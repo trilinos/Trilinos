@@ -505,7 +505,7 @@ namespace Iogn {
 	if (!sequentialNG2L) {
 	  Ioss::Map::build_reverse_map(&reverseNodeMap,
 				       &nodeMap[1], nodeCount, 0,
-				       "node", myProcessor);
+				       myProcessor);
 	} else {
 	  // Sequential map
 	  sequentialNG2L = true;
@@ -554,7 +554,7 @@ namespace Iogn {
 	if (!sequentialEG2L) {
 	  Ioss::Map::build_reverse_map(&reverseElementMap,
 				       &elementMap[1], elementCount, 0,
-				       "element", myProcessor);
+				       myProcessor);
 	} else {
 	  // Sequential map
 	  sequentialEG2L = true;

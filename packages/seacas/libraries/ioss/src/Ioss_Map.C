@@ -41,13 +41,17 @@
 #include <utility>
 #include <vector>
 
+namespace {
+  typedef std::vector<Ioss::IdPair>::const_iterator RMapI;
+}
+
 Ioss::Map::Map() :
   entityCount(-1), sequentialG2L(true), entityReordered(false)
 {}
 
+
 void Ioss::Map::build_reverse_map(ReverseMapContainer *Map, const int64_t *ids,
-				 int64_t num_to_get, int64_t offset,
-				 const std::string& type, int processor)
+				 int64_t num_to_get, int64_t offset, int processor)
 {
   // Stored as a sorted vector of <global_id, local_id> pairs...
   // To build incrementally:
@@ -85,14 +89,44 @@ void Ioss::Map::build_reverse_map(ReverseMapContainer *Map, const int64_t *ids,
 	       std::inserter(*Map, Map->begin()), IdPairCompare());
     
     // Check for duplicate ids...
-    verify_no_duplicate_ids(*Map, type, processor);
+    verify_no_duplicate_ids(*Map, processor);
   }
 
 }
 
+void Ioss::Map::build_reverse_map(int processor)
+{
+  if (map[0] == 1) {
+    build_reverse_map(&reverse, &map[1], map.size()-1, 0, processor);
+  }
+}
+
+void Ioss::Map::build_reorder_map(int64_t start, int64_t count)
+{
+  // Note: To further add confusion, the reorderEntityaMap is 0-based
+  // and the reverseEntityMap and entityMap are 1-baed. This is
+  // just a consequence of how they are intended to be used...
+  //
+  // start is based on a 0-based array -- start of the reorderMap to build.
+      
+  if (reorder.empty())
+    reorder.resize(map.size()-1);
+      
+  int64_t my_end = start+count;
+  for (int64_t i=start; i < my_end; i++) {
+    int64_t global_id = map[i+1];
+    int64_t orig_local_id = global_to_local(global_id) - 1;
+	
+    // If we assume that partial output is not being used (it
+    // currently isn't in Sierra), then the reordering should only be
+    // a permutation of the original ordering within this entity block...
+    assert(orig_local_id >= start && orig_local_id <= my_end);
+    reorder[i] = orig_local_id;
+  }
+}
+    
 void Ioss::Map::build_reverse_map(ReverseMapContainer *Map, const int *ids,
-				 int num_to_get, int offset,
-				 const std::string& type, int processor)
+				 int num_to_get, int offset, int processor)
 {
   // Stored as a sorted vector of <global_id, local_id> pairs...
   // To build incrementally:
@@ -130,12 +164,11 @@ void Ioss::Map::build_reverse_map(ReverseMapContainer *Map, const int *ids,
 	       std::inserter(*Map, Map->begin()), IdPairCompare());
     
     // Check for duplicate ids...
-    verify_no_duplicate_ids(*Map, type, processor);
+    verify_no_duplicate_ids(*Map, processor);
   }
 }
 
-void Ioss::Map::verify_no_duplicate_ids(std::vector<IdPair> &reverse_map,
-				  const std::string &type, int processor)
+void Ioss::Map::verify_no_duplicate_ids(std::vector<IdPair> &reverse_map, int processor)
 {
   // Check for duplicate ids...
   std::vector<IdPair>::iterator dup = std::adjacent_find(reverse_map.begin(),
@@ -144,10 +177,10 @@ void Ioss::Map::verify_no_duplicate_ids(std::vector<IdPair> &reverse_map,
 
   if (dup != reverse_map.end()) {
     std::ostringstream errmsg;
-    errmsg << "\nERROR: Duplicate global " << type << " id detected on processor "
+    errmsg << "\nERROR: Duplicate global id detected on processor "
 	   << processor << ".\n"
 	   << "       Global id " << (*dup).first
-	   << " assigned to local " << type << "s "
+	   << " assigned to local entities "
 	   << (*dup).second << " and "
 	   << (*++dup).second << ".\n";
     IOSS_ERROR(errmsg);
@@ -198,13 +231,12 @@ int64_t Ioss::Map::local_to_global(int64_t /* local */)  const
   return -1;
 }
 
-typedef std::vector<Ioss::IdPair>::const_iterator RMapI;
 int64_t Ioss::Map::global_to_local(int64_t global, bool must_exist) const
 {
   assert(entityCount >= 0);
   int64_t local = global;
   if (!sequentialG2L) {
-    std::pair<RMapI, RMapI> iter = std::equal_range(reverseMap.begin(), reverseMap.end(),
+    std::pair<RMapI, RMapI> iter = std::equal_range(reverse.begin(), reverse.end(),
 						    global, Ioss::IdPairCompare());
     if (iter.first != iter.second)
       local = (iter.first)->second;
@@ -216,7 +248,7 @@ int64_t Ioss::Map::global_to_local(int64_t global, bool must_exist) const
   }
   if (local > entityCount || (local <= 0  && must_exist)) {
     std::ostringstream errmsg;
-    errmsg << "Entity with global id equal to " << global
+    errmsg << "Entity (element, face, edge, node) with global id equal to " << global
 	   << " returns a local id of " << local
 	   << " which is invalid. This should not happen, please report.\n";
     IOSS_ERROR(errmsg);

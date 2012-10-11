@@ -297,10 +297,11 @@ namespace Iopx {
 
     // ID Mapping functions.
     const Ioss::MapContainer& get_map(ex_entity_type type) const;
-    const Ioss::MapContainer& get_node_map()            const;
-    const Ioss::MapContainer& get_edge_map()            const;
-    const Ioss::MapContainer& get_face_map()            const;
-    const Ioss::MapContainer& get_element_map()         const;
+    const Ioss::MapContainer& get_map(Ioss::Map &entity_map,
+				      int64_t entityCount,
+				      int64_t file_offset, int64_t file_count,
+				      ex_entity_type entity_type,
+				      ex_inquiry inquiry_type) const;
 
     // Internal data handling
     void build_element_reorder_map(int64_t start, int64_t count);
@@ -387,28 +388,13 @@ namespace Iopx {
     //               sierra side.   global = nodeMap[local]
     // nodeMap[0] contains: -1 if sequential, 0 if ordering unknown, 1
     // if nonsequential
-    mutable Ioss::MapContainer        nodeMap;
-    mutable Ioss::MapContainer        reorderNodeMap;
-    mutable Ioss::ReverseMapContainer reverseNodeMap;
+
+    mutable Ioss::Map nodeMap;
+    mutable Ioss::Map edgeMap;
+    mutable Ioss::Map faceMap;
+    mutable Ioss::Map elemMap;
+
     // (local==global)
-
-    //---Element Map -- Maps internal (1..NUMEL) ids to global ids used on the
-    //               sierra side.   global = elementMap[local]
-    // elementMap[0] contains: -1 if sequential, 0 if ordering unknown,
-    // 1 if nonsequential
-
-    // TODO: Replace these with Ioss::Map class...
-    mutable Ioss::MapContainer        elementMap;
-    mutable Ioss::MapContainer        reorderElementMap;
-    mutable Ioss::ReverseMapContainer reverseElementMap;
-
-    mutable Ioss::MapContainer        faceMap;
-    mutable Ioss::MapContainer        reorderFaceMap;
-    mutable Ioss::ReverseMapContainer reverseFaceMap;
-
-    mutable Ioss::MapContainer        edgeMap;
-    mutable Ioss::MapContainer        reorderEdgeMap;
-    mutable Ioss::ReverseMapContainer reverseEdgeMap;
 
     // --- Nodal/Element/Attribute Variable Names -- Maps from sierra
     // field names to index of nodal/element/attribute variable in
@@ -446,13 +432,13 @@ namespace Iopx {
   typedef std::vector<Ioss::IdPair>::iterator RMapI;
   inline int64_t DatabaseIO::node_global_to_local(int64_t global, bool must_exist) const
     {
-      if (nodeMap.empty()) {
-	get_node_map();
+      if (nodeMap.map.empty()) {
+	get_map(EX_NODE_BLOCK);
       }
       int64_t local = global;
-      if (nodeMap[0] != -1) {
-	std::pair<RMapI, RMapI> iter = std::equal_range(reverseNodeMap.begin(),
-							reverseNodeMap.end(),
+      if (nodeMap.map[0] != -1) {
+	std::pair<RMapI, RMapI> iter = std::equal_range(nodeMap.reverse.begin(),
+							nodeMap.reverse.end(),
 							global,
 							Ioss::IdPairCompare());
 	if (iter.first != iter.second)
@@ -480,13 +466,13 @@ namespace Iopx {
 
   inline int64_t DatabaseIO::element_global_to_local(int64_t global) const
     {
-      if (elementMap.empty()) {
-	get_element_map();
+      if (elemMap.map.empty()) {
+	get_map(EX_ELEM_BLOCK);
       }
       int64_t local = global;
-      if (elementMap[0] != -1) {
-	std::pair<RMapI, RMapI> iter = std::equal_range(reverseElementMap.begin(),
-							reverseElementMap.end(),
+      if (elemMap.map[0] != -1) {
+	std::pair<RMapI, RMapI> iter = std::equal_range(elemMap.reverse.begin(),
+							elemMap.reverse.end(),
 							global,
 							Ioss::IdPairCompare());
 	if (iter.first == iter.second) {

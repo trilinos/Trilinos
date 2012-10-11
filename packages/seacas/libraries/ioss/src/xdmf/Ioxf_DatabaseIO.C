@@ -749,7 +749,7 @@ namespace Ioxf {
       if (!sequentialNG2L || num_to_get != nodeCount) {
 	sequentialNG2L = false;
 	Ioss::Map::build_reverse_map(&reverseNodeMap, ids, num_to_get, 0,
-				     "node", myProcessor);
+				     myProcessor);
       }
 
       // Only a single nodeblock and all set
@@ -856,7 +856,7 @@ namespace Ioxf {
     // Now, if the state is Ioss::STATE_MODEL, update the reverseElementMap
     if (dbState == Ioss::STATE_MODEL) {
       Ioss::Map::build_reverse_map(&reverseElementMap, ids, num_to_get,
-				   eb_offset, "element", myProcessor);
+				   eb_offset, myProcessor);
 
       // Strongest assertion we can make is that size of map <=
       // elementCount
