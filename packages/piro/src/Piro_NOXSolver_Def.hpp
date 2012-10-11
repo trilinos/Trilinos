@@ -122,14 +122,36 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::NOXSolver<Scalar>::createOutArg
   outArgs.setModelEvalDescription(this->description());
 
   // One additional response slot for the solution vector
-  outArgs.set_Np_Ng(num_p, num_g+1);
+  outArgs.set_Np_Ng(num_p, num_g + 1);
 
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
-  for (int i=0; i<num_g; i++)
-    for (int j=0; j<num_p; j++)
-      if (!modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, i, j).none())
-        outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, i, j,
-             Thyra::ModelEvaluatorBase::DerivativeSupport(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM));
+  const Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
+
+  // Sensitivity support
+  // 1) Jacobian operator required
+  if (modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_W)) {
+
+    for (int j = 0; j < num_g; ++j) {
+      // 2) DgDx required
+      const Thyra::ModelEvaluatorBase::DerivativeSupport dgdx_support =
+        modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, j);
+      if (dgdx_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM)) {
+        for (int l = 0; l < num_p; ++l) {
+          // 3) DfDp required
+          const Thyra::ModelEvaluatorBase::DerivativeSupport dfdp_support =
+            modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DfDp, l);
+          if (dfdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+            // 4) Dgdp required
+            const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
+              modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
+            if (dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+              outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l,
+                  Thyra::ModelEvaluatorBase::DerivativeSupport(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM));
+            }
+          }
+        }
+      }
+    }
+  }
 
   return outArgs;
 }
