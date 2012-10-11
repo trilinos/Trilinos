@@ -254,7 +254,7 @@ protected:
   //! Combine mode for off-process elements (only if overlap is used)
   Tpetra::CombineMode CombineMode_;
   //! Contains the estimated condition number.
-  Scalar Condest_;
+  magnitudeType Condest_;
   //! If \c true, compute the condition number estimate each time Compute() is called.
   bool ComputeCondest_;
   //! If \c true, reorder the local matrix.
