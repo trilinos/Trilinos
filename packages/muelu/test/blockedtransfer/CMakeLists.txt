@@ -9,10 +9,9 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 
 IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE(
     BlockedTransfer
     SOURCES BlockedTransfer.cpp
-    ARGS ""
     COMM serial mpi
     DEPLIBS muelu xpetra
   )
