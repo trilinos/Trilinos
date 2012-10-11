@@ -48,6 +48,8 @@
 #include <vector>
 #include <map>
 
+#include <boost/unordered_map.hpp>
+
 #include "Teuchos_ParameterList.hpp"
 
 #include "Phalanx_FieldManager.hpp"
@@ -67,6 +69,9 @@
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"
+#include "Panzer_TypeAssocMap.hpp"
+
+#include "Panzer_ResponseEvaluatorFactory_TemplateManager.hpp"
 
 namespace panzer {
 
@@ -225,6 +230,24 @@ public:
    //! Reinitialize the reponse data
    void reinitializeResponseData();
 
+////////////////////////////////////////////////////////////////////////////////////////////
+//
+// 2nd Generation Interface
+//
+////////////////////////////////////////////////////////////////////////////////////////////
+
+   /** Add a volumetric response using hte response factory builder.
+     *
+     * \param[in] responseName Name of the response to be added.
+     * \param[in] blocks Element blocks to evaluate the response over
+     * \param[in] builder Builder that builds the correct response object.
+     */
+   template <typename ResponseEvaluatorFactory_BuilderT>
+   void addResponse(const std::string responseName,
+                    const std::vector<std::string> & blocks,
+                    const ResponseEvaluatorFactory_BuilderT & builder); 
+                   
+
 protected:
    //! Access a container field for a specified element block
    template <typename EvalT>
@@ -258,6 +281,22 @@ private:
    Teuchos::RCP<LinearObjFactory<TraitsT> > linObjFactory_;
    Teuchos::RCP<FieldManagerBuilder> fmb_;
    AssemblyEngine_TemplateManager<panzer::Traits> ae_tm_;
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//
+// 2nd Generation Members
+//
+////////////////////////////////////////////////////////////////////////////////////////////
+   typedef TypeAssocMap<panzer::Traits::EvalTypes,Teuchos::RCP<ResponseBase> > Response_TemplateManager;
+
+   Teuchos::RCP<FieldManagerBuilder> fmb2_;
+   AssemblyEngine_TemplateManager<panzer::Traits> ae_tm2_;
+
+   // Store up response factories by element block
+   boost::unordered_map<std::string,std::vector<Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > respFactories_;
+ 
+   //! Store all the response objects 
+   boost::unordered_map<std::string, Response_TemplateManager> responseObjects_;
 };
 
 }

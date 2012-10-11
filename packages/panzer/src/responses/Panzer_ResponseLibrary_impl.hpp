@@ -410,6 +410,57 @@ reinitializeResponseData()
    }
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////
+//
+// 2nd Generation Interface
+//
+////////////////////////////////////////////////////////////////////////////////////////////
+
+namespace {
+  // This is a builder for building a ResponseBase object by evaluation type
+  template <typename TraitsT>
+  struct ResponseBase_Builder {
+    Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > respFact_;
+    std::string respName_;
+    ResponseBase_Builder(const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & respFact,
+                         const std::string & respName)
+      : respFact_(respFact), respName_(respName) {}
+    template <typename T>
+    Teuchos::RCP<ResponseBase> build() const 
+    { return respFact_->template getAsBase<T>()->buildResponseObject(respName_); }
+  };
+}
+
+template <typename TraitsT>
+template <typename ResponseEvaluatorFactory_BuilderT>
+void ResponseLibrary<TraitsT>::
+addResponse(const std::string responseName,
+            const std::vector<std::string> & blocks,
+            const ResponseEvaluatorFactory_BuilderT & builder) 
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+
+   // build response factory objects for each evaluation type
+   RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > modelFact_tm
+        = rcp(new ResponseEvaluatorFactory_TemplateManager<TraitsT>);
+   modelFact_tm->buildObjects(builder);
+
+   // build a response object for each evaluation type
+   ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName);
+   responseObjects_[responseName].buildObjects(respData_builder);
+
+   // associate response objects with all element blocks required
+   for(std::size_t i=0;i<blocks.size();i++) {
+     std::string blockId = blocks[i];
+
+     // add response factory TM to vector that stores them
+     std::vector<RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > & block_tm 
+        = respFactories_[blockId];
+     block_tm.push_back(modelFact_tm);
+   }
+}
+
 }
 
 #endif
