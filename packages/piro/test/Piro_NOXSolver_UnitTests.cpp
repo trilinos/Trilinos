@@ -85,21 +85,6 @@ const RCP<NOXSolver<double> > solverNew(const RCP<EpetraExt::ModelEvaluator> &ep
   return rcp(new NOXSolver<double>(piroParams, thyraModel));
 }
 
-Thyra::MEB::InArgs<double> defaultInArgsNew(const Thyra::ModelEvaluator<double> &model)
-{
-  Thyra::MEB::InArgs<double> result = model.createInArgs();
-  {
-    const int parameterIndex = 0;
-    const RCP<Thyra::VectorBase<double> > p = Thyra::createMember(*(model.get_p_space(parameterIndex)));
-    {
-      const Thyra::MEB::InArgs<double> nominalInArgs = model.getNominalValues();
-      Thyra::copy(*nominalInArgs.get_p(parameterIndex), p.ptr());
-    }
-    result.set_p(parameterIndex, p);
-  }
-  return result;
-}
-
 // Testing support
 
 Array<double> arrayFromVector(const Thyra::VectorBase<double> &v)
@@ -114,7 +99,7 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, Solution)
 {
   const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew());
 
-  const Thyra::MEB::InArgs<double> inArgs = defaultInArgsNew(*solver);
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
 
   Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
   const int solutionResponseIndex = solver->Ng() - 1;
@@ -131,7 +116,7 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, Response)
 {
   const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew());
 
-  const Thyra::MEB::InArgs<double> inArgs = defaultInArgsNew(*solver);
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
 
   Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
   const int responseIndex = 0;
@@ -148,7 +133,7 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvJac)
 {
   const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew());
 
-  const Thyra::MEB::InArgs<double> inArgs = defaultInArgsNew(*solver);
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
 
   Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
   const int responseIndex = 0;
@@ -172,7 +157,7 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGrad)
 {
   const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew());
 
-  const Thyra::MEB::InArgs<double> inArgs = defaultInArgsNew(*solver);
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
 
   Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
   const int responseIndex = 0;

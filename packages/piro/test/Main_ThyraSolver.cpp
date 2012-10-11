@@ -172,32 +172,28 @@ int main(int argc, char *argv[]) {
           "Error: Unknown Piro Solver : " << solver);
       }
 
-      bool computeSens = piroParams->get("Compute Sensitivities", false);
+      const bool computeSens = piroParams->get("Compute Sensitivities", false);
 
       // Now the (somewhat cumbersome) setting of inputs and outputs
-      Thyra::ModelEvaluatorBase::InArgs<double> inArgs = piro->createInArgs();
-      const Thyra::ModelEvaluatorBase::InArgs<double> inArgsNominal = piro->getNominalValues();
-      int num_p = inArgs.Np();     // Number of *vectors* of parameters
+      const Thyra::ModelEvaluatorBase::InArgs<double> inArgs = piro->getNominalValues();
+      const int num_p = inArgs.Np();     // Number of *vectors* of parameters
       assert (num_p == 1);  // Logic needs to be generalized -- hardwire to 1 p vector in model
-      RCP<Thyra::VectorBase<double> > p1 = Thyra::createMember(*piro->get_p_space(0));
-      Thyra::copy(*inArgsNominal.get_p(0), p1.ptr());
-      int numParams = p1->space()->dim(); // Number of parameters in p1 vector
-      
-      inArgs.set_p(0,p1);
+      const RCP<const Thyra::VectorBase<double> > p1 = inArgs.get_p(0);
+      const int numParams = p1->space()->dim(); // Number of parameters in p1 vector
 
       // Set output arguments to evalModel call
       Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = piro->createOutArgs();
-      int num_g = outArgs.Ng(); // Number of *vectors* of responses
+      const int num_g = outArgs.Ng(); // Number of *vectors* of responses
       assert (num_g == 2);  // Logic needs to be generalized -- hardwire to 1 g vector in model
 
-      RCP<Thyra::VectorBase<double> > g1 = Thyra::createMember(*piro->get_g_space(0));
+      const RCP<Thyra::VectorBase<double> > g1 = Thyra::createMember(*piro->get_g_space(0));
       outArgs.set_g(0,g1);
 
       // Solution vector is returned as extra respons vector
-      RCP<Thyra::VectorBase<double> > gx = Thyra::createMember(*thyraModel->get_x_space());
+      const RCP<Thyra::VectorBase<double> > gx = Thyra::createMember(*thyraModel->get_x_space());
       outArgs.set_g(1,gx);
 
-      RCP<Thyra::MultiVectorBase<double> > dgdp =
+      const RCP<Thyra::MultiVectorBase<double> > dgdp =
         Thyra::createMembers(*piro->get_g_space(0),numParams);
       if (computeSens) outArgs.set_DgDp(0, 0, dgdp);
 
