@@ -247,6 +247,23 @@ public:
                     const std::vector<std::string> & blocks,
                     const ResponseEvaluatorFactory_BuilderT & builder); 
                    
+   /** Access a response by name and evaluation type.
+     *
+     * \param[in] responseName Name of the response to be added.
+     *
+     * \return Returns a nonnull response object if it exists, otherwise
+     *         it returns null.
+     */
+   template <typename EvalT>
+   Teuchos::RCP<const ResponseBase> getResponse(const std::string responseName) const;
+
+   /** Get the set of responses corresponding to a particular evaluation type. This will
+     * overwrite (<code>clear</code>) the vector.
+     *
+     * \param[in,out] responses Vector over the responses, the responses know their own names!
+     */
+   template <typename EvalT>
+   void getResponses(std::vector<Teuchos::RCP<const ResponseBase> > & responses) const;
 
 protected:
    //! Access a container field for a specified element block

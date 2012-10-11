@@ -461,6 +461,36 @@ addResponse(const std::string responseName,
    }
 }
 
+template <typename TraitsT>
+template <typename EvalT>
+Teuchos::RCP<const ResponseBase> ResponseLibrary<TraitsT>::
+getResponse(const std::string responseName) const
+{
+   typedef boost::unordered_map<std::string, Response_TemplateManager> HashMap;
+   HashMap::const_iterator itr = responseObjects_.find(responseName);
+
+   // response was not in list of responses
+   if(itr==responseObjects_.end())
+     return Teuchos::null;
+
+   // response was found, return it
+   return itr->second.get<EvalT>();
+}
+
+template <typename TraitsT>
+template <typename EvalT>
+void ResponseLibrary<TraitsT>::
+getResponses(std::vector<Teuchos::RCP<const ResponseBase> > & responses) const
+{
+   typedef boost::unordered_map<std::string, Response_TemplateManager> HashMap;
+
+   responses.clear();
+
+   // loop over all respones adding them to the vector
+   for(HashMap::const_iterator itr=responseObjects_.begin();itr!=responseObjects_.end();++itr)
+     responses.push_back(itr->second.get<EvalT>());
+}
+
 }
 
 #endif

@@ -237,9 +237,38 @@ namespace panzer {
           = Teuchos::rcp(new ResponseLibrary<Traits>());
 
     RespFactoryFunc_Builder builder;
-    std::vector<std::string> blocks;
-    blocks.push_back("eblock-0_0");
-    rLibrary->addResponse("T",blocks,builder);
+    std::vector<std::string> blocks(1);
+    blocks[0] = "eblock-0_0";
+    rLibrary->addResponse("TEMPERATURE",blocks,builder);
+    blocks[0] = "eblock-1_0";
+    rLibrary->addResponse("ION_TEMPERATURE",blocks,builder);
+
+    Teuchos::RCP<const ResponseBase> tResp = rLibrary->getResponse<panzer::Traits::Residual>("TEMPERATURE");
+    Teuchos::RCP<const ResponseBase> iResp = rLibrary->getResponse<panzer::Traits::Residual>("ION_TEMPERATURE");
+
+    TEST_ASSERT(tResp!=Teuchos::null);
+    TEST_ASSERT(iResp!=Teuchos::null);
+
+    TEST_EQUALITY(tResp->getName(),"TEMPERATURE");
+    TEST_EQUALITY(iResp->getName(),"ION_TEMPERATURE");
+
+    TEST_EQUALITY(tResp->getLookupName(),"RESPONSE_TEMPERATURE");
+    TEST_EQUALITY(iResp->getLookupName(),"RESPONSE_ION_TEMPERATURE");
+
+    TEST_THROW(Teuchos::rcp_dynamic_cast<const Response_Functional<panzer::Traits::Residual> >(tResp,true),std::bad_cast);
+    TEST_THROW(Teuchos::rcp_dynamic_cast<const Response_Functional<panzer::Traits::Residual> >(iResp,true),std::bad_cast);
+
+    std::vector<Teuchos::RCP<const ResponseBase> > v;
+    v.push_back(Teuchos::null);
+
+    rLibrary->getResponses<panzer::Traits::Residual>(v);
+    TEST_EQUALITY(v.size(),2);
+
+    TEST_ASSERT(v[0]->getName()=="TEMPERATURE" || v[0]->getName()=="ION_TEMPERATURE");
+    TEST_ASSERT(v[1]->getName()=="TEMPERATURE" || v[1]->getName()=="ION_TEMPERATURE");
+
+    TEST_THROW(Teuchos::rcp_dynamic_cast<const Response_Functional<panzer::Traits::Residual> >(v[0],true),std::bad_cast);
+    TEST_THROW(Teuchos::rcp_dynamic_cast<const Response_Functional<panzer::Traits::Residual> >(v[1],true),std::bad_cast);
   }
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
