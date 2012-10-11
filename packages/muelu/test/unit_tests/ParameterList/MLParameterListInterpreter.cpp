@@ -43,41 +43,58 @@
 // ***********************************************************************
 //
 // @HEADER
-#include <Teuchos_UnitTestRepository.hpp>
+
+#include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include "MueLu_TestHelpers.hpp"
 
+#include "MueLu_MLParameterListInterpreter.hpp"
+#include "MueLu_Exceptions.hpp"
+
+#include "MueLu_UseDefaultTypes.hpp"
+#include "MueLu_UseShortNames.hpp"
+
 namespace MueLuTests {
 
-  // static members initialization of the class TestHelpers::Parameters
-  Xpetra::Parameters TestHelpers::Parameters::xpetraParameters = Xpetra::Parameters(Teuchos::UnitTestRepository::getCLP());
+  typedef std::map<std::string, RCP<const FactoryBase> > FactoryMap; // TODO: remove
 
-}
+  TEUCHOS_UNIT_TEST(MLParameterListInterpreter, SetParameterList)
+  {
 
-namespace MueLuTests {
-  namespace TestHelpers {
-
-  ArrayRCP<std::string> GetFileList(const std::string & dirPath, const std::string & filter) {
-
-    RCP<std::vector<std::string> > files = rcp(new std::vector<std::string>());
-
-    DIR *dir;
-    struct dirent *dirEntry;
-
-    dir = opendir(dirPath.c_str());
-    TEUCHOS_TEST_FOR_EXCEPTION(dir == NULL, MueLu::Exceptions::RuntimeError, "GetFileList(\"" + dirPath + "\") : " + strerror(errno));
-
-    while ((dirEntry = readdir(dir)) != NULL) {
-      std::string dirEntryS(dirEntry->d_name);
-
-      if (dirEntryS.rfind(filter) != string::npos)
-        files->push_back(std::string(dirEntryS));
+    //TODO: this test can be done at compilation time
+#if !defined(HAVE_MUELU_IFPACK)  or !defined(HAVE_MUELU_AMESOS)
+    if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) {
+      out << "Test skipped (dependencies not available)" << std::endl;
+      return;
     }
+#endif
 
-    closedir(dir);
+#if !defined(HAVE_MUELU_IFPACK2) or !defined(HAVE_MUELU_AMESOS2)
+    if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) {
+      out << "Test skipped (dependencies not available)" << std::endl;
+      return;
+    }
+#endif
 
-    return arcp(files);
+    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99);
+
+    ArrayRCP<std::string> fileList = TestHelpers::GetFileList(std::string("ParameterList/MLParameterListInterpreter/"), std::string(".xml"));
+
+    for(int i=0; i< fileList.size(); i++) {
+      out << "Processing file: " << fileList[i] << std::endl;
+      MLParameterListInterpreter mueluFactory("ParameterList/MLParameterListInterpreter/" + fileList[i]);
+      
+      RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
+      H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
+     
+      mueluFactory.SetupHierarchy(*H);
+      
+      //TODO: check no unused parameters
+      //TODO: check results of Iterate()
+    }
   }
+  
+} // namespace MueLuTests
 
-  }
-}
+// TODO: some tests of the parameter list parser can be done without building the Hierarchy. 
