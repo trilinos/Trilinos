@@ -269,13 +269,12 @@ namespace {
 
       Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
 
-      // define node
-      Teuchos::ParameterList defaultParams;
-      Teuchos::RCP<Kokkos::SerialNode> pNode = Teuchos::rcp (new Kokkos::SerialNode (defaultParams));
-
       // define map
       LO nEle = 6;
       const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
+
+      // get node
+      Teuchos::RCP<Node> pNode = map->getNode();
 
       // read in matrices
       typedef Tpetra::MatrixMarket::Reader<Tpetra::CrsMatrix<Scalar, LO, GO, Node> > reader_type;
