@@ -188,6 +188,9 @@ namespace Xpetra {
     //! Returns the Frobenius norm of the matrix.
     ScalarTraits< Scalar >::magnitudeType getFrobeniusNorm() const { XPETRA_MONITOR("EpetraCrsMatrix::getFrobeniusNorm"); return mtx_->NormFrobenius(); }
 
+    //! Returns true if getLocalRowView() and getGlobalRowView() are valid for this class.
+    bool supportsRowViews() const;
+
     //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
     void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const;
 
@@ -202,7 +205,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name Methods implementing Matrix
+    //! @name Methods implementing Operator
     //@{
 
     //! Computes the sparse matrix-multivector multiplication.

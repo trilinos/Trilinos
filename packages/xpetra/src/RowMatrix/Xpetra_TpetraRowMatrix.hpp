@@ -130,6 +130,9 @@ namespace Xpetra {
     //! Returns true if fillComplete() has been called.
     bool isFillComplete() const  { XPETRA_MONITOR("TpetraRowMatrix::isFillComplete"); return mtx_->isFillComplete(); }
 
+    //! Returns true if getLocalRowView() and getGlobalRowView() are valid for this class.
+    bool supportsRowViews() const  { XPETRA_MONITOR("TpetraRowMatrix::supportsRowViews"); return mtx_->supportsRowViews(); }
+
     //@}
 
     //! @name Extraction Methods
