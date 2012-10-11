@@ -93,7 +93,13 @@ const FieldBase::Restriction& find_restriction(const FieldBase& field,
         restriction = &*it;
       }
       if (it->not_equal_stride(*restriction)) {
-        ThrowErrorMsg("find_restriction calculation failed with different field-restriction selectors giving incompatible sizes.");
+        std::ostringstream oss;
+        for ( PartIterator name_it = pbegin; name_it != pend ; ++name_it ) {
+          oss << MetaData::get(field).get_part( get_part_ordinal(name_it) ).name() << ", ";
+        }
+        ThrowErrorMsg("find_restriction calculation failed with different field-restriction selectors giving incompatible sizes.  Field name = "
+        		<< field.name() << "on bucket with parts = " << oss.str() << "with one selector = " << restriction->selector() << ", dimension = " << restriction->dimension()
+        		<< " and another selector = " << it->selector() << ", dimension = " << it->dimension() << "!");
       }
     }
   }
