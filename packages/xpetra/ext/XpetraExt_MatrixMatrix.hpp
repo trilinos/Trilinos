@@ -228,7 +228,7 @@ Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op2NonConstTpetra
 
     /** Given CrsMatrix objects A, B and C, form the product C = A*B.
   In a parallel setting, A and B need not have matching distributions,
-  but C needs to have the same row-map as A.
+  but C needs to have the same row-map as A (if transposeA is false).
   At this time C=AT*B and C=A*BT are known to not work. However,
   C=A*B and C=AT*BT are known to work, Kurtis Nusbaum 03/24/2011
 
@@ -263,27 +263,26 @@ void Multiply(
   bool call_FillComplete_on_result = true,
   bool doOptimizeStorage = true) {
 
-    if(C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
+    if(transposeA == false && C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
       std::string msg = "XpetraExt::MatrixMatrix::Multiply: row map of C is not same as row map of A";
       throw(Xpetra::Exceptions::RuntimeError(msg));
     }
+    else if(transposeA == true && C.getRowMap()->isSameAs(*A.getDomainMap()) == false) {
+      std::string msg = "XpetraExt::MatrixMatrix::Multiply: row map of C is not same as domain map of A";
+      throw(Xpetra::Exceptions::RuntimeError(msg));
+    }
+
 
     if (!A.isFillComplete())
       throw(Xpetra::Exceptions::RuntimeError("A is not fill-completed"));
     if (!B.isFillComplete())
       throw(Xpetra::Exceptions::RuntimeError("B is not fill-completed"));
 
-    /*RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Teuchos::rcpFromRef(A));
-    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Teuchos::rcpFromRef(B));*/
 
     if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
 #       ifndef HAVE_XPETRA_EPETRAEXT
       throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Multiply requires EpetraExt to be compiled."));
 #else
-      /*RCP<Epetra_CrsMatrix> epA = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(rcpA);
-      RCP<Epetra_CrsMatrix> epB = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(rcpB);
-      RCP<Epetra_CrsMatrix> epC = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(Teuchos::rcpFromRef(C));*/
-
       Epetra_CrsMatrix & epA = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(A);
       Epetra_CrsMatrix & epB = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(B);
       Epetra_CrsMatrix & epC = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(C);
@@ -301,10 +300,6 @@ void Multiply(
 #endif
     } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
-      /*RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpA = Op2TpetraCrs(rcpA);
-      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpB = Op2TpetraCrs(rcpB);
-      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >       tpC = Op2NonConstTpetraCrs(Teuchos::rcpFromRef(C));*/
-
       const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & tpA = Xpetra::MatrixMatrix::Op2TpetraCrs(A);
       const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & tpB = Xpetra::MatrixMatrix::Op2TpetraCrs(B);
       Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &       tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
