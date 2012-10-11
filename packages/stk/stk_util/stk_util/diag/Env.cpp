@@ -35,14 +35,13 @@
 #include <stk_util/diag/Exception.hpp>
 #include <stk_util/diag/ExceptionReport.hpp>
 #include <stk_util/parallel/MPI.hpp>
-#include <stk_util/util/OutputLog.hpp>
+#include <stk_util/environment/OutputLog.hpp>
 #include <stk_util/environment/ProductRegistry.hpp>
 #include <stk_util/diag/StringUtil.hpp>
 #include <stk_util/diag/UserPlugin.hpp>
 #include <stk_util/diag/mpih.hpp>
 #include <stk_util/diag/PreParse.hpp>
 
-#include <stk_util/environment/OutputLog.hpp>
 #include <stk_util/environment/ProgramOptions.hpp>
 #include <stk_util/environment/RuntimeMessage.hpp>
 #include <stk_util/parallel/BroadcastArg.hpp>

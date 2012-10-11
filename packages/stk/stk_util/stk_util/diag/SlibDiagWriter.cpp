@@ -8,7 +8,7 @@
 
 #include <stk_util/util/Bootstrap.hpp>
 
-#include <stk_util/util/OutputLog.hpp>
+#include <stk_util/environment/OutputLog.hpp>
 #include <stk_util/diag/WriterRegistry.hpp>
 
 #include <stk_util/diag/SlibDiagWriter.hpp>
