@@ -90,6 +90,7 @@ IF (Piro_ENABLE_NOX)
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
     MockModelEval_A.cpp
     MockModelEval_A.hpp
+    Piro_Test_WeakenedModelEvaluator.hpp
     NUM_MPI_PROCS 1-4
     STANDARD_PASS_OUTPUT
   )

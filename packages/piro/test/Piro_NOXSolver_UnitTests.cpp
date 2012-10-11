@@ -49,6 +49,8 @@
 
 #include "MockModelEval_A.hpp"
 
+#include "Piro_Test_WeakenedModelEvaluator.hpp"
+
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 #include "Thyra_DetachedVectorView.hpp"
@@ -77,12 +79,21 @@ const RCP<EpetraExt::ModelEvaluator> epetraModelNew()
   return rcp(new MockModelEval_A(comm));
 }
 
-const RCP<NOXSolver<double> > solverNew(const RCP<EpetraExt::ModelEvaluator> &epetraModel)
+const RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModelNew(const RCP<EpetraExt::ModelEvaluator> &epetraModel)
 {
   const RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory(new Thyra::AmesosLinearOpWithSolveFactory);
-  const RCP<Thyra::EpetraModelEvaluator> thyraModel(epetraModelEvaluator(epetraModel, lowsFactory));
+  return epetraModelEvaluator(epetraModel, lowsFactory);
+}
+
+const RCP<NOXSolver<double> > solverNew(const RCP<Thyra::ModelEvaluatorDefaultBase<double> > &thyraModel)
+{
   const RCP<Teuchos::ParameterList> piroParams(new Teuchos::ParameterList("Piro Parameters"));
   return rcp(new NOXSolver<double>(piroParams, thyraModel));
+}
+
+const RCP<NOXSolver<double> > solverNew(const RCP<EpetraExt::ModelEvaluator> &epetraModel)
+{
+  return solverNew(thyraModelNew(epetraModel));
 }
 
 // Testing support
@@ -172,6 +183,34 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGrad)
   const Array<double> expected = tuple(2.0, -8.0);
   const Array<double> actual = arrayFromVector(*dgdp);
   TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+}
+
+TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvJac_NoDgDxMv)
+{
+  // Disable support for MultiVector-based DgDx derivative
+  // (Only LinOp form is available)
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > crippledModel =
+      rcp(new Test::WeakenedModelEvaluator(thyraModelNew(epetraModelNew())));
+  const RCP<NOXSolver<double> > solver = solverNew(crippledModel);
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const int responseIndex = 0;
+  const int parameterIndex = 0;
+  const RCP<Thyra::MultiVectorBase<double> > dgdp =
+    Thyra::createMembers(solver->get_g_space(responseIndex), solver->get_p_space(parameterIndex));
+  const Thyra::MEB::Derivative<double> dgdp_deriv(dgdp, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+
+  const Array<double> expected = tuple(2.0, -8.0);
+  TEST_EQUALITY(dgdp->domain()->dim(), expected.size());
+  for (int i = 0; i < expected.size(); ++i) {
+    const Array<double> actual = arrayFromVector(*dgdp->col(i));
+    TEST_COMPARE_FLOATING_ARRAYS(actual, arrayView(&expected[i], 1), tol);
+  }
 }
 
 #endif /*Piro_ENABLE_NOX*/
