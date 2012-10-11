@@ -52,38 +52,21 @@
 template <typename Scalar>
 Piro::NOXSolver<Scalar>::
 NOXSolver(Teuchos::RCP<Teuchos::ParameterList> appParams_,
-	  Teuchos::RCP< Thyra::ModelEvaluatorDefaultBase<Scalar> > model_) :
+	  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > model_) :
   appParams(appParams_),
-  model(model_)
+  model(model_),
+  num_p(model->Np()),
+  num_g(model->Ng()),
+  solver(new Thyra::NOXNonlinearSolver),
+  out(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
   using Teuchos::RCP;
-  using Teuchos::rcp;
 
-  out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  const RCP<Teuchos::ParameterList> noxParams =
+    Teuchos::sublist(appParams, "NOX", /*mustAlreadyExist =*/ false);
 
-  RCP<Teuchos::ParameterList> noxParams =
-	rcp(&(appParams->sublist("NOX")),false);
-
-//   string jacobianSource = appParams->get("Jacobian Operator", "Have Jacobian");
-
-//   if (jacobianSource == "Matrix-Free") {
-//     TEUCHOS_TEST_FOR_EXCEPTION(jacobianSource == "Matrix-Free", std::logic_error,
-//        "MATRIX_free not yet implemented for Piro Thyra");
-//     model = rcp(new Piro::Thyra::MatrixFreeDecorator(model));
-//   }
-
-  // Grab some modelEval stuff from underlying model
-  num_p = model->createInArgs().Np();
-  num_g = model->createOutArgs().Ng();
-
-  solver = rcp(new Thyra::NOXNonlinearSolver);
   solver->setParameterList(noxParams);
   solver->setModel(model);
-}
-
-template <typename Scalar>
-Piro::NOXSolver<Scalar>::~NOXSolver()
-{
 }
 
 template<typename Scalar>
@@ -167,7 +150,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
 
     const Thyra::SolveCriteria<double> solve_criteria;
     const Thyra::SolveStatus<double> solve_status =
-      solver->solve(initial_guess.get(), &solve_criteria, /*delta = */ NULL);
+      solver->solve(initial_guess.get(), &solve_criteria, /*delta =*/ NULL);
 
     TEUCHOS_TEST_FOR_EXCEPTION(
         solve_status.solveStatus != ::Thyra::SOLVE_STATUS_CONVERGED,

@@ -60,54 +60,51 @@ template <typename Scalar>
 class NOXSolver
     : public Thyra::ResponseOnlyModelEvaluatorBase<Scalar>
 {
-
   public:
 
   /** \name Constructors/initializers */
   //@{
-
   /** \brief Takes the number of elements in the discretization . */
   NOXSolver(Teuchos::RCP<Teuchos::ParameterList> appParams,
-            Teuchos::RCP< Thyra::ModelEvaluatorDefaultBase<Scalar> > model
-            );
-
+            Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > model);
   //@}
-
-  ~NOXSolver();
 
   /** \name Overridden from Thyra::ModelEvaluatorBase . */
   //@{
-
-  /** \brief . */
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
-  /** \brief . */
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   /** \brief . */
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int i) const;
   /** \brief . */
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int i) const;
+  //@}
 
+  /** \name Overridden from Thyra::ResponseOnlyModelEvaluatorBase . */
+  //@{
   /** \brief . */
-  void evalModelImpl( const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
-                  const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs ) const;
-
-  private:
-
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   //@}
 
   private:
+  /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
+  //@{
+  /** \brief . */
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
 
-   //These are set in the constructor and used in evalModel
-   mutable Teuchos::RCP<Teuchos::ParameterList> appParams;
-   Teuchos::RCP< Thyra::ModelEvaluatorDefaultBase<Scalar> > model;
-   Teuchos::RCP<Teuchos::FancyOStream> out;
+  /** \brief . */
+  void evalModelImpl(
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
+  //@}
 
-   Teuchos::RCP< ::Thyra::NOXNonlinearSolver> solver;
+  Teuchos::RCP<Teuchos::ParameterList> appParams;
+  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > model;
 
-   int num_p;
-   int num_g;
+  int num_p;
+  int num_g;
+  Teuchos::RCP<Thyra::NOXNonlinearSolver> solver;
+
+  Teuchos::RCP<Teuchos::FancyOStream> out;
 };
 
 }
