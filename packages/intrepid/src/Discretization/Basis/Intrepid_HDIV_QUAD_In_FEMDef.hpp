@@ -115,7 +115,7 @@ namespace Intrepid {
     bases[0][1] = rcp( &openBasis_ , false );
     bases[1][0] = rcp( &openBasis_ , false );
     bases[1][1] = rcp( &closedBasis_ , false );
-    setBases( bases );
+    this->setBases( bases );
 
   }
   
