@@ -186,11 +186,18 @@ template<>
 class MpiTypeTraits< ${name} > {
  public:
   typedef ${name} packet_type;
-  static const bool needFree = false;
-  static const bool globallyConsistent = true;
-  static const bool globallyConsistentType = true;
+  static const bool mustFreeDatatype = false;
+  static const bool sameDatatype = true;
+  static const bool sameLocalCount = true;
+  static const bool sameGlobalCount = true;
+  static const bool direct = true;
+  static const bool mustSerialize = false;
 
-  static std::pair<MPI_Datatype, size_t> makeType (const ${name}& example);
+  static void* getPtr (const ${name}& packet) {
+    return reinterpret_cast<void*> (const_cast<Packet*> (&packet));
+  }
+  static MPI_Datatype getType (const ${name}& packet);
+  static size_t getCount (const ${name}& packet);
 };
 ''')
     for k in d.keys():
@@ -244,8 +251,12 @@ def emitSpecializationDefs (d, indent=0):
     # Fill it in for each (C++ type, MPI_Datatype) pair in the dictionary.
     tmpl = Template('''// Specialization of MpiTypeTraits<T> for T=${name}.
 template<>
-MPI_Datatype MpiTypeTraits< ${name} >::makeType () {
-  return std::make_pair (${type}, static_cast<size_t> (${count}));
+MPI_Datatype MpiTypeTraits< ${name} >::getType (const ${name}& ) {
+  return ${type};
+}
+template<>
+size_t MpiTypeTraits< ${name} >::getCount (const ${name}& ) {
+  return static_cast<size_t> (${count});
 }
 ''')
     for k,v in d.iteritems():

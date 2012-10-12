@@ -63,17 +63,22 @@ namespace { // anonymous
 } // namespace (anonymous)
 
 template<>
-std::pair<MPI_Datatype, size_t> MpiTypeTraits<bool>::makeType () {
+MPI_Datatype MpiTypeTraits<bool>::getType () {
   // The compiler should be able to optimize away the false branches.
   if (sizeof(bool) == sizeof(char)) {
-    return std::make_pair (MPI_CHAR, static_cast<size_t> (1));
+    return MPI_CHAR;
   } else if (sizeof(bool) == sizeof(short)) {
-    return std::make_pair (MPI_SHORT, static_cast<size_t> (1));
+    return MPI_SHORT;
   } else if (sizeof(bool) == sizeof(int)) {
-    return std::make_pair (MPI_INT, static_cast<size_t> (1));
+    return MPI_INT;
   } else if (sizeof(bool) == sizeof(long)) {
-    return std::make_pair (MPI_LONG, static_cast<size_t> (1));
+    return MPI_LONG;
   } else { // Fall-back if bool isn't the same size as a common integer type.
-    return std::make_pair (makeDerivedTypeForBool (), static_cast<size_t> (1));
+    return makeDerivedTypeForBool ();
   }
+}
+
+template<>
+size_t MpiTypeTraits<bool>::getCount () {
+  return static_cast<size_t> (1);
 }

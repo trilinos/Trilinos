@@ -27,13 +27,20 @@ class MpiTypeTraits<bool> {
  public:
   typedef bool packet_type;
   // The right-hand side of this expression is a compile-time constant.
-  static const bool needFree = sizeof(bool) != sizeof(char) &&
-                               sizeof(bool) != sizeof(short) &&
-                               sizeof(bool) != sizeof(int) &&
-                               sizeof(bool) != sizeof(long);
-  // We assume that every bool on every MPI process has the same size.
-  static const bool globallyConsistent = true;
-  static const bool globallyConsistentType = true;
+  static const bool mustFreeDatatype = sizeof(bool) != sizeof(char) &&
+    sizeof(bool) != sizeof(short) &&
+    sizeof(bool) != sizeof(int) &&
+    sizeof(bool) != sizeof(long);
+  // We assume that every bool on every MPI process has the same datatype and count.
+  static const bool sameDatatype = true;
+  static const bool sameLocalCount = true;
+  static const bool sameGlobalCount = true;
+  static const bool direct = true;
+  static const bool mustSerialize = false;
 
-  static std::pair<MPI_Datatype, size_t> makeType (const bool& x);
+  static void* getPtr (const bool& x) {
+    return &x;
+  }
+  static MPI_Datatype getType (const bool& x);
+  static size_t getCount (const bool& x);
 };
