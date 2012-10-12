@@ -865,20 +865,17 @@ if (mypid == 0)
       throw(Exceptions::Incompatible("Utils::PowerMethod: operator must have domain and range maps that are equivalent."));
     }
     // create three vectors, fill z with random numbers
-    RCP<MultiVector> q = MultiVectorFactory::Build(A.getRangeMap(),1);
-    RCP<MultiVector> r = MultiVectorFactory::Build(A.getRangeMap(),1);
-    RCP<MultiVector> z = MultiVectorFactory::Build(A.getRangeMap(),1);
+    RCP<Vector> q = VectorFactory::Build(A.getRangeMap());
+    RCP<Vector> r = VectorFactory::Build(A.getRangeMap());
+    RCP<Vector> z = VectorFactory::Build(A.getRangeMap());
     z->setSeed(seed);  // seed random number generator
     z->randomize(true);// use Xpetra implementation: -> same results for Epetra and Tpetra
       
     Teuchos::Array<Magnitude> norms(1);
   
-    //std::vector<Scalar> lambda(1);
-    //lambda[0] = 0.0;
     Scalar lambda=0.0;
     Magnitude residual = 0.0;
     // power iteration
-    Teuchos::ArrayView<Scalar> avLambda(&lambda,1);
     RCP<Vector> diagVec,oneOverDiagonal;
     if (scaleByDiag) {
       diagVec = VectorFactory::Build(A.getRowMap());
@@ -891,7 +888,7 @@ if (mypid == 0)
       q->update(1.0/norms[0],*z,0.);                 // Set q = z / normz
       A.apply(*q, *z);                               // Compute z = A*q
       if (scaleByDiag) z->elementWiseMultiply(1.0, *oneOverDiagonal, *z, 0.0);
-      q->dot(*z,avLambda);                            // Approximate maximum eigenvalue: lamba = dot(q,z)
+      lambda = q->dot(*z);                            // Approximate maximum eigenvalue: lamba = dot(q,z)
       if ( iter % 100 == 0 || iter + 1 == niters ) {
         r->update(1.0, *z, -lambda, *q, 0.0);         // Compute A*q - lambda*q
         r->norm2(norms);
