@@ -212,6 +212,29 @@ APPEND_SET(SOURCES
   NOX_Multiphysics_Solver_FixedPointBased.C
   )
 
+IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA)
+  INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/src-thyra)
+  APPEND_SET(HEADERS
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra.H
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_Vector.H
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_MultiVector.H
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_Group.H
+    ${PACKAGE_SOURCE_DIR}/src-thyra/Thyra_NonlinearSolver_NOX.hpp
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_PrePostOperator_RowSumScaling.H
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_MeritFunction_Weighted.hpp
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Solver_PseudoTransient.hpp
+  )
+  APPEND_SET(SOURCES
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_Vector.C
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_MultiVector.C
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_Group.C
+    ${PACKAGE_SOURCE_DIR}/src-thyra/Thyra_NonlinearSolver_NOX.cpp
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_PrePostOperator_RowSumScaling.C
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_MeritFunction_Weighted.cpp
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Solver_PseudoTransient.cpp
+  )
+ENDIF()
+
 #
 # C) Define the targets for package's library(s)
 #
