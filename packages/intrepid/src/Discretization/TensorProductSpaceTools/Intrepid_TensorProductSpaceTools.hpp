@@ -75,27 +75,50 @@ public:
 			 const ArrayTypeCoeffs &coeffs ,
 			 const Array<RCP<ArrayTypeBasis> > &bases );
 
+  // /** \brief Computes point values of a set of array-valued
+  //            polynomials expressed in a  
+  //            tensor product basis at output points.  The array
+  //            <b>coeffs</b> is assumed to have dimensions (C,F1,F2),
+  // 	     where F1 runs over the number of different polynomials per cell and
+  //            F2 runs over the coefficients run over a tensor product
+  //            basis (lowest space dimension runs fastest).  The
+  // 	     Teuchos::Array of (pointers to) Arrays bases
+  // 	     have the one-dimensional bases tabulated at the
+  //            one-dimensional points.  The output array is (C,F1,P,D).
+  // 	     This method assumes that the nodes for the basis coincide with
+  // 	     the evaluation points, which leads to a big simplification.
+	     
+  //      \param vals  [out] - output point values of the discrete function
+  //      \param coeffs [in] - coefficients of the input function
+  //      \param bases  [in] - one-dimensional bases tabulated at points
+  //  */
+  // template<class Scalar, class ArrayTypeOut, class ArrayTypeCoeffs,
+  // 	   class ArrayTypeBasis>
+  // static void evaluateCollocated(  ArrayTypeOut &vals ,
+  // 				   const ArrayTypeCoeffs &coeffs ,
+  // 				   const Array<Array<RCP<ArrayTypeBasis> > > &bases );
+
   /** \brief Computes point values of a set of polynomials expressed in a
              tensor product basis at output points.  The array
              <b>coeffs</b> is assumed to have dimensions (C,F1,F2),
-	     where F1 runs over the number of different polynomials per cell and
+  	     where F1 runs over the number of different polynomials per cell and
              F2 runs over the coefficients run over a tensor product
              basis (lowest space dimension runs fastest).  The
-	     Teuchos::Array of (pointers to) Arrays bases
-	     have the one-dimensional bases tabulated at the
+  	     Teuchos::Array of (pointers to) Arrays bases
+  	     have the one-dimensional bases tabulated at the
              one-dimensional points.  The output array is (C,F1,P).
-	     This method assumes that the nodes for the basis coincide with
-	     the evaluation points, which leads to a big simplification.
+  	     This method assumes that the nodes for the basis coincide with
+  	     the evaluation points, which leads to a big simplification.
 	     
        \param vals  [out] - output point values of the discrete function
        \param coeffs [in] - coefficients of the input function
        \param bases  [in] - one-dimensional bases tabulated at points
    */
   template<class Scalar, class ArrayTypeOut, class ArrayTypeCoeffs,
-	   class ArrayTypeBasis>
+  	   class ArrayTypeBasis>
   static void evaluateCollocated(  ArrayTypeOut &vals ,
-				   const ArrayTypeCoeffs &coeffs ,
-				   const Array<RCP<ArrayTypeBasis> > &bases );
+  				   const ArrayTypeCoeffs &coeffs ,
+  				   const Array<RCP<ArrayTypeBasis> > &bases );
 
   /** \brief Given a polynomial expressed in a tensor product basis,
       evaluates the gradient at a tensor product of points.
