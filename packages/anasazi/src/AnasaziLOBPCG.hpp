@@ -1700,6 +1700,13 @@ namespace Anasazi {
           lapack.POTRF('U',twoBlocks,CMMC.values(),CMMC.stride(),&info);
           // our views ARE NOT currently in place; we must reestablish them before throwing an exception
           if (info != 0) {
+            // Check symmetry of H'*K*H, this might be the first place a non-Hermitian operator will cause a problem.
+            Teuchos::SerialDenseMatrix<int,ScalarType> K22(Teuchos::View,KK,blockSize_,blockSize_,1*blockSize_,1*blockSize_);
+            Teuchos::SerialDenseMatrix<int,ScalarType> K22_trans( K22, Teuchos::CONJ_TRANS );
+            K22_trans -= K22;
+            MagnitudeType symNorm = K22_trans.normOne();
+            MagnitudeType tol = SCT::magnitude(SCT::squareroot(SCT::eps()));
+
             cXHP = Teuchos::null;
             cHP = Teuchos::null;
             cK_XHP = Teuchos::null;
@@ -1707,9 +1714,18 @@ namespace Anasazi {
             cM_XHP = Teuchos::null;
             cM_HP = Teuchos::null;
             setupViews();
+           
+            std::string errMsg = "Anasazi::LOBPCG::iterate(): Cholesky factorization failed during full orthogonalization.";
+            if ( symNorm < tol )
+            {
+              TEUCHOS_TEST_FOR_EXCEPTION(info != 0, LOBPCGOrthoFailure, errMsg );
+            }
+            else
+            {
+              errMsg += " Check the operator A (or K), it may not be Hermitian!";
+              TEUCHOS_TEST_FOR_EXCEPTION(info != 0, LOBPCGOrthoFailure, errMsg );
+            }
           }
-          TEUCHOS_TEST_FOR_EXCEPTION(info != 0, LOBPCGOrthoFailure, 
-              "Anasazi::LOBPCG::iterate(): Cholesky factorization failed during full orthogonalization.");
         }
         // compute C = C inv(R)
         blas.TRSM(Teuchos::RIGHT_SIDE,Teuchos::UPPER_TRI,Teuchos::NO_TRANS,Teuchos::NON_UNIT_DIAG,
