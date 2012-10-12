@@ -306,9 +306,6 @@ namespace Ioex {
 				      ex_inquiry inquiry_type) const;
     
     // Internal data handling
-    void build_element_reorder_map(int64_t start, int64_t count);
-    void build_node_reorder_map(void *new_ids, int64_t count);
-
     int64_t handle_node_ids(void* ids, int64_t num_to_get);
     int64_t handle_element_ids(const Ioss::ElementBlock *eb, void* ids, size_t num_to_get);
     int64_t handle_face_ids(const Ioss::FaceBlock *eb, void* ids, size_t num_to_get);

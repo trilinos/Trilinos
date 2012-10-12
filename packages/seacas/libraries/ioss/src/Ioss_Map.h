@@ -39,6 +39,8 @@
 #include <stdint.h>
 
 namespace Ioss {
+  class Field;
+  
   typedef std::vector<int64_t> MapContainer;
   // map global to local ids
   typedef std::pair<int64_t,int64_t> IdPair;
@@ -89,12 +91,18 @@ namespace Ioss {
     int64_t local_to_global(int64_t local) const;
 
     void build_reverse_map(int processor);
+    void build_reverse_map(int64_t num_to_get, int64_t offset, int processor);
 
-    static void build_reverse_map(ReverseMapContainer *Map, const int64_t *ids,
-				  int64_t num_to_get, int64_t offset, int processor);
 
-    static void build_reverse_map(ReverseMapContainer *Map, const int *ids,
-				  int num_to_get, int offset, int processor);
+    template <typename INT>
+    static void build_reverse_map(ReverseMapContainer *Map, const INT *ids,
+				  size_t num_to_get, size_t offset, int processor);
+
+    static void map_data(void *data, const Ioss::Field &field, size_t count, const Ioss::MapContainer &map);
+
+    static void map_implicit_data(void *data, const Ioss::Field &field, size_t count,
+				  const Ioss::MapContainer &map, size_t offset);
+
 
     void build_reorder_map(int64_t start, int64_t count);
 
@@ -105,8 +113,6 @@ namespace Ioss {
     static void verify_no_duplicate_ids(ReverseMapContainer &reverse_map,
 					int processor);
 
-    int64_t  entityCount;
-    bool sequentialG2L; // true if reverse node map is sequential (local==global)
     bool entityReordered;
 
     MapContainer        map;

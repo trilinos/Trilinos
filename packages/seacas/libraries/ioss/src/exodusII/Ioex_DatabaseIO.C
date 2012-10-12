@@ -237,38 +237,6 @@ namespace {
       exodus_error(exoid, __LINE__, -1);
   }
 
-  void map_connectivity_data(void *data, const Ioss::Field &field, size_t count, const Ioss::MapContainer &map)
-  {
-    if (!Ioss::Map::is_sequential(map)) {
-      if (field.get_type() == Ioss::Field::INTEGER) {
-	int *connect = static_cast<int*>(data);
-	for (size_t i=0; i < count; i++)
-	  connect[i] = map[connect[i]];
-      } else {
-	int64_t *connect = static_cast<int64_t*>(data);
-	for (size_t i=0; i < count; i++)
-	  connect[i] = map[connect[i]];
-      }
-    }
-  }
-
-  void map_id_data(void *data, const Ioss::Field &field, size_t count, const Ioss::MapContainer &map, size_t offset)
-  {
-    if (field.get_type() == Ioss::Field::INTEGER) {
-      int *ids = static_cast<int*>(data);
-      
-      for (size_t i=0; i < count; i++) {
-	ids[i] = map[offset + 1 + i];
-      }
-    } else {
-      int64_t *ids = static_cast<int64_t*>(data);
-      
-      for (size_t i=0; i < count; i++) {
-	ids[i] = map[offset + 1 + i];
-      }
-    }
-  }
-
   void filter_element_list(Ioss::Region *region,
 			   Ioss::Int64Vector &elements, Ioss::Int64Vector &sides,
 			   bool remove_omitted_elements);
@@ -2691,7 +2659,7 @@ namespace Ioex {
 	    else if (field.get_name() == "ids") {
 	      // Map the local ids in this node block
 	      // (1...node_count) to global node ids.
-	      map_id_data(data, field, num_to_get, get_map(EX_NODE_BLOCK), 0);
+	      Ioss::Map::map_implicit_data(data, field, num_to_get, get_map(EX_NODE_BLOCK), 0);
 	    }
 
 	    else if (field.get_name() == "connectivity") {
@@ -2755,7 +2723,7 @@ namespace Ioex {
 	      // The element_node index varies fastet
 	      if (my_element_count > 0) {
 		get_connectivity_data(get_file_pointer(), data, EX_ELEM_BLOCK, id, 0);
-		map_connectivity_data(data, field, num_to_get*element_nodes, get_map(EX_NODE_BLOCK));
+		Ioss::Map::map_data(data, field, num_to_get*element_nodes, get_map(EX_NODE_BLOCK));
 	      }
 	    }
 	    else if (field.get_name() == "connectivity_face") {
@@ -2765,7 +2733,7 @@ namespace Ioex {
 	      // The element_face index varies fastest
 	      if (my_element_count > 0) {
 		get_connectivity_data(get_file_pointer(), data, EX_ELEM_BLOCK, id, 2);
-		map_connectivity_data(data, field, num_to_get*face_count, get_map(EX_FACE_BLOCK));
+		Ioss::Map::map_data(data, field, num_to_get*face_count, get_map(EX_FACE_BLOCK));
 	      }
 	    }
 	    else if (field.get_name() == "connectivity_edge") {
@@ -2775,7 +2743,7 @@ namespace Ioex {
 	      // The element_edge index varies fastest
 	      if (my_element_count > 0) {
 		get_connectivity_data(get_file_pointer(), data, EX_ELEM_BLOCK, id, 1);
-		map_connectivity_data(data, field, num_to_get*edge_count, get_map(EX_EDGE_BLOCK));
+		Ioss::Map::map_data(data, field, num_to_get*edge_count, get_map(EX_EDGE_BLOCK));
 	      }
 	    }
 	    else if (field.get_name() == "connectivity_raw") {
@@ -2791,7 +2759,7 @@ namespace Ioex {
 	    else if (field.get_name() == "ids") {
 	      // Map the local ids in this element block
 	      // (eb_offset+1...eb_offset+1+my_element_count) to global element ids.
-	      map_id_data(data, field, num_to_get, get_map(EX_ELEM_BLOCK), eb->get_offset());
+	      Ioss::Map::map_implicit_data(data, field, num_to_get, get_map(EX_ELEM_BLOCK), eb->get_offset());
 	    }
 	    else if (field.get_name() == "skin") {
 	      // This is (currently) for the skinned body. It maps the
@@ -2887,7 +2855,7 @@ namespace Ioex {
 	      // The face_node index varies fastet
 	      if (my_face_count > 0) {
 		get_connectivity_data(get_file_pointer(), data, EX_FACE_BLOCK, id, 0);
-		map_connectivity_data(data, field, num_to_get*face_nodes, get_map(EX_NODE_BLOCK));
+		Ioss::Map::map_data(data, field, num_to_get*face_nodes, get_map(EX_NODE_BLOCK));
 	      }
 	    }
 	    else if (field.get_name() == "connectivity_edge") {
@@ -2897,7 +2865,7 @@ namespace Ioex {
 	      // The face_edge index varies fastest
 	      if (my_face_count > 0) {
 		get_connectivity_data(get_file_pointer(), data, EX_FACE_BLOCK, id, 1);
-		map_connectivity_data(data, field, num_to_get*edge_count, get_map(EX_EDGE_BLOCK));
+		Ioss::Map::map_data(data, field, num_to_get*edge_count, get_map(EX_EDGE_BLOCK));
 	      }
 	    }
 	    else if (field.get_name() == "connectivity_raw") {
@@ -2913,7 +2881,7 @@ namespace Ioex {
 	    else if (field.get_name() == "ids") {
 	      // Map the local ids in this face block
 	      // (eb_offset+1...eb_offset+1+my_face_count) to global face ids.
-	      map_id_data(data, field, num_to_get, get_map(EX_FACE_BLOCK), eb->get_offset());
+	      Ioss::Map::map_implicit_data(data, field, num_to_get, get_map(EX_FACE_BLOCK), eb->get_offset());
 	    }
 	    else {
 	      num_to_get = Ioss::Utils::field_warning(eb, field, "input");
@@ -2966,7 +2934,7 @@ namespace Ioex {
 	      // The edge_node index varies fastet
 	      if (my_edge_count > 0) {
 		get_connectivity_data(get_file_pointer(), data, EX_EDGE_BLOCK, id, 0);
-		map_connectivity_data(data, field, num_to_get*edge_nodes, get_map(EX_NODE_BLOCK));
+		Ioss::Map::map_data(data, field, num_to_get*edge_nodes, get_map(EX_NODE_BLOCK));
 	      }
 	    }
 	    else if (field.get_name() == "connectivity_raw") {
@@ -2982,7 +2950,7 @@ namespace Ioex {
 	    else if (field.get_name() == "ids") {
 	      // Map the local ids in this edge block
 	      // (eb_offset+1...eb_offset+1+my_edge_count) to global edge ids.
-	      map_id_data(data, field, num_to_get, get_map(EX_EDGE_BLOCK), eb->get_offset());
+	      Ioss::Map::map_implicit_data(data, field, num_to_get, get_map(EX_EDGE_BLOCK), eb->get_offset());
 	    }
 	    else {
 	      num_to_get = Ioss::Utils::field_warning(eb, field, "input");
@@ -3038,21 +3006,9 @@ namespace Ioex {
 	      
 	      if (field.get_name() == "ids") {
 		// Convert the local node ids to global ids
-		const Ioss::MapContainer &map = get_map(type);
-		if (!Ioss::Map::is_sequential(map)) {
-		  if (field.get_type() == Ioss::Field::INTEGER) {
-		    int *ids = static_cast<int*>(data);
-		    for (size_t i=0; i < num_to_get; i++) {
-		      ids[i] = map[ids[i]];
-		    }
-		  } else {
-		    int64_t *ids = static_cast<int64_t*>(data);
-		    for (size_t i=0; i < num_to_get; i++) {
-		      ids[i] = map[ids[i]];
-		    }
-		  }
-		}
+		Ioss::Map::map_data(data, field, num_to_get, get_map(type));
 	      }
+
             } else if (field.get_name() == "orientation") {
 	      if (field.get_type() == Ioss::Field::INTEGER) {
 		ierr = ex_get_set(get_file_pointer(), type, id, NULL, static_cast<int*>(data));
@@ -4676,7 +4632,7 @@ namespace Ioex {
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
       }
 
-      build_node_reorder_map(ids, num_to_get);
+      nodeMap.build_reorder_map(0, num_to_get);
       return num_to_get;
     }
 
@@ -4830,8 +4786,7 @@ namespace Ioex {
 
 	// Now, if the state is Ioss::STATE_MODEL, update the reverseEntityMap
 	if (db_state == Ioss::STATE_MODEL) {
-	  Ioss::Map::build_reverse_map(&entity_map.reverse, &entity_map.map[eb_offset+1], num_to_get,
-				       eb_offset, my_processor);
+	  entity_map.build_reverse_map(num_to_get, eb_offset, my_processor);
 
 	  // Output this portion of the entity number map
 	  int ierr = ex_put_partial_id_map(file_pointer, map_type, eb_offset+1, num_to_get, ids);
@@ -6526,51 +6481,6 @@ namespace Ioex {
 	int ierr = ex_put_variable_names(get_file_pointer(), type, var_count, TOPTR(var_names));
 	if (ierr < 0)
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
-      }
-    }
-
-    void DatabaseIO::build_node_reorder_map(void *ids, int64_t count)
-    {
-      // This routine builds a map that relates the current node id order
-      // to the original node ordering in affect at the time the file was
-      // created. That is, the node map used to define the topology of the
-      // model.  Now, if there are changes in node ordering at the
-      // application level, we build the node reorder map to map the
-      // current order into the original order.  An added complication is
-      // that this is more than just a reordering... It may be that the
-      // application has 'ghosted' nodes that it doesnt want put out on
-      // the database, so the reorder map must handle a node that is not
-      // in the original mesh and map that to an invalid value (currently
-      // using -1 as invalid value...)
-
-
-      // Note: To further add confusion,
-      // the nodeMap.reorder and new_ids are 0-based
-      // the nodeMap.reverse and nodeMap.map are 1-based. This is
-      // just a consequence of how they are intended to be used...
-
-      nodeMap.reorder.resize(count);
-
-      if (int_byte_size_api() == 4) {
-	int *new_ids = static_cast<int*>(ids);
-	for (int i=0; i < count; i++) {
-	  int global_id = new_ids[i];
-	  
-	  // This will return 0 if node is not found in list.
-	  int orig_local_id = node_global_to_local(global_id, false) - 1;
-	  
-	  nodeMap.reorder[i] = orig_local_id;
-	}
-      } else {
-	int64_t *new_ids = static_cast<int64_t*>(ids);
-	for (int64_t i=0; i < count; i++) {
-	  int64_t global_id = new_ids[i];
-	  
-	  // This will return 0 if node is not found in list.
-	  int64_t orig_local_id = node_global_to_local(global_id, false) - 1;
-	  
-	  nodeMap.reorder[i] = orig_local_id;
-	}
       }
     }
 
