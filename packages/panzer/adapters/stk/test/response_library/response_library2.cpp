@@ -234,7 +234,8 @@ namespace panzer {
     out << "Adding responses" << std::endl;
 
     RCP<ResponseLibrary<Traits> > rLibrary 
-          = Teuchos::rcp(new ResponseLibrary<Traits>());
+          = Teuchos::rcp(new ResponseLibrary<Traits>(wkstContainer,dofManager,lof));
+          // = Teuchos::rcp(new ResponseLibrary<Traits>());
 
     RespFactoryFunc_Builder builder;
     std::vector<std::string> blocks(1);
@@ -269,6 +270,15 @@ namespace panzer {
 
     TEST_THROW(Teuchos::rcp_dynamic_cast<const Response_Functional<panzer::Traits::Residual> >(v[0],true),std::bad_cast);
     TEST_THROW(Teuchos::rcp_dynamic_cast<const Response_Functional<panzer::Traits::Residual> >(v[1],true),std::bad_cast);
+
+    TEST_ASSERT(!rLibrary->responseEvaluatorsBuilt());
+
+    rLibrary->buildResponseEvaluators(physics_blocks,
+  				      cm_factory,
+                                      closure_models,
+  				      user_data,true);
+
+    TEST_ASSERT(rLibrary->responseEvaluatorsBuilt());
   }
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,

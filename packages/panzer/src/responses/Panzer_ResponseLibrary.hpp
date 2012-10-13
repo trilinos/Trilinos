@@ -265,6 +265,23 @@ public:
    template <typename EvalT>
    void getResponses(std::vector<Teuchos::RCP<const ResponseBase> > & responses) const;
 
+   /** Setup up field managers for all responses. Once this method is called
+     * no other responses can be added. An exception is thrown if they are.
+     */
+   void buildResponseEvaluators(
+         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+         const Teuchos::ParameterList& closure_models,
+         const Teuchos::ParameterList& user_data,
+         const bool write_graphviz_file=false,
+         const std::string& graphviz_file_prefix="");
+
+   /** Have the response evaluators been built? True only if 
+     * <code>buildResponseEvaluators</code> has been called and run to completion.
+     */ 
+   bool responseEvaluatorsBuilt() const
+   { return responseEvaluatorsBuilt_; }
+
 protected:
    //! Access a container field for a specified element block
    template <typename EvalT>
@@ -314,6 +331,8 @@ private:
  
    //! Store all the response objects 
    boost::unordered_map<std::string, Response_TemplateManager> responseObjects_;
+
+   bool responseEvaluatorsBuilt_;
 };
 
 }

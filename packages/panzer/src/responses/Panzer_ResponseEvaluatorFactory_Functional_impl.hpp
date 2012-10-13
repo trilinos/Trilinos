@@ -28,7 +28,8 @@ buildAndRegisterEvaluators(const std::string & responseName,
    fm.template registerEvaluator<EvalT>(eval);
 
    // require last field
-   return eval->evaluatedFields()[0];
+   // return eval->evaluatedFields()[0];
+   return Teuchos::null;
 }
 
 }

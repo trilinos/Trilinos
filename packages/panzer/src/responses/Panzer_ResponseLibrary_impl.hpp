@@ -50,6 +50,7 @@ namespace panzer {
 
 template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary()
+   : responseEvaluatorsBuilt_(false)
 {
    // build dynamic dispatch objects
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
@@ -61,7 +62,7 @@ template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
                                           const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi,
                                           const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
-   : respAggManager_(ugi,lof), wkstContainer_(wc), globalIndexer_(ugi), linObjFactory_(lof)
+   : respAggManager_(ugi,lof), wkstContainer_(wc), globalIndexer_(ugi), linObjFactory_(lof), responseEvaluatorsBuilt_(false)
 {
    // build dynamic dispatch objects
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
@@ -72,7 +73,7 @@ ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> &
 template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary(const ResponseLibrary<TraitsT> & rl)
    : respAggManager_(rl.globalIndexer_,rl.linObjFactory_), wkstContainer_(rl.wkstContainer_)
-   , globalIndexer_(rl.globalIndexer_), linObjFactory_(rl.linObjFactory_)
+   , globalIndexer_(rl.globalIndexer_), linObjFactory_(rl.linObjFactory_), responseEvaluatorsBuilt_(false)
 {
    // build dynamic dispatch objects
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
@@ -489,6 +490,104 @@ getResponses(std::vector<Teuchos::RCP<const ResponseBase> > & responses) const
    // loop over all respones adding them to the vector
    for(HashMap::const_iterator itr=responseObjects_.begin();itr!=responseObjects_.end();++itr)
      responses.push_back(itr->second.get<EvalT>());
+}
+
+template <typename TraitsT>
+class RVEF2 : public GenericEvaluatorFactory {
+public:
+   typedef boost::unordered_map<std::string,std::vector<Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > RespFactoryTable;
+   typedef boost::unordered_set<std::string> StringAccessTable;
+
+   RVEF2(const Teuchos::ParameterList & userData,RespFactoryTable & rft)
+     : userData_(userData), rft_(rft) {}
+
+   bool registerEvaluators(PHX::FieldManager<TraitsT> & fm, const PhysicsBlock & pb) const
+   {
+     using Teuchos::RCP;
+     using Teuchos::rcp;
+
+     std::string blockId = pb.elementBlockID();
+
+     // because we reduce the physics blocks to only ones we need, this find should succeed
+     typename RespFactoryTable::iterator itr=rft_.find(blockId);
+
+     TEUCHOS_ASSERT(itr!=rft_.end() && itr->second.size()>0);
+
+     // loop over each template manager in the block, and then each evaluation type
+     std::vector<RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > & respFacts = itr->second;
+     for(std::size_t i=0;i<respFacts.size();i++) {
+       RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > fact = respFacts[i];
+       // what is going on here?
+       if(fact==Teuchos::null)
+         continue;
+ 
+       // loop over each evaluation type
+       for(typename ResponseEvaluatorFactory_TemplateManager<TraitsT>::iterator rf_itr=fact->begin();
+           rf_itr!=fact->end();++rf_itr) {
+
+         // build and register evaluators, store field tag, make it required
+         RCP<const PHX::FieldTag> ft = rf_itr->buildAndRegisterEvaluators("YOU STILL HAVE TO PASS RESPONSE NAMES TO FMB CONSTRUCTION!!!!",fm,pb,userData_);     
+
+
+         // this sets up the scatter
+         // TEUCHOS_ASSERT(ft!=Teuchos::null);
+         // fm.requireField(*ft);
+       }
+     }
+    
+     return true;
+   }
+
+private:
+  const Teuchos::ParameterList & userData_;
+  RespFactoryTable & rft_;
+};
+
+template <typename TraitsT>
+void ResponseLibrary<TraitsT>::
+buildResponseEvaluators(
+         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+         const Teuchos::ParameterList& closure_models,
+         const Teuchos::ParameterList& user_data,
+         const bool write_graphviz_file,
+         const std::string& graphviz_file_prefix)
+{
+   using Teuchos::RCP;
+
+   typedef boost::unordered_map<std::string,std::vector<RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > RespFactoryTable;
+
+   // first compute subset of physics blocks required to build responses
+   ////////////////////////////////////////////////////////////////////////////////
+
+   std::vector<Teuchos::RCP<panzer::PhysicsBlock> > requiredPhysicsBlocks;
+   for(std::size_t i=0;i<physicsBlocks.size();i++) {
+     std::string blockId = physicsBlocks[i]->elementBlockID();
+     
+     // is this element block required
+     typename RespFactoryTable::const_iterator itr = respFactories_.find(blockId);
+
+     if(itr!=respFactories_.end()) {
+       // one last check for nonzero size
+       if(itr->second.size()>0)
+         requiredPhysicsBlocks.push_back(physicsBlocks[i]);
+     } 
+   }
+
+   // second construct generic evaluator factory from required response factories
+   ////////////////////////////////////////////////////////////////////////////////
+   RVEF2<TraitsT> rvef2(user_data,respFactories_);
+
+   // third build field manager builder using the required physics blocks
+   ////////////////////////////////////////////////////////////////////////////////
+
+   // don't build scatter evaluators
+   fmb2_ = Teuchos::rcp(new FieldManagerBuilder(true)); 
+
+   fmb2_->setWorksetContainer(wkstContainer_);
+   fmb2_->setupVolumeFieldManagers(requiredPhysicsBlocks,cm_factory,closure_models,*linObjFactory_,user_data,rvef2);
+
+   responseEvaluatorsBuilt_ = true;
 }
 
 }
