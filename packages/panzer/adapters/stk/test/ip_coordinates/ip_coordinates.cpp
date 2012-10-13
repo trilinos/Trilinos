@@ -103,7 +103,7 @@ namespace panzer {
     user_app::BCFactory bc_factory;
     const std::size_t workset_size = 1;
 
-    panzer::FieldManagerBuilder<int,int> fmb;
+    panzer::FieldManagerBuilder fmb;
 
     // setup mesh
     /////////////////////////////////////////////

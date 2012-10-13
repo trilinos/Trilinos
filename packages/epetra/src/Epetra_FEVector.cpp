@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include <Epetra_ConfigDefs.h>
 #include <Epetra_FEVector.h>
 
 #include <Epetra_LocalMap.h>
@@ -60,8 +61,12 @@ Epetra_FEVector::Epetra_FEVector(const Epetra_BlockMap& map,
   : Epetra_MultiVector(map, numVectors),
     myFirstID_(0),
     myNumIDs_(0),
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     nonlocalIDs_int_(),
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     nonlocalIDs_LL_(),
+#endif
     nonlocalElementSize_(),
     nonlocalCoefs_(),
     nonlocalMap_(0),
@@ -81,8 +86,12 @@ Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Ma
  : Epetra_MultiVector(CV, Map, A, MyLDA, NumVectors),
     myFirstID_(0),
     myNumIDs_(0),
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     nonlocalIDs_int_(),
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     nonlocalIDs_LL_(),
+#endif
     nonlocalElementSize_(),
     nonlocalCoefs_(),
     nonlocalMap_(0),
@@ -102,8 +111,12 @@ Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Ma
  : Epetra_MultiVector(CV, Map, ArrayOfPointers, NumVectors),
     myFirstID_(0),
     myNumIDs_(0),
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     nonlocalIDs_int_(),
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     nonlocalIDs_LL_(),
+#endif
     nonlocalElementSize_(),
     nonlocalCoefs_(),
     nonlocalMap_(0),
@@ -121,8 +134,12 @@ Epetra_FEVector::Epetra_FEVector(const Epetra_FEVector& source)
   : Epetra_MultiVector(source),
     myFirstID_(0),
     myNumIDs_(0),
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     nonlocalIDs_int_(),
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     nonlocalIDs_LL_(),
+#endif
     nonlocalElementSize_(),
     nonlocalCoefs_(),
     nonlocalMap_(0),
@@ -527,8 +544,12 @@ Epetra_FEVector& Epetra_FEVector::operator=(const Epetra_FEVector& source)
   // inexpensive (just a pointer comparison).
   Epetra_MultiVector::Assign(source);
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   nonlocalIDs_int_ = source.nonlocalIDs_int_;
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   nonlocalIDs_LL_ = source.nonlocalIDs_LL_;
+#endif
   nonlocalElementSize_ = source.nonlocalElementSize_;
   nonlocalCoefs_ = source.nonlocalCoefs_;
 
@@ -555,8 +576,12 @@ void Epetra_FEVector::zeroNonlocalData()
 //----------------------------------------------------------------------------
 void Epetra_FEVector::destroyNonlocalData()
 {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   nonlocalIDs_int_.clear();
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   nonlocalIDs_LL_.clear();
+#endif
   nonlocalElementSize_.clear();
 
   if (nonlocalCoefs_.size() > 0) {

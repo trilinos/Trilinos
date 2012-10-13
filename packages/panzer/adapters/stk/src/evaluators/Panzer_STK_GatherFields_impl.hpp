@@ -54,8 +54,8 @@
 // Specialization: Residual
 // **********************************************************************
 
-template<typename Traits>
-panzer_stk::GatherFields<panzer::Traits::Residual, Traits>::
+template<typename EvalT, typename Traits> 
+panzer_stk::GatherFields<EvalT, Traits>::
   GatherFields(const Teuchos::RCP<const STK_Interface> & mesh,const Teuchos::ParameterList& p)
 { 
   using panzer::Cell;
@@ -81,8 +81,8 @@ panzer_stk::GatherFields<panzer::Traits::Residual, Traits>::
 }
 
 // **********************************************************************
-template<typename Traits>
-void panzer_stk::GatherFields<panzer::Traits::Residual, Traits>::
+template<typename EvalT, typename Traits> 
+void panzer_stk::GatherFields<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
@@ -91,14 +91,23 @@ postRegistrationSetup(typename Traits::SetupData d,
 
     stkFields_[fd] = mesh_->getMetaData()->get_field<VariableField>(fieldName);
 
+    if(stkFields_[fd]==0) {
+      std::stringstream ss; 
+      mesh_->printMetaData(ss);
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+                                 "panzer_stk::GatherFields: STK field " << "\"" << fieldName << "\" " 
+                                 "not found.\n STK meta data follows: \n\n" << ss.str());
+    }
+     
+
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
   }
 }
 
 // **********************************************************************
-template<typename Traits>
-void panzer_stk::GatherFields<panzer::Traits::Residual, Traits>::
+template<typename EvalT, typename Traits> 
+void panzer_stk::GatherFields<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    const std::vector<stk::mesh::Entity*> & localElements = *mesh_->getElementsOrderedByLID();

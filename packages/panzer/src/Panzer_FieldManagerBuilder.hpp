@@ -70,31 +70,61 @@ namespace PHX {
 
 namespace panzer {
 
-  template <typename LO, typename GO>
+  class GenericEvaluatorFactory {
+  public:
+    virtual bool registerEvaluators(PHX::FieldManager<panzer::Traits> & fm, const PhysicsBlock & pb) const = 0;
+  };
+
+  class EmptyEvaluatorFactory : public GenericEvaluatorFactory {
+  public:
+    bool registerEvaluators(PHX::FieldManager<panzer::Traits> & fm, const PhysicsBlock & pb) const 
+    { return false; }
+  };
+
   class FieldManagerBuilder {
 
   public:
 
     typedef std::map<unsigned,panzer::Workset> BCFaceWorksetMap;
 
+    FieldManagerBuilder(bool disablePhysicsBlockScatter=false)
+      : disablePhysicsBlockScatter_(disablePhysicsBlockScatter) {}
+
     void print(std::ostream& os) const;
+
+    bool physicsBlockScatterDisabled() const
+    { return disablePhysicsBlockScatter_; }
+
+    void setWorksetContainer(const Teuchos::RCP<WorksetContainer> & wc)
+    { worksetContainer_ = wc; }
+
+    Teuchos::RCP<WorksetContainer> getWorksetContainer() const
+    { return worksetContainer_; }
 
     const 
       std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >&
       getVolumeFieldManagers() const {return phx_volume_field_managers_;}
 
-    const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& 
-      getWorksets() const {return worksets_;}
+    //! Look up field manager by an element block ID
+    Teuchos::RCP< PHX::FieldManager<panzer::Traits> >
+    getVolumeFieldManager(const std::string & blockId) const 
+    {
+       const std::vector<std::string> & blockNames = getElementBlockNames();
+       std::vector<std::string>::const_iterator itr = std::find(blockNames.begin(),blockNames.end(),blockId);
+       TEUCHOS_ASSERT(itr!=blockNames.end());
+
+       // get volume field manager associated with the block ID
+       int index = itr - blockNames.begin();
+       return getVolumeFieldManagers()[index];
+    }
+
+    const std::vector<std::string> &
+      getElementBlockNames() const {return element_block_names_;}
 
     const std::map<panzer::BC, 
 		   std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
 		   panzer::LessBC>& 
       getBCFieldManagers() const {return bc_field_managers_;}
-
-    const std::map<panzer::BC,
-		   Teuchos::RCP<std::map<unsigned,panzer::Workset> >,
-		   panzer::LessBC>&
-      getBCWorksets() const {return bc_worksets_;}
 
     // The intention of the next set of functions is to simplify and eventually
     // replace the setup routine above. Its not clear that these functions
@@ -105,17 +135,22 @@ namespace panzer {
     /** Setup the volume field managers. This uses the passed in <code>dofManager</code>
       * and sets it for permenant use.
       */
-    void setupVolumeFieldManagers(WorksetContainer & wkstContainer, 
-                                  const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+    void setupVolumeFieldManagers(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
 				  const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
 				  const Teuchos::ParameterList& closure_models,
                                   const LinearObjFactory<panzer::Traits> & lo_factory,
 				  const Teuchos::ParameterList& user_data);
 
+    void setupVolumeFieldManagers(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+				  const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+				  const Teuchos::ParameterList& closure_models,
+                                  const LinearObjFactory<panzer::Traits> & lo_factory,
+				  const Teuchos::ParameterList& user_data,
+                                  const GenericEvaluatorFactory & gEvalFact);
+
     /** Build the BC field managers.
       */
-    void setupBCFieldManagers(WorksetContainer & wkstContainer,
-                              const std::vector<panzer::BC> & bcs,
+    void setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
                               const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
 	                      const panzer::EquationSetFactory & eqset_factory,
 			      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
@@ -132,10 +167,12 @@ namespace panzer {
     //! Phalanx volume field managers for each element block.
     std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >
       phx_volume_field_managers_;
-    
-    //! Volume fill worksets for each element block.
-    std::vector< Teuchos::RCP<std::vector<panzer::Workset> > > worksets_;
 
+    /** \brief Matches volume field managers so you can determine
+      *        the element block name for each field manager.
+      */
+    std::vector<std::string> element_block_names_;
+    
     /*! \brief Field managers for the boundary conditions
 
         key is a panzer::BC object.  value is a map of
@@ -146,24 +183,16 @@ namespace panzer {
       std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
       panzer::LessBC> bc_field_managers_;
 
-    /*! \brief Worksets for the boundary conditions
+    Teuchos::RCP<WorksetContainer> worksetContainer_;
 
-        key is a panzer::BC object.  value is a map of
-        worksets where the key is the local side index used by
-        intrepid.  All elemenst of a boundary are in one workset for
-        each local side of the sideset.
-    */
-    std::map<panzer::BC,
-      Teuchos::RCP<std::map<unsigned,panzer::Workset> >,
-      panzer::LessBC> bc_worksets_;
-
+    /** Set to false by default, enables/disables physics block scattering in
+      * newly created field managers.
+      */
+    bool disablePhysicsBlockScatter_;
   };
 
-template<typename LO, typename GO>
-std::ostream& operator<<(std::ostream& os, const panzer::FieldManagerBuilder<LO,GO>& rfd);
+std::ostream& operator<<(std::ostream& os, const panzer::FieldManagerBuilder & rfd);
 
 } // namespace panzer
-
-#include "Panzer_FieldManagerBuilder_impl.hpp"
 
 #endif

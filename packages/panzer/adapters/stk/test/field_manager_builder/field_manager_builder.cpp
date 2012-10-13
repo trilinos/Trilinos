@@ -89,7 +89,7 @@ namespace panzer {
     user_app::BCFactory bc_factory;
     const std::size_t workset_size = 20;
 
-    panzer::FieldManagerBuilder<int,int> fmb;
+    panzer::FieldManagerBuilder fmb;
 
     // setup mesh
     /////////////////////////////////////////////
@@ -172,8 +172,9 @@ namespace panzer {
 
     Teuchos::ParameterList user_data("User Data");
 
-    fmb.setupVolumeFieldManagers(*wkstContainer,physics_blocks,cm_factory,closure_models,elof,user_data);
-    fmb.setupBCFieldManagers(*wkstContainer,bcs,physics_blocks,eqset_factory,cm_factory,bc_factory,closure_models,elof, user_data);
+    fmb.setWorksetContainer(wkstContainer);
+    fmb.setupVolumeFieldManagers(physics_blocks,cm_factory,closure_models,elof,user_data);
+    fmb.setupBCFieldManagers(bcs,physics_blocks,eqset_factory,cm_factory,bc_factory,closure_models,elof, user_data);
 
     // run tests
     /////////////////////////////////
@@ -182,19 +183,18 @@ namespace panzer {
     const std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& fmb_vol_fm = 
       fmb.getVolumeFieldManagers();
     
-    const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& fmb_vol_worksets = 
-      fmb.getWorksets();
+    Teuchos::RCP<const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > > > fmb_vol_worksets = 
+      wkstContainer->getVolumeWorksets();
     
     TEST_EQUALITY(fmb_vol_fm.size(), 2);
-    TEST_EQUALITY(fmb_vol_fm.size(), fmb_vol_worksets.size());
+    TEST_EQUALITY(fmb_vol_fm.size(), fmb_vol_worksets->size());
 
     const std::map<panzer::BC, 
       std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
       panzer::LessBC>& fmb_bc_fm = fmb.getBCFieldManagers();
       
-    const std::map<panzer::BC,
-		   Teuchos::RCP<std::map<unsigned,panzer::Workset> >,
-		   panzer::LessBC>& fmb_bc_worksets = fmb.getBCWorksets();
+    std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >, panzer::LessBC> fmb_bc_worksets;
+    panzer::getSideWorksetsFromContainer(*wkstContainer,bcs,fmb_bc_worksets);
 
     TEST_EQUALITY(fmb_bc_fm.size(), 3);
     TEST_EQUALITY(fmb_bc_fm.size(), fmb_bc_worksets.size());

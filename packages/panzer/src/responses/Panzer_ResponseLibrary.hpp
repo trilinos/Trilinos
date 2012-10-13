@@ -58,8 +58,10 @@
 #include "Panzer_ResponseAggregatorBase.hpp"
 #include "Panzer_ResponseFunctional_Aggregator.hpp"
 #include "Panzer_RLDynamicDispatch.hpp"
+#include "Panzer_FieldManagerBuilder.hpp"
 
 #include "Panzer_AssemblyEngine_InArgs.hpp"
+#include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 
 #include "Panzer_WorksetContainer.hpp"
@@ -88,11 +90,7 @@ class ResponseLibrary {
 public:
    typedef typename TraitsT::EvalTypes TypeSeq;
 
-   ResponseLibrary() 
-   {
-      // build dynamic dispatch objects
-      dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
-   }
+   ResponseLibrary();
 
    ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
                    const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi,
@@ -168,14 +166,6 @@ public:
 						    const std::list<std::string> & eBlocks,
 						    const std::list<std::string> & evalTypes);
 
-   /** Veryify that this response and element block are actual valid choices
-     * for the evaluation type. This is optional error checking but makes debugging
-     * simplier.
-     */
-   template <typename EvalT>
-   bool validateResponseIdInElementBlock(const ResponseId & rid,const std::string & eBlock) const 
-   { return true; }
-
    /** This method builds the volume field managers from the reserved
      * responses. It also registers a number of evaluators, using the closure
      * model and equation set factories. Unlike in the assembly engine only gather
@@ -190,13 +180,6 @@ public:
                         const Teuchos::ParameterList& user_data,
                         const bool write_graphviz_file=false,
                         const std::string& graphviz_file_prefix="");
-
-   /** Evaluate all the volume field managers of a particular evaluator type.
-     */
-   template <typename EvalT>
-   void evaluateVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& worksets,
-                                    const panzer::AssemblyEngineInArgs & ae_in,
-                                    const Teuchos::Comm<int> & comm);
 
    /** Evaluate all the volume field managers of a particular evaluator type.
      */
@@ -273,6 +256,8 @@ private:
 
    Teuchos::RCP<UniqueGlobalIndexerBase> globalIndexer_;
    Teuchos::RCP<LinearObjFactory<TraitsT> > linObjFactory_;
+   Teuchos::RCP<FieldManagerBuilder> fmb_;
+   AssemblyEngine_TemplateManager<panzer::Traits> ae_tm_;
 };
 
 }

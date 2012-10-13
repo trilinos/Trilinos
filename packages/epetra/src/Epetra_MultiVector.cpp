@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Comm.h"

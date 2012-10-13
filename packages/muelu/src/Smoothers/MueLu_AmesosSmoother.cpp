@@ -110,7 +110,7 @@ namespace MueLu {
 
   void AmesosSmoother::Setup(Level &currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
-    if (SmootherPrototype::IsSetup() == true) GetOStream(Warnings0, 0) << "Warning: MueLu::AmesosSmoother::Setup(): Setup() has already been called";
+    if (SmootherPrototype::IsSetup() == true) GetOStream(Warnings0, 0) << "Warning: MueLu::AmesosSmoother::Setup(): Setup() has already been called" << std::endl;
 
     A_ = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
 

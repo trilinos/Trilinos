@@ -67,9 +67,9 @@
 
 // Constructors/Initializers/Accessors
 
-template<typename Scalar, typename LO, typename GO, typename NODE>
-panzer::ModelEvaluator<Scalar,LO,GO,NODE>::
-ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb,
+template<typename Scalar, typename NODE>
+panzer::ModelEvaluator<Scalar,NODE>::
+ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
                const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
                const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
@@ -97,7 +97,7 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb,
 
   TEUCHOS_ASSERT(lof_!=Teuchos::null);
 
-  panzer::AssemblyEngine_TemplateBuilder<LO,GO> builder(fmb,lof);
+  panzer::AssemblyEngine_TemplateBuilder builder(fmb,lof);
   ae_tm_.buildObjects(builder);
 
   //
@@ -172,8 +172,8 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb,
   
 }
 
-template<typename Scalar, typename LO, typename GO, typename NODE>
-panzer::ModelEvaluator<Scalar,LO,GO,NODE>::
+template<typename Scalar, typename NODE>
+panzer::ModelEvaluator<Scalar,NODE>::
 ModelEvaluator()
 {
   TEUCHOS_ASSERT(false);
@@ -181,24 +181,24 @@ ModelEvaluator()
 
 // Public functions overridden from ModelEvaulator
 
-template<typename Scalar, typename LO, typename GO, typename NODE>
+template<typename Scalar, typename NODE>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-panzer::ModelEvaluator<Scalar,LO,GO,NODE>::get_x_space() const
+panzer::ModelEvaluator<Scalar,NODE>::get_x_space() const
 {
   return x_space_;
 }
 
 
-template<typename Scalar, typename LO, typename GO, typename NODE>
+template<typename Scalar, typename NODE>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-panzer::ModelEvaluator<Scalar,LO,GO,NODE>::get_f_space() const
+panzer::ModelEvaluator<Scalar,NODE>::get_f_space() const
 {
   return f_space_;
 }
 
-template<typename Scalar, typename LO, typename GO, typename NODE>
+template<typename Scalar, typename NODE>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-panzer::ModelEvaluator<Scalar,LO,GO,NODE>::get_g_space(int i) const
+panzer::ModelEvaluator<Scalar,NODE>::get_g_space(int i) const
 {
   TEUCHOS_ASSERT(i>=0 && 
 		 static_cast<typename std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > >::size_type>(i)<g_space_.size());
@@ -206,16 +206,16 @@ panzer::ModelEvaluator<Scalar,LO,GO,NODE>::get_g_space(int i) const
   return g_space_[i];
 }
 
-template<typename Scalar, typename LO, typename GO, typename NODE>
+template<typename Scalar, typename NODE>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
-panzer::ModelEvaluator<Scalar,LO,GO,NODE>::createInArgs() const
+panzer::ModelEvaluator<Scalar,NODE>::createInArgs() const
 {
   return prototypeInArgs_;
 }
 
-template<typename Scalar, typename LO, typename GO, typename NODE>
+template<typename Scalar,  typename NODE>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
-panzer::ModelEvaluator<Scalar,LO,GO,NODE>::getNominalValues() const
+panzer::ModelEvaluator<Scalar,NODE>::getNominalValues() const
 {
   return nominalValues_;
 }
@@ -223,16 +223,16 @@ panzer::ModelEvaluator<Scalar,LO,GO,NODE>::getNominalValues() const
 // Private functions overridden from ModelEvaulatorDefaultBase
 
 
-template <typename Scalar, typename LO, typename GO, typename NODE>
+template <typename Scalar, typename NODE>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-panzer::ModelEvaluator<Scalar,LO,GO,NODE>::createOutArgsImpl() const
+panzer::ModelEvaluator<Scalar,NODE>::createOutArgsImpl() const
 {
   return prototypeOutArgs_;
 }
 
-template <typename Scalar, typename LO, typename GO, typename NODE>
+template <typename Scalar, typename NODE>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> > 
-panzer::ModelEvaluator<Scalar,LO,GO,NODE>::
+panzer::ModelEvaluator<Scalar,NODE>::
 create_W_op() const
 {
   Teuchos::RCP<const ThyraObjFactory<Scalar> > tof 
@@ -241,32 +241,32 @@ create_W_op() const
   return tof->getThyraMatrix();
 }
 
-template <typename Scalar, typename LO, typename GO, typename NODE>
+template <typename Scalar, typename NODE>
 Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > 
-panzer::ModelEvaluator<Scalar,LO,GO,NODE>::
+panzer::ModelEvaluator<Scalar,NODE>::
 get_W_factory() const
 {
   return solverFactory_;
 }
 
-template <typename Scalar, typename LO, typename GO, typename NODE>
-void panzer::ModelEvaluator<Scalar,LO,GO,NODE>::
+template <typename Scalar, typename NODE>
+void panzer::ModelEvaluator<Scalar,NODE>::
 addNonParameterGlobalEvaluationData(const std::string & key,
                                     const Teuchos::RCP<GlobalEvaluationData> & ged)
 {
    nonParamGlobalEvaluationData_.addDataObject(key,ged);
 }
 
-template <typename Scalar, typename LO, typename GO, typename NODE>
-void panzer::ModelEvaluator<Scalar,LO,GO,NODE>::
+template <typename Scalar, typename NODE>
+void panzer::ModelEvaluator<Scalar,NODE>::
 evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
    evalModelImpl_basic(inArgs,outArgs); 
 }
 
-template <typename Scalar, typename LO, typename GO, typename NODE>
-void panzer::ModelEvaluator<Scalar,LO,GO,NODE>::
+template <typename Scalar, typename NODE>
+void panzer::ModelEvaluator<Scalar,NODE>::
 evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                     const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
@@ -414,8 +414,8 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   ae_inargs.ghostedContainer_ = Teuchos::null;
 }
 
-template <typename Scalar, typename LO, typename GO, typename NODE>
-void panzer::ModelEvaluator<Scalar,LO,GO,NODE>::
+template <typename Scalar, typename NODE>
+void panzer::ModelEvaluator<Scalar,NODE>::
 evalModelImpl_basic_g(panzer::AssemblyEngineInArgs & ae_inargs,
                       const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                       const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
@@ -450,8 +450,8 @@ evalModelImpl_basic_g(panzer::AssemblyEngineInArgs & ae_inargs,
    }
 }
 
-template <typename Scalar, typename LO, typename GO, typename NODE>
-bool panzer::ModelEvaluator<Scalar,LO,GO,NODE>::
+template <typename Scalar, typename NODE>
+bool panzer::ModelEvaluator<Scalar,NODE>::
 required_basic_g(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
    // determine if any of the outArgs are not null!

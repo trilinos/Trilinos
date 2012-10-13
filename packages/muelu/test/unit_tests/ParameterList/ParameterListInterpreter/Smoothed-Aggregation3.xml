@@ -1,3 +1,4 @@
+<!-- TEST: factories as input parameters -->
 <ParameterList name="MueLu">
 
   <ParameterList name="Factories">

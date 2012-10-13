@@ -44,8 +44,18 @@
 #define __Panzer_ResponseLibrary_impl_hpp__
 
 #include "Panzer_ResponseContainer.hpp"
+#include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 
 namespace panzer {
+
+template <typename TraitsT>
+ResponseLibrary<TraitsT>::ResponseLibrary()
+{
+   // build dynamic dispatch objects
+   dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
+
+   fmb_ = Teuchos::rcp(new FieldManagerBuilder(true)); // don't build scatter evaluators
+}
 
 template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
@@ -55,6 +65,8 @@ ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> &
 {
    // build dynamic dispatch objects
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
+
+   fmb_ = Teuchos::rcp(new FieldManagerBuilder(true)); // don't build scatter evaluators
 }
 
 template <typename TraitsT>
@@ -64,6 +76,8 @@ ResponseLibrary<TraitsT>::ResponseLibrary(const ResponseLibrary<TraitsT> & rl)
 {
    // build dynamic dispatch objects
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
+
+   fmb_ = Teuchos::rcp(new FieldManagerBuilder(true)); // don't build scatter evaluators
 }
 
 template <typename TraitsT>
@@ -93,8 +107,6 @@ template <typename EvalT>
 void ResponseLibrary<TraitsT>::
 reserveVolumeResponse(const ResponseId & rid,const std::string & eBlock)
 {
-   validateResponseIdInElementBlock<EvalT>(rid,eBlock);
-
    int idx = Sacado::mpl::find<TypeSeq,EvalT>::value;
    int sz = Sacado::mpl::size<TypeSeq>::value;
 
@@ -254,6 +266,40 @@ getRequiredElementBlocks(std::vector<std::string> & eBlocks) const
 }
 
 template <typename TraitsT>
+class ResponseVolumeEvaluatorsFactory : public GenericEvaluatorFactory {
+  typedef std::vector<Teuchos::RCP<ResponseContainerBase<TraitsT> > > RespContVector;
+
+  Teuchos::ParameterList userData_;
+  std::map<std::string,Teuchos::RCP<RespContVector> > rsvdVolResp_;
+
+public:
+   ResponseVolumeEvaluatorsFactory(const Teuchos::ParameterList & userData,
+                                   const std::map<std::string,Teuchos::RCP<RespContVector> > & rsvdVolResp)
+     : userData_(userData), rsvdVolResp_(rsvdVolResp) {}
+
+   bool registerEvaluators(PHX::FieldManager<TraitsT> & fm, const PhysicsBlock & pb) const
+   {
+      // verify that block is relevant
+      std::string blockId = pb.elementBlockID();
+      typename std::map<std::string,Teuchos::RCP<RespContVector> >::const_iterator contItr = rsvdVolResp_.find(blockId);
+      if(contItr==rsvdVolResp_.end())
+         return false;
+      RespContVector & contVector = *contItr->second;
+
+      for(std::size_t i=0;i<contVector.size();i++) {
+         // if container has not been constructed, don't register responses
+         if(contVector[i]==Teuchos::null) 
+            continue;
+
+         // build and register new field manager
+         contVector[i]->registerResponses(fm,pb,userData_);
+      }
+
+      return true;
+   }
+};
+
+template <typename TraitsT>
 void ResponseLibrary<TraitsT>::
 buildVolumeFieldManagersFromResponses(
                         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
@@ -263,59 +309,21 @@ buildVolumeFieldManagersFromResponses(
                         const bool write_graphviz_file,
                         const std::string& graphviz_file_prefix)
 {
-   using Teuchos::RCP;
-   using Teuchos::rcp;
+   ResponseVolumeEvaluatorsFactory<TraitsT> rvef(user_data,rsvdVolResp_);
 
+   // setup all volume field managers: pass in extra evaluator evaluator
+   fmb_->setWorksetContainer(wkstContainer_);
+   fmb_->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory_,user_data,rvef);
+
+   AssemblyEngine_TemplateBuilder builder(fmb_,linObjFactory_); 
+   ae_tm_.buildObjects(builder);
+
+   // load up appropriate volume field managers
    std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator blkItr;
-   for (blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr) {
-      RCP<panzer::PhysicsBlock> pb = *blkItr;
-      std::string blockId = pb->elementBlockID();
+   for(blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr) {
+      std::string blockId = (*blkItr)->elementBlockID();
 
-      // verify that block is relevant
-      typename std::map<std::string,Teuchos::RCP<RespContVector> >::iterator contItr = rsvdVolResp_.find(blockId);
-      if(contItr==rsvdVolResp_.end())
-         continue;
-      RespContVector & contVector = *contItr->second;
-  
-      // build a field manager object
-      Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm 
-            = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
-      
-      // Choose model sublist for this element block
-      std::string response_model_name = "Response Model";
-     
-      Teuchos::ParameterList tmp_user_data(user_data);
-      tmp_user_data.set<bool>("Ignore Scatter",true);
-  
-      // use the physics block to register evaluators
-      pb->buildAndRegisterEquationSetEvaluators(*fm, user_data);
-      pb->buildAndRegisterGatherAndOrientationEvaluators(*fm,*linObjFactory_, tmp_user_data);
-      pb->buildAndRegisterDOFProjectionsToIPEvaluators(*fm, tmp_user_data);
-      pb->buildAndRegisterScatterEvaluators(*fm,*linObjFactory_, tmp_user_data);
-      pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, closure_models, user_data);
-      if(closure_models.isSublist(response_model_name))
-         pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, response_model_name, closure_models, user_data);
-
-      for(std::size_t i=0;i<contVector.size();i++) {
-
-         // if container has not been constructed, don'ta register responses
-         if(contVector[i]==Teuchos::null) 
-            continue;
-
-         // build and register new field manager
-         contVector[i]->registerResponses(*fm,*pb,user_data);
-      }
-  
-      // build the setup data using passed in information
-      Traits::SetupData setupData;
-      setupData.worksets_ = wkstContainer_->getVolumeWorksets(blockId);
-  
-      fm->postRegistrationSetup(setupData);
-      
-      if (write_graphviz_file)
-        fm->writeGraphvizFile(graphviz_file_prefix+"Response_"+blockId);
-
-      volFieldManagers_[blockId] = fm;
+      volFieldManagers_[blockId] = fmb_->getVolumeFieldManager(blockId);
    }
 }
 
@@ -325,103 +333,23 @@ void ResponseLibrary<TraitsT>::
 evaluateVolumeFieldManagers(const panzer::AssemblyEngineInArgs & ae_in,
                             const Teuchos::Comm<int> & comm)
 {
-   int idx = Sacado::mpl::find<TypeSeq,EvalT>::value;
-
-   GlobalEvaluationDataContainer preEvalData;
-   preEvalData.addDataObject("Solution Gather Container",ae_in.ghostedContainer_);
-   ae_in.fillGlobalEvaluationDataContainer(preEvalData);
-
    typedef panzer::LinearObjContainer LOC;
-   linObjFactory_->globalToGhostContainer(*(ae_in.container_),*(ae_in.ghostedContainer_),LOC::X | LOC::DxDt);
+   const int idx = Sacado::mpl::find<TypeSeq,EvalT>::value;
 
-   // std::map<std::string,Teuchos::RCP<PHX::FieldManager<TraitsT> > >::iterator fm_itr;
+   linObjFactory_->globalToGhostContainer(*(ae_in.container_),*(ae_in.ghostedContainer_),LOC::X | LOC::DxDt);
+  
+   Teuchos::RCP<panzer::AssemblyEngine<EvalT> > ae = ae_tm_.getAsObject<EvalT>();
+   ae->evaluateVolume(ae_in);
+
    typename std::map<std::string,Teuchos::RCP<PHX::FieldManager<TraitsT> > >::iterator fm_itr;
    for(fm_itr=volFieldManagers_.begin();fm_itr!=volFieldManagers_.end();fm_itr++) {
      const std::string & eBlock = fm_itr->first;
-     Teuchos::RCP< PHX::FieldManager<TraitsT> > fm = fm_itr->second;
- 
-     fm->template preEvaluate<EvalT>(preEvalData);
 
-     // loop over all worksets
-     for(std::vector<panzer::Workset>::iterator wkst_itr=wkstContainer_->begin(eBlock);
-         wkst_itr!=wkstContainer_->end(eBlock);++wkst_itr) {
- 
-        panzer::Workset& workset = *wkst_itr;
-    
-        workset.ghostedLinContainer = ae_in.ghostedContainer_;
-        workset.linContainer = ae_in.container_;
-        workset.alpha = ae_in.alpha;
-        workset.beta = ae_in.beta;
-        workset.time = ae_in.time;
-        workset.evaluate_transient_terms = ae_in.evaluate_transient_terms;
- 
-        fm->template evaluateFields<EvalT>(workset);
-     }
- 
-     fm->template postEvaluate<EvalT>(0);
- 
      // perform global communication
      const RespContVector & contVector = *rsvdVolResp_.find(eBlock)->second;
-    
-     // if not container has been constructed, don't build
-     // a field manager
      if(contVector[idx]!=Teuchos::null) 
         contVector[idx]->globalReduction(comm);
    }
-}
-
-template <typename TraitsT>
-template <typename EvalT>
-void ResponseLibrary<TraitsT>::
-evaluateVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& worksets,
-                            const panzer::AssemblyEngineInArgs & ae_in,
-                            const Teuchos::Comm<int> & comm)
-{
-  int idx = Sacado::mpl::find<TypeSeq,EvalT>::value;
-
-  GlobalEvaluationDataContainer preEvalData;
-  preEvalData.addDataObject("Solution Gather Container",ae_in.ghostedContainer_);
-  ae_in.fillGlobalEvaluationDataContainer(preEvalData);
-
-  typedef panzer::LinearObjContainer LOC;
-  linObjFactory_->globalToGhostContainer(*(ae_in.container_),*(ae_in.ghostedContainer_),LOC::X | LOC::DxDt);
-
-  std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >::const_iterator itr;
-  for(itr=worksets.begin();itr!=worksets.end();++itr) {
-    const std::string & eBlock = itr->first;
-    std::vector<panzer::Workset> & w = *(itr->second);
-
-    Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = volFieldManagers_[eBlock];
-
-    if(fm!=Teuchos::null) {
-       fm->preEvaluate<EvalT>(preEvalData);
-   
-       // Loop over worksets in this element block
-       for (std::size_t i = 0; i < w.size(); ++i) {
-         panzer::Workset& workset = w[i];
-   
-         workset.ghostedLinContainer = ae_in.ghostedContainer_;
-         workset.linContainer = ae_in.container_;
-         workset.alpha = ae_in.alpha;
-         workset.beta = ae_in.beta;
-         workset.time = ae_in.time;
-         workset.evaluate_transient_terms = ae_in.evaluate_transient_terms;
-
-         fm->evaluateFields<EvalT>(workset);
-       }
-   
-       fm->postEvaluate<EvalT>(0);
-   
-       // perform global communication
-       const RespContVector & contVector = *rsvdVolResp_.find(eBlock)->second;
-   
-       // if not container has been constructed, don't build
-       // a field manager
-       if(contVector[idx]!=Teuchos::null) 
-          contVector[idx]->globalReduction(comm);
-    }
-  }
-
 }
 
 //! Write out all volume containers to a stream

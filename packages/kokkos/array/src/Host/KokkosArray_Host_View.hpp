@@ -68,13 +68,13 @@ void View< DataType , LayoutType , Host >::internal_private_create(
   const size_t count = Impl::ShapeMap<shape_type>::allocation_count( shape );
 
   oper_type::m_shape = shape ;
-  oper_type::m_ptr_on_device = (value_type *)
+  oper_type::m_ptr_on_device = (scalar_type *)
     memory_space::allocate( label ,
-                            typeid(value_type) ,
-                            sizeof(value_type) ,
+                            typeid(scalar_type) ,
+                            sizeof(scalar_type) ,
                             count );
 
-  Impl::HostParallelFill<value_type>( oper_type::m_ptr_on_device , 0 , count );
+  Impl::HostParallelFill<scalar_type>( oper_type::m_ptr_on_device , 0 , count );
 }
 
 } // namespace KokkosArray
@@ -302,7 +302,7 @@ template< class DataTypeDst , class LayoutDst ,
           class DataTypeSrc , class LayoutSrc >
 struct ViewDeepCopy< View< DataTypeDst , LayoutDst , Host > ,
                      View< DataTypeSrc , LayoutSrc , Host > ,
-                     true_type  /* Same value_type  */ ,
+                     true_type  /* Same scalar_type  */ ,
                      false_type /* Different layout_type */ ,
                      true_type  /* Same rank */ >
 {
@@ -323,7 +323,7 @@ template< class DataTypeDst , class LayoutDst ,
           class SameLayout >
 struct ViewDeepCopy< View< DataTypeDst , LayoutDst , Host > ,
                      View< DataTypeSrc , LayoutSrc , Host > ,
-                     false_type /* Different value_type  */ ,
+                     false_type /* Different scalar_type  */ ,
                      SameLayout /* Any layout */ ,
                      true_type  /* Same rank */ >
 {

@@ -65,9 +65,9 @@ public:
   typedef size_t size_type ;
 
   static void * allocate( const std::string    & label ,
-                          const std::type_info & value_type ,
-                          const size_t           value_size ,
-                          const size_t           value_count );
+                          const std::type_info & scalar_type ,
+                          const size_t           scalar_size ,
+                          const size_t           scalar_count );
 
 #if ! defined( __CUDA_ARCH__ )
   static void increment( const void * );
@@ -82,7 +82,7 @@ public:
   /*--------------------------------*/
 
   static 
-  size_t preferred_alignment( size_t value_size , size_t value_count );
+  size_t preferred_alignment( size_t scalar_size , size_t scalar_count );
 
   /*--------------------------------*/
 

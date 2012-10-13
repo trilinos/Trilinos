@@ -107,8 +107,6 @@ int ex_get_nodal_var_time (int   exoid,
   int status;
   int varid;
   size_t start[3], count[3];
-  float fdum;
-  char *cdum = 0; 
   char errmsg[MAX_ERR_LENGTH];
 
   beg_time_step--;
@@ -116,19 +114,11 @@ int ex_get_nodal_var_time (int   exoid,
   
   /* inquire previously defined variable */
   if (end_time_step < 0) {
-
     /* user is requesting the maximum time step;  we find this out using the
      * database inquire function to get the number of time steps;  the ending
      * time step number is 1 less due to 0 based array indexing in C
      */
-    if ((status = ex_inquire (exoid, EX_INQ_TIME, &end_time_step, &fdum, cdum)) != NC_NOERR) {
-      exerrval = status;
-      sprintf(errmsg,
-	      "Error: failed to get number of time steps in file id %d",
-	      exoid);
-      ex_err("ex_get_nodal_var_time",errmsg,exerrval);
-      return (EX_FATAL);
-    }
+    end_time_step = ex_inquire_int (exoid, EX_INQ_TIME);
   }
 
   end_time_step--;

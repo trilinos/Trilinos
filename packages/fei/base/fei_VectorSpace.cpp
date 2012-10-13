@@ -1,45 +1,10 @@
-/*
-// @HEADER
-// ************************************************************************
-//             FEI: Finite Element Interface to Linear Solvers
-//                  Copyright (2005) Sandia Corporation.
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation, the
-// U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Alan Williams (william@sandia.gov) 
-//
-// ************************************************************************
-// @HEADER
-*/
-
+/*--------------------------------------------------------------------*/
+/*    Copyright 2005 Sandia Corporation.                              */
+/*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
+/*    non-exclusive license for use of this work by or on behalf      */
+/*    of the U.S. Government.  Export of this program may require     */
+/*    a license from the United States Government.                    */
+/*--------------------------------------------------------------------*/
 
 #include "fei_sstream.hpp"
 #include "fei_fstream.hpp"
@@ -576,6 +541,21 @@ int fei::VectorSpace::initSharedIDs(int numShared,
   return(0);
 }
 
+int fei::VectorSpace::setOwners(int numShared, int idType, const int* sharedIDs, const int* owners)
+{
+  int idx = fei::binarySearch(idType, idTypes_);
+  if (idx < 0) ERReturn(-1);
+  for(int i=0; i<numShared; ++i) {
+    fei::Record<int>* rec = recordCollections_[idx]->getRecordWithID(sharedIDs[i]);
+    if (rec == NULL) {
+      throw std::runtime_error("shared id not found in setOwners");
+    }
+    rec->setOwnerProc(owners[i]);
+  }
+
+  return 0;
+}
+
 //----------------------------------------------------------------------------
 int fei::VectorSpace::addVectorSpace(fei::VectorSpace* inputSpace)
 {
@@ -647,7 +627,7 @@ fei::SharedIDs<int>& fei::VectorSpace::getSharedIDs(int idType)
 }
 
 //----------------------------------------------------------------------------
-void fei::VectorSpace::compute_shared_ids()
+void fei::VectorSpace::compute_shared_ids(const std::vector<int>& global_min, const std::vector<int>& global_max)
 {
   //For each ID-type, call the fei::set_shared_ids function, which
   //takes a RecordCollection as input and fills a SharedIDs object
@@ -657,7 +637,7 @@ void fei::VectorSpace::compute_shared_ids()
     snl_fei::RecordCollection* records = recordCollections_[i];
     fei::SharedIDs<int>& shIDs = getSharedIDs(idTypes_[i]);
 
-    fei::set_shared_ids(comm_, *records, shIDs);
+    fei::set_shared_ids(comm_, *records, shIDs, global_min[i], global_max[i]);
   }
 }
 
@@ -671,10 +651,19 @@ int fei::VectorSpace::initComplete()
 
   simpleProblem_ = (fieldMasks_.size()==1) && (fieldMasks_[0]->getNumFields()==1);
 
+  std::vector<int> local_data(recordCollections_.size()+1);
+  for(size_t i=0; i<recordCollections_.size(); ++i) {
+    local_data[i] = recordCollections_[i]->getMaxID();
+  }
+
+  std::vector<int> global_max_data(recordCollections_.size()+1, 0);
+
   //we need to know if any processor has newInitData_.
   int localInitData = newInitData_ ? 1 : 0;
-  int globalInitData = 0;
-  CHK_ERR( fei::GlobalMax(comm_, localInitData, globalInitData) );
+  local_data[local_data.size()-1] = localInitData;
+
+  CHK_ERR( fei::GlobalMax(comm_, local_data, global_max_data) );
+  int globalInitData = global_max_data[global_max_data.size()-1];
   newInitData_ = globalInitData > 0 ? true : false;
 
   if (!newInitData_) {
@@ -690,18 +679,28 @@ int fei::VectorSpace::initComplete()
     need_to_compute_shared_ids = true;
   }
 
+  for(size_t i=0; i<recordCollections_.size(); ++i) {
+    local_data[i] = recordCollections_[i]->getMinID();
+  }
   int localNeedToCompute = need_to_compute_shared_ids ? 1 : 0;
-  int globalNeedToCompute = 0;
-  CHK_ERR( fei::GlobalMin(comm_, localNeedToCompute, globalNeedToCompute) );
+  local_data[local_data.size()-1] = localNeedToCompute;
+
+  std::vector<int> global_min_data(recordCollections_.size()+1);
+  CHK_ERR( fei::GlobalMin(comm_, local_data, global_min_data) );
+  int globalNeedToCompute = global_min_data[global_min_data.size()-1];
   need_to_compute_shared_ids = globalNeedToCompute==1 ? true : false;
   if (need_to_compute_shared_ids) {
-    compute_shared_ids();
+    compute_shared_ids(global_min_data, global_max_data);
   }
 
-  //setOwners_lowestSharing is a local operation (no communication), which
+  //setOwners_shared is a local operation (no communication), which
   //assumes that each processor holds CORRECT (globally symmetric)
   //shared-id/sharing-proc tables. No correctness-checking is performed here.
-  setOwners_lowestSharing();
+  setOwners_shared();
+
+  for(size_t i=0; i<recordCollections_.size(); ++i) {
+    recordCollections_[i]->setOwners_local();
+  }
 
   //synchronizeSharedRecords ensures that each sharing processor has the same
   //view of the shared records, with respect to the layout of fields, which
@@ -1473,11 +1472,18 @@ int fei::VectorSpace::getOwnedAndSharedIDs(int idType,
   if (idx < 0) return(-1);
 
   snl_fei::RecordCollection* records = recordCollections_[idx];
-  const std::vector<fei::Record<int> >& rvec = records->getRecords();
-  int len = rvec.size();
+  std::map<int,int>& global_to_local = records->getGlobalToLocalMap();
+  std::map<int,int>::iterator
+    it = global_to_local.begin(),
+    end = global_to_local.end();
+  numLocalIDs = records->getNumRecords();
+  int len = numLocalIDs;
   if (lenList < len) len = lenList;
-  for(int i=0; i<len; ++i) {
-    IDs[i] = rvec[i].getID();
+  int i=0;
+  for(; it!=end; ++it) {
+    int local_id = it->second;
+    IDs[i++] = records->getRecordWithLocalID(local_id)->getID();
+    if (i >= len) break;
   }
 
   return(0);
@@ -1493,19 +1499,26 @@ int fei::VectorSpace::getOwnedIDs(int idType,
   if (idx < 0) return(-1);
 
   snl_fei::RecordCollection* records = recordCollections_[idx];
-  std::vector<fei::Record<int> >& rvec = records->getRecords();
-  int len = rvec.size();
-  int numOwned = 0;
-  for(int i=0; i<len; ++i) {
-    fei::Record<int>& thisrecord = rvec[i];
+
+  std::map<int,int>& global_to_local = records->getGlobalToLocalMap();
+  std::map<int,int>::iterator
+    it = global_to_local.begin(),
+    end = global_to_local.end();
+
+  numLocalIDs = 0;
+
+  for(; it!=end; ++it) {
+    fei::Record<int>& thisrecord = *records->getRecordWithLocalID(it->second);
 
     if (thisrecord.getOwnerProc() == fei::localProc(comm_)) {
-      IDs[numOwned++] = thisrecord.getID();
+      if (numLocalIDs < lenList) {
+        IDs[numLocalIDs] = thisrecord.getID();
+      }
+      ++numLocalIDs;
     }
-    if (numOwned == lenList) break;
   }
 
-  return 0;
+  return(0);
 }
 
 //----------------------------------------------------------------------------
@@ -1695,7 +1708,7 @@ int fei::VectorSpace::getRecordCollection(int idType,
 }
 
 //----------------------------------------------------------------------------
-void fei::VectorSpace::setOwners_lowestSharing()
+void fei::VectorSpace::setOwners_shared()
 {
   //first, add localProc to each of the sharing-proc lists, in case it wasn't
   //included via initSharedIDs().
@@ -2023,9 +2036,13 @@ void fei::VectorSpace::runRecords(fei::Record_Operator<int>& record_op)
 {
   for(size_t rec=0; rec<recordCollections_.size(); ++rec) {
     snl_fei::RecordCollection* records = recordCollections_[rec];
-    std::vector<fei::Record<int> >& rvec = records->getRecords();
-    for(size_t i=0; i<rvec.size(); ++i) {
-      fei::Record<int>& thisrecord = rvec[i];
+    std::map<int,int>& g2l = records->getGlobalToLocalMap();
+    std::map<int,int>::iterator
+      it = g2l.begin(),
+      end= g2l.end();
+
+    for(; it!=end; ++it) {
+      fei::Record<int>& thisrecord = *records->getRecordWithLocalID(it->second);
 
       record_op(thisrecord);
     }
@@ -2078,12 +2095,14 @@ int fei::VectorSpace::setLocalEqnNumbers()
   for(size_t rec=0; rec<recordCollections_.size(); ++rec) {
     snl_fei::RecordCollection* records = recordCollections_[rec];
 
-    std::vector<fei::Record<int> >& rvec = records->getRecords();
+    const std::map<int,int>& rmap = records->getGlobalToLocalMap();
+    std::map<int,int>::const_iterator
+      it = rmap.begin(), it_end = rmap.end();
 
     int* eqnNumPtr = &eqnNumbers_[0];
 
-    for(size_t i=0; i<rvec.size(); ++i) {
-      fei::Record<int>& thisrecord = rvec[i];
+    for(; it!=it_end; ++it) {
+      fei::Record<int>& thisrecord = *records->getRecordWithLocalID(it->second);
 
       fei::FieldMask* mask = thisrecord.getFieldMask();
 

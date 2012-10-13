@@ -125,6 +125,9 @@ namespace Xpetra {
     //! Returns true if fillComplete() has been called.
     virtual bool isFillComplete() const = 0;
 
+    //! Returns true if getLocalRowView() and getGlobalRowView() are valid for this class.
+    virtual bool supportsRowViews() const = 0;
+
     //@}
 
     //! @name Extraction Methods

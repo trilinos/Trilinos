@@ -126,8 +126,8 @@ template< class DstView ,
           class SrcView ,
           class SameValue =
             typename ViewDeepCopyValueCompatible<
-              typename DstView::value_type ,
-              typename SrcView::value_type >::type ,
+              typename DstView::scalar_type ,
+              typename SrcView::scalar_type >::type ,
           class SameLayout = typename
             is_same< typename DstView::array_layout ,
                      typename SrcView::array_layout >::type ,
@@ -141,7 +141,7 @@ template< class DataDst , class LayoutDst , class DeviceDst ,
           class DataSrc , class LayoutSrc , class DeviceSrc >
 struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst > ,
                      View< DataSrc , LayoutSrc , DeviceSrc > ,
-                     true_type /* Same value_type   */ ,
+                     true_type /* Same scalar_type   */ ,
                      true_type /* Same array_layout */ ,
                      true_type /* Same rank */ >
 {
@@ -156,7 +156,7 @@ struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst > ,
     if ( dst != src ) {
       assert_shapes_are_equal( dst.shape() , src.shape() );
 
-      DeepCopy< typename dst_type::value_type ,
+      DeepCopy< typename dst_type::scalar_type ,
                 typename DeviceDst::memory_space ,
                 typename DeviceSrc::memory_space > (
         dst.ptr_on_device() ,

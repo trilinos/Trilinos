@@ -113,6 +113,7 @@ class Epetra_Distributor {
 			       int *& ExportGIDs,
 			       int *& ExportPIDs) = 0;
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   virtual int CreateFromRecvs( const int & NumRemoteIDs,
                                const long long * RemoteGIDs,
 			       const int * RemotePIDs,
@@ -120,6 +121,7 @@ class Epetra_Distributor {
 			       int & NumExportIDs,
 			       long long *& ExportGIDs,
 			       int *& ExportPIDs) = 0;
+#endif
   //@}
 
   //! @name Execute Gather/Scatter Operations (Constant size objects)

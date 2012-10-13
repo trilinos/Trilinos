@@ -191,8 +191,11 @@ namespace Xpetra {
     //! Returns the Frobenius norm of the matrix.
     typename ScalarTraits< Scalar >::magnitudeType getFrobeniusNorm() const { XPETRA_MONITOR("TpetraCrsMatrix::getFrobeniusNorm"); return mtx_->getFrobeniusNorm(); }
 
-    //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
-    void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const { XPETRA_MONITOR("TpetraCrsMatrix::getLocalRowCopy"); mtx_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries); }
+    //! Returns true if getLocalRowView() and getGlobalRowView() are valid for this class.
+    bool supportsRowViews() const { XPETRA_MONITOR("TpetraCrsMatrix::supportsRowViews"); return mtx_->supportsRowViews(); }
+
+//     //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
+//     void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const { XPETRA_MONITOR("TpetraCrsMatrix::getLocalRowCopy"); mtx_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries); }
 
     //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
     void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &indices, ArrayView< const Scalar > &values) const { XPETRA_MONITOR("TpetraCrsMatrix::getGlobalRowView"); mtx_->getGlobalRowView(GlobalRow, indices, values); }
@@ -202,7 +205,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name Methods implementing Matrix
+    //! @name Methods implementing Operator
     //@{
 
     //! Computes the sparse matrix-multivector multiplication.
@@ -224,6 +227,14 @@ namespace Xpetra {
 
     //! Print the object with some verbosity level to an FancyOStream object.
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { XPETRA_MONITOR("TpetraCrsMatrix::describe"); mtx_->describe(out, verbLevel); }
+
+    //@}
+
+    //! @name Extraction Methods
+    //@{
+
+    //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
+    void getLocalRowCopy(LocalOrdinal LocalRow, const Teuchos::ArrayView< LocalOrdinal > &Indices, const Teuchos::ArrayView< Scalar > &Values, size_t &NumEntries) const { XPETRA_MONITOR("TpetraCrsMatrix::getLocalRowCopy"); mtx_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries); }
 
     //@}
 

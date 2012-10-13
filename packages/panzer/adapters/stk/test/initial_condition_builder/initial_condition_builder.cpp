@@ -91,7 +91,7 @@ namespace panzer {
     user_app::BCFactory bc_factory;
     const std::size_t workset_size = 20;
 
-    panzer::FieldManagerBuilder<int,int> fmb;
+    panzer::FieldManagerBuilder fmb;
 
     // setup mesh
     /////////////////////////////////////////////
@@ -189,8 +189,9 @@ namespace panzer {
     user_data.sublist("Panzer Data").set("DOF Manager", dofManager);
     user_data.sublist("Panzer Data").set("Linear Object Factory", lof);
 
-    fmb.setupVolumeFieldManagers(*wkstContainer,physics_blocks,cm_factory,closure_models,*elof,user_data);
-    fmb.setupBCFieldManagers(*wkstContainer,bcs,physics_blocks,eqset_factory,cm_factory,bc_factory,closure_models,*elof,user_data);
+    fmb.setWorksetContainer(wkstContainer);
+    fmb.setupVolumeFieldManagers(physics_blocks,cm_factory,closure_models,*elof,user_data);
+    fmb.setupBCFieldManagers(bcs,physics_blocks,eqset_factory,cm_factory,bc_factory,closure_models,*elof,user_data);
 
     Teuchos::ParameterList ic_closure_models("Initial Conditions");
     ic_closure_models.sublist("eblock-0_0").sublist("TEMPERATURE").set<double>("Value",3.0);
@@ -214,7 +215,7 @@ namespace panzer {
     elof->initializeContainer(panzer::EpetraLinearObjContainer::X,*loc);
     Teuchos::RCP<panzer::EpetraLinearObjContainer> eloc = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
     eloc->get_x()->PutScalar(0.0);
-    panzer::evaluateInitialCondition(fmb.getWorksets(), phx_ic_field_managers, loc, 0.0);
+    panzer::evaluateInitialCondition(*wkstContainer->getVolumeWorksets(), phx_ic_field_managers, loc, 0.0);
     
     Teuchos::RCP<Epetra_Vector> x = eloc->get_x();
     for (int i=0; i < x->MyLength(); ++i)

@@ -40,14 +40,18 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_FIELD_MANAGER_BUILDER_IMPL_HPP
-#define PANZER_FIELD_MANAGER_BUILDER_IMPL_HPP
-
 #include <vector>
 #include <string>
 #include <sstream>
+
+#include "Panzer_FieldManagerBuilder.hpp"
+
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldManager.hpp"
+
+#include "Teuchos_FancyOStream.hpp"
+
+#include "Shards_CellTopology.hpp"
 
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_ConnManager.hpp"
@@ -59,9 +63,7 @@
 #include "Panzer_BCStrategy_Factory.hpp"
 #include "Panzer_BCStrategy_TemplateManager.hpp"
 #include "Panzer_CellData.hpp"
-#include "Shards_CellTopology.hpp"
 #include "Panzer_InputPhysicsBlock.hpp"
-#include "Teuchos_FancyOStream.hpp"
 #include "Panzer_StlMap_Utilities.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 
@@ -69,26 +71,27 @@
 
 //=======================================================================
 //=======================================================================
-template<typename LO, typename GO>
-void panzer::FieldManagerBuilder<LO,GO>::print(std::ostream& os) const
+void panzer::FieldManagerBuilder::print(std::ostream& os) const
 {
-  os << "panzer::FieldManagerBuilder<LO,GO> output:  Not implemented yet!";
+  os << "panzer::FieldManagerBuilder output:  Not implemented yet!";
 }
 
 //=======================================================================
-//=======================================================================
-template<typename LO, typename GO>
-void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(WorksetContainer & wkstContainer, 
+void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
                                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks, 
 					    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
 					    const Teuchos::ParameterList& closure_models,
                                             const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
-					    const Teuchos::ParameterList& user_data)
+					    const Teuchos::ParameterList& user_data,
+                                            const GenericEvaluatorFactory & gEvalFact)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  worksets_.clear();
+  TEUCHOS_TEST_FOR_EXCEPTION(getWorksetContainer()==Teuchos::null,std::logic_error,
+                            "panzer::FMB::setupVolumeFieldManagers: method function getWorksetContainer() returns null. "
+                            "Plase call setWorksetContainer() before calling this method");
+
   phx_volume_field_managers_.clear();
 
   std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator blkItr;
@@ -104,26 +107,40 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(WorksetContain
     pb->buildAndRegisterEquationSetEvaluators(*fm, user_data);
     pb->buildAndRegisterGatherAndOrientationEvaluators(*fm,lo_factory,user_data);
     pb->buildAndRegisterDOFProjectionsToIPEvaluators(*fm,user_data);
-    pb->buildAndRegisterScatterEvaluators(*fm,lo_factory,user_data);
+    if(!physicsBlockScatterDisabled())
+      pb->buildAndRegisterScatterEvaluators(*fm,lo_factory,user_data);
     pb->buildAndRegisterClosureModelEvaluators(*fm,cm_factory,closure_models,user_data);
+ 
+    // register additional model evaluator from the generic evaluator factory
+    gEvalFact.registerEvaluators(*fm,*pb);
 
     // build the setup data using passed in information
     Traits::SetupData setupData;
-    setupData.worksets_ = wkstContainer.getVolumeWorksets(blockId);
+    setupData.worksets_ = getWorksetContainer()->getVolumeWorksets(blockId);
     fm->postRegistrationSetup(setupData);
 
     // make sure to add the field manager & workset to the list 
-    worksets_.push_back(setupData.worksets_);
+    element_block_names_.push_back(blockId);
     phx_volume_field_managers_.push_back(fm); 
   }
 }
 
 //=======================================================================
+void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
+                                            const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks, 
+					    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+					    const Teuchos::ParameterList& closure_models,
+                                            const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
+					    const Teuchos::ParameterList& user_data)
+{
+   EmptyEvaluatorFactory eef;
+   setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,lo_factory,user_data,eef);
+}
+
 //=======================================================================
-template<typename LO, typename GO>
-void panzer::FieldManagerBuilder<LO,GO>::
-setupBCFieldManagers(WorksetContainer & wkstContainer,
-                     const std::vector<panzer::BC> & bcs,
+//=======================================================================
+void panzer::FieldManagerBuilder::
+setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
                      const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
 	             const panzer::EquationSetFactory & eqset_factory,
                      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
@@ -132,6 +149,10 @@ setupBCFieldManagers(WorksetContainer & wkstContainer,
                      const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
                      const Teuchos::ParameterList& user_data)
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(getWorksetContainer()==Teuchos::null,std::logic_error,
+                            "panzer::FMB::setupBCFieldManagers: method function getWorksetContainer() returns null. "
+                            "Plase call setWorksetContainer() before calling this method");
+
   // for convenience build a map (element block id => physics block)
   std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks_map;
   {
@@ -155,11 +176,9 @@ setupBCFieldManagers(WorksetContainer & wkstContainer,
     Teuchos::RCP<const shards::CellTopology> volume_cell_topology = volume_pb->cellData().getCellTopology();
     int base_cell_dimension = volume_pb->cellData().baseCellDimension();
     
-    Teuchos::RCP<std::map<unsigned,panzer::Workset> > currentWkst = wkstContainer.getSideWorksets(*bc);
+    Teuchos::RCP<std::map<unsigned,panzer::Workset> > currentWkst = getWorksetContainer()->getSideWorksets(*bc);
     if(currentWkst==Teuchos::null) // if there is nothing to do...do nothing!
        continue;
-
-    bc_worksets_[*bc] = currentWkst;
 
     // Build one FieldManager for each local side workset for each dirichlet bc
     std::map<unsigned,PHX::FieldManager<panzer::Traits> >& field_managers = 
@@ -167,7 +186,7 @@ setupBCFieldManagers(WorksetContainer & wkstContainer,
 
     // Loop over local face indices and setup each field manager
     for (std::map<unsigned,panzer::Workset>::const_iterator wkst = 
-	   bc_worksets_[*bc]->begin(); wkst != bc_worksets_[*bc]->end();
+	 currentWkst->begin(); wkst != currentWkst->end();
 	 ++wkst) {
 
       PHX::FieldManager<panzer::Traits>& fm = field_managers[wkst->first];
@@ -188,7 +207,9 @@ setupBCFieldManagers(WorksetContainer & wkstContainer,
 	     bcs_type = bcs->begin(); bcs_type != bcs->end(); ++bcs_type) {
 	bcs_type->setup(*side_pb,user_data);
 	bcs_type->buildAndRegisterEvaluators(fm,*side_pb,cm_factory,closure_models,user_data);
-	bcs_type->buildAndRegisterGatherScatterEvaluators(fm,*side_pb,lo_factory,user_data);
+	bcs_type->buildAndRegisterGatherAndOrientationEvaluators(fm,*side_pb,lo_factory,user_data);
+        if(!physicsBlockScatterDisabled())
+  	  bcs_type->buildAndRegisterScatterEvaluators(fm,*side_pb,lo_factory,user_data);
       }
 
       // Setup the fieldmanager
@@ -205,8 +226,7 @@ setupBCFieldManagers(WorksetContainer & wkstContainer,
 
 //=======================================================================
 //=======================================================================
-template<typename LO, typename GO>
-void panzer::FieldManagerBuilder<LO,GO>::
+void panzer::FieldManagerBuilder::
 writeVolumeGraphvizDependencyFiles(std::string filename_prefix,
 				   const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks) const
 {  
@@ -221,11 +241,8 @@ writeVolumeGraphvizDependencyFiles(std::string filename_prefix,
 
 //=======================================================================
 //=======================================================================
-template<typename LO, typename GO>
-std::ostream& panzer::operator<<(std::ostream& os, const panzer::FieldManagerBuilder<LO,GO>& rfd)
+std::ostream& panzer::operator<<(std::ostream& os, const panzer::FieldManagerBuilder& rfd)
 {
   rfd.print(os);
   return os;
 }
-
-#endif

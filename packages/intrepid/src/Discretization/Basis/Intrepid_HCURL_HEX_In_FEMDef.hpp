@@ -64,6 +64,20 @@ namespace Intrepid {
     this -> basisType_         = BASIS_FEM_FIAT;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
+
+    Array<Array<RCP<Basis<Scalar,ArrayScalar > > > > bases(3);
+    bases[0].resize(3); bases[1].resize(3); bases[2].resize(3);
+    bases[0][0] = rcp( &openBasis_ , false );
+    bases[0][1] = rcp( &closedBasis_ , false );
+    bases[0][2] = rcp( &closedBasis_ , false );
+    bases[1][0] = rcp( &closedBasis_ , false );
+    bases[1][1] = rcp( &openBasis_ , false );
+    bases[1][2] = rcp( &closedBasis_ , false );
+    bases[2][0] = rcp( &closedBasis_ , false );
+    bases[2][1] = rcp( &closedBasis_ , false );
+    bases[2][2] = rcp( &openBasis_ , false );
+    this->setBases( bases );
+
   }
 
   template<class Scalar, class ArrayScalar>
@@ -100,6 +114,20 @@ namespace Intrepid {
 								0 ,
 								POINTTYPE_EQUISPACED );
       }
+
+    Array<Array<RCP<Basis<Scalar,ArrayScalar > > > > bases(3);
+    bases[0].resize(3); bases[1].resize(3); bases[2].resize(3);
+    bases[0][0] = rcp( &openBasis_ , false );
+    bases[0][1] = rcp( &closedBasis_ , false );
+    bases[0][2] = rcp( &closedBasis_ , false );
+    bases[1][0] = rcp( &closedBasis_ , false );
+    bases[1][1] = rcp( &openBasis_ , false );
+    bases[1][2] = rcp( &closedBasis_ , false );
+    bases[2][0] = rcp( &closedBasis_ , false );
+    bases[2][1] = rcp( &closedBasis_ , false );
+    bases[2][2] = rcp( &openBasis_ , false );
+    this->setBases( bases );
+
   }
   
   template<class Scalar, class ArrayScalar>

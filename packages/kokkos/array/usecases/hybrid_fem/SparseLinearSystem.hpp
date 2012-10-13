@@ -73,7 +73,7 @@ struct CrsMatrix {
   typedef ScalarType  value_type ;
 
   typedef CrsArray< int , device_type , device_type , int >  graph_type ;
-  typedef View< value_type[] , device_type >   coefficients_type ;
+  typedef View< value_type* , device_type >   coefficients_type ;
 
   graph_type         graph ;
   coefficients_type  coefficients ;
@@ -84,10 +84,10 @@ struct CrsMatrix {
 template< typename Scalar , class Device >
 void waxpby( const ParallelDataMap & data_map ,
              const double alpha ,
-             const View< Scalar[] , Device > & x ,
+             const View< Scalar* , Device > & x ,
              const double beta ,
-             const View< Scalar[] , Device > & y ,
-             const View< Scalar[] , Device > & w )
+             const View< Scalar* , Device > & y ,
+             const View< Scalar* , Device > & w )
 {
   if ( y == w ) {
     Impl::AXPBY<Scalar,Device>::apply( data_map.count_owned , alpha , x , beta , y );
@@ -99,7 +99,7 @@ void waxpby( const ParallelDataMap & data_map ,
 
 template< typename Scalar , class Device >
 void fill( const double alpha ,
-           const View< Scalar[] , Device > & w )
+           const View< Scalar* , Device > & w )
 {
   Impl::FILL<Scalar,Device>::apply( w.dimension_0() , alpha , w );
 }
@@ -108,8 +108,8 @@ void fill( const double alpha ,
 
 template< typename Scalar , class Device >
 double dot( const ParallelDataMap & data_map ,
-            const View< Scalar[] , Device > & x ,
-            const View< Scalar[] , Device > & y )
+            const View< Scalar* , Device > & x ,
+            const View< Scalar* , Device > & y )
 {
   double global_result =
     Impl::Dot< Scalar , Device , Impl::unsigned_<2> >
@@ -129,7 +129,7 @@ double dot( const ParallelDataMap & data_map ,
 
 template< typename Scalar , class Device >
 double dot( const ParallelDataMap & data_map ,
-            const View< Scalar[] , Device > & x )
+            const View< Scalar* , Device > & x )
 {
   double global_result = 
     Impl::Dot< Scalar , Device , Impl::unsigned_<1> >
@@ -154,7 +154,7 @@ template< typename AScalarType ,
           class Device >
 class Operator {
   typedef CrsMatrix<AScalarType,Device>  matrix_type ;
-  typedef View<VScalarType[],Device>     vector_type ;
+  typedef View<VScalarType*,Device>     vector_type ;
 
 private:
   const CrsMatrix<AScalarType,Device> A ;
@@ -171,8 +171,8 @@ public:
     , exchange( arg_data_map , 1 )
     {}
 
-  void apply( const View<VScalarType[],Device>  & x ,
-              const View<VScalarType[],Device>  & y )
+  void apply( const View<VScalarType*,Device>  & x ,
+              const View<VScalarType*,Device>  & y )
   {
     // Gather off-processor data for 'x'
 
@@ -204,15 +204,15 @@ template< typename AScalarType , typename VScalarType , class Device >
 void cgsolve(
   const ParallelDataMap                 data_map ,
   const CrsMatrix<AScalarType,Device>   A ,
-  const View<VScalarType[],Device> b ,
-  const View<VScalarType[],Device> x ,
+  const View<VScalarType*,Device> b ,
+  const View<VScalarType*,Device> x ,
   size_t & iteration ,
   double & normr ,
   double & iter_time ,
   const size_t maximum_iteration = 200 ,
   const double tolerance = std::numeric_limits<VScalarType>::epsilon() )
 {
-  typedef View<VScalarType[],Device> vector_type ;
+  typedef View<VScalarType*,Device> vector_type ;
   typedef View<VScalarType,  Device> value_type ;
 
   const size_t count_owned = data_map.count_owned ;

@@ -1,0 +1,7 @@
+<ParameterList name="MultiLevelPreconditioner">
+  <Parameter name="ML output"        type="int"    value="10"/>
+  <Parameter name="max levels"       type="int"    value="2"/>
+  <Parameter name="smoother: type"   type="string" value="symmetric Gauss-Seidel"/>
+  <Parameter name="smoother: sweeps" type="int"    value="2"/>
+  <Parameter name="coarse: type"     type="string" value="Amesos-KLU"/>
+</ParameterList>

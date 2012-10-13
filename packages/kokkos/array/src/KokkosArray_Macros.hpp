@@ -85,7 +85,13 @@ struct Restrict_Function_To_Device
  *  identifying compilation for 'compute_XY' architecture.
  */
 
-#define KOKKOSARRAY_CHECK_EXPR(expr) do{/*expr;*/}while(false)
+#define KOKKOSARRAY_RESTRICT_CODE_TO_DEVICE
+
+/*  If compiling for device code cannot do expression checking */
+
+#if defined( KOKKOSARRAY_EXPRESSION_CHECK )
+#undef  KOKKOSARRAY_EXPRESSION_CHECK
+#endif
 
 /*  Compile-time restriction that code is being compiled with Cuda compiler
  *  to run on the Cuda device.
@@ -105,12 +111,6 @@ struct Restrict_Function_To_Device<KokkosArray::Cuda>
 
 /*  Compiling with CUDA compiler for host code. */
 
-#ifdef  KOKKOSARRAY_EXPRESSION_CHECK
-#define KOKKOSARRAY_CHECK_EXPR(expr) do{expr;}while(false)
-#else
-#define KOKKOSARRAY_CHECK_EXPR(expr) do{/*expr;*/}while(false)
-#endif
-
 #endif
 
 //----------------------------------------------------------------------------
@@ -126,24 +126,16 @@ struct Restrict_Function_To_Device<KokkosArray::Cuda>
 #define KOKKOSARRAY_INLINE_FUNCTION         inline
 #define KOKKOSARRAY_INLINE_DEVICE_FUNCTION  inline
 
-#ifdef  KOKKOSARRAY_EXPRESSION_CHECK
-#define KOKKOSARRAY_CHECK_EXPR(expr) do{expr;}while(false)
-#else
-#define KOKKOSARRAY_CHECK_EXPR(expr) do{/*expr;*/}while(false)
-#endif
+#define KOKKOSARRAY_RESTRICT_CODE_TO_DEVICE
 
 //----------------------------------------------------------------------------
 
 #else //on host
 
-#define KOKKOSARRAY_INLINE_FUNCTION inline
-#define KOKKOSARRAY_INLINE_DEVICE_FUNCTION inline
+#define KOKKOSARRAY_INLINE_FUNCTION         inline
+#define KOKKOSARRAY_INLINE_DEVICE_FUNCTION  inline
 
-#ifdef  KOKKOSARRAY_EXPRESSION_CHECK
-#define KOKKOSARRAY_CHECK_EXPR(expr) do{expr;}while(false)
-#else
-#define KOKKOSARRAY_CHECK_EXPR(expr) do{/*expr;*/}while(false)
-#endif
+#define KOKKOSARRAY_RESTRICT_CODE_TO_DEVICE
 
 namespace KokkosArray { namespace Impl {
 
@@ -155,5 +147,14 @@ struct Restrict_Function_To_Device<KokkosArray::Host>
 
 #endif
 
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#ifdef  KOKKOSARRAY_EXPRESSION_CHECK
+#define KOKKOSARRAY_CHECK_EXPR(expr) do{expr;}while(false)
+#else
+#define KOKKOSARRAY_CHECK_EXPR(expr) do{/*expr;*/}while(false)
+#endif
 
 #endif // KOKKOSARRAY_MACROS_HPP
+

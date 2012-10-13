@@ -154,7 +154,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
       int numIndices = 0;
 
       // Take degree of freedom in middle of mesh: Then look at ghosted graph
-      int err = gGraph->ExtractGlobalRowCopy(2,10,numIndices,&indices[0]);
+      int err = gGraph->ExtractGlobalRowCopy(3,10,numIndices,&indices[0]);
       TEST_EQUALITY(err,0);
 
       indices.resize(numIndices);
@@ -184,7 +184,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
          TEST_EQUALITY(numIndices,6); 
 
          std::vector<int> compare(6);
-         compare[0] = 1; compare[1] = 2; compare[2] = 4;
+         compare[0] = 1; compare[1] = 3; compare[2] = 5;
          compare[3] = 6; compare[4] = 7; compare[5] = 8;
          
          TEST_EQUALITY(compare.size(),indices.size());

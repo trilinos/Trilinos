@@ -125,7 +125,7 @@ struct ShapeMap< Shape<LayoutRight,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> >
     const size_t block_count = shape.N1 * shape.N2 * shape.N3 *
                                shape.N4 * shape.N5 * shape.N6 * shape.N7 ;
 
-    return MemorySpace::preferred_alignment( shape.value_size , block_count );
+    return MemorySpace::preferred_alignment( shape.scalar_size , block_count );
   }
 };
 

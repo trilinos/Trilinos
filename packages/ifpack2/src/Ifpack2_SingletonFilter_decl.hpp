@@ -147,6 +147,8 @@ public:
   //! Returns \c true if fillComplete() has been called.
   virtual bool isFillComplete() const;
   
+  //! Returns \c true if RowViews are supported.
+  virtual bool supportsRowViews() const;  
 
   //@}
   

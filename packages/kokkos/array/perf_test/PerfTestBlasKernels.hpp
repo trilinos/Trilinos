@@ -185,7 +185,7 @@ struct DotSingle
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
   void operator()( int i , value_type & update ) const
     {
-      const typename Type::value_type x = X[i]; update += x * x ;
+      const typename Type::scalar_type x = X[i]; update += x * x ;
     }
 
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION

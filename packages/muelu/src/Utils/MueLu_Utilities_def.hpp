@@ -77,6 +77,8 @@
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 
+#include <XpetraExt_MatrixMatrix.hpp>  // standard matrix matrix routines
+
 #include <MueLu_Utilities_decl.hpp>
 
 #ifdef HAVE_MUELU_ML
@@ -275,82 +277,33 @@ t0 = MPI_Wtime();
 
     if (C->getRowMap()->lib() == Xpetra::UseEpetra)
       {
-#       ifndef HAVE_MUELU_EPETRAEXT
+      // check first for EpetraExt since this is the MatrixMatrix multiplication which
+      // can handle all cases
+#ifndef HAVE_MUELU_EPETRAEXT
         throw(Exceptions::RuntimeError("MueLu::TwoMatrixMultiply requires EpetraExt to be compiled."));
-#       else
-        RCP<Epetra_CrsMatrix> epA = Op2NonConstEpetraCrs(A);
-        RCP<Epetra_CrsMatrix> epB = Op2NonConstEpetraCrs(B);
-        RCP<Epetra_CrsMatrix> epC = Op2NonConstEpetraCrs(C);
-
+#else
         //ML's multiply cannot implicitly tranpose either matrix.
         int canUseML=1;
         if (transposeA || transposeB)
           canUseML=0;
 
         switch (canUseML) {
-
         case true:
           //if ML is not enabled, this case falls through to the EpetraExt multiply.
 #ifdef HAVE_MUELU_ML
           {
-//#define USE_JHU_ML_MULTIPLY
-#ifdef USE_JHU_ML_MULTIPLY // Jonathan's ML-MULTIPLY
-
-            //ML matrix multiply wrap that uses ML_Matrix_WrapEpetraCrsMatrix
-            ML_Comm* comm;
-            ML_Comm_Create(&comm);
-            if (comm->ML_mypid == 0)
-              std::cout << "****** USING ML's MATRIX MATRIX MULTIPLY ******" << std::endl;
-#ifdef HAVE_MPI
-            mypid = comm->ML_mypid;
-            // ML_Comm uses MPI_COMM_WORLD, so try to use the same communicator as epA.
-            const Epetra_MpiComm * Mcomm=dynamic_cast<const Epetra_MpiComm*>(&(epA->Comm()));
-            if(Mcomm) ML_Comm_Set_UsrComm(comm,Mcomm->GetMpiComm());
-#endif // HAVE_MPI
-            //in order to use ML, there must be no indices missing from the matrix column maps.
-            EpetraExt::CrsMatrix_SolverMap AcolMapTransform;
-            Epetra_CrsMatrix *transA = &(AcolMapTransform(*epA));
-            ML_Matrix *mlA = ML_Matrix_Create(comm);
-            ML_Matrix_WrapEpetraCrsMatrix(transA,mlA);
-
-            EpetraExt::CrsMatrix_SolverMap BcolMapTransform;
-            Epetra_CrsMatrix *transB = &(BcolMapTransform(*epB));
-            ML_Matrix *mlB = ML_Matrix_Create(comm);
-            ML_Matrix_WrapEpetraCrsMatrix(transB,mlB);
-
-            ML_Matrix *mlAB = ML_Matrix_Create(comm);
-            ML_2matmult(mlA,mlB,mlAB,ML_CSR_MATRIX);
-    
-            /* Wrap back */
-            int nnz;
-            double time;
-            Epetra_CrsMatrix *result;
-            ML_Matrix2EpetraCrsMatrix(mlAB,result,nnz,false,time,0,false);
-            result->OptimizeStorage();
-            ML_Matrix_Destroy(&mlA);
-            ML_Matrix_Destroy(&mlB);
-            ML_Matrix_Destroy(&mlAB);
-            ML_Comm_Destroy(&comm);
-
-            RCP<Epetra_CrsMatrix> epAB(result);
-#else // Michael's MLMULTIPLY
-
+            RCP<Epetra_CrsMatrix> epA = Op2NonConstEpetraCrs(A);
+            RCP<Epetra_CrsMatrix> epB = Op2NonConstEpetraCrs(B);
+            RCP<Epetra_CrsMatrix> epC = Op2NonConstEpetraCrs(C);
             RCP<Epetra_CrsMatrix> epAB = MLTwoMatrixMultiply(*epA, *epB);
-#endif
             C = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(epAB);
           }
-          break;
+          break; // if ML is not available automatically fall back to EpetraExt
 #endif // HAVE_MUELU_ML
-
         case false:
           {
-            int i = EpetraExt::MatrixMatrix::Multiply(*epA,transposeA,*epB,transposeB,*epC,false);
-            if (i != 0) {
-              std::ostringstream buf;
-              buf << i;
-              std::string msg = "EpetraExt::MatrixMatrix::Multiply return value of " + buf.str();
-              throw(Exceptions::RuntimeError(msg));
-            }
+            // use standard matrix matrix multiplication (from EpetraExt)
+            Xpetra::MatrixMatrix::Multiply(*A,transposeA,*B,transposeB,*C,false);
           }
           break;
 
@@ -360,11 +313,8 @@ t0 = MPI_Wtime();
 
       } else if(C->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpA = Op2TpetraCrs(A);
-      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpB = Op2TpetraCrs(B);
-      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >       tpC = Op2NonConstTpetraCrs(C);
-
-      Tpetra::MatrixMatrix::Multiply(*tpA,transposeA,*tpB,transposeB,*tpC,false);        
+        // use standard matrix matrix multiplication (provided by Xpetra)
+        Xpetra::MatrixMatrix::Multiply(*A,transposeA,*B,transposeB,*C,false);
 #else
       throw(Exceptions::RuntimeError("MueLu must be compiled with Tpetra."));
 #endif
@@ -378,9 +328,11 @@ t0 = MPI_Wtime();
 		      params);
     }
 
-    ///////////////////////// EXPERIMENTAL
+    // fill strided maps information
+    // this is necessary since the ML matrix matrix multiplication routine
+    // has no handling for this
+    // TODO: move this call to MLMultiply...
     C->CreateView("stridedMaps", A, transposeA, B, transposeB);
-    ///////////////////////// EXPERIMENTAL
     
 #ifdef HAVE_MPI
 t1 += MPI_Wtime() - t0;

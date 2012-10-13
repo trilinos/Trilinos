@@ -52,12 +52,12 @@ namespace Impl {
 
 template< typename AScalarType , typename VScalarType >
 struct Multiply< CrsMatrix<AScalarType,Host> ,
-                 View<VScalarType[],Host > ,
-                 View<VScalarType[],Host > >
+                 View<VScalarType*,Host > ,
+                 View<VScalarType*,Host > >
 {
   typedef Host                                      device_type ;
   typedef device_type::size_type                    size_type ;
-  typedef View< VScalarType[] , device_type >  vector_type ;
+  typedef View< VScalarType* , device_type >  vector_type ;
   typedef CrsMatrix< AScalarType , device_type >    matrix_type ;
 
 private:
@@ -87,7 +87,7 @@ public:
 
   static void apply( const matrix_type & A ,
                      const size_type nrow ,
-                     const size_type ncol ,
+                     const size_type , // ncol ,
                      const vector_type & x ,
                      const vector_type & y )
   {

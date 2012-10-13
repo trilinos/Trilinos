@@ -77,6 +77,8 @@ namespace Xpetra {
     XPETRA_ERR_CHECK(mtx_->InsertMyValues(localRow, vals.size(), vals.getRawPtr(), cols.getRawPtr()));
   }
 
+  bool EpetraCrsMatrix::supportsRowViews() const { XPETRA_MONITOR("EpetraCrsMatrix::supportsRowViews"); return true; }
+
   //TODO: throw same exception as Tpetra
   void EpetraCrsMatrix::getLocalRowCopy(int LocalRow, const ArrayView<int> &Indices, const ArrayView<double> &Values, size_t &NumEntries) const { 
     XPETRA_MONITOR("EpetraCrsMatrix::getLocalRowCopy");

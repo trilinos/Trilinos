@@ -44,6 +44,7 @@
 #ifndef EPETRA_FECRSGRAPH_H
 #define EPETRA_FECRSGRAPH_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Map.h"
 #include "Epetra_CrsGraph.h"
 
@@ -195,8 +196,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
    * This STL map holds all non-local data in format of Entries in the
    * individual rows together with the row number.
    */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   std::map<int,Epetra_CrsGraphData::EntriesInOneRow<int> > nonlocalRowData_int_;
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   std::map<long long,Epetra_CrsGraphData::EntriesInOneRow<long long> > nonlocalRowData_LL_;
+#endif
 
   template<typename int_type>
   std::map<int_type,Epetra_CrsGraphData::EntriesInOneRow<int_type> >& nonlocalRowData();
@@ -218,14 +223,18 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
 
 };//class Epetra_FECrsGraph
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 template<> inline std::map<int,Epetra_CrsGraphData::EntriesInOneRow<int> >& Epetra_FECrsGraph::nonlocalRowData()
 {
   return nonlocalRowData_int_;
 }
+#endif
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 template<> inline std::map<long long,Epetra_CrsGraphData::EntriesInOneRow<long long> >& Epetra_FECrsGraph::nonlocalRowData()
 {
   return nonlocalRowData_LL_;
 }
+#endif
 
 #endif

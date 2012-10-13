@@ -269,7 +269,7 @@ void nodal_update( const Fields & arg_fields , const float x_bc )
 template< typename FieldsScalar , typename ValueType , class Device >
 inline
 void pack_state( const Fields< FieldsScalar , Device >  & arg_fields ,
-                 const KokkosArray::View< ValueType[] , Device > & arg_buffer ,
+                 const KokkosArray::View< ValueType* , Device > & arg_buffer ,
                  const unsigned node_begin ,
                  const unsigned node_count )
 {
@@ -283,7 +283,7 @@ void pack_state( const Fields< FieldsScalar , Device >  & arg_fields ,
 template< typename FieldsScalar , typename ValueType , class Device >
 inline
 void unpack_state( const Fields< FieldsScalar , Device >  & arg_fields ,
-                   const KokkosArray::View< ValueType[] , Device > & arg_buffer ,
+                   const KokkosArray::View< ValueType* , Device > & arg_buffer ,
                    const unsigned node_begin ,
                    const unsigned node_count )
 {
@@ -427,7 +427,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   perf_data.number_of_steps = total_num_steps ;
 
   typedef typename
-    fields_type::geom_array_view::value_type  comm_value_type ;
+    fields_type::geom_array_view::scalar_type  comm_value_type ;
 
   const unsigned comm_value_count = 6 ;
 

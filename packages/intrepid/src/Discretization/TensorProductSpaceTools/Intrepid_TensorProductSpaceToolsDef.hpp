@@ -113,22 +113,22 @@ namespace Intrepid {
 
 #ifdef HAVE_INTREPID_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( vals.rank() != 3 , std::invalid_argument ,
-				">>> ERROR (TensorProductSpaceTools::evaluate): vals must be rank 3 array." );
+				">>> ERROR (TensorProductSpaceTools::evaluateCollocated): vals must be rank 3 array." );
 
     TEUCHOS_TEST_FOR_EXCEPTION( coeffs.rank() != 3 , std::invalid_argument ,
-				">>> ERROR (TensorProductSpaceTools::evaluate): coeffs must be rank 3 array." );
+				">>> ERROR (TensorProductSpaceTools::evaluateCollocated): coeffs must be rank 3 array." );
 
     for (unsigned d=0;d<space_dim;d++)
       {
 	TEUCHOS_TEST_FOR_EXCEPTION( bases[d]->rank() != 2 , std::invalid_argument ,
-				    ">>> ERROR (TensorProductSpaceTools::evaluate): each tabulated basis must be rank 2 array." );
+				    ">>> ERROR (TensorProductSpaceTools::evaluateCollocated): each tabulated basis must be rank 2 array." );
       }
 
     TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(0) != coeffs.dimension(0) , std::invalid_argument,
-				">>> ERROR (TensorProductSpaceTools::evaluate): Number of cells for vals and coeffs must match." );
+				">>> ERROR (TensorProductSpaceTools::evaluateCollocated): Number of cells for vals and coeffs must match." );
 
     TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(1) != coeffs.dimension(1) , std::invalid_argument,
-				">>> ERROR (TensorProductSpaceTools::evaluate): Number of fields for vals and coeffs must match." );
+				">>> ERROR (TensorProductSpaceTools::evaluateCollocated): Number of fields for vals and coeffs must match." );
     
     int product_of_basis_dimensions = 1;
     int product_of_basis_points = 1;
@@ -139,10 +139,10 @@ namespace Intrepid {
       }
     
     TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(2) != product_of_basis_points , std::invalid_argument,
-				">>> ERROR (TensorProductSpaceTools::evaluate): Incompatible number of points in vals and bases ." );
+				">>> ERROR (TensorProductSpaceTools::evaluateCollocated): Incompatible number of points in vals and bases ." );
     
     TEUCHOS_TEST_FOR_EXCEPTION( coeffs.dimension(2) != product_of_basis_dimensions , std::invalid_argument,
-				">>> ERROR (TensorProductSpaceTools::evaluate): Incompatible number of basis functions in coeffs and bases ." );
+				">>> ERROR (TensorProductSpaceTools::evaluateCollocated): Incompatible number of basis functions in coeffs and bases ." );
 #endif    
     
 
@@ -157,6 +157,67 @@ namespace Intrepid {
       }
 
   }
+
+//   template<class Scalar, class ArrayTypeOut, class ArrayTypeCoeffs,
+// 	   class ArrayTypeBasis>
+//   void TensorProductSpaceTools::evaluateCollocated( ArrayTypeOut &vals ,
+// 						    const ArrayTypeCoeffs &coeffs ,
+// 						    const Array<Array<RCP<ArrayTypeBasis> > > &bases )
+//   {
+//     const unsigned space_dim = bases.size();
+
+// #ifdef HAVE_INTREPID_DEBUG
+//     TEUCHOS_TEST_FOR_EXCEPTION( vals.rank() != 4 , std::invalid_argument ,
+// 				">>> ERROR (TensorProductSpaceTools::evaluateCollocated): vals must be rank 3 array." );
+
+//     TEUCHOS_TEST_FOR_EXCEPTION( coeffs.rank() != 3 , std::invalid_argument ,
+// 				">>> ERROR (TensorProductSpaceTools::evaluateCollocated): coeffs must be rank 3 array." );
+
+//     for (unsigned d0=0;d0<bases.size();d0++)
+//       {
+// 	for (unsigned d1=1;d1<space_dim;d1++)
+// 	  {
+// 	    TEUCHOS_TEST_FOR_EXCEPTION( bases[d0][d1]->rank() != 2 , std::invalid_argument ,
+// 					">>> ERROR (TensorProductSpaceTools::evaluateCollocated): each tabulated basis must be rank 2 array." );
+// 	  }
+//       }
+
+//     TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(0) != coeffs.dimension(0) , std::invalid_argument,
+// 				">>> ERROR (TensorProductSpaceTools::evaluateCollocated): Number of cells for vals and coeffs must match." );
+
+//     TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(1) != coeffs.dimension(1) , std::invalid_argument,
+// 				">>> ERROR (TensorProductSpaceTools::evaluateCollocated): Number of fields for vals and coeffs must match." );
+    
+//     int product_of_basis_dimensions = 1;
+//     int product_of_basis_points = 1;
+//     for (unsigned d=0;d<space_dim;d++)
+//       {
+// 	product_of_basis_dimensions *= bases[0][d]->dimension(0);
+// 	product_of_basis_points *= bases[0][d]->dimension(1);
+//       }
+    
+//     TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(2) != product_of_basis_points , std::invalid_argument,
+// 				">>> ERROR (TensorProductSpaceTools::evaluateCollocated): Incompatible number of points in vals and bases ." );
+    
+//     TEUCHOS_TEST_FOR_EXCEPTION( coeffs.dimension(2) != product_of_basis_dimensions , std::invalid_argument,
+// 				">>> ERROR (TensorProductSpaceTools::evaluateCollocated): Incompatible number of basis functions in coeffs and bases ." );
+// #endif    
+
+//     TEUCHOS_TEST_FOR_EXCEPTION( vals.rank(3) != bases.size() , std::invalid_argument ,
+// 				">>> ERROR (TensorProductSpaceTools::evaluateCollocated): wrong dimensions for vals");
+    
+
+//     switch (space_dim)
+//       {
+//       case 2:
+// 	evaluateCollocated2D<Scalar,ArrayTypeOut,ArrayTypeCoeffs,ArrayTypeBasis>( vals , coeffs , bases );
+// 	break;
+//       case 3:
+// 	evaluateCollocated3D<Scalar,ArrayTypeOut,ArrayTypeCoeffs,ArrayTypeBasis>( vals , coeffs , bases );
+// 	break;
+//       }
+
+//   }
 
   template<class Scalar, class ArrayTypeOut, class ArrayTypeCoeffs,
 	   class ArrayTypeBasis>
@@ -666,6 +727,37 @@ namespace Intrepid {
 
     return;
   }
+
+  // template<class Scalar, class ArrayTypeOut, class ArrayTypeCoeffs,
+  // 	   class ArrayTypeBasis>
+  // void TensorProductSpaceTools::evaluateCollocated2D( ArrayTypeOut &vals ,
+  // 						      const ArrayTypeCoeffs &coeffs ,
+  // 						      const Array<Array<RCP<ArrayTypeBasis> > > &bases )
+  // {
+  //   // just copy coeffs to vals!
+  //   const int numCells = vals.dimension(0);
+  //   const int numFields = vals.dimension(1);
+    
+  //   const int numBfx = bases[comp][0]->dimension(0);
+  //   const int numBfy = bases[comp][1]->dimension(0);
+    
+    
+  //   for (int cell=0;cell<numCells;cell++)
+  //     {
+  // 	for (int f=0;f<numFields;f++)
+  // 	  {
+  // 	    for (int j=0;j<numBfy;j++)
+  // 	      {
+  // 		for (int i=0;i<numBfx;i++)
+  // 		  {			const int I = j * numBfx + i;
+  // 		    vals(cell,f,I,comp) = coeffs(cell,f,I);
+  // 		  }
+  // 	      }
+  // 	  }
+  //     }
+
+  //   return;
+  // }
 
   template<class Scalar, class ArrayTypeOut, class ArrayTypeCoeffs,
 	   class ArrayTypeBasis>

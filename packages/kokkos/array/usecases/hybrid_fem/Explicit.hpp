@@ -349,7 +349,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 #if defined( HAVE_MPI )
 
   typedef typename
-    fields_type::geom_state_array_type::value_type  comm_value_type ;
+    fields_type::geom_state_array_type::scalar_type  comm_value_type ;
 
   const unsigned comm_value_count = 6 ;
 

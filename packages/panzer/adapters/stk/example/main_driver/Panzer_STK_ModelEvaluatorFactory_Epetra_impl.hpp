@@ -244,7 +244,7 @@ namespace panzer_stk {
     // build physics blocks
 
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
     panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                block_ids_to_cell_topo,
 			       physics_id_to_input_physics_blocks,
@@ -395,8 +395,9 @@ namespace panzer_stk {
     // setup field manager build
     /////////////////////////////////////////////////////////////
  
-    fmb->setupVolumeFieldManagers(*wkstContainer,physicsBlocks,cm_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
-    fmb->setupBCFieldManagers(*wkstContainer,bcs,physicsBlocks,eqset_factory,user_cm_factory,bc_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
+    fmb->setWorksetContainer(wkstContainer);
+    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
+    fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,user_cm_factory,bc_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
 
     // Print Phalanx DAGs
     {
@@ -487,7 +488,7 @@ namespace panzer_stk {
       thyra_me = Thyra::epetraModelEvaluator(ep_me,lowsFactory);
     }
     else {
-      thyra_me = Teuchos::rcp(new panzer::ModelEvaluator<double,int,int,Kokkos::DefaultNode::DefaultNodeType>
+      thyra_me = Teuchos::rcp(new panzer::ModelEvaluator<double,Kokkos::DefaultNode::DefaultNodeType>
                   (fmb,m_response_library,linObjFactory,p_names,lowsFactory,global_data,is_transient,t_init));
     }
 
@@ -523,7 +524,7 @@ namespace panzer_stk {
         bloc->set_x(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(nomValues.get_x()));
       }
       
-      panzer::evaluateInitialCondition(fmb->getWorksets(), phx_ic_field_managers, loc, 0.0);
+      panzer::evaluateInitialCondition(*wkstContainer->getVolumeWorksets(), phx_ic_field_managers, loc, 0.0);
 
       // Write the epetra vector into the STK mesh: use response library
       //////////////////////////////////////////////////////////////////////////

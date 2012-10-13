@@ -66,6 +66,27 @@ using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
 
+#define CATCH_EXCEPTIONS(pp) \
+  catch (std::runtime_error &e) { \
+    cout << "Runtime exception returned from " << pp << ": " \
+         << e.what() << " FAIL" << endl; \
+    return -1; \
+  } \
+  catch (std::logic_error &e) { \
+    cout << "Logic exception returned from " << pp << ": " \
+         << e.what() << " FAIL" << endl; \
+    return -1; \
+  } \
+  catch (std::bad_alloc &e) { \
+    cout << "Bad_alloc exception returned from " << pp << ": " \
+         << e.what() << " FAIL" << endl; \
+    return -1; \
+  } \
+  catch (std::exception &e) { \
+    cout << "Unknown exception returned from " << pp << ": " \
+         << e.what() << " FAIL" << endl; \
+    return -1; \
+  }
 
 
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
@@ -169,8 +190,11 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
   }
 }
 
-void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts, float imbalance, std::string paramFile, std::string pqParts/*, std::string paramFile*/, partId_t k,
-    bool force_binary, bool force_linear){
+int GeometricGen(const RCP<const Teuchos::Comm<int> > & comm,
+    partId_t numParts, float imbalance,
+    std::string paramFile, std::string pqParts/*, std::string paramFile*/,
+    partId_t k, bool force_binary, bool force_linear)
+{
 
   Teuchos::ParameterList geoparams("geo params");
 
@@ -266,30 +290,29 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts
   }
   params.set("bisection_num_test_cuts", 7);
 
+  Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
+  try {
 #ifdef HAVE_ZOLTAN2_MPI
-
-
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,
-      MPI_COMM_WORLD);
-
-
+    problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, &params,
+        MPI_COMM_WORLD);
 #else
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
+    problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, &params);
 #endif
+  }
+  CATCH_EXCEPTIONS("PartitioningProblem()")
 
-  problem.solve();
-
-  //const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
-  //    problem.getSolution();
-
+  try {
+    problem->solve();
+  }
+  CATCH_EXCEPTIONS("solve()")
 
   if (comm->getRank() == 0){
 
-    problem.printMetrics(cout);
+    problem->printMetrics(cout);
 
-    cout << "testFromDataFile is done " << endl;
+    cout << "GeometricGen is done " << endl;
   }
-  problem.printTimers();
+  problem->printTimers();
   if(weight_dim){
     for(int i = 0; i < weight_dim; ++i)
     delete [] weight[i];
@@ -300,9 +323,10 @@ void GeometricGen(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts
     delete [] coords[i];
     delete [] coords;
   }
+  return 0;
 }
 
-void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts, float imbalance, std::string fname, std::string pqParts, partId_t k,
+int testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numParts, float imbalance, std::string fname, std::string pqParts, partId_t k,
     bool force_binary, bool force_linear)
 {
   //std::string fname("simple");
@@ -362,27 +386,36 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm, partId_t numP
   params.set("imbalance_tolerance", double(imbalance));
   params.set("bisection_num_test_cuts", 7);
 
+  Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
+  try {
 #ifdef HAVE_ZOLTAN2_MPI
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,
-      MPI_COMM_WORLD);
+    problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, &params,
+        MPI_COMM_WORLD);
 #else
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
+    problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, &params);
 #endif
+  }
+  CATCH_EXCEPTIONS("PartitioningProblem()")
 
-  problem.solve();
+  try {
+    problem->solve();
+  }
+  CATCH_EXCEPTIONS("solve()")
 
   //const Zoltan2::PartitioningSolution<inputAdapter_t> &solution =
       //problem.getSolution();
 
   if (comm->getRank() == 0){
-    problem.printMetrics(cout);
+    problem->printMetrics(cout);
 
     cout << "testFromDataFile is done " << endl;
   }
 
-  problem.printTimers();
+  problem->printTimers();
 
+  delete problem;
 
+  return 0;
 }
 
 
@@ -555,7 +588,7 @@ int main(int argc, char *argv[])
       if(tcomm->getRank() == 0){
         print_usage(argv[0]);
       }
-      throw s; 
+      throw s;
     }
     catch(char const * s){
       if(tcomm->getRank() == 0){
@@ -564,17 +597,20 @@ int main(int argc, char *argv[])
       throw s;
     }
 
+    int ierr = 0;
     switch (opt){
     case 0:
-      testFromDataFile(tcomm,numParts, imbalance,fname,pqParts, k, force_binary, force_linear);
+      ierr = testFromDataFile(tcomm,numParts, imbalance,fname,pqParts, k, force_binary, force_linear);
       break;
     default:
       GeometricGen(tcomm, numParts, imbalance, fname, pqParts/*, paramFile*/, k, force_binary, force_linear);
       break;
     }
 
-    if (rank == 0)
-      std::cout << "PASS" << std::endl;
+    if (rank == 0) {
+      if (ierr == 0) std::cout << "PASS" << std::endl;
+      else std::cout << "FAIL" << std::endl;
+    }
   }
 
 

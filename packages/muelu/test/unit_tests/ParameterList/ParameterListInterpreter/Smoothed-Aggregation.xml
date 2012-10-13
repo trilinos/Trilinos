@@ -1,3 +1,4 @@
+<!-- TEST: duplication of factories -->
 <ParameterList name="MueLu">
    
   <ParameterList name="Hierarchy">

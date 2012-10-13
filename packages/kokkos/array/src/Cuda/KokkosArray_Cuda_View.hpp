@@ -68,10 +68,10 @@ void View< DataType , LayoutType , Cuda >::internal_private_create(
   const size_t count = Impl::ShapeMap<shape_type>::allocation_count( shape );
 
   oper_type::m_shape = shape ;
-  oper_type::m_ptr_on_device = (value_type *)
+  oper_type::m_ptr_on_device = (scalar_type *)
     memory_space::allocate( label ,
-                            typeid(value_type) ,
-                            sizeof(value_type) ,
+                            typeid(scalar_type) ,
+                            sizeof(scalar_type) ,
                             count );
 }
 

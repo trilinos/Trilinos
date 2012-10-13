@@ -179,7 +179,9 @@ public:
   
   //! Returns \c true if fillComplete() has been called.
   virtual bool isFillComplete() const;
-  
+
+  //! Returns \c true if RowViews are supported.
+  virtual bool supportsRowViews() const;  
 
   //@}
   
@@ -339,7 +341,7 @@ private:
   //! Pointer to the matrix to be preconditioned.
   Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
   //! Communicator containing this process only.
-  Teuchos::RCP<Teuchos::Comm<int> > LocalComm_;
+  Teuchos::RCP<const Teuchos::Comm<int> > LocalComm_;
   //! Map based on SerialComm_, containing the local rows only.
   Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > LocalMap_;
   //! Number of rows in the local matrix.

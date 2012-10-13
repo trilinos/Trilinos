@@ -125,8 +125,8 @@ namespace panzer {
     std::vector<panzer::BC> bcs;
     testInitialzation(ipb, bcs);
 
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
-      Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb = 
+      Teuchos::rcp(new panzer::FieldManagerBuilder);
 
     // build physics blocks
     //////////////////////////////////////////////////////////////
@@ -195,11 +195,12 @@ namespace panzer {
 
     Teuchos::ParameterList user_data("User Data");
 
-    fmb->setupVolumeFieldManagers(*wkstContainer,physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
-    fmb->setupBCFieldManagers(*wkstContainer,bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+    fmb->setWorksetContainer(wkstContainer);
+    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
-    panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm;
-    panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,linObjFactory);
+    panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm;
+    panzer::AssemblyEngine_TemplateBuilder builder(fmb,linObjFactory);
     ae_tm.buildObjects(builder);
 
     RCP<panzer::EpetraLinearObjContainer> eGhosted 
@@ -251,8 +252,8 @@ namespace panzer {
     std::vector<panzer::BC> bcs;
     testInitialzation(ipb, bcs);
 
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
-      Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb = 
+      Teuchos::rcp(new panzer::FieldManagerBuilder);
 
     // build physics blocks
     //////////////////////////////////////////////////////////////
@@ -320,11 +321,12 @@ namespace panzer {
 
     Teuchos::ParameterList user_data("User Data");
 
-    fmb->setupVolumeFieldManagers(*wkstContainer,physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
-    fmb->setupBCFieldManagers(*wkstContainer,bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+    fmb->setWorksetContainer(wkstContainer);
+    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
-    panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm;
-    panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,linObjFactory);
+    panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm;
+    panzer::AssemblyEngine_TemplateBuilder builder(fmb,linObjFactory);
     ae_tm.buildObjects(builder);
 
     RCP<panzer::LinearObjContainer> tGhosted = linObjFactory->buildGhostedLinearObjContainer();

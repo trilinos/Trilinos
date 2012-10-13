@@ -376,9 +376,9 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
 
   /* Aggregate Nodes */
   int printlevel=ML_Get_PrintLevel();
-  ML_Set_PrintLevel(10);
+  if(verbose) ML_Set_PrintLevel(10);
   NumAggregates = ML_Aggregate_Coarsen(MLAggr,A_ML, &P, ml_comm);
-  ML_Set_PrintLevel(printlevel);
+  if(verbose) ML_Set_PrintLevel(printlevel);
 
   if (NumAggregates == 0){
     cerr << "Found 0 aggregates, perhaps the problem is too small." << endl;

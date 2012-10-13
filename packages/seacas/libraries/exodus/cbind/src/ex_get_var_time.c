@@ -80,8 +80,6 @@ int ex_get_var_time( int   exoid,
   size_t num_obj, i;
   size_t num_entries_this_obj = 0;
   size_t start[2], count[2];
-  float fdum;
-  char *cdum;
   char errmsg[MAX_ERR_LENGTH];
   const char* varobjids;
   const char* varobstat;
@@ -131,8 +129,6 @@ int ex_get_var_time( int   exoid,
   }
 
   exerrval = 0; /* clear error code */
-
-  cdum = 0; /* initialize even though it is not used */
 
   /* assume entry number is 1-based (the first entry of an object is 1, not 0);
    * adjust so it is 0-based
@@ -249,7 +245,6 @@ int ex_get_var_time( int   exoid,
   offset = id - (numel - num_entries_this_obj);
 
   /* inquire previously defined variable */
-
   if ((status = nc_inq_varid(exoid,ex_name_var_of_object(var_type,var_index,i+1), &varid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
@@ -271,14 +266,7 @@ int ex_get_var_time( int   exoid,
      * database inquire function to get the number of time steps;  the ending
      * time step number is 1 less due to 0 based array indexing in C
      */
-    if ((status = ex_inquire (exoid, EX_INQ_TIME, &end_time_step, &fdum, cdum)) != NC_NOERR) {
-      exerrval = status;
-      sprintf(errmsg,
-	      "Error: failed to get maximum time step in file id %d",
-	      exoid);
-      ex_err("ex_get_var_time",errmsg,exerrval);
-      return (EX_FATAL);
-    }
+    end_time_step = ex_inquire_int (exoid, EX_INQ_TIME);
   }
 
   end_time_step--;

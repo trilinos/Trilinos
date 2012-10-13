@@ -61,7 +61,7 @@ class ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
                 ValueType , Shape< LayoutLeft , ValueSize, 0 > >
 {
 private:
-  template< class , class , class > friend class KokkosArray::View ;
+  template< class , class , class , class > friend class KokkosArray::View ;
 
   ValueType                   * m_ptr_on_device ;
   Shape<LayoutLeft,ValueSize,0> m_shape ;
@@ -91,7 +91,7 @@ class ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
                 ValueType , Shape< LayoutLeft, ValueSize, 1, s0 > >
 {
 private:
-  template< class , class , class > friend class KokkosArray::View ;
+  template< class , class , class , class > friend class KokkosArray::View ;
 
   ValueType                      * m_ptr_on_device ;
   Shape<LayoutLeft,ValueSize,1,s0> m_shape ;
@@ -133,7 +133,7 @@ class ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
                 ValueType , Shape< LayoutLeft, ValueSize, 2, s0, s1 > >
 {
 private:
-  template< class , class , class > friend class KokkosArray::View ;
+  template< class , class , class , class > friend class KokkosArray::View ;
 
   ValueType                         * m_ptr_on_device ;
   Shape<LayoutLeft,ValueSize,2,s0,s1> m_shape ;
@@ -166,7 +166,7 @@ class ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
                 Shape<LayoutLeft,ValueSize,3,s0,s1,s2> >
 {
 private:
-  template< class , class , class > friend class KokkosArray::View ;
+  template< class , class , class , class > friend class KokkosArray::View ;
 
   ValueType                            * m_ptr_on_device ;
   Shape<LayoutLeft,ValueSize,3,s0,s1,s2> m_shape ;
@@ -201,7 +201,7 @@ class ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
                 Shape<LayoutLeft,ValueSize,4,s0,s1,s2,s3> >
 {
 private:
-  template< class , class , class > friend class KokkosArray::View ;
+  template< class , class , class , class > friend class KokkosArray::View ;
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutLeft,ValueSize,4,s0,s1,s2,s3> m_shape ;
@@ -239,7 +239,7 @@ class ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
                 Shape<LayoutLeft,ValueSize,5,s0,s1,s2,s3,s4> >
 {
 private:
-  template< class , class , class > friend class KokkosArray::View ;
+  template< class , class , class , class > friend class KokkosArray::View ;
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutLeft,ValueSize,5,s0,s1,s2,s3,s4> m_shape ;
@@ -279,7 +279,7 @@ class ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
                 Shape<LayoutLeft,ValueSize,6,s0,s1,s2,s3,s4,s5> >
 {
 private:
-  template< class , class , class > friend class KokkosArray::View ;
+  template< class , class , class , class > friend class KokkosArray::View ;
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutLeft,ValueSize,6,s0,s1,s2,s3,s4,s5> m_shape ;
@@ -320,7 +320,7 @@ class ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
                 Shape<LayoutLeft,ValueSize,7,s0,s1,s2,s3,s4,s5,s6> >
 {
 private:
-  template< class , class , class > friend class KokkosArray::View ;
+  template< class , class , class , class > friend class KokkosArray::View ;
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutLeft,ValueSize,7,s0,s1,s2,s3,s4,s5,s6> m_shape ;
@@ -364,7 +364,7 @@ class ViewOper< KOKKOSARRAY_MACRO_DEVICE::memory_space ,
                 Shape<LayoutLeft,ValueSize,8,s0,s1,s2,s3,s4,s5,s6,s7> >
 {
 private:
-  template< class , class , class > friend class KokkosArray::View ;
+  template< class , class , class , class > friend class KokkosArray::View ;
 
   ValueType * m_ptr_on_device ;
   Shape<LayoutLeft,ValueSize,8,s0,s1,s2,s3,s4,s5,s6,s7> m_shape ;

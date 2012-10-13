@@ -44,6 +44,7 @@
 #ifndef EPETRA_LONGLONGVECTOR_H
 #define EPETRA_LONGLONGVECTOR_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_DistObject.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Distributor.h"

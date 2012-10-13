@@ -168,7 +168,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
   }
 
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
-  void operator()( const size_type i , value_type & update ) const
+  void operator()( const size_type , value_type & update ) const
   {
     long offset ;
 
@@ -263,7 +263,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
   }
 
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
-  void operator()( const size_type i , value_type & update ) const
+  void operator()( const size_type , value_type & update ) const
   {
     long offset ;
 
@@ -356,7 +356,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
   }
 
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
-  void operator()( const size_type i , value_type & update ) const
+  void operator()( const size_type , value_type & update ) const
   {
     long offset ;
 
@@ -447,7 +447,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
   }
 
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
-  void operator()( const size_type i , value_type & update ) const
+  void operator()( const size_type , value_type & update ) const
   {
     long offset ;
 
@@ -536,7 +536,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
   }
 
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
-  void operator()( const size_type i , value_type & update ) const
+  void operator()( const size_type , value_type & update ) const
   {
     long offset ;
 
@@ -623,7 +623,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
   }
 
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
-  void operator()( const size_type i , value_type & update ) const
+  void operator()( const size_type , value_type & update ) const
   {
     long offset ;
 
@@ -708,7 +708,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
   }
 
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
-  void operator()( const size_type i , value_type & update ) const
+  void operator()( const size_type , value_type & update ) const
   {
     long offset ;
 
@@ -771,6 +771,8 @@ public:
   typedef KokkosArray::View< T[][N1][N2][N3] , device > dView4 ;
   typedef KokkosArray::View< const T[][N1][N2][N3] , device > const_dView4 ;
 
+  typedef KokkosArray::View< T[][N1][N2][N3] , device, device, KokkosArray::MemoryUnmanaged > dView4_unmanaged ;
+
   static void run_test()
   {
     typedef typename dView0::HostMirror  hView0 ;
@@ -781,6 +783,7 @@ public:
 
     dView4 dx , dy , dz ;
     hView4 hx , hy , hz ;
+
     ASSERT_FALSE(dx);
     ASSERT_FALSE(dy);
     ASSERT_FALSE(dz);
@@ -803,7 +806,11 @@ public:
     dx = dView4( "dx" , N0 );
     dy = dView4( "dy" , N0 );
 
+
+
+    dView4_unmanaged unmaaged_dx = dx;
     const_dView4 const_dx = dx ;
+
 
     ASSERT_TRUE(dx);
     ASSERT_TRUE(const_dx);

@@ -430,6 +430,13 @@ bool DropFilter<MatrixType>::hasTransposeApply() const
   return true;
 }
 
+//==========================================================================
+template<class MatrixType> 
+bool DropFilter<MatrixType>::supportsRowViews() const
+{
+  return false;
+}
+
 //==========================================================================  
 template<class MatrixType> 
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType DropFilter<MatrixType>::getFrobeniusNorm() const

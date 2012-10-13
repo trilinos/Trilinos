@@ -191,6 +191,12 @@ TRIBITS_ADD_LIBRARY(pytrilinos
   SOURCES ${SOURCES}
   )
 
+# Link against the Python library to prevent undefined
+# symbols for shared builds with -Wl,--no-undefined.
+TARGET_LINK_LIBRARIES(pytrilinos
+  ${PYTHON_LIBRARIES}
+  )
+
 SET_TARGET_PROPERTIES(pytrilinos
   PROPERTIES LINK_FLAGS "${EXTRA_LINK_ARGS}"
   )
