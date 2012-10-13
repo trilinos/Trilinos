@@ -40,9 +40,8 @@ public:
    virtual Teuchos::RCP<ResponseBase> buildResponseObject(const std::string & responseName) const = 0; 
    
    /** Build and register evaluators for a response on a particular physics
-     * block. Note the required returned field tag is needed for specifying
-     * a scatter evaluator. This does not prevent a developer from marking
-     * something as required within the buildAndRegisterEvaluators method.
+     * block. Note that it is assumed that a field has been marked required
+     * during this method call.
      *
      * \param[in] responseName The name of the response to be constructed
      *                         by these evaluators.
@@ -51,19 +50,15 @@ public:
      *                         the evaluators
      * \param[in] user_data The user data parameter list, this stores things
      *                      that the user may find useful.
-     *
-     * \returns Field tag that corresponds to the required scatter field for
-     *          this response. 
      */
-   virtual Teuchos::RCP<const PHX::FieldTag> buildAndRegisterEvaluators(const std::string & responseName,
-                                            PHX::FieldManager<panzer::Traits> & fm,
-                                            const panzer::PhysicsBlock & physicsBlock,
-                                            const Teuchos::ParameterList & user_data) const = 0;
+   virtual void buildAndRegisterEvaluators(const std::string & responseName,
+                                           PHX::FieldManager<panzer::Traits> & fm,
+                                           const panzer::PhysicsBlock & physicsBlock,
+                                           const Teuchos::ParameterList & user_data) const = 0;
 
    /** Build and register evaluators for a response on a particular side set.
-     * Note the required returned field tag is needed for specifying
-     * a scatter evaluator. This does not prevent a developer from marking
-     * something as required within the buildAndRegisterEvaluators method.
+     * Note that it is assumed that a field has been marked required
+     * during this method call.
      *
      * \param[in] responseName The name of the response to be constructed
      *                         by these evaluators.
@@ -73,11 +68,8 @@ public:
      *                         the evaluators
      * \param[in] user_data The user data parameter list, this stores things
      *                      that the user may find useful.
-     *
-     * \returns Field tag that corresponds to the required scatter field for
-     *          this response. 
      */
-   virtual Teuchos::RCP<const PHX::FieldTag> buildAndRegisterEvaluators(const std::string & responseName,
+    virtual void buildAndRegisterEvaluators(const std::string & responseName,
                                             PHX::FieldManager<panzer::Traits> & fm,
                                             const panzer::BC & bc,
                                             const panzer::PhysicsBlock & physicsBlock,

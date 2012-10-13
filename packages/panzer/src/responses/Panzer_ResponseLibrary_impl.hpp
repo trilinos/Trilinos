@@ -456,9 +456,9 @@ addResponse(const std::string responseName,
      std::string blockId = blocks[i];
 
      // add response factory TM to vector that stores them
-     std::vector<RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > & block_tm 
+     std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > & block_tm 
         = respFactories_[blockId];
-     block_tm.push_back(modelFact_tm);
+     block_tm.push_back(std::make_pair(responseName,modelFact_tm));
    }
 }
 
@@ -495,7 +495,8 @@ getResponses(std::vector<Teuchos::RCP<const ResponseBase> > & responses) const
 template <typename TraitsT>
 class RVEF2 : public GenericEvaluatorFactory {
 public:
-   typedef boost::unordered_map<std::string,std::vector<Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > RespFactoryTable;
+   typedef boost::unordered_map<std::string,
+                                std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > RespFactoryTable;
    typedef boost::unordered_set<std::string> StringAccessTable;
 
    RVEF2(const Teuchos::ParameterList & userData,RespFactoryTable & rft)
@@ -514,9 +515,10 @@ public:
      TEUCHOS_ASSERT(itr!=rft_.end() && itr->second.size()>0);
 
      // loop over each template manager in the block, and then each evaluation type
-     std::vector<RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > & respFacts = itr->second;
+     std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > & respFacts = itr->second;
      for(std::size_t i=0;i<respFacts.size();i++) {
-       RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > fact = respFacts[i];
+       std::string responseName = respFacts[i].first;
+       RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > fact = respFacts[i].second;
        // what is going on here?
        if(fact==Teuchos::null)
          continue;
@@ -526,12 +528,7 @@ public:
            rf_itr!=fact->end();++rf_itr) {
 
          // build and register evaluators, store field tag, make it required
-         RCP<const PHX::FieldTag> ft = rf_itr->buildAndRegisterEvaluators("YOU STILL HAVE TO PASS RESPONSE NAMES TO FMB CONSTRUCTION!!!!",fm,pb,userData_);     
-
-
-         // this sets up the scatter
-         // TEUCHOS_ASSERT(ft!=Teuchos::null);
-         // fm.requireField(*ft);
+         rf_itr->buildAndRegisterEvaluators(responseName,fm,pb,userData_);     
        }
      }
     
@@ -555,7 +552,8 @@ buildResponseEvaluators(
 {
    using Teuchos::RCP;
 
-   typedef boost::unordered_map<std::string,std::vector<RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > RespFactoryTable;
+   typedef boost::unordered_map<std::string,
+                                std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > RespFactoryTable;
 
    // first compute subset of physics blocks required to build responses
    ////////////////////////////////////////////////////////////////////////////////
@@ -586,6 +584,12 @@ buildResponseEvaluators(
 
    fmb2_->setWorksetContainer(wkstContainer_);
    fmb2_->setupVolumeFieldManagers(requiredPhysicsBlocks,cm_factory,closure_models,*linObjFactory_,user_data,rvef2);
+
+   // fourth build assembly engine from FMB
+   ////////////////////////////////////////////////////////////////////////////////
+
+   AssemblyEngine_TemplateBuilder builder(fmb2_,linObjFactory_); 
+   ae_tm2_.buildObjects(builder);
 
    responseEvaluatorsBuilt_ = true;
 }

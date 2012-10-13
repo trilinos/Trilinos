@@ -327,7 +327,8 @@ private:
    AssemblyEngine_TemplateManager<panzer::Traits> ae_tm2_;
 
    // Store up response factories by element block
-   boost::unordered_map<std::string,std::vector<Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > respFactories_;
+   boost::unordered_map<std::string,
+                        std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > respFactories_;
  
    //! Store all the response objects 
    boost::unordered_map<std::string, Response_TemplateManager> responseObjects_;

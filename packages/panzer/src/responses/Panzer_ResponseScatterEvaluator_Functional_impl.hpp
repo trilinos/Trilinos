@@ -47,12 +47,13 @@
 #include <string>
 
 #include "Panzer_config.hpp"
-#include "Panzer_Dimension.hpp"
-
-#include "Panzer_ResponseFunctional_Aggregator.hpp"
 
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
+
+#include "Panzer_ResponseBase.hpp"
+#include "Panzer_Dimension.hpp"
 
 namespace panzer {
 
@@ -61,8 +62,26 @@ namespace panzer {
   */
 template<typename EvalT, typename Traits>
 ResponseScatterEvaluator_Functional<EvalT,Traits>::
-ResponseScatterEvaluator_Functional(const std::string & name)
+ResponseScatterEvaluator_Functional(const std::string & name,
+                                    const CellData & cd)
 {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  std::string dummyName = ResponseBase::buildLookupName(name) + " dummy target";
+
+  // build dummy target tag
+  RCP<PHX::DataLayout> dl_dummy = rcp(new PHX::MDALayout<panzer::Dummy>(0));
+  scatterHolder_ = rcp(new PHX::Tag<ScalarT>(dummyName,dl_dummy));
+  this->addEvaluatedField(*scatterHolder_);
+
+  // build dendent field
+  RCP<PHX::DataLayout> dl_cell = rcp(new PHX::MDALayout<panzer::Cell>(cd.numCells()));
+  cellIntegral_ = PHX::MDField<ScalarT,panzer::Cell>(name,dl_cell);
+  this->addDependentField(cellIntegral_);
+
+  std::string n = "Functional Response Scatter: " + name;
+  this->setName(n);
 }
 
 template<typename EvalT, typename Traits>

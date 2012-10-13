@@ -48,6 +48,7 @@
 
 #include "Panzer_config.hpp"
 #include "Panzer_Dimension.hpp"
+#include "Panzer_CellData.hpp"
 
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
@@ -63,7 +64,7 @@ class ResponseScatterEvaluator_Functional : public PHX::EvaluatorWithBaseImpl<Tr
 public:
 
   //! A constructor with concrete arguments instead of a parameter list.
-  ResponseScatterEvaluator_Functional(const std::string & name);
+  ResponseScatterEvaluator_Functional(const std::string & name,const CellData & cd);
 
   void postRegistrationSetup(typename Traits::SetupData d,
                              PHX::FieldManager<Traits>& fm);
@@ -72,6 +73,9 @@ public:
 
 private:
   typedef typename EvalT::ScalarT ScalarT;
+
+  Teuchos::RCP<PHX::FieldTag> scatterHolder_; // dummy target
+  PHX::MDField<ScalarT,panzer::Cell> cellIntegral_; // holds cell integrals
 };
 
 }
