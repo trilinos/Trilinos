@@ -9,6 +9,8 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_ResponseEvaluatorFactory.hpp"
 
+#include <mpi.h>
+
 namespace panzer {
 
 /** This class defines a response based on a functional.
@@ -17,8 +19,8 @@ template <typename EvalT>
 class ResponseEvaluatorFactory_Functional : public ResponseEvaluatorFactory<EvalT> {
 public:
 
-   ResponseEvaluatorFactory_Functional(int cubatureDegree=1,bool requiresCellIntegral=true) 
-     : cubatureDegree_(cubatureDegree), requiresCellIntegral_(requiresCellIntegral) {}
+   ResponseEvaluatorFactory_Functional(MPI_Comm comm, int cubatureDegree=1,bool requiresCellIntegral=true) 
+     : comm_(comm), cubatureDegree_(cubatureDegree), requiresCellIntegral_(requiresCellIntegral) {}
 
    virtual ~ResponseEvaluatorFactory_Functional() {}
  
@@ -68,6 +70,7 @@ public:
    { }
 
 private:
+   MPI_Comm comm_;
    int cubatureDegree_;
    bool requiresCellIntegral_;
 };

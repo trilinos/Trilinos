@@ -12,7 +12,7 @@ namespace panzer {
   * Note that by itself the interface for this is 
   * not useful for storing data.
   */
-class ResponseBase {
+class ResponseBase : public GlobalEvaluationData_Default {
 public:
 
    /** Only available constructor for this object.
@@ -39,6 +39,18 @@ public:
      */
    static std::string buildLookupName(const std::string & responseName)
    { return "RESPONSE_"+responseName; }
+
+   //! Inherited from GlobalEvaluationData, 
+   virtual void ghostToGlobal(int) 
+   { scatterResponse(); }
+
+   virtual void intializeData()
+   { initializeResponse(); }
+
+   //! Prepare the response for access by the user (do global communication)
+   virtual void scatterResponse() = 0;
+
+   virtual void initializeResponse() = 0;
 
 private:
 

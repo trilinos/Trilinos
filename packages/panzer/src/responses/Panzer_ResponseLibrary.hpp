@@ -255,7 +255,7 @@ public:
      *         it returns null.
      */
    template <typename EvalT>
-   Teuchos::RCP<const ResponseBase> getResponse(const std::string responseName) const;
+   Teuchos::RCP<ResponseBase> getResponse(const std::string responseName) const;
 
    /** Get the set of responses corresponding to a particular evaluation type. This will
      * overwrite (<code>clear</code>) the vector.
@@ -263,7 +263,7 @@ public:
      * \param[in,out] responses Vector over the responses, the responses know their own names!
      */
    template <typename EvalT>
-   void getResponses(std::vector<Teuchos::RCP<const ResponseBase> > & responses) const;
+   void getResponses(std::vector<Teuchos::RCP<ResponseBase> > & responses) const;
 
    /** Setup up field managers for all responses. Once this method is called
      * no other responses can be added. An exception is thrown if they are.

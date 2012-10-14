@@ -64,6 +64,7 @@ template<typename EvalT, typename Traits>
 ResponseScatterEvaluator_Functional<EvalT,Traits>::
 ResponseScatterEvaluator_Functional(const std::string & name,
                                     const CellData & cd)
+  : responseName_(name)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -86,16 +87,29 @@ ResponseScatterEvaluator_Functional(const std::string & name,
 
 template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_Functional<EvalT,Traits>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+  // extract linear object container
+  responseObj_ = Teuchos::rcp_dynamic_cast<Response_Functional<ScalarT> >(
+                                   d.getDataObject(ResponseBase::buildLookupName(responseName_)),true);
+}
+
+
+template<typename EvalT, typename Traits>
+void ResponseScatterEvaluator_Functional<EvalT,Traits>::
 postRegistrationSetup(typename Traits::SetupData d,
                       PHX::FieldManager<Traits>& fm)
 {
+  this->utils.setFieldData(cellIntegral_,fm);
 }
 
 template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_Functional<EvalT,Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
-   std::cout << "EVALUTE FIELDS: \"" <<  cellIntegral_.fieldTag().name() << "\"" << std::endl;
+  for(std::size_t i=0;i<d.num_cells;i++) {
+    responseObj_->value += cellIntegral_(i);
+  }
 }
 
 }

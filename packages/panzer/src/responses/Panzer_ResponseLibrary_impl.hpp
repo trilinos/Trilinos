@@ -464,7 +464,7 @@ addResponse(const std::string responseName,
 
 template <typename TraitsT>
 template <typename EvalT>
-Teuchos::RCP<const ResponseBase> ResponseLibrary<TraitsT>::
+Teuchos::RCP<ResponseBase> ResponseLibrary<TraitsT>::
 getResponse(const std::string responseName) const
 {
    typedef boost::unordered_map<std::string, Response_TemplateManager> HashMap;
@@ -481,7 +481,7 @@ getResponse(const std::string responseName) const
 template <typename TraitsT>
 template <typename EvalT>
 void ResponseLibrary<TraitsT>::
-getResponses(std::vector<Teuchos::RCP<const ResponseBase> > & responses) const
+getResponses(std::vector<Teuchos::RCP<ResponseBase> > & responses) const
 {
    typedef boost::unordered_map<std::string, Response_TemplateManager> HashMap;
 

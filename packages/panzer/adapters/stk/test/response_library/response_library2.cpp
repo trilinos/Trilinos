@@ -113,9 +113,11 @@ namespace panzer {
   }
 
   struct RespFactoryFunc_Builder {
+    MPI_Comm comm;
+
     template <typename T>
     Teuchos::RCP<ResponseEvaluatorFactoryBase> build() const
-    { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T>()); }
+    { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T>(comm)); }
   };
 
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(response_library_stk, test, EvalT)
@@ -218,9 +220,14 @@ namespace panzer {
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory; 
     cm_factory.buildObjects(cm_builder);
 
+    double iValue = -2.3;
+    double tValue = 82.9;
+
     Teuchos::ParameterList closure_models("Closure Models");
     closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
+    closure_models.sublist("solid").sublist("FIELD_A").set<double>("Value",tValue);
     closure_models.sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").set<double>("Value",1.0);
+    closure_models.sublist("ion solid").sublist("FIELD_B").set<double>("Value",iValue);
 
     Teuchos::ParameterList user_data("User Data");
     user_data.sublist("Panzer Data").set("Mesh", mesh);
@@ -238,38 +245,56 @@ namespace panzer {
           // = Teuchos::rcp(new ResponseLibrary<Traits>());
 
     RespFactoryFunc_Builder builder;
+    builder.comm = MPI_COMM_WORLD;
     std::vector<std::string> blocks(1);
     blocks[0] = "eblock-0_0";
-    rLibrary->addResponse("TEMPERATURE",blocks,builder);
+    rLibrary->addResponse("FIELD_A",blocks,builder);
     blocks[0] = "eblock-1_0";
-    rLibrary->addResponse("ION_TEMPERATURE",blocks,builder);
+    rLibrary->addResponse("FIELD_B",blocks,builder);
 
-    Teuchos::RCP<const ResponseBase> tResp = rLibrary->getResponse<panzer::Traits::Residual>("TEMPERATURE");
-    Teuchos::RCP<const ResponseBase> iResp = rLibrary->getResponse<panzer::Traits::Residual>("ION_TEMPERATURE");
+    Teuchos::RCP<ResponseBase> tResp = rLibrary->getResponse<panzer::Traits::Residual>("FIELD_A");
+    Teuchos::RCP<ResponseBase> iResp = rLibrary->getResponse<panzer::Traits::Residual>("FIELD_B");
 
     TEST_ASSERT(tResp!=Teuchos::null);
     TEST_ASSERT(iResp!=Teuchos::null);
 
-    TEST_EQUALITY(tResp->getName(),"TEMPERATURE");
-    TEST_EQUALITY(iResp->getName(),"ION_TEMPERATURE");
+    TEST_EQUALITY(tResp->getName(),"FIELD_A");
+    TEST_EQUALITY(iResp->getName(),"FIELD_B");
 
-    TEST_EQUALITY(tResp->getLookupName(),"RESPONSE_TEMPERATURE");
-    TEST_EQUALITY(iResp->getLookupName(),"RESPONSE_ION_TEMPERATURE");
+    TEST_EQUALITY(tResp->getLookupName(),"RESPONSE_FIELD_A");
+    TEST_EQUALITY(iResp->getLookupName(),"RESPONSE_FIELD_B");
 
-    TEST_THROW(Teuchos::rcp_dynamic_cast<const Response_Functional<panzer::Traits::Residual> >(tResp,true),std::bad_cast);
-    TEST_THROW(Teuchos::rcp_dynamic_cast<const Response_Functional<panzer::Traits::Residual> >(iResp,true),std::bad_cast);
+    TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<double> >(tResp,true));
+    TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<double> >(iResp,true));
 
-    std::vector<Teuchos::RCP<const ResponseBase> > v;
+    RCP<Epetra_Vector> eVec;
+    RCP<Thyra::VectorBase<double> > tVec;
+    {
+      RCP<const Epetra_Map> map = Teuchos::rcp_dynamic_cast<Response_Functional<double> >(iResp)->getMap();
+      RCP<const Thyra::VectorSpaceBase<double> > vs = Teuchos::rcp_dynamic_cast<Response_Functional<double> >(tResp)->getVectorSpace();
+
+      eVec = Teuchos::rcp(new Epetra_Vector(*map)); 
+      tVec = Thyra::createMember<double>(vs);
+      
+      Teuchos::rcp_dynamic_cast<Response_Functional<double> >(iResp)->setVector(eVec);
+      Teuchos::rcp_dynamic_cast<Response_Functional<double> >(tResp)->setVector(tVec);
+
+      // test epetra or thyra only logic
+      TEST_THROW(Teuchos::rcp_dynamic_cast<Response_Functional<double> >(iResp)->setVector(tVec),std::logic_error);
+      TEST_THROW(Teuchos::rcp_dynamic_cast<Response_Functional<double> >(tResp)->setVector(eVec),std::logic_error);
+    }
+
+    std::vector<Teuchos::RCP<ResponseBase> > v;
     v.push_back(Teuchos::null);
 
     rLibrary->getResponses<panzer::Traits::Residual>(v);
     TEST_EQUALITY(v.size(),2);
 
-    TEST_ASSERT(v[0]->getName()=="TEMPERATURE" || v[0]->getName()=="ION_TEMPERATURE");
-    TEST_ASSERT(v[1]->getName()=="TEMPERATURE" || v[1]->getName()=="ION_TEMPERATURE");
+    TEST_ASSERT(v[0]->getName()=="FIELD_A" || v[0]->getName()=="FIELD_B");
+    TEST_ASSERT(v[1]->getName()=="FIELD_A" || v[1]->getName()=="FIELD_B");
 
-    TEST_THROW(Teuchos::rcp_dynamic_cast<const Response_Functional<panzer::Traits::Residual> >(v[0],true),std::bad_cast);
-    TEST_THROW(Teuchos::rcp_dynamic_cast<const Response_Functional<panzer::Traits::Residual> >(v[1],true),std::bad_cast);
+    TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<double> >(v[0],true));
+    TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<double> >(v[1],true));
 
     TEST_ASSERT(!rLibrary->responseEvaluatorsBuilt());
 
@@ -286,7 +311,16 @@ namespace panzer {
     elof->initializeGhostedContainer(panzer::EpetraLinearObjContainer::X,*gloc);
 
     panzer::AssemblyEngineInArgs ae_inargs(gloc,loc);
+    ae_inargs.addGlobalEvaluationData(iResp->getLookupName(),iResp);
+    ae_inargs.addGlobalEvaluationData(tResp->getLookupName(),tResp);
+
     rLibrary->evaluate<panzer::Traits::Residual>(ae_inargs);
+
+    Teuchos::ArrayRCP<double> tData;
+    Teuchos::rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(tVec)->getNonconstLocalData(Teuchos::outArg(tData));
+
+    TEST_FLOATING_EQUALITY((*eVec)[0],0.5*iValue,1e-14);
+    TEST_FLOATING_EQUALITY(tData[0],0.5*tValue,1e-14);
   }
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,

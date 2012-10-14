@@ -49,6 +49,7 @@
 #include "Panzer_config.hpp"
 #include "Panzer_Dimension.hpp"
 #include "Panzer_CellData.hpp"
+#include "Panzer_Response_Functional.hpp"
 
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
@@ -71,8 +72,13 @@ public:
 
   void evaluateFields(typename Traits::EvalData d);
 
+  void preEvaluate(typename Traits::PreEvalData d);
+
 private:
   typedef typename EvalT::ScalarT ScalarT;
+
+  std::string responseName_;
+  Teuchos::RCP<Response_Functional<ScalarT> > responseObj_;
 
   Teuchos::RCP<PHX::FieldTag> scatterHolder_; // dummy target
   PHX::MDField<ScalarT,panzer::Cell> cellIntegral_; // holds cell integrals
