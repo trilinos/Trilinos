@@ -61,6 +61,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_TentativePFactory_fwd.hpp"
+#include "MueLu_CoarseMapFactory_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
@@ -155,7 +156,7 @@ namespace MueLu {
      * returns the full block size (number of DOFs per node) of the domain DOF map (= coarse map). 
      * This is the sum of all entries in the striding vector.
      * e.g. for 2 velocity dofs and 1 pressure dof the return value is 3.
-     */
+     */ // TODO remove me, code has been moved to CoarseMapFactory
     size_t getFixedBlockSize() const {
       // sum up size of all strided blocks (= number of dofs per node)
       size_t blkSize = 0;
@@ -224,7 +225,7 @@ namespace MueLu {
 
     - FIXME There is no attempt to detect if the aggregate is too small to support the NS.
     */
-    void MakeTentative(const Matrix& fineA, const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const MultiVector & fineNullspace, //-> INPUT
+    void MakeTentative(const Matrix& fineA, const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const MultiVector & fineNullspace, RCP<const Map> coarseMap, //-> INPUT
                        RCP<MultiVector> & coarseNullspace, RCP<Matrix> & Ptentative) const;                  //-> OUTPUT
 
   private:
@@ -232,6 +233,7 @@ namespace MueLu {
     RCP<const FactoryBase> amalgFact_;      //! Factory that (Un)Amalgamation info from A
     RCP<const FactoryBase> nullspaceFact_;  //! Factory creating the nullspace
     RCP<const FactoryBase> AFact_;          //! Define which matrix A is used in this factory
+    RCP<const FactoryBase> coarseMapFact_;  //! coarseMap factory creates coarse map of prolongation transfer operator
 
     bool QR_; //! use QR decomposition for improving nullspace information per default
 

@@ -63,6 +63,7 @@
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_NullspaceFactory.hpp" //FIXME
+#include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
@@ -75,6 +76,7 @@ namespace MueLu {
 
     stridedBlockId_ = -1; // default: blocked map with constant blocksize "NSDim"
 
+    coarseMapFact_ = Teuchos::rcp(new CoarseMapFactory(aggregatesFact_,nullspaceFact_));
   }
  
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -86,6 +88,7 @@ namespace MueLu {
     fineLevel.DeclareInput("Aggregates", aggregatesFact_.get(), this);
     fineLevel.DeclareInput("Nullspace",  nullspaceFact_.get(), this);
     fineLevel.DeclareInput("UnAmalgamationInfo", amalgFact_.get(), this);
+    fineLevel.DeclareInput("CoarseMap", coarseMapFact_.get(), this);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -109,11 +112,12 @@ namespace MueLu {
     RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_.get());
     RCP<AmalgamationInfo> amalgInfo = fineLevel.Get< RCP<AmalgamationInfo> >("UnAmalgamationInfo", amalgFact_.get());
     RCP<MultiVector> nullspace  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
+    RCP<const Map> coarseMap = fineLevel.Get<RCP<const Map> >("CoarseMap",coarseMapFact_.get());
 
     // Build
     RCP<MultiVector> coarseNullspace; RCP<Matrix> Ptentative; // output of MakeTentative()
 
-    MakeTentative(*A, *aggregates, *amalgInfo, *nullspace, coarseNullspace, Ptentative);
+    MakeTentative(*A, *aggregates, *amalgInfo, *nullspace, coarseMap, coarseNullspace, Ptentative);
 
     // Level Set
     coarseLevel.Set("Nullspace", coarseNullspace, this);
@@ -133,7 +137,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MakeTentative(
-                     const Matrix& fineA, const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const MultiVector & fineNullspace,
+                     const Matrix& fineA, const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const MultiVector & fineNullspace, RCP<const Map> coarseMap,
                      RCP<MultiVector> & coarseNullspace, RCP<Matrix> & Ptentative) const
   {
     RCP<const Teuchos::Comm<int> > comm = fineA.getRowMap()->getComm();
@@ -159,11 +163,12 @@ namespace MueLu {
     // dimension of fine level nullspace
     const size_t NSDim = fineNullspace.getNumVectors();
 
+#if 0
     // index base for coarse Dof map (usually 0)
     GO indexBase=fineA.getRowMap()->getIndexBase();
 
     // build coarse level maps (= domain map of transfer operator)
-    RCP<const Map > coarseMap = Teuchos::null;
+    //RCP<const Map > coarseMap = Teuchos::null;
     //if (domainGidOffset_ == 0)
 
     // in general we cannot use the striding information from range map of A since the number of null spaces might have changed from fine level to intermediate levels (e.g. for structural problems from 3 to 6)
@@ -195,6 +200,7 @@ namespace MueLu {
 						  stridedBlockId_,
 						  domainGidOffset_
 						  );
+#endif
 
     const RCP<const Map> nonUniqueMap = AmalgamationFactory::ComputeUnamalgamatedImportDofMap(aggregates, amalgInfo, aggSizes);
     const RCP<const Map> uniqueMap    = fineA.getDomainMap();

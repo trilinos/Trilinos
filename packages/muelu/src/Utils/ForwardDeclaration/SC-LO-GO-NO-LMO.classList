@@ -37,3 +37,4 @@ MultiVectorTransferFactory
 SchurComplementFactory
 AmalgamationFactory
 AggStatTransferFactory
+CoarseMapFactory
