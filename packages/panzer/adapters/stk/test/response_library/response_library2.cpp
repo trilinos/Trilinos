@@ -279,6 +279,14 @@ namespace panzer {
   				      user_data,true);
 
     TEST_ASSERT(rLibrary->responseEvaluatorsBuilt());
+
+    Teuchos::RCP<panzer::LinearObjContainer> loc = elof->buildLinearObjContainer();
+    elof->initializeContainer(panzer::EpetraLinearObjContainer::X,*loc);
+    Teuchos::RCP<panzer::LinearObjContainer> gloc = elof->buildGhostedLinearObjContainer();
+    elof->initializeGhostedContainer(panzer::EpetraLinearObjContainer::X,*gloc);
+
+    panzer::AssemblyEngineInArgs ae_inargs(gloc,loc);
+    rLibrary->evaluate<panzer::Traits::Residual>(ae_inargs);
   }
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,

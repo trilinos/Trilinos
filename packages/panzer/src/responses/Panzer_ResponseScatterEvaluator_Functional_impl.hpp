@@ -95,6 +95,7 @@ template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_Functional<EvalT,Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
+   std::cout << "EVALUTE FIELDS: \"" <<  cellIntegral_.fieldTag().name() << "\"" << std::endl;
 }
 
 }

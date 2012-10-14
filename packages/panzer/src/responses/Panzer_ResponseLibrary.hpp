@@ -282,6 +282,11 @@ public:
    bool responseEvaluatorsBuilt() const
    { return responseEvaluatorsBuilt_; }
 
+   /** Evaluate response library for a particular evaluation type.
+     */
+   template <typename EvalT> 
+   void evaluate(const panzer::AssemblyEngineInArgs& input_args);
+
 protected:
    //! Access a container field for a specified element block
    template <typename EvalT>

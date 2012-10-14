@@ -594,6 +594,14 @@ buildResponseEvaluators(
    responseEvaluatorsBuilt_ = true;
 }
 
+template <typename TraitsT>
+template <typename EvalT> 
+void ResponseLibrary<TraitsT>::
+evaluate(const panzer::AssemblyEngineInArgs& input_args)
+{
+   ae_tm2_.template getAsObject<EvalT>()->evaluate(input_args);
+}
+
 }
 
 #endif
