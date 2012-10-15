@@ -264,24 +264,24 @@ namespace panzer {
     TEST_EQUALITY(tResp->getLookupName(),"RESPONSE_FIELD_A");
     TEST_EQUALITY(iResp->getLookupName(),"RESPONSE_FIELD_B");
 
-    TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<double> >(tResp,true));
-    TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<double> >(iResp,true));
+    TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(tResp,true));
+    TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(iResp,true));
 
     RCP<Epetra_Vector> eVec;
     RCP<Thyra::VectorBase<double> > tVec;
     {
-      RCP<const Epetra_Map> map = Teuchos::rcp_dynamic_cast<Response_Functional<double> >(iResp)->getMap();
-      RCP<const Thyra::VectorSpaceBase<double> > vs = Teuchos::rcp_dynamic_cast<Response_Functional<double> >(tResp)->getVectorSpace();
+      RCP<const Epetra_Map> map = Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(iResp)->getMap();
+      RCP<const Thyra::VectorSpaceBase<double> > vs = Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(tResp)->getVectorSpace();
 
       eVec = Teuchos::rcp(new Epetra_Vector(*map)); 
       tVec = Thyra::createMember<double>(vs);
       
-      Teuchos::rcp_dynamic_cast<Response_Functional<double> >(iResp)->setVector(eVec);
-      Teuchos::rcp_dynamic_cast<Response_Functional<double> >(tResp)->setVector(tVec);
+      Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(iResp)->setVector(eVec);
+      Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(tResp)->setVector(tVec);
 
       // test epetra or thyra only logic
-      TEST_THROW(Teuchos::rcp_dynamic_cast<Response_Functional<double> >(iResp)->setVector(tVec),std::logic_error);
-      TEST_THROW(Teuchos::rcp_dynamic_cast<Response_Functional<double> >(tResp)->setVector(eVec),std::logic_error);
+      TEST_THROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(iResp)->setVector(tVec),std::logic_error);
+      TEST_THROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(tResp)->setVector(eVec),std::logic_error);
     }
 
     std::vector<Teuchos::RCP<ResponseBase> > v;
@@ -293,8 +293,8 @@ namespace panzer {
     TEST_ASSERT(v[0]->getName()=="FIELD_A" || v[0]->getName()=="FIELD_B");
     TEST_ASSERT(v[1]->getName()=="FIELD_A" || v[1]->getName()=="FIELD_B");
 
-    TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<double> >(v[0],true));
-    TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<double> >(v[1],true));
+    TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(v[0],true));
+    TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(v[1],true));
 
     TEST_ASSERT(!rLibrary->responseEvaluatorsBuilt());
 

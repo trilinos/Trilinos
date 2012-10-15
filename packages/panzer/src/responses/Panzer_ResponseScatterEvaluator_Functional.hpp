@@ -78,7 +78,7 @@ private:
   typedef typename EvalT::ScalarT ScalarT;
 
   std::string responseName_;
-  Teuchos::RCP<Response_Functional<ScalarT> > responseObj_;
+  Teuchos::RCP<Response_Functional<EvalT> > responseObj_;
 
   Teuchos::RCP<PHX::FieldTag> scatterHolder_; // dummy target
   PHX::MDField<ScalarT,panzer::Cell> cellIntegral_; // holds cell integrals
