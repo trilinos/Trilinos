@@ -71,12 +71,10 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TentativePFactory(RCP<const FactoryBase> aggregatesFact, RCP<const FactoryBase> amalgFact, RCP<const FactoryBase> nullspaceFact, RCP<const FactoryBase> AFact, RCP<const FactoryBase> coarseMapFact)
     : aggregatesFact_(aggregatesFact), amalgFact_(amalgFact), nullspaceFact_(nullspaceFact), AFact_(AFact),coarseMapFact_(coarseMapFact),
-      QR_(false),
-      domainGidOffset_(0) {
+      QR_(false)//,
+      /*domainGidOffset_(0)*/ {
 
-    stridedBlockId_ = -1; // default: blocked map with constant blocksize "NSDim"
-
-    //coarseMapFact_ = Teuchos::rcp(new CoarseMapFactory(aggregatesFact_,nullspaceFact_));
+    //stridedBlockId_ = -1; // default: blocked map with constant blocksize "NSDim"
   }
  
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -125,17 +123,6 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::setDomainMapOffset(GlobalOrdinal offset) {
-    TEUCHOS_TEST_FOR_EXCEPTION(offset < 0, Exceptions::RuntimeError, "MueLu::TentativePFactory::SetDomainMapOffset: domain map offset for coarse gids of tentative prolongator must not be smaller than zero. Error.");
-    domainGidOffset_ = offset;
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  GlobalOrdinal TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::getDomainMapOffset() const {
-    return domainGidOffset_;
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MakeTentative(
                      const Matrix& fineA, const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const MultiVector & fineNullspace, RCP<const Map> coarseMap,
                      RCP<MultiVector> & coarseNullspace, RCP<Matrix> & Ptentative) const
@@ -165,41 +152,6 @@ namespace MueLu {
 
     // index base for coarse Dof map (usually 0)
     GO indexBase=fineA.getRowMap()->getIndexBase();
-#if 0
-    // build coarse level maps (= domain map of transfer operator)
-    //RCP<const Map > coarseMap = Teuchos::null;
-    //if (domainGidOffset_ == 0)
-
-    // in general we cannot use the striding information from range map of A since the number of null spaces might have changed from fine level to intermediate levels (e.g. for structural problems from 3 to 6)
-
-    // check for consistency of striding information with NSDim and nCoarseDofs
-    if( stridedBlockId_== -1 ) {
-      // this means we have no real strided map but only a block map with constant blockSize "NSDim"
-      TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo_.size() > 1, Exceptions::RuntimeError, "MueLu::TentativePFactory::MakeTentative(): stridingInfo_.size() but must be one");
-      stridingInfo_.clear();
-      stridingInfo_.push_back(NSDim);
-      TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo_.size() != 1, Exceptions::RuntimeError, "MueLu::TentativePFactory::MakeTentative(): stridingInfo_.size() but must be one");
-    } else {
-      // stridedBlockId_ > -1, set by user
-      TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockId_ > Teuchos::as<LO>(stridingInfo_.size() - 1) , Exceptions::RuntimeError, "MueLu::TentativePFactory::MakeTentative(): it is stridingInfo_.size() <= stridedBlockId_. error.");
-      size_t stridedBlockSize = stridingInfo_[stridedBlockId_];
-      TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockSize != NSDim , Exceptions::RuntimeError, "MueLu::TentativePFactory::MakeTentative(): dimension of strided block != NSDim. error.");      
-    }
-
-    // number of coarse level dofs (fixed by number of aggregats and nullspace dimension)
-    GO nCoarseDofs = numAggs * getFixedBlockSize(); // TODO FIXME this is a hack, maybe it's better to have nCoarseDofs based on the local number of dofs for current strided block?
-
-    // default: no offset for domain gids.
-    coarseMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(fineA.getRowMap()->lib(),
-						  Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-						  nCoarseDofs,
-						  indexBase,
-						  stridingInfo_,
-						  fineA.getRowMap()->getComm(),
-						  stridedBlockId_,
-						  domainGidOffset_
-						  );
-#endif
 
     const RCP<const Map> nonUniqueMap = AmalgamationFactory::ComputeUnamalgamatedImportDofMap(aggregates, amalgInfo, aggSizes);
     const RCP<const Map> uniqueMap    = fineA.getDomainMap();

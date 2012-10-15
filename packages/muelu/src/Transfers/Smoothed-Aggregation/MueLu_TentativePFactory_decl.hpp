@@ -127,61 +127,6 @@ namespace MueLu {
 
     //@}
 
-    //! @name Get/Set functions
-
-    /*! @brief setDomainMapOffset
-     sets offset for domain map DOF Gids in tentative prolongation operator.
-     offset must not be smaller than zero. Note: Direct solvers (Amesos/Amesos2) are not properly working with offset > 0.
-     */
-    void setDomainMapOffset(GlobalOrdinal offset);
-
-    /*! @brief getDomainMapOffset
-     * returns offset of the domain DOF map (=coarse map).
-     */
-    GlobalOrdinal getDomainMapOffset() const;
-
-    /*! @brief getStridingData
-     * returns vector with size of striding blocks in the domain DOF map (= coarse map). 
-     * e.g. for 2 velocity dofs and 1 pressure dof the vector is (2,1)
-     */
-    std::vector<size_t> getStridingData() { return stridingInfo_; }
-
-    /*! @brief setStridingData
-     * set striding vector for the domain DOF map (= coarse map),
-     * e.g. (2,1) for 2 velocity dofs and 1 pressure dof
-     */
-    void setStridingData(std::vector<size_t> stridingInfo) { stridingInfo_ = stridingInfo; }
-
-    /*! @brief getFixedBlockSize
-     * returns the full block size (number of DOFs per node) of the domain DOF map (= coarse map). 
-     * This is the sum of all entries in the striding vector.
-     * e.g. for 2 velocity dofs and 1 pressure dof the return value is 3.
-     */ // TODO remove me, code has been moved to CoarseMapFactory
-    size_t getFixedBlockSize() const {
-      // sum up size of all strided blocks (= number of dofs per node)
-      size_t blkSize = 0;
-      std::vector<size_t>::const_iterator it;
-      for(it = stridingInfo_.begin(); it != stridingInfo_.end(); ++it) {
-        blkSize += *it;
-      }
-      return blkSize;
-    }
-
-    /*! @brief getStridedBlockId
-     * returns strided block id for the domain DOF map of Ptent (= coarse map)
-     * or -1 if full strided map is stored in the domain map of Ptent (= coarse map)
-     */
-    LocalOrdinal getStridedBlockId() { return stridedBlockId_; }
-
-    /*! @brief setStridedBlockId
-     * set strided block id for the domain DOF map of Ptent (= coarse map)
-     * or -1 if full strided map is stored in the domain map of Ptent (= coarse map)
-     */
-    void setStridedBlockId(LocalOrdinal stridedBlockId) {
-      stridedBlockId_ = stridedBlockId;
-    }
-
-    //@}
   private:
     //! @name Static methods.
     //@{
@@ -222,8 +167,6 @@ namespace MueLu {
     Otherwise, the only alternative was to base the Importer on A's rowmap, which is probably much larger than the reduced map.
 
     5) Once received, the rows are inserted by the owning processes and Ptent is fillCompleted.
-
-    - FIXME There is no attempt to detect if the aggregate is too small to support the NS.
     */
     void MakeTentative(const Matrix& fineA, const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const MultiVector & fineNullspace, RCP<const Map> coarseMap, //-> INPUT
                        RCP<MultiVector> & coarseNullspace, RCP<Matrix> & Ptentative) const;                  //-> OUTPUT
@@ -236,15 +179,6 @@ namespace MueLu {
     RCP<const FactoryBase> coarseMapFact_;  //! coarseMap factory creates coarse map of prolongation transfer operator
 
     bool QR_; //! use QR decomposition for improving nullspace information per default
-
-    // TODO to be removed: add a domainGidOffset to strided maps
-    GlobalOrdinal domainGidOffset_; //! offset for domain gids (coarse gids) of tentative prolongator  (default = 0). The GIDs for the domain dofs of Ptent start with domainGidOffset, are contiguous and distributed equally over the procs (unless some reordering is done).
-
-    mutable std::vector<size_t> stridingInfo_;   // vector with size of strided blocks (dofs)
-    LocalOrdinal stridedBlockId_;        // member variable denoting which dofs are stored in map
-                                         // stridedBlock == -1: the full map (with all strided block dofs)
-                                         // stridedBlock >  -1: only dofs of strided block with index "stridedBlockId" are stored in this map
-
 
   }; //class TentativePFactory
 
