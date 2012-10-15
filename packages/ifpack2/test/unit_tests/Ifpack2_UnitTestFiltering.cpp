@@ -185,7 +185,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // ======================================== //
 #ifdef HAVE_IFPACK2_ZOLTAN2
   // Fill the permulation with a local reversal
-  Zoltan2::OrderingSolution<LocalOrdinal,LocalOrdinal> Ordering((size_t)num_rows_per_proc,(size_t)num_rows_per_proc);
+  Zoltan2::OrderingSolution<GlobalOrdinal,LocalOrdinal> Ordering((size_t)num_rows_per_proc,(size_t)num_rows_per_proc);
   Teuchos::ArrayRCP<LocalOrdinal> l_perm=Ordering.getPermutationRCP();
   for(LocalOrdinal i=0; i < (LocalOrdinal)num_rows_per_proc; i++){
     l_perm[i] = (LocalOrdinal) (num_rows_per_proc - i - 1);
@@ -193,9 +193,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
 
   // Now, build a reordering and a reverse reordering
   Ifpack2::ReorderFilter<CRS> Reorder1(RCP<ROW >(&LocalA,false),
-				       RCP<Zoltan2::OrderingSolution<LocalOrdinal,LocalOrdinal> >(&Ordering,false));
+				       RCP<Zoltan2::OrderingSolution<GlobalOrdinal,LocalOrdinal> >(&Ordering,false));
   Ifpack2::ReorderFilter<CRS> Reorder2(RCP<ROW >(&Reorder1,false),
-				       RCP<Zoltan2::OrderingSolution<LocalOrdinal,LocalOrdinal> >(&Ordering,false));
+				       RCP<Zoltan2::OrderingSolution<GlobalOrdinal,LocalOrdinal> >(&Ordering,false));
 
   // Apply w/ double-reversed reordering
   Reorder2.apply(lx,ly);
