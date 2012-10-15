@@ -46,6 +46,8 @@
 #include "Panzer_ResponseContainer.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 
+#include <boost/unordered_set.hpp>
+
 namespace panzer {
 
 template <typename TraitsT>
