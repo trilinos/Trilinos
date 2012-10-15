@@ -1018,12 +1018,7 @@ namespace Iopg {
 	else if (field.get_name() == "ids") {
 	  // Map the local ids in this node block
 	  // (1...node_count) to global node ids.
-	  const Ioss::MapContainer &map = get_node_map();
-	  int *ids = static_cast<int*>(data);
-
-	  for (size_t i=0; i < num_to_get; i++) {
-	    ids[i] = map[1 + i];
-	  }
+	  Ioss::Map::map_implicit_data(data, field, num_to_get, get_node_map(), 0);
 	}
 	else if (field.get_name() == "connectivity") {
 	  // Do nothing, just handles an idiosyncracy of the GroupingEntity
@@ -1069,24 +1064,13 @@ namespace Iopg {
 	      pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 
 	    // Now, map the nodes in the connectivity from local to global ids
-	    const Ioss::MapContainer &map = get_node_map();
-	    if (!Ioss::Map::is_sequential(map)) {
-	      int *connect = static_cast<int*>(data);
-	      for (size_t i=0; i < num_to_get*element_nodes; i++)
-		connect[i] = map[connect[i]];
-	    }
+	    Ioss::Map::map_data(data, field, num_to_get*element_nodes, get_node_map());
 	  }
 	}
 	else if (field.get_name() == "ids") {
 	  // Map the local ids in this element block
 	  // (eb_offset+1...eb_offset+1+my_element_count) to global element ids.
-	  const Ioss::MapContainer &map = get_element_map();
-	  int eb_offset = eb->get_offset();
-	  int *ids = static_cast<int*>(data);
-
-	  for (size_t i=0; i < num_to_get; i++) {
-	    ids[i] = map[eb_offset + 1 + i];
-	  }
+	  Ioss::Map::map_implicit_data(data, field, num_to_get, get_element_map(), eb->get_offset());
 	}
 	else {
 	  num_to_get = Ioss::Utils::field_warning(eb, field, "input");

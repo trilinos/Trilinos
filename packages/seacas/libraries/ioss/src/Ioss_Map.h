@@ -103,6 +103,9 @@ namespace Ioss {
     static void map_implicit_data(void *data, const Ioss::Field &field, size_t count,
 				  const Ioss::MapContainer &map, size_t offset);
 
+    template <typename T>
+      size_t map_field_to_db_scalar_order(T* variables, std::vector<double> &db_var,
+					  size_t begin_offset, size_t count, size_t stride, size_t offset);
 
     void build_reorder_map(int64_t start, int64_t count);
 
@@ -112,8 +115,6 @@ namespace Ioss {
 
     static void verify_no_duplicate_ids(ReverseMapContainer &reverse_map,
 					int processor);
-
-    bool entityReordered;
 
     MapContainer        map;
     MapContainer        reorder;

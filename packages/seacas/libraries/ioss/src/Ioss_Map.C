@@ -62,8 +62,7 @@ namespace {
 
 }
 
-Ioss::Map::Map() :
-  entityReordered(false)
+Ioss::Map::Map()
 {}
 
 
@@ -237,6 +236,40 @@ void Ioss::Map::map_implicit_data(void *data, const Ioss::Field &field, size_t c
   }
 }
 
+template size_t Ioss::Map::map_field_to_db_scalar_order(double* variables, std::vector<double> &db_var, 
+							size_t begin_offset, size_t count, size_t stride, size_t offset);
+template size_t Ioss::Map::map_field_to_db_scalar_order(int* variables, std::vector<double> &db_var, 
+							size_t begin_offset, size_t count, size_t stride, size_t offset);
+template size_t Ioss::Map::map_field_to_db_scalar_order(int64_t* variables, std::vector<double> &db_var, 
+							size_t begin_offset, size_t count, size_t stride, size_t offset);
+
+template <typename T>
+size_t Ioss::Map::map_field_to_db_scalar_order(T* variables, std::vector<double> &db_var, 
+					     size_t begin_offset, size_t count, size_t stride, size_t offset)
+{
+  size_t num_out = 0;
+  if (!reorder.empty()) {
+    size_t k = offset;
+    for (size_t j=begin_offset; j < count*stride; j+= stride) {
+      // Map to storage location.
+      ssize_t where = reorder[k++] - offset;
+      if (where >= 0) {
+	assert(where < count);
+	db_var[where] = variables[j];
+	num_out++;
+      }
+    }
+  } else {
+    size_t k = 0;
+    for (size_t j=begin_offset; j < count*stride; j+= stride) {
+      // Map to storage location.
+      db_var[k++] = variables[j];
+    }
+    num_out = count;
+  }
+  return num_out;
+}
+					     
 void Ioss::Map::build_reorder_map(int64_t start, int64_t count)
 {
   // This routine builds a map that relates the current node id order
@@ -265,9 +298,8 @@ void Ioss::Map::build_reorder_map(int64_t start, int64_t count)
     int64_t global_id = map[i+1];
     int64_t orig_local_id = global_to_local(global_id) - 1;
 	
-    // If we assume that partial output is not being used (it
-    // currently isn't in Sierra), then the reordering should only be
-    // a permutation of the original ordering within this entity block...
+    // The reordering should only be a permutation of the original
+    // ordering within this entity block...
     assert(orig_local_id >= start && orig_local_id <= my_end);
     reorder[i] = orig_local_id;
   }

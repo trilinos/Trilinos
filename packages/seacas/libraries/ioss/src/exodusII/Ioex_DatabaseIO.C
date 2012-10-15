@@ -4854,9 +4854,6 @@ namespace Ioex {
       Ioss::Field::BasicType ioss_type = field.get_type();
       assert(ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::INTEGER ||
 	     ioss_type == Ioss::Field::INT64 ||ioss_type == Ioss::Field::COMPLEX);
-      double  *rvar   = static_cast<double*>(variables);
-      int     *ivar   = static_cast<int*>(variables);
-      int64_t *ivar64 = static_cast<int64_t*>(variables);
 
       // Note that if the field's basic type is COMPLEX, then each component of
       // the VariableType is a complex variable consisting of a real and
@@ -4901,28 +4898,28 @@ namespace Ioex {
 
 	  var_index = m_variables[EX_NODE_BLOCK].find(var_name)->second;
 
-	  // Transfer from 'variables' array.
-	  ssize_t k = 0;
-	  ssize_t num_out = 0;
-	  for (ssize_t j=(re_im*i)+complex_comp; j < re_im*count*comp_count; j+=(re_im*comp_count)) {
-	    int64_t where;
-	    if (nodeMap.reorder.empty())
-	      where = k++;
-	    else
-	      where = nodeMap.reorder[k++];
-	    if (where >= 0) {
-	      assert(where < count);
-	      if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
-		temp[where] = rvar[j];
-	      else if (ioss_type == Ioss::Field::INTEGER)
-		temp[where] = ivar[j];
-	      else if (ioss_type == Ioss::Field::INT64)
-		temp[where] = ivar64[j]; // FIX 64 UNSAFE
-	      num_out++;
-	    }
+	  size_t begin_offset = (re_im*i)+complex_comp;
+	  size_t stride = re_im*comp_count;
+	  size_t num_out = 0;
+
+	  if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
+	    num_out = nodeMap.map_field_to_db_scalar_order(static_cast<double*>(variables),
+							   temp, begin_offset, count, stride, 0);
+	  else if (ioss_type == Ioss::Field::INTEGER)
+	    num_out = nodeMap.map_field_to_db_scalar_order(static_cast<int*>(variables),
+							   temp, begin_offset, count, stride, 0);
+	  else if (ioss_type == Ioss::Field::INT64)
+	    num_out = nodeMap.map_field_to_db_scalar_order(static_cast<int64_t*>(variables),
+							   temp, begin_offset, count, stride, 0);
+
+	  if (num_out != nodeCount) {
+	    std::ostringstream errmsg;
+	    errmsg << "ERROR: Problem outputting nodal variable '" << var_name
+		   << "' with index = " << var_index << " to file "
+		   << util().decode_filename(get_filename(), isParallel) << "\n"
+		   << "Should have output " << nodeCount << " values, but instead only output " << num_out << " values.\n";
+	    IOSS_ERROR(errmsg);
 	  }
-	  assert(k == count);
-	  assert(num_out == nodeCount);
 
 	  // Write the variable...
 	  int ierr = ex_put_var(get_file_pointer(), step, EX_NODE_BLOCK, var_index, 0, num_out, TOPTR(temp));
@@ -4943,25 +4940,27 @@ namespace Ioex {
 						  int64_t count,
 						  void *variables) const
     {
+      static Ioss::Map non_element_map; // Used as an empty map for ge->type() != element block.
       const Ioss::VariableType *var_type = field.transformed_storage();
       std::vector<double> temp(count);
 
       int step = get_current_state();
       step = get_database_step(step);
 
+      Ioss::Map *map = NULL;
       ssize_t eb_offset = 0;
       if (ge->type() == Ioss::ELEMENTBLOCK) {
 	const Ioss::ElementBlock *elb = dynamic_cast<const Ioss::ElementBlock*>(ge);
 	assert(elb != NULL);
 	eb_offset = elb->get_offset();
+	map = &elemMap;
+      } else {
+	map = &non_element_map;
       }
 
       Ioss::Field::BasicType ioss_type = field.get_type();
       assert(ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::INTEGER ||
 	     ioss_type == Ioss::Field::INT64 || ioss_type == Ioss::Field::COMPLEX);
-      double  *rvar = static_cast<double*>(variables);
-      int     *ivar = static_cast<int*>(variables);
-      int64_t *ivar64 = static_cast<int64_t*>(variables);
 
       // Note that if the field's basic type is COMPLEX, then each component of
       // the VariableType is a complex variable consisting of a real and
@@ -4972,7 +4971,6 @@ namespace Ioex {
       // v.im_y, v_z, v.im_z which need to be output in six separate
       // exodus fields.  These fields were already defined in
       // "write_results_metadata".
-
 
       // get number of components, cycle through each component
       // and add suffix to base 'field_name'.  Look up index
@@ -4996,34 +4994,23 @@ namespace Ioex {
 	  var_index = m_variables[type].find(var_name)->second;
 	  assert(var_index > 0);
 
-	  // Transfer from 'variables' array.  Note that the
-	  // 'elemMap.reorder has '1..numel' ids in it, but the 'temp'
-	  // array is stored in 'element block local id space', so we need
-	  // to add/subtract the element block offset to keep things
-	  // straight.
-	  ssize_t k = eb_offset;
-	  ssize_t where = 0;
-	  for (ssize_t j=(re_im*i)+complex_comp; j < re_im*count*comp_count; j+=(re_im*comp_count)) {
-	    // Map to storage location.
-
-	    if (type == EX_ELEM_BLOCK)
-	      if (!elemMap.reorder.empty())
-		where = elemMap.reorder[k++] - eb_offset;
-	      else
-		where = k++ - eb_offset;
-	    else
-	      where = k++;
-
-	    assert(where >= 0 && where < count);
-	    if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
-	      temp[where] = rvar[j];
-	    else if (ioss_type == Ioss::Field::INTEGER)
-	      temp[where] = ivar[j];
-	    else if (ioss_type == Ioss::Field::INT64)
-	      temp[where] = ivar64[j]; // FIX 64 UNSAFE
-	  }
-	  assert(k-eb_offset == count);
-
+	  // var is a [count,comp,re_im] array;  re_im = 1(real) or 2(complex)
+	  // beg_offset = (re_im*i)+complex_comp
+	  // number_values = count
+	  // stride = re_im*comp_count
+	  ssize_t begin_offset = (re_im*i)+complex_comp;
+	  ssize_t stride = re_im*comp_count;
+	  
+	  if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX)
+	    map->map_field_to_db_scalar_order(static_cast<double*>(variables),
+					      temp, begin_offset, count, stride, eb_offset);
+	  else if (ioss_type == Ioss::Field::INTEGER)
+	    map->map_field_to_db_scalar_order(static_cast<int*>(variables),
+					      temp, begin_offset, count, stride, eb_offset);
+	  else if (ioss_type == Ioss::Field::INT64)
+	    map->map_field_to_db_scalar_order(static_cast<int64_t*>(variables),
+					      temp, begin_offset, count, stride, eb_offset);
+	  
 	  // Write the variable...
 	  int64_t id = get_id(ge, type, &ids_);
 	  int ierr;
