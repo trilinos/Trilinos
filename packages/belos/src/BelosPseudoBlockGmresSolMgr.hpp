@@ -696,7 +696,6 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
   }
 
   // Check for a change in scaling, if so we need to build new residual tests.
-  bool newImpResTest = false, newExpResTest = false; 
   if (params->isParameter("Implicit Residual Scaling")) {
     std::string tempImpResScale = Teuchos::getParameter<std::string>( *params, "Implicit Residual Scaling" );
 
@@ -714,7 +713,6 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
         catch (std::exception& e) {
           // Make sure the convergence test gets constructed again.
           isSTSet_ = false;
-          newImpResTest = true;
         }
       }
     }      
@@ -737,7 +735,6 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
         catch (std::exception& e) {
           // Make sure the convergence test gets constructed again.
           isSTSet_ = false;
-          newExpResTest = true;
         }
       }
     }      
