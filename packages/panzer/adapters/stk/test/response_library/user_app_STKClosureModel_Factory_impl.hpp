@@ -46,6 +46,8 @@
 #include <iostream>
 #include <sstream>
 #include "Panzer_InputEquationSet.hpp"
+#include "Panzer_Constant.hpp"
+
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
@@ -76,6 +78,24 @@ buildClosureModels(const std::string& model_id,
 
   RCP< vector< RCP<Evaluator<panzer::Traits> > > > evaluators = 
     rcp(new vector< RCP<Evaluator<panzer::Traits> > > );
+
+  const ParameterList& my_models = models.sublist(model_id);
+
+  for (ParameterList::ConstIterator model_it = my_models.begin(); 
+       model_it != my_models.end(); ++model_it) {
+    const std::string key = model_it->first;
+    const Teuchos::ParameterEntry& entry = model_it->second;
+    const ParameterList& plist = Teuchos::getValue<Teuchos::ParameterList>(entry);
+    if (plist.isType<double>("Value")) {
+      Teuchos::ParameterList input;
+      input.set("Name", key);
+      input.set("Value", plist.get<double>("Value"));
+      input.set("Data Layout", default_params.get<RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+      RCP< PHX::Evaluator<panzer::Traits> > e = 
+        rcp(new panzer::Constant<EvalT,panzer::Traits>(input));
+      evaluators->push_back(e);
+    }
+  }
 
   {
      RCP<PHX::Evaluator<panzer::Traits> > e

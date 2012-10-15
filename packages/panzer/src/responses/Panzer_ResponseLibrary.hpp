@@ -48,6 +48,8 @@
 #include <vector>
 #include <map>
 
+#include <boost/unordered_map.hpp>
+
 #include "Teuchos_ParameterList.hpp"
 
 #include "Phalanx_FieldManager.hpp"
@@ -67,6 +69,9 @@
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"
+#include "Panzer_TypeAssocMap.hpp"
+
+#include "Panzer_ResponseEvaluatorFactory_TemplateManager.hpp"
 
 namespace panzer {
 
@@ -225,6 +230,63 @@ public:
    //! Reinitialize the reponse data
    void reinitializeResponseData();
 
+////////////////////////////////////////////////////////////////////////////////////////////
+//
+// 2nd Generation Interface
+//
+////////////////////////////////////////////////////////////////////////////////////////////
+
+   /** Add a volumetric response using hte response factory builder.
+     *
+     * \param[in] responseName Name of the response to be added.
+     * \param[in] blocks Element blocks to evaluate the response over
+     * \param[in] builder Builder that builds the correct response object.
+     */
+   template <typename ResponseEvaluatorFactory_BuilderT>
+   void addResponse(const std::string responseName,
+                    const std::vector<std::string> & blocks,
+                    const ResponseEvaluatorFactory_BuilderT & builder); 
+                   
+   /** Access a response by name and evaluation type.
+     *
+     * \param[in] responseName Name of the response to be added.
+     *
+     * \return Returns a nonnull response object if it exists, otherwise
+     *         it returns null.
+     */
+   template <typename EvalT>
+   Teuchos::RCP<ResponseBase> getResponse(const std::string responseName) const;
+
+   /** Get the set of responses corresponding to a particular evaluation type. This will
+     * overwrite (<code>clear</code>) the vector.
+     *
+     * \param[in,out] responses Vector over the responses, the responses know their own names!
+     */
+   template <typename EvalT>
+   void getResponses(std::vector<Teuchos::RCP<ResponseBase> > & responses) const;
+
+   /** Setup up field managers for all responses. Once this method is called
+     * no other responses can be added. An exception is thrown if they are.
+     */
+   void buildResponseEvaluators(
+         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+         const Teuchos::ParameterList& closure_models,
+         const Teuchos::ParameterList& user_data,
+         const bool write_graphviz_file=false,
+         const std::string& graphviz_file_prefix="");
+
+   /** Have the response evaluators been built? True only if 
+     * <code>buildResponseEvaluators</code> has been called and run to completion.
+     */ 
+   bool responseEvaluatorsBuilt() const
+   { return responseEvaluatorsBuilt_; }
+
+   /** Evaluate response library for a particular evaluation type.
+     */
+   template <typename EvalT> 
+   void evaluate(const panzer::AssemblyEngineInArgs& input_args);
+
 protected:
    //! Access a container field for a specified element block
    template <typename EvalT>
@@ -258,6 +320,25 @@ private:
    Teuchos::RCP<LinearObjFactory<TraitsT> > linObjFactory_;
    Teuchos::RCP<FieldManagerBuilder> fmb_;
    AssemblyEngine_TemplateManager<panzer::Traits> ae_tm_;
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//
+// 2nd Generation Members
+//
+////////////////////////////////////////////////////////////////////////////////////////////
+   typedef TypeAssocMap<panzer::Traits::EvalTypes,Teuchos::RCP<ResponseBase> > Response_TemplateManager;
+
+   Teuchos::RCP<FieldManagerBuilder> fmb2_;
+   AssemblyEngine_TemplateManager<panzer::Traits> ae_tm2_;
+
+   // Store up response factories by element block
+   boost::unordered_map<std::string,
+                        std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > respFactories_;
+ 
+   //! Store all the response objects 
+   boost::unordered_map<std::string, Response_TemplateManager> responseObjects_;
+
+   bool responseEvaluatorsBuilt_;
 };
 
 }
