@@ -3618,14 +3618,13 @@ void ML_CreateSublists(ParameterList &List, ParameterList &newList,
       ParameterList &coarseList = newList.sublist("coarse: list");
       if (pnameIsList && pname=="coarse: list") {
         ParameterList &sublist = List.sublist(pname);
-        for (ParameterList::ConstIterator param=sublist.begin(); param!=sublist.end() ; param++) {
-          ParameterList &coarseList = newList.sublist("coarse: list");
-          const string pname=sublist.name(param);
-          if (pname.find("coarse:",0) == 0) {
-            sprintf(subname,"smoother: %s",pname.c_str()+8);
-            coarseList.setEntry(subname,sublist.entry(param));
+        for (ParameterList::ConstIterator param2=sublist.begin(); param2!=sublist.end() ; param2++) {
+          const string pname2=sublist.name(param2);
+          if (pname2.find("coarse:",0) == 0) {
+            sprintf(subname,"smoother: %s",pname2.c_str()+8);
+            coarseList.setEntry(subname,sublist.entry(param2));
           } else
-            coarseList.setEntry(pname,sublist.entry(param));
+            coarseList.setEntry(pname2,sublist.entry(param2));
         }
       } else {
         sprintf(subname,"smoother: %s",pname.c_str()+8);
