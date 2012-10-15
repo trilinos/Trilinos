@@ -109,6 +109,8 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockSize != NSDim , Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): dimension of strided block != NSDim. error.");
     }
 
+    GetOStream(Statistics1, 0) << "domainGIDOffset: " << domainGidOffset_ << " block size: " << getFixedBlockSize() << " stridedBlockId: " << stridedBlockId_ << std::endl;
+
     // number of coarse level dofs (fixed by number of aggregates and blocksize data)
     GlobalOrdinal nCoarseDofs = numAggs * getFixedBlockSize();
     GlobalOrdinal indexBase   = aggregates->GetMap()->getIndexBase();

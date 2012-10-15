@@ -96,7 +96,7 @@ namespace MueLu {
       \param nullspaceFact -- (optional) factory that creates (fine level) null space approximation
       \param AFact -- (optional) factory that creates level matrix A
     */
-    TentativePFactory(RCP<const FactoryBase> aggregatesFact = Teuchos::null, RCP<const FactoryBase> amalgFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null);
+    TentativePFactory(RCP<const FactoryBase> aggregatesFact = Teuchos::null, RCP<const FactoryBase> amalgFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null, RCP<const FactoryBase> coarseMapFact = Teuchos::null);
     
     //! Destructor.
     virtual ~TentativePFactory();

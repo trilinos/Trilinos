@@ -69,14 +69,14 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TentativePFactory(RCP<const FactoryBase> aggregatesFact, RCP<const FactoryBase> amalgFact, RCP<const FactoryBase> nullspaceFact, RCP<const FactoryBase> AFact)
-    : aggregatesFact_(aggregatesFact), amalgFact_(amalgFact), nullspaceFact_(nullspaceFact), AFact_(AFact),
+  TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TentativePFactory(RCP<const FactoryBase> aggregatesFact, RCP<const FactoryBase> amalgFact, RCP<const FactoryBase> nullspaceFact, RCP<const FactoryBase> AFact, RCP<const FactoryBase> coarseMapFact)
+    : aggregatesFact_(aggregatesFact), amalgFact_(amalgFact), nullspaceFact_(nullspaceFact), AFact_(AFact),coarseMapFact_(coarseMapFact),
       QR_(false),
       domainGidOffset_(0) {
 
     stridedBlockId_ = -1; // default: blocked map with constant blocksize "NSDim"
 
-    coarseMapFact_ = Teuchos::rcp(new CoarseMapFactory(aggregatesFact_,nullspaceFact_));
+    //coarseMapFact_ = Teuchos::rcp(new CoarseMapFactory(aggregatesFact_,nullspaceFact_));
   }
  
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -163,10 +163,9 @@ namespace MueLu {
     // dimension of fine level nullspace
     const size_t NSDim = fineNullspace.getNumVectors();
 
-#if 0
     // index base for coarse Dof map (usually 0)
     GO indexBase=fineA.getRowMap()->getIndexBase();
-
+#if 0
     // build coarse level maps (= domain map of transfer operator)
     //RCP<const Map > coarseMap = Teuchos::null;
     //if (domainGidOffset_ == 0)
