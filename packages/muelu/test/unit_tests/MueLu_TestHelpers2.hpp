@@ -77,6 +77,7 @@
 #include "MueLu_LocalAggregationAlgorithm_decl.hpp" //AggOptions
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
+#include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
@@ -113,7 +114,9 @@ namespace MueLuTests {
             aggFact->SetOrdering(MueLu::AggOptions::NATURAL);
             aggFact->SetPhase3AggCreation(0.5);
       
-            RCP<TentativePFactory> tentPFact = rcp(new TentativePFactory(aggFact));
+            RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory(aggFact, Teuchos::null));
+
+            RCP<TentativePFactory> tentPFact = rcp(new TentativePFactory(aggFact, Teuchos::null, Teuchos::null, Teuchos::null, coarseMapFact));
       
             RCP<SaPFactory> Pfact  = rcp(new SaPFactory(tentPFact));
             RCP<RFactory>   Rfact  = rcp(new TransPFactory(Pfact));
