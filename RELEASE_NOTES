@@ -18,7 +18,7 @@ ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
 Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, NOX, Optika, OptiPack, Pamgen,
 Phalanx, Piro, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, SEACAS, Shards,
 ShyLU*, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos, ThreadPool, Thyra,
-Tpetra, TriKota, TrilinosCouplings, Trios*, Triutils, Xpetra*, Zoltan, Zoltan2*.
+Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra*, Zoltan, Zoltan2*.
 
 (* denotes package is being released externally as a part of Trilinos for the
 first time.)
