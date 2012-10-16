@@ -1,0 +1,3 @@
+<ParameterList name="TestSubLists">
+  <Parameter name="coarse: type" type="string" value="Gauss-Seidel"/>
+</ParameterList>
