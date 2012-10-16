@@ -42,6 +42,7 @@ APPEND_SET(SOURCES
   ParameterList/FactoryFactory.cpp
   ParameterList/ParameterListInterpreter.cpp
 # ParameterList/MLParameterListInterpreter.cpp
+  ParameterList/CreateSublists.cpp
   MultiVectorTransferFactory.cpp
 )
 
@@ -145,3 +146,4 @@ ENDIF() # Galeri TMP
 ADD_SUBDIRECTORY(ParameterList/FactoryFactory/)
 ADD_SUBDIRECTORY(ParameterList/ParameterListInterpreter/)
 ADD_SUBDIRECTORY(ParameterList/MLParameterListInterpreter/)
+ADD_SUBDIRECTORY(ParameterList/CreateSublists/)
