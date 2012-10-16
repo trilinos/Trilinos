@@ -52,9 +52,9 @@ namespace Piro {
 namespace Test {
 
 /** \brief Simple ModelEvaluator wrapper with MultiVector-based DgDx derivative disabled */
-class WeakenedModelEvaluator : public Thyra::ModelEvaluatorDelegatorBase<double> {
+class WeakenedModelEvaluator_NoDgDxMv : public Thyra::ModelEvaluatorDelegatorBase<double> {
 public:
-  explicit WeakenedModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<double> > &model) :
+  explicit WeakenedModelEvaluator_NoDgDxMv(const Teuchos::RCP<Thyra::ModelEvaluator<double> > &model) :
     Thyra::ModelEvaluatorDelegatorBase<double>(model)
   {}
 
@@ -81,6 +81,48 @@ private:
     outArgs.setModelEvalDescription(this->description());
     const Thyra::ModelEvaluatorBase::DerivativeSupport newSupport(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
     outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, 0, newSupport);
+    return outArgs;
+  }
+  //@}
+};
+
+/** \brief Simple ModelEvaluator wrapper with Jacobian-form MultiVector-based DgDp derivative disabled */
+class WeakenedModelEvaluator_NoDgDpMvJac : public Thyra::ModelEvaluatorDelegatorBase<double> {
+public:
+  explicit WeakenedModelEvaluator_NoDgDpMvJac(const Teuchos::RCP<Thyra::ModelEvaluator<double> > &model) :
+    Thyra::ModelEvaluatorDelegatorBase<double>(model)
+  {}
+
+  /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
+  //@{
+  virtual ModelEvaluatorBase::OutArgs<double> createOutArgs() const {
+    return WeakenedModelEvaluator_NoDgDpMvJac::createOutArgsImpl();
+  }
+  //@}
+
+private:
+  /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
+  //@{
+  /** \brief . */
+  virtual void evalModelImpl(
+      const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<double> &outArgs) const {
+    const Thyra::ModelEvaluatorBase::DerivativeSupport expected_support =
+      Thyra::ModelEvaluatorBase::DerivativeSupport(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
+    TEUCHOS_ASSERT(expected_support.isSameSupport(outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, 0, 0)));
+    ModelEvaluatorBase::OutArgs<double> forwardedOutArgs = getUnderlyingModel()->createOutArgs();
+    forwardedOutArgs.setArgs(outArgs);
+    getUnderlyingModel()->evalModel(inArgs, forwardedOutArgs);
+  }
+  //@}
+
+  /** \name Overridden from Thyra::ModelEvaluatorDelegatorBase . */
+  //@{
+  virtual ModelEvaluatorBase::OutArgs<double> createOutArgsImpl() const {
+    ModelEvaluatorBase::OutArgsSetup<double> outArgs = getUnderlyingModel()->createOutArgs();
+    outArgs.setModelEvalDescription(this->description());
+    const Thyra::ModelEvaluatorBase::DerivativeSupport newSupport(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
+    outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, 0, 0, newSupport);
     return outArgs;
   }
   //@}

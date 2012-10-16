@@ -189,9 +189,9 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvJac_NoDgDxMv)
 {
   // Disable support for MultiVector-based DgDx derivative
   // (Only LinOp form is available)
-  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > crippledModel =
-      rcp(new Test::WeakenedModelEvaluator(thyraModelNew(epetraModelNew())));
-  const RCP<NOXSolver<double> > solver = solverNew(crippledModel);
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > weakenedModel =
+      rcp(new Test::WeakenedModelEvaluator_NoDgDxMv(thyraModelNew(epetraModelNew())));
+  const RCP<NOXSolver<double> > solver = solverNew(weakenedModel);
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
 
@@ -211,6 +211,31 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvJac_NoDgDxMv)
     const Array<double> actual = arrayFromVector(*dgdp->col(i));
     TEST_COMPARE_FLOATING_ARRAYS(actual, arrayView(&expected[i], 1), tol);
   }
+}
+
+TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGrad_NoDgDpMvJac)
+{
+  // Disable support for MultiVector-based DgDx derivative
+  // (Only LinOp form is available)
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > weakenedModel =
+      rcp(new Test::WeakenedModelEvaluator_NoDgDpMvJac(thyraModelNew(epetraModelNew())));
+  const RCP<NOXSolver<double> > solver = solverNew(weakenedModel);
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const int responseIndex = 0;
+  const int parameterIndex = 0;
+  const RCP<Thyra::VectorBase<double> > dgdp =
+    Thyra::createMember(solver->get_p_space(responseIndex));
+  const Thyra::MEB::Derivative<double> dgdp_deriv(dgdp, Thyra::MEB::DERIV_MV_GRADIENT_FORM);
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+
+  const Array<double> expected = tuple(2.0, -8.0);
+  const Array<double> actual = arrayFromVector(*dgdp);
+  TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
 }
 
 #endif /*Piro_ENABLE_NOX*/
