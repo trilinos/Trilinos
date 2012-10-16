@@ -42,6 +42,9 @@
 // @HEADER
 */
 
+#ifndef PIRO_TEST_WEAKENEDMODELEVALUATOR_HPP
+#define PIRO_TEST_WEAKENEDMODELEVALUATOR_HPP
+
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 
 #include "Teuchos_RCP.hpp"
@@ -163,6 +166,43 @@ private:
   //@}
 };
 
+/** \brief Simple ModelEvaluator wrapper with MultiVector-based DfDp derivative disabled */
+class WeakenedModelEvaluator_NoDfDpMv : public Thyra::ModelEvaluatorDelegatorBase<double> {
+public:
+  explicit WeakenedModelEvaluator_NoDfDpMv(const Teuchos::RCP<Thyra::ModelEvaluator<double> > &model) :
+    Thyra::ModelEvaluatorDelegatorBase<double>(model)
+  {}
+
+private:
+  /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
+  //@{
+  /** \brief . */
+  virtual void evalModelImpl(
+      const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<double> &outArgs) const {
+    const Thyra::ModelEvaluatorBase::DerivativeSupport expected_support =
+      Thyra::ModelEvaluatorBase::DerivativeSupport(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+    TEUCHOS_ASSERT(expected_support.isSameSupport(outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DfDp, 0)));
+    ModelEvaluatorBase::OutArgs<double> forwardedOutArgs = getUnderlyingModel()->createOutArgs();
+    forwardedOutArgs.setArgs(outArgs);
+    getUnderlyingModel()->evalModel(inArgs, forwardedOutArgs);
+  }
+  //@}
+
+  /** \name Overridden from Thyra::ModelEvaluatorDelegatorBase . */
+  //@{
+  virtual ModelEvaluatorBase::OutArgs<double> createOutArgsImpl() const {
+    ModelEvaluatorBase::OutArgsSetup<double> outArgs = getUnderlyingModel()->createOutArgs();
+    outArgs.setModelEvalDescription(this->description());
+    const Thyra::ModelEvaluatorBase::DerivativeSupport newSupport(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+    outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DfDp, 0, newSupport);
+    return outArgs;
+  }
+  //@}
+};
+
 } // namespace Test
 
 } // namespace Piro
+
+#endif /* PIRO_TEST_WEAKENEDMODELEVALUATOR_HPP */

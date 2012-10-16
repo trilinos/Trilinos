@@ -47,11 +47,13 @@
 #include "Thyra_DefaultAddedLinearOp.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultInverseLinearOp.hpp"
+#include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
 
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_Tuple.hpp"
 
 #include <stdexcept>
 #include <cstddef>
@@ -139,11 +141,12 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::NOXSolver<Scalar>::createOutArg
 
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
 
-  // Sensitivity support
-  // 1) Jacobian operator required
+  // Sensitivity support (Forward approach only)
+  // Jacobian operator required for all sensitivities
   if (modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_W)) {
     for (int j = 0; j < num_g; ++j) {
-      // 2) DgDx required
+      // Response sensitivities
+      // 1) DgDx required
       const Thyra::ModelEvaluatorBase::DerivativeSupport dgdx_support =
         modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, j);
         const bool dgdx_forwardOpSupport =
@@ -152,7 +155,7 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::NOXSolver<Scalar>::createOutArg
           dgdx_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
       if (dgdx_forwardOpSupport || dgdx_mvGradSupport) {
         for (int l = 0; l < num_p; ++l) {
-          // 3) DfDp required
+          // 2) DfDp required
           const Thyra::ModelEvaluatorBase::DerivativeSupport dfdp_support =
             modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DfDp, l);
           const bool dfdp_forwardOpSupport =
@@ -160,7 +163,7 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::NOXSolver<Scalar>::createOutArg
           const bool dfdp_mvJacSupport =
             dfdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
           if (dfdp_forwardOpSupport || dfdp_mvJacSupport) {
-            // 4) Dgdp required
+            // 3) Dgdp required
             const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
               modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
             Thyra::ModelEvaluatorBase::DerivativeSupport sensitivitySupport;
@@ -181,6 +184,23 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::NOXSolver<Scalar>::createOutArg
         }
       }
     }
+
+    // Solution sensitivity
+    for (int l = 0; l < num_p; ++l) {
+      Thyra::ModelEvaluatorBase::DerivativeSupport sensitivitySupport;
+      {
+        //DfDp required
+        const Thyra::ModelEvaluatorBase::DerivativeSupport dfdp_support =
+          modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DfDp, l);
+        if (dfdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
+          sensitivitySupport.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+        }
+        if (dfdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+          sensitivitySupport.plus(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+        }
+      }
+      outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, num_g, l, sensitivitySupport);
+    }
   }
 
   return outArgs;
@@ -198,11 +218,11 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   // TODO: pass the parameters from inArgs down to the underlying model used by the solver.
   // Currently, only the default values of p set in createInArgs are used in the nonlinear solver !
   {
-    const RCP<Thyra::VectorBase<double> > initial_guess =
+    const RCP<Thyra::VectorBase<Scalar> > initial_guess =
       model->getNominalValues().get_x()->clone_v();
 
-    const Thyra::SolveCriteria<double> solve_criteria;
-    const Thyra::SolveStatus<double> solve_status =
+    const Thyra::SolveCriteria<Scalar> solve_criteria;
+    const Thyra::SolveStatus<Scalar> solve_status =
       solver->solve(initial_guess.get(), &solve_criteria, /*delta =*/ NULL);
 
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -231,7 +251,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
     }
   }
 
-  // Compute responses
+  // Responses
   {
     Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
     // Forward to underlying model
@@ -242,7 +262,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
     model->evalModel(modelInArgs, modelOutArgs);
   }
 
-  // Sensitivities
+  // Response sensitivities
   for (int j = 0; j < num_g; ++j) {
     for (int l = 0; l < num_p; ++l) {
       const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
@@ -397,16 +417,102 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
       }
     }
   }
+
+  // Solution sensitivities
+  for (int l = 0; l < num_p; ++l) {
+    const Thyra::ModelEvaluatorBase::DerivativeSupport dxdp_support =
+      outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, num_g, l);
+    if (!dxdp_support.none()) {
+      const Thyra::ModelEvaluatorBase::Derivative<Scalar> dxdp_deriv =
+        outArgs.get_DgDp(num_g, l);
+      if (!dxdp_deriv.isEmpty()) {
+        Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
+
+        // Model Jacobian with solve required
+        {
+          const RCP<Thyra::LinearOpWithSolveBase<Scalar> > jacobian =
+            model->create_W();
+          modelOutArgs.set_W(jacobian);
+        }
+
+        const RCP<Thyra::LinearOpBase<Scalar> > dxdp_op_user =
+          dxdp_deriv.getLinearOp();
+        if (Teuchos::nonnull(dxdp_op_user)) {
+          // Model DfDp(l) required in operator form
+          modelOutArgs.set_DfDp(l, model->create_DfDp_op(l));
+        }
+
+        const RCP<Thyra::MultiVectorBase<Scalar> > dxdp_mv =
+          dxdp_deriv.getMultiVector();
+        if (Teuchos::nonnull(dxdp_mv)) {
+          // Model DfDp(l) required in multivector jacobian form
+          const Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar> dfdp_dmv =
+            Thyra::create_DfDp_mv(*model, l, Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+          modelOutArgs.set_DfDp(l, dfdp_dmv);
+        }
+
+        // Call underlying model
+        model->evalModel(modelInArgs, modelOutArgs);
+
+        // Build (DfDx)^-1 * DfDp * (-I)
+        if (Teuchos::nonnull(dxdp_op_user)) {
+          const RCP<Thyra::DefaultMultipliedLinearOp<Scalar> > dxdp_op =
+            Teuchos::rcp_dynamic_cast<Thyra::DefaultMultipliedLinearOp<Scalar> >(dxdp_op_user);
+          TEUCHOS_TEST_FOR_EXCEPTION(
+              Teuchos::is_null(dxdp_op),
+              std::invalid_argument,
+              "Illegal operator for DgDp(" <<
+              "j = " << num_g << ", " <<
+              "index l = " << l << ")\n");
+
+          const RCP<const Thyra::LinearOpBase<Scalar> > dfdp_op =
+            modelOutArgs.get_DfDp(l).getLinearOp();
+          const RCP<const Thyra::LinearOpBase<Scalar> > minus_id_op =
+            Thyra::scale<Scalar>(-Teuchos::ScalarTraits<Scalar>::one(), Thyra::identity(dfdp_op->domain()));
+          const RCP<const Thyra::LinearOpBase<Scalar> > dfdx_inv_op =
+            Thyra::inverse<Scalar>(modelOutArgs.get_W());
+
+          dxdp_op->initialize(Teuchos::tuple(dfdx_inv_op, dfdp_op, minus_id_op));
+        }
+
+        // Compute DgDp = - (DfDx)^-1 * DfDp
+        if (Teuchos::nonnull(dxdp_mv)) {
+          assign(dxdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+
+          const RCP<Thyra::LinearOpWithSolveBase<Scalar> > jacobian =
+            modelOutArgs.get_W();
+          const RCP<const Thyra::MultiVectorBase<Scalar> > dfdp_mv =
+            modelOutArgs.get_DfDp(l).getMultiVector();
+
+          const Thyra::SolveCriteria<Scalar> defaultSolveCriteria;
+          const Thyra::SolveStatus<Scalar> solveStatus =
+            Thyra::solve(
+                *jacobian,
+                Thyra::NOTRANS,
+                *dfdp_mv,
+                dxdp_mv.ptr(),
+                Teuchos::ptr(&defaultSolveCriteria));
+          TEUCHOS_TEST_FOR_EXCEPTION(
+              solveStatus.solveStatus == Thyra::SOLVE_STATUS_UNCONVERGED,
+              std::runtime_error,
+              "Jacobian solver failed to converge");
+
+          Thyra::scale(-Teuchos::ScalarTraits<Scalar>::one(), dxdp_mv.ptr());
+        }
+      }
+    }
+  }
 }
 
 template <typename Scalar>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Piro::NOXSolver<Scalar>::create_DgDp_op_impl(int j, int l) const
 {
-  using Teuchos::Array;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  const Array<RCP<const Thyra::LinearOpBase<Scalar> > > dummy(1, zero(this->get_g_space(j), this->get_p_space(l)));
-  return rcp(new Thyra::DefaultAddedLinearOp<Scalar>(dummy));
+  const Teuchos::Array<Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > > dummy =
+    Teuchos::tuple(zero(this->get_g_space(j), this->get_p_space(l)));
+  if (j == num_g)  {
+    return Thyra::defaultMultipliedLinearOp<Scalar>(dummy);
+  } else {
+    return Teuchos::rcp(new Thyra::DefaultAddedLinearOp<Scalar>(dummy));
+  }
 }
