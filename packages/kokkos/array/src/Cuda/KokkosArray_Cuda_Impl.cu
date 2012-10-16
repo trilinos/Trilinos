@@ -341,8 +341,6 @@ CudaInternal::scratch_flags( const Cuda::size_type size )
 
   if ( m_scratchFlagsCount * sizeScratchGrain < size ) {
 
-    cudaDeviceSynchronize();
-
     CudaMemorySpace::decrement( m_scratchFlags );
   
     m_scratchFlagsCount = ( size + sizeScratchGrain - 1 ) / sizeScratchGrain ;
@@ -367,8 +365,6 @@ CudaInternal::scratch_space( const Cuda::size_type size )
   assert_initialized();
 
   if ( m_scratchSpaceCount * sizeScratchGrain < size ) {
-
-    cudaDeviceSynchronize();
 
     CudaMemorySpace::decrement( m_scratchSpace );
   
@@ -431,7 +427,7 @@ void CudaInternal::finalize()
   m_maxBlock           = 0 ; 
   m_maxSharedWords     = 0 ;
   m_scratchSpaceCount  = 0 ;
-  m_scratchSpaceCount  = 0 ;
+  m_scratchFlagsCount  = 0 ;
   m_scratchSpace       = 0 ;
   m_scratchFlags       = 0 ;
 }

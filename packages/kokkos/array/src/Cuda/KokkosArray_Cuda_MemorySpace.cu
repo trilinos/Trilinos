@@ -127,6 +127,8 @@ void * CudaMemorySpace::allocate(
   if ( 0 < scalar_size * scalar_count ) {
     bool ok = true ;
 
+    cudaDeviceSynchronize();
+
     if ( ok ) ok = cudaSuccess == cudaMalloc( & ptr , size );
     if ( ok ) ok = 0 != ptr ;
     if ( ok ) ok = cudaSuccess == cudaMemset( ptr , 0 , size );
@@ -169,6 +171,9 @@ void CudaMemorySpace::decrement( const void * ptr )
     void * ptr_alloc = s.m_allocations.decrement( ptr );
 
     if ( 0 != ptr_alloc ) {
+
+      cudaDeviceSynchronize();
+
       const bool failed = cudaSuccess != cudaFree( ptr_alloc );
 
       if ( failed ) {

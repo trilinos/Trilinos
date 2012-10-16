@@ -45,6 +45,8 @@ fi
 
 echo ${CXX} ${INC_PATH} -o unit_test.exe ${CXX_SOURCES} ${LIB}
 
+rm -f unit_test.exe
+
 ${CXX} ${INC_PATH} -o unit_test.exe ${CXX_SOURCES} ${LIB}
 
 rm -f *.o *.a

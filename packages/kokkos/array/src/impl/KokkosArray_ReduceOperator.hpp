@@ -130,6 +130,7 @@ struct ReduceOperatorFinalize< View< DataType , LayoutType , DeviceType > ,
     typedef ScalarType                       value_type[] ;
     const unsigned                           value_count ;
 
+    explicit
     type( const view_type & v )
       : m_view( v ), value_count( v.dimension_0() ) {}
 
@@ -178,7 +179,7 @@ public:
   unsigned value_size() const { return sizeof(value_type); }
 
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
-  void join( void * update , const void * input ) const
+  void join( volatile void * update , const volatile void * input ) const
     {
       typedef       volatile value_type * vvp ;
       typedef const volatile value_type * cvvp ;
@@ -238,7 +239,7 @@ public:
     { return sizeof(MemberType) * m_finalize.value_count ; }
 
   KOKKOSARRAY_INLINE_DEVICE_FUNCTION
-  void join( void * update , const void * input ) const
+  void join( volatile void * update , const volatile void * input ) const
     {
       typedef       volatile MemberType * vvp ;
       typedef const volatile MemberType * cvvp ;
