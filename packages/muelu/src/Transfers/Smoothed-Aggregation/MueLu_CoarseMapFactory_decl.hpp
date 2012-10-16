@@ -125,7 +125,7 @@ namespace MueLu {
      * This is the sum of all entries in the striding vector.
      * e.g. for 2 velocity dofs and 1 pressure dof the return value is 3.
      */
-    size_t getFixedBlockSize() const {
+    virtual size_t getFixedBlockSize() const {
       // sum up size of all strided blocks (= number of dofs per node)
       size_t blkSize = 0;
       std::vector<size_t>::const_iterator it;
@@ -141,42 +141,42 @@ namespace MueLu {
      sets offset for domain map DOF Gids in tentative prolongation operator.
      offset must not be smaller than zero. Note: Direct solvers (Amesos/Amesos2) are not properly working with offset > 0.
      */
-    void setDomainMapOffset(GlobalOrdinal offset);
+    virtual void setDomainMapOffset(GlobalOrdinal offset);
 
     /*! @brief getDomainMapOffset
      * returns offset of the domain DOF map (=coarse map).
      */
-    GlobalOrdinal getDomainMapOffset() const;
+    virtual GlobalOrdinal getDomainMapOffset() const;
 
     /*! @brief getStridingData
      * returns vector with size of striding blocks in the domain DOF map (= coarse map).
      * e.g. for 2 velocity dofs and 1 pressure dof the vector is (2,1)
      */
-    std::vector<size_t> getStridingData() { return stridingInfo_; }
+    virtual std::vector<size_t> getStridingData() { return stridingInfo_; }
 
     /*! @brief setStridingData
      * set striding vector for the domain DOF map (= coarse map),
      * e.g. (2,1) for 2 velocity dofs and 1 pressure dof
      */
-    void setStridingData(std::vector<size_t> stridingInfo) { stridingInfo_ = stridingInfo; }
+    virtual void setStridingData(std::vector<size_t> stridingInfo) { stridingInfo_ = stridingInfo; }
 
     /*! @brief getStridedBlockId
      * returns strided block id for the domain DOF map of Ptent (= coarse map)
      * or -1 if full strided map is stored in the domain map of Ptent (= coarse map)
      */
-    LocalOrdinal getStridedBlockId() { return stridedBlockId_; }
+    virtual LocalOrdinal getStridedBlockId() { return stridedBlockId_; }
 
     /*! @brief setStridedBlockId
      * set strided block id for the domain DOF map of Ptent (= coarse map)
      * or -1 if full strided map is stored in the domain map of Ptent (= coarse map)
      */
-    void setStridedBlockId(LocalOrdinal stridedBlockId) {
+    virtual void setStridedBlockId(LocalOrdinal stridedBlockId) {
       stridedBlockId_ = stridedBlockId;
     }
 
     //@}
 
-  private:
+  protected:
     RCP<const FactoryBase> aggregatesFact_; //! Factory that creates aggregates
     RCP<const FactoryBase> nullspaceFact_;  //! Factory creating the nullspace
 

@@ -174,6 +174,10 @@ typedef MueLu::AggStatTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,Loc
 typedef MueLu::CoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> CoarseMapFactory;
 #endif
 
+#ifdef MUELU_BLOCKEDCOARSEMAPFACTORY_SHORT
+typedef MueLu::BlockedCoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> BlockedCoarseMapFactory;
+#endif
+
 #ifdef MUELU_UTILITIES_SHORT
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils2;
