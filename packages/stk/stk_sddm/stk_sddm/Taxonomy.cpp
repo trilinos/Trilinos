@@ -158,14 +158,23 @@ Taxon::validate(
 
 Taxonomy::~Taxonomy()
 {
+  destroy_and_clear();
+}
+
+void Taxonomy::destroy_and_clear()
+{
   while (!m_children.empty()) {
     delete m_children.back();
     m_children.pop_back();
   }
 
-  delete m_root;
-}
+  //vector swap trick to actually delete memory for m_children
+  TaxonVector tmp;
+  tmp.swap(m_children);
 
+  delete m_root;
+  m_root = NULL;
+}
 
 Taxon *
 Taxonomy::createTaxon(

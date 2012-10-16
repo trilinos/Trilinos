@@ -347,6 +347,8 @@ public:
     std::copy(first, last, std::back_inserter(m_dataTypes));
   }
   
+  void destroy_and_clear();
+
 private:
   const std::string             m_name;                 ///< 
   Taxon *                       m_root;                 ///< 
