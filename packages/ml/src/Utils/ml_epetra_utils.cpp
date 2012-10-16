@@ -3600,7 +3600,7 @@ void ML_CreateSublists(ParameterList &List, ParameterList &newList,
   newList.setName(List.name());
 
   for (ParameterList::ConstIterator param=List.begin();
-                                    param!=List.end() ; param++)
+                                    param!=List.end() ; ++param)
   {
     const string pname=List.name(param);
     bool pnameIsList = List.isSublist(pname);
@@ -3618,7 +3618,7 @@ void ML_CreateSublists(ParameterList &List, ParameterList &newList,
       ParameterList &coarseList = newList.sublist("coarse: list");
       if (pnameIsList && pname=="coarse: list") {
         ParameterList &sublist = List.sublist(pname);
-        for (ParameterList::ConstIterator param2=sublist.begin(); param2!=sublist.end() ; param2++) {
+        for (ParameterList::ConstIterator param2=sublist.begin(); param2!=sublist.end() ; ++param2) {
           const string pname2=sublist.name(param2);
           if (pname2.find("coarse:",0) == 0) {
             sprintf(subname,"smoother: %s",pname2.c_str()+8);
