@@ -60,6 +60,8 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Tuple.hpp"
 
+#include <stdexcept>
+
 using namespace Teuchos;
 using namespace Piro;
 
@@ -104,7 +106,43 @@ Array<double> arrayFromVector(const Thyra::VectorBase<double> &v)
   return Array<double>(view.values(), view.values() + view.subDim());
 }
 
+RCP<Thyra::VectorBase<double> > vectorFromLinOp(const Thyra::LinearOpBase<double> &op, int col)
+{
+  const RCP<Thyra::VectorBase<double> > result = Thyra::createMember(op.range());
+  const RCP<Thyra::VectorBase<double> > v = Thyra::createMember(op.domain());
+  Thyra::put_scalar(0.0, v.ptr());
+  Thyra::set_ele(col, 1.0, v.ptr());
+  Thyra::apply(op, Thyra::NOTRANS, *v, result.ptr(), 1.0, 0.0);
+  return result;
+}
+
+Array<double> arrayFromLinOp(const Thyra::LinearOpBase<double> &op, int col)
+{
+  return arrayFromVector(*vectorFromLinOp(op, col));
+}
+
 const double tol = 1.0e-8;
+
+// Tests
+
+TEUCHOS_UNIT_TEST(Piro_NOXSolver, Spaces)
+{
+  const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew());
+
+  TEST_ASSERT(solver->Np() == 1);
+  TEST_ASSERT(solver->Ng() == 2);
+
+  const int parameterIndex = 0;
+  const int responseIndex = 0;
+  const int solutionResponseIndex = solver->Ng() - 1;
+  TEST_ASSERT(Teuchos::nonnull(solver->get_p_space(parameterIndex)));
+  TEST_ASSERT(Teuchos::nonnull(solver->get_g_space(responseIndex)));
+  TEST_ASSERT(Teuchos::nonnull(solver->get_g_space(solutionResponseIndex)));
+
+  // TODO
+  //TEST_THROW(solver->get_x_space(), std::exception);
+  //TEST_THROW(solver->get_f_space(), std::exception);
+}
 
 TEUCHOS_UNIT_TEST(Piro_NOXSolver, Solution)
 {
@@ -185,6 +223,29 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGrad)
   TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
 }
 
+TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityOp)
+{
+  const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew());
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const int responseIndex = 0;
+  const int parameterIndex = 0;
+  const RCP<Thyra::LinearOpBase<double> > dgdp = solver->create_DgDp_op(responseIndex, parameterIndex);
+  TEST_ASSERT(Teuchos::nonnull(dgdp));
+  const Thyra::MEB::Derivative<double> dgdp_deriv(dgdp);
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+
+  const Array<double> expected = tuple(2.0, -8.0);
+  for (int i = 0; i < expected.size(); ++i) {
+    const Array<double> actual = arrayFromLinOp(*dgdp, i);
+    TEST_COMPARE_FLOATING_ARRAYS(actual, arrayView(&expected[i], 1), tol);
+  }
+}
+
 TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvJac_NoDgDxMv)
 {
   // Disable support for MultiVector-based DgDx derivative
@@ -236,6 +297,33 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGrad_NoDgDpMvJac)
   const Array<double> expected = tuple(2.0, -8.0);
   const Array<double> actual = arrayFromVector(*dgdp);
   TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+}
+
+TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityOp_NoDgDpMv)
+{
+  // Disable support for MultiVector-based DgDp derivative
+  // (Only LinOp form is available)
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > weakenedModel =
+      rcp(new Test::WeakenedModelEvaluator_NoDgDpMv(thyraModelNew(epetraModelNew())));
+  const RCP<NOXSolver<double> > solver = solverNew(weakenedModel);
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const int responseIndex = 0;
+  const int parameterIndex = 0;
+  const RCP<Thyra::LinearOpBase<double> > dgdp = solver->create_DgDp_op(responseIndex, parameterIndex);
+  TEST_ASSERT(Teuchos::nonnull(dgdp));
+  const Thyra::MEB::Derivative<double> dgdp_deriv(dgdp);
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+
+  const Array<double> expected = tuple(2.0, -8.0);
+  for (int i = 0; i < expected.size(); ++i) {
+    const Array<double> actual = arrayFromLinOp(*dgdp, i);
+    TEST_COMPARE_FLOATING_ARRAYS(actual, arrayView(&expected[i], 1), tol);
+  }
 }
 
 #endif /*Piro_ENABLE_NOX*/

@@ -95,6 +95,9 @@ class NOXSolver
   void evalModelImpl(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
+
+  /** \brief . */
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DgDp_op_impl(int j, int l) const;
   //@}
 
   Teuchos::RCP<Teuchos::ParameterList> appParams;

@@ -86,6 +86,41 @@ private:
   //@}
 };
 
+/** \brief Simple ModelEvaluator wrapper with MultiVector-based DgDp derivative disabled */
+class WeakenedModelEvaluator_NoDgDpMv : public Thyra::ModelEvaluatorDelegatorBase<double> {
+public:
+  explicit WeakenedModelEvaluator_NoDgDpMv(const Teuchos::RCP<Thyra::ModelEvaluator<double> > &model) :
+    Thyra::ModelEvaluatorDelegatorBase<double>(model)
+  {}
+
+private:
+  /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
+  //@{
+  /** \brief . */
+  virtual void evalModelImpl(
+      const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<double> &outArgs) const {
+    const Thyra::ModelEvaluatorBase::DerivativeSupport expected_support =
+      Thyra::ModelEvaluatorBase::DerivativeSupport(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+    TEUCHOS_ASSERT(expected_support.isSameSupport(outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, 0, 0)));
+    ModelEvaluatorBase::OutArgs<double> forwardedOutArgs = getUnderlyingModel()->createOutArgs();
+    forwardedOutArgs.setArgs(outArgs);
+    getUnderlyingModel()->evalModel(inArgs, forwardedOutArgs);
+  }
+  //@}
+
+  /** \name Overridden from Thyra::ModelEvaluatorDelegatorBase . */
+  //@{
+  virtual ModelEvaluatorBase::OutArgs<double> createOutArgsImpl() const {
+    ModelEvaluatorBase::OutArgsSetup<double> outArgs = getUnderlyingModel()->createOutArgs();
+    outArgs.setModelEvalDescription(this->description());
+    const Thyra::ModelEvaluatorBase::DerivativeSupport newSupport(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+    outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, 0, 0, newSupport);
+    return outArgs;
+  }
+  //@}
+};
+
 /** \brief Simple ModelEvaluator wrapper with Jacobian-form MultiVector-based DgDp derivative disabled */
 class WeakenedModelEvaluator_NoDgDpMvJac : public Thyra::ModelEvaluatorDelegatorBase<double> {
 public:
