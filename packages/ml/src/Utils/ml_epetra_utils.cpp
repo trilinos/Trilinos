@@ -3595,94 +3595,102 @@ void ML_CreateSublists(const ParameterList &List, ParameterList &newList)
   char listName[80], subname[160];
   newList.setName(List.name());
 
-  for (ParameterList::ConstIterator param=List.begin();
-                                    param!=List.end() ; ++param)
-  {
-    const string pname=List.name(param);
-    bool pnameIsList = List.isSublist(pname);
-    string::size_type where = pname.find(" (level",0);
-
-    /*
-    The coarse sublist is a special case.  For each of its options:
-       1) If starts with "coarse:"
-          a) change to "smoother:".
-          b) copy to new list's coarse sublist.
-       2) If a smoother option
-          copy as is to new list's coarse sublist.
-    */
-    if (pname.find("coarse:",0) == 0) {
-      ParameterList &coarseList = newList.sublist("coarse: list");
-      if (pnameIsList && pname=="coarse: list") {
-        const ParameterList &sublist = List.sublist(pname);
-        for (ParameterList::ConstIterator param2=sublist.begin(); param2!=sublist.end() ; ++param2) {
-          const string pname2=sublist.name(param2);
-          if (pname2.find("coarse:",0) == 0) {
-            sprintf(subname,"smoother: %s",pname2.c_str()+8);
-            coarseList.setEntry(subname,sublist.entry(param2));
-          } else
-            coarseList.setEntry(pname2,sublist.entry(param2));
-        }
-      } else {
-        sprintf(subname,"smoother: %s",pname.c_str()+8);
-        coarseList.setEntry(subname,List.entry(param));
-      }
-    }
-
-    if ( !pnameIsList && (where != string::npos) )
+  // Copy general (= not level-specific) options and sublists to the new list.
+  for (ParameterList::ConstIterator param=List.begin(); param!=List.end(); ++param)
     {
-        // Process all ML level-specific options that aren't sublists.
-        if (pname.find("smoother:",0) == 0)
-        {
-          int i=-999;
-          const char *s = pname.c_str()+where;
-          if (sscanf(s," (level %d)",&i)) {
-            // pull out the level number and create/grab a sublist
-            sprintf(listName,"smoother: list (level %d)",i);
-            ParameterList & smList = newList.sublist(listName);
-            // shove option w/o level number into sublist
-            strncpy(subname,pname.c_str(),where);
-            subname[where] = '\0';
-            smList.setEntry(subname,List.entry(param));
-          } else {
-            std::cout << "ML_CreateSublist(), Line " << __LINE__
-                 << ". Error in creating smoother sublists" << std::endl;
-            std::cout << "Offending parameter: " << pname << std::endl;
-#           ifdef ML_MPI
-            MPI_Finalize();
-#           endif
-            exit(EXIT_FAILURE);
-          }
-        } else if (pname.find("aggregation:",0) == 0) {
+      const string & pname=List.name(param);
 
-          int i=-999;
-          const char *s = pname.c_str()+where;
-          if (sscanf(s," (level %d)",&i)) {
-            // pull out the level number and create/grab a sublist
-            sprintf(listName,"aggregation: list (level %d)",i);
-            ParameterList & aggList = newList.sublist(listName);
-            // shove option w/o level number into sublist
-            strncpy(subname,pname.c_str(),where);
-            subname[where] = '\0';
-            aggList.setEntry(subname,List.entry(param));
-          } else {
-            std::cout << "ML_CreateSublist(), Line " << __LINE__
-                 << ". Error in creating aggregation sublists" << std::endl;
-            std::cout << "Offending parameter: " << pname << std::endl;
-#           ifdef ML_MPI
-            MPI_Finalize();
-#           endif
-            exit(EXIT_FAILURE);
-          }
+      // Skip copy of:
+      // - standalone level-specific parameters (will be copied on corresponding sublist later)
+      // - skip coarse parameters (both standalone parameters and sublist because the sublist also have to be modified before copy)
+      if ((pname.find(" (level",0)  == string::npos || List.isSublist(pname)) &&
+          (pname.find("coarse: ",0) == string::npos))
+        {
+          newList.setEntry(pname,List.entry(param));
         }
-    } 
-    else{
-      // Copy general (not level-specific) options and sublists to new list.
-      // Don't copy coarse sublist, since its entries were already copied.
-      if (pname.find("coarse: ",0) == string::npos ) {
-        newList.setEntry(pname,List.entry(param));
-      }
     }
-  } //param list iterator
+
+  for (ParameterList::ConstIterator param=List.begin(); param!=List.end(); ++param)
+    {
+      const string & pname=List.name(param);
+      bool pnameIsList = List.isSublist(pname);
+      string::size_type where = pname.find(" (level",0);
+      
+      /*
+        The coarse sublist is a special case.  For each of its options:
+        1) If starts with "coarse:"
+        a) change to "smoother:".
+        b) copy to new list's coarse sublist.
+        2) If a smoother option
+        copy as is to new list's coarse sublist.
+      */
+      if (pname.find("coarse:",0) == 0) {
+        ParameterList &coarseList = newList.sublist("coarse: list");
+        if (pnameIsList && pname == "coarse: list") {
+          const ParameterList &sublist = List.sublist(pname);
+          for (ParameterList::ConstIterator param2=sublist.begin(); param2!=sublist.end() ; ++param2) {
+            const string & pname2=sublist.name(param2);
+            if (pname2.find("coarse:",0) == 0) {
+              sprintf(subname,"smoother: %s",pname2.c_str()+8);
+              coarseList.setEntry(subname,sublist.entry(param2));
+            } else
+              coarseList.setEntry(pname2,sublist.entry(param2));
+          }
+        } else {
+          sprintf(subname,"smoother: %s",pname.c_str()+8);
+          coarseList.setEntry(subname,List.entry(param));
+        }
+      }
+
+      if ( !pnameIsList && (where != string::npos) )
+        {
+          // Process all ML level-specific options that aren't sublists.
+          if (pname.find("smoother:",0) == 0)
+            {
+              int i=-999;
+              const char *s = pname.c_str()+where;
+              if (sscanf(s," (level %d)",&i)) {
+                // pull out the level number and create/grab a sublist
+                sprintf(listName,"smoother: list (level %d)",i);
+                ParameterList & smList = newList.sublist(listName);
+                // shove option w/o level number into sublist
+                strncpy(subname,pname.c_str(),where);
+                subname[where] = '\0';
+                smList.setEntry(subname,List.entry(param));
+              } else {
+                std::cout << "ML_CreateSublist(), Line " << __LINE__
+                          << ". Error in creating smoother sublists" << std::endl;
+                std::cout << "Offending parameter: " << pname << std::endl;
+#           ifdef ML_MPI
+                MPI_Finalize();
+#           endif
+                exit(EXIT_FAILURE);
+              }
+            } else if (pname.find("aggregation:",0) == 0) {
+
+            int i=-999;
+            const char *s = pname.c_str()+where;
+            if (sscanf(s," (level %d)",&i)) {
+              // pull out the level number and create/grab a sublist
+              sprintf(listName,"aggregation: list (level %d)",i);
+              ParameterList & aggList = newList.sublist(listName);
+              // shove option w/o level number into sublist
+              strncpy(subname,pname.c_str(),where);
+              subname[where] = '\0';
+              aggList.setEntry(subname,List.entry(param));
+            } else {
+              std::cout << "ML_CreateSublist(), Line " << __LINE__
+                        << ". Error in creating aggregation sublists" << std::endl;
+              std::cout << "Offending parameter: " << pname << std::endl;
+#           ifdef ML_MPI
+              MPI_Finalize();
+#           endif
+              exit(EXIT_FAILURE);
+            }
+          }
+        } 
+    
+    } //param list iterator
 
 } //ML_CreateSublist()
 
