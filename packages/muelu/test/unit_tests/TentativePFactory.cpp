@@ -62,6 +62,7 @@
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
+#include "MueLu_CoarseMapFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
@@ -121,7 +122,9 @@ namespace MueLuTests {
       UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
       UCAggFact->SetPhase3AggCreation(0.5);
 
-      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact,amalgFact));
+      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory(UCAggFact,Teuchos::null));
+
+      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact,amalgFact, Teuchos::null, Teuchos::null, coarseMapFact));
 
       coarseLevel.Request("P",TentativePFact.get());         // request Ptent
       coarseLevel.Request("Nullspace",TentativePFact.get()); // request coarse nullspace
@@ -187,7 +190,9 @@ namespace MueLuTests {
       UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
       UCAggFact->SetPhase3AggCreation(0.5);
 
-      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact,amalgFact));
+      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory(UCAggFact,Teuchos::null));
+
+      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact,amalgFact,Teuchos::null,Teuchos::null,coarseMapFact));
 
       coarseLevel.Request("P",TentativePFact.get());  // request Ptent
       coarseLevel.Request("Nullspace",TentativePFact.get());

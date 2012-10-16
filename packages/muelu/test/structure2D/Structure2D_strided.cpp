@@ -95,6 +95,7 @@
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
+#include "MueLu_CoarseMapFactory.hpp"
 
 //#include "MueLu_AggregationExportFactory.hpp"
 
@@ -227,9 +228,14 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
   // build transfer operators
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
 
-  TentPFact->setStridingData(stridingInfo);
+  /*TentPFact->setStridingData(stridingInfo);
   TentPFact->setStridedBlockId(stridedBlockId);
-  TentPFact->setDomainMapOffset(offset);
+  TentPFact->setDomainMapOffset(offset);*/
+
+  RCP<CoarseMapFactory> coarseMapFact = Teuchos::rcp(new CoarseMapFactory(UCAggFact));
+  coarseMapFact->setStridingData(stridingInfo);
+  coarseMapFact->setStridedBlockId(stridedBlockId);
+  coarseMapFact->setDomainMapOffset(offset);
 
   RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
   //RCP<PgPFactory> Pfact  = rcp( new PgPFactory(TentPFact) );
@@ -283,6 +289,7 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
   M.SetFactory("A", Acfact);
   M.SetFactory("Smoother", SmooFact);
   M.SetFactory("CoarseSolver", coarsestSmooFact);
+  M.SetFactory("CoarseMap", coarseMapFact);
 
   H->Setup(M, 0, maxLevels);
 

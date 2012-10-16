@@ -56,6 +56,8 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
+#include "Kokkos_DefaultKernels.hpp"
+
 #include <Xpetra_ConfigDefs.hpp>
 
 #ifdef HAVE_XPETRA_EPETRAEXT
@@ -91,6 +93,7 @@
 
 namespace {
 
+  using Kokkos::DefaultKernels;
   using Teuchos::Array;
   using Teuchos::as;
   using Teuchos::RCP;
@@ -150,6 +153,7 @@ namespace {
   /// unit test for matrix-matrix multiplication (both for Epetra and Tpetra)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MatrixMatrix, Multiply, Scalar, LO, GO, Node )
   {
+    typedef typename DefaultKernels<Scalar,LO,Node>::SparseOps DSM;
     typedef Teuchos::ScalarTraits<Scalar> ST;
     typedef Matrix<Scalar, LO, GO, Node> Matrix;
     typedef CrsMatrix<Scalar, LO, GO, Node> CrsMatrix;
@@ -202,64 +206,63 @@ namespace {
       /////////////////////////////////////// transform Epetra objects to Xpetra (needed for MueLu)
 
       // build Xpetra objects from Epetra_CrsMatrix objects
-      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xAmat = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
-      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xBmat = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epB));
-      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xABmat = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epAB));
-      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xAtBmat = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epAtB));
-      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xABtmat = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epABt));
-      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xAtBtmat = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epAtBt));
+      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,DSM> > xAmat = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
+      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,DSM> > xBmat = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epB));
+      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,DSM> > xABmat = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epAB));
+      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,DSM> > xAtBmat = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epAtB));
+      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,DSM> > xABtmat = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epABt));
+      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,DSM> > xAtBtmat = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epAtBt));
 
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > xA = Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(xAmat));
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > xB = Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(xBmat));
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > xAB= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(xABmat));
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > xAtB= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(xAtBmat));
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > xABt= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(xABtmat));
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > xAtBt= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(xAtBtmat));
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node,DSM> > xA = Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node,DSM>(xAmat));
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node,DSM> > xB = Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node,DSM>(xBmat));
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node,DSM> > xAB= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node,DSM>(xABmat));
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node,DSM> > xAtB= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node,DSM>(xAtBmat));
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node,DSM> > xABt= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node,DSM>(xABtmat));
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node,DSM> > xAtBt= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node,DSM>(xAtBtmat));
 
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > yAB= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(map, 6));
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node,DSM> > yAB= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node,DSM>(map, 6));
 
       //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
       //yAB->describe(*fos,Teuchos::VERB_EXTREME);
 
 
-      Xpetra::MatrixMatrix::Multiply (
+      Xpetra::MatrixMatrix::Multiply<Scalar, LO, GO, Node, DSM> (
         *xA,
         false,
         *xB,
         false,
         *yAB);
-      Xpetra::MatrixMatrix::Add (*xAB,false,1.0,*yAB,-1.0);
+      Xpetra::MatrixMatrix::Add<Scalar, LO, GO, Node, DSM>(*xAB,false,1.0,*yAB,-1.0);
       TEUCHOS_TEST_EQUALITY(yAB->getFrobeniusNorm(), 0, out, success );
 
-      Xpetra::MatrixMatrix::Multiply (
+      Xpetra::MatrixMatrix::Multiply<Scalar, LO, GO, Node, DSM> (
         *xA,
         true,
         *xB,
         false,
         *yAB);
-      Xpetra::MatrixMatrix::Add (*xAtB,false,1.0,*yAB,-1.0);
+      Xpetra::MatrixMatrix::Add<Scalar, LO, GO, Node, DSM>(*xAtB,false,1.0,*yAB,-1.0);
       TEUCHOS_TEST_EQUALITY(yAB->getFrobeniusNorm(), 0, out, success );
 
-      Xpetra::MatrixMatrix::Multiply (
+      Xpetra::MatrixMatrix::Multiply<Scalar, LO, GO, Node, DSM> (
         *xA,
         false,
         *xB,
         true,
         *yAB);
-      Xpetra::MatrixMatrix::Add (*xABt,false,1.0,*yAB,-1.0);
+      Xpetra::MatrixMatrix::Add<Scalar, LO, GO, Node, DSM> (*xABt,false,1.0,*yAB,-1.0);
       TEUCHOS_TEST_EQUALITY(yAB->getFrobeniusNorm(), 0, out, success );
 
-      Xpetra::MatrixMatrix::Multiply (
+      Xpetra::MatrixMatrix::Multiply<Scalar, LO, GO, Node, DSM> (
         *xA,
         true,
         *xB,
         true,
         *yAB);
-      Xpetra::MatrixMatrix::Add (*xAtBt,false,1.0,*yAB,-1.0);
+      Xpetra::MatrixMatrix::Add<Scalar, LO, GO, Node, DSM> (*xAtBt,false,1.0,*yAB,-1.0);
       TEUCHOS_TEST_EQUALITY(yAB->getFrobeniusNorm(), 0, out, success );
     } // end Epetra test
 #endif
-
 
 #ifdef HAVE_XPETRA_TPETRA
     { // Tpetra test
@@ -277,36 +280,36 @@ namespace {
       Teuchos::RCP<Node> pNode = map->getNode();
 
       // read in matrices
-      typedef Tpetra::MatrixMarket::Reader<Tpetra::CrsMatrix<Scalar, LO, GO, Node> > reader_type;
+      typedef Tpetra::MatrixMarket::Reader<Tpetra::CrsMatrix<Scalar, LO, GO, Node,DSM> > reader_type;
 
-      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > tpA = reader_type::readSparseFile("A.mat",comm,pNode );
-      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > tpB = reader_type::readSparseFile("B.mat",comm,pNode );
-      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > tpAB = reader_type::readSparseFile("AB.mat",comm,pNode );
-      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > tpAtB = reader_type::readSparseFile("AtB.mat",comm,pNode );
-      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > tpABt = reader_type::readSparseFile("ABt.mat",comm,pNode );
-      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node> > tpAtBt = reader_type::readSparseFile("AtBt.mat",comm,pNode );
+      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node,DSM> > tpA = reader_type::readSparseFile("A.mat",comm,pNode );
+      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node,DSM> > tpB = reader_type::readSparseFile("B.mat",comm,pNode );
+      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node,DSM> > tpAB = reader_type::readSparseFile("AB.mat",comm,pNode );
+      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node,DSM> > tpAtB = reader_type::readSparseFile("AtB.mat",comm,pNode );
+      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node,DSM> > tpABt = reader_type::readSparseFile("ABt.mat",comm,pNode );
+      Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,Node,DSM> > tpAtBt = reader_type::readSparseFile("AtBt.mat",comm,pNode );
 
       // transform to Xpetra
-      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xAmat = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node>(tpA));
-      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xBmat = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node>(tpB));
-      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xABmat = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node>(tpAB));
-      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xAtBmat = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node>(tpAtB));
-      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xABtmat = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node>(tpABt));
-      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xAtBtmat = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node>(tpAtBt));
+      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,DSM> > xAmat = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node,DSM>(tpA));
+      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,DSM> > xBmat = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node,DSM>(tpB));
+      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,DSM> > xABmat = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node,DSM>(tpAB));
+      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,DSM> > xAtBmat = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node,DSM>(tpAtB));
+      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,DSM> > xABtmat = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node,DSM>(tpABt));
+      Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,DSM> > xAtBtmat = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node,DSM>(tpAtBt));
 
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > xA = Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(xAmat));
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > xB = Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(xBmat));
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > xAB= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(xABmat));
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > xAtB= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(xAtBmat));
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > xABt= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(xABtmat));
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > xAtBt= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(xAtBtmat));
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node,DSM> > xA = Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node,DSM>(xAmat));
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node,DSM> > xB = Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node,DSM>(xBmat));
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node,DSM> > xAB= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node,DSM>(xABmat));
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node,DSM> > xAtB= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node,DSM>(xAtBmat));
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node,DSM> > xABt= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node,DSM>(xABtmat));
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node,DSM> > xAtBt= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node,DSM>(xAtBtmat));
 
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > yAB= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(map, 10));
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > yAtB= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(map, 10));
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > yABt= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(map, 10));
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > yAtBt= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(map, 10));
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node,DSM> > yAB= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node,DSM>(map, 10));
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node,DSM> > yAtB= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node,DSM>(map, 10));
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node,DSM> > yABt= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node,DSM>(map, 10));
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node,DSM> > yAtBt= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node,DSM>(map, 10));
 
-      Xpetra::MatrixMatrix::Multiply (
+      Xpetra::MatrixMatrix::Multiply<Scalar, LO, GO, Node, DSM> (
         *xA,
         false,
         *xB,
@@ -316,7 +319,7 @@ namespace {
       TEUCHOS_TEST_EQUALITY(xAB->getGlobalNumDiags(), yAB->getGlobalNumDiags(), out, success );
       TEUCHOS_TEST_EQUALITY(xAB->getNodeNumEntries(), yAB->getNodeNumEntries(), out, success );
 
-      Xpetra::MatrixMatrix::Multiply (
+      Xpetra::MatrixMatrix::Multiply<Scalar, LO, GO, Node, DSM> (
           *xA,
           true,
           *xB,
@@ -326,7 +329,7 @@ namespace {
         TEUCHOS_TEST_EQUALITY(xAtB->getGlobalNumDiags(), yAtB->getGlobalNumDiags(), out, success );
         TEUCHOS_TEST_EQUALITY(xAtB->getNodeNumEntries(), yAtB->getNodeNumEntries(), out, success );
 
-      Xpetra::MatrixMatrix::Multiply (
+      Xpetra::MatrixMatrix::Multiply<Scalar, LO, GO, Node, DSM> (
           *xA,
           false,
           *xB,
@@ -336,7 +339,7 @@ namespace {
         TEUCHOS_TEST_EQUALITY(xABt->getGlobalNumDiags(), yABt->getGlobalNumDiags(), out, success );
         TEUCHOS_TEST_EQUALITY(xABt->getNodeNumEntries(), yABt->getNodeNumEntries(), out, success );
 
-      Xpetra::MatrixMatrix::Multiply (
+      Xpetra::MatrixMatrix::Multiply<Scalar, LO, GO, Node, DSM> (
           *xA,
           true,
           *xB,

@@ -122,7 +122,7 @@ namespace MueLu {
     bool IsRoot(LO i) const               { return isRoot_[i];          } ///< returns true if node with given local node id is marked to be a root node
     void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         } ///< set root node information. Used by aggregation methods only.
     
-    const RCP<const Map> GetMap() const { return vertex2AggId_->getMap(); } ///< returns (overlapping) map of aggregate/node distribution
+    const RCP<const Map> GetMap() const; ///< returns (overlapping) map of aggregate/node distribution
 
     /*! @brief Compute sizes of aggregates
      * 

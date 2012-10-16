@@ -67,6 +67,7 @@
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_CoarseMapFactory.hpp"
  
 namespace MueLu {
 
@@ -130,6 +131,7 @@ namespace MueLu {
       if (varName == "Graph")               return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
       if (varName == "UnAmalgamationInfo")  return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory())); //GetFactory("Graph"));
       if (varName == "Aggregates")          return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
+      if (varName == "CoarseMap")           return SetAndReturnDefaultFactory(varName, rcp(new CoarseMapFactory()));
 
       // Same factory for both Pre and Post Smoother. Factory for key "Smoother" can be set by users.
       if (varName == "PreSmoother")         return GetFactory("Smoother");

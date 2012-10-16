@@ -205,7 +205,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
     Teuchos::RCP<const ::Thyra::VectorBase<double> > x_old = 
       thyraOldSolnGroup->get_current_x();
 
-    // Compute x_dot using backward Euler
+    // Compute x_dot using forward finite difference
     if (is_null(x_dot))
       x_dot = ::Thyra::createMember(x->space());
 
