@@ -43,16 +43,46 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
-#define MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
+#ifndef MUELU_CONSTRAINTFACTORY_DEF_HPP
+#define MUELU_CONSTRAINTFACTORY_DEF_HPP
+
+#include <Xpetra_MultiVector_fwd.hpp>
+#include <Xpetra_CrsGraph_fwd.hpp>
+
+#include "MueLu_ConstraintFactory_decl.hpp"
+
+#include "MueLu_Constraint.hpp"
+#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class $TMPL_CLASS;
-}
+  ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ConstraintFactory(RCP<const FactoryBase> PatternFact)
+  : patternFact_(PatternFact)
+  { }
 
-#ifndef MUELU_$TMPL_UPPERCASECLASS_SHORT
-#define MUELU_$TMPL_UPPERCASECLASS_SHORT
-#endif
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~ConstraintFactory()
+  { }
 
-#endif // MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level& coarseLevel) const {
+    fineLevel.  DeclareInput("Nullspace", NULL, this);
+    coarseLevel.DeclareInput("Nullspace", NULL, this);
+    coarseLevel.DeclareInput("Ppattern", patternFact_.get(), this);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level& coarseLevel) const {
+    FactoryMonitor m(*this, "Constraint", coarseLevel);
+
+    RCP<Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > constraint(new Constraint<SC,LO,GO,NO,LMO>);
+    constraint->Setup(*fineLevel.Get< RCP<MultiVector> >("Nullspace", NULL), *coarseLevel.Get< RCP<MultiVector> >("Nullspace", NULL), coarseLevel.Get< RCP<const CrsGraph> >("Ppattern", patternFact_.get()));
+
+    coarseLevel.Set("Constraint", constraint, this);
+  }
+
+
+} // namespace MueLu
+
+#endif // MUELU_CONSTRAINTFACTORY_DEF_HPP

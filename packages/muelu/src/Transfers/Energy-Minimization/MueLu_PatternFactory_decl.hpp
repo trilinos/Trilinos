@@ -43,16 +43,68 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
-#define MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
+#ifndef MUELU_PATTERNFACTORY_DECL_HPP
+#define MUELU_PATTERNFACTORY_DECL_HPP
+
+#include "MueLu_ConfigDefs.hpp"
+
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_Level_fwd.hpp"
 
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class $TMPL_CLASS;
-}
 
-#ifndef MUELU_$TMPL_UPPERCASECLASS_SHORT
-#define MUELU_$TMPL_UPPERCASECLASS_SHORT
-#endif
+  /*!
+    @class PatternFactory class.
+    @brief Factory for building nonzero patterns for energy minimization.
+    @ingroup MueLuTransferClasses
+    */
 
-#endif // MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
+  template<class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::sparseOps>
+  class PatternFactory : public SingleLevelFactoryBase {
+#undef MUELU_PATTERNFACTORY_SHORT
+#include "MueLu_UseShortNames.hpp"
+
+  public:
+
+    //! @name Constructors/Destructors.
+    //@{
+
+    /*! @brief Constructor.
+      User can supply a factory for generating the prolongator. The nonzero pattern of the
+      constructed prolongator will be used for the nonzero pattern.
+      */
+    PatternFactory(RCP<const FactoryBase> PFact = Teuchos::null);
+
+    //! Destructor.
+    virtual ~PatternFactory();
+
+    //@}
+
+    //! @name Input
+    //@{
+
+    void DeclareInput(Level& currentLevel) const;
+
+    //@}
+
+    //! @name Build methods.
+    //@{
+
+    /*!
+      @brief Build method.
+
+      Builds nonzero pattern (graph) and returns it in <tt>coarseLevel</tt>.
+      */
+    void Build(Level & currentLevel) const;
+
+    //@}
+
+  private:
+    RCP<const FactoryBase> PFact_;              //!< Prolongator factory
+  }; // class PatternFactory
+
+
+} // namespace MueLu
+
+#define MUELU_PATTERNFACTORY_SHORT
+#endif // MUELU_PATTERNFACTORY_DECL_HPP

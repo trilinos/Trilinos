@@ -43,3 +43,10 @@ AmalgamationFactory
 AggStatTransferFactory
 CoarseMapFactory
 BlockedCoarseMapFactory
+EminPFactory
+ConstraintFactory
+Constraint
+PatternFactory
+SolverBase
+SteepestDescentSolver
+CGSolver

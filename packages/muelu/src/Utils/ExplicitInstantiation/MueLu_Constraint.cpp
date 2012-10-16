@@ -43,16 +43,31 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
-#define MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
+#include "MueLu_ExplicitInstantiation.hpp"
 
-namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class $TMPL_CLASS;
-}
+#ifdef INCLUDE_MUELU_EXPERIMENTAL
 
-#ifndef MUELU_$TMPL_UPPERCASECLASS_SHORT
-#define MUELU_$TMPL_UPPERCASECLASS_SHORT
+#include "MueLu_Constraint_def.hpp"
+
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
+template class MueLu::Constraint<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
 #endif
 
-#endif // MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
+# ifdef HAVE_TEUCHOS_LONG_LONG_INT
+template class MueLu::Constraint<double, int, long long int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+# else
+# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
+# endif
+#endif
+
+#ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
+# ifdef HAVE_TEUCHOS_COMPLEX
+#include <complex>
+template class MueLu::Constraint<std::complex<double>, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+# else
+# warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
+# endif
+#endif
+
+#endif // #ifdef INCLUDE_MUELU_EXPERIMENTAL

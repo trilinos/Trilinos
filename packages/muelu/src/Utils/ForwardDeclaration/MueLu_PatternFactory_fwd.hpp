@@ -43,16 +43,16 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
-#define MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
+#ifndef MUELU_PATTERNFACTORY_FWD_HPP
+#define MUELU_PATTERNFACTORY_FWD_HPP
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class $TMPL_CLASS;
+  class PatternFactory;
 }
 
-#ifndef MUELU_$TMPL_UPPERCASECLASS_SHORT
-#define MUELU_$TMPL_UPPERCASECLASS_SHORT
+#ifndef MUELU_PATTERNFACTORY_SHORT
+#define MUELU_PATTERNFACTORY_SHORT
 #endif
 
-#endif // MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
+#endif // MUELU_PATTERNFACTORY_FWD_HPP

@@ -1,12 +1,12 @@
 INCLUDE(TribitsLibraryMacros)
 INCLUDE(TrilinosCreateClientTemplateHeaders)
- 
+
 # Note about the use of wildcard in CMakeLists.txt: CMake dont't know
 # when new files is added. You need to re-run CMake manually to
 # regenerate a build system incorporating the new file.
 # YOU MUST ALSO TOUCH A CMAKE CONFIGURATION FILE WHEN YOU PUSH THE NEW
 # FILE TO FORCE THE RECONFIGURE ON OTHER PEOPLE'S BUILDS.
-   
+
 #
 # Package-specific configuration options
 #
@@ -28,6 +28,10 @@ INCLUDE_DIRECTORIES(${DIR}/MueCentral/Level)
 INCLUDE_DIRECTORIES(${DIR}/Smoothers)
 INCLUDE_DIRECTORIES(${DIR}/Smoothers/BlockedSmoothers)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/BlockedTransfers)
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization)
+  INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization/Solvers)
+ENDIF ()
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Smoothed-Aggregation)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Petrov-Galerkin-SA)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Generic)
@@ -45,6 +49,7 @@ APPEND_GLOB(HEADERS ${BDIR}/${PACKAGE_NAME}_config.hpp)
 APPEND_GLOB(HEADERS ${DIR}/Headers/${PACKAGE_NAME}_ConfigDefs.hpp)
 APPEND_GLOB(HEADERS */*.hpp)
 APPEND_GLOB(HEADERS */*/*.hpp)
+APPEND_GLOB(HEADERS */*/*/*.hpp)
 
 SET(SOURCES "")
 APPEND_GLOB(SOURCES */*.cpp)
@@ -54,6 +59,10 @@ APPEND_GLOB(SOURCES MueCentral/BaseClass/*.cpp)
 APPEND_GLOB(SOURCES MueCentral/Level/*.cpp)
 APPEND_GLOB(SOURCES Smoothers/BlockedSmoothers/*.cpp)
 APPEND_GLOB(SOURCES Transfers/BlockedTransfers/*.cpp)
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  APPEND_GLOB(SOURCES Transfers/Energy-Minimization/*.cpp)
+  APPEND_GLOB(SOURCES Transfers/Energy-Minimization/Solvers/*.cpp)
+ENDIF ()
 APPEND_GLOB(SOURCES Transfers/Smoothed-Aggregation/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Petrov-Galerkin-SA/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Generic/*.cpp)
@@ -72,6 +81,10 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/UncoupledAggregation NOSIER
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/BaseClass NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Petrov-Galerkin-SA NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Generic NOSIERRABJAM)
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Energy-Minimization NOSIERRABJAM)
+  TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Energy-Minimization/Solvers NOSIERRABJAM)
+ENDIF ()
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Smoothed-Aggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/BlockedTransfers NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/MueCentral NOSIERRABJAM)
@@ -108,7 +121,7 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   DEPLIBS xpetra xpetra-sup xpetra-ext
   )
- 
+
 # for debugging
 #MESSAGE("")
 #MESSAGE("**************** in muelu src ***********")
@@ -118,5 +131,3 @@ TRIBITS_ADD_LIBRARY(
 #MESSAGE("INCLUDE_DIRECTORIES = ")
 #get_directory_property(output INCLUDE_DIRECTORIES)
 #message(STATUS ${output})
- 
- 

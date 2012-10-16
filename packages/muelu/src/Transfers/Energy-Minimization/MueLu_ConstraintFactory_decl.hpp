@@ -43,16 +43,69 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
-#define MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
+#ifndef MUELU_CONSTRAINTFACTORY_DECL_HPP
+#define MUELU_CONSTRAINTFACTORY_DECL_HPP
+
+#include "MueLu_ConfigDefs.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp"
+#include "MueLu_Level_fwd.hpp"
 
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class $TMPL_CLASS;
-}
 
-#ifndef MUELU_$TMPL_UPPERCASECLASS_SHORT
-#define MUELU_$TMPL_UPPERCASECLASS_SHORT
-#endif
+  /*!
+    @class ConstraintFactory class.
+    @brief Factory for building the constraint operator
 
-#endif // MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
+    Factory for creating the constraint operator.
+
+    @ingroup MueLuTransferClasses
+  */
+
+  template<class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::sparseOps>
+  class ConstraintFactory : public TwoLevelFactoryBase {
+#undef MUELU_CONSTRAINTFACTORY_SHORT
+#include "MueLu_UseShortNames.hpp"
+
+  public:
+
+    //! @name Constructors/Destructors.
+    //@{
+
+    /*! @brief Constructor.
+      User can supply a factory for generating the nonzero pattern. The nullspace vectors (both fine and coarse) will
+      be taken from the corresponding level factories
+      */
+    ConstraintFactory(RCP<const FactoryBase> PatternFact = Teuchos::null);
+
+    //! Destructor.
+    virtual ~ConstraintFactory();
+
+    //@}
+
+    //! @name Input
+    //@{
+
+    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
+
+    //@}
+    //! @name Build methods.
+    //@{
+
+    /*!
+      @brief Build method.
+
+      Builds Constraint and returns it in <tt>coarseLevel</tt>.
+      */
+    void Build(Level & fineLevel, Level& coarseLevel) const;
+
+    //@}
+
+  private:
+    RCP<const FactoryBase> patternFact_;
+  }; // class ConstraintFactory
+
+
+} // namespace MueLu
+
+#define MUELU_CONSTRAINTFACTORY_SHORT
+#endif // MUELU_CONSTRAINTFACTORY_DECL_HPP

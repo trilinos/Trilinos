@@ -43,16 +43,16 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
-#define MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
+#ifndef MUELU_CGSOLVER_FWD_HPP
+#define MUELU_CGSOLVER_FWD_HPP
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class $TMPL_CLASS;
+  class CGSolver;
 }
 
-#ifndef MUELU_$TMPL_UPPERCASECLASS_SHORT
-#define MUELU_$TMPL_UPPERCASECLASS_SHORT
+#ifndef MUELU_CGSOLVER_SHORT
+#define MUELU_CGSOLVER_SHORT
 #endif
 
-#endif // MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
+#endif // MUELU_CGSOLVER_FWD_HPP

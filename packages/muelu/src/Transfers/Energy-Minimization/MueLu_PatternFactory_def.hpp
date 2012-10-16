@@ -43,16 +43,42 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
-#define MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
+#ifndef MUELU_PATTERNFACTORY_DEF_HPP
+#define MUELU_PATTERNFACTORY_DEF_HPP
+
+#include <Xpetra_Matrix.hpp>
+
+#include "MueLu_PatternFactory_decl.hpp"
+
+#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class $TMPL_CLASS;
-}
+  PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PatternFactory(RCP<const FactoryBase> PFact)
+  : PFact_(PFact)
+  { }
 
-#ifndef MUELU_$TMPL_UPPERCASECLASS_SHORT
-#define MUELU_$TMPL_UPPERCASECLASS_SHORT
-#endif
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~PatternFactory()
+  { }
 
-#endif // MUELU_$TMPL_UPPERCASECLASS_FWD_HPP
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+    currentLevel.DeclareInput("P", PFact_.get(), this);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
+    FactoryMonitor m(*this, "Ppattern", currentLevel);
+
+    RCP<Matrix> P = currentLevel.Get< RCP<Matrix> >("P", PFact_.get());
+
+    // When P goes away, does the pattern continue to exist?
+    currentLevel.Set("Ppattern", P->getCrsGraph(), this);
+  }
+
+
+} // namespace MueLu
+
+#endif // MUELU_PATTERNFACTORY_DEF_HPP
