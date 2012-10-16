@@ -939,6 +939,7 @@ double *AZ_manage_memory(unsigned int input_size, int action, int type,
   static struct mem_ptr *head = NULL;
   struct mem_ptr        *current, *temp,*prev, *thenext;
   int                   found = 0, i,j, n2, nn;
+  /* FIX: long int aligned_str_mem, aligned_j, aligned_size; */
 int aligned_str_mem,aligned_j,aligned_size;
 double *dtmp;
 
@@ -1898,9 +1899,12 @@ char *AZ_allocate(unsigned int isize) {
 
     char *ptr, *header_start, *header_end;
     struct widget *widget;
+    /* FIX: int *size_ptr, i;
+       FIX: unsigned int size; */
     int *size_ptr, i, size;
     double *dptr;
 
+    /* FIX: size = isize; */
     size = (int) isize;
 
     size = size + 7*sizeof(double);
