@@ -3590,7 +3590,7 @@ int ML_Epetra::UpdateList(Teuchos::ParameterList &source, Teuchos::ParameterList
 */
 
 #ifdef HAVE_ML_TEUCHOS
-void ML_CreateSublists(ParameterList &List, ParameterList &newList,
+void ML_CreateSublists(const ParameterList &List, ParameterList &newList,
                       int NumLevels)
 {
   char listName[80], subname[160];
@@ -3617,7 +3617,7 @@ void ML_CreateSublists(ParameterList &List, ParameterList &newList,
     if (pname.find("coarse:",0) == 0) {
       ParameterList &coarseList = newList.sublist("coarse: list");
       if (pnameIsList && pname=="coarse: list") {
-        ParameterList &sublist = List.sublist(pname);
+        const ParameterList &sublist = List.sublist(pname);
         for (ParameterList::ConstIterator param2=sublist.begin(); param2!=sublist.end() ; ++param2) {
           const string pname2=sublist.name(param2);
           if (pname2.find("coarse:",0) == 0) {
