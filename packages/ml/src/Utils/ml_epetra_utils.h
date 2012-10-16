@@ -163,10 +163,7 @@ int ML_Operator_WrapEpetraCrsGraph(Epetra_CrsGraph* Graph, ML_Operator *newMatri
 
 #ifdef HAVE_ML_TEUCHOS
 void ML_CreateSublists(const Teuchos::ParameterList &List,
-                      Teuchos::ParameterList &newList,
-                      int NumLevels);
-
-
+                       Teuchos::ParameterList &newList);
 #endif
 
 #ifndef ML_CPP

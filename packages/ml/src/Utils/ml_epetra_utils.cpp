@@ -3590,13 +3590,9 @@ int ML_Epetra::UpdateList(Teuchos::ParameterList &source, Teuchos::ParameterList
 */
 
 #ifdef HAVE_ML_TEUCHOS
-void ML_CreateSublists(const ParameterList &List, ParameterList &newList,
-                      int NumLevels)
+void ML_CreateSublists(const ParameterList &List, ParameterList &newList)
 {
   char listName[80], subname[160];
-  ParameterList  **smList = new ParameterList*[NumLevels];
-  ParameterList  **aggList = new ParameterList*[NumLevels];
-  for (int i=0; i<NumLevels; i++) smList[i] = aggList[i] = 0;
   newList.setName(List.name());
 
   for (ParameterList::ConstIterator param=List.begin();
@@ -3642,11 +3638,11 @@ void ML_CreateSublists(const ParameterList &List, ParameterList &newList,
           if (sscanf(s," (level %d)",&i)) {
             // pull out the level number and create/grab a sublist
             sprintf(listName,"smoother: list (level %d)",i);
-            smList[i] = &(newList.sublist(listName));
+            ParameterList & smList = newList.sublist(listName);
             // shove option w/o level number into sublist
             strncpy(subname,pname.c_str(),where);
             subname[where] = '\0';
-            smList[i]->setEntry(subname,List.entry(param));
+            smList.setEntry(subname,List.entry(param));
           } else {
             std::cout << "ML_CreateSublist(), Line " << __LINE__
                  << ". Error in creating smoother sublists" << std::endl;
@@ -3663,11 +3659,11 @@ void ML_CreateSublists(const ParameterList &List, ParameterList &newList,
           if (sscanf(s," (level %d)",&i)) {
             // pull out the level number and create/grab a sublist
             sprintf(listName,"aggregation: list (level %d)",i);
-            aggList[i] = &(newList.sublist(listName));
+            ParameterList & aggList = newList.sublist(listName);
             // shove option w/o level number into sublist
             strncpy(subname,pname.c_str(),where);
             subname[where] = '\0';
-            aggList[i]->setEntry(subname,List.entry(param));
+            aggList.setEntry(subname,List.entry(param));
           } else {
             std::cout << "ML_CreateSublist(), Line " << __LINE__
                  << ". Error in creating aggregation sublists" << std::endl;
@@ -3687,9 +3683,6 @@ void ML_CreateSublists(const ParameterList &List, ParameterList &newList,
       }
     }
   } //param list iterator
-
-  delete [] smList;
-  delete [] aggList;
 
 } //ML_CreateSublist()
 

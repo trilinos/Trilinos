@@ -132,7 +132,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 
   /* Validate List */
   Teuchos::ParameterList newList;
-  ML_CreateSublists(List_,newList,0);
+  ML_CreateSublists(List_,newList);
   List_ = newList;
   //TODO check for failure of validation, and print a helpful message,
   //     just like in MultiLevelPreconditioner

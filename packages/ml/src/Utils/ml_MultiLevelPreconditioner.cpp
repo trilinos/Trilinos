@@ -1123,7 +1123,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // Creates new list with level-specific smoother, level-specific 
   // aggregation, and coarse options now in sublists.
   ParameterList newList;
-  ML_CreateSublists(List_,newList,NumLevels_);
+  ML_CreateSublists(List_,newList);
   List_ = newList;
   // Validate Parameter List
   int depth=List_.get("ML validate depth",5);
