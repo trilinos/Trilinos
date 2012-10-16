@@ -2,71 +2,272 @@ Users' guide to MpiTypeTraits
 
 * Summary
 
-This class maps from the C++ type, to its ~MPI_Datatype~ and count.  For a given C++ type ~Packet~, this traits class tells you:
-1. The corresponding ~MPI_Datatype~ and count (i.e., number of contiguous instances of that ~MPI_Datatype~).  These tell MPI how to send and receive objects of type ~Packet~.
-2. Whether the ~MPI_Datatype~ is a /basic/ or /derived/ type.  Derived types must be freed after use, by calling ~MPI_Type_free~.  Basic types need not and must not be freed after use.
+The ~MpiTypeTraits~ traits class defines how to communicate instances of a given C++ type ~Packet~ using [[http://www.mpi-forum.org/][MPI]] (the [[http://en.wikipedia.org/wiki/Message_Passing_Interface][Message Passing Interface]] for distributed-memory parallel programming).  For a given ~Packet~ type, ~MpiTypeTraits~ tells you:
+1. The corresponding ~MPI_Datatype~ and count, which tell MPI how to send and receive objects of type ~Packet~.
+2. Whether the ~MPI_Datatype~ is a basic or derived type.  /Derived/ ~MPI_Datatype~ instances must be freed after use, by calling ~MPI_Type_free~.  /Basic/ ~MPI_Datatype~ instances must /not/ be freed after use.
 3. Whether the ~MPI_Datatype~ and count are the same for all instances of ~Packet~ on an MPI process, at all times in the program, on all MPI processes.  (These are three separate conditions.)  
 4. Whether you need to serialize a ~Packet~ instance before communicating it.  (Serialization is handled separately.)
 
-~MpiTypeTraits~ is meant mainly for Trilinos packages such as Tpetra and Zoltan2, that use Comm (Teuchos' MPI wrapper) to communicate data.  It is also appropriate for any direct user of Comm.  If you do not use Comm directly, you need not worry about this class.
+~MpiTypeTraits~ is meant mainly for Trilinos packages such as Tpetra and Zoltan2, that use ~Comm~ (Teuchos' MPI wrapper) to communicate data.  It is also appropriate for any direct user of ~Comm~.  If you do not use ~Comm~ directly, you probably don't need to know about this class.
 
 This class works by specialization.  If there is no specialization of ~MpiTypeTraits~ for a type ~Packet~, then expressions involving ~MpiTypeTraits<Packet>~ will not compile.  We provide specializations for many commonly used C++ types, including all standard built-in integer and floating-point types.  However, you must write a specialization for any ~Packet~ types we do not cover.  Be sure to check this header file for the list of specializations that we provide.  Duplicating an existing specialization will result in an error either at compile time or link time.
 
-* When and how do I need to serialize?
+We explain below how you can use ~MpiTypeTraits~ to write generic code that uses MPI.  Such code is templated on the type ~Packet~ being communicated, and depends as little as possible on the specific ~Packet~ type.  The ~MpiTypeTraits~ class distills the specific details of ~Packet~ that affect how you communicate it, into a small number of Boolean constants and functions.  In particular, the traits class tells you:
+- Do I need to serialize ~Packet~ instances before communicating them, or can I give them directly to MPI?
+- Do I need to coordinate count and/or ~MPI_Datatype~ information between sending and receiving processes?
+If you know these things, you can avoid unnecessary work and communication.  You can also simplify your implementation for special cases, while safely checking whether a ~Packet~ type meets your assumptions.
 
-In this section, we explain when you need to serialize instances of a particular type ~Packet~ before communicating them.  We also talk about how to use MPI's built-in serialization capability, and how to do serialization if not building with MPI.  Novice users should read the initial "Summary" section.  Subsequent sections include justification for design choices, and implementation suggestions.
+~MpiTypeTraits~ defers serialization to a separate serialization traits class.  This allows changing the serialization method without changing how you communicate data, and makes building without MPI easier.  
+
+~MpiTypeTraits~ requires MPI.  If you are building Trilinos without MPI support, you should not refer to ~MpiTypeTraits~ in your code or include its header file.
+
+* When and how do I serialize?  If not, how do I give MPI a pointer to the data?
+
+Some C++ types need [[http://en.wikipedia.org/wiki/Serialization][serialization]] before you may communicate them using MPI.  Serialization takes time and memory, and many C++ types do not need it.  ~MpiTypeTraits<T>~ tells you when you need to serialize an instance of ~T~ or an array of ~T~.  It does not implement serialization for ~T~.  You may use either MPI's built-in serialization capability (~MPI_Pack~ and ~MPI_Unpack~), or another facility of your choice.  Optional serialization leads to a explanation of how to give MPI a raw pointer to the data of a ~T~ instance.  Depending on ~T~, you may need to call a function to do this.  This affects whether or not serialization of arrays of ~T~ is required, so we discuss this topic here as well.
+
+In this section, we explain how to use ~MpiTypeTraits~ to find out whether you need to serialize, and how to send and receive data in either case.  Then, we explain in detail the cases where serialization is needed.  We also mention MPI's built-in serialization capability, and how to do serialization if not building with MPI.  Novice users should read the initial "Summary: What user code needs to do" section, and perhaps also the "Direct and indirect types" section.
 
 ** Summary: What user code needs to do
 
-You must serialize when communicating
-- An array of indirect type ~T~
+This section summarizes the conditions under which you must serialize instances of a C++ type ~T~ instances before communicating them.  You must check three values in ~MpiTypeTraits<T>~: the two Booleans ~mustSerialize~ and ~direct~, and the integer count returned by ~getCount~.  It is always correct to serialize, so you may do this if you do not want to check all the conditions.  We give you the opportunity to bypass serialization for as many types as possible, in order to improve performance and reduce memory consumption.  We hope this will encourage use of memory-safe array containers rather than raw arrays, that might otherwise need serialization.
+
+In summary, you must serialize when communicating
+- One or more ~T~, if ~mustSerialize~ is true
+- An array of ~T~, if ~mustSerialize~ is false and ~direct~ is false
+- An array of ~T~, if any element of the array has count not equal to 1
 - An array of arrays of any type ~T~
-- An array of ~T~, if ~T~ may have count greater than one
-- An instance of ~T~, if ~MpiTypeTraits<T>::mustSerialize~ is true
+
+"Array" includes both raw C++ arrays (of type ~T[]~ or ~const T[]~) and any kind of wrapper or higher-level array interface giving access to contiguous storage.  This includes ~std::vector~ and ~std::string~ (whose ~c_str~ method returns an array of ~char~), as well as the arrays in Teuchos' memory management classes (~Teuchos::Array~, ~Teuchos::ArrayRCP~, and ~Teuchos::ArrayView~).
+
+To summarize in words: If ~MpiTypeTraits<T>::mustSerialize~ is true, you must always serialize ~T~, whether a single instance or an array.  If this is false, then you need not serialize a single instance of ~T~.  Whether or not you need to serialize arrays of ~T~ depends on the second Boolean, ~MpiTypeTraits<T>::direct~.  This says whether ~T~ is a "direct" (if true) or "indirect" (if false) type (see definition below).  If ~T~ is direct, then you need not serialize arrays of ~T~.  Otherwise, you must.  Finally, if the count of ~T~ (as returned by ~MpiTypeTraits<T>::getCount~) is not equal to 1, you must always serialize arrays of ~T~.
+
+** Direct and indirect types
 
 The Boolean ~MpiTypeTraits<T>::direct~ is true if ~T~ is a direct type, and false if ~T~ is an indirect type.  An /direct type/ ~T~ is a type for which it is correct to use a pointer to a ~T~ instance as an input or output buffer of an MPI function.  For example:
 #+BEGIN_SRC C++
 T x (...); // T here must be a direct type.
 (void) MPI_Send (&x, ...);
 #+END_SRC
-An /indirect type/ is a type for which this is not the case.  Some indirect types require serialization in order to communicate a single instance; others do not.  For example, ~std::string~ is an indirect type, but does not require serialization.  This is because for a ~std::string~ instance ~s~, one may use ~reinterpret_cast<void*> (s.c_str ())~ as an input or output buffer.  In contrast, ~std::set<T>~ for any ~T~ is both indirect and requires serialization.  This is because the representation of ~std::set~ is opaque, /and/ an ~std::set~ need not store its data contiguously (as ~std::string~ and ~std::vector~ must).  That is, there is no sensible way to define "get the raw pointer" for an ~std::set~.
+An /indirect type/ is a type for which this is not the case.  Some indirect types require serialization in order to communicate a single instance; others do not.  For example, ~std::string~ is an indirect type, but does not require serialization.  This is because for a ~std::string~ instance ~s~, one may get a valid input or output buffer for MPI like this:
+#+BEGIN_SRC C++
+void* buf = reinterpret_cast<void*> (s.c_str ());
+(void) MPI_Send (buf, static_cast<int> (s.size ()), MPI_CHAR, ...);
+#+END_SRC
+In contrast, ~std::set<T>~ for any ~T~ is both indirect and requires serialization.  This is because an ~std::set~ need not store its data contiguously (as ~std::string~ and ~std::vector~ must), and does not expose its representation.  Thus, there is no sensible way to "get the raw pointer" to the data in an ~std::set~.
 
-The Boolean ~MpiTypeTraits<T>::mustSerialize~ is true if ~T~ requires serialization.  For types ~T~ that do /not/ require serialization, ~MpiTypeTraits<T>::getPtr~ returns a pointer that may be used as an input or output buffer.  Here is an example of a send for a type that does not need serialization.
+*** Send example: No serialization
+
+For both direct and indirect types ~T~ that do /not/ require serialization, ~MpiTypeTraits<T>::getPtr~ returns a pointer that may be used as an input or output buffer for MPI.  Here is an example of a send for a type that does not need serialization.
 #+BEGIN_SRC C++
 std::string s ("foo bar");
 void* buf = MpiTypeTraits<T>::getPtr (s);
 int count = MpiTypeTraits<T>::getCount (s);
 MPI_Datatype type = MpiTypeTraits<T>::getType (s);
+// We omit checking the returned error code for brevity.
 (void) MPI_Send (buf, count, type, destRank, tag, comm);
 #+END_SRC
-For types that /do/ require serialization, ~MpiTypeTraits<T>::getPtr~ is not needed.  It just returns the address of the ~T~ instance in that case.  Here is an example of a send for a type ~T~ that requires serialization.  ~SerializationTraits<T>::pack~ is a hypothetical serialization traits class in this example, that uses ~MPI_Pack~ internally.
+
+*** Send example: Serialization required
+
+If communicating even a single instance of ~T~ needs serialization, then there is no valid way to define its ~MPI_Datatype~.  Otherwise, you wouldn't need serialization, since you could just pass that ~MPI_Datatype~ to MPI along with the pointer returned by ~MpiTypeTraits<T>::getPtr~.  Thus, ~MpiTypeTraits<T>::getPtr~ is not meaningful.  We simply define it as returning the address of its argument, cast to ~void*~.  You also cannot rely on ~MpiTypeTraits~ for the count or ~MPI_Datatype~.  ~MpiTypeTraits<T>::getType~ just returns ~MPI_PACKED~ in this case, just because it is necessary to give it a definition.  The count returned by ~MpiTypeTraits<T>::getCount~ is undefined.  
+
+The lack of a valid ~MPI_Datatype~ means that you cannot serialize a ~T~ instance with a single call to ~MPI_Pack~; you have to define a custom method.  There may be many different ways to serialize a ~T~ instance, so we do not include the serialization method in ~MpiTypeTraits~.  It instead defers to a separate serialization traits class to define the serialization method.  You must get the following information from the serialization traits class:
+- The count of serialized objects
+- The type ~pack_type~ of elements of the serialization buffer
+The latter is typically ~char~.  We impose the following constraints on ~pack_type~.
+1. ~MpiTypeTraits<pack_type>~ must be defined.  (This is how you get the ~MPI_Datatype~ of packed data.)
+2. Its ~MPI_Datatype~ must be the same for all instances of ~pack_type~, on all MPI processes, at all times in the program's execution.  
+3. Its count must be 1.
+It would also be best for its ~MPI_Datatype~ to be basic, that is, ~MpiTypeTraits<pack_type>::mustFree~ is false.  However, this is not strictly required.
+
+Here is an example of sending a single instance of a type ~T~ that needs serialization, that is, for which ~MpiTypeTraits<T>::mustSerialize~ is true.  The example uses a hypothetical serialization traits class ~SerializationTraits~.
 #+BEGIN_SRC C++
 T x (...);
-int count = MpiTypeTraits<T>::getCount (s);
-char* buf = new char [count];
-// Serialize x into the char buffer.  The MPI_Comm 
-// argument 'comm' is needed because MPI_Pack needs it.
-SerializationTraits<T>::pack (buf, x, comm);
-// Data serialized by MPI always have type MPI_PACKED.
-MPI_Datatype type = MPI_PACKED;
-(void) MPI_Send (buf, count, type, destRank, tag, comm);
+
+// Upper bound on required space for serialization.
+int count = SerializationTraits<T>::getCount (x, comm);
+
+// Allocate serialization buffer.
+typedef SerializationTraits<T>::pack_type pack_type;
+Teuchos::Array<pack_type> buf (count);
+
+// Get MPI_Datatype of pack_type.  This assumes count > 0.
+MPI_Datatype type = MpiTypeTraits<pack_type>::getType (buf[0]);
+
+// Assume you're starting at the beginning of the buffer.
+// We use int (not Teuchos::Array<pack_type>::size_type) because
+// MPI only accepts int arguments for integer indices.
+int oldPos = 0; 
+
+// Serialize x (const reference) into the buffer, and return
+// the starting position of the "rest of the buffer" (the part 
+// immediately after the part you used to serialize).  The latter 
+// lets you serialize multiple objects into a single buffer.
+// We put oldPos last so it can have a default value.
+int newPos = SerializationTraits<T>::pack (buf, x, comm, oldPos);
+
+// MPI wants a raw void* to the serialization buffer.
+void* bufPtr = reinterpret_cast<void*> (buf.getRawPtr ());
+
+// Send the serialized data.
+(void) MPI_Send (bufPtr, count, type, destRank, tag, comm);
 #+END_SRC
-Note that it's also legal to serialize types ~T~ that themselves do not need serialization.  This is necessary when sending an array of arrays of ~T~.  In that case, one should be careful to use ~MPI_PACKED~ as the ~MPI_Datatype~, not the datatype of ~T~.
+Here is an exampe of a receive for the same type ~T~:
+#+BEGIN_SRC C++
+T x (...);
 
-** Getting a valid buffer argument for MPI functions
+// Upper bound on required space for serialization.
+// We assume count coordination has already taken place,
+// so that the T instance x has the right size and layout
+// for receiving the data.
+int count = SerializationTraits<T>::getCount (x, comm);
 
-The ~std::string~ type is an indirect type, which nevertheless just represents a simple array of characters.  Communicating a string should not require serialization, as long as the receiving process knows the number of characters.  This is also true of types more important to numerical computation, like ~std::vector<double>~ or other encapsulations of arrays.  This suggests that ~MpiTypeTraits~ should provide a generic way to get "a pointer to the data," even when simply taking the address of the ~Packet~ instance is not correct.  The MPP library does this by providing a ~get_ptr~ class method in its traits class analogous to ~MpiTypeTraits~.  This method returns a pointer which can be given directly to MPI as an input or output buffer.  Our ~MpiTypeTraits~ traits class has a corresponding class method ~getPtr~.  It looks like this:
+// Allocate serialization buffer.
+typedef SerializationTraits<T>::pack_type pack_type;
+Teuchos::Array<pack_type> buf (count);
+
+// Get MPI_Datatype of pack_type.  This assumes count > 0.
+MPI_Datatype bufType = MpiTypeTraits<pack_type>::getType (buf[0]);
+
+// MPI wants a raw void* to the serialization buffer.
+void* bufPtr = reinterpret_cast<void*> (buf.getRawPtr ());
+
+// Receive the serialized data.
+MPI_Status status;
+(void) MPI_Recv (bufPtr, count, bufType, srcRank, tag, comm, &status);
+
+// Assume you're starting at the beginning of the buffer.
+int oldPos = 0; 
+
+// Deserialize x (nonconst reference) from the buffer, and
+// return the starting position of the "rest of the buffer."
+// We put oldPos last so it can have a default value.
+typedef Teuchos::ArrayView<pack_type>::size_type size_type;
+int newPos = SerializationTraits<T>::unpack (x, buf, comm, oldPos);
+#+END_SRC
+Here is a provisional interface for ~SerializationTraits~, as used in the above two examples.
+#+BEGIN_SRC C++
+template<class T>
+class SerializationTraits {
+public:
+  // You might want to define this differently for specific T.
+  typedef char pack_type;
+
+  //! Return upper bound on buffer size in bytes.
+  int getCount (const T& x, MPI_Comm comm);
+
+  /// \brief Pack x into the serialization buffer buf.
+  ///
+  /// \param buf [out] Serialization buffer.
+  /// \param x [in] Object to serialize.
+  /// \param comm [in] MPI communicator.
+  /// \param oldPos [in] Starting position of the buffer on input.
+  ///   We put this argument last so it can have a default value.
+  ///
+  /// \return Starting position of the buffer on output.
+  int
+  pack (Teuchos::ArrayView<pack_type> buf, const T& x, 
+        MPI_Comm comm, const int oldPos=0);
+
+  /// \brief Unpack the (de)serialization buffer buf into x.
+  ///
+  /// \param x [out] Object to deserialize.
+  /// \param buf [in] Serialization buffer.
+  /// \param comm [in] MPI communicator.
+  /// \param oldPos [in] Starting position of the buffer on input.
+  ///   We put this argument last so it can have a default value.
+  ///
+  /// \return Starting position of the buffer on output.
+  int
+  unpack (Packet& x, Teuchos::ArrayView<const pack_type> buf, 
+          MPI_Comm comm, const int oldPos=0);
+}
+#+END_SRC
+Its methods take an ~MPI_Comm~, in case custom serialization uses ~MPI_Pack~ calls.  This matches the "serialization optional" case below, in which ~getCount~, ~pack~, and ~unpack~ have simple implementations using ~MPI_Pack_size~, ~MPI_Pack~, and ~MPI_Unpack~, respectively.  This interface assumes you are building with MPI.  If you desire the option to build without MPI, then you have a few different options.  You might wish to wrap ~MPI_Comm~, as the Teuchos package does with ~Teuchos::Comm~:
+#+BEGIN_SRC C++
+template<class T>
+class SerializationTraits {
+public:
+  typedef Teuchos::Comm<int> comm_type;
+  typedef char pack_type;
+
+  int getCount (const T& x, const comm_type& comm);
+
+  int
+  pack (Teuchos::ArrayView<pack_type> buf, const T& x, 
+        const comm_type& comm, const int oldPos=0);
+
+  int
+  unpack (T& x, Teuchos::ArrayView<const pack_type> buf, 
+          const comm_type& comm, const int oldPos=0);
+};
+#+END_SRC
+Alternately, you might wish to specialize via a macro definition.  In the example below, we assume that ~HAVE_MPI~ is defined if and only building with MPI support.
+#+BEGIN_SRC C++
+template<class T>
+class SerializationTraits {
+public:
+#ifdef HAVE_MPI
+  typedef MPI_Comm comm_type;
+#else
+  typedef FakeComm comm_type; // some kind of fake handle
+#endif // HAVE_MPI
+  typedef char pack_type;
+
+  int getCount (const T& x, comm_type comm);
+
+  int
+  pack (Teuchos::ArrayView<pack_type> buf, const T& x, 
+        const comm_type& comm, const int oldPos=0);
+
+  int
+  unpack (T& x, Teuchos::ArrayView<const pack_type> buf, 
+          const comm_type& comm, const int oldPos=0);
+};
+#+END_SRC
+It would be attractive for ~pack~ and ~unpack~ to return an ~ArrayView~ of "the rest of the buffer," that is, the remaining part of the serialization buffer following the part written to by ~pack~ or read from by ~unpack~.  This would make code for packing multiple objects via loops or recursion cleaner.  However, we would like the above interface to match the interface below ("Serialization optional") that uses MPI's serialization facility directly.  MPI constrains how one may pack multiple objects in a buffer.  In particular (Section 4.2 of the MPI 3.0 standard):
+#+BEGIN_QUOTE
+The concatenation of two packing units is not necessarily a packing unit; nor is a substring of a packing unit necessarily a packing unit.
+#+END_QUOTE
+The way that you pack / unpack multiple objects into / from a single MPI buffer is by changing the ~position~ input / output argument of ~MPI_Pack~ and ~MPI_Unpack~.  If the position is 0 on input, it means that you are starting over with a new buffer.  If ~pack~ (for instance) returned an ~ArrayView<pack_type>~, then there would be no way to get the right position.  Simply using an input position of 0 would make packing two objects the "concatenation of two packing units."  Thus, the interface must accept a starting position as input, and return the output starting position[fn:buffer-view].  
+
+[fn:buffer-view] ~Teuchos::ArrayView~ does not tell you the starting position of the "original array" of which it is a view.  An alternative would be for us to create a new "buffer view" class that remembers its current starting position.
+
+*** Send example: Serialization optional
+
+Finally, you might want or need to serialize a type ~T~ for which ~MpiTypeTraits<T>::mustSerialize~ is false.  For example, ~T~ might be an indirect type and you need to send an array of ~T~, or you may want to use serialization to pack multiple objects of different types into a single message.  MPI's serialization facility makes this particularly easy.  Since ~MpiTypeTraits~ already gives you the right ~MPI_Datatype~ and count for each ~T~ instance, the serialization traits class' ~pack~ method need only give these to ~MPI_Pack~ for each element of the array.  The previous send example works perfectly well and should also be efficient, but you may make the following simplifications:
+#+BEGIN_SRC C++
+T x (...);
+
+// Upper bound on required space for serialization.
+int count = SerializationTraits<T>::getCount (x, comm);
+
+// For MPI's serialization, char is the right type.
+Teuchos::Array<char> buf (count);
+
+// Serialize x (const reference) into the char buffer.  
+int oldPos = 0;
+int newPos = SerializationTraits<T>::pack (buf, x, comm, oldPos);
+
+// Data serialized by MPI always have type MPI_PACKED.
+(void) MPI_Send (buf.getRawPtr (), count, MPI_PACKED, destRank, tag, comm);
+#+END_SRC
+We assume in the above example that ~SerializationTraits<T>::pack_type~ is ~char~ (the type required by MPI), and that ~SerializationTraits<T>~ uses ~MPI_Pack~.  The latter is why the ~pack~ function takes a communicator.  ~SerializationTraits<T>::getCount~ in this case should use ~MPI_Pack_size~ internally, with the ~MPI_Datatype~ returned by ~MpiTypeTraits<T>::getType(x)~ and the count returned by ~MpiTypeTraits<T>::getCount(x)~.  This is why ~SerializationTraits<T>::getCount~ needs the communicator.
+
+** Getting a raw pointer to the data for MPI input and output
+
+The ~std::string~ type is an indirect type, which nevertheless just represents a simple array of characters.  Communicating a string should not require serialization, as long as the receiving process knows the number of characters.  This is also true of types more important to numerical computation, like ~std::vector<double>~ or other encapsulations of arrays.  This suggests that ~MpiTypeTraits<T>~ should provide a generic way to get "a pointer to the data," even when simply taking the address of the ~T~ instance is not correct.  The MPP library does this by providing a ~get_ptr~ class method in its traits class analogous to ~MpiTypeTraits~.  This method returns a pointer which can be given directly to MPI as an input or output buffer.  Our ~MpiTypeTraits~ traits class has a corresponding class method ~getPtr~.  It looks like this:
 #+BEGIN_SRC C++
 /// \brief Pointer to give to MPI as an input or output buffer.
 ///
-/// If mustSerialize is false (that is, if Packet need not be serialized), 
-/// then you may pass the pointer returned by this function directly to 
-/// MPI as an input or output buffer for communicating a Packet instance.  
+/// If mustSerialize is false (that is, if an instance of T need not be 
+/// serialized), then you may pass the returned pointer directly to MPI
+/// as an input or output buffer for communicating a Packet instance.  
 ///
 /// This function returns <tt>void*</tt> (not even <tt>const void*</tt>) 
 /// because MPI's C binding does not know about \c const or about the 
-/// Packet type.  Both input and output buffers in MPI are <tt>void*</tt>.
-static void* getPtr (const Packet& x);
+/// T type.  Both input and output buffers in MPI are <tt>void*</tt>.
+static void* getPtr (const T& x);
 #+END_SRC
 The canonical example is ~std::string~, but this works if ~Packet~ is any kind of container type for which MPI can't apply the ~MPI_Datatype~ directly to the address of a ~Packet~ instance.  For example, the ~std::string~ version looks like this:
 #+BEGIN_SRC C++
@@ -74,36 +275,36 @@ static void* getPtr (const std::string& x) {
   return reinterpret_cast<void*> (const_cast<char*> (s.c_str ()));
 }
 #+END_SRC
-and the ~std::vector<T>~ partial specialization might look like this (though note that arrays of indirect types are not valid MPI buffers; see below):
+and the ~T=std::vector<E>~ partial specialization (~E~ stands for "element of the array") might look like this (though note that arrays of indirect types are not valid MPI buffers; see below):
 #+BEGIN_SRC C++
-static void* getPtr (const std::vector<T>& x) {
+static void* getPtr (const std::vector<E>& x) {
   if (x.size () == 0) {
     return NULL; // Don't do &x[0] if x[0] doesn't exist.
   } else {
-    return reinterpret_cast<void*> (const_cast<T*> (&x[0]));
+    return reinterpret_cast<void*> (const_cast<E*> (&x[0]));
   }
 }
 #+END_SRC
 
 ** Arrays of indirect types are not valid MPI buffers
 
-Using ~getPtr~ for an indirect type make sense if you are sending or receiving just one ~Packet~.  What about an array of ~Packet~, though?  MPI's datatype system for an /array/ of data reads the address of each element of the array directly.  If you give it a ~Packet packets[]~ array, it will apply the ~MPI_Datatype~ to ~&packets[i]~ for each element ~packets[i]~ of the array.  This makes sense for an array of ~double~ or even an array of certain kinds of struct-like objects, like ~std::complex<double>~.  However, it doesn't make sense if ~Packet~ contains dynamically allocated data or if it has an opaque layout -- that is, if ~Packet~ is an indirect type.  For example, neither you nor MPI know the internal representation of an ~std::string~.  Some ~std::string~ implementations use reference counting to avoid storing duplicates redundantly.  What MPI needs is ~getPtr (strings[i])~, not ~&strings[i]~, but MPI doesn't know that it must call ~getPtr~ on each element of the array.  
+Using ~getPtr~ for an indirect type make sense if you are sending or receiving just one instance of ~T~.  What about an array, though?  MPI's datatype system for an /array/ of data reads the address of each element of the array directly.  If you give it an array ~T packets[]~, it will apply the ~MPI_Datatype~ to ~&packets[i]~ for each element ~packets[i]~ of the array.  This makes sense for an array of ~double~ or even an array of certain kinds of struct-like objects, like ~std::complex<double>~.  However, it doesn't make sense if ~T~ contains dynamically allocated data or if it has an opaque layout -- that is, if it is an indirect type.  For example, neither you nor MPI know the internal representation of an ~std::string~.  Some ~std::string~ implementations use reference counting to avoid storing duplicates redundantly.  What MPI needs is ~getPtr (strings[i])~, not ~&strings[i]~, but MPI doesn't know that it must call ~getPtr~ on each element of the array.  
 
 ** Arrays of indirect types need serialization; arrays of direct types do not
 
-We solve this problem by requiring serialization for communicating arrays of indirect ~Packet~ types.  Note that a single instance of an indirect type does /not/ need serialization.  The array type ~std::vector<double>~ is an indirect type, for example, but it is easy to send or receive its data directly.  Requiring serialization in this case would tempt users to bypass useful array abstractions (like ~std::vector~ or Teuchos' memory management classes) in favor of raw pointers.  This is the justifiation for distinguishing between direct and indirect types.
+We solve this problem by requiring serialization for communicating arrays of indirect types.  Note that a single instance of an indirect type does /not/ need serialization.  The array type ~std::vector<double>~ is an indirect type, for example, but it is easy to send or receive its data directly.  Requiring serialization in this case would tempt users to bypass useful array abstractions (like ~std::vector~ or Teuchos' memory management classes) in favor of raw pointers.  This is the justifiation for distinguishing between direct and indirect types.
 
-Indirect types include ~std::string~, ~std::vector<T>~ for any ~T~, and ~Teuchos::ArrayView<T>~ for any ~T~.  An indirect type which does /not/ require serialization may be sent or received directly; the pointer returned by ~getPtr~ may be used directly as an input or output buffer in an MPI function.  Thus: 
+Indirect types include ~std::string~, ~std::vector<E>~ for any ~E~, and ~Teuchos::ArrayView<E>~ for any ~E~.  An indirect type which does /not/ require serialization may be sent or received directly; the pointer returned by ~getPtr~ may be used directly as an input or output buffer in an MPI function.  Thus: 
 - ~double~ can be sent directly
 - ~std::vector<double>~ can be sent directly
 - ~std::string~ can be sent directly, but ~std::vector<std::string>~ cannot
-- ~std::vector<T>~ can only be sent directly if ~T~ is a direct type
+- ~std::vector<E>~ can only be sent directly if ~E~ is a direct type
 
 This implies that every indirect type must have a definition of serialization and deserialization.  It would also be reasonable to require that every direct type have a count of 1.  For example, ~qd_real~ would use a custom ~MPI_Datatype~ (made using ~MPI_Type_contiguous~) with a count of 1, rather than ~MPI_DOUBLE~ with a count of 4.  This makes computing the count of an array of ~Packet~ much easier, and also avoids possible errors relating to alignment of structs (for example, if you cheat by using ~MPI_Type_contiguous~ for a struct of three doubles).  As we explain elsewhere, this introduces no additional restrictions on one-sided communication (types like ~qd_real~ need a custom ~MPI_Op~ for addition anyway).  
 
-** Array-like types
+** Array-like types are those with count not equal to 1
 
-We define /array-like/ types as those with a count greater than 1.  Intuitively, these are types which from MPI's perspective represent "multiple values" to communicate.  Whether a type is array-like has consequences for serialization, as we explain below.  We prefer that types which represent "single values," rather than an array of values, always have a count of 1.  For example, there are two different ways to represent a ~qd_real~: 
+We define /array-like/ types as those with a count not equal to 1.  Intuitively, these are types which from MPI's perspective represent "multiple values" to communicate.  Whether a type is array-like has consequences for serialization, as we explain below.  We prefer that types which represent "single values," rather than an array of values, always have a count of 1.  For example, there are two different ways to represent a ~qd_real~: 
 1. ~MPI_Datatype~ of ~MPI_DOUBLE~ and count of 4
 2. a custom ~MPI_Datatype~ (via ~MPI_Type_contiguous~) and a count of 1
 Always choosing a custom ~MPI_Datatype~ with a count of 1 has advantages.  First, it makes computing the count of an array of ~Packet~ easier.  The user need not remember to multiply the count of an element by the number of elements in the array.  Second, it avoids possible errors relating to alignment of structs.  For example, for a direct type ~T~ that looks like a struct of three ~char~, it might be tempting to use a datatype of ~MPI_CHAR~ and a count of 3.  However, the compiler [[http://en.wikipedia.org/wiki/Data_structure_alignment#Data_structure_padding][is allowed to pad the end of a struct]] with unused data, in order to preserve a particular alignment requirement (e.g., 4-byte alignment, which in this case would make each ~T~ take up 4 bytes).  If you have an array of ~T~ with 10 elements, and use a datatype of ~MPI_CHAR~ and a count of 3 for each element, it would be tempting to represent the array with a datatype of ~MPI_CHAR~ and a count of 30.  This is wrong, though, if ~T~ is aligned to 4 bytes.  Using a custom datatype and a count of 1 for each ~T~ instance would fix this problem, whether you use ~MPI_Type_struct~ or ~MPI_Type_contiguous~ to build the custom datatype.  Third, using a count of 1 avoids serialization.  As we explain below, array-like types of array-like types need serialization.  For the above "array of ~T~" example, it would be correct (but slow) to serialize the whole array.  This is unnecessary, though, because ~T~ is a direct type.  Using a count of 1 for ~T~ makes it clear that MPI can legally send and receive the array of ~T~ directly.
@@ -112,114 +313,363 @@ Using a custom datatype for "single values" introduces no additional restriction
 
 ** Array-like types of array-like types need serialization
 
-Sending an array of an array-like type always requires serialization or some form of packing.  We've explained this already above in the discussion of direct vs. indirect types, but the issue is even more fundamental than that.  Suppose we have a length $N$ array of arrays, each of which has a possibly different length $M_i$.  There is no guarantee that we can send and receive this as a single contiguous array of length $N \cdot \sum_i M_i$, since the arrays need not be stored contiguously.  This is true even if all the arrays have the same length $M$.  If we make a custom ~MPI_Datatype~ for each array, then different arrays have different datatypes.  MPI requires, however, that all elements of an input or output buffer array have the same ~MPI_Datatype~.  
+Sending an array of an array-like type always requires serialization or some form of packing.  We've explained this already above in the discussion of direct vs. indirect types, but the issue is even more fundamental than that.  Suppose we have a length N array of arrays, each of which has a possibly different length M_i.  There is no guarantee that we can send and receive this as a single contiguous array of length N \cdot \sum_i M_i, since the arrays need not be stored contiguously.  This is true even if all the arrays have the same length M.  If we make a custom ~MPI_Datatype~ for each array, then different arrays have different datatypes.  MPI requires, however, that all elements of an input or output buffer array have the same ~MPI_Datatype~.  
 
 ** Everything must define serialization, even if it doesn't need it
 
 An array of indirect types needs serialization.  This implies that every indirect type ~T~ needs to have a serialization procedure defined, even if communicating a single ~T~ instance does not require serialization.  Furthermore, an array of arrays (or array-like types) of ~T~ needs serialization, even if ~T~ is a direct type.  This means that even direct types must have a serialization procedure defined.  /Every/ ~Packet~ type needs to define ~pack~ and ~unpack~ methods somewhere.
 
-The nice thing is that MPI already provides serialization, via ~MPI_Pack~ and ~MPI_Unpack~.  These functions use the ~MPI_Datatype~ to describe how to serialize and deserialize the data.  Thus, if ~MpiTypeTraits<T>::mustSerialize~ is false, we may defer serialization to MPI in a generic way:
+The nice thing is that MPI already provides serialization, via ~MPI_Pack~ and ~MPI_Unpack~.  These functions use the ~MPI_Datatype~ to describe how to serialize and deserialize the data.  Thus, if ~MpiTypeTraits<T>::mustSerialize~ is false, we may defer serialization and deserialization to MPI in a generic way:
 #+BEGIN_SRC C++
-Teuchos::ArrayView<char>::size_type 
-pack (Teuchos::ArrayView<char> buf, const Packet& x, MPI_Comm comm) 
-{
-  void* inPtr = MpiTypeTraits<T>::getPtr (x);
-  int inCount = MpiTypeTraits<T>::getCount (x);
-  MPI_Datatype inType = MpiTypeTraits<T>::getType (x);
+// This is only valid if MpiTypeTraits<T>::mustSerialize is false.
+// Otherwise, you must define a custom specialization.
+template<>
+class SerializationTraits<T> {
+public:
+  // MPI serializes into arrays of char.
+  typedef char pack_type;
+  typedef Teuchos::ArrayView<pack_type>::size_type size_type;
 
-  char* outPtr = buf.getRawPtr ();
-  int outSize = static_cast<int> (buf.size ());
-  int pos = 0;
-  (void) MPI_Pack (inPtr, inCount, inType, outPtr, outSize, &pos, comm);
+  int getCount (const T& x, MPI_Comm comm) {
+    // This only works because you don't have to serialize T.
+    // Thus, MpiTypeTraits<T> has the right count and datatype.
+    int inCount = MpiTypeTraits<T>::getCount (x);
+    MPI_Datatype inType = MpiTypeTraits<T>::getType (x);
 
-  // Return the starting position for the next item, if there
-  // is one.  MPI lets you pack multiple items of possibly 
-  // different types in the same buffer.
-  return static_cast<Teuchos::ArrayView<char>::size_type> (pos);
+    // MPI tells you via MPI_Pack_size how much space you need.
+    // It's an upper bound and not strict, because the actual 
+    // space needed may depend on context (e.g., the first thing
+    // packed in a buffer might take more space).
+    int outSize = 0;
+    (void) MPI_Pack_size (inCount, inType, comm, &outSize);
+    return outSize;
+  }
+
+  size_type
+  pack (Teuchos::ArrayView<pack_type> buf, const T& x, 
+        MPI_Comm comm, const size_type oldPos=0) 
+  {
+    void* inPtr = MpiTypeTraits<T>::getPtr (x);
+    int inCount = MpiTypeTraits<T>::getCount (x);
+    MPI_Datatype inType = MpiTypeTraits<T>::getType (x);
+
+    pack_type* outPtr = buf.getRawPtr ();
+    int outSize = getCount (x, comm);
+    if (static_cast<int> (buf.size ()) < outSize) {
+      throw std::invalid_argument ("buffer too small");
+    }
+    int pos = static_cast<int> (oldPos);
+    (void) MPI_Pack (inPtr, inCount, inType, outPtr, outSize, &pos, comm);
+    return static_cast<size_type> (pos);
+  }
+
+  size_type
+  unpack (Packet& x, Teuchos::ArrayView<const pack_type> buf, 
+          MPI_Comm comm, const size_type oldPos=0) 
+  {
+    void* outPtr = MpiTypeTraits<T>::getPtr (x);
+    // This assumes we've already done count coordination.
+    int outCount = MpiTypeTraits<T>::getCount (x);
+    MPI_Datatype outType = MpiTypeTraits<T>::getType (x);
+
+    pack_type* inPtr = const_cast<pack_type*> (buf.getRawPtr ());
+    int inSize = static_cast<int> (buf.size ());
+    int pos = oldPos;
+    (void) MPI_Unpack (inPtr, inSize, &pos, outPtr, outCount, outType, comm);
+    return static_cast<size_type> (newPos);
+  }
 }
 #+END_SRC
-and likewise deserialization:
-#+BEGIN_SRC C++
-Teuchos::ArrayView<char>::size_type 
-unpack (Packet& x, Teuchos::ArrayView<char> buf, MPI_Comm comm) 
-{
-  void* outPtr = MpiTypeTraits<T>::getPtr (x);
-  int outCount = MpiTypeTraits<T>::getCount (x);
-  MPI_Datatype outType = MpiTypeTraits<T>::getType (x);
-
-  char* inPtr = const_cast<char*> (buf.getRawPtr ());
-  int inSize = static_cast<int> (buf.size ());
-  int pos = 0;
-  (void) MPI_Unpack (inPtr, inSize, &pos, outPtr, outCount, outType, comm);
-
-  // Return the starting position for the next item, if there
-  // is one.  MPI lets you unpack multiple items of possibly 
-  // different types from the same buffer.
-  return static_cast<Teuchos::ArrayView<char>::size_type> (pos);
-}
-#+END_SRC
-If ~Packet~ needs serialization anyway, then ~pack~ and ~unpack~ need custom definitions.
+An alternate design might combine ~getCount~ and ~pack~ into a single function to avoid redundant calls to ~MpiTypeTraits<T>::getType~, which might be costly for derived types.  Alternately, this might be a good case for having ~getType~ memoize its return value.
 
 ** Why is serialization separate from ~MpiTypeTraits~?
 
-Separating the implementation of serialization from ~MpiTypeTraits~ lets us change the serialization method, without changing how we communicate the serialized data.  That way, we can build with or without MPI, just by changing the serialization traits class.  (See the example in the next subsection.)  Users could also write their own serialization routines.  If you want to be clever, you could let the serialization traits class define the ~MPI_Datatype~ or even the buffer type (not necessarily ~char~) of packed data.  The right way to do this would be to use a different serialization traits class.  Here is a hypothetical example, with a different serialization traits class ~FancySerializationTraits~.  It's fair to assume that all instances of the buffer type have the same basic ~MPI_Datatype~ and the same count of 1.
-#+BEGIN_SRC C++
-T x (...);
-int count = MpiTypeTraits<T>::getCount (s);
-typedef typename FancySerializationTraits<T>::pack_type pack_type;
-pack_type* buf = new pack_type [count];
-// Somehow serialize x into the buffer.
-FancySerializationTraits<T>::pack (buf, x, comm);
-// In this case, serialized data need not have type MPI_PACKED.
-// We assume MpiTypeTraits<pack_type>::getCount always returns 1.
-MPI_Datatype type = MpiTypeTraits<pack_type>::getType (pack_type ());
-(void) MPI_Send (buf, count, type, destRank, tag, comm);
-#+END_SRC
-For example, given an array of arrays of ~double~ with no ~NaN~ entries, one might like to pack them into a single array of ~double~, with ~NaN~ delimiters between each packed array.  In that case, ~FancySerializationTraits<double>::pack_type~ would be ~double~.  (I don't necessarily recommend this; I'm merely coming up with an example.)
+Separating the implementation of serialization from ~MpiTypeTraits~ lets us change the serialization method, without changing how we communicate the serialized data.  That way, we can build with or without MPI, just by changing the serialization traits class.  (See the example in the next subsection.)  Users could also write their own serialization routines for certain kinds of data.  For example, given an array of arrays of ~double~ with no ~NaN~ entries, one might like to pack them into a single array of ~double~, with ~NaN~ delimiters between each packed array.  In that case, the ~pack_type~ would be ~double~.  (I don't necessarily recommend this; I'm merely coming up with an example.)  The right way to do this would be to use a different serialization traits class.
 
 ** How do I define serialization if I'm not building with MPI?
 
 Trilinos has a requirement that key packages can build without MPI.  This is an annoying and troublesome requirement, because it forces us to reimplement much of MPI, and hope that we got the semantics right.  Nevertheless, it is a requirement.
 
-The good thing is that when running without MPI, there is only one "process."  The size of ~MPI_COMM_WORLD~ is 1.  This takes away all worries about type punning and endianness.  For example, I can serialize by copying a double directly into an array of 8 ~char~ using ~memcpy~:
+The good thing is that when running without MPI, there is only one "process."  The size of ~MPI_COMM_WORLD~ is 1.  This takes away all worries about type punning and endianness.  For example, I can serialize by copying a double directly into an array of 8 ~char~ using ~memcpy~.  I do so below for a specialization of a hypothetical ~NoMpiSerializationTraits~ traits class:
 #+BEGIN_SRC C++
+// Specialization for Packet type double.
 template<>
-NoMpiSerializationTraits<double>::
-pack (Teuchos::ArrayView<char> buf, const double& x, FakeComm) {
-  // size_type is signed; size_t is unsigned.
-  typedef Teuchos::ArrayView<char>::size_type size_type; 
-  const size_type size = static_cast<size_type> (sizeof (double));
-  if (buf.size () < size) {
-    throw std::invalid_argument ("buffer is not long enough");
-  } else { // memcpy wants a size_t, not a size_type.
-    memcpy (&x, buf.getRawPtr (), sizeof (double));
-    return size;
+class NoMpiSerializationTraits<double> {
+public:
+  typedef FakeComm comm_type;
+  typedef char pack_type;
+  typedef Teuchos::ArrayView<pack_type>::size_type size_type;
+
+  int getCount (const double& x, const comm_type& comm) {
+    (void) comm; // Not using this argument.
+
+    // size_type is signed; size_t is unsigned.
+    return static_cast<int> (sizeof (double));
+  }
+
+  size_type
+  pack (Teuchos::ArrayView<pack_type> buf,
+        const double& x,
+        const comm_type& comm,
+        const size_type oldPos=0)
+  {
+    (void) comm; // Not using this argument.
+
+    // Get the number of bytes to use for serialization.
+    const size_type size = static_cast<size_type> (getCount (x, comm));
+
+    if (buf.size () + oldPos < size) {
+      throw std::invalid_argument ("buffer is not long enough");
+    } else { // memcpy wants a size_t, not a size_type.
+      memcpy (&x, buf.getRawPtr () + oldPos, static_cast<size_t> (size));
+      return oldPos + size;
+    }
+  }
+
+  size_type
+  unpack (double& x,
+          Teuchos::ArrayView<const pack_type> buf,
+          const comm_type& comm,
+          const size_type oldPos=0)
+  {
+    (void) comm; // Not using this argument.
+
+    // Get the number of bytes to use for serialization.
+    const size_type size = static_cast<size_type> (getCount (x, comm));
+
+    if (buf.size () + oldPos < size) {
+      throw std::invalid_argument ("buffer is not long enough");
+    } else { // memcpy wants a size_t, not a size_type.
+      memcpy (buf.getRawPtr () + oldPos, &x, static_cast<size_t> (size));
+      return oldPos + size;
+    }
   }
 };
 #+END_SRC
 We use ~memcpy~ because ~reinterpret_cast<char*> (&x)~ does not necessarily work correctly, due to possible compiler optimizations.
 
-The problem with this approach is that now we have to reimplement ~MPI_Pack~ and ~MPI_Unpack~.  We must do this for /every/ type, not just those that require serialization.  Furthermore, we must do this without the benefit of the MPI datatype system, which describes the memory layout of many different kinds of data.  At least the above "~memcpy~ ~sizeof(T)~ bytes" approach works for all C++ built-in types and many other types, such as ~std::complex<double>~.
+The problem with this approach is that we are essentially writing a poor reimplementation of ~MPI_Pack~ and ~MPI_Unpack~.  We must do this without the benefit of the MPI datatype system, which describes the memory layout of many different kinds of data.  Furthermore, we must do this for /every/ type, not just those that require serialization.  At least the above "~memcpy~ ~sizeof(T)~ bytes" approach works for all C++ built-in types and many other types, such as ~std::complex<double>~.  
 
-* When and how do I do count coordination?
-** Summary: What user code needs to do
+Automatic code generation is a good way to reduce the tedium of generating all the specializations for different types ~T~.  Approaches done only in C++ would complicate the implementation unnecessarily.  For example, one could refactor serialization to be implemented in instance methods instead of class methods.  We would specify the serialization interface as a class ~Serializer~ with pure virtual methods, and provide different implementations of the interface.  The ~Serializer~ interface might look like this.  Note the templating on the communicator type ~CommType~: this would let us use ~MPI_Comm~ for an MPI build, and ~FakeComm~ for a non-MPI build.
+#+BEGIN_SRC C++
+template<class T, class CommType>
+class Serializer {
+public:
+  typedef CommType comm_type;
+  typedef char pack_type;
+  typedef Teuchos::ArrayView<pack_type>::size_type size_type;
 
-There are three Booleans in ~MpiTypeTraits<T>~ that tell you exactly whether and how to do count coordination with instances of ~T~.
+  virtual int getCount (const double& x, const comm_type& comm) = 0;
+
+  size_type
+  pack (Teuchos::ArrayView<pack_type> buf,
+        const double& x,
+        const comm_type& comm,
+        const size_type oldPos=0) = 0;
+
+  size_type
+  unpack (double& x,
+          Teuchos::ArrayView<const pack_type> buf,
+          const comm_type& comm,
+          const size_type oldPos=0) = 0;
+};
+#+END_SRC
+Then, we would write a class ~MemcpySerializer~ which inherits from the partial specialization ~Serializer<T, FakeComm>~.  It thus would only work in a non-MPI build.  ~MemcpySerializer~ would use the above ~memcpy~ ~sizeof(T)~ approach works for its template parameter ~T~, and would assume that this is correct.  We would similarly write an ~MpiSerializer<T>~ class that inherits from ~Serializer<T, MPI_Comm>~.  After this, we would define a factory ~SerializerFactory~ that returns the right ~Serializer~ for a given type ~T~ and build situation ~CommType~:
+#+BEGIN_SRC C++
+template<class T, class CommType>
+class SerializerFactory {
+public:
+  static Teuchos::RCP<Serializer<T, CommType> > create ();
+};
+#+END_SRC
+We would specialize the ~create~ method of ~SerializerFactory~ at compile time for specific ~CommType~, and at run time for specific ~T~, based on traits.  For example, we might add a new Boolean trait ~mayMemcpySizeof~ to a traits class ~SerializationTraits<T>~.  If true, then one may serialize ~T~ using the above ~memcpy~ ~sizeof(T)~ approach, not considering endianness issues for multiple processes.  Then, we would check ~mayMemcpySizeof~ in ~SerializerFactory::create~:
+#+BEGIN_SRC C++
+// Partial specialization for non-MPI build.
+template<class T>
+static Teuchos::RCP<Serializer<T, FakeComm> > 
+SerializerFactory<T, FakeComm>::create () 
+{
+  if (SerializationTraits<T>::mayMemcpySizeof) {
+    return Teuchos::rcp (new MemcpySerializer<T, FakeComm>);
+  } else {
+    throw std::logic_error ("Not implemented");
+  }
+}
+#+END_SRC
+Isn't this just terribly complicated?  Now imagine that users have to write a specialization for a particular type ~T~.  They have to sort through at least three different classes (~Serializer~, ~SerializerFactory~, and ~SerializationTraits~) and read this complicated explanation in order to do what they want.  It would be much easier for them to specialize one traits class, namely ~SerializationTraits~, for their type ~T~.
+
+* When do I need to coordinate count and/or ~MPI_Datatype~ information?
+
+In MPI, the receiving process of a message or collective needs to know the count and ~MPI_Datatype~ of the incoming data.  For general C++ types, that may mean that the sending process(es) and the receiving process have to /coordinate/ on the count and/or layout of the data.  This may involve some kind of implicit agreement without communication, or sending actual messages with count and/or layout information.  ~MpiTypeTraits~ tells you whether you need to coordinate on the layout or the count.  The following three Booleans delineate all the special cases:
 - ~sameDatatype~: If true, then all instances of ~T~, on all processes, at all times, have the same ~MPI_Datatype~.
 - ~sameLocalCount~: If true, then all instances of ~T~ on the calling process, at all times, have the same count.
 - ~sameGlobalCount~: If true, then all instances of ~T~, on all processes, at all times, have the same count.
 
-If ~sameDatatype~ is false, then there is no generic way to do count coordination.  An example of this case would be if ~T~ is an encapsulation of a slice of a two-dimensional structured grid.  The sending and receiving process might use an entirely different custom ~MPI_Datatype~ to handle different strides.  Users must do coordination themselves in a way specific to the type ~T~.
+** If different ~T~ instances may have different ~MPI_Datatype~
 
-If ~sameDatatype~ is true, then users can do count coordination by sending the count, since the sending and receiving process use the same ~MPI_Datatype~.  There are three cases, depending on the other two Booleans:
+If ~sameDatatype~ is false, then it is necessary to coordinate on the layout of the data, not just the count.  It is possible to convey most kinds of ~MPI_Datatype~ "generically," by taking apart the datatype using standard MPI functions.  However, we don't recommend using this approach in general.  It's burdensome for implementers and it neglects what the user intended by having a custom ~MPI_Datatype~.  Users should handle this case in a way specific to the type ~T~.  An example of this case would be if ~T~ is an encapsulation of a slice of a two-dimensional structured grid.  The sending and receiving process might use an entirely different custom ~MPI_Datatype~ to handle different strides.  
 
+** If different ~T~ instances always have the same ~MPI_Datatype~
+
+This is the typical case for most types that users want to send and receive.  If ~sameDatatype~ is true, then the sending and receiving process use the same ~MPI_Datatype~.  This means that users can coordinate just by sending the count.  We call this /count coordination/.  There are three cases, depending on the other two Booleans:
 1. ~sameLocalCount~ is false: Sending a single ~T~ instance always requires knowing the count for that instance.  One can't just use any instance to determine the count.  Preallocating enough buffer space for serializing an array of ~T~ may require examining all the elements of the array, not just the first.  It may be faster to use a dynamic reallocation strategy, with a reasonable upper bound.
 2. ~sameLocalCount~ is true, but ~sameGlobalCount~ is false: The count for a ~T~ instance is a "per-process" value.  It's still necessary to coordinate on the count.  Preallocating enough buffer space to serialize an array of ~T~ does not require checking the count of every element of the array.
 3. ~sameLocalCount~ is true, and ~sameGlobalCount~ is true: All instances of ~T~ everywhere have the same count at all times.  There is no need to do count coordination, whether or not serialization is necessary.  
 
-Cases 2 and 3 impose a constraint on types ~T~ that do not require serialization:  If all instances of ~T~ have the same count, then this is also true of their serializations.  
-
-The ~sameLocalCount~ parameter does not affect serialization for an array of ~T~, as long as the serialization of a ~T~ instance encodes the amount of data somehow.  Sending an array of ~T~ when ~sameGlobalCount~ is false always requires serialization and coordination on the total amount of serialized data.
+These cases affect serialization as well as count coordination, because serialization requires buffers whose size depends on the type of data being communicated.  Cases 2 and 3 impose a constraint on types ~T~ that do not require serialization:  If all instances of ~T~ have the same count, then this is also true of their serializations.  The ~sameLocalCount~ parameter does not affect serialization for an array of ~T~, as long as the serialization of a ~T~ instance encodes the amount of data somehow.  Sending an array of ~T~ when ~sameGlobalCount~ is false always requires serialization and coordination on the total amount of serialized data.
 
 Note that the count coordination requirement does not mean that users must necessarily send the count each time.  Users may make assertions about ~sameDatatype~, ~sameLocalCount~, or ~sameGlobalCount~ at run time for a particular type ~T~.
+
+* How do I write generic nonblocking sends and receives?
+** What about with serialization?
+
+This question gets more interesting for ~Packet~ types that require serialization.  Fortunately, Teuchos' ~ArrayRCP~ class (a shared array) allows "attaching" data to the array.  (~RCP~ and ~ArrayRCP~ both have this feature, which is not part of the analogous ~std::shared_ptr~ class in the C++ standard library.)  It's already a good idea to give nonblocking operations an ~ArrayRCP~ of ~Packet~ rather than an ~ArrayView~, and have the wrapped request (~CommRequest~) keep the ~ArrayRCP~ until the user waits on or cancels the operation.  By attaching a (de)serialization buffer to the ~ArrayRCP<Packet>~, we can make (de)serialization invisible to the user.
+
+~ArrayRCP~ gives you two different ways to attach data to the array.  One may do this on creation of the ~ArrayRCP<Packet>~, using the ~arcpWithEmbeddedObj~ nonmember constructor.  Alternately, one may attach "extra data" to an existing ~ArrayRCP<Packet>~:
+#+BEGIN_SRC C++
+// ... ArrayRCP<Packet> packets was previously allocated above ...
+// ... Compute length of serialization buffer bufLen ... 
+
+// Allocate the serialization buffer.
+typedef typename SerializationTraits<Packet>::pack_type pack_type;
+ArrayRCP<pack_type> buf (bufLen);
+
+// Attach the serialization buffer to the packets array as "extra data."
+set_extra_data<ArrayRCP<pack_type>, ArrayRCP<Packet> > (buf, "Serialization buffer", ptr (&packets));
+#+END_SRC
+We prefer the latter option, because it lets users use ~Packet~ arrays that they allocated themselves.  (Hopefully users haven't already attached extra data with the label "Serialization buffer" for a different purpose.)  In practice, we should check whether the buffer already exists, and create it if it does not.  
+#+BEGIN_SRC C++
+template<class Packet>
+ArrayRCP<typename SerializationTraits<Packet>::pack_type>
+getSerializationBuffer (const ArrayRCP<Packet>& packets) 
+{
+  typedef typename SerializationTraits<Packet>::pack_type pack_type;
+  ArrayRCP<pack_type> buf; // This will be the serialization buffer on exit.
+  {
+    // Try to get the serialization buffer from the packets array's "extra data."
+    ArrayRCP<pack_type>* bufPtr = 
+      get_optional_extra_data<ArrayRCP<pack_type>, ArrayRCP<Packet> > (packets, "Serialization buffer");
+
+    if (bufPtr == NULL) {
+      // Compute length of serialization buffer.
+      // We call getCount for each packet to send or receive.
+      int bufLen = 0;
+      for (int k = 0; k < packets.size (); ++k) {
+        bufLen += SerializationTraits<Packet>::getCount (packets[k]);
+      }
+      // Allocate the serialization buffer.
+      buf = arcp<pack_type> (bufLen);
+
+      // Attach the serialization buffer to the packets array as "extra data."
+      set_extra_data<ArrayRCP<pack_type>, ArrayRCP<Packet> > (buf, "Serialization buffer", ptr (&packets));
+    }
+    else { // Serialization buffer was already allocated.
+      buf = *bufPtr;
+    }
+  }
+  return buf;
+}
+#+END_SRC
+Given the ~getSerializationBuffer~ function above, we can now implement a nonblocking send wrapper.  The ~CommRequest~ object that it returns wraps the raw ~MPI_Request~ and keeps a reference to the ~packets~ array.
+#+BEGIN_SRC C++
+template<class Packet>
+RCP<CommRequest>
+isend (const ArrayRCP<const Packet>& packets, 
+       const int destRank, 
+       const int tag, 
+       MPI_Comm comm)
+{
+  typedef typename SerializationTraits<Packet>::pack_type pack_type;
+  typedef Teuchos::ArrayView<pack_type>::size_type size_type;
+
+  ArrayView<pack_type> buf;
+  {
+    ArrayRCP<pack_type> theBuf = getSerializationBuffer<const Packet> (packets);
+    // ArrayRCP::operator() returns an ArrayView, which is what pack wants.
+    buf = theBuf ();
+  }
+
+  // Start at position zero of the serialization buffer.
+  int pos = 0;
+  // Pack each array element in turn.
+  for (int k = 0; k < packets.size (); ++k) {
+    pos = SerializationTraits<Packet>::pack (buf, packets[k], comm, pos);
+  }
+
+  // We assume that the datatype of packed data is a basic MPI_Datatype,
+  // so we don't have to call MPI_Type_free on it after use.  We also
+  // assume here that buf.size() > 0.
+  MPI_Datatype packType = MpiTypeTraits<Packet>::getType (buf[0]);
+  MPI_Request request;
+  (void) MPI_Isend (buf.getRawPtr (), pos, packType, destRank, tag, comm, &request);
+
+  // "Nonmember constructor" for CommRequest.  Serialization buffer stays with packets.
+  return makeCommRequest (packets, request);
+}
+#+END_SRC
+Waiting on the ~CommRequest~ then invalidates its reference to ~packets~.  The same mechanism applies to a nonblocking receive, except that the ~CommRequest~ has to be told to unpack the data on wait.
+#+BEGIN_SRC C++
+template<class Packet>
+RCP<CommRequest<Packet> >
+irecv (const ArrayRCP<Packet>& packets, 
+       const int srcRank, 
+       const int tag, 
+       MPI_Comm comm)
+{
+  typedef typename SerializationTraits<Packet>::pack_type pack_type;
+  ArrayView<pack_type> buf;
+  {
+    ArrayRCP<pack_type> theBuf = getSerializationBuffer<const Packet> (packets);
+    // ArrayRCP::operator() returns an ArrayView, which is what pack wants.
+    buf = theBuf ();
+  }
+
+  // We assume that the datatype of packed data is a basic MPI_Datatype,
+  // so we don't have to call MPI_Type_free on it after use.  We also
+  // assume here that buf.size() > 0.
+  MPI_Datatype packType = MpiTypeTraits<Packet>::getType (buf[0]);
+  MPI_Request request;
+  (void) MPI_Irecv (buf.getRawPtr (), pos, packType, srcRank, tag, comm, &request);
+
+  // "Nonmember constructor" for CommRequest.  Serialization buffer stays with packets.
+  // At the time the request is fulfilled (waited on), the request unpacks the data from buf into packets.
+  typedef UnpackCallback<Packet> callback_type;
+  return makeCommRequestWithCallback<callback_type> (packets, request, callback_type (packets, comm));
+}
+#+END_SRC
+The ~makeCommRequestWithCallback~ template nonmember constructor associates a "callback" (a function or function object) with the request.  When the request is fulfilled (i.e., when the user waits on it), the callback's ~operator()~ method is called.  The unpack "callback" looks like this:
+#+BEGIN_SRC C++
+template<class Packet>
+class UnpackCallback {
+public:
+  UnpackCallback (const ArrayRCP<Packet>& packets, MPI_Comm comm) : 
+    packets_ (packets), comm_ (comm) {}
+
+  void operator() {
+    typedef typename SerializationTraits<Packet>::pack_type pack_type;
+    ArrayRCP<pack_type> buf = getSerializationBuffer<Packet> (packets_);
+
+    // Start at position zero of the serialization buffer.
+    int pos = 0;
+    // Unpack each array element in turn.
+    for (int k = 0; k < packets.size (); ++k) {
+      pos = SerializationTraits<Packet>::unpack (packets_[k], buf, comm, pos);
+    }
+  }
+private:
+  ArrayRCP<Packet> packets_;
+  MPI_Comm comm_;
+}
+#+END_SRC
+In this case, the ~CommRequest~ object would actually be a class derived from ~CommRequest~, called ~CommRequestWithCallback~, that is templated on the callback type.  The closest analogy is Teuchos' ~OpaqueWrapper~ class.
+
+The above examples omit the optimization of packing multiple requests into a single ~CommRequests~ object.  This makes the wrapped versions of ~MPI_Waitsome~ and ~MPI_Waitall~ more efficient, since it is not necessary to pack and unpack arrays of raw ~MPI_Request~ each time.
+
+*** Nonblocking collectives may use the same techniques
+
+We may use the same techniques for the nonblocking collectives in MPI 3.0.  The collective operation's wrapper would need to pack the input buffer, and associate a callback with the request that unpacks into the output buffer on wait.
+
+*** Reusing serialization buffers
+
+The serialization buffer attached to ~packets~ will not be deallocated until the ~packets~ array itself is deallocated.  This is good because it avoids reallocating serialization buffers. However, because it hides the buffer, it prevents sophisticated use cases, such as packing multiple kinds of data in the same serialization buffer.  Users may bypass this mechanism by invoking serialization directly, and doing nonblocking communication directly on the serialization buffer.
 

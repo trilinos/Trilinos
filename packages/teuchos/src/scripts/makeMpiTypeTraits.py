@@ -358,6 +358,7 @@ def emitDeclHeader (d, filename, indent=0):
 #include <mpi.h>
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
+#include <cstdint>
 #include <utility> // std::pair
 
 /// \\file {1}

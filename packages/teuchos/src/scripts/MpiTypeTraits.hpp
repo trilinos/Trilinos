@@ -162,43 +162,65 @@ class MpiTypeTraits {
   }
 };
 
-/// \fn makeMpiType
-/// \brief Get MPI_Datatype (safely wrapped in OpaqueHandle) and count
-///   for a \c Packet instance.
+/// \fn getMpiDatatype
+/// \brief Get MPI_Datatype (safely wrapped in OpaqueHandle) for a Packet instance.
 /// \tparam Packet The type of data being sent and received; same as
-///   the \c Packet template parameter of MpiTypeTraits.
+///   the Packet template parameter of MpiTypeTraits.
 ///
 /// This function uses MpiTypeTraits<Packet> to get the MPI_Datatype
-/// and count for sending or receiving the given Packet instance.
-/// Please refer to the documentation of MpiTypeTraits for details.
-/// We recommend using this function if you do not want to manage
-/// freeing the MPI_Datatype after use, as you would have to do if you
-/// used MpiTypeTraits<Packet>::makeType().
+/// for communicating the given Packet instance.  Please refer to the
+/// documentation of MpiTypeTraits for details.  We recommend using
+/// this function if you do not want to manage freeing the
+/// MPI_Datatype after use, as you would have to do if you used
+/// MpiTypeTraits<Packet>::getType().
 ///
 /// If MpiTypeTraits<Packet>::sameLocalCount is false, then different
-/// Packet instances may have different counts.  This means you need
-/// to give this function the specific Packet instance you want to
-/// send or receive.  If MpiTypeTraits<Packet>::sameLocalCount is
-/// true, then all Packet instances on the calling process have the
-/// same count and MPI_Datatype, so you can use any Packet instance.
+/// Packet instances on the calling process may have different counts.
+/// This means you need to give this function the specific Packet
+/// instance you want to send or receive.  Otherwise, all Packet
+/// instances on the calling process have the same count and
+/// MPI_Datatype, so you can use any Packet instance.
 ///
-/// \param p [in] The Packet instance for which to compute the
-///   MPI_Datatype and count.
+/// \param p [in] The Packet instance for which to compute the MPI_Datatype.
 ///
-/// \return A pair whose first element is the MPI_Datatype (wrapped in
-///   an RCP of OpaqueHandle, which automatically calls MPI_Type_free
-///   if necessary when the reference count goes to zero) and whose
-///   second element is the count.
+/// \return The corresponding MPI_Datatype, wrapped in an RCP of
+///   OpaqueHandle.  The RCP will automatically calls MPI_Type_free if
+///   necessary (and only if necessary) when the RCP's reference count
+///   goes to zero.
 template<class Packet>
-std::pair<RCP<OpaqueHandle<MPI_Datatype> >, size_t>
-makeMpiType (const Packet& p)
+RCP<OpaqueHandle<MPI_Datatype> >
+getMpiDatatype (const Packet& p)
 {
   MPI_Datatype rawDatatype = MpiTypeTraits<Packet>::getType (p);
   RCP<OpaqueHandle<MPI_Datatype> > handle;  
-  if (MpiTypeTraits<Packet>::needFree) { // 
-    handle = opaqueHandle (result.first, MPI_Type_free);
+  if (MpiTypeTraits<Packet>::mustFreeDatatype) { // 
+    handle = opaqueHandle (rawDatatype, MPI_Type_free);
   } else { // It's a basic MPI_Datatype; don't use MPI_Type_free.
-    handle = opaqueHandle (result.first);
+    handle = opaqueHandle (rawDatatype);
   }
-  return std::make_pair (handle, MpiTypeTraits<Packet>::getCount (p));
+  return handle;
+}
+
+
+/// \fn getMpiCount
+/// \brief Get the count for communicating a Packet instance with MPI.
+/// \tparam Packet The type of data being sent and received; same as
+///   the Packet template parameter of MpiTypeTraits.
+///
+/// This function uses MpiTypeTraits<Packet> to get the count for
+/// communicating the given Packet instance using MPI.  Please refer
+/// to the documentation of MpiTypeTraits for details.  
+///
+/// If MpiTypeTraits<Packet>::sameLocalCount is false, then different
+/// Packet instances on the calling process may have different counts.
+/// This means you need to give this function the specific Packet
+/// instance you want to send or receive.  Otherwise, all Packet
+/// instances on the calling process have the same count, so you can
+/// use any Packet instance.
+///
+/// \param p [in] The Packet instance for which to compute the count.
+template<class Packet>
+size_t getMpiCount (const Packet& p)
+{
+  return MpiTypeTraits<Packet>::getCount (p);
 }
