@@ -1119,10 +1119,6 @@ if (mypid == 0)
       throw(Exceptions::RuntimeError("You cannot use Epetra::MatrixMatrix::Add with Scalar!=double or Ordinal!=int"));
     } else if(A->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      /*RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpA = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2TpetraCrs(A);
-      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpB = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2NonConstTpetraCrs(B);
-        
-      Tpetra::MatrixMatrix::Add(*tpA, transposeA, alpha, *tpB, beta);*/
       Xpetra::MatrixMatrix::Add(*A, transposeA, alpha, *B, beta);
 #else
       throw(Exceptions::RuntimeError("MueLu must be compiled with Tpetra."));
@@ -1148,22 +1144,14 @@ if (mypid == 0)
       throw(Exceptions::RuntimeError("You cannot use Epetra::MatrixMatrix::Add with Scalar!=double or Ordinal!=int"));
     } else if(C->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      /*RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpA = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2TpetraCrs(A);
-      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpB = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2TpetraCrs(B);
-      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >       tpC = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2NonConstTpetraCrs(C);
-
-      Tpetra::MatrixMatrix::Add(*tpA, transposeA, alpha, *tpB, transposeB, beta, tpC);*/
       Xpetra::MatrixMatrix::Add(*A, transposeA, alpha, *B, transposeB, beta, C);
 #else
       throw(Exceptions::RuntimeError("MueLu must be compile with Tpetra."));
 #endif
     }
 
-    ///////////////////////// EXPERIMENTAL
     if(A->IsView("stridedMaps")) C->CreateView("stridedMaps", A);
     if(B->IsView("stridedMaps")) C->CreateView("stridedMaps", B);
-    ///////////////////////// EXPERIMENTAL
-
   } //Utils2::TwoMatrixAdd()
 
 
