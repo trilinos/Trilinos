@@ -102,7 +102,9 @@ namespace Ioex {
     ~DatabaseIO();
 
     // Check to see if database state is ok...
-    bool ok(bool write_message = false) const;
+    // If 'write_message' true, then output a warning message indicating the problem.
+    // If 'error_message' non-null, then put the warning message into the string and return it.
+    bool ok(bool write_message = false, std::string *error_message=NULL) const;
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed

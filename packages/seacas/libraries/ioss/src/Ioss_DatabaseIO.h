@@ -75,7 +75,10 @@ namespace Ioss {
     public:
 
       // Check to see if database state is ok...
-      virtual bool ok(bool write_message = false) const {return dbState != Ioss::STATE_INVALID;}
+      // If 'write_message' true, then output a warning message indicating the problem.
+      // If 'error_message' non-null, then put the warning message into the string and return it.
+      virtual bool ok(bool write_message = false, std::string *error_message=NULL) const
+      {return dbState != Ioss::STATE_INVALID;}
 
       // Check capabilities of input/output database...  Returns an
       // unsigned int with the supported Ioss::EntityTypes or'ed
