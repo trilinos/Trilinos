@@ -226,7 +226,7 @@ bool field_data_valid( const FieldBase & f ,
 bool Bucket::assert_correct() const {
   // test equivalent() method
   const Bucket* bucket = this;
-  const Bucket * first = m_bucketImpl.first_bucket_in_family();
+  const Bucket * first = first_bucket_in_family();
   if (!first || ! bucket->equivalent(*first) || ! first->equivalent(*bucket) )
     return false;
 
@@ -304,14 +304,14 @@ void memory_zero( unsigned char * dst , unsigned n )
 
 //----------------------------------------------------------------------
 
-void Bucket::BucketImpl::update_state()
+void Bucket::update_state()
 {
-  const MetaData & meta = MetaData::get(m_mesh);
+  const MetaData & meta = MetaData::get(m_bucketImpl.m_mesh);
   const std::vector<FieldBase*> & field_set = meta.get_fields();
 
   for ( unsigned i = 0 ; i < field_set.size() ; ) {
 
-    DataMap * const tmp = &m_field_map[0] + i ;
+    DataMap * const tmp = &m_bucketImpl.m_field_map[0] + i ;
     const FieldBase & field = * field_set[i] ;
     const unsigned num_state = field.number_of_states();
     i += num_state ;
@@ -335,7 +335,7 @@ void Bucket::BucketImpl::update_state()
 // Every bucket in the family points to the first bucket,
 // except the first bucket which points to the last bucket.
 
-Bucket * Bucket::BucketImpl::last_bucket_in_family() const
+Bucket * Bucket::last_bucket_in_family() const
 {
   Bucket * last = last_bucket_in_family_impl();
 
@@ -345,16 +345,16 @@ Bucket * Bucket::BucketImpl::last_bucket_in_family() const
   return last ;
 }
 
-Bucket * Bucket::BucketImpl::last_bucket_in_family_impl() const
+Bucket * Bucket::last_bucket_in_family_impl() const
 {
   bool this_is_first_bucket_in_family = (bucket_counter() == 0);
 
   Bucket * last = NULL;
 
   if (this_is_first_bucket_in_family) {
-    last = m_bucket;
+    last = m_bucketImpl.m_bucket;
   } else {
-    last = m_bucket->m_bucketImpl.m_bucket;
+    last = m_bucketImpl.m_bucket->m_bucketImpl.m_bucket;
   }
 
   return last;
@@ -362,14 +362,14 @@ Bucket * Bucket::BucketImpl::last_bucket_in_family_impl() const
 
 //----------------------------------------------------------------------
 
-Bucket * Bucket::BucketImpl::first_bucket_in_family() const
+Bucket * Bucket::first_bucket_in_family() const
 {
   return last_bucket_in_family_impl()->m_bucketImpl.m_bucket;
 }
 
 //----------------------------------------------------------------------
 
-void Bucket::BucketImpl::set_last_bucket_in_family( Bucket * last_bucket )
+void Bucket::set_last_bucket_in_family( Bucket * last_bucket )
 {
   Bucket * last = last_bucket_in_family_impl();
   Bucket * first = last->m_bucketImpl.m_bucket;
@@ -378,27 +378,27 @@ void Bucket::BucketImpl::set_last_bucket_in_family( Bucket * last_bucket )
 
 //----------------------------------------------------------------------
 
-void Bucket::BucketImpl::set_first_bucket_in_family( Bucket * first_bucket )
+void Bucket::set_first_bucket_in_family( Bucket * first_bucket )
 {
-  m_bucket = first_bucket;
+  m_bucketImpl.m_bucket = first_bucket;
 }
 
 //----------------------------------------------------------------------
 
-Bucket::BucketImpl::DataMap * Bucket::BucketImpl::get_field_map()
+Bucket::DataMap * Bucket::get_field_map()
 {
-  return &m_field_map[0];
+  return &m_bucketImpl.m_field_map[0];
 }
 
 //----------------------------------------------------------------------
 
-void Bucket::BucketImpl::initialize_fields( unsigned i_dst )
+void Bucket::Bucket::initialize_fields( unsigned i_dst )
 {
   const std::vector<FieldBase*> & field_set =
-    MetaData::get(m_mesh).get_fields();
+    MetaData::get(m_bucketImpl.m_mesh).get_fields();
 
-  unsigned char * const p = m_field_data;
-  const DataMap *       i = &m_field_map[0];
+  unsigned char * const p = m_bucketImpl.m_field_data;
+  const DataMap *       i = &m_bucketImpl.m_field_map[0];
   const DataMap * const e = i + field_set.size();
 
   for (std::vector<FieldBase*>::const_iterator field_iter=field_set.begin() ;
@@ -418,15 +418,15 @@ void Bucket::BucketImpl::initialize_fields( unsigned i_dst )
   }
 }
 
-void Bucket::BucketImpl::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_src )
+void Bucket::Bucket::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_src )
 {
   const std::vector<FieldBase*> & field_set =
-    MetaData::get(m_mesh).get_fields();
+    MetaData::get(m_bucketImpl.m_mesh).get_fields();
 
   unsigned char * const s = k_src.m_bucketImpl.m_field_data;
-  unsigned char * const d = m_field_data;
+  unsigned char * const d = m_bucketImpl.m_field_data;
   const DataMap *       j = &(k_src.m_bucketImpl.m_field_map[0]);
-  const DataMap *       i = &m_field_map[0];
+  const DataMap *       i = &m_bucketImpl.m_field_map[0];
   const DataMap * const e = i + field_set.size();
 
   for (std::vector<FieldBase*>::const_iterator field_iter=field_set.begin() ;

@@ -76,7 +76,7 @@ void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * b
   std::vector<Bucket *> & bucket_set = m_buckets[entity_rank];
 
   // Get the first bucket in the same family as the bucket being deleted
-  Bucket * const first = bucket_to_be_deleted->m_bucketImpl.first_bucket_in_family();
+  Bucket * const first = bucket_to_be_deleted->first_bucket_in_family();
 
   ThrowRequireMsg( bucket_to_be_deleted->equivalent(*first), "Logic error - bucket_to_be_deleted is not in same family as first_bucket_in_family");
   ThrowRequireMsg( first->equivalent(*bucket_to_be_deleted), "Logic error - first_bucket_in_family is not in same family as bucket_to_be_deleted");
@@ -84,7 +84,7 @@ void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * b
   ThrowRequireMsg( bucket_to_be_deleted->size() == 0,
       "Destroying non-empty bucket " << *(bucket_to_be_deleted->key()) );
 
-  ThrowRequireMsg( bucket_to_be_deleted == first->m_bucketImpl.get_bucket_family_pointer(),
+  ThrowRequireMsg( bucket_to_be_deleted == first->get_bucket_family_pointer(),
                    "Destroying bucket family") ;
 
   std::vector<Bucket*>::iterator ik = lower_bound(bucket_set, bucket_to_be_deleted->key());
@@ -98,9 +98,9 @@ void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * b
     ThrowRequireMsg( ik != bucket_set.begin(),
                      "Where did first bucket go?" );
 
-    first->m_bucketImpl.set_last_bucket_in_family( *--ik );
+    first->set_last_bucket_in_family( *--ik );
 
-    ThrowRequireMsg ( first->m_bucketImpl.get_bucket_family_pointer()->size() != 0,
+    ThrowRequireMsg ( first->get_bucket_family_pointer()->size() != 0,
                       "TODO: Explain" );
   }
 
@@ -134,7 +134,7 @@ BucketRepository::declare_nil_bucket()
     Bucket * bucket =
       new Bucket(m_mesh, InvalidEntityRank, new_key, 0);
 
-    bucket->m_bucketImpl.set_bucket_family_pointer( bucket );
+    bucket->set_bucket_family_pointer( bucket );
 
     //----------------------------------
 
@@ -229,7 +229,7 @@ BucketRepository::declare_bucket(
     ThrowRequireMsg( last_bucket->size() != 0,
                      "Last bucket should not be empty.");
 
-    //field_map = last_bucket->m_bucketImpl.get_field_map();
+    //field_map = last_bucket->get_field_map();
 
     const unsigned last_count = last_bucket->key()[ key[0] ];
 
@@ -255,19 +255,19 @@ BucketRepository::declare_bucket(
   {
     bucket = new Bucket( m_mesh, arg_entity_rank, key, m_bucket_capacity);
 
-    Bucket * first_bucket = last_bucket ? last_bucket->m_bucketImpl.first_bucket_in_family() : bucket ;
+    Bucket * first_bucket = last_bucket ? last_bucket->first_bucket_in_family() : bucket ;
 
-    bucket->m_bucketImpl.set_first_bucket_in_family(first_bucket); // Family members point to first bucket
+    bucket->set_first_bucket_in_family(first_bucket); // Family members point to first bucket
 
-    first_bucket->m_bucketImpl.set_last_bucket_in_family(bucket); // First bucket points to new last bucket
+    first_bucket->set_last_bucket_in_family(bucket); // First bucket points to new last bucket
 
     bucket_set.insert( ik , bucket );
   }
 
   //----------------------------------
 
-  ThrowRequireMsg( bucket->equivalent(*bucket->m_bucketImpl.first_bucket_in_family()), "Logic error - new bucket is not in same family as first_bucket_in_family");
-  ThrowRequireMsg( bucket->m_bucketImpl.first_bucket_in_family()->equivalent(*bucket), "Logic error - first_bucket_in_family is not in same family as new bucket");
+  ThrowRequireMsg( bucket->equivalent(*bucket->first_bucket_in_family()), "Logic error - new bucket is not in same family as first_bucket_in_family");
+  ThrowRequireMsg( bucket->first_bucket_in_family()->equivalent(*bucket), "Logic error - first_bucket_in_family is not in same family as new bucket");
 
   return bucket ;
 }
@@ -277,7 +277,7 @@ BucketRepository::declare_bucket(
 void BucketRepository::initialize_fields( Bucket & k_dst , unsigned i_dst )
 {
   TraceIfWatching("stk::mesh::impl::BucketRepository::initialize_fields", LOG_BUCKET, &k_dst);
-  k_dst.m_bucketImpl.initialize_fields(i_dst);
+  k_dst.initialize_fields(i_dst);
 }
 
 //----------------------------------------------------------------------
@@ -293,7 +293,7 @@ void BucketRepository::update_field_data_states() const
 
     for ( std::vector<Bucket*>::const_iterator
           ik = kset.begin() ; ik != kset.end() ; ++ik ) {
-      (*ik)->m_bucketImpl.update_state();
+      (*ik)->update_state();
     }
   }
 }
@@ -316,7 +316,7 @@ void BucketRepository::internal_sort_bucket_entities()
 
     for ( ; bk < buckets.size() ; bk = ek ) {
       Bucket * b_scratch = NULL ;
-      Bucket * ik_vacant = buckets[bk]->m_bucketImpl.last_bucket_in_family();
+      Bucket * ik_vacant = buckets[bk]->last_bucket_in_family();
       unsigned ie_vacant = ik_vacant->size();
 
       if ( ik_vacant->capacity() <= ie_vacant ) {
@@ -333,7 +333,7 @@ void BucketRepository::internal_sort_bucket_entities()
         ie_vacant = 0 ;
       }
 
-      ik_vacant->m_bucketImpl.replace_entity( ie_vacant , NULL ) ;
+      ik_vacant->replace_entity( ie_vacant , NULL ) ;
 
       // Determine offset to the end bucket in this family:
       while ( ek < buckets.size() && ik_vacant != buckets[ek] ) { ++ek ; }
@@ -374,18 +374,18 @@ void BucketRepository::internal_sort_bucket_entities()
               // Move current entity to the vacant spot
               copy_fields( *ik_vacant , ie_vacant , b, i );
               m_entity_repo.change_entity_bucket(*ik_vacant, *current, ie_vacant);
-              ik_vacant->m_bucketImpl.replace_entity( ie_vacant , current ) ;
+              ik_vacant->replace_entity( ie_vacant , current ) ;
             }
 
             // Set the vacant spot to where the required entity is now.
             ik_vacant = & ((*j)->bucket()) ;
             ie_vacant = (*j)->bucket_ordinal() ;
-            ik_vacant->m_bucketImpl.replace_entity( ie_vacant , NULL ) ;
+            ik_vacant->replace_entity( ie_vacant , NULL ) ;
 
             // Move required entity to the required spot
             copy_fields( b, i, *ik_vacant , ie_vacant );
             m_entity_repo.change_entity_bucket( b, **j, i);
-            b.m_bucketImpl.replace_entity( i, *j );
+            b.replace_entity( i, *j );
 
             change_this_family = true ;
           }
@@ -425,7 +425,7 @@ void BucketRepository::optimize_buckets()
 
     //loop over families
     for ( ; begin_family < buckets.size() ; begin_family = end_family ) {
-      Bucket * last_bucket_in_family  = buckets[begin_family]->m_bucketImpl.last_bucket_in_family();
+      Bucket * last_bucket_in_family  = buckets[begin_family]->last_bucket_in_family();
 
       // Determine offset to the end bucket in this family:
       while ( end_family < buckets.size() && last_bucket_in_family != buckets[end_family] ) { ++end_family ; }
@@ -438,13 +438,13 @@ void BucketRepository::optimize_buckets()
         continue;
       }
 
-      std::vector<unsigned> new_key = buckets[begin_family]->m_bucketImpl.key_vector();
+      std::vector<unsigned> new_key = buckets[begin_family]->key_vector();
       //index of bucket in family
       new_key[ new_key[0] ] = 0;
 
       unsigned new_capacity = 0 ;
       for ( size_t i = begin_family ; i != end_family ; ++i ) {
-        new_capacity += buckets[i]->m_bucketImpl.capacity();
+        new_capacity += buckets[i]->capacity();
       }
 
       std::vector<Entity*> entities;
@@ -465,14 +465,14 @@ void BucketRepository::optimize_buckets()
           new_capacity
           );
 
-      new_bucket->m_bucketImpl.set_first_bucket_in_family(new_bucket); // Family members point to first bucket
-      new_bucket->m_bucketImpl.set_last_bucket_in_family(new_bucket); // First bucket points to new last bucket
+      new_bucket->set_first_bucket_in_family(new_bucket); // Family members point to first bucket
+      new_bucket->set_last_bucket_in_family(new_bucket); // First bucket points to new last bucket
 
       tmp_buckets.push_back(new_bucket);
 
       for(size_t new_ordinal=0; new_ordinal<entities.size(); ++new_ordinal) {
         //increase size of the new_bucket
-        new_bucket->m_bucketImpl.increment_size();
+        new_bucket->increment_size();
 
         Entity & entity = *entities[new_ordinal];
         Bucket& old_bucket = entity.bucket();
@@ -481,7 +481,7 @@ void BucketRepository::optimize_buckets()
         //copy field data from old to new
         copy_fields( *new_bucket, new_ordinal, old_bucket, old_ordinal);
         m_entity_repo.change_entity_bucket( *new_bucket, entity, new_ordinal);
-        new_bucket->m_bucketImpl.replace_entity( new_ordinal , &entity ) ;
+        new_bucket->replace_entity( new_ordinal , &entity ) ;
         internal_propagate_relocation(entity);
       }
 
@@ -507,7 +507,7 @@ void BucketRepository::remove_entity( Bucket * k , unsigned i )
   // Last bucket in the family of buckets with the same parts.
   // The last bucket is the only non-full bucket in the family.
 
-  Bucket * const last = k->m_bucketImpl.last_bucket_in_family();
+  Bucket * const last = k->last_bucket_in_family();
 
   ThrowRequireMsg( last->equivalent(*k), "Logic error - last bucket in family not equivalent to bucket");
   ThrowRequireMsg( k->equivalent(*last), "Logic error - bucket not equivalent to last bucket in family");
@@ -522,7 +522,7 @@ void BucketRepository::remove_entity( Bucket * k , unsigned i )
 
     copy_fields( *k , i , *last , last->size() - 1 );
 
-    k->m_bucketImpl.replace_entity(i, & entity ) ;
+    k->replace_entity(i, & entity ) ;
     m_entity_repo.change_entity_bucket( *k, entity, i);
 
     // Entity field data has relocated
@@ -530,9 +530,9 @@ void BucketRepository::remove_entity( Bucket * k , unsigned i )
     internal_propagate_relocation( entity );
   }
 
-  last->m_bucketImpl.decrement_size();
+  last->decrement_size();
 
-  last->m_bucketImpl.replace_entity( last->size() , NULL ) ;
+  last->replace_entity( last->size() , NULL ) ;
 
   if ( 0 == last->size() ) {
     destroy_bucket( entity_rank , last );

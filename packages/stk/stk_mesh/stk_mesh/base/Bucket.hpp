@@ -90,114 +90,29 @@ bool has_superset( const Bucket & , const PartVector & );
  *  The entities are homogeneous in that they are of the same entity type
  *  and are members of the same of parts.
  */
-class Bucket {
+class Bucket
+{
 private:
   friend class impl::BucketRepository;
 
-  class BucketImpl {
-  public:
-
-    struct DataMap {
-      typedef FieldBase::Restriction::size_type size_type ;
-      const size_type * m_stride ;
-      size_type         m_base ;
-      size_type         m_size ;
+  struct DataMap
+  {
+    typedef FieldBase::Restriction::size_type size_type ;
+    const size_type * m_stride ;
+    size_type         m_base ;
+    size_type         m_size ;
     };
 
+  struct BucketImpl 
+  {
     BucketImpl( BulkData & arg_mesh ,
                 EntityRank arg_entity_rank,
                 const std::vector<unsigned> & arg_key,
                 size_t arg_capacity
                 );
 
-    //
-    // External interface:
-    //
-    BulkData & mesh() const { return m_mesh ; }
-    unsigned entity_rank() const { return m_entity_rank ; }
-    const unsigned * key() const { return &m_key[0] ; }
-    const std::vector<unsigned> & key_vector() const { return m_key; }
-
-    std::pair<const unsigned *, const unsigned *>
-    superset_part_ordinals() const
-    {
-      return std::pair<const unsigned *, const unsigned *>
-        ( key() + 1 , key() + key()[0] );
-    }
-    unsigned allocation_size() const { return 0 ; }
-    size_t capacity() const { return m_capacity ; }
-    size_t size() const { return m_size ; }
-    Entity & operator[] ( size_t i ) const { return *(m_entities[i]) ; }
-    unsigned field_data_size(const FieldBase & field) const
-    {
-      return m_field_map[ field.mesh_meta_data_ordinal() ].m_size;
-    }
-    const FieldBase::Restriction::size_type * field_data_stride( const FieldBase & field ) const
-    {
-      return m_field_map[ field.mesh_meta_data_ordinal() ].m_stride;
-    }
-    unsigned char * field_data_location( const FieldBase & field, const Entity & entity ) const
-    {
-      return field_data_location_impl( field.mesh_meta_data_ordinal(), entity.bucket_ordinal() );
-    }
-
-    /** Experimental method that skips the if-test for field existence on the bucket.
-        This method should only be called if the caller is sure that the field exists on the bucket.
-    */
-    unsigned char * fast_field_data_location( const FieldBase & field, unsigned ordinal ) const
-    {
-      return fast_field_data_location_impl( field.mesh_meta_data_ordinal(), ordinal );
-    }
-    unsigned char * field_data_location( const FieldBase & field, unsigned ordinal ) const
-    {
-      return field_data_location_impl( field.mesh_meta_data_ordinal(), ordinal );
-    }
-    unsigned char * field_data_location( const FieldBase & field ) const
-    {
-      unsigned int zero_ordinal = 0;
-      return field_data_location_impl( field.mesh_meta_data_ordinal(), zero_ordinal );
-    }
-
-    //
-    // Internal interface:
-    //
-    void increment_size() { ++m_size ; }
-    void decrement_size() { --m_size ; }
-    void replace_entity(unsigned entity_ordinal, Entity * entity ) { m_entities[entity_ordinal] = entity ; }
-    void update_state();
-
-    template< class field_type >
-    typename FieldTraits< field_type >::data_type *
-    field_data( const field_type & f , const unsigned & entity_ordinal ) const
-    {
-      typedef typename FieldTraits< field_type >::data_type * data_p ;
-      return reinterpret_cast<data_p>(field_data_location_impl(f.mesh_meta_data_ordinal(),entity_ordinal));
-    }
-
-    // BucketKey key = ( part-count , { part-ordinals } , counter )
-    //  key[ key[0] ] == counter
-    unsigned bucket_counter() const { return m_key[ m_key[0] ]; }
-
-    Bucket * last_bucket_in_family() const;
-    Bucket * first_bucket_in_family() const;
-    void set_last_bucket_in_family( Bucket * last_bucket );
-    void set_first_bucket_in_family( Bucket * first_bucket );
-    DataMap * get_field_map();
-    void initialize_fields( unsigned i_dst );
-    void replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_src );
-    void set_bucket_family_pointer( Bucket * bucket ) { m_bucket = bucket; }
-    const Bucket * get_bucket_family_pointer() const { return m_bucket; }
-
-    bool equivalent( const BucketImpl& other_bucket ) const {
-      return first_bucket_in_family() == other_bucket.first_bucket_in_family();
-    }
-
-    Entity*const* begin() const { return &m_entities[0]; }
-    Entity*const* end() const { return &m_entities[0] + m_size; }
-
     ~BucketImpl() { delete [] m_field_data; }
 
-  private:
     BucketImpl();
 
     BulkData             & m_mesh ;        // Where this bucket resides
@@ -212,27 +127,7 @@ private:
     unsigned char* m_field_data;
     unsigned char* m_field_data_end;
 
-    unsigned char * field_data_location_impl( const unsigned & field_ordinal, const unsigned & entity_ordinal ) const
-    {
-      typedef unsigned char * byte_p ;
-      const DataMap & data_map = m_field_map[ field_ordinal ];
-      unsigned char * ptr = NULL;
-      if ( data_map.m_size ) {
-        ptr = const_cast<unsigned char*>(m_field_data) + data_map.m_base + data_map.m_size * entity_ordinal;
-        ThrowAssert(ptr < m_field_data_end);
-      }
-      return ptr ;
-    }
-    unsigned char * fast_field_data_location_impl( const unsigned & field_ordinal, const unsigned & entity_ordinal ) const
-    {
-      typedef unsigned char * byte_p ;
-      const DataMap & data_map = m_field_map[ field_ordinal ];
-      ThrowAssertMsg(data_map.m_size>0,"Field doesn't exist on bucket.");
-      return const_cast<unsigned char*>(m_field_data) + data_map.m_base + data_map.m_size * entity_ordinal;
-    }
-    Bucket * last_bucket_in_family_impl() const;
   };
-
 
   BucketImpl       m_bucketImpl;
 
@@ -240,8 +135,8 @@ private:
   const void*            m_fmwk_mesh_bulk_data;
 #endif
 
-public:
 
+public:
 
   ////
   //// New API functions
@@ -263,61 +158,71 @@ public:
   typedef boost::indirect_iterator<Entity*const*> iterator ;
 
   /** \brief Beginning of the bucket */
-  inline iterator begin() const { return iterator(m_bucketImpl.begin()); }
+  inline iterator begin() const { return &m_bucketImpl.m_entities[0]; }
 
   /** \brief End of the bucket */
-  inline iterator end() const { return iterator(m_bucketImpl.end()); }
+  inline iterator end() const { return &m_bucketImpl.m_entities[0] + m_bucketImpl.m_size; }
+
 
   /** \brief  Number of entities associated with this bucket */
-  size_t size() const { return m_bucketImpl.size() ; }
+  size_t size() const { return m_bucketImpl.m_size ; }
 
   /** \brief  Capacity of this bucket */
-  size_t capacity() const { return m_bucketImpl.capacity() ; }
+  size_t capacity() const { return m_bucketImpl.m_capacity ; }
+
 
   /** \brief  Query the i^th entity */
-  Entity & operator[] ( size_t i ) const { return m_bucketImpl[i] ; }
+  Entity & operator[] ( size_t i ) const { return *(m_bucketImpl.m_entities[i]) ; }
 
   /** \brief  Query the size of this field data specified by FieldBase */
   unsigned field_data_size(const FieldBase & field) const
-  { return m_bucketImpl.field_data_size(field); }
+  {
+    return m_bucketImpl.m_field_map[ field.mesh_meta_data_ordinal() ].m_size;
+  }
 
   /** \brief  Query the stride of this field data specified by FieldBase */
   const FieldBase::Restriction::size_type * field_data_stride( const FieldBase & field ) const
-  { return m_bucketImpl.field_data_stride(field); }
+  {
+    return m_bucketImpl.m_field_map[ field.mesh_meta_data_ordinal() ].m_stride;
+  }
 
   /** \brief  Query the location of this field data specified by FieldBase and Entity */
   unsigned char * field_data_location( const FieldBase & field, const Entity & entity ) const
-  { return m_bucketImpl.field_data_location(field,entity); }
+  {
+    return field_data_location_impl( field.mesh_meta_data_ordinal(), entity.bucket_ordinal() );
+  }
 
-  /** \brief  Query the location of this field data specified by FieldBase and Entity-bucket-ordinal */
-  unsigned char * field_data_location( const FieldBase & field, unsigned ordinal ) const
-  { return m_bucketImpl.field_data_location(field, ordinal); }
 
   /** \brief  Query the location of this field data specified by FieldBase and Entity-bucket-ordinal
      This method should only be called if the caller knows that the field exists on the bucket.
      In an attempt to improve performance, this method skips the if-test that is normally done.
    */
   unsigned char * fast_field_data_location( const FieldBase & field, unsigned ordinal ) const
-  { return m_bucketImpl.fast_field_data_location(field, ordinal); }
+  {
+    return fast_field_data_location_impl( field.mesh_meta_data_ordinal(), ordinal );
+  }
 
   /** \brief  Query the location of this field data specified by FieldBase */
   unsigned char * field_data_location( const FieldBase & field ) const
-  { return m_bucketImpl.field_data_location(field); }
+  {
+    unsigned int zero_ordinal = 0;
+    return field_data_location_impl( field.mesh_meta_data_ordinal(), zero_ordinal );
+  }
 
   /** \brief  Query the location of this field data specified by FieldBase and Entity */
   template< class field_type >
   typename FieldTraits< field_type >::data_type *
   field_data( const field_type & field , const Entity & entity ) const
-  { return m_bucketImpl.field_data(field,entity.bucket_ordinal()); }
+  { return field_data(field,entity.bucket_ordinal()); }
 
   //--------------------------------
   /** \brief  The \ref stk::mesh::BulkData "bulk data manager"
    *          that owns this bucket.
    */
-  BulkData & mesh() const { return m_bucketImpl.mesh(); }
+  BulkData & mesh() const { return m_bucketImpl.m_mesh ; }
 
   /** \brief  Type of entities in this bucket */
-  unsigned entity_rank() const { return m_bucketImpl.entity_rank(); }
+  unsigned entity_rank() const { return m_bucketImpl.m_entity_rank ; }
 
   /** \brief  This bucket is a subset of these \ref stk::mesh::Part "parts" */
   void supersets( PartVector & ) const ;
@@ -337,21 +242,27 @@ public:
 
   //--------------------------------
   /** Query bucket's supersets' ordinals. */
+
   std::pair<const unsigned *, const unsigned *>
-    superset_part_ordinals() const { return m_bucketImpl.superset_part_ordinals() ; }
+  superset_part_ordinals() const
+  {
+    return std::pair<const unsigned *, const unsigned *>
+      ( key() + 1 , key() + key()[0] );
+  }
 
   /** \brief Equivalent buckets have the same parts
    */
   bool equivalent( const Bucket& b ) const {
-    return m_bucketImpl.equivalent(b.m_bucketImpl);
+    return first_bucket_in_family() == b.first_bucket_in_family();
   }
 
+
 #ifndef DOXYGEN_COMPILE
-  const unsigned * key() const { return m_bucketImpl.key() ; }
+  const unsigned * key() const { return &m_bucketImpl.m_key[0] ; }
 #endif /* DOXYGEN_COMPILE */
 
   /** \brief  The allocation size, in bytes, of this bucket */
-  unsigned allocation_size() const { return m_bucketImpl.allocation_size() ; }
+  unsigned allocation_size() const { return 0 ; }
 
   /** \brief  A method to assist in unit testing - accesses private data as necessary. */
   bool assert_correct() const;
@@ -368,13 +279,23 @@ public:
 
   template <class T>
   void set_bulk_data(const T* bulk_ptr) { m_fmwk_mesh_bulk_data = bulk_ptr; }
+
 #endif
+
+  /** Experimental method that skips the if-test for field existence on the bucket.
+      This method should only be called if the caller is sure that the field exists on the bucket.
+  */
+  unsigned char * field_data_location( const FieldBase & field, unsigned ordinal ) const
+  {
+    return field_data_location_impl( field.mesh_meta_data_ordinal(), ordinal );
+  }
+
 
 private:
   /** \brief  The \ref stk::mesh::BulkData "bulk data manager"
    *          that owns this bucket.
    */
-  BulkData & bulk_data() const { return m_bucketImpl.mesh(); }
+  BulkData & bulk_data() const { return mesh(); }
 
   // Only reason to define this at all is to ensure it's private
   ~Bucket() {}
@@ -390,6 +311,56 @@ private:
         );
 
   friend class ::stk::mesh::BulkData;
+
+  const std::vector<unsigned> & key_vector() const { return m_bucketImpl.m_key; }
+
+  void increment_size() { ++m_bucketImpl.m_size ; }
+  void decrement_size() { --m_bucketImpl.m_size ; }
+  void replace_entity(unsigned entity_ordinal, Entity * entity ) { m_bucketImpl.m_entities[entity_ordinal] = entity ; }
+  void update_state();
+
+  template< class field_type >
+  typename FieldTraits< field_type >::data_type *
+  field_data( const field_type & f , const unsigned & entity_ordinal ) const
+  {
+    typedef typename FieldTraits< field_type >::data_type * data_p ;
+    return reinterpret_cast<data_p>(field_data_location_impl(f.mesh_meta_data_ordinal(),entity_ordinal));
+  }
+
+  // BucketKey key = ( part-count , { part-ordinals } , counter )
+  //  key[ key[0] ] == counter
+  unsigned bucket_counter() const { return m_bucketImpl.m_key[ m_bucketImpl.m_key[0] ]; }
+
+  Bucket * last_bucket_in_family() const;
+  Bucket * first_bucket_in_family() const;
+  void set_last_bucket_in_family( Bucket * last_bucket );
+  void set_first_bucket_in_family( Bucket * first_bucket );
+  DataMap * get_field_map();
+  void initialize_fields( unsigned i_dst );
+  void replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_src );
+  void set_bucket_family_pointer( Bucket * bucket ) { m_bucketImpl.m_bucket = bucket; }
+  const Bucket * get_bucket_family_pointer() const { return m_bucketImpl.m_bucket; }
+
+  Bucket * last_bucket_in_family_impl() const;
+
+  unsigned char * field_data_location_impl( const unsigned & field_ordinal, const unsigned & entity_ordinal ) const
+  {
+    typedef unsigned char * byte_p ;
+    const DataMap & data_map = m_bucketImpl.m_field_map[ field_ordinal ];
+    unsigned char * ptr = NULL;
+    if ( data_map.m_size ) {
+      ptr = const_cast<unsigned char*>(m_bucketImpl.m_field_data) + data_map.m_base + data_map.m_size * entity_ordinal;
+      ThrowAssert(ptr < m_bucketImpl.m_field_data_end);
+    }
+    return ptr ;
+  }
+  unsigned char * fast_field_data_location_impl( const unsigned & field_ordinal, const unsigned & entity_ordinal ) const
+  {
+    typedef unsigned char * byte_p ;
+    const DataMap & data_map =  m_bucketImpl.m_field_map[ field_ordinal ];
+    ThrowAssertMsg(data_map.m_size>0,"Field doesn't exist on bucket.");
+    return const_cast<unsigned char*>( m_bucketImpl.m_field_data) + data_map.m_base + data_map.m_size * entity_ordinal;
+  }
 };
 
 

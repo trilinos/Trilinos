@@ -79,7 +79,7 @@ public:
       );
   void copy_fields( Bucket & k_dst , unsigned i_dst ,
                            Bucket & k_src , unsigned i_src )
-  { k_dst.m_bucketImpl.replace_fields(i_dst,k_src,i_src); }
+  { k_dst.replace_fields(i_dst,k_src,i_src); }
 
   void initialize_fields( Bucket & k_dst , unsigned i_dst );
 
@@ -90,8 +90,8 @@ public:
 
   void add_entity_to_bucket( Entity & entity, Bucket & bucket )
   {
-    bucket.m_bucketImpl.replace_entity( bucket.size() , & entity ) ;
-    bucket.m_bucketImpl.increment_size();
+    bucket.replace_entity( bucket.size() , & entity ) ;
+    bucket.increment_size();
   }
 
   void internal_propagate_relocation( Entity & );

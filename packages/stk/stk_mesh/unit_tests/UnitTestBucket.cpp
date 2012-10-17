@@ -32,8 +32,6 @@
 
 #include <stk_mesh/base/FEMHelpers.hpp>
 
-// #include <stk_mesh/baseImpl/BucketImpl.hpp>
-
 #include <stk_mesh/fixtures/BoxFixture.hpp>
 
 #include <Shards_BasicTopologies.hpp>
@@ -362,7 +360,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
 
   // FIXME: The code below needs to be fixed or removed
   /*
-  impl::BucketImpl::last_bucket_in_family( *k2 );
+  Bucket::last_bucket_in_family( *k2 );
 
   const unsigned * t = key;
   const Bucket * u = last_bucket;

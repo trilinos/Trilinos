@@ -28,9 +28,6 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Ghosting.hpp>
-
-// #include <stk_mesh/baseImpl/BucketImpl.hpp>
-
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/BoundaryAnalysis.hpp>
 
