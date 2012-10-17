@@ -39,22 +39,22 @@ inline std::string getTopologyName(Topology topology)
 }
 
 struct ExodusData {
-    const std::vector<double> &coordinates;
-    const std::vector< std::vector<int> > &elementBlockConnectivity;
-    const std::vector<int> &globalNumberOfElementsInBlock;
-    const std::vector<int> &localNumberOfElementsInBlock;
-    const std::vector<Topology> &blockTopologicalData;
+    const std::vector<double> coordinates;
+    const std::vector< std::vector<int> > elementBlockConnectivity;
+    const std::vector<int> globalNumberOfElementsInBlock;
+    const std::vector<int> localNumberOfElementsInBlock;
+    const std::vector<Topology> blockTopologicalData;
 
     const int globalNumberOfNodes;
 
-    const std::vector<int> &globalIdsOfLocalElements;
-    const std::vector<int> &globalIdsOfLocalNodes;
+    const std::vector<int> globalIdsOfLocalElements;
+    const std::vector<int> globalIdsOfLocalNodes;
 
     std::vector<SharedNode> *sharedNodes;
-    ExodusData(const std::vector<double> &coords, const std::vector< std::vector<int> > &elemBlockConnectivity,
-               const std::vector<int> &globalNumOfElemsInBlock, const std::vector<int> &localNumOfElemsInBlock,
-               const std::vector<Topology> &blockTopoData, int globalNumNodes, const std::vector<int> &globalIdsOfLocalElems,
-               const std::vector<int> &globalIdsLocalNodes)
+    ExodusData(const std::vector<double> coords, const std::vector< std::vector<int> > elemBlockConnectivity,
+               const std::vector<int> globalNumOfElemsInBlock, const std::vector<int> localNumOfElemsInBlock,
+               const std::vector<Topology> blockTopoData, int globalNumNodes, const std::vector<int> globalIdsOfLocalElems,
+               const std::vector<int> globalIdsLocalNodes)
     : coordinates(coords), elementBlockConnectivity(elemBlockConnectivity),
       globalNumberOfElementsInBlock(globalNumOfElemsInBlock), localNumberOfElementsInBlock(localNumOfElemsInBlock),
       blockTopologicalData(blockTopoData), globalNumberOfNodes(globalNumNodes), globalIdsOfLocalElements(globalIdsOfLocalElems),
