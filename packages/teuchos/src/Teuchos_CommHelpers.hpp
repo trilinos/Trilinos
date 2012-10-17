@@ -96,19 +96,6 @@ const char* toString( const EReductionType reductType )
   return 0; // Will never be called
 }
 
-#ifdef HAVE_MPI
-  namespace Details {
-    /// \brief The MPI_Op value corresponding to the given EReductionType.
-    ///
-    /// The returned MPI_Op is guaranteed to be a predefined MPI_Op.
-    /// You need not and must not call MPI_Op_free on it after use.
-    MPI_Op getMpiOpForEReductionType (const enum EReductionType reductionType);
-
-    //! The error string corresponding to the given MPI error code.
-    std::string getMpiErrorString (const int errCode);
-  } // namespace (anonymous)
-#endif // HAVE_MPI
-
 /** \brief Get the process rank.
  *
  * \relates Comm

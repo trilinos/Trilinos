@@ -42,7 +42,8 @@
 #include "Teuchos_CommHelpers.hpp"
 
 namespace Teuchos {
-namespace Details {
+namespace { // (anonymous)
+
 #ifdef HAVE_MPI
 MPI_Op getMpiOpForEReductionType (const enum EReductionType reductionType) {
   switch (reductionType) {
@@ -72,7 +73,7 @@ std::string getMpiErrorString (const int errCode) {
 }
 #endif // HAVE_MPI
 
-} // namespace Details
+} // namespace (anonymous)
 
 
 // Specialization for Ordinal=int and Packet=double.
@@ -105,12 +106,12 @@ reduceAll<int, double> (const Comm<int>& comm,
       std::copy (sendBuffer, sendBuffer + count, globalReducts);
     }
   } else { // It's an MpiComm.  Invoke MPI directly.
-    MPI_Op op = Details::getMpiOpForEReductionType (reductType);
+    MPI_Op op = getMpiOpForEReductionType (reductType);
     MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
     const int err = MPI_Allreduce (const_cast<double*> (sendBuffer), globalReducts, count, MPI_DOUBLE, op, rawMpiComm);
     TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
       "MPI_Allreduce failed with the following error: " 
-      << Details::getMpiErrorString (err));
+      << getMpiErrorString (err));
   }
 #else 
   // We've built without MPI, so just assume it's a SerialComm and copy the data.
@@ -148,12 +149,12 @@ reduceAll<int, int> (const Comm<int>& comm,
       std::copy (sendBuffer, sendBuffer + count, globalReducts);
     }
   } else { // The Comm is an MpiComm.  Invoke MPI directly.
-    MPI_Op op = Details::getMpiOpForEReductionType (reductType);
+    MPI_Op op = getMpiOpForEReductionType (reductType);
     MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
     const int err = MPI_Allreduce (const_cast<int*> (sendBuffer), globalReducts, count, MPI_INT, op, rawMpiComm);
     TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
       "MPI_Allreduce failed with the following error: " 
-      << Details::getMpiErrorString (err));
+      << getMpiErrorString (err));
   }
 #else 
   // We've built without MPI, so just assume it's a SerialComm and copy the data.
