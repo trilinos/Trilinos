@@ -720,9 +720,9 @@ namespace stk {
                       if (d > 1.e-10)
                         {
                           HI = inverse(H);
-                          double gn[] = { cg_g[0], cg_g[1] };
-                          cg_g[0] = HI(0,0)*gn[0] + HI(0,1)*gn[1];
-                          cg_g[1] = HI(1,0)*gn[0] + HI(1,1)*gn[1];
+                          double my_gn[] = { cg_g[0], cg_g[1] };
+                          cg_g[0] = HI(0,0)*my_gn[0] + HI(0,1)*my_gn[1];
+                          cg_g[1] = HI(1,0)*my_gn[0] + HI(1,1)*my_gn[1];
                         }
                       sum=0.0;
                       for (int idim=0; idim < spatialDim; idim++)
