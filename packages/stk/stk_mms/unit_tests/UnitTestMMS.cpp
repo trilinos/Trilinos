@@ -71,6 +71,351 @@ STKUNIT_UNIT_TEST(exampleMMS, euler3D)
   STKUNIT_EXPECT_DOUBLE_EQ(energy_src, 6.81241027548468e17);
 }
 
+STKUNIT_UNIT_TEST(exampleMMS, euler2D_FAD2)
+{
+  const int ND = 2;
+  double nodalSrc[5];
+  const int irho_=0, irhoU_=1, irhoE_=4;
+
+  const double xb=1.234, yb=2.345, zb=0.0, tb = 23.4;
+
+  stk::mms::FAD2_Type x(4, 0, xb);
+  stk::mms::FAD2_Type y(4, 1, yb);
+  stk::mms::FAD2_Type z(4, 2, zb);
+  stk::mms::FAD2_Type t(4, 3, tb);
+  
+  x.val() = stk::mms::FAD_Type(4, 0, xb);
+  y.val() = stk::mms::FAD_Type(4, 1, yb);
+  z.val() = stk::mms::FAD_Type(4, 2, zb);
+  t.val() = stk::mms::FAD_Type(4, 3, tb);
+
+  FAD2_Type p = 1.0+(x-t)*y;
+  FAD2_Type T = 1.0+cos(1.0+x-t*y);
+  
+  FAD2_Type velocity[3];
+  velocity[0] = 1.0+sin(x+y-t);
+  velocity[1] = 2.0+exp(-x*y-t);
+  velocity[2] = 0.0;
+
+  const double gamma = 1.4;
+  const double Rgas = 287.0;
+  const double Cv = Rgas/(gamma-1.0);
+
+  FAD2_Type rho = p/(Rgas*T); 
+  FAD2_Type E = rho*(Cv*T);
+  for (int i = 0; i < ND; ++i ) {
+    E += rho*0.5*velocity[i]*velocity[i];
+  }
+
+  // 1) time derivative terms
+  nodalSrc[irho_]  =     DT2(rho).val();
+  nodalSrc[irhoE_] =     DT2(E).val();
+  for (int i = 0; i < ND; ++i ) {
+    nodalSrc[irhoU_+i] = DT2(rho*velocity[i]).val();
+  }
+  
+  // 2) advection terms + pressure
+  for (int i = 0; i < ND; ++i ) {
+    nodalSrc[irho_]    +=   D2(  rho*velocity[i], i).val();
+    nodalSrc[irhoE_]   +=   D2((E+p)*velocity[i], i).val();
+    
+    nodalSrc[irhoU_+i] +=   D2(  p, i).val();
+    
+    for (int j = 0; j < ND; ++j ) {
+      nodalSrc[irhoU_+i] += D2(  rho*velocity[i]*velocity[j], j).val();
+    }
+  }
+  
+  // compare with output from Mathematica
+  STKUNIT_EXPECT_NEAR(nodalSrc[irho_],    -77.60303215919267,  1e-10);
+  STKUNIT_EXPECT_NEAR(nodalSrc[irhoU_+0], -11.600229605425282, 1e-10);
+  STKUNIT_EXPECT_NEAR(nodalSrc[irhoU_+1], -177.37206431867156, 1e-10);
+  STKUNIT_EXPECT_NEAR(nodalSrc[irhoE_],   -416.70415397545025, 1e-10);
+}
+
+STKUNIT_UNIT_TEST(exampleMMS, euler3D_FAD2)
+{
+  const int ND = 3;
+  double nodalSrc[5];
+  const int irho_=0, irhoU_=1, irhoE_=4;
+
+  const double xb=1.234, yb=2.345, zb=2.3, tb = 2.4;
+
+  stk::mms::FAD2_Type x(4, 0, xb);
+  stk::mms::FAD2_Type y(4, 1, yb);
+  stk::mms::FAD2_Type z(4, 2, zb);
+  stk::mms::FAD2_Type t(4, 3, tb);
+  
+  x.val() = stk::mms::FAD_Type(4, 0, xb);
+  y.val() = stk::mms::FAD_Type(4, 1, yb);
+  z.val() = stk::mms::FAD_Type(4, 2, zb);
+  t.val() = stk::mms::FAD_Type(4, 3, tb);
+
+  FAD2_Type p = 1.0+(x-t)*y*z;
+  FAD2_Type T = 1.0+cos(z+x-t*y);
+  
+  FAD2_Type velocity[3];
+  velocity[0] = 1.0+sin(x+y-t*z);
+  velocity[1] = 2.0+exp(-x*y-t);
+  velocity[2] = 3.0+pow(y-z*t,2);
+
+  const double gamma = 1.4;
+  const double Rgas = 287.0;
+  const double Cv = Rgas/(gamma-1.0);
+
+  FAD2_Type rho = p/(Rgas*T); 
+  FAD2_Type E = rho*(Cv*T);
+  for (int i = 0; i < ND; ++i ) {
+    E += rho*0.5*velocity[i]*velocity[i];
+  }
+
+  // 1) time derivative terms
+  nodalSrc[irho_]  =     DT2(rho).val();
+  nodalSrc[irhoE_] =     DT2(E).val();
+  for (int i = 0; i < ND; ++i ) {
+    nodalSrc[irhoU_+i] = DT2(rho*velocity[i]).val();
+  }
+  
+  // 2) advection terms + pressure
+  for (int i = 0; i < ND; ++i ) {
+    nodalSrc[irho_]    +=   D2(  rho*velocity[i], i).val();
+    nodalSrc[irhoE_]   +=   D2((E+p)*velocity[i], i).val();
+    
+    nodalSrc[irhoU_+i] +=   D2(  p, i).val();
+    
+    for (int j = 0; j < ND; ++j ) {
+      nodalSrc[irhoU_+i] += D2(  rho*velocity[i]*velocity[j], j).val();
+    }
+  }
+  
+  // compare with output from Mathematica
+  STKUNIT_EXPECT_NEAR(nodalSrc[irho_],    -0.4872484486213013, 1e-10);
+  STKUNIT_EXPECT_NEAR(nodalSrc[irhoU_+0], 4.9391274393182325,  1e-10);
+  STKUNIT_EXPECT_NEAR(nodalSrc[irhoU_+1], -3.658072223766688,  1e-10);
+  STKUNIT_EXPECT_NEAR(nodalSrc[irhoU_+2], -16.518922637184943, 1e-10);
+  STKUNIT_EXPECT_NEAR(nodalSrc[irhoE_],   -571.1339486153646,  1e-10);
+}
+
+STKUNIT_UNIT_TEST(exampleMMS, navierstokes2D_FAD2)
+{
+  const int ND = 2;
+  double nodalSrc[5];
+  const int irho_=0, irhoU_=1, irhoE_=4;
+
+  const double xb=1.234, yb=2.345, zb=0.0, tb = 2.4;
+
+  stk::mms::FAD2_Type x(4, 0, xb);
+  stk::mms::FAD2_Type y(4, 1, yb);
+  stk::mms::FAD2_Type z(4, 2, zb);
+  stk::mms::FAD2_Type t(4, 3, tb);
+  
+  x.val() = stk::mms::FAD_Type(4, 0, xb);
+  y.val() = stk::mms::FAD_Type(4, 1, yb);
+  z.val() = stk::mms::FAD_Type(4, 2, zb);
+  t.val() = stk::mms::FAD_Type(4, 3, tb);
+
+  FAD2_Type p = 1.0+(x-t)*y;
+  FAD2_Type T = 1.0+cos(1.0+x-t*y);
+  
+  FAD2_Type velocity[3];
+  velocity[0] = 1.0+sin(x+y-t);
+  velocity[1] = 2.0+exp(-x*y-t);
+  velocity[2] = 0.0;
+
+  const double gamma = 1.4;
+  const double Rgas = 287.0;
+  const double Cv = Rgas/(gamma-1.0);
+
+  FAD2_Type rho = p/(Rgas*T); 
+  FAD2_Type E = rho*(Cv*T);
+  for (int i = 0; i < ND; ++i ) {
+    E += rho*0.5*velocity[i]*velocity[i];
+  }
+
+  // 1) time derivative terms
+  nodalSrc[irho_]  =     DT2(rho).val();
+  nodalSrc[irhoE_] =     DT2(E).val();
+  for (int i = 0; i < ND; ++i ) {
+    nodalSrc[irhoU_+i] = DT2(rho*velocity[i]).val();
+  }
+  
+  // 2) advection terms + pressure
+  for (int i = 0; i < ND; ++i ) {
+    nodalSrc[irho_]    +=   D2(  rho*velocity[i], i).val();
+    nodalSrc[irhoE_]   +=   D2((E+p)*velocity[i], i).val();
+    
+    nodalSrc[irhoU_+i] +=   D2(  p, i).val();
+    
+    for (int j = 0; j < ND; ++j ) {
+      nodalSrc[irhoU_+i] += D2(  rho*velocity[i]*velocity[j], j).val();
+    }
+  }
+  
+  // 3.0) compute material props: viscosity and thermal_conductivity
+  const double suth_c1 = 0.1;
+  const double suth_c2 = 100.0;
+  
+  FAD_Type viscosity = ( suth_c1 * T * sqrt(T)/(T + suth_c2) ).val();
+
+  const double Pr = 0.72;
+  const double Cp = gamma*Cv;
+
+  FAD_Type thermal_conductivity = viscosity*Cp/Pr;
+	
+  // 3.1) form stress tensor (no pressure)
+  FAD_Type tau[3][3];
+  const double oneThird = 1./3.;
+  
+  FAD_Type div_vel = 0.0;
+  for (int i = 0; i < ND; ++i ) {
+    div_vel += D2(velocity[i], i);
+  }
+  
+  for (int i = 0; i < ND; ++i ) {
+    tau[i][i] = 2.0*viscosity*(D2(velocity[i], i) - oneThird*div_vel);
+    
+    for (int j = 0; j < i; ++j ) {
+      tau[i][j] = viscosity*(D2(velocity[i], j) + D2(velocity[j], i));
+      tau[j][i] = tau[i][j];
+    }
+  }
+
+  // 3.2) form total thermal heat flux
+  FAD_Type thermal_flux[3];
+  
+  for (int i = 0; i < ND; ++i ) {
+    thermal_flux[i] = -thermal_conductivity*D2(T, i);
+    for (int j = 0; j < ND; ++j ) {
+      thermal_flux[i] -= velocity[j].val()*tau[j][i];
+    }
+  }
+
+  // 3.3) sum terms into src (using divg)
+  for (int i = 0; i < ND; ++i ) {
+    nodalSrc[irhoE_] += D(thermal_flux[i], i);
+    for (int j = 0; j < ND; ++j ) {
+      nodalSrc[irhoU_+i] -= D(tau[j][i], j);
+    }
+  }
+
+  // compare with output from Mathematica
+  STKUNIT_EXPECT_NEAR(nodalSrc[irho_],    7.774957427548612,  1e-10);
+  STKUNIT_EXPECT_NEAR(nodalSrc[irhoU_+0], 17.092439451251725, 1e-10);
+  STKUNIT_EXPECT_NEAR(nodalSrc[irhoU_+1], 14.43068705973624,  1e-10);
+  STKUNIT_EXPECT_NEAR(nodalSrc[irhoE_],   28.886475272725438, 1e-10);
+}
+
+STKUNIT_UNIT_TEST(exampleMMS, navierstokes3D_FAD2)
+{
+  const int ND = 3;
+  double nodalSrc[5];
+  const int irho_=0, irhoU_=1, irhoE_=4;
+
+  const double xb=1.234, yb=2.345, zb=2.3, tb = 2.4;
+
+  stk::mms::FAD2_Type x(4, 0, xb);
+  stk::mms::FAD2_Type y(4, 1, yb);
+  stk::mms::FAD2_Type z(4, 2, zb);
+  stk::mms::FAD2_Type t(4, 3, tb);
+  
+  x.val() = stk::mms::FAD_Type(4, 0, xb);
+  y.val() = stk::mms::FAD_Type(4, 1, yb);
+  z.val() = stk::mms::FAD_Type(4, 2, zb);
+  t.val() = stk::mms::FAD_Type(4, 3, tb);
+
+  FAD2_Type p = 1.0+(x-t)*y*z;
+  FAD2_Type T = 1.0+cos(z+x-t*y);
+  
+  FAD2_Type velocity[3];
+  velocity[0] = 1.0+sin(x+y-t*z);
+  velocity[1] = 2.0+exp(-x*y-t);
+  //velocity[2] = 3.0+pow(y-z*t,2);
+  velocity[2] = 3.0+(y-z*t)*(y-z*t);
+
+  const double gamma = 1.4;
+  const double Rgas = 287.0;
+  const double Cv = Rgas/(gamma-1.0);
+
+  FAD2_Type rho = p/(Rgas*T); 
+  FAD2_Type E = rho*(Cv*T);
+  for (int i = 0; i < ND; ++i ) {
+    E += rho*0.5*velocity[i]*velocity[i];
+  }
+
+  // 1) time derivative terms
+  nodalSrc[irho_]  =     DT2(rho).val();
+  nodalSrc[irhoE_] =     DT2(E).val();
+  for (int i = 0; i < ND; ++i ) {
+    nodalSrc[irhoU_+i] = DT2(rho*velocity[i]).val();
+  }
+  
+  // 2) advection terms + pressure
+  for (int i = 0; i < ND; ++i ) {
+    nodalSrc[irho_]    +=   D2(  rho*velocity[i], i).val();
+    nodalSrc[irhoE_]   +=   D2((E+p)*velocity[i], i).val();
+    
+    nodalSrc[irhoU_+i] +=   D2(  p, i).val();
+    
+    for (int j = 0; j < ND; ++j ) {
+      nodalSrc[irhoU_+i] += D2(  rho*velocity[i]*velocity[j], j).val();
+    }
+  }
+  
+  // 3.0) compute material props: viscosity and thermal_conductivity
+  const double suth_c1 = 0.1;
+  const double suth_c2 = 100.0;
+  
+  FAD_Type viscosity = ( suth_c1 * T * sqrt(T)/(T + suth_c2) ).val();
+
+  const double Pr = 0.72;
+  const double Cp = gamma*Cv;
+
+  FAD_Type thermal_conductivity = viscosity*Cp/Pr;
+	
+  // 3.1) form stress tensor (no pressure)
+  FAD_Type tau[3][3];
+  const double oneThird = 1./3.;
+  
+  FAD_Type div_vel = 0.0;
+  for (int i = 0; i < ND; ++i ) {
+    div_vel += D2(velocity[i], i);
+  }
+  
+  for (int i = 0; i < ND; ++i ) {
+    tau[i][i] = 2.0*viscosity*(D2(velocity[i], i) - oneThird*div_vel);
+    
+    for (int j = 0; j < i; ++j ) {
+      tau[i][j] = viscosity*(D2(velocity[i], j) + D2(velocity[j], i));
+      tau[j][i] = tau[i][j];
+    }
+  }
+
+  // 3.2) form total thermal heat flux
+  FAD_Type thermal_flux[3];
+  
+  for (int i = 0; i < ND; ++i ) {
+    thermal_flux[i] = -thermal_conductivity*D2(T, i);
+    for (int j = 0; j < ND; ++j ) {
+      thermal_flux[i] -= velocity[j].val()*tau[j][i];
+    }
+  }
+
+  // 3.3) sum terms into src (using divg)
+  for (int i = 0; i < ND; ++i ) {
+    nodalSrc[irhoE_] += D(thermal_flux[i], i);
+    for (int j = 0; j < ND; ++j ) {
+      nodalSrc[irhoU_+i] -= D(tau[j][i], j);
+    }
+  }
+
+  // compare with output from Mathematica
+  STKUNIT_EXPECT_NEAR(nodalSrc[irho_],    -0.4872484486213013, 1e-10);
+  STKUNIT_EXPECT_NEAR(nodalSrc[irhoU_+0], 4.944557100416018,   1e-10);
+  STKUNIT_EXPECT_NEAR(nodalSrc[irhoU_+1], -3.673218932569313,  1e-10);
+  STKUNIT_EXPECT_NEAR(nodalSrc[irhoU_+2], -16.558200406094826, 1e-10);
+  STKUNIT_EXPECT_NEAR(nodalSrc[irhoE_],   -582.2566990445401,  1e-10);
+}
+
 STKUNIT_UNIT_TEST(exampleMMS, solidMechanics3D)
 {
   // NOTE: some of the code below should be moved into library calls
@@ -179,6 +524,7 @@ STKUNIT_UNIT_TEST(exampleMMS, solidMechanics3D)
   // TODO: test against output from Mathematica 
 
   // DEBUG
+  /*
   std::cout << "Time: " << t.val().val() << std::endl;
   std::cout << "Initial point: " 
 	    << X.val().val() << " " 
@@ -223,6 +569,7 @@ STKUNIT_UNIT_TEST(exampleMMS, solidMechanics3D)
     std::cout << mom_src[i] << " ";
   }
   std::cout << std::endl;
+  */
 }
 
 STKUNIT_UNIT_TEST(exampleMMS, viscousNavierStokes2D)
@@ -319,6 +666,31 @@ STKUNIT_UNIT_TEST(exampleMMS, viscousNavierStokes2D)
   STKUNIT_EXPECT_NEAR(mom_src[0], 76.58413133799213, 1e-10);
   STKUNIT_EXPECT_NEAR(mom_src[1], 92.05081838663132, 1e-10);
   STKUNIT_EXPECT_NEAR(energy_src, 70295.4770236427,  1e-10);
+}
+
+STKUNIT_UNIT_TEST(exampleMMS, FADbug)
+{
+  const double xb=1.234, yb=2.345, zb=2.3, tb = 2.4;
+
+  stk::mms::FAD2_Type x(4, 0, xb);
+  stk::mms::FAD2_Type y(4, 1, yb);
+  stk::mms::FAD2_Type z(4, 2, zb);
+  stk::mms::FAD2_Type t(4, 3, tb);
+  
+  x.val() = stk::mms::FAD_Type(4, 0, xb);
+  y.val() = stk::mms::FAD_Type(4, 1, yb);
+  z.val() = stk::mms::FAD_Type(4, 2, zb);
+  t.val() = stk::mms::FAD_Type(4, 3, tb);
+
+  stk::mms::FAD2_Type w = pow(y-z*t,2);
+
+  std::cout << "w = " 
+	    << w.val() << " " 
+	    << w.dx(0) << " " 
+	    << w.dx(1) << " " 
+	    << w.dx(2) << " " 
+	    << w.dx(3) << std::endl;
+
 }
 
 } // namespace unit_tests
