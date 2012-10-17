@@ -3589,6 +3589,15 @@ int ML_Epetra::UpdateList(Teuchos::ParameterList &source, Teuchos::ParameterList
   Currently, level-specific parameters that begin with "smoother:"
   or "aggregation:" are placed in sublists. Coarse options are also placed
   in a coarse list.
+
+  Example:
+   Input:
+    smoother: type (level 0) = symmetric Gauss-Seidel  
+    smoother: sweeps (level 0) = 1  
+   Output:
+    smoother: list (level 0) -> 
+     smoother: type = symmetric Gauss-Seidel  
+     smoother: sweeps = 1  
 */
 void ML_CreateSublists(const ParameterList &List, ParameterList &newList)
 {
