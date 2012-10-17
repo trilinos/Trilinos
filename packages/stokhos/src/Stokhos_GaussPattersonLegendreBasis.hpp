@@ -28,20 +28,20 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_CLENSHAWCURTISLEGENDREBASIS_HPP
-#define STOKHOS_CLENSHAWCURTISLEGENDREBASIS_HPP
+#ifndef STOKHOS_GAUSS_PATTERSON_LEGENDRE_BASIS_HPP
+#define STOKHOS_GAUSS_PATTERSON_LEGENDRE_BASIS_HPP
 
 #include "Stokhos_LegendreBasis.hpp"
 
 namespace Stokhos {
 
-  //! Legendre polynomial basis using Clenshaw-Curtis quadrature points
+  //! Legendre polynomial basis using Gauss-Patterson quadrature points
   /*!
-   * This is the same as Stokhos::LegendreBasis, but uses Clenshaw-Curtis
+   * This is the same as Stokhos::LegendreBasis, but uses Gauss-Patterson
    * quadrature points (instead of Gauss-Legendre).
    */
   template <typename ordinal_type, typename value_type>
-  class ClenshawCurtisLegendreBasis : 
+  class GaussPattersonLegendreBasis : 
     public LegendreBasis<ordinal_type, value_type> {
   public:
 
@@ -50,11 +50,11 @@ namespace Stokhos {
      * \param p order of the basis
      * \param normalize whether polynomials should be given unit norm
      */
-    ClenshawCurtisLegendreBasis(ordinal_type p, bool normalize = false,
+    GaussPattersonLegendreBasis(ordinal_type p, bool normalize = false,
 				bool isotropic = false);
 
     //! Destructor
-    ~ClenshawCurtisLegendreBasis();
+    ~GaussPattersonLegendreBasis();
 
     //! \name Implementation of Stokhos::OneDOrthogPolyBasis methods
     //@{ 
@@ -97,27 +97,27 @@ namespace Stokhos {
   protected:
 
     //! Copy constructor with specified order
-    ClenshawCurtisLegendreBasis(ordinal_type p, 
-				const ClenshawCurtisLegendreBasis& basis);
+    GaussPattersonLegendreBasis(ordinal_type p, 
+				const GaussPattersonLegendreBasis& basis);
 
   private:
 
     // Prohibit copying
-    ClenshawCurtisLegendreBasis(const ClenshawCurtisLegendreBasis&);
+    GaussPattersonLegendreBasis(const GaussPattersonLegendreBasis&);
 
     // Prohibit Assignment
-    ClenshawCurtisLegendreBasis& operator=(const ClenshawCurtisLegendreBasis& b);
+    GaussPattersonLegendreBasis& operator=(const GaussPattersonLegendreBasis& b);
 
   protected:
 
     //! Flag determining if expansion is iostropic (same basis in every dim)
     bool isotropic;
 
-  }; // class ClenshawCurtisLegendreBasis
+  }; // class GaussPattersonLegendreBasis
 
 } // Namespace Stokhos
 
 // Include template definitions
-#include "Stokhos_ClenshawCurtisLegendreBasisImp.hpp"
+#include "Stokhos_GaussPattersonLegendreBasisImp.hpp"
 
 #endif

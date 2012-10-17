@@ -151,8 +151,10 @@ getMyPoints( int order, int dim, double x[] )
   Teuchos::Array<double> quad_points;
   Teuchos::Array<double> quad_weights;
   Teuchos::Array< Teuchos::Array<double> > quad_values;
-  sgq->coordinate_bases[dim]->getQuadPoints(2*order-1, quad_points, 
-                                            quad_weights, quad_values);
+  ordinal_type p = sgq->coordinate_bases[dim]->quadDegreeOfExactness(order);
+  sgq->coordinate_bases[dim]->getQuadPoints(p, quad_points, 
+					    quad_weights, quad_values);
+  TEUCHOS_ASSERT(quad_points.size() == order);
   for (int i = 0; i<quad_points.size(); i++) {
     x[i] = quad_points[i];
   }
@@ -166,8 +168,10 @@ getMyWeights( int order, int dim, double w[] )
   Teuchos::Array<double> quad_points;
   Teuchos::Array<double> quad_weights;
   Teuchos::Array< Teuchos::Array<double> > quad_values;
-  sgq->coordinate_bases[dim]->getQuadPoints(2*order-1, quad_points, 
-                                            quad_weights, quad_values);
+  ordinal_type p = sgq->coordinate_bases[dim]->quadDegreeOfExactness(order);
+  sgq->coordinate_bases[dim]->getQuadPoints(p, quad_points, 
+					    quad_weights, quad_values);
+  TEUCHOS_ASSERT(quad_points.size() == order);
   for (int i = 0; i<quad_points.size(); i++) {
     w[i] = quad_weights[i];
   }

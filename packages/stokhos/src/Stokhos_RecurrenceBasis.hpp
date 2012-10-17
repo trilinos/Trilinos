@@ -165,6 +165,12 @@ namespace Stokhos {
 		  Teuchos::Array<value_type>& weights,
 		  Teuchos::Array< Teuchos::Array<value_type> >& values) const;
 
+    /*!
+     * Return polynomial degree of exactness for a given number of quadrature
+     * points.
+     */
+    virtual ordinal_type quadDegreeOfExactness(ordinal_type n) const;
+
     //! Function pointer needed for level_to_order mappings
     typedef typename OneDOrthogPolyBasis<ordinal_type,value_type>::LevelToOrderFnPtr LevelToOrderFnPtr;
 

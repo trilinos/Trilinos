@@ -30,8 +30,1305 @@
 #define STOKHOS_PRODUCT_BASIS_UTILS_HPP
 
 #include "Teuchos_Array.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
+
+#include "Stokhos_SDMUtils.hpp"
 
 namespace Stokhos {
+
+  /*!
+   * \brief Compute bionomial coefficient (n ; k) = n!/( k! (n-k)! )
+   */
+  template <typename ordinal_type>
+  ordinal_type n_choose_k(const ordinal_type& n, const ordinal_type& k) {
+    // Use formula
+    // n!/(k!(n-k)!) = n(n-1)...(k+1) / ( (n-k)(n-k-1)...1 )  ( n-k terms )
+    //               = n(n-1)...(n-k+1) / ( k(k-1)...1 )      ( k terms )
+    // which ever has fewer terms
+    if (k > n)
+      return 0;
+    ordinal_type num = 1;
+    ordinal_type den = 1;
+    ordinal_type l = std::min(n-k,k);
+    for (ordinal_type i=0; i<l; i++) {
+      num *= n-i;
+      den *= i+1;
+    }
+    return num / den;
+  }
+
+  //! A multidimensional index
+  template <typename ordinal_t>
+  class MultiIndex {
+  public:
+
+    typedef ordinal_t ordinal_type;
+    typedef ordinal_t element_type;
+
+    //! Constructor
+    MultiIndex(ordinal_type dim, ordinal_type v = ordinal_type(0)) : 
+      index(dim,v) {}
+
+    //! Destructor
+    ~MultiIndex() {}
+
+    //! Dimension
+    ordinal_type dimension() const { return index.size(); }
+
+    //! Term access
+    const ordinal_type& operator[] (ordinal_type i) const { return index[i]; }
+
+    //! Term access
+    ordinal_type& operator[] (ordinal_type i) { return index[i]; }
+
+    //! Initialize
+    void init(ordinal_type v) {
+      for (ordinal_type i=0; i<dimension(); i++) 
+	index[i] = v;
+    }
+
+    //! Compute total order of index
+    ordinal_type order() const {
+      ordinal_type my_order = 0;
+      for (ordinal_type i=0; i<dimension(); ++i) my_order += index[i];
+      return my_order;
+    }
+
+    //! Compare equality
+    bool operator==(const MultiIndex& idx) const {
+      if (dimension() != idx.dimension())
+        return false;
+      for (ordinal_type i=0; i<dimension(); i++) {
+        if (index[i] != idx.index[i])
+	  return false;
+       }
+       return true;
+    }
+
+    //! Compare equality
+    bool operator!=(const MultiIndex& idx) const { return !(*this == idx); }
+
+    //! Print multiindex
+    std::ostream& print(std::ostream& os) const {
+      os << "[ ";
+      for (ordinal_type i=0; i<dimension(); i++)
+	os << index[i] << " ";
+      os << "]";
+      return os;
+    }
+
+  protected:
+
+    //! index terms
+    Teuchos::Array<ordinal_type> index;
+
+  };
+
+  template <typename ordinal_type>
+  std::ostream& operator << (std::ostream& os, 
+			     const MultiIndex<ordinal_type>& m) {
+    return m.print(os);
+  }
+
+  //! An isotropic total order index set
+  /*!
+   * Represents the set l <= |i| <= u given upper and lower bounds
+   * l and u, and |i| = i_1 + ... + i_d where d is the dimension of the
+   * index.
+   *
+   * Currently this class only really provides an input iterator for 
+   * iterating over the elements of the index set.  One should not make
+   * any assumption on the order of these elements.
+   */
+  template <typename ordinal_t>
+  class TotalOrderIndexSet {
+  public:
+
+    // Forward declaration of our iterator
+    class Iterator;
+
+    typedef ordinal_t ordinal_type;
+    typedef MultiIndex<ordinal_type> multiindex_type;
+    typedef Iterator iterator;
+    typedef Iterator const_iterator;
+
+    //! Constructor
+    /*!
+     * \c dim_ is the dimension of the index set, \c lower_ is the lower
+     * bound of the index set, and \c upper_ is the upper bound (inclusive)
+     */
+    TotalOrderIndexSet(ordinal_type dim_, 
+		       ordinal_type lower_, 
+		       ordinal_type upper_) :
+      dim(dim_), lower(lower_), upper(upper_) {}
+
+    //! Constructor
+    /*!
+     * \c dim_ is the dimension of the index set, the lower bound is zero, 
+     * and \c upper_ is the upper bound (inclusive)
+     */
+    TotalOrderIndexSet(ordinal_type dim_, 
+		       ordinal_type upper_) :
+      dim(dim_), lower(0), upper(upper_) {}
+
+    //! Return dimension
+    ordinal_type dimension() const { return dim; }
+
+    //! Return maximum order for each dimension
+    multiindex_type max_orders() const {
+      return multiindex_type(dim, upper);
+    }
+
+    //! Return iterator for first element in the set
+    const_iterator begin() const { 
+      multiindex_type index(dim);
+      index[0] = lower;
+      return Iterator(upper, index); 
+    }
+
+    //! Return iterator for end of the index set
+    const_iterator end() const { 
+      multiindex_type index(dim);
+      index[dim-1] = upper+1;
+      return Iterator(upper, index); 
+    }
+
+  protected:
+
+    //! Dimension
+    ordinal_type dim;
+
+    //! Lower order of index set
+    ordinal_type lower;
+
+    //! Upper order of index set
+    ordinal_type upper;
+
+  public:
+
+    //! Iterator class for iterating over elements of the index set
+    class Iterator : public std::iterator<std::input_iterator_tag,
+					  multiindex_type> {
+    public:
+
+      typedef std::iterator<std::input_iterator_tag,multiindex_type> base_type;
+      typedef typename base_type::iterator_category iterator_category;
+      typedef typename base_type::value_type value_type;
+      typedef typename base_type::difference_type difference_type;
+      typedef typename base_type::reference reference;
+      typedef typename base_type::pointer pointer;
+
+      typedef const multiindex_type& const_reference;
+      typedef const multiindex_type* const_pointer;
+
+      //! Constructor
+      /*!
+       * \c max_order_ is the maximum order of the set (inclusive) and
+       * \c index_ is the starting multi-index.
+       */
+      Iterator(ordinal_type max_order_, const multiindex_type& index_) : 
+	max_order(max_order_), index(index_), dim(index.dimension()), 
+	orders(dim) {
+	orders[dim-1] = max_order;
+	for (ordinal_type i=dim-2; i>=0; --i)
+	  orders[i] = orders[i+1] - index[i+1];
+      }
+
+      //! Compare equality of iterators
+      bool operator==(const Iterator& it) const { return index == it.index; }
+
+      //! Compare inequality of iterators
+      bool operator!=(const Iterator& it) const { return index != it.index; }
+      
+      //! Dereference
+      const_reference operator*() const { return index; }
+
+      //! Dereference
+      const_pointer operator->() const { return &index; }
+      
+      //! Prefix increment, i.e., ++iterator
+      /*!
+       * No particular ordering of the indices is guaranteed.  The current 
+       * implementation produces multi-indices sorted lexographically 
+       * backwards among the elements, e.g., 
+       * [0 0], [1 0], [2 0], ... [0 1], [1 1], [2 1], ... 
+       * but one shouldn't assume that.  To obtain a specific
+       * ordering, one should implement a "less" functional and put the 
+       * indices in a sorted container such as std::map<>.
+       */
+      Iterator& operator++() {
+	++index[0];
+	ordinal_type i=0;
+	while (i<dim-1 && index[i] > orders[i]) {
+	  index[i] = 0;
+	  ++i;
+	  ++index[i];
+	}
+	for (ordinal_type i=dim-2; i>=0; --i)
+	  orders[i] = orders[i+1] - index[i+1];
+
+	return *this;
+      }
+
+      //! Postfix increment, i.e., iterator++
+      Iterator& operator++(int) {
+	Iterator tmp(*this);
+	++(*this);
+	return tmp;
+      }
+
+    protected:
+
+      //! Maximum order of iterator
+      ordinal_type max_order;
+      
+      //! Current value of iterator
+      multiindex_type index;
+
+      //! Dimension
+      ordinal_type dim;
+
+      //! Maximum orders for each term to determine how to increment
+      Teuchos::Array<ordinal_type> orders;
+    };
+  };
+
+  //! A tensor product index set
+  /*!
+   * Represents the set l_j <= i_j <= u_j given upper and lower bounds
+   * l_j and u_j, for j = 1,...,d where d is the dimension of the
+   * index.
+   *
+   * Currently this class only really provides an input iterator for 
+   * iterating over the elements of the index set.  One should not make
+   * any assumption on the order of these elements.
+   */
+  template <typename ordinal_t>
+  class TensorProductIndexSet {
+  public:
+
+    // Forward declaration of our iterator
+    class Iterator;
+
+    typedef ordinal_t ordinal_type;
+    typedef MultiIndex<ordinal_type> multiindex_type;
+    typedef Iterator iterator;
+    typedef Iterator const_iterator;
+
+    //! Constructor
+    /*!
+     * \c dim_ is the dimension of the index set, \c lower_ is the lower
+     * bound of the index set, and \c upper_ is the upper bound (inclusive)
+     */
+    TensorProductIndexSet(ordinal_type dim_, 
+			  ordinal_type lower_, 
+			  ordinal_type upper_) :
+      dim(dim_), lower(dim_,lower_), upper(dim_,upper_) {}
+
+    //! Constructor
+    /*!
+     * \c dim_ is the dimension of the index set, the lower bound is zero, 
+     * and \c upper_ is the upper bound (inclusive)
+     */
+    TensorProductIndexSet(ordinal_type dim_, 
+			  ordinal_type upper_) :
+      dim(dim_), lower(dim_,ordinal_type(0)), upper(dim_,upper_) {}
+
+    //! Constructor
+    /*!
+     * \c dim_ is the dimension of the index set, \c lower_ is the lower
+     * bound of the index set, and \c upper_ is the upper bound (inclusive)
+     */
+    TensorProductIndexSet(const multiindex_type& lower_, 
+			  const multiindex_type& upper_) :
+      dim(lower_.dimension()), lower(lower_), upper(upper_) {}
+
+    //! Constructor
+    /*!
+     * \c dim_ is the dimension of the index set, the lower bound is zero, 
+     * and \c upper_ is the upper bound (inclusive)
+     */
+    TensorProductIndexSet(const multiindex_type& upper_) :
+      dim(upper_.dimension()), lower(dim,ordinal_type(0)), upper(upper_) {}
+
+    //! Return dimension
+    ordinal_type dimension() const { return dim; }
+
+    //! Return maximum order for each dimension
+    multiindex_type max_orders() const {
+      return upper;
+    }
+
+    //! Return iterator for first element in the set
+    const_iterator begin() const { 
+      return Iterator(upper, lower); 
+    }
+
+    //! Return iterator for end of the index set
+    const_iterator end() const { 
+      multiindex_type index(dim);
+      index[dim-1] = upper[dim-1]+1;
+      return Iterator(upper, index); 
+    }
+
+  protected:
+
+    //! Dimension
+    ordinal_type dim;
+
+    //! Lower bound of index set
+    multiindex_type lower;
+
+    //! Upper bound of index set
+    multiindex_type upper;
+
+  public:
+
+    //! Iterator class for iterating over elements of the index set
+    class Iterator : public std::iterator<std::input_iterator_tag,
+					  multiindex_type> {
+    public:
+
+      typedef std::iterator<std::input_iterator_tag,multiindex_type> base_type;
+      typedef typename base_type::iterator_category iterator_category;
+      typedef typename base_type::value_type value_type;
+      typedef typename base_type::difference_type difference_type;
+      typedef typename base_type::reference reference;
+      typedef typename base_type::pointer pointer;
+
+      typedef const multiindex_type& const_reference;
+      typedef const multiindex_type* const_pointer;
+
+      //! Constructor
+      /*!
+       * \c upper_ is the upper bound of the set (inclusive) and
+       * \c index_ is the starting multi-index.
+       */
+      Iterator(const multiindex_type& upper_, const multiindex_type& index_) : 
+	upper(upper_), index(index_), dim(index.dimension()) {}
+
+      //! Compare equality of iterators
+      bool operator==(const Iterator& it) const { return index == it.index; }
+
+      //! Compare inequality of iterators
+      bool operator!=(const Iterator& it) const { return index != it.index; }
+      
+      //! Dereference
+      const_reference operator*() const { return index; }
+
+      //! Dereference
+      const_pointer operator->() const { return &index; }
+      
+      //! Prefix increment, i.e., ++iterator
+      /*!
+       * No particular ordering of the indices is guaranteed.  The current 
+       * implementation produces multi-indices sorted lexographically 
+       * backwards among the elements, e.g., 
+       * [0 0], [1 0], [2 0], ... [0 1], [1 1], [2 1], ... 
+       * but one shouldn't assume that.  To obtain a specific
+       * ordering, one should implement a "less" functional and put the 
+       * indices in a sorted container such as std::map<>.
+       */
+      Iterator& operator++() {
+	++index[0];
+	ordinal_type i=0;
+	while (i<dim-1 && index[i] > upper[i]) {
+	  index[i] = 0;
+	  ++i;
+	  ++index[i];
+	}
+	return *this;
+      }
+
+      //! Postfix increment, i.e., iterator++
+      Iterator& operator++(int) {
+	Iterator tmp(*this);
+	++(*this);
+	return tmp;
+      }
+
+    protected:
+
+      //! Upper bound of iterator
+      multiindex_type upper;
+      
+      //! Current value of iterator
+      multiindex_type index;
+
+      //! Dimension
+      ordinal_type dim;
+
+    };
+  };
+
+  //! Container storing a term in a generalized tensor product
+  template <typename ordinal_t, typename element_t>
+  class TensorProductElement {
+  public:
+
+    typedef ordinal_t ordinal_type;
+    typedef element_t element_type;
+
+    //! Default constructor
+    TensorProductElement() {}
+
+    //! Constructor
+    TensorProductElement(ordinal_type dim) : term(dim) {}
+
+    //! Destructor
+    ~TensorProductElement() {};
+
+    //! Return dimension
+    ordinal_type dimension() const { return term.size(); }
+
+    //! Term access
+    const element_type& operator[] (ordinal_type i) const { return term[i]; }
+
+    //! Term access
+    element_type& operator[] (ordinal_type i) { return term[i]; }
+
+    //! Term access
+    const Teuchos::Array<element_type>& getTerm() const { return term; }
+
+    //! Term access
+    Teuchos::Array<element_type>& getTerm() { return term; }
+
+    //! Compute total order of tensor product element
+    element_type order() const {
+      element_type my_order = 0;
+      for (ordinal_type i=0; i<dimension(); ++i) my_order += term[i];
+      return my_order;
+    }
+
+    //! Print multiindex
+    std::ostream& print(std::ostream& os) const {
+      os << "[ ";
+      for (ordinal_type i=0; i<dimension(); i++)
+	os << term[i] << " ";
+      os << "]";
+      return os;
+    }
+
+  protected:
+
+    //! Array storing term elements
+    Teuchos::Array<element_type> term;
+    
+  };
+
+  template <typename ordinal_type, typename element_type>
+  std::ostream& operator << (
+    std::ostream& os, 
+    const TensorProductElement<ordinal_type,element_type>& m) {
+    return m.print(os);
+  }
+
+  /*! 
+   * \brief A comparison functor implementing a strict weak ordering based
+   * lexographic ordering
+   */
+  /*
+   * Objects of type \c term_type must implement \c dimension() and 
+   * \c operator[] methods, as well as contain ordinal_type and element_type 
+   * nested types.
+   */
+  template <typename term_type, 
+	    typename compare_type = std::less<typename term_type::element_type> >
+  class LexographicLess {
+  public:
+    
+    typedef term_type product_element_type;
+    typedef typename term_type::ordinal_type ordinal_type;
+    typedef typename term_type::element_type element_type;
+
+    //! Constructor
+    LexographicLess(const compare_type& cmp_ = compare_type()) : cmp(cmp_) {}
+
+    //! Determine if \c a is less than \c b
+    bool operator()(const term_type& a, const term_type& b) const {
+      ordinal_type i=0;
+      while(i < a.dimension() && i < b.dimension() && equal(a[i],b[i])) i++;
+
+      // if a is shorter than b and the first a.dimension() elements agree
+      // then a is always less than b
+      if (i == a.dimension()) return i != b.dimension();
+
+      // if a is longer than b and the first b.dimension() elements agree
+      // then b is always less than a
+      if (i == b.dimension()) return false;
+
+      // a and b different at element i, a is less than b if a[i] < b[i]
+      return cmp(a[i],b[i]);
+    }
+
+  protected:
+
+    //! Element comparison functor
+    compare_type cmp;
+
+    //! Determine if two elements \c a and \c b are equal
+    bool equal(const element_type& a, const element_type& b) const {
+      return !(cmp(a,b) || cmp(b,a));
+    }
+
+  };
+
+  /*! 
+   * \brief A comparison functor implementing a strict weak ordering based
+   * total-order ordering, recursive on the dimension.
+   */
+  /*
+   * Objects of type \c term_type must implement \c dimension(), \c order, and 
+   * \c operator[] methods, as well as contain ordinal_type and element_type 
+   * nested types.
+   */
+  template <typename term_type, 
+	    typename compare_type = std::less<typename term_type::element_type> >
+  class TotalOrderLess {
+  public:
+    
+    typedef term_type product_element_type;
+    typedef typename term_type::ordinal_type ordinal_type;
+    typedef typename term_type::element_type element_type;
+
+    //! Constructor
+    TotalOrderLess(const compare_type& cmp_ = compare_type()) : cmp(cmp_) {}
+
+    bool operator()(const term_type& a, const term_type& b) const {
+      element_type a_order = a.order();
+      element_type b_order = b.order();
+      ordinal_type i=0;
+      while (i < a.dimension() && i < b.dimension() && equal(a_order,b_order)) {
+	a_order -= a[i];
+	b_order -= b[i];
+	++i;
+      }
+      return cmp(a_order,b_order);
+    }
+
+  protected:
+
+    //! Element comparison functor
+    compare_type cmp;
+
+    //! Determine if two elements \c a and \c b are equal
+    bool equal(const element_type& a, const element_type& b) const {
+      return !(cmp(a,b) || cmp(b,a));
+    }
+
+  };
+
+  //! A functor for comparing floating-point numbers to some tolerance
+  /*!
+   * The difference between this and standard < is that if |a-b| < tol, 
+   * then this always returns false as a and b are treated as equal.
+   */
+  template <typename value_type>
+  class FloatingPointLess {
+  public:
+    
+    //! Constructor
+    FloatingPointLess(const value_type& tol_ = 1.0e-12) : tol(tol_) {}
+
+    //! Destructor
+    ~FloatingPointLess() {}
+
+    //! Compare if a < b
+    bool operator() (const value_type& a, const value_type& b) const {
+      return a < b - tol;
+    }
+
+  protected:
+
+    //! Tolerance
+    value_type tol;
+
+  };
+
+  //! A growth rule that is the identity
+  template <typename value_type>
+  class IdentityGrowthRule {
+  public:
+    //! Constructor
+    IdentityGrowthRule() {}
+
+    //! Destructor
+    ~IdentityGrowthRule() {}
+
+    //! Evaluate growth rule
+    value_type operator() (const value_type& x) const { return x; }
+  };
+
+  /*! 
+   * \brief Utilities for indexing a multi-variate complete polynomial basis 
+   */
+  /*!
+   * This version allows specification of a growth rule for each dimension
+   * allowing the coefficient order to be a function of the corresponding
+   * index.
+   */
+  class ProductBasisUtils {
+  public:
+
+    /*!
+     * \brief Generate a product basis from an index set.
+     */
+    template <typename index_set_type, 
+	      typename growth_rule_type,
+	      typename basis_set_type, 
+	      typename basis_map_type>
+    static void
+    buildProductBasis(const index_set_type& index_set,
+		      const growth_rule_type& growth_rule,
+		      basis_set_type& basis_set,
+		      basis_map_type& basis_map) {
+
+      typedef typename index_set_type::ordinal_type ordinal_type;
+      typedef typename index_set_type::iterator index_iterator_type;
+      typedef typename basis_set_type::iterator basis_iterator_type;
+      typedef typename basis_set_type::key_type coeff_type;
+      
+      ordinal_type dim = index_set.dimension();
+
+      // Iterator over elements of index set
+      index_iterator_type index_iterator = index_set.begin();
+      index_iterator_type index_iterator_end = index_set.end();
+      for (; index_iterator != index_iterator_end; ++index_iterator) {
+
+	// Generate product coefficient
+	coeff_type coeff(dim);
+	for (ordinal_type i=0; i<dim; i++)
+	  coeff[i] = growth_rule[i]((*index_iterator)[i]);
+
+	// Insert coefficient into set
+	basis_set[coeff] = ordinal_type(0);
+      }
+
+      // Generate linear ordering of basis_set elements
+      basis_map.resize(basis_set.size());
+      ordinal_type idx = 0;
+      basis_iterator_type basis_iterator = basis_set.begin();
+      basis_iterator_type basis_iterator_end = basis_set.end();
+      for (; basis_iterator != basis_iterator_end; ++basis_iterator) {
+	basis_iterator->second = idx;
+	basis_map[idx] = basis_iterator->first;
+	++idx;
+      }
+    }
+
+    /*!
+     * \brief Generate a product basis from an index set.
+     */
+    
+    template <typename index_set_type, 
+	      typename basis_set_type, 
+	      typename basis_map_type>
+    static void
+    buildProductBasis(const index_set_type& index_set,
+		      basis_set_type& basis_set,
+		      basis_map_type& basis_map) {
+      typedef typename index_set_type::ordinal_type ordinal_type;
+      ordinal_type dim = index_set.dimension();
+      Teuchos::Array< IdentityGrowthRule<ordinal_type> > growth_rule(dim);
+      buildProductBasis(index_set, growth_rule, basis_set, basis_map);
+    }
+
+  };
+
+  /*!
+   * \brief An operator for building pseudo-spectral coefficients in a tensor
+   * product basis using tensor-product quadrature.
+   */
+  template <typename coeff_compare_type,
+	    typename point_compare_type>
+  class TensorProductPseudoSpectralOperator {
+  public:
+    typedef typename coeff_compare_type::ordinal_type ordinal_type;
+    typedef MultiIndex<ordinal_type> multiindex_type;
+    typedef typename coeff_compare_type::product_element_type coeff_type;
+    typedef typename point_compare_type::product_element_type point_type;
+    typedef typename point_type::element_type value_type;
+    typedef OneDOrthogPolyBasis<ordinal_type,value_type> basis_type;
+    
+    typedef point_type domain;
+    typedef coeff_type range;
+    typedef point_compare_type domain_compare;
+    typedef coeff_compare_type range_compare;
+    typedef std::map<domain,std::pair<value_type,ordinal_type>,domain_compare> domain_set_type;
+    typedef std::map<range,ordinal_type,range_compare> range_set_type;
+    typedef Teuchos::Array<domain> domain_map_type;
+    typedef Teuchos::Array<range> range_map_type;
+
+    typedef typename domain_map_type::iterator domain_iterator;
+    typedef typename domain_map_type::const_iterator domain_const_iterator;
+    typedef typename range_map_type::iterator range_iterator;
+    typedef typename range_map_type::const_iterator range_const_iterator;
+    typedef typename domain_set_type::iterator domain_set_iterator;
+    typedef typename domain_set_type::const_iterator domain_set_const_iterator;
+    typedef typename range_set_type::iterator range_set_iterator;
+    typedef typename range_set_type::const_iterator range_set_const_iterator;
+
+    //! Constructor
+    template <typename coeff_index_set_type>
+    TensorProductPseudoSpectralOperator(
+      const Teuchos::Array< Teuchos::RCP<const basis_type> >& bases_, 
+      const coeff_index_set_type& coeff_index_set,
+      const multiindex_type& multiindex,
+      const coeff_compare_type& coeff_compare = coeff_compare_type(),
+      const point_compare_type& point_compare = point_compare_type()) : 
+      dim(multiindex.dimension()),
+      points(point_compare),
+      coeffs(coeff_compare) {
+
+      // Generate coefficients
+      Stokhos::ProductBasisUtils::buildProductBasis(
+	coeff_index_set, coeffs, coeff_map);
+
+      // Make sure order of each 1-D basis is large enough for 
+      // supplied set of coefficients
+      Teuchos::Array< Teuchos::RCP<const basis_type> > bases(bases_);
+      multiindex_type max_orders = coeff_index_set.max_orders();
+      for (ordinal_type i=0; i<dim; ++i) {
+	if (bases[i]->order() < max_orders[i])
+	  bases[i] = bases[i]->cloneWithOrder(max_orders[i]);
+      }
+
+      // Compute quad points, weights, values
+      Teuchos::Array< Teuchos::Array<value_type> > gp(dim);
+      Teuchos::Array< Teuchos::Array<value_type> > gw(dim);
+      Teuchos::Array< Teuchos::Array< Teuchos::Array<value_type> > > gv(dim);
+      multiindex_type n(dim);
+      for (ordinal_type i=0; i<dim; i++) {
+	bases[i]->getQuadPoints(2*multiindex[i], gp[i], gw[i], gv[i]);
+	n[i] = gp[i].size()-1;
+      }
+
+      // Generate points and weights
+      Stokhos::TensorProductIndexSet<ordinal_type> pointIndexSet(n);
+      typedef typename Stokhos::TensorProductIndexSet<ordinal_type>::iterator index_iterator;
+      index_iterator point_iterator = pointIndexSet.begin();
+      index_iterator point_end = pointIndexSet.end();
+      point_type point(dim);
+      while (point_iterator != point_end) {
+	value_type w = 1.0;
+	for (ordinal_type k=0; k<dim; k++) {
+	  point[k] = gp[k][(*point_iterator)[k]];
+	  w *= gw[k][(*point_iterator)[k]];
+	}
+	points[point] = std::make_pair(w,ordinal_type(0));
+	++point_iterator;
+      }
+
+      // Generate linear ordering of points
+      ordinal_type nqp = points.size();
+      point_map.resize(nqp);      
+      ordinal_type idx=0;
+      typename domain_set_type::iterator di = points.begin();
+      typename domain_set_type::iterator di_end = points.end();
+      while (di != di_end) {
+	di->second.second = idx;
+	point_map[idx] = di->first;
+	++idx;
+	++di;
+      }
+
+      // Generate quadrature operator
+      ordinal_type npc = coeffs.size();
+      A.reshape(npc,nqp);
+      A.putScalar(1.0);
+      for (point_iterator = pointIndexSet.begin(); point_iterator != point_end; 
+	   ++point_iterator) {
+	for (ordinal_type k=0; k<dim; k++)
+	  point[k] = gp[k][(*point_iterator)[k]];
+	ordinal_type j = points[point].second;
+	for (ordinal_type i=0; i<npc; i++) {
+	  for (ordinal_type k=0; k<dim; k++) {
+	    ordinal_type l = (*point_iterator)[k];
+	    ordinal_type m = coeff_map[i][k];
+	    A(i,j) *= gw[k][l]*gv[k][l][m] / bases[k]->norm_squared(m);
+	  }
+	}
+      }
+      
+    }
+
+    ordinal_type domain_size() const { return points.size(); }
+    ordinal_type range_size() const { return coeffs.size(); }
+
+    domain_iterator domain_begin() { return point_map.begin(); }
+    domain_iterator domain_end() { return point_map.end(); }
+    range_iterator range_begin() { return coeff_map.begin(); }
+    range_iterator range_end() { return coeff_map.end(); }
+
+    domain_const_iterator domain_begin() const { return point_map.begin(); }
+    domain_const_iterator domain_end() const { return point_map.end(); }
+    range_const_iterator range_begin() const { return coeff_map.begin(); }
+    range_const_iterator range_end() const { return coeff_map.end(); }
+
+    domain_set_iterator domain_set_begin() { return points.begin(); }
+    domain_set_iterator domain_set_end() { return points.end(); }
+    range_set_iterator range_set_begin() { return coeffs.begin(); }
+    range_set_iterator range_set_end() { return coeffs.end(); }
+
+    domain_set_const_iterator domain_set_begin() const { return points.begin(); }
+    domain_set_const_iterator domain_set_end() const { return points.end(); }
+    range_set_const_iterator range_set_begin() const { return coeffs.begin(); }
+    range_set_const_iterator range_set_end() const { return coeffs.end(); }
+
+    ordinal_type getDomainIndex(const domain& term) const { 
+      return points[term];
+    }
+    ordinal_type getRangeIndex(const range& term) const { 
+      return coeffs[term];
+    }
+
+    const domain& getDomainTerm(ordinal_type n) const {
+      return point_map[n];
+    }
+    const range& getRangeTerm(ordinal_type n) const {
+      return coeff_map[n];
+    }
+
+    //! Apply tensor product quadrature operator
+    /*!
+     * \c input is a vector storing values of a function at the quadrature
+     * points, and \c result will contain the resulting polynomial chaos
+     * coefficients.  \c input and \c result can have multiple columns for
+     * vector-valued functions and set \c trans to true if these (multi-) 
+     * vectors are layed out in a transposed fashion.
+     */
+    void apply(const value_type& alpha, 
+	       const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& input,
+	       Teuchos::SerialDenseMatrix<ordinal_type,value_type>& result, 
+	       const value_type& beta,
+	       bool trans = false) const {
+      ordinal_type ret;
+      if (trans)
+	ret = result.multiply(Teuchos::NO_TRANS, Teuchos::TRANS, alpha, input,
+			      A, beta);
+      else
+	ret = result.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, alpha, A,
+			      input, beta);
+      TEUCHOS_ASSERT(ret == 0);
+    }
+
+  protected:
+
+    //! Dimension
+    ordinal_type dim;
+
+    //! Quadrature points
+    domain_set_type points;
+
+    //! Coefficients we compute
+    range_set_type coeffs;
+
+    //! Map index to domain term
+    domain_map_type point_map;
+
+    //! Map index to range term
+    range_map_type coeff_map;
+
+    //! Matrix mapping point to coefficients
+    Teuchos::SerialDenseMatrix<ordinal_type,value_type> A;
+
+  };
+
+  /*! 
+   * A factory for building TensorProductPseudoSpectralOperator's for a
+   * given multi-index.
+   */
+  template <typename coeff_compare_type,
+	    typename point_compare_type>
+  class TensorProductPseudoSpectralOperatorFactory {
+  public:
+    typedef TensorProductPseudoSpectralOperator<coeff_compare_type,
+						point_compare_type> operator_type;
+    typedef typename operator_type::ordinal_type ordinal_type;
+    typedef typename operator_type::basis_type basis_type;
+    typedef typename operator_type::multiindex_type multiindex_type;
+
+    //! Constructor
+    TensorProductPseudoSpectralOperatorFactory(
+      const Teuchos::Array< Teuchos::RCP<const basis_type > >& bases_,
+      const coeff_compare_type& coeff_compare_ = coeff_compare_type(),
+      const point_compare_type& point_compare_ = point_compare_type()) : 
+      bases(bases_),
+      coeff_compare(coeff_compare_),
+      point_compare(point_compare_) {}
+
+    //! Destructor
+    ~TensorProductPseudoSpectralOperatorFactory() {}
+
+    //! Generate operator
+    template <typename coeff_index_set_type>
+    Teuchos::RCP<operator_type> operator() (
+      const coeff_index_set_type& coeff_index_set,
+      const multiindex_type& multiindex) const {
+      return Teuchos::rcp(new operator_type(bases, coeff_index_set, multiindex,
+					    coeff_compare, point_compare));
+    }
+
+  protected:
+
+    //! 1-D bases comprising tensor product
+    Teuchos::Array< Teuchos::RCP<const basis_type > > bases;
+
+    //! Coefficient comparison functor
+    coeff_compare_type coeff_compare;
+
+    //! Point comparison functor
+    point_compare_type point_compare;
+
+  };
+
+  /*!
+   * \brief An operator for building pseudo-spectral coefficients in a tensor
+   * product basis using tensor-product quadrature.
+   */
+  /*!
+   * This version uses partial summation in the quadrature.  It is unclear if
+   * this can be done for arbitrary coefficient index sets, so this version
+   * uses the same index set for points and coefficients.
+   *
+   * The partial summation relies on the fact that the matrix of multivariate
+   * basis functions evaluated at multivariate quadrature points can be written
+   * as a Kronecker product A = A_1 \otimes ... \A_d where d is the dimension
+   * of the quadrature, and A_i is the corresponding 1-D quadrature operator.
+   * Then A*x can be decomposed into a series of 1-D quadratures, which is
+   * signficantly more efficient than computing A*x directly.
+   *
+   * Since the partial summation construction relies on a specific ordering
+   * of the points and coefficients, this operator does not allow specification
+   * of the point and coefficient comparison functors.
+   */
+  template <typename ordinal_t, typename value_t>
+  class TensorProductPseudoSpectralOperatorPST {
+  public:
+
+    typedef ordinal_t ordinal_type;
+    typedef value_t value_type;
+    typedef OneDOrthogPolyBasis<ordinal_type,value_type> basis_type;
+    typedef TensorProductElement<ordinal_type,ordinal_type> coeff_type;
+    typedef TensorProductElement<ordinal_type,value_type> point_type;
+    typedef MultiIndex<ordinal_type> multiindex_type;
+    typedef Stokhos::TensorProductIndexSet<ordinal_type> coeff_index_set_type;
+
+    typedef point_type domain;
+    typedef coeff_type range;
+    typedef FloatingPointLess<value_type> point_compare;
+    typedef std::less<ordinal_type> coeff_compare;
+    typedef LexographicLess<point_type,point_compare> domain_compare;
+    typedef LexographicLess<coeff_type,coeff_compare> range_compare;
+    typedef std::map<domain,std::pair<value_type,ordinal_type>,domain_compare> domain_set_type;
+    typedef std::map<range,ordinal_type,range_compare> range_set_type;
+    typedef Teuchos::Array<domain> domain_map_type;
+    typedef Teuchos::Array<range> range_map_type;
+
+    typedef typename domain_map_type::iterator domain_iterator;
+    typedef typename domain_map_type::const_iterator domain_const_iterator;
+    typedef typename range_map_type::iterator range_iterator;
+    typedef typename range_map_type::const_iterator range_const_iterator;
+    typedef typename domain_set_type::iterator domain_set_iterator;
+    typedef typename domain_set_type::const_iterator domain_set_const_iterator;
+    typedef typename range_set_type::iterator range_set_iterator;
+    typedef typename range_set_type::const_iterator range_set_const_iterator;
+
+    //! Constructor
+    TensorProductPseudoSpectralOperatorPST(
+      const Teuchos::Array< Teuchos::RCP<const basis_type> >& bases_,
+      const coeff_index_set_type& coeff_index_set,
+      const multiindex_type& multiindex,
+      const value_type& point_tol=1e-12) : 
+      dim(multiindex.dimension()),
+      points(domain_compare(point_compare(point_tol))),
+      coeffs(range_compare(coeff_compare())),
+      Ak(dim) {
+
+      // Generate coefficients
+      Stokhos::ProductBasisUtils::buildProductBasis(
+	coeff_index_set, coeffs, coeff_map);
+
+      // Make sure order of each 1-D basis is large enough for 
+      // supplied set of coefficients
+      Teuchos::Array< Teuchos::RCP<const basis_type> > bases(bases_);
+      multiindex_type max_orders = coeff_index_set.max_orders();
+      for (ordinal_type i=0; i<dim; ++i) {
+	if (bases[i]->order() != max_orders[i])
+	  bases[i] = bases[i]->cloneWithOrder(max_orders[i]);
+      }
+
+      // Compute quad points, weights, values
+      Teuchos::Array< Teuchos::Array<value_type> > gp(dim);
+      Teuchos::Array< Teuchos::Array<value_type> > gw(dim);
+      Teuchos::Array< Teuchos::Array< Teuchos::Array<value_type> > > gv(dim);
+      multiindex_type n(dim);
+      for (ordinal_type k=0; k<dim; k++) {
+	bases[k]->getQuadPoints(2*multiindex[k], gp[k], gw[k], gv[k]);
+	n[k] = gp[k].size()-1;
+
+	// Generate quadrature operator
+	ordinal_type npc = bases[k]->size();
+	ordinal_type nqp = gp[k].size();
+	Ak[k].reshape(npc,nqp);
+	Ak[k].putScalar(1.0);
+	for (ordinal_type j=0; j<nqp; j++) {
+	  for (ordinal_type i=0; i<npc; i++) {
+	      Ak[k](i,j) *= gw[k][j]*gv[k][j][i] / bases[k]->norm_squared(i);
+	  }
+	}
+      }
+
+      // Generate points and weights
+      Stokhos::TensorProductIndexSet<ordinal_type> pointIndexSet(n);
+      typedef typename Stokhos::TensorProductIndexSet<ordinal_type>::iterator index_iterator;
+      index_iterator point_iterator = pointIndexSet.begin();
+      index_iterator point_end = pointIndexSet.end();
+      point_type point(dim);
+      while (point_iterator != point_end) {
+	value_type w = 1.0;
+	for (ordinal_type k=0; k<dim; k++) {
+	  point[k] = gp[k][(*point_iterator)[k]];
+	  w *= gw[k][(*point_iterator)[k]];
+	}
+	points[point] = std::make_pair(w,ordinal_type(0));
+	++point_iterator;
+      }
+
+      // Generate linear ordering of points
+      ordinal_type nqp = points.size();
+      point_map.resize(nqp);
+      ordinal_type idx=0;
+      typename domain_set_type::iterator di = points.begin();
+      typename domain_set_type::iterator di_end = points.end();
+      while (di != di_end) {
+	di->second.second = idx;
+	point_map[idx] = di->first;
+	++idx;
+	++di;
+      }
+      
+    }
+
+    ordinal_type domain_size() const { return points.size(); }
+    ordinal_type range_size() const { return coeffs.size(); }
+
+    domain_iterator domain_begin() { return point_map.begin(); }
+    domain_iterator domain_end() { return point_map.end(); }
+    range_iterator range_begin() { return coeff_map.begin(); }
+    range_iterator range_end() { return coeff_map.end(); }
+
+    domain_const_iterator domain_begin() const { return point_map.begin(); }
+    domain_const_iterator domain_end() const { return point_map.end(); }
+    range_const_iterator range_begin() const { return coeff_map.begin(); }
+    range_const_iterator range_end() const { return coeff_map.end(); }
+
+    domain_set_iterator domain_set_begin() { return points.begin(); }
+    domain_set_iterator domain_set_end() { return points.end(); }
+    range_set_iterator range_set_begin() { return coeffs.begin(); }
+    range_set_iterator range_set_end() { return coeffs.end(); }
+
+    domain_set_const_iterator domain_set_begin() const { return points.begin(); }
+    domain_set_const_iterator domain_set_end() const { return points.end(); }
+    range_set_const_iterator range_set_begin() const { return coeffs.begin(); }
+    range_set_const_iterator range_set_end() const { return coeffs.end(); }
+
+    ordinal_type getDomainIndex(const domain& term) const { 
+      return points[term];
+    }
+    ordinal_type getRangeIndex(const range& term) const { 
+      return coeffs[term];
+    }
+
+    const domain& getDomainTerm(ordinal_type n) const {
+      return point_map[n];
+    }
+    const range& getRangeTerm(ordinal_type n) const {
+      return coeff_map[n];
+    }
+
+    //! Apply tensor product quadrature operator
+    /*!
+     * \c input is a vector storing values of a function at the quadrature
+     * points, and \c result will contain the resulting polynomial chaos
+     * coefficients.  \c input and \c result can have multiple columns for
+     * vector-valued functions and set \c trans to true if these (multi-) 
+     * vectors are layed out in a transposed fashion.
+     *
+     * For k=1,...,d, let A_k be the m_k-by-n_k quadrature operator for
+     * dimension k and A = A_1 \otimes ... \otimes A_d be m-\by-n where 
+     * m = m_1...m_d and n = n_1...n_d.  For any two matrices
+     * B and C and vector x, (B \otimes C)x = vec( C*X*B^T ) = 
+     * vec( C*(B*X^T)^T ) where x = vec(X), and the vec() operator makes a 
+     * vector out of a matrix by stacking columns.  Applying this formula
+     * recursively to A yields the simple algorithm for computing y = A*x
+     * (x is n-by-1 and y is m-by-1):
+     *    X = x;
+     *    for k=1:d
+     *      n = n / n_k;
+     *      X = reshape(X, n, n_k);
+     *      X = A_k*X';
+     *      n = n * m_k;
+     *    end
+     *    y = reshape(X, m, 1);
+     *
+     * When x has p columns, it is somehwat more complicated because the
+     * standard transpose above isn't correct.  Instead the transpose
+     * needs to be applied to each p block in X.
+     *
+     * The strategy here for dealing with transposed input and result
+     * is to transpose them when copying to/from the temporary buffers
+     * used in the algorithm.
+     */
+    void apply(
+      const value_type& alpha, 
+      const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& input,
+      Teuchos::SerialDenseMatrix<ordinal_type,value_type>& result, 
+      const value_type& beta,
+      bool trans = false) const {
+
+      ordinal_type n, m, p;
+      if (trans) {
+	TEUCHOS_ASSERT(input.numRows() == result.numRows());
+	n = input.numCols();
+	p = input.numRows();
+	m = result.numCols();
+      }
+      else {
+	TEUCHOS_ASSERT(input.numCols() == result.numCols());
+	n = input.numRows();
+	p = input.numCols();
+	m = result.numRows();
+      }    
+      TEUCHOS_ASSERT(n == domain_size());
+      TEUCHOS_ASSERT(m == range_size());
+      ordinal_type sz = std::max(n,m);  
+
+      // Temporary buffers used in algorithm
+      Teuchos::Array<value_type> tmp1(sz*p),  tmp2(sz*p);
+
+      // Copy input to tmp1 (transpose if necessary)
+      if (trans) {
+	for (ordinal_type j=0; j<p; j++)
+	  for (ordinal_type i=0; i<n; i++)
+	    tmp1[i+j*n] = input(j,i);
+      }
+      else {
+	for (ordinal_type j=0; j<p; j++)
+	  for (ordinal_type i=0; i<n; i++)
+	    tmp1[i+j*n] = input(i,j);
+      }
+      
+      // Loop over each term in Kronecker product
+      for (ordinal_type k=0; k<dim; k++) {
+	ordinal_type mk = Ak[k].numRows();
+	ordinal_type nk = Ak[k].numCols();
+	n = n / nk;
+	
+	// x = reshape(x, n, n_k)
+	Teuchos::SerialDenseMatrix<ordinal_type,value_type> x(
+	  Teuchos::View, &tmp1[0], n, n, nk*p);
+
+	// y = x'
+	Teuchos::SerialDenseMatrix<ordinal_type,value_type> y(
+	  Teuchos::View, &tmp2[0], nk, nk, n*p);
+	for (ordinal_type l=0; l<p; l++)
+	  for (ordinal_type j=0; j<n; j++)
+	    for (ordinal_type i=0; i<nk; i++)
+	      y(i,j+l*n) = x(j,i+l*nk);
+
+	// x = A_k*x
+	Teuchos::SerialDenseMatrix<ordinal_type,value_type> z(
+	  Teuchos::View, &tmp1[0], mk, mk, n*p);
+	ordinal_type ret = 
+	  z.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Ak[k], y, 0.0);
+	TEUCHOS_ASSERT(ret == 0);
+
+	n = n * mk;
+      }
+
+      // Sum answer into result (transposing if necessary)
+      if (trans) {
+	for (ordinal_type j=0; j<p; j++)
+	  for (ordinal_type i=0; i<m; i++)
+	    result(j,i) = beta*result(j,i) + alpha*tmp1[i+j*m];
+      }
+      else {
+	for (ordinal_type j=0; j<p; j++)
+	  for (ordinal_type i=0; i<m; i++)
+	    result(i,j) = beta*result(i,j) + alpha*tmp1[i+j*m];
+      }
+    }
+
+  protected:
+
+    //! Dimension
+    ordinal_type dim;
+
+    //! Quadrature points
+    domain_set_type points;
+
+    //! Coefficients we compute
+    range_set_type coeffs;
+
+    //! Map index to domain term
+    domain_map_type point_map;
+
+    //! Map index to range term
+    range_map_type coeff_map;
+
+    //! Matrix mapping point to coefficients for each dimension
+    Teuchos::Array< Teuchos::SerialDenseMatrix<ordinal_type,value_type> > Ak;
+
+    //! Matrix mapping point to coefficients
+    Teuchos::SerialDenseMatrix<ordinal_type,value_type> A;
+
+    Teuchos::BLAS<ordinal_type,value_type> blas;
+
+  };
+
+  /*! 
+   * A factory for building TensorProductPseudoSpectralOperator's for a
+   * given multi-index.
+   */
+  template <typename ordinal_t, typename value_type>
+  class TensorProductPseudoSpectralOperatorPSTFactory {
+  public:
+    typedef TensorProductPseudoSpectralOperatorPST<ordinal_t,
+						   value_type> operator_type;
+    typedef typename operator_type::ordinal_type ordinal_type;
+    typedef typename operator_type::basis_type basis_type;
+    typedef typename operator_type::multiindex_type multiindex_type;
+    typedef typename operator_type::coeff_index_set_type coeff_index_set_type;
+
+    //! Constructor
+    TensorProductPseudoSpectralOperatorPSTFactory(
+      const Teuchos::Array< Teuchos::RCP<const basis_type > >& bases_,
+      const value_type& point_tol_=1e-12) : 
+      bases(bases_),
+      point_tol(point_tol_) {}
+
+    //! Destructor
+    ~TensorProductPseudoSpectralOperatorPSTFactory() {}
+
+    //! Generate operator
+    Teuchos::RCP<operator_type> operator() (
+      const coeff_index_set_type& coeff_index_set,
+      const multiindex_type& multiindex) const {
+      return Teuchos::rcp(new operator_type(bases, coeff_index_set, multiindex, 
+					    point_tol));
+    }
+
+  protected:
+
+    //! 1-D bases comprising tensor product
+    Teuchos::Array< Teuchos::RCP<const basis_type > > bases;
+
+    //! Point tolerance
+    value_type point_tol;
+
+  };
 
   /*! 
    * \brief Utilities for indexing a multi-variate complete polynomial basis 

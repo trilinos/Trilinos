@@ -53,6 +53,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_LegendreBasisImp.hpp
   Stokhos_ClenshawCurtisLegendreBasis.hpp
   Stokhos_ClenshawCurtisLegendreBasisImp.hpp
+  Stokhos_GaussPattersonLegendreBasis.hpp
+  Stokhos_GaussPattersonLegendreBasisImp.hpp
   Stokhos_StieltjesPCEBasis.hpp
   Stokhos_StieltjesPCEBasisImp.hpp
   Stokhos_StieltjesBasis.hpp
@@ -70,6 +72,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_ProductBasisUtils.hpp
   Stokhos_CompletePolynomialBasis.hpp
   Stokhos_CompletePolynomialBasisImp.hpp
+  Stokhos_SmolyakBasis.hpp
+  Stokhos_SmolyakBasisImp.hpp
   Stokhos_GramSchmidtBasis.hpp
   Stokhos_GramSchmidtBasisImp.hpp
   Stokhos_ReducedPCEBasis.hpp

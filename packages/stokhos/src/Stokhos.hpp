@@ -37,6 +37,7 @@
 // Bases
 #include "Stokhos_LegendreBasis.hpp"
 #include "Stokhos_ClenshawCurtisLegendreBasis.hpp"
+#include "Stokhos_GaussPattersonLegendreBasis.hpp"
 #include "Stokhos_HermiteBasis.hpp"
 #include "Stokhos_JacobiBasis.hpp"
 #include "Stokhos_RysBasis.hpp"
