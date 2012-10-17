@@ -40,6 +40,10 @@
 //@HEADER
 
 #include "AztecOO.h"
+#include <iostream>
+
+using std::cout;
+using std::endl;
 
 void test_bug5737();
 
@@ -49,7 +53,12 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  test_bug5737();
+  if (sizeof(long int) == sizeof(signed int)) {
+    cout << "Test not valid; \"long int\" is only 32 bits."  << endl;
+  }
+  else {
+    test_bug5737();
+  }
 
   cout << "********* Test passed **********" << endl;
 
