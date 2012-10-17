@@ -54,6 +54,11 @@
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_as.hpp"
 
+#ifdef HAVE_MPI
+#  include "Teuchos_DefaultMpiComm.hpp"
+#endif // HAVE_MPI
+#include "Teuchos_DefaultSerialComm.hpp"
+
 
 namespace Teuchos {
 
@@ -90,6 +95,19 @@ const char* toString( const EReductionType reductType )
   }
   return 0; // Will never be called
 }
+
+#ifdef HAVE_MPI
+  namespace Details {
+    /// \brief The MPI_Op value corresponding to the given EReductionType.
+    ///
+    /// The returned MPI_Op is guaranteed to be a predefined MPI_Op.
+    /// You need not and must not call MPI_Op_free on it after use.
+    MPI_Op getMpiOpForEReductionType (const enum EReductionType reductionType);
+
+    //! The error string corresponding to the given MPI error code.
+    std::string getMpiErrorString (const int errCode);
+  } // namespace (anonymous)
+#endif // HAVE_MPI
 
 /** \brief Get the process rank.
  *
@@ -1285,6 +1303,27 @@ void Teuchos::reduceAll(
     reductOp(createOp<Ordinal,Packet>(reductType));
   reduceAll(comm,*reductOp,count,sendBuffer,globalReducts);
 }
+
+
+namespace Teuchos {
+// Specialization for Ordinal=int and Packet=double.
+template<>
+void 
+reduceAll<int, double> (const Comm<int>& comm, 
+			const EReductionType reductType,
+			const int count, 
+			const double sendBuffer[], 
+			double globalReducts[]);
+
+// Specialization for Ordinal=int and Packet=int.
+template<>
+void 
+reduceAll<int, int> (const Comm<int>& comm, 
+		     const EReductionType reductType,
+		     const int count, 
+		     const int sendBuffer[], 
+		     int globalReducts[]);
+} // namespace Teuchos
 
 
 template<typename Ordinal, typename Packet>
