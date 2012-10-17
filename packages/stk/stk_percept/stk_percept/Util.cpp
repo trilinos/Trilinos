@@ -12,8 +12,13 @@
 #include <iomanip>
 #include <algorithm>
 #include <locale>
-#include <malloc.h>
 #include <stdlib.h>
+
+#ifndef __APPLE__
+#include <malloc.h>
+#else
+#include <sys/malloc.h>
+#endif
 
 #include <stk_percept/Util.hpp>
 #include <stk_percept/PerceptMesh.hpp>
