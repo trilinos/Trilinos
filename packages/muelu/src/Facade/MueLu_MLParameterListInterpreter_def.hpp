@@ -48,7 +48,8 @@
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
-#ifdef MUELU_HAVE_ML
+#include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_ML
 #include <ml_ValidateParameters.h>
 #include <ml_epetra_utils.h> // ML_CreateSublists
 #endif
@@ -277,17 +278,17 @@ namespace MueLu {
       bool validate = paramList.get("ML validate parameter list", true); /* true = default in ML */
       if (validate) {
       
-#ifdef MUELU_HAVE_ML
+#ifdef HAVE_MUELU_ML
         // Validate parameter list using ML validator
-        int  depth = paramList.get("ML validate depth", 5); /* 5 = default in ML */
-        TEUCHOS_TEST_FOR_EXCEPTION(!ValidateMLPParameters(paramList_, depth), Exceptions::RuntimeError,
+        int depth = paramList.get("ML validate depth", 5); /* 5 = default in ML */
+        TEUCHOS_TEST_FOR_EXCEPTION(! ML_Epetra::ValidateMLPParameters(paramList, depth), Exceptions::RuntimeError,
                                    "ERROR: ML's Teuchos::ParameterList contains incorrect parameter!");
 #else
         // If no validator available: issue a warning and set parameter value to false in the output list
         *out << "Warning: MueLu_ENABLE_ML=OFF. The parameter list cannot be validated." << std::endl;
         paramList.set("ML validate parameter list", false);
 
-#endif // MUELU_HAVE_ML
+#endif // HAVE_MUELU_ML
       } // if(validate)
     } // scope
 
