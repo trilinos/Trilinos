@@ -865,6 +865,7 @@ buildEpetraGraph(int i,int j) const
    int err = graph->Export( *oGraph, *exporter, Insert );
    TEUCHOS_ASSERT_EQUALITY(err,0);
    graph->FillComplete(*map_j,*map_i);
+   graph->OptimizeStorage();
   
    return graph;
 }
@@ -914,6 +915,7 @@ buildEpetraGhostedGraph(int i,int j) const
    // finish filling the graph: Make sure the colmap and row maps coincide to 
    //                           minimize calls to LID lookups
    graph->FillComplete(*colMap,*rowMap);
+   graph->OptimizeStorage();
 
    return graph;
 }
