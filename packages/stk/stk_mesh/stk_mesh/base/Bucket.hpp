@@ -101,35 +101,20 @@ private:
     const size_type * m_stride ;
     size_type         m_base ;
     size_type         m_size ;
-    };
-
-  struct BucketImpl 
-  {
-    BucketImpl( BulkData & arg_mesh ,
-                EntityRank arg_entity_rank,
-                const std::vector<unsigned> & arg_key,
-                size_t arg_capacity
-                );
-
-    ~BucketImpl() { delete [] m_field_data; }
-
-    BucketImpl();
-
-    BulkData             & m_mesh ;        // Where this bucket resides
-    const EntityRank       m_entity_rank ; // Type of entities for this bucket
-    std::vector<unsigned>  m_key ;
-    const size_t           m_capacity ;    // Capacity for entities
-    size_t                 m_size ;        // Number of entities
-    Bucket               * m_bucket ;      // Pointer to head of bucket family, but head points to tail
-    std::vector<DataMap>   m_field_map ;   // Field value data map, shared
-    std::vector<Entity*>   m_entities ;    // Array of entity pointers,
-    // beginning of field value memory.
-    unsigned char* m_field_data;
-    unsigned char* m_field_data_end;
-
   };
 
-  BucketImpl       m_bucketImpl;
+  BulkData             & m_mesh ;        // Where this bucket resides
+  const EntityRank       m_entity_rank ; // Type of entities for this bucket
+  std::vector<unsigned>  m_key ;
+  const size_t           m_capacity ;    // Capacity for entities
+  size_t                 m_size ;        // Number of entities
+  Bucket               * m_bucket ;      // Pointer to head of bucket family, but head points to tail
+  std::vector<DataMap>   m_field_map ;   // Field value data map, shared
+  std::vector<Entity*>   m_entities ;    // Array of entity pointers,
+  // beginning of field value memory.
+  unsigned char* m_field_data;
+  unsigned char* m_field_data_end;
+
 
 #ifdef SIERRA_MIGRATION
   const void*            m_fmwk_mesh_bulk_data;
@@ -149,7 +134,7 @@ public:
 
 //   void swap(partition_offset first, partition_offset second);
   ////
-  //// End New API function.
+  //// End New API functions.
   ////
 
   //--------------------------------
@@ -158,32 +143,32 @@ public:
   typedef boost::indirect_iterator<Entity*const*> iterator ;
 
   /** \brief Beginning of the bucket */
-  inline iterator begin() const { return &m_bucketImpl.m_entities[0]; }
+  inline iterator begin() const { return &m_entities[0]; }
 
   /** \brief End of the bucket */
-  inline iterator end() const { return &m_bucketImpl.m_entities[0] + m_bucketImpl.m_size; }
+  inline iterator end() const { return &m_entities[0] + m_size; }
 
 
   /** \brief  Number of entities associated with this bucket */
-  size_t size() const { return m_bucketImpl.m_size ; }
+  size_t size() const { return m_size ; }
 
   /** \brief  Capacity of this bucket */
-  size_t capacity() const { return m_bucketImpl.m_capacity ; }
+  size_t capacity() const { return m_capacity ; }
 
 
   /** \brief  Query the i^th entity */
-  Entity & operator[] ( size_t i ) const { return *(m_bucketImpl.m_entities[i]) ; }
+  Entity & operator[] ( size_t i ) const { return *(m_entities[i]) ; }
 
   /** \brief  Query the size of this field data specified by FieldBase */
   unsigned field_data_size(const FieldBase & field) const
   {
-    return m_bucketImpl.m_field_map[ field.mesh_meta_data_ordinal() ].m_size;
+    return m_field_map[ field.mesh_meta_data_ordinal() ].m_size;
   }
 
   /** \brief  Query the stride of this field data specified by FieldBase */
   const FieldBase::Restriction::size_type * field_data_stride( const FieldBase & field ) const
   {
-    return m_bucketImpl.m_field_map[ field.mesh_meta_data_ordinal() ].m_stride;
+    return m_field_map[ field.mesh_meta_data_ordinal() ].m_stride;
   }
 
   /** \brief  Query the location of this field data specified by FieldBase and Entity */
@@ -219,10 +204,10 @@ public:
   /** \brief  The \ref stk::mesh::BulkData "bulk data manager"
    *          that owns this bucket.
    */
-  BulkData & mesh() const { return m_bucketImpl.m_mesh ; }
+  BulkData & mesh() const { return m_mesh ; }
 
   /** \brief  Type of entities in this bucket */
-  unsigned entity_rank() const { return m_bucketImpl.m_entity_rank ; }
+  unsigned entity_rank() const { return m_entity_rank ; }
 
   /** \brief  This bucket is a subset of these \ref stk::mesh::Part "parts" */
   void supersets( PartVector & ) const ;
@@ -258,7 +243,7 @@ public:
 
 
 #ifndef DOXYGEN_COMPILE
-  const unsigned * key() const { return &m_bucketImpl.m_key[0] ; }
+  const unsigned * key() const { return &m_key[0] ; }
 #endif /* DOXYGEN_COMPILE */
 
   /** \brief  The allocation size, in bytes, of this bucket */
@@ -297,8 +282,7 @@ private:
    */
   BulkData & bulk_data() const { return mesh(); }
 
-  // Only reason to define this at all is to ensure it's private
-  ~Bucket() {}
+  ~Bucket() { delete [] m_field_data; }
 
   Bucket();
   Bucket( const Bucket & );
@@ -312,11 +296,11 @@ private:
 
   friend class ::stk::mesh::BulkData;
 
-  const std::vector<unsigned> & key_vector() const { return m_bucketImpl.m_key; }
+  const std::vector<unsigned> & key_vector() const { return m_key; }
 
-  void increment_size() { ++m_bucketImpl.m_size ; }
-  void decrement_size() { --m_bucketImpl.m_size ; }
-  void replace_entity(unsigned entity_ordinal, Entity * entity ) { m_bucketImpl.m_entities[entity_ordinal] = entity ; }
+  void increment_size() { ++m_size ; }
+  void decrement_size() { --m_size ; }
+  void replace_entity(unsigned entity_ordinal, Entity * entity ) { m_entities[entity_ordinal] = entity ; }
   void update_state();
 
   template< class field_type >
@@ -329,7 +313,7 @@ private:
 
   // BucketKey key = ( part-count , { part-ordinals } , counter )
   //  key[ key[0] ] == counter
-  unsigned bucket_counter() const { return m_bucketImpl.m_key[ m_bucketImpl.m_key[0] ]; }
+  unsigned bucket_counter() const { return m_key[ m_key[0] ]; }
 
   Bucket * last_bucket_in_family() const;
   Bucket * first_bucket_in_family() const;
@@ -338,28 +322,28 @@ private:
   DataMap * get_field_map();
   void initialize_fields( unsigned i_dst );
   void replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_src );
-  void set_bucket_family_pointer( Bucket * bucket ) { m_bucketImpl.m_bucket = bucket; }
-  const Bucket * get_bucket_family_pointer() const { return m_bucketImpl.m_bucket; }
+  void set_bucket_family_pointer( Bucket * bucket ) { m_bucket = bucket; }
+  const Bucket * get_bucket_family_pointer() const { return m_bucket; }
 
   Bucket * last_bucket_in_family_impl() const;
 
   unsigned char * field_data_location_impl( const unsigned & field_ordinal, const unsigned & entity_ordinal ) const
   {
     typedef unsigned char * byte_p ;
-    const DataMap & data_map = m_bucketImpl.m_field_map[ field_ordinal ];
+    const DataMap & data_map = m_field_map[ field_ordinal ];
     unsigned char * ptr = NULL;
     if ( data_map.m_size ) {
-      ptr = const_cast<unsigned char*>(m_bucketImpl.m_field_data) + data_map.m_base + data_map.m_size * entity_ordinal;
-      ThrowAssert(ptr < m_bucketImpl.m_field_data_end);
+      ptr = const_cast<unsigned char*>(m_field_data) + data_map.m_base + data_map.m_size * entity_ordinal;
+      ThrowAssert(ptr < m_field_data_end);
     }
     return ptr ;
   }
   unsigned char * fast_field_data_location_impl( const unsigned & field_ordinal, const unsigned & entity_ordinal ) const
   {
     typedef unsigned char * byte_p ;
-    const DataMap & data_map =  m_bucketImpl.m_field_map[ field_ordinal ];
+    const DataMap & data_map =  m_field_map[ field_ordinal ];
     ThrowAssertMsg(data_map.m_size>0,"Field doesn't exist on bucket.");
-    return const_cast<unsigned char*>( m_bucketImpl.m_field_data) + data_map.m_base + data_map.m_size * entity_ordinal;
+    return const_cast<unsigned char*>( m_field_data) + data_map.m_base + data_map.m_size * entity_ordinal;
   }
 };
 
@@ -375,14 +359,6 @@ std::vector<Bucket*>::iterator
 lower_bound( std::vector<Bucket*> & v , const unsigned * key )
 { return std::lower_bound( v.begin() , v.end() , key , BucketLess() ); }
 
-inline
-Bucket::Bucket( BulkData & arg_mesh ,
-                EntityRank arg_entity_rank,
-                const std::vector<unsigned> & arg_key,
-                size_t arg_capacity
-        )
-  : m_bucketImpl(arg_mesh,arg_entity_rank,arg_key,arg_capacity)
-{}
 
 /** \} */
 
