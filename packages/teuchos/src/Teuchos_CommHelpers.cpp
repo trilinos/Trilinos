@@ -76,6 +76,97 @@ std::string getMpiErrorString (const int errCode) {
 } // namespace (anonymous)
 
 
+#ifdef TEUCHOS_HAVE_COMPLEX
+// Specialization for Ordinal=int and Packet=std::complex<double>.
+template<>
+void 
+reduceAll<int, std::complex<double> > (const Comm<int>& comm, 
+				       const EReductionType reductType,
+				       const int count, 
+				       const std::complex<double> sendBuffer[], 
+				       std::complex<double> globalReducts[])
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::reduceAll<int, std::complex<double> > (" << count << ", " << toString (reductType) << ")"
+    );
+#ifdef HAVE_MPI
+  // mfh 17 Oct 2012: Even in an MPI build, Comm might be either a
+  // SerialComm or an MpiComm.  If it's something else, we fall back
+  // to the most general implementation.
+  const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
+  if (mpiComm == NULL) {
+    // Is it a SerialComm?
+    const SerialComm<int>* serialComm = dynamic_cast<const SerialComm<int>* > (&comm);
+    if (serialComm == NULL) { 
+      // We don't know what kind of Comm we have, so fall back to the
+      // most general implementation.
+      std::auto_ptr<ValueTypeReductionOp<int, std::complex<double> > > reductOp (createOp<int, std::complex<double> > (reductType));
+      reduceAll (comm, *reductOp, count, sendBuffer, globalReducts);
+    } 
+    else { // It's a SerialComm; there is only 1 process, so just copy.
+      std::copy (sendBuffer, sendBuffer + count, globalReducts);
+    }
+  } else { // It's an MpiComm.  Invoke MPI directly.
+    MPI_Op op = getMpiOpForEReductionType (reductType);
+    MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
+    const int err = MPI_Allreduce (const_cast<std::complex<double>* > (sendBuffer), 
+      globalReducts, count, MPI_C_DOUBLE_COMPLEX, op, rawMpiComm);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+      "MPI_Allreduce failed with the following error: " 
+      << getMpiErrorString (err));
+  }
+#else 
+  // We've built without MPI, so just assume it's a SerialComm and copy the data.
+  std::copy (sendBuffer, sendBuffer + count, globalReducts);
+#endif // HAVE_MPI
+}
+
+// Specialization for Ordinal=int and Packet=std::complex<float>.
+template<>
+void 
+reduceAll<int, std::complex<float> > (const Comm<int>& comm, 
+				       const EReductionType reductType,
+				       const int count, 
+				       const std::complex<float> sendBuffer[], 
+				       std::complex<float> globalReducts[])
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::reduceAll<int, std::complex<float> > (" << count << ", " << toString (reductType) << ")"
+    );
+#ifdef HAVE_MPI
+  // mfh 17 Oct 2012: Even in an MPI build, Comm might be either a
+  // SerialComm or an MpiComm.  If it's something else, we fall back
+  // to the most general implementation.
+  const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
+  if (mpiComm == NULL) {
+    // Is it a SerialComm?
+    const SerialComm<int>* serialComm = dynamic_cast<const SerialComm<int>* > (&comm);
+    if (serialComm == NULL) { 
+      // We don't know what kind of Comm we have, so fall back to the
+      // most general implementation.
+      std::auto_ptr<ValueTypeReductionOp<int, std::complex<float> > > reductOp (createOp<int, std::complex<float> > (reductType));
+      reduceAll (comm, *reductOp, count, sendBuffer, globalReducts);
+    } 
+    else { // It's a SerialComm; there is only 1 process, so just copy.
+      std::copy (sendBuffer, sendBuffer + count, globalReducts);
+    }
+  } else { // It's an MpiComm.  Invoke MPI directly.
+    MPI_Op op = getMpiOpForEReductionType (reductType);
+    MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
+    const int err = MPI_Allreduce (const_cast<std::complex<float>* > (sendBuffer), 
+      globalReducts, count, MPI_C_FLOAT_COMPLEX, op, rawMpiComm);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+      "MPI_Allreduce failed with the following error: " 
+      << getMpiErrorString (err));
+  }
+#else 
+  // We've built without MPI, so just assume it's a SerialComm and copy the data.
+  std::copy (sendBuffer, sendBuffer + count, globalReducts);
+#endif // HAVE_MPI
+}
+#endif // TEUCHOS_HAVE_COMPLEX
+
+
 // Specialization for Ordinal=int and Packet=double.
 template<>
 void 
@@ -109,6 +200,138 @@ reduceAll<int, double> (const Comm<int>& comm,
     MPI_Op op = getMpiOpForEReductionType (reductType);
     MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
     const int err = MPI_Allreduce (const_cast<double*> (sendBuffer), globalReducts, count, MPI_DOUBLE, op, rawMpiComm);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+      "MPI_Allreduce failed with the following error: " 
+      << getMpiErrorString (err));
+  }
+#else 
+  // We've built without MPI, so just assume it's a SerialComm and copy the data.
+  std::copy (sendBuffer, sendBuffer + count, globalReducts);
+#endif // HAVE_MPI
+}
+
+
+// Specialization for Ordinal=int and Packet=float.
+template<>
+void 
+reduceAll<int, float> (const Comm<int>& comm, 
+		       const EReductionType reductType,
+		       const int count, 
+		       const float sendBuffer[], 
+		       float globalReducts[])
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::reduceAll<int, float> (" << count << ", " << toString (reductType) << ")"
+    );
+#ifdef HAVE_MPI
+  // mfh 17 Oct 2012: Even in an MPI build, Comm might be either a
+  // SerialComm or an MpiComm.  If it's something else, we fall back
+  // to the most general implementation.
+  const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
+  if (mpiComm == NULL) {
+    // Is it a SerialComm?
+    const SerialComm<int>* serialComm = dynamic_cast<const SerialComm<int>* > (&comm);
+    if (serialComm == NULL) { 
+      // We don't know what kind of Comm we have, so fall back to the
+      // most general implementation.
+      std::auto_ptr<ValueTypeReductionOp<int,float> > reductOp (createOp<int,float> (reductType));
+      reduceAll (comm, *reductOp, count, sendBuffer, globalReducts);
+    } 
+    else { // It's a SerialComm; there is only 1 process, so just copy.
+      std::copy (sendBuffer, sendBuffer + count, globalReducts);
+    }
+  } else { // It's an MpiComm.  Invoke MPI directly.
+    MPI_Op op = getMpiOpForEReductionType (reductType);
+    MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
+    const int err = MPI_Allreduce (const_cast<float*> (sendBuffer), globalReducts, count, MPI_FLOAT, op, rawMpiComm);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+      "MPI_Allreduce failed with the following error: " 
+      << getMpiErrorString (err));
+  }
+#else 
+  // We've built without MPI, so just assume it's a SerialComm and copy the data.
+  std::copy (sendBuffer, sendBuffer + count, globalReducts);
+#endif // HAVE_MPI
+}
+
+
+#ifdef TEUCHOS_HAVE_LONG_LONG
+// Specialization for Ordinal=int and Packet=long long.
+template<>
+void 
+reduceAll<int, long long> (const Comm<int>& comm, 
+			   const EReductionType reductType,
+			   const int count, 
+			   const long long sendBuffer[], 
+			   long long globalReducts[])
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::reduceAll<int, long long> (" << count << ", " << toString (reductType) << ")"
+    );
+#ifdef HAVE_MPI
+  // mfh 17 Oct 2012: Even in an MPI build, Comm might be either a
+  // SerialComm or an MpiComm.  If it's something else, we fall back
+  // to the most general implementation.
+  const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
+  if (mpiComm == NULL) {
+    const SerialComm<int>* serialComm = dynamic_cast<const SerialComm<int>* > (&comm);
+    if (serialComm == NULL) { 
+      // We don't know what kind of Comm we have, so fall back to the
+      // most general implementation.
+      std::auto_ptr<ValueTypeReductionOp<int,long long> > reductOp (createOp<int,long long> (reductType));
+      reduceAll (comm, *reductOp, count, sendBuffer, globalReducts);
+    } 
+    else { // SerialComm means one process only.  
+      std::copy (sendBuffer, sendBuffer + count, globalReducts);
+    }
+  } else { // The Comm is an MpiComm.  Invoke MPI directly.
+    MPI_Op op = getMpiOpForEReductionType (reductType);
+    MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
+    const int err = MPI_Allreduce (const_cast<long long*> (sendBuffer), globalReducts, count, MPI_LONG_LONG, op, rawMpiComm);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+      "MPI_Allreduce failed with the following error: " 
+      << getMpiErrorString (err));
+  }
+#else 
+  // We've built without MPI, so just assume it's a SerialComm and copy the data.
+  std::copy (sendBuffer, sendBuffer + count, globalReducts);
+#endif // HAVE_MPI
+}
+#endif // TEUCHOS_HAVE_LONG_LONG
+
+
+// Specialization for Ordinal=int and Packet=long.
+template<>
+void 
+reduceAll<int, long> (const Comm<int>& comm, 
+		      const EReductionType reductType,
+		      const int count, 
+		      const long sendBuffer[], 
+		      long globalReducts[])
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::reduceAll<int, long> (" << count << ", " << toString (reductType) << ")"
+    );
+#ifdef HAVE_MPI
+  // mfh 17 Oct 2012: Even in an MPI build, Comm might be either a
+  // SerialComm or an MpiComm.  If it's something else, we fall back
+  // to the most general implementation.
+  const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
+  if (mpiComm == NULL) {
+    const SerialComm<int>* serialComm = dynamic_cast<const SerialComm<int>* > (&comm);
+    if (serialComm == NULL) { 
+      // We don't know what kind of Comm we have, so fall back to the
+      // most general implementation.
+      std::auto_ptr<ValueTypeReductionOp<int,long> > reductOp (createOp<int,long> (reductType));
+      reduceAll (comm, *reductOp, count, sendBuffer, globalReducts);
+    } 
+    else { // SerialComm means one process only.  
+      std::copy (sendBuffer, sendBuffer + count, globalReducts);
+    }
+  } else { // The Comm is an MpiComm.  Invoke MPI directly.
+    MPI_Op op = getMpiOpForEReductionType (reductType);
+    MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
+    const int err = MPI_Allreduce (const_cast<long*> (sendBuffer), globalReducts, count, MPI_LONG, op, rawMpiComm);
     TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
       "MPI_Allreduce failed with the following error: " 
       << getMpiErrorString (err));
@@ -161,5 +384,92 @@ reduceAll<int, int> (const Comm<int>& comm,
   std::copy (sendBuffer, sendBuffer + count, globalReducts);
 #endif // HAVE_MPI
 }
+
+
+// Specialization for Ordinal=int and Packet=short.
+template<>
+void 
+reduceAll<int, short> (const Comm<int>& comm, 
+		       const EReductionType reductType,
+		       const int count, 
+		       const short sendBuffer[], 
+		       short globalReducts[])
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::reduceAll<int, short> (" << count << ", " << toString (reductType) << ")"
+    );
+#ifdef HAVE_MPI
+  // mfh 17 Oct 2012: Even in an MPI build, Comm might be either a
+  // SerialComm or an MpiComm.  If it's something else, we fall back
+  // to the most general implementation.
+  const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
+  if (mpiComm == NULL) {
+    const SerialComm<int>* serialComm = dynamic_cast<const SerialComm<int>* > (&comm);
+    if (serialComm == NULL) { 
+      // We don't know what kind of Comm we have, so fall back to the
+      // most general implementation.
+      std::auto_ptr<ValueTypeReductionOp<int,short> > reductOp (createOp<int,short> (reductType));
+      reduceAll (comm, *reductOp, count, sendBuffer, globalReducts);
+    } 
+    else { // SerialComm means one process only.  
+      std::copy (sendBuffer, sendBuffer + count, globalReducts);
+    }
+  } else { // The Comm is an MpiComm.  Invoke MPI directly.
+    MPI_Op op = getMpiOpForEReductionType (reductType);
+    MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
+    const int err = MPI_Allreduce (const_cast<short*> (sendBuffer), globalReducts, count, MPI_SHORT, op, rawMpiComm);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+      "MPI_Allreduce failed with the following error: " 
+      << getMpiErrorString (err));
+  }
+#else 
+  // We've built without MPI, so just assume it's a SerialComm and copy the data.
+  std::copy (sendBuffer, sendBuffer + count, globalReducts);
+#endif // HAVE_MPI
+}
+
+
+// Specialization for Ordinal=int and Packet=char.
+template<>
+void 
+reduceAll<int, char> (const Comm<int>& comm, 
+		      const EReductionType reductType,
+		      const int count, 
+		      const char sendBuffer[], 
+		      char globalReducts[])
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::reduceAll<int, char> (" << count << ", " << toString (reductType) << ")"
+    );
+#ifdef HAVE_MPI
+  // mfh 17 Oct 2012: Even in an MPI build, Comm might be either a
+  // SerialComm or an MpiComm.  If it's something else, we fall back
+  // to the most general implementation.
+  const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
+  if (mpiComm == NULL) {
+    const SerialComm<int>* serialComm = dynamic_cast<const SerialComm<int>* > (&comm);
+    if (serialComm == NULL) { 
+      // We don't know what kind of Comm we have, so fall back to the
+      // most general implementation.
+      std::auto_ptr<ValueTypeReductionOp<int,char> > reductOp (createOp<int,char> (reductType));
+      reduceAll (comm, *reductOp, count, sendBuffer, globalReducts);
+    } 
+    else { // SerialComm means one process only.  
+      std::copy (sendBuffer, sendBuffer + count, globalReducts);
+    }
+  } else { // The Comm is an MpiComm.  Invoke MPI directly.
+    MPI_Op op = getMpiOpForEReductionType (reductType);
+    MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
+    const int err = MPI_Allreduce (const_cast<char*> (sendBuffer), globalReducts, count, MPI_CHAR, op, rawMpiComm);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+      "MPI_Allreduce failed with the following error: " 
+      << getMpiErrorString (err));
+  }
+#else 
+  // We've built without MPI, so just assume it's a SerialComm and copy the data.
+  std::copy (sendBuffer, sendBuffer + count, globalReducts);
+#endif // HAVE_MPI
+}
+
 
 } // namespace Teuchos

@@ -1293,6 +1293,27 @@ void Teuchos::reduceAll(
 
 
 namespace Teuchos {
+
+#ifdef TEUCHOS_HAVE_COMPLEX
+// Specialization for Ordinal=int and Packet=std::complex<double>.
+template<>
+void 
+reduceAll<int, std::complex<double> > (const Comm<int>& comm, 
+				       const EReductionType reductType,
+				       const int count, 
+				       const std::complex<double> sendBuffer[], 
+				       std::complex<double> globalReducts[]);
+
+// Specialization for Ordinal=int and Packet=std::complex<float>.
+template<>
+void 
+reduceAll<int, std::complex<float> > (const Comm<int>& comm, 
+				      const EReductionType reductType,
+				      const int count, 
+				      const std::complex<float> sendBuffer[], 
+				      std::complex<float> globalReducts[]);
+#endif // TEUCHOS_HAVE_COMPLEX
+
 // Specialization for Ordinal=int and Packet=double.
 template<>
 void 
@@ -1302,6 +1323,35 @@ reduceAll<int, double> (const Comm<int>& comm,
 			const double sendBuffer[], 
 			double globalReducts[]);
 
+// Specialization for Ordinal=int and Packet=float.
+template<>
+void 
+reduceAll<int, float> (const Comm<int>& comm, 
+		       const EReductionType reductType,
+		       const int count, 
+		       const float sendBuffer[], 
+		       float globalReducts[]);
+
+#ifdef TEUCHOS_HAVE_LONG_LONG
+// Specialization for Ordinal=int and Packet=long long.
+template<>
+void 
+reduceAll<int, long long> (const Comm<int>& comm, 
+			   const EReductionType reductType,
+			   const int count, 
+			   const long long sendBuffer[], 
+			   long long globalReducts[]);
+#endif // TEUCHOS_HAVE_LONG_LONG
+
+// Specialization for Ordinal=int and Packet=long.
+template<>
+void 
+reduceAll<int, long> (const Comm<int>& comm, 
+		      const EReductionType reductType,
+		      const int count, 
+		      const long sendBuffer[], 
+		      long globalReducts[]);
+
 // Specialization for Ordinal=int and Packet=int.
 template<>
 void 
@@ -1310,6 +1360,24 @@ reduceAll<int, int> (const Comm<int>& comm,
 		     const int count, 
 		     const int sendBuffer[], 
 		     int globalReducts[]);
+
+// Specialization for Ordinal=int and Packet=short.
+template<>
+void 
+reduceAll<int, short> (const Comm<int>& comm, 
+		       const EReductionType reductType,
+		       const int count, 
+		       const short sendBuffer[], 
+		       short globalReducts[]);
+
+// Specialization for Ordinal=int and Packet=char.
+template<>
+void 
+reduceAll<int, char> (const Comm<int>& comm, 
+		      const EReductionType reductType,
+		      const int count, 
+		      const char sendBuffer[], 
+		      char globalReducts[]);
 } // namespace Teuchos
 
 
@@ -1319,6 +1387,8 @@ void Teuchos::reduceAll(
   ,const Packet &send, const Ptr<Packet> &globalReduct
   )
 {
+  // mfh 17 Oct 2012: This will invoke the above specializations for
+  // general count, so we don't need to specialize this function.
   reduceAll<Ordinal,Packet>(comm, reductType, 1, &send, &*globalReduct);
 }
 
