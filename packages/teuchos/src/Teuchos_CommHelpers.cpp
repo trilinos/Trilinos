@@ -436,6 +436,15 @@ reduceAll<int, short> (const Comm<int>& comm,
 }
 
 
+// mfh 18 Oct 2012: The specialization for Packet=char seems to be
+// causing problems such as the following:
+//
+// http://testing.sandia.gov/cdash/testDetails.php?test=9909246&build=747699
+// 
+// I am disabling it for now.  This should revert back to the old
+// behavior for Packet=char.  That should fix the Tpetra errors, since
+// many Tpetra objects inherit from DistObject<char, ...>.
+#if 0
 // Specialization for Ordinal=int and Packet=char.
 template<>
 void 
@@ -477,6 +486,6 @@ reduceAll<int, char> (const Comm<int>& comm,
   std::copy (sendBuffer, sendBuffer + count, globalReducts);
 #endif // HAVE_MPI
 }
-
+#endif // 0
 
 } // namespace Teuchos
