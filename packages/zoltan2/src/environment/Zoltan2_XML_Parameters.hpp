@@ -101,7 +101,7 @@
     /> \
    <Parameter  \
     id=\"10\" name=\"pqParts\" type=\"string\" validatorId=\"8\" value=\"0\" \
-    docString='  list of parts for pqJagged partitioning algorithm. As many as the dimension count.' \
+    docString='  list of parts for multiJagged partitioning algorithm. As many as the dimension count.' \
     /> \
    <Parameter  \
     id=\"11\" name=\"memory_procs\" type=\"string\" validatorId=\"9\" value=\"0\" \
@@ -361,7 +361,7 @@
       </Validator> \
       <Validator type=\"StringValidator\" validatorId=\"25\"> \
         <String value=\"rcb\"/> \
-        <String value=\"pqjagged\"/> \
+        <String value=\"multijagged\"/> \
         <String value=\"rib\"/> \
         <String value=\"hsfc\"/> \
         <String value=\"patoh\"/> \
