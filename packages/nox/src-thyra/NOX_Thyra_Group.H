@@ -250,6 +250,8 @@ namespace NOX {
       /** FOR POWER USERS ONLY!  Grab the inargs used by nox and allow the user to change it.  Used by pseudo-transient solver to add an x_dot and alpha/beta to the model evaluator call. */
       ::Thyra::ModelEvaluatorBase::InArgs<double>& getNonconstInArgs();
 
+      const ::Thyra::ModelEvaluatorBase::InArgs<double>& getInArgs() const;
+
     protected:
 
       //! resets the isValid flags to false
