@@ -162,8 +162,28 @@ class MpiTypeTraits {
   }
 };
 
+/// \brief Free an MPI_Datatype safely.
+///
+/// This function checks if MPI_Finalize has been called.  If it has,
+/// it just returns.  Otherwise, it calls MPI_Type_free on the given
+/// MPI_Datatype.  This ensures that no MPI functions will be called
+/// after MPI_Finalize has been called.  
+///
+/// The current implementation of this function conceals a memory leak
+/// in your code.  If you've allowed a derived MPI_Datatype to persist
+/// past MPI_Finalize, then you are leaking memory.  We could fix this
+/// by using MPI's caching mechanism to make the MPI_Datatype an
+/// attribute of MPI_COMM_SELF, and adding a free function to the
+/// attribute.  MPI_Finalize invokes the free functions of all the
+/// attributes of MPI_COMM_SELF (as specified in the MPI 3.0
+/// Standard), so this would free the MPI_Datatype on calling
+/// MPI_Finalize.  We don't do this currently, because we would need a
+/// name for the attribute that would not collide with any possible
+/// user-specified attribute.
+void TEUCHOS_LIB_DLL_EXPORT safeMpiDatatypeFree (MPI_Datatype datatype);
+
 /// \fn getMpiDatatype
-/// \brief Get MPI_Datatype (safely wrapped in OpaqueHandle) for a Packet instance.
+/// \brief Get MPI_Datatype (safely wrapped in OpaqueWrapper) for a Packet instance.
 /// \tparam Packet The type of data being sent and received; same as
 ///   the Packet template parameter of MpiTypeTraits.
 ///
@@ -184,19 +204,19 @@ class MpiTypeTraits {
 /// \param p [in] The Packet instance for which to compute the MPI_Datatype.
 ///
 /// \return The corresponding MPI_Datatype, wrapped in an RCP of
-///   OpaqueHandle.  The RCP will automatically calls MPI_Type_free if
+///   OpaqueWrapper.  The RCP will automatically calls MPI_Type_free if
 ///   necessary (and only if necessary) when the RCP's reference count
 ///   goes to zero.
 template<class Packet>
-RCP<OpaqueHandle<MPI_Datatype> >
+RCP<OpaqueWrapper<MPI_Datatype> >
 getMpiDatatype (const Packet& p)
 {
   MPI_Datatype rawDatatype = MpiTypeTraits<Packet>::getType (p);
-  RCP<OpaqueHandle<MPI_Datatype> > handle;  
-  if (MpiTypeTraits<Packet>::mustFreeDatatype) { // 
-    handle = opaqueHandle (rawDatatype, MPI_Type_free);
+  RCP<OpaqueWrapper<MPI_Datatype> > handle;  
+  if (MpiTypeTraits<Packet>::mustFreeDatatype) { 
+    handle = opaqueWrapper (rawDatatype, safeMpiDatatypeFree);
   } else { // It's a basic MPI_Datatype; don't use MPI_Type_free.
-    handle = opaqueHandle (rawDatatype);
+    handle = opaqueWrapper (rawDatatype);
   }
   return handle;
 }

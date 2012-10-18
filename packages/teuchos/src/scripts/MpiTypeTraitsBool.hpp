@@ -1,6 +1,6 @@
-/// \\brief Specialization of MpiTypeTraits for Packet type \c bool.
+/// \brief Specialization of MpiTypeTraits for Packet type \c bool.
 ///
-/// \\note For various reasons, we cannot promise that makeType() for
+/// \note For various reasons, we cannot promise that makeType() for
 ///   the Packet=bool specialization returns a basic datatype.  Even
 ///   if it does, we cannot promise that the MPI_Op reduction
 ///   functions for typical Boolean operations are not user-defined.
@@ -8,8 +8,8 @@
 ///   communication operations, since we cannot guarantee this is
 ///   possible on all platforms.  In general, you should prefer using
 ///   C++ built-in integer types to encode Boolean values.  In most
-///   cases, \\c int should suffice.  For large arrays of Boolean 
-///   values, you might consider using \\c char to save space.
+///   cases, \c int should suffice.  For large arrays of Boolean 
+///   values, you might consider using \c char to save space.
 ///
 /// \warning std::vector<bool> is not an array of bool; it is a bit
 ///   set with a different representation than std::vector<T> for
