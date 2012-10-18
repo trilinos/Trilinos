@@ -321,6 +321,7 @@ void Multiply(
     C.CreateView("stridedMaps", rcpA, transposeA, rcpB, transposeB); // TODO use references instead of RCPs
 } // end Multiply
 
+#if TO_BE_FIXED
 /** Given CrsMatrix objects A and B, form the sum B = a*A + b*B
  * Currently not functional.
 
@@ -451,7 +452,7 @@ void Add(
   if(B.IsView("stridedMaps")) C->CreateView("stridedMaps", rcpB);
   ///////////////////////// EXPERIMENTAL
 }
-
+#endif // TO_BE_FIXED
 
 
 } // end namespace MatrixMatrix
