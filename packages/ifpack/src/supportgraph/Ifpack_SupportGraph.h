@@ -362,8 +362,8 @@ public virtual Ifpack_Preconditioner
  //! Contains the Offset to add to the diagonal of the support graph
  double Offset_;
 
- //! Contains the option to keep the diagonal of original matrix
- int KeepDiag_;
+ //! Contains the option to keep the diagonal of original matrix, or weighted average
+ double KeepDiag_;
 
 }; // class Ifpack_SupportGraph<T>
 
@@ -388,7 +388,7 @@ Matrix_(rcp(Matrix_in,false)),
   ApplyInverseFlops_(0.0),
   NumForests_(1),
   Offset_(1),
-  KeepDiag_(1)
+  KeepDiag_(1.0)
 {
   
   Teuchos::ParameterList List_in;
@@ -884,6 +884,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
   
   // Create an stl vector of stl vectors to hold indices and values (neighbour edges)
   std::vector< std::vector< int > > Indices(num_verts);
+  // TODO: Optimize for performance, may use arrays instead of vectors
   //std::vector<int> Indices[num_verts];
   //std::vector<double> Values[num_verts];
 
@@ -903,6 +904,8 @@ int Ifpack_SupportGraph<T>::FindSupport()
       l[i] = 1;
     }
   
+  // Add each spanning forest (tree) to the support graph and 
+  // remove it from original graph
   for(int i = 0; i < NumForests_; i++)
     {
       if(i > 0)
@@ -925,14 +928,12 @@ int Ifpack_SupportGraph<T>::FindSupport()
       for (std::vector < Edge >::iterator ei = spanning_tree.begin();
 	   ei != spanning_tree.end(); ++ei)
 	{
-	  if(KeepDiag_ == 0)
-	    {
-	      Values[source(*ei,g)][0] = Values[source(*ei,g)][0] - weight[*ei];
-	      Values[target(*ei,g)][0] = Values[target(*ei,g)][0] - weight[*ei];
-	    }
+          // Assume standard Laplacian with constant row-sum.
+          // Edge weights are negative, so subtract to make diagonal positive
 	  Indices[source(*ei,g)][0] = source(*ei,g);
+	  Values[source(*ei,g)][0] = Values[source(*ei,g)][0] - weight[*ei];
 	  Indices[target(*ei,g)][0] = target(*ei,g);
-
+	  Values[target(*ei,g)][0] = Values[target(*ei,g)][0] - weight[*ei];
 
 	  Indices[source(*ei,g)][l[source(*ei,g)]] = target(*ei,g);
 	  Values[source(*ei,g)][l[source(*ei,g)]] = weight[*ei];
@@ -948,13 +949,12 @@ int Ifpack_SupportGraph<T>::FindSupport()
     }
 
   
-  if(KeepDiag_ == 1)
-    {
-      for(int i = 0; i < num_verts; i++)
-	{
-	  Values[i][0] = diagonal[i];
-	}
-    }
+  // Set diagonal to weighted average of old and new values
+  for(int i = 0; i < num_verts; i++)
+     {
+	  Values[i][0] *= (1.-KeepDiag_);
+          Values[i][0] += KeepDiag_ * diagonal[i];
+     }
   
   // Create the CrsMatrix for the support graph                                                 
   Support_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(),l, true));
@@ -988,8 +988,8 @@ int Ifpack_SupportGraph<T>::SetParameters(Teuchos::ParameterList& List_in)
 {
   List_ = List_in;
   NumForests_ = List_in.get("MST: forest number", NumForests_);
-  Offset_ = List_in.get("MST: diagonal offset", Offset_);
   KeepDiag_ = List_in.get("MST: keep diagonal", KeepDiag_);
+  Offset_ = List_in.get("MST: diagonal offset", Offset_); // TODO: Make this option compatible with other Ifpack preconditioners.
 
   return(0);
 }
@@ -1000,7 +1000,6 @@ int Ifpack_SupportGraph<T>::Initialize()
   IsInitialized_ = false;
   IsComputed_ = false;
 
-  
   
   if (Time_ == Teuchos::null)
     {
