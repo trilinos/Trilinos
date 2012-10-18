@@ -28,14 +28,6 @@
 // ***********************************************************************
 // @HEADER
 
-#if ! defined(KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
-    ! defined(KOKKOSARRAY_MACRO_DEVICE)                  || \
-    ! defined(KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION)
-
-#error "Including <Stokhos_DynamicStridedStorage_impl.hpp> without macros defined"
-
-#else
-
 #if defined( __CUDA_ARCH__ )
 
 namespace Stokhos {
@@ -259,7 +251,5 @@ namespace Stokhos {
   };
 
 }
-
-#endif
 
 #endif

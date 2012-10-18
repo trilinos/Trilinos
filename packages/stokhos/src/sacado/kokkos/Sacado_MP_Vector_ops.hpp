@@ -33,43 +33,43 @@
 namespace Sacado {
   namespace MP {
 
-    template <typename T>
-    class LogOp<T,KOKKOSARRAY_MACRO_DEVICE> :
-      public Expr< LogOp< T,KOKKOSARRAY_MACRO_DEVICE >,KOKKOSARRAY_MACRO_DEVICE > {
+    template <typename T, typename N>
+    class LogOp :
+      public Expr< LogOp< T,N >,N > {
     public:
 
       typedef typename T::value_type value_type;
       typedef typename T::storage_type storage_type;
 
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_INLINE_FUNCTION
       LogOp(const T& expr_) : expr(expr_)  {}
 
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_INLINE_FUNCTION
       std::string name() const {
 	return std::string("log") + expr.name();
       }
 
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_INLINE_FUNCTION
       int size() const {
 	return expr.size();
       }
 
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_INLINE_FUNCTION
       bool hasFastAccess(int sz) const {
 	return expr.hasFastAccess(sz);
       }
 
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_INLINE_FUNCTION
       value_type val() const {
 	return std::log(expr.val());
       }
 
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_INLINE_FUNCTION
       value_type coeff(int i) const {
 	return std::log(expr.coeff(i));
       }
 
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+      KOKKOSARRAY_INLINE_FUNCTION
       value_type fastAccessCoeff(int i) const {
 	return std::log(expr.fastAccessCoeff(i));
       }
@@ -80,13 +80,12 @@ namespace Sacado {
 
     };
 
-    template <typename T>
-    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
-    inline LogOp< T,KOKKOSARRAY_MACRO_DEVICE >
-    log (const Expr<T,KOKKOSARRAY_MACRO_DEVICE>& expr)
+    template <typename T, typename N>
+    KOKKOSARRAY_INLINE_FUNCTION
+    LogOp< T,N >
+    log (const Expr<T,N>& expr)
     {
-      typedef LogOp< typename Expr<T,KOKKOSARRAY_MACRO_DEVICE>::derived_type,
-		     KOKKOSARRAY_MACRO_DEVICE > expr_t;
+      typedef LogOp< typename Expr<T,N>::derived_type, N > expr_t;
  
       return expr_t(expr.derived());
     }
@@ -99,49 +98,49 @@ namespace Sacado {							\
   namespace MP {							\
 									\
 									\
-    template <typename T>						\
-    class OP<T,KOKKOSARRAY_MACRO_DEVICE> :				\
-      public Expr< OP< T,KOKKOSARRAY_MACRO_DEVICE >,KOKKOSARRAY_MACRO_DEVICE > { \
+    template <typename T, typename N>					\
+    class OP :								\
+      public Expr< OP< T,N >,N > {					\
     public:								\
       									\
       typedef typename T::value_type value_type;			\
       typedef typename T::storage_type storage_type;			\
       									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       OP(const T& expr_) : expr(expr_)  {}				\
       									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       std::string name() const {					\
 	return std::string(#OPER) + expr.name();			\
       }									\
       									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       int size() const {						\
 	return expr.size();						\
       }									\
       									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       bool hasFastAccess(int sz) const {				\
 	return expr.hasFastAccess(sz);					\
       }									\
       									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
 	value_type val() const {					\
 	return OPER(expr.val());					\
       }									\
       									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type coeff(int i) const {					\
 	return OPER(expr.coeff(i));					\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type fastAccessCoeff(int i) const {				\
 	return OPER(expr.fastAccessCoeff(i));				\
       }									\
 									\
       template <int i>							\
-	KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type getCoeff() const {					\
 	return OPER(expr.template getCoeff<i>());			\
       }									\
@@ -152,13 +151,13 @@ namespace Sacado {							\
 									\
     };									\
 									\
-    template <typename T>						\
-    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION				\
-    inline OP< T,KOKKOSARRAY_MACRO_DEVICE >				\
-    OPNAME (const Expr<T,KOKKOSARRAY_MACRO_DEVICE>& expr)		\
+    template <typename T, typename N>					\
+    KOKKOSARRAY_INLINE_FUNCTION						\
+    OP< T,N >								\
+    OPNAME (const Expr<T,N>& expr)					\
     {									\
-      typedef OP< typename Expr<T,KOKKOSARRAY_MACRO_DEVICE>::derived_type, \
-		  KOKKOSARRAY_MACRO_DEVICE > expr_t;			\
+      typedef OP< typename Expr<T,N>::derived_type,			\
+		  N > expr_t;						\
       									\
       return expr_t(expr.derived());					\
     }									\
@@ -192,9 +191,9 @@ MP_UNARYOP_MACRO(fabs, FAbsOp, std::fabs)
 namespace Sacado {							\
   namespace MP {							\
 									\
-    template <typename T1, typename T2>					\
-    class OP<T1,T2,KOKKOSARRAY_MACRO_DEVICE> :				\
-      public Expr< OP< T1, T2, KOKKOSARRAY_MACRO_DEVICE>, KOKKOSARRAY_MACRO_DEVICE > { \
+    template <typename T1, typename T2, typename N>			\
+    class OP :								\
+      public Expr< OP< T1, T2, N>, N > {				\
 									\
     public:								\
 									\
@@ -206,43 +205,43 @@ namespace Sacado {							\
       typedef typename T1::storage_type storage_type;			\
 									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       OP(const T1& expr1_, const T2& expr2_) :				\
 	expr1(expr1_), expr2(expr2_) {}					\
       									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       std::string name() const {					\
 	return expr1.name() + std::string(#OPER) + expr2.name();	\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       int size() const {						\
 	int sz1 = expr1.size(), sz2 = expr2.size();			\
 	return sz1 > sz2 ? sz1 : sz2;					\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       bool hasFastAccess(int sz) const {				\
 	return expr1.hasFastAccess(sz) && expr2.hasFastAccess(sz);	\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type val() const {						\
 	return (expr1.val() OPER expr2.val());				\
       }									\
       									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type coeff(int i) const {					\
 	return (expr1.coeff(i) OPER expr2.coeff(i));			\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type fastAccessCoeff(int i) const {				\
 	return (expr1.fastAccessCoeff(i) OPER expr2.fastAccessCoeff(i)); \
       }									\
       									\
       template <int i>							\
-	KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+	KOKKOSARRAY_INLINE_FUNCTION					\
       value_type getCoeff() const {					\
 	return expr1.template getCoeff<i>() OPER expr2.template getCoeff<i>(); \
       }									\
@@ -254,9 +253,9 @@ namespace Sacado {							\
 									\
     };									\
     									\
-    template <typename T1>						\
-    class OP< T1, typename T1::value_type, KOKKOSARRAY_MACRO_DEVICE > :	\
-      public Expr< OP< T1, typename T1::value_type, KOKKOSARRAY_MACRO_DEVICE >, KOKKOSARRAY_MACRO_DEVICE > { \
+    template <typename T1, typename N>					\
+    class OP< T1, typename T1::value_type, N > :			\
+      public Expr< OP< T1, typename T1::value_type, N >, N > {		\
 									\
     public:								\
 									\
@@ -265,42 +264,42 @@ namespace Sacado {							\
 									\
       typedef typename T1::storage_type storage_type;			\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       OP(const T1& expr1_, const ConstT& c_) :				\
 	expr1(expr1_), c(c_) {}						\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       std::string name() const {					\
 	return expr1.name() + std::string(#OPER) + std::string("c");	\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       int size() const {						\
 	return expr1.size();						\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       bool hasFastAccess(int sz) const {				\
 	return expr1.hasFastAccess(sz);					\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type val() const {						\
 	return (expr1.val() OPER c);					\
       }									\
       									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type coeff(int i) const {					\
 	return (expr1.coeff(i) OPER c);					\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type fastAccessCoeff(int i) const {				\
 	return (expr1.fastAccessCoeff(i) OPER c);			\
       }									\
 									\
       template <int i>							\
-	KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+	KOKKOSARRAY_INLINE_FUNCTION					\
       value_type getCoeff() const {					\
 	return expr1.template getCoeff<i>() OPER c;			\
       }									\
@@ -311,9 +310,9 @@ namespace Sacado {							\
       const ConstT& c;							\
     };									\
 									\
-    template <typename T2>						\
-    class OP< typename T2::value_type, T2, KOKKOSARRAY_MACRO_DEVICE > :	\
-      public Expr< OP< typename T2::value_type, T2, KOKKOSARRAY_MACRO_DEVICE >, KOKKOSARRAY_MACRO_DEVICE > { \
+    template <typename T2, typename N>					\
+    class OP< typename T2::value_type, T2, N > :			\
+      public Expr< OP< typename T2::value_type, T2, N >, N > {		\
 									\
     public:								\
 									\
@@ -322,40 +321,40 @@ namespace Sacado {							\
 									\
       typedef typename T2::storage_type storage_type;			\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       OP(const ConstT& c_, const T2& expr2_) :				\
 	c(c_), expr2(expr2_) {}						\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       std::string name() const {					\
 	return std::string("c") + std::string(#OPER) + expr2.name();	\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       int size() const { return expr2.size(); }				\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       bool hasFastAccess(int sz) const {				\
 	return expr2.hasFastAccess(sz);					\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type val() const {						\
 	return (c OPER expr2.val());					\
       }									\
       									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type coeff(int i) const {					\
 	return (c OPER expr2.coeff(i));					\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type fastAccessCoeff(int i) const {				\
 	return (c OPER expr2.fastAccessCoeff(i));			\
       }									\
 									\
       template <int i>							\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type getCoeff() const {					\
 	return c OPER expr2.template getCoeff<i>();			\
       }									\
@@ -366,43 +365,43 @@ namespace Sacado {							\
       typename const_expr_ref<T2>::type expr2;				\
     };									\
 									\
-    template <typename T1, typename T2>					\
-    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION				\
-    inline OP< T1, T2, KOKKOSARRAY_MACRO_DEVICE >			\
-    OPNAME (const Expr<T1,KOKKOSARRAY_MACRO_DEVICE>& expr1,		\
-	    const Expr<T2,KOKKOSARRAY_MACRO_DEVICE>& expr2)		\
+    template <typename T1, typename T2, typename N>			\
+    KOKKOSARRAY_INLINE_FUNCTION						\
+    OP< T1, T2, N >							\
+    OPNAME (const Expr<T1,N>& expr1,					\
+	    const Expr<T2,N>& expr2)					\
     {									\
-      typedef OP< typename Expr<T1,KOKKOSARRAY_MACRO_DEVICE>::derived_type, \
-		  typename Expr<T2,KOKKOSARRAY_MACRO_DEVICE>::derived_type, \
-		  KOKKOSARRAY_MACRO_DEVICE > expr_t;			\
-    									\
+      typedef OP< typename Expr<T1,N>::derived_type,			\
+		  typename Expr<T2,N>::derived_type,			\
+		  N > expr_t;						\
+      									\
       return expr_t(expr1.derived(), expr2.derived());			\
     }									\
-									\
-    template <typename T>						\
-    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION				\
-    inline OP< typename T::value_type, T, KOKKOSARRAY_MACRO_DEVICE >	\
+    									\
+    template <typename T, typename N>					\
+    KOKKOSARRAY_INLINE_FUNCTION						\
+    OP< typename T::value_type, T, N >					\
     OPNAME (const typename T::value_type& c,				\
-	    const Expr<T,KOKKOSARRAY_MACRO_DEVICE>& expr)		\
+	    const Expr<T,N>& expr)					\
     {									\
       typedef typename T::value_type ConstT;				\
       typedef OP< ConstT,						\
-		  typename Expr<T,KOKKOSARRAY_MACRO_DEVICE>::derived_type, \
-		  KOKKOSARRAY_MACRO_DEVICE > expr_t;			\
+		  typename Expr<T,N>::derived_type,			\
+		  N > expr_t;						\
 									\
       return expr_t(c, expr.derived());					\
     }									\
 									\
-    template <typename T>						\
-    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION				\
-    inline OP< T, typename T::value_type,KOKKOSARRAY_MACRO_DEVICE >	\
-    OPNAME (const Expr<T,KOKKOSARRAY_MACRO_DEVICE>& expr,		\
+    template <typename T, typename N>					\
+    KOKKOSARRAY_INLINE_FUNCTION						\
+    OP< T, typename T::value_type,N >					\
+    OPNAME (const Expr<T,N>& expr,					\
 	    const typename T::value_type& c)				\
     {									\
       typedef typename T::value_type ConstT;				\
-      typedef OP< typename Expr<T,KOKKOSARRAY_MACRO_DEVICE>::derived_type, \
-		  ConstT, KOKKOSARRAY_MACRO_DEVICE > expr_t;		\
-									\
+      typedef OP< typename Expr<T,N>::derived_type,			\
+		  ConstT, N > expr_t;					\
+      									\
       return expr_t(expr.derived(), c);					\
     }									\
   }									\
@@ -419,10 +418,10 @@ MP_BINARYOP_MACRO(operator/, DivisionOp, /)
 namespace Sacado {							\
   namespace MP {							\
 									\
-    template <typename T1, typename T2>					\
-    class OP< T1, T2, KOKKOSARRAY_MACRO_DEVICE > :			\
-      public Expr< OP< T1, T2, KOKKOSARRAY_MACRO_DEVICE >, KOKKOSARRAY_MACRO_DEVICE > { \
-									\
+    template <typename T1, typename T2, typename N>			\
+    class OP :								\
+      public Expr< OP< T1, T2, N >, N > {				\
+      									\
     public:								\
 									\
       typedef typename T1::value_type value_type_1;			\
@@ -433,45 +432,46 @@ namespace Sacado {							\
       typedef typename T1::storage_type storage_type;			\
 									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       OP(const T1& expr1_, const T2& expr2_) :				\
 	expr1(expr1_), expr2(expr2_) {}					\
       									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       std::string name() const {					\
 	return expr1.name() + std::string(#OPER) + expr2.name();	\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       int size() const {						\
 	int sz1 = expr1.size(), sz2 = expr2.size();			\
 	return sz1 > sz2 ? sz1 : sz2;					\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       bool hasFastAccess(int sz) const {				\
 	return expr1.hasFastAccess(sz) && expr2.hasFastAccess(sz);	\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type val() const {						\
 	return OPER(expr1.val(), expr2.val());				\
       }									\
       									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type coeff(int i) const {					\
 	return OPER(expr1.coeff(i), expr2.coeff(i));			\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type fastAccessCoeff(int i) const {				\
 	return OPER(expr1.fastAccessCoeff(i), expr2.fastAccessCoeff(i)); \
       }									\
 									\
       template <int i>							\
-	KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type getCoeff() const {					\
-	return OPER(expr1.template getCoeff<i>(), expr2.template getCoeff<i>()); \
+	return OPER(expr1.template getCoeff<i>(),			\
+		    expr2.template getCoeff<i>());			\
       }									\
       									\
     protected:								\
@@ -481,9 +481,9 @@ namespace Sacado {							\
 									\
     };									\
 									\
-    template <typename T1>						\
-    class OP< T1, typename T1::value_type, KOKKOSARRAY_MACRO_DEVICE > :	\
-      public Expr< OP< T1, typename T1::value_type, KOKKOSARRAY_MACRO_DEVICE >, KOKKOSARRAY_MACRO_DEVICE > { \
+    template <typename T1, typename N>					\
+    class OP< T1, typename T1::value_type, N > :			\
+      public Expr< OP< T1, typename T1::value_type, N >, N > {		\
 									\
     public:								\
 									\
@@ -492,40 +492,40 @@ namespace Sacado {							\
 									\
       typedef typename T1::storage_type storage_type;			\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       OP(const T1& expr1_, const ConstT& c_) :				\
 	expr1(expr1_), c(c_) {}						\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       std::string name() const {					\
 	return expr1.name() + std::string(#OPER) + std::string("c");	\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       int size() const { return expr1.size(); }				\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       bool hasFastAccess(int sz) const {				\
 	return expr1.hasFastAccess(sz);					\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type val() const {						\
 	return OPER(expr1.val(), c);					\
       }									\
       									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type coeff(int i) const {					\
 	return OPER(expr1.coeff(i), c);					\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type fastAccessCoeff(int i) const {				\
 	return OPER(expr1.fastAccessCoeff(i), c);			\
       }									\
 									\
       template <int i>							\
-	KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+	KOKKOSARRAY_INLINE_FUNCTION					\
       value_type getCoeff() const {					\
 	return OPER(expr1.template getCoeff<i>(), c);			\
       }									\
@@ -536,9 +536,9 @@ namespace Sacado {							\
       const ConstT& c;							\
     };									\
 									\
-    template <typename T2>						\
-    class OP< typename T2::value_type, T2, KOKKOSARRAY_MACRO_DEVICE > :	\
-      public Expr< OP< typename T2::value_type, T2, KOKKOSARRAY_MACRO_DEVICE >, KOKKOSARRAY_MACRO_DEVICE > { \
+    template <typename T2, typename N>					\
+    class OP< typename T2::value_type, T2, N > :			\
+      public Expr< OP< typename T2::value_type, T2, N >, N > {		\
 									\
     public:								\
 									\
@@ -547,40 +547,40 @@ namespace Sacado {							\
 									\
       typedef typename T2::storage_type storage_type;			\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       OP(const ConstT& c_, const T2& expr2_) :				\
 	c(c_), expr2(expr2_) {}						\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       std::string name() const {					\
 	return std::string("c") + std::string(#OPER) + expr2.name();	\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       int size() const { return expr2.size(); }				\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       bool hasFastAccess(int sz) const {				\
 	return expr2.hasFastAccess(sz);					\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type val() const {						\
 	return OPER(c, expr2.val());					\
       }									\
       									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type coeff(int i) const {					\
 	return OPER(c, expr2.coeff(i));					\
       }									\
 									\
-      KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type fastAccessCoeff(int i) const {				\
 	return OPER(c, expr2.fastAccessCoeff(i));			\
       }									\
 									\
       template <int i>							\
-	KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION			\
+      KOKKOSARRAY_INLINE_FUNCTION					\
       value_type getCoeff() const {					\
 	return OPER(c, expr2.template getCoeff<i>());			\
       }									\
@@ -591,43 +591,43 @@ namespace Sacado {							\
       typename const_expr_ref<T2>::type expr2;				\
     };									\
 									\
-    template <typename T1, typename T2>					\
-    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION				\
-    inline OP< T1, T2, KOKKOSARRAY_MACRO_DEVICE >			\
-    OPNAME (const Expr<T1,KOKKOSARRAY_MACRO_DEVICE>& expr1,		\
-	    const Expr<T2,KOKKOSARRAY_MACRO_DEVICE>& expr2)		\
+    template <typename T1, typename T2, typename N>			\
+    KOKKOSARRAY_INLINE_FUNCTION						\
+    OP< T1, T2, N >							\
+    OPNAME (const Expr<T1,N>& expr1,					\
+	    const Expr<T2,N>& expr2)					\
     {									\
-      typedef OP< typename Expr<T1,KOKKOSARRAY_MACRO_DEVICE>::derived_type, \
-		  typename Expr<T2,KOKKOSARRAY_MACRO_DEVICE>::derived_type, \
-		  KOKKOSARRAY_MACRO_DEVICE > expr_t;			\
+      typedef OP< typename Expr<T1,N>::derived_type,			\
+		  typename Expr<T2,N>::derived_type,			\
+		  N > expr_t;						\
     									\
       return expr_t(expr1.derived(), expr2.derived());			\
     }									\
 									\
-    template <typename T>						\
-    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION				\
-    inline OP< typename T::value_type, T, KOKKOSARRAY_MACRO_DEVICE >	\
+    template <typename T, typename N>					\
+    KOKKOSARRAY_INLINE_FUNCTION						\
+    OP< typename T::value_type, T, N >					\
     OPNAME (const typename T::value_type& c,				\
-	    const Expr<T,KOKKOSARRAY_MACRO_DEVICE>& expr)		\
+	    const Expr<T,N>& expr)					\
     {									\
       typedef typename T::value_type ConstT;				\
       typedef OP< ConstT,						\
-		  typename Expr<T,KOKKOSARRAY_MACRO_DEVICE>::derived_type, \
-		  KOKKOSARRAY_MACRO_DEVICE > expr_t;			\
+		  typename Expr<T,N>::derived_type,			\
+		  N > expr_t;						\
 									\
       return expr_t(c, expr.derived());					\
     }									\
-									\
-    template <typename T>						\
-    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION				\
-    inline OP< T, typename T::value_type, KOKKOSARRAY_MACRO_DEVICE >	\
-    OPNAME (const Expr<T,KOKKOSARRAY_MACRO_DEVICE>& expr,		\
+    									\
+    template <typename T, typename N>					\
+    KOKKOSARRAY_INLINE_FUNCTION						\
+    OP< T, typename T::value_type, N >					\
+    OPNAME (const Expr<T,N>& expr,					\
 	    const typename T::value_type& c)				\
     {									\
       typedef typename T::value_type ConstT;				\
-      typedef OP< typename Expr<T,KOKKOSARRAY_MACRO_DEVICE>::derived_type, \
-		  ConstT, KOKKOSARRAY_MACRO_DEVICE > expr_t;		\
-									\
+      typedef OP< typename Expr<T,N>::derived_type,			\
+		  ConstT, N > expr_t;					\
+      									\
       return expr_t(expr.derived(), c);					\
     }									\
   }									\
@@ -646,28 +646,28 @@ MP_BINARYOP_MACRO(min, MinOp, std::min)
 namespace Sacado {							\
   namespace MP {							\
 									\
-    template <typename T1, typename T2>					\
-    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION				\
-    inline bool								\
-    operator OP (const Expr<T1,KOKKOSARRAY_MACRO_DEVICE>& expr1,	\
-		 const Expr<T2,KOKKOSARRAY_MACRO_DEVICE>& expr2)	\
+    template <typename T1, typename T2, typename N>			\
+    KOKKOSARRAY_INLINE_FUNCTION						\
+    bool								\
+    operator OP (const Expr<T1,N>& expr1,				\
+		 const Expr<T2,N>& expr2)				\
     {									\
       return expr1.derived().val() OP expr2.derived().val();		\
     }									\
 									\
-    template <typename T2>						\
-    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION				\
-    inline bool								\
+    template <typename T2, typename N>					\
+    KOKKOSARRAY_INLINE_FUNCTION						\
+    bool								\
     operator OP (const typename T2::value_type& a,			\
-		 const Expr<T2,KOKKOSARRAY_MACRO_DEVICE>& expr2)	\
+		 const Expr<T2,N>& expr2)				\
     {									\
       return a OP expr2.derived().val();				\
     }									\
 									\
-    template <typename T1>						\
-    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION				\
-    inline bool								\
-    operator OP (const Expr<T1,KOKKOSARRAY_MACRO_DEVICE>& expr1,	\
+    template <typename T1, typename N>					\
+    KOKKOSARRAY_INLINE_FUNCTION						\
+    bool								\
+    operator OP (const Expr<T1,N>& expr1,				\
 		 const typename T1::value_type& b)			\
     {									\
       return expr1.derived().val() OP b;				\
@@ -692,9 +692,9 @@ namespace Sacado {
 
   namespace MP {
 
-    template <typename T>
-    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
-    inline bool operator ! (const Expr<T,KOKKOSARRAY_MACRO_DEVICE>& expr) 
+    template <typename T, typename N>
+    KOKKOSARRAY_INLINE_FUNCTION
+    bool operator ! (const Expr<T,N>& expr) 
     {
       return ! expr.derived().val();
     }
@@ -709,10 +709,10 @@ namespace Sacado {
 
   namespace MP {
 
-    template <typename T>
-    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
-    bool toBool(const Expr<T,KOKKOSARRAY_MACRO_DEVICE>& xx) {
-      const typename Expr<T,KOKKOSARRAY_MACRO_DEVICE>::derived_type& x = 
+    template <typename T, typename N>
+    KOKKOSARRAY_INLINE_FUNCTION
+    bool toBool(const Expr<T,N>& xx) {
+      const typename Expr<T,N>::derived_type& x = 
 	xx.derived();
       bool is_zero = true;
       for (int i=0; i<x.size(); i++)
@@ -728,28 +728,28 @@ namespace Sacado {
 namespace Sacado {							\
   namespace MP {							\
 									\
-    template <typename T1, typename T2>					\
-    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION				\
-    inline bool								\
-    operator OP (const Expr<T1,KOKKOSARRAY_MACRO_DEVICE>& expr1,	\
-		 const Expr<T2,KOKKOSARRAY_MACRO_DEVICE>& expr2)	\
+    template <typename T1, typename T2, typename N>			\
+    KOKKOSARRAY_INLINE_FUNCTION						\
+    bool								\
+    operator OP (const Expr<T1,N>& expr1,				\
+		 const Expr<T2,N>& expr2)				\
     {									\
       return toBool(expr1) OP toBool(expr2);				\
     }									\
 									\
-    template <typename T2>						\
-    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION				\
-    inline bool								\
+    template <typename T2, typename N>					\
+    KOKKOSARRAY_INLINE_FUNCTION						\
+    bool								\
     operator OP (const typename T2::value_type& a,			\
-		 const Expr<T2,KOKKOSARRAY_MACRO_DEVICE>& expr2)	\
+		 const Expr<T2,N>& expr2)				\
     {									\
       return a OP toBool(expr2);					\
     }									\
 									\
-    template <typename T1>						\
-    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION				\
-    inline bool								\
-    operator OP (const Expr<T1,KOKKOSARRAY_MACRO_DEVICE>& expr1,	\
+    template <typename T1, typename N>					\
+    KOKKOSARRAY_INLINE_FUNCTION						\
+    bool								\
+    operator OP (const Expr<T1,N>& expr1,				\
 		 const typename T1::value_type& b)			\
     {									\
       return toBool(expr1) OP b;					\
@@ -769,10 +769,10 @@ namespace Sacado {
 
   namespace MP {
 
-    template <typename T>
-    KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+    template <typename T, typename N>
+    KOKKOSARRAY_INLINE_FUNCTION
     std::ostream& operator << (std::ostream& os, 
-			       const Expr<T,KOKKOSARRAY_MACRO_DEVICE>& x) {
+			       const Expr<T,N>& x) {
       typedef typename T::value_type value_type;
       typedef typename T::storage_type storage_type;
       Vector<value_type, storage_type> a(x);
