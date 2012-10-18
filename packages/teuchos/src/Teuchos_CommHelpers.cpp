@@ -75,6 +75,13 @@ std::string getMpiErrorString (const int errCode) {
 
 } // namespace (anonymous)
 
+// mfh 18 Oct 2012: Note on full template specializations
+//
+// To make Windows builds happy, declarations of full template
+// specializations (as found in Teuchos_CommHelpers.hpp) must use the
+// TEUCHOS_LIB_DLL_EXPORT macro.  However, _definitions_ of the
+// specializations (as found in this file) must _not_ use the macro.
+// That's why we don't use that macro here.
 
 #ifdef TEUCHOS_HAVE_COMPLEX
 // Specialization for Ordinal=int and Packet=std::complex<double>.
