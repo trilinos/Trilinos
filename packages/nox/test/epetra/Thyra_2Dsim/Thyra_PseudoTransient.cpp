@@ -219,19 +219,20 @@ TEUCHOS_UNIT_TEST(dimension, default)
 
   Teuchos::RCP<const Epetra_Vector> x_analytic = epetraModel->get_analytic_solution();
 
-  // ROGER - need to finish off analytic comparison of solution
-//   Teuchos::RCP< ::Thyra::VectorBase<double> > x_analytic = 
-//     epetraModel->get_analytic_solution();
+  Teuchos::RCP<const NOX::Abstract::Vector> x = thyra_nox_solver->getNOXSolver()->getSolutionGroup().getXPtr();
 
-//   Teuchos::RCP<Thyra::SpmdVectorBase<double> > spmd_x_analytic =
-//     Teuchos::rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(x_analytic,true);
+  Teuchos::RCP<const NOX::Thyra::Vector> nox_thyra_x = 
+    Teuchos::rcp_dynamic_cast<const NOX::Thyra::Vector>(x,true);
 
-//   Teuchos::ArrayRCP<const double> local_values;
-//   spmd_x_analytic->getLocalData(outArg(local_values));
+  Teuchos::RCP<const Thyra::SpmdVectorBase<double> > spmd_x =
+    Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(nox_thyra_x->getThyraRCPVector(),true);
+
+  Teuchos::ArrayRCP<const double> local_values;
+  spmd_x->getLocalData(outArg(local_values));
 
   double tol = 1.0e-8;
-  TEST_FLOATING_EQUALITY((*x_analytic)[0],(*x_analytic)[0],tol);
-  TEST_FLOATING_EQUALITY((*x_analytic)[1],(*x_analytic)[1],tol);
+  TEST_FLOATING_EQUALITY((*x_analytic)[0],local_values[0],tol);
+  TEST_FLOATING_EQUALITY((*x_analytic)[1],local_values[1],tol);
 
   if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED)
     std::cout << "Test passed!" << std::endl;

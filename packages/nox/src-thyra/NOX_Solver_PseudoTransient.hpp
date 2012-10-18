@@ -79,9 +79,13 @@ namespace NOX {
 namespace Solver {
 
 /*!
-  \brief Pseudo-transient solver.  This object is under construction and is not yet completed.  Please do not use this yet!
+  \brief Pseudo-transient solver.
 
-  Based on the 1998 Kelley Keyes paper, with minor modifications for robustness.
+  Requires that the Thyra::ModelEvaluator implement transient support
+  (uses alpha, beta, Jacobian evaluation and optionally x_dot in
+  residual).
+
+  Based on the 1998 Kelley Keyes paper, with minor modifications.
 */
 class PseudoTransient : public NOX::Solver::Generic {
 
