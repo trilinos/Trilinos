@@ -43,6 +43,93 @@
 #include <vector>
 
 namespace {
+  // Determines whether the input map is sequential (map[i] == i)
+  bool is_sequential(const MapContainer &the_map)
+  {
+    // Assumes the_map runs from [1..size) Slot zero will contain -1 if the
+    // vector is sequential; 1 if not sequential, and 0 if it has not
+    // yet been determined...
+    // Once the the_map has been determined to be sequential/not-sequential,
+    // slot zero is set appropriately.
+    // 'sequential' is defined here to mean i==the_map[i] for all 0<i<the_map.size()
+
+    // Check slot zero...
+    if (the_map[0] == -1)
+      return true;
+    else if (the_map[0] ==  1)
+      return false;
+    else {
+      size_t size = the_map.size();
+      for (size_t i=1; i < size; i++)
+	if (the_map[i] != (int64_t)i) {
+	  MapContainer &new_map = const_cast<MapContainer&>(the_map);
+	  new_map[0] = 1;
+	  return false;
+	}
+      MapContainer &new_map = const_cast<MapContainer&>(the_map);
+      new_map[0] = -1;
+      return true;
+    }
+  }
+
+
+  void verify_no_duplicate_ids(std::vector<IdPair> &reverse_map, int processor)
+  {
+    // Check for duplicate ids...
+    std::vector<IdPair>::iterator dup = std::adjacent_find(reverse_map.begin(),
+							   reverse_map.end(),
+							   IdPairEqual());
+
+    if (dup != reverse_map.end()) {
+      std::ostringstream errmsg;
+      errmsg << "\nERROR: Duplicate global id detected on processor "
+	     << processor << ".\n"
+	     << "       Global id " << (*dup).first
+	     << " assigned to local entities "
+	     << (*dup).second << " and "
+	     << (*++dup).second << ".\n";
+      IOSS_ERROR(errmsg);
+    }
+  }
+
+  // map global to local ids
+  typedef Ioss::ReverseMapContainer::value_type RMCValuePair;
+
+  // Class to support storing global/local element id map in sorted vector...
+  class IdPairCompare
+  {
+  public:
+    IdPairCompare() {}
+    bool operator()(const Ioss::IdPair& lhs, const Ioss::IdPair &rhs) const
+    { return key_less(lhs.first, rhs.first); }
+    bool operator()(const Ioss::IdPair& lhs, const Ioss::IdPair::first_type &k) const
+    { return key_less(lhs.first, k); }
+    bool operator()(const Ioss::IdPair::first_type& k, const Ioss::IdPair &rhs) const
+    { return key_less(k, rhs.first); }
+    // Assignment operator
+    // Copy constructor
+  private:
+    bool key_less(const Ioss::IdPair::first_type &k1, const Ioss::IdPair::first_type &k2) const
+    { return k1 < k2; }
+  };
+
+  class IdPairEqual
+  {
+  public:
+    IdPairEqual() {}
+    bool operator()(const Ioss::IdPair& lhs, const Ioss::IdPair &rhs) const
+    { return key_equal(lhs.first, rhs.first); }
+    bool operator()(const Ioss::IdPair& lhs, const Ioss::IdPair::first_type &k) const
+    { return key_equal(lhs.first, k); }
+    bool operator()(const Ioss::IdPair::first_type& k, const Ioss::IdPair &rhs) const
+    { return key_equal(k, rhs.first); }
+    // Assignment operator
+    // Copy constructor
+  private:
+    bool key_equal(const Ioss::IdPair::first_type &k1, const Ioss::IdPair::first_type &k2) const
+    { return k1 == k2; }
+  };
+
   typedef std::vector<Ioss::IdPair>::const_iterator RMapI;
 
   template <typename INT>
@@ -123,52 +210,6 @@ void Ioss::Map::build_reverse_map(int64_t num_to_get, int64_t offset, int proces
 
 }
 
-#if 0
-void Ioss::Map::build_reverse_map(ReverseMapContainer *Map, const int64_t *ids,
-				 int64_t num_to_get, int64_t offset, int processor)
-{
-  // Stored as a sorted vector of <global_id, local_id> pairs...
-  // To build incrementally:
-  // 0. PRE: reverseElementMap is sorted, size >= 0.
-  // 1. Build vector of current ids. -- new_ids
-  // 2. Sort that vector.
-  // 3. Copy reverseElementMap to old_ids, empty reverseElementMap.
-  // 4. Merge old_ids and new_ids to reverseElementMap.
-  // 5. Check for duplicate global_ids...
-
-  // Build a vector containing the current ids...
-  ReverseMapContainer new_ids(num_to_get);
-  for (int64_t i=0; i < num_to_get; i++) {
-    int64_t local_id = offset + i + 1;
-    new_ids[i] = std::make_pair(ids[i], local_id);
-  }
-
-  // Sort that vector...
-  std::sort(new_ids.begin(), new_ids.end(), IdPairCompare());
-
-  int64_t new_id_min = new_ids.empty() ? 0 : new_ids.front().first;
-  int64_t old_id_max = Map->empty() ? 0 : Map->back().first;
-  if (new_id_min > old_id_max) {
-    Map->insert(Map->end(), new_ids.begin(), new_ids.end());
-  } else {
-    // Copy reverseElementMap to old_ids, empty reverseElementMap.
-    ReverseMapContainer old_ids;
-    old_ids.swap(*Map);
-    assert(Map->empty());
-    
-    // Merge old_ids and new_ids to reverseElementMap.
-    Map->reserve(old_ids.size() + new_ids.size());
-    std::merge(old_ids.begin(), old_ids.end(),
-	       new_ids.begin(), new_ids.end(),
-	       std::inserter(*Map, Map->begin()), IdPairCompare());
-    
-    // Check for duplicate ids...
-    verify_no_duplicate_ids(*Map, processor);
-  }
-
-}
-#endif
-
 template void Ioss::Map::set_map(int *ids, size_t count, size_t offset);
 template void Ioss::Map::set_map(int64_t *ids, size_t count, size_t offset);
 
@@ -182,55 +223,6 @@ void Ioss::Map::set_map(INT *ids, size_t count, size_t offset)
       map[0] = 1;
       assert(ids[i] != 0);
     }
-  }
-}
-
-template void Ioss::Map::build_reverse_map(ReverseMapContainer *Map, const int *ids,
-					     size_t num_to_get, size_t offset, int processor);
-template void Ioss::Map::build_reverse_map(ReverseMapContainer *Map, const int64_t *ids,
-					     size_t num_to_get, size_t offset, int processor);
-
-template <typename INT>
-void Ioss::Map::build_reverse_map(ReverseMapContainer *Map, const INT *ids,
-				  size_t num_to_get, size_t offset, int processor)
-{
-  // Stored as a sorted vector of <global_id, local_id> pairs...
-  // To build incrementally:
-  // 0. PRE: reverseElementMap is sorted, size >= 0.
-  // 1. Build vector of current ids. -- new_ids
-  // 2. Sort that vector.
-  // 3. Copy reverseElementMap to old_ids, empty reverseElementMap.
-  // 4. Merge old_ids and new_ids to reverseElementMap.
-  // 5. Check for duplicate global_ids...
-
-  // Build a vector containing the current ids...
-  ReverseMapContainer new_ids(num_to_get);
-  for (size_t i=0; i < num_to_get; i++) {
-    size_t local_id = offset + i + 1;
-    new_ids[i] = std::make_pair(ids[i], local_id);
-  }
-
-  // Sort that vector...
-  std::sort(new_ids.begin(), new_ids.end(), IdPairCompare());
-
-  size_t new_id_min = new_ids.empty() ? 0 : new_ids.front().first;
-  size_t old_id_max = Map->empty() ? 0 : Map->back().first;
-  if (new_id_min > old_id_max) {
-    Map->insert(Map->end(), new_ids.begin(), new_ids.end());
-  } else {
-    // Copy reverseElementMap to old_ids, empty reverseElementMap.
-    ReverseMapContainer old_ids;
-    old_ids.swap(*Map);
-    assert(Map->empty());
-    
-    // Merge old_ids and new_ids to reverseElementMap.
-    Map->reserve(old_ids.size() + new_ids.size());
-    std::merge(old_ids.begin(), old_ids.end(),
-	       new_ids.begin(), new_ids.end(),
-	       std::inserter(*Map, Map->begin()), IdPairCompare());
-    
-    // Check for duplicate ids...
-    verify_no_duplicate_ids(*Map, processor);
   }
 }
 
@@ -347,75 +339,17 @@ void Ioss::Map::build_reorder_map(int64_t start, int64_t count)
   }
 }
     
-void Ioss::Map::verify_no_duplicate_ids(std::vector<IdPair> &reverse_map, int processor)
-{
-  // Check for duplicate ids...
-  std::vector<IdPair>::iterator dup = std::adjacent_find(reverse_map.begin(),
-							 reverse_map.end(),
-							 IdPairEqual());
-
-  if (dup != reverse_map.end()) {
-    std::ostringstream errmsg;
-    errmsg << "\nERROR: Duplicate global id detected on processor "
-	   << processor << ".\n"
-	   << "       Global id " << (*dup).first
-	   << " assigned to local entities "
-	   << (*dup).second << " and "
-	   << (*++dup).second << ".\n";
-    IOSS_ERROR(errmsg);
-  }
-}
-
-bool Ioss::Map::is_sequential(const MapContainer &the_map)
-{
-  // Assumes the_map runs from [1..size) Slot zero will contain -1 if the
-  // vector is sequential; 1 if not sequential, and 0 if it has not
-  // yet been determined...
-  // Once the the_map has been determined to be sequential/not-sequential,
-  // slot zero is set appropriately.
-  // 'sequential' is defined here to mean i==the_map[i] for all 0<i<the_map.size()
-
-  // Check slot zero...
-  if (the_map[0] == -1)
-    return true;
-  else if (the_map[0] ==  1)
-    return false;
-  else {
-    size_t size = the_map.size();
-    for (size_t i=1; i < size; i++)
-      if (the_map[i] != (int64_t)i) {
-	MapContainer &new_map = const_cast<MapContainer&>(the_map);
-	new_map[0] = 1;
-	return false;
-      }
-    MapContainer &new_map = const_cast<MapContainer&>(the_map);
-    new_map[0] = -1;
-    return true;
-  }
-}
-
 // Node and Element mapping functions.  The ExodusII database
 // stores ids in a local-id system (1..NUMNP), (1..NUMEL) but
 // Sierra wants entities in a global system. These routines
 // take care of the mapping from local <-> global
-
-int64_t Ioss::Map::local_to_global(int64_t /* local */)  const
-{
-#if 0
-  assert(local <= nodeCount && local > 0);
-  const MapContainer &node_map = get_node_map();
-  int64_t global = node_map[local];
-  return global;
-#endif
-  return -1;
-}
 
 int64_t Ioss::Map::global_to_local(int64_t global, bool must_exist) const
 {
   int64_t local = global;
   if (map[0] == 1) {
     std::pair<RMapI, RMapI> iter = std::equal_range(reverse.begin(), reverse.end(),
-						    global, Ioss::IdPairCompare());
+						    global, IdPairCompare());
     if (iter.first != iter.second)
       local = (iter.first)->second;
     else

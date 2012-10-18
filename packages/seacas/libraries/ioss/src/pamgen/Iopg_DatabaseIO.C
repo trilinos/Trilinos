@@ -1449,8 +1449,7 @@ namespace Iopg {
 	}
 
 	if (!sequentialNG2L) {
-	  Ioss::Map::build_reverse_map(&nodeMap.reverse, &nodeMap.map[1], nodeCount, 0,
-				       myProcessor);
+	  nodeMap.build_reverse_map(myProcessor);
 	} else {
 	  // Sequential map
 	  nodeMap.map[0] = -1;
@@ -1492,9 +1491,7 @@ namespace Iopg {
 	}
 
 	if (!sequentialEG2L) {
-	  Ioss::Map::build_reverse_map(&elemMap.reverse,
-				       &elemMap.map[1], elementCount, 0,
-				       myProcessor);
+	  elemMap.build_reverse_map(myProcessor);
 	} else {
 	  // Sequential map
 	  sequentialEG2L = true;
