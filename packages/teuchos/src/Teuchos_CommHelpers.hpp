@@ -1297,7 +1297,7 @@ namespace Teuchos {
 #ifdef TEUCHOS_HAVE_COMPLEX
 // Specialization for Ordinal=int and Packet=std::complex<double>.
 template<>
-void 
+TEUCHOS_LIB_DLL_EXPORT void
 reduceAll<int, std::complex<double> > (const Comm<int>& comm, 
 				       const EReductionType reductType,
 				       const int count, 
@@ -1306,7 +1306,7 @@ reduceAll<int, std::complex<double> > (const Comm<int>& comm,
 
 // Specialization for Ordinal=int and Packet=std::complex<float>.
 template<>
-void 
+TEUCHOS_LIB_DLL_EXPORT void
 reduceAll<int, std::complex<float> > (const Comm<int>& comm, 
 				      const EReductionType reductType,
 				      const int count, 
@@ -1316,7 +1316,7 @@ reduceAll<int, std::complex<float> > (const Comm<int>& comm,
 
 // Specialization for Ordinal=int and Packet=double.
 template<>
-void 
+TEUCHOS_LIB_DLL_EXPORT void
 reduceAll<int, double> (const Comm<int>& comm, 
 			const EReductionType reductType,
 			const int count, 
@@ -1325,7 +1325,7 @@ reduceAll<int, double> (const Comm<int>& comm,
 
 // Specialization for Ordinal=int and Packet=float.
 template<>
-void 
+TEUCHOS_LIB_DLL_EXPORT void
 reduceAll<int, float> (const Comm<int>& comm, 
 		       const EReductionType reductType,
 		       const int count, 
@@ -1335,7 +1335,7 @@ reduceAll<int, float> (const Comm<int>& comm,
 #ifdef TEUCHOS_HAVE_LONG_LONG
 // Specialization for Ordinal=int and Packet=long long.
 template<>
-void 
+TEUCHOS_LIB_DLL_EXPORT void
 reduceAll<int, long long> (const Comm<int>& comm, 
 			   const EReductionType reductType,
 			   const int count, 
@@ -1345,7 +1345,7 @@ reduceAll<int, long long> (const Comm<int>& comm,
 
 // Specialization for Ordinal=int and Packet=long.
 template<>
-void 
+TEUCHOS_LIB_DLL_EXPORT void
 reduceAll<int, long> (const Comm<int>& comm, 
 		      const EReductionType reductType,
 		      const int count, 
@@ -1354,7 +1354,7 @@ reduceAll<int, long> (const Comm<int>& comm,
 
 // Specialization for Ordinal=int and Packet=int.
 template<>
-void 
+TEUCHOS_LIB_DLL_EXPORT void
 reduceAll<int, int> (const Comm<int>& comm, 
 		     const EReductionType reductType,
 		     const int count, 
@@ -1363,7 +1363,7 @@ reduceAll<int, int> (const Comm<int>& comm,
 
 // Specialization for Ordinal=int and Packet=short.
 template<>
-void 
+TEUCHOS_LIB_DLL_EXPORT void
 reduceAll<int, short> (const Comm<int>& comm, 
 		       const EReductionType reductType,
 		       const int count, 
@@ -1372,7 +1372,7 @@ reduceAll<int, short> (const Comm<int>& comm,
 
 // Specialization for Ordinal=int and Packet=char.
 template<>
-void 
+TEUCHOS_LIB_DLL_EXPORT void
 reduceAll<int, char> (const Comm<int>& comm, 
 		      const EReductionType reductType,
 		      const int count, 
