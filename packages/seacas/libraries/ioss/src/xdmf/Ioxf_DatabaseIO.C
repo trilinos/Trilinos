@@ -118,7 +118,7 @@ namespace Ioxf {
     elemCmapIds(NULL), elemCmapElemCnts(NULL), commsetNodeCount(0),
     commsetElemCount(0),
     elementTruthTable(NULL), nodesetTruthTable(NULL), sidesetTruthTable(NULL),
-    sequentialNG2L(true), sequentialEG2L(true), fileExists(false)
+    fileExists(false)
   {
     // A history file is only written on processor 0...
     if (db_usage == Ioss::WRITE_HISTORY)
@@ -249,54 +249,53 @@ namespace Ioxf {
     output_only();
   }
 
-  const Ioss::MapContainer& DatabaseIO::get_node_map() const
+  const Ioss::Map& DatabaseIO::get_node_map() const
   {
     // Allocate space for node number map and read it in...
     // Can be called multiple times, allocate 1 time only
 
-    if (nodeMap.empty()) {
+    if (nodeMap.map.empty()) {
       // Cast away the 'const'.  Conceptually, this is a const operation
       // since it doesn't change the clients view of the database.
       DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
-      new_this->nodeMap.resize(nodeCount+1);
+      new_this->nodeMap.map.resize(nodeCount+1);
 
       if (is_input()) {
 	output_only();
       } else {
 	// Output database; nodeMap not set yet... Build a default map.
 	for (int i=1; i < nodeCount+1; i++) {
-	  new_this->nodeMap[i] = i;
+	  new_this->nodeMap.map[i] = i;
 	}
 	// Sequential map
-	new_this->nodeMap[0] = -1;
+	new_this->nodeMap.map[0] = -1;
       }
     }
     return nodeMap;
   }
 
-  const Ioss::MapContainer& DatabaseIO::get_element_map() const
+  const Ioss::Map& DatabaseIO::get_element_map() const
   {
     // Allocate space for elemente number map and read it in...
     // Can be called multiple times, allocate 1 time only
-    if (elementMap.empty()) {
+    if (elemMap.map.empty()) {
       // Cast away the 'const'.  Conceptually, this is a const operation
       // since it doesn't change the clients view of the database.
       DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
-      new_this->elementMap.resize(elementCount+1);
+      new_this->elemMap.map.resize(elementCount+1);
 
       if (is_input()) {
 	output_only();
       } else {
-	// Output database; elementMap not set yet... Build a default map.
+	// Output database; elemMap.map not set yet... Build a default map.
 	for (int i=1; i < elementCount+1; i++) {
-	  new_this->elementMap[i] = i;
+	  new_this->elemMap.map[i] = i;
 	}
 	// Sequential map
-	new_this->sequentialEG2L = true;
-	new_this->elementMap[0] = -1;
+	new_this->elemMap.map[0] = -1;
       }
     }
-    return elementMap;
+    return elemMap;
   }
 
   void DatabaseIO::get_nodeblocks() const
@@ -590,14 +589,7 @@ namespace Ioxf {
 	      int element_nodes =
 		eb->get_property("topology_node_count").get_int();
 
-	      if (!sequentialNG2L) {
-		assert(field.transformed_storage()->component_count() == element_nodes);
-
-		for (int i=0; i < num_to_get * element_nodes; i++) {
-		  int global_id = connect[i];
-		  connect[i] = node_global_to_local(global_id, true);
-		}
-	      }
+	      nodeMap.map_data(data, field, num_to_get*element_nodes);
 
 	      XdmfArray *ScalarArray = new XdmfArray();
 
@@ -735,26 +727,23 @@ namespace Ioxf {
     // local id -1 (That is, data[0] contains the global id of local
     // node 1)
 
+    assert(num_to_get == nodeCount);
+
     if (dbState == Ioss::STATE_MODEL) {
-      // This optimization only valid if entire field available
-      if (sequentialNG2L && num_to_get == nodeCount) {
-	for (int i=0; i < num_to_get; i++) {
-	  if (i+1 != ids[i]) {
-	    sequentialNG2L = false;
-	    break;
-	  }
-	}
+      if (nodeMap.map.empty()) {
+	nodeMap.map.resize(nodeCount+1);
+	nodeMap.map[0] = -1;
       }
 
-      if (!sequentialNG2L || num_to_get != nodeCount) {
-	sequentialNG2L = false;
-	Ioss::Map::build_reverse_map(&reverseNodeMap, ids, num_to_get, 0,
-				     myProcessor);
+      if (nodeMap.map[0] == -1) {
+	nodeMap.set_map(ids, num_to_get, 0);
       }
+
+      nodeMap.build_reverse_map(myProcessor);
 
       // Only a single nodeblock and all set
       if (num_to_get == nodeCount) {
-	assert(sequentialNG2L || (int)reverseNodeMap.size() == nodeCount);
+	assert(nodeMap.map[0] == -1 || nodeMap.reverse.size() == (size_t)nodeCount);
       }
       assert(get_region()->get_property("node_block_count").get_int() == 1);
 
@@ -772,7 +761,7 @@ namespace Ioxf {
 
     }
 
-    build_node_reorder_map(ids, num_to_get);
+    nodeMap.build_reorder_map(0, num_to_get);
     return num_to_get;
   }
 
@@ -834,33 +823,19 @@ namespace Ioxf {
     // 'eb_offset+offset' and ending at
     // 'eb_offset+offset+num_to_get'. If the entire block is being
     // processed, this reduces to the range 'eb_offset..eb_offset+element_count'
-    if (elementMap.empty()) {
-      elementMap.resize(elementCount+1);
-      sequentialEG2L = true;
+    if (elemMap.map.empty()) {
+      elemMap.map.resize(elementCount+1);
+      elemMap.map[0] = -1;
     }
 
-    assert(static_cast<int>(elementMap.size()) == elementCount+1);
-    elementMap[0] = -1;
+    assert(static_cast<int>(elemMap.map.size()) == elementCount+1);
 
     int eb_offset = eb->get_offset();
-
-    for (int i=0; i < num_to_get; i++) {
-      int local_id = eb_offset + i + 1;
-      elementMap[local_id] = ids[i];
-      if (local_id != ids[i]) {
-	sequentialEG2L = false;
-	elementMap[0] = 1;
-      }
-    }
+    elemMap.set_map(ids, num_to_get, eb_offset);
 
     // Now, if the state is Ioss::STATE_MODEL, update the reverseElementMap
     if (dbState == Ioss::STATE_MODEL) {
-      Ioss::Map::build_reverse_map(&reverseElementMap, ids, num_to_get,
-				   eb_offset, myProcessor);
-
-      // Strongest assertion we can make is that size of map <=
-      // elementCount
-      assert((int)reverseElementMap.size() <= elementCount);
+      elemMap.build_reverse_map(num_to_get, eb_offset, myProcessor);
 
       // Output this portion of the element number map
       std::ostringstream *XML=NULL;
@@ -897,7 +872,7 @@ namespace Ioxf {
     // the current topologies local order to the local order stored in
     // the database...  This is 0-based and used for remapping output
     // TRANSIENT fields. (Will also need one on input once we read fields)
-    build_element_reorder_map(eb_offset, num_to_get);
+    elemMap.build_reorder_map(eb_offset, num_to_get);
     return num_to_get;
   }
 
@@ -905,12 +880,10 @@ namespace Ioxf {
 					       const Ioss::Field &field,
 					       const Ioss::NodeBlock */* ge */,
 					       int count,
-					       void *data) const
+					       void *variables) const
   {
     Ioss::Field::BasicType ioss_type = field.get_type();
     assert(ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::INTEGER);
-    double *rvar = (double*)data;
-    int  *ivar = (int*)data;
 
     const Ioss::VariableType *var_type = field.transformed_storage();
     std::vector<double> temp(count);
@@ -928,22 +901,21 @@ namespace Ioxf {
 
       new_this->nodalVariables[var_name];
 
-      // Transfer from 'variables' array.
-      int k = 0;
-      int num_out = 0;
-      for (int j=i; j < count*comp_count; j+=comp_count) {
-	int where = reorderNodeMap[k++];
-	if (where >= 0) {
-	  assert(where < count);
-	  if (ioss_type == Ioss::Field::REAL)
-	    temp[where] = rvar[j];
-	  else
-	    temp[where] = ivar[j];
-	  num_out++;
-	}
+      size_t num_out = 0;
+      if (ioss_type == Ioss::Field::REAL)
+	num_out = nodeMap.map_field_to_db_scalar_order(static_cast<double*>(variables),
+						       temp, i, count, comp_count, 0);
+      else if (ioss_type == Ioss::Field::INTEGER)
+	num_out = nodeMap.map_field_to_db_scalar_order(static_cast<int*>(variables),
+						       temp, i, count, comp_count, 0);
+      
+      if (num_out != nodeCount) {
+	std::ostringstream errmsg;
+	errmsg << "ERROR: Problem outputting nodal variable '" << var_name
+	       << " to file " << util().decode_filename(get_filename(), isParallel) << "\n"
+	       << "Should have output " << nodeCount << " values, but instead only output " << num_out << " values.\n";
+	IOSS_ERROR(errmsg);
       }
-      assert(k == count);
-      assert(num_out == nodeCount);
 
       // Write the variable...
 
@@ -1019,8 +991,9 @@ namespace Ioxf {
 						const Ioss::Field& field,
 						const Ioss::GroupingEntity *ge,
 						int count,
-						void *data) const
+						void *variables) const
   {
+    static Ioss::Map non_element_map; // Used as an empty map for ge->type() != element block.
     assert(type[0] == 'E' || type[0] == 'M' || type[0] == 'S');
 
     const Ioss::VariableType *var_type = field.transformed_storage();
@@ -1030,17 +1003,20 @@ namespace Ioxf {
     int step = get_region()->get_property("current_state").get_int();
     step = get_database_step(step);
 
+    Ioss::Map *map = NULL;
     int eb_offset = 0;
+
     if (ge->type() == Ioss::ELEMENTBLOCK) {
       const Ioss::ElementBlock *elb = dynamic_cast<const Ioss::ElementBlock*>(ge);
       assert(elb != NULL);
       eb_offset = elb->get_offset();
+      map = &elemMap;
+    } else {
+      map = &non_element_map;
     }
 
     Ioss::Field::BasicType ioss_type = field.get_type();
     assert(ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::INTEGER);
-    double *rvar = (double*)data;
-    int  *ivar = (int*)data;
 
     // get number of components, cycle through each component
     // and add suffix to base 'field_name'.  Look up index
@@ -1054,23 +1030,12 @@ namespace Ioxf {
       // array is stored in 'element block local id space', so we need
       // to add/subtract the element block offset to keep things
       // straight.
-      int k = eb_offset;
-      int where = 0;
-      for (int j=i; j < count*comp_count; j+=comp_count) {
-	// Map to storage location.
-
-	if (type[0] == 'E')
-	  where = reorderElementMap[k++] - eb_offset;
-	else
-	  where = k++;
-
-	assert(where >= 0 && where < count);
-	if (ioss_type == Ioss::Field::REAL)
-	  temp[where] = rvar[j];
-	else
-	  temp[where] = ivar[j];
-      }
-      assert(k-eb_offset == count);
+      if (ioss_type == Ioss::Field::REAL)
+	map->map_field_to_db_scalar_order(static_cast<double*>(variables),
+					  temp, i, count, comp_count, eb_offset);
+      else if (ioss_type == Ioss::Field::INTEGER)
+	map->map_field_to_db_scalar_order(static_cast<int*>(variables),
+					  temp, i, count, comp_count, eb_offset);
 
       // Write the variable...
       int id;
@@ -1232,14 +1197,7 @@ namespace Ioxf {
 	  if (field.get_name() == "ids") {
 	    // Map node id from global node id to local node id.
 	    // Do it in 'data' ...
-	    int* ids = (int*)data;
-
-	    if (!sequentialNG2L) {
-	      for (int i=0; i < num_to_get; i++) {
-		int global_id = ids[i];
-		ids[i] = node_global_to_local(global_id, true);
-	      }
-	    }
+	    nodeMap.reverse_map_data(data, field, num_to_get);
 
 	    XdmfArray *ScalarArray = new XdmfArray();
 	    ScalarArray->SetNumberType( XDMF_INT32_TYPE );
@@ -1621,28 +1579,6 @@ namespace Ioxf {
       }
     }
     return num_to_get;
-  }
-
-  // ------------------------------------------------------------------------
-  // Node and Element mapping functions.  The ExodusII database
-  // stores ids in a local-id system (1..NUMNP), (1..NUMEL) but
-  // Sierra wants entities in a global system. These routines
-  // take care of the mapping from local <-> global
-
-  int64_t DatabaseIO::node_local_to_global(int64_t local)  const
-  {
-    assert(local <= nodeCount && local > 0);
-    const Ioss::MapContainer &node_map = get_node_map();
-    int global = node_map[local];
-    return global;
-  }
-
-  int64_t DatabaseIO::element_local_to_global(int64_t local)  const
-  {
-    assert(local <= elementCount && local > 0);
-    const Ioss::MapContainer &element_map = get_element_map();
-    int global = element_map[local];
-    return global;
   }
 
   bool DatabaseIO::begin(Ioss::State state)
@@ -2748,64 +2684,6 @@ namespace Ioxf {
       offset += var_count;
     }
     assert(offset == var_count * nodesetCount);
-  }
-
-  void DatabaseIO::build_element_reorder_map(int start, int count)
-  {
-    // Note: To further add confusion, the reorderElementMap is 0-based
-    // and the reverseElementMap and elementMap are 1-based. This is
-    // just a consequence of how they are intended to be used...
-    //
-    // start is based on a 0-based array -- start of the reorderMap to build.
-
-    if (reorderElementMap.empty())
-      reorderElementMap.resize(elementCount);
-    assert(static_cast<int>(elementMap.size()) == elementCount+1);
-    assert(static_cast<int>(reverseElementMap.size()) <= elementCount); // Built in pieces
-
-    int end = start+count;
-    for (int i=start; i < end; i++) {
-      int global_id = elementMap[i+1];
-      int orig_local_id = element_global_to_local(global_id) - 1;
-
-      // If we assume that partial output is not being used (it
-      // currently isn't in Sierra), then the reordering should only be
-      // a permutation of the original ordering within this element block...
-      assert(orig_local_id >= start && orig_local_id <= end);
-      reorderElementMap[i] = orig_local_id;
-    }
-  }
-
-  void DatabaseIO::build_node_reorder_map(int *new_ids, int count)
-  {
-    // This routine builds a map that relates the current node id order
-    // to the original node ordering in affect at the time the file was
-    // created. That is, the node map used to define the topology of the
-    // model.  Now, if there are changes in node ordering at the
-    // application level, we build the node reorder map to map the
-    // current order into the original order.  An added complication is
-    // that this is more than just a reordering... It may be that the
-    // application has 'ghosted' nodes that it doesnt want put out on
-    // the database, so the reorder map must handle a node that is not
-    // in the original mesh and map that to an invalid value (currently
-    // using -1 as invalid value...)
-
-
-    // Note: To further add confusion,
-    // the reorderNodeMap and new_ids are 0-based
-    // the reverseNodeMap and nodeMap are 1-based. This is
-    // just a consequence of how they are intended to be used...
-
-    reorderNodeMap.resize(count);
-
-    for (int i=0; i < count; i++) {
-      int global_id = new_ids[i];
-
-      // This will return 0 if node is not found in list.
-      int orig_local_id = node_global_to_local(global_id, false) - 1;
-
-      reorderNodeMap[i] = orig_local_id;
-    }
   }
 
   // Handle special output time requests -- primarily restart (cycle, keep, overwrite)

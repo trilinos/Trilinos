@@ -111,8 +111,8 @@ namespace Iogn {
     void get_sidesets();
     void get_commsets();
 
-    const Ioss::MapContainer& get_node_map() const;
-    const Ioss::MapContainer& get_element_map() const;
+    const Ioss::Map& get_node_map() const;
+    const Ioss::Map& get_element_map() const;
 
     int64_t get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
@@ -187,22 +187,8 @@ namespace Iogn {
     //               sierra side.   global = nodeMap[local]
     // nodeMap[0] contains: -1 if sequential, 0 if ordering unknown, 1
     // if nonsequential
-    mutable Ioss::MapContainer        nodeMap;
-    mutable Ioss::MapContainer        reorderNodeMap;
-    mutable Ioss::ReverseMapContainer reverseNodeMap;
-    // (local==global)
-
-    //---Element Map -- Maps internal (1..NUMEL) ids to global ids used on the
-    //               sierra side.   global = elementMap[local]
-    // elementMap[0] contains: -1 if sequential, 0 if ordering unknown,
-    // 1 if nonsequential
-    mutable Ioss::MapContainer        elementMap;
-    mutable Ioss::MapContainer        reorderElementMap;
-    mutable Ioss::ReverseMapContainer reverseElementMap;
-
-    mutable bool sequentialNG2L; // true if reverse node map is sequential
-    mutable bool sequentialEG2L; // true if reverse element map is
-    // sequential (local==global)
+    mutable Ioss::Map nodeMap;
+    mutable Ioss::Map elemMap;
   };
 }
 #endif // IOSS_Iogn_DatabaseIO_h

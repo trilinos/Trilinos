@@ -65,8 +65,7 @@ namespace Iogn {
     Ioss::DatabaseIO(region, filename, db_usage, communicator, props), 
     m_generatedMesh(NULL),  spatialDimension(3), nodeCount(0),
     elementCount(0), nodeBlockCount(0),
-    elementBlockCount(0), nodesetCount(0), sidesetCount(0),
-    sequentialNG2L(false), sequentialEG2L(false)
+    elementBlockCount(0), nodesetCount(0), sidesetCount(0)
   {
     if (is_input()) {
       dbState = Ioss::STATE_UNKNOWN;
@@ -145,20 +144,7 @@ namespace Iogn {
 	else if (field.get_name() == "ids") {
 	  // Map the local ids in this node block
 	  // (1...node_count) to global node ids.
-	  const Ioss::MapContainer &map = get_node_map();
-	  if (field.is_type(Ioss::Field::INTEGER)) {
-	    int *ids = static_cast<int*>(data);
-	    
-	    for (size_t i=0; i < num_to_get; i++) {
-	      ids[i] = map[1 + i];
-	    }
-	  } else {
-	    int64_t *ids = static_cast<int64_t*>(data);
-	    
-	    for (size_t i=0; i < num_to_get; i++) {
-	      ids[i] = map[1 + i];
-	    }
-	  }
+	  get_node_map().map_implicit_data(data, field, num_to_get, 0);
 	}
 	else if (field.get_name() == "connectivity") {
 	  // Do nothing, just handles an idiosyncracy of the GroupingEntity
@@ -212,19 +198,7 @@ namespace Iogn {
 	else if (field.get_name() == "ids") {
 	  // Map the local ids in this element block
 	  // (eb_offset+1...eb_offset+1+element_count) to global element ids.
-	  const Ioss::MapContainer &map = get_element_map();
-	  int64_t eb_offset = eb->get_offset();
-	  if (field.is_type(Ioss::Field::INTEGER)) {
-	    int *ids = static_cast<int*>(data);
-	    for (size_t i=0; i < num_to_get; i++) {
-	      ids[i] = map[eb_offset + 1 + i];
-	    }
-	  } else {
-	    int64_t*ids = static_cast<int64_t*>(data);
-	    for (size_t i=0; i < num_to_get; i++) {
-	      ids[i] = map[eb_offset + 1 + i];
-	    }
-	  }
+	  get_element_map().map_implicit_data(data, field, num_to_get, eb->get_offset());
 	}
 	else {
 	  num_to_get = Ioss::Utils::field_warning(eb, field, "input");
@@ -476,12 +450,12 @@ namespace Iogn {
   int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
   int64_t DatabaseIO::put_field_internal(const Ioss::CommSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
 
-  const Ioss::MapContainer& DatabaseIO::get_node_map() const
+  const Ioss::Map& DatabaseIO::get_node_map() const
   {
     // Allocate space for node number map and read it in...
     // Can be called multiple times, allocate 1 time only
-    if (nodeMap.empty()) {
-      nodeMap.resize(nodeCount+1);
+    if (nodeMap.map.empty()) {
+      nodeMap.map.resize(nodeCount+1);
 
       if (is_input()) {
 	std::vector<int64_t> map;
@@ -489,48 +463,38 @@ namespace Iogn {
 
 	// Map needed for Ioss starts at position 1 since the
 	// sequential/non-sequential flag is at position 0...
-	std::copy(map.begin(), map.end(), &nodeMap[1]);
+	std::copy(map.begin(), map.end(), &nodeMap.map[1]);
 
 	// Check for sequential node map.
 	// If not, build the reverse G2L node map...
-	sequentialNG2L = true;
+	nodeMap.map[0] = -1;
 	for (int64_t i=1; i < nodeCount+1; i++) {
-	  if (i != nodeMap[i]) {
-	    sequentialNG2L = false;
-	    nodeMap[0] = 1;
+	  if (i != nodeMap.map[i]) {
+	    nodeMap.map[0] = 1;
 	    break;
 	  }
 	}
 
-	if (!sequentialNG2L) {
-	  Ioss::Map::build_reverse_map(&reverseNodeMap,
-				       &nodeMap[1], nodeCount, 0,
-				       myProcessor);
-	} else {
-	  // Sequential map
-	  sequentialNG2L = true;
-	  nodeMap[0] = -1;
-	}
-
+	nodeMap.build_reverse_map(myProcessor);
+	
       } else {
 	// Output database; nodeMap not set yet... Build a default map.
 	for (int64_t i=1; i < nodeCount+1; i++) {
-	  nodeMap[i] = i;
+	  nodeMap.map[i] = i;
 	}
 	// Sequential map
-	sequentialNG2L = true;
-	nodeMap[0] = -1;
+	nodeMap.map[0] = -1;
       }
     }
     return nodeMap;
   }
 
-  const Ioss::MapContainer& DatabaseIO::get_element_map() const
+  const Ioss::Map& DatabaseIO::get_element_map() const
   {
     // Allocate space for elemente number map and read it in...
     // Can be called multiple times, allocate 1 time only
-    if (elementMap.empty()) {
-      elementMap.resize(elementCount+1);
+    if (elemMap.map.empty()) {
+      elemMap.map.resize(elementCount+1);
 
       if (is_input()) {
 	std::vector<int64_t> map;
@@ -538,40 +502,31 @@ namespace Iogn {
 
 	// Map needed for Ioss starts at position 1 since the
 	// sequential/non-sequential flag is at position 0...
-	std::copy(map.begin(), map.end(), &elementMap[1]);
+	std::copy(map.begin(), map.end(), &elemMap.map[1]);
 
 	// Check for sequential element map.
 	// If not, build the reverse G2L element map...
-	sequentialEG2L = true;
+	elemMap.map[0] = -1;
 	for (int64_t i=1; i < elementCount+1; i++) {
-	  if (i != elementMap[i]) {
-	    sequentialEG2L = false;
-	    elementMap[0] = 1;
+	  if (i != elemMap.map[i]) {
+	    elemMap.map[0] = 1;
 	    break;
 	  }
 	}
 
-	if (!sequentialEG2L) {
-	  Ioss::Map::build_reverse_map(&reverseElementMap,
-				       &elementMap[1], elementCount, 0,
-				       myProcessor);
-	} else {
-	  // Sequential map
-	  sequentialEG2L = true;
-	  elementMap[0] = -1;
+	if (elemMap.map[0] == 1) {
+	  elemMap.build_reverse_map(myProcessor);
 	}
 
       } else {
 	// Output database; elementMap not set yet... Build a default map.
 	for (int64_t i=1; i < elementCount+1; i++) {
-	  elementMap[i] = i;
+	  elemMap.map[i] = i;
 	}
-	// Sequential map
-	sequentialEG2L = true;
-	elementMap[0] = -1;
+	elemMap.map[0] = -1;
       }
     }
-    return elementMap;
+    return elemMap;
   }
 
   void DatabaseIO::get_nodeblocks()

@@ -169,6 +169,22 @@ void Ioss::Map::build_reverse_map(ReverseMapContainer *Map, const int64_t *ids,
 }
 #endif
 
+template void Ioss::Map::set_map(int *ids, size_t count, size_t offset);
+template void Ioss::Map::set_map(int64_t *ids, size_t count, size_t offset);
+
+template <typename INT>
+void Ioss::Map::set_map(INT *ids, size_t count, size_t offset)
+{
+  for (size_t i=0; i < count; i++) {
+    ssize_t local_id = offset + i + 1;
+    map[local_id] = ids[i];
+    if (local_id != ids[i]) {
+      map[0] = 1;
+      assert(ids[i] != 0);
+    }
+  }
+}
+
 template void Ioss::Map::build_reverse_map(ReverseMapContainer *Map, const int *ids,
 					     size_t num_to_get, size_t offset, int processor);
 template void Ioss::Map::build_reverse_map(ReverseMapContainer *Map, const int64_t *ids,

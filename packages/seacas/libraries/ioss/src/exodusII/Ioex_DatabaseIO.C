@@ -4501,24 +4501,10 @@ namespace Ioex {
 
 	if (nodeMap.map[0] == -1) {
 	  if (int_byte_size_api() == 4) {
-	    int *ids32 = static_cast<int*>(ids);
-	    for (ssize_t i=0; i < num_to_get; i++) {
-	      nodeMap.map[i+1] = ids32[i];
-	      if (i+1 != ids32[i]) {
-		assert(ids32[i] != 0);
-		nodeMap.map[0] = 1;
-	      }
-	    }
+	    nodeMap.set_map(static_cast<int*>(ids), num_to_get, 0);
 	  } else {
-	    int64_t *ids64 = static_cast<int64_t*>(ids);
-	    for (ssize_t i=0; i < num_to_get; i++) {
-	      nodeMap.map[i+1] = ids64[i];
-	      if (i+1 != ids64[i]) {
-		assert(ids64[i] != 0);
-		nodeMap.map[0] = 1;
-	      }
-	    }
-	  }
+	    nodeMap.set_map(static_cast<int64_t*>(ids), num_to_get, 0);
+	  }	    
 	}
 
 	nodeMap.build_reverse_map(myProcessor);
@@ -4666,25 +4652,9 @@ namespace Ioex {
 	int64_t eb_offset = eb->get_offset();
 
 	if (int_byte_size == 4) {
-	  int *ids32 = static_cast<int*>(ids);
-	  for (size_t i=0; i < num_to_get; i++) {
-	    ssize_t local_id = eb_offset + i + 1;
-	    entity_map.map[local_id] = ids32[i];
-	    if (local_id != ids32[i]) {
-	      entity_map.map[0] = 1;
-	      assert(ids32[i] != 0);
-	    }
-	  }
+	  entity_map.set_map(static_cast<int*>(ids), num_to_get, eb_offset);
 	} else {
-	  int64_t *ids64 = static_cast<int64_t*>(ids);
-	  for (size_t i=0; i < num_to_get; i++) {
-	    ssize_t local_id = eb_offset + i + 1;
-	    entity_map.map[local_id] = ids64[i];
-	    if (local_id != ids64[i]) {
-	      entity_map.map[0] = 1;
-	      assert(ids64[i] != 0);
-	    }
-	  }
+	  entity_map.set_map(static_cast<int64_t*>(ids), num_to_get, eb_offset);
 	}
 
 	// Now, if the state is Ioss::STATE_MODEL, update the reverseEntityMap

@@ -90,6 +90,9 @@ namespace Ioss {
     int64_t global_to_local(int64_t global, bool must_exist = true) const;
     int64_t local_to_global(int64_t local) const;
 
+    template <typename INT>
+      void set_map(INT *ids, size_t count, size_t offset);
+
     void build_reverse_map(int processor);
     void build_reverse_map(int64_t num_to_get, int64_t offset, int processor);
 
