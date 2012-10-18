@@ -50,6 +50,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_partition_tests
   SOURCE_FILES
     simple.mtx
     simple_coord.mtx
+    USAir97.mtx
+    USAir97_coord.mtx
     GeomGenParam.txt
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../data
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
