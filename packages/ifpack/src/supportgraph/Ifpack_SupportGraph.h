@@ -35,10 +35,11 @@
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_Amesos.h"
 #include "Ifpack_Condest.h"
-#include "Epetra_MultiVector.h"
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Time.h"
+#include "Epetra_Vector.h"
+#include "Epetra_MultiVector.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
@@ -949,11 +950,21 @@ int Ifpack_SupportGraph<T>::FindSupport()
     }
 
   
-  // Set diagonal to weighted average of old and new values
+  // Set diagonal to weighted average of Laplacian preconditioner
+  // and the original matrix
+
+  // First compute the "diagonal surplus"
+  // If input is a (Dirichlet) graph Laplacian , this will be 0
+  // TODO: revisit maps for parallel case
+  Epetra_Vector ones(Matrix_->DomainMap());
+  Epetra_Vector surplus((Matrix_->RangeMap());
+  Matrix_->Multiply(false, ones, surplus);
+
   for(int i = 0; i < num_verts; i++)
      {
-	  Values[i][0] *= (1.-KeepDiag_);
-          Values[i][0] += KeepDiag_ * diagonal[i];
+	  Values[i][0] += surplus[i];
+          Values[i][0] = KeepDiag_*diagonal[i] + 
+                         (1.-KeepDiag_) * Values[i][0];
      }
   
   // Create the CrsMatrix for the support graph                                                 
