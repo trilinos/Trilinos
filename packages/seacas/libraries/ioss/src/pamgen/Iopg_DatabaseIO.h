@@ -129,8 +129,8 @@ namespace Iopg {
     int get_side_distributions(const Ioss::SideBlock* fb, int id,
 			       int side_count, double *dist_fact, size_t data_size) const;
 
-    const Ioss::MapContainer& get_node_map() const;
-    const Ioss::MapContainer& get_element_map() const;
+    const Ioss::Map& get_node_map() const;
+    const Ioss::Map& get_element_map() const;
       
     void compute_block_adjacencies() const;
 
@@ -210,22 +210,8 @@ namespace Iopg {
     // MAPS -- Used to convert from local exodusII ids/names to Sierra
     // database global ids/names
 
-    //---Node Map -- Maps internal (1..NUMNP) ids to global ids used on the
-    //               sierra side.   global = nodeMap[local]
-    // nodeMap[0] contains: -1 if sequential, 0 if ordering unknown, 1
-    // if nonsequential
-    mutable Ioss::MapContainer        nodeMap;
-    mutable Ioss::MapContainer        reorderNodeMap;
-    mutable Ioss::ReverseMapContainer reverseNodeMap;
-    // (local==global)
-
-    //---Element Map -- Maps internal (1..NUMEL) ids to global ids used on the
-    //               sierra side.   global = elementMap[local]
-    // elementMap[0] contains: -1 if sequential, 0 if ordering unknown,
-    // 1 if nonsequential
-    mutable Ioss::MapContainer        elementMap;
-    mutable Ioss::MapContainer        reorderElementMap;
-    mutable Ioss::ReverseMapContainer reverseElementMap;
+    mutable Ioss::Map nodeMap;
+    mutable Ioss::Map elemMap;
 
     mutable std::vector<std::vector<bool> > blockAdjacency;
 

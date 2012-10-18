@@ -66,6 +66,13 @@ Ioss::Map::Map()
 {}
 
 
+void Ioss::Map::release_memory()
+{
+  MapContainer().swap(map);
+  MapContainer().swap(reorder);
+  ReverseMapContainer().swap(reverse);
+}
+
 void Ioss::Map::build_reverse_map(int processor)
 {
   if (map[0] == 1) {
@@ -211,7 +218,27 @@ void Ioss::Map::build_reverse_map(ReverseMapContainer *Map, const INT *ids,
   }
 }
 
-void Ioss::Map::map_data(void *data, const Ioss::Field &field, size_t count, const Ioss::MapContainer &map)
+void Ioss::Map::reverse_map_data(void *data, const Ioss::Field &field, size_t count) const
+{
+  assert(!map.empty());
+  if (!Ioss::Map::is_sequential(map)) {
+    if (field.get_type() == Ioss::Field::INTEGER) {
+      int* connect = static_cast<int*>(data);
+      for (size_t i=0; i < count; i++) {
+	int global_id = connect[i];
+	connect[i] = global_to_local(global_id, true);
+      }
+    } else {
+      int64_t* connect = static_cast<int64_t*>(data);
+      for (size_t i=0; i < count; i++) {
+	int64_t global_id = connect[i];
+	connect[i] = global_to_local(global_id, true);
+      }
+    }
+  }
+}
+
+void Ioss::Map::map_data(void *data, const Ioss::Field &field, size_t count) const
 {
   if (!Ioss::Map::is_sequential(map)) {
     if (field.get_type() == Ioss::Field::INTEGER) {
@@ -226,8 +253,7 @@ void Ioss::Map::map_data(void *data, const Ioss::Field &field, size_t count, con
   }
 }
 
-void Ioss::Map::map_implicit_data(void *data, const Ioss::Field &field, size_t count,
-				  const Ioss::MapContainer &map, size_t offset)
+void Ioss::Map::map_implicit_data(void *data, const Ioss::Field &field, size_t count, size_t offset) const
 {
   if (field.get_type() == Ioss::Field::INTEGER) {
     map_implicit_data_internal(static_cast<int*>(data), count, map, offset);

@@ -106,25 +106,15 @@ namespace Ioex {
     // If 'error_message' non-null, then put the warning message into the string and return it.
     bool ok(bool write_message = false, std::string *error_message=NULL) const;
 
+    // Eliminate as much memory as possible, but still retain meta data information
+    // Typically, eliminate the maps...
+    void release_memory();
+
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
     // together. If "return_value & Ioss::EntityType" is set, then the
     // database supports that type (e.g. return_value & Ioss::FACESET)
     unsigned entity_field_support() const;
-
-    int64_t  local_to_global(ex_entity_type type, int64_t local)  const;
-    int64_t  global_to_local(ex_entity_type type, int64_t global) const;
-
-    /*!
-     * Determine the local position of the node with the global id
-     * 'global'.  If 'must_exist' is false, then the global id possibly
-     * does not exist in the map; otherwise, it must exist and will
-     * throw an exception if not found.
-     */
-    int64_t node_global_to_local(int64_t global, bool must_exist) const;
-    int64_t node_local_to_global(int64_t local)  const;
-    int64_t element_local_to_global(int64_t local)  const;
-    int64_t element_global_to_local(int64_t global) const;
 
     bool begin(Ioss::State state);
     bool   end(Ioss::State state);
@@ -299,12 +289,18 @@ namespace Ioex {
 
 
     // ID Mapping functions.
-    const Ioss::MapContainer& get_map(ex_entity_type type) const;
-    const Ioss::MapContainer& get_map(Ioss::Map &entity_map,
-				      int64_t entityCount,
-				      ex_entity_type entity_type,
-				      ex_inquiry inquiry_type) const;
+    const Ioss::Map& get_map(ex_entity_type type) const;
+    const Ioss::Map& get_map(Ioss::Map &entity_map,
+			     int64_t entityCount,
+			     ex_entity_type entity_type,
+			     ex_inquiry inquiry_type) const;
     
+    int64_t node_global_to_local(int64_t global, bool must_exist) const
+    {return nodeMap.global_to_local(global, must_exist);}
+    
+    int64_t element_global_to_local(int64_t global) const
+    {return elemMap.global_to_local(global);}
+
     // Internal data handling
     int64_t handle_node_ids(void* ids, int64_t num_to_get);
     int64_t handle_element_ids(const Ioss::ElementBlock *eb, void* ids, size_t num_to_get);
@@ -421,75 +417,5 @@ namespace Ioex {
     mutable bool nodeConnectivityStatusCalculated; // True if the lazy creation of
     // nodeConnectivityStatus has been calculated.
   };
-
-  // ------------------------------------------------------------------------
-  // Node and Element mapping functions.  The ExodusII database
-  // stores ids in a local-id system (1..NUMNP), (1..NUMEL) but
-  // Sierra wants entities in a global system. These routines
-  // take care of the mapping from local <-> global
-
-  typedef std::vector<Ioss::IdPair>::iterator RMapI;
-  inline int64_t DatabaseIO::node_global_to_local(int64_t global, bool must_exist) const
-    {
-      if (nodeMap.map.empty()) {
-	get_map(EX_NODE_BLOCK);
-      }
-      int64_t local = global;
-      if (nodeMap.map[0] != -1) {
-	std::pair<RMapI, RMapI> iter = std::equal_range(nodeMap.reverse.begin(),
-							nodeMap.reverse.end(),
-							global,
-							Ioss::IdPairCompare());
-	if (iter.first != iter.second)
-	  local = (iter.first)->second;
-	else
-	  local = 0;
-	if (must_exist && iter.first == iter.second) {
-	  std::ostringstream errmsg;
-	  errmsg << "Node with global id equal to " << global
-		 << " does not exist in this mesh on this processor\n";
-	  IOSS_ERROR(errmsg);
-	}
-      } else if (!must_exist && global > nodeCount) {
-	local = 0;
-      }
-      if (local > nodeCount || (local <= 0 && must_exist)) {
-	std::ostringstream errmsg;
-	errmsg << "Node with global id equal to " << global
-	       << " returns a local id of " << local
-	       << " which is invalid. This should not happen, please report.\n";
-	IOSS_ERROR(errmsg);
-      }
-      return local;
-    }
-
-  inline int64_t DatabaseIO::element_global_to_local(int64_t global) const
-    {
-      if (elemMap.map.empty()) {
-	get_map(EX_ELEM_BLOCK);
-      }
-      int64_t local = global;
-      if (elemMap.map[0] != -1) {
-	std::pair<RMapI, RMapI> iter = std::equal_range(elemMap.reverse.begin(),
-							elemMap.reverse.end(),
-							global,
-							Ioss::IdPairCompare());
-	if (iter.first == iter.second) {
-	  std::ostringstream errmsg;
-	  errmsg << "Element with global id equal to " << global
-		 << " does not exist in this mesh on this processor\n";
-	  IOSS_ERROR(errmsg);
-	}
-	local = (iter.first)->second;
-      }
-      if (local > elementCount || local <= 0) {
-	std::ostringstream errmsg;
-	errmsg << "Element with global id equal to " << global
-	       << " returns a local id of " << local
-	       << " which is invalid. This should not happen, please report.\n";
-	IOSS_ERROR(errmsg);
-      }
-      return local;
-    }
 }
 #endif

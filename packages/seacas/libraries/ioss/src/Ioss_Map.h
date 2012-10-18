@@ -93,15 +93,17 @@ namespace Ioss {
     void build_reverse_map(int processor);
     void build_reverse_map(int64_t num_to_get, int64_t offset, int processor);
 
-
+    void release_memory(); //! Release memory for all maps.
+      
     template <typename INT>
     static void build_reverse_map(ReverseMapContainer *Map, const INT *ids,
 				  size_t num_to_get, size_t offset, int processor);
 
-    static void map_data(void *data, const Ioss::Field &field, size_t count, const Ioss::MapContainer &map);
+    void reverse_map_data(void *data, const Ioss::Field &field, size_t count) const;
 
-    static void map_implicit_data(void *data, const Ioss::Field &field, size_t count,
-				  const Ioss::MapContainer &map, size_t offset);
+    void map_data(void *data, const Ioss::Field &field, size_t count) const;
+
+    void map_implicit_data(void *data, const Ioss::Field &field, size_t count, size_t offset) const;
 
     template <typename T>
       size_t map_field_to_db_scalar_order(T* variables, std::vector<double> &db_var,

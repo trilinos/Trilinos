@@ -488,6 +488,14 @@ namespace Iopx {
     }
   }
 
+  void DatabaseIO::release_memory()
+  {
+    nodeMap.release_memory();
+    edgeMap.release_memory();
+    faceMap.release_memory();
+    elemMap.release_memory();
+  }
+
   unsigned DatabaseIO::entity_field_support() const
   {
     return Ioss::NODEBLOCK | Ioss::EDGEBLOCK | Ioss::FACEBLOCK | Ioss::ELEMENTBLOCK |
@@ -914,7 +922,7 @@ namespace Iopx {
     }
   }
 
-  const Ioss::MapContainer& DatabaseIO::get_map(ex_entity_type type) const
+  const Ioss::Map& DatabaseIO::get_map(ex_entity_type type) const
   {
     switch (type) {
     case EX_NODE_BLOCK:
@@ -950,11 +958,11 @@ namespace Iopx {
     }      
   }
   
-  const Ioss::MapContainer& DatabaseIO::get_map(Ioss::Map &entity_map,
-						int64_t entityCount,
-						int64_t file_offset, int64_t file_count,
-						ex_entity_type entity_type,
-						ex_inquiry inquiry_type) const
+  const Ioss::Map& DatabaseIO::get_map(Ioss::Map &entity_map,
+				       int64_t entityCount,
+				       int64_t file_offset, int64_t file_count,
+				       ex_entity_type entity_type,
+				       ex_inquiry inquiry_type) const
   {
     // Allocate space for node number map and read it in...
     // Can be called multiple times, allocate 1 time only
@@ -1040,7 +1048,7 @@ namespace Iopx {
 	entity_map.map[0] = -1;
       }
     }
-    return entity_map.map;
+    return entity_map;
   }
 
   void DatabaseIO::get_nodeblocks() 
@@ -1340,7 +1348,7 @@ namespace Iopx {
 	int proc    = proc_node[i].first;
 	procs[proc]++;
 	send[offset++] = glob_id;
-	int64_t loc_id = node_global_to_local(glob_id, true) -1;
+	int64_t loc_id = nodeMap.global_to_local(glob_id, true) -1;
 	for (size_t j = 0; j < inv_con[loc_id].size(); j++) {
 	  int jblk = inv_con[loc_id][j];
 	  size_t wrd_off = jblk / word_size;
@@ -1437,7 +1445,7 @@ namespace Iopx {
       offset = 0;
       for (size_t i=0; i < proc_node.size(); i++) {
 	int64_t glob_id = recv[offset++];
-	int64_t loc_id = node_global_to_local(glob_id, true) -1;
+	int64_t loc_id = nodeMap.global_to_local(glob_id, true) -1;
 	for (int iblk = 0; iblk < m_groupCount[EX_ELEM_BLOCK]; iblk++) {
 	  size_t wrd_off = iblk / word_size;
 	  size_t bit     = iblk % word_size;
@@ -2059,7 +2067,7 @@ namespace Iopx {
 	Ioss::ElementBlock *block = NULL;
 	for (size_t iel = 0; iel < number_sides; iel++) {
 	  int64_t elem_id = element_side[2*iel];  // Vector contains both element and side.
-	  elem_id = element_global_to_local(elem_id);
+	  elem_id = elemMap.global_to_local(elem_id);
 	  if (block == NULL || !block->contains(elem_id)) {
 	    block = get_region()->get_element_block(elem_id);
 	    assert(block != NULL);
@@ -2219,7 +2227,7 @@ namespace Iopx {
 	    else if (field.get_name() == "ids") {
 	      // Map the local ids in this node block
 	      // (1...node_count) to global node ids.
-	      Ioss::Map::map_implicit_data(data, field, num_to_get, get_map(EX_NODE_BLOCK), 0);
+	      get_map(EX_NODE_BLOCK).map_implicit_data(data, field, num_to_get, 0);
 	    }
 
 	    else if (field.get_name() == "connectivity") {
@@ -2282,7 +2290,7 @@ namespace Iopx {
 	    // The element_node index varies fastet
 
 	    decomp.get_block_connectivity(get_file_pointer(), (int*)data, id, order, element_nodes);
-	    Ioss::Map::map_data(data, field, num_to_get*element_nodes, get_map(EX_NODE_BLOCK));
+	    get_map(EX_NODE_BLOCK).map_data(data, field, num_to_get*element_nodes);
 	  }
 #if 0
 	  else if (field.get_name() == "connectivity_face") {
@@ -2292,7 +2300,7 @@ namespace Iopx {
 	    // The element_face index varies fastest
 	    if (my_element_count > 0) {
 	      get_connectivity_data(get_file_pointer(), data, EX_ELEM_BLOCK, id, 2);
-	      Ioss::Map::map_data(data, field, num_to_get*face_count, get_map(EX_FACE_BLOCK));
+	      get_map(EX_FACE_BLOCK).map_data(data, field, num_to_get*face_count);
 	    }
 	  }
 	  else if (field.get_name() == "connectivity_edge") {
@@ -2302,7 +2310,7 @@ namespace Iopx {
 	    // The element_edge index varies fastest
 	    if (my_element_count > 0) {
 	      get_connectivity_data(get_file_pointer(), data, EX_ELEM_BLOCK, id, 1);
-	      Ioss::Map::map_data(data, field, num_to_get*edge_count, get_map(EX_EDGE_BLOCK));
+	      get_map(EX_EDGE_BLOCK).map_data(data, field, num_to_get*edge_count);
 	    }
 	  }
 #endif
@@ -2319,7 +2327,7 @@ namespace Iopx {
 	  else if (field.get_name() == "ids") {
 	    // Map the local ids in this element block
 	    // (eb_offset+1...eb_offset+1+my_element_count) to global element ids.
-	    Ioss::Map::map_implicit_data(data, field, num_to_get, get_map(EX_ELEM_BLOCK), eb->get_offset());
+	    get_map(EX_ELEM_BLOCK).map_implicit_data(data, field, num_to_get, eb->get_offset());
 	  }
 	  else if (field.get_name() == "skin") {
 	    // This is (currently) for the skinned body. It maps the
@@ -2416,7 +2424,7 @@ namespace Iopx {
 	      // The face_node index varies fastet
 	      if (my_face_count > 0) {
 		get_connectivity_data(get_file_pointer(), data, EX_FACE_BLOCK, id, 0);
-		Ioss::Map::map_data(data, field, num_to_get*face_nodes, get_map(EX_NODE_BLOCK));
+		get_map(EX_NODE_BLOCK).map_data(data, field, num_to_get*face_nodes);
 	      }
 	    }
 	    else if (field.get_name() == "connectivity_edge") {
@@ -2426,7 +2434,7 @@ namespace Iopx {
 	      // The face_edge index varies fastest
 	      if (my_face_count > 0) {
 		get_connectivity_data(get_file_pointer(), data, EX_FACE_BLOCK, id, 1);
-		Ioss::Map::map_data(data, field, num_to_get*edge_count, get_map(EX_EDGE_BLOCK));
+		get_map(EX_EDGE_BLOCK).map_data(data, field, num_to_get*edge_count);
 	      }
 	    }
 	    else if (field.get_name() == "connectivity_raw") {
@@ -2442,7 +2450,7 @@ namespace Iopx {
 	    else if (field.get_name() == "ids") {
 	      // Map the local ids in this face block
 	      // (eb_offset+1...eb_offset+1+my_face_count) to global face ids.
-	      Ioss::Map::map_implicit_data(data, field, num_to_get, get_map(EX_FACE_BLOCK), eb->get_offset());
+	      get_map(EX_FACE_BLOCK).map_implicit_data(data, field, num_to_get, eb->get_offset());
 	    }
 	    else {
 	      num_to_get = Ioss::Utils::field_warning(eb, field, "input");
@@ -2495,7 +2503,7 @@ namespace Iopx {
 	      // The edge_node index varies fastet
 	      if (my_edge_count > 0) {
 		get_connectivity_data(get_file_pointer(), data, EX_EDGE_BLOCK, id, 0);
-		Ioss::Map::map_data(data, field, num_to_get*edge_nodes, get_map(EX_NODE_BLOCK));
+		get_map(EX_NODE_BLOCK).map_data(data, field, num_to_get*edge_nodes);
 	      }
 	    }
 	    else if (field.get_name() == "connectivity_raw") {
@@ -2511,7 +2519,7 @@ namespace Iopx {
 	    else if (field.get_name() == "ids") {
 	      // Map the local ids in this edge block
 	      // (eb_offset+1...eb_offset+1+my_edge_count) to global edge ids.
-	      Ioss::Map::map_implicit_data(data, field, num_to_get, get_map(EX_EDGE_BLOCK), eb->get_offset());
+	      get_map(EX_EDGE_BLOCK).map_implicit_data(data, field, num_to_get, eb->get_offset());
 	    }
 	    else {
 	      num_to_get = Ioss::Utils::field_warning(eb, field, "input");
@@ -2568,7 +2576,7 @@ namespace Iopx {
 	      
 	  if (field.get_name() == "ids") {
 	    // Convert the local node ids to global ids
-	    Ioss::Map::map_data(data, field, num_to_get, get_map(EX_NODE_BLOCK));
+	    get_map(EX_NODE_BLOCK).map_data(data, field, num_to_get);
 	  }
 	} else if (field.get_name() == "orientation") {
 	  if (field.get_type() == Ioss::Field::INTEGER) {
@@ -2661,7 +2669,7 @@ namespace Iopx {
 	      // Convert local node id to global node id and store in 'data'
 	      if (int_byte_size_api() == 4) {
 		int* entity_proc = static_cast<int*>(data);
-		const Ioss::MapContainer &map = get_map(EX_NODE_BLOCK);
+		const Ioss::MapContainer &map = get_map(EX_NODE_BLOCK).map;
 
 		size_t j=0;
 		for (size_t i=0; i < decomp.nodeCommMap.size(); i+=2) {
@@ -2671,7 +2679,7 @@ namespace Iopx {
 		}
 	      } else {
 		int64_t* entity_proc = static_cast<int64_t*>(data);
-		const Ioss::MapContainer &map = get_map(EX_NODE_BLOCK);
+		const Ioss::MapContainer &map = get_map(EX_NODE_BLOCK).map;
 
 		size_t j=0;
 		for (size_t i=0; i < decomp.nodeCommMap.size(); i+=2) {
@@ -2802,7 +2810,7 @@ namespace Iopx {
 	  // map from local_to_global prior to generating the side  id...
 
 	  // Get the element number map (1-based)...
-	  const Ioss::MapContainer &map = get_map(EX_ELEM_BLOCK);
+	  const Ioss::MapContainer &map = get_map(EX_ELEM_BLOCK).map;
 
 	  // Allocate space for local side number and element numbers
 	  // numbers.
@@ -3646,28 +3654,8 @@ namespace Iopx {
 	    if (field.get_name() == "connectivity") {
 	      if (my_element_count > 0) {
 		// Map element connectivity from global node id to local node id.
-		// Do it in 'data' ...
-		
-		assert(!nodeMap.map.empty());
-		if (nodeMap.map[0] != -1) {
-		  int element_nodes =
-		    eb->get_property("topology_node_count").get_int();
-		  assert(field.transformed_storage()->component_count() == element_nodes);
-		  
-		  if (field.get_type() == Ioss::Field::INTEGER) {
-		    int* connect = static_cast<int*>(data);
-		    for (size_t i=0; i < num_to_get * element_nodes; i++) {
-		      int global_id = connect[i];
-		      connect[i] = node_global_to_local(global_id, true);
-		    }
-		  } else {
-		    int64_t* connect = static_cast<int64_t*>(data);
-		    for (size_t i=0; i < num_to_get * element_nodes; i++) {
-		      int64_t global_id = connect[i];
-		      connect[i] = node_global_to_local(global_id, true);
-		    }
-		  }
-		}
+		int element_nodes = eb->get_property("topology_node_count").get_int();
+		nodeMap.reverse_map_data(data, field, num_to_get*element_nodes);
 		ierr = ex_put_conn(get_file_pointer(), EX_ELEM_BLOCK, id, data, NULL, NULL);
 		if (ierr < 0)
 		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -3675,24 +3663,8 @@ namespace Iopx {
 	    } else if (field.get_name() == "connectivity_edge") {
 	      if (my_element_count > 0) {
 		// Map element connectivity from global edge id to local edge id.
-		// Do it in 'data' ...
-		if (edgeMap.map[0] != -1) {
-		  int element_edges = field.transformed_storage()->component_count();
-
-		  if (field.get_type() == Ioss::Field::INTEGER) {
-		    int* connect = static_cast<int*>(data);
-		    for (size_t i=0; i < num_to_get * element_edges; i++) {
-		      int global_id = connect[i];
-		      connect[i] = global_to_local(EX_EDGE_BLOCK, global_id);
-		    }
-		  } else {
-		    int64_t* connect = static_cast<int64_t*>(data);
-		    for (size_t i=0; i < num_to_get * element_edges; i++) {
-		      int64_t global_id = connect[i];
-		      connect[i] = global_to_local(EX_EDGE_BLOCK, global_id);
-		    }
-		  }
-		}
+		int element_edges = field.transformed_storage()->component_count();
+		edgeMap.reverse_map_data(data, field, num_to_get*element_edges);
 		ierr = ex_put_conn(get_file_pointer(), EX_ELEM_BLOCK, id, NULL, data, NULL);
 		if (ierr < 0)
 		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -3700,24 +3672,8 @@ namespace Iopx {
 	    } else if (field.get_name() == "connectivity_face") {
 	      if (my_element_count > 0) {
 		// Map element connectivity from global face id to local face id.
-		// Do it in 'data' ...
-		if (faceMap.map[0] != -1) {
-		  int element_faces = field.transformed_storage()->component_count();
-
-		  if (field.get_type() == Ioss::Field::INTEGER) {
-		    int* connect = static_cast<int*>(data);
-		    for (size_t i=0; i < num_to_get * element_faces; i++) {
-		      int global_id = connect[i];
-		      connect[i] = global_to_local(EX_FACE_BLOCK, global_id);
-		    }
-		  } else {
-		    int64_t* connect = static_cast<int64_t*>(data);
-		    for (size_t i=0; i < num_to_get * element_faces; i++) {
-		      int64_t global_id = connect[i];
-		      connect[i] = global_to_local(EX_FACE_BLOCK, global_id);
-		    }
-		  }
-		}
+		int element_faces = field.transformed_storage()->component_count();
+		faceMap.reverse_map_data(data, field, num_to_get*element_faces);
 		ierr = ex_put_conn(get_file_pointer(), EX_ELEM_BLOCK, id, NULL, NULL, data);
 		if (ierr < 0)
 		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -3842,27 +3798,8 @@ namespace Iopx {
 	    if (field.get_name() == "connectivity") {
 	      if (my_face_count > 0) {
 		// Map face connectivity from global node id to local node id.
-		// Do it in 'data' ...
-
-		assert(!nodeMap.map.empty());
-		if (nodeMap.map[0] != -1) {
-		  int face_nodes = eb->get_property("topology_node_count").get_int();
-		  assert(field.transformed_storage()->component_count() == face_nodes);
-
-		  if (field.get_type() == Ioss::Field::INTEGER) {
-		    int* connect = static_cast<int*>(data);
-		    for (size_t i=0; i < num_to_get * face_nodes; i++) {
-		      int global_id = connect[i];
-		      connect[i] = node_global_to_local(global_id, true);
-		    }
-		  } else {
-		    int64_t* connect = static_cast<int64_t*>(data);
-		    for (size_t i=0; i < num_to_get * face_nodes; i++) {
-		      int64_t global_id = connect[i];
-		      connect[i] = node_global_to_local(global_id, true);
-		    }
-		  }
-		}
+		int face_nodes = eb->get_property("topology_node_count").get_int();
+		nodeMap.reverse_map_data(data, field, num_to_get*face_nodes);
 		ierr = ex_put_conn(get_file_pointer(), EX_FACE_BLOCK, id, data, NULL, NULL);
 		if (ierr < 0) exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	      }
@@ -3870,24 +3807,8 @@ namespace Iopx {
 	      if (my_face_count > 0) {
 		// Map face connectivity from global edge id to local edge id.
 		// Do it in 'data' ...
-		
-		if (edgeMap.map[0] != -1) {
-		  int face_edges = field.transformed_storage()->component_count();
-		  
-		  if (field.get_type() == Ioss::Field::INTEGER) {
-		    int* connect = static_cast<int*>(data);
-		    for (size_t i=0; i < num_to_get * face_edges; i++) {
-		      int global_id = connect[i];
-		      connect[i] = global_to_local(EX_EDGE_BLOCK, global_id);
-		    }
-		  } else {
-		    int64_t* connect = static_cast<int64_t*>(data);
-		    for (size_t i=0; i < num_to_get * face_edges; i++) {
-		      int64_t global_id = connect[i];
-		      connect[i] = global_to_local(EX_EDGE_BLOCK, global_id);
-		    }
-		  }
-		}
+		int face_edges = field.transformed_storage()->component_count();
+		edgeMap.reverse_map_data(data, field, num_to_get*face_edges);
 		ierr = ex_put_conn(get_file_pointer(), EX_FACE_BLOCK, id, NULL, data, NULL);
 		if (ierr < 0) exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	      }
@@ -3947,27 +3868,8 @@ namespace Iopx {
 	    if (field.get_name() == "connectivity") {
 	      if (my_edge_count > 0) {
 		// Map edge connectivity from global node id to local node id.
-		// Do it in 'data' ...
-
-		assert(!nodeMap.map.empty());
-		if (nodeMap.map[0] != -1) {
-		  int edge_nodes = eb->get_property("topology_node_count").get_int();
-		  assert(field.transformed_storage()->component_count() == edge_nodes);
-
-		  if (field.get_type() == Ioss::Field::INTEGER) {
-		    int* connect = static_cast<int*>(data);
-		    for (size_t i=0; i < num_to_get * edge_nodes; i++) {
-		      int global_id = connect[i];
-		      connect[i] = node_global_to_local(global_id, true);
-		    }
-		  } else {
-		    int64_t* connect = static_cast<int64_t*>(data);
-		    for (size_t i=0; i < num_to_get * edge_nodes; i++) {
-		      int64_t global_id = connect[i];
-		      connect[i] = node_global_to_local(global_id, true);
-		    }
-		  }
-		}
+		int edge_nodes = eb->get_property("topology_node_count").get_int();
+		nodeMap.reverse_map_data(data, field, num_to_get*edge_nodes);
 		ierr = ex_put_conn(get_file_pointer(), EX_EDGE_BLOCK, id, data, NULL, NULL);
 		if (ierr < 0) exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	      }
@@ -4258,20 +4160,6 @@ namespace Iopx {
       }
     }
   
-    int64_t  DatabaseIO::global_to_local(ex_entity_type type, int64_t global) const
-    {
-      if (type == EX_NODE_BLOCK || type == EX_NODE_SET) {
-	return nodeMap.global_to_local(global);
-      } else if (type == EX_ELEM_BLOCK || type == EX_ELEM_SET) {
-	return elemMap.global_to_local(global);
-      } else if (type == EX_FACE_BLOCK || type == EX_FACE_SET) {
-	return faceMap.global_to_local(global);
-      } else if (type == EX_EDGE_BLOCK || type == EX_EDGE_SET) {
-	return edgeMap.global_to_local(global);
-      }
-      return 0;
-    }
-
     int64_t DatabaseIO::handle_element_ids(const Ioss::ElementBlock *eb, void* ids, size_t num_to_get)
     {
       if (elemMap.map.empty()) {
@@ -4634,22 +4522,7 @@ namespace Iopx {
 	      // Do it in 'data' ...
 
 	      if (field.get_name() == "ids") {
-		assert(!nodeMap.map.empty());
-		if (nodeMap.map[0] != -1) {
-		  if (int_byte_size_api() == 4) {
-		    int* ids = static_cast<int*>(data);
-		    for (size_t i=0; i < num_to_get; i++) {
-		      int64_t global_id = ids[i];
-		      ids[i] = node_global_to_local(global_id, true);
-		    }
-		  } else {
-		    int64_t* ids = static_cast<int64_t*>(data);
-		    for (size_t i=0; i < num_to_get; i++) {
-		      int64_t global_id = ids[i];
-		      ids[i] = node_global_to_local(global_id, true);
-		    }
-		  }
-		}
+		nodeMap.reverse_map_data(data, field, num_to_get);
 	      }
 	      int ierr = ex_put_set(get_file_pointer(), type, id, data, NULL);
 	      if (ierr < 0) exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -4760,7 +4633,7 @@ namespace Iopx {
 	    int j=0;
 	    for (size_t i=0; i < entity_count; i++) {
 	      int global_id = entity_proc[j++];
-	      ent[i] = node_global_to_local(global_id, true);
+	      ent[i] = nodeMap.global_to_local(global_id, true);
 	      pro[i] = entity_proc[j++];
 	    }
 	  } else {
@@ -4770,7 +4643,7 @@ namespace Iopx {
 	    int64_t j=0;
 	    for (size_t i=0; i < entity_count; i++) {
 	      int64_t global_id = entity_proc[j++];
-	      ent[i] = node_global_to_local(global_id, true);
+	      ent[i] = nodeMap.global_to_local(global_id, true);
 	      pro[i] = entity_proc[j++];
 	    }
 	  }
@@ -4822,7 +4695,7 @@ namespace Iopx {
 	    for (size_t i=0; i < entity_count; i++) {
 	      // Assume klugy side id generation.
 	      int global_id = entity_proc[j] / 10;
-	      ent[i] = element_global_to_local(global_id);
+	      ent[i] = elemMap.global_to_local(global_id);
 	      sid[i] = entity_proc[j++] % 10;
 	      pro[i] = entity_proc[j++];
 	    }
@@ -4835,7 +4708,7 @@ namespace Iopx {
 	    for (size_t i=0; i < entity_count; i++) {
 	      // Assume klugy side id generation.
 	      int64_t global_id = entity_proc[j] / 10;
-	      ent[i] = element_global_to_local(global_id);
+	      ent[i] = elemMap.global_to_local(global_id);
 	      sid[i] = entity_proc[j++] % 10;
 	      pro[i] = entity_proc[j++];
 	    }
@@ -4959,7 +4832,7 @@ namespace Iopx {
 	      int *el_side = (int *)data;
 	      
 	      for (size_t i=0; i < num_to_get; i++) {
-		element[i] = element_global_to_local(el_side[index++]);
+		element[i] = elemMap.global_to_local(el_side[index++]);
 		side[i]    = el_side[index++]+side_offset;
 	      }
 	      
@@ -4972,7 +4845,7 @@ namespace Iopx {
 	      int64_t *el_side = (int64_t *)data;
 	      
 	      for (size_t i=0; i < num_to_get; i++) {
-		element[i] = element_global_to_local(el_side[index++]);
+		element[i] = elemMap.global_to_local(el_side[index++]);
 		side[i]    = el_side[index++]+side_offset;
 	      }
 	      
@@ -5050,35 +4923,6 @@ namespace Iopx {
 	}
       }
       return num_to_get;
-    }
-
-    // ------------------------------------------------------------------------
-    // Node and Element mapping functions.  The ExodusII database
-    // stores ids in a local-id system (1..NUMNP), (1..NUMEL) but
-    // Sierra wants entities in a global system. These routines
-    // take care of the mapping from local <-> global
-
-    int64_t DatabaseIO::local_to_global(ex_entity_type type, int64_t local)  const
-    {
-      const Ioss::MapContainer &map = get_map(type);
-      int64_t global = map[local];
-      return global;
-    }
-
-    int64_t DatabaseIO::node_local_to_global(int64_t local)  const
-    {
-      assert(local <= nodeCount && local > 0);
-      const Ioss::MapContainer &node_map = get_map(EX_NODE_BLOCK);
-      int64_t global = node_map[local];
-      return global;
-    }
-
-    int64_t DatabaseIO::element_local_to_global(int64_t local)  const
-    {
-      assert(local <= elementCount && local > 0);
-      const Ioss::MapContainer &element_map = get_map(EX_ELEM_BLOCK);
-      int64_t global = element_map[local];
-      return global;
     }
 
     bool DatabaseIO::begin(Ioss::State state)
