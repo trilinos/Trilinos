@@ -155,115 +155,6 @@ namespace Iovs {
     // TODO fillin
   }
 
-  void DatabaseIO::compute_block_membership(int id, std::vector<std::string> &block_membership) const
-  {
-    Ioss::IntVector block_ids(elementBlockCount);
-    for (int el = 0; el < elementBlockCount; el ++) {
-      block_ids[el] = 1;
-    }
-    /*
-    if (elementBlockCount == 1) {
-      block_ids[0] = 1;
-    } else {
-      int number_sides;
-      int number_distribution_factors;
-      int error = ex_get_set_param(get_file_pointer(), EX_SIDE_SET, id,
-                                   &number_sides, &number_distribution_factors);
-      if (error < 0) {
-        exodus_error(get_file_pointer(), __LINE__, myProcessor);
-      }
-      
-      if (number_sides > 0) {
-        // Get the element and element side lists.
-        Ioss::IntVector element(number_sides);
-        Ioss::IntVector sides(number_sides);
-        
-        int ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, &element[0], &sides[0]);
-        if (ierr < 0)
-          exodus_error(get_file_pointer(), __LINE__, myProcessor);
-        
-        Ioss::ElementBlock *block = NULL;
-        for (int iel = 0; iel < number_sides; iel++) {
-          int elem_id = element[iel];
-          if (block == NULL || !block->contains(elem_id)) {
-            block = get_region()->get_element_block(elem_id);
-            assert(block != NULL);
-            int block_order = block->get_property("original_block_order").get_int();
-            block_ids[block_order] = 1;
-          }
-        }
-      }
-      // Synchronize among all processors....
-      if (isParallel) {
-        util().global_array_minmax(&block_ids[0],
-                                         block_ids.size(),
-                                         Ioss::ParallelUtils::DO_MAX);
-      }
-    }
-    */
-
-    Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
-    // assert(check_block_order(element_blocks));
-
-    for (int i=0; i < elementBlockCount; i++) {
-      if (block_ids[i] == 1) {
-        Ioss::ElementBlock *block = element_blocks[i];
-        // if (!block_is_omitted(block)) {
-          block_membership.push_back(block->name());
-        // }
-      }
-    }
-  }
-  
-  void DatabaseIO::compute_block_membership(Ioss::EntityBlock *efblock,
-                                            std::vector<std::string> &block_membership) const
-  {
-    Ioss::IntVector block_ids(elementBlockCount);
-    for (int el = 0; el < elementBlockCount; el ++) {
-      block_ids[el] = 1;
-    }
-    /*
-    if (elementBlockCount == 1) {
-      block_ids[0] = 1;
-    } else {
-      Ioss::IntVector element_side;
-      efblock->get_field_data("element_side", element_side);
-      
-      size_t number_sides = element_side.size() / 2;
-      Ioss::ElementBlock *block = NULL;
-      for (size_t iel = 0; iel < number_sides; iel++) {
-        int elem_id = element_side[2*iel];  // Vector contains both element and side.
-        elem_id = element_global_to_local(elem_id);
-        if (block == NULL || !block->contains(elem_id)) {
-          block = get_region()->get_element_block(elem_id);
-          assert(block != NULL);
-          int block_order = block->get_property("original_block_order").get_int();
-          block_ids[block_order] = 1;
-        }
-      }
-    }
-    */
-    
-    // Synchronize among all processors....
-    if (isParallel) {
-      util().global_array_minmax(&block_ids[0],
-                                 block_ids.size(),
-                                 Ioss::ParallelUtils::DO_MAX);
-    }
-    
-    Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
-    // assert(check_block_order(element_blocks));
-    
-    for (int i=0; i < elementBlockCount; i++) {
-      if (block_ids[i] == 1) {
-        Ioss::ElementBlock *block = element_blocks[i];
-        // if (!block_is_omitted(block)) {
-          block_membership.push_back(block->name());
-        // }
-      }
-    }
-  }
-  
   //------------------------------------------------------------------------
   int64_t DatabaseIO::put_field_internal(const Ioss::Region* /* region */,
                                      const Ioss::Field& field,
@@ -473,41 +364,6 @@ namespace Iovs {
     }
   }
 
-  typedef std::vector<Ioss::IdPair>::iterator RMapI;
-  inline int64_t DatabaseIO::iovs_internal_node_global_to_local(int64_t global, bool must_exist) const
-    {
-      if (nodeMap.empty()) {
-	get_node_map();
-      }
-      int64_t local = global;
-      if (nodeMap[0] != -1) {
-	std::pair<RMapI, RMapI> iter = std::equal_range(reverseNodeMap.begin(),
-							reverseNodeMap.end(),
-							global,
-							Ioss::IdPairCompare());
-	if (iter.first != iter.second)
-	  local = (iter.first)->second;
-	else
-	  local = 0;
-	if (must_exist && iter.first == iter.second) {
-	  std::ostringstream errmsg;
-	  errmsg << "Node with global id equal to " << global
-		 << " does not exist in this mesh on this processor\n";
-	  IOSS_ERROR(errmsg);
-	}
-      } else if (!must_exist && global > nodeCount) {
-	local = 0;
-      }
-      if (local > nodeCount || (local <= 0 && must_exist)) {
-	std::ostringstream errmsg;
-	errmsg << "Node with global id equal to " << global
-	       << " returns a local id of " << local
-	       << " which is invalid. This should not happen, please report.\n";
-	IOSS_ERROR(errmsg);
-      }
-      return local;
-    }
-
   int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock* eb,
                                      const Ioss::Field& field,
                                      void *data, size_t data_size) const
@@ -569,40 +425,7 @@ namespace Iovs {
               };
 
               if (imesh_topology != iMesh_ALL_TOPOLOGIES) {
-                /*
-                int* connect = static_cast<int*>(data);
-
-                if (!sequentialNG2L) {
-                  for (size_t i=0; i < num_to_get * element_nodes; i++) {
-                    int global_id = connect[i];
-                    connect[i] = node_global_to_local(global_id, true);
-                  }
-                }
-                */
-                int* connectInt = static_cast<int*>(data);
-                int64_t* connectInt64 = static_cast<int64_t*>(data);
-                if(nodeMap[0] != -1) {
-                  //std::cout << "DatabaseIO::put_field_internal not sequential (nodeMap[0] != -1)\n";
-                  //these lines already done above
-                  //int element_nodes =
-                  //  eb->get_property("topology_node_count").get_int();
-                  //assert(field.transformed_storage()->component_count() == element_nodes);
-
-                  if (field.get_type() == Ioss::Field::INTEGER) {
-                    for (size_t i=0; i < num_to_get * element_nodes; i++) {
-                      int global_id = connectInt[i];
-                      connectInt[i] = node_global_to_local(global_id, true);
-                    }
-                  } else {
-                    //std::cout << "doing 64 bint fpi element\n";
-                    for (size_t i=0; i < num_to_get * element_nodes; i++) {
-                      int64_t global_id = connectInt64[i];
-                      connectInt64[i] = node_global_to_local(global_id, true);
-                    }
-                  }
-                } else {
-                  //std::cout << "DatabaseIO::put_field_internal sequential (nodeMap[0] == -1)\n";
-                }
+		nodeMap.reverse_map_data(data, field, num_to_get*element_nodes);
 
                 iBase_EntityHandle *vertexHandles = 0;
                 int vertexAllocated = 0, vertexSize;
@@ -617,6 +440,8 @@ namespace Iovs {
                   int *status = 0;
                   int statusAllocated = 0, statusSize;
 
+		  int* connectInt = static_cast<int*>(data);
+		  int64_t* connectInt64 = static_cast<int64_t*>(data);
                   for (size_t i=0; i < num_to_get * element_nodes; i++) {
                     if (field.get_type() == Ioss::Field::INTEGER) {
                       connectHandles[i] = vertexHandles[connectInt[i] - 1];
@@ -632,65 +457,16 @@ namespace Iovs {
               
                 delete [] connectHandles;
                 }
-                // ierr = ex_put_conn(get_file_pointer(), EX_ELEM_BLOCK, id, connect, NULL, NULL);
-                // if (ierr < 0)
-                  // exodus_error(get_file_pointer(), __LINE__, myProcessor);
               }
             }
           } else if (field.get_name() == "ids") {
             // Another 'const-cast' since we are modifying the database just
             // for efficiency; which the client does not see...
             DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
-            //new_this->handle_element_ids(eb, static_cast<int*>(data), num_to_get);
             new_this->handle_element_ids(eb, data, num_to_get);
 
           } else if (field.get_name() == "skin") {
-            // This is (currently) for the skinned body. It maps the
-            // face element on the skin to the original element/local
-            // face number.  It is a two component field, the first
-            // component is the global id of the underlying element in
-            // the initial mesh and its local face number (1-based).
-
-            /* TODO do we care about skin?
-            Ioss::IntVector element(element_count);
-            Ioss::IntVector side(element_count);
-            int *el_side = (int *)data;
-
-            int index = 0;
-            for (int i=0; i < element_count; i++) {
-              element[i] = el_side[index++];
-              side[i]    = el_side[index++];
-            }
-
-            // FIX: Hardwired map ids....
-            int map_count = ex_inquire_int(get_file_pointer(), EX_INQ_ELEM_MAP);
-            if (map_count == 0) {
-              // This needs to be fixed... Currently hardwired....
-              ierr = ex_put_map_param(get_file_pointer(), 0, 2);
-              if (ierr < 0)
-                exodus_error(get_file_pointer(), __LINE__, myProcessor);
-            }
-
-            int eb_offset = eb->get_offset();
-            ierr = ex_put_partial_elem_map(get_file_pointer(), 1, eb_offset+1, element_count,
-                                           &element[0]);
-            if (ierr < 0)
-              exodus_error(get_file_pointer(), __LINE__, myProcessor);
-            ierr = ex_put_partial_elem_map(get_file_pointer(), 2, eb_offset+1, element_count,
-                                           &side[0]);
-            if (ierr < 0)
-              exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
-            if (map_count == 0) {
-              ierr = ex_put_name(get_file_pointer(), EX_ELEM_MAP, 1, "skin:parent_element_id");
-              if (ierr < 0)
-                exodus_error(get_file_pointer(), __LINE__, myProcessor);
-              ierr = ex_put_name(get_file_pointer(), EX_ELEM_MAP, 2, "skin:parent_element_face_number");
-              if (ierr < 0)
-                exodus_error(get_file_pointer(), __LINE__, myProcessor);
-            }
-            */
-
+	    // Not applicable to viz output.
           } else {
             IOSS_WARNING << " ElementBlock " << eb->name()
                          << ". Unknown field " << field.get_name();
@@ -858,132 +634,39 @@ namespace Iovs {
     assert(num_to_get == nodeCount);
     
     if (dbState == Ioss::STATE_MODEL) {
-      if (nodeMap.empty()) {
+      if (nodeMap.map.empty()) {
         //std::cout << "DatabaseIO::handle_node_ids nodeMap was empty, resizing and tagging serial\n";
-        nodeMap.resize(nodeCount+1);
-          nodeMap[0] = -1;
+        nodeMap.map.resize(nodeCount+1);
+	nodeMap.map[0] = -1;
       }
 
-      if (nodeMap[0] == -1) {
+      if (nodeMap.map[0] == -1) {
         //std::cout << "DatabaseIO::handle_node_ids nodeMap tagged serial, doing mapping\n";
-        if (int_byte_size_api() == 4) {
-          //std::cout << "handle_node_ids 32 bit section\n";
-          int *ids32 = static_cast<int*>(ids);
-          for (ssize_t i=0; i < num_to_get; i++) {
-            nodeMap[i+1] = ids32[i];
-            if (i+1 != ids32[i]) {
-              assert(ids32[i] != 0);
-              if(nodeMap[0] != 1) {
-                //std::cout << "DatabaseIO::handle_node_ids 32 local_id not matching, mark as nonsequential\n";
-              }
-              nodeMap[0] = 1;
-            }
-          }
-        } else {
-          int64_t *ids64 = static_cast<int64_t*>(ids);
-          std::cout << "handle_node_ids 64 bit section\n";
-          for (ssize_t i=0; i < num_to_get; i++) {
-            nodeMap[i+1] = ids64[i];
-            if (i+1 != ids64[i]) {
-              assert(ids64[i] != 0);
-              if(nodeMap[0] != 1) {
-                std::cout << "DatabaseIO::handle_node_ids 64 local_id not matching, mark as nonsequential\n";
-              }
-              nodeMap[0] = 1;
-            }
-          }
-        }
-      } else {
-        //std::cout << "DatabaseIO::handle_node_ids nodeMap tagged NOT serial, NOT doing mapping\n";
+	if (int_byte_size_api() == 4) {
+	  nodeMap.set_map(static_cast<int*>(ids), num_to_get, 0);
+	} else {
+	  nodeMap.set_map(static_cast<int64_t*>(ids), num_to_get, 0);
+	}	    
       }
 
-      if (nodeMap[0] != -1) {
-        //std::cout << "DatabaseIO::handle_node_ids nodeMap tagged serial, doing build_reverse_map\n";
-        Ioss::Map::build_reverse_map(&reverseNodeMap, &nodeMap[1], num_to_get, 0, myProcessor);
-      } else {
-        //std::cout << "DatabaseIO::handle_node_ids nodeMap tagged NOT serial, NOT doing build_reverse_map\n";
+	nodeMap.build_reverse_map(myProcessor);
+
+	// Only a single nodeblock and all set
+	if (num_to_get == nodeCount) {
+	  assert(nodeMap.map[0] == -1 || nodeMap.reverse.size() == (size_t)nodeCount);
+	}
+	assert(get_region()->get_property("node_block_count").get_int() == 1);
       }
 
-      // Only a single nodeblock and all set
-      if (num_to_get == nodeCount) {
-        assert(nodeMap[0] == -1 || reverseNodeMap.size() == (size_t)nodeCount);
-      }
-      assert(get_region()->get_property("node_block_count").get_int() == 1);
-
+      nodeMap.build_reorder_map(0, num_to_get);
+      return num_to_get;
     }
 
-    build_node_reorder_map(ids, num_to_get);
-    //std::cout << "DatabaseIO::handle_node_ids returning\n";
-    return num_to_get;
-  }
-
-      int64_t internal_global_to_local(Ioss::ReverseMapContainer &reverseEntityMap, bool sequential,
-				      size_t entity_count, int64_t global)
-      {
-	int64_t local = global;
-	if (!sequential) {
-	  std::pair<RMapI, RMapI> iter = std::equal_range(reverseEntityMap.begin(),
-							  reverseEntityMap.end(),
-							  global,
-							  Ioss::IdPairCompare());
-	  if (iter.first == iter.second) {
-	    std::ostringstream errmsg;
-	    errmsg << "Element with global id equal to " << global
-		   << " does not exist in this mesh on this processor\n";
-	    IOSS_ERROR(errmsg);
-	  }
-	  local = (iter.first)->second;
-	}
-	if (local > (ssize_t)entity_count || local <= 0) {
-	  std::ostringstream errmsg;
-	  errmsg << "Entity (element, face, edge, node) with global id equal to " << global
-		 << " returns a local id of " << local
-		 << " which is invalid. This should not happen, please report.\n";
-	  IOSS_ERROR(errmsg);
-	}
-	return local;
-      }
-
-      void build_entity_reorder_map(Ioss::MapContainer &entityMap,
-				    Ioss::ReverseMapContainer &reverseEntityMap,
-				    Ioss::MapContainer &reorderEntityMap,
-				    int64_t start, int64_t count)
-      {
-        //std::cout << "DatabaseIO::build_entity_reorder_map executing\n";
-        //std::cout << "DatabaseIO::build_entity_reorder_map entityMap.size: " << entityMap.size() << " reorderEntityMap.empty: " << reorderEntityMap.empty() << "\n";
-	// Note: To further add confusion, the reorderEntityaMap is 0-based
-	// and the reverseEntityMap and entityMap are 1-baed. This is
-	// just a consequence of how they are intended to be used...
-	//
-	// start is based on a 0-based array -- start of the reorderMap to build.
-      
-	if (reorderEntityMap.empty())
-	  reorderEntityMap.resize(entityMap.size()-1);
-      
-        //std::cout << "DatabaseIO::build_entity_reorder_map did check, resize, starting loop\n";
-
-	int64_t my_end = start+count;
-        //std::cout << "start: " << start << " my_end: " << my_end << " count " << count << " size: " << entityMap.size() << "\n";
-	for (int64_t i=start; i < my_end; i++) {
-	  int64_t global_id = entityMap[i+1];
-	  int64_t orig_local_id = internal_global_to_local(reverseEntityMap, entityMap[0] == -1, entityMap.size()-1, global_id) - 1;
-	
-	  // If we assume that partial output is not being used (it
-	  // currently isn't in Sierra), then the reordering should only be
-	  // a permutation of the original ordering within this entity block...
-	  assert(orig_local_id >= start && orig_local_id <= my_end);
-	  reorderEntityMap[i] = orig_local_id;
-	}
-        //std::cout << "DatabaseIO::build_entity_reorder_map returning\n";
-      }
-
       size_t handle_block_ids(const Ioss::EntityBlock *eb,
-			   ex_entity_type map_type,
-			   Ioss::State db_state,
-			   Ioss::MapContainer &entityMap,
-			   Ioss::ReverseMapContainer &reverseEntityMap,
-			   Ioss::MapContainer &reorderEntityMap,
-			   void* ids, size_t int_byte_size, size_t num_to_get, /*int file_pointer,*/ int my_processor)
+			      ex_entity_type map_type,
+			      Ioss::State db_state,
+			      Ioss::Map &entity_map,
+			      void* ids, size_t int_byte_size, size_t num_to_get, /*int file_pointer,*/ int my_processor)
       {
         //std::cout << "DatabaseIO::handle_block_ids executing\n";
 	/*!
@@ -1047,51 +730,21 @@ namespace Iovs {
 	int64_t eb_offset = eb->get_offset();
 
 	if (int_byte_size == 4) {
-          //std::cout << "handle_block_ids 32 bit section\n";
-	  int *ids32 = static_cast<int*>(ids);
-	  for (size_t i=0; i < num_to_get; i++) {
-	    ssize_t local_id = eb_offset + i + 1;
-	    entityMap[local_id] = ids32[i];
-	    if (local_id != ids32[i]) {
-              //if(entityMap[0] != 1) {
-                //std::cout << "DatabaseIO::handle_block_ids 32 local_id not matching, mark as nonsequential\n";
-              //}
-	      entityMap[0] = 1;
-	      assert(ids32[i] != 0);
-	    }
-	  }
+	  entity_map.set_map(static_cast<int*>(ids), num_to_get, eb_offset);
 	} else {
-          std::cout << "handle_block_ids 64 bit section\n";
-	  int64_t *ids64 = static_cast<int64_t*>(ids);
-	  for (size_t i=0; i < num_to_get; i++) {
-	    ssize_t local_id = eb_offset + i + 1;
-	    entityMap[local_id] = ids64[i];
-	    if (local_id != ids64[i]) {
-              if(entityMap[0] != 1) {
-                std::cout << "DatabaseIO::handle_block_ids 64 local_id not matching, mark as nonsequential\n";
-              }
-	      entityMap[0] = 1;
-	      assert(ids64[i] != 0);
-	    }
-	  }
+	  entity_map.set_map(static_cast<int64_t*>(ids), num_to_get, eb_offset);
 	}
 
 	// Now, if the state is Ioss::STATE_MODEL, update the reverseEntityMap
 	if (db_state == Ioss::STATE_MODEL) {
-          //std::cout << "DatabaseIO::handle_block_ids state model, update reverseEntityMap\n";
-	  Ioss::Map::build_reverse_map(&reverseEntityMap, &entityMap[eb_offset+1], num_to_get,
-				       eb_offset, my_processor);
-
-          //took out the write to database stuff here
-	} else {
-          //std::cout << "DatabaseIO::handle_block_ids NOT state model, NOT update reverseEntityMap\n";
+	  entity_map.build_reverse_map(num_to_get, eb_offset, my_processor);
         }
+
 	// Build the reorderEntityMap which does a direct mapping from
 	// the current topologies local order to the local order
 	// stored in the database...  This is 0-based and used for
 	// remapping output and input TRANSIENT fields.
-	build_entity_reorder_map(entityMap, reverseEntityMap, reorderEntityMap,
-                                 eb_offset, num_to_get);
+	entity_map.build_reorder_map(eb_offset, num_to_get);
         //std::cout << "DatabaseIO::handle_block_ids returning\n";
 	return num_to_get;
       }
@@ -1099,102 +752,53 @@ namespace Iovs {
   int64_t DatabaseIO::handle_element_ids(const Ioss::ElementBlock *eb, void* ids, size_t num_to_get)
   {
       //std::cout << "DatabaseIO::handle_element_ids executing num_to_get: " << num_to_get << "\n";
-      if (elementMap.empty()) {
+      if (elemMap.map.empty()) {
         //std::cout << "DatabaseIO::handle_element_ids elementMap was empty; allocating and marking as sequential\nelmenetCount: " << elementCount << "\n";
-        elementMap.resize(elementCount+1);
-        elementMap[0] = -1;
+        elemMap.map.resize(elementCount+1);
+        elemMap.map[0] = -1;
       }
       //std::cout << "DatabaseIO::handle_element_ids elementMap size: " << elementMap.size() << "\n";
-      return handle_block_ids(eb, EX_ELEM_MAP, dbState,
-                              elementMap, reverseElementMap, reorderElementMap,
+      return handle_block_ids(eb, EX_ELEM_MAP, dbState, elemMap,
                               ids, int_byte_size_api(), num_to_get, /*get_file_pointer(),*/ myProcessor);
   }
 
 
-    void DatabaseIO::build_node_reorder_map(void *ids, int64_t count)
-    {
-      //std::cout << "DatabaseIO::build_node_reorder_map executing\n";
-      // This routine builds a map that relates the current node id order
-      // to the original node ordering in affect at the time the file was
-      // created. That is, the node map used to define the topology of the
-      // model.  Now, if there are changes in node ordering at the
-      // application level, we build the node reorder map to map the
-      // current order into the original order.  An added complication is
-      // that this is more than just a reordering... It may be that the
-      // application has 'ghosted' nodes that it doesnt want put out on
-      // the database, so the reorder map must handle a node that is not
-      // in the original mesh and map that to an invalid value (currently
-      // using -1 as invalid value...)
-
-
-      // Note: To further add confusion,
-      // the reorderNodeMap and new_ids are 0-based
-      // the reverseNodeMap and nodeMap are 1-based. This is
-      // just a consequence of how they are intended to be used...
-
-      reorderNodeMap.resize(count);
-
-      if (int_byte_size_api() == 4) {
-        //std::cout << "build_node_reorder_map 32 bit section\n";
-	int *new_ids = static_cast<int*>(ids);
-	for (int i=0; i < count; i++) {
-	  int global_id = new_ids[i];
-	  
-	  // This will return 0 if node is not found in list.
-	  int orig_local_id = node_global_to_local(global_id, false) - 1;
-	  
-	  reorderNodeMap[i] = orig_local_id;
-	}
-      } else {
-	int64_t *new_ids = static_cast<int64_t*>(ids);
-        std::cout << "build_node_reorder_map 64 bit section\n";
-	for (int64_t i=0; i < count; i++) {
-	  int64_t global_id = new_ids[i];
-	  
-	  // This will return 0 if node is not found in list.
-	  int64_t orig_local_id = node_global_to_local(global_id, false) - 1;
-	  
-	  reorderNodeMap[i] = orig_local_id;
-	}
-      }
-      //std::cout << "DatabaseIO::build_node_reorder_map returning\n";
-    }
-
-  const Ioss::MapContainer& DatabaseIO::get_node_map() const
+  const Ioss::Map& DatabaseIO::get_node_map() const
   {
     //std::cout << "in new nathan Iovs DatabaseIO::get_node_reorder_map\n";
     // Allocate space for node number map and read it in...
     // Can be called multiple times, allocate 1 time only
-    if (nodeMap.empty()) {
+    if (nodeMap.map.empty()) {
       //std::cout << "DatabaseIO::get_node_map  nodeMap was empty, resizing and tagging sequential\n";
-      nodeMap.resize(nodeCount+1);
+      nodeMap.map.resize(nodeCount+1);
 
-	// Output database; nodeMap not set yet... Build a default map.
-	for (int64_t i=1; i < nodeCount+1; i++) {
-	  nodeMap[i] = i;
-	}
-	// Sequential map
-	nodeMap[0] = -1;
+      // Output database; nodeMap not set yet... Build a default map.
+      for (int64_t i=1; i < nodeCount+1; i++) {
+	nodeMap.map[i] = i;
+      }
+      // Sequential map
+      nodeMap.map[0] = -1;
     }
     return nodeMap;
   }
 
-  const Ioss::MapContainer& DatabaseIO::get_element_map() const
+  // Not used...
+  const Ioss::Map& DatabaseIO::get_element_map() const
   {
     //std::cout << "in new nathan Iovs DatabaseIO::get_element_map\n";
     // Allocate space for elemente number map and read it in...
     // Can be called multiple times, allocate 1 time only
-    if (elementMap.empty()) {
-      elementMap.resize(elementCount+1);
+    if (elemMap.map.empty()) {
+      elemMap.map.resize(elementCount+1);
 
 	// Output database; elementMap not set yet... Build a default map.
 	for (int64_t i=1; i < elementCount+1; i++) {
-	  elementMap[i] = i;
+	  elemMap.map[i] = i;
 	}
 	// Sequential map
-	elementMap[0] = -1;
+	elemMap.map[0] = -1;
     }
-    return elementMap;
+    return elemMap;
   }
 
   int field_warning(const Ioss::GroupingEntity *ge,
