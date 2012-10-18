@@ -196,7 +196,7 @@ def emitSpecializationDecls (d, indent=0):
     # Fill it in for each C++ type key of the dictionary.
     tmpl = Template('''// Specialization of MpiTypeTraits<T> for T=${name}.
 template<>
-class MpiTypeTraits< ${name} > {
+class TEUCHOS_LIB_DLL_EXPORT MpiTypeTraits< ${name} > {
  public:
   typedef ${name} packet_type;
   static const bool mustFreeDatatype = false;
