@@ -262,7 +262,7 @@ reduceAll<int, float> (const Comm<int>& comm,
 }
 
 
-#ifdef TEUCHOS_HAVE_LONG_LONG
+#ifdef TEUCHOS_HAVE_LONG_LONG_INT
 // Specialization for Ordinal=int and Packet=long long.
 template<>
 void 
@@ -304,7 +304,7 @@ reduceAll<int, long long> (const Comm<int>& comm,
   std::copy (sendBuffer, sendBuffer + count, globalReducts);
 #endif // HAVE_MPI
 }
-#endif // TEUCHOS_HAVE_LONG_LONG
+#endif // TEUCHOS_HAVE_LONG_LONG_INT
 
 
 // Specialization for Ordinal=int and Packet=long.

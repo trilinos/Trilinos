@@ -1332,7 +1332,7 @@ reduceAll<int, float> (const Comm<int>& comm,
 		       const float sendBuffer[], 
 		       float globalReducts[]);
 
-#ifdef TEUCHOS_HAVE_LONG_LONG
+#ifdef TEUCHOS_HAVE_LONG_LONG_INT
 // Specialization for Ordinal=int and Packet=long long.
 template<>
 TEUCHOS_LIB_DLL_EXPORT void
@@ -1341,7 +1341,7 @@ reduceAll<int, long long> (const Comm<int>& comm,
 			   const int count, 
 			   const long long sendBuffer[], 
 			   long long globalReducts[]);
-#endif // TEUCHOS_HAVE_LONG_LONG
+#endif // TEUCHOS_HAVE_LONG_LONG_INT
 
 // Specialization for Ordinal=int and Packet=long.
 template<>
