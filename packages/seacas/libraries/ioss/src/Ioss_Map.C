@@ -44,7 +44,7 @@
 
 namespace {
   // Determines whether the input map is sequential (map[i] == i)
-  bool is_sequential(const MapContainer &the_map)
+  bool is_sequential(const Ioss::MapContainer &the_map)
   {
     // Assumes the_map runs from [1..size) Slot zero will contain -1 if the
     // vector is sequential; 1 if not sequential, and 0 if it has not
@@ -59,38 +59,18 @@ namespace {
     else if (the_map[0] ==  1)
       return false;
     else {
+      Ioss::MapContainer &new_map = const_cast<Ioss::MapContainer&>(the_map);
       size_t size = the_map.size();
       for (size_t i=1; i < size; i++)
 	if (the_map[i] != (int64_t)i) {
-	  MapContainer &new_map = const_cast<MapContainer&>(the_map);
 	  new_map[0] = 1;
 	  return false;
 	}
-      MapContainer &new_map = const_cast<MapContainer&>(the_map);
       new_map[0] = -1;
       return true;
     }
   }
 
-
-  void verify_no_duplicate_ids(std::vector<IdPair> &reverse_map, int processor)
-  {
-    // Check for duplicate ids...
-    std::vector<IdPair>::iterator dup = std::adjacent_find(reverse_map.begin(),
-							   reverse_map.end(),
-							   IdPairEqual());
-
-    if (dup != reverse_map.end()) {
-      std::ostringstream errmsg;
-      errmsg << "\nERROR: Duplicate global id detected on processor "
-	     << processor << ".\n"
-	     << "       Global id " << (*dup).first
-	     << " assigned to local entities "
-	     << (*dup).second << " and "
-	     << (*++dup).second << ".\n";
-      IOSS_ERROR(errmsg);
-    }
-  }
 
   // map global to local ids
   typedef Ioss::ReverseMapContainer::value_type RMCValuePair;
@@ -132,11 +112,30 @@ namespace {
 
   typedef std::vector<Ioss::IdPair>::const_iterator RMapI;
 
+  void verify_no_duplicate_ids(std::vector<Ioss::IdPair> &reverse_map, int processor)
+  {
+    // Check for duplicate ids...
+    std::vector<Ioss::IdPair>::iterator dup = std::adjacent_find(reverse_map.begin(),
+							   reverse_map.end(),
+							   IdPairEqual());
+
+    if (dup != reverse_map.end()) {
+      std::ostringstream errmsg;
+      errmsg << "\nERROR: Duplicate global id detected on processor "
+	     << processor << ".\n"
+	     << "       Global id " << (*dup).first
+	     << " assigned to local entities "
+	     << (*dup).second << " and "
+	     << (*++dup).second << ".\n";
+      IOSS_ERROR(errmsg);
+    }
+  }
+
   template <typename INT>
   void map_implicit_data_internal(INT *ids, size_t count, const Ioss::MapContainer &map, size_t offset)
   {
     // Map the "local" ids (offset+1..offset+count) to the global ids. The local ids are implicit 
-    if (Ioss::Map::is_sequential(map)) {
+    if (is_sequential(map)) {
       for (size_t i=0; i < count; i++) {
 	ids[i] = offset + 1 + i;
       }
@@ -229,7 +228,7 @@ void Ioss::Map::set_map(INT *ids, size_t count, size_t offset)
 void Ioss::Map::reverse_map_data(void *data, const Ioss::Field &field, size_t count) const
 {
   assert(!map.empty());
-  if (!Ioss::Map::is_sequential(map)) {
+  if (!is_sequential(map)) {
     if (field.get_type() == Ioss::Field::INTEGER) {
       int* connect = static_cast<int*>(data);
       for (size_t i=0; i < count; i++) {
@@ -248,7 +247,7 @@ void Ioss::Map::reverse_map_data(void *data, const Ioss::Field &field, size_t co
 
 void Ioss::Map::map_data(void *data, const Ioss::Field &field, size_t count) const
 {
-  if (!Ioss::Map::is_sequential(map)) {
+  if (!is_sequential(map)) {
     if (field.get_type() == Ioss::Field::INTEGER) {
       int *datum = static_cast<int*>(data);
       for (size_t i=0; i < count; i++)
