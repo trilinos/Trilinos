@@ -112,12 +112,51 @@ public:
 /// // Equivalent of MPI_Comm_barrier
 /// comm->barrier ();
 /// \endcode
+///
 /// Comm's communication methods that actually send or receive data
 /// accept that data as an array of \c char.  You should never call
 /// these methods directly.  Instead, you should use the nonmember
 /// "helper" functions in Teuchos_CommHelpers.hpp.  These methods are
 /// templated on the \c Packet type, that is, the type of data you
-/// want to send or receive.
+/// want to send or receive.  See the example below.
+///
+/// \section Teuchos_Comm_Handle Treat <tt>RCP<const Comm<int> ></tt> like an opaque handle
+///
+/// You should consider an <tt>RCP<const Comm<int> ></tt> as
+/// equivalent to the MPI_Comm opaque handle, except that the RCP also
+/// does reference counting to ensure memory safety when using the
+/// same communicator in different parts of the code.  That is,
+/// copying the RCP does not create a new communicator; the following
+/// two codes do about the same thing, except with a different syntax
+/// (and reference counting in the second code).
+/// 
+/// Raw MPI_Comm handles:
+/// \code
+/// MPI_Comm comm = ...;
+/// // sameComm is THE SAME COMMUNICATOR as comm.
+/// MPI_Comm sameComm = comm;
+/// \endcode
+///
+/// Reference-counted pointers to Comm:
+/// \code
+/// RCP<const Comm<int> > comm = ...;
+/// // *sameComm is THE SAME COMMUNICATOR as *comm.
+/// RCP<const Comm<int> > sameComm = comm;
+/// \endcode
+///
+/// If you want to make a "new communicator" rather than just "copy
+/// the handle," you should call the duplicate() method.  This has the
+/// same behavior as MPI_Comm_dup (which see).
+/// 
+/// The "reference counting" feature means that the subclass of Comm
+/// will take care of freeing the underlying MPI_Comm (and any other
+/// data structures it may use) by calling MPI_Comm_free if necessary,
+/// once the reference count of the RCP goes to zero.
+///
+/// \warning Do <i>not</i> pass around subclasses of Comm by value!
+///   Comm or its subclasses by themselves do not have handle
+///   semantics.  Their copy constructors likely do not behave as you
+///   would expect if the classes had handle semantics.
 ///
 /// \section Teuchos_Comm_How How do I make a Comm?
 ///
@@ -140,16 +179,27 @@ public:
 ///
 ///   // ... use comm in your code as you would use MPI_COMM_WORLD ...
 ///   
-///   // Don't need to call MPI_Finalize.
+///   // We don't need to call MPI_Finalize, since the 
+///   // destructor of GlobalMPISession does that for us.
 ///   return EXIT_SUCCESS;
 /// }
 /// \endcode
-/// If you know you are building with MPI, you don't need to use
+/// This code works whether or not you built Trilinos with MPI
+/// support.  It is not necessary to use GlobalMPISession, but it's
+/// useful so you don't have to remember to call MPI_Finalize.  If you
+/// don't want to use GlobalMPISession, you can still call
+/// <tt>DefaultComm<int>::getComm()</tt>, though you must have called
+/// MPI_Init first if you build Trilinos with MPI support.
+/// Furthermore, if you know MPI is present, you don't need to use
 /// DefaultComm.  You may simply pass MPI_COMM_WORLD directly to
 /// MpiComm, like this:
 /// \code
 /// RCP<const Comm<int> > comm = rcp (new MpiComm (MPI_COMM_WORLD));
 /// \endcode
+/// You may also pass an arbitrary MPI_Comm directly into MpiComm's
+/// constructor, though you are responsible for freeing it after use
+/// (via MPI_Comm_free) if necessary.  You may automate the freeing
+/// of your MPI_Comm by using OpaqueWrapper (which see).
 ///
 /// \section Teuchos_Comm_Use How do I use Comm?
 ///
