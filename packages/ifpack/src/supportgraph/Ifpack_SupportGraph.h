@@ -360,8 +360,11 @@ public virtual Ifpack_Preconditioner
  //! Contains the number of forests in the support graph
  int NumForests_;
 
- //! Contains the Offset to add to the diagonal of the support graph
- double Offset_;
+ //! Relative diagonal pertubation
+ double DiagPertRel_;
+
+ //! Absolute diagonal pertubation
+ double DiagPertAbs;
 
  //! Contains the option to keep the diagonal of original matrix, or weighted average
  double KeepDiag_;
@@ -388,7 +391,8 @@ Matrix_(rcp(Matrix_in,false)),
   ComputeFlops_(0.0),
   ApplyInverseFlops_(0.0),
   NumForests_(1),
-  Offset_(1),
+  DiagPertRel_(0.0),
+  DiagPertAbs_(0.0),
   KeepDiag_(1.0)
 {
   
@@ -848,6 +852,12 @@ int Ifpack_SupportGraph<T>::FindSupport()
 	  if(i == indices[j])
 	    {
 	      diagonal[i] = values[j];
+              // Diagonal pertubation, only if requested
+              if (DiagPertRel_)
+                 diagonal[i] *= DiagPertRel_;
+              if (DiagPertAbs_)
+                 diagonal[i] += DiagPertAbs_;
+	    }
 	    }
 
 	  if(i < indices[j])
@@ -953,7 +963,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
   // Set diagonal to weighted average of Laplacian preconditioner
   // and the original matrix
 
-  // First compute the "diagonal surplus"
+  // First compute the "diagonal surplus" (in the original input matrix)
   // If input is a (Dirichlet) graph Laplacian , this will be 0
   // TODO: revisit maps for parallel case
   Epetra_Vector ones(Matrix_->DomainMap());
@@ -974,8 +984,6 @@ int Ifpack_SupportGraph<T>::FindSupport()
   // Fill in the matrix with the stl vectors for each row                                       
   for(int i = 0; i < num_verts; i++)
     {
-      Values[i][0] = Values[i][0] + Offset_;
-
       (*Support_).InsertGlobalValues(i,l[i],&Values[i][0],&Indices[i][0]);
     }
  
@@ -1000,7 +1008,9 @@ int Ifpack_SupportGraph<T>::SetParameters(Teuchos::ParameterList& List_in)
   List_ = List_in;
   NumForests_ = List_in.get("MST: forest number", NumForests_);
   KeepDiag_ = List_in.get("MST: keep diagonal", KeepDiag_);
-  Offset_ = List_in.get("MST: diagonal offset", Offset_); // TODO: Make this option compatible with other Ifpack preconditioners.
+  // Diagonal pertubation parameters have weird names to be compatible with rest of Ifpack!
+  DiagPertRel_ = List_in.get("fact: relative threshold", DiagPertRel_); 
+  DiagPertAbs_ = List_in.get("fact: absolute threshold", DiagPertAbs_); 
 
   return(0);
 }
