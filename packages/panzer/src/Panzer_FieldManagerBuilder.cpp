@@ -66,6 +66,7 @@
 #include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_StlMap_Utilities.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
+#include "Panzer_EquationSet_Factory.hpp"
 
 //#include "EpetraExt_BlockMapOut.h"
 
