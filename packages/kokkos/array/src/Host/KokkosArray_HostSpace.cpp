@@ -41,102 +41,51 @@
 //@HEADER
 */
 
+#include <memory.h>
 #include <stdlib.h>
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
 
-#include <KokkosArray_Cuda.hpp>
-#include <Cuda/KokkosArray_Cuda_MemorySpace.hpp>
-#include <Cuda/KokkosArray_Cuda_Internal.hpp>
+#include <KokkosArray_HostSpace.hpp>
+#include <Host/KokkosArray_Host_Internal.hpp>
 #include <impl/KokkosArray_MemoryTracking.hpp>
 
 /*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {
-namespace Impl {
-
 namespace {
 
-class CudaMemoryImpl {
-public:
-  MemoryTracking m_allocations ;
-
-  CudaMemoryImpl();
-  ~CudaMemoryImpl();
-
-  static CudaMemoryImpl & singleton();
-};
-
-CudaMemoryImpl::CudaMemoryImpl()
-  : m_allocations()
-{}
-
-CudaMemoryImpl & CudaMemoryImpl::singleton()
+Impl::MemoryTracking & host_space_singleton()
 {
-  static CudaMemoryImpl self ;
+  static Impl::MemoryTracking self("KokkosArray::HostSpace");
   return self ;
 }
 
-CudaMemoryImpl::~CudaMemoryImpl()
-{
-  if ( ! m_allocations.empty() ) {
-    std::cerr << "KokkosArray::Cuda memory leaks:" << std::endl ;
-    m_allocations.print( std::cerr , std::string("  ") );
-  }
-}
-
-}
+} // namespace <blank>
+} // namespade KokkosArray
 
 /*--------------------------------------------------------------------------*/
 
-void CudaMemorySpace::copy_to_device_from_device(
-  void * dst, const void * src, size_t n )
-{
-  CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
-}
+namespace KokkosArray {
 
-void CudaMemorySpace::copy_to_device_from_host(
-  void * dst, const void * src, size_t n )
-{
-  CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
-}
-
-void CudaMemorySpace::copy_to_host_from_device(
-  void * dst, const void * src, size_t n )
-{
-  CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
-}
-
-
-
-/*--------------------------------------------------------------------------*/
-
-void * CudaMemorySpace::allocate(
+void * HostSpace::allocate(
   const std::string    & label ,
   const std::type_info & scalar_type ,
   const size_t           scalar_size ,
   const size_t           scalar_count )
 {
-  CudaMemoryImpl & s = CudaMemoryImpl::singleton();
-
-  const size_t size = scalar_size * scalar_count ;
+  assert_master_thread( "KokkosArray::HostSpace::allocate" );
 
   void * ptr = 0 ;
 
   if ( 0 < scalar_size * scalar_count ) {
-    bool ok = true ;
 
-    cudaDeviceSynchronize();
+    ptr = malloc( scalar_size * scalar_count );
 
-    if ( ok ) ok = cudaSuccess == cudaMalloc( & ptr , size );
-    if ( ok ) ok = 0 != ptr ;
-    if ( ok ) ok = cudaSuccess == cudaMemset( ptr , 0 , size );
-    if ( ok ) ok = cudaSuccess == cudaThreadSynchronize();
-
-    if ( ! ok ) {
+    if ( 0 == ptr ) {
       std::ostringstream msg ;
-      msg << "KokkosArray::Impl::CudaMemorySpace::allocate( "
+      msg << "KokkosArray::Impl::HostSpace::allocate( "
           << label
           << " , " << scalar_type.name()
           << " , " << scalar_size
@@ -145,62 +94,52 @@ void * CudaMemorySpace::allocate(
       throw std::runtime_error( msg.str() );
     }
 
-    s.m_allocations.track( ptr, & scalar_type, scalar_size, scalar_count, label );
+    host_space_singleton()
+      .track( ptr, & scalar_type, scalar_size, scalar_count, label );
   }
 
   return ptr ;
 }
 
-#if ! defined( __CUDA_ARCH__ )
-
-void CudaMemorySpace::increment( const void * ptr )
+void HostSpace::increment( const void * ptr )
 {
-  if ( 0 != ptr ) {
-    CudaMemoryImpl & s = CudaMemoryImpl::singleton();
-
-    s.m_allocations.increment( ptr );
+  if ( 0 != ptr && Impl::HostInternal::singleton().is_master_thread() ) {
+    host_space_singleton().increment( ptr );
   }
 }
 
-void CudaMemorySpace::decrement( const void * ptr )
+void HostSpace::decrement( const void * ptr )
 {
-  if ( 0 != ptr ) {
+  if ( 0 != ptr && Impl::HostInternal::singleton().is_master_thread() ) {
 
-    CudaMemoryImpl & s = CudaMemoryImpl::singleton();
-
-    void * ptr_alloc = s.m_allocations.decrement( ptr );
+    void * ptr_alloc = host_space_singleton().decrement( ptr );
 
     if ( 0 != ptr_alloc ) {
-
-      cudaDeviceSynchronize();
-
-      const bool failed = cudaSuccess != cudaFree( ptr_alloc );
-
-      if ( failed ) {
-        std::string msg("KokkosArray::Impl::CudaMemorySpace::decrement() failed cudaFree");
-        throw std::runtime_error( msg );
-      }
+      free( ptr_alloc );
     }
   }
 }
 
-#endif
-
-void CudaMemorySpace::print_memory_view( std::ostream & o )
+void HostSpace::print_memory_view( std::ostream & o )
 {
-  CudaMemoryImpl & s = CudaMemoryImpl::singleton();
-
-  s.m_allocations.print( o , std::string("  ") );
+  host_space_singleton().print( o , std::string("  ") );
 }
 
+std::string HostSpace::query_label( const void * p )
+{
+  const Impl::MemoryTracking::Info info = 
+    host_space_singleton().query( p );
 
-size_t CudaMemorySpace::preferred_alignment(
+  return info.label ;
+}
+
+size_t HostSpace::preferred_alignment(
   size_t scalar_size , size_t scalar_count )
 {
-  const size_t alignment = Impl::CudaTraits::WarpSize * sizeof(Cuda::size_type);
+  const size_t alignment = Host::detect_cache_line_size();
 
-  // If the array is larger than the warp-alignment
-  // then align the count on the warp boundary.
+  // If the array is larger than the cache line
+  // then align the count on cache line boundary.
 
   if ( alignment < scalar_size * scalar_count &&
        0 == alignment % scalar_size ) {
@@ -211,8 +150,40 @@ size_t CudaMemorySpace::preferred_alignment(
   return scalar_count ;
 }
 
+
+DeepCopy<HostSpace,HostSpace>
+  ::DeepCopy( void * dst , const void * src , size_t n )
+{
+  memcpy( dst , src , n );
+}
+
+
+} // namespace KokkosArray
+
+/*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
-} // namespace Impl
+namespace KokkosArray {
+
+size_t HostSpace::detect_cache_line_size()
+{ return Impl::HostInternal::singleton().m_cache_line_size ; }
+
+size_t HostSpace::detect_memory_page_size()
+{ return Impl::HostInternal::singleton().m_page_size ; }
+
+void HostSpace::assert_master_thread( const char * const name )
+{
+  if ( ! Impl::HostInternal::singleton().is_master_thread() ) {
+    std::string msg ;
+    msg.append( "KokkosArray::HostSpace::assert_master_thread( " );
+    msg.append( name );
+    msg.append( " ) FAILED " );
+    throw std::runtime_error( msg );
+  }
+}
+
 } // namespace KokkosArray
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
 

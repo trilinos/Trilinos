@@ -635,7 +635,7 @@ public:
 
 } /* namespace KokkosArray */
 
-#include <impl/KokkosEmbed_ArrayExp.hpp>
+#include <impl/KokkosArray_ArrayExp.hpp>
 
 #endif /* #ifndef KOKKOSARRAY_ARRAY_HPP */
 

@@ -45,12 +45,12 @@
 
 #include <iostream>
 
-#include <KokkosArray_View.hpp>
-
-#include <KokkosArray_CrsArray.hpp>
-
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_Cuda.hpp>
+
+#include <KokkosArray_View.hpp>
+#include <KokkosArray_CrsArray.hpp>
+
 
 //----------------------------------------------------------------------------
 
@@ -76,6 +76,15 @@ void test_device_cuda_view_impl()
 void test_device_cuda_view_api()
 {
   TestViewAPI< double , KokkosArray::Cuda >();
+
+#if 0
+  KokkosArray::View<double, KokkosArray::Cuda > x("x");
+  KokkosArray::View<double[1], KokkosArray::Cuda > y("y");
+  *x = 10 ; // Should not compile
+  x() = 10 ; // Should not compile
+  y[0] = 10 ; // Should not compile
+  y(0) = 10 ; // Should not compile
+#endif
 }
 
 void test_device_cuda_crsarray() {

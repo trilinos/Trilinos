@@ -46,6 +46,7 @@
 
 #include <iostream>
 
+#include <KokkosArray_HostSpace.hpp>
 #include <impl/KokkosArray_StaticAssert.hpp>
 #include <impl/KokkosArray_ArrayTraits.hpp>
 
@@ -154,14 +155,18 @@ struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst > ,
     typedef typename dst_type::shape_type shape_type ;
 
     if ( dst != src ) {
+
       assert_shapes_are_equal( dst.shape() , src.shape() );
 
-      DeepCopy< typename dst_type::scalar_type ,
-                typename DeviceDst::memory_space ,
-                typename DeviceSrc::memory_space > (
+      const size_t n =
+        sizeof(typename dst_type::scalar_type) *
+        ShapeMap< shape_type >::allocation_count( dst.shape() );
+
+        KokkosArray::DeepCopy< typename DeviceDst::memory_space ,
+                               typename DeviceSrc::memory_space >(
         dst.ptr_on_device() ,
         src.ptr_on_device() ,
-        ShapeMap< shape_type >::allocation_count( dst.shape() ) );
+        n );
     }
   }
 };

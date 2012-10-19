@@ -307,9 +307,6 @@ namespace Impl {
 template< class MemorySpace , typename ValueType , class Shape >
 class ViewOper ;
 
-template< typename ValueType , class DeviceDst , class DeviceSrc >
-struct DeepCopy ;
-
 }
 }
 

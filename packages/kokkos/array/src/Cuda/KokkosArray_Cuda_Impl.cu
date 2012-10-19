@@ -341,12 +341,12 @@ CudaInternal::scratch_flags( const Cuda::size_type size )
 
   if ( m_scratchFlagsCount * sizeScratchGrain < size ) {
 
-    CudaMemorySpace::decrement( m_scratchFlags );
+    Cuda::memory_space::decrement( m_scratchFlags );
   
     m_scratchFlagsCount = ( size + sizeScratchGrain - 1 ) / sizeScratchGrain ;
 
     m_scratchFlags = (size_type *)
-      CudaMemorySpace::allocate(
+      Cuda::memory_space::allocate(
         std::string("InternalScratchFlags") ,
         typeid( ScratchGrain ),
         sizeof( ScratchGrain ),
@@ -366,12 +366,12 @@ CudaInternal::scratch_space( const Cuda::size_type size )
 
   if ( m_scratchSpaceCount * sizeScratchGrain < size ) {
 
-    CudaMemorySpace::decrement( m_scratchSpace );
+    Cuda::memory_space::decrement( m_scratchSpace );
   
     m_scratchSpaceCount = ( size + sizeScratchGrain - 1 ) / sizeScratchGrain ;
 
     m_scratchSpace = (size_type *)
-      CudaMemorySpace::allocate(
+      Cuda::memory_space::allocate(
         std::string("InternalScratchSpace") ,
         typeid( ScratchGrain ),
         sizeof( ScratchGrain ),
@@ -418,8 +418,8 @@ CudaInternal::scratch_unified( const Cuda::size_type size )
 
 void CudaInternal::finalize()
 {
-  CudaMemorySpace::decrement( m_scratchSpace );
-  CudaMemorySpace::decrement( m_scratchFlags );
+  Cuda::memory_space::decrement( m_scratchSpace );
+  Cuda::memory_space::decrement( m_scratchFlags );
   (void) scratch_unified( 0 );
 
   m_cudaDev            = -1 ;

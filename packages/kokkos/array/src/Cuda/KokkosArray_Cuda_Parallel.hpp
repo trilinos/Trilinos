@@ -68,16 +68,16 @@ struct CudaTraits {
 #if defined( __CUDACC__ )
   __device__ __host__
 #endif
-  Cuda::size_type warp_count( Cuda::size_type i )
+  CudaSpace::size_type warp_count( CudaSpace::size_type i )
     { return ( i + WarpIndexMask ) >> WarpIndexShift ; }
 
   static inline
 #if defined( __CUDACC__ )
   __device__ __host__
 #endif
-  Cuda::size_type warp_align( Cuda::size_type i )
+  CudaSpace::size_type warp_align( CudaSpace::size_type i )
     {
-      enum { Mask = ~Cuda::size_type( WarpIndexMask ) };
+      enum { Mask = ~CudaSpace::size_type( WarpIndexMask ) };
       return ( i + WarpIndexMask ) & Mask ;
     }
 };
@@ -86,20 +86,6 @@ struct CudaTraits {
 } // namespace KokkosArray
 
 //----------------------------------------------------------------------------
-
-namespace KokkosArray {
-
-inline
-CudaWorkConfig::CudaWorkConfig()
-{
-  grid[0] = grid[1] = grid[2] = 1 ;
-  block[1] = block[2] = 1 ;
-  block[0] = 6 * Impl::CudaTraits::WarpSize ;
-  shared = 0 ;
-}
-
-} // namespace KokkosArray
-
 //----------------------------------------------------------------------------
 
 #if defined( __CUDACC__ )
@@ -107,13 +93,13 @@ CudaWorkConfig::CudaWorkConfig()
 namespace KokkosArray {
 namespace Impl {
 
-Cuda::size_type cuda_internal_maximum_warp_count();
-Cuda::size_type cuda_internal_maximum_grid_count();
-Cuda::size_type cuda_internal_maximum_shared_words();
+CudaSpace::size_type cuda_internal_maximum_warp_count();
+CudaSpace::size_type cuda_internal_maximum_grid_count();
+CudaSpace::size_type cuda_internal_maximum_shared_words();
 
-Cuda::size_type * cuda_internal_scratch_flags( Cuda::size_type size );
-Cuda::size_type * cuda_internal_scratch_space( Cuda::size_type size );
-Cuda::size_type * cuda_internal_scratch_unified( Cuda::size_type size );
+CudaSpace::size_type * cuda_internal_scratch_flags( CudaSpace::size_type size );
+CudaSpace::size_type * cuda_internal_scratch_space( CudaSpace::size_type size );
+CudaSpace::size_type * cuda_internal_scratch_unified( CudaSpace::size_type size );
 
 template< typename ValueType >
 inline
@@ -152,7 +138,7 @@ template< typename T >
 inline
 __device__
 T * kokkos_impl_cuda_shared_memory()
-{ extern __shared__ KokkosArray::Cuda::size_type sh[]; return (T*) sh ; }
+{ extern __shared__ KokkosArray::CudaSpace::size_type sh[]; return (T*) sh ; }
 
 namespace KokkosArray {
 namespace Impl {
@@ -227,7 +213,7 @@ class CudaParallelCopy ;
 template< typename Type >
 class CudaParallelCopy<Type,Type> {
 public:
-  CudaParallelCopy( Type * dst , const Type * src , Cuda::size_type count )
+  CudaParallelCopy( Type * dst , const Type * src , CudaSpace::size_type count )
   {
     CUDA_SAFE_CALL( cudaMemcpy( dst , src , count * sizeof(Type) ,
                                 cudaMemcpyDefault ) );
@@ -240,24 +226,24 @@ public:
 
         DstType * const m_dst ;
   const SrcType * const m_src ;
-  const Cuda::size_type m_count ;
-        Cuda::size_type m_stride ;
+  const CudaSpace::size_type m_count ;
+        CudaSpace::size_type m_stride ;
 
   inline
   __device__
   void operator()(void) const
   {
-    Cuda::size_type i = threadIdx.x + blockDim.x * blockIdx.x ;
+    CudaSpace::size_type i = threadIdx.x + blockDim.x * blockIdx.x ;
     for ( ; i < m_count ; i += m_stride ) {
       m_dst[i] = (DstType) m_src[i] ;
     }
   }
 
   CudaParallelCopy( DstType * dst , const SrcType * src ,
-                    Cuda::size_type count )
+                    CudaSpace::size_type count )
     : m_dst( dst ), m_src( src ), m_count( count )
     {
-      const Cuda::size_type grid_max = cuda_internal_maximum_grid_count();
+      const CudaSpace::size_type grid_max = cuda_internal_maximum_grid_count();
 
       const dim3 block( CudaTraits::WarpSize * cuda_internal_maximum_warp_count(), 1, 1);
 

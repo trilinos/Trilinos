@@ -34,16 +34,18 @@ then
   NVCC_SOURCES="${NVCC_SOURCES} PerfTestCuda.cu"
   CXX_SOURCES="${CXX_SOURCES} PerfTestCuda.cpp"
 
-  echo ${NVCC} ${OPTFLAGS} ${INC_PATH} ${NVCC_SOURCES}
+  echo ${NVCC} ${INC_PATH} ${NVCC_SOURCES}
 
-  ${NVCC} ${OPTFLAGS} ${INC_PATH} ${NVCC_SOURCES}
+  ${NVCC} ${INC_PATH} ${NVCC_SOURCES}
 fi
 
 #-----------------------------------------------------------------------------
 
-echo ${CXX} ${OPTFLAGS} ${INC_PATH} -o perf_test.exe ${CXX_SOURCES} ${LIB}
+rm -f perf_test.exe
 
-${CXX} ${OPTFLAGS} ${INC_PATH} -o perf_test.exe ${CXX_SOURCES} ${LIB}
+echo ${CXX} ${INC_PATH} -o perf_test.exe ${CXX_SOURCES} ${LIB}
+
+${CXX} ${INC_PATH} -o perf_test.exe ${CXX_SOURCES} ${LIB}
 
 rm -f *.o *.a
 

@@ -44,6 +44,7 @@
 #ifndef KOKKOSARRAY_HOST_VIEW_HPP
 #define KOKKOSARRAY_HOST_VIEW_HPP
 
+#include <KokkosArray_Host.hpp>
 #include <KokkosArray_View.hpp>
 #include <Host/KokkosArray_Host_Parallel.hpp>
 

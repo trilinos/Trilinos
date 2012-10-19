@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOSARRAY_CUDAMEMORYSPACE_HPP
-#define KOKKOSARRAY_CUDAMEMORYSPACE_HPP
+#ifndef KOKKOSARRAY_HOSTSPACE_HPP
+#define KOKKOSARRAY_HOSTSPACE_HPP
 
 #include <iosfwd>
 #include <typeinfo>
@@ -51,33 +51,51 @@
 /*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {
-namespace Impl {
 
 /** \brief  Memory management on the host for devices */
 
-class CudaMemorySpace {
+class HostSpace {
 public:
 
-  static int m_memory_view_tracking ;
+  typedef HostSpace  memory_space ;
+  typedef size_t     size_type ;
 
-public:
-
-  typedef size_t size_type ;
-
+  /** \brief  Allocate a contiguous block of memory on the Cuda device
+   *          with size = scalar_size * scalar_count.
+   *
+   *  The input label is associated with the block of memory.
+   *  The block of memory is tracked via reference counting where
+   *  allocation gives it a reference count of one.
+   *
+   *  Allocation may only occur on the master thread of the process.
+   */
   static void * allocate( const std::string    & label ,
                           const std::type_info & scalar_type ,
                           const size_t           scalar_size ,
                           const size_t           scalar_count );
 
-#if ! defined( __CUDA_ARCH__ )
+  /** \brief  Increment the reference count of the block of memory
+   *          in which the input pointer resides.
+   *
+   *          Reference counting only occurs on the master thread.
+   */
   static void increment( const void * );
-  static void decrement( const void * );
-#else
-  static __device__ void increment( const void * ) {}
-  static __device__ void decrement( const void * ) {}
-#endif
 
+  /** \brief  Decrement the reference count of the block of memory
+   *          in which the input pointer resides.  If the reference
+   *          count falls to zero the memory is deallocated.
+   *
+   *          Reference counting only occurs on the master thread.
+   */
+  static void decrement( const void * );
+
+  /*--------------------------------*/
+
+  /** \brief  Print all tracked memory to the output stream. */
   static void print_memory_view( std::ostream & );
+
+  /** \brief  Retrieve label associated with the input pointer */
+  static std::string query_label( const void * );
 
   /*--------------------------------*/
 
@@ -85,48 +103,56 @@ public:
   size_t preferred_alignment( size_t scalar_size , size_t scalar_count );
 
   /*--------------------------------*/
+  /* Functions unique to the Host memory space */
 
-  static void copy_to_device_from_device( void * , const void * , size_t );
-  static void copy_to_device_from_host(   void * , const void * , size_t );
-  static void copy_to_host_from_device(   void * , const void * , size_t );
+  /** \brief  Assert called from the original, master thread.  */
+  static void assert_master_thread( const char * const );
 
-  /*--------------------------------*/
+  /** \brief  Detect cache line size, if capable */
+  static size_t detect_cache_line_size();
+
+  /** \brief  Detect memory page line size, if capable */
+  static size_t detect_memory_page_size();
 };
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class DeviceDst , class DeviceSrc >
+template< class DstSpace , class SrcSpace >
 struct DeepCopy ;
+void deep_copy( void * dst , const void * src , size_t );
 
-template< typename ValueType >
-struct DeepCopy< ValueType , Cuda::memory_space , Cuda::memory_space > {
-  DeepCopy( ValueType * dst , const ValueType * src , size_t count )
-  {
-    CudaMemorySpace::copy_to_device_from_device( dst , src , sizeof(ValueType) * count );
-  }
-};
-
-template< typename ValueType >
-struct DeepCopy< ValueType , Cuda::memory_space , Host::memory_space > {
-  DeepCopy( ValueType * dst , const ValueType * src , size_t count )
-  {
-    CudaMemorySpace::copy_to_device_from_host( dst , src , sizeof(ValueType) * count );
-  }
-};
-
-template< typename ValueType >
-struct DeepCopy< ValueType , Host::memory_space , Cuda::memory_space > {
-  DeepCopy( ValueType * dst , const ValueType * src , size_t count )
-  {
-    CudaMemorySpace::copy_to_host_from_device( dst , src , sizeof(ValueType) * count );
-  }
+template<>
+struct DeepCopy<HostSpace,HostSpace> {
+  DeepCopy( void * dst , const void * src , size_t );
 };
 
 //----------------------------------------------------------------------------
+
+template< class ExecutionSpace , class DataSpace >
+struct VerifyExecutionSpaceCanAccessDataSpace ;
+
+template<>
+struct VerifyExecutionSpaceCanAccessDataSpace< HostSpace , HostSpace >
+{
+  inline static void verify(void) {}
+  inline static void verify(const void *) {}
+};
+
 //----------------------------------------------------------------------------
 
-} // namespace Impl
 } // namespace KokkosArray
 
-#endif /* #define KOKKOSARRAY_CUDAMEMORYSPACE_HPP */
+#if ! defined( KOKKOSARRAY_EXECUTION_SPACE )
+#define KOKKOSARRAY_EXECUTION_SPACE HostSpace
+#endif
+
+#define KOKKOSARRAY_IMPL_RESTRICT_EXECUTION_TO( D ) \
+    VerifyExecutionSpaceCanAccessMemorySpace< \
+       KOKKOSARRAY_EXECUTION_SPACE , \
+       typename D::memory_space >::verify() 
+
+#define KOKKOSARRAY_RESTRICT_EXECUTION_TO( D ) \
+        KOKKOSARRAY_IMPL_RESTRICT_EXECUTION_TO( D )
+
+#endif /* #define KOKKOSARRAY_HOSTSPACE_HPP */
 

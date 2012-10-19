@@ -86,6 +86,21 @@ void MemoryTracking::Info::print( std::ostream & s ) const
     << "label(" << label << ") }" ;
 }
 
+MemoryTracking::MemoryTracking() {}
+
+MemoryTracking::MemoryTracking( const std::string & space )
+  : m_space( space ), m_tracking() {}
+
+MemoryTracking::~MemoryTracking()
+{
+  try {
+    if ( ! m_tracking.empty() ) {
+      std::cerr << m_space << " destroyed with memory leaks:" << std::endl ;
+      print( std::cerr , std::string("  ") );
+    }
+  } catch( ... ) {}
+}
+
 void MemoryTracking::track(
   const void           * ptr ,
   const std::type_info * type ,

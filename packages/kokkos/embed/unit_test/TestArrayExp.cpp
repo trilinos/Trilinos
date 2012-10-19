@@ -1,7 +1,15 @@
-
-#include <KokkosEmbed_Array.hpp>
-#include <impl/KokkosEmbed_Array_ViewOperRight.hpp>
 #include <iostream>
+#include <typeinfo>
+
+#include <KokkosArray_Cuda.hpp>
+#include <KokkosArray_Host.hpp>
+#include <KokkosArray_Array.hpp>
+
+#include <impl/KokkosArray_ArrayAnalyzeShape.hpp>
+#include <impl/KokkosArray_ArrayViewOperRight.hpp>
+#include <impl/KokkosArray_ArrayViewOperLeft.hpp>
+
+//----------------------------------------------------------------------------
 
 template< class Device > int test();
 
@@ -86,4 +94,72 @@ int test< TEST_KOKKOSARRAY_DEVICE >()
 
   return 0 ;
 }
+
+//----------------------------------------------------------------------------
+
+template< class Device > struct TestFunctor ;
+
+template<>
+struct TestFunctor< TEST_KOKKOSARRAY_DEVICE >
+{
+  typedef KokkosArray::Array<double,20> scalar_type ;
+
+  typedef TEST_KOKKOSARRAY_DEVICE device_type ;
+  typedef device_type::size_type  size_type ;
+
+  typedef KokkosArray::View< scalar_type * , device_type > vector_type ;
+
+  static const size_type N = 1000 ;
+
+  const vector_type x , y , z ;
+  const scalar_type a , b ;
+
+  TestFunctor()
+    : x("x",N), y("y",N), z("z",N)
+    , a(2), b(3)
+    { }
+
+  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  void operator()( const size_type ip ) const
+  {
+    z(ip) = a * x(ip) + b * y(ip);
+  }
+};
+
+template< class Device > int test_functor();
+
+template<>
+int test_functor< TEST_KOKKOSARRAY_DEVICE >()
+{
+  typedef TEST_KOKKOSARRAY_DEVICE device_type ;
+  
+  typedef TestFunctor<device_type> functor_type ;
+
+  std::cout << "functor_type::vector_type::scalar_type = "
+            << typeid(functor_type::vector_type::scalar_type).name()
+            << std::endl ;
+
+  std::cout << "functor_type::vector_type::value_type = "
+            << typeid(functor_type::vector_type::value_type).name()
+            << std::endl ;
+
+  functor_type f ;
+
+  functor_type::vector_type::HostMirror x = 
+    KokkosArray::create_mirror( f.x );
+
+  for ( unsigned i = 0 ; i < f.N ; ++i ) { x(i) = 1 ; }
+
+  KokkosArray::deep_copy( f.x , x );
+  KokkosArray::deep_copy( f.y , x );
+
+  KokkosArray::parallel_for( f.N , f );
+
+  KokkosArray::deep_copy( x , f.z );
+
+  std::cout << "test_functor z = " << x(0) << std::endl ;
+
+  return 0 ;
+}
+
 

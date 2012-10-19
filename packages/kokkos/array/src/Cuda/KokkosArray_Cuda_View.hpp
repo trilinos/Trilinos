@@ -87,7 +87,7 @@ void deep_copy( ValueType & dst ,
 
   typedef typename Impl::assert_shape_is_rank_zero< src_shape >::type ok_rank ;
 
-  Cuda::memory_space::copy_to_host_from_device( & dst , src.ptr_on_device() , sizeof(ValueType) );
+  DeepCopy<HostSpace,CudaSpace>( & dst , src.ptr_on_device() , sizeof(ValueType) );
 }
 
 template< typename ValueType , class LayoutDst >
@@ -100,7 +100,7 @@ void deep_copy( const View< ValueType , LayoutDst , Cuda > & dst ,
 
   typedef typename Impl::assert_shape_is_rank_zero< dst_shape >::type ok_rank ;
 
-  Cuda::memory_space::copy_to_device_from_host( dst.ptr_on_device() , & src , sizeof(ValueType) );
+  DeepCopy<CudaSpace,HostSpace>( dst.ptr_on_device() , & src , sizeof(ValueType) );
 }
 
 } // namespace KokkosArray

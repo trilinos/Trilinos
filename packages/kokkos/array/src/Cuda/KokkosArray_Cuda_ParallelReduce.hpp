@@ -1094,8 +1094,7 @@ struct CudaReduceResult {
     }
     else {
       ptr = (T*) cuda_internal_scratch_space( sizeof(T) * count );
-      CudaMemorySpace
-        ::copy_to_host_from_device( host_pointer , ptr , sizeof(T) * count );
+      DeepCopy<HostSpace,CudaSpace>( host_pointer , ptr , sizeof(T) * count );
     }
   }
 
@@ -1110,7 +1109,7 @@ struct CudaReduceResult {
     else {
       ptr = (T*) cuda_internal_scratch_space( sizeof(T) );
       T value ;
-      CudaMemorySpace::copy_to_host_from_device( & value , ptr , sizeof(T) );
+      DeepCopy<HostSpace,CudaSpace>( & value , ptr , sizeof(T) );
       return value ;
     }
   }

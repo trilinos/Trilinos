@@ -77,8 +77,13 @@ public:
 
   inline
   KOKKOSARRAY_MACRO_DEVICE_FUNCTION
-  void operator()( const ValueType & v )
+  void operator()( const ValueType & v ) const
     { *m_ptr_on_device = v ; }
+
+  inline
+  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  ValueType & operator()( void ) const
+    { return *m_ptr_on_device ; }
 
 #endif
 

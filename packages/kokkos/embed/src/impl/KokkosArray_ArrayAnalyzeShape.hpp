@@ -69,20 +69,20 @@ private:
   typedef typename nested::shape nested_shape ;
 public:
 
-  typedef typename nested::scalar_type          scalar_type ;
-  typedef typename nested::array_type           array_type[ N ];
-  typedef typename const Array< T , N , void >  value_type ;
-  typedef typename const Array< T , N , void >  type ;
+  typedef typename nested::scalar_type  scalar_type ;
+  typedef typename nested::array_type   array_type[ N ];
+  typedef const Array< T , N , void >   value_type ;
+  typedef const Array< T , N , void >   type ;
 
-  typedef typename scalar_type const_scalar_type ;
-  typedef typename array_type  const_array_type ;
-  typedef typename value_type  const_value_type ;
-  typedef typename type        const_type ;
+  typedef scalar_type const_scalar_type ;
+  typedef array_type  const_array_type ;
+  typedef value_type  const_value_type ;
+  typedef type        const_type ;
 
   typedef typename nested::non_const_scalar_type   non_const_scalar_type ;
   typedef typename nested::non_const_array_type    non_const_array_type[ N ];
-  typedef typename Array< T , N , void >           non_const_value_type ;
-  typedef typename Array< T , N , void >           non_const_type ;
+  typedef Array< T , N , void >                    non_const_value_type ;
+  typedef Array< T , N , void >                    non_const_type ;
 
   typedef typename ShapeInsert< nested_shape , N >::type shape ;
 };
@@ -97,18 +97,18 @@ public:
 
   typedef typename nested::scalar_type    scalar_type ;
   typedef typename nested::array_type     array_type[ N ];
-  typedef typename Array< T , N , void >  value_type ;
-  typedef typename Array< T , N , void >  type ;
+  typedef          Array< T , N , void >  value_type ;
+  typedef          Array< T , N , void >  type ;
 
   typedef typename nested::const_scalar_type    const_scalar_type ;
   typedef typename nested::const_array_type     const_array_type[ N ];
-  typedef typename const Array< T , N , void >  const_value_type ;
-  typedef typename const Array< T , N , void >  const_type ;
+  typedef          const Array< T , N , void >  const_value_type ;
+  typedef          const Array< T , N , void >  const_type ;
 
-  typedef typename scalar_type  non_const_scalar_type ;
-  typedef typename array_type   non_const_array_type ;
-  typedef typename value_type   non_const_value_type ;
-  typedef typename type         non_const_type ;
+  typedef          scalar_type  non_const_scalar_type ;
+  typedef          array_type   non_const_array_type ;
+  typedef          value_type   non_const_value_type ;
+  typedef          type         non_const_type ;
 
   typedef typename ShapeInsert< nested_shape , N >::type shape ;
 };

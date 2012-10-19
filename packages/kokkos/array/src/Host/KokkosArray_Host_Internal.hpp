@@ -45,6 +45,7 @@
 #define KOKKOSARRAY_HOST_INTERNAL_HPP
 
 #include <KokkosArray_Host.hpp>
+#include <KokkosArray_HostSpace.hpp>
 #include <Host/KokkosArray_Host_Parallel.hpp>
 
 //----------------------------------------------------------------------------
@@ -171,6 +172,7 @@ public:
   static HostInternal & singleton();
 
   friend class KokkosArray::Host ;
+  friend class KokkosArray::HostSpace ;
 };
 
 } /* namespace Impl */

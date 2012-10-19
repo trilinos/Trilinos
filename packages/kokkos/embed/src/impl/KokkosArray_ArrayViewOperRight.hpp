@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOSARRAY_ARRAY_VIEWOPER_RIGHT_HPP
-#define KOKKOSARRAY_ARRAY_VIEWOPER_RIGHT_HPP
+#ifndef KOKKOSARRAY_ARRAYVIEWOPERRIGHT_HPP
+#define KOKKOSARRAY_ARRAYVIEWOPERRIGHT_HPP
 
 #include <KokkosArray_Macros.hpp>
 #include <KokkosArray_View.hpp>
@@ -450,5 +450,5 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef KOKKOSARRAY_ARRAY_VIEWOPER_RIGHT_HPP */
+#endif /* #ifndef KOKKOSARRAY_ARRAYVIEWOPERRIGHT_HPP */
 
