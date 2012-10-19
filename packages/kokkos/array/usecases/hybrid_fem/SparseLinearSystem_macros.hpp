@@ -61,16 +61,16 @@ private:
 
 public:
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( int iwork , value_type & update ) const 
   { update += x(iwork) * y(iwork); }
     
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & source )
   { update += source;    }
     
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type & update )
   { update = 0 ; }
 
@@ -99,16 +99,16 @@ private:
 
 public:
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( int iwork , value_type & update ) const 
   { const Scalar xi = x(iwork); update += xi * xi ; }
     
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & source )
   { update += source ; }
     
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type & update )
   { update = 0 ; }
 
@@ -137,7 +137,7 @@ private:
 
 public:
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()(int inode) const
   {
     w(inode) = alpha ;
@@ -173,7 +173,7 @@ private:
 
 public:
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()(int inode) const
   {
     w(inode) = alpha * x(inode) + beta * y(inode);
@@ -214,7 +214,7 @@ private:
 
 public:
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()(int inode) const
   {
     Scalar & val = y(inode); val = alpha * x(inode) + beta * val ;

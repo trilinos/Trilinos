@@ -68,20 +68,17 @@ private:
 
 public:
 
-#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_INLINE_FUNCTION )
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ValueType & operator * () const
     { return *m_ptr_on_device ; }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const ValueType & v ) const
     { *m_ptr_on_device = v ; }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ValueType & operator()( void ) const
     { return *m_ptr_on_device ; }
 
@@ -103,11 +100,10 @@ private:
 
 public:
 
-#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_INLINE_FUNCTION )
 
   template< typename iType0 >
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ValueType & operator()( const iType0 & i0 ) const
     {
       KOKKOSARRAY_MACRO_CHECK(
@@ -117,8 +113,7 @@ public:
     }
 
   template< typename iType0 >
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ValueType & operator[]( const iType0 & i0 ) const
     {
       KOKKOSARRAY_MACRO_CHECK(
@@ -145,11 +140,10 @@ private:
 
 public:
 
-#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_INLINE_FUNCTION )
 
   template< typename iType0 , typename iType1 >
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ValueType & operator()( const iType0 & i0 , const iType1 & i1 ) const
     {
       KOKKOSARRAY_MACRO_CHECK(
@@ -178,11 +172,10 @@ private:
 
 public:
 
-#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_INLINE_FUNCTION )
 
   template< typename iType0 , typename iType1 , typename iType2 >
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ValueType & operator()( const iType0 & i0 , const iType1 & i1 ,
                           const iType2 & i2 ) const
     {
@@ -213,12 +206,11 @@ private:
 
 public:
 
-#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_INLINE_FUNCTION )
 
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 >
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ValueType & operator()( const iType0 & i0 , const iType1 & i1 ,
                           const iType2 & i2 , const iType3 & i3 ) const
     {
@@ -251,12 +243,11 @@ private:
 
 public:
 
-#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_INLINE_FUNCTION )
 
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 >
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ValueType & operator()( const iType0 & i0 , const iType1 & i1 ,
                           const iType2 & i2 , const iType3 & i3 ,
                           const iType4 & i4 ) const
@@ -291,12 +282,11 @@ private:
 
 public:
 
-#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_INLINE_FUNCTION )
 
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5 >
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ValueType & operator()( const iType0 & i0 , const iType1 & i1 ,
                           const iType2 & i2 , const iType3 & i3 ,
                           const iType4 & i4 , const iType5 & i5 ) const
@@ -332,13 +322,12 @@ private:
 
 public:
 
-#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_INLINE_FUNCTION )
 
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5 ,
             typename iType6 >
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ValueType & operator()( const iType0 & i0 , const iType1 & i1 ,
                           const iType2 & i2 , const iType3 & i3 ,
                           const iType4 & i4 , const iType5 & i5 ,
@@ -376,13 +365,12 @@ private:
 
 public:
 
-#if defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION )
+#if defined( KOKKOSARRAY_INLINE_FUNCTION )
 
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5 ,
             typename iType6 , typename iType7 >
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ValueType & operator()( const iType0 & i0 , const iType1 & i1 ,
                           const iType2 & i2 , const iType3 & i3 ,
                           const iType4 & i4 , const iType5 & i5 ,

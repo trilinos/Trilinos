@@ -77,7 +77,7 @@ struct ModifiedGramSchmidt
       , inv( argInv )
       {}
 
-    KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+    KOKKOSARRAY_INLINE_FUNCTION
     void operator()( const value_type & result ) const
     {
       const Scalar value = sqrt( result );
@@ -99,7 +99,7 @@ struct ModifiedGramSchmidt
       , tmp( argTmp )
       {}
 
-    KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+    KOKKOSARRAY_INLINE_FUNCTION
     void operator()( const value_type & result ) const
     {
        *Rjk  = result ;

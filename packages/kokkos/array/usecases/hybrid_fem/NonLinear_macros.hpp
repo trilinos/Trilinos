@@ -72,7 +72,7 @@ struct DirichletSolution<
   ScalarType      bc_lower_value ;
   ScalarType      bc_upper_value ;
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const unsigned inode ) const
   {
    
@@ -131,7 +131,7 @@ struct DirichletResidual<
   ScalarCoordType bc_lower_z ;
   ScalarCoordType bc_upper_z ;
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const unsigned inode ) const
   {
     //  Apply a dirichlet boundary condition to 'irow'

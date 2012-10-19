@@ -11,8 +11,6 @@
 #include <HexElement.hpp>
 #include <FEMesh.hpp>
 
-#define  KOKKOSARRAY_MACRO_DEVICE_FUNCTION  __device__
-
 namespace HybridFEM {
 namespace NonLinear {
 
@@ -129,7 +127,7 @@ public:
   // Sum among the threadIdx.x 
 
   template< typename Type >
-  static inline KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  __device__ inline static
   void sum_x( Type & result , const double value )
   {
     extern __shared__ WorkSpace work_data[] ;
@@ -152,7 +150,7 @@ public:
     }
   }
 
-  static inline KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  __device__ inline static
   void sum_x_clear()
   {
     extern __shared__ WorkSpace work_data[] ;
@@ -163,7 +161,7 @@ public:
   //------------------------------------
   //------------------------------------
 
-  inline KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  __device__ inline
   void evaluateFunctions( const unsigned ielem ) const
   {
     extern __shared__ WorkSpace work_data[] ;
@@ -275,7 +273,7 @@ public:
     __syncthreads(); // All shared data must be populated at return.
   }
 
-  inline KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  __device__ inline
   void contributeResidualJacobian( const unsigned ielem ) const
   {
     extern __shared__ WorkSpace work_data[] ;
@@ -332,7 +330,7 @@ public:
     __syncthreads(); // All warps finish before refilling shared data 
   }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  __device__ inline
   void operator()(void) const
   {
     extern __shared__ WorkSpace work_data[] ;

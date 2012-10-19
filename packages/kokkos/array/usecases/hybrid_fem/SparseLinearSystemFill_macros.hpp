@@ -81,7 +81,7 @@ private:
 
 public:
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( size_type irow ) const
   {
     const size_type node_elem_begin = node_elem_ids.row_map[irow];

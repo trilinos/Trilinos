@@ -43,7 +43,7 @@
 
 #if ! defined(KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
     ! defined(KOKKOSARRAY_MACRO_DEVICE)                  || \
-    ! defined(KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION)
+    ! defined(KOKKOSARRAY_INLINE_FUNCTION)
 
 #error "Including <impl/KokkosArray_ProductTensor_macros.hpp> without macros defined"
 
@@ -60,12 +60,10 @@ public:
   typedef KOKKOSARRAY_MACRO_DEVICE    device_type ;
   typedef device_type::size_type size_type ;
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ~ProductTensorIndex() {}
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ProductTensorIndex()
   {
     m_coord[0] = 0 ;
@@ -74,8 +72,7 @@ public:
     m_coord[3] = 0 ;
   }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ProductTensorIndex( const ProductTensorIndex & rhs )
   {
     m_coord[0] = rhs.m_coord[0] ;
@@ -84,8 +81,7 @@ public:
     m_coord[3] = rhs.m_coord[3] ;
   }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ProductTensorIndex & operator = ( const ProductTensorIndex & rhs )
   {
     m_coord[0] = rhs.m_coord[0] ;
@@ -98,8 +94,7 @@ public:
 private:
 
   template< unsigned I , unsigned J >
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void order()
   {
     if ( m_coord[I] < m_coord[J] ) {
@@ -113,8 +108,7 @@ public:
 
   /** \brief  Construct with the dense symmetric compression map */
   template< typename iType , typename jType , typename kType >
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ProductTensorIndex( const iType & argI ,
                       const jType & argJ ,
                       const kType & argK )
@@ -133,8 +127,7 @@ public:
   }
 
   template< class D >
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ProductTensorIndex( const ProductTensorIndex<3,D> & rhs )
   {
     m_coord[0] = rhs.coord(0) ;
@@ -144,8 +137,7 @@ public:
   }
 
   template< class D >
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ProductTensorIndex & operator = ( const ProductTensorIndex<3,D> & rhs )
   {
     m_coord[0] = rhs.coord(0) ;
@@ -157,8 +149,7 @@ public:
 
   /*------------------------------------------------------------------------*/
   /** \brief  Initialize with dense symmetric compression map offset */
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   explicit ProductTensorIndex( size_type dense_offset )
   {
     unsigned long i , j ;
@@ -213,18 +204,15 @@ public:
 
   /*------------------------------------------------------------------------*/
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   size_type coord( size_type c ) const { return m_coord[c]; }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   size_type offset() const { return m_coord[3]; }
 
   /*------------------------------------------------------------------------*/
   /** \brief  Increment in the dense map ordering */
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   ProductTensorIndex & operator++()
   {
     if      ( m_coord[1] > m_coord[2] ) { ++m_coord[2] ; }
@@ -235,33 +223,27 @@ public:
   }
   /*------------------------------------------------------------------------*/
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   bool operator == ( const ProductTensorIndex & rhs ) const
   { return m_coord[3] == rhs.m_coord[3] ; }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   bool operator < ( const ProductTensorIndex & rhs ) const
   { return m_coord[3] < rhs.m_coord[3] ; }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   bool operator > ( const ProductTensorIndex & rhs ) const
   { return m_coord[3] > rhs.m_coord[3] ; }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   bool operator != ( const ProductTensorIndex & rhs ) const
   { return m_coord[3] != rhs.m_coord[3] ; }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   bool operator <= ( const ProductTensorIndex & rhs ) const
   { return m_coord[3] <= rhs.m_coord[3] ; }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   bool operator >= ( const ProductTensorIndex & rhs ) const
   { return m_coord[3] >= rhs.m_coord[3] ; }
 
@@ -309,22 +291,18 @@ public:
     return *this ;
   }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   size_type dimension() const { return m_dimen ; }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   size_type entry_count() const
   { return m_value.dimension_0(); }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   const value_type & value( const size_type entry ) const
   { return m_value( entry ); }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   size_type coord( const size_type entry , const size_type c ) const
   { return m_coord( entry , c ); }
 
@@ -373,37 +351,30 @@ public:
     return *this ;
   }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   size_type dimension() const { return m_coord.row_map.dimension(0) - 1 ; }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   size_type entry_count() const
   { return m_coord.entries.dimension(0); }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   size_type entry_maximum() const
   { return m_entry_max ; }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   size_type entry_begin( size_type i ) const
   { return m_coord.row_map[i]; }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   size_type entry_end( size_type i ) const
   { return m_coord.row_map[i+1]; }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   size_type coord( const size_type entry , const size_type c ) const
   { return m_coord.entries( entry , c ); }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   const value_type & value( const size_type entry ) const
   { return m_value( entry ); }
 

@@ -87,7 +87,7 @@ struct Hex8Functions
   //--------------------------------------------------------------------------
 
   template< typename Scalar >
-  static KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  static KOKKOSARRAY_INLINE_FUNCTION
   Scalar dot8( const Scalar * a , const Scalar * b )
   { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3] +
            a[4] * b[4] + a[5] * b[5] + a[6] * b[6] + a[7] * b[7] ; }
@@ -95,7 +95,7 @@ struct Hex8Functions
   //--------------------------------------------------------------------------
 
   template< typename CoordScalarType , typename Scalar >
-  static KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  static KOKKOSARRAY_INLINE_FUNCTION
   void grad( const CoordScalarType x[] ,
              const CoordScalarType z[] ,
                    Scalar grad_y[] )
@@ -137,7 +137,7 @@ struct Hex8Functions
   }
 
   template< typename CoordScalarType , typename Scalar >
-  static KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  static KOKKOSARRAY_INLINE_FUNCTION
   void grad( const CoordScalarType x[] ,
              const CoordScalarType y[] ,
              const CoordScalarType z[] ,
@@ -153,7 +153,7 @@ struct Hex8Functions
   //--------------------------------------------------------------------------
 
   template< typename Scalar >
-  static KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  static KOKKOSARRAY_INLINE_FUNCTION
   void polar_decomp( const Scalar dt ,
                      const Scalar v_gr[] ,
                            Scalar stretch[] /* INOUT */ ,
@@ -303,7 +303,7 @@ struct Hex8Functions
   //--------------------------------------------------------------------------
 
   template< typename Scalar >
-  static KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  static KOKKOSARRAY_INLINE_FUNCTION
   void rotate_tensor( const Scalar str_ten[] ,
                       const Scalar rot[] ,
                             Scalar rot_str[] )
@@ -335,7 +335,7 @@ struct Hex8Functions
   //--------------------------------------------------------------------------
 
   template< typename Scalar >
-  static KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  static KOKKOSARRAY_INLINE_FUNCTION
   void rotate_tensor_backward( const Scalar s_n[] ,
                                const Scalar r_n[] ,
                                      Scalar rot_stress[] )
@@ -367,7 +367,7 @@ struct Hex8Functions
   //--------------------------------------------------------------------------
 
   template< typename Scalar , typename ScalarStress >
-  static KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  static KOKKOSARRAY_INLINE_FUNCTION
   void update_stress( const Scalar dt ,
                       const Scalar two_mu ,
                       const Scalar bulk_modulus ,
@@ -390,7 +390,7 @@ struct Hex8Functions
   //--------------------------------------------------------------------------
 
   template< typename Scalar >
-  static KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  static KOKKOSARRAY_INLINE_FUNCTION
   void comp_force( const Scalar vx[] ,
                    const Scalar vy[] ,
                    const Scalar vz[] ,

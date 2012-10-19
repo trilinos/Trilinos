@@ -112,7 +112,7 @@ public:
      /* Inverse jacobian */   TensorDim * 6 + 6 +
      /* Gradient transform */ FunctionCount * 15 ;
 
-  inline KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   float transform_gradients(
     const float grad[][ FunctionCount ] , // Gradient of bases master element
     const double x[] ,
@@ -190,7 +190,7 @@ public:
     return detJ ;
   }
 
-  inline KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void contributeResidualJacobian(
     const float coeff_k ,
     const double dof_values[] ,
@@ -244,7 +244,7 @@ public:
     }
   }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const unsigned ielem ) const
   {
     // Gather nodal coordinates and solution vector:

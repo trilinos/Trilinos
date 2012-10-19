@@ -43,7 +43,7 @@
 
 #if ! defined(KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
     ! defined(KOKKOSARRAY_MACRO_DEVICE)                  || \
-    ! defined(KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION)
+    ! defined(KOKKOSARRAY_INLINE_FUNCTION)
 
 #error "Including <impl/KokkosArray_ProductTensor_macros.hpp> without macros defined"
 
@@ -91,27 +91,22 @@ public:
     return *this ;
   }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   const tensor_type & tensor() const { return m_tensor ; }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   size_type dimension() const { return m_tensor.dimension(); }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   size_type variable_count() const { return m_variable ; }
 
   template< typename iType >
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   size_type variable_degree( const iType & iVariable ) const
     { return m_degree_map( 0 , iVariable ); }
 
   template< typename iType , typename jType >
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   size_type bases_degree( const iType & iBasis , const jType & iVariable ) const
     { return m_degree_map( iBasis + 1 , iVariable ); }
 
