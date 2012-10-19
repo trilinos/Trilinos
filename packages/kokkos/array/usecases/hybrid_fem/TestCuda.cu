@@ -6,11 +6,11 @@
 
 #include <KokkosArray_Cuda.hpp>
 #include <KokkosArray_Host.hpp>
+#include <SparseLinearSystem.hpp>
 
 #include <impl/KokkosArray_Cuda_macros.hpp>
 #include <ParallelDataMap_macros.hpp>
 #include <TestBoxMeshFixture_macros.hpp>
-#include <SparseLinearSystem_macros.hpp>
 #include <SparseLinearSystemFill_macros.hpp>
 
 #include <Implicit_macros.hpp>

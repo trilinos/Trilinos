@@ -52,13 +52,204 @@ namespace KokkosArray {
 namespace Impl {
 
 template< class Scalar , class DeviceType , class > struct Dot ;
-template< class Scalar , class DeviceType > struct WAXPBY ;
-template< class Scalar , class DeviceType > struct AXPBY ;
-template< class Scalar , class DeviceType > struct FILL ;
-template< class AType , class XType , class YType > struct Multiply ;
+template< class Matrix , class OutputVector , class InputVector >
+class Multiply ;
 
-} /* namespace Impl */
-} /* namespace KokkosArray */
+template< typename Scalar , class DeviceType >
+struct Dot< Scalar , DeviceType , Impl::unsigned_<2> >
+{
+  typedef DeviceType          device_type;
+  typedef typename device_type::size_type       size_type;
+  typedef View<Scalar*, device_type>  scalar_vector;  
+  typedef double                       value_type;
+
+private:
+
+  scalar_vector x;
+  scalar_vector y;
+
+public:
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  void operator()( int iwork , value_type & update ) const 
+  { update += x(iwork) * y(iwork); }
+    
+  KOKKOSARRAY_INLINE_FUNCTION
+  static void join( volatile value_type & update ,
+                    const volatile value_type & source )
+  { update += source;    }
+    
+  KOKKOSARRAY_INLINE_FUNCTION
+  static void init( value_type & update )
+  { update = 0 ; }
+
+  inline static
+  value_type apply( const size_t n ,
+                    const scalar_vector & x ,
+                    const scalar_vector & y )
+  {
+    Dot op ; op.x = x ; op.y = y ;
+    return parallel_reduce( n , op );
+  }
+}; //Dot
+
+template< typename Scalar , class DeviceType >
+struct Dot< Scalar , DeviceType , Impl::unsigned_<1> >
+{
+  typedef DeviceType          device_type;
+  typedef typename device_type::size_type       size_type;
+  typedef View<Scalar*, device_type>  scalar_vector;  
+  typedef View < double, device_type>  result_type ;  
+  typedef double                       value_type;
+
+private:
+
+  scalar_vector x;
+
+public:
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  void operator()( int iwork , value_type & update ) const 
+  { const Scalar xi = x(iwork); update += xi * xi ; }
+    
+  KOKKOSARRAY_INLINE_FUNCTION
+  static void join( volatile value_type & update ,
+                    const volatile value_type & source )
+  { update += source ; }
+    
+  KOKKOSARRAY_INLINE_FUNCTION
+  static void init( value_type & update )
+  { update = 0 ; }
+
+  inline static
+  value_type apply( const size_t n ,
+                    const scalar_vector & x )
+  {
+    Dot op ; op.x = x ;
+    return parallel_reduce( n , op );
+  }
+}; //Dot
+
+//----------------------------------------------------------------------------
+
+template < typename Scalar , class DeviceType >
+struct FILL
+{
+  typedef DeviceType          device_type ;
+  typedef typename device_type::size_type       size_type ;
+  typedef View<Scalar*, device_type>  scalar_vector ;
+
+private:
+
+  scalar_vector w ;
+  Scalar alpha ;
+
+public:
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  void operator()(int inode) const
+  {
+    w(inode) = alpha ;
+  }
+
+  inline static
+  void apply( const size_t n ,
+              const double          alpha ,
+              const scalar_vector & w )
+  {
+    FILL op ;
+    op.w = w ;
+    op.alpha = alpha ;
+    parallel_for( n , op );
+  }
+};
+
+template < typename Scalar , class DeviceType >
+struct WAXPBY
+{
+  typedef DeviceType          device_type ;
+  typedef typename device_type::size_type       size_type ;
+  typedef View<Scalar*, device_type>  scalar_vector ;
+
+private:
+
+  scalar_vector w ;
+  scalar_vector x ;
+  scalar_vector y ;
+
+  Scalar alpha ;
+  Scalar beta ;
+
+public:
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  void operator()(int inode) const
+  {
+    w(inode) = alpha * x(inode) + beta * y(inode);
+  }
+
+  inline static
+  void apply( const size_t n ,
+              const double          alpha ,
+              const scalar_vector & x ,
+              const double          beta ,
+              const scalar_vector & y ,
+              const scalar_vector & w )
+  {
+    WAXPBY op ;
+    op.w = w ;
+    op.x = x ;
+    op.y = y ;
+    op.alpha = alpha ;
+    op.beta  = beta ;
+    parallel_for( n , op );
+  }
+}; // WAXPBY
+
+template < typename Scalar , class DeviceType >
+struct AXPBY
+{
+  typedef DeviceType          device_type ;
+  typedef typename device_type::size_type       size_type ;
+  typedef View<Scalar*, device_type>  scalar_vector ;
+
+private:
+
+  scalar_vector x ;
+  scalar_vector y ;
+
+  Scalar alpha ;
+  Scalar beta ;
+
+public:
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  void operator()(int inode) const
+  {
+    Scalar & val = y(inode); val = alpha * x(inode) + beta * val ;
+  }
+
+  inline static
+  void apply( const size_t n ,
+              const double          alpha ,
+              const scalar_vector & x ,
+              const double          beta ,
+              const scalar_vector & y )
+  {
+    AXPBY op ;
+    op.x = x ;
+    op.y = y ;
+    op.alpha = alpha ;
+    op.beta  = beta ;
+    parallel_for( n , op );
+  }
+}; // WAXPBY
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+} // namespace Impl
+} // namespace KokkosArray
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

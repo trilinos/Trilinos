@@ -1,6 +1,4 @@
 
-/* #define KOKKOSARRAY_BOUNDS_CHECK 1 */
-
 #include <iostream>
 #include <stdexcept>
 #include <limits>
@@ -13,11 +11,11 @@
 #include <Explicit.hpp>
 
 #include <KokkosArray_Host.hpp>
+#include <SparseLinearSystem.hpp>
 
 #include <impl/KokkosArray_Host_macros.hpp>
 #include <ParallelDataMap_macros.hpp>
 #include <TestBoxMeshFixture_macros.hpp>
-#include <SparseLinearSystem_macros.hpp>
 #include <SparseLinearSystemFill_macros.hpp>
 
 #include <Implicit_macros.hpp>

@@ -80,7 +80,7 @@ struct InitializeElement< Explicit::Fields< Scalar, KOKKOSARRAY_MACRO_DEVICE > >
       KokkosArray::parallel_for( mesh_fields.num_elements , *this );
     }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( unsigned ielem )const
   {
     const unsigned K_XX = 0 ;
@@ -146,7 +146,7 @@ struct InitializeNode< Explicit::Fields< Scalar, KOKKOSARRAY_MACRO_DEVICE > >
       KokkosArray::parallel_for( mesh_fields.num_nodes_owned , *this );
     }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( unsigned inode )const
   {
     const unsigned begin = node_elem_connectivity.row_map[inode];
@@ -206,7 +206,7 @@ struct GradFunctor< Explicit::Fields< Scalar , KOKKOSARRAY_MACRO_DEVICE > >
   //--------------------------------------------------------------------------
   // Functor operator() which calls the three member functions.
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( unsigned ielem )const
   {
     const unsigned K_F_XX = Fields::K_F_XX ;
@@ -334,7 +334,7 @@ struct DecompRotateFunctor< Explicit::Fields< Scalar , KOKKOSARRAY_MACRO_DEVICE 
       KokkosArray::parallel_for( mesh_fields.num_elements , *this );
     }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( unsigned ielem ) const
   {
     const Scalar step = *dt ;
@@ -386,12 +386,12 @@ struct InternalForceFunctor< Explicit::Fields< Scalar , KOKKOSARRAY_MACRO_DEVICE
 
   typedef Scalar value_type;
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void init(value_type & next_time_step ) {
      next_time_step  = 1.0e32;
   }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & next_time_step ,
                     const volatile value_type & source )
   {
@@ -407,7 +407,7 @@ struct InternalForceFunctor< Explicit::Fields< Scalar , KOKKOSARRAY_MACRO_DEVICE
     SetNextTimeStep( const typename Fields::value_view & arg_dt )
       : dt( arg_dt ) {}
 
-    KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+    KOKKOSARRAY_INLINE_FUNCTION
     void operator()( const value_type & result ) const
     {
       *dt = result ;
@@ -465,7 +465,7 @@ struct InternalForceFunctor< Explicit::Fields< Scalar , KOKKOSARRAY_MACRO_DEVICE
 
   //--------------------------------------------------------------------------
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( unsigned ielem, value_type & next_time_step )const
   {
     const Scalar ONE12TH = 1.0 / 12.0 ;
@@ -607,7 +607,7 @@ struct NodalBoundary< Explicit::Fields< Scalar , KOKKOSARRAY_MACRO_DEVICE > >
     , x_bc( arg_x_bc )
     {}
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const unsigned inode , Scalar accel[] ) const
   {
     const Scalar tol_bc = 1.0e-7;
@@ -670,7 +670,7 @@ struct NodalUpdateFunctor< Fields< Scalar , KOKKOSARRAY_MACRO_DEVICE > , Boundar
       KokkosArray::parallel_for( mesh_fields.num_nodes_owned , *this );
    }
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( unsigned inode ) const
   {
     // Getting count as per 'CSR-like' data structure
@@ -772,8 +772,7 @@ struct PackState< Explicit::Fields< Scalar , KOKKOSARRAY_MACRO_DEVICE > >
       KokkosArray::parallel_for( arg_count , *this );
     }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const unsigned i ) const
   {
     const unsigned inode  = inode_base + i ;
@@ -825,8 +824,7 @@ struct UnpackState< Explicit::Fields< Scalar , KOKKOSARRAY_MACRO_DEVICE > >
       KokkosArray::parallel_for( arg_count , *this );
     }
 
-  inline
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const unsigned i ) const
   {
     const unsigned inode = inode_base + i ;

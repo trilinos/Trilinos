@@ -44,9 +44,7 @@
 */
 
 #if defined( KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION ) || \
-    defined( KOKKOSARRAY_MACRO_DEVICE ) || \
-    defined( KOKKOSARRAY_MACRO_DEVICE_FUNCTION ) || \
-    defined( KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION )
+    defined( KOKKOSARRAY_MACRO_DEVICE )
 
 #error "Including <KokkosArray_Cuda_macros.hpp> with macros already defined"
 
@@ -58,10 +56,6 @@
 
 #define KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
 #define KOKKOSARRAY_MACRO_DEVICE                      KokkosArray::Cuda
-/* #define KOKKOSARRAY_MACRO_DEVICE_FUNCTION */
-#define KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION      /* */
-#define KOKKOSARRAY_MACRO_DEVICE_CAN_THROW( expr ) expr
-#define KOKKOSARRAY_MACRO_CHECK( expr )  expr
 
 #else
 
@@ -72,20 +66,6 @@
 
 #define KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
 #define KOKKOSARRAY_MACRO_DEVICE                      KokkosArray::Cuda
-#define KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION    __device__ __host__
-#define KOKKOSARRAY_MACRO_DEVICE_FUNCTION             __device__ __host__
-
-/* Device-only functions are not compiled unless compiling for the device. */
-#if defined( __CUDA_ARCH__ )
-#define KOKKOSARRAY_MACRO_DEVICE_CAN_THROW( expr )  /* */
-#define KOKKOSARRAY_MACRO_CHECK( expr )             /* */
-#elif ! defined( KOKKOSARRAY_BOUNDS_CHECK )
-#define KOKKOSARRAY_MACRO_DEVICE_CAN_THROW( expr )  expr
-#define KOKKOSARRAY_MACRO_CHECK( expr )             /* */
-#else
-#define KOKKOSARRAY_MACRO_DEVICE_CAN_THROW( expr )  expr
-#define KOKKOSARRAY_MACRO_CHECK( expr )             expr
-#endif
 
 #endif
 

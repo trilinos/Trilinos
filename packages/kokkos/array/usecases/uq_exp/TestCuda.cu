@@ -1,6 +1,4 @@
 
-/* #define KOKKOSARRAY_BOUNDS_CHECK 1 */
-
 #include <iostream>
 #include <stdexcept>
 #include <limits>

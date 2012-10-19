@@ -44,8 +44,6 @@
 #ifndef KOKKOSARRAY_BOXMESHFIXTURE_HPP
 #define KOKKOSARRAY_BOXMESHFIXTURE_HPP
 
-/* #define KOKKOSARRAY_BOUNDS_CHECK 1 */
-
 #include <cmath>
 #include <stdexcept>
 #include <sstream>
