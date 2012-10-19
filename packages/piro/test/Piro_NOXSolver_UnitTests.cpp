@@ -52,6 +52,8 @@
 #include "Piro_Test_WeakenedModelEvaluator.hpp"
 
 #include "Thyra_EpetraModelEvaluator.hpp"
+#include "Thyra_ModelEvaluatorHelpers.hpp"
+
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 
@@ -187,9 +189,9 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SolutionSensitivityMvJac)
   Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
   const int solutionResponseIndex = solver->Ng() - 1;
   const int parameterIndex = 0;
-  const RCP<Thyra::MultiVectorBase<double> > dxdp =
-    Thyra::createMembers(solver->get_g_space(solutionResponseIndex), solver->get_p_space(parameterIndex));
-  const Thyra::MEB::Derivative<double> dxdp_deriv(dxdp, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const Thyra::MEB::Derivative<double> dxdp_deriv =
+    Thyra::create_DgDp_mv(*solver, solutionResponseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<Thyra::MultiVectorBase<double> > dxdp = dxdp_deriv.getMultiVector();
   outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv);
 
   solver->evalModel(inArgs, outArgs);
@@ -274,9 +276,9 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvJac)
   Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
   const int responseIndex = 0;
   const int parameterIndex = 0;
-  const RCP<Thyra::MultiVectorBase<double> > dgdp =
-    Thyra::createMembers(solver->get_g_space(responseIndex), solver->get_p_space(parameterIndex));
-  const Thyra::MEB::Derivative<double> dgdp_deriv(dgdp, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const Thyra::MEB::Derivative<double> dgdp_deriv =
+    Thyra::create_DgDp_mv(*solver, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<Thyra::MultiVectorBase<double> > dgdp = dgdp_deriv.getMultiVector();
   outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
 
   solver->evalModel(inArgs, outArgs);
@@ -298,15 +300,15 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGrad)
   Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
   const int responseIndex = 0;
   const int parameterIndex = 0;
-  const RCP<Thyra::VectorBase<double> > dgdp =
-    Thyra::createMember(solver->get_p_space(responseIndex));
-  const Thyra::MEB::Derivative<double> dgdp_deriv(dgdp, Thyra::MEB::DERIV_MV_GRADIENT_FORM);
+  const Thyra::MEB::Derivative<double> dgdp_deriv =
+    Thyra::create_DgDp_mv(*solver, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_GRADIENT_FORM);
+  const RCP<Thyra::MultiVectorBase<double> > dgdp = dgdp_deriv.getMultiVector();
   outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
 
   solver->evalModel(inArgs, outArgs);
 
   const Array<double> expected = tuple(2.0, -8.0);
-  const Array<double> actual = arrayFromVector(*dgdp);
+  const Array<double> actual = arrayFromVector(*dgdp->col(parameterIndex));
   TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
 }
 
@@ -347,9 +349,9 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvJac_NoDgDxMv)
   Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
   const int responseIndex = 0;
   const int parameterIndex = 0;
-  const RCP<Thyra::MultiVectorBase<double> > dgdp =
-    Thyra::createMembers(solver->get_g_space(responseIndex), solver->get_p_space(parameterIndex));
-  const Thyra::MEB::Derivative<double> dgdp_deriv(dgdp, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const Thyra::MEB::Derivative<double> dgdp_deriv =
+    Thyra::create_DgDp_mv(*solver, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<Thyra::MultiVectorBase<double> > dgdp = dgdp_deriv.getMultiVector();
   outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
 
   solver->evalModel(inArgs, outArgs);
@@ -376,7 +378,7 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGrad_NoDgDpMvJac)
   const int responseIndex = 0;
   const int parameterIndex = 0;
   const RCP<Thyra::VectorBase<double> > dgdp =
-    Thyra::createMember(solver->get_p_space(responseIndex));
+    Thyra::createMember(solver->get_p_space(parameterIndex));
   const Thyra::MEB::Derivative<double> dgdp_deriv(dgdp, Thyra::MEB::DERIV_MV_GRADIENT_FORM);
   outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
 
