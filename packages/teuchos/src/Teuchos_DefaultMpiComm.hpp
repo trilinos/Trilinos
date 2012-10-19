@@ -420,8 +420,20 @@ private:
   /// include but are not limited to MPI_COMM_WORLD and MPI_COMM_SELF,
   /// need not and must not be freed after use.)
   RCP<const OpaqueWrapper<MPI_Comm> > rawMpiComm_;
+
+  //! The rank of the calling process.
   int rank_;
+
+  //! The number of processes in the communicator.
   int size_;
+  
+  /// \brief The current tag, to use for all MPI functions that need it.
+  ///
+  /// Each MpiComm instance always uses the same tag.  Different
+  /// MpiComm instances use different tags.  The tag is set in
+  /// MpiComm's constructor.  Please refer to 
+  /// <a href="https://software.sandia.gov/bugzilla/show_bug.cgi?id=5740">Bug 5740</a>
+  /// for further discussion.
   int tag_;
 
   //! MPI error handler.  If null, MPI uses the default error handler.
@@ -563,19 +575,37 @@ MpiComm (MPI_Comm rawMpiComm)
 
 
 template<typename Ordinal>
-MpiComm<Ordinal>::MpiComm(const MpiComm<Ordinal>& other)
+MpiComm<Ordinal>::MpiComm (const MpiComm<Ordinal>& other) : 
+  rawMpiComm_ (MPI_COMM_NULL) // <- This will be set below
 {
-  TEUCHOS_TEST_FOR_EXCEPT(other.getRawMpiComm().get() == NULL);
-  TEUCHOS_TEST_FOR_EXCEPT(*other.getRawMpiComm() == MPI_COMM_NULL);
-/*
-  MPI_Comm newComm;
-  const int err = MPI_Comm_dup (*other.getRawMpiComm(), &newComm);
-  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-    "Teuchos::MpiComm copy constructor: MPI_Comm_dup failed with error \""
-    << mpiErrorCodeToString (err) << "\".");
-  rawMpiComm_ = opaqueWrapper (newComm,MPI_Comm_free);
-*/
-  rawMpiComm_ = other.rawMpiComm_;
+  // These are logic errors, since they violate MpiComm's invariants.
+  RCP<const OpaqueWrapper<MPI_Comm> > origCommPtr = other.getRawMpiComm ();
+  TEUCHOS_TEST_FOR_EXCEPTION(origCommPtr == null, std::logic_error, 
+    "Teuchos::MpiComm copy constructor: "
+    "The input's getRawMpiComm() method returns null.");
+  MPI_Comm origComm = *origCommPtr;
+  TEUCHOS_TEST_FOR_EXCEPTION(origComm == MPI_COMM_NULL, std::logic_error,
+    "Teuchos::MpiComm copy constructor: "
+    "The input's raw MPI_Comm is MPI_COMM_NULL.");
+
+  // mfh 19 Oct 2012: Don't change the behavior of MpiComm's copy
+  // constructor for now.  Later, we'll switch to the version that
+  // calls MPI_Comm_dup.  For now, we just copy other's handle over.
+  // Note that the new MpiComm's tag is still different than the input
+  // MpiComm's tag.  See Bug 5740.
+  if (true) {
+    rawMpiComm_ = origCommPtr;
+  } 
+  else { // false (not run)
+    MPI_Comm newComm;
+    const int err = MPI_Comm_dup (origComm, &newComm);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+      "Teuchos::MpiComm copy constructor: MPI_Comm_dup failed with "
+      "the following error: " << mpiErrorCodeToString (err));
+    // No side effects until after everything has succeeded.
+    rawMpiComm_ = opaqueWrapper (newComm, details::safeCommFree);
+  }
+
   setupMembersFromComm();
 }
 
