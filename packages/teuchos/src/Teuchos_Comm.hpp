@@ -85,25 +85,122 @@ public:
   virtual OrdinalType getSourceRank () = 0;
 };
 
-/** \brief Abstract interface class for a basic communication channel between
- * one or more processes.
- *
- * This interface is templated on the ordinal type but only deals with buffers
- * of untyped data represented as arrays <tt>char</tt> type. All reduction
- * operations that are initiated by the concreate communicator object are
- * performed by user-defined <tt>ReductOpBase</tt> objects.  It is the
- * responsibility of the <tt>ReductOpBase</tt> object to know what the currect
- * data type is, to perform casts or serializations/unserializations to and
- * from <tt>char[]</tt> buffers, and to know how to reduce the objects
- * correctly.  It is strictly up to the client to correctly convert data types
- * to <tt>char[]</tt> arrays but there is a great deal of helper code to make
- * this easy and safe.
- *
- * ToDo: Finish documentation!
- */
+/// \class Comm
+/// \brief Abstract interface for distributed-memory communication.
+/// \tparam Ordinal Type of indices used for communication.
+///
+/// \section Teuchos_Comm_What What is Comm?
+///
+/// This class is Teuchos' interface to distributed-memory
+/// communication between one or more parallel processes.  It presents
+/// an interface very much like that of MPI (the Message Passing
+/// Interface).  Teuchos provides two implementations of Comm:
+/// - An MPI (Message Passing Interface) implementation, MpiComm
+/// - A "serial" implementation, SerialComm, that only has one process
+///
+/// Comm is an abstract interface.  You cannot create a Comm directly.
+/// You have to create one of the subclasses.  The normal way to
+/// handle a Comm is to pass it around using RCP (a reference-counted
+/// "smart" pointer).  For example:
+/// \code
+/// // Make a Comm.  This one happens to wrap MPI_COMM_WORLD.
+/// RCP<const Comm<int> > comm = rcp (new MpiComm (MPI_COMM_WORLD));
+/// // Equivalent of MPI_Comm_rank
+/// const int myRank = comm->getRank ();
+/// // Equivalent of MPI_Comm_size
+/// const int numProcs = comm->getSize ();
+/// // Equivalent of MPI_Comm_barrier
+/// comm->barrier ();
+/// \endcode
+/// Comm's communication methods that actually send or receive data
+/// accept that data as an array of \c char.  You should never call
+/// these methods directly.  Instead, you should use the nonmember
+/// "helper" functions in Teuchos_CommHelpers.hpp.  These methods are
+/// templated on the \c Packet type, that is, the type of data you
+/// want to send or receive.
+///
+/// \section Teuchos_Comm_How How do I make a Comm?
+///
+/// Comm works whether or not you have build Trilinos with MPI
+/// support.  If you want to make a "default" Comm that is the
+/// equivalent of MPI_COMM_WORLD, but you don't know if your Trilinos
+/// with MPI enabled, you may use GlobalMPISession to call MPI_Init if
+/// necessary, and DefaultComm to "get a default communicator."  For
+/// example:
+/// int main (int argc, char* argv[]) {
+///   using Teuchos::Comm;
+///   using Teuchos::DefaultComm;
+///   using Teuchos::RCP;
+///
+///   // This replaces the call to MPI_Init.  If you didn't
+///   // build with MPI, this doesn't call MPI functions.
+///   Teuchos::GlobalMPISesssion session (&argc, &argv, NULL);
+///   // comm is the equivalent of MPI_COMM_WORLD.
+///   RCP<const Comm<int> > comm = DefaultComm<int>::getComm ();
+///
+///   // ... use comm in your code as you would use MPI_COMM_WORLD ...
+///   
+///   // Don't need to call MPI_Finalize.
+///   return EXIT_SUCCESS;
+/// }
+/// \endcode
+/// If you know you are building with MPI, you don't need to use
+/// DefaultComm.  You may simply pass MPI_COMM_WORLD directly to
+/// MpiComm, like this:
+/// \code
+/// RCP<const Comm<int> > comm = rcp (new MpiComm (MPI_COMM_WORLD));
+/// \endcode
+///
+/// \section Teuchos_Comm_Use How do I use Comm?
+///
+/// As we mentioned above, for communication of data with Comm, you
+/// you should use the nonmember "helper" functions in
+/// Teuchos_CommHelpers.hpp.  These methods are templated on the
+/// <tt>Packet</tt> type, that is, the type of data you want to send
+/// or receive.  For example, suppose you have two processes (with
+/// ranks 0 and 1, respectively), and you want to send an array of
+/// 10 <tt>double</tt> from Process 0 to Process 1.  Both processes have
+/// defined <tt>RCP<const Comm<int> > comm</tt> as above.  Here is the
+/// code on Process 0:
+/// \code
+/// const int count = 10; // Send 10 doubles
+/// double values[10] = ...; 
+/// const int destinationRank = 1; // Send to Process 1
+/// // You may be able to omit the template arguments of 'send' here.
+/// Teuchos::send<int, double> (*comm, 10, values, destinationRank);
+/// \endcode
+/// Here is the code on Process 1:
+/// \code
+/// const int count = 10; // Receive 10 doubles
+/// double values[10]; // Will be overwritten by receive
+/// const int sourceRank = 0; // Receive from Process 0
+/// // You may be able to omit the template arguments of 'receive' here.
+/// Teuchos::receive<int, double> (*comm, sourceRank, 10, values);
+/// \endcode
+/// Please refer to the documentation in Teuchos_CommHelpers.hpp for
+/// more details.
+/// 
+/// \section Teuchos_Comm_Former Former documentation
+///
+/// This interface is templated on the ordinal type but only deals with buffers
+/// of untyped data represented as arrays <tt>char</tt> type. All reduction
+/// operations that are initiated by the concreate communicator object are
+/// performed by user-defined <tt>ReductOpBase</tt> objects.  It is the
+/// responsibility of the <tt>ReductOpBase</tt> object to know what the currect
+/// data type is, to perform casts or serializations/unserializations to and
+/// from <tt>char[]</tt> buffers, and to know how to reduce the objects
+/// correctly.  It is strictly up to the client to correctly convert data types
+/// to <tt>char[]</tt> arrays but there is a great deal of helper code to make
+/// this easy and safe.
 template<typename Ordinal>
 class Comm : virtual public Describable {
 public:
+  //! @name Destructor
+  //@{
+
+  //! Destructor, declared virtual for safety of derived classes.
+  virtual ~Comm() {}
+  //@}
   
   //! @name Query functions 
   //@{
@@ -450,9 +547,67 @@ public:
   /**
    * \brief Duplicate this communicator.
    *
-   * Make a copy of this communicator with a duplicate communication space.
-   * Note that the returned communicator has the same properties as this
-   * communicator, but is distinct from the original.
+   * Make a copy of this communicator with a duplicate communication
+   * space.  Note that the returned communicator has the same
+   * properties (including process ranks, attributes and topologies)
+   * as this communicator, but is distinct from the original.
+   * "Distinct" means that if you send a message on the original
+   * communicator, you can't receive it on the new one, and vice
+   * versa.  The new communicator represents a separate message space.
+   * This has the same semantics as MPI_Comm_dup.  (In fact, the
+   * subclass MpiComm implements this using MPI_Comm_dup.)
+   *
+   * Most users don't want to do this.  The duplicate() method returns
+   * a <i>new communicator</i>.  In MPI terms, it is a <i>different
+   * MPI_Comm</i>.  If you want a shallow copy of the handle, you
+   * should pass the <tt>Comm<Ordinal><tt> around by const pointer,
+   * like this:
+   * \code
+   * RCP<const Comm<int> > comm = ...; // my original communicator
+   * // ... do some stuff with comm ...
+   * // Make a shallow copy.
+   * RCP<const Comm<int> > diffHandleSameComm = comm;
+   * // ... do some stuff with diffHandleSameComm ...
+   * \endcode
+   * This behaves the same as the following "raw MPI" code:
+   * \code
+   * MPI_Comm comm = ...; // my original communicator
+   * // ... do some stuff with comm ...
+   * // Make a shallow copy.
+   * MPI_Comm diffHandleSameComm = comm;
+   * // ... do some stuff with diffHandleSameComm ...
+   * \endcode
+   * The subclass of Comm ensures that the "raw" MPI handle is freed
+   * only after the last reference to it by a subclass instance
+   * disappears.  (It does reference counting underneath.)
+   *
+   * Please, please do not invoke the copy constructor or assignment
+   * operator of Comm.  Of course it's not legal to do that anyway,
+   * because Comm is pure virtual.  However, even if you could do it,
+   * you must never do this!  For example, do <i>not</i> do this:
+   * \code
+   * RCP<const Comm<int> > comm = ...; // my original communicator
+   * // ... do some stuff with comm ...
+   * // DO NOT DO THIS, EVER!!!  THIS IS VERY BAD!!!
+   * RCP<const Comm<int> > badComm (new Comm<int> (*comm));
+   * \endcode
+   * and do <i>not</i> do this:
+   * \code
+   * RCP<const Comm<int> > comm = ...; // my original communicator
+   * // ... do some stuff with comm ...
+   * // DO NOT DO THIS, EITHER!!!  THIS IS JUST AS BAD!!!
+   * RCP<const Comm<int> > badComm = rcp (new Comm<int> (*comm));
+   * \endcode
+   * This is bad because it ignores the subclass' data.  Depending on
+   * the subclass of Comm that you are actually using, it may be
+   * appropriate to invoke the copy constructor or assignment operator
+   * of the specific subclass, but <i>never</i> those of Comm itself.
+   *
+   * Users are not responsible for freeing the returned communicator.
+   * The destructor of the subclass of Comm handles that itself.
+   *
+   * In an MPI implementation, the returned communicator is created
+   * using MPI_Comm_dup, with the resulting semantic implications.
    *
    * \return A new communicator.
    */
@@ -462,20 +617,28 @@ public:
    * \brief Split a communicator into subcommunicators based on color
    * and key.
    *
-   * Generates a partition of this communicator into multiple disjoint
-   * groups.  There will be as many groups as there are globally many
-   * distinct values for the color parameter. Within each subset of
-   * the partition, the ranks will be ordered according to the key
-   * value each rank passed for the key parameter. If multiple ranks
-   * pass the same value for the key parameter, then they will be
-   * ordered according to their rank value in the original
-   * communicator. To return a valid communicator, this function
-   * requires a nonnegative value for color. If a negative value
-   * is passed for color, a null communicator will be
-   * returned.
+   * Partition this communicator into multiple disjoint groups, and
+   * return the communicator corresponding to the group to which this
+   * process belongs.  There will be as many groups as there are
+   * globally many distinct values for the <tt>color</tt> parameter.
+   * Within each subset of the partition, the ranks will be ordered
+   * according to the key value each process passed for the
+   * <tt>key</tt> parameter. If multiple processes pass the same value
+   * for <tt>key</tt>, then they will be ordered according to their
+   * rank in the original communicator.  To return a valid
+   * communicator, this function requires a nonnegative value for
+   * <tt>color</tt>.  If <tt>color</tt> is negative, this method will
+   * return a null communicator.
    *
-   * All members of this communicator must call this member if it is
-   * called at all.
+   * This method must be called as a collective on all processes in
+   * this communicator.  That is, if this method is called at all, it
+   * must be called on all processes in the communicator.
+   *
+   * Users are not responsible for freeing the returned communicator.
+   * The destructor of the subclass of Comm handles that itself.
+   *
+   * In an MPI implementation, the returned communicator is created
+   * using MPI_Comm_split, with the resulting semantic implications.
    *
    * \param color [in] An integer representing the color for the local
    * rank.  
@@ -487,21 +650,26 @@ public:
   virtual RCP< Comm > split(const int color, const int key) const = 0;
 
   /**
-   * \brief Create a subcommunicator containing the specified ranks of
-   * this one.
+   * \brief Create a subcommunicator containing the specified processes.
    *
-   * Generates a subcommunicator of this communicator that consists of
-   * the specified ranks in the order in which they are listed in the
-   * input vector. Ranks that are not specified in the input vector
-   * will be given a null communicator.
+   * Create and return a subcommunicator of this communicator.  The
+   * subcommunicator contains the processes in this communicator with
+   * the given ranks, in which they are listed in the input vector.
+   * Processes whose ranks are not included in the input vector will
+   * be given a null communicator.
    *
-   * All members of this communicator must call this member if it is
-   * called at all.
+   * This method must be called as a collective on all processes in
+   * this communicator.  That is, if this method is called at all, it
+   * must be called on all processes in the communicator.
    *
-   * \param ranks A vector containing the ranks to include in the new
-   * communicator.
+   * Users are not responsible for freeing the returned communicator.
+   * The destructor of the subclass of Comm handles that itself.
    *
-   * \return A new communicator.
+   * In an MPI implementation, the subcommunicator is created using
+   * MPI_Comm_create, with the resulting semantic implications.  
+   *
+   * \param ranks The ranks of the processes to include in the subcommunicator.
+   * \return The subcommunicator.
    */
   virtual RCP<Comm> createSubcommunicator(
     const ArrayView<const int>& ranks) const = 0;

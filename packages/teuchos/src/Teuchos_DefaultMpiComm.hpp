@@ -206,16 +206,21 @@ mpiCommStatus (MPI_Status rawMpiStatus)
   return rcp (new MpiCommStatus<OrdinalType> (rawMpiStatus));
 }
 
-/** \brief Concrete communicator subclass based on MPI.
- *
- * <b>Assertions:</b><ul>
- * <li><tt>getRawMpiComm().get()!=NULL && *getRawMpiComm()!=MPI_COMM_NULL</tt>
- * <li><tt>getSize() > 0</tt>
- * <li><tt>0 <= getRank() && getRank() < getSize()</tt>
- * </ul>
- *
- * ToDo: Finish documentation!
- */
+/// \class MpiComm
+/// \brief Implementation of Comm that uses MPI for communication.
+/// \tparam Ordinal The index type for communication; same as the
+///   template parameter of Comm.
+///
+/// This class uses MPI (the Message Passing Interface) to implement
+/// the Comm interface.  It includes constructors that take an
+/// MPI_Comm from the application.
+/// 
+/// Assertions:
+/// - <tt>getRawMpiComm().get() != NULL<tt>
+/// - <tt>*getRawMpiComm() != MPI_COMM_NULL</tt>
+/// - <tt>getSize() > 0</tt>
+/// - <tt>0 <= getRank() && getRank() < getSize()</tt>
+///
 template<typename Ordinal>
 class MpiComm : public Comm<Ordinal> {
 public:
@@ -223,12 +228,42 @@ public:
   //! @name Constructors
   //@{
 
-  /** \brief Construct given a wrapped MPI_Comm oqaque object.
-   *
-   * <b>Preconditions:</b><ul>
-   * <li><tt>rawMpiComm.get()!=NULL && *rawMpiComm != MPI_COMM_NULL</tt>
-   * </ul>
-   */
+  /// \brief Construct an MpiComm with an MPI_Comm.
+  ///
+  /// This constructs an MpiComm that uses the given "raw" MPI
+  /// communicator underneath.  The MPI_Comm must be valid for the
+  /// lifetime of this MpiComm.  You are responsible for freeing the
+  /// MPI_Comm (using MPI_Comm_free) if necessary.
+  ///
+  /// This constructor should be used only in one of two cases:
+  /// 1. When the given MPI_Comm is one of the predefined
+  ///    communicators that need not and must not be freed after use,
+  ///    like MPI_COMM_WORLD or MPI_COMM_SELF.
+  /// 2. When you know that the given MPI_Comm will not be freed until
+  ///    after the lifetime of this MpiComm.
+  ///
+  /// If you cannot be sure of either of these two conditions, you
+  /// should use the version of the constructor that takes an
+  /// <tt>RCP<const OpaqueWrapper<MPI_Comm> ></tt>.
+  ///
+  /// Precondition:
+  /// - <tt>rawMpiComm != MPI_COMM_NULL</tt>
+  MpiComm (MPI_Comm rawMpiComm);
+
+  /// \brief Construct an MpiComm with the given wrapped MPI_Comm.
+  ///
+  /// This constructs an MpiComm that uses the given "raw" MPI
+  /// communicator underneath.  This version of the constructor
+  /// accepts the MPI_Comm wrapped in an OpaqueWrapper, which along
+  /// with the RCP has the option to free the MPI_Comm (via
+  /// MPI_Comm_free) after use if necessary.  You are responsible when
+  /// creating the OpaqueWrapper for supplying a "free" function if
+  /// needed.  We recommend using details::safeCommFree for the "free"
+  /// function, if one is needed.
+  ///
+  /// Preconditions:
+  /// - <tt>rawMpiComm.get() != NULL</tt>
+  /// - <tt>*rawMpiComm != MPI_COMM_NULL</tt>
   MpiComm(
     const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
     );
@@ -377,6 +412,13 @@ private:
   void setupMembersFromComm();
   static int tagCounter_;
 
+  /// \brief The "raw" MPI_Comm (communicator).
+  ///
+  /// We wrap the MPI_Comm so that it is freed automatically when its
+  /// reference count goes to zero, if it does need to be freed after
+  /// use by calling MPI_Comm_free.  (Predefined MPI_Comm, which
+  /// include but are not limited to MPI_COMM_WORLD and MPI_COMM_SELF,
+  /// need not and must not be freed after use.)
   RCP<const OpaqueWrapper<MPI_Comm> > rawMpiComm_;
   int rank_;
   int size_;
@@ -443,6 +485,50 @@ MpiComm<Ordinal>::MpiComm(
     std::invalid_argument, "Teuchos::MpiComm constructor: The given MPI_Comm "
     "is MPI_COMM_NULL.");
   rawMpiComm_ = rawMpiComm;
+
+  // FIXME (mfh 26 Mar 2012) The following is a bit wicked in that it
+  // changes the behavior of existing applications that use MpiComm,
+  // without warning.  I've chosen to do it because I can't figure out
+  // any other way to help me debug MPI_Waitall failures on some (but
+  // not all) of the testing platforms.  The problem is that MPI's
+  // default error handler is MPI_ERRORS_ARE_FATAL, which immediately
+  // aborts on error without returning an error code from the MPI
+  // function.  Also, the testing platforms' MPI implementations'
+  // diagnostics are not giving me useful information.  Thus, I'm
+  // setting the default error handler to MPI_ERRORS_RETURN, so that
+  // MPI_Waitall will return an error code.
+  //
+  // Note that all MpiComm methods check error codes returned by MPI
+  // functions, and throw an exception if the code is not MPI_SUCCESS.
+  // Thus, this change in behavior will only affect your program in
+  // the following case: You call a function f() in the try block of a
+  // try-catch, and expect f() to throw an exception (generally
+  // std::runtime_error) in a particular case not related to MpiComm,
+  // but MpiComm throws the exception instead.  It's probably a bad
+  // idea for you to do this, because MpiComm might very well throw
+  // exceptions for things like invalid arguments.
+  const bool makeMpiErrorsReturn = true;
+  if (makeMpiErrorsReturn) {
+    RCP<const OpaqueWrapper<MPI_Errhandler> > errHandler =
+      rcp (new OpaqueWrapper<MPI_Errhandler> (MPI_ERRORS_RETURN));
+    setErrorHandler (errHandler);
+  }
+
+  setupMembersFromComm();
+}
+
+
+template<typename Ordinal>
+MpiComm<Ordinal>::
+MpiComm (MPI_Comm rawMpiComm)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(rawMpiComm == MPI_COMM_NULL,
+    std::invalid_argument, "Teuchos::MpiComm constructor: The given MPI_Comm "
+    "is MPI_COMM_NULL.");
+  // We don't supply a "free" function here, since this version of the
+  // constructor makes the caller responsible for freeing rawMpiComm
+  // after use if necessary.
+  rawMpiComm_ = opaqueWrapper<MPI_Comm> (rawMpiComm);
 
   // FIXME (mfh 26 Mar 2012) The following is a bit wicked in that it
   // changes the behavior of existing applications that use MpiComm,
@@ -1097,11 +1183,41 @@ MpiComm<Ordinal>::wait (const Ptr<RCP<CommRequest> >& request) const
 }
 
 
+namespace details {
+  /// \brief Give \c comm to MPI_Comm_free, if MPI is not yet finalized.
+  ///
+  /// This function "frees" the given communicator by giving it to
+  /// MPI_Comm_free.  It only does so if MPI_Finalize has not yet been
+  /// called.  If MPI_Finalize has been called, this function does
+  /// nothing, since it is not legal to call most MPI functions after
+  /// MPI_Finalize has been called.  This function also ignores any
+  /// errors returned by MPI_Finalize, which makes it suitable for use
+  /// in a destructor.
+  ///
+  /// \note This function may allow a memory leak in your program, if
+  ///   you have allowed the MPI_Comm to persist after MPI_Finalize
+  ///   has been called.
+  void safeCommFree (MPI_Comm* comm);
+} // namespace details
+
+
 template<typename Ordinal>
 RCP< Comm<Ordinal> >
 MpiComm<Ordinal>::duplicate() const
 {
-  return rcp (new MpiComm<Ordinal> (*this));
+  MPI_Comm origRawComm = *rawMpiComm_;
+  MPI_Comm newRawComm = MPI_COMM_NULL;
+  const int err = MPI_Comm_dup (origRawComm, &newRawComm);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, "Teuchos"
+    "::MpiComm::duplicate: MPI_Comm_dup failed with the following error: " 
+    << mpiErrorCodeToString (err));
+
+  // Wrap the raw communicator, and pass the (const) wrapped
+  // communicator to MpiComm's constructor.  We created the raw comm,
+  // so we have to supply a function that frees it after use.
+  RCP<OpaqueWrapper<MPI_Comm> > wrapped = opaqueWrapper<MPI_Comm> (newRawComm, safeCommFree);
+  RCP<const MpiComm<Ordinal> > newComm (new MpiComm<Ordinal> (wrapped.getConst ()));
+  return rcp_implicit_cast<const Comm<Ordinal> > (newComm);
 }
 
 
