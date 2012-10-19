@@ -46,15 +46,21 @@
 #ifndef KOKKOSARRAY_MACROS_HPP
 #define KOKKOSARRAY_MACROS_HPP
 
+namespace KokkosArray {
+class HostSpace ;
+}
+
 //----------------------------------------------------------------------------
 
 #if defined( __CUDACC__ )
 
+namespace KokkosArray {
+class CudaSpace ;
+};
+
 /*  Compiling with a CUDA compiler for host and device code.
  *  Declare functions available on host and device, or device only.
  */
-
-#define KOKKOSARRAY_INLINE_FUNCTION  __device__  __host__  inline
 
 #if defined( __CUDA_ARCH__ )
 
@@ -68,6 +74,7 @@
  */
 
 #define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::CudaSpace
+#define KOKKOSARRAY_INLINE_FUNCTION  __device__  __host__  inline
 
 /*  If compiling for device code cannot do expression checking */
 
@@ -80,6 +87,8 @@
 /*  Compiling with CUDA compiler for host code. */
 
 #define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::HostSpace
+#define KOKKOSARRAY_EXECUTION_SPACE_IS_HOST
+#define KOKKOSARRAY_INLINE_FUNCTION  inline
 
 #endif /* ! #if defined( __CUDA_ARCH__ ) */
 
@@ -98,6 +107,7 @@
 #define KOKKOSARRAY_INLINE_FUNCTION  inline
 
 #define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::HostSpace
+#define KOKKOSARRAY_EXECUTION_SPACE_IS_HOST
 
 /* END defined( _OPENMP ) */
 //----------------------------------------------------------------------------
@@ -108,8 +118,23 @@
 #define KOKKOSARRAY_INLINE_FUNCTION  inline
 
 #define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::HostSpace
+#define KOKKOSARRAY_EXECUTION_SPACE_IS_HOST
 
 #endif
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#define KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( DATA_SPACE , DATA_PTR ) \
+  KokkosArray::VerifyExecutionSpaceCanAccessDataSpace< \
+    KOKKOSARRAY_EXECUTION_SPACE , DATA_SPACE >::verify( DATA_PTR )
+
+#define KOKKOSARRAY_RESTRICT_EXECUTION_TO( DATA_SPACE ) \
+  KokkosArray::VerifyExecutionSpaceCanAccessDataSpace< \
+    KOKKOSARRAY_EXECUTION_SPACE , DATA_SPACE >::verify()
+
+
+
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

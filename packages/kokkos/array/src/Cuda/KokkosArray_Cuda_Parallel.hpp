@@ -44,6 +44,9 @@
 #ifndef KOKKOSARRAY_CUDA_PARALLEL_HPP
 #define KOKKOSARRAY_CUDA_PARALLEL_HPP
 
+#include <string>
+#include <stdexcept>
+
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
@@ -57,10 +60,11 @@ struct CudaTraits {
   enum { SharedMemoryBanks_20 = 32 /* Compute device 2.0 */ };
   enum { UpperBoundGridCount = 65535 /* Hard upper bound */ };
   enum { ConstantMemoryCapacity = 0x010000 /* 64k bytes */ };
+  enum { ConstantMemoryUsage    = 0x008000 /* 32k bytes */ };
   enum { ConstantMemoryCache    = 0x002000 /*  8k bytes */ };
 
   typedef unsigned long
-    ConstantGlobalBufferType[ ConstantMemoryCapacity / sizeof(unsigned long) ];
+    ConstantGlobalBufferType[ ConstantMemoryUsage / sizeof(unsigned long) ];
 
   enum { ConstantMemoryUseThreshold = 0x000100 /* 256 bytes */ };
 
@@ -184,6 +188,10 @@ struct CudaParallelLaunch< DriverType , true > {
                       const dim3       & block ,
                       const int          shmem )
   {
+    if ( sizeof( KokkosArray::Impl::CudaTraits::ConstantGlobalBufferType ) <
+         sizeof( DriverType ) ) {
+      throw std::runtime_error( std::string("CudaParallelLaunch FAILED: Functor is too large") );
+    }
     // Copy functor to constant memory on the device
     cudaMemcpyToSymbol( kokkos_impl_cuda_constant_memory_buffer , & driver , sizeof(DriverType) );
 

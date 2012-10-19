@@ -78,7 +78,6 @@ public:
                           const size_t           scalar_size ,
                           const size_t           scalar_count );
 
-#if ! defined( __CUDA_ARCH__ )
   /** \brief  Increment the reference count of the block of memory
    *          in which the input pointer resides.
    *
@@ -93,10 +92,6 @@ public:
    *          Reference counting only occurs on the master thread.
    */
   static void decrement( const void * );
-#else
-  static __device__ void increment( const void * ) {}
-  static __device__ void decrement( const void * ) {}
-#endif
 
   /** \brief  Print all tracked memory to the output stream. */
   static void print_memory_view( std::ostream & );
@@ -140,23 +135,23 @@ struct DeepCopy<CudaSpace,CudaSpace> {
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-// Compiler specifics macros
+// Trap cross-memory space access errors.
 
-#if defined( __CUDACC__ )
+#if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
 
-/* Force asserts to trap memory space access errors. */
-#if defined( NDEBUG )
-#undef NDEBUG
-#include <assert.h>
-#define NDEBUG
-#else
-#include <assert.h>
-#endif
+extern "C" {
+/*  Cuda runtime function, declared in <crt/device_runtime.h>
+ *  Requires capability 2.x or better.
+ */
+extern __device__ void __assertfail(
+  const void  *message,
+  const void  *file,
+  unsigned int line,
+  const void  *function,
+  size_t       charsize);
+}
 
-#endif /* #if defined( __CUDACC__ ) */
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+#endif /* #if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ ) */
 
 namespace KokkosArray {
 
@@ -169,27 +164,43 @@ struct VerifyExecutionSpaceCanAccessDataSpace< CudaSpace , CudaSpace >
 };
 
 /** \brief  Cuda accessing non-Cuda is bad */
-template< class DataSpace >
-struct VerifyExecutionSpaceCanAccessDataSpace< CudaSpace , DataSpace >
+template<>
+struct VerifyExecutionSpaceCanAccessDataSpace< CudaSpace , HostSpace >
 {
   KOKKOSARRAY_INLINE_FUNCTION static void verify(void)
   {
-    const int Cuda_execution_on_Cuda_memory = 0 ;
-    assert(Cuda_execution_on_Cuda_memory);
+#if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
+    const char message[] = "Cuda kernel called function restricted to Host" ;
+    const char empty[] = "" ;
+
+    __assertfail( (const void *) message ,
+                  (const void *) empty ,
+                  (unsigned int) 0 ,
+                  (const void *) empty ,
+                  sizeof(char) );
+#endif
   }
 
   KOKKOSARRAY_INLINE_FUNCTION static void verify( const void * )
   {
-    const int Cuda_execution_on_Cuda_memory = 0 ;
-    assert(Cuda_execution_on_Cuda_memory);
+#if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
+    const char message[] = "Cuda kernel attempt to access Host memory" ;
+    const char empty[] = "" ;
+
+    __assertfail( (const void *) message ,
+                  (const void *) empty ,
+                  (unsigned int) 0 ,
+                  (const void *) empty ,
+                  sizeof(char) );
+#endif
   }
 };
 
 /** \brief  Produce error message when trying to access Cuda 
  *          memory on the host.
  */
-template< class ExecutionSpace >
-struct VerifyExecutionSpaceCanAccessDataSpace< ExecutionSpace , CudaSpace >
+template<>
+struct VerifyExecutionSpaceCanAccessDataSpace< HostSpace , CudaSpace >
 {
   inline static void verify( void ) { CudaSpace::access_error(); }
   inline static void verify( const void * p ) { CudaSpace::access_error(p); }
@@ -201,5 +212,4 @@ struct VerifyExecutionSpaceCanAccessDataSpace< ExecutionSpace , CudaSpace >
 //----------------------------------------------------------------------------
 
 #endif /* #define KOKKOSARRAY_CUDASPACE_HPP */
-
 

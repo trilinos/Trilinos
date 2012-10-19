@@ -46,38 +46,36 @@
 
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_View.hpp>
-#include <Host/KokkosArray_Host_Parallel.hpp>
 
-#include <impl/KokkosArray_Host_macros.hpp>
-#include <impl/KokkosArray_ViewOperLeft_macros.hpp>
-#include <impl/KokkosArray_ViewOperRight_macros.hpp>
-#include <impl/KokkosArray_View_macros.hpp>
-#include <impl/KokkosArray_Clear_macros.hpp>
+#include <impl/KokkosArray_ViewOperLeft.hpp>
+#include <impl/KokkosArray_ViewOperRight.hpp>
+
+#include <Host/KokkosArray_Host_Parallel.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
+namespace Impl {
 
-template< class DataType , class LayoutType >
-void View< DataType , LayoutType , Host >::internal_private_create(
-  const std::string & label ,
-  const View< DataType , LayoutType , Host >::shape_type shape )
+template< class DataType , class LayoutType , class ManagedType >
+struct ViewInitialize< View< DataType , LayoutType , Host , ManagedType > >
 {
-  typedef typename View< DataType , LayoutType , Host >::shape_type shape_type ;
+  typedef View< DataType , LayoutType , Host , ManagedType > view_type ;
+  typedef typename view_type::scalar_type scalar_type ;
+  typedef typename view_type::shape_type  shape_type ;
 
-  const size_t count = Impl::ShapeMap<shape_type>::allocation_count( shape );
+  inline static void apply( const view_type & view )
+  {
+    const size_t count =
+      Impl::ShapeMap<shape_type>::allocation_count( view.shape() );
 
-  oper_type::m_shape = shape ;
-  oper_type::m_ptr_on_device = (scalar_type *)
-    memory_space::allocate( label ,
-                            typeid(scalar_type) ,
-                            sizeof(scalar_type) ,
-                            count );
+    Impl::HostParallelFill< scalar_type >( view.ptr_on_device() , 0 , count );
+                                           
+  }
+};
 
-  Impl::HostParallelFill<scalar_type>( oper_type::m_ptr_on_device , 0 , count );
-}
-
+} // namespace Impl
 } // namespace KokkosArray
 
 //----------------------------------------------------------------------------
@@ -299,16 +297,16 @@ struct HostViewRemap< OutputView , InputView , 0 >
 // Deep copy views with either different value types
 // or different layouts.
 
-template< class DataTypeDst , class LayoutDst ,
-          class DataTypeSrc , class LayoutSrc >
-struct ViewDeepCopy< View< DataTypeDst , LayoutDst , Host > ,
-                     View< DataTypeSrc , LayoutSrc , Host > ,
+template< class DataTypeDst , class LayoutDst , class ManagedDst ,
+          class DataTypeSrc , class LayoutSrc , class ManagedSrc >
+struct ViewDeepCopy< View< DataTypeDst , LayoutDst , Host , ManagedDst > ,
+                     View< DataTypeSrc , LayoutSrc , Host , ManagedSrc > ,
                      true_type  /* Same scalar_type  */ ,
                      false_type /* Different layout_type */ ,
                      true_type  /* Same rank */ >
 {
-  typedef View< DataTypeDst , LayoutDst , Host > dst_type ;
-  typedef View< DataTypeSrc , LayoutSrc , Host > src_type ;
+  typedef View< DataTypeDst , LayoutDst , Host , ManagedDst > dst_type ;
+  typedef View< DataTypeSrc , LayoutSrc , Host , ManagedSrc > src_type ;
 
   static inline
   void apply( const dst_type & dst , const src_type & src )
@@ -319,17 +317,17 @@ struct ViewDeepCopy< View< DataTypeDst , LayoutDst , Host > ,
   }
 };
 
-template< class DataTypeDst , class LayoutDst ,
-          class DataTypeSrc , class LayoutSrc ,
+template< class DataTypeDst , class LayoutDst , class ManagedDst ,
+          class DataTypeSrc , class LayoutSrc , class ManagedSrc ,
           class SameLayout >
-struct ViewDeepCopy< View< DataTypeDst , LayoutDst , Host > ,
-                     View< DataTypeSrc , LayoutSrc , Host > ,
+struct ViewDeepCopy< View< DataTypeDst , LayoutDst , Host , ManagedDst > ,
+                     View< DataTypeSrc , LayoutSrc , Host , ManagedSrc > ,
                      false_type /* Different scalar_type  */ ,
                      SameLayout /* Any layout */ ,
                      true_type  /* Same rank */ >
 {
-  typedef View< DataTypeDst , LayoutDst , Host > dst_type ;
-  typedef View< DataTypeSrc , LayoutSrc , Host > src_type ;
+  typedef View< DataTypeDst , LayoutDst , Host , ManagedDst > dst_type ;
+  typedef View< DataTypeSrc , LayoutSrc , Host , ManagedSrc > src_type ;
 
   static inline
   void apply( const dst_type & dst , const src_type & src )

@@ -47,6 +47,7 @@
 #include <cstddef>
 #include <KokkosArray_Layout.hpp>
 #include <KokkosArray_HostSpace.hpp>
+#include <KokkosArray_MemoryManagement.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -65,6 +66,7 @@ public:
   typedef HostSpace::size_type  size_type ;
   typedef HostSpace             memory_space ;
   typedef LayoutRight           array_layout ;
+  typedef MemoryManaged         memory_management ;
 
   //@}
   //! \name Functions that all KokkosArray devices must implement.

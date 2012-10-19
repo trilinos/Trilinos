@@ -49,16 +49,7 @@
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_Layout.hpp>
 #include <KokkosArray_CudaSpace.hpp>
-
-/*--------------------------------------------------------------------------*/
-
-namespace KokkosArray {
-namespace Impl {
-
-class CudaMemorySpace ;
-
-} // namespace Impl
-} // namespace KokkosArray
+#include <KokkosArray_MemoryManagement.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -74,8 +65,9 @@ public:
   typedef Cuda                  type ;
   typedef Cuda                  layout_type ;
   typedef Cuda                  device_type ;
-  typedef CudaSpace::size_type  size_type ;
   typedef CudaSpace             memory_space ;
+  typedef CudaSpace::size_type  size_type ;
+  typedef MemoryManaged         memory_management ;
   typedef LayoutLeft            array_layout ;
 
   //--------------------------------------------------------------------------

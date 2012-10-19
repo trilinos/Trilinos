@@ -121,7 +121,6 @@ public:
 
 template< class DstSpace , class SrcSpace >
 struct DeepCopy ;
-void deep_copy( void * dst , const void * src , size_t );
 
 template<>
 struct DeepCopy<HostSpace,HostSpace> {
@@ -143,16 +142,6 @@ struct VerifyExecutionSpaceCanAccessDataSpace< HostSpace , HostSpace >
 //----------------------------------------------------------------------------
 
 } // namespace KokkosArray
-
-/*
-#define KOKKOSARRAY_IMPL_RESTRICT_EXECUTION_TO( D ) \
-    VerifyExecutionSpaceCanAccessMemorySpace< \
-       KOKKOSARRAY_EXECUTION_SPACE , \
-       typename D::memory_space >::verify() 
-
-#define KOKKOSARRAY_RESTRICT_EXECUTION_TO( D ) \
-        KOKKOSARRAY_IMPL_RESTRICT_EXECUTION_TO( D )
-*/
 
 #endif /* #define KOKKOSARRAY_HOSTSPACE_HPP */
 

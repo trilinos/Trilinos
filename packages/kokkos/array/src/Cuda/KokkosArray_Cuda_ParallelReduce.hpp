@@ -1022,17 +1022,18 @@ public:
 /* Reduction into a view on the host */
 
 template< class FunctorType , class ValueOper ,
-          class ValueType , class LayoutType >
+          class ValueType , class LayoutType ,
+          class ManagedType >
 class ParallelReduce< FunctorType ,
                       ValueOper , 
-                      View< ValueType , LayoutType , Host > ,
+                      View< ValueType , LayoutType , Host , ManagedType > ,
                       Cuda >
 {
 public:
 
   typedef typename FunctorType::value_type value_type ;
 
-  typedef View< ValueType , LayoutType , Host > host_view_type ;
+  typedef View< ValueType , LayoutType , Host , ManagedType > host_view_type ;
 
   ParallelReduce( const Cuda::size_type  work_count ,
                   const FunctorType    & functor ,

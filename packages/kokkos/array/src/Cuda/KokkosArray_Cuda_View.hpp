@@ -47,35 +47,26 @@
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_View.hpp>
 
-#include <impl/KokkosArray_Cuda_macros.hpp>
-#include <impl/KokkosArray_ViewOperLeft_macros.hpp>
-#include <impl/KokkosArray_ViewOperRight_macros.hpp>
-#include <impl/KokkosArray_View_macros.hpp>
-#include <impl/KokkosArray_Clear_macros.hpp>
+#include <impl/KokkosArray_ViewOperLeft.hpp>
+#include <impl/KokkosArray_ViewOperRight.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
+namespace Impl {
 
-template< class DataType , class LayoutType >
-void View< DataType , LayoutType , Cuda >::internal_private_create(
-  const std::string & label ,
-  const typename View< DataType , LayoutType , Cuda >::shape_type shape )
+template< class DataType , class LayoutType , class ManageType >
+struct ViewInitialize< View< DataType , LayoutType , Cuda , ManageType > >
 {
-  typedef typename View< DataType , LayoutType , Cuda >::shape_type shape_type ;
+  typedef View< DataType , LayoutType , Cuda , ManageType > view_type ;
+  inline static void apply( const view_type & ) {}
+};
 
-  const size_t count = Impl::ShapeMap<shape_type>::allocation_count( shape );
-
-  oper_type::m_shape = shape ;
-  oper_type::m_ptr_on_device = (scalar_type *)
-    memory_space::allocate( label ,
-                            typeid(scalar_type) ,
-                            sizeof(scalar_type) ,
-                            count );
+}
 }
 
-//----------------------------------------------------------------------------
+namespace KokkosArray {
 
 template< typename ValueType , class LayoutSrc >
 inline

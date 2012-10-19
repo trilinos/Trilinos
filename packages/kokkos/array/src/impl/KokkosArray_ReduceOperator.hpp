@@ -79,12 +79,16 @@ struct ReduceOperatorFinalize {
     }
 };
 
-template < class DataType , class LayoutType , class DeviceType ,
+template < class DataType ,
+           class LayoutType ,
+           class DeviceType ,
+           class ManageType ,
            class ScalarType >
-struct ReduceOperatorFinalize< View< DataType , LayoutType , DeviceType > ,
-                               ScalarType >
+struct ReduceOperatorFinalize<
+  View< DataType , LayoutType , DeviceType , ManageType > ,
+  ScalarType >
 {
-  typedef View< DataType , LayoutType , DeviceType > view_type ;
+  typedef View< DataType , LayoutType , DeviceType , ManageType > view_type ;
 
   typedef typename
     StaticAssertSame< typename view_type::scalar_type , ScalarType >
@@ -105,12 +109,16 @@ struct ReduceOperatorFinalize< View< DataType , LayoutType , DeviceType > ,
   };
 };
 
-template < class DataType , class LayoutType , class DeviceType ,
+template < class DataType ,
+           class LayoutType ,
+           class DeviceType ,
+           class ManageType ,
            class ScalarType >
-struct ReduceOperatorFinalize< View< DataType , LayoutType , DeviceType > ,
-                               ScalarType[] >
+struct ReduceOperatorFinalize<
+  View< DataType , LayoutType , DeviceType , ManageType > ,
+  ScalarType[] >
 {
-  typedef View< DataType , LayoutType , DeviceType > view_type ;
+  typedef View< DataType , LayoutType , DeviceType , ManageType > view_type ;
 
   typedef typename
     StaticAssertSame< typename view_type::scalar_type , ScalarType >

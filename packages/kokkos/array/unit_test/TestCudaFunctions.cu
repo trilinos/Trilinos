@@ -64,12 +64,19 @@
 
 namespace Test {
 
-void test_device_cuda_init() {
-  KokkosArray::Cuda::initialize();
+__global__
+void test_abort()
+{
+  KokkosArray::VerifyExecutionSpaceCanAccessDataSpace<
+    KokkosArray::CudaSpace ,
+    KokkosArray::HostSpace >::verify();
 }
+
 
 void test_device_cuda_view_impl()
 {
+  //  test_abort<<<32,32>>>(); // Aborts the kernel
+
   test_view_impl< KokkosArray::Cuda >();
 }
 
