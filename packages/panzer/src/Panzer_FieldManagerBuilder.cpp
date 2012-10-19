@@ -142,7 +142,7 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
 void panzer::FieldManagerBuilder::
 setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
                      const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
-	             const panzer::EquationSetFactory & eqset_factory,
+                     const Teuchos::Ptr<const panzer::EquationSetFactory> & eqset_factory,
                      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
                      const panzer::BCStrategyFactory& bc_factory,
                      const Teuchos::ParameterList& closure_models,
@@ -196,8 +196,13 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
 					    base_cell_dimension,
 					    wkst->first,volume_cell_topology);      
 
-      Teuchos::RCP<panzer::PhysicsBlock> side_pb 
-            = volume_pb->copyWithCellData(side_cell_data, eqset_factory);
+      // if there is an equation set factory to use, use it in copying the physics block 
+      // otherwise use the parroted one
+      Teuchos::RCP<panzer::PhysicsBlock> side_pb;
+      if(eqset_factory==Teuchos::null) 
+        side_pb = volume_pb->copyWithCellData(side_cell_data);
+      else
+        side_pb = volume_pb->copyWithCellData(side_cell_data,*eqset_factory);
 
       Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs = 
 	bc_factory.buildBCStrategy(*bc,side_pb->globalData());

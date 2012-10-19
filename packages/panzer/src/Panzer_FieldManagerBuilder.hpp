@@ -157,12 +157,32 @@ namespace panzer {
                               const panzer::BCStrategyFactory& bc_factory,
 			      const Teuchos::ParameterList& closure_models,
                               const LinearObjFactory<panzer::Traits> & lo_factory,
-			      const Teuchos::ParameterList& user_data);
+			      const Teuchos::ParameterList& user_data)
+    { setupBCFieldManagers(bcs,physicsBlocks,Teuchos::ptrFromRef(eqset_factory),cm_factory,bc_factory,closure_models,lo_factory,user_data); }
+
+    void setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
+                              const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+			      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+                              const panzer::BCStrategyFactory& bc_factory,
+			      const Teuchos::ParameterList& closure_models,
+                              const LinearObjFactory<panzer::Traits> & lo_factory,
+			      const Teuchos::ParameterList& user_data)
+    { setupBCFieldManagers(bcs,physicsBlocks,Teuchos::null,cm_factory,bc_factory,closure_models,lo_factory,user_data); }
 
     void writeVolumeGraphvizDependencyFiles(std::string filename_prefix,
 					    const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks) const;
 
   private:
+    /** Build the BC field managers. This is the real deal, it correclty handles not having an equation set factory.
+      */
+    void setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
+                              const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+	                      const Teuchos::Ptr<const panzer::EquationSetFactory> & eqset_factory,
+			      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+                              const panzer::BCStrategyFactory& bc_factory,
+			      const Teuchos::ParameterList& closure_models,
+                              const LinearObjFactory<panzer::Traits> & lo_factory,
+			      const Teuchos::ParameterList& user_data);
 
     //! Phalanx volume field managers for each element block.
     std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >

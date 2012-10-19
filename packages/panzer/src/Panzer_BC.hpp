@@ -48,6 +48,9 @@
 #include <iostream>
 #include <functional>
 #include <cstddef>
+
+#include <boost/unordered_map.hpp>
+
 #include "Teuchos_RCP.hpp"
 
 namespace Teuchos {
@@ -64,6 +67,18 @@ namespace panzer {
 
   //! Stores input information for a boundary condition.
   class BC {
+  public:
+    // types supporting hashing
+    struct BCHash {
+      boost::hash<std::size_t> hash;
+      std::size_t operator()(const BC & bc) const
+      { return this->hash(bc.bcID());}
+    };
+
+    struct BCEquality {
+      bool operator()(const BC & bc1,const BC & bc2) const
+      { return bc1.bcID()==bc2.bcID(); }
+    };
     
   public:
 

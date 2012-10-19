@@ -227,6 +227,74 @@ namespace panzer {
     TEST_FLOATING_EQUALITY(tData[0],0.5*tValue,1e-14);
   }
 
+  TEUCHOS_UNIT_TEST(response_library2, test_surface)
+  {
+    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physics_blocks;
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
+    Teuchos::ParameterList closure_models("Closure Models");
+    Teuchos::ParameterList user_data("User Data");
+
+    // setup and evaluate ResponseLibrary
+    ///////////////////////////////////////////////////
+ 
+    out << "Adding responses" << std::endl;
+
+    std::pair< RCP<ResponseLibrary<Traits> >, RCP<panzer::LinearObjFactory<panzer::Traits> > > data 
+          = buildResponseLibrary(physics_blocks,cm_factory,closure_models,user_data);
+    RCP<ResponseLibrary<Traits> > rLibrary = data.first;
+    RCP<panzer::LinearObjFactory<panzer::Traits> > lof = data.second;
+
+    RespFactoryFunc_Builder builder;
+    builder.comm = MPI_COMM_WORLD;
+    std::vector<std::string> blocks(1);
+    blocks[0] = "eblock-0_0";
+    rLibrary->addResponse("FIELD_A",blocks,builder);
+
+    std::vector<std::pair<std::string,std::string> > sidesets;
+    sidesets.push_back(std::make_pair("bottom","eblock-0_0")); // 0.5
+    sidesets.push_back(std::make_pair("top","eblock-0_0"));    // 0.5
+    sidesets.push_back(std::make_pair("right","eblock-1_0"));    // 1.0
+    rLibrary->addResponse("FIELD_B",sidesets,builder);
+
+    Teuchos::RCP<ResponseBase> blkResp = rLibrary->getResponse<panzer::Traits::Residual>("FIELD_A");
+    Teuchos::RCP<ResponseBase> ssResp = rLibrary->getResponse<panzer::Traits::Residual>("FIELD_B");
+
+    RCP<Epetra_Vector> eVec, eVec2;
+    {
+      RCP<const Epetra_Map> map = Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(ssResp)->getMap();
+
+      eVec = Teuchos::rcp(new Epetra_Vector(*map)); 
+      eVec2 = Teuchos::rcp(new Epetra_Vector(*map)); 
+      
+      TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(blkResp)->setVector(eVec));
+      TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(ssResp)->setVector(eVec2));
+    }
+
+    rLibrary->buildResponseEvaluators(physics_blocks,
+  				      cm_factory,
+                                      closure_models,
+  				      user_data,true);
+
+    TEST_ASSERT(rLibrary->responseEvaluatorsBuilt());
+
+    Teuchos::RCP<panzer::LinearObjContainer> loc = lof->buildLinearObjContainer();
+    lof->initializeContainer(panzer::LinearObjContainer::X,*loc);
+    Teuchos::RCP<panzer::LinearObjContainer> gloc = lof->buildGhostedLinearObjContainer();
+    lof->initializeGhostedContainer(panzer::LinearObjContainer::X,*gloc);
+
+    panzer::AssemblyEngineInArgs ae_inargs(gloc,loc);
+    ae_inargs.addGlobalEvaluationData(blkResp->getLookupName(),blkResp);
+    ae_inargs.addGlobalEvaluationData(ssResp->getLookupName(),ssResp);
+
+    rLibrary->evaluate<panzer::Traits::Residual>(ae_inargs);
+
+    double iValue = -2.3;
+    double tValue = 82.9;
+
+    TEST_FLOATING_EQUALITY((*eVec)[0],0.5*tValue,1e-14);
+    TEST_FLOATING_EQUALITY((*eVec2)[0],2.0*iValue,1e-14);
+  }
+
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs)
   {
