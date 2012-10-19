@@ -99,7 +99,7 @@ struct ReduceOperatorFinalize< View< DataType , LayoutType , DeviceType > ,
 
     type( const view_type & v ) : m_view( v ) {}
 
-    KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+    KOKKOSARRAY_INLINE_FUNCTION
     void operator()( const ScalarType & input ) const
       { *m_view = input ; }
   };
@@ -134,7 +134,7 @@ struct ReduceOperatorFinalize< View< DataType , LayoutType , DeviceType > ,
     type( const view_type & v )
       : m_view( v ), value_count( v.dimension_0() ) {}
 
-    KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+    KOKKOSARRAY_INLINE_FUNCTION
     void operator()( const ScalarType input[] ) const
     { for ( unsigned i = 0 ; i < value_count ; ++i ) m_view(i) = input[i] ; }
   };
@@ -178,7 +178,7 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION
   unsigned value_size() const { return sizeof(value_type); }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void join( volatile void * update , const volatile void * input ) const
     {
       typedef       volatile value_type * vvp ;
@@ -187,7 +187,7 @@ public:
       ValueOper::join( *vvp(update) , *cvvp(input) );
     }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   reference_type init( void * update ) const
     {
       reference_type ref = *((value_type*) update);
@@ -195,7 +195,7 @@ public:
       return ref ;
     }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void finalize( const void * input ) const
     { m_finalize( *( (const value_type *) input ) ); }
 };
@@ -238,7 +238,7 @@ public:
   unsigned value_size() const
     { return sizeof(MemberType) * m_finalize.value_count ; }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void join( volatile void * update , const volatile void * input ) const
     {
       typedef       volatile MemberType * vvp ;
@@ -247,7 +247,7 @@ public:
       ValueOper::join( vvp(update) , cvvp(input) , m_finalize.value_count );
     }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   reference_type init( void * update ) const
     {
       reference_type ref = (reference_type) update ;
@@ -255,7 +255,7 @@ public:
       return ref ;
     }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void finalize( const void * input ) const
     { m_finalize( (const MemberType *) input ); }
 };

@@ -73,7 +73,7 @@
 #define KOKKOSARRAY_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
 #define KOKKOSARRAY_MACRO_DEVICE                      KokkosArray::Cuda
 #define KOKKOSARRAY_MACRO_DEVICE_AND_HOST_FUNCTION    __device__ __host__
-#define KOKKOSARRAY_MACRO_DEVICE_FUNCTION             __device__
+#define KOKKOSARRAY_MACRO_DEVICE_FUNCTION             __device__ __host__
 
 /* Device-only functions are not compiled unless compiling for the device. */
 #if defined( __CUDA_ARCH__ )

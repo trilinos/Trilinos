@@ -1124,7 +1124,7 @@ public:
 
   typedef ValueType value_type ;
 
-  __device__
+  __device__ __host__
   inline
   void operator()( const value_type & value ) const
     { *m_dev = value ; }
@@ -1148,7 +1148,7 @@ public:
   typedef MemberType     value_type[] ;
   const Cuda::size_type  value_count ;
 
-  __device__
+  __device__ __host__
   inline
   void operator()( const MemberType input[] ) const
     {

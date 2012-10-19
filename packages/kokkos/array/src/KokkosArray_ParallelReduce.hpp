@@ -47,7 +47,6 @@
 #include <cstddef>
 #include <stdexcept>
 #include <sstream>
-#include <KokkosArray_Macros.hpp>
 #include <impl/KokkosArray_ReduceOperator.hpp>
 
 //----------------------------------------------------------------------------

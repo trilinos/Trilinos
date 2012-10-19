@@ -45,14 +45,14 @@
 #define KOKKOSARRAY_VIEW_HPP
 
 #include <string>
+#include <KokkosArray_Macros.hpp>
+
 #include <impl/KokkosArray_StaticAssert.hpp>
 #include <impl/KokkosArray_ArrayTraits.hpp>
 #include <impl/KokkosArray_Shape.hpp>
 #include <impl/KokkosArray_AnalyzeShape.hpp>
 
 #include <KokkosArray_MemoryManagement.hpp>
-
-#include <KokkosArray_Macros.hpp>
 
 namespace KokkosArray {
 

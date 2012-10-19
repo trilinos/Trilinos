@@ -48,44 +48,26 @@
 
 //----------------------------------------------------------------------------
 
-namespace KokkosArray {
-
-class Host;
-class Cuda;
-
-} //namespace KokkosArray
-
-//----------------------------------------------------------------------------
-
-namespace KokkosArray {
-namespace Impl {
-
-template <typename MemorySpace>
-struct Restrict_Function_To_Device
-{ static void fail() {} };
-
-} // namespace Impl
-} // namespace KokkosArray
-
-//----------------------------------------------------------------------------
-
 #if defined( __CUDACC__ )
 
 /*  Compiling with a CUDA compiler for host and device code.
  *  Declare functions available on host and device, or device only.
  */
 
-#define KOKKOSARRAY_INLINE_FUNCTION        inline __device__ __host__
-#define KOKKOSARRAY_INLINE_DEVICE_FUNCTION inline __device__
+#define KOKKOSARRAY_INLINE_FUNCTION  __device__  __host__  inline
 
 #if defined( __CUDA_ARCH__ )
+
+#if ( __CUDA_ARCH__ < 200 )
+#error "Cuda device capability >= 2.0 is required"
+#endif
 
 /*  Compiling with CUDA compiler for device code.
  *  The value of __CUDA_ARCH__ is an integer value XY0
  *  identifying compilation for 'compute_XY' architecture.
  */
 
-#define KOKKOSARRAY_RESTRICT_CODE_TO_DEVICE
+#define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::CudaSpace
 
 /*  If compiling for device code cannot do expression checking */
 
@@ -93,26 +75,16 @@ struct Restrict_Function_To_Device
 #undef  KOKKOSARRAY_EXPRESSION_CHECK
 #endif
 
-/*  Compile-time restriction that code is being compiled with Cuda compiler
- *  to run on the Cuda device.
- */
-namespace KokkosArray { namespace Impl {
-
-template<>
-struct Restrict_Function_To_Device<KokkosArray::Cuda>
-{
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
-  static void success() {}
-};
-
-}} //namespace KokkosArray::Impl
-
-#else
+#else /* ! #if defined( __CUDA_ARCH__ ) */
 
 /*  Compiling with CUDA compiler for host code. */
 
-#endif
+#define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::HostSpace
 
+#endif /* ! #if defined( __CUDA_ARCH__ ) */
+
+/* END defined( __CUDACC__ ) */
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 #elif defined( _OPENMP )
@@ -123,38 +95,24 @@ struct Restrict_Function_To_Device<KokkosArray::Cuda>
  *  of the supported OpenMP API version.
  */
 
-#define KOKKOSARRAY_INLINE_FUNCTION         inline
-#define KOKKOSARRAY_INLINE_DEVICE_FUNCTION  inline
+#define KOKKOSARRAY_INLINE_FUNCTION  inline
 
-#define KOKKOSARRAY_RESTRICT_CODE_TO_DEVICE
+#define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::HostSpace
 
+/* END defined( _OPENMP ) */
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#else //on host
+#else /* No special compilation space detected */
 
-#define KOKKOSARRAY_INLINE_FUNCTION         inline
-#define KOKKOSARRAY_INLINE_DEVICE_FUNCTION  inline
+#define KOKKOSARRAY_INLINE_FUNCTION  inline
 
-#define KOKKOSARRAY_RESTRICT_CODE_TO_DEVICE
-
-namespace KokkosArray { namespace Impl {
-
-template<>
-struct Restrict_Function_To_Device<KokkosArray::Host>
-{ static void success() {} };
-
-}} //namespace KokkosArray::Impl
+#define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::HostSpace
 
 #endif
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#ifdef  KOKKOSARRAY_EXPRESSION_CHECK
-#define KOKKOSARRAY_CHECK_EXPR(expr) do{expr;}while(false)
-#else
-#define KOKKOSARRAY_CHECK_EXPR(expr) do{/*expr;*/}while(false)
-#endif
-
-#endif // KOKKOSARRAY_MACROS_HPP
+#endif /* #ifndef KOKKOSARRAY_MACROS_HPP */
 

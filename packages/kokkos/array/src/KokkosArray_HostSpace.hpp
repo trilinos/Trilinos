@@ -48,6 +48,8 @@
 #include <typeinfo>
 #include <string>
 
+#include <KokkosArray_Macros.hpp>
+
 /*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {
@@ -142,10 +144,7 @@ struct VerifyExecutionSpaceCanAccessDataSpace< HostSpace , HostSpace >
 
 } // namespace KokkosArray
 
-#if ! defined( KOKKOSARRAY_EXECUTION_SPACE )
-#define KOKKOSARRAY_EXECUTION_SPACE HostSpace
-#endif
-
+/*
 #define KOKKOSARRAY_IMPL_RESTRICT_EXECUTION_TO( D ) \
     VerifyExecutionSpaceCanAccessMemorySpace< \
        KOKKOSARRAY_EXECUTION_SPACE , \
@@ -153,6 +152,7 @@ struct VerifyExecutionSpaceCanAccessDataSpace< HostSpace , HostSpace >
 
 #define KOKKOSARRAY_RESTRICT_EXECUTION_TO( D ) \
         KOKKOSARRAY_IMPL_RESTRICT_EXECUTION_TO( D )
+*/
 
 #endif /* #define KOKKOSARRAY_HOSTSPACE_HPP */
 

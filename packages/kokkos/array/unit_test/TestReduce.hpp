@@ -69,7 +69,7 @@ public:
   ReduceFunctor( const ReduceFunctor & rhs )
     : nwork( rhs.nwork ) {}
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type & dst )
   {
     dst.value[0] = 0 ;
@@ -77,7 +77,7 @@ public:
     dst.value[2] = 0 ;
   }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & dst ,
                     const volatile value_type & src )
   {
@@ -86,7 +86,7 @@ public:
     dst.value[2] += src.value[2] ;
   }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( size_type iwork , value_type & dst ) const
   {
     dst.value[0] += 1 ;
@@ -117,18 +117,18 @@ public:
     : value_count( arg_count )
     , nwork( arg_nwork ) {}
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type dst ,
                     const size_type count )
   { for ( unsigned i = 0 ; i < count ; ++i ) dst[i] = 0 ; }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile ScalarType dst[] ,
                     const volatile ScalarType src[] ,
                     const size_type count )
   { for ( unsigned i = 0 ; i < count ; ++i ) dst[i] += src[i] ; }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( size_type iwork , ScalarType dst[] ) const
   {
     for ( unsigned i = 0 ; i < value_count ; ++i ) {

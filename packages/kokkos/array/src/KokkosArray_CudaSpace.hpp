@@ -48,6 +48,7 @@
 #include <typeinfo>
 #include <string>
 
+#include <KokkosArray_Macros.hpp>
 #include <KokkosArray_HostSpace.hpp>
 
 /*--------------------------------------------------------------------------*/
@@ -142,25 +143,6 @@ struct DeepCopy<CudaSpace,CudaSpace> {
 // Compiler specifics macros
 
 #if defined( __CUDACC__ )
-
-#if defined( KOKKOSARRAY_INLINE_FUNCTION )
-#undef KOKKOSARRAY_INLINE_FUNCTION
-#endif
-#define KOKKOSARRAY_INLINE_FUNCTION __device__ __host__ inline
-
-
-#if defined( __CUDA_ARCH__ ) /* Cuda compiling code to run on the Cuda device */
-
-#if ( __CUDA_ARCH__ < 200 )
-#error "Cuda device capability >= 2.0 is required"
-#endif
-
-#if defined( KOKKOSARRAY_EXECUTION_SPACE )
-#undef KOKKOSARRAY_EXECUTION_SPACE
-#endif
-#define KOKKOSARRAY_EXECUTION_SPACE CudaSpace
-
-#endif  /* #if defined( __CUDA_ARCH__ ) */
 
 /* Force asserts to trap memory space access errors. */
 #if defined( NDEBUG )
