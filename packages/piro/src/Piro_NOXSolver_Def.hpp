@@ -298,13 +298,15 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
         }
       }
 
-      Thyra::ModelEvaluatorBase::Derivative<Scalar> dfdp_deriv;
-      if (dfdp_request.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
-        dfdp_deriv = Thyra::create_DfDp_mv(*model, l, Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
-      } else if (dfdp_request.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
-        dfdp_deriv = model->create_DfDp_op(l);
+      if (!dfdp_request.none()) {
+        Thyra::ModelEvaluatorBase::Derivative<Scalar> dfdp_deriv;
+        if (dfdp_request.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+          dfdp_deriv = Thyra::create_DfDp_mv(*model, l, Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+        } else if (dfdp_request.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
+          dfdp_deriv = model->create_DfDp_op(l);
+        }
+        modelOutArgs.set_DfDp(l, dfdp_deriv);
       }
-      modelOutArgs.set_DfDp(l, dfdp_deriv);
     }
 
     // DgDx derivatives
@@ -329,13 +331,15 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
         }
       }
 
-      Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdx_deriv;
-      if (dgdx_request.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM)) {
-        dgdx_deriv = Thyra::create_DgDx_mv(*model, j, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
-      } else if (dgdx_request.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
-        dgdx_deriv = model->create_DgDx_op(j);
+      if (!dgdx_request.none()) {
+        Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdx_deriv;
+        if (dgdx_request.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM)) {
+          dgdx_deriv = Thyra::create_DgDx_mv(*model, j, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
+        } else if (dgdx_request.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
+          dgdx_deriv = model->create_DgDx_op(j);
+        }
+        modelOutArgs.set_DgDx(j, dgdx_deriv);
       }
-      modelOutArgs.set_DgDx(j, dgdx_deriv);
     }
 
     // DgDp derivatives
@@ -353,7 +357,9 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
           } else {
             model_dgdp_deriv = dgdp_deriv;
           }
-          modelOutArgs.set_DgDp(j, l, model_dgdp_deriv);
+          if (!model_dgdp_deriv.isEmpty()) {
+            modelOutArgs.set_DgDp(j, l, model_dgdp_deriv);
+          }
         }
       }
     }
