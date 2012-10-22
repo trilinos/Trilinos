@@ -61,34 +61,58 @@ namespace KokkosArray {
  *  { a13 , a24 , a35 , a46 , a57 , ... }
  *
  */
-template< class Device >
+template< class DeviceType >
 class SymmetricDiagonalSpec {
 public:
-  typedef typename Device::size_type size_type ;
 
   /** \brief  Dimension of vector block */
-  size_type dimension() const ;
-
-  /** \brief  Storage size for block coefficients */
-  size_type size() const ;
-
-  ~SymmetricDiagonalSpec();
-  SymmetricDiagonalSpec();
-  SymmetricDiagonalSpec( const SymmetricDiagonalSpec & );
-  SymmetricDiagonalSpec & operator = ( const SymmetricDiagonalSpec & );
-
-  /* Type specific members: */
-
-  explicit SymmetricDiagonalSpec( const size_type dim );
+  KOKKOSARRAY_INLINE_FUNCTION
+  unsigned dimension() const { return m_dimension ; }
 
   /** \brief  Storage location for the (row,column) entry */
-  size_type offset( const size_type row , const size_type column ) const ;
-};
+  KOKKOSARRAY_INLINE_FUNCTION
+  unsigned matrix_offset( const unsigned row , const unsigned column ) const
+    {
+      const int diag_count = 1 + ( m_dimension >> 1 );
+      const int diag = (int) column - (int) row ;
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+      unsigned offset = 0 ;
+
+      if ( ( 0 <= diag && diag < diag_count ) || ( diag <= - diag_count ) ) {
+        offset = row + m_dimension * ( ( m_dimension + diag ) % m_dimension );
+      }
+      else {
+        offset = column + m_dimension * ( ( m_dimension - diag ) % m_dimension );
+      }
+
+      return offset ;
+    }
+
+  /** \brief  Storage size for block coefficients */
+  KOKKOSARRAY_INLINE_FUNCTION
+  unsigned matrix_size() const
+    { return ( m_dimension * ( m_dimension + 1 ) ) >> 1 ; }
+
+  SymmetricDiagonalSpec()
+    : m_dimension( 0 ) {}
+
+  SymmetricDiagonalSpec( const SymmetricDiagonalSpec & rhs )
+    : m_dimension( rhs.m_dimension ) {}
+
+  SymmetricDiagonalSpec & operator =
+    ( const SymmetricDiagonalSpec & rhs )
+      { m_dimension = rhs.m_dimension ; return *this ; }
+
+  explicit
+  SymmetricDiagonalSpec( const unsigned dim )
+    : m_dimension( dim ) {}
+
+private:
+  unsigned m_dimension ;
+};
 
 } // namespace KokkosArray
 
 #endif /* #ifndef KOKKOSARRAY_SYMMETRICDIAGONALSPEC_HPP */
+
 

@@ -44,6 +44,9 @@
 #ifndef KOKKOSARRAY_LEGENDREPOLYNOMIALS_HPP
 #define KOKKOSARRAY_LEGENDREPOLYNOMIALS_HPP
 
+#include <cmath>
+#include <KokkosArray_Macros.hpp>
+
 namespace KokkosArray {
 
 //----------------------------------------------------------------------------
@@ -59,13 +62,38 @@ namespace KokkosArray {
  *                            = kd_{k,n} * 2 / ( 2 * k + 1 ) 
  *
  */
-template< unsigned MaximumDegree , class Device >
+template< unsigned MaximumDegree >
 class NormalizedLegendrePolynomialBases {
 public:
-  template< typename Scalar >
-  void evaluate( unsigned P , Scalar x , Scalar values[] ) const ;
 
-  NormalizedLegendrePolynomialBases();
+  template< typename Scalar >
+  KOKKOSARRAY_INLINE_FUNCTION
+  void evaluate( unsigned N , Scalar x , Scalar value[] ) const
+  {
+    double vkm1 = 0 ;
+    double vk   = 1 ;
+
+    value[0] = vk * m_norm[0];
+
+    for ( unsigned k = 1 ; k <= N ; ++k ) {
+      const double vkm2 = vkm1 ;
+      vkm1 = vk ;
+      vk = ( vkm1 * x * (2*k-1) - vkm2 * (k-1) ) / double(k);
+      value[k] = vk * m_norm[k];
+    }
+  }
+
+  NormalizedLegendrePolynomialBases()
+  {
+    for ( unsigned k = 0 ; k <= MaximumDegree ; ++k ) {
+      m_norm[k] = std::sqrt( 0.5 + k );
+    }
+  }
+
+private:
+
+  double m_norm[ MaximumDegree + 1 ];
+
 };
 
 //----------------------------------------------------------------------------

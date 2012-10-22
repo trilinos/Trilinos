@@ -72,7 +72,7 @@ public:
 
 private:
 
-  typedef ProductTensorIndex< 3 , device_type > product_tensor_index_type ;
+  typedef ProductTensorIndex< 3 > product_tensor_index_type ;
   typedef typename type::tensor_type tensor_type ;
   typedef std::map< product_tensor_index_type , ValueType >  tensor_map_type ;
 
