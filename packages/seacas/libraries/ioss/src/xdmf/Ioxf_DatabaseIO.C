@@ -161,6 +161,12 @@ namespace Ioxf {
     delete MainXML;
   }
 
+  void DatabaseIO::release_memory()
+  {
+    nodeMap.release_memory();
+    elemMap.release_memory();
+  }
+
   void DatabaseIO::finalize()
   {
     H5close();

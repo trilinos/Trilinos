@@ -91,6 +91,12 @@ namespace Iovs {
 #endif
   }
 
+  void DatabaseIO::release_memory()
+  {
+    nodeMap.release_memory();
+    elemMap.release_memory();
+  }
+
   bool DatabaseIO::begin(Ioss::State state)
   {
     dbState = state;

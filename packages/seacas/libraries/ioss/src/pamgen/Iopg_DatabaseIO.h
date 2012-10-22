@@ -88,6 +88,10 @@ namespace Iopg {
     // database supports that type (e.g. return_value & Ioss::FACESET)
     unsigned entity_field_support() const {return 0;}
 
+    // Eliminate as much memory as possible, but still retain meta data information
+    // Typically, eliminate the maps...
+    void release_memory();
+
     void read_meta_data();
 
     bool begin(Ioss::State state);

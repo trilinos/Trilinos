@@ -155,6 +155,12 @@ namespace Iopg {
     Delete_Pamgen_Mesh();
   }
 
+  void DatabaseIO::release_memory()
+  {
+    nodeMap.release_memory();
+    elemMap.release_memory();
+  }
+
   void DatabaseIO::read_meta_data()
   {
     // The file for pamgen contains the mesh description.

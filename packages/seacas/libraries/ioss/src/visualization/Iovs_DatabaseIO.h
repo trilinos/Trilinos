@@ -53,6 +53,10 @@ namespace Iovs {
     unsigned entity_field_support() const
     { return Ioss::NODEBLOCK|Ioss::ELEMENTBLOCK|Ioss::NODESET|Ioss::SIDESET|Ioss::SIDEBLOCK;}
 
+    // Eliminate as much memory as possible, but still retain meta data information
+    // Typically, eliminate the maps...
+    void release_memory();
+
     /*!
      * Determine the local position of the node with the global id
      * 'global'.  If 'must_exist' is false, then the global id possibly

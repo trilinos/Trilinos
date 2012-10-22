@@ -98,6 +98,10 @@ namespace Ioxf {
     ~DatabaseIO();
     static void finalize();
 
+    // Eliminate as much memory as possible, but still retain meta data information
+    // Typically, eliminate the maps...
+    void release_memory();
+
     void InitXML(std::ostringstream *XML);
     void WriteMetaXdmfNodesets(std::ostringstream *XML, const std::vector<Ioxf::NodeSet> &nodesets);
     void WriteMetaXdmfSidesets(std::ostringstream *XML, const std::vector<Ioxf::SideSet> &sidesets);
