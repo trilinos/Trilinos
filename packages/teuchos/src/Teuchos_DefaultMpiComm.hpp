@@ -1294,7 +1294,13 @@ MpiComm<Ordinal>::wait (const Ptr<RCP<CommRequest<Ordinal> > >& request) const
   if (is_null (*request)) {
     return null; // Nothing to wait on ...
   }
-  return (*request)->wait ();
+  else {
+    RCP<CommStatus<Ordinal> > status = (*request)->wait ();
+    // mfh 22 Oct 2012: The unit tests expect waiting on the
+    // CommRequest to invalidate it by setting it to null.
+    *request = null;
+    return status;
+  }
 }
 
 template<typename Ordinal>
