@@ -38,6 +38,9 @@ Writer.hpp
 WriterManip.hpp
 WriterOStream.hpp
 WriterParser.hpp
+Platform.hpp
+Env.hpp
+Option.hpp
   )
 
 APPEND_SET(SOURCES
@@ -49,6 +52,8 @@ Writer.cpp
 WriterExt.cpp
 WriterManip.cpp
 WriterParser.cpp
+Platform.cpp
+Option.cpp
   )
 
 IF (TPL_ENABLE_MPI)
