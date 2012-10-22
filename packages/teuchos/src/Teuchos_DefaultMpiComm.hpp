@@ -109,17 +109,69 @@ void dumpBuffer(
 #endif // TEUCHOS_MPI_COMM_DUMP
 
 
+/// \class MpiCommStatus
+/// \brief MPI-specific implementation of CommStatus.
+///
+/// Users would not normally create an instance of this class.  The
+/// only time they might wish to do so is to encapsulate an MPI_Status
+/// returned by an external library or by their own code, and pass it
+/// into one of our functions like wait() or waitAll().
+///
+/// \tparam OrdinalType The same template parameter as \c Comm.  Only
+///   use \c int here.  We only make this a template class for
+///   compatibility with \c Comm.
+template<class OrdinalType>
+class MpiCommStatus : public CommStatus<OrdinalType> {
+public:
+  MpiCommStatus (MPI_Status status) : status_ (status) {}
+
+  //! Destructor (declared virtual for memory safety)
+  virtual ~MpiCommStatus() {}
+
+  //! The source rank that sent the message.
+  OrdinalType getSourceRank () { return status_.MPI_SOURCE; }
+
+  //! The tag of the received message.
+  OrdinalType getTag () { return status_.MPI_TAG; }
+
+  //! The error code of the received message.
+  OrdinalType getError () { return status_.MPI_ERROR; }
+
+private:
+  //! We forbid default construction syntactically.
+  MpiCommStatus ();
+
+  //! The raw MPI_Status struct that this class encapsulates.
+  MPI_Status status_;
+};
+
+/// \fn mpiCommStatus
+/// \brief Nonmember constructor for MpiCommStatus.
+/// \relates MpiCommStatus
+template<class OrdinalType>
+inline RCP<MpiCommStatus<OrdinalType> >
+mpiCommStatus (MPI_Status rawMpiStatus)
+{
+  return rcp (new MpiCommStatus<OrdinalType> (rawMpiStatus));
+}
+
 /// \class MpiCommRequest
-/// \brief MPI-specific implementation of \c CommRequest.
+/// \brief MPI implementation of CommRequest.
+/// \tparam OrdinalType Same as the template parameter of Comm.
+///
+/// This class wraps MPI_Request, which is MPI's reification of a
+/// nonblocking communication operation. 
 ///
 /// Users would not normally create an instance of this class.  Calls
-/// to \c ireceive() and \c isend() return a CommRequest, which for an
-/// MPI implementation of \c Comm is an MpiCommRequest.  Users might
-/// wish to create an MpiCommRequest directly if they want to
-/// encapsulate an MPI_Request returned by an external library or by
-/// their own code, and pass it into one of our wrapper functions like
-/// \c wait() or \c waitAll().
-class MpiCommRequest : public CommRequest {
+/// to nonblocking communication operations (such as \c ireceive() or
+/// \c isend()) return a pointer to a CommRequest.  If the Comm is an
+/// MpiComm, then the returned CommRequest is an MpiCommRequest.
+///
+/// Users might wish to create an MpiCommRequest directly if they want
+/// to encapsulate an MPI_Request returned by an external library or
+/// by their own code.
+template<class OrdinalType>
+class MpiCommRequest : public CommRequest<OrdinalType> {
 public:
   //! Constructor (from a raw MPI_Request).
   MpiCommRequest (MPI_Request rawMpiRequest,
@@ -154,8 +206,80 @@ public:
     return numBytes_;
   }
 
+  /// \brief Wait on this communication request to complete.
+  ///
+  /// This is a blocking operation.  The user is responsible for
+  /// avoiding deadlock.  (For example, a receive must have a matching
+  /// send, otherwise a wait on the receive will wait forever.)
+  RCP<CommStatus<OrdinalType> > wait () {
+    MPI_Status rawMpiStatus;
+    // Whether this function satisfies the strong exception guarantee
+    // depends on whether MPI_Wait modifies its input request on error.
+    const int err = MPI_Wait (&rawMpiRequest_, &rawMpiStatus);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+      "Teuchos::MpiCommStatus::wait: MPI_Wait() failed with error \""
+      << mpiErrorCodeToString (err) << "\".");
+    // MPI_Wait sets the MPI_Request to MPI_REQUEST_NULL on success.
+    return mpiCommStatus<OrdinalType> (rawMpiStatus);
+  }
+
+  /// \brief Cancel the communication request, and return its status.
+  ///
+  /// If this request is invalid or has already been invalidated, this
+  /// method returns null.
+  RCP<CommStatus<OrdinalType> > cancel () {
+    if (rawMpiRequest_ == MPI_REQUEST_NULL) {
+      return null;
+    }
+    else {
+      int err = MPI_Cancel (&rawMpiRequest_);
+      TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+        "Teuchos::MpiCommStatus::cancel: MPI_Cancel failed with the following "
+        "error: " << mpiErrorCodeToString (err));
+
+      // Wait on the request.  If successful, MPI_Wait will set the
+      // MPI_Request to MPI_REQUEST_NULL.  The returned status may
+      // still be useful; for example, one may call MPI_Test_cancelled
+      // to test an MPI_Status from a nonblocking send.
+      MPI_Status status;
+      err = MPI_Wait (&rawMpiRequest_, &status);
+      TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+        "Teuchos::MpiCommStatus::cancel: MPI_Wait failed with the following "
+        "error: " << mpiErrorCodeToString (err));
+      return mpiCommStatus<OrdinalType> (status);
+    }
+  }
+
+  //! Destructor; cancels the request if it is still pending.
+  ~MpiCommRequest () {
+    if (rawMpiRequest_ != MPI_REQUEST_NULL) {
+      // We're in a destructor, so don't throw errors.  However, if
+      // MPI_Cancel fails, it's probably a bad idea to call MPI_Wait.
+      const int err = MPI_Cancel (&rawMpiRequest_);
+      if (err == MPI_SUCCESS) {
+	// The MPI_Cancel succeeded.  Now wait on the request.  Ignore
+	// any reported error, since we can't do anything about those
+	// in the destructor (other than kill the program).  If
+	// successful, MPI_Wait will set the MPI_Request to
+	// MPI_REQUEST_NULL.  We ignore the returned MPI_Status, since
+	// if the user let the request fall out of scope, she must not
+	// care about the status.
+	//
+	// mfh 21 Oct 2012: The MPI standard requires completing a
+	// canceled request by calling a function like MPI_Wait,
+	// MPI_Test, or MPI_Request_free.  MPI_Wait on a canceled
+	// request behaves like a local operation (it does not
+	// communicate or block waiting for communication).  One could
+	// also call MPI_Request_free instead of MPI_Wait, but
+	// MPI_Request_free is intended more for persistent requests
+	// (created with functions like MPI_Recv_init).
+	(void) MPI_Wait (&rawMpiRequest_, MPI_STATUS_IGNORE);
+      } 
+    }
+  }
+
 private:
-  //! The raw request (an opaque object).
+  //! The raw MPI request (an opaque object).
   MPI_Request rawMpiRequest_;
   //! Number of bytes in the nonblocking send or receive request.
   ArrayView<char>::size_type numBytes_;
@@ -164,63 +288,19 @@ private:
 };
 
 /// \fn mpiCommRequest
-/// \brief Nonmember constructor for \c MpiCommRequest.
+/// \brief Nonmember constructor for MpiCommRequest.
+/// \tparam OrdinalType Same as the template parameter of MpiCommRequest.
 /// \relates MpiCommRequest
 ///
 /// \param rawMpiRequest [in] The raw MPI_Request opaque object.
 /// \param numBytes [in] The number of bytes in the nonblocking
 ///   send or receive request.
-inline RCP<MpiCommRequest>
+template<class OrdinalType>
+inline RCP<MpiCommRequest<OrdinalType> >
 mpiCommRequest (MPI_Request rawMpiRequest,
                 const ArrayView<char>::size_type numBytes)
 {
-  return rcp (new MpiCommRequest (rawMpiRequest, numBytes));
-}
-
-/// \class MpiCommStatus
-/// \brief MPI-specific implementation of \c CommStatus.
-///
-/// Users would not normally create an instance of this class.  The
-/// only time they might wish to do so is to encapsulate an MPI_Status
-/// returned by an external library or by their own code, and pass it
-/// into one of our functions like \c wait() or \c waitAll().
-///
-/// \tparam OrdinalType The same template parameter as \c Comm.  Only
-///   use \c int here.  We only make this a template class for
-///   compatibility with \c Comm.
-template<class OrdinalType>
-class MpiCommStatus : public CommStatus<OrdinalType> {
-public:
-  MpiCommStatus (MPI_Status status) : status_ (status) {}
-
-  //! Destructor (declared virtual for memory safety)
-  virtual ~MpiCommStatus() {}
-
-  //! The source rank that sent the message.
-  OrdinalType getSourceRank () { return status_.MPI_SOURCE; }
-
-  //! The tag of the received message.
-  OrdinalType getTag () { return status_.MPI_TAG; }
-
-  //! The error code of the received message.
-  OrdinalType getError () { return status_.MPI_ERROR; }
-
-private:
-  //! We forbid default construction syntactically.
-  MpiCommStatus ();
-
-  //! The raw MPI_Status struct that this class encapsulates.
-  MPI_Status status_;
-};
-
-/// \fn mpiCommStatus
-/// \brief Nonmember constructor for \c MpiCommStatus.
-/// \relates MpiCommStatus
-template<class OrdinalType>
-inline RCP<MpiCommStatus<OrdinalType> >
-mpiCommStatus (MPI_Status rawMpiStatus)
-{
-  return rcp (new MpiCommStatus<OrdinalType> (rawMpiStatus));
+  return rcp (new MpiCommRequest<OrdinalType> (rawMpiRequest, numBytes));
 }
 
 /// \class MpiComm
@@ -381,26 +461,26 @@ public:
     const int destRank
     ) const;
   /** \brief . */
-  virtual RCP<CommRequest> isend(
+  virtual RCP<CommRequest<Ordinal> > isend(
     const ArrayView<const char> &sendBuffer,
     const int destRank
     ) const;
   /** \brief . */
-  virtual RCP<CommRequest> ireceive(
+  virtual RCP<CommRequest<Ordinal> > ireceive(
     const ArrayView<char> &Buffer,
     const int sourceRank
     ) const;
   /** \brief . */
   virtual void waitAll(
-    const ArrayView<RCP<CommRequest> > &requests
+    const ArrayView<RCP<CommRequest<Ordinal> > > &requests
     ) const;
   /** \brief . */
   virtual void
-  waitAll (const ArrayView<RCP<CommRequest> >& requests,
+  waitAll (const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
            const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const;
   /** \brief . */
   virtual RCP<CommStatus<Ordinal> >
-  wait (const Ptr<RCP<CommRequest> >& request) const;
+  wait (const Ptr<RCP<CommRequest<Ordinal> > >& request) const;
   /** \brief . */
   virtual RCP< Comm<Ordinal> > duplicate() const;
   /** \brief . */
@@ -950,7 +1030,7 @@ MpiComm<Ordinal>::receive (const int sourceRank,
 
 
 template<typename Ordinal>
-RCP<CommRequest>
+RCP<CommRequest<Ordinal> >
 MpiComm<Ordinal>::isend (const ArrayView<const char> &sendBuffer,
                          const int destRank) const
 {
@@ -964,12 +1044,12 @@ MpiComm<Ordinal>::isend (const ArrayView<const char> &sendBuffer,
     "Teuchos::MpiComm::isend: MPI_Isend() failed with error \""
     << mpiErrorCodeToString (err) << "\".");
 
-  return mpiCommRequest (rawMpiRequest, sendBuffer.size());
+  return mpiCommRequest<Ordinal> (rawMpiRequest, sendBuffer.size());
 }
 
 
 template<typename Ordinal>
-RCP<CommRequest>
+RCP<CommRequest<Ordinal> >
 MpiComm<Ordinal>::ireceive (const ArrayView<char> &recvBuffer,
                             const int sourceRank) const
 {
@@ -988,7 +1068,7 @@ MpiComm<Ordinal>::ireceive (const ArrayView<char> &recvBuffer,
     "Teuchos::MpiComm::ireceive: MPI_Irecv() failed with error \""
     << mpiErrorCodeToString (err) << "\".");
 
-  return mpiCommRequest (rawMpiRequest, recvBuffer.size());
+  return mpiCommRequest<Ordinal> (rawMpiRequest, recvBuffer.size());
 }
 
 
@@ -996,10 +1076,10 @@ namespace {
   // Called by both MpiComm::waitAll() implementations.
   template<typename Ordinal>
   void
-  waitAllImpl (const ArrayView<RCP<CommRequest> >& requests,
+  waitAllImpl (const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
                const ArrayView<MPI_Status>& rawMpiStatuses)
   {
-    typedef ArrayView<RCP<CommRequest> >::size_type size_type;
+    typedef typename ArrayView<RCP<CommRequest<Ordinal> > >::size_type size_type;
     const size_type count = requests.size();
     // waitAllImpl() is not meant to be called by users, so it's a bug
     // for the two views to have different lengths.
@@ -1022,10 +1102,10 @@ namespace {
     bool someNullRequests = false;
     Array<MPI_Request> rawMpiRequests (count, MPI_REQUEST_NULL);
     for (int i = 0; i < count; ++i) {
-      RCP<CommRequest> request = requests[i];
+      RCP<CommRequest<Ordinal> > request = requests[i];
       if (! is_null (request)) {
-        RCP<MpiCommRequest> mpiRequest =
-          rcp_dynamic_cast<MpiCommRequest> (request);
+        RCP<MpiCommRequest<Ordinal> > mpiRequest =
+          rcp_dynamic_cast<MpiCommRequest<Ordinal> > (request);
         // releaseRawMpiRequest() sets the MpiCommRequest's raw
         // MPI_Request to MPI_REQUEST_NULL.  This makes waitAll() not
         // satisfy the strong exception guarantee.  That's OK because
@@ -1128,8 +1208,8 @@ namespace {
       Array<std::pair<size_type, size_type> > nonmatchingLengthPairs;
       for (size_type k = 0; k < count; ++k) {
         if (! is_null (requests[k])) {
-          RCP<MpiCommRequest> mpiRequest =
-            rcp_dynamic_cast<MpiCommRequest> (requests[k]);
+          RCP<MpiCommRequest<Ordinal> > mpiRequest =
+            rcp_dynamic_cast<MpiCommRequest<Ordinal> > (requests[k]);
 
           int statusCount = -1;
           (void) MPI_Get_count (&rawMpiStatuses[k], MPI_CHAR, &statusCount);
@@ -1148,7 +1228,7 @@ namespace {
            << (numNonmatching != 1 ? "their" : "its") << " corresponding status"
            << (numNonmatching != 1 ? "es" : "") << "." << std::endl;
         os << "Here are the lengths that don't match (from MPI_Request, MPI_Status resp.): " << std::endl;
-        for (Array<std::pair<size_type, size_type> >::const_iterator it = nonmatchingLengthPairs.begin(); it != nonmatchingLengthPairs.end(); ++it) {
+        for (typename Array<std::pair<size_type, size_type> >::const_iterator it = nonmatchingLengthPairs.begin(); it != nonmatchingLengthPairs.end(); ++it) {
           os << "(" << it->first << "," << it->second << ") ";
         }
         if (err == MPI_ERR_IN_STATUS) {
@@ -1171,7 +1251,7 @@ namespace {
 template<typename Ordinal>
 void
 MpiComm<Ordinal>::
-waitAll (const ArrayView<RCP<CommRequest> >& requests) const
+waitAll (const ArrayView<RCP<CommRequest<Ordinal> > >& requests) const
 {
   TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::waitAll(requests)" );
 
@@ -1183,12 +1263,12 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests) const
 template<typename Ordinal>
 void
 MpiComm<Ordinal>::
-waitAll (const ArrayView<RCP<CommRequest> >& requests,
+waitAll (const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
          const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const
 {
   TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::waitAll(requests, statuses)" );
 
-  typedef ArrayView<RCP<CommRequest> >::size_type size_type;
+  typedef typename ArrayView<RCP<CommRequest<Ordinal> > >::size_type size_type;
   const size_type count = requests.size();
 
   TEUCHOS_TEST_FOR_EXCEPTION(count != statuses.size(),
@@ -1207,28 +1287,15 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests,
 
 template<typename Ordinal>
 RCP<CommStatus<Ordinal> >
-MpiComm<Ordinal>::wait (const Ptr<RCP<CommRequest> >& request) const
+MpiComm<Ordinal>::wait (const Ptr<RCP<CommRequest<Ordinal> > >& request) const
 {
   TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::wait(...)" );
 
-  if (is_null(*request)) {
+  if (is_null (*request)) {
     return null; // Nothing to wait on ...
   }
-  const RCP<MpiCommRequest> mpiCommRequest =
-    rcp_dynamic_cast<MpiCommRequest>(*request);
-  // This function doesn't satisfy the strong exception guarantee,
-  // because releaseRawMpiRequest() modifies the MpiCommRequest.
-  MPI_Request rawMpiRequest = mpiCommRequest->releaseRawMpiRequest();
-  MPI_Status status;
-  const int err = MPI_Wait (&rawMpiRequest, &status);
-  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-    "Teuchos::MpiComm::wait: MPI_Wait() failed with error \""
-    << mpiErrorCodeToString (err) << "\".");
-
-  *request = null;
-  return rcp (new MpiCommStatus<Ordinal> (status));
+  return (*request)->wait ();
 }
-
 
 template<typename Ordinal>
 RCP< Comm<Ordinal> >

@@ -300,7 +300,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, ReadySend1, Ordinal, Packet )
   Packet sendData = origSendData;
   Packet recvData = origRecvData;
 
-  RCP<Teuchos::CommRequest> recvRequest;
+  RCP<Teuchos::CommRequest<Ordinal> > recvRequest;
 
   // Post non-block receive on proc 0
   if (procRank == 0) {
@@ -401,7 +401,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, ReadySend, Ordinal, Packet )
   const ArrayRCP<Packet> sendData = arcpClone<Packet>(origSendData());
   const ArrayRCP<Packet> recvData = arcpClone<Packet>(origRecvData());
 
-  RCP<Teuchos::CommRequest> recvRequest;
+  RCP<Teuchos::CommRequest<Ordinal> > recvRequest;
 
   // both proc 0 and proc n-1 will post non-block receives, into recvData
   // then proc 0 will initiate a ready-send to proc n-1; the latter will initiate a wait
@@ -518,8 +518,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive, Ordin
   const Packet input_data = orig_input_data;
   Packet output_data = orig_output_data;
 
-  RCP<Teuchos::CommRequest> recvRequest;
-  RCP<Teuchos::CommRequest> sendRequest;
+  RCP<Teuchos::CommRequest<Ordinal> > recvRequest;
+  RCP<Teuchos::CommRequest<Ordinal> > sendRequest;
 
   if (procRank == 0) {
     // Create copy of data to make sure that persisting relationship is
@@ -615,8 +615,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
   const ArrayRCP<Packet> inputData = arcpClone<Packet>(origInputData());
   const ArrayRCP<Packet> outputData = arcpClone<Packet>(origOutputData());
 
-  Array<RCP<Teuchos::CommRequest> > recvRequests;
-  Array<RCP<Teuchos::CommRequest> > sendRequests;
+  Array<RCP<Teuchos::CommRequest<Ordinal> > > recvRequests;
+  Array<RCP<Teuchos::CommRequest<Ordinal> > > sendRequests;
 
   // Send from proc 0 to proc numProcs-1
   if (procRank == 0) {
@@ -648,10 +648,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
   }
 
   if (procRank == 0) {
-    waitAll( *comm, sendRequests );
+    waitAll( *comm, sendRequests() );
   }
   if (procRank == numProcs-1) {
-    waitAll( *comm, recvRequests );
+    waitAll( *comm, recvRequests() );
   }
 
   if (!sendRequests.empty()) {

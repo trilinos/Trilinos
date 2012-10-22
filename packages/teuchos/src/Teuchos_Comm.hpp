@@ -48,33 +48,25 @@
 
 namespace Teuchos {
 
-/// \class CommRequest
-/// \brief Encapsulation of MPI_Request.
-///
-/// An MPI_Request encapsulates the result of a nonblocking MPI send
-/// or receive (which we in turn encapsulate by \c isend() resp. \c
-/// ireceive()).  This class in turn wraps MPI_Request.
-///
-/// This is an opaque object which is meant to be given to \c wait()
-/// or \c waitall().
-class CommRequest : public Teuchos::Describable {};
-
 /// \class CommStatus
-/// \brief Encapsulation of MPI_Status.
+/// \brief Encapsulation of the result of a receive (blocking or nonblocking).
 ///
-/// This interface encapsulates the result of a receive (the \c
-/// MPI_Status struct).  Its main use is to figure out which process
-/// sent you a message, if you received it using \c MPI_ANY_SOURCE.
+/// An instance of this class encapsulates the result of a receive.
+/// (An MPI implementation would wrap MPI_Status.)  You can query it
+/// for information like the rank of the process that sent you the
+/// message.  (This is useful if your receive specified a negative
+/// source rank, indicating that you would accept a message from any
+/// process in the communicator.)
 ///
-/// \tparam OrdinalType The same template parameter as \c Comm.  Only
-///   use \c int here.  We only make this a template class for
-///   compatibility with \c Comm.
+/// \tparam OrdinalType The same template parameter as Comm.  Only use
+///   \c int here.  We only make this a template class for
+///   compatibility with Comm.
 ///
 /// \note For now, this class only exposes the rank of the process
 ///   that sent the message (the "source rank").  Later, we might
-///   expose other fields of \c MPI_Status in this interface.  For
-///   now, you can attempt a dynamic cast to \c MpiCommStatus to
-///   access all three fields (MPI_SOURCE, MPI_TAG, and MPI_ERROR).
+///   expose other fields of MPI_Status in this interface.  For now,
+///   you can attempt a dynamic cast to MpiCommStatus to access all
+///   three fields (MPI_SOURCE, MPI_TAG, and MPI_ERROR).
 template<class OrdinalType>
 class CommStatus {
 public:
@@ -83,6 +75,75 @@ public:
 
   //! The source rank that sent the message.
   virtual OrdinalType getSourceRank () = 0;
+};
+
+// Forward declaration for CommRequest::wait.
+template<class OrdinalType>
+class Comm;
+
+/// \class CommRequest
+/// \brief Encapsulation of a pending nonblocking communication operation.
+/// \tparam OrdinalType Same as the template parameter of Comm.
+///
+/// An instance of (a subclass of) this class represents a nonblocking
+/// communication operation, such as a nonblocking send, receive, or
+/// collective.  To wait on the communication operation, you may give
+/// the CommRequest to functions like wait() or waitAll() (which may
+/// be found in Teuchos_CommHelpers.hpp).  Here is an example of how
+/// to use wait().
+/// \code
+/// const int sourceRank = ...; // Rank of the sending process.
+/// RCP<const Comm<int> > comm = ...; // The communicator.
+/// ArrayRCP<double> buf (...); // Buffer for incoming data.
+/// RCP<CommRequest<int> > req = ireceive (comm, buf, sourceRank);
+///
+/// // ... Do some other things ...
+///
+/// // Wait on the request.  This blocks on the sending process.
+/// // When it finishes, it invalidates the req reference, and 
+/// // returns a status (which wraps MPI_Status in an MPI 
+/// // implementation).
+/// RCP<CommStatus<int> > status = wait (comm, ptr (&req));
+/// \endcode
+///
+/// This object's destructor cancels the request without
+/// communication.  If you wish, you may rely on this behavior for
+/// speculative communication.  For example:
+/// \code
+/// const int sourceRank = ...; // Rank of the sending process.
+/// RCP<const Comm<int> > comm = ...; // The communicator.
+/// ArrayRCP<double> buf (...); // Buffer for incoming data.
+/// RCP<CommRequest<int> > req = ireceive (comm, buf, sourceRank);
+///
+/// // ... Do some other things ...
+/// // ... Find out we didn't need to receive data ...
+///
+/// // This cancels the request.  We could also just let
+/// // the one reference to the request fall out of scope.
+/// req = null;
+/// \endcode
+/// 
+/// \note To implementers: The MPI implementation of this class
+///   (MpiCommRequest) wraps MPI_Request.  The MPI version of
+///   waitAll() will need to unpack the array of wrapped requests, and
+///   then pack up the resulting MPI_Request after waiting on them.
+///   It would be preferable to have a class \c CommRequests that
+///   encapsulates a set of requests, so that you can avoid this
+///   unpacking and packing.
+template<class OrdinalType>
+class CommRequest : public Teuchos::Describable {
+public:
+  /// \brief Destructor; cancels the request if it is still pending.
+  ///
+  /// Canceling a communication request must always be a local
+  /// operation.  An MPI implementation may achieve this by first
+  /// calling MPI_Cancel to cancel the request, then calling MPI_Wait
+  /// (which behaves as a local operation for a canceled request) to
+  /// complete the canceled request (as required by the MPI standard).
+  virtual ~CommRequest() {}
+
+  //! Wait on this request (a blocking operation).
+  virtual RCP<CommStatus<OrdinalType> > wait () = 0;
 };
 
 /// \class Comm
@@ -502,7 +563,7 @@ public:
    * <li><tt>destRank != this->getRank()</tt>
    * </ul>
    */
-  virtual RCP<CommRequest> isend(
+  virtual RCP<CommRequest<Ordinal> > isend(
     const ArrayView<const char> &sendBuffer,
     const int destRank
     ) const = 0;
@@ -522,7 +583,7 @@ public:
    *
    * \return Returns the senders rank.
    */
-  virtual RCP<CommRequest> ireceive(
+  virtual RCP<CommRequest<Ordinal> > ireceive(
     const ArrayView<char> &recvBuffer,
     const int sourceRank
     ) const = 0;
@@ -539,7 +600,7 @@ public:
    * </ul>
    */
   virtual void waitAll(
-    const ArrayView<RCP<CommRequest> > &requests
+    const ArrayView<RCP<CommRequest<Ordinal> > > &requests
     ) const = 0;
 
   /// \brief Wait on communication requests, and return their statuses.
@@ -559,7 +620,7 @@ public:
   /// \param statuses [out] The status results of waiting on the
   ///   requests.
   virtual void 
-  waitAll (const ArrayView<RCP<CommRequest> >& requests,
+  waitAll (const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
 	   const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const = 0;
 
   /// \brief Wait on a single communication request, and return its status.
@@ -587,7 +648,7 @@ public:
   /// This function blocks until the communication operation
   /// associated with the CommRequest object has completed.
   virtual RCP<CommStatus<Ordinal> > 
-  wait (const Ptr<RCP<CommRequest> >& request) const = 0;
+  wait (const Ptr<RCP<CommRequest<Ordinal> > >& request) const = 0;
 
   //@}
 

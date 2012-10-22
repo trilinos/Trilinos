@@ -603,7 +603,7 @@ void readySend(
  * \relates Comm
  */
 template<typename Ordinal, typename Packet>
-RCP<CommRequest> isend(
+RCP<CommRequest<Ordinal> > isend(
   const Comm<Ordinal>& comm,
   const ArrayRCP<const Packet> &sendBuffer,
   const int destRank
@@ -615,7 +615,7 @@ RCP<CommRequest> isend(
  * \relates Comm
  */
 template<typename Ordinal, typename Packet>
-RCP<CommRequest> isend(
+RCP<CommRequest<Ordinal> > isend(
   const Comm<Ordinal>& comm,
   const RCP<const Packet> &send,
   const int destRank
@@ -627,7 +627,7 @@ RCP<CommRequest> isend(
  * \relates Comm
  */
 template<typename Ordinal, typename Packet, typename Serializer>
-RCP<CommRequest> isend(
+RCP<CommRequest<Ordinal> > isend(
   const Comm<Ordinal>& comm,
   const Serializer& serializer,
   const ArrayRCP<const Packet> &sendBuffer,
@@ -638,24 +638,36 @@ RCP<CommRequest> isend(
 // 2008/07/29: rabartl: ToDo: Add reference semantics version of isend!
 
 
-/** \brief Send objects that use values semantics to another process.
- *
- * \relates Comm
- */
+/// \brief Receive one or more objects (that use values semantics) from another process.
+/// \relates Comm
+///
+/// \param comm [in] The communicator.
+/// \param recvBuffer [out] The buffer into which to receive the data.
+/// \param sourceRank [in] The rank of the sending process.  A
+///   negative source rank means that this will accept an incoming
+///   message from any process on the given communicator.  (This is
+///   the equivalent of MPI_ANY_SOURCE.)
 template<typename Ordinal, typename Packet>
-RCP<CommRequest> ireceive(
+RCP<CommRequest<Ordinal> > ireceive(
   const Comm<Ordinal>& comm,
   const ArrayRCP<Packet> &recvBuffer,
   const int sourceRank
   );
 
 
-/** \brief Send a single object that use values semantics to another process.
- *
- * \relates Comm
- */
+/// \brief Receive one object (that uses values semantics) from another process.
+/// \relates Comm
+///
+/// \param comm [in] The communicator.
+/// \param recv [out] The buffer into which to receive the object.
+/// \param sourceRank [in] The rank of the sending process.  A
+///   negative source rank means that this will accept an incoming
+///   message from any process on the given communicator.
+///
+/// \note To implementers: A negative source rank is the equivalent of
+///   MPI_ANY_SOURCE, if the given Comm is an MpiComm.
 template<typename Ordinal, typename Packet>
-RCP<CommRequest> ireceive(
+RCP<CommRequest<Ordinal> > ireceive(
   const Comm<Ordinal>& comm,
   const RCP<Packet> &recv,
   const int sourceRank
@@ -667,7 +679,7 @@ RCP<CommRequest> ireceive(
  * \relates Comm
  */
 template<typename Ordinal, typename Packet, typename Serializer>
-RCP<CommRequest> ireceive(
+RCP<CommRequest<Ordinal> > ireceive(
   const Comm<Ordinal>& comm,
   const Serializer& serializer,
   const ArrayRCP<Packet> &recvBuffer,
@@ -688,7 +700,7 @@ RCP<CommRequest> ireceive(
 template<typename Ordinal>
 void waitAll(
   const Comm<Ordinal>& comm,
-  const ArrayView<RCP<CommRequest> > &requests
+  const ArrayView<RCP<CommRequest<Ordinal> > > &requests
   );
 
 /// \brief Wait on communication requests, and return their statuses.
@@ -715,28 +727,28 @@ void waitAll(
 template<typename Ordinal>
 void 
 waitAll (const Comm<Ordinal>& comm,
-	 const ArrayView<RCP<CommRequest> >& requests,
+	 const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
 	 const ArrayView<RCP<CommStatus<Ordinal> > >& statuses);
 
 /// \brief Wait on a single communication request, and return its status.
 ///
 /// \param request [in/out] On input: request is not null, and
-/// *request is either null (in which case this function does
-/// nothing) or an RCP of a valid CommRequest instance representing
-/// an outstanding communication request.  On output: If the
+/// *request is either null (in which case this function does nothing)
+/// or an RCP of a valid CommRequest instance representing an
+/// outstanding communication request.  On output: If the
 /// communication request completed successfully, we set *request to
 /// null, indicating that the request has completed.  (This helps
 /// prevent common bugs like trying to complete the same request
 /// twice.)
 ///
 /// \return A CommStatus instance representing the result of
-/// completing the request.  In the case of a nonblocking receive
-/// request, you can query the CommStatus instance for the process
-/// ID of the sending process.  (This is useful for receiving from
-/// any process via MPI_ANY_SOURCE.)
+///   completing the request.  In the case of a nonblocking receive
+///   request, you can query the CommStatus instance for the process
+///   ID of the sending process.  (This is useful for receiving from
+///   any process via MPI_ANY_SOURCE.)
 /// 
-/// \pre !is_null(request) (that is, the Ptr is not null).
-/// \post is_null(*request) (that is, the RCP is null).
+/// \pre <tt>!is_null(request)</tt> (that is, the Ptr is not null).
+/// \post <tt>is_null(*request)</tt> (that is, the RCP is null).
 ///
 /// This function blocks until the communication operation associated
 /// with the CommRequest object has completed.
@@ -744,7 +756,7 @@ waitAll (const Comm<Ordinal>& comm,
 /// \relates Comm
 template<typename Ordinal>
 RCP<CommStatus<Ordinal> >
-wait (const Comm<Ordinal>& comm, const Ptr<RCP<CommRequest> >& request);
+wait (const Comm<Ordinal>& comm, const Ptr<RCP<CommRequest<Ordinal> > >& request);
 
 //
 // Standard reduction subclasses for objects that use value semantics
@@ -1919,7 +1931,7 @@ void Teuchos::readySend(
 }
 
 template<typename Ordinal, typename Packet>
-Teuchos::RCP<Teuchos::CommRequest>
+Teuchos::RCP<Teuchos::CommRequest<Ordinal> >
 Teuchos::isend(
   const Comm<Ordinal>& comm,
   const ArrayRCP<const Packet> &sendBuffer,
@@ -1933,7 +1945,7 @@ Teuchos::isend(
     );
   ConstValueTypeSerializationBuffer<Ordinal,Packet>
     charSendBuffer(sendBuffer.size(), sendBuffer.getRawPtr());
-  RCP<CommRequest> commRequest = comm.isend(
+  RCP<CommRequest<Ordinal> > commRequest = comm.isend(
     charSendBuffer.getCharBufferView(), destRank );
   set_extra_data( sendBuffer, "buffer", inOutArg(commRequest) );
   return commRequest;
@@ -1941,7 +1953,7 @@ Teuchos::isend(
 
 
 template<typename Ordinal, typename Packet>
-Teuchos::RCP<Teuchos::CommRequest>
+Teuchos::RCP<Teuchos::CommRequest<Ordinal> >
 Teuchos::isend(
   const Comm<Ordinal>& comm,
   const RCP<const Packet> &send,
@@ -1956,7 +1968,7 @@ Teuchos::isend(
 }
 
 template<typename Ordinal, typename Packet, typename Serializer>
-Teuchos::RCP<Teuchos::CommRequest>
+Teuchos::RCP<Teuchos::CommRequest<Ordinal> >
 Teuchos::isend(
   const Comm<Ordinal>& comm,
   const Serializer& serializer,
@@ -1971,21 +1983,21 @@ Teuchos::isend(
     );
   ConstValueTypeSerializationBuffer<Ordinal,Packet,Serializer>
     charSendBuffer(sendBuffer.size(), sendBuffer.getRawPtr(), serializer);
-  RCP<CommRequest> commRequest = comm.isend(
+  RCP<CommRequest<Ordinal> > commRequest = comm.isend(
     charSendBuffer.getCharBufferView(), destRank );
   set_extra_data( sendBuffer, "buffer", inOutArg(commRequest) );
   return commRequest;
 }
 
 template<typename Ordinal, typename Packet>
-Teuchos::RCP<Teuchos::CommRequest>
+Teuchos::RCP<Teuchos::CommRequest<Ordinal> >
 Teuchos::ireceive(
   const Comm<Ordinal>& comm,
   const ArrayRCP<Packet> &recvBuffer,
   const int sourceRank
   )
 {
-  typedef std::pair<RCP<CommRequest>, ArrayRCP<const Packet> > comm_buffer_pair_t;
+  typedef std::pair<RCP<CommRequest<Ordinal> >, ArrayRCP<const Packet> > comm_buffer_pair_t;
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: ireceive<"
     <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
@@ -1993,7 +2005,7 @@ Teuchos::ireceive(
     );
   ValueTypeSerializationBuffer<Ordinal,Packet>
     charRecvBuffer(recvBuffer.size(), recvBuffer.getRawPtr());
-  RCP<CommRequest> commRequest = comm.ireceive(
+  RCP<CommRequest<Ordinal> > commRequest = comm.ireceive(
     charRecvBuffer.getCharBufferView(), sourceRank );
   set_extra_data( recvBuffer, "buffer", inOutArg(commRequest) );
   return commRequest;
@@ -2001,7 +2013,7 @@ Teuchos::ireceive(
 
 
 template<typename Ordinal, typename Packet>
-Teuchos::RCP<Teuchos::CommRequest>
+Teuchos::RCP<Teuchos::CommRequest<Ordinal> >
 Teuchos::ireceive(
   const Comm<Ordinal>& comm,
   const RCP<Packet> &recv,
@@ -2016,7 +2028,7 @@ Teuchos::ireceive(
 }
 
 template<typename Ordinal, typename Packet, typename Serializer>
-Teuchos::RCP<Teuchos::CommRequest>
+Teuchos::RCP<Teuchos::CommRequest<Ordinal> >
 Teuchos::ireceive(
   const Comm<Ordinal>& comm,
   const Serializer& serializer,
@@ -2024,7 +2036,7 @@ Teuchos::ireceive(
   const int sourceRank
   )
 {
-  typedef std::pair<RCP<CommRequest>, ArrayRCP<const Packet> > comm_buffer_pair_t;
+  typedef std::pair<RCP<CommRequest<Ordinal> >, ArrayRCP<const Packet> > comm_buffer_pair_t;
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: ireceive<"
     <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
@@ -2032,7 +2044,7 @@ Teuchos::ireceive(
     );
   ValueTypeSerializationBuffer<Ordinal,Packet,Serializer>
     charRecvBuffer(recvBuffer.size(), recvBuffer.getRawPtr(), serializer);
-  RCP<CommRequest> commRequest = comm.ireceive(
+  RCP<CommRequest<Ordinal> > commRequest = comm.ireceive(
     charRecvBuffer.getCharBufferView(), sourceRank );
   set_extra_data( recvBuffer, "buffer", inOutArg(commRequest) );
   return commRequest;
@@ -2041,7 +2053,7 @@ Teuchos::ireceive(
 template<typename Ordinal>
 void Teuchos::waitAll(
   const Comm<Ordinal>& comm,
-  const ArrayView<RCP<CommRequest> > &requests
+  const ArrayView<RCP<CommRequest<Ordinal> > > &requests
   )
 {
   comm.waitAll(requests);
@@ -2051,7 +2063,7 @@ void Teuchos::waitAll(
 template<typename Ordinal>
 void 
 Teuchos::waitAll (const Comm<Ordinal>& comm,
-		  const ArrayView<RCP<CommRequest> >& requests,
+		  const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
 		  const ArrayView<RCP<CommStatus<Ordinal> > >& statuses)
 {
   comm.waitAll (requests, statuses);
@@ -2061,7 +2073,7 @@ Teuchos::waitAll (const Comm<Ordinal>& comm,
 template<typename Ordinal>
 Teuchos::RCP<Teuchos::CommStatus<Ordinal> >
 Teuchos::wait (const Comm<Ordinal>& comm,
-	       const Ptr<RCP<CommRequest> > &request)
+	       const Ptr<RCP<CommRequest<Ordinal> > > &request)
 {
   return comm.wait (request);
 }

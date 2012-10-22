@@ -136,26 +136,26 @@ public:
     const int destRank
     ) const;
   /** \brief . */
-  virtual RCP<CommRequest> isend(
+  virtual RCP<CommRequest<Ordinal> > isend(
     const ArrayView<const char> &sendBuffer,
     const int destRank
     ) const;
   /** \brief . */
-  virtual RCP<CommRequest> ireceive(
+  virtual RCP<CommRequest<Ordinal> > ireceive(
     const ArrayView<char> &Buffer,
     const int sourceRank
     ) const;
   /** \brief . */
   virtual void waitAll(
-    const ArrayView<RCP<CommRequest> > &requests
+    const ArrayView<RCP<CommRequest<Ordinal> > > &requests
     ) const;
   /** \brief . */
   virtual void 
-  waitAll (const ArrayView<RCP<CommRequest> >& requests,
+  waitAll (const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
 	   const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const;
   /** \brief . */
   virtual RCP<CommStatus<Ordinal> > 
-  wait (const Ptr<RCP<CommRequest> >& request) const;
+  wait (const Ptr<RCP<CommRequest<Ordinal> > >& request) const;
   /** \brief . */
   virtual RCP< Comm<Ordinal> > duplicate() const;
   /** \brief . */
@@ -353,7 +353,7 @@ void SerialComm<Ordinal>::readySend(
 
 
 template<typename Ordinal>
-RCP<CommRequest> SerialComm<Ordinal>::isend(
+RCP<CommRequest<Ordinal> > SerialComm<Ordinal>::isend(
   const ArrayView<const char> &/*sendBuffer*/,
   const int /*destRank*/
   ) const
@@ -364,7 +364,7 @@ RCP<CommRequest> SerialComm<Ordinal>::isend(
 
 
 template<typename Ordinal>
-RCP<CommRequest> SerialComm<Ordinal>::ireceive(
+RCP<CommRequest<Ordinal> > SerialComm<Ordinal>::ireceive(
   const ArrayView<char> &/*Buffer*/,
   const int /*sourceRank*/
   ) const
@@ -375,7 +375,7 @@ RCP<CommRequest> SerialComm<Ordinal>::ireceive(
 
 
 template<typename Ordinal>
-void SerialComm<Ordinal>::waitAll (const ArrayView<RCP<CommRequest> >& requests) const
+void SerialComm<Ordinal>::waitAll (const ArrayView<RCP<CommRequest<Ordinal> > >& requests) const
 {
   (void) requests;
   // There's nothing to wait on!
@@ -385,7 +385,7 @@ void SerialComm<Ordinal>::waitAll (const ArrayView<RCP<CommRequest> >& requests)
 template<typename Ordinal>
 void 
 SerialComm<Ordinal>::
-waitAll (const ArrayView<RCP<CommRequest> >& requests,
+waitAll (const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
 	 const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(statuses.size() < requests.size(), 
@@ -394,7 +394,7 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests,
     " requests.  requests.size() = " << requests.size() << " > statuses.size() "
     "= " << statuses.size() << ".");
 
-  for (ArrayView<RCP<CommRequest> >::iterator it = requests.begin(); 
+  for (typename ArrayView<RCP<CommRequest<Ordinal> > >::iterator it = requests.begin(); 
        it != requests.end(); ++it) {
     *it = null; // A postcondition of the Teuchos::Comm interface.
   }
@@ -402,7 +402,7 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests,
 
 template<typename Ordinal>
 RCP<CommStatus<Ordinal> > 
-SerialComm<Ordinal>::wait (const Ptr<RCP<CommRequest> > & request) const
+SerialComm<Ordinal>::wait (const Ptr<RCP<CommRequest<Ordinal> > > & request) const
 {
   (void) request;
   TEUCHOS_TEST_FOR_EXCEPTION(request.getRawPtr() == NULL, std::invalid_argument,
