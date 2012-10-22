@@ -411,7 +411,8 @@ reducedQuadrature_Q_Squared_CPQR2(
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> QQ2(nqp, r);
   for (ordinal_type j=0; j<r; j++)
     for (ordinal_type i=0; i<nqp; i++)
-      QQ2(i,j) = Q2(i,piv[j]);
+      //QQ2(i,j) = Q2(i,piv[j]);
+      QQ2(i,j) = Z(i,j);
 
   if (verbose) {
     std::cout << "Q2 rank = " << r << std::endl;
@@ -424,6 +425,18 @@ reducedQuadrature_Q_Squared_CPQR2(
   ordinal_type ret = 
     ee1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, QQ2, w, 0.0);
   TEUCHOS_ASSERT(ret == 0);
+
+  /*
+  std::ofstream out("my_lp.m");
+  out.precision(16);
+  out << "A = ";
+  print_matlab(out, QQ2);
+  out << std::endl << "b = ";
+  print_matlab(out, ee1);
+  out << std::endl;
+  */
+  save_matlab("lp.mat", "A", QQ2, true);
+  save_matlab("lp.mat", "b", ee1, false);
 
   // Solve problem
   Teuchos::SerialDenseVector<ordinal_type,value_type> u(nqp);

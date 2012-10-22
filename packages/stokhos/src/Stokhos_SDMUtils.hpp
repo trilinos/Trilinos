@@ -43,6 +43,15 @@ void DGEQPF_F77(int*, int*, double*, int*, int*, double*, double*, int*);
 void DGEQP3_F77(int*, int*, double*, int*, int*, double*, double*, int*, int*);
 }
 
+#include "Stokhos_ConfigDefs.h"
+
+#ifdef HAVE_STOKHOS_MATLABLIB
+extern "C" {
+#include "mat.h"
+#include "matrix.h"
+}
+#endif
+
 namespace Stokhos {
 
   namespace detail {
@@ -89,8 +98,48 @@ namespace Stokhos {
       if (i < A.numRows()-1)
 	os << ";" << std::endl << "  ";
     }
-    os << "]" << std::endl;  
+    os << "];" << std::endl;  
   }
+
+#ifdef HAVE_STOKHOS_MATLABLIB
+  // Save a matrix to matlab MAT file
+  template <typename ordinal_type>
+  void
+  save_matlab(const std::string& file_name, const std::string& matrix_name, 
+	      const Teuchos::SerialDenseMatrix<ordinal_type,double>& A,
+	      bool overwrite = true)
+  {
+    // Open matfile
+    const char *mode;
+    if (overwrite)
+      mode = "w";
+    else
+      mode = "u";
+    MATFile *file = matOpen(file_name.c_str(), mode);
+    TEUCHOS_ASSERT(file != NULL);
+
+    // Convert SDM to Matlab matrix
+    mxArray *mat = mxCreateDoubleMatrix(0, 0, mxREAL);
+    TEUCHOS_ASSERT(mat != NULL);
+    mxSetPr(mat, A.values());
+    mxSetM(mat, A.numRows());
+    mxSetN(mat, A.numCols());
+
+    // Save matrix to file
+    ordinal_type ret = matPutVariable(file, matrix_name.c_str(), mat);
+    TEUCHOS_ASSERT(ret == 0);
+
+    // Close file
+    ret = matClose(file);
+    TEUCHOS_ASSERT(ret == 0);
+
+    // Free matlab matrix
+    mxSetPr(mat, NULL);
+    mxSetM(mat, 0);
+    mxSetN(mat, 0);
+    mxDestroyArray(mat);
+  }
+#endif
 
   //! Compute thin QR using classical Gram-Schmidt
   /*!
