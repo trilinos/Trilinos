@@ -364,6 +364,113 @@ namespace ProductBasisUtilsUnitTest {
 
   }
 
+  template <typename ordinal_type>
+  struct total_order_predicate {
+    ordinal_type dim, order;
+
+    total_order_predicate(ordinal_type dim_, ordinal_type order_) :
+      dim(dim_), order(order_) {}
+
+    template <typename term_type>
+    bool operator() (const term_type& term) const {
+      ordinal_type sum = 0;
+      for (ordinal_type i=0; i<dim; ++i)
+	sum += term[i];
+      return sum <= order;
+    }
+
+  };
+
+  template <typename basis_set_type>
+  struct general_predicate {
+    const basis_set_type& basis_set;
+
+    general_predicate(const basis_set_type& basis_set_) :
+      basis_set(basis_set_) {}
+
+    template <typename term_type>
+    bool operator() (const term_type& term) const {
+      return basis_set.find(term) != basis_set.end();
+    }
+
+  };
+
+
+  TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils, TotalOrderSparse3Tensor ) {
+    success = true;
+    ordinal_type dim = 7;
+    ordinal_type order = 5;
+
+    // Build index set of dimension d and order p
+    typedef Stokhos::TotalOrderIndexSet<ordinal_type> index_set_type;
+    typedef typename index_set_type::multiindex_type multiindex_type;
+    typedef typename index_set_type::iterator iterator;
+    index_set_type indexSet(dim, 0, order);
+
+    // Build total-order basis from index set
+    typedef Stokhos::TensorProductElement<ordinal_type,ordinal_type> coeff_type;
+    typedef Stokhos::TotalOrderLess<coeff_type> less_type;
+    typedef std::map<coeff_type, ordinal_type, less_type> basis_set_type;
+    typedef typename basis_set_type::iterator basis_set_iterator;
+    typedef Teuchos::Array<coeff_type> basis_map_type;
+    basis_set_type basis_set;
+    basis_map_type basis_map;
+    Stokhos::ProductBasisUtils::buildProductBasis(
+      indexSet, basis_set, basis_map);
+
+    // 1-D bases
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > > bases(dim);
+    for (ordinal_type i=0; i<dim; i++)
+      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(order, true));
+
+    // Build Cijk tensor
+    coeff_type k_lim(dim, order+1);
+    typedef Stokhos::Sparse3Tensor<ordinal_type,value_type> Cijk_type;
+    //total_order_predicate<ordinal_type> pred(dim, order);
+    general_predicate<basis_set_type> pred(basis_set);
+    Teuchos::RCP<Cijk_type> Cijk =
+      Stokhos::ProductBasisUtils::computeTripleProductTensor<ordinal_type,value_type>(bases, basis_set, basis_map, pred, k_lim);
+
+    // Build Cijk tensor using original approach
+    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::CompletePolynomialBasis<ordinal_type,value_type>(bases));
+    Teuchos::RCP<Cijk_type> Cijk2 =
+      basis->computeTripleProductTensor(basis->size());
+    
+    // Check sizes
+    TEUCHOS_TEST_EQUALITY(Cijk->num_k(), Cijk2->num_k(), out, success);
+    TEUCHOS_TEST_EQUALITY(Cijk->num_entries(), Cijk2->num_entries(), out, success);
+    
+    // Check tensors match
+    for (Cijk_type::k_iterator k_it=Cijk2->k_begin(); 
+	 k_it!=Cijk2->k_end(); ++k_it) {
+      int k = Stokhos::index(k_it);
+      for (Cijk_type::kj_iterator j_it = Cijk2->j_begin(k_it); 
+	   j_it != Cijk2->j_end(k_it); ++j_it) {
+	int j = Stokhos::index(j_it);
+	for (Cijk_type::kji_iterator i_it = Cijk2->i_begin(j_it);
+	     i_it != Cijk2->i_end(j_it); ++i_it) {
+	  int i = Stokhos::index(i_it);
+	  double c = Cijk->getValue(i,j,k);
+	  double c2 = Stokhos::value(i_it);
+	  double tol = setup.atol + c2*setup.rtol;
+	  double err = std::abs(c-c2);
+	  bool s = err < tol;
+	  if (!s) {
+	    out << std::endl
+		<< "Check: rel_err( C(" << i << "," << j << "," << k << ") )"
+		<< " = " << "rel_err( " << c << ", " << c2 << " ) = " << err 
+		<< " <= " << tol << " : ";
+	    if (s) out << "Passed.";
+	    else out << "Failed!";
+	    out << std::endl;
+	  }
+	  success = success && s;
+	}
+      }
+    }
+
+  }
+
   TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils, TensorProductOperator ) {
     success = true;
 
@@ -665,5 +772,7 @@ namespace ProductBasisUtilsUnitTest {
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+  int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+  Teuchos::TimeMonitor::summarize(std::cout);
+  return res;
 }

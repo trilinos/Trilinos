@@ -32,8 +32,10 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include "Stokhos_SDMUtils.hpp"
+#include "Stokhos_Sparse3Tensor.hpp"
 
 namespace Stokhos {
 
@@ -474,7 +476,9 @@ namespace Stokhos {
     TensorProductElement() {}
 
     //! Constructor
-    TensorProductElement(ordinal_type dim) : term(dim) {}
+    TensorProductElement(ordinal_type dim,
+			 const element_type& val = element_type(0)) : 
+      term(dim,val) {}
 
     //! Destructor
     ~TensorProductElement() {};
@@ -734,6 +738,185 @@ namespace Stokhos {
       buildProductBasis(index_set, growth_rule, basis_set, basis_map);
     }
 
+    template <typename ordinal_type, 
+	      typename value_type,
+	      typename basis_set_type, 
+	      typename basis_map_type,
+	      typename coeff_predicate_type>
+    static Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
+    computeTripleProductTensor(
+      const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& bases,
+      const basis_set_type& basis_set,
+      const basis_map_type& basis_map,
+      const coeff_predicate_type& coeff_pred,
+      const TensorProductElement<ordinal_type,ordinal_type>& k_lim,
+      const value_type sparse_tol = 1.0e-12)
+      {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
+	TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total Triple-Product Tensor Time");
+#endif
+	ordinal_type d = bases.size();
+	typename basis_set_type::const_iterator basis_set_end = basis_set.end();
+	typename basis_set_type::const_iterator k_end = basis_set.find(k_lim);
+	ordinal_type order;
+	if (k_end != basis_set_end)
+	  order = k_end->second;
+	else
+	  order = basis_set.size();
+
+	// The algorithm for computing Cijk = < \Psi_i \Psi_j \Psi_k > here 
+	// works by factoring 
+	// < \Psi_i \Psi_j \Psi_k > = 
+	//    < \psi^1_{i_1}\psi^1_{j_1}\psi^1_{k_1} >_1 x ... x
+	//    < \psi^d_{i_d}\psi^d_{j_d}\psi^d_{k_d} >_d
+	// We compute the sparse triple product < \psi^l_i\psi^l_j\psi^l_k >_l
+	// for each dimension l, and then compute all non-zero products of these
+	// terms.  The complexity arises from iterating through all possible
+	// combinations, throwing out terms that aren't in the basis and are 
+	// beyond the k-order limit provided
+	Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
+	  Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>);
+	
+	// Create 1-D triple products
+	Teuchos::Array< Teuchos::RCP<Sparse3Tensor<ordinal_type,value_type> > > Cijk_1d(d);
+	for (ordinal_type i=0; i<d; i++) {
+	  if (k_lim[i] <= bases[i]->order()+1)
+	    Cijk_1d[i] = 
+	      bases[i]->computeSparseTripleProductTensor(k_lim[i]);
+	  else
+	    Cijk_1d[i] = 
+	      bases[i]->computeSparseTripleProductTensor(bases[i]->order()+1);
+	}
+	
+	// Create i, j, k iterators for each dimension
+	// Note:  we have to supply an initializer in the arrays of iterators 
+	// to avoid checked-stl errors about singular iterators
+	typedef Sparse3Tensor<ordinal_type,value_type> Cijk_type;
+	typedef typename Cijk_type::k_iterator k_iterator;
+	typedef typename Cijk_type::kj_iterator kj_iterator;
+	typedef typename Cijk_type::kji_iterator kji_iterator;
+	Teuchos::Array<k_iterator> k_iterators(d, Cijk_1d[0]->k_begin());
+	Teuchos::Array<kj_iterator > j_iterators(d, Cijk_1d[0]->j_begin(k_iterators[0]));
+	Teuchos::Array<kji_iterator > i_iterators(d, Cijk_1d[0]->i_begin(j_iterators[0]));
+	TensorProductElement<ordinal_type,ordinal_type> terms_i(d), terms_j(d), terms_k(d);
+	for (ordinal_type dim=0; dim<d; dim++) {
+	  k_iterators[dim] = Cijk_1d[dim]->k_begin();
+	  j_iterators[dim] = Cijk_1d[dim]->j_begin(k_iterators[dim]);
+	  i_iterators[dim] = Cijk_1d[dim]->i_begin(j_iterators[dim]);
+	  terms_i[dim] = index(i_iterators[dim]);
+	  terms_j[dim] = index(j_iterators[dim]);
+	  terms_k[dim] = index(k_iterators[dim]);
+	}
+
+	ordinal_type I = 0;
+	ordinal_type J = 0;
+	ordinal_type K = 0;
+	bool valid_i = coeff_pred(terms_i);
+	bool valid_j = coeff_pred(terms_j);
+	bool valid_k = coeff_pred(terms_k);
+	bool inc_i = true;
+	bool inc_j = true;
+	bool inc_k = true;
+	bool stop = false;
+	ordinal_type cnt = 0;
+	while (!stop) {
+	  
+	  // Add term if it is in the basis
+	  if (valid_i && valid_j && valid_k) {
+	    if (inc_k) {
+	      typename basis_set_type::const_iterator k = 
+		basis_set.find(terms_k);
+	      K = k->second;
+            }
+	    if (K < order) {
+	      if (inc_i) {
+	        typename basis_set_type::const_iterator i = 
+		  basis_set.find(terms_i);
+		I = i->second;
+              }
+	      if (inc_j) {
+	        typename basis_set_type::const_iterator j = 
+		  basis_set.find(terms_j);
+		J = j->second;
+              }
+	      value_type c = value_type(1.0);
+	      value_type nrm = value_type(1.0);
+	      for (ordinal_type dim=0; dim<d; dim++) {
+		c *= value(i_iterators[dim]);
+		nrm *= bases[dim]->norm_squared(terms_i[dim]);
+	      }
+	      if (std::abs(c/nrm) > sparse_tol)
+		Cijk->add_term(I,J,K,c);
+	    }
+	  }
+	  
+	  // Increment iterators to the next valid term
+	  ordinal_type cdim = 0;
+	  bool inc = true;
+	  inc_i = false;
+	  inc_j = false; 
+	  inc_k = false;
+	  while (inc && cdim < d) {
+	    ordinal_type cur_dim = cdim;
+	    ++i_iterators[cdim];
+	    inc_i = true;
+	    if (i_iterators[cdim] != Cijk_1d[cdim]->i_end(j_iterators[cdim])) {
+	      terms_i[cdim] = index(i_iterators[cdim]);
+	      valid_i = coeff_pred(terms_i);
+	    }
+	    if (i_iterators[cdim] == Cijk_1d[cdim]->i_end(j_iterators[cdim]) ||
+		!valid_i) {
+	      ++j_iterators[cdim];
+	      inc_j = true;
+	      if (j_iterators[cdim] != Cijk_1d[cdim]->j_end(k_iterators[cdim])) {
+		terms_j[cdim] = index(j_iterators[cdim]);
+		valid_j = coeff_pred(terms_j);
+	      }
+	      if (j_iterators[cdim] == Cijk_1d[cdim]->j_end(k_iterators[cdim]) ||
+		  !valid_j) {
+		++k_iterators[cdim];
+		inc_k = true;
+		if (k_iterators[cdim] != Cijk_1d[cdim]->k_end()) {
+		  terms_k[cdim] = index(k_iterators[cdim]);
+		  valid_k = coeff_pred(terms_k);
+		}
+		if (k_iterators[cdim] == Cijk_1d[cdim]->k_end() || 
+		    !valid_k) {
+		  k_iterators[cdim] = Cijk_1d[cdim]->k_begin();
+		  ++cdim;
+		  terms_k[cur_dim] = index(k_iterators[cur_dim]);
+		  valid_k = coeff_pred(terms_k);
+		}
+		else
+		  inc = false;
+		j_iterators[cur_dim] = 
+		  Cijk_1d[cur_dim]->j_begin(k_iterators[cur_dim]);
+		terms_j[cur_dim] = index(j_iterators[cur_dim]);
+		valid_j = coeff_pred(terms_j);
+	      }
+	      else
+		inc = false;
+	      i_iterators[cur_dim] = Cijk_1d[cur_dim]->i_begin(j_iterators[cur_dim]);
+	      terms_i[cur_dim] = index(i_iterators[cur_dim]);
+	      valid_i = coeff_pred(terms_i);
+	    }
+	    else
+	      inc = false;
+	    
+	    if (!valid_i || !valid_j || !valid_k)
+	      inc = true;
+	  }
+	  
+	  if (cdim == d)
+	    stop = true;
+	  
+	  cnt++;
+	}
+	
+	Cijk->fillComplete();
+
+	return Cijk;
+      }
   };
 
   /*!
