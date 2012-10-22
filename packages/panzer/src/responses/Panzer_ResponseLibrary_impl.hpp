@@ -53,7 +53,7 @@ namespace panzer {
 
 template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary()
-   : responseEvaluatorsBuilt_(false)
+   : nextBC_id(0), responseEvaluatorsBuilt_(false)
 {
    // build dynamic dispatch objects
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
@@ -65,7 +65,7 @@ template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
                                           const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi,
                                           const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
-   : respAggManager_(ugi,lof), wkstContainer_(wc), globalIndexer_(ugi), linObjFactory_(lof), responseEvaluatorsBuilt_(false)
+   : respAggManager_(ugi,lof), wkstContainer_(wc), globalIndexer_(ugi), linObjFactory_(lof), nextBC_id(0), responseEvaluatorsBuilt_(false)
 {
    // build dynamic dispatch objects
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
@@ -76,7 +76,7 @@ ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> &
 template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary(const ResponseLibrary<TraitsT> & rl)
    : respAggManager_(rl.globalIndexer_,rl.linObjFactory_), wkstContainer_(rl.wkstContainer_)
-   , globalIndexer_(rl.globalIndexer_), linObjFactory_(rl.linObjFactory_), responseEvaluatorsBuilt_(false)
+   , globalIndexer_(rl.globalIndexer_), linObjFactory_(rl.linObjFactory_), nextBC_id(0), responseEvaluatorsBuilt_(false)
 {
    // build dynamic dispatch objects
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
@@ -491,10 +491,15 @@ addResponse(const std::string responseName,
 
      BC bc(nextBC_id,BCT_Neumann,sideset,blockId,"Whatever",responseName+"_BCStrategy");
 
-     // add response factory TM to vector that stores them
-     std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > & block_tm 
+     RCP<std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > block_tm
         = respBCFactories_[bc];
-     block_tm.push_back(std::make_pair(responseName,modelFact_tm));
+     if(block_tm==Teuchos::null) {
+       block_tm = Teuchos::rcp(new std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > >); 
+       respBCFactories_[bc] = block_tm;
+     }
+
+     // add response factory TM to vector that stores them
+     block_tm->push_back(std::make_pair(responseName,modelFact_tm));
  
      nextBC_id++;
    }

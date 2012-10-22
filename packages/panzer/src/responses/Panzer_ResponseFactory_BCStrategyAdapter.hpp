@@ -135,7 +135,7 @@ namespace response_bc_adapters {
   class BCFactoryResponse : public panzer::BCStrategyFactory {
   public:
     typedef std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<panzer::Traits> > > > RespFact_TM_Vector;
-    typedef boost::unordered_map<BC,RespFact_TM_Vector,BC::BCHash,BC::BCEquality> BCHashMap;
+    typedef boost::unordered_map<BC,Teuchos::RCP<RespFact_TM_Vector>,BC::BCHash,BC::BCEquality> BCHashMap;
 
     BCFactoryResponse(const BCHashMap & hashMap)
       : hashMap_(hashMap) {}
@@ -149,7 +149,7 @@ namespace response_bc_adapters {
       BCHashMap::const_iterator itr = hashMap_.find(bc);
       TEUCHOS_ASSERT(itr!=hashMap_.end());
 
-      BCStrategy_TM_ResponseAdapterBuilder builder(bc,itr->second);
+      BCStrategy_TM_ResponseAdapterBuilder builder(bc,*itr->second);
       bcstrategy_tm->buildObjects(builder);
  
       return bcstrategy_tm;

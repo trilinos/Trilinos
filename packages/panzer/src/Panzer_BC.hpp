@@ -70,14 +70,14 @@ namespace panzer {
   public:
     // types supporting hashing
     struct BCHash {
-      boost::hash<std::size_t> hash;
+      boost::hash<std::string> hash;
       std::size_t operator()(const BC & bc) const
-      { return this->hash(bc.bcID());}
+      { return this->hash(bc.elementBlockID()+"_"+bc.sidesetID());}
     };
 
     struct BCEquality {
       bool operator()(const BC & bc1,const BC & bc2) const
-      { return bc1.bcID()==bc2.bcID(); }
+      { return bc1.elementBlockID()==bc2.elementBlockID() && bc1.sidesetID()==bc2.sidesetID(); }
     };
     
   public:

@@ -175,7 +175,12 @@ namespace panzer {
       RCP<const Thyra::VectorSpaceBase<double> > vs = Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(tResp)->getVectorSpace();
 
       eVec = Teuchos::rcp(new Epetra_Vector(*map)); 
+      // eVec->PutScalar(0.0);
+
+      // TEST_EQUALITY(eVec->MyLength(),1);
+
       tVec = Thyra::createMember<double>(vs);
+      // Thyra::assign(tVec.ptr(),0.0);
       
       Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(iResp)->setVector(eVec);
       Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(tResp)->setVector(tVec);

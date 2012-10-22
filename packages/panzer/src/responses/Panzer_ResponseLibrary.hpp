@@ -344,7 +344,7 @@ private:
    AssemblyEngine_TemplateManager<panzer::Traits> ae_tm2_;
 
    typedef boost::unordered_map<panzer::BC,
-                                std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > >,
+                                Teuchos::RCP<std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > >,
                                 BC::BCHash,BC::BCEquality > BCHashMap;
 
    // Store up response factories by element block
