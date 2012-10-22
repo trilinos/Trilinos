@@ -703,27 +703,35 @@ void waitAll(
   const ArrayView<RCP<CommRequest<Ordinal> > > &requests
   );
 
-/// \brief Wait on communication requests, and return their statuses.
-///
-/// \pre requests.size() == statuses.size()
-///
-/// \pre For i in 0, 1, ..., requests.size()-1, requests[i] is
-///   either null or requests[i] was returned by an ireceive() or
-///   isend().
-///
-/// \post For i in 0, 1, ..., requests.size()-1,
-///   requests[i].is_null() is true.
-///
-/// \param requests [in/out] On input: the requests on which to
-///   wait.  On output: all set to null.
-///
-/// \param statuses [out] The status results of waiting on the
-///   requests.
-///
-/// This function blocks until all communication operations associated
-/// with the CommRequest objects have completed.
-///
+/// \brief Wait on one or more communication requests, and return their statuses.
 /// \relates Comm
+///
+/// This function will block until all the communication operations
+/// complete.  You are responsible for ordering messages in a way that
+/// avoids deadlock.  An erroneous ordering of messages may cause this
+/// function to wait forever.
+///
+/// \pre <tt>requests.size() == statuses.size()</tt>
+///
+/// \pre For i in 0, 1, ..., <tt>requests.size() - 1</tt>,
+///   <tt>requests[i]</tt> is either null or it was the return value
+///   of a nonblocking communication request.
+///
+/// \post For i in 0, 1, ..., <tt>requests.size() - 1</tt>,
+///   <tt>requests[i]</tt> is null.  If <tt>requests[i]</tt> were
+///   nonnull on input, then the corresponding nonblocking
+///   communication operation completed successfully.
+///
+/// \param comm [in] The communicator on which the communication
+///   requests were made.
+/// \param requests [in/out] On input: the requests on which to wait.
+///   Null elements of the array are ignored.  On output: all elements
+///   of the array are set to null.
+/// \param statuses [out] CommStatus instances representing the
+///   results of completing the requests.  You may query each for
+///   information about its corresponding communication operation.
+///   Any element of the array may be null, for example if its
+///   corresponding CommRequest was null on input.
 template<typename Ordinal>
 void 
 waitAll (const Comm<Ordinal>& comm,
@@ -731,29 +739,28 @@ waitAll (const Comm<Ordinal>& comm,
 	 const ArrayView<RCP<CommStatus<Ordinal> > >& statuses);
 
 /// \brief Wait on a single communication request, and return its status.
+/// \relates Comm
 ///
-/// \param request [in/out] On input: request is not null, and
-/// *request is either null (in which case this function does nothing)
-/// or an RCP of a valid CommRequest instance representing an
-/// outstanding communication request.  On output: If the
-/// communication request completed successfully, we set *request to
-/// null, indicating that the request has completed.  (This helps
-/// prevent common bugs like trying to complete the same request
-/// twice.)
+/// This function will block until the communication operation
+/// completes.  You are responsible for ordering messages in a way
+/// that avoids deadlock.  An erroneous ordering of messages may cause
+/// this function to wait forever.
+///
+/// \param request [in/out] A nonnull pointer to an RCP.  On input,
+///   the RCP is either null (in which case this function does
+///   nothing) or it points to a valid CommRequest representing an
+///   outstanding communication request.  On output, this function
+///   sets <tt>*request</tt> to null, which indicates that the request
+///   completed successfully.  (This function will not return unless
+///   the request completes.)
 ///
 /// \return A CommStatus instance representing the result of
-///   completing the request.  In the case of a nonblocking receive
-///   request, you can query the CommStatus instance for the process
-///   ID of the sending process.  (This is useful for receiving from
-///   any process via MPI_ANY_SOURCE.)
+///   completing the request.  You may query it for information about
+///   the completed communication operation.  This may be null, for
+///   example if <tt>*request</tt> was null on input.
 /// 
 /// \pre <tt>!is_null(request)</tt> (that is, the Ptr is not null).
 /// \post <tt>is_null(*request)</tt> (that is, the RCP is null).
-///
-/// This function blocks until the communication operation associated
-/// with the CommRequest object has completed.
-///
-/// \relates Comm
 template<typename Ordinal>
 RCP<CommStatus<Ordinal> >
 wait (const Comm<Ordinal>& comm, const Ptr<RCP<CommRequest<Ordinal> > >& request);
