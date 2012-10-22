@@ -265,7 +265,7 @@ public:
   ///
   /// Precondition:
   /// - <tt>rawMpiComm != MPI_COMM_NULL</tt>
-  MpiComm (MPI_Comm rawMpiComm);
+  explicit MpiComm (MPI_Comm rawMpiComm);
 
   /// \brief Construct an MpiComm with the given wrapped MPI_Comm.
   ///
