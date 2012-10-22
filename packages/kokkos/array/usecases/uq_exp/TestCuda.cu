@@ -4,15 +4,9 @@
 #include <limits>
 #include <utility>
 
+#include <KokkosArray_Cuda.hpp>
 #include <BoxMeshFixture.hpp>
 #include <Explicit.hpp>
-
-#include <KokkosArray_Cuda.hpp>
-
-#include <impl/KokkosArray_Cuda_macros.hpp>
-#include <ParallelDataMap_macros.hpp>
-#include <Explicit_macros.hpp>
-#include <impl/KokkosArray_Clear_macros.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

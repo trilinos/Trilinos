@@ -4,15 +4,10 @@
 #include <limits>
 #include <utility>
 
-#include <BoxMeshFixture.hpp>
-#include <Explicit.hpp>
-
 #include <KokkosArray_Host.hpp>
 
-#include <impl/KokkosArray_Host_macros.hpp>
-#include <ParallelDataMap_macros.hpp>
-#include <Explicit_macros.hpp>
-#include <impl/KokkosArray_Clear_macros.hpp>
+#include <BoxMeshFixture.hpp>
+#include <Explicit.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

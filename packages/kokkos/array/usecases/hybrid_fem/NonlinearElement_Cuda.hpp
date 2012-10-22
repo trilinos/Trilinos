@@ -12,7 +12,7 @@
 #include <FEMesh.hpp>
 
 namespace HybridFEM {
-namespace NonLinear {
+namespace Nonlinear {
 
 template< class MeshType , typename ScalarType > struct ElementComputation ;
 
@@ -345,6 +345,6 @@ public:
 
 }; /* ElementComputation */
 
-} /* namespace NonLinear */
+} /* namespace Nonlinear */
 } /* namespace HybridFEM */
 

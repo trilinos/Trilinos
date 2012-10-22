@@ -60,14 +60,14 @@ namespace Impl {
  *  The std::map input guarantees uniqueness and proper sorting of
  *  the product tensor's symmetric entries.
  */
-template< unsigned Rank , typename ValueType , class Device , class D >
+template< unsigned Rank , typename ValueType , class Device >
 class CreateSparseProductTensor<
   SparseProductTensor< Rank , ValueType , Device > ,
-  std::map< ProductTensorIndex<Rank,D> , ValueType > >
+  std::map< ProductTensorIndex<Rank> , ValueType > >
 {
 public:
   typedef SparseProductTensor<Rank,ValueType,Device> type ;
-  typedef std::map< ProductTensorIndex< Rank , D > , ValueType > input_type ;
+  typedef std::map< ProductTensorIndex< Rank > , ValueType > input_type ;
 
   static
   type create( const input_type & input )
@@ -126,15 +126,15 @@ public:
  *  The std::map input guarantees uniqueness and proper sorting of
  *  the product tensor's symmetric entries.
  */
-template< typename ValueType , class Device , class D >
+template< typename ValueType , class Device >
 class CreateSparseProductTensor<
   CrsProductTensor< 3 , ValueType , Device > ,
-  std::map< ProductTensorIndex<3,D> , ValueType > >
+  std::map< ProductTensorIndex<3> , ValueType > >
 {
 public:
   enum { Rank = 3 };
   typedef CrsProductTensor<Rank,ValueType,Device> type ;
-  typedef std::map< ProductTensorIndex< Rank , D > , ValueType > input_type ;
+  typedef std::map< ProductTensorIndex< Rank > , ValueType > input_type ;
 
   // input entries are sorted: coord(0) >= coord(1) >= coord(2)
   // thus last entry has maximum coordinate

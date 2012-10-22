@@ -146,7 +146,7 @@ public:
 
 template< typename ValueType >
 class Multiply< SparseProductTensor< 3 , ValueType , Host > ,
-                SymmetricDiagonalSpec< Host > , void >
+                SymmetricDiagonalSpec< KokkosArray::Host > , void >
 {
 public:
   typedef Host::size_type size_type ;
@@ -157,7 +157,9 @@ public:
                      const MatrixValue * const a ,
                            MatrixValue * const M )
   {
-    const SymmetricDiagonalSpec< Host > spec( tensor.dimension() );
+    const SymmetricDiagonalSpec< KokkosArray::Host >
+      spec( tensor.dimension() );
+
     const size_type nEntry  = tensor.entry_count();
     const size_type nMatrix = spec.matrix_size();
 
