@@ -46,6 +46,7 @@
 
 #include <KokkosArray_Cuda.hpp>
 #include <Cuda/KokkosArray_Cuda_Internal.hpp>
+#include <impl/KokkosArray_Error.hpp>
 
 /*--------------------------------------------------------------------------*/
 /* Standard 'C' libraries */
@@ -54,7 +55,6 @@
 /* Standard 'C++' libraries */
 #include <vector>
 #include <iostream>
-#include <stdexcept>
 #include <sstream>
 
 /*--------------------------------------------------------------------------*/
@@ -66,7 +66,7 @@ void cuda_internal_error_throw( cudaError e , const char * name )
 {
   std::ostringstream out ;
   out << name << " error: " << cudaGetErrorString(e);
-  throw std::runtime_error( out.str() );
+  throw_runtime_exception( out.str() );
 }
 
 //----------------------------------------------------------------------------
@@ -221,7 +221,8 @@ CudaInternal & CudaInternal::raw_singleton()
 const CudaInternal & CudaInternal::assert_initialized() const
 {
   if ( m_cudaDev == -1 ) {
-    throw std::runtime_error(std::string("CATASTROPHIC FAILURE: Using KokkosArray::Cuda before calling KokkosArray::Cuda::initialize(...)"));
+    const std::string msg("CATASTROPHIC FAILURE: Using KokkosArray::Cuda before calling KokkosArray::Cuda::initialize(...)");
+    throw_runtime_exception( msg );
   }
   return *this ;
 }
@@ -241,11 +242,11 @@ void CudaInternal::initialize( int cuda_device_id )
   const bool ok_id   = 0 <= cuda_device_id &&
                             cuda_device_id < dev_info.m_cudaDevCount ;
 
-  // Need device capability 1.3 or better
+  // Need device capability 2.0 or better
 
   const bool ok_dev = ok_id &&
-    ( 1 < dev_info.m_cudaProp[ cuda_device_id ].major ||
-      2 < dev_info.m_cudaProp[ cuda_device_id ].minor );
+    ( 2 <= dev_info.m_cudaProp[ cuda_device_id ].major &&
+      0 <= dev_info.m_cudaProp[ cuda_device_id ].minor );
 
   if ( ok_init && ok_dev ) {
 
@@ -260,11 +261,13 @@ void CudaInternal::initialize( int cuda_device_id )
     // Maximum number of warps,
     // at most one warp per thread in a warp for reduction.
 
-    // HCE 02/02/2012 :
+    // HCE 2012-February :
     // Found bug in CUDA 4.1 that sometimes a kernel launch would fail
     // if the thread count == 1024 and a functor is passed to the kernel.
     // Copying the kernel to constant memory and then launching with
     // thread count == 1024 would work fine.
+    //
+    // HCE 2012-October :
     // All compute capabilities support at least 16 warps (512 threads).
     // However, we have found that 8 warps typically gives better performance.
 
@@ -277,6 +280,10 @@ void CudaInternal::initialize( int cuda_device_id )
     }
 
     //----------------------------------
+    // HCE 2012-October
+    // Prefer L1 by default to improve occupancy for non-reductions.
+
+    CUDA_SAFE_CALL( cudaDeviceSetCacheConfig( cudaFuncCachePreferL1 ) );
 
     m_maxSharedWords = cudaProp.sharedMemPerBlock / WordSize ;
 
@@ -322,9 +329,9 @@ void CudaInternal::initialize( int cuda_device_id )
       msg << dev_info.m_cudaProp[ cuda_device_id ].major ;
       msg << "." ;
       msg << dev_info.m_cudaProp[ cuda_device_id ].minor ;
-      msg << " has insufficient capability, required 1.3 or better" ;
+      msg << " has insufficient capability, required 2.0 or better" ;
     }
-    throw std::runtime_error( msg.str() );
+    KokkosArray::Impl::throw_runtime_exception( msg.str() );
   } 
 }
 
@@ -473,7 +480,7 @@ bool Cuda::sleep() { return false ; }
 bool Cuda::wake() { return true ; }
 
 void Cuda::fence()
-{ cudaDeviceSynchronize(); }
+{ CUDA_SAFE_CALL( cudaDeviceSynchronize() ); }
 
 } // namespace KokkosArray
 

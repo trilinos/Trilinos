@@ -41,81 +41,53 @@
 //@HEADER
 */
 
-#include <gtest/gtest.h>
-
-#include <iostream>
-
-#include <KokkosArray_Host.hpp>
-#include <KokkosArray_Cuda.hpp>
-
-#include <KokkosArray_View.hpp>
-#include <KokkosArray_CrsArray.hpp>
-
+#ifndef KOKKOSARRAY_CUDA_ABORT_HPP
+#define KOKKOSARRAY_CUDA_ABORT_HPP
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
-#include <TestViewImpl.hpp>
+#if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
 
-#include <TestViewAPI.hpp>
-#include <TestCrsArray.hpp>
+extern "C" {
+/*  Cuda runtime function, declared in <crt/device_runtime.h>
+ *  Requires capability 2.x or better.
+ */
+extern __device__ void __assertfail(
+  const void  *message,
+  const void  *file,
+  unsigned int line,
+  const void  *function,
+  size_t       charsize);
+}
 
-#include <TestReduce.hpp>
-#include <TestMultiReduce.hpp>
+namespace KokkosArray {
 
-namespace Test {
-
-__global__
-void test_abort()
+__device__ inline
+void cuda_abort( const char * const message )
 {
-  KokkosArray::VerifyExecutionSpaceCanAccessDataSpace<
-    KokkosArray::CudaSpace ,
-    KokkosArray::HostSpace >::verify();
+  const char empty[] = "" ;
+
+  __assertfail( (const void *) message ,
+                (const void *) empty ,
+                (unsigned int) 0 ,
+                (const void *) empty ,
+                sizeof(char) );
 }
 
+} // namespace KokkosArray
 
-void test_device_cuda_view_impl()
-{
-  //  test_abort<<<32,32>>>(); // Aborts the kernel
+#else /* !  #if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ ) */
 
-  test_view_impl< KokkosArray::Cuda >();
+namespace KokkosArray {
+inline
+void cuda_abort( const char * const ) {}
 }
 
-void test_device_cuda_view_api()
-{
-  TestViewAPI< double , KokkosArray::Cuda >();
+#endif /* #if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ ) */
 
-#if 0
-  KokkosArray::View<double, KokkosArray::Cuda > x("x");
-  KokkosArray::View<double[1], KokkosArray::Cuda > y("y");
-  // *x = 10 ;
-  // x() = 10 ;
-  // y[0] = 10 ;
-  // y(0) = 10 ;
-#endif
-}
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
-void test_device_cuda_crsarray() {
-  TestCrsArray< KokkosArray::Cuda >();
-}
-
-void test_device_cuda_reduce() {
-  TestReduce< long ,   KokkosArray::Cuda >( 10000000 );
-  TestReduce< double , KokkosArray::Cuda >( 1000000 );
-}
-
-void test_device_cuda_reduce_dynamic() {
-  TestReduceDynamic< long ,   KokkosArray::Cuda >( 10000000 );
-  TestReduceDynamic< double , KokkosArray::Cuda >( 1000000 );
-}
-
-void test_device_cuda_reduce_dynamic_view() {
-  TestReduceDynamicView< long ,   KokkosArray::Cuda >( 10000000 );
-  TestReduceDynamicView< double , KokkosArray::Cuda >( 1000000 );
-}
-
-void test_device_cuda_multi_reduce() {
-  TestReduceMulti< long , KokkosArray::Cuda >( 1000000 , 7 );
-}
-
-}
+#endif /* #ifndef KOKKOSARRAY_CUDA_ABORT_HPP */
 

@@ -51,6 +51,7 @@ class HostSpace ;
 }
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 #if defined( __CUDACC__ )
 
@@ -75,12 +76,6 @@ class CudaSpace ;
 
 #define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::CudaSpace
 #define KOKKOSARRAY_INLINE_FUNCTION  __device__  __host__  inline
-
-/*  If compiling for device code cannot do expression checking */
-
-#if defined( KOKKOSARRAY_EXPRESSION_CHECK )
-#undef  KOKKOSARRAY_EXPRESSION_CHECK
-#endif
 
 #else /* ! #if defined( __CUDA_ARCH__ ) */
 

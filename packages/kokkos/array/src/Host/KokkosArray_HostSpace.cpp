@@ -44,11 +44,11 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <iostream>
-#include <stdexcept>
 #include <sstream>
 
 #include <KokkosArray_HostSpace.hpp>
 #include <Host/KokkosArray_Host_Internal.hpp>
+#include <impl/KokkosArray_Error.hpp>
 #include <impl/KokkosArray_MemoryTracking.hpp>
 
 /*--------------------------------------------------------------------------*/
@@ -91,7 +91,7 @@ void * HostSpace::allocate(
           << " , " << scalar_size
           << " , " << scalar_count
           << " ) FAILED memory allocation" ;
-      throw std::runtime_error( msg.str() );
+      KokkosArray::Impl::throw_runtime_exception( msg.str() );
     }
 
     host_space_singleton()
@@ -178,7 +178,7 @@ void HostSpace::assert_master_thread( const char * const name )
     msg.append( "KokkosArray::HostSpace::assert_master_thread( " );
     msg.append( name );
     msg.append( " ) FAILED " );
-    throw std::runtime_error( msg );
+    KokkosArray::Impl::throw_runtime_exception( msg );
   }
 }
 

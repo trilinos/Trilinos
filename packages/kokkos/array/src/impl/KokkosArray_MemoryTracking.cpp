@@ -42,11 +42,10 @@
 */
 
 #include <iostream>
-
 #include <sstream>
-#include <stdexcept>
 #include <algorithm>
 
+#include <impl/KokkosArray_Error.hpp>
 #include <impl/KokkosArray_MemoryTracking.hpp>
 
 namespace KokkosArray {
@@ -123,7 +122,7 @@ void MemoryTracking::track(
         << "label(" << label << ") )"
         << " ERROR, already exists as " ;
     i->print( msg );
-    throw std::runtime_error( msg.str() );
+    throw_runtime_exception( msg.str() );
   }
 
   Info info ;
@@ -151,7 +150,7 @@ void MemoryTracking::increment( const void * ptr )
     msg << "MemoryTracking(" << (void *) this
         << ")::increment( "
         << "ptr(" << ptr << ") ) ERROR, not being tracked" ;
-    throw std::runtime_error(msg.str());
+    throw_runtime_exception( msg.str() );
   }
 
   ++( i->count );
@@ -169,7 +168,7 @@ void * MemoryTracking::decrement( const void * ptr )
     msg << "MemoryTracking(" << (void *) this
         << ")::decrement( "
         << "ptr(" << ptr << ") ) ERROR, not being tracked" ;
-    throw std::runtime_error(msg.str());
+    throw_runtime_exception( msg.str() );
   }
 
   --( i->count );

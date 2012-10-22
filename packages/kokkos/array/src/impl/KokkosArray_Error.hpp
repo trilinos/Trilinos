@@ -2,9 +2,11 @@
 //@HEADER
 // ************************************************************************
 // 
-//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//                             KokkosArray
+//         Manycore Performance-Portable Multidimensional Arrays
+//
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 // 
@@ -35,87 +37,27 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
+// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
 */
 
-#include <gtest/gtest.h>
+#ifndef KOKKOSARRAY_IMPL_ERROR_HPP
+#define KOKKOSARRAY_IMPL_ERROR_HPP
 
-#include <iostream>
+#include <string>
+#include <iosfwd>
 
-#include <KokkosArray_Host.hpp>
-#include <KokkosArray_Cuda.hpp>
+namespace KokkosArray {
+namespace Impl {
 
-#include <KokkosArray_View.hpp>
-#include <KokkosArray_CrsArray.hpp>
+void throw_runtime_exception( const std::string & );
 
-
-//----------------------------------------------------------------------------
-
-#include <TestViewImpl.hpp>
-
-#include <TestViewAPI.hpp>
-#include <TestCrsArray.hpp>
-
-#include <TestReduce.hpp>
-#include <TestMultiReduce.hpp>
-
-namespace Test {
-
-__global__
-void test_abort()
-{
-  KokkosArray::VerifyExecutionSpaceCanAccessDataSpace<
-    KokkosArray::CudaSpace ,
-    KokkosArray::HostSpace >::verify();
-}
-
-
-void test_device_cuda_view_impl()
-{
-  //  test_abort<<<32,32>>>(); // Aborts the kernel
-
-  test_view_impl< KokkosArray::Cuda >();
-}
-
-void test_device_cuda_view_api()
-{
-  TestViewAPI< double , KokkosArray::Cuda >();
-
-#if 0
-  KokkosArray::View<double, KokkosArray::Cuda > x("x");
-  KokkosArray::View<double[1], KokkosArray::Cuda > y("y");
-  // *x = 10 ;
-  // x() = 10 ;
-  // y[0] = 10 ;
-  // y(0) = 10 ;
-#endif
-}
-
-void test_device_cuda_crsarray() {
-  TestCrsArray< KokkosArray::Cuda >();
-}
-
-void test_device_cuda_reduce() {
-  TestReduce< long ,   KokkosArray::Cuda >( 10000000 );
-  TestReduce< double , KokkosArray::Cuda >( 1000000 );
-}
-
-void test_device_cuda_reduce_dynamic() {
-  TestReduceDynamic< long ,   KokkosArray::Cuda >( 10000000 );
-  TestReduceDynamic< double , KokkosArray::Cuda >( 1000000 );
-}
-
-void test_device_cuda_reduce_dynamic_view() {
-  TestReduceDynamicView< long ,   KokkosArray::Cuda >( 10000000 );
-  TestReduceDynamicView< double , KokkosArray::Cuda >( 1000000 );
-}
-
-void test_device_cuda_multi_reduce() {
-  TestReduceMulti< long , KokkosArray::Cuda >( 1000000 , 7 );
-}
+void traceback_callstack( std::ostream & );
 
 }
+}
+
+#endif /* #ifndef KOKKOSARRAY_IMPL_ERROR_HPP */
 

@@ -49,6 +49,8 @@ GNU | gnu | g++ )
   # The Trilinos build system requires '-pedantic'
   # 
   CXX="g++ -Wall -Wextra -ansi -pedantic"
+  CXX="${CXX} -rdynamic -DENABLE_TRACEBACK"
+  LIB="${LIB} -ldl"
   ;;
 #-------------------------------
 INTEL | intel | icc )
