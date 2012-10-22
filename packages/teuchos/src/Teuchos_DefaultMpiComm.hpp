@@ -71,6 +71,23 @@ namespace Teuchos {
 std::string
 mpiErrorCodeToString (const int err);
 
+namespace details {
+  /// \brief Give \c comm to MPI_Comm_free, if MPI is not yet finalized.
+  ///
+  /// This function "frees" the given communicator by giving it to
+  /// MPI_Comm_free.  It only does so if MPI_Finalize has not yet been
+  /// called.  If MPI_Finalize has been called, this function does
+  /// nothing, since it is not legal to call most MPI functions after
+  /// MPI_Finalize has been called.  This function also ignores any
+  /// errors returned by MPI_Finalize, which makes it suitable for use
+  /// in a destructor.
+  ///
+  /// \note This function may allow a memory leak in your program, if
+  ///   you have allowed the MPI_Comm to persist after MPI_Finalize
+  ///   has been called.
+  void safeCommFree (MPI_Comm* comm);
+} // namespace details
+
 #ifdef TEUCHOS_MPI_COMM_DUMP
 template<typename Ordinal, typename T>
 void dumpBuffer(
@@ -576,7 +593,7 @@ MpiComm (MPI_Comm rawMpiComm)
 
 template<typename Ordinal>
 MpiComm<Ordinal>::MpiComm (const MpiComm<Ordinal>& other) : 
-  rawMpiComm_ (MPI_COMM_NULL) // <- This will be set below
+  rawMpiComm_ (opaqueWrapper<MPI_Comm> (MPI_COMM_NULL)) // <- This will be set below
 {
   // These are logic errors, since they violate MpiComm's invariants.
   RCP<const OpaqueWrapper<MPI_Comm> > origCommPtr = other.getRawMpiComm ();
@@ -1213,24 +1230,6 @@ MpiComm<Ordinal>::wait (const Ptr<RCP<CommRequest> >& request) const
 }
 
 
-namespace details {
-  /// \brief Give \c comm to MPI_Comm_free, if MPI is not yet finalized.
-  ///
-  /// This function "frees" the given communicator by giving it to
-  /// MPI_Comm_free.  It only does so if MPI_Finalize has not yet been
-  /// called.  If MPI_Finalize has been called, this function does
-  /// nothing, since it is not legal to call most MPI functions after
-  /// MPI_Finalize has been called.  This function also ignores any
-  /// errors returned by MPI_Finalize, which makes it suitable for use
-  /// in a destructor.
-  ///
-  /// \note This function may allow a memory leak in your program, if
-  ///   you have allowed the MPI_Comm to persist after MPI_Finalize
-  ///   has been called.
-  void safeCommFree (MPI_Comm* comm);
-} // namespace details
-
-
 template<typename Ordinal>
 RCP< Comm<Ordinal> >
 MpiComm<Ordinal>::duplicate() const
@@ -1245,9 +1244,9 @@ MpiComm<Ordinal>::duplicate() const
   // Wrap the raw communicator, and pass the (const) wrapped
   // communicator to MpiComm's constructor.  We created the raw comm,
   // so we have to supply a function that frees it after use.
-  RCP<OpaqueWrapper<MPI_Comm> > wrapped = opaqueWrapper<MPI_Comm> (newRawComm, safeCommFree);
-  RCP<const MpiComm<Ordinal> > newComm (new MpiComm<Ordinal> (wrapped.getConst ()));
-  return rcp_implicit_cast<const Comm<Ordinal> > (newComm);
+  RCP<OpaqueWrapper<MPI_Comm> > wrapped = opaqueWrapper<MPI_Comm> (newRawComm, details::safeCommFree);
+  RCP<MpiComm<Ordinal> > newComm (new MpiComm<Ordinal> (wrapped.getConst ()));
+  return rcp_implicit_cast<Comm<Ordinal> > (newComm);
 }
 
 
