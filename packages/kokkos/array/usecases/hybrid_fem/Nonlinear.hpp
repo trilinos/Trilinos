@@ -51,6 +51,8 @@
 #include <KokkosArray_View.hpp>
 #include <SparseLinearSystem.hpp>
 #include <SparseLinearSystemFill.hpp>
+#include <NonlinearFunctors.hpp>
+
 #include <FEMesh.hpp>
 #include <HexElement.hpp>
 
@@ -58,7 +60,7 @@
 //----------------------------------------------------------------------------
 
 namespace HybridFEM {
-namespace NonLinear {
+namespace Nonlinear {
 
 struct PerformanceData {
   double mesh_time ;
@@ -96,12 +98,6 @@ struct PerformanceData {
     error_max = std::min( error_max , rhs.error_max );
   }
 };
-
-//----------------------------------------------------------------------------
-
-template< class MeshType , typename ScalarType > struct ElementComputation ;
-template< class MeshType , typename ScalarType > struct DirichletSolution ;
-template< class MeshType , typename ScalarType > struct DirichletResidual ;
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -498,7 +494,7 @@ void driver( const char * label , comm::Machine machine ,
 
   if ( comm::rank( machine ) == 0 ) {
     std::cout << std::endl ;
-    std::cout << "\"KokkosArray::HybridFE::NonLinear " << label << "\"" << std::endl;
+    std::cout << "\"KokkosArray::HybridFE::Nonlinear " << label << "\"" << std::endl;
     std::cout
       << "\"Size\" ,  \"Graphing\" , \"Element\" , \"Fill\" ,   \"Boundary\" ,  \"CG-Iter\" , \"CG-Iter\" , \"Newton-Iter\" , \"Max-node-error\"" 
       << std::endl
@@ -559,7 +555,7 @@ void driver( const char * label , comm::Machine machine ,
 
 //----------------------------------------------------------------------------
 
-} /* namespace NonLinear */
+} /* namespace Nonlinear */
 } /* namespace HybridFEM */
 
 

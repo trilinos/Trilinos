@@ -51,6 +51,7 @@
 #include <KokkosArray_View.hpp>
 #include <SparseLinearSystem.hpp>
 #include <SparseLinearSystemFill.hpp>
+#include <ImplicitFunctors.hpp>
 #include <FEMesh.hpp>
 
 //----------------------------------------------------------------------------
@@ -86,14 +87,6 @@ struct PerformanceData {
     cg_iteration_time = std::min( cg_iteration_time , rhs.cg_iteration_time );
   }
 };
-
-//----------------------------------------------------------------------------
-
-template< typename ScalarType , typename ScalarCoordType , class Device >
-struct ElementComputation ;
-
-template< typename ScalarType , typename ScalarCoordType , class Device >
-struct DirichletBoundary ;
 
 //----------------------------------------------------------------------------
 

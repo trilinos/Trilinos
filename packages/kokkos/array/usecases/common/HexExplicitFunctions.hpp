@@ -41,6 +41,9 @@
 //@HEADER
 */
 
+#ifndef KOKKOSARRAY_HEXEXPLICITFUNCTIONS_HPP
+#define KOKKOSARRAY_HEXEXPLICITFUNCTIONS_HPP
+
 #include <math.h>
 
 namespace Explicit {
@@ -429,4 +432,6 @@ struct Hex8Functions
 };
 
 } // namespace Explicit
+
+#endif /* #ifndef KOKKOSARRAY_HEXEXPLICITFUNCTIONS_HPP */
 

@@ -46,14 +46,45 @@
 
 #include <cmath>
 #include <impl/KokkosArray_Timer.hpp>
+#include <KokkosArray_View.hpp>
 #include <KokkosArray_CrsArray.hpp>
 
 namespace KokkosArray {
+
+template< typename ScalarType , class Device >
+struct CrsMatrix {
+  typedef Device      device_type ;
+  typedef ScalarType  value_type ;
+
+  typedef CrsArray< int , device_type , device_type , int >  graph_type ;
+  typedef View< value_type* , device_type >   coefficients_type ;
+
+  graph_type         graph ;
+  coefficients_type  coefficients ;
+};
+
+//----------------------------------------------------------------------------
+
 namespace Impl {
 
 template< class Scalar , class DeviceType , class > struct Dot ;
+
 template< class Matrix , class OutputVector , class InputVector >
 class Multiply ;
+
+}
+}
+
+/* Cuda-specific specializations */
+#if defined( __CUDACC__ )
+#include <SparseLinearSystem_Cuda.hpp>
+#endif
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
+namespace Impl {
 
 template< typename Scalar , class DeviceType >
 struct Dot< Scalar , DeviceType , Impl::unsigned_<2> >
@@ -246,6 +277,56 @@ public:
 }; // WAXPBY
 
 //----------------------------------------------------------------------------
+
+template< typename AScalarType , typename VScalarType , class DeviceType >
+struct Multiply< CrsMatrix<AScalarType,DeviceType> ,
+                 View<VScalarType*,DeviceType > ,
+                 View<VScalarType*,DeviceType > >
+{
+  typedef DeviceType                             device_type ;
+  typedef typename device_type::size_type        size_type ;
+  typedef View< VScalarType* , device_type >     vector_type ;
+  typedef CrsMatrix< AScalarType , device_type > matrix_type ;
+
+private:
+
+  matrix_type  m_A ;
+  vector_type  m_x ;
+  vector_type  m_y ;
+
+public:
+
+  //--------------------------------------------------------------------------
+
+  inline
+  void operator()( const size_type iRow ) const
+  {
+    const size_type iEntryBegin = m_A.graph.row_map[iRow];
+    const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
+
+    double sum = 0 ;
+
+    for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
+      sum += m_A.coefficients(iEntry) * m_x( m_A.graph.entries(iEntry) );
+    }
+
+    m_y(iRow) = sum ;
+  }
+
+  static void apply( const matrix_type & A ,
+                     const size_type nrow ,
+                     const size_type , // ncol ,
+                     const vector_type & x ,
+                     const vector_type & y )
+  {
+    Multiply op ;
+    op.m_A = A ;
+    op.m_x = x ;
+    op.m_y = y ;
+    parallel_for( nrow , op );
+  }
+};
+
 //----------------------------------------------------------------------------
 
 } // namespace Impl
@@ -258,19 +339,6 @@ namespace KokkosArray {
 
 //----------------------------------------------------------------------------
 
-template< typename ScalarType , class Device >
-struct CrsMatrix {
-  typedef Device      device_type ;
-  typedef ScalarType  value_type ;
-
-  typedef CrsArray< int , device_type , device_type , int >  graph_type ;
-  typedef View< value_type* , device_type >   coefficients_type ;
-
-  graph_type         graph ;
-  coefficients_type  coefficients ;
-};
-
-//----------------------------------------------------------------------------
 
 template< typename Scalar , class Device >
 void waxpby( const ParallelDataMap & data_map ,

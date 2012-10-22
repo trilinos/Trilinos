@@ -211,12 +211,12 @@ struct ShapeFunctionEvaluation {
 
 //----------------------------------------------------------------------------
 
-template< typename ScalarType , typename ScalarCoordType >
-struct ElementComputation< ScalarType , ScalarCoordType , KOKKOSARRAY_MACRO_DEVICE >
+template< typename ScalarType , typename ScalarCoordType , class DeviceType >
+struct ElementComputation
 {
-  typedef KOKKOSARRAY_MACRO_DEVICE     device_type;
+  typedef DeviceType     device_type;
   typedef ScalarType              scalar_type ;
-  typedef device_type::size_type  size_type ;
+  typedef typename device_type::size_type  size_type ;
 
   static const size_type ElementNodeCount = 8 ;
 
@@ -481,11 +481,11 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< typename ScalarType , typename ScalarCoordType >
-struct DirichletBoundary< ScalarType , ScalarCoordType , KOKKOSARRAY_MACRO_DEVICE >
+template< typename ScalarType , typename ScalarCoordType , class DeviceType >
+struct DirichletBoundary
 {
-  typedef KOKKOSARRAY_MACRO_DEVICE     device_type;
-  typedef device_type::size_type  size_type ;
+  typedef DeviceType     device_type;
+  typedef typename device_type::size_type  size_type ;
 
   static const size_type ElementNodeCount = 8 ;
 
