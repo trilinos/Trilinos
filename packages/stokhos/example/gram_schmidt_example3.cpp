@@ -182,17 +182,36 @@ int main(int argc, char **argv)
 		  solver_method_values,  solver_method_names, 
 		  "Reduced quadrature solver method");
 
+    Orthogonalization_Method quad_orthogonalization_method = HOUSEHOLDER;
+    CLP.setOption("quad_orthogonalization_method", 
+		  &quad_orthogonalization_method, 
+		  num_orthogonalization_method, 
+		  orthogonalization_method_values, 
+		  orthogonalization_method_names, 
+		  "Quadrature Orthogonalization method");
+
     bool eliminate_dependent_rows = true;
-    CLP.setOption("cpqr", "no-cpqr", &eliminate_dependent_rows, "Eliminate dependent rows in quadrature constraint matrix");
+    CLP.setOption("cpqr", "no-cpqr", &eliminate_dependent_rows, 
+		  "Eliminate dependent rows in quadrature constraint matrix");
+
+    bool use_Q = true;
+    CLP.setOption("use-Q", "no-use-Q", &use_Q, "Use Q in LP");
+
+    bool restrict_r = false;
+    CLP.setOption("restrict-rank", "no-restrict-rank", &restrict_r, 
+		  "Restrict rank in LP");
 
     double objective_value = 0.0;
-    CLP.setOption("objective_value", &objective_value, "Value for LP objective function");
+    CLP.setOption("objective_value", &objective_value, 
+		  "Value for LP objective function");
 
     bool project = true;
-    CLP.setOption("project", "no-project", &project, "Use Projected Lanczos Method");
+    CLP.setOption("project", "no-project", &project, 
+		  "Use Projected Lanczos Method");
 
     bool use_stieltjes = false;
-    CLP.setOption("stieltjes", "no-stieltjes", &use_stieltjes, "Use Old Stieltjes Method");
+    CLP.setOption("stieltjes", "no-stieltjes", &use_stieltjes, 
+		  "Use Old Stieltjes Method");
 
     CLP.parse( argc, argv );
 
@@ -212,8 +231,13 @@ int main(int argc, char **argv)
 	      << std::endl
 	      << "\tsolver_method               = " 
 	      << solver_method_names[solver_method] << std::endl
+	      << "\tquad_orthogonalization_method = " 
+	      << orthogonalization_method_names[quad_orthogonalization_method] 
+	      << std::endl
 	      << "\tcpqr                        = " << eliminate_dependent_rows 
 	      << std::endl
+	      << "\tuse-Q                       = " << use_Q << std::endl
+	      << "\trestrict-rank               = " << restrict_r << std::endl
 	      << "\tobjective_value             = " << objective_value << std::endl
 	      << "\tproject                     = " << project << std::endl
 	      << "\tstieljtes                   = " << use_stieltjes << std::endl
@@ -324,6 +348,12 @@ int main(int argc, char **argv)
     red_quad_params.set("Verbose", verbose);
     red_quad_params.set("Objective Value", objective_value);
     red_quad_params.set("Q2 Rank Threshold", rank_threshold2);
+    red_quad_params.set(
+      "Orthogonalization Method", 
+      orthogonalization_method_names[quad_orthogonalization_method]);
+    red_quad_params.set("Use Q in LP", use_Q);
+    red_quad_params.set("Restrict Rank", restrict_r);
+    red_quad_params.set("Order Restriction", 2*p2);
     Stokhos::ReducedBasisFactory<int,double> factory(params);
     Teuchos::RCP< Stokhos::ReducedPCEBasis<int,double> > gs_basis = 
       factory.createReducedBasis(p2, pces, quad, Cijk);

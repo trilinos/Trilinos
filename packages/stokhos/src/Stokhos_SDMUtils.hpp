@@ -141,6 +141,15 @@ namespace Stokhos {
   }
 #endif
 
+  //! Vector-infinity norm of a matrix
+  template <typename ordinal_type, typename scalar_type>
+  scalar_type vec_norm_inf(
+    const Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& A) {
+    Teuchos::SerialDenseMatrix<ordinal_type,scalar_type> vec_A(
+      Teuchos::View, A.values(), 1, A.numRows()*A.numCols(), 1);
+    return vec_A.normInf();
+  }
+
   //! Compute thin QR using classical Gram-Schmidt
   /*!
    * For A an m-by-n matrix computes A = Q*R with R k-by-k upper triangular,
