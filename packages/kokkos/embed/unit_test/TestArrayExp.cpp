@@ -196,12 +196,11 @@ struct TestFunctor
 
   typedef KokkosArray::View< ValueType * , device_type > vector_type ;
 
-  static const size_type N = 1000 ;
-
   const vector_type x , y , z ;
   const ValueType   a , b ;
 
-  TestFunctor()
+  explicit
+  TestFunctor( const unsigned N )
     : x("x",N), y("y",N), z("z",N)
     , a(2), b(3)
     { }
@@ -221,10 +220,9 @@ template<>
 int test_functor< TEST_KOKKOSARRAY_SPACE >()
 {
   typedef TestDevice< TEST_KOKKOSARRAY_SPACE > TestD ;
+  typedef TestD::type device_type ;
 
   if ( ! TestD::value ) return 0 ;
-
-  typedef TestD::type device_type ;
   
   enum { Count = 20 };
 
@@ -242,7 +240,9 @@ int test_functor< TEST_KOKKOSARRAY_SPACE >()
             << typeid(functor_type::vector_type::value_type).name()
             << std::endl ;
 
-  functor_type f ;
+  const unsigned N = 1000 ;
+
+  functor_type f( N );
 
   functor_type::vector_type::HostMirror x = 
     KokkosArray::create_mirror( f.x );
@@ -263,12 +263,12 @@ int test_functor< TEST_KOKKOSARRAY_SPACE >()
               << std::endl ;
   }
 
-  for ( unsigned i = 0 ; i < f.N ; ++i ) { x(i) = 1 ; }
+  for ( unsigned i = 0 ; i < N ; ++i ) { x(i) = 1 ; }
 
   KokkosArray::deep_copy( f.x , x );
   KokkosArray::deep_copy( f.y , x );
 
-  KokkosArray::parallel_for( f.N , f );
+  KokkosArray::parallel_for( N , f );
 
   KokkosArray::deep_copy( x , f.z );
 
@@ -276,4 +276,88 @@ int test_functor< TEST_KOKKOSARRAY_SPACE >()
 
   return 0 ;
 }
+
+//----------------------------------------------------------------------------
+
+template< typename ScalarType , unsigned N , class ProxyX , class ProxyY >
+KOKKOSARRAY_INLINE_FUNCTION
+double dot( const KokkosArray::Array< ScalarType , N , ProxyX > & x ,
+            const KokkosArray::Array< ScalarType , N , ProxyY > & y )
+{
+  double r = 0 ;
+  for ( unsigned i = 0 ; i < x.value_count ; ++i ) {
+    r += x[i] * y[i] ;
+  }
+  return r ;
+}
+
+template< class ScalarType , class DeviceType >
+struct TestDot
+{
+  typedef DeviceType                       device_type ;
+  typedef typename device_type::size_type  size_type ;
+
+  typedef double value_type ;
+
+  typedef KokkosArray::View< ScalarType * , device_type > vector_type ;
+
+  const vector_type x , y ;
+
+  TestDot( const vector_type & arg_x ,
+           const vector_type & arg_y )
+    : x( arg_x ), y( arg_y ) {}
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  void operator()( const size_type ip , value_type & update ) const
+    { update += dot( x(ip) , y(ip) ); }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static void init( value_type & update )
+    { update = 0 ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static void join( volatile value_type & update ,
+                    const volatile value_type & input )
+    { update += input ; }
+};
+
+
+template< class Space > int test_inner_product();
+
+template<>
+int test_inner_product< TEST_KOKKOSARRAY_SPACE >()
+{
+  typedef TestDevice< TEST_KOKKOSARRAY_SPACE > TestD ;
+  typedef TestD::type device_type ;
+
+  if ( ! TestD::value ) return 0 ;
+
+  TestD device ;
+
+  enum { Count = 20 };
+
+  typedef KokkosArray::Array<double,Count> value_type ;
+
+  typedef TestDot< value_type , device_type > functor_type ;
+
+  const unsigned N = 1000 ;
+
+  functor_type::vector_type x("x",N);
+  functor_type::vector_type y("y",N);
+
+  functor_type::vector_type::HostMirror hx = KokkosArray::create_mirror_view( x );
+  functor_type::vector_type::HostMirror hy = KokkosArray::create_mirror_view( y );
+  
+  for ( unsigned i = 0 ; i < N ; ++i ) { hx(i) = 1 ; hy(i) = 2 ; }
+
+  KokkosArray::deep_copy( x , hx );
+  KokkosArray::deep_copy( y , hy );
+
+  double r = KokkosArray::parallel_reduce( N , functor_type(x,y) );
+
+  std::cout << "test_inner_product r = " << r << std::endl ;
+
+  return 0 ;
+}
+
 

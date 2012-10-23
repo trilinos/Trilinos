@@ -116,7 +116,8 @@ private:
 
 public:
 
-  typedef T  value_type ;
+  typedef T             value_type ;
+  static const unsigned value_count = N ;
 
   //------------------------------------
 
@@ -240,7 +241,8 @@ private:
 
 public:
 
-  typedef T  value_type ;
+  typedef T             value_type ;
+  static const unsigned value_count = N ;
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
@@ -298,7 +300,8 @@ private:
 
 public:
 
-  typedef T  value_type ;
+  typedef T             value_type ;
+  static const unsigned value_count = N ;
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
@@ -357,7 +360,8 @@ private:
 
 public:
 
-  typedef T  value_type ;
+  typedef T             value_type ;
+  static const unsigned value_count = N ;
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
@@ -393,7 +397,8 @@ private:
 
 public:
 
-  typedef T  value_type ;
+  typedef T             value_type ;
+  static const unsigned value_count = N ;
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
@@ -440,7 +445,8 @@ private:
 
 public:
 
-  typedef T  value_type ;
+  typedef T             value_type ;
+  static const unsigned value_count = N ;
 
   //------------------------------------
 
@@ -506,13 +512,14 @@ class Array< T , N , volatile ArrayProxyStrided >
 private:
 
   volatile T * const elems ;
-  const unsigned             stride ;
+  const unsigned     stride ;
 
   Array();
 
 public:
 
-  typedef T  value_type ;
+  typedef T             value_type ;
+  static const unsigned value_count = N ;
 
   //------------------------------------
 
@@ -577,13 +584,14 @@ class Array< T , N , const ArrayProxyStrided >
 private:
 
   const T * const elems ;
-  const unsigned          stride ;
+  const unsigned  stride ;
 
   Array();
 
 public:
 
-  typedef T  value_type ;
+  typedef T             value_type ;
+  static const unsigned value_count = N ;
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
@@ -613,7 +621,8 @@ private:
 
 public:
 
-  typedef T  value_type ;
+  typedef T             value_type ;
+  static const unsigned value_count = N ;
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION

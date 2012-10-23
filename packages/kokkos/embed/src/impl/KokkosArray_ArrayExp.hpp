@@ -218,7 +218,7 @@ KOKKOSARRAY_BINARYEXPRESSIONTYPE(int,unsigned int)
 namespace KokkosArray {
 namespace Impl {
 
-template< typename Type , unsigned N >
+template< typename Type >
 struct ArrayWeakOrdering
 {
   enum Result { EQUAL , LESS , GREATER , NOT_ORDERED };
@@ -229,7 +229,7 @@ struct ArrayWeakOrdering
   {
     Result result = EQUAL ; // Assume equal for 0 == Count
 
-    for ( unsigned i = 0 ; i < N && result != NOT_ORDERED ; ++i ) {
+    for ( unsigned i = 0 ; i < lhs.value_count && result != NOT_ORDERED ; ++i ) {
       const Type L = lhs[i] ;
       const Type R = rhs[i] ;
 
@@ -246,7 +246,7 @@ struct ArrayWeakOrdering
   {
     Result result = EQUAL ; // Assume equal for 0 == Count
 
-    for ( unsigned i = 0 ; i < N && result != NOT_ORDERED ; ++i ) {
+    for ( unsigned i = 0 ; i < lhs.value_count && result != NOT_ORDERED ; ++i ) {
       const Type L = lhs[i] ;
 
       if      ( L < R ) { result = result != GREATER ? LESS : NOT_ORDERED ; }
@@ -262,7 +262,7 @@ struct ArrayWeakOrdering
   {
     Result result = EQUAL ; // Assume equal for 0 == Count
 
-    for ( unsigned i = 0 ; i < N && result != NOT_ORDERED ; ++i ) {
+    for ( unsigned i = 0 ; i < rhs.value_count && result != NOT_ORDERED ; ++i ) {
       const Type R = rhs[i] ;
 
       if      ( L < R ) { result = result != GREATER ? LESS : NOT_ORDERED ; }

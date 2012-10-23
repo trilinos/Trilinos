@@ -64,7 +64,7 @@ operator KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR
   ( Array< T , N , ProxyLHS > & lhs ,
     Array< T , N , ProxyRHS > & rhs )
 {
-  for ( unsigned i = 0 ; i < N ; ++i ) {
+  for ( unsigned i = 0 ; i < lhs.value_count ; ++i ) {
     lhs[i] KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR rhs[i] ;
   }
   return lhs ;
@@ -76,7 +76,7 @@ Array< T , N , Proxy > &
 operator KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR
   ( Array< T , N , Proxy > & lhs , const RHS rhs )
 {
-  for ( unsigned i = 0 ; i < N ; ++i ) {
+  for ( unsigned i = 0 ; i < lhs.value_count ; ++i ) {
     lhs[i] KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR rhs ;
   }
   return lhs ;
@@ -690,7 +690,7 @@ bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
 {
   typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type T ;
 
-  typedef Impl::ArrayWeakOrdering<T,N> WeakOrdering ;
+  typedef Impl::ArrayWeakOrdering<T> WeakOrdering ;
 
   const typename WeakOrdering::Result result =
     WeakOrdering::compare_array_array( lhs , rhs );
@@ -707,7 +707,7 @@ bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
 {
   typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type T ;
 
-  typedef Impl::ArrayWeakOrdering<T,N> WeakOrdering ;
+  typedef Impl::ArrayWeakOrdering<T> WeakOrdering ;
 
   const typename WeakOrdering::Result result =
     WeakOrdering::compare_array_array( lhs , rhs );
@@ -724,7 +724,7 @@ bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
 {
   typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type T ;
 
-  typedef Impl::ArrayWeakOrdering<T,N> WeakOrdering ;
+  typedef Impl::ArrayWeakOrdering<T> WeakOrdering ;
 
   const typename WeakOrdering::Result result =
     WeakOrdering::compare_array_array( lhs , rhs );
@@ -741,7 +741,7 @@ bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
 {
   typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type T ;
 
-  typedef Impl::ArrayWeakOrdering<T,N> WeakOrdering ;
+  typedef Impl::ArrayWeakOrdering<T> WeakOrdering ;
 
   const typename WeakOrdering::Result result =
     WeakOrdering::compare_array_array( lhs , rhs );
@@ -760,7 +760,7 @@ bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
 {
   typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type T ;
 
-  typedef Impl::ArrayWeakOrdering<T,N> WeakOrdering ;
+  typedef Impl::ArrayWeakOrdering<T> WeakOrdering ;
 
   const typename WeakOrdering::Result result =
     WeakOrdering::compare_value_array( lhs , rhs );
@@ -777,7 +777,7 @@ bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
 {
   typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type T ;
 
-  typedef Impl::ArrayWeakOrdering<T,N> WeakOrdering ;
+  typedef Impl::ArrayWeakOrdering<T> WeakOrdering ;
 
   const typename WeakOrdering::Result result =
     WeakOrdering::compare_value_array( lhs , rhs );
@@ -797,7 +797,7 @@ bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
 {
   typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type T ;
 
-  typedef Impl::ArrayWeakOrdering<T,N> WeakOrdering ;
+  typedef Impl::ArrayWeakOrdering<T> WeakOrdering ;
 
   const typename WeakOrdering::Result result =
     WeakOrdering::compare_array_value( lhs , rhs );
@@ -814,7 +814,7 @@ bool operator KOKKOSARRAY_ARRAY_WEAK_ORDERING_OPERATOR
 {
   typedef typename BinaryExpressionType<TypeLHS,TypeRHS>::type T ;
 
-  typedef Impl::ArrayWeakOrdering<T,N> WeakOrdering ;
+  typedef Impl::ArrayWeakOrdering<T> WeakOrdering ;
 
   const typename WeakOrdering::Result result =
     WeakOrdering::compare_array_value( lhs , rhs );
