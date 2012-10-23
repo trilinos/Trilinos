@@ -12,6 +12,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Iterators.hpp>
+#include <stk_mesh/baseImpl/BucketFamily.hpp>
 
 namespace stk {
 namespace mesh {
@@ -107,6 +108,20 @@ public:
     return stk::mesh::get_bucket_range(m_buckets, itr);
   }
 
+  ////
+  //// Experimental section.
+  ////
+
+  // Assuming that everything else is already up-to-date, update the contents of
+  // m_bucket_families.
+  void update_bucket_families();
+
+  std::vector<BucketFamily> get_bucket_families(EntityRank rank) const
+  {
+      return m_bucket_families[rank];
+  }
+
+
 private:
   BucketRepository();
 
@@ -116,6 +131,8 @@ private:
   Bucket                              * m_nil_bucket ; // nil bucket
 
   EntityRepository                    & m_entity_repo ;
+
+  std::vector<std::vector<BucketFamily> >         m_bucket_families;  // Experimental.
 };
 
 

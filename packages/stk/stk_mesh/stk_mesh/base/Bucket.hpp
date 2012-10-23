@@ -45,6 +45,7 @@ namespace stk {
 namespace mesh {
 
 namespace impl {
+class BucketFamily;
 class BucketRepository;
 } // namespace impl
 
@@ -115,6 +116,8 @@ private:
   unsigned char* m_field_data;
   unsigned char* m_field_data_end;
 
+  impl::BucketFamily    *m_bucket_family;
+
 
 #ifdef SIERRA_MIGRATION
   const void*            m_fmwk_mesh_bulk_data;
@@ -126,13 +129,13 @@ public:
   ////
   //// New API functions
   ////
-//   void add_entities_impl(size_t how_many);
+//   void add_entities_impl(size_t how_many); /* add to end of this bucket */
 
-//   void remove_entities_impl(size_t how_many);
+//   void remove_entities_impl(size_t how_many); /* remove from end of this bucket */
 
-//   void move_entities_impl(partition_impl& to, size_t how_many);
+//   void move_entities_impl(destination_bucket& to, size_t how_many); /* move from end of this to end of destination bucket *.
 
-//   void swap(partition_offset first, partition_offset second);
+//   void swap(partition_offset first, partition_offset second);  /* swaps two entities in this bucket */
   ////
   //// End New API functions.
   ////

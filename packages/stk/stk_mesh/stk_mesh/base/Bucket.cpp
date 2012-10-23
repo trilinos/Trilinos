@@ -86,6 +86,7 @@ Bucket::Bucket( BulkData & arg_mesh ,
   , m_entities(arg_capacity)
   , m_field_data(NULL)
   , m_field_data_end(NULL)
+  , m_bucket_family(NULL)
 {
   //calculate the size of the field_data
 

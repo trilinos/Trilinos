@@ -563,6 +563,44 @@ void BucketRepository::internal_propagate_relocation( Entity & entity )
   }
 }
 
+void BucketRepository::update_bucket_families()
+{
+    m_bucket_families.clear();
+    m_bucket_families.resize(4);
+
+    for ( EntityRank entity_rank = 0 ;
+        entity_rank < m_buckets.size() ; ++entity_rank )
+    {
+      std::vector<Bucket*> & buckets = m_buckets[ entity_rank ];
+
+      size_t begin_family = 0 ; // Offset to first bucket of the family
+      size_t end_family = 0 ; // Offset to end   bucket of the family
+
+      //loop over families
+      for ( ; begin_family < buckets.size() ; begin_family = end_family )
+      {
+        m_bucket_families[entity_rank].push_back(BucketFamily(entity_rank));
+        BucketFamily &bucket_family = m_bucket_families[entity_rank].back();
+        bucket_family.m_stkPartition = buckets[begin_family]->key_vector();
+
+        Bucket * last_bucket_in_family = buckets[begin_family]->last_bucket_in_family();
+
+        // Determine offset to the end bucket in this family:
+        while ((end_family < buckets.size()) && (last_bucket_in_family != buckets[end_family]))
+        {
+            buckets[end_family]->m_bucket_family = &bucket_family;
+            ++end_family ;
+        }
+        if (end_family < buckets.size())
+        {
+            ++end_family ; //increment past the end
+        }
+        bucket_family.m_beginBucketIndex = static_cast<unsigned>(begin_family);
+        bucket_family.m_endBucketIndex = static_cast<unsigned>(end_family);
+      }
+    }
+}
+
 
 } // namespace impl
 } // namespace mesh
