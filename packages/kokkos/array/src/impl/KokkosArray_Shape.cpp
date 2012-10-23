@@ -43,7 +43,7 @@
 
 
 #include <sstream>
-#include <stdexcept>
+#include <impl/KokkosArray_Error.hpp>
 #include <impl/KokkosArray_Shape.hpp>
 
 //----------------------------------------------------------------------------
@@ -101,10 +101,10 @@ void assert_shapes_are_equal_throw(
   if ( 7 < y_rank ) { msg << " " << y_N7 ; }
   msg << " ) } )" ;
 
-  throw std::runtime_error( msg.str() );
+  throw_runtime_exception( msg.str() );
 }
 
-void assert_shape_bounds_throw(
+void AssertShapeBoundsAbort< KokkosArray::HostSpace >::apply(
   const size_t rank ,
   const size_t n0 , const size_t n1 , 
   const size_t n2 , const size_t n3 ,
@@ -117,7 +117,7 @@ void assert_shape_bounds_throw(
   const size_t i6 , const size_t i7 )
 {
   std::ostringstream msg ;
-  msg << "KokkosArray::Impl::assert_shape_bounds_throw( shape = {" ;
+  msg << "KokkosArray::Impl::AssertShapeBoundsAbort( shape = {" ;
   if ( 0 < rank ) { msg << " " << n0 ; }
   if ( 1 < rank ) { msg << " " << n1 ; }
   if ( 2 < rank ) { msg << " " << n2 ; }
@@ -137,7 +137,7 @@ void assert_shape_bounds_throw(
   if ( 7 < rank ) { msg << " " << i7 ; }
   msg << " } )" ;
 
-  throw std::runtime_error( msg.str() );
+  throw_runtime_exception( msg.str() );
 }
 
 void assert_shape_effective_rank1_at_leastN_throw(
@@ -161,7 +161,7 @@ void assert_shape_effective_rank1_at_leastN_throw(
   if ( 7 < x_rank ) { msg << " " << x_N7 ; }
   msg << " } N = " << N0 << " )" ;
 
-  throw std::runtime_error( msg.str() );
+  throw_runtime_exception( msg.str() );
 }
 
 

@@ -46,6 +46,7 @@
 
 #include <KokkosArray_Host.hpp>
 #include <Host/KokkosArray_Host_Internal.hpp>
+#include <impl/KokkosArray_Error.hpp>
 
 /*--------------------------------------------------------------------------*/
 /* Standard 'C' libraries */
@@ -54,7 +55,6 @@
 /* Standard 'C++' libraries */
 #include <limits>
 #include <iostream>
-#include <stdexcept>
 #include <sstream>
 
 /*--------------------------------------------------------------------------*/
@@ -223,7 +223,7 @@ HostInternal::HostInternal()
   m_worker = NULL ;
 
   if ( ! is_master_thread() ) {
-    throw std::runtime_error( std::string("KokkosArray::Impl::HostInternal FAILED : not initialized on the master thread"));
+    KokkosArray::Impl::throw_runtime_exception( std::string("KokkosArray::Impl::HostInternal FAILED : not initialized on the master thread") );
   }
 
   // Master thread:
@@ -484,7 +484,7 @@ void HostInternal::verify_inactive( const char * const method ) const
     else {
       msg << "Functor is executing." ;
     }
-    throw std::runtime_error( msg.str() );
+    KokkosArray::Impl::throw_runtime_exception( msg.str() );
   }
 }
 
@@ -587,7 +587,7 @@ void HostInternal::initialize( const unsigned gang_count ,
       msg << " : Spawning or cpu-binding the threads" ;
     }
 
-    throw std::runtime_error( msg.str() );
+    KokkosArray::Impl::throw_runtime_exception( msg.str() );
   }
 
   resize_reduce_scratch( 1024 );

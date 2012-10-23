@@ -48,8 +48,6 @@
 
 namespace Test {
 
-extern void test_device_cuda_init();
-
 class cuda : public ::testing::Test {
 protected:
   static void SetUpTestCase()

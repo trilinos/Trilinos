@@ -66,7 +66,7 @@ namespace Teuchos {
  * opaqueWrapper() nonmember template function.  The <i>type</i> of an
  * RCP to an opaque object T is <tt>RCP<OpaqueWrapper<T> ></tt>.
  *
- * \subsection Teuchos_OpaqueWrapper_Prereq Prerequisites
+ * \section Teuchos_OpaqueWrapper_Prereq Prerequisites
  *
  * In order to understand this documentation, you must first have
  * learned how to use RCP (Teuchos' reference-counted pointer class)
@@ -75,7 +75,7 @@ namespace Teuchos {
  * for distributed-memory parallel programming), but this is not
  * required.
  *
- * \subsection Teuchos_OpaqueWrapper_Handles What are opaque objects (a.k.a. handles)?
+ * \section Teuchos_OpaqueWrapper_Handles What are opaque objects (a.k.a. handles)?
  *
  * Many different software libraries use the <i>opaque object</i> or
  * opaque handle idiom to hide the internals of a data structure from
@@ -101,7 +101,7 @@ namespace Teuchos {
  * you can take.  This is needed in order to wrap an opaque object in
  * a RCP, for example.
  *
- * \subsection Teuchos_OpaqueWrapper_Special Why do opaque handles need special treatment?
+ * \section Teuchos_OpaqueWrapper_Special Why do opaque handles need special treatment?
  *
  * This class was motivated in particular by MPI's common use of the
  * opaque object idiom.  For MPI, passing MPI_Comm, MPI_Datatype, and
@@ -173,7 +173,7 @@ namespace Teuchos {
  * others must not.  (Compare std::ostream; std::cout should never be
  * closed by typical user code, but an output file should be closed.)
  *
- * \subsection Teuchos_OpaqueWrapper_How How to use OpaqueWrapper
+ * \section Teuchos_OpaqueWrapper_How How to use OpaqueWrapper
  *
  * We fix this problem by providing the OpaqueWrapper template base
  * class and the opaqueWrapper() nonmember template function.  Use
@@ -196,6 +196,7 @@ namespace Teuchos {
  if (errCode != MPI_SUCCESS) {
    // ... Handle the error ...
  }
+ // See note below on using MPI_Comm_free here.
  RCP<OpaqueWrapper<MPI_Comm> > comm = opaqueWrapper (rawComm, MPI_Comm_free);
  \endcode
 
@@ -220,6 +221,66 @@ namespace Teuchos {
  * Users are not allowed to construct an OpaqueWrapper object
  * explicitly.  You must use the opaqueWrapper() nonmember function to
  * do so.
+ *
+ * \section Teuchos_OpaqueWrapper_Note Note on <tt>MPI_*_free</tt> functions, memory leaks, and MPI_Finalize
+ *
+ * This is a technical note that does not apply to most users.  It
+ * will only apply to you if you are very concerned about small memory
+ * leaks at the end of your program.  The explanations require
+ * familiarity with RCP semantics and some familiarity with MPI's
+ * attributes (a.k.a. key/value pair) facility.
+ *
+ * Functions of the form <tt>MPI_*_free</tt> (such as MPI_Comm_free)
+ * should not be called after MPI_Finalize has been called.  
+ * This issue has come up before; see e.g., 
+ * <a href="https://software.sandia.gov/bugzilla/show_bug.cgi?id=5724">Bug 5724</a>.
+ * There are two ways to deal with this:
+ * 1. Make sure that all references to wrapped Opaque instances go
+ *    away before MPI_Finalize is called.
+ * 2. Write (or use) a "free" function that checks first whether
+ *    MPI_Finalize has been called (by calling MPI_Finalized), before
+ *    invoking any <tt>MPI_*_free</tt> functions.
+ *
+ * The details::safeCommFree function is a "free" function for
+ * MPI_Comm that does the latter; it is declared in
+ * Teuchos_DefaultMpiComm.hpp.  The "check MPI_Finalized first"
+ * approach may permit a small memory leak, if your program allows
+ * references to wrapped Opaque instances to persist past
+ * MPI_Finalize, and if those Opaque instances need to be freed.  This
+ * should not matter if the MPI implementation correctly frees all
+ * resources before your program exits.
+ *
+ * If small memory leaks are not acceptable, even at program completion, 
+ * then you should start with the approach discussed in Section 8.7.1 of the 
+ * <a href="http://www.mpi-forum.org/docs/mpi-3.0/mpi30-report.pdf">MPI 3.0 Standard</a>,
+ * namely, attaching attributes to MPI_COMM_SELF, with functions
+ * that are called automatically by MPI_Finalize before it tears down
+ * MPI_COMM_SELF.  Here are two ways to use this technique.
+ *
+ * First, you could forgo providing a "free" function to
+ * opaqueWrapper(), and simply attach the raw opaque handle as an
+ * attribute to MPI_COMM_SELF.  This makes the MPI_Comm persist
+ * until MPI_Finalize is called.
+ *
+ * Second, if you don't want the MPI_Comm to persist that long, you
+ * could develop a custom reference counting mechanism that
+ * interoperates with MPI's attributes.  You could do this with just
+ * a combination of RCP and the MPI attributes facility.  For example:
+ * 1. Give a "free" function to opaqueWrapper() that first checks
+ *    whether the Opaque handle is invalid (e.g.,
+ *    <tt>MPI_*_NULL</tt>), frees it if it is not invalid, and then
+ *    invalidates the Opaque handle after freeing it (e.g., by setting
+ *    it to <tt>MPI_*_NULL</tt>).  Many (all?) <tt>MPI_*_free</tt>
+ *    functions invalidate their input handle anyway.
+ * 2. Make the <tt>RCP<OpaqueWrapper<Opaque> ></tt> itself an
+ *    attribute of MPI_COMM_SELF.  (You'll have to pass in as a "new"
+ *    <tt>RCP*</tt>.)
+ * 3. Set the attribute's "free" function to call the appropriate
+ *    <tt>MPI_*_free</tt> function if the underlying Opaque handle has
+ *    not been invalidated.  This bypasses the OpaqueWrapper's normal
+ *    "free" function mechanism and invalidates all references.  This
+ *    is what you want, since no user code should use MPI objects
+ *    after MPI_Finalize has been called.
  *
  * \ingroup teuchos_mem_mng_grp
  */

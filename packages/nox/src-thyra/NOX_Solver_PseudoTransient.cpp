@@ -111,7 +111,7 @@ void NOX::Solver::PseudoTransient::init()
   time = 0.0;
 
   use_transient_residual = 
-    paramsPtr->sublist("Pseudo-Transient").get<double>("Use Transient Residual in Direction Computation",true);
+    paramsPtr->sublist("Pseudo-Transient").get<bool>("Use Transient Residual in Direction Computation",true);
 
   max_pseudo_transient_iterations = 
     paramsPtr->sublist("Pseudo-Transient").get<int>("Maximum Number of Pseudo-Transient Iterations",

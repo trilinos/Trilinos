@@ -60,7 +60,7 @@ struct initialize_node<Scalar, KOKKOSARRAY_MACRO_DEVICE>
   {}
 
 
-  KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( int inode )const {
 
     const int begin = region.node_elem_offset(inode);

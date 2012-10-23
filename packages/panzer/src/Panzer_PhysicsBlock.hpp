@@ -175,6 +175,10 @@ namespace panzer {
     Teuchos::RCP<PhysicsBlock> copyWithCellData(const panzer::CellData & cell_data,
                                                 const panzer::EquationSetFactory & factory) const;
 
+    /** Copy using the "Parrot" equation sets.
+      */
+    Teuchos::RCP<PhysicsBlock> copyWithCellData(const panzer::CellData & cell_data) const;
+
     Teuchos::RCP<panzer::GlobalData> globalData() const;
 
     Teuchos::RCP<const FieldLibrary> getFieldLibrary() const 
