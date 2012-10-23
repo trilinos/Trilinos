@@ -53,8 +53,8 @@
  *   - Symmetrization
  *   - Filtering
  */
-#ifndef __MATRIX_H
-#define __MATRIX_H
+#ifndef __ZOLTAN_MATRIX_H
+#define __ZOLTAN_MATRIX_H
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
