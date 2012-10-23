@@ -285,7 +285,7 @@ double dot( const KokkosArray::Array< ScalarType , N , ProxyX > & x ,
             const KokkosArray::Array< ScalarType , N , ProxyY > & y )
 {
   double r = 0 ;
-  for ( unsigned i = 0 ; i < x.value_count ; ++i ) {
+  for ( unsigned i = 0 ; i < x.size() ; ++i ) {
     r += x[i] * y[i] ;
   }
   return r ;

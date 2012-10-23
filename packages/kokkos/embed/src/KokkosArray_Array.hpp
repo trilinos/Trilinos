@@ -116,8 +116,13 @@ private:
 
 public:
 
-  typedef T             value_type ;
-  static const unsigned value_count = N ;
+  typedef T value_type ;
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  unsigned size() const { return N ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  unsigned size() const volatile { return N ; }
 
   //------------------------------------
 
@@ -139,7 +144,7 @@ public:
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
   const volatile value_type & operator[]( const iType & i ) const volatile
-    { check_bounds(i); return elems[i] ; }
+    { array_check_bounds(i,N); return elems[i] ; }
 
   //------------------------------------
 
@@ -213,437 +218,168 @@ public:
 
   void print_expression( std::ostream & s ) const
   { s << "[" << (void*) elems << "]" ; }
-  
 };
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-// four cv-qualified possibilities:
-//
-//   Array<T,C,                 ArrayProxyContiguous >
-//   Array<T,C,       volatile  ArrayProxyContiguous >
-//   Array<T,C, const           ArrayProxyContiguous >
-//   Array<T,C, const volatile  ArrayProxyContiguous >
-//
-struct ArrayProxyContiguous {};
-
-/** \brief  Static array reference to a contiguous
- *          to a chunk of memory.
- */
-template< typename T , unsigned N >
-class Array< T , N , ArrayProxyContiguous >
-{
-private:
-
-  T * const elems ;
-
-  Array();
-
-public:
-
-  typedef T             value_type ;
-  static const unsigned value_count = N ;
-
-  template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
-  value_type & operator[]( const iType & i )
-    { array_check_bounds(i,N); return elems[i]; }
-
-  template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
-  const value_type & operator[]( const iType & i ) const
-    { array_check_bounds(i,N); return elems[i]; }
-
-  //------------------------------------
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array( const Array & rhs ) : elems( rhs.elems ) {}
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  explicit
-  Array( value_type * rhs ) : elems( rhs ) {}
-
-  //------------------------------------
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array & operator = ( const Array & rhs )
-  { for (unsigned i = 0 ; i < N ; ++i) elems[i] = rhs[i] ; return *this ; }
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array & operator = ( const value_type rhs )
-  { for (unsigned i = 0 ; i < N ; ++i) elems[i] = rhs ; return *this ; }
-
-  template< typename rT , class P >
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array & operator = ( const Array< rT , N , P > & rhs )
-  { for (unsigned i = 0 ; i < N ; ++i) elems[i] = rhs[i] ; return *this ; }
-
-  template< typename rT , class P >
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array & operator = ( const volatile Array< rT , N , P > & rhs )
-  { for (unsigned i = 0 ; i < N ; ++i) elems[i] = rhs[i] ; return *this ; }
-
-  //------------------------------------
-
-  void print_expression( std::ostream & s ) const
-  { s << "[" << (void*) elems << "]" ; }
-};
-
-template< typename T , unsigned N >
-class Array< T , N , volatile ArrayProxyContiguous >
-{
-private:
-
-  volatile T * const elems ;
-
-  Array();
-
-public:
-
-  typedef T             value_type ;
-  static const unsigned value_count = N ;
-
-  template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
-  volatile value_type & operator[]( const iType & i )
-    { array_check_bounds(i,N); return elems[i] ; }
-
-  template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
-  const volatile value_type & operator[]( const iType & i ) const
-    { array_check_bounds(i,N); return elems[i] ; }
-
-  //------------------------------------
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array( const Array & rhs ) : elems( rhs.elems ) {}
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  explicit
-  Array( volatile value_type * rhs ) : elems( rhs ) {}
-
-  //------------------------------------
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array & operator = ( const Array & rhs )
-  { for (unsigned i = 0 ; i < N ; ++i) elems[i] = rhs[i] ; return *this ; }
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array & operator = ( const value_type rhs )
-  { for (unsigned i = 0 ; i < N ; ++i) elems[i] = rhs ; return *this ; }
-
-  template< typename rT , class P >
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array & operator = ( const Array< rT , N , P > & rhs )
-  { for (unsigned i = 0 ; i < N ; ++i) elems[i] = rhs[i] ; return *this ; }
-
-  template< typename rT , class P >
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array & operator = ( const volatile Array< rT , N , P > & rhs )
-  { for (unsigned i = 0 ; i < N ; ++i) elems[i] = rhs[i] ; return *this ; }
-
-  //------------------------------------
-
-  void print_expression( std::ostream & s ) const
-  { s << "[V " << (void*) elems << "]" ; }
-};
-
-template< typename T , unsigned N >
-class Array< T , N , const ArrayProxyContiguous >
-{
-private:
-
-  const T * const elems ;
-
-  Array();
-  Array & operator = ( const Array & );
-
-public:
-
-  typedef T             value_type ;
-  static const unsigned value_count = N ;
-
-  template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
-  const value_type & operator[]( const iType & i ) const
-    { array_check_bounds(i,N); return elems[i] ; }
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array( const Array & rhs ) : elems( rhs.elems ) {}
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  explicit
-  Array( const value_type * rhs ) : elems( rhs ) {}
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  explicit
-  Array( const Array<T,N,void> & rhs ) : elems( rhs.elems ) {}
-
-  //------------------------------------
-
-  void print_expression( std::ostream & s ) const
-    { s << "[C " << (void*) elems << "]" ; }
-};
-
-template< typename T , unsigned N >
-class Array< T , N , const volatile ArrayProxyContiguous >
-{
-private:
-
-  const volatile T * const elems ;
-
-  Array();
-  Array & operator = ( const Array & );
-
-public:
-
-  typedef T             value_type ;
-  static const unsigned value_count = N ;
-
-  template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
-  const volatile value_type & operator[]( const iType & i ) const
-    { array_check_bounds(i,N); return elems[i] ; }
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array( const Array & rhs ) : elems( rhs.elems ) {}
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  explicit
-  Array( const volatile value_type * rhs ) : elems( rhs ) {}
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  explicit
-  Array( const volatile Array<T,N,void> & rhs ) : elems( rhs.elems ) {}
-
-  //------------------------------------
-
-  void print_expression( std::ostream & s ) const
-  { s << "[CV " << (void*) elems << "]" ; }
-};
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-// four cv-qualified possibilities:
-//
-//   Array<T,C,                 ArrayProxyStrided >
-//   Array<T,C,       volatile  ArrayProxyStrided >
-//   Array<T,C, const           ArrayProxyStrided >
-//   Array<T,C, const volatile  ArrayProxyStrided >
-//
-struct ArrayProxyStrided {};
-
-template< typename T , unsigned N >
-class Array< T , N , ArrayProxyStrided >
-{
-private:
-
-  T * const elems ;
-  const unsigned    stride ;
-
-  Array();
-
-public:
-
-  typedef T             value_type ;
-  static const unsigned value_count = N ;
-
-  //------------------------------------
-
-  template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
-  value_type & operator[]( const iType & i )
-    { array_check_bounds(i,N); return elems[i*stride] ; }
-
-  template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
-  const value_type & operator[]( const iType & i ) const
-    { array_check_bounds(i,N); return elems[i*stride] ; }
-
-  //------------------------------------
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array( const Array & rhs ) : elems( rhs.elems ), stride( rhs.stride ) {}
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array( value_type * rhs_pointer , unsigned rhs_stride )
-    : elems( rhs_pointer ), stride( rhs_stride ) {}
-
-  //------------------------------------
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array & operator = ( const Array & rhs )
-  {
-    for (unsigned i = 0 ; i < N ; ++i) elems[i*stride] = rhs[i] ;
-    return *this ;
-  }
-
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array & operator = ( const value_type rhs )
-  {
-    for (unsigned i = 0 ; i < N ; ++i) elems[i*stride] = rhs ;
-    return *this ;
-  }
-
-  template< typename rT , class P >
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array & operator = ( const Array< rT , N , P > & rhs )
-  {
-    for (unsigned i = 0 ; i < N ; ++i) elems[i*stride] = rhs[i] ;
-    return *this ;
-  }
-
-  template< typename rT , class P >
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array & operator = ( const volatile Array< rT , N , P > & rhs )
-  {
-    for (unsigned i = 0 ; i < N ; ++i) elems[i*stride] = rhs[i] ;
-    return *this ;
-  }
-
-  void print_expression( std::ostream & s ) const
-  { s << "[" << (void*) elems << " : " << stride << "]" ; }
-};
-
-template< typename T , unsigned N >
-class Array< T , N , volatile ArrayProxyStrided >
-{
-private:
-
-  volatile T * const elems ;
-  const unsigned     stride ;
-
-  Array();
-
-public:
-
-  typedef T             value_type ;
-  static const unsigned value_count = N ;
-
-  //------------------------------------
-
-  template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
-  volatile value_type & operator[]( const iType & i )
-    { array_check_bounds(i,N); return elems[i*stride] ; }
-
-  template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
-  const volatile value_type & operator[]( const iType & i ) const
-    { array_check_bounds(i,N); return elems[i*stride] ; }
-
-  //------------------------------------
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array( const Array & rhs ) : elems( rhs.elems ), stride( rhs.stride ) {}
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array( volatile value_type * rhs_pointer , unsigned rhs_stride )
-    : elems( rhs_pointer ), stride( rhs_stride ) {}
-
-  //------------------------------------
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array & operator = ( const Array & rhs )
-  {
-    for (unsigned i = 0 ; i < N ; ++i) elems[i*stride] = rhs[i] ;
-    return *this ;
-  }
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array & operator = ( const value_type rhs )
-  {
-    for (unsigned i = 0 ; i < N ; ++i) elems[i*stride] = rhs ;
-    return *this ;
-  }
-
-  template< typename rT , class P >
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array & operator = ( const Array< rT , N , P > & rhs )
-  {
-    for (unsigned i = 0 ; i < N ; ++i) elems[i*stride] = rhs[i] ;
-    return *this ;
-  }
-
-  template< typename rT , class P >
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array & operator = ( const volatile Array< rT , N , P > & rhs )
-  {
-    for (unsigned i = 0 ; i < N ; ++i) elems[i*stride] = rhs[i] ;
-    return *this ;
-  }
-
-  void print_expression( std::ostream & s ) const
-  { s << "[V " << (void*) elems << " : " << stride << "]" ; }
-};
-
-template< typename T , unsigned N >
-class Array< T , N , const ArrayProxyStrided >
-{
-private:
-
-  const T * const elems ;
-  const unsigned  stride ;
-
-  Array();
-
-public:
-
-  typedef T             value_type ;
-  static const unsigned value_count = N ;
-
-  template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
-  const value_type & operator[]( const iType & i ) const
-    { array_check_bounds(i,N); return elems[i*stride] ; }
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array( const Array & rhs ) : elems( rhs.elems ), stride( rhs.stride ) {}
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array( const value_type * rhs , const unsigned stride )
-    : elems( rhs ), stride( stride ) {}
-
-  void print_expression( std::ostream & s ) const
-  { s << "[C " << (void*) elems << " : " << stride << "]" ; }
-};
-
-template< typename T , unsigned N >
-class Array< T , N , const volatile ArrayProxyStrided >
-{
-private:
-
-  const volatile T * const elems ;
-  const unsigned                   stride ;
-
-  Array();
-
-public:
-
-  typedef T             value_type ;
-  static const unsigned value_count = N ;
-
-  template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
-  const volatile value_type & operator[]( const iType & i ) const
-    { array_check_bounds(i,N); return elems[i*stride] ; }
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array( const Array & rhs ) : elems( rhs.elems ), stride( rhs.stride ) {}
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array( const value_type * rhs , const unsigned stride )
-    : elems( rhs ), stride( stride ) {}
-
-  void print_expression( std::ostream & s ) const
-  { s << "[CV " << (void*) elems << " : " << stride << "]" ; }
-};
-
-//----------------------------------------------------------------------------
 
 } /* namespace KokkosArray */
 
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
+
+template< typename T >
+class Array< T , 0 , void >
+{
+private:
+
+  T * const elems ;
+  const unsigned count ;
+
+  template< class , unsigned , class > friend class Array ;
+
+public:
+
+  typedef T      value_type ;
+  unsigned size() const { return count ; }
+
+  //------------------------------------
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  value_type & operator[]( const iType & i )
+    { array_check_bounds(i,count); return elems[i] ; }
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  volatile value_type & operator[]( const iType & i ) volatile
+    { array_check_bounds(i,count); return elems[i] ; }
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  const value_type & operator[]( const iType & i ) const
+    { array_check_bounds(i,count); return elems[i] ; }
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  const volatile value_type & operator[]( const iType & i ) const volatile
+    { array_check_bounds(i,count); return elems[i] ; }
+
+  //------------------------------------
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  Array() : elems(0), count(0) {}
+
+  ~Array() { if ( elems ) delete[] elems ; }
+
+  //------------------------------------
+  // Copy constructors:
+
+  inline
+  Array( const Array & rhs )
+    : elems( new value_type[ rhs.count ] )
+    , count( rhs.count )
+    { for (unsigned i = 0 ; i < count ; ++i) elems[i] = rhs[i] ; }
+
+  template< typename rT , unsigned rN , class P >
+  inline
+  Array( const Array< rT , rN , P > & rhs )
+    : elems( rhs.size() ? new value_type[ rhs.size() ] : 0 )
+    , count( rhs.size() )
+    { for (unsigned i = 0 ; i < count ; ++i) elems[i] = rhs[i] ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  Array( const unsigned N , const value_type rhs )
+    : elems( N ? new value_type[N] : 0 )
+    , count(N)
+    { for (unsigned i = 0 ; i < count ; ++i) elems[i] = rhs ; }
+
+  //------------------------------------
+  // Assignment operators for non-volatile type:
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  Array & operator = ( const Array & rhs )
+    {
+      array_check_bounds( count , rhs.count + 1 );
+      for (unsigned i = 0 ; i < count ; ++i) elems[i] = rhs[i] ;
+      return *this ;
+    }
+
+  /** \brief  Take the value once before performing assignment */
+  KOKKOSARRAY_INLINE_FUNCTION
+  Array & operator = ( const value_type rhs )
+    {
+      for (unsigned i = 0 ; i < count ; ++i) elems[i] = rhs ;
+      return *this ;
+    }
+
+  template< typename rT , unsigned rN , class P >
+  KOKKOSARRAY_INLINE_FUNCTION
+  Array & operator = ( const Array< rT , rN , P > & rhs )
+    {
+      array_check_bounds( count , rhs.size() + 1 );
+      for (unsigned i = 0 ; i < count ; ++i) elems[i] = rhs[i] ;
+      return *this ;
+    }
+
+  template< typename rT , unsigned rN , class P >
+  KOKKOSARRAY_INLINE_FUNCTION
+  Array & operator = ( const volatile Array< rT , rN , P > & rhs )
+    {
+      array_check_bounds( count , rhs.size() + 1 );
+      for (unsigned i = 0 ; i < count ; ++i) elems[i] = rhs[i] ;
+      return *this ;
+    }
+
+  //------------------------------------
+  // Assignment operators for volatile type:
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  volatile Array & operator = ( const Array & rhs ) volatile
+    {
+      array_check_bounds( count , rhs.count + 1 );
+      for (unsigned i = 0 ; i < count ; ++i) elems[i] = rhs[i] ;
+      return *this ;
+    }
+
+  /** \brief  Take the value once before performing assignment */
+  KOKKOSARRAY_INLINE_FUNCTION
+  volatile Array & operator = ( const value_type rhs ) volatile
+    {
+      for (unsigned i = 0 ; i < count ; ++i) elems[i] = rhs ;
+      return *this ;
+    }
+
+  template< typename rT , unsigned rN , class P >
+  KOKKOSARRAY_INLINE_FUNCTION
+  volatile Array & operator = ( const Array< rT , rN , P > & rhs ) volatile
+    {
+      array_check_bounds( count , rhs.size() + 1 );
+      for (unsigned i = 0 ; i < count ; ++i) elems[i] = rhs[i] ;
+      return *this ;
+    }
+
+  template< typename rT , unsigned rN , class P >
+  KOKKOSARRAY_INLINE_FUNCTION
+  volatile Array & operator =
+    ( const volatile Array< rT , rN , P > & rhs ) volatile
+    {
+      array_check_bounds( count , rhs.size() + 1 );
+      for (unsigned i = 0 ; i < count ; ++i) elems[i] = rhs[i] ;
+      return *this ;
+    }
+  
+  //------------------------------------
+
+  void print_expression( std::ostream & s ) const
+  { s << "[" << (void*) elems << " : " << count << "]" ; }
+};
+
+} /* namespace KokkosArray */
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#include <impl/KokkosArray_ArrayProxy.hpp>
 #include <impl/KokkosArray_ArrayExp.hpp>
 
 #endif /* #ifndef KOKKOSARRAY_ARRAY_HPP */

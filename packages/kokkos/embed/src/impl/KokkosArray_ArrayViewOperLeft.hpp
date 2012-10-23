@@ -78,7 +78,7 @@ public:
   ArrayProxyType operator * () const
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
-      return ArrayProxyType( m_ptr_on_device );
+      return ArrayProxyType( m_ptr_on_device , 1 , m_shape.N0 );
     }
 
   template< typename iType0 >
@@ -98,8 +98,6 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape , i0 );
       return m_ptr_on_device[ i0 ];
     }
-
-
 };
 
 //----------------------------------------------------------------------------
@@ -127,7 +125,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( MemorySpace , m_ptr_on_device );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( m_shape , i0 , 0 );
       return ArrayProxyType( m_ptr_on_device + i0 ,
-                             m_shape.Stride );
+                             m_shape.Stride , m_shape.N1 );
     }
 
   template< typename iType0 , typename iType1 >

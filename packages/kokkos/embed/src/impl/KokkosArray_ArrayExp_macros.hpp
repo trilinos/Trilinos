@@ -64,7 +64,7 @@ operator KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR
   ( Array< T , N , ProxyLHS > & lhs ,
     Array< T , N , ProxyRHS > & rhs )
 {
-  for ( unsigned i = 0 ; i < lhs.value_count ; ++i ) {
+  for ( unsigned i = 0 ; i < lhs.size() ; ++i ) {
     lhs[i] KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR rhs[i] ;
   }
   return lhs ;
@@ -76,7 +76,7 @@ Array< T , N , Proxy > &
 operator KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR
   ( Array< T , N , Proxy > & lhs , const RHS rhs )
 {
-  for ( unsigned i = 0 ; i < lhs.value_count ; ++i ) {
+  for ( unsigned i = 0 ; i < lhs.size() ; ++i ) {
     lhs[i] KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR rhs ;
   }
   return lhs ;
