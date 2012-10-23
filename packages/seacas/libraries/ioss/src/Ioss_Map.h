@@ -47,8 +47,11 @@ namespace Ioss {
 
   class Map {
   public:
-    Map(); // Default constructor
-
+    Map() : entityType("unknown")
+      {} 
+    Map(const std::string &entity_type) : entityType(entity_type)
+      {}
+    
     int64_t global_to_local(int64_t global, bool must_exist = true) const;
 
     template <typename INT>
@@ -74,7 +77,8 @@ namespace Ioss {
     MapContainer        map;
     MapContainer        reorder;
     ReverseMapContainer reverse;
-
+    std::string         entityType; // node, element, edge, face
+    
   private:
     Map(const Map& from); // do not implement
     Map& operator=(const Map& from); // do not implement

@@ -115,8 +115,8 @@ namespace Ioxf {
     nodeCount(0), elementCount(0),
     nodeBlockCount(0), elementBlockCount(0), nodesetCount(0), sidesetCount(0),
     nodeCmapIds(NULL), nodeCmapNodeCnts(NULL),
-    elemCmapIds(NULL), elemCmapElemCnts(NULL), commsetNodeCount(0),
-    commsetElemCount(0),
+    elemCmapIds(NULL), elemCmapElemCnts(NULL), commsetNodeCount(0), commsetElemCount(0),
+    nodeMap("node"), elemMap("elem"),
     elementTruthTable(NULL), nodesetTruthTable(NULL), sidesetTruthTable(NULL),
     fileExists(false)
   {

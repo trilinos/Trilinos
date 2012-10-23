@@ -138,7 +138,7 @@ namespace Iopg {
     elementCount(0), nodeBlockCount(0),
     elementBlockCount(0), nodesetCount(0), sidesetCount(0),
     commsetNodeCount(0), commsetElemCount(0),
-    sequentialNG2L(false), sequentialEG2L(false),
+    nodeMap("node"), elemMap("elem"),
     blockAdjacenciesCalculated(false)
   {
     if (is_input()) {
@@ -1445,21 +1445,15 @@ namespace Iopg {
 	std::copy(node_map.begin(), node_map.end(), nodeMap.map.begin());
 	// Check for sequential node map.
 	// If not, build the reverse G2L node map...
-	sequentialNG2L = true;
+	nodeMap.map[0] = -1;
 	for (int i=1; i < nodeCount+1; i++) {
 	  if (i != nodeMap.map[i]) {
-	    sequentialNG2L = false;
 	    nodeMap.map[0] = 1;
 	    break;
 	  }
 	}
 
-	if (!sequentialNG2L) {
-	  nodeMap.build_reverse_map(myProcessor);
-	} else {
-	  // Sequential map
-	  nodeMap.map[0] = -1;
-	}
+	nodeMap.build_reverse_map(myProcessor);
 
       } else {
 	unsupported("output nodal id map");
@@ -1487,22 +1481,15 @@ namespace Iopg {
 
 	// Check for sequential element map.
 	// If not, build the reverse G2L element map...
-	sequentialEG2L = true;
+	elemMap.map[0] = -1;
 	for (int i=1; i < elementCount+1; i++) {
 	  if (i != elemMap.map[i]) {
-	    sequentialEG2L = false;
 	    elemMap.map[0] = 1;
 	    break;
 	  }
 	}
 
-	if (!sequentialEG2L) {
-	  elemMap.build_reverse_map(myProcessor);
-	} else {
-	  // Sequential map
-	  sequentialEG2L = true;
-	  elemMap.map[0] = -1;
-	}
+	elemMap.build_reverse_map(myProcessor);
 
       } else {
 	unsupported("output element map");

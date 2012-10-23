@@ -361,6 +361,7 @@ namespace Ioex {
     maximumNameLength(32), spatialDimension(0),
     nodeCount(0), edgeCount(0), faceCount(0), elementCount(0),
     commsetNodeCount(0), commsetElemCount(0),
+    nodeMap("node"), edgeMap("edge"), faceMap("face"), elemMap("elem"),
     timeLastFlush(0), fileExists(false),
     minimizeOpenFiles(false), blockAdjacenciesCalculated(false),
     nodeConnectivityStatusCalculated(false)

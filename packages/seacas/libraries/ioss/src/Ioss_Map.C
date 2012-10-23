@@ -148,10 +148,6 @@ namespace {
 
 }
 
-Ioss::Map::Map()
-{}
-
-
 void Ioss::Map::release_memory()
 {
   MapContainer().swap(map);
@@ -182,6 +178,13 @@ void Ioss::Map::build_reverse_map(int64_t num_to_get, int64_t offset, int proces
   for (int64_t i=0; i < num_to_get; i++) {
     int64_t local_id = offset + i + 1;
     new_ids[i] = std::make_pair(map[local_id], local_id);
+
+    if (map[local_id] <= 0) {
+      std::ostringstream errmsg;
+      errmsg << "\nERROR: " << entityType << " mapping routines detected non-positive global id " << map[local_id]
+	     << " for local id " << local_id << " on processor " << processor << ".\n";
+      IOSS_ERROR(errmsg);
+    }
   }
 
   // Sort that vector...
@@ -203,10 +206,9 @@ void Ioss::Map::build_reverse_map(int64_t num_to_get, int64_t offset, int proces
 	       new_ids.begin(), new_ids.end(),
 	       std::inserter(reverse, reverse.begin()), IdPairCompare());
     
-    // Check for duplicate ids...
-    verify_no_duplicate_ids(reverse, processor);
   }
-
+  // Check for duplicate ids...
+  verify_no_duplicate_ids(reverse, processor);
 }
 
 template void Ioss::Map::set_map(int *ids, size_t count, size_t offset);
@@ -220,7 +222,12 @@ void Ioss::Map::set_map(INT *ids, size_t count, size_t offset)
     map[local_id] = ids[i];
     if (local_id != ids[i]) {
       map[0] = 1;
-      assert(ids[i] != 0);
+    }
+    if (ids[i] <= 0) {
+      std::ostringstream errmsg;
+      errmsg << "\nERROR: " << entityType << " mapping routines detected non-positive global id " << ids[i]
+	     << " for local id " << local_id << ".\n";
+      IOSS_ERROR(errmsg);
     }
   }
 }
@@ -359,7 +366,7 @@ int64_t Ioss::Map::global_to_local(int64_t global, bool must_exist) const
   }
   if (local > map.size()-1 || (local <= 0  && must_exist)) {
     std::ostringstream errmsg;
-    errmsg << "Entity (element, face, edge, node) with global id equal to " << global
+    errmsg << "ERROR: Ioss Mapping routines detected " << entityType << " with global id equal to " << global
 	   << " returns a local id of " << local
 	   << " which is invalid. This should not happen, please report.\n";
     IOSS_ERROR(errmsg);

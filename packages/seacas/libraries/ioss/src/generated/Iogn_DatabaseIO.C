@@ -65,7 +65,8 @@ namespace Iogn {
     Ioss::DatabaseIO(region, filename, db_usage, communicator, props), 
     m_generatedMesh(NULL),  spatialDimension(3), nodeCount(0),
     elementCount(0), nodeBlockCount(0),
-    elementBlockCount(0), nodesetCount(0), sidesetCount(0)
+    elementBlockCount(0), nodesetCount(0), sidesetCount(0),
+    nodeMap("node"), elemMap("elem")
   {
     if (is_input()) {
       dbState = Ioss::STATE_UNKNOWN;

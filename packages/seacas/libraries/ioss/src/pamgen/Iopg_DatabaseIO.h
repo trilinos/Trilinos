@@ -219,9 +219,6 @@ namespace Iopg {
 
     mutable std::vector<std::vector<bool> > blockAdjacency;
 
-    mutable bool sequentialNG2L; // true if reverse node map is sequential
-    mutable bool sequentialEG2L; // true if reverse element map is
-    // sequential (local==global)
     mutable bool blockAdjacenciesCalculated; // True if the lazy creation of
     // block adjacencies has been calculated.
   };
