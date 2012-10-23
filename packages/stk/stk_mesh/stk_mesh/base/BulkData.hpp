@@ -552,6 +552,7 @@ private:
   // FIXME: Remove this friend once unit-testing has been refactored
   friend class UnitTestModificationEndWrapper;
   friend class ::stk::mesh::MetaData;
+  friend class ::stk::mesh::impl::BucketFamily;
 #endif /* DOXYGEN_COMPILE */
 };
 

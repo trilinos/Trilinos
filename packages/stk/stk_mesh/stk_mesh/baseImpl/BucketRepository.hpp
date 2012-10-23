@@ -112,14 +112,13 @@ public:
   //// Experimental section.
   ////
 
+  friend class BucketFamily;
+
   // Assuming that everything else is already up-to-date, update the contents of
   // m_bucket_families.
   void update_bucket_families();
 
-  std::vector<BucketFamily> get_bucket_families(EntityRank rank) const
-  {
-      return m_bucket_families[rank];
-  }
+  std::vector<BucketFamily *> get_bucket_families(EntityRank rank);
 
 
 private:
@@ -135,11 +134,11 @@ private:
   std::vector<std::vector<BucketFamily> >         m_bucket_families;  // Experimental.
 };
 
-
-
 } // namespace impl
 } // namespace mesh
 } // namespace stk
 
+
+#include <stk_mesh/baseImpl/BucketFamily.tcc>
 
 #endif // stk_mesh_BucketRepository_hpp

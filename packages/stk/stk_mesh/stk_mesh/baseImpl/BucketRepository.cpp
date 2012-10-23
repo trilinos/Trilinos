@@ -571,36 +571,64 @@ void BucketRepository::update_bucket_families()
     for ( EntityRank entity_rank = 0 ;
         entity_rank < m_buckets.size() ; ++entity_rank )
     {
+      std::vector<stk::mesh::impl::BucketFamily> &bucket_families = m_bucket_families[entity_rank];
       std::vector<Bucket*> & buckets = m_buckets[ entity_rank ];
 
       size_t begin_family = 0 ; // Offset to first bucket of the family
       size_t end_family = 0 ; // Offset to end   bucket of the family
 
-      //loop over families
+      //loop over families (of entity_rank) via buckets
       for ( ; begin_family < buckets.size() ; begin_family = end_family )
       {
-        m_bucket_families[entity_rank].push_back(BucketFamily(entity_rank));
-        BucketFamily &bucket_family = m_bucket_families[entity_rank].back();
-        bucket_family.m_stkPartition = buckets[begin_family]->key_vector();
-
+        bucket_families.push_back(BucketFamily(this, entity_rank));
         Bucket * last_bucket_in_family = buckets[begin_family]->last_bucket_in_family();
 
         // Determine offset to the end bucket in this family:
         while ((end_family < buckets.size()) && (last_bucket_in_family != buckets[end_family]))
         {
-            buckets[end_family]->m_bucket_family = &bucket_family;
             ++end_family ;
         }
         if (end_family < buckets.size())
         {
             ++end_family ; //increment past the end
         }
+        BucketFamily &bucket_family = bucket_families.back();
+        bucket_family.m_stkPartition = buckets[begin_family]->key_vector();
+        bucket_family.m_stkPartition.pop_back();
         bucket_family.m_beginBucketIndex = static_cast<unsigned>(begin_family);
         bucket_family.m_endBucketIndex = static_cast<unsigned>(end_family);
+      }
+
+      // Let all the buckets of entity_rank know about their bucket families.
+      size_t num_families = bucket_families.size();
+      for (size_t i = 0; i < num_families; ++i)
+      {
+          stk::mesh::impl::BucketFamily &bucket_family = bucket_families[i];
+          std::vector<stk::mesh::Bucket *>::iterator bkt= bucket_family.begin();
+          for (;bkt != bucket_family.end(); ++bkt)
+          {
+              (*bkt)->m_bucket_family = &bucket_families[i];
+          }
+          // std::cout << bucket_family << std::endl;
       }
     }
 }
 
+
+std::vector<BucketFamily *> BucketRepository::get_bucket_families(EntityRank rank)
+{
+    if (m_mesh.synchronized_state() != BulkData::SYNCHRONIZED)
+    {
+        std::vector<BucketFamily *>();
+    }
+    std::vector<BucketFamily *> retval;
+    std::vector<BucketFamily> &bf_vec = m_bucket_families[rank];
+    for (size_t i = 0; i < bf_vec.size(); ++i)
+    {
+        retval.push_back(&bf_vec[i]);
+    }
+    return retval;
+}
 
 } // namespace impl
 } // namespace mesh

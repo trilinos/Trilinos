@@ -128,10 +128,10 @@ void initialize(SelectorFixture& fixture,
   *
   * */
 
-/** \brief Verify we can construct the selector unit testing fixture.
+/** \brief Verify we can construct the unit testing fixture.
  *
  * */
-STKUNIT_UNIT_TEST( UnitTestBucketFamily, one_FatSelectorFixture )
+STKUNIT_UNIT_TEST( UnitTestBucketFamily, UTBF_testInitialize )
 {
     std::vector<stk::mesh::Entity *> ec1;
     std::vector<stk::mesh::Entity *> ec2;
@@ -142,17 +142,59 @@ STKUNIT_UNIT_TEST( UnitTestBucketFamily, one_FatSelectorFixture )
     SelectorFixture fix;
     initialize(fix, ec1, ec2, ec3, ec4, ec5);
 
-    STKUNIT_EXPECT_TRUE(true);
+    stk::mesh::Selector selector;
+  //std::cout << "Selector = " << selector << std::endl;
+
+    {
+        selector = fix.m_partA & !fix.m_partB;
+        for (size_t i = 0; i < ec1.size(); ++i)
+        {
+            const stk::mesh::Bucket & bucket = ec1[i]->bucket() ;
+            bool result = selector(bucket);
+            STKUNIT_EXPECT_TRUE(result);
+        }
+    }
+    {
+        selector = fix.m_partA & fix.m_partB;
+        for (size_t i = 0; i < ec2.size(); ++i)
+        {
+            const stk::mesh::Bucket & bucket = ec2[i]->bucket() ;
+            bool result = selector(bucket);
+            STKUNIT_EXPECT_TRUE(result);
+        }
+    }
+    {
+        selector = fix.m_partB & fix.m_partC;
+        for (size_t i = 0; i < ec3.size(); ++i)
+        {
+            const stk::mesh::Bucket & bucket = ec3[i]->bucket() ;
+            bool result = selector(bucket);
+          STKUNIT_EXPECT_TRUE(result);
+        }
+    }
+    {
+        selector = !fix.m_partB & fix.m_partC;
+        for (size_t i = 0; i < ec4.size(); ++i)
+        {
+            const stk::mesh::Bucket & bucket = ec4[i]->bucket() ;
+            bool result = selector(bucket);
+            STKUNIT_EXPECT_TRUE(result);
+        }
+    }
+  {
+      stk::mesh::Selector selector =
+              !(fix.m_partA | fix.m_partB | fix.m_partC | fix.m_partD);
+      for (size_t i = 0; i < ec5.size(); ++i)
+      {
+          const stk::mesh::Bucket & bucket = ec5[i]->bucket() ;
+          bool result = selector(bucket);
+          STKUNIT_EXPECT_TRUE(result);
+      }
+  }
 }
 
 
-
-/** \brief Test containment directly.
- *
- * Verify PartA contains Entity1 and Entity2, and does not contain
- * Entity3, Entity4, or Entity5.
- * */
-STKUNIT_UNIT_TEST( UnitTestBucketFamily, UTBF_A_12345 )
+STKUNIT_UNIT_TEST( UnitTestBucketFamily, UTBF_testForReal)
 {
     std::vector<stk::mesh::Entity *> ec1;
     std::vector<stk::mesh::Entity *> ec2;
@@ -163,75 +205,47 @@ STKUNIT_UNIT_TEST( UnitTestBucketFamily, UTBF_A_12345 )
     SelectorFixture fix;
     initialize(fix, ec1, ec2, ec3, ec4, ec5);
 
-  stk::mesh::Selector selector( fix.m_partA );
-  //std::cout << "Selector = " << selector << std::endl;
+    stk::mesh::impl::BucketRepository &bucket_repository = stk::mesh::impl::BucketFamily::getRepository(fix.m_bulk_data);
+    bucket_repository.update_bucket_families();
 
-  {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket() ;
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = fix.m_entity2->bucket();
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = fix.m_entity4->bucket();
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = fix.m_entity5->bucket();
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-}
+    // Correct means:
+    //   - A bucket family for each partition
+    //   - Each bucket family contains the right number of entities (didn't lose any buckets!)
 
-STKUNIT_UNIT_TEST( UnitTestBucketFamily, UTBF_B_12345 )
-{
-    std::vector<stk::mesh::Entity *> ec1;
-    std::vector<stk::mesh::Entity *> ec2;
-    std::vector<stk::mesh::Entity *> ec3;
-    std::vector<stk::mesh::Entity *> ec4;
-    std::vector<stk::mesh::Entity *> ec5;
+    stk::mesh::Selector selector_A_only = fix.m_partA & !fix.m_partB;
+    stk::mesh::Selector selector_A_and_B = fix.m_partA & fix.m_partB;
+    stk::mesh::Selector selector_B_and_C = fix.m_partB & fix.m_partC;
+    stk::mesh::Selector selector_C_only = !fix.m_partB & fix.m_partC;
+    stk::mesh::Selector selector_no_letter = !(fix.m_partA | fix.m_partB | fix.m_partC | fix.m_partD);
 
-    SelectorFixture fix;
-    initialize(fix, ec1, ec2, ec3, ec4, ec5);
+    std::vector<stk::mesh::Selector> selectors;
+    selectors.push_back(selector_A_only);
+    selectors.push_back(selector_A_and_B);
+    selectors.push_back(selector_B_and_C);
+    selectors.push_back(selector_C_only);
+    selectors.push_back(selector_no_letter);
 
-  stk::mesh::Selector selector( fix.m_partA );
-  //std::cout << "Selector = " << selector << std::endl;
+    std::vector<bool> found_it(5, false);
 
-  {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket() ;
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = fix.m_entity2->bucket();
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_TRUE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = fix.m_entity4->bucket();
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
-  {
-    const stk::mesh::Bucket & bucket = fix.m_entity5->bucket();
-    bool result = selector(bucket);
-    STKUNIT_EXPECT_FALSE(result);
-  }
+    std::vector<stk::mesh::impl::BucketFamily *> bucket_families = bucket_repository.get_bucket_families(0);
+    size_t num_families = bucket_families.size();
+    STKUNIT_EXPECT_EQ(num_families, 5u);
+
+    for (size_t i = 0; i < num_families; ++i)
+    {
+        // size_t count = 0;
+        stk::mesh::impl::BucketFamily &bucket_family = *bucket_families[i];
+        const std::vector<unsigned> &family_key = bucket_family.get_legacy_partition_id();
+        for (std::vector<stk::mesh::Bucket *>::iterator bkt= bucket_family.begin(); bkt != bucket_family.end(); ++bkt)
+        {
+            STKUNIT_EXPECT_EQ(bucket_families[i], (*bkt)->getBucketFamily() );
+            const unsigned *bucket_key = (*bkt)->key();
+            for (size_t k = 0; k < family_key.size(); ++k)
+            {
+                STKUNIT_EXPECT_EQ(family_key[k], bucket_key[k]);
+            }
+        }
+    }
 }
 
 

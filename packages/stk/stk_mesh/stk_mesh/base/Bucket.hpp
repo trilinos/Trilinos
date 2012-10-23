@@ -278,6 +278,7 @@ public:
     return field_data_location_impl( field.mesh_meta_data_ordinal(), ordinal );
   }
 
+  impl::BucketFamily *getBucketFamily() const { return m_bucket_family; }
 
 private:
   /** \brief  The \ref stk::mesh::BulkData "bulk data manager"
