@@ -53,7 +53,12 @@
 # ************************************************************************
 # @HEADER
 
-# TPL for linking to matlab libraries (no mex)
+# TPL for linking to matlab libraries (no mex or engine)
+# Currently this TPL is incompatible with Zoltan because both Matlab
+# and Zoltan have a header called matrix.h.  So to use this you need to
+# disable Zoltan.
+#
+# Unlike the MATLAB TPL, this TPL seems to work with MPI enabled.
 
 INCLUDE(TribitsTplDeclareLibraries)
 
