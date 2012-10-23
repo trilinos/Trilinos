@@ -48,16 +48,13 @@
 
 namespace KokkosArray {
 class HostSpace ;
+class CudaSpace ;
 }
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 #if defined( __CUDACC__ )
-
-namespace KokkosArray {
-class CudaSpace ;
-};
 
 /*  Compiling with a CUDA compiler for host and device code.
  *  Declare functions available on host and device, or device only.
@@ -76,14 +73,15 @@ class CudaSpace ;
 
 #define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::CudaSpace
 #define KOKKOSARRAY_INLINE_FUNCTION  __device__  __host__  inline
+#define KOKKOSARRAY_FUNCTION         __device__  __host__
 
 #else /* ! #if defined( __CUDA_ARCH__ ) */
 
 /*  Compiling with CUDA compiler for host code. */
 
 #define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::HostSpace
-#define KOKKOSARRAY_EXECUTION_SPACE_IS_HOST
 #define KOKKOSARRAY_INLINE_FUNCTION  inline
+#define KOKKOSARRAY_FUNCTION         /* */
 
 #endif /* ! #if defined( __CUDA_ARCH__ ) */
 
@@ -99,10 +97,9 @@ class CudaSpace ;
  *  of the supported OpenMP API version.
  */
 
-#define KOKKOSARRAY_INLINE_FUNCTION  inline
-
 #define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::HostSpace
-#define KOKKOSARRAY_EXECUTION_SPACE_IS_HOST
+#define KOKKOSARRAY_INLINE_FUNCTION  inline
+#define KOKKOSARRAY_FUNCTION         /* */
 
 /* END defined( _OPENMP ) */
 //----------------------------------------------------------------------------
@@ -110,10 +107,9 @@ class CudaSpace ;
 
 #else /* No special compilation space detected */
 
-#define KOKKOSARRAY_INLINE_FUNCTION  inline
-
 #define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::HostSpace
-#define KOKKOSARRAY_EXECUTION_SPACE_IS_HOST
+#define KOKKOSARRAY_INLINE_FUNCTION  inline
+#define KOKKOSARRAY_FUNCTION         /* */
 
 #endif
 

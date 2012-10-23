@@ -45,6 +45,7 @@
 #define KOKKOSARRAY_SHAPE_HPP
 
 #include <typeinfo>
+#include <utility>
 #include <KokkosArray_Macros.hpp>
 #include <KokkosArray_Layout.hpp>
 #include <impl/KokkosArray_ArrayTraits.hpp>

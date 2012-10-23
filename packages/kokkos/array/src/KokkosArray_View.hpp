@@ -44,6 +44,7 @@
 #ifndef KOKKOSARRAY_VIEW_HPP
 #define KOKKOSARRAY_VIEW_HPP
 
+#include <string>
 #include <KokkosArray_Macros.hpp>
 #include <KokkosArray_MemoryManagement.hpp>
 
@@ -51,6 +52,9 @@
 #include <impl/KokkosArray_ArrayTraits.hpp>
 #include <impl/KokkosArray_Shape.hpp>
 #include <impl/KokkosArray_AnalyzeShape.hpp>
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 namespace KokkosArray {
 namespace Impl {
@@ -68,7 +72,17 @@ struct ViewCreatable ;
 template< class >
 struct ViewInitialize ;
 
-}
+template< class ExecutionSpace , class MemoryManagement ,
+          class ScalarType , class ShapeType , class MemorySpace >
+struct ViewManagement ;
+
+} // namespace Impl
+} // namespace KokkosArray
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
 
 template< class DataType ,
           class LayoutType ,
@@ -225,56 +239,32 @@ public:
 
 private:
 
+  typedef Impl::ViewManagement<
+     KOKKOSARRAY_EXECUTION_SPACE , memory_management ,
+     scalar_type , shape_type , memory_space > internal_management ;
+
   KOKKOSARRAY_INLINE_FUNCTION
   void internal_private_assign( const shape_type & shape , scalar_type * ptr )
   {
     oper_type::m_shape          = shape ;
     oper_type::m_ptr_on_device  = ptr ;
 
-#if defined( KOKKOSARRAY_EXECUTION_SPACE_IS_HOST )
-    if ( Impl::is_same< memory_management , MemoryManaged >::value ) {
-      memory_space::increment( oper_type::m_ptr_on_device );
-    }
-#endif
+    internal_management::increment( oper_type::m_ptr_on_device ); 
   }
 
   KOKKOSARRAY_INLINE_FUNCTION
   void internal_private_clear()
   {
-#if defined( KOKKOSARRAY_EXECUTION_SPACE_IS_HOST )
-    if ( Impl::is_same< memory_management , MemoryManaged >::value ) {
-      memory_space::decrement( oper_type::m_ptr_on_device );
-    }
-#endif
+    internal_management::decrement( oper_type::m_ptr_on_device ); 
     oper_type::m_ptr_on_device = 0 ;
   }
-
 
   void internal_private_create( const std::string & label ,
                                 const shape_type shape )
   {
-#if defined( KOKKOSARRAY_EXECUTION_SPACE_IS_HOST )
-    if ( Impl::is_same< memory_management , MemoryManaged >::value ) {
-      const size_t count =
-        Impl::ShapeMap<shape_type>::allocation_count( shape );
-
-      oper_type::m_shape = shape ;
-      oper_type::m_ptr_on_device = (scalar_type *)
-        memory_space::allocate( label ,
-                                typeid(scalar_type) ,
-                                sizeof(scalar_type) ,
-                                count );
-
-      Impl::ViewInitialize< View >::apply( *this );
-    }
-    else {
-      oper_type::m_ptr_on_device = 0 ;
-      oper_type::m_shape = shape_type();
-    }
-#else
-    oper_type::m_ptr_on_device = 0 ;
-    oper_type::m_shape = shape_type();
-#endif
+    oper_type::m_ptr_on_device = internal_management::allocate( label , shape );
+    oper_type::m_shape = 0 != oper_type::m_ptr_on_device ? shape : shape_type();
+    Impl::ViewInitialize< View >::apply( *this );
   }
 
 public:

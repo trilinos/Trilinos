@@ -1,3 +1,47 @@
+/*
+// ************************************************************************
+//
+//                             KokkosArray
+//         Manycore Performance-Portable Multidimensional Arrays
+//
+//              Copyright (2012) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
+// ************************************************************************
+*/
+
+#include <stdio.h>
 #include <iostream>
 #include <typeinfo>
 
@@ -11,11 +55,57 @@
 
 //----------------------------------------------------------------------------
 
+template< class Space > struct TestDevice ;
+
+template<> struct TestDevice< KokkosArray::HostSpace >
+{
+  enum { value = true };
+
+  typedef KokkosArray::Host type ;
+
+  TestDevice()
+  {
+    KokkosArray::Host::initialize( 1 , 4 );
+  }
+  ~TestDevice()
+  {
+    KokkosArray::Host::finalize();
+  }
+};
+
+template<>
+struct TestDevice< KokkosArray::CudaSpace >
+{
+#if defined( __CUDACC__ )
+
+  enum { value = true };
+
+  typedef KokkosArray::Cuda type ;
+
+  TestDevice()
+  {
+    KokkosArray::Cuda::initialize();
+  }
+  ~TestDevice()
+  {
+    KokkosArray::Cuda::finalize();
+  }
+#else
+  enum { value = false };
+
+  typedef KokkosArray::Host type ;
+#endif
+};
+
+//----------------------------------------------------------------------------
+
 template< class Device > int test();
 
 template<>
-int test< TEST_KOKKOSARRAY_DEVICE >()
+int test< TEST_KOKKOSARRAY_SPACE >()
 {
+  if ( ! TestDevice< TEST_KOKKOSARRAY_SPACE >::value ) return 0 ;
+
   KokkosArray::Array<double,10> a = 1 ;
   KokkosArray::Array<double,10> b = a + a ;
 
@@ -96,44 +186,53 @@ int test< TEST_KOKKOSARRAY_DEVICE >()
 }
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
-template< class Device > struct TestFunctor ;
-
-template<>
-struct TestFunctor< TEST_KOKKOSARRAY_DEVICE >
+template< class ValueType , class DeviceType >
+struct TestFunctor
 {
-  typedef KokkosArray::Array<double,20> scalar_type ;
+  typedef DeviceType                       device_type ;
+  typedef typename device_type::size_type  size_type ;
 
-  typedef TEST_KOKKOSARRAY_DEVICE device_type ;
-  typedef device_type::size_type  size_type ;
-
-  typedef KokkosArray::View< scalar_type * , device_type > vector_type ;
+  typedef KokkosArray::View< ValueType * , device_type > vector_type ;
 
   static const size_type N = 1000 ;
 
   const vector_type x , y , z ;
-  const scalar_type a , b ;
+  const ValueType   a , b ;
 
   TestFunctor()
     : x("x",N), y("y",N), z("z",N)
     , a(2), b(3)
     { }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const size_type ip ) const
   {
     z(ip) = a * x(ip) + b * y(ip);
   }
 };
 
-template< class Device > int test_functor();
+//----------------------------------------------------------------------------
+
+template< class Space > int test_functor();
 
 template<>
-int test_functor< TEST_KOKKOSARRAY_DEVICE >()
+int test_functor< TEST_KOKKOSARRAY_SPACE >()
 {
-  typedef TEST_KOKKOSARRAY_DEVICE device_type ;
+  typedef TestDevice< TEST_KOKKOSARRAY_SPACE > TestD ;
+
+  if ( ! TestD::value ) return 0 ;
+
+  typedef TestD::type device_type ;
   
-  typedef TestFunctor<device_type> functor_type ;
+  enum { Count = 20 };
+
+  typedef KokkosArray::Array<double,Count> value_type ;
+
+  typedef TestFunctor<value_type,device_type> functor_type ;
+
+  TestD device ;
 
   std::cout << "functor_type::vector_type::scalar_type = "
             << typeid(functor_type::vector_type::scalar_type).name()
@@ -148,6 +247,22 @@ int test_functor< TEST_KOKKOSARRAY_DEVICE >()
   functor_type::vector_type::HostMirror x = 
     KokkosArray::create_mirror( f.x );
 
+  std::cout << "  distance( x(0)[0] , x(0)[last] ) = "
+            << (int)( & x(0)[Count-1] - & x(0)[0] )
+            << std::endl
+            << "  x.shape() = { " << x.shape().Stride
+            << " : " << x.shape().N0 
+            << " , " << x.shape().N1
+            << std::endl ;
+
+  if ( & x(0)[0] != & x(0,0) ) {
+    std::cout << "  FAILED & x(0)[0] != & x(0,0) : "
+              << & x(0)[0] 
+              << " != "
+              << & x(0,0)
+              << std::endl ;
+  }
+
   for ( unsigned i = 0 ; i < f.N ; ++i ) { x(i) = 1 ; }
 
   KokkosArray::deep_copy( f.x , x );
@@ -161,5 +276,4 @@ int test_functor< TEST_KOKKOSARRAY_DEVICE >()
 
   return 0 ;
 }
-
 
