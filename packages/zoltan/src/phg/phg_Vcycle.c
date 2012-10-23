@@ -843,7 +843,7 @@ double Zoltan_PHG_Compute_ConCut(
     if (hg->nEdge) {
         int i, j, *cuts=NULL, *rescuts=NULL, *parts, nEdge, start;
             
-        nEdge = MIN((int)MAXMEMORYALLOC / (2*sizeof(int)*p), hg->nEdge);
+        nEdge = MIN((int)MAXMEMORYALLOC / (2*(int)sizeof(int)*p), hg->nEdge);
 
         if (!(cuts = (int*) ZOLTAN_MALLOC (p * nEdge * sizeof(int)))) {
             ZOLTAN_PRINT_ERROR(hgc->myProc, yo, "Memory error.");

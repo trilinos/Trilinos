@@ -532,7 +532,7 @@ int main(int argc, char *argv[])
   scalar_t maxSumWgtPerPart = 0.;
   scalar_t minSumWgtPerPart = std::numeric_limits<scalar_t>::max();
   scalar_t totWgt = 0.;
-  int maxSumWgtPart, minSumWgtPart;
+  int maxSumWgtPart=0, minSumWgtPart=0;
   for (int i = 0; i < numGlobalParts; i++) {
     if (gsumWgtPerPart[i] > maxSumWgtPerPart) {
       maxSumWgtPerPart = gsumWgtPerPart[i];

@@ -1139,7 +1139,7 @@ template <typename Adapter>
   // respect to a desired solution.  This solution may have more or
   // fewer parts that the desired solution.)
 
-  partId_t lMax, lMin, gMax, gMin;
+  partId_t lMax=0, lMin=0, gMax, gMin;
   
   if (len > 0)
     IdentifierTraits<partId_t>::minMax(partList.getRawPtr(), len, lMin, lMax);
