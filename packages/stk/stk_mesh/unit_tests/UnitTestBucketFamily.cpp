@@ -140,6 +140,12 @@ STKUNIT_UNIT_TEST( UnitTestBucketFamily, UTBF_testInitialize )
     std::vector<stk::mesh::Entity *> ec5;
 
     SelectorFixture fix;
+
+    if (fix.m_bulk_data.parallel_size() > 1)
+    {
+        return;
+    }
+
     initialize(fix, ec1, ec2, ec3, ec4, ec5);
 
     stk::mesh::Selector selector;
@@ -203,6 +209,11 @@ STKUNIT_UNIT_TEST( UnitTestBucketFamily, UTBF_testForReal)
     std::vector<stk::mesh::Entity *> ec5;
 
     SelectorFixture fix;
+
+    if (fix.m_bulk_data.parallel_size() > 1)
+    {
+        return;
+    }
     initialize(fix, ec1, ec2, ec3, ec4, ec5);
 
     stk::mesh::impl::BucketRepository &bucket_repository = stk::mesh::impl::BucketFamily::getRepository(fix.m_bulk_data);
