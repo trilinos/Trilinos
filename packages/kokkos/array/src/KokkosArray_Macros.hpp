@@ -71,7 +71,8 @@ class CudaSpace ;
  *  identifying compilation for 'compute_XY' architecture.
  */
 
-#define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::CudaSpace
+namespace KokkosArray { typedef CudaSpace ExecutionSpace ; }
+
 #define KOKKOSARRAY_INLINE_FUNCTION  __device__  __host__  inline
 #define KOKKOSARRAY_FUNCTION         __device__  __host__
 
@@ -79,7 +80,8 @@ class CudaSpace ;
 
 /*  Compiling with CUDA compiler for host code. */
 
-#define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::HostSpace
+namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
+
 #define KOKKOSARRAY_INLINE_FUNCTION  inline
 #define KOKKOSARRAY_FUNCTION         /* */
 
@@ -97,7 +99,8 @@ class CudaSpace ;
  *  of the supported OpenMP API version.
  */
 
-#define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::HostSpace
+namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
+
 #define KOKKOSARRAY_INLINE_FUNCTION  inline
 #define KOKKOSARRAY_FUNCTION         /* */
 
@@ -107,7 +110,8 @@ class CudaSpace ;
 
 #else /* No special compilation space detected */
 
-#define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::HostSpace
+namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
+
 #define KOKKOSARRAY_INLINE_FUNCTION  inline
 #define KOKKOSARRAY_FUNCTION         /* */
 
@@ -118,11 +122,11 @@ class CudaSpace ;
 
 #define KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( DATA_SPACE , DATA_PTR ) \
   KokkosArray::VerifyExecutionSpaceCanAccessDataSpace< \
-    KOKKOSARRAY_EXECUTION_SPACE , DATA_SPACE >::verify( DATA_PTR )
+    KokkosArray::ExecutionSpace , DATA_SPACE >::verify( DATA_PTR )
 
 #define KOKKOSARRAY_RESTRICT_EXECUTION_TO( DATA_SPACE ) \
   KokkosArray::VerifyExecutionSpaceCanAccessDataSpace< \
-    KOKKOSARRAY_EXECUTION_SPACE , DATA_SPACE >::verify()
+    KokkosArray::ExecutionSpace , DATA_SPACE >::verify()
 
 
 

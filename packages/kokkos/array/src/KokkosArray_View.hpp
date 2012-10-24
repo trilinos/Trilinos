@@ -240,7 +240,7 @@ public:
 private:
 
   typedef Impl::ViewManagement<
-     KOKKOSARRAY_EXECUTION_SPACE , memory_management ,
+     ExecutionSpace , memory_management ,
      scalar_type , shape_type , memory_space > internal_management ;
 
   KOKKOSARRAY_INLINE_FUNCTION
