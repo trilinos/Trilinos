@@ -64,7 +64,7 @@ std::ostream & operator <<
   ( std::ostream & s , const KokkosArray::Array<T,N,Proxy> & a )
 {
   s << "{" ;
-  for ( unsigned i = 0 ; i < N ; ++i ) { s << " " << a[i] ; }
+  for ( unsigned i = 0 ; i < a.size() ; ++i ) { s << " " << a[i] ; }
   s << " }" ;
   return s ;
 }
@@ -240,7 +240,12 @@ private:
 public:
 
   typedef T      value_type ;
+
+  KOKKOSARRAY_INLINE_FUNCTION
   unsigned size() const { return count ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  unsigned size() const volatile { return count ; }
 
   //------------------------------------
 
@@ -269,6 +274,7 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION
   Array() : elems(0), count(0) {}
 
+  KOKKOSARRAY_INLINE_FUNCTION
   ~Array() { if ( elems ) delete[] elems ; }
 
   //------------------------------------
@@ -288,10 +294,16 @@ public:
     { for (unsigned i = 0 ; i < count ; ++i) elems[i] = rhs[i] ; }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  Array( const unsigned N , const value_type rhs )
+  Array( const value_type rhs , const unsigned N )
     : elems( N ? new value_type[N] : 0 )
     , count(N)
     { for (unsigned i = 0 ; i < count ; ++i) elems[i] = rhs ; }
+
+private:
+  /*  Only allow this constructor if meaningful semantics can be defined */
+  KOKKOSARRAY_INLINE_FUNCTION
+  Array( const value_type rhs );
+public:
 
   //------------------------------------
   // Assignment operators for non-volatile type:

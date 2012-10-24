@@ -116,6 +116,9 @@ private:
 public:
 
   KOKKOSARRAY_INLINE_FUNCTION
+  unsigned size() const { return N ? N : ~0u ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
   Array( const          Type & arg ) : value( arg ) {}
 
   KOKKOSARRAY_INLINE_FUNCTION
