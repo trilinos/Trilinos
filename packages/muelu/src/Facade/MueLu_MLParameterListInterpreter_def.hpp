@@ -133,38 +133,35 @@ namespace MueLu {
     for (ParameterList::ConstIterator param=List.begin(); param!=List.end(); ++param)
       {
         const string & pname=List.name(param);
-        if (!List.isSublist(pname)) {
-
-          if (pname.find(" (level",0) != string::npos) {
-            // Copy level-specific parameters (smoother and aggregation)
+        if (!List.isSublist(pname) && pname.find(" (level",0) != string::npos) {
+          // Copy level-specific parameters (smoother and aggregation)
           
-            // Scan pname (ex: pname="smoother: type (level 2)")
-            typedef Teuchos::ArrayRCP<char>::size_type size_type;    // (!)
-            Teuchos::Array<char> ctype  (size_type(pname.size()+1));
-            Teuchos::Array<char> coption(size_type(pname.size()+1));
-            int levelID=-1;
+          // Scan pname (ex: pname="smoother: type (level 2)")
+          typedef Teuchos::ArrayRCP<char>::size_type size_type;    // (!)
+          Teuchos::Array<char> ctype  (size_type(pname.size()+1));
+          Teuchos::Array<char> coption(size_type(pname.size()+1));
+          int levelID=-1;
           
-            int matched = sscanf(pname.c_str(),"%s %s (level %d)", ctype.getRawPtr(), coption.getRawPtr(), &levelID);
-            string type = string(ctype.getRawPtr());
+          int matched = sscanf(pname.c_str(),"%s %s (level %d)", ctype.getRawPtr(), coption.getRawPtr(), &levelID);
+          string type = string(ctype.getRawPtr());
           
-            if (matched != 3 || (type != "smoother:" && type != "aggregation:")) {
-              TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::CreateSublist(), Line " << __LINE__ << ". "
-                                         << "Error in creating level-specific sublists" << std::endl
-                                         << "Offending parameter: " << pname << std::endl);
-            }
+          if (matched != 3 || (type != "smoother:" && type != "aggregation:")) {
+            TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::CreateSublist(), Line " << __LINE__ << ". "
+                                       << "Error in creating level-specific sublists" << std::endl
+                                       << "Offending parameter: " << pname << std::endl);
+          }
           
-            // Create/grab the corresponding sublist of newList
-            ParameterList &newSubList = newList.sublist(type + " list (level " + Teuchos::toString(levelID) + ")");
-            // Shove option w/o level number into sublist
-            newSubList.setEntry(type + " " + string(coption.getRawPtr()),List.entry(param));
+          // Create/grab the corresponding sublist of newList
+          ParameterList &newSubList = newList.sublist(type + " list (level " + Teuchos::toString(levelID) + ")");
+          // Shove option w/o level number into sublist
+          newSubList.setEntry(type + " " + string(coption.getRawPtr()),List.entry(param));
           
-          } else if(pname.find("coarse:",0) == 0) {
-            // Copy coarse parameters
-            ParameterList &newCoarseList = newList.sublist("coarse: list"); // the coarse sublist is created only if there is at least one "coarse:" parameter
-            newCoarseList.setEntry("smoother: "+pname.substr(8),List.entry(param)); // change "coarse: " to "smoother:"
-          } // end if
+        } else if (pname != "coarse: list" && pname.find("coarse:",0) == 0) {
+          // Copy coarse parameters
+          ParameterList &newCoarseList = newList.sublist("coarse: list"); // the coarse sublist is created only if there is at least one "coarse:" parameter
+          newCoarseList.setEntry("smoother: "+pname.substr(8),List.entry(param)); // change "coarse: " to "smoother:"
+        } // end if
         
-        } // end if !isSublist
       } // for
   
   } //MueLu::CreateSublist()
