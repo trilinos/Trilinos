@@ -63,7 +63,7 @@
 
 namespace MueLuTests {
 
-  TEUCHOS_UNIT_TEST(MueLu_CreateSubLists, SetParameterList)
+  TEUCHOS_UNIT_TEST(MueLu_CreateSublists, SetParameterList)
   {
     std::string dir("ParameterList/CreateSublists/");
 
