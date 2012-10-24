@@ -1,0 +1,11 @@
+<ParameterList name="TestSubLists">
+
+  <ParameterList name="smoother: list (level 0)">
+    <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
+  </ParameterList>
+
+  <ParameterList name="smoother: ifpack list (level 0)">
+    <Parameter name="relaxation: sweeps" type="int" value="1"/>
+  </ParameterList>
+ 
+</ParameterList>
