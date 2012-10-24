@@ -206,7 +206,8 @@ reducedQuadrature_Q_Squared(
 	WQ(i,j) = u[i]*Q(i,j);
     ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
     TEUCHOS_ASSERT(ret == 0);
-    std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
+    std::cout << "||vec(I-Q^T*diag(u)*Q)||_infty = " << vec_norm_inf(err2) 
+	      << std::endl;
     //print_matlab(std::cout, err2);
   }
   
@@ -334,7 +335,8 @@ reducedQuadrature_Q_Squared_CPQR(
 	WQ(i,j) = u[i]*Q(i,j);
     ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
     TEUCHOS_ASSERT(ret == 0);
-    std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
+    std::cout << "||vec(I-Q^T*diag(u)*Q)||_infty = " << vec_norm_inf(err2) 
+	      << std::endl;
     //print_matlab(std::cout, err2);
   }
   
@@ -415,8 +417,6 @@ reducedQuadrature_Q_Squared_CPQR2(
   ordinal_type r = SOF::createOrthogonalBasis(
     orthogonalization_method, reduction_tol, verbose, Q2, ww, 
     Z, R, piv);
-  //CPQR_Householder(Q2, Z, R, piv);
-  //ordinal_type r = computeRank(R, reduction_tol);
   bool restrict_r = params.get("Restrict Rank", false);
   if (restrict_r) {
     ordinal_type d = F.numCols();
@@ -584,7 +584,8 @@ reducedQuadrature_Q2(
 	WQ(i,j) = u[i]*Q(i,j);
     ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
     TEUCHOS_ASSERT(ret == 0);
-    std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
+    std::cout << "||vec(I-Q^T*diag(u)*Q)||_infty = " << vec_norm_inf(err2) 
+	      << std::endl;
   }
   
   ordinal_type rank = 0;
@@ -701,7 +702,8 @@ reducedQuadrature_Q2_CPQR(
 	WQ(i,j) = u[i]*Q(i,j);
     ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
     TEUCHOS_ASSERT(ret == 0);
-    std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
+    std::cout << "||vec(I-Q^T*diag(u)*Q)||_infty = " << vec_norm_inf(err2) 
+	      << std::endl;
     //print_matlab(std::cout, err2);
   }
   
