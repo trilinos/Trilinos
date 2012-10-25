@@ -31,7 +31,7 @@ public:
    typedef typename EvalT::ScalarT ScalarT;
 
    Response_Functional(const std::string & responseName,MPI_Comm comm)
-     : ResponseMESupport_Default<EvalT>(responseName,comm) {}
+     : ResponseMESupport_Default<EvalT>(responseName,comm), value(0.0) {}
 
    //! provide direct access, this thing is pretty simple
    ScalarT value;
