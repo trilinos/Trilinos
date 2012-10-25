@@ -2575,7 +2575,7 @@ static int ML_estimate_avg_nz_per_row_nosubmatrix(ML_Operator * matrix, int star
   struct ML_CSR_MSRdata * ptr;
   int rv=-1;
   N=matrix->getrow->Nrows - start_row;
-  if(N==0) return 0;
+  if(N==0) {(*avg_nz)=0.0; return 0;}
 
   if (matrix->getrow->func_ptr == CSR_getrow){
     /* Case #1: CSR Matrix */
