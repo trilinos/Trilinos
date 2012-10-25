@@ -54,9 +54,12 @@
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Tpetra_MatrixIO.hpp>
+#include <Teuchos_TimeMonitor.hpp>
 
 std::string fnMatrix("bcsstk17.rsa");
 bool testPassed;
+double eps = 1e-4;
+int niters = 100;
 
 template <class Node, class Scalar, class Ordinal>
 Scalar power_method(const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal,Ordinal,Node> > &A, size_t niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, bool verbose) {
@@ -75,6 +78,8 @@ Scalar power_method(const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal,Ord
   Scalar lambda = static_cast<Scalar>(0.0);
   Magnitude normz, residual = static_cast<Magnitude>(0.0);
   // power iteration
+  RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("PowerMethod");
+  timer->start();
   for (size_t iter = 0; iter < niters; ++iter) {
     normz = z->norm2();                            // Compute 2-norm of z
     q->scale(ONE/normz, *z);                       // Set q = z / normz
@@ -93,6 +98,7 @@ Scalar power_method(const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal,Ord
       break;
     }
   }
+  timer->stop();
   return lambda;
 }
 
@@ -109,12 +115,17 @@ class runTest {
     // we prefer float for this test, as it is more likely to exercise the GPU
 #if   defined(HAVE_TPETRA_INST_FLOAT)
     typedef float  TestScalar;
+      if (comm->getRank() == 0) cout << "running with scalar float" << std::endl;
 #elif defined(HAVE_TPETRA_INST_DOUBLE)
     typedef double TestScalar;
+      if (comm->getRank() == 0) cout << "running with scalar double" << std::endl;
 #endif
     Teuchos::RCP< Tpetra::CrsMatrix<TestScalar,int,int,Node> > A;
     try {
+      Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("ReadMatrix");
+      timer->start();
       Tpetra::Utils::readHBMatrix(fnMatrix,comm,node,A);
+      timer->stop();
     }
     catch (std::runtime_error &e) {
       if (comm->getRank() == 0) {
@@ -123,7 +134,7 @@ class runTest {
       testPassed = false;      
       return;
     }
-    (void)power_method<Node,TestScalar,int>(A,100,1e-4f,comm->getRank() == 0);
+    (void)power_method<Node,TestScalar,int>(A,niters,(TestScalar)eps,comm->getRank() == 0);
     testPassed = true;
   }
 };
@@ -150,6 +161,8 @@ int main(int argc, char **argv) {
   string fnMachine("mpionly.xml");
   cmdp.setOption("matrix-file",&fnMatrix,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("machine-file",&fnMachine,"Filename for XML machine description file.");
+  cmdp.setOption("num-iters",&niters,"Number of iterations.");
+  cmdp.setOption("tolerance",&eps,"Convergence tolerance.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -163,6 +176,8 @@ int main(int argc, char **argv) {
   ParameterList machPL = pl2xml.toParameterList(machXML);
   Tpetra::HybridPlatform platform(comm,machPL);
   platform.runUserCode<runTest>();
+
+  Teuchos::TimeMonitor::summarize();
 
   if (testPassed == false) {
     if (comm->getRank() == 0) {

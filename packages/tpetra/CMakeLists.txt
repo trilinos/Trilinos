@@ -29,6 +29,10 @@ TRIBITS_ADD_DEBUG_OPTION()
 
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
+SET(Tpetra_MACHINE_XML_FILE_DIR 
+    ${CURRENT_SOURCE_DIR}/examples/HybridPlatform 
+    CACHE INTERNAL BLAH)
+
 #
 # B) Set up package-specific options
 #

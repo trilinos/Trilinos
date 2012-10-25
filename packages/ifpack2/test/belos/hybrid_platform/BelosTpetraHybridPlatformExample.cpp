@@ -120,15 +120,6 @@ class NodeDetails<Kokkos::ThrustGPUNode> {
   }
 };
 
-template <> Teuchos::RCP<Teuchos::Time> Belos::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::TBBNode      > >::mvTransMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Belos::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::ThrustGPUNode> >::mvTransMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Belos::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::TPINode      > >::mvTransMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Belos::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::SerialNode   > >::mvTransMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Belos::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::TBBNode      > >::mvTimesMatAddMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Belos::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::ThrustGPUNode> >::mvTimesMatAddMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Belos::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::TPINode      > >::mvTimesMatAddMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Belos::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::SerialNode   > >::mvTimesMatAddMvTimer_ = Teuchos::null;
-
 template <class Node>
 class runTest {
   public:
