@@ -152,7 +152,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
 
   doFillComplete=true;
   optimizeStorage=false;
-  Teuchos::ArrayRCP<Scalar> diag = Utils::GetMatrixDiagonal(A);
+  Teuchos::ArrayRCP<Scalar> diag = Utils::GetMatrixDiagonal(*A);
   Utils::MyOldScaleMatrix(DinvAP0,diag,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 
   /////////////////// calculate local damping factors omega
@@ -289,7 +289,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
     // compute D^{-1} * A * D^{-1} * A * P0
     bool doFillComplete=true;
     bool optimizeStorage=false;
-    Teuchos::ArrayRCP<Scalar> diagA = Utils::GetMatrixDiagonal(A);
+    Teuchos::ArrayRCP<Scalar> diagA = Utils::GetMatrixDiagonal(*A);
     RCP<Matrix> DinvADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAP0,false,doFillComplete,optimizeStorage);
     Utils::MyOldScaleMatrix(DinvADinvAP0,diagA,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 

@@ -154,7 +154,7 @@ namespace MueLu {
         SubFactoryMonitor m2(*this, "Scaling (A x Ptentative) by D^{-1}", coarseLevel);
         bool doFillComplete=false;
         bool optimizeStorage=false;
-        Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(A);
+        Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(*A);
         Utils::MyOldScaleMatrix(AP,diag,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
       }
 
