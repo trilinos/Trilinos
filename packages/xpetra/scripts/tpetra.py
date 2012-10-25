@@ -31,6 +31,9 @@ def buildFuncLineTpetra( functionNode ):
     # <argsstring>
     argsstring = functionNode.xpath('argsstring')[0].text
 
+    # skip deprecated functions
+    if 'TPETRA_DEPRECATED' in type: return ''
+    
     # hack for Vector:
     # - add missing 'typename'
     # - do not add MultiVector inherited methods
@@ -39,6 +42,18 @@ def buildFuncLineTpetra( functionNode ):
         if name in ['dot','norm1','norm2','normInf','normWeighted','meanValue'] and 'ArrayView' in argsstring: return ''
     if functionNode.xpath('//compoundname')[0].text == 'Tpetra::Vector':
         if name in ['replaceGlobalValue','sumIntoGlobalValue','replaceLocalValue','sumIntoLocalValue'] and 'size_t vectorIndex' in argsstring: return ''
+
+    # hack for MultiVector
+    #  if name == "scale" and "Teuchos::ArrayView< const Scalar > alpha" in argsstring: return ''
+    #  if name == "scale" and "const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A" in argsstring: return ''
+
+    #hack for CrsMatrix
+    if name == "getLocalRowCopy" and "const =0" in argsstring: return '' 
+    if name == "TpetraCrsMatrix" and "const RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &graph" in argsstring: return ''
+    if className == "TpetraCrsMatrix" and "const =0" in argsstring: argsstring = argsstring.replace("const =0", "const")
+    
+    #hack for RowMatrix
+    if className == "TpetraRowMatrix" and "const =0" in argsstring: argsstring = argsstring.replace("const =0", "const")
 
     # <param> -> get list of arg name as a string 'GIDList, nodeIDList, LIDList'
     # Simple version
@@ -68,16 +83,6 @@ def buildFuncLineTpetra( functionNode ):
     else:
         declStr = name + argsstring
     declStr = declStr.rstrip()
-
-    if 'TPETRA_DEPRECATED' in type: return ''
-#    if "const =0" in argsstring: return '' #hack for CrsMatrix
-
-    # hack for MultiVector
-#    if name == "scale" and "Teuchos::ArrayView< const Scalar > alpha" in argsstring: return ''
-#    if name == "scale" and "const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A" in argsstring: return ''
-
-    # hack for CrsMatrix
-    if name == "TpetraCrsMatrix" and "const RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &graph" in argsstring: return ''
 
     if name in conf_RemoveRefFunctionList: declStr = declStr.replace('&', '')
     
