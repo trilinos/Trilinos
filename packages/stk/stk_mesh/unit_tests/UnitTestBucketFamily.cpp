@@ -187,16 +187,15 @@ STKUNIT_UNIT_TEST( UnitTestBucketFamily, UTBF_testInitialize )
             STKUNIT_EXPECT_TRUE(result);
         }
     }
-  {
-      stk::mesh::Selector selector =
-              !(fix.m_partA | fix.m_partB | fix.m_partC | fix.m_partD);
+    {
+      selector = !(fix.m_partA | fix.m_partB | fix.m_partC | fix.m_partD);
       for (size_t i = 0; i < ec5.size(); ++i)
       {
           const stk::mesh::Bucket & bucket = ec5[i]->bucket() ;
           bool result = selector(bucket);
           STKUNIT_EXPECT_TRUE(result);
       }
-  }
+    }
 }
 
 
