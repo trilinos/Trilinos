@@ -79,11 +79,14 @@ namespace NOX {
 namespace Solver {
 
 /*!
-  \brief Pseudo-transient solver
+  \brief Pseudo-transient solver.
 
-  Based on the Kelley Keyes paper.
+  Requires that the Thyra::ModelEvaluator implement transient support
+  (uses alpha, beta, Jacobian evaluation and optionally x_dot in
+  residual).
+
+  Based on the 1998 Kelley Keyes paper, with minor modifications.
 */
-
 class PseudoTransient : public NOX::Solver::Generic {
 
 public:
@@ -128,6 +131,9 @@ protected:
   //! Previous solution pointer. 
   Teuchos::RCP<NOX::Abstract::Group> oldSolnPtr;	
 
+  //! Group used to evaluate a transient residual
+  Teuchos::RCP<NOX::Abstract::Group> transientResidualGroup;	
+
   //! Current search direction pointer.
   Teuchos::RCP<NOX::Abstract::Vector> dirPtr;
 
@@ -165,6 +171,8 @@ protected:
   Teuchos::RCP<NOX::Thyra::Group> thyraSolnGroup; 
   //! Pointer to oldSolnPtr casted back to a thyra group 
   Teuchos::RCP<NOX::Thyra::Group> thyraOldSolnGroup; 
+  //! Group used to evaluate a transient residual
+  Teuchos::RCP<NOX::Thyra::Group> thyraTransientResidualGroup; 
 
   //! Step size for pseudo-transient stepping
   double delta;
@@ -183,6 +191,11 @@ protected:
   //! solution time derivative used for scaling operator V in pseudo-transient paper
   Teuchos::RCP< ::Thyra::VectorBase<double> > x_dot;
 
+  //! If set to true, the candidate direction will use the transient residual instead of the steady-state residual.  This is a modification of the Kelley-Keyes paper.
+  bool use_transient_residual;
+
+  //! Maximum number of iterations before pseudo-transient is disabled and the algorithm switches to a line search-based direct to steady state solve. 
+  int max_pseudo_transient_iterations;
 };
 } // namespace Solver
 } // namespace NOX

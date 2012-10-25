@@ -17,7 +17,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUDriverFiles
-    SOURCE_FILES ShyLU.xml wathen96.mtx wathenSmall.mtx wathenMedium.mtx wathenLarge.mtx
+    SOURCE_FILES ShyLU.xml wathen96.mtx wathenSmall.mtx
 #    EXEDEPS aztec_driver belos_driver
     EXEDEPS belos_driver
     )

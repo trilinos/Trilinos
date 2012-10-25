@@ -21,7 +21,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
       DEPLIBS muelu xpetra
       )
     
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(VisualizeAggregates_example_copyfiles
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(VisualizeAggregates_example_cp
       SOURCE_FILES Condif2Mat.mat Condif2Rhs.mat plotaggs.py convhull.py nodes0.txt
       )
 ENDIF()

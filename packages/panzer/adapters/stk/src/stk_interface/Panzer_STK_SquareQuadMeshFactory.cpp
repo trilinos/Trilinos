@@ -229,6 +229,7 @@ void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK
 
    // add nodesets
    mesh.addNodeset("lower_left");
+   mesh.addNodeset("origin");
 }
 
 void SquareQuadMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const
@@ -421,9 +422,10 @@ void SquareQuadMeshFactory::addNodeSets(STK_Interface & mesh) const
 
    // get all part vectors
    stk::mesh::Part * lower_left = mesh.getNodeset("lower_left");
+   stk::mesh::Part * origin = mesh.getNodeset("origin");
 
-   std::vector<stk::mesh::Entity*> localElmts;
-   mesh.getMyElements(localElmts);
+   // std::vector<stk::mesh::Entity*> localElmts;
+   // mesh.getMyElements(localElmts);
 
    Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
    if(machRank_==0) 
@@ -431,6 +433,9 @@ void SquareQuadMeshFactory::addNodeSets(STK_Interface & mesh) const
       // add zero node to lower_left node set
       stk::mesh::Entity * node = bulkData->get_entity(mesh.getNodeRank(),1);
       mesh.addEntityToNodeset(*node,lower_left);
+
+      // add zero node to origin node set
+      mesh.addEntityToNodeset(*node,origin);
    }
 
    mesh.endModification();

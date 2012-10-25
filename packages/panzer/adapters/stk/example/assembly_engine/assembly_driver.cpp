@@ -135,8 +135,8 @@ int main(int argc,char * argv[])
 
    // other declarations
    const std::size_t workset_size = 20;
-   Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
-         Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+   Teuchos::RCP<panzer::FieldManagerBuilder> fmb = 
+         Teuchos::rcp(new panzer::FieldManagerBuilder);
 
    RCP<panzer_stk::STK_Interface> mesh;
    int base_cell_dimension = -1;
@@ -269,15 +269,16 @@ int main(int argc,char * argv[])
 
     Teuchos::ParameterList user_data("User Data");
 
-    fmb->setupVolumeFieldManagers(*wkstContainer,physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
-    fmb->setupBCFieldManagers(*wkstContainer,bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+    fmb->setWorksetContainer(wkstContainer);
+    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
    // setup assembly engine
    /////////////////////////////////////////////////////////////
 
    // build assembly engine
-   panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm;
-   panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,linObjFactory);
+   panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm;
+   panzer::AssemblyEngine_TemplateBuilder builder(fmb,linObjFactory);
    ae_tm.buildObjects(builder);
 
    // setup linear algebra and solve 

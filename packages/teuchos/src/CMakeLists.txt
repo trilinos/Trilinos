@@ -205,6 +205,7 @@ APPEND_SET(SOURCES
   Teuchos_BLAS.cpp
   Teuchos_CTimeMonitor.cpp
   Teuchos_CommandLineProcessor.cpp
+  Teuchos_CommHelpers.cpp
   Teuchos_CompObject.cpp
   Teuchos_CWrapperSupport.cpp
   Teuchos_Describable.cpp

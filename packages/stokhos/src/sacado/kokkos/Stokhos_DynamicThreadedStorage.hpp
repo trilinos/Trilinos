@@ -107,8 +107,6 @@ namespace Stokhos {
 
 // Cuda specialization
 #include "KokkosArray_Cuda.hpp"
-#include "KokkosArray_Cuda_macros.hpp"
-#include "Stokhos_DynamicThreadedStorage_cuda_impl.hpp"
-#include "KokkosArray_Clear_macros.hpp"
+#include "Stokhos_DynamicThreadedStorage_cuda.hpp"
 
 #endif // STOKHOS_DYNAMIC_STORAGE_HPP

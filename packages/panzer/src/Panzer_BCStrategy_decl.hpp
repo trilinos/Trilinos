@@ -71,10 +71,16 @@ namespace panzer {
 			       const Teuchos::ParameterList& user_data) const = 0;
       
     virtual void 
-    buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					    const panzer::PhysicsBlock& side_pb,
-					    const LinearObjFactory<panzer::Traits> & lof,
-					    const Teuchos::ParameterList& user_data) const = 0;
+    buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+				      const panzer::PhysicsBlock& side_pb,
+				      const LinearObjFactory<panzer::Traits> & lof,
+				      const Teuchos::ParameterList& user_data) const = 0;
+
+    virtual void
+    buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+					           const panzer::PhysicsBlock& side_pb,
+						   const LinearObjFactory<panzer::Traits> & lof,
+						   const Teuchos::ParameterList& user_data) const = 0;
     
   protected:
     

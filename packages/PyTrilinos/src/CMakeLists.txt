@@ -60,7 +60,7 @@ TRIBITS_CONFIGURE_FILE(PyTrilinos_config.h)
 #
 # On Mac OS X Gnu compilers, add dynamic lookup for undefined symbols
 # to the pytrilinos library and PyTrilinos extension modules
-SET(EXTRA_LINK_ARGS "")
+SET(EXTRA_LINK_ARGS "${CMAKE_SHARED_LINKER_FLAGS}")
 IF(APPLE)
   IF(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     APPEND_SET(EXTRA_LINK_ARGS "-undefined dynamic_lookup")
@@ -189,6 +189,12 @@ APPEND_SET(HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_RUNTIME})
 TRIBITS_ADD_LIBRARY(pytrilinos
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  )
+
+# Link against the Python library to prevent undefined
+# symbols for shared builds with -Wl,--no-undefined.
+TARGET_LINK_LIBRARIES(pytrilinos
+  ${PYTHON_LIBRARIES}
   )
 
 SET_TARGET_PROPERTIES(pytrilinos

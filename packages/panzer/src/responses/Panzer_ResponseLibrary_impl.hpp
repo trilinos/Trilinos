@@ -44,26 +44,44 @@
 #define __Panzer_ResponseLibrary_impl_hpp__
 
 #include "Panzer_ResponseContainer.hpp"
+#include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
+#include "Panzer_ResponseFactory_BCStrategyAdapter.hpp"
+
+#include <boost/unordered_set.hpp>
 
 namespace panzer {
+
+template <typename TraitsT>
+ResponseLibrary<TraitsT>::ResponseLibrary()
+   : nextBC_id(0), responseEvaluatorsBuilt_(false)
+{
+   // build dynamic dispatch objects
+   dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
+
+   fmb_ = Teuchos::rcp(new FieldManagerBuilder(true)); // don't build scatter evaluators
+}
 
 template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
                                           const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi,
                                           const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
-   : respAggManager_(ugi,lof), wkstContainer_(wc), globalIndexer_(ugi), linObjFactory_(lof)
+   : respAggManager_(ugi,lof), wkstContainer_(wc), globalIndexer_(ugi), linObjFactory_(lof), nextBC_id(0), responseEvaluatorsBuilt_(false)
 {
    // build dynamic dispatch objects
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
+
+   fmb_ = Teuchos::rcp(new FieldManagerBuilder(true)); // don't build scatter evaluators
 }
 
 template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary(const ResponseLibrary<TraitsT> & rl)
    : respAggManager_(rl.globalIndexer_,rl.linObjFactory_), wkstContainer_(rl.wkstContainer_)
-   , globalIndexer_(rl.globalIndexer_), linObjFactory_(rl.linObjFactory_)
+   , globalIndexer_(rl.globalIndexer_), linObjFactory_(rl.linObjFactory_), nextBC_id(0), responseEvaluatorsBuilt_(false)
 {
    // build dynamic dispatch objects
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
+
+   fmb_ = Teuchos::rcp(new FieldManagerBuilder(true)); // don't build scatter evaluators
 }
 
 template <typename TraitsT>
@@ -93,8 +111,6 @@ template <typename EvalT>
 void ResponseLibrary<TraitsT>::
 reserveVolumeResponse(const ResponseId & rid,const std::string & eBlock)
 {
-   validateResponseIdInElementBlock<EvalT>(rid,eBlock);
-
    int idx = Sacado::mpl::find<TypeSeq,EvalT>::value;
    int sz = Sacado::mpl::size<TypeSeq>::value;
 
@@ -254,6 +270,40 @@ getRequiredElementBlocks(std::vector<std::string> & eBlocks) const
 }
 
 template <typename TraitsT>
+class ResponseVolumeEvaluatorsFactory : public GenericEvaluatorFactory {
+  typedef std::vector<Teuchos::RCP<ResponseContainerBase<TraitsT> > > RespContVector;
+
+  Teuchos::ParameterList userData_;
+  std::map<std::string,Teuchos::RCP<RespContVector> > rsvdVolResp_;
+
+public:
+   ResponseVolumeEvaluatorsFactory(const Teuchos::ParameterList & userData,
+                                   const std::map<std::string,Teuchos::RCP<RespContVector> > & rsvdVolResp)
+     : userData_(userData), rsvdVolResp_(rsvdVolResp) {}
+
+   bool registerEvaluators(PHX::FieldManager<TraitsT> & fm, const PhysicsBlock & pb) const
+   {
+      // verify that block is relevant
+      std::string blockId = pb.elementBlockID();
+      typename std::map<std::string,Teuchos::RCP<RespContVector> >::const_iterator contItr = rsvdVolResp_.find(blockId);
+      if(contItr==rsvdVolResp_.end())
+         return false;
+      RespContVector & contVector = *contItr->second;
+
+      for(std::size_t i=0;i<contVector.size();i++) {
+         // if container has not been constructed, don't register responses
+         if(contVector[i]==Teuchos::null) 
+            continue;
+
+         // build and register new field manager
+         contVector[i]->registerResponses(fm,pb,userData_);
+      }
+
+      return true;
+   }
+};
+
+template <typename TraitsT>
 void ResponseLibrary<TraitsT>::
 buildVolumeFieldManagersFromResponses(
                         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
@@ -263,59 +313,21 @@ buildVolumeFieldManagersFromResponses(
                         const bool write_graphviz_file,
                         const std::string& graphviz_file_prefix)
 {
-   using Teuchos::RCP;
-   using Teuchos::rcp;
+   ResponseVolumeEvaluatorsFactory<TraitsT> rvef(user_data,rsvdVolResp_);
 
+   // setup all volume field managers: pass in extra evaluator evaluator
+   fmb_->setWorksetContainer(wkstContainer_);
+   fmb_->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory_,user_data,rvef);
+
+   AssemblyEngine_TemplateBuilder builder(fmb_,linObjFactory_); 
+   ae_tm_.buildObjects(builder);
+
+   // load up appropriate volume field managers
    std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator blkItr;
-   for (blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr) {
-      RCP<panzer::PhysicsBlock> pb = *blkItr;
-      std::string blockId = pb->elementBlockID();
+   for(blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr) {
+      std::string blockId = (*blkItr)->elementBlockID();
 
-      // verify that block is relevant
-      typename std::map<std::string,Teuchos::RCP<RespContVector> >::iterator contItr = rsvdVolResp_.find(blockId);
-      if(contItr==rsvdVolResp_.end())
-         continue;
-      RespContVector & contVector = *contItr->second;
-  
-      // build a field manager object
-      Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm 
-            = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
-      
-      // Choose model sublist for this element block
-      std::string response_model_name = "Response Model";
-     
-      Teuchos::ParameterList tmp_user_data(user_data);
-      tmp_user_data.set<bool>("Ignore Scatter",true);
-  
-      // use the physics block to register evaluators
-      pb->buildAndRegisterEquationSetEvaluators(*fm, user_data);
-      pb->buildAndRegisterGatherAndOrientationEvaluators(*fm,*linObjFactory_, tmp_user_data);
-      pb->buildAndRegisterDOFProjectionsToIPEvaluators(*fm, tmp_user_data);
-      pb->buildAndRegisterScatterEvaluators(*fm,*linObjFactory_, tmp_user_data);
-      pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, closure_models, user_data);
-      if(closure_models.isSublist(response_model_name))
-         pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, response_model_name, closure_models, user_data);
-
-      for(std::size_t i=0;i<contVector.size();i++) {
-
-         // if container has not been constructed, don'ta register responses
-         if(contVector[i]==Teuchos::null) 
-            continue;
-
-         // build and register new field manager
-         contVector[i]->registerResponses(*fm,*pb,user_data);
-      }
-  
-      // build the setup data using passed in information
-      Traits::SetupData setupData;
-      setupData.worksets_ = wkstContainer_->getVolumeWorksets(blockId);
-  
-      fm->postRegistrationSetup(setupData);
-      
-      if (write_graphviz_file)
-        fm->writeGraphvizFile(graphviz_file_prefix+"Response_"+blockId);
-
-      volFieldManagers_[blockId] = fm;
+      volFieldManagers_[blockId] = fmb_->getVolumeFieldManager(blockId);
    }
 }
 
@@ -325,103 +337,23 @@ void ResponseLibrary<TraitsT>::
 evaluateVolumeFieldManagers(const panzer::AssemblyEngineInArgs & ae_in,
                             const Teuchos::Comm<int> & comm)
 {
-   int idx = Sacado::mpl::find<TypeSeq,EvalT>::value;
-
-   GlobalEvaluationDataContainer preEvalData;
-   preEvalData.addDataObject("Solution Gather Container",ae_in.ghostedContainer_);
-   ae_in.fillGlobalEvaluationDataContainer(preEvalData);
-
    typedef panzer::LinearObjContainer LOC;
-   linObjFactory_->globalToGhostContainer(*(ae_in.container_),*(ae_in.ghostedContainer_),LOC::X | LOC::DxDt);
+   const int idx = Sacado::mpl::find<TypeSeq,EvalT>::value;
 
-   // std::map<std::string,Teuchos::RCP<PHX::FieldManager<TraitsT> > >::iterator fm_itr;
+   linObjFactory_->globalToGhostContainer(*(ae_in.container_),*(ae_in.ghostedContainer_),LOC::X | LOC::DxDt);
+  
+   Teuchos::RCP<panzer::AssemblyEngine<EvalT> > ae = ae_tm_.getAsObject<EvalT>();
+   ae->evaluateVolume(ae_in);
+
    typename std::map<std::string,Teuchos::RCP<PHX::FieldManager<TraitsT> > >::iterator fm_itr;
    for(fm_itr=volFieldManagers_.begin();fm_itr!=volFieldManagers_.end();fm_itr++) {
      const std::string & eBlock = fm_itr->first;
-     Teuchos::RCP< PHX::FieldManager<TraitsT> > fm = fm_itr->second;
- 
-     fm->template preEvaluate<EvalT>(preEvalData);
 
-     // loop over all worksets
-     for(std::vector<panzer::Workset>::iterator wkst_itr=wkstContainer_->begin(eBlock);
-         wkst_itr!=wkstContainer_->end(eBlock);++wkst_itr) {
- 
-        panzer::Workset& workset = *wkst_itr;
-    
-        workset.ghostedLinContainer = ae_in.ghostedContainer_;
-        workset.linContainer = ae_in.container_;
-        workset.alpha = ae_in.alpha;
-        workset.beta = ae_in.beta;
-        workset.time = ae_in.time;
-        workset.evaluate_transient_terms = ae_in.evaluate_transient_terms;
- 
-        fm->template evaluateFields<EvalT>(workset);
-     }
- 
-     fm->template postEvaluate<EvalT>(0);
- 
      // perform global communication
      const RespContVector & contVector = *rsvdVolResp_.find(eBlock)->second;
-    
-     // if not container has been constructed, don't build
-     // a field manager
      if(contVector[idx]!=Teuchos::null) 
         contVector[idx]->globalReduction(comm);
    }
-}
-
-template <typename TraitsT>
-template <typename EvalT>
-void ResponseLibrary<TraitsT>::
-evaluateVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >& worksets,
-                            const panzer::AssemblyEngineInArgs & ae_in,
-                            const Teuchos::Comm<int> & comm)
-{
-  int idx = Sacado::mpl::find<TypeSeq,EvalT>::value;
-
-  GlobalEvaluationDataContainer preEvalData;
-  preEvalData.addDataObject("Solution Gather Container",ae_in.ghostedContainer_);
-  ae_in.fillGlobalEvaluationDataContainer(preEvalData);
-
-  typedef panzer::LinearObjContainer LOC;
-  linObjFactory_->globalToGhostContainer(*(ae_in.container_),*(ae_in.ghostedContainer_),LOC::X | LOC::DxDt);
-
-  std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >::const_iterator itr;
-  for(itr=worksets.begin();itr!=worksets.end();++itr) {
-    const std::string & eBlock = itr->first;
-    std::vector<panzer::Workset> & w = *(itr->second);
-
-    Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = volFieldManagers_[eBlock];
-
-    if(fm!=Teuchos::null) {
-       fm->preEvaluate<EvalT>(preEvalData);
-   
-       // Loop over worksets in this element block
-       for (std::size_t i = 0; i < w.size(); ++i) {
-         panzer::Workset& workset = w[i];
-   
-         workset.ghostedLinContainer = ae_in.ghostedContainer_;
-         workset.linContainer = ae_in.container_;
-         workset.alpha = ae_in.alpha;
-         workset.beta = ae_in.beta;
-         workset.time = ae_in.time;
-         workset.evaluate_transient_terms = ae_in.evaluate_transient_terms;
-
-         fm->evaluateFields<EvalT>(workset);
-       }
-   
-       fm->postEvaluate<EvalT>(0);
-   
-       // perform global communication
-       const RespContVector & contVector = *rsvdVolResp_.find(eBlock)->second;
-   
-       // if not container has been constructed, don't build
-       // a field manager
-       if(contVector[idx]!=Teuchos::null) 
-          contVector[idx]->globalReduction(comm);
-    }
-  }
-
 }
 
 //! Write out all volume containers to a stream
@@ -480,6 +412,246 @@ reinitializeResponseData()
             respContVec[i]->clear();
       }
    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//
+// 2nd Generation Interface
+//
+////////////////////////////////////////////////////////////////////////////////////////////
+
+namespace {
+  // This is a builder for building a ResponseBase object by evaluation type
+  template <typename TraitsT>
+  struct ResponseBase_Builder {
+    Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > respFact_;
+    std::string respName_;
+    ResponseBase_Builder(const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & respFact,
+                         const std::string & respName)
+      : respFact_(respFact), respName_(respName) {}
+    template <typename T>
+    Teuchos::RCP<ResponseBase> build() const 
+    { return respFact_->template getAsBase<T>()->buildResponseObject(respName_); }
+  };
+}
+
+template <typename TraitsT>
+template <typename ResponseEvaluatorFactory_BuilderT>
+void ResponseLibrary<TraitsT>::
+addResponse(const std::string responseName,
+            const std::vector<std::string> & blocks,
+            const ResponseEvaluatorFactory_BuilderT & builder) 
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+
+   // build response factory objects for each evaluation type
+   RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > modelFact_tm
+        = rcp(new ResponseEvaluatorFactory_TemplateManager<TraitsT>);
+   modelFact_tm->buildObjects(builder);
+
+   // build a response object for each evaluation type
+   ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName);
+   responseObjects_[responseName].buildObjects(respData_builder);
+
+   // associate response objects with all element blocks required
+   for(std::size_t i=0;i<blocks.size();i++) {
+     std::string blockId = blocks[i];
+
+     // add response factory TM to vector that stores them
+     std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > & block_tm 
+        = respFactories_[blockId];
+     block_tm.push_back(std::make_pair(responseName,modelFact_tm));
+   }
+}
+
+template <typename TraitsT>
+template <typename ResponseEvaluatorFactory_BuilderT>
+void ResponseLibrary<TraitsT>::
+addResponse(const std::string responseName,
+            const std::vector<std::pair<std::string,std::string> > & sideset_blocks,
+            const ResponseEvaluatorFactory_BuilderT & builder) 
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+
+   // build response factory objects for each evaluation type
+   RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > modelFact_tm
+        = rcp(new ResponseEvaluatorFactory_TemplateManager<TraitsT>);
+   modelFact_tm->buildObjects(builder);
+
+   // build a response object for each evaluation type
+   ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName);
+   responseObjects_[responseName].buildObjects(respData_builder);
+
+   // associate response objects with all element blocks required
+   for(std::size_t i=0;i<sideset_blocks.size();i++) {
+     std::string sideset = sideset_blocks[i].first;
+     std::string blockId = sideset_blocks[i].second;
+
+     BC bc(nextBC_id,BCT_Neumann,sideset,blockId,"Whatever",responseName+"_BCStrategy");
+
+     RCP<std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > block_tm
+        = respBCFactories_[bc];
+     if(block_tm==Teuchos::null) {
+       block_tm = Teuchos::rcp(new std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > >); 
+       respBCFactories_[bc] = block_tm;
+     }
+
+     // add response factory TM to vector that stores them
+     block_tm->push_back(std::make_pair(responseName,modelFact_tm));
+ 
+     nextBC_id++;
+   }
+}
+
+template <typename TraitsT>
+template <typename EvalT>
+Teuchos::RCP<ResponseBase> ResponseLibrary<TraitsT>::
+getResponse(const std::string responseName) const
+{
+   typedef boost::unordered_map<std::string, Response_TemplateManager> HashMap;
+   HashMap::const_iterator itr = responseObjects_.find(responseName);
+
+   // response was not in list of responses
+   if(itr==responseObjects_.end())
+     return Teuchos::null;
+
+   // response was found, return it
+   return itr->second.get<EvalT>();
+}
+
+template <typename TraitsT>
+template <typename EvalT>
+void ResponseLibrary<TraitsT>::
+getResponses(std::vector<Teuchos::RCP<ResponseBase> > & responses) const
+{
+   typedef boost::unordered_map<std::string, Response_TemplateManager> HashMap;
+
+   responses.clear();
+
+   // loop over all respones adding them to the vector
+   for(HashMap::const_iterator itr=responseObjects_.begin();itr!=responseObjects_.end();++itr)
+     responses.push_back(itr->second.get<EvalT>());
+}
+
+template <typename TraitsT>
+class RVEF2 : public GenericEvaluatorFactory {
+public:
+   typedef boost::unordered_map<std::string,
+                                std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > RespFactoryTable;
+   typedef boost::unordered_set<std::string> StringAccessTable;
+
+   RVEF2(const Teuchos::ParameterList & userData,RespFactoryTable & rft)
+     : userData_(userData), rft_(rft) {}
+
+   bool registerEvaluators(PHX::FieldManager<TraitsT> & fm, const PhysicsBlock & pb) const
+   {
+     using Teuchos::RCP;
+     using Teuchos::rcp;
+
+     std::string blockId = pb.elementBlockID();
+
+     // because we reduce the physics blocks to only ones we need, this find should succeed
+     typename RespFactoryTable::iterator itr=rft_.find(blockId);
+
+     TEUCHOS_ASSERT(itr!=rft_.end() && itr->second.size()>0);
+
+     // loop over each template manager in the block, and then each evaluation type
+     std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > & respFacts = itr->second;
+     for(std::size_t i=0;i<respFacts.size();i++) {
+       std::string responseName = respFacts[i].first;
+       RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > fact = respFacts[i].second;
+       // what is going on here?
+       if(fact==Teuchos::null)
+         continue;
+ 
+       // loop over each evaluation type
+       for(typename ResponseEvaluatorFactory_TemplateManager<TraitsT>::iterator rf_itr=fact->begin();
+           rf_itr!=fact->end();++rf_itr) {
+
+         // build and register evaluators, store field tag, make it required
+         rf_itr->buildAndRegisterEvaluators(responseName,fm,pb,userData_);     
+       }
+     }
+    
+     return true;
+   }
+
+private:
+  const Teuchos::ParameterList & userData_;
+  RespFactoryTable & rft_;
+};
+
+template <typename TraitsT>
+void ResponseLibrary<TraitsT>::
+buildResponseEvaluators(
+         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+         const Teuchos::ParameterList& closure_models,
+         const Teuchos::ParameterList& user_data,
+         const bool write_graphviz_file,
+         const std::string& graphviz_file_prefix)
+{
+   using Teuchos::RCP;
+
+   typedef boost::unordered_map<std::string,
+                                std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > RespFactoryTable;
+
+   // first compute subset of physics blocks required to build responses
+   ////////////////////////////////////////////////////////////////////////////////
+
+   std::vector<Teuchos::RCP<panzer::PhysicsBlock> > requiredVolPhysicsBlocks;
+   for(std::size_t i=0;i<physicsBlocks.size();i++) {
+     std::string blockId = physicsBlocks[i]->elementBlockID();
+     
+     // is this element block required
+     typename RespFactoryTable::const_iterator itr = respFactories_.find(blockId);
+
+     if(itr!=respFactories_.end()) {
+       // one last check for nonzero size
+       if(itr->second.size()>0)
+         requiredVolPhysicsBlocks.push_back(physicsBlocks[i]);
+     } 
+   }
+
+   // build boundary response array
+   std::vector<BC> bcs;
+   for(typename BCHashMap::const_iterator itr=respBCFactories_.begin();
+       itr!=respBCFactories_.end();++itr)
+     bcs.push_back(itr->first);
+
+   // second construct generic evaluator factory from required response factories
+   ////////////////////////////////////////////////////////////////////////////////
+   RVEF2<TraitsT> rvef2(user_data,respFactories_);
+
+   // third build field manager builder using the required physics blocks
+   ////////////////////////////////////////////////////////////////////////////////
+
+   response_bc_adapters::BCFactoryResponse bc_factory(respBCFactories_);
+
+   // don't build scatter evaluators
+   fmb2_ = Teuchos::rcp(new FieldManagerBuilder(true)); 
+
+   fmb2_->setWorksetContainer(wkstContainer_);
+   fmb2_->setupVolumeFieldManagers(requiredVolPhysicsBlocks,cm_factory,closure_models,*linObjFactory_,user_data,rvef2);
+   fmb2_->setupBCFieldManagers(bcs,physicsBlocks,cm_factory,bc_factory,closure_models,*linObjFactory_,user_data);
+
+   // fourth build assembly engine from FMB
+   ////////////////////////////////////////////////////////////////////////////////
+
+   AssemblyEngine_TemplateBuilder builder(fmb2_,linObjFactory_); 
+   ae_tm2_.buildObjects(builder);
+
+   responseEvaluatorsBuilt_ = true;
+}
+
+template <typename TraitsT>
+template <typename EvalT> 
+void ResponseLibrary<TraitsT>::
+evaluate(const panzer::AssemblyEngineInArgs& input_args)
+{
+   ae_tm2_.template getAsObject<EvalT>()->evaluate(input_args);
 }
 
 }

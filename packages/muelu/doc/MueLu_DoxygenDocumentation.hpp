@@ -70,8 +70,9 @@ development of new multigrid preconditioning techniques.
 \section muelu_authors Authors and Contributors
 
   - Jeremie Gaidamour, Sandia National Labs
-  - Axel Gerstenberger, Sandia National Labs
+  - Axel Gerstenberger, Rolls Royce
   - Jonathan Hu, Sandia National Labs
+  - Andrey Prokopenko, Sandia National Labs
   - Chris Siefert, Sandia National Labs
   - Ray Tuminaro, Sandia National Labs
   - Tobias Wiesner, Technical University Munich

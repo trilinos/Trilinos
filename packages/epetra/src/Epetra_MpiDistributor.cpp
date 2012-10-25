@@ -369,6 +369,7 @@ int Epetra_MpiDistributor::CreateFromRecvs( const int & NumRemoteIDs,
 //CreateFromRecvs Method
 // - create communication plan given a known list of procs to recv from
 //---------------------------------------------------------------------------
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int Epetra_MpiDistributor::CreateFromRecvs( const int & NumRemoteIDs,
 				   const long long * RemoteGIDs,
 			           const int * RemotePIDs,
@@ -392,6 +393,7 @@ int Epetra_MpiDistributor::CreateFromRecvs( const int & NumRemoteIDs,
 
   return(0);
 }
+#endif
 
 //==============================================================================
 //---------------------------------------------------------------------------

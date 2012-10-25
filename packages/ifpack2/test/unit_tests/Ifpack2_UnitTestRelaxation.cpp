@@ -186,14 +186,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test2, Scalar, LocalOrdinal
   }
 }
 
-  // Test apply() with "null" x and y. In parallel, it is possible that some nodes do not have any local elements.
+  // Test apply() with a partially "null" x and y. In parallel, it is possible that some nodes do not have any local elements.
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test3, Scalar, LocalOrdinal, GlobalOrdinal)
 {
   std::string version = Ifpack2::Version();
   out << "Ifpack2::Version(): " << version << std::endl;
   
   global_size_t num_rows_per_proc = 0;
-  
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  if(!comm->getRank()) num_rows_per_proc=5;
+   
+
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   
   Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
@@ -210,8 +213,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test3, Scalar, LocalOrdinal
   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
   x.putScalar(1);
 
-  TEST_EQUALITY(x.getMap()->getNodeNumElements(), 0);
-  TEST_EQUALITY(y.getMap()->getNodeNumElements(), 0);
+  TEST_EQUALITY(x.getMap()->getNodeNumElements(), num_rows_per_proc);
+  TEST_EQUALITY(y.getMap()->getNodeNumElements(), num_rows_per_proc);
   
   TEST_NOTHROW(x.getLocalMV().getValues());
   TEST_NOTHROW(y.getLocalMV().getValues());
@@ -225,7 +228,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test4, Scalar, LocalOrdinal
   std::string version = Ifpack2::Version();
   out << "Ifpack2::Version(): " << version << std::endl;
   
-  global_size_t num_rows_per_proc = 0;
+  global_size_t num_rows_per_proc = 5;
   
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   
@@ -244,8 +247,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test4, Scalar, LocalOrdinal
   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
   x.putScalar(1);
 
-  TEST_EQUALITY(x.getMap()->getNodeNumElements(), 0);
-  TEST_EQUALITY(y.getMap()->getNodeNumElements(), 0);
+  TEST_EQUALITY(x.getMap()->getNodeNumElements(), 5);
+  TEST_EQUALITY(y.getMap()->getNodeNumElements(), 5);
   
   TEST_NOTHROW(x.getLocalMV().getValues());
   TEST_NOTHROW(y.getLocalMV().getValues());

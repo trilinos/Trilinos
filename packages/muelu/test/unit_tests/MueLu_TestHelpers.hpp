@@ -47,6 +47,7 @@
 #define MUELU_TEST_HELPERS_H
 
 #include <string>
+#include <dirent.h>
 
 // Teuchos
 #include "Teuchos_Comm.hpp"
@@ -223,6 +224,11 @@ namespace MueLuTests {
 #endif
 
     }; // class Factory
+
+
+
+    //! Return the list of files in the directory. Only files that are matching '*filter*' are returned.
+    ArrayRCP<std::string> GetFileList(const std::string & dirPath, const std::string & filter);     
 
   } // namespace TestHelpers
 

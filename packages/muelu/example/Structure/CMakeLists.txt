@@ -13,7 +13,7 @@ IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
     DEPLIBS muelu xpetra
     )
 
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(Structure2d_example_copyfiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Structure2d_example_cp
     SOURCE_FILES stru2d_A.txt stru2d_b.txt stru2d_ns.txt
     )
   

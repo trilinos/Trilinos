@@ -1,0 +1,8 @@
+<ParameterList name="TestSubLists">
+  <ParameterList name="smoother: list (level 0)">
+    <Parameter name="smoother: type" type="string" value="Jacobi"/>
+  </ParameterList>
+  <ParameterList name="smoother: list (level 2)" type="string" value="Gauss-Seidel">
+    <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
+  </ParameterList>
+</ParameterList>

@@ -7,14 +7,7 @@ INCLUDE(TrilinosCreateClientTemplateHeaders)
 # A) Package-specific configuration options
 #
 
-CONFIGURE_FILE(
-  ../cmake/Xpetra_config.hpp.in 
-  ${CMAKE_CURRENT_BINARY_DIR}/Xpetra_config.hpp
-  )
-
-# Note: cannot use the macro TRIBITS_CONFIGURE_FILE() because 
-# Xpetra_config.hpp.in is not in ${PACKAGE_SOURCE_DIR}/cmake
-## TRIBITS_CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Xpetra_config.hpp)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.hpp)
 
 #
 # B) Define the header and source files (and directories)

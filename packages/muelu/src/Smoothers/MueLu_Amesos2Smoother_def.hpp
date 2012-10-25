@@ -80,6 +80,18 @@ namespace MueLu {
 #endif
     } // if(type_ == "")
 
+    //TMP: Amesos2 KLU never available but most MueLu tests are using KLU by default 
+    // (ex: examples driven by ML parameter lists) 
+    // -> temporarily fallback to SUPERLU
+    // Remove this when KLU becomes available.
+#if defined(HAVE_AMESOS2_SUPERLU)
+    if (type_ == "Klu" && Amesos2::query(type_) == false) {
+      type_ = "Superlu";
+      this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother: KLU2 not available. Using SuperLu instead" << std::endl;
+    }
+#endif // HAVE_AMESOS2_SUPERLU
+    // END OF TMP
+
     // Check the validity of the solver type parameter
     TEUCHOS_TEST_FOR_EXCEPTION(Amesos2::query(type_) == false, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Amesos2Smoother(): The Amesos2 library reported that the solver '" << type_ << "' is not available. "
                                "Amesos2 have been compiled without the support of this solver or the solver name is misspelled.");
@@ -96,7 +108,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level &currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
-    if (SmootherPrototype::IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother::Setup(): Setup() has already been called";
+    if (SmootherPrototype::IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother::Setup(): Setup() has already been called" << std::endl;
 
     RCP<Matrix> A_ = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
 

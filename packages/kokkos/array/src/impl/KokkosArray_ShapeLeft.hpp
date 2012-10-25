@@ -122,7 +122,7 @@ struct ShapeMap< Shape<LayoutLeft,ValueSize,Rank,s0,s1,s2,s3,s4,s5,s6,s7> >
   static inline
   size_t stride( const shape_type & shape )
   {
-    return MemorySpace::preferred_alignment( shape.value_size , shape.N0 );
+    return MemorySpace::preferred_alignment( shape.scalar_size , shape.N0 );
   }
 };
 

@@ -276,7 +276,13 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   //   MODEL = graph, hypergraph, geometric, ids
   //   ALGORITHM = rcm, random, amd
 
-  ModelType modelType = GraphModelType;
+  ModelType modelType = IdentifierModelType; //default, change later
+  string method = this->params_->template get<string>("order_method", "rcm");
+
+  if ((method == string("rcm")) || 
+      (method == string("minimum_degree"))) {
+    modelType = GraphModelType;
+  }
 
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
@@ -300,7 +306,6 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 
 
   case IdentifierModelType:
-    idFlags.set(SELF_EDGES_MUST_BE_REMOVED);
     this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
       this->baseInputAdapter_, this->envConst_, problemCommConst_, idFlags));
 

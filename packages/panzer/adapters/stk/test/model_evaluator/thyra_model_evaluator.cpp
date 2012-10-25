@@ -92,7 +92,7 @@ namespace panzer {
   bool testEqualityOfEpetraVectorValues(Epetra_Vector& a, Epetra_Vector& b, double tolerance, bool write_to_cout = false);
 
   void buildAssemblyPieces(bool parameter_on,
-                           Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > & fmb,  
+                           Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,  
                            Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary, 
                            Teuchos::RCP<panzer::GlobalData> & gd,
                            Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof);
@@ -102,7 +102,7 @@ namespace panzer {
     using Teuchos::RCP;
 
     bool parameter_on = true;
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb;  
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb;  
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary; 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof;
     Teuchos::RCP<panzer::GlobalData> gd;
@@ -116,7 +116,7 @@ namespace panzer {
       typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
       typedef Thyra::VectorBase<double> VectorType;
       typedef Thyra::LinearOpBase<double> OperatorType;
-      typedef panzer::ModelEvaluator<double,int,int,Kokkos::DefaultNode::DefaultNodeType> PME;
+      typedef panzer::ModelEvaluator<double,Kokkos::DefaultNode::DefaultNodeType> PME;
 
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = true;
@@ -246,7 +246,7 @@ namespace panzer {
   }
 
   void buildAssemblyPieces(bool parameter_on,
-                           Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > & fmb,  
+                           Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,  
                            Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary, 
                            Teuchos::RCP<panzer::GlobalData> & gd,
                            Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof
@@ -269,7 +269,7 @@ namespace panzer {
     std::vector<panzer::BC> bcs;
     testInitialzation(ipb, bcs);
 
-    fmb = Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+    fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
 
     // build physics blocks
     //////////////////////////////////////////////////////////////
@@ -348,8 +348,9 @@ namespace panzer {
 
     Teuchos::ParameterList user_data("User Data");
 
-    fmb->setupVolumeFieldManagers(*wkstContainer,physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
-    fmb->setupBCFieldManagers(*wkstContainer,bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+    fmb->setWorksetContainer(wkstContainer);
+    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
   }
 
 

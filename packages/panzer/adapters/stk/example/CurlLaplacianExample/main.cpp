@@ -325,10 +325,11 @@ int main(int argc,char * argv[])
    // setup field manager builder
    /////////////////////////////////////////////////////////////
 
-   Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
-         Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
-   fmb->setupVolumeFieldManagers(*wkstContainer,physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
-   fmb->setupBCFieldManagers(*wkstContainer,bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,
+   Teuchos::RCP<panzer::FieldManagerBuilder> fmb = 
+         Teuchos::rcp(new panzer::FieldManagerBuilder);
+   fmb->setWorksetContainer(wkstContainer);
+   fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+   fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,
                              *linObjFactory,user_data);
 
    // setup assembly engine
@@ -337,8 +338,8 @@ int main(int argc,char * argv[])
    // build assembly engine: The key piece that brings together everything and 
    //                        drives and controls the assembly process. Just add
    //                        matrices and vectors
-   panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm;
-   panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,linObjFactory);
+   panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm;
+   panzer::AssemblyEngine_TemplateBuilder builder(fmb,linObjFactory);
    ae_tm.buildObjects(builder);
 
    // Finalize construcition of STK writer response library

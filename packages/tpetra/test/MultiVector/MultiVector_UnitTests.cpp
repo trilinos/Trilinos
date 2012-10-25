@@ -336,6 +336,10 @@ namespace {
     TEST_EQUALITY( vec->get1dViewNonConst().getRawPtr(), user_arcp.getRawPtr() )
     TEST_EQUALITY( vec->getData(0).getRawPtr(),          user_arcp.getRawPtr() )
     TEST_EQUALITY( vec->getDataNonConst(0).getRawPtr(),  user_arcp.getRawPtr() )
+    // test both view methods; this is the easiest place to test these, 
+    // because we know the pointers for the data
+    TEST_EQUALITY( vec->getDataNonConst(0), vec->getDataNonConst() )
+    TEST_EQUALITY( vec->getData(), vec->getDataNonConst()          )
   }
 
 

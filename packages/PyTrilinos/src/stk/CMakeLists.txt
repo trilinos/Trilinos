@@ -1,9 +1,3 @@
-# the stk project
-PROJECT(PyPercept)
-
-# we need python to build
-FIND_PACKAGE(PythonLibs REQUIRED)
-FIND_PACKAGE(PythonInclude REQUIRED) 
 
 FIND_PATH(MPI4PY_INCLUDE_DIR mpi4py HINTS ${PYTHON_INCLUDE_DIRS}/../../lib/python2.7/site-packages/mpi4py/include DOC "path to mpi4py include directory")
 
@@ -50,7 +44,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}
           ${Boost_INCLUDE_DIRS}/..
           )
 
-SET(PERCEPT_LIBS 
+SET(PERCEPT_LIBS
    stk_percept
    stk_adapt
    stk_mesh_base
@@ -61,7 +55,7 @@ SET(PERCEPT_LIBS
    stk_util_diag
    stk_search
    intrepid
-   shards   
+   shards
    teuchos
 )
 
@@ -96,7 +90,7 @@ SET(DOT_I_DEPENDS
 # Create the custom swig command.
 # set PerceptMesh.i to generate c++ code
 #SET(CMAKE_SWIG_FLAGS "-Wall")
- 
+
 SWIG_MODULE_GET_OUTDIR_AND_MODULE(PerceptMesh.i MODULE_OUTDIR MODULE_NAME)
 SET_SOURCE_FILES_PROPERTIES(PerceptMesh.i PROPERTIES CPLUSPLUS ON OBJECT_DEPENDS "${DOT_I_DEPENDS}" )
 SWIG_ADD_MODULE(PyPercept python PerceptMesh.i "${MODULE_OUTDIR}" "${MODULE_NAME}" )

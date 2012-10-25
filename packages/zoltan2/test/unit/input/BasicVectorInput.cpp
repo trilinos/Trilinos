@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
     valuePtrs[v] = mv_values + v;
   }
 
-  Zoltan2::BasicVectorInput<userTypes_t> *ia;
+  Zoltan2::BasicVectorInput<userTypes_t> *ia = NULL;
 
   {
     // A Zoltan2::BasicVectorInput object with one vector and no weights

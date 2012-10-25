@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_LongLongSerialDenseVector.h"
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES

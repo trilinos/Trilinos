@@ -73,7 +73,7 @@ namespace Teuchos {
 /// #include <Teuchos_GlobalMPISession.hpp>
 ///
 /// int main () {
-///   Teuchos::GlobalMPISession (&argc, &argv, NULL);
+///   Teuchos::GlobalMPISession session (&argc, &argv, NULL);
 ///   // Your code goes here ...
 ///   return 0;
 /// }

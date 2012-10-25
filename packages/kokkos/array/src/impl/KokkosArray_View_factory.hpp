@@ -46,6 +46,7 @@
 
 #include <iostream>
 
+#include <KokkosArray_HostSpace.hpp>
 #include <impl/KokkosArray_StaticAssert.hpp>
 #include <impl/KokkosArray_ArrayTraits.hpp>
 
@@ -53,32 +54,86 @@
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
+namespace Impl {
 
+template< class ExecutionSpace , class MemoryManagement ,
+          class ScalarType , class ShapeType , class MemorySpace >
+struct ViewManagement 
+{
+  KOKKOSARRAY_INLINE_FUNCTION static void increment( ScalarType * ) {}
+
+  KOKKOSARRAY_INLINE_FUNCTION static void decrement( ScalarType * ) {}
+
+  inline static 
+  ScalarType * allocate( const std::string & , const ShapeType & )
+  { return 0 ; }
+};
+
+template< class ScalarType , class ShapeType , class MemorySpace >
+struct ViewManagement< HostSpace , MemoryManaged ,
+                       ScalarType , ShapeType , MemorySpace >
+{
+  KOKKOSARRAY_INLINE_FUNCTION static void increment( ScalarType * p )
+  { MemorySpace::increment( p ); }
+
+  KOKKOSARRAY_INLINE_FUNCTION static void decrement( ScalarType * p )
+  { MemorySpace::decrement( p ); }
+
+  inline static 
+  ScalarType * allocate( const std::string & label ,
+                         const ShapeType & shape )
+  {
+    return (ScalarType *)
+      MemorySpace::allocate( label ,
+                             typeid(ScalarType) ,
+                             sizeof(ScalarType) ,
+                             Impl::ShapeMap<ShapeType>
+                                 ::allocation_count( shape ) );
+  }
+};
+
+} // namespace Impl
+} // namespace KokkosArray
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
 namespace Impl {
 
 template< class > struct ViewCreateMirror ;
 
-template< class DataType , class LayoutType , class DeviceType >
-struct ViewCreateMirror< View< DataType , LayoutType , DeviceType > >
+template< class DataType , class LayoutType , class DeviceType , class ManageType >
+struct ViewCreateMirror< View< DataType , LayoutType , DeviceType , ManageType > >
 {
-  typedef View< DataType , LayoutType , DeviceType > output_type ;
+  typedef View< DataType , LayoutType , DeviceType , ManageType > output_type ;
 
   inline static
   output_type create( const output_type & src ) { return src ; }
 
-  template< class DeviceSrc >
+  template< class DeviceSrc , class ManageSrc >
   inline static
-  output_type create( const View< DataType , LayoutType , DeviceSrc > & src )
+  output_type create( const View< DataType , LayoutType , DeviceSrc , ManageSrc > & src )
   {
     return output_type( "mirror" , src.shape() );
   }
 };
 
 } // namespace Impl
+} // namespace KokkosArray
 
-template< class DataType , class LayoutType , class DeviceType >
-typename View< DataType , LayoutType , DeviceType >::HostMirror
-create_mirror_view( const View<DataType,LayoutType,DeviceType> & input )
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
+
+template< class DataType ,
+          class LayoutType ,
+          class DeviceType ,
+          class ManageType >
+typename View< DataType , LayoutType , DeviceType , ManageType >::HostMirror
+create_mirror_view(
+  const View<DataType,LayoutType,DeviceType,ManageType > & input )
 {
   typedef View< DataType , LayoutType , DeviceType > input_type ;
   typedef typename input_type::HostMirror            output_type ;
@@ -126,8 +181,8 @@ template< class DstView ,
           class SrcView ,
           class SameValue =
             typename ViewDeepCopyValueCompatible<
-              typename DstView::value_type ,
-              typename SrcView::value_type >::type ,
+              typename DstView::scalar_type ,
+              typename SrcView::scalar_type >::type ,
           class SameLayout = typename
             is_same< typename DstView::array_layout ,
                      typename SrcView::array_layout >::type ,
@@ -137,16 +192,16 @@ struct ViewDeepCopy ;
 
 // Deep copy compatible views:
 
-template< class DataDst , class LayoutDst , class DeviceDst ,
-          class DataSrc , class LayoutSrc , class DeviceSrc >
-struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst > ,
-                     View< DataSrc , LayoutSrc , DeviceSrc > ,
-                     true_type /* Same value_type   */ ,
+template< class DataDst , class LayoutDst , class DeviceDst , class ManageDst ,
+          class DataSrc , class LayoutSrc , class DeviceSrc , class ManageSrc >
+struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst , ManageDst > ,
+                     View< DataSrc , LayoutSrc , DeviceSrc , ManageSrc > ,
+                     true_type /* Same scalar_type   */ ,
                      true_type /* Same array_layout */ ,
                      true_type /* Same rank */ >
 {
-  typedef View< DataDst , LayoutDst , DeviceDst >  dst_type ;
-  typedef View< DataSrc , LayoutSrc , DeviceSrc >  src_type ;
+  typedef View< DataDst , LayoutDst , DeviceDst , ManageDst >  dst_type ;
+  typedef View< DataSrc , LayoutSrc , DeviceSrc , ManageSrc >  src_type ;
 
   inline static
   void apply( const dst_type & dst , const src_type & src )
@@ -154,14 +209,18 @@ struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst > ,
     typedef typename dst_type::shape_type shape_type ;
 
     if ( dst != src ) {
+
       assert_shapes_are_equal( dst.shape() , src.shape() );
 
-      DeepCopy< typename dst_type::value_type ,
-                typename DeviceDst::memory_space ,
-                typename DeviceSrc::memory_space > (
+      const size_t n =
+        sizeof(typename dst_type::scalar_type) *
+        ShapeMap< shape_type >::allocation_count( dst.shape() );
+
+        KokkosArray::DeepCopy< typename DeviceDst::memory_space ,
+                               typename DeviceSrc::memory_space >(
         dst.ptr_on_device() ,
         src.ptr_on_device() ,
-        ShapeMap< shape_type >::allocation_count( dst.shape() ) );
+        n );
     }
   }
 };
@@ -170,14 +229,14 @@ struct ViewDeepCopy< View< DataDst , LayoutDst , DeviceDst > ,
 
 // Deep copy arbitrary arrays:
 
-template< class DataDst , class LayoutDst , class DeviceDst ,
-          class DataSrc , class LayoutSrc , class DeviceSrc >
+template< class DataDst , class LayoutDst , class DeviceDst , class ManageDst ,
+          class DataSrc , class LayoutSrc , class DeviceSrc , class ManageSrc >
 inline
-void deep_copy( const View< DataDst , LayoutDst , DeviceDst > & dst ,
-                const View< DataSrc , LayoutSrc , DeviceSrc > & src )
+void deep_copy( const View< DataDst, LayoutDst, DeviceDst, ManageDst> & dst ,
+                const View< DataSrc, LayoutSrc, DeviceSrc, ManageSrc> & src )
 {
-  typedef View< DataDst , LayoutDst , DeviceDst > dst_type ;
-  typedef View< DataSrc , LayoutSrc , DeviceSrc > src_type ;
+  typedef View< DataDst , LayoutDst , DeviceDst , ManageDst > dst_type ;
+  typedef View< DataSrc , LayoutSrc , DeviceSrc , ManageSrc > src_type ;
 
   Impl::ViewDeepCopy<dst_type,src_type>::apply( dst , src );
 }

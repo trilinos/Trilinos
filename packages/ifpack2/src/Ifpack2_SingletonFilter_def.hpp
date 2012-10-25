@@ -456,6 +456,13 @@ bool SingletonFilter<MatrixType>::hasTransposeApply() const
   return true;
 }
 
+//==========================================================================  
+template<class MatrixType> 
+bool SingletonFilter<MatrixType>::supportsRowViews() const
+{
+  return false;
+}
+
 //==============================================================================
 template<class MatrixType> 
 void SingletonFilter<MatrixType>::SolveSingletons(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS, 

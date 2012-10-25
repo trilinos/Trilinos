@@ -39,6 +39,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Export.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Distributor.h"

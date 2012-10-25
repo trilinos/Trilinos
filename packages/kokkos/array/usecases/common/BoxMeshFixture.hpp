@@ -44,8 +44,6 @@
 #ifndef KOKKOSARRAY_BOXMESHFIXTURE_HPP
 #define KOKKOSARRAY_BOXMESHFIXTURE_HPP
 
-/* #define KOKKOSARRAY_BOUNDS_CHECK 1 */
-
 #include <cmath>
 #include <stdexcept>
 #include <sstream>
@@ -146,9 +144,9 @@ struct BoxMeshFixture {
     const typename FEMeshType::elem_node_ids_type::HostMirror & elem_node_ids ,
     const typename FEMeshType::node_elem_ids_type::HostMirror & node_elem_ids )
   {
-    typedef typename FEMeshType::size_type         size_type ;
-    typedef typename FEMeshType::node_coords_type  node_coords_type ;
-    typedef typename node_coords_type::value_type  coords_type ;
+    typedef typename FEMeshType::size_type          size_type ;
+    typedef typename FEMeshType::node_coords_type   node_coords_type ;
+    typedef typename node_coords_type::scalar_type  coords_type ;
 
     const size_type node_count_total = node_coords.dimension(0);
     const size_type elem_count_total = elem_node_ids.dimension(0);

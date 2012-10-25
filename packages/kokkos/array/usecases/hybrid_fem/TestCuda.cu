@@ -1,28 +1,12 @@
 
-#include <TestBoxMeshFixture.hpp>
-#include <Implicit.hpp>
-#include <NonLinear.hpp>
-#include <Explicit.hpp>
-
 #include <KokkosArray_Cuda.hpp>
 #include <KokkosArray_Host.hpp>
 
-#include <impl/KokkosArray_Cuda_macros.hpp>
-#include <ParallelDataMap_macros.hpp>
-#include <TestBoxMeshFixture_macros.hpp>
-#include <SparseLinearSystem_macros.hpp>
-#include <SparseLinearSystemFill_macros.hpp>
-
-#include <Implicit_macros.hpp>
-#include <NonLinear_macros.hpp>
-#include <NonlinearElement_macros.hpp>
-#include <Explicit_macros.hpp>
-#include <impl/KokkosArray_Clear_macros.hpp>
-
-// Cuda tailored version of the nonlinear quadratic element computation
-#include <NonlinearElement_Cuda.hpp>
-
-#include <SparseLinearSystem_Cuda.hpp>
+#include <TestBoxMeshFixture.hpp>
+#include <Implicit.hpp>
+#include <Nonlinear.hpp>
+#include <Explicit.hpp>
+#include <SparseLinearSystem.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -108,7 +92,7 @@ void test_cuda_nonlinear( comm::Machine machine ,
 
   typedef KokkosArray::Cuda device ;
   typedef FixtureElementHex8 hex8 ;
-  HybridFEM::NonLinear::driver<double,device,hex8>( "Cuda" , machine , elem_count_begin , elem_count_end , count_run );
+  HybridFEM::Nonlinear::driver<double,device,hex8>( "Cuda" , machine , elem_count_begin , elem_count_end , count_run );
   KokkosArray::Cuda::finalize();
 }
 
@@ -128,7 +112,7 @@ void test_cuda_nonlinear_quadratic( comm::Machine machine ,
 
   typedef KokkosArray::Cuda device ;
   typedef FixtureElementHex27 hex27 ;
-  HybridFEM::NonLinear::driver<double,device,hex27>( "Cuda" , machine , elem_count_begin , elem_count_end , count_run );
+  HybridFEM::Nonlinear::driver<double,device,hex27>( "Cuda" , machine , elem_count_begin , elem_count_end , count_run );
   KokkosArray::Cuda::finalize();
 }
 

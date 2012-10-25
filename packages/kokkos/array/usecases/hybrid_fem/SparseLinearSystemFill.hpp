@@ -59,8 +59,93 @@ template< class MatrixType , class MeshType ,
           class elem_matrices_type ,
           class elem_vectors_type > struct GatherFill ;
 
-}
 
+template< typename ScalarType ,
+          class    DeviceType ,
+          unsigned ElemNode ,
+          typename CoordScalarType ,
+          class elem_matrices_type ,
+          class elem_vectors_type >
+struct GatherFill< 
+  KokkosArray::CrsMatrix< ScalarType , DeviceType > ,
+  FEMesh< CoordScalarType , ElemNode , DeviceType > ,
+  elem_matrices_type , elem_vectors_type >
+{
+  typedef DeviceType     device_type ;
+  typedef typename device_type::size_type  size_type ;
+
+  static const size_type ElemNodeCount = ElemNode ;
+
+  typedef KokkosArray::CrsMatrix< ScalarType , device_type >    matrix_type ;
+  typedef typename matrix_type::coefficients_type   coefficients_type ;
+  typedef KokkosArray::View< ScalarType[] , device_type >  vector_type ;
+  typedef KokkosArray::View< size_type[][ElemNodeCount][ElemNodeCount] , device_type >       elem_graph_type ;
+
+  typedef FEMesh< CoordScalarType , ElemNodeCount , device_type > mesh_type ;
+  typedef typename mesh_type::node_elem_ids_type node_elem_ids_type ;
+
+private:
+
+  node_elem_ids_type  node_elem_ids ;
+  elem_graph_type     elem_graph ;
+  elem_matrices_type  elem_matrices ;
+  elem_vectors_type   elem_vectors ;
+  coefficients_type   system_coeff ;
+  vector_type         system_rhs ;
+
+public:
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  void operator()( size_type irow ) const
+  {
+    const size_type node_elem_begin = node_elem_ids.row_map[irow];
+    const size_type node_elem_end   = node_elem_ids.row_map[irow+1];
+
+    //  for each element that a node belongs to 
+
+    for ( size_type i = node_elem_begin ; i < node_elem_end ; i++ ) {
+
+      const size_type elem_id   = node_elem_ids.entries( i, 0);
+      const size_type row_index = node_elem_ids.entries( i, 1);
+
+      system_rhs(irow) += elem_vectors(elem_id, row_index);
+
+      //  for each node in a particular related element  
+      //  gather the contents of the element stiffness
+      //  matrix that belong in irow
+
+      for ( size_type j = 0 ; j < ElemNodeCount ; ++j ){
+        const size_type A_index = elem_graph( elem_id , row_index , j );
+
+        system_coeff( A_index ) += elem_matrices( elem_id, row_index, j );
+      }
+    }
+  }
+
+
+  static void apply( const matrix_type & matrix ,
+                     const vector_type & rhs ,
+                     const mesh_type   & mesh ,
+                     const elem_graph_type    & elem_graph ,
+                     const elem_matrices_type & elem_matrices ,
+                     const elem_vectors_type  & elem_vectors )
+  {
+    const size_t row_count = matrix.graph.row_map.dimension(0) - 1 ;
+    GatherFill op ;
+    op.node_elem_ids = mesh.node_elem_ids ;
+    op.elem_graph    = elem_graph ;
+    op.elem_matrices = elem_matrices ;
+    op.elem_vectors  = elem_vectors ;
+    op.system_coeff  = matrix.coefficients ;
+    op.system_rhs    = rhs ;
+
+    parallel_for( row_count , op );
+  }
+};
+
+} /* namespace HybridFEM */
+
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 namespace HybridFEM {

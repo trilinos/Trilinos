@@ -33,12 +33,18 @@
 
 #include "Stokhos_StaticArrayTraits.hpp"
 
+#include "KokkosArray_Macros.hpp"
+
 namespace Stokhos {
 
   //! Statically allocated storage class
   template <typename ordinal_t, typename value_t, int Num, typename node_t>
   class StaticStorage {
   public:
+
+    static const bool is_static = false;
+    static const int static_size = 0;
+    static const bool supports_reset = false;
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
@@ -56,59 +62,104 @@ namespace Stokhos {
     };
 
     //! Constructor
+    KOKKOSARRAY_INLINE_FUNCTION
     StaticStorage(const ordinal_type& sz,
-		  const value_type& x = value_type(0.0));
+		  const value_type& x = value_type(0.0)) : sz_(sz) { 
+      ss::fill(coeff_, sz_, x); 
+    }
 
     //! Copy constructor
-    StaticStorage(const StaticStorage& s);
+    KOKKOSARRAY_INLINE_FUNCTION
+    StaticStorage(const StaticStorage& s) : sz_(s.sz_) {
+      ss::copy(s.coeff_, coeff_, sz_);
+    }
 
     //! Destructor
-    ~StaticStorage();
+    KOKKOSARRAY_INLINE_FUNCTION
+    ~StaticStorage() {}
 
     //! Assignment operator
-    StaticStorage& operator=(const StaticStorage& s);
+    KOKKOSARRAY_INLINE_FUNCTION
+    StaticStorage& operator=(const StaticStorage& s) {
+      sz_ = s.sz_;
+      ss::copy(s.coeff_, coeff_, sz_);
+      return *this;
+    }
 
     //! Initialize values to a constant value
-    void init(const_reference v);
+    KOKKOSARRAY_INLINE_FUNCTION
+    void init(const_reference v) { 
+      ss::fill(coeff_, sz_, v); 
+    }
 
     //! Initialize values to an array of values
-    void init(const_pointer v, const ordinal_type& sz_ = 0);
+    KOKKOSARRAY_INLINE_FUNCTION
+    void init(const_pointer v, const ordinal_type& sz = 0) {
+      if (sz == 0)
+      	ss::copy(v, coeff_, sz_);
+      else
+      	ss::copy(v, coeff_, sz);
+    }
 
     //! Load values to an array of values
-    void load(pointer v);
+    KOKKOSARRAY_INLINE_FUNCTION
+    void load(pointer v) { 
+      ss::copy(coeff_, v, sz_); 
+    }
 
     //! Resize to new size (values are preserved)
-    void resize(const ordinal_type& sz);
+    KOKKOSARRAY_INLINE_FUNCTION
+    void resize(const ordinal_type& sz) { 
+      if (sz > sz_)
+	ss::fill(coeff_+sz_, sz-sz_, value_type(0.0));
+      sz_ = sz; 
+    }
+
+    //! Reset storage to given array, size, and stride
+    KOKKOSARRAY_INLINE_FUNCTION
+    void shallowReset(pointer v, const ordinal_type& sz, 
+		      const ordinal_type& stride, bool owned) {}
 
     //! Return size
-    static ordinal_type size();
+    KOKKOSARRAY_INLINE_FUNCTION
+    ordinal_type size() const { return sz_; }
 
     //! Coefficient access (avoid if possible)
-    const_reference operator[] (const ordinal_type& i) const;
+    KOKKOSARRAY_INLINE_FUNCTION
+    const_reference operator[] (const ordinal_type& i) const { 
+      return coeff_[i];
+    }
 
     //! Coefficient access (avoid if possible)
-    reference operator[] (const ordinal_type& i);
+    KOKKOSARRAY_INLINE_FUNCTION
+    reference operator[] (const ordinal_type& i) { return coeff_[i]; }
+
+    template <int i>
+    KOKKOSARRAY_INLINE_FUNCTION
+    reference getCoeff() { return coeff_[i]; }
+
+    template <int i>
+    KOKKOSARRAY_INLINE_FUNCTION
+    const_reference getCoeff() const { return coeff_[i]; }
 
     //! Get coefficients
-    const_pointer coeff() const;
+    KOKKOSARRAY_INLINE_FUNCTION
+    const_pointer coeff() const { return coeff_; }
 
     //! Get coefficients
-    pointer coeff();
+    KOKKOSARRAY_INLINE_FUNCTION
+    pointer coeff() { return coeff_; }
+
+  private:
+
+    //! Coefficient values
+    value_type coeff_[Num];
+
+    //! Size of array used
+    ordinal_type sz_;
 
   };
 
 }
-
-// Host specialization
-#include "KokkosArray_Host.hpp"
-#include "KokkosArray_Host_macros.hpp"
-#include "Stokhos_StaticStorage_impl.hpp"
-#include "KokkosArray_Clear_macros.hpp"
-
-// Cuda specialization
-#include "KokkosArray_Cuda.hpp"
-#include "KokkosArray_Cuda_macros.hpp"
-#include "Stokhos_StaticStorage_impl.hpp"
-#include "KokkosArray_Clear_macros.hpp"
 
 #endif // STOKHOS_STATIC_STORAGE_HPP

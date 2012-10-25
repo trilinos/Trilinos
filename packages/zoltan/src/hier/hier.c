@@ -117,27 +117,33 @@ static zoltan_platform_specification
 
 {"glory",         /* machine named Glory */
   3,              /* 3-level hierarchy */
-  {1, 4, 4}},     /* 1 node, 4 sockets, 4 cpus */
+  {1, 4, 4},      /* 1 node, 4 sockets, 4 cpus */
+  {-1}},          /* dummy initializer to avoid compiler warnings */
 
-{"redsky",       /* machine named RedSky */
-  3,             /* 3-level hierarchy */
-  {1, 2, 4}},     /* 1 node, 2 sockets, 4 cpus */
+{"redsky",        /* machine named RedSky */
+  3,              /* 3-level hierarchy */
+  {1, 2, 4},      /* 1 node, 2 sockets, 4 cpus */
+  {-1}},          /* dummy initializer to avoid compiler warnings */
 
-{"ctx",          /* machine named CTX */
-  3,             /* 3-level hierarchy */
-  {1, 2, 6}},    /* 1 node, 2 sockets, 6 cpus */
+{"ctx",           /* machine named CTX */
+  3,              /* 3-level hierarchy */
+  {1, 2, 6},      /* 1 node, 2 sockets, 6 cpus */
+  {-1}},          /* dummy initializer to avoid compiler warnings */
 
-{"odin",         /* machine named odin */
-  3,             /* 3-level hierarchy */
-  {1, 2, 4}},    /* 1 node, 2 sockets, 4 cpus */
+{"odin",          /* machine named odin */
+  3,              /* 3-level hierarchy */
+  {1, 2, 4},      /* 1 node, 2 sockets, 4 cpus */
+  {-1}},          /* dummy initializer to avoid compiler warnings */
 
 {"octopi",        /* eight-core machine named octopi */
-  2,             /* 2-level hierarchy */
-  {2, 4}},       /* 2 sockets, 4 cpus */
+  2,              /* 2-level hierarchy */
+  {2, 4},         /* 2 sockets, 4 cpus */
+  {-1}},          /* dummy initializer to avoid compiler warnings */
 
 {"s861036",      /* dual-core machine named s861036 */
   1,             /* 1-level hierarchy */
-  {2}}           /* 2 cpus */
+  {2},           /* 2 cpus */
+  {-1}}          /* dummy initializer to avoid compiler warnings */
 };
 
 /***********************************************************************/

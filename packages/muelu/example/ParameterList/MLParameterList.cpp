@@ -155,6 +155,7 @@ int main(int argc, char *argv[]) {
 
   }
 
+  std::cout << "Initial parameter list" << std::endl;
   std::cout << *params << std::endl;
     
   if (muelu) {
@@ -239,7 +240,7 @@ int main(int argc, char *argv[]) {
     }
 #endif // HAVE_MUELU_AZTECOO
 
-  }
+  } // if (muelu)
 
 #if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
   if (ml) {
@@ -301,7 +302,13 @@ int main(int argc, char *argv[]) {
 #else
     std::cout << "Enable AztecOO to see solution" << std::endl;
 #endif // HAVE_MUELU_AZTECOO
+
+    std::cout << "Parameter list after ML run" << std::endl;
+    const Teuchos::ParameterList & paramsAfterML = mlPrec->GetList();
+    std::cout << paramsAfterML << std::endl;
+    
   } // if (ml)
+
 
 #endif // HAVE_MUELU_ML && HAVE_MUELU_EPETRA
 

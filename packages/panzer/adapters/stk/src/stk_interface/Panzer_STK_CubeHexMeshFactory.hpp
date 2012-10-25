@@ -90,6 +90,7 @@ protected:
    std::pair<int,int> determineZElemSizeAndStart(int zBlock,unsigned int size,unsigned int rank) const;
 
    void addSideSets(STK_Interface & mesh) const;
+   void addNodeSets(STK_Interface & mesh) const;
 
    // search through relations for the one matching the ID: for use with addSideSets
    const stk::mesh::Relation * getRelationByID(unsigned ID,stk::mesh::PairIterRelation edges) const;

@@ -84,7 +84,7 @@ namespace Galeri {
         if (nx == -1 || ny == -1)
         {
           GlobalOrdinal n = map->getGlobalNumElements();
-          nx = (GlobalOrdinal)sqrt((Scalar)n);
+          nx = (GlobalOrdinal)sqrt((double)n);
           ny = nx;
           TEUCHOS_TEST_FOR_EXCEPTION(nx*ny != n, std::logic_error, "You need to specify nx and ny.");
         }
@@ -139,7 +139,7 @@ namespace Galeri {
         if (nx == -1 || ny == -1 || nz == -1)
           {
             GlobalOrdinal n = map->getGlobalNumElements();
-            nx = (GlobalOrdinal) Teuchos::ScalarTraits<Scalar>::pow(n, 0.33334);
+            nx = (GlobalOrdinal) Teuchos::ScalarTraits<double>::pow(n, 0.33334);
             ny = nx; nz = nx;
             TEUCHOS_TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
           } 
@@ -154,7 +154,7 @@ namespace Galeri {
         if (nx == -1 || ny == -1 || nz == -1)
           {
             GlobalOrdinal n = map->getGlobalNumElements();
-            nx = (GlobalOrdinal) Teuchos::ScalarTraits<Scalar>::pow(n, 0.33334);
+            nx = (GlobalOrdinal) Teuchos::ScalarTraits<double>::pow(n, 0.33334);
             ny = nx; nz = nx;
             TEUCHOS_TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
           } 

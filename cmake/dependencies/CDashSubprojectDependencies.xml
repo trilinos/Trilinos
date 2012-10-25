@@ -302,7 +302,8 @@
     <Dependency name="Triutils" type="TR"/>
     <Dependency name="Tpetra" type="LR"/>
     <Dependency name="EpetraExt" type="ILO"/>
-    <Dependency name="Xpetra" type="ILO"/>
+    <Dependency name="Xpetra" type="LO"/>
+    <Dependency name="Galeri" type="TR"/>
     <Dependency name="Belos" type="TR"/>
     <Dependency name="Anasazi" type="ILO"/>
     <Dependency name="Zoltan2" type="LO"/>

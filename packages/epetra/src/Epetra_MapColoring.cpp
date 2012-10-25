@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_HashTable.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"

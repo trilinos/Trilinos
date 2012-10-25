@@ -61,14 +61,14 @@ template< class ViewType >
 struct VerifyUnpack  ;
 
 template< typename DeviceType, typename T >
-struct VerifyUnpack< KokkosArray::View< T[][3] , DeviceType > >
+struct VerifyUnpack< KokkosArray::View< T*[3] , DeviceType > >
 {
   typedef DeviceType     device_type ;
   typedef typename device_type::size_type  size_type ;
   typedef size_type               value_type ;
 
-  typedef KokkosArray::View< T[] ,    device_type > buffer_type ;
-  typedef KokkosArray::View< T[][3] , device_type > array_type ;
+  typedef KokkosArray::View< T* ,    device_type > buffer_type ;
+  typedef KokkosArray::View< T*[3] , device_type > array_type ;
 
 private:
 
@@ -78,16 +78,16 @@ private:
 
 public:
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type & update )
   { update = 0 ; }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & source )
   { update += source ; }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const size_type i , value_type & update ) const
   {
     const size_type node_id = i + node_begin ;
@@ -198,7 +198,7 @@ template< typename coordinate_scalar_type ,
 void verify_parallel(
   const HybridFEM::FEMesh< coordinate_scalar_type ,
                            ElemNodeCount ,
-                           Device > & mesh )
+                           Device > & )
 {}
 
 } // namespace TestFEMesh

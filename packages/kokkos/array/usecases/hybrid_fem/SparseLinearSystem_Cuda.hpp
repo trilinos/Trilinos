@@ -74,13 +74,13 @@ CudaSparseSingleton & CudaSparseSingleton::singleton()
 
 template<>
 struct Multiply< CrsMatrix<double,Cuda> ,
-                 View<double[],Cuda > ,
-                 View<double[],Cuda > >
+                 View<double*,Cuda > ,
+                 View<double*,Cuda > >
 {
   typedef Cuda                                      device_type ;
   typedef device_type::size_type                    size_type ;
   typedef double                                    scalar_type ;
-  typedef View< scalar_type[] , device_type >  vector_type ;
+  typedef View< scalar_type* , device_type >  vector_type ;
   typedef CrsMatrix< scalar_type , device_type >    matrix_type ;
 
 private:
@@ -122,13 +122,13 @@ public:
 
 template<>
 struct Multiply< CrsMatrix<float,Cuda> ,
-                 View<float[],Cuda > ,
-                 View<float[],Cuda > >
+                 View<float*,Cuda > ,
+                 View<float*,Cuda > >
 {
   typedef Cuda                                      device_type ;
   typedef device_type::size_type                    size_type ;
   typedef float                                     scalar_type ;
-  typedef View< scalar_type[] , device_type >  vector_type ;
+  typedef View< scalar_type* , device_type >  vector_type ;
   typedef CrsMatrix< scalar_type , device_type >    matrix_type ;
 
 private:

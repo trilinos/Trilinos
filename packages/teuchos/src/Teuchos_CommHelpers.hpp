@@ -54,6 +54,11 @@
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_as.hpp"
 
+#ifdef HAVE_MPI
+#  include "Teuchos_DefaultMpiComm.hpp"
+#endif // HAVE_MPI
+#include "Teuchos_DefaultSerialComm.hpp"
+
 
 namespace Teuchos {
 
@@ -1287,12 +1292,113 @@ void Teuchos::reduceAll(
 }
 
 
+namespace Teuchos {
+
+#ifdef TEUCHOS_HAVE_COMPLEX
+// Specialization for Ordinal=int and Packet=std::complex<double>.
+template<>
+TEUCHOS_LIB_DLL_EXPORT void
+reduceAll<int, std::complex<double> > (const Comm<int>& comm, 
+				       const EReductionType reductType,
+				       const int count, 
+				       const std::complex<double> sendBuffer[], 
+				       std::complex<double> globalReducts[]);
+
+// Specialization for Ordinal=int and Packet=std::complex<float>.
+template<>
+TEUCHOS_LIB_DLL_EXPORT void
+reduceAll<int, std::complex<float> > (const Comm<int>& comm, 
+				      const EReductionType reductType,
+				      const int count, 
+				      const std::complex<float> sendBuffer[], 
+				      std::complex<float> globalReducts[]);
+#endif // TEUCHOS_HAVE_COMPLEX
+
+// Specialization for Ordinal=int and Packet=double.
+template<>
+TEUCHOS_LIB_DLL_EXPORT void
+reduceAll<int, double> (const Comm<int>& comm, 
+			const EReductionType reductType,
+			const int count, 
+			const double sendBuffer[], 
+			double globalReducts[]);
+
+// Specialization for Ordinal=int and Packet=float.
+template<>
+TEUCHOS_LIB_DLL_EXPORT void
+reduceAll<int, float> (const Comm<int>& comm, 
+		       const EReductionType reductType,
+		       const int count, 
+		       const float sendBuffer[], 
+		       float globalReducts[]);
+
+#ifdef TEUCHOS_HAVE_LONG_LONG_INT
+// Specialization for Ordinal=int and Packet=long long.
+template<>
+TEUCHOS_LIB_DLL_EXPORT void
+reduceAll<int, long long> (const Comm<int>& comm, 
+			   const EReductionType reductType,
+			   const int count, 
+			   const long long sendBuffer[], 
+			   long long globalReducts[]);
+#endif // TEUCHOS_HAVE_LONG_LONG_INT
+
+// Specialization for Ordinal=int and Packet=long.
+template<>
+TEUCHOS_LIB_DLL_EXPORT void
+reduceAll<int, long> (const Comm<int>& comm, 
+		      const EReductionType reductType,
+		      const int count, 
+		      const long sendBuffer[], 
+		      long globalReducts[]);
+
+// Specialization for Ordinal=int and Packet=int.
+template<>
+TEUCHOS_LIB_DLL_EXPORT void
+reduceAll<int, int> (const Comm<int>& comm, 
+		     const EReductionType reductType,
+		     const int count, 
+		     const int sendBuffer[], 
+		     int globalReducts[]);
+
+// Specialization for Ordinal=int and Packet=short.
+template<>
+TEUCHOS_LIB_DLL_EXPORT void
+reduceAll<int, short> (const Comm<int>& comm, 
+		       const EReductionType reductType,
+		       const int count, 
+		       const short sendBuffer[], 
+		       short globalReducts[]);
+
+// mfh 18 Oct 2012: The specialization for Packet=char seems to be
+// causing problems such as the following:
+//
+// http://testing.sandia.gov/cdash/testDetails.php?test=9909246&build=747699
+// 
+// I am disabling it for now.  This should revert back to the old
+// behavior for Packet=char.  That should fix the Tpetra errors, since
+// many Tpetra objects inherit from DistObject<char, ...>.
+#if 0
+// Specialization for Ordinal=int and Packet=char.
+template<>
+TEUCHOS_LIB_DLL_EXPORT void
+reduceAll<int, char> (const Comm<int>& comm, 
+		      const EReductionType reductType,
+		      const int count, 
+		      const char sendBuffer[], 
+		      char globalReducts[]);
+#endif // 0
+} // namespace Teuchos
+
+
 template<typename Ordinal, typename Packet>
 void Teuchos::reduceAll(
   const Comm<Ordinal>& comm, const EReductionType reductType
   ,const Packet &send, const Ptr<Packet> &globalReduct
   )
 {
+  // mfh 17 Oct 2012: This will invoke the above specializations for
+  // general count, so we don't need to specialize this function.
   reduceAll<Ordinal,Packet>(comm, reductType, 1, &send, &*globalReduct);
 }
 

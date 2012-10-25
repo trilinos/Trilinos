@@ -51,6 +51,7 @@
 #include <KokkosArray_View.hpp>
 #include <SparseLinearSystem.hpp>
 #include <SparseLinearSystemFill.hpp>
+#include <ImplicitFunctors.hpp>
 #include <FEMesh.hpp>
 
 //----------------------------------------------------------------------------
@@ -89,18 +90,10 @@ struct PerformanceData {
 
 //----------------------------------------------------------------------------
 
-template< typename ScalarType , typename ScalarCoordType , class Device >
-struct ElementComputation ;
-
-template< typename ScalarType , typename ScalarCoordType , class Device >
-struct DirichletBoundary ;
-
-//----------------------------------------------------------------------------
-
 template< typename Scalar , class FixtureType >
 PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
-                     const int global_max_x ,
-                     const int global_max_y ,
+                     const int , // global_max_x ,
+                     const int , // global_max_y ,
                      const int global_max_z ,
                      const bool print_sample )
 {
@@ -129,7 +122,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   //------------------------------------
   // Sparse linear system types:
 
-  typedef KokkosArray::View< Scalar[] , device_type >   vector_type ;
+  typedef KokkosArray::View< Scalar* , device_type >   vector_type ;
   typedef KokkosArray::CrsMatrix< Scalar , device_type >     matrix_type ;
   typedef typename matrix_type::graph_type         matrix_graph_type ;
   typedef typename matrix_type::coefficients_type  matrix_coefficients_type ;

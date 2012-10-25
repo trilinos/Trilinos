@@ -294,9 +294,9 @@ IF (Stokhos_ENABLE_Sacado)
     )
   IF (Stokhos_ENABLE_KokkosArray)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos)
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/impl)
     SET(HEADERS ${HEADERS}
       sacado/kokkos/Stokhos_Sacado_Kokkos.hpp
+      sacado/kokkos/Stokhos_Sacado_Kokkos_MathFunctions.hpp
       sacado/kokkos/Stokhos_StaticArrayTraits.hpp
       sacado/kokkos/Stokhos_DynArrayTraits.hpp
       sacado/kokkos/Stokhos_LocalStorage.hpp
@@ -305,20 +305,10 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/Stokhos_DynamicStorage.hpp
       sacado/kokkos/Stokhos_DynamicStridedStorage.hpp
       sacado/kokkos/Stokhos_DynamicThreadedStorage.hpp
+      sacado/kokkos/Stokhos_DynamicThreadedStorage_cuda.hpp
       sacado/kokkos/Sacado_MP_Vector.hpp
       sacado/kokkos/Sacado_MP_VectorTraits.hpp
-      sacado/kokkos/Stokhos_Sacado_Kokkos_MathFunctions.hpp
-      sacado/kokkos/impl/Stokhos_StaticArrayTraits_impl.hpp
-      sacado/kokkos/impl/Stokhos_DynArrayTraits_impl.hpp
-      sacado/kokkos/impl/Stokhos_LocalStorage_impl.hpp
-      sacado/kokkos/impl/Stokhos_StaticStorage_impl.hpp
-      sacado/kokkos/impl/Stokhos_StaticFixedStorage_impl.hpp
-      sacado/kokkos/impl/Stokhos_DynamicStorage_impl.hpp
-      sacado/kokkos/impl/Stokhos_DynamicStridedStorage_impl.hpp
-      sacado/kokkos/impl/Stokhos_DynamicThreadedStorage_cuda_impl.hpp
-      sacado/kokkos/impl/Sacado_MP_Vector_impl.hpp
-      sacado/kokkos/impl/Sacado_MP_Vector_ops.hpp
-      sacado/kokkos/impl/Stokhos_Sacado_Kokkos_MathFunctions_impl.hpp
+      sacado/kokkos/Sacado_MP_Vector_ops.hpp
     )
   ENDIF()
   IF (Stokhos_ENABLE_MueLu)
@@ -405,3 +395,4 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+ 

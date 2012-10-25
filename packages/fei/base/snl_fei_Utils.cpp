@@ -1,45 +1,10 @@
-/*
-// @HEADER
-// ************************************************************************
-//             FEI: Finite Element Interface to Linear Solvers
-//                  Copyright (2005) Sandia Corporation.
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation, the
-// U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Alan Williams (william@sandia.gov) 
-//
-// ************************************************************************
-// @HEADER
-*/
-
+/*--------------------------------------------------------------------*/
+/*    Copyright 2005 Sandia Corporation.                              */
+/*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
+/*    non-exclusive license for use of this work by or on behalf      */
+/*    of the U.S. Government.  Export of this program may require     */
+/*    a license from the United States Government.                    */
+/*--------------------------------------------------------------------*/
 
 #include <fei_macros.hpp>
 
@@ -226,8 +191,7 @@ void snl_fei::separate_string(const char* input_string,
     return;
   }
 
-  std::string std_input_string(input_string);
-  int len_input_string = std_input_string.size();
+  int len_input_string = strlen(input_string);
   before_substring = input_string;
 
   if (substring == NULL) {
@@ -237,21 +201,19 @@ void snl_fei::separate_string(const char* input_string,
     return;
   }
 
-  std::string std_substring(substring);
-  int len_substring = std_substring.size();
+  int len_substring = strlen(substring);
 
-  size_t found = std_input_string.find(std_substring);
-  if (found == std::string::npos) {
+  const char* s1 = strstr(input_string, substring);
+  if (s1 == NULL) {
     len_before_substring = len_input_string;
     after_substring = NULL;
     len_after_substring = 0;
     return;
   }
 
-  size_t rfound = std_input_string.rfind(std_substring);
-  after_substring = input_string+rfound+std_substring.size();
-  len_before_substring = found;
-  len_after_substring = len_input_string - rfound - len_substring;
+  after_substring = skipSeparator(s1, substring[len_substring-1]);
+  len_before_substring = s1 - input_string;
+  len_after_substring = len_input_string - len_before_substring - len_substring;
 }
 
 //----------------------------------------------------------------------------

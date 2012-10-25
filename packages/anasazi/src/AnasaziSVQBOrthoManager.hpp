@@ -809,14 +809,15 @@ namespace Anasazi {
 
           condT = SCTM::magnitude(maxLambda / minLambda);
           if (debug_) {
-            std::cout << dbgstr << "condT: " << condT << std::endl;
+            std::cout << dbgstr << "condT: " << condT << ", tolerance = " << tolerance << std::endl;
           }
-          
-        } // end while (condT >= tolerance)
+      
+          // if multiple passes of SVQB are necessary, then pass through outer GS loop again    
+          if ((doGramSchmidt == false) && (condT > SCTM::squareroot(tolerance))) {
+            doGramSchmidt = true;
+          }
 
-        if ((doGramSchmidt == false) && (condT > SCTM::squareroot(tolerance))) {
-          doGramSchmidt = true;
-        }
+        } // end while (condT >= tolerance)
       }
       // end if(normalize_in)
        

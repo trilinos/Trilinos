@@ -46,6 +46,7 @@
 #ifndef MUELU_AGGREGATES_DEF_HPP
 #define MUELU_AGGREGATES_DEF_HPP
 
+#include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -56,6 +57,7 @@
 
 namespace MueLu {
 
+  ///////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Aggregates(const Graph & graph) {
     nAggregates_  = 0;
@@ -68,6 +70,22 @@ namespace MueLu {
     
     isRoot_ = Teuchos::ArrayRCP<bool>(graph.GetImportMap()->getNodeNumElements());
     for (size_t i=0; i < graph.GetImportMap()->getNodeNumElements(); i++)
+      isRoot_[i] = false;
+  }
+
+  ///////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Aggregates(const RCP<const Map> & map) {
+    nAggregates_ = 0;
+
+    vertex2AggId_ = LOVectorFactory::Build(map);
+    vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
+
+    procWinner_ = LOVectorFactory::Build(map);
+    procWinner_->putScalar(MUELU_UNASSIGNED);
+
+    isRoot_ = Teuchos::ArrayRCP<bool>(map->getNodeNumElements());
+    for (size_t i=0; i < map->getNodeNumElements(); i++)
       isRoot_[i] = false;
   }
 
@@ -113,6 +131,11 @@ namespace MueLu {
     LO nAggregates = GetNumAggregates();
     GO nGlobalAggregates; sumAll(vertex2AggId_->getMap()->getComm(), (GO)nAggregates, nGlobalAggregates);
     return nGlobalAggregates;
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMap() const {
+    return vertex2AggId_->getMap();
   }
 
 } //namespace MueLu

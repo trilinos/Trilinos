@@ -50,10 +50,10 @@
 #include <iostream>
 
 #include <vector>
-#include <stdexcept>
 
 #include <KokkosArray_ParallelReduce.hpp>
 #include <Cuda/KokkosArray_Cuda_Parallel.hpp>
+#include <impl/KokkosArray_Error.hpp>
 
 namespace KokkosArray {
 namespace Impl {
@@ -80,8 +80,8 @@ struct CudaReduceShared_AnalyzeSize
   enum { ValueSize         = sizeof(ValueType) };
   enum { WarpSize          = Impl::CudaTraits::WarpSize };
   enum { WarpStride        = WarpSize + 1 };
-  enum { SharedMemoryBanks = Impl::CudaTraits::SharedMemoryBanks_13 };
-  enum { SharedMemorySize  = 0x04000 /* assume only 16k on Capability 1.3 */ }; 
+  enum { SharedMemoryBanks = Impl::CudaTraits::SharedMemoryBanks };
+  enum { SharedMemorySize  = Impl::CudaTraits::SharedMemoryCapacity };
   enum { SharedMemoryWords = SharedMemorySize / WordSize };
 
   enum { ValueWordCount = ( ValueSize + WordSize - 1 ) / WordSize };
@@ -281,7 +281,7 @@ private:
       enum { n02 = ValueWordStride << 1 };
       enum { n01 = ValueWordStride      };
 
-      size_type * const data = shared_data + shared_data_offset(tx,ty) ;
+      volatile size_type * const data = shared_data + shared_data_offset(tx,ty) ;
 
       m_reduce.join( data, data + n16 );
       m_reduce.join( data, data + n08 );
@@ -305,7 +305,7 @@ private:
       enum { n02 = ValueWarpStride << 1 };
       enum { n01 = ValueWarpStride      };
 
-      size_type * const data = shared_data + shared_data_offset(0,tx);
+      volatile size_type * const data = shared_data + shared_data_offset(0,tx);
 
       if ( tx + 2 < WarpCount ) {
         if ( tx + 4 < WarpCount ) {
@@ -315,13 +315,17 @@ private:
 //
 //          if ( tx + 16 < WarpCount ) {
 //            m_reduce.join( data , data + n16 ); 
+//            __threadfence_block();
 //          } 
 
             m_reduce.join( data , data + n08 );
+            __threadfence_block();
           }
           m_reduce.join( data , data + n04 );
+          __threadfence_block();
         }
         m_reduce.join( data , data + n02 );
+        __threadfence_block();
       }
       m_reduce.join( data , data + n01 );
     }
@@ -356,11 +360,11 @@ public:
 
     // tidx == which thread within the warp
     // tidy == which warp   within the block
-    // widy == first thread of the warp within the block
+    // wbeg == first thread of the warp within the block
 
     const size_type tidx = thread_of_block &   CudaTraits::WarpIndexMask ;
     const size_type tidy = thread_of_block >>  CudaTraits::WarpIndexShift ;
-    const size_type widy = thread_of_block &  ~CudaTraits::WarpIndexMask ;
+    const size_type wbeg = thread_of_block &  ~CudaTraits::WarpIndexMask ;
 
     size_type block_count   = m_block_count ;
     size_type block_id      = m_block_begin + block_of_grid ;
@@ -416,8 +420,15 @@ public:
 
       //----------------------------------
       // Coalesced global memory write of this block's contribution
+      // which has been computed by Warp #0.
+      //
+      // If ( CudaTraits::WarpSize < ValueWordStride )
+      // then more than Warp #0 will write, so must synchronize
+
+      if ( CudaTraits::WarpSize < ValueWordStride ) { __syncthreads(); }
+
       {
-        size_type * const scratch =
+        volatile size_type * const scratch =
            m_scratch_space + ( group_offset + block_id ) * ValueWordStride ;
 
         for ( size_type i = thread_of_block ;
@@ -425,9 +436,12 @@ public:
                         i += ThreadCount ) {
           scratch[i] = shared_data[i] ;
         }
-
-        __threadfence(); // Wait for write to complete
       }
+
+      // Wait for write to global memory to complete
+      // before incrementing the group's write counter.
+
+      __threadfence();
 
       //----------------------------------
       // Warp #0 Thread #0 :
@@ -439,13 +453,13 @@ public:
 
         size_type * const flag = m_scratch_flags + flag_offset + group_id ;
 
+        // Increment the group write counter.
+        // If the old value is 'group_size-1' then atomicInc
+        // sets the value to zero and returns the old value.
+
         // Inform the entire block of the last_block status:
         // atomicInc returns value prior to increment.
-        shared_data[ SharedFlagOffset ] =
-          ( group_size == 1 + atomicInc(flag,group_size+1) );
-
-        // Reset the flag for the next reduction operation
-        if ( shared_data[ SharedFlagOffset ] ) *flag = 0 ;
+        shared_data[ SharedFlagOffset ] = 1 + atomicInc(flag,group_size-1);
       }
 
       // All threads of block wait for last_block flag to be set.
@@ -453,34 +467,36 @@ public:
 
       // If this is not the last block in the group then
       // this block is finished.
-      if ( ! shared_data[ SharedFlagOffset ] ) break ;
+      if ( shared_data[ SharedFlagOffset ] < group_size ) break ;
 
       // Last block to complete performs this group's reduction
       //----------------------------------
-      // Each warp reads its own data.
+      // Read data for group_size blocks.
+      // This warp reads [ wbeg .. wbeg + WarpSize ).
       // A warp's shared memory is contiguous but
       // there is a gap between warps to avoid bank conflicts.
 
       {
-        enum { WordsPerWarp = ValueWordStride << CudaTraits::WarpIndexShift };
-
         size_type * const shared = shared_data + shared_data_offset(0,tidy);
 
-        size_type * const scratch =
+        volatile size_type * const scratch =
           m_scratch_space + ValueWordStride * (
-            group_offset           + // offset for this reduction cycle
-            ( group_id << ThreadCountShift ) + // offset for this block
-            widy );                  // offset for this warp
+            group_offset                     + // offset for reduction cycle
+            ( group_id << ThreadCountShift ) + // offset for block
+            wbeg );                            // offset for warp
+
+        const size_type read_count = ValueWordStride * (
+          wbeg + CudaTraits::WarpSize < group_size ? CudaTraits::WarpSize : (
+          wbeg                        < group_size ? group_size - wbeg : 0 ));
 
         for ( size_type i = tidx ;
-                        i < WordsPerWarp ;
+                        i < read_count ;
                         i += CudaTraits::WarpSize ) {
           shared[i] = scratch[i] ;
         }
       }
 
-      // If the group was short data then junk was read into it's value.
-      // Initialize the thread's data.
+      // If the group was short data initialize the thread's data.
 
       if ( group_size <= thread_of_block ) {
         m_reduce.init( shared_data + shared_data_offset(tidx,tidy) );
@@ -510,7 +526,7 @@ struct CudaReduceShared<ValueOper,FinalizeType, 0 /* Cannot determine size */ >
   enum { HalfWarpSize      = Impl::CudaTraits::WarpSize >> 1 };
   enum { WarpIndexMask     = Impl::CudaTraits::WarpIndexMask };
   enum { WarpIndexShift    = Impl::CudaTraits::WarpIndexShift };
-  enum { SharedMemoryBanks = Impl::CudaTraits::SharedMemoryBanks_13 };
+  enum { SharedMemoryBanks = Impl::CudaTraits::SharedMemoryBanks };
 
   typedef Cuda::size_type size_type ;
 
@@ -534,26 +550,31 @@ struct CudaReduceShared<ValueOper,FinalizeType, 0 /* Cannot determine size */ >
   size_type word_stride( const size_type value_size )
   {
     const size_type n = word_count( value_size );
-    return n + ( n % SharedMemoryBanks ? 0 : 2 );
+    return n ? n + ( n % SharedMemoryBanks ? 0 : 2 ) : 0 ;
   }
 
   static inline
   size_type warp_count_max( const FinalizeType & finalize )
   {
-    const size_type value_size = reduce_operator::value_size( finalize );
+    const size_type value_size        = reduce_operator::value_size( finalize );
     const size_type value_word_stride = word_stride( value_size );
 
-    const size_type maximum_shared_words =
-      cuda_internal_maximum_shared_words();
+    size_type warps_per_block = 0 ;
 
-    const size_type words_per_warp_stride = value_word_stride * WarpStride ;
+    if ( value_word_stride ) {
 
-    // Start with maximum number of warps per block:
-    size_type warps_per_block = cuda_internal_maximum_warp_count();
+      const size_type maximum_shared_words =
+        cuda_internal_maximum_shared_words();
 
-    // Reduce number of warps to fit per-thread reduction data in shared memory
-    while ( maximum_shared_words < warps_per_block * words_per_warp_stride ) {
-      warps_per_block >>= 1 ;
+      const size_type words_per_warp_stride = value_word_stride * WarpStride ;
+
+      // Start with maximum number of warps per block:
+      warps_per_block = cuda_internal_maximum_warp_count();
+
+      // Reduce number of warps to fit per-thread reduction data in shared memory
+      while ( maximum_shared_words < warps_per_block * words_per_warp_stride ) {
+        warps_per_block >>= 1 ;
+      }
     }
 
     return warps_per_block ;
@@ -561,8 +582,10 @@ struct CudaReduceShared<ValueOper,FinalizeType, 0 /* Cannot determine size */ >
 
   inline size_type shmem_size() const
   {
-    return sizeof(size_type) *
-           ( m_value_word_stride * ( WarpStride * m_warp_count - 1 ) + 1 );
+    return 0 != m_value_word_stride && 0 != m_warp_count
+      ? sizeof(size_type) *
+          ( m_value_word_stride * ( WarpStride * m_warp_count - 1 ) + 1 )
+      : 0 ;
   }
 
 private:
@@ -626,10 +649,12 @@ public:
 
 #if 0
 std::cout
-  << "CudaReduceShared( warp_count " << warp_count
+  << "CudaReduceShared("
   << " , block_begin " << block_begin
   << " , block_count " << block_count
   << " )"
+  << std::endl
+  << "m_warp_count " << m_warp_count
   << std::endl
   << "  groups[ 0 .. " << m_group_init_use - 1
   << " ) <= blocks[ 0 .. " << m_group_init_full_end << " ) full reduction group"
@@ -644,6 +669,7 @@ std::cout
   << " ) <= blocks[ " << m_group_init_use_end
   << " .. " << m_block_count << " ) skip one reduction cycle"
   << std::endl ;
+std::cout.flush();
 #endif
 
   }
@@ -676,7 +702,7 @@ private:
     //
     if ( tx < HalfWarpSize ) {
 
-      size_type * const data = shared_data + shared_data_offset(tx,ty) ;
+      volatile size_type * const data = shared_data + shared_data_offset(tx,ty) ;
 
       m_reduce.join( data, data + ( m_value_word_stride << 4 ) );
       m_reduce.join( data, data + ( m_value_word_stride << 3 ) );
@@ -693,21 +719,29 @@ private:
 
     if ( 0 == ty && tx + 1 < m_warp_count ) {
 
-      size_type * const data = shared_data + shared_data_offset(0,tx);
+      volatile size_type * const data = shared_data + shared_data_offset(0,tx);
 
       const size_type s = WarpStride * m_value_word_stride ;
 
       if ( tx + 2 < m_warp_count ) {
         if ( tx + 4 < m_warp_count ) {
           if ( tx + 8 < m_warp_count ) {
-            if ( tx + 16 < m_warp_count ) {
-              m_reduce.join( data , data + ( s << 4 ) );
-            }
+
+// Hard-wired WarpCount <= 16 so don't need this step
+//
+//          if ( tx + 16 < m_warp_count ) {
+//            m_reduce.join( data , data + ( s << 4 ) );
+//            __threadfence_block();
+//          }
+//
             m_reduce.join( data , data + ( s << 3 ) );
+            __threadfence_block();
           }
           m_reduce.join( data , data + ( s << 2 ) );
+          __threadfence_block();
         }
         m_reduce.join( data , data + ( s << 1 ) );
+        __threadfence_block();
       }
       m_reduce.join( data , data + s );
     }
@@ -742,11 +776,11 @@ public:
 
     // tidx == which thread within the warp
     // tidy == which warp   within the block
-    // widy == first thread of the warp within the block
+    // wbeg == first thread of the warp within the block
 
     const size_type tidx = thread_of_block &   CudaTraits::WarpIndexMask ;
     const size_type tidy = thread_of_block >>  CudaTraits::WarpIndexShift ;
-    const size_type widy = thread_of_block &  ~CudaTraits::WarpIndexMask ;
+    const size_type wbeg = thread_of_block &  ~CudaTraits::WarpIndexMask ;
 
     size_type block_count   = m_block_count ;
     size_type block_id      = m_block_begin + block_of_grid ;
@@ -802,8 +836,15 @@ public:
 
       //----------------------------------
       // Coalesced global memory write of this block's contribution
+      // which has been computed by Warp #0.
+      //
+      // If ( CudaTraits::WarpSize < ValueWordStride )
+      // then more than Warp #0 will write, so must synchronize
+
+      if ( CudaTraits::WarpSize < m_value_word_stride ) { __syncthreads(); }
+
       {
-        size_type * const scratch =
+        volatile size_type * const scratch =
            m_scratch_space + ( group_offset + block_id ) * m_value_word_stride ;
 
         for ( size_type i = thread_of_block ;
@@ -811,9 +852,12 @@ public:
                         i += m_thread_count ) {
           scratch[i] = shared_data[i] ;
         }
-
-        __threadfence(); // Wait for write to complete
       }
+
+      // Wait for write to global memory to complete
+      // before incrementing the group's write counter.
+
+      __threadfence();
 
       //----------------------------------
       // Warp #0 Thread #0 :
@@ -825,13 +869,13 @@ public:
 
         size_type * const flag = m_scratch_flags + flag_offset + group_id ;
 
+        // Increment the group write counter.
+        // If the old value is 'group_size-1' then atomicInc
+        // sets the value to zero and returns the old value.
+
         // Inform the entire block of the last_block status:
         // atomicInc returns value prior to increment.
-        shared_data[ m_shared_flag_offset ] =
-          ( group_size == 1 + atomicInc(flag,group_size+1) );
-
-        // Reset the flag for the next reduction operation
-        if ( shared_data[ m_shared_flag_offset ] ) *flag = 0 ;
+        shared_data[ m_shared_flag_offset ] = 1 + atomicInc(flag,group_size-1);
       }
 
       // All threads of block wait for last_block flag to be set.
@@ -839,28 +883,30 @@ public:
 
       // If this is not the last block in the group then
       // this block is finished.
-      if ( ! shared_data[ m_shared_flag_offset ] ) break ;
+      if ( shared_data[ m_shared_flag_offset ] < group_size ) break ;
 
       // Last block to complete performs this group's reduction
       //----------------------------------
-      // Each warp reads own data.
+      // Read data for group_size blocks.
+      // This warp reads [ wbeg .. wbeg + WarpSize ).
       // A warp's shared memory is contiguous but
       // there is a gap between warps to avoid bank conflicts.
 
       {
         size_type * const shared = shared_data + shared_data_offset(0,tidy);
 
-        size_type * const scratch =
+        volatile size_type * const scratch =
           m_scratch_space + m_value_word_stride * (
-            group_offset              + // offset for this reduction cycle
-            group_id * m_thread_count + // offset for this block
-            widy );                     // offset for this warp
+            group_offset              + // offset for reduction cycle
+            group_id * m_thread_count + // offset for block
+            wbeg );                     // offset for warp
 
-        const size_type words_per_warp =
-          m_value_word_stride << CudaTraits::WarpIndexShift ;
+        const size_type read_count = m_value_word_stride * (
+          wbeg + CudaTraits::WarpSize < group_size ? CudaTraits::WarpSize : (
+          wbeg                        < group_size ? group_size - wbeg : 0 ));
 
         for ( size_type i = tidx ;
-                        i < words_per_warp ;
+                        i < read_count ;
                         i += CudaTraits::WarpSize ) {
           shared[i] = scratch[i] ;
         }
@@ -915,7 +961,13 @@ public:
     const size_type nt =
       Impl::CudaTraits::WarpSize * ReduceType::warp_count_max( f );
 
+    if ( 0 == nt ) return 0 ;
+
+    // One level:
     return std::min( nt , size_type( ( work_count + nt - 1 ) / nt ) );
+
+    // Two level:
+    // return std::min( nt * nt , size_type( ( work_count + nt - 1 ) / nt ) );
   }
 
 public:
@@ -942,13 +994,15 @@ public:
     , m_reduce_shared( finalize , 0 , block_count(finalize,work_count) )
     , m_work_count(    work_count )
   {
-    const size_type nw = ReduceType::warp_count_max( finalize );
+    if ( m_work_count ) {
+      const size_type nw = ReduceType::warp_count_max( finalize );
 
-    const dim3 block( Impl::CudaTraits::WarpSize * nw , 1, 1 );
-    const dim3 grid( block_count(finalize,work_count) , 1 , 1 );
-    const size_type shmem_size = m_reduce_shared.shmem_size();
+      const dim3 block( Impl::CudaTraits::WarpSize * nw , 1, 1 );
+      const dim3 grid( block_count(finalize,work_count) , 1 , 1 );
+      const size_type shmem_size = m_reduce_shared.shmem_size();
 
-    CudaParallelLaunch< ParallelReduce >( *this , grid , block , shmem_size );
+      CudaParallelLaunch< ParallelReduce >( *this , grid , block , shmem_size );
+    }
   }
 
   //--------------------------------------------------------------------------
@@ -975,24 +1029,25 @@ public:
 /* Reduction into a view on the host */
 
 template< class FunctorType , class ValueOper ,
-          class ValueType , class LayoutType >
+          class ValueType , class LayoutType ,
+          class ManagedType >
 class ParallelReduce< FunctorType ,
                       ValueOper , 
-                      View< ValueType , LayoutType , Host > ,
+                      View< ValueType , LayoutType , Host , ManagedType > ,
                       Cuda >
 {
 public:
 
   typedef typename FunctorType::value_type value_type ;
 
-  typedef View< ValueType , LayoutType , Host > host_view_type ;
+  typedef View< ValueType , LayoutType , Host , ManagedType > host_view_type ;
 
   ParallelReduce( const Cuda::size_type  work_count ,
                   const FunctorType    & functor ,
                   const host_view_type & host_view )
   {
     typedef typename
-      StaticAssertSame< typename host_view_type::value_type[] , value_type >
+      StaticAssertSame< typename host_view_type::scalar_type[] , value_type >
         ::type ok_match_type ;
 
     typedef typename
@@ -1005,7 +1060,7 @@ public:
           << functor.value_count
           << ") != view.dimension_0("
           << host_view.dimension_0() << ")" ;
-      throw std::runtime_error(msg.str());
+      KokkosArray::Impl::throw_runtime_exception( msg.str() );
     }
 
     typedef Impl::ParallelReduceFunctorValue< value_type , Cuda >
@@ -1047,8 +1102,7 @@ struct CudaReduceResult {
     }
     else {
       ptr = (T*) cuda_internal_scratch_space( sizeof(T) * count );
-      CudaMemorySpace
-        ::copy_to_host_from_device( host_pointer , ptr , sizeof(T) * count );
+      DeepCopy<HostSpace,CudaSpace>( host_pointer , ptr , sizeof(T) * count );
     }
   }
 
@@ -1063,7 +1117,7 @@ struct CudaReduceResult {
     else {
       ptr = (T*) cuda_internal_scratch_space( sizeof(T) );
       T value ;
-      CudaMemorySpace::copy_to_host_from_device( & value , ptr , sizeof(T) );
+      DeepCopy<HostSpace,CudaSpace>( & value , ptr , sizeof(T) );
       return value ;
     }
   }
@@ -1078,7 +1132,7 @@ public:
 
   typedef ValueType value_type ;
 
-  __device__
+  __device__ __host__
   inline
   void operator()( const value_type & value ) const
     { *m_dev = value ; }
@@ -1102,7 +1156,7 @@ public:
   typedef MemberType     value_type[] ;
   const Cuda::size_type  value_count ;
 
-  __device__
+  __device__ __host__
   inline
   void operator()( const MemberType input[] ) const
     {
@@ -1284,12 +1338,14 @@ public:
     for ( m = m_member_functors.begin() ; m != m_member_functors.end() ; ++m ) {
       MemberType & member = **m ;
 
-      const size_type n = block_count( warp_count , (*m)->m_work_count );
+      if ( (*m)->m_work_count ) {
+        const size_type n = block_count( warp_count , (*m)->m_work_count );
 
-      member.apply( m_finalize , thread_count , n ,
-                    global_block_offset , global_block_count );
+        member.apply( m_finalize , thread_count , n ,
+                      global_block_offset , global_block_count );
 
-      global_block_offset += n ;
+        global_block_offset += n ;
+      }
     }
   }
 };

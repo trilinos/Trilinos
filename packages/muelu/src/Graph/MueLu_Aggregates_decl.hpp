@@ -91,20 +91,38 @@ namespace MueLu {
 
   public:
      
+    /*! @brief Standard constructor for Aggregates structure
+     *
+     * Standard constructor of aggregates takes a Graph object as parameter.
+     * Uses the graph.GetImportMap() to initialize the internal vector for mapping nodes to (local) aggregate ids as well as
+     * th mapping of node to the owning processor id.
+     *
+     */
     Aggregates(const Graph & graph);
+
+    /*! @brief Constructor for Aggregates structure
+     *
+     * This constructor takes a RCP pointer to a map which is used for the internal mappings of nodes to the (local) aggregate ids and the owning processor.
+     *
+     */
+    Aggregates(const RCP<const Map> & map);
+
+    /*! @brief Destructor
+     *
+     */
     virtual ~Aggregates() { }
      
-    LO GetNumAggregates() const           { return nAggregates_;        } // rename GetNumLocal ?
-    void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates; }
-    RCP<LOVector> & GetVertex2AggIdNonConst()     { return vertex2AggId_;       } // LocalOrdinal because it's an array of local id
-    RCP<LOVector> & GetProcWinnerNonConst()       { return procWinner_;         }
-    const RCP<LOVector> & GetVertex2AggId() const { return vertex2AggId_;       } // LocalOrdinal because it's an array of local id
-    const RCP<LOVector> & GetProcWinner() const   { return procWinner_;         }
+    LO GetNumAggregates() const           { return nAggregates_;        } ///< returns the number of aggregates of the current processor. Note: could/should be renamed to GetNumLocalAggregates?
+    void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates; } ///< set number of local aggregates on current processor. This has to be done by the aggregation routines.
+    RCP<LOVector> & GetVertex2AggIdNonConst()     { return vertex2AggId_;       } ///< provide access to the underlaying aggregation information. Vertex2AggId provides a mapping of the local node id to the local aggregate id on the current processor
+    RCP<LOVector> & GetProcWinnerNonConst()       { return procWinner_;         } ///< provide access to the underlaying aggregation information. ProcWinner stores the processor id owning the given (local) node id.
+    const RCP<LOVector> & GetVertex2AggId() const { return vertex2AggId_;       } ///< provide access to the underlaying aggregation information. Vertex2AggId provides a mapping of the local node id to the local aggregate id on the current processor
+    const RCP<LOVector> & GetProcWinner() const   { return procWinner_;         } ///< provide access to the underlaying aggregation information. ProcWinner stores the processor id owning the given (local) node id.
 
-    bool IsRoot(LO i) const               { return isRoot_[i];          } // Local
-    void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         } // Local
+    bool IsRoot(LO i) const               { return isRoot_[i];          } ///< returns true if node with given local node id is marked to be a root node
+    void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         } ///< set root node information. Used by aggregation methods only.
     
-    const RCP<const Map> GetMap() const { return vertex2AggId_->getMap(); }
+    const RCP<const Map> GetMap() const; ///< returns (overlapping) map of aggregate/node distribution
 
     /*! @brief Compute sizes of aggregates
      * 

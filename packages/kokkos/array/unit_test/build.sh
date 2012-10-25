@@ -4,91 +4,52 @@
 # Simple build script with options
 #-----------------------------------------------------------------------------
 
-SRC="../src"
+# Directory for KokkosArray
 
-INC_PATH="-I. -I${SRC} -I../TPL"
-CXX="g++"
-CXXFLAGS="-Wall"
+KOKKOSARRAY=".."
 
-CXX_SOURCES=""
-CXX_SOURCES="${CXX_SOURCES} ${SRC}/impl/*.cpp"
-CXX_SOURCES="${CXX_SOURCES} ${SRC}/Host/KokkosArray_Host_Impl.cpp"
-CXX_SOURCES="${CXX_SOURCES} ${SRC}/Host/KokkosArray_Host_MemorySpace.cpp"
+source ${KOKKOSARRAY}/src/build_common.sh
+
+# Process command line options and set compilation variables
+#
+# INC_PATH     : required include paths
+# CXX          : C++ compiler with compiler-specific options
+# CXX_SOURCES  : C++ files for host
+# NVCC         : Cuda compiler with compiler-specific options
+# NVCC_SOURCES : Cuda sources
+
+#-----------------------------------------------------------------------------
+# Add TPL and local source code:
+
+TPL_PATH="${KOKKOSARRAY}/TPL"
+INC_PATH="${INC_PATH} -I. -I${TPL_PATH}"
+
+CXX_SOURCES="${CXX_SOURCES} ${TPL_PATH}/gtest/gtest-all.cc"
 CXX_SOURCES="${CXX_SOURCES} UnitTestMain.cpp TestHost.cpp"
-CXX_SOURCES="${CXX_SOURCES} ../TPL/gtest/gtest-all.cc"
 
 #-----------------------------------------------------------------------------
+# If Cuda compiler set build Cuda source code
 
-while [ -n "${1}" ] ; do
-
-ARG="${1}"
-shift 1
-
-case ${ARG} in
-#-------------------------------
-#----------- OPTIONS -----------
-CUDA | Cuda | cuda ) HAVE_CUDA=1 ;;
-HWLOC | hwloc ) HAVE_HWLOC=${1} ; shift 1 ;;
-OPT | opt | O3 | -O3 ) OPTFLAGS="-O3" ;;
-DBG | dbg | g | -g )   OPTFLAGS="-g -DKOKKOSARRAY_BOUNDS_CHECK" ;;
-#-------------------------------
-#---------- COMPILERS ----------
-GNU | gnu | g++ )
-  CXX="g++"
-  CXXFLAGS="-Wall"
-  ;;
-INTEL | intel | icc )
-  CXX="icc"
-  # -xW = use SSE and SSE2 instructions
-  CXXFLAGS="-Wall -xW"
-  LIB="${LIB} -lstdc++"
-  ;;
-#-------------------------------
-*) echo 'unknown option: ' ${ARG} ; exit -1 ;;
-esac
-done
-
-#-----------------------------------------------------------------------------
-
-if [ -n "${HAVE_CUDA}" ] ;
+if [ -n "${NVCC}" ] ;
 then
-  NVCC_SOURCES="${SRC}/Cuda/*.cu"
   NVCC_SOURCES="${NVCC_SOURCES} TestCudaFunctions.cu"
   CXX_SOURCES="${CXX_SOURCES} TestCuda.cpp"
-  LIB="${LIB} -L/usr/local/cuda/lib64 libCuda.a -lcudart -lcuda -lcusparse"
-  nvcc -arch=sm_20 -lib -o libCuda.a ${OPTFLAGS} ${INC_PATH} ${NVCC_SOURCES}
+
+  echo ${NVCC} ${INC_PATH} ${NVCC_SOURCES}
+
+  ${NVCC} ${INC_PATH} ${NVCC_SOURCES}
 fi
 
 #-----------------------------------------------------------------------------
+# Build C++ source code:
 
-if [ -n "${HAVE_HWLOC}" ] ;
-then
-  CXX_SOURCES="${CXX_SOURCES} ${SRC}/Host/KokkosArray_Host_hwloc.cpp"
-  LIB="${LIB} -L${HAVE_HWLOC}/lib -lhwloc"
-  INC_PATH="${INC_PATH} -I${HAVE_HWLOC}/include"
-else
-  CXX_SOURCES="${CXX_SOURCES} ${SRC}/Host/KokkosArray_Host_hwloc_unavailable.cpp"
-fi
-#-----------------------------------------------------------------------------
-# Option for PTHREAD or WINTHREAD eventually
+echo ${CXX} ${INC_PATH} -o unit_test.exe ${CXX_SOURCES} ${LIB}
 
-HAVE_PTHREAD=1
+rm -f unit_test.exe
 
-if [ -n "${HAVE_PTHREAD}" ] ;
-then
-  CXX_SOURCES="${CXX_SOURCES} ${SRC}/Host/KokkosArray_Host_pthread.cpp"
-  LIB="${LIB} -lpthread"
-else
-  CXX_SOURCES="${CXX_SOURCES} ${SRC}/Host/KokkosArray_Host_nothread.cpp"
-fi
+${CXX} ${INC_PATH} -o unit_test.exe ${CXX_SOURCES} ${LIB}
 
-#-----------------------------------------------------------------------------
-
-echo "Building regular files as: " ${CXX} ${CXXFLAGS} ${OPTFLAGS}
-
-${CXX} ${CXXFLAGS} ${OPTFLAGS} ${INC_PATH} ${TEST_MACRO} -o unit_test.exe ${CXX_SOURCES} ${LIB}
-
-rm -f *.o *.a ThreadPool_config.h
+rm -f *.o *.a
 
 #-----------------------------------------------------------------------------
 

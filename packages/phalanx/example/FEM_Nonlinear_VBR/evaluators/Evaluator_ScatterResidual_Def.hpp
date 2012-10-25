@@ -103,7 +103,11 @@ evaluateFields(typename Traits::EvalData workset)
     for (int node = 0; node < num_nodes; node++) {
       unsigned node_GID = element->globalNodeId(node);
       //int firstDOF = f->Map().LID(node_GID * num_eq);
-      int firstDOF = f->Map().LID(node_GID) * num_eq;
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+      int firstDOF = f->Map().LID(static_cast<long long>(node_GID)) * num_eq;
+#else
+      int firstDOF = f->Map().LID(static_cast<int>(node_GID)) * num_eq;
+#endif
       for (std::size_t eq = 0; eq < val.size(); eq++)
 	(*f)[firstDOF + eq] += (val[eq])(cell,node);
     }

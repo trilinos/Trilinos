@@ -104,7 +104,7 @@
 #include "MueLu_SubBlockAFactory.hpp"
 #include "MueLu_BlockedPFactory.hpp"
 #include "MueLu_BlockedGaussSeidelSmoother.hpp"
-
+#include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
@@ -534,15 +534,16 @@ int main(int argc, char *argv[]) {
 #if 1
   // use PG-AMG
   RCP<TentativePFactory> P11tentFact = rcp(new TentativePFactory(UCAggFact11,amalgFact11)); // check me
-  P11tentFact->setStridingData(stridingInfo);
-  P11tentFact->setStridedBlockId(0); // declare this P11Fact to be the transfer operator for the velocity dofs
-
 
   RCP<PgPFactory> P11Fact = rcp(new PgPFactory(P11tentFact));
 
   RCP<GenericRFactory> R11Fact = rcp(new GenericRFactory(P11Fact));
 
   Teuchos::RCP<NullspaceFactory> nspFact11 = Teuchos::rcp(new NullspaceFactory("Nullspace1",P11tentFact));
+
+  RCP<CoarseMapFactory> coarseMapFact11 = Teuchos::rcp(new CoarseMapFactory(UCAggFact11, nspFact11));
+  coarseMapFact11->setStridingData(stridingInfo);
+  coarseMapFact11->setStridedBlockId(0);
 
   //////////////////////////////// define factory manager for (1,1) block
   RCP<FactoryManager> M11 = rcp(new FactoryManager());
@@ -552,15 +553,18 @@ int main(int argc, char *argv[]) {
   M11->SetFactory("Nullspace", nspFact11);
   M11->SetFactory("Ptent", P11tentFact);
   M11->SetFactory("Smoother", Smoo11Fact);
+  M11->SetFactory("CoarseMap", coarseMapFact11);
 
 #else
   RCP<TentativePFactory> P11Fact = rcp(new TentativePFactory(UCAggFact11,amalgFact11)); // check me
-  P11Fact->setStridingData(stridingInfo);
-  P11Fact->setStridedBlockId(0); // declare this P11Fact to be the transfer operator for the velocity dofs
 
   RCP<TransPFactory> R11Fact = rcp(new TransPFactory(P11Fact));
 
   Teuchos::RCP<NullspaceFactory> nspFact11 = Teuchos::rcp(new NullspaceFactory("Nullspace1",P11Fact));
+
+  RCP<CoarseMapFactory> coarseMapFact11 = Teuchos::rcp(new CoarseMapFactory(UCAggFact11, nspFact11));
+  coarseMapFact11->setStridingData(stridingInfo);
+  coarseMapFact11->setStridedBlockId(0);
 
   //////////////////////////////// define factory manager for (1,1) block
   RCP<FactoryManager> M11 = rcp(new FactoryManager());
@@ -570,6 +574,7 @@ int main(int argc, char *argv[]) {
   M11->SetFactory("Nullspace", nspFact11);
   M11->SetFactory("Ptent", P11Fact);
   M11->SetFactory("Smoother", Smoo11Fact);
+  M11->SetFactory("CoarseMap", coarseMapFact11);
 #endif
   M11->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
 
@@ -597,8 +602,6 @@ int main(int argc, char *argv[]) {
   // use PGAMG
   RCP<AmalgamationFactory> amalgFact22 = rcp(new AmalgamationFactory(A22Fact));
   RCP<TentativePFactory> P22tentFact = rcp(new TentativePFactory(UCAggFact11, amalgFact22)); // check me (fed with A22) wrong column GIDS!!!
-  P22tentFact->setStridingData(stridingInfo);
-  P22tentFact->setStridedBlockId(1);
 
   RCP<SaPFactory> P22Fact = rcp(new SaPFactory(P22tentFact));
 
@@ -606,6 +609,10 @@ int main(int argc, char *argv[]) {
   RCP<TransPFactory> R22Fact = rcp(new TransPFactory(P22Fact));
 
   Teuchos::RCP<NullspaceFactory> nspFact22 = Teuchos::rcp(new NullspaceFactory("Nullspace2",P22tentFact));
+
+  RCP<CoarseMapFactory> coarseMapFact22 = Teuchos::rcp(new CoarseMapFactory(UCAggFact11, nspFact22));
+  coarseMapFact22->setStridingData(stridingInfo);
+  coarseMapFact22->setStridedBlockId(1);
 
   //////////////////////////////// define factory manager for (2,2) block
   RCP<FactoryManager> M22 = rcp(new FactoryManager());
@@ -616,18 +623,21 @@ int main(int argc, char *argv[]) {
   M22->SetFactory("Nullspace", nspFact22);
   M22->SetFactory("Ptent", P22tentFact);
   M22->SetFactory("Smoother", Smoo22Fact);
+  M22->SetFactory("CoarseMap", coarseMapFact22);
   M22->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
 
 #else
   // use TentativePFactory
   RCP<AmalgamationFactory> amalgFact22 = rcp(new AmalgamationFactory(A22Fact));
   RCP<TentativePFactory> P22Fact = rcp(new TentativePFactory(UCAggFact11, amalgFact22 )); // check me (fed with A22) wrong column GIDS!!!
-  P22Fact->setStridingData(stridingInfo);
-  P22Fact->setStridedBlockId(1); // declare this P22Fact to be the transfer operator for the pressure dofs
 
   RCP<TransPFactory> R22Fact = rcp(new TransPFactory(P22Fact));
 
   Teuchos::RCP<NullspaceFactory> nspFact22 = Teuchos::rcp(new NullspaceFactory("Nullspace2",P22Fact));
+
+  RCP<CoarseMapFactory> coarseMapFact22 = Teuchos::rcp(new CoarseMapFactory(UCAggFact11, nspFact22));
+  coarseMapFact22->setStridingData(stridingInfo);
+  coarseMapFact22->setStridedBlockId(1);
 
   //////////////////////////////// define factory manager for (2,2) block
   RCP<FactoryManager> M22 = rcp(new FactoryManager());
@@ -638,6 +648,7 @@ int main(int argc, char *argv[]) {
   M22->SetFactory("Nullspace", nspFact22);
   M22->SetFactory("Ptent", P22Fact);
   M22->SetFactory("Smoother", Smoo22Fact);
+  M22->SetFactory("CoarseMap", coarseMapFact22);
   M22->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
 #endif
 

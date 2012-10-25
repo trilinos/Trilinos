@@ -80,9 +80,6 @@ SET(HEADERS ${HEADERS}
   Epetra_LinearProblem.h
 #  Epetra_LinearProblemRedistor.h
   Epetra_LocalMap.h
-  Epetra_LongLongSerialDenseMatrix.h
-  Epetra_LongLongSerialDenseVector.h
-  Epetra_LongLongVector.h
   Epetra_Map.h
   Epetra_MapColoring.h
   Epetra_MultiVector.h
@@ -109,6 +106,14 @@ SET(HEADERS ${HEADERS}
   Epetra_Vector.h
   Epetra_Version.h
   )
+
+IF(NOT Trilinos_NO_64BIT_GLOBAL_INDICES)
+  SET(HEADERS ${HEADERS}
+    Epetra_LongLongSerialDenseMatrix.h
+    Epetra_LongLongSerialDenseVector.h
+    Epetra_LongLongVector.h
+  )
+ENDIF()
 
 # Set sources
 SET(SOURCES ${SOURCES}
@@ -143,9 +148,6 @@ SET(SOURCES ${SOURCES}
   Epetra_LinearProblem.cpp
 #  Epetra_LinearProblemRedistor.cpp
   Epetra_LocalMap.cpp
-  Epetra_LongLongSerialDenseMatrix.cpp
-  Epetra_LongLongSerialDenseVector.cpp
-  Epetra_LongLongVector.cpp
   Epetra_Map.cpp
   Epetra_MapColoring.cpp
   Epetra_MultiVector.cpp
@@ -166,6 +168,15 @@ SET(SOURCES ${SOURCES}
   Epetra_VbrMatrix.cpp
   Epetra_Vector.cpp
   )
+
+IF(NOT Trilinos_NO_64BIT_GLOBAL_INDICES)
+  SET(SOURCES ${SOURCES}
+    Epetra_LongLongSerialDenseMatrix.cpp
+    Epetra_LongLongSerialDenseVector.cpp
+    Epetra_LongLongVector.cpp
+  )
+ENDIF()
+
 
 IF(Epetra_ENABLE_Oski)
   APPEND_SET(HEADERS

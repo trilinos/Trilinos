@@ -43,11 +43,11 @@
 
 #include <gtest/gtest.h>
 
+#include <KokkosArray_Host.hpp>
+
 #include <KokkosArray_View.hpp>
 
 #include <KokkosArray_CrsArray.hpp>
-
-#include <KokkosArray_Host.hpp>
 
 //----------------------------------------------------------------------------
 

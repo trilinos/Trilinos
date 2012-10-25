@@ -155,6 +155,9 @@ namespace Xpetra {
     //! Returns the Frobenius norm of the matrix.
     virtual typename ScalarTraits< Scalar >::magnitudeType getFrobeniusNorm() const = 0;
 
+    //! Returns true if getLocalRowView() and getGlobalRowView() are valid for this class.
+    virtual bool supportsRowViews() const = 0;
+
     //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
     virtual void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &indices, ArrayView< const Scalar > &values) const = 0;
 
@@ -166,7 +169,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name Methods implementing Matrix
+    //! @name Methods implementing Operator
     //@{
 
     //! Computes the sparse matrix-multivector multiplication.

@@ -41,3 +41,5 @@ MultiVectorTransferFactory
 PermutedTransferFactory
 AmalgamationFactory
 AggStatTransferFactory
+CoarseMapFactory
+BlockedCoarseMapFactory

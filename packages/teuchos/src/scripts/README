@@ -24,4 +24,6 @@ license as the Teuchos package.  Please refer to teuchos/Copyright.txt
 for license details.  Interested users are welcome to examine the
 scripts in this directory, subject to the terms of this license.
 
-
+MpiTypeTraits-users-guide.org: A users' guide for the MpiTypeTraits
+traits class that maps from C++ type to its corresponding MPI_Datatype
+and count.  It is a plain text file best viewed using Emacs' org-mode.

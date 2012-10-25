@@ -36,7 +36,7 @@ TRIBITS_ADD_ADVANCED_TEST(
   TEST_0 EXEC main_driver 
     ARGS  --i=energy-ss.xml
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
-    XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov
+    XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov zan.sandia.gov
   )
 
 TRIBITS_ADD_ADVANCED_TEST(
@@ -44,7 +44,7 @@ TRIBITS_ADD_ADVANCED_TEST(
   TEST_0 EXEC main_driver 
     ARGS  --i=energy-transient.xml
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
-    XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov
+    XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov zan.sandia.gov
   )
 
 TRIBITS_ADD_ADVANCED_TEST(
@@ -52,7 +52,7 @@ TRIBITS_ADD_ADVANCED_TEST(
   TEST_0 EXEC main_driver 
     ARGS  --i=energy-ss-blocked.xml
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
-    XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov
+    XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov zan.sandia.gov
   )
 
 TRIBITS_ADD_ADVANCED_TEST(
@@ -61,7 +61,7 @@ TRIBITS_ADD_ADVANCED_TEST(
     ARGS  --i=energy-neumann.xml
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
     NUM_MPI_PROCS 1
-    XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov
+    XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov zan.sandia.gov
   )
 
 IF(${PACKAGE_NAME}_ENABLE_Teko)
@@ -70,6 +70,6 @@ IF(${PACKAGE_NAME}_ENABLE_Teko)
     TEST_0 EXEC main_driver 
       ARGS  --i=energy-transient-blocked.xml
       PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
-      XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov
+      XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov zan.sandia.gov
     )
 ENDIF()

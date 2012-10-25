@@ -1,4 +1,4 @@
-/*! \mainpage Trilinos/Zoltan2: Dynamic parallel partitioning and ordering.
+/*! \mainpage Trilinos/Zoltan2: Load Balancing and Combinatorial Scientific Computing.
 
 \section mainpage_contents Contents
 <ul>
@@ -17,8 +17,8 @@ Information specifically for developers can be found at \ref z2_developer.
 
 \section z2_main_intro Introduction to Zoltan2
 
-Zoltan2 is a refactoring of the <a href=http://www.cs.sandia.gov/Zoltan >
-Zoltan </a>
+Zoltan2 is a complete refactoring of the 
+<a href=http://www.cs.sandia.gov/Zoltan > Zoltan </a>
 library into C++ in order to support template programming,
 to scale to larger problems, and to support architecture aware partitioning.
 This library is currently under active development.
@@ -27,6 +27,7 @@ Partitioning functionality that is available now is:
 
 <ul>
 <li> \ref blockPage for simple weighted identifiers (really created as a sample algorithm).
+<li> Multi-jagged for weighted geometric coordinates.
 <li> \ref rcbPage for weighted geometric coordinates.
 <li> \ref scotchPartPage for undirected weighted graphs.
 </ul>
@@ -37,9 +38,6 @@ Serial ordering available now is:
 <ul>
 <li> \ref rcmPage for RCM ordering.
 <li> \ref amdPage for AMD ordering.
-<li> Increasing degree
-<li> Natural (identity permutation)
-<li> Random
 </ul>
 
 <hr>

@@ -268,17 +268,20 @@ template<typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::RythmosSolver<Scalar>::getNominalValues() const
 {
-  return model->getNominalValues();
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> result = this->createInArgs();
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> modelNominalValues = model->getNominalValues();
+  for (int l = 0; l < num_p; ++l) {
+    result.set_p(l, modelNominalValues.get_p(l));
+  }
+  return result;
 }
 
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar> Piro::RythmosSolver<Scalar>::createInArgs() const
 {
-  //return underlyingME->createInArgs();
   Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
   inArgs.set_Np(num_p);
-//  inArgs.setSupports(IN_ARG_x,true);
   return inArgs;
 }
 

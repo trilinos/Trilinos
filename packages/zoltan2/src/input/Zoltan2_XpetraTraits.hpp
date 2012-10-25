@@ -55,6 +55,7 @@
 
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
+#include <Xpetra_TpetraRowMatrix.hpp>
 #include <Xpetra_EpetraVector.hpp>
 #include <Xpetra_TpetraVector.hpp>
 #include <Xpetra_EpetraUtils.hpp>
@@ -525,6 +526,50 @@ struct XpetraTraits<Xpetra::CrsGraph<lno_t, gno_t, node_t> >
       RCP<const x_graph_t> xgnew =
         XpetraTraits<t_graph_t>::convertToXpetra(tgnew);
       return xgnew;
+    }
+  }
+};
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Xpetra::RowMatrix
+template <typename scalar_t,
+          typename lno_t,
+          typename gno_t,
+          typename node_t>
+struct XpetraTraits<Xpetra::RowMatrix<scalar_t, lno_t, gno_t, node_t> >
+{
+  typedef Xpetra::RowMatrix<scalar_t, lno_t, gno_t, node_t> x_matrix_t;
+  typedef Xpetra::TpetraRowMatrix<scalar_t, lno_t, gno_t, node_t> xt_matrix_t;
+  typedef Tpetra::RowMatrix<scalar_t,lno_t,gno_t,node_t> t_matrix_t; 
+
+  static inline RCP<const x_matrix_t>
+    convertToXpetra( const RCP<const x_matrix_t > &a)
+    {
+      return a;
+    }
+
+  static RCP<const x_matrix_t> doMigration(const RCP<const x_matrix_t> &from,
+      lno_t numLocalRows, const gno_t *myNewRows)
+  {
+    Xpetra::UnderlyingLib lib = from->getRowMap()->lib();
+
+    if (lib == Xpetra::UseEpetra){
+       throw logic_error("compiler should have used specialization");
+    } else{
+      // Do the import with the Tpetra::CrsMatrix traits object
+      const x_matrix_t *xm = from.get();
+      const xt_matrix_t *xtm = dynamic_cast<const xt_matrix_t *>(xm);
+      RCP<const t_matrix_t> tm = xtm->getTpetra_CrsMatrix();
+
+      RCP<const t_matrix_t> tmnew = XpetraTraits<t_matrix_t>::doMigration(
+        tm, numLocalRows, myNewRows);
+
+      RCP<const x_matrix_t> xmnew = 
+        XpetraTraits<t_matrix_t>::convertToXpetra(tmnew);
+
+      return xmnew;
     }
   }
 };

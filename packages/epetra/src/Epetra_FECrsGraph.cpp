@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_FECrsGraph.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"

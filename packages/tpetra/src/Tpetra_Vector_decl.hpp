@@ -110,6 +110,14 @@ namespace Tpetra {
     //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
     void get1dCopy(ArrayView<Scalar> A) const;
 
+    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDataNonConst; // overloading, not hiding
+    //! View of the local values of this vector.
+    Teuchos::ArrayRCP<Scalar> getDataNonConst()     { return getDataNonConst(0); }
+
+    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getData; // overloading, not hiding
+    //! Const view of the local values of this vector.
+    Teuchos::ArrayRCP<const Scalar> getData() const { return getData(0); }
+
     //@}
 
     //! @name Mathematical methods

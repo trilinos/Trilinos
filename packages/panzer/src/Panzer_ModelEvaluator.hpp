@@ -62,19 +62,17 @@
 
 namespace panzer {
 
-template<typename, typename>  class FieldManagerBuilder;
+class FieldManagerBuilder;
 template<typename> class ResponseLibrary;
 template<typename> class LinearObjFactory;
 class GlobalData;
 
-template<typename Scalar, typename LO, typename GO, typename NODE>
+template<typename Scalar, typename NODE>
 class ModelEvaluator
   : public Thyra::StateFuncModelEvaluatorBase<Scalar>
 {
 public:
 
-//   typedef typename panzer::Traits<T>::lid_type LO;
-//   typedef typename panzer::Traits<T>::gid_type GO;
 //   typedef typename panzer::Traits<T>::node_type NODE;
 
 public:
@@ -82,7 +80,7 @@ public:
   /** \name Constructors/Initializers/Accessors */
   //@{
 
-  ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb,
+  ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                  const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
 		 const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
 		 const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
@@ -177,9 +175,9 @@ private: // data members
   // responses
   std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > g_space_;
 
-  Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> > fmb_;
+  Teuchos::RCP<panzer::FieldManagerBuilder> fmb_;
   mutable Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_; // These objects are basically the same
-  mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits,LO,GO> ae_tm_;     // they control and provide access to evaluate
+  mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm_;     // they control and provide access to evaluate
   std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_;
 
   mutable Teuchos::Array<panzer::ParamVec> parameter_vector_;

@@ -76,16 +76,6 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT}
     )
 
-  # sacado
-  IF(${PACKAGE_NAME}_ENABLE_PCE_SUPPORT)
-    TRIBITS_ADD_OPTION_AND_DEFINE(
-      ${PACKAGE_NAME}_INST_PCE_INT_INT
-      HAVE_${PACKAGE_NAME_UC}_INST_PCE_INT_INT
-      "Enable the use of explicit template instantiation with Scalar=Sacado orthogonal polynomials and LO=GO=int."
-      ON
-    )
-  ENDIF()
-
 ENDIF()
 
 # HAVE_MUELU_COMPLEX=ON iff:

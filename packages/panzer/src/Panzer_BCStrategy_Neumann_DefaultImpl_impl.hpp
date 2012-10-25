@@ -91,6 +91,18 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				        const panzer::LinearObjFactory<panzer::Traits> & lof,
 					const Teuchos::ParameterList& user_data) const
 {
+  buildAndRegisterGatherAndOrientationEvaluators(fm,pb,lof,user_data);
+  buildAndRegisterScatterEvaluators(fm,pb,lof,user_data);
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::BCStrategy_Neumann_DefaultImpl<EvalT>::
+buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+			                       const panzer::PhysicsBlock& pb,
+				               const panzer::LinearObjFactory<panzer::Traits> & lof,
+				               const Teuchos::ParameterList& user_data) const
+{
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -105,7 +117,7 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // Iterate over each residual contribution
   for (vector<boost::tuples::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > >::const_iterator eq = 
 	 m_residual_contributions.begin(); eq != m_residual_contributions.end(); ++eq) {
-    
+
     const string& residual_name = eq->get<0>();
     const string& dof_name = eq->get<1>();
     const string& flux_name = eq->get<2>();
@@ -144,6 +156,34 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       fm.template registerEvaluator<EvalT>(op);
     }
 
+  }
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::BCStrategy_Neumann_DefaultImpl<EvalT>::
+buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+  		                  const panzer::PhysicsBlock& pb,
+			          const panzer::LinearObjFactory<panzer::Traits> & lof,
+			  	  const Teuchos::ParameterList& user_data) const
+{
+  using Teuchos::ParameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using std::vector;
+  using std::map;
+  using std::string;
+  using std::pair;
+
+  // Iterate over each residual contribution
+  for (vector<boost::tuples::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > >::const_iterator eq = 
+	 m_residual_contributions.begin(); eq != m_residual_contributions.end(); ++eq) {
+
+    const string& residual_name = eq->get<0>();
+    const string& dof_name = eq->get<1>();
+    const RCP<const panzer::PureBasis> basis = eq->get<4>();
+    const RCP<const panzer::IntegrationRule> ir = eq->get<5>();
+
     // Scatter evaluator
     {
       ParameterList p("Scatter: "+ residual_name + " to " + dof_name);
@@ -175,8 +215,7 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
     }  // end of Scatter
 
-  }  // end of residual contribution 
-
+  }
 }
 
 // ***********************************************************************

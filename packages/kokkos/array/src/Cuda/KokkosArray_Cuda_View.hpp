@@ -44,38 +44,51 @@
 #ifndef KOKKOSARRAY_CUDA_VIEW_HPP
 #define KOKKOSARRAY_CUDA_VIEW_HPP
 
-#include <KokkosArray_Host.hpp>
 #include <KokkosArray_View.hpp>
-
-#include <impl/KokkosArray_Cuda_macros.hpp>
-#include <impl/KokkosArray_ViewOperLeft_macros.hpp>
-#include <impl/KokkosArray_ViewOperRight_macros.hpp>
-#include <impl/KokkosArray_View_macros.hpp>
-#include <impl/KokkosArray_Clear_macros.hpp>
+#include <KokkosArray_HostSpace.hpp>
+#include <KokkosArray_CudaSpace.hpp>
+#include <Cuda/KokkosArray_Cuda_abort.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
+namespace Impl {
 
-template< class DataType , class LayoutType >
-void View< DataType , LayoutType , Cuda >::internal_private_create(
-  const std::string & label ,
-  const typename View< DataType , LayoutType , Cuda >::shape_type shape )
+template< class DataType , class LayoutType , class ManageType >
+struct ViewInitialize< View< DataType , LayoutType , Cuda , ManageType > >
 {
-  typedef typename View< DataType , LayoutType , Cuda >::shape_type shape_type ;
+  typedef View< DataType , LayoutType , Cuda , ManageType > view_type ;
+  inline static void apply( const view_type & ) {}
+};
 
-  const size_t count = Impl::ShapeMap<shape_type>::allocation_count( shape );
+template<>
+struct AssertShapeBoundsAbort< CudaSpace >
+{
+  KOKKOSARRAY_INLINE_FUNCTION
+  static void apply( const size_t /* rank */ ,
 
-  oper_type::m_shape = shape ;
-  oper_type::m_ptr_on_device = (value_type *)
-    memory_space::allocate( label ,
-                            typeid(value_type) ,
-                            sizeof(value_type) ,
-                            count );
+                     const size_t /* n0 */ , const size_t /* n1 */ ,
+                     const size_t /* n2 */ , const size_t /* n3 */ ,
+                     const size_t /* n4 */ , const size_t /* n5 */ ,
+                     const size_t /* n6 */ , const size_t /* n7 */ ,
+
+                     const size_t /* i0 */ , const size_t /* i1 */ ,
+                     const size_t /* i2 */ , const size_t /* i3 */ ,
+                     const size_t /* i4 */ , const size_t /* i5 */ ,
+                     const size_t /* i6 */ , const size_t /* i7 */ )
+    {
+      KokkosArray::cuda_abort("KokkosArray::View array bounds violation");
+    }
+};
+
+}
 }
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
 
 template< typename ValueType , class LayoutSrc >
 inline
@@ -87,7 +100,7 @@ void deep_copy( ValueType & dst ,
 
   typedef typename Impl::assert_shape_is_rank_zero< src_shape >::type ok_rank ;
 
-  Cuda::memory_space::copy_to_host_from_device( & dst , src.ptr_on_device() , sizeof(ValueType) );
+  DeepCopy<HostSpace,CudaSpace>( & dst , src.ptr_on_device() , sizeof(ValueType) );
 }
 
 template< typename ValueType , class LayoutDst >
@@ -100,7 +113,7 @@ void deep_copy( const View< ValueType , LayoutDst , Cuda > & dst ,
 
   typedef typename Impl::assert_shape_is_rank_zero< dst_shape >::type ok_rank ;
 
-  Cuda::memory_space::copy_to_device_from_host( dst.ptr_on_device() , & src , sizeof(ValueType) );
+  DeepCopy<CudaSpace,HostSpace>( dst.ptr_on_device() , & src , sizeof(ValueType) );
 }
 
 } // namespace KokkosArray

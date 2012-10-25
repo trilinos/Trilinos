@@ -269,8 +269,6 @@ static int shylu_local_solve(
                                                                     // paper
     Epetra_MultiVector temp3 (View, *(ssym->Drhs), 0,  nvectors);
 
-    Epetra_MultiVector *templhs = ssym->OrigLP->GetLHS();
-    Epetra_MultiVector *temprhs = ssym->OrigLP->GetRHS();
     ssym->OrigLP->SetRHS(&localrhs);
     ssym->OrigLP->SetLHS(&locallhs);
     ssym->ReIdx_LP->fwd();
@@ -348,9 +346,6 @@ static int shylu_local_solve(
     ssym->OrigLP->SetLHS(&locallhs);
     ssym->ReIdx_LP->fwd();
     ssym->Solver->Solve();
-    ssym->OrigLP->SetRHS(temprhs);
-    ssym->OrigLP->SetLHS(templhs);
-    ssym->ReIdx_LP->fwd();
 
     Epetra_Export XdExporter(LocalDMap, Y.Map());
     Y.Export(locallhs, XdExporter, Insert);

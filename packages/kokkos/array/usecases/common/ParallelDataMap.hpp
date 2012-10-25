@@ -70,9 +70,9 @@ namespace KokkosArray {
  *  send_item { send item offsets within 'send' range }
  */
 struct ParallelDataMap {
-  typedef View< unsigned[][2], Host >  host_recv_type ;
-  typedef View< unsigned[][2], Host >  host_send_type ;
-  typedef View< unsigned[] ,   Host >  host_send_item_type ;
+  typedef View< unsigned*[2], Host >  host_recv_type ;
+  typedef View< unsigned*[2], Host >  host_send_type ;
+  typedef View< unsigned* ,   Host >  host_send_item_type ;
 
   comm::Machine        machine ;
   host_recv_type       host_recv ;
@@ -110,12 +110,12 @@ template< class ArrayType , class Rank = void >
 struct PackArray ;
 
 template< typename DeviceType, typename ValueType >
-struct PackArray< View< ValueType[] , DeviceType > , void >
+struct PackArray< View< ValueType* , DeviceType > , void >
 {
   typedef DeviceType                         device_type ;
   typedef typename DeviceType::size_type     size_type ;
-  typedef View< ValueType[] , device_type >  array_type ;
-  typedef View< ValueType[] , device_type >  buffer_type ;
+  typedef View< ValueType* , device_type >  array_type ;
+  typedef View< ValueType* , device_type >  buffer_type ;
 
 private:
 
@@ -125,7 +125,7 @@ private:
 
 public:
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const size_type i ) const
   { output[i] = input(base+i); }
 
@@ -145,12 +145,12 @@ public:
 };
 
 template< typename DeviceType, typename ValueType , unsigned N1 >
-struct PackArray< View< ValueType[][N1] , DeviceType > , void >
+struct PackArray< View< ValueType*[N1] , DeviceType > , void >
 {
   typedef DeviceType                                  device_type ;
   typedef typename DeviceType::size_type              size_type ;
-  typedef View< ValueType[][N1] , device_type >       array_type ;
-  typedef View< ValueType[] , device_type >           buffer_type ;
+  typedef View< ValueType*[N1] , device_type >       array_type ;
+  typedef View< ValueType* , device_type >           buffer_type ;
 
 private:
 
@@ -160,7 +160,7 @@ private:
 
 public:
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const size_type i ) const
   {
     for ( size_type j = 0 , k = i * N1 ; j < N1 ; ++j , ++k ) {
@@ -190,12 +190,12 @@ public:
 template< class ArrayType , class Rank = void > struct UnpackArray ;
 
 template< typename DeviceType, typename ValueType >
-struct UnpackArray< View< ValueType[] , DeviceType > , void >
+struct UnpackArray< View< ValueType* , DeviceType > , void >
 {
   typedef DeviceType                         device_type ;
   typedef typename DeviceType::size_type     size_type ;
-  typedef View< ValueType[] , device_type >  array_type ;
-  typedef View< ValueType[] , device_type >  buffer_type ;
+  typedef View< ValueType* , device_type >  array_type ;
+  typedef View< ValueType* , device_type >  buffer_type ;
 
 private:
 
@@ -205,7 +205,7 @@ private:
 
 public:
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const size_type i ) const
   { output(base+i) = input[i]; }
 
@@ -225,12 +225,12 @@ public:
 };
 
 template< typename DeviceType, typename ValueType , unsigned N1 >
-struct UnpackArray< View< ValueType[][N1] , DeviceType > , void >
+struct UnpackArray< View< ValueType*[N1] , DeviceType > , void >
 {
   typedef DeviceType                                  device_type ;
   typedef typename DeviceType::size_type              size_type ;
-  typedef View< ValueType[] , device_type >           buffer_type ;
-  typedef View< ValueType[][N1] , device_type >       array_type ;
+  typedef View< ValueType* , device_type >           buffer_type ;
+  typedef View< ValueType*[N1] , device_type >       array_type ;
 
 private:
 
@@ -240,7 +240,7 @@ private:
 
 public:
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const size_type i ) const
   {
     for ( size_type j = 0 , k = i * N1 ; j < N1 ; ++j , ++k ) {
@@ -293,7 +293,7 @@ public:
 
   typedef Device                                          device_type ;
   typedef KokkosArray::ParallelDataMap                    data_map_type ;
-  typedef KokkosArray::View< ValueType[] , device_type >  buffer_dev_type ;
+  typedef KokkosArray::View< ValueType* , device_type >  buffer_dev_type ;
   typedef typename buffer_dev_type::HostMirror            buffer_host_type ;
 
 private:
@@ -489,8 +489,8 @@ public:
 
   typedef Device                                          device_type ;
   typedef KokkosArray::ParallelDataMap                    data_map_type ;
-  typedef KokkosArray::View< ValueType[] , device_type >  buffer_dev_type ;
-  typedef KokkosArray::View< ValueType[] , Host >         buffer_host_type ;
+  typedef KokkosArray::View< ValueType* , device_type >  buffer_dev_type ;
+  typedef KokkosArray::View< ValueType* , Host >         buffer_host_type ;
 
   buffer_dev_type      dev_buffer ;
 

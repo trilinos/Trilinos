@@ -930,7 +930,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    }
    if (flag == 1) Agetrow = ML_get_matrow_CSR;
 
-    /********************************************************/
+   /********************************************************/
    /* put here to alleviate a hidden error - C. Tong       */
    if ( Amatrix->max_nz_per_row > Amatrix->getrow->Nrows )
       Amatrix->max_nz_per_row = Amatrix->getrow->Nrows;
@@ -1012,33 +1012,14 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    /**************************************************************************/
    /* Make conservative estimates of the size needed to hold the resulting   */
    /* matrix. NOTE: These arrays can be increased later in the computation   */
+   /*                                                                        */
+   /* We try to use the actual data from the rowptrs if we can get at 'em,   */
+   /* otherwise we probe a few rows to generate a guess.                     */
    /*------------------------------------------------------------------------*/
-
-   if ( Amatrix->getrow->Nrows > 0 )
-   {
-      row = 0;
-      Agetrow(Amatrix,1, &row, &A_i_allocated , &A_i_cols, &A_i_vals, &i,0);
-      row = (Amatrix->getrow->Nrows-1)/2;
-      Agetrow(Amatrix,1, &row, &A_i_allocated , &A_i_cols, &A_i_vals, &k,0);
-      row = Amatrix->getrow->Nrows-1;
-      Agetrow(Amatrix,1, &row, &A_i_allocated , &A_i_cols, &A_i_vals, &jj,0);
-      A_avg_nz_per_row = ((double) (i+k+jj))/3.0;
-   } else A_avg_nz_per_row = 100;
-
-   if ( Bmatrix->getrow->Nrows > 0 )
-   {
-      row = 0;
-      Bgetrow(Bmatrix,1,&row, &accum_size, &accum_col, &accum_val, &i,0);
-      row = (Bmatrix->getrow->Nrows-1)/2;
-      Bgetrow(Bmatrix,1,&row, &accum_size, &accum_col, &accum_val, &k,0);
-      row = Bmatrix->getrow->Nrows-1;
-      Bgetrow(Bmatrix,1,&row, &accum_size, &accum_col, &accum_val,&jj,0);
-      B_avg_nz_per_row = ((double) (i+k+jj))/3.0;
-   } else B_avg_nz_per_row = i = k = jj = 100;
-
-   if (i  > Bmatrix->max_nz_per_row) Bmatrix->max_nz_per_row =  i+10;
-   if (k  > Bmatrix->max_nz_per_row) Bmatrix->max_nz_per_row =  k+10;
-   if (jj > Bmatrix->max_nz_per_row) Bmatrix->max_nz_per_row = jj+10;
+   ML_estimate_avg_nz_per_row(Amatrix,&A_avg_nz_per_row);
+   if (!A_avg_nz_per_row) A_avg_nz_per_row=100;
+   ML_estimate_avg_nz_per_row(Bmatrix,&B_avg_nz_per_row);
+   if (!B_avg_nz_per_row) B_avg_nz_per_row=100;
 
    estimated_nz_per_row = sqrt(A_avg_nz_per_row) + sqrt(B_avg_nz_per_row) - 1.;
    estimated_nz_per_row *= estimated_nz_per_row;

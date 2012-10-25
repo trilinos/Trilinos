@@ -171,7 +171,9 @@ if __name__ == "__main__":
         errors = 1
 
     # Sum the errors, report the status and exit
+    print "Processor", comm.getRank(), "-- errors =", errors
     totalErrors = comm.reduceAll(Teuchos.REDUCE_SUM, errors)
+    print "Processor", comm.getRank(), "-- totalErrors =", totalErrors
     if iAmRoot:
         if errors == 0:
             print "End Result: TEST PASSED"
