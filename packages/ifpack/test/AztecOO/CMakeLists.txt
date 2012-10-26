@@ -3,11 +3,6 @@ INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../teuchos/src)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../teuchos/src)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../aztecoo/src)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../epetra/src)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
 
@@ -17,7 +12,6 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 TRIBITS_ADD_EXECUTABLE(
   ifp_aztecoo
   SOURCES aztecoo_solve.cpp build_problem.cpp build_solver.cpp read_matrix.cpp
-  DEPLIBS aztecoo epetra teuchos
 )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(IfpackAztecOOCopyFiles

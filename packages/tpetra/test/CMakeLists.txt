@@ -28,7 +28,7 @@ ADD_SUBDIRECTORY(BugTests)
 TRIBITS_ADD_LIBRARY(
   tpetratestlib
   SOURCES UnitTestMissingExplicitInstantiations.cpp
-  DEPLIBS tpetra teuchos
+  DEPLIBS tpetra
   TESTONLY
 )
 
