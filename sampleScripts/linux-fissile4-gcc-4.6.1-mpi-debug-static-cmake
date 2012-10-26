@@ -48,6 +48,7 @@ cmake \
 -D Teuchos_ENABLE_DEFAULT_STACKTRACE:BOOL=ON \
 -D DART_TESTING_TIMEOUT:STRING=180.0 \
 -D CTEST_BUILD_FLAGS:STRING="-j8" \
+-D Trilinos_EXCLUDE_PACKAGES="CTrilinos;ForTrilinos;PyTrilinos;Didasko;Mesquite;Phdmesh;Pliris;Claps" \
 $EXTRA_ARGS \
 ${TRILINOS_DIR_ABS}
 
