@@ -2,8 +2,8 @@ INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2Tpetra_HybridPlatformTest_Files1
-  SOURCE_DIR ${Tpetra_XML_MACHINE_FILE_DIR}
-  SOURCE_FILES gpuonly.xml hybrid.xml mpionly.xml threaded.xml titan.xml
+  SOURCE_DIR ${Tpetra_MACHINE_XML_FILE_DIR}
+  SOURCE_FILES gpuonly.xml hybrid.xml mpionly.xml threaded.xml titan.xml serial.xml
 )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2Tpetra_HybridPlatformTest_Files2

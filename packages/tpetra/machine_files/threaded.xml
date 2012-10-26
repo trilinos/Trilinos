@@ -1,5 +1,5 @@
 <ParameterList>
-  <ParameterList name="%=0">
+  <ParameterList name="%1=0">
     <Parameter name="NodeType"      type="string" value="Kokkos::TPINode"/>
     <Parameter name="Num Threads"   type="int"    value="2"/>
   </ParameterList>

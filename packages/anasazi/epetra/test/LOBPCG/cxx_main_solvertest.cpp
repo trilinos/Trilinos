@@ -58,13 +58,10 @@
 using namespace Teuchos;
 using namespace Anasazi;
 
-typedef double                              ScalarType;
-typedef ScalarTraits<ScalarType>                   SCT;
-typedef SCT::magnitudeType               MagnitudeType;
+typedef double                       ScalarType;
+typedef double                    MagnitudeType;
 typedef Epetra_MultiVector                 MV;
 typedef Epetra_Operator                    OP;
-typedef MultiVecTraits<ScalarType,MV>     MVT;
-typedef OperatorTraits<ScalarType,MV,OP>  OPT;
 
 class get_out : public std::logic_error {
   public: get_out(const std::string &whatarg) : std::logic_error(whatarg) {}
@@ -73,7 +70,11 @@ class get_out : public std::logic_error {
 void checks( RCP<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool fullortho, 
              RCP<Eigenproblem<ScalarType,MV,OP> > problem,
              RCP<MatOrthoManager<ScalarType,MV,OP> > ortho,
-             SolverUtils<ScalarType,MV,OP> &msutils) {
+             SolverUtils<ScalarType,MV,OP> &msutils) 
+{
+  typedef MultiVecTraits<ScalarType,MV>     MVT;
+  typedef OperatorTraits<ScalarType,MV,OP>  OPT;
+  typedef ScalarTraits<ScalarType>          SCT;
   LOBPCGState<ScalarType,MV> state = solver->getState();
   
   TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.X)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for X");
@@ -159,6 +160,9 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
                  RCP< SortManager<MagnitudeType> > sorter,
                  ParameterList &pls,bool invalid=false)
 {
+  typedef MultiVecTraits<ScalarType,MV>     MVT;
+  typedef OperatorTraits<ScalarType,MV,OP>  OPT;
+  typedef ScalarTraits<ScalarType>          SCT;
   // create a status tester to run for one iteration
   RCP< StatusTest<ScalarType,MV,OP> > tester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
 
@@ -253,6 +257,9 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
 
 int main(int argc, char *argv[]) 
 {
+  typedef MultiVecTraits<ScalarType,MV>     MVT;
+  typedef OperatorTraits<ScalarType,MV,OP>  OPT;
+  typedef ScalarTraits<ScalarType>          SCT;
 
 #ifdef HAVE_MPI
   // Initialize MPI
