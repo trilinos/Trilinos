@@ -59,6 +59,7 @@ APPEND_GLOB(SOURCES Transfers/Petrov-Galerkin-SA/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Generic/*.cpp)
 APPEND_GLOB(SOURCES Transfers/BaseClass/*.cpp)
 APPEND_GLOB(SOURCES Utils/ForwardDeclaration/*.cpp)
+APPEND_GLOB(SOURCES Facade/*.cpp)
 
 #
 # Explicit instantiation
