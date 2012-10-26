@@ -814,6 +814,8 @@ NNTI_result_t NNTI_ib_disconnect (
 {
     NNTI_result_t rc=NNTI_OK;
 
+    log_debug(nnti_debug_level, "Disconnecting from IB");
+
     assert(trans_hdl);
     assert(peer_hdl);
 
@@ -1116,7 +1118,7 @@ NNTI_result_t NNTI_ib_send (
     assert(peer_hdl);
     assert(msg_hdl);
 
-    log_level debug_level=nnti_debug_level; //LOG_ALL;
+    log_level debug_level=nnti_debug_level;
 
     ib_mem_hdl=(ib_memory_handle *)msg_hdl->transport_private;
     assert(ib_mem_hdl);
@@ -1126,6 +1128,9 @@ NNTI_result_t NNTI_ib_send (
         wr=(ib_work_request *)calloc(1, sizeof(ib_work_request));
     }
     assert(wr);
+
+    // RAOLDFI ADDED
+    memset(wr, 0, sizeof(ib_work_request));
 
     wr->conn = get_conn_peer(peer_hdl);
     assert(wr->conn);
@@ -1146,6 +1151,7 @@ NNTI_result_t NNTI_ib_send (
         wr->sge.lkey  =ib_mem_hdl->mr->lkey;
 
         wr->sq_wr.wr_id  =hash6432shift((uint64_t)wr);
+        wr->sq_wr.next = NULL;  // RAOLDFI ADDED
         wr->sq_wr.sg_list=&wr->sge;
         wr->sq_wr.num_sge=1;
 
@@ -1166,6 +1172,7 @@ NNTI_result_t NNTI_ib_send (
         wr->sge.lkey  =ib_mem_hdl->mr->lkey;
 
         wr->sq_wr.wr_id  =hash6432shift((uint64_t)wr);
+        wr->sq_wr.next = NULL;  // RAOLDFI ADDED
         wr->sq_wr.sg_list=&wr->sge;
         wr->sq_wr.num_sge=1;
 
@@ -1179,7 +1186,8 @@ NNTI_result_t NNTI_ib_send (
         wr->last_op=IB_OP_SEND_BUFFER;
     }
 
-    log_debug(nnti_debug_level, "sending to (%s, qp=%p, qpn=%lu, sge.addr=%p, sge.length=%llu, sq_wr.imm_data=%llx, sq_wr.wr.rdma.rkey=%x, sq_wr.wr.rdma.remote_addr=%p)",
+
+    log_debug(debug_level, "sending to (%s, qp=%p, qpn=%du, sge.addr=%p, sge.length=%llu, sq_wr.imm_data=%llx, sq_wr.wr.rdma.rkey=%x, sq_wr.wr.rdma.remote_addr=%p)",
             peer_hdl->url,
             wr->qp,
             wr->qpn,
@@ -1188,6 +1196,22 @@ NNTI_result_t NNTI_ib_send (
             (uint64_t)wr->sq_wr.imm_data,
                       wr->sq_wr.wr.rdma.rkey,
             (void *)  wr->sq_wr.wr.rdma.remote_addr);
+
+    log_debug(debug_level, "sq_wr {wr_id=%lu, next=%p, sg_list=%p, num_sge=%d, opcode=%d, send_flags=%d, imm_data=%d",
+            wr->sq_wr.wr_id,
+            wr->sq_wr.next,
+            wr->sq_wr.sg_list,
+            wr->sq_wr.num_sge,
+            wr->sq_wr.opcode,
+            wr->sq_wr.send_flags,
+            wr->sq_wr.imm_data);
+
+
+    log_debug(debug_level, "sge.addr=%lu, sge.length=%d, sge.lkey=%d",
+            wr->sge.addr,
+            wr->sge.length,
+            wr->sge.lkey);
+
 
     nthread_lock(&nnti_wr_wrhash_lock);
 
@@ -1346,6 +1370,7 @@ NNTI_result_t NNTI_ib_get (
         const uint64_t       dest_offset)
 {
     NNTI_result_t rc=NNTI_OK;
+    log_level debug_level = nnti_debug_level;
 
     trios_declare_timer(call_time);
 
@@ -1354,7 +1379,7 @@ NNTI_result_t NNTI_ib_get (
     ib_memory_handle *ib_mem_hdl=NULL;
     ib_work_request  *wr=NULL;
 
-    log_debug(nnti_debug_level, "enter");
+    log_debug(debug_level, "enter");
 
     assert(src_buffer_hdl);
     assert(dest_buffer_hdl);
@@ -1421,6 +1446,7 @@ NNTI_result_t NNTI_ib_get (
         wr->ack_sq_wr.opcode    =IBV_WR_RDMA_WRITE_WITH_IMM;
         wr->ack_sq_wr.send_flags=IBV_SEND_SIGNALED|IBV_SEND_FENCE;
         wr->ack_sq_wr.wr_id     =hash6432shift((uint64_t)wr);
+
         wr->ack_sq_wr.imm_data  =hash6432shift((uint64_t)src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.buf);
     }
 
@@ -1428,7 +1454,7 @@ NNTI_result_t NNTI_ib_get (
     wr->length=src_length;
     wr->offset=dest_offset;
 
-    log_debug(nnti_debug_level, "getting from (%s, qp=%p, qpn=%lu)",
+    log_debug(debug_level, "getting from (%s, qp=%p, qpn=%lu)",
             src_buffer_hdl->buffer_owner.url,
             wr->qp,
             wr->qpn);
@@ -4405,20 +4431,36 @@ static void close_all_conn(void)
             connections_by_qpn.size(), connections_by_peer.size());
 
     nthread_lock(&nnti_conn_qpn_lock);
-    conn_by_qpn_iter_t qpn_iter;
-    for (qpn_iter = connections_by_qpn.begin(); qpn_iter != connections_by_qpn.end(); qpn_iter++) {
+    conn_by_qpn_iter_t qpn_iter = connections_by_qpn.begin();
+    conn_by_qpn_iter_t end_iter = connections_by_qpn.end();
+
+    // Each connection is stored in this queue twice. Once referenced by req_qpn, once
+    // referenced by data_qpn.
+    while (qpn_iter != end_iter) {
         log_debug(debug_level, "close connection (qpn=%llu)", qpn_iter->first);
-        close_connection(qpn_iter->second);
-        connections_by_qpn.erase(qpn_iter);
+        ib_connection *conn = qpn_iter->second;
+        //close_connection(conn);
+        connections_by_qpn.erase(qpn_iter++);
     }
+
     nthread_unlock(&nnti_conn_qpn_lock);
 
     nthread_lock(&nnti_conn_peer_lock);
-    conn_by_peer_iter_t peer_iter;
-    for (peer_iter = connections_by_peer.begin(); peer_iter != connections_by_peer.end(); peer_iter++) {
+
+    conn_by_peer_iter_t peer_iter = connections_by_peer.begin();
+    conn_by_peer_iter_t peer_end_iter = connections_by_peer.end();
+
+    static int connection_count=0;
+
+    // The peer connections should have each connection exactly once
+    while (peer_iter != connections_by_peer.end()) {
         log_debug(debug_level, "close connection (peer.addr=%llu)", peer_iter->first.addr);
-//        close_connection(peer_iter->second);
-        connections_by_peer.erase(peer_iter);
+        ib_connection *conn = peer_iter->second;
+        close_connection(peer_iter->second);
+        log_debug(LOG_ALL, "Freeing connection resources, connection %d", ++connection_count);
+        if (conn != NULL) free(conn);  // TODO:  MAKE SURE THIS IS THE RIGHT PLACE TO FREE THE CONNECTION
+        connections_by_peer.erase(peer_iter++);
+
     }
     nthread_unlock(&nnti_conn_peer_lock);
 
@@ -4524,11 +4566,12 @@ static NNTI_result_t check_for_waiting_connection()
             goto cleanup;
         }
     } else {
+        static int connection_count = 0;
         char         *peer_hostname = strdup(inet_ntoa(ssin.sin_addr));
         NNTI_ip_addr  peer_addr  = ssin.sin_addr.s_addr;
         NNTI_tcp_port peer_port  = ntohs(ssin.sin_port);
 
-        conn = (ib_connection *)calloc(1, sizeof(ib_connection));
+        conn = (ib_connection *)calloc(1, sizeof(ib_connection));    // TODO: FIND OUT WHERE THIS IS FREED
         log_debug(nnti_debug_level, "calloc returned conn=%p.", conn);
         if (conn == NULL) {
             log_error(nnti_debug_level, "calloc returned NULL.  out of memory?: %s", strerror(errno));
@@ -4549,6 +4592,8 @@ static NNTI_result_t check_for_waiting_connection()
         insert_conn_qpn(conn->req_qp.qpn, conn);
         insert_conn_qpn(conn->data_qp.qpn, conn);
         insert_conn_peer(&peer, conn);
+
+        log_debug(LOG_ALL, "Allocating new connection count=%d", ++connection_count);
 
         transition_connection_to_ready(s, conn);
 //        nthread_unlock(&nnti_ib_lock);
@@ -4755,6 +4800,10 @@ static void config_init(nnti_ib_config *c)
 static void config_get_from_env(nnti_ib_config *c)
 {
     char *env_str=NULL;
+
+    // defaults
+    c->use_wr_pool = false;
+    c->use_rdma_target_ack=true;
 
     if ((env_str=getenv("TRIOS_NNTI_USE_WR_POOL")) != NULL) {
         if ((!strcasecmp(env_str, "TRUE")) ||
