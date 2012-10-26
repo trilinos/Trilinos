@@ -191,7 +191,8 @@ static int commsplitter_MPI_Init_thread(int *argc, char ***argv, int required, i
     enabled_save = commsplitter_data.enabled;
     commsplitter_data.enabled = 0;
 
-    SAMPLING_STOP();
+    int sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
     rc = PMPI_Init_thread(argc, argv, required, provided);
 
     commsplitter_data.enabled = enabled_save;
@@ -201,7 +202,7 @@ static int commsplitter_MPI_Init_thread(int *argc, char ***argv, int required, i
     commsplitter_log("app_pathname is %s\n", commsplitter_data.app_pathname);
 
     rc=split_comm_world();
-    SAMPLING_START();
+    if (sampling) SAMPLING_START();
 
     return(rc);
 }
@@ -238,7 +239,11 @@ static int commsplitter_MPI_Finalize()
     commsplitter_finalize();
     commsplitter_data.enabled = 0;
     commsplitter_log("calling PMPI_Finalize\n");
+
+    int sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
     rc = PMPI_Finalize();
+    if (sampling) SAMPLING_START();
     commsplitter_log("returning from PMPI_Finalize\n");
 
     return(rc);
