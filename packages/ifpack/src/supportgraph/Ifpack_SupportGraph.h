@@ -391,7 +391,7 @@ Matrix_(rcp(Matrix_in,false)),
   ComputeFlops_(0.0),
   ApplyInverseFlops_(0.0),
   NumForests_(1),
-  DiagPertRel_(0.0),
+  DiagPertRel_(1.0),
   DiagPertAbs_(0.0),
   KeepDiag_(1.0)
 {
