@@ -761,9 +761,18 @@ static int send_result(const NNTI_peer_t   *caller,
     if (!header.fetch_result)
         valid_bytes += res_size;
 
-    log_debug(rpc_debug_level, "send short result %lu "
-        "(in xdr bytes:  len=%d bytes: encoded_header=%d bytes, res=%d bytes)",
-            request_id, valid_bytes, hdr_size, res_size);
+    if (logging_debug(rpc_debug_level)) {
+        log_debug(rpc_debug_level, "send short result %lu "
+                "(in xdr bytes:  len=%d bytes: encoded_header=%d bytes, res=%d bytes)",
+                request_id, valid_bytes, hdr_size, res_size);
+
+        fprint_NNTI_buffer(logger_get_file(), "nssi_server: 768 -- dest_addr", "%", dest_addr);
+
+        fprint_NNTI_buffer(logger_get_file(), "nssi_server: 768 -- short_res_hdl", "%", short_res_hdl);
+
+        fprint_NNTI_peer(logger_get_file(), "nssi_server: 772 -- caller", "%", caller);
+    }
+
 
     /* TODO: Handle the timeout case.  This probably means the client died */
     trios_start_timer(call_time);
