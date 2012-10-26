@@ -1696,7 +1696,7 @@ int nssi_call_rpc(
         log_debug (debug_level, "allocating short result (size=%d)", NSSI_SHORT_RESULT_SIZE);
         request->short_result_hdl=&request->short_result;
         trios_start_timer(call_time);
-        buf=(char *)malloc(NSSI_SHORT_RESULT_SIZE);  // Freed in cleanup portion of timedwait
+        buf=(char *)calloc(NSSI_SHORT_RESULT_SIZE, sizeof(char));  // Freed in cleanup portion of timedwait
         trios_stop_timer("malloc - short result", call_time);
         if (!buf)   {
             log_fatal(rpc_debug_level, "malloc() failed!");
