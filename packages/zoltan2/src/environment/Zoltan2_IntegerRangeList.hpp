@@ -57,6 +57,7 @@
 #include <Teuchos_XMLObject.hpp>
 #include <Teuchos_ValidatorMaps.hpp>
 #include <Teuchos_DummyObjectGetter.hpp>
+#include <Teuchos_StrUtils.hpp>
 
 // Had to redefine this type from Teuchos_ParameterEntryValidator.hpp.
 // Compiler stumbled on it.
