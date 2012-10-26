@@ -666,6 +666,39 @@ static wr_pool_t initiator_wr_pool;
 static nnti_gni_config config;
 
 
+/* ---------------- Wrappers to protect HPCToolkit issues ---------- */
+static
+gni_return_t GNI_CqWaitEvent_wrapper(
+        gni_cq_handle_t cq_hdl,
+        uint64_t timeout_per_call,
+        gni_cq_entry_t *ev_data)
+{
+    gni_return_t  rc;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc = GNI_CqWaitEvent(cq_hdl, timeout_per_call, ev_data);
+    if (sampling) SAMPLING_START();
+
+    return rc;
+}
+
+static
+gni_return_t GNI_CdmAttach_wrapper(
+        gni_cdm_handle_t cdm_hndl,
+        uint32_t device_id,
+        uint32_t *local_addr,
+        gni_nic_handle_t *nic_hndl)
+{
+    gni_return_t rc;
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc=GNI_CdmAttach (cdm_hndl, device_id, local_addr, nic_hndl);
+    if (sampling) SAMPLING_START();
+    return rc;
+}
+
+
 /**
  * @brief Initialize NNTI to use a specific transport.
  *
@@ -844,17 +877,10 @@ NNTI_result_t NNTI_gni_init (
 
         trios_start_timer(call_time);
 
-        // The hpctoolkit signal interferes with this operation.  This will disable
-        // signals from hpctoolkit.
-        bool sampling = SAMPLING_IS_ACTIVE();
-        if (sampling) SAMPLING_STOP();
-
-        rc=GNI_CdmAttach (transport_global_data.cdm_hdl,
+        rc=GNI_CdmAttach_wrapper (transport_global_data.cdm_hdl,
                 transport_global_data.alps_info.device_id,
                 (uint32_t*)&transport_global_data.alps_info.local_addr, /* ALPS and GNI disagree about the type of local_addr.  cast here. */
                 &transport_global_data.nic_hdl);
-
-        if (sampling) SAMPLING_START();
 
         trios_stop_timer("CdmAttach", call_time);
         if (rc!=GNI_RC_SUCCESS) {
@@ -1929,7 +1955,7 @@ nthread_unlock(&nnti_gni_lock);
 //                log_debug(nnti_event_debug_level, "calling CqWaitEvent(wait)");
                 trios_start_timer(call_time);
 //                nthread_lock(&nnti_gni_lock);
-                rc=GNI_CqWaitEvent(cq_hdl, timeout_per_call, &ev_data);
+                rc=GNI_CqWaitEvent_wrapper(cq_hdl, timeout_per_call, &ev_data);
 //                nthread_unlock(&nnti_gni_lock);
                 print_cq_event(&ev_data);
                 trios_stop_timer("NNTI_gni_wait - CqWaitEvent", call_time);
@@ -5742,16 +5768,11 @@ static int post_wait(
 
     log_debug(nnti_ee_debug_level, "enter");
 
-    // Turn off sampling for this function
-    bool sampling = SAMPLING_IS_ACTIVE();
-    if (sampling) SAMPLING_STOP();
-
-
     memset(&ev_data, 0, sizeof(ev_data));
     for(i=0;i<=retries;i++) {
         log_debug(nnti_debug_level, "calling CqWaitEvent");
         trios_start_timer(call_time);
-        rc=GNI_CqWaitEvent (cq_hdl, timeout, &ev_data);
+        rc=GNI_CqWaitEvent_wrapper(cq_hdl, timeout, &ev_data);
         trios_stop_timer("post_wait - CqWaitEvent", call_time);
         if (rc==GNI_RC_SUCCESS) {
             break;
@@ -5766,10 +5787,6 @@ static int post_wait(
     trios_stop_timer("post_wait - GetCompleted", call_time);
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted failed: %d", rc);
     print_post_desc(post_desc_ptr);
-
-
-    // Turn sampling back on
-    if (sampling) SAMPLING_START();
 
     log_debug(nnti_ee_debug_level, "exit");
 
@@ -5904,7 +5921,7 @@ static int fetch_add_buffer_offset(
             do {
                 log_debug(debug_level, "calling CqWaitEvent(unblock)");
                 trios_start_timer(call_time);
-                rc=GNI_CqWaitEvent (local_req_queue_attrs->unblock_mem_cq_hdl, 1000, &ev_data);
+                rc=GNI_CqWaitEvent_wrapper (local_req_queue_attrs->unblock_mem_cq_hdl, 1000, &ev_data);
                 trios_stop_timer("unblock", call_time);
                 if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "CqWaitEvent(unblock) failed: %d", rc);
             } while (rc!=GNI_RC_SUCCESS);
@@ -5937,7 +5954,7 @@ static int fetch_add_buffer_offset(
 
             /* absorb one unblock message */
             log_debug(nnti_event_debug_level, "calling CqGetEvent(absorb one unblock)");
-            rc=GNI_CqWaitEvent (local_req_queue_attrs->unblock_mem_cq_hdl, 1000, &ev_data);
+            rc=GNI_CqWaitEvent_wrapper (local_req_queue_attrs->unblock_mem_cq_hdl, 1000, &ev_data);
             if (rc==GNI_RC_SUCCESS) {
                 ui64=gni_cq_get_data(ev_data);
                 ptr32=(uint32_t*)&ui64;
