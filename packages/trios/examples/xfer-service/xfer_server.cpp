@@ -178,6 +178,7 @@ int xfer_write_rdma_srvr(
     data_array_t array;
     array.data_array_t_len = len;
     array.data_array_t_val = (data_t *)malloc(nbytes);
+    memset(array.data_array_t_val, 0, nbytes);
 
     log_debug(debug_level, "getting data from client (%s)", caller->url);
 
