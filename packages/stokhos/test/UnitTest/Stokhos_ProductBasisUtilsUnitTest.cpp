@@ -398,8 +398,8 @@ namespace ProductBasisUtilsUnitTest {
 
   TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils, TotalOrderSparse3Tensor ) {
     success = true;
-    ordinal_type dim = 7;
-    ordinal_type order = 5;
+    ordinal_type dim = setup.d;
+    ordinal_type order = setup.p;
 
     // Build index set of dimension d and order p
     typedef Stokhos::TotalOrderIndexSet<ordinal_type> index_set_type;
