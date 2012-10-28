@@ -61,6 +61,9 @@
 #include <Kokkos_ThrustGPUNode.hpp>
 #endif
 
+#define TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT(N) \
+  template <> bool HybridPlatform::isNodeSupported<N>() {return true;}
+
 namespace Tpetra {
 
   //! \brief A platform class for hybrid nodes.
@@ -75,7 +78,7 @@ namespace Tpetra {
       //@{ 
 
       //! Constructor
-      HybridPlatform(const Teuchos::RCP<const Teuchos::Comm<int> > &comm, Teuchos::ParameterList &pl);
+      HybridPlatform(const RCP<const Comm<int> > &comm, ParameterList &pl);
 
       //! Destructor
       ~HybridPlatform();
@@ -86,9 +89,14 @@ namespace Tpetra {
       //@{ 
 
       //! Comm Instance
-      Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
+      RCP<const Comm<int> > getComm() const;
 
-      void createNode();
+      //! List of supported nodes and their valid parameters.
+      static RCP<ParameterList> listSupportedNodes();
+
+      //! Query support for a specific node type.
+      template <class Node>
+      static bool isNodeSupported();
 
       //! Run user code with the runtime-selected Node type.
       template <template <class Node> class UserCode> 
@@ -99,6 +107,9 @@ namespace Tpetra {
       void runUserCode(UserCode &code);
 
       //@}
+
+    protected:
+      void createNode();
 
     private:
       HybridPlatform(const HybridPlatform &platform); // not supported
@@ -256,6 +267,64 @@ namespace Tpetra {
   HybridPlatform::~HybridPlatform() 
   {}
 
+  RCP<ParameterList> HybridPlatform::listSupportedNodes()
+  {
+    RCP<ParameterList> list = Teuchos::parameterList();
+    {
+      ParameterList subpl = Kokkos::SerialNode::getDefaultParameters();
+      subpl.set("NodeType","Kokkos::SerialNode");
+      list->set("=-1",subpl);
+    }
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+    {
+      ParameterList subpl = Kokkos::TBBNode::getDefaultParameters();
+      subpl.set("NodeType","Kokkos::TBBNode");
+      list->set("=-1",subpl);
+    }
+#endif        
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+    {
+      ParameterList subpl = Kokkos::OpenMPNode::getDefaultParameters();
+      subpl.set("NodeType","Kokkos::OpenMPNode");
+      list->set("=-1",subpl);
+    }
+#endif        
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+    {
+      ParameterList subpl = Kokkos::TPINode::getDefaultParameters();
+      subpl.set("NodeType","Kokkos::TPINode");
+      list->set("=-1",subpl);
+    }
+#endif        
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
+    {
+      ParameterList subpl = Kokkos::ThrustGPUNode::getDefaultParameters();
+      subpl.set("NodeType","Kokkos::ThrustGPUNode");
+      list->set("=-1",subpl);
+    }
+#endif        
+    return list;
+  }
+
+  template <class Node>
+  bool HybridPlatform::isNodeSupported()
+  {
+    return false;
+  }
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT(Kokkos::SerialNode)
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT(Kokkos::TBBNode)
+#endif        
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT(Kokkos::OpenMPNode)
+#endif        
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT(Kokkos::TPINode)
+#endif        
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT(Kokkos::ThrustGPUNode)
+#endif
+  
   Teuchos::RCP<const Teuchos::Comm<int> > 
   HybridPlatform::getComm() const {
     return comm_;
