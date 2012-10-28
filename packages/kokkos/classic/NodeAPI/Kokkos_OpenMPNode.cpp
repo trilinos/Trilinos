@@ -46,7 +46,7 @@ namespace Kokkos {
 
   OpenMPNode::OpenMPNode () :
     curNumThreads_ (-1), // Default: Let OpenMP pick the number of threads
-    verbose_ (false) // Default: No verbose status output
+    verbose_ (false)     // Default: No verbose status output
   {
     init (curNumThreads_);
   }
@@ -73,7 +73,7 @@ namespace Kokkos {
   ParameterList OpenMPNode::getDefaultParameters() 
   {
     ParameterList params;
-    params.set("Verbose",  false);
+    params.set("Verbose",      0);
     params.set("Num Threads", -1);
     return params;
   }
