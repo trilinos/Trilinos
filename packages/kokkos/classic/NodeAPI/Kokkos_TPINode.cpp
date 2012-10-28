@@ -41,24 +41,34 @@
 
 #include "Kokkos_TPINode.hpp"
 #include <iostream>
-#include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Assert.hpp>
 
 namespace Kokkos {
 
-  TPINode::TPINode(Teuchos::ParameterList &plist) {
+  TPINode::TPINode(ParameterList &plist) 
+  {
     using std::cout;
     using std::cerr;
     using std::endl;
 
-    curNumThreads_ = plist.get<int>("Num Threads", 0);
-    int verbose = plist.get<int>("Verbose",0);
+    ParameterList params = getDefaultParameters();
+    params.setParameters(plist);
+    curNumThreads_ = params.get<int>("Num Threads");
+    int verbose = params.get<int>("Verbose");
     TEUCHOS_TEST_FOR_EXCEPTION(curNumThreads_ < 0, std::runtime_error, 
         "TPINode::TPINode(): invalid ""Num Threads"" specification.");
     if (verbose) {
       cout << "TPINode initializing with numThreads == " << curNumThreads_ << std::endl;
     }
     init(curNumThreads_);
+  }
+
+  ParameterList TPINode::getDefaultParameters() 
+  {
+    ParameterList params;
+    params.set("Num Threads", 0);
+    params.set("Verbose",     0);
+    return params;
   }
 
   void TPINode::init(int numThreads) {

@@ -50,6 +50,7 @@
 #include <Teuchos_FileInputSource.hpp>
 #include <Teuchos_XMLObject.hpp>
 #include <Teuchos_XMLParameterListReader.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>
@@ -153,6 +154,12 @@ int main(int argc, char **argv) {
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
+
+  //
+  // Supported nodes
+  //
+  cout << "Supported nodes/parameters:" << endl;
+  Teuchos::writeParameterListToXmlOStream(*Tpetra::HybridPlatform::listSupportedNodes(), cout);
 
   // 
   // read machine file and initialize platform
