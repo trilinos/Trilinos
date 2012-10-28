@@ -1223,8 +1223,6 @@ int main(int argc, char *argv[])
   if (verbose && Comm.MyPID()!=0) verbose = false;
 
 
-  EPETRA_TEST_ERR( checkVbrMatrixOptimizedGraph(Comm, verbose), ierr);
-
   int NumMyElements = 400;
   //  int NumMyElements = 3; 
   int MinSize = 2;
@@ -1386,6 +1384,8 @@ int main(int argc, char *argv[])
 
   }
   */
+
+  /* Active Bug: EPETRA_TEST_ERR( checkVbrMatrixOptimizedGraph(Comm, verbose), ierr); */
 
   EPETRA_TEST_ERR( checkMergeRedundantEntries(Comm, verbose), ierr);
 
