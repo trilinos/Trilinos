@@ -53,6 +53,7 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
+#include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 
 #include "Panzer_STK_Utilities.hpp"
 
@@ -72,33 +73,14 @@ namespace user_app {
       m_lof(lof),
       m_response_library(response_library)
     { 
-      // register solution writer response aggregator with this library
-      // this is an "Action" only response aggregator
-      panzer::ResponseAggregator_Manager<panzer::Traits> & aggMngr = m_response_library->getAggregatorManager();
-      panzer_stk::ResponseAggregator_SolutionWriter_Builder builder(mesh);
-      builder.setLinearObjFactory(aggMngr.getLinearObjFactory());
-      builder.setGlobalIndexer(aggMngr.getGlobalIndexer());
-      aggMngr.defineAggregatorTypeFromBuilder("Solution Writer",builder);
+      // get all element blocks and add them to the list
+      std::vector<std::string> eBlocks;
+      mesh->getElementBlockNames(eBlocks);
 
-      // require a particular "Solution Writer" response
-      panzer::ResponseId rid("Main Field Output","Solution Writer");
-      std::list<std::string> eTypes;
-      eTypes.push_back("Residual");
-      #ifdef HAVE_STOKHOS
-         eTypes.push_back("SGResidual");
-      #endif
-
-      std::list<std::string> eBlocks;
-      {
-         // get all element blocks and add them to the list
-         std::vector<std::string> eBlockNames;
-         mesh->getElementBlockNames(eBlockNames);
-         for(std::size_t i=0;i<eBlockNames.size();i++)
-            eBlocks.push_back(eBlockNames[i]);
-      }
-
-      // reserve response guranteeing that we can evaluate it (assuming things are done correctly elsewhere)
-      response_library->reserveLabeledBlockAggregatedVolumeResponse("Main Field Output",rid,eBlocks,eTypes);
+      panzer_stk::RespFactorySolnWriter_Builder builder;
+      builder.comm = MPI_COMM_WORLD;
+      builder.mesh = mesh;
+      m_response_library->addResponse("Main Field Output",eBlocks,builder);
 
       // used block LOF, or epetra LOF
       m_isEpetraLOF = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(m_lof)!=Teuchos::null;
@@ -147,11 +129,10 @@ namespace user_app {
          blkGlobalContainer->set_x(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(solution));
       }
 
-      // do import
-      m_lof->globalToGhostContainer(*ae_inargs.container_,*ae_inargs.ghostedContainer_,panzer::LinearObjContainer::X);
+      Teuchos::RCP<panzer::ResponseBase> resp = m_response_library->getResponse<panzer::Traits::Residual>("Main Field Output");
+      ae_inargs.addGlobalEvaluationData(resp->getLookupName(),resp);
 
-      // fill STK mesh objects
-      m_response_library->evaluateVolumeFieldManagers<panzer::Traits::Residual>(ae_inargs,comm);
+      m_response_library->evaluate<panzer::Traits::Residual>(ae_inargs);
       
       m_mesh->writeToExodus(stepper.getStepStatus().time);
     }

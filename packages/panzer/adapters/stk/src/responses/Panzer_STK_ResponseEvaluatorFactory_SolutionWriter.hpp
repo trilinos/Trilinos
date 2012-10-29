@@ -72,6 +72,18 @@ private:
    Teuchos::RCP<STK_Interface> mesh_;
 };
 
+/** A simple builder for this the SolutionWriter response factory, simply set the mesh and MPI_Comm
+  * and this will build the response factories for you. (Pass into ResponseLibrary::addResponse)
+  */
+struct RespFactorySolnWriter_Builder {
+  MPI_Comm comm;
+  Teuchos::RCP<panzer_stk::STK_Interface> mesh;
+
+  template <typename T>
+  Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
+  { return Teuchos::rcp(new panzer_stk::ResponseEvaluatorFactory_SolutionWriter<T>(comm,mesh)); }
+};
+
 }
 
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter_impl.hpp"

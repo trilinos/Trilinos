@@ -146,15 +146,6 @@ void testInitialization(panzer::InputPhysicsBlock& ipb,
 void solveEpetraSystem(panzer::LinearObjContainer & container);
 void solveTpetraSystem(panzer::LinearObjContainer & container);
 
-struct RespFactorySolnWriter_Builder {
-  MPI_Comm comm;
-  Teuchos::RCP<panzer_stk::STK_Interface> mesh;
-
-  template <typename T>
-  Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
-  { return Teuchos::rcp(new panzer_stk::ResponseEvaluatorFactory_SolutionWriter<T>(comm,mesh)); }
-};
-
 // calls MPI_Init and MPI_Finalize
 int main(int argc,char * argv[])
 {
@@ -332,7 +323,7 @@ int main(int argc,char * argv[])
             eBlocks.push_back(eBlockNames[i]);
       }
       
-      RespFactorySolnWriter_Builder builder;
+      panzer_stk::RespFactorySolnWriter_Builder builder;
       builder.comm = MPI_COMM_WORLD;
       builder.mesh = mesh;
       stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
