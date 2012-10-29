@@ -75,7 +75,7 @@ void test_abort()
 
 void test_device_cuda_view_impl()
 {
-  //  test_abort<<<32,32>>>(); // Aborts the kernel
+  // test_abort<<<32,32>>>(); // Aborts the kernel with CUDA version 4.1 or greater
 
   test_view_impl< KokkosArray::Cuda >();
 }

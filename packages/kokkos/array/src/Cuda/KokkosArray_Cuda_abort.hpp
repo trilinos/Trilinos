@@ -47,7 +47,9 @@
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
+#if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ ) && \
+    defined( CUDA_RELEASE_VERSION ) && \
+    ( 401 <= CUDA_RELEASE_VERSION )
 
 extern "C" {
 /*  Cuda runtime function, declared in <crt/device_runtime.h>
@@ -77,10 +79,10 @@ void cuda_abort( const char * const message )
 
 } // namespace KokkosArray
 
-#else /* !  #if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ ) */
+#else
 
 namespace KokkosArray {
-inline
+KOKKOSARRAY_INLINE_FUNCTION
 void cuda_abort( const char * const ) {}
 }
 

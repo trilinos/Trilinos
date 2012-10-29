@@ -34,14 +34,22 @@ MPI | mpi )
   ;;
 #-------------------------------
 CUDA | Cuda | cuda )
-  HAVE_CUDA=1
-  OPTFLAGS="${OPTFLAGS} -DHAVE_CUDA"
+  HAVE_CUDA="-DHAVE_CUDA"
+  OPTFLAGS="${OPTFLAGS} ${HAVE_CUDA}"
   NVCC_SOURCES="${NVCC_SOURCES} ${KOKKOSARRAY}/src/Cuda/*.cu"
-  LIB="${LIB} libCuda.a -L/usr/local/cuda/lib64 -lcudart -lcuda -lcusparse"
+  #
+  # Extract release version from compiler as
+  #   __major__0__minor__
+  # where __major__ == major version number
+  # where __minor__ == minor version number
+  #
+  CUDA_RELEASE_VERSION="-DCUDA_RELEASE_VERSION=`nvcc --version | sed -n -e '/release/{s/^.*release //;s/,.*$//;s/\./0/;p}'`"
   #
   # -x cu : process all files through the Cuda compiler as Cuda code.
+  # -lib -o : produce library
   #
-  NVCC='nvcc --compiler-options "-Wall" -arch=sm_20 -lib -o libCuda.a -x cu'
+  NVCC="nvcc -Xcompiler -Wall,-ansi ${CUDA_RELEASE_VERSION} -arch=sm_20 -lib -o libCuda.a -x cu"
+  LIB="${LIB} libCuda.a -L/usr/local/cuda/lib64 -lcudart -lcuda -lcusparse"
   ;;
 #-------------------------------
 GNU | gnu | g++ )
