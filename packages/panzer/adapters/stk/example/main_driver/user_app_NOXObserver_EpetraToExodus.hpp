@@ -86,7 +86,6 @@ namespace user_app {
       mesh->getElementBlockNames(eBlocks);
 
       panzer_stk::RespFactorySolnWriter_Builder builder;
-      builder.comm = MPI_COMM_WORLD;
       builder.mesh = mesh;
       m_response_library->addResponse("Main Field Output",eBlocks,builder);
 

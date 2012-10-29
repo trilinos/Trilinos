@@ -24,8 +24,8 @@ template <typename EvalT>
 class ResponseEvaluatorFactory_SolutionWriter : public panzer::ResponseEvaluatorFactory<EvalT> {
 public:
 
-   ResponseEvaluatorFactory_SolutionWriter(MPI_Comm comm,const Teuchos::RCP<STK_Interface> & mesh)
-     : comm_(comm), mesh_(mesh) {}
+   ResponseEvaluatorFactory_SolutionWriter(const Teuchos::RCP<STK_Interface> & mesh)
+     : mesh_(mesh) {}
 
    virtual ~ResponseEvaluatorFactory_SolutionWriter() {}
  
@@ -68,7 +68,6 @@ private:
                                  int baseDimension,
                                  Intrepid::FieldContainer<double> & centroid) const;
 
-   MPI_Comm comm_;
    Teuchos::RCP<STK_Interface> mesh_;
 };
 
@@ -76,12 +75,11 @@ private:
   * and this will build the response factories for you. (Pass into ResponseLibrary::addResponse)
   */
 struct RespFactorySolnWriter_Builder {
-  MPI_Comm comm;
   Teuchos::RCP<panzer_stk::STK_Interface> mesh;
 
   template <typename T>
   Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
-  { return Teuchos::rcp(new panzer_stk::ResponseEvaluatorFactory_SolutionWriter<T>(comm,mesh)); }
+  { return Teuchos::rcp(new panzer_stk::ResponseEvaluatorFactory_SolutionWriter<T>(mesh)); }
 };
 
 }

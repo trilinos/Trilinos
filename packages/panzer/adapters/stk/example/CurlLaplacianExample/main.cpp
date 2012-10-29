@@ -293,7 +293,6 @@ int main(int argc,char * argv[])
       }
       
       panzer_stk::RespFactorySolnWriter_Builder builder;
-      builder.comm = MPI_COMM_WORLD;
       builder.mesh = mesh;
       stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
    }
