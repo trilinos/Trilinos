@@ -38,10 +38,9 @@ CUDA | Cuda | cuda )
   OPTFLAGS="${OPTFLAGS} ${HAVE_CUDA}"
   NVCC_SOURCES="${NVCC_SOURCES} ${KOKKOSARRAY}/src/Cuda/*.cu"
   #
-  # Extract release version from compiler as
-  #   __major__0__minor__
-  # where __major__ == major version number
-  # where __minor__ == minor version number
+  # Extract release version from compiler as m0n
+  # where m == major version number
+  # where n == minor version number
   #
   CUDA_RELEASE_VERSION="-DCUDA_RELEASE_VERSION=`nvcc --version | sed -n -e '/release/{s/^.*release //;s/,.*$//;s/\./0/;p}'`"
   #
