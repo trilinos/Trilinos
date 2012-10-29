@@ -52,6 +52,7 @@
 #define NOX_SOLVER_PSEUDO_TRANSIENT_HPP
 
 #include "NOX_Solver_Generic.H"	         // base class
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp" // base class
 #include "NOX_Solver_PrePostOperator.H"  // class data element
 #include "Teuchos_ParameterList.hpp"	         // class data element
 #include "NOX_Utils.H"		         // class data element
@@ -87,29 +88,35 @@ namespace Solver {
 
   Based on the 1998 Kelley Keyes paper, with minor modifications.
 */
-class PseudoTransient : public NOX::Solver::Generic {
+  class PseudoTransient :
+    public NOX::Solver::Generic,
+    public Teuchos::ParameterListAcceptorDefaultBase 
+{
 
 public:
   
   PseudoTransient(const Teuchos::RCP<NOX::Abstract::Group>& xGrp, 
 		  const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
 		  const Teuchos::RCP<Teuchos::ParameterList>& params);
-  
-  virtual void reset(const NOX::Abstract::Vector& initialGuess, 
-		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
-  virtual void reset(const NOX::Abstract::Vector& initialGuess);
-  virtual NOX::StatusTest::StatusType getStatus();
-  virtual NOX::StatusTest::StatusType step();
-  virtual NOX::StatusTest::StatusType solve();
-  virtual const NOX::Abstract::Group& getSolutionGroup() const;
-  virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
-  virtual int getNumIterations() const;
-  virtual const Teuchos::ParameterList& getList() const;
-  virtual double getStepSize() const;
 
-  inline virtual Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const {return solnPtr;};
-  inline virtual Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const {return oldSolnPtr;};
-  inline virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const {return paramsPtr;};
+  void setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList);
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+  
+  void reset(const NOX::Abstract::Vector& initialGuess, 
+	     const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
+  void reset(const NOX::Abstract::Vector& initialGuess);
+  NOX::StatusTest::StatusType getStatus();
+  NOX::StatusTest::StatusType step();
+  NOX::StatusTest::StatusType solve();
+  const NOX::Abstract::Group& getSolutionGroup() const;
+  const NOX::Abstract::Group& getPreviousSolutionGroup() const;
+  int getNumIterations() const;
+  const Teuchos::ParameterList& getList() const;
+  double getStepSize() const;
+
+  Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const;
+  Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const;
+  Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const;
 
 protected:
   
@@ -141,7 +148,7 @@ protected:
   Teuchos::RCP<NOX::StatusTest::Generic> testPtr;		
 
   //! Input parameters.
-  Teuchos::RCP<Teuchos::ParameterList> paramsPtr;	
+  //Teuchos::RCP<Teuchos::ParameterList> paramsPtr;	
 
   //! Linesearch. 
   Teuchos::RCP<NOX::LineSearch::Generic> lineSearchPtr; 
@@ -196,6 +203,9 @@ protected:
 
   //! Maximum number of iterations before pseudo-transient is disabled and the algorithm switches to a line search-based direct to steady state solve. 
   int max_pseudo_transient_iterations;
+
+  //! Parameters that are valid for this solver
+  mutable Teuchos::RCP<Teuchos::ParameterList> validParameters;
 };
 } // namespace Solver
 } // namespace NOX
