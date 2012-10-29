@@ -77,10 +77,10 @@ namespace Xpetra {
   @class CrsMatrixWrap
   @brief Concrete implementation of Xpetra::Matrix.
 */
-template <class Scalar, 
-          class LocalOrdinal  = int, 
-          class GlobalOrdinal = LocalOrdinal, 
-          class Node          = Kokkos::DefaultNode::DefaultNodeType, 
+template <class Scalar,
+          class LocalOrdinal  = int,
+          class GlobalOrdinal = LocalOrdinal,
+          class Node          = Kokkos::DefaultNode::DefaultNodeType,
           class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
 class CrsMatrixWrap : public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
@@ -95,7 +95,7 @@ class CrsMatrixWrap : public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,Local
   typedef Xpetra::MatrixView<LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 
 public:
-  
+
   //! @name Constructor/Destructor Methods
   //@{
 
@@ -116,12 +116,12 @@ public:
   {
     // Set matrix data
     matrixData_ = CrsMatrixFactory::Build(rowMap, NumEntriesPerRowToAlloc, pftype);
-    
+
     // Default view
     CreateDefaultView();
   }
-  
-  CrsMatrixWrap(RCP<CrsMatrix> &matrix)
+
+  CrsMatrixWrap(RCP<CrsMatrix> matrix)
     : finalDefaultView_(matrix->isFillComplete())
   {
     // Set matrix data
@@ -130,7 +130,7 @@ public:
     // Default view
     CreateDefaultView();
   }
-  
+
   //! Destructor
   virtual ~CrsMatrixWrap() {}
 
@@ -138,21 +138,21 @@ public:
 
 
   //! @name Insertion/Removal Methods
-  //@{ 
+  //@{
 
   //! Insert matrix entries, using global IDs.
-  /** All index values must be in the global space. 
+  /** All index values must be in the global space.
       \pre \c globalRow exists as an ID in the global row map
       \pre <tt>isLocallyIndexed() == false</tt>
       \pre <tt>isStorageOptimized() == false</tt>
 
       \post <tt>isGloballyIndexed() == true</tt>
 
-      \note If \c globalRow does not belong to the matrix on this node, then it will be communicated to the appropriate node when globalAssemble() is called (which will, at the latest, occur during the next call to fillComplete().) Otherwise, the entries will be inserted in the local matrix. 
+      \note If \c globalRow does not belong to the matrix on this node, then it will be communicated to the appropriate node when globalAssemble() is called (which will, at the latest, occur during the next call to fillComplete().) Otherwise, the entries will be inserted in the local matrix.
       \note If the matrix row already contains values at the indices corresponding to values in \c cols, then the new values will be summed with the old values; this may happen at insertion or during the next call to fillComplete().
       \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
   */
-  void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals) { 
+  void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals) {
     matrixData_->insertGlobalValues(globalRow, cols, vals);
   }
 
@@ -176,7 +176,7 @@ public:
   //@}
 
   //! @name Transformational Methods
-  //@{ 
+  //@{
 
     /*! \brief Signal that data entry is complete, specifying domain and range maps.
 
@@ -188,7 +188,7 @@ public:
     \post <tt>isFillActive() == false<tt>
     \post <tt>isFillComplete() == true<tt>
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
-    */ 
+    */
   void fillComplete(const RCP<const Map> &domainMap, const RCP<const Map> &rangeMap, const RCP<Teuchos::ParameterList> &params = null) {
     matrixData_->fillComplete(domainMap, rangeMap, params);
 
@@ -196,7 +196,7 @@ public:
     updateDefaultView();
   }
 
-  /*! \brief Signal that data entry is complete. 
+  /*! \brief Signal that data entry is complete.
 
   Off-node entries are distributed (via globalAssemble()), repeated entries are summed, and global indices are transformed to local indices.
 
@@ -222,7 +222,7 @@ public:
   //! Returns the number of global rows in this matrix.
   /** Undefined if isFillActive().
    */
-  global_size_t getGlobalNumRows() const { 
+  global_size_t getGlobalNumRows() const {
     return matrixData_->getGlobalNumRows();
   }
 
@@ -254,14 +254,14 @@ public:
     return matrixData_->getNumEntriesInLocalRow(localRow);
   }
 
-  //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons. 
+  //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
   /** Undefined if isFillActive().
    */
   global_size_t getGlobalNumDiags() const {
     return matrixData_->getGlobalNumDiags();
   }
 
-  //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons. 
+  //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons.
   /** Undefined if isFillActive().
    */
   size_t getNodeNumDiags() const {
@@ -303,21 +303,21 @@ public:
     \param Indices - (Out) Local column indices corresponding to values.
     \param Values - (Out) Matrix values.
     \param NumIndices - (Out) Number of indices.
-    
+
     Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
-    with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is 
+    with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is
     returned as OrdinalTraits<size_t>::invalid().
-    
+
     \pre <tt>isLocallyIndexed()==true</tt> or <tt>hasColMap() == true</tt>
   */
-  void getLocalRowCopy(LocalOrdinal LocalRow, 
-                       const ArrayView<LocalOrdinal> &Indices, 
+  void getLocalRowCopy(LocalOrdinal LocalRow,
+                       const ArrayView<LocalOrdinal> &Indices,
                        const ArrayView<Scalar> &Values,
                        size_t &NumEntries
                        ) const {
     matrixData_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries);
   }
-  
+
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
     \param GlobalRow - (In) Global row number for which indices are desired.
@@ -347,7 +347,7 @@ public:
   }
 
   //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
-  /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
+  /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
     the zero and non-zero diagonals owned by this node. */
   void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const {
     matrixData_->getLocalDiagCopy(diag);
@@ -369,7 +369,7 @@ public:
   Both are required to have constant stride, and they are not permitted to ocupy overlapping space. No runtime checking will be performed in a non-debug build.
 
   This method is templated on the scalar type of MultiVector objects, allowing this method to be applied to MultiVector objects of arbitrary type. However, it is recommended that multiply() not be called directly; instead, use the CrsMatrixMultiplyOp, as it will handle the import/exprt operations required to apply a matrix with non-trivial communication needs.
-          
+
   If \c beta is equal to zero, the operation will enjoy overwrite semantics (\c Y will be overwritten with the result of the multiplication). Otherwise, the result of the multiplication
   will be accumulated into \c Y.
   */
@@ -381,20 +381,20 @@ public:
   //@}
 
   //! @name Methods implementing Matrix
-  //@{ 
+  //@{
 
   //! \brief Computes the sparse matrix-multivector multiplication.
   /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
     - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
   */
-  void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+  void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
              Teuchos::ETransp mode = Teuchos::NO_TRANS,
              Scalar alpha = ScalarTraits<Scalar>::one(),
              Scalar beta = ScalarTraits<Scalar>::zero()) const {
 
     matrixData_->apply(X,Y,mode,alpha,beta);
   }
-  
+
   //! \brief Returns the Map associated with the domain of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
   const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
@@ -410,34 +410,34 @@ public:
   //! \brief Returns the Map that describes the column distribution in this matrix.
   //! This might be <tt>null</tt> until fillComplete() is called.
   const RCP<const Map> & getColMap() const { return getColMap(Matrix::GetCurrentViewLabel()); }
-  
+
   //! \brief Returns the Map that describes the column distribution in this matrix.
-  const RCP<const Map> & getColMap(viewLabel_t viewLabel) const { 
+  const RCP<const Map> & getColMap(viewLabel_t viewLabel) const {
     TEUCHOS_TEST_FOR_EXCEPTION(Matrix::operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.GetColMap(): view '" + viewLabel + "' does not exist.");
     updateDefaultView(); // If CrsMatrix::fillComplete() have been used instead of CrsMatrixWrap::fillComplete(), the default view is updated.
-    return Matrix::operatorViewTable_.get(viewLabel)->GetColMap(); 
+    return Matrix::operatorViewTable_.get(viewLabel)->GetColMap();
   }
-  
+
   //@}
 
-  //! @name Overridden from Teuchos::Describable 
+  //! @name Overridden from Teuchos::Describable
   //@{
-  
+
   /** \brief Return a simple one-line description of this object. */
   std::string description() const {
     return "Xpetra_CrsMatrixWrap.description()";
   }
-  
+
   /** \brief Print the object with some verbosity level to an FancyOStream object. */
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { 
+  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
     //     Teuchos::EVerbosityLevel vl = verbLevel;
     //     if (vl == VERB_DEFAULT) vl = VERB_LOW;
     //     RCP<const Comm<int> > comm = this->getComm();
     //     const int myImageID = comm->getRank(),
     //       numImages = comm->getSize();
-    
-    //     if (myImageID == 0) out << this->description() << std::endl; 
-    
+
+    //     if (myImageID == 0) out << this->description() << std::endl;
+
     matrixData_->describe(out,verbLevel);
 
     // Teuchos::OSTab tab(out);
@@ -445,31 +445,31 @@ public:
 
   // JG: Added:
 
-  //! Returns the CrsGraph associated with this matrix. 
+  //! Returns the CrsGraph associated with this matrix.
   RCP<const CrsGraph> getCrsGraph() const { return matrixData_->getCrsGraph(); }
 
   RCP<CrsMatrix> getCrsMatrix() const {  return matrixData_; }
 
   //@}
-  
+
 
 private:
 
   // Default view is created after fillComplete()
-  // Because ColMap might not be available before fillComplete(). 
+  // Because ColMap might not be available before fillComplete().
   void CreateDefaultView() {
-    
+
     // Create default view
     this->defaultViewLabel_ = "point";
-    this->CreateView(this->GetDefaultViewLabel(), matrixData_->getRowMap(), matrixData_->getColMap());    
-    
+    this->CreateView(this->GetDefaultViewLabel(), matrixData_->getRowMap(), matrixData_->getColMap());
+
     // Set current view
     this->currentViewLabel_ = this->GetDefaultViewLabel();
   }
 
 private:
 
-  // The colMap can be <tt>null</tt> until fillComplete() is called. The default view of the Matrix have to be updated when fillComplete() is called. 
+  // The colMap can be <tt>null</tt> until fillComplete() is called. The default view of the Matrix have to be updated when fillComplete() is called.
   // If CrsMatrix::fillComplete() have been used instead of CrsMatrixWrap::fillComplete(), the default view is updated when getColMap() is called.
   void updateDefaultView() const {
     if ((finalDefaultView_ == false) &&  matrixData_->isFillComplete() ) {
