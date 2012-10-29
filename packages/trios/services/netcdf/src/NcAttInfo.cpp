@@ -47,6 +47,9 @@
  *      Author: raoldfi
  */
 
+#include "Trios_config.h"
+#ifdef HAVE_TRIOS_PNETCDF
+
 #include <string.h>
 #include <Trios_nssi_client.h>
 #include <pnetcdf.h>
@@ -131,4 +134,4 @@ int NcAttInfo::inq_attlen(size_t *attlenp)
 
 
 
-
+#endif // HAVE_TRIOS_PNETCDF

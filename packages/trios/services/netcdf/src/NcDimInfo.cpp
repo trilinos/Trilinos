@@ -47,6 +47,9 @@
  *      Author: raoldfi
  */
 
+#include "Trios_config.h"
+#ifdef HAVE_TRIOS_PNETCDF
+
 #include <string>
 using namespace std;
 
@@ -127,3 +130,5 @@ int NcDimInfo::rename_dim(const char *newname)
     this->name = string(newname);
     return rc;
 }
+
+#endif // HAVE_TRIOS_PNETCDF

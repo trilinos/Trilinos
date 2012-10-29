@@ -47,6 +47,9 @@
  *      Author: raoldfi
  */
 
+#include "Trios_config.h"
+#ifdef HAVE_TRIOS_PNETCDF
+
 #include <Trios_nssi_client.h>
 #include <vector>
 using namespace std;
@@ -418,5 +421,5 @@ int NcVarInfo::inq_attid   (const char *name, int *attnump)
 }
 
 
-
+#endif // HAVE_TRIOS_PNETCDF
 

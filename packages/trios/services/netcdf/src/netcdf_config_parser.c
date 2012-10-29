@@ -40,6 +40,10 @@
 // *************************************************************************
 //@HEADER
  */
+
+#include "Trios_config.h"
+#ifdef HAVE_TRIOS_PNETCDF
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -332,3 +336,5 @@ void netcdf_config_free(struct netcdf_config *netcdf_cfg)
     }
     free(netcdf_cfg->netcdf_server_urls);
 }
+
+#endif // HAVE_TRIOS_PNETCDF

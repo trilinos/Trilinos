@@ -47,6 +47,9 @@
  *      Author: raoldfi
  */
 
+#include "Trios_config.h"
+#ifdef HAVE_TRIOS_PNETCDF
+
 #include <Trios_nssi_client.h>
 #include <assert.h>
 #include <string.h>
@@ -884,3 +887,4 @@ int NcGroupInfo::del_att (const char* name)
     return rc;
 }
 
+#endif // HAVE_TRIOS_PNETCDF

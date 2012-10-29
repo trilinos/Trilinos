@@ -50,6 +50,9 @@
 #define __STDC_CONSTANT_MACROS
 #endif
 
+#include "Trios_config.h"
+#ifdef HAVE_TRIOS_PNETCDF
+
 #include <stdint.h>
 #include <inttypes.h>
 #include <sys/stat.h>
@@ -4552,4 +4555,6 @@ cleanup:
     return 0;
 }
 
-#endif
+#endif // DEBUG
+
+#endif // HAVE_TRIOS_PNETCDF
