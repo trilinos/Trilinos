@@ -93,8 +93,6 @@
 
 #include "AztecOO.h"
 
-//#define USE_OLD_SOLN_WRITER
-
 using Teuchos::RCP;
 using Teuchos::rcp;
 
@@ -283,35 +281,6 @@ int main(int argc,char * argv[])
    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary 
       = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
 
-   #ifdef USE_OLD_SOLN_WRITER 
-   {
-      // register solution writer response aggregator with this library
-      // this is an "Action" only response aggregator
-      panzer::ResponseAggregator_Manager<panzer::Traits> & aggMngr = stkIOResponseLibrary->getAggregatorManager();
-      panzer_stk::ResponseAggregator_SolutionWriter_Builder builder(mesh);
-      builder.setLinearObjFactory(aggMngr.getLinearObjFactory());
-      builder.setGlobalIndexer(aggMngr.getGlobalIndexer());
-      aggMngr.defineAggregatorTypeFromBuilder("Solution Writer",builder);
-   
-      // require a particular "Solution Writer" response
-      panzer::ResponseId rid("Main Field Output","Solution Writer");
-      std::list<std::string> eTypes;
-      eTypes.push_back("Residual");
-   
-      // get a vector of all the element blocks : for some reason a list is used?
-      std::list<std::string> eBlocks;
-      {
-         // get all element blocks and add them to the list
-         std::vector<std::string> eBlockNames;
-         mesh->getElementBlockNames(eBlockNames);
-         for(std::size_t i=0;i<eBlockNames.size();i++)
-            eBlocks.push_back(eBlockNames[i]);
-      }
-   
-      // reserve response guranteeing that we can evaluate it (assuming things are done correctly elsewhere)
-      stkIOResponseLibrary->reserveLabeledBlockAggregatedVolumeResponse("Main Field Output",rid,eBlocks,eTypes);
-   }
-   #else
    {
       // get a vector of all the element blocks 
       std::vector<std::string> eBlocks;
@@ -328,7 +297,6 @@ int main(int argc,char * argv[])
       builder.mesh = mesh;
       stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
    }
-   #endif
 
    // setup closure model
    /////////////////////////////////////////////////////////////
@@ -368,18 +336,10 @@ int main(int argc,char * argv[])
    /////////////////////////////////////////////////////////////
    {
       user_data.set<int>("Workset Size",workset_size);
-      #ifdef USE_OLD_SOLN_WRITER
-      stkIOResponseLibrary->buildVolumeFieldManagersFromResponses(physicsBlocks,
-                                                                  cm_factory,
-                                                                  closure_models,
-                                                                  user_data);
-      #else
       stkIOResponseLibrary->buildResponseEvaluators(physicsBlocks,
                                         cm_factory,
                                         closure_models,
                                         user_data);
-
-      #endif
    }
 
    // assemble linear system
@@ -425,21 +385,13 @@ int main(int argc,char * argv[])
    // write out solution
    if(true) {
       // fill STK mesh objects
-      #ifdef USE_OLD_SOLN_WRITER
-      // redistribute solution vector to ghosted vector
-      linObjFactory->globalToGhostContainer(*container,*ghostCont, panzer::LinearObjContainer::X 
-                                                                 | panzer::LinearObjContainer::DxDt); 
-
-      stkIOResponseLibrary->evaluateVolumeFieldManagers<panzer::Traits::Residual>(input,*comm);
-      #else
       Teuchos::RCP<panzer::ResponseBase> resp = stkIOResponseLibrary->getResponse<panzer::Traits::Residual>("Main Field Output");
       panzer::AssemblyEngineInArgs respInput(ghostCont,container);
-      respInput.addGlobalEvaluationData(resp->getLookupName(),resp);
       respInput.alpha = 0;
       respInput.beta = 1;
 
+      stkIOResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
       stkIOResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
-      #endif
 
       // write to exodus
       mesh->writeToExodus("output.exo");

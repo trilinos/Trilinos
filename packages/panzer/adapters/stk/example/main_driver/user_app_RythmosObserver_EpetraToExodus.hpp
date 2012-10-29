@@ -129,9 +129,7 @@ namespace user_app {
          blkGlobalContainer->set_x(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(solution));
       }
 
-      Teuchos::RCP<panzer::ResponseBase> resp = m_response_library->getResponse<panzer::Traits::Residual>("Main Field Output");
-      ae_inargs.addGlobalEvaluationData(resp->getLookupName(),resp);
-
+      m_response_library->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
       m_response_library->evaluate<panzer::Traits::Residual>(ae_inargs);
       
       m_mesh->writeToExodus(stepper.getStepStatus().time);
