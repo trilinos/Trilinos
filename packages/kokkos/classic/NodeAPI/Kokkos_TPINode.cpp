@@ -66,8 +66,8 @@ namespace Kokkos {
   ParameterList TPINode::getDefaultParameters() 
   {
     ParameterList params;
-    params.set("Num Threads", 0);
     params.set("Verbose",     0);
+    params.set("Num Threads", 0);
     return params;
   }
 

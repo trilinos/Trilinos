@@ -271,36 +271,41 @@ namespace Tpetra {
   {
     RCP<ParameterList> list = Teuchos::parameterList();
     {
-      ParameterList subpl = Kokkos::SerialNode::getDefaultParameters();
+      ParameterList subpl;
       subpl.set("NodeType","Kokkos::SerialNode");
+      subpl.setParameters( Kokkos::SerialNode::getDefaultParameters() );
       list->set("=-1",subpl);
     }
 #ifdef HAVE_KOKKOSCLASSIC_TBB
     {
-      ParameterList subpl = Kokkos::TBBNode::getDefaultParameters();
+      ParameterList subpl;
       subpl.set("NodeType","Kokkos::TBBNode");
-      list->set("=-1",subpl);
+      subpl.setParameters( Kokkos::TBBNode::getDefaultParameters() );
+      list->set("=-2",subpl);
     }
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
     {
-      ParameterList subpl = Kokkos::OpenMPNode::getDefaultParameters();
+      ParameterList subpl;
       subpl.set("NodeType","Kokkos::OpenMPNode");
-      list->set("=-1",subpl);
+      subpl.setParameters( Kokkos::OpenMPNode::getDefaultParameters() );
+      list->set("=-3",subpl);
     }
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
     {
-      ParameterList subpl = Kokkos::TPINode::getDefaultParameters();
+      ParameterList subpl;
       subpl.set("NodeType","Kokkos::TPINode");
-      list->set("=-1",subpl);
+      subpl.setParameters( Kokkos::TPINode::getDefaultParameters() );
+      list->set("=-4",subpl);
     }
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
     {
-      ParameterList subpl = Kokkos::ThrustGPUNode::getDefaultParameters();
+      ParameterList subpl;
       subpl.set("NodeType","Kokkos::ThrustGPUNode");
-      list->set("=-1",subpl);
+      subpl.setParameters( Kokkos::ThrustGPUNode::getDefaultParameters() );
+      list->set("=-5",subpl);
     }
 #endif        
     return list;
