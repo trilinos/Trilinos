@@ -222,7 +222,7 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
   const EntityRank element_rank = MetaData::ELEMENT_RANK;
   const EntityRank side_rank = fem_meta.side_rank();
   const EntityRank edge_rank = MetaData::EDGE_RANK;
-
+  
   const size_t num_ranks = fem_meta.entity_rank_count();
 
   Selector select_owned = fem_meta.locally_owned_part();
