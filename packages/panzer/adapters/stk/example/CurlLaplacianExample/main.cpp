@@ -76,7 +76,6 @@
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_Utilities.hpp"
-#include "Panzer_STK_ResponseAggregator_SolutionWriter.hpp"
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 
 #include "Epetra_MpiComm.h"

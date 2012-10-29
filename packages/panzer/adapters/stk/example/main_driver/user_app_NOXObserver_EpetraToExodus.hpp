@@ -115,7 +115,7 @@ namespace user_app {
       const NOX::Abstract::Vector& x = solver.getSolutionGroup().getX();
       const NOX::Thyra::Vector* n_th_x = dynamic_cast<const NOX::Thyra::Vector*>(&x);
       TEUCHOS_TEST_FOR_EXCEPTION(n_th_x == NULL, std::runtime_error, "Failed to dynamic_cast to NOX::Thyra::Vector!")
-      const ::Thyra::VectorBase<double>& th_x = n_th_x->getThyraVector(); 
+      RCP<const Thyra::VectorBase<double> > th_x = n_th_x->getThyraRCPVector(); 
 
       // initialize the assembly container
       panzer::AssemblyEngineInArgs ae_inargs;
@@ -131,20 +131,16 @@ namespace user_app {
       // Teuchos::MpiComm<int> comm(Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(ep_x->Comm()).Comm()));
       Teuchos::MpiComm<int> comm = m_lof->getComm();
       if(m_isEpetraLOF) {
-         Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof
-            = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(m_lof,true);
-         Teuchos::RCP<const Epetra_Vector> ep_x = Thyra::get_Epetra_Vector(*(ep_lof->getMap()), Teuchos::rcp(&th_x, false));
-
          // initialize the x vector
          const Teuchos::RCP<panzer::EpetraLinearObjContainer> epGlobalContainer
             = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs.container_,true);
-         epGlobalContainer->set_x(Teuchos::rcp_const_cast<Epetra_Vector>(ep_x));
+         epGlobalContainer->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(th_x));
       }
       else {
          // initialize the x vector
          const Teuchos::RCP<panzer::BlockedEpetraLinearObjContainer> blkGlobalContainer
             = Teuchos::rcp_dynamic_cast<panzer::BlockedEpetraLinearObjContainer>(ae_inargs.container_,true);
-         blkGlobalContainer->set_x(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(Teuchos::rcpFromRef(th_x)));
+         blkGlobalContainer->set_x(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(th_x));
       }
 
       m_response_library->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);

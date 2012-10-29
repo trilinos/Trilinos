@@ -113,13 +113,10 @@ namespace user_app {
 
       Teuchos::MpiComm<int> comm = m_lof->getComm();
       if(m_isEpetraLOF) {
-         Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof
-            = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(m_lof,true);
-         Teuchos::RCP<const Epetra_Vector> ep_solution = Thyra::get_Epetra_Vector(*(ep_lof->getMap()), solution);
-
+         // initialize the x vector
          const Teuchos::RCP<panzer::EpetraLinearObjContainer> epGlobalContainer
             = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs.container_,true);
-         epGlobalContainer->set_x(Teuchos::rcp_const_cast<Epetra_Vector>(ep_solution));
+         epGlobalContainer->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(solution));
       }
       else {
          // initialize the x vector
