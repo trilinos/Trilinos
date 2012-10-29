@@ -221,6 +221,9 @@ namespace Xpetra {
     */
     virtual void insertLocalValues(LocalOrdinal localRow, const ArrayView<const LocalOrdinal> &cols, const ArrayView<const Scalar> &vals) = 0;
 
+    //! Scale the current values of a matrix, this = alpha*this.
+    virtual void scale(const Scalar &alpha)= 0;
+
     //@}
 
     //! @name Transformational Methods

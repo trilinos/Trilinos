@@ -120,7 +120,7 @@ namespace Kokkos {
     struct CUSPARSEUnsupportedScalar
     {
       public:
-      static inline T notSupported() { return T::this_type_is_not_supported_by_CUSPARSE(); }
+      static inline cusparseStatus_t notSupported() { T::this_type_is_not_supported_by_CUSPARSE(); return CUSPARSE_STATUS_ARCH_MISMATCH; }
     };
 
 

@@ -49,7 +49,7 @@ namespace Stokhos {
     struct for_each {
       typedef node_t node_type;
       template <typename Op>
-      KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+      KOKKOSARRAY_INLINE_FUNCTION
       for_each(const Op& op) {
 	op(typename Sacado::mpl::deref<Iter1>::type());
 	for_each<Seq, node_type, typename Sacado::mpl::next<Iter1>::type, Iter2> f(op);
@@ -59,7 +59,7 @@ namespace Stokhos {
     template <class Seq, class node_t, class Iter1>
     struct for_each<Seq, node_t, Iter1, Iter1> {
       template <typename Op>
-      KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+      KOKKOSARRAY_INLINE_FUNCTION
       for_each(const Op& op) {}
     };
 

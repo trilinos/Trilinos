@@ -77,6 +77,7 @@
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_Utilities.hpp"
 #include "Panzer_STK_ResponseAggregator_SolutionWriter.hpp"
+#include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 
 #include "Epetra_MpiComm.h"
 
@@ -91,6 +92,8 @@
 #include "Example_EquationSetFactory.hpp"
 
 #include "AztecOO.h"
+
+//#define USE_OLD_SOLN_WRITER
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -142,6 +145,15 @@ void testInitialization(panzer::InputPhysicsBlock& ipb,
 
 void solveEpetraSystem(panzer::LinearObjContainer & container);
 void solveTpetraSystem(panzer::LinearObjContainer & container);
+
+struct RespFactorySolnWriter_Builder {
+  MPI_Comm comm;
+  Teuchos::RCP<panzer_stk::STK_Interface> mesh;
+
+  template <typename T>
+  Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
+  { return Teuchos::rcp(new panzer_stk::ResponseEvaluatorFactory_SolutionWriter<T>(comm,mesh)); }
+};
 
 // calls MPI_Init and MPI_Finalize
 int main(int argc,char * argv[])
@@ -280,6 +292,7 @@ int main(int argc,char * argv[])
    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary 
       = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
 
+   #ifdef USE_OLD_SOLN_WRITER 
    {
       // register solution writer response aggregator with this library
       // this is an "Action" only response aggregator
@@ -307,6 +320,24 @@ int main(int argc,char * argv[])
       // reserve response guranteeing that we can evaluate it (assuming things are done correctly elsewhere)
       stkIOResponseLibrary->reserveLabeledBlockAggregatedVolumeResponse("Main Field Output",rid,eBlocks,eTypes);
    }
+   #else
+   {
+      // get a vector of all the element blocks 
+      std::vector<std::string> eBlocks;
+      {
+         // get all element blocks and add them to the list
+         std::vector<std::string> eBlockNames;
+         mesh->getElementBlockNames(eBlockNames);
+         for(std::size_t i=0;i<eBlockNames.size();i++)
+            eBlocks.push_back(eBlockNames[i]);
+      }
+      
+      RespFactorySolnWriter_Builder builder;
+      builder.comm = MPI_COMM_WORLD;
+      builder.mesh = mesh;
+      stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
+   }
+   #endif
 
    // setup closure model
    /////////////////////////////////////////////////////////////
@@ -346,10 +377,18 @@ int main(int argc,char * argv[])
    /////////////////////////////////////////////////////////////
    {
       user_data.set<int>("Workset Size",workset_size);
+      #ifdef USE_OLD_SOLN_WRITER
       stkIOResponseLibrary->buildVolumeFieldManagersFromResponses(physicsBlocks,
                                                                   cm_factory,
                                                                   closure_models,
                                                                   user_data);
+      #else
+      stkIOResponseLibrary->buildResponseEvaluators(physicsBlocks,
+                                        cm_factory,
+                                        closure_models,
+                                        user_data);
+
+      #endif
    }
 
    // assemble linear system
@@ -394,12 +433,22 @@ int main(int argc,char * argv[])
 
    // write out solution
    if(true) {
+      // fill STK mesh objects
+      #ifdef USE_OLD_SOLN_WRITER
       // redistribute solution vector to ghosted vector
       linObjFactory->globalToGhostContainer(*container,*ghostCont, panzer::LinearObjContainer::X 
                                                                  | panzer::LinearObjContainer::DxDt); 
 
-      // fill STK mesh objects
       stkIOResponseLibrary->evaluateVolumeFieldManagers<panzer::Traits::Residual>(input,*comm);
+      #else
+      Teuchos::RCP<panzer::ResponseBase> resp = stkIOResponseLibrary->getResponse<panzer::Traits::Residual>("Main Field Output");
+      panzer::AssemblyEngineInArgs respInput(ghostCont,container);
+      respInput.addGlobalEvaluationData(resp->getLookupName(),resp);
+      respInput.alpha = 0;
+      respInput.beta = 1;
+
+      stkIOResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
+      #endif
 
       // write to exodus
       mesh->writeToExodus("output.exo");
@@ -487,6 +536,8 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
 
   // scale by -1
   tp_container.get_x()->scale(-1.0);
+
+  tp_container.get_A()->resumeFill(); // where does this go?
 }
 
 void testInitialization(panzer::InputPhysicsBlock& ipb,

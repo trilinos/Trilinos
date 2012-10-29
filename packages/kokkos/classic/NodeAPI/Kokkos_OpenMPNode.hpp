@@ -82,6 +82,9 @@ namespace Kokkos {
     /// argument.
     OpenMPNode();
 
+    /*! \brief Get default parameters for this node */
+    static ParameterList getDefaultParameters();
+
     //! Destructor.
     ~OpenMPNode();
 

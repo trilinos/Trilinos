@@ -96,7 +96,7 @@ namespace response_bc_adapters {
       side_pb.buildAndRegisterClosureModelEvaluatorsForType<EvalT>(fm,factory,models,user_data);
 
       for(std::size_t i=0;i<refVec_.size();i++)
-        refVec_[i].second->getAsBase<EvalT>()->buildAndRegisterEvaluators(refVec_[i].first,fm,side_pb,user_data); 
+        refVec_[i].second->template getAsBase<EvalT>()->buildAndRegisterEvaluators(refVec_[i].first,fm,side_pb,user_data); 
     }
 
     virtual void 
