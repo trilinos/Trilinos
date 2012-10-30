@@ -68,7 +68,7 @@ class Epetra_Export;
 class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraphData : public Epetra_Data {
   friend class Epetra_CrsGraph;
   friend class Epetra_FECrsGraph;
-
+  friend class Epetra_CrsMatrix;
  private:
 
   //! @name Constructor/Destructor Methods
