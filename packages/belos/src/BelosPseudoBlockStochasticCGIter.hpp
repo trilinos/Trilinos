@@ -69,11 +69,14 @@
   
   \brief This class implements the stochastic pseudo-block CG iteration, where the basic 
   stochastic CG algorithm is performed on all of the linear systems simultaneously.  The
-  implementation is a pseudo-block generalization of Parker and Fox, SISC 2012.
+  implementation is a pseudo-block generalization of the stochastic CG algorithm of 
+  Parker and Fox, SISC 2012.
+  
+  THIS CODE IS CURRENTLY EXPERIMENTAL. CAVEAT EMPTOR.
 
   \ingroup belos_solver_framework
  
-  \author  Chris Siefert & Heidi Thornquist 
+  \author  Chris Siefert 
 */
 
 namespace Belos {
