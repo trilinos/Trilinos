@@ -46,10 +46,12 @@
 
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
+#include <vector>
 class Epetra_Map;
 class Epetra_BlockMap;
 class Epetra_CrsMatrix;
 class Epetra_MultiVector;
+class Epetra_Import;
 
 //! Epetra_Util:  The Epetra Util Wrapper Class.
 /*! The Epetra_Util class is a collection of useful functions that cut across a broad
@@ -186,6 +188,28 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Util {
   */
   static Epetra_BlockMap Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
 						  bool high_rank_proc_owns_shared=false);
+
+
+  //! Epetra_Util GetPidGidPairs function
+  /*!  For each GID in the TargetMap, find who owns the GID in the SourceMap. 
+    This works entirely from the Distributor and has no communication at all.  
+    This routine only works if your Importer is using an Epetra_MpiDistributor under the hood.
+    
+    The routine returns (by reference) a std::vector of std::pair<int,int> which contains (PID,GID) pairs.
+    If the use_minus_one_for_local==true, any GIDs owned by this processor get -1 instead of their PID.
+  */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  static int GetPidGidPairs(const Epetra_Import & Importer,std::vector< std::pair<int,int> > & gpids, bool use_minus_one_for_local);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  static int GetPidGidPairs(const Epetra_Import & Importer,std::vector< std::pair<int,long long> > & gpids, bool use_minus_one_for_local);
+#endif
+  
+
+  //! Epetra_Util GetPids function
+  /*! Like GetPidGidPairs, but just gets the PIDs, ordered by the columnmap 
+   */
+  int GetPids(const Epetra_Import & Importer, std::vector<int> &pids, bool use_minus_one_for_local);
 
   //! Epetra_Util Chop method.  Return zero if input Value is less than ChopValue
   static double Chop(const double & Value);
