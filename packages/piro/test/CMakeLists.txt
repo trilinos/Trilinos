@@ -120,3 +120,15 @@ IF (Piro_ENABLE_NOX)
 
 ENDIF()
 
+IF (Piro_ENABLE_Rythmos)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    RythmosSolver_UnitTests
+    SOURCES
+    Piro_RythmosSolver_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    MockModelEval_A.hpp
+    MockModelEval_A.cpp
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+  )
+ENDIF (Piro_ENABLE_Rythmos)
