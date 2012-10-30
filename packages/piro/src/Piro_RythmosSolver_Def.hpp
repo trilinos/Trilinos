@@ -57,6 +57,7 @@
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
 #include "Rythmos_IntegratorBuilder.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Piro_RythmosNOX_RowSumUpdater.hpp"
@@ -162,7 +163,7 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
     RCP<Rythmos::StepControlStrategyAcceptingStepperBase<Scalar> > scsa_stepper =
       Teuchos::rcp_dynamic_cast<Rythmos::StepControlStrategyAcceptingStepperBase<Scalar> >(fwdStateStepper);
 
-    if ( nonnull(scsa_stepper) ) {
+    if (Teuchos::nonnull(scsa_stepper)) {
       std::string step_control_strategy = rythmosPL->get("Step Control Strategy Type", "None");
 
       if (step_control_strategy == "None") {
@@ -293,214 +294,202 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::RythmosSolver<Scalar>::createOu
   outArgs.setModelEvalDescription(this->description());
 
   // Ng is 1 bigger then model-Ng so that the solution vector can be an outarg
-  outArgs.set_Np_Ng(num_p, num_g+1);
+  outArgs.set_Np_Ng(num_p, num_g + 1);
 
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> model_outargs = model->createOutArgs();
-  for (int i=0; i<num_g; i++)
-    for (int j=0; j<num_p; j++)
-      if (!model_outargs.supports( Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, i, j).none())
-        outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, i, j,
-             Thyra::ModelEvaluatorBase::DerivativeSupport( Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL));
+  const int l = 0;
+  // Solution sensitivity
+  outArgs.setSupports(
+      Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,
+      num_g,
+      l,
+      Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
 
   return outArgs;
 }
 
 template <typename Scalar>
 void Piro::RythmosSolver<Scalar>::evalModelImpl(
-       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
-       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs ) const
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
+    const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  // TODO: Support more than 1 parameter and 1 response
+  const int j = 0;
+  const int l = 0;
+
   // Parse InArgs
-
   RCP<const Thyra::VectorBase<Scalar> > p_in;
-  if (num_p > 0) p_in = inArgs.get_p(0);
+  if (num_p > 0) {
+    p_in = inArgs.get_p(l);
+  }
 
-  // Parse OutArgs: always 1 extra
-  RCP< Thyra::VectorBase<Scalar> > g_out;
-  if (num_g > 0) g_out = outArgs.get_g(0);
-  RCP< Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g);
-
-  // Parse out-args for sensitivity calculation
-  RCP< Thyra::MultiVectorBase<Scalar> > dgdp_out;
-  if (num_p>0 && num_g>0)
-    dgdp_out = outArgs.get_DgDp(0,0).getMultiVector();
-
-  RCP<const Thyra::VectorBase<Scalar> > finalSolution;
+  // Parse OutArgs
+  RCP<Thyra::VectorBase<Scalar> > g_out;
+  if (num_g > 0) {
+    g_out = outArgs.get_g(j);
+  }
+  const RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g);
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> state_ic = model->getNominalValues();
 
   // Set paramters p_in as part of initial conditions
-  if (num_p > 0) state_ic.set_p(0,p_in);
+  if (num_p > 0){
+    state_ic.set_p(l, p_in);
+  }
 
-  //*out << "\nstate_ic:\n" << Teuchos::describe(state_ic,Teuchos::VERB_NONE);
   *out << "\nstate_ic:\n" << Teuchos::describe(state_ic,solnVerbLevel);
 
-  if (dgdp_out == Teuchos::null) {
-      //
-      *out << "\nE) Solve the forward problem ...\n";
-      //
+  RCP<Thyra::MultiVectorBase<Scalar> > dgxdp_out;
+  const Thyra::ModelEvaluatorBase::DerivativeSupport dgxdp_support =
+    outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, num_g, l);
+  if (dgxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+    const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgxdp_deriv =
+      outArgs.get_DgDp(num_g, l);
+    dgxdp_out = dgxdp_deriv.getMultiVector();
+  }
 
-      fwdStateStepper->setInitialCondition(state_ic);
-      fwdStateIntegrator->setStepper(fwdStateStepper, t_final, true);
+  const bool requestedSensitivities = Teuchos::nonnull(dgxdp_out);
 
-      Teuchos::Array<RCP<const Thyra::VectorBase<Scalar> > > x_final_array;
-      fwdStateIntegrator->getFwdPoints(
-        Teuchos::tuple<Scalar>(t_final), &x_final_array, NULL, NULL
-        );
-      finalSolution = x_final_array[0];
+  RCP<const Thyra::VectorBase<Scalar> > finalSolution;
+  if (!requestedSensitivities) {
+    //
+    *out << "\nE) Solve the forward problem ...\n";
+    //
 
-      if (Teuchos::VERB_MEDIUM <= solnVerbLevel)
-         std::cout << "Final Solution\n" << *finalSolution << std::endl;
+    fwdStateStepper->setInitialCondition(state_ic);
+    fwdStateIntegrator->setStepper(fwdStateStepper, t_final, true);
 
-     // As post-processing step, calc responses at final solution
-     Thyra::ModelEvaluatorBase::InArgs<Scalar>  model_inargs = model->createInArgs();
-     Thyra::ModelEvaluatorBase::OutArgs<Scalar> model_outargs = model->createOutArgs();
-     model_inargs.set_x(finalSolution);
-     if (num_p > 0)  model_inargs.set_p(0, p_in);
-     if (g_out != Teuchos::null) {
-       Thyra::put_scalar(0.0,g_out.ptr());
-       model_outargs.set_g(0, g_out);
-     }
+    Teuchos::Array<RCP<const Thyra::VectorBase<Scalar> > > x_final_array;
+    fwdStateIntegrator->getFwdPoints(
+        Teuchos::tuple<Scalar>(t_final), &x_final_array, NULL, NULL);
+    finalSolution = x_final_array[0];
 
-     model->evalModel(model_inargs, model_outargs);
+    if (Teuchos::VERB_MEDIUM <= solnVerbLevel) {
+      std::cout << "Final Solution\n" << *finalSolution << std::endl;
+    }
 
-   }
-   else {//Doing sensitivities
-      //
-      *out << "\nE) Solve the forward problem with Sensitivities...\n";
-      //
+    // As post-processing step, calculate responses at final solution
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> model_inargs = model->createInArgs();
+    model_inargs.set_x(finalSolution);
+    if (num_p > 0) {
+      model_inargs.set_p(l, p_in);
+    }
 
-      RCP<Rythmos::ForwardSensitivityStepper<Scalar> > stateAndSensStepper =
-        Rythmos::forwardSensitivityStepper<Scalar>();
-      stateAndSensStepper->initializeSyncedSteppers(
-          model, 0, model->getNominalValues(),
-          fwdStateStepper, fwdTimeStepSolver);
+    Thyra::ModelEvaluatorBase::OutArgs<Scalar> model_outargs = model->createOutArgs();
+    if (Teuchos::nonnull(g_out)) {
+      Thyra::put_scalar(Teuchos::ScalarTraits<Scalar>::zero(), g_out.ptr());
+      model_outargs.set_g(j, g_out);
+    }
 
-      //
-      // Set the initial condition for the state and forward sensitivities
-      //
+    model->evalModel(model_inargs, model_outargs);
 
-      RCP< Thyra::VectorBase<Scalar> > s_bar_init
-        = createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
-      assign( s_bar_init.ptr(), 0.0 );
-      RCP< Thyra::VectorBase<Scalar> > s_bar_dot_init
-        = createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
-      assign( s_bar_dot_init.ptr(), 0.0 );
-      // Above, I believe that these are the correct initial conditions for
-      // s_bar and s_bar_dot given how the EpetraExt::DiagonalTransientModel
-      // is currently implemented!
+  } else { // Computing sensitivities
+    //
+    *out << "\nE) Solve the forward problem with Sensitivities...\n";
+    //
+    RCP<Rythmos::ForwardSensitivityStepper<Scalar> > stateAndSensStepper =
+      Rythmos::forwardSensitivityStepper<Scalar>();
+    stateAndSensStepper->initializeSyncedSteppers(
+        model, l, model->getNominalValues(),
+        fwdStateStepper, fwdTimeStepSolver);
 
-      RCP<const Rythmos::StateAndForwardSensitivityModelEvaluator<Scalar> >
-        stateAndSensModel = stateAndSensStepper->getStateAndFwdSensModel();
+    //
+    // Set the initial condition for the state and forward sensitivities
+    //
 
-      Thyra::ModelEvaluatorBase::InArgs<Scalar>
-        state_and_sens_ic = stateAndSensStepper->getModel()->createInArgs();
+    // The initial condition is assumed to be independent from the parameters
+    // Therefore, the initial condition for the sensitivity is zero
+    const RCP< Thyra::VectorBase<Scalar> > s_bar_init =
+      createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
+    assign(s_bar_init.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+    const RCP< Thyra::VectorBase<Scalar> > s_bar_dot_init =
+      createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
+    assign(s_bar_dot_init.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
 
-      // Copy time, parameters etc.
-      state_and_sens_ic.setArgs(state_ic);
-      // Set initial condition for x_bar = [ x; s_bar ]
-      state_and_sens_ic.set_x(
+    RCP<const Rythmos::StateAndForwardSensitivityModelEvaluator<Scalar> >
+      stateAndSensModel = stateAndSensStepper->getStateAndFwdSensModel();
+
+    Thyra::ModelEvaluatorBase::InArgs<Scalar>
+      state_and_sens_ic = stateAndSensStepper->getModel()->createInArgs();
+
+    // Copy time, parameters etc.
+    state_and_sens_ic.setArgs(state_ic);
+    // Set initial condition for x_bar = [ x; s_bar ]
+    state_and_sens_ic.set_x(
         stateAndSensModel->create_x_bar_vec(state_ic.get_x(),s_bar_init)
         );
-      // Set initial condition for x_bar_dot = [ x_dot; s_bar_dot ]
-      state_and_sens_ic.set_x_dot(
-        stateAndSensModel->create_x_bar_vec(state_ic.get_x_dot(),s_bar_dot_init)
+    // Set initial condition for x_bar_dot = [ x_dot; s_bar_dot ]
+    state_and_sens_ic.set_x_dot(
+        stateAndSensModel->create_x_bar_vec(state_ic.get_x_dot(), s_bar_dot_init)
         );
 
-//      *out << "\nstate_and_sens_ic:\n" << Teuchos::describe(state_and_sens_ic,Teuchos::VERB_DEFAULT);
+    stateAndSensStepper->setInitialCondition(state_and_sens_ic);
 
-      stateAndSensStepper->setInitialCondition(state_and_sens_ic);
+    //
+    // Use a StepperAsModelEvaluator to integrate the state+sens
+    //
 
-      //
-      // Use a StepperAsModelEvaluator to integrate the state+sens
-      //
-
-      RCP<Rythmos::StepperAsModelEvaluator<Scalar> >
-        stateAndSensIntegratorAsModel = Rythmos::stepperAsModelEvaluator(
+    const RCP<Rythmos::StepperAsModelEvaluator<Scalar> >
+      stateAndSensIntegratorAsModel = Rythmos::stepperAsModelEvaluator(
           Teuchos::rcp_implicit_cast<Rythmos::StepperBase<Scalar> >(stateAndSensStepper),
           Teuchos::rcp_implicit_cast<Rythmos::IntegratorBase<Scalar> >(fwdStateIntegrator),
-          state_and_sens_ic
-          );
+          state_and_sens_ic);
+    const int solutionResponseIndex = 0;
 
-      *out << "\nUse the StepperAsModelEvaluator to integrate state + sens x_bar(p,t_final) ... \n";
+    *out << "\nUse the StepperAsModelEvaluator to integrate state + sens x_bar(p,t_final) ... \n";
+    Teuchos::OSTab tab(out);
 
-      RCP< Thyra::VectorBase<Scalar> > x_bar_final;
+    // Solution sensitivity in column-oriented (Jacobian) MultiVector form
+    RCP<const Thyra::MultiVectorBase<Scalar> > dxdp;
 
-      Teuchos::OSTab tab(out);
+    const RCP<Thyra::VectorBase<Scalar> > x_bar_final =
+      Thyra::createMember(stateAndSensIntegratorAsModel->get_g_space(j));
+    // Extract pieces of x_bar_final to prepare output
+    {
+      const RCP<const Thyra::ProductVectorBase<Scalar> > x_bar_final_downcasted =
+        Thyra::productVectorBase<Scalar>(x_bar_final);
 
-      x_bar_final = createMember(stateAndSensIntegratorAsModel->get_g_space(0));
+      // Solution
+      const int solutionBlockIndex = 0;
+      finalSolution = x_bar_final_downcasted->getVectorBlock(solutionBlockIndex);
 
-      eval_g(
+      // Sensitivity
+      const int sensitivityBlockIndex = 1;
+      const RCP<const Thyra::VectorBase<Scalar> > s_bar_final =
+        x_bar_final_downcasted->getVectorBlock(sensitivityBlockIndex);
+      {
+        typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+        const RCP<const DMVPV> s_bar_final_downcasted = Teuchos::rcp_dynamic_cast<const DMVPV>(s_bar_final);
+
+        dxdp = s_bar_final_downcasted->getMultiVector();
+      }
+    }
+
+    eval_g(
         *stateAndSensIntegratorAsModel,
-        0, *state_ic.get_p(0),
+        l, *state_ic.get_p(l),
         t_final,
-        0, &*x_bar_final
+        solutionResponseIndex, &*x_bar_final
         );
 
-      *out
-        << "\nx_bar_final = x_bar(p,t_final) evaluated using "
-        << "stateAndSensIntegratorAsModel:\n"
-        << Teuchos::describe(*x_bar_final,solnVerbLevel);
+    *out
+      << "\nx_bar_final = x_bar(p,t_final) evaluated using "
+      << "stateAndSensIntegratorAsModel:\n"
+      << Teuchos::describe(*x_bar_final,solnVerbLevel);
 
-     // As post-processing step, calc responses and gradient at final solution
-     finalSolution = Thyra::productVectorBase<Scalar>(x_bar_final)->getVectorBlock(0);
+    if (Teuchos::nonnull(dgxdp_out)) {
+      Thyra::assign(dgxdp_out.ptr(), *dxdp);
+    }
 
-      *out << "\nF) Check the solution to the forward problem ...\n";
+    *out << "\nF) Check the solution to the forward problem ...\n";
+  }
 
-     // Extract sensitivity vectors into Epetra_MultiVector
-     Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > dxdp =
-         Teuchos::rcp_dynamic_cast<const Thyra::DefaultMultiVectorProductVector<Scalar> >
-           (Thyra::productVectorBase<Scalar>(x_bar_final)->getVectorBlock(1))
-             ->getMultiVector();;
-
-     Thyra::assign(dgdp_out.ptr(), 0.0);
-
-/*********************  NEED TO CONVERT TO THYRA *******************
-
-     Teuchos::RCP<Epetra_MultiVector> dgdx
-          = Teuchos::rcp(new Epetra_MultiVector(finalSolution->Map(),
-                                                   dgdp_out->GlobalLength()));
-     Teuchos::Array<int> p_indexes =
-       outArgs.get_DgDp(0,0).getDerivativeMultiVector().getParamIndexes();
-
-     EpetraExt::ModelEvaluator::DerivativeMultiVector dmv_dgdp(dgdp_out,
-                                                               DERIV_MV_BY_COL,
-                                                               p_indexes);
-
-     EpetraExt::ModelEvaluator::InArgs model_inargs = model->createInArgs();
-     EpetraExt::ModelEvaluator::OutArgs model_outargs = model->createOutArgs();
-     model_inargs.set_x(finalSolution);
-     model_inargs.set_p(0, p_in);
-
-     if (g_out != Teuchos::null) {
-       g_out->PutScalar(0.0);
-       model_outargs.set_g(0, g_out);
-     }
-     model_outargs.set_DgDp(0,0,dmv_dgdp);
-     model_outargs.set_DgDx(0,dgdx);
-
-     model->evalModel(model_inargs, model_outargs);
-
-
-     // (3) Calculate dg/dp = dg/dx*dx/dp + dg/dp
-     // This may be the transpose of what we want since we specified
-     // we want dg/dp by column in createOutArgs().
-     // In this case just interchange the order of dgdx and dxdp
-     // We should really probably check what the underlying ME does
-
-     if (Teuchos::VERB_MEDIUM <= solnVerbLevel) cout << " dgdx \n" << *dgdx << endl;
-     if (Teuchos::VERB_MEDIUM <= solnVerbLevel) cout << " dxdp \n" << *dxdp << endl;
-
-     dgdp_out->Multiply('T', 'N', 1.0, *dgdx, *dxdp, 1.0);
-*********************/
-
-   }
-
-   // return the final solution as an additional g-vector, if requested
-   if (gx_out != Teuchos::null)  Thyra::copy(*finalSolution, gx_out.ptr());
+  // Return the final solution as an additional g-vector, if requested
+  if (Teuchos::nonnull(gx_out)) {
+    Thyra::copy(*finalSolution, gx_out.ptr());
+  }
 }
 
 template <typename Scalar>
