@@ -43,7 +43,7 @@ IF (${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_Thrust)
     RTITutorialSimple
     SOURCES RTITutorialSimple
     ARGS 
-    COMM serial mpi
+    COMM mpi
     STANDARD_PASS_OUTPUT
   )
 
