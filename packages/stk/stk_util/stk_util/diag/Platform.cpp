@@ -27,7 +27,9 @@
 #include <stk_util/parallel/Exception.hpp>
 #include <stk_util/parallel/ExceptionReport.hpp>
 #include <stk_util/parallel/MPI.hpp>
-#include <stk_util/parallel/mpih.hpp>
+#ifdef STK_BUILT_IN_SIERRA
+#  include <stk_util/parallel/mpih.hpp>
+#endif
 #include <stk_util/environment/ProductRegistry.hpp>
 
 #include <stk_util/diag/Writer.hpp>
