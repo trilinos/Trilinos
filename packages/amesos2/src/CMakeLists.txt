@@ -230,9 +230,9 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     )
 ENDIF()
 
-IF (Trilinos_ENABLE_Amesos)
-    ADD_SUBDIRECTORY(SuiteSparse/KLU2/Source)
-ENDIF()
+#IF (Trilinos_ENABLE_Amesos)
+#    ADD_SUBDIRECTORY(SuiteSparse/KLU2/Source)
+#ENDIF()
 
 #
 # C) Define the targets for package's library(s)
