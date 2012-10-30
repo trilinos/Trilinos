@@ -38,6 +38,8 @@ RuntimeDoomed.hpp
 RuntimeMessage.hpp
 RuntimeWarning.hpp
 WallTime.hpp
+FormatTime.hpp
+FormatMemorySize.hpp
   )
 
 IF ( TPL_ENABLE_BoostLib )
@@ -55,6 +57,8 @@ RuntimeDoomed.cpp
 RuntimeMessage.cpp
 RuntimeWarning.cpp
 WallTime.cpp
+FormatTime.cpp
+FormatMemorySize.cpp
   )
 
 IF ( TPL_ENABLE_BoostLib )
