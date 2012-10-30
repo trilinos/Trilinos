@@ -296,14 +296,27 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::RythmosSolver<Scalar>::createOu
   Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
 
-  // Ng is 1 bigger then model-Ng so that the solution vector can be an outarg
+  // One additional response slot for the solution vector
   outArgs.set_Np_Ng(num_p, num_g + 1);
 
+  const Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
+
+  // Only one response supported
+  const int j = 0;
+  // Only one parameter supported
   const int l = 0;
+
   // Solution sensitivity
   outArgs.setSupports(
       Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,
       num_g,
+      l,
+      Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+
+  // Response sensitivity
+  outArgs.setSupports(
+      Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,
+      j,
       l,
       Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
 
@@ -337,12 +350,31 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> state_ic = model->getNominalValues();
 
+  if (Teuchos::nonnull(initialConditionModel)) {
+    // The initial condition depends on the parameter
+    // It is found by querying the auxiliary model evaluator as the last response
+    const RCP<Thyra::VectorBase<Scalar> > initialState =
+      Thyra::createMember(model->get_x_space());
+
+    {
+      Thyra::ModelEvaluatorBase::InArgs<Scalar> initCondInArgs = initialConditionModel->createInArgs();
+      initCondInArgs.set_p(l, inArgs.get_p(l));
+
+      Thyra::ModelEvaluatorBase::OutArgs<Scalar> initCondOutArgs = initialConditionModel->createOutArgs();
+      initCondOutArgs.set_g(initCondOutArgs.Ng() - 1, initialState);
+
+      initialConditionModel->evalModel(initCondInArgs, initCondOutArgs);
+    }
+
+    state_ic.set_x(initialState);
+  }
+
   // Set paramters p_in as part of initial conditions
-  if (num_p > 0){
+  if (num_p > 0) {
     state_ic.set_p(l, p_in);
   }
 
-  *out << "\nstate_ic:\n" << Teuchos::describe(state_ic,solnVerbLevel);
+  *out << "\nstate_ic:\n" << Teuchos::describe(state_ic, solnVerbLevel);
 
   RCP<Thyra::MultiVectorBase<Scalar> > dgxdp_out;
   const Thyra::ModelEvaluatorBase::DerivativeSupport dgxdp_support =
@@ -353,7 +385,17 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
     dgxdp_out = dgxdp_deriv.getMultiVector();
   }
 
-  const bool requestedSensitivities = Teuchos::nonnull(dgxdp_out);
+  RCP<Thyra::MultiVectorBase<Scalar> > dgdp_out;
+  const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
+    outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
+  if (dgxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+    const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv =
+      outArgs.get_DgDp(j, l);
+    dgdp_out = dgdp_deriv.getMultiVector();
+  }
+
+  const bool requestedSensitivities =
+    Teuchos::nonnull(dgxdp_out) || Teuchos::nonnull(dgdp_out);
 
   RCP<const Thyra::VectorBase<Scalar> > finalSolution;
   if (!requestedSensitivities) {
@@ -374,19 +416,21 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
     }
 
     // As post-processing step, calculate responses at final solution
-    Thyra::ModelEvaluatorBase::InArgs<Scalar> model_inargs = model->createInArgs();
-    model_inargs.set_x(finalSolution);
-    if (num_p > 0) {
-      model_inargs.set_p(l, p_in);
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = model->createInArgs();
+    {
+      modelInArgs.set_x(finalSolution);
+      if (num_p > 0) {
+        modelInArgs.set_p(l, p_in);
+      }
     }
 
-    Thyra::ModelEvaluatorBase::OutArgs<Scalar> model_outargs = model->createOutArgs();
+    Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
     if (Teuchos::nonnull(g_out)) {
       Thyra::put_scalar(Teuchos::ScalarTraits<Scalar>::zero(), g_out.ptr());
-      model_outargs.set_g(j, g_out);
+      modelOutArgs.set_g(j, g_out);
     }
 
-    model->evalModel(model_inargs, model_outargs);
+    model->evalModel(modelInArgs, modelOutArgs);
 
   } else { // Computing sensitivities
     //
@@ -402,15 +446,15 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
     // Set the initial condition for the state and forward sensitivities
     //
 
-    const RCP< Thyra::VectorBase<Scalar> > s_bar_init =
-      createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
-    const RCP< Thyra::VectorBase<Scalar> > s_bar_dot_init =
-      createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
+    const RCP<Thyra::VectorBase<Scalar> > s_bar_init =
+      Thyra::createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
+    const RCP<Thyra::VectorBase<Scalar> > s_bar_dot_init =
+      Thyra::createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
 
     if (Teuchos::is_null(initialConditionModel)) {
       // The initial condition is assumed to be independent from the parameters
       // Therefore, the initial condition for the sensitivity is zero
-      assign(s_bar_init.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+      Thyra::assign(s_bar_init.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
     } else {
       // Use initialConditionModel to compute initial condition for sensitivity
       Thyra::ModelEvaluatorBase::InArgs<Scalar> initCondInArgs = initialConditionModel->createInArgs();
@@ -426,7 +470,7 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
 
       initialConditionModel->evalModel(initCondInArgs, initCondOutArgs);
     }
-    assign(s_bar_dot_init.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+    Thyra::assign(s_bar_dot_init.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
 
     RCP<const Rythmos::StateAndForwardSensitivityModelEvaluator<Scalar> >
       stateAndSensModel = stateAndSensStepper->getStateAndFwdSensModel();
@@ -487,7 +531,7 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
       }
     }
 
-    eval_g(
+    Thyra::eval_g(
         *stateAndSensIntegratorAsModel,
         l, *state_ic.get_p(l),
         t_final,
@@ -503,8 +547,44 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
       Thyra::assign(dgxdp_out.ptr(), *dxdp);
     }
 
-    *out << "\nF) Check the solution to the forward problem ...\n";
+    if (Teuchos::nonnull(dgdp_out)) {
+      Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = model->createInArgs();
+      {
+        modelInArgs.set_x(finalSolution);
+        if (num_p > 0) {
+          modelInArgs.set_p(l, p_in);
+        }
+      }
+
+      // require dgdx, dgdp from model
+      Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
+      {
+        const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdx_deriv =
+          Thyra::create_DgDx_mv(*model, j, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
+        modelOutArgs.set_DgDx(j, dgdx_deriv);
+
+        const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv =
+          Thyra::ModelEvaluatorBase::Derivative<Scalar>(dgdp_out, Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+        modelOutArgs.set_DgDp(j, l, dgdp_deriv);
+      }
+
+      model->evalModel(modelInArgs, modelOutArgs);
+
+      const RCP<const Thyra::MultiVectorBase<Scalar> > dgdx =
+        modelOutArgs.get_DgDx(j).getMultiVector();
+
+      // dgdp_out = dgdp + <dgdx, dxdp>
+      Thyra::apply(
+          *dgdx,
+          Thyra::TRANS,
+          *dxdp,
+          dgdp_out.ptr(),
+          Teuchos::ScalarTraits<Scalar>::one(),
+          Teuchos::ScalarTraits<Scalar>::one());
+    }
   }
+
+  *out << "\nF) Check the solution to the forward problem ...\n";
 
   // Return the final solution as an additional g-vector, if requested
   if (Teuchos::nonnull(gx_out)) {
