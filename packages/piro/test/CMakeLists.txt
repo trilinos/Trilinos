@@ -127,6 +127,7 @@ IF (Piro_ENABLE_Rythmos)
     SOURCES
     Piro_RythmosSolver_UnitTests.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_ThyraSupport.hpp
     MockModelEval_A.hpp
     MockModelEval_A.cpp
     NUM_MPI_PROCS 1-4
