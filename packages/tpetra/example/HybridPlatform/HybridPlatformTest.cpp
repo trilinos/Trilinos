@@ -146,8 +146,10 @@ int main(int argc, char **argv) {
   //
   // Supported nodes
   //
-  cout << "Supported nodes/parameters:" << endl;
-  Teuchos::writeParameterListToXmlOStream(*Tpetra::HybridPlatform::listSupportedNodes(), cout);
+  if (comm->getRank() == 0) {
+    cout << "Supported nodes/parameters:" << endl;
+    Teuchos::writeParameterListToXmlOStream(*Tpetra::HybridPlatform::listSupportedNodes(), cout);
+  }
 
   // 
   // read machine file and initialize platform
