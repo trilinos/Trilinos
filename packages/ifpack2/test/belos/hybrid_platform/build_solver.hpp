@@ -46,10 +46,10 @@
 
 #include <Teuchos_RefCountPtr.hpp>
 #include <BelosLinearProblem.hpp>
-// #include "BelosPseudoBlockCGSolMgr.hpp"
-// #include "BelosPseudoBlockGmresSolMgr.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
 #include <BelosBlockGmresSolMgr.hpp>
-// #include "BelosTFQMRSolMgr.hpp"
+#include "BelosTFQMRSolMgr.hpp"
 
 template<class Scalar,class MV, class OP>
 Teuchos::RCP<Belos::SolverManager<Scalar,MV,OP> >
@@ -57,30 +57,29 @@ build_solver(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
              Teuchos::ParameterList& test_params,
              Teuchos::RCP<Belos::LinearProblem<Scalar,MV,OP> > problem)
 {
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+  using Teuchos::rcpFromRef;
+
   typedef Belos::LinearProblem<Scalar,MV,OP> BLinProb;
   Teuchos::RCP<Belos::SolverManager<Scalar,MV,OP> > solver;
 
-  Teuchos::ParameterList bparams;
-  if (test_params.isSublist("Belos")) {
-    bparams = test_params.sublist("Belos");
-  }
-  Teuchos::RCP<Teuchos::ParameterList> rcpparams = Teuchos::rcpFromRef(bparams);
+  RCP<ParameterList> bparams = Teuchos::sublist(rcpFromRef(test_params),"Belos");
 
   std::string solver_type("not specified");
   Ifpack2::getParameter(test_params, "solver_type", solver_type);
   if (solver_type == "BlockGmres") {
-    // if (comm->getRank() == 0) std::cout << *rcpparams << std::endl;
-    solver = Teuchos::rcp(new Belos::BlockGmresSolMgr<Scalar,MV,OP>(problem,rcpparams));
+    solver = Teuchos::rcp(new Belos::BlockGmresSolMgr<Scalar,MV,OP>(problem,bparams));
   }
-  // else if (solver_type == "PseudoBlockGmres") {
-  //   solver = Teuchos::rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,MV,OP>(problem,rcpparams));
-  // }
-  // else if (solver_type == "PseudoBlockCG") {
-  //   solver = Teuchos::rcp(new Belos::PseudoBlockCGSolMgr<Scalar,MV,OP>(problem,rcpparams));
-  // }
-  // else if (solver_type == "TFQMR") {
-  //   solver = Teuchos::rcp(new Belos::TFQMRSolMgr<Scalar,MV,OP>(problem,rcpparams));
-  // }
+  else if (solver_type == "PseudoBlockGmres") {
+    solver = Teuchos::rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,MV,OP>(problem,bparams));
+  }
+  else if (solver_type == "PseudoBlockCG") {
+    solver = Teuchos::rcp(new Belos::PseudoBlockCGSolMgr<Scalar,MV,OP>(problem,bparams));
+  }
+  else if (solver_type == "TFQMR") {
+    solver = Teuchos::rcp(new Belos::TFQMRSolMgr<Scalar,MV,OP>(problem,bparams));
+  }
   else if (solver_type == "not specified") {
     throw std::runtime_error("Error in build_solver: solver_type not specified.");
   }

@@ -50,19 +50,17 @@
 
 using namespace Teuchos;
 using namespace Anasazi;
-using namespace std;
+using std::cout;
+using std::endl;
+using std::swap;
 
 typedef double                       ST;
 typedef Epetra_MultiVector           MV;
 typedef Epetra_Operator              OP;
-typedef MultiVecTraits<double,MV>    MVT;
-typedef OperatorTraits<double,MV,OP> OPT;
-typedef ScalarTraits<double>         SCT;
-typedef SCT::magnitudeType           MT;
 
 // this is the tolerance that all tests are performed against
-const MT TOL = 1.0e-10;
-const MT ATOL = 100;
+const double TOL = 1.0e-10;
+const double ATOL = 100;
 
 // declare an output manager for handling local output
 RCP< Anasazi::BasicOutputManager<ST> > MyOM;
@@ -71,11 +69,15 @@ RCP< Anasazi::BasicOutputManager<ST> > MyOM;
 int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM, RCP<const MV> S, RCP<const MV> X1, RCP<const MV> Y1, RCP<const MV> X2, RCP<const MV> Y2, bool isBiortho);
 int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM, RCP<const MV> S, RCP<const MV> X1, RCP<const MV> Y1, RCP<const MV> X2, RCP<const MV> Y2, bool isBiortho);
 
-MT MVDiff(const MV &X, const MV &Y);
+double MVDiff(const MV &X, const MV &Y);
 
 int main(int argc, char *argv[]) 
 {
-  
+  typedef MultiVecTraits<double,MV>    MVT;
+  typedef OperatorTraits<double,MV,OP> OPT;
+  typedef ScalarTraits<double>         SCT;
+  typedef SCT::magnitudeType           MT;
+
   const ST ONE = SCT::one();
   const MT ZERO = SCT::magnitude(SCT::zero());
 #ifdef EPETRA_MPI
@@ -187,7 +189,7 @@ int main(int argc, char *argv[])
       Teuchos::LAPACK<int,ST> lapack;
       TEUCHOS_TEST_FOR_EXCEPTION(sizeX1 < sizeX2,std::logic_error,"Internal logic error: sizeX1 < sizeX2.");
       Array<ST> LUwork(sizeX1);
-      vector<MT> norms1(sizeX1), norms2(sizeX2);
+      std::vector<MT> norms1(sizeX1), norms2(sizeX2);
       // use a BasicOrthoManager for testing
       RCP<MatOrthoManager<ST,MV,OP> > OM_basic = rcp( new BasicOrthoManager<ST,MV,OP>(M) );
 
@@ -506,7 +508,12 @@ int main(int argc, char *argv[])
 int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM, 
                                RCP<const MV> S, 
                                RCP<const MV> X1, RCP<const MV> Y1,
-                               RCP<const MV> X2, RCP<const MV> Y2, bool isBiortho) {
+                               RCP<const MV> X2, RCP<const MV> Y2, bool isBiortho) 
+{
+  typedef MultiVecTraits<double,MV>    MVT;
+  typedef OperatorTraits<double,MV,OP> OPT;
+  typedef ScalarTraits<double>         SCT;
+  typedef SCT::magnitudeType           MT;
 
   const ST ONE = SCT::one();
   const MT ZERO = SCT::magnitude(SCT::zero());
@@ -684,7 +691,7 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
       // we allocate S and MS for each test, so we can save these as views
       // however, save copies of the C and B
       if (ret < sizeS) {
-        vector<int> ind(ret);
+        std::vector<int> ind(ret);
         for (int i=0; i<ret; i++) {
           ind[i] = i;
         }
@@ -746,7 +753,7 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
         // we allocate S and MS for each test, so we can save these as views
         // however, save copies of the C and B
         if (ret < sizeS) {
-          vector<int> ind(ret);
+          std::vector<int> ind(ret);
           for (int i=0; i<ret; i++) {
             ind[i] = i;
           }
@@ -861,7 +868,12 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
 int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM, 
                    RCP<const MV> S, 
                    RCP<const MV> X1, RCP<const MV> Y1,
-                   RCP<const MV> X2, RCP<const MV> Y2, bool isBiortho) {
+                   RCP<const MV> X2, RCP<const MV> Y2, bool isBiortho) 
+{
+  typedef MultiVecTraits<double,MV>    MVT;
+  typedef OperatorTraits<double,MV,OP> OPT;
+  typedef ScalarTraits<double>         SCT;
+  typedef SCT::magnitudeType           MT;
 
   const ST ONE = SCT::one();
   const int sizeS = MVT::GetNumberVecs(*S);
@@ -1151,7 +1163,13 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
 
 
 
-MT MVDiff(const MV &X, const MV &Y) {
+double MVDiff(const MV &X, const MV &Y) 
+{
+  typedef MultiVecTraits<double,MV>    MVT;
+  typedef OperatorTraits<double,MV,OP> OPT;
+  typedef ScalarTraits<double>         SCT;
+  typedef SCT::magnitudeType           MT;
+
   const ST ONE = SCT::one();
   const int sizeX = MVT::GetNumberVecs(X);
   SerialDenseMatrix<int,ST> xTmx(sizeX,sizeX);

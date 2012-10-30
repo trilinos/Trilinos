@@ -45,6 +45,7 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ParameterXMLFileReader.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_Time.hpp>
 #include <Teuchos_Comm.hpp>
@@ -76,7 +77,7 @@ using Teuchos::ScalarTraits;
 
 namespace BelosTpetraHybridDriverTest {
   ParameterList plTestParams;
-};
+}
 
 #ifdef HAVE_TPETRA_THREADED_MKL
 #include <mkl_service.h>
@@ -109,6 +110,7 @@ class NodeDetails {
   static void clear(const RCP<Node> &node) {}
 };
 
+#ifdef HAVE_KOKKOS_THRUST
 template <>
 class NodeDetails<Kokkos::ThrustGPUNode> {
   public:
@@ -119,15 +121,7 @@ class NodeDetails<Kokkos::ThrustGPUNode> {
     node->clearStatistics();
   }
 };
-
-template <> Teuchos::RCP<Teuchos::Time> Belos::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::TBBNode      > >::mvTransMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Belos::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::ThrustGPUNode> >::mvTransMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Belos::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::TPINode      > >::mvTransMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Belos::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::SerialNode   > >::mvTransMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Belos::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::TBBNode      > >::mvTimesMatAddMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Belos::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::ThrustGPUNode> >::mvTimesMatAddMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Belos::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::TPINode      > >::mvTimesMatAddMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Belos::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::SerialNode   > >::mvTimesMatAddMvTimer_ = Teuchos::null;
+#endif
 
 template <class Node>
 class runTest {
@@ -146,13 +140,15 @@ class runTest {
     typedef Belos::SolverManager<Scalar,TMV,TOP>   BSM;
     typedef Belos::MultiVecTraits<Scalar,TMV>      BMVT;
 
+#ifdef HAVE_BELOS_TPETRA_TIMERS
     BMVT::mvTimesMatAddMvTimer_ = Teuchos::TimeMonitor::getNewTimer("Belos/Tpetra::MvTimesMatAddMv()");
     BMVT::mvTransMvTimer_ = Teuchos::TimeMonitor::getNewTimer("Belos/Tpetra::MvTransMv()");
+#endif
 
     const bool IAmRoot = (comm->getRank() == 0);
 
     RCP<FancyOStream> fos = fancyOStream(rcpFromRef(std::cout));
-    fos->setShowProcRank(true);
+    // fos->setShowProcRank(true);
     *fos << "Running test with Node == " << Teuchos::typeName(*node) << " on rank " << comm->getRank() << "/" << comm->getSize() << endl;
 
     int myWeight = myMachPL.get<int>("Node Weight",1);
@@ -171,27 +167,22 @@ class runTest {
     Belos::ReturnType ret = solver->solve();
 
     if (IAmRoot) {
-      *fos << "Converged in " << solver->getNumIters() << " iterations." << endl;
+      if (ret == Belos::Converged) *fos << "Converged after " << solver->getNumIters() << " iterations." << endl;
+      else                         *fos << "DID NOT CONVERGE after " << solver->getNumIters() << " iterations." << endl;
+      Teuchos::writeParameterListToXmlFile(*solver->getCurrentParameters(), "solver_params_out.xml");
     }
 
-    // RCP<TMV> R = rcp(new TMV(*problem->getRHS()));
-    // problem->computeCurrResVec(&*R, &*problem->getLHS(), &*problem->getRHS());
-    // Array<ScalarTraits<Scalar>::magnitudeType> norms(R->getNumVectors());
-    // R->norm2(norms);
-    // if (norms.size() < 1) {
-    //   throw std::runtime_error("ERROR: norms.size()==0 indicates R->getNumVectors()==0.");
-    // }
-    // if (IAmRoot) {
-    //   *fos << "2-Norm of 0th residual vec: " << norms[0] << endl;
-    // }
-
+    RCP<TMV> R = rcp(new TMV(*problem->getRHS()));
+    problem->computeCurrResVec(&*R, &*problem->getLHS(), &*problem->getRHS());
+    Array<ScalarTraits<Scalar>::magnitudeType> norms(R->getNumVectors());
+    R->norm2(norms);
+    if (norms.size() < 1) {
+      throw std::runtime_error("ERROR: norms.size()==0 indicates R->getNumVectors()==0.");
+    }
     if (IAmRoot) {
-      *fos << endl;
+      *fos << "2-Norm of 0th residual vec: " << norms[0] << endl;
     }
     Teuchos::TimeMonitor::summarize(*fos,true,false,false);
-    if (IAmRoot) {
-      *fos << endl;
-    }
 
     // print node details
     for (int i=0; i<comm->getSize(); ++i) {
@@ -208,12 +199,11 @@ int main(int argc, char*argv[])
   Teuchos::GlobalMPISession mpisess(&argc,&argv,&cout);
   RCP<const Comm<int> > comm = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
 
-  const int numImages = comm->getSize(),
-            myImageID = comm->getRank();
+  const int myImageID = comm->getRank();
   const bool IAmRoot = (myImageID == 0);
 
-  // Time timer("Total time for BelosTpetraHybridDriver test");
-  // timer.start();
+  Time timer("Total time for BelosTpetraHybridDriver test");
+  timer.start();
 
   // Get macine and test parameter files from command line
   string fnTestParams("");
@@ -241,10 +231,10 @@ int main(int argc, char*argv[])
   Tpetra::HybridPlatform platform(comm,plMachine);
   platform.runUserCode<runTest>();
 
-  // timer.stop();
-  // if (IAmRoot) {
-  //   cout << "proc 0 total program time: " << timer.totalElapsedTime() << endl;
-  // }
+  timer.stop();
+  if (IAmRoot) {
+    cout << "proc 0 total program time: " << timer.totalElapsedTime() << endl;
+  }
   
   return 0;
 }

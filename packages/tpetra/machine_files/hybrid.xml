@@ -1,9 +1,9 @@
 <ParameterList>
-  <ParameterList name="=0">
+  <ParameterList name="%2=0">
     <Parameter name="NodeType"      type="string" value="Kokkos::TPINode"/>
     <Parameter name="Num Threads"   type="int"    value="2"/>
   </ParameterList>
-  <ParameterList name="=1">
+  <ParameterList name="%2=1">
     <Parameter name="NodeType"      type="string" value="Kokkos::ThrustGPUNode"/>
     <Parameter name="Verbose"       type="int"    value="1"/>
     <Parameter name="Device Number" type="int"    value="0"/>
