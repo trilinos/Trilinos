@@ -301,24 +301,29 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::RythmosSolver<Scalar>::createOu
 
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
 
-  // Only one response supported
-  const int j = 0;
-  // Only one parameter supported
-  const int l = 0;
+  if (num_p > 0) {
+    // Only one parameter supported
+    const int l = 0;
 
-  // Solution sensitivity
-  outArgs.setSupports(
-      Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,
-      num_g,
-      l,
-      Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+    // Solution sensitivity
+    outArgs.setSupports(
+        Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,
+        num_g,
+        l,
+        Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
 
-  // Response sensitivity
-  outArgs.setSupports(
-      Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,
-      j,
-      l,
-      Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+    if (num_g > 0) {
+      // Only one response supported
+      const int j = 0;
+
+      // Response sensitivity
+      outArgs.setSupports(
+          Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,
+          j,
+          l,
+          Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+    }
+  }
 
   return outArgs;
 }
@@ -358,7 +363,9 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
 
     {
       Thyra::ModelEvaluatorBase::InArgs<Scalar> initCondInArgs = initialConditionModel->createInArgs();
-      initCondInArgs.set_p(l, inArgs.get_p(l));
+      if (num_p > 0) {
+        initCondInArgs.set_p(l, inArgs.get_p(l));
+      }
 
       Thyra::ModelEvaluatorBase::OutArgs<Scalar> initCondOutArgs = initialConditionModel->createOutArgs();
       initCondOutArgs.set_g(initCondOutArgs.Ng() - 1, initialState);
@@ -377,21 +384,25 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
   *out << "\nstate_ic:\n" << Teuchos::describe(state_ic, solnVerbLevel);
 
   RCP<Thyra::MultiVectorBase<Scalar> > dgxdp_out;
-  const Thyra::ModelEvaluatorBase::DerivativeSupport dgxdp_support =
-    outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, num_g, l);
-  if (dgxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
-    const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgxdp_deriv =
-      outArgs.get_DgDp(num_g, l);
-    dgxdp_out = dgxdp_deriv.getMultiVector();
-  }
-
   RCP<Thyra::MultiVectorBase<Scalar> > dgdp_out;
-  const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
-    outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
-  if (dgxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
-    const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv =
-      outArgs.get_DgDp(j, l);
-    dgdp_out = dgdp_deriv.getMultiVector();
+  if (num_p > 0) {
+    const Thyra::ModelEvaluatorBase::DerivativeSupport dgxdp_support =
+      outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, num_g, l);
+    if (dgxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+      const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgxdp_deriv =
+        outArgs.get_DgDp(num_g, l);
+      dgxdp_out = dgxdp_deriv.getMultiVector();
+    }
+
+    if (num_g > 0) {
+      const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
+        outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
+      if (dgxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+        const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv =
+          outArgs.get_DgDp(j, l);
+        dgdp_out = dgdp_deriv.getMultiVector();
+      }
+    }
   }
 
   const bool requestedSensitivities =
@@ -463,13 +474,9 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
     // Copy time, parameters etc.
     state_and_sens_ic.setArgs(state_ic);
     // Set initial condition for x_bar = [ x; s_bar ]
-    state_and_sens_ic.set_x(
-        stateAndSensModel->create_x_bar_vec(state_ic.get_x(),s_bar_init)
-        );
+    state_and_sens_ic.set_x(stateAndSensModel->create_x_bar_vec(state_ic.get_x(), s_bar_init));
     // Set initial condition for x_bar_dot = [ x_dot; s_bar_dot ]
-    state_and_sens_ic.set_x_dot(
-        stateAndSensModel->create_x_bar_vec(state_ic.get_x_dot(), s_bar_dot_init)
-        );
+    state_and_sens_ic.set_x_dot(stateAndSensModel->create_x_bar_vec(state_ic.get_x_dot(), s_bar_dot_init));
 
     stateAndSensStepper->setInitialCondition(state_and_sens_ic);
 
