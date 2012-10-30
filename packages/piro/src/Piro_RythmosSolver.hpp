@@ -86,6 +86,7 @@ public:
       const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
       const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &model,
       Scalar finalTime,
+      const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &initialConditionModel = Teuchos::null,
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
   //@}
 
@@ -123,6 +124,7 @@ private:
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > fwdTimeStepSolver;
 
   Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > model;
+  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > initialConditionModel;
 
   Scalar t_final;
 

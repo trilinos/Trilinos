@@ -40,8 +40,6 @@
 // ************************************************************************
 // @HEADER
 
-#include <cmath>
-
 #include "Piro_RythmosSolver.hpp"
 #include "Piro_ValidPiroParameters.hpp"
 
@@ -67,6 +65,9 @@
 #endif
 
 #include "Thyra_ScaledModelEvaluator.hpp"
+
+#include <iostream>
+#include <string>
 
 template <typename Scalar>
 Piro::RythmosSolver<Scalar>::RythmosSolver(
@@ -218,11 +219,13 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
     const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &underlyingModel,
     Scalar finalTime,
+    const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &icModel,
     Teuchos::EVerbosityLevel verbosityLevel) :
   fwdStateIntegrator(stateIntegrator),
   fwdStateStepper(stateStepper),
   fwdTimeStepSolver(timeStepSolver),
   model(underlyingModel),
+  initialConditionModel(icModel),
   num_p(model->createInArgs().Np()),
   num_g(model->createOutArgs().Ng()),
   t_final(finalTime),
@@ -399,13 +402,30 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
     // Set the initial condition for the state and forward sensitivities
     //
 
-    // The initial condition is assumed to be independent from the parameters
-    // Therefore, the initial condition for the sensitivity is zero
     const RCP< Thyra::VectorBase<Scalar> > s_bar_init =
       createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
-    assign(s_bar_init.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
     const RCP< Thyra::VectorBase<Scalar> > s_bar_dot_init =
       createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
+
+    if (Teuchos::is_null(initialConditionModel)) {
+      // The initial condition is assumed to be independent from the parameters
+      // Therefore, the initial condition for the sensitivity is zero
+      assign(s_bar_init.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+    } else {
+      // Use initialConditionModel to compute initial condition for sensitivity
+      Thyra::ModelEvaluatorBase::InArgs<Scalar> initCondInArgs = initialConditionModel->createInArgs();
+      initCondInArgs.set_p(l, inArgs.get_p(l));
+
+      Thyra::ModelEvaluatorBase::OutArgs<Scalar> initCondOutArgs = initialConditionModel->createOutArgs();
+      typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+      const RCP<DMVPV> s_bar_init_downcasted = Teuchos::rcp_dynamic_cast<DMVPV>(s_bar_init);
+      const Thyra::ModelEvaluatorBase::Derivative<Scalar> initCond_deriv(
+          s_bar_init_downcasted->getNonconstMultiVector(),
+          Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+      initCondOutArgs.set_DgDp(initCondOutArgs.Ng() - 1, l, initCond_deriv);
+
+      initialConditionModel->evalModel(initCondInArgs, initCondOutArgs);
+    }
     assign(s_bar_dot_init.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
 
     RCP<const Rythmos::StateAndForwardSensitivityModelEvaluator<Scalar> >
