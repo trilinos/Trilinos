@@ -47,14 +47,14 @@
       "A simple algorithm for maximal Poisson-disk sampling in high dimensions", 
 	  Computer Graphics Forum (Eurographics 2012), 31(2), May 2012.
    
-   input: a set of conforming simplices defining the bounaries of a (non-convex)
-          + a ditribution radius
+   input: a set of conforming simplices defining the boundaries of a (non-convex) domain
+          + a ditribution radius (greater than the smallest feature size)
    output: a maximal Poisson-disk sample
 
- * Random Number Generator was provided by George Marsaglia available at
+ * The Random Number Generator is provided by George Marsaglia available at
    http://www.velocityreviews.com/forums/t720512-re-rngs-a-double-kiss.html
 
- * Last modified: 10/15/2012
+ * Last modified: 10/29/2012
 ********************************************************************************/
 
 #include "MeshingGenie_mps_nd.h"
@@ -78,9 +78,15 @@ int MeshingGenie_mps_nd::solve_mps(size_t ndim, double r, size_t random_seed,
 	initiate_random_generator(random_seed);
 
 	generate_bg_grid();
+
 	create_generic_neighbor_list();
 
+	initiate_active_pool();
+
 	identify_active_boundary_cells();
+
+	identify_exterior_cells();
+
 	end_time = clock();
 
 	return 0;
@@ -327,6 +333,47 @@ void MeshingGenie_mps_nd::create_generic_neighbor_list()
 	#pragma endregion
 }
 
+void MeshingGenie_mps_nd::initiate_active_pool()
+{
+	#pragma region initiate Active pool with all cell in the background grid:
+	size_t* icell = new size_t[_ndim];
+	for (size_t idim = 0; idim< _ndim; idim++) icell[idim] = 0;
+
+	size_t k_dim(_ndim - 1);
+	while (true)
+	{
+		while (icell[k_dim] < _nc[k_dim])
+		{
+			size_t* jcell = new size_t[_ndim];
+			for (size_t idim = 0; idim< _ndim; idim++) jcell[idim] = icell[idim];
+			add_cell(jcell, _active_cells);
+			icell[k_dim]++;
+		}
+
+		size_t kk_dim(k_dim - 1);
+		bool done(false);
+		while (true)
+		{
+			icell[kk_dim]++;
+			if (icell[kk_dim] >= _nc[kk_dim])
+			{
+				icell[kk_dim] = 0;
+				if (kk_dim == 0)
+				{
+					done = true;
+					break;
+				}
+				kk_dim--;
+			}
+			else break;
+		}
+		if (done) break;
+		icell[k_dim] = 0;
+	}
+	delete [] icell;
+	#pragma endregion
+}
+
 void MeshingGenie_mps_nd::identify_active_boundary_cells()
 {
 	#pragma region Identifying Active Boundary Cells via Random Sampling of boundary faces:
@@ -419,62 +466,142 @@ void MeshingGenie_mps_nd::identify_active_boundary_cells()
 	#pragma endregion
 }
 
-bool MeshingGenie_mps_nd::identify_exterior_cells_at_level_zero()
-{
-	/*
-	// Assume that _r is smaller than feature size
-	size_t* icell = new size_t[_ndim];
-	for (size_t idim = 0; idim< _ndim; idim++) icell[idim] = 0;
-	add_cell(icell, _exterior_cells_level_zero);
 
+
+void MeshingGenie_mps_nd::identify_exterior_cells()
+{
+	#pragma region Identify Exterior Cells Assuming One Material only, may contain holes:
+	size_t num_face_neighbors(2 * _ndim);
+	
+	// Assume that _r is smaller than feature size, nonconvext domains with holes
+	if (fabs(_ss / _s - 1.0) < 1E-10)
+	{
+		// Level zero	
+		size_t* icell = new size_t[_ndim];
+		for (size_t idim = 0; idim< _ndim; idim++) icell[idim] = 0;
+		add_cell(icell, _exterior_cells);
+	}
+	else
+	{
+		
+	}
+
+	size_t num_active_cells(_active_cells.size());
 	size_t* jcell = new size_t[_ndim];
 	while (true)
 	{
-		// propagating exterior cells thorugh the domain until we hit a boundary cell
-		
-		// Loop over all cells in the domain
-		for (size_t idim = 0; idim < _ndim; idim++) icell[idim] = 0;
-		size_t k_dim(_ndim - 1);
+		#pragma region propagating exterior cells thorugh active cells until we hit a boundary cell:
+		bool done(true);
 
-		_num_neighbor_cells = 0;
-		while (true)
+		for (size_t iactive = 0; iactive < num_active_cells; iactive++)
 		{
-			#pragma region Count Neighbor Cells:
-			while (icell[k_dim] < _nc[k_dim])
+			if (!cell_in_vec(_active_cells[iactive], _exterior_cells)) continue;
+			
+			// _active_cells[iactive] is an exterior cell, try to propagate that to its face neighbors
+			for (size_t i_neighbor = 0; i_neighbor < num_face_neighbors; i_neighbor++)
 			{
-				// loop over neighbors and give them the same color
-				if (find_cell_binary(icell, _exterior_cells_level_zero)
+				bool valid_cell(true);
+				for (size_t idim = 0; idim < _ndim; idim++)
 				{
-					// icell is an exterior cell, loop over non-boundary neighbors and make them extrior as well
+					if ((int)_active_cells[iactive][idim] + _generic_neighbor_cells[i_neighbor][idim] < 0) {valid_cell = false; break;}
+					if ((int)_active_cells[iactive][idim] + _generic_neighbor_cells[i_neighbor][idim] >= (int)_nc[idim]) {valid_cell = false; break;}
 
+					jcell[idim] = _active_cells[iactive][idim] + _generic_neighbor_cells[i_neighbor][idim];
 				}
+				if (!valid_cell) continue;
 
-				icell[k_dim]++;
+				if (cell_in_vec(jcell, _active_boundary_cells)) continue;
+
+				if (cell_in_vec(jcell, _exterior_cells)) continue;
+
+				add_cell(jcell, _exterior_cells);
+				jcell = new size_t[_ndim];
+				done = false;
 			}
-			size_t kk_dim(k_dim - 1);
-			bool done(false);
-			while (true)
-			{
-				icell[kk_dim]++;
-				if (icell[kk_dim] > _nc[kk_dim])
-				{
-					icell[kk_dim] = 0;
-					if (kk_dim == 0)
-					{
-						done = true;
-						break;
-					}
-					kk_dim--;
-				}
-				else break;
-			}
-			if (done) break;
-			icell[k_dim] = 0;
-			#pragma endregion
 		}
-		
+		if (done) break;
+		#pragma endregion
 	}
-	*/
+
+	#pragma region Propagating Exterior cells to interior cells through active boundary cells:
+	size_t num_active_bcells(_active_boundary_cells.size());
+	for (size_t ibactive = 0; ibactive < num_active_bcells; ibactive++)
+	{
+		bool touching_exterior(false);
+		for (size_t i_neighbor = 0; i_neighbor < num_face_neighbors; i_neighbor++)
+		{
+			bool valid_cell(true);
+			for (size_t idim = 0; idim < _ndim; idim++)
+			{
+				if ((int)_active_boundary_cells[ibactive][idim] + _generic_neighbor_cells[i_neighbor][idim] < 0) {valid_cell = false; break;}
+				if ((int)_active_boundary_cells[ibactive][idim] + _generic_neighbor_cells[i_neighbor][idim] >= (int)_nc[idim]) {valid_cell = false; break;}
+
+				jcell[idim] = _active_boundary_cells[ibactive][idim] + _generic_neighbor_cells[i_neighbor][idim];
+			}
+			if (!valid_cell) continue;
+			if (cell_in_vec(jcell, _exterior_cells)) {touching_exterior = true; break;} // A boundary cell touching the exterior
+		}
+		if (touching_exterior)
+		{
+			for (size_t i_neighbor = 0; i_neighbor < num_face_neighbors; i_neighbor++)
+			{
+				bool valid_cell(true);
+				for (size_t idim = 0; idim < _ndim; idim++)
+				{
+					if ((int)_active_boundary_cells[ibactive][idim] + _generic_neighbor_cells[i_neighbor][idim] < 0) {valid_cell = false; break;}
+					if ((int)_active_boundary_cells[ibactive][idim] + _generic_neighbor_cells[i_neighbor][idim] >= (int)_nc[idim]) {valid_cell = false; break;}
+
+					jcell[idim] = _active_boundary_cells[ibactive][idim] + _generic_neighbor_cells[i_neighbor][idim];
+				}
+				if (!valid_cell) continue;
+				if (!cell_in_vec(jcell, _exterior_cells) && !cell_in_vec(jcell, _active_boundary_cells) && !cell_in_vec(jcell, _interior_cells))
+				{ 
+					// jcell is a non-classified active cell, classify it as an interior cell
+					add_cell(jcell, _interior_cells);
+					jcell = new size_t[_ndim];
+				}
+			}
+		}
+	}
+	#pragma endregion
+
+	while (true)
+	{
+		#pragma region propagating interior cells thorugh active cells until we hit a boundary cell:
+		bool done(true);
+
+		for (size_t iactive = 0; iactive < num_active_cells; iactive++)
+		{
+			if (!cell_in_vec(_active_cells[iactive], _interior_cells)) continue;
+			
+			// _active_cells[iactive] is an exterior cell, try to propagate that to its face neighbors
+			for (size_t i_neighbor = 0; i_neighbor < num_face_neighbors; i_neighbor++)
+			{
+				bool valid_cell(true);
+				for (size_t idim = 0; idim < _ndim; idim++)
+				{
+					if ((int)_active_cells[iactive][idim] + _generic_neighbor_cells[i_neighbor][idim] < 0) {valid_cell = false; break;}
+					if ((int)_active_cells[iactive][idim] + _generic_neighbor_cells[i_neighbor][idim] >= (int)_nc[idim]) {valid_cell = false; break;}
+
+					jcell[idim] = _active_cells[iactive][idim] + _generic_neighbor_cells[i_neighbor][idim];
+				}
+				if (!valid_cell) continue;
+
+				if (cell_in_vec(jcell, _active_boundary_cells)) continue;
+
+				if (cell_in_vec(jcell, _interior_cells)) continue;
+
+				add_cell(jcell, _interior_cells);
+				jcell = new size_t[_ndim];
+				done = false;
+			}
+		}
+		if (done) break;
+		#pragma endregion
+	}
+
+	delete[] jcell;
+	#pragma endregion
 }
 
 inline bool MeshingGenie_mps_nd::cell_in_vec(size_t* icell, std::vector<size_t*> &cell_vec)
@@ -499,7 +626,7 @@ inline bool MeshingGenie_mps_nd::boundary_cell_parent_is_covered(size_t* parent_
 
 inline bool MeshingGenie_mps_nd::add_cell(size_t* icell, std::vector<size_t*> &cell_vec)
 {
-	#pragma region Use binary search to add active_boundary_cell to cell_vec:
+	#pragma region Use binary search to add icell to cell_vec:
 	vec_range loc = check_location(icell, cell_vec);
 	if (loc == empty || loc == back)
 	{
@@ -520,7 +647,7 @@ inline bool MeshingGenie_mps_nd::add_cell(size_t* icell, std::vector<size_t*> &c
 		return false;
 	}
 
-	size_t index = find_cell_binary(icell, _active_boundary_cells);       
+	size_t index = find_cell_binary(icell, cell_vec);       
 
 	if (cells_equal(icell, cell_vec[index])) return false; // active_boundary_cell exists in _active_boundary_cells
 	

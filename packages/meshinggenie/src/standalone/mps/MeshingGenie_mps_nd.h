@@ -48,15 +48,16 @@
       "A simple algorithm for maximal Poisson-disk sampling in high dimensions", 
 	  Computer Graphics Forum (Eurographics 2012), 31(2), May 2012.
    
-   input: a set of conforming simplices defining the bounaries of a (non-convex)
-          + a ditribution radius
+   input: a set of conforming simplices defining the boundaries of a (non-convex) domain
+          + a ditribution radius (greater than the smallest feature size)
    output: a maximal Poisson-disk sample
 
- * Random Number Generator was provided by George Marsaglia available at
+ * The Random Number Generator is provided by George Marsaglia available at
    http://www.velocityreviews.com/forums/t720512-re-rngs-a-double-kiss.html
 
- * Last modified: 10/15/2012
+ * Last modified: 10/29/2012
 ********************************************************************************/
+
 
 #ifndef MESHING_GENIE_mps_nd_H
 #define MESHING_GENIE_mps_nd_H
@@ -98,9 +99,9 @@ class MeshingGenie_mps_nd
 		
 
 		// Identifying Active Boundary Cells via Random Sampling of boundary faces
+		void initiate_active_pool();
 		void identify_active_boundary_cells();
-
-		bool identify_exterior_cells_at_level_zero();
+		void identify_exterior_cells();
 
 		// use binary search to check if icell exists in cell_vec
 		inline bool cell_in_vec(size_t* icell, std::vector<size_t*> &cell_vec);
@@ -163,11 +164,14 @@ class MeshingGenie_mps_nd
 		size_t _num_neighbor_cells;                // number of neighbor cells
 		int**  _generic_neighbor_cells;            // list of generic neigbor cells
 
-		std::vector< size_t* > _active_cells;            // Active Cells
 		
-		std::vector< size_t* > _exterior_cells_level_zero;            // cells that lie out side the domain
+		std::vector< size_t* > _active_cells;               // active Cells
+		std::vector< size_t* > _active_boundary_cells;      // active boundary cells
+		std::vector< size_t* > _exterior_cells;             // active cells that lie outside the domain
+		std::vector< size_t* > _interior_cells;             // active cells that lie inside the domain
+		
 
-		std::vector< size_t* > _active_boundary_cells;      // Active boundary cells
+
 		std::vector< size_t* > _covered_boundary_cells;     // Boundary Cells that are already covered
 };
                                 

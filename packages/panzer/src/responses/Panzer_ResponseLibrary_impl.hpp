@@ -649,6 +649,19 @@ buildResponseEvaluators(
 template <typename TraitsT>
 template <typename EvalT> 
 void ResponseLibrary<TraitsT>::
+addResponsesToInArgs(panzer::AssemblyEngineInArgs & input_args) const
+{
+   std::vector<Teuchos::RCP<ResponseBase> > responses;
+   this->getResponses<EvalT>(responses);
+
+   // add all responses to input args  
+   for(std::size_t i=0;i<responses.size();i++)
+     input_args.addGlobalEvaluationData(responses[i]->getLookupName(),responses[i]);
+}
+
+template <typename TraitsT>
+template <typename EvalT> 
+void ResponseLibrary<TraitsT>::
 evaluate(const panzer::AssemblyEngineInArgs& input_args)
 {
    ae_tm2_.template getAsObject<EvalT>()->evaluate(input_args);
