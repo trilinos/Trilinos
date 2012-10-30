@@ -414,24 +414,6 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
     if (Teuchos::VERB_MEDIUM <= solnVerbLevel) {
       std::cout << "Final Solution\n" << *finalSolution << std::endl;
     }
-
-    // As post-processing step, calculate responses at final solution
-    Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = model->createInArgs();
-    {
-      modelInArgs.set_x(finalSolution);
-      if (num_p > 0) {
-        modelInArgs.set_p(l, p_in);
-      }
-    }
-
-    Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
-    if (Teuchos::nonnull(g_out)) {
-      Thyra::put_scalar(Teuchos::ScalarTraits<Scalar>::zero(), g_out.ptr());
-      modelOutArgs.set_g(j, g_out);
-    }
-
-    model->evalModel(modelInArgs, modelOutArgs);
-
   } else { // Computing sensitivities
     //
     *out << "\nE) Solve the forward problem with Sensitivities...\n";
@@ -585,6 +567,25 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
   }
 
   *out << "\nF) Check the solution to the forward problem ...\n";
+
+  // As post-processing step, calculate responses at final solution
+  {
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = model->createInArgs();
+    {
+      modelInArgs.set_x(finalSolution);
+      if (num_p > 0) {
+        modelInArgs.set_p(l, p_in);
+      }
+    }
+
+    Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
+    if (Teuchos::nonnull(g_out)) {
+      Thyra::put_scalar(Teuchos::ScalarTraits<Scalar>::zero(), g_out.ptr());
+      modelOutArgs.set_g(j, g_out);
+    }
+
+    model->evalModel(modelInArgs, modelOutArgs);
+  }
 
   // Return the final solution as an additional g-vector, if requested
   if (Teuchos::nonnull(gx_out)) {
