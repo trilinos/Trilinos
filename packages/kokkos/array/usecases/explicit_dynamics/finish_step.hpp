@@ -82,7 +82,7 @@ struct finish_step<Scalar ,KOKKOSARRAY_MACRO_DEVICE>{
       }
 
 
-    KOKKOSARRAY_MACRO_DEVICE_FUNCTION
+    KOKKOSARRAY_INLINE_FUNCTION
     void operator()(int inode) const {
 
       // Getting count as per 'CSR-like' data structure

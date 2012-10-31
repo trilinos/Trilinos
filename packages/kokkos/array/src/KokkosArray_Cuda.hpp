@@ -48,16 +48,8 @@
 
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_Layout.hpp>
-
-/*--------------------------------------------------------------------------*/
-
-namespace KokkosArray {
-namespace Impl {
-
-class CudaMemorySpace ;
-
-} // namespace Impl
-} // namespace KokkosArray
+#include <KokkosArray_CudaSpace.hpp>
+#include <KokkosArray_MemoryManagement.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -70,21 +62,15 @@ public:
   //! \name Type declarations that all KokkosArray devices must provide.
   //@{
 
-  typedef Cuda          type ;
-  typedef Cuda          layout_type ;
-  typedef Cuda          device_type ;
-  typedef unsigned int  size_type ;
-
-  typedef Impl::CudaMemorySpace  memory_space ;
-  typedef LayoutLeft             array_layout ;
+  typedef Cuda                  type ;
+  typedef Cuda                  layout_type ;
+  typedef Cuda                  device_type ;
+  typedef CudaSpace             memory_space ;
+  typedef CudaSpace::size_type  size_type ;
+  typedef MemoryManaged         memory_management ;
+  typedef LayoutLeft            array_layout ;
 
   //--------------------------------------------------------------------------
-
-  struct SelectDevice {
-    int cuda_device_id ;
-    SelectDevice() : cuda_device_id(0) {}
-    explicit SelectDevice( int id ) : cuda_device_id( id ) {}
-  };
 
   //@}
   //! \name Functions that all KokkosArray devices must implement.
@@ -125,6 +111,12 @@ public:
   //! \name Device-specific functions
   //@{
 
+  struct SelectDevice {
+    int cuda_device_id ;
+    SelectDevice() : cuda_device_id(0) {}
+    explicit SelectDevice( int id ) : cuda_device_id( id ) {}
+  };
+
   //! Initialize, telling the CUDA run-time library which device to use.
   static void initialize( const SelectDevice = SelectDevice() );
 
@@ -146,7 +138,14 @@ struct CudaWorkConfig {
   Cuda::size_type  block[3] ;  //< Block dimensions
   Cuda::size_type  shared ;    //< Shared memory size
 
-  CudaWorkConfig();
+  CudaWorkConfig()
+  {
+    enum { WarpSize = 32 };
+    grid[0] = grid[1] = grid[2] = 1 ;
+    block[1] = block[2] = 1 ;
+    block[0] = 8 * WarpSize ;
+    shared = 0 ;
+  }
 };
 
 template< class FunctorType >
@@ -174,9 +173,7 @@ parallel_reduce( const CudaWorkConfig & work_config ,
 
 /*--------------------------------------------------------------------------*/
 
-#include <Cuda/KokkosArray_Cuda_MemorySpace.hpp>
 #include <Cuda/KokkosArray_Cuda_View.hpp>
-
 #include <Cuda/KokkosArray_Cuda_Parallel.hpp>
 #include <Cuda/KokkosArray_Cuda_ParallelFor.hpp>
 #include <Cuda/KokkosArray_Cuda_ParallelReduce.hpp>

@@ -1,0 +1,57 @@
+Mark Hoemmen (22 Oct 2012):
+
+Note on this README file
+========================
+
+I (Mark Hoemmen) did not create this directory.  I am writing this
+README file in hope of documenting its purpose with the information I
+have at hand.  I learned about this directory from Matt Bettencourt,
+who explained its purpose to me.  He did not create this directory,
+but he has some experience using it.  Thus, my knowledge is third
+hand, but some documentation is better than none.
+
+Documentation
+=============
+
+The Sierra build system doesn't know how to find the header files in a
+Trilinos install directory.  The current workaround is for all the
+Trilinos header files that Sierra needs to be copied and checked into
+the config_headers directory here.  The Sierra repository has a Python
+script that is supposed to automate the copying process.  Their script
+lives here:
+
+/sierra/Dev/stana_scripts/link-trilinos-headers.py
+
+Matt Bettencourt says you're supposed to run the script like this.
+The dollar sign ($) represents the command-line prompt; don't type it.
+The backslashes (\) represent line continuation characters; you only
+need to type them if you want to break the single long command across
+multiple lines.
+
+$ /sierra/Dev/stana_scripts/link-trilinos-headers.py \
+--trilinos-src-base-dir=Trilinos \
+--headers-list-file=Trilinos/SIERRA/bjam/trilinos_link_headers.txt \
+--flat-header-output-dir=Trilinos_flat_headers
+
+The trilinos_link_headers.txt file in this directory tells the script
+which header files to copy out of the Trilinos source repository.  As
+far as I can tell, each line of the trilinos_link_headers.txt file
+(except for the first line) represents a Trilinos package.  Following
+the package name is a list of file patterns to copy.
+
+Commentary
+==========
+
+What I wrote above is strictly informational.  What follows below is
+commentary.
+
+There are a few problems with this system:
+
+1. The script for copying over the files is not accessible to Trilinos
+   developers (it lives in the Sierra repository, not in the Trilinos
+   repository), so they cannot run it in order to update the header
+   files.
+2. This means the header files in config_headers could be out of date.
+3. Most Trilinos developers don't know about this system, so if a
+   Trilinos package's directory structure changes, the system may
+   break.

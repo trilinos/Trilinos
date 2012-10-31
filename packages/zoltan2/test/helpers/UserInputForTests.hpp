@@ -259,8 +259,8 @@ UserInputForTests::UserInputForTests(string path, string testData,
 #endif
 {
   bool zoltan1 = false;
-  string::size_type loc = path.find("/data/");  // Zoltan2 data
-  if (loc == string::npos)
+  string::size_type loc = path.find("/zoltan/test/");  // Zoltan1 data
+  if (loc != string::npos)
     zoltan1 = true;
 
   if (zoltan1)
@@ -498,7 +498,6 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
 {
   std::ostringstream fname;
   fname << path << "/" << testData << ".mtx";
-
   RCP<Kokkos::DefaultNode::DefaultNodeType> dnode 
     = Kokkos::DefaultNode::getDefaultNode();
 

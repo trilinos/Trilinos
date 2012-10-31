@@ -38,7 +38,7 @@ void test_inner_product_legengre_polynomial()
   const double tolerance = 1e-14 ;
 
   KokkosArray::GaussLegendre<P*2> rule ;
-  KokkosArray::NormalizedLegendrePolynomialBases<P,Device> poly ;
+  KokkosArray::NormalizedLegendrePolynomialBases<P> poly ;
 
   double values[P+1];
   double result[P+1][P+1];
@@ -86,7 +86,7 @@ void test_triple_product_legendre_polynomial()
   const double tolerance = 1e-14 ;
 
   KokkosArray::GaussLegendre<P*3+1> rule ;
-  KokkosArray::NormalizedLegendrePolynomialBases<P,Device> poly ;
+  KokkosArray::NormalizedLegendrePolynomialBases<P> poly ;
 
   double values[P+1];
   double result[P+1][P+1][P+1];
@@ -131,7 +131,7 @@ void test_triple_product_legendre_polynomial()
 template< class Device , template< unsigned , typename , class > class TensorType >
 void test_product_tensor( const std::vector<int> & var_degree )
 {
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<4,Device> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<4> polynomial ;
   typedef KokkosArray::StochasticProductTensor< double , polynomial , Device , TensorType > tensor_type ;
 
   tensor_type tensor = KokkosArray::create_product_tensor< tensor_type >( var_degree );
@@ -155,7 +155,7 @@ test_product_tensor_matrix(
                              KokkosArray::LayoutLeft ,
                              Device > block_vector_type ;
 
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<4,Device> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<4> polynomial ;
 
   typedef KokkosArray::StochasticProductTensor< value_type , polynomial , Device , TensorType > tensor_type ;
 
@@ -254,7 +254,7 @@ test_product_tensor_diagonal_matrix(
                              KokkosArray::LayoutLeft ,
                              Device > block_vector_type ;
 
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<4,KokkosArray::Host> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<4> polynomial ;
   typedef KokkosArray::StochasticProductTensor< value_type , polynomial , KokkosArray::Host , KokkosArray::SparseProductTensor > tensor_type ;
 
   //------------------------------
@@ -375,7 +375,7 @@ test_product_flat_commuted_matrix(
   typedef ScalarType value_type ;
   typedef KokkosArray::View< value_type[] , Device > vector_type ;
 
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<4,KokkosArray::Host> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<4> polynomial ;
 
   typedef KokkosArray::StochasticProductTensor<
      value_type , polynomial ,
@@ -535,7 +535,7 @@ test_product_flat_original_matrix(
   typedef ScalarType value_type ;
   typedef KokkosArray::View< value_type[] , Device > vector_type ;
 
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<4,KokkosArray::Host> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<4> polynomial ;
 
   typedef KokkosArray::StochasticProductTensor<
     value_type , polynomial ,
@@ -936,7 +936,7 @@ void performance_test_driver_all( const int pdeg ,
 				  const int nIter ,
 				  const bool print )
 {
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<8,Device> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
   typedef KokkosArray::StochasticProductTensor< double , polynomial , Device , KokkosArray::SparseProductTensor > tensor_type ;
 
   std::cout.precision(8);
@@ -1089,8 +1089,8 @@ void performance_test_driver()
   nGrid = 5 ;
   nIter = 10 ; 
   print = false ;
-  performance_test_driver_all<Device>( 3 , 1 , 12 , nGrid , nIter , print );
-  performance_test_driver_all<Device>( 5 , 1 ,  6 , nGrid , nIter , print );
+  performance_test_driver_all<Device>( 3 , 1 ,  9 , nGrid , nIter , print );
+  performance_test_driver_all<Device>( 5 , 1 ,  5 , nGrid , nIter , print );
 
 #ifdef HAVE_KOKKOSARRAY_STOKHOS
   // Just polynomial methods compared against original

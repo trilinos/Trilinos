@@ -55,7 +55,7 @@ TRIBITS_ADD_LIBRARY(
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/include/stk_mesh/base/)
+    ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/stk_mesh/base/)
 
 INSTALL(FILES ${HEADERS_IMPL} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/include/stk_mesh/baseImpl/)
+    ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/stk_mesh/baseImpl/)

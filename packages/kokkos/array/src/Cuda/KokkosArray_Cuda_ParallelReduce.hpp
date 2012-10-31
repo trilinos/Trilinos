@@ -50,10 +50,10 @@
 #include <iostream>
 
 #include <vector>
-#include <stdexcept>
 
 #include <KokkosArray_ParallelReduce.hpp>
 #include <Cuda/KokkosArray_Cuda_Parallel.hpp>
+#include <impl/KokkosArray_Error.hpp>
 
 namespace KokkosArray {
 namespace Impl {
@@ -80,8 +80,8 @@ struct CudaReduceShared_AnalyzeSize
   enum { ValueSize         = sizeof(ValueType) };
   enum { WarpSize          = Impl::CudaTraits::WarpSize };
   enum { WarpStride        = WarpSize + 1 };
-  enum { SharedMemoryBanks = Impl::CudaTraits::SharedMemoryBanks_13 };
-  enum { SharedMemorySize  = 0x04000 /* assume only 16k on Capability 1.3 */ }; 
+  enum { SharedMemoryBanks = Impl::CudaTraits::SharedMemoryBanks };
+  enum { SharedMemorySize  = Impl::CudaTraits::SharedMemoryCapacity };
   enum { SharedMemoryWords = SharedMemorySize / WordSize };
 
   enum { ValueWordCount = ( ValueSize + WordSize - 1 ) / WordSize };
@@ -526,7 +526,7 @@ struct CudaReduceShared<ValueOper,FinalizeType, 0 /* Cannot determine size */ >
   enum { HalfWarpSize      = Impl::CudaTraits::WarpSize >> 1 };
   enum { WarpIndexMask     = Impl::CudaTraits::WarpIndexMask };
   enum { WarpIndexShift    = Impl::CudaTraits::WarpIndexShift };
-  enum { SharedMemoryBanks = Impl::CudaTraits::SharedMemoryBanks_13 };
+  enum { SharedMemoryBanks = Impl::CudaTraits::SharedMemoryBanks };
 
   typedef Cuda::size_type size_type ;
 
@@ -649,10 +649,12 @@ public:
 
 #if 0
 std::cout
-  << "CudaReduceShared( warp_count " << warp_count
+  << "CudaReduceShared("
   << " , block_begin " << block_begin
   << " , block_count " << block_count
   << " )"
+  << std::endl
+  << "m_warp_count " << m_warp_count
   << std::endl
   << "  groups[ 0 .. " << m_group_init_use - 1
   << " ) <= blocks[ 0 .. " << m_group_init_full_end << " ) full reduction group"
@@ -667,6 +669,7 @@ std::cout
   << " ) <= blocks[ " << m_group_init_use_end
   << " .. " << m_block_count << " ) skip one reduction cycle"
   << std::endl ;
+std::cout.flush();
 #endif
 
   }
@@ -958,6 +961,8 @@ public:
     const size_type nt =
       Impl::CudaTraits::WarpSize * ReduceType::warp_count_max( f );
 
+    if ( 0 == nt ) return 0 ;
+
     // One level:
     return std::min( nt , size_type( ( work_count + nt - 1 ) / nt ) );
 
@@ -989,13 +994,15 @@ public:
     , m_reduce_shared( finalize , 0 , block_count(finalize,work_count) )
     , m_work_count(    work_count )
   {
-    const size_type nw = ReduceType::warp_count_max( finalize );
+    if ( m_work_count ) {
+      const size_type nw = ReduceType::warp_count_max( finalize );
 
-    const dim3 block( Impl::CudaTraits::WarpSize * nw , 1, 1 );
-    const dim3 grid( block_count(finalize,work_count) , 1 , 1 );
-    const size_type shmem_size = m_reduce_shared.shmem_size();
+      const dim3 block( Impl::CudaTraits::WarpSize * nw , 1, 1 );
+      const dim3 grid( block_count(finalize,work_count) , 1 , 1 );
+      const size_type shmem_size = m_reduce_shared.shmem_size();
 
-    CudaParallelLaunch< ParallelReduce >( *this , grid , block , shmem_size );
+      CudaParallelLaunch< ParallelReduce >( *this , grid , block , shmem_size );
+    }
   }
 
   //--------------------------------------------------------------------------
@@ -1022,17 +1029,18 @@ public:
 /* Reduction into a view on the host */
 
 template< class FunctorType , class ValueOper ,
-          class ValueType , class LayoutType >
+          class ValueType , class LayoutType ,
+          class ManagedType >
 class ParallelReduce< FunctorType ,
                       ValueOper , 
-                      View< ValueType , LayoutType , Host > ,
+                      View< ValueType , LayoutType , Host , ManagedType > ,
                       Cuda >
 {
 public:
 
   typedef typename FunctorType::value_type value_type ;
 
-  typedef View< ValueType , LayoutType , Host > host_view_type ;
+  typedef View< ValueType , LayoutType , Host , ManagedType > host_view_type ;
 
   ParallelReduce( const Cuda::size_type  work_count ,
                   const FunctorType    & functor ,
@@ -1052,7 +1060,7 @@ public:
           << functor.value_count
           << ") != view.dimension_0("
           << host_view.dimension_0() << ")" ;
-      throw std::runtime_error(msg.str());
+      KokkosArray::Impl::throw_runtime_exception( msg.str() );
     }
 
     typedef Impl::ParallelReduceFunctorValue< value_type , Cuda >
@@ -1094,8 +1102,7 @@ struct CudaReduceResult {
     }
     else {
       ptr = (T*) cuda_internal_scratch_space( sizeof(T) * count );
-      CudaMemorySpace
-        ::copy_to_host_from_device( host_pointer , ptr , sizeof(T) * count );
+      DeepCopy<HostSpace,CudaSpace>( host_pointer , ptr , sizeof(T) * count );
     }
   }
 
@@ -1110,7 +1117,7 @@ struct CudaReduceResult {
     else {
       ptr = (T*) cuda_internal_scratch_space( sizeof(T) );
       T value ;
-      CudaMemorySpace::copy_to_host_from_device( & value , ptr , sizeof(T) );
+      DeepCopy<HostSpace,CudaSpace>( & value , ptr , sizeof(T) );
       return value ;
     }
   }
@@ -1125,7 +1132,7 @@ public:
 
   typedef ValueType value_type ;
 
-  __device__
+  __device__ __host__
   inline
   void operator()( const value_type & value ) const
     { *m_dev = value ; }
@@ -1149,7 +1156,7 @@ public:
   typedef MemberType     value_type[] ;
   const Cuda::size_type  value_count ;
 
-  __device__
+  __device__ __host__
   inline
   void operator()( const MemberType input[] ) const
     {
@@ -1331,12 +1338,14 @@ public:
     for ( m = m_member_functors.begin() ; m != m_member_functors.end() ; ++m ) {
       MemberType & member = **m ;
 
-      const size_type n = block_count( warp_count , (*m)->m_work_count );
+      if ( (*m)->m_work_count ) {
+        const size_type n = block_count( warp_count , (*m)->m_work_count );
 
-      member.apply( m_finalize , thread_count , n ,
-                    global_block_offset , global_block_count );
+        member.apply( m_finalize , thread_count , n ,
+                      global_block_offset , global_block_count );
 
-      global_block_offset += n ;
+        global_block_offset += n ;
+      }
     }
   }
 };

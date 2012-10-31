@@ -57,4 +57,20 @@ namespace Teuchos {
       return std::string (rawErrString);
     }
   }
+
+  namespace details {
+    void safeCommFree (MPI_Comm* comm) {
+      int finalized = 0;
+      const int err = MPI_Finalized (&finalized);
+      // Just to be safe, don't do anything if calling MPI_Finalized
+      // didn't succeed.  It's better to leak memory than to crash.
+      if (err == MPI_SUCCESS && ! finalized) {
+	// Don't throw an exception if MPI_Comm_free reports an error,
+	// since we're likely to be in a destructor and destructors
+	// shouldn't throw exceptions.
+	(void) MPI_Comm_free (comm);
+      }
+    }
+  } // namespace details
+
 } // namespace Teuchos

@@ -64,7 +64,7 @@ public:
     ScalarType value[3] ;
   };
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type & dst )
   {
     dst.value[0] = 0 ;
@@ -72,7 +72,7 @@ public:
     dst.value[2] = 0 ;
   }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & dst ,
                     const volatile value_type & src )
   {
@@ -108,7 +108,7 @@ public:
     , work_begin( rhs.work_begin )
     {}
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( size_type iwork , value_type & dst ) const
   {
     const size_type ival = iwork + work_begin ;

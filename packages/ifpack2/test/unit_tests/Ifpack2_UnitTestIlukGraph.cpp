@@ -81,8 +81,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
                 iluk0_graph.getU_Graph()->getGlobalNumEntries() +
                 iluk0_graph.getNumGlobalDiagonals();
 
-  size_t nnz_input = crsgraph->getGlobalNumEntries();
-
   fill_levels = 2;
 
   Ifpack2::IlukGraph<int,int> iluk2_graph(crsgraph, fill_levels, overlap_levels);

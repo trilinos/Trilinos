@@ -42,14 +42,10 @@
 #ifndef KOKKOS_TPINODE_HPP_
 #define KOKKOS_TPINODE_HPP_
 
+#include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_StandardNodeMemoryModel.hpp"
 #include "Kokkos_NodeHelpers.hpp"
 #include <TPI.h>
-
-namespace Teuchos {
-  // forward declarations
-  class ParameterList;
-}
 
 namespace Kokkos {
 
@@ -141,7 +137,10 @@ namespace Kokkos {
           \param "Verbose"     [int] Non-zero parameter specifies that the constructor is verbose, printing information about the number of threads. Default: 0.
           
        */
-      TPINode(Teuchos::ParameterList &plist);
+      TPINode(ParameterList &plist);
+
+      /*! \brief Get default parameters for this node */
+      static ParameterList getDefaultParameters();
 
       /*! \brief Thread initialization method.
           If \c numThreads is greater than zero, this calls TPI_Init(). If the threads have already been initialized by this node, it first calls TPI_Finalize().

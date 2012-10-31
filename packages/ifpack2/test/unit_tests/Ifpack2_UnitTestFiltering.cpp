@@ -31,10 +31,6 @@
 #include <Ifpack2_Version.hpp>
 #include <iostream>
 
-#ifdef HAVE_IFPACK2_QD
-#include <qd/dd_real.h>
-#endif
-
 #include <Ifpack2_UnitTestHelpers.hpp>
 #ifdef HAVE_MPI
 #include <Teuchos_DefaultMpiComm.hpp>

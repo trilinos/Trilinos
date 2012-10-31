@@ -46,16 +46,8 @@
 
 #include <cstddef>
 #include <KokkosArray_Layout.hpp>
-
-/*--------------------------------------------------------------------------*/
-
-namespace KokkosArray {
-namespace Impl {
-
-class HostMemorySpace ;
-
-} // namespace Impl
-} // namespace KokkosArray
+#include <KokkosArray_HostSpace.hpp>
+#include <KokkosArray_MemoryManagement.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -68,13 +60,13 @@ public:
   //! \name Type declarations that all KokkosArray devices must provide.
   //@{
 
-  typedef Host    type ;
-  typedef Host    device_type ;
-  typedef Host    layout_type ;
-  typedef size_t  size_type ;
-
-  typedef Impl::HostMemorySpace  memory_space ;
-  typedef LayoutRight            array_layout ;
+  typedef Host                  type ;
+  typedef Host                  device_type ;
+  typedef Host                  layout_type ;
+  typedef HostSpace::size_type  size_type ;
+  typedef HostSpace             memory_space ;
+  typedef LayoutRight           array_layout ;
+  typedef MemoryManaged         memory_management ;
 
   //@}
   //! \name Functions that all KokkosArray devices must implement.
@@ -162,7 +154,6 @@ public:
 
 } // namespace KokkosArray
 
-#include <Host/KokkosArray_Host_MemorySpace.hpp>
 #include <Host/KokkosArray_Host_View.hpp>
 
 #include <Host/KokkosArray_Host_Parallel.hpp>

@@ -22,7 +22,7 @@ case ${ARG} in
 #----------- OPTIONS -----------
 OPT | opt | O3 | -O3 ) OPTFLAGS="${OPTFLAGS} -O3" ;;
 #-------------------------------
-DBG | dbg | g | -g )   OPTFLAGS="${OPTFLAGS} -g -DKOKKOSARRAY_BOUNDS_CHECK" ;;
+DBG | dbg | g | -g )   OPTFLAGS="${OPTFLAGS} -g -DKOKKOSARRAY_EXPRESSION_CHECK" ;;
 #-------------------------------
 HWLOC | hwloc ) HAVE_HWLOC=${1} ; shift 1 ;;
 #-------------------------------
@@ -49,6 +49,8 @@ GNU | gnu | g++ )
   # The Trilinos build system requires '-pedantic'
   # 
   CXX="g++ -Wall -Wextra -ansi -pedantic"
+  CXX="${CXX} -rdynamic -DENABLE_TRACEBACK"
+  LIB="${LIB} -ldl"
   ;;
 #-------------------------------
 INTEL | intel | icc )
@@ -89,7 +91,7 @@ INC_PATH="${INC_PATH} -I${KOKKOSARRAY}/src"
 
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_Host_Impl.cpp"
-CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_Host_MemorySpace.cpp"
+CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_HostSpace.cpp"
 
 #-----------------------------------------------------------------------------
 

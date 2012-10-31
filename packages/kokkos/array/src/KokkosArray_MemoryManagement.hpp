@@ -43,16 +43,25 @@
 //@HEADER
 */
 
-#ifndef KOKKOSARRAY_MEMORY_MANAGEMENT_HPP
-#define KOKKOSARRAY_MEMORY_MANAGEMENT_HPP
+#ifndef KOKKOSARRAY_MEMORYMANAGEMENT_HPP
+#define KOKKOSARRAY_MEMORYMANAGEMENT_HPP
 
 namespace KokkosArray {
 
+struct MemoryManaged   { typedef MemoryManaged    memory_management ; };
+struct MemoryUnmanaged { typedef MemoryUnmanaged  memory_management ; };
+
+} // namespace Kokkos
+
+
+
+
+
+namespace KokkosArray {
+
+
 struct Host;
 struct Cuda;
-
-struct MemoryManaged{};
-struct MemoryUnmanaged{};
 
 template <typename Device>
 struct DefaultMemoryManagement;
@@ -65,5 +74,5 @@ template <> struct DefaultMemoryManagement<Cuda>
 
 } /* namespace KokkosArray */
 
-#endif /* #ifndef KOKKOSARRAY_MEMORY_MANAGEMENT_HPP */
+#endif /* #ifndef KOKKOSARRAY_MEMORYMANAGEMENT_HPP */
 

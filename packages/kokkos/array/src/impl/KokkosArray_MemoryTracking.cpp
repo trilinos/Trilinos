@@ -42,11 +42,10 @@
 */
 
 #include <iostream>
-
 #include <sstream>
-#include <stdexcept>
 #include <algorithm>
 
+#include <impl/KokkosArray_Error.hpp>
 #include <impl/KokkosArray_MemoryTracking.hpp>
 
 namespace KokkosArray {
@@ -86,6 +85,21 @@ void MemoryTracking::Info::print( std::ostream & s ) const
     << "label(" << label << ") }" ;
 }
 
+MemoryTracking::MemoryTracking() {}
+
+MemoryTracking::MemoryTracking( const std::string & space )
+  : m_space( space ), m_tracking() {}
+
+MemoryTracking::~MemoryTracking()
+{
+  try {
+    if ( ! m_tracking.empty() ) {
+      std::cerr << m_space << " destroyed with memory leaks:" << std::endl ;
+      print( std::cerr , std::string("  ") );
+    }
+  } catch( ... ) {}
+}
+
 void MemoryTracking::track(
   const void           * ptr ,
   const std::type_info * type ,
@@ -108,7 +122,7 @@ void MemoryTracking::track(
         << "label(" << label << ") )"
         << " ERROR, already exists as " ;
     i->print( msg );
-    throw std::runtime_error( msg.str() );
+    throw_runtime_exception( msg.str() );
   }
 
   Info info ;
@@ -136,7 +150,7 @@ void MemoryTracking::increment( const void * ptr )
     msg << "MemoryTracking(" << (void *) this
         << ")::increment( "
         << "ptr(" << ptr << ") ) ERROR, not being tracked" ;
-    throw std::runtime_error(msg.str());
+    throw_runtime_exception( msg.str() );
   }
 
   ++( i->count );
@@ -154,7 +168,7 @@ void * MemoryTracking::decrement( const void * ptr )
     msg << "MemoryTracking(" << (void *) this
         << ")::decrement( "
         << "ptr(" << ptr << ") ) ERROR, not being tracked" ;
-    throw std::runtime_error(msg.str());
+    throw_runtime_exception( msg.str() );
   }
 
   --( i->count );

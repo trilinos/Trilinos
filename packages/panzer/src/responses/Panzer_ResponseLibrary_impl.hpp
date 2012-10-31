@@ -45,6 +45,7 @@
 
 #include "Panzer_ResponseContainer.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
+#include "Panzer_ResponseFactory_BCStrategyAdapter.hpp"
 
 #include <boost/unordered_set.hpp>
 
@@ -52,7 +53,7 @@ namespace panzer {
 
 template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary()
-   : responseEvaluatorsBuilt_(false)
+   : nextBC_id(0), responseEvaluatorsBuilt_(false)
 {
    // build dynamic dispatch objects
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
@@ -64,7 +65,7 @@ template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
                                           const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi,
                                           const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
-   : respAggManager_(ugi,lof), wkstContainer_(wc), globalIndexer_(ugi), linObjFactory_(lof), responseEvaluatorsBuilt_(false)
+   : respAggManager_(ugi,lof), wkstContainer_(wc), globalIndexer_(ugi), linObjFactory_(lof), nextBC_id(0), responseEvaluatorsBuilt_(false)
 {
    // build dynamic dispatch objects
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
@@ -75,7 +76,7 @@ ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> &
 template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary(const ResponseLibrary<TraitsT> & rl)
    : respAggManager_(rl.globalIndexer_,rl.linObjFactory_), wkstContainer_(rl.wkstContainer_)
-   , globalIndexer_(rl.globalIndexer_), linObjFactory_(rl.linObjFactory_), responseEvaluatorsBuilt_(false)
+   , globalIndexer_(rl.globalIndexer_), linObjFactory_(rl.linObjFactory_), nextBC_id(0), responseEvaluatorsBuilt_(false)
 {
    // build dynamic dispatch objects
    dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
@@ -465,6 +466,46 @@ addResponse(const std::string responseName,
 }
 
 template <typename TraitsT>
+template <typename ResponseEvaluatorFactory_BuilderT>
+void ResponseLibrary<TraitsT>::
+addResponse(const std::string responseName,
+            const std::vector<std::pair<std::string,std::string> > & sideset_blocks,
+            const ResponseEvaluatorFactory_BuilderT & builder) 
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+
+   // build response factory objects for each evaluation type
+   RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > modelFact_tm
+        = rcp(new ResponseEvaluatorFactory_TemplateManager<TraitsT>);
+   modelFact_tm->buildObjects(builder);
+
+   // build a response object for each evaluation type
+   ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName);
+   responseObjects_[responseName].buildObjects(respData_builder);
+
+   // associate response objects with all element blocks required
+   for(std::size_t i=0;i<sideset_blocks.size();i++) {
+     std::string sideset = sideset_blocks[i].first;
+     std::string blockId = sideset_blocks[i].second;
+
+     BC bc(nextBC_id,BCT_Neumann,sideset,blockId,"Whatever",responseName+"_BCStrategy");
+
+     RCP<std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > block_tm
+        = respBCFactories_[bc];
+     if(block_tm==Teuchos::null) {
+       block_tm = Teuchos::rcp(new std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > >); 
+       respBCFactories_[bc] = block_tm;
+     }
+
+     // add response factory TM to vector that stores them
+     block_tm->push_back(std::make_pair(responseName,modelFact_tm));
+ 
+     nextBC_id++;
+   }
+}
+
+template <typename TraitsT>
 template <typename EvalT>
 Teuchos::RCP<ResponseBase> ResponseLibrary<TraitsT>::
 getResponse(const std::string responseName) const
@@ -560,7 +601,7 @@ buildResponseEvaluators(
    // first compute subset of physics blocks required to build responses
    ////////////////////////////////////////////////////////////////////////////////
 
-   std::vector<Teuchos::RCP<panzer::PhysicsBlock> > requiredPhysicsBlocks;
+   std::vector<Teuchos::RCP<panzer::PhysicsBlock> > requiredVolPhysicsBlocks;
    for(std::size_t i=0;i<physicsBlocks.size();i++) {
      std::string blockId = physicsBlocks[i]->elementBlockID();
      
@@ -570,9 +611,15 @@ buildResponseEvaluators(
      if(itr!=respFactories_.end()) {
        // one last check for nonzero size
        if(itr->second.size()>0)
-         requiredPhysicsBlocks.push_back(physicsBlocks[i]);
+         requiredVolPhysicsBlocks.push_back(physicsBlocks[i]);
      } 
    }
+
+   // build boundary response array
+   std::vector<BC> bcs;
+   for(typename BCHashMap::const_iterator itr=respBCFactories_.begin();
+       itr!=respBCFactories_.end();++itr)
+     bcs.push_back(itr->first);
 
    // second construct generic evaluator factory from required response factories
    ////////////////////////////////////////////////////////////////////////////////
@@ -581,11 +628,14 @@ buildResponseEvaluators(
    // third build field manager builder using the required physics blocks
    ////////////////////////////////////////////////////////////////////////////////
 
+   response_bc_adapters::BCFactoryResponse bc_factory(respBCFactories_);
+
    // don't build scatter evaluators
    fmb2_ = Teuchos::rcp(new FieldManagerBuilder(true)); 
 
    fmb2_->setWorksetContainer(wkstContainer_);
-   fmb2_->setupVolumeFieldManagers(requiredPhysicsBlocks,cm_factory,closure_models,*linObjFactory_,user_data,rvef2);
+   fmb2_->setupVolumeFieldManagers(requiredVolPhysicsBlocks,cm_factory,closure_models,*linObjFactory_,user_data,rvef2);
+   fmb2_->setupBCFieldManagers(bcs,physicsBlocks,cm_factory,bc_factory,closure_models,*linObjFactory_,user_data);
 
    // fourth build assembly engine from FMB
    ////////////////////////////////////////////////////////////////////////////////
@@ -594,6 +644,19 @@ buildResponseEvaluators(
    ae_tm2_.buildObjects(builder);
 
    responseEvaluatorsBuilt_ = true;
+}
+
+template <typename TraitsT>
+template <typename EvalT> 
+void ResponseLibrary<TraitsT>::
+addResponsesToInArgs(panzer::AssemblyEngineInArgs & input_args) const
+{
+   std::vector<Teuchos::RCP<ResponseBase> > responses;
+   this->getResponses<EvalT>(responses);
+
+   // add all responses to input args  
+   for(std::size_t i=0;i<responses.size();i++)
+     input_args.addGlobalEvaluationData(responses[i]->getLookupName(),responses[i]);
 }
 
 template <typename TraitsT>

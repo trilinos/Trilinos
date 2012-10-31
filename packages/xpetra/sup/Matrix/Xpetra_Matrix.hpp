@@ -72,6 +72,22 @@ Declarations for the class Xpetra::Matrix.
 */
 namespace Xpetra {
 
+    /*!
+     @class Xpetra::Matrix class.
+     @brief Xpetra-specific matrix class.
+
+     This class is specific to Xpetra and has no analogue in Epetra or Tpetra.  The main motivation for this class is to be able to access matrix data in a manner different than how it is stored.
+     For example, it might be more convenient to treat ("view") a matrix stored in compressed row storage as if it were a block matrix.  The Xpetra::Matrix class is intended to manage these "views".
+
+     <B>How to create a Matrix from an existing CrsMatrix</B>
+
+     @code
+     RCP<Xpetra::CrsMatrix> crsA;
+     RCP<Xpetra::Matrix>    A  = rcp(new CrsMatrixWrap(crsA));
+     @endcode
+
+    */
+
   typedef std::string viewLabel_t;
 
   template <class Scalar, 
@@ -204,6 +220,9 @@ namespace Xpetra {
         \post <tt>isLocallyIndexed() == true</tt>
     */
     virtual void insertLocalValues(LocalOrdinal localRow, const ArrayView<const LocalOrdinal> &cols, const ArrayView<const Scalar> &vals) = 0;
+
+    //! Scale the current values of a matrix, this = alpha*this.
+    virtual void scale(const Scalar &alpha)= 0;
 
     //@}
 

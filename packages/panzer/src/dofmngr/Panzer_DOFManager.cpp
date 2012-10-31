@@ -45,15 +45,6 @@
 #include "Panzer_DOFManager_decl.hpp"
 #include "Panzer_DOFManager_impl.hpp"
 
-#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
-
-template class panzer::DOFManager<int,long int>;
-template class panzer::DOFManager<int,int>;
-template class panzer::DOFManager<short,int>;
-template class panzer::DOFManager<char,long int>;
-
-#endif
-
 // FEI includes
 #include "fei_Factory_Trilinos.hpp"
 
@@ -93,3 +84,12 @@ void getOwnedAndSharedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs
 ///////////////////////////////////////////////////////////////////////////
 
 }
+
+#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
+
+template class panzer::DOFManager<int,long int>;
+template class panzer::DOFManager<int,int>;
+template class panzer::DOFManager<short,int>;
+template class panzer::DOFManager<char,long int>;
+
+#endif

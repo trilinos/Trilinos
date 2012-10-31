@@ -168,6 +168,11 @@ public:
     matrixData_->insertLocalValues(localRow, cols, vals);
   }
 
+  //! Scale the current values of a matrix, this = alpha*this.
+  void scale(const Scalar &alpha) {
+    matrixData_->scale(alpha);
+  }
+
   //@}
 
   //! @name Transformational Methods

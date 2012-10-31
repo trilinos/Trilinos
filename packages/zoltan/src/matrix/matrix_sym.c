@@ -54,7 +54,7 @@ extern "C" {
 #include "zz_util_const.h"
 #include "zoltan_dd.h"
 #include "phg.h"
-#include "matrix.h"
+#include "zoltan_matrix.h"
 
 int
 Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)

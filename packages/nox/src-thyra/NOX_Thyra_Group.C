@@ -714,3 +714,9 @@ NOX::Thyra::Group::getNonconstInArgs()
 {
   return in_args_;
 }
+
+const ::Thyra::ModelEvaluatorBase::InArgs<double>& 
+NOX::Thyra::Group::getInArgs() const
+{
+  return in_args_;
+}

@@ -45,6 +45,8 @@
 #define KOKKOSARRAY_SHAPE_HPP
 
 #include <typeinfo>
+#include <utility>
+#include <KokkosArray_Macros.hpp>
 #include <KokkosArray_Layout.hpp>
 #include <impl/KokkosArray_ArrayTraits.hpp>
 #include <impl/KokkosArray_StaticAssert.hpp>
@@ -205,18 +207,48 @@ struct assert_shape_is_rank_one< Shape<Layout,Size,1,s0> >
 
 //----------------------------------------------------------------------------
 
-void assert_shape_bounds_throw( const size_t rank ,
-                                const size_t n0 , const size_t n1 ,
-                                const size_t n2 , const size_t n3 ,
-                                const size_t n4 , const size_t n5 ,
-                                const size_t n6 , const size_t n7 ,
-                                const size_t i0 , const size_t i1 ,
-                                const size_t i2 , const size_t i3 ,
-                                const size_t i4 , const size_t i5 ,
-                                const size_t i6 , const size_t i7 );
+/** \brief  Array bounds assertion templated on the execution space
+ *          to allow device-specific abort code.
+ */
+template< class ExecutionSpace >
+struct AssertShapeBoundsAbort ;
+
+template<>
+struct AssertShapeBoundsAbort< KokkosArray::HostSpace >
+{
+  static void apply( const size_t rank ,
+                     const size_t n0 , const size_t n1 ,
+                     const size_t n2 , const size_t n3 ,
+                     const size_t n4 , const size_t n5 ,
+                     const size_t n6 , const size_t n7 ,
+                     const size_t i0 , const size_t i1 ,
+                     const size_t i2 , const size_t i3 ,
+                     const size_t i4 , const size_t i5 ,
+                     const size_t i6 , const size_t i7 );
+};
+
+template< class ExecutionDevice >
+struct AssertShapeBoundsAbort
+{
+  KOKKOSARRAY_INLINE_FUNCTION
+  static void apply( const size_t rank ,
+                     const size_t n0 , const size_t n1 ,
+                     const size_t n2 , const size_t n3 ,
+                     const size_t n4 , const size_t n5 ,
+                     const size_t n6 , const size_t n7 ,
+                     const size_t i0 , const size_t i1 ,
+                     const size_t i2 , const size_t i3 ,
+                     const size_t i4 , const size_t i5 ,
+                     const size_t i6 , const size_t i7 )
+    {
+      AssertShapeBoundsAbort< KokkosArray::HostSpace >
+        ::apply( rank , n0 , n1 , n2 , n3 , n4 , n5 , n6 , n7 ,
+                        i0 , i1 , i2 , i3 , i4 , i5 , i6 , i7 );
+    }
+};
 
 template< class ShapeType >
-inline
+KOKKOSARRAY_INLINE_FUNCTION
 void assert_shape_bounds( const ShapeType & shape ,
                           const size_t i0 = 0 ,
                           const size_t i1 = 0 ,
@@ -235,12 +267,12 @@ void assert_shape_bounds( const ShapeType & shape ,
                   5 == ShapeType::rank ? true : i5 < shape.N5 && (
                   6 == ShapeType::rank ? true : i6 < shape.N6 && (
                   7 == ShapeType::rank ? true : i7 < shape.N7 )))))));
-
   if ( ! ok ) {
-    assert_shape_bounds_throw( ShapeType::rank ,
-                               shape.N0 , shape.N1 , shape.N2 , shape.N3 ,
-                               shape.N4 , shape.N5 , shape.N6 , shape.N7 ,
-                               i0 , i1 , i2 , i3 , i4 , i5 , i6 , i7 );
+    AssertShapeBoundsAbort< ExecutionSpace >
+      ::apply( ShapeType::rank ,
+               shape.N0 , shape.N1 , shape.N2 , shape.N3 ,
+               shape.N4 , shape.N5 , shape.N6 , shape.N7 ,
+               i0 , i1 , i2 , i3 , i4 , i5 , i6 , i7 );
   }
 }
 

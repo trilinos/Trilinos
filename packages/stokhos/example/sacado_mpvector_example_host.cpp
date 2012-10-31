@@ -127,22 +127,22 @@ struct MPVectorExample<MaxSize,KokkosArray::Host> {
     bool status;
     if (storage_method == STATIC)
       status = run_impl<typename MPT::static_vector>(
-	n, sz, nblocks, nthreads, reset, print);
+    	n, sz, nblocks, nthreads, reset, print);
     else if (storage_method == STATIC_FIXED)
       status = run_impl<typename MPT::static_fixed_vector>(
 	n, sz, nblocks, nthreads, reset, print);
     else if (storage_method == LOCAL)
       status = run_impl<typename MPT::local_vector>(
-	n, sz, nblocks, nthreads, reset, print);
+    	n, sz, nblocks, nthreads, reset, print);
     else if (storage_method == DYNAMIC)
       status = run_impl<typename MPT::dynamic_vector>(
-	n, sz, nblocks, nthreads, reset, print);
+    	n, sz, nblocks, nthreads, reset, print);
     else if (storage_method == DYNAMIC_STRIDED)
       status = run_impl<typename MPT::dynamic_strided_vector>(
-	n, sz, nblocks, nthreads, reset, print);
+    	n, sz, nblocks, nthreads, reset, print);
     else if (storage_method == DYNAMIC_THREADED) {
       std::cout << "Host node doesn't support dynamic-threaded storage!"
-		<< std::endl;
+    		<< std::endl;
       status = false;
     }
     

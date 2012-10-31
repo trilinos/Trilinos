@@ -45,9 +45,8 @@
 #define KOKKOSARRAY_PARALLELREDUCE_HPP
 
 #include <cstddef>
-#include <stdexcept>
 #include <sstream>
-#include <KokkosArray_Macros.hpp>
+#include <impl/KokkosArray_Error.hpp>
 #include <impl/KokkosArray_ReduceOperator.hpp>
 
 //----------------------------------------------------------------------------
@@ -192,7 +191,7 @@ void parallel_reduce( const size_t work_count ,
     msg << "KokkosArray::parallel_reduce( <array_type> ) ERROR "
         << "given incompatible array lengths: functor.value_count("
         << functor.value_count << ") != count(" << count << ")" ;
-    throw std::runtime_error(msg.str());
+    KokkosArray::Impl::throw_runtime_exception( msg.str() );
   }
 
   typedef Impl::ParallelReduceFunctorValue< value_type , device_type >

@@ -128,13 +128,16 @@ public:
   bool empty() const 
   { return m_tracking.empty(); }
 
-  MemoryTracking() {}
-  ~MemoryTracking() {}
+  explicit MemoryTracking( const std::string & space );
+
+  MemoryTracking();
+  ~MemoryTracking();
 
 private:
   MemoryTracking( const MemoryTracking & );
   MemoryTracking & operator = ( const MemoryTracking & );
 
+  std::string       m_space ;
   std::vector<Info> m_tracking ;
 };
 

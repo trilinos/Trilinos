@@ -865,20 +865,22 @@ if (mypid == 0)
       throw(Exceptions::Incompatible("Utils::PowerMethod: operator must have domain and range maps that are equivalent."));
     }
     // create three vectors, fill z with random numbers
-    RCP<MultiVector> q = MultiVectorFactory::Build(A.getRangeMap(),1);
-    RCP<MultiVector> r = MultiVectorFactory::Build(A.getRangeMap(),1);
-    RCP<MultiVector> z = MultiVectorFactory::Build(A.getRangeMap(),1);
+    RCP<Vector> q = VectorFactory::Build(A.getDomainMap());
+    RCP<Vector> qinit = VectorFactory::Build(A.getDomainMap());
+    RCP<Vector> r = VectorFactory::Build(A.getRangeMap());
+    RCP<Vector> z = VectorFactory::Build(A.getRangeMap());
     z->setSeed(seed);  // seed random number generator
     z->randomize(true);// use Xpetra implementation: -> same results for Epetra and Tpetra
       
     Teuchos::Array<Magnitude> norms(1);
   
-    //std::vector<Scalar> lambda(1);
-    //lambda[0] = 0.0;
-    Scalar lambda=0.0;
+    
+    const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+    const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+
+    Scalar lambda=zero;
     Magnitude residual = 0.0;
     // power iteration
-    Teuchos::ArrayView<Scalar> avLambda(&lambda,1);
     RCP<Vector> diagVec,oneOverDiagonal;
     if (scaleByDiag) {
       diagVec = VectorFactory::Build(A.getRowMap());
@@ -886,14 +888,17 @@ if (mypid == 0)
       oneOverDiagonal = VectorFactory::Build(A.getRowMap());
       oneOverDiagonal->reciprocal(*diagVec);
     }
+    //FIXME for the moment, the following matvec gives q and z the same coefficient pattern
+    //FIXME for PCE scalar types.  Discuss this with ETP.
+    A.apply(*qinit, *q);
     for (int iter = 0; iter < niters; ++iter) {
       z->norm2(norms);                               // Compute 2-norm of z
-      q->update(1.0/norms[0],*z,0.);                 // Set q = z / normz
+      q->update(one / norms[0],*z,zero);                 // Set q = z / normz
       A.apply(*q, *z);                               // Compute z = A*q
-      if (scaleByDiag) z->elementWiseMultiply(1.0, *oneOverDiagonal, *z, 0.0);
-      q->dot(*z,avLambda);                            // Approximate maximum eigenvalue: lamba = dot(q,z)
+      if (scaleByDiag) z->elementWiseMultiply(one, *oneOverDiagonal, *z, zero);
+      lambda = q->dot(*z);                            // Approximate maximum eigenvalue: lamba = dot(q,z)
       if ( iter % 100 == 0 || iter + 1 == niters ) {
-        r->update(1.0, *z, -lambda, *q, 0.0);         // Compute A*q - lambda*q
+        r->update(1.0, *z, -lambda, *q, zero);         // Compute A*q - lambda*q
         r->norm2(norms);
         residual = Teuchos::ScalarTraits<Scalar>::magnitude(norms[0] / lambda);
         if (verbose) {
@@ -1119,7 +1124,10 @@ if (mypid == 0)
       throw(Exceptions::RuntimeError("You cannot use Epetra::MatrixMatrix::Add with Scalar!=double or Ordinal!=int"));
     } else if(A->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      Xpetra::MatrixMatrix::Add(*A, transposeA, alpha, *B, beta);
+      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpA = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2TpetraCrs(A);
+      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpB = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2NonConstTpetraCrs(B);
+
+      Tpetra::MatrixMatrix::Add(*tpA, transposeA, alpha, *tpB, beta);
 #else
       throw(Exceptions::RuntimeError("MueLu must be compiled with Tpetra."));
 #endif
@@ -1144,16 +1152,22 @@ if (mypid == 0)
       throw(Exceptions::RuntimeError("You cannot use Epetra::MatrixMatrix::Add with Scalar!=double or Ordinal!=int"));
     } else if(C->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      Xpetra::MatrixMatrix::Add(*A, transposeA, alpha, *B, transposeB, beta, C);
+      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpA = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2TpetraCrs(A);
+      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpB = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2TpetraCrs(B);
+      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >       tpC = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2NonConstTpetraCrs(C);
+
+      Tpetra::MatrixMatrix::Add(*tpA, transposeA, alpha, *tpB, transposeB, beta, tpC);
 #else
       throw(Exceptions::RuntimeError("MueLu must be compile with Tpetra."));
 #endif
     }
 
+    ///////////////////////// EXPERIMENTAL
     if(A->IsView("stridedMaps")) C->CreateView("stridedMaps", A);
     if(B->IsView("stridedMaps")) C->CreateView("stridedMaps", B);
-  } //Utils2::TwoMatrixAdd()
+    ///////////////////////// EXPERIMENTAL
 
+  } //Utils2::TwoMatrixAdd()
 
 } //namespace MueLu
 

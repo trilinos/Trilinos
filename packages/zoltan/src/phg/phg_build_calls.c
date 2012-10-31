@@ -505,7 +505,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
       toID = myHshEdges.pinGID + (pinIdx[j] * gid_size);
 
-      for (k=0; k < recvIdBuf[i]; k++){
+      for (k=0;(ZOLTAN_ID_TYPE) k < recvIdBuf[i]; k++){
         ZOLTAN_SET_GID(zz, toID , fromID);
         toID += gid_size;
         fromID += gid_size;

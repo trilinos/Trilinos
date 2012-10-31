@@ -34,5 +34,5 @@ ENDIF()
 
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/include/stk_adapt/sierra_element/)
+    ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/stk_adapt/sierra_element/)
 

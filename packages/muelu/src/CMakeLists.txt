@@ -38,6 +38,7 @@ INCLUDE_DIRECTORIES(${DIR}/Facade)
 INCLUDE_DIRECTORIES(${DIR}/Utils)
 INCLUDE_DIRECTORIES(${DIR}/Utils/ForwardDeclaration)
 
+
 #The HEADERS variable is the list of headers that will be copied to the install directory during "make install".
 SET(HEADERS "")
 APPEND_GLOB(HEADERS ${BDIR}/${PACKAGE_NAME}_config.hpp)
@@ -58,6 +59,7 @@ APPEND_GLOB(SOURCES Transfers/Petrov-Galerkin-SA/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Generic/*.cpp)
 APPEND_GLOB(SOURCES Transfers/BaseClass/*.cpp)
 APPEND_GLOB(SOURCES Utils/ForwardDeclaration/*.cpp)
+APPEND_GLOB(SOURCES Facade/*.cpp)
 
 #
 # Explicit instantiation
@@ -110,4 +112,5 @@ TRIBITS_ADD_LIBRARY(
 #MESSAGE("INCLUDE_DIRECTORIES = ")
 #get_directory_property(output INCLUDE_DIRECTORIES)
 #message(STATUS ${output})
+ 
  
