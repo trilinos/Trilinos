@@ -42,6 +42,7 @@
 #ifndef TPETRA_HYBRIDPLATFORM_HPP
 #define TPETRA_HYBRIDPLATFORM_HPP
 
+#include "Tpetra_ConfigDefs.hpp"
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <string>

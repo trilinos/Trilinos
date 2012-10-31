@@ -1,23 +1,22 @@
-
 INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
-
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
-
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
+ADD_SUBDIRECTORIES(hybrid_platform)
 
 TRIBITS_ADD_EXECUTABLE(
   tif_belos
   SOURCES belos_solve.cpp
+  DEPLIBS belos tpetra kokkos teuchos
 )
 
 IF(Ifpack2_ENABLE_QD)
   TRIBITS_ADD_EXECUTABLE(
     tif_extprec_belos
     SOURCES belos_extprec_solve.cpp
+    DEPLIBS ifpack2_tpetra_testinst
   )
 ENDIF()
 

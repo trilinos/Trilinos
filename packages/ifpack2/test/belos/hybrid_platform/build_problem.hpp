@@ -58,14 +58,13 @@
 #include <BelosTpetraAdapter.hpp>
 
 #include <Tpetra_MatrixIO.hpp>
-#include "read_matrix.hpp"
 
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<Belos::LinearProblem<Scalar,Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>,Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > 
-build_problem_mm(Teuchos::ParameterList& test_params, 
-                 const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A, 
-                 const Teuchos::RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& b_in,
-                 const Teuchos::RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& dvec)
+build_problem(Teuchos::ParameterList& test_params, 
+              const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A, 
+              const Teuchos::RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& b_in,
+              const Teuchos::RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& dvec)
 {
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>    TOP;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   TCRS;
@@ -137,36 +136,22 @@ Teuchos::RCP<
   Teuchos::RCP<TV> dvec;
 
   std::string mm_file("not specified");
-  std::string rhs_mm_file("not specified");
+  //std::string rhs_mm_file("not specified");
   std::string gen_mat("not specified");
-  // std::string hb_file("not specified");
+  std::string hb_file("not specified");
   Ifpack2::getParameter(test_params, "mm_file", mm_file);
-  int mm_file_maxnnz = test_params.get<int>("mm_file_maxnnz", -1);
-  // Ifpack2::getParameter(test_params, "hb_file", hb_file);
-  Ifpack2::getParameter(test_params, "rhs_mm_file", rhs_mm_file);
+  Ifpack2::getParameter(test_params, "hb_file", hb_file);
+  //Ifpack2::getParameter(test_params, "rhs_mm_file", rhs_mm_file);
   Ifpack2::getParameter(test_params, "gen_mat", gen_mat);
 
   const bool IAmRoot = (comm->getRank() == 0);
 
-  if (mm_file != "not specified") {
+  if (hb_file != "not specified") {
     if (IAmRoot) {
-      std::cout << "Matrix-Market file: " << mm_file << std::endl;
+      std::cout << "Harwell-Boeing file: " << hb_file << std::endl;
     }
-    read_matrix_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(mm_file, comm, node, myWeight, mm_file_maxnnz, A, dvec);
-
-    if (rhs_mm_file != "not specified") {
-      if (IAmRoot) {
-        std::cout << "Right-hand-side Matrix-Market file: " << rhs_mm_file << std::endl;
-      }
-      b = read_vector_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rhs_mm_file, comm, node, A->getRowMap());
-    }
+    Tpetra::Utils::readHBMatrix(hb_file,comm,node,A);
   }
-  // else if (hb_file != "not specified") {
-  //   if (IAmRoot) {
-  //     std::cout << "Harwell-Boeing file: " << hb_file << std::endl;
-  //   }
-  //   A = read_matrix_hb<Scalar,LocalOrdinal,GlobalOrdinal,Node>(hb_file, comm, node, myWeight);
-  // }
   else if (gen_mat != "not specified") {
     Teuchos::RCP<Teuchos::ParameterList> genparams = sublist(rcpFromRef(test_params),"GenMat");
     if (genparams == Teuchos::null) {
@@ -184,7 +169,7 @@ Teuchos::RCP<
 
   // print node details
   {
-    RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer = A->getGraph()->getImporter();
+    Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer = A->getGraph()->getImporter();
     for (int i=0; i<comm->getSize(); ++i) {
       if (comm->getRank() == i) {
         if (importer != Teuchos::null) {
@@ -207,7 +192,7 @@ Teuchos::RCP<
     }
   }
 
-  Teuchos::RCP<BLinProb> problem = build_problem_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(test_params, A, b, dvec);
+  Teuchos::RCP<BLinProb> problem = build_problem<Scalar,LocalOrdinal,GlobalOrdinal,Node>(test_params, A, b, dvec);
 
   return problem;
 }

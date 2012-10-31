@@ -1,0 +1,17 @@
+<ParameterList name="test_params">
+  <Parameter name="hb_file" type="string" value="bcsstk17.rsa"/>
+
+  <Parameter name="solver_type" type="string" value="BlockGmres"/>
+  <ParameterList name="Belos">
+    <!-- "Num Blocks" is the krylov subspace size, or iters-per-restart. -->
+    <Parameter name="Num Blocks" type="int" value="100"/>
+    <Parameter name="Block Size" type="int" value="1"/>
+    <Parameter name="Convergence Tolerance"  type="double" value="0.01"/>
+    <Parameter name="Maximum Restarts" type="int" value="20"/>
+    <Parameter name="Verbosity" type="int" value="33"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+    <Parameter name="Output Frequency" type="int" value="1"/>
+  </ParameterList>
+
+  <Parameter name="expectNumIters" type="int" value="26"/>
+</ParameterList>
