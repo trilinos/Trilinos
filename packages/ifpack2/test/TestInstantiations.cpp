@@ -96,9 +96,10 @@
     template class Diagonal<Tpetra::CrsMatrix<dd_real,int,int,NODE> >; \
     template class Chebyshev<Tpetra::CrsMatrix<dd_real,int,int,NODE> >; \
   }
-#endif
 
 INSTANT_ALL(Kokkos::DefaultNode::DefaultNodeType)
+#endif
+
 namespace Ifpack2 {
   template class Diagonal<Tpetra::CrsMatrix<double,int,int,Kokkos::SerialNode> >;
 }
