@@ -18,6 +18,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   # ARGS 
   COMM mpi # serial
   STANDARD_PASS_OUTPUT
+  DEPLIBS ifpack2_tpetra_testinst
 )
 
 IF (TPL_ENABLE_MPI)

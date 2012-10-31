@@ -45,8 +45,6 @@
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-// #include "Tpetra_ExplicitInstantiationHelpers.hpp"
-
 #include "TpetraExt_MatrixMatrix_def.hpp"
 
 #include <Kokkos_SerialNode.hpp>
