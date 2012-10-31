@@ -167,8 +167,13 @@ class runTest {
     Belos::ReturnType ret = solver->solve();
 
     if (IAmRoot) {
-      if (ret == Belos::Converged) *fos << "Converged after " << solver->getNumIters() << " iterations." << endl;
-      else                         *fos << "DID NOT CONVERGE after " << solver->getNumIters() << " iterations." << endl;
+      if (ret == Belos::Converged) {
+        *fos << "Converged after " << solver->getNumIters() << " iterations." << endl
+             << "End Result: TEST PASSED" << std::endl;
+      }
+      else {
+        *fos << "DID NOT CONVERGE after " << solver->getNumIters() << " iterations." << endl;
+      }
       Teuchos::writeParameterListToXmlFile(*solver->getCurrentParameters(), "solver_params_out.xml");
     }
 
