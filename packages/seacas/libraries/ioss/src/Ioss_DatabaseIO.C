@@ -91,17 +91,18 @@ namespace {
 #endif
 }
 
-Ioss::DatabaseIO::DatabaseIO(Ioss::Region* region, const std::string& filename,
-			     Ioss::DatabaseUsage db_usage,
+namespace Ioss {
+DatabaseIO::DatabaseIO(Region* region, const std::string& filename,
+			     DatabaseUsage db_usage,
 			     MPI_Comm communicator,
-			     const Ioss::PropertyManager &props)
+			     const PropertyManager &props)
   : properties(props), commonSideTopology(NULL), DBFilename(filename), dbState(STATE_INVALID),
     isParallel(false), isSerialParallel(false), myProcessor(0), cycleCount(0), overlayCount(0),
-    splitType(Ioss::SPLIT_BY_TOPOLOGIES),
+    splitType(SPLIT_BY_TOPOLOGIES),
     dbUsage(db_usage),dbIntSizeAPI(USE_INT32_API),
     nodeGlobalIdBackwardCompatibility(false), lowerCaseVariableNames(true),
     util_(communicator), region_(region), isInput(is_input_event(db_usage)),
-    singleProcOnly(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT || Ioss::SerializeIO::isEnabled()),
+    singleProcOnly(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT || SerializeIO::isEnabled()),
     doLogging(false)
 {
   isParallel  = util_.parallel_size() > 1;
@@ -115,20 +116,20 @@ Ioss::DatabaseIO::DatabaseIO(Ioss::Region* region, const std::string& filename,
     // env_props string should be of the form
     // "PROP1=VALUE1:PROP2=VALUE2:..."
     std::vector<std::string> prop_val;
-    Ioss::tokenize(env_props, ":", prop_val);
+    tokenize(env_props, ":", prop_val);
     
     for (size_t i=0; i < prop_val.size(); i++) {
       std::vector<std::string> property;
-      Ioss::tokenize(prop_val[i], "=", property);
+      tokenize(prop_val[i], "=", property);
       if (property.size() != 2) {
 	std::ostringstream errmsg;
 	errmsg << "ERROR: Invalid property specification found in IOSS_PROPERTIES environment variable\n"
 	       << "       Found '" << prop_val[i] << "' which is not of the correct PROPERTY=VALUE form";
 	IOSS_ERROR(errmsg);
       }
-      std::string prop = Ioss::Utils::uppercase(property[0]);
+      std::string prop = Utils::uppercase(property[0]);
       std::string value = property[1];
-      std::string up_value = Ioss::Utils::uppercase(value);
+      std::string up_value = Utils::uppercase(value);
       bool all_digit = value.find_first_not_of("0123456789") == std::string::npos;
 
       if (myProcessor == 0) 
@@ -136,40 +137,40 @@ Ioss::DatabaseIO::DatabaseIO(Ioss::Region* region, const std::string& filename,
       
       if (all_digit) {
 	int int_value = std::strtol(value.c_str(), NULL, 10);
-	properties.add(Ioss::Property(prop, int_value));
+	properties.add(Property(prop, int_value));
       }
       else if (up_value == "TRUE" || up_value == "YES") {
-	properties.add(Ioss::Property(prop, 1));
+	properties.add(Property(prop, 1));
       }
       else if (up_value == "FALSE" || up_value == "NO") {
-	properties.add(Ioss::Property(prop, 0));
+	properties.add(Property(prop, 0));
       }
       else {
-	properties.add(Ioss::Property(prop, value));
+	properties.add(Property(prop, value));
       }
     }
   }
 }
 
-Ioss::DatabaseIO::~DatabaseIO()
+DatabaseIO::~DatabaseIO()
 {
 }
 
-int Ioss::DatabaseIO::int_byte_size_api() const
+int DatabaseIO::int_byte_size_api() const
 {
-  if (dbIntSizeAPI == Ioss::USE_INT32_API) {
+  if (dbIntSizeAPI == USE_INT32_API) {
     return 4;
   } else {
     return 8;
   }
 }
 
-void Ioss::DatabaseIO::set_int_byte_size_api(Ioss::DataSize size) const
+void DatabaseIO::set_int_byte_size_api(DataSize size) const
 {
   dbIntSizeAPI = size; // mutable
 }
 
-char Ioss::DatabaseIO::get_field_separator() const
+char DatabaseIO::get_field_separator() const
 {
   char suffix = '_'; // Default
   if (properties.exists("FIELD_SUFFIX_SEPARATOR")) {
@@ -179,7 +180,7 @@ char Ioss::DatabaseIO::get_field_separator() const
   return suffix;
 }
 
-void Ioss::DatabaseIO::set_field_separator(const char separator)
+void DatabaseIO::set_field_separator(const char separator)
 {
   if (properties.exists("FIELD_SUFFIX_SEPARATOR")) {
     properties.erase("FIELD_SUFFIX_SEPARATOR");
@@ -187,19 +188,19 @@ void Ioss::DatabaseIO::set_field_separator(const char separator)
   char tmp[2];
   tmp[0] = separator;
   tmp[1] = 0;
-  properties.add(Ioss::Property("FIELD_SUFFIX_SEPARATOR", tmp));
+  properties.add(Property("FIELD_SUFFIX_SEPARATOR", tmp));
 }
 
-Ioss::IfDatabaseExistsBehavior Ioss::DatabaseIO::open_create_behavior() const
+IfDatabaseExistsBehavior DatabaseIO::open_create_behavior() const
 {
-  Ioss::IfDatabaseExistsBehavior exists = Ioss::DB_OVERWRITE;
+  IfDatabaseExistsBehavior exists = DB_OVERWRITE;
   if (properties.exists("APPEND_OUTPUT")) {
-    exists = (Ioss::IfDatabaseExistsBehavior)properties.get("APPEND_OUTPUT").get_int();
+    exists = (IfDatabaseExistsBehavior)properties.get("APPEND_OUTPUT").get_int();
   }
   return exists;
 }
 
-void Ioss::DatabaseIO::verify_and_log(const Ioss::GroupingEntity *ge, const Ioss::Field& field) const
+void DatabaseIO::verify_and_log(const GroupingEntity *ge, const Field& field) const
 {
   assert(is_parallel_consistent(singleProcOnly, ge, field, util_));
   if (get_logging()) {
@@ -208,12 +209,12 @@ void Ioss::DatabaseIO::verify_and_log(const Ioss::GroupingEntity *ge, const Ioss
 }
 
 // Default versions do nothing...
-bool Ioss::DatabaseIO::begin_state(Ioss::Region */* region */, int /* state */, double /* time */)
+bool DatabaseIO::begin_state(Region */* region */, int /* state */, double /* time */)
 {
   return true;
 }
 
-bool Ioss::DatabaseIO::end_state(Ioss::Region */* region */, int /* state */, double /* time */)
+bool DatabaseIO::end_state(Region */* region */, int /* state */, double /* time */)
 {
   return true;
 }
@@ -337,14 +338,14 @@ void DatabaseIO::create_group(EntityType type, const std::string &type_name,
 // whether all elements in the model have the same face topology.
 // This can be used to speed-up certain algorithms since they don't
 // have to check each face (or group of faces) individually.
-void Ioss::DatabaseIO::set_common_side_topology() const
+void DatabaseIO::set_common_side_topology() const
 {
-  Ioss::DatabaseIO *new_this = const_cast<Ioss::DatabaseIO*>(this);
+  DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
 
-  Ioss::ElementBlockContainer element_blocks =
+  ElementBlockContainer element_blocks =
     get_region()->get_element_blocks();
-  Ioss::ElementBlockContainer::const_iterator I  = element_blocks.begin();
-  Ioss::ElementBlockContainer::const_iterator IE = element_blocks.end();
+  ElementBlockContainer::const_iterator I  = element_blocks.begin();
+  ElementBlockContainer::const_iterator IE = element_blocks.end();
 
   while (I != IE) {
     size_t element_count = (*I)->get_property("entity_count").get_int();
@@ -365,25 +366,25 @@ void Ioss::DatabaseIO::set_common_side_topology() const
   }
 }
 
-void Ioss::DatabaseIO::add_information_records(const std::vector<std::string> &info)
+void DatabaseIO::add_information_records(const std::vector<std::string> &info)
 {
   informationRecords.reserve(informationRecords.size()+info.size());
   informationRecords.insert(informationRecords.end(), info.begin(), info.end());
 }
 
-void Ioss::DatabaseIO::add_information_record(const std::string &info)
+void DatabaseIO::add_information_record(const std::string &info)
 {
   informationRecords.push_back(info);
 }
 
-void Ioss::DatabaseIO::set_block_omissions(const std::vector<std::string> &omissions)
+void DatabaseIO::set_block_omissions(const std::vector<std::string> &omissions)
 {
   blockOmissions.assign(omissions.begin(), omissions.end());
   std::sort(blockOmissions.begin(), blockOmissions.end());
 }
 
 // Check topology of all sides (face/edges) in model...
-void Ioss::DatabaseIO::check_side_topology() const
+void DatabaseIO::check_side_topology() const
 {
   // The following code creates the sideTopology sets which contain
   // a list of the side topologies in this model.
@@ -403,12 +404,12 @@ void Ioss::DatabaseIO::check_side_topology() const
     // Set contains (parent_element, boundary_topology) pairs...
     std::set<std::pair<const ElementTopology*, const ElementTopology*> > side_topo;
 
-    Ioss::ElementBlockContainer element_blocks =
+    ElementBlockContainer element_blocks =
       get_region()->get_element_blocks();
-    Ioss::ElementBlockContainer::const_iterator I;
+    ElementBlockContainer::const_iterator I;
 
     for (I=element_blocks.begin(); I != element_blocks.end(); ++I) {
-      const Ioss::ElementBlock *block = *I;
+      const ElementBlock *block = *I;
       const ElementTopology *elem_type = block->topology();
       const ElementTopology *side_type = elem_type->boundary_type();
       if (side_type == NULL) {
@@ -432,19 +433,20 @@ void Ioss::DatabaseIO::check_side_topology() const
       if (element_blocks.empty()) {
 	side_topo.insert(std::make_pair(ftopo, ftopo));
       } else {
-	const Ioss::ElementBlock *block = *element_blocks.begin();
+	const ElementBlock *block = *element_blocks.begin();
 	side_topo.insert(std::make_pair(block->topology(), ftopo));
       }
     }
     assert(side_topo.size() > 0);
     assert(sideTopology.size() == 0);
     // Copy into the sideTopology container...
-    Ioss::DatabaseIO *new_this = const_cast<Ioss::DatabaseIO*>(this);
+    DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
     std::copy(side_topo.begin(), side_topo.end(),
 	      std::back_inserter(new_this->sideTopology));
   }
   assert(sideTopology.size() > 0);
 }
+} // namespace Ioss
 
 #include <sys/time.h>
 
