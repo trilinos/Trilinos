@@ -7,90 +7,56 @@
 <li>\ref Teuchos_contributors
 <li>\ref Teuchos_startup
   <ul>
-  <li>\ref Teuchos_sclasses
-  <li>\ref Teuchos_eclasses
+  <li>\ref TeuchosCore_src
+  <li>\ref TeuchosParameterList_src
+  <li>\ref TeuchosComm_src
+  <li>\ref TeuchosNumerics_src
+  <li>\ref TeuchosRemainder_src
   </ul>
 <li>\ref Teuchos_browser
 </ul>
+
 
 \section Teuchos_intro Introduction
 
 Teuchos provides a suite of common tools for Trilinos for developers to use.  These tools 
 include BLAS/LAPACK wrappers, smart pointers, parameter lists, XML parsers, etc. 
 
+
 \section Teuchos_contributors Teuchos Contributors
 
 The following people have contributed to the development of Teuchos:
 
 <ul>
-	<li> Chris Baker, Oak Ridge National Lab, bakercg@ornl.gov
-	<li> Roscoe Bartlett, Sandia National Labs, rabartl@sandia.gov
-	<li> Michael Heroux, Sandia National Labs, maherou@sandia.gov
-	<li> Kris Kampshoff, University of Minnesota, kamp@cs.umn.edu
-	<li> Kevin Long, Sandia National Labs, krlong@sandia.gov
-	<li> Kurtis Nusbaum, Sandia National Labs, klnusbaum@gmail.com
-	<li> Paul Sexton, University of Illinois-Chicago, pmsext@software.sandia.gov
-	<li> Heidi Thornquist (Package Lead), Sandia National Labs, hkthorn@sandia.gov
+  <li> Chris Baker, Oak Ridge National Lab, bakercg@ornl.gov
+  <li> Roscoe Bartlett, Sandia National Labs, rabartl@sandia.gov
+  <li> Michael Heroux, Sandia National Labs, maherou@sandia.gov
+  <li> Kris Kampshoff, University of Minnesota, kamp@cs.umn.edu
+  <li> Kevin Long, Sandia National Labs, krlong@sandia.gov
+  <li> Kurtis Nusbaum, Sandia National Labs, klnusbaum@gmail.com
+  <li> Paul Sexton, University of Illinois-Chicago, pmsext@software.sandia.gov
+  <li> Heidi Thornquist (Package Lead), Sandia National Labs, hkthorn@sandia.gov
 </ul>
 
-\section Teuchos_startup Overview of Teuchos
 
-Teuchos contains a number of classes.  These classes have been divided 
-between a "standard" build and an "extended" build.  The "standard" build has shown to be 
-a portable subset of the Teuchos tools and is built by default when Teuchos is enabled (<i>--enable-teuchos</i>).  
-The "extended" build is also portable, but contains more special purpose tools like XML parsing and
-communicators (<i>--enable-teuchos-extended</i>).
+\section Teuchos_startup Overview of Teuchos Subpackages
+
+Teuchos contains several different types of software.  These different
+collections are organized into different subpackages.
 
 Additionally, boundschecking for some of the container classes can be enabled through configuring 
-Trilinos with <i>--enable-teuchos-abc</i>.  <b>Boundschecking incurs a significant performance penalty and so is 
+Trilinos with <i>Teuchos_ENABLE_DEBUG=ON</i>.  <b>Boundschecking incurs a significant performance penalty and so is 
 not recommended for production builds.</b>  To enable complex arithmetic in the computational classes, 
-Teuchos must be configured with <i>--enable-teuchos-complex</i>.
+Teuchos must be configured with <i>Teuchos_ENABLE_COMPLEX=ON</i>.
 
-\subsection Teuchos_sclasses Teuchos "Standard" Classes
+
+\subsection TeuchosCore_src Teuchos Core Subpackage
+
+The Teuchos Core subpackage (Trilinos_ENABLE_TeuchosCore=ON) contains basic
+utilities that are less domain-specific to numerical computing but are more
+general purpose.
 
 <ul>
-
-<li> <b>Low-level math</b>
-
-  <ul>
-
-  <li> Numerical scalar traits : Teuchos::ScalarTraits - a traits class defining basic propertys and elementary
-  functions for various scalar data types to be used in numerical computations.
-
-  <li> BLAS wrapper class: Teuchos::BLAS - A ``thin'' layer of C++ code wrapping the basic linear algebra subprograms (BLAS).
-       This class provides a single instance interface between Teuchos and the BLAS.  In this way we can easily
-       switch BLAS interfaces and manage the C++/Fortran translation differences that exist between different
-       computer systems.  This class also provides a very convenient
-       way to templatize the BLAS.
-
-  <li> LAPACK wrapper class: Teuchos::LAPACK - A ``thin'' layer of C++ code wrapping LAPACK.  Like Teuchos::BLAS,
-       it provides nice C++ access to LAPACK.
-
-  <li> Serial Dense Matrix class:  Teuchos::SerialDenseMatrix - A templated, dense rectangular matrix class that provides basic
-       operations like addition, multiplication, scaling, logical comparison, norms, etc.  This class also provides support for a dense
-       matrix that needs to be replicated across processors in a parallel application.  Teuchos::SerialDenseVector inherits from
-       Teuchos::SerialDenseMatrix, providing some additional methods that are useful to dense vectors.  Boundschecking
-       can be turned on at compile time with the
-       <tt>--enable-teuchos-abc </tt> configure flag.
-
-  </ul>
-
-<li> <b> Parameter Options: </b>
-
-  <ul>
-
-  <li> Parameter Entry:  Teuchos::ParameterEntry - A structure that holds a Teuchos::any object as the value
-       and information on the status of the parameter.  The type of parameter is chosen through the templated Set/Get methods.
-       Teuchos::ParameterEntry object is held as the "value" in the Teuchos::ParameterList map.
-
-  <li> Parameter List:  Teuchos::ParameterList - A templated parameter list which holds a map of <key,value> pairs, where the
-       "value" is a Teuchos::ParameterEntry object and the "key" is a string object.  The type of parameter is chosen through
-       the templated Set/Get methods, which allows it to be any standard type (float, double, int, ...) or another parameter list.
-
-  <li> Commandline arguments: Teuchos::CommandLineProcessor - processes commandline arguments from (argc,argv[])
-       in a validated manner and automatically generates a documented --help option. 
-
-  </ul>
 
 <li> <b> Memory Management: </b>
 
@@ -162,10 +128,6 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
   <tt>dynamic_cast<></tt> that throws <tt>std::bad_cast</tt>
   exceptions with very detailed error messages on what types are involved.
 
-  <li> Array argument call generation : \ref Teuchos_Array_Arguments "arrayArg()" - a set of overloaded
-  templated functions for generating inline array arguments for
-  function calls.
-
   <li><tt>Teuchos::getConst()</tt> is a silly little templated function that returns a
   constant reference given any constant object.  This function allows a piece of code
   to access the <tt>const</tt> version of a member function given a non-<tt>const</tt> reference
@@ -204,19 +166,6 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
   functions and therefore can be inherited by existing C++ classes
   without requiring any additional implementation support to get
   started.
-
-  </ul>
-
-<li> <b> Performance Monitoring </b>
-
-  <ul>
-
-  <li> Timing class: Teuchos::TimeMonitor - Provides timing functions for the
-       purposes of performance analysis. 
-
-  <li> Floating point operation class: Teuchos::Flops - Provides floating point operations (FLOPS)
-       counting and reporting functions for the purposes of performance analysis.  All Teuchos computational
-       classes accumulate FLOP counts associated with the \e this object of the computations.
 
   </ul>
 
@@ -274,53 +223,138 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
 
   </ul>
 
+<li> <b> Containers </b>
+
+  <ul>
+
+  <li> Teuchos::Hashtable is a templated map with constant-time lookup.
+
+  <li> Teuchos::HashSet is a templated set with constant-time lookup.
+
+  </ul>
+
 <li> <b> Testing Unit Support </b>
 
   Teuchos contains some utilities that make it easier to write unit tests.
   See the native \ref Teuchos_UnitTest_grp "Unit Testing Support Code".
 
-</ul>
-
-\subsection Teuchos_eclasses Teuchos "Extended" Classes
-
-<ul>
-
-<li> <b> Containers </b>
-
-<ul>
-
-<li> Teuchos::Hashtable is a templated map with constant-time lookup.
-
-<li> Teuchos::HashSet is a templated set with constant-time lookup.
+<li> Numerical scalar traits : Teuchos::ScalarTraits - a traits class defining basic propertys and elementary
+  functions for various scalar data types to be used in numerical computations.
 
 </ul>
 
-<br>
+
+\subsection TeuchosParameterList_src Teuchos ParameterList Subpackage
+
+The Teuchos ParameterList subpackage (Trilinos_ENABLE_TeuchosParameterList=ON)
+contains the Teuchos::ParameterList class and related software.  The
+Teuchos::ParameterList class is a very versitile serializeable hierarchical
+object database that is primarily used for
+
+<ul>
+
+<li> <b> Parameter Options: </b>
+
+  <ul>
+
+  <li> Parameter Entry:  Teuchos::ParameterEntry - A structure that holds a Teuchos::any object as the value
+       and information on the status of the parameter.  The type of parameter is chosen through the templated Set/Get methods.
+       Teuchos::ParameterEntry object is held as the "value" in the Teuchos::ParameterList map.
+
+  <li> Parameter List:  Teuchos::ParameterList - A templated parameter list which holds a map of <key,value> pairs, where the
+       "value" is a Teuchos::ParameterEntry object and the "key" is a string object.  The type of parameter is chosen through
+       the templated Set/Get methods, which allows it to be any standard type (float, double, int, ...) or another parameter list.
+
+  <li> Commandline arguments: Teuchos::CommandLineProcessor - processes commandline arguments from (argc,argv[])
+       in a validated manner and automatically generates a documented --help option. 
+
+  </ul>
+
 <li> <b> XML </b>
+
+  <ul>
+  
+  <li> Teuchos::XMLObject is an object representation of a subset of XML data. Supported XML features
+  are tags, attributes, and character content. 
+  
+  <li> Teuchos::FileInputSource can read XML from a file and produce a Teuchos::XMLObject
+  
+  <li> Teuchos::StringInputSource can read XML from a character string and produce a Teuchos::XMLObject
+  
+  </ul>
+
+</ul>
+
+
+\subsection TeuchosComm_src Teuchos Communication Subpackage
+
+The Teuchos Comm subpackage (Trilinos_ENABLE_TeuchosComm=ON) contains support
+for SPMD parallel programs and useful utilities that depend on these.
+
 <ul>
 
-<li> Teuchos::XMLObject is an object representation of a subset of XML data. Supported XML features
-are tags, attributes, and character content. 
+<li> <b>Single Program Multiple Data (SPMD)</b>
 
-<li> Teuchos::FileInputSource can read XML from a file and produce a Teuchos::XMLObject
+  <ul>
 
-<li> Teuchos::StringInputSource can read XML from a character string and produce a Teuchos::XMLObject
+  <li> Teuchos::Comm is an abstract interface to a small subset of MPI.
+
+  <li> Teuchos::MpiComm is a sublcass of Teuchos::Comm that uses MPI.
+
+  <li> Teuchos::SerialComm is a subclass of Teuchos::Comm for sinlge-process programs
+
+  </ul>
+
+<li> <b> Performance Monitoring </b>
+
+  <ul>
+
+  <li> Timing class: Teuchos::TimeMonitor - Provides timing functions for the
+       purposes of performance analysis. 
+
+  <li> Floating point operation class: Teuchos::Flops - Provides floating point operations (FLOPS)
+       counting and reporting functions for the purposes of performance analysis.  All Teuchos computational
+       classes accumulate FLOP counts associated with the \e this object of the computations.
+
+  </ul>
 
 </ul>
 
-<br>
-<li> <b> MPI </b>
+
+\subsection TeuchosNumerics_src Teuchos Numerics Subpackage
+
+The Teuchos Numerics subpackage (Trilinos_ENABLE_TeuchosNumerics=ON) contains
+BLAS and LAPACK C++ wrappers and C++ classes that use these for dense serial
+matrices and vectors.
+
 <ul>
 
-<li> Teuchos::MPISession has methods to initialize, finalize, and query the global MPI environment.
+<li> BLAS wrapper class: Teuchos::BLAS - A ``thin'' layer of C++ code wrapping the basic linear algebra subprograms (BLAS).
+     This class provides a single instance interface between Teuchos and the BLAS.  In this way we can easily
+     switch BLAS interfaces and manage the C++/Fortran translation differences that exist between different
+     computer systems.  This class also provides a very convenient
+     way to templatize the BLAS.
 
-<li> Teuchos::MPIComm represents an MPI communicator
+<li> LAPACK wrapper class: Teuchos::LAPACK - A ``thin'' layer of C++ code wrapping LAPACK.  Like Teuchos::BLAS,
+     it provides nice C++ access to LAPACK.
 
-<li> Teuchos::MPIContainerComm has methods to communicate Teuchos::Array objects
+<li> Serial Dense Matrix class:  Teuchos::SerialDenseMatrix - A templated, dense rectangular matrix class that provides basic
+     operations like addition, multiplication, scaling, logical comparison, norms, etc.  This class also provides support for a dense
+     matrix that needs to be replicated across processors in a parallel application.  Teuchos::SerialDenseVector inherits from
+     Teuchos::SerialDenseMatrix, providing some additional methods that are useful to dense vectors.  Boundschecking
+     can be turned on at compile time with the
+     <tt>Teuchos_ENABLE_DEBUG=ON</tt> configure flag.
+
 
 </ul>
 
-</ul>
+
+\subsection TeuchosRemainder_src Teuchos Remainder Subpackage
+
+The Teuchos Remainder subpackage (Trilinos_ENABLE_TeuchosRemainder=ON)contains
+left over stuff that does not fit will into the above subpackages or is slated
+to be deprecated and removed.
+
 
 \section Teuchos_browser Browse all of Teuchos
 

@@ -1,10 +1,11 @@
 INCLUDE(TribitsPackageMacros)
 
 #
-# A) Define the package
+# A) Forward delcare the package so that certain options are also defined for
+# subpackages
 #
 
-TRIBITS_PACKAGE( Teuchos ENABLE_SHADOWING_WARNINGS CLEANED )
+TRIBITS_PACKAGE_DECL( Teuchos ENABLE_SHADOWING_WARNINGS CLEANED )
 
 SET(${PACKAGE_NAME}_VERSION "1.5d")
 
@@ -56,9 +57,9 @@ IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
 ELSE()
   SET(${PACKAGE_NAME}_ENABLE_DEFAULT_STACKTRACE OFF)
 ENDIF()
-  
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Boost)
-IF (${PACKAGE_NAME}_ENABLE_Boost)
+
+ASSERT_DEFINED(${PACKAGE_NAME}Core_ENABLE_Boost)
+IF (${PACKAGE_NAME}Core_ENABLE_Boost)
   INCLUDE(CheckForBoostIsPolymorphic)
   CHECK_FOR_BOOST_IS_POLYMORPHIC(HAS_TEUCHOS_BOOST_IS_POLYMORPHIC)
 ENDIF()
@@ -145,12 +146,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${${PACKAGE_NAME}_ENABLE_DEBUG}
   )
 
-OPTION(
-  ${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS
-  "Override enable ${PACKAGE_NAME} performance tests."
-  ${${PROJECT_NAME}_ENABLE_PERFORMANCE_TESTS}
-  )
-
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_EXTENDED
   HAVE_TEUCHOS_EXTENDED
@@ -196,18 +191,16 @@ IF (HAVE_TEUCHOS_DOUBLE_TO_ARPREC AND HAVE_TEUCHOS_DOUBLE_TO_QD)
 ENDIF()
 
 #
-# D) Add the libraries, tests, and examples
+# D) Process the subpackages for Teuchos
 #
 
 # For use by other packages as well as Teuchos tests
 GLOBAL_SET(TEUCHOS_STD_UNIT_TEST_MAIN
-  "${PACKAGE_SOURCE_DIR}/test/UnitTest/Teuchos_StandardUnitTestMain.cpp")
+  "${PACKAGE_SOURCE_DIR}/core/test/UnitTest/Teuchos_StandardUnitTestMain.cpp")
 
-ADD_SUBDIRECTORY(src)
+TRIBITS_PROCESS_SUBPACKAGES()
 
-TRIBITS_ADD_TEST_DIRECTORIES(test)
-
-TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
+TRIBITS_PACKAGE_DEF()
 
 #
 # Exclude files for source package.

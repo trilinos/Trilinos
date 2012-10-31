@@ -23,5 +23,4 @@ TRIBITS_ADD_LIBRARY(
   galeri-xpetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS teuchos # for timers etc.
   )
