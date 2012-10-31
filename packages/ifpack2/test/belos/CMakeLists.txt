@@ -9,7 +9,6 @@ ADD_SUBDIRECTORIES(hybrid_platform)
 TRIBITS_ADD_EXECUTABLE(
   tif_belos
   SOURCES belos_solve.cpp
-  DEPLIBS belos tpetra kokkos teuchos
 )
 
 IF(Ifpack2_ENABLE_QD)
