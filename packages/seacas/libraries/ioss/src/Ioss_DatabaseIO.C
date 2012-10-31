@@ -52,6 +52,8 @@
 #include "Ioss_DBUsage.h"
 #include "Ioss_Field.h"
 #include "Ioss_GroupingEntity.h"
+#include "Ioss_SideSet.h"
+#include "Ioss_SideBlock.h"
 #include "Ioss_Property.h"
 #include "Ioss_SerializeIO.h"
 #include "Ioss_State.h"
@@ -214,6 +216,121 @@ bool Ioss::DatabaseIO::begin_state(Ioss::Region */* region */, int /* state */, 
 bool Ioss::DatabaseIO::end_state(Ioss::Region */* region */, int /* state */, double /* time */)
 {
   return true;
+}
+
+void DatabaseIO::handle_groups()
+{
+  // Set Grouping requests are specified as properties...
+  // See if the property exists and decode...
+  // There is a property for each "type":
+  // GROUP_SIDESET, GROUP_NODESET, GROUP_EDGESET, GROUP_FACESET, GROUP_ELEMSET.
+  // Within the property, the "value" consists of multiple groups separated by ":"
+  // Within the group, the names are "," separated:
+  //
+  // new_surf1,member1,member2,member3:new_surf2,mem1,mem2,mem3,mem4:new_surf3,....
+  //
+  // Currently does not check for duplicate entity membership in a set -- union with duplicates
+  //
+  create_groups("GROUP_SIDESET", SIDESET, "side", (SideSet*)NULL);
+  create_groups("GROUP_NODESET", NODESET, "node", (NodeSet*)NULL);
+  create_groups("GROUP_EDGESET", EDGESET, "edge", (EdgeSet*)NULL);
+  create_groups("GROUP_FACESET", FACESET, "face", (FaceSet*)NULL);
+  create_groups("GROUP_ELEMSET", ELEMENTSET, "elem", (ElementSet*)NULL);
+}
+
+template <typename T>
+void DatabaseIO::create_groups(const std::string &property_name, EntityType type,
+			       const std::string &type_name, const T* set_type)
+{
+  if (!properties.exists(property_name))
+    return;
+
+  std::string prop = properties.get(property_name).get_string();
+  std::vector<std::string> groups;
+  tokenize(prop, ":", groups);
+  for (size_t i=0; i < groups.size(); i++) {
+    std::vector<std::string> group_spec;
+    tokenize(groups[i], ",", group_spec);
+
+    // group_spec should contain the name of the new group as
+    // the first location and the members of the group as subsequent
+    // locations.  OK to have a single member
+    if (group_spec.size() < 2) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Invalid " << type_name << " group specification '" << groups[i] << "'\n"
+	     << "       Correct syntax is 'new_group,member1,...,memberN' and their must "
+	     << "       be at least 1 member of the group";
+      IOSS_ERROR(errmsg);
+    }
+	  
+    create_group(type, type_name, group_spec, set_type);
+  }
+}
+
+template <typename T>
+void DatabaseIO::create_group(EntityType type, const std::string &type_name,
+			      const std::vector<std::string> &group_spec, const T* set_type)
+{
+  IOSS_WARNING << "WARNING: Grouping of " << type_name << " sets is not yet implemented.\n"
+	       << "         Skipping the creation of " << type_name << " set '" << group_spec[0] << "'\n\n";
+}
+
+template <>
+void DatabaseIO::create_group(EntityType type, const std::string &type_name,
+			      const std::vector<std::string> &group_spec, const SideSet* set_type)
+{
+  // Not generalized yet... This only works for T == SideSet
+  if (type != SIDESET)
+    return;
+	
+  int64_t entity_count = 0;
+  int64_t df_count = 0;
+
+  // Create the new set...
+  SideSet* new_set = new SideSet(this, group_spec[0]);
+	
+  get_region()->add(new_set);
+	
+  // Find the member SideSets...
+  for (size_t i=1; i < group_spec.size(); i++) {
+    SideSet* set = get_region()->get_sideset(group_spec[i]);
+    if (set != NULL) {
+      SideBlockContainer side_blocks = set->get_side_blocks();
+      SideBlockContainer::const_iterator J;
+
+      for (J=side_blocks.begin(); J != side_blocks.end(); ++J) {
+	SideBlock *sbold = *J;
+	size_t side_count = sbold->get_property("entity_count").get_int();
+	SideBlock *sbnew = new SideBlock(this, sbold->name(),
+						     sbold->topology()->name(),
+						     sbold->parent_element_topology()->name(),
+						     side_count);
+	int64_t id = sbold->get_property("id").get_int();
+	sbnew->property_add(Property("set_offset", entity_count));
+	sbnew->property_add(Property("set_df_offset", df_count));
+	sbnew->property_add(Property("id", id));
+	      
+	new_set->add(sbnew);
+
+	size_t old_df_count   = sbold->get_property("distribution_factor_count").get_int();
+	if (old_df_count > 0) {
+	  std::string storage = "Real[";
+	  storage += Utils::to_string(sbnew->topology()->number_nodes());
+	  storage += "]";
+	  sbnew->field_add(Field("distribution_factors",
+				       Field::REAL, storage,
+				       Field::MESH, side_count));
+	}
+	entity_count += side_count;
+	df_count     += old_df_count;
+      }
+    }
+    else {
+      IOSS_WARNING << "WARNING: While creating the grouped surface '" << group_spec[0]
+		   << "', the surface '" << group_spec[i] << "' does not exist. "
+		   << "This surface will skipped and not added to the group.\n\n";
+    }
+  }
 }
 
 // Utility function that may be used by derived classes.  Determines

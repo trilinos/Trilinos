@@ -44,6 +44,7 @@
 #include <Ioss_DataSize.h>
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_PropertyManager.h>
+#include <Ioss_EntityType.h>
 
 #include <vector>
 
@@ -260,6 +261,16 @@ namespace Ioss {
       ElementTopology *commonSideTopology;
 
       
+      template <typename T>
+	void create_groups(const std::string &property_name, EntityType type,
+			   const std::string &type_name, const T* set_type);
+      template <typename T>
+	void create_group(EntityType type, const std::string &type_name,
+			  const std::vector<std::string> &group_spec, const T* set_type);
+
+      // Create new sets as groups of existing exodus sets...
+      void handle_groups(); 
+
       /*!
        * Filename that this Database is connected with.  Derived
        * DatabaseIO classes may need to change this if the passed  in
