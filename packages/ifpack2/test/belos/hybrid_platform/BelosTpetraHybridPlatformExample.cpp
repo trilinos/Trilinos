@@ -206,8 +206,8 @@ int main(int argc, char*argv[])
   timer.start();
 
   // Get macine and test parameter files from command line
-  string fnTestParams("");
-  string fnMachine("");
+  string fnTestParams;
+  string fnMachine;
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("param-file", &fnTestParams, "XML Parameters file");
   cmdp.setOption("machine-file",&fnMachine,"Filename for XML machine description file.");
