@@ -65,6 +65,8 @@ APPEND_SET(HEADERS
   BelosPseudoBlockCGSolMgr.hpp
   BelosPseudoBlockGmresIter.hpp
   BelosPseudoBlockGmresSolMgr.hpp
+  BelosPseudoBlockStochasticCGIter.hpp
+  BelosPseudoBlockStochasticCGSolMgr.hpp
   BelosRCGIter.hpp
   BelosRCGSolMgr.hpp
   BelosSimpleOrthoManager.hpp
@@ -81,6 +83,7 @@ APPEND_SET(HEADERS
   BelosStatusTestOutput.hpp
   BelosStatusTestResNorm.hpp
   BelosStatusTestResNormOutput.hpp
+  BelosStochasticCGIteration.hpp
   BelosStubTsqrAdapter.hpp
   BelosTFQMRIter.hpp
   BelosTFQMRSolMgr.hpp
@@ -100,6 +103,7 @@ APPEND_SET(HEADERS
   BelosBlockGmresSolMgr.hpp
   BelosPseudoBlockCGSolMgr.hpp
   BelosPseudoBlockGmresSolMgr.hpp
+  BelosPseudoBlockStochasticCGSolMgr.hpp
   BelosTFQMRSolMgr.hpp
   BelosCGIter.hpp
   BelosBlockCGIter.hpp
@@ -107,6 +111,7 @@ APPEND_SET(HEADERS
   BelosBlockGmresIter.hpp
   BelosPseudoBlockCGIter.hpp
   BelosPseudoBlockGmresIter.hpp
+  BelosPseudoBlockStochasticCGIter.hpp
   BelosTFQMRIter.hpp
   )
 

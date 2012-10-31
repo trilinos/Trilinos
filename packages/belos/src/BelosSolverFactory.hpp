@@ -50,6 +50,7 @@
 #include <BelosPseudoBlockGmresSolMgr.hpp>
 #include <BelosBlockCGSolMgr.hpp>
 #include <BelosPseudoBlockCGSolMgr.hpp>
+#include <BelosPseudoBlockStochasticCGSolMgr.hpp>
 #include <BelosGCRODRSolMgr.hpp>
 #include <BelosRCGSolMgr.hpp>
 #include <BelosMinresSolMgr.hpp>
@@ -96,7 +97,8 @@ enum EBelosSolverType {
   SOLVER_TYPE_GCRODR,
   SOLVER_TYPE_RCG,
   SOLVER_TYPE_MINRES,
-  SOLVER_TYPE_LSQR
+  SOLVER_TYPE_LSQR,
+  SOLVER_TYPE_STOCHASTIC_CG
 };
 
 } // namespace details
@@ -424,6 +426,10 @@ makeSolverManagerFromEnum (const EBelosSolverType solverType,
     return makeSolverManagerTmpl<base_type, impl_type> (params);
     break;
   }
+  case SOLVER_TYPE_STOCHASTIC_CG: {
+    typedef PseudoBlockStochasticCGSolMgr<Scalar, MV, OP> impl_type;
+    return makeSolverManagerTmpl<base_type, impl_type> (params);
+  }
   default:
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 			       "Invalid EBelosSolverType enum value " << solverType 
@@ -474,6 +480,7 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   // parameter, or may have forgotten.
   aliasToCanonicalName_["Flexible GMRES"] = "Block GMRES";
   aliasToCanonicalName_["CG"] = "Pseudoblock CG";
+  aliasToCanonicalName_["Stochastic CG"] = "Pseudoblock Stochastic CG";
   aliasToCanonicalName_["Recycling CG"] = "RCG";
   aliasToCanonicalName_["Recycling GMRES"] = "GCRODR";
   // For compatibility with Stratimikos' Belos adapter.
@@ -486,6 +493,7 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   canonicalNameToEnum_["Pseudoblock GMRES"] = details::SOLVER_TYPE_PSEUDO_BLOCK_GMRES;
   canonicalNameToEnum_["Block CG"] = details::SOLVER_TYPE_BLOCK_CG;
   canonicalNameToEnum_["Pseudoblock CG"] = details::SOLVER_TYPE_PSEUDO_BLOCK_CG;
+  canonicalNameToEnum_["Pseudoblock Stochastic CG"] = details::SOLVER_TYPE_STOCHASTIC_CG;
   canonicalNameToEnum_["GCRODR"] = details::SOLVER_TYPE_GCRODR;
   canonicalNameToEnum_["RCG"] = details::SOLVER_TYPE_RCG;
   canonicalNameToEnum_["MINRES"] = details::SOLVER_TYPE_MINRES;
