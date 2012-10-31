@@ -67,7 +67,7 @@ public:
    */
   void update_field_data_states() const ;
 
-  // Destroy the last empty bucket in a family:
+  // Destroy the last empty bucket in a partition:
   void destroy_bucket( const unsigned & entity_rank , Bucket * last );
   void destroy_bucket( Bucket * bucket );
   void declare_nil_bucket();
