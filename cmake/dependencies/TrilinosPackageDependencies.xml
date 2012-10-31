@@ -1123,7 +1123,7 @@
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Tpetra,KokkosClassic"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Xpetra,Zoltan2"/>
     <TEST_REQUIRED_DEP_PACKAGES value="Belos,Triutils,Galeri"/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Anasazi"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
