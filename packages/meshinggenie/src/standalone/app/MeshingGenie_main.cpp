@@ -97,7 +97,16 @@ int main(int argc, char *argv[])
 	_delaunay_tessellation = false;
 	_voronoi_tessellation = false;
 
-	read_input(argv[1]);
+	if (argc == 1)
+	{
+		std::cout<< "Meshing Genie: Please specify input file!" << std::endl;
+		return 1;
+	}
+
+	if(read_input(argv[1])) 
+	{
+		return 1;
+	}
 
 	if (_mps)
 	{
@@ -165,7 +174,9 @@ int read_input(std::string file_name)
 				i_bf++;
 			}
 		}
+		return 0;
 	}
-	return 0;
+	std::cout<< "Meshing Genie: Error reading input file!" << std::endl;
+	return 1;
 	#pragma endregion
 }

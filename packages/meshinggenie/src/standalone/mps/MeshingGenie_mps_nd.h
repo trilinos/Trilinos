@@ -100,17 +100,23 @@ class MeshingGenie_mps_nd
 
 		// Identifying Active Boundary Cells via Random Sampling of boundary faces
 		void initiate_active_pool();
-		void identify_active_boundary_cells();
-		void identify_exterior_cells();
+		void identify_boundary_cells();
+		void identify_exterior_and_interior_cells();
+		void update_active_pool(size_t refLevel);
+		void throw_darts(size_t refLevel);
+
+		// retrieve uncovered children of an active cell
+		inline void get_uncovered_children(size_t* icell, size_t refLevel, std::vector<size_t*> &children);
+
+		inline bool valid_dart(double* dart, size_t* dart_parent_cell);
+		inline bool covered_cell(size_t icell, size_t refLevel);
 
 		// use binary search to check if icell exists in cell_vec
 		inline bool cell_in_vec(size_t* icell, std::vector<size_t*> &cell_vec);
-		// use binary search to check if parent_cell is in _covered_boundary_cells
-		inline bool boundary_cell_parent_is_covered(size_t* parent_cell);
-
+		
 		// use binary search to add icell to cell_vec, false == icell already exists in cell_vec
 		inline bool add_cell(size_t* icell, std::vector<size_t*> &cell_vec);
-		inline bool add_active_boundary_cell(size_t* active_boundary_cell);
+		inline bool add_boundary_cell(size_t* active_boundary_cell);
 
 		// Check the location of icell with regard to the range of cell_vec
 		inline vec_range check_location(size_t* icell,std::vector<size_t*> &cell_vec);
@@ -127,6 +133,9 @@ class MeshingGenie_mps_nd
 		inline bool conflicting_cells(size_t* icell, size_t* jcell);
 		// Get distance squared between the centers of two cells:
 		inline double get_cells_sq_distance(size_t* icell, size_t* jcell);
+		
+		// returns the i^p
+		inline size_t ipow(size_t i, size_t p);
 
     private:
 		
@@ -166,13 +175,16 @@ class MeshingGenie_mps_nd
 
 		
 		std::vector< size_t* > _active_cells;               // active Cells
-		std::vector< size_t* > _active_boundary_cells;      // active boundary cells
-		std::vector< size_t* > _exterior_cells;             // active cells that lie outside the domain
-		std::vector< size_t* > _interior_cells;             // active cells that lie inside the domain
+
+
+		std::vector< size_t* > _boundary_cells;             // boundary cells
+		std::vector< size_t* > _exterior_cells;             // cells that lie outside the domain
+		std::vector< size_t* > _interior_cells;             // cells that lie inside the domain
+		std::vector< size_t* > _covered_cells;              //  cells that are already covered
 		
-
-
-		std::vector< size_t* > _covered_boundary_cells;     // Boundary Cells that are already covered
+		std::vector< double* > _boundary_cell_points;       // sample points in boundary cells
+		std::vector< double* > _interior_cell_points;       // sample points in interior cells		
+		
 };
                                 
 #endif	
