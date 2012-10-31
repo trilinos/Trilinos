@@ -87,7 +87,7 @@ $TRILINOS_BASE_DIR/Trilinos/checkin-test.py \
 --ss-extra-builds=MPI_DEBUG_SS,SERIAL_RELEASE_SS \
 --disable-packages=$DISABLE_PACKAGES \
 --skip-case-no-email \
---ctest-options="-E '(MOOCHO_|Piro_AnalysisDriver|Stokhos_Linear2D_Diffusion_GMRES_KLR)'" \
+--ctest-options="-E '(MOOCHO_|Piro_AnalysisDriver|Stokhos_Linear2D_Diffusion_GMRES_KLR|Panzer_STK_ResponseLibraryTest)'" \
 $EXTRA_ARGS  
 
 
