@@ -327,7 +327,7 @@ bool Bucket::assert_correct() const {
   // test equivalent() method
   const Bucket* bucket = this;
   const Bucket * first = first_bucket_in_partition();
-  if (!first || ! bucket->equivalent(*first) || ! first->equivalent(*bucket) )
+  if (!first || ! bucket->in_same_partition(*first) || ! first->in_same_partition(*bucket) )
     return false;
 
   // other tests...

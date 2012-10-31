@@ -1,5 +1,5 @@
 /*
- * BucketFamily.hpp
+ * Partition.hpp
  *
  */
 
@@ -36,6 +36,9 @@ public:
     {
         return m_stkPartition;
     }
+
+    /// Sort the entities in this partition by EntityKey.
+    void sort();
 
     inline bool belongs(Bucket *bkt) const;
 

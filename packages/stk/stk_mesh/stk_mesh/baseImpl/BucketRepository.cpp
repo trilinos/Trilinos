@@ -78,8 +78,8 @@ void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * b
   // Get the first bucket in the same partition as the bucket being deleted
   Bucket * const first = bucket_to_be_deleted->first_bucket_in_partition();
 
-  ThrowRequireMsg( bucket_to_be_deleted->equivalent(*first), "Logic error - bucket_to_be_deleted is not in same partition as first_bucket_in_partition");
-  ThrowRequireMsg( first->equivalent(*bucket_to_be_deleted), "Logic error - first_bucket_in_partition is not in same partition as bucket_to_be_deleted");
+  ThrowRequireMsg( bucket_to_be_deleted->in_same_partition(*first), "Logic error - bucket_to_be_deleted is not in same partition as first_bucket_in_partition");
+  ThrowRequireMsg( first->in_same_partition(*bucket_to_be_deleted), "Logic error - first_bucket_in_partition is not in same partition as bucket_to_be_deleted");
 
   ThrowRequireMsg( bucket_to_be_deleted->size() == 0,
       "Destroying non-empty bucket " << *(bucket_to_be_deleted->key()) );
@@ -266,8 +266,8 @@ BucketRepository::declare_bucket(
 
   //----------------------------------
 
-  ThrowRequireMsg( bucket->equivalent(*bucket->first_bucket_in_partition()), "Logic error - new bucket is not in same partition as first_bucket_in_partition");
-  ThrowRequireMsg( bucket->first_bucket_in_partition()->equivalent(*bucket), "Logic error - first_bucket_in_partition is not in same partition as new bucket");
+  ThrowRequireMsg( bucket->in_same_partition(*bucket->first_bucket_in_partition()), "Logic error - new bucket is not in same partition as first_bucket_in_partition");
+  ThrowRequireMsg( bucket->first_bucket_in_partition()->in_same_partition(*bucket), "Logic error - first_bucket_in_partition is not in same partition as new bucket");
 
   return bucket ;
 }
@@ -509,8 +509,8 @@ void BucketRepository::remove_entity( Bucket * k , unsigned i )
 
   Bucket * const last = k->last_bucket_in_partition();
 
-  ThrowRequireMsg( last->equivalent(*k), "Logic error - last bucket in partition not equivalent to bucket");
-  ThrowRequireMsg( k->equivalent(*last), "Logic error - bucket not equivalent to last bucket in partition");
+  ThrowRequireMsg( last->in_same_partition(*k), "Logic error - last bucket's partition is not bucket's");
+  ThrowRequireMsg( k->in_same_partition(*last), "Logic error - bucket's partition is not last bucket's");
 
   // Fill in the gap if it is not the last entity being removed
 
@@ -590,7 +590,7 @@ void BucketRepository::update_partitions()
         }
         if (end_partition < buckets.size())
         {
-            ++end_partition ; //increment past the end
+            ++end_partition ; //increment past the last bucket in the partition.
         }
         Partition &partition = partitions.back();
         partition.m_stkPartition = buckets[begin_partition]->key_vector();

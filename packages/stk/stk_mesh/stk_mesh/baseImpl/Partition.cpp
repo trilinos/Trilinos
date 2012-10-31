@@ -1,8 +1,7 @@
 /*
- * BucketFamily.cpp
+ * Partition.cpp
  *
  *  Created on: Oct 22, 2012
- *      Author: pgxavie
  */
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/baseImpl/Partition.hpp>
@@ -52,3 +51,11 @@ BucketRepository &Partition::getRepository(stk::mesh::BulkData &mesh)
     return mesh.m_bucket_repository;
 }
 
+void Partition::sort()
+{
+    // Gather up the entities in this partition.
+
+    // Sort the entities.
+
+    // More to come...
+}

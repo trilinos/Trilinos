@@ -236,7 +236,7 @@ public:
 
   /** \brief Equivalent buckets have the same parts
    */
-  bool equivalent( const Bucket& b ) const {
+  bool in_same_partition( const Bucket& b ) const {
     return first_bucket_in_partition() == b.first_bucket_in_partition();
   }
 

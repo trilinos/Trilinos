@@ -199,7 +199,7 @@ void EntityRepository::change_entity_bucket( Bucket & b, Entity e,
   DiagIfWatching(LOG_ENTITY, e.key(), "New bucket: " << b << ", ordinal: " << ordinal);
 
   const bool modified_parts = ! e.m_entityImpl->is_bucket_valid() ||
-                              ! b.equivalent( e.bucket() );
+                              ! b.in_same_partition( e.bucket() );
   if ( modified_parts ) {
     e.m_entityImpl->log_modified_and_propagate();
   }
