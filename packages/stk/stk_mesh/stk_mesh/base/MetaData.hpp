@@ -17,6 +17,7 @@
 #include <stk_util/util/StaticAssert.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 
+#include <stk_mesh/base/FieldTraits.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Field.hpp>

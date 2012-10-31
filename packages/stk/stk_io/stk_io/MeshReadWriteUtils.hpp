@@ -219,7 +219,7 @@ namespace stk {
      * stk fields will have a corresponding database field defined.
      */
     void define_output_fields(const MeshData &mesh_data,
-			      const stk::mesh::MetaData &fem_meta,
+			      const stk::mesh::MetaData &meta,
 			      bool add_all_fields = false);
 
     /**

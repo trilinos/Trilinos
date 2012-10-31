@@ -10,23 +10,9 @@
 #define stk_io_IossBridge_hpp
 
 #include <string>
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-
-// TODO: remove this and uses of USE_FEMMETADATA once the migration is done (srkenno@sandia.gov)
-
-#define USE_FEMMETADATA
-#ifdef USE_FEMMETADATA
-#include <stk_mesh/base/FEMHelpers.hpp>
-#endif
-
 #include <stk_mesh/base/TopologyDimensions.hpp>
-#include <Ioss_DBUsage.h>
 #include <Ioss_Field.h>
-#include <Ioss_SideBlock.h>
-#include <Ioss_ElementTopology.h>
+#include <Ioss_DBUsage.h>
 
 namespace Ioss {
 class Region;
@@ -40,6 +26,12 @@ class ElementTopology;
 struct CellTopologyData;
 
 namespace stk {
+  namespace mesh {
+    class Part;
+    class BulkData;
+    class Selector;
+    class MetaData;
+  }
 
 /**
  * The stk::io namespace contains functions related to the
@@ -85,11 +77,11 @@ void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &me
  */
 template <typename T>
 void default_part_processing(const std::vector<T*> &entities,
-                             stk::mesh::MetaData &fem_meta)
+                             stk::mesh::MetaData &meta)
 {
   for(size_t i=0; i < entities.size(); i++) {
     T* entity = entities[i];
-    internal_part_processing(entity, fem_meta);
+    internal_part_processing(entity, meta);
   }
 }
 
@@ -307,12 +299,8 @@ mesh::EntityRank side_rank(const mesh::MetaData &meta);
 mesh::EntityRank face_rank(const mesh::MetaData &meta);
 mesh::EntityRank edge_rank(const mesh::MetaData &meta);
 mesh::EntityRank node_rank(const mesh::MetaData &meta);
-void set_cell_topology(mesh::Part &part, const CellTopologyData * const cell_topology);
 const CellTopologyData *get_cell_topology(const mesh::Part &part);
 
-void initialize_spatial_dimension(mesh::MetaData &fem_meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names);
-
-//! \deprecated
 void initialize_spatial_dimension(mesh::MetaData &meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names);
 
 void get_io_field_type(const stk::mesh::FieldBase *field,

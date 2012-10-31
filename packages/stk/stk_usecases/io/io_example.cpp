@@ -18,6 +18,8 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/TopologyDimensions.hpp>
+#include <stk_mesh/base/FEMHelpers.hpp>
+#include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include <stk_io/IossBridge.hpp>
 

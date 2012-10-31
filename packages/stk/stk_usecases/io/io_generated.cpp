@@ -117,7 +117,7 @@ namespace {
     // types and the exodusII default database type.
     Ioss::Init::Initializer init_db;
 
-    stk::mesh::MetaData fem_meta_data( spatial_dimension );
+    stk::mesh::MetaData meta_data( spatial_dimension );
     stk::io::MeshData mesh_data;
 
     bool use_netcdf4 = false;
@@ -142,18 +142,18 @@ namespace {
 
     std::string file = working_directory;
     file += filename;
-    stk::io::create_input_mesh(type, file, comm, fem_meta_data, mesh_data);
-    stk::io::define_input_fields(mesh_data, fem_meta_data);
+    stk::io::create_input_mesh(type, file, comm, meta_data, mesh_data);
+    stk::io::define_input_fields(mesh_data, meta_data);
 
-    fem_meta_data.commit();
-    stk::mesh::BulkData bulk_data(fem_meta_data , comm);
+    meta_data.commit();
+    stk::mesh::BulkData bulk_data(meta_data , comm);
     stk::io::populate_bulk_data(bulk_data, mesh_data);
 
     //------------------------------------------------------------------
     // Create output mesh...  ("generated_mesh.out") ("exodus_mesh.out")
     std::string output_filename = working_directory + type + "_mesh.out";
     stk::io::create_output_mesh(output_filename, comm, bulk_data, mesh_data);
-    stk::io::define_output_fields(mesh_data, fem_meta_data);
+    stk::io::define_output_fields(mesh_data, meta_data);
 
     // Determine number of timesteps on input database...
     int timestep_count = mesh_data.m_input_region->get_property("state_count").get_int();

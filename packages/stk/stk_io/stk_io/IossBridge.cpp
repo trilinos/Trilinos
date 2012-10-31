@@ -20,6 +20,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FieldData.hpp>
@@ -447,21 +448,16 @@ stk::mesh::EntityRank node_rank(const stk::mesh::MetaData& meta)
   return stk::mesh::MetaData::NODE_RANK;
 }
 
-void set_cell_topology(stk::mesh::Part &part, const CellTopologyData * const cell_topology)
-{
-  stk::mesh::set_cell_topology(part, cell_topology);
-}
-
 const CellTopologyData *get_cell_topology(const stk::mesh::Part &part)
 {
   return stk::mesh::MetaData::get(part).get_cell_topology(part).getCellTopologyData();
 }
 
-void initialize_spatial_dimension(stk::mesh::MetaData & fem_meta, size_t spatial_dimension,
+void initialize_spatial_dimension(stk::mesh::MetaData & meta, size_t spatial_dimension,
                                   const std::vector<std::string> &entity_rank_names)
 {
-  if (!fem_meta.is_initialized() ) {
-    fem_meta.initialize(spatial_dimension, entity_rank_names);
+  if (!meta.is_initialized() ) {
+    meta.initialize(spatial_dimension, entity_rank_names);
   }
 }
 
@@ -824,7 +820,6 @@ void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &me
     if (cell_topology != NULL) {
       const stk::mesh::CellTopology cell_topo(cell_topology);
       stk::mesh::set_cell_topology(*part, cell_topo);
-      stk::io::set_cell_topology(*part, cell_topology);
     } else {
       // \todo IMPLEMENT handle cell_topolgy mapping error...
     }
