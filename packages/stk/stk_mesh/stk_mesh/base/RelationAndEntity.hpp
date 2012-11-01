@@ -9,8 +9,6 @@
 #ifndef stk_mesh_base_RelationAndEntity_hpp
 #define stk_mesh_base_RelationAndEntity_hpp
 
-#define stk_mesh_base_RelationAndEntity_USE_VALUE_SEMENATICS_FOR_ENTITY
-
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Trace.hpp>
