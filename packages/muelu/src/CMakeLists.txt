@@ -92,6 +92,12 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_GLOB(SOURCES ${DIR}/Utils/ExplicitInstantiation/*.cpp)
 ENDIF()
 
+if (NOT ${PACKAGE_NAME}_ENABLE_Ifpack2)
+  LIST(REMOVE_ITEM HEADERS ${DIR}/Smoothers/MueLu_Ifpack2Smoother.hpp)
+  LIST(REMOVE_ITEM SOURCES ${DIR}/Utils/ExplicitInstantiation/MueLu_Ifpack2Smoother.cpp)
+ENDIF()
+
+
 #
 # Define the targets for package's library(s)
 #
