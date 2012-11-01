@@ -59,14 +59,18 @@ namespace Teuchos {
 /** \class OpaqueWrapper
  * \brief Base class for wrapped opaque objects.
  * \tparam Opaque Type of the opaque object (a.k.a. handle).
+ * \ingroup teuchos_mem_mng_grp
  *
- * \subsection Teuchos_OpaqueWrapper_Summary Summary
+ * \section Teuchos_OpaqueWrapper_Summary Summary
  *
- * If you want to <i>create</i> an RCP to an opaque object, use the
+ * If you want to create an RCP to an opaque object, use the
  * opaqueWrapper() nonmember template function.  The <i>type</i> of an
  * RCP to an opaque object T is <tt>RCP<OpaqueWrapper<T> ></tt>.
+ * Users are not allowed to construct an OpaqueWrapper object
+ * explicitly.  You must use the opaqueWrapper() nonmember function to
+ * do so.
  *
- * \subsection Teuchos_OpaqueWrapper_Prereq Prerequisites
+ * \section Teuchos_OpaqueWrapper_Prereq Prerequisites
  *
  * In order to understand this documentation, you must first have
  * learned how to use RCP (Teuchos' reference-counted pointer class)
@@ -75,7 +79,7 @@ namespace Teuchos {
  * for distributed-memory parallel programming), but this is not
  * required.
  *
- * \subsection Teuchos_OpaqueWrapper_Handles What are opaque objects (a.k.a. handles)?
+ * \section Teuchos_OpaqueWrapper_Handles What are opaque objects (a.k.a. handles)?
  *
  * Many different software libraries use the <i>opaque object</i> or
  * opaque handle idiom to hide the internals of a data structure from
@@ -101,7 +105,7 @@ namespace Teuchos {
  * you can take.  This is needed in order to wrap an opaque object in
  * a RCP, for example.
  *
- * \subsection Teuchos_OpaqueWrapper_Special Why do opaque handles need special treatment?
+ * \section Teuchos_OpaqueWrapper_Special Why do opaque handles need special treatment?
  *
  * This class was motivated in particular by MPI's common use of the
  * opaque object idiom.  For MPI, passing MPI_Comm, MPI_Datatype, and
@@ -173,7 +177,7 @@ namespace Teuchos {
  * others must not.  (Compare std::ostream; std::cout should never be
  * closed by typical user code, but an output file should be closed.)
  *
- * \subsection Teuchos_OpaqueWrapper_How How to use OpaqueWrapper
+ * \section Teuchos_OpaqueWrapper_How How to use OpaqueWrapper
  *
  * We fix this problem by providing the OpaqueWrapper template base
  * class and the opaqueWrapper() nonmember template function.  Use
@@ -200,10 +204,10 @@ namespace Teuchos {
  \endcode
 
  * The optional second argument to opaqueWrapper() is a "free"
- * function, of type OpaqueFree which is a template parameter.  If the
- * free function is provided, then when the RCP's reference count goes
- * to zero, that function is called to "free" the handle.  If
- * opaqueFree is a free function, then the following must be
+ * function.  It has type OpaqueFree which is a template parameter.
+ * If the free function is provided, then when the RCP's reference
+ * count goes to zero, that function is called to "free" the handle.
+ * If opaqueFree is a free function, then the following must be
  * syntactically valid:
  \code
  Opaque opaque;
@@ -217,11 +221,13 @@ namespace Teuchos {
  * the "free" function once the reference count of \c comm reaches
  * zero.
  *
- * Users are not allowed to construct an OpaqueWrapper object
- * explicitly.  You must use the opaqueWrapper() nonmember function to
- * do so.
- *
- * \ingroup teuchos_mem_mng_grp
+ * Note that the above example is only correct if the reference count
+ * of \c comm will go to zero before MPI_Finalize is called.  This is
+ * because it's not valid to call MPI_Comm_free after MPI_Finalize has
+ * been called.  The details::safeCommFree function checks whether
+ * MPI_Finalize has been called (via MPI_Finalized) before calling
+ * MPI_Comm_free; you may use this function as the free function if
+ * you are concerned about this.
  */
 template <class Opaque>
 class OpaqueWrapper {
@@ -285,14 +291,11 @@ private:
  * must be callable as:
 
  \code
-  opaqueFree(&opaque);
+ opaqueFree(&opaque);
  \endcode
 
- * Again, this is typical for the opaque objects implemented in MPI
- * for instance.  For example, in order to delete an MPI_Comm object
- * created by the user (not MPI_COMM_WORLD), you must use the function
- * MPI_Comm_free().  See the documentation of OpaqueWrapper for
- * examples of how to supply a function for freeing an opaque handle.
+ * Please refer to the documentation of OpaqueWrapper for examples of
+ * how to supply a function for freeing an opaque handle.
  *
  * \relates OpaqueWrapper
  */
