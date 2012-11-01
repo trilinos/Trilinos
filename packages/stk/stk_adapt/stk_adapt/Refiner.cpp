@@ -2742,8 +2742,8 @@ namespace stk {
         {
           bool valid = false;
           stk::mesh::PartVector side_parts, elem_parts;
-          element->bucket().supersets(elem_parts);
-          side_elem->bucket().supersets(side_parts);
+          element.bucket().supersets(elem_parts);
+          side_elem.bucket().supersets(side_parts);
           for (unsigned isp = 0; isp < side_parts.size(); isp++)
             {
               if ( stk::mesh::is_auto_declared_part(*side_parts[isp]) )
@@ -2779,12 +2779,12 @@ namespace stk {
       int topoDim = UniformRefinerPatternBase::getTopoDim(element_topo);
 
       bool isShell = false;
-      if (topoDim < (int)element->entity_rank())
+      if (topoDim < (int)element.entity_rank())
         {
           isShell = true;
         }
       int spatialDim = m_eMesh.get_spatial_dim();
-      if (spatialDim == 3 && isShell && side_elem->entity_rank() == m_eMesh.edge_rank())
+      if (spatialDim == 3 && isShell && side_elem.entity_rank() == m_eMesh.edge_rank())
         {
           element_nsides = (unsigned) element_topo.getEdgeCount();
         }
@@ -2807,15 +2807,15 @@ namespace stk {
 
       if (permIndex >= 0)
         {
-          mesh::PairIterRelation rels = side_elem->relations(m_eMesh.element_rank());
+          mesh::PairIterRelation rels = side_elem.relations(m_eMesh.element_rank());
 
           // special case for shells
           if (isShell)
             {
               // FIXME for 2D
-              if (side_elem->entity_rank() == m_eMesh.face_rank())
+              if (side_elem.entity_rank() == m_eMesh.face_rank())
                 {
-                  stk::mesh::PairIterRelation elem_sides = element->relations(side_elem->entity_rank());
+                  stk::mesh::PairIterRelation elem_sides = element.relations(side_elem.entity_rank());
                   unsigned elem_sides_size= elem_sides.size();
                   //std::cout << "tmp srk found shell, elem_sides_size= " << elem_sides_size << std::endl;
                   if (elem_sides_size == 1)
@@ -2830,7 +2830,7 @@ namespace stk {
             }
 
           int exists=0;
-          stk::mesh::PairIterRelation elem_sides = element->relations(side_elem->entity_rank());
+          stk::mesh::PairIterRelation elem_sides = element.relations(side_elem.entity_rank());
           unsigned elem_sides_size= elem_sides.size();
           unsigned rel_id = 0;
           for (unsigned iside=0; iside < elem_sides_size; iside++)

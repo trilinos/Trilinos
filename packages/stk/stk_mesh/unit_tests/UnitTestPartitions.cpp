@@ -274,7 +274,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testInitialize )
         selector = fix.m_partA & !fix.m_partB;
         for (size_t i = 0; i < ec1.size(); ++i)
         {
-            const stk::mesh::Bucket & bucket = ec1[i]->bucket() ;
+            const stk::mesh::Bucket & bucket = ec1[i].bucket() ;
             bool result = selector(bucket);
             STKUNIT_EXPECT_TRUE(result);
         }
@@ -283,7 +283,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testInitialize )
         selector = fix.m_partA & fix.m_partB;
         for (size_t i = 0; i < ec2.size(); ++i)
         {
-            const stk::mesh::Bucket & bucket = ec2[i]->bucket() ;
+            const stk::mesh::Bucket & bucket = ec2[i].bucket() ;
             bool result = selector(bucket);
             STKUNIT_EXPECT_TRUE(result);
         }
@@ -292,7 +292,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testInitialize )
         selector = fix.m_partB & fix.m_partC;
         for (size_t i = 0; i < ec3.size(); ++i)
         {
-            const stk::mesh::Bucket & bucket = ec3[i]->bucket() ;
+            const stk::mesh::Bucket & bucket = ec3[i].bucket() ;
             bool result = selector(bucket);
           STKUNIT_EXPECT_TRUE(result);
         }
@@ -301,7 +301,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testInitialize )
         selector = !fix.m_partB & fix.m_partC;
         for (size_t i = 0; i < ec4.size(); ++i)
         {
-            const stk::mesh::Bucket & bucket = ec4[i]->bucket() ;
+            const stk::mesh::Bucket & bucket = ec4[i].bucket() ;
             bool result = selector(bucket);
             STKUNIT_EXPECT_TRUE(result);
         }
@@ -310,7 +310,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testInitialize )
       selector = !(fix.m_partA | fix.m_partB | fix.m_partC | fix.m_partD);
       for (size_t i = 0; i < ec5.size(); ++i)
       {
-          const stk::mesh::Bucket & bucket = ec5[i]->bucket() ;
+          const stk::mesh::Bucket & bucket = ec5[i].bucket() ;
           bool result = selector(bucket);
           STKUNIT_EXPECT_TRUE(result);
       }

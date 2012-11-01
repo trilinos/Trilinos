@@ -715,8 +715,6 @@ public:
   //Entity(Entity* e) : m_entityImpl(e->m_entityImpl) {}
   //Entity& operator=(Entity* e) { m_entityImpl = e->m_entityImpl; return *this; }
   Entity operator*() const { return *this; }
-  const Entity* operator->() const { return this; }
-  Entity* operator->() { return this; }
   friend bool operator==(void* lhs, Entity rhs)
   {
     assert(lhs == NULL);
