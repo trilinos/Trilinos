@@ -170,7 +170,7 @@ class ExodusMesh : public GeneratedMesh
 {
 public:
 
-    explicit ExodusMesh(ExodusData &exodusData);
+    explicit ExodusMesh(const ExodusData &exodusData);
 
     virtual ~ExodusMesh() { }
 
@@ -219,7 +219,7 @@ private:
     int64_t mGlobalNumberOfElements;
     int64_t mLocalNumberOfElements;
 
-    ExodusData & mExodusData;
+    const ExodusData & mExodusData;
     std::vector<int64_t> mElementOffsetForBlock;
 };
 

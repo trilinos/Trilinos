@@ -268,7 +268,7 @@ void DashSurfaceMesh::element_map(IntVector &map) const
 
 // -----------------------------------------------------------------------------------------
 
-ExodusMesh::ExodusMesh(ExodusData &exodusData) : mExodusData(exodusData)
+ExodusMesh::ExodusMesh(const ExodusData &exodusData) : mExodusData(exodusData)
 {
     if(block_count() > 0)
     {
