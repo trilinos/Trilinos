@@ -42,16 +42,24 @@
 #ifndef EPETRAEXT_MMHELPERS_H
 #define EPETRAEXT_MMHELPERS_H
 
-#include <EpetraExt_ConfigDefs.h>
-#include <Epetra_DistObject.h>
-#include <Epetra_Map.h>
+#include "EpetraExt_ConfigDefs.h"
+#include "Epetra_DistObject.h"
+#include "Epetra_Map.h"
+
 #include <vector>
 #include <set>
 #include <map>
 
+
 class Epetra_CrsMatrix;
+class Epetra_Import;
+class Epetra_Distributor;
 
 namespace EpetraExt {
+class LightweightCrsMatrix;
+
+
+#define LIGHTWEIGHT_MATRIX
 
 //struct that holds views of the contents of a CrsMatrix. These
 //contents may be a mixture of local and remote rows of the
@@ -74,8 +82,13 @@ public:
   const Epetra_Map* rowMap;
   const Epetra_Map* colMap;
   const Epetra_Map* domainMap;
-  const Epetra_Map* importColMap;
+  const Epetra_BlockMap* importColMap;
+#ifdef LIGHTWEIGHT_MATRIX
+  LightweightCrsMatrix* importMatrix;
+#else
   Epetra_CrsMatrix* importMatrix;
+#endif
+
 };
 
 int dumpCrsMatrixStruct(const CrsMatrixStruct& M);
@@ -139,13 +152,57 @@ void pack_outgoing_rows(const Epetra_CrsMatrix& mtx,
                         std::vector<int>& send_rows,
                         std::vector<int>& rows_per_send_proc);
 
-inline
-std::pair<int,int> get_col_range(const Epetra_Map& emap)
-{
-  return std::make_pair(emap.MinMyGID(),emap.MaxMyGID());
-}
+std::pair<int,int> get_col_range(const Epetra_Map& emap);
 
 std::pair<int,int> get_col_range(const Epetra_CrsMatrix& mtx);
+
+int sort_crs_entries(int NumRows, const int *CRS_rowptr, int *CRS_colind, double *CRS_vals);
+
+
+class LightweightCrsMatrix {
+ public:
+ 
+  LightweightCrsMatrix(const Epetra_CrsMatrix & A, Epetra_Import & RowImporter);
+
+  // Standard crs data structures
+  std::vector<int>    rowptr_;
+  std::vector<int>    colind_;
+  std::vector<double> vals_;
+
+  // Colind in LL-GID space (if needed)
+  std::vector<long long>   colind_LL_;
+
+  // Epetra Maps
+  Epetra_BlockMap          RowMap_;
+  Epetra_BlockMap          ColMap_;
+  Epetra_Map               DomainMap_;
+
+  // List of owning PIDs (from the DomainMap) as ordered by entries in the column map.
+  std::vector<int>    ColMapOwningPIDs_;
+
+ private: 
+
+  // Templated versions of MakeColMapAndReindex (to prevent code duplication)
+  template <class GO>
+  int MakeColMapAndReindex(std::vector<int> owningPIDs,std::vector<GO> Gcolind);
+
+  template <int>
+  int MakeColMapAndReindex(std::vector<int> owningPIDs,std::vector<int> Gcolind);
+
+  template <long long>
+  int MakeColMapAndReindex(std::vector<int> owningPIDs,std::vector<long long> Gcolind);
+
+
+  int PackAndPrepareWithOwningPIDs(const Epetra_DistObject & Source, 
+				   int NumExportIDs,
+				   int * ExportLIDs,
+				   int & LenExports,
+				   char *& Exports,
+				   int & SizeOfPacket,
+				   int * Sizes,
+				   bool & VarSizes,
+				   Epetra_Distributor & Distor);
+};
 
 }//namespace EpetraExt
 

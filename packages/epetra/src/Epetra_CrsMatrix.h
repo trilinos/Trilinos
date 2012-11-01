@@ -62,6 +62,8 @@ class Epetra_Import;
 class Epetra_Export;
 class Epetra_Vector;
 class Epetra_MultiVector;
+class Epetra_IntSerialDenseVector;
+
 
 // Define this to see a complete dump a an Epetra_CrsMatrix::Multiply(...) call
 //#define EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
@@ -246,7 +248,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
   
   //! Copy constructor.
   Epetra_CrsMatrix(const Epetra_CrsMatrix& Matrix);
-  
+
   //! Epetra_CrsMatrix Destructor
   virtual ~Epetra_CrsMatrix();
   //@}
@@ -1290,6 +1292,40 @@ or if the number of entries in this row exceed the Length parameter.
     } 
     else { IndexOffset = 0; Indices = 0; Values_in  = 0; return (-1);} }
   
+    
+    //! Returns a reference to the Epetra_IntSerialDenseVector used to hold the local IndexOffsets (CRS rowptr)
+    /*!
+       \warning This method is intended for experts only, its use may require user code modifications in future versions of Epetra.
+    */
+    Epetra_IntSerialDenseVector& ExpertExtractIndexOffset();
+
+    //! Returns a reference to the Epetra_IntSerialDenseVector used to hold the local All_Indices (CRS colind)
+    /*!
+       \warning This method is intended for experts only, its use may require user code modifications in future versions of Epetra.
+    */
+    Epetra_IntSerialDenseVector& ExpertExtractIndices();  
+
+    //! Returns a reference to the double* used to hold the values array
+    /*!
+       \warning This method is intended for experts only, its use may require user code modifications in future versions of Epetra.    
+    */
+    double *& ExpertExtractValues() {return All_Values_;}
+
+
+    //! Performs a FillComplete on an object that aready has filled CRS data
+    /*! Performs a lightweight FillComplete on an object that already has filled IndexOffsets, All_Indices and All_Values.
+      This routine is needed to support the EpetraExt::MatrixMatrix::Multiply and should not be called by users.
+       \warning This method is intended for expert developer use only, and should never be called by user code.
+    */
+    int ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, bool MakeImportExport=true);
+
+
+    //! Makes sure this matrix has a unique CrsGraphData object
+    /*! This routine is needed to support the EpetraExt::MatrixMatrix::Multiply and should not be called by users.
+      \warning This method is intended for expert developer use only, and should never be called by user code.
+    */
+    int ExpertMakeUniqueCrsGraphData();
+
   //! Forces FillComplete() to locally order ghostnodes associated with each remote processor in ascending order.
   /*! To be compliant with AztecOO, FillComplete() already locally orders ghostnodes such that
       information received from processor k has a lower local numbering than information received

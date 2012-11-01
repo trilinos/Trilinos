@@ -44,8 +44,15 @@
 #include <EpetraExt_ConfigDefs.h>
 
 class Epetra_CrsMatrix;
+class Epetra_Map;
+
+#ifdef HAVE_VECTOR
+#include <vector>
+#endif
 
 namespace EpetraExt {
+  class CrsMatrixStruct;
+
 
   /** Collection of matrix-matrix operations. This class basically
       functions as a namespace, containing only static methods.
@@ -139,6 +146,30 @@ class MatrixMatrix {
                    bool transposeB,
                    double scalarB,
                    Epetra_CrsMatrix * & C);
+
+ private:
+    static int mult_A_B_reuse(const Epetra_CrsMatrix & A,
+		       const Epetra_CrsMatrix & B,
+		       CrsMatrixStruct& Bview,
+		       std::vector<int> & Bcol2Ccol,
+		       std::vector<int> & Bimportcol2Ccol,
+		       Epetra_CrsMatrix& C);
+    
+    static int mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
+			   const Epetra_CrsMatrix & B,
+			   CrsMatrixStruct& Bview,
+			   std::vector<int> & Bcol2Ccol,
+			   std::vector<int> & Bimportcol2Ccol,
+			   Epetra_CrsMatrix& C);
+
+    static int mult_A_B(const Epetra_CrsMatrix & A,
+		 CrsMatrixStruct & Aview,
+		 const Epetra_CrsMatrix & B,
+		 CrsMatrixStruct& Bview,
+		 Epetra_CrsMatrix& C,
+		 bool call_FillComplete_on_result);
+
+    static int ReplaceCrsGraphData(Epetra_CrsMatrix & C, const Epetra_Map & DomainMap, const Epetra_Map & RangeMap);
 
 };//class MatrixMatrix
 

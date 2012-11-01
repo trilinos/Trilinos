@@ -415,6 +415,8 @@ int run_test(Epetra_Comm& Comm,
   std::string C_file;
   bool transA, transB;
 
+  if(!Comm.MyPID()) cout<<"Testing: "<<filename<<endl;
+
   int err = read_matrix_file_names(Comm, filename, A_file, transA,
                                    B_file, transB, C_file);
   if (err != 0) {
@@ -475,6 +477,8 @@ int run_test(Epetra_Comm& Comm,
 
   C = new Epetra_CrsMatrix(Copy, *rowmap, 1);
 
+  if(C->Comm().MyPID()) printf("transA = %d transB = %d\n",(int)transA,(int)transB);
+
   err = EpetraExt::MatrixMatrix::Multiply(*A, transA, *B, transB, *C);
   if (err != 0) {
     std::cout << "err "<<err<<" from MatrixMatrix::Multiply"<<std::endl;
@@ -520,7 +524,7 @@ int run_test(Epetra_Comm& Comm,
   else {
     return_code = -1;
     if (localProc == 0) {
-      std::cout << "Test Failed, inf_norm = " << inf_norm << std::endl;
+      std::cout << "Test Failed ("<<filename<<"), inf_norm = " << inf_norm << std::endl;
     }
 Comm.Barrier();
 std::cout << "C"<<std::endl;
