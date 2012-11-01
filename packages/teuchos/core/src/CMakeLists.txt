@@ -57,8 +57,19 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
 LIST(REMOVE_ITEM  HEADERS
+  # Not to be built yet
   ${CMAKE_CURRENT_SOURCE_DIR}/Teuchos_SharedAccessPolicy.hpp
   )
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Boost)
+IF (NOT ${PACKAGE_NAME}_ENABLE_Boost)
+
+  LIST(REMOVE_ITEM  HEADERS
+      ${CMAKE_CURRENT_SOURCE_DIR}/Teuchos_RCPBoostSharedPtrConversions.hpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/Teuchos_RCPBoostSharedPtrConversionsDecl.hpp
+      )
+
+ENDIF()
 
 
 #
