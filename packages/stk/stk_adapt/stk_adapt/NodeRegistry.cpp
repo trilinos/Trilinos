@@ -1,4 +1,6 @@
 #include <stk_adapt/NodeRegistry.hpp>
+#include <stk_adapt/UniformRefinerPattern.hpp>
+#include <stk_percept/mesh/mod/smoother/SpacingFieldUtil.hpp>
 
 #if 0 && NODE_REGISTRY_MAP_TYPE_TEUCHOS_HASHTABLE
 namespace Teuchos
@@ -15,6 +17,10 @@ namespace Teuchos
 
 namespace stk {
   namespace adapt {
+
+    static int s_nsz_parent = 0;
+    static bool s_element_is_ghost = false;
+    static stk::mesh::Selector *s_oldPartSelector = 0;
 
     // FIXME
     //static double m_min_spacing_factor = 0.5;  // reproduce (mostly) old behavior (centroids will be slightly diff)
@@ -112,23 +118,52 @@ namespace stk {
 
       }
 
-      static double spacing_edge(unsigned iv0, unsigned iv1, unsigned nsz, unsigned nsp,  double lspc[8][3], double den_xyz[3], double *coord[8])
+      double NodeRegistry::spacing_edge(std::vector<stk::mesh::Entity>& nodes,
+                                        unsigned iv0, unsigned iv1, unsigned nsz, unsigned nsp,  double lspc[8][3], double den_xyz[3], double *coord[8])
       {
-        unsigned iv[2]={iv0,iv1};
+        VERIFY_OP_ON(nsz, ==, 2, "hmmm");
+        static SubDimCell_SDSEntityType subDimEntity;
+        subDimEntity.clear(); 
+        subDimEntity.insert(nodes[iv0]);
+        subDimEntity.insert(nodes[iv1]);
+        static SubDimCellData new_SubDimCellData;
+        static SubDimCellData empty_SubDimCellData;
+
+        SubDimCellData* nodeId_elementOwnderId_ptr = getFromMapPtr(subDimEntity);
+        SubDimCellData& nodeId_elementOwnderId = (nodeId_elementOwnderId_ptr ? *nodeId_elementOwnderId_ptr : empty_SubDimCellData);
+        bool is_empty = nodeId_elementOwnderId_ptr == 0;
+        //bool is_not_empty_but_data_cleared = (!is_empty && nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().size() == 0);
+        if (is_empty) {
+          if (0)
+            {
+              std::cout << "tmp srk P[" << m_eMesh.get_rank() << "] s_nsz_parent = " << s_nsz_parent << " s_element_is_ghost = " << s_element_is_ghost 
+                        << " iv0= " << iv0 << " iv1= " << iv1 
+                        << " n0 =  " << nodes[iv0].identifier() << " n1= " << nodes[iv1].identifier()
+                        << std::endl;
+            }
+          return 0.5;
+        }
+        if (0 && is_empty)
+          {
+            m_eMesh.dump_vtk(nodes[iv0], "node-iv0.vtk", s_oldPartSelector);
+            m_eMesh.dump_vtk(nodes[iv1], "node-iv1.vtk", s_oldPartSelector);
+          }
+        VERIFY_OP_ON(is_empty, ==, false, "hmmm");
+
+        //unsigned iv[2]={iv0,iv1};
         double alp[2]={0.0,0.0};
         double alp1[2]={0.0,0.0};
+
+        double alpsum=0.0;
         for (unsigned ipts=0; ipts < nsz; ipts++)
           {
-            unsigned jpts = iv[ipts];
-            double len = 0.0;
-            alp[ipts]=0.0;
-
-            for (unsigned isp = 0; isp < nsp; isp++)
-              {
-                alp[ipts] += (coord[iv[1]][isp] - coord[iv[0]][isp])*lspc[jpts][isp];
-                len += (coord[iv[1]][isp] - coord[iv[0]][isp])*(coord[iv[1]][isp] - coord[iv[0]][isp]);
-              }
-            alp[ipts] = std::fabs(alp[ipts])/std::sqrt(len);
+            alp[ipts] = nodeId_elementOwnderId.get<SDC_DATA_SPACING>()[ipts];
+            VERIFY_OP_ON(alp[ipts], >, 0.0, "hmmm33");
+            alpsum += alp[ipts];
+          }
+        for (unsigned ipts=0; ipts < nsz; ipts++)
+          {
+            alp[ipts] /= alpsum;
           }
         const double fac=3.0, facden = 4.0;
         for (unsigned ipts=0; ipts < nsz; ipts++)
@@ -156,7 +191,7 @@ namespace stk {
         return candidate_alpha;
       }
 
-      static void normalize_spacing_0(unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3])
+    static void normalize_spacing_0(unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3])
       {
         for (unsigned isp = 0; isp < nsp; isp++)
           {
@@ -224,8 +259,11 @@ namespace stk {
       }
 
 
-      static void normalize_spacing(unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3], double *coord[8])
+    void NodeRegistry::normalize_spacing(std::vector<stk::mesh::Entity> &nodes,
+                                         unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3], double *coord[8])
       {
+        s_nsz_parent = nsz;
+
         double fac = 0.0, facden=0.0;
         switch(nsz) {
         case 2:
@@ -256,11 +294,11 @@ namespace stk {
           {
             if (nsz == 4)
               {
-                double alp01 = spacing_edge(0, 1, 2, nsp,  lspc, den_xyz, coord);
-                double alp32 = spacing_edge(3, 2, 2, nsp,  lspc, den_xyz, coord);
+                double alp01 = spacing_edge(nodes, 0, 1, 2, nsp,  lspc, den_xyz, coord);
+                double alp32 = spacing_edge(nodes, 3, 2, 2, nsp,  lspc, den_xyz, coord);
                 double x = 0.5*(alp01+alp32);
-                double alp12 = spacing_edge(1, 2, 2, nsp,  lspc, den_xyz, coord);
-                double alp03 = spacing_edge(0, 3, 2, nsp,  lspc, den_xyz, coord);
+                double alp12 = spacing_edge(nodes, 1, 2, 2, nsp,  lspc, den_xyz, coord);
+                double alp03 = spacing_edge(nodes, 0, 3, 2, nsp,  lspc, den_xyz, coord);
                 double y = 0.5*(alp12+alp03);
                 if (isp == 0)
                   {
@@ -279,20 +317,20 @@ namespace stk {
               }
             else if (nsz == 8)
               {
-                double alp01 = spacing_edge(0, 1, 2, nsp,  lspc, den_xyz, coord);
-                double alp32 = spacing_edge(3, 2, 2, nsp,  lspc, den_xyz, coord);
-                double alp45 = spacing_edge(4, 5, 2, nsp,  lspc, den_xyz, coord);
-                double alp76 = spacing_edge(7, 6, 2, nsp,  lspc, den_xyz, coord);
+                double alp01 = spacing_edge(nodes, 0, 1, 2, nsp,  lspc, den_xyz, coord);
+                double alp32 = spacing_edge(nodes, 3, 2, 2, nsp,  lspc, den_xyz, coord);
+                double alp45 = spacing_edge(nodes, 4, 5, 2, nsp,  lspc, den_xyz, coord);
+                double alp76 = spacing_edge(nodes, 7, 6, 2, nsp,  lspc, den_xyz, coord);
                 double x = 0.25*(alp01+alp32+alp45+alp76);
-                double alp12 = spacing_edge(1, 2, 2, nsp,  lspc, den_xyz, coord);
-                double alp03 = spacing_edge(0, 3, 2, nsp,  lspc, den_xyz, coord);
-                double alp56 = spacing_edge(5, 6, 2, nsp,  lspc, den_xyz, coord);
-                double alp47 = spacing_edge(4, 7, 2, nsp,  lspc, den_xyz, coord);
+                double alp12 = spacing_edge(nodes, 1, 2, 2, nsp,  lspc, den_xyz, coord);
+                double alp03 = spacing_edge(nodes, 0, 3, 2, nsp,  lspc, den_xyz, coord);
+                double alp56 = spacing_edge(nodes, 5, 6, 2, nsp,  lspc, den_xyz, coord);
+                double alp47 = spacing_edge(nodes, 4, 7, 2, nsp,  lspc, den_xyz, coord);
                 double y = 0.25*(alp12+alp03+alp56+alp47);
-                double alp04 = spacing_edge(0, 4, 2, nsp,  lspc, den_xyz, coord);
-                double alp15 = spacing_edge(1, 5, 2, nsp,  lspc, den_xyz, coord);
-                double alp26 = spacing_edge(2, 6, 2, nsp,  lspc, den_xyz, coord);
-                double alp37 = spacing_edge(3, 7, 2, nsp,  lspc, den_xyz, coord);
+                double alp04 = spacing_edge(nodes, 0, 4, 2, nsp,  lspc, den_xyz, coord);
+                double alp15 = spacing_edge(nodes, 1, 5, 2, nsp,  lspc, den_xyz, coord);
+                double alp26 = spacing_edge(nodes, 2, 6, 2, nsp,  lspc, den_xyz, coord);
+                double alp37 = spacing_edge(nodes, 3, 7, 2, nsp,  lspc, den_xyz, coord);
                 double z = 0.25*(alp04+alp15+alp26+alp37);
                 if (isp == 0)
                   {
@@ -342,19 +380,35 @@ namespace stk {
               {
                 spc[ipts][isp] /= sum;
                 if (0 && nsz == 8 && isp == 1)
-                  std::cout << "spc[" << ipts << "]= " << spc[ipts][isp] << std::endl;
+                  std::cout << "tmp srk spc[" << ipts << "]= " << spc[ipts][isp] << std::endl;
               }
           }
       }
 
       /// makes coordinates of this new node be the centroid of its sub entity - this version does it for all new nodes
-      void NodeRegistry::makeCentroid(stk::mesh::FieldBase *field)
+      void NodeRegistry::makeCentroid(stk::mesh::FieldBase *field, unsigned *subDimSize_in)
       {
         EXCEPTWATCH;
         bool do_respect_spacing = m_eMesh.get_respect_spacing();
+        // called from main code
+        if (do_respect_spacing && !subDimSize_in)
+          {
+            // recurse to specialize to compute edges first
+            unsigned subDimSize_2 = 2;
+            makeCentroid(field, &subDimSize_2);
+            // then signal compute all non-edges
+            subDimSize_2 = 0;
+            makeCentroid(field, &subDimSize_2);
+            return;
+          }
+
         //unsigned *null_u = 0;
         stk::mesh::FieldBase *spacing_field    = m_eMesh.get_field("ref_spacing_field");
-
+        const mesh::Part *oldPart = m_eMesh.getPart(UniformRefinerPatternBase::getOldElementsPartName()+toString(m_eMesh.element_rank()));
+        VERIFY_OP_ON(oldPart, !=, 0, "hmmm");
+        stk::mesh::Selector oldPartSelector (*oldPart);
+        s_oldPartSelector = &oldPartSelector;
+        
         int spatialDim = m_eMesh.get_spatial_dim();
         int fieldDim = spatialDim;
         stk::mesh::EntityRank field_rank = stk::mesh::MetaData::NODE_RANK;
@@ -385,6 +439,9 @@ namespace stk {
         for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); ++iter)
           {
             const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            if (do_respect_spacing && *subDimSize_in == 2 && subDimEntity.size() != 2)
+              continue;
+
             SubDimCellData& nodeId_elementOwnderId = (*iter).second;
 
             NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
@@ -393,6 +450,8 @@ namespace stk {
             unsigned char owning_elementSubDimOrd = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_ORDINAL>();
             VERIFY_OP_ON(owning_elementSubDimOrd, >, 0, "hmm 2");
             --owning_elementSubDimOrd ;
+
+            Double2& nodeId_spacing = nodeId_elementOwnderId.get<SDC_DATA_SPACING>();
 
             static const SubDimCellData empty_SubDimCellData;
 
@@ -438,10 +497,12 @@ namespace stk {
             bool doPrint = false;
             std::vector<stk::mesh::Entity> nodes(8, stk::mesh::Entity());
             unsigned nsz = 0;
+            bool is_element = false;
 
             if (needed_entity_rank == stk::mesh::MetaData::ELEMENT_RANK)
               {
                 EXCEPTWATCH;
+                is_element = true;
                 stk::mesh::Entity element_p = stk::mesh::Entity();
                 {
                   SDSEntityType elementId = *subDimEntity.begin();
@@ -453,8 +514,12 @@ namespace stk {
                     }
                 }
 
+                if (!oldPartSelector(element_p))
+                  continue;
+
                 stk::mesh::Entity element = element_p;
                 bool element_is_ghost = m_eMesh.isGhostElement(element);
+                s_element_is_ghost = element_is_ghost;
                 if (element_is_ghost)
                   {
                     //std::cout << "tmp found ghost" << std::endl;
@@ -518,6 +583,7 @@ namespace stk {
                 {
                   EXCEPTWATCH;
                   unsigned ipts=0;
+                  SpacingFieldUtil sfu(m_eMesh);
 
                   double * coord[8] = {0,0,0,0,0,0,0,0};
                   double * field_data[8] = {0,0,0,0,0,0,0,0};
@@ -535,6 +601,7 @@ namespace stk {
                   // cast to suppress "set but not used warnings" from gcc 4.6.3
                   (void)den;
                   double den_xyz[3] = {0,0,0};
+                  double unit_edge_vec[3] = {0,0,0};
                   if (nsz == 2)
                     {
                       den = 0.0;
@@ -543,18 +610,33 @@ namespace stk {
                           double len = 0.0;
                           for (int isp = 0; isp < spatialDim; isp++)
                             {
-                              spc[ipts][0] += (coord[1][isp] - coord[0][isp])*spacing[ipts][isp];
                               len += (coord[1][isp] - coord[0][isp])*(coord[1][isp] - coord[0][isp]);
                             }
+                          for (int isp = 0; isp < spatialDim; isp++)
+                            {
+                              unit_edge_vec[isp] = (coord[1][isp] - coord[0][isp]) / std::sqrt(len);
+                            }
+                          spc[ipts][0] = sfu.spacing_at_node_in_direction(unit_edge_vec, nodes[ipts], &oldPartSelector);
+
                           spc[ipts][0] = std::fabs(spc[ipts][0])/std::sqrt(len);
                         }
                       for (ipts=0; ipts < nsz; ipts++)
                         {
+                          nodeId_spacing[ipts] = spc[ipts][0];
                           for (int isp = 1; isp < spatialDim; isp++)
                             {
                               spc[ipts][isp] = spc[ipts][0];
                             }
+
                         }
+
+                      if (0)
+                        for (ipts=0; ipts < nsz; ipts++)
+                          for (int isp = 0; isp < spatialDim; isp++)
+                            {
+                              std::cout << "y = " << coord[ipts][1] << " new spc[" << ipts << "]= " << spc[ipts][0] << std::endl;
+                            }
+
                     }
                   else
                     {
@@ -565,8 +647,9 @@ namespace stk {
                               spc[ipts][isp] = spacing[ipts][isp];
                             }
                         }
+
                     }
-                  normalize_spacing(nsz, spatialDim, spc, den_xyz, coord);
+                  normalize_spacing(nodes, nsz, spatialDim, spc, den_xyz, coord);
                   if (0 && nsz==2 && (coord[1][0] < 1.e-3 && coord[0][0] < 1.e-3))
                     for (ipts=0; ipts < nsz; ipts++)
                       for (int isp = 0; isp < spatialDim; isp++)

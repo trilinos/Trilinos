@@ -1828,6 +1828,10 @@ namespace stk {
 
 #if defined ( STK_PERCEPT_HAS_GEOMETRY )
 
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
       /// Refine a triangle mesh with spacing
       STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_quad_to_quad_sierra_spc)
       {
@@ -1887,6 +1891,11 @@ namespace stk {
                       }
                   }
               }
+#if 0
+            Math::Matrix rmz = Math::rotationMatrix(2, 30);
+            eMesh.transform_mesh(rmz);
+#endif
+
             SpacingFieldUtil sfu(eMesh);
             sfu.compute_spacing_field();
 
@@ -1903,16 +1912,8 @@ namespace stk {
 
             // end_demo
           }
-#if 0
-    Math::Matrix rmx = Math::rotationMatrix(0, 30);
-    Math::Matrix rmy = Math::rotationMatrix(1, -45);
-    Math::Matrix rmz = Math::rotationMatrix(2, 30);
-    Math::Matrix rm;
-    rm =  rmy * rmz;
-    rm =  rmx * rm;
-    eMesh.transform_mesh(rm);
-#endif
       }
+
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
@@ -1976,6 +1977,11 @@ namespace stk {
                       }
                   }
               }
+#if 1
+            Math::Matrix rmz = Math::rotationMatrix(2, 30);
+            eMesh.transform_mesh(rmz);
+#endif
+
             SpacingFieldUtil sfu(eMesh);
             sfu.compute_spacing_field();
 

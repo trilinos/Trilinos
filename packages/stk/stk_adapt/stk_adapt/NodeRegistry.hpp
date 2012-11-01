@@ -120,7 +120,8 @@ namespace stk {
     enum SubDimCellDataEnum {
       SDC_DATA_GLOBAL_NODE_IDS,
       SDC_DATA_OWNING_ELEMENT_KEY,
-      SDC_DATA_OWNING_ELEMENT_ORDINAL  // the ordinal of the face/edge owning this sub-dim entity
+      SDC_DATA_OWNING_ELEMENT_ORDINAL,  // the ordinal of the face/edge owning this sub-dim entity
+      SDC_DATA_SPACING
     };
 
     typedef  stk::mesh::Entity NodeIdsOnSubDimEntityTypeQuantum;
@@ -178,7 +179,8 @@ namespace stk {
     }
 
 
-    typedef boost::tuple<NodeIdsOnSubDimEntityType, stk::mesh::EntityKey, unsigned char> SubDimCellData;
+    typedef boost::array<double, 2> Double2;
+    typedef boost::tuple<NodeIdsOnSubDimEntityType, stk::mesh::EntityKey, unsigned char, Double2> SubDimCellData;
 
 #define SDS_ENTITY_TYPE_ID 0
 #if SDS_ENTITY_TYPE_ID
@@ -220,7 +222,8 @@ namespace stk {
       out << "SDC:: node ids= " << val.get<SDC_DATA_GLOBAL_NODE_IDS>()
           << " owning element rank= " << stk::mesh::entity_rank(val.get<SDC_DATA_OWNING_ELEMENT_KEY>())
           << " owning element id= " << stk::mesh::entity_id(val.get<SDC_DATA_OWNING_ELEMENT_KEY>())
-          << " owning element subDim-ord= " << val.get<SDC_DATA_OWNING_ELEMENT_ORDINAL>();
+          << " owning element subDim-ord= " << val.get<SDC_DATA_OWNING_ELEMENT_ORDINAL>()
+          << " spacing info= " << val.get<SDC_DATA_SPACING>()[0] << " " << val.get<SDC_DATA_SPACING>()[1];
       return out;
     }
 
@@ -1235,7 +1238,13 @@ namespace stk {
 
       }
 
-      void makeCentroid(stk::mesh::FieldBase *field);
+      double spacing_edge(std::vector<stk::mesh::Entity>& nodes,
+                          unsigned iv0, unsigned iv1, unsigned nsz, unsigned nsp,  double lspc[8][3], double den_xyz[3], double *coord[8]);
+
+      void normalize_spacing(std::vector<stk::mesh::Entity> &nodes,
+                             unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3], double *coord[8]);
+
+      void makeCentroid(stk::mesh::FieldBase *field, unsigned *subDimSize_in=0);
 
       /// do interpolation for all fields
       void interpolateFields(const stk::mesh::Entity element,  stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd)

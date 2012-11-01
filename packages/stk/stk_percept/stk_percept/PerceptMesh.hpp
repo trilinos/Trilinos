@@ -379,7 +379,7 @@ namespace stk {
       void remove_geometry_blocks_on_output(std::string geometry_file_name);
 
       /// dump a vtk file for the mesh surrounding the given node 
-      void dump_vtk(stk::mesh::Entity node, std::string filename);
+      void dump_vtk(stk::mesh::Entity node, std::string filename, stk::mesh::Selector *selector=0);
       void dump_vtk(std::string filename);
 
       /// choose to respect the mesh spacing in the refined mesh
@@ -723,7 +723,7 @@ namespace stk {
       {
         double x = domain(0);
         double y = domain(1);
-        double z = domain(2);
+        double z = (domain.dimension(0) == 2 ?  0 : domain(2));
         Math::Vector v;
         v(0)=x;
         v(1)=y;
@@ -731,7 +731,7 @@ namespace stk {
         v = m_rotMat * v;
         codomain(0)=v(0);
         codomain(1)=v(1);
-        codomain(2)=v(2);
+        if (codomain.dimension(0) == 3 ) codomain(2)= v(2);
       }
 
     };

@@ -3980,28 +3980,33 @@ namespace stk {
       return 0;
     }
 
-    void PerceptMesh::dump_vtk(stk::mesh::Entity node, std::string filename)
+    void PerceptMesh::dump_vtk(stk::mesh::Entity node, std::string filename, stk::mesh::Selector *selector)
     {
       typedef std::map<stk::mesh::Entity , unsigned> NodeMap;
       NodeMap node_map;
-      unsigned nnode_per_elem=0;
+      unsigned nnode_per_elem=0, nelem_node_size=0;
+      unsigned num_elem=0;
 
       stk::mesh::PairIterRelation node_elems = node.relations(element_rank());
       for (unsigned ielem = 0; ielem < node_elems.size(); ielem++)
         {
           stk::mesh::Entity element = node_elems[ielem].entity();
-          stk::mesh::PairIterRelation elem_nodes = element.relations(node_rank());
-          nnode_per_elem = elem_nodes.size(); // FIXME for hetero mesh
-          for (unsigned inode = 0; inode < elem_nodes.size(); inode++)
+          if (!selector || (*selector)(element))
             {
-              stk::mesh::Entity node_i = elem_nodes[inode].entity();
-              node_map[node_i] = 0;  // just add to the list
+              ++num_elem;
+              stk::mesh::PairIterRelation elem_nodes = element.relations(node_rank());
+              nnode_per_elem = elem_nodes.size(); // FIXME for hetero mesh
+              nelem_node_size += nnode_per_elem + 1;
+              for (unsigned inode = 0; inode < elem_nodes.size(); inode++)
+                {
+                  stk::mesh::Entity node_i = elem_nodes[inode].entity();
+                  node_map[node_i] = 0;  // just add to the list
+                }
             }
         }
       unsigned ii=0;
       for (NodeMap::iterator inode=node_map.begin(); inode != node_map.end(); ++inode)
         {
-          //stk::mesh::Entity node_i = *inode->first;
           inode->second = ii++;
         }
       std::ofstream file(filename.c_str());
@@ -4015,28 +4020,53 @@ namespace stk {
             {
               file << coord[idim] << " ";
             }
+          if (get_spatial_dim() == 2) file << " 0.0 ";
           file << "\n";
         }
-      file << "CELLS " << node_elems.size() << " " << node_elems.size()*(nnode_per_elem+1) << "\n";
+      file << "CELLS " << num_elem << " " << nelem_node_size << "\n";
       for (unsigned ielem = 0; ielem < node_elems.size(); ielem++)
         {
           stk::mesh::Entity element = node_elems[ielem].entity();
-          stk::mesh::PairIterRelation elem_nodes = element.relations(node_rank());
-          file << nnode_per_elem << " ";
-          for (unsigned inode = 0; inode < elem_nodes.size(); inode++)
+          if (!selector || (*selector)(element))
             {
-              stk::mesh::Entity node_i = elem_nodes[inode].entity();
-              unsigned id = node_map[node_i];
-              file << id << " ";
+              stk::mesh::PairIterRelation elem_nodes = element.relations(node_rank());
+              file << elem_nodes.size() << " ";
+              for (unsigned inode = 0; inode < elem_nodes.size(); inode++)
+                {
+                  stk::mesh::Entity node_i = elem_nodes[inode].entity();
+                  unsigned id = node_map[node_i];
+                  file << id << " ";
+                }
+              file << "\n";
             }
-          file << "\n";
         }
-      file << "CELL_TYPES " << node_elems.size() << "\n";
+      file << "CELL_TYPES " << num_elem << "\n";
       for (unsigned ielem = 0; ielem < node_elems.size(); ielem++)
         {
           stk::mesh::Entity element = node_elems[ielem].entity();
-          file << vtk_type(element) << "\n";
+          if (!selector || (*selector)(element))
+            {
+              file << vtk_type(element) << "\n";
+            }
         }
+      file << "POINT_DATA " << node_map.size() << "\n";
+
+      file << "SCALARS NodeCenter int\nLOOKUP_TABLE default\n";
+      for (NodeMap::iterator inode=node_map.begin(); inode != node_map.end(); ++inode)
+        {
+          stk::mesh::Entity node_i = inode->first;
+          int val = node.identifier();
+          if (node_i != node) val = -1;
+          file << val << "\n";
+        }
+      file << "SCALARS NodeID int\nLOOKUP_TABLE default\n";
+      for (NodeMap::iterator inode=node_map.begin(); inode != node_map.end(); ++inode)
+        {
+          stk::mesh::Entity node_i = inode->first;
+          int val = node_i.identifier();
+          file << val << "\n";
+        }
+
     }
 
     void PerceptMesh::dump_vtk(std::string filename)

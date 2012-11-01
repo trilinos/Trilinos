@@ -129,6 +129,65 @@ namespace stk {
 
     }
 
+    double SpacingFieldUtil::spacing_at_node_in_direction(double unit_vector_dir[3], stk::mesh::Entity node, stk::mesh::Selector *element_selector)
+    {
+      int spatial_dim = m_eMesh.get_spatial_dim();
+
+      double spacing_ave=0.0;
+      double *coord = stk::mesh::field_data( *static_cast<const VectorFieldType *>(m_eMesh.get_coordinates_field()) , node );
+
+      const mesh::PairIterRelation node_elems = node.relations( m_eMesh.element_rank() );
+      double num_elem = 0;
+
+      for (unsigned i_element = 0; i_element < node_elems.size(); i_element++)
+        {
+          stk::mesh::Entity element = node_elems[i_element].entity();
+          if (!element_selector || (*element_selector)(element))
+            {
+              ++num_elem;
+              //if (element.entity_rank() == m_eMesh.element_rank() );
+              const CellTopologyData *topology_data = m_eMesh.get_cell_topology(element);
+              shards::CellTopology topo(topology_data);
+              JacobianUtil jacA;
+
+              DenseMatrix<3,3> AI;
+              double A_ = 0.0;
+              jacA(A_, m_eMesh, element, m_eMesh.get_coordinates_field(), topology_data);
+
+              unsigned inode = node_elems[i_element].identifier();
+              DenseMatrix<3,3>& A = jacA.m_J[inode];
+              inverse(A, AI);
+              double spacing[3] = {0,0,0};
+              for (int idim=0; idim < spatial_dim; idim++)
+                {
+                  for (int jdim=0; jdim < spatial_dim; jdim++)
+                    {
+                      if (0)
+                        std::cout << "(i,j)= " << idim << " " << jdim << " coord= " << coord[0] << " " << coord[1] 
+                                  << " AI= " << AI(idim,jdim) <<  " num_elem= " << num_elem << " i_element= " << i_element 
+                                  << " A_ = " << A_ << " A= " << A(idim,jdim) << " uv= " << unit_vector_dir[jdim] << " topo= " << topo.getName() << "\n";
+                      spacing[idim] += AI(idim,jdim)*unit_vector_dir[jdim];
+                    }
+                }
+              double sum=0.0;
+              for (int jdim=0; jdim < spatial_dim; jdim++)
+                {
+                  //std::cout << " spacing[" << jdim << "]= " << spacing[jdim] << std::endl;
+                  sum += spacing[jdim]*spacing[jdim];
+                }
+              sum = std::sqrt(sum);
+              spacing_ave += 1.0/sum;
+            }
+        }
+      //std::cout << "spacing_ave= " << spacing_ave << std::endl;
+      if (spacing_ave < 1.e-10) {
+        std::cout << "spacing_ave= " << spacing_ave << std::endl;
+        throw std::runtime_error("spacing too small before invert in SpacingFieldUtil::spacing_at_node_in_direction");
+      }
+      if (num_elem) spacing_ave /= num_elem;
+      return spacing_ave;
+    }
+
   }
 }
 
