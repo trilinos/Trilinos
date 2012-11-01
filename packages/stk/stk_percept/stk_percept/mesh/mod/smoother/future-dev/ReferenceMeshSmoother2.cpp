@@ -78,7 +78,7 @@ namespace stk {
 
                 for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                   {
-                    stk::mesh::Entity& node = bucket[i_node];
+                    stk::mesh::Entity node = bucket[i_node];
                     bool fixed = this->get_fixed_flag(&node);
                     bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
                     if (fixed || isGhostNode)

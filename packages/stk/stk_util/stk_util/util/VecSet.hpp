@@ -237,6 +237,13 @@ public:
     return std::pair<iterator,bool>( ip, b );
   }
 
+  template< typename FORWARD_ITERATOR >
+  void insert( FORWARD_ITERATOR b, FORWARD_ITERATOR e) {
+    for (FORWARD_ITERATOR it = b ; it != e ; ++it) {
+        insert(*it);
+    }
+  }
+
   void erase( iterator i ) {
     Storage.erase( Storage.begin() + ( i - begin() ) );
   }

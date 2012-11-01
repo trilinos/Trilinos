@@ -73,7 +73,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
         );
 
     // pointer to middle_element after mesh modification.
-    stk::mesh::Entity * middle_element = mesh.get_entity(element_rank, fixture.elem_id(1,1,1));
+    stk::mesh::Entity middle_element = mesh.get_entity(element_rank, fixture.elem_id(1,1,1));
 
     unsigned num_skin_entities = count_skin_entities(mesh, skin_part, side_rank);
 
@@ -89,16 +89,16 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
     //all nodes connected to the single element that has been broken off
     //should have relations.size() == 4 and comm.size() == 0
-    if (middle_element != NULL && middle_element->owner_rank() == mesh.parallel_rank()) {
+    if (middle_element.is_valid() && middle_element.owner_rank() == mesh.parallel_rank()) {
 
-      stk::mesh::PairIterRelation relations = middle_element->relations(NODE_RANK);
+      stk::mesh::PairIterRelation relations = middle_element.relations(NODE_RANK);
 
       for (; relations.first != relations.second; ++relations.first) {
-        stk::mesh::Entity * current_node = (relations.first->entity());
+        stk::mesh::Entity current_node = (relations.first->entity());
         //each node should be attached to only 1 element and 3 faces
-        correct_relations &= ( current_node->relations().size() == 4 );
+        correct_relations &= ( current_node.relations().size() == 4 );
         //the entire closure of the element should exist on a single process
-        correct_comm      &= ( current_node->comm().size() == 0 );
+        correct_comm      &= ( current_node.comm().size() == 0 );
       }
     }
     passed &= (correct_skin && correct_relations && correct_comm);

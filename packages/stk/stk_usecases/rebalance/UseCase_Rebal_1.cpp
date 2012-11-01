@@ -72,9 +72,9 @@ bool test_unequal_weights( stk::ParallelMachine pm )
       for ( unsigned k = 0 ; k < nz ; ++k ) {
         for ( unsigned j = 0 ; j < ny ; ++j ) {
           for ( unsigned i = 0 ; i < l ; ++i ) {
-            const stk::mesh::EntityId elem_id = 1 + nslabs + i + j*ngx + k*ngx*ny; 
-            stk::mesh::Entity * elem = bulk.get_entity(element_rank, elem_id);
-            double * const e_weight = stk::mesh::field_data( weight_field , *elem );
+            const stk::mesh::EntityId elem_id = 1 + nslabs + i + j*ngx + k*ngx*ny;
+            stk::mesh::Entity elem = bulk.get_entity(element_rank, elem_id);
+            double * const e_weight = stk::mesh::field_data( weight_field , elem );
             *e_weight = double(ngx) / double(l);
           }
         }
@@ -98,7 +98,7 @@ bool test_unequal_weights( stk::ParallelMachine pm )
   const bool do_rebal = 1.5 < imbalance_threshold;
 
   if( 0 == p_rank )
-    std::cerr << std::endl 
+    std::cerr << std::endl
      << "imbalance_threshold after rebalance = " << imbalance_threshold << ", " << do_rebal << std::endl;
 
   stk::mesh::Selector owned_selector = fem_meta.locally_owned_part();

@@ -224,7 +224,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
     // Kill entities by moving them to the dead part.
     for (stk::mesh::EntityVector::iterator itr = entities_to_kill.begin();
         itr != entities_to_kill.end(); ++itr) {
-      mesh.change_entity_parts(**itr, dead_parts);
+      mesh.change_entity_parts(*itr, dead_parts);
     }
 
     // Ask for new entities to represent the sides between the live and dead entities
@@ -239,9 +239,9 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
     // Create boundaries between live and dead entities
     // by creating a relation between the new entities and the live entities
     for ( size_t i = 0; i < skin.size(); ++i) {
-      stk::mesh::Entity & entity = *(skin[i].entity);
+      stk::mesh::Entity entity = skin[i].entity;
       const unsigned side_ordinal  = skin[i].side_ordinal;
-      stk::mesh::Entity & side   = * (requested_entities[i]);
+      stk::mesh::Entity side   = requested_entities[i];
 
       stk::mesh::declare_element_side(entity, side, side_ordinal);
     }
@@ -269,7 +269,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
       mesh.modification_begin();
       for (stk::mesh::EntityVector::iterator itr = kill_list.begin();
           itr != kill_list.end(); ++itr) {
-        mesh.change_entity_parts(**itr, dead_parts);
+        mesh.change_entity_parts(*itr, dead_parts);
       }
       mesh.modification_end();
     }
@@ -300,11 +300,11 @@ void find_sides_to_be_created(
     const stk::mesh::EntitySideComponent & outside = itr->outside;
 
     // examine the boundary of the outside of the closure.
-    if ( outside.entity != NULL && select(*(outside.entity)) ) {
+    if ( outside.entity.is_valid() && select(outside.entity) ) {
 
       //make sure the side does not already exist
       const unsigned side_ordinal = outside.side_ordinal;
-      const stk::mesh::Entity & entity = * outside.entity;
+      const stk::mesh::Entity entity = outside.entity;
       stk::mesh::PairIterRelation existing_sides = entity.relations(side_rank);
 
       for (; existing_sides.first != existing_sides.second &&
@@ -345,7 +345,7 @@ void find_lower_rank_entities_to_kill(
       stk::mesh::EntityLess());
 
   for (; itr != end; ++itr) {
-    stk::mesh::Entity & entity = **itr;
+    stk::mesh::Entity entity = *itr;
 
     if (select_owned(entity.bucket())) {
       bool found_live = false;
@@ -359,14 +359,14 @@ void find_lower_rank_entities_to_kill(
 
         for (; relations_pair.first != relations_pair.second && !found_live; ++relations_pair.first) {
 
-          if( select_live(*relations_pair.first->entity())) {
+          if( select_live(relations_pair.first->entity())) {
             found_live = true;
           }
         }
       }
 
       if (!found_live) {
-        kill_list.push_back(&entity);
+        kill_list.push_back(entity);
       }
     }
   }

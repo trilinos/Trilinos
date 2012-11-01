@@ -86,11 +86,11 @@ namespace stk {
             
             for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
               {
-                const stk::mesh::Entity& element = bucket[iElement];
+                const stk::mesh::Entity element = bucket[iElement];
 
                 //const stk::mesh::PairIterRelation& elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );  
 
-                //const stk::mesh::Entity& element = * element_p;
+                //const stk::mesh::Entity element = * element_p;
 
                 bool elementIsGhost = m_eMesh.isGhostElement(element);
                 if (!elementIsGhost) 
@@ -122,7 +122,7 @@ namespace stk {
     }
 
     void TestLocalRefiner::
-    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
+    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element, vector<NeededEntityType>& needed_entity_ranks)
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
                 

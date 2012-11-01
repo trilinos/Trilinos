@@ -183,41 +183,41 @@ inline void EntityComm::comm_swap(const EntityKey & key1, const EntityKey & key2
 }
 
 /** \brief  Is shared with any other process */
-bool in_shared( const Entity & entity );
+bool in_shared( const Entity entity );
 
 /** \brief  Is shared with a given process */
-bool in_shared( const Entity & entity , unsigned proc );
+bool in_shared( const Entity entity , unsigned proc );
 
 /** \brief  Is a receive ghost copy of an entity */
-bool in_receive_ghost( const Entity & entity );
+bool in_receive_ghost( const Entity entity );
 
 /** \brief  Is a receive ghost copy of an entity */
-bool in_receive_ghost( const Ghosting & ghost , const Entity & entity );
+bool in_receive_ghost( const Ghosting & ghost , const Entity entity );
 
 /** \brief  Is sent to a ghost copy of an entity on any process */
-bool in_send_ghost( const Entity & entity );
+bool in_send_ghost( const Entity entity );
 
 /** \brief  Is sent to a ghost copy of an entity on a given process */
-bool in_send_ghost( const Entity & entity , unsigned proc );
+bool in_send_ghost( const Entity entity , unsigned proc );
 
 /** \brief  Is in ghosting either send to 'p' or receive from 'p' */
-bool in_ghost( const Ghosting & ghost , const Entity & entity , unsigned p );
+bool in_ghost( const Ghosting & ghost , const Entity entity , unsigned p );
 
 /** \brief  Is in owned closure of the given process,
  *          typically the local process.
  */
-bool in_owned_closure( const Entity & entity , unsigned proc );
+bool in_owned_closure( const Entity entity , unsigned proc );
 
 /** \brief  List of all entity communication processes, sorted */
-void comm_procs( const Entity & entity , std::vector<unsigned> & procs );
+void comm_procs( const Entity entity , std::vector<unsigned> & procs );
 
 /** \brief  List of entity communication processes for a given ghost, sorted */
 void comm_procs( const Ghosting & ghost ,
-                 const Entity & entity , std::vector<unsigned> & procs );
+                 const Entity entity , std::vector<unsigned> & procs );
 
 //----------------------------------------------------------------------
 
-void pack_entity_info( CommBuffer & buf , const Entity & entity );
+void pack_entity_info( CommBuffer & buf , const Entity entity );
 
 void unpack_entity_info(
   CommBuffer     & buf,
@@ -228,10 +228,10 @@ void unpack_entity_info(
   std::vector<Relation> & relations );
 
 /** \brief  Pack an entity's field values into a buffer */
-void pack_field_values( CommBuffer & , Entity & );
+void pack_field_values( CommBuffer & , Entity );
 
 /** \brief  Unpack an entity's field values from a buffer */
-bool unpack_field_values( CommBuffer & , Entity & , std::ostream & error_msg );
+bool unpack_field_values( CommBuffer & , Entity , std::ostream & error_msg );
 
 } // namespace mesh
 } // namespace stk

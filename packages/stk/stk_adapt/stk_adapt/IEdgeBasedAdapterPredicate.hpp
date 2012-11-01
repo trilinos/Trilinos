@@ -35,7 +35,7 @@ namespace stk {
 
       /// for a Refine predicate, Return true for refine, false for ignore
       /// for an Unrefine predicate, return true for unrefine, false for ignore
-      bool operator()(const stk::mesh::Entity& element, unsigned which_edge, stk::mesh::Entity & node0, stk::mesh::Entity & node1,
+      bool operator()(const stk::mesh::Entity element, unsigned which_edge, stk::mesh::Entity node0, stk::mesh::Entity node1,
                       double *coord0, double *coord1, std::vector<int>* existing_edge_marks);
 
     };

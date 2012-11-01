@@ -97,7 +97,7 @@ void Gear::populate_fields(FieldState state) {
       for ( size_t iz = 0 ; iz < height_num; ++iz ) {
         const double height = height_min + height_increment * iz ;
 
-        Entity & node = get_node(iz,ir,ia);
+        Entity node = get_node(iz,ir,ia);
 
         double * const cylindrical_data = field_data( cylindrical_coord_field , node );
         double * const translation_data = field_data( translation_field , node );
@@ -135,7 +135,7 @@ void Gear::populate_fields(FieldState state) {
       for ( size_t iz = 0 ; iz < height_num; ++iz ) {
         const double height = height_min + height_increment * iz ;
 
-        Entity & node = get_node(iz,ir,ia);
+        Entity node = get_node(iz,ir,ia);
 
         double * const cylindrical_data = field_data( cylindrical_coord_field , node );
         double * const translation_data = field_data( translation_field , node );
@@ -189,26 +189,26 @@ void Gear::generate_gear()
       for ( size_t ia = 0 ; ia < angle_num; ++ia ) {
         for ( size_t iz = 0 ; iz < height_num -1 ; ++iz ) {
 
-          Entity & elem = get_element(iz, ir, ia);
+          Entity elem = get_element(iz, ir, ia);
           bulk_data.change_entity_parts(elem, add_parts, remove_parts);
 
           const size_t ia_1 = ( ia + 1 ) % angle_num ;
           const size_t ir_1 = ir + 1 ;
           const size_t iz_1 = iz + 1 ;
 
-          Entity * node[8] ;
+          Entity node[8] ;
 
-          node[0] = & get_node(iz  , ir  , ia_1 );
-          node[1] = & get_node(iz  , ir  , ia   );
-          node[2] = & get_node(iz_1, ir  , ia   );
-          node[3] = & get_node(iz_1, ir  , ia_1 );
-          node[4] = & get_node(iz  , ir_1, ia_1 );
-          node[5] = & get_node(iz  , ir_1, ia   );
-          node[6] = & get_node(iz_1, ir_1, ia   );
-          node[7] = & get_node(iz_1, ir_1, ia_1 );
+          node[0] = get_node(iz  , ir  , ia_1 );
+          node[1] = get_node(iz  , ir  , ia   );
+          node[2] = get_node(iz_1, ir  , ia   );
+          node[3] = get_node(iz_1, ir  , ia_1 );
+          node[4] = get_node(iz  , ir_1, ia_1 );
+          node[5] = get_node(iz  , ir_1, ia   );
+          node[6] = get_node(iz_1, ir_1, ia   );
+          node[7] = get_node(iz_1, ir_1, ia_1 );
 
           for ( size_t j = 0 ; j < 8 ; ++j ) {
-            bulk_data.declare_relation( elem , * node[j] , j );
+            bulk_data.declare_relation( elem , node[j] , j );
           }
         }
       }
@@ -226,24 +226,24 @@ void Gear::generate_gear()
     for ( size_t ia = 0 ; ia < angle_num; ++ia ) {
       for ( size_t iz = 0 ; iz < height_num -1 ; ++iz ) {
 
-        Entity & elem = get_element(iz, ir, ia);
+        Entity elem = get_element(iz, ir, ia);
         bulk_data.change_entity_parts(elem, add_parts, remove_parts);
 
         const size_t ia_1 = ( ia + 1 ) % angle_num ;
         const size_t ir_1 = ir + 1 ;
         const size_t iz_1 = iz + 1 ;
 
-        Entity * node[6] ;
+        Entity node[6] ;
 
-        node[0] = & get_node(iz  , ir  , ia_1 );
-        node[1] = & get_node(iz  , ir  , ia   );
-        node[2] = & get_node(iz  , ir_1, ia   );
-        node[3] = & get_node(iz_1, ir  , ia_1 );
-        node[4] = & get_node(iz_1, ir  , ia   );
-        node[5] = & get_node(iz_1, ir_1, ia   );
+        node[0] = get_node(iz  , ir  , ia_1 );
+        node[1] = get_node(iz  , ir  , ia   );
+        node[2] = get_node(iz  , ir_1, ia   );
+        node[3] = get_node(iz_1, ir  , ia_1 );
+        node[4] = get_node(iz_1, ir  , ia   );
+        node[5] = get_node(iz_1, ir_1, ia   );
 
         for ( size_t j = 0 ; j < 6 ; ++j ) {
-          bulk_data.declare_relation( elem , * node[j] , j );
+          bulk_data.declare_relation( elem , node[j] , j );
         }
       }
     }

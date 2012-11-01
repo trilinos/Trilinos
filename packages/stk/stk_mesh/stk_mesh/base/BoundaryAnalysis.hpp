@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/Entity.hpp>
 
 #include <stk_util/util/NamedPair.hpp>
 
@@ -21,12 +22,11 @@ namespace stk {
 namespace mesh {
 
 class BulkData;
-class Entity;
 
 /**
- * A pair of Entity* and a local side id (defined a part of a side)
+ * A pair of Entity and a local side id (defined a part of a side)
  */
-NAMED_PAIR(EntitySideComponent, Entity *, entity, unsigned, side_ordinal)
+NAMED_PAIR(EntitySideComponent, Entity , entity, unsigned, side_ordinal)
 /**
  * A pair of EntitySideComponents (defines a side of the boundary)
  * Most sides will have two EntitySideComponents, but degenerate cases

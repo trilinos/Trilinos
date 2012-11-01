@@ -45,9 +45,9 @@ namespace stk
      */
 
     template<int SpatialDim>
-    const stk::mesh::Entity *
+    const stk::mesh::Entity
     STKSearcher<SpatialDim>::findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates,
-                                         unsigned& found_it, const mesh::Entity *hint_element )
+                                         unsigned& found_it, const mesh::Entity hint_element )
     {
       //return 0;
       mesh::MetaData& metaData = stk::mesh::MetaData::get(*m_bulk);
@@ -98,9 +98,9 @@ namespace stk
             {
               if (0 || EXTRA_PRINT)
                 std::cout << "relation[ " << i << "]= {" << relation[i].first << "} --> { " << relation[i].second << "}" << std::endl;
-              mesh::Entity *element = bulkData.get_entity(stk::mesh::MetaData::ELEMENT_RANK, relation[i].second.ident);
+              mesh::Entity element = bulkData.get_entity(stk::mesh::MetaData::ELEMENT_RANK, relation[i].second.ident);
               //bool loop_break = ... intentionally ignoring return value
-              isIn(*element, bulkData);
+              isIn(element, bulkData);
               if (0 || EXTRA_PRINT) std::cout << "STKSearcher::findElement: found it= " << isIn.m_found_it << std::endl;
               if (isIn.m_found_it)
                 {
@@ -110,12 +110,12 @@ namespace stk
               else
                 {
                   found_it = 0;
-                  return 0;
+                  return stk::mesh::Entity();
                 }
             }
         }
 
-      return 0;
+      return stk::mesh::Entity();
     }
 
   }

@@ -24,7 +24,7 @@ namespace {
 
 const EntityRank NODE_RANK = MetaData::NODE_RANK;
 
-void filter_superimposed_entities(const Entity & entity, EntityVector & entities)
+void filter_superimposed_entities(const Entity entity, EntityVector & entities)
 {
   // Get the node entities for the nodes that make up the entity, we'll
   // use this to check for superimposed entities
@@ -42,10 +42,10 @@ void filter_superimposed_entities(const Entity & entity, EntityVector & entities
   current_nodes.resize(num_nodes_in_orig_entity);
   EntityVector::iterator itr = entities.begin();
   while ( itr != entities.end() ) {
-    Entity * current_entity = *itr;
-    PairIterRelation relations = current_entity->relations(NODE_RANK);
+    Entity current_entity = *itr;
+    PairIterRelation relations = current_entity.relations(NODE_RANK);
 
-    if (current_entity == &entity) {
+    if (current_entity == entity) {
       // Superimposed with self by definition
       itr = entities.erase(itr);
     }
@@ -84,7 +84,7 @@ void filter_superimposed_entities(const Entity & entity, EntityVector & entities
  *     have the adjacent entity and the local id of the common subcell
  *     with respect to the adjacent entity.
  */
-void get_adjacent_entities( const Entity & entity ,
+void get_adjacent_entities( const Entity entity ,
                             EntityRank subcell_rank ,
                             unsigned subcell_identifier ,
                             std::vector< EntitySideComponent> & adjacent_entities)
@@ -118,7 +118,7 @@ void get_adjacent_entities( const Entity & entity ,
 
   for (EntityVector::const_iterator eitr = potentially_adjacent_entities.begin();
        eitr != potentially_adjacent_entities.end(); ++eitr) {
-    int local_subcell_num = get_entity_subcell_id(**eitr,
+    int local_subcell_num = get_entity_subcell_id(*eitr,
                                                   subcell_rank,
                                                   subcell_topology,
                                                   subcell_nodes);
@@ -147,10 +147,10 @@ void boundary_analysis(const BulkData& bulk_data,
                      EntityLess());
 
   // iterate over all the entities in the closure up to the iterator we computed above
-  for ( ; itr != entities_closure.end() && (*itr)->entity_rank() == closure_rank; ++itr) {
+  for ( ; itr != entities_closure.end() && itr->entity_rank() == closure_rank; ++itr) {
     // some temporaries for clarity
     std::vector<EntitySideComponent > adjacent_entities;
-    Entity& curr_entity = **itr;
+    Entity curr_entity = *itr;
     const CellTopologyData* celltopology = get_cell_topology(curr_entity).getCellTopologyData();
     if (celltopology == NULL) {
       continue;
@@ -178,9 +178,9 @@ void boundary_analysis(const BulkData& bulk_data,
 
       if (adjacent_entities.empty()) {
         EntitySide keeper;
-        keeper.inside.entity = &curr_entity;
+        keeper.inside.entity = curr_entity;
         keeper.inside.side_ordinal = subcell_identifier;
-        keeper.outside.entity = NULL;
+        keeper.outside.entity = Entity();
         keeper.outside.side_ordinal = 0;
         boundary.push_back(keeper);
         continue;
@@ -191,7 +191,7 @@ void boundary_analysis(const BulkData& bulk_data,
            adj_itr = adjacent_entities.begin();
            adj_itr != adjacent_entities.end(); ++adj_itr) {
         // grab a reference to this neighbor for clarity
-        const Entity& neighbor = *(adj_itr->entity);
+        const Entity neighbor = adj_itr->entity;
 
         // see if this neighbor is in the closure, if so, not a keeper
         bool neighbor_is_in_closure =
@@ -207,7 +207,7 @@ void boundary_analysis(const BulkData& bulk_data,
         // if neighbor or curr_entity is locally-used, add it to keeper
         if ( locally_used( neighbor.bucket()) || locally_used( curr_entity.bucket() ) ) {
           EntitySide keeper;
-          keeper.inside.entity = &curr_entity;
+          keeper.inside.entity = curr_entity;
           keeper.inside.side_ordinal = subcell_identifier;
           keeper.outside = *adj_itr;
 

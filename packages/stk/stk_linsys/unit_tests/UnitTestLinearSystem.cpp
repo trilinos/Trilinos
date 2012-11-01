@@ -90,7 +90,7 @@ STKUNIT_UNIT_TEST(UnitTestLinearSystem, test1)
 
   bulk_data.modification_begin();
 
-  std::vector<stk::mesh::Entity*> local_nodes;
+  std::vector<stk::mesh::Entity> local_nodes;
   stk::mesh::Selector select_owned(fem_meta.locally_owned_part());
   stk::mesh::get_selected_entities(select_owned,
                                    bulk_data.buckets(NODE_RANK),
@@ -101,8 +101,8 @@ STKUNIT_UNIT_TEST(UnitTestLinearSystem, test1)
   if (local_nodes.size() > 0) {
     stk::mesh::PartVector partvector;
     partvector.push_back(&bcpart);
-    bulk_data.change_entity_parts(*local_nodes[0], partvector);
-    bc_node_id = stk::linsys::impl::entityid_to_int(local_nodes[0]->identifier());
+    bulk_data.change_entity_parts(local_nodes[0], partvector);
+    bc_node_id = stk::linsys::impl::entityid_to_int(local_nodes[0].identifier());
   }
   (void)bc_node_id; // to avoid a set but not used warning from gcc 4.6.3
 
@@ -117,7 +117,7 @@ STKUNIT_UNIT_TEST(UnitTestLinearSystem, test1)
   STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
   STKUNIT_ASSERT_EQUAL( count[NODE_RANK],    (unsigned)20 );
 
-  std::vector<stk::mesh::Entity*> nodes;
+  std::vector<stk::mesh::Entity> nodes;
   stk::mesh::get_entities(bulk_data, NODE_RANK, nodes);
 
   ScalarField* temperature_field = fem_meta.get_field<ScalarField>("temperature");
@@ -199,7 +199,7 @@ STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
 
   bulk_data.modification_begin();
 
-  std::vector<stk::mesh::Entity*> local_nodes;
+  std::vector<stk::mesh::Entity> local_nodes;
   stk::mesh::Selector select_owned(fem_meta.locally_owned_part());
   stk::mesh::get_selected_entities(select_owned,
                                    bulk_data.buckets(NODE_RANK),
@@ -210,8 +210,8 @@ STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
   if (local_nodes.size() > 0) {
     stk::mesh::PartVector partvector;
     partvector.push_back(&bcpart);
-    bulk_data.change_entity_parts(*local_nodes[0], partvector);
-    bc_node_id = stk::linsys::impl::entityid_to_int(local_nodes[0]->identifier());
+    bulk_data.change_entity_parts(local_nodes[0], partvector);
+    bc_node_id = stk::linsys::impl::entityid_to_int(local_nodes[0].identifier());
   }
   (void)bc_node_id; // to avoid a set but not used warning from gcc 4.6.3
 
@@ -226,7 +226,7 @@ STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
   STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
   STKUNIT_ASSERT_EQUAL( count[NODE_RANK],    (unsigned)20 );
 
-  std::vector<stk::mesh::Entity*> nodes;
+  std::vector<stk::mesh::Entity> nodes;
   stk::mesh::get_entities(bulk_data, NODE_RANK, nodes);
 
   ScalarField* temperature_field = fem_meta.get_field<ScalarField>("temperature");

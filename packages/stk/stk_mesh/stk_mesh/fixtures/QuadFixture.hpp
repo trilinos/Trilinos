@@ -76,7 +76,7 @@ class QuadFixture
    * the (x, y) position. Return NULL if this process doesn't know about
    * this node.
    */
-  Entity * node( unsigned x , unsigned y ) const
+  Entity node( unsigned x , unsigned y ) const
   { return m_bulk_data.get_entity( MetaData::NODE_RANK , node_id(x, y) ); }
 
   /**
@@ -84,7 +84,7 @@ class QuadFixture
    * the (x, y) position. Return NULL if this process doesn't know about
    * this element.
    */
-  Entity * elem( unsigned x , unsigned y ) const
+  Entity elem( unsigned x , unsigned y ) const
   { return m_bulk_data.get_entity( MetaData::ELEMENT_RANK, elem_id(x, y)); }
 
   /**

@@ -151,7 +151,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkModify)
 
   bulk.reset_transaction ( stk::mesh::Transaction::BULK );
   bulk.modification_begin ();
-  stk::mesh::Entity &new_entity = bulk.declare_entity ( 0 , fixture.comm_size()*1000 + fixture.comm_rank() , add_part );
+  stk::mesh::Entity new_entity = bulk.declare_entity ( 0 , fixture.comm_size()*1000 + fixture.comm_rank() , add_part );
   bulk.modification_end ();
 
   bulk.reset_transaction ( stk::mesh::Transaction::BULK );
@@ -214,8 +214,8 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkAddRelation)
 
   bulk.reset_transaction ( stk::mesh::Transaction::BULK );
   bulk.modification_begin();
-  stk::mesh::Entity  &new_node = bulk.declare_entity ( 0 , 123456789 , blank_part );
-  stk::mesh::Entity  &existing_cell = *bulk.buckets(3)[0]->begin();
+  stk::mesh::Entity new_node = bulk.declare_entity ( 0 , 123456789 , blank_part );
+  stk::mesh::Entity existing_cell = *bulk.buckets(3)[0]->begin();
   bulk.declare_relation ( existing_cell, new_node , 10 );
   bulk.modification_end();
 
@@ -252,7 +252,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkDelete)
 
   bulk.reset_transaction ( stk::mesh::Transaction::BULK );
   bulk.modification_begin ();
-  stk::mesh::Entity *new_entity = &bulk.declare_entity ( 0 , fixture.comm_size()*1000 + fixture.comm_rank() , add_part );
+  stk::mesh::Entity new_entity = &bulk.declare_entity ( 0 , fixture.comm_size()*1000 + fixture.comm_rank() , add_part );
   bulk.modification_end ();
 
   bulk.reset_transaction ( stk::mesh::Transaction::BULK );
@@ -332,7 +332,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyTransactionSpanningModifications)
   bulk.modification_end();
 
   bulk.modification_begin();
-  stk::mesh::Entity &n = *(*bulk.buckets(0).begin())->begin();
+  stk::mesh::Entity n = *(*bulk.buckets(0).begin())->begin();
   bulk.change_entity_parts ( n , add_part );
   bulk.modification_end();
 
@@ -378,7 +378,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalInsert)
   bulk.reset_transaction ( stk::mesh::Transaction::INCREMENTAL );
   bulk.modification_begin();
   // Add 4 entities to the mesh
-  stk::mesh::Entity *entities[4];
+  stk::mesh::Entity entities[4];
   entities[0] = &bulk.declare_entity ( 0 , 123456789 , blank_part );
   entities[1] = &bulk.declare_entity ( 1 , 123456789 , blank_part );
   entities[2] = &bulk.declare_entity ( 2 , 123456789 , blank_part );
@@ -400,7 +400,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalInsert)
     // Make sure the entity is the only thing in the bucket
     STKUNIT_ASSERT_EQUAL ( log.get_inserted_buckets(i)[0]->size() , 1u );
 
-    stk::mesh::Entity &new_entity = *((*log.get_inserted_buckets(i).begin())->begin());
+    stk::mesh::Entity new_entity = *((*log.get_inserted_buckets(i).begin())->begin());
     // Make sure we find the right entity
     STKUNIT_ASSERT_EQUAL ( &new_entity , entities[i] );
     // Verify nothing happend to modified and deleted
@@ -433,7 +433,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalModify)
   // Modify the state of a node and entity in the mesh
   bulk.reset_transaction ( stk::mesh::Transaction::INCREMENTAL );
   bulk.modification_begin();
-  stk::mesh::Entity *entities[2];
+  stk::mesh::Entity entities[2];
   entities[0] = &*bulk.buckets(0)[0]->begin();
   entities[1] = &*bulk.buckets(3)[0]->begin();
   bulk.change_entity_parts ( *entities[0] , add_part );
@@ -447,7 +447,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalModify)
     STKUNIT_ASSERT_EQUAL ( log.get_modified_buckets(enttype).size() , 1u );
     // Make sure the entity is the only thing in the bucket
     STKUNIT_ASSERT_EQUAL ( log.get_modified_buckets(enttype)[0]->size() , 1u );
-    stk::mesh::Entity &mod_entity = *log.get_modified_buckets(enttype)[0]->begin();
+    stk::mesh::Entity mod_entity = *log.get_modified_buckets(enttype)[0]->begin();
     // Make sure we find the right entity
     STKUNIT_ASSERT_EQUAL ( &mod_entity , entities[i] );
     // Verify nothing happend to modified and deleted
@@ -483,8 +483,8 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalAddRelation)
 
   bulk.reset_transaction ( stk::mesh::Transaction::INCREMENTAL );
   bulk.modification_begin();
-  stk::mesh::Entity  &new_node = bulk.declare_entity ( 0 , 123456789 , blank_part );
-  stk::mesh::Entity  &existing_cell = *bulk.buckets(3)[0]->begin();
+  stk::mesh::Entity new_node = bulk.declare_entity ( 0 , 123456789 , blank_part );
+  stk::mesh::Entity existing_cell = *bulk.buckets(3)[0]->begin();
   bulk.declare_relation ( existing_cell, new_node , 10 );
   bulk.modification_end();
 
@@ -529,7 +529,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalDelete)
   // transaction reset
   bulk.reset_transaction ( stk::mesh::Transaction::INCREMENTAL );
   bulk.modification_begin();
-  stk::mesh::Entity     *deleted_cell = &*bulk.buckets(3)[0]->begin();
+  stk::mesh::Entity deleted_cell = &*bulk.buckets(3)[0]->begin();
 
   // Record the old parts for testing later
   deleted_cell->bucket().supersets ( old_parts );
@@ -566,7 +566,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelChangeOwnership)
   if ( fixture.comm_size() < 4 ) return;
 
   bulk.modification_begin ();
-  stk::mesh::Entity  *entity = 0;
+  stk::mesh::Entity entity = 0;
   bulk.declare_entity ( 0 , fixture.comm_rank()+1 , blank_part );
   if ( fixture.comm_rank() < 3 )
     entity = &bulk.declare_entity ( 0 , 1234 , blank_part );
@@ -615,7 +615,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelResolutionModify)
 
   // Find a node to alter, preferable one that is shared
   const std::vector<stk::mesh::EntityProc> &shared_entities = bulk.shared_entities();
-  stk::mesh::Entity  *node_to_modify = 0;
+  stk::mesh::Entity node_to_modify = 0;
   for ( unsigned i = 0 ; i != shared_entities.size() ;i++ )
   {
     if ( shared_entities[i].first->entity_rank() == 0 )

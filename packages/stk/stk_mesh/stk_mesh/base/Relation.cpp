@@ -18,6 +18,8 @@
 #include <stk_mesh/base/Relation.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 
+#include <stk_mesh/baseImpl/EntityImpl.hpp>
+
 namespace stk {
 namespace mesh {
 
@@ -26,12 +28,12 @@ namespace mesh {
 std::ostream &
 operator << ( std::ostream & s , const Relation & rel )
 {
-  Entity * const e = rel.entity();
+  Entity const e = rel.entity();
 
-  if ( e ) {
-    const MetaData & meta_data = MetaData::get(*e);
+  if ( e.is_valid() ) {
+    const MetaData & meta_data = MetaData::get(e);
     s << "[" << rel.identifier() << "]->" ;
-    print_entity_key( s , meta_data , e->key() );
+    print_entity_key( s , meta_data , e.key() );
   }
   else {
     s << "[" << rel.identifier() << "]->" << rel.entity_rank();
@@ -40,86 +42,24 @@ operator << ( std::ostream & s , const Relation & rel )
   return s ;
 }
 
-//----------------------------------------------------------------------
-
-Relation::Relation( Entity & entity , RelationIdentifier identifier )
-  : m_raw_relation( Relation::raw_relation_id( entity.entity_rank() , identifier ) ),
-    m_target_entity( & entity )
-{
-#ifdef SIERRA_MIGRATION
-  setRelationType(INVALID);
-#endif
-}
-
-bool Relation::operator < ( const Relation & rhs ) const
-{
-  bool result = false;
-
-#ifdef SIERRA_MIGRATION
-  if (entity_rank() != rhs.entity_rank()) {
-    result = entity_rank() < rhs.entity_rank();
-  }
-  else if (getRelationType() != rhs.getRelationType()) {
-    result = getRelationType() < rhs.getRelationType();
-  }
-  else if (identifier() != rhs.identifier()) {
-    result = identifier() < rhs.identifier();
-  }
-#else
-  if ( m_raw_relation.value != rhs.m_raw_relation.value ) {
-    result = m_raw_relation.value < rhs.m_raw_relation.value ;
-  }
-#endif
-  else {
-    const EntityKey lhs_key = m_target_entity     ? m_target_entity->key()     : EntityKey();
-    const EntityKey rhs_key = rhs.m_target_entity ? rhs.m_target_entity->key() : EntityKey();
-    result = lhs_key < rhs_key ;
-  }
-  return result ;
-}
-
-//----------------------------------------------------------------------
-
-#ifdef SIERRA_MIGRATION
-
-Relation::Relation(Entity *obj, const unsigned relation_type, const unsigned ordinal, const unsigned orient)
-  :
-  m_raw_relation( Relation::raw_relation_id( obj->entity_rank(), ordinal )),
-  m_attribute( (relation_type << fmwk_orientation_digits) | orient ),
-  m_target_entity(obj)
-{
-  ThrowAssertMsg( orient <= fmwk_orientation_mask,
-                  "orientation " << orient << " exceeds maximum allowed value");
-}
-
-void Relation::setMeshObj(Entity *object)
-{
-  if (object != NULL) {
-    m_raw_relation = Relation::raw_relation_id( object->entity_rank(), identifier() );
-  }
-  m_target_entity = object;
-}
-
-#endif
-
 namespace {
 
 void get_entities_through_relations(
   PairIterRelation rel ,
-  const std::vector<Entity*>::const_iterator i_beg ,
-  const std::vector<Entity*>::const_iterator i_end ,
-  std::vector<Entity*> & entities_related )
+  const std::vector<Entity>::const_iterator i_beg ,
+  const std::vector<Entity>::const_iterator i_end ,
+  std::vector<Entity> & entities_related )
 {
   for ( ; rel.first != rel.second ; ++rel.first ) {
 
     // Do all input entities have a relation to this entity ?
 
-    Entity * const e = rel.first->entity();
+    Entity const e = rel.first->entity();
 
-    std::vector<Entity*>::const_iterator i = i_beg ;
+    std::vector<Entity>::const_iterator i = i_beg ;
 
     for ( ; i != i_end ; ++i ) {
-      PairIterRelation r = (*i)->relations();
+      PairIterRelation r = i->relations();
       while ( r.first != r.second && e != r.first->entity() ) {
         ++r.first ;
       }
@@ -154,33 +94,33 @@ void insert_part_and_supersets(OrdinalVector& induced_parts,
 }
 
 void get_entities_through_relations(
-  const std::vector<Entity*> & entities ,
-        std::vector<Entity*> & entities_related )
+  const std::vector<Entity> & entities ,
+        std::vector<Entity> & entities_related )
 {
   entities_related.clear();
 
   if ( ! entities.empty() ) {
-          std::vector<Entity*>::const_iterator i = entities.begin();
-    const std::vector<Entity*>::const_iterator j = entities.end();
+          std::vector<Entity>::const_iterator i = entities.begin();
+    const std::vector<Entity>::const_iterator j = entities.end();
 
-    PairIterRelation rel = (*i)->relations(); ++i ;
+    PairIterRelation rel = i->relations(); ++i ;
 
     get_entities_through_relations( rel , i , j , entities_related );
   }
 }
 
 void get_entities_through_relations(
-  const std::vector<Entity*> & entities ,
+  const std::vector<Entity> & entities ,
         unsigned               entities_related_rank ,
-        std::vector<Entity*> & entities_related )
+        std::vector<Entity> & entities_related )
 {
   entities_related.clear();
 
   if ( ! entities.empty() ) {
-          std::vector<Entity*>::const_iterator i = entities.begin();
-    const std::vector<Entity*>::const_iterator j = entities.end();
+          std::vector<Entity>::const_iterator i = entities.begin();
+    const std::vector<Entity>::const_iterator j = entities.end();
 
-    PairIterRelation rel = (*i)->relations( entities_related_rank ); ++i ;
+    PairIterRelation rel = i->relations( entities_related_rank ); ++i ;
 
     get_entities_through_relations( rel , i , j , entities_related );
   }
@@ -244,7 +184,7 @@ void induced_part_membership( Part & part ,
 //  this entity's relationship.  Can only trust 'entity_from' to be
 //  accurate if it is owned by the local process.
 
-void induced_part_membership( const Entity           & entity_from ,
+void induced_part_membership( const Entity entity_from ,
                               const OrdinalVector       & omit ,
                                     unsigned           entity_rank_to ,
                                     RelationIdentifier relation_identifier ,
@@ -288,7 +228,7 @@ void induced_part_membership( const Entity           & entity_from ,
 
 //----------------------------------------------------------------------
 
-void induced_part_membership( const Entity     & entity ,
+void induced_part_membership( const Entity entity ,
                               const OrdinalVector & omit ,
                                     OrdinalVector & induced_parts,
                                     bool include_supersets)
@@ -296,7 +236,7 @@ void induced_part_membership( const Entity     & entity ,
   for ( PairIterRelation
         rel = entity.relations() ; ! rel.empty() ; ++rel ) {
 
-    induced_part_membership( * rel->entity() , omit ,
+    induced_part_membership( rel->entity() , omit ,
                              entity.entity_rank() ,
                              rel->identifier() ,
                              induced_parts,

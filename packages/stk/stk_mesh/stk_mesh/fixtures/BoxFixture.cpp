@@ -36,7 +36,7 @@ BoxFixture::BoxFixture( stk::ParallelMachine pm ,
     m_previous_state ( stk::mesh::BulkData::MODIFIABLE )
 {}
 
-Entity& BoxFixture::get_new_entity ( EntityRank rank , EntityId parallel_dependent_id )
+Entity BoxFixture::get_new_entity ( EntityRank rank , EntityId parallel_dependent_id )
 {
   return m_bulk_data.declare_entity ( rank , parallel_dependent_id*m_comm_size + m_comm_rank + 1 , std::vector<Part *> () );
 }
@@ -80,15 +80,15 @@ void BoxFixture::generate_boxes( const BOX   root_box,
 
     const EntityId elem_id =  1 + i + j * ngx + k * ngx * ngy;
 
-    Entity & node0 = m_bulk_data.declare_entity( MetaData::NODE_RANK , n0 , no_parts );
-    Entity & node1 = m_bulk_data.declare_entity( MetaData::NODE_RANK , n1 , no_parts );
-    Entity & node2 = m_bulk_data.declare_entity( MetaData::NODE_RANK , n2 , no_parts );
-    Entity & node3 = m_bulk_data.declare_entity( MetaData::NODE_RANK , n3 , no_parts );
-    Entity & node4 = m_bulk_data.declare_entity( MetaData::NODE_RANK , n4 , no_parts );
-    Entity & node5 = m_bulk_data.declare_entity( MetaData::NODE_RANK , n5 , no_parts );
-    Entity & node6 = m_bulk_data.declare_entity( MetaData::NODE_RANK , n6 , no_parts );
-    Entity & node7 = m_bulk_data.declare_entity( MetaData::NODE_RANK , n7 , no_parts );
-    Entity & elem  = m_bulk_data.declare_entity( MetaData::ELEMENT_RANK , elem_id , no_parts );
+    Entity node0 = m_bulk_data.declare_entity( MetaData::NODE_RANK , n0 , no_parts );
+    Entity node1 = m_bulk_data.declare_entity( MetaData::NODE_RANK , n1 , no_parts );
+    Entity node2 = m_bulk_data.declare_entity( MetaData::NODE_RANK , n2 , no_parts );
+    Entity node3 = m_bulk_data.declare_entity( MetaData::NODE_RANK , n3 , no_parts );
+    Entity node4 = m_bulk_data.declare_entity( MetaData::NODE_RANK , n4 , no_parts );
+    Entity node5 = m_bulk_data.declare_entity( MetaData::NODE_RANK , n5 , no_parts );
+    Entity node6 = m_bulk_data.declare_entity( MetaData::NODE_RANK , n6 , no_parts );
+    Entity node7 = m_bulk_data.declare_entity( MetaData::NODE_RANK , n7 , no_parts );
+    Entity elem  = m_bulk_data.declare_entity( MetaData::ELEMENT_RANK , elem_id , no_parts );
 
     m_bulk_data.declare_relation( elem , node0 , 0 );
     m_bulk_data.declare_relation( elem , node1 , 1 );

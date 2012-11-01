@@ -153,7 +153,7 @@ namespace stk
         SetRefineField(percept::PerceptMesh& eMesh) : m_eMesh(eMesh) {
         }
 
-        virtual bool operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+        virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
         {
           double plane_point[3] = {2,0,0};
           double plane_normal[3] = {1, .5, -.5};
@@ -162,16 +162,16 @@ namespace stk
           unsigned num_node = elem_nodes.size();
           double *f_data = PerceptMesh::field_data_entity(field, element);
           VectorFieldType* coordField = m_eMesh.get_coordinates_field();
-                
+
           bool found = false;
           for (unsigned inode=0; inode < num_node-1; inode++)
             {
-              mesh::Entity & node_i = * elem_nodes[ inode ].entity();
+              mesh::Entity node_i = elem_nodes[ inode ].entity();
               double *coord_data_i = PerceptMesh::field_data(coordField, node_i);
 
               for (unsigned jnode=inode+1; jnode < num_node; jnode++)
                 {
-                  mesh::Entity & node_j = * elem_nodes[ jnode ].entity();
+                  mesh::Entity node_j = elem_nodes[ jnode ].entity();
                   double *coord_data_j = PerceptMesh::field_data(coordField, node_j);
 
                   double dot_0 = plane_dot_product(plane_point, plane_normal, coord_data_i);
@@ -201,17 +201,17 @@ namespace stk
         percept::PerceptMesh& m_eMesh;
       public:
         SetUnrefineField(percept::PerceptMesh& eMesh) : m_eMesh(eMesh) {}
-        virtual bool operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+        virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
         {
           const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
           double *f_data = PerceptMesh::field_data_entity(field, element);
           VectorFieldType* coordField = m_eMesh.get_coordinates_field();
-                
+
           bool found = true;
           for (unsigned inode=0; inode < num_node; inode++)
             {
-              mesh::Entity & node = * elem_nodes[ inode ].entity();
+              mesh::Entity node = elem_nodes[ inode ].entity();
               double *coord_data = PerceptMesh::field_data(coordField, node);
 
               if (coord_data[0] < 0.0 || coord_data[1] < 0.0) // || coord_data[2] > 1.1)
@@ -264,7 +264,7 @@ namespace stk
             ElementRefinePredicate erp(0, refine_field, 0.0);
 
             PredicateBasedElementAdapter<ElementRefinePredicate>
-              breaker(erp, 
+              breaker(erp,
                       eMesh, break_tet_to_tet_N, proc_rank_field);
 
             breaker.setRemoveOldElements(false);
@@ -304,12 +304,12 @@ namespace stk
       //=============================================================================
 
       struct MyEdgeBasedRefinePredicate : public IEdgeBasedAdapterPredicate {
-      
+
         MyEdgeBasedRefinePredicate(stk::mesh::Selector * selector=0, stk::mesh::FieldBase *field=0, double tolerance=0.0) :
           IEdgeBasedAdapterPredicate(selector, field, tolerance) {}
 
         /// Return DO_NOTHING, DO_REFINE, DO_UNREFINE or sum of these
-        int operator()(const stk::mesh::Entity& element, unsigned which_edge, stk::mesh::Entity & node0, stk::mesh::Entity & node1,
+        int operator()(const stk::mesh::Entity element, unsigned which_edge, stk::mesh::Entity node0, stk::mesh::Entity node1,
                        double *coord0, double *coord1, std::vector<int>* existing_edge_marks)
         {
           int mark = 0;
@@ -369,7 +369,7 @@ namespace stk
             MyEdgeBasedRefinePredicate mrp(0, refine_field, 0.0);
 
             PredicateBasedEdgeAdapter<MyEdgeBasedRefinePredicate>
-              breaker(mrp, 
+              breaker(mrp,
                       eMesh, break_tet_to_tet_N, proc_rank_field);
 
             breaker.setRemoveOldElements(false);
@@ -407,7 +407,7 @@ namespace stk
       //=============================================================================
       //=============================================================================
 
-      struct PlaneShock 
+      struct PlaneShock
       {
         double plane_point_init[3]; // = {2 + shock_displacement,0,0};
         double plane_normal[3]; // = {1, 0, 0};
@@ -433,7 +433,7 @@ namespace stk
           plane_point[1] = plane_point_init[1] + shock_displacement*plane_normal[1];
           plane_point[2] = plane_point_init[2] + shock_displacement*plane_normal[2];
         }
-        
+
       };
 
       static double shock_width = 1./5.0;
@@ -446,9 +446,9 @@ namespace stk
         return std::tanh(x);
       }
 
-      
+
       static double shock_diff(stk::mesh::FieldBase* nodal_refine_field, percept::PerceptMesh& eMesh,
-                               stk::mesh::Entity & node0, stk::mesh::Entity & node1, double *coord0, double *coord1, PlaneShock& shock, double shock_displacement)
+                               stk::mesh::Entity node0, stk::mesh::Entity node1, double *coord0, double *coord1, PlaneShock& shock, double shock_displacement)
       {
         shock.setCurrentPlanePoint(shock_displacement);
         double *plane_point = shock.plane_point;
@@ -481,14 +481,14 @@ namespace stk
             fd0[0] = dot_0;
             fd1[0] = dot_1;
           }
-              
+
         double d01 = distance(coord0, coord1);
 
         return (1 + 0*d01 + 0*d01p + 0*v01dotn)*std::abs(dot_0 - dot_1);
       }
 
       struct ShockBasedRefinePredicate : public IEdgeBasedAdapterPredicate {
-      
+
         percept::PerceptMesh& m_eMesh;
         stk::mesh::FieldBase * m_nodal_refine_field;
         PlaneShock m_shock;
@@ -502,7 +502,7 @@ namespace stk
 
 
         /// Return DO_NOTHING, DO_REFINE, DO_UNREFINE or sum of these
-        int operator()(const stk::mesh::Entity& element, unsigned which_edge, stk::mesh::Entity & node0, stk::mesh::Entity & node1,
+        int operator()(const stk::mesh::Entity element, unsigned which_edge, stk::mesh::Entity node0, stk::mesh::Entity node1,
                         double *coord0, double *coord1, std::vector<int>* existing_edge_marks)
         {
           int mark=0;
@@ -567,7 +567,7 @@ namespace stk
             ShockBasedRefinePredicate srp(nodal_refine_field, eMesh, 0, refine_field, 0.0, shock, 0.0);
 
             PredicateBasedEdgeAdapter<ShockBasedRefinePredicate>
-              breaker(srp, 
+              breaker(srp,
                       eMesh, break_tet_to_tet_N, proc_rank_field);
 
             breaker.setRemoveOldElements(false);
@@ -645,14 +645,14 @@ namespace stk
             ShockBasedRefinePredicate srp(nodal_refine_field, eMesh, 0, refine_field, 0.0, shock, 0.0, 0.4);
 
             PredicateBasedEdgeAdapter<ShockBasedRefinePredicate>
-              breaker(srp, 
+              breaker(srp,
                       eMesh, break_tet_to_tet_N, proc_rank_field);
 
             breaker.setRemoveOldElements(false);
             breaker.setAlwaysInitializeNodeRegistry(false);
 
             double delta_shock_displacement = 0.2;
-            double shock_displacement = -2.0;  
+            double shock_displacement = -2.0;
             int num_ref_passes = 2;
             int num_unref_passes = 3;
 
@@ -680,7 +680,7 @@ namespace stk
                     if (save_intermediate)
                       eMesh.save_as(output_files_loc+"tmp_moving_shock_unref_istep_ipass_"+toString(istep)+"_"+toString(iunref_pass)+"_"+post_fix[p_size]+".e");
                   }
-                
+
                 if (delete_parents && istep == num_time_steps-1)
                   {
                     breaker.deleteParentElements();
@@ -768,7 +768,7 @@ namespace stk
             ShockBasedRefinePredicate srp(nodal_refine_field, eMesh, 0, refine_field, 0.0, shock, 0.0, shock_diff_criterion);
 
             PredicateBasedEdgeAdapter<ShockBasedRefinePredicate>
-              breaker(srp, 
+              breaker(srp,
                       eMesh, break_tet_to_tet_N, proc_rank_field);
 
             breaker.setRemoveOldElements(false);
@@ -776,7 +776,7 @@ namespace stk
 
             // x,y,z: [-.08,.08],[-.08,.08],[-.5,-.2]
             double delta_shock_displacement = 0.2;
-            double shock_displacement = 0.0;  
+            double shock_displacement = 0.0;
             int num_ref_passes = 3;
             int num_unref_passes = 3;
 
@@ -805,7 +805,7 @@ namespace stk
                     breaker.unrefineTheseElements(elements_to_unref);
                     std::cout << "P[" << eMesh.get_rank() << "] done... iunref_pass= " << iunref_pass << " moving_shock number elements= " << eMesh.get_number_elements() << std::endl;
                   }
-                
+
 //                 breaker.deleteParentElements();
                  eMesh.save_as(output_files_loc+"tmp_cyl_sidesets_moving_shock_"+post_fix[p_size]+".e");
                  //exit(123);
@@ -905,7 +905,7 @@ namespace stk
             ShockBasedRefinePredicate srp(nodal_refine_field, eMesh, &univ_selector, refine_field, 0.0, shock, 0.0, shock_diff_criterion);
 
             PredicateBasedEdgeAdapter<ShockBasedRefinePredicate>
-              breaker(srp, 
+              breaker(srp,
                       eMesh, break_tet_to_tet_N, proc_rank_field);
 
             breaker.setRemoveOldElements(false);
@@ -914,7 +914,7 @@ namespace stk
 
             // x,y,z: [-.08,.08],[-.08,.08],[-.5,-.2]
             double delta_shock_displacement = 0.2*0.08*(10./((double)num_time_steps));
-            double shock_displacement = 0.0;  
+            double shock_displacement = 0.0;
             int num_ref_passes = 2;
             int num_unref_passes = 3;
 
@@ -942,7 +942,7 @@ namespace stk
                     breaker.unrefineTheseElements(elements_to_unref);
                     std::cout << "P[" << eMesh.get_rank() << "] done... iunref_pass= " << iunref_pass << " moving_shock number elements= " << eMesh.get_number_elements() << std::endl;
                   }
-                
+
                 if (delete_parents && istep == num_time_steps-1)
                   {
                     breaker.deleteParentElements();

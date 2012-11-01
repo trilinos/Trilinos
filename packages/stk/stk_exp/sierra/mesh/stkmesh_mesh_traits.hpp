@@ -23,17 +23,17 @@ struct To_Ordinal : std::unary_function<const stk::mesh::Part*, unsigned>
 template<>
 struct mesh_traits<stk::mesh::BulkData>
 {
-  typedef stk::mesh::Entity*                                                   entity_key;
-  typedef stk::mesh::Entity*                                                   entity_descriptor;
+  typedef stk::mesh::Entity                                                    entity_key;
+  typedef stk::mesh::Entity                                                    entity_descriptor;
   typedef stk::mesh::EntityId                                                  entity_property;
   typedef stk::mesh::EntityRank                                                entity_rank;
   typedef stk::mesh::BucketVectorEntityIteratorRange                           entity_descriptor_range;
-  typedef stk::mesh::BucketPtrIterator                                         bucket_entity_iterator;
+  typedef stk::mesh::BucketIterator                                            bucket_entity_iterator;
   typedef std::pair<bucket_entity_iterator, bucket_entity_iterator>            bucket_entity_range;
 
   typedef stk::mesh::Relation                                        relation_descriptor;
   typedef stk::mesh::RelationIdentifier                              relation_position;
-  typedef stk::mesh::RelationVector::const_iterator           relation_iterator;
+  typedef stk::mesh::RelationVector::const_iterator                  relation_iterator;
   typedef std::pair<relation_iterator, relation_iterator>            relation_range;
 
   typedef stk::mesh::Bucket*                           bucket_key;

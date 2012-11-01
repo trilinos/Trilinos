@@ -231,8 +231,8 @@ void use_case_13_driver( MPI_Comm comm )
 namespace {
 
 /* Determine if the element's side is in the outward orientation. */
-bool outward_orientation( const mesh::Entity & elem ,
-                          const mesh::Entity & side ,
+bool outward_orientation( const mesh::Entity elem ,
+                          const mesh::Entity side ,
                           const unsigned side_ord )
 {
   const CellTopologyData * const elem_top = mesh::get_cell_topology( elem ).getCellTopologyData();
@@ -298,13 +298,13 @@ void use_case_13_algorithm(
 
     for ( int i = 0 ; i < number ; ++i , side_data += 3 ) {
 
-      mesh::Entity & side = bucket[i] ;
+      mesh::Entity side = bucket[i] ;
 
       const mesh::PairIterRelation side_elems = side.relations(element_rank);
 
       if ( side_elems.size() == 2 ) {
-        mesh::Entity & elem1 = * side_elems[0].entity();
-        mesh::Entity & elem2 = * side_elems[1].entity();
+        mesh::Entity elem1 = side_elems[0].entity();
+        mesh::Entity elem2 = side_elems[1].entity();
 
         double * const elem1_data = field_data( elem_field , elem1 );
         double * const elem2_data = field_data( elem_field , elem2 );
@@ -339,8 +339,8 @@ namespace {
 
 // Does not work for shells since side neighbor can be ambiguous...
 
-mesh::Entity * get_side_neighbor(
-  const CellTopologyData & elem_top , const mesh::Entity & elem , unsigned side_id )
+mesh::Entity get_side_neighbor(
+  const CellTopologyData & elem_top , const mesh::Entity elem , unsigned side_id )
 {
   const CellTopologyData & side_top = * elem_top.side[ side_id ].topology ;
   const unsigned * const node_map = elem_top.side[ side_id ].node ;
@@ -348,24 +348,24 @@ mesh::Entity * get_side_neighbor(
 
   // Find other element that shares this side...
 
-  mesh::Entity & node = * elem_nodes[ node_map[0] ].entity();
+  mesh::Entity node = elem_nodes[ node_map[0] ].entity();
 
   const mesh::PairIterRelation node_elems = node.relations(elem.entity_rank());
 
-  mesh::Entity * neighbor = NULL ;
+  mesh::Entity neighbor = mesh::Entity();
 
-  for ( unsigned i = 0 ; neighbor == NULL && i < node_elems.size() ; ++i ) {
+  for ( unsigned i = 0 ; !neighbor.is_valid() && i < node_elems.size() ; ++i ) {
 
     neighbor = node_elems[i].entity();
 
-    const mesh::PairIterRelation neighbor_nodes = neighbor->relations( mesh::MetaData::NODE_RANK );
+    const mesh::PairIterRelation neighbor_nodes = neighbor.relations( mesh::MetaData::NODE_RANK );
 
-    if ( & elem == neighbor ) { neighbor = NULL ; }
+    if ( elem == neighbor ) { neighbor = stk::mesh::Entity() ; }
 
     for ( unsigned j = 1 ;
-          neighbor != NULL && j < side_top.node_count ; ++j ) {
+          neighbor.is_valid() && j < side_top.node_count ; ++j ) {
 
-      mesh::Entity * const next_node = elem_nodes[ node_map[j] ].entity();
+      mesh::Entity const next_node = elem_nodes[ node_map[j] ].entity();
 
       // If neighbor does not have node then not this element ...
 
@@ -373,7 +373,7 @@ mesh::Entity * get_side_neighbor(
       for ( unsigned k = 0 ; ! found && k < neighbor_nodes.size() ; ++k ) {
         found = next_node == neighbor_nodes[k].entity();
       }
-      if ( ! found ) { neighbor = NULL ; }
+      if ( ! found ) { neighbor = stk::mesh::Entity() ; }
     }
 
 #if 0
@@ -393,7 +393,7 @@ mesh::Entity * get_side_neighbor(
       }
       std::cout << " } , Share { " ;
       for ( unsigned j = 0 ; j < side_top.node_count ; ++j ) {
-        mesh::Entity * const next_node = elem_nodes[ node_map[j] ].entity();
+        mesh::Entity const next_node = elem_nodes[ node_map[j] ].entity();
         std::cout << " " << next_node->identifier();
       }
       std::cout << " } )" ;
@@ -406,7 +406,7 @@ mesh::Entity * get_side_neighbor(
   return neighbor ;
 }
 
-unsigned determine_local_side_id( const mesh::Entity & elem , mesh::Entity & side )
+unsigned determine_local_side_id( const mesh::Entity elem , mesh::Entity side )
 {
   const CellTopologyData * const elem_top = mesh::get_cell_topology( elem ).getCellTopologyData();
 
@@ -426,7 +426,7 @@ unsigned determine_local_side_id( const mesh::Entity & elem , mesh::Entity & sid
       for ( unsigned j = 0 ;
             side_id == static_cast<int>(i) && j < side_top.node_count ; ++j ) {
 
-        mesh::Entity * const elem_node = elem_nodes[ side_map[j] ].entity();
+        mesh::Entity const elem_node = elem_nodes[ side_map[j] ].entity();
 
         bool found = false ;
 
@@ -447,13 +447,13 @@ unsigned determine_local_side_id( const mesh::Entity & elem , mesh::Entity & sid
     msg << elem.identifier();
     msg << " ]{" ;
     for ( unsigned i = 0 ; i < elem_nodes.size() ; ++i ) {
-      msg << " " << elem_nodes[i].entity()->identifier();
+      msg << " " << elem_nodes[i].entity().identifier();
     }
     msg << " } , Side[ " ;
     msg << side.identifier();
     msg << " ]{" ;
     for ( unsigned i = 0 ; i < side_nodes.size() ; ++i ) {
-      msg << " " << side_nodes[i].entity()->identifier();
+      msg << " " << side_nodes[i].entity().identifier();
     }
     msg << " } ) FAILED" ;
     throw std::runtime_error( msg.str() );
@@ -491,8 +491,8 @@ void use_case_13_generate_sides(
     for ( size_t j = 0; j < n; ++j) {
 
       // The const_cast indicates that there is an API issue to be addressed:
-      //mesh::Entity & element = const_cast<mesh::Entity&>( bucket[j] );
-      mesh::Entity & element = bucket[j];
+      //mesh::Entity element = const_cast<mesh::Entity>( bucket[j] );
+      mesh::Entity element = bucket[j];
 
       const CellTopologyData * const elem_top = mesh::get_cell_topology( element ).getCellTopologyData();
 
@@ -505,17 +505,17 @@ void use_case_13_generate_sides(
 
       for ( unsigned i = 0 ; i < elem_top->side_count ; ++i ) {
 
-        mesh::Entity * const elem_neighbor = get_side_neighbor(*elem_top,element,i);
+        mesh::Entity const elem_neighbor = get_side_neighbor(*elem_top,element,i);
 
         const bool element_owned  = p_rank == element.owner_rank();
-        const bool neighbor_owned = elem_neighbor &&
-                                    elem_neighbor->owner_rank() == p_rank ;
+        const bool neighbor_owned = elem_neighbor.is_valid() &&
+                                    elem_neighbor.owner_rank() == p_rank ;
 
         const bool create_side =
           ( element_owned || neighbor_owned ) &&
-          ( ! elem_neighbor ||
+          ( ! elem_neighbor.is_valid() ||
             ( ! skin_only &&
-              element.identifier() < elem_neighbor->identifier() ) );
+              element.identifier() < elem_neighbor.identifier() ) );
 
         if ( create_side ) {
 
@@ -527,23 +527,23 @@ void use_case_13_generate_sides(
 
           mesh::PartVector parts ;
 
-          mesh::Entity & side = mesh.declare_entity( side_type, side_id , parts );
+          mesh::Entity side = mesh.declare_entity( side_type, side_id , parts );
 
           mesh::PairIterRelation rel = element.relations( mesh::MetaData::NODE_RANK );
 
           for ( unsigned k = 0 ; k < side_top->node_count ; ++k ) {
-            mesh::Entity & node = * rel[ side_node[k] ].entity();
+            mesh::Entity node = rel[ side_node[k] ].entity();
             mesh.declare_relation( side , node , k );
           }
 
           mesh.declare_relation( element , side , i );
 
-          if ( elem_neighbor ) {
+          if ( elem_neighbor.is_valid() ) {
 
             const unsigned other_side_id =
-              determine_local_side_id( *elem_neighbor , side );
+              determine_local_side_id( elem_neighbor , side );
 
-            mesh.declare_relation( *elem_neighbor , side , other_side_id );
+            mesh.declare_relation( elem_neighbor , side , other_side_id );
           }
         }
       }
@@ -652,9 +652,9 @@ void use_case_13_generate_mesh(
     for ( unsigned i = 0 ; i < node_map.size() ; ++i ) {
       const unsigned i3 = i * 3 ;
 
-      mesh::Entity * const node = mesh.get_entity( mesh::MetaData::NODE_RANK , node_map[i] );
+      mesh::Entity const node = mesh.get_entity( mesh::MetaData::NODE_RANK , node_map[i] );
 
-      if ( NULL == node ) {
+      if ( !node.is_valid() ) {
         std::ostringstream msg ;
         msg << "  P:" << mesh.parallel_rank()
             << " ERROR, Node not found: "
@@ -662,7 +662,7 @@ void use_case_13_generate_mesh(
         throw std::runtime_error( msg.str() );
       }
 
-      double * const data = field_data( node_coord , *node );
+      double * const data = field_data( node_coord , node );
       data[0] = node_coordinates[ i3 + 0 ];
       data[1] = node_coordinates[ i3 + 1 ];
       data[2] = node_coordinates[ i3 + 2 ];

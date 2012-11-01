@@ -9,7 +9,7 @@
 #define JacobianUtil_hpp
 
 #include <stk_percept/Percept.hpp>
-#if !defined(__IBMCPP__) 
+#if !defined(__IBMCPP__)
 
 
 #include <stk_percept/PerceptMesh.hpp>
@@ -18,7 +18,7 @@
 namespace stk {
   namespace percept {
 
-    class JacobianUtil 
+    class JacobianUtil
     {
 
     public:
@@ -27,14 +27,14 @@ namespace stk {
 
       enum { NELEM_TYPES = 10, NNODES_MAX = 8 };
 
-      double   m_detJ[NNODES_MAX]; 
+      double   m_detJ[NNODES_MAX];
       DenseMatrix<3,3> m_J[NNODES_MAX];
       DenseMatrix<3,3> m_dMetric_dA[NNODES_MAX];
       double m_grad[NNODES_MAX][NNODES_MAX][3];
       int m_num_nodes;
       bool m_scale_to_unit;
 
-      JacobianUtil() : 
+      JacobianUtil() :
         m_num_nodes(0),
         m_scale_to_unit(false)
       {
@@ -47,16 +47,16 @@ namespace stk {
         return sum/double(n);
       }
 
-      bool operator()(double& averageJ, PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::FieldBase *coord_field,
+      bool operator()(double& averageJ, PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::FieldBase *coord_field,
                       const CellTopologyData * topology_data_in = 0 );
 
-      bool grad_metric_util( PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::FieldBase *coord_field,
+      bool grad_metric_util( PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::FieldBase *coord_field,
                              const CellTopologyData * topology_data );
 
     private:
       inline bool jacobian_matrix_3D(double &detJ, DenseMatrix<3,3>& A, const double *x0, const double *x1, const double *x2, const double *x3)
       {
-        A(0,0) = (x1[0] - x0[0]);  
+        A(0,0) = (x1[0] - x0[0]);
         A(0,1) = (x2[0] - x0[0]);
         A(0,2) = (x3[0] - x0[0]);
 

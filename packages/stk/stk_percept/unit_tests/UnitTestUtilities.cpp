@@ -610,7 +610,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 
   Ioss::NodeBlock *nb = node_blocks[0];
 
-  std::vector<stk::mesh::Entity*> nodes;
+  std::vector<stk::mesh::Entity> nodes;
   stk::io::get_entity_list(nb, stk::mesh::MetaData::NODE_RANK, bulk, nodes);
 
   /** \todo REFACTOR Application would probably store this field
@@ -656,7 +656,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
       int nodes_per_elem = cell_topo->node_count ;
       std::vector<mesh::EntityId> e_connectivity(nodes_per_elem) ;
 
-      std::vector<stk::mesh::Entity*> elements(element_count);
+      std::vector<stk::mesh::Entity> elements(element_count);
       for(size_t i=0; i<element_count; ++i) {
         int *conn = &(connectivity[i*nodes_per_elem]);
         for (int j=0; j < nodes_per_elem; j++)
@@ -664,7 +664,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
             e_connectivity[j] = (mesh::EntityId)conn[j];
           }
         mesh::EntityId* e_conn = &(e_connectivity[0]);
-        elements[i] = &stk::mesh::declare_element(bulk, *part, elem_ids[i], e_conn);
+        elements[i] = stk::mesh::declare_element(bulk, *part, elem_ids[i], e_conn);
       }
 
       // For this example, we are just taking all attribute fields
@@ -705,10 +705,10 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
       std::vector<int> node_ids ;
       int node_count = entity->get_field_data("ids", node_ids);
 
-      std::vector<stk::mesh::Entity*> nodes(node_count);
+      std::vector<stk::mesh::Entity> nodes(node_count);
       for(int i=0; i<node_count; ++i) {
         nodes[i] = bulk.get_entity( stk::mesh::MetaData::NODE_RANK, node_ids[i] );
-        if (nodes[i] != NULL)
+        if (nodes[i].is_valid())
           bulk.declare_entity(stk::mesh::MetaData::NODE_RANK, node_ids[i], add_parts );
       }
 
@@ -750,12 +750,12 @@ void process_surface_entity(const Ioss::SideSet* io ,
       stk::mesh::PartVector add_parts( 1 , fb_part );
 
       size_t side_count = side_ids.size();
-      std::vector<stk::mesh::Entity*> sides(side_count);
+      std::vector<stk::mesh::Entity> sides(side_count);
       for(size_t is=0; is<side_count; ++is) {
 
         mesh::EntityRank stk_mesh_Element = 3;
 
-        stk::mesh::Entity* const elem = bulk.get_entity(stk_mesh_Element, elem_side[is*2]);
+        stk::mesh::Entity const elem = bulk.get_entity(stk_mesh_Element, elem_side[is*2]);
         // If NULL, then the element was probably assigned to an
         // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
         // Hence the '-1' in the following line.
@@ -764,13 +764,13 @@ void process_surface_entity(const Ioss::SideSet* io ,
         // element block that appears in the database, but was
         // subsetted out of the analysis mesh. Only process if
         // non-null.
-        if (elem != NULL) {
-          stk::mesh::Entity& side =
-            stk::mesh::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
+        if (elem.is_valid()) {
+          stk::mesh::Entity side =
+            stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
           bulk.change_entity_parts( side, add_parts );
-          sides[is] = &side;
+          sides[is] = side;
         } else {
-          sides[is] = NULL;
+          sides[is] = stk::mesh::Entity();
         }
       }
 
@@ -805,7 +805,7 @@ void get_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                     Ioss::GroupingEntity *io_entity,
                     Ioss::Field::RoleType filter_role)
 {
-  std::vector<stk::mesh::Entity*> entities;
+  std::vector<stk::mesh::Entity> entities;
   stk::io::get_entity_list(io_entity, part_type, bulk, entities);
 
   stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
@@ -874,7 +874,7 @@ void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                     Ioss::GroupingEntity *io_entity,
                     Ioss::Field::RoleType filter_role)
 {
-  std::vector<stk::mesh::Entity*> entities;
+  std::vector<stk::mesh::Entity> entities;
   stk::io::get_entity_list(io_entity, part_type, bulk, entities);
 
   stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
@@ -968,7 +968,7 @@ void my_test(
 
       for ( int i = 0 ; i < number ; ++i, elem_centroid_data += 3) {
 
-        mesh::Entity & elem = bucket[i] ;
+        mesh::Entity elem = bucket[i] ;
 
         const mesh::PairIterRelation elem_nodes = elem.relations( mesh::MetaData::NODE_RANK );
 
@@ -978,7 +978,7 @@ void my_test(
 
           for (int inode=0; inode < 8; inode++)
           {
-            mesh::Entity & node = * elem_nodes[inode].entity();
+            mesh::Entity node = elem_nodes[inode].entity();
 
             double * const node_data = field_data(coord_field , node );
             for (int ic=0; ic < 3; ic++) {

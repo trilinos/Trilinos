@@ -39,7 +39,7 @@
 // bcarnes: needed to put these in the namespace matching the second
 //   arg to operator << in order to get compiler (gcc 4.4.4) to work
 
-namespace std { 
+namespace std {
 
     template<class T, class L, class A>
     std::ostream& operator<<(std::ostream& out,  const std::set<T,L,A>& val)
@@ -60,17 +60,17 @@ namespace std {
     {
       typename std::map<Key, Val, Comp, Alloc >::iterator it;
       for (it = val.begin();
-           it != val.end(); 
+           it != val.end();
            it++)
         {
           out << "map[ " << (*it).first << "]= " << (*it).second << " \n";
         }
 
       return out;
-    } 
+    }
 
     template<typename Scalar>
-    std::ostream& operator<<(std::ostream& os, const std::vector<Scalar>& vec) 
+    std::ostream& operator<<(std::ostream& os, const std::vector<Scalar>& vec)
     {
       os << "vector size()= " << vec.size() << " entries= [ \n";
       for (unsigned i = 0; i < vec.size(); i++)
@@ -85,13 +85,13 @@ namespace shards {
   std::ostream& operator<<(std::ostream& os, const shards::Array<double, shards::NaturalOrder>& container) ;
 }
 
-namespace stk { 
+namespace stk {
 
-  namespace mesh { 
-    std::ostream &operator<<(std::ostream& out, const stk::mesh::Entity& entity);
+  namespace mesh {
+    //std::ostream &operator<<(std::ostream& out, const stk::mesh::Entity entity);
   }
 
-  namespace percept { 
+  namespace percept {
 
       enum TraceTypes {
         CONNECT_LOCAL,
@@ -156,19 +156,19 @@ namespace stk {
         return ret;
       }
 
-      static bool approx_equal_relative(double a, double b, double tol) 
-      { 
-        if (fabs(a-b) <= tol*(fabs(a)+fabs(b))*0.5) 
-          return true; 
-        else 
-          return false; 
+      static bool approx_equal_relative(double a, double b, double tol)
+      {
+        if (fabs(a-b) <= tol*(fabs(a)+fabs(b))*0.5)
+          return true;
+        else
+          return false;
       }
-      static bool approx_equal_absolute(double a, double b, double tol) 
-      { 
+      static bool approx_equal_absolute(double a, double b, double tol)
+      {
         if (fabs(a-b) < tol)
-          return true; 
-        else 
-          return false; 
+          return true;
+        else
+          return false;
       }
 
       static bool file_exists(std::string filename)
@@ -192,11 +192,11 @@ namespace stk {
     {
     public:
       GenericVectorOfObjectPointers(int n) : std::vector<VecType *>(n) {}
-      GenericVectorOfObjectPointers(VecType *vt1=0, 
-                    VecType *vt2=0, 
-                    VecType *vt3=0, 
-                    VecType *vt4=0, 
-                    VecType *vt5=0, 
+      GenericVectorOfObjectPointers(VecType *vt1=0,
+                    VecType *vt2=0,
+                    VecType *vt3=0,
+                    VecType *vt4=0,
+                    VecType *vt5=0,
                     VecType *vt6=0,
                     VecType *vt7=0,
                     VecType *vt8=0)
@@ -226,14 +226,14 @@ namespace stk {
 
     //========================================================================================================================
 
-    template<class T> 
+    template<class T>
     std::string toString(T t) { return boost::lexical_cast<std::string>(t); }
 
-    template<class T> 
+    template<class T>
     inline
     T square(T t) { return t*t; }
 
-    template<class T> 
+    template<class T>
     inline
     T SQR(T t) { return t*t; }
 
@@ -244,7 +244,7 @@ namespace stk {
 #define QUOTE(A) #A
 #define EXPAND_AND_QUOTE(A) QUOTE(A)
 
-#define PERCEPT_OUT(a) " " << QUOTE(a) << " = " << a 
+#define PERCEPT_OUT(a) " " << QUOTE(a) << " = " << a
 
 #define TOKENPASTE2(x,y) x ## y
 #define TOKENPASTE(x,y) TOKENPASTE2(x,y)
@@ -263,10 +263,10 @@ namespace stk {
 #ifdef NDEBUG
 
 #define VERIFY_1(message)  do {} while(0)
-#define VERIFY(expr, val1, val2, message)  do {} while(0) 
-#define VERIFY_OP( val1, op, val2, message)  do {} while(0) 
+#define VERIFY(expr, val1, val2, message)  do {} while(0)
+#define VERIFY_OP( val1, op, val2, message)  do {} while(0)
 #define VERIFY_EQ1( val1, val2, message)  do {} while(0)
-#define VERIFY_NE( val1, val2, message)  do {} while(0) 
+#define VERIFY_NE( val1, val2, message)  do {} while(0)
 
 #else
 
@@ -275,7 +275,7 @@ namespace stk {
 #define VERIFY_1(message) do { if(VERIFY_ON) {  std::ostringstream msg_loc; msg_loc << message; \
                                               std::cout << msg_loc.str() << std::endl;          \
                                               throw std::runtime_error(msg_loc.str());  } } while (0)
-                                                   
+
 
 #define VERIFY(expr, val1, val2, message) do { if (VERIFY_ON) { if (!(expr)) { std::ostringstream msg_loc; msg_loc << message << " " << val1 << " " << val2; \
                                               std::cout << msg_loc.str() << std::endl; \
@@ -297,7 +297,7 @@ namespace stk {
 #define VERIFY_EQ1( val1, val2, message) do { if (VERIFY_ON) { if (!(val1==val2)) { std::ostringstream msg_loc; msg_loc << message << " " << val1 << " " << val2; \
                                              std::cout << msg_loc.str() << std::endl; \
                                              Util::debug_stop();        \
-                                             throw std::runtime_error(msg_loc.str()); } } } while (0) 
+                                             throw std::runtime_error(msg_loc.str()); } } } while (0)
 
 #define VERIFY_NE( val1, val2, message) do { if (VERIFY_ON) { if (!(val1 != val2)) { std::ostringstream msg_loc; msg_loc << message << " " << val1 << " " << val2; \
                                             std::cout << msg_loc.str() << std::endl; \

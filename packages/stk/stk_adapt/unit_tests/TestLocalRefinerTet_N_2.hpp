@@ -23,7 +23,7 @@ namespace stk {
 
 
       virtual void 
-      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element, 
             vector<NeededEntityType>& needed_entity_ranks);
 
 
@@ -39,7 +39,7 @@ namespace stk {
 
 
     void TestLocalRefinerTet_N_2::
-    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
+    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element, vector<NeededEntityType>& needed_entity_ranks)
     {
       //static int n_seq = 400;
 
@@ -90,8 +90,8 @@ namespace stk {
               if (needed_entity_rank == m_eMesh.edge_rank())
                 {
 #if 0
-                  stk::mesh::Entity & node0 = *elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
-                  stk::mesh::Entity & node1 = *elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
+                  stk::mesh::Entity node0 = *elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
+                  stk::mesh::Entity node1 = *elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
                   double * const coord0 = stk::mesh::field_data( *coordField , node0 );
                   double * const coord1 = stk::mesh::field_data( *coordField , node1 );
                   

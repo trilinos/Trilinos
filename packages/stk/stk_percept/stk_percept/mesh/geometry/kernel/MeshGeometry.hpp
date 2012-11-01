@@ -42,16 +42,16 @@ public:
     void snap_points_to_geometry(PerceptMesh* mesh_data);
 
     // snaps only specified points in the mesh to their associated geometry
-    void snap_points_to_geometry(PerceptMesh* mesh_data, std::vector<stk::mesh::Entity *>& nodes);
+    void snap_points_to_geometry(PerceptMesh* mesh_data, std::vector<stk::mesh::Entity>& nodes);
 
     // gets normal at a surface (or curve, in which case it returns the curvature vector)
-    void normal_at(PerceptMesh* eMesh, stk::mesh::Entity * node, std::vector<double>& normal);
+    void normal_at(PerceptMesh* eMesh, stk::mesh::Entity node, std::vector<double>& normal);
 
   /**
    * Return 0,1,2,3 if the node or bucket is on a geometry vertex, curve, surface or domain.
    * Return the found evaluators in the curveEvaluators and surfEvaluators.
    */
-  int classify_node(const stk::mesh::Entity& node, size_t& curveOrSurfaceEvaluator);
+  int classify_node(const stk::mesh::Entity node, size_t& curveOrSurfaceEvaluator);
   int classify_bucket(const stk::mesh::Bucket& bucket, size_t& curveOrSurfaceEvaluator);
 
   const std::vector<GeometryEvaluator*>& getGeomEvaluators();
@@ -78,7 +78,7 @@ public:
   bool m_cache_classify_bucket_is_active;
   bool m_doPrint;
 protected:
-    void snap_point_to_geometry(stk::mesh::Entity *node);
+    void snap_point_to_geometry(stk::mesh::Entity node);
 
 private:
 
@@ -94,11 +94,11 @@ private:
                      size_t evalautor_idx );
 
     void snap_node( PerceptMesh* mesh_data,
-                    Entity &node,
+                    Entity node,
                     size_t evalautor_idx );
 
     void normal_at( PerceptMesh* mesh_data,
-                    Entity &node,
+                    Entity node,
                     size_t evalautor_idx,
                     std::vector<double>& normal);
 

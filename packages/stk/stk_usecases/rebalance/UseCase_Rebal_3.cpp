@@ -109,28 +109,28 @@ bool test_contact_surfaces( stk::ParallelMachine comm )
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
         nodes[3] = 1 + ix + ( iy + 1 ) * nnx ;
 
-        stk::mesh::Entity &q = stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
+        stk::mesh::Entity q = stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
         if (0==ix) {
           stk::mesh::declare_element_side( bulk_data, face_id, q, 0 /*local side id*/, &side_part);
           ++face_id;
         }
-        quads[ix][iy] = &q;
+        quads[ix][iy] = q;
       }
     }
 
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::Entity * e = bulk_data.get_entity( element_rank, elem );
-        double * const e_weight = stk::mesh::field_data( weight_field , *e );
+        stk::mesh::Entity e = bulk_data.get_entity( element_rank, elem );
+        double * const e_weight = stk::mesh::field_data( weight_field , e );
         *e_weight = 1.0;
       }
     }
     for ( unsigned iy = 0 ; iy <= ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix <= nx ; ++ix ) {
         stk::mesh::EntityId nid = 1 + ix + iy * nnx ;
-        stk::mesh::Entity * n = bulk_data.get_entity( node_rank, nid );
-        double * const coord = stk::mesh::field_data( coord_field , *n );
+        stk::mesh::Entity n = bulk_data.get_entity( node_rank, nid );
+        double * const coord = stk::mesh::field_data( coord_field , n );
         coord[0] = .1*ix;
         coord[1] = .1*iy;
         coord[2] = 0;
@@ -145,12 +145,12 @@ bool test_contact_surfaces( stk::ParallelMachine comm )
       for ( unsigned ix = 0 ; ix <= nx ; ++ix ) {
         stk::mesh::EntityId nid_bottom  = 1 + ix + iy_bottom  * nnx ;
         stk::mesh::EntityId nid_top = 1 + ix + iy_top * nnx ;
-        stk::mesh::Entity * n_bottom  = bulk_data.get_entity( node_rank, nid_bottom  );
-        stk::mesh::Entity * n_top = bulk_data.get_entity( node_rank, nid_top );
+        stk::mesh::Entity n_bottom  = bulk_data.get_entity( node_rank, nid_bottom  );
+        stk::mesh::Entity n_top = bulk_data.get_entity( node_rank, nid_top );
         const stk::mesh::EntityId constraint_entity_id =  1 + ix + nny * nnx;
-        stk::mesh::Entity & c = bulk_data.declare_entity( constraint_rank, constraint_entity_id, add );
-        bulk_data.declare_relation( c , *n_bottom  , 0 );
-        bulk_data.declare_relation( c , *n_top , 1 );
+        stk::mesh::Entity c = bulk_data.declare_entity( constraint_rank, constraint_entity_id, add );
+        bulk_data.declare_relation( c , n_bottom  , 0 );
+        bulk_data.declare_relation( c , n_top , 1 );
       }
     } // end snippet
 

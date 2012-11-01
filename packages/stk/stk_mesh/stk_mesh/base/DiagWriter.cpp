@@ -88,7 +88,7 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Part& part)
   return writer << "Part[" << part.name() << ", " << part.mesh_meta_data_ordinal() << "]";
 }
 
-stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Entity& entity)
+stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Entity entity)
 {
   // Get bucket of entity
   Bucket* bucket = NULL;

@@ -79,7 +79,7 @@ namespace stk {
       IAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
 
       virtual void 
-      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element, 
                                               vector<NeededEntityType>& needed_entity_ranks) = 0;
 
 

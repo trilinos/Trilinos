@@ -6,7 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #include <stdexcept>
 #include <sstream>
 #include <algorithm>
@@ -17,7 +16,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
-
 
 namespace stk {
 namespace mesh {
@@ -42,10 +40,10 @@ void communicate_field_data(
   std::vector<unsigned> send_size( parallel_size , zero );
   std::vector<unsigned> recv_size( parallel_size , zero );
 
-  for ( std::vector<Entity*>::const_iterator
+  for ( std::vector<Entity>::const_iterator
         i =  mesh.entity_comm().begin() ;
         i != mesh.entity_comm().end() ; ++i ) {
-    Entity & e = **i ;
+    Entity e = *i;
     const bool owned = e.owner_rank() == parallel_rank ;
 
     unsigned e_size = 0 ;
@@ -78,10 +76,10 @@ void communicate_field_data(
 
   // Send packing:
 
-  for ( std::vector<Entity*>::const_iterator
+  for ( std::vector<Entity>::const_iterator
         i =  mesh.entity_comm().begin() ;
         i != mesh.entity_comm().end() ; ++i ) {
-    Entity & e = **i ;
+    Entity e = *i;
     if ( e.owner_rank() == parallel_rank ) {
 
       for ( fi = fb ; fi != fe ; ++fi ) {
@@ -110,10 +108,10 @@ void communicate_field_data(
 
   // Unpack for recv:
 
-  for ( std::vector<Entity*>::const_iterator
+  for ( std::vector<Entity>::const_iterator
         i =  mesh.entity_comm().begin() ;
         i != mesh.entity_comm().end() ; ++i ) {
-    Entity & e = **i ;
+    Entity e = *i;
     if ( e.owner_rank() != parallel_rank ) {
 
       for ( fi = fb ; fi != fe ; ++fi ) {
@@ -164,7 +162,7 @@ void communicate_field_data(
   std::vector<EntityProc>::const_iterator i ;
 
   for ( i = domain.begin() ; i != domain.end() ; ++i ) {
-    Entity       & e = * i->first ;
+    Entity e = i->first;
     const unsigned p = i->second ;
 
     if ( asymmetric || parallel_rank == e.owner_rank() ) {
@@ -178,7 +176,7 @@ void communicate_field_data(
   }
 
   for ( i = range.begin() ; i != range.end() ; ++i ) {
-    Entity       & e = * i->first ;
+    Entity e = i->first;
     const unsigned p = i->second ;
 
     if ( asymmetric || p == e.owner_rank() ) {
@@ -204,7 +202,7 @@ void communicate_field_data(
   // Pack for send:
 
   for ( i = domain.begin() ; i != domain.end() ; ++i ) {
-    Entity       & e = * i->first ;
+    Entity e = i->first;
     const unsigned p = i->second ;
 
     if ( asymmetric || parallel_rank == e.owner_rank() ) {
@@ -227,7 +225,7 @@ void communicate_field_data(
   // Unpack for recv:
 
   for ( i = range.begin() ; i != range.end() ; ++i ) {
-    Entity       & e = * i->first ;
+    Entity e = i->first;
     const unsigned p = i->second ;
 
     if ( asymmetric || p == e.owner_rank() ) {
@@ -252,7 +250,7 @@ void communicate_field_data(
   const FieldBase * fields[] ,
   CommAll & sparse )
 {
-  const std::vector<Entity*> & entity_comm = mesh.entity_comm();
+  const std::vector<Entity> & entity_comm = mesh.entity_comm();
 
   const unsigned parallel_size = mesh.parallel_size();
 
@@ -265,9 +263,9 @@ void communicate_field_data(
 
   for ( j = 0 ; j < field_count ; ++j ) {
     const FieldBase & f = * fields[j] ;
-    for ( std::vector<Entity*>::const_iterator
+    for ( std::vector<Entity>::const_iterator
           i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
-      Entity & e = **i ;
+      Entity e = *i;
       const unsigned size = field_data_size( f , e );
       if ( size ) {
         for ( PairIterEntityComm
@@ -289,9 +287,9 @@ void communicate_field_data(
 
   for ( j = 0 ; j < field_count ; ++j ) {
     const FieldBase & f = * fields[j] ;
-    for ( std::vector<Entity*>::const_iterator
+    for ( std::vector<Entity>::const_iterator
           i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
-      Entity & e = **i ;
+      Entity e = *i;
       const unsigned size = field_data_size( f , e );
       if ( size ) {
         unsigned char * ptr =

@@ -68,7 +68,7 @@ namespace stk {
 
                 for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
                   {
-                    stk::mesh::Entity& element = bucket[i_element];
+                    stk::mesh::Entity element = bucket[i_element];
 
                     const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
                     unsigned num_node = elem_nodes.size();
@@ -77,7 +77,7 @@ namespace stk {
 
                     for (unsigned inode=0; inode < num_node; inode++)
                       {
-                        mesh::Entity & node = * elem_nodes[ inode ].entity();
+                        mesh::Entity node = * elem_nodes[ inode ].entity();
 
                         bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
                         VERIFY_OP_ON(isGhostNode, ==, false, "hmmmm");
@@ -121,7 +121,7 @@ namespace stk {
 
                 for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                   {
-                    stk::mesh::Entity& node = bucket[i_node];
+                    stk::mesh::Entity node = bucket[i_node];
                     bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
                     VERIFY_OP_ON(isGhostNode, ==, false, "hmmmm");
                     bool fixed = this->get_fixed_flag(&node);

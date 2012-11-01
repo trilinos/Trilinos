@@ -192,7 +192,7 @@ double scale_angle_2pi(double angle) {
 
 void select_nodal_data(
     GearsFixture::CylindricalField & cylindrical_coord_field,
-    Entity & element,
+    Entity element,
     double & radius,
     double & angle,
     double & height
@@ -204,8 +204,8 @@ void select_nodal_data(
   PairIterRelation node_relations = element.relations(NODE_RANK);
   int numNodes = node_relations.second - node_relations.first;
   for ( ; node_relations.first != node_relations.second ; ++(node_relations.first) ) {
-    Entity * node = node_relations.first->entity();
-    EntityArray<GearsFixture::CylindricalField> cylindrical_data( cylindrical_coord_field, *node);
+    Entity node = node_relations.first->entity();
+    EntityArray<GearsFixture::CylindricalField> cylindrical_data( cylindrical_coord_field, node);
     radius += cylindrical_data(0);
     angle  = std::min(angle,cylindrical_data(1));
     height += cylindrical_data(2);
@@ -228,21 +228,21 @@ void distribute_gear_across_processors(Gear & gear, GearsFixture::CylindricalFie
   if (p_rank == 0) {
     BucketVector all_elements;
     stk::mesh::get_buckets(locally_owned, bulk_data.buckets(ELEMENT_RANK), all_elements);
-    std::set<Entity *> node_set; // First come first serve nodal movement.
+    std::set<Entity> node_set; // First come first serve nodal movement.
     for (BucketVector::iterator it = all_elements.begin() ; it != all_elements.end() ; ++it) {
       Bucket & b = **it;
       for (size_t i=0 ; i<b.size() ; ++i) {
-        Entity * element = &b[i];
+        Entity element = b[i];
         double radius = 0.0;
         double angle  = 0.0;
         double height = 0.0;
-        select_nodal_data(cylindrical_coord_field, *element,radius,angle,height);
+        select_nodal_data(cylindrical_coord_field, element, radius, angle, height);
         unsigned destination_processor_rank = destination_processor(gear,radius,angle,height,p_rank,p_size);
         elements_to_change_owner.push_back(EntityProc(element,destination_processor_rank));
         // Now add all related nodes to list to move to this processor:
-        PairIterRelation node_relations = element->relations(stk::mesh::MetaData::NODE_RANK);
+        PairIterRelation node_relations = element.relations(stk::mesh::MetaData::NODE_RANK);
         for ( ; node_relations.first != node_relations.second ; ++(node_relations.first) ) {
-          Entity * node = node_relations.first->entity();
+          Entity node = node_relations.first->entity();
           if (node_set.count(node)==0) {
             elements_to_change_owner.push_back(EntityProc(node,destination_processor_rank));
             node_set.insert(node);
@@ -327,6 +327,3 @@ unsigned destination_processor(const Gear & gear, double rad, double angle, doub
 } // fixtures
 } // mesh
 } // stk
-
-
-

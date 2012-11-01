@@ -29,12 +29,12 @@ void activate_entities(stk::io::util::IO_Fixture &fixture,
     stk::mesh::Part * const part = *ip;
     if (stk::io::is_part_io_part(*part) && part->primary_entity_rank() == elem_rank) {
       // Get all entities (elements) on this part...
-      std::vector<stk::mesh::Entity*> entities;
+      std::vector<stk::mesh::Entity> entities;
       stk::mesh::Selector select = meta.locally_owned_part() & *part;
       stk::mesh::get_selected_entities(select, bulk.buckets(elem_rank), entities);
       for (size_t i=0; i < entities.size(); i++) {
         if (rand() > (RAND_MAX/4)*3)
-          bulk.change_entity_parts(*entities[i], add_parts);
+          bulk.change_entity_parts(entities[i], add_parts);
       }
     }
   }
@@ -218,7 +218,7 @@ STKUNIT_UNIT_TEST( IOFixture, large_mesh_test )
     const int length   = b.size();
     for ( int k = 0 ; k < length ; ++k ) {
       // get element
-      stk::mesh::Entity &elem = b[k];
+      stk::mesh::Entity elem = b[k];
       stk::mesh::PairIterRelation elem_node_rels = elem.relations(stk::mesh::MetaData::NODE_RANK);
       STKUNIT_EXPECT_EQ( 8u, elem_node_rels.size());
     }

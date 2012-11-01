@@ -52,7 +52,7 @@ public:
   void generate_boxes (const BOX root_box,
                              BOX local_box);
 
-  Entity  &get_new_entity ( EntityRank rank , EntityId parallel_dependent_id );
+  Entity get_new_entity ( EntityRank rank , EntityId parallel_dependent_id );
 
 protected:
   MetaData m_fem_meta;

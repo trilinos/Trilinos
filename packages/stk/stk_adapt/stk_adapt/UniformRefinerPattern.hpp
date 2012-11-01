@@ -83,13 +83,13 @@ namespace stk {
 
     // useful tools
 #define NODE_COORD(node) stk::mesh::field_data( *eMesh.get_coordinates_field() , node )
-#define VERT_COORD(ivert) NODE_COORD(*elem_nodes[ivert].entity())
-#define EDGE_COORD(iedge,inode) NODE_COORD(*elem_nodes[cell_topo_data->edge[iedge].node[inode]].entity())
-#define FACE_COORD(iface,inode) NODE_COORD(*elem_nodes[cell_topo_data->side[iface].node[inode]].entity())
+#define VERT_COORD(ivert) NODE_COORD(elem_nodes[ivert].entity())
+#define EDGE_COORD(iedge,inode) NODE_COORD(elem_nodes[cell_topo_data->edge[iedge].node[inode]].entity())
+#define FACE_COORD(iface,inode) NODE_COORD(elem_nodes[cell_topo_data->side[iface].node[inode]].entity())
 
     /// 2D array new_sub_entity_nodes[entity_rank][ordinal_of_node_on_sub_dim_entity]
 
-#define VERT_N(i) elem_nodes[i].entity()->identifier()
+#define VERT_N(i) elem_nodes[i].entity().identifier()
 
 // #define VERT_N(i) elem_nodes[i].entity()->identifier()
 // #define EDGE_N(i) new_sub_entity_nodes[m_eMesh.edge_rank()][i][0]
@@ -207,18 +207,18 @@ namespace stk {
       ///   create all new sub-elements of the refined element
       virtual void
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+                        stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)=0;
 
       /// if numChild is passed in as non-null, use that value, else use getNumNewElemPerElem() as size of child vector
-      void set_parent_child_relations(percept::PerceptMesh& eMesh, stk::mesh::Entity& old_owning_elem, stk::mesh::Entity& newElement, unsigned ordinal, unsigned *numChild=0);
+      void set_parent_child_relations(percept::PerceptMesh& eMesh, stk::mesh::Entity old_owning_elem, stk::mesh::Entity newElement, unsigned ordinal, unsigned *numChild=0);
 
-      void interpolateElementFields(percept::PerceptMesh& eMesh, stk::mesh::Entity& old_owning_elem, stk::mesh::Entity& newElement);
+      void interpolateElementFields(percept::PerceptMesh& eMesh, stk::mesh::Entity old_owning_elem, stk::mesh::Entity newElement);
       
       /// given a new element (child) that is a child of an original element (parent), look at parent's side to elem
       ///   relations and from the children of the element, choose an element to connect the new side to (using connectSides)
-      bool findSideRelations(percept::PerceptMesh& eMesh, stk::mesh::Entity *parent, stk::mesh::Entity *child);
-      bool connectSides(percept::PerceptMesh& eMesh, stk::mesh::Entity *element, stk::mesh::Entity *side_elem);
+      bool findSideRelations(percept::PerceptMesh& eMesh, stk::mesh::Entity parent, stk::mesh::Entity child);
+      bool connectSides(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity side_elem);
 
       /// optionally overridden (must be overridden if sidesets are to work properly) to provide info on which sub pattern
       /// should be used to refine side sets (and edge sets)
@@ -598,7 +598,7 @@ namespace stk {
 
 
       void interpolateLine3(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field,
-                            MDArray& output_pts, stk::mesh::Entity& element, MDArray& input_param_coords, double time_val=0.0)
+                            MDArray& output_pts, stk::mesh::Entity element, MDArray& input_param_coords, double time_val=0.0)
       {
         int fieldStride = output_pts.dimension(1);
         unsigned *null_u = 0;
@@ -617,8 +617,8 @@ namespace stk {
           }
         for (unsigned i_node = 0; i_node < elem_nodes.size(); i_node++)
           {
-            stk::mesh::Entity *node = elem_nodes[i_node].entity();
-            double *f_data = eMesh.field_data(field, *node, null_u);
+            stk::mesh::Entity node = elem_nodes[i_node].entity();
+            double *f_data = eMesh.field_data(field, node, null_u);
             for (int i_stride=0; i_stride < fieldStride; i_stride++)
               {
                 output_pts(0, i_stride) += f_data[i_stride]*basis_val[i_node];
@@ -627,7 +627,7 @@ namespace stk {
       }
 
       void interpolateIntrepid(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field, shards::CellTopology& cell_topo,
-                               MDArray& output_pts, stk::mesh::Entity& element, MDArray& input_param_coords, double time_val=0.0)
+                               MDArray& output_pts, stk::mesh::Entity element, MDArray& input_param_coords, double time_val=0.0)
       {
         int fieldStride = output_pts.dimension(1);
         unsigned *null_u = 0;
@@ -651,8 +651,8 @@ namespace stk {
         for (unsigned i_node = 0; i_node < elem_nodes.size(); i_node++)
           {
             //std::cout << "tmp basis_val[" << i_node <<"]= " << basis_val(i_node,0) << std::endl;
-            stk::mesh::Entity *node = elem_nodes[i_node].entity();
-            double *f_data = eMesh.field_data(field, *node, null_u);
+            stk::mesh::Entity node = elem_nodes[i_node].entity();
+            double *f_data = eMesh.field_data(field, node, null_u);
             for (int i_stride=0; i_stride < fieldStride; i_stride++)
               {
                 output_pts(0, i_stride) += f_data[i_stride]*basis_val(i_node, 0);
@@ -666,7 +666,7 @@ namespace stk {
 
 
       /// This version uses Intrepid for interpolation
-      void interpolateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::Entity& newElement,  const unsigned *child_nodes,
+      void interpolateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity newElement,  const unsigned *child_nodes,
                              RefTopoX_arr ref_topo_x, stk::mesh::FieldBase *field)
       {
         EXCEPTWATCH;
@@ -677,7 +677,6 @@ namespace stk {
 
         // FIXME - need topo dimensions here
         int topoDim = getTopoDim(cell_topo);
-        
 
         int fieldStride = 0;
         stk::mesh::EntityRank fr_type = stk::mesh::MetaData::NODE_RANK;
@@ -818,10 +817,10 @@ namespace stk {
                   }
               }
 
-            stk::mesh::Entity *new_node = new_elem_nodes[i_new_node].entity();
+            stk::mesh::Entity new_node = new_elem_nodes[i_new_node].entity();
 
             {
-              double *f_data_new = eMesh.field_data(field, *new_node, null_u);
+              double *f_data_new = eMesh.field_data(field, new_node, null_u);
               for (int ifd=0; ifd < fieldStride; ifd++)
                 {
                   f_data_new[ifd] = output_pts(0, ifd);
@@ -837,7 +836,7 @@ namespace stk {
 
       /// do interpolation for all fields
       /// This version uses Intrepid
-      void interpolateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::Entity& newElement, const unsigned *child_nodes,
+      void interpolateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity newElement, const unsigned *child_nodes,
                              RefTopoX_arr ref_topo_x)
       {
         const stk::mesh::FieldVector & fields = eMesh.get_fem_meta_data()->get_fields();
@@ -853,10 +852,10 @@ namespace stk {
       }
 
 
-      stk::mesh::Entity& createOrGetNode(NodeRegistry& nodeRegistry, PerceptMesh& eMesh, stk::mesh::EntityId eid)
+      stk::mesh::Entity createOrGetNode(NodeRegistry& nodeRegistry, PerceptMesh& eMesh, stk::mesh::EntityId eid)
       {
 #if STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO
-        stk::mesh::Entity *node_p = nodeRegistry.get_entity_node_Ib(*eMesh.get_bulk_data(), stk::mesh::MetaData::NODE_RANK, eid);
+        stk::mesh::Entity node_p = nodeRegistry.get_entity_node_Ib(*eMesh.get_bulk_data(), stk::mesh::MetaData::NODE_RANK, eid);
         if (node_p)
           return *node_p;
         else
@@ -870,7 +869,7 @@ namespace stk {
 
       void
       genericEnrich_createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
-                                      stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+                                      stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                                       stk::mesh::FieldBase *proc_rank_field=0)
       {
         std::vector<NeededEntityType> needed_entities;
@@ -913,9 +912,9 @@ namespace stk {
 
             for (unsigned iSubDim = 0; iSubDim < nSubDimEntities; iSubDim++)
               {
-                 nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), needed_entities[i_need].first, iSubDim);
-                 nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), needed_entities[i_need].first, iSubDim);
-                 nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), needed_entities[i_need].first, iSubDim);
+                 nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity>(&element), needed_entities[i_need].first, iSubDim);
+                 nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity>(&element), needed_entities[i_need].first, iSubDim);
+                 nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity>(&element), needed_entities[i_need].first, iSubDim);
               }
           }
 #endif
@@ -989,7 +988,7 @@ namespace stk {
 
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
-            stk::mesh::Entity& newElement = *(*element_pool);
+            stk::mesh::Entity newElement = *element_pool;
 
             // FIXME
             if (m_primaryEntityRank == stk::mesh::MetaData::ELEMENT_RANK &&  proc_rank_field)
@@ -1008,8 +1007,8 @@ namespace stk {
                     std::cout << "P[" << eMesh.get_rank() << "] eid = 0 for inode = " << inode << std::endl;
                     throw std::logic_error("UniformRefinerPatternBase::genericEnrich_createNewElements bad entity id = 0 ");
                   }
-                //stk::mesh::Entity& node = eMesh.createOrGetNode(eid);
-                stk::mesh::Entity& node = createOrGetNode(nodeRegistry, eMesh, eid);
+                //stk::mesh::Entity node = eMesh.createOrGetNode(eid);
+                stk::mesh::Entity node = createOrGetNode(nodeRegistry, eMesh, eid);
                 eMesh.get_bulk_data()->declare_relation(newElement, node, inode);
               }
 
@@ -1052,7 +1051,7 @@ namespace stk {
 
       */
 
-      int getPermutation(int num_verts, stk::mesh::Entity& element, shards::CellTopology& cell_topo, unsigned rank_of_subcell, unsigned ordinal_of_subcell)
+      int getPermutation(int num_verts, stk::mesh::Entity element, shards::CellTopology& cell_topo, unsigned rank_of_subcell, unsigned ordinal_of_subcell)
       {
         if (rank_of_subcell == 0 || rank_of_subcell == 3) return 0;
 
@@ -1076,7 +1075,7 @@ namespace stk {
         unsigned minNodeId = 0;
         for (int iv = 0; iv < num_subcell_verts; iv++)
           {
-            unsigned nid = elem_nodes[inodes[iv]].entity()->identifier();
+            unsigned nid = elem_nodes[inodes[iv]].entity().identifier();
             if (iv == 0)
               minNodeId = nid;
             else
@@ -1182,7 +1181,7 @@ namespace stk {
 
       void
       genericRefine_createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
-                                      stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+                                      stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                                       stk::mesh::FieldBase *proc_rank_field=0)
       {
         EXCEPTWATCH;
@@ -1249,10 +1248,10 @@ namespace stk {
               {
                 //!
 #if STK_ADAPT_URP_LOCAL_NODE_COMPS
-                nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), needed_entities[i_need].first, iSubDim);
+                nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity>(&element), needed_entities[i_need].first, iSubDim);
                 if (isLinearElement)
                   {
-                    nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), needed_entities[i_need].first, iSubDim);
+                    nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity>(&element), needed_entities[i_need].first, iSubDim);
                   }
 #endif
 
@@ -1486,7 +1485,7 @@ namespace stk {
         for (unsigned iChild = 0; iChild < num_child; iChild++)
           {
             int iChildRefTopo = iChild + iChildStart;
-            stk::mesh::Entity& newElement = *(*element_pool);
+            stk::mesh::Entity newElement = *element_pool;
 
             if (m_primaryEntityRank == stk::mesh::MetaData::ELEMENT_RANK &&  proc_rank_field)
               {
@@ -1511,7 +1510,7 @@ namespace stk {
                   }
 
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_URP_createOrGetNode);
-                stk::mesh::Entity& node = createOrGetNode(nodeRegistry, eMesh, eid);
+                stk::mesh::Entity node = createOrGetNode(nodeRegistry, eMesh, eid);
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_URP_createOrGetNode);
 
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_URP_declare_relation);
@@ -2706,7 +2705,7 @@ namespace stk {
 
 #define DEBUG_CHANGE_ENTITY_PARTS 0
 
-      void change_entity_parts(percept::PerceptMesh& eMesh, stk::mesh::Entity& old_owning_elem, stk::mesh::Entity& newElement)
+      void change_entity_parts(percept::PerceptMesh& eMesh, stk::mesh::Entity old_owning_elem, stk::mesh::Entity newElement)
       {
         static std::vector<stk::mesh::Part*> add_parts(1);
         static std::vector<stk::mesh::Part*> remove_parts;

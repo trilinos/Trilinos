@@ -1,7 +1,7 @@
 #include "MeshGeometry.hpp"
 #include <stk_util/environment/CPUTime.hpp>
 
-MeshGeometry::MeshGeometry(GeometryKernel* geom, double doCheckMovement, double doCheckCPUTime, bool cache_classify_bucket_is_active, bool doPrint) 
+MeshGeometry::MeshGeometry(GeometryKernel* geom, double doCheckMovement, double doCheckCPUTime, bool cache_classify_bucket_is_active, bool doPrint)
   : m_doCheckMovement(doCheckMovement), m_checkCPUTime(doCheckCPUTime), m_cache_classify_bucket_is_active(cache_classify_bucket_is_active), m_doPrint(doPrint),
     m_type(-1)
 {
@@ -47,7 +47,7 @@ const std::vector<GeometryEvaluator*>& MeshGeometry::getGeomEvaluators()
 /**
  * Return 0,1,2,3 if the node is on a geometry vertex, curve, surface or domain.
  */
-int MeshGeometry::classify_node(const stk::mesh::Entity& node, size_t& curveOrSurfaceEvaluator)
+int MeshGeometry::classify_node(const stk::mesh::Entity node, size_t& curveOrSurfaceEvaluator)
 {
   const stk::mesh::Bucket& bucket = node.bucket();
   return classify_bucket(bucket, curveOrSurfaceEvaluator);
@@ -165,7 +165,7 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
   BulkData& bulkData = *eMesh->get_bulk_data();
 
   // Get all of the nodes.
-  std::vector<Entity*> nodes;
+  std::vector<Entity> nodes;
   stk::mesh::get_entities(bulkData, stk::mesh::MetaData::NODE_RANK, nodes);
 
   VectorFieldType* coordField = eMesh->get_coordinates_field();
@@ -173,8 +173,8 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
   // Loop through all of the nodes and choose the "best" projection.
   for(int i=nodes.size()-1; i>-1; i--)
   {
-    Entity *cur_node = nodes[i];
-    Bucket &node_bucket = cur_node->bucket();
+    Entity cur_node = nodes[i];
+    Bucket &node_bucket = cur_node.bucket();
     std::vector<int> evaluators, curve_evals, surf_evals;
     size_t s;
     for (s=0; s<geomEvaluators.size(); s++)
@@ -192,22 +192,22 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
       evaluators = surf_evals;
     if(curve_evals.size() > 0)
       evaluators = curve_evals;
-    
+
     // If we have more than one evaluator we will project to each and
     // keep the best one.
     if(evaluators.size() > 1)
     {
-      double * coords = stk::mesh::field_data(*coordField , *cur_node);
+      double * coords = stk::mesh::field_data(*coordField , cur_node);
       double orig_pos[3] = {coords[0], coords[1], coords[2]};
       double smallest_dist_sq = 9999999.9;
       double best_pos[3] = {0,0,0};
       for(s=0; s<evaluators.size(); s++)
       {
-        // Always start with the original position.	
+        // Always start with the original position.
         for(int f=0; f<3; f++)
           coords[f] = orig_pos[f];
         // Do the projection (changes "coords" variable).
-        snap_node(eMesh, *cur_node, evaluators[s]);
+        snap_node(eMesh, cur_node, evaluators[s]);
         // See if this projection is closer to the original point
         // than any of the previous ones.
         double dist_sq = 0.0;
@@ -227,7 +227,7 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
     // If we know we only have one evaluator don't bother with all
     // of the saving/restoring of positions.
     else if(evaluators.size() > 0)
-      snap_node(eMesh, *cur_node, evaluators[0]);
+      snap_node(eMesh, cur_node, evaluators[0]);
   }
 
 #if 0
@@ -273,10 +273,10 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
 #endif
 }
 
-void MeshGeometry::normal_at(PerceptMesh* eMesh, stk::mesh::Entity * node, std::vector<double>& normal)
+void MeshGeometry::normal_at(PerceptMesh* eMesh, stk::mesh::Entity node, std::vector<double>& normal)
 {
   {
-    Bucket& bucket = node->bucket();
+    Bucket& bucket = node.bucket();
 
     // Each bucket contains the set of nodes with unique part intersections.
     // This means that every nodes will be in exactly one bucket.  But, the
@@ -298,12 +298,12 @@ void MeshGeometry::normal_at(PerceptMesh* eMesh, stk::mesh::Entity * node, std::
     case 1:
       // This bucket represents a geometric curve.  Snap to it.
       //std::cout << "Snapping to curve" << curveEvaluators[0] << std::endl;
-      normal_at( eMesh, *node, curveOrSurfaceEvaluator, normal );
+      normal_at( eMesh, node, curveOrSurfaceEvaluator, normal );
       break;
     case 2:
       //std::cout << "Snapping to surface" << surfEvaluators[0] << std::endl;
       // This bucket represents a geometric surface.  Snap to it.
-      normal_at( eMesh, *node, curveOrSurfaceEvaluator, normal );
+      normal_at( eMesh, node, curveOrSurfaceEvaluator, normal );
       break;
     case -1:
     default:
@@ -315,11 +315,11 @@ void MeshGeometry::normal_at(PerceptMesh* eMesh, stk::mesh::Entity * node, std::
   }
 }
 
-void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh, std::vector<stk::mesh::Entity *>& nodes)
+void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh, std::vector<stk::mesh::Entity>& nodes)
 {
   for (unsigned inode=0; inode < nodes.size(); inode++)
   {
-    Bucket& bucket = nodes[inode]->bucket();
+    Bucket& bucket = nodes[inode].bucket();
 
 #if CONTAINS_DEBUG_NODE
     if ( contains_dbg_node( eMesh, bucket ) )
@@ -348,12 +348,12 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh, std::vector<stk::
     case 1:
       // This bucket represents a geometric curve.  Snap to it.
       //std::cout << "Snapping to curve" << curveEvaluators[0] << std::endl;
-      snap_node( eMesh, *nodes[inode], curveOrSurfaceEvaluator );
+      snap_node( eMesh, nodes[inode], curveOrSurfaceEvaluator );
       break;
     case 2:
       //std::cout << "Snapping to surface" << surfEvaluators[0] << std::endl;
       // This bucket represents a geometric surface.  Snap to it.
-      snap_node( eMesh, *nodes[inode], curveOrSurfaceEvaluator );
+      snap_node( eMesh, nodes[inode], curveOrSurfaceEvaluator );
       break;
     case -1:
     default:
@@ -369,7 +369,7 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh, std::vector<stk::
 void MeshGeometry::snap_node
 (
   PerceptMesh *eMesh,
-  Entity & node,
+  Entity node,
   size_t evaluator_idx
 )
 {
@@ -399,14 +399,14 @@ void MeshGeometry::snap_node
     if (doPrint)
     {
       std::string str = geomKernel->get_attribute(evaluator_idx);
-      std::cout << "tmp geom snap_points_to_geometry eval name= " << str << " node id= " << node.identifier() 
+      std::cout << "tmp geom snap_points_to_geometry eval name= " << str << " node id= " << node.identifier()
                 << " coords b4= " << coord[0] << " " << coord[1] << " " << coord[2] << " type= " << m_type << std::endl;
     }
 
     double cpu0 = 0.0, cpu1 = 0.0;
     if (doCheckCPUTime) cpu0 = stk::cpu_time();
 
-    // Look at the neighboring edges and calculate an average edge length.  This will be 
+    // Look at the neighboring edges and calculate an average edge length.  This will be
     // used as a tolerance to tell the projection code that if the projected point
     // has moved less than this value we can consider it a valid solution.  This will
     // greatly reduce the number of iterations the projection code has to do.
@@ -415,7 +415,7 @@ void MeshGeometry::snap_node
     stk::mesh::PairIterRelation node_elements = node.relations(eMesh->element_rank());
     for(unsigned ii=0; ii < node_elements.size(); ii++)
     {
-      edge_length_ave += eMesh->edge_length_ave(*node_elements[ii].entity());
+      edge_length_ave += eMesh->edge_length_ave(node_elements[ii].entity());
     }
     edge_length_ave /= ((double)node_elements.size());
 
@@ -440,22 +440,22 @@ void MeshGeometry::snap_node
             std::string str = geomKernel->get_attribute(evaluator_idx);
             double dtot = std::sqrt(delta[0]*delta[0]+delta[1]*delta[1]+delta[2]*delta[2]);
 
-            std::cout << "big cpu = " << cpu1 << " coords_0 = " << coord_0[0] << " " << coord_0[1] << " " << coord_0[2] 
-                      << " delta= " << delta[0] << " " << delta[1] << " " << delta[2] 
+            std::cout << "big cpu = " << cpu1 << " coords_0 = " << coord_0[0] << " " << coord_0[1] << " " << coord_0[2]
+                      << " delta= " << delta[0] << " " << delta[1] << " " << delta[2]
                       << " coords_1= " << coord[0] << " " << coord[1] << " " << coord[2]
                       << " deltaMag= " << dtot
                       << " block= " << str
                       << std::endl;
           }
       }
-    
+
     if (doPrint || doCheckMovement)
     {
       std::string str = geomKernel->get_attribute(evaluator_idx);
       double dtot = std::sqrt(delta[0]*delta[0]+delta[1]*delta[1]+delta[2]*delta[2]);
       if(doPrint)
-        std::cout << " coords af= " << coord[0] << " " << coord[1] << " " << coord[2] 
-                  << " delta= " << delta[0] << " " << delta[1] << " " << delta[2] 
+        std::cout << " coords af= " << coord[0] << " " << coord[1] << " " << coord[2]
+                  << " delta= " << delta[0] << " " << delta[1] << " " << delta[2]
                   << " deltaTot= " << dtot
                   << " block= " << str
                   << std::endl;
@@ -474,8 +474,8 @@ void MeshGeometry::snap_node
               const bool print_every = true;
               if (print_every)
                 {
-                  std::cout << "big delta coords_0 = " << coord_0[0] << " " << coord_0[1] << " " << coord_0[2] 
-                            << " delta= " << delta[0] << " " << delta[1] << " " << delta[2] 
+                  std::cout << "big delta coords_0 = " << coord_0[0] << " " << coord_0[1] << " " << coord_0[2]
+                            << " delta= " << delta[0] << " " << delta[1] << " " << delta[2]
                             << " coords_1= " << coord[0] << " " << coord[1] << " " << coord[2]
                             << " deltaMag= " << dtot
                             << " block= " << str
@@ -509,7 +509,7 @@ void MeshGeometry::print_node_movement_summary()
 void MeshGeometry::normal_at
 (
   PerceptMesh *eMesh,
-  Entity & node,
+  Entity node,
   size_t evaluator_idx,
   std::vector<double>& normal
 )
@@ -523,7 +523,7 @@ void MeshGeometry::normal_at
     if (doPrint)
     {
       std::string str = geomKernel->get_attribute(evaluator_idx);
-      std::cout << "tmp geom snap_points_to_geometry eval name= " << str << " node id= " << node.identifier() 
+      std::cout << "tmp geom snap_points_to_geometry eval name= " << str << " node id= " << node.identifier()
                 << " coords b4= " << coord[0] << " " << coord[1] << " " << coord[2];
     }
 
@@ -536,7 +536,7 @@ void MeshGeometry::normal_at
 
     if (doPrint)
     {
-      std::cout << " normal = " << normal[0] << " " << normal[1] << " " << normal[2] 
+      std::cout << " normal = " << normal[0] << " " << normal[1] << " " << normal[2]
                 << std::endl;
       //if (str.substr(6,5)=="20004") block_20004
       //{
@@ -559,7 +559,7 @@ void MeshGeometry::snap_nodes
   //std::string str = geomKernel->get_attribute(evaluator_idx);
   for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
   {
-    Entity& node = bucket[iNode];
+    Entity node = bucket[iNode];
 
     snap_node(eMesh, node, evaluator_idx);
   }
@@ -576,7 +576,7 @@ bool MeshGeometry::contains_dbg_node
 
   for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
   {
-    Entity& node = bucket[iNode];
+    Entity node = bucket[iNode];
 
     double * coord = stk::mesh::field_data( *coordField , node );
     if ( is_dbg_node( coord ) )

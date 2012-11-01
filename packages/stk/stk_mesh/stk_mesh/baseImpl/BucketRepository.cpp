@@ -63,8 +63,8 @@ BucketRepository::~BucketRepository()
 
 
 //----------------------------------------------------------------------
-// The current 'last' bucket in a family is to be deleted.
-// The previous 'last' bucket becomes the new 'last' bucket in the family.
+// The current 'last' bucket in a partition is to be deleted.
+// The previous 'last' bucket becomes the new 'last' bucket in the partition.
 
 void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * bucket_to_be_deleted )
 {
@@ -75,17 +75,17 @@ void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * b
 
   std::vector<Bucket *> & bucket_set = m_buckets[entity_rank];
 
-  // Get the first bucket in the same family as the bucket being deleted
-  Bucket * const first = bucket_to_be_deleted->first_bucket_in_family();
+  // Get the first bucket in the same partition as the bucket being deleted
+  Bucket * const first = bucket_to_be_deleted->first_bucket_in_partition();
 
-  ThrowRequireMsg( bucket_to_be_deleted->equivalent(*first), "Logic error - bucket_to_be_deleted is not in same family as first_bucket_in_family");
-  ThrowRequireMsg( first->equivalent(*bucket_to_be_deleted), "Logic error - first_bucket_in_family is not in same family as bucket_to_be_deleted");
+  ThrowRequireMsg( bucket_to_be_deleted->equivalent(*first), "Logic error - bucket_to_be_deleted is not in same partition as first_bucket_in_partition");
+  ThrowRequireMsg( first->equivalent(*bucket_to_be_deleted), "Logic error - first_bucket_in_partition is not in same partition as bucket_to_be_deleted");
 
   ThrowRequireMsg( bucket_to_be_deleted->size() == 0,
       "Destroying non-empty bucket " << *(bucket_to_be_deleted->key()) );
 
-  ThrowRequireMsg( bucket_to_be_deleted == first->get_bucket_family_pointer(),
-                   "Destroying bucket family") ;
+  ThrowRequireMsg( bucket_to_be_deleted == first->get_partition_pointer(),
+                   "Destroying partition") ;
 
   std::vector<Bucket*>::iterator ik = lower_bound(bucket_set, bucket_to_be_deleted->key());
   ThrowRequireMsg( ik != bucket_set.end() && bucket_to_be_deleted == *ik,
@@ -98,9 +98,9 @@ void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * b
     ThrowRequireMsg( ik != bucket_set.begin(),
                      "Where did first bucket go?" );
 
-    first->set_last_bucket_in_family( *--ik );
+    first->set_last_bucket_in_partition( *--ik );
 
-    ThrowRequireMsg ( first->get_bucket_family_pointer()->size() != 0,
+    ThrowRequireMsg ( first->get_partition_pointer()->size() != 0,
                       "TODO: Explain" );
   }
 
@@ -125,16 +125,16 @@ BucketRepository::declare_nil_bucket()
 
   if (m_nil_bucket == NULL) {
     // Key layout:
-    // { part_count + 1 , { part_ordinals } , family_count }
+    // { part_count + 1 , { part_ordinals } , partition_count }
 
     std::vector<unsigned> new_key(2);
     new_key[0] = 1 ; // part_count + 1
-    new_key[1] = 0 ; // family_count
+    new_key[1] = 0 ; // partition_count
 
     Bucket * bucket =
       new Bucket(m_mesh, InvalidEntityRank, new_key, 0);
 
-    bucket->set_bucket_family_pointer( bucket );
+    bucket->set_partition_pointer( bucket );
 
     //----------------------------------
 
@@ -193,8 +193,8 @@ BucketRepository::declare_bucket(
 
   //----------------------------------
   // Key layout:
-  // { part_count + 1 , { part_ordinals } , family_count }
-  // Thus family_count = key[ key[0] ]
+  // { part_count + 1 , { part_ordinals } , partition_count }
+  // Thus partition_count = key[ key[0] ]
   //
   // for upper bound search use the maximum key.
 
@@ -206,23 +206,23 @@ BucketRepository::declare_bucket(
   }
 
   //----------------------------------
-  // Bucket family has all of the same parts.
-  // Look for the last bucket in this family:
+  // partition has all of the same parts.
+  // Look for the last bucket in this partition:
 
   const std::vector<Bucket*>::iterator ik = lower_bound( bucket_set , &key[0] );
 
   //----------------------------------
-  // If a member of the bucket family has space, it is the last one
+  // If a member of the partition has space, it is the last one
   // since buckets are kept packed.
-  const bool bucket_family_exists =
+  const bool partition_exists =
     ik != bucket_set.begin() && bucket_part_equal( ik[-1]->key() , &key[0] );
 
-  Bucket * const last_bucket = bucket_family_exists ? ik[-1] : NULL ;
+  Bucket * const last_bucket = partition_exists ? ik[-1] : NULL ;
 
   Bucket          * bucket    = NULL ;
 
-  if ( last_bucket == NULL ) { // First bucket in this family
-    key[ key[0] ] = 0 ; // Set the key's family count to zero
+  if ( last_bucket == NULL ) { // First bucket in this partition
+    key[ key[0] ] = 0 ; // Set the partition key's bucket count to zero
   }
   else { // Last bucket present, can it hold one more entity?
 
@@ -239,7 +239,7 @@ BucketRepository::declare_bucket(
       bucket = last_bucket ;
     }
     else if ( last_count < max ) {
-      key[ key[0] ] = 1 + last_count ; // Increment the key's family count.
+      key[ key[0] ] = 1 + last_count ; // Increment the partition key's bucket count.
     }
     else {
       // ERROR insane number of buckets!
@@ -255,19 +255,19 @@ BucketRepository::declare_bucket(
   {
     bucket = new Bucket( m_mesh, arg_entity_rank, key, m_bucket_capacity);
 
-    Bucket * first_bucket = last_bucket ? last_bucket->first_bucket_in_family() : bucket ;
+    Bucket * first_bucket = last_bucket ? last_bucket->first_bucket_in_partition() : bucket ;
 
-    bucket->set_first_bucket_in_family(first_bucket); // Family members point to first bucket
+    bucket->set_first_bucket_in_partition(first_bucket); // partition members point to first bucket
 
-    first_bucket->set_last_bucket_in_family(bucket); // First bucket points to new last bucket
+    first_bucket->set_last_bucket_in_partition(bucket); // First bucket points to new last bucket
 
     bucket_set.insert( ik , bucket );
   }
 
   //----------------------------------
 
-  ThrowRequireMsg( bucket->equivalent(*bucket->first_bucket_in_family()), "Logic error - new bucket is not in same family as first_bucket_in_family");
-  ThrowRequireMsg( bucket->first_bucket_in_family()->equivalent(*bucket), "Logic error - first_bucket_in_family is not in same family as new bucket");
+  ThrowRequireMsg( bucket->equivalent(*bucket->first_bucket_in_partition()), "Logic error - new bucket is not in same partition as first_bucket_in_partition");
+  ThrowRequireMsg( bucket->first_bucket_in_partition()->equivalent(*bucket), "Logic error - first_bucket_in_partition is not in same partition as new bucket");
 
   return bucket ;
 }
@@ -311,12 +311,12 @@ void BucketRepository::internal_sort_bucket_entities()
 
     std::vector<Bucket*> & buckets = m_buckets[ entity_rank ];
 
-    size_t bk = 0 ; // Offset to first bucket of the family
-    size_t ek = 0 ; // Offset to end   bucket of the family
+    size_t bk = 0 ; // Offset to first bucket of the partition
+    size_t ek = 0 ; // Offset to end   bucket of the partition
 
     for ( ; bk < buckets.size() ; bk = ek ) {
       Bucket * b_scratch = NULL ;
-      Bucket * ik_vacant = buckets[bk]->last_bucket_in_family();
+      Bucket * ik_vacant = buckets[bk]->last_bucket_in_partition();
       unsigned ie_vacant = ik_vacant->size();
 
       if ( ik_vacant->capacity() <= ie_vacant ) {
@@ -333,9 +333,9 @@ void BucketRepository::internal_sort_bucket_entities()
         ie_vacant = 0 ;
       }
 
-      ik_vacant->replace_entity( ie_vacant , NULL ) ;
+      ik_vacant->replace_entity( ie_vacant , Entity() ) ;
 
-      // Determine offset to the end bucket in this family:
+      // Determine offset to the end bucket in this partition:
       while ( ek < buckets.size() && ik_vacant != buckets[ek] ) { ++ek ; }
       if (ek < buckets.size()) ++ek ;
 
@@ -344,15 +344,15 @@ void BucketRepository::internal_sort_bucket_entities()
         count += buckets[ik]->size();
       }
 
-      std::vector<Entity*> entities( count );
+      std::vector<Entity> entities( count );
 
-      std::vector<Entity*>::iterator j = entities.begin();
+      std::vector<Entity>::iterator j = entities.begin();
 
       for ( size_t ik = bk ; ik != ek ; ++ik ) {
         Bucket & b = * buckets[ik];
         const unsigned n = b.size();
         for ( unsigned i = 0 ; i < n ; ++i , ++j ) {
-          *j = & b[i] ;
+          *j = b[i];
         }
       }
 
@@ -360,42 +360,42 @@ void BucketRepository::internal_sort_bucket_entities()
 
       j = entities.begin();
 
-      bool change_this_family = false ;
+      bool change_this_partition = false ;
 
       for ( size_t ik = bk ; ik != ek ; ++ik ) {
         Bucket & b = * buckets[ik];
         const unsigned n = b.size();
         for ( unsigned i = 0 ; i < n ; ++i , ++j ) {
-          Entity * const current = & b[i] ;
+          Entity const current = b[i];
 
           if ( current != *j ) {
 
-            if ( current ) {
+            if ( current.is_valid() ) {
               // Move current entity to the vacant spot
               copy_fields( *ik_vacant , ie_vacant , b, i );
-              m_entity_repo.change_entity_bucket(*ik_vacant, *current, ie_vacant);
+              m_entity_repo.change_entity_bucket(*ik_vacant, current, ie_vacant);
               ik_vacant->replace_entity( ie_vacant , current ) ;
             }
 
             // Set the vacant spot to where the required entity is now.
-            ik_vacant = & ((*j)->bucket()) ;
-            ie_vacant = (*j)->bucket_ordinal() ;
-            ik_vacant->replace_entity( ie_vacant , NULL ) ;
+            ik_vacant = & (j->bucket()) ;
+            ie_vacant = j->bucket_ordinal() ;
+            ik_vacant->replace_entity( ie_vacant , Entity() ) ;
 
             // Move required entity to the required spot
             copy_fields( b, i, *ik_vacant , ie_vacant );
-            m_entity_repo.change_entity_bucket( b, **j, i);
+            m_entity_repo.change_entity_bucket( b, *j, i);
             b.replace_entity( i, *j );
 
-            change_this_family = true ;
+            change_this_partition = true ;
           }
 
           // Once a change has occured then need to propagate the
-          // relocation for the remainder of the family.
+          // relocation for the remainder of the partition.
           // This allows the propagation to be performed once per
           // entity as opposed to both times the entity is moved.
 
-          if ( change_this_family ) { internal_propagate_relocation( **j ); }
+          if ( change_this_partition ) { internal_propagate_relocation( *j ); }
         }
       }
 
@@ -420,40 +420,40 @@ void BucketRepository::optimize_buckets()
 
     std::vector<Bucket*> tmp_buckets;
 
-    size_t begin_family = 0 ; // Offset to first bucket of the family
-    size_t end_family = 0 ; // Offset to end   bucket of the family
+    size_t begin_partition = 0 ; // Offset to first bucket of the partition
+    size_t end_partition = 0 ; // Offset to end   bucket of the partition
 
     //loop over families
-    for ( ; begin_family < buckets.size() ; begin_family = end_family ) {
-      Bucket * last_bucket_in_family  = buckets[begin_family]->last_bucket_in_family();
+    for ( ; begin_partition < buckets.size() ; begin_partition = end_partition ) {
+      Bucket * last_bucket_in_partition  = buckets[begin_partition]->last_bucket_in_partition();
 
-      // Determine offset to the end bucket in this family:
-      while ( end_family < buckets.size() && last_bucket_in_family != buckets[end_family] ) { ++end_family ; }
-      if (end_family < buckets.size())  ++end_family ; //increment past the end
+      // Determine offset to the end bucket in this partition:
+      while ( end_partition < buckets.size() && last_bucket_in_partition != buckets[end_partition] ) { ++end_partition ; }
+      if (end_partition < buckets.size())  ++end_partition ; //increment past the end
 
-      //only one bucket in the family
-      //go to the next family
-      if (end_family - begin_family == 1) {
-        tmp_buckets.push_back(buckets[begin_family]);
+      //only one bucket in the partition
+      //go to the next partition
+      if (end_partition - begin_partition == 1) {
+        tmp_buckets.push_back(buckets[begin_partition]);
         continue;
       }
 
-      std::vector<unsigned> new_key = buckets[begin_family]->key_vector();
-      //index of bucket in family
+      std::vector<unsigned> new_key = buckets[begin_partition]->key_vector();
+      //index of bucket in partition
       new_key[ new_key[0] ] = 0;
 
       unsigned new_capacity = 0 ;
-      for ( size_t i = begin_family ; i != end_family ; ++i ) {
+      for ( size_t i = begin_partition ; i != end_partition ; ++i ) {
         new_capacity += buckets[i]->capacity();
       }
 
-      std::vector<Entity*> entities;
+      std::vector<Entity> entities;
       entities.reserve(new_capacity);
 
-      for ( size_t i = begin_family ; i != end_family ; ++i ) {
+      for ( size_t i = begin_partition ; i != end_partition ; ++i ) {
         Bucket& b = *buckets[i];
         for(size_t j=0; j<b.size(); ++j) {
-          entities.push_back(&b[j]);
+          entities.push_back(b[j]);
         }
       }
 
@@ -465,8 +465,8 @@ void BucketRepository::optimize_buckets()
           new_capacity
           );
 
-      new_bucket->set_first_bucket_in_family(new_bucket); // Family members point to first bucket
-      new_bucket->set_last_bucket_in_family(new_bucket); // First bucket points to new last bucket
+      new_bucket->set_first_bucket_in_partition(new_bucket); // partition members point to first bucket
+      new_bucket->set_last_bucket_in_partition(new_bucket); // First bucket points to new last bucket
 
       tmp_buckets.push_back(new_bucket);
 
@@ -474,18 +474,18 @@ void BucketRepository::optimize_buckets()
         //increase size of the new_bucket
         new_bucket->increment_size();
 
-        Entity & entity = *entities[new_ordinal];
+        Entity entity = entities[new_ordinal];
         Bucket& old_bucket = entity.bucket();
         unsigned old_ordinal = entity.bucket_ordinal();
 
         //copy field data from old to new
         copy_fields( *new_bucket, new_ordinal, old_bucket, old_ordinal);
         m_entity_repo.change_entity_bucket( *new_bucket, entity, new_ordinal);
-        new_bucket->replace_entity( new_ordinal , &entity ) ;
+        new_bucket->replace_entity( new_ordinal , entity ) ;
         internal_propagate_relocation(entity);
       }
 
-      for (size_t ik = begin_family; ik != end_family; ++ik) {
+      for (size_t ik = begin_partition; ik != end_partition; ++ik) {
         delete buckets[ik];
         buckets[ik] = NULL;
       }
@@ -504,13 +504,13 @@ void BucketRepository::remove_entity( Bucket * k , unsigned i )
 
   const EntityRank entity_rank = k->entity_rank();
 
-  // Last bucket in the family of buckets with the same parts.
-  // The last bucket is the only non-full bucket in the family.
+  // Last bucket in the partition of buckets with the same parts.
+  // The last bucket is the only non-full bucket in the partition.
 
-  Bucket * const last = k->last_bucket_in_family();
+  Bucket * const last = k->last_bucket_in_partition();
 
-  ThrowRequireMsg( last->equivalent(*k), "Logic error - last bucket in family not equivalent to bucket");
-  ThrowRequireMsg( k->equivalent(*last), "Logic error - bucket not equivalent to last bucket in family");
+  ThrowRequireMsg( last->equivalent(*k), "Logic error - last bucket in partition not equivalent to bucket");
+  ThrowRequireMsg( k->equivalent(*last), "Logic error - bucket not equivalent to last bucket in partition");
 
   // Fill in the gap if it is not the last entity being removed
 
@@ -518,11 +518,11 @@ void BucketRepository::remove_entity( Bucket * k , unsigned i )
 
     // Copy last entity in last bucket to bucket *k slot i
 
-    Entity & entity = (*last)[ last->size() - 1 ];
+    Entity entity = (*last)[ last->size() - 1 ];
 
     copy_fields( *k , i , *last , last->size() - 1 );
 
-    k->replace_entity(i, & entity ) ;
+    k->replace_entity(i, entity ) ;
     m_entity_repo.change_entity_bucket( *k, entity, i);
 
     // Entity field data has relocated
@@ -532,7 +532,7 @@ void BucketRepository::remove_entity( Bucket * k , unsigned i )
 
   last->decrement_size();
 
-  last->replace_entity( last->size() , NULL ) ;
+  last->replace_entity( last->size() , Entity() ) ;
 
   if ( 0 == last->size() ) {
     destroy_bucket( entity_rank , last );
@@ -541,7 +541,7 @@ void BucketRepository::remove_entity( Bucket * k , unsigned i )
 
 //----------------------------------------------------------------------
 
-void BucketRepository::internal_propagate_relocation( Entity & entity )
+void BucketRepository::internal_propagate_relocation( Entity entity )
 {
   TraceIf("stk::mesh::impl::BucketRepository::internal_propagate_relocation", LOG_BUCKET);
 
@@ -551,78 +551,78 @@ void BucketRepository::internal_propagate_relocation( Entity & entity )
   for ( ; ! rel.empty() ; ++rel ) {
     const EntityRank rel_rank = rel->entity_rank();
     if ( rel_rank < erank ) {
-      Entity & e_to = * rel->entity();
+      Entity e_to = rel->entity();
 
       set_field_relations( entity, e_to, rel->identifier() );
     }
     else if ( erank < rel_rank ) {
-      Entity & e_from = * rel->entity();
+      Entity e_from = rel->entity();
 
       set_field_relations( e_from, entity, rel->identifier() );
     }
   }
 }
 
-void BucketRepository::update_bucket_families()
+void BucketRepository::update_partitions()
 {
-    m_bucket_families.clear();
-    m_bucket_families.resize(4);
+    m_partitions.clear();
+    m_partitions.resize(4);
 
     for ( EntityRank entity_rank = 0 ;
         entity_rank < m_buckets.size() ; ++entity_rank )
     {
-      std::vector<stk::mesh::impl::BucketFamily> &bucket_families = m_bucket_families[entity_rank];
+      std::vector<stk::mesh::impl::Partition> &partitions = m_partitions[entity_rank];
       std::vector<Bucket*> & buckets = m_buckets[ entity_rank ];
 
-      size_t begin_family = 0 ; // Offset to first bucket of the family
-      size_t end_family = 0 ; // Offset to end   bucket of the family
+      size_t begin_partition = 0 ; // Offset to first bucket of the partition
+      size_t end_partition = 0 ; // Offset to end   bucket of the partition
 
       //loop over families (of entity_rank) via buckets
-      for ( ; begin_family < buckets.size() ; begin_family = end_family )
+      for ( ; begin_partition < buckets.size() ; begin_partition = end_partition )
       {
-        bucket_families.push_back(BucketFamily(this, entity_rank));
-        Bucket * last_bucket_in_family = buckets[begin_family]->last_bucket_in_family();
+        partitions.push_back(Partition(this, entity_rank));
+        Bucket * last_bucket_in_partition = buckets[begin_partition]->last_bucket_in_partition();
 
-        // Determine offset to the end bucket in this family:
-        while ((end_family < buckets.size()) && (last_bucket_in_family != buckets[end_family]))
+        // Determine offset to the end bucket in this partition:
+        while ((end_partition < buckets.size()) && (last_bucket_in_partition != buckets[end_partition]))
         {
-            ++end_family ;
+            ++end_partition ;
         }
-        if (end_family < buckets.size())
+        if (end_partition < buckets.size())
         {
-            ++end_family ; //increment past the end
+            ++end_partition ; //increment past the end
         }
-        BucketFamily &bucket_family = bucket_families.back();
-        bucket_family.m_stkPartition = buckets[begin_family]->key_vector();
-        bucket_family.m_stkPartition.pop_back();
-        bucket_family.m_beginBucketIndex = static_cast<unsigned>(begin_family);
-        bucket_family.m_endBucketIndex = static_cast<unsigned>(end_family);
+        Partition &partition = partitions.back();
+        partition.m_stkPartition = buckets[begin_partition]->key_vector();
+        partition.m_stkPartition.pop_back();
+        partition.m_beginBucketIndex = static_cast<unsigned>(begin_partition);
+        partition.m_endBucketIndex = static_cast<unsigned>(end_partition);
       }
 
       // Let all the buckets of entity_rank know about their bucket families.
-      size_t num_families = bucket_families.size();
-      for (size_t i = 0; i < num_families; ++i)
+      size_t num_partitions = partitions.size();
+      for (size_t i = 0; i < num_partitions; ++i)
       {
-          stk::mesh::impl::BucketFamily &bucket_family = bucket_families[i];
-          std::vector<stk::mesh::Bucket *>::iterator bkt= bucket_family.begin();
-          for (;bkt != bucket_family.end(); ++bkt)
+          stk::mesh::impl::Partition &partition = partitions[i];
+          std::vector<stk::mesh::Bucket *>::iterator bkt= partition.begin();
+          for (;bkt != partition.end(); ++bkt)
           {
-              (*bkt)->m_bucket_family = &bucket_families[i];
+              (*bkt)->m_partition = &partitions[i];
           }
-          // std::cout << bucket_family << std::endl;
+          // std::cout << partition << std::endl;
       }
     }
 }
 
 
-std::vector<BucketFamily *> BucketRepository::get_bucket_families(EntityRank rank)
+std::vector<Partition *> BucketRepository::get_partitions(EntityRank rank)
 {
     if (m_mesh.synchronized_state() != BulkData::SYNCHRONIZED)
     {
-        std::vector<BucketFamily *>();
+        std::vector<Partition *>();
     }
-    std::vector<BucketFamily *> retval;
-    std::vector<BucketFamily> &bf_vec = m_bucket_families[rank];
+    std::vector<Partition *> retval;
+    std::vector<Partition> &bf_vec = m_partitions[rank];
     for (size_t i = 0; i < bf_vec.size(); ++i)
     {
         retval.push_back(&bf_vec[i]);

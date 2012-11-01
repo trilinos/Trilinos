@@ -49,7 +49,7 @@
 extern double s_timers[10]; // = {0,0,0,0,0,0,0,0,0,0};
 
 
-namespace stk { 
+namespace stk {
 
   namespace adapt {
 
@@ -73,13 +73,13 @@ namespace stk {
       MemMultType mult_hex8;
       MemMultType mult_tet4;
       MemMultType mult_nodes;
-      
+
       MemoryMultipliers(MemMultType mult_hex8=1490, MemMultType mult_tet4=702, MemMultType mult_nodes=0):
         num_hex8(0ul),
         num_tet4(0ul),
         num_nodes(0ul),
-        mult_hex8(mult_hex8), 
-        mult_tet4(mult_tet4), 
+        mult_hex8(mult_hex8),
+        mult_tet4(mult_tet4),
         mult_nodes(mult_nodes)
       {
       }
@@ -108,10 +108,10 @@ namespace stk {
         for (unsigned i = 0; i < refInfo.size(); i++)
           {
             num_nodes= refInfo[0].m_numNewNodes;
-            //std::cout << "irank, rank, m_numNewNodes, m_numNewElems= " << i << " " << refInfo[i].m_rank << " " << refInfo[i].m_numNewNodes 
+            //std::cout << "irank, rank, m_numNewNodes, m_numNewElems= " << i << " " << refInfo[i].m_rank << " " << refInfo[i].m_numNewNodes
             //<< " " << refInfo[i].m_numNewElemsLast
             //<< std::endl;
-            
+
             //             if (refInfo[i].m_rank == 0)
             //               {
             //                 num_nodes += refInfo[i].m_numNewNodes;
@@ -134,7 +134,7 @@ namespace stk {
 
         return estimate_memory();
       }
-      
+
       static void process_estimate(MemorySizeType tot_mem, PerceptMesh& eMesh, std::vector<RefinementInfoByType>& refInfo, std::string memory_multipliers_file, std::string input_file)
       {
         //const stk::ParallelMachine& comm = eMesh.get_bulk_data()->parallel();
@@ -146,10 +146,10 @@ namespace stk {
               mesh::Selector sel_locally_owned(eMesh.get_fem_meta_data()->locally_owned_part());
               mesh::Selector sel_globally_shared(eMesh.get_fem_meta_data()->globally_shared_part());
               mesh::Selector sel_universal(eMesh.get_fem_meta_data()->universal_part());
-          
+
               std::vector<unsigned> count ;
               stk::mesh::count_entities( sel_universal, *eMesh.get_bulk_data(), count );
-      
+
               unsigned nnodes = count[0];
 
               stk::ParallelMachine pm = eMesh.get_bulk_data()->parallel();
@@ -164,11 +164,11 @@ namespace stk {
             //std::cout << "tmp srk tot_mem = " << MegaByte(tot_mem) << " estMem= " << MegaByte(estMem) << std::endl;
             if (eMesh.get_rank() == 0)
               {
-                std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory[MB]= " << MegaByte(tot_mem) 
-                          << " estMem[MB]= " << MegaByte(estMem) 
+                std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory[MB]= " << MegaByte(tot_mem)
+                          << " estMem[MB]= " << MegaByte(estMem)
                           << " mult_hex8= " << memMults.mult_hex8 << " mult_tet4= " << memMults.mult_tet4 << " mult_nodes=" << memMults.mult_nodes << std::endl;
 
-                std::cout << "(*MemEstMM: " << input_file << " *) ,{" << memMults.num_nodes << ", " << memMults.num_tet4 << "," << memMults.num_hex8 << "," << MegaByte(tot_mem) 
+                std::cout << "(*MemEstMM: " << input_file << " *) ,{" << memMults.num_nodes << ", " << memMults.num_tet4 << "," << memMults.num_hex8 << "," << MegaByte(tot_mem)
                           << ", " << MegaByte(estMem) << "}" << std::endl;
               }
 
@@ -185,11 +185,11 @@ namespace stk {
             //std::cout << "tmp srk tot_mem = " << MegaByte(tot_mem) << " estMem= " << MegaByte(estMem) << std::endl;
             if (eMesh.get_rank() == 0)
               {
-                std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory[MB]= " << MegaByte(tot_mem) 
-                          << " estMem[MB]= " << MegaByte(estMem) 
+                std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory[MB]= " << MegaByte(tot_mem)
+                          << " estMem[MB]= " << MegaByte(estMem)
                           << " mult_hex8= " << memMults.mult_hex8 << " mult_tet4= " << memMults.mult_tet4 << " mult_nodes=" << memMults.mult_nodes << std::endl;
 
-                std::cout << "(*MemEstMM: " << input_file << " *) ,{" << memMults.num_nodes << ", " << memMults.num_tet4 << "," << memMults.num_hex8 << "," << MegaByte(tot_mem) 
+                std::cout << "(*MemEstMM: " << input_file << " *) ,{" << memMults.num_nodes << ", " << memMults.num_tet4 << "," << memMults.num_hex8 << "," << MegaByte(tot_mem)
                           << ", " << MegaByte(estMem) << "}" << std::endl;
               }
 
@@ -214,7 +214,7 @@ namespace stk {
       stk::mesh::compute_memory_usage(bulkData, mem_usage);
 
       MemorySizeType node_reg_mem = 0;
-      if (node_reg) 
+      if (node_reg)
         node_reg_mem = node_reg->get_memory_usage();
       MemorySizeType node_reg_mem_sum = node_reg_mem;
       MemorySizeType node_reg_mem_max = node_reg_mem;
@@ -239,23 +239,23 @@ namespace stk {
           if (dump_level > 1)
 
             {
-              std::cout << "P[" << bulkData.parallel_rank() << "] AdaptMain::memory_dump stk_mesh counted memory usage at stage [" << msg << "] " 
+              std::cout << "P[" << bulkData.parallel_rank() << "] AdaptMain::memory_dump stk_mesh counted memory usage at stage [" << msg << "] "
                 " parallel sum, max memory [MB]= " << ((double)mem_total_bytes_sum)/MB << " , " << ((double)mem_total_bytes_max)/MB << std::endl;
               if (dump_level > 2)
                 stk::mesh::print_memory_usage(mem_usage, std::cout);
 
-              std::cout << "P[" << bulkData.parallel_rank() << "] AdaptMain::memory_dump malloc_used total (sum all proc) at stage [" << msg << "] = " 
-                        << " malloc_used malloc_footprint malloc_max_footprint [MB]= " << ((double)malloc_used_0)/MB 
-                        << " , " << ((double)malloc_footprint_0)/MB 
-                        << " , " << ((double)malloc_max_footprint_0)/MB 
+              std::cout << "P[" << bulkData.parallel_rank() << "] AdaptMain::memory_dump malloc_used total (sum all proc) at stage [" << msg << "] = "
+                        << " malloc_used malloc_footprint malloc_max_footprint [MB]= " << ((double)malloc_used_0)/MB
+                        << " , " << ((double)malloc_footprint_0)/MB
+                        << " , " << ((double)malloc_max_footprint_0)/MB
                         << std::endl;
             }
-          
+
           {
             std::cout << "AdaptMain::memory_dump summary for " << msg << " : stk_mesh [sum], NodeRegistry [sum], ptmalloc[sum] [MB] "
-                      << ((double)mem_total_bytes_sum)/MB << " , " 
-                      << ((double)node_reg_mem_sum)/MB << " , " 
-                      << ((double)malloc_used_0)/MB 
+                      << ((double)mem_total_bytes_sum)/MB << " , "
+                      << ((double)node_reg_mem_sum)/MB << " , "
+                      << ((double)malloc_used_0)/MB
                       << std::endl;
           }
 
@@ -271,9 +271,9 @@ namespace stk {
     //extern void test_memory(int, int);
     void test_memory(percept::PerceptMesh& eMesh, MemorySizeType n_elements, MemorySizeType n_nodes)
     {
-      vector<stk::mesh::Entity *> new_elements;
-      vector<stk::mesh::Entity *> new_nodes;
-      
+      vector<stk::mesh::Entity> new_elements;
+      vector<stk::mesh::Entity> new_nodes;
+
       eMesh.get_bulk_data()->modification_begin();
 
       std::cout << "creating " << n_elements << " elements..." <<std::endl;
@@ -287,7 +287,7 @@ namespace stk {
       MemorySizeType num_prints = std::min(static_cast<MemorySizeType>(100ul), n_elements);
       MemorySizeType print_mod = n_elements/num_prints;
       MemorySizeType i_node = 0;
-      int n_node_per_element = 8; 
+      int n_node_per_element = 8;
       for (MemorySizeType i_element = 0; i_element < n_elements; i_element++)
         {
           if (!i_element || (i_element % print_mod == 0))
@@ -295,14 +295,14 @@ namespace stk {
               std::cout << "declare_relation for i_element = " << i_element << " [" << n_elements << "] = " << ((double)i_element)/((double)n_elements)*100 << "%"
                         << std::endl;
             }
-          stk::mesh::Entity& element = *new_elements[i_element];
+          stk::mesh::Entity element = new_elements[i_element];
 
           for (int j_node = 0; j_node < n_node_per_element; j_node++)
             {
-              stk::mesh::Entity& node = *new_nodes[i_node];
+              stk::mesh::Entity node = new_nodes[i_node];
 
               eMesh.get_bulk_data()->declare_relation(element, node, j_node);
-              
+
               i_node++;
               if (i_node >= n_nodes-1)
                 i_node = 0;
@@ -312,7 +312,7 @@ namespace stk {
       std::cout << " doing modification_end ... " << std::endl;
       eMesh.get_bulk_data()->modification_end();
       std::cout << " done modification_end ... " << std::endl;
-      
+
 
     }
 
@@ -350,19 +350,19 @@ namespace stk {
     int adapt_main_full_options(int argc, char **argv) ;
 
     // FIXME
-    static int check_for_simple_options(int argc, char **argv) 
+    static int check_for_simple_options(int argc, char **argv)
     {
       int simple = 0;
       for (int i = 1; i < argc; i++)
         {
-          if (std::string(argv[i]) == "refine" || std::string(argv[i]) == "enrich" || std::string(argv[i]) == "convert")  
+          if (std::string(argv[i]) == "refine" || std::string(argv[i]) == "enrich" || std::string(argv[i]) == "convert")
             return i;
         }
       return simple;
     }
 
     static bool debug = false;
-    int adapt_main_simple_options(int argc_in, char **argv_in) 
+    int adapt_main_simple_options(int argc_in, char **argv_in)
     {
 
       // format: exe_name [convert|enrich|refine] input_file_name
@@ -406,7 +406,7 @@ namespace stk {
         (void)nref;
         isInt = true;
       }
-      catch( ... ) 
+      catch( ... )
         {
         }
 
@@ -460,7 +460,7 @@ namespace stk {
       return ret_val;
     }
 
-    static void dump_args(int argc, char **argv) 
+    static void dump_args(int argc, char **argv)
     {
       std::cout << "argc = " << argc << std::endl;
       for (int i = 0; i < argc; i++)
@@ -469,7 +469,7 @@ namespace stk {
         }
     }
 
-    int adapt_main(int argc, char **argv) 
+    int adapt_main(int argc, char **argv)
     {
       if (debug)
         dump_args(argc, argv);
@@ -480,8 +480,8 @@ namespace stk {
         return adapt_main_full_options(argc, argv);
     }
 
-    int adapt_main_full_options(int argc, char **argv) 
-    { 
+    int adapt_main_full_options(int argc, char **argv)
+    {
       EXCEPTWATCH;
       bool debug_re = false;
 
@@ -504,7 +504,7 @@ namespace stk {
       std::string enrich="";
       bool doRefineMesh = true;
       int load_balance = 1;
-      std::string convert_Hex8_Tet4_24 = "Hex8_Tet4_24";      
+      std::string convert_Hex8_Tet4_24 = "Hex8_Tet4_24";
       int print_info=0;
       int remove_original_elements = 1;
       int number_refines = 1;
@@ -530,7 +530,7 @@ namespace stk {
       int streaming_iW = 0;
 
       //  Hex8_Tet4_24 (default), Quad4_Quad4_4, Qu
-      std::string block_name_desc = 
+      std::string block_name_desc =
         "block name(s) to convert: there are 4 options\n"
         "  (1) empty string or option not specified: convert all blocks in the input mesh file\n"
         "  (2) file:my_filename.my_ext (e.g. file:filelist.dat) which will read input block names\n"
@@ -550,7 +550,7 @@ namespace stk {
       if (0) std::cout << def1 << "tmp split = " << Util::split(convert_options, ", ") << std::endl;
       int test_memory_elements = 0;
       int test_memory_nodes = 0;
-      
+
       //convert_options = "DEFAULT or one of "+convert_options;
       //refine_options = "DEFAULT or one of "+refine_options;
       //enrich_options = "DEFAULT or one of "+enrich_options;
@@ -596,20 +596,20 @@ namespace stk {
       run_environment.clp.setOption("proc_rank_field"          , &proc_rank_field          , " add an element field to show processor rank");
       run_environment.clp.setOption("remove_original_elements" , &remove_original_elements , " remove original (converted) elements (default=true)");
       run_environment.clp.setOption("input_geometry"           , &input_geometry           , "input geometry name");
-      run_environment.clp.setOption("streaming_size"           , &streaming_size      , 
+      run_environment.clp.setOption("streaming_size"           , &streaming_size      ,
                                     "INTERNAL use only by python script streaming refinement interface:\n"
                                     "  run in streaming mode - this number specifies how many virtual procs the mesh is split into\n"
                                     "    i.e. we expect to see files like file.e.N.iN where N = streaming_size iN=0..N");
-      run_environment.clp.setOption("streaming_rank"           , &streaming_rank     , 
+      run_environment.clp.setOption("streaming_rank"           , &streaming_rank     ,
                                     "INTERNAL use only by python script streaming refinement interface:\n"
                                     "  run in streaming mode - this number specifies which virtual proc this is.");
-      run_environment.clp.setOption("streaming_pass_start"     , &streaming_pass_start           , 
+      run_environment.clp.setOption("streaming_pass_start"     , &streaming_pass_start           ,
                                     "INTERNAL use only by python script streaming refinement interface:\n");
-      run_environment.clp.setOption("streaming_pass_end"       , &streaming_pass_end           , 
+      run_environment.clp.setOption("streaming_pass_end"       , &streaming_pass_end           ,
                                     "INTERNAL use only by python script streaming refinement interface:\n");
-      run_environment.clp.setOption("streaming_W"              , &streaming_W           , 
+      run_environment.clp.setOption("streaming_W"              , &streaming_W           ,
                                     "INTERNAL use only by python script streaming refinement interface:\n");
-      run_environment.clp.setOption("streaming_iW"             , &streaming_iW          , 
+      run_environment.clp.setOption("streaming_iW"             , &streaming_iW          ,
                                     "INTERNAL use only by python script streaming refinement interface:\n");
       run_environment.clp.setOption("print_memory_usage"       , &print_memory_usage       , "print memory usage");
 
@@ -639,7 +639,7 @@ namespace stk {
         }
 
       if (help
-          || input_mesh.length() == 0 
+          || input_mesh.length() == 0
           || output_mesh.length() == 0
           || (convert.length() == 0 && refine.length()==0 && enrich.length()==0)
           //||  not (convert == "Hex8_Tet4_24" || convert == "Quad4_Quad4_4" || convert == "Quad4_Tri3_6")
@@ -732,12 +732,12 @@ namespace stk {
           s_spatialDim = eMesh.get_spatial_dim();
           VERIFY_OP_ON(s_spatialDim, >=, 2, "AdaptMain bad spatial_dim");
         }
-      
+
       for (int i_pass=streaming_pass_start; i_pass <= streaming_pass_end; i_pass++)
         {
 
 #if STK_ADAPT_HAVE_YAML_CPP
-          if (streaming_size) 
+          if (streaming_size)
             {
 
               // init pass
@@ -850,8 +850,8 @@ namespace stk {
                           }
                       }
 
-                    // ==============  START  ================================================================== 
-        
+                    // ==============  START  ==================================================================
+
                     if (do_normal_pass)
                       {
                         eMesh.open(input_mesh);
@@ -888,7 +888,7 @@ namespace stk {
                                     }
                                   }
                               }
-            
+
                             pattern = UniformRefinerPatternBase::createPattern(refine, enrich, convert, eMesh, block_names);
 
                             if (0)
@@ -955,12 +955,12 @@ namespace stk {
                                 memMults.num_hex8=test_memory_elements;
                                 memMults.num_nodes=test_memory_nodes;
                                 MemorySizeType estMem = memMults.estimate_memory();
-                                //                 std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory= " << MegaByte(tot_mem) 
+                                //                 std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory= " << MegaByte(tot_mem)
                                 //                           << " estMem= " << MegaByte(estMem) << std::endl;
-                                std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory[MB]= " << MegaByte(tot_mem) 
-                                          << " estMem[MB]= " << MegaByte(estMem) 
+                                std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory[MB]= " << MegaByte(tot_mem)
+                                          << " estMem[MB]= " << MegaByte(estMem)
                                           << " mult_hex8= " << memMults.mult_hex8 << " mult_tet4= " << memMults.mult_tet4 << " mult_nodes=" << memMults.mult_nodes << std::endl;
-                                std::cout << "(*MemEstMM: " << input_mesh << " *) ,{" << memMults.num_nodes << ", " << memMults.num_tet4 << "," << memMults.num_hex8 << "," << MegaByte(tot_mem) 
+                                std::cout << "(*MemEstMM: " << input_mesh << " *) ,{" << memMults.num_nodes << ", " << memMults.num_tet4 << "," << memMults.num_hex8 << "," << MegaByte(tot_mem)
                                           << ", " << MegaByte(estMem) << "}" << std::endl;
 
                               }
@@ -978,7 +978,7 @@ namespace stk {
                             eMesh.save_as("outtmp.e");
                             exit(1);
                           }
-        
+
                         if (print_info)
                           {
                             eMesh.print_info("convert", print_info);
@@ -993,7 +993,7 @@ namespace stk {
 
                         if (doRefineMesh)
                           {
-                            t0 =  stk::wall_time(); 
+                            t0 =  stk::wall_time();
                             cpu0 = stk::cpu_time();
 
                             UniformRefiner breaker(eMesh, *pattern, proc_rank_field_ptr);
@@ -1001,7 +1001,7 @@ namespace stk {
                             ProgressMeter pm(breaker);
                             //pm.setActive(true);
 
-                            //std::cout << "P[" << p_rank << ", " << p_size << "] input_geometry = " << input_geometry << std::endl; 
+                            //std::cout << "P[" << p_rank << ", " << p_size << "] input_geometry = " << input_geometry << std::endl;
 
                             if (input_geometry != "")
                               {
@@ -1058,7 +1058,7 @@ namespace stk {
                                 breaker.setSmoothGeometry(true);
                                 breaker.snapAndSmooth(false, input_geometry);
                               }
-                              
+
 
                             if (streaming_size)
                               {
@@ -1084,7 +1084,7 @@ namespace stk {
                             if (delete_parents)
                               breaker.deleteParentElements();
 
-                            t1 =  stk::wall_time(); 
+                            t1 =  stk::wall_time();
                             cpu1 = stk::cpu_time();
 
                             stk::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";
@@ -1107,7 +1107,7 @@ namespace stk {
                         std::cout << "tmp timer[" << itime << "]= " << s_timers[itime] << " " << s_timers[itime]/s_timers[3]*100 << " %" << std::endl;
                       }
 #endif
-        
+
                   }
                   catch ( const std::exception * X ) {
                     std::cout << "AdaptMain::  unexpected exception POINTER: " << X->what() << std::endl;
@@ -1177,7 +1177,7 @@ namespace stk {
 
 //#include "pyencore.h"
 //#if !PY_PERCEPT
-int main(int argc, char **argv) { 
+int main(int argc, char **argv) {
 
   int res=0;
   res = stk::adapt::adapt_main(argc, argv);

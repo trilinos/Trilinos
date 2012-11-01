@@ -220,7 +220,7 @@ namespace stk{
 
       // Hard coded tri node ids for all the tri nodes in the entire mesh
       static const stk::mesh::EntityId tri_node_ids[number_tri][ Triangle3::node_count ] = {
-        { 5, 6, 9}, 
+        { 5, 6, 9},
         { 6, 10, 9}
       };
 
@@ -246,14 +246,14 @@ namespace stk{
 
           // For each element topology declare elements
 
-          stk::mesh::Entity *wedges[number_wedge];
+          stk::mesh::Entity wedges[number_wedge];
 
           for ( unsigned i = 0 ; i < number_hex ; ++i , ++curr_elem_id ) {
             stk::mesh::declare_element( m_bulkData, m_block_hex, curr_elem_id, hex_node_ids[i] );
           }
 
           for ( unsigned i = 0 ; i < number_wedge ; ++i , ++curr_elem_id ) {
-            wedges[i] = &stk::mesh::declare_element( m_bulkData, m_block_wedge, curr_elem_id, wedge_node_ids[i] );
+            wedges[i] = stk::mesh::declare_element( m_bulkData, m_block_wedge, curr_elem_id, wedge_node_ids[i] );
           }
 
           for ( unsigned i = 0 ; i < number_tetra ; ++i , ++curr_elem_id ) {
@@ -278,11 +278,11 @@ namespace stk{
             {
               for ( unsigned i = 0 ; i < number_quad ; ++i , ++curr_elem_id ) {
                 std::cout << "quad i= " << i << std::endl;
-                stk::mesh::declare_element_side( m_bulkData, 
-                                                      curr_elem_id, //side_id,
-                                                      *wedges[quad_node_side_ids[i][0] - 4], // element,
-                                                      quad_node_side_ids[i][1],   //j_side, // local_side_ord,
-                                                      m_sideset_quad_subset);
+                stk::mesh::declare_element_side( m_bulkData,
+                                                 curr_elem_id, //side_id,
+                                                 wedges[quad_node_side_ids[i][0] - 4], // element,
+                                                 quad_node_side_ids[i][1],   //j_side, // local_side_ord,
+                                                 m_sideset_quad_subset);
               }
             }
 
@@ -290,18 +290,18 @@ namespace stk{
             {
               for ( unsigned i = 0 ; i < number_tri ; ++i , ++curr_elem_id ) {
                 std::cout << "tri i= " << i << std::endl;
-                stk::mesh::declare_element_side( m_bulkData, 
-                                                      curr_elem_id, //side_id,
-                                                      *wedges[tri_node_side_ids[i][0] - 4], // element,
-                                                      tri_node_side_ids[i][1],   //j_side, // local_side_ord,
-                                                      m_sideset_tri_subset);
+                stk::mesh::declare_element_side( m_bulkData,
+                                                 curr_elem_id, //side_id,
+                                                 wedges[tri_node_side_ids[i][0] - 4], // element,
+                                                 tri_node_side_ids[i][1],   //j_side, // local_side_ord,
+                                                 m_sideset_tri_subset);
               }
             }
 
           // For all nodes assign nodal coordinates
           for ( unsigned i = 0 ; i < node_count ; ++i ) {
-            stk::mesh::Entity * const node = m_bulkData.get_entity( stk::mesh::MetaData::NODE_RANK , i + 1 );
-            double * const coord = field_data( m_coordinates_field , *node );
+            stk::mesh::Entity const node = m_bulkData.get_entity( stk::mesh::MetaData::NODE_RANK , i + 1 );
+            double * const coord = field_data( m_coordinates_field , node );
             coord[0] = node_coord_data[i][0] ;
             coord[1] = node_coord_data[i][1] ;
             coord[2] = node_coord_data[i][2] ;
@@ -357,8 +357,8 @@ namespace stk{
 
       // Check that all the nodes were allocated.
       for ( unsigned i = 0 ; i < node_count ; ++i ) {
-        stk::mesh::Entity * const node = bulkData.get_entity( stk::mesh::MetaData::NODE_RANK , i + 1 );
-        if ( node == NULL ) {
+        stk::mesh::Entity const node = bulkData.get_entity( stk::mesh::MetaData::NODE_RANK , i + 1 );
+        if ( !node.is_valid() ) {
           std::cerr << "Error!  Invalid null pointer for node returned from "
                     << "bulkData.get_entity( stk::mesh::MetaData::NODE_RANK, " << i+1 << " ) " << std::endl;
           result = false;

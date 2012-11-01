@@ -1,5 +1,5 @@
 #include <stk_percept/Percept.hpp>
-#if !defined(__IBMCPP__) 
+#if !defined(__IBMCPP__)
 
 #include "JacobianUtil.hpp"
 
@@ -51,7 +51,7 @@ namespace stk {
     {
       /* Calculate A */
       // x_xi, x_eta, x_zeta => A(ixyz, ixietazeta) = dx_i/dxi_j
-      A(0,0) = (x[1][0] - x[0][0]);  
+      A(0,0) = (x[1][0] - x[0][0]);
       A(0,1) = (x[2][0] - x[0][0]);
       A(0,2) = 0;
 
@@ -115,7 +115,7 @@ namespace stk {
     }
 
     /// modeled after code from Mesquite::IdealWeightMeanRatio::evaluate()
-    bool JacobianUtil::operator()(double& m,  PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::FieldBase *coord_field,
+    bool JacobianUtil::operator()(double& m,  PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::FieldBase *coord_field,
                                   const CellTopologyData * topology_data )
     {
       static DenseMatrix<3,3> J;
@@ -135,9 +135,9 @@ namespace stk {
       const double *x2d[3] = {0,0,0};
       //const double *x3d[4] = {0,0,0,0};
 
-#define VERTEX(vi)  stk::mesh::field_data( *static_cast<const VectorFieldType *>(coord_field) , *vi.entity() )
+#define VERTEX(vi)  stk::mesh::field_data( *static_cast<const VectorFieldType *>(coord_field) , vi.entity() )
 
-      switch(topology_data->key) 
+      switch(topology_data->key)
         {
         case shards::Triangle<3>::key:
           //n[0] = 0; n[1] = 0; n[2] = 1;
@@ -147,7 +147,7 @@ namespace stk {
           metric_valid = jacobian_matrix_2D(m, J, x2d);
           for (i = 0; i < 3; i++) { m_detJ[i] = m; m_J[i] = J; }
           break;
-    
+
         case shards::Quadrilateral<4>::key:
           //n[0] = 0; n[1] = 0; n[2] = 1;
           for (i = 0; i < 4; ++i) {
@@ -171,7 +171,7 @@ namespace stk {
 
         case shards::Pyramid<5>::key:
           for (i = 0; i < 4; ++i) {
-            metric_valid = jacobian_matrix_3D(m_detJ[i], m_J[i], 
+            metric_valid = jacobian_matrix_3D(m_detJ[i], m_J[i],
                                               VERTEX(v_i[ i     ]),
                                               VERTEX(v_i[(i+1)%4]),
                                               VERTEX(v_i[(i+3)%4]),
@@ -197,7 +197,7 @@ namespace stk {
 
         case shards::Hexahedron<8>::key:
           for (i = 0; i < 8; ++i) {
-            metric_valid = jacobian_matrix_3D(m_detJ[i], m_J[i], 
+            metric_valid = jacobian_matrix_3D(m_detJ[i], m_J[i],
                                               VERTEX(v_i[locs_hex[i][0]]),
                                               VERTEX(v_i[locs_hex[i][1]]),
                                               VERTEX(v_i[locs_hex[i][2]]),
@@ -216,31 +216,31 @@ namespace stk {
         case shards::ShellLine<3>::key:
         case shards::Beam<2>::key:
         case shards::Beam<3>::key:
-      
+
         case shards::Triangle<4>::key:
         case shards::Triangle<6>::key:
         case shards::ShellTriangle<3>::key:
         case shards::ShellTriangle<6>::key:
-      
+
         case shards::Quadrilateral<8>::key:
         case shards::Quadrilateral<9>::key:
         case shards::ShellQuadrilateral<4>::key:
         case shards::ShellQuadrilateral<8>::key:
         case shards::ShellQuadrilateral<9>::key:
-      
+
         case shards::Tetrahedron<8>::key:
         case shards::Tetrahedron<10>::key:
         case shards::Tetrahedron<11>::key:
-      
+
         case shards::Hexahedron<20>::key:
         case shards::Hexahedron<27>::key:
-      
+
         case shards::Pyramid<13>::key:
         case shards::Pyramid<14>::key:
-      
+
         case shards::Wedge<15>::key:
         case shards::Wedge<18>::key:
-      
+
         case shards::Pentagon<5>::key:
         case shards::Hexagon<6>::key:
 
@@ -257,7 +257,7 @@ namespace stk {
 
     /// modeled after code from Mesquite::IdealWeightMeanRatio::evaluate(), and TargetMetricUtil
     /// fills the mGrad member variable given the array of (member variable) m_dMetric_dA terms
-    bool JacobianUtil::grad_metric_util( PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::FieldBase *coord_field,
+    bool JacobianUtil::grad_metric_util( PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::FieldBase *coord_field,
                                         const CellTopologyData * topology_data )
     {
       static DenseMatrix<3,3> J;
@@ -274,20 +274,18 @@ namespace stk {
       stk::mesh::PairIterRelation v_i = element.relations(eMesh.node_rank());
       m_num_nodes = v_i.size();
 
-#define VERTEX(vi)  stk::mesh::field_data( *static_cast<const VectorFieldType *>(coord_field) , *vi.entity() )
-
       const int indices_tri[3] = {0,1,2};
       const int indices_tet[4] = {0,1,2,3};
-      switch(topology_data->key) 
+      switch(topology_data->key)
         {
         case shards::Triangle<3>::key:
           //n[0] = 0; n[1] = 0; n[2] = 1;
-          for (i = 0; i < 3; i++) { 
+          for (i = 0; i < 3; i++) {
             //void JacobianUtil::grad_util(const DenseMatrix<3,3>& dMetric_dA, double grad[NNODES_MAX][3], int nnode, int spd, int *indices, int nind)
             grad_util_2d(m_dMetric_dA[i], m_grad[i], 3, 2, indices_tri, 3);
           }
           break;
-    
+
         case shards::Quadrilateral<4>::key:
           //n[0] = 0; n[1] = 0; n[2] = 1;
           for (i = 0; i < 4; ++i) {
@@ -308,14 +306,14 @@ namespace stk {
             grad_util(m_dMetric_dA[i], m_grad[i], 5, 3, indices_pyr, 4);
           }
           // FIXME
-          for ( i=0; i < 5; i++) 
+          for ( i=0; i < 5; i++)
             {
               for (int j=0; j < 3; j++)
                 m_grad[4][i][j] = 0.0;
             }
-          for (int k=0; k < 4; k++) 
+          for (int k=0; k < 4; k++)
             {
-              for (i=0; i < 5; i++) 
+              for (i=0; i < 5; i++)
                 {
                   for (int j=0; j < 3; j++)
                     m_grad[4][i][j] += m_grad[k][i][j]*0.25;
@@ -347,31 +345,31 @@ namespace stk {
         case shards::ShellLine<3>::key:
         case shards::Beam<2>::key:
         case shards::Beam<3>::key:
-      
+
         case shards::Triangle<4>::key:
         case shards::Triangle<6>::key:
         case shards::ShellTriangle<3>::key:
         case shards::ShellTriangle<6>::key:
-      
+
         case shards::Quadrilateral<8>::key:
         case shards::Quadrilateral<9>::key:
         case shards::ShellQuadrilateral<4>::key:
         case shards::ShellQuadrilateral<8>::key:
         case shards::ShellQuadrilateral<9>::key:
-      
+
         case shards::Tetrahedron<8>::key:
         case shards::Tetrahedron<10>::key:
         case shards::Tetrahedron<11>::key:
-      
+
         case shards::Hexahedron<20>::key:
         case shards::Hexahedron<27>::key:
-      
+
         case shards::Pyramid<13>::key:
         case shards::Pyramid<14>::key:
-      
+
         case shards::Wedge<15>::key:
         case shards::Wedge<18>::key:
-      
+
         case shards::Pentagon<5>::key:
         case shards::Hexagon<6>::key:
 

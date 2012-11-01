@@ -69,7 +69,7 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
 
   if ( p_rank == 0 ) {
 
-    std::vector<std::vector<stk::mesh::Entity*> > quads(nx);
+    std::vector<std::vector<stk::mesh::Entity> > quads(nx);
     for ( unsigned ix = 0 ; ix < nx ; ++ix ) quads[ix].resize(ny);
 
     const unsigned nnx = nx + 1 ;
@@ -83,16 +83,16 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
         nodes[3] = 1 + ix + ( iy + 1 ) * nnx ;
 
-        stk::mesh::Entity &q = stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
-        quads[ix][iy] = &q; 
+        stk::mesh::Entity q = stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
+        quads[ix][iy] = q;
       }
     }
 
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::Entity * e = bulk_data.get_entity( element_rank, elem );
-        double * const e_weight = stk::mesh::field_data( weight_field , *e );
+        stk::mesh::Entity e = bulk_data.get_entity( element_rank, elem );
+        double * const e_weight = stk::mesh::field_data( weight_field , e );
         *e_weight = 1.0;
       }
     }
@@ -100,8 +100,8 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
     for ( unsigned iy = 0 ; iy <= ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix <= nx ; ++ix ) {
         stk::mesh::EntityId nid = 1 + ix + iy * nnx ;
-        stk::mesh::Entity * n = bulk_data.get_entity( NODE_RANK, nid );
-        double * const coord = stk::mesh::field_data( coord_field , *n );
+        stk::mesh::Entity n = bulk_data.get_entity( NODE_RANK, nid );
+        double * const coord = stk::mesh::field_data( coord_field , n );
         coord[0] = .1*ix;
         coord[1] = .1*iy;
         coord[2] = 0;
@@ -109,18 +109,18 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
     }
 
     {
-      const unsigned iy_left  =  0; 
-      const unsigned iy_right = ny; 
+      const unsigned iy_left  =  0;
+      const unsigned iy_right = ny;
       stk::mesh::PartVector add(1, &fem_meta.locally_owned_part());
       for ( unsigned ix = 0 ; ix <= nx ; ++ix ) {
         stk::mesh::EntityId nid_left  = 1 + ix + iy_left  * nnx ;
         stk::mesh::EntityId nid_right = 1 + ix + iy_right * nnx ;
-        stk::mesh::Entity * n_left  = bulk_data.get_entity( NODE_RANK, nid_left  );
-        stk::mesh::Entity * n_right = bulk_data.get_entity( NODE_RANK, nid_right );
+        stk::mesh::Entity n_left  = bulk_data.get_entity( NODE_RANK, nid_left  );
+        stk::mesh::Entity n_right = bulk_data.get_entity( NODE_RANK, nid_right );
         const stk::mesh::EntityId constraint_entity_id =  1 + ix + nny * nnx;
-        stk::mesh::Entity & c = bulk_data.declare_entity( constraint_rank, constraint_entity_id, add );
-        bulk_data.declare_relation( c , *n_left  , 0 );
-        bulk_data.declare_relation( c , *n_right , 1 );
+        stk::mesh::Entity c = bulk_data.declare_entity( constraint_rank, constraint_entity_id, add );
+        bulk_data.declare_relation( c , n_left  , 0 );
+        bulk_data.declare_relation( c , n_right , 1 );
       }
     }
 
@@ -185,10 +185,10 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
 ///  \ingroup stk_rebalance_unit_test_module
 /// \section stk_rebalance_unit_test_zoltan_description Simple Zoltan Unit Test
 ///
-/// This unit test creates a 2D quad mesh on proc 0 with coordinates and 
+/// This unit test creates a 2D quad mesh on proc 0 with coordinates and
 /// Parts associated with edges, nodes, and constraints and then moves these entities
 /// as determined by calling Zoltan's load balancing capability using
-/// default settings. 
+/// default settings.
 ///
 /// Using the following mesh of 4 quads,
 ///
@@ -200,18 +200,18 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
 ///   |       |       |
 ///   |  e3   |  e4   |
 ///   |       |5      |
-///  4+-------+-------+6   
+///  4+-------+-------+6
 ///   |       |       |     Y
 ///   |  e1   |  e2   |     |
 ///   |       |       |     |
 ///   +-------+-------+     *--> X
-///   1       2      3 
+///   1       2      3
 /// </pre>
 ///
 ///  Local node numbering
 ///
 /// <pre>
-///     
+///
 ///   3       4
 ///   +-------+
 ///   |       |
@@ -224,14 +224,14 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
 /// Use of Zoltan with default settings is achieved by instantiating the
 /// appropriate Partition class with an empty parameter list as follows,
 /// \dontinclude UnitTestZoltanSimple.cpp
-/// \skip Zoltan partition is 
+/// \skip Zoltan partition is
 /// \until zoltan_partition(
 ///
 /// An initial assessment of imbalance is made using an element weight field
 /// followed by a call to actually do the rebalance as follows,
 /// \skip Force a rebalance
 /// \until rebalance::rebalance(
-/// 
+///
 /// Perfect balancing should result using 2 or 4 procs, and
 /// on 3 procs, the imbalance threshold should be below 1.5.
 /// The test passes if these criteria are satisfied.

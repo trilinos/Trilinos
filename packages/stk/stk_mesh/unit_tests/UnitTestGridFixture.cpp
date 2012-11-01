@@ -79,7 +79,7 @@ STKUNIT_UNIT_TEST( UnitTestGridFixture, test_gridfixture )
   stk::mesh::PartVector shell_parts;
   shell_parts.push_back(&shell_part);
 
-  std::vector<stk::mesh::Entity*> shell_faces;
+  std::vector<stk::mesh::Entity> shell_faces;
 
   unsigned id_base = 0;
   unsigned id_offset = 500; // a safe offset to avoid id overlap
@@ -87,10 +87,10 @@ STKUNIT_UNIT_TEST( UnitTestGridFixture, test_gridfixture )
   for (id_base = 1; id_base <= num_shell_faces; ++id_base) {
 
     int new_id = rank * num_shell_faces + id_base;
-    stk::mesh::Entity& new_shell = bulk_data.declare_entity(elem_rank,
+    stk::mesh::Entity new_shell = bulk_data.declare_entity(elem_rank,
                                                             id_offset + new_id,
                                                             shell_parts);
-    shell_faces.push_back(&new_shell);
+    shell_faces.push_back(new_shell);
   }
 
    bulk_data.modification_end();

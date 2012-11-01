@@ -30,7 +30,7 @@ namespace stk {
 
     // This is a very specialized test that is used in unit testing only (see unit_localRefiner/break_tri_to_tri_N_1 in UnitTestLocalRefiner.cpp)
 
-    TestLocalRefinerTri_N_1::TestLocalRefinerTri_N_1(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
+    TestLocalRefinerTri_N_1::TestLocalRefinerTri_N_1(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) :
       Refiner(eMesh, bp, proc_rank_field)
     {
     }
@@ -38,7 +38,7 @@ namespace stk {
     static std::vector<unsigned> get_random_sequence(int min, int max, int num)
     {
       srand(1234);
-      
+
       std::vector<unsigned> seq(num);
       for (int i = 0; i < num; i++)
         {
@@ -48,13 +48,13 @@ namespace stk {
     }
 
     void TestLocalRefinerTri_N_1::
-    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
+    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element, vector<NeededEntityType>& needed_entity_ranks)
     {
       //static int n_seq = 400;
       static std::vector<unsigned> random_sequence = get_random_sequence(1, 50, 50);
 
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-                
+
       CellTopology cell_topo(cell_topo_data);
       const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
 
@@ -99,12 +99,12 @@ namespace stk {
 
               if (needed_entity_rank == m_eMesh.edge_rank())
                 {
-                  stk::mesh::Entity & node0 = *elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
-                  stk::mesh::Entity & node1 = *elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
+                  stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
+                  stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
                   //double * const coord0 = stk::mesh::field_data( *coordField , node0 );
                   //double * const coord1 = stk::mesh::field_data( *coordField , node1 );
 
-                  // choose to refine or not 
+                  // choose to refine or not
                   if (random_sequence[ node0.identifier() + node1.identifier() ] < node0.identifier() + node1.identifier())
                     {
                       (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
@@ -121,23 +121,23 @@ namespace stk {
 
       const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
 
-      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          //if (removePartSelector(**k)) 
+          //if (removePartSelector(**k))
           {
             stk::mesh::Bucket & bucket = **k ;
 
             const unsigned num_entity_in_bucket = bucket.size();
             for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
               {
-                stk::mesh::Entity& element = bucket[ientity];
+                stk::mesh::Entity element = bucket[ientity];
 #if 0
                 // add ghost elements here, but skip them in Refiner::unrefineTheseElements
                 bool elementIsGhost = m_eMesh.isGhostElement(element);
                 if (elementIsGhost)
                   continue;
 #endif
-                
+
                 const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
 
                 if (elem_nodes.size() && m_eMesh.isChildElement(element, false))
@@ -145,8 +145,8 @@ namespace stk {
                     bool found = true;
                     for (unsigned inode=0; inode < elem_nodes.size(); inode++)
                       {
-                        stk::mesh::Entity *node = elem_nodes[inode].entity();
-                        double *coord = stk::mesh::field_data( *m_eMesh.get_coordinates_field(), *node );
+                        stk::mesh::Entity node = elem_nodes[inode].entity();
+                        double *coord = stk::mesh::field_data( *m_eMesh.get_coordinates_field(), node );
                         if (coord[0] > 2.1 || coord[1] > 2.1)
                           {
                             found = false;
@@ -155,7 +155,7 @@ namespace stk {
                       }
                     if (found)
                       {
-                        elements_to_unref.insert(&element);
+                        elements_to_unref.insert(element);
                         //std::cout << "tmp element id= " << element.identifier() << " ";
                         //m_eMesh.print_entity(std::cout, element);
                       }

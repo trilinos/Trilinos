@@ -194,7 +194,7 @@ void UseCase_4_Mesh::populate()
 
   // Iterate over the number of desired hexs here and declares them
   for ( unsigned i = 0 ; i < number_hex ; ++i , ++elem_id , ++face_id ) {
-    Entity & elem =
+    Entity elem =
       declare_element( m_bulkData, m_block_hex27, elem_id, hex_node_ids[i] );
 
     declare_element_side( m_bulkData, face_id, elem, 0 /*local side id*/, &m_side_part);
@@ -202,7 +202,7 @@ void UseCase_4_Mesh::populate()
 
   // Iterate over the number of desired wedges here and declares the
   for ( unsigned i = 0 ; i < number_wedge ; ++i , ++elem_id , ++face_id ) {
-    Entity & elem =
+    Entity elem =
       declare_element( m_bulkData, m_block_wedge18, elem_id, wedge_node_ids[i] );
 
     declare_element_side( m_bulkData, face_id , elem , 4 /*local side id*/, &m_side_part);
@@ -210,10 +210,10 @@ void UseCase_4_Mesh::populate()
 
   // For all nodes assign nodal coordinates
   for ( unsigned i = 0 ; i < node_count ; ++i ) {
-    Entity * const node = m_bulkData.get_entity( m_node_rank, i + 1 );
-    ThrowRequireMsg( node != NULL, i+1 );
+    Entity const node = m_bulkData.get_entity( m_node_rank, i + 1 );
+    ThrowRequireMsg( node.is_valid(), i+1 );
 
-    double * const coord = field_data( m_coordinates_field , *node );
+    double * const coord = field_data( m_coordinates_field , node );
     coord[0] = node_coord_data[i][0] ;
     coord[1] = node_coord_data[i][1] ;
     coord[2] = node_coord_data[i][2] ;
@@ -255,7 +255,7 @@ namespace {
 template< class CellTopology >
 bool verify_elem_side_node( const EntityId * const elem_nodes ,
                             const unsigned local_side ,
-                            const mesh::Entity & side )
+                            const mesh::Entity side )
 {
   bool result = true;
   const CellTopologyData * const elem_top = shards::getCellTopologyData< CellTopology >();
@@ -268,7 +268,7 @@ bool verify_elem_side_node( const EntityId * const elem_nodes ,
   // Verify that the node relations are compatible with the cell topology data
   for ( unsigned i = 0 ; i < side_top->node_count ; ++i ) {
 
-    if ( elem_nodes[ side_node_map[i] ] != rel[i].entity()->identifier() ) {
+    if ( elem_nodes[ side_node_map[i] ] != rel[i].entity().identifier() ) {
       std::cerr << "Error!" << std::endl;
       result = false;
     }
@@ -373,7 +373,7 @@ bool verify_pressure_velocity_stencil(
       // Iterate over all entities in bucket
       for ( Bucket::iterator
             i = bucket.begin() ; i != bucket.end() ; ++i ) {
-        Entity & elem = *i ;
+        Entity elem = *i ;
 
         PairIterRelation rel = elem.relations( MetaData::NODE_RANK );
 
@@ -386,7 +386,7 @@ bool verify_pressure_velocity_stencil(
 
         // Iterate over every node and check pressure and velocity at each node.
         for ( unsigned j = 0 ; j < ElementTopology::node_count ; ++j ) {
-          Entity & node = * rel[j].entity();
+          Entity node = rel[j].entity();
 
           // Get the parts that this node belongs to.
           const Bucket & node_bucket = node.bucket();
@@ -470,12 +470,12 @@ bool verifyMesh( const UseCase_4_Mesh & mesh )
   Part & side_part = mesh.m_side_part ;
   {
     Selector selector = block_hex27 & side_part;
-    std::vector<Entity *> entities;
+    std::vector<Entity> entities;
     get_selected_entities( selector, face_buckets, entities);
     for (unsigned i=0 ; i < entities.size() ; ++i) {
       result = result &&
         verify_elem_side_node< shards::Hexahedron<27> >(
-          hex_node_ids[i], 0, *entities[i]
+          hex_node_ids[i], 0, entities[i]
           );
     }
   }
@@ -494,12 +494,12 @@ bool verifyMesh( const UseCase_4_Mesh & mesh )
   // Verify element side node:
   {
     Selector selector = block_wedge18 & side_part;
-    std::vector<Entity *> entities;
+    std::vector<Entity> entities;
     get_selected_entities( selector, face_buckets, entities);
     for (unsigned i=0 ; i < entities.size() ; ++i) {
       result = result &&
         verify_elem_side_node< shards::Wedge<18> >(
-          wedge_node_ids[i], 4, *entities[i]
+          wedge_node_ids[i], 4, entities[i]
           );
     }
   }

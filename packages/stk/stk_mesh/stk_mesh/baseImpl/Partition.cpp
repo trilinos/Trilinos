@@ -5,7 +5,7 @@
  *      Author: pgxavie
  */
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/baseImpl/BucketFamily.hpp>
+#include <stk_mesh/baseImpl/Partition.hpp>
 
 #include <iostream>
 
@@ -14,7 +14,7 @@ namespace mesh {
 namespace impl {
 
 
-std::ostream &operator<<(std::ostream &os, const stk::mesh::impl::BucketFamily &bf)
+std::ostream &operator<<(std::ostream &os, const stk::mesh::impl::Partition &bf)
 {
     return bf.streamit(os);
 }
@@ -25,7 +25,7 @@ std::ostream &operator<<(std::ostream &os, const stk::mesh::impl::BucketFamily &
 
 using namespace stk::mesh::impl;
 
-std::ostream &BucketFamily::streamit(std::ostream &os) const
+std::ostream &Partition::streamit(std::ostream &os) const
 {
     os << "{BucketFamily " << std::endl
        << "  m_repository = " << m_repository << "  m_rank = " << m_rank << std::endl
@@ -42,12 +42,12 @@ std::ostream &BucketFamily::streamit(std::ostream &os) const
     return os;
 }
 
-BucketFamily::~BucketFamily()
+Partition::~Partition()
 {
     // TODO Auto-generated destructor stub
 }
 
-BucketRepository &BucketFamily::getRepository(stk::mesh::BulkData &mesh)
+BucketRepository &Partition::getRepository(stk::mesh::BulkData &mesh)
 {
     return mesh.m_bucket_repository;
 }

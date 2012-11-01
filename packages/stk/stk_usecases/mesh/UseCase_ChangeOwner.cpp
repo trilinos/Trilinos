@@ -256,8 +256,8 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
     for ( unsigned iy = 0 ; iy < ny+1 ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx+1 ; ++ix ) {
         stk::mesh::EntityId nid = 1 + ix + iy * nnx ;
-        stk::mesh::Entity * n = bulk_data.get_entity( NODE_RANK, nid );
-        double * const coord = stk::mesh::field_data( *coordinates_field , *n );
+        stk::mesh::Entity n = bulk_data.get_entity( NODE_RANK, nid );
+        double * const coord = stk::mesh::field_data( *coordinates_field , n );
         coord[0] = .1*ix;
         coord[1] = .1*iy;
         coord[2] = 0;
@@ -297,26 +297,26 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
     {
       // create constraint
 
-      stk::mesh::Entity * n10 = bulk_data.get_entity( NODE_RANK, 10 );
-      stk::mesh::Entity * n11 = bulk_data.get_entity( NODE_RANK, 11 );
-      stk::mesh::Entity * n12 = bulk_data.get_entity( NODE_RANK, 12 );
+      stk::mesh::Entity n10 = bulk_data.get_entity( NODE_RANK, 10 );
+      stk::mesh::Entity n11 = bulk_data.get_entity( NODE_RANK, 11 );
+      stk::mesh::Entity n12 = bulk_data.get_entity( NODE_RANK, 12 );
 
       stk::mesh::PartVector add;
       add.push_back( &owned_part );
       const stk::mesh::EntityId c_entity_id = 1;
-      stk::mesh::Entity & c = bulk_data.declare_entity( constraint_rank, c_entity_id, add );
-      bulk_data.declare_relation( c , *n10 , 0 );
-      bulk_data.declare_relation( c , *n11 , 1 );
-      bulk_data.declare_relation( c , *n12 , 2 );
+      stk::mesh::Entity c = bulk_data.declare_entity( constraint_rank, c_entity_id, add );
+      bulk_data.declare_relation( c , n10 , 0 );
+      bulk_data.declare_relation( c , n11 , 1 );
+      bulk_data.declare_relation( c , n12 , 2 );
     }
 
     bulk_data.modification_end();
 
-    stk::mesh::Entity * n10 = bulk_data.get_entity( NODE_RANK, 10 );
+    stk::mesh::Entity n10 = bulk_data.get_entity( NODE_RANK, 10 );
 
     if ( p_rank==0 or p_rank==1 )
     {
-      ThrowErrorMsgIf( !stk::mesh::in_shared( *n10 ), "NODE[10] not shared" );
+      ThrowErrorMsgIf( !stk::mesh::in_shared( n10 ), "NODE[10] not shared" );
     }
 
     bulk_data.modification_begin();
@@ -325,9 +325,9 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
     {
       // destroy constraint
 
-      stk::mesh::Entity * c1 = bulk_data.get_entity( constraint_rank, 1 );
+      stk::mesh::Entity c1 = bulk_data.get_entity( constraint_rank, 1 );
 
-      ThrowErrorMsgIf( !bulk_data.destroy_entity( *c1 ),
+      ThrowErrorMsgIf( !bulk_data.destroy_entity( c1 ),
                        "failed to destroy constraint" );
     }
 
@@ -335,7 +335,7 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
 
     if ( p_rank==0 or p_rank==1 )
     {
-      ThrowErrorMsgIf( stk::mesh::in_shared( *n10 ), "NODE[10] shared" );
+      ThrowErrorMsgIf( stk::mesh::in_shared( n10 ), "NODE[10] shared" );
     }
   }
 
@@ -391,8 +391,8 @@ bool test_change_owner_2( stk::ParallelMachine pm )
     for ( unsigned iy = 0 ; iy < ny+1 ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx+1 ; ++ix ) {
         stk::mesh::EntityId nid = 1 + ix + iy * nnx ;
-        stk::mesh::Entity * n = bulk_data.get_entity( NODE_RANK, nid );
-        double * const coord = stk::mesh::field_data( *coordinates_field , *n );
+        stk::mesh::Entity n = bulk_data.get_entity( NODE_RANK, nid );
+        double * const coord = stk::mesh::field_data( *coordinates_field , n );
         coord[0] = .1*ix;
         coord[1] = .1*iy;
         coord[2] = 0;
@@ -516,8 +516,8 @@ bool test_change_owner_3( stk::ParallelMachine pm )
     for ( unsigned iy = 0 ; iy < ny+1 ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx+1 ; ++ix ) {
         stk::mesh::EntityId nid = 1 + ix + iy * nnx ;
-        stk::mesh::Entity * n = bulk_data.get_entity( NODE_RANK, nid );
-        double * const coord = stk::mesh::field_data( *coordinates_field , *n );
+        stk::mesh::Entity n = bulk_data.get_entity( NODE_RANK, nid );
+        double * const coord = stk::mesh::field_data( *coordinates_field , n );
         coord[0] = .1*ix;
         coord[1] = .1*iy;
         coord[2] = 0;

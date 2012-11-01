@@ -33,8 +33,8 @@ namespace search_util {
  * verify which entity contains another entity.
  */
 void print_entity_map(stk::diag::Writer &writer,
-                      const std::vector<std::pair<stk::mesh::Entity*,
-                      stk::mesh::Entity*> >& entity_map,
+                      const std::vector<std::pair<stk::mesh::Entity ,
+                      stk::mesh::Entity> >& entity_map,
                       const std::string & relation);
 
 /**
@@ -67,7 +67,7 @@ void print_entity_proc_map(stk::diag::Writer &writer,
  * Example output: "Share NODE 37 with processor 12"
  */
 void print_entity_proc_map(stk::diag::Writer &writer,
-                           const std::vector<stk::mesh::Entity*>& entity_proc,
+                           const std::vector<stk::mesh::Entity>& entity_proc,
                            const std::string &action,
                            const std::string &to_from);
 

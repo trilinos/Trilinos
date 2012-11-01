@@ -100,7 +100,7 @@ public:
    *                         weight will be balanced across all of the 
    *                         processors. Can be NULL.
    */
-  virtual void set_mesh_info ( const std::vector<mesh::Entity *> &mesh_entities,
+  virtual void set_mesh_info ( const std::vector<mesh::Entity> &mesh_entities,
                                const VectorField   * nodal_coord_ref,
                                const ScalarField   * elem_weight_ref=NULL) = 0;
 

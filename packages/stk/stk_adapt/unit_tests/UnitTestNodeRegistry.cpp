@@ -80,14 +80,14 @@ STKUNIT_UNIT_TEST(nodeRegistry, createAddNodes_serial_and_1st_parallel)
   {
     unsigned elem_num=(12/p_size)*3*3;
 
-    const stk::mesh::Entity* element_1_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num);
-    dw() << "P["<<p_rank<<"] element_1_p = " << element_1_p << DWENDL;
+    const stk::mesh::Entity element_1_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num);
+    dw() << "P["<<p_rank<<"] element_1_p = " << element_1_p.identifier() << DWENDL;
     stk::mesh::EntityRank stk_mesh_Edge = 1;
 
     NeededEntityType entity_rank(stk_mesh_Edge, 1u);
     unsigned iSubDimOrd = 0u;
 
-    const stk::mesh::Entity& element_1 = *eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num);
+    const stk::mesh::Entity element_1 = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num);
 
     //nodeRegistry.getSubDimEntity(subDimEntity, element_1, entity_rank, iSubDimOrd);
     nodeRegistry.registerNeedNewNode(element_1, entity_rank, iSubDimOrd, true);
@@ -116,14 +116,14 @@ STKUNIT_UNIT_TEST(nodeRegistry, createAddNodes_serial_and_1st_parallel)
   {
     unsigned elem_num=1;
 
-    const stk::mesh::Entity* element_1_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num);
+    const stk::mesh::Entity element_1_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num);
     std::cout << "P["<<p_rank<<"] element_1_p = " << element_1_p << std::endl;
     stk::mesh::EntityRank stk_mesh_Edge = 1;
 
     NeededEntityType entity_rank(stk_mesh_Edge, 1u);
     unsigned iSubDimOrd = 0u;
 
-    const stk::mesh::Entity& element_1 = *eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num);
+    const stk::mesh::Entity element_1 = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num);
 
     nodeRegistry.registerNeedNewNode(element_1, entity_rank, iSubDimOrd, true);
 
@@ -213,8 +213,8 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_0)
     unsigned elem_num_local = (12/p_size)*3*3;
     unsigned elem_num_ghost = elem_num_local+(3*3);
 
-    const stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
-    const stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
+    stk::mesh::Entity element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
+    stk::mesh::Entity element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
 
     if (p_rank == 1)
     {
@@ -225,8 +225,8 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_0)
     dw() << "P["<<p_rank<<"] elem_num_local = " << elem_num_local << DWENDL;
     dw() << "P["<<p_rank<<"] elem_num_ghost = " << elem_num_ghost << DWENDL;
 
-    const stk::mesh::Entity& element_local = *element_local_p;
-    const stk::mesh::Entity& element_ghost = *element_ghost_p;
+    const stk::mesh::Entity element_local = element_local_p;
+    const stk::mesh::Entity element_ghost = element_ghost_p;
 
     std::cout << "P["<<p_rank<<"] element_local = " << element_local << std::endl;
     std::cout << "P["<<p_rank<<"] element_ghost = " << element_ghost << std::endl;
@@ -277,8 +277,8 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1)
     unsigned elem_num_local = (12/p_size)*3*3;
     unsigned elem_num_ghost = elem_num_local+(3*3);
 
-    stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
-    stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
+    stk::mesh::Entity element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
+    stk::mesh::Entity element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
     if (p_rank == 1)
     {
       element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
@@ -288,8 +288,8 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1)
     dw() << "P["<<p_rank<<"] elem_num_local = " << elem_num_local << DWENDL;
     dw() << "P["<<p_rank<<"] elem_num_ghost = " << elem_num_ghost << DWENDL;
 
-    stk::mesh::Entity& element_local = *element_local_p;
-    stk::mesh::Entity& element_ghost = *element_ghost_p;
+    stk::mesh::Entity element_local = element_local_p;
+    stk::mesh::Entity element_ghost = element_ghost_p;
 
     std::cout << "P["<<p_rank<<"] element_local = " << element_local << std::endl;
     std::cout << "P["<<p_rank<<"] element_ghost = " << element_ghost << std::endl;
@@ -342,7 +342,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1)
       iSubDimOrd = 0u;
     }
     NodeIdsOnSubDimEntityType& nodeIds_onSE = *( nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_rank.first, iSubDimOrd));
-    stk::mesh::Entity*  node   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE[0]->identifier());
+    stk::mesh::Entity node   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE[0].identifier());
 
     // should be the same node on each proc
     std::cout << "P[" << p_rank << "] nodeId = " << nodeIds_onSE << " node= " << node << std::endl;
@@ -351,7 +351,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1)
 
     // change element to be a strange element with 9 nodes
     eMesh.get_bulk_data()->modification_begin();
-    eMesh.get_bulk_data()->declare_relation(element_local, *node, 8);
+    eMesh.get_bulk_data()->declare_relation(element_local, node, 8);
     eMesh.get_bulk_data()->modification_end();
 
     eMesh.save_as("./cube_hex9.e");
@@ -401,8 +401,8 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
     if (p_size == 1)
       elem_num_ghost = 1;
 
-    stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
-    stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
+    stk::mesh::Entity element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
+    stk::mesh::Entity element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
     if (p_rank == 1)
     {
       element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
@@ -412,8 +412,8 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
     dw() << "P["<<p_rank<<"] elem_num_local = " << elem_num_local << DWENDL;
     dw() << "P["<<p_rank<<"] elem_num_ghost = " << elem_num_ghost << DWENDL;
 
-    stk::mesh::Entity& element_local = *element_local_p;
-    stk::mesh::Entity& element_ghost = *element_ghost_p;
+    stk::mesh::Entity element_local = element_local_p;
+    stk::mesh::Entity element_ghost = element_ghost_p;
 
     std::cout << "P["<<p_rank<<"] element_local = " << element_local << std::endl;
     std::cout << "P["<<p_rank<<"] element_ghost = " << element_ghost << std::endl;
@@ -465,7 +465,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
       iSubDimOrd = 0u;
     }
     NodeIdsOnSubDimEntityType& nodeIds_onSE_0 = *( nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_rank.first, iSubDimOrd));
-    stk::mesh::Entity*  node_0   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE_0[0]->identifier());
+    stk::mesh::Entity node_0   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE_0[0].identifier());
 
     // should be the same node on each proc
     std::cout << "P[" << p_rank << "] nodeId_0 = " << nodeIds_onSE_0 << " node_0= " << node_0 << std::endl;
@@ -521,13 +521,13 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
                     *itk >> key;
                     std::cout << "read key= " << key << std::endl;
                   }
-              
+
                   const YAML::Node& valSeq = it.second();
                   for(YAML::Iterator itv=valSeq.begin();itv!=valSeq.end();++itv) {
                     *itv >> value;
                     std::cout << "read value= " << value << std::endl;
                   }
-              
+
                 }
               }
           }
@@ -545,7 +545,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
         std::cout << "\nnrNew.serialize_write(yaml3)" << std::endl;
         SerializeNodeRegistry::serialize_write(nrNew, yaml3, 0);
         std::cout << yaml3.c_str() << std::endl;
-        
+
         //exit(1);
       }
 #endif
@@ -563,13 +563,13 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
       nodeRegistry.makeCentroidCoords(element_local, needed_entity_rank.first, isd);
       NodeIdsOnSubDimEntityType& nodeIds_onSE_0_loc = *( nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_rank.first, isd));
 
-      stk::mesh::Entity*  node   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE_0_loc[0]->identifier());
+      stk::mesh::Entity node   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE_0_loc[0].identifier());
 
       unsigned edge_ord = 8u + isd;
       //unsigned n_edge_ord = cell_topo_data->edge[isd].topology->node_count;
       //std::cout << "n_edge_ord = " << n_edge_ord << std::endl;
       edge_ord = cell_topo_data->edge[isd].node[2];
-      eMesh.get_bulk_data()->declare_relation(element_local, *node, edge_ord);
+      eMesh.get_bulk_data()->declare_relation(element_local, node, edge_ord);
     }
 
     std::vector<stk::mesh::Part*> add_parts(1, &block_hex_20);
@@ -629,8 +629,8 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
     if (p_size == 1)
       elem_num_ghost = 1;
 
-    stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
-    stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
+    stk::mesh::Entity element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
+    stk::mesh::Entity element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
     if (p_rank == 1)
     {
       element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
@@ -640,8 +640,8 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
     dw() << "P["<<p_rank<<"] elem_num_local = " << elem_num_local << DWENDL;
     dw() << "P["<<p_rank<<"] elem_num_ghost = " << elem_num_ghost << DWENDL;
 
-    stk::mesh::Entity& element_local = *element_local_p;
-    stk::mesh::Entity& element_ghost = *element_ghost_p;
+    stk::mesh::Entity element_local = element_local_p;
+    stk::mesh::Entity element_ghost = element_ghost_p;
 
     std::cout << "P["<<p_rank<<"] element_local = " << element_local << std::endl;
     std::cout << "P["<<p_rank<<"] element_ghost = " << element_ghost << std::endl;
@@ -694,13 +694,13 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
       iSubDimOrd = 4u;
     }
     NodeIdsOnSubDimEntityType& nodeIds_onSE_0 = *( nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[0].first, iSubDimOrd));
-    stk::mesh::Entity*  node_0   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE_0[0]->identifier());
+    stk::mesh::Entity node_0   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE_0[0].identifier());
 
     // should be the same node on each proc
     std::cout << "P[" << p_rank << "] nodeId_0 = " << nodeIds_onSE_0 << " node_0= " << node_0 << std::endl;
     if (p_size == 2)
     {
-      STKUNIT_EXPECT_EQ(nodeIds_onSE_0[0]->identifier(), 20u);
+      STKUNIT_EXPECT_EQ(nodeIds_onSE_0[0].identifier(), 20u);
     }
 
     // end_demo
@@ -711,11 +711,11 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
     if (p_rank == 0)
     {
       NodeIdsOnSubDimEntityType& nodeIds_onSE_1 = *( nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[1].first, 0u));
-      stk::mesh::Entity*  node_1   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE_1[0]->identifier());
+      stk::mesh::Entity node_1   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE_1[0].identifier());
       std::cout << "P[" << p_rank << "] nodeId_1 = " << nodeIds_onSE_1 << " node_1= " << node_1 << std::endl;
       if (p_size == 2)
       {
-        STKUNIT_EXPECT_EQ(nodeIds_onSE_1[0]->identifier(), 19u);
+        STKUNIT_EXPECT_EQ(nodeIds_onSE_1[0].identifier(), 19u);
       }
     }
     //exit(1);

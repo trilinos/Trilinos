@@ -24,7 +24,7 @@ namespace mesh {
  *  <PRE>
  *  typedef Field<...> MyFieldType ;
  *  const MyFieldType & my_field = ... ; // obtained from somewhere
- *  const Entity & entity = ... ;        // obtained from somewhere
+ *  const Entity entity = ... ;        // obtained from somewhere
  *  const Bucket & bucket = ... ;        // obtained from somewhere
  *
  *  EntityArray< MyFieldType > entity_data( my_field , entity );

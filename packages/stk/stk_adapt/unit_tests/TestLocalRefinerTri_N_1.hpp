@@ -24,7 +24,7 @@ namespace stk {
       // not needed
 
       virtual void 
-      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element, 
                                               vector<NeededEntityType>& needed_entity_ranks);
 
 

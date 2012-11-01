@@ -120,7 +120,7 @@ STKUNIT_UNIT_TEST(adapt, count_memory)
       MemoryInfo mem_delta_node;
       double time = -stk::percept::Util::cpu_time();
 
-      std::vector<stk::mesh::Entity *> new_nodes, new_elements;
+      std::vector<stk::mesh::Entity> new_nodes, new_elements;
 
       eMesh.get_bulk_data()->modification_begin();
       eMesh.createEntities(eMesh.node_rank(), num_new_nodes, new_nodes);
@@ -143,7 +143,7 @@ STKUNIT_UNIT_TEST(adapt, count_memory)
       for (size_t i=0; i<num_new_tris; ++i) {
         unsigned ordinal = 0;
         for (size_t j=0; j < num_nodes_per_tri; ++j) {
-          eMesh.get_bulk_data()->declare_relation(*new_elements[i],*new_nodes[i_node],ordinal);
+          eMesh.get_bulk_data()->declare_relation(new_elements[i], new_nodes[i_node],ordinal);
           ++ordinal;
           ++i_node;
         }

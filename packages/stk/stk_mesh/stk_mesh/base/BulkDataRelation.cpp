@@ -27,8 +27,8 @@
 namespace stk {
 namespace mesh {
 
-void set_field_relations( Entity & e_from ,
-                          Entity & e_to ,
+void set_field_relations( Entity e_from ,
+                          Entity e_to ,
                           const unsigned ident )
 {
   const std::vector<FieldRelation> & field_rels =
@@ -61,7 +61,7 @@ void set_field_relations( Entity & e_from ,
 
 namespace {
 
-void clear_field_relations( Entity & e_from ,
+void clear_field_relations( Entity e_from ,
                             const unsigned type ,
                             const unsigned ident )
 {
@@ -96,8 +96,8 @@ void clear_field_relations( Entity & e_from ,
 
 void BulkData::require_valid_relation( const char action[] ,
                                        const BulkData & mesh ,
-                                       const Entity   & e_from ,
-                                       const Entity   & e_to )
+                                       const Entity e_from ,
+                                       const Entity e_to )
 {
   const bool error_mesh_from = & mesh != & BulkData::get(e_from);
   const bool error_mesh_to   = & mesh != & BulkData::get(e_to);
@@ -126,8 +126,8 @@ void BulkData::require_valid_relation( const char action[] ,
 
 //----------------------------------------------------------------------
 
-void BulkData::declare_relation( Entity & e_from ,
-                                 Entity & e_to ,
+void BulkData::declare_relation( Entity e_from ,
+                                 Entity e_to ,
                                  const RelationIdentifier local_id )
 {
   TraceIfWatching("stk::mesh::BulkData::declare_relation", LOG_ENTITY, e_from.key());
@@ -162,7 +162,7 @@ void BulkData::declare_relation( Entity & e_from ,
 
 //----------------------------------------------------------------------
 
-void BulkData::declare_relation( Entity & entity ,
+void BulkData::declare_relation( Entity entity ,
                                  const std::vector<Relation> & rel )
 {
   require_ok_to_modify();
@@ -171,7 +171,7 @@ void BulkData::declare_relation( Entity & entity ,
 
   std::vector<Relation>::const_iterator i ;
   for ( i = rel.begin() ; i != rel.end() ; ++i ) {
-    Entity & e = * i->entity();
+    Entity e = i->entity();
     const unsigned n = i->identifier();
     if ( e.entity_rank() < erank ) {
       declare_relation( entity , e , n );
@@ -188,8 +188,8 @@ void BulkData::declare_relation( Entity & entity ,
 
 //----------------------------------------------------------------------
 
-bool BulkData::destroy_relation( Entity & e_from ,
-                                 Entity & e_to,
+bool BulkData::destroy_relation( Entity e_from ,
+                                 Entity e_to,
                                  const RelationIdentifier local_id )
 {
   TraceIfWatching("stk::mesh::BulkData::destroy_relation", LOG_ENTITY, e_from.key());
@@ -227,8 +227,8 @@ bool BulkData::destroy_relation( Entity & e_from ,
     // these relations to the 'keep' vector
     for ( PairIterRelation i = e_to.relations(); !i.empty(); ++i ) {
       if (e_to.entity_rank() < i->entity_rank()) { // Need to look at back rels only
-        if ( !( i->entity() == & e_from && i->identifier() == local_id ) ) {
-          induced_part_membership( * i->entity(), empty, e_to.entity_rank(),
+        if ( !( i->entity() == e_from && i->identifier() == local_id ) ) {
+          induced_part_membership( i->entity(), empty, e_to.entity_rank(),
                                    i->identifier(), keep,
                                    false /*Do not look at supersets*/);
         }
@@ -238,7 +238,7 @@ bool BulkData::destroy_relation( Entity & e_from ,
     // Find the relation this is being deleted and add the parts that are
     // induced from that relation (and that are not in 'keep') to 'del'
     for ( PairIterRelation i = e_from.relations() ; !i.empty() ; ++i ) {
-      if ( i->entity() == & e_to && i->identifier() == local_id ) {
+      if ( i->entity() == e_to && i->identifier() == local_id ) {
         induced_part_membership( e_from, keep, e_to.entity_rank(),
                                  i->identifier(), del,
                                  false /*Do not look at supersets*/);
@@ -255,7 +255,7 @@ bool BulkData::destroy_relation( Entity & e_from ,
   else {
     // Just clear the field, part membership will be handled by modification end
     for ( PairIterRelation i = e_from.relations() ; !i.empty() ; ++i ) {
-      if ( i->entity() == & e_to && i->identifier() == local_id ) {
+      if ( i->entity() == e_to && i->identifier() == local_id ) {
         clear_field_relations( e_from , e_to.entity_rank() ,
                                i->identifier() );
         break; // at most 1 relation can match our specification
@@ -273,7 +273,7 @@ bool BulkData::destroy_relation( Entity & e_from ,
 // removals.
 
 void BulkData::internal_propagate_part_changes(
-  Entity           & entity ,
+  Entity entity ,
   const PartVector & removed )
 {
   TraceIfWatching("stk::mesh::BulkData::internal_propagate_part_changes",
@@ -294,7 +294,7 @@ void BulkData::internal_propagate_part_changes(
 
     if ( rel_type < etype ) { // a 'to' entity
 
-      Entity & e_to = * rel->entity();
+      Entity e_to = rel->entity();
 
       to_del.clear();
       to_add.clear();
@@ -316,9 +316,9 @@ void BulkData::internal_propagate_part_changes(
         for ( PairIterRelation
               to_rel = e_to.relations(); ! to_rel.empty() ; ++to_rel ) {
           if ( e_to.entity_rank() < to_rel->entity_rank() &&
-               & entity != to_rel->entity() /* Already did this entity */ ) {
+               entity != to_rel->entity() /* Already did this entity */ ) {
             // Relation from to_rel->entity() to e_to
-            induced_part_membership( * to_rel->entity(), empty,
+            induced_part_membership( to_rel->entity(), empty,
                                      e_to.entity_rank(),
                                      to_rel->identifier(),
                                      to_add );
@@ -349,7 +349,7 @@ void BulkData::internal_propagate_part_changes(
       set_field_relations( entity, e_to, rel_ident );
     }
     else if ( etype < rel_type ) { // a 'from' entity
-      Entity & e_from = * rel->entity();
+      Entity e_from = rel->entity();
 
       set_field_relations( e_from, entity, rel_ident );
     }
@@ -357,7 +357,7 @@ void BulkData::internal_propagate_part_changes(
 }
 
 void BulkData::internal_propagate_part_changes(
-  Entity           & entity ,
+  Entity entity ,
   const OrdinalVector & removed )
 {
   TraceIfWatching("stk::mesh::BulkData::internal_propagate_part_changes",
@@ -380,7 +380,7 @@ void BulkData::internal_propagate_part_changes(
 
     if ( rel_type < etype ) { // a 'to' entity
 
-      Entity & e_to = * rel->entity();
+      Entity e_to = rel->entity();
 
       to_del.clear();
       to_add.clear();
@@ -402,9 +402,9 @@ void BulkData::internal_propagate_part_changes(
         for ( PairIterRelation
               to_rel = e_to.relations(); ! to_rel.empty() ; ++to_rel ) {
           if ( e_to.entity_rank() < to_rel->entity_rank() &&
-               & entity != to_rel->entity() /* Already did this entity */ ) {
+               entity != to_rel->entity() /* Already did this entity */ ) {
             // Relation from to_rel->entity() to e_to
-            induced_part_membership( * to_rel->entity(), empty,
+            induced_part_membership( to_rel->entity(), empty,
                                      e_to.entity_rank(),
                                      to_rel->identifier(),
                                      to_add );
@@ -435,7 +435,7 @@ void BulkData::internal_propagate_part_changes(
       set_field_relations( entity, e_to, rel_ident );
     }
     else if ( etype < rel_type ) { // a 'from' entity
-      Entity & e_from = * rel->entity();
+      Entity e_from = rel->entity();
 
       set_field_relations( e_from, entity, rel_ident );
     }

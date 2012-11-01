@@ -35,13 +35,13 @@ struct Zoltan_Struct;
 
 /** \file ZoltanPartition.hpp derived from \a Partition to implement Zoltan based rebalancing.
  *
- * \class Zoltan 
+ * \class Zoltan
  *
  * \brief Class for implementing Zoltan based rebalancing
  *
  * Derived from the \a GeomDecomp class.
  *
- * The \a Partition class can be derived from to define all different ways of 
+ * The \a Partition class can be derived from to define all different ways of
  * determining a new partition for rebalancing. This is one example where the
  * derived class uses Zoltan to determine the new partition.
  */
@@ -87,7 +87,7 @@ public:
    * processors.
    */
   struct MeshInfo {
-    std::vector<mesh::Entity *>      mesh_entities;
+    std::vector<mesh::Entity>      mesh_entities;
     const VectorField              * nodal_coord_ref ;
     const ScalarField              * elem_weight_ref;
     std::vector<unsigned>            dest_proc_ids ;
@@ -108,13 +108,13 @@ public:
    * \param nodal_coord_ref  Nodal coordinate field to determine new partition
    *                         if using geometric based partitioning.
    *
-   * \param elem_weight_ref  Weighting of elements used in defining 
+   * \param elem_weight_ref  Weighting of elements used in defining
    *                         the new partition. If used, the total element
-   *                         weight will be balanced across all of the 
+   *                         weight will be balanced across all of the
    *                         processors. Can be NULL.
    */
 
-  virtual void set_mesh_info ( const std::vector<mesh::Entity *> &mesh_entities,
+  virtual void set_mesh_info ( const std::vector<mesh::Entity> &mesh_entities,
                                const VectorField   * nodal_coord_ref,
                                const ScalarField   * elem_weight_ref=NULL);
 
@@ -140,10 +140,10 @@ public:
    *
    * \param ndim   The spatial dimention of the mesh being balanced.
    *
-   * \param rebal_region_parameters  This is a hierarchial map of strings to strings 
+   * \param rebal_region_parameters  This is a hierarchial map of strings to strings
    *                                 that defines the parameters used to
-   *                                 initialize \a Zoltan. See the 
-   *                                 \a fill_default_values function 
+   *                                 initialize \a Zoltan. See the
+   *                                 \a fill_default_values function
    *                                 for a list of valid parameter names.
    *
    * \param parameters_name  The subset of parameter in \a rebal_region_parameters
@@ -154,9 +154,9 @@ public:
    * a list of the latest releaseed and supported parameters.
    */
 
-  explicit Zoltan(ParallelMachine pm, 
-                  const unsigned ndim, 
-                  Teuchos::ParameterList & rebal_region_parameters, 
+  explicit Zoltan(ParallelMachine pm,
+                  const unsigned ndim,
+                  Teuchos::ParameterList & rebal_region_parameters,
                   std::string parameters_name=default_parameters_name());
 
   /**
@@ -178,16 +178,16 @@ public:
   /** \brief Various data access functions.
    */
   int globalID         (const unsigned moid) const
-  { return m_mesh_information_.mesh_entities[ moid ]->identifier(); }
+  { return m_mesh_information_.mesh_entities[ moid ].identifier(); }
 
   /** \brief Return the number of local ids per global ids (entities per region).*/
   unsigned num_moid() const;
 
   /** \brief Find the local ID of a given mesh entity. */
-  bool find_mesh_entity(const mesh::Entity * entity, unsigned & moid) const;
+  bool find_mesh_entity(const mesh::Entity entity, unsigned & moid) const;
 
   /** \brief Return a mesh entity pointer. */
-  mesh::Entity *mesh_entity(const unsigned moid ) const;
+  mesh::Entity mesh_entity(const unsigned moid ) const;
 
   /** \brief Return the Field points to the entity coordinates.*/
   const VectorField * entity_coord_ref () const;
@@ -204,7 +204,7 @@ public:
    * need to be converted into short Zoltan names.  The
    * \a merge_default_values and \a convert_names_and_values
    * functions do that.  Merge_Default_Values should be called
-   * first because it merges with the long names.  
+   * first because it merges with the long names.
    */
   static void merge_default_values   (const Teuchos::ParameterList &from,
                                       Teuchos::ParameterList &to);
@@ -219,8 +219,8 @@ public:
 
 
   /** \brief determine New Partition.
-   * 
-   * \param RebalancingNeeded  If true, then a new partition 
+   *
+   * \param RebalancingNeeded  If true, then a new partition
    *                           has been defined.  If false, the
    *                           new partition is the same as the old
    *                           one and no rebalancing is needed.
@@ -265,7 +265,7 @@ public:
    * \param ncuts         Total number of cuts used in partition
    *
    * \param cut_wgt       Not sure about this one.
-   * 
+   *
    * \param nboundary     Maybe the number of entities on the processor boundary.
    *
    * \param nadj          Not sure about this one.

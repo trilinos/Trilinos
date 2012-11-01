@@ -31,12 +31,12 @@ namespace stk
       bool m_found_it;
       MDArray& m_input_phy_points;
       MDArray& m_found_parametric_coordinates;
-      const stk::mesh::Entity *m_foundElement;
+      stk::mesh::Entity m_foundElement;
     public:
       IsInElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates);
 
-      bool operator()(const stk::mesh::Entity& element, const mesh::BulkData& bulkData);
-      bool operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase* field, const mesh::BulkData& bulkData) 
+      bool operator()(const stk::mesh::Entity element, const mesh::BulkData& bulkData);
+      bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase* field, const mesh::BulkData& bulkData)
       {
         return (*this)(element, bulkData);
       }
@@ -47,10 +47,10 @@ namespace stk
 
 
       /**
-       *  Dimensions of input_phy_points = ([P]=1, [D]) 
+       *  Dimensions of input_phy_points = ([P]=1, [D])
        *  Dimensions of found_parametric_coordinates = ([P]=1, [D])
        */
-      void isInElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates, unsigned& found_it, const mesh::Entity& element,
+      void isInElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates, unsigned& found_it, const mesh::Entity element,
                        const mesh::BulkData& bulkData);
 
     };

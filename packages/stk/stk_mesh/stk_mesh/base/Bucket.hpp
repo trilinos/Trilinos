@@ -23,9 +23,6 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Entity.hpp>
 
-#include <boost/iterator/transform_iterator.hpp>
-#include <boost/iterator/indirect_iterator.hpp>
-
 //----------------------------------------------------------------------
 
 #ifdef SIERRA_MIGRATION
@@ -45,7 +42,7 @@ namespace stk {
 namespace mesh {
 
 namespace impl {
-class BucketFamily;
+class Partition;
 class BucketRepository;
 } // namespace impl
 
@@ -109,14 +106,14 @@ private:
   std::vector<unsigned>  m_key ;
   const size_t           m_capacity ;    // Capacity for entities
   size_t                 m_size ;        // Number of entities
-  Bucket               * m_bucket ;      // Pointer to head of bucket family, but head points to tail
+  Bucket               * m_bucket ;      // Pointer to head of partition, but head points to tail
   std::vector<DataMap>   m_field_map ;   // Field value data map, shared
-  std::vector<Entity*>   m_entities ;    // Array of entity pointers,
+  std::vector<Entity>    m_entities ;    // Array of entity pointers,
   // beginning of field value memory.
   unsigned char* m_field_data;
   unsigned char* m_field_data_end;
 
-  impl::BucketFamily    *m_bucket_family;
+  impl::Partition    *m_partition;
 
 
 #ifdef SIERRA_MIGRATION
@@ -143,7 +140,7 @@ public:
   //--------------------------------
   // Container-like types and methods:
 
-  typedef boost::indirect_iterator<Entity*const*> iterator ;
+  typedef const Entity * iterator;
 
   /** \brief Beginning of the bucket */
   inline iterator begin() const { return &m_entities[0]; }
@@ -160,7 +157,7 @@ public:
 
 
   /** \brief  Query the i^th entity */
-  Entity & operator[] ( size_t i ) const { return *(m_entities[i]) ; }
+  Entity operator[] ( size_t i ) const { return m_entities[i]; }
 
   /** \brief  Query the size of this field data specified by FieldBase */
   unsigned field_data_size(const FieldBase & field) const
@@ -175,11 +172,10 @@ public:
   }
 
   /** \brief  Query the location of this field data specified by FieldBase and Entity */
-  unsigned char * field_data_location( const FieldBase & field, const Entity & entity ) const
+  unsigned char * field_data_location( const FieldBase & field, const Entity entity ) const
   {
     return field_data_location_impl( field.mesh_meta_data_ordinal(), entity.bucket_ordinal() );
   }
-
 
   /** \brief  Query the location of this field data specified by FieldBase and Entity-bucket-ordinal
      This method should only be called if the caller knows that the field exists on the bucket.
@@ -200,7 +196,7 @@ public:
   /** \brief  Query the location of this field data specified by FieldBase and Entity */
   template< class field_type >
   typename FieldTraits< field_type >::data_type *
-  field_data( const field_type & field , const Entity & entity ) const
+  field_data( const field_type & field , const Entity entity ) const
   { return field_data(field,entity.bucket_ordinal()); }
 
   //--------------------------------
@@ -241,7 +237,7 @@ public:
   /** \brief Equivalent buckets have the same parts
    */
   bool equivalent( const Bucket& b ) const {
-    return first_bucket_in_family() == b.first_bucket_in_family();
+    return first_bucket_in_partition() == b.first_bucket_in_partition();
   }
 
 
@@ -278,7 +274,7 @@ public:
     return field_data_location_impl( field.mesh_meta_data_ordinal(), ordinal );
   }
 
-  impl::BucketFamily *getBucketFamily() const { return m_bucket_family; }
+  impl::Partition *getPartition() const { return m_partition; }
 
 private:
   /** \brief  The \ref stk::mesh::BulkData "bulk data manager"
@@ -304,7 +300,7 @@ private:
 
   void increment_size() { ++m_size ; }
   void decrement_size() { --m_size ; }
-  void replace_entity(unsigned entity_ordinal, Entity * entity ) { m_entities[entity_ordinal] = entity ; }
+  void replace_entity(unsigned entity_ordinal, Entity entity ) { m_entities[entity_ordinal] = entity ; }
   void update_state();
 
   template< class field_type >
@@ -319,17 +315,17 @@ private:
   //  key[ key[0] ] == counter
   unsigned bucket_counter() const { return m_key[ m_key[0] ]; }
 
-  Bucket * last_bucket_in_family() const;
-  Bucket * first_bucket_in_family() const;
-  void set_last_bucket_in_family( Bucket * last_bucket );
-  void set_first_bucket_in_family( Bucket * first_bucket );
+  Bucket * last_bucket_in_partition() const;
+  Bucket * first_bucket_in_partition() const;
+  void set_last_bucket_in_partition( Bucket * last_bucket );
+  void set_first_bucket_in_partition( Bucket * first_bucket );
   DataMap * get_field_map();
   void initialize_fields( unsigned i_dst );
   void replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_src );
-  void set_bucket_family_pointer( Bucket * bucket ) { m_bucket = bucket; }
-  const Bucket * get_bucket_family_pointer() const { return m_bucket; }
+  void set_partition_pointer( Bucket * bucket ) { m_bucket = bucket; }
+  const Bucket * get_partition_pointer() const { return m_bucket; }
 
-  Bucket * last_bucket_in_family_impl() const;
+  Bucket * last_bucket_in_partition_impl() const;
 
   unsigned char * field_data_location_impl( const unsigned & field_ordinal, const unsigned & entity_ordinal ) const
   {
@@ -383,17 +379,6 @@ bool Bucket::member_all( const OrdinalVector& parts ) const
   }
   return result_all ;
 }
-
-struct To_Ptr : std::unary_function<Entity&, Entity*>
-{
-  Entity* operator()(Entity& entity) const
-  {
-    return &entity;
-  }
-};
-
-// Sometimes, we want a bucket-iterator to dereference to an Entity*
-typedef boost::transform_iterator<To_Ptr, Bucket::iterator> BucketPtrIterator;
 
 typedef Bucket::iterator BucketIterator;
 

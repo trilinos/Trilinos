@@ -51,7 +51,7 @@ public:
    *          This generated communication list for receiving updates
    *          is sorted by entity key.
    */
-  void receive_list( std::vector< Entity * > & ) const ;
+  void receive_list( std::vector< Entity> & ) const ;
 
   /** \brief  Print the details of this object for debugging
    */

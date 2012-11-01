@@ -144,7 +144,7 @@ namespace mesh {
  *
  *    // Iterate the elements in the bucketa and the field data
  *    for ( unsigned j = 0 ; j < n ; ++j ) {
- *      mesh::Entity & element = * k[j] ;
+ *      mesh::Entity element = * k[j] ;
  *      double * element_tensor = tensor + size_of_tensor * j ;
  *      // computations...
  *    }

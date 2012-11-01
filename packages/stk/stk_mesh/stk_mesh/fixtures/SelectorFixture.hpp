@@ -60,11 +60,11 @@ class SelectorFixture {
   stk::mesh::Part & m_partC ;
   stk::mesh::Part & m_partD ;
 
-  stk::mesh::Entity * m_entity1 ;
-  stk::mesh::Entity * m_entity2 ;
-  stk::mesh::Entity * m_entity3 ;
-  stk::mesh::Entity * m_entity4 ;
-  stk::mesh::Entity * m_entity5 ;
+  stk::mesh::Entity m_entity1 ;
+  stk::mesh::Entity m_entity2 ;
+  stk::mesh::Entity m_entity3 ;
+  stk::mesh::Entity m_entity4 ;
+  stk::mesh::Entity m_entity5 ;
 
   stk::mesh::Field<double>& m_fieldA;
   stk::mesh::Field<double>& m_fieldABC;
@@ -85,7 +85,7 @@ class VariableSelectorFixture {
   stk::mesh::BulkData m_BulkData ;
 
   stk::mesh::PartVector m_declared_part_vector;
-  std::vector<stk::mesh::Entity*> m_entities ;
+  std::vector<stk::mesh::Entity> m_entities ;
 
  private:
   VariableSelectorFixture( const VariableSelectorFixture & );

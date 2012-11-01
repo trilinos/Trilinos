@@ -473,12 +473,12 @@ void verify_elem_node_coord(
     double * const * elem_data = array.contiguous_data();
 
     for ( unsigned i = 0 ; i < size ; ++i ) {
-      stk::mesh::Entity & elem = bucket[i] ;
+      stk::mesh::Entity elem = bucket[i] ;
 
       stk::mesh::PairIterRelation rel = elem.relations( stk::mesh::MetaData::NODE_RANK );
 
       for ( unsigned j = 0 ; j < num_node ; ++j , ++elem_data ) {
-        stk::mesh::Entity & node = * rel[j].entity();
+        stk::mesh::Entity node = rel[j].entity();
 
         double * const node_data = field_data( node_coord , node );
         if ( *elem_data != node_data ) {

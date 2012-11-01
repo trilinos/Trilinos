@@ -62,7 +62,7 @@ typedef stk::mesh::Field<int> IntField;
 void separate_wedge(
     bool do_separate_wedge,
     stk::mesh::fixtures::GearsFixture   & fixture,
-    stk::mesh::Entity * wedge,
+    stk::mesh::Entity wedge,
     CartesianField & velocity_field,
     stk::mesh::Part & skin_part
     )
@@ -90,20 +90,20 @@ void separate_wedge(
     // Remove wedge from cylidrical_coord_part
     stk::mesh::PartVector empty_parts, remove_parts;
     remove_parts.push_back(& fixture.cylindrical_coord_part);
-    fixture.bulk_data.change_entity_parts(*wedge, empty_parts, remove_parts);
+    fixture.bulk_data.change_entity_parts(wedge, empty_parts, remove_parts);
 
     // Replace wedge's nodes with new nodes because any nodes shared with other
     // entities cannot be taken along with the separated wedge. As a
     // simplification, we simply leave all the old nodes behind.
-    stk::mesh::PairIterRelation relations = wedge->relations(NODE_RANK);
+    stk::mesh::PairIterRelation relations = wedge.relations(NODE_RANK);
     ThrowRequire(relations.size() == num_nodes_per_wedge);
 
     for (size_t i = 0; i < num_nodes_per_wedge; ++i) {
-      stk::mesh::Entity & old_node = *(relations[ i ].entity());
-      stk::mesh::Entity & new_node = *(new_nodes[i]);
+      stk::mesh::Entity old_node = relations[ i ].entity();
+      stk::mesh::Entity new_node = new_nodes[i];
 
-      fixture.bulk_data.destroy_relation(*wedge, old_node, i);
-      fixture.bulk_data.declare_relation(*wedge, new_node, i);
+      fixture.bulk_data.destroy_relation(wedge, old_node, i);
+      fixture.bulk_data.declare_relation(wedge, new_node, i);
 
       fixture.bulk_data.copy_entity_fields( old_node, new_node);
     }
@@ -113,7 +113,7 @@ void separate_wedge(
     // all the nodes to have the same velocity; otherwise, the wedge will stretch
     std::vector<double> avg_velocity_data(spatial_dim, 0);
     for (size_t i = 0; i < num_nodes_per_wedge; ++i) {
-      stk::mesh::Entity & new_node = *(new_nodes[i]);
+      stk::mesh::Entity new_node = new_nodes[i];
       const double * const new_displacement_data =
         stk::mesh::field_data( fixture.displacement_field.field_of_state(stk::mesh::StateNew), new_node);
 
@@ -132,7 +132,7 @@ void separate_wedge(
 
     const double detached_wedge_speedup_multiplier = 1.1;
     for (size_t i = 0; i < num_nodes_per_wedge; ++i) {
-      stk::mesh::Entity & new_node = *(new_nodes[i]);
+      stk::mesh::Entity new_node = new_nodes[i];
       double * const velocity_data =
         stk::mesh::field_data( velocity_field , new_node );
 
@@ -475,7 +475,7 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear )
 
       // Move the gear; this will only rotate the gear since x,y,z are all 0
       gear.move(gear_movement_data);
-      stk::mesh::Entity * wedge = NULL;
+      stk::mesh::Entity wedge = stk::mesh::Entity();
 
       // Separate the wedge if it's time
       if (do_separate_wedge) {
@@ -506,13 +506,13 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear )
     for (stk::mesh::BucketVector::iterator b_itr = face_buckets.begin(); b_itr != face_buckets.end(); ++b_itr) {
       stk::mesh::Bucket & b = **b_itr;
       for (size_t i = 0; i < b.size(); ++i) {
-        stk::mesh::Entity& face = b[i];
+        stk::mesh::Entity face = b[i];
         double *elem_node_disp = field_data(displacement, face);
         if (elem_node_disp) {
           stk::mesh::PairIterRelation node_rels = face.node_relations();
           const size_t num_nodes = node_rels.size();
           for(; !node_rels.empty(); ++node_rels) {
-            const stk::mesh::Entity& node = *node_rels->entity();
+            const stk::mesh::Entity node = node_rels->entity();
             double* node_disp = stk::mesh::field_data(fixture.displacement_field, node);
             elem_node_disp[0] = node_disp[0];
             elem_node_disp[1] = node_disp[1];

@@ -43,13 +43,13 @@ namespace stk {
       ///    @param needed_entity_rank
       ///
     void NodeRegistry::
-      noInline_getSubDimEntity(SubDimCell_SDSEntityType& subDimEntity, const stk::mesh::Entity& element, stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd)
+      noInline_getSubDimEntity(SubDimCell_SDSEntityType& subDimEntity, const stk::mesh::Entity element, stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd)
       {
         subDimEntity.clear();
         // in the case of elements, we don't share any nodes so we just make a map of element id to node
         if (needed_entity_rank == stk::mesh::MetaData::ELEMENT_RANK)
           {
-            subDimEntity.insert( const_cast<stk::mesh::Entity*>(&element) );
+            subDimEntity.insert( element );
             //!!subDimEntity.insert(element.identifier());
             return;
           }
@@ -127,7 +127,7 @@ namespace stk {
               {
                 alp[ipts] += (coord[iv[1]][isp] - coord[iv[0]][isp])*lspc[jpts][isp];
                 len += (coord[iv[1]][isp] - coord[iv[0]][isp])*(coord[iv[1]][isp] - coord[iv[0]][isp]);
-              }                            
+              }
             alp[ipts] = std::fabs(alp[ipts])/std::sqrt(len);
           }
         const double fac=3.0, facden = 4.0;
@@ -164,7 +164,7 @@ namespace stk {
             unsigned ipts=0;
             for (ipts=0; ipts < nsz; ipts++)
               {
-                spc[ipts][isp] = 1.0/spc[ipts][isp]; 
+                spc[ipts][isp] = 1.0/spc[ipts][isp];
                 den += spc[ipts][isp];
               }
             for (ipts=0; ipts < nsz; ipts++)
@@ -179,13 +179,13 @@ namespace stk {
                     spc[ipts][isp] = 1.0 - m_min_spacing_factor;
                     for (unsigned jpts=0; jpts < nsz; jpts++)
                       {
-                        if (ipts != jpts) 
+                        if (ipts != jpts)
                           spc[ipts][isp] = m_min_spacing_factor/((double)(nsz-1));
                       }
 
                     break;
                   }
-              }         
+              }
             // now renormalize it
             den = 0.0;
             for (ipts=0; ipts < nsz; ipts++)
@@ -238,8 +238,8 @@ namespace stk {
            fac = 411./259.; facden=64./37.; // heuristic
            break;
         default:
-          normalize_spacing_0(nsz,nsp,spc,den_xyz); 
-          return; 
+          normalize_spacing_0(nsz,nsp,spc,den_xyz);
+          return;
         }
 
         //facden = 1+(double(nsz)-1)*fac;
@@ -332,7 +332,7 @@ namespace stk {
               {
                 throw std::logic_error("nsz wrong - logic error");
               }
-            // these values end up as weights on the coordinates 
+            // these values end up as weights on the coordinates
             double sum=0.0;
             for (unsigned ipts=0; ipts < nsz; ipts++)
               {
@@ -341,7 +341,7 @@ namespace stk {
             for (unsigned ipts=0; ipts < nsz; ipts++)
               {
                 spc[ipts][isp] /= sum;
-                if (0 && nsz == 8 && isp == 1) 
+                if (0 && nsz == 8 && isp == 1)
                   std::cout << "spc[" << ipts << "]= " << spc[ipts][isp] << std::endl;
               }
           }
@@ -375,7 +375,7 @@ namespace stk {
           {
             if (field_rank == stk::mesh::MetaData::ELEMENT_RANK)
               {
-                
+
               }
             return;
           }
@@ -422,38 +422,38 @@ namespace stk {
                 needed_entity_rank = stk::mesh::MetaData::ELEMENT_RANK;
               }
 
-            if (nodeIds_onSE[0] == 0)
+            if (!nodeIds_onSE[0].is_valid())
               {
                 continue;
               }
 
-            stk::mesh::Entity * c_node = nodeIds_onSE[0];
+            stk::mesh::Entity c_node = nodeIds_onSE[0];
 
-            if (!c_node)
+            if (!c_node.is_valid())
               {
                 throw std::runtime_error("makeCentroid(field): bad node found 0.0");
               }
 
             std::vector<double> c_p(fieldDim,0);
             bool doPrint = false;
-            std::vector<stk::mesh::Entity *> nodes(8,(stk::mesh::Entity *)0);
+            std::vector<stk::mesh::Entity> nodes(8, stk::mesh::Entity());
             unsigned nsz = 0;
 
             if (needed_entity_rank == stk::mesh::MetaData::ELEMENT_RANK)
               {
                 EXCEPTWATCH;
-                stk::mesh::Entity *element_p = 0;
+                stk::mesh::Entity element_p = stk::mesh::Entity();
                 {
                   SDSEntityType elementId = *subDimEntity.begin();
                   //!!element_p = get_entity_element(*m_eMesh.get_bulk_data(), stk::mesh::MetaData::ELEMENT_RANK, elementId);
                   element_p = elementId;
-                  if (!element_p)
+                  if (!element_p.is_valid())
                     {
                       throw std::runtime_error("makeCentroid(field): bad elem found 2");
                     }
                 }
 
-                stk::mesh::Entity& element = *element_p;
+                stk::mesh::Entity element = element_p;
                 bool element_is_ghost = m_eMesh.isGhostElement(element);
                 if (element_is_ghost)
                   {
@@ -464,14 +464,14 @@ namespace stk {
                     const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
                     unsigned npts = elem_nodes.size();
                     nsz = npts;
-                    nodes.resize(nsz, (stk::mesh::Entity *)0);
+                    nodes.resize(nsz, stk::mesh::Entity());
                     c_p.resize(fieldDim,0);
                     //if (npts == 2) doPrint=true;
                     //double dnpts = elem_nodes.size();
                     for (unsigned ipts = 0; ipts < npts; ipts++)
                       {
-                        stk::mesh::Entity * node = elem_nodes[ipts].entity();
-                        if (!node)
+                        stk::mesh::Entity node = elem_nodes[ipts].entity();
+                        if (!node.is_valid())
                           {
                             throw std::runtime_error("makeCentroid(field): bad node found 1.0");
                           }
@@ -482,17 +482,17 @@ namespace stk {
             else
               {
                 nsz = subDimEntity.size();
-                nodes.resize(nsz, (stk::mesh::Entity *)0);
+                nodes.resize(nsz, stk::mesh::Entity());
                 c_p.resize(fieldDim,0);
 
                 if (do_respect_spacing && nsz == 4 &&  spatialDim == 3)
                   {
                     //exit(1);
-                    //element_side_nodes( const stk::mesh::Entity & elem , int local_side_id, stk::mesh::EntityRank side_entity_rank, std::vector<stk::mesh::Entity *>& side_node_entities )
-                    stk::mesh::Entity *owning_element = m_eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, owning_elementId);
-                    VERIFY_OP_ON(owning_element, !=, 0, "hmmm");
-                    std::vector<stk::mesh::Entity *> side_node_entities;
-                    PerceptMesh::element_side_nodes(*owning_element, owning_elementSubDimOrd, m_eMesh.face_rank(), side_node_entities);
+                    //element_side_nodes( const stk::mesh::Entity elem , int local_side_id, stk::mesh::EntityRank side_entity_rank, std::vector<stk::mesh::Entity>& side_node_entities )
+                    stk::mesh::Entity owning_element = m_eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, owning_elementId);
+                    VERIFY_OP_ON(owning_element, !=, stk::mesh::Entity(), "hmmm");
+                    std::vector<stk::mesh::Entity> side_node_entities;
+                    PerceptMesh::element_side_nodes(owning_element, owning_elementSubDimOrd, m_eMesh.face_rank(), side_node_entities);
                     VERIFY_OP_ON(side_node_entities.size(), ==, 4, "hmmm 3");
                     for (unsigned ipts=0; ipts < side_node_entities.size(); ipts++)
                       {
@@ -505,7 +505,7 @@ namespace stk {
                     for (SubDimCell_SDSEntityType::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids, ++ipts)
                       {
                         SDSEntityType nodeId = *ids;
-                        stk::mesh::Entity * node = nodeId;
+                        stk::mesh::Entity node = nodeId;
                         nodes[ipts]=node;
                       }
                   }
@@ -525,15 +525,17 @@ namespace stk {
 
                   for (ipts=0; ipts < nsz; ipts++)
                     {
-                      coord[ipts] = m_eMesh.field_data_inlined(m_eMesh.get_coordinates_field(), *nodes[ipts]);
-                      field_data[ipts] = m_eMesh.field_data_inlined(field, *nodes[ipts]);
-                      spacing[ipts] = m_eMesh.field_data_inlined(spacing_field, *nodes[ipts]);
+                      coord[ipts] = m_eMesh.field_data_inlined(m_eMesh.get_coordinates_field(), nodes[ipts]);
+                      field_data[ipts] = m_eMesh.field_data_inlined(field, nodes[ipts]);
+                      spacing[ipts] = m_eMesh.field_data_inlined(spacing_field, nodes[ipts]);
                     }
 
                   double spc[8][3] = {{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}};
                   double den = 0.0;
+                  // cast to suppress "set but not used warnings" from gcc 4.6.3
+                  (void)den;
                   double den_xyz[3] = {0,0,0};
-                  if (nsz == 2) 
+                  if (nsz == 2)
                     {
                       den = 0.0;
                       for (ipts=0; ipts < nsz; ipts++)
@@ -543,7 +545,7 @@ namespace stk {
                             {
                               spc[ipts][0] += (coord[1][isp] - coord[0][isp])*spacing[ipts][isp];
                               len += (coord[1][isp] - coord[0][isp])*(coord[1][isp] - coord[0][isp]);
-                            }                            
+                            }
                           spc[ipts][0] = std::fabs(spc[ipts][0])/std::sqrt(len);
                         }
                       for (ipts=0; ipts < nsz; ipts++)
@@ -551,7 +553,7 @@ namespace stk {
                           for (int isp = 1; isp < spatialDim; isp++)
                             {
                               spc[ipts][isp] = spc[ipts][0];
-                            }                            
+                            }
                         }
                     }
                   else
@@ -592,13 +594,13 @@ namespace stk {
                   unsigned ipts=0;
                   for (ipts=0; ipts < nsz; ipts++)
                     {
-                      stk::mesh::Entity * node = nodes[ipts];
-                      if (!node)
+                      stk::mesh::Entity node = nodes[ipts];
+                      if (!node.is_valid())
                         {
                           throw std::runtime_error("makeCentroid(field): bad node found 2.0");
                         }
                       //double *  coord = m_eMesh.field_data(field, *node, null_u);
-                      double *  field_data = m_eMesh.field_data_inlined(field, *node);
+                      double *  field_data = m_eMesh.field_data_inlined(field, node);
 
                       if (doPrint && field_data)
                         {
@@ -625,7 +627,7 @@ namespace stk {
               EXCEPTWATCH;
 
               //double *  c_coord = m_eMesh.field_data(field, *c_node, null_u);
-              double *  c_coord = m_eMesh.field_data_inlined(field, *c_node);
+              double *  c_coord = m_eMesh.field_data_inlined(field, c_node);
 
               if (c_coord)
                 {

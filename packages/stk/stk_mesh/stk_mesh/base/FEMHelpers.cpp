@@ -17,7 +17,7 @@ namespace {
 
 void verify_declare_element_side(
     const BulkData & mesh,
-    const Entity & elem,
+    const Entity elem,
     const unsigned local_side_id
     )
 {
@@ -42,7 +42,7 @@ void verify_declare_element_side(
 
 void verify_declare_element_edge(
     const BulkData & mesh,
-    const Entity & elem,
+    const Entity elem,
     const unsigned local_edge_id
     )
 {
@@ -67,7 +67,7 @@ void verify_declare_element_edge(
 
 } // unnamed namespace
 
-Entity & declare_element( BulkData & mesh ,
+Entity declare_element( BulkData & mesh ,
                           Part & part ,
                           const EntityId elem_id ,
                           const EntityId node_id[] )
@@ -83,25 +83,25 @@ Entity & declare_element( BulkData & mesh ,
 
   const EntityRank entity_rank = MetaData::ELEMENT_RANK;
 
-  Entity & elem = mesh.declare_entity( entity_rank, elem_id, add );
+  Entity elem = mesh.declare_entity( entity_rank, elem_id, add );
 
   const EntityRank node_rank = MetaData::NODE_RANK;
 
   for ( unsigned i = 0 ; i < top->node_count ; ++i ) {
     //declare node if it doesn't already exist
-    Entity * node = mesh.get_entity( node_rank , node_id[i]);
-    if ( NULL == node) {
-      node = & mesh.declare_entity( node_rank , node_id[i], empty );
+    Entity node = mesh.get_entity( node_rank , node_id[i]);
+    if ( !node.is_valid() ) {
+      node = mesh.declare_entity( node_rank , node_id[i], empty );
     }
 
-    mesh.declare_relation( elem , *node , i );
+    mesh.declare_relation( elem , node , i );
   }
   return elem ;
 }
 
-Entity & declare_element_side(
-  Entity & elem ,
-  Entity & side,
+Entity declare_element_side(
+  Entity elem ,
+  Entity side,
   const unsigned local_side_id ,
   Part * part )
 {
@@ -133,16 +133,16 @@ Entity & declare_element_side(
   PairIterRelation rel = elem.relations( MetaData::NODE_RANK );
 
   for ( unsigned i = 0 ; i < side_top->node_count ; ++i ) {
-    Entity & node = * rel[ side_node_map[i] ].entity();
+    Entity node = rel[ side_node_map[i] ].entity();
     mesh.declare_relation( side , node , i );
   }
 
   return side ;
 }
 
-Entity & declare_element_edge(
-  Entity & elem ,
-  Entity & edge,
+Entity declare_element_edge(
+  Entity elem ,
+  Entity edge,
   const unsigned local_edge_id ,
   Part * part )
 {
@@ -174,17 +174,17 @@ Entity & declare_element_edge(
   PairIterRelation rel = elem.relations( MetaData::NODE_RANK );
 
   for ( unsigned i = 0 ; i < edge_top->node_count ; ++i ) {
-    Entity & node = * rel[ edge_node_map[i] ].entity();
+    Entity node = rel[ edge_node_map[i] ].entity();
     mesh.declare_relation( edge , node , i );
   }
 
   return edge ;
 }
 
-Entity & declare_element_side(
+Entity declare_element_side(
   BulkData & mesh ,
   const stk::mesh::EntityId global_side_id ,
-  Entity & elem ,
+  Entity elem ,
   const unsigned local_side_id ,
   Part * part )
 {
@@ -202,14 +202,14 @@ Entity & declare_element_side(
 		   local_side_id << ", side has no defined topology" );
 
   PartVector empty_parts ;
-  Entity & side = mesh.declare_entity( side_top->dimension , global_side_id, empty_parts );
+  Entity side = mesh.declare_entity( side_top->dimension , global_side_id, empty_parts );
   return declare_element_side( elem, side, local_side_id, part);
 }
 
-Entity & declare_element_edge(
+Entity declare_element_edge(
   BulkData & mesh ,
   const stk::mesh::EntityId global_edge_id ,
-  Entity & elem ,
+  Entity elem ,
   const unsigned local_edge_id ,
   Part * part )
 {
@@ -228,13 +228,13 @@ Entity & declare_element_edge(
       local_edge_id << ", edge has no defined topology" );
 
   PartVector empty_parts ;
-  Entity & edge = mesh.declare_entity( edge_top->dimension , global_edge_id, empty_parts );
+  Entity edge = mesh.declare_entity( edge_top->dimension , global_edge_id, empty_parts );
   return declare_element_edge( elem, edge, local_edge_id, part);
 }
 
 
 
-const CellTopologyData * get_subcell_nodes(const Entity & entity ,
+const CellTopologyData * get_subcell_nodes(const Entity entity ,
                                            EntityRank subcell_rank ,
                                            unsigned subcell_identifier ,
                                            EntityVector & subcell_nodes)
@@ -283,10 +283,10 @@ const CellTopologyData * get_subcell_nodes(const Entity & entity ,
 }
 
 
-int get_entity_subcell_id( const Entity & entity ,
+int get_entity_subcell_id( const Entity entity ,
                            const EntityRank subcell_rank,
                            const CellTopologyData * subcell_topology,
-                           const std::vector<Entity*>& subcell_nodes )
+                           const std::vector<Entity>& subcell_nodes )
 {
   const int INVALID_SIDE = -1;
 
@@ -355,8 +355,8 @@ int get_entity_subcell_id( const Entity & entity ,
   return INVALID_SIDE;
 }
 
-bool element_side_polarity( const Entity & elem ,
-                            const Entity & side , int local_side_id )
+bool element_side_polarity( const Entity elem ,
+                            const Entity side , int local_side_id )
 {
   // 09/14/10:  TODO:  tscoffe:  Will this work in 1D?
   const bool is_side = side.entity_rank() != MetaData::EDGE_RANK;

@@ -47,7 +47,7 @@
 namespace stk {
   namespace adapt {
 
-    typedef std::set<stk::mesh::Entity *> ElementUnrefineCollection;
+    typedef std::set<stk::mesh::Entity> ElementUnrefineCollection;
     //typedef std::map<stk::mesh::Part*, stk::mesh::Part*> SidePartMap;
     typedef std::map<std::string, std::string> SidePartMap;
 
@@ -57,13 +57,13 @@ namespace stk {
 
 
 #if UNIFORM_REF_REMOVE_OLD_STD_SET
-    typedef std::set<stk::mesh::Entity *> elements_to_be_destroyed_type;
+    typedef std::set<stk::mesh::Entity> elements_to_be_destroyed_type;
 #endif
 #if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
-    typedef std::vector<stk::mesh::Entity *> elements_to_be_destroyed_type;
+    typedef std::vector<stk::mesh::Entity> elements_to_be_destroyed_type;
 #endif
 #if UNIFORM_REF_REMOVE_OLD_BOOST_SET
-    typedef boost::unordered_set<stk::mesh::Entity *> elements_to_be_destroyed_type;
+    typedef boost::unordered_set<stk::mesh::Entity> elements_to_be_destroyed_type;
 #endif
 
 
@@ -146,8 +146,8 @@ namespace stk {
 
       // ================================ unrefine
 
-      typedef std::set<stk::mesh::Entity *> NodeSetType;
-      typedef std::set<stk::mesh::Entity *> SetOfEntities;
+      typedef std::set<stk::mesh::Entity> NodeSetType;
+      typedef std::set<stk::mesh::Entity> SetOfEntities;
 
 
       void
@@ -191,9 +191,10 @@ namespace stk {
       /// determine side part to elem part relations
       void get_side_part_relations(bool checkParentChild, SidePartMap& side_part_map);
 
-      bool connectSides(stk::mesh::Entity *element, stk::mesh::Entity *side_elem, SidePartMap* side_part_map=0);
+      bool connectSides(stk::mesh::Entity element, stk::mesh::Entity side_elem, SidePartMap* side_part_map=0);
+      bool connectSidesForced(stk::mesh::Entity element, stk::mesh::Entity side_elem, SidePartMap* side_part_map=0);
       void fixElementSides2();
-      void fixSides(stk::mesh::Entity *parent);
+      void fixSides(stk::mesh::Entity parent);
 
       NodeRegistry& getNodeRegistry() { return *m_nodeRegistry; }
       percept::PerceptMesh& getMesh() { return m_eMesh; }
@@ -266,7 +267,7 @@ namespace stk {
        */
       virtual bool
       createNewNeededNodeIds(const CellTopologyData * const cell_topo_data,
-                             const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks, NewSubEntityNodesType& nodes) ;
+                             const stk::mesh::Entity element, vector<NeededEntityType>& needed_entity_ranks, NewSubEntityNodesType& nodes) ;
 
       /** Method that actually creates new elements by first calling createNewNeededNodeIds then calls the break pattern's createNewElements method.
        *
@@ -275,7 +276,7 @@ namespace stk {
       virtual void
       createElementsAndNodesAndConnectLocal(unsigned irank,  stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern,
                                             vector< ColorerSetType >& elementColors,   vector<NeededEntityType>& needed_entity_ranks,
-                                            vector<stk::mesh::Entity *>& new_elements_pool) ;
+                                            vector<stk::mesh::Entity>& new_elements_pool) ;
 
       /** This is a helper method that loops over all sub-dimensional entities whose rank matches on of those in @param needed_entity_ranks
        *    and registers that sub-dimensional entity as needing a new node, or whatever other function NodeRegistry requires (getFromRemote(), etc)
@@ -287,7 +288,7 @@ namespace stk {
        */
 
       virtual void
-      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element,
+      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element,
                                               vector<NeededEntityType>& needed_entity_ranks);
 
       /// =========>  Overrides  end

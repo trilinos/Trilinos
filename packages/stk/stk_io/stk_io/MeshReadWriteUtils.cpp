@@ -75,16 +75,16 @@ void process_surface_entity(Ioss::SideSet *sset, stk::mesh::MetaData &meta)
 
   size_t get_entities(stk::mesh::Part &part,
 		      const stk::mesh::BulkData &bulk,
-		      std::vector<stk::mesh::Entity*> &entities,
+		      std::vector<stk::mesh::Entity> &entities,
 		      const stk::mesh::Selector *anded_selector)
   {
     stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
     stk::mesh::EntityRank type = stk::io::part_primary_entity_rank(part);
-    
+
     stk::mesh::Selector own = meta.locally_owned_part();
     stk::mesh::Selector selector = part & own;
     if (anded_selector) selector &= *anded_selector;
-    
+
     get_selected_entities(selector, bulk.buckets(type), entities);
     return entities.size();
   }
@@ -115,26 +115,24 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
       stk::mesh::PartVector add_parts( 1 , sb_part );
 
       size_t side_count = side_ids.size();
-      std::vector<stk::mesh::Entity*> sides(side_count);
+      std::vector<stk::mesh::Entity> sides(side_count);
       for(size_t is=0; is<side_count; ++is) {
-        stk::mesh::Entity* const elem = bulk.get_entity(elem_rank, elem_side[is*2]);
+        stk::mesh::Entity const elem = bulk.get_entity(elem_rank, elem_side[is*2]);
 
         // If NULL, then the element was probably assigned to an
         // element block that appears in the database, but was
         // subsetted out of the analysis mesh. Only process if
         // non-null.
-        if (elem != NULL) {
+        if (elem.is_valid()) {
           // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
           int side_ordinal = elem_side[is*2+1] - 1;
 
-          stk::mesh::Entity* side_ptr = NULL;
-          side_ptr = &stk::mesh::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
-          stk::mesh::Entity& side = *side_ptr;
+          stk::mesh::Entity side = stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
 
           bulk.change_entity_parts( side, add_parts );
-          sides[is] = &side;
+          sides[is] = side;
         } else {
-          sides[is] = NULL;
+          sides[is] = stk::mesh::Entity();
         }
       }
 
@@ -200,7 +198,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 
   Ioss::NodeBlock *nb = node_blocks[0];
 
-  std::vector<stk::mesh::Entity*> nodes;
+  std::vector<stk::mesh::Entity> nodes;
   stk::io::get_entity_list(nb, stk::mesh::MetaData::NODE_RANK, bulk, nodes);
 
   stk::mesh::Field<double,stk::mesh::Cartesian> *coord_field =
@@ -261,12 +259,12 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
       int nodes_per_elem = cell_topo->node_count ;
 
       std::vector<stk::mesh::EntityId> id_vec(nodes_per_elem);
-      std::vector<stk::mesh::Entity*> elements(element_count);
+      std::vector<stk::mesh::Entity> elements(element_count);
 
       for(size_t i=0; i<element_count; ++i) {
         INT *conn = &connectivity[i*nodes_per_elem];
         std::copy(&conn[0], &conn[0+nodes_per_elem], id_vec.begin());
-        elements[i] = &stk::mesh::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
+        elements[i] = stk::mesh::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
       }
 
       // Add all element attributes as fields.
@@ -354,11 +352,11 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dum
       std::vector<INT> node_ids ;
       size_t node_count = entity->get_field_data("ids", node_ids);
 
-      std::vector<stk::mesh::Entity*> nodes(node_count);
+      std::vector<stk::mesh::Entity> nodes(node_count);
       stk::mesh::EntityRank n_rank = stk::mesh::MetaData::NODE_RANK;
       for(size_t i=0; i<node_count; ++i) {
         nodes[i] = bulk.get_entity(n_rank, node_ids[i] );
-        if (nodes[i] != NULL)
+        if (nodes[i].is_valid())
           bulk.declare_entity(n_rank, node_ids[i], add_parts );
       }
 
@@ -407,11 +405,11 @@ void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                     Ioss::Field::RoleType filter_role,
 		    const stk::mesh::Selector *anded_selector=NULL)
 {
-  std::vector<stk::mesh::Entity*> entities;
+  std::vector<stk::mesh::Entity> entities;
   if (io_entity->type() == Ioss::SIDEBLOCK) {
     // Temporary Kluge to handle sideblocks which contain internally generated sides
     // where the "ids" field on the io_entity doesn't work to get the correct side...
-    // NOTE: Could use this method for all entity types, but then need to correctly 
+    // NOTE: Could use this method for all entity types, but then need to correctly
     // specify whether shared entities are included/excluded (See IossBridge version).
     size_t num_sides = get_entities(part, bulk, entities, anded_selector);
     if (num_sides != (size_t)io_entity->get_property("entity_count").get_int()) {
@@ -718,7 +716,7 @@ void internal_process_input_request(Ioss::GroupingEntity *io_entity,
                                     stk::mesh::BulkData &bulk)
 {
   assert(io_entity != NULL);
-  std::vector<stk::mesh::Entity*> entity_list;
+  std::vector<stk::mesh::Entity> entity_list;
   stk::io::get_entity_list(io_entity, entity_rank, bulk, entity_list);
 
   const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);

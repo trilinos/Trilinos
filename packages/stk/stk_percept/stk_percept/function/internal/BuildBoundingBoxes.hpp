@@ -39,7 +39,7 @@ namespace stk
       {
       }
 
-      void init(std::vector<AABoundingBox>& boxes, VectorFieldType *coords_field) 
+      void init(std::vector<AABoundingBox>& boxes, VectorFieldType *coords_field)
       {
         m_boxes(boxes);
         //m_boxes = boxes;
@@ -51,9 +51,9 @@ namespace stk
       }
       void fini_elementOp()
       {
-        m_notInitialized=true;  // force this object to be used only once 
+        m_notInitialized=true;  // force this object to be used only once
       }
-      bool operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+      bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
       {
         if (m_notInitialized)
           throw std::runtime_error("BuildBoundingBoxes::operator(): you must re-construct this object before reusing it");
@@ -64,14 +64,14 @@ namespace stk
         return false;  // never break out of the enclosing loop
       }
 
-      AABoundingBox getBoundingBox(const stk::mesh::Entity& element, const mesh::BulkData& bulkData)
+      AABoundingBox getBoundingBox(const stk::mesh::Entity element, const mesh::BulkData& bulkData)
       {
         double bbox[2*SpatialDim];
         const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
         unsigned numNodes = elem_nodes.size();
         for (unsigned iNode = 0; iNode < numNodes; iNode++)
           {
-            mesh::Entity& node = *elem_nodes[iNode].entity();
+            mesh::Entity node = elem_nodes[iNode].entity();
             double * coord_data = mesh::field_data( *m_coords_field, node);
             if (iNode == 0)
               {
@@ -119,11 +119,11 @@ namespace stk
     template<unsigned SpatialDim>
     std::ostream &operator<<(std::ostream &out, const typename BuildBoundingBoxes<SpatialDim>::AABoundingBox &bbox)
     {
-      out << "bbox_min = { " 
+      out << "bbox_min = { "
           << bbox.lower(0) << ",  "
           << bbox.lower(1) << ",  "
           << bbox.lower(2) << "}  "
-          << "bbox_max = { " 
+          << "bbox_max = { "
           << bbox.upper(0) << ",  "
           << bbox.upper(1) << ",  "
           << bbox.upper(2) << "}  ";
@@ -135,11 +135,11 @@ namespace stk
     template<typename BBox_loc>
     std::ostream &operator<<(std::ostream &out, const BBox_loc &bbox)
     {
-      out << "bbox_min = { " 
+      out << "bbox_min = { "
           << bbox.lower(0) << ",  "
           << bbox.lower(1) << ",  "
           << bbox.lower(2) << "}  "
-          << "bbox_max = { " 
+          << "bbox_max = { "
           << bbox.upper(0) << ",  "
           << bbox.upper(1) << ",  "
           << bbox.upper(2) << "}  ";

@@ -28,7 +28,7 @@ namespace {
 void destroy_entity_and_create_particles(
     stk::mesh::fixtures::HexFixture & fixture,
     stk::mesh::Part & skin_part,
-    stk::mesh::Entity * elem
+    stk::mesh::Entity elem
     )
 {
   const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
@@ -40,7 +40,7 @@ void destroy_entity_and_create_particles(
 
   // forumlate request for 8 particles on owning process
   std::vector<size_t> requests(fixture.m_fem_meta.entity_rank_count(), 0);
-  if ( elem != NULL && p_rank == elem->owner_rank() ) {
+  if ( elem.is_valid() && p_rank == elem.owner_rank() ) {
     requests[particle_rank] = 8;
   }
 
@@ -50,7 +50,7 @@ void destroy_entity_and_create_particles(
 
   if ( ! new_particles.empty() ) {
     // Get node relations
-    stk::mesh::PairIterRelation relations = elem->relations();
+    stk::mesh::PairIterRelation relations = elem.relations();
 
     std::vector<stk::mesh::Part*> add_parts;
     add_parts.push_back(&skin_part);
@@ -58,36 +58,36 @@ void destroy_entity_and_create_particles(
     // iterate over the new particles
     for (unsigned i = 0; i != 8; ++i) {
       // add the particles to the skin_part
-      fixture.m_bulk_data.change_entity_parts( *new_particles[i],
-                                             add_parts );
+      fixture.m_bulk_data.change_entity_parts( new_particles[i],
+                                               add_parts );
       // copy fields from nodes to particles
-      fixture.m_bulk_data.copy_entity_fields( *(relations[i].entity()),
-                                            *new_particles[i] );
+      fixture.m_bulk_data.copy_entity_fields( (relations[i].entity()),
+                                              new_particles[i] );
     }
   }
 
   // delete element and entities in closure that have been orphaned
-  if ( elem != NULL ) {
-    stk::mesh::PairIterRelation relations = elem->relations();
+  if ( elem.is_valid() ) {
+    stk::mesh::PairIterRelation relations = elem.relations();
     stk::mesh::EntityVector downward_relations;
 
     for (; relations.first != relations.second;) {
       --relations.second;
-      stk::mesh::Entity * current_entity = (relations.second->entity());
+      stk::mesh::Entity current_entity = (relations.second->entity());
 
       downward_relations.push_back(current_entity);
     }
 
-    fixture.m_bulk_data.destroy_entity( *elem );
+    fixture.m_bulk_data.destroy_entity( elem );
 
     // destroy the related entities if they are not connected to any
     // higher order entities
     for (stk::mesh::EntityVector::iterator itr = downward_relations.begin();
         itr != downward_relations.end(); ++itr) {
-      stk::mesh::Entity * current_entity = *itr;
+      stk::mesh::Entity current_entity = *itr;
 
-      if (current_entity->relations(element_rank).empty()) {
-        fixture.m_bulk_data.destroy_entity( *current_entity );
+      if (current_entity.relations(element_rank).empty()) {
+        fixture.m_bulk_data.destroy_entity( current_entity );
       }
     }
   }
@@ -130,7 +130,7 @@ bool skinning_use_case_1b(stk::ParallelMachine pm)
 
       stk::mesh::skin_mesh(fixture.m_bulk_data, element_rank, &skin_part);
 
-      stk::mesh::Entity * elem = fixture.elem(ix , iy , iz);
+      stk::mesh::Entity elem = fixture.elem(ix , iy , iz);
 
       destroy_entity_and_create_particles(fixture, skin_part, elem);
     }

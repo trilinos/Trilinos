@@ -18,7 +18,7 @@ class BulkData;
 class Part;
 class Entity;
 
-typedef std::vector<Entity *> EntityVector;
+typedef std::vector<Entity> EntityVector;
 
 /**
  * Skin the entire mesh.

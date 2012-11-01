@@ -24,7 +24,7 @@ using stk::mesh::Entity;
 
 namespace {
 
-bool has_part(const Entity& entity, const Part& part)
+bool has_part(const Entity entity, const Part& part)
 {
   return entity.bucket().member(part);
 }
@@ -57,15 +57,15 @@ bool has_part(const Entity& entity, const Part& part)
   stk::mesh::PartVector parts;                                          \
   parts.push_back(&unranked_part);                                       \
   parts.push_back(&element_rank_part);                                   \
-  Entity& elem = mesh.declare_entity(MetaData::ELEMENT_RANK, 1 /*id*/, parts); \
+  Entity elem = mesh.declare_entity(MetaData::ELEMENT_RANK, 1 /*id*/, parts); \
                                                                         \
   parts.clear();                                                        \
   parts.push_back(&side_rank_part);                                      \
-  Entity& side1 = mesh.declare_entity(meta_data.side_rank(), 1 /*id*/, parts); \
-  Entity& side2 = mesh.declare_entity(meta_data.side_rank(), 2 /*id*/, parts); \
+  Entity side1 = mesh.declare_entity(meta_data.side_rank(), 1 /*id*/, parts); \
+  Entity side2 = mesh.declare_entity(meta_data.side_rank(), 2 /*id*/, parts); \
                                                                         \
   parts.clear();                                                        \
-  Entity& node = mesh.declare_entity(MetaData::NODE_RANK, 1 /*id*/, parts);      \
+  Entity node = mesh.declare_entity(MetaData::NODE_RANK, 1 /*id*/, parts);      \
                                                                         \
   mesh.declare_relation(elem, side1,  0 /*rel id*/);                    \
   mesh.declare_relation(elem, side2,  1 /*rel id*/);                    \

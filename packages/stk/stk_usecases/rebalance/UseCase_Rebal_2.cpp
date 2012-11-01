@@ -42,14 +42,14 @@ namespace {
     {
       for( size_t ielem = 0; ielem < elements.size(); ++ielem )
       {
-        stk::mesh::Entity * elem = elements[ielem];
-        double * elem_weight = field_data( field , *elem );
-        const stk::mesh::PairIterRelation rel = elem->relations( ranks[i] );
+        stk::mesh::Entity elem = elements[ielem];
+        double * elem_weight = field_data( field , elem );
+        const stk::mesh::PairIterRelation rel = elem.relations( ranks[i] );
         const unsigned num_entities = rel.size();
 
         for ( unsigned j = 0 ; j < num_entities ; ++j )
         {
-          stk::mesh::Entity & entity = * rel[j].entity();
+          stk::mesh::Entity entity = rel[j].entity();
           const double * entity_weight = field_data( field , entity );
           elem_weight[0] += entity_weight[0];
         }
@@ -123,8 +123,8 @@ bool test_heavy_nodes( stk::ParallelMachine pm )
 
     for( size_t iface = 0; iface < selected_faces.size(); ++iface )
     {
-      stk::mesh::Entity * face = selected_faces[iface];
-      double * const weight = stk::mesh::field_data( weight_field, *face );
+      stk::mesh::Entity face = selected_faces[iface];
+      double * const weight = stk::mesh::field_data( weight_field, face );
       weight[0] = 10.0;
     }
 
@@ -159,27 +159,27 @@ bool test_heavy_nodes( stk::ParallelMachine pm )
     }
     for( size_t iedge = 0; iedge < selected_edges.size(); ++iedge )
     {
-      stk::mesh::Entity * edge = selected_edges[iedge];
-      double * const weight = stk::mesh::field_data( weight_field, *edge );
+      stk::mesh::Entity edge = selected_edges[iedge];
+      double * const weight = stk::mesh::field_data( weight_field, edge );
       weight[0] = 100.0;
     }
 
     // Finally, give the corner nodes of the x=0 plane a characteristic weight
     selected_nodes.clear();
-    double * weight = stk::mesh::field_data( weight_field, *fixture.node(0, 0, 0) );
+    double * weight = stk::mesh::field_data( weight_field, fixture.node(0, 0, 0) );
     weight[0] = 1000.0;
-    weight = stk::mesh::field_data( weight_field, *fixture.node(0, ny, 0) );
+    weight = stk::mesh::field_data( weight_field, fixture.node(0, ny, 0) );
     weight[0] = 1000.0;
-    weight = stk::mesh::field_data( weight_field, *fixture.node(0, 0, nz) );
+    weight = stk::mesh::field_data( weight_field, fixture.node(0, 0, nz) );
     weight[0] = 1000.0;
-    weight = stk::mesh::field_data( weight_field, *fixture.node(0, ny, nz) );
+    weight = stk::mesh::field_data( weight_field, fixture.node(0, ny, nz) );
     weight[0] = 1000.0;
 
     // Assign element weights
     for( size_t i = 0; i < my_element_ids.size(); ++i )
     {
-      stk::mesh::Entity * elem = bulk.get_entity(element_rank, my_element_ids[i]);
-      double * const e_weight = stk::mesh::field_data( weight_field , *elem );
+      stk::mesh::Entity elem = bulk.get_entity(element_rank, my_element_ids[i]);
+      double * const e_weight = stk::mesh::field_data( weight_field , elem );
       *e_weight = 1.0;
     }
     //

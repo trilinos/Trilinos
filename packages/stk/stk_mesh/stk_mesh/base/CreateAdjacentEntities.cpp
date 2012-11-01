@@ -26,13 +26,13 @@ namespace {
 struct EntitySubcellComponent {
   public:
     EntitySubcellComponent()
-      : entity(NULL)
+      : entity()
       , subcell_rank(0)
       , subcell_id(0)
   {}
 
     EntitySubcellComponent(
-        Entity     * arg_entity,
+        Entity arg_entity,
         EntityRank   arg_subcell_rank,
         unsigned     arg_subcell_id
         )
@@ -41,7 +41,7 @@ struct EntitySubcellComponent {
       , subcell_id(arg_subcell_id)
   {}
 
-    Entity     * entity;
+    Entity entity;
     EntityRank subcell_rank;
     unsigned   subcell_id;
 };
@@ -65,7 +65,7 @@ void get_entities_with_given_subcell(
   for (EntityVector::const_iterator eitr = entities.begin();
        eitr != entities.end(); ++eitr) {
     int local_subcell_num = get_entity_subcell_id(
-      **eitr,
+      *eitr,
       subcell_rank,
       subcell_topology,
       subcell_nodes);
@@ -82,7 +82,7 @@ bool is_degenerate( const CellTopology & topo)
 }
 
 // Check if entity has a specific relation to an entity of subcell_rank
-bool relation_exist( const Entity & entity, EntityRank subcell_rank, RelationIdentifier subcell_id )
+bool relation_exist( const Entity entity, EntityRank subcell_rank, RelationIdentifier subcell_id )
 {
   bool found = false;
   PairIterRelation relations = entity.relations(subcell_rank);
@@ -125,7 +125,7 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
 
         for (size_t i = 0; i<b.size(); ++i) {
 
-          Entity & elem = b[i];
+          Entity elem = b[i];
 
           const unsigned subcell_count = topo.getSubcellCount(subcell_rank);
 
@@ -171,7 +171,7 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
                   adjacent_itr != adjacent_elements.end();
                   ++adjacent_itr)
               {
-                if (adjacent_itr->entity->identifier() < elem.identifier()) {
+                if (adjacent_itr->entity.identifier() < elem.identifier()) {
                   current_elem_has_lowest_id = false;
                   break;
                 }
@@ -257,7 +257,7 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
 
         for (size_t i = 0; i<b.size(); ++i) {
 
-          Entity & elem = b[i];
+          Entity elem = b[i];
 
           const unsigned subcell_count = topo.getSubcellCount(subcell_rank);
 
@@ -302,7 +302,7 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
                   adjacent_itr != adjacent_elements.end();
                   ++adjacent_itr)
               {
-                if (adjacent_itr->entity->identifier() < elem.identifier()) {
+                if (adjacent_itr->entity.identifier() < elem.identifier()) {
                   current_elem_has_lowest_id = false;
                   break;
                 }
@@ -312,11 +312,11 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
               // needs to generate a request to create
               // the subcell
               if (current_elem_has_lowest_id) {
-                Entity & subcell = * requested_entities[subcell_rank][entities_used[subcell_rank]++];
+                Entity subcell = requested_entities[subcell_rank][entities_used[subcell_rank]++];
 
                 //declare the node relations for this subcell
                 for (size_t n = 0; n<subcell_nodes.size(); ++n) {
-                  Entity & node = *subcell_nodes[n];
+                  Entity node = subcell_nodes[n];
                   mesh.declare_relation( subcell, node, n);
                 }
 
@@ -376,7 +376,7 @@ void complete_connectivity( BulkData & mesh )
 
         {
           for (size_t i = 0; i<b.size(); ++i) {
-            Entity & entity = b[i];
+            Entity entity = b[i];
 
             const unsigned subcell_count = topo.getSubcellCount(subcell_rank);
 
@@ -420,8 +420,7 @@ void complete_connectivity( BulkData & mesh )
 
 
                 if ( !adjacent_entities.empty()) {
-
-                  mesh.declare_relation( entity, *adjacent_entities[0].entity, subcell_id);
+                  mesh.declare_relation( entity, adjacent_entities[0].entity, subcell_id);
                 }
               }
             }

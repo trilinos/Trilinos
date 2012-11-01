@@ -45,24 +45,24 @@ namespace {
 const EntityRank NODE_RANK = MetaData::NODE_RANK;
 } // empty namespace
 
-void printEntity(std::ostringstream& msg, Entity *entity)
+void printEntity(std::ostringstream& msg, Entity entity)
 {
-  msg << " :: " << print_entity_key(entity) << ":o[" << entity->owner_rank() << "]:l[" << entity->log_query()
+  msg << " :: " << print_entity_key(entity) << ":o[" << entity.owner_rank() << "]:l[" << entity.log_query()
       << "]:ec[";
-  for ( PairIterEntityComm ec = entity->comm() ; ! ec.empty() ; ++ec ) {
+  for ( PairIterEntityComm ec = entity.comm() ; ! ec.empty() ; ++ec ) {
     msg << "(" << ec->ghost_id << "," << ec->proc << ")";
   }
   msg << "]";
 }
 
-void printNode(std::ostringstream& msg, Entity *node)
+void printNode(std::ostringstream& msg, Entity node)
 {
   printEntity(msg, node);
-  PairIterRelation rels = node->relations();
+  PairIterRelation rels = node.relations();
   for (unsigned i = 0; i < rels.size(); i++)
     {
-      Entity *entity = rels[i].entity();
-      if (entity->entity_rank() > node->entity_rank())
+      Entity entity = rels[i].entity();
+      if (entity.entity_rank() > node.entity_rank())
         printEntity(msg, entity);
     }
 }
@@ -147,7 +147,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
 
   // Create elements
   const EntityRank elem_rank = MetaData::ELEMENT_RANK;
-  Entity * elem = 0;
+  Entity elem = Entity();
 
   mesh.modification_begin();
 
@@ -155,23 +155,23 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
     {
       if (elems_0[ielem][3] == p_rank)
         {
-          elem = &mesh.declare_entity(elem_rank, elems_0[ielem][0], empty_parts);
+          elem = mesh.declare_entity(elem_rank, elems_0[ielem][0], empty_parts);
 
           EntityVector nodes;
           // Create node on all procs
-          nodes.push_back( &mesh.declare_entity(NODE_RANK, elems_0[ielem][2], empty_parts) );
-          nodes.push_back( &mesh.declare_entity(NODE_RANK, elems_0[ielem][1], empty_parts) );
+          nodes.push_back( mesh.declare_entity(NODE_RANK, elems_0[ielem][2], empty_parts) );
+          nodes.push_back( mesh.declare_entity(NODE_RANK, elems_0[ielem][1], empty_parts) );
 
           // Add relations to nodes
-          mesh.declare_relation( *elem, *nodes[0], 0 );
-          mesh.declare_relation( *elem, *nodes[1], 1 );
+          mesh.declare_relation( elem, nodes[0], 0 );
+          mesh.declare_relation( elem, nodes[1], 1 );
 
         }
     }
 
   mesh.modification_end();
 
-  Entity* node1 = 0;
+  Entity node1 = Entity();
 
   // change node owners
   mesh.modification_begin();
@@ -181,7 +181,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
   for (unsigned inode=0; inode < nnodes; inode++)
     {
       node1 = mesh.get_entity(MetaData::NODE_RANK, nodes_0[inode][0]);
-      if (node1 && node1->owner_rank() == p_rank)
+      if (node1.is_valid() && node1.owner_rank() == p_rank)
         {
           unsigned dest = nodes_0[inode][1];
           EntityProc eproc(node1, dest);
@@ -204,13 +204,13 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
   if (p_rank == 2)
     {
       node1 = mesh.get_entity(MetaData::NODE_RANK, 21);
-      Entity *elem1 = mesh.get_entity(MetaData::ELEMENT_RANK, 201);
-      Entity *elem2 = mesh.get_entity(MetaData::ELEMENT_RANK, 100);
+      Entity elem1 = mesh.get_entity(MetaData::ELEMENT_RANK, 201);
+      Entity elem2 = mesh.get_entity(MetaData::ELEMENT_RANK, 100);
 
-      bool did_it_elem = mesh.destroy_entity(*elem1);
-      did_it_elem = did_it_elem & mesh.destroy_entity(*elem2);
+      bool did_it_elem = mesh.destroy_entity(elem1);
+      did_it_elem = did_it_elem & mesh.destroy_entity(elem2);
       STKUNIT_ASSERT(did_it_elem);
-      bool did_it = mesh.destroy_entity(*node1);
+      bool did_it = mesh.destroy_entity(node1);
       STKUNIT_ASSERT(did_it);
     }
 

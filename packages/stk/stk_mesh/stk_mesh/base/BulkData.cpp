@@ -65,7 +65,7 @@ convert_entity_keys_to_spans( const MetaData & meta )
   return spans ;
 }
 
-void ensure_part_superset_consistency( const Entity& entity )
+void ensure_part_superset_consistency( const Entity entity )
 {
   std::ostringstream errs;
   PartVector parts;
@@ -139,7 +139,7 @@ void BulkData::require_ok_to_modify() const
                    "NOT in the ok-to-modify state" );
 }
 
-void BulkData::require_entity_owner( const Entity & entity ,
+void BulkData::require_entity_owner( const Entity entity ,
                                      unsigned owner ) const
 {
   const bool error_not_owner = owner != entity.owner_rank() ;
@@ -212,7 +212,7 @@ bool BulkData::modification_begin()
 
 //----------------------------------------------------------------------
 
-Entity & BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
+Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
                                    const PartVector & parts )
 {
   require_ok_to_modify();
@@ -223,20 +223,20 @@ Entity & BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
   TraceIfWatching("stk::mesh::BulkData::declare_entity", LOG_ENTITY, key);
   DiagIfWatching(LOG_ENTITY, key, "declaring entity with parts " << parts);
 
-  std::pair< Entity * , bool > result = m_entity_repo.internal_create_entity( key );
+  std::pair< Entity , bool > result = m_entity_repo.internal_create_entity( key );
 
-  Entity* declared_entity = result.first;
+  Entity declared_entity = result.first;
 
   if ( result.second ) {
     // A new application-created entity
-    m_entity_repo.set_entity_owner_rank( *declared_entity, m_parallel_rank);
-    m_entity_repo.set_entity_sync_count( *declared_entity, m_sync_count);
-    DiagIfWatching(LOG_ENTITY, key, "new entity: " << *declared_entity);
+    m_entity_repo.set_entity_owner_rank( declared_entity, m_parallel_rank);
+    m_entity_repo.set_entity_sync_count( declared_entity, m_sync_count);
+    DiagIfWatching(LOG_ENTITY, key, "new entity: " << declared_entity);
   }
   else {
     // An existing entity, the owner must match.
-    require_entity_owner( *declared_entity , m_parallel_rank );
-    DiagIfWatching(LOG_ENTITY, key, "existing entity: " << *declared_entity);
+    require_entity_owner( declared_entity , m_parallel_rank );
+    DiagIfWatching(LOG_ENTITY, key, "existing entity: " << declared_entity);
   }
 
   //------------------------------
@@ -247,14 +247,14 @@ Entity & BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
   std::vector<Part*> add( parts );
   add.push_back( owns );
 
-  change_entity_parts( *declared_entity , add , rem );
+  change_entity_parts( declared_entity , add , rem );
 
   // m_transaction_log.insert_entity ( *(result.first) );
 
-  return *declared_entity ;
+  return declared_entity ;
 }
 
-void BulkData::change_entity_id( EntityId id, Entity & entity)
+void BulkData::change_entity_id( EntityId id, Entity entity)
 {
   require_ok_to_modify();
   require_good_rank_and_id(entity.entity_rank(),id);
@@ -279,7 +279,7 @@ void BulkData::change_entity_id( EntityId id, Entity & entity)
 // 3) Part that does not match the entity rank.
 
 void BulkData::internal_verify_change_parts( const MetaData   & meta ,
-                                             const Entity     & entity ,
+                                             const Entity entity ,
                                              const PartVector & parts ) const
 {
   const std::vector<std::string> & rank_names = meta.entity_rank_names();
@@ -326,7 +326,7 @@ void BulkData::internal_verify_change_parts( const MetaData   & meta ,
 }
 
 void BulkData::internal_verify_change_parts( const MetaData   & meta ,
-                                             const Entity     & entity ,
+                                             const Entity entity ,
                                              const OrdinalVector & parts ) const
 {
   const std::vector<std::string> & rank_names = meta.entity_rank_names();
@@ -471,7 +471,7 @@ void merge_in( std::vector<unsigned> & vec , const OrdinalVector & parts )
 //  modification_end.
 
 void BulkData::internal_change_entity_parts(
-  Entity & entity ,
+  Entity entity ,
   const PartVector & add_parts ,
   const PartVector & remove_parts )
 {
@@ -575,7 +575,7 @@ void BulkData::internal_change_entity_parts(
 }
 
 void BulkData::internal_change_entity_parts(
-  Entity & entity ,
+  Entity entity ,
   const OrdinalVector & add_parts ,
   const OrdinalVector & remove_parts,
   bool always_propagate_internal_changes )
@@ -695,7 +695,7 @@ void BulkData::internal_change_entity_parts(
 
 //----------------------------------------------------------------------
 
-bool BulkData::destroy_entity( Entity & entity )
+bool BulkData::destroy_entity( Entity entity )
 {
   TraceIfWatching("stk::mesh::BulkData::destroy_entity", LOG_ENTITY, entity.key());
   DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
@@ -731,7 +731,7 @@ bool BulkData::destroy_entity( Entity & entity )
   // the higher (back) relations are destroyed first.
   while ( ! entity.relations().empty() ) {
     destroy_relation( entity ,
-                      * entity.relations().back().entity(),
+                      entity.relations().back().entity(),
                       entity.relations().back().identifier());
   }
 
@@ -767,7 +767,7 @@ bool BulkData::destroy_entity( Entity & entity )
 //----------------------------------------------------------------------
 
 void BulkData::generate_new_entities(const std::vector<size_t>& requests,
-                                 std::vector<Entity *>& requested_entities)
+                                 std::vector<Entity>& requested_entities)
 {
   Trace_("stk::mesh::BulkData::generate_new_entities");
 
@@ -800,7 +800,7 @@ void BulkData::generate_new_entities(const std::vector<size_t>& requests,
         kitr = key_types.begin(); kitr != key_types.end(); ++kitr) {
       EntityKey key(&(*kitr));
       require_good_rank_and_id(key.rank(), key.id());
-      std::pair<Entity *, bool> result = m_entity_repo.internal_create_entity(key);
+      std::pair<Entity , bool> result = m_entity_repo.internal_create_entity(key);
 
       //if an entity is declare with the declare_entity function in
       //the same modification cycle as the generate_new_entities
@@ -812,13 +812,13 @@ void BulkData::generate_new_entities(const std::vector<size_t>& requests,
 
       // A new application-created entity
 
-      Entity* new_entity = result.first;
+      Entity new_entity = result.first;
 
-      m_entity_repo.set_entity_owner_rank( *new_entity, m_parallel_rank);
-      m_entity_repo.set_entity_sync_count( *new_entity, m_sync_count);
+      m_entity_repo.set_entity_owner_rank( new_entity, m_parallel_rank);
+      m_entity_repo.set_entity_sync_count( new_entity, m_sync_count);
 
       //add entity to 'owned' part
-      change_entity_parts( *new_entity , add , rem );
+      change_entity_parts( new_entity , add , rem );
       requested_entities.push_back(new_entity);
     }
   }

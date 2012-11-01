@@ -42,7 +42,7 @@ namespace stk {
 
                 for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
                   {
-                    stk::mesh::Entity& element = bucket[i_element];
+                    stk::mesh::Entity element = bucket[i_element];
                     JacobianUtil jacA;
 
                     double A_ = 0.0;
@@ -53,7 +53,7 @@ namespace stk {
 
                     for (unsigned inode=0; inode < num_node; inode++)
                       {
-                        mesh::Entity & node = *elem_nodes[ inode ].entity();
+                        mesh::Entity node = elem_nodes[ inode ].entity();
                         double *spacing = PerceptMesh::field_data(spacing_field, node);
                         double *spacing_counter = PerceptMesh::field_data(spacing_field_counter, node);
                         if (m_type == SPACING_AVE)
@@ -113,7 +113,7 @@ namespace stk {
 
                 for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                   {
-                    stk::mesh::Entity& node = bucket[i_node];
+                    stk::mesh::Entity node = bucket[i_node];
                     double *spacing = PerceptMesh::field_data(spacing_field, node);
                     double *spacing_counter = PerceptMesh::field_data(spacing_field_counter, node);
 

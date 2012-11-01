@@ -84,7 +84,7 @@ namespace stk {
 
 	for (unsigned i = 0; i < num_nodes_in_bucket; i++) {
 
-	  stk::mesh::Entity& node = bucket[i];
+	  stk::mesh::Entity node = bucket[i];
 
 	  const double *coords = stk::mesh::field_data( *eMesh.get_coordinates_field() , node);
 	  double *hess = stk::mesh::field_data( *nodal_hessian_field , node);
@@ -111,10 +111,10 @@ namespace stk {
       /// Client supplies these methods - given an element, which edge, and the nodes on the edge, return instruction on what to do to the edge,
       ///    DO_NOTHING (nothing), DO_REFINE (refine), DO_UNREFINE
       virtual int mark(
-        const stk::mesh::Entity& element, 
+        const stk::mesh::Entity element, 
 	unsigned which_edge, 
-	stk::mesh::Entity & node0, 
-	stk::mesh::Entity & node1,
+	stk::mesh::Entity node0, 
+	stk::mesh::Entity node1,
 	double *coord0, 
 	double *coord1, 
 	std::vector<int>* existing_edge_marks) ;
@@ -142,10 +142,10 @@ namespace stk {
 
     int 
     TestLocalRefinerTri_N_3_EdgeBasedAnisotropic::mark(
-      const stk::mesh::Entity& element, 
+      const stk::mesh::Entity element, 
       unsigned which_edge, 
-      stk::mesh::Entity & node0, 
-      stk::mesh::Entity & node1,
+      stk::mesh::Entity node0, 
+      stk::mesh::Entity node1,
       double *coord0, double *coord1, 
       std::vector<int>* existing_edge_marks)
     {

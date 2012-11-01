@@ -35,25 +35,25 @@ namespace {
 
 // Given an entity, if it's a ghost, insert the closure of the entity
 // into work_list.
-void insert_closure_ghost( Entity * const entity ,
+void insert_closure_ghost( Entity const entity ,
                            const unsigned proc_local ,
-                           std::set<Entity*,EntityLess> & work_list )
+                           std::set<Entity ,EntityLess> & work_list )
 {
-  if ( ! in_owned_closure( *entity , proc_local ) ) {
+  if ( ! in_owned_closure( entity , proc_local ) ) {
     // This entity is a ghost, put it on the work_list
     // along with all ghosts in its closure
 
-    std::pair< std::set<Entity*,EntityLess>::iterator , bool >
+    std::pair< std::set<Entity ,EntityLess>::iterator , bool >
       result = work_list.insert( entity );
 
     if ( result.second ) {
       // This ghost entity is new to the list, traverse its closure.
 
-      const unsigned entity_rank = entity->entity_rank();
+      const unsigned entity_rank = entity.entity_rank();
 
       // Recurse over downward relations
       for ( PairIterRelation
-            irel = entity->relations() ; ! irel.empty() ; ++irel ) {
+            irel = entity.relations() ; ! irel.empty() ; ++irel ) {
         if ( irel->entity_rank() < entity_rank ) {
           insert_closure_ghost( irel->entity() , proc_local ,work_list );
         }
@@ -64,9 +64,9 @@ void insert_closure_ghost( Entity * const entity ,
 
 // Given an entity, insert the closures of every entity that has this entity
 // in its closure. Only ghosts will be inserted.
-void insert_transitive_ghost( Entity * const entity ,
+void insert_transitive_ghost( Entity const entity ,
                               const unsigned proc_local ,
-                              std::set<Entity*,EntityLess> & work_list )
+                              std::set<Entity ,EntityLess> & work_list )
 {
   insert_closure_ghost( entity , proc_local , work_list );
 
@@ -74,10 +74,10 @@ void insert_transitive_ghost( Entity * const entity ,
   // If this entity is a member of another entity's closure
   // then that other entity is part of the traversal.
 
-  const unsigned entity_rank = entity->entity_rank();
+  const unsigned entity_rank = entity.entity_rank();
 
   // Recurse over upward relations
-  for ( PairIterRelation rel = entity->relations(); ! rel.empty() ; ++rel ) {
+  for ( PairIterRelation rel = entity.relations(); ! rel.empty() ; ++rel ) {
     if ( entity_rank < rel->entity_rank() ) {
       insert_transitive_ghost( rel->entity() , proc_local , work_list );
     }
@@ -93,7 +93,7 @@ void insert_closure_send(
   const EntityProc                  send_entry ,
   std::set<EntityProc,EntityLess> & send_list )
 {
-  ThrowRequireMsg( send_entry.first->log_query() != EntityLogDeleted,
+  ThrowRequireMsg( send_entry.first.log_query() != EntityLogDeleted,
       "Cannot send destroyed entity " << print_entity_key(send_entry.first));
 
   std::pair< std::set<EntityProc,EntityLess>::iterator , bool >
@@ -102,8 +102,8 @@ void insert_closure_send(
   if ( result.second ) {
     // First time this entity was inserted into the send_list.
 
-    const unsigned erank  = send_entry.first->entity_rank();
-    PairIterRelation irel = send_entry.first->relations();
+    const unsigned erank  = send_entry.first.entity_rank();
+    PairIterRelation irel = send_entry.first.relations();
 
     // Recurse over downward relations
     for ( ; ! irel.empty() ; ++irel ) {
@@ -118,7 +118,7 @@ void insert_closure_send(
 
 //----------------------------------------------------------------------
 
-bool member_of_owned_closure( const Entity & e , const unsigned p_rank )
+bool member_of_owned_closure( const Entity e , const unsigned p_rank )
 {
   bool result = p_rank == e.owner_rank();
 
@@ -128,14 +128,14 @@ bool member_of_owned_closure( const Entity & e , const unsigned p_rank )
   for ( PairIterRelation
         irel = e.relations(); ! result && ! irel.empty() ; ++irel ) {
     result = entity_rank  <  irel->entity_rank() &&
-             p_rank == irel->entity()->owner_rank();
+             p_rank == irel->entity().owner_rank();
   }
 
   // Any higher ranking entity member of an owned closure?
   for ( PairIterRelation
         irel = e.relations(); ! result && ! irel.empty() ; ++irel ) {
     result = entity_rank < irel->entity_rank() &&
-             member_of_owned_closure( * irel->entity() , p_rank );
+             member_of_owned_closure( irel->entity() , p_rank );
   }
 
   return result ;
@@ -170,7 +170,7 @@ void clean_and_verify_parallel_change(
   for ( std::vector<EntityProc>::iterator
         i = local_change.begin() ; i != local_change.end() ; ++i ) {
     std::vector<EntityProc>::iterator next = i+1 ;
-    Entity * const entity    = i->first ;
+    Entity const entity    = i->first ;
     const unsigned new_owner = i->second ;
 
     // Verification:
@@ -179,13 +179,13 @@ void clean_and_verify_parallel_change(
     // 3) New owner must exist
     // 4) Cannot grant ownership to two different owners
 
-    const bool bad_null = NULL == entity ;
+    const bool bad_null = !entity.is_valid();
 
     // Cannot change the ownership of an entity that you've already marked as deleted
-    const bool bad_marked_deleted = ! bad_null && EntityLogDeleted == entity->log_query();
+    const bool bad_marked_deleted = ! bad_null && EntityLogDeleted == entity.log_query();
 
     // Cannot change the ownership of an entity you do not own
-    const bool bad_process_not_entity_owner = ! bad_null && entity->owner_rank() != p_rank ;
+    const bool bad_process_not_entity_owner = ! bad_null && entity.owner_rank() != p_rank ;
 
     // New owner must exist
     const bool bad_new_owner_does_not_exist = p_size <= new_owner ;
@@ -203,7 +203,7 @@ void clean_and_verify_parallel_change(
 
       error_msg << "  P" << p_rank << ": " ;
       if ( bad_null ) { error_msg << " NULL ENTITY" ; }
-      else { print_entity_key( error_msg , meta , entity->key() ); }
+      else { print_entity_key( error_msg , meta , entity.key() ); }
       if ( bad_marked_deleted ) { error_msg << " HAS_BEEN_DELETED" ; }
       if ( bad_process_not_entity_owner ) { error_msg << " NOT_CURRENT_OWNER" ; }
       if ( bad_new_owner_does_not_exist ) {
@@ -217,8 +217,8 @@ void clean_and_verify_parallel_change(
     }
     else if ( new_owner == p_rank ) {
       // Eliminate non-changes
-      i->first = NULL ;
-      i->second = 0 ;
+      i->first = Entity();
+      i->second = 0;
     }
   }
 
@@ -234,7 +234,7 @@ void clean_and_verify_parallel_change(
   {
     std::vector<EntityProc>::iterator i = local_change.begin(),
                                       j = local_change.end();
-    i = std::remove( i , j , EntityProc(NULL,0) );
+    i = std::remove( i , j , EntityProc(Entity(), 0) );
     local_change.erase( i , j );
   }
 }
@@ -261,7 +261,7 @@ void generate_parallel_change( const BulkData & mesh ,
   for ( int phase = 0; phase < 2; ++phase) {
     for ( std::vector<EntityProc>::const_iterator
           ip = local_change.begin() ; ip != local_change.end() ; ++ip ) {
-      Entity & entity    = * ip->first ;
+      Entity entity      = ip->first ;
       unsigned new_owner = ip->second;
       comm_procs( entity , procs );
       for ( std::vector<unsigned>::iterator
@@ -292,7 +292,7 @@ void generate_parallel_change( const BulkData & mesh ,
 
       entry.first = mesh.get_entity( key );
 
-      if ( in_receive_ghost( * entry.first ) ) {
+      if ( in_receive_ghost( entry.first ) ) {
         ghosted_change.push_back( entry );
       }
       else {
@@ -349,7 +349,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
   // Request that all ghost entities in the closure of the ghost be deleted.
 
   typedef std::set<EntityProc,EntityLess> EntityProcSet;
-  typedef std::set<Entity*,EntityLess> EntitySet;
+  typedef std::set<Entity ,EntityLess> EntitySet;
 
   // Compute the closure of all the locally changing entities
   EntityProcSet send_closure ;
@@ -384,7 +384,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
     ghosted_change.clear();
 
     std::vector<EntityProc> empty_add ;
-    std::vector<Entity*> remove_modified_ghosts( modified_ghosts.begin() ,
+    std::vector<Entity> remove_modified_ghosts( modified_ghosts.begin() ,
                                                  modified_ghosts.end() );
 
     // Skip 'm_ghosting[0]' which is the shared subset.
@@ -408,19 +408,19 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
           i = local_change.begin() ; i != local_change.end() ; ++i ) {
       // Giving ownership, change the parts first and then
       // the owner rank to pass the ownership test.
-      Entity* entity = i->first;
+      Entity entity = i->first;
 
-      change_entity_parts( *entity , PartVector() , owned );
+      change_entity_parts( entity , PartVector() , owned );
 
-      m_entity_repo.set_entity_owner_rank( *entity, i->second );
+      m_entity_repo.set_entity_owner_rank( entity, i->second );
     }
 
     for ( std::vector<EntityProc>::iterator
           i = shared_change.begin() ; i != shared_change.end() ; ++i ) {
-      Entity* entity = i->first;
-      m_entity_repo.set_entity_owner_rank( *entity, i->second);
+      Entity entity = i->first;
+      m_entity_repo.set_entity_owner_rank( entity, i->second);
       if ( p_rank == i->second ) { // I receive ownership
-        change_entity_parts( *entity , owned , PartVector() );
+        change_entity_parts( entity , owned , PartVector() );
       }
     }
   }
@@ -436,7 +436,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
     for ( std::set<EntityProc,EntityLess>::iterator
           i = send_closure.begin() ; i != send_closure.end() ; ++i ) {
       CommBuffer & buffer = comm.send_buffer( i->second );
-      Entity     & entity = * i->first ;
+      Entity entity = i->first;
       pack_entity_info( buffer , entity );
       pack_field_values( buffer , entity );
     }
@@ -446,7 +446,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
     for ( std::set<EntityProc,EntityLess>::iterator
           i = send_closure.begin() ; i != send_closure.end() ; ++i ) {
       CommBuffer & buffer = comm.send_buffer( i->second );
-      Entity     & entity = * i->first ;
+      Entity entity = i->first;
       pack_entity_info( buffer , entity );
       pack_field_values( buffer , entity );
     }
@@ -477,22 +477,22 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
           remove( parts , meta.locally_owned_part() );
         }
 
-        std::pair<Entity*,bool> result =
+        std::pair<Entity ,bool> result =
           m_entity_repo.internal_create_entity( key );
 
-        Entity* entity = result.first;
+        Entity entity = result.first;
 
-        m_entity_repo.log_created_parallel_copy( *entity );
+        m_entity_repo.log_created_parallel_copy( entity );
 
         // The entity was copied and not created.
 
-        m_entity_repo.set_entity_owner_rank( *entity, owner);
+        m_entity_repo.set_entity_owner_rank( entity, owner);
 
-        internal_change_entity_parts( *entity , parts , PartVector() );
+        internal_change_entity_parts( entity , parts , PartVector() );
 
-        declare_relation( *entity , relations );
+        declare_relation( entity , relations );
 
-        if ( ! unpack_field_values( buf , *entity , error_msg ) ) {
+        if ( ! unpack_field_values( buf , entity , error_msg ) ) {
           ++error_count ;
         }
       }
@@ -507,20 +507,20 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
     // Destroy backwards so as not to invalidate closures in the process.
 
     {
-      Entity * entity = NULL ;
+      Entity entity = Entity();
 
       for ( std::set<EntityProc,EntityLess>::iterator
             i = send_closure.end() ; i != send_closure.begin() ; ) {
 
-        Entity * e = (--i)->first ;
+        Entity e = (--i)->first ;
 
         // The same entity may be sent to more than one process.
         // Only evaluate it once.
 
         if ( entity != e ) {
           entity = e ;
-          if ( ! member_of_owned_closure( *e , p_rank ) ) {
-            ThrowRequireMsg( destroy_entity( *e ),
+          if ( ! member_of_owned_closure( e , p_rank ) ) {
+            ThrowRequireMsg( destroy_entity( e ),
                 "Failed to destroy entity " << print_entity_key(e) );
           }
         }

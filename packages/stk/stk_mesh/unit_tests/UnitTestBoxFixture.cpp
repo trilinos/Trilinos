@@ -101,7 +101,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
 
     const EntityId elem_id =  1 + i + j * ngx + k * ngx * ngy;
 
-    std::vector<Entity*> nodes(8);
+    std::vector<Entity> nodes(8);
     nodes[0] = bulk.get_entity( NODE_RANK, n0 );
     nodes[1] = bulk.get_entity( NODE_RANK, n1 );
     nodes[2] = bulk.get_entity( NODE_RANK, n2 );
@@ -111,16 +111,16 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
     nodes[6] = bulk.get_entity( NODE_RANK, n6 );
     nodes[7] = bulk.get_entity( NODE_RANK, n7 );
 
-    Entity* elem = bulk.get_entity( element_rank, elem_id );
+    Entity elem = bulk.get_entity( element_rank, elem_id );
 
-    std::vector<Entity*> elems ;
+    std::vector<Entity> elems ;
     stk::mesh::get_entities_through_relations( nodes , elems );
     STKUNIT_ASSERT_EQUAL( elems.size() , size_t(1) );
-    STKUNIT_ASSERT_EQUAL( elems[0] , elem );
+    STKUNIT_ASSERT_TRUE( elems[0] == elem );
 
     stk::mesh::get_entities_through_relations(nodes, element_rank, elems);
     STKUNIT_ASSERT_EQUAL( elems.size() , size_t(1) );
-    STKUNIT_ASSERT_EQUAL( elems[0] , elem );
+    STKUNIT_ASSERT_TRUE( elems[0] == elem );
 
   }
   }
@@ -152,8 +152,8 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
   for ( int i = local_box[0][0] ; i <= local_box[0][1] ; ++i ) {
     EntityRank node_type = 0;
     EntityId node_id = 1 + i + j * (ngx+1) + k * (ngx+1) * (ngy+1);
-    Entity * const node = bulk.get_entity( node_type , node_id );
-    STKUNIT_ASSERT( node != NULL );
+    Entity const node = bulk.get_entity( node_type , node_id );
+    STKUNIT_ASSERT( node.is_valid() );
     // Shared if on a processor boundary.
     const bool shared =
       ( k == local_box[2][0] && k != root_box[2][0] ) ||
@@ -163,7 +163,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
       ( i == local_box[0][0] && i != root_box[0][0] ) ||
       ( i == local_box[0][1] && i != root_box[0][1] );
     if (bulk.parallel_size() > 1) {
-      STKUNIT_ASSERT_EQUAL( shared , ! node->sharing().empty() );
+      STKUNIT_ASSERT_EQUAL( shared , ! node.sharing().empty() );
     }
   }
   }
@@ -182,10 +182,10 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
 
                 EntityRank node_type = 0;
                 EntityId node_id = 1 + i + j * (ngx+1) + k * (ngx+1) * (ngy+1);
-                Entity * const node = bulk.get_entity( node_type , node_id );
-                STKUNIT_ASSERT( node != NULL );
+                Entity const node = bulk.get_entity( node_type , node_id );
+                STKUNIT_ASSERT( node.is_valid() );
                 // Must be shared with 'p'
-                stk::mesh::PairIterEntityComm iter = node->sharing();
+                stk::mesh::PairIterEntityComm iter = node.sharing();
                 for ( ; ! iter.empty() && iter->proc != p ; ++iter );
                 STKUNIT_ASSERT( ! iter.empty() );
 
@@ -196,11 +196,11 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
   }
 
   size_t count_shared_entities = 0 ;
-  for (std::vector<Entity*>::const_iterator
+  for (std::vector<Entity>::const_iterator
        i = bulk.entity_comm().begin() ;
        i != bulk.entity_comm().end() ;
        ++i) {
-    const stk::mesh::PairIterEntityComm ec = (**i).sharing();
+    const stk::mesh::PairIterEntityComm ec = i->sharing();
     count_shared_entities += ec.size();
   }
   STKUNIT_ASSERT_EQUAL( count_shared_entities , count_shared_node_pairs );

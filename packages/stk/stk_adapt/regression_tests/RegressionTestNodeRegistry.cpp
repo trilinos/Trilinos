@@ -84,27 +84,26 @@ namespace stk
             stk::mesh::PartVector shared_parts(1,shared_part);
 
             // Create nodes
-            Entity *node=0;
-            node = &mesh.declare_entity(0,
-                                        p_rank+1,
-                                        empty_parts);
+            Entity node = mesh.declare_entity(0,
+                                              p_rank+1,
+                                              empty_parts);
 
 
-            Entity& elem = mesh.declare_entity(elem_rank,
+            Entity elem = mesh.declare_entity(elem_rank,
                                                p_rank+1,
                                                empty_parts);
 
 
             if (p_rank==0 || p_rank==2)
               {
-                node = &mesh.declare_entity(0,
+                node = mesh.declare_entity(0,
                                             2,
                                             empty_parts);
-                mesh.declare_relation(elem, *node, 0);
+                mesh.declare_relation(elem, node, 0);
               }
             else
               {
-                mesh.declare_relation(elem, *node, 0);
+                mesh.declare_relation(elem, node, 0);
               }
 
 
@@ -165,8 +164,8 @@ namespace stk
                   unsigned elem_num_ghost = 5;  // edge #2
                   unsigned elem_20 = 20;
 
-                  stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
-                  stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
+                  stk::mesh::Entity element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local);
+                  stk::mesh::Entity element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
                   if (p_rank == 2)
                     {
                       element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_ghost);
@@ -181,8 +180,8 @@ namespace stk
                   dw() << "P["<<p_rank<<"] elem_num_local = " << elem_num_local << DWENDL;
                   dw() << "P["<<p_rank<<"] elem_num_ghost = " << elem_num_ghost << DWENDL;
 
-                  stk::mesh::Entity& element_local = *element_local_p;
-                  stk::mesh::Entity& element_ghost = *element_ghost_p;
+                  stk::mesh::Entity element_local = element_local_p;
+                  stk::mesh::Entity element_ghost = element_ghost_p;
 
                   std::cout << "P["<<p_rank<<"] element_local isGhost = " << eMesh.isGhostElement(element_local) << " " << element_local << std::endl;
                   std::cout << "P["<<p_rank<<"] element_ghost isGhost = " << eMesh.isGhostElement(element_ghost) << " " << element_ghost << std::endl;
@@ -260,7 +259,7 @@ namespace stk
                       //if (!nodeIds_onSE[0])
                       //  throw std::logic_error("nodeRegistry_regr.parallel_2 logic err3");
 
-                      stk::mesh::Entity*  node   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[0]);
+                      stk::mesh::Entity node   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[0]);
 
                       //EXPECT_EQ(nodeIds_onSE.m_entity_id_vector[0], 42u);
                       EXPECT_EQ(nodeIds_onSE.m_entity_id_vector[0], 41u);
@@ -343,8 +342,8 @@ namespace stk
                   unsigned elem_num_local_proc_1 = elem_num_local;
                   unsigned elem_num_local_proc_2 = elem_num_ghost;
 
-                  stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local_proc_1);
-                  stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local_proc_2);
+                  stk::mesh::Entity element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local_proc_1);
+                  stk::mesh::Entity element_ghost_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local_proc_2);
                   if (p_rank == 2)
                     {
                       element_local_p = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, elem_num_local_proc_2);
@@ -359,8 +358,8 @@ namespace stk
                   dw() << "P["<<p_rank<<"] elem_num_local = " << elem_num_local << DWENDL;
                   dw() << "P["<<p_rank<<"] elem_num_ghost = " << elem_num_ghost << DWENDL;
 
-                  stk::mesh::Entity& element_local = *element_local_p;
-                  stk::mesh::Entity& element_ghost = *element_ghost_p;
+                  stk::mesh::Entity element_local = element_local_p;
+                  stk::mesh::Entity element_ghost = element_ghost_p;
 
                   std::cout << "P["<< p_rank <<"] element_local isGhost = " << eMesh.isGhostElement(element_local) << " " << element_local << std::endl;
                   std::cout << "P["<< p_rank <<"] element_ghost isGhost = " << eMesh.isGhostElement(element_ghost) << " " << element_ghost << std::endl;
@@ -435,9 +434,9 @@ namespace stk
                           iSubDimOrd = 2u;
                         }
                       NodeIdsOnSubDimEntityType& nodeIds_onSE = *(nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[0].first, iSubDimOrd));
-                      if (!nodeIds_onSE[0])
+                      if (!nodeIds_onSE[0].is_valid())
                         throw std::logic_error("nodeRegistry_regr.parallel_2 logic err1");
-                      stk::mesh::Entity*  node   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE[0]->identifier());
+                      stk::mesh::Entity node   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE[0].identifier());
 
                       //EXPECT_EQ(nodeId, 42u);
                       // should be the same node on each proc
@@ -449,10 +448,10 @@ namespace stk
                       if (p_rank)
                         {
                           NodeIdsOnSubDimEntityType& nodeIds_onSE_1 = *(nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[1].first, 0u));
-                          if (!nodeIds_onSE_1[0])
+                          if (!nodeIds_onSE_1[0].is_valid())
                             throw std::logic_error("nodeRegistry_regr.parallel_2 logic err2");
 
-                          stk::mesh::Entity*  node_1   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE_1[0]->identifier());
+                          stk::mesh::Entity node_1   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, nodeIds_onSE_1[0].identifier());
 
                           std::cout << "P[" << p_rank << "] nodeId_1 = " << nodeIds_onSE_1 << " node_1= " << node_1 << std::endl;
 
@@ -483,8 +482,8 @@ namespace stk
                           if (p_rank==1) std::cout << "P["<<p_rank<<"] nodeIds_onSE_1[0]= " << nodeIds_onSE_1.m_entity_id_vector[0] << "should be " << expectedId    << std::endl;
                           if (p_rank==2) std::cout << "P["<<p_rank<<"] nodeIds_onSE_1[0]= " << nodeIds_onSE_1.m_entity_id_vector[0] << "should be " << expectedId_p2 << std::endl;
 
-                          if (p_rank==1) EXPECT_EQ(nodeIds_onSE_1[0]->identifier(), expectedId);
-                          if (p_rank==2) EXPECT_EQ(nodeIds_onSE_1[0]->identifier(), expectedId_p2);
+                          if (p_rank==1) EXPECT_EQ(nodeIds_onSE_1[0].identifier(), expectedId);
+                          if (p_rank==2) EXPECT_EQ(nodeIds_onSE_1[0].identifier(), expectedId_p2);
                         }
 
                     }

@@ -42,7 +42,7 @@ namespace use_cases {
 class GreedySideset : public Partition {
   public :
   struct MeshInfo {
-    std::vector<mesh::Entity *>      mesh_entities;
+    std::vector<mesh::Entity>      mesh_entities;
     const VectorField * nodal_coord_ref ;
     const ScalarField * elem_weight_ref;
     std::vector<unsigned>            dest_proc_ids ;
@@ -60,14 +60,14 @@ class GreedySideset : public Partition {
                          mesh::BulkData   & bulk_data);
   virtual ~GreedySideset();
   virtual void reset_dest_proc_data();
-  virtual void set_mesh_info ( const std::vector<mesh::Entity *> &mesh_entities,
+  virtual void set_mesh_info ( const std::vector<mesh::Entity> &mesh_entities,
                                const VectorField   * nodal_coord_ref,
                                const ScalarField   * elem_weight_ref=NULL);
   virtual void determine_new_partition(bool &RebalancingNeeded);
   virtual unsigned num_elems() const;
   virtual int get_new_partition(stk::mesh::EntityProcVec &new_partition);
   virtual bool partition_dependents_needed()const;
-  bool find_mesh_entity(const mesh::Entity * entity, unsigned & moid) const;
+  bool find_mesh_entity(const mesh::Entity entity, unsigned & moid) const;
   unsigned destination_proc(const unsigned moid) const;
   void set_destination_proc(const unsigned moid, const unsigned proc );
   MeshInfo  mesh_information_;
@@ -89,7 +89,7 @@ void GreedySideset::reset_dest_proc_data() {
   const unsigned size = mesh_information_.mesh_entities.size();
   mesh_information_.dest_proc_ids.assign(size, proc);
 }
-void GreedySideset::set_mesh_info ( const std::vector<mesh::Entity *> &mesh_entities,
+void GreedySideset::set_mesh_info ( const std::vector<mesh::Entity> &mesh_entities,
                                     const VectorField   * nodal_coord_ref,
                                     const ScalarField   * elem_weight_ref){
   MeshInfo mesh_info;
@@ -113,12 +113,12 @@ void GreedySideset::set_mesh_info ( const std::vector<mesh::Entity *> &mesh_enti
 
 unsigned GreedySideset::num_elems() const {return total_number_entities_ ;}
 int GreedySideset::get_new_partition(stk::mesh::EntityProcVec &new_partition){
-std::vector<mesh::Entity*>::iterator i=mesh_information_.mesh_entities.begin();
+std::vector<mesh::Entity>::iterator i=mesh_information_.mesh_entities.begin();
 std::vector<unsigned>     ::iterator j=mesh_information_.dest_proc_ids.begin();
   for (;i != mesh_information_.mesh_entities.end(),
         j != mesh_information_.dest_proc_ids.end();
         ++i,++j) {
-    mesh::Entity * mesh_entity = *i;
+    mesh::Entity mesh_entity = *i;
     unsigned proc = *j;
     mesh::EntityProc et(mesh_entity, proc);
     new_partition.push_back(et);
@@ -127,7 +127,7 @@ std::vector<unsigned>     ::iterator j=mesh_information_.dest_proc_ids.begin();
 }
 bool GreedySideset::partition_dependents_needed()const{return true;}
 
-bool GreedySideset::find_mesh_entity(const mesh::Entity * entity, unsigned & moid) const
+bool GreedySideset::find_mesh_entity(const mesh::Entity entity, unsigned & moid) const
 {
   unsigned len = mesh_information_.mesh_entities.size();
   for(moid = 0; moid < len; ++moid)
@@ -167,16 +167,16 @@ void GreedySideset::determine_new_partition(bool &RebalancingNeeded) {
   const unsigned nSide = sides.size();
   for(unsigned iSide = 0; iSide < nSide; ++iSide)
   {
-    const mesh::Entity & side = *sides[iSide];
+    const mesh::Entity side = sides[iSide];
     const unsigned sideProc = side.owner_rank();
     ThrowRequireMsg(sideProc!=p_rank,
      "When iterating Non-locally owned sides, found a locally owned side.");
 
     stk::mesh::PairIterRelation iElem = side.relations(elem_rank);
     for ( ; iElem.first != iElem.second; ++iElem.first ) {
-      const mesh::Entity & elem = *iElem.first->entity();
+      const mesh::Entity elem = iElem.first->entity();
       unsigned moid;
-      const bool mesh_entity_found = find_mesh_entity(&elem, moid);
+      const bool mesh_entity_found = find_mesh_entity(elem, moid);
       if (mesh_entity_found) {
         const unsigned elemProc = elem.owner_rank();
         ThrowRequireMsg(elemProc==p_rank,
@@ -229,7 +229,7 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
 
   if ( !p_rank ) {
 
-    std::vector<std::vector<stk::mesh::Entity*> > quads(nx);
+    std::vector<std::vector<stk::mesh::Entity> > quads(nx);
     for ( unsigned ix = 0 ; ix < nx ; ++ix ) quads[ix].resize(ny);
 
     const unsigned nnx = nx + 1 ;
@@ -242,24 +242,24 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
         nodes[3] = 1 + ix + ( iy + 1 ) * nnx ;
 
-        stk::mesh::Entity &q = stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
-        quads[ix][iy] = &q;
+        stk::mesh::Entity q = stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
+        quads[ix][iy] = q;
       }
     }
 
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::Entity * e = bulk_data.get_entity( element_rank, elem );
-        double * const e_weight = stk::mesh::field_data( weight_field , *e );
+        stk::mesh::Entity e = bulk_data.get_entity( element_rank, elem );
+        double * const e_weight = stk::mesh::field_data( weight_field , e );
         *e_weight = 1.0;
       }
     }
     for ( unsigned iy = 0 ; iy <= ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix <= nx ; ++ix ) {
         stk::mesh::EntityId nid = 1 + ix + iy * nnx ;
-        stk::mesh::Entity * n = bulk_data.get_entity( node_rank, nid );
-        double * const coord = stk::mesh::field_data( coord_field , *n );
+        stk::mesh::Entity n = bulk_data.get_entity( node_rank, nid );
+        double * const coord = stk::mesh::field_data( coord_field , n );
         coord[0] = .1*ix;
         coord[1] = .1*iy;
         coord[2] = 0;
@@ -287,7 +287,7 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
     const unsigned nSide = sides.size();
     for(unsigned iSide = 0; iSide < nSide; ++iSide)
     {
-      mesh::Entity & side = *sides[iSide];
+      mesh::Entity side = sides[iSide];
       if (side.identifier()==7) {
         bulk_data.change_entity_parts(side, surfaces, empty_remove_parts);
       }
@@ -321,13 +321,13 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
       stk::mesh::MetaData & fmeta = stk::mesh::MetaData::get(bulk_data);
       const stk::mesh::EntityRank side_rank = fmeta.side_rank();
       const stk::mesh::EntityRank elem_rank = stk::mesh::MetaData::ELEMENT_RANK;
-      const mesh::Entity *s = bulk_data.get_entity(side_rank,7);
-      if (s) {
-        const mesh::Entity & side = *s;
+      const mesh::Entity s = bulk_data.get_entity(side_rank,7);
+      if (s.is_valid()) {
+        const mesh::Entity side = s;
         if (p_rank == side.owner_rank()) {
           stk::mesh::PairIterRelation iElem = side.relations(elem_rank);
           for ( ; iElem.first != iElem.second; ++iElem.first ) {
-            const mesh::Entity & elem = *iElem.first->entity();
+            const mesh::Entity elem = iElem.first->entity();
             const unsigned elemProc = elem.owner_rank();
             if (elemProc!=p_rank) {
               std::cout <<p_rank<<" Good: Found element of of side 7 not owned."
@@ -363,13 +363,13 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
     stk::mesh::MetaData & fmeta = stk::mesh::MetaData::get(bulk_data);
     const stk::mesh::EntityRank side_rank = fmeta.side_rank();
     const stk::mesh::EntityRank elem_rank = stk::mesh::MetaData::ELEMENT_RANK;
-    mesh::Entity *s = bulk_data.get_entity(side_rank,7);
-    if (s) {
-      mesh::Entity & side = *s;
+    mesh::Entity s = bulk_data.get_entity(side_rank,7);
+    if (s.is_valid()) {
+      mesh::Entity side = s;
       if (p_rank == side.owner_rank()) {
         stk::mesh::PairIterRelation iElem = side.relations(elem_rank);
         for ( ; iElem.first != iElem.second; ++iElem.first ) {
-          const mesh::Entity & elem = *iElem.first->entity();
+          const mesh::Entity elem = iElem.first->entity();
           const unsigned elemProc = elem.owner_rank();
           if (elemProc!=p_rank) {
             std::cerr <<p_rank<<" Error: Found element of of side 7 not owned:"<<elemProc<<std::endl;

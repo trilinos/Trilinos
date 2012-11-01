@@ -665,10 +665,10 @@ void use_encr_case_1_generate_mesh(
 
             stk::mesh::declare_element( mesh , hex_block , elem_id , node_id );
 
-            mesh::Entity * const elem = mesh.get_entity( stk::mesh::MetaData::ELEMENT_RANK, elem_id );
+            mesh::Entity const elem = mesh.get_entity( stk::mesh::MetaData::ELEMENT_RANK, elem_id );
 
 
-            if (!topoVerifier.isTopologyBad(*elem))
+            if (!topoVerifier.isTopologyBad(elem))
             {
               std::cout << "no bad element and bad element expected" << "\n";
               std::cout.flush();
@@ -702,9 +702,9 @@ void use_encr_case_1_generate_mesh(
     for ( unsigned i = 0 ; i < node_map.size() ; ++i ) {
       const unsigned i3 = i * 3 ;
 
-      mesh::Entity * const node = mesh.get_entity( mesh::MetaData::NODE_RANK , node_map[i] );
+      mesh::Entity const node = mesh.get_entity( mesh::MetaData::NODE_RANK , node_map[i] );
 
-      if ( NULL == node ) {
+      if ( !node.is_valid() ) {
         std::ostringstream msg ;
         msg << "  P:" << mesh.parallel_rank()
             << " ERROR, Node not found: "
@@ -712,7 +712,7 @@ void use_encr_case_1_generate_mesh(
         throw std::runtime_error( msg.str() );
       }
 
-      double * const data = field_data( node_coord_field , *node );
+      double * const data = field_data( node_coord_field , node );
       data[0] = node_coordinates[ i3 + 0 ];
       data[1] = node_coordinates[ i3 + 1 ];
       data[2] = node_coordinates[ i3 + 2 ];

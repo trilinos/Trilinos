@@ -41,7 +41,7 @@ namespace stk {
           {
             bp[0] = this;
           }
-        else 
+        else
           {
           }
 
@@ -50,16 +50,16 @@ namespace stk {
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
         needed_entities.resize(1);
-        //needed_entities[0].first = m_eMesh.edge_rank();   
+        //needed_entities[0].first = m_eMesh.edge_rank();
         needed_entities[0].first = (m_eMesh.get_spatial_dim() == 1 ? stk::mesh::MetaData::ELEMENT_RANK : m_eMesh.edge_rank());
         setToOne(needed_entities);
       }
 
       virtual unsigned getNumNewElemPerElem() { return 1; }
 
-      void 
-      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+      void
+      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
+                        stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
         const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
@@ -73,7 +73,7 @@ namespace stk {
         std::vector<stk::mesh::Part*> remove_parts;
 
         add_parts = m_toParts;
-        
+
 #if 0
         double coord_x[3];
         for (int iedge = 0; iedge < 1; iedge++)
@@ -88,12 +88,12 @@ namespace stk {
             eMesh.createOrGetNode(EDGE_N(iedge), mp);
           }
         // FIXME
-        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), m_primaryEntityRank, 0u);
-        nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), m_primaryEntityRank, 0u);
+        nodeRegistry.makeCentroidCoords(element, m_primaryEntityRank, 0u);
+        nodeRegistry.interpolateFields(element, m_primaryEntityRank, 0u);
 #endif
-        nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), m_primaryEntityRank, 0u);
+        nodeRegistry.addToExistingParts(element, m_primaryEntityRank, 0u);
 
-#define CENTROID_N NN(m_primaryEntityRank,0)  
+#define CENTROID_N NN(m_primaryEntityRank,0)
 
 
         {
@@ -118,7 +118,7 @@ namespace stk {
 
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
-            stk::mesh::Entity& newElement = *(*element_pool);
+            stk::mesh::Entity newElement = *element_pool;
 
             // FIXME
             if (0 && proc_rank_field)
@@ -141,7 +141,7 @@ namespace stk {
             for (int inode=0; inode < 3; inode++)
               {
                 stk::mesh::EntityId eid = elems[ielem][inode];
-                stk::mesh::Entity& node = eMesh.createOrGetNode(eid);
+                stk::mesh::Entity node = eMesh.createOrGetNode(eid);
                 eMesh.get_bulk_data()->declare_relation(newElement, node, inode);
               }
 
@@ -152,7 +152,7 @@ namespace stk {
           }
 
       }
-      
+
     };
 
   }

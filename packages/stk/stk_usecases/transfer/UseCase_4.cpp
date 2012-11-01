@@ -122,14 +122,14 @@ void get_idents(stk::mesh::BulkData &bulk_data,
   ident_vector.clear();
   const stk::mesh::MetaData&   meta_data = stk::mesh::MetaData::get(bulk_data);
 
-  std::vector<stk::mesh::Entity *> entities;
+  std::vector<stk::mesh::Entity> entities;
   stk::mesh::Selector selector = meta_data.locally_owned_part();
   get_selected_entities(selector, bulk_data.buckets(stk::mesh::MetaData::NODE_RANK), entities);
   const size_t num_entities = entities.size();
 
   for (size_t i = 0; i < num_entities; ++i) {
 //    const ParallelIndex::Key   p = entities[i]->key().value();
-    const ParallelIndex::Key   p = entities[i]->key();
+    const ParallelIndex::Key   p = entities[i].key();
     ident_vector.push_back(p);
   }
 }
@@ -304,8 +304,8 @@ use_case_4_driver(stk::ParallelMachine  comm,
     stk::mesh::EntityKey entity_key(processor_map[i].first);
     int to_proc = processor_map[i].second;
 
-    stk::mesh::Entity *entity = domain_bulk_data.get_entity(stk::mesh::entity_rank(entity_key), stk::mesh::entity_id(entity_key));
-    double *entity_coordinates = stk::mesh::field_data(domain_coordinates_field, *entity);
+    stk::mesh::Entity entity = domain_bulk_data.get_entity(stk::mesh::entity_rank(entity_key), stk::mesh::entity_id(entity_key));
+    double *entity_coordinates = stk::mesh::field_data(domain_coordinates_field, entity);
 
     double coord_sum = entity_coordinates[0] + entity_coordinates[1] + entity_coordinates[2];
 
@@ -384,9 +384,9 @@ use_case_4_driver(stk::ParallelMachine  comm,
         while (min >> entity_key >> coord_sum) {
           dw().m(LOG_TRANSFER) << stk::mesh::entity_id(entity_key) << "," << stk::mesh::entity_rank(entity_key) << ": " << coord_sum << dendl;
 
-          stk::mesh::Entity *entity = range_bulk_data.get_entity(stk::mesh::entity_rank(entity_key), stk::mesh::entity_id(entity_key));
+          stk::mesh::Entity entity = range_bulk_data.get_entity(stk::mesh::entity_rank(entity_key), stk::mesh::entity_id(entity_key));
 
-          double *entity_coordinates = stk::mesh::field_data(range_coordinates_field, *entity);
+          double *entity_coordinates = stk::mesh::field_data(range_coordinates_field, entity);
 
           if (coord_sum != entity_coordinates[0] + entity_coordinates[1] + entity_coordinates[2]) {
             static stk::MessageCode x;
@@ -394,7 +394,7 @@ use_case_4_driver(stk::ParallelMachine  comm,
             stk::RuntimeDoomedDeferred(x) << "Incorrect range coordinate sum for entity " << stk::mesh::entity_id(entity_key) << " do not sum to " << coord_sum;
           }
           else {
-            double *entity_coord_sum = stk::mesh::field_data(range_coord_sum_field, *entity);
+            double *entity_coord_sum = stk::mesh::field_data(range_coord_sum_field, entity);
 
             *entity_coord_sum = coord_sum;
           }
@@ -411,12 +411,12 @@ use_case_4_driver(stk::ParallelMachine  comm,
   {
     const stk::mesh::MetaData&   meta_data = stk::mesh::MetaData::get(range_bulk_data);
 
-    std::vector<stk::mesh::Entity *> entities;
+    std::vector<stk::mesh::Entity> entities;
     stk::mesh::Selector selector = meta_data.locally_owned_part();
     get_selected_entities(selector, range_bulk_data.buckets(stk::mesh::MetaData::NODE_RANK), entities);
     const size_t num_entities = entities.size();
     for (size_t i = 0; i < num_entities; ++i) {
-      const stk::mesh::Entity &entity = *entities[i];
+      const stk::mesh::Entity entity = entities[i];
 
       double *entity_coordinates = stk::mesh::field_data(range_coordinates_field, entity);
       double *entity_coord_sum = stk::mesh::field_data(range_coord_sum_field, entity);

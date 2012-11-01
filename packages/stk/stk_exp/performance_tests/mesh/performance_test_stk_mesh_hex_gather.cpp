@@ -40,14 +40,14 @@ void gather_hex( const Selector & element_select,
     BucketIterator ent_end   = (*b_iter)->end();
 
     for (BucketIterator ent_iter = ent_begin; ent_iter != ent_end; ++ent_iter) {
-      Entity& elem = *ent_iter;
+      Entity elem = *ent_iter;
       PairIterRelation node_relations = elem.relations(node_rank);
       const size_t num_nodes = node_relations.size();
       elem_node_coords.resize(num_nodes*3, 0.0);
       size_t offset = 0;
 
       for ( ; !node_relations.empty() ; ++node_relations ) {
-        Entity& node = *(node_relations->entity());
+        Entity node = node_relations->entity();
         double * node_coords = field_data(coordinates, node);
         elem_node_coords[offset++] = node_coords[0];
         elem_node_coords[offset++] = node_coords[1];

@@ -83,7 +83,7 @@ DofMapper::add_dof_mappings(const stk::mesh::BulkData& mesh_bulk,
     int num_ids = 0;
 
     for(; iter != iter_end; ++iter) {
-      stk::mesh::Entity& entity = *iter;
+      stk::mesh::Entity entity = *iter;
       ids[num_ids++] = impl::entityid_to_int(entity.identifier());
     }
 
@@ -94,18 +94,18 @@ DofMapper::add_dof_mappings(const stk::mesh::BulkData& mesh_bulk,
   std::vector<int> shared_ids;
   std::vector<int> sharing_procs;
 
-  const std::vector<stk::mesh::Entity*>& entity_comm = mesh_bulk.entity_comm();
+  const std::vector<stk::mesh::Entity>& entity_comm = mesh_bulk.entity_comm();
   for(size_t i=0; i<entity_comm.size(); ++i) {
-    stk::mesh::Entity* ent = entity_comm[i] ;
+    stk::mesh::Entity ent = entity_comm[i] ;
 
     //we only care about entities of the right type, and which have data for 'field'.
-    if (ent->entity_rank() != ent_type) continue;
-    if (!stk::mesh::field_data_valid(field, *ent)) continue;
+    if (ent.entity_rank() != ent_type) continue;
+    if (!stk::mesh::field_data_valid(field, ent)) continue;
 
-    const stk::mesh::PairIterEntityComm ec = ent->sharing();
+    const stk::mesh::PairIterEntityComm ec = ent.sharing();
 
     for ( size_t j = 0 ; j < ec.size() ; ++j ) {
-      shared_ids.push_back(impl::entityid_to_int(ent->identifier()));
+      shared_ids.push_back(impl::entityid_to_int(ent.identifier()));
       sharing_procs.push_back(ec[j].proc);
     }
   }

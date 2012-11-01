@@ -323,7 +323,7 @@ const stk::mesh::FieldBase *declare_ioss_field(stk::mesh::MetaData &meta,
 template <typename T>
 void internal_field_data_from_ioss(const Ioss::Field &io_field,
                                    const stk::mesh::FieldBase *field,
-                                   std::vector<stk::mesh::Entity*> &entities,
+                                   std::vector<stk::mesh::Entity> &entities,
                                    Ioss::GroupingEntity *io_entity,
                                    T /*dummy */)
 {
@@ -347,8 +347,8 @@ void internal_field_data_from_ioss(const Ioss::Field &io_field,
   for (size_t i=0; i < entity_count; ++i) {
     /// \todo REFACTOR Is there a way to get the data from a
     /// "FieldBase*" field as a T* without the cast?
-    if (entities[i] != NULL) {
-      T *fld_data = (T*)stk::mesh::field_data(*field, *entities[i]);
+    if (entities[i].is_valid()) {
+      T *fld_data = (T*)stk::mesh::field_data(*field, entities[i]);
       assert(fld_data != NULL);
       for(size_t j=0; j<field_component_count; ++j) {
         fld_data[j] = io_field_data[i*field_component_count+j];
@@ -360,7 +360,7 @@ void internal_field_data_from_ioss(const Ioss::Field &io_field,
 template <typename T>
 void internal_field_data_to_ioss(const Ioss::Field &io_field,
                                  const stk::mesh::FieldBase *field,
-                                 std::vector<stk::mesh::Entity*> &entities,
+                                 std::vector<stk::mesh::Entity> &entities,
                                  Ioss::GroupingEntity *io_entity,
                                  T /*dummy */)
 {
@@ -372,8 +372,8 @@ void internal_field_data_to_ioss(const Ioss::Field &io_field,
   for (size_t i=0; i < entity_count; ++i) {
     /// \todo REFACTOR Is there a way to get the data from a
     /// "FieldBase*" field as a T* without the cast?
-    if (entities[i] != NULL) {
-      T *fld_data = (T*)stk::mesh::field_data(*field, *entities[i]);
+    if (entities[i].is_valid()) {
+      T *fld_data = (T*)stk::mesh::field_data(*field, entities[i]);
       assert(fld_data != NULL);
       for(size_t j=0; j<field_component_count; ++j) {
         io_field_data[i*field_component_count+j] = fld_data[j];
@@ -903,7 +903,7 @@ template <typename INT>
 void get_entity_list(Ioss::GroupingEntity *io_entity,
                      stk::mesh::EntityRank part_type,
                      const stk::mesh::BulkData &bulk,
-                     std::vector<stk::mesh::Entity*> &entities, INT /*dummy*/)
+                     std::vector<stk::mesh::Entity> &entities, INT /*dummy*/)
 {
   std::vector<INT> ids ;
   io_entity->get_field_data("ids", ids);
@@ -919,7 +919,7 @@ void get_entity_list(Ioss::GroupingEntity *io_entity,
 void get_entity_list(Ioss::GroupingEntity *io_entity,
                      stk::mesh::EntityRank part_type,
                      const stk::mesh::BulkData &bulk,
-                     std::vector<stk::mesh::Entity*> &entities)
+                     std::vector<stk::mesh::Entity> &entities)
 {
   if (db_api_int_size(io_entity) == 4) {
     get_entity_list(io_entity, part_type, bulk, entities, (int)0);
@@ -929,7 +929,7 @@ void get_entity_list(Ioss::GroupingEntity *io_entity,
 }
 
 void field_data_from_ioss(const stk::mesh::FieldBase *field,
-                          std::vector<stk::mesh::Entity*> &entities,
+                          std::vector<stk::mesh::Entity> &entities,
                           Ioss::GroupingEntity *io_entity,
                           const std::string &io_fld_name)
 {
@@ -964,7 +964,7 @@ void field_data_from_ioss(const stk::mesh::FieldBase *field,
 }
 
 void field_data_to_ioss(const stk::mesh::FieldBase *field,
-                        std::vector<stk::mesh::Entity*> &entities,
+                        std::vector<stk::mesh::Entity> &entities,
                         Ioss::GroupingEntity *io_entity,
                         const std::string &io_fld_name,
                         Ioss::Field::RoleType filter_role)
@@ -1327,7 +1327,7 @@ namespace {
 
 size_t get_entities(stk::mesh::Part &part,
                     const stk::mesh::BulkData &bulk,
-                    std::vector<mesh::Entity*> &entities,
+                    std::vector<mesh::Entity> &entities,
                     bool include_shared,
                     const stk::mesh::Selector *anded_selector)
 {
@@ -1357,7 +1357,7 @@ void write_side_data_to_ioss( Ioss::GroupingEntity & io ,
   //std::cout << "tmp write_side_data_to_ioss part= " << part->name() << std::endl;
   const mesh::MetaData & meta_data = mesh::MetaData::get(*part);
 
-  std::vector<mesh::Entity *> sides ;
+  std::vector<mesh::Entity> sides ;
   size_t num_sides = get_entities(*part, bulk_data, sides, false, anded_selector);
 
   std::vector<INT> elem_side_ids; elem_side_ids.reserve(num_sides*2);
@@ -1365,7 +1365,7 @@ void write_side_data_to_ioss( Ioss::GroupingEntity & io ,
   stk::mesh::EntityRank elem_rank = element_rank(meta_data);
   for(size_t i=0; i<num_sides; ++i) {
 
-    const mesh::Entity &side = *sides[i] ;
+    const mesh::Entity side = sides[i] ;
     const mesh::PairIterRelation side_elem = side.relations( elem_rank );
 
     // Which element to use?
@@ -1376,7 +1376,7 @@ void write_side_data_to_ioss( Ioss::GroupingEntity & io ,
     const mesh::Relation *rel = NULL ;
 
     for ( size_t j = 0 ; j < num_side_elem && ! rel ; ++j ) {
-      const mesh::Entity & elem = *side_elem[j].entity();
+      const mesh::Entity elem = side_elem[j].entity();
 
       if ( elem.bucket().member( meta_data.locally_owned_part() ) &&
            (num_side_elem == 1 || stk::mesh::element_side_polarity(elem, side, side_elem[j].identifier())) ) {
@@ -1390,7 +1390,7 @@ void write_side_data_to_ioss( Ioss::GroupingEntity & io ,
       throw std::runtime_error(oss.str());
     }
 
-    elem_side_ids.push_back(rel->entity()->identifier());
+    elem_side_ids.push_back(rel->entity().identifier());
     elem_side_ids.push_back(rel->identifier() + 1) ; // Ioss is 1-based, mesh is 0-based.
   }
 
@@ -1437,12 +1437,12 @@ void output_node_block(Ioss::NodeBlock &nb,
   // the global->local mapping of nodes for the output database.
   // Similarly for the element "ids" field related to bulk data
   // using element ids.
-  std::vector<mesh::Entity *> nodes ;
+  std::vector<mesh::Entity> nodes ;
   size_t num_nodes = get_entities(part, bulk, nodes, true, anded_selector);
 
   std::vector<INT> node_ids; node_ids.reserve(num_nodes);
   for(size_t i=0; i<num_nodes; ++i) {
-    const mesh::Entity & node = * nodes[i] ;
+    const mesh::Entity node = nodes[i] ;
     node_ids.push_back(node.identifier());
   }
 
@@ -1486,7 +1486,7 @@ void output_element_block(Ioss::ElementBlock *block,
   mesh::Part* part = meta_data.get_part(name);
 
   assert(part != NULL);
-  std::vector<mesh::Entity *> elements;
+  std::vector<mesh::Entity> elements;
   size_t num_elems = get_entities(*part, bulk, elements, false, anded_selector);
 
   const CellTopologyData * cell_topo =
@@ -1506,12 +1506,12 @@ void output_element_block(Ioss::ElementBlock *block,
   stk::mesh::EntityRank no_rank = node_rank(meta_data);
   for (size_t i = 0; i < num_elems; ++i) {
 
-    elem_ids.push_back(elements[i]->identifier());
+    elem_ids.push_back(elements[i].identifier());
 
-    const mesh::PairIterRelation elem_nodes = elements[i]->relations(no_rank);
+    const mesh::PairIterRelation elem_nodes = elements[i].relations(no_rank);
 
     for (size_t j = 0; j < nodes_per_elem; ++j) {
-      connectivity.push_back(elem_nodes[j].entity()->identifier());
+      connectivity.push_back(elem_nodes[j].entity().identifier());
     }
   }
 
@@ -1551,12 +1551,12 @@ void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk,
   stk::mesh::Part* part = meta_data.get_part(name);
   assert(part != NULL);
 
-  std::vector<stk::mesh::Entity *> nodes ;
+  std::vector<stk::mesh::Entity> nodes ;
   size_t num_nodes = get_entities(*part, bulk, nodes, true, anded_selector);
 
   std::vector<INT> node_ids; node_ids.reserve(num_nodes);
   for(size_t i=0; i<num_nodes; ++i) {
-    const stk::mesh::Entity & node = * nodes[i] ;
+    const stk::mesh::Entity node = nodes[i] ;
     node_ids.push_back(node.identifier());
   }
 

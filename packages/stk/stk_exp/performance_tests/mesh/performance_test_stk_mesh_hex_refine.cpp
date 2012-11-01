@@ -48,11 +48,11 @@ namespace {
     std::cout << "nid_start = " << nid_start << " nid_end= " << nid_end << " diff= " << nid_end - nid_start << std::endl;
     std::cout << "eid_start = " << eid_start << " eid_end= " << eid_end << " diff= " << eid_end - eid_start << std::endl;
 
-    boost::unordered_map<unsigned, Entity*> node_map;
+    boost::unordered_map<unsigned, Entity> node_map;
 
     for(unsigned nid=nid_start; nid<nid_end; ++nid) {
-      Entity *key = &bulk.declare_entity(0, nid, add_parts);
-      node_map[nid] = key;
+      Entity e = bulk.declare_entity(0, nid, add_parts);
+      node_map[nid] = e;
     }
 
     for (unsigned entity_id = eid_start; entity_id < eid_end; ++entity_id)  {
@@ -92,7 +92,7 @@ namespace {
 
 #if 0
       for (unsigned i = 0; i<8; ++i) {
-        stk::mesh::Entity * const node = bulk.get_entity( MetaData::NODE_RANK , elem_node[i] );
+        stk::mesh::Entity const node = bulk.get_entity( MetaData::NODE_RANK , elem_node[i] );
         bulk.change_entity_parts(*node, add_parts);
 
         ThrowRequireMsg( node != NULL, "found null node in create_entities");

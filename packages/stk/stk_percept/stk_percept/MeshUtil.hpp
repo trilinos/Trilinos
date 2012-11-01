@@ -41,17 +41,17 @@ namespace stk {
 
       // low-level support methods
       
-      static void fillSideNodes(stk::mesh::Entity& element, unsigned iside, std::vector<stk::mesh::EntityId>& side_nodes);
+      static void fillSideNodes(stk::mesh::Entity element, unsigned iside, std::vector<stk::mesh::EntityId>& side_nodes);
 
-      static void fillSideNodes(stk::mesh::Entity& element, unsigned iside, std::vector<stk::mesh::Entity *>& side_nodes);
+      static void fillSideNodes(stk::mesh::Entity element, unsigned iside, std::vector<stk::mesh::Entity>& side_nodes);
 
-      static double triFaceArea(percept::PerceptMesh& eMesh, stk::mesh::Entity& element, unsigned iside);
+      static double triFaceArea(percept::PerceptMesh& eMesh, stk::mesh::Entity element, unsigned iside);
 
       static bool nodesMatch(  std::vector<stk::mesh::EntityId>& side1, std::vector<stk::mesh::EntityId>& side2, bool reverse=false);
 
-      static bool sharesFace(stk::mesh::Entity& element1, stk::mesh::Entity& element2, unsigned& iside1, unsigned& iside2);
+      static bool sharesFace(stk::mesh::Entity element1, stk::mesh::Entity element2, unsigned& iside1, unsigned& iside2);
 
-      static bool facesConsistent1(percept::PerceptMesh& eMesh, stk::mesh::Entity& element1, stk::mesh::Entity& element2);
+      static bool facesConsistent1(percept::PerceptMesh& eMesh, stk::mesh::Entity element1, stk::mesh::Entity element2);
 
     }; 
   }

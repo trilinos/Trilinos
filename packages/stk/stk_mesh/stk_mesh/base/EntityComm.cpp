@@ -14,19 +14,20 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/EntityComm.hpp>
+#include <stk_mesh/base/Relation.hpp>
 
 namespace stk {
 namespace mesh {
 
 //----------------------------------------------------------------------------
 
-bool in_shared( const Entity & entity )
+bool in_shared( const Entity entity )
 {
   PairIterEntityComm ec = entity.comm();
   return ! ec.empty() && ec.front().ghost_id == 0 ;
 }
 
-bool in_shared( const Entity & entity , unsigned proc )
+bool in_shared( const Entity entity , unsigned proc )
 {
   for ( PairIterEntityComm ec = entity.comm();
         ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
@@ -37,7 +38,7 @@ bool in_shared( const Entity & entity , unsigned proc )
   return false ;
 }
 
-bool in_receive_ghost( const Entity & entity )
+bool in_receive_ghost( const Entity entity )
 {
   // Ghost communication with owner.
   PairIterEntityComm ec = entity.comm();
@@ -45,12 +46,12 @@ bool in_receive_ghost( const Entity & entity )
                          ec.front().proc == entity.owner_rank();
 }
 
-bool in_receive_ghost( const Ghosting & ghost , const Entity & entity )
+bool in_receive_ghost( const Ghosting & ghost , const Entity entity )
 {
   return in_ghost( ghost , entity , entity.owner_rank() );
 }
 
-bool in_send_ghost( const Entity & entity )
+bool in_send_ghost( const Entity entity )
 {
   // Ghost communication with non-owner.
   PairIterEntityComm ec = entity.comm();
@@ -58,7 +59,7 @@ bool in_send_ghost( const Entity & entity )
                          ec.back().proc != entity.owner_rank();
 }
 
-bool in_send_ghost( const Entity & entity , unsigned proc )
+bool in_send_ghost( const Entity entity , unsigned proc )
 {
   for ( PairIterEntityComm ec = entity.comm(); ! ec.empty() ; ++ec ) {
     if ( ec->ghost_id != 0 &&
@@ -70,7 +71,7 @@ bool in_send_ghost( const Entity & entity , unsigned proc )
   return false ;
 }
 
-bool in_ghost( const Ghosting & ghost , const Entity & entity , unsigned p )
+bool in_ghost( const Ghosting & ghost , const Entity entity , unsigned p )
 {
   // Ghost communication from owner.
   EntityCommInfo tmp( ghost.ordinal() , p );
@@ -84,7 +85,7 @@ bool in_ghost( const Ghosting & ghost , const Entity & entity , unsigned p )
 /** \brief  Is in owned closure of the given process,
  *          typically the local process.
  */
-bool in_owned_closure( const Entity & entity , unsigned proc )
+bool in_owned_closure( const Entity entity , unsigned proc )
 {
   // TODO: This function has a potential performance problem if relations
   // are dense.
@@ -99,14 +100,14 @@ bool in_owned_closure( const Entity & entity , unsigned proc )
     for ( PairIterRelation
           rel = entity.relations(); ! result && ! rel.empty() ; ++rel ) {
       result =  erank < rel->entity_rank() &&
-                in_owned_closure( * rel->entity(), proc);
+                in_owned_closure( rel->entity(), proc);
     }
   }
 
   return result ;
 }
 
-void comm_procs( const Entity & entity , std::vector<unsigned> & procs )
+void comm_procs( const Entity entity , std::vector<unsigned> & procs )
 {
   procs.clear();
   for ( PairIterEntityComm ec = entity.comm(); ! ec.empty() ; ++ec ) {
@@ -119,7 +120,7 @@ void comm_procs( const Entity & entity , std::vector<unsigned> & procs )
 }
 
 void comm_procs( const Ghosting & ghost ,
-                 const Entity & entity , std::vector<unsigned> & procs )
+                 const Entity entity , std::vector<unsigned> & procs )
 {
   procs.clear();
   for ( PairIterEntityComm ec = entity.comm(); ! ec.empty() ; ++ec ) {
@@ -132,7 +133,7 @@ void comm_procs( const Ghosting & ghost ,
 
 //----------------------------------------------------------------------------
 
-void pack_entity_info( CommBuffer & buf , const Entity & entity )
+void pack_entity_info( CommBuffer & buf , const Entity entity )
 {
   const EntityKey & key   = entity.key();
   const unsigned    owner = entity.owner_rank();
@@ -150,7 +151,7 @@ void pack_entity_info( CommBuffer & buf , const Entity & entity )
   buf.pack<unsigned>( nrel );
 
   for ( unsigned i = 0 ; i < nrel ; ++i ) {
-    buf.pack<EntityKey>( relations[i].entity()->key() );
+    buf.pack<EntityKey>( relations[i].entity().key() );
     buf.pack<unsigned>( relations[i].identifier() );
     buf.pack<unsigned>( relations[i].attribute() );
   }
@@ -191,10 +192,10 @@ void unpack_entity_info(
     buf.unpack<EntityKey>( rel_key );
     buf.unpack<unsigned>( rel_id );
     buf.unpack<unsigned>( rel_attr );
-    Entity * const entity =
+    Entity const entity =
       mesh.get_entity( entity_rank(rel_key), entity_id(rel_key) );
-    if ( entity && EntityLogDeleted != entity->log_query() ) {
-      Relation rel( * entity, rel_id );
+    if ( entity.is_valid() && EntityLogDeleted != entity.log_query() ) {
+      Relation rel( entity, rel_id );
       rel.set_attribute(rel_attr);
       relations.push_back( rel );
     }
@@ -204,7 +205,7 @@ void unpack_entity_info(
 
 //----------------------------------------------------------------------
 
-void pack_field_values( CommBuffer & buf , Entity & entity )
+void pack_field_values( CommBuffer & buf , Entity entity )
 {
   const Bucket   & bucket = entity.bucket();
   const BulkData & mesh   = BulkData::get(bucket);
@@ -232,7 +233,7 @@ void pack_field_values( CommBuffer & buf , Entity & entity )
 }
 
 bool unpack_field_values(
-  CommBuffer & buf , Entity & entity , std::ostream & error_msg )
+  CommBuffer & buf , Entity entity , std::ostream & error_msg )
 {
   const Bucket   & bucket = entity.bucket();
   const BulkData & mesh   = BulkData::get(bucket);

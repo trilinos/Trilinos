@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <iterator>
 
 namespace stk {
 namespace mesh {
@@ -20,10 +21,12 @@ namespace mesh {
 // Incrementing this iterator will take us to the next valid low-level iterator, skipping past
 // empty high-level containers, until the end iterator.
 template<typename HighLevelItrType, typename LowLevelItrType>
-class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, typename LowLevelItrType::value_type>
+class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, typename std::iterator_traits<LowLevelItrType>::value_type>
 {
  public:
   typedef TwoLevelIterator<HighLevelItrType, LowLevelItrType>  self;
+  typedef typename std::iterator_traits<LowLevelItrType>::reference reference;
+  typedef typename std::iterator_traits<LowLevelItrType>::pointer pointer;
 
   // Construct an iterator from a starting point specified by high_itr and low_itr
   TwoLevelIterator(HighLevelItrType high_itr, LowLevelItrType low_itr, HighLevelItrType high_end_itr) :
@@ -74,12 +77,12 @@ class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, typenam
     return *this;
   }
 
-  typename LowLevelItrType::reference operator*() const
+  reference operator*() const
   {
     return *m_low_itr;
   }
 
-  typename LowLevelItrType::pointer operator->() const
+  pointer operator->() const
   {
     return &*m_low_itr;
   }
@@ -261,8 +264,8 @@ class SelectedBucketIterator : public std::iterator<std::forward_iterator_tag,
 };
 
 // Iterator for iterating over all entities within each bucket of a vector of buckets
-typedef TwoLevelIterator<std::vector<Bucket*>::const_iterator, BucketPtrIterator> BucketVectorEntityIterator;
-typedef std::pair<BucketVectorEntityIterator, BucketVectorEntityIterator>         BucketVectorEntityIteratorRange;
+typedef TwoLevelIterator<std::vector<Bucket*>::const_iterator, BucketIterator> BucketVectorEntityIterator;
+typedef std::pair<BucketVectorEntityIterator, BucketVectorEntityIterator>      BucketVectorEntityIteratorRange;
 
 // Iterator for iterating over selected buckets within a vector of buckets
 typedef SelectedBucketIterator<std::vector<Bucket*>::const_iterator>                      SelectedBucketVectorIterator;
@@ -270,7 +273,7 @@ typedef SelectedBucketIterator<std::vector<Bucket*>::const_iterator>            
 typedef std::pair<SelectedBucketVectorIterator, SelectedBucketVectorIterator>             SelectedBucketVectorIteratorRange;
 
 // Iterator for iterating over all entities within each *selected* bucket of a vector of buckets
-typedef TwoLevelIterator<SelectedBucketVectorIterator, BucketPtrIterator>                 SelectedBucketVectorEntityIterator;
+typedef TwoLevelIterator<SelectedBucketVectorIterator, BucketIterator>                 SelectedBucketVectorEntityIterator;
 typedef std::pair<SelectedBucketVectorEntityIterator, SelectedBucketVectorEntityIterator> SelectedBucketVectorEntityIteratorRange;
 
 // Iterator for iterating over all buckets in a vector of vectors of buckets
@@ -283,11 +286,11 @@ typedef SelectedBucketIterator<AllBucketsIterator>                         AllSe
 typedef std::pair<AllSelectedBucketsIterator, AllSelectedBucketsIterator>  AllSelectedBucketsRange;
 
 // Iterator for iterating over all entities within each bucket of a bucket range
-typedef TwoLevelIterator<AllBucketsIterator, BucketPtrIterator>         BucketRangeEntityIterator;
+typedef TwoLevelIterator<AllBucketsIterator, BucketIterator>            BucketRangeEntityIterator;
 typedef std::pair<BucketRangeEntityIterator, BucketRangeEntityIterator> BucketRangeEntityIteratorRange;
 
 // Iterator for iterating over all *selected* entities withing a bucket range
-typedef TwoLevelIterator<AllSelectedBucketsIterator, BucketPtrIterator>                  SelectedBucketRangeEntityIterator;
+typedef TwoLevelIterator<AllSelectedBucketsIterator, BucketIterator>                     SelectedBucketRangeEntityIterator;
 typedef std::pair<SelectedBucketRangeEntityIterator, SelectedBucketRangeEntityIterator>  SelectedBucketRangeEntityIteratorRange;
 
 //

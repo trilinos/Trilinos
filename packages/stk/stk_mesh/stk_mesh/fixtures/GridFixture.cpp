@@ -59,7 +59,7 @@ void GridFixture::generate_grid()
   const unsigned p_rank = m_bulk_data.parallel_rank();
   const unsigned p_size = m_bulk_data.parallel_size();
   const EntityRank element_rank = MetaData::ELEMENT_RANK;
-  std::vector<Entity*> all_entities;
+  std::vector<Entity> all_entities;
 
   // assign ids, quads, nodes, then shells
   // (we need this order to be this way in order for our connectivity setup to  work)
@@ -96,13 +96,13 @@ void GridFixture::generate_grid()
       unsigned face_id = quad_face_ids[i];
       unsigned row = (face_id - 1) / num_nodes_per_quad;
 
-      Entity& face = m_bulk_data.declare_entity(element_rank, face_id, face_parts);
+      Entity face = m_bulk_data.declare_entity(element_rank, face_id, face_parts);
 
       unsigned node_id = num_quad_faces + face_id + row;
 
       for (unsigned chg_itr = 0; chg_itr < num_nodes_per_quad; ++chg_itr) {
         node_id += stencil_for_4x4_quad_mesh[chg_itr];
-        Entity& node = m_bulk_data.declare_entity(MetaData::NODE_RANK, node_id, no_parts);
+        Entity node = m_bulk_data.declare_entity(MetaData::NODE_RANK, node_id, no_parts);
         m_bulk_data.declare_relation( face , node , chg_itr);
       }
     }

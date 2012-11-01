@@ -12,7 +12,7 @@ namespace stk {
     /**
      * An IEdgeAdapter is an abstract base class for derived classes that are required to overload the mark method,
      *    which provides info such as the element the edge belongs to, which edge ordinal it is, the nodes of the edge
-     *    and the edge coordinates.  
+     *    and the edge coordinates.
      */
     class IEdgeAdapter : public IAdapter
     {
@@ -27,31 +27,31 @@ namespace stk {
       /// Client supplies these methods - given an element, which edge, and the nodes on the edge, return instruction on what to do to the edge,
       ///    DO_NOTHING (nothing), DO_REFINE (refine), DO_UNREFINE
 
-      virtual int mark(const stk::mesh::Entity& element, unsigned which_edge, stk::mesh::Entity & node0, stk::mesh::Entity & node1,
+      virtual int mark(const stk::mesh::Entity element, unsigned which_edge, stk::mesh::Entity node0, stk::mesh::Entity node1,
                            double *coord0, double *coord1, std::vector<int>* existing_edge_marks) = 0;
 
       /// This convenience method calls mark and if all edges are marked for unrefine, it returns -1 to unrefine the element.
       /// This method can be overriden to allow for an "element-based" determination that doesn't need to visit edges.
-      virtual int markUnrefine(const stk::mesh::Entity& element);
+      virtual int markUnrefine(const stk::mesh::Entity element);
 
-      virtual void 
-      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+      virtual void
+      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element,
                                               vector<NeededEntityType>& needed_entity_ranks);
 
 
     };
 
-    IEdgeAdapter::IEdgeAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
+    IEdgeAdapter::IEdgeAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) :
       IAdapter(eMesh, bp, proc_rank_field)
     {
     }
 
     void IEdgeAdapter::
-    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element,
                                             vector<NeededEntityType>& needed_entity_ranks)
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-                
+
       CellTopology cell_topo(cell_topo_data);
       const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
 
@@ -85,7 +85,7 @@ namespace stk {
               for (unsigned iSubDimOrd = 0; iSubDimOrd < numSubDimNeededEntities; iSubDimOrd++)
                 {
                   bool is_empty = m_nodeRegistry->is_empty( element, needed_entity_rank, iSubDimOrd);
-                  if (!is_empty) 
+                  if (!is_empty)
                     {
                       edge_marks[iSubDimOrd] = 1;
                       ++num_marked;
@@ -97,11 +97,11 @@ namespace stk {
             {
               if (needed_entity_rank == m_eMesh.edge_rank())
                 {
-                  stk::mesh::Entity & node0 = *elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
-                  stk::mesh::Entity & node1 = *elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
+                  stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
+                  stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
                   double * const coord0 = stk::mesh::field_data( *coordField , node0 );
                   double * const coord1 = stk::mesh::field_data( *coordField , node1 );
-                  
+
 
                   int markInfo = mark(element, iSubDimOrd, node0, node1, coord0, coord1, &edge_marks);
 
@@ -115,10 +115,10 @@ namespace stk {
         } // ineed_ent
     }
 
-    int IEdgeAdapter::markUnrefine(const stk::mesh::Entity& element)
+    int IEdgeAdapter::markUnrefine(const stk::mesh::Entity element)
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-                
+
       CellTopology cell_topo(cell_topo_data);
       const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
 
@@ -130,11 +130,11 @@ namespace stk {
       bool unrefAllEdges = true;
       for (unsigned iSubDimOrd = 0; iSubDimOrd < numSubDimNeededEntities; iSubDimOrd++)
         {
-          stk::mesh::Entity & node0 = *elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
-          stk::mesh::Entity & node1 = *elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
+          stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
+          stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
           double * const coord0 = stk::mesh::field_data( *coordField , node0 );
           double * const coord1 = stk::mesh::field_data( *coordField , node1 );
-                  
+
           int markInfo = mark(element, iSubDimOrd, node0, node1, coord0, coord1, 0);
           bool do_unref = markInfo & DO_UNREFINE;
           if (!do_unref)
@@ -155,7 +155,7 @@ namespace stk {
 
       const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
 
-      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
           {
             stk::mesh::Bucket & bucket = **k ;
@@ -163,16 +163,16 @@ namespace stk {
             const unsigned num_entity_in_bucket = bucket.size();
             for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
               {
-                stk::mesh::Entity& element = bucket[ientity];
+                stk::mesh::Entity element = bucket[ientity];
 
                 // FIXME
                 // skip elements that are already a parent (if there's no family tree yet, it's not a parent, so avoid throwing an error is isParentElement)
-                const bool check_for_family_tree = false;  
+                const bool check_for_family_tree = false;
                 bool isParent = m_eMesh.isParentElement(element, check_for_family_tree);
-              
+
                 if (isParent)
                   continue;
-                
+
                 const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
 
                 if (elem_nodes.size() && m_eMesh.isChildWithoutNieces(element, false))
@@ -180,7 +180,7 @@ namespace stk {
                     int markInfo = markUnrefine(element);
                     if (markInfo & DO_UNREFINE)
                       {
-                        elements_to_unref.insert(&element);
+                        elements_to_unref.insert(element);
                         //std::cout << "tmp unref element id= " << element.identifier() << std::endl;
                         //m_eMesh.print_entity(std::cout, element);
                       }

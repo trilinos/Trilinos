@@ -45,9 +45,9 @@ class EntityRepository {
     }
   };
 
-  typedef std::tr1::unordered_map<EntityKey, Entity*, stk_entity_rep_hash, std::equal_to<EntityKey> > EntityMap;
+  typedef std::tr1::unordered_map<EntityKey, Entity , stk_entity_rep_hash, std::equal_to<EntityKey> > EntityMap;
 #else
-  typedef std::map<EntityKey,Entity*> EntityMap;
+  typedef std::map<EntityKey,Entity> EntityMap;
 #endif
 
   public:
@@ -59,7 +59,7 @@ class EntityRepository {
 
     ~EntityRepository();
 
-    Entity * get_entity( const EntityKey &key ) const;
+    Entity get_entity( const EntityKey &key ) const;
 
     iterator begin() const { return m_entities.begin(); }
     iterator end() const { return m_entities.end(); }
@@ -70,13 +70,13 @@ class EntityRepository {
     // or not. If there was already an active entity, the second item in the
     // will be false; otherwise it will be true (even if the Entity was present
     // but marked as destroyed).
-    std::pair<Entity*,bool>
+    std::pair<Entity ,bool>
       internal_create_entity( const EntityKey & key );
 
     /** \brief Log that this entity was created as a parallel copy
       *        of an existing entity.
       */
-    void log_created_parallel_copy( Entity & e );
+    void log_created_parallel_copy( Entity e );
 
     /**
      * The client knows that this entity should be marked as modified. In
@@ -84,39 +84,41 @@ class EntityRepository {
      * knows when it performs operations that modify entities. BulkData should
      * be the only caller of this method.
      */
-    inline void log_modified(Entity & e) const;
+    inline void log_modified(Entity e) const;
 
-    inline void set_entity_owner_rank( Entity & e, unsigned owner_rank);
-    inline void set_entity_sync_count( Entity & e, size_t count);
+    inline void set_entity_owner_rank( Entity e, unsigned owner_rank);
+    inline void set_entity_sync_count( Entity e, size_t count);
 
-    inline void comm_clear( Entity & e) const;
-    inline void comm_clear_ghosting( Entity & e) const;
+    inline void comm_clear( Entity e) const;
+    inline void comm_clear_ghosting( Entity e) const;
 
-    bool erase_ghosting( Entity & e, const Ghosting & ghosts) const;
-    bool erase_comm_info( Entity & e, const EntityCommInfo & comm_info) const;
+    bool erase_ghosting( Entity e, const Ghosting & ghosts) const;
+    bool erase_comm_info( Entity e, const EntityCommInfo & comm_info) const;
 
-    bool insert_comm_info( Entity & e, const EntityCommInfo & comm_info) const;
+    bool insert_comm_info( Entity e, const EntityCommInfo & comm_info) const;
 
-    void change_entity_bucket( Bucket & b, Entity & e, unsigned ordinal);
-    Bucket * get_entity_bucket ( Entity & e ) const;
-    void destroy_later( Entity & e, Bucket* nil_bucket );
+    void change_entity_bucket( Bucket & b, Entity e, unsigned ordinal);
+    Bucket * get_entity_bucket ( Entity e ) const;
+    void destroy_later( Entity e, Bucket* nil_bucket );
 
-    bool destroy_relation( Entity & e_from,
-                           Entity & e_to,
+    bool destroy_relation( Entity e_from,
+                           Entity e_to,
                            const RelationIdentifier local_id);
 
-    void declare_relation( Entity & e_from,
-                           Entity & e_to,
+    void declare_relation( Entity e_from,
+                           Entity e_to,
                            const RelationIdentifier local_id,
                            unsigned sync_count );
 
-    void update_entity_key(EntityKey key, Entity & entity);
+    void update_entity_key(EntityKey key, Entity entity);
 
   private:
     void internal_expunge_entity( EntityMap::iterator i);
 
-    Entity* internal_allocate_entity(EntityKey entity_key);
-    Entity* allocate_entity(bool use_pool);
+    void internal_destroy_entity(Entity entity, bool use_pool);
+
+    Entity internal_allocate_entity(EntityKey entity_key);
+    Entity allocate_entity(bool use_pool);
 
     EntityMap m_entities;
     bool m_use_pool;
@@ -128,43 +130,43 @@ class EntityRepository {
 
 /*---------------------------------------------------------------*/
 
-void EntityRepository::set_entity_sync_count( Entity & e, size_t count)
+void EntityRepository::set_entity_sync_count( Entity e, size_t count)
 {
   TraceIfWatching("stk::mesh::impl::EntityRepository::set_entity_sync_count", LOG_ENTITY, e.key());
 
-  e.m_entityImpl.set_sync_count(count);
+  e.m_entityImpl->set_sync_count(count);
 }
 
-void EntityRepository::set_entity_owner_rank( Entity & e, unsigned owner_rank)
+void EntityRepository::set_entity_owner_rank( Entity e, unsigned owner_rank)
 {
   TraceIfWatching("stk::mesh::impl::EntityRepository::set_entity_owner_rank", LOG_ENTITY, e.key());
   DiagIfWatching(LOG_ENTITY, e.key(), "new owner: " << owner_rank);
 
-  bool changed = e.m_entityImpl.set_owner_rank(owner_rank);
+  bool changed = e.m_entityImpl->set_owner_rank(owner_rank);
   if ( changed ) {
-    e.m_entityImpl.log_modified_and_propagate();
+    e.m_entityImpl->log_modified_and_propagate();
   }
 }
 
-void EntityRepository::comm_clear( Entity & e) const
+void EntityRepository::comm_clear( Entity e) const
 {
   TraceIfWatching("stk::mesh::impl::EntityRepository::comm_clear", LOG_ENTITY, e.key());
 
-  e.m_entityImpl.comm_clear();
+  e.m_entityImpl->comm_clear();
 }
 
-void EntityRepository::comm_clear_ghosting( Entity & e) const
+void EntityRepository::comm_clear_ghosting( Entity e) const
 {
   TraceIfWatching("stk::mesh::impl::EntityRepository::comm_clear_ghosting", LOG_ENTITY, e.key());
 
-  e.m_entityImpl.comm_clear_ghosting();
+  e.m_entityImpl->comm_clear_ghosting();
 }
 
-void EntityRepository::log_modified( Entity & e ) const
+void EntityRepository::log_modified( Entity e ) const
 {
   TraceIfWatching("stk::mesh::impl::EntityRepository::log_modified", LOG_ENTITY, e.key());
 
-  e.m_entityImpl.log_modified_and_propagate();
+  e.m_entityImpl->log_modified_and_propagate();
 }
 
 } // namespace impl

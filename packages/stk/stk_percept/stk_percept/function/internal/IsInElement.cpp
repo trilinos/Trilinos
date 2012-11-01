@@ -15,7 +15,7 @@ namespace stk
 
     IsInElement::IsInElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates) :
       m_found_it(false), m_input_phy_points(input_phy_points), m_found_parametric_coordinates(found_parametric_coordinates),
-      m_foundElement(0)
+      m_foundElement()
     {}
 
     void IsInElement::init_elementOp()
@@ -26,7 +26,7 @@ namespace stk
     {
     }
 
-    bool IsInElement::operator()(const stk::mesh::Entity& element, const mesh::BulkData& bulkData)
+    bool IsInElement::operator()(const stk::mesh::Entity element, const mesh::BulkData& bulkData)
     {
 
       unsigned found_it;
@@ -36,7 +36,7 @@ namespace stk
       if (found_it)
         {
           m_found_it = true;
-          m_foundElement = &element;
+          m_foundElement = element;
           return true;
         }
       else
@@ -47,7 +47,7 @@ namespace stk
      *  Dimensions of input_phy_points = ([P]=1, [D])
      *  Dimensions of found_parametric_coordinates = ([P]=1, [D])
      */
-    void IsInElement::isInElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates, unsigned& found_it, const mesh::Entity& element,
+    void IsInElement::isInElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates, unsigned& found_it, const mesh::Entity element,
                                   const mesh::BulkData& bulkData)
     {
       IntrepidManager::isInElement(input_phy_points, found_parametric_coordinates, found_it, element, bulkData);
@@ -75,7 +75,7 @@ namespace stk
         {
           for (unsigned iNode = 0; iNode < numNodes; iNode++)
             {
-              mesh::Entity& node = *elem_nodes[iNode].entity();
+              mesh::Entity node = *elem_nodes[iNode].entity();
               double * node_coord_data = stk::mesh::field_data( *coords_field , node);
               for (unsigned iDim=0; iDim < cellDim; iDim++)
                 {

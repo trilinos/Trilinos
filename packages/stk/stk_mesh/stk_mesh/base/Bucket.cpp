@@ -86,7 +86,7 @@ Bucket::Bucket( BulkData & arg_mesh ,
   , m_entities(arg_capacity)
   , m_field_data(NULL)
   , m_field_data_end(NULL)
-  , m_bucket_family(NULL)
+  , m_partition(NULL)
 {
   //calculate the size of the field_data
 
@@ -326,7 +326,7 @@ bool field_data_valid( const FieldBase & f ,
 bool Bucket::assert_correct() const {
   // test equivalent() method
   const Bucket* bucket = this;
-  const Bucket * first = first_bucket_in_family();
+  const Bucket * first = first_bucket_in_partition();
   if (!first || ! bucket->equivalent(*first) || ! first->equivalent(*bucket) )
     return false;
 
@@ -427,12 +427,12 @@ void Bucket::update_state()
 }
 
 //----------------------------------------------------------------------
-// Every bucket in the family points to the first bucket,
+// Every bucket in the partition points to the first bucket,
 // except the first bucket which points to the last bucket.
 
-Bucket * Bucket::last_bucket_in_family() const
+Bucket * Bucket::last_bucket_in_partition() const
 {
-  Bucket * last = last_bucket_in_family_impl();
+  Bucket * last = last_bucket_in_partition_impl();
 
   ThrowRequireMsg( NULL != last, "Last is NULL");
   ThrowRequireMsg( last->size() != 0, "Last bucket is empty");
@@ -440,13 +440,13 @@ Bucket * Bucket::last_bucket_in_family() const
   return last ;
 }
 
-Bucket * Bucket::last_bucket_in_family_impl() const
+Bucket * Bucket::last_bucket_in_partition_impl() const
 {
-  bool this_is_first_bucket_in_family = (bucket_counter() == 0);
+  bool this_is_first_bucket_in_partition = (bucket_counter() == 0);
 
   Bucket * last = NULL;
 
-  if (this_is_first_bucket_in_family) {
+  if (this_is_first_bucket_in_partition) {
     last = m_bucket;
   } else {
     last = m_bucket->m_bucket;
@@ -457,23 +457,23 @@ Bucket * Bucket::last_bucket_in_family_impl() const
 
 //----------------------------------------------------------------------
 
-Bucket * Bucket::first_bucket_in_family() const
+Bucket * Bucket::first_bucket_in_partition() const
 {
-  return last_bucket_in_family_impl()->m_bucket;
+  return last_bucket_in_partition_impl()->m_bucket;
 }
 
 //----------------------------------------------------------------------
 
-void Bucket::set_last_bucket_in_family( Bucket * last_bucket )
+void Bucket::set_last_bucket_in_partition( Bucket * last_bucket )
 {
-  Bucket * last = last_bucket_in_family_impl();
+  Bucket * last = last_bucket_in_partition_impl();
   Bucket * first = last->m_bucket;
   first->m_bucket = last_bucket;
 }
 
 //----------------------------------------------------------------------
 
-void Bucket::set_first_bucket_in_family( Bucket * first_bucket )
+void Bucket::set_first_bucket_in_partition( Bucket * first_bucket )
 {
   m_bucket = first_bucket;
 }

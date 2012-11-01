@@ -41,7 +41,7 @@ void count_entities( const Selector & selector ,
 
 /** \brief Get all entities of the specified type, sorted by ID.  */
 void get_entities( const BulkData & mesh , EntityRank entity_rank,
-                   std::vector< Entity*> & entities);
+                   std::vector< Entity> & entities);
 
 // Note: Order will be different than above method because above method sorts
 // TODO: remove underscore once API and STK_Mesh are in different namespaces
@@ -58,7 +58,7 @@ unsigned count_selected_entities( const Selector & selector ,
  */
 void get_selected_entities( const Selector & selector ,
                             const std::vector< Bucket * > & input_buckets ,
-                            std::vector< Entity * > & entities );
+                            std::vector< Entity> & entities );
 
 SelectedBucketRangeEntityIteratorRange get_selected_entities( const Selector & selector,
                                                               const AllBucketsRange& bucket_range );

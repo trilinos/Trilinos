@@ -78,9 +78,9 @@ namespace stk {
 
       virtual unsigned getNumNewElemPerElem() { return 6; }
 
-      void 
-      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+      void
+      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
+                        stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
         const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
@@ -97,10 +97,10 @@ namespace stk {
         std::vector<stk::mesh::Part*> remove_parts;
 
         //add_parts.push_back( &active );
-        //FIXME 
+        //FIXME
         //add_parts.push_back( const_cast<mesh::Part*>( eMesh.getPart(m_toTopoPartName) ));
         add_parts = m_toParts;
-        
+
         /**
            \node[above] at (p4.side 1){2};
            \node[left] at (p4.side 2){3};
@@ -137,13 +137,13 @@ namespace stk {
 #if WRITE_DIAGRAM
 
 #endif
-        
+
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
-            //stk::mesh::Entity& newElement = eMesh.get_bulk_data()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
-            //stk::mesh::Entity& newElement = eMesh.get_bulk_data()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
+            //stk::mesh::Entity newElement = eMesh.get_bulk_data()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
+            //stk::mesh::Entity newElement = eMesh.get_bulk_data()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
 
-            stk::mesh::Entity& newElement = *(*element_pool);
+            stk::mesh::Entity newElement = *element_pool;
 
             if (proc_rank_field)
               {
@@ -175,7 +175,7 @@ namespace stk {
           }
 
       }
-      
+
     };
 
   }

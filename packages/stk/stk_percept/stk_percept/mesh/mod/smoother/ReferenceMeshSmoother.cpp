@@ -52,11 +52,11 @@ namespace stk {
 
         msg << std::endl ;
 
-        for ( std::vector<Entity*>::const_iterator
+        for ( std::vector<Entity>::const_iterator
                 i =  mesh.entity_comm().begin() ;
               i != mesh.entity_comm().end() ; ++i ) {
 
-          Entity & entity = **i ;
+          Entity entity = *i;
           msg << "P" << mesh.parallel_rank() << ": " ;
 
           print_entity_key( msg , MetaData::get(mesh) , entity.key() );

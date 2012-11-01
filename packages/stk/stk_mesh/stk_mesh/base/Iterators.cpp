@@ -10,7 +10,7 @@ BucketVectorEntityIteratorRange get_entity_range(const std::vector<Bucket*>& buc
     return std::make_pair(end_itr, end_itr);
   }
   else {
-    return std::make_pair(BucketVectorEntityIterator(buckets.begin(), BucketPtrIterator((*buckets.begin())->begin()),   buckets.end()),
+    return std::make_pair(BucketVectorEntityIterator(buckets.begin(), BucketIterator((*buckets.begin())->begin()),   buckets.end()),
                           BucketVectorEntityIterator(buckets.end()));
   }
 }
@@ -27,7 +27,7 @@ SelectedBucketVectorEntityIteratorRange get_entity_range(const std::vector<Bucke
     //SelectedBucketVectorIterator end_select_itr(selector, buckets.end(), buckets.end());
     SelectedBucketVectorIterator end_select_itr(buckets.end());
     return std::make_pair(SelectedBucketVectorEntityIterator(SelectedBucketVectorIterator(selector, buckets.begin(), buckets.end()),
-                                                             BucketPtrIterator((*buckets.begin())->begin()),
+                                                             BucketIterator((*buckets.begin())->begin()),
                                                              end_select_itr),
                           SelectedBucketVectorEntityIterator(end_select_itr));
   }
@@ -80,7 +80,7 @@ SelectedBucketRangeEntityIteratorRange get_selected_bucket_entity_range(const Al
   else {
     AllSelectedBucketsRange selected_bucket_range = get_selected_bucket_range(bucket_range, selector);
     return std::make_pair(SelectedBucketRangeEntityIterator(selected_bucket_range.first,
-                                                            BucketPtrIterator( (*selected_bucket_range.first)->begin()),
+                                                            BucketIterator( (*selected_bucket_range.first)->begin()),
                                                             selected_bucket_range.second),
                           SelectedBucketRangeEntityIterator(selected_bucket_range.second));
   }

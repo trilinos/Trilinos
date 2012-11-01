@@ -54,7 +54,7 @@ void testDofMapper( MPI_Comm comm )
   STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
   STKUNIT_ASSERT_EQUAL( count[NODE_RANK],    (unsigned)20 );
 
-  std::vector<stk::mesh::Entity*> nodes;
+  std::vector<stk::mesh::Entity> nodes;
   stk::mesh::get_entities(bulk_data, NODE_RANK, nodes);
 
   ScalarField* temperature_field = fem_meta.get_field<ScalarField>("temperature");
@@ -84,12 +84,12 @@ void testDofMapper( MPI_Comm comm )
 
   //find a node that is in the locally-used part:
   size_t i_node = 0;
-  while(! select_used( nodes[i_node]->bucket() ) && i_node<nodes.size()) {
+  while(! select_used( nodes[i_node].bucket() ) && i_node<nodes.size()) {
     ++i_node;
   }
 
   //test the get_global_index function:
-  stk::mesh::EntityId node_id = nodes[i_node]->identifier();
+  stk::mesh::EntityId node_id = nodes[i_node].identifier();
   index = dof_mapper.get_global_index(NODE_RANK, node_id, *temperature_field);
   STKUNIT_ASSERT_EQUAL( index, (int)(node_id-1) );
 
@@ -108,8 +108,8 @@ void testDofMapper( MPI_Comm comm )
 
   dof_mapper.get_dof(index, ent_type, ent_id, field, offset_into_field);
 
-  STKUNIT_ASSERT_EQUAL( ent_type, nodes[i_node]->entity_rank() );
-  STKUNIT_ASSERT_EQUAL( ent_id,   nodes[i_node]->identifier() );
+  STKUNIT_ASSERT_EQUAL( ent_type, nodes[i_node].entity_rank() );
+  STKUNIT_ASSERT_EQUAL( ent_id,   nodes[i_node].identifier() );
   STKUNIT_ASSERT_EQUAL( field->name() == temperature_field->name(), true );
   STKUNIT_ASSERT_EQUAL( offset_into_field, (int)0 );
 }

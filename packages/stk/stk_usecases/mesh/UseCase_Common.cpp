@@ -44,7 +44,7 @@ namespace mesh {
 namespace use_cases {
 
 bool verify_elem_node_coord(
-  mesh::Entity & elem ,
+  mesh::Entity elem ,
   const ElementNodePointerFieldType & elem_node_coord ,
   const VectorFieldType & node_coord ,
   const unsigned node_count )
@@ -83,7 +83,7 @@ bool verify_elem_node_coord(
 
   // Iterating over the nodes in element
   for ( unsigned j = 0 ; j < node_count ; ++j ) {
-    mesh::Entity & node = * rel[j].entity();
+    mesh::Entity node = rel[j].entity();
 
     // Field data for the nodal coordinate field for node
     mesh::EntityArray< VectorFieldType > node_coord_array( node_coord , node );
@@ -124,14 +124,14 @@ bool verify_elem_node_coord_by_part(
     const unsigned node_count )
 {
   Selector selector(part);
-  std::vector<Entity *> entities;
+  std::vector<Entity> entities;
   get_selected_entities( selector, bucket_vector, entities);
-  std::vector<Entity *>::iterator entity_it = entities.begin();
+  std::vector<Entity>::iterator entity_it = entities.begin();
   bool result = true;
   for ( ; entity_it != entities.end() ; ++entity_it ) {
     result = result &&
       verify_elem_node_coord(
-          **entity_it , elem_node_coord , node_coord , node_count
+          *entity_it , elem_node_coord , node_coord , node_count
           );
   }
   return result;

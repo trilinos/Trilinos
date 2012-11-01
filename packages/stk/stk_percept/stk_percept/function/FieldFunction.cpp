@@ -21,7 +21,7 @@ namespace stk
 
       Function(name, Dimensions(domain_dimension), Dimensions(codomain_dimension), integration_order),
       m_my_field(field), m_bulkData(mesh.get_bulk_data()),
-      m_cachedElement(0), m_searcher(0),
+      m_cachedElement(), m_searcher(0),
       m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType), m_get_derivative(false)
                                 //, m_parallelEval(true)
     {
@@ -58,7 +58,7 @@ namespace stk
                                  SearchType searchType,
                                  unsigned integration_order) :
       Function(name, domain_dimensions, codomain_dimensions, integration_order),
-      m_my_field(field), m_bulkData(bulk), m_cachedElement(0), m_searcher(0),
+      m_my_field(field), m_bulkData(bulk), m_cachedElement(), m_searcher(0),
       m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType), m_get_derivative(false)
                                 //, m_parallelEval(true)
     {
@@ -72,7 +72,7 @@ namespace stk
                                  SearchType searchType,
                                  unsigned integration_order) :
       Function(name, domain_dimensions, codomain_dimensions, integration_order),
-      m_my_field(field), m_bulkData(eMesh.get_bulk_data()), m_cachedElement(0), m_searcher(0),
+      m_my_field(field), m_bulkData(eMesh.get_bulk_data()), m_cachedElement(), m_searcher(0),
       m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType), m_get_derivative(false)
     {
 
@@ -193,7 +193,7 @@ namespace stk
                     }
                 }
 
-              const stk::mesh::Entity *found_element = 0;
+              stk::mesh::Entity found_element = stk::mesh::Entity();
               {
                 EXCEPTWATCH;
                 //if (m_searchType==STK_SEARCH) std::cout << "find" << std::endl;
@@ -206,9 +206,9 @@ namespace stk
                 {
                   m_found_on_local_owned_part = true;
                   if (( EXTRA_PRINT) && m_searchType==STK_SEARCH)
-                    std::cout << "FieldFunction::operator() found element # = " << found_element->identifier() << std::endl;
+                    std::cout << "FieldFunction::operator() found element # = " << found_element.identifier() << std::endl;
 
-                  (*this)(input_phy_points_one, output_field_values_one, *found_element, found_parametric_coordinates_one);
+                  (*this)(input_phy_points_one, output_field_values_one, found_element, found_parametric_coordinates_one);
 
                   for (int iDOF = 0; iDOF < DOF_; iDOF++)
                     {
@@ -270,7 +270,7 @@ namespace stk
      */
 
     void FieldFunction::operator()(MDArray& input_phy_points, MDArray& output_field_values,
-                                   const stk::mesh::Entity& element, const MDArray& parametric_coordinates, double time_value_optional)
+                                   const stk::mesh::Entity element, const MDArray& parametric_coordinates, double time_value_optional)
     {
       EXCEPTWATCH;
       helper(input_phy_points, output_field_values, element, parametric_coordinates, time_value_optional);

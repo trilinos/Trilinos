@@ -207,7 +207,7 @@ bool use_case_3_driver( MPI_Comm comm ,
 
       int field_id = dof_mapper.get_field_id(displacements_field);
 
-      stk::mesh::Entity& first_entity = *(part_buckets[0]->begin());
+      stk::mesh::Entity first_entity = *(part_buckets[0]->begin());
       stk::mesh::PairIterRelation rel = first_entity.relations(stk::mesh::MetaData::NODE_RANK);
       int num_nodes_per_elem = rel.second - rel.first;
 
@@ -245,10 +245,10 @@ bool use_case_3_driver( MPI_Comm comm ,
           b_iter = part_buckets[i]->begin(),
           b_end  = part_buckets[i]->end();
         for(; b_iter != b_end; ++b_iter) {
-          stk::mesh::Entity& elem = *b_iter;
+          stk::mesh::Entity elem = *b_iter;
           rel = elem.relations(stk::mesh::MetaData::NODE_RANK);
           for(int j=0; rel.first != rel.second; ++rel.first, ++j) {
-            node_ids[j] = rel.first->entity()->identifier();
+            node_ids[j] = rel.first->entity().identifier();
           }
 
           matgraph->getPatternIndices(pattern_id, &node_ids[0], eqn_indices);
@@ -418,9 +418,9 @@ void use_case_3_generate_mesh(
     for ( unsigned i = 0 ; i < node_map.size() ; ++i ) {
       const unsigned i3 = i * 3 ;
 
-      stk::mesh::Entity * const node = mesh.get_entity( stk::mesh::MetaData::NODE_RANK , node_map[i] );
+      stk::mesh::Entity const node = mesh.get_entity( stk::mesh::MetaData::NODE_RANK , node_map[i] );
 
-      if ( NULL == node ) {
+      if ( !node.is_valid() ) {
         std::ostringstream msg ;
         msg << "  P:" << mesh.parallel_rank()
             << " ERROR, Node not found: "
@@ -428,7 +428,7 @@ void use_case_3_generate_mesh(
         throw std::runtime_error( msg.str() );
       }
 
-      double * const data = field_data( node_coord , *node );
+      double * const data = field_data( node_coord , node );
       data[0] = node_coordinates[ i3 + 0 ];
       data[1] = node_coordinates[ i3 + 1 ];
       data[2] = node_coordinates[ i3 + 2 ];

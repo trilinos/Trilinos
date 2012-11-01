@@ -67,7 +67,7 @@ bool Selector::operator()( const Bucket * candidate ) const{
   return operator()(*candidate);
 }
 
-bool Selector::operator()( const Entity & candidate ) const
+bool Selector::operator()( const Entity candidate ) const
 {
   const Bucket & b = candidate.bucket();
   return this->operator()(b);

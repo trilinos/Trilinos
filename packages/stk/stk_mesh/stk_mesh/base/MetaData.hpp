@@ -110,7 +110,7 @@ public:
 
   static MetaData & get( const BulkData & bulk_data );
   static MetaData & get( const Bucket & bucket );
-  static MetaData & get( const Entity & entity );
+  static MetaData & get( const Entity entity );
   static MetaData & get( const Ghosting & ghost );
 
   /** \brief  Construct a meta data manager to own parts and fields.  */
@@ -560,7 +560,7 @@ CellTopology get_cell_topology(const Bucket &bucket);
 
 
 /** Get the cell_topology off an entity */
-CellTopology get_cell_topology(const Entity &entity);
+CellTopology get_cell_topology(const Entity entity);
 
 /** Get default entity rank names */
 const std::vector<std::string>& entity_rank_names();

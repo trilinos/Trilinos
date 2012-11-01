@@ -142,7 +142,7 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& 
 
   int field_id = dof_mapper.get_field_id(field);
 
-  stk::mesh::Entity& first_entity = *(part_buckets[0]->begin());
+  stk::mesh::Entity first_entity = *(part_buckets[0]->begin());
   stk::mesh::PairIterRelation rel = first_entity.relations(NODE_RANK);
   int num_nodes_per_elem = rel.second - rel.first;
 
@@ -185,10 +185,10 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& 
       b_iter = part_buckets[i]->begin(),
              b_end  = part_buckets[i]->end();
     for(; b_iter != b_end; ++b_iter) {
-      stk::mesh::Entity& elem = *b_iter;
+      stk::mesh::Entity elem = *b_iter;
       rel = elem.relations(NODE_RANK);
       for(int j=0; rel.first != rel.second; ++rel.first, ++j) {
-        node_ids[j] = rel.first->entity()->identifier();
+        node_ids[j] = rel.first->entity().identifier();
       }
 
       matgraph->getPatternIndices(pattern_id, &node_ids[0], eqn_indices);
@@ -212,7 +212,7 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& 
 
   int field_id = dof_mapper.get_field_id(field);
 
-  stk::mesh::Entity& first_entity = *(part_buckets[0]->begin());
+  stk::mesh::Entity first_entity = *(part_buckets[0]->begin());
   stk::mesh::PairIterRelation rel = first_entity.relations(NODE_RANK);
   int num_nodes_per_elem = rel.second - rel.first;
 
@@ -253,10 +253,10 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& 
       b_iter = part_buckets[i]->begin(),
              b_end  = part_buckets[i]->end();
     for(; b_iter != b_end; ++b_iter) {
-      stk::mesh::Entity& elem = *b_iter;
+      stk::mesh::Entity elem = *b_iter;
       rel = elem.relations(NODE_RANK);
       for(int j=0; rel.first != rel.second; ++rel.first, ++j) {
-        node_ids[j] = rel.first->entity()->identifier();
+        node_ids[j] = rel.first->entity().identifier();
       }
 
       matgraph->getPatternIndices(pattern_id, &node_ids[0], eqn_indices);

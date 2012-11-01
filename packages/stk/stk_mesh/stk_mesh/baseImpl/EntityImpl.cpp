@@ -77,12 +77,12 @@ void EntityImpl::log_modified_and_propagate()
   EntityRank rank_of_original_entity = entity_rank();
   for ( PairIterRelation irel = relations() ; irel.first != irel.second ; ) {
     --irel.second;
-    Entity & entity = *(irel.second->entity());
+    Entity entity = irel.second->entity();
     if ( rank_of_original_entity >= entity.entity_rank() ) {
       break; //we're done
     }
     else if ( entity.log_query() == EntityLogNoChange ) {
-      entity.m_entityImpl.log_modified_and_propagate();
+      entity.m_entityImpl->log_modified_and_propagate();
     }
   }
 
@@ -103,14 +103,14 @@ void EntityImpl::log_created_parallel_copy()
   }
 }
 
-bool EntityImpl::destroy_relation( Entity& e_to, const RelationIdentifier local_id )
+bool EntityImpl::destroy_relation( Entity e_to, const RelationIdentifier local_id )
 {
   TraceIfWatching("stk::mesh::impl::EntityImpl::destroy_relation", LOG_ENTITY, key());
 
   bool destroyed_relations = false;
   for ( RelationVector::iterator
         i = m_relation.begin() ; i != m_relation.end() ; ++i ) {
-    if ( i->entity() == & e_to && i->identifier() == local_id ) {
+    if ( i->entity() == e_to && i->identifier() == local_id ) {
       i = m_relation.erase( i ); // invalidates iterators, but we're breaking so it's OK
       destroyed_relations = true;
       break;
@@ -119,7 +119,7 @@ bool EntityImpl::destroy_relation( Entity& e_to, const RelationIdentifier local_
   return destroyed_relations;
 }
 
-bool EntityImpl::declare_relation( Entity & e_to,
+bool EntityImpl::declare_relation( Entity e_to,
                                    const RelationIdentifier local_id,
                                    unsigned sync_count,
                                    bool is_back_relation )
@@ -175,7 +175,7 @@ bool EntityImpl::declare_relation( Entity & e_to,
                        print_entity_key( meta_data, key() ) << " to " <<
                        print_entity_key( meta_data, e_to.key() ) << ", with id " <<
                        local_id << ". Relation already exists to " <<
-                       print_entity_key( meta_data, itr->entity()->key() ));
+                       print_entity_key( meta_data, itr->entity().key() ));
     }
   }
 
@@ -213,7 +213,7 @@ void EntityImpl::update_key(EntityKey key)
         ++i
       )
   {
-    EntityImpl & entity = i->entity()->m_entityImpl;
+    EntityImpl & entity = *(i->entity().m_entityImpl);
     std::sort(entity.m_relation.begin(), entity.m_relation.end(), LessRelation());
     entity.log_modified_and_propagate();
   }

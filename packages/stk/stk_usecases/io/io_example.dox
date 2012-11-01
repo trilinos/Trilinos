@@ -458,7 +458,7 @@
 
     Ioss::NodeBlock *nb = node_blocks[0];
 
-    std::vector<const stk::mesh::Entity*> nodes;
+    std::vector<const stk::mesh::Entity> nodes;
     stk::io::get_entity_list(nb, stk::mesh::Node, bulk, nodes);
       
     const stk::mesh::MetaData& meta = MetaData::get(bulk);
@@ -501,7 +501,7 @@
         int element_count = elem_ids.size();
         int nodes_per_elem = cell_topo->node_count ;
 
-        std::vector<const stk::mesh::Entity*> elements(element_count);
+        std::vector<const stk::mesh::Entity> elements(element_count);
         for(int i=0; i<element_count; ++i) {
           stk::mesh::entity_id_type *conn = &connectivity[i*nodes_per_elem];
           elements[i] = &stk::mesh::declare_element(bulk, *part, elem_ids[i], conn);
@@ -547,7 +547,7 @@
         std::vector<int> node_ids ;
         int node_count = entity->get_field_data("ids", node_ids);
         
-        std::vector<const stk::mesh::Entity*> nodes(node_count);
+        std::vector<const stk::mesh::Entity> nodes(node_count);
         for(int i=0; i<node_count; ++i) {
           const stk::mesh::entity_key_type key =
             stk::mesh::entity_key(stk::mesh::Node, node_ids[i]);
@@ -595,7 +595,7 @@
         stk::mesh::PartVector add_parts( 1 , fb_part );
         
         int side_count = side_ids.size();
-        std::vector<const stk::mesh::Entity*> sides(side_count);
+        std::vector<const stk::mesh::Entity> sides(side_count);
         for(int is=0; is<side_count; ++is) {
       
           const stk::mesh::entity_key_type elem_key =
@@ -605,13 +605,13 @@
           // Hence the '-1' in the following line.
           int side_ordinal = elem_side[is*2+1] - 1 ;
           
-          stk::mesh::Entity* const elem = bulk.get_entity(elem_key);
+          stk::mesh::Entity const elem = bulk.get_entity(elem_key);
           // If NULL, then the element was probably assigned to an
           // element block that appears in the database, but was
           // subsetted out of the analysis mesh. Only process if
           // non-null.
           if (elem != NULL) { 
-            stk::mesh::Entity& side =
+            stk::mesh::Entity side =
               stk::mesh::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
             bulk.change_entity_parts( side, add_parts );
             sides[is] = &side;
@@ -671,7 +671,7 @@
                       Ioss::GroupingEntity *io_entity,
                       Ioss::Field::RoleType filter_role)
   {
-    std::vector<const stk::mesh::Entity*> entities;
+    std::vector<const stk::mesh::Entity> entities;
     stk::io::get_entity_list(io_entity, part_type, bulk, entities);
 
     stk::mesh::MetaData & meta = MetaData::get(part);
@@ -692,7 +692,7 @@
                       Ioss::GroupingEntity *io_entity,
                       Ioss::Field::RoleType filter_role)
   {
-    std::vector<const stk::mesh::Entity*> entities;
+    std::vector<const stk::mesh::Entity> entities;
     stk::io::get_entity_list(io_entity, part_type, bulk, entities);
       
     stk::mesh::MetaData & meta = MetaData::get(part);

@@ -173,8 +173,8 @@ use_case_1_driver(
     if (domain_owning_proc != my_rank && range_owning_rank == my_rank) {
       stk::mesh::EntityKey entity_key(i->second.ident);
 
-      stk::mesh::Entity *r_entity = range_bulk_data.get_entity(stk::mesh::entity_rank(entity_key), stk::mesh::entity_id(entity_key));
-      if (r_entity->owner_rank() == my_rank) {
+      stk::mesh::Entity r_entity = range_bulk_data.get_entity(stk::mesh::entity_rank(entity_key), stk::mesh::entity_id(entity_key));
+      if (r_entity.owner_rank() == my_rank) {
         stk::mesh::EntityProc ep(r_entity, domain_owning_proc);
         range_to_ghost.push_back(ep);
       }
@@ -198,7 +198,7 @@ use_case_1_driver(
       range_bulk_data.create_ghosting( std::string("transter_test") );
 
     {
-      std::vector<stk::mesh::Entity*> receive;
+      std::vector<stk::mesh::Entity> receive;
       transfer_range_ghosting.receive_list( receive );
       range_bulk_data.change_ghosting( transfer_range_ghosting ,
                                        range_to_ghost ,
@@ -220,7 +220,7 @@ use_case_1_driver(
   }
 
   // Create the on-processor domain-to-range (range possibly ghosted) map.
-  std::vector<std::pair<stk::mesh::Entity*, stk::mesh::Entity*> > entity_map;
+  std::vector<std::pair<stk::mesh::Entity , stk::mesh::Entity> > entity_map;
   {
     IdentProcRelation::const_iterator I=relation.begin(), rend=relation.end();
     for ( ; I!=rend; ++I) {
@@ -229,23 +229,23 @@ use_case_1_driver(
         stk::mesh::EntityKey domain_entity_key(I->first.ident);
         stk::mesh::EntityKey range_entity_key(I->second.ident);
 
-        stk::mesh::Entity * const d_entity = domain_bulk_data.get_entity(stk::mesh::entity_rank(domain_entity_key), stk::mesh::entity_id(domain_entity_key));
-        stk::mesh::Entity * const r_entity = range_bulk_data.get_entity (stk::mesh::entity_rank(range_entity_key), stk::mesh::entity_id(range_entity_key));
-        if ( d_entity == 0 || r_entity == 0 ) {
+        stk::mesh::Entity const d_entity = domain_bulk_data.get_entity(stk::mesh::entity_rank(domain_entity_key), stk::mesh::entity_id(domain_entity_key));
+        stk::mesh::Entity const r_entity = range_bulk_data.get_entity (stk::mesh::entity_rank(range_entity_key), stk::mesh::entity_id(range_entity_key));
+        if ( !d_entity.is_valid() || !r_entity.is_valid() ) {
           std::ostringstream msg ;
           msg << "P" << my_rank << ": Ghosting failed for " ;
           msg << "( " ;
           stk::mesh::print_entity_key( msg , range_meta_data, domain_entity_key );
-          if ( d_entity == NULL ) { msg << " -> NULL" ; }
+          if ( !d_entity.is_valid() ) { msg << " -> NULL" ; }
           msg << " , " << I->first.proc ;
           msg << " ) ( " ;
           stk::mesh::print_entity_key( msg , range_meta_data, range_entity_key );
-          if ( r_entity == NULL ) { msg << " -> NULL" ; }
+          if ( !r_entity.is_valid() ) { msg << " -> NULL" ; }
           msg << " , " << I->second.proc ;
           msg << " )" ;
           throw std::runtime_error( msg.str() );
         }
-        std::pair<stk::mesh::Entity*, stk::mesh::Entity*> e(d_entity, r_entity);
+        std::pair<stk::mesh::Entity , stk::mesh::Entity> e(d_entity, r_entity);
         entity_map.push_back(e);
       }
     }
@@ -264,7 +264,7 @@ use_case_1_driver(
   std::vector<std::size_t>::reverse_iterator I=not_in_element.rbegin();
   for (; I!=not_in_element.rend(); ++I)
   {
-    std::vector<std::pair<stk::mesh::Entity*, stk::mesh::Entity*> >::iterator del = entity_map.begin()+*I;
+    std::vector<std::pair<stk::mesh::Entity , stk::mesh::Entity> >::iterator del = entity_map.begin()+*I;
     entity_map.erase(del);
   }
 

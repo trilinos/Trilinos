@@ -110,7 +110,7 @@ namespace {
 #if 0
 
       for (unsigned i = 0; i<8; ++i) {
-        stk::mesh::Entity * const node = bulk.get_entity( fem::FEMMetaData::NODE_RANK , elem_node[i] );
+        stk::mesh::Entity const node = bulk.get_entity( fem::FEMMetaData::NODE_RANK , elem_node[i] );
         bulk.change_entity_parts(*node, add_parts);
 
         ThrowRequireMsg( node != NULL, "found null node in create_entities");

@@ -6,7 +6,7 @@
 namespace stk {
   namespace adapt {
 
-    NodeIdsOnSubDimEntityType* NodeRegistry::getNewNodesOnSubDimEntity(const stk::mesh::Entity& element,  stk::mesh::EntityRank& needed_entity_rank, 
+    NodeIdsOnSubDimEntityType* NodeRegistry::getNewNodesOnSubDimEntity(const stk::mesh::Entity element,  stk::mesh::EntityRank& needed_entity_rank, 
                                                                        unsigned iSubDimOrd)
     {
       EXCEPTWATCH;
@@ -40,7 +40,7 @@ namespace stk {
       return &nodeId;
     }
 
-    bool NodeRegistry::is_empty( const stk::mesh::Entity& element, stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd)
+    bool NodeRegistry::is_empty( const stk::mesh::Entity element, stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd)
     {
       static SubDimCell_SDSEntityType subDimEntity;
       getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);

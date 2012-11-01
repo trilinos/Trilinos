@@ -84,9 +84,9 @@ void RingFixture::generate_mesh( )
       if ( ! m_element_parts.empty() ) {
         add_parts[0] = m_element_parts[ i % m_element_parts.size() ];
       }
-      Entity & e_node_0 = m_bulk_data.declare_entity( MetaData::NODE_RANK , m_node_ids[n0] , no_parts );
-      Entity & e_node_1 = m_bulk_data.declare_entity( MetaData::NODE_RANK , m_node_ids[n1] , no_parts );
-      Entity & e_element   = m_bulk_data.declare_entity( MetaData::ELEMENT_RANK , m_element_ids[i] , add_parts );
+      Entity e_node_0 = m_bulk_data.declare_entity( MetaData::NODE_RANK , m_node_ids[n0] , no_parts );
+      Entity e_node_1 = m_bulk_data.declare_entity( MetaData::NODE_RANK , m_node_ids[n1] , no_parts );
+      Entity e_element   = m_bulk_data.declare_entity( MetaData::ELEMENT_RANK , m_element_ids[i] , add_parts );
       m_bulk_data.declare_relation( e_element , e_node_0 , 0 );
       m_bulk_data.declare_relation( e_element , e_node_1 , 1 );
     }
@@ -104,8 +104,8 @@ void RingFixture::fixup_node_ownership()
 
   if ( 1 < p_size ) {
     std::vector<EntityProc> change ;
-    Entity * const e_node_0 = m_bulk_data.get_entity( 0 , m_node_ids[id_begin] );
-    if ( p_rank == e_node_0->owner_rank() ) {
+    Entity const e_node_0 = m_bulk_data.get_entity( 0 , m_node_ids[id_begin] );
+    if ( p_rank == e_node_0.owner_rank() ) {
       EntityProc entry ;
       entry.first = e_node_0 ;
       entry.second = ( p_rank + p_size - 1 ) % p_size ;

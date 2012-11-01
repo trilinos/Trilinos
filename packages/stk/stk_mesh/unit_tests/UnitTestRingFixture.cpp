@@ -68,14 +68,14 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
   STKUNIT_ASSERT_EQUAL( local_count[NODE_RANK]     , nLocalNode );
   STKUNIT_ASSERT_EQUAL( local_count[element_rank] , nLocalElement );
 
-  std::vector<Entity*> all_nodes;
+  std::vector<Entity> all_nodes;
   get_entities( bulk, NODE_RANK, all_nodes);
 
   unsigned num_selected_nodes =
     count_selected_entities( select_used, bulk.buckets(NODE_RANK) );
   STKUNIT_ASSERT_EQUAL( num_selected_nodes , local_count[NODE_RANK] );
 
-  std::vector<Entity*> universal_nodes;
+  std::vector<Entity> universal_nodes;
   get_selected_entities(select_all, bulk.buckets(NODE_RANK),
                         universal_nodes );
   STKUNIT_ASSERT_EQUAL( universal_nodes.size() , all_nodes.size() );
@@ -92,14 +92,14 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
     const unsigned n0 = id_end < id_total ? id_begin : 0 ;
     const unsigned n1 = id_end < id_total ? id_end : id_begin ;
 
-    Entity * const node0 = bulk.get_entity( NODE_RANK , fixture.m_node_ids[n0] );
-    Entity * const node1 = bulk.get_entity( NODE_RANK , fixture.m_node_ids[n1] );
+    Entity const node0 = bulk.get_entity( NODE_RANK , fixture.m_node_ids[n0] );
+    Entity const node1 = bulk.get_entity( NODE_RANK , fixture.m_node_ids[n1] );
 
-    STKUNIT_ASSERT( node0 != NULL );
-    STKUNIT_ASSERT( node1 != NULL );
+    STKUNIT_ASSERT( node0.is_valid() );
+    STKUNIT_ASSERT( node1.is_valid() );
 
-    STKUNIT_ASSERT_EQUAL( node0->sharing().size() , size_t(1) );
-    STKUNIT_ASSERT_EQUAL( node1->sharing().size() , size_t(1) );
+    STKUNIT_ASSERT_EQUAL( node0.sharing().size() , size_t(1) );
+    STKUNIT_ASSERT_EQUAL( node1.sharing().size() , size_t(1) );
   }
 
   // Test no-op first:
@@ -167,23 +167,23 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
   std::vector<unsigned> local_count ;
   std::vector<EntityProc> change ;
 
-  Entity * send_element_1 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_send ] );
-  Entity * send_element_2 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_send + 1 ] );
-  Entity * send_node_1 = send_element_1->relations()[1].entity();
-  Entity * send_node_2 = send_element_2->relations()[1].entity();
-  Entity * recv_element_1 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_recv ] );
-  Entity * recv_element_2 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_recv + 1 ] );
+  Entity send_element_1 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_send ] );
+  Entity send_element_2 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_send + 1 ] );
+  Entity send_node_1 = send_element_1.relations()[1].entity();
+  Entity send_node_2 = send_element_2.relations()[1].entity();
+  Entity recv_element_1 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_recv ] );
+  Entity recv_element_2 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_recv + 1 ] );
 
-  STKUNIT_ASSERT( NULL != send_element_1 && p_rank == send_element_1->owner_rank() );
-  STKUNIT_ASSERT( NULL != send_element_2 && p_rank == send_element_2->owner_rank() );
-  STKUNIT_ASSERT( NULL == recv_element_1 || p_rank != recv_element_1->owner_rank() );
-  STKUNIT_ASSERT( NULL == recv_element_2 || p_rank != recv_element_2->owner_rank() );
+  STKUNIT_ASSERT( send_element_1.is_valid() && p_rank == send_element_1.owner_rank() );
+  STKUNIT_ASSERT( send_element_2.is_valid() && p_rank == send_element_2.owner_rank() );
+  STKUNIT_ASSERT( !recv_element_1.is_valid() || p_rank != recv_element_1.owner_rank() );
+  STKUNIT_ASSERT( !recv_element_2.is_valid() || p_rank != recv_element_2.owner_rank() );
 
-  if ( p_rank == send_node_1->owner_rank() ) {
+  if ( p_rank == send_node_1.owner_rank() ) {
     EntityProc entry( send_node_1 , p_send );
     change.push_back( entry );
   }
-  if ( p_rank == send_node_2->owner_rank() ) {
+  if ( p_rank == send_node_2.owner_rank() ) {
     EntityProc entry( send_node_2 , p_send );
     change.push_back( entry );
   }
@@ -196,12 +196,12 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
     change.push_back( entry );
   }
 
-  send_element_1 = NULL ;
-  send_element_2 = NULL ;
-  send_node_1 = NULL ;
-  send_node_2 = NULL ;
-  recv_element_1 = NULL ;
-  recv_element_2 = NULL ;
+  send_element_1 = Entity();
+  send_element_2 = Entity();
+  send_node_1 = Entity();
+  send_node_2 = Entity();
+  recv_element_1 = Entity();
+  recv_element_2 = Entity();
 
   STKUNIT_ASSERT( bulk.modification_begin() );
   bulk.change_entity_owner( change );
@@ -212,29 +212,29 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
   recv_element_1 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_recv ] );
   recv_element_2 = bulk.get_entity( MetaData::ELEMENT_RANK , ring.m_element_ids[ id_recv + 1 ] );
 
-  STKUNIT_ASSERT( NULL == send_element_1 || p_rank != send_element_1->owner_rank() );
-  STKUNIT_ASSERT( NULL == send_element_2 || p_rank != send_element_2->owner_rank() );
-  STKUNIT_ASSERT( NULL != recv_element_1 && p_rank == recv_element_1->owner_rank() );
-  STKUNIT_ASSERT( NULL != recv_element_2 && p_rank == recv_element_2->owner_rank() );
+  STKUNIT_ASSERT( !send_element_1.is_valid() || p_rank != send_element_1.owner_rank() );
+  STKUNIT_ASSERT( !send_element_2.is_valid() || p_rank != send_element_2.owner_rank() );
+  STKUNIT_ASSERT( recv_element_1.is_valid() && p_rank == recv_element_1.owner_rank() );
+  STKUNIT_ASSERT( recv_element_2.is_valid() && p_rank == recv_element_2.owner_rank() );
 
   stk::mesh::count_entities( select_used , bulk , local_count );
   STKUNIT_ASSERT_EQUAL( local_count[MetaData::NODE_RANK] , nLocalNode );
   STKUNIT_ASSERT_EQUAL( local_count[MetaData::ELEMENT_RANK] , nLocalElement );
 
   unsigned count_shared = 0 ;
-  for ( std::vector<Entity*>::const_iterator
+  for ( std::vector<Entity>::const_iterator
         i = bulk.entity_comm().begin() ;
         i != bulk.entity_comm().end() ; ++i ) {
-    if ( in_shared( **i ) ) { ++count_shared ; }
+    if ( in_shared( *i ) ) { ++count_shared ; }
   }
   STKUNIT_ASSERT_EQUAL( count_shared , 2u );
 
   {
-    Entity * const node_recv = bulk.get_entity( NODE_RANK , ring.m_node_ids[id_recv] );
-    Entity * const node_send = bulk.get_entity( NODE_RANK , ring.m_node_ids[id_send] );
+    const Entity node_recv = bulk.get_entity( NODE_RANK , ring.m_node_ids[id_recv] );
+    const Entity node_send = bulk.get_entity( NODE_RANK , ring.m_node_ids[id_send] );
 
-    STKUNIT_ASSERT_EQUAL( node_recv->sharing().size() , 1u );
-    STKUNIT_ASSERT_EQUAL( node_send->sharing().size() , 1u );
+    STKUNIT_ASSERT_EQUAL( node_recv.sharing().size() , 1u );
+    STKUNIT_ASSERT_EQUAL( node_send.sharing().size() , 1u );
   }
 }
 

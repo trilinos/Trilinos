@@ -32,7 +32,7 @@ namespace stk
       void build_invalid_edge_sets();
     public:
       TopologyVerifier();
-      bool isTopologyBad( mesh::Entity  &elem);
+      bool isTopologyBad( mesh::Entity elem);
       bool isTopologyBad( mesh::BulkData& mesh_bulk_data);
     };
 

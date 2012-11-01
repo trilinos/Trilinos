@@ -88,7 +88,7 @@ bool field_data_valid( const FieldBase & f ,
  */
 inline
 bool field_data_valid( const FieldBase & f ,
-                       const Entity & e ,
+                       const Entity e ,
                        const char * required_by = NULL )
 { return field_data_valid( f, e.bucket(), e.bucket_ordinal(), required_by ); }
 
@@ -103,7 +103,7 @@ unsigned field_data_size( const FieldBase & f , const Bucket & k )
 
 /** \brief  Size, in bytes, of the field data for each entity */
 inline
-unsigned field_data_size( const FieldBase & f , const Entity & e )
+unsigned field_data_size( const FieldBase & f , const Entity e )
 { return field_data_size( f , e.bucket() ); }
 
 //----------------------------------------------------------------------
@@ -123,7 +123,7 @@ field_data( const field_type & f , const Bucket::iterator i )
 template< class field_type >
 inline
 typename FieldTraits< field_type >::data_type *
-field_data( const field_type & f , const Entity & e )
+field_data( const field_type & f , const Entity e )
 {
   return e.bucket().field_data( f, e );
 }
@@ -140,7 +140,7 @@ struct EntityArray< Field<ScalarType,void,void,void,void,void,void,void> >
   typedef shards::Array<ScalarType,shards::RankZero,void,void,void,void,void,void,void>
   array_type ;
 
-  EntityArray( const field_type & f , const Entity & e )
+  EntityArray( const field_type & f , const Entity e )
     : array_type( field_data( f , e ) ) {}
 
 private:
@@ -173,7 +173,7 @@ public:
   shards::Array<ScalarType,shards::FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>
   array_type ;
 
-  EntityArray( const field_type & f , const Entity & e ) : array_type()
+  EntityArray( const field_type & f , const Entity e ) : array_type()
   {
     const Bucket          & b = e.bucket();
     if (b.field_data_size(f)) {

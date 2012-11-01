@@ -89,7 +89,7 @@ MetaData & MetaData::get( const Bucket & bucket) {
   return MetaData::get(BulkData::get(bucket));
 }
 
-MetaData & MetaData::get( const Entity & entity) {
+MetaData & MetaData::get( const Entity entity) {
   return MetaData::get(BulkData::get(entity));
 }
 
@@ -893,7 +893,7 @@ get_cell_topology(
   return cell_topology ;
 }
 
-CellTopology get_cell_topology(const Entity &entity)
+CellTopology get_cell_topology(const Entity entity)
 {
   return get_cell_topology(entity.bucket());
 }

@@ -34,7 +34,7 @@ namespace stk {
       RefinePredicate& getRefinePredicate() { return m_predicate_refine; }
 
       ///    DO_NOTHING (nothing), DO_REFINE (refine), DO_UNREFINE
-      virtual int mark(const stk::mesh::Entity& element, unsigned which_edge, stk::mesh::Entity & node0, stk::mesh::Entity & node1,
+      virtual int mark(const stk::mesh::Entity element, unsigned which_edge, stk::mesh::Entity node0, stk::mesh::Entity node1,
                            double *coord0, double *coord1, std::vector<int>* existing_edge_marks) 
       {
         int mark = m_predicate_refine(element, which_edge, node0, node1, coord0, coord1, existing_edge_marks);

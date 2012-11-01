@@ -77,7 +77,7 @@ class HexFixture
    * Thinking in terms of a 3D grid of nodes, get the node in the (x, y, z)
    * position. Return NULL if this process doesn't know about this node.
    */
-  Entity * node( unsigned x , unsigned y , unsigned z ) const {
+  Entity node( unsigned x , unsigned y , unsigned z ) const {
     return m_bulk_data.get_entity( MetaData::NODE_RANK , node_id(x, y, z) );
   }
 
@@ -86,7 +86,7 @@ class HexFixture
    * (x, y, z) position. Return NULL if this process doesn't know about this
    * element.
    */
-  Entity * elem( unsigned x , unsigned y , unsigned z ) const {
+  Entity elem( unsigned x , unsigned y , unsigned z ) const {
     return m_bulk_data.get_entity( MetaData::ELEMENT_RANK, elem_id(x, y, z) );
   }
 

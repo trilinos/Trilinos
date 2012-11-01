@@ -24,27 +24,27 @@ namespace stk {
 
       /// Client supplies this method - given an element return instruction on what to do to the element:
       ///    DO_NOTHING (nothing), DO_REFINE (refine), DO_UNREFINE
-      virtual int mark(const stk::mesh::Entity& element) = 0;
+      virtual int mark(const stk::mesh::Entity element) = 0;
 
       virtual void
-      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element,
                                               vector<NeededEntityType>& needed_entity_ranks);
 
     };
 
     // This is a very specialized test that is used in unit testing only (see unit_localRefiner/break_tri_to_tri_N_3 in UnitTestLocalRefiner.cpp)
 
-    IElementAdapter::IElementAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
+    IElementAdapter::IElementAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) :
       IAdapter(eMesh, bp, proc_rank_field)
     {
     }
 
     void IElementAdapter::
-    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element,
                                             vector<NeededEntityType>& needed_entity_ranks)
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-                
+
       CellTopology cell_topo(cell_topo_data);
       const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
 
@@ -87,7 +87,7 @@ namespace stk {
 
       const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
 
-      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
           {
             stk::mesh::Bucket & bucket = **k ;
@@ -95,16 +95,16 @@ namespace stk {
             const unsigned num_entity_in_bucket = bucket.size();
             for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
               {
-                stk::mesh::Entity& element = bucket[ientity];
+                stk::mesh::Entity element = bucket[ientity];
 
                 // FIXME
                 // skip elements that are already a parent (if there's no family tree yet, it's not a parent, so avoid throwing an error is isParentElement)
-                const bool check_for_family_tree = false;  
+                const bool check_for_family_tree = false;
                 bool isParent = m_eMesh.isParentElement(element, check_for_family_tree);
-              
+
                 if (isParent)
                   continue;
-                
+
                 const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
 
                 if (elem_nodes.size() && m_eMesh.isChildWithoutNieces(element, false))
@@ -112,7 +112,7 @@ namespace stk {
                     int markInfo = mark(element);
                     if (markInfo & DO_UNREFINE)
                       {
-                        elements_to_unref.insert(&element);
+                        elements_to_unref.insert(element);
                       }
                   }
               }

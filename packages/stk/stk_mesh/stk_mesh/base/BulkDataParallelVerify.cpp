@@ -80,7 +80,7 @@ bool comm_mesh_verify_parallel_consistency(
 
 namespace {
 
-bool ordered_comm( const Entity & entity )
+bool ordered_comm( const Entity entity )
 {
   const PairIterEntityComm ec = entity.comm();
   const size_t n = ec.size();
@@ -122,7 +122,7 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
             Bucket::iterator j     = bucket.begin();
 
       while ( j != j_end ) {
-        Entity & entity = *j ; ++j ;
+        Entity entity = *j ; ++j ;
 
         bool this_result = true ;
 
@@ -231,14 +231,14 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
     }
   }
 
-  for ( std::vector<Entity*>::const_iterator
+  for ( std::vector<Entity>::const_iterator
         i =  M.entity_comm().begin() ;
         i != M.entity_comm().end() ; ++i ) {
 
-    const PairIterEntityComm ec = (*i)->comm();
+    const PairIterEntityComm ec = i->comm();
 
     if ( ec.empty() ) {
-      print_entity_key( error_log , MetaData::get(M), (*i)->key() );
+      print_entity_key( error_log , MetaData::get(M), i->key() );
       error_log << " ERROR: in entity_comm but has no comm info" << std::endl ;
       result = false ;
     }
@@ -268,13 +268,13 @@ void insert( std::vector<unsigned> & vec , unsigned val )
 
 void pack_owned_verify( CommAll & all , const BulkData & mesh )
 {
-  const std::vector<Entity*> & entity_comm = mesh.entity_comm();
+  const std::vector<Entity> & entity_comm = mesh.entity_comm();
   const unsigned p_rank = all.parallel_rank();
 
-  for ( std::vector<Entity*>::const_iterator
+  for ( std::vector<Entity>::const_iterator
         i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
 
-    Entity & entity = **i ;
+    Entity entity = *i ;
 
     if ( entity.owner_rank() == p_rank ) {
 
@@ -357,7 +357,7 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
   Part * const       shares_part = & meta.globally_shared_part();
   const PartVector & mesh_parts  = meta.get_parts();
   const unsigned     p_rank = mesh.parallel_rank();
-  const std::vector<Entity*> & entity_comm = mesh.entity_comm();
+  const std::vector<Entity> & entity_comm = mesh.entity_comm();
 
   bool result = true ;
 
@@ -368,10 +368,10 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
   std::vector<Relation> recv_relations ;
   std::vector<unsigned> recv_comm ;
 
-  for ( std::vector<Entity*>::const_iterator
+  for ( std::vector<Entity>::const_iterator
         i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
 
-    Entity & entity = **i ;
+    Entity entity = *i;
 
     if ( entity.owner_rank() != p_rank ) {
 

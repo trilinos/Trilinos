@@ -33,7 +33,7 @@ typedef Field<double*,ElementNode> ElementNodePointerFieldType ;
  * of its nodes.
  */
 bool verify_elem_node_coord(
-  Entity & elem ,
+  Entity elem ,
   const ElementNodePointerFieldType & elem_node_coord ,
   const VectorFieldType & node_coord ,
   const unsigned node_count );

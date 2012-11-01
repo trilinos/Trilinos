@@ -29,7 +29,7 @@ class GridFixture;
 }
 
 //Generates a vector of entities to be killed in this iteration
-std::vector<stk::mesh::Entity *> entities_to_be_killed(
+std::vector<stk::mesh::Entity> entities_to_be_killed(
     const stk::mesh::BulkData & mesh,
     int iteration,
     stk::mesh::EntityRank entity_rank

@@ -135,7 +135,7 @@ namespace stk
       virtual void operator()(MDArray& in, MDArray& out, double time_value_optional=0.0);
       virtual void localEvaluation(MDArray& in, MDArray& out, double time_value_optional=0.0);
 
-      virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Entity& element, const MDArray& parametric_coords, double time_value_optional=0.0);
+      virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Entity element, const MDArray& parametric_coords, double time_value_optional=0.0);
       virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Bucket& bucket, const MDArray& parametric_coords, double time_value_optional=0.0);
 
       void setup_searcher(int D_);
@@ -152,7 +152,7 @@ namespace stk
     private:
       mesh::FieldBase *m_my_field;
       mesh::BulkData *m_bulkData;
-      const mesh::Entity *m_cachedElement;
+      mesh::Entity m_cachedElement;
       Searcher* m_searcher;
       //const CellTopologyData * m_cached_topo;
 

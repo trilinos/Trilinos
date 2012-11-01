@@ -118,7 +118,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
     stk::mesh::get_entities(bulk, NODE_RANK, nodes);
     std::vector<unsigned> procs ;
     STKUNIT_ASSERT(!nodes.empty());
-    stk::mesh::comm_procs( gg, *nodes.front() , procs );
+    stk::mesh::comm_procs( gg, nodes.front() , procs );
 
     STKUNIT_ASSERT(bulk.modification_end());
 
@@ -140,19 +140,19 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
     STKUNIT_ASSERT(bulk2.modification_end());
   }
 
-  Entity &cell = *(bulk.buckets (3)[0]->begin());
-  Entity &node = bulk.buckets (0)[0]-> operator [] ( 0 );
-  Entity &nodeb = bulk.buckets (0)[0]-> operator [] ( 2 );
+  Entity cell = *(bulk.buckets (3)[0]->begin());
+  Entity node = bulk.buckets (0)[0]-> operator [] ( 0 );
+  Entity nodeb = bulk.buckets (0)[0]-> operator [] ( 2 );
 
   std::vector<Part *> parts;
   parts.push_back ( &universal );
   parts.push_back ( &owned );
   bulk.modification_begin();
   stk::mesh::EntityId  new_id = bulk.parallel_rank() + 1;
-  Entity &edge = bulk.declare_entity ( 1 , new_id , parts );
+  Entity edge = bulk.declare_entity ( 1 , new_id , parts );
 
-  Entity &cell2 = *(bulk2.buckets (3)[0]->begin());
-  Entity &node2 = *(bulk2.buckets (0)[0]->begin());
+  Entity cell2 = *(bulk2.buckets (3)[0]->begin());
+  Entity node2 = *(bulk2.buckets (0)[0]->begin());
 
   STKUNIT_ASSERT_THROW ( bulk.declare_relation ( node , cell , 0 ) , std::runtime_error );
   STKUNIT_ASSERT_THROW ( bulk.declare_relation ( cell , node2 , 0 ) , std::runtime_error );
@@ -203,19 +203,19 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
     // This process' first element in the loop
     // if a parallel mesh has a shared node
 
-    Entity * elementnew = mesh2.m_bulk_data.get_entity( MetaData::ELEMENT_RANK , mesh2.m_element_ids[ nLocalElement * p_rank ] );
+    Entity elementnew = mesh2.m_bulk_data.get_entity( MetaData::ELEMENT_RANK , mesh2.m_element_ids[ nLocalElement * p_rank ] );
 
     mesh2.m_bulk_data.modification_begin();
     for ( unsigned p = 0 ; p < p_size ; ++p ) if ( p != p_rank ) {
-      STKUNIT_ASSERT_EQUAL( in_shared( *elementnew , p ), false );
-      STKUNIT_ASSERT_EQUAL( in_send_ghost( *elementnew , p ), false );
+      STKUNIT_ASSERT_EQUAL( in_shared( elementnew , p ), false );
+      STKUNIT_ASSERT_EQUAL( in_send_ghost( elementnew , p ), false );
     }
 
-    Entity * elementnew2 = mesh2.m_bulk_data.get_entity( MetaData::ELEMENT_RANK , mesh2.m_element_ids[ nLocalElement * p_rank ] );
-    STKUNIT_ASSERT_EQUAL( in_send_ghost( *elementnew2 , p_rank+100 ), false );
+    Entity elementnew2 = mesh2.m_bulk_data.get_entity( MetaData::ELEMENT_RANK , mesh2.m_element_ids[ nLocalElement * p_rank ] );
+    STKUNIT_ASSERT_EQUAL( in_send_ghost( elementnew2 , p_rank+100 ), false );
 
-    Entity * node3 = mesh2.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh2.m_node_ids[ nLocalElement * p_rank ] );
-    STKUNIT_ASSERT_EQUAL( in_shared( *node3 , p_rank+100 ), false );
+    Entity node3 = mesh2.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh2.m_node_ids[ nLocalElement * p_rank ] );
+    STKUNIT_ASSERT_EQUAL( in_shared( node3 , p_rank+100 ), false );
   }
 
   { //ghosting
@@ -235,8 +235,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
     const unsigned nNotOwned = nPerProc * p_rank ;
 
     // The not-owned shared entity:
-    Entity * node3 = mesh3.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh3.m_node_ids[ nNotOwned ] );
-    Entity * node4 = mesh3.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh3.m_node_ids[ nNotOwned ] );
+    Entity node3 = mesh3.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh3.m_node_ids[ nNotOwned ] );
+    Entity node4 = mesh3.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh3.m_node_ids[ nNotOwned ] );
 
     //EntityId node_element_ids[2] ;
     //node_element_ids[0] = node3->relations()[0].entity()->identifier();
@@ -247,17 +247,17 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
     for ( unsigned p = 0 ; p < p_size ; ++p ) if ( p != p_rank ) {
       //FIXME for Carol the check below did not pass for -np 3 or 4
       //STKUNIT_ASSERT_EQUAL( in_shared( *node3 , p ), true );
-      STKUNIT_ASSERT_EQUAL( in_send_ghost( *node3 , p ), false );
+      STKUNIT_ASSERT_EQUAL( in_send_ghost( node3 , p ), false );
     }
 
     //not owned and not shared
-    Entity * node5 = mesh3.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh3.m_node_ids[ nLocalElement * p_rank ] );
+    Entity node5 = mesh3.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh3.m_node_ids[ nLocalElement * p_rank ] );
 
     //node_element_ids[0] = node5->relations()[0].entity()->identifier();
     //node_element_ids[1] = node5->relations()[1].entity()->identifier();
 
-    STKUNIT_ASSERT_EQUAL( in_shared( *node5 , p_rank+100 ), false );
-    STKUNIT_ASSERT_EQUAL( in_send_ghost( *node4 , p_rank+100 ), false );
+    STKUNIT_ASSERT_EQUAL( in_shared( node5 , p_rank+100 ), false );
+    STKUNIT_ASSERT_EQUAL( in_send_ghost( node4 , p_rank+100 ), false );
   }
 
   }
@@ -293,10 +293,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
 
   // Create element
   const EntityRank entity_rank = MetaData::ELEMENT_RANK;
-  Entity & elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
+  Entity elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
 
   // Create node
-  Entity & node = mesh.declare_entity(NODE_RANK, p_rank+1 /*node_id*/, empty_parts);
+  Entity node = mesh.declare_entity(NODE_RANK, p_rank+1 /*node_id*/, empty_parts);
 
   // Add degenerate relations
   const unsigned nodes_per_elem = 4;
@@ -339,10 +339,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationAttribute)
 
   // Create element
   const EntityRank entity_rank = MetaData::ELEMENT_RANK;
-  Entity & elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
+  Entity elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
 
   // Create node
-  Entity & node = mesh.declare_entity(NODE_RANK, p_rank+1 /*node_id*/, empty_parts);
+  Entity node = mesh.declare_entity(NODE_RANK, p_rank+1 /*node_id*/, empty_parts);
 
   mesh.declare_relation( elem, node, 0 );
 
@@ -392,8 +392,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
   // Begin modification cycle so we can create the entities and relations
   mesh.modification_begin();
 
-  Entity* elem_ptr = NULL;
-  Entity* edge_ptr = NULL;
+  Entity edge = Entity();
   EntityVector nodes;
   const unsigned nodes_per_elem = 4, nodes_per_side = 2;
 
@@ -403,28 +402,26 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
 
     // Create element
     const EntityRank entity_rank = MetaData::ELEMENT_RANK;
-    Entity & elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
-    elem_ptr = &elem;
+    Entity elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
 
     // Create nodes
     const unsigned starting_node_id = p_rank * nodes_per_side + 1;
     for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
-      nodes.push_back(&mesh.declare_entity(NODE_RANK, id, empty_parts));
+      nodes.push_back(mesh.declare_entity(NODE_RANK, id, empty_parts));
     }
 
     // Add relations to nodes
     unsigned rel_id = 0;
     for (EntityVector::iterator itr = nodes.begin(); itr != nodes.end(); ++itr, ++rel_id) {
-      mesh.declare_relation( elem, **itr, rel_id );
+      mesh.declare_relation( elem, *itr, rel_id );
     }
 
     // Create edge
     const EntityRank edge_rank = meta_data.side_rank();
-    Entity & edge = mesh.declare_entity(edge_rank, 1 /*id*/, empty_parts);
-    edge_ptr = &edge;
+    edge = mesh.declare_entity(edge_rank, 1 /*id*/, empty_parts);
 
     // Set up relation from elem to edge
-    mesh.declare_relation( *elem_ptr, *edge_ptr, 0 /*rel-id*/ );
+    mesh.declare_relation( elem, edge, 0 /*rel-id*/ );
   }
 
   mesh.modification_end();
@@ -438,7 +435,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
     for (unsigned node_idx = starting_node_idx;
          node_idx < starting_node_idx + nodes_per_side;
          ++node_idx, ++rel_id) {
-      mesh.declare_relation( *edge_ptr, *nodes[node_idx], rel_id );
+      mesh.declare_relation( edge, nodes[node_idx], rel_id );
     }
   }
 

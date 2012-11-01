@@ -53,7 +53,7 @@ void sort_and_compare_eq(std::vector<T*> results,
 void check_selected_buckets(const Selector& selector,
                             const BulkData& mesh,
                             const std::vector<Bucket*>& node_buckets,
-                            const std::vector<Entity*>& expected_selected_entities)
+                            const std::vector<Entity>& expected_selected_entities)
 {
   //
   // Check buckets
@@ -63,7 +63,7 @@ void check_selected_buckets(const Selector& selector,
   std::set<Bucket*> selected_bucket_set;
 
   // Compute vector of buckets that should be selected
-  BOOST_FOREACH( Entity* entity, expected_selected_entities ) {
+  BOOST_FOREACH( Entity entity, expected_selected_entities ) {
     selected_bucket_set.insert(&(entity->bucket()));
   }
   std::copy(selected_bucket_set.begin(), selected_bucket_set.end(), std::back_inserter(expected_buckets));
@@ -104,7 +104,7 @@ void check_selected_buckets(const Selector& selector,
   // Check entities
   //
 
-  std::vector<Entity*> get_entities_range;
+  std::vector<Entity> get_entities_range;
 
   stk::mesh::SelectedBucketRangeEntityIteratorRange selected_entity_range = stk::mesh::get_selected_entities( selector, all_buckets );
   for (stk::mesh::SelectedBucketRangeEntityIterator selected_entity_itr = boost::begin(selected_entity_range),
@@ -114,7 +114,7 @@ void check_selected_buckets(const Selector& selector,
     get_entities_range.push_back(*selected_entity_itr);
   }
   // TODO: Figure out why BOOST_FOREACH does not work well with selected entity iterators
-  // BOOST_FOREACH(Entity* entity, stk::mesh::get_selected_entities(selector, all_buckets) ) {
+  // BOOST_FOREACH(Entity entity, stk::mesh::get_selected_entities(selector, all_buckets) ) {
   //   get_entities_range.push_back(entity);
   // }
 
@@ -139,7 +139,7 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
   // Check bucket membership correctness
 
   {
-    const Bucket & bucket = fix.m_entity1->bucket();
+    const Bucket & bucket = fix.m_entity1.bucket();
     STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partA ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partB ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partC ) );
@@ -147,7 +147,7 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
   }
 
   {
-    const Bucket & bucket = fix.m_entity2->bucket();
+    const Bucket & bucket = fix.m_entity2.bucket();
     STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partA ) );
     STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partB ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partC ) );
@@ -155,7 +155,7 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
   }
 
   {
-    const Bucket & bucket = fix.m_entity3->bucket();
+    const Bucket & bucket = fix.m_entity3.bucket();
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partA ) );
     STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partB ) );
     STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partC ) );
@@ -163,7 +163,7 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
   }
 
   {
-    const Bucket & bucket = fix.m_entity4->bucket();
+    const Bucket & bucket = fix.m_entity4.bucket();
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partA ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partB ) );
     STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partC ) );
@@ -171,7 +171,7 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
   }
 
   {
-    const Bucket & bucket = fix.m_entity5->bucket();
+    const Bucket & bucket = fix.m_entity5.bucket();
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partA ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partB ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partC ) );
@@ -204,7 +204,7 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
   // the selected bucket itertor is broken
   // \TODO fix
   {
-    std::vector<Entity*> expected_selected_entities;
+    std::vector<Entity> expected_selected_entities;
     expected_selected_entities.push_back(fix.m_entity1);
     expected_selected_entities.push_back(fix.m_entity2);
 
@@ -212,7 +212,7 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
   }
 
   {
-    std::vector<Entity*> expected_selected_entities;
+    std::vector<Entity> expected_selected_entities;
     expected_selected_entities.push_back(fix.m_entity2);
     expected_selected_entities.push_back(fix.m_entity3);
 
@@ -220,7 +220,7 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
   }
 
   {
-    std::vector<Entity*> expected_selected_entities;
+    std::vector<Entity> expected_selected_entities;
     expected_selected_entities.push_back(fix.m_entity3);
     expected_selected_entities.push_back(fix.m_entity4);
 
@@ -230,7 +230,7 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
   // Check get_entities correctness
 
   {
-    std::vector<Entity*> all_nodes_expected, all_nodes, all_nodes_range;
+    std::vector<Entity> all_nodes_expected, all_nodes, all_nodes_range;
 
     all_nodes_expected.push_back(fix.m_entity1);
     all_nodes_expected.push_back(fix.m_entity2);
@@ -247,7 +247,7 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
          ++entity_itr) {
       all_nodes_range.push_back(*entity_itr);
     }
-    // BOOST_FOREACH( Entity* const entity, stk::mesh::get_entities( NODE_RANK, fix.m_bulk_data ) ) {
+    // BOOST_FOREACH( Entity const entity, stk::mesh::get_entities( NODE_RANK, fix.m_bulk_data ) ) {
     //   all_nodes_range.push_back(entity);
     // }
     sort_and_compare_eq(all_nodes_range, all_nodes_expected);

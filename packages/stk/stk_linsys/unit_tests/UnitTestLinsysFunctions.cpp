@@ -128,7 +128,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
 
   bulk_data.modification_begin();
 
-  std::vector<stk::mesh::Entity*> local_nodes;
+  std::vector<stk::mesh::Entity> local_nodes;
   stk::mesh::Selector select_owned(fem_meta.locally_owned_part());
   stk::mesh::get_selected_entities(select_owned,
                                    bulk_data.buckets(NODE_RANK),
@@ -139,8 +139,8 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
   if (local_nodes.size() > 0) {
     stk::mesh::PartVector partvector;
     partvector.push_back(&bcpart);
-    bulk_data.change_entity_parts(*local_nodes[0], partvector);
-    bc_node_id = stk::linsys::impl::entityid_to_int(local_nodes[0]->identifier());
+    bulk_data.change_entity_parts(local_nodes[0], partvector);
+    bc_node_id = stk::linsys::impl::entityid_to_int(local_nodes[0].identifier());
   }
 
   bulk_data.modification_end();
@@ -209,9 +209,9 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
 
   stk::linsys::copy_vector_to_mesh( *rhsvec, ls.get_DofMapper(), bulk_data);
 
-  stk::mesh::Entity* bc_node = bulk_data.get_entity(NODE_RANK, local_nodes[0]->identifier());
+  stk::mesh::Entity bc_node = bulk_data.get_entity(NODE_RANK, local_nodes[0].identifier());
 
-  stk::mesh::FieldTraits<ScalarField>::data_type* bc_node_data = stk::mesh::field_data(*temperature_field, *bc_node);
+  stk::mesh::FieldTraits<ScalarField>::data_type* bc_node_data = stk::mesh::field_data(*temperature_field, bc_node);
 
   bool bc_node_data_is_correct = std::abs(bc_node_data[0] - 9.0) < 1.e-13;
   STKUNIT_ASSERT( bc_node_data_is_correct );

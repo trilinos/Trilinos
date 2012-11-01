@@ -137,16 +137,16 @@ void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proc
 
       stk::mesh::declare_element( m_bulk_data, m_quad_part, elem_id( ix , iy ) , elem_nodes);
       for (unsigned i = 0; i<4; ++i) {
-        stk::mesh::Entity * const node = m_bulk_data.get_entity( MetaData::NODE_RANK , elem_nodes[i] );
+        stk::mesh::Entity const node = m_bulk_data.get_entity( MetaData::NODE_RANK , elem_nodes[i] );
 
-        ThrowRequireMsg( node != NULL,
+        ThrowRequireMsg( node.is_valid(),
           "This process should know about the nodes that make up its element");
 
         // Compute and assign coordinates to the node
         unsigned nx = 0, ny = 0;
         node_x_y(elem_nodes[i], nx, ny);
 
-        Scalar * data = stk::mesh::field_data( m_coord_field , *node );
+        Scalar * data = stk::mesh::field_data( m_coord_field , node );
 
         data[0] = nx ;
         data[1] = ny ;

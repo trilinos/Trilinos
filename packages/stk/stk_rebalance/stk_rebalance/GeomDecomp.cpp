@@ -31,12 +31,12 @@ static const size_t NODE_RANK = stk::mesh::MetaData::NODE_RANK;
 namespace stk {
 namespace rebalance {
 
-std::vector<const mesh::Entity *> GeomDecomp::entity_coordinates(const mesh::Entity                 & entity,
-                                                                  const VectorField            & nodal_coor,
-                                                                  std::vector<std::vector<double> >  & coordinates)
+std::vector<mesh::Entity> GeomDecomp::entity_coordinates(const mesh::Entity entity,
+                                                         const VectorField            & nodal_coor,
+                                                         std::vector<std::vector<double> >  & coordinates)
 {
   coordinates.clear();
-  std::vector<const mesh::Entity *> mesh_nodes;
+  std::vector<mesh::Entity> mesh_nodes;
 
   const mesh::EntityRank enttype   = entity.entity_rank();
   if ( enttype == NODE_RANK )
@@ -51,9 +51,9 @@ std::vector<const mesh::Entity *> GeomDecomp::entity_coordinates(const mesh::Ent
     {
       const mesh::Relation &rel = *nr.first;
       if (rel.entity_rank() ==  NODE_RANK) { // %fixme: need to check for USES relation
-        const mesh::Entity *nent = rel.entity();
-        const unsigned ndim(field_data_size(nodal_coor, *nent)/sizeof(double)); // TODO - is there a better way to get this info?
-        double * coor = mesh::field_data(nodal_coor, *nent);
+        const mesh::Entity nent = rel.entity();
+        const unsigned ndim(field_data_size(nodal_coor, nent)/sizeof(double)); // TODO - is there a better way to get this info?
+        double * coor = mesh::field_data(nodal_coor, nent);
         if (!coor) {
           throw std::runtime_error("GeomDecomp::entity_coordinates Error: The coordinate field does not exist.");
         }
@@ -67,7 +67,7 @@ std::vector<const mesh::Entity *> GeomDecomp::entity_coordinates(const mesh::Ent
   return mesh_nodes;
 }
 
-std::vector<std::vector<double> > GeomDecomp::compute_entity_centroid(const mesh::Entity & entity,
+std::vector<std::vector<double> > GeomDecomp::compute_entity_centroid(const mesh::Entity entity,
                                                                    const VectorField & nodal_coor_ref,
                                                                    std::vector<double>   & centroid)
 {
@@ -130,7 +130,7 @@ void apply_rotation (std::vector<double> &coor)
 
 //: Convert a mesh entity to a single point
 //: in cartesian coordinates (x,y,z)
-void GeomDecomp::entity_to_point (const mesh::Entity            & entity,
+void GeomDecomp::entity_to_point (const mesh::Entity entity,
                                const VectorField & nodeCoord,
                                std::vector<double>           & coor)
 {

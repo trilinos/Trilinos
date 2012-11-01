@@ -23,11 +23,11 @@ SelectorFixture::SelectorFixture()
   , m_partB( m_meta_data.declare_part( "PartB" , 0 ) )
   , m_partC( m_meta_data.declare_part( "PartC" , 0 ) )
   , m_partD( m_meta_data.declare_part( "PartD" , 0 ) )
-  , m_entity1( NULL )
-  , m_entity2( NULL )
-  , m_entity3( NULL )
-  , m_entity4( NULL )
-  , m_entity5( NULL )
+  , m_entity1( )
+  , m_entity2( )
+  , m_entity3( )
+  , m_entity4( )
+  , m_entity5( )
   , m_fieldA(m_meta_data.declare_field<stk::mesh::Field<double> >("FieldA"))
   , m_fieldABC(m_meta_data.declare_field<stk::mesh::Field<double> >("FieldABC"))
 {
@@ -55,32 +55,32 @@ void SelectorFixture::generate_mesh()
   // Entity1 is contained in PartA
   partMembership.clear();
   partMembership.push_back( & m_partA );
-  m_entity1 = & m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+  m_entity1 = m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
   ++ent_id;
 
   // Entity2 is contained in PartA and PartB
   partMembership.clear();
   partMembership.push_back( & m_partA );
   partMembership.push_back( & m_partB );
-  m_entity2 = & m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+  m_entity2 = m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
   ++ent_id;
 
   // Entity3 is contained in PartB and PartC
   partMembership.clear();
   partMembership.push_back( & m_partB );
   partMembership.push_back( & m_partC );
-  m_entity3 = & m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+  m_entity3 = m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
   ++ent_id;
 
   // Entity4 is contained in PartC
   partMembership.clear();
   partMembership.push_back( & m_partC );
-  m_entity4 = & m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+  m_entity4 = m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
   ++ent_id;
 
   // Entity5 is not contained in any Part
   partMembership.clear();
-  m_entity5 = & m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+  m_entity5 = m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
 }
 
 //--------------------------------------------------------------------------
@@ -118,8 +118,7 @@ VariableSelectorFixture::VariableSelectorFixture(int NumParts)
   for (int part_i = 0 ; part_i < NumParts ; ++part_i) {
     std::vector<stk::mesh::Part*> partMembership;
     partMembership.push_back(m_declared_part_vector[part_i]);
-    stk::mesh::Entity * e =
-      & m_BulkData.declare_entity(ent_type, ent_id, partMembership);
+    stk::mesh::Entity e = m_BulkData.declare_entity(ent_type, ent_id, partMembership);
     m_entities.push_back( e );
     ++ent_id;
   }

@@ -44,7 +44,7 @@ double stk::rebalance::check_balance(mesh::BulkData &    bulk_data,
   for(mesh::EntityVector::iterator elem_it = local_elems.begin(); elem_it != local_elems.end(); ++elem_it)
   {
     if (load_measure) {
-      const double * load_val = mesh::field_data(*load_measure, **elem_it);
+      const double * load_val = mesh::field_data(*load_measure, *elem_it);
       my_load += *load_val;
     } else {
       my_load += 1;
@@ -74,14 +74,14 @@ bool stk::rebalance::verify_dependent_ownership( const stk::mesh::EntityRank & p
   {
     is_with_elem = false;
 
-    stk::mesh::Entity * entity = entities[i];
-    unsigned owner_proc = entity->owner_rank();
-    const stk::mesh::PairIterRelation rel = entity->relations( parent_rank );
+    stk::mesh::Entity entity = entities[i];
+    unsigned owner_proc = entity.owner_rank();
+    const stk::mesh::PairIterRelation rel = entity.relations( parent_rank );
     const unsigned num_elems = rel.size();
 
     for ( unsigned j = 0 ; j < num_elems ; ++j )
     {
-      stk::mesh::Entity & elem = * rel[j].entity();
+      stk::mesh::Entity elem = rel[j].entity();
       if( owner_proc == elem.owner_rank() )
       {
         is_with_elem = true;

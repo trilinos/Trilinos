@@ -73,7 +73,7 @@ namespace stk
             output_values[i] = std::pow(std::fabs(integrand_values[i]), double(std::fabs(Power)) );
           }
       }
-      virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Entity& element, const MDArray& parametric_coords, double time_value_optional=0.0)
+      virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Entity element, const MDArray& parametric_coords, double time_value_optional=0.0)
       {
         (*this)(domain, codomain, time_value_optional);
       }

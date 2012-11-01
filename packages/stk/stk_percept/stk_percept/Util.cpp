@@ -32,16 +32,16 @@
 
 namespace shards {
 
-    std::ostream& operator<<(std::ostream& os, const shards::Array<double, shards::NaturalOrder>& container) 
+    std::ostream& operator<<(std::ostream& os, const shards::Array<double, shards::NaturalOrder>& container)
     {
       // Save the format state of the original ostream os.
       Teuchos::oblackholestream oldFormatState;
-      oldFormatState.copyfmt(os);  
+      oldFormatState.copyfmt(os);
 
       os.setf(std::ios_base::scientific, std::ios_base::floatfield);
       os.setf(std::ios_base::right);
       int myprec = os.precision();
-  
+
       int size = container.size();
       int rank = container.rank();
       Teuchos::Array<int> multiIndex(rank);
@@ -52,30 +52,30 @@ namespace shards {
         {
           dimensions[irank] = container.dimension(irank);
         }
-  
+
       os<< "===============================================================================\n"\
         << "\t Container size = " << size << "\n"
         << "\t Container rank = " << rank << "\n" ;
-  
+
       if( (rank == 0 ) && (size == 0) ) {
         os<< "====================================================================================\n"\
           << "|                        *** This is an empty container ****                       |\n";
       }
       else {
         os<< "\t Dimensions     = ";
-    
+
         for(int r = 0; r < rank; r++){
           os << " (" << dimensions[r] <<") ";
         }
         os << "\n";
-    
+
         os<< "====================================================================================\n"\
           << "|              Multi-index          Enumeration             Value                  |\n"\
           << "====================================================================================\n";
       }
-  
+
       int address=0;
-      
+
       std::vector<int> dims = dimensions;
       dims.resize(8,1);
       std::vector<int> idim(8);
@@ -99,11 +99,11 @@ namespace shards {
                                       mistring << idim[jr] << std::dec << " " ;
                                     }
                                   os.setf(std::ios::right, std::ios::adjustfield);
-                                  os << std::setw(27) << mistring.str(); 
+                                  os << std::setw(27) << mistring.str();
                                   os << std::setw(20) << address;
                                   os << "             ";
                                   os.setf(std::ios::left, std::ios::adjustfield);
-                                  os << std::setw(myprec+8) 
+                                  os << std::setw(myprec+8)
                                      << container[address]
                                      << "\n";
                                   ++address;
@@ -119,17 +119,17 @@ namespace shards {
         container.getMultiIndex(multiIndex,address);
         std::ostringstream mistring;
         for(int r = 0; r < rank; r++){
-          mistring <<  multiIndex[r] << std::dec << " "; 
+          mistring <<  multiIndex[r] << std::dec << " ";
         }
         os.setf(std::ios::right, std::ios::adjustfield);
-        os << std::setw(27) << mistring.str(); 
+        os << std::setw(27) << mistring.str();
         os << std::setw(20) << address;
         os << "             ";
         os.setf(std::ios::left, std::ios::adjustfield);
         os << std::setw(myprec+8) << container[address] << "\n";
       }
 #endif
-  
+
       os<< "====================================================================================\n\n";
 
       // reset format state of os
@@ -140,11 +140,12 @@ namespace shards {
 
 }
 
-namespace stk { 
+namespace stk {
 
-  namespace mesh { 
+#if 0
+  namespace mesh {
 
-    std::ostream &operator<<(std::ostream& out, const stk::mesh::Entity& entity)
+    std::ostream &operator<<(std::ostream& out, const stk::mesh::Entity entity)
     {
       if (entity.entity_rank() != stk::mesh::MetaData::NODE_RANK)
         {
@@ -154,7 +155,7 @@ namespace stk {
           unsigned num_node = elem_nodes.size();
           for (unsigned inode=0; inode < num_node; inode++)
             {
-              mesh::Entity & node = * elem_nodes[ inode ].entity();
+              mesh::Entity node = elem_nodes[ inode ].entity();
 
               out << node.identifier() << " ";
             }
@@ -167,17 +168,17 @@ namespace stk {
           out << "Node: " << entity.identifier();
 
         }
-      else 
+      else
         {
           out << "rank unknown: " << entity.entity_rank();
         }
 
       return out;
-    }    
-
+    }
   }
+#endif
 
-  namespace percept { 
+  namespace percept {
 
 #define ENABLE_PAUSE 1
     //#define ENABLE_PAUSE (1 && NDEBUG)
@@ -240,7 +241,7 @@ namespace stk {
     static double s_trace_time_0[] = {0,0,0,0,0,0,0,0,0,0};
     static double s_trace_time_1[] = {0,0,0,0,0,0,0,0,0,0};
 
-    void 
+    void
     Util::
     trace_cpu_time_and_mem_0(unsigned index)
     {
@@ -249,13 +250,13 @@ namespace stk {
           size_t memory_in_bytes = Util::memory(heap_in_bytes);
 
           double cpu_in_min = Util::cpu_time()/60.0;
-        
+
           s_trace_mem_0[index] = memory_in_bytes;
           s_trace_time_0[index] = cpu_in_min;
         }
     }
 
-    void 
+    void
     Util::
     trace_cpu_time_and_mem_1(unsigned index)
     {
@@ -264,7 +265,7 @@ namespace stk {
           size_t memory_in_bytes = Util::memory(heap_in_bytes);
 
           double cpu_in_min = Util::cpu_time()/60.0;
-        
+
           s_trace_mem_1[index] += memory_in_bytes - s_trace_mem_0[index];
           s_trace_time_1[index] += cpu_in_min - s_trace_time_0[index];
         }
@@ -273,8 +274,8 @@ namespace stk {
 
     void Util::trace_cpu_time_and_mem_print(int index, std::string msg)
     {
-      std::cout << "tmp trace_cpu_time_and_mem_print "              
-                << msg << " = " << ((double)s_trace_mem_1[index])/(1024.0*1024.0) << " [Mb] " 
+      std::cout << "tmp trace_cpu_time_and_mem_print "
+                << msg << " = " << ((double)s_trace_mem_1[index])/(1024.0*1024.0) << " [Mb] "
                 << s_trace_time_1[index] << " [min] " << std::endl ;
     }
 
@@ -377,7 +378,7 @@ get_heap_info(
 
       double seconds = my_rusage.ru_utime.tv_sec;
       double micro_seconds = my_rusage.ru_utime.tv_usec;
-  
+
       return seconds + micro_seconds*1.0e-6;
 
 #else
@@ -402,7 +403,7 @@ get_heap_info(
 
       double seconds = my_rusage.ru_utime.tv_sec;
       double micro_seconds = my_rusage.ru_utime.tv_usec;
-  
+
       return seconds + micro_seconds*1.0e-6;
 
 #else

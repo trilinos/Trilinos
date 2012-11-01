@@ -51,7 +51,7 @@ namespace rebalance {
  */
 
 
-/** \class GeomDecomp 
+/** \class GeomDecomp
  *
  * \brief Class for determining the optimal partitioning of mesh entities.
  *
@@ -93,7 +93,7 @@ public:
    * a single coordinate point for it.
    *
    */
-  static void entity_to_point( const mesh::Entity  & entity,
+  static void entity_to_point( const mesh::Entity entity,
                             const VectorField   & ref,
                             std::vector<double> & coor);
 
@@ -103,15 +103,15 @@ public:
    *
    * \param ref  Coordinate field to average, usually defined on the nodes.
    *
-   * \param coor Is the output coordinates that entity_to_point would average to 
+   * \param coor Is the output coordinates that entity_to_point would average to
    *             determine a centroid.
    *
    * The return value is the mesh entities from which the coordinates were obtained.
    */
 
-  static std::vector<const mesh::Entity *> entity_coordinates(const mesh::Entity     & entity,
-                                                               const VectorField     & ref,
-                                                               std::vector<std::vector<double> >    & coordinates);
+  static std::vector<mesh::Entity> entity_coordinates(const mesh::Entity entity,
+                                                      const VectorField     & ref,
+                                                      std::vector<std::vector<double> >    & coordinates);
 
   /** \brief  Returns a vector of vectors containing the coordinates of the nodes that were used to compute the centroid.
    *
@@ -123,11 +123,11 @@ public:
    *             be large enough to hold a single coordinate.
    *             Note the maximum needed in all cases is length 3.
    *
-   * return value is the output coordinates that entity_to_point would average to 
+   * return value is the output coordinates that entity_to_point would average to
    *             determine a centroid.
    *
    */
-  static std::vector<std::vector<double> > compute_entity_centroid( const mesh::Entity     & entity,
+  static std::vector<std::vector<double> > compute_entity_centroid( const mesh::Entity entity,
                                                                const VectorField   & ref,
                                                                std::vector<double> & coor);
   /** \brief Check existence of library entry name on domain library.

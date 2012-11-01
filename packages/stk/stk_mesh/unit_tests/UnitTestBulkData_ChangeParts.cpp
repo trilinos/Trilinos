@@ -82,24 +82,24 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   // call that entity the closure_entity because all the other entities
   // will be in it's closure.
 
-  Entity& closure_entity = bulk.declare_entity(4 /*entity rank*/,
+  Entity closure_entity = bulk.declare_entity(4 /*entity rank*/,
                                                p_rank+1 /*id*/,
                                                no_parts);
 
   tmp[0] = & part_A_0 ;
-  Entity& entity_0_1 = bulk.declare_entity(MetaData::NODE_RANK, 1 /*id*/, tmp);
+  Entity entity_0_1 = bulk.declare_entity(MetaData::NODE_RANK, 1 /*id*/, tmp);
   bulk.declare_relation( closure_entity , entity_0_1 , 0 /*local_rel_id*/ );
 
   tmp[0] = & part_A_1 ;
-  Entity& entity_1_1 = bulk.declare_entity(MetaData::EDGE_RANK, 1 /*id*/, tmp);
+  Entity entity_1_1 = bulk.declare_entity(MetaData::EDGE_RANK, 1 /*id*/, tmp);
   bulk.declare_relation( closure_entity , entity_1_1 , 1 /*local_rel_id*/ );
 
   tmp[0] = & part_A_2 ;
-  Entity& entity_2_1 = bulk.declare_entity(MetaData::FACE_RANK, 1 /*id*/, tmp);
+  Entity entity_2_1 = bulk.declare_entity(MetaData::FACE_RANK, 1 /*id*/, tmp);
   bulk.declare_relation( closure_entity , entity_2_1 , 2 /*local_rel_id*/ );
 
   tmp[0] = & part_A_3 ;
-  Entity& entity_3_1 = bulk.declare_entity(MetaData::ELEMENT_RANK, 1 /*id*/, tmp);
+  Entity entity_3_1 = bulk.declare_entity(MetaData::ELEMENT_RANK, 1 /*id*/, tmp);
   bulk.declare_relation( closure_entity , entity_3_1 , 3 /*local_rel_id*/ );
 
   // Ensure that the supersets of the buckets containing the entities we
@@ -392,12 +392,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
   // RingMesh puts each element in its own part.
   for ( unsigned i = 0 ; i < nLocalElement ; ++i ) {
     const unsigned n = i + nPerProc * p_rank ;
-    Entity * const element = bulk.get_entity( MetaData::ELEMENT_RANK /*entity rank*/,
+    Entity const element = bulk.get_entity( MetaData::ELEMENT_RANK /*entity rank*/,
                                               ring_mesh.m_element_ids[n] );
-    STKUNIT_ASSERT( element != NULL );
-    STKUNIT_ASSERT( element->bucket().member( part_univ ) );
-    STKUNIT_ASSERT( element->bucket().member( part_owns ) );
-    STKUNIT_ASSERT( element->bucket().member( * ring_mesh.m_element_parts[ n % ring_mesh.m_element_parts.size() ] ) );
+    STKUNIT_ASSERT( element.is_valid() );
+    STKUNIT_ASSERT( element.bucket().member( part_univ ) );
+    STKUNIT_ASSERT( element.bucket().member( part_owns ) );
+    STKUNIT_ASSERT( element.bucket().member( * ring_mesh.m_element_parts[ n % ring_mesh.m_element_parts.size() ] ) );
   }
 
   // Check that local nodes are in the expected parts. Note that the relations
@@ -413,19 +413,19 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
     Part * const epart_0 = ring_mesh.m_element_parts[ n0 < n1 ? n0 : n1 ];
     Part * const epart_1 = ring_mesh.m_element_parts[ n0 < n1 ? n1 : n0 ];
 
-    Entity * const node = bulk.get_entity( MetaData::NODE_RANK , ring_mesh.m_node_ids[n] );
-    STKUNIT_ASSERT( node != NULL );
-    if ( node->owner_rank() == p_rank ) {
-      STKUNIT_ASSERT( node->bucket().member( part_univ ) );
-      STKUNIT_ASSERT( node->bucket().member( part_owns ) );
-      STKUNIT_ASSERT( node->bucket().member( *epart_0 ) );
-      STKUNIT_ASSERT( node->bucket().member( *epart_1 ) );
+    Entity const node = bulk.get_entity( MetaData::NODE_RANK , ring_mesh.m_node_ids[n] );
+    STKUNIT_ASSERT( node.is_valid() );
+    if ( node.owner_rank() == p_rank ) {
+      STKUNIT_ASSERT( node.bucket().member( part_univ ) );
+      STKUNIT_ASSERT( node.bucket().member( part_owns ) );
+      STKUNIT_ASSERT( node.bucket().member( *epart_0 ) );
+      STKUNIT_ASSERT( node.bucket().member( *epart_1 ) );
     }
     else {
-      STKUNIT_ASSERT( node->bucket().member( part_univ ) );
-      STKUNIT_ASSERT( ! node->bucket().member( part_owns ) );
-      STKUNIT_ASSERT( node->bucket().member( * epart_0 ) );
-      STKUNIT_ASSERT( node->bucket().member( * epart_1 ) );
+      STKUNIT_ASSERT( node.bucket().member( part_univ ) );
+      STKUNIT_ASSERT( ! node.bucket().member( part_owns ) );
+      STKUNIT_ASSERT( node.bucket().member( * epart_0 ) );
+      STKUNIT_ASSERT( node.bucket().member( * epart_1 ) );
     }
   }
 
@@ -440,11 +440,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
       PartVector add(1); add[0] = & ring_mesh.m_element_part_extra ;
       PartVector rem(1); rem[0] = ring_mesh.m_element_parts[ n % ring_mesh.m_element_parts.size() ];
 
-      Entity * const element = bulk.get_entity( MetaData::ELEMENT_RANK , ring_mesh.m_element_ids[n] );
-      bulk.change_entity_parts( *element , add , rem );
-      STKUNIT_ASSERT( element->bucket().member( part_univ ) );
-      STKUNIT_ASSERT( element->bucket().member( part_owns ) );
-      STKUNIT_ASSERT( element->bucket().member(ring_mesh.m_element_part_extra ) );
+      Entity const element = bulk.get_entity( MetaData::ELEMENT_RANK , ring_mesh.m_element_ids[n] );
+      bulk.change_entity_parts( element , add , rem );
+      STKUNIT_ASSERT( element.bucket().member( part_univ ) );
+      STKUNIT_ASSERT( element.bucket().member( part_owns ) );
+      STKUNIT_ASSERT( element.bucket().member(ring_mesh.m_element_part_extra ) );
     }
   }
 
@@ -465,17 +465,17 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
     Part * epart_0 = ep_0->mesh_meta_data_ordinal() < ep_1->mesh_meta_data_ordinal() ? ep_0 : ep_1 ;
     Part * epart_1 = ep_0->mesh_meta_data_ordinal() < ep_1->mesh_meta_data_ordinal() ? ep_1 : ep_0 ;
 
-    Entity * const node = bulk.get_entity( MetaData::NODE_RANK , ring_mesh.m_node_ids[n] );
-    STKUNIT_ASSERT( node != NULL );
-    if ( node->owner_rank() == p_rank ) {
-      STKUNIT_ASSERT( node->bucket().member( part_owns ) );
+    Entity const node = bulk.get_entity( MetaData::NODE_RANK , ring_mesh.m_node_ids[n] );
+    STKUNIT_ASSERT( node.is_valid() );
+    if ( node.owner_rank() == p_rank ) {
+      STKUNIT_ASSERT( node.bucket().member( part_owns ) );
     }
     else {
-      STKUNIT_ASSERT( ! node->bucket().member( part_owns ) );
+      STKUNIT_ASSERT( ! node.bucket().member( part_owns ) );
     }
 
-    STKUNIT_ASSERT( node->bucket().member( part_univ ) );
-    STKUNIT_ASSERT( node->bucket().member( *epart_0 ) );
-    STKUNIT_ASSERT( node->bucket().member( *epart_1 ) );
+    STKUNIT_ASSERT( node.bucket().member( part_univ ) );
+    STKUNIT_ASSERT( node.bucket().member( *epart_0 ) );
+    STKUNIT_ASSERT( node.bucket().member( *epart_1 ) );
   }
 }

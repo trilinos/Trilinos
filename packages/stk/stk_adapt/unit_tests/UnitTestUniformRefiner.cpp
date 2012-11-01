@@ -245,7 +245,7 @@ namespace stk {
         for(std::size_t i=0;i<buckets.size();++i) {
           stk::mesh::Bucket & b = *buckets[i];
           for(std::size_t j=0;j<b.size();++j) {
-            stk::mesh::Entity & element = b[j];
+            stk::mesh::Entity element = b[j];
             // set processor rank
             int * procId = stk::mesh::field_data(processorIdField,element);
             procId[0] = hf.m_bulk_data.parallel_rank();
@@ -289,7 +289,7 @@ namespace stk {
           for(std::size_t i=0;i<buckets.size();++i) {
             stk::mesh::Bucket & b = *buckets[i];
             for(std::size_t j=0;j<b.size();++j) {
-              stk::mesh::Entity & element = b[j];
+              stk::mesh::Entity element = b[j];
               // set processor rank
               int * procId = stk::mesh::field_data(processorIdField,element);
               procId[0] = hf.m_bulk_data.parallel_rank();
@@ -1878,7 +1878,7 @@ namespace stk {
                 
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
-                        stk::mesh::Entity& node = bucket[iEntity];
+                        stk::mesh::Entity node = bucket[iEntity];
 
                         double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
                         double iy = data[1]; // /double(nele);
@@ -1967,7 +1967,7 @@ namespace stk {
                 
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
-                        stk::mesh::Entity& node = bucket[iEntity];
+                        stk::mesh::Entity node = bucket[iEntity];
 
                         double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
                         double iy = data[1]; // /double(nele);
@@ -2032,7 +2032,7 @@ namespace stk {
                 
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
-                        stk::mesh::Entity& entity = bucket[iEntity];
+                        stk::mesh::Entity entity = bucket[iEntity];
 
                         double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
                         data[2] = data[2]*data[2];

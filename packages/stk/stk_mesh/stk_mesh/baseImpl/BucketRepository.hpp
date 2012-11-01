@@ -12,7 +12,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Iterators.hpp>
-#include <stk_mesh/baseImpl/BucketFamily.hpp>
+#include <stk_mesh/baseImpl/Partition.hpp>
 
 namespace stk {
 namespace mesh {
@@ -89,13 +89,13 @@ public:
   void optimize_buckets();
   void sort_and_optimize_buckets();
 
-  void add_entity_to_bucket( Entity & entity, Bucket & bucket )
+  void add_entity_to_bucket( Entity entity, Bucket & bucket )
   {
-    bucket.replace_entity( bucket.size() , & entity ) ;
+    bucket.replace_entity( bucket.size() , entity ) ;
     bucket.increment_size();
   }
 
-  void internal_propagate_relocation( Entity & );
+  void internal_propagate_relocation( Entity );
 
   AllBucketsRange get_bucket_range() const
   {
@@ -112,13 +112,13 @@ public:
   //// Experimental section.
   ////
 
-  friend class BucketFamily;
+  friend class Partition;
 
   // Assuming that everything else is already up-to-date, update the contents of
-  // m_bucket_families.
-  void update_bucket_families();
+  // m_partitions.
+  void update_partitions();
 
-  std::vector<BucketFamily *> get_bucket_families(EntityRank rank);
+  std::vector<Partition *> get_partitions(EntityRank rank);
 
 
 private:
@@ -131,7 +131,7 @@ private:
 
   EntityRepository                    & m_entity_repo ;
 
-  std::vector<std::vector<BucketFamily> >         m_bucket_families;  // Experimental.
+  std::vector<std::vector<Partition> >         m_partitions;  // Experimental.
 };
 
 } // namespace impl
@@ -139,6 +139,6 @@ private:
 } // namespace stk
 
 
-#include <stk_mesh/baseImpl/BucketFamily.tcc>
+#include <stk_mesh/baseImpl/Partition.tcc>
 
 #endif // stk_mesh_BucketRepository_hpp

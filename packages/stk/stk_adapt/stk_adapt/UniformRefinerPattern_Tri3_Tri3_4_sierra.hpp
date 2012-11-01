@@ -84,7 +84,7 @@ namespace stk {
 
       void 
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+                        stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
         genericRefine_createNewElements(eMesh, nodeRegistry,

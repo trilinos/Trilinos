@@ -577,20 +577,20 @@ MyNodalForceScatterAlg::apply(
   size_t num_dof = 3;
 
   for ( stk::mesh::Bucket::iterator i = ibegin ; i != iend ; ++i ) {
-    stk::mesh::Entity & node = *i;
+    stk::mesh::Entity node = *i;
     stk::mesh::PairIterRelation elem_relations = node.relations(m_elementRank);
 
     for( std::vector<stk::mesh::Relation>::const_iterator
          iter =  elem_relations.first;
          iter != elem_relations.second; ++iter) {
 
-      stk::mesh::Entity* elem = iter->entity();
+      stk::mesh::Entity elem = iter->entity();
 
       int local_node = iter->identifier();
 
       int elem_offset = local_node*num_dof;
 
-      const double* f_new = field_data( *force_new_field, *elem ) + elem_offset;
+      const double* f_new = field_data( *force_new_field, elem ) + elem_offset;
 
       fint[0] += f_new[0];
       fint[1] += f_new[1];

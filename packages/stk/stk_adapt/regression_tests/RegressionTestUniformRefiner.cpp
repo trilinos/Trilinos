@@ -3123,7 +3123,7 @@ namespace stk
                 
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
-                        stk::mesh::Entity& entity = bucket[iEntity];
+                        stk::mesh::Entity entity = bucket[iEntity];
 
                         double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
                         data[2] = data[2]*data[2];
@@ -3146,7 +3146,7 @@ namespace stk
                 
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
-                        stk::mesh::Entity& entity = bucket[iEntity];
+                        stk::mesh::Entity entity = bucket[iEntity];
 
                         double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
                         double ix = data[0];

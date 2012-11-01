@@ -29,7 +29,7 @@ namespace mesh {
 /** \brief  Declare an element member of a Part with a CellTopology
  *          and nodes conformal to that topology.
  */
-Entity & declare_element( BulkData & mesh ,
+Entity declare_element( BulkData & mesh ,
                           Part & part ,
                           const EntityId elem_id ,
                           const EntityId node_id[] );
@@ -39,9 +39,9 @@ Entity & declare_element( BulkData & mesh ,
  *
  *  The element must be a member of a Part with a CellTopology.
  */
-Entity & declare_element_side( BulkData & mesh ,
+Entity declare_element_side( BulkData & mesh ,
                                const stk::mesh::EntityId global_side_id ,
-                               Entity & elem ,
+                               Entity elem ,
                                const unsigned local_side_id ,
                                Part * part = NULL );
 
@@ -49,24 +49,24 @@ Entity & declare_element_side( BulkData & mesh ,
  *
  *  The element must be a member of a Part with a CellTopology.
  */
-Entity & declare_element_edge( BulkData & mesh ,
+Entity declare_element_edge( BulkData & mesh ,
                                const stk::mesh::EntityId global_side_id ,
-                               Entity & elem ,
+                               Entity elem ,
                                const unsigned local_side_id ,
                                Part * part = NULL );
 
 /** \brief  Determine the polarity of the local side,
  *          more efficient if the local_side_id is known.
  */
-bool element_side_polarity( const Entity & elem ,
-                            const Entity & side , int local_side_id = -1 );
+bool element_side_polarity( const Entity elem ,
+                            const Entity side , int local_side_id = -1 );
 
 /** \brief  Create (or find) an element side.
  *
  *  The element must be a member of a Part with a CellTopology.
  */
-Entity & declare_element_side( Entity & elem ,
-                               Entity & side ,
+Entity declare_element_side( Entity elem ,
+                               Entity side ,
                                const unsigned local_side_id ,
                                Part * part = NULL );
 
@@ -76,8 +76,8 @@ Entity & declare_element_side( Entity & elem ,
  *
  *  The element must be a member of a Part with a CellTopology.
  */
-Entity & declare_element_edge( Entity & elem ,
-                               Entity & edge ,
+Entity declare_element_edge( Entity elem ,
+                               Entity edge ,
                                const unsigned local_edge_id ,
                                Part * part = NULL );
 
@@ -103,7 +103,7 @@ Part &declare_part(MetaData& meta_data, const std::string &name) {
  * \return CellTopologyData * of the requested subcell
  */
 const CellTopologyData * get_subcell_nodes(
-    const Entity     & entity ,
+    const Entity entity ,
     EntityRank         subcell_rank ,
     unsigned           subcell_identifier ,
     EntityVector     & subcell_nodes
@@ -113,7 +113,7 @@ const CellTopologyData * get_subcell_nodes(
  *          local id of the subcell that contains those nodes in the
  *          correct orientation.
  */
-int get_entity_subcell_id( const Entity            & entity ,
+int get_entity_subcell_id( const Entity entity ,
                            const EntityRank          subcell_rank,
                            const CellTopologyData  * side_topology,
                            const EntityVector      & side_nodes );
@@ -174,7 +174,7 @@ void get_parts_with_topology(stk::mesh::BulkData& mesh,
 }
 
 inline
-unsigned get_spatial_dimension(const Entity& entity)
+unsigned get_spatial_dimension(const Entity entity)
 {
   // expose some dot-chain to ensure everything inlined
   return entity.bucket().mesh().mesh_meta_data().spatial_dimension();

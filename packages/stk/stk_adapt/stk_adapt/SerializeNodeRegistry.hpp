@@ -59,7 +59,7 @@
 #endif
 
 
-namespace stk { 
+namespace stk {
 
   namespace adapt {
 
@@ -75,7 +75,7 @@ namespace stk {
     public:
       typedef std::vector<stk::mesh::EntityId> IdVector;
 
-      // PartMap maps a part name to data about the part: its primary entity rank, topology name, subset parts 
+      // PartMap maps a part name to data about the part: its primary entity rank, topology name, subset parts
       typedef std::string TopologyName;
       typedef std::string PartName;
       typedef std::vector<PartName> PartSubsets;
@@ -98,10 +98,10 @@ namespace stk {
       // iP, P = worker, nworker
       int m_M, m_iM, m_W, m_iW;
       // for W==1, [start,end] = [0,M-1]
-      //     W==2, iW==0, [M_0,M_1] = [0,M/2-1] , 
+      //     W==2, iW==0, [M_0,M_1] = [0,M/2-1] ,
       //           iW==1, = [M/2,M-1]
       // etc..
-      int m_M_0, m_M_1; 
+      int m_M_0, m_M_1;
       const std::vector<std::string> & m_entity_rank_names;
       IdVector m_id_max;
       std::string m_globalIdFile;
@@ -118,9 +118,9 @@ namespace stk {
     public:
       enum { MaxPass = 3 };
 
-      SerializeNodeRegistry(PerceptMesh& eMesh, NodeRegistry* nodeRegistry, std::string input_mesh_name, std::string output_mesh_name, 
-                            int M, int iM, int W=1, int iW=0, int M_0=-1, int M_1=-1) : 
-        m_eMesh(eMesh), m_nodeRegistry(nodeRegistry), m_input_mesh_name(input_mesh_name), m_output_mesh_name(output_mesh_name), m_filePrefix(input_mesh_name), 
+      SerializeNodeRegistry(PerceptMesh& eMesh, NodeRegistry* nodeRegistry, std::string input_mesh_name, std::string output_mesh_name,
+                            int M, int iM, int W=1, int iW=0, int M_0=-1, int M_1=-1) :
+        m_eMesh(eMesh), m_nodeRegistry(nodeRegistry), m_input_mesh_name(input_mesh_name), m_output_mesh_name(output_mesh_name), m_filePrefix(input_mesh_name),
         m_M(M), m_iM(iM), m_W(W), m_iW(iW), m_M_0(M_0 >= 0 ? M_0 : 0), m_M_1(M_1 >= 0 ? M_1 : M-1),
         m_entity_rank_names(eMesh.get_fem_meta_data()->entity_rank_names()),
         m_id_max(m_entity_rank_names.size(), 0u),  FAMILY_TREE_RANK(stk::mesh::MetaData::ELEMENT_RANK + 1u),
@@ -263,7 +263,7 @@ namespace stk {
                   }
                 stk::mesh::set_cell_topology(*part, topo);
               }
-          }        
+          }
         // once parts are declared, declare part subsets
         for (iter = m_partMap->begin(); iter != m_partMap->end(); ++iter)
           {
@@ -273,17 +273,17 @@ namespace stk {
             if (!part)
               {
                 throw std::runtime_error(std::string("no part found SerializeNodeRegistry::declareGlobalParts: part= ")+part_name);
-              }                
+              }
             PartSubsets subsets = iter->second.get<2>();
             for (unsigned isub=0; isub < subsets.size(); isub++)
               {
                 const stk::mesh::Part* c_subset = m_eMesh.get_fem_meta_data()->get_part(subsets[isub]);
                 stk::mesh::Part *subset = const_cast<stk::mesh::Part *>(c_subset);
-                
+
                 if (!subset)
                   {
                     throw std::runtime_error(std::string("no subset part found SerializeNodeRegistry::declareGlobalParts: subset part= ")+subsets[isub]);
-                  }                
+                  }
                 m_eMesh.get_fem_meta_data()->declare_part_subset(*part, *subset);
               }
           }
@@ -316,7 +316,7 @@ namespace stk {
             //std::cout << "\n readGlobalPartsFile doc.Type() = " << doc.Type() << " doc.Tag()= " << doc.Tag() << " doc.size= " << doc.size() << std::endl;
             if (doc.Type() == YAML::NodeType::Map)
               {
-                for(YAML::Iterator iter=doc.begin();iter!=doc.end();++iter) 
+                for(YAML::Iterator iter=doc.begin();iter!=doc.end();++iter)
                   {
                     const YAML::Node& key = iter.first();
                     PartName part_name;
@@ -374,14 +374,14 @@ namespace stk {
         }
         file.close();
       }
-      
-      /** 
+
+      /**
        *  loop over all files (m_iM...)
        *    loop over all my nodes
        *      add my proc rank to map value
-       *    
+       *
        *  cull node map (only nodes that are shared remain)
-       * 
+       *
        *  write nodeMap to file by procId: shared node with proc (map<procId, map<node,procOwner> > )
        *    loop over nodes, procs sharing node, NodeMapVector[procs][node] = owner
        *
@@ -409,7 +409,7 @@ namespace stk {
               {
                 if (procs.size() <= 1) throw std::logic_error("SerializeNodeRegistry::writeNodeMap procs.size is <=1");
                 NodeMapValue::iterator find_my_proc = std::find(procs.begin(), procs.end(), jM);
-                include_entry = include_entry && (find_my_proc != procs.end());  // shared by me 
+                include_entry = include_entry && (find_my_proc != procs.end());  // shared by me
               }
             if (include_entry)
               {
@@ -496,7 +496,7 @@ namespace stk {
                       << " doc.Type() = " << doc.Type() << " doc.Tag()= " << doc.Tag() << " doc.size= " << doc.size() << std::endl;
             if (doc.Type() == YAML::NodeType::Map)
               {
-                for(YAML::Iterator iter=doc.begin();iter!=doc.end();++iter) 
+                for(YAML::Iterator iter=doc.begin();iter!=doc.end();++iter)
                   {
                     const YAML::Node& key = iter.first();
                     stk::mesh::EntityId id;
@@ -505,7 +505,7 @@ namespace stk {
                     const YAML::Node& val = iter.second();
                     val >> procs;
                     //std::cout << "readNodeMap id= " << id << " procs= " << procs << std::endl;
-                    if (is_local && procs.size() != 1) 
+                    if (is_local && procs.size() != 1)
                       throw std::logic_error(std::string("SerializeNodeRegistry::readNodeMap procs.size is != 1, = ")+toString(procs.size()));
                     NodeMapValue& procs_existing = nodeMap[id];
                     for (unsigned ip=0; ip < procs.size(); ip++)
@@ -665,7 +665,7 @@ namespace stk {
 
               for (unsigned iEntity = 0; iEntity < num_entities_in_bucket; iEntity++)
                 {
-                  stk::mesh::Entity& entity = bucket[iEntity];
+                  stk::mesh::Entity entity = bucket[iEntity];
                   stk::mesh::EntityId id = entity.identifier();
                   NodeMapValue& procs = (*m_nodeMap)[id];
                   if (procs.size() == 0)
@@ -723,7 +723,7 @@ namespace stk {
           {
             m_id_max[irank]=0u;
           }
-        
+
         // first, get the max of all
         IdVector id_max_local_0(m_id_max.size(), 0u);
         // now get how many each iW used
@@ -828,7 +828,7 @@ namespace stk {
             snr.getGlobalPartMap();
             snr.passM1_mergeGlobalParts();
             snr.setGlobalPartMap();
-            
+
             snr.getGlobalNodeMap();
             snr.passM1_createLocalNodeMap();
             snr.setGlobalNodeMap();
@@ -863,16 +863,16 @@ namespace stk {
 
       void printCurrentGlobalMaxId(std::string msg="")
       {
-        //if (m_debug) 
+        //if (m_debug)
         std::cout << "M[" << m_iM << ", " << m_M << "] W[" << m_iW << ", " << m_W << "] SerializeNodeRegistry::printCurrentGlobalMaxId: = " << m_id_max << " for: " << msg << std::endl;
       }
 
       /**
        *   pass1: refine mesh, write local NodeRegistry, set new max id from refined mesh - assumes parent elements exist
-       *     
+       *
        *   (m_iM = 0...M)
        *   1. open file.e.M.m_iM, refine mesh
-       *   2. 
+       *   2.
        *   3. getCurrentGlobalMaxId()
        *   4. resetNewElementIds() (resets new element ids by looking at child elements only)
        *   5. write NodeRegistry in name.yaml.M.m_iM
@@ -955,7 +955,7 @@ namespace stk {
           {
             SerializeNodeRegistry::getStreamingPiece(m_M, m_W, jW, m_M_0, m_M_1);
             m_iW = jW;
-            
+
             for (m_iM = m_M_0; m_iM <= m_M_1; m_iM++)
               {
                 NodeRegistry newLocalNR(eMeshLocal);
@@ -979,7 +979,7 @@ namespace stk {
       }
 
       /**
-       *   pass 3: 
+       *   pass 3:
        *   1. read global NodeRegistry
        *   2. read each refined file-ref.M.m_iM
        *   3. lookup edge/face/elem in global NodeRegistry, reset id to that found in NR
@@ -1020,7 +1020,7 @@ namespace stk {
             snr0.getGlobalPartMap();
             snr0.declareGlobalParts();
             eMesh.commit();
-                        
+
             NodeRegistry *some_nr = 0;
             SerializeNodeRegistry snr(eMesh, some_nr, m_input_mesh_name, m_output_mesh_name, m_M, jM,  m_W, m_iW, m_M_0, m_M_1);
             snr.pass(3);
@@ -1045,7 +1045,7 @@ namespace stk {
             const SubDimCell_SDSEntityType& subDimEntity = iter->first;
             SubDimCellData& nodeId_elementOwnderId = iter->second;
 
-            // special case for "interior" subDimEntity's which are centroid nodes for quad or hex elements - 
+            // special case for "interior" subDimEntity's which are centroid nodes for quad or hex elements -
             //   by definition they aren't shared
             if (subDimEntity.size() == 1)
               continue;
@@ -1057,7 +1057,7 @@ namespace stk {
                 std::cout << "M[" << m_iM << "] SerializeNodeRegistry::lookupAndSetNewNodeIds couldn't find subDimEntity= " << subDimEntity;
                 for (unsigned kk=0; kk < subDimEntity.size(); kk++)
                   {
-                    std::cout << " [" << subDimEntity[kk]->identifier() << "] ";
+                    std::cout << " [" << subDimEntity[kk].identifier() << "] ";
                   }
                 std::cout << std::endl;
               }
@@ -1076,19 +1076,19 @@ namespace stk {
               {
                 stk::mesh::EntityId id_new = global_nodeIds_onSE.m_entity_id_vector[inode];
                 stk::mesh::EntityId id_old = nodeIds_onSE.m_entity_id_vector[inode];
-                stk::mesh::Entity* tmp_global_node = globalNR.getMesh().get_bulk_data()->get_entity(0, id_new);
-                stk::mesh::Entity* local_node_to_change = m_eMesh.get_bulk_data()->get_entity(0, id_old);
+                stk::mesh::Entity tmp_global_node = globalNR.getMesh().get_bulk_data()->get_entity(0, id_new);
+                stk::mesh::Entity local_node_to_change = m_eMesh.get_bulk_data()->get_entity(0, id_old);
                 if (m_debug) std::cout << "m_iM= " << m_iM << " id_new= " << id_new << " id_old= " << id_old << std::endl;
-                VERIFY_OP_ON(local_node_to_change, !=, 0, "SerializeNodeRegistry::lookupAndSetNewNodeIds null local_node_to_change");
-                VERIFY_OP_ON(tmp_global_node, !=, 0, "SerializeNodeRegistry::lookupAndSetNewNodeIds null tmp_global_node");
+                VERIFY_OP_ON(local_node_to_change, !=, stk::mesh::Entity(), "SerializeNodeRegistry::lookupAndSetNewNodeIds null local_node_to_change");
+                VERIFY_OP_ON(tmp_global_node, !=, stk::mesh::Entity(), "SerializeNodeRegistry::lookupAndSetNewNodeIds null tmp_global_node");
                 VERIFY_OP_ON(tmp_global_node, ==, global_nodeIds_onSE[inode], "SerializeNodeRegistry::lookupAndSetNewNodeIds new node mistmatch");
                 if (id_new != id_old)
                   {
                     if (m_debug) std::cout << "DIFF m_iM= " << m_iM << " id_new= " << id_new << " id_old= " << id_old << std::endl;
-                    stk::mesh::Entity* local_node_new_id_check = m_eMesh.get_bulk_data()->get_entity(0, id_new);
-                    if (!local_node_new_id_check)
+                    stk::mesh::Entity local_node_new_id_check = m_eMesh.get_bulk_data()->get_entity(0, id_new);
+                    if (!local_node_new_id_check.is_valid())
                       {
-                        m_eMesh.get_bulk_data()->change_entity_id(id_new, *local_node_to_change);
+                        m_eMesh.get_bulk_data()->change_entity_id(id_new, local_node_to_change);
                       }
                   }
               }
@@ -1128,7 +1128,7 @@ namespace stk {
           {
             throw std::runtime_error(std::string("SerializeNodeRegistry::readNodeRegistry couldn't open file ")+filename);
           }
-        
+
         serialize_read(nodeRegistry, file);
       }
 
@@ -1146,22 +1146,22 @@ namespace stk {
           {
             const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
             SubDimCellData& nodeId_elementOwnderId = (*iter).second;
-            if (m_debug) 
+            if (m_debug)
               {
                 std::cout << "SerializeNodeRegistry::processNodeRegistry inserting localMap entry = " << subDimEntity ;
                 for (unsigned kk=0; kk < subDimEntity.size(); kk++)
                   {
-                    std::cout << " [" << subDimEntity[kk]->identifier() << "] ";
+                    std::cout << " [" << subDimEntity[kk].identifier() << "] ";
                   }
                 std::cout << " data= " << nodeId_elementOwnderId << " nid=" <<  nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().m_entity_id_vector[0] << std::endl;
               }
             /// clone subDimEntity...
             globalMap[subDimEntity] = nodeId_elementOwnderId;
-          }        
+          }
         if (m_debug) std::cout << "SerializeNodeRegistry::processNodeRegistry globalMap size= " << globalMap.size() << std::endl;
       }
 
-      ///Note: we read and write to a file instead of storing in memory to allow stk_adapt_exe to be called on a 
+      ///Note: we read and write to a file instead of storing in memory to allow stk_adapt_exe to be called on a
       //   single piece of the partition - useful for testing and for potentially parallelizing the global outer loop
       void getCurrentGlobalMaxId()
       {
@@ -1172,12 +1172,12 @@ namespace stk {
       {
         // get max node, element id, dump to global file, if global file exists, read from it, use those as start values
         std::fstream file;
-        file.open(fileName.c_str(), std::ios_base::in);  
+        file.open(fileName.c_str(), std::ios_base::in);
         if (!file.is_open())
           {
             throw std::runtime_error(std::string("SerializeNodeRegistry::getCurrentGlobalMaxId couldn't open file ")+fileName);
           }
-            
+
         YAML::Parser parser(file);
         YAML::Node doc;
         stk::mesh::EntityId id_max_local;
@@ -1253,7 +1253,7 @@ namespace stk {
 
                   for (unsigned iEntity = 0; iEntity < num_entities_in_bucket; iEntity++)
                     {
-                      stk::mesh::Entity& entity = bucket[iEntity];
+                      stk::mesh::Entity entity = bucket[iEntity];
                       stk::mesh::EntityId id = entity.identifier();
                       m_id_max[irank] = std::max(m_id_max[irank], id);
                     }
@@ -1283,13 +1283,13 @@ namespace stk {
 
                   for (unsigned iEntity = 0; iEntity < num_entities_in_bucket; iEntity++)
                     {
-                      stk::mesh::Entity& entity = bucket[iEntity];
-                      //! FIXME 
+                      stk::mesh::Entity entity = bucket[iEntity];
+                      //! FIXME
                       //if (eMesh.hasFamilyTree(entity) && eMesh.isChildElement(entity))
                         {
                           stk::mesh::EntityId id = m_id_max[irank] + 1;
                           m_id_max[irank] = id;
-                          
+
                           stk::mesh::EntityId id_old = entity.identifier();
                           id_change.push_back(EntityPair(id_old, id));
                         }
@@ -1301,17 +1301,17 @@ namespace stk {
 
             for (unsigned ii=0; ii< id_change.size(); ii++)
               {
-                stk::mesh::Entity *entity = eMesh.get_bulk_data()->get_entity(irank, id_change[ii].first);
-                VERIFY_OP_ON(entity, !=, 0, "SerializeNodeRegistry::resetNewElementIds");
-                VERIFY_OP_ON(entity->identifier(), ==, id_change[ii].first, "SerializeNodeRegistry::resetNewElementIds bad00");
+                stk::mesh::Entity entity = eMesh.get_bulk_data()->get_entity(irank, id_change[ii].first);
+                VERIFY_OP_ON(entity, !=, stk::mesh::Entity(), "SerializeNodeRegistry::resetNewElementIds");
+                VERIFY_OP_ON(entity.identifier(), ==, id_change[ii].first, "SerializeNodeRegistry::resetNewElementIds bad00");
                 stk::mesh::EntityId id_new = id_change[ii].second;
                 //stk::mesh::EntityId id_old = entity->identifier();
-                eMesh.get_bulk_data()->change_entity_id(id_new, *entity);
+                eMesh.get_bulk_data()->change_entity_id(id_new, entity);
               }
           }
       }
 
-      void checkNR(NodeRegistry& nodeRegistry, std::string msg="") 
+      void checkNR(NodeRegistry& nodeRegistry, std::string msg="")
       {
         nodeRegistry.getMesh().get_bulk_data()->modification_begin();
 
@@ -1329,21 +1329,21 @@ namespace stk {
                 unsigned nnodes = nodeIds_onSE.size();
                 for (unsigned inode=0; inode < nnodes; inode++)
                   {
-                    VERIFY_OP_ON(nodeIds_onSE[inode], !=, 0, "SerializeNodeRegistry::checkNR node is null 0");
+                    VERIFY_OP_ON(nodeIds_onSE[inode], !=, stk::mesh::Entity(), "SerializeNodeRegistry::checkNR node is null 0");
                     stk::mesh::EntityId id_old = nodeIds_onSE.m_entity_id_vector[inode];
                     VERIFY_OP_ON(id_old, !=, 0, "SerializeNodeRegistry::checkNR node id is  0");
-                    stk::mesh::EntityId id_old_check = nodeIds_onSE[inode]->identifier();
-                    if (nodeIds_onSE[inode]->entity_rank() != 0) 
-                      std::cout <<  "SerializeNodeRegistry checkNR 1" << nodeIds_onSE[inode]->identifier() << " " << msg << std::endl;
+                    stk::mesh::EntityId id_old_check = nodeIds_onSE[inode].identifier();
+                    if (nodeIds_onSE[inode].entity_rank() != 0)
+                      std::cout <<  "SerializeNodeRegistry checkNR 1" << nodeIds_onSE[inode].identifier() << " " << msg << std::endl;
 
-                    VERIFY_OP_ON(nodeIds_onSE[inode]->entity_rank(), ==, 0, "SerializeNodeRegistry checkNR 1");
-                    if (id_old_check != id_old) 
-                      std::cout <<  "SerializeNodeRegistry checkNR 2" << nodeIds_onSE[inode]->identifier() << " " << msg << std::endl;
+                    VERIFY_OP_ON(nodeIds_onSE[inode].entity_rank(), ==, 0, "SerializeNodeRegistry checkNR 1");
+                    if (id_old_check != id_old)
+                      std::cout <<  "SerializeNodeRegistry checkNR 2" << nodeIds_onSE[inode].identifier() << " " << msg << std::endl;
 
                     VERIFY_OP_ON(id_old_check, ==, id_old, "SerializeNodeRegistry::checkNR id_old");
 
-                    stk::mesh::Entity *node = nodeRegistry.getMesh().get_bulk_data()->get_entity(0, id_old);
-                    VERIFY_OP_ON(node, !=, 0, "SerializeNodeRegistry::checkNR node is null");
+                    stk::mesh::Entity node = nodeRegistry.getMesh().get_bulk_data()->get_entity(0, id_old);
+                    VERIFY_OP_ON(node, !=, stk::mesh::Entity(), "SerializeNodeRegistry::checkNR node is null");
                     VERIFY_OP_ON(node, ==, nodeIds_onSE[inode], "SerializeNodeRegistry::checkNR node is not same");
                   }
               }
@@ -1352,7 +1352,7 @@ namespace stk {
         nodeRegistry.getMesh().get_bulk_data()->modification_end();
       }
 
-      void fixNR(NodeRegistry& nodeRegistry, std::string msg="") 
+      void fixNR(NodeRegistry& nodeRegistry, std::string msg="")
       {
         nodeRegistry.getMesh().get_bulk_data()->modification_begin();
         SubDimCellToDataMap::iterator iter;
@@ -1368,8 +1368,8 @@ namespace stk {
             for (unsigned inode=0; inode < nnodes; inode++)
               {
                 stk::mesh::EntityId id = nodeIds_onSE.m_entity_id_vector[inode];
-                stk::mesh::Entity *node = nodeRegistry.getMesh().get_bulk_data()->get_entity(0, id);
-                VERIFY_OP_ON(node, !=, 0, "SerializeNodeRegistry::fixNR node is null "+toString(id));
+                stk::mesh::Entity node = nodeRegistry.getMesh().get_bulk_data()->get_entity(0, id);
+                VERIFY_OP_ON(node, !=, stk::mesh::Entity(), "SerializeNodeRegistry::fixNR node is null "+toString(id));
                 nodeIds_onSE[inode] = node;
               }
           }
@@ -1377,9 +1377,9 @@ namespace stk {
         std::cout << " tmp SerializeNodeRegistry::fixNR done msg= " << msg << " map size: " << map.size() << std::endl;
       }
 
-      /// Using the current global max id, in a simple id-server manner, generate new id's and assign to 
+      /// Using the current global max id, in a simple id-server manner, generate new id's and assign to
       ///   the shared nodes.
-      void resetNewNodeIds(NodeRegistry& nodeRegistry) 
+      void resetNewNodeIds(NodeRegistry& nodeRegistry)
       {
         nodeRegistry.getMesh().get_bulk_data()->modification_begin();
 
@@ -1398,7 +1398,7 @@ namespace stk {
                 for (unsigned inode=0; inode < nnodes; inode++)
                   {
                     stk::mesh::EntityId id_old = nodeIds_onSE.m_entity_id_vector[inode];
-                    stk::mesh::EntityId id_old_check = nodeIds_onSE[inode]->identifier();
+                    stk::mesh::EntityId id_old_check = nodeIds_onSE[inode].identifier();
                     VERIFY_OP_ON(id_old_check, ==, id_old, "SerializeNodeRegistry::resetNewNodeIds id_old");
                   }
               }
@@ -1415,16 +1415,16 @@ namespace stk {
             for (unsigned inode=0; inode < nnodes; inode++)
               {
                 stk::mesh::EntityId id_old = nodeIds_onSE.m_entity_id_vector[inode];
-                stk::mesh::EntityId id_old_check = nodeIds_onSE[inode]->identifier();
+                stk::mesh::EntityId id_old_check = nodeIds_onSE[inode].identifier();
                 VERIFY_OP_ON(id_old_check, ==, id_old, "SerializeNodeRegistry::resetNewNodeIds id_old");
-                
+
                 stk::mesh::EntityId id_new = m_id_max[0]+1;
                 m_id_max[0] = id_new;
                 nodeIds_onSE.m_entity_id_vector[inode] = id_new;
 
-                nodeRegistry.getMesh().get_bulk_data()->change_entity_id(id_new, *nodeIds_onSE[inode]);
+                nodeRegistry.getMesh().get_bulk_data()->change_entity_id(id_new, nodeIds_onSE[inode]);
 
-                stk::mesh::EntityId id_new_check = nodeIds_onSE[inode]->identifier();
+                stk::mesh::EntityId id_new_check = nodeIds_onSE[inode].identifier();
                 VERIFY_OP_ON(id_new_check, ==, id_new, "SerializeNodeRegistry::resetNewNodeIds id_new");
                 id_new = nodeIds_onSE.m_entity_id_vector[inode];
 
@@ -1457,7 +1457,7 @@ namespace stk {
             // check if all nodes are on the boundary (defined by shared nodes in the NodeMap)
             if (nodeMapFilter)
               {
-                // special case for "interior" subDimEntity's which are centroid nodes for quad or hex elements - 
+                // special case for "interior" subDimEntity's which are centroid nodes for quad or hex elements -
                 //   by definition they aren't shared
                 if (subDimEntity.size() == 1)
                   continue;
@@ -1466,17 +1466,17 @@ namespace stk {
                 for (unsigned k=0; k < subDimEntity.size(); k++)
                   {
                     //std::cout << " " << subDimEntity[k]->identifier() << " ";
-                    NodeMap::iterator filter_iter = nodeMapFilter->find(subDimEntity[k]->identifier());
+                    NodeMap::iterator filter_iter = nodeMapFilter->find(subDimEntity[k].identifier());
                     if (filter_iter == nodeMapFilter->end())
                       {
                         notFound = true;
                         break;
                       }
                   }
-                if (notFound) 
+                if (notFound)
                   continue;
               }
-            
+
             //emitter << YAML::Key << subDimEntity;
             emitter << YAML::Key;       YAML_ERRCHECK;
             emitter << YAML::Flow;      YAML_ERRCHECK;
@@ -1485,7 +1485,7 @@ namespace stk {
             for (unsigned k=0; k < subDimEntity.size(); k++)
               {
                 //std::cout << " " << subDimEntity[k]->identifier() << " ";
-                emitter << subDimEntity[k]->identifier();          YAML_ERRCHECK;
+                emitter << subDimEntity[k].identifier();          YAML_ERRCHECK;
               }
             emitter << YAML::EndSeq;      YAML_ERRCHECK;
 
@@ -1502,7 +1502,7 @@ namespace stk {
               {
                 //emitter << (int)nodeIds_onSE[ii]->identifier();      YAML_ERRCHECK;
                 stk::mesh::EntityId id = nodeIds_onSE.m_entity_id_vector[ii];
-                stk::mesh::EntityId id_check = nodeIds_onSE[ii]->identifier();
+                stk::mesh::EntityId id_check = nodeIds_onSE[ii].identifier();
                 VERIFY_OP_ON(id_check, ==, id, "SerializeNodeRegistry::serialize_write id");
 
                 emitter << (int)nodeIds_onSE.m_entity_id_vector[ii];      YAML_ERRCHECK;
@@ -1522,12 +1522,12 @@ namespace stk {
         YAML::Parser parser(file_in);
         YAML::Node doc;
         if (DEBUG_YAML)
-          std::cout 
-            << "\n serialize_read..." 
+          std::cout
+            << "\n serialize_read..."
             << " YAML::NodeType::Null= " <<  YAML::NodeType::Null
             << " YAML::NodeType::Scalar= " <<  YAML::NodeType::Scalar
             << " YAML::NodeType::Sequence= " <<  YAML::NodeType::Sequence
-            << " YAML::NodeType::Map= " <<  YAML::NodeType::Map 
+            << " YAML::NodeType::Map= " <<  YAML::NodeType::Map
             << std::endl;
 
         SubDimCellToDataMap& map = nodeRegistry.getMap();
@@ -1540,13 +1540,13 @@ namespace stk {
               {
                 for(YAML::Iterator it=doc.begin();it!=doc.end();++it) {
                   typedef stk::mesh::EntityId SDSEntityType_ID;
-                  //typedef stk::mesh::Entity * SDSEntityType;
+                  //typedef stk::mesh::Entity SDSEntityType;
                   SDSEntityType_ID key_quantum;
                   //typedef SubDimCell<SDSEntityType> SubDimCell_SDSEntityType;
                   SubDimCell_SDSEntityType key; // subDimEntity = (*iter).first;
 
                   //struct NodeIdsOnSubDimEntityType : public std::vector<NodeIdsOnSubDimEntityTypeQuantum>
-                  // { 
+                  // {
                   //     typedef IdVector entity_id_vector_type;
 
                   stk::mesh::EntityId value_tuple_0_quantum;
@@ -1558,11 +1558,11 @@ namespace stk {
                   NodeIdsOnSubDimEntityType& nodeIds_onSE = value.get<SDC_DATA_GLOBAL_NODE_IDS>();
                   nodeIds_onSE.resize(0);
                   stk::mesh::EntityKey& value_entity_key = value.get<SDC_DATA_OWNING_ELEMENT_KEY>();
-                  // value = { {new_node0, new_node1,...}:[vector<Entity*>,vector<EntityId>], {elem_own[rank, ele_id]:EntityKey} }
-                  // key = { nodePtr_0,... : set<Entity *> }
+                  // value = { {new_node0, new_node1,...}:[vector<Entity>,vector<EntityId>], {elem_own[rank, ele_id]:EntityKey} }
+                  // key = { nodePtr_0,... : set<Entity> }
                   // value.serialized = { {new_nid0, new_nid1,...}:vector<EntityId>, {elem_own[rank, ele_id]:EntityKey} }
                   // key.serialized = { nodeid_0,... : set<EntityId> }
-                
+
 
                   //if (DEBUG_YAML) std::cout << "it.first().Type() = " << it.first().Type() << " it.first().Tag()= " << it.first().Tag() << std::endl;
                   //if (DEBUG_YAML) std::cout << "it.second().Type() = " << it.second().Type() << " it.second().Tag()= " << it.second().Tag() << std::endl;
@@ -1571,22 +1571,22 @@ namespace stk {
                     *itk >> key_quantum;
                     if (DEBUG_YAML) std::cout << "s_r key_quantum= " << key_quantum << std::endl;
                     SDSEntityType node = eMesh.get_bulk_data()->get_entity(0, key_quantum);
-                    //key.insert(const_cast<stk::mesh::Entity*>(&element) );
-                    if (!node)
+                    //key.insert(const_cast<stk::mesh::Entity>(&element) );
+                    if (!node.is_valid())
                       {
                         if (force_have_node)
                           throw std::runtime_error("NodeRegistry::serialize_read: null node returned from get_entity");
                         else
                           {
                             stk::mesh::PartVector parts(1, &eMesh.get_fem_meta_data()->universal_part());
-                            node = &eMesh.get_bulk_data()->declare_entity(0, static_cast<stk::mesh::EntityId>(key_quantum), parts);
+                            node = eMesh.get_bulk_data()->declare_entity(0, static_cast<stk::mesh::EntityId>(key_quantum), parts);
                           }
                       }
-                  
+
                     key.insert( node );
 
                   }
-              
+
                   int iseq=0;
                   const YAML::Node& valSeq = it.second();
                   stk::mesh::EntityRank rank;
@@ -1603,7 +1603,7 @@ namespace stk {
                         if (DEBUG_YAML) std::cout << "s_r value_tuple_1= " << rank << " " << id << std::endl;
                         value_entity_key = stk::mesh::EntityKey(rank,id);
                         if (DEBUG_YAML) std::cout << "s_r owning element rank= " << stk::mesh::entity_rank(value.get<SDC_DATA_OWNING_ELEMENT_KEY>())
-                                                  << " owning element id= " << stk::mesh::entity_id(value.get<SDC_DATA_OWNING_ELEMENT_KEY>()) 
+                                                  << " owning element id= " << stk::mesh::entity_id(value.get<SDC_DATA_OWNING_ELEMENT_KEY>())
                                                   << std::endl;
                       }
                     else
@@ -1612,15 +1612,15 @@ namespace stk {
 
                         //stk::mesh::EntityId owning_elementId = stk::mesh::entity_id(data.get<SDC_DATA_OWNING_ELEMENT_KEY>());
                         nodeIds_onSE.m_entity_id_vector.push_back(value_tuple_0_quantum);
-                        stk::mesh::Entity *entity = eMesh.get_bulk_data()->get_entity(0, value_tuple_0_quantum);
-                        if (!entity)
+                        stk::mesh::Entity entity = eMesh.get_bulk_data()->get_entity(0, value_tuple_0_quantum);
+                        if (!entity.is_valid())
                           {
                             if (force_have_node)
                               throw std::runtime_error("NodeRegistry::serialize_read: null node returned from get_entity 2");
                             else
                               {
                                 stk::mesh::PartVector parts(1, &eMesh.get_fem_meta_data()->universal_part());
-                                entity = &eMesh.get_bulk_data()->declare_entity(0, static_cast<stk::mesh::EntityId>(value_tuple_0_quantum), 
+                                entity = eMesh.get_bulk_data()->declare_entity(0, static_cast<stk::mesh::EntityId>(value_tuple_0_quantum),
                                                                               parts);
                               }
                           }
@@ -1631,14 +1631,14 @@ namespace stk {
                         int sz1 = nodeIds_onSE.m_entity_id_vector.size();
                         VERIFY_OP_ON(sz, ==, sz1, "SerializeNodeRegistry::serialize_read sz");
                         stk::mesh::EntityId id = nodeIds_onSE.m_entity_id_vector[sz-1];
-                        stk::mesh::EntityId id_check = nodeIds_onSE[sz-1]->identifier();
+                        stk::mesh::EntityId id_check = nodeIds_onSE[sz-1].identifier();
                         VERIFY_OP_ON(id_check, ==, id, "SerializeNodeRegistry::serialize_read id");
 
-                        if (DEBUG_YAML) std::cout << "s_r value_tuple_0_quantum= " << value_tuple_0_quantum << " entity= " << entity 
+                        if (DEBUG_YAML) std::cout << "s_r value_tuple_0_quantum= " << value_tuple_0_quantum << " entity= " << entity
                                                   <<  " len0= " << nodeIds_onSE.size() << " len1= " << nodeIds_onSE.m_entity_id_vector.size() << std::endl;
                       }
                   }
-              
+
                   map[key] = value;
                 }
               }
@@ -1658,7 +1658,7 @@ namespace stk {
 #else
     class SerializeNodeRegistry {
     public:
-      SerializeNodeRegistry(PerceptMesh& eMesh, NodeRegistry* nodeRegistry, std::string input_mesh_name, std::string output_mesh_name, 
+      SerializeNodeRegistry(PerceptMesh& eMesh, NodeRegistry* nodeRegistry, std::string input_mesh_name, std::string output_mesh_name,
                             int M, int iM, int W=1, int iW=0, int M_0=-1, int M_1=-1) {}
     };
 #endif

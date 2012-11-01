@@ -1,5 +1,5 @@
 #include <stk_percept/Percept.hpp>
-#if !defined(__IBMCPP__) 
+#if !defined(__IBMCPP__)
 
 
 #include <stk_percept/mesh/mod/smoother/ReferenceMeshSmoother1.hpp>
@@ -33,7 +33,7 @@ namespace stk {
     const bool do_tot_test = false;
     bool do_print_elem_val = false;
 
-    void ReferenceMeshSmoother1::nodal_gradient(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid, double *ng)
+    void ReferenceMeshSmoother1::nodal_gradient(stk::mesh::Entity node, double alpha, double *coord_current, double *cg_d, bool& valid, double *ng)
     {
       int spatialDim = m_eMesh->get_spatial_dim();
       valid = true;
@@ -47,7 +47,7 @@ namespace stk {
         {
           xc[i]=coord_current[i];
           double dt = eps1;
-          coord_current[i] += dt;  
+          coord_current[i] += dt;
           double mp = nodal_metric(node, 0.0, coord_current, cg_d, valid);
           bool second_order = true;
           if (second_order)
@@ -68,7 +68,7 @@ namespace stk {
         }
     }
 
-    double ReferenceMeshSmoother1::nodal_metric(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid)
+    double ReferenceMeshSmoother1::nodal_metric(stk::mesh::Entity node, double alpha, double *coord_current, double *cg_d, bool& valid)
     {
       int spatialDim = m_eMesh->get_spatial_dim();
       valid = true;
@@ -76,7 +76,7 @@ namespace stk {
       CombineOp combine = m_metric->get_combine_op();
       if (combine == COP_MIN) nm = std::numeric_limits<double>::max();
       if (combine == COP_MAX) nm = -std::numeric_limits<double>::max();
-      m_metric->set_node(&node);
+      m_metric->set_node(node);
 
       double xc[3]={0,0,0};
 
@@ -84,7 +84,7 @@ namespace stk {
         {
           xc[i]=coord_current[i];
           double dt = alpha*cg_d[i];
-          coord_current[i] += dt;  
+          coord_current[i] += dt;
         }
 
       stk::mesh::Selector on_locally_owned_part =  ( m_eMesh->get_fem_meta_data()->locally_owned_part() );
@@ -92,7 +92,7 @@ namespace stk {
       stk::mesh::PairIterRelation node_elems = node.relations(m_eMesh->element_rank());
       for (unsigned i_elem=0; i_elem < node_elems.size(); i_elem++)
         {
-          stk::mesh::Entity& element = *node_elems[i_elem].entity();
+          stk::mesh::Entity element = node_elems[i_elem].entity();
           if (MeshSmoother::select_bucket(element.bucket(), m_eMesh) && on_locally_owned_part(element.bucket()))
             {
               bool local_valid = true;
@@ -114,7 +114,7 @@ namespace stk {
       return nm;
     }
 
-    double ReferenceMeshSmoother1::nodal_edge_length_ave(stk::mesh::Entity& node)
+    double ReferenceMeshSmoother1::nodal_edge_length_ave(stk::mesh::Entity node)
     {
       //int spatialDim = m_eMesh->get_spatial_dim();
       double nm=0.0;
@@ -122,7 +122,7 @@ namespace stk {
       stk::mesh::PairIterRelation node_elems = node.relations(m_eMesh->element_rank());
       for (unsigned i_elem=0; i_elem < node_elems.size(); i_elem++)
         {
-          stk::mesh::Entity& element = *node_elems[i_elem].entity();
+          stk::mesh::Entity element = node_elems[i_elem].entity();
           double elem_edge_len = m_eMesh->edge_length_ave(element, m_coord_field_original);
           nm += elem_edge_len;
         }
@@ -149,16 +149,16 @@ namespace stk {
         //    if (m_num_invalid == 0 && (m_grad_norm_scaled < gradNorm || (m_iter > 0 && m_dmax < gradNorm ) ) )
         {
           std::cout << "tmp srk untangle m_dnew(scaled nnode) check= " << (scaled_grad_norm  < grad_check)
-                    << " m_grad_norm_scaled check= " << (m_grad_norm_scaled < grad_check) 
+                    << " m_grad_norm_scaled check= " << (m_grad_norm_scaled < grad_check)
                     << " m_dmax check= " << (m_dmax < grad_check)
                     << " m_dnew check= " << (m_dnew < grad_check*grad_check*m_d0)
                     << " m_total_metric = " << m_total_metric << std::endl;
           return true;
-        }      
+        }
       return false;
     }
 
-    double ReferenceMeshSmoother1::metric(stk::mesh::Entity& element, bool& valid)
+    double ReferenceMeshSmoother1::metric(stk::mesh::Entity element, bool& valid)
     {
       return m_metric->metric(element,valid);
     }
@@ -198,8 +198,8 @@ namespace stk {
 
                   for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                     {
-                      stk::mesh::Entity& node = bucket[i_node];
-                      bool fixed = this->get_fixed_flag(&node);
+                      stk::mesh::Entity node = bucket[i_node];
+                      bool fixed = this->get_fixed_flag(node);
                       if (fixed)
                         {
                           continue;
@@ -213,7 +213,7 @@ namespace stk {
                       double *cg_d = PerceptMesh::field_data(cg_d_field, node);
                       double *cg_g = PerceptMesh::field_data(cg_g_field, node);
 
-                      m_metric->set_node(&node);
+                      m_metric->set_node(node);
 
                       double gsav[3]={0,0,0};
                       bool ng_valid = true;
@@ -245,7 +245,7 @@ namespace stk {
           for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
             {
               if (MeshSmoother::select_bucket(**k, m_eMesh))
-                //if (on_locally_owned_part(**k))  
+                //if (on_locally_owned_part(**k))
                 {
                   stk::mesh::Bucket & bucket = **k ;
                   const unsigned num_elements_in_bucket = bucket.size();
@@ -253,7 +253,7 @@ namespace stk {
 
                   for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
                     {
-                      stk::mesh::Entity& element = bucket[i_element];
+                      stk::mesh::Entity element = bucket[i_element];
 
                       const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
                       unsigned num_node = elem_nodes.size();
@@ -265,7 +265,7 @@ namespace stk {
                       double analytic_grad[8][3];
                       if ((test_analytic_grad || use_analytic_grad) && m_stage == 1)
                         {
-                          //virtual double grad_metric(stk::mesh::Entity& element, bool& valid, double grad[8][3]) { return 0.0; }
+                          //virtual double grad_metric(stk::mesh::Entity element, bool& valid, double grad[8][3]) { return 0.0; }
                           bool gmvalid = true;
                           double gm = m_metric->grad_metric(element, gmvalid, analytic_grad);
                           (void)gm;
@@ -273,11 +273,11 @@ namespace stk {
                             {
                               for (unsigned inode=0; inode < num_node; inode++)
                                 {
-                                  mesh::Entity & node = * elem_nodes[ inode ].entity();
+                                  mesh::Entity node = elem_nodes[ inode ].entity();
 
                                   bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
                                   bool node_locally_owned = (eMesh->get_rank() == node.owner_rank());
-                                  bool fixed = this->get_fixed_flag(&node);
+                                  bool fixed = this->get_fixed_flag(node);
                                   if (fixed || isGhostNode)
                                     continue;
 
@@ -296,12 +296,12 @@ namespace stk {
                         }
                       for (unsigned inode=0; inode < num_node; inode++)
                         {
-                          mesh::Entity & node = * elem_nodes[ inode ].entity();
+                          mesh::Entity node = elem_nodes[ inode ].entity();
 
                           bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
                           //VERIFY_OP_ON(isGhostNode, ==, false, "hmmmm");
                           bool node_locally_owned = (eMesh->get_rank() == node.owner_rank());
-                          bool fixed = this->get_fixed_flag(&node);
+                          bool fixed = this->get_fixed_flag(node);
                           if (fixed || isGhostNode)
                             continue;
 
@@ -311,13 +311,13 @@ namespace stk {
                           //edge_length_ave = nodal_edge_length_ave(node);
                           edge_length_ave = cg_edge_length[0];
 
-                          m_metric->set_node(&node);
+                          m_metric->set_node(node);
                           double *coord_current = PerceptMesh::field_data(coord_field_current, node);
                           double *cg_g = PerceptMesh::field_data(cg_g_field, node);
                           unsigned stride_h=0;
                           double *cg_h = (m_use_hessian_scaling ? PerceptMesh::field_data(cg_h_field, node, &stride_h) : 0);
                           if (m_use_hessian_scaling) VERIFY_OP_ON(int(stride_h), ==, spatialDim*spatialDim, "hmm");
-                        
+
                           //double eps = 1.e-6;
                           double eps1 = sqrt_eps*edge_length_ave;
                           //if (m_metric->length_scaling_power() != 1.0) eps1 = std::pow(eps1, 1.0/m_metric->length_scaling_power());
@@ -369,10 +369,10 @@ namespace stk {
                               if (spatialDim==3) diff = std::max(diff, std::fabs( analytic_grad[inode][2] -gsav[2]));
                               double sc = std::max(std::fabs( analytic_grad[inode][0]),std::fabs( analytic_grad[inode][1] ));
                               if (spatialDim==3) sc = std::max(sc, std::fabs( analytic_grad[inode][2] ));
-                              if (sc > 1.e-3 && diff > 1.e-3*sc) 
+                              if (sc > 1.e-3 && diff > 1.e-3*sc)
                                 {
                                   std::cout << "analytic_grad= " << analytic_grad[inode][0] << " " << analytic_grad[inode][1] << " "
-                                            << " fd_grad= " << gsav[0] << " " << gsav[1] 
+                                            << " fd_grad= " << gsav[0] << " " << gsav[1]
                                             << " diff = " << analytic_grad[inode][0]-gsav[0] << " " << analytic_grad[inode][1] -gsav[1]
                                             << std::endl;
                                   //exit(1);
@@ -400,7 +400,7 @@ namespace stk {
                                       double cc_i = csav[idim];
                                       double cc_j = csav[jdim];
                                       bool fvalid=false;
-                                  
+
                                       coord_current[idim] = cc_i;
                                       coord_current[jdim] = cc_j;
 
@@ -456,7 +456,7 @@ namespace stk {
                                       // c-style ordering
                                       cg_h[jdim + idim*spatialDim] += f_xi_xj;
                                       H(idim,jdim) = f_xi_xj;
-                                      if (0 && m_stage==1) 
+                                      if (0 && m_stage==1)
                                       {
                                         std::cout << "i,j= " << idim << " " << jdim << " fpp= " << fpp << " fpm= " << fpm << " fmp= " << fmp << " fmm= " << fmm << std::endl;
                                         std::cout << "i,j= " << idim << " " << jdim << " f_xi_xj= " << f_xi_xj << " fpp-fmm= " << fpp-fmm << " fpm-fmm= " << fpm-fmm << " fmp-fmm= " << fmp-fmm << " eps_hess= " << eps_hess << std::endl;
@@ -473,7 +473,7 @@ namespace stk {
                               {
                                 double d = det(H);
                                 //a00 - Sqrt(4*a01*a10 + Power(a00 - a11,2)) + a11)/2., (a00 + Sqrt(4*a01*a10 + Power(a00 - a11,2)) + a11)/2.
-                      
+
                                 double disc=4*H(0,1)*H(1,0) + std::pow(H(0,0) - H(1,1),2);
                                 double eigen[] = {(H(0,0) - std::sqrt(disc) + H(1,1))/2.,
                                                   (H(0,0) + std::sqrt(disc) + H(1,1))/2.};
@@ -489,7 +489,7 @@ namespace stk {
 
                             }
 
-                          // FIXME 
+                          // FIXME
                           if (DEBUG_PRINT)
                             {
                               double gsn=0.0;
@@ -545,7 +545,7 @@ namespace stk {
         fields.push_back(cg_g_field);
 
         // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
-        stk::mesh::communicate_field_data(m_eMesh->get_bulk_data()->shared_aura(), fields); 
+        stk::mesh::communicate_field_data(m_eMesh->get_bulk_data()->shared_aura(), fields);
 
         // the shared part (just the shared boundary)
         //stk::mesh::communicate_field_data(*m_eMesh->get_bulk_data()->ghostings()[0], fields);
@@ -553,13 +553,13 @@ namespace stk {
 
       {
         stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_scale ) );
-        //!! FIXME 
+        //!! FIXME
         //m_scale = (m_scale < 1.0) ? 1.0 : 1.0/m_scale;
         m_scale = 1.0/m_scale;
         //PRINT_1("tmp srk get_grad m_scale= " << m_scale);
       }
-        
-      if (!m_use_local_scaling) 
+
+      if (!m_use_local_scaling)
         get_scale();
     }
 
@@ -595,7 +595,7 @@ namespace stk {
 
                 for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
                   {
-                    stk::mesh::Entity& element = bucket[i_element];
+                    stk::mesh::Entity element = bucket[i_element];
 
                     const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
                     unsigned num_node = elem_nodes.size();
@@ -604,19 +604,19 @@ namespace stk {
 
                     for (unsigned inode=0; inode < num_node; inode++)
                       {
-                        mesh::Entity & node = * elem_nodes[ inode ].entity();
+                        mesh::Entity node = elem_nodes[ inode ].entity();
 
                         double *cg_edge_length = PerceptMesh::field_data(cg_edge_length_field, node);
                         edge_length_ave = cg_edge_length[0];
 
                         bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
                         VERIFY_OP_ON(isGhostNode, ==, false, "hmmmm");
-                        bool fixed = this->get_fixed_flag(&node);
+                        bool fixed = this->get_fixed_flag(node);
                         if (fixed || isGhostNode)
                           continue;
 
                         double *cg_g = PerceptMesh::field_data(cg_g_field, node);
-                        
+
                         for (int idim=0; idim < spatialDim; idim++)
                           {
                             m_scale = std::max(m_scale, std::abs(cg_g[idim])/edge_length_ave);
@@ -635,7 +635,7 @@ namespace stk {
       else
         {
           stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_scale ) );
-          //!! FIXME  
+          //!! FIXME
           //m_scale = (m_scale < 1.0) ? 1.0 : 1.0/m_scale;
           m_scale = 1.0/m_scale;
           //PRINT_1("tmp srk get_scale m_scale= " << m_scale);
@@ -647,7 +647,7 @@ namespace stk {
       double el=1.e+10, es1=0, es2=0;
       //double pw=std::max(m_metric->length_scaling_power() - 1.0,0.0);
 
-      stk::mesh::Entity *node_max = 0;
+      stk::mesh::Entity node_max = stk::mesh::Entity();
 
       {
         const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->node_rank() );
@@ -661,10 +661,10 @@ namespace stk {
 
                 for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                   {
-                    stk::mesh::Entity& node = bucket[i_node];
+                    stk::mesh::Entity node = bucket[i_node];
                     bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
                     VERIFY_OP_ON(isGhostNode, ==, false, "hmmmm");
-                    bool fixed = this->get_fixed_flag(&node);
+                    bool fixed = this->get_fixed_flag(node);
                     if (fixed || isGhostNode)
                       continue;
 
@@ -674,7 +674,7 @@ namespace stk {
 
                     double *cg_g = PerceptMesh::field_data(cg_g_field, node);
                     double *cg_h = (m_use_hessian_scaling ? PerceptMesh::field_data(cg_h_field, node) : 0);
-                        
+
                     double sum=0.0;
                     for (int idim=0; idim < spatialDim; idim++)
                       {
@@ -705,7 +705,7 @@ namespace stk {
                       DenseMatrix<2,2> H(cg_h), HI;
                       double d = det(H);
                       //a00 - Sqrt(4*a01*a10 + Power(a00 - a11,2)) + a11)/2., (a00 + Sqrt(4*a01*a10 + Power(a00 - a11,2)) + a11)/2.
-                      
+
                       double disc=4*H(0,1)*H(1,0) + std::pow(H(0,0) - H(1,1),2);
                       double eigen[] = {(H(0,0) - std::sqrt(disc) + H(1,1))/2.,
                                         (H(0,0) + std::sqrt(disc) + H(1,1))/2.};
@@ -735,7 +735,7 @@ namespace stk {
                     if (sum > m_grad_norm_scaled)
                       {
                         m_grad_norm_scaled = sum;
-                        node_max = &node;
+                        node_max = node;
                         el = edge_length_ave;
                         es1 = s1;
                         es2 = s2;
@@ -751,7 +751,7 @@ namespace stk {
                         for (int idim=0; idim < spatialDim; idim++)
                           {
                             len += cg_r[idim]*cg_r[idim];
-                          }                            
+                          }
                         len = std::sqrt(len);
                         if (len > edge_length_ave)
                           {
@@ -777,13 +777,13 @@ namespace stk {
           {
             PRINT_2(" tmp srk max occurs on proc= " << m_eMesh->get_rank());
             {
-              stk::mesh::Entity& node = *node_max;
+              stk::mesh::Entity node = node_max;
               static int file_i = 0;
               std::string file = "dump_vtk_"+toString(file_i)+".vtk";
               ++file_i;
               m_eMesh->dump_vtk(node, file);
               bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
-              bool fixed = this->get_fixed_flag(&node);
+              bool fixed = this->get_fixed_flag(node);
               PRINT_2(" tmp srk fixed= " << fixed << " isGhostNode= " << isGhostNode);
               if (fixed || isGhostNode)
                 {
@@ -793,10 +793,10 @@ namespace stk {
                   //               stk::mesh::PairIterRelation node_elems = node.relations(m_eMesh->element_rank());
                   //               for (unsigned ielem=0; ielem < node_elems.size(); ielem++)
                   //                 {
-                  //                   stk::mesh::Entity& element = *node_elems[ielem].entity();
-                  
+                  //                   stk::mesh::Entity element = *node_elems[ielem].entity();
+
                   //                 }
-                  //double ReferenceMeshSmoother1::nodal_metric(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid)
+                  //double ReferenceMeshSmoother1::nodal_metric(stk::mesh::Entity node, double alpha, double *coord_current, double *cg_d, bool& valid)
                   double *coord_current = PerceptMesh::field_data(m_coord_field_current, node);
 
                   double *cg_g = PerceptMesh::field_data(cg_g_field, node);
@@ -827,7 +827,7 @@ namespace stk {
 
               for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                 {
-                  stk::mesh::Entity& node = bucket[i_node];
+                  stk::mesh::Entity node = bucket[i_node];
                   double *cg_edge_length = PerceptMesh::field_data(cg_edge_length_field, node);
 
                   if (on_locally_owned_part(node) || on_globally_shared_part(node))
@@ -921,7 +921,7 @@ namespace stk {
             double mfac = alpha*armijo_offset_factor;
             converged = (metric < metric_0 + mfac);
             if (m_untangled) converged = converged && total_valid;
-            PRINT(  "tmp srk alpha= " << alpha << " metric_0= " << metric_0 << " metric= " << metric << " diff= " << metric - (metric_0 + mfac) 
+            PRINT(  "tmp srk alpha= " << alpha << " metric_0= " << metric_0 << " metric= " << metric << " diff= " << metric - (metric_0 + mfac)
                     << " m_untangled = " << m_untangled
                     << " total_valid= " << total_valid );
             if (!converged)
@@ -969,7 +969,7 @@ namespace stk {
             double mfac = alpha*armijo_offset_factor;
             converged = (metric < metric_0 + mfac);
             if (m_untangled) converged = converged && total_valid;
-            PRINT_1(  "tmp srk ### alpha= " << alpha << " metric_0= " << metric_0 << " metric= " << metric << " diff= " << metric - (metric_0 + mfac) 
+            PRINT_1(  "tmp srk ### alpha= " << alpha << " metric_0= " << metric_0 << " metric= " << metric << " diff= " << metric - (metric_0 + mfac)
                     << " m_untangled = " << m_untangled
                     << " total_valid= " << total_valid );
             if (!converged)
@@ -1022,7 +1022,7 @@ namespace stk {
                       {
                         PRINT_1( "tmp srk WARNING !total_valid alpha_quadratic= " << alpha_quadratic << " alpha= " << a2 );
                       }
-                  } 
+                  }
               }
 
             // try over-relaxation
@@ -1091,7 +1091,7 @@ namespace stk {
       //PRINT("tmp srk m_dnew[n] = " << m_dnew << " f_cur= " << f_cur << " total_valid= " << total_valid);
 
       double cg_beta = 0.0;
-      if (std::fabs(m_dold) < 1.e-12) 
+      if (std::fabs(m_dold) < 1.e-12)
         cg_beta = 0.0;
       else
         cg_beta = (m_dnew - m_dmid) / m_dold;
@@ -1100,7 +1100,7 @@ namespace stk {
 
       // FIXME
       int N = m_num_nodes;
-      if (m_iter % N == 0 || cg_beta <= 0.0 || restarted) 
+      if (m_iter % N == 0 || cg_beta <= 0.0 || restarted)
         {
           /// d = s
           eMesh->copy_field(cg_d_field, cg_s_field);
@@ -1116,15 +1116,15 @@ namespace stk {
       if (debug_par)
         {
           double d_s=eMesh->nodal_field_dot(cg_s_field, cg_s_field);
-          if (0 && !m_eMesh->get_rank()) printf("dmax[%3d]=%20.12g tm=%20.12g dnew=%20.12g dmid= %20.12g d_g= %20.12g d_r= %20.12g d_s= %20.12g beta= %20.12g coord= %20.12g\n",  
+          if (0 && !m_eMesh->get_rank()) printf("dmax[%3d]=%20.12g tm=%20.12g dnew=%20.12g dmid= %20.12g d_g= %20.12g d_r= %20.12g d_s= %20.12g beta= %20.12g coord= %20.12g\n",
                                            m_iter, m_dmax, tm, m_dnew, m_dmid, d_g, d_r, d_s, cg_beta, coord_mag);
-          if (!m_eMesh->get_rank()) printf("dmax[%3d]=%20.12e tm=%20.12e dnew=%20.12e d_g= %20.12e beta= %20.12e coord= %20.12e scl= %20.12e alp= %20.12e\n",  
+          if (!m_eMesh->get_rank()) printf("dmax[%3d]=%20.12e tm=%20.12e dnew=%20.12e d_g= %20.12e beta= %20.12e coord= %20.12e scl= %20.12e alp= %20.12e\n",
                                            m_iter, m_dmax, tm, m_dnew, d_g, cg_beta, coord_mag, m_scale, alpha);
         }
 
       return tm;
     }
-    
+
     void ReferenceMeshSmoother1::debug_print(double alpha)
     {
       if (0)
@@ -1140,7 +1140,7 @@ namespace stk {
           const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
           for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
             {
-              // update local and globally shared 
+              // update local and globally shared
               //if (on_locally_owned_part(**k) || on_globally_shared_part(**k))
               {
                 stk::mesh::Bucket & bucket = **k ;
@@ -1148,7 +1148,7 @@ namespace stk {
 
                 for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                   {
-                    stk::mesh::Entity& node = bucket[i_node];
+                    stk::mesh::Entity node = bucket[i_node];
 
                     double *coord_current = PerceptMesh::field_data(m_coord_field_current, node);
                     double *cg_d = PerceptMesh::field_data(cg_d_field, node);
@@ -1199,11 +1199,11 @@ namespace stk {
             {
               MPI_Barrier( MPI_COMM_WORLD );
 
-              //stk::mesh::Entity* node_p = m_eMesh->get_bulk_data()->get_entity(0, ids[i_node]);
-              stk::mesh::Entity* node_p = m_eMesh->get_bulk_data()->get_entity(0, i_node+1);
-              if (node_p)
+              //stk::mesh::Entity node_p = m_eMesh->get_bulk_data()->get_entity(0, ids[i_node]);
+              stk::mesh::Entity node_p = m_eMesh->get_bulk_data()->get_entity(0, i_node+1);
+              if (node_p.is_valid())
                 {
-                  stk::mesh::Entity& node = *node_p;
+                  stk::mesh::Entity node = node_p;
 
                   double *coord_current = PerceptMesh::field_data(m_coord_field_current, node);
                   double *cg_d = PerceptMesh::field_data(cg_d_field, node);
@@ -1225,7 +1225,7 @@ namespace stk {
 
                   {
                     bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
-                    bool fixed = this->get_fixed_flag(&node);
+                    bool fixed = this->get_fixed_flag(node);
                     if (fixed || isGhostNode)
                       {
                       }
@@ -1251,7 +1251,7 @@ namespace stk {
               MPI_Barrier( MPI_COMM_WORLD );
 
             }
-        }        
+        }
 
     }
 
@@ -1272,7 +1272,7 @@ namespace stk {
         const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->node_rank() );
         for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
-            // update local and globally shared 
+            // update local and globally shared
             if (on_locally_owned_part(**k) || on_globally_shared_part(**k))
               {
                 stk::mesh::Bucket & bucket = **k ;
@@ -1280,8 +1280,8 @@ namespace stk {
 
                 for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                   {
-                    stk::mesh::Entity& node = bucket[i_node];
-                    bool fixed = this->get_fixed_flag(&node);
+                    stk::mesh::Entity node = bucket[i_node];
+                    bool fixed = this->get_fixed_flag(node);
                     bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
                     if (fixed || isGhostNode)
                       {
@@ -1295,7 +1295,7 @@ namespace stk {
                       {
                         double dt = alpha*cg_d[i];
                         m_dmax = std::max(std::fabs(dt), m_dmax);
-                        coord_current[i] += dt;  
+                        coord_current[i] += dt;
                       }
                   }
               }
@@ -1310,7 +1310,7 @@ namespace stk {
         //fields.push_back(cg_g_field);
 
         // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
-        stk::mesh::communicate_field_data(m_eMesh->get_bulk_data()->shared_aura(), fields); 
+        stk::mesh::communicate_field_data(m_eMesh->get_bulk_data()->shared_aura(), fields);
         // the shared part (just the shared boundary)
         //stk::mesh::communicate_field_data(*m_eMesh->get_bulk_data()->ghostings()[0], fields);
       }
@@ -1341,7 +1341,7 @@ namespace stk {
         const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
         for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
-            // update local and globally shared 
+            // update local and globally shared
             if (on_locally_owned_part(**k) || on_globally_shared_part(**k))
               {
                 stk::mesh::Bucket & bucket = **k ;
@@ -1349,8 +1349,8 @@ namespace stk {
 
                 for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                   {
-                    stk::mesh::Entity& node = bucket[i_node];
-                    bool fixed = this->get_fixed_flag(&node);
+                    stk::mesh::Entity node = bucket[i_node];
+                    bool fixed = this->get_fixed_flag(node);
                     if (fixed)
                       {
                         continue;
@@ -1383,8 +1383,8 @@ namespace stk {
 
                   for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                     {
-                      stk::mesh::Entity& node = bucket[i_node];
-                      bool fixed = this->get_fixed_flag(&node);
+                      stk::mesh::Entity node = bucket[i_node];
+                      bool fixed = this->get_fixed_flag(node);
                       if (fixed)
                         {
                           continue;
@@ -1413,12 +1413,12 @@ namespace stk {
                 {
                   stk::mesh::Bucket & bucket = **k ;
                   m_metric->m_topology_data = m_eMesh->get_cell_topology(bucket);
-            
+
                   const unsigned num_elements_in_bucket = bucket.size();
 
                   for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
                     {
-                      stk::mesh::Entity& element = bucket[i_element];
+                      stk::mesh::Entity element = bucket[i_element];
                       bool local_valid=true;
                       double mm = metric(element, local_valid);
                       if (!local_valid) n_invalid++;
@@ -1445,7 +1445,7 @@ namespace stk {
         }
 
       return mtot;
-      
+
     }
   }
 }

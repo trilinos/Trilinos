@@ -89,7 +89,7 @@ namespace stk
 
       /// innermost operation of an element-based loop; return value of true forces the enclosing loop to terminate and this class'
       ///   derived classes can return info back to the loop invoker
-      virtual bool operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData);
+      virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData);
       void init_elementOp() { init(); }
       void fini_elementOp() {}
 
@@ -277,13 +277,13 @@ namespace stk
 
         for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
           {
-            stk::mesh::Entity& element = bucket[iElement];
+            stk::mesh::Entity element = bucket[iElement];
             helperSubDim(element, field, bulkData);
           }
         return false;
       }
 
-      bool helperSubDim(const stk::mesh::Entity& child_element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+      bool helperSubDim(const stk::mesh::Entity child_element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
       {
         EXCEPTWATCH;
 
@@ -307,7 +307,7 @@ namespace stk
         unsigned cubDegree = m_cubDegree;
         const stk::mesh::PairIterRelation parent_elements = child_element.relations(child_element.entity_rank() + 1);
         VERIFY_OP_ON(parent_elements.size(), ==, 1, "cant find parent");
-        const stk::mesh::Entity& element = *parent_elements[0].entity();
+        const stk::mesh::Entity element = parent_elements[0].entity();
         unsigned i_face = parent_elements[0].identifier();
 
         const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
@@ -517,7 +517,7 @@ namespace stk
 
     /// innermost operation of an element-based loop; return value of true forces the enclosing loop to terminate and this class'
     ///   derived classes can return info back to the loop invoker
-    bool IntegratedOp::operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+    bool IntegratedOp::operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
     {
       EXCEPTWATCH;
       helper(element, field, bulkData);

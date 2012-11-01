@@ -73,9 +73,9 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
   mesh::EntityProcVec::iterator ep_iter = entity_procs.begin(),
                                  ep_end = entity_procs.end();
   for( ; ep_end != ep_iter; ++ep_iter ) {
-    if( element_rank == ep_iter->first->entity_rank() )
+    if( element_rank == ep_iter->first.entity_rank() )
     {
-      const mesh::EntityId elem_id = ep_iter->first->identifier();
+      const mesh::EntityId elem_id = ep_iter->first.identifier();
       elem_procs[elem_id] = ep_iter->second;
       owned_moving_elems.push_back(ep_iter->first);
     }
@@ -93,13 +93,13 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
                                         r_end = owned_moving_elems.rend();
   for( ; r_end != r_iter; ++r_iter )
   {
-    const mesh::EntityId elem_id = (*r_iter)->identifier();
+    const mesh::EntityId elem_id = r_iter->identifier();
     mesh::EntityVector related_entities;
     mesh::EntityVector elems(1);
     elems[0] = *r_iter;
     stk::mesh::get_entities_through_relations(elems, dep_rank, related_entities);
     for( size_t j = 0; j < related_entities.size(); ++j ) {
-      dep_entity_procs[related_entities[j]->identifier()] = elem_procs[elem_id];
+      dep_entity_procs[related_entities[j].identifier()] = elem_procs[elem_id];
     }
   }
 
@@ -108,8 +108,8 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
                                                       c_end = dep_entity_procs.end();
   for( ; c_end != c_iter; ++c_iter )
   {
-    mesh::Entity * de = bulk_data.get_entity( dep_rank, c_iter->first );
-    if( parallel_machine_rank(partition->parallel()) == de->owner_rank() )
+    mesh::Entity de = bulk_data.get_entity( dep_rank, c_iter->first );
+    if( parallel_machine_rank(partition->parallel()) == de.owner_rank() )
     {
       stk::mesh::EntityProc dep_proc(de, c_iter->second);
       entity_procs.push_back(dep_proc);
@@ -178,7 +178,7 @@ bool stk::rebalance::rebalance(mesh::BulkData   & bulk_data  ,
   for (mesh::EntityVector::iterator iA = entities.begin() ; iA != entities.end() ; ++iA ) {
     if(rebal_elem_weight_ref)
     {
-      double * const w = mesh::field_data( *rebal_elem_weight_ref, **iA );
+      double * const w = mesh::field_data( *rebal_elem_weight_ref, *iA );
       ThrowRequireMsg( NULL != w,
         "Rebalance weight field is not defined on entities but should be defined on all entities.");
       // Should this be a throw instead???

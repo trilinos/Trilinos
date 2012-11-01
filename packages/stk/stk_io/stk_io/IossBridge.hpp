@@ -217,7 +217,7 @@ std::string map_topology_cell_to_ioss( const CellTopologyData *cell_top,
 void get_entity_list(Ioss::GroupingEntity *io_entity,
                      stk::mesh::EntityRank part_type,
                      const stk::mesh::BulkData &bulk,
-                     std::vector<stk::mesh::Entity*> &entities);
+                     std::vector<stk::mesh::Entity> &entities);
 
 /**
  * Fill the specified 'field' with data from the Ioss field named
@@ -226,7 +226,7 @@ void get_entity_list(Ioss::GroupingEntity *io_entity,
  * stk::mesh::Entities is given by the 'entities' list.
  */
 void field_data_from_ioss(const stk::mesh::FieldBase *field,
-                          std::vector<stk::mesh::Entity*> &entities,
+                          std::vector<stk::mesh::Entity> &entities,
                           Ioss::GroupingEntity *io_entity,
                           const std::string &io_fld_name);
 
@@ -237,7 +237,7 @@ void field_data_from_ioss(const stk::mesh::FieldBase *field,
  * stk::mesh::Entities is given by the 'entities' list.
  */
 void field_data_to_ioss(const stk::mesh::FieldBase *field,
-                        std::vector<stk::mesh::Entity*> &entities,
+                        std::vector<stk::mesh::Entity> &entities,
                         Ioss::GroupingEntity *io_entity,
                         const std::string &io_fld_name,
                         Ioss::Field::RoleType filter_role);

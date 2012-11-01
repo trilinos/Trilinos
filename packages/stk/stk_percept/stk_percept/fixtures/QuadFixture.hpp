@@ -218,21 +218,21 @@ namespace stk {
               elem_node[3] = node_id( ix   , iy+1 );
 
               for (unsigned i = 0; i<4; ++i) {
-                stk::mesh::Entity * const node =
+                stk::mesh::Entity const node =
                   bulk_data.get_entity( stk::mesh::MetaData::NODE_RANK , elem_node[i] );
 
-                if ( node != NULL) {
+                if ( node.is_valid() ) {
 
                   unsigned nx = 0, ny = 0;
                   node_ix_iy(elem_node[i], nx, ny);
 
-                  Scalar * data = stk::mesh::field_data( coord_field , *node );
+                  Scalar * data = stk::mesh::field_data( coord_field , node );
 
                   //data[0] = nx ;
                   // data[1] = ny ;
                   data[0] = m_xmin + (m_xmax-m_xmin)*((double)nx) / ((double)NX) ;
                   data[1] = m_ymin + (m_ymax-m_ymin)*((double)ny) / ((double)NY) ;
-                   
+
                 }
               }
             }
@@ -265,7 +265,7 @@ namespace stk {
         stk::mesh::EntityId elem_id( unsigned ix , unsigned iy ) const
         { return 1 + ix + NX * iy ; }
 
-        stk::mesh::Entity * node( unsigned ix , unsigned iy ) const
+        stk::mesh::Entity node( unsigned ix , unsigned iy ) const
         { return bulk_data.get_entity( stk::mesh::MetaData::NODE_RANK , node_id(ix,iy) ); }
 
         void node_ix_iy( stk::mesh::EntityId entity_id, unsigned &ix , unsigned &iy ) const  {
@@ -286,7 +286,7 @@ namespace stk {
           iy = entity_id;
         }
 
-        stk::mesh::Entity * elem( unsigned ix , unsigned iy ) const
+        stk::mesh::Entity elem( unsigned ix , unsigned iy ) const
       { return bulk_data.get_entity( stk::mesh::MetaData::ELEMENT_RANK , elem_id(ix,iy) ); }
 
 
@@ -372,10 +372,10 @@ namespace stk {
                 {
                   for (unsigned iy = iy0; iy < iy1; iy++)
                     {
-                      if (elem(ix,iy) &&
+                      if (elem(ix,iy).is_valid() &&
                           (NodesPerElem == 4 || i_side <= 1))
                         {
-                          mesh::Entity& element = *elem(ix, iy);
+                          mesh::Entity element = elem(ix, iy);
 
                           if (end != std::find(ibegin, end, element.identifier()))
                             {
@@ -401,18 +401,18 @@ namespace stk {
                               else
                                 {
                                   stk::mesh::EntityId elem_node[2];
-                                  elem_node[0] = (element.relations(0)[j_side]).entity()->identifier();
-                                  elem_node[1] = (element.relations(0)[(j_side+1)%4]).entity()->identifier();
+                                  elem_node[0] = (element.relations(0)[j_side]).entity().identifier();
+                                  elem_node[1] = (element.relations(0)[(j_side+1)%4]).entity().identifier();
                                   stk::mesh::declare_element( bulk_data, *side_parts[i_side], side_id + (2*NX*NY+2) , elem_node);
-                                  
+
                                 }
 
                             }
 
                         }
-                      if (NodesPerElem == 3 && elem(ix,iy) && i_side >=2 )
+                      if (NodesPerElem == 3 && elem(ix,iy).is_valid() && i_side >=2 )
                         {
-                          mesh::Entity& element = *bulk_data.get_entity(stk::mesh::MetaData::ELEMENT_RANK, (NX*NY+1)+elem_id(ix, iy));
+                          mesh::Entity element = bulk_data.get_entity(stk::mesh::MetaData::ELEMENT_RANK, (NX*NY+1)+elem_id(ix, iy));
 
                           if (end != std::find(ibegin, end, elem_id(ix,iy)) )
                             {
@@ -454,12 +454,12 @@ namespace stk {
         QuadFixture();
         QuadFixture( const QuadFixture & );
         QuadFixture & operator = ( const QuadFixture & );
-        
+
         double m_xmin;
         double m_xmax;
         double m_ymin;
         double m_ymax;
-        
+
       };
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

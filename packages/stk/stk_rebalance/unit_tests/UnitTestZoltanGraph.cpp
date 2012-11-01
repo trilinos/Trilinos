@@ -68,7 +68,7 @@ void disabled_unit_test()
 
   if ( p_rank == 0 ) {
 
-    std::vector<std::vector<stk::mesh::Entity*> > quads(nx);
+    std::vector<std::vector<stk::mesh::Entity> > quads(nx);
     for ( unsigned ix = 0 ; ix < nx ; ++ix ) quads[ix].resize(ny);
 
     const unsigned nnx = nx + 1 ;
@@ -82,16 +82,16 @@ void disabled_unit_test()
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
         nodes[3] = 1 + ix + ( iy + 1 ) * nnx ;
 
-        stk::mesh::Entity &q = stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
-        quads[ix][iy] = &q; 
+        stk::mesh::Entity q = stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
+        quads[ix][iy] = q;
       }
     }
 
     for ( unsigned iy = 0 ; iy <= ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix <= nx ; ++ix ) {
         stk::mesh::EntityId nid = 1 + ix + iy * nnx ;
-        stk::mesh::Entity * n = bulk_data.get_entity( NODE_RANK, nid );
-        double * const coord = stk::mesh::field_data( coord_field , *n );
+        stk::mesh::Entity n = bulk_data.get_entity( NODE_RANK, nid );
+        double * const coord = stk::mesh::field_data( coord_field , n );
         coord[0] = .1*ix;
         coord[1] = .1*iy;
         coord[2] = 0;
@@ -99,18 +99,18 @@ void disabled_unit_test()
     }
 
     {
-      const unsigned iy_left  =  0; 
-      const unsigned iy_right = ny; 
+      const unsigned iy_left  =  0;
+      const unsigned iy_right = ny;
       stk::mesh::PartVector add(1, &fem_meta.locally_owned_part());
       for ( unsigned ix = 0 ; ix <= nx ; ++ix ) {
         stk::mesh::EntityId nid_left  = 1 + ix + iy_left  * nnx ;
         stk::mesh::EntityId nid_right = 1 + ix + iy_right * nnx ;
-        stk::mesh::Entity * n_left  = bulk_data.get_entity( NODE_RANK, nid_left  );
-        stk::mesh::Entity * n_right = bulk_data.get_entity( NODE_RANK, nid_right );
+        stk::mesh::Entity n_left  = bulk_data.get_entity( NODE_RANK, nid_left  );
+        stk::mesh::Entity n_right = bulk_data.get_entity( NODE_RANK, nid_right );
         const stk::mesh::EntityId constraint_entity_id =  1 + ix + nny * nnx;
-        stk::mesh::Entity & c = bulk_data.declare_entity( constraint_rank, constraint_entity_id, add );
-        bulk_data.declare_relation( c , *n_left  , 0 );
-        bulk_data.declare_relation( c , *n_right , 1 );
+        stk::mesh::Entity c = bulk_data.declare_entity( constraint_rank, constraint_entity_id, add );
+        bulk_data.declare_relation( c , n_left  , 0 );
+        bulk_data.declare_relation( c , n_right , 1 );
       }
     }
 
@@ -176,7 +176,7 @@ void disabled_unit_test()
 ///  \ingroup stk_rebalance_unit_test_module
 /// \section stk_rebalance_unit_test_zoltan_graph Simple Zoltan Unit Test using Graph-Based Partitioning
 ///
-/// This unit test is identical to 
+/// This unit test is identical to
 /// \ref stk_rebalance_unit_test_zoltan_description "Simple Zoltan Unit Test"
 /// with the only difference being use of graph-based partitioning instead
 /// of element weights.
@@ -185,11 +185,11 @@ void disabled_unit_test()
 /// \dontinclude UnitTestZoltanGraph.cpp
 /// \skip Configure Zoltan to use graph-based partitioning
 /// \until end configure snippet
-/// and then calling check_balance and rebalance with NULL weight fields 
+/// and then calling check_balance and rebalance with NULL weight fields
 /// and calling rebalance with non-NULL coordinates, eg
-/// \skip double imbalance_threshold = 
+/// \skip double imbalance_threshold =
 /// \until rebalance::rebalance(
-/// 
+///
 ///
 /// The test passes if the resulting rebalance produces an imbalance measure
 /// below 1.1 for 2 or 4 procs and below 1.5 otherwise.

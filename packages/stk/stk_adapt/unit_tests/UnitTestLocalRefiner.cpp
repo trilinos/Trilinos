@@ -149,12 +149,12 @@ namespace stk {
             const unsigned num_elements_in_bucket = bucket.size();
             for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
               {
-                stk::mesh::Entity& element = bucket[iElement];
+                stk::mesh::Entity element = bucket[iElement];
                 stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
                 for (unsigned inode=0; inode < elem_nodes.size(); inode++)
                   {
-                    stk::mesh::Entity *node = elem_nodes[inode].entity();
-                    double *fdata = stk::mesh::field_data( *eMesh.get_coordinates_field() , *node);
+                    stk::mesh::Entity node = elem_nodes[inode].entity();
+                    double *fdata = stk::mesh::field_data( *eMesh.get_coordinates_field() , node);
                     node_coord_data[inode][0] = fdata[0];
                     node_coord_data[inode][1] = fdata[1];
                     node_coord_data[inode][2] = fdata[2];
@@ -1539,7 +1539,7 @@ namespace stk {
         percept::PerceptMesh& m_eMesh;
       public:
         SetRefineField(percept::PerceptMesh& eMesh) : m_eMesh(eMesh) {}
-        virtual bool operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+        virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
         {
           const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
@@ -1549,7 +1549,7 @@ namespace stk {
           bool found = true;
           for (unsigned inode=0; inode < num_node; inode++)
             {
-              mesh::Entity & node = * elem_nodes[ inode ].entity();
+              mesh::Entity node = elem_nodes[ inode ].entity();
               double *coord_data = PerceptMesh::field_data(coordField, node);
 
               //std::cout << "tmp coord_data= " << coord_data[0] << std::endl;
@@ -1576,7 +1576,7 @@ namespace stk {
         percept::PerceptMesh& m_eMesh;
       public:
         SetUnrefineField(percept::PerceptMesh& eMesh) : m_eMesh(eMesh) {}
-        virtual bool operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+        virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
         {
           const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
@@ -1586,7 +1586,7 @@ namespace stk {
           bool found = true;
           for (unsigned inode=0; inode < num_node; inode++)
             {
-              mesh::Entity & node = * elem_nodes[ inode ].entity();
+              mesh::Entity node = elem_nodes[ inode ].entity();
               double *coord_data = PerceptMesh::field_data(coordField, node);
 
               //std::cout << "tmp coord_data= " << coord_data[0] << std::endl;
@@ -1689,8 +1689,8 @@ namespace stk {
       {
         for (unsigned inode=0; inode < elem_nodes.size(); inode++)
           {
-            stk::mesh::Entity *node = elem_nodes[inode].entity();
-            double *fdata = stk::mesh::field_data( *eMesh.get_coordinates_field() , *node );
+            stk::mesh::Entity node = elem_nodes[inode].entity();
+            double *fdata = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
             for (int dim=0; dim < eMesh.get_spatial_dim(); dim++)
               {
                 fdata[dim] = tri_coords[inode][dim];
@@ -1911,29 +1911,29 @@ namespace stk {
 
             // delete the first element
             eMesh.get_bulk_data()->modification_begin();
-            stk::mesh::Entity* element_0 = &( (**(eMesh.get_bulk_data()->buckets(stk::mesh::MetaData::ELEMENT_RANK).begin()))[0]);
-            if ( ! eMesh.get_bulk_data()->destroy_entity( *element_0 ) )
+            stk::mesh::Entity element_0 = (**(eMesh.get_bulk_data()->buckets(stk::mesh::MetaData::ELEMENT_RANK).begin()))[0];
+            if ( ! eMesh.get_bulk_data()->destroy_entity( element_0 ) )
               {
                 throw std::logic_error("failed in deleting element");
               }
             eMesh.get_bulk_data()->modification_end();
 
             // single element left
-            //stk::mesh::Entity& element = (**(eMesh.get_bulk_data()->buckets(stk::mesh::MetaData::ELEMENT_RANK).begin()))[0];
+            //stk::mesh::Entity element = (**(eMesh.get_bulk_data()->buckets(stk::mesh::MetaData::ELEMENT_RANK).begin()))[0];
 
             eMesh.save_as(output_files_loc+"tri_face_0.e");
 
             // single element left
-            stk::mesh::Entity& element = (**(eMesh.get_bulk_data()->buckets(stk::mesh::MetaData::ELEMENT_RANK).begin()))[0];
+            stk::mesh::Entity element = (**(eMesh.get_bulk_data()->buckets(stk::mesh::MetaData::ELEMENT_RANK).begin()))[0];
             std::cout << "element = " << element << std::endl;
 
             mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
 
 
-            stk::mesh::Entity *elem_nodes_vector[3];
+            stk::mesh::Entity elem_nodes_vector[3];
             for (unsigned inode=0; inode < elem_nodes.size(); inode++)
               {
-                stk::mesh::Entity *node = elem_nodes[inode].entity();
+                stk::mesh::Entity node = elem_nodes[inode].entity();
                 elem_nodes_vector[inode] = node;
               }
             vector<tri_tuple_type_local> elems_local;
@@ -1965,7 +1965,7 @@ namespace stk {
 
             // test2: same as test 1 but mirror image (emulating a face shared between two tets)
             {
-              stk::mesh::Entity* node1 = elem_nodes_vector[1];
+              stk::mesh::Entity node1 = elem_nodes_vector[1];
               elem_nodes_vector[1] = elem_nodes_vector[2];
               elem_nodes_vector[2] = node1;
 

@@ -88,7 +88,7 @@ private:
   size_t m_angle_num ;
   int    m_turn_dir ;
 
-  stk::mesh::Entity &create_node( const std::vector<stk::mesh::Part*> &parts ,
+  stk::mesh::Entity create_node( const std::vector<stk::mesh::Part*> &parts ,
                                   stk::mesh::EntityId node_id_base ,
                                   size_t iz ,
                                   size_t ir ,

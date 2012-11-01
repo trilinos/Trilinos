@@ -74,7 +74,7 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
   // All side buckets
   const std::vector<stk::mesh::Bucket*> & all_side_buckets = fixture.getBulkData().buckets( fem_meta.side_rank() );
 
-  std::vector<stk::mesh::Entity *> entities;
+  std::vector<stk::mesh::Entity> entities;
 
   const stk::mesh::PartVector & side_parts = fixture.getSideParts();
   STKUNIT_ASSERT_EQUAL( sideset_names.size(), side_parts.size() );
@@ -89,7 +89,7 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
     STKUNIT_ASSERT_EQUAL( fixture.getSurfElemCount(ifset), entities.size() );
 
     for ( size_t i = 0 ; i < entities.size() ; ++i ) {
-      stk::mesh::Entity & side = *entities[i] ;
+      stk::mesh::Entity side = entities[i] ;
 
       const CellTopologyData * cell_topology = stk::mesh::get_cell_topology(side).getCellTopologyData();
 
@@ -101,7 +101,7 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
 
       for ( unsigned j = 0 ; j < cell_topology->node_count ; ++j )
       {
-        stk::mesh::Entity & rel_node = *rel[j].entity();
+        stk::mesh::Entity rel_node = rel[j].entity();
         double * coords = stk::mesh::field_data(*coord_field, rel_node);
 	STKUNIT_ASSERT( coords );
         //std::cerr << "( " << coords[0] << ", " << coords[1] << ", " << coords[2] << ")" << std::endl;

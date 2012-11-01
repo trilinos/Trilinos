@@ -153,12 +153,12 @@ void UnitTestStkMeshSkinning::test_skinning()
   stk::mesh::PartVector shell_parts;
   shell_parts.push_back(&shell_part);
 
-  std::vector<stk::mesh::Entity*> shell_faces;
+  std::vector<stk::mesh::Entity> shell_faces;
   for (unsigned i = 1; i <= num_shell_faces; ++i) {
-    stk::mesh::Entity& new_shell = bulk_data.declare_entity(element_rank,
-                                                            num_entities + i,
-                                                            shell_parts);
-    shell_faces.push_back(&new_shell);
+    stk::mesh::Entity new_shell = bulk_data.declare_entity(element_rank,
+                                                           num_entities + i,
+                                                           shell_parts);
+    shell_faces.push_back(new_shell);
   }
 
   // Set up relationships for shells
@@ -166,9 +166,9 @@ void UnitTestStkMeshSkinning::test_skinning()
   // declare shell relationships for first shell
   unsigned node_list_1[5] = {21, 26, 31, 36, 41};
   for (unsigned i = 0; i < num_shell_1_faces; ++i) {
-    stk::mesh::Entity& shell = *(shell_faces[i]);
-    stk::mesh::Entity& node1 = *(bulk_data.get_entity(NODE_RANK, node_list_1[i]));
-    stk::mesh::Entity& node2 = *(bulk_data.get_entity(NODE_RANK, node_list_1[i+1]));
+    stk::mesh::Entity shell = shell_faces[i];
+    stk::mesh::Entity node1 = bulk_data.get_entity(NODE_RANK, node_list_1[i]);
+    stk::mesh::Entity node2 = bulk_data.get_entity(NODE_RANK, node_list_1[i+1]);
     bulk_data.declare_relation(shell, node1, 0);
     bulk_data.declare_relation(shell, node2, 1);
   }
@@ -176,9 +176,9 @@ void UnitTestStkMeshSkinning::test_skinning()
   // declare shell relationships for second shell
   unsigned node_list_2[3] = {31, 36, 41};
   for (unsigned i = 0; i < num_shell_2_faces; ++i) {
-    stk::mesh::Entity& shell = *(shell_faces[i + num_shell_1_faces]);
-    stk::mesh::Entity& node1 = *(bulk_data.get_entity(NODE_RANK, node_list_2[i]));
-    stk::mesh::Entity& node2 = *(bulk_data.get_entity(NODE_RANK, node_list_2[i+1]));
+    stk::mesh::Entity shell = shell_faces[i + num_shell_1_faces];
+    stk::mesh::Entity node1 = bulk_data.get_entity(NODE_RANK, node_list_2[i]);
+    stk::mesh::Entity node2 = bulk_data.get_entity(NODE_RANK, node_list_2[i+1]);
     bulk_data.declare_relation(shell, node1, 0);
     bulk_data.declare_relation(shell, node2, 1);
   }
@@ -191,7 +191,7 @@ void UnitTestStkMeshSkinning::test_skinning()
   // Grab the skin entities
   stk::mesh::Selector skin_selector(skin_part);
   const std::vector<stk::mesh::Bucket*>& edge_buckets = bulk_data.buckets(stk::mesh::MetaData::EDGE_RANK);
-  std::vector<stk::mesh::Entity*> skin_entities;
+  std::vector<stk::mesh::Entity> skin_entities;
   stk::mesh::get_selected_entities(skin_selector, edge_buckets, skin_entities);
 
   unsigned num_expected_skin_entites = 16;
@@ -236,14 +236,14 @@ void UnitTestStkMeshSkinning::test_skinning()
 
   // map skin-id to ids of elements it is attached to; we will use this to
   // compute sharing
-  for (std::vector<stk::mesh::Entity*>::const_iterator
+  for (std::vector<stk::mesh::Entity>::const_iterator
        itr = skin_entities.begin(); itr != skin_entities.end(); ++itr) {
     stk::mesh::PairIterRelation upward_relation_itr =
-      (*itr)->relations(element_rank);
+      itr->relations(element_rank);
     bool has_multiple = upward_relation_itr.size() > 1;
     std::set<unsigned> sharing_elements;
     for ( ; !upward_relation_itr.empty() ; ++upward_relation_itr ) {
-      unsigned elem_id = upward_relation_itr->entity()->identifier();
+      unsigned elem_id = upward_relation_itr->entity().identifier();
       if (results.find(elem_id) != results.end()) {
         ++results[elem_id];
       }

@@ -41,7 +41,7 @@ void add_connectivities(stk::linsys::LinearSystemInterface& ls,
 
   int field_id = dof_mapper.get_field_id(field);
 
-  stk::mesh::Entity& first_entity = *(part_buckets[0]->begin());
+  stk::mesh::Entity first_entity = *(part_buckets[0]->begin());
   stk::mesh::PairIterRelation rel = first_entity.relations(connected_entity_rank);
   int num_connected = rel.second - rel.first;
 
@@ -63,10 +63,10 @@ void add_connectivities(stk::linsys::LinearSystemInterface& ls,
       b_iter = part_buckets[i]->begin(),
       b_end  = part_buckets[i]->end();
     for(; b_iter != b_end; ++b_iter) {
-      stk::mesh::Entity& entity = *b_iter;
+      stk::mesh::Entity entity = *b_iter;
       rel = entity.relations(connected_entity_rank);
       for(int j=0; rel.first != rel.second; ++rel.first, ++j) {
-        connected_ids[j] = rel.first->entity()->identifier();
+        connected_ids[j] = rel.first->entity().identifier();
       }
       int conn_id = entity.identifier();
       matgraph->initConnectivity(block_id, conn_id, &connected_ids[0]);
@@ -93,7 +93,7 @@ void dirichlet_bc(stk::linsys::LinearSystemInterface& ls,
     stk::mesh::Bucket::iterator
       iter = buckets[i]->begin(), iend = buckets[i]->end();
     for(; iter!=iend; ++iter) {
-      const stk::mesh::Entity& entity = *iter;
+      const stk::mesh::Entity entity = *iter;
       entity_ids.push_back(stk::linsys::impl::entityid_to_int(entity.identifier()));
     }
   }
@@ -195,7 +195,7 @@ void copy_vector_to_mesh( fei::Vector & vec,
                  offset_into_field
                 );
 
-    stk::mesh::Entity & entity = *mesh_bulk_data.get_entity(ent_type, ent_id);
+    stk::mesh::Entity entity = mesh_bulk_data.get_entity(ent_type, ent_id);
 
     void * data = stk::mesh::field_data(*field,entity);
 

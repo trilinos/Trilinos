@@ -22,16 +22,16 @@
 namespace stk {
 namespace mesh {
 
-typedef std::set<Entity *, EntityLess> EntitySet;
+typedef std::set<Entity , EntityLess> EntitySet;
 typedef std::set<EntityProc , EntityLess> EntityProcSet;
 
 namespace {
 
-void construct_transitive_closure( EntitySet & closure , Entity & entry )
+void construct_transitive_closure( EntitySet & closure , Entity entry )
 {
 
   std::pair< EntitySet::const_iterator , bool >
-    result = closure.insert( & entry );
+    result = closure.insert( entry );
 
   // A new insertion, must also insert the closure
   if ( result.second ) {
@@ -42,8 +42,8 @@ void construct_transitive_closure( EntitySet & closure , Entity & entry )
     for ( ; irel.first != irel.second ; ++irel.first ) {
       // insert entities with relations of lower rank into the closure
       if ( irel.first->entity_rank() < erank ) {
-        Entity * tmp = irel.first->entity();
-        construct_transitive_closure( closure , *tmp );
+        Entity tmp = irel.first->entity();
+        construct_transitive_closure( closure , tmp );
       }
     }
   }
@@ -54,7 +54,7 @@ void find_local_closure ( EntitySet & closure, const EntityVector & entities)
   for (EntityVector::const_iterator i = entities.begin();
       i != entities.end(); ++i)
   {
-    construct_transitive_closure(closure, **i);
+    construct_transitive_closure(closure, *i);
   }
 }
 
@@ -65,7 +65,7 @@ void construct_communication_set( const BulkData & bulk, const EntitySet & closu
   for ( EntitySet::const_iterator
         i = closure.begin(); i != closure.end(); ++i) {
 
-    Entity & entity = **i;
+    Entity entity = *i;
 
     const bool owned = bulk.parallel_rank() == entity.owner_rank();
 
@@ -73,7 +73,7 @@ void construct_communication_set( const BulkData & bulk, const EntitySet & closu
 
     for ( PairIterEntityComm ec = entity.comm(); ! ec.empty() ; ++ec ) {
       if ( owned || ec->ghost_id == 0 ) {
-        EntityProc tmp( & entity , ec->proc );
+        EntityProc tmp( entity , ec->proc );
         communication_set.insert( tmp );
       }
     }
@@ -87,7 +87,7 @@ size_t count_non_used_entities( const BulkData & bulk, const EntityVector & enti
 
   for ( EntityVector::const_iterator
         i = entities.begin(); i != entities.end(); ++i ) {
-    if ( ! in_owned_closure( **i , proc_local ) ) {
+    if ( ! in_owned_closure( *i , proc_local ) ) {
       ++non_used_entities;
     }
   }
@@ -100,8 +100,8 @@ size_t count_non_used_entities( const BulkData & bulk, const EntityVector & enti
 
 
 void find_closure( const BulkData & bulk,
-    const std::vector< Entity *> & entities,
-    std::vector< Entity *> & entities_closure)
+    const std::vector< Entity> & entities,
+    std::vector< Entity> & entities_closure)
 {
 
   entities_closure.clear();
@@ -129,7 +129,7 @@ void find_closure( const BulkData & bulk,
   //pack send_list for sizing
   for ( EntityProcSet::const_iterator
       ep = send_list.begin() ; ep != send_list.end() ; ++ep ) {
-    all.send_buffer( ep->second).pack<EntityKey>(ep->first->key());
+    all.send_buffer( ep->second).pack<EntityKey>(ep->first.key());
   }
 
 
@@ -143,7 +143,7 @@ void find_closure( const BulkData & bulk,
       msg << "stk::mesh::find_closure( const BulkData & bulk, ... ) bulk is not synchronized";
     }
     else if ( 0 < non_used_entities) {
-      msg << "stk::mesh::find_closure( const BulkData & bulk, std::vector<Entity *> entities, ... ) \n"
+      msg << "stk::mesh::find_closure( const BulkData & bulk, std::vector<Entity> entities, ... ) \n"
           << "entities contains " << non_used_entities << " non locally used entities \n";
     }
 
@@ -154,7 +154,7 @@ void find_closure( const BulkData & bulk,
   //pack send_list
   for ( EntityProcSet::const_iterator
       ep = send_list.begin() ; ep != send_list.end() ; ++ep ) {
-    all.send_buffer( ep->second).pack<EntityKey>(ep->first->key());
+    all.send_buffer( ep->second).pack<EntityKey>(ep->first.key());
   }
 
 
@@ -166,7 +166,7 @@ void find_closure( const BulkData & bulk,
     EntityKey k ;
     while ( buf.remaining() ) {
       buf.unpack<EntityKey>( k );
-      Entity * e = bulk.get_entity(k);
+      Entity e = bulk.get_entity(k);
       temp_entities_closure.insert(e);
     }
   }

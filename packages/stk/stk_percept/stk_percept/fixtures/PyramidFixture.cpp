@@ -127,11 +127,11 @@ namespace stk{
       // Hard coded node coordinate data for all the nodes in the entire mesh
       static const double node_coord_data[ node_count ][ SpatialDim ] = {
 
-        { 0 , 0 , -1 } , { 1 , 0 , -1 } ,  { 2 , 0 , -1 } , 
+        { 0 , 0 , -1 } , { 1 , 0 , -1 } ,  { 2 , 0 , -1 } ,
 
-        { 0 , 1 , -1 } , { 1 , 1 , -1 } , { 2 , 1 , -1 } , 
+        { 0 , 1 , -1 } , { 1 , 1 , -1 } , { 2 , 1 , -1 } ,
 
-        { 1 , 1 , -2 } 
+        { 1 , 1 , -2 }
       };
 
       // Hard coded pyramid node ids for all the pyramid nodes in the entire mesh
@@ -170,19 +170,19 @@ namespace stk{
 
           // For each element topology declare elements
 
-          stk::mesh::Entity *pyramids[2];
+          stk::mesh::Entity pyramids[2];
           for ( unsigned i = 0 ; i < number_pyramid ; ++i , ++curr_elem_id ) {
-            pyramids[i] = &stk::mesh::declare_element( m_bulkData, m_block_pyramid, curr_elem_id, pyramid_node_ids[i] );
+            pyramids[i] = stk::mesh::declare_element( m_bulkData, m_block_pyramid, curr_elem_id, pyramid_node_ids[i] );
           }
 
           if (m_sideset_quad)
             {
               for ( unsigned i = 0 ; i < number_quad ; ++i , ++curr_elem_id ) {
-                stk::mesh::declare_element_side( m_bulkData, 
-                                                      curr_elem_id, //side_id,
-                                                      *pyramids[i], // element,
-                                                      4,            //j_side, // local_side_ord,
-                                                      m_sideset_quad_subset);
+                stk::mesh::declare_element_side( m_bulkData,
+                                                 curr_elem_id, //side_id,
+                                                 pyramids[i], // element,
+                                                 4,            //j_side, // local_side_ord,
+                                                 m_sideset_quad_subset);
               }
             }
 
@@ -191,28 +191,28 @@ namespace stk{
               unsigned j_side=0;
               for ( unsigned i = 0 ; i < 3 ; ++i , ++curr_elem_id ) {
                 if (i == 2) ++j_side;
-                stk::mesh::declare_element_side( m_bulkData, 
-                                                      curr_elem_id, //side_id,
-                                                      *pyramids[0], // element,
-                                                      j_side,            //j_side, // local_side_ord,
-                                                      m_sideset_tri_subset);
+                stk::mesh::declare_element_side( m_bulkData,
+                                                 curr_elem_id, //side_id,
+                                                 pyramids[0], // element,
+                                                 j_side,            //j_side, // local_side_ord,
+                                                 m_sideset_tri_subset);
                 ++j_side;
               }
               j_side=1;
               for ( unsigned i = 0 ; i < 3 ; ++i , ++curr_elem_id ) {
-                stk::mesh::declare_element_side( m_bulkData, 
-                                                      curr_elem_id, //side_id,
-                                                      *pyramids[1], // element,
-                                                      j_side,            //j_side, // local_side_ord,
-                                                      m_sideset_tri_subset);
+                stk::mesh::declare_element_side( m_bulkData,
+                                                 curr_elem_id, //side_id,
+                                                 pyramids[1], // element,
+                                                 j_side,            //j_side, // local_side_ord,
+                                                 m_sideset_tri_subset);
                 ++j_side;
               }
             }
 
           // For all nodes assign nodal coordinates
           for ( unsigned i = 0 ; i < node_count ; ++i ) {
-            stk::mesh::Entity * const node = m_bulkData.get_entity( stk::mesh::MetaData::NODE_RANK , i + 1 );
-            double * const coord = field_data( m_coordinates_field , *node );
+            stk::mesh::Entity const node = m_bulkData.get_entity( stk::mesh::MetaData::NODE_RANK , i + 1 );
+            double * const coord = field_data( m_coordinates_field , node );
             coord[0] = node_coord_data[i][0] ;
             coord[1] = node_coord_data[i][1] ;
             coord[2] = node_coord_data[i][2] ;
@@ -260,8 +260,8 @@ namespace stk{
 
       // Check that all the nodes were allocated.
       for ( unsigned i = 0 ; i < node_count ; ++i ) {
-        stk::mesh::Entity * const node = bulkData.get_entity( stk::mesh::MetaData::NODE_RANK , i + 1 );
-        if ( node == NULL ) {
+        stk::mesh::Entity const node = bulkData.get_entity( stk::mesh::MetaData::NODE_RANK , i + 1 );
+        if ( !node.is_valid() ) {
           std::cerr << "Error!  Invalid null pointer for node returned from "
                     << "bulkData.get_entity( stk::mesh::MetaData::NODE_RANK, " << i+1 << " ) " << std::endl;
           result = false;

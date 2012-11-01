@@ -880,9 +880,9 @@ void use_case_14_generate_mesh(
     for ( unsigned i = 0 ; i < node_map.size() ; ++i ) {
       const unsigned i3 = i * 3 ;
 
-      stk::mesh::Entity * const node = mesh.get_entity( stk::mesh::MetaData::NODE_RANK , node_map[i] );
+      stk::mesh::Entity const node = mesh.get_entity( stk::mesh::MetaData::NODE_RANK , node_map[i] );
 
-      if ( NULL == node ) {
+      if ( !node.is_valid() ) {
         std::ostringstream msg ;
         msg << "  P:" << mesh.parallel_rank()
             << " ERROR, stk::mesh::MetaData::NODE_RANK not found: "
@@ -890,7 +890,7 @@ void use_case_14_generate_mesh(
         throw std::runtime_error( msg.str() );
       }
 
-      double * const data = stk::mesh::field_data( node_coord , *node );
+      double * const data = stk::mesh::field_data( node_coord , node );
       data[0] = node_coordinates[ i3 + 0 ];
       data[1] = node_coordinates[ i3 + 1 ];
       data[2] = node_coordinates[ i3 + 2 ];

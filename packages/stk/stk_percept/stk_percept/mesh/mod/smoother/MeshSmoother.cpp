@@ -1,5 +1,5 @@
 #include <stk_percept/Percept.hpp>
-#if !defined(__IBMCPP__) 
+#if !defined(__IBMCPP__)
 
 #include <stk_percept/mesh/mod/smoother/MeshSmoother.hpp>
 #include <stk_percept/mesh/mod/smoother/ReferenceMeshSmoother.hpp>
@@ -39,7 +39,7 @@ namespace stk {
 
         for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
-            if (MeshSmoother::select_bucket(**k, eMesh) && on_locally_owned_part(**k))  
+            if (MeshSmoother::select_bucket(**k, eMesh) && on_locally_owned_part(**k))
               {
                 stk::mesh::Bucket & bucket = **k ;
                 const unsigned num_elements_in_bucket = bucket.size();
@@ -47,7 +47,7 @@ namespace stk {
 
                 for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
                   {
-                    stk::mesh::Entity& element = bucket[i_element];
+                    stk::mesh::Entity element = bucket[i_element];
                     bool valid=true;
                     if (get_mesh_diagnostics)
                       {
@@ -94,7 +94,7 @@ namespace stk {
           stk::all_reduce( MPI_COMM_WORLD, stk::ReduceMax<1>( &shapeW_max ) );
           if (eMesh->get_rank() == 0)
             {
-              std::cout << "P[0] detA_min= " << detA_min << " detW_min= " << detW_min 
+              std::cout << "P[0] detA_min= " << detA_min << " detW_min= " << detW_min
                         << " shapeA_max= " << shapeA_max << " shapeW_max= " << shapeW_max << std::endl;
             }
         }
@@ -111,7 +111,7 @@ namespace stk {
     }
 
     int MeshSmoother::
-    classify_node(stk::mesh::Entity& node, size_t& curveOrSurfaceEvaluator) const
+    classify_node(stk::mesh::Entity node, size_t& curveOrSurfaceEvaluator) const
     {
       int dof =0;
       if (m_meshGeometry)
@@ -140,7 +140,7 @@ namespace stk {
     }
 
 
-    bool MeshSmoother::get_fixed_flag(stk::mesh::Entity* node_ptr)
+    bool MeshSmoother::get_fixed_flag(stk::mesh::Entity node_ptr)
     {
       int dof = -1;
       bool fixed=true;
@@ -148,7 +148,7 @@ namespace stk {
       // is on the boundary; otherwise, it isn't.
       if (m_boundarySelector)
         {
-          if ((*m_boundarySelector)(*node_ptr))
+          if ((*m_boundarySelector)(node_ptr))
             fixed=true;
           else
             fixed=false;
@@ -158,7 +158,7 @@ namespace stk {
           if (m_meshGeometry)
             {
               size_t curveOrSurfaceEvaluator;
-              dof = m_meshGeometry->classify_node(*node_ptr, curveOrSurfaceEvaluator);
+              dof = m_meshGeometry->classify_node(node_ptr, curveOrSurfaceEvaluator);
               //std::cout << "tmp srk classify node= " << node_ptr->identifier() << " dof= " << dof << std::endl;
               // vertex
               if (dof == 0)
@@ -169,14 +169,14 @@ namespace stk {
               else if (dof == 1)
                 {
                   fixed=true;
-                  //fixed=false;   // FIXME 
+                  //fixed=false;   // FIXME
                 }
               // surface - also fixed
               else if (dof == 2)
                 {
                   //fixed=false;
                   fixed=true;
-                  if (DEBUG_PRINT) std::cout << "tmp srk found surface node unfixed= " << node_ptr->identifier() << std::endl;
+                  if (DEBUG_PRINT) std::cout << "tmp srk found surface node unfixed= " << node_ptr.identifier() << std::endl;
                 }
               // interior/volume - free to move
               else
@@ -189,7 +189,7 @@ namespace stk {
               fixed=false;
             }
         }
-      if (DEBUG_PRINT) std::cout << "tmp srk classify node= " << node_ptr->identifier() << " dof= " << dof << " fixed= " << fixed << std::endl;
+      if (DEBUG_PRINT) std::cout << "tmp srk classify node= " << node_ptr.identifier() << " dof= " << dof << " fixed= " << fixed << std::endl;
 
       return fixed;
     }
@@ -203,9 +203,9 @@ namespace stk {
       PerceptMesh *eMesh = m_eMesh;
 
       int num_invalid = parallel_count_invalid_elements(eMesh);
-      if (!m_eMesh->get_rank()) 
-        std::cout << "\ntmp srk MeshSmoother num_invalid before= " << num_invalid 
-                      << (num_invalid ? " WARNING: invalid elements exist before  smoothing" : 
+      if (!m_eMesh->get_rank())
+        std::cout << "\ntmp srk MeshSmoother num_invalid before= " << num_invalid
+                      << (num_invalid ? " WARNING: invalid elements exist before  smoothing" :
                           (!always_smooth ? "WARNING: no smoothing requested since always_smooth=false" : " "))
                       << std::endl;
       //if (num_invalid) throw std::runtime_error("MeshSmoother can't start from invalid mesh...");
@@ -218,12 +218,12 @@ namespace stk {
           std::cout << "\nP[" << m_eMesh->get_rank() << "] tmp srk innerIter= " << innerIter << " parallelIterations= " << parallelIterations << std::endl;
           this->run_algorithm();
 
-          //if (!m_eMesh->get_rank()) 
+          //if (!m_eMesh->get_rank())
 
           num_invalid = parallel_count_invalid_elements(eMesh);
-          //if (!m_eMesh->get_rank()) 
-          std::cout << "\nP[" << m_eMesh->get_rank() << "] tmp srk MeshSmoother num_invalid after= " << num_invalid << " " 
-                    << (num_invalid ? " ERROR still have invalid elements after smoothing" : 
+          //if (!m_eMesh->get_rank())
+          std::cout << "\nP[" << m_eMesh->get_rank() << "] tmp srk MeshSmoother num_invalid after= " << num_invalid << " "
+                    << (num_invalid ? " ERROR still have invalid elements after smoothing" :
                         " SUCCESS: smoothed and removed invalid elements ")
                     << std::endl;
           MPI_Barrier( MPI_COMM_WORLD );

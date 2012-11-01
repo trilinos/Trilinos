@@ -46,7 +46,7 @@ namespace stk {
 #if STK_ADAPT_COLORER_STORED_ENTITYID
     typedef mesh::EntityId ColorerStoredEntity;
 #else
-    typedef mesh::Entity *ColorerStoredEntity;
+    typedef mesh::Entity ColorerStoredEntity;
 #endif
 
 #if STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR

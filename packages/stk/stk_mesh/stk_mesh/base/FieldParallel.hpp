@@ -119,7 +119,7 @@ struct ParallelReduceField {
   ParallelReduceField( const field_type & f ) : field(f) {}
   ParallelReduceField( const ParallelReduceField & p ) : field(p.field) {}
 
-  void operator()( const std::vector<Entity*> & entity_comm ,
+  void operator()( const std::vector<Entity> & entity_comm ,
                    CommAll & sparse ) const ;
 
 private:
@@ -131,14 +131,14 @@ template< class ReduceOp ,
           class Tag4 , class Tag5, class Tag6, class Tag7 >
 void ParallelReduceField< ReduceOp , Type ,  Tag1,  Tag2,  Tag3 ,
                                      Tag4 ,  Tag5,  Tag6,  Tag7 >::
-  operator()( const std::vector<Entity*> & entity_comm ,
+  operator()( const std::vector<Entity> & entity_comm ,
               CommAll & sparse ) const
 {
   typedef EntityArray< field_type > array_type ;
 
-  for ( std::vector<Entity*>::const_iterator
+  for ( std::vector<Entity>::const_iterator
         i = entity_comm.begin(); i != entity_comm.end() ; ++i ) {
-    Entity & entity = **i ;
+    Entity entity = *i ;
     array_type array( field , entity );
     Type * const ptr_beg = array.contiguous_data();
     Type * const ptr_end = ptr_beg + array.size();

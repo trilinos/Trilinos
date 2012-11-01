@@ -212,7 +212,7 @@ namespace app {
 
     Ioss::NodeBlock *nb = node_blocks[0];
 
-    std::vector<stk::mesh::Entity*> nodes;
+    std::vector<stk::mesh::Entity> nodes;
     stk::io::get_entity_list(nb, stk::mesh::MetaData::NODE_RANK, bulk, nodes);
 
     /// \todo REFACTOR Application would probably store this field
@@ -251,16 +251,16 @@ namespace app {
 	entity->get_field_data("connectivity", connectivity);
         connectivity2.reserve(connectivity.size());
         std::copy(connectivity.begin(), connectivity.end(), std::back_inserter(connectivity2));
-          
+
 	int element_count = elem_ids.size();
 	int nodes_per_elem = cell_topo->node_count ;
 
-	std::vector<stk::mesh::Entity*> elements(element_count);
+	std::vector<stk::mesh::Entity> elements(element_count);
 	for(int i=0; i<element_count; ++i) {
 	  /// \todo REFACTOR cast from int to unsigned is unsafe and ugly.
 	  /// change function to take int[] argument.
 	  stk::mesh::EntityId *conn = &connectivity2[i*nodes_per_elem];
-	  elements[i] = &stk::mesh::declare_element(bulk, *part, elem_ids[i], conn);
+	  elements[i] = stk::mesh::declare_element(bulk, *part, elem_ids[i], conn);
 	}
 
 	// For this example, we are just taking all attribute fields
@@ -301,10 +301,10 @@ namespace app {
 	std::vector<int> node_ids ;
 	int node_count = entity->get_field_data("ids", node_ids);
 
-	std::vector<stk::mesh::Entity*> nodes(node_count);
+	std::vector<stk::mesh::Entity> nodes(node_count);
 	for(int i=0; i<node_count; ++i) {
 	  nodes[i] = bulk.get_entity( stk::mesh::MetaData::NODE_RANK, node_ids[i] );
-	  if (nodes[i] != NULL)
+	  if (nodes[i].is_valid())
 	    bulk.declare_entity(stk::mesh::MetaData::NODE_RANK, node_ids[i], add_parts );
 	}
 
@@ -346,10 +346,10 @@ namespace app {
 	stk::mesh::PartVector add_parts( 1 , fb_part );
 
 	int side_count = side_ids.size();
-	std::vector<stk::mesh::Entity*> sides(side_count);
+	std::vector<stk::mesh::Entity> sides(side_count);
 	for(int is=0; is<side_count; ++is) {
 
-	  stk::mesh::Entity* const elem = bulk.get_entity(element_rank, elem_side[is*2]);
+	  stk::mesh::Entity const elem = bulk.get_entity(element_rank, elem_side[is*2]);
 	  // If NULL, then the element was probably assigned to an
 	  // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
 	  // Hence the '-1' in the following line.
@@ -358,13 +358,13 @@ namespace app {
 	  // element block that appears in the database, but was
 	  // subsetted out of the analysis mesh. Only process if
 	  // non-null.
-	  if (elem != NULL) {
-	    stk::mesh::Entity& side =
-	      stk::mesh::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
+	  if (elem.is_valid()) {
+	    stk::mesh::Entity side =
+	      stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
 	    bulk.change_entity_parts( side, add_parts );
-	    sides[is] = &side;
+	    sides[is] = side;
 	  } else {
-	    sides[is] = NULL;
+	    sides[is] = stk::mesh::Entity();
 	  }
 	}
 
@@ -399,7 +399,7 @@ namespace app {
 		      Ioss::GroupingEntity *io_entity,
 		      Ioss::Field::RoleType filter_role)
   {
-    std::vector<stk::mesh::Entity*> entities;
+    std::vector<stk::mesh::Entity> entities;
     stk::io::get_entity_list(io_entity, part_type, bulk, entities);
 
     stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
@@ -470,7 +470,7 @@ namespace app {
 		      Ioss::GroupingEntity *io_entity,
 		      Ioss::Field::RoleType filter_role)
   {
-    std::vector<stk::mesh::Entity*> entities;
+    std::vector<stk::mesh::Entity> entities;
     stk::io::get_entity_list(io_entity, part_type, bulk, entities);
 
     stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);

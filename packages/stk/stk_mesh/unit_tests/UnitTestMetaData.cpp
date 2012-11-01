@@ -148,10 +148,10 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testEntityRepository )
   }
 
   int new_id = size * (++id_base) + rank;
-  stk::mesh::Entity & elem  = bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+1 , add_part );
+  stk::mesh::Entity elem  = bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+1 , add_part );
 
   //new_id = size * (++id_base) + rank;
-  // stk::mesh::Entity & elem2  = bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+1 , add_part );
+  // stk::mesh::Entity elem2  = bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+1 , add_part );
 
   bool use_memory_pool = false;
   stk::mesh::impl::EntityRepository e(use_memory_pool);
@@ -183,8 +183,8 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testEntityRepository )
     int ok = 0 ;
     try {
 
-      stk::mesh::Entity * elem3 = e.get_entity(stk::mesh::EntityKey());
-      if(elem3){
+      stk::mesh::Entity elem3 = e.get_entity(stk::mesh::EntityKey());
+      if(elem3.is_valid()){
         // CAROL FIXME
       }
 

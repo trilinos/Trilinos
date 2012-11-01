@@ -146,17 +146,17 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
       stk::mesh::declare_element( m_bulk_data, m_hex_part, elem_id( ix , iy , iz ) , elem_node);
 
       for (unsigned i = 0; i<8; ++i) {
-        stk::mesh::Entity * const node = m_bulk_data.get_entity( MetaData::NODE_RANK , elem_node[i] );
-        m_bulk_data.change_entity_parts(*node, add_parts);
+        stk::mesh::Entity const node = m_bulk_data.get_entity( MetaData::NODE_RANK , elem_node[i] );
+        m_bulk_data.change_entity_parts(node, add_parts);
 
-        ThrowRequireMsg( node != NULL,
+        ThrowRequireMsg( node.is_valid(),
           "This process should know about the nodes that make up its element");
 
         // Compute and assign coordinates to the node
         unsigned nx = 0, ny = 0, nz = 0;
         node_x_y_z(elem_node[i], nx, ny, nz);
 
-        Scalar * data = stk::mesh::field_data( m_coord_field , *node );
+        Scalar * data = stk::mesh::field_data( m_coord_field , node );
 
         data[0] = nx ;
         data[1] = ny ;

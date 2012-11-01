@@ -37,33 +37,33 @@ unsigned count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin
 
 // Destroy this entity and any lower ranking entities in this entity's closure that no longer
 // have any upward relations.
-void destroy_entity_closure( stk::mesh::BulkData & mesh, stk::mesh::Entity * entity)
+void destroy_entity_closure( stk::mesh::BulkData & mesh, stk::mesh::Entity entity)
 {
-  stk::mesh::PairIterRelation relations = entity->relations();
-  stk::mesh::EntityRank entity_rank = entity->entity_rank();
+  stk::mesh::PairIterRelation relations = entity.relations();
+  stk::mesh::EntityRank entity_rank = entity.entity_rank();
 
   ThrowErrorMsgIf( !relations.empty() &&
-                   relations.back().entity()->entity_rank() > entity_rank,
+                   relations.back().entity().entity_rank() > entity_rank,
                    "Unable to destroy and entity with upward relations" );
 
-  for (; !entity->relations().empty();) {
-    stk::mesh::Entity * related_entity = (entity->relations().back().entity());
-    stk::mesh::RelationIdentifier rel_id = entity->relations().back().identifier();
-    stk::mesh::EntityRank related_entity_rank = related_entity->entity_rank();
+  for (; !entity.relations().empty();) {
+    stk::mesh::Entity related_entity = (entity.relations().back().entity());
+    stk::mesh::RelationIdentifier rel_id = entity.relations().back().identifier();
+    stk::mesh::EntityRank related_entity_rank = related_entity.entity_rank();
 
-    mesh.destroy_relation( *entity, *related_entity, rel_id );
+    mesh.destroy_relation( entity, related_entity, rel_id );
 
-    stk::mesh::PairIterRelation related_entity_relations = related_entity->relations();
+    stk::mesh::PairIterRelation related_entity_relations = related_entity.relations();
 
     //  Only destroy if there are no upward relations
     if ( related_entity_relations.empty() ||
-        related_entity_relations.back().entity()->entity_rank() < related_entity_rank )
+        related_entity_relations.back().entity().entity_rank() < related_entity_rank )
     {
       destroy_entity_closure(mesh,related_entity);
     }
   }
 
-  mesh.destroy_entity(*entity);
+  mesh.destroy_entity(entity);
 }
 
 }
@@ -136,8 +136,8 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
 
     // Kill element on the "left" of the shell:
     fixture.m_bulk_data.modification_begin();
-    stk::mesh::Entity * elem_to_kill = fixture.elem( 0 , 0 , 0 ); // (i,j,k) indices
-    if ( elem_to_kill != NULL && p_rank == elem_to_kill->owner_rank() ) {
+    stk::mesh::Entity elem_to_kill = fixture.elem( 0 , 0 , 0 ); // (i,j,k) indices
+    if ( elem_to_kill.is_valid() && p_rank == elem_to_kill.owner_rank() ) {
       // Destroy element and its sides and nodes
       // that are not in the closure of another element.
       destroy_entity_closure( fixture.m_bulk_data, elem_to_kill);

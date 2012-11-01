@@ -41,7 +41,7 @@ STKUNIT_UNIT_TEST( UnitTestDeclareElement , inject_shell )
 
   fixture.generate_mesh();
 
-  stk::mesh::Entity * elem = fixture.elem( 0 , 0 , 0 );
+  stk::mesh::Entity elem = fixture.elem( 0 , 0 , 0 );
 
   fixture.m_bulk_data.modification_begin();
 
@@ -49,8 +49,8 @@ STKUNIT_UNIT_TEST( UnitTestDeclareElement , inject_shell )
 
   // Whoever owns the 0,0,0 element create the shell and insert it between
   // the two elements.
-  if ( elem != NULL && p_rank == elem->owner_rank() ) {
-    stk::mesh::EntityId elem_node[4] ;
+  if ( elem.is_valid() && p_rank == elem.owner_rank() ) {
+    stk::mesh::EntityId elem_node[4];
     elem_node[0] = fixture.node_id( 1, 0, 0 );
     elem_node[1] = fixture.node_id( 1, 1, 0 );
     elem_node[2] = fixture.node_id( 1, 1, 1 );

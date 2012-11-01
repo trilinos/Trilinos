@@ -1,6 +1,4 @@
-
 #include <stk_percept/Percept.hpp>
-
 
 #include <Intrepid_CellTools.hpp>
 #include <Intrepid_FunctionSpaceTools.hpp>
@@ -20,8 +18,8 @@ namespace stk
      *  Dimensions of found_parametric_coordinates = ([P]=1, [D])
      */
 
-    const stk::mesh::Entity *SimpleSearcher::findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates,
-                                                         unsigned& found_it, const mesh::Entity *hint_element )
+    const stk::mesh::Entity SimpleSearcher::findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates,
+                                                         unsigned& found_it, const mesh::Entity hint_element )
     {
       VERIFY_OP(input_phy_points.rank(), ==, found_parametric_coordinates.rank(), "SimpleSearcher::findElement bad dims");
       VERIFY_OP(input_phy_points.rank(), ==, 2, "SimpleSearcher::findElement bad rank");
@@ -37,10 +35,10 @@ namespace stk
       IsInElement isIn(input_phy_points, found_parametric_coordinates);
 
       // check first using the hint
-      if (hint_element)
+      if (hint_element.is_valid())
         {
           IsInElement isIn_hint(input_phy_points, found_parametric_coordinates);
-          isIn_hint(*hint_element,  bulkData);
+          isIn_hint(hint_element,  bulkData);
 
           //if (EXTRA_PRINT) std::cout << "SimpleSearcher::findElement: hint found it= " << isIn_hint.m_found_it << std::endl;
           if (isIn_hint.m_found_it)
@@ -62,10 +60,7 @@ namespace stk
         {
           found_it = 0;
         }
-      return 0;
+      return stk::mesh::Entity();
     }
-
-
   }
 }
-

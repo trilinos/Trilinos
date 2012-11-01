@@ -56,7 +56,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshGenerateNewEntities , testUnit )
   // confirm that the nodes we created earlier are not in the new entities
   for (stk::mesh::EntityVector::const_iterator itr = new_nodes.begin();
        itr != new_nodes.end(); ++itr) {
-    STKUNIT_ASSERT_GT((*itr)->identifier(), bulk_data.parallel_size());
+    STKUNIT_ASSERT_GT(itr->identifier(), bulk_data.parallel_size());
   }
 
   bulk_data.modification_end();

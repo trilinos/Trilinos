@@ -19,7 +19,7 @@ typedef stk::mesh::Field<double, stk::mesh::Cartesian>       VectorField ;
 
 size_t is_in_element(VectorField *domain_coordinates,
                      VectorField *range_coordinates,
-                     const std::vector<std::pair<stk::mesh::Entity*, stk::mesh::Entity*> > &entity_map,
+                     const std::vector<std::pair<stk::mesh::Entity , stk::mesh::Entity> > &entity_map,
                      std::vector<std::size_t> &not_in_element);
 }
 }

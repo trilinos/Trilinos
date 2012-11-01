@@ -52,7 +52,7 @@ public:
   void optimize_buckets_at_modification_end(bool b) { m_optimize_buckets = b; }
 
   inline static BulkData & get( const Bucket & bucket);
-  inline static BulkData & get( const Entity & entity);
+  inline static BulkData & get( const Entity entity);
   inline static BulkData & get( const Ghosting & ghost);
 
   enum BulkDataSyncState { MODIFIABLE = 1 , SYNCHRONIZED = 2 };
@@ -178,14 +178,13 @@ public:
    *           - Fields that exist on the dest that don't exist on the src will
    *             be zeroed or initialized with the Field-specified initial-value.
    */
-  void copy_entity_fields( const Entity & src, Entity & dest) {
+  void copy_entity_fields( Entity src, Entity dest) {
     //TODO fix const correctness for src
-    Entity & non_const_src = const_cast<Entity &>(src);
     m_bucket_repository.copy_fields(
         dest.bucket(),
         dest.bucket_ordinal(),
-        non_const_src.bucket(),
-        non_const_src.bucket_ordinal()
+        src.bucket(),
+        src.bucket_ordinal()
         );
   }
 
@@ -207,13 +206,13 @@ public:
 #endif
 
   /** \brief  Get entity with a given key */
-  Entity * get_entity( EntityRank entity_rank , EntityId entity_id ) const {
+  Entity get_entity( EntityRank entity_rank , EntityId entity_id ) const {
     require_good_rank_and_id(entity_rank, entity_id);
     return m_entity_repo.get_entity( EntityKey(entity_rank, entity_id));
   }
 
   /** \brief  Get entity with a given key */
-  Entity * get_entity( const EntityKey key ) const  {
+  Entity get_entity( const EntityKey key ) const  {
     return m_entity_repo.get_entity(key);
   }
 
@@ -231,10 +230,10 @@ public:
    *  and identifier then the sharing and ownership of these entities
    *  will be resolved by the call to 'modification_end'.
    */
-  Entity & declare_entity( EntityRank ent_rank ,
+  Entity declare_entity( EntityRank ent_rank ,
       EntityId ent_id , const PartVector& parts);
 
-  void change_entity_id( EntityId id, Entity & entity);
+  void change_entity_id( EntityId id, Entity entity);
 
   /** \brief  Change the parallel-locally-owned entity's
    *          part membership by adding and/or removing parts
@@ -245,7 +244,7 @@ public:
    *  the change will be propogated to the sharing or ghosting
    *  processes by modification_end.
    */
-  void change_entity_parts( Entity & entity,
+  void change_entity_parts( Entity entity,
       const PartVector & add_parts ,
       const PartVector & remove_parts = PartVector() )
   {
@@ -259,7 +258,7 @@ public:
 //internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
 //the propagation that stk-mesh does.
   template<typename AddIterator, typename RemoveIterator>
-  void change_entity_parts( Entity & entity,
+  void change_entity_parts( Entity entity,
                             AddIterator begin_add_parts, AddIterator end_add_parts,
                             RemoveIterator begin_remove_parts, RemoveIterator end_remove_parts,
                             bool always_propagate_internal_changes=true );
@@ -297,7 +296,7 @@ public:
    *  \return  True if the request for destruction is accepted; i.e.,
    *           if the entity is not the 'to' member of a relation.
    */
-  bool destroy_entity( Entity & entity );
+  bool destroy_entity( Entity entity );
 
   //------------------------------------
 
@@ -311,7 +310,7 @@ public:
    *  of rank 2
    */
   void generate_new_entities(const std::vector<size_t>& requests,
-      std::vector<Entity *>& requested_entities);
+      std::vector<Entity>& requested_entities);
 
   //------------------------------------
   /** \brief  Declare a relation and its converse between
@@ -333,14 +332,14 @@ public:
    * Note that relation-declarations must be symmetric across all
    * sharers of the involved entities within a modification cycle.
    */
-  void declare_relation( Entity & e_from ,
-      Entity & e_to ,
+  void declare_relation( Entity e_from ,
+      Entity e_to ,
       const RelationIdentifier local_id );
 
   /** \brief  Declare a collection of relations by simply iterating
    *          the input and calling declare_relation on each entry.
    */
-  void declare_relation( Entity & entity, const std::vector<Relation> & rel);
+  void declare_relation( Entity entity, const std::vector<Relation> & rel);
 
   /** \brief  Remove all relations between two entities.
    *
@@ -356,14 +355,14 @@ public:
    *
    *  Returns true if we were able to destroy the relation.
    */
-  bool destroy_relation( Entity & e_from ,
-                         Entity & e_to,
+  bool destroy_relation( Entity e_from ,
+                         Entity e_to,
                          const RelationIdentifier local_id );
 
   //------------------------------------
   //------------------------------------
   /** \brief  All entities with communication information. */
-  const std::vector<Entity*> & entity_comm() const
+  const std::vector<Entity> & entity_comm() const
     { return m_entity_comm ; }
 
   //------------------------------------
@@ -399,7 +398,7 @@ public:
    */
   void change_ghosting( Ghosting & ghosts,
                         const std::vector<EntityProc> & add_send ,
-                        const std::vector<Entity*> & remove_receive );
+                        const std::vector<Entity> & remove_receive );
 
   /** \brief  Empty every single Ghosting.
    *          Same result, but more efficient than, calling
@@ -439,7 +438,7 @@ private:
   parallel::DistributedIndex          m_entities_index ;
   impl::EntityRepository              m_entity_repo ;
   impl::BucketRepository              m_bucket_repository ;
-  std::vector<Entity*>                m_entity_comm ;
+  std::vector<Entity>                m_entity_comm ;
   std::vector<Ghosting*>              m_ghosting ; /**< Aura is [1] */
 
   // Other information:
@@ -458,14 +457,14 @@ private:
    * For all processors sharing an entity, find one to be the new
    * owner.
    */
-  unsigned determine_new_owner( Entity & ) const ;
+  unsigned determine_new_owner( Entity ) const ;
 
   /*  Entity modification consequences:
    *  1) Change entity relation => update via part relation => change parts
    *  2) Change parts => update forward relations via part relation
    *                  => update via field relation
    */
-  void internal_change_entity_parts( Entity & ,
+  void internal_change_entity_parts( Entity ,
                                      const PartVector & add_parts ,
                                      const PartVector & remove_parts );
 
@@ -473,17 +472,17 @@ private:
 //is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
 //internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
 //the propagation that stk-mesh does.
-  void internal_change_entity_parts( Entity & ,
+  void internal_change_entity_parts( Entity ,
                                      const OrdinalVector & add_parts ,
                                      const OrdinalVector & remove_parts,
                                      bool always_propagate_internal_changes=true);
 
-  void internal_propagate_part_changes( Entity & entity, const PartVector & removed );
-  void internal_propagate_part_changes( Entity & entity, const OrdinalVector & removed );
+  void internal_propagate_part_changes( Entity entity, const PartVector & removed );
+  void internal_propagate_part_changes( Entity entity, const OrdinalVector & removed );
 
   void internal_change_ghosting( Ghosting & ghosts,
                                  const std::vector<EntityProc> & add_send ,
-                                 const std::vector<Entity*> & remove_receive );
+                                 const std::vector<Entity> & remove_receive );
 
   bool internal_modification_end( bool regenerate_aura );
     void internal_resolve_shared_modify_delete();
@@ -492,7 +491,7 @@ private:
     void internal_resolve_parallel_create();
     void internal_resolve_shared_membership();
 
-  void internal_update_distributed_index( std::vector<Entity*> & shared_new );
+  void internal_update_distributed_index( std::vector<Entity> & shared_new );
 
   /** \brief  Regenerate the shared-entity aura,
    *          adding and removing ghosted entities as necessary.
@@ -518,11 +517,11 @@ private:
                                          const unsigned undef_rank) const;
 
   void internal_verify_change_parts( const MetaData   & meta ,
-                                     const Entity     & entity ,
+                                     const Entity entity ,
                                      const PartVector & parts ) const;
 
   void internal_verify_change_parts( const MetaData   & meta ,
-                                     const Entity     & entity ,
+                                     const Entity entity ,
                                      const OrdinalVector & parts ) const;
 
   //------------------------------------
@@ -534,7 +533,7 @@ private:
   /** \brief  All non-const methods assert this */
   void require_ok_to_modify() const ;
 
-  void require_entity_owner( const Entity & entity, unsigned owner) const ;
+  void require_entity_owner( const Entity entity, unsigned owner) const ;
 
   void require_metadata_committed() const;
 
@@ -542,8 +541,8 @@ private:
 
   void require_valid_relation( const char action[] ,
                                const BulkData & mesh ,
-                               const Entity   & e_from ,
-                               const Entity   & e_to );
+                               const Entity e_from ,
+                               const Entity e_to );
 
   /** \} */
 
@@ -552,7 +551,7 @@ private:
   // FIXME: Remove this friend once unit-testing has been refactored
   friend class UnitTestModificationEndWrapper;
   friend class ::stk::mesh::MetaData;
-  friend class ::stk::mesh::impl::BucketFamily;
+  friend class ::stk::mesh::impl::Partition;
 #endif /* DOXYGEN_COMPILE */
 };
 
@@ -560,7 +559,7 @@ BulkData & BulkData::get( const Bucket & bucket) {
   return bucket.bulk_data();
 }
 
-BulkData & BulkData::get( const Entity & entity) {
+BulkData & BulkData::get( const Entity entity) {
   return BulkData::get(entity.bucket());
 }
 
@@ -576,8 +575,8 @@ BulkData & BulkData::get( const Ghosting & ghost) {
  */
 // TODO - Does this need to be in the public API? It's only used internally.
 // In what context would a client ever call this?
-void set_field_relations( Entity & e_from ,
-                          Entity & e_to ,
+void set_field_relations( Entity e_from ,
+                          Entity e_to ,
                           const unsigned ident );
 
 inline
@@ -617,7 +616,7 @@ inline bool BulkData::internal_quick_verify_change_part(const Part* part,
 //internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
 //the propagation that stk-mesh does.
 template<typename AddIterator, typename RemoveIterator>
-void BulkData::change_entity_parts( Entity & entity,
+void BulkData::change_entity_parts( Entity entity,
                                     AddIterator begin_add_parts, AddIterator end_add_parts,
                                     RemoveIterator begin_remove_parts, RemoveIterator end_remove_parts,
                                     bool always_propagate_internal_changes)

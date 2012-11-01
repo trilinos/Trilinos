@@ -23,7 +23,7 @@ namespace mesh {
 //----------------------------------------------------------------------
 
 void get_entities( const BulkData & mesh , EntityRank entity_rank ,
-                   std::vector< Entity*> & entities )
+                   std::vector< Entity> & entities )
 {
   const std::vector<Bucket*> & ks = mesh.buckets( entity_rank );
   entities.clear();
@@ -43,7 +43,7 @@ void get_entities( const BulkData & mesh , EntityRank entity_rank ,
     const Bucket & k = **ik ;
     size_t n = k.size();
     for(size_t i = 0; i < n; ++i) {
-      entities.push_back(&k[i]);
+      entities.push_back(k[i]);
     }
   }
 
@@ -76,7 +76,7 @@ unsigned count_selected_entities(
 
 void get_selected_entities( const Selector & selector ,
                             const std::vector< Bucket * > & input_buckets ,
-                            std::vector< Entity * > & entities )
+                            std::vector< Entity> & entities )
 {
   size_t count = count_selected_entities(selector,input_buckets);
 
@@ -90,7 +90,7 @@ void get_selected_entities( const Selector & selector ,
     if ( selector( k ) ) {
       const size_t n = k.size();
       for ( size_t i = 0; i < n; ++i, ++j ) {
-        entities[j] = &k[i] ;
+        entities[j] = k[i] ;
       }
     }
   }
@@ -138,4 +138,3 @@ void count_entities(
 
 } // namespace mesh
 } // namespace stk
-

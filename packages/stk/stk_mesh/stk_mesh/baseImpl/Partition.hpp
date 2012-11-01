@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef STK_MESH_IMPL_BUCKETFAMILY_HPP_
-#define STK_MESH_IMPL_BUCKETFAMILY_HPP_
+#ifndef STK_MESH_IMPL_PARTITION_HPP_
+#define STK_MESH_IMPL_PARTITION_HPP_
 
 #include <stk_mesh/base/Types.hpp>
 
@@ -16,14 +16,14 @@ namespace impl {
 
 class BucketRepository;
 
-class BucketFamily
+class Partition
 {
     friend class BucketRepository;
 public:
-    BucketFamily(BucketRepository *repo, EntityRank rank)
+    Partition(BucketRepository *repo, EntityRank rank)
     : m_repository(repo), m_rank(rank), m_beginBucketIndex(0), m_endBucketIndex(0) { }
 
-    virtual ~BucketFamily();
+    virtual ~Partition();
 
     std::ostream &streamit(std::ostream &os) const;
 
@@ -51,7 +51,7 @@ private:
     unsigned m_endBucketIndex;
 };
 
-std::ostream &operator<<(std::ostream &, const stk::mesh::impl::BucketFamily &);
+std::ostream &operator<<(std::ostream &, const stk::mesh::impl::Partition &);
 
 } // impl
 } // mesh

@@ -189,8 +189,8 @@ use_case_3_driver(stk::ParallelMachine  comm,
     const std::size_t domain_owning_proc = i->first.proc;
     const std::size_t range_owning_rank  = i->second.proc;
     if (domain_owning_proc != my_rank && range_owning_rank == my_rank) {
-      stk::mesh::Entity *r_entity = range_bulk_data.get_entity(stk::mesh::entity_rank(range_entity_key), stk::mesh::entity_id(range_entity_key));
-      if (r_entity->owner_rank() == my_rank) {
+      stk::mesh::Entity r_entity = range_bulk_data.get_entity(stk::mesh::entity_rank(range_entity_key), stk::mesh::entity_id(range_entity_key));
+      if (r_entity.owner_rank() == my_rank) {
         stk::mesh::EntityProc ep(r_entity, domain_owning_proc);
         range_to_ghost.push_back(ep);
       }
@@ -210,7 +210,7 @@ use_case_3_driver(stk::ParallelMachine  comm,
       range_bulk_data.create_ghosting( std::string("transter_test") );
 
     {
-      std::vector<stk::mesh::Entity*> receive ;
+      std::vector<stk::mesh::Entity> receive ;
       transfer_range_ghosting.receive_list( receive );
       range_bulk_data.change_ghosting( transfer_range_ghosting ,
                                        range_to_ghost ,
@@ -231,7 +231,7 @@ use_case_3_driver(stk::ParallelMachine  comm,
     stk::mesh::communicate_field_data( transfer_range_ghosting , fields);
   }
 
-  std::vector<std::pair<stk::mesh::Entity*, stk::mesh::Entity*> > entity_map;
+  std::vector<std::pair<stk::mesh::Entity , stk::mesh::Entity> > entity_map;
   {
     IdentProcRelation::const_iterator I=relation.begin(), rend=relation.end();
     for ( ; I!=rend; ++I) {
@@ -240,11 +240,11 @@ use_case_3_driver(stk::ParallelMachine  comm,
         stk::mesh::EntityKey domain_entity_key(I->first.ident);
         stk::mesh::EntityKey range_entity_key(I->second.ident);
 
-        stk::mesh::Entity *d_entity = domain_bulk_data.get_entity(stk::mesh::entity_rank(domain_entity_key), stk::mesh::entity_id(domain_entity_key));
-        stk::mesh::Entity *r_entity = range_bulk_data.get_entity (stk::mesh::entity_rank(range_entity_key), stk::mesh::entity_id(range_entity_key));
-        assert(d_entity);
-        assert(r_entity);
-        std::pair<stk::mesh::Entity*, stk::mesh::Entity*> e(d_entity, r_entity);
+        stk::mesh::Entity d_entity = domain_bulk_data.get_entity(stk::mesh::entity_rank(domain_entity_key), stk::mesh::entity_id(domain_entity_key));
+        stk::mesh::Entity r_entity = range_bulk_data.get_entity (stk::mesh::entity_rank(range_entity_key), stk::mesh::entity_id(range_entity_key));
+        assert(d_entity.is_valid());
+        assert(r_entity.is_valid());
+        std::pair<stk::mesh::Entity , stk::mesh::Entity> e(d_entity, r_entity);
         entity_map.push_back(e);
       }
     }
@@ -270,7 +270,7 @@ use_case_3_driver(stk::ParallelMachine  comm,
   std::vector<std::size_t>::reverse_iterator I=not_in_element.rbegin();
   for (; I!=not_in_element.rend(); ++I)
   {
-    std::vector<std::pair<stk::mesh::Entity*, stk::mesh::Entity*> >::iterator del = entity_map.begin()+*I;
+    std::vector<std::pair<stk::mesh::Entity , stk::mesh::Entity> >::iterator del = entity_map.begin()+*I;
     entity_map.erase(del);
   }
 

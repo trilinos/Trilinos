@@ -67,7 +67,7 @@ class TopologyHelpersTestingFixture
   EntityId nextEntityId()
   { return psize*(++entity_id)+prank; }
 
-  Entity & create_entity( EntityRank rank, Part& part_membership)
+  Entity create_entity( EntityRank rank, Part& part_membership)
   {
     PartVector part_intersection;
     part_intersection.push_back ( &part_membership );
@@ -108,7 +108,7 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_based_on_part)
 {
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
   fix.bulk.modification_begin();
-  Entity & elem1  = fix.create_entity( fix.side_rank, fix.generic_face_part );
+  Entity elem1  = fix.create_entity( fix.side_rank, fix.generic_face_part );
 
   PartVector tmp(1);
   tmp[0] = & fix.face_quad_part;
@@ -130,7 +130,7 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_multiple_topologies )
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
 
   fix.bulk.modification_begin();
-  Entity & elem  = fix.create_entity( fix.element_rank, fix.generic_element_part );
+  Entity elem  = fix.create_entity( fix.element_rank, fix.generic_element_part );
   PartVector add_parts;
   add_parts.push_back( &fix.element_tet_part );
   add_parts.push_back( &fix.element_wedge_part );
@@ -148,7 +148,7 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_multiple_topologies )
 //   if ( 1 == fix.bulk.parallel_size() ) {
 //
 //     fix.bulk.modification_begin();
-//     Entity & elem2  = fix.create_entity( fix.element_rank, fix.generic_element_part );
+//     Entity elem2  = fix.create_entity( fix.element_rank, fix.generic_element_part );
 //     fix.bulk.modification_end();
 //
 //     std::vector<EntitySideComponent> adjacent_entities;
@@ -163,7 +163,7 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_multiple_topologies )
 // {
 //   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
 //   fix.bulk.modification_begin();
-//   Entity & elem3  = fix.create_entity( fix.element_rank , fix.generic_element_part );
+//   Entity elem3  = fix.create_entity( fix.element_rank , fix.generic_element_part );
 //
 //   PartVector add_parts;
 //   add_parts.push_back( & fix.element_tet_part );
@@ -194,7 +194,7 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_no_topology )
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
 
   fix.bulk.modification_begin();
-  Entity & elem4  = fix.create_entity( fix.element_rank , fix.generic_element_part );
+  Entity elem4  = fix.create_entity( fix.element_rank , fix.generic_element_part );
   STKUNIT_ASSERT_THROW(
     stk::mesh::declare_element_side( fix.bulk, fix.element_rank, elem4, fix.nextEntityId(), &fix.element_wedge_part ),
     std::runtime_error
@@ -227,7 +227,7 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_wrong_bulk_data)
 
   TopologyHelpersTestingFixture fix2(MPI_COMM_WORLD);
   fix2.bulk.modification_begin();
-  Entity & elem4_2  = fix2.create_entity( fix2.element_rank , fix2.generic_element_part );
+  Entity elem4_2  = fix2.create_entity( fix2.element_rank , fix2.generic_element_part );
   fix2.bulk.modification_end();
 
   STKUNIT_ASSERT_THROW(
@@ -248,7 +248,7 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_no_topology_2 )
   elem_node[1] = 2;
   elem_node[2] = 3;
   elem_node[3] = 4;
-  Entity & element  = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node);
+  Entity element  = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node);
   const CellTopologyData * const elem_top = stk::mesh::get_cell_topology( element ).getCellTopologyData();
   const EntityId nSideCount = elem_top->side_count + 10 ;
   STKUNIT_ASSERT_THROW(
@@ -271,10 +271,10 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_full )
   elem_node[2] = 3;
   elem_node[3] = 4;
 
-  Entity& element = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
+  Entity element = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
 
   const EntityId zero_side_count = 0;
-  Entity& face2 = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count);
+  Entity face2 = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count);
   fix.bulk.modification_end();
 
   PairIterRelation rel2 = face2.relations(NODE_RANK);
@@ -293,9 +293,9 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, element_side_polarity_valid )
   elem_node[3] = 4;
 
   fix.bulk.modification_begin();
-  Entity & element = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
+  Entity element = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
   const EntityId zero_side_count = 0;
-  Entity& face2 = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count);
+  Entity face2 = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count);
   fix.bulk.modification_end();
 
   const int local_side_id = 0;
@@ -315,9 +315,9 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, element_side_polarity_invalid_1 )
   // Coverage of element_side_polarity in TopologyHelpers.cpp
   {
     fix.bulk.modification_begin();
-    Entity & element = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
+    Entity element = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
     const EntityId zero_side_count = 0;
-    Entity& face = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count);
+    Entity face = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count);
     fix.bulk.modification_end();
 
     const int invalid_local_side_id = -1;
@@ -343,14 +343,14 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, element_side_polarity_invalid_2 )
 
   PartVector part_intersection;
   part_intersection.push_back ( &fix.generic_element_part);
-  Entity & element = fix.bulk.declare_entity(fix.element_rank, fix.nextEntityId(), part_intersection);
+  Entity element = fix.bulk.declare_entity(fix.element_rank, fix.nextEntityId(), part_intersection);
   STKUNIT_ASSERT_TRUE( stk::mesh::get_cell_topology( element ).getCellTopologyData() == NULL );
 
-  Entity & element_with_top = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
+  Entity element_with_top = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
   STKUNIT_ASSERT_TRUE( stk::mesh::get_cell_topology( element_with_top ).getCellTopologyData() != NULL );
 
   const EntityId zero_side_count = 0;
-  Entity& face_with_top = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element_with_top, zero_side_count);
+  Entity face_with_top = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element_with_top, zero_side_count);
 
   fix.bulk.modification_end();
 

@@ -120,8 +120,8 @@ namespace stk{
 
           // For all nodes assign nodal coordinates
           for ( unsigned i = 0 ; i < node_count ; ++i ) {
-            stk::mesh::Entity * const node = m_bulkData.get_entity( stk::mesh::MetaData::NODE_RANK , i + 1 );
-            double * const coord = field_data( m_coordinates_field , *node );
+            stk::mesh::Entity const node = m_bulkData.get_entity( stk::mesh::MetaData::NODE_RANK , i + 1 );
+            double * const coord = field_data( m_coordinates_field , node );
             coord[0] = node_coord_data[i][0] ;
             coord[1] = node_coord_data[i][1] ;
             coord[2] = node_coord_data[i][2] ;

@@ -69,7 +69,7 @@ class Relation ; // Relation pair of local mesh entities
 class Ghosting ;
 
 typedef std::vector<Bucket *> BucketVector;
-typedef std::vector<Entity *> EntityVector;
+typedef std::vector<Entity> EntityVector;
 
 /** Change log to reflect change from before 'modification_begin'
   *  to the current status.
@@ -108,7 +108,7 @@ static const RelationIdentifier InvalidRelationIdentifier = InvalidOrdinal;
  */
 
 /** \brief  Pairing of an entity with a processor rank */
-typedef std::pair<Entity*,unsigned> EntityProc ;
+typedef std::pair<Entity ,unsigned> EntityProc ;
 typedef std::vector<EntityProc>     EntityProcVec ;
 
 /** \brief  Spans of a vector of entity-processor pairs are common.

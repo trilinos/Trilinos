@@ -31,8 +31,8 @@ class EntitySideComponentLess {
   public:
     bool operator () (const EntitySideComponent & lhs, const EntitySideComponent &rhs)
     {
-      const EntityId lhs_elem_id = lhs.entity->identifier();
-      const EntityId rhs_elem_id = rhs.entity->identifier();
+      const EntityId lhs_elem_id = lhs.entity.identifier();
+      const EntityId rhs_elem_id = rhs.entity.identifier();
 
       return (lhs_elem_id != rhs_elem_id) ?
         (lhs_elem_id < rhs_elem_id) :
@@ -54,7 +54,7 @@ class ElementIdSide {
       elem_id(id), side_ordinal(ordinal) {}
 
     ElementIdSide( const EntitySideComponent & esc) :
-      elem_id(esc.entity->identifier()), side_ordinal(esc.side_ordinal) {}
+      elem_id(esc.entity.identifier()), side_ordinal(esc.side_ordinal) {}
 
     ElementIdSide & operator = ( const ElementIdSide & rhs) {
       elem_id      = rhs.elem_id;
@@ -117,11 +117,11 @@ void ensure_consistent_order(EntityVector & side_entities)
 {
   ThrowRequire( !side_entities.empty() );
 
-  EntityId lowest_id = side_entities.front()->identifier();
+  EntityId lowest_id = side_entities.front().identifier();
   unsigned idx_of_lowest_id = 0;
 
   for (unsigned idx = 1; idx < side_entities.size(); ++idx) {
-    EntityId curr_id = side_entities[idx]->identifier();
+    EntityId curr_id = side_entities[idx].identifier();
     if (curr_id < lowest_id) {
       idx_of_lowest_id = idx;
       lowest_id = curr_id;
@@ -151,10 +151,10 @@ void add_owned_sides_to_map(
     const EntitySideComponent & inside = itr->inside;
     const EntitySideComponent & outside = itr->outside;
     const RelationIdentifier side_ordinal = inside.side_ordinal;
-    const Entity& inside_entity = *(inside.entity);
+    const Entity inside_entity = inside.entity;
 
     if ( inside_entity.owner_rank() == mesh.parallel_rank() &&
-        outside.entity == NULL ) {
+         !outside.entity.is_valid() ) {
       // search through existing sides
       PairIterRelation existing_sides = inside_entity.relations(side_rank);
       for (; existing_sides.first != existing_sides.second &&
@@ -203,11 +203,11 @@ void add_non_owned_sides_to_map(
     const EntitySideComponent & inside = itr->inside;
     const EntitySideComponent & outside = itr->outside;
     const RelationIdentifier side_ordinal = inside.side_ordinal;
-    const Entity& inside_entity = *(inside.entity);
+    const Entity inside_entity = inside.entity;
 
     // If this process does NOT own the inside and the outside entity does not exist
     if ( inside_entity.owner_rank() != mesh.parallel_rank() &&
-        outside.entity == NULL ) {
+         !outside.entity.is_valid() ) {
       // search through existing sides
       PairIterRelation existing_sides = inside_entity.relations(side_rank);
       for (; existing_sides.first != existing_sides.second &&
@@ -269,7 +269,7 @@ size_t determine_creating_processes(
 
     //does this process create the first side
     //if so it needs to create a side_id
-    if (first_side.entity->owner_rank() == mesh.parallel_rank()) {
+    if (first_side.entity.owner_rank() == mesh.parallel_rank()) {
       ++num_sides_to_create;
     }
     const ElementIdSide elem_id_side(first_side);
@@ -347,7 +347,7 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
     // Only generated keys for sides in which this process
     // owns the first element in the side vector
     const EntitySideComponent & first_side = *(side_vector.begin());
-    if ( first_side.entity->owner_rank() == mesh.parallel_rank()) {
+    if ( first_side.entity.owner_rank() == mesh.parallel_rank()) {
 
       //to be used as the key in the reverse boundary map
       //a side can be identified in two ways
@@ -356,7 +356,7 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
       // the reverse boundary map is used to go from (2) to (1).
       const ElementIdSide elem_id_side( first_side);
 
-      Entity & side = *(requested_sides[current_side]);
+      Entity side = requested_sides[current_side];
       EntityId side_id = side.identifier();
 
 
@@ -374,11 +374,11 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
             if (topo == fem_meta_data.get_cell_topology(**i)) {
               if (std::string(side_key.first->name) == "Quadrilateral_4") { // A enum would be nice
                 // Quad could be the face of a hex or wedge.
-                if (std::string("Hexahedron_8") == stk::mesh::get_cell_topology(*side_vector.front().entity).getName() &&
+                if (std::string("Hexahedron_8") == stk::mesh::get_cell_topology(side_vector.front().entity).getName() &&
                                                    std::string::npos != (*i)->name().find("hex8")) { // Magic string
                   add_parts.push_back(*i);
                 }
-                else if (std::string("Wedge_6") == stk::mesh::get_cell_topology(*side_vector.front().entity).getName() &&
+                else if (std::string("Wedge_6") == stk::mesh::get_cell_topology(side_vector.front().entity).getName() &&
                                                    std::string::npos != (*i)->name().find("wedge6")) { // Magic string
                   add_parts.push_back(*i);
                 }
@@ -397,7 +397,7 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
       const EntityVector & nodes = side_key.second;
 
       for (size_t i = 0; i<nodes.size(); ++i) {
-        Entity & node = *nodes[i];
+        Entity node = nodes[i];
         mesh.declare_relation( side, node, i);
       }
 
@@ -406,7 +406,7 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
           side_itr != side_vector.end();
           ++side_itr)
       {
-        Entity & elem = *(side_itr->entity);
+        Entity elem = side_itr->entity;
         //only declare relations for owned elements
         if (elem.owner_rank() == mesh.parallel_rank()) {
           const RelationIdentifier elem_side_ordinal = side_itr->side_ordinal;
@@ -473,11 +473,11 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
             if (topo == fem_meta_data.get_cell_topology(**i)) {
               if (std::string(side_key.first->name) == "Quadrilateral_4") { // A enum would be nice
                 // Quad could be the face of a hex or wedge.
-                if (std::string("Hexahedron_8") == stk::mesh::get_cell_topology(*side_vector.front().entity).getName() &&
+                if (std::string("Hexahedron_8") == stk::mesh::get_cell_topology(side_vector.front().entity).getName() &&
                                                    std::string::npos != (*i)->name().find("hex8")) { // Magic string
                   add_parts.push_back(*i);
                 }
-                else if (std::string("Wedge_6") == stk::mesh::get_cell_topology(*side_vector.front().entity).getName() &&
+                else if (std::string("Wedge_6") == stk::mesh::get_cell_topology(side_vector.front().entity).getName() &&
                                                    std::string::npos != (*i)->name().find("wedge6")) { // Magic string
                   add_parts.push_back(*i);
                 }
@@ -489,13 +489,13 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
           }
         }
       }
-      Entity & side = mesh.declare_entity(side_rank,generated_side_id,add_parts);
+      Entity side = mesh.declare_entity(side_rank,generated_side_id,add_parts);
 
       //declare the side->node relations
       const EntityVector & nodes = side_key.second;
 
       for (size_t i = 0; i<nodes.size(); ++i) {
-        Entity & node = *nodes[i];
+        Entity node = nodes[i];
         mesh.declare_relation( side, node, i);
       }
 
@@ -504,7 +504,7 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
            side_itr != side_vector.end();
            ++side_itr)
       {
-        Entity & elem = *(side_itr->entity);
+        Entity elem = side_itr->entity;
         //only declare relations for owned elements
         if (elem.owner_rank() == mesh.parallel_rank()) {
           const RelationIdentifier elem_side_ordinal = side_itr->side_ordinal;

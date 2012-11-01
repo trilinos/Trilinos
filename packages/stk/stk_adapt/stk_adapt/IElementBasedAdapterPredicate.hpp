@@ -25,7 +25,7 @@ namespace stk {
      */
 
     // Example 
-    struct IElementBasedAdapterPredicate : public std::unary_function<const stk::mesh::Entity& , bool> {
+    struct IElementBasedAdapterPredicate : public std::unary_function<const stk::mesh::Entity , bool> {
       stk::mesh::Selector * m_selector;
       stk::mesh::FieldBase *m_field;
       double m_tolerance;
@@ -41,7 +41,7 @@ namespace stk {
         IElementBasedAdapterPredicate(selector, field, tolerance) {}
 
       /// Return true for refine, false for ignore
-      int operator()(const stk::mesh::Entity& entity) {
+      int operator()(const stk::mesh::Entity entity) {
         double *fdata = 0;
         if (m_field) 
           fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_field) , entity );
@@ -58,7 +58,7 @@ namespace stk {
     /** Example of how the above is used (pseudo-code):
      *
      * class PredicateAdapter : public Refiner {
-     *   void visit_for_refine_and_unrefin(std::unary_function<stk::mesh::Entity& , bool>& user_predicate_refine)
+     *   void visit_for_refine_and_unrefin(std::unary_function<stk::mesh::Entity , bool>& user_predicate_refine)
      *     {
      *        foreach (Entity entity in list)
      *          {

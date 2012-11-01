@@ -61,8 +61,8 @@ namespace stk {
       virtual void run_algorithm() = 0;
 
       static bool select_bucket(stk::mesh::Bucket& bucket, PerceptMesh *eMesh);
-      bool get_fixed_flag(stk::mesh::Entity* node_ptr);
-      int classify_node(stk::mesh::Entity& node, size_t& curveOrSurfaceEvaluator) const;
+      bool get_fixed_flag(stk::mesh::Entity node_ptr);
+      int classify_node(stk::mesh::Entity node, size_t& curveOrSurfaceEvaluator) const;
 
 
     };

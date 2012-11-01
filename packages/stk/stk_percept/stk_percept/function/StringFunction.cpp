@@ -21,18 +21,18 @@ namespace stk
 {
   namespace percept
   {
-    StringFunction::StringFunction(const char *function_string, 
+    StringFunction::StringFunction(const char *function_string,
                                    Name name,
                                    int domain_dimension,
                                    int codomain_dimension,
                                    unsigned integration_order) :
       Function(name.getName().c_str(), Dimensions(domain_dimension), Dimensions(codomain_dimension), integration_order),
-      m_func_string(function_string), m_functionExpr(*this), m_gradient_string(""), m_spatialDim(0) 
+      m_func_string(function_string), m_functionExpr(*this), m_gradient_string(""), m_spatialDim(0)
     {
       init();
     }
 
-    StringFunction::StringFunction(const char *function_string, 
+    StringFunction::StringFunction(const char *function_string,
                                    Name name,
                                    Dimensions domain_dimensions,
                                    Dimensions codomain_dimensions,
@@ -43,7 +43,7 @@ namespace stk
       init();
     }
 
-    StringFunction::StringFunction(const StringFunction& s) : 
+    StringFunction::StringFunction(const StringFunction& s) :
       Function(s.m_name.c_str(), s.m_domain_dimensions, s.m_codomain_dimensions, s.m_integration_order),
       m_func_string(s.m_func_string), m_functionExpr(*this), m_gradient_string(s.m_gradient_string), m_spatialDim(s.m_spatialDim)
     {
@@ -57,9 +57,9 @@ namespace stk
       m_v.resize(nOutDim);
       //m_g.resize(nOutDim);
       m_functionExpr.setExpression(m_func_string.c_str()).parse();
-      m_element=0;
+      m_element = stk::mesh::Entity();
       m_bucket=0;
-      m_parametric_coordinates = MDArray(1,3); 
+      m_parametric_coordinates = MDArray(1,3);
       m_have_element = false;
       m_have_bucket = false;
     }
@@ -72,7 +72,7 @@ namespace stk
         m_gradient_string += "v["+boost::lexical_cast<std::string>(i)+"]= "+gstring[i]+";";
     }
 
-    void 
+    void
     StringFunction::set_gradient_strings(MDArrayString& gstring)
     {
       if (gstring.rank() != 1) throw std::runtime_error("set_gradient_strings takes a rank 1 matrix (i.e. a vector) of strings (MDArrayString)");
@@ -152,11 +152,11 @@ namespace stk
 
           if (m_have_element)
             {
-              func(f_inp, f_out, *m_element, m_parametric_coordinates, time_value_optional); 
+              func(f_inp, f_out, m_element, m_parametric_coordinates, time_value_optional);
             }
           else
             {
-              func(f_inp, f_out); 
+              func(f_inp, f_out);
             }
 
           int nOutDim = last_dimension(f_out);
@@ -320,8 +320,8 @@ namespace stk
       VERIFY_OP_ON(out_rank, <=,  maxRank, "StringFunction::operator() output array rank too large");
       int n_inp_points[maxRank] = {1,1,1};
       int n_out_points[maxRank] = {1,1,1};
-      first_dimensions(inp, inp_offset, n_inp_points, maxRank);  
-      first_dimensions(out, out_offset, n_out_points, maxRank);  
+      first_dimensions(inp, inp_offset, n_inp_points, maxRank);
+      first_dimensions(out, out_offset, n_out_points, maxRank);
 
       int nInDim  = m_domain_dimensions[0];
       int nOutDim = m_codomain_dimensions[0];
@@ -395,14 +395,14 @@ namespace stk
     ///  Dimensions of parametric_coordinates and input_phy_points are required to be ([P],[D])
     /// output_values: ([P], [DOF])
     void StringFunction::operator()(MDArray& input_phy_points, MDArray& output_values,
-                                    const stk::mesh::Entity& element, const MDArray& parametric_coordinates, double time_value_optional) 
+                                    const stk::mesh::Entity element, const MDArray& parametric_coordinates, double time_value_optional)
     {
       PRINT("tmp srk StringFunction::operator(element) getName()= " << getName() << " input_phy_points= " << input_phy_points << " output_values= " << output_values);
 
       argsAreValid(input_phy_points, output_values);
       argsAreValid(parametric_coordinates, output_values);
 
-      m_element = &element;
+      m_element = element;
       m_have_element = true;
       VERIFY_OP(parametric_coordinates.rank(), ==, 2, "StringFunction::operator() parametric_coordinates rank bad");
       m_parametric_coordinates = MDArray(1, parametric_coordinates.dimension(1));
@@ -417,15 +417,15 @@ namespace stk
 
       // reset this else we won't be able to reuse this object correctly
       m_have_element = false;
-      m_element = 0;
+      m_element = stk::mesh::Entity();
 
       // *  Dimensions of parametric_coordinates are required to be ([P],[D])
-      //FieldFunction:: void operator()(const stk::mesh::Entity *element, const MDArray& parametric_coordinates, MDArray& out);
+      //FieldFunction:: void operator()(const stk::mesh::Entity element, const MDArray& parametric_coordinates, MDArray& out);
 
     }
 
     void StringFunction::operator()(MDArray& input_phy_points, MDArray& output_values,
-                                    const stk::mesh::Bucket& bucket, const MDArray& parametric_coordinates, double time_value_optional) 
+                                    const stk::mesh::Bucket& bucket, const MDArray& parametric_coordinates, double time_value_optional)
     {
       PRINT("tmp srk StringFunction::operator(bucket) getName()= " << getName() << " input_phy_points= " << input_phy_points << " output_values= " << output_values);
 
@@ -438,7 +438,7 @@ namespace stk
       const unsigned num_elements_in_bucket = bucket.size();
       for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
         {
-          stk::mesh::Entity& element = bucket[iElement];
+          stk::mesh::Entity element = bucket[iElement];
           for (int iPoint = 0; iPoint<nPoints; iPoint++)
             {
               for (int iSpaceDim=0; iSpaceDim < nSpaceDim; iSpaceDim++)

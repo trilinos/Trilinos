@@ -26,8 +26,8 @@ namespace mesh {
    *     ghosted entities.
    */
 void find_closure( const BulkData & bulk,
-    const std::vector< Entity *> & entities,
-    std::vector< Entity *> & entities_closure);
+    const std::vector< Entity> & entities,
+    std::vector< Entity> & entities_closure);
 
 } // namespace mesh
 } // namespace stk

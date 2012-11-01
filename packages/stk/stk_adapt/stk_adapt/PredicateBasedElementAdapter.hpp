@@ -14,10 +14,10 @@ namespace stk {
     /**
      *  Predicate-based marker
      *
-     *  The functor @class RefinePredicate should supply an operator() that returns an entry from AdaptInstruction, 
+     *  The functor @class RefinePredicate should supply an operator() that returns an entry from AdaptInstruction,
      *    either to do nothing, refine, unrefine, or both refine & unrefine (useful for unit testing, etc.)
      */
-    typedef std::unary_function<stk::mesh::Entity& , bool> AdapterPredicateFunctor;
+    typedef std::unary_function<stk::mesh::Entity , bool> AdapterPredicateFunctor;
 
     template<class RefinePredicate>
     class PredicateBasedElementAdapter : public IAdapter
@@ -38,7 +38,7 @@ namespace stk {
 
         const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
 
-        for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+        for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
             {
               stk::mesh::Bucket & bucket = **k ;
@@ -46,23 +46,23 @@ namespace stk {
               const unsigned num_entity_in_bucket = bucket.size();
               for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
                 {
-                  stk::mesh::Entity& element = bucket[ientity];
+                  stk::mesh::Entity element = bucket[ientity];
 
                   // FIXME
                   // skip elements that are already a parent (if there's no family tree yet, it's not a parent, so avoid throwing an error is isParentElement)
-                  const bool check_for_family_tree = false;  
+                  const bool check_for_family_tree = false;
                   bool isParent = m_eMesh.isParentElement(element, check_for_family_tree);
-              
+
                   if (isParent)
                     continue;
-                
+
                   const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
 
                   if (elem_nodes.size() && m_eMesh.isChildWithoutNieces(element, false))
                     {
 
                       if (m_predicate_refine(element) & DO_UNREFINE)
-                        elements_to_unref.insert(&element);
+                        elements_to_unref.insert(element);
                     }
                 }
             }
@@ -73,12 +73,12 @@ namespace stk {
 
     protected:
 
-      virtual void 
-      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+      virtual void
+      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element,
             vector<NeededEntityType>& needed_entity_ranks)
       {
         const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-                
+
         CellTopology cell_topo(cell_topo_data);
         const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
 

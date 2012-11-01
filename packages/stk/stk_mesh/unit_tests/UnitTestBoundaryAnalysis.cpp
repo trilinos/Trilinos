@@ -116,22 +116,22 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   const unsigned num_entities = count[NODE_RANK] + count[element_rank];
 
   // Declare the shell entities, placing them in the shell part
-  std::vector<stk::mesh::Entity*> shells;
+  std::vector<stk::mesh::Entity> shells;
   stk::mesh::PartVector shell_parts;
   shell_parts.push_back(&shell_part);
   for (unsigned i = 1; i <= num_shells; ++i) {
-    stk::mesh::Entity& new_shell = bulk_data.declare_entity(element_rank,
+    stk::mesh::Entity new_shell = bulk_data.declare_entity(element_rank,
                                                             num_entities + i,
                                                             shell_parts);
-    shells.push_back(&new_shell);
+    shells.push_back(new_shell);
   }
 
   // declare shell relationships
   unsigned node_list[5] = {20, 25, 30, 35, 40};
   for (unsigned i = 0; i < num_shells; ++i) {
-    stk::mesh::Entity& shell = *(shells[i]);
-    stk::mesh::Entity& node1 = *(bulk_data.get_entity(NODE_RANK, node_list[i]));
-    stk::mesh::Entity& node2 = *(bulk_data.get_entity(NODE_RANK, node_list[i+1]));
+    stk::mesh::Entity shell = shells[i];
+    stk::mesh::Entity node1 = bulk_data.get_entity(NODE_RANK, node_list[i]);
+    stk::mesh::Entity node2 = bulk_data.get_entity(NODE_RANK, node_list[i+1]);
     bulk_data.declare_relation(shell, node1, 0);
     bulk_data.declare_relation(shell, node2, 1);
   }
@@ -139,7 +139,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   bulk_data.modification_end();
 
   // create the closure we want to analyze
-  std::vector<stk::mesh::Entity*> closure;
+  std::vector<stk::mesh::Entity> closure;
   unsigned num_elems_in_closure = 6;
   stk::mesh::EntityId ids_of_entities_in_closure[] =
     {6, 7, 10, 11, 14, 15, 23, 24, 25, 28, 29, 30, 33, 34, 35, 38, 39, 40};
@@ -153,7 +153,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
     else {
       rank_of_entity = NODE_RANK;
     }
-    stk::mesh::Entity* closure_entity =
+    stk::mesh::Entity closure_entity =
       bulk_data.get_entity(rank_of_entity, ids_of_entities_in_closure[i]);
     closure.push_back(closure_entity);
   }
@@ -214,11 +214,11 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   {
     stk::mesh::EntitySide& side = *itr;
     stk::mesh::EntitySideComponent& inside_closure = side.inside;
-    stk::mesh::EntityId inside_id = inside_closure.entity != NULL ? inside_closure.entity->identifier() : 0;
-    stk::mesh::EntityId inside_side = inside_closure.entity != NULL ? inside_closure.side_ordinal : 0;
+    stk::mesh::EntityId inside_id = inside_closure.entity.is_valid() ? inside_closure.entity.identifier() : 0;
+    stk::mesh::EntityId inside_side = inside_closure.entity.is_valid() ? inside_closure.side_ordinal : 0;
     stk::mesh::EntitySideComponent& outside_closure = side.outside;
-    stk::mesh::EntityId outside_id = outside_closure.entity != NULL ? outside_closure.entity->identifier() : 0;
-    stk::mesh::EntityId outside_side = outside_closure.entity != NULL ? outside_closure.side_ordinal : 0;
+    stk::mesh::EntityId outside_id = outside_closure.entity.is_valid() ? outside_closure.entity.identifier() : 0;
+    stk::mesh::EntityId outside_side = outside_closure.entity.is_valid() ? outside_closure.side_ordinal : 0;
 
     expected_results[i] = BoundaryPair(BoundaryItem(inside_id, inside_side),
                                        BoundaryItem(outside_id, outside_side));
@@ -251,15 +251,15 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis_null_topology()
   stk::mesh::BulkData bulk ( fem_meta , comm , 100 );
 
   stk::mesh::EntitySideVector boundary;
-  std::vector<stk::mesh::Entity*> newclosure;
+  std::vector<stk::mesh::Entity> newclosure;
 
   stk::mesh::PartVector face_parts;
   face_parts.push_back(&quad_part);
 
   bulk.modification_begin();
   if (m_rank == 0) {
-    stk::mesh::Entity & new_face = bulk.declare_entity(side_rank, 1, face_parts);
-    newclosure.push_back(&new_face);
+    stk::mesh::Entity new_face = bulk.declare_entity(side_rank, 1, face_parts);
+    newclosure.push_back(new_face);
   }
 
   stk::mesh::boundary_analysis(bulk, newclosure, side_rank, boundary);

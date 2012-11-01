@@ -107,20 +107,20 @@ class Gear {
 
  private:
 
-  Entity & get_node (
+  Entity get_node (
         size_t iz ,       // Thickness index
         size_t ir ,       // Radial index
         size_t ia ) const // Angle index
   {
-    return * gear_entities[ node_index(iz,ir,ia)];
+    return gear_entities[ node_index(iz,ir,ia)];
   }
 
-    Entity & get_element(
+    Entity get_element(
         size_t iz ,       // Thickness index
         size_t ir ,       // Radial index
         size_t ia ) const // Angle index
   {
-    return * gear_entities[ elem_index(iz,ir,ia)];
+    return gear_entities[ elem_index(iz,ir,ia)];
   }
 
     EntityId node_index(

@@ -56,7 +56,7 @@ class MockPartition : public stk::rebalance::Partition
     void set_balance_step(BALANCE_TEST_STEP step)
     { m_step = step; }
 
-    void set_mesh_info ( const std::vector<stk::mesh::Entity *> &mesh_entities,
+    void set_mesh_info ( const std::vector<stk::mesh::Entity> &mesh_entities,
                          const VectorField   * nodal_coord_ref,
                          const ScalarField   * elem_weight_ref)
     { total_number_entities_ = mesh_entities.size(); }
@@ -240,8 +240,8 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::Entity * e = bulk_data.get_entity( element_rank, elem );
-        double * const e_weight = stk::mesh::field_data( weight_field , *e );
+        stk::mesh::Entity e = bulk_data.get_entity( element_rank, elem );
+        double * const e_weight = stk::mesh::field_data( weight_field , e );
         *e_weight = 1.0;
       }
     }
@@ -276,8 +276,8 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
       for ( unsigned iy = 0 ; iy < ny ; ++iy )
       {
         stk::mesh::EntityId elem = 1 + iy * nx ;
-        stk::mesh::Entity * e = bulk_data.get_entity( element_rank, elem );
-        double * const e_weight = stk::mesh::field_data( weight_field , *e );
+        stk::mesh::Entity e = bulk_data.get_entity( element_rank, elem );
+        double * const e_weight = stk::mesh::field_data( weight_field , e );
         *e_weight = -2.0;
       }
     }

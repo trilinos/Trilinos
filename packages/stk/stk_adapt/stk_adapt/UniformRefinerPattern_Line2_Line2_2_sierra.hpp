@@ -29,15 +29,15 @@ namespace stk {
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
         needed_entities.resize(1);
-        needed_entities[0].first = m_eMesh.edge_rank(); 
+        needed_entities[0].first = m_eMesh.edge_rank();
         setToOne(needed_entities);
       }
 
       virtual unsigned getNumNewElemPerElem() { return 2; }
 
-      void 
-      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+      void
+      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
+                        stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
         const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
@@ -51,7 +51,7 @@ namespace stk {
         std::vector<stk::mesh::Part*> remove_parts;
 
         add_parts = m_toParts;
-        
+
         double coord_x[3];
         for (int iedge = 0; iedge < 1; iedge++)
           {
@@ -68,10 +68,10 @@ namespace stk {
           }
 
         // FIXME
-        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), m_primaryEntityRank, 0u);
-        nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), m_primaryEntityRank, 0u);
+        nodeRegistry.makeCentroidCoords(element, m_primaryEntityRank, 0u);
+        nodeRegistry.addToExistingParts(element, m_primaryEntityRank, 0u);
 
-        nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), m_primaryEntityRank, 0u);
+        nodeRegistry.interpolateFields(element, m_primaryEntityRank, 0u);
 
         Elem::CellTopology elem_celltopo = Elem::getCellTopology< FromTopology >();
         const Elem::RefinementTopology* ref_topo_p = Elem::getRefinementTopology(elem_celltopo);
@@ -91,7 +91,7 @@ namespace stk {
         typedef Elem::StdMeshObjTopologies::RefTopoX RefTopoX;
         RefTopoX& l2 = Elem::StdMeshObjTopologies::RefinementTopologyExtra< FromTopology > ::refinement_topology;
 
-#define CENTROID_N NN(m_primaryEntityRank,0)  
+#define CENTROID_N NN(m_primaryEntityRank,0)
 
         for (unsigned iChild = 0; iChild < 2; iChild++)
           {
@@ -128,7 +128,7 @@ namespace stk {
 
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
-            stk::mesh::Entity& newElement = *(*element_pool);
+            stk::mesh::Entity newElement = *element_pool;
 
 #if 0
             if (proc_rank_field && proc_rank_field->rank() == m_eMesh.edge_rank()) //&& m_eMesh.get_spatial_dim()==1)
@@ -145,7 +145,7 @@ namespace stk {
                 fdata[0] = double(newElement.owner_rank());
                 //fdata[0] = 1234.56;
                 if (0)
-                std::cout << "P[" << m_eMesh.get_rank() << "] tmp set proc_rank_field_edge to value = " << newElement.owner_rank() 
+                std::cout << "P[" << m_eMesh.get_rank() << "] tmp set proc_rank_field_edge to value = " << newElement.owner_rank()
                           << " for side element = " << newElement.identifier()
                           << std::endl;
               }
@@ -173,7 +173,7 @@ namespace stk {
           }
 
       }
-      
+
     };
 
   }

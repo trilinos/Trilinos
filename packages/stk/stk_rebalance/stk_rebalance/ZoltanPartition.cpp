@@ -350,7 +350,7 @@ void stkCallback_Centroid_Coord( void *data,
 
   int lid = local_id[  0 ]; // Local Element ID
 
-  const mesh::Entity & target_entity = * zdata->mesh_entity( lid );
+  const mesh::Entity target_entity = zdata->mesh_entity( lid );
   const GeomDecomp::VectorField & coor = * zdata->entity_coord_ref();
   const unsigned                        nd   =  zdata->spatial_dimension();
 
@@ -370,8 +370,8 @@ void stkCallback_Centroid_Coord( void *data,
 
 
 
-void getNeighbors( const mesh::Entity & entity,
-                   std::set<const mesh::Entity*> & nodes )
+void getNeighbors( const mesh::Entity entity,
+                   std::set<mesh::Entity> & nodes )
 {
   const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
@@ -380,18 +380,18 @@ void getNeighbors( const mesh::Entity & entity,
   mesh::PairIterRelation iElem = entity.relations(element_rank);
 
   for ( ; iElem.first != iElem.second; ++iElem.first ) {
-    mesh::Entity * elem = iElem.first->entity();
-    mesh::PairIterRelation iNode = elem->relations(stk::mesh::MetaData::NODE_RANK);
+    mesh::Entity elem = iElem.first->entity();
+    mesh::PairIterRelation iNode = elem.relations(stk::mesh::MetaData::NODE_RANK);
     for ( ; iNode.first != iNode.second; ++iNode.first ) {
-      mesh::Entity * node = iNode.first->entity();
-      if (&entity != node) nodes.insert( node );
+      mesh::Entity node = iNode.first->entity();
+      if (entity != node) nodes.insert( node );
     }
   }
 }
 
-int numEdges( const mesh::Entity & entity ) {
+int numEdges( const mesh::Entity entity ) {
 
-  std::set<const mesh::Entity*> nodes;
+  std::set<mesh::Entity> nodes;
 
   getNeighbors( entity, nodes );
   return nodes.size();
@@ -424,7 +424,7 @@ int stkCallback_Num_Edges( void *data,
 
   int lid = local_id[  0 ]; // Local Element ID
 
-  const mesh::Entity & target_entity = * zdata->mesh_entity( lid );
+  const mesh::Entity target_entity = zdata->mesh_entity( lid );
 
   return  numEdges( target_entity );
 
@@ -464,17 +464,17 @@ void stkCallback_Edge_List( void *data,
 
   int lid = local_id[  0 ]; // Local Node ID
 
-  const mesh::Entity & target_entity = * zdata->mesh_entity( lid );
+  const mesh::Entity target_entity = zdata->mesh_entity( lid );
 
-  std::set<const mesh::Entity*> nodes;
+  std::set<mesh::Entity> nodes;
   getNeighbors( target_entity, nodes );
 
   int counter(0);
-  for ( std::set<const mesh::Entity*>::iterator i = nodes.begin();
+  for ( std::set<mesh::Entity>::iterator i = nodes.begin();
         i != nodes.end(); ++i ) {
     nbor_global_id[counter*2+0] = 0; // region_id
 
-    const mesh::Entity & n = **i;
+    const mesh::Entity n = *i;
     nbor_global_id[counter*2+1] = n.key().id();
 
     nbor_procs[counter] = n.owner_rank();
@@ -566,7 +566,7 @@ Zoltan::Zoltan(ParallelMachine pm, const unsigned ndim, Parameters & rebal_regio
 }
 
 void
-Zoltan::set_mesh_info( const std::vector<mesh::Entity *> &mesh_entities,
+Zoltan::set_mesh_info( const std::vector<mesh::Entity> &mesh_entities,
                           const VectorField * nodal_coord_ref,
                           const ScalarField * elem_weight_ref)
 {
@@ -697,7 +697,7 @@ Zoltan::destination_proc(const unsigned moid) const
 }
 
 bool
-Zoltan::find_mesh_entity(const mesh::Entity * entity, unsigned & moid) const
+Zoltan::find_mesh_entity(const mesh::Entity entity, unsigned & moid) const
 {
   unsigned len = m_mesh_information_.mesh_entities.size();
   for(moid = 0; moid < len; ++moid)
@@ -712,7 +712,7 @@ Zoltan::get_new_partition(stk::mesh::EntityProcVec &rebal_spec)
 {
   const unsigned entity_iter_len = m_mesh_information_.mesh_entities.size();
   for (unsigned entity_iter =0; entity_iter != entity_iter_len; ++entity_iter) {
-    mesh::Entity * mesh_ent = mesh_entity(entity_iter);
+    mesh::Entity mesh_ent = mesh_entity(entity_iter);
     int proc = destination_proc(entity_iter);
     mesh::EntityProc et(mesh_ent, proc);
     rebal_spec.push_back(et);
@@ -726,7 +726,7 @@ Zoltan::entity_coord_ref() const
    return m_mesh_information_.nodal_coord_ref;
 }
 
-mesh::Entity *
+mesh::Entity
 Zoltan::mesh_entity(const unsigned moid ) const
 {
   return m_mesh_information_.mesh_entities[ moid ];
@@ -738,7 +738,7 @@ Zoltan::entity_weight(const unsigned moid ) const
   double mo_weight = 1.0;
   if (entity_weight_ref()) {
     mo_weight = * static_cast<double *>
-      ( mesh::field_data (*entity_weight_ref(), *m_mesh_information_.mesh_entities[ moid ]));
+      ( mesh::field_data (*entity_weight_ref(), m_mesh_information_.mesh_entities[ moid ]));
   }
   return mo_weight;
 }
@@ -769,8 +769,8 @@ int Zoltan::register_callbacks()
    * Register the Zoltan/SIERRA "call-back" (querry) functions.
    * Use ONLY THE BARE ESSENTIALS for decompositions:
    *
-   *    Zoltan_Set_Num_Obj_Fn      
-   *    Zoltan_Set_Obj_List_Fn     
+   *    Zoltan_Set_Num_Obj_Fn
+   *    Zoltan_Set_Obj_List_Fn
    *    Zoltan_Set_Num_Geom_Fn
    *    Zoltan_Set_Geom_Fn
    */

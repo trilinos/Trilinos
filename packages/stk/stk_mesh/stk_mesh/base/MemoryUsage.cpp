@@ -55,7 +55,7 @@ void compute_memory_usage(const BulkData& bulk, MemoryUsage& mem_usage)
   mem_usage.bucket_counts.resize(nranks, 0);
   mem_usage.bucket_bytes.resize(nranks, 0);
 
-  std::vector<Entity*> entities;
+  std::vector<Entity> entities;
   for(size_t i=0; i<nranks; ++i) {
     EntityRank rank = i;
     total_bytes += mem_usage.entity_counts[rank]*sizeof(Entity);
@@ -63,7 +63,7 @@ void compute_memory_usage(const BulkData& bulk, MemoryUsage& mem_usage)
     get_entities(bulk, rank, entities);
 
     for(size_t n=0; n<entities.size(); ++n) {
-      Entity& entity = *entities[n];
+      Entity entity = entities[n];
       for(EntityRank r=0; r<i; ++r) {
         unsigned num_rels = entity.relations(r).size();
         mem_usage.downward_relation_counts[r] += num_rels;

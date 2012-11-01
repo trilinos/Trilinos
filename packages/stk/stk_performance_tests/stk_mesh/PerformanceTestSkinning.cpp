@@ -56,7 +56,7 @@ void delete_skin( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, Entit
   mesh.modification_begin();
 
   for ( stk::mesh::EntityVector::iterator i = skin_entities.begin(); i != skin_entities.end(); ++i) {
-    mesh.destroy_entity(**i);
+    mesh.destroy_entity(*i);
   }
 
   mesh.modification_end();
@@ -78,9 +78,9 @@ void update_skin( stk::mesh::BulkData & mesh, stk::mesh::Part *skin_part, Entity
   for( stk::mesh::EntityVector::iterator i = owned_elements.begin();
       i != owned_elements.end(); ++i )
   {
-    stk::mesh::Entity * entity= *i;
-    if ( entity->log_query() == stk::mesh::EntityLogCreated ||
-         entity->log_query() == stk::mesh::EntityLogModified ) {
+    stk::mesh::Entity entity= *i;
+    if ( entity.log_query() == stk::mesh::EntityLogCreated ||
+         entity.log_query() == stk::mesh::EntityLogModified ) {
      modified_elements.push_back(entity);
     }
   }
@@ -105,14 +105,14 @@ void find_owned_nodes_with_relations_outside_closure(
       stk::mesh::EntityLess());
 
   for (stk::mesh::EntityVector::iterator itr = closure.begin(); itr != node_end; ++itr) {
-    stk::mesh::Entity & node = **itr;
+    stk::mesh::Entity node = *itr;
 
     if (select_owned(node)) {
       stk::mesh::PairIterRelation relations_pair = node.relations();
 
       //loop over the relations and check to see if they are in the closure
       for (; relations_pair.first != relations_pair.second; ++relations_pair.first) {
-        stk::mesh::Entity * current_entity = (relations_pair.first->entity());
+        stk::mesh::Entity current_entity = (relations_pair.first->entity());
 
         //has relation outside of closure
         if ( !std::binary_search(node_end,
@@ -120,7 +120,7 @@ void find_owned_nodes_with_relations_outside_closure(
               current_entity,
               stk::mesh::EntityLess()) )
         {
-          nodes.push_back(&node);
+          nodes.push_back(node);
           break;
         }
       }
@@ -136,20 +136,20 @@ void copy_nodes_and_break_relations( stk::mesh::BulkData     & mesh,
 
 
   for (size_t i = 0; i < nodes.size(); ++i) {
-    stk::mesh::Entity * entity = nodes[i];
-    stk::mesh::Entity * new_entity = new_nodes[i];
+    stk::mesh::Entity entity = nodes[i];
+    stk::mesh::Entity new_entity = new_nodes[i];
 
-    stk::mesh::PairIterRelation relations_pair = entity->relations();
+    stk::mesh::PairIterRelation relations_pair = entity.relations();
 
     std::vector<stk::mesh::EntitySideComponent> sides;
 
     //loop over the relations and check to see if they are in the closure
     for (; relations_pair.first != relations_pair.second;) {
       --relations_pair.second;
-      stk::mesh::Entity * current_entity = (relations_pair.second->entity());
+      stk::mesh::Entity current_entity = (relations_pair.second->entity());
       size_t side_ordinal = relations_pair.second->identifier();
 
-      if (stk::mesh::in_receive_ghost(*current_entity)) {
+      if (stk::mesh::in_receive_ghost(current_entity)) {
         // TODO deleteing the ghost triggers a logic error at the
         // end of the NEXT modification cycle.  We need to fix this!
         //mesh.destroy_entity(current_entity);
@@ -170,27 +170,24 @@ void copy_nodes_and_break_relations( stk::mesh::BulkData     & mesh,
     for ( std::vector<stk::mesh::EntitySideComponent>::iterator itr = sides.begin();
         itr != sides.end(); ++itr)
     {
-      mesh.destroy_relation(*(itr->entity), *entity, itr->side_ordinal);
-      mesh.declare_relation(*(itr->entity), *new_entity, itr->side_ordinal);
+      mesh.destroy_relation(itr->entity, entity, itr->side_ordinal);
+      mesh.declare_relation(itr->entity, new_entity, itr->side_ordinal);
     }
 
     //copy non-induced part membership from nodes[i] to new_nodes[i]
     //there are NO non-induced parts for this example
 
     //copy field data from nodes[i] to new_nodes[i]
-    mesh.copy_entity_fields( *entity, *new_entity);
+    mesh.copy_entity_fields( entity, new_entity);
 
-    if (entity->relations().empty()) {
-      mesh.destroy_entity(*entity);
+    if (entity.relations().empty()) {
+      mesh.destroy_entity(entity);
     }
 
-    if (new_entity->relations().empty()) {
-      mesh.destroy_entity(*new_entity);
+    if (new_entity.relations().empty()) {
+      mesh.destroy_entity(new_entity);
     }
-
-
   }
-
 }
 
 void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
@@ -202,8 +199,8 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
   stk::CommAll comm(mesh.parallel());
 
   for (size_t i = 0; i < nodes.size(); ++i) {
-    stk::mesh::Entity & node = *nodes[i];
-    stk::mesh::Entity & new_node = *new_nodes[i];
+    stk::mesh::Entity node = nodes[i];
+    stk::mesh::Entity new_node = new_nodes[i];
 
     stk::mesh::PairIterEntityComm entity_comm = node.sharing();
 
@@ -219,8 +216,8 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
   comm.allocate_buffers( mesh.parallel_size()/4 );
 
   for (size_t i = 0; i < nodes.size(); ++i) {
-    stk::mesh::Entity & node = *nodes[i];
-    stk::mesh::Entity & new_node = *new_nodes[i];
+    stk::mesh::Entity node = nodes[i];
+    stk::mesh::Entity new_node = new_nodes[i];
 
     stk::mesh::PairIterEntityComm entity_comm = node.sharing();
 
@@ -246,8 +243,8 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
       comm.recv_buffer(process).unpack<stk::mesh::EntityKey>(old_key)
         .unpack<stk::mesh::EntityKey>(new_key);
 
-      stk::mesh::Entity * old_entity = mesh.get_entity(old_key);
-      stk::mesh::Entity * new_entity = & mesh.declare_entity(new_key.rank(), new_key.id(), no_parts);
+      stk::mesh::Entity old_entity = mesh.get_entity(old_key);
+      stk::mesh::Entity new_entity = mesh.declare_entity(new_key.rank(), new_key.id(), no_parts);
 
       nodes.push_back(old_entity);
       new_nodes.push_back(new_entity);
@@ -358,8 +355,8 @@ STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
       for (size_t ix=NX/3; ix < 2*NX/3; ++ix) {
       for (size_t iy=0; iy < NY; ++iy) {
       for (size_t iz=0; iz < NZ; ++iz) {
-        stk::mesh::Entity * element = fixture.elem(ix,iy,iz);
-        if (element != NULL && element->owner_rank() == mesh.parallel_rank()) {
+        stk::mesh::Entity element = fixture.elem(ix,iy,iz);
+        if (element.is_valid() && element.owner_rank() == mesh.parallel_rank()) {
           entities_to_separate.push_back(element);
           num_detached_this_proc++;
         }
@@ -372,8 +369,8 @@ STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
       for (size_t ix=NX/2; ix < NX/2+1; ++ix) {
       for (size_t iy=NY/2; iy < NY/2+1; ++iy) {
       for (size_t iz=NZ/2; iz < NZ/2+1; ++iz) {
-        stk::mesh::Entity * element = fixture.elem(ix,iy,iz);
-        if (element != NULL && element->owner_rank() == mesh.parallel_rank()) {
+        stk::mesh::Entity element = fixture.elem(ix,iy,iz);
+        if (element.is_valid() && element.owner_rank() == mesh.parallel_rank()) {
           entities_to_separate.push_back(element);
         }
       }

@@ -112,27 +112,27 @@ STKUNIT_UNIT_TEST( UnitTestSelector, A_12345 )
   //std::cout << "Selector = " << selector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket() ;
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket() ;
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity2->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity2.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity3.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity4->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity4.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity5->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity5.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -152,27 +152,27 @@ STKUNIT_UNIT_TEST( UnitTestSelector, Ac_12345 )
   //std::cout << "Selector = " << selector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity2->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity2.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity3.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity4->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity4.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity5->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity5.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
@@ -189,7 +189,7 @@ STKUNIT_UNIT_TEST( UnitTestSelector, D_5 )
 
   stk::mesh::Selector selector( fix.m_partD );
 
-  const stk::mesh::Bucket & bucket = fix.m_entity5->bucket();
+  const stk::mesh::Bucket & bucket = fix.m_entity5.bucket();
 
   bool result = selector(bucket);
   STKUNIT_EXPECT_FALSE(result);
@@ -210,12 +210,12 @@ STKUNIT_UNIT_TEST( UnitTestSelector, Ac_15 )
   //std::cout << "Selector = " << selector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity5->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity5.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
@@ -237,12 +237,12 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AiB_12 )
   //std::cout << "Selector = " << selector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity2->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity2.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
@@ -264,12 +264,12 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AuB_14 )
   //std::cout << "Selector = " << selector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity4->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity4.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -291,12 +291,12 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AiBc_12 )
   //std::cout << "Selector = " << selector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity2->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity2.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -318,12 +318,12 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AuBc_13 )
   //std::cout << "Selector = " << selector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity3.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -348,12 +348,12 @@ STKUNIT_UNIT_TEST( UnitTestSelector, Ai_BuC_c_12 )
   //std::cout << "Selector = " << selector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity2->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity2.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -361,12 +361,12 @@ STKUNIT_UNIT_TEST( UnitTestSelector, Ai_BuC_c_12 )
   stk::mesh::Selector newSelector(selector);
   // Should be the same:
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = newSelector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity2->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity2.bucket();
     bool result = newSelector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -387,7 +387,7 @@ STKUNIT_UNIT_TEST( UnitTestSelector, entityTest )
     stk::mesh::Part & partB = fix.m_partB ;
     stk::mesh::Selector selector = partA & !partB;
 
-    const stk::mesh::Entity & pEntity = *fix.m_entity5;
+    const stk::mesh::Entity pEntity = fix.m_entity5;
     bool result = selector(pEntity);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -406,7 +406,7 @@ STKUNIT_UNIT_TEST( UnitTestSelector, defaultConstructor )
   //std::cout << "Selector = " << selector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -433,22 +433,22 @@ STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AuB_c )
   //std::cout << "Not Or Selector = " << notOrSelector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = notOrSelector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity2->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity2.bucket();
     bool result = notOrSelector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity3.bucket();
     bool result = notOrSelector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity4->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity4.bucket();
     bool result = notOrSelector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
@@ -456,22 +456,22 @@ STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AuB_c )
   stk::mesh::Selector notNotOrSelector = !notOrSelector;
   //std::cout << "Not Not Or Selector = " << notNotOrSelector << std::endl;
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = notNotOrSelector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity2->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity2.bucket();
     bool result = notNotOrSelector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity3.bucket();
     bool result = notNotOrSelector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity4->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity4.bucket();
     bool result = notNotOrSelector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -497,22 +497,22 @@ STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AiB_c )
   //std::cout << "Not And Selector = " << notAndSelector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = notAndSelector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity2->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity2.bucket();
     bool result = notAndSelector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity3.bucket();
     bool result = notAndSelector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity4->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity4.bucket();
     bool result = notAndSelector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
@@ -520,22 +520,22 @@ STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AiB_c )
   stk::mesh::Selector notNotAndSelector = !notAndSelector;
   //std::cout << "Not Not And Selector = " << notNotAndSelector << std::endl;
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = notNotAndSelector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity2->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity2.bucket();
     bool result = notNotAndSelector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity3.bucket();
     bool result = notNotAndSelector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity4->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity4.bucket();
     bool result = notNotAndSelector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -553,13 +553,13 @@ STKUNIT_UNIT_TEST( UnitTestSelector, complementEmpty ) {
 
   stk::mesh::Selector selector;
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   selector.complement();
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
@@ -641,27 +641,27 @@ STKUNIT_UNIT_TEST( UnitTestSelector, selectIntersection )
   stk::mesh::Selector selector = selectIntersection(parts);
 
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = selector(bucket);
     STKUNIT_ASSERT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity2->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity2.bucket();
     bool result = selector(bucket);
     STKUNIT_ASSERT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity3.bucket();
     bool result = selector(bucket);
     STKUNIT_ASSERT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity4->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity4.bucket();
     bool result = selector(bucket);
     STKUNIT_ASSERT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity5->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity5.bucket();
     bool result = selector(bucket);
     STKUNIT_ASSERT_FALSE(result);
   }
@@ -688,27 +688,27 @@ STKUNIT_UNIT_TEST( UnitTestSelector, selectUnion )
   stk::mesh::Selector selector = selectUnion(parts);
 
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = selector(bucket);
     STKUNIT_ASSERT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity2->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity2.bucket();
     bool result = selector(bucket);
     STKUNIT_ASSERT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity3.bucket();
     bool result = selector(bucket);
     STKUNIT_ASSERT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity4->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity4.bucket();
     bool result = selector(bucket);
     STKUNIT_ASSERT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity5->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity5.bucket();
     bool result = selector(bucket);
     STKUNIT_ASSERT_FALSE(result);
   }
@@ -739,22 +739,22 @@ STKUNIT_UNIT_TEST( UnitTestSelector, selectUnion )
 //    msg << selector;
 //    STKUNIT_EXPECT_EQUAL( "!(!PartA AND !(PartB AND PartC))", msg.str() );
 //    {
-//      const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+//      const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
 //      bool result = selector(bucket);
 //      STKUNIT_EXPECT_TRUE(result);
 //    }
 //    {
-//      const stk::mesh::Bucket & bucket = fix.m_entity2->bucket();
+//      const stk::mesh::Bucket & bucket = fix.m_entity2.bucket();
 //      bool result = selector(bucket);
 //      STKUNIT_EXPECT_TRUE(result);
 //    }
 //    {
-//      const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
+//      const stk::mesh::Bucket & bucket = fix.m_entity3.bucket();
 //      bool result = selector(bucket);
 //      STKUNIT_EXPECT_TRUE(result);
 //    }
 //    {
-//      const stk::mesh::Bucket & bucket = fix.m_entity4->bucket();
+//      const stk::mesh::Bucket & bucket = fix.m_entity4.bucket();
 //      bool result = selector(bucket);
 //      STKUNIT_EXPECT_FALSE(result);
 //    }
@@ -766,22 +766,22 @@ STKUNIT_UNIT_TEST( UnitTestSelector, selectUnion )
 //    msg << selector;
 //    STKUNIT_EXPECT_EQUAL( "!(!(PartB AND PartC) AND !PartA)", msg.str() );
 //    {
-//      const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+//      const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
 //      bool result = selector(bucket);
 //      STKUNIT_EXPECT_TRUE(result);
 //    }
 //    {
-//      const stk::mesh::Bucket & bucket = fix.m_entity2->bucket();
+//      const stk::mesh::Bucket & bucket = fix.m_entity2.bucket();
 //      bool result = selector(bucket);
 //      STKUNIT_EXPECT_TRUE(result);
 //    }
 //    {
-//      const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
+//      const stk::mesh::Bucket & bucket = fix.m_entity3.bucket();
 //      bool result = selector(bucket);
 //      STKUNIT_EXPECT_TRUE(result);
 //    }
 //    {
-//      const stk::mesh::Bucket & bucket = fix.m_entity4->bucket();
+//      const stk::mesh::Bucket & bucket = fix.m_entity4.bucket();
 //      bool result = selector(bucket);
 //      STKUNIT_EXPECT_FALSE(result);
 //    }
@@ -802,13 +802,13 @@ STKUNIT_UNIT_TEST( UnitTestSelector, ZeroiuZero ) {
   selectAll.complement();
   {
     stk::mesh::Selector selector = selectNone & selectAll;
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
     stk::mesh::Selector selector = selectNone | selectAll;
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
@@ -837,12 +837,12 @@ STKUNIT_UNIT_TEST( UnitTestSelector, ZeroiuA )
   stk::mesh::Selector selectNoneOrA = selectNone | selectA;
   stk::mesh::Selector selectAllAndA = selectAll & selectA;
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = selectNoneOrA(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = selectAllAndA(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
@@ -910,19 +910,19 @@ STKUNIT_UNIT_TEST( UnitTestSelector, selectField )
   stk::mesh::Selector selectABC = stk::mesh::selectField(fix.m_fieldABC);
   {
     //entity1 is in partA, so entity1's bucket should be selected by selectA:
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity1.bucket();
     bool result = selectA(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
     //entity3 is not in partA, so entity3's bucket should not be selected by selectA:
-    const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity3.bucket();
     bool result = selectA(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
     //entity3 is in partB, so entity3's bucket should be selected by selectABC:
-    const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
+    const stk::mesh::Bucket & bucket = fix.m_entity3.bucket();
     bool result = selectABC(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
@@ -947,10 +947,10 @@ STKUNIT_UNIT_TEST( UnitTestSelector, select_part )
   STKUNIT_EXPECT_FALSE(selector(partC));
   STKUNIT_EXPECT_TRUE(selector(partD));
 
-  selector =  
-    partA |  
-    ( !( (partA & partB) | partC)  
-      & 
+  selector =
+    partA |
+    ( !( (partA & partB) | partC)
+      &
       (!partD | partB)
       );
 

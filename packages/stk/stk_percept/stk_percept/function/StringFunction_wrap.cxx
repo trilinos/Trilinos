@@ -3397,7 +3397,7 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_2(PyObject *SWIGUNUSEDP
   stk::encore::StringFunction *arg1 = (stk::encore::StringFunction *) 0 ;
   MDArray *arg2 = 0 ;
   MDArray *arg3 = 0 ;
-  stk::mesh::Entity *arg4 = 0 ;
+  stk::mesh::Entity arg4 = 0 ;
   MDArray *arg5 = 0 ;
   double arg6 ;
   void *argp1 = 0 ;
@@ -3443,12 +3443,12 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_2(PyObject *SWIGUNUSEDP
   arg3 = reinterpret_cast< MDArray * >(argp3);
   res4 = SWIG_ConvertPtr(obj3, &argp4, SWIGTYPE_p_stk__mesh__Entity,  0  | 0);
   if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk::mesh::Entity const &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk::mesh::Entity ""'"); 
   }
   if (!argp4) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk::mesh::Entity const &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk::mesh::Entity ""'"); 
   }
-  arg4 = reinterpret_cast< stk::mesh::Entity * >(argp4);
+  arg4 = reinterpret_cast< stk::mesh::Entity>(argp4);
   res5 = SWIG_ConvertPtr(obj4, &argp5, SWIGTYPE_p_MDArray,  0  | 0);
   if (!SWIG_IsOK(res5)) {
     SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "StringFunction___call__" "', argument " "5"" of type '" "MDArray const &""'"); 
@@ -3462,7 +3462,7 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_2(PyObject *SWIGUNUSEDP
     SWIG_exception_fail(SWIG_ArgError(ecode6), "in method '" "StringFunction___call__" "', argument " "6"" of type '" "double""'");
   } 
   arg6 = static_cast< double >(val6);
-  (arg1)->operator ()(*arg2,*arg3,(stk::mesh::Entity const &)*arg4,(MDArray const &)*arg5,arg6);
+  (arg1)->operator ()(*arg2,*arg3,(stk::mesh::Entity )*arg4,(MDArray const &)*arg5,arg6);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -3475,7 +3475,7 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_3(PyObject *SWIGUNUSEDP
   stk::encore::StringFunction *arg1 = (stk::encore::StringFunction *) 0 ;
   MDArray *arg2 = 0 ;
   MDArray *arg3 = 0 ;
-  stk::mesh::Entity *arg4 = 0 ;
+  stk::mesh::Entity arg4 = 0 ;
   MDArray *arg5 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -3517,12 +3517,12 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_3(PyObject *SWIGUNUSEDP
   arg3 = reinterpret_cast< MDArray * >(argp3);
   res4 = SWIG_ConvertPtr(obj3, &argp4, SWIGTYPE_p_stk__mesh__Entity,  0  | 0);
   if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk::mesh::Entity const &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk::mesh::Entity ""'"); 
   }
   if (!argp4) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk::mesh::Entity const &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk::mesh::Entity ""'"); 
   }
-  arg4 = reinterpret_cast< stk::mesh::Entity * >(argp4);
+  arg4 = reinterpret_cast< stk::mesh::Entity>(argp4);
   res5 = SWIG_ConvertPtr(obj4, &argp5, SWIGTYPE_p_MDArray,  0  | 0);
   if (!SWIG_IsOK(res5)) {
     SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "StringFunction___call__" "', argument " "5"" of type '" "MDArray const &""'"); 
@@ -3531,7 +3531,7 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_3(PyObject *SWIGUNUSEDP
     SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "StringFunction___call__" "', argument " "5"" of type '" "MDArray const &""'"); 
   }
   arg5 = reinterpret_cast< MDArray * >(argp5);
-  (arg1)->operator ()(*arg2,*arg3,(stk::mesh::Entity const &)*arg4,(MDArray const &)*arg5);
+  (arg1)->operator ()(*arg2,*arg3,(stk::mesh::Entity )*arg4,(MDArray const &)*arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -4213,7 +4213,7 @@ static swig_type_info _swigt__p_std__string = {"_p_std__string", "std::string *"
 static swig_type_info _swigt__p_stk__encore__StringFunction = {"_p_stk__encore__StringFunction", "stk::encore::StringFunction *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_stk__expreval__VariableMap__iterator = {"_p_stk__expreval__VariableMap__iterator", "stk::expreval::VariableMap::iterator *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_stk__mesh__Bucket = {"_p_stk__mesh__Bucket", "stk::mesh::Bucket *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_stk__mesh__Entity = {"_p_stk__mesh__Entity", "stk::mesh::Entity *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_stk__mesh__Entity = {"_p_stk__mesh__Entity", "stk::mesh::Entity ", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_Dimensions,

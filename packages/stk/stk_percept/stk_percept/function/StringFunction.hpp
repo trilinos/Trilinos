@@ -23,30 +23,30 @@ namespace stk
       //========================================================================================================================
       // high-level interface
 
-      StringFunction(const char *function_string, 
+      StringFunction(const char *function_string,
                      Name name = Name("noname"),
                      int domain_dimension = 3,
                      int codomain_dimension = 1,
                      unsigned integration_order = 0);
 
 
-      std::string 
+      std::string
       getFunctionString() { return m_func_string; }
 
-      void 
+      void
       set_gradient_strings(std::string gstring[3], int len);
 
-      void 
+      void
       set_gradient_strings(MDArrayString& gstring);
 
-      virtual Teuchos::RCP<Function > 
+      virtual Teuchos::RCP<Function >
       derivative(MDArrayString& deriv_spec);
 
       Teuchos::RCP<Function > gradient(int spatialDim=3);
 
       //========================================================================================================================
       // low-level interface
-      StringFunction(const char *function_string, 
+      StringFunction(const char *function_string,
                      Name name,
                      Dimensions domain_dimensions,
                      Dimensions codomain_dimensions,
@@ -60,7 +60,7 @@ namespace stk
       Teuchos::RCP<Function > derivative_test_fd(MDArrayString& deriv_spec, double eps=1.e-6);
 
       virtual void operator()(MDArray& in, MDArray& out, double time_value_optional=0.0);
-      virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Entity& element, const MDArray& parametric_coords, double time_value_optional=0.0);
+      virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Entity element, const MDArray& parametric_coords, double time_value_optional=0.0);
       virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Bucket& bucket, const MDArray& parametric_coords, double time_value_optional=0.0);
 
     private:
@@ -80,7 +80,7 @@ namespace stk
       //Map of function names to their evalutation values
       std::map<Function *, std::vector<double> > m_func_to_value;
 
-      const stk::mesh::Entity * m_element;
+      stk::mesh::Entity m_element;
       const stk::mesh::Bucket * m_bucket;
       MDArray m_parametric_coordinates;
       bool m_have_element;

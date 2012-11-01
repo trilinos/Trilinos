@@ -242,14 +242,14 @@ namespace stk
 
                     for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                       {
-                        stk::mesh::Entity& element = bucket[iElement];
+                        stk::mesh::Entity element = bucket[iElement];
 
                         const stk::mesh::PairIterRelation& elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
 
                         unsigned num_node = elem_nodes.size();
                         for (unsigned inode=0; inode < num_node; inode++)
                           {
-                            stk::mesh::Entity & node = *elem_nodes[ inode ].entity();
+                            stk::mesh::Entity node = elem_nodes[ inode ].entity();
                             //stk::mesh::EntityId nid = node.identifier();
 
                             double * const coord = stk::mesh::field_data( *coordField , node );
@@ -355,7 +355,7 @@ namespace stk
 
                   for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                     {
-                      stk::mesh::Entity& entity = bucket[iEntity];
+                      stk::mesh::Entity entity = bucket[iEntity];
 
                       double * const coord = stk::mesh::field_data( *coordField_1 , entity );
 
@@ -431,7 +431,7 @@ namespace stk
 
                   for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
                     {
-                      stk::mesh::Entity& node = bucket[iNode];
+                      stk::mesh::Entity node = bucket[iNode];
                       //stk::mesh::EntityId nid = node.identifier();
 
                       double * const coord = stk::mesh::field_data( *coordField , node );

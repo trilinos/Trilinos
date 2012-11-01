@@ -106,7 +106,7 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
   }
 
   int new_id =  size * (++id_base) +  rank;
-  stk::mesh::Entity & elem  =  bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+1 ,  add_part );
+  stk::mesh::Entity elem  =  bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+1 ,  add_part );
 
   bool use_memory_pool = false;
   stk::mesh::impl::EntityRepository e(use_memory_pool);
@@ -148,20 +148,20 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
   }
 
   // stk::mesh::impl::EntityRepository::EntityMap eMap;
-  stk::mesh::Entity & elem2  =  bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+8 ,  add_part );
-  stk::mesh::Entity & elem3  =  bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+9 ,  add_part );
-  stk::mesh::Entity & elem4  =  bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+10 ,  add_part );
+  stk::mesh::Entity elem2  =  bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+8 ,  add_part );
+  stk::mesh::Entity elem3  =  bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+9 ,  add_part );
+  stk::mesh::Entity elem4  =  bulk.declare_entity( MetaData::ELEMENT_RANK , new_id+10 ,  add_part );
 
   e.internal_create_entity( stk::mesh::EntityKey( MetaData::ELEMENT_RANK, new_id+8 ));
   e.internal_create_entity( stk::mesh::EntityKey( MetaData::ELEMENT_RANK, new_id+9 ));
   e.internal_create_entity( stk::mesh::EntityKey( MetaData::ELEMENT_RANK, new_id+10 ));
 
-  typedef std::map<EntityKey,Entity*> EntityMap;
+  typedef std::map<EntityKey,Entity> EntityMap;
   EntityMap entity_map_array;
 
-  entity_map_array[stk::mesh::EntityKey( MetaData::ELEMENT_RANK, new_id+8 )] = &elem2;
-  entity_map_array[stk::mesh::EntityKey( MetaData::ELEMENT_RANK, new_id+9 )] = &elem3;
-  entity_map_array[stk::mesh::EntityKey( MetaData::ELEMENT_RANK, new_id+10 )] = &elem4;
+  entity_map_array[stk::mesh::EntityKey( MetaData::ELEMENT_RANK, new_id+8 )] = elem2;
+  entity_map_array[stk::mesh::EntityKey( MetaData::ELEMENT_RANK, new_id+9 )] = elem3;
+  entity_map_array[stk::mesh::EntityKey( MetaData::ELEMENT_RANK, new_id+10 )] = elem4;
 
   //Coverage of destroy_later in EntityRepository.cpp
   Bucket *nil_bucket =  bulk.buckets(3)[0];

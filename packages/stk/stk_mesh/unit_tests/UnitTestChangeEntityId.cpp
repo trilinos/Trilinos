@@ -57,7 +57,7 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id )
   old_ids.reserve(num_elems);
   BOOST_FOREACH(Bucket * b, elems) {
     for (size_t i =0; i<b->size(); ++i) {
-      Entity & e = (*b)[i];
+      Entity e = (*b)[i];
       old_ids.push_back(e.identifier());
       mesh.change_entity_id( e.identifier()+num_elems, e);
     }
@@ -72,7 +72,7 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id )
   new_ids_minus_num_elems.reserve(num_elems);
   BOOST_FOREACH(Bucket * b, elems) {
     for (size_t i =0; i<b->size(); ++i) {
-      Entity & e = (*b)[i];
+      Entity e = (*b)[i];
       new_ids_minus_num_elems.push_back(e.identifier()-num_elems);
     }
   }

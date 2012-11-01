@@ -93,7 +93,7 @@ namespace stk
       //using GenericFunction::operator();
 
       // FIXME make protected
-      virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Entity& element, const MDArray& parametric_coords, double time_value_optional=0.0)
+      virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Entity element, const MDArray& parametric_coords, double time_value_optional=0.0)
       {
         EXCEPTWATCH;
         throw std::runtime_error("Not implemented");

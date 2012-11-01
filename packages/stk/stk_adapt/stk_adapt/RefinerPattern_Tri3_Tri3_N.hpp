@@ -16,7 +16,7 @@ namespace stk {
     typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tri_tuple_type;
 
     /// general refinement pattern
-    
+
     // the "-1" here signifies the number of elements created is not fixed, depends on the marking pattern
     template <>
     class RefinerPattern<shards::Triangle<3>, shards::Triangle<3>, -1 > : public URP<shards::Triangle<3>,shards::Triangle<3>  >
@@ -43,7 +43,7 @@ namespace stk {
 
       }
 
-      ~RefinerPattern() 
+      ~RefinerPattern()
       {
         if (m_edge_breaker) delete m_edge_breaker;
       }
@@ -68,7 +68,7 @@ namespace stk {
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
         needed_entities.resize(1);
-        needed_entities[0].first = m_eMesh.edge_rank();    
+        needed_entities[0].first = m_eMesh.edge_rank();
         needed_entities[0].second = 1u;
       }
 
@@ -81,7 +81,7 @@ namespace stk {
        *     of "elements" defined as local id's of nodes forming those elements, where {0,1,2} represent
        *     the original vertices and {3,4,5} are the edges:
        *
-       *                2  
+       *                2
        *                o
        *               / \
        *              /   \
@@ -89,12 +89,12 @@ namespace stk {
        *          5 *       * 4
        *           /         \
        *          /           \
-       *         /             \ 
+       *         /             \
        *        o-------*-------o
        *       0        3        1
        */
 
-      // Note: this will form the basis of triangulating faces in 3D, so it is generalized to a 
+      // Note: this will form the basis of triangulating faces in 3D, so it is generalized to a
       //   generic method.
       // Note: code below doesn't orient the face except for a rotation - we need a polarity flip check as
       //   well for the general, 3D face case
@@ -103,7 +103,7 @@ namespace stk {
 #define T_VERT_N(i) (i)
 #define T_EDGE_N(i) ((i)+3)
 
-      static void triangulate_face(PerceptMesh& eMesh, stk::mesh::Entity *elem_nodes[3], unsigned edge_marks[3], 
+      static void triangulate_face(PerceptMesh& eMesh, stk::mesh::Entity elem_nodes[3], unsigned edge_marks[3],
                                    vector<tri_tuple_type_local>& elems)
       {
         elems.resize(0);
@@ -141,7 +141,7 @@ namespace stk {
              *
              *   case 1: jedge == max length edge
              *
-             *                i2  
+             *                i2
              *                o
              *               /|\
              *              / | \
@@ -149,16 +149,16 @@ namespace stk {
              *            /   |   * jedgep
              *           /    |  / \
              *          /     | /   \
-             *         /      |/     \ 
+             *         /      |/     \
              *        o-------*-------o
              *       i0      jedge     i1
              *
              *
              *   case 2: jedge+1 == max length edge
              *
-             *                i2 
+             *                i2
              *                o
-             *               / \ 
+             *               / \
              *              /   \
              *             /     \
              *            /     _.* jedgep
@@ -190,41 +190,41 @@ namespace stk {
 
                 if (num_nodes_on_edge)
                   {
-                    stk::mesh::Entity * node_0 = elem_nodes[cell_topo_data->edge[iedge].node[0]];
-                    stk::mesh::Entity * node_1 = elem_nodes[cell_topo_data->edge[iedge].node[1]];
+                    stk::mesh::Entity node_0 = elem_nodes[cell_topo_data->edge[iedge].node[0]];
+                    stk::mesh::Entity node_1 = elem_nodes[cell_topo_data->edge[iedge].node[1]];
 
                     //bool reverse = false;
                     // ensure edge_len is computed identically, independent of edge orientation
-                    if (node_0->identifier() > node_1->identifier())
+                    if (node_0.identifier() > node_1.identifier())
                       {
                         //reverse = true;
-                        stk::mesh::Entity *node_temp = node_0;
+                        stk::mesh::Entity node_temp = node_0;
                         node_0 = node_1;
                         node_1 = node_temp;
                       }
 
-                    double * const coord_0 = stk::mesh::field_data( *coordField , *node_0 );
-                    double * const coord_1 = stk::mesh::field_data( *coordField , *node_1 );
+                    double * const coord_0 = stk::mesh::field_data( *coordField , node_0 );
+                    double * const coord_1 = stk::mesh::field_data( *coordField , node_1 );
                     double edge_len_squared = 0.0;
 
-                    edge_len_squared = 
+                    edge_len_squared =
                       (coord_0[0] - coord_1[0])*(coord_0[0] - coord_1[0])+
                       (coord_0[1] - coord_1[1])*(coord_0[1] - coord_1[1])+
-                      (eMesh.get_spatial_dim() == 2 ? 0 : 
+                      (eMesh.get_spatial_dim() == 2 ? 0 :
                        (coord_0[2] - coord_1[2])*(coord_0[2] - coord_1[2]) );
 
                     if (edge_len_squared > max_edge_length)
                       {
-                        id_diff_0 = node_0->identifier();
-                        id_diff_1 = node_1->identifier();
+                        id_diff_0 = node_0.identifier();
+                        id_diff_1 = node_1.identifier();
                         max_edge_length = edge_len_squared;
                         jedge_max_edge = iedge;
                       }
                     // intentional floating-point comparison (tie-break)
                     else if (edge_len_squared == max_edge_length)
                       {
-                        unsigned loc_id_diff_0 = node_0->identifier();
-                        unsigned loc_id_diff_1 = node_1->identifier();
+                        unsigned loc_id_diff_0 = node_0.identifier();
+                        unsigned loc_id_diff_1 = node_1.identifier();
                         bool lexical_less = false;
                         if (loc_id_diff_0 < id_diff_0)
                           {
@@ -243,13 +243,13 @@ namespace stk {
                   }
               }
 
-            if (jedge < 0 || jedge_max_edge < 0) 
+            if (jedge < 0 || jedge_max_edge < 0)
               {
                 std::cout << "jedge = " << jedge << " jedge_max_edge = " << jedge_max_edge << std::endl;
                 throw std::runtime_error("RefinerPattern_Tri3_Tri3_N jedge < 0");
               }
 
-            //stk::mesh::Entity & node0 = *elem_nodes[iii].entity();
+            //stk::mesh::Entity node0 = *elem_nodes[iii].entity();
             int i0 = cell_topo_data->edge[jedge].node[0];
             if (i0 != jedge)
               {
@@ -308,9 +308,9 @@ namespace stk {
 
 
 
-      void 
-      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+      void
+      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
+                        stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
         if (0 && eMesh.check_entity_duplicate(element))
@@ -332,7 +332,7 @@ namespace stk {
         std::vector<stk::mesh::Part*> add_parts;
         std::vector<stk::mesh::Part*> remove_parts;
         add_parts = m_toParts;
-        
+
         unsigned edge_marks[3] = {0,0,0};
         unsigned num_edges_marked=0;
         for (int iedge = 0; iedge < 3; iedge++)
@@ -347,13 +347,13 @@ namespace stk {
         if (num_edges_marked == 0)
           return;
 
-        stk::mesh::Entity *elem_nodes_local[3] = {0,0,0};
+        stk::mesh::Entity elem_nodes_local[3] = {stk::mesh::Entity()};
         for (int inode=0; inode < 3; inode++)
           {
             elem_nodes_local[inode] = elem_nodes[inode].entity();
           }
         triangulate_face(eMesh, elem_nodes_local, edge_marks, elems_local);
-        
+
 #define CV_EV(i) ( i < 3 ? VERT_N(i) : EDGE_N(i-3) )
 
         num_new_elems = elems_local.size();
@@ -365,11 +365,11 @@ namespace stk {
 
         //std::cout << "tmp RefinerPattern_Tri3_Tri3_N::num_edges_marked= " << num_edges_marked << std::endl;
 
-        //nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::MetaData::ELEMENT_RANK, 0u);
-        
+        //nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity>(&element), stk::mesh::MetaData::ELEMENT_RANK, 0u);
+
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
-            stk::mesh::Entity& newElement = *(*element_pool);
+            stk::mesh::Entity newElement = *element_pool;
 
             if (proc_rank_field)
               {
@@ -411,14 +411,14 @@ namespace stk {
                 std::cout << "===> newElement.ischild, is parent = " << eMesh.isChildElement(newElement) << " " << eMesh.isParentElement(newElement) << std::endl;
                 throw std::logic_error("RefinerPattern_Tri3_Tri3_N::createNewElements bad duplicate element");
               }
-            
+
             element_pool++;
 
           }
 
-      
+
       }
-      
+
     };
 
   }

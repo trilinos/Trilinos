@@ -14,7 +14,7 @@
 
 #include <stk_mesh/fixtures/SelectorFixture.hpp>
 
-// Borrow a lot from UnitTestBucketFamily.  Bulk up the SelectorFixture to have parts
+// Borrow a lot from UnitTestSelector.  Bulk up the SelectorFixture to have parts
 // with enough entities so that each partition (bucket family) comprises multiple
 // buckets.
 
@@ -23,11 +23,11 @@ namespace {
 using stk::mesh::fixtures::SelectorFixture ;
 
 void initialize(SelectorFixture& fixture,
-                std::vector<stk::mesh::Entity *> &ec1_arg,
-                std::vector<stk::mesh::Entity *> &ec2_arg,
-                std::vector<stk::mesh::Entity *> &ec3_arg,
-                std::vector<stk::mesh::Entity *> &ec4_arg,
-                std::vector<stk::mesh::Entity *> &ec5_arg
+                std::vector<stk::mesh::Entity> &ec1_arg,
+                std::vector<stk::mesh::Entity> &ec2_arg,
+                std::vector<stk::mesh::Entity> &ec3_arg,
+                std::vector<stk::mesh::Entity> &ec4_arg,
+                std::vector<stk::mesh::Entity> &ec5_arg
                 )
 {
   fixture.m_meta_data.commit();
@@ -35,10 +35,10 @@ void initialize(SelectorFixture& fixture,
   fixture.generate_mesh();
 
   const size_t bucket_size = 1000;  // Default value for BucketRepository constructor.
-  const size_t lb_num_buckets_per_family = 3;
+  const size_t lb_num_buckets_per_partition = 3;
   stk::mesh::EntityRank ent_type = 0; // rank
 
-  const size_t bf_size = bucket_size * lb_num_buckets_per_family;
+  const size_t bf_size = bucket_size * lb_num_buckets_per_partition;
   stk::mesh::EntityId ent_id = 1000;
   std::vector<stk::mesh::Part*> partMembership;
 
@@ -47,7 +47,7 @@ void initialize(SelectorFixture& fixture,
   partMembership.push_back( & fixture.m_partA );
   for (size_t i = 1; i < bf_size; ++i)
   {
-      stk::mesh::Entity *ent = & fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+      stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
       ec1_arg.push_back(ent);
       ++ent_id;
   }
@@ -58,7 +58,7 @@ void initialize(SelectorFixture& fixture,
   partMembership.push_back( & fixture.m_partB );
   for (size_t i = 1; i < bf_size; ++i)
   {
-      stk::mesh::Entity *ent = & fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+      stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
       ec2_arg.push_back(ent);
       ++ent_id;
   }
@@ -69,7 +69,7 @@ void initialize(SelectorFixture& fixture,
   partMembership.push_back( & fixture.m_partC );
   for (size_t i = 1; i < bf_size; ++i)
   {
-      stk::mesh::Entity *ent = & fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+      stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
       ec3_arg.push_back(ent);
       ++ent_id;
   }
@@ -79,7 +79,7 @@ void initialize(SelectorFixture& fixture,
   partMembership.push_back( & fixture.m_partC );
   for (size_t i = 1; i < bf_size; ++i)
   {
-      stk::mesh::Entity *ent = & fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+      stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
       ec4_arg.push_back(ent);
       ++ent_id;
   }
@@ -88,7 +88,7 @@ void initialize(SelectorFixture& fixture,
   partMembership.clear();
   for (size_t i = 1; i < bf_size; ++i)
   {
-      stk::mesh::Entity *ent = & fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+      stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
       ec5_arg.push_back(ent);
       ++ent_id;
   }
@@ -96,8 +96,8 @@ void initialize(SelectorFixture& fixture,
   STKUNIT_ASSERT(fixture.m_bulk_data.modification_end());
 }
 
-/** \defgroup stk_mesh_bucket_family_unit "stk::mesh::BucketFamily Unit Testing"
-  * \addtogroup stk_mesh_bucket_family_unit
+/** \defgroup stk_mesh_partition_unit "stk::mesh::Partition Unit Testing"
+  * \addtogroup stk_mesh_partition_unit
   * \{
   *
   * Selector unit testing environment. <br>
@@ -131,13 +131,13 @@ void initialize(SelectorFixture& fixture,
 /** \brief Verify we can construct the unit testing fixture.
  *
  * */
-STKUNIT_UNIT_TEST( UnitTestBucketFamily, UTBF_testInitialize )
+STKUNIT_UNIT_TEST( UnitTestPartition, UTBF_testInitialize )
 {
-    std::vector<stk::mesh::Entity *> ec1;
-    std::vector<stk::mesh::Entity *> ec2;
-    std::vector<stk::mesh::Entity *> ec3;
-    std::vector<stk::mesh::Entity *> ec4;
-    std::vector<stk::mesh::Entity *> ec5;
+    std::vector<stk::mesh::Entity> ec1;
+    std::vector<stk::mesh::Entity> ec2;
+    std::vector<stk::mesh::Entity> ec3;
+    std::vector<stk::mesh::Entity> ec4;
+    std::vector<stk::mesh::Entity> ec5;
 
     SelectorFixture fix;
 
@@ -199,13 +199,13 @@ STKUNIT_UNIT_TEST( UnitTestBucketFamily, UTBF_testInitialize )
 }
 
 
-STKUNIT_UNIT_TEST( UnitTestBucketFamily, UTBF_testForReal)
+STKUNIT_UNIT_TEST( UnitTestPartition, UTBF_testForReal)
 {
-    std::vector<stk::mesh::Entity *> ec1;
-    std::vector<stk::mesh::Entity *> ec2;
-    std::vector<stk::mesh::Entity *> ec3;
-    std::vector<stk::mesh::Entity *> ec4;
-    std::vector<stk::mesh::Entity *> ec5;
+    std::vector<stk::mesh::Entity> ec1;
+    std::vector<stk::mesh::Entity> ec2;
+    std::vector<stk::mesh::Entity> ec3;
+    std::vector<stk::mesh::Entity> ec4;
+    std::vector<stk::mesh::Entity> ec5;
 
     SelectorFixture fix;
 
@@ -215,12 +215,12 @@ STKUNIT_UNIT_TEST( UnitTestBucketFamily, UTBF_testForReal)
     }
     initialize(fix, ec1, ec2, ec3, ec4, ec5);
 
-    stk::mesh::impl::BucketRepository &bucket_repository = stk::mesh::impl::BucketFamily::getRepository(fix.m_bulk_data);
-    bucket_repository.update_bucket_families();
+    stk::mesh::impl::BucketRepository &bucket_repository = stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
+    bucket_repository.update_partitions();
 
     // Correct means:
-    //   - A bucket family for each partition
-    //   - Each bucket family contains the right number of entities (didn't lose any buckets!)
+    //   - A partition for each bucket
+    //   - Each partition contains the right number of buckets (didn't lose any buckets!)
 
     stk::mesh::Selector selector_A_only = fix.m_partA & !fix.m_partB;
     stk::mesh::Selector selector_A_and_B = fix.m_partA & fix.m_partB;
@@ -237,22 +237,22 @@ STKUNIT_UNIT_TEST( UnitTestBucketFamily, UTBF_testForReal)
 
     std::vector<bool> found_it(5, false);
 
-    std::vector<stk::mesh::impl::BucketFamily *> bucket_families = bucket_repository.get_bucket_families(0);
-    size_t num_families = bucket_families.size();
-    STKUNIT_EXPECT_EQ(num_families, 5u);
+    std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(0);
+    size_t num_partitions = partitions.size();
+    STKUNIT_EXPECT_EQ(num_partitions, 5u);
 
-    for (size_t i = 0; i < num_families; ++i)
+    for (size_t i = 0; i < num_partitions; ++i)
     {
         // size_t count = 0;
-        stk::mesh::impl::BucketFamily &bucket_family = *bucket_families[i];
-        const std::vector<unsigned> &family_key = bucket_family.get_legacy_partition_id();
-        for (std::vector<stk::mesh::Bucket *>::iterator bkt= bucket_family.begin(); bkt != bucket_family.end(); ++bkt)
+        stk::mesh::impl::Partition &partition = *partitions[i];
+        const std::vector<unsigned> &partition_key = partition.get_legacy_partition_id();
+        for (std::vector<stk::mesh::Bucket *>::iterator bkt= partition.begin(); bkt != partition.end(); ++bkt)
         {
-            STKUNIT_EXPECT_EQ(bucket_families[i], (*bkt)->getBucketFamily() );
+            STKUNIT_EXPECT_EQ(partitions[i], (*bkt)->getPartition() );
             const unsigned *bucket_key = (*bkt)->key();
-            for (size_t k = 0; k < family_key.size(); ++k)
+            for (size_t k = 0; k < partition_key.size(); ++k)
             {
-                STKUNIT_EXPECT_EQ(family_key[k], bucket_key[k]);
+                STKUNIT_EXPECT_EQ(partition_key[k], bucket_key[k]);
             }
         }
     }

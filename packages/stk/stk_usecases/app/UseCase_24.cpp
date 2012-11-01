@@ -329,7 +329,7 @@ void use_case_24_boundary_algorithm(
 
     for ( int i = 0 ; i < number ; ++i ) {
 
-      mesh::Entity & face = faceBucket[i] ;
+      mesh::Entity face = faceBucket[i] ;
 
       const mesh::PairIterRelation face_elem = face.relations( element_rank );
       const mesh::PairIterRelation face_nodes = face.relations( mesh::MetaData::NODE_RANK);
@@ -340,7 +340,7 @@ void use_case_24_boundary_algorithm(
       }
       else {
 
-	mesh::Entity &elem = *face_elem[0].entity();
+	mesh::Entity elem = face_elem[0].entity();
 
 	//=======================================
 	// populate face bip data with values
@@ -376,7 +376,7 @@ void use_case_24_boundary_algorithm(
 
 	for ( unsigned int k = 0; k < face_nodes.size(); ++k )
 	{
-	  mesh::Entity &node = *face_nodes[k].entity();
+	  mesh::Entity node = face_nodes[k].entity();
 
 	  double * const pNode = field_data( pressure ,node );
 	  *pNode = 1.0;
@@ -432,7 +432,7 @@ void use_case_24_boundary_algorithm(
 	// define some arrays for bip data
 	for ( unsigned int k = 0; k < elem_nodes.size(); ++k )
 	{
-	  mesh::Entity &node = *elem_nodes[k].entity();
+	  mesh::Entity node = elem_nodes[k].entity();
 
 	  double * const pNode = field_data( pressure ,node );
 	  VectorArray v_face_node_array(velocity, node);

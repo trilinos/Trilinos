@@ -195,29 +195,29 @@ bool use_case_1_driver( MPI_Comm comm ,
           << dof_mapper.get_fei_VectorSpace()->getGlobalNumIndices() << std::endl;
     }
 
-    std::vector<stk::mesh::Entity*> nodes;
+    std::vector<stk::mesh::Entity> nodes;
     stk::mesh::get_entities(mesh_bulk_data, stk::mesh::MetaData::NODE_RANK, nodes);
 
-    std::vector<stk::mesh::Entity*> elems;
+    std::vector<stk::mesh::Entity> elems;
     stk::mesh::get_entities(mesh_bulk_data, element_rank, elems);
 
     int global_index = 0;
 
     for(size_t i=0; i<nodes.size(); i+=1000) {
       //is the i-th node in the locally-used part? If not, continue.
-      if (! select_used( nodes[i]->bucket())) continue;
+      if (! select_used( nodes[i].bucket())) continue;
 
-      global_index = dof_mapper.get_global_index(stk::mesh::MetaData::NODE_RANK, nodes[i]->identifier(), displacements_field);
-      std::cout << "Proc " << myProc << ", global index for node " << nodes[i]->identifier()
+      global_index = dof_mapper.get_global_index(stk::mesh::MetaData::NODE_RANK, nodes[i].identifier(), displacements_field);
+      std::cout << "Proc " << myProc << ", global index for node " << nodes[i].identifier()
         << ", field '"<<displacements_field.name()<<"' is: " << global_index << std::endl;
     }
 
     for(size_t i=0; i<elems.size(); i+=1000) {
       //is the i-th elem in the locally-owned part? If not, continue.
-      if (!elems[i]->bucket().member(fem_meta.locally_owned_part())) continue;
+      if (!elems[i].bucket().member(fem_meta.locally_owned_part())) continue;
 
-      global_index = dof_mapper.get_global_index(element_rank, elems[i]->identifier(), pressure_field);
-      std::cout << "Proc " << myProc << ", global index for element " << elems[i]->identifier()
+      global_index = dof_mapper.get_global_index(element_rank, elems[i].identifier(), pressure_field);
+      std::cout << "Proc " << myProc << ", global index for element " << elems[i].identifier()
         << ", field '"<<pressure_field.name()<<"' is: " << global_index << std::endl;
     }
 
@@ -378,9 +378,9 @@ void use_case_1_generate_mesh(
     for ( unsigned i = 0 ; i < node_map.size() ; ++i ) {
       const unsigned i3 = i * 3 ;
 
-      stk::mesh::Entity * const node = mesh.get_entity( stk::mesh::MetaData::NODE_RANK , node_map[i] );
+      stk::mesh::Entity const node = mesh.get_entity( stk::mesh::MetaData::NODE_RANK , node_map[i] );
 
-      if ( NULL == node ) {
+      if ( !node.is_valid() ) {
         std::ostringstream msg ;
         msg << "  P:" << mesh.parallel_rank()
             << " ERROR, Node not found: "
@@ -388,7 +388,7 @@ void use_case_1_generate_mesh(
         throw std::runtime_error( msg.str() );
       }
 
-      double * const data = field_data( node_coord , *node );
+      double * const data = field_data( node_coord , node );
       data[0] = node_coordinates[ i3 + 0 ];
       data[1] = node_coordinates[ i3 + 1 ];
       data[2] = node_coordinates[ i3 + 2 ];

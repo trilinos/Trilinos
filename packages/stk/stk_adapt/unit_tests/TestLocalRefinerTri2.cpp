@@ -26,16 +26,16 @@ namespace stk {
   namespace adapt {
 
 
-    TestLocalRefinerTri2::TestLocalRefinerTri2(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field, bool diagonals) : 
+    TestLocalRefinerTri2::TestLocalRefinerTri2(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field, bool diagonals) :
       Refiner(eMesh, bp, proc_rank_field), m_diagonals(diagonals)
     {
     }
 
     void TestLocalRefinerTri2::
-    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
+    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element, vector<NeededEntityType>& needed_entity_ranks)
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-                
+
       CellTopology cell_topo(cell_topo_data);
       const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
 
@@ -80,8 +80,8 @@ namespace stk {
 
               if (needed_entity_rank == m_eMesh.edge_rank())
                 {
-                  stk::mesh::Entity & node0 = *elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
-                  stk::mesh::Entity & node1 = *elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
+                  stk::mesh::Entity node0 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
+                  stk::mesh::Entity node1 = elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
                   double * const coord0 = stk::mesh::field_data( *coordField , node0 );
                   double * const coord1 = stk::mesh::field_data( *coordField , node1 );
 

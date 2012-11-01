@@ -369,7 +369,7 @@ namespace stk
 
               for (unsigned iCell = 0; iCell < numCells; iCell++)
                 {
-                  mesh::Entity & elem = bucket[iCell];
+                  mesh::Entity elem = bucket[iCell];
                   double min_edge_length = elem_min_edge_length[iCell];
                   double max_edge_length = elem_max_edge_length[iCell];
                   double max_edge_lengthNotZero = (fabs(max_edge_length) < 1.e-20? 1.e-20 : max_edge_length);

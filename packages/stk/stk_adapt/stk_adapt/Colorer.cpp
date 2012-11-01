@@ -46,11 +46,11 @@ namespace stk {
     color(percept::PerceptMesh& eMesh, unsigned * elementType,  stk::mesh::PartVector* fromParts, stk::mesh::FieldBase *element_color_field)
     {
       const unsigned MAX_COLORS=1000;
-      vector< ColorerNodeSetType > node_colors(MAX_COLORS+1); 
-      ColorerElementSetType all_elements; 
+      vector< ColorerNodeSetType > node_colors(MAX_COLORS+1);
+      ColorerElementSetType all_elements;
 
       mesh::Selector selector(eMesh.get_fem_meta_data()->universal_part());
-      if (fromParts) 
+      if (fromParts)
         {
           if (0)
             {
@@ -71,7 +71,7 @@ namespace stk {
       unsigned num_max_colors = MAX_COLORS;
       if (m_noColoring)
         num_max_colors = 1;
-      
+
       m_element_colors = vector< ColorerSetType > (num_max_colors+1);
 
       for (unsigned icolor = 0; icolor < num_max_colors; icolor++)
@@ -80,9 +80,9 @@ namespace stk {
           for (unsigned irank = 0; irank < m_entityRanks.size(); irank++)
             {
               const vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( m_entityRanks[irank] );
-              for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+              for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
                 {
-                  if (selector(**k))  
+                  if (selector(**k))
                   {
                     stk::mesh::Bucket & bucket = **k ;
 
@@ -96,7 +96,7 @@ namespace stk {
 
                     if (0 && doThisBucket)
                       {
-                        std::cout << "tmp color = " << icolor << " bucket topo name= " << topo.getName() << " key= " << topo.getKey() 
+                        std::cout << "tmp color = " << icolor << " bucket topo name= " << topo.getName() << " key= " << topo.getKey()
                                   << " elementType= " << (elementType?  *elementType : 0) << " doThisBucket= " << doThisBucket << std::endl;
                       }
 
@@ -104,17 +104,17 @@ namespace stk {
                       {
                         const unsigned num_elements_in_bucket = bucket.size();
                         nelem += num_elements_in_bucket;
-                
+
                         for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                           {
-                            stk::mesh::Entity& element = bucket[iElement];
+                            stk::mesh::Entity element = bucket[iElement];
 
                             if (0)
-                              std::cout << "tmp color = " << icolor << " bucket topo name= " << topo.getName() << " key= " << topo.getKey() 
+                              std::cout << "tmp color = " << icolor << " bucket topo name= " << topo.getName() << " key= " << topo.getKey()
                                         << " elementId = " << element.identifier() << " element = " << element << std::endl;
 
                             stk::mesh::EntityId elem_id = element.identifier();
-                            
+
                             if (!m_noColoring && contains(all_elements, elem_id))
                               continue;
 
@@ -124,12 +124,12 @@ namespace stk {
 
                             if (!m_noColoring)
                               {
-                                const stk::mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );  
-                                num_node = elem_nodes.size(); 
+                                const stk::mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::MetaData::NODE_RANK );
+                                num_node = elem_nodes.size();
                                 node_ids.reserve(num_node);
                                 for (unsigned inode=0; inode < num_node; inode++)
                                   {
-                                    stk::mesh::Entity & node = *elem_nodes[ inode ].entity();
+                                    stk::mesh::Entity node = elem_nodes[ inode ].entity();
                                     stk::mesh::EntityId nid = node.identifier();
                                     node_ids[inode] = nid;
                                     if (contains(node_colors[icolor], nid))
@@ -148,9 +148,9 @@ namespace stk {
                                     fdata[0] = double(icolor);
                                   }
 #if STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
-                                m_element_colors[icolor].push_back(&element);
+                                m_element_colors[icolor].push_back(element);
 #else
-                                m_element_colors[icolor].insert(&element);
+                                m_element_colors[icolor].insert(element);
 #endif
                                 if (!m_noColoring)
                                   {

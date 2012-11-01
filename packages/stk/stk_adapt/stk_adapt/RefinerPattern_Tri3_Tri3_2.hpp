@@ -72,7 +72,7 @@ namespace stk {
 
       void
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+                        stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
         const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
@@ -117,12 +117,12 @@ namespace stk {
               }
           }
 
-        //nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), stk::mesh::MetaData::ELEMENT_RANK, 0u);
+        //nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity>(&element), stk::mesh::MetaData::ELEMENT_RANK, 0u);
 
 
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
-            stk::mesh::Entity& newElement = *(*element_pool);
+            stk::mesh::Entity newElement = *element_pool;
             //std::cout << "tmp newElement id = " << newElement.identifier() << std::endl;
 
             if (proc_rank_field)

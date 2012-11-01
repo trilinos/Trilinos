@@ -495,8 +495,8 @@ namespace stk
       public:
         typedef MDArray BaseType;
         FieldValues(IM& im);
-        void operator()(const stk::mesh::Entity& element, MDArray& transformed_basis_values, mesh::FieldBase* field);
-        void operator()(const stk::mesh::Entity& element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values);
+        void operator()(const stk::mesh::Entity element, MDArray& transformed_basis_values, mesh::FieldBase* field);
+        void operator()(const stk::mesh::Entity element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values);
       };
 
       // FIXME - change to shards array
@@ -513,7 +513,7 @@ namespace stk
 
         using BaseType::operator();
 
-        void operator()(const stk::mesh::Entity& element, const MDArray& parametric_coordinates);
+        void operator()(const stk::mesh::Entity element, const MDArray& parametric_coordinates);
         void operator()(const stk::mesh::Bucket& bucket, const MDArray& parametric_coordinates);
         
       };
@@ -528,7 +528,7 @@ namespace stk
 
       void setupCubature(CellTopology& cellTopo, unsigned cubDegree=2);
 
-      static void isInElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates, unsigned& found_it, const mesh::Entity& element,
+      static void isInElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates, unsigned& found_it, const mesh::Entity element,
                               const mesh::BulkData& bulkData);
       static void more_template_instantiations();
 

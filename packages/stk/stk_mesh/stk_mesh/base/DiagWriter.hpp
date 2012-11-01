@@ -65,7 +65,7 @@ public:
 
 stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Part& part);
 
-stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Entity& entity);
+stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Entity entity);
 
 stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityKey& key);
 

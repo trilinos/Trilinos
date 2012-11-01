@@ -298,7 +298,7 @@ stk::percept::<a href="#BeamFixture">BeamFixture</a>::~<a href="#BeamFixture">Be
 
 <dl><dt><a name="Bucket-fast_field_data_location"><strong>fast_field_data_location</strong></a>(self, *args)</dt><dd><tt><a href="#Bucket-fast_field_data_location">fast_field_data_location</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;unsigned&nbsp;int&nbsp;ordinal)&nbsp;-&gt;&nbsp;unsigned&nbsp;char</tt></dd></dl>
 
-<dl><dt><a name="Bucket-field_data_location"><strong>field_data_location</strong></a>(self, *args)</dt><dd><tt><a href="#Bucket-field_data_location">field_data_location</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;Entity&nbsp;entity)&nbsp;-&gt;&nbsp;unsigned&nbsp;char<br>
+<dl><dt><a name="Bucket-field_data_location"><strong>field_data_location</strong></a>(self, *args)</dt><dd><tt><a href="#Bucket-field_data_location">field_data_location</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;Entity nbsp;entity)&nbsp;-&gt;&nbsp;unsigned&nbsp;char<br>
 <a href="#Bucket-field_data_location">field_data_location</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;unsigned&nbsp;int&nbsp;ordinal)&nbsp;-&gt;&nbsp;unsigned&nbsp;char<br>
 <a href="#Bucket-field_data_location">field_data_location</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field)&nbsp;-&gt;&nbsp;unsigned&nbsp;char</tt></dd></dl>
 
@@ -397,30 +397,30 @@ Data and other attributes defined here:<br>
 
 <dl><dt><a name="BulkData-buckets"><strong>buckets</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-buckets">buckets</a>(self,&nbsp;EntityRank&nbsp;rank)&nbsp;-&gt;&nbsp;std::vector&lt;(p.stk::mesh::<a href="#Bucket">Bucket</a>,std::allocator&lt;(p.stk::mesh::<a href="#Bucket">Bucket</a>)&gt;)&gt;</tt></dd></dl>
 
-<dl><dt><a name="BulkData-change_entity_id"><strong>change_entity_id</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-change_entity_id">change_entity_id</a>(self,&nbsp;EntityId&nbsp;id,&nbsp;Entity&nbsp;entity)</tt></dd></dl>
+<dl><dt><a name="BulkData-change_entity_id"><strong>change_entity_id</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-change_entity_id">change_entity_id</a>(self,&nbsp;EntityId&nbsp;id,&nbsp;Entity nbsp;entity)</tt></dd></dl>
 
 <dl><dt><a name="BulkData-change_entity_owner"><strong>change_entity_owner</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-change_entity_owner">change_entity_owner</a>(self,&nbsp;std::vector&lt;(stk::mesh::EntityProc,std::allocator&lt;(stk::mesh::EntityProc)&gt;)&gt;&nbsp;arg_change)</tt></dd></dl>
 
-<dl><dt><a name="BulkData-change_entity_parts"><strong>change_entity_parts</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-change_entity_parts">change_entity_parts</a>(self,&nbsp;Entity&nbsp;entity,&nbsp;PartVector&nbsp;add_parts,&nbsp;PartVector&nbsp;remove_parts&nbsp;=&nbsp;stk::mesh::PartVector())<br>
-<a href="#BulkData-change_entity_parts">change_entity_parts</a>(self,&nbsp;Entity&nbsp;entity,&nbsp;PartVector&nbsp;add_parts)</tt></dd></dl>
+<dl><dt><a name="BulkData-change_entity_parts"><strong>change_entity_parts</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-change_entity_parts">change_entity_parts</a>(self,&nbsp;Entity nbsp;entity,&nbsp;PartVector&nbsp;add_parts,&nbsp;PartVector&nbsp;remove_parts&nbsp;=&nbsp;stk::mesh::PartVector())<br>
+<a href="#BulkData-change_entity_parts">change_entity_parts</a>(self,&nbsp;Entity nbsp;entity,&nbsp;PartVector&nbsp;add_parts)</tt></dd></dl>
 
 <dl><dt><a name="BulkData-change_ghosting"><strong>change_ghosting</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-change_ghosting">change_ghosting</a>(self,&nbsp;Ghosting&nbsp;ghosts,&nbsp;std::vector&lt;(stk::mesh::EntityProc,std::allocator&lt;(stk::mesh::EntityProc)&gt;)&gt;&nbsp;add_send,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;std::vector&lt;(p.stk::mesh::Entity,std::allocator&lt;(p.stk::mesh::Entity)&gt;)&gt;&nbsp;remove_receive)</tt></dd></dl>
 
-<dl><dt><a name="BulkData-copy_entity_fields"><strong>copy_entity_fields</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-copy_entity_fields">copy_entity_fields</a>(self,&nbsp;Entity&nbsp;src,&nbsp;Entity&nbsp;dest)</tt></dd></dl>
+<dl><dt><a name="BulkData-copy_entity_fields"><strong>copy_entity_fields</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-copy_entity_fields">copy_entity_fields</a>(self,&nbsp;Entity nbsp;src,&nbsp;Entity nbsp;dest)</tt></dd></dl>
 
 <dl><dt><a name="BulkData-create_ghosting"><strong>create_ghosting</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-create_ghosting">create_ghosting</a>(self,&nbsp;string&nbsp;name)&nbsp;-&gt;&nbsp;Ghosting</tt></dd></dl>
 
 <dl><dt><a name="BulkData-declare_entity"><strong>declare_entity</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-declare_entity">declare_entity</a>(self,&nbsp;EntityRank&nbsp;ent_rank,&nbsp;EntityId&nbsp;ent_id,&nbsp;PartVector&nbsp;parts)&nbsp;-&gt;&nbsp;Entity</tt></dd></dl>
 
-<dl><dt><a name="BulkData-declare_relation"><strong>declare_relation</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-declare_relation">declare_relation</a>(self,&nbsp;Entity&nbsp;e_from,&nbsp;Entity&nbsp;e_to,&nbsp;RelationIdentifier&nbsp;local_id)<br>
-<a href="#BulkData-declare_relation">declare_relation</a>(self,&nbsp;Entity&nbsp;entity,&nbsp;std::vector&lt;(stk::mesh::Relation,std::allocator&lt;(stk::mesh::Relation)&gt;)&gt;&nbsp;rel)</tt></dd></dl>
+<dl><dt><a name="BulkData-declare_relation"><strong>declare_relation</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-declare_relation">declare_relation</a>(self,&nbsp;Entity nbsp;e_from,&nbsp;Entity nbsp;e_to,&nbsp;RelationIdentifier&nbsp;local_id)<br>
+<a href="#BulkData-declare_relation">declare_relation</a>(self,&nbsp;Entity nbsp;entity,&nbsp;std::vector&lt;(stk::mesh::Relation,std::allocator&lt;(stk::mesh::Relation)&gt;)&gt;&nbsp;rel)</tt></dd></dl>
 
 <dl><dt><a name="BulkData-destroy_all_ghosting"><strong>destroy_all_ghosting</strong></a>(self)</dt><dd><tt><a href="#BulkData-destroy_all_ghosting">destroy_all_ghosting</a>(self)</tt></dd></dl>
 
-<dl><dt><a name="BulkData-destroy_entity"><strong>destroy_entity</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-destroy_entity">destroy_entity</a>(self,&nbsp;Entity&nbsp;entity)&nbsp;-&gt;&nbsp;bool</tt></dd></dl>
+<dl><dt><a name="BulkData-destroy_entity"><strong>destroy_entity</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-destroy_entity">destroy_entity</a>(self,&nbsp;Entity nbsp;entity)&nbsp;-&gt;&nbsp;bool</tt></dd></dl>
 
-<dl><dt><a name="BulkData-destroy_relation"><strong>destroy_relation</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-destroy_relation">destroy_relation</a>(self,&nbsp;Entity&nbsp;e_from,&nbsp;Entity&nbsp;e_to,&nbsp;RelationIdentifier&nbsp;local_id)&nbsp;-&gt;&nbsp;bool</tt></dd></dl>
+<dl><dt><a name="BulkData-destroy_relation"><strong>destroy_relation</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-destroy_relation">destroy_relation</a>(self,&nbsp;Entity nbsp;e_from,&nbsp;Entity nbsp;e_to,&nbsp;RelationIdentifier&nbsp;local_id)&nbsp;-&gt;&nbsp;bool</tt></dd></dl>
 
 <dl><dt><a name="BulkData-entity_comm"><strong>entity_comm</strong></a>(self, *args)</dt><dd><tt><a href="#BulkData-entity_comm">entity_comm</a>(self)&nbsp;-&gt;&nbsp;std::vector&lt;(p.stk::mesh::Entity,std::allocator&lt;(p.stk::mesh::Entity)&gt;)&gt;<br>
 <a href="#BulkData-entity_comm">entity_comm</a>(self,&nbsp;EntityKey&nbsp;key)&nbsp;-&gt;&nbsp;PairIterEntityComm<br>
@@ -474,7 +474,7 @@ Data and other attributes defined here:<br>
 <hr>
 Static methods defined here:<br>
 <dl><dt><a name="BulkData-get"><strong>get</strong></a>(*args)</dt><dd><tt><a href="#BulkData-get">get</a>(<a href="#Bucket">Bucket</a>&nbsp;bucket)&nbsp;-&gt;&nbsp;<a href="#BulkData">BulkData</a><br>
-<a href="#BulkData-get">get</a>(Entity&nbsp;entity)&nbsp;-&gt;&nbsp;<a href="#BulkData">BulkData</a><br>
+<a href="#BulkData-get">get</a>(Entity nbsp;entity)&nbsp;-&gt;&nbsp;<a href="#BulkData">BulkData</a><br>
 <a href="#BulkData-get">get</a>(Ghosting&nbsp;ghost)&nbsp;-&gt;&nbsp;<a href="#BulkData">BulkData</a></tt></dd></dl>
 
 <hr>
@@ -1102,7 +1102,7 @@ Static methods defined here:<br>
 <a href="#FEMMetaData-get">get</a>(PropertyBase&nbsp;property)&nbsp;-&gt;&nbsp;<a href="#FEMMetaData">FEMMetaData</a><br>
 <a href="#FEMMetaData-get">get</a>(<a href="#BulkData">BulkData</a>&nbsp;bulk_data)&nbsp;-&gt;&nbsp;<a href="#FEMMetaData">FEMMetaData</a><br>
 <a href="#FEMMetaData-get">get</a>(<a href="#Bucket">Bucket</a>&nbsp;bucket)&nbsp;-&gt;&nbsp;<a href="#FEMMetaData">FEMMetaData</a><br>
-<a href="#FEMMetaData-get">get</a>(Entity&nbsp;entity)&nbsp;-&gt;&nbsp;<a href="#FEMMetaData">FEMMetaData</a><br>
+<a href="#FEMMetaData-get">get</a>(Entity nbsp;entity)&nbsp;-&gt;&nbsp;<a href="#FEMMetaData">FEMMetaData</a><br>
 <a href="#FEMMetaData-get">get</a>(Ghosting&nbsp;ghost)&nbsp;-&gt;&nbsp;<a href="#FEMMetaData">FEMMetaData</a></tt></dd></dl>
 
 <dl><dt><a name="FEMMetaData-get_meta_data"><strong>get_meta_data</strong></a>(*args)</dt><dd><tt><a href="#FEMMetaData-get_meta_data">get_meta_data</a>(<a href="#FEMMetaData">FEMMetaData</a>&nbsp;fem_meta)&nbsp;-&gt;&nbsp;MetaData</tt></dd></dl>
@@ -3050,7 +3050,7 @@ return&nbsp;the&nbsp;number&nbsp;of&nbsp;steps&nbsp;in&nbsp;the&nbsp;database</t
 <a href="#PerceptMesh-get_element">get_element</a>(self,&nbsp;double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;z&nbsp;=&nbsp;0)&nbsp;-&gt;&nbsp;Entity<br>
 <a href="#PerceptMesh-get_element">get_element</a>(self,&nbsp;double&nbsp;x,&nbsp;double&nbsp;y)&nbsp;-&gt;&nbsp;Entity<br>
 &nbsp;<br>
-stk::mesh::Entity&nbsp;*&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_element">get_element</a>(double&nbsp;x,<br>
+stk::mesh::Entity nbsp;*&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_element">get_element</a>(double&nbsp;x,<br>
 double&nbsp;y,&nbsp;double&nbsp;z=0,&nbsp;double&nbsp;t=0)<br>
 &nbsp;<br>
 find&nbsp;and&nbsp;return&nbsp;pointer&nbsp;to&nbsp;element&nbsp;that&nbsp;contains&nbsp;given&nbsp;point&nbsp;-&nbsp;in<br>
@@ -3061,7 +3061,7 @@ find&nbsp;element&nbsp;that&nbsp;contains&nbsp;or&nbsp;is&nbsp;closest&nbsp;to&n
 
 <dl><dt><a name="PerceptMesh-get_entity"><strong>get_entity</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-get_entity">get_entity</a>(self,&nbsp;EntityRank&nbsp;rank,&nbsp;EntityId&nbsp;id)&nbsp;-&gt;&nbsp;Entity<br>
 &nbsp;<br>
-stk::mesh::Entity*<br>
+stk::mesh::Entity <br>
 stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_entity">get_entity</a>(mesh::EntityRank&nbsp;rank,&nbsp;const<br>
 mesh::EntityId&nbsp;id)<br>
 &nbsp;<br>
@@ -3079,11 +3079,11 @@ get&nbsp;the&nbsp;low-level&nbsp;meta&nbsp;data&nbsp;pointer&nbsp;from&nbsp;stk_
 stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_field">get_field</a>(const<br>
 std::string&nbsp;&amp;name)</tt></dd></dl>
 
-<dl><dt><a name="PerceptMesh-get_field_data"><strong>get_field_data</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-get_field_data">get_field_data</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;Entity&nbsp;entity,&nbsp;unsigned&nbsp;int&nbsp;ordinal&nbsp;=&nbsp;0)&nbsp;-&gt;&nbsp;double<br>
-<a href="#PerceptMesh-get_field_data">get_field_data</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;Entity&nbsp;entity)&nbsp;-&gt;&nbsp;double<br>
+<dl><dt><a name="PerceptMesh-get_field_data"><strong>get_field_data</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-get_field_data">get_field_data</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;Entity nbsp;entity,&nbsp;unsigned&nbsp;int&nbsp;ordinal&nbsp;=&nbsp;0)&nbsp;-&gt;&nbsp;double<br>
+<a href="#PerceptMesh-get_field_data">get_field_data</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;Entity nbsp;entity)&nbsp;-&gt;&nbsp;double<br>
 &nbsp;<br>
 double&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_field_data">get_field_data</a>(const<br>
-stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*field,&nbsp;const&nbsp;mesh::Entity&nbsp;*entity,&nbsp;unsigned<br>
+stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*field,&nbsp;const&nbsp;mesh::Entity nbsp;*entity,&nbsp;unsigned<br>
 ordinal=0)<br>
 &nbsp;<br>
 get&nbsp;the&nbsp;value&nbsp;of&nbsp;a&nbsp;field&nbsp;on&nbsp;the&nbsp;given&nbsp;entity;&nbsp;if&nbsp;a&nbsp;vector&nbsp;field,&nbsp;pass<br>
@@ -3094,7 +3094,7 @@ in&nbsp;the&nbsp;index&nbsp;of&nbsp;the&nbsp;vector&nbsp;required&nbsp;(ordinal)
 <a href="#PerceptMesh-get_node">get_node</a>(self,&nbsp;double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;z&nbsp;=&nbsp;0)&nbsp;-&gt;&nbsp;Entity<br>
 <a href="#PerceptMesh-get_node">get_node</a>(self,&nbsp;double&nbsp;x,&nbsp;double&nbsp;y)&nbsp;-&gt;&nbsp;Entity<br>
 &nbsp;<br>
-stk::mesh::Entity&nbsp;*&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_node">get_node</a>(double&nbsp;x,<br>
+stk::mesh::Entity nbsp;*&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_node">get_node</a>(double&nbsp;x,<br>
 double&nbsp;y,&nbsp;double&nbsp;z=0,&nbsp;double&nbsp;t=0)<br>
 &nbsp;<br>
 find&nbsp;and&nbsp;return&nbsp;pointer&nbsp;to&nbsp;node&nbsp;closest&nbsp;to&nbsp;given&nbsp;point&nbsp;-&nbsp;in&nbsp;parallel,<br>
@@ -3257,18 +3257,18 @@ void&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#Percep
 &nbsp;<br>
 reads&nbsp;and&nbsp;commits&nbsp;mesh,&nbsp;editing&nbsp;disabled</tt></dd></dl>
 
-<dl><dt><a name="PerceptMesh-print_entity"><strong>print_entity</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-print_entity">print_entity</a>(self,&nbsp;Entity&nbsp;entity,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field&nbsp;=&nbsp;None)<br>
-<a href="#PerceptMesh-print_entity">print_entity</a>(self,&nbsp;Entity&nbsp;entity)<br>
+<dl><dt><a name="PerceptMesh-print_entity"><strong>print_entity</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-print_entity">print_entity</a>(self,&nbsp;Entity nbsp;entity,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field&nbsp;=&nbsp;None)<br>
+<a href="#PerceptMesh-print_entity">print_entity</a>(self,&nbsp;Entity nbsp;entity)<br>
 &nbsp;<br>
 void<br>
 stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-print_entity">print_entity</a>(std::ostream&nbsp;&amp;out,&nbsp;const<br>
-stk::mesh::Entity&nbsp;&amp;entity,&nbsp;stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*field=0)</tt></dd></dl>
+stk::mesh::Entity nbsp;&amp;entity,&nbsp;stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*field=0)</tt></dd></dl>
 
-<dl><dt><a name="PerceptMesh-print_entity_compact"><strong>print_entity_compact</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-print_entity_compact">print_entity_compact</a>(self,&nbsp;Entity&nbsp;entity,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field&nbsp;=&nbsp;None)&nbsp;-&gt;&nbsp;string<br>
-<a href="#PerceptMesh-print_entity_compact">print_entity_compact</a>(self,&nbsp;Entity&nbsp;entity)&nbsp;-&gt;&nbsp;string<br>
+<dl><dt><a name="PerceptMesh-print_entity_compact"><strong>print_entity_compact</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-print_entity_compact">print_entity_compact</a>(self,&nbsp;Entity nbsp;entity,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field&nbsp;=&nbsp;None)&nbsp;-&gt;&nbsp;string<br>
+<a href="#PerceptMesh-print_entity_compact">print_entity_compact</a>(self,&nbsp;Entity nbsp;entity)&nbsp;-&gt;&nbsp;string<br>
 &nbsp;<br>
 std::string&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-print_entity_compact">print_entity_compact</a>(const<br>
-stk::mesh::Entity&nbsp;&amp;entity,&nbsp;stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*field=0)<br>
+stk::mesh::Entity nbsp;&amp;entity,&nbsp;stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*field=0)<br>
 &nbsp;<br>
 shorter&nbsp;output&nbsp;for&nbsp;print_entity</tt></dd></dl>
 
@@ -3349,11 +3349,11 @@ stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-save
 &nbsp;<br>
 commits&nbsp;mesh&nbsp;if&nbsp;not&nbsp;committed&nbsp;and&nbsp;saves&nbsp;it&nbsp;in&nbsp;new&nbsp;file</tt></dd></dl>
 
-<dl><dt><a name="PerceptMesh-set_field_data"><strong>set_field_data</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-set_field_data">set_field_data</a>(self,&nbsp;double&nbsp;value,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;Entity&nbsp;entity,&nbsp;unsigned&nbsp;int&nbsp;ordinal&nbsp;=&nbsp;0)<br>
-<a href="#PerceptMesh-set_field_data">set_field_data</a>(self,&nbsp;double&nbsp;value,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;Entity&nbsp;entity)<br>
+<dl><dt><a name="PerceptMesh-set_field_data"><strong>set_field_data</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-set_field_data">set_field_data</a>(self,&nbsp;double&nbsp;value,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;Entity nbsp;entity,&nbsp;unsigned&nbsp;int&nbsp;ordinal&nbsp;=&nbsp;0)<br>
+<a href="#PerceptMesh-set_field_data">set_field_data</a>(self,&nbsp;double&nbsp;value,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;Entity nbsp;entity)<br>
 &nbsp;<br>
 void&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-set_field_data">set_field_data</a>(double&nbsp;value,&nbsp;const<br>
-stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*field,&nbsp;const&nbsp;mesh::Entity&nbsp;*entity,&nbsp;unsigned<br>
+stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*field,&nbsp;const&nbsp;mesh::Entity nbsp;*entity,&nbsp;unsigned<br>
 ordinal=0)<br>
 &nbsp;<br>
 set&nbsp;the&nbsp;value&nbsp;of&nbsp;a&nbsp;field&nbsp;on&nbsp;the&nbsp;given&nbsp;entity;&nbsp;if&nbsp;a&nbsp;vector&nbsp;field,&nbsp;pass<br>
@@ -3444,7 +3444,7 @@ generate_sidesets_in,&nbsp;bool&nbsp;debug_geom_side_sets_as_blocks_in=false)</t
 
 <dl><dt><a name="QuadFixture_3-elem"><strong>elem</strong></a>(self, *args)</dt><dd><tt><a href="#QuadFixture_3-elem">elem</a>(self,&nbsp;unsigned&nbsp;int&nbsp;ix,&nbsp;unsigned&nbsp;int&nbsp;iy)&nbsp;-&gt;&nbsp;Entity<br>
 &nbsp;<br>
-stk::mesh::Entity*&nbsp;stk::percept::QuadFixture&lt;&nbsp;Scalar,&nbsp;Topology<br>
+stk::mesh::Entity &nbsp;stk::percept::QuadFixture&lt;&nbsp;Scalar,&nbsp;Topology<br>
 &gt;::<a href="#QuadFixture_3-elem">elem</a>(unsigned&nbsp;ix,&nbsp;unsigned&nbsp;iy)&nbsp;const</tt></dd></dl>
 
 <dl><dt><a name="QuadFixture_3-elem_id"><strong>elem_id</strong></a>(self, *args)</dt><dd><tt><a href="#QuadFixture_3-elem_id">elem_id</a>(self,&nbsp;unsigned&nbsp;int&nbsp;ix,&nbsp;unsigned&nbsp;int&nbsp;iy)&nbsp;-&gt;&nbsp;EntityId<br>
@@ -3480,7 +3480,7 @@ void&nbsp;stk::percept::QuadFixture&lt;&nbsp;Scalar,&nbsp;Topology<br>
 
 <dl><dt><a name="QuadFixture_3-node"><strong>node</strong></a>(self, *args)</dt><dd><tt><a href="#QuadFixture_3-node">node</a>(self,&nbsp;unsigned&nbsp;int&nbsp;ix,&nbsp;unsigned&nbsp;int&nbsp;iy)&nbsp;-&gt;&nbsp;Entity<br>
 &nbsp;<br>
-stk::mesh::Entity*&nbsp;stk::percept::QuadFixture&lt;&nbsp;Scalar,&nbsp;Topology<br>
+stk::mesh::Entity &nbsp;stk::percept::QuadFixture&lt;&nbsp;Scalar,&nbsp;Topology<br>
 &gt;::<a href="#QuadFixture_3-node">node</a>(unsigned&nbsp;ix,&nbsp;unsigned&nbsp;iy)&nbsp;const</tt></dd></dl>
 
 <dl><dt><a name="QuadFixture_3-node_id"><strong>node_id</strong></a>(self, *args)</dt><dd><tt><a href="#QuadFixture_3-node_id">node_id</a>(self,&nbsp;unsigned&nbsp;int&nbsp;ix,&nbsp;unsigned&nbsp;int&nbsp;iy)&nbsp;-&gt;&nbsp;EntityId<br>
@@ -3579,7 +3579,7 @@ generate_sidesets_in,&nbsp;bool&nbsp;debug_geom_side_sets_as_blocks_in=false)</t
 
 <dl><dt><a name="QuadFixture_4-elem"><strong>elem</strong></a>(self, *args)</dt><dd><tt><a href="#QuadFixture_4-elem">elem</a>(self,&nbsp;unsigned&nbsp;int&nbsp;ix,&nbsp;unsigned&nbsp;int&nbsp;iy)&nbsp;-&gt;&nbsp;Entity<br>
 &nbsp;<br>
-stk::mesh::Entity*&nbsp;stk::percept::QuadFixture&lt;&nbsp;Scalar,&nbsp;Topology<br>
+stk::mesh::Entity &nbsp;stk::percept::QuadFixture&lt;&nbsp;Scalar,&nbsp;Topology<br>
 &gt;::<a href="#QuadFixture_4-elem">elem</a>(unsigned&nbsp;ix,&nbsp;unsigned&nbsp;iy)&nbsp;const</tt></dd></dl>
 
 <dl><dt><a name="QuadFixture_4-elem_id"><strong>elem_id</strong></a>(self, *args)</dt><dd><tt><a href="#QuadFixture_4-elem_id">elem_id</a>(self,&nbsp;unsigned&nbsp;int&nbsp;ix,&nbsp;unsigned&nbsp;int&nbsp;iy)&nbsp;-&gt;&nbsp;EntityId<br>
@@ -3615,7 +3615,7 @@ void&nbsp;stk::percept::QuadFixture&lt;&nbsp;Scalar,&nbsp;Topology<br>
 
 <dl><dt><a name="QuadFixture_4-node"><strong>node</strong></a>(self, *args)</dt><dd><tt><a href="#QuadFixture_4-node">node</a>(self,&nbsp;unsigned&nbsp;int&nbsp;ix,&nbsp;unsigned&nbsp;int&nbsp;iy)&nbsp;-&gt;&nbsp;Entity<br>
 &nbsp;<br>
-stk::mesh::Entity*&nbsp;stk::percept::QuadFixture&lt;&nbsp;Scalar,&nbsp;Topology<br>
+stk::mesh::Entity &nbsp;stk::percept::QuadFixture&lt;&nbsp;Scalar,&nbsp;Topology<br>
 &gt;::<a href="#QuadFixture_4-node">node</a>(unsigned&nbsp;ix,&nbsp;unsigned&nbsp;iy)&nbsp;const</tt></dd></dl>
 
 <dl><dt><a name="QuadFixture_4-node_id"><strong>node_id</strong></a>(self, *args)</dt><dd><tt><a href="#QuadFixture_4-node_id">node_id</a>(self,&nbsp;unsigned&nbsp;int&nbsp;ix,&nbsp;unsigned&nbsp;int&nbsp;iy)&nbsp;-&gt;&nbsp;EntityId<br>
@@ -4065,12 +4065,12 @@ stk::adapt::<a href="#Refiner">Refiner</a>::<a href="#Refiner-check_sidesets_1">
 void<br>
 stk::adapt::<a href="#Refiner">Refiner</a>::<a href="#Refiner-check_sidesets_2">check_sidesets_2</a>(std::string&nbsp;msg)</tt></dd></dl>
 
-<dl><dt><a name="Refiner-connectSides"><strong>connectSides</strong></a>(self, *args)</dt><dd><tt><a href="#Refiner-connectSides">connectSides</a>(self,&nbsp;Entity&nbsp;element,&nbsp;Entity&nbsp;side_elem,&nbsp;SidePartMap&nbsp;side_part_map&nbsp;=&nbsp;None)&nbsp;-&gt;&nbsp;bool<br>
-<a href="#Refiner-connectSides">connectSides</a>(self,&nbsp;Entity&nbsp;element,&nbsp;Entity&nbsp;side_elem)&nbsp;-&gt;&nbsp;bool<br>
+<dl><dt><a name="Refiner-connectSides"><strong>connectSides</strong></a>(self, *args)</dt><dd><tt><a href="#Refiner-connectSides">connectSides</a>(self,&nbsp;Entity nbsp;element,&nbsp;Entity nbsp;side_elem,&nbsp;SidePartMap&nbsp;side_part_map&nbsp;=&nbsp;None)&nbsp;-&gt;&nbsp;bool<br>
+<a href="#Refiner-connectSides">connectSides</a>(self,&nbsp;Entity nbsp;element,&nbsp;Entity nbsp;side_elem)&nbsp;-&gt;&nbsp;bool<br>
 &nbsp;<br>
 bool<br>
-stk::adapt::<a href="#Refiner">Refiner</a>::<a href="#Refiner-connectSides">connectSides</a>(stk::mesh::Entity&nbsp;*element,<br>
-stk::mesh::Entity&nbsp;*side_elem,&nbsp;SidePartMap&nbsp;*side_part_map=0)</tt></dd></dl>
+stk::adapt::<a href="#Refiner">Refiner</a>::<a href="#Refiner-connectSides">connectSides</a>(stk::mesh::Entity nbsp;*element,<br>
+stk::mesh::Entity nbsp;*side_elem,&nbsp;SidePartMap&nbsp;*side_part_map=0)</tt></dd></dl>
 
 <dl><dt><a name="Refiner-deleteParentElements"><strong>deleteParentElements</strong></a>(self)</dt><dd><tt><a href="#Refiner-deleteParentElements">deleteParentElements</a>(self)<br>
 &nbsp;<br>
@@ -4102,10 +4102,10 @@ new&nbsp;nodes&nbsp;to&nbsp;the&nbsp;right&nbsp;parts,&nbsp;interpolating&nbsp;f
 void<br>
 stk::adapt::<a href="#Refiner">Refiner</a>::<a href="#Refiner-fixElementSides2">fixElementSides2</a>()</tt></dd></dl>
 
-<dl><dt><a name="Refiner-fixSides"><strong>fixSides</strong></a>(self, *args)</dt><dd><tt><a href="#Refiner-fixSides">fixSides</a>(self,&nbsp;Entity&nbsp;parent)<br>
+<dl><dt><a name="Refiner-fixSides"><strong>fixSides</strong></a>(self, *args)</dt><dd><tt><a href="#Refiner-fixSides">fixSides</a>(self,&nbsp;Entity nbsp;parent)<br>
 &nbsp;<br>
 void<br>
-stk::adapt::<a href="#Refiner">Refiner</a>::<a href="#Refiner-fixSides">fixSides</a>(stk::mesh::Entity&nbsp;*parent)</tt></dd></dl>
+stk::adapt::<a href="#Refiner">Refiner</a>::<a href="#Refiner-fixSides">fixSides</a>(stk::mesh::Entity nbsp;*parent)</tt></dd></dl>
 
 <dl><dt><a name="Refiner-fix_side_sets_1"><strong>fix_side_sets_1</strong></a>(self)</dt><dd><tt><a href="#Refiner-fix_side_sets_1">fix_side_sets_1</a>(self)<br>
 &nbsp;<br>
@@ -4705,24 +4705,24 @@ C++&nbsp;includes:&nbsp;UniformRefinerPattern.hpp<br>&nbsp;</tt></td></tr>
 
 <dl><dt><strong>__setattr__</strong> <em>lambda</em> self, name, value</dt></dl>
 
-<dl><dt><a name="UniformRefinerPatternBase-connectSides"><strong>connectSides</strong></a>(self, *args)</dt><dd><tt><a href="#UniformRefinerPatternBase-connectSides">connectSides</a>(self,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;eMesh,&nbsp;Entity&nbsp;element,&nbsp;Entity&nbsp;side_elem)&nbsp;-&gt;&nbsp;bool<br>
+<dl><dt><a name="UniformRefinerPatternBase-connectSides"><strong>connectSides</strong></a>(self, *args)</dt><dd><tt><a href="#UniformRefinerPatternBase-connectSides">connectSides</a>(self,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;eMesh,&nbsp;Entity nbsp;element,&nbsp;Entity nbsp;side_elem)&nbsp;-&gt;&nbsp;bool<br>
 &nbsp;<br>
 bool<br>
 stk::adapt::<a href="#UniformRefinerPatternBase">UniformRefinerPatternBase</a>::<a href="#UniformRefinerPatternBase-connectSides">connectSides</a>(percept::<a href="#PerceptMesh">PerceptMesh</a><br>
-&amp;eMesh,&nbsp;stk::mesh::Entity&nbsp;*element,&nbsp;stk::mesh::Entity&nbsp;*side_elem)</tt></dd></dl>
+&amp;eMesh,&nbsp;stk::mesh::Entity nbsp;*element,&nbsp;stk::mesh::Entity nbsp;*side_elem)</tt></dd></dl>
 
-<dl><dt><a name="UniformRefinerPatternBase-createNewElements"><strong>createNewElements</strong></a>(self, *args)</dt><dd><tt><a href="#UniformRefinerPatternBase-createNewElements">createNewElements</a>(self,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;eMesh,&nbsp;NodeRegistry&nbsp;nodeRegistry,&nbsp;Entity&nbsp;element,&nbsp;<br>
+<dl><dt><a name="UniformRefinerPatternBase-createNewElements"><strong>createNewElements</strong></a>(self, *args)</dt><dd><tt><a href="#UniformRefinerPatternBase-createNewElements">createNewElements</a>(self,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;eMesh,&nbsp;NodeRegistry&nbsp;nodeRegistry,&nbsp;Entity nbsp;element,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;NewSubEntityNodesType&nbsp;new_sub_entity_nodes,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;vector&lt;(p.stk::mesh::Entity,std::allocator&lt;(p.stk::mesh::Entity)&gt;)&gt;::iterator&nbsp;element_pool,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;proc_rank_field&nbsp;=&nbsp;None)<br>
-<a href="#UniformRefinerPatternBase-createNewElements">createNewElements</a>(self,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;eMesh,&nbsp;NodeRegistry&nbsp;nodeRegistry,&nbsp;Entity&nbsp;element,&nbsp;<br>
+<a href="#UniformRefinerPatternBase-createNewElements">createNewElements</a>(self,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;eMesh,&nbsp;NodeRegistry&nbsp;nodeRegistry,&nbsp;Entity nbsp;element,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;NewSubEntityNodesType&nbsp;new_sub_entity_nodes,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;vector&lt;(p.stk::mesh::Entity,std::allocator&lt;(p.stk::mesh::Entity)&gt;)&gt;::iterator&nbsp;element_pool)<br>
 &nbsp;<br>
 virtual<br>
 void<br>
 stk::adapt::<a href="#UniformRefinerPatternBase">UniformRefinerPatternBase</a>::<a href="#UniformRefinerPatternBase-createNewElements">createNewElements</a>(percept::<a href="#PerceptMesh">PerceptMesh</a><br>
-&amp;eMesh,&nbsp;NodeRegistry&nbsp;&amp;nodeRegistry,&nbsp;stk::mesh::Entity&nbsp;&amp;element,<br>
+&amp;eMesh,&nbsp;NodeRegistry&nbsp;&amp;nodeRegistry,&nbsp;stk::mesh::Entity nbsp;&amp;element,<br>
 NewSubEntityNodesType&nbsp;&amp;new_sub_entity_nodes,&nbsp;vector&lt;&nbsp;stk::mesh::Entity<br>
 *&nbsp;&gt;::iterator&nbsp;&amp;element_pool,&nbsp;stk::mesh::<a href="#FieldBase">FieldBase</a><br>
 *proc_rank_field=0)=0<br>
@@ -4748,11 +4748,11 @@ supplies&nbsp;the&nbsp;ranks&nbsp;of&nbsp;the&nbsp;sub&nbsp;entities&nbsp;needed
 m_eMesh.<a href="#-face_rank">face_rank</a>(),&nbsp;m_eMesh.<a href="#-edge_rank">edge_rank</a>(),..)&nbsp;10/02/10&nbsp;and&nbsp;the&nbsp;number<br>
 of&nbsp;nodes&nbsp;needed&nbsp;for&nbsp;each&nbsp;sub&nbsp;entity</tt></dd></dl>
 
-<dl><dt><a name="UniformRefinerPatternBase-findSideRelations"><strong>findSideRelations</strong></a>(self, *args)</dt><dd><tt><a href="#UniformRefinerPatternBase-findSideRelations">findSideRelations</a>(self,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;eMesh,&nbsp;Entity&nbsp;parent,&nbsp;Entity&nbsp;child)&nbsp;-&gt;&nbsp;bool<br>
+<dl><dt><a name="UniformRefinerPatternBase-findSideRelations"><strong>findSideRelations</strong></a>(self, *args)</dt><dd><tt><a href="#UniformRefinerPatternBase-findSideRelations">findSideRelations</a>(self,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;eMesh,&nbsp;Entity nbsp;parent,&nbsp;Entity nbsp;child)&nbsp;-&gt;&nbsp;bool<br>
 &nbsp;<br>
 bool<br>
 stk::adapt::<a href="#UniformRefinerPatternBase">UniformRefinerPatternBase</a>::<a href="#UniformRefinerPatternBase-findSideRelations">findSideRelations</a>(percept::<a href="#PerceptMesh">PerceptMesh</a><br>
-&amp;eMesh,&nbsp;stk::mesh::Entity&nbsp;*parent,&nbsp;stk::mesh::Entity&nbsp;*child)<br>
+&amp;eMesh,&nbsp;stk::mesh::Entity nbsp;*parent,&nbsp;stk::mesh::Entity nbsp;*child)<br>
 &nbsp;<br>
 given&nbsp;a&nbsp;new&nbsp;element&nbsp;(child)&nbsp;that&nbsp;is&nbsp;a&nbsp;child&nbsp;of&nbsp;an&nbsp;original&nbsp;element<br>
 (parent),&nbsp;look&nbsp;at&nbsp;parent's&nbsp;side&nbsp;to&nbsp;elem&nbsp;relations&nbsp;and&nbsp;from&nbsp;the<br>
@@ -4845,11 +4845,11 @@ virtual&nbsp;const<br>
 CellTopologyData*<br>
 stk::adapt::<a href="#UniformRefinerPatternBase">UniformRefinerPatternBase</a>::<a href="#UniformRefinerPatternBase-getToTopology">getToTopology</a>()=0</tt></dd></dl>
 
-<dl><dt><a name="UniformRefinerPatternBase-interpolateElementFields"><strong>interpolateElementFields</strong></a>(self, *args)</dt><dd><tt><a href="#UniformRefinerPatternBase-interpolateElementFields">interpolateElementFields</a>(self,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;eMesh,&nbsp;Entity&nbsp;old_owning_elem,&nbsp;Entity&nbsp;newElement)<br>
+<dl><dt><a name="UniformRefinerPatternBase-interpolateElementFields"><strong>interpolateElementFields</strong></a>(self, *args)</dt><dd><tt><a href="#UniformRefinerPatternBase-interpolateElementFields">interpolateElementFields</a>(self,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;eMesh,&nbsp;Entity nbsp;old_owning_elem,&nbsp;Entity nbsp;newElement)<br>
 &nbsp;<br>
 void<br>
 stk::adapt::<a href="#UniformRefinerPatternBase">UniformRefinerPatternBase</a>::<a href="#UniformRefinerPatternBase-interpolateElementFields">interpolateElementFields</a>(percept::<a href="#PerceptMesh">PerceptMesh</a><br>
-&amp;eMesh,&nbsp;stk::mesh::Entity&nbsp;&amp;old_owning_elem,&nbsp;stk::mesh::Entity<br>
+&amp;eMesh,&nbsp;stk::mesh::Entity nbsp;&amp;old_owning_elem,&nbsp;stk::mesh::Entity<br>
 &amp;newElement)</tt></dd></dl>
 
 <dl><dt><a name="UniformRefinerPatternBase-midPoint"><strong>midPoint</strong></a>(self, *args)</dt><dd><tt><a href="#UniformRefinerPatternBase-midPoint">midPoint</a>(self,&nbsp;double&nbsp;p1,&nbsp;double&nbsp;p2,&nbsp;int&nbsp;spatialDim,&nbsp;double&nbsp;x)&nbsp;-&gt;&nbsp;double<br>
@@ -4888,14 +4888,14 @@ to&nbsp;1&nbsp;-&nbsp;this&nbsp;is&nbsp;just&nbsp;a&nbsp;helper&nbsp;-&nbsp;in&n
 node&nbsp;for&nbsp;linear&nbsp;elements,&nbsp;and&nbsp;multiple&nbsp;new&nbsp;nodes&nbsp;in&nbsp;the&nbsp;case&nbsp;of<br>
 quadratic&nbsp;elements</tt></dd></dl>
 
-<dl><dt><a name="UniformRefinerPatternBase-set_parent_child_relations"><strong>set_parent_child_relations</strong></a>(self, *args)</dt><dd><tt><a href="#UniformRefinerPatternBase-set_parent_child_relations">set_parent_child_relations</a>(self,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;eMesh,&nbsp;Entity&nbsp;old_owning_elem,&nbsp;Entity&nbsp;newElement,&nbsp;<br>
+<dl><dt><a name="UniformRefinerPatternBase-set_parent_child_relations"><strong>set_parent_child_relations</strong></a>(self, *args)</dt><dd><tt><a href="#UniformRefinerPatternBase-set_parent_child_relations">set_parent_child_relations</a>(self,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;eMesh,&nbsp;Entity nbsp;old_owning_elem,&nbsp;Entity nbsp;newElement,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;unsigned&nbsp;int&nbsp;ordinal,&nbsp;unsigned&nbsp;int&nbsp;numChild&nbsp;=&nbsp;None)<br>
-<a href="#UniformRefinerPatternBase-set_parent_child_relations">set_parent_child_relations</a>(self,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;eMesh,&nbsp;Entity&nbsp;old_owning_elem,&nbsp;Entity&nbsp;newElement,&nbsp;<br>
+<a href="#UniformRefinerPatternBase-set_parent_child_relations">set_parent_child_relations</a>(self,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;eMesh,&nbsp;Entity nbsp;old_owning_elem,&nbsp;Entity nbsp;newElement,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;unsigned&nbsp;int&nbsp;ordinal)<br>
 &nbsp;<br>
 void<br>
 stk::adapt::<a href="#UniformRefinerPatternBase">UniformRefinerPatternBase</a>::<a href="#UniformRefinerPatternBase-set_parent_child_relations">set_parent_child_relations</a>(percept::<a href="#PerceptMesh">PerceptMesh</a><br>
-&amp;eMesh,&nbsp;stk::mesh::Entity&nbsp;&amp;old_owning_elem,&nbsp;stk::mesh::Entity<br>
+&amp;eMesh,&nbsp;stk::mesh::Entity nbsp;&amp;old_owning_elem,&nbsp;stk::mesh::Entity<br>
 &amp;newElement,&nbsp;unsigned&nbsp;ordinal,&nbsp;unsigned&nbsp;*numChild=0)<br>
 &nbsp;<br>
 if&nbsp;numChild&nbsp;is&nbsp;passed&nbsp;in&nbsp;as&nbsp;non-null,&nbsp;use&nbsp;that&nbsp;value,&nbsp;else&nbsp;use<br>
@@ -5709,7 +5709,7 @@ Data and other attributes defined here:<br>
  <dl><dt><a name="-BucketLess_swigregister"><strong>BucketLess_swigregister</strong></a>(...)</dt></dl>
  <dl><dt><a name="-Bucket_swigregister"><strong>Bucket_swigregister</strong></a>(...)</dt></dl>
  <dl><dt><a name="-BulkData_get"><strong>BulkData_get</strong></a>(*args)</dt><dd><tt>get(<a href="#Bucket">Bucket</a>&nbsp;bucket)&nbsp;-&gt;&nbsp;<a href="#BulkData">BulkData</a><br>
-get(Entity&nbsp;entity)&nbsp;-&gt;&nbsp;<a href="#BulkData">BulkData</a><br>
+get(Entity nbsp;entity)&nbsp;-&gt;&nbsp;<a href="#BulkData">BulkData</a><br>
 <a href="#-BulkData_get">BulkData_get</a>(Ghosting&nbsp;ghost)&nbsp;-&gt;&nbsp;<a href="#BulkData">BulkData</a></tt></dd></dl>
  <dl><dt><a name="-BulkData_swigregister"><strong>BulkData_swigregister</strong></a>(...)</dt></dl>
  <dl><dt><a name="-ConstantFunctionVec_swigregister"><strong>ConstantFunctionVec_swigregister</strong></a>(...)</dt></dl>
@@ -5721,7 +5721,7 @@ get(<a href="#FieldBase">FieldBase</a>&nbsp;field)&nbsp;-&gt;&nbsp;<a href="#FEM
 get(PropertyBase&nbsp;property)&nbsp;-&gt;&nbsp;<a href="#FEMMetaData">FEMMetaData</a><br>
 get(<a href="#BulkData">BulkData</a>&nbsp;bulk_data)&nbsp;-&gt;&nbsp;<a href="#FEMMetaData">FEMMetaData</a><br>
 get(<a href="#Bucket">Bucket</a>&nbsp;bucket)&nbsp;-&gt;&nbsp;<a href="#FEMMetaData">FEMMetaData</a><br>
-get(Entity&nbsp;entity)&nbsp;-&gt;&nbsp;<a href="#FEMMetaData">FEMMetaData</a><br>
+get(Entity nbsp;entity)&nbsp;-&gt;&nbsp;<a href="#FEMMetaData">FEMMetaData</a><br>
 <a href="#-FEMMetaData_get">FEMMetaData_get</a>(Ghosting&nbsp;ghost)&nbsp;-&gt;&nbsp;<a href="#FEMMetaData">FEMMetaData</a></tt></dd></dl>
  <dl><dt><a name="-FEMMetaData_get_meta_data"><strong>FEMMetaData_get_meta_data</strong></a>(*args)</dt><dd><tt><a href="#-FEMMetaData_get_meta_data">FEMMetaData_get_meta_data</a>(<a href="#FEMMetaData">FEMMetaData</a>&nbsp;fem_meta)&nbsp;-&gt;&nbsp;MetaData</tt></dd></dl>
  <dl><dt><a name="-FEMMetaData_swigregister"><strong>FEMMetaData_swigregister</strong></a>(...)</dt></dl>
@@ -5832,7 +5832,7 @@ mesh_difference(<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh1,&nbsp;<a href=
  <dl><dt><a name="-find"><strong>find</strong></a>(*args)</dt><dd><tt><a href="#-find">find</a>(PartVector&nbsp;arg0,&nbsp;string&nbsp;arg1)&nbsp;-&gt;&nbsp;<a href="#Part">Part</a></tt></dd></dl>
  <dl><dt><a name="-get_associated_ioss_entity"><strong>get_associated_ioss_entity</strong></a>(*args)</dt><dd><tt><a href="#-get_associated_ioss_entity">get_associated_ioss_entity</a>(mesh::<a href="#Part">Part</a>&nbsp;part)&nbsp;-&gt;&nbsp;GroupingEntity</tt></dd></dl>
  <dl><dt><a name="-get_cell_topology"><strong>get_cell_topology</strong></a>(*args)</dt><dd><tt><a href="#-get_cell_topology">get_cell_topology</a>(<a href="#Bucket">Bucket</a>&nbsp;bucket)&nbsp;-&gt;&nbsp;CellTopology<br>
-<a href="#-get_cell_topology">get_cell_topology</a>(Entity&nbsp;entity)&nbsp;-&gt;&nbsp;CellTopology</tt></dd></dl>
+<a href="#-get_cell_topology">get_cell_topology</a>(Entity nbsp;entity)&nbsp;-&gt;&nbsp;CellTopology</tt></dd></dl>
  <dl><dt><a name="-get_distribution_factor_field"><strong>get_distribution_factor_field</strong></a>(*args)</dt><dd><tt><a href="#-get_distribution_factor_field">get_distribution_factor_field</a>(mesh::<a href="#Part">Part</a>&nbsp;p)&nbsp;-&gt;&nbsp;mesh::Field&lt;(double,mesh::ElementNode,void,void,void,void,void,void)&gt;</tt></dd></dl>
  <dl><dt><a name="-get_entity_list"><strong>get_entity_list</strong></a>(*args)</dt><dd><tt><a href="#-get_entity_list">get_entity_list</a>(GroupingEntity&nbsp;io_entity,&nbsp;EntityRank&nbsp;part_type,&nbsp;<a href="#BulkData">BulkData</a>&nbsp;bulk,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;std::vector&lt;(p.stk::mesh::Entity,std::allocator&lt;(p.stk::mesh::Entity)&gt;)&gt;&nbsp;entities)</tt></dd></dl>
@@ -5894,7 +5894,7 @@ mesh_difference(<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh1,&nbsp;<a href=
  <dl><dt><a name="-selectUnion"><strong>selectUnion</strong></a>(*args)</dt><dd><tt><a href="#-selectUnion">selectUnion</a>(PartVector&nbsp;union_part_vector)&nbsp;-&gt;&nbsp;<a href="#Selector">Selector</a></tt></dd></dl>
  <dl><dt><a name="-set_cell_topology"><strong>set_cell_topology</strong></a>(*args)</dt><dd><tt><a href="#-set_cell_topology">set_cell_topology</a>(<a href="#Part">Part</a>&nbsp;part,&nbsp;CellTopology&nbsp;cell_topology)</tt></dd></dl>
  <dl><dt><a name="-set_distribution_factor_field"><strong>set_distribution_factor_field</strong></a>(*args)</dt><dd><tt><a href="#-set_distribution_factor_field">set_distribution_factor_field</a>(mesh::<a href="#Part">Part</a>&nbsp;p,&nbsp;mesh::Field&lt;(double,mesh::ElementNode,void,void,void,void,void,void)&gt;&nbsp;df_field)</tt></dd></dl>
- <dl><dt><a name="-set_field_relations"><strong>set_field_relations</strong></a>(*args)</dt><dd><tt><a href="#-set_field_relations">set_field_relations</a>(Entity&nbsp;e_from,&nbsp;Entity&nbsp;e_to,&nbsp;unsigned&nbsp;int&nbsp;ident)</tt></dd></dl>
+ <dl><dt><a name="-set_field_relations"><strong>set_field_relations</strong></a>(*args)</dt><dd><tt><a href="#-set_field_relations">set_field_relations</a>(Entity nbsp;e_from,&nbsp;Entity nbsp;e_to,&nbsp;unsigned&nbsp;int&nbsp;ident)</tt></dd></dl>
  <dl><dt><a name="-set_field_role"><strong>set_field_role</strong></a>(*args)</dt><dd><tt><a href="#-set_field_role">set_field_role</a>(mesh::<a href="#FieldBase">FieldBase</a>&nbsp;f,&nbsp;Ioss::Field::RoleType&nbsp;role)</tt></dd></dl>
  <dl><dt><a name="-setlinemask"><strong>setlinemask</strong></a>(*args)</dt><dd><tt><a href="#-setlinemask">setlinemask</a>(PrintMask&nbsp;line_mask)&nbsp;-&gt;&nbsp;_setlinemask</tt></dd></dl>
  <dl><dt><a name="-side_rank"><strong>side_rank</strong></a>(*args)</dt><dd><tt><a href="#-side_rank">side_rank</a>(mesh::MetaData&nbsp;meta)&nbsp;-&gt;&nbsp;mesh::EntityRank</tt></dd></dl>

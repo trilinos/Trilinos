@@ -119,7 +119,7 @@ Gear::Gear( stk::mesh::MetaData & S ,
 
 //----------------------------------------------------------------------
 
-stk::mesh::Entity &Gear::create_node(const std::vector<stk::mesh::Part*> & parts ,
+stk::mesh::Entity Gear::create_node(const std::vector<stk::mesh::Part*> & parts ,
                                      stk::mesh::EntityId node_id_base ,
                                      size_t iz ,
                                      size_t ir ,
@@ -139,7 +139,7 @@ stk::mesh::Entity &Gear::create_node(const std::vector<stk::mesh::Part*> & parts
   stk::mesh::EntityId id_gear = identifier( m_z_num, m_rad_num, iz, ir, ia );
   stk::mesh::EntityId id = node_id_base + id_gear ;
 
-  stk::mesh::Entity & node = m_mesh->declare_entity( stk::mesh::MetaData::NODE_RANK, id , parts );
+  stk::mesh::Entity node = m_mesh->declare_entity( stk::mesh::MetaData::NODE_RANK, id , parts );
 
   double * const gear_data    = field_data( m_gear_coord , node );
   double * const model_data   = field_data( m_model_coord , node );
@@ -211,16 +211,16 @@ void Gear::mesh( stk::mesh::BulkData & M )
           const size_t ir_1 = ir + 1 ;
           const size_t iz_1 = iz + 1 ;
 
-          stk::mesh::Entity * node[8] ;
+          stk::mesh::Entity node[8] ;
 
-          node[0] = &create_node( node_parts, node_id_base, iz  , ir  , ia_1 );
-          node[1] = &create_node( node_parts, node_id_base, iz_1, ir  , ia_1 );
-          node[2] = &create_node( node_parts, node_id_base, iz_1, ir  , ia   );
-          node[3] = &create_node( node_parts, node_id_base, iz  , ir  , ia   );
-          node[4] = &create_node( node_parts, node_id_base, iz  , ir_1, ia_1 );
-          node[5] = &create_node( node_parts, node_id_base, iz_1, ir_1, ia_1 );
-          node[6] = &create_node( node_parts, node_id_base, iz_1, ir_1, ia   );
-          node[7] = &create_node( node_parts, node_id_base, iz  , ir_1, ia   );
+          node[0] = create_node( node_parts, node_id_base, iz  , ir  , ia_1 );
+          node[1] = create_node( node_parts, node_id_base, iz_1, ir  , ia_1 );
+          node[2] = create_node( node_parts, node_id_base, iz_1, ir  , ia   );
+          node[3] = create_node( node_parts, node_id_base, iz  , ir  , ia   );
+          node[4] = create_node( node_parts, node_id_base, iz  , ir_1, ia_1 );
+          node[5] = create_node( node_parts, node_id_base, iz_1, ir_1, ia_1 );
+          node[6] = create_node( node_parts, node_id_base, iz_1, ir_1, ia   );
+          node[7] = create_node( node_parts, node_id_base, iz  , ir_1, ia   );
 #if 0 /* VERIFY_CENTROID */
 
           // Centroid of the element for verification
@@ -256,11 +256,11 @@ void Gear::mesh( stk::mesh::BulkData & M )
           }
 #endif
 
-          stk::mesh::Entity & elem =
+          stk::mesh::Entity elem =
             M.declare_entity( element_rank, elem_id, elem_parts );
 
           for ( size_t j = 0 ; j < 8 ; ++j ) {
-            M.declare_relation( elem , * node[j] ,
+            M.declare_relation( elem , node[j] ,
                                 static_cast<unsigned>(j) );
           }
         }
@@ -286,25 +286,25 @@ void Gear::mesh( stk::mesh::BulkData & M )
           unsigned face_ord = 5 ;
           stk::mesh::EntityId face_id = elem_id * 10 + face_ord + 1;
 
-          stk::mesh::Entity * node[4] ;
+          stk::mesh::Entity node[4] ;
 
           const size_t ia_1 = ( ia + 1 ) % m_angle_num ;
           const size_t iz_1 = iz + 1 ;
 
-          node[0] = &create_node( node_parts, node_id_base, iz  , ir  , ia_1 );
-          node[1] = &create_node( node_parts, node_id_base, iz_1, ir  , ia_1 );
-          node[2] = &create_node( node_parts, node_id_base, iz_1, ir  , ia   );
-          node[3] = &create_node( node_parts, node_id_base, iz  , ir  , ia   );
+          node[0] = create_node( node_parts, node_id_base, iz  , ir  , ia_1 );
+          node[1] = create_node( node_parts, node_id_base, iz_1, ir  , ia_1 );
+          node[2] = create_node( node_parts, node_id_base, iz_1, ir  , ia   );
+          node[3] = create_node( node_parts, node_id_base, iz  , ir  , ia   );
 
-          stk::mesh::Entity & face =
+          stk::mesh::Entity face =
             M.declare_entity( side_rank, face_id, face_parts );
 
           for ( size_t j = 0 ; j < 4 ; ++j ) {
-            M.declare_relation( face , * node[j] ,
+            M.declare_relation( face , node[j] ,
                                 static_cast<unsigned>(j) );
           }
 
-          stk::mesh::Entity & elem = * M.get_entity(element_rank, elem_id);
+          stk::mesh::Entity elem = M.get_entity(element_rank, elem_id);
 
           M.declare_relation( elem , face , face_ord );
         }

@@ -156,7 +156,7 @@ public:
   /** \brief  Is this entity a member of the
    *          set defined by the selector expression.
    */
-  bool operator()( const Entity & candidate ) const;
+  bool operator()( const Entity candidate ) const;
 
   /** \brief Is the intersection of the 'part_ords' parts a member
    * of the set defined by the selector expression.

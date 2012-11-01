@@ -26,7 +26,7 @@ namespace stk {
     public:  
 
       typedef std::vector<double> Vector;
-      typedef boost::unordered_map<stk::mesh::Entity *, Vector  > NodeMap;
+      typedef boost::unordered_map<stk::mesh::Entity , Vector  > NodeMap;
       
         
       ReferenceMeshSmoother(PerceptMesh *eMesh,

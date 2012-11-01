@@ -198,9 +198,9 @@ namespace stk {
       unsigned get_parallel_size() { return get_bulk_data()->parallel_size(); }
 
       /// print a node, edge, element, etc; optionally pass in a field to dump data associated with the entity
-      void print_entity(const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0) { print_entity(std::cout, entity, field); };
+      void print_entity(const stk::mesh::Entity entity, stk::mesh::FieldBase* field=0) { print_entity(std::cout, entity, field); };
       /// shorter output for print_entity
-      std::string print_entity_compact(const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
+      std::string print_entity_compact(const stk::mesh::Entity entity, stk::mesh::FieldBase* field=0);
 
       /// print elements on the given part
       void dump_elements(const std::string& partName = "");
@@ -217,15 +217,15 @@ namespace stk {
 
       // entity data setter/getters
       /// get the value of a field on the given entity; if a vector field, pass in the index of the vector required (ordinal)
-      double get_field_data(const stk::mesh::FieldBase *field, const mesh::Entity* entity, unsigned ordinal=0)
+      double get_field_data(const stk::mesh::FieldBase *field, const mesh::Entity entity, unsigned ordinal=0)
       {
-        double *val= field_data_entity(field,*entity);
+        double *val= field_data_entity(field, entity);
         return val ? val[ordinal] : 0.0;
       }
       /// set the value of a field on the given entity; if a vector field, pass in the index of the vector required (ordinal)
-      void set_field_data(double value, const stk::mesh::FieldBase *field, const mesh::Entity* entity, unsigned ordinal=0 )
+      void set_field_data(double value, const stk::mesh::FieldBase *field, const mesh::Entity entity, unsigned ordinal=0 )
       {
-        double *val= field_data_entity(field,*entity);
+        double *val= field_data_entity(field, entity);
         if( val) val[ordinal] = value;
       }
 
@@ -243,28 +243,28 @@ namespace stk {
       }
 
       /// get a pointer to a node with given id
-      stk::mesh::Entity *get_node(const mesh::EntityId node_id)
+      stk::mesh::Entity get_node(const mesh::EntityId node_id)
       {
         return get_bulk_data()->get_entity(node_rank(), node_id);
       }
 
       /// get a pointer to an element with given id
-      stk::mesh::Entity *get_element(const mesh::EntityId element_id)
+      stk::mesh::Entity get_element(const mesh::EntityId element_id)
       {
         return get_bulk_data()->get_entity(element_rank(), element_id);
       }
 
       /// get a pointer to an entity with given id
-      stk::mesh::Entity *get_entity( mesh::EntityRank rank, const mesh::EntityId id)
+      stk::mesh::Entity get_entity( mesh::EntityRank rank, const mesh::EntityId id)
       {
         return get_bulk_data()->get_entity(rank, id);
       }
 
       /// find and return pointer to node closest to given point - in parallel, check return for null (if null, closest node is on another proc)
-      stk::mesh::Entity *get_node(double x, double y, double z=0, double t=0) ;
+      stk::mesh::Entity get_node(double x, double y, double z=0, double t=0) ;
 
       /// find and return pointer to element that contains given point - in parallel, check return for null (if null, element containing point is on another proc)
-      stk::mesh::Entity *get_element(double x, double y, double z=0, double t=0) ;
+      stk::mesh::Entity get_element(double x, double y, double z=0, double t=0) ;
 
       /// return true if the two meshes are different; if @param print is true, print diffs; set print_all_field_diffs to get more output
       static bool mesh_difference(PerceptMesh& mesh1, PerceptMesh& mesh2,
@@ -379,7 +379,8 @@ namespace stk {
       void remove_geometry_blocks_on_output(std::string geometry_file_name);
 
       /// dump a vtk file for the mesh surrounding the given node 
-      void dump_vtk(stk::mesh::Entity& node, std::string filename);
+      void dump_vtk(stk::mesh::Entity node, std::string filename);
+      void dump_vtk(std::string filename);
 
       /// choose to respect the mesh spacing in the refined mesh
       void set_respect_spacing(bool do_respect_spacing=true) { m_do_respect_spacing = do_respect_spacing; }
@@ -410,7 +411,7 @@ namespace stk {
       void
       openEmpty();
 
-      stk::mesh::Entity *get_closest_node(double x, double y, double z=0, double t=0, double *sum_min_ret=0) ;
+      stk::mesh::Entity get_closest_node(double x, double y, double z=0, double t=0, double *sum_min_ret=0) ;
 
       //PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
 
@@ -421,7 +422,7 @@ namespace stk {
       const mesh::Part*
       getPart(const std::string& part_name) ;
 
-      void print_entity(std::ostream& out, const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
+      void print_entity(std::ostream& out, const stk::mesh::Entity entity, stk::mesh::FieldBase* field=0);
 
       // allow setting spatial dim after creation (for compatability with new MetaData)
       void setSpatialDim(int sd);
@@ -433,7 +434,7 @@ namespace stk {
       /// reads the given file into a temporary model and prints info about it
       void dump(const std::string& file="");
 
-      bool isGhostElement(const stk::mesh::Entity& element)
+      bool isGhostElement(const stk::mesh::Entity element)
       {
         //throw std::runtime_error("not impl"); // FIXME
         bool isGhost = element.owner_rank() != get_rank();
@@ -442,7 +443,7 @@ namespace stk {
 
       // checks if this entity has a duplicate (ie all nodes are the same)
       bool
-      check_entity_duplicate(stk::mesh::Entity& entity);
+      check_entity_duplicate(stk::mesh::Entity entity);
 
       void delete_side_sets();
 
@@ -486,37 +487,37 @@ namespace stk {
        *    where we are looking for the family tree of the element associated with it being a parent).
        *
        */
-      unsigned getFamilyTreeRelationIndex(FamiltyTreeLevel level, const stk::mesh::Entity& element);
+      unsigned getFamilyTreeRelationIndex(FamiltyTreeLevel level, const stk::mesh::Entity element);
 
       /// the element is not a parent of the 0'th family_tree relation
-      bool isChildElement( const stk::mesh::Entity& element, bool check_for_family_tree=true);
+      bool isChildElement( const stk::mesh::Entity element, bool check_for_family_tree=true);
 
       // either has no family tree or is a child
-      bool isLeafElement( const stk::mesh::Entity& element);
+      bool isLeafElement( const stk::mesh::Entity element);
 
       /// the element is not a parent of any family tree relation
-      bool isChildElementLeaf( const stk::mesh::Entity& element, bool check_for_family_tree=true);
+      bool isChildElementLeaf( const stk::mesh::Entity element, bool check_for_family_tree=true);
 
-      bool hasFamilyTree(const stk::mesh::Entity& element);
+      bool hasFamilyTree(const stk::mesh::Entity element);
 
       /// if the element is a parent at any level, return true
-      bool isParentElement( const stk::mesh::Entity& element, bool check_for_family_tree=true);
+      bool isParentElement( const stk::mesh::Entity element, bool check_for_family_tree=true);
 
       /// is element a parent at the leaf level (either there is only one level, and it's a parent, or
       ///    if more than one, the element is a child and a parent and its children have no children)
-      bool isParentElementLeaf( const stk::mesh::Entity& element, bool check_for_family_tree=true);
+      bool isParentElementLeaf( const stk::mesh::Entity element, bool check_for_family_tree=true);
 
       /// is element a parent at level 2 (meaning that it is both a child and a parent)
-      bool isParentElementLevel2( const stk::mesh::Entity& element, bool check_for_family_tree=true);
+      bool isParentElementLevel2( const stk::mesh::Entity element, bool check_for_family_tree=true);
 
       /// is element a child with siblings with no nieces or nephews (siblings with children)
       ///  (alternative would be "is child and is parent not a grandparent")
-      bool isChildWithoutNieces( const stk::mesh::Entity& element, bool check_for_family_tree=true);
+      bool isChildWithoutNieces( const stk::mesh::Entity element, bool check_for_family_tree=true);
 
       // return false if we couldn't get the children
-      bool getChildren( const stk::mesh::Entity& element, std::vector<stk::mesh::Entity*>& children, bool check_for_family_tree=true, bool only_if_element_is_parent_leaf=false);
+      bool getChildren( const stk::mesh::Entity element, std::vector<stk::mesh::Entity>& children, bool check_for_family_tree=true, bool only_if_element_is_parent_leaf=false);
 
-      void printParentChildInfo(const stk::mesh::Entity& element, bool check_for_family_tree=true);
+      void printParentChildInfo(const stk::mesh::Entity element, bool check_for_family_tree=true);
 
       static inline
       stk::mesh::EntityRank fem_entity_rank( unsigned int t ) {
@@ -524,17 +525,17 @@ namespace stk {
       }
 
 
-      stk::mesh::Entity & createOrGetNode(stk::mesh::EntityId nid, double* x=0);
+      stk::mesh::Entity createOrGetNode(stk::mesh::EntityId nid, double* x=0);
 
-      void createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity *>& requested_entities);
+      void createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity>& requested_entities);
 
 
       static double * field_data(const stk::mesh::FieldBase *field, const stk::mesh::Bucket & bucket, unsigned *stride=0);
-      static double * field_data(const stk::mesh::FieldBase *field, const mesh::Entity& node, unsigned *stride=0);
-      static double * field_data_entity(const stk::mesh::FieldBase *field, const mesh::Entity& entity, unsigned *stride=0);
+      static double * field_data(const stk::mesh::FieldBase *field, const mesh::Entity node, unsigned *stride=0);
+      static double * field_data_entity(const stk::mesh::FieldBase *field, const mesh::Entity entity, unsigned *stride=0);
 
       static inline double *
-      field_data_inlined(const mesh::FieldBase *field, const mesh::Entity& node)
+      field_data_inlined(const mesh::FieldBase *field, const mesh::Entity node)
       {
         return field_data(field, node);
 //         return
@@ -557,7 +558,7 @@ namespace stk {
       void bucketOpLoop(BucketOp& bucketOp, stk::mesh::FieldBase *field, stk::mesh::Selector* selector, bool is_surface_norm=false );
 
       static unsigned size1(const stk::mesh::Bucket& bucket) { return bucket.size(); }
-      static unsigned size1(const stk::mesh::Entity& element) { return 1; }
+      static unsigned size1(const stk::mesh::Entity element) { return 1; }
 
       /// \brief Fill the array cellNodes(numCells, numNodesPerCell, nDof) with DOF values from the given Field
       /// The stride of the data (last dimension in cellNodes) is taken to be that of the field's stride; however,
@@ -572,22 +573,22 @@ namespace stk {
 
       /// \brief see comment for fillCellNodes(Bucket& ...)
       template<class ArrayType>
-      static void fillCellNodes( const stk::mesh::Entity &element,
+      static void fillCellNodes( const stk::mesh::Entity element,
                                  //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                  //VectorFieldType& coord_field,
                                  mesh::FieldBase* field,
                                  ArrayType& cellNodes, unsigned dataStride=0 );
 
-      double edge_length_ave(const stk::mesh::Entity &entity, mesh::FieldBase* coord_field = 0);
+      double edge_length_ave(const stk::mesh::Entity entity, mesh::FieldBase* coord_field = 0);
 
       static void findMinMaxEdgeLength(const mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                        Intrepid::FieldContainer<double>& elem_min_edge_length, Intrepid::FieldContainer<double>& elem_max_edge_length);
 
       static void
-      element_side_nodes( const mesh::Entity & elem , int local_side_id, stk::mesh::EntityRank side_entity_rank, std::vector<mesh::Entity *>& side_node_entities );
+      element_side_nodes( const mesh::Entity elem , int local_side_id, stk::mesh::EntityRank side_entity_rank, std::vector<mesh::Entity>& side_node_entities );
 
       static void
-      element_side_permutation(const mesh::Entity& element, const mesh::Entity& side, unsigned iSubDimOrd, int& returnedIndex, int& returnedPolarity);
+      element_side_permutation(const mesh::Entity element, const mesh::Entity side, unsigned iSubDimOrd, int& returnedIndex, int& returnedPolarity);
 
       // FIXME
       SameRankRelation& adapt_parent_to_child_relations() { return m_adapt_parent_to_child_relations; }
@@ -776,7 +777,7 @@ namespace stk {
 
       for ( unsigned iElemInBucketOrd = 0 ; iElemInBucketOrd < number_elems ; ++iElemInBucketOrd)
         {
-          mesh::Entity & elem = bucket[iElemInBucketOrd] ;
+          mesh::Entity elem = bucket[iElemInBucketOrd] ;
 
           if (0) std::cout << "elemOfBucket= " << elem << std::endl;
           const mesh::PairIterRelation elem_nodes = elem.relations( mesh::MetaData::NODE_RANK );
@@ -784,7 +785,7 @@ namespace stk {
           // FIXME: fill field data (node coordinates)
           for (unsigned iNodeOrd = 0; iNodeOrd < numNodes; iNodeOrd++)
             {
-              mesh::Entity& node = *elem_nodes[iNodeOrd].entity();
+              mesh::Entity node = elem_nodes[iNodeOrd].entity();
               double * node_coord_data = PerceptMesh::field_data( field , node);
 
               for (unsigned iDOFOrd = 0; iDOFOrd < dataStride; iDOFOrd++)
@@ -800,7 +801,7 @@ namespace stk {
 
     // static
     template<class ArrayType>
-    void PerceptMesh::fillCellNodes( const stk::mesh::Entity &element,
+    void PerceptMesh::fillCellNodes( const stk::mesh::Entity element,
                                   //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                   //VectorFieldType& coord_field,
                                   mesh::FieldBase* field,
@@ -820,7 +821,7 @@ namespace stk {
       unsigned iCell = 0;
       for (unsigned iNodeOrd = 0; iNodeOrd < numNodes; iNodeOrd++)
         {
-          mesh::Entity& node = *element_nodes[iNodeOrd].entity();
+          mesh::Entity node = element_nodes[iNodeOrd].entity();
           double * node_coord_data = PerceptMesh::field_data( field , node);
 
           for (unsigned iDOFOrd = 0; iDOFOrd < dataStride; iDOFOrd++)

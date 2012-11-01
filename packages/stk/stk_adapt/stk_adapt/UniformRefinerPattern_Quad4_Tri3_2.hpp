@@ -44,9 +44,9 @@ namespace stk {
         return str_map;
       }
 
-      void 
-      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+      void
+      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
+                        stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
         const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
@@ -65,15 +65,15 @@ namespace stk {
         std::vector<stk::mesh::Part*> remove_parts;
 
         add_parts = m_toParts;
-        
+
         //std::cout << "P["<< m_eMesh.get_rank() << "] add_parts = " << add_parts << std::endl;
 
         //stk::mesh::EntityRank my_rank = m_primaryEntityRank;
 
-        //nodeRegistry.makeCentroid(*const_cast<stk::mesh::Entity *>(&element), my_rank, 0u);
-        //nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), my_rank, 0u);
-        //nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), my_rank, 0u);
-        
+        //nodeRegistry.makeCentroid(*const_cast<stk::mesh::Entity>(&element), my_rank, 0u);
+        //nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity>(&element), my_rank, 0u);
+        //nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity>(&element), my_rank, 0u);
+
         {
           unsigned globalIqf  = VERT_N(0);
           unsigned minVal     = globalIqf;
@@ -95,7 +95,7 @@ namespace stk {
 
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
-            stk::mesh::Entity& newElement = *(*element_pool);
+            stk::mesh::Entity newElement = *element_pool;
 
             if (proc_rank_field && element.entity_rank() == stk::mesh::MetaData::ELEMENT_RANK)
               {
@@ -125,7 +125,7 @@ namespace stk {
           }
 
       }
-      
+
     };
 
   }

@@ -160,17 +160,17 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, trivial_parallel_2 )
   // Verify element_id 1 is owned by proc 0
   // Verify element_id 2 is owned by proc 1
   const EntityRank element_rank = MetaData::ELEMENT_RANK;
-  Entity * entity_1 = mesh.get_entity(element_rank, 1);
-  Entity * entity_2 = mesh.get_entity(element_rank ,2);
+  Entity entity_1 = mesh.get_entity(element_rank, 1);
+  Entity entity_2 = mesh.get_entity(element_rank ,2);
   if (p_rank <= 1) {
-    STKUNIT_ASSERT_TRUE( entity_1 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_2 != NULL );
-    STKUNIT_EXPECT_EQUAL( 0u, entity_1->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_2->owner_rank() );
+    STKUNIT_ASSERT_TRUE( entity_1.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_2.is_valid() );
+    STKUNIT_EXPECT_EQUAL( 0u, entity_1.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1u, entity_2.owner_rank() );
   }
   else {
-    STKUNIT_EXPECT_TRUE( entity_1 == NULL );
-    STKUNIT_EXPECT_TRUE( entity_2 == NULL );
+    STKUNIT_EXPECT_TRUE( !entity_1.is_valid() );
+    STKUNIT_EXPECT_TRUE( !entity_2.is_valid() );
   }
 }
 
@@ -202,22 +202,22 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_psizex1x1 )
   const EntityRank element_rank = MetaData::ELEMENT_RANK;
 
   // We should always know about, and own, the element assigned to us
-  Entity * my_entity    = mesh.get_entity(element_rank, p_rank + 1);
-  STKUNIT_ASSERT_TRUE( my_entity != NULL );
-  STKUNIT_EXPECT_EQUAL( p_rank, my_entity->owner_rank() );
+  Entity my_entity    = mesh.get_entity(element_rank, p_rank + 1);
+  STKUNIT_ASSERT_TRUE( my_entity.is_valid() );
+  STKUNIT_EXPECT_EQUAL( p_rank, my_entity.owner_rank() );
 
   // If applicable, we know about the element on adjacent lower rank
   if (p_rank > 0) {
-    Entity * prior_entity = mesh.get_entity(element_rank, p_rank);
-    STKUNIT_ASSERT_TRUE( prior_entity != NULL );
-    STKUNIT_EXPECT_EQUAL( p_rank - 1, prior_entity->owner_rank() );
+    Entity prior_entity = mesh.get_entity(element_rank, p_rank);
+    STKUNIT_ASSERT_TRUE( prior_entity.is_valid() );
+    STKUNIT_EXPECT_EQUAL( p_rank - 1, prior_entity.owner_rank() );
   }
 
   // If applicable, we know about the element on adjacent higher rank
   if (p_rank < p_size - 1) {
-    Entity * next_entity   = mesh.get_entity(element_rank, p_rank + 2);
-    STKUNIT_ASSERT_TRUE( next_entity != NULL );
-    STKUNIT_EXPECT_EQUAL( p_rank + 1, next_entity->owner_rank() );
+    Entity next_entity   = mesh.get_entity(element_rank, p_rank + 2);
+    STKUNIT_ASSERT_TRUE( next_entity.is_valid() );
+    STKUNIT_EXPECT_EQUAL( p_rank + 1, next_entity.owner_rank() );
   }
 }
 
@@ -277,57 +277,57 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_4x2x1 )
 
   // Verify that the entities and known and owned by the appropriate procs
   const EntityRank element_rank = MetaData::ELEMENT_RANK;
-  Entity * entity_1 = mesh.get_entity(element_rank, 1);
-  Entity * entity_2 = mesh.get_entity(element_rank, 2);
-  Entity * entity_3 = mesh.get_entity(element_rank, 3);
-  Entity * entity_4 = mesh.get_entity(element_rank, 4);
-  Entity * entity_5 = mesh.get_entity(element_rank, 5);
-  Entity * entity_6 = mesh.get_entity(element_rank, 6);
-  Entity * entity_7 = mesh.get_entity(element_rank, 7);
-  Entity * entity_8 = mesh.get_entity(element_rank, 8);
+  Entity entity_1 = mesh.get_entity(element_rank, 1);
+  Entity entity_2 = mesh.get_entity(element_rank, 2);
+  Entity entity_3 = mesh.get_entity(element_rank, 3);
+  Entity entity_4 = mesh.get_entity(element_rank, 4);
+  Entity entity_5 = mesh.get_entity(element_rank, 5);
+  Entity entity_6 = mesh.get_entity(element_rank, 6);
+  Entity entity_7 = mesh.get_entity(element_rank, 7);
+  Entity entity_8 = mesh.get_entity(element_rank, 8);
   if (p_rank == 0) {
-    STKUNIT_ASSERT_TRUE( entity_1 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_2 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_3 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_4 == NULL );
-    STKUNIT_ASSERT_TRUE( entity_5 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_6 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_7 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_8 == NULL );
-    STKUNIT_EXPECT_EQUAL( 0u, entity_1->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_2->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_3->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_5->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 0u, entity_6->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_7->owner_rank() );
+    STKUNIT_ASSERT_TRUE( entity_1.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_2.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_3.is_valid() );
+    STKUNIT_ASSERT_TRUE( !entity_4.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_5.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_6.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_7.is_valid() );
+    STKUNIT_ASSERT_TRUE( !entity_8.is_valid() );
+    STKUNIT_EXPECT_EQUAL( 0u, entity_1.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1u, entity_2.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1u, entity_3.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1u, entity_5.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 0u, entity_6.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1u, entity_7.owner_rank() );
   }
   else if (p_rank == 1) {
-    STKUNIT_ASSERT_TRUE( entity_1 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_2 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_3 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_4 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_5 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_6 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_7 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_8 != NULL );
-    STKUNIT_EXPECT_EQUAL( 0u, entity_1->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_2->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_3->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_4->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_5->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 0u, entity_6->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_7->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_8->owner_rank() );
+    STKUNIT_ASSERT_TRUE( entity_1.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_2.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_3.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_4.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_5.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_6.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_7.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_8.is_valid() );
+    STKUNIT_EXPECT_EQUAL( 0u, entity_1.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1u, entity_2.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1u, entity_3.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1u, entity_4.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1u, entity_5.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 0u, entity_6.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1u, entity_7.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1u, entity_8.owner_rank() );
   }
   else {
-    STKUNIT_EXPECT_TRUE( entity_1 == NULL );
-    STKUNIT_EXPECT_TRUE( entity_2 == NULL );
-    STKUNIT_EXPECT_TRUE( entity_3 == NULL );
-    STKUNIT_EXPECT_TRUE( entity_4 == NULL );
-    STKUNIT_EXPECT_TRUE( entity_5 == NULL );
-    STKUNIT_EXPECT_TRUE( entity_6 == NULL );
-    STKUNIT_EXPECT_TRUE( entity_7 == NULL );
-    STKUNIT_EXPECT_TRUE( entity_8 == NULL );
+    STKUNIT_EXPECT_TRUE( !entity_1.is_valid() );
+    STKUNIT_EXPECT_TRUE( !entity_2.is_valid() );
+    STKUNIT_EXPECT_TRUE( !entity_3.is_valid() );
+    STKUNIT_EXPECT_TRUE( !entity_4.is_valid() );
+    STKUNIT_EXPECT_TRUE( !entity_5.is_valid() );
+    STKUNIT_EXPECT_TRUE( !entity_6.is_valid() );
+    STKUNIT_EXPECT_TRUE( !entity_7.is_valid() );
+    STKUNIT_EXPECT_TRUE( !entity_8.is_valid() );
   }
 }
 
@@ -379,40 +379,40 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_5x1x1 )
 
   // Verify that the entities and known and owned by the appropriate procs
   const EntityRank element_rank = MetaData::ELEMENT_RANK;
-  Entity * entity_1 = mesh.get_entity(element_rank, 1);
-  Entity * entity_2 = mesh.get_entity(element_rank, 2);
-  Entity * entity_3 = mesh.get_entity(element_rank, 3);
-  Entity * entity_4 = mesh.get_entity(element_rank, 4);
-  Entity * entity_5 = mesh.get_entity(element_rank, 5);
+  Entity entity_1 = mesh.get_entity(element_rank, 1);
+  Entity entity_2 = mesh.get_entity(element_rank, 2);
+  Entity entity_3 = mesh.get_entity(element_rank, 3);
+  Entity entity_4 = mesh.get_entity(element_rank, 4);
+  Entity entity_5 = mesh.get_entity(element_rank, 5);
   if (p_rank == 0) {
-    STKUNIT_ASSERT_TRUE( entity_1 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_2 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_3 == NULL );
-    STKUNIT_ASSERT_TRUE( entity_4 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_5 != NULL );
-    STKUNIT_EXPECT_EQUAL( 0u, entity_1->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_2->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_4->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 0u, entity_5->owner_rank() );
+    STKUNIT_ASSERT_TRUE( entity_1.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_2.is_valid() );
+    STKUNIT_ASSERT_TRUE( !entity_3.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_4.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_5.is_valid() );
+    STKUNIT_EXPECT_EQUAL( 0u, entity_1.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1u, entity_2.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1u, entity_4.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 0u, entity_5.owner_rank() );
   }
   else if (p_rank == 1) {
-    STKUNIT_ASSERT_TRUE( entity_1 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_2 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_3 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_4 != NULL );
-    STKUNIT_ASSERT_TRUE( entity_5 != NULL );
-    STKUNIT_EXPECT_EQUAL( 0u, entity_1->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_2->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_3->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 1u, entity_4->owner_rank() );
-    STKUNIT_EXPECT_EQUAL( 0u, entity_5->owner_rank() );
+    STKUNIT_ASSERT_TRUE( entity_1.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_2.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_3.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_4.is_valid() );
+    STKUNIT_ASSERT_TRUE( entity_5.is_valid() );
+    STKUNIT_EXPECT_EQUAL( 0u, entity_1.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1u, entity_2.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1u, entity_3.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 1u, entity_4.owner_rank() );
+    STKUNIT_EXPECT_EQUAL( 0u, entity_5.owner_rank() );
   }
   else {
-    STKUNIT_EXPECT_TRUE( entity_1 == NULL );
-    STKUNIT_EXPECT_TRUE( entity_2 == NULL );
-    STKUNIT_EXPECT_TRUE( entity_3 == NULL );
-    STKUNIT_EXPECT_TRUE( entity_4 == NULL );
-    STKUNIT_EXPECT_TRUE( entity_5 == NULL );
+    STKUNIT_EXPECT_TRUE( !entity_1.is_valid() );
+    STKUNIT_EXPECT_TRUE( !entity_2.is_valid() );
+    STKUNIT_EXPECT_TRUE( !entity_3.is_valid() );
+    STKUNIT_EXPECT_TRUE( !entity_4.is_valid() );
+    STKUNIT_EXPECT_TRUE( !entity_5.is_valid() );
   }
 }
 

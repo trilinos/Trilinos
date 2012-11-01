@@ -80,14 +80,14 @@ void get_idents(stk::mesh::BulkData &bulk_data,
   ident_vector.clear();
   const stk::mesh::MetaData&   meta_data = stk::mesh::MetaData::get(bulk_data);
 
-  std::vector<stk::mesh::Entity *> entities;
+  std::vector<stk::mesh::Entity> entities;
   stk::mesh::Selector selector = meta_data.locally_owned_part();
   get_selected_entities(selector, bulk_data.buckets(stk::mesh::MetaData::NODE_RANK), entities);
   const size_t num_entities = entities.size();
 
   for (size_t i = 0; i < num_entities; ++i) {
 //    const ParallelIndex::Key   p = entities[i]->key().value();
-    const ParallelIndex::Key   p = entities[i]->key();
+    const ParallelIndex::Key   p = entities[i].key();
     ident_vector.push_back(p);
   }
 }

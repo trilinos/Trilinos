@@ -98,9 +98,9 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinPocket)
 
   //each element should have 6 faces attached to it
   for (EntityId element_id = 1; element_id < 3; ++element_id) {
-    stk::mesh::Entity * element = bulk_data.get_entity( element_rank, element_id);
-    if ( element != NULL) {
-      stk::mesh::PairIterRelation element_side_relations = element->relations(side_rank);
+    stk::mesh::Entity element = bulk_data.get_entity( element_rank, element_id);
+    if ( element.is_valid() ) {
+      stk::mesh::PairIterRelation element_side_relations = element.relations(side_rank);
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 6);
     }
   }
@@ -264,19 +264,19 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShells)
     EntityId face_1_id = 0; //invalid face id
     EntityId face_2_id = 0; //invalid face id
     for (EntityId shell_id = 1; shell_id < 5; ++shell_id) {
-      stk::mesh::Entity * shell = bulk_data.get_entity( element_rank, shell_id);
-      if ( shell != NULL) {
-        stk::mesh::PairIterRelation shell_side_relations = shell->relations(side_rank);
+      stk::mesh::Entity shell = bulk_data.get_entity( element_rank, shell_id);
+      if ( shell.is_valid() ) {
+        stk::mesh::PairIterRelation shell_side_relations = shell.relations(side_rank);
 
         STKUNIT_ASSERT_TRUE( shell_side_relations.size() == 2);
 
         // verify that only one side has been created
         // and that all stacked shells reference this side
         if (face_1_id == 0) {
-          face_1_id = shell_side_relations->entity()->identifier();
+          face_1_id = shell_side_relations->entity().identifier();
         }
         else {
-          STKUNIT_EXPECT_TRUE( face_1_id == shell_side_relations->entity()->identifier());
+          STKUNIT_EXPECT_TRUE( face_1_id == shell_side_relations->entity().identifier());
         }
 
         //check that the side is one the correct local side of the shell
@@ -285,10 +285,10 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShells)
         ++shell_side_relations;
 
         if (face_2_id == 0) {
-          face_2_id = shell_side_relations->entity()->identifier();
+          face_2_id = shell_side_relations->entity().identifier();
         }
         else {
-          STKUNIT_EXPECT_TRUE( face_2_id == shell_side_relations->entity()->identifier());
+          STKUNIT_EXPECT_TRUE( face_2_id == shell_side_relations->entity().identifier());
         }
 
         //check that the side is one the correct local side of the shell
@@ -298,19 +298,19 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShells)
     }
 
     for (EntityId shell_id = 5; shell_id < 9; ++shell_id) {
-      stk::mesh::Entity * shell = bulk_data.get_entity( element_rank, shell_id);
-      if ( shell != NULL) {
-        stk::mesh::PairIterRelation shell_side_relations = shell->relations(side_rank);
+      stk::mesh::Entity shell = bulk_data.get_entity( element_rank, shell_id);
+      if ( shell.is_valid() ) {
+        stk::mesh::PairIterRelation shell_side_relations = shell.relations(side_rank);
 
         STKUNIT_ASSERT_TRUE( shell_side_relations.size() == 2);
 
         // verify that only one side has been created
         // and that all stacked shells reference this side
         if (face_2_id == 0) {
-          face_2_id = shell_side_relations->entity()->identifier();
+          face_2_id = shell_side_relations->entity().identifier();
         }
         else {
-          STKUNIT_EXPECT_TRUE( face_2_id == shell_side_relations->entity()->identifier());
+          STKUNIT_EXPECT_TRUE( face_2_id == shell_side_relations->entity().identifier());
         }
 
         //check that the side is one the correct local side of the shell
@@ -319,10 +319,10 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShells)
         ++shell_side_relations;
 
         if (face_1_id == 0) {
-          face_1_id = shell_side_relations->entity()->identifier();
+          face_1_id = shell_side_relations->entity().identifier();
         }
         else {
-          STKUNIT_EXPECT_TRUE( face_1_id == shell_side_relations->entity()->identifier());
+          STKUNIT_EXPECT_TRUE( face_1_id == shell_side_relations->entity().identifier());
         }
 
         //check that the side is one the correct local side of the shell
@@ -399,9 +399,9 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinShellOnHex)
   //check hex
   {
     EntityId hex_id = 1;
-    stk::mesh::Entity * element = bulk_data.get_entity( element_rank, hex_id);
-    if ( element != NULL) {
-      stk::mesh::PairIterRelation element_side_relations = element->relations(side_rank);
+    stk::mesh::Entity element = bulk_data.get_entity( element_rank, hex_id);
+    if ( element.is_valid() ) {
+      stk::mesh::PairIterRelation element_side_relations = element.relations(side_rank);
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 5);
       for (; !element_side_relations.empty(); ++element_side_relations) {
         unsigned local_side_id = element_side_relations->identifier();
@@ -415,9 +415,9 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinShellOnHex)
   //check shell
   {
     EntityId shell_id = 2;
-    stk::mesh::Entity * element = bulk_data.get_entity( element_rank, shell_id);
-    if ( element != NULL) {
-      stk::mesh::PairIterRelation element_side_relations = element->relations(side_rank);
+    stk::mesh::Entity element = bulk_data.get_entity( element_rank, shell_id);
+    if ( element.is_valid() ) {
+      stk::mesh::PairIterRelation element_side_relations = element.relations(side_rank);
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 1);
       for (; !element_side_relations.empty(); ++element_side_relations) {
         unsigned local_side_id = element_side_relations->identifier();
@@ -496,9 +496,9 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinInvertedShellOnHex)
   //check hex
   {
     EntityId hex_id = 1;
-    stk::mesh::Entity * element = bulk_data.get_entity( element_rank, hex_id);
-    if ( element != NULL) {
-      stk::mesh::PairIterRelation element_side_relations = element->relations(side_rank);
+    stk::mesh::Entity element = bulk_data.get_entity( element_rank, hex_id);
+    if ( element.is_valid() ) {
+      stk::mesh::PairIterRelation element_side_relations = element.relations(side_rank);
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 6);
       for (; !element_side_relations.empty(); ++element_side_relations) {
         unsigned local_side_id = element_side_relations->identifier();
@@ -512,9 +512,9 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinInvertedShellOnHex)
   //check shell
   {
     EntityId shell_id = 2;
-    stk::mesh::Entity * element = bulk_data.get_entity( element_rank, shell_id);
-    if ( element != NULL) {
-      stk::mesh::PairIterRelation element_side_relations = element->relations(side_rank);
+    stk::mesh::Entity element = bulk_data.get_entity( element_rank, shell_id);
+    if ( element.is_valid() ) {
+      stk::mesh::PairIterRelation element_side_relations = element.relations(side_rank);
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 2);
       for (; !element_side_relations.empty(); ++element_side_relations) {
         unsigned local_side_id = element_side_relations->identifier();
@@ -612,9 +612,9 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShellOnHex)
   //check hex
   {
     EntityId hex_id = 1;
-    stk::mesh::Entity * element = bulk_data.get_entity( element_rank, hex_id);
-    if ( element != NULL) {
-      stk::mesh::PairIterRelation element_side_relations = element->relations(side_rank);
+    stk::mesh::Entity element = bulk_data.get_entity( element_rank, hex_id);
+    if ( element.is_valid() ) {
+      stk::mesh::PairIterRelation element_side_relations = element.relations(side_rank);
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 5);
       for (; !element_side_relations.empty(); ++element_side_relations) {
         unsigned local_side_id = element_side_relations->identifier();
@@ -629,22 +629,22 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShellOnHex)
   {
     EntityId face_id = 0; //invalid face id
     for (EntityId shell_id = 2; shell_id < 5; ++shell_id) {
-      stk::mesh::Entity * shell = bulk_data.get_entity( element_rank, shell_id);
-      if ( shell != NULL) {
-        stk::mesh::PairIterRelation shell_side_relations = shell->relations(side_rank);
+      stk::mesh::Entity shell = bulk_data.get_entity( element_rank, shell_id);
+      if ( shell.is_valid() ) {
+        stk::mesh::PairIterRelation shell_side_relations = shell.relations(side_rank);
 
         STKUNIT_EXPECT_TRUE( shell_side_relations.size() == 1);
 
         // verify that only one side has been created
         // and that all stacked shells reference this side
         if (face_id == 0) {
-          face_id = shell_side_relations->entity()->identifier();
+          face_id = shell_side_relations->entity().identifier();
         }
         else {
-          STKUNIT_EXPECT_TRUE( face_id == shell_side_relations->entity()->identifier());
+          STKUNIT_EXPECT_TRUE( face_id == shell_side_relations->entity().identifier());
           std::cout << "Shell: " << shell_id
                     << "\tFace_id: " << face_id
-                    << "\tFace_id: " << shell_side_relations->entity()->identifier()
+                    << "\tFace_id: " << shell_side_relations->entity().identifier()
                     << std::endl;
         }
 

@@ -58,7 +58,7 @@ namespace stk
     }
 
     /// return true if topology is bad
-    bool TopologyVerifier::isTopologyBad( mesh::Entity  &elem)
+    bool TopologyVerifier::isTopologyBad( mesh::Entity elem)
     {
       const CellTopologyData * const top = stk::percept::PerceptMesh::get_cell_topology(elem);
 
@@ -72,11 +72,11 @@ namespace stk
 
       for (unsigned j = 0; j < elem_nodes.size()-1; j++)
         {
-          mesh::Entity & node = * elem_nodes[ j ].entity();
+          mesh::Entity node = elem_nodes[ j ].entity();
 
           for ( unsigned i = j+1 ; i < top->node_count ; ++i ) {
             {
-              mesh::Entity & nodei = * elem_nodes[ i ].entity();
+              mesh::Entity nodei = elem_nodes[ i ].entity();
               if (node.identifier() == nodei.identifier())
                 {
                   return true;
@@ -132,7 +132,7 @@ namespace stk
 
           for ( unsigned i = 0 ; i < number_elems ; ++i)
             {
-              mesh::Entity & elem = bucket[i] ;
+              mesh::Entity elem = bucket[i] ;
               bool isDuplicateNode = isTopologyBad(elem);
               if (isDuplicateNode)
                 {
@@ -154,7 +154,7 @@ namespace stk
                   unsigned in0 = cell_topo->edge[iedgeOrd].node[0];
                   unsigned in1 = cell_topo->edge[iedgeOrd].node[1];
 
-                  MyEdge<unsigned> potential_bad_edge(elem_nodes[in0].entity()->identifier(), elem_nodes[in1].entity()->identifier());
+                  MyEdge<unsigned> potential_bad_edge(elem_nodes[in0].entity().identifier(), elem_nodes[in1].entity().identifier());
                   //if (potential_bad_edge.getId0() == 3 && potential_bad_edge.getId1() == 6)
                   if (0) std::cout << "potential_bad_edge: " << potential_bad_edge.getId0() << " " << potential_bad_edge.getId1() << std::endl;
                 }
@@ -165,7 +165,7 @@ namespace stk
                   unsigned in0 = cell_topo->edge[iedgeOrd].node[0];
                   unsigned in1 = cell_topo->edge[iedgeOrd].node[1];
 
-                  MyEdge<unsigned> potential_bad_edge(elem_nodes[in0].entity()->identifier(), elem_nodes[in1].entity()->identifier());
+                  MyEdge<unsigned> potential_bad_edge(elem_nodes[in0].entity().identifier(), elem_nodes[in1].entity().identifier());
                   //if (potential_bad_edge.getId0() == 3 && potential_bad_edge.getId1() == 6)
                   if (0) std::cout << "potential_bad_edge: " << potential_bad_edge.getId0() << " " << potential_bad_edge.getId1() << std::endl;
 
@@ -178,12 +178,12 @@ namespace stk
                     {
                       unsigned inodeOnPotBadEdgeInElem = cell_topo->edge[iedgeOrd].node[inodeOnPotBadEdge];
 
-                      const mesh::PairIterRelation node_elems = elem_nodes[inodeOnPotBadEdgeInElem].entity()->relations( stk::mesh::MetaData::ELEMENT_RANK );
+                      const mesh::PairIterRelation node_elems = elem_nodes[inodeOnPotBadEdgeInElem].entity().relations( stk::mesh::MetaData::ELEMENT_RANK );
                       unsigned num_elems_on_node = node_elems.size();
 
                       for (unsigned iele = 0; iele < num_elems_on_node; iele++)
                         {
-                          mesh::Entity & elemOnNode = *node_elems[iele].entity();
+                          mesh::Entity elemOnNode = node_elems[iele].entity();
                           const mesh::PairIterRelation elemOnNode_nodes = elemOnNode.relations( stk::mesh::MetaData::NODE_RANK );
 
                           const CellTopologyData * const local_cell_topo = stk::percept::PerceptMesh::get_cell_topology(elemOnNode);
@@ -196,8 +196,8 @@ namespace stk
                           for (invalid_edge_set_type::iterator inv_edge = m_invalid_edge_set[local_shardsId].begin();
                                inv_edge != m_invalid_edge_set[local_shardsId].end(); inv_edge++)
                             {
-                              MyEdge<unsigned> globalIdInvEdge( elemOnNode_nodes[ (*inv_edge).getId0()].entity()->identifier(),
-                                                                elemOnNode_nodes[ (*inv_edge).getId1()].entity()->identifier() );
+                              MyEdge<unsigned> globalIdInvEdge( elemOnNode_nodes[ (*inv_edge).getId0()].entity().identifier(),
+                                                                elemOnNode_nodes[ (*inv_edge).getId1()].entity().identifier() );
 
                               if (0) std::cout << "globalIdInvEdge: " << globalIdInvEdge.getId0() << " " << globalIdInvEdge.getId1() << std::endl;
                               if(potential_bad_edge == globalIdInvEdge)

@@ -127,7 +127,7 @@ namespace stk {
 
       void
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
+                        stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
         EXCEPTWATCH;
@@ -139,14 +139,14 @@ namespace stk {
         const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::MetaData::NODE_RANK);
 
         // for cases that have a single center node, we just compute the new node's quantities here instead of globally
-        //stk::mesh::Entity * node = get_bulk_data()->get_entity( Node, node_id );
+        //stk::mesh::Entity node = get_bulk_data()->get_entity( Node, node_id );
 
 #define CENTROID_N NN(stk::mesh::MetaData::ELEMENT_RANK, 0)
 
 #if STK_ADAPT_URP_LOCAL_NODE_COMPS
-        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), Element, 0u);
-        nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), Element, 0u);
-        nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), Element, 0u);
+        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity>(&element), Element, 0u);
+        nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity>(&element), Element, 0u);
+        nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity>(&element), Element, 0u);
 #endif
 
         // following code is from SweepMesher::breakElement, modified here for stk_mesh
@@ -162,7 +162,7 @@ namespace stk {
           //std::cout << "tmp hex elem= " << element << std::endl;
           for (int inode=0; inode < 8; inode++)
             {
-              stk::mesh::Entity & node = * elem_nodes[inode].entity();
+              stk::mesh::Entity node = elem_nodes[inode].entity();
               element_globalIds[inode] = node.identifier();
             }
 
@@ -317,10 +317,10 @@ namespace stk {
 
         for (unsigned ielem=0; ielem < new_elements.size(); ielem++)
           {
-            //stk::mesh::Entity& newElement = eMesh.get_bulk_data()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
-            //stk::mesh::Entity& newElement = eMesh.get_bulk_data()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
+            //stk::mesh::Entity newElement = eMesh.get_bulk_data()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
+            //stk::mesh::Entity newElement = eMesh.get_bulk_data()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
 
-            stk::mesh::Entity& newElement = *(*element_pool);
+            stk::mesh::Entity newElement = *element_pool;
 
             if (proc_rank_field)
               {
@@ -355,18 +355,18 @@ namespace stk {
               {
                 // destroy un-needed elems
                 // elems_to_destroy.push_back(*element_pool);  ++element_pool;
-                eMesh.get_bulk_data()->destroy_entity(**element_pool);
+                eMesh.get_bulk_data()->destroy_entity(*element_pool);
                 ++element_pool;
               }
             //nodes_to_destroy.push_back(CENTROID_N)
-            stk::mesh::Entity * node = eMesh.get_bulk_data()->get_entity( stk::mesh::MetaData::NODE_RANK, CENTROID_N);
-            if (!node)
+            stk::mesh::Entity node = eMesh.get_bulk_data()->get_entity( stk::mesh::MetaData::NODE_RANK, CENTROID_N);
+            if (!node.is_valid())
               {
                 throw std::logic_error("UniformRefinerPattern_Hex8_Tet4_6_12:: node is null");
               }
             else
               {
-                eMesh.get_bulk_data()->destroy_entity(*node);
+                eMesh.get_bulk_data()->destroy_entity(node);
               }
           }
       }

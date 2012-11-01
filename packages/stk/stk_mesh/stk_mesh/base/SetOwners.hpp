@@ -33,14 +33,14 @@ void set_owners(BulkData& mesh_bulk_data)
 
   std::vector<EntityProc> entity_new_owners;
 
-  const std::vector<Entity*>& entity_comm = mesh_bulk_data.entity_comm();
+  const std::vector<Entity>& entity_comm = mesh_bulk_data.entity_comm();
 
   for ( size_t i=0; i<entity_comm.size(); ++i) {
-    Entity * const entity = entity_comm[i] ;
+    Entity const entity = entity_comm[i] ;
 
-    const PairIterEntityComm sharing = entity->sharing();
+    const PairIterEntityComm sharing = entity.sharing();
 
-    if ( ! sharing.empty() && entity->owner_rank() == local_proc ) {
+    if ( ! sharing.empty() && entity.owner_rank() == local_proc ) {
       ProcSet proc_set ;
 
       proc_set.insert( local_proc );

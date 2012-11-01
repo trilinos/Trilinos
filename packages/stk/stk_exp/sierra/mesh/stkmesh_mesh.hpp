@@ -31,8 +31,8 @@ add_entity( mesh_traits<stk::mesh::BulkData>::entity_rank entity_rank,
             stk::mesh::BulkData & mesh )
 {
   stk::mesh::PartVector empty_parts;
-  stk::mesh::Entity& new_entity = mesh.declare_entity(entity_rank, entity_id, empty_parts);
-  return &new_entity;
+  stk::mesh::Entity new_entity = mesh.declare_entity(entity_rank, entity_id, empty_parts);
+  return new_entity;
 }
 
 // Add entity with property and parts to mesh. Optimization for STK_Mesh
@@ -43,7 +43,7 @@ add_entity( mesh_traits<stk::mesh::BulkData>::entity_rank entity_rank,
             stk::mesh::PartVector& parts,
             stk::mesh::BulkData & mesh )
 {
-  return &mesh.declare_entity(entity_rank, entity_id, parts);
+  return mesh.declare_entity(entity_rank, entity_id, parts);
 }
 
 // Destroy_entity
@@ -52,7 +52,7 @@ bool
 remove_entity( mesh_traits<stk::mesh::BulkData>::entity_key entity,
                stk::mesh::BulkData & mesh )
 {
-  return mesh.destroy_entity(*entity);
+  return mesh.destroy_entity(entity);
 }
 
 // Add relation from entity_from to entity_to with position
@@ -64,13 +64,13 @@ add_relation(mesh_traits<stk::mesh::BulkData>::entity_key entity_from,
              stk::mesh::BulkData & mesh)
 {
   try {
-    mesh.declare_relation(*entity_from, *entity_to, relation_position);
+    mesh.declare_relation(entity_from, entity_to, relation_position);
   }
   catch (std::runtime_error&) {
     return stk::mesh::Relation(); // invalid relation descriptor
   }
 
-  stk::mesh::PairIterRelation rels = entity_from->relations(entity_to->entity_rank());
+  stk::mesh::PairIterRelation rels = entity_from.relations(entity_to.entity_rank());
   for ( ; !rels.empty(); ++rels) {
     if (rels->identifier() == relation_position && rels->entity() == entity_to) {
       return *rels;
@@ -140,7 +140,7 @@ remove_relation( mesh_traits<stk::mesh::BulkData>::entity_key entity_from,
                  mesh_traits<stk::mesh::BulkData>::relation_position position,
                  stk::mesh::BulkData & mesh)
 {
-  return mesh.destroy_relation(*entity_from, *entity_to, position);
+  return mesh.destroy_relation(entity_from, entity_to, position);
 }
 
 // Generic API:  Get a range to all entities in the mesh.
@@ -169,7 +169,7 @@ mesh_traits<stk::mesh::BulkData>::relation_range
 get_relations(mesh_traits<stk::mesh::BulkData>::entity_descriptor entity,
               const stk::mesh::BulkData & mesh )
 {
-  return entity->relations();
+  return entity.relations();
 }
 
 // Generic API:  Get a range to selected relations for this entity_local_id
@@ -181,7 +181,7 @@ get_relations(mesh_traits<stk::mesh::BulkData>::entity_descriptor entity,
               const RelationSelector & select,
               const stk::mesh::BulkData & mesh)
 {
-  return entity->relations(select);
+  return entity.relations(select);
 }
 
 // Generic API:  Get a bucket for an entity_descriptor
@@ -191,7 +191,7 @@ mesh_traits<stk::mesh::BulkData>::bucket_key
 get_bucket(mesh_traits<stk::mesh::BulkData>::entity_descriptor entity,
            const stk::mesh::BulkData & mesh)
 {
-  return & entity->bucket();
+  return &entity.bucket();
 }
 
 // Generic API:  Get a bucket for an entity_descriptor
@@ -201,7 +201,7 @@ mesh_traits<stk::mesh::BulkData>::bucket_location
 get_bucket_location(mesh_traits<stk::mesh::BulkData>::entity_descriptor entity,
                     const stk::mesh::BulkData & mesh)
 {
-  return entity->bucket_ordinal();
+  return entity.bucket_ordinal();
 }
 
 // Get all buckets in a mesh
@@ -219,7 +219,7 @@ mesh_traits<stk::mesh::BulkData>::entity_rank
 get_entity_rank( mesh_traits<stk::mesh::BulkData>::entity_key entity,
                  const stk::mesh::BulkData & mesh )
 {
-  return entity->entity_rank();
+  return entity.entity_rank();
 }
 
 // Generic API:  Get buckets associated with a selector.
@@ -273,8 +273,8 @@ move_entity( mesh_traits<stk::mesh::BulkData>::entity_key entity,
              stk::mesh::BulkData & mesh,
              bool always_propagate_internal_changes = true )
 {
-  mesh.change_entity_parts( *entity, add_first, add_last, remove_first, remove_last, always_propagate_internal_changes );
-  stk::mesh::Bucket & bucket = entity->bucket();
+  mesh.change_entity_parts( entity, add_first, add_last, remove_first, remove_last, always_propagate_internal_changes );
+  stk::mesh::Bucket & bucket = entity.bucket();
   return & bucket;
 }
 
@@ -338,7 +338,7 @@ get_field_data( const Field& field,
                 mesh_traits<stk::mesh::BulkData>::entity_descriptor entity,
                 const stk::mesh::BulkData& mesh )
 {
-  return field_data(field, *entity);
+  return field_data(field, entity);
 }
 
 } // namespace mesh

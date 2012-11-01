@@ -32,13 +32,13 @@ namespace stk
 
       // transformed_basis_values: ([C],[F],[P]), or ([C],[F],[P],[D]) for GRAD
       // output_field_values: ([C],[P],[DOF])
-      void get_fieldValues(const stk::mesh::Entity& element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values)
+      void get_fieldValues(const stk::mesh::Entity element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values)
       {
         VERIFY_OP(output_field_values.rank(), ==, 3, "FieldValuesComputer::get_fieldValues output_field_values bad rank");
         VERIFY_OP(transformed_basis_values.rank(), ==, 3, "FieldValuesComputer::get_fieldValues transformed_basis_values bad rank");
-        VERIFY_OP(output_field_values.dimension(0), ==, transformed_basis_values.dimension(0), 
+        VERIFY_OP(output_field_values.dimension(0), ==, transformed_basis_values.dimension(0),
                   "FieldValuesComputer::get_fieldValues output_field_values.dim(0) doesn't match transformed_basis_values.dim(0)");
-        VERIFY_OP(output_field_values.dimension(1), ==, transformed_basis_values.dimension(1), 
+        VERIFY_OP(output_field_values.dimension(1), ==, transformed_basis_values.dimension(1),
                   "FieldValuesComputer::get_fieldValues output_field_values.dim(1) doesn't match transformed_basis_values.dim(1)");
 
         // [P] = num integration points
@@ -72,7 +72,7 @@ namespace stk
         int numNodes = numBases;  // FIXME
 
         // ([C],[F],[P]), or ([C],[F],[P],[D]) for GRAD
-        //MDArray transformed_basis_values(numCells, numBases, numInterpPoints); 
+        //MDArray transformed_basis_values(numCells, numBases, numInterpPoints);
 
         // FIXME - it appears that Intrepid only supports the evaluation of scalar-valued fields, so we have
         //   to copy the field one DOF at a time into a local array, evaluate, then copy back
@@ -95,7 +95,7 @@ namespace stk
               {
                 for (int iNode = 0; iNode < numNodes; iNode++)
                   {
-                    mesh::Entity& node = *elem_nodes[iNode].entity();
+                    mesh::Entity node = elem_nodes[iNode].entity();
                     double * fdata = PerceptMesh::field_data( field , node, &stride_node);
                     field_data_values(iCell, iNode) = fdata[iDOF];
                   }

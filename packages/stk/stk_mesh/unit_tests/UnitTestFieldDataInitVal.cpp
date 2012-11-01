@@ -68,7 +68,7 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_scalar_field)
 
   EntityId node_id = p_rank+1;
   // Create node
-  Entity & node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
+  Entity node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
 
   mesh.modification_end();
 
@@ -114,7 +114,7 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field)
 
   EntityId node_id = p_rank+1;
   // Create node
-  Entity & node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
+  Entity node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
 
   mesh.modification_end();
 
@@ -165,7 +165,7 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
 
   EntityId node_id = p_rank+1;
   // Create node
-  Entity & node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
+  Entity node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
 
   stk::mesh::Bucket& old_bucket = node.bucket();
 
@@ -223,7 +223,7 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
 
   EntityId node_id = p_rank+1;
   // Create node
-  Entity & node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
+  Entity node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
 
   mesh.modification_end();
 

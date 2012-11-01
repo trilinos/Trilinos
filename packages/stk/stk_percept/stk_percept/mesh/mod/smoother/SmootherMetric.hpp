@@ -28,30 +28,30 @@ namespace stk {
     class SmootherMetric
     {
     public:
-      SmootherMetric(PerceptMesh *eMesh) : m_topology_data(0), m_eMesh(eMesh), m_node(0), m_is_nodal(false), m_combine(COP_SUM)
+      SmootherMetric(PerceptMesh *eMesh) : m_topology_data(0), m_eMesh(eMesh), m_node(), m_is_nodal(false), m_combine(COP_SUM)
       {
         m_coord_field_current   = eMesh->get_coordinates_field();
         m_coord_field_original  = eMesh->get_field("coordinates_NM1");
       }
       virtual double length_scaling_power() { return 1.0; }
-      virtual double metric(stk::mesh::Entity& element, bool& valid)=0;
-      virtual double grad_metric(stk::mesh::Entity& element, bool& valid, double grad[8][3]) { throw std::runtime_error("not impl"); return 0.0; }
+      virtual double metric(stk::mesh::Entity element, bool& valid)=0;
+      virtual double grad_metric(stk::mesh::Entity element, bool& valid, double grad[8][3]) { throw std::runtime_error("not impl"); return 0.0; }
 
       const CellTopologyData * m_topology_data ;
-      void set_node(stk::mesh::Entity *node) { m_node=node; }
-      stk::mesh::Entity *get_node() { return m_node; }
+      void set_node(stk::mesh::Entity node) { m_node=node; }
+      stk::mesh::Entity get_node() { return m_node; }
       void set_combine_op(CombineOp combine) { m_combine= combine; }
       CombineOp get_combine_op() { return m_combine; }
       bool is_nodal() { return m_is_nodal; }
 
     protected:
       PerceptMesh *m_eMesh;
-      stk::mesh::Entity *m_node; // for metrics that are node-based
+      stk::mesh::Entity m_node; // for metrics that are node-based
       bool m_is_nodal;
       CombineOp m_combine;
       stk::mesh::FieldBase *m_coord_field_current;
       stk::mesh::FieldBase *m_coord_field_original;
-      
+
     };
 
 
@@ -65,7 +65,7 @@ namespace stk {
       }
       virtual double length_scaling_power() { return 3.0; }
 
-      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid)
       {
         valid = true;
         JacobianUtil jacA, jacW;
@@ -96,7 +96,7 @@ namespace stk {
     public:
       SmootherMetricShapeSizeOrient(PerceptMesh *eMesh) : SmootherMetric(eMesh) {}
       virtual double length_scaling_power() { return 1.0; }
-      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid)
       {
         valid = true;
         JacobianUtil jacA, jacW;
@@ -106,7 +106,7 @@ namespace stk {
         jacA(A_, *m_eMesh, element, m_coord_field_current, m_topology_data);
         jacW(W_, *m_eMesh, element, m_coord_field_original, m_topology_data);
         double val=0.0, val_shape=0.0;
-        DenseMatrix<3,3> Ident; 
+        DenseMatrix<3,3> Ident;
         identity(Ident);
 
         DenseMatrix<3,3> AI, Atmp, WAI;
@@ -138,13 +138,13 @@ namespace stk {
     class SmootherMetricScaledJacobianNodal : public SmootherMetric
     {
     public:
-      SmootherMetricScaledJacobianNodal(PerceptMesh *eMesh) : SmootherMetric(eMesh) 
+      SmootherMetricScaledJacobianNodal(PerceptMesh *eMesh) : SmootherMetric(eMesh)
       { m_is_nodal=true; m_combine=COP_MAX; }
       virtual double length_scaling_power() { return 1.0; }
 
-      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid)
       {
-        VERIFY_OP_ON(m_node, !=, 0, "must set a node");
+        VERIFY_OP_ON(m_node, !=, stk::mesh::Entity(), "must set a node");
         valid = true;
         JacobianUtil jacA, jacSA, jacW;
         jacSA.m_scale_to_unit = true;
@@ -195,7 +195,7 @@ namespace stk {
       SmootherMetricScaledJacobianElemental(PerceptMesh *eMesh) : SmootherMetric(eMesh) {}
       virtual double length_scaling_power() { return 1.0; }
 
-      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid)
       {
         valid = true;
         JacobianUtil jacA, jacSA, jacW;
@@ -242,18 +242,18 @@ namespace stk {
 
     class SmootherMetricShapeB1 : public SmootherMetric
     {
-      DenseMatrix<3,3> Ident; 
+      DenseMatrix<3,3> Ident;
       DenseMatrix<3,3> WI, T;
       JacobianUtil jacA, jacW;
       const int spatialDim;
-      
+
     public:
       SmootherMetricShapeB1(PerceptMesh *eMesh) : SmootherMetric(eMesh), spatialDim( m_eMesh->get_spatial_dim()) {
         identity(Ident);
       }
 
       virtual double length_scaling_power() { return 1.0; }
-      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid)
       {
         valid = true;
 
@@ -332,7 +332,7 @@ namespace stk {
       }
 
       /// computes metric and its gradient - see Mesquite::TShapeB1, TQualityMetric, TargetMetricUtil
-      virtual double grad_metric(stk::mesh::Entity& element, bool& valid, double grad[8][3])
+      virtual double grad_metric(stk::mesh::Entity element, bool& valid, double grad[8][3])
       {
         double A_ = 0.0, W_ = 0.0; // current and reference detJ
         jacA(A_, *m_eMesh, element, m_coord_field_current, m_topology_data);
@@ -435,7 +435,7 @@ namespace stk {
       SmootherMetricShapeSizeOrientB1(PerceptMesh *eMesh) : SmootherMetric(eMesh) {}
 
       virtual double length_scaling_power() { return 1.0; }
-      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid)
       {
         valid = true;
         JacobianUtil jacA, jacW;
@@ -445,7 +445,7 @@ namespace stk {
         jacA(A_, *m_eMesh, element, m_coord_field_current, m_topology_data);
         jacW(W_, *m_eMesh, element, m_coord_field_original, m_topology_data);
         double val=0.0, val_shape=0.0;
-        DenseMatrix<3,3> Ident; 
+        DenseMatrix<3,3> Ident;
         identity(Ident);
 
         DenseMatrix<3,3> WI, T;
@@ -501,7 +501,7 @@ namespace stk {
       SmootherMetricShapeC1(PerceptMesh *eMesh) : SmootherMetric(eMesh) {}
 
       virtual double length_scaling_power() { return 1.0; }
-      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid)
       {
         valid = true;
         JacobianUtil jacA, jacW;
@@ -511,7 +511,7 @@ namespace stk {
         jacA(A_, *m_eMesh, element, m_coord_field_current, m_topology_data);
         jacW(W_, *m_eMesh, element, m_coord_field_original, m_topology_data);
         double val=0.0, val_shape=0.0;
-        DenseMatrix<3,3> Ident; 
+        DenseMatrix<3,3> Ident;
         identity(Ident);
 
         DenseMatrix<3,3> WI, T;
@@ -581,7 +581,7 @@ namespace stk {
       SmootherMetricLaplace(PerceptMesh *eMesh) : SmootherMetric(eMesh) {}
 
       virtual double length_scaling_power() { return 2.0; }
-      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid)
       {
         valid = true;
         JacobianUtil jacA;
@@ -617,7 +617,7 @@ namespace stk {
       SmootherMetricVolumetricEnergy(PerceptMesh *eMesh) : SmootherMetric(eMesh) {}
 
       virtual double length_scaling_power() { return 6.0; }
-      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid)
       {
         valid = true;
         JacobianUtil jacA;

@@ -352,7 +352,7 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
 
       // Iterate over all elements in this bucket
       for ( size_t i = 0 ; i < elem_bucket.size() ; ++i ) {
-        stk::mesh::Entity & elem = elem_bucket[i] ;
+        stk::mesh::Entity elem = elem_bucket[i] ;
 
         // Query the node ids for this element.
         stk::mesh::EntityId node_ids[ shards::Hexahedron<8> ::node_count ];
@@ -375,7 +375,7 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
         // have the correct relation-identifiers and
         // are members of the block.
         for ( unsigned k = 0 ; k < shards::Hexahedron<8> ::node_count ; ++k ) {
-          stk::mesh::Entity & rel_node = * rel[k].entity();
+          stk::mesh::Entity rel_node = rel[k].entity();
           if ( node_ids[k] != rel_node.identifier() ||
                ! rel_node.bucket().member(**iter_part) ) {
               std::cerr << "Error, an element's node is just plain wrong!"
@@ -395,7 +395,7 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
 // field data from the nodes of an element.
 template< class field_type >
 bool gather_field_data( unsigned expected_num_rel, const field_type & field ,
-                        const stk::mesh::Entity & entity ,
+                        const stk::mesh::Entity entity ,
                         typename stk::mesh::FieldTraits< field_type >::data_type * dst,
                         stk::mesh::EntityRank entity_rank )
 {
@@ -410,7 +410,7 @@ bool gather_field_data( unsigned expected_num_rel, const field_type & field ,
     // into src for one entity at a time
     T * const dst_end = dst + SpatialDim * expected_num_rel ;
     for ( ; dst < dst_end ; ++rel , dst += SpatialDim ) {
-      const T* src = field_data( field , * rel->entity() );
+      const T* src = field_data( field , rel->entity() );
       if (!src) {
         break;
       }
@@ -461,7 +461,7 @@ bool verifyFields( const UseCase_2_Mesh & mesh )
 
     // Iterate over all elements in bucket
     for( size_t bucket_index = 0; bucket_index < num_elements_in_bucket; ++bucket_index) {
-      const stk::mesh::Entity & elem = bucket[bucket_index] ;
+      const stk::mesh::Entity elem = bucket[bucket_index] ;
 
       // Gather nodal coordinates of this element
       double elem_coord[ ElementTraits::node_count ][ SpatialDim ];

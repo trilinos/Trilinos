@@ -424,7 +424,7 @@ namespace stk
 
     void
     IntrepidManager::Bases::
-    operator()(const stk::mesh::Entity& element, const MDArray& parametric_coordinates)
+    operator()(const stk::mesh::Entity element, const MDArray& parametric_coordinates)
     {
       m_cb.getBases(element, parametric_coordinates, *this);
     }
@@ -443,12 +443,12 @@ namespace stk
     IntrepidManager::FieldValues::
     FieldValues(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(DOFs_Tag)) {}
 
-    void IntrepidManager::FieldValues::operator()(const stk::mesh::Entity& element, MDArray& transformed_basis_values, mesh::FieldBase* field)
+    void IntrepidManager::FieldValues::operator()(const stk::mesh::Entity element, MDArray& transformed_basis_values, mesh::FieldBase* field)
     {
       ComputeFieldValues cfv;
       cfv.get_fieldValues(element, transformed_basis_values, field, *this);
     }
-    void IntrepidManager::FieldValues::operator()(const stk::mesh::Entity& element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values)
+    void IntrepidManager::FieldValues::operator()(const stk::mesh::Entity element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values)
     {
       ComputeFieldValues cfv;
       cfv.get_fieldValues(element, transformed_basis_values, field, output_field_values);
@@ -556,7 +556,7 @@ namespace stk
 
     }
 
-    void IntrepidManager::isInElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates, unsigned& found_it, const mesh::Entity& element,
+    void IntrepidManager::isInElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates, unsigned& found_it, const mesh::Entity element,
                                       const mesh::BulkData& bulkData)
     {
       found_it = 0;
@@ -588,7 +588,7 @@ namespace stk
         {
           for (unsigned iNode = 0; iNode < numNodes; iNode++)
             {
-              mesh::Entity& node = *elem_nodes[iNode].entity();
+              mesh::Entity node = elem_nodes[iNode].entity();
               double * node_coord_data = stk::mesh::field_data( *coords_field , node);
               for (unsigned iDim=0; iDim < cellDim; iDim++)
                 {

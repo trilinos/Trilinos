@@ -130,7 +130,7 @@ namespace stk
                 
                   for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                     {
-                      stk::mesh::Entity& node = bucket[iEntity];
+                      stk::mesh::Entity node = bucket[iEntity];
 
                       double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
                       double iy = data[1]; // /double(nele);
@@ -157,7 +157,7 @@ namespace stk
                 
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
-                        stk::mesh::Entity& node = bucket[iEntity];
+                        stk::mesh::Entity node = bucket[iEntity];
 
                         double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
                         double ix = data[0]; // /double(nele);
@@ -242,7 +242,7 @@ namespace stk
             eMesh.copy_field(eMesh.get_field("coordinates_NM1"), eMesh.get_coordinates_field());
 
             unsigned center_node_id = 5;
-            stk::mesh::Entity* node = eMesh.get_bulk_data()->get_entity(0, center_node_id);
+            stk::mesh::Entity node = eMesh.get_bulk_data()->get_entity(0, center_node_id);
             double *data = 0;
             if (node)
               {
@@ -326,7 +326,7 @@ namespace stk
                 
                   for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                     {
-                      stk::mesh::Entity& entity = bucket[iEntity];
+                      stk::mesh::Entity entity = bucket[iEntity];
 
                       double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
                       data[2] = data[2]*data[2];
@@ -349,7 +349,7 @@ namespace stk
                 
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
-                        stk::mesh::Entity& entity = bucket[iEntity];
+                        stk::mesh::Entity entity = bucket[iEntity];
 
                         double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
                         double ix = data[0];
