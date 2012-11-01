@@ -214,6 +214,9 @@ namespace Belos {
     ReturnType solve();
     
     //@}
+
+    //! Get a copy of the final stochastic vector
+    Teuchos::RCP<MV> getStochasticVector() { return Y_;}
     
     /** \name Overridden from Teuchos::Describable */
     //@{
@@ -277,6 +280,10 @@ namespace Belos {
 
     // Internal state variables.
     bool isSet_;
+
+    // Stashed copy of the stochastic vector
+    Teuchos::RCP<MV> Y_;
+
   };
   
   
@@ -820,6 +827,10 @@ ReturnType PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::solve() {
     }// while ( numRHS2Solve > 0 )
     
   }
+
+  // get the final stochastic vector
+  Y_=block_cg_iter->getStochasticVector();
+
 								     
   // print final summary
   sTest_->print( printer_->stream(FinalSummary) );

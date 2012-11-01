@@ -200,7 +200,7 @@ namespace Belos {
     Teuchos::RCP<MV> getCurrentUpdate() const { return Teuchos::null; }
     
     //! Get the stochastic vector   
-    const Teuchos::RCP<MV> getStochasticVector() const { return Y_; }
+    Teuchos::RCP<MV> getStochasticVector() const { return Y_; }
 
     //@}
     
