@@ -1,4 +1,3 @@
-
 INCLUDE(TribitsLibraryMacros)
 
 #
@@ -84,10 +83,14 @@ APPEND_SET(SOURCES
     Kokkos_NodeAPIVersion.cpp
   )
 
+SET(kokkos_enabled_nodes "")
+
 MESSAGE(STATUS "Enabling node: Serial")
+LIST(APPEND kokkos_enabled_nodes "Kokkos::SerialNode")
 
 ASSERT_DEFINED(KokkosClassic_ENABLE_Thrust)
 IF (KokkosClassic_ENABLE_Thrust)
+  LIST(APPEND kokkos_enabled_nodes "Kokkos::ThrustGPUNode")
   MESSAGE(STATUS "Enabling node: CUDA/Thrust")
   APPEND_SET(HEADERS ${CUDA_HEADERS})
   APPEND_SET(SOURCES ${CUDA_SOURCES})
@@ -95,6 +98,7 @@ ENDIF()
 
 ASSERT_DEFINED(KokkosClassic_ENABLE_TBB)
 IF (KokkosClassic_ENABLE_TBB)
+  LIST(APPEND kokkos_enabled_nodes "Kokkos::TBBNode")
   MESSAGE(STATUS "Enabling node: TBB")
   APPEND_SET(HEADERS ${TBB_HEADERS})
   APPEND_SET(SOURCES ${TBB_SOURCES})
@@ -102,6 +106,7 @@ ENDIF()
 
 ASSERT_DEFINED(KokkosClassic_ENABLE_ThreadPool)
 IF (KokkosClassic_ENABLE_ThreadPool)
+  LIST(APPEND kokkos_enabled_nodes "Kokkos::TPINode")
   MESSAGE(STATUS "Enabling node: ThreadPool")
   APPEND_SET(HEADERS ${TPI_HEADERS})
   APPEND_SET(SOURCES ${TPI_SOURCES})
@@ -109,10 +114,13 @@ ENDIF()
 
 ASSERT_DEFINED(KokkosClassic_ENABLE_OpenMP)
 IF (KokkosClassic_ENABLE_OpenMP)
+  LIST(APPEND kokkos_enabled_nodes "Kokkos::OpenMPNode")
   MESSAGE(STATUS "Enabling node: OpenMP")
   APPEND_SET(HEADERS ${OMP_HEADERS})
   APPEND_SET(SOURCES ${OMP_SOURCES})
 ENDIF()
+
+SET(KokkosClassic_ENABLED_NODES ${kokkos_enabled_nodes} CACHE STRING "List of nodes enabled in KokkkosClassic.")
 
 #
 # C) Define the targets for package's library(s)
