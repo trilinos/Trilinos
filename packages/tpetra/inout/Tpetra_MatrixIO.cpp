@@ -321,59 +321,15 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
+#include "Tpetra_ETIHelperMacros.h"
 #include "Tpetra_MatrixIO_def.hpp"
-
-#include <Kokkos_ConfigDefs.hpp>
-#include <Kokkos_SerialNode.hpp>
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#  include <Kokkos_TBBNode.hpp>
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#  include <Kokkos_TPINode.hpp>
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-#  include <Kokkos_ThrustGPUNode.hpp>
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-#  include <Kokkos_OpenMPNode.hpp>
-#endif
 
 namespace Tpetra {
   namespace Utils {
 
-#if defined(HAVE_TPETRA_INST_FLOAT)
-  TPETRA_MATRIXIO_INSTANT(float,int,int,Kokkos::SerialNode)
-# ifdef HAVE_KOKKOSCLASSIC_TBB
-    TPETRA_MATRIXIO_INSTANT(float,int,int,Kokkos::TBBNode)
-# endif
-# ifdef HAVE_KOKKOSCLASSIC_OPENMP
-    TPETRA_MATRIXIO_INSTANT(float,int,int,Kokkos::OpenMPNode)
-# endif
-# ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-    TPETRA_MATRIXIO_INSTANT(float,int,int,Kokkos::TPINode)
-# endif
-# if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT)
-    TPETRA_MATRIXIO_INSTANT(float,int,int,Kokkos::ThrustGPUNode)
-# endif
-#endif
+    TPETRA_INSTANTIATE_SLGN(TPETRA_MATRIXIO_INSTANT)
 
-#if defined(HAVE_TPETRA_INST_DOUBLE)
-  TPETRA_MATRIXIO_INSTANT(double,int,int,Kokkos::SerialNode)
-# ifdef HAVE_KOKKOSCLASSIC_TBB
-    TPETRA_MATRIXIO_INSTANT(double,int,int,Kokkos::TBBNode)
-# endif
-# ifdef HAVE_KOKKOSCLASSIC_OPENMP
-    TPETRA_MATRIXIO_INSTANT(double,int,int,Kokkos::OpenMPNode)
-# endif
-# ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-    TPETRA_MATRIXIO_INSTANT(double,int,int,Kokkos::TPINode)
-# endif
-# if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
-    TPETRA_MATRIXIO_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
-# endif
-#endif
-
-} // namespace Tpetra::Utils
+  } // namespace Tpetra::Utils
 } // namespace Tpetra
 
 #endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION

@@ -1,4 +1,3 @@
-
 INCLUDE(TribitsLibraryMacros)
 INCLUDE(TrilinosCreateClientTemplateHeaders)
 
@@ -7,6 +6,10 @@ INCLUDE(TrilinosCreateClientTemplateHeaders)
 #
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
+  TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_ETIHelperMacros.h)
+ENDIF()
+
 
 #
 # B) Define the header and source files (and directories)

@@ -1,0 +1,30 @@
+#ifndef TPETRA_ETIHELPERMACROS_H_
+#define TPETRA_ETIHELPERMACROS_H_
+
+#include <Tpetra_ConfigDefs.hpp>
+
+#include <Kokkos_SerialNode.hpp>
+#if defined(HAVE_KOKKOSCLASSIC_TBB)
+#  include <Kokkos_TBBNode.hpp>
+#endif
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+#  include <Kokkos_TPINode.hpp>
+#endif
+#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
+#  include <Kokkos_OpenMPNode.hpp>
+#endif
+#if defined(HAVE_KOKKOSCLASSIC_THRUST)
+#  include <Kokkos_ThrustGPUNode.hpp>
+#endif
+
+#if defined(HAVE_TPETRA_QD)
+#include <qd/qd_real.h>
+#endif
+
+@TPETRA_ETIMACRO_TSLGN@
+
+@TPETRA_ETIMACRO_SLGN@
+
+@TPETRA_ETIMACRO_LGN@
+
+#endif // TPETRA_ETIHELPERMACROS_H_
