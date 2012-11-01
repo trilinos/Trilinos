@@ -3462,7 +3462,7 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_2(PyObject *SWIGUNUSEDP
     SWIG_exception_fail(SWIG_ArgError(ecode6), "in method '" "StringFunction___call__" "', argument " "6"" of type '" "double""'");
   } 
   arg6 = static_cast< double >(val6);
-  (arg1)->operator ()(*arg2,*arg3,(stk::mesh::Entity )*arg4,(MDArray const &)*arg5,arg6);
+  (arg1)->operator ()(*arg2,*arg3,(stk::mesh::Entity )arg4,(MDArray const &)*arg5,arg6);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -3531,7 +3531,7 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_3(PyObject *SWIGUNUSEDP
     SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "StringFunction___call__" "', argument " "5"" of type '" "MDArray const &""'"); 
   }
   arg5 = reinterpret_cast< MDArray * >(argp5);
-  (arg1)->operator ()(*arg2,*arg3,(stk::mesh::Entity )*arg4,(MDArray const &)*arg5);
+  (arg1)->operator ()(*arg2,*arg3,(stk::mesh::Entity )arg4,(MDArray const &)*arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
