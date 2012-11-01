@@ -47,26 +47,27 @@ WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
 INPUT                  = index.doc groups.doc \
-                         ../src
+                         ../core/src ../parameterlist/src ../comm/src ../numerics/src ../remainder/src
 #INPUT                  = index.doc
-FILE_PATTERNS          = *.h *.hpp *.cpp
+FILE_PATTERNS          = *.h *.c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_PATTERNS       = *.x *.o *.out
-EXAMPLE_PATH           =  ../example/BLAS/cxx_main.cpp \
-                          ../example/CommandLineProcessor/cxx_main.cpp \
-                          ../example/LAPACK/cxx_main.cpp \
-                          ../example/ParameterList/cxx_main.cpp \
-                          ../test/MemoryManagement/ArrayRCP_test.cpp \
-                          ../test/MemoryManagement/RCP_test.cpp \
-                          ../example/RefCountPtr/cxx_main.cpp \
-                          ../example/DenseMatrix/cxx_main.cpp \
-                          ../example/DenseMatrix/cxx_main_sym.cpp \
-                          ../example/TimeMonitor/cxx_main.cpp \
-                          ../test/FancyOutputting/FancyOutputting_test.cpp \
-                          ../test/UnitTest/Int_UnitTests.cpp \
-                          ../test/UnitTest/TemplateFunc_UnitTests.cpp \
-                          ../test/UnitTest/vector_UnitTests.cpp
+EXAMPLE_PATH           = \
+                          ../core/example/CommandLineProcessor/cxx_main.cpp \
+                          ../core/example/RefCountPtr/cxx_main.cpp \
+                          ../core/test/MemoryManagement/ArrayRCP_test.cpp \
+                          ../core/test/MemoryManagement/RCP_test.cpp \
+                          ../core/test/UnitTest/Int_UnitTests.cpp \
+                          ../core/test/UnitTest/TemplateFunc_UnitTests.cpp \
+                          ../core/test/UnitTest/vector_UnitTests.cpp \
+                          ../parameterlist/example/ParameterList/cxx_main.cpp \
+                          ../parameterlist/test/FancyOutputting/FancyOutputting_test.cpp \
+                          ../comm/example/TimeMonitor/cxx_main.cpp \
+                          ../numerics/example/BLAS/cxx_main.cpp \
+                          ../numerics/example/DenseMatrix/cxx_main.cpp \
+                          ../numerics/example/DenseMatrix/cxx_main_sym.cpp \
+                          ../numerics/example/LAPACK/cxx_main.cpp
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 IMAGE_PATH             = 
 INPUT_FILTER           = 
@@ -91,7 +92,7 @@ SEARCH_INCLUDES        = YES
 INCLUDE_FILE_PATTERNS  = 
 PREDEFINED             = DOXYGEN_COMPILE DOXYGEN_SHOULD_SKIP_THIS EPETRA_MPI \
 "TEUCHOS_GET_RCP(Base)=/** Teuchos::ConstHandleable<##Base> interface */ virtual Teuchos::RCP<const Base> getConstRcp() const {return rcp(this);} /** Teuchos::Handleable<##Base> interface */ virtual Teuchos::RCP<Base > getRcp() {return rcp(this);}"
-INCLUDE_PATH           = ../src
+INCLUDE_PATH           =  ../core/src ../parameterlist/src ../comm/src ../numerics/src ../remainder/src
 EXPAND_AS_DEFINED      = STANDARD_MEMBER_COMPOSITION_MEMBERS TEUCHOS_GET_RCP
 #
 # Links to other packages

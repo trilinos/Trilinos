@@ -57,6 +57,7 @@
 #include <Teuchos_XMLObject.hpp>
 #include <Teuchos_ValidatorMaps.hpp>
 #include <Teuchos_DummyObjectGetter.hpp>
+#include <Teuchos_StrUtils.hpp>
 
 // Had to redefine this type from Teuchos_ParameterEntryValidator.hpp.
 // Compiler stumbled on it.
@@ -759,7 +760,7 @@ template <typename Integral>
      const Teuchos::XMLObject& xmlObj, 
      const Teuchos::IDtoValidatorMap& /*validatorIDsMap*/) const
 {
-  Integral minValue, maxValue;
+  Integral minValue=0, maxValue=0;
   bool unsorted=false, hasMin=false, hasMax=false;
 
   if (xmlObj.hasAttribute(string("min"))) {

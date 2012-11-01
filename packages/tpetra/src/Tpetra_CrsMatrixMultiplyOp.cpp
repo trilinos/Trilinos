@@ -45,6 +45,10 @@
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
+#include "Tpetra_CrsMatrixMultiplyOp_def.hpp"
+// need this to instantiate CrsMatrix::multiply()
+#include "Tpetra_CrsMatrix_def.hpp"
+
 #include <Kokkos_SerialNode.hpp>
 #if defined(HAVE_KOKKOSCLASSIC_TBB)
 #  include <Kokkos_TBBNode.hpp>
@@ -59,164 +63,96 @@
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
 
-#include "Tpetra_CrsMatrixMultiplyOp_def.hpp"
-// need this to instantiate CrsMatrix::multiply()
-#include "Tpetra_CrsMatrix_def.hpp"
+#define INST_SER_GO_SCALAR(GO,SCALAR) TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(SCALAR,SCALAR,int,GO,Kokkos::SerialNode)
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+#define INST_TBB_GO_SCALAR(GO,SCALAR) TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(SCALAR,SCALAR,int,GO,Kokkos::TBBNode)
+#else
+#define INST_TBB_GO_SCALAR(GO,SCALAR)
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#define INST_OMP_GO_SCALAR(GO,SCALAR) TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(SCALAR,SCALAR,int,GO,Kokkos::OpenMPNode)
+#else
+#define INST_OMP_GO_SCALAR(GO,SCALAR)
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+#define INST_TPI_GO_SCALAR(GO,SCALAR) TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(SCALAR,SCALAR,int,GO,Kokkos::TPINode)
+#else
+#define INST_TPI_GO_SCALAR(GO,SCALAR)
+#endif
+
+#define INST_SER_GO_SCALAR_SCALAR(GO,S1,S2) TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(S1,S2,int,GO,Kokkos::SerialNode)
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+#define INST_TBB_GO_SCALAR_SCALAR(GO,S1,S2) TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(S1,S2,int,GO,Kokkos::TBBNode)
+#else
+#define INST_TBB_GO_SCALAR_SCALAR(GO,S1,S2)
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#define INST_OMP_GO_SCALAR_SCALAR(GO,S1,S2) TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(S1,S2,int,GO,Kokkos::OpenMPNode)
+#else
+#define INST_OMP_GO_SCALAR_SCALAR(GO,S1,S2)
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+#define INST_TPI_GO_SCALAR_SCALAR(GO,S1,S2) TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(S1,S2,int,GO,Kokkos::TPINode)
+#else
+#define INST_TPI_GO_SCALAR_SCALAR(GO,S1,S2)
+#endif
+
+#define INST_CPU_GO_SCALAR(GO,SCALAR) \
+  INST_SER_GO_SCALAR(GO,SCALAR) \
+  INST_TBB_GO_SCALAR(GO,SCALAR) \
+  INST_OMP_GO_SCALAR(GO,SCALAR) \
+  INST_TPI_GO_SCALAR(GO,SCALAR)
+
+#ifdef HAVE_TPETRA_INST_INT_LONG
+#define INST_CPU_SCALAR(SCALAR) \
+        INST_CPU_GO_SCALAR(int,SCALAR) \
+        INST_CPU_GO_SCALAR(long,SCALAR)
+#else
+#define INST_CPU_SCALAR(SCALAR) \
+        INST_CPU_GO_SCALAR(int,SCALAR)
+#endif
 
 namespace Tpetra {
 
-  // 
+  //
   // instantiate all single-scalar implementations; these are needed internally by CrsMatrix
   //
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,double,int,int,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,double,int,int,Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,double,int,int,Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,double,int,int,Kokkos::OpenMPNode)
-#endif
+  INST_CPU_SCALAR(double)
 #if defined(HAVE_KOKKOSCLASSIC_CUSPARSE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,double,int,int,Kokkos::ThrustGPUNode)
 #endif
 #endif // double
+
 #if defined(HAVE_TPETRA_INST_FLOAT)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,float,int,int,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,float,int,int,Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,float,int,int,Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,float,int,int,Kokkos::OpenMPNode)
-#endif
+  INST_CPU_SCALAR(float)
 #if defined(HAVE_KOKKOSCLASSIC_CUSPARSE) && defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT)
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,float,int,int,Kokkos::ThrustGPUNode)
-#endif
+#endif 
 #endif // float
+
 #if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,std::complex<double>,int,int,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,std::complex<double>,int,int,Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,std::complex<double>,int,int,Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,std::complex<double>,int,int,Kokkos::OpenMPNode)
-#endif
-// not yet supported
+  INST_CPU_SCALAR(std::complex<double>)
+// not yet supported by cusparse
 // #if defined(HAVE_KOKKOSCLASSIC_CUSPARSE) && defined(HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_DOUBLE)
 //     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,std::complex<double>,int,int,Kokkos::ThrustGPUNode)
 // #endif
 #endif // complex double
+
 #if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<float>,std::complex<float>,int,int,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<float>,std::complex<float>,int,int,Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<float>,std::complex<float>,int,int,Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<float>,std::complex<float>,int,int,Kokkos::OpenMPNode)
-#endif
-// not yet supported
+  INST_CPU_SCALAR(std::complex<float>)
+// not yet supported by cusparse
 // #if defined(HAVE_KOKKOSCLASSIC_CUSPARSE) && defined(HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_FLOAT)
 //     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<float>,std::complex<float>,int,int,Kokkos::ThrustGPUNode)
 // #endif
 #endif // complex float
 
-
-#ifdef HAVE_TPETRA_INST_INT_LONG
-#if defined(HAVE_TPETRA_INST_DOUBLE)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,double,int,long,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,double,int,long,Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,double,int,long,Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,double,int,long,Kokkos::OpenMPNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_CUSPARSE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,double,int,long,Kokkos::ThrustGPUNode)
-#endif
-#endif // double
-#if defined(HAVE_TPETRA_INST_FLOAT)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,float,int,long,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,float,int,long,Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,float,int,long,Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,float,int,long,Kokkos::OpenMPNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_CUSPARSE) && defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,float,int,long,Kokkos::ThrustGPUNode)
-#endif
-#endif // float
-#if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,std::complex<double>,int,long,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,std::complex<double>,int,long,Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,std::complex<double>,int,long,Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,std::complex<double>,int,long,Kokkos::OpenMPNode)
-#endif
-// not yet supported
-// #if defined(HAVE_KOKKOSCLASSIC_CUSPARSE) && defined(HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_DOUBLE)
-//     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,std::complex<double>,int,long,Kokkos::ThrustGPUNode)
-// #endif
-#endif // complex double
-#if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<float>,std::complex<float>,int,long,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<float>,std::complex<float>,int,long,Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<float>,std::complex<float>,int,long,Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<float>,std::complex<float>,int,long,Kokkos::OpenMPNode)
-#endif
-// not yet supported
-// #if defined(HAVE_KOKKOSCLASSIC_CUSPARSE) && defined(HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_FLOAT)
-//     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<float>,std::complex<float>,int,long,Kokkos::ThrustGPUNode)
-// #endif
-#endif // complex float
-#endif // <int,long>
-
-
-  // get all cross scalar applications for testing (these should be moved to a
-  // different file if they are indeed just to support testing)
-  // double x float
+  // cross scalar applications
+  // double-float and float-double
 #if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,float,int,int,Kokkos::SerialNode)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,double,int,int,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,float,int,int,Kokkos::TBBNode)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,double,int,int,Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,float,int,int,Kokkos::TPINode)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,double,int,int,Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,float,int,int,Kokkos::OpenMPNode)
-    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,double,int,int,Kokkos::OpenMPNode)
-#endif
+  INST_TPI_GO_SCALAR_SCALAR(int,float,double)
+  INST_TPI_GO_SCALAR_SCALAR(int,double,float)
 #if defined(HAVE_KOKKOSCLASSIC_CUSPARSE) && defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(double,float,int,int,Kokkos::ThrustGPUNode)
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,double,int,int,Kokkos::ThrustGPUNode)

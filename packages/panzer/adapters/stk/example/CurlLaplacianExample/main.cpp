@@ -76,7 +76,7 @@
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_Utilities.hpp"
-#include "Panzer_STK_ResponseAggregator_SolutionWriter.hpp"
+#include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 
 #include "Epetra_MpiComm.h"
 
@@ -281,21 +281,8 @@ int main(int argc,char * argv[])
       = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
 
    {
-      // register solution writer response aggregator with this library
-      // this is an "Action" only response aggregator
-      panzer::ResponseAggregator_Manager<panzer::Traits> & aggMngr = stkIOResponseLibrary->getAggregatorManager();
-      panzer_stk::ResponseAggregator_SolutionWriter_Builder builder(mesh);
-      builder.setLinearObjFactory(aggMngr.getLinearObjFactory());
-      builder.setGlobalIndexer(aggMngr.getGlobalIndexer());
-      aggMngr.defineAggregatorTypeFromBuilder("Solution Writer",builder);
-   
-      // require a particular "Solution Writer" response
-      panzer::ResponseId rid("Main Field Output","Solution Writer");
-      std::list<std::string> eTypes;
-      eTypes.push_back("Residual");
-   
-      // get a vector of all the element blocks : for some reason a list is used?
-      std::list<std::string> eBlocks;
+      // get a vector of all the element blocks 
+      std::vector<std::string> eBlocks;
       {
          // get all element blocks and add them to the list
          std::vector<std::string> eBlockNames;
@@ -303,9 +290,10 @@ int main(int argc,char * argv[])
          for(std::size_t i=0;i<eBlockNames.size();i++)
             eBlocks.push_back(eBlockNames[i]);
       }
-   
-      // reserve response guranteeing that we can evaluate it (assuming things are done correctly elsewhere)
-      stkIOResponseLibrary->reserveLabeledBlockAggregatedVolumeResponse("Main Field Output",rid,eBlocks,eTypes);
+      
+      panzer_stk::RespFactorySolnWriter_Builder builder;
+      builder.mesh = mesh;
+      stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
    }
 
    // setup closure model
@@ -346,10 +334,10 @@ int main(int argc,char * argv[])
    /////////////////////////////////////////////////////////////
    {
       user_data.set<int>("Workset Size",workset_size);
-      stkIOResponseLibrary->buildVolumeFieldManagersFromResponses(physicsBlocks,
-                                                                  cm_factory,
-                                                                  closure_models,
-                                                                  user_data);
+      stkIOResponseLibrary->buildResponseEvaluators(physicsBlocks,
+                                        cm_factory,
+                                        closure_models,
+                                        user_data);
    }
 
    // assemble linear system
@@ -394,12 +382,14 @@ int main(int argc,char * argv[])
 
    // write out solution
    if(true) {
-      // redistribute solution vector to ghosted vector
-      linObjFactory->globalToGhostContainer(*container,*ghostCont, panzer::LinearObjContainer::X 
-                                                                 | panzer::LinearObjContainer::DxDt); 
-
       // fill STK mesh objects
-      stkIOResponseLibrary->evaluateVolumeFieldManagers<panzer::Traits::Residual>(input,*comm);
+      Teuchos::RCP<panzer::ResponseBase> resp = stkIOResponseLibrary->getResponse<panzer::Traits::Residual>("Main Field Output");
+      panzer::AssemblyEngineInArgs respInput(ghostCont,container);
+      respInput.alpha = 0;
+      respInput.beta = 1;
+
+      stkIOResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
+      stkIOResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
 
       // write to exodus
       mesh->writeToExodus("output.exo");
@@ -487,6 +477,8 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
 
   // scale by -1
   tp_container.get_x()->scale(-1.0);
+
+  tp_container.get_A()->resumeFill(); // where does this go?
 }
 
 void testInitialization(panzer::InputPhysicsBlock& ipb,

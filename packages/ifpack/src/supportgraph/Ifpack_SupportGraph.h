@@ -369,6 +369,9 @@ public virtual Ifpack_Preconditioner
  //! Contains the option to keep the diagonal of original matrix, or weighted average
  double KeepDiag_;
 
+ //! Option to add random pertubation to edge weights, to get random spanning trees
+ int Randomize_;
+
 }; // class Ifpack_SupportGraph<T>
 
 
@@ -391,9 +394,10 @@ Matrix_(rcp(Matrix_in,false)),
   ComputeFlops_(0.0),
   ApplyInverseFlops_(0.0),
   NumForests_(1),
-  DiagPertRel_(0.0),
+  DiagPertRel_(1.0),
   DiagPertAbs_(0.0),
-  KeepDiag_(1.0)
+  KeepDiag_(1.0),
+  Randomize_(0)
 {
   
   Teuchos::ParameterList List_in;
@@ -864,6 +868,11 @@ int Ifpack_SupportGraph<T>::FindSupport()
 	    {
 	      edge_array[k] = E(i,indices[j]);
 	      weights[k] = values[j];
+              if (Randomize_)
+              {
+                // Add small random pertubation. 
+                weights[k] *= (1.0 + 1e-8 * drand48());
+              }
 
 	      k++;
 	    }
@@ -1008,6 +1017,7 @@ int Ifpack_SupportGraph<T>::SetParameters(Teuchos::ParameterList& List_in)
   List_ = List_in;
   NumForests_ = List_in.get("MST: forest number", NumForests_);
   KeepDiag_ = List_in.get("MST: keep diagonal", KeepDiag_);
+  Randomize_ = List_in.get("MST: randomize", Randomize_);
   // Diagonal pertubation parameters have weird names to be compatible with rest of Ifpack!
   DiagPertRel_ = List_in.get("fact: relative threshold", DiagPertRel_); 
   DiagPertAbs_ = List_in.get("fact: absolute threshold", DiagPertAbs_); 

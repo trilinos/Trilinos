@@ -59,6 +59,7 @@ APPEND_GLOB(SOURCES Transfers/Petrov-Galerkin-SA/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Generic/*.cpp)
 APPEND_GLOB(SOURCES Transfers/BaseClass/*.cpp)
 APPEND_GLOB(SOURCES Utils/ForwardDeclaration/*.cpp)
+APPEND_GLOB(SOURCES Facade/*.cpp)
 
 #
 # Explicit instantiation
@@ -111,4 +112,5 @@ TRIBITS_ADD_LIBRARY(
 #MESSAGE("INCLUDE_DIRECTORIES = ")
 #get_directory_property(output INCLUDE_DIRECTORIES)
 #message(STATUS ${output})
+ 
  

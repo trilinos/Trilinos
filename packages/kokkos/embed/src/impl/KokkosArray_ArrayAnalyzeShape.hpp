@@ -55,6 +55,7 @@
 namespace KokkosArray {
 namespace Impl {
 
+//----------------------------------------------------------------------------
 /** \brief  The type 'T' is expected be an intrinsic scalar type;
  *          however, the nesting analysis is invoked for extensibility
  *          to other embedded types.  If not an intrinsic scalar type
@@ -112,6 +113,62 @@ public:
 
   typedef typename ShapeInsert< nested_shape , N >::type shape ;
 };
+
+//----------------------------------------------------------------------------
+
+template< typename T , class Layout >
+struct AnalyzeShape< const Array< T , 0 , void > , Layout >
+{
+private:
+  typedef AnalyzeShape< const T , Layout > nested ;
+  typedef typename nested::shape nested_shape ;
+public:
+
+  typedef typename nested::scalar_type    scalar_type ;
+  typedef typename nested::array_type   * array_type ;
+  typedef const Array< T , 0 , void >     value_type ;
+  typedef const Array< T , 0 , void >     type ;
+
+  typedef scalar_type const_scalar_type ;
+  typedef array_type  const_array_type ;
+  typedef value_type  const_value_type ;
+  typedef type        const_type ;
+
+  typedef typename nested::non_const_scalar_type   non_const_scalar_type ;
+  typedef typename nested::non_const_array_type  * non_const_array_type ;
+  typedef Array< T , 0 , void >                    non_const_value_type ;
+  typedef Array< T , 0 , void >                    non_const_type ;
+
+  typedef typename ShapeInsert< nested_shape , 0 >::type shape ;
+};
+
+template< typename T , class Layout >
+struct AnalyzeShape< Array< T , 0 , void > , Layout >
+{
+private:
+  typedef AnalyzeShape<T,Layout> nested ;
+  typedef typename nested::shape nested_shape ;
+public:
+
+  typedef typename nested::scalar_type    scalar_type ;
+  typedef typename nested::array_type   * array_type ;
+  typedef          Array< T , 0 , void >  value_type ;
+  typedef          Array< T , 0 , void >  type ;
+
+  typedef typename nested::const_scalar_type    const_scalar_type ;
+  typedef typename nested::const_array_type   * const_array_type ;
+  typedef          const Array< T , 0 , void >  const_value_type ;
+  typedef          const Array< T , 0 , void >  const_type ;
+
+  typedef          scalar_type  non_const_scalar_type ;
+  typedef          array_type   non_const_array_type ;
+  typedef          value_type   non_const_value_type ;
+  typedef          type         non_const_type ;
+
+  typedef typename ShapeInsert< nested_shape , 0 >::type shape ;
+};
+
+//----------------------------------------------------------------------------
 
 } // namespace Impl
 } // namespace KokkosArray

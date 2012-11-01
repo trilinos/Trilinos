@@ -99,11 +99,14 @@ namespace Kokkos {
           This constructor accepts the parameters:
           \param "Num Threads" [int] Specifies the number of threads, calls TBBNode::init() if non-negative. Otherwise, late initialization. Default: -1.
        */
-      TBBNode(Teuchos::ParameterList &pl);
+      TBBNode(ParameterList &pl);
   
       /*! \brief Default destructor, calls tbb::task_scheduler_init::terminate(). 
        */
       ~TBBNode();
+
+      /*! \brief Get default parameters for this node */
+      static ParameterList getDefaultParameters();
 
       /*! \brief Init the node with a given number of threads.
           Call tbb::task_scheduler_initi::initialize(), with \c numThreads as the argument if it is greater than 0, and tbb::task_scheduler_init::automatic otherwise.

@@ -87,10 +87,10 @@ void test_device_cuda_view_api()
 #if 0
   KokkosArray::View<double, KokkosArray::Cuda > x("x");
   KokkosArray::View<double[1], KokkosArray::Cuda > y("y");
-  *x = 10 ; // Should not compile
-  x() = 10 ; // Should not compile
-  y[0] = 10 ; // Should not compile
-  y(0) = 10 ; // Should not compile
+  // *x = 10 ;
+  // x() = 10 ;
+  // y[0] = 10 ;
+  // y(0) = 10 ;
 #endif
 }
 

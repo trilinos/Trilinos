@@ -69,6 +69,9 @@ class ThrustGPUNode : public CUDANodeMemoryModel {
     //! \brief Destructor has no effect.
     ~ThrustGPUNode();
 
+    /*! \brief Get default parameters for this node */
+    static ParameterList getDefaultParameters();
+
     //@{ Computational methods
 
     //! \begin parallel for skeleton, a wrapper around thrust::for_each. See \ref kokkos_node_api "Kokkos Node API"

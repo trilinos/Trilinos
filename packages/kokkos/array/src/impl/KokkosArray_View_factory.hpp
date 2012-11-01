@@ -54,7 +54,51 @@
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
+namespace Impl {
 
+template< class ExecutionSpace , class MemoryManagement ,
+          class ScalarType , class ShapeType , class MemorySpace >
+struct ViewManagement 
+{
+  KOKKOSARRAY_INLINE_FUNCTION static void increment( ScalarType * ) {}
+
+  KOKKOSARRAY_INLINE_FUNCTION static void decrement( ScalarType * ) {}
+
+  inline static 
+  ScalarType * allocate( const std::string & , const ShapeType & )
+  { return 0 ; }
+};
+
+template< class ScalarType , class ShapeType , class MemorySpace >
+struct ViewManagement< HostSpace , MemoryManaged ,
+                       ScalarType , ShapeType , MemorySpace >
+{
+  KOKKOSARRAY_INLINE_FUNCTION static void increment( ScalarType * p )
+  { MemorySpace::increment( p ); }
+
+  KOKKOSARRAY_INLINE_FUNCTION static void decrement( ScalarType * p )
+  { MemorySpace::decrement( p ); }
+
+  inline static 
+  ScalarType * allocate( const std::string & label ,
+                         const ShapeType & shape )
+  {
+    return (ScalarType *)
+      MemorySpace::allocate( label ,
+                             typeid(ScalarType) ,
+                             sizeof(ScalarType) ,
+                             Impl::ShapeMap<ShapeType>
+                                 ::allocation_count( shape ) );
+  }
+};
+
+} // namespace Impl
+} // namespace KokkosArray
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
 namespace Impl {
 
 template< class > struct ViewCreateMirror ;
@@ -76,6 +120,12 @@ struct ViewCreateMirror< View< DataType , LayoutType , DeviceType , ManageType >
 };
 
 } // namespace Impl
+} // namespace KokkosArray
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
 
 template< class DataType ,
           class LayoutType ,

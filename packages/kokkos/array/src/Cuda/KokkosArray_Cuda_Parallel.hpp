@@ -45,7 +45,7 @@
 #define KOKKOSARRAY_CUDA_PARALLEL_HPP
 
 #include <string>
-#include <stdexcept>
+#include <impl/KokkosArray_Error.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -56,9 +56,12 @@ struct CudaTraits {
   enum { WarpSize       = 32      /* 0x0020 */ };
   enum { WarpIndexMask  = 0x001f  /* Mask for warpindex */ };
   enum { WarpIndexShift = 5       /* WarpSize == 1 << WarpShift */ };
-  enum { SharedMemoryBanks_13 = 16 /* Compute device 1.3 */ };
-  enum { SharedMemoryBanks_20 = 32 /* Compute device 2.0 */ };
-  enum { UpperBoundGridCount = 65535 /* Hard upper bound */ };
+
+  enum { SharedMemoryBanks    = 32      /* Compute device 2.0 */ };
+  enum { SharedMemoryCapacity = 0x0C000 /* 48k shared / 16k L1 Cache */ };
+  enum { SharedMemoryUsage    = 0x04000 /* 16k shared / 48k L1 Cache */ };
+
+  enum { UpperBoundGridCount    = 65535 /* Hard upper bound */ };
   enum { ConstantMemoryCapacity = 0x010000 /* 64k bytes */ };
   enum { ConstantMemoryUsage    = 0x008000 /* 32k bytes */ };
   enum { ConstantMemoryCache    = 0x002000 /*  8k bytes */ };
@@ -68,17 +71,11 @@ struct CudaTraits {
 
   enum { ConstantMemoryUseThreshold = 0x000100 /* 256 bytes */ };
 
-  static inline
-#if defined( __CUDACC__ )
-  __device__ __host__
-#endif
+  KOKKOSARRAY_INLINE_FUNCTION static
   CudaSpace::size_type warp_count( CudaSpace::size_type i )
     { return ( i + WarpIndexMask ) >> WarpIndexShift ; }
 
-  static inline
-#if defined( __CUDACC__ )
-  __device__ __host__
-#endif
+  KOKKOSARRAY_INLINE_FUNCTION static
   CudaSpace::size_type warp_align( CudaSpace::size_type i )
     {
       enum { Mask = ~CudaSpace::size_type( WarpIndexMask ) };
@@ -190,8 +187,14 @@ struct CudaParallelLaunch< DriverType , true > {
   {
     if ( sizeof( KokkosArray::Impl::CudaTraits::ConstantGlobalBufferType ) <
          sizeof( DriverType ) ) {
-      throw std::runtime_error( std::string("CudaParallelLaunch FAILED: Functor is too large") );
+      KokkosArray::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: Functor is too large") );
     }
+
+    // The default is to prefer L1
+    if ( CudaTraits::SharedMemoryUsage < shmem ) {
+      cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferShared );
+    }
+
     // Copy functor to constant memory on the device
     cudaMemcpyToSymbol( kokkos_impl_cuda_constant_memory_buffer , & driver , sizeof(DriverType) );
 
@@ -209,60 +212,13 @@ struct CudaParallelLaunch< DriverType , false > {
                       const dim3       & block ,
                       const int          shmem )
   {
+    // The default is to prefer L1
+    if ( CudaTraits::SharedMemoryUsage < shmem ) {
+      cudaFuncSetCacheConfig( cuda_parallel_launch_local_memory< DriverType > , cudaFuncCachePreferShared );
+    }
+
     cuda_parallel_launch_local_memory< DriverType ><<< grid , block , shmem >>>( driver );
   }
-};
-
-//----------------------------------------------------------------------------
-
-template< typename DstType , typename SrcType  >
-class CudaParallelCopy ;
-
-template< typename Type >
-class CudaParallelCopy<Type,Type> {
-public:
-  CudaParallelCopy( Type * dst , const Type * src , CudaSpace::size_type count )
-  {
-    CUDA_SAFE_CALL( cudaMemcpy( dst , src , count * sizeof(Type) ,
-                                cudaMemcpyDefault ) );
-  }
-};
-
-template< typename DstType , typename SrcType  >
-class CudaParallelCopy {
-public:
-
-        DstType * const m_dst ;
-  const SrcType * const m_src ;
-  const CudaSpace::size_type m_count ;
-        CudaSpace::size_type m_stride ;
-
-  inline
-  __device__
-  void operator()(void) const
-  {
-    CudaSpace::size_type i = threadIdx.x + blockDim.x * blockIdx.x ;
-    for ( ; i < m_count ; i += m_stride ) {
-      m_dst[i] = (DstType) m_src[i] ;
-    }
-  }
-
-  CudaParallelCopy( DstType * dst , const SrcType * src ,
-                    CudaSpace::size_type count )
-    : m_dst( dst ), m_src( src ), m_count( count )
-    {
-      const CudaSpace::size_type grid_max = cuda_internal_maximum_grid_count();
-
-      const dim3 block( CudaTraits::WarpSize * cuda_internal_maximum_warp_count(), 1, 1);
-
-      dim3 grid( ( ( count + block.x - 1 ) / block.x ) , 1 , 1 );
-
-      if ( grid_max < grid.x ) grid.x = grid_max ;
-
-      m_stride = grid.x * block.x ;
-
-      cuda_parallel_launch_local_memory< CudaParallelCopy ><<< grid , block >>>( *this );
-    }
 };
 
 //----------------------------------------------------------------------------

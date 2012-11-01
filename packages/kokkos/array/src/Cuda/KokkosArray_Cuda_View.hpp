@@ -44,11 +44,10 @@
 #ifndef KOKKOSARRAY_CUDA_VIEW_HPP
 #define KOKKOSARRAY_CUDA_VIEW_HPP
 
-#include <KokkosArray_Host.hpp>
 #include <KokkosArray_View.hpp>
-
-#include <impl/KokkosArray_ViewOperLeft.hpp>
-#include <impl/KokkosArray_ViewOperRight.hpp>
+#include <KokkosArray_HostSpace.hpp>
+#include <KokkosArray_CudaSpace.hpp>
+#include <Cuda/KokkosArray_Cuda_abort.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -63,8 +62,31 @@ struct ViewInitialize< View< DataType , LayoutType , Cuda , ManageType > >
   inline static void apply( const view_type & ) {}
 };
 
+template<>
+struct AssertShapeBoundsAbort< CudaSpace >
+{
+  KOKKOSARRAY_INLINE_FUNCTION
+  static void apply( const size_t /* rank */ ,
+
+                     const size_t /* n0 */ , const size_t /* n1 */ ,
+                     const size_t /* n2 */ , const size_t /* n3 */ ,
+                     const size_t /* n4 */ , const size_t /* n5 */ ,
+                     const size_t /* n6 */ , const size_t /* n7 */ ,
+
+                     const size_t /* i0 */ , const size_t /* i1 */ ,
+                     const size_t /* i2 */ , const size_t /* i3 */ ,
+                     const size_t /* i4 */ , const size_t /* i5 */ ,
+                     const size_t /* i6 */ , const size_t /* i7 */ )
+    {
+      KokkosArray::cuda_abort("KokkosArray::View array bounds violation");
+    }
+};
+
 }
 }
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 namespace KokkosArray {
 

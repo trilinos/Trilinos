@@ -43,13 +43,13 @@
 
 #include <stdlib.h>
 #include <iostream>
-#include <stdexcept>
 #include <sstream>
 
 #include <KokkosArray_CudaSpace.hpp>
 #include <Cuda/KokkosArray_Cuda_Internal.hpp>
 #include <Cuda/KokkosArray_Cuda_Parallel.hpp>
 #include <impl/KokkosArray_MemoryTracking.hpp>
+#include <impl/KokkosArray_Error.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -116,7 +116,7 @@ void * CudaSpace::allocate(
           << " , " << scalar_size
           << " , " << scalar_count
           << " ) FAILED memory allocation" ;
-      throw std::runtime_error( msg.str() );
+      KokkosArray::Impl::throw_runtime_exception( msg.str() );
     }
 
     cuda_space_singleton()
@@ -153,7 +153,7 @@ void CudaSpace::decrement( const void * ptr )
 
       if ( failed ) {
         std::string msg("KokkosArray::Impl::CudaSpace::decrement() failed cudaFree");
-        throw std::runtime_error( msg );
+        KokkosArray::Impl::throw_runtime_exception( msg );
       }
     }
   }
@@ -194,19 +194,19 @@ std::string CudaSpace::query_label( const void * p )
 
 void CudaSpace::access_error()
 {
-  std::string msg ;
-  msg.append( "KokkosArray::CudaSpace::access_error()" );
-  msg.append( " attempt to execute Cuda function from non-Cuda space" );
-  throw std::runtime_error( msg );
+  const std::string msg("KokkosArray::CudaSpace::access_error attempt to execute Cuda function from non-Cuda space" );
+
+  KokkosArray::Impl::throw_runtime_exception( msg );
 }
 
 void CudaSpace::access_error( const void * const ptr )
 {
-  std::string msg ;
-  msg.append( "KokkosArray::CudaSpace::access_error( " );
-  msg.append( query_label( ptr ) );
-  msg.append( " ) attempt to access Cuda-data from non-Cuda execution" );
-  throw std::runtime_error( msg );
+  std::ostringstream msg ;
+  msg << "KokkosArray::CudaSpace::access_error:" ;
+  msg << " attempt to access Cuda-data labeled(" ;
+  msg << query_label( ptr ) ;
+  msg << ") from non-Cuda execution" ;
+  KokkosArray::Impl::throw_runtime_exception( msg.str() );
 }
 
 /*--------------------------------------------------------------------------*/

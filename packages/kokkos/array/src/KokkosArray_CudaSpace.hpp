@@ -50,9 +50,9 @@
 
 #include <KokkosArray_Macros.hpp>
 #include <KokkosArray_HostSpace.hpp>
+#include <Cuda/KokkosArray_Cuda_abort.hpp>
 
 /*--------------------------------------------------------------------------*/
-
 
 namespace KokkosArray {
 
@@ -135,27 +135,10 @@ struct DeepCopy<CudaSpace,CudaSpace> {
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-// Trap cross-memory space access errors.
-
-#if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
-
-extern "C" {
-/*  Cuda runtime function, declared in <crt/device_runtime.h>
- *  Requires capability 2.x or better.
- */
-extern __device__ void __assertfail(
-  const void  *message,
-  const void  *file,
-  unsigned int line,
-  const void  *function,
-  size_t       charsize);
-}
-
-#endif /* #if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ ) */
 
 namespace KokkosArray {
 
-/** \brief  Cuda accessing Cuda is good */
+/** \brief  Cuda code accessing Cuda data is good. */
 template<>
 struct VerifyExecutionSpaceCanAccessDataSpace< CudaSpace , CudaSpace >
 {
@@ -163,37 +146,15 @@ struct VerifyExecutionSpaceCanAccessDataSpace< CudaSpace , CudaSpace >
   KOKKOSARRAY_INLINE_FUNCTION static void verify( const void * ) {}
 };
 
-/** \brief  Cuda accessing non-Cuda is bad */
+/** \brief  Cuda code accessing non-Cuda data is bad. */
 template<>
 struct VerifyExecutionSpaceCanAccessDataSpace< CudaSpace , HostSpace >
 {
   KOKKOSARRAY_INLINE_FUNCTION static void verify(void)
-  {
-#if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
-    const char message[] = "Cuda kernel called function restricted to Host" ;
-    const char empty[] = "" ;
-
-    __assertfail( (const void *) message ,
-                  (const void *) empty ,
-                  (unsigned int) 0 ,
-                  (const void *) empty ,
-                  sizeof(char) );
-#endif
-  }
+  { KokkosArray::cuda_abort("Cuda code called function restricted to Host"); }
 
   KOKKOSARRAY_INLINE_FUNCTION static void verify( const void * )
-  {
-#if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
-    const char message[] = "Cuda kernel attempt to access Host memory" ;
-    const char empty[] = "" ;
-
-    __assertfail( (const void *) message ,
-                  (const void *) empty ,
-                  (unsigned int) 0 ,
-                  (const void *) empty ,
-                  sizeof(char) );
-#endif
-  }
+  { KokkosArray::cuda_abort("Cuda code attempted to access Host memory"); }
 };
 
 /** \brief  Produce error message when trying to access Cuda 

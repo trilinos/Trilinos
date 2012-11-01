@@ -1,3 +1,4 @@
+/**
 //@HEADER
 // ************************************************************************
 //
@@ -34,10 +35,11 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
+//Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 //
-// ************************************************************************
+// *************************************************************************
 //@HEADER
+ */
 
 #include "Trios_config.h"
 #include "Trios_logger.h"

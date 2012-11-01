@@ -59,6 +59,8 @@ static FORCE_INLINE uint32_t fmix32 ( uint32_t h )
 
 /*---------- */
 
+#if 0
+/* KDDKDD NOT USED BY ZOLTAN  */
 static FORCE_INLINE uint64_t fmix64 ( uint64_t k )
 {
   k ^= k >> 33;
@@ -69,6 +71,7 @@ static FORCE_INLINE uint64_t fmix64 ( uint64_t k )
 
   return k;
 }
+#endif
 
 /*--------------------------------------------------------------------------- */
 
@@ -105,6 +108,7 @@ static void MurmurHash3_x86_32 ( const void * key, int len,
   /*---------- */
   /* tail */
 
+  {
   const uint8_t * tail = (const uint8_t*)(data + nblocks*4);
 
   uint32_t k1 = 0;
@@ -116,6 +120,7 @@ static void MurmurHash3_x86_32 ( const void * key, int len,
   case 1: k1 ^= tail[0];
           k1 *= c1; k1 = ROTL32(k1,15); k1 *= c2; h1 ^= k1;
   };
+  }
 
   /*---------- */
   /* finalization */
@@ -129,6 +134,8 @@ static void MurmurHash3_x86_32 ( const void * key, int len,
 
 /*--------------------------------------------------------------------------- */
 
+#if 0
+/* KDDKDD NOT USED BY ZOLTAN */
 static void MurmurHash3_x86_128 ( const void * key, const int len,
                                   uint32_t seed, void * out )
 {
@@ -232,9 +239,12 @@ static void MurmurHash3_x86_128 ( const void * key, const int len,
   ((uint32_t*)out)[2] = h3;
   ((uint32_t*)out)[3] = h4;
 }
+#endif
 
 /*--------------------------------------------------------------------------- */
 
+#if 0
+/* KDDKDD NOT USED BY ZOLTAN */
 static void MurmurHash3_x64_128 ( const void * key, const int len,
                                   const uint32_t seed, void * out )
 {
@@ -314,3 +324,4 @@ static void MurmurHash3_x64_128 ( const void * key, const int len,
   ((uint64_t*)out)[0] = h1;
   ((uint64_t*)out)[1] = h2;
 }
+#endif

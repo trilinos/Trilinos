@@ -170,6 +170,11 @@ namespace Stokhos {
       const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& R,
       const value_type tol) const;
 
+    /*!
+     * \brief Compute bionomial coefficient (n ; k) = n!/( k! (n-k)! )
+     */
+    ordinal_type n_choose_k(const ordinal_type& n, const ordinal_type& k) const;
+
   private:
 
     // Prohibit copying

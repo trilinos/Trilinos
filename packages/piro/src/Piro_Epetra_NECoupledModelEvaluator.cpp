@@ -62,12 +62,14 @@ NECoupledModelEvaluator(
   const Teuchos::Array<Teuchos::RCP<Teuchos::ParameterList> >& piroParams_,
   const Teuchos::RCP<AbstractNetworkModel>& network_model_,
   const Teuchos::RCP<Teuchos::ParameterList>& params_,
-  const Teuchos::RCP<const Epetra_Comm>& comm_):
+  const Teuchos::RCP<const Epetra_Comm>& comm_,
+  const Teuchos::Array< Teuchos::RCP<NOX::Epetra::Observer> >& observers_):
   models(models_),
   piroParams(piroParams_),
   network_model(network_model_),
   params(params_),
-  comm(comm_)
+  comm(comm_),
+  observers(observers_)
 {
   // Setup VerboseObject
   Teuchos::readVerboseObjectSublist(params.get(), this);
@@ -77,13 +79,15 @@ NECoupledModelEvaluator(
 
   // Create solvers for models A and B
   bool stochastic = params->get("Stochastic", false);
+  if (observers.size() < n_models)
+    observers.resize(n_models);
   if (stochastic) {
     sgSolvers.resize(n_models);
     for (int i=0; i<n_models; i++) {
       sgSolvers[i] = 
 	Teuchos::rcp(new Piro::Epetra::StokhosSolver(piroParams[i], 
 						     comm));
-      sgSolvers[i]->setup(models[i]);
+      sgSolvers[i]->setup(models[i], observers[i]);
       solvers[i] = sgSolvers[i];
     }
   }
@@ -247,8 +251,20 @@ NECoupledModelEvaluator(
   g_sg.resize(n_models);
   dgdp_sg_layout.resize(n_models);
   dgdp_sg.resize(n_models);
-  reduce_dimension = 
-    params->sublist("Dimension Reduction").get("Reduce Dimension", false);
+  Teuchos::ParameterList& dim_reduct_params = 
+    params->sublist("Dimension Reduction");
+  if (!dim_reduct_params.isParameter("Reduce Dimension"))
+    reduce_dimension.resize(n_models, 0);
+  else if (dim_reduct_params.isType<bool>("Reduce Dimension"))
+    reduce_dimension.resize(n_models, 
+			    dim_reduct_params.get<bool>("Reduce Dimension"));
+  else if (dim_reduct_params.isType< Teuchos::Array<int> >("Reduce Dimension"))
+    reduce_dimension = 
+      dim_reduct_params.get< Teuchos::Array<int> >("Reduce Dimension");
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, 
+      "Invalid type for parameter \"Dimension Reduction\"");
 }
 
 // Overridden from EpetraExt::ModelEvaluator
@@ -683,7 +699,7 @@ evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
   Teuchos::Array<Teuchos::RCP<Teuchos::ParameterList> > piroParams_red(n_models);
   
   for (int i=0; i<n_models; i++) {
-    do_dimension_reduction(inArgs, 
+    do_dimension_reduction(i, inArgs, 
 			   solver_inargs[i], solver_outargs[i],
 			   models[i], solvers[i], piroParams[i],
 			   solver_inargs_red[i], solver_outargs_red[i],
@@ -694,18 +710,37 @@ evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
   int proc = comm->MyPID();
 
   // Evaluate models
-  for (int i=0; i<n_models; i++) {
-    TEUCHOS_FUNC_TIME_MONITOR(
-      "NECoupledModelEvaluator -- Model nonlinear elimination");
-    if (verbLevel != Teuchos::VERB_NONE)
-      *out << "Eliminating model " << i+1 << " states...";
-    solvers_red[i]->evalModel(solver_inargs_red[i], solver_outargs_red[i]);
+  if (n_models == 2) {
+    {
+      TEUCHOS_FUNC_TIME_MONITOR(
+	"NECoupledModelEvaluator -- Model 1 nonlinear elimination");
+      if (verbLevel != Teuchos::VERB_NONE)
+	*out << "Eliminating model " << 1 << " states...";
+      solvers_red[0]->evalModel(solver_inargs_red[0], solver_outargs_red[0]);
+    }
+
+    {
+      TEUCHOS_FUNC_TIME_MONITOR(
+	"NECoupledModelEvaluator -- Model 2 nonlinear elimination");
+      if (verbLevel != Teuchos::VERB_NONE)
+	*out << "Eliminating model " << 2 << " states...";
+      solvers_red[1]->evalModel(solver_inargs_red[1], solver_outargs_red[1]);
+    }
+  }
+  else {
+    for (int i=0; i<n_models; i++) {
+      TEUCHOS_FUNC_TIME_MONITOR(
+	"NECoupledModelEvaluator -- Model nonlinear elimination");
+      if (verbLevel != Teuchos::VERB_NONE)
+	*out << "Eliminating model " << i+1 << " states...";
+      solvers_red[i]->evalModel(solver_inargs_red[i], solver_outargs_red[i]);
+    }
   }
 
   // Project back to original stochastic bases
   for (int i=0; i<n_models; i++)
-    do_dimension_projection(inArgs, solver_inargs_red[i], solver_outargs_red[i],
-			    solver_outargs[i]);
+    do_dimension_projection(i, inArgs, solver_inargs_red[i], 
+			    solver_outargs_red[i], solver_outargs[i]);
 
   // Evaluate network model
   network_model->evalModel(solver_inargs, solver_outargs, 
@@ -758,6 +793,7 @@ evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
 void
 Piro::Epetra::NECoupledModelEvaluator:: 
 do_dimension_reduction(
+  int model_index,
   const InArgs& inArgs,
   const InArgs& solver_inargs, 
   const OutArgs& solver_outargs,
@@ -781,7 +817,7 @@ do_dimension_reduction(
   InArgs::sg_const_vector_t x_sg;
   if (supports_x_sg)
     x_sg = inArgs.get_x_sg();
-  if (!reduce_dimension || x_sg == Teuchos::null)
+  if (!reduce_dimension[model_index] || x_sg == Teuchos::null)
     return;
 
   Teuchos::RCP<const Stokhos::ProductBasis<int,double> > basis = 
@@ -941,7 +977,7 @@ do_dimension_reduction(
     red_sg_params.remove("Triple Product Tensor");
   Teuchos::RCP<Piro::Epetra::StokhosSolver> reduced_piro_solver = 
     Teuchos::rcp(new Piro::Epetra::StokhosSolver(reduced_params, comm));
-  reduced_piro_solver->setup(model);
+  reduced_piro_solver->setup(model, observers[model_index]);
   reduced_solver = reduced_piro_solver;
 
   if (reduced_inargs.supports(IN_ARG_sg_basis))
@@ -955,6 +991,7 @@ do_dimension_reduction(
 void 
 Piro::Epetra::NECoupledModelEvaluator:: 
 do_dimension_projection(
+  int model_index,
   const InArgs& inArgs, 
   const InArgs& reduced_inargs, 
   const OutArgs& reduced_outargs,
@@ -966,7 +1003,7 @@ do_dimension_projection(
   InArgs::sg_const_vector_t x_sg;
   if (supports_x_sg)
     x_sg = inArgs.get_x_sg();
-  if (!reduce_dimension || x_sg == Teuchos::null)
+  if (!reduce_dimension[model_index] || x_sg == Teuchos::null)
     return;
 
   Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 

@@ -57,7 +57,7 @@ namespace SparseGridQuadratureUnitTest {
       
       // Sparse grid quadrature
       quad = 
-	Teuchos::rcp(new Stokhos::SparseGridQuadrature<OrdinalType,ValueType>(basis, p));
+	Teuchos::rcp(new Stokhos::SparseGridQuadrature<OrdinalType,ValueType>(basis, p, 1e-12, Pecos::MODERATE_RESTRICTED_GROWTH));
     }
     
   };

@@ -52,7 +52,7 @@
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 
 #include "Panzer_STK_Interface.hpp"
-#include "Panzer_STK_ResponseAggregator_SolutionWriter.hpp"
+#include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 
 #include "NOX_Epetra_Vector.H"
 #include "Epetra_Vector.h"
@@ -81,33 +81,13 @@ namespace user_app {
     { 
       TEUCHOS_ASSERT(m_lof!=Teuchos::null);
 
-      // register solution writer response aggregator with this library
-      // this is an "Action" only response aggregator
-      panzer::ResponseAggregator_Manager<panzer::Traits> & aggMngr = m_response_library->getAggregatorManager();
-      panzer_stk::ResponseAggregator_SolutionWriter_Builder builder(mesh);
-      builder.setLinearObjFactory(aggMngr.getLinearObjFactory());
-      builder.setGlobalIndexer(aggMngr.getGlobalIndexer());
-      aggMngr.defineAggregatorTypeFromBuilder("Solution Writer",builder);
+      // get all element blocks and add them to the list
+      std::vector<std::string> eBlocks;
+      mesh->getElementBlockNames(eBlocks);
 
-      // require a particular "Solution Writer" response
-      panzer::ResponseId rid("Main Field Output","Solution Writer");
-      std::list<std::string> eTypes;
-      eTypes.push_back("Residual");
-      #ifdef HAVE_STOKHOS
-         eTypes.push_back("SGResidual");
-      #endif
-
-      std::list<std::string> eBlocks;
-      {
-         // get all element blocks and add them to the list
-         std::vector<std::string> eBlockNames;
-         mesh->getElementBlockNames(eBlockNames);
-         for(std::size_t i=0;i<eBlockNames.size();i++)
-            eBlocks.push_back(eBlockNames[i]);
-      }
-
-      // reserve response guranteeing that we can evaluate it (assuming things are done correctly elsewhere)
-      response_library->reserveLabeledBlockAggregatedVolumeResponse("Main Field Output",rid,eBlocks,eTypes);
+      panzer_stk::RespFactorySolnWriter_Builder builder;
+      builder.mesh = mesh;
+      m_response_library->addResponse("Main Field Output",eBlocks,builder);
 
       // used block LOF, or epetra LOF
       m_isEpetraLOF = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(m_lof)!=Teuchos::null;
@@ -135,7 +115,7 @@ namespace user_app {
       const NOX::Abstract::Vector& x = solver.getSolutionGroup().getX();
       const NOX::Thyra::Vector* n_th_x = dynamic_cast<const NOX::Thyra::Vector*>(&x);
       TEUCHOS_TEST_FOR_EXCEPTION(n_th_x == NULL, std::runtime_error, "Failed to dynamic_cast to NOX::Thyra::Vector!")
-      const ::Thyra::VectorBase<double>& th_x = n_th_x->getThyraVector(); 
+      RCP<const Thyra::VectorBase<double> > th_x = n_th_x->getThyraRCPVector(); 
 
       // initialize the assembly container
       panzer::AssemblyEngineInArgs ae_inargs;
@@ -151,27 +131,20 @@ namespace user_app {
       // Teuchos::MpiComm<int> comm(Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(ep_x->Comm()).Comm()));
       Teuchos::MpiComm<int> comm = m_lof->getComm();
       if(m_isEpetraLOF) {
-         Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof
-            = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(m_lof,true);
-         Teuchos::RCP<const Epetra_Vector> ep_x = Thyra::get_Epetra_Vector(*(ep_lof->getMap()), Teuchos::rcp(&th_x, false));
-
          // initialize the x vector
          const Teuchos::RCP<panzer::EpetraLinearObjContainer> epGlobalContainer
             = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs.container_,true);
-         epGlobalContainer->set_x(Teuchos::rcp_const_cast<Epetra_Vector>(ep_x));
+         epGlobalContainer->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(th_x));
       }
       else {
          // initialize the x vector
          const Teuchos::RCP<panzer::BlockedEpetraLinearObjContainer> blkGlobalContainer
             = Teuchos::rcp_dynamic_cast<panzer::BlockedEpetraLinearObjContainer>(ae_inargs.container_,true);
-         blkGlobalContainer->set_x(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(Teuchos::rcpFromRef(th_x)));
+         blkGlobalContainer->set_x(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(th_x));
       }
 
-      // do import
-      m_lof->globalToGhostContainer(*ae_inargs.container_,*ae_inargs.ghostedContainer_,panzer::LinearObjContainer::X);
-
-      // fill STK mesh objects
-      m_response_library->evaluateVolumeFieldManagers<panzer::Traits::Residual>(ae_inargs,comm);
+      m_response_library->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
+      m_response_library->evaluate<panzer::Traits::Residual>(ae_inargs);
       
       // write to disk
       m_mesh->writeToExodus(0.0);

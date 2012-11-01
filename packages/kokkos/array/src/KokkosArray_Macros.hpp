@@ -48,15 +48,13 @@
 
 namespace KokkosArray {
 class HostSpace ;
+class CudaSpace ;
 }
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 #if defined( __CUDACC__ )
-
-namespace KokkosArray {
-class CudaSpace ;
-};
 
 /*  Compiling with a CUDA compiler for host and device code.
  *  Declare functions available on host and device, or device only.
@@ -73,22 +71,19 @@ class CudaSpace ;
  *  identifying compilation for 'compute_XY' architecture.
  */
 
-#define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::CudaSpace
+namespace KokkosArray { typedef CudaSpace ExecutionSpace ; }
+
 #define KOKKOSARRAY_INLINE_FUNCTION  __device__  __host__  inline
-
-/*  If compiling for device code cannot do expression checking */
-
-#if defined( KOKKOSARRAY_EXPRESSION_CHECK )
-#undef  KOKKOSARRAY_EXPRESSION_CHECK
-#endif
+#define KOKKOSARRAY_FUNCTION         __device__  __host__
 
 #else /* ! #if defined( __CUDA_ARCH__ ) */
 
 /*  Compiling with CUDA compiler for host code. */
 
-#define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::HostSpace
-#define KOKKOSARRAY_EXECUTION_SPACE_IS_HOST
+namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
+
 #define KOKKOSARRAY_INLINE_FUNCTION  inline
+#define KOKKOSARRAY_FUNCTION         /* */
 
 #endif /* ! #if defined( __CUDA_ARCH__ ) */
 
@@ -104,10 +99,10 @@ class CudaSpace ;
  *  of the supported OpenMP API version.
  */
 
-#define KOKKOSARRAY_INLINE_FUNCTION  inline
+namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
 
-#define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::HostSpace
-#define KOKKOSARRAY_EXECUTION_SPACE_IS_HOST
+#define KOKKOSARRAY_INLINE_FUNCTION  inline
+#define KOKKOSARRAY_FUNCTION         /* */
 
 /* END defined( _OPENMP ) */
 //----------------------------------------------------------------------------
@@ -115,10 +110,10 @@ class CudaSpace ;
 
 #else /* No special compilation space detected */
 
-#define KOKKOSARRAY_INLINE_FUNCTION  inline
+namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
 
-#define KOKKOSARRAY_EXECUTION_SPACE  KokkosArray::HostSpace
-#define KOKKOSARRAY_EXECUTION_SPACE_IS_HOST
+#define KOKKOSARRAY_INLINE_FUNCTION  inline
+#define KOKKOSARRAY_FUNCTION         /* */
 
 #endif
 
@@ -127,11 +122,11 @@ class CudaSpace ;
 
 #define KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( DATA_SPACE , DATA_PTR ) \
   KokkosArray::VerifyExecutionSpaceCanAccessDataSpace< \
-    KOKKOSARRAY_EXECUTION_SPACE , DATA_SPACE >::verify( DATA_PTR )
+    KokkosArray::ExecutionSpace , DATA_SPACE >::verify( DATA_PTR )
 
 #define KOKKOSARRAY_RESTRICT_EXECUTION_TO( DATA_SPACE ) \
   KokkosArray::VerifyExecutionSpaceCanAccessDataSpace< \
-    KOKKOSARRAY_EXECUTION_SPACE , DATA_SPACE >::verify()
+    KokkosArray::ExecutionSpace , DATA_SPACE >::verify()
 
 
 

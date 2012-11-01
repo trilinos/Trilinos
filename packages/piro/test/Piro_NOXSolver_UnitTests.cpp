@@ -50,12 +50,11 @@
 #include "MockModelEval_A.hpp"
 
 #include "Piro_Test_WeakenedModelEvaluator.hpp"
+#include "Piro_Test_ThyraSupport.hpp"
 
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
-
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
-#include "Thyra_DetachedVectorView.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"
 
@@ -66,6 +65,7 @@
 
 using namespace Teuchos;
 using namespace Piro;
+using namespace Piro::Test;
 
 namespace Thyra {
   typedef ModelEvaluatorBase MEB;
@@ -100,29 +100,7 @@ const RCP<NOXSolver<double> > solverNew(const RCP<EpetraExt::ModelEvaluator> &ep
   return solverNew(thyraModelNew(epetraModel));
 }
 
-// Testing support
-
-Array<double> arrayFromVector(const Thyra::VectorBase<double> &v)
-{
-  const Thyra::ConstDetachedVectorView<double> view(v, Thyra::Range1D(), true);
-  return Array<double>(view.values(), view.values() + view.subDim());
-}
-
-RCP<Thyra::VectorBase<double> > vectorFromLinOp(const Thyra::LinearOpBase<double> &op, int col)
-{
-  const RCP<Thyra::VectorBase<double> > result = Thyra::createMember(op.range());
-  const RCP<Thyra::VectorBase<double> > v = Thyra::createMember(op.domain());
-  Thyra::put_scalar(0.0, v.ptr());
-  Thyra::set_ele(col, 1.0, v.ptr());
-  Thyra::apply(op, Thyra::NOTRANS, *v, result.ptr(), 1.0, 0.0);
-  return result;
-}
-
-Array<double> arrayFromLinOp(const Thyra::LinearOpBase<double> &op, int col)
-{
-  return arrayFromVector(*vectorFromLinOp(op, col));
-}
-
+// Floating point tolerance
 const double tol = 1.0e-8;
 
 // Tests
@@ -240,7 +218,7 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SolutionSensitivityOp_NoDfDpMv)
   // Disable support for MultiVector-based DfDp derivative
   // (Only LinOp form is available)
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > weakenedModel =
-      rcp(new Test::WeakenedModelEvaluator_NoDfDpMv(thyraModelNew(epetraModelNew())));
+      rcp(new WeakenedModelEvaluator_NoDfDpMv(thyraModelNew(epetraModelNew())));
   const RCP<NOXSolver<double> > solver = solverNew(weakenedModel);
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
@@ -341,7 +319,7 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvJac_NoDgDxMv)
   // Disable support for MultiVector-based DgDx derivative
   // (Only LinOp form is available)
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > weakenedModel =
-      rcp(new Test::WeakenedModelEvaluator_NoDgDxMv(thyraModelNew(epetraModelNew())));
+      rcp(new WeakenedModelEvaluator_NoDgDxMv(thyraModelNew(epetraModelNew())));
   const RCP<NOXSolver<double> > solver = solverNew(weakenedModel);
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
@@ -369,7 +347,7 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGrad_NoDgDpMvJac)
   // Disable support for MultiVector-based DgDx derivative
   // (Only LinOp form is available)
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > weakenedModel =
-      rcp(new Test::WeakenedModelEvaluator_NoDgDpMvJac(thyraModelNew(epetraModelNew())));
+      rcp(new WeakenedModelEvaluator_NoDgDpMvJac(thyraModelNew(epetraModelNew())));
   const RCP<NOXSolver<double> > solver = solverNew(weakenedModel);
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
@@ -394,7 +372,7 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityOp_NoDgDpMv)
   // Disable support for MultiVector-based DgDp derivative
   // (Only LinOp form is available)
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > weakenedModel =
-      rcp(new Test::WeakenedModelEvaluator_NoDgDpMv(thyraModelNew(epetraModelNew())));
+      rcp(new WeakenedModelEvaluator_NoDgDpMv(thyraModelNew(epetraModelNew())));
   const RCP<NOXSolver<double> > solver = solverNew(weakenedModel);
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
