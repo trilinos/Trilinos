@@ -556,14 +556,43 @@ private:
 
 public: // Hidden implementation stuff that clients should never see
 
-  // This code is to decouple the Teuchos::TimeMonitor class that is now in
-  // the TeuchosComm subpackage from this class.  This design allows this
-  // class to automatically support showing summary timings just by haveing
-  // the TeuchosComm subpackage enabled and have its libaries linked in.  Is
-  // not C++ a wonderful language?
-
+  /// \class TimeMonitorSurrogate
+  /// \brief Interface by which CommandLineProcessor may use TimeMonitor.
+  /// \warning Users should not use this class or rely on it in any way.  
+  ///   It is an implementation detail.
+  ///
+  /// \section Teuchos_TimeMonitorSurrogate_Summary Summary
+  ///
+  /// This class provides an interface by which CommandLineProcessor
+  /// may optionally call TimeMonitor::summarize(), without needing to
+  /// know that the TimeMonitor class exists.  This allows Teuchos to
+  /// put CommandLineProcessor in a separate package from TimeMonitor.
+  /// We want to do this because TimeMonitor depends on Comm, and is
+  /// therefore in the TeuchosComm subpackage, but
+  /// CommandLineProcessor does not depend on Comm, and is therefore
+  /// in the TeuchosCore subpackage.  This design lets
+  /// CommandLineProcessor automatically support showing summary
+  /// timings just by having the TeuchosComm subpackage enabled and
+  /// having its libaries linked in.
+  ///
+  /// \section Teuchos_TimeMonitorSurrogate_Note Note to Teuchos developers
+  ///
+  /// The TimeMonitorSurrogateImplInserter class in the TeuchosComm
+  /// subpackage will ensure that CommandLineProcessor gets informed
+  /// about TimeMonitor even before the program starts executing
+  /// main().  This happens automatically; you don't need to change
+  /// the main() function.
+  ///
+  /// This is an instance of the <a
+  /// href="http://en.wikipedia.org/wiki/Dependency_injection">Dependency
+  /// injection</a> design pattern.  CommandLineProcessor is not
+  /// supposed to know about TimeMonitor, because TimeMonitor lives in
+  /// a subpackage that depends on CommandLineProcessor's subpackage.
+  /// Thus, CommandLineProcessor interacts with TimeMonitor through
+  /// the TimeMonitorSurrogate interface.
   class TimeMonitorSurrogate {
   public:
+    //! Summarize timings over all process(es) to the given output stream.
     virtual void summarize(std::ostream &out=std::cout) = 0;
   };
 

@@ -686,16 +686,16 @@ public:
 } // namespace Teuchos
 
 
-
-// Implement the guts of the CommandLineProcessor TimeMonitor output
-// feature. This happens automatically before the program even starts
-// processing main().  Don't you just love C++!
-
-
 namespace Teuchos {
 
-
-// Implement the Teuchos::CommandLineProcessor::TimeMonitorSurrogate interface
+/// \class TimeMonitorSurrogateImpl
+/// \brief Implementation of TimeMonitorSurrogate that invokes TimeMonitor.
+/// \warning Users should not use this class or rely on it in any way.  
+///   It is an implementation detail.
+///
+/// Please refer to the documentation of
+/// TimeMonitorSurrogateImplInserter and TimeMonitorSurrogate for an
+/// explanation of the purpose of this class.
 class TimeMonitorSurrogateImpl : public CommandLineProcessor::TimeMonitorSurrogate
 {
   virtual void summarize(std::ostream& out)
@@ -704,10 +704,50 @@ class TimeMonitorSurrogateImpl : public CommandLineProcessor::TimeMonitorSurroga
     }
 }; 
 
-
-// Define class object type for auto-inserting the above impl
+/// \class TimeMonitorSurrogateImplInserter
+/// \brief Injects run-time dependency of a class on TimeMonitor.
+/// \warning Users should not use this class or rely on it in any way.  
+///   It is an implementation detail.
+///
+/// \section Teuchos_TimeMonitorSurrogateImplInserter_Summary Summary
+///
+/// Classes and functions with the name "TimeMonitorSurrogate" in them
+/// let CommandLineProcessor optionally call TimeMonitor::summarize(),
+/// without needing to know that the TimeMonitor class exists.  This
+/// allows Teuchos to put CommandLineProcessor in a separate package
+/// from TimeMonitor.  We want to do this because TimeMonitor depends
+/// on Comm, and is therefore in the TeuchosComm subpackage (which
+/// depends on TeuchosCore), but CommandLineProcessor is in the
+/// TeuchosCore subpackage (which does not depend on TeuchosComm).
+///
+/// The TimeMonitorSurrogateImplInserter class' constructor ensures
+/// that CommandLineProcessor gets informed about TimeMonitor even
+/// before the program starts executing main().  This happens
+/// automatically, without changes to main(), because we declare an
+/// instance of this class in the header file.  If the TeuchosComm
+/// subpackage was built and its libraries were linked in,
+/// CommandLineProcessor will know about TimeMonitor.
+///
+/// \section Teuchos_TimeMonitorSurrogateImplInserter_Note Note to Teuchos developers
+///
+/// This is an instance of the 
+/// <a href="http://en.wikipedia.org/wiki/Dependency_injection">Dependency injection</a>
+/// design pattern.  CommandLineProcessor is not supposed to know
+/// about TimeMonitor, because TimeMonitor lives in a subpackage that
+/// depends on CommandLineProcessor's subpackage.  Thus,
+/// CommandLineProcessor interacts with TimeMonitor through the
+/// TimeMonitorSurrogate interface.  TimeMonitorSurrogateImplInserter
+/// "injects the dependency" at run time, if the TeuchosComm
+/// subpackage was enabled and the application linked with its
+/// libraries.
+///
+/// Teuchos developers could imitate the pattern of this class in
+/// order to use TimeMonitor's class methods (such as summarize())
+/// from any other class that does not depend on the TeuchosComm
+/// subpackage.
 class TimeMonitorSurrogateImplInserter {
 public:
+  //! Constructor: inject dependency on TimeMonitor into CommandLineProcessor.
   TimeMonitorSurrogateImplInserter()
     {
       if (is_null(CommandLineProcessor::getTimeMonitorSurrogate())) {
