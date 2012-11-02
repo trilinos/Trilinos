@@ -92,6 +92,7 @@ class Bucket
 {
 private:
   friend class impl::BucketRepository;
+  friend class impl::Partition;
 
   struct DataMap
   {

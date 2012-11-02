@@ -78,8 +78,8 @@ void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * b
   // Get the first bucket in the same partition as the bucket being deleted
   Bucket * const first = bucket_to_be_deleted->first_bucket_in_partition();
 
-  ThrowRequireMsg( bucket_to_be_deleted->in_same_partition(*first), "Logic error - bucket_to_be_deleted is not in same partition as first_bucket_in_partition");
-  ThrowRequireMsg( first->in_same_partition(*bucket_to_be_deleted), "Logic error - first_bucket_in_partition is not in same partition as bucket_to_be_deleted");
+  ThrowRequireMsg( bucket_to_be_deleted->in_same_partition(*first), "Logic error - bucket_to_be_deleted is not in same partition as first bucket in partition");
+  ThrowRequireMsg( first->in_same_partition(*bucket_to_be_deleted), "Logic error - first bucket in partition is not in same partition as bucket_to_be_deleted");
 
   ThrowRequireMsg( bucket_to_be_deleted->size() == 0,
       "Destroying non-empty bucket " << *(bucket_to_be_deleted->key()) );
@@ -266,8 +266,8 @@ BucketRepository::declare_bucket(
 
   //----------------------------------
 
-  ThrowRequireMsg( bucket->in_same_partition(*bucket->first_bucket_in_partition()), "Logic error - new bucket is not in same partition as first_bucket_in_partition");
-  ThrowRequireMsg( bucket->first_bucket_in_partition()->in_same_partition(*bucket), "Logic error - first_bucket_in_partition is not in same partition as new bucket");
+  ThrowRequireMsg( bucket->in_same_partition(*bucket->first_bucket_in_partition()), "Logic error - new bucket is not in same partition as first bucket in partition");
+  ThrowRequireMsg( bucket->first_bucket_in_partition()->in_same_partition(*bucket), "Logic error - first bucket in partition is not in same partition as new bucket");
 
   return bucket ;
 }

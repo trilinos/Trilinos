@@ -37,6 +37,9 @@ public:
         return m_stkPartition;
     }
 
+    /// Compress this partion into a single bucket of sorted Entities.
+    void compress();
+
     /// Sort the entities in this partition by EntityKey.
     void sort();
 
@@ -52,6 +55,17 @@ private:
     std::vector<PartOrdinal> m_stkPartition;
     unsigned m_beginBucketIndex;
     unsigned m_endBucketIndex;
+
+    size_t compute_size()
+    {
+        size_t partition_size = 0;
+        std::vector<Bucket *>::iterator buckets_end = end();
+        for (std::vector<Bucket *>::iterator b_i = begin(); b_i != buckets_end; ++b_i)
+        {
+            partition_size += (*b_i)->size();
+        }
+        return partition_size;
+    }
 };
 
 std::ostream &operator<<(std::ostream &, const stk::mesh::impl::Partition &);
