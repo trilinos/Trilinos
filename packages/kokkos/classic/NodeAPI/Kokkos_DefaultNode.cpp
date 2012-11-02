@@ -51,14 +51,17 @@ namespace Kokkos {
   {
     if (node_ == null) {
       Teuchos::ParameterList pl;
-#if   defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+#if   defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
       pl.set<int>("Num Threads",1);
       node_ = rcp<TPINode>(new TPINode(pl));
-#elif defined(HAVE_KOKKOSCLASSIC_TBB)
+#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE)
       pl.set<int>("Num Threads",0);
       node_ = rcp<TBBNode>(new TBBNode(pl));
-#elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
+#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE)
       node_ = rcp<OpenMPNode>(new OpenMPNode(pl));
+#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE)
+      pl.set<int>("Device Number",0);
+      node_ = rcp<ThrustGPUNode>(new ThrustGPUNode(pl));
 #else
       node_ = rcp<SerialNode>(new SerialNode(pl));
 #endif
