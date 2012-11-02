@@ -247,7 +247,7 @@ namespace {
 
     Teuchos::ArrayRCP<Scalar> rdata = r->getDataNonConst(0), rdatacopy = rcopy->getDataNonConst(0);
     Scalar s = Teuchos::ScalarTraits<Scalar>::zero();
-    for (LO i = 0; i < nEle; i++)
+    for (LO i = 0; i < NumMyElements; i++)
         s += Teuchos::ScalarTraits<Scalar>::magnitude(rdata[i] - rdatacopy[i]);
     TEUCHOS_TEST_COMPARE(s, <, 1e-16, out, success);
 #endif
@@ -302,7 +302,7 @@ namespace {
 
     Teuchos::ArrayRCP<Scalar> rdata = r->getDataNonConst(0), rdatacopy = rcopy->getDataNonConst(0);
     Scalar s = Teuchos::ScalarTraits<Scalar>::zero();
-    for (LO i = 0; i < nEle; i++)
+    for (LO i = 0; i < NumMyElements; i++)
         s += Teuchos::ScalarTraits<Scalar>::magnitude(rdata[i] - rdatacopy[i]);
     TEUCHOS_TEST_COMPARE(s, <, 1e-16, out, success);
 #endif
