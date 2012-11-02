@@ -52,7 +52,7 @@ using Teuchos::rcp;
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Panzer_FieldManagerBuilder.hpp"
-#include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_InputPhysicsBlock.hpp"

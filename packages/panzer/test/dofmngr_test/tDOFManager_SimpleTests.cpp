@@ -50,7 +50,7 @@
 #include <vector>
 #include <set>
 
-#include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerFEI.hpp"
 
 // include some intrepid basis functions
 // 2D basis 

@@ -54,7 +54,7 @@
 #include "Panzer_BC.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_BasisIRLayout.hpp"
-#include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_BlockedDOFManagerFactory.hpp"

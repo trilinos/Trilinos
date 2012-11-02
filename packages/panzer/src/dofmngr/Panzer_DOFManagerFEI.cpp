@@ -42,8 +42,8 @@
 
 #include "Panzer_config.hpp"
 
-#include "Panzer_DOFManager_decl.hpp"
-#include "Panzer_DOFManager_impl.hpp"
+#include "Panzer_DOFManagerFEI_decl.hpp"
+#include "Panzer_DOFManagerFEI_impl.hpp"
 
 // FEI includes
 #include "fei_Factory_Trilinos.hpp"
@@ -55,7 +55,7 @@ using Teuchos::RCP;
 ///////////////////////////////////////////////
 namespace panzer {
 
-// Function is "helpers" for DOFManager::getOwnedIndices
+// Function is "helpers" for DOFManagerFEI::getOwnedIndices
 ///////////////////////////////////////////////////////////////////////////
 
 template < >
@@ -71,7 +71,7 @@ void getOwnedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs,std::vec
 
 ///////////////////////////////////////////////////////////////////////////
 
-// Function is "helper" for DOFManager::getOwnedAndSharedIndices
+// Function is "helper" for DOFManagerFEI::getOwnedAndSharedIndices
 ///////////////////////////////////////////////////////////////////////////
 
 template < >

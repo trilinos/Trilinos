@@ -53,8 +53,6 @@
 
 #include "Shards_CellTopology.hpp"
 
-#include "Panzer_DOFManager.hpp"
-#include "Panzer_ConnManager.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_Workset.hpp"
 #include "Panzer_Workset_Builder.hpp"

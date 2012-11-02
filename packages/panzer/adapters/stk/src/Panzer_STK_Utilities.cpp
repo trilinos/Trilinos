@@ -43,7 +43,7 @@
 #include "Panzer_STK_Utilities.hpp"
 #include "Intrepid_FieldContainer.hpp"
 
-#include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerFEI.hpp"
 
 #include <stk_mesh/base/FieldData.hpp>
 

@@ -43,7 +43,7 @@
 #ifndef PANZER_DOF_MANAGER_FACTORY_IMPL_HPP
 #define PANZER_DOF_MANAGER_FACTORY_IMPL_HPP
 
-#include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_DOFManager2.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 
