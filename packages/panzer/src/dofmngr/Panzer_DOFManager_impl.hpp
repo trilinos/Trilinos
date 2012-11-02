@@ -57,8 +57,6 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Panzer_NodalFieldPattern.hpp"
 
-//#include "DOFManager2_decl.hpp"
-
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayView.hpp"
@@ -83,22 +81,22 @@ using Teuchos::ArrayView;
 using Kokkos::DefaultArithmetic;
 
 template <typename LO, typename GO>
-DOFManager2<LO,GO>::DOFManager2()
+DOFManager<LO,GO>::DOFManager()
   : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false)
 { }
 
 template <typename LO, typename GO>
-DOFManager2<LO,GO>::DOFManager2(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,MPI_Comm mpiComm)
+DOFManager<LO,GO>::DOFManager(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,MPI_Comm mpiComm)
   : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false)
 { 
   setConnManager(connMngr,mpiComm);
 }
 
 template <typename LO, typename GO>
-void DOFManager2<LO,GO>::setConnManager(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr, MPI_Comm mpiComm)
+void DOFManager<LO,GO>::setConnManager(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr, MPI_Comm mpiComm)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
-                      "DOFManager2::setConnManager: setConnManager cannot be called after "
+                      "DOFManager::setConnManager: setConnManager cannot be called after "
                       "buildGlobalUnknowns has been called"); 
   connMngr_ = connMngr;
   //We acquire the block ordering from the connmanager.
@@ -115,10 +113,10 @@ void DOFManager2<LO,GO>::setConnManager(const Teuchos::RCP<ConnManager<LO,GO> > 
   //Adds a field to be used in creating the Global Numbering
   //Returns the index for the field pattern
 template <typename LO, typename GO>
-int DOFManager2<LO,GO>::addField(const std::string & str, const Teuchos::RCP<const FieldPattern> & pattern)
+int DOFManager<LO,GO>::addField(const std::string & str, const Teuchos::RCP<const FieldPattern> & pattern)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
-                      "DOFManager2::addField: addField cannot be called after "
+                      "DOFManager::addField: addField cannot be called after "
                       "buildGlobalUnknowns has been called"); 
   fieldPatterns_.push_back(pattern);
   fieldNameToAID_.insert(std::map<std::string,int>::value_type(str, numFields_));
@@ -132,13 +130,13 @@ int DOFManager2<LO,GO>::addField(const std::string & str, const Teuchos::RCP<con
 }
 
 template <typename LO, typename GO>
-int DOFManager2<LO,GO>::addField(const std::string & blockID, const std::string & str, const Teuchos::RCP<const FieldPattern> & pattern)
+int DOFManager<LO,GO>::addField(const std::string & blockID, const std::string & str, const Teuchos::RCP<const FieldPattern> & pattern)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
-                      "DOFManager2::addField: addField cannot be called after "
+                      "DOFManager::addField: addField cannot be called after "
                       "buildGlobalUnknowns has been called"); 
   TEUCHOS_TEST_FOR_EXCEPTION((connMngr_==Teuchos::null),std::logic_error,
-                             "DOFManager2::addField: you must add a ConnManager before"
+                             "DOFManager::addField: you must add a ConnManager before"
                              "you can associate a FP with a given block.")
   bool found=false;
   size_t blocknum=0;
@@ -149,7 +147,7 @@ int DOFManager2<LO,GO>::addField(const std::string & blockID, const std::string 
     }
     blocknum++;
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(!found,std::logic_error, "DOFManager2::addField: Invalid block name.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!found,std::logic_error, "DOFManager::addField: Invalid block name.");
   //This will be different if the FieldPattern is already present.
   //We need to check for that.
   found=false;
@@ -178,13 +176,13 @@ int DOFManager2<LO,GO>::addField(const std::string & blockID, const std::string 
 
   //Returns the fieldpattern of the given name
 template <typename LO, typename GO>
-Teuchos::RCP<const FieldPattern> DOFManager2<LO,GO>::getFieldPattern(const std::string & name)
+Teuchos::RCP<const FieldPattern> DOFManager<LO,GO>::getFieldPattern(const std::string & name)
 {
   return fieldPatterns_[fieldNameToAID_[name]];
 }
 
 template <typename LO, typename GO>
-void DOFManager2<LO,GO>::getOwnedIndices(std::vector<GO> & indicies) const{
+void DOFManager<LO,GO>::getOwnedIndices(std::vector<GO> & indicies) const{
   indicies.resize(owned_.size());
   for (size_t i = 0; i < owned_.size(); ++i) {
     indicies[i]=owned_[i];
@@ -192,7 +190,7 @@ void DOFManager2<LO,GO>::getOwnedIndices(std::vector<GO> & indicies) const{
 }
 
 template <typename LO, typename GO>
-void DOFManager2<LO,GO>::getOwnedAndSharedIndices(std::vector<GO> & indicies) const{
+void DOFManager<LO,GO>::getOwnedAndSharedIndices(std::vector<GO> & indicies) const{
   indicies.resize(owned_and_ghosted_.size());
   for (size_t i = 0; i < owned_and_ghosted_.size(); ++i) {
     indicies[i]=owned_and_ghosted_[i];
@@ -201,38 +199,38 @@ void DOFManager2<LO,GO>::getOwnedAndSharedIndices(std::vector<GO> & indicies) co
   
   //gets the number of fields
 template <typename LO, typename GO>
-int DOFManager2<LO,GO>::getNumFields() const
+int DOFManager<LO,GO>::getNumFields() const
 {
   return numFields_;
 }
 
 template <typename LO, typename GO>
-const std::vector<int> & DOFManager2<LO,GO>::getGIDFieldOffsets(const std::string & blockID, int fieldNum) const
+const std::vector<int> & DOFManager<LO,GO>::getGIDFieldOffsets(const std::string & blockID, int fieldNum) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error, "DOFManager2::getGIDFieldOffsets: cannot be called before buildGlobalUnknowns has been called");
+  TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error, "DOFManager::getGIDFieldOffsets: cannot be called before buildGlobalUnknowns has been called");
   std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(blockID);
   if(bitr==blockNameToID_.end())
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager2::fieldInBlock: invalid block name");
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid block name");
   int bid=bitr->second;
   return fa_fps_[bid]->localOffsets(fieldNum);
 }
 
 template <typename LO, typename GO>
-void DOFManager2<LO,GO>::getElementGIDs(LO localElementID, std::vector<GO> & gids, const std::string & blockIdHint) const 
+void DOFManager<LO,GO>::getElementGIDs(LO localElementID, std::vector<GO> & gids, const std::string & blockIdHint) const 
 {
   gids = elementGIDs_[localElementID];
 }
 
 //builds the global unknowns array
 template <typename LO, typename GO>
-void DOFManager2<LO,GO>::buildGlobalUnknowns()
+void DOFManager<LO,GO>::buildGlobalUnknowns()
 {
   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
   out.setOutputToRootOnly(-1);
   out.setShowProcRank(true);
 
   TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
-                      "DOFManager2::buildGlobalUnknowns: buildGlobalUnknowns cannot be called again "
+                      "DOFManager::buildGlobalUnknowns: buildGlobalUnknowns cannot be called again "
                       "after buildGlobalUnknowns has been called"); 
   //Some stuff for the Map.
   typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
@@ -534,7 +532,7 @@ void DOFManager2<LO,GO>::buildGlobalUnknowns()
 
 
 template <typename LO, typename GO>
-int DOFManager2<LO,GO>::getFieldNum(const std::string & string) const{
+int DOFManager<LO,GO>::getFieldNum(const std::string & string) const{
   int ind=0;
   bool found=false;
   while(!found && (size_t)ind<fieldStringOrder_.size()){
@@ -548,7 +546,7 @@ int DOFManager2<LO,GO>::getFieldNum(const std::string & string) const{
 }
 
 template <typename LO, typename GO>
-void DOFManager2<LO,GO>::getFieldOrder(std::vector<std::string> & fieldOrder)
+void DOFManager<LO,GO>::getFieldOrder(std::vector<std::string> & fieldOrder)
 {
 fieldOrder.resize(fieldStringOrder_.size());
 for (size_t i = 0; i < fieldStringOrder_.size(); ++i) {
@@ -557,13 +555,13 @@ for (size_t i = 0; i < fieldStringOrder_.size(); ++i) {
 }
   
 template <typename LO, typename GO>
-bool DOFManager2<LO,GO>::fieldInBlock(const std::string & field, const std::string & block) const{
+bool DOFManager<LO,GO>::fieldInBlock(const std::string & field, const std::string & block) const{
   std::map<std::string,int>::const_iterator fitr = fieldNameToAID_.find(field);
   if(fitr==fieldNameToAID_.end())
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager2::fieldInBlock: invalid field name");
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid field name");
   std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(block);
   if(bitr==blockNameToID_.end())
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager2::fieldInBlock: invalid block name");
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid block name");
   int fid=fitr->second;
   int bid=bitr->second;
 
@@ -585,12 +583,12 @@ bool DOFManager2<LO,GO>::fieldInBlock(const std::string & field, const std::stri
 }
 
 template <typename LO, typename GO>
-const std::vector<int> & DOFManager2<LO,GO>::getBlockFieldNumbers(const std::string & blockId) const{
-  TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error,"DOFManager2::getBlockFieldNumbers: BuildConnectivity must be run first.");
+const std::vector<int> & DOFManager<LO,GO>::getBlockFieldNumbers(const std::string & blockId) const{
+  TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error,"DOFManager::getBlockFieldNumbers: BuildConnectivity must be run first.");
 
   std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(blockId);
   if(bitr==blockNameToID_.end())
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager2::fieldInBlock: invalid block name");
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid block name");
   int bid=bitr->second;
   return fa_fps_[bid]->fieldIds();
 
@@ -598,16 +596,16 @@ const std::vector<int> & DOFManager2<LO,GO>::getBlockFieldNumbers(const std::str
 
 template <typename LO, typename GO>
 const std::pair<std::vector<int>,std::vector<int> > & 
-DOFManager2<LO,GO>::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const{
-  TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error,"DOFManager2::getGIDFieldOffsets_closure: BuildConnectivity must be run first.");
+DOFManager<LO,GO>::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const{
+  TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error,"DOFManager::getGIDFieldOffsets_closure: BuildConnectivity must be run first.");
   std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(blockId);
   if(bitr==blockNameToID_.end())
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "DOFManager2::getGIDFieldOffsets_closure: invalid block name.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "DOFManager::getGIDFieldOffsets_closure: invalid block name.");
   return fa_fps_[bitr->second]->localOffsets_closure(fieldNum, subcellDim, subcellId);
 }
 
 template <typename LO, typename GO>
-void DOFManager2<LO,GO>::ownedIndices(const std::vector<GO> & indices,std::vector<bool> & isOwned) const{
+void DOFManager<LO,GO>::ownedIndices(const std::vector<GO> & indices,std::vector<bool> & isOwned) const{
   //Resizes the isOwned array.
   if(indices.size()!=isOwned.size())
     isOwned.resize(indices.size(),false);
@@ -618,9 +616,9 @@ void DOFManager2<LO,GO>::ownedIndices(const std::vector<GO> & indices,std::vecto
 }
 
 template <typename LO, typename GO>
-void DOFManager2<LO,GO>::setFieldOrder(const std::vector<std::string> & fieldOrder){
+void DOFManager<LO,GO>::setFieldOrder(const std::vector<std::string> & fieldOrder){
   TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
-                      "DOFManager2::setFieldOrder: setFieldOrder cannot be called after "
+                      "DOFManager::setFieldOrder: setFieldOrder cannot be called after "
                       "buildGlobalUnknowns has been called"); 
   if(validFieldOrder(fieldOrder)){
     fieldStringOrder_=fieldOrder;
@@ -630,13 +628,13 @@ void DOFManager2<LO,GO>::setFieldOrder(const std::vector<std::string> & fieldOrd
     }
   }
   else
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager2::setFieldOrder: Invalid Field Ordering!");
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::setFieldOrder: Invalid Field Ordering!");
     
 }
 
 
 template <typename LO, typename GO>
-bool DOFManager2<LO,GO>::validFieldOrder(const std::vector<std::string> & proposed_fieldOrder){
+bool DOFManager<LO,GO>::validFieldOrder(const std::vector<std::string> & proposed_fieldOrder){
   if(fieldStringOrder_.size()!=proposed_fieldOrder.size())
     return false;
   //I'm using a not very efficient way of doing this, but there should never
@@ -654,10 +652,10 @@ bool DOFManager2<LO,GO>::validFieldOrder(const std::vector<std::string> & propos
 }
 
 template <typename LO, typename GO>
-const std::string & DOFManager2<LO,GO>::getFieldString(int num) const{
+const std::string & DOFManager<LO,GO>::getFieldString(int num) const{
   //A reverse lookup through fieldStringOrder_.
   if(num>=(int)fieldStringOrder_.size())
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "DOFManager2::getFieldString: invalid number");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "DOFManager::getFieldString: invalid number");
   return fieldStringOrder_[num];
 //  bool found=false;
 //  size_t i=0;
@@ -668,7 +666,7 @@ const std::string & DOFManager2<LO,GO>::getFieldString(int num) const{
 //      i++;
 //  }
 //  if(!found)
-//    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "DOFManager2::getFieldString: invalid number");
+//    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "DOFManager::getFieldString: invalid number");
 //  return i;
 }
 
@@ -678,7 +676,7 @@ const std::string & DOFManager2<LO,GO>::getFieldString(int num) const{
 //to this DOFManager, but the basic ideas and format should be similar.
 //
 template <typename LO, typename GO>
-void DOFManager2<LO,GO>::buildUnknownsOrientation(){
+void DOFManager<LO,GO>::buildUnknownsOrientation(){
   orientation_.clear(); // clean up previous work
 
   std::vector<std::string> elementBlockIds;
@@ -700,7 +698,7 @@ void DOFManager2<LO,GO>::buildUnknownsOrientation(){
      // this block has no unknowns (or elements)
     std::map<std::string,int>::const_iterator fap = blockNameToID_.find(blockName);
     if(fap==blockNameToID_.end()) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager2::buildUnknownsOrientation: invalid block name");
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::buildUnknownsOrientation: invalid block name");
     }
 
     int bid=fap->second;
@@ -738,12 +736,12 @@ void DOFManager2<LO,GO>::buildUnknownsOrientation(){
 }
 
 template <typename LO, typename GO>
-void DOFManager2<LO,GO>::getElementOrientation(LO localElmtId,std::vector<double> & gidsOrientation) const
+void DOFManager<LO,GO>::getElementOrientation(LO localElmtId,std::vector<double> & gidsOrientation) const
 {
    // TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::getElementOrientation not implemented yet!");
 
    TEUCHOS_TEST_FOR_EXCEPTION(orientation_.size()==0,std::logic_error,
-                              "DOFManager2::getElementOrientations: Orientations were not constructed!");
+                              "DOFManager::getElementOrientations: Orientations were not constructed!");
 
    const std::vector<char> & local_o = orientation_[localElmtId];
    gidsOrientation.resize(local_o.size());

@@ -44,7 +44,7 @@
 #define PANZER_DOF_MANAGER_FACTORY_IMPL_HPP
 
 #include "Panzer_DOFManagerFEI.hpp"
-#include "Panzer_DOFManager2.hpp"
+#include "Panzer_DOFManager.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 
 namespace panzer {
@@ -57,7 +57,7 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
                             const std::string & fieldOrder) const
 {
    if(useDOFManager2_)
-      return buildUniqueGlobalIndexer<panzer::DOFManager2<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
+      return buildUniqueGlobalIndexer<panzer::DOFManager<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
    else
       return buildUniqueGlobalIndexer<panzer::DOFManagerFEI<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
 }

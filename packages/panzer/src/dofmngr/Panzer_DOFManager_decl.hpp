@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_DOFManager2_decl_hpp__
-#define __Panzer_DOFManager2_decl_hpp__
+#ifndef __Panzer_DOFManager_decl_hpp__
+#define __Panzer_DOFManager_decl_hpp__
 #include <map>
 
 #include "mpi.h"
@@ -59,22 +59,22 @@ namespace panzer {
 
 
 template <typename LocalOrdinalT, typename GlobalOrdinalT>
-class DOFManager2 : public UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT> {
+class DOFManager : public UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT> {
 public:
   typedef GlobalOrdinalT GO;
   typedef LocalOrdinalT LO;
 
-  virtual ~DOFManager2() {}
+  virtual ~DOFManager() {}
 
-  DOFManager2();
+  DOFManager();
 
   /** Constructor that sets the connection manager and communicator
     * objects. This is equivalent to calling the default constructor and
     * then "setConnManager" routine.
     */
-  DOFManager2(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
+  DOFManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
 
-  //! Adds a Connection Manager that will be associated with this DOFManager2.
+  //! Adds a Connection Manager that will be associated with this DOFManager.
   void setConnManager(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr, MPI_Comm mpiComm);
 
   Teuchos::RCP<const ConnManager<LO,GO> > getConnManager() const

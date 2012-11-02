@@ -42,12 +42,12 @@
 
 #include "Panzer_config.hpp"
 
-#include "Panzer_DOFManager2_decl.hpp"
-#include "Panzer_DOFManager2_impl.hpp"
+#include "Panzer_DOFManager_decl.hpp"
+#include "Panzer_DOFManager_impl.hpp"
 
 #ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 
-template class panzer::DOFManager2<int,long int>;
-template class panzer::DOFManager2<int,int>;
+template class panzer::DOFManager<int,long int>;
+template class panzer::DOFManager<int,int>;
 
 #endif
