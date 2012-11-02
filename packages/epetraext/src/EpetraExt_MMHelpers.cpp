@@ -415,15 +415,15 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
   // Now build integer array containing column GIDs
   // Build back end, containing remote GIDs, first
   int numMyBlockCols = NumLocalColGIDs + NumRemoteColGIDs;
-  Epetra_IntSerialDenseVector Colind_ices;
+  Epetra_IntSerialDenseVector Colindices;
   if(numMyBlockCols > 0) 
-    Colind_ices.Size(numMyBlockCols);
-  int* RemoteColind_ices = Colind_ices.Values() + NumLocalColGIDs; // Points to back end of Colind_ices
+    Colindices.Size(numMyBlockCols);
+  int* RemoteColindices = Colindices.Values() + NumLocalColGIDs; // Points to back end of Colindices
 
   for(i = 0; i < NumRemoteColGIDs; i++) 
-    RemoteColind_ices[i] = RemoteGIDList[i]; 
+    RemoteColindices[i] = RemoteGIDList[i]; 
 
-  int NLists = 1;
+  int NLists = 2;
 
   // Build permute array for *remote* reindexing.
   std::vector<int> RemotePermuteIDs(NumRemoteColGIDs);
@@ -431,11 +431,13 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
 
   // Sort External column indices so that all columns coming from a given remote processor are contiguous
   Epetra_Util Util;
-  int* SortLists[3]; // this array is allocated on the stack, and so we won't need to delete it.bb
-  SortLists[0] = RemoteColind_ices;
-  SortLists[NLists] = &RemotePermuteIDs[0];
-  NLists++;
-  Util.Sort(true, NumRemoteColGIDs, &RemoteOwningPIDs[0], 0, 0, NLists, SortLists);
+  int* SortLists[3]; // this array is allocated on the stack, and so we won't need to delete it.
+  if(NumRemoteColGIDs > 0) {
+    SortLists[0] = RemoteColindices;    
+    SortLists[1] = &RemotePermuteIDs[0];
+    Util.Sort(true, NumRemoteColGIDs, &RemoteOwningPIDs[0], 0, 0, NLists, SortLists);
+  }
+
 
   bool SortGhostsAssociatedWithEachProcessor_ = false;
   if (SortGhostsAssociatedWithEachProcessor_) {
@@ -443,19 +445,19 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
     // but also in ascending order. NOTE: I don't know if the number of externals associated
     // with a given remote processor is known at this point ... so I count them here.
 
-    NLists--;
+    NLists=1;
     int StartCurrent, StartNext;
     StartCurrent = 0; StartNext = 1;
     while ( StartNext < NumRemoteColGIDs ) {
       if (RemoteOwningPIDs[StartNext]==RemoteOwningPIDs[StartNext-1]) StartNext++;
       else {
 	SortLists[0] =  &RemotePermuteIDs[StartCurrent];
-        Util.Sort(true,StartNext-StartCurrent, &(RemoteColind_ices[StartCurrent]),0,0,NLists,SortLists);
+        Util.Sort(true,StartNext-StartCurrent, &(RemoteColindices[StartCurrent]),0,0,NLists,SortLists);
         StartCurrent = StartNext; StartNext++;
       }
     }
     SortLists[0] =  &RemotePermuteIDs[StartCurrent];
-    Util.Sort(true, StartNext-StartCurrent, &(RemoteColind_ices[StartCurrent]), 0, 0, NLists, SortLists);
+    Util.Sort(true, StartNext-StartCurrent, &(RemoteColindices[StartCurrent]), 0, 0, NLists, SortLists);
   }
 
   // Reverse the permutation to get the information we actually care about
@@ -468,12 +470,12 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
 
   // Now fill front end. Two cases:
   // (1) If the number of Local column GIDs is the same as the number of Local domain GIDs, we
-  //     can simply read the domain GIDs into the front part of Colind_ices, otherwise 
+  //     can simply read the domain GIDs into the front part of Colindices, otherwise 
   // (2) We step through the GIDs of the domainMap, checking to see if each domain GID is a column GID.
   //     we want to do this to maintain a consistent ordering of GIDs between the columns and the domain.
 
   if(NumLocalColGIDs == DomainMap_.NumMyElements()) {
-    DomainMap_.MyGlobalElements(Colind_ices.Values()); // Load Global Indices into first numMyBlockCols elements column GID list
+    DomainMap_.MyGlobalElements(Colindices.Values()); // Load Global Indices into first numMyBlockCols elements column GID list
   }
   else {
     int* MyGlobalElements = DomainMap_.MyGlobalElements();
@@ -485,7 +487,7 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
     for(i = 0; i < numDomainElements; i++) {
       if(LocalGIDs[i]) {
 	LocalPermuteIDs[i] = NumLocalAgain;
-	Colind_ices[NumLocalAgain++] = MyGlobalElements[i];
+	Colindices[NumLocalAgain++] = MyGlobalElements[i];
       }
     }
     assert(NumLocalAgain==NumLocalColGIDs); // Sanity test
@@ -499,7 +501,7 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
     ColMapOwningPIDs_[NumLocalColGIDs+i] = RemoteOwningPIDs[i];
 
   // Make Column map with same element sizes as Domain map 
-  Epetra_Map temp(-1, numMyBlockCols, Colind_ices.Values(), DomainMap_.IndexBase(), DomainMap_.Comm());
+  Epetra_Map temp(-1, numMyBlockCols, Colindices.Values(), DomainMap_.IndexBase(), DomainMap_.Comm());
   ColMap_ = temp;
 
   // Low-cost reindex of the matrix
@@ -516,7 +518,7 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
     }
   }
 
-  assert(ColMap_.NumMyElements() == ColMapOwningPIDs_.size());
+  assert((size_t)ColMap_.NumMyElements() == ColMapOwningPIDs_.size());
   return(0);
 }
 
@@ -613,7 +615,6 @@ int LightweightCrsMatrix::PackAndPrepareWithOwningPIDs(const Epetra_DistObject &
         
       int maxNumEntries = A.MaxNumEntries();
       std::vector<int> MyIndices(maxNumEntries);
-      
       dintptr = (double *) Exports;
       valptr = dintptr + IntSizes[0];
       intptr = (int *) dintptr;
@@ -669,7 +670,6 @@ int LightweightCrsMatrix::PackAndPrepareWithOwningPIDs(const Epetra_DistObject &
 	    }	
 	}    
     }
-    
     
     for( int i = 0; i < NumExportIDs; ++i )
       Sizes[i] += IntSizes[i];
@@ -837,7 +837,6 @@ LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix
     }
   }
 
-
   // Turn row length into a real rowptr_
   int last_len = rowptr_[0];
   rowptr_[0] = 0;
@@ -846,7 +845,6 @@ LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix
     rowptr_[i] = last_len + rowptr_[i-1];
     last_len=new_len;
   }
-
 
   // Allocate CSR_colind_ & CSR_values arrays
   int mynnz=rowptr_[N];
@@ -859,7 +857,7 @@ LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix
   // Find the PIDs from the Source Matrix (whatever SourceMatrix.Importer() knows)
   std::vector<int> SourcePIDs(SourceMatrix.NumMyCols(),-1);
   if(SourceMatrix.Importer()) util.GetPids(*SourceMatrix.Importer(),SourcePIDs,true);
- 
+
   // Grab pointers for SourceMatrix
   int    * Source_rowptr, * Source_colind;
   double * Source_vals;
@@ -963,12 +961,15 @@ LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix
   /********************************************/
   /**** 4) Call sort the entries           ****/
   /********************************************/
+  // NOTE: If we have no entries the &blah[0] will cause the STL to die in debug mode
   mtime->stop();
   mtime=MM.getNewTimer("LWCRS C-4");
   mtime->start();
 
-  // Sort the entries
-  sort_crs_entries(N, &rowptr_[0], &colind_[0], &vals_[0]);
+  if(N>0)
+    sort_crs_entries(N, &rowptr_[0], &colind_[0], &vals_[0]);
+
+
 
   /********************************************/
   /**** 5) Cleanup                         ****/
@@ -982,7 +983,6 @@ LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix
   delete [] Sizes_;
 
   mtime->stop();
-
  }// end fused copy constructor
 
 

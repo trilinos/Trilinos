@@ -615,8 +615,8 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   mtime->start();
 
   int i;
-  int *rowptr, *colind;
-  double *vals;
+  int *rowptr=0, *colind=0;
+  double *vals=0;
 
   EPETRA_CHK_ERR( M.ExtractCrsDataPointers(rowptr,colind,vals) );
   for(i=0; i<Mview.numRows; ++i) {
@@ -714,9 +714,11 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 
     //Finally, use the freshly imported data to fill in the gaps in our views
 #ifdef LIGHTWEIGHT_MATRIX
-    rowptr = &Mview.importMatrix->rowptr_[0];
-    colind = &Mview.importMatrix->colind_[0];
-    vals   = &Mview.importMatrix->vals_[0];
+    if(Mview.importMatrix->RowMap_.NumMyElements()) {
+      rowptr = &Mview.importMatrix->rowptr_[0];
+      colind = &Mview.importMatrix->colind_[0];
+      vals   = &Mview.importMatrix->vals_[0];
+    }
 #else
     EPETRA_CHK_ERR( Mview.importMatrix->ExtractCrsDataPointers(rowptr,colind,vals) );
 #endif
