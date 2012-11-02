@@ -50,7 +50,7 @@ namespace panzer {
 template <typename LO,typename GO>
 class DOFManagerFactory : public virtual UniqueGlobalIndexerFactory<LO,GO,LO,GO> {
 public:
-   DOFManagerFactory() : useDOFManager2_(false) {}
+   DOFManagerFactory() : useDOFManagerFEI_(false) {}
 
    virtual ~DOFManagerFactory() {}
 
@@ -71,10 +71,10 @@ public:
                             const std::string & fieldOrder="") const;
 
    void setUseDOFManager2(bool flag)
-   { useDOFManager2_ = flag; }
+   { useDOFManagerFEI_ = flag; }
 
    bool getUseDOFManager2() const
-   { return useDOFManager2_; }
+   { return useDOFManagerFEI_; }
 
 protected:
    template <typename DOFManagerT>
@@ -84,7 +84,7 @@ protected:
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
                             const std::string & fieldOrder) const;
 
-   bool useDOFManager2_;
+   bool useDOFManagerFEI_;
 };
 
 }
