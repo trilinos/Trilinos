@@ -703,12 +703,13 @@ LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix
   else
     throw std::runtime_error("EpetraExt::LightweightCrsMatrix::PackAndPrepare: Unable to determine source global index type");
 
-
+#ifdef ENABLE_MMM_TIMINGS
   Teuchos::Time myTime("global");
   Teuchos::TimeMonitor MM(myTime);
   Teuchos::RCP<Teuchos::Time> mtime;
   mtime=MM.getNewTimer("LWCRS C-1");
   mtime->start();
+#endif
 
   // Fused constructor, import & FillComplete
   int i,j,rv=0;
@@ -778,10 +779,11 @@ LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix
   /*********************************************************************/
   /**** 2) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
   /*********************************************************************/
+#ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
   mtime=MM.getNewTimer("LWCRS C-2");
   mtime->start();
-
+#endif
   // What we really need to know is where in the CSR arrays each row should start (aka the rowptr_).
   // We do that by (a) having each row record it's size in the rowptr_ (b) doing a cumulative sum to get the rowptr_ values correct and 
   // (c) Having each row copied into the right colind_ / values locations.
@@ -950,9 +952,11 @@ LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix
   /**************************************************************/
   /**** 3) Call Optimized MakeColMap w/ no Directory Lookups ****/
   /**************************************************************/
+#ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
   mtime=MM.getNewTimer("LWCRS C-3");
   mtime->start();
+#endif
 
   //Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids).
   if(UseLL) MakeColMapAndReindex<long long>(pids,colind_LL_);
@@ -962,27 +966,29 @@ LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix
   /**** 4) Call sort the entries           ****/
   /********************************************/
   // NOTE: If we have no entries the &blah[0] will cause the STL to die in debug mode
+#ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
   mtime=MM.getNewTimer("LWCRS C-4");
   mtime->start();
-
-  if(N>0)
-    sort_crs_entries(N, &rowptr_[0], &colind_[0], &vals_[0]);
-
-
+#endif
+  if(N>0) sort_crs_entries(N, &rowptr_[0], &colind_[0], &vals_[0]);
 
   /********************************************/
   /**** 5) Cleanup                         ****/
   /********************************************/
+#ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
   mtime=MM.getNewTimer("LWCRS C-5");
   mtime->start();
+#endif
 
   delete [] Exports_;
   delete [] Imports_;
   delete [] Sizes_;
 
+#ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
+#endif
  }// end fused copy constructor
 
 

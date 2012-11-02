@@ -61,6 +61,8 @@ class LightweightCrsMatrix;
 
 #define LIGHTWEIGHT_MATRIX
 
+//#define ENABLE_MMM_TIMINGS
+
 //struct that holds views of the contents of a CrsMatrix. These
 //contents may be a mixture of local and remote rows of the
 //actual matrix.

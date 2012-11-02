@@ -585,11 +585,13 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   //of M, then those remotely-owned rows will be imported into
   //'Mview.importMatrix', and views of them will be included in 'Mview'.
 
+#ifdef ENABLE_MMM_TIMINGS
   Teuchos::Time myTime("global");
   Teuchos::TimeMonitor MM(myTime);
   Teuchos::RCP<Teuchos::Time> mtime;
   mtime=MM.getNewTimer("All I&X Alloc");
   mtime->start();
+#endif
 
   Mview.deleteContents();
 
@@ -609,10 +611,11 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   }
 
   Mview.numRemote = 0;
-
+#ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
   mtime=MM.getNewTimer("All I&X Extract");
   mtime->start();
+#endif
 
   int i;
   int *rowptr=0, *colind=0;
@@ -632,9 +635,10 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
       Mview.remote[i]           = false;
     }
   }
-
+#ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
   mtime->start();
+#endif
 
   Mview.origRowMap = &(M.RowMap());
   Mview.rowMap = &targetMap;
@@ -661,13 +665,15 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   int globalMaxNumRemote = 0;
   Mrowmap.Comm().MaxAll(&Mview.numRemote, &globalMaxNumRemote, 1);
 
-
+#ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
+#endif
 
   if (globalMaxNumRemote > 0) {
+#ifdef ENABLE_MMM_TIMINGS
     mtime=MM.getNewTimer("All I&X Import-1");
     mtime->start();
-    
+#endif
     //Create a map that describes the remote rows of M that we need.
 
     int* MremoteRows = Mview.numRemote>0 ? new int[Mview.numRemote] : NULL;
@@ -680,19 +686,20 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 
     Epetra_Map MremoteRowMap(-1, Mview.numRemote, MremoteRows,
 			     Mrowmap.IndexBase(), Mrowmap.Comm());
-
+#ifdef ENABLE_MMM_TIMINGS
     mtime->stop();
     mtime=MM.getNewTimer("All I&X Import-2");
     mtime->start();
-
+#endif
     //Create an importer with target-map MremoteRowMap and 
     //source-map Mrowmap.
     Epetra_Import importer(MremoteRowMap, Mrowmap);
 
+#ifdef ENABLE_MMM_TIMINGS
     mtime->stop();
     mtime=MM.getNewTimer("All I&X Import-3");
     mtime->start();
-
+#endif
 
 #ifdef  LIGHTWEIGHT_MATRIX
     if(Mview.importMatrix) delete Mview.importMatrix;
@@ -705,12 +712,13 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
     EPETRA_CHK_ERR( Mview.importMatrix->Import(M, importer, Insert) );
     EPETRA_CHK_ERR( Mview.importMatrix->FillComplete(M.DomainMap(), M.RangeMap()) );
 #endif
-    mtime->stop();
 
+#ifdef ENABLE_MMM_TIMINGS
+    mtime->stop();
     mtime->stop();
     mtime=MM.getNewTimer("All I&X Import-4");
     mtime->start();
-
+#endif
 
     //Finally, use the freshly imported data to fill in the gaps in our views
 #ifdef LIGHTWEIGHT_MATRIX
@@ -738,12 +746,10 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
     Mview.importColMap = &(Mview.importMatrix->ColMap());
 #endif
     delete [] MremoteRows;
+#ifdef ENABLE_MMM_TIMINGS
     mtime->stop();
-
-    
+#endif   
   }
-
-
   return(0);
 }
 
@@ -910,13 +916,13 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
 
   // DEBUG
   //  bool NewFlag=!C.IndicesAreLocal() && !C.IndicesAreGlobal();
+#ifdef ENABLE_MMM_TIMINGS
   Teuchos::Time myTime("global");
   Teuchos::TimeMonitor M(myTime);
-  Teuchos::RCP<Teuchos::Time> mtime;
-  
+  Teuchos::RCP<Teuchos::Time> mtime;  
   mtime=M.getNewTimer("All Setup");
   mtime->start();
-
+#endif
   // end DEBUG
 
   //
@@ -996,11 +1002,10 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   const Epetra_Map* targetMap_A = rowmap_A;
   const Epetra_Map* targetMap_B = rowmap_B;
 
+#ifdef ENABLE_MMM_TIMINGS
   mtime=M.getNewTimer("All I&X");
   mtime->start();
-
-
-
+#endif
   if (numProcs > 1) {
     //If op(A) = A^T, find all rows of A that contain column-indices in the
     //local portion of the domain-map. (We'll import any remote rows
@@ -1041,12 +1046,11 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   //Now import any needed remote rows and populate the Bview struct.  
   EPETRA_CHK_ERR( import_and_extract_views(B, *targetMap_B, Bview) );
 
+#ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
-
-
   mtime=M.getNewTimer("All Solve");
   mtime->start();
-
+#endif
 
   // Zero if filled
   if(C.Filled()) C.PutScalar(0.0);
@@ -1065,8 +1069,9 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
     break;
   }
 
-
+#ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
+#endif
 
   if (scenario != 1 && call_FillComplete_on_result) {
     //We'll call FillComplete on the C matrix before we exit, and give
@@ -1093,8 +1098,6 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   delete mapunion1; mapunion1 = NULL;
   delete workmap1; workmap1 = NULL;
   delete workmap2; workmap2 = NULL;
-
-
 
   return(0);
 }

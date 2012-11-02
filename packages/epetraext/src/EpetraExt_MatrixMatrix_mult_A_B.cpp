@@ -647,10 +647,12 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
   Epetra_Map* mapunion1 = 0;
 
   // DEBUG
+#ifdef ENABLE_MMM_TIMINGS
   Teuchos::Time myTime("global");
   Teuchos::TimeMonitor M(myTime);
   Teuchos::RCP<Teuchos::Time> mtime;
-  
+#endif  
+
   // If the user doesn't want us to call FillComplete, use the general routine
   if(!call_FillComplete_on_result) {
     return mult_A_B_general(A,Aview,B,Bview,C,false);
@@ -671,12 +673,11 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
     return mult_A_B_general(A,Aview,B,Bview,C,call_FillComplete_on_result);
   }
 
+#ifdef ENABLE_MMM_TIMINGS
   if(NewFlag) mtime=M.getNewTimer("M5 Setup");
   else mtime=M.getNewTimer("M5r Setup");
   mtime->start();
-
-
-
+#endif
   // If new, build & clobber a colmap for C
   if(NewFlag){
     if(Bview.importMatrix) {
@@ -725,12 +726,12 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 #endif
   }		
 
+#ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
-
   if(NewFlag) mtime=M.getNewTimer("M5 Core");
   else mtime=M.getNewTimer("M5r Core");
   mtime->start();
-
+#endif
 
   // Call the appropriate core routine
   if(NewFlag) {
@@ -740,7 +741,9 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
     EPETRA_CHK_ERR(mult_A_B_reuse(A,B,Bview,Bcol2Ccol,Bimportcol2Ccol,C));
   }
   
+#ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
+#endif
 
   // Cleanup      
   delete mapunion1;
