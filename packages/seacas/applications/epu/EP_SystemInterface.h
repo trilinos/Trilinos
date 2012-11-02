@@ -65,7 +65,12 @@ namespace Excn {
       int step_interval() const {return stepInterval_;}
       int subcycle() const {return subcycle_; }
       int cycle() const {return cycle_; }
+
       void subcycle(int cycles) {subcycle_ = cycles; }
+      void processor_count(int count) {processorCount_ = count;}
+      void step_min(int step_min) {stepMin_ = step_min;}
+      void step_max(int step_max) {stepMax_ = step_max;}
+      void step_interval(int interval) {stepInterval_ = interval;}
   
       std::string cwd() const {return cwd_;}
       std::string basename() const {return basename_;}
@@ -85,7 +90,8 @@ namespace Excn {
       bool int64() const {return intIs64Bit_;}
       void set_int64() const {intIs64Bit_=true;}
       int  compress_data() const {return compressData_;}
-      
+      bool subcycle_join() const {return subcycleJoin_;}
+	  
       StringIdVector global_var_names() const {return globalVarNames_;}
       StringIdVector node_var_names() const {return nodeVarNames_;}
       StringIdVector elem_var_names() const {return elemVarNames_;}
@@ -144,6 +150,7 @@ namespace Excn {
       bool largeModel_;
       bool append_;
       mutable bool intIs64Bit_;
+      bool subcycleJoin_;
       
       StringIdVector globalVarNames_;
       StringIdVector nodeVarNames_;

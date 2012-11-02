@@ -50,6 +50,7 @@
 #include <stdlib.h>
 #include <float.h>
 #include <math.h>
+#include <limits.h>
 
 #include <string.h>
 #include <time.h>
@@ -386,6 +387,37 @@ int main(int argc, char* argv[])
     if (interface.subcycle() < 0 || (interface.subcycle() > 0 && interface.cycle() >= 0)) {
       break;
     }
+  }
+
+  if (interface.subcycle() > 0 && interface.cycle() < 0 && interface.subcycle_join()) {
+    // Now, join the subcycled parts into a single file...
+    start_part = 0;
+    part_count = interface.subcycle();
+    interface.subcycle(0);
+    interface.processor_count(part_count);
+    interface.step_min(1);
+    interface.step_max(INT_MAX);
+    interface.step_interval(1);
+    
+    if (!ExodusFile::initialize(interface, start_part, part_count)) {
+      std::cerr << "ERROR: Problem initializing input and/or output files.\n";
+      exit(EXIT_FAILURE);
+    }
+
+    if (ExodusFile::io_word_size() == 4) { // Reals are floats
+      if (interface.int64()) {
+	error = epu(interface, start_part, part_count, 0, (float)0.0, (int64_t)0);
+      } else {
+	error = epu(interface, start_part, part_count, 0, (float)0.0, (int)0);
+      }
+    } else { // Reals are doubles
+      if (interface.int64()) { 
+	error = epu(interface, start_part, part_count, 0, (double)0.0, (int64_t)0);
+      } else {
+	error = epu(interface, start_part, part_count, 0, (double)0.0, (int)0);
+      }
+    }
+    
   }
 
   time_t end_time = time(NULL);
@@ -829,7 +861,8 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
   // Determine how many steps will be written...
   int output_steps = (ts_max - ts_min) / ts_step + 1;
-
+  int subcycles = interface.subcycle();
+  
   double start_time = seacas_timer();
 
   for (time_step = ts_min-1; time_step < ts_max; time_step+=ts_step) {
@@ -1046,6 +1079,10 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     if (debug_level & 1)
       std::cout << time_stamp(tsFormat);
 
+    if (subcycles > 2) {
+      std::cout << cycle+1 << "/" << subcycles << " ";
+    }
+
     std::cout << "Wrote step " << std::setw(2) << time_step+1 << ", time "
 	      << std::scientific << std::setprecision(4) << time_val;
 
@@ -1078,6 +1115,10 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   // EXIT program
   if (debug_level & 1)
     std::cout << time_stamp(tsFormat);
+  if (subcycles > 2) {
+    std::cout << cycle+1 << "/" << subcycles << " ";
+  }
+  
   std::cout << "******* END *******\n";
   return(error);
 }
