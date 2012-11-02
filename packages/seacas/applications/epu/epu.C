@@ -1705,7 +1705,7 @@ namespace {
 	}
       }
 
-      IntVector element_map;
+      std::vector<INT> element_map;
       for (int p = 0; p < part_count; p++) {
 	size_t element_count = local_mesh[p].elementCount;
 	element_map.resize(element_count);
