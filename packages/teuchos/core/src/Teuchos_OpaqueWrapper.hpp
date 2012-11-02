@@ -63,35 +63,38 @@ namespace Teuchos {
  *
  * \section Teuchos_OpaqueWrapper_Summary Summary
  *
- * If you want to create an RCP to an opaque object, use the
- * opaqueWrapper() nonmember template function.  The <i>type</i> of an
- * RCP to an opaque object T is <tt>RCP<OpaqueWrapper<T> ></tt>.
- * Users are not allowed to construct an OpaqueWrapper object
- * explicitly.  You must use the opaqueWrapper() nonmember function to
- * do so.
+ * If you want to create an RCP to an opaque handle (an instance of a
+ * type like MPI_Comm), use the opaqueWrapper() nonmember template
+ * function.  If that opaque handle needs to be freed after all
+ * references to it go away, then supply a "free" function to
+ * opaqueWrapper().  The type returned by opaqueWrapper() is
+ * <tt>RCP<OpaqueWrapper<T> ></tt>, an RCP (reference-counted "smart"
+ * pointer) to a wrapper of the opaque handle type T.  Users are not
+ * allowed to construct an OpaqueWrapper object explicitly.  You must
+ * use the opaqueWrapper() nonmember function to do so.
  *
  * \section Teuchos_OpaqueWrapper_Prereq Prerequisites
  *
  * In order to understand this documentation, you must first have
- * learned how to use RCP (Teuchos' reference-counted pointer class)
- * to manage dynamically allocated memory and other resources.  It
- * also helps to be familiar with MPI (the Message Passing Interface
- * for distributed-memory parallel programming), but this is not
- * required.
+ * learned how to use RCP (Teuchos' reference-counted "smart" pointer
+ * class) to manage dynamically allocated memory and other resources.
+ * It also helps to be familiar with MPI (the Message Passing
+ * Interface for distributed-memory parallel programming), but this is
+ * not required.
  *
- * \section Teuchos_OpaqueWrapper_Handles What are opaque objects (a.k.a. handles)?
+ * \section Teuchos_OpaqueWrapper_Handles What are opaque handles?
  *
- * Many different software libraries use the <i>opaque object</i> or
- * opaque handle idiom to hide the internals of a data structure from
- * users.  This standard technique allows users to treat an instance
- * of a data structure as a handle.  Users may pass the handle around
- * as if it were a simple value type (like int), and must call
- * nonmember functions in order to create, operate on, use, or destroy
- * instances of the data structure.  The MPI (Message Passing
- * Interface) standard is full of examples of the opaque object idiom,
- * including MPI_Comm (for communicators), MPI_Datatype (for standard
- * and custom data types), and MPI_Op (for standard and custom
- * reduction operations).
+ * Many different software libraries use the <i>opaque handle</i>
+ * (a.k.a. opaque object) idiom to hide the internals of a data
+ * structure from users.  This standard technique allows users to
+ * treat an instance of a data structure as a handle.  Users may pass
+ * the handle around as if it were a simple value type (like int), and
+ * must call nonmember functions in order to create, operate on, use,
+ * or destroy instances of the data structure.  The MPI (Message
+ * Passing Interface) standard is full of examples of the opaque
+ * handle idiom, including MPI_Comm (for communicators), MPI_Datatype
+ * (for standard and custom data types), and MPI_Op (for standard and
+ * custom reduction operations).
  *
  * In general, opaque handles (corresponding to the Opaque template
  * parameter) must be <i>assignable</i>.  This means that copy
@@ -100,15 +103,16 @@ namespace Teuchos {
  * opaque handle types.
  *
  * Opaque handles are a useful technique, but they interfere with
- * correct use of RCP, as we will explain below.  This base class
- * allows opaque objects to be wrapped by a real object, whose address
- * you can take.  This is needed in order to wrap an opaque object in
- * a RCP, for example.
+ * correct use of reference-counted "smart" pointer types such as
+ * Teuchos' RCP or std::shared_ptr.  We will explain below why this is
+ * the case.  The OpaqueWrapper base class allows opaque handles to be
+ * wrapped by a real object, whose address you can take.  This is
+ * needed in order to wrap an opaque object in a RCP, for example.
  *
  * \section Teuchos_OpaqueWrapper_Special Why do opaque handles need special treatment?
  *
- * This class was motivated in particular by MPI's common use of the
- * opaque object idiom.  For MPI, passing MPI_Comm, MPI_Datatype, and
+ * The OpaqueWrapper class was motivated by MPI's common use of the
+ * opaque handle idiom.  For MPI, passing MPI_Comm, MPI_Datatype, and
  * MPI_Op objects around by handles hides implementation details from
  * the user.  Handles also make it easier to access MPI functionality
  * from Fortran, so that C, C++, and Fortran can all share the same
@@ -118,8 +122,8 @@ namespace Teuchos {
  * implementers suggests, such an implementation would likely maintain
  * a table for each MPI process that maps the integer value to a
  * pointer to the corresponding object.)  For example, MPI_Comm might
- * be a typedef to int, and MPI_COMM_WORLD might be a literal integer
- * value:
+ * be a typedef to int, and MPI_COMM_WORLD might be a C preprocessor
+ * macro for a literal integer value:
  *
  \code
  typedef int MPI_Comm;
@@ -128,10 +132,11 @@ namespace Teuchos {
 
  * In this case, the expression <tt>rcp(&MPI_COMM_WORLD)</tt> would
  * not even compile, since one cannot take the address of an integer
- * literal.  To make this this compile, one might try the following:
+ * literal such as 42.  (Remember that preprocessor macros get
+ * replaced with their values before the C++ compiler does its work.)
+ * To make this expression compile, one might try the following:
 
  \code
-
  // THIS FUNCTION IS WRONG.  IT MAY SEGFAULT.
  Teuchos::RCP<MPI_Comm> getMpiCommPtr()
  {
@@ -139,7 +144,6 @@ namespace Teuchos {
    // WRONG!!!  comm is a stack variable!
    return Teuchos::rcp (&comm, false);
  }
-
  \endcode
 
  * Using the returned communicator would result in undefined behavior,
@@ -152,7 +156,6 @@ namespace Teuchos {
  * The following code is syntactically correct, but may leak memory:
 
  \code
-
  // THIS CODE LEAKS MEMORY FOR GENERAL MPI_Comm OBJECTS.
  Teuchos::RCP<MPI_Comm> getMpiCommPtr (MPI_Comm comm)
  {
@@ -161,7 +164,6 @@ namespace Teuchos {
    // leaks memory for user-created MPI_Comm objects.
    return Teuchos::rcp (pComm);
  }
-
  \endcode
 
  * The above implementation of getMpiCommPtr() is correct only for the
@@ -191,7 +193,8 @@ namespace Teuchos {
  \endcode
 
  * If you instead want to create a custom MPI_Comm using a function
- * like MPI_Comm_split(), then you may wrap it in an RCP as follows:
+ * like MPI_Comm_split(), then you may wrap it in an RCP as follows
+ * (please see discussion later about MPI_Comm_free()):
 
  \code
  MPI_Comm rawComm;
@@ -208,21 +211,25 @@ namespace Teuchos {
  * If the free function is provided, then when the RCP's reference
  * count goes to zero, that function is called to "free" the handle.
  * If opaqueFree is a free function, then the following must be
- * syntactically valid:
+ * syntactically valid, where <tt>opaque</tt> has type <tt>Opaque</tt>:
+
  \code
- Opaque opaque;
  opaqueFree (&opaque);
  \endcode
- * The function's return value, if any, is ignored.  Users are
- * responsible for knowing whether to provide a free function to
- * opaqueWrapper().  In this case, because we created an MPI_Comm
- * dynamically using a communicator "constructor" function, the
- * MPI_Comm must be "freed" after use.  RCP will automatically call
- * the "free" function once the reference count of \c comm reaches
- * zero.
+
+ * The function's return value, if any, is ignored.  Furthermore, the
+ * OpaqueFree type must be copy constructible.  (A function pointer is
+ * trivally copy constructible.)
  *
- * Note that the above example is only correct if the reference count
- * of \c comm will go to zero before MPI_Finalize is called.  This is
+ * Users are responsible for knowing whether to provide a free
+ * function to opaqueWrapper().  In this case, because we created an
+ * MPI_Comm dynamically using a communicator "constructor" function,
+ * the MPI_Comm must be "freed" after use.  RCP will automatically
+ * call the "free" function once the reference count of \c comm
+ * reaches zero.
+ *
+ * \note The above example is only correct if the reference count of
+ * \c comm will go to zero before MPI_Finalize is called.  This is
  * because it's not valid to call MPI_Comm_free after MPI_Finalize has
  * been called.  The details::safeCommFree function checks whether
  * MPI_Finalize has been called (via MPI_Finalized) before calling
@@ -287,15 +294,17 @@ private:
  *   base class OpaqueWrapper.
  *
  * This subclass allows a client to easily wrap any opaque object that
- * needs a function to free it.  This function (or function object)
+ * needs a function to free it.  This function (or function object) 
  * must be callable as:
 
  \code
  opaqueFree(&opaque);
  \endcode
-
- * Please refer to the documentation of OpaqueWrapper for examples of
- * how to supply a function for freeing an opaque handle.
+ 
+ * It must also be copy constructible.  (A function pointer is
+ * trivially copy constructible.)  Please refer to the documentation
+ * of OpaqueWrapper for examples of how to supply a function for
+ * freeing an opaque handle.
  *
  * \relates OpaqueWrapper
  */
