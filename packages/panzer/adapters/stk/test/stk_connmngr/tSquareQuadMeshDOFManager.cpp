@@ -117,7 +117,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
          = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
 
    TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
@@ -222,7 +222,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, field_order)
          = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
 
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
 
@@ -314,7 +314,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, shared_owned_indices)
 
    // build DOF manager
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
    dofManager->addField("u",patternC1);
    dofManager->buildGlobalUnknowns();
@@ -392,14 +392,14 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, multiple_dof_managers)
 
    // build DOF manager
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager_fluids = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager_fluids = rcp(new panzer::DOFManagerFEI<int,int>());
    dofManager_fluids->setConnManager(connManager,MPI_COMM_WORLD);
    dofManager_fluids->addField("ux",patternC2);
    dofManager_fluids->addField("uy",patternC2);
    dofManager_fluids->addField("p",patternC1);
    dofManager_fluids->buildGlobalUnknowns();
 
-   RCP<panzer::DOFManager<int,int> > dofManager_temp = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager_temp = rcp(new panzer::DOFManagerFEI<int,int>());
    dofManager_temp->setConnManager(connManager,MPI_COMM_WORLD);
    dofManager_temp->addField("T",patternC1);
    dofManager_temp->buildGlobalUnknowns(dofManager_fluids->getGeometricFieldPattern());
@@ -519,7 +519,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations)
          = buildFieldPattern<Intrepid::Basis_HCURL_QUAD_I1_FEM<double,FieldContainer> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
 
    dofManager->setOrientationsRequired(true);
    TEST_EQUALITY(dofManager->getOrientationsRequired(),true);
@@ -644,7 +644,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations2)
          = buildFieldPattern<Intrepid::Basis_HCURL_QUAD_I1_FEM<double,FieldContainer> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
 
    dofManager->setOrientationsRequired(true);
    TEST_EQUALITY(dofManager->getOrientationsRequired(),true);
@@ -719,7 +719,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations_fa
          = buildFieldPattern<Intrepid::Basis_HCURL_QUAD_I1_FEM<double,FieldContainer> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
 
    dofManager->setOrientationsRequired(true);
    TEST_EQUALITY(dofManager->getOrientationsRequired(),true);

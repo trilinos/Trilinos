@@ -86,8 +86,8 @@ TEUCHOS_UNIT_TEST(tSolutionReader, test)
 
    RCP<panzer::ConnManager<int,int> > connManager 
          = rcp(new panzer_stk::STKConnManager(mesh));
-   RCP<panzer::DOFManager<int,int> > dofManager 
-         = rcp(new panzer::DOFManager<int,int>(connManager,MPI_COMM_WORLD));
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager 
+         = rcp(new panzer::DOFManagerFEI<int,int>(connManager,MPI_COMM_WORLD));
 
    RCP<const panzer::FieldPattern> linPattern = rcp(new panzer::IntrepidFieldPattern(
         rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>)));

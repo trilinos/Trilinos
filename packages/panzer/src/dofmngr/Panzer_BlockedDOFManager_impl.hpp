@@ -212,7 +212,7 @@ const std::vector<int> & BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getGID
 
    // first grab all pieces that are needed for extracting GIDs from sub system
    int fieldBlock = getFieldBlock(fieldNum);
-   Teuchos::RCP<const DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager = fieldBlockManagers_[fieldBlock];
+   Teuchos::RCP<const DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager = fieldBlockManagers_[fieldBlock];
 
    // grab offsets for sub dof manager. Notice you must convert to field number used by sub manager!
    const std::vector<int> & subGIDOffsets 
@@ -279,7 +279,7 @@ BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getGIDFieldOffsets_closure(cons
 
    // first grab all pieces that are needed for extracting GIDs from sub system
    int fieldBlock = getFieldBlock(fieldNum);
-   Teuchos::RCP<const DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager = fieldBlockManagers_[fieldBlock];
+   Teuchos::RCP<const DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager = fieldBlockManagers_[fieldBlock];
 
    // grab offsets for sub dof manager. Notice you must convert to field number used by sub manager!
    const std::pair<std::vector<int>,std::vector<int> > & subGIDOffsets_closure
@@ -503,8 +503,8 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
 
    // build sub DOFManagers for each field block
    for(std::size_t fldBlk=0;fldBlk<fieldOrder_.size();fldBlk++) {
-      Teuchos::RCP<panzer::DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager =
-         Teuchos::rcp(new panzer::DOFManager<LocalOrdinalT,GlobalOrdinalT>);
+      Teuchos::RCP<panzer::DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager =
+         Teuchos::rcp(new panzer::DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>);
       dofManager->setConnManager(getConnManager(),mpiComm_);
 
       // add in these fields to the new manager
@@ -524,7 +524,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
    maxSubFieldNum_ = -1;
    std::map<std::string,int> tempStrToNum;
    for(std::size_t fldBlk=0;fldBlk<fieldBlockManagers_.size();fldBlk++) {
-      Teuchos::RCP<panzer::DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager =
+      Teuchos::RCP<panzer::DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager =
          fieldBlockManagers_[fldBlk];
       const std::vector<std::string> & activeFields = fieldOrder_[fldBlk];
 
@@ -579,7 +579,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::
 addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
-                             DOFManager<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const
+                             DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const
 {
    std::vector<std::size_t> correctnessCheck(activeFields.size(),0);
    std::vector<std::string> elementBlocks;

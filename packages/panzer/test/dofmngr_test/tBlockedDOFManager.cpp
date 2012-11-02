@@ -198,7 +198,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 
    dofManager.registerFields();
    TEST_ASSERT(dofManager.fieldsRegistered());
-   const std::vector<RCP<panzer::DOFManager<short,int> > > & subManagers = 
+   const std::vector<RCP<panzer::DOFManagerFEI<short,int> > > & subManagers = 
          dofManager.getFieldDOFManagers();
    TEST_EQUALITY(subManagers.size(),fieldOrder.size());
 
@@ -529,7 +529,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
       const std::pair<std::vector<int>,std::vector<int> > * vec = 0;
       const std::pair<std::vector<int>,std::vector<int> > * sub_vec = 0;
 
-      Teuchos::RCP<const DOFManager<short,int> > subManager;
+      Teuchos::RCP<const DOFManagerFEI<short,int> > subManager;
    
       // block 0
       subManager = dofManager.getFieldDOFManagers()[2];

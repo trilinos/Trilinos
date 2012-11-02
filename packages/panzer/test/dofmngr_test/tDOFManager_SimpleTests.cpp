@@ -72,7 +72,7 @@ namespace panzer {
 
 TEUCHOS_UNIT_TEST(tDOFManager_SimpleTests,validFieldOrder)
 {
-   DOFManager<int,int> dofManager; 
+   DOFManagerFEI<int,int> dofManager; 
 
    std::set<std::string> validFields;
    validFields.insert("horse");

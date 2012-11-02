@@ -304,7 +304,7 @@ int main(int argc,char * argv[])
 
       // get X Epetra_Vector from ghosted container
       RCP<panzer::EpetraLinearObjContainer> ep_ghostCont = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ghostCont);
-      panzer_stk::write_solution_data(*rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*ep_ghostCont->get_x());
+      panzer_stk::write_solution_data(*rcp_dynamic_cast<panzer::DOFManagerFEI<int,int> >(dofManager),*mesh,*ep_ghostCont->get_x());
       mesh->writeToExodus("output.exo");
    }
 

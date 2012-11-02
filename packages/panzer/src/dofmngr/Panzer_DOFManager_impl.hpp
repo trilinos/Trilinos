@@ -59,16 +59,16 @@ using Teuchos::RCP;
 namespace panzer {
 
 // ************************************************************
-// class DOFManager
+// class DOFManagerFEI
 // ************************************************************
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-DOFManager<LocalOrdinalT,GlobalOrdinalT>::DOFManager()
+DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::DOFManagerFEI()
    : numFields_(0), fieldsRegistered_(false), requireOrientations_(false)
 { }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-DOFManager<LocalOrdinalT,GlobalOrdinalT>::DOFManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
+DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::DOFManagerFEI(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
    : numFields_(0), fieldsRegistered_(false), requireOrientations_(false)
 {
    setConnManager(connMngr,mpiComm);
@@ -86,7 +86,7 @@ DOFManager<LocalOrdinalT,GlobalOrdinalT>::DOFManager(const Teuchos::RCP<ConnMana
   * \param[in] mpiComm  Communicator to use.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::setConnManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
+void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::setConnManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
 {
    // make sure you own an MPI comm
    communicator_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(mpiComm)));
@@ -118,7 +118,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::setConnManager(const Teuchos::RCP
   * \returns Old connection manager.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > DOFManager<LocalOrdinalT,GlobalOrdinalT>::resetIndices()
+Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::resetIndices()
 {
    Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr = connMngr_;
 
@@ -136,7 +136,7 @@ Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > DOFManager<LocalOrdinal
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string & str,
+void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string & str,
                                                         const Teuchos::RCP<const FieldPattern> & pattern)
 {
    std::vector<std::string> elementBlockIds;
@@ -148,18 +148,18 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string & str,
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string & blockId,const std::string & str,
+void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string & blockId,const std::string & str,
                                                         const Teuchos::RCP<const FieldPattern> & pattern)
 {
    TEUCHOS_TEST_FOR_EXCEPTION(fieldsRegistered_,std::logic_error,
-                      "DOFManager::addField: addField cannot be called after registerFields or"
+                      "DOFManagerFEI::addField: addField cannot be called after registerFields or"
                       "buildGlobalUnknowns has been called"); 
 
    fieldStringToPattern_[std::make_pair(blockId,str)] = pattern;
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields() 
+void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::registerFields() 
 {
    numFields_ = 0;
 
@@ -186,7 +186,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
          // for outputing
          std::stringstream ss;
 
-         ss << "DOFManager::registerFields - Field order is invalid!\n";
+         ss << "DOFManagerFEI::registerFields - Field order is invalid!\n";
 
          ss << "   fields = [ ";
          for(std::set<std::string>::const_iterator itr=fields.begin();
@@ -245,7 +245,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
          // order validator for letting something slip through!
          
          TEUCHOS_TEST_FOR_EXCEPTION(false,std::logic_error,
-                            "DOFManager::registerFields - Impossible case discoverved!");
+                            "DOFManagerFEI::registerFields - Impossible case discoverved!");
       }
    }
 
@@ -253,7 +253,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-int DOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldNum(const std::string & str) const
+int DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::getFieldNum(const std::string & str) const
 {
    std::map<std::string,int>::const_iterator itr = fieldStrToInt_.find(str);
 
@@ -261,7 +261,7 @@ int DOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldNum(const std::string & st
    if(itr==fieldStrToInt_.end()) {
       // incorrect field name
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-                         "DOFManager::getFieldNum No field with the name \"" + str + "\" has been added");
+                         "DOFManagerFEI::getFieldNum No field with the name \"" + str + "\" has been added");
    }
    else {
       return itr->second;
@@ -269,7 +269,7 @@ int DOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldNum(const std::string & st
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::setFieldOrder(const std::vector<std::string> & fieldOrder)
+void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::setFieldOrder(const std::vector<std::string> & fieldOrder)
 {
    fieldOrder_ = fieldOrder;
 }
@@ -277,13 +277,13 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::setFieldOrder(const std::vector<s
 /** Get the field order used. Return the field strings.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldOrder(std::vector<std::string> & fieldOrder) const
+void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::getFieldOrder(std::vector<std::string> & fieldOrder) const
 {
    fieldOrder = fieldOrder_;
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-int DOFManager<LocalOrdinalT,GlobalOrdinalT>::getNumFields() const
+int DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::getNumFields() const
 {
    return vectorSpace_->getNumFields();
 }
@@ -293,7 +293,7 @@ int DOFManager<LocalOrdinalT,GlobalOrdinalT>::getNumFields() const
 //   2. initializes the connectivity
 //   3. calls initComplete
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern)
+void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern)
 {
    // this is a safety check to make sure that nodes are included
    // in the geometric field pattern when orientations are required
@@ -301,7 +301,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const Teuchos
       std::size_t sz = geomPattern->getSubcellIndices(0,0).size();
       
       TEUCHOS_TEST_FOR_EXCEPTION(sz==0,std::logic_error,
-                                 "DOFManager::buildGlobalUnknowns requires a geometric pattern including "
+                                 "DOFManagerFEI::buildGlobalUnknowns requires a geometric pattern including "
                                  "the nodes when orientations are needed!");
    }
 
@@ -373,7 +373,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const Teuchos
 //   2. initializes the connectivity
 //   3. calls initComplete
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
+void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
 {
    if(!fieldsRegistered_)
       registerFields();
@@ -403,7 +403,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildUnknownsOrientation()
+void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::buildUnknownsOrientation()
 {
    orientation_.clear(); // clean up previous work
 
@@ -455,7 +455,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildUnknownsOrientation()
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOrderedBlock(const std::vector<std::string> & fieldOrder,
+void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::getOrderedBlock(const std::vector<std::string> & fieldOrder,
                                                                const std::string & blockId,
                                                                std::vector<int> & orderedBlock) const
 {
@@ -474,7 +474,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOrderedBlock(const std::vector
 
 // build the pattern associated with this manager
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-bool DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildPattern(const std::vector<std::string> & fieldOrder,
+bool DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::buildPattern(const std::vector<std::string> & fieldOrder,
                                                             const std::string & blockId)
 {
    using Teuchos::rcp;
@@ -554,7 +554,7 @@ inline void getGIDsFromMatrixGraph(int blockIndex,int dof,LocalOrdinalT localElm
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids,const std::string & blockIdHint) const
+void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids,const std::string & blockIdHint) const
 {
    // this short circuits any lookup, and improves efficiency
    std::string blockId;
@@ -568,7 +568,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT loca
    int dof = getElementBlockGIDCount(blockIndex);
 
    // getConnectivityNumIndices returns -1 if no block is found or
-   // has been initialized. So if this DOFManager has no fields on
+   // has been initialized. So if this DOFManagerFEI has no fields on
    // the block it should be ignored (hence dof>0)
    if(dof>0) {
       getGIDsFromMatrixGraph(blockIndex,dof,localElmtId,*matrixGraph_,gids);
@@ -580,13 +580,13 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT loca
 /** \brief Get a vector containg the orientation of the GIDs relative to the neighbors.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::
+void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::
 getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const
 {
-   // TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::getElementOrientation not implemented yet!");
+   // TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManagerFEI::getElementOrientation not implemented yet!");
 
    TEUCHOS_TEST_FOR_EXCEPTION(orientation_.size()==0,std::logic_error,
-                              "DOFManager::getElementOrientations: Orientations were not constructed!");
+                              "DOFManagerFEI::getElementOrientations: Orientations were not constructed!");
 
    const std::vector<char> & local_o = orientation_[localElmtId];
    gidsOrientation.resize(local_o.size());
@@ -596,9 +596,9 @@ getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrient
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std::ostream & os) const
+void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std::ostream & os) const
 {
-   os << "DOFManager Field Information: " << std::endl;
+   os << "DOFManagerFEI Field Information: " << std::endl;
    
    if(fieldsRegistered_) {
       std::map<std::string,Teuchos::RCP<FieldAggPattern> >::const_iterator iter;
@@ -621,7 +621,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std::ostrea
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-Teuchos::RCP<const FieldPattern> DOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldPattern(const std::string & blockId, int fieldNum) const
+Teuchos::RCP<const FieldPattern> DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::getFieldPattern(const std::string & blockId, int fieldNum) const
 {
    std::map<std::pair<std::string,int>,Teuchos::RCP<const FieldPattern> >::const_iterator itr;
    itr = fieldIntToPattern_.find(std::make_pair(blockId,fieldNum));
@@ -635,7 +635,7 @@ Teuchos::RCP<const FieldPattern> DOFManager<LocalOrdinalT,GlobalOrdinalT>::getFi
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-Teuchos::RCP<const FieldPattern> DOFManager<LocalOrdinalT,GlobalOrdinalT>::
+Teuchos::RCP<const FieldPattern> DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::
 getFieldPattern(const std::string & blockId, const std::string & fieldName) const
 {
    // return null even if field doesn't exist in manager
@@ -651,7 +651,7 @@ getFieldPattern(const std::string & blockId, const std::string & fieldName) cons
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-std::size_t DOFManager<LocalOrdinalT,GlobalOrdinalT>::blockIdToIndex(const std::string & blockId) const
+std::size_t DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::blockIdToIndex(const std::string & blockId) const
 {
    // use lazy evaluation to build block indices
    if(blockIdToIndex_==Teuchos::null) {
@@ -669,7 +669,7 @@ std::size_t DOFManager<LocalOrdinalT,GlobalOrdinalT>::blockIdToIndex(const std::
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-const std::map<std::string,std::size_t> & DOFManager<LocalOrdinalT,GlobalOrdinalT>::blockIdToIndexMap() const
+const std::map<std::string,std::size_t> & DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::blockIdToIndexMap() const
 {
    // use lazy evaluation to build block indices
    if(blockIdToIndex_==Teuchos::null) {
@@ -687,7 +687,7 @@ const std::map<std::string,std::size_t> & DOFManager<LocalOrdinalT,GlobalOrdinal
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const
+void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const
 {
    // verify size is correct
    if(indices.size()!=isOwned.size())
@@ -699,7 +699,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::vector<Gl
       isOwned[i] = (ownedGIDHashTable_.find(indices[i])!=endItr);
 }
 
-// These two functions are "helpers" for DOFManager::getOwnedIndices
+// These two functions are "helpers" for DOFManagerFEI::getOwnedIndices
 ///////////////////////////////////////////////////////////////////////////
 template <typename OrdinalType> 
 static void getOwnedIndices_T(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<OrdinalType> & indices) 
@@ -720,7 +720,7 @@ static void getOwnedIndices_T(const fei::SharedPtr<fei::VectorSpace> & vs,std::v
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const
+void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const
 {
    getOwnedIndices_T<GlobalOrdinalT>(vectorSpace_,indices);
 }
@@ -734,7 +734,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vector<Globa
   * \returns true if the vector is valid, false otherwise.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-bool DOFManager<LocalOrdinalT,GlobalOrdinalT>::validFieldOrder(const std::vector<std::string> & fieldOrder_ut,const std::set<std::string> & fields) const
+bool DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::validFieldOrder(const std::vector<std::string> & fieldOrder_ut,const std::set<std::string> & fields) const
 {
    if(fields.size()!=fieldOrder_ut.size()) // something is wrong!
       return false;
@@ -765,7 +765,7 @@ bool DOFManager<LocalOrdinalT,GlobalOrdinalT>::validFieldOrder(const std::vector
 
 ///////////////////////////////////////////////////////////////////////////
 
-// These two functions are "helpers" for DOFManager::getOwnedAndSharedIndices
+// These two functions are "helpers" for DOFManagerFEI::getOwnedAndSharedIndices
 ///////////////////////////////////////////////////////////////////////////
 template <typename OrdinalType> 
 static void getOwnedAndSharedIndices_T(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<OrdinalType> & indices) 
@@ -781,7 +781,7 @@ static void getOwnedAndSharedIndices_T(const fei::SharedPtr<fei::VectorSpace> & 
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const
+void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const
 {
    getOwnedAndSharedIndices_T<GlobalOrdinalT>(vectorSpace_,indices);
 }

@@ -87,9 +87,9 @@ void getOwnedAndSharedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs
 
 #ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 
-template class panzer::DOFManager<int,long int>;
-template class panzer::DOFManager<int,int>;
-template class panzer::DOFManager<short,int>;
-template class panzer::DOFManager<char,long int>;
+template class panzer::DOFManagerFEI<int,long int>;
+template class panzer::DOFManagerFEI<int,int>;
+template class panzer::DOFManagerFEI<short,int>;
+template class panzer::DOFManagerFEI<char,long int>;
 
 #endif

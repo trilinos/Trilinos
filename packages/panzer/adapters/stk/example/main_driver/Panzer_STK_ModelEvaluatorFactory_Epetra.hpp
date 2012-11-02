@@ -157,7 +157,7 @@ namespace panzer_stk {
       *
       * \returns False if no unique field is found. Otherwise True is returned.
       */
-    bool determineCoordinateField(const panzer::DOFManager<int,int> & globalIndexer,std::string & fieldName) const;
+    bool determineCoordinateField(const panzer::DOFManagerFEI<int,int> & globalIndexer,std::string & fieldName) const;
 
     /** Fill a STL map with the the block ids associated with the pattern for a specific field.
       *
@@ -165,7 +165,7 @@ namespace panzer_stk {
       * \param[out] fieldPatterns A map from element block IDs to field patterns associated with the fieldName
       *                           argument
       */
-    void fillFieldPatternMap(const panzer::DOFManager<int,int> & globalIndexer, const std::string & fieldName, 
+    void fillFieldPatternMap(const panzer::DOFManagerFEI<int,int> & globalIndexer, const std::string & fieldName, 
                              std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
 
     /** \brief Gets the initial time from either the input parameter list or an exodus file

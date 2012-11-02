@@ -59,7 +59,7 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
    if(useDOFManager2_)
       return buildUniqueGlobalIndexer<panzer::DOFManager2<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
    else
-      return buildUniqueGlobalIndexer<panzer::DOFManager<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
+      return buildUniqueGlobalIndexer<panzer::DOFManagerFEI<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
 }
 
 template <typename LO,typename GO>

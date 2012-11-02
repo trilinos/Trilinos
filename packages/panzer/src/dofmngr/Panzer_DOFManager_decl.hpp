@@ -67,21 +67,21 @@
 namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class DOFManager : public UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> {
+class DOFManagerFEI : public UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> {
 public:
    typedef GlobalOrdinalT GlobalOrdinal;
    typedef LocalOrdinalT LocalOrdinal;
    typedef std::map<int,std::string>::const_iterator const_field_iterator;
 
-   virtual ~DOFManager() {}
+   virtual ~DOFManagerFEI() {}
 
-   DOFManager();
+   DOFManagerFEI();
 
    /** Constructor that sets the connection manager and communicator
      * objects. This is equivalent to calling the default constructor and
      * then "setConnManager" routine.
      */
-   DOFManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
+   DOFManagerFEI(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
 
    /** \brief Set the connection manager and MPI_Comm objects.
      *

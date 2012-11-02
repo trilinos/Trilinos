@@ -752,7 +752,7 @@ namespace panzer_stk {
 
   template<typename ScalarT>
   bool ModelEvaluatorFactory_Epetra<ScalarT>::determineCoordinateField(
-                                   const panzer::DOFManager<int,int> & globalIndexer,std::string & fieldName) const
+                                   const panzer::DOFManagerFEI<int,int> & globalIndexer,std::string & fieldName) const
   {
      std::vector<string> elementBlocks;
      globalIndexer.getElementBlockIds(elementBlocks);
@@ -781,7 +781,7 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
-  void ModelEvaluatorFactory_Epetra<ScalarT>::fillFieldPatternMap(const panzer::DOFManager<int,int> & globalIndexer,
+  void ModelEvaluatorFactory_Epetra<ScalarT>::fillFieldPatternMap(const panzer::DOFManagerFEI<int,int> & globalIndexer,
                                                                   const std::string & fieldName, 
                                                                   std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const
   {
@@ -925,8 +925,8 @@ namespace panzer_stk {
           reqHandler = Teuchos::rcp(new Teko::RequestHandler);
        }
 
-       Teuchos::RCP<const panzer::DOFManager<int,int> > dofs =
-          Teuchos::rcp_dynamic_cast<const panzer::DOFManager<int,int> >(globalIndexer);
+       Teuchos::RCP<const panzer::DOFManagerFEI<int,int> > dofs =
+          Teuchos::rcp_dynamic_cast<const panzer::DOFManagerFEI<int,int> >(globalIndexer);
 
        // add in the coordinate parameter list callback handler
        if(dofs!=Teuchos::null && determineCoordinateField(*dofs,fieldName)) {
@@ -1020,11 +1020,11 @@ namespace panzer_stk {
              Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,int> >(globalIndexer);
 
           // loop over blocks
-          const std::vector<Teuchos::RCP<panzer::DOFManager<int,int> > > & dofVec
+          const std::vector<Teuchos::RCP<panzer::DOFManagerFEI<int,int> > > & dofVec
              = blkDofs->getFieldDOFManagers(); 
           for(std::size_t i=0;i<dofVec.size();i++) { 
             std::string fieldName;
-            Teuchos::RCP<const panzer::DOFManager<int,int> > dofs = dofVec[i];
+            Teuchos::RCP<const panzer::DOFManagerFEI<int,int> > dofs = dofVec[i];
 
             // add in the coordinate parameter list callback handler
             TEUCHOS_ASSERT(determineCoordinateField(*dofs,fieldName)); 

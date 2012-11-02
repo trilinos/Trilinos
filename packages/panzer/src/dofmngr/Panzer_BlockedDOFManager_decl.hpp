@@ -345,7 +345,7 @@ public:
    /** Extract the field DOFManagers used underneath to define the
      * global unknowns.
      */ 
-   const std::vector<Teuchos::RCP<DOFManager<LocalOrdinalT,GlobalOrdinalT> > > &
+   const std::vector<Teuchos::RCP<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > > &
    getFieldDOFManagers() const
    { return fieldBlockManagers_; }
 
@@ -395,7 +395,7 @@ protected:
      * This method assumes that the activeFields are a legitimate ordering for the local field block.
      */
    void addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
-                                     DOFManager<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const;
+                                     DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const;
 
 
    // computes connectivity
@@ -436,7 +436,7 @@ protected:
    Teuchos::RCP<const FieldPattern> geomPattern_;
    Teuchos::RCP<Teuchos::MpiComm<int> > communicator_;
 
-   std::vector<Teuchos::RCP<DOFManager<LocalOrdinalT,GlobalOrdinalT> > > fieldBlockManagers_;
+   std::vector<Teuchos::RCP<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > > fieldBlockManagers_;
 
    MPI_Comm mpiComm_;
    int maxSubFieldNum_;
