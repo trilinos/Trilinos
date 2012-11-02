@@ -72,6 +72,10 @@ SET(HEADERS ${HEADERS}
   Stokhos_ProductBasisUtils.hpp
   Stokhos_CompletePolynomialBasis.hpp
   Stokhos_CompletePolynomialBasisImp.hpp
+  Stokhos_TensorProductBasis.hpp
+  Stokhos_TensorProductBasisImp.hpp
+  Stokhos_TotalOrderBasis.hpp
+  Stokhos_TotalOrderBasisImp.hpp
   Stokhos_SmolyakBasis.hpp
   Stokhos_SmolyakBasisImp.hpp
   Stokhos_GramSchmidtBasis.hpp
@@ -114,6 +118,9 @@ SET(HEADERS ${HEADERS}
   Stokhos_UserDefinedQuadratureImp.hpp
   Stokhos_QuadratureFactory.hpp
   Stokhos_QuadratureFactoryImp.hpp
+  Stokhos_PseudoSpectralOperator.hpp
+  Stokhos_TensorProductPseudoSpectralOperator.hpp
+  Stokhos_QuadraturePseudoSpectralOperator.hpp
   Stokhos_StandardStorage.hpp
   Stokhos_StaticStandardStorage.hpp
   Stokhos_StaticFixedStandardStorage.hpp

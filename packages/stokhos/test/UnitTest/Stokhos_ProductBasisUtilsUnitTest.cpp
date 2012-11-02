@@ -251,6 +251,52 @@ namespace ProductBasisUtilsUnitTest {
       success = false;
   }
 
+  TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils, 
+		     AnisotropicTotalOrderIndexSet ) {
+    success = true;
+
+    // Build index set of dimension d and order p
+    typedef Stokhos::AnisotropicTotalOrderIndexSet<ordinal_type> index_set_type;
+    typedef typename index_set_type::multiindex_type multiindex_type;
+    typedef typename index_set_type::iterator iterator;
+    multiindex_type upper(setup.d);
+    for (ordinal_type i=0; i<setup.d; ++i)
+      upper[i] = i+1;
+    index_set_type indexSet(setup.p, upper);
+
+    // Print index set
+    out << std::endl << "Anisotropic total order index set (dimension = " 
+	<< setup.d << ", order = " << setup.p << ", and component orders = "
+	<< upper << "):" << std::endl;
+    std::ostream_iterator<multiindex_type> out_iterator(out, "\n");
+    std::copy(indexSet.begin(), indexSet.end(), out_iterator);
+
+    // Verify each index lies appropriatly in the set
+    for (iterator i=indexSet.begin(); i!=indexSet.end(); ++i) {
+      if (i->order() < 0 || i->order() > setup.p || !i->termWiseLEQ(upper)) {
+	out << "index " << *i << " does not lie in total order set! "
+	    << std::endl;
+	success = false; 
+      }
+    }
+    
+    // Need to figure out how to compute the size of such an index set
+    /*
+    // Put indices in sorted container -- this will ensure there are no
+    // duplicates, if we get the right size
+    typedef Stokhos::TotalOrderLess<multiindex_type> less_type;
+    typedef std::set<multiindex_type, less_type> multiindex_set;
+    multiindex_set sortedIndexSet(indexSet.begin(), indexSet.end());
+
+    out << "sorted index set size = " << sortedIndexSet.size() << std::endl;
+    out << "expected index set size = " 
+	<< Stokhos::n_choose_k(setup.p+setup.d,setup.d) << std::endl;
+    if (static_cast<ordinal_type>(sortedIndexSet.size()) != 
+	Stokhos::n_choose_k(setup.p+setup.d,setup.d))
+      success = false;
+    */
+  }
+
   TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils, TotalOrderBasis ) {
     success = true;
 
@@ -273,7 +319,7 @@ namespace ProductBasisUtilsUnitTest {
 
     // Build total-order basis directly
     ordinal_type sz;
-    Teuchos::Array< Teuchos::Array<ordinal_type> > terms;
+    Teuchos::Array< Stokhos::MultiIndex<ordinal_type> > terms;
     Teuchos::Array<ordinal_type> num_terms;
     Stokhos::CompletePolynomialBasisUtils<ordinal_type,value_type>::
       compute_terms(setup.p, setup.d, sz, terms, num_terms);
@@ -292,9 +338,7 @@ namespace ProductBasisUtilsUnitTest {
     for (ordinal_type i=0; i<sz; i++) {
 
       // Verify terms match
-      out << "term " << basis_map[i] << " == [ ";
-      std::copy(terms[i].begin(), terms[i].end(), out_iterator);
-      out << "] : ";
+      out << "term " << basis_map[i] << " == " << terms[i] << " : ";
       bool is_equal = true;
       for (ordinal_type j=0; j<setup.d; j++)
 	is_equal = is_equal && terms[i][j] == basis_map[i][j];
@@ -424,12 +468,11 @@ namespace ProductBasisUtilsUnitTest {
       bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(order, true));
 
     // Build Cijk tensor
-    coeff_type k_lim(dim, order+1);
     typedef Stokhos::Sparse3Tensor<ordinal_type,value_type> Cijk_type;
-    //total_order_predicate<ordinal_type> pred(dim, order);
-    general_predicate<basis_set_type> pred(basis_set);
+    total_order_predicate<ordinal_type> pred(dim, order);
+    //general_predicate<basis_set_type> pred(basis_set);
     Teuchos::RCP<Cijk_type> Cijk =
-      Stokhos::ProductBasisUtils::computeTripleProductTensor<ordinal_type,value_type>(bases, basis_set, basis_map, pred, k_lim);
+      Stokhos::ProductBasisUtils::computeTripleProductTensor<ordinal_type,value_type>(bases, basis_set, basis_map, pred, pred);
 
     // Build Cijk tensor using original approach
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::CompletePolynomialBasis<ordinal_type,value_type>(bases));
@@ -470,304 +513,6 @@ namespace ProductBasisUtilsUnitTest {
     }
 
   }
-
-  TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils, TensorProductOperator ) {
-    success = true;
-
-    // Build tensor product operator of dimension d and order p
-    Stokhos::MultiIndex<ordinal_type> upper(setup.d, setup.p);
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > > bases(setup.d);
-    for (ordinal_type i=0; i<setup.d; i++)
-      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(1, true)); // tests implicit resizing within operator
-    typedef Stokhos::TotalOrderIndexSet<ordinal_type> coeff_index_set_type;
-    typedef Stokhos::TensorProductElement<ordinal_type,ordinal_type> coeff_type;
-    typedef Stokhos::TensorProductElement<ordinal_type,value_type> point_type;
-    typedef Stokhos::TotalOrderLess<coeff_type> coeff_compare;
-    typedef Stokhos::FloatingPointLess<value_type> value_compare;
-    typedef Stokhos::LexographicLess<point_type,value_compare> point_compare;
-    typedef Stokhos::TensorProductPseudoSpectralOperator<coeff_compare,point_compare> operator_type;
-    typedef typename operator_type::domain_iterator point_iterator_type;
-    coeff_index_set_type coeff_index_set(setup.d, setup.p);
-    operator_type tpop(bases, coeff_index_set, upper);
-
-    // Compute expected sizes
-    ordinal_type point_sz = 1;
-    for (ordinal_type i=0; i<setup.d; ++i)
-      point_sz *= setup.p+1;
-    ordinal_type coeff_sz = Stokhos::n_choose_k(setup.p+setup.d, setup.d);
-
-    // Check sizes
-    TEUCHOS_TEST_EQUALITY(tpop.domain_size(), point_sz, out, success);
-    TEUCHOS_TEST_EQUALITY(tpop.range_size(), coeff_sz, out, success);
-
-    // Evaluate function at quadrature points
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> f(point_sz,2);
-    ordinal_type idx = 0;
-    for (point_iterator_type pi = tpop.domain_begin(); pi != tpop.domain_end(); 
-         ++pi) {
-      f(idx,0) = quad_func1(pi->getTerm());
-      f(idx,1) = quad_func2(pi->getTerm());
-      ++idx;
-    }
-
-    // Compute PCE coefficients
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> x(coeff_sz,2);
-    tpop.apply(1.0, f, x, 0.0);
-
-    // Compute PCE cofficients using original approach
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > > bases2(setup.d);
-    for (ordinal_type i=0; i<setup.d; i++)
-      bases2[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(setup.p, true));
-    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::CompletePolynomialBasis<ordinal_type,value_type>(bases2));
-    Teuchos::RCP<const Stokhos::Quadrature<ordinal_type,value_type> > quad =
-      Teuchos::rcp(new Stokhos::TensorProductQuadrature<ordinal_type,value_type>(basis));
-    const Teuchos::Array<value_type>& weights = quad->getQuadWeights();
-    const Teuchos::Array< Teuchos::Array<value_type> >& points = quad->getQuadPoints();
-    const Teuchos::Array< Teuchos::Array<value_type> > & vals = quad->getBasisAtQuadPoints();
-    TEUCHOS_TEST_EQUALITY(weights.size(), point_sz, out, success);
-    TEUCHOS_TEST_EQUALITY(basis->size(), coeff_sz, out, success);
-
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> A(coeff_sz,point_sz);
-    A.putScalar(1.0);
-    for (ordinal_type j=0; j<point_sz; j++)
-      for (ordinal_type i=0; i<coeff_sz; i++)
-	A(i,j) = weights[j]*vals[j][i] / basis->norm_squared(i);
-
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> f2(point_sz,2);
-    for (ordinal_type qp=0; qp<point_sz; qp++) {
-      f2(qp,0) = quad_func1(points[qp]);
-      f2(qp,1) = quad_func2(points[qp]);
-    }
-
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> x2(coeff_sz,2);
-    for (ordinal_type i=0; i<coeff_sz; i++) {
-      for (ordinal_type j=0; j<point_sz; j++) {
-	x2(i,0) += weights[j]*f2(j,0)*vals[j][i];
-	x2(i,1) += weights[j]*f2(j,1)*vals[j][i];
-      }
-      x2(i,0) /= basis->norm_squared(i);
-      x2(i,1) /= basis->norm_squared(i);
-    }
-
-    // Compare PCE coefficients
-    success = success && 
-      Stokhos::compareSDM(x, "x", x2, "x2", setup.rtol, setup.atol, out);
-  }
-
-  TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils, TensorProductOperator_Trans ) {
-    success = true;
-
-    // Build tensor product operator of dimension d and order p
-    Stokhos::MultiIndex<ordinal_type> upper(setup.d, setup.p);
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > > bases(setup.d);
-    for (ordinal_type i=0; i<setup.d; i++)
-      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(setup.p, true));
-    typedef Stokhos::TotalOrderIndexSet<ordinal_type> coeff_index_set_type;
-    typedef Stokhos::TensorProductElement<ordinal_type,ordinal_type> coeff_type;
-    typedef Stokhos::TensorProductElement<ordinal_type,value_type> point_type;
-    typedef Stokhos::TotalOrderLess<coeff_type> coeff_compare;
-    typedef Stokhos::FloatingPointLess<value_type> value_compare;
-    typedef Stokhos::LexographicLess<point_type,value_compare> point_compare;
-    typedef Stokhos::TensorProductPseudoSpectralOperator<coeff_compare,point_compare> operator_type;
-    typedef typename operator_type::domain_iterator point_iterator_type;
-    coeff_index_set_type coeff_index_set(setup.d, setup.p);
-    operator_type tpop(bases, coeff_index_set, upper);
-
-    // Compute expected sizes
-    ordinal_type point_sz = 1;
-    for (ordinal_type i=0; i<setup.d; ++i)
-      point_sz *= setup.p+1;
-    ordinal_type coeff_sz = Stokhos::n_choose_k(setup.p+setup.d, setup.d);
-
-    // Check sizes
-    TEUCHOS_TEST_EQUALITY(tpop.domain_size(), point_sz, out, success);
-    TEUCHOS_TEST_EQUALITY(tpop.range_size(), coeff_sz, out, success);
-
-    // Evaluate function at quadrature points
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> f(2,point_sz);
-    ordinal_type idx = 0;
-    for (point_iterator_type pi = tpop.domain_begin(); pi != tpop.domain_end(); 
-         ++pi) {
-      f(0,idx) = quad_func1(pi->getTerm());
-      f(1,idx) = quad_func2(pi->getTerm());
-      ++idx;
-    }
-
-    // Compute PCE coefficients
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> x(2,coeff_sz);
-    tpop.apply(1.0, f, x, 0.0, true);
-
-    // Compute PCE cofficients using original approach
-    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::CompletePolynomialBasis<ordinal_type,value_type>(bases));
-    Teuchos::RCP<const Stokhos::Quadrature<ordinal_type,value_type> > quad =
-      Teuchos::rcp(new Stokhos::TensorProductQuadrature<ordinal_type,value_type>(basis));
-    const Teuchos::Array<value_type>& weights = quad->getQuadWeights();
-    const Teuchos::Array< Teuchos::Array<value_type> >& points = quad->getQuadPoints();
-    const Teuchos::Array< Teuchos::Array<value_type> > & vals = quad->getBasisAtQuadPoints();
-    TEUCHOS_TEST_EQUALITY(weights.size(), point_sz, out, success);
-    TEUCHOS_TEST_EQUALITY(basis->size(), coeff_sz, out, success);
-
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> A(coeff_sz,point_sz);
-    A.putScalar(1.0);
-    for (ordinal_type j=0; j<point_sz; j++)
-      for (ordinal_type i=0; i<coeff_sz; i++)
-	A(i,j) = weights[j]*vals[j][i] / basis->norm_squared(i);
-
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> f2(2,point_sz);
-    for (ordinal_type qp=0; qp<point_sz; qp++) {
-      f2(0,qp) = quad_func1(points[qp]);
-      f2(1,qp) = quad_func2(points[qp]);
-    }
-
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> x2(2,coeff_sz);
-    for (ordinal_type i=0; i<coeff_sz; i++) {
-      for (ordinal_type j=0; j<point_sz; j++) {
-	x2(0,i) += weights[j]*f2(0,j)*vals[j][i];
-	x2(1,i) += weights[j]*f2(1,j)*vals[j][i];
-      }
-      x2(0,i) /= basis->norm_squared(i);
-      x2(1,i) /= basis->norm_squared(i);
-    }
-
-    // Compare PCE coefficients
-    success = success && 
-      Stokhos::compareSDM(x, "x", x2, "x2", setup.rtol, setup.atol, out);
-  }
-
-  TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils, TensorProductOperatorPST ) {
-    success = true;
-
-    // Build tensor product operator of dimension d and order p
-    Stokhos::MultiIndex<ordinal_type> upper(setup.d);
-    for (ordinal_type i=0; i<setup.d; i++)
-      upper[i] = 2+i;
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > > bases(setup.d);
-    for (ordinal_type i=0; i<setup.d; i++)
-      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(1, true)); // tests implicit resizing within operator
-
-    typedef Stokhos::TensorProductIndexSet<ordinal_type> coeff_index_set_type;
-    typedef Stokhos::TensorProductElement<ordinal_type,ordinal_type> coeff_type;
-    typedef Stokhos::TensorProductElement<ordinal_type,value_type> point_type;
-    typedef Stokhos::LexographicLess<coeff_type> coeff_compare;
-    typedef Stokhos::FloatingPointLess<value_type> value_compare;
-    typedef Stokhos::LexographicLess<point_type,value_compare> point_compare;
-    typedef Stokhos::TensorProductPseudoSpectralOperator<coeff_compare,point_compare> operator_type;
-    typedef typename operator_type::domain_iterator point_iterator_type;
-    coeff_index_set_type coeff_index_set(upper);
-    operator_type tpop(bases, coeff_index_set, upper);
-
-    typedef Stokhos::TensorProductPseudoSpectralOperatorPST<ordinal_type,value_type> operator_pst_type;
-    typedef typename operator_pst_type::domain_iterator point_pst_iterator_type;
-    operator_pst_type tpop_pst(bases, coeff_index_set, upper);
-
-    // Compute expected sizes
-    ordinal_type point_sz = 1;
-    for (ordinal_type i=0; i<setup.d; ++i)
-      point_sz *= upper[i]+1;
-    ordinal_type coeff_sz = point_sz;
-
-    // Check sizes
-    TEUCHOS_TEST_EQUALITY(tpop.domain_size(), point_sz, out, success);
-    TEUCHOS_TEST_EQUALITY(tpop.range_size(), coeff_sz, out, success);
-    TEUCHOS_TEST_EQUALITY(tpop_pst.domain_size(), point_sz, out, success);
-    TEUCHOS_TEST_EQUALITY(tpop_pst.range_size(), coeff_sz, out, success);
-
-    // Evaluate function at quadrature points
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> f(point_sz,2), f2(point_sz,2);
-    ordinal_type idx = 0;
-    for (point_pst_iterator_type pi = tpop_pst.domain_begin(); 
-	 pi != tpop_pst.domain_end(); 
-         ++pi) {
-      f(idx,0) = quad_func1(pi->getTerm());
-      f(idx,1) = quad_func2(pi->getTerm());
-      ++idx;
-    }
-    idx = 0;
-    for (point_iterator_type pi = tpop.domain_begin(); 
-	 pi != tpop.domain_end(); 
-         ++pi) {
-      f2(idx,0) = quad_func1(pi->getTerm());
-      f2(idx,1) = quad_func2(pi->getTerm());
-      ++idx;
-    }
-
-    // Compute PCE coefficients
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> x(coeff_sz,2), x2(coeff_sz,2);
-    tpop_pst.apply(1.0, f, x, 0.0);
-    tpop.apply(1.0, f2, x2, 0.0);
-
-    // Compare PCE coefficients
-    success = success && 
-      Stokhos::compareSDM(x, "x", x2, "x2", setup.rtol, setup.atol, out);
-  } 
-
-  TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils, TensorProductOperatorPST_Trans ) {
-    success = true;
-
-    // Build tensor product operator of dimension d and order p
-    Stokhos::MultiIndex<ordinal_type> upper(setup.d);
-    for (ordinal_type i=0; i<setup.d; i++)
-      upper[i] = 2+i;
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > > bases(setup.d);
-    for (ordinal_type i=0; i<setup.d; i++)
-      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(upper[i], true));
-    
-    typedef Stokhos::TensorProductIndexSet<ordinal_type> coeff_index_set_type;
-    typedef Stokhos::TensorProductElement<ordinal_type,ordinal_type> coeff_type;
-    typedef Stokhos::TensorProductElement<ordinal_type,value_type> point_type;
-    typedef Stokhos::LexographicLess<coeff_type> coeff_compare;
-    typedef Stokhos::FloatingPointLess<value_type> value_compare;
-    typedef Stokhos::LexographicLess<point_type,value_compare> point_compare;
-    typedef Stokhos::TensorProductPseudoSpectralOperator<coeff_compare,point_compare> operator_type;
-    typedef typename operator_type::domain_iterator point_iterator_type;
-    coeff_index_set_type coeff_index_set(upper);
-    operator_type tpop(bases, coeff_index_set, upper);
-
-    typedef Stokhos::TensorProductPseudoSpectralOperatorPST<ordinal_type,value_type> operator_pst_type;
-    typedef typename operator_pst_type::domain_iterator point_pst_iterator_type;
-    operator_pst_type tpop_pst(bases, coeff_index_set, upper);
-
-    // Compute expected sizes
-    ordinal_type point_sz = 1;
-    for (ordinal_type i=0; i<setup.d; ++i)
-      point_sz *= upper[i]+1;
-    ordinal_type coeff_sz = point_sz;
-
-    // Check sizes
-    TEUCHOS_TEST_EQUALITY(tpop.domain_size(), point_sz, out, success);
-    TEUCHOS_TEST_EQUALITY(tpop.range_size(), coeff_sz, out, success);
-    TEUCHOS_TEST_EQUALITY(tpop_pst.domain_size(), point_sz, out, success);
-    TEUCHOS_TEST_EQUALITY(tpop_pst.range_size(), coeff_sz, out, success);
-
-    // Evaluate function at quadrature points
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> f(2,point_sz), f2(2,point_sz);
-    ordinal_type idx = 0;
-    for (point_pst_iterator_type pi = tpop_pst.domain_begin(); 
-	 pi != tpop_pst.domain_end(); 
-         ++pi) {
-      f(0,idx) = quad_func1(pi->getTerm());
-      f(1,idx) = quad_func2(pi->getTerm());
-      ++idx;
-    }
-    idx = 0;
-    for (point_iterator_type pi = tpop.domain_begin(); 
-	 pi != tpop.domain_end(); 
-         ++pi) {
-      f2(0,idx) = quad_func1(pi->getTerm());
-      f2(1,idx) = quad_func2(pi->getTerm());
-      ++idx;
-    }
-
-    // Compute PCE coefficients
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> x(2,coeff_sz), x2(2,coeff_sz);
-    tpop_pst.apply(1.0, f, x, 0.0, true);
-    tpop.apply(1.0, f2, x2, 0.0, true);
-
-    // Compare PCE coefficients
-    success = success && 
-      Stokhos::compareSDM(x, "x", x2, "x2", setup.rtol, setup.atol, out);
-  } 
-
 }
 
 int main( int argc, char* argv[] ) {

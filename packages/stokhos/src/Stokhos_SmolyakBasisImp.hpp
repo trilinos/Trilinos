@@ -152,7 +152,7 @@ computeTripleProductTensorNew(ordinal_type order) const
   // Map the specified order limit to a limit on each dimension
   // Subtract 1 to get the term for the last order we want to include,
   // add up the orders for each term to get the total order, then add 1
-  Teuchos::Array<ordinal_type> term = getTerm(order-1);
+  Teuchos::Array<ordinal_type> term = term(order-1);
   ordinal_type k_lim = 0;
   for (ordinal_type i=0; i<d; i++)
     k_lim = k_lim + term[i];
@@ -347,9 +347,9 @@ print(std::ostream& os) const
 }
 
 template <typename ordinal_type, typename value_type>
-Teuchos::Array<ordinal_type>
+const Stokhos::MultiIndex<ordinal_type>&
 Stokhos::SmolyakBasis<ordinal_type, value_type>::
-getTerm(ordinal_type i) const
+term(ordinal_type i) const
 {
   return terms[i];
 }
@@ -357,7 +357,7 @@ getTerm(ordinal_type i) const
 template <typename ordinal_type, typename value_type>
 ordinal_type
 Stokhos::SmolyakBasis<ordinal_type, value_type>::
-getIndex(const Teuchos::Array<ordinal_type>& term) const
+index(const Stokhos::MultiIndex<ordinal_type>& term) const
 {
   // Currentl do a linear search.  Will have to find a better
   // data structure.

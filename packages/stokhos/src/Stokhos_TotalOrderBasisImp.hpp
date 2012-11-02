@@ -28,8 +28,8 @@
 #include "Teuchos_TimeMonitor.hpp"
 
 template <typename ordinal_type, typename value_type, typename ordering_type>
-Stokhos::TensorProductBasis<ordinal_type, value_type, ordering_type>::
-TensorProductBasis(
+Stokhos::TotalOrderBasis<ordinal_type, value_type, ordering_type>::
+TotalOrderBasis(
   const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& bases_,
   const value_type& sparse_tol_) :
   p(0),
@@ -52,7 +52,7 @@ TensorProductBasis(
   MultiIndex<ordinal_type> orders(d);
   for (ordinal_type i=0; i<d; ++i)
     orders[i] = bases[i]->order();
-  TensorProductIndexSet<ordinal_type> index_set(orders);
+  AnisotropicTotalOrderIndexSet<ordinal_type> index_set(p, orders);
   ProductBasisUtils::buildProductBasis(index_set, basis_set, basis_map);
   sz = basis_map.size();
     
@@ -79,14 +79,14 @@ TensorProductBasis(
 }
 
 template <typename ordinal_type, typename value_type, typename ordering_type>
-Stokhos::TensorProductBasis<ordinal_type, value_type, ordering_type>::
-~TensorProductBasis()
+Stokhos::TotalOrderBasis<ordinal_type, value_type, ordering_type>::
+~TotalOrderBasis()
 {
 }
 
 template <typename ordinal_type, typename value_type, typename ordering_type>
 ordinal_type
-Stokhos::TensorProductBasis<ordinal_type, value_type, ordering_type>::
+Stokhos::TotalOrderBasis<ordinal_type, value_type, ordering_type>::
 order() const
 {
   return p;
@@ -94,7 +94,7 @@ order() const
 
 template <typename ordinal_type, typename value_type, typename ordering_type>
 ordinal_type
-Stokhos::TensorProductBasis<ordinal_type, value_type, ordering_type>::
+Stokhos::TotalOrderBasis<ordinal_type, value_type, ordering_type>::
 dimension() const
 {
   return d;
@@ -102,7 +102,7 @@ dimension() const
 
 template <typename ordinal_type, typename value_type, typename ordering_type>
 ordinal_type
-Stokhos::TensorProductBasis<ordinal_type, value_type, ordering_type>::
+Stokhos::TotalOrderBasis<ordinal_type, value_type, ordering_type>::
 size() const
 {
   return sz;
@@ -110,7 +110,7 @@ size() const
 
 template <typename ordinal_type, typename value_type, typename ordering_type>
 const Teuchos::Array<value_type>&
-Stokhos::TensorProductBasis<ordinal_type, value_type, ordering_type>::
+Stokhos::TotalOrderBasis<ordinal_type, value_type, ordering_type>::
 norm_squared() const
 {
   return norms;
@@ -118,7 +118,7 @@ norm_squared() const
 
 template <typename ordinal_type, typename value_type, typename ordering_type>
 const value_type&
-Stokhos::TensorProductBasis<ordinal_type, value_type, ordering_type>::
+Stokhos::TotalOrderBasis<ordinal_type, value_type, ordering_type>::
 norm_squared(ordinal_type i) const
 {
   return norms[i];
@@ -126,14 +126,14 @@ norm_squared(ordinal_type i) const
 
 template <typename ordinal_type, typename value_type, typename ordering_type>
 Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
-Stokhos::TensorProductBasis<ordinal_type, value_type, ordering_type>::
+Stokhos::TotalOrderBasis<ordinal_type, value_type, ordering_type>::
 computeTripleProductTensor(ordinal_type order) const
 {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total Triple-Product Tensor Fill Time");
 #endif
 
-  tensor_product_predicate predicate(max_orders);
+  total_order_predicate predicate(p, max_orders);
   // A hack until we change the interface to do this correctly
   coeff_type k_lim(d);
   if (order == d+1)
@@ -142,7 +142,7 @@ computeTripleProductTensor(ordinal_type order) const
   else
     for (ordinal_type i=0; i<d; ++i)
       k_lim[i] = max_orders[i];
-  tensor_product_predicate k_predicate(k_lim);
+  total_order_predicate k_predicate(p, k_lim);
   
   return ProductBasisUtils::computeTripleProductTensor(
     bases, basis_set, basis_map, predicate, k_predicate, sparse_tol);
@@ -150,7 +150,7 @@ computeTripleProductTensor(ordinal_type order) const
 
 template <typename ordinal_type, typename value_type, typename ordering_type>
 value_type
-Stokhos::TensorProductBasis<ordinal_type, value_type, ordering_type>::
+Stokhos::TotalOrderBasis<ordinal_type, value_type, ordering_type>::
 evaluateZero(ordinal_type i) const
 {
   // z = psi_{i_1}(0) * ... * psi_{i_d}(0) where i_1,...,i_d are the basis
@@ -164,7 +164,7 @@ evaluateZero(ordinal_type i) const
 
 template <typename ordinal_type, typename value_type, typename ordering_type>
 void
-Stokhos::TensorProductBasis<ordinal_type, value_type, ordering_type>::
+Stokhos::TotalOrderBasis<ordinal_type, value_type, ordering_type>::
 evaluateBases(const Teuchos::ArrayView<const value_type>& point,
 	      Teuchos::Array<value_type>& basis_vals) const
 {
@@ -182,7 +182,7 @@ evaluateBases(const Teuchos::ArrayView<const value_type>& point,
 
 template <typename ordinal_type, typename value_type, typename ordering_type>
 void
-Stokhos::TensorProductBasis<ordinal_type, value_type, ordering_type>::
+Stokhos::TotalOrderBasis<ordinal_type, value_type, ordering_type>::
 print(std::ostream& os) const
 {
   os << "Tensor product basis of order " << p << ", dimension " << d 
@@ -197,7 +197,7 @@ print(std::ostream& os) const
 
 template <typename ordinal_type, typename value_type, typename ordering_type>
 const Stokhos::MultiIndex<ordinal_type>&
-Stokhos::TensorProductBasis<ordinal_type, value_type, ordering_type>::
+Stokhos::TotalOrderBasis<ordinal_type, value_type, ordering_type>::
 term(ordinal_type i) const
 {
   return basis_map[i];
@@ -205,7 +205,7 @@ term(ordinal_type i) const
 
 template <typename ordinal_type, typename value_type, typename ordering_type>
 ordinal_type
-Stokhos::TensorProductBasis<ordinal_type, value_type, ordering_type>::
+Stokhos::TotalOrderBasis<ordinal_type, value_type, ordering_type>::
 index(const MultiIndex<ordinal_type>& term) const
 {
   typename coeff_set_type::const_iterator it = basis_set.find(term);
@@ -216,7 +216,7 @@ index(const MultiIndex<ordinal_type>& term) const
 
 template <typename ordinal_type, typename value_type, typename ordering_type>
 const std::string&
-Stokhos::TensorProductBasis<ordinal_type, value_type, ordering_type>::
+Stokhos::TotalOrderBasis<ordinal_type, value_type, ordering_type>::
 getName() const
 {
   return name;
@@ -224,7 +224,7 @@ getName() const
 
 template <typename ordinal_type, typename value_type, typename ordering_type>
 Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type, value_type> > >
-Stokhos::TensorProductBasis<ordinal_type, value_type, ordering_type>::
+Stokhos::TotalOrderBasis<ordinal_type, value_type, ordering_type>::
 getCoordinateBases() const
 {
   return bases;
@@ -232,7 +232,7 @@ getCoordinateBases() const
 
 template <typename ordinal_type, typename value_type, typename ordering_type>
 Stokhos::MultiIndex<ordinal_type>
-Stokhos::TensorProductBasis<ordinal_type, value_type, ordering_type>::
+Stokhos::TotalOrderBasis<ordinal_type, value_type, ordering_type>::
 getMaxOrders() const
 {
   return max_orders;

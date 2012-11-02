@@ -293,7 +293,7 @@ evaluateZero(ordinal_type i) const
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::ProductLanczosPCEBasis<ordinal_type, value_type>::
-evaluateBases(const Teuchos::Array<value_type>& point,
+evaluateBases(const Teuchos::ArrayView<const value_type>& point,
 	      Teuchos::Array<value_type>& basis_vals) const
 {
   return tensor_lanczos_basis->evaluateBases(point, basis_vals);
@@ -316,19 +316,19 @@ getName() const
 }
 
 template <typename ordinal_type, typename value_type>
-Teuchos::Array<ordinal_type>
+const Stokhos::MultiIndex<ordinal_type>&
 Stokhos::ProductLanczosPCEBasis<ordinal_type, value_type>::
-getTerm(ordinal_type i) const
+term(ordinal_type i) const
 {
-  return tensor_lanczos_basis->getTerm(i);
+  return tensor_lanczos_basis->term(i);
 }
 
 template <typename ordinal_type, typename value_type>
 ordinal_type
 Stokhos::ProductLanczosPCEBasis<ordinal_type, value_type>::
-getIndex(const Teuchos::Array<ordinal_type>& term) const
+index(const Stokhos::MultiIndex<ordinal_type>& term) const
 {
-  return tensor_lanczos_basis->getIndex(term);
+  return tensor_lanczos_basis->index(term);
 }
 
 template <typename ordinal_type, typename value_type>
@@ -337,6 +337,14 @@ Stokhos::ProductLanczosPCEBasis<ordinal_type, value_type>::
 getCoordinateBases() const
 {
   return tensor_lanczos_basis->getCoordinateBases();
+}
+
+template <typename ordinal_type, typename value_type>
+Stokhos::MultiIndex<ordinal_type>
+Stokhos::ProductLanczosPCEBasis<ordinal_type, value_type>::
+getMaxOrders() const
+{
+  return tensor_lanczos_basis->getMaxOrders();
 }
 
 template <typename ordinal_type, typename value_type>

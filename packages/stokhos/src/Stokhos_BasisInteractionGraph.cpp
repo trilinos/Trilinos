@@ -131,12 +131,12 @@ void Stokhos::BasisInteractionGraph::initialize(const Stokhos::ProductBasis<int,
    // build row basis terms
    std::vector<int> rowIndexToMasterIndex(rowBasis.size());
    for(int i=0;i<rowBasis.size();i++) 
-      rowIndexToMasterIndex[i] = masterBasis.getIndex(rowBasis.getTerm(i));
+      rowIndexToMasterIndex[i] = masterBasis.index(rowBasis.term(i));
 
    // build column basis terms
    std::vector<int> colIndexToMasterIndex(colBasis.size());
    for(int i=0;i<colBasis.size();i++) 
-      colIndexToMasterIndex[i] = masterBasis.getIndex(colBasis.getTerm(i));
+      colIndexToMasterIndex[i] = masterBasis.index(colBasis.term(i));
 
    // build graph by looking up sparsity in master basis
    for(int r=0;r<rowBasis.size();r++) {

@@ -141,7 +141,7 @@ namespace SmolyakBasisUtilsUnitTest {
     typename operator_type::range_const_iterator ri = smop.range_begin();
     for (; ri != smop.range_end(); ++ri) {
       out << "coeff " << *ri << " == [ ";
-      Teuchos::Array<ordinal_type> term = setup.basis->getTerm(idx);
+      Stokhos::MultiIndex<ordinal_type> term = setup.basis->term(idx);
       std::copy(term.begin(), term.end(), out_ord_iterator);
       out << "] : ";
       bool is_equal = true;

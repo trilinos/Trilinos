@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_TENSOR_PRODUCT_BASIS_HPP
-#define STOKHOS_TENSOR_PRODUCT_BASIS_HPP
+#ifndef STOKHOS_TOTAL_ORDER_BASIS_HPP
+#define STOKHOS_TOTAL_ORDER_BASIS_HPP
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -54,7 +54,7 @@ namespace Stokhos {
   template <typename ordinal_type, typename value_type,
 	    typename coeff_compare_type = 
 	    TotalOrderLess<MultiIndex<ordinal_type> > >
-  class TensorProductBasis : 
+  class TotalOrderBasis : 
     public ProductBasis<ordinal_type,value_type> {
   public:
 
@@ -64,13 +64,13 @@ namespace Stokhos {
      * \param sparse_tol tolerance used to drop terms in sparse triple-product
      *                   tensors
      */
-    TensorProductBasis(
+    TotalOrderBasis(
       const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,
  value_type> > >& bases,
       const value_type& sparse_tol = 1.0e-12);
 
     //! Destructor
-    virtual ~TensorProductBasis();
+    virtual ~TotalOrderBasis();
 
     //! \name Implementation of Stokhos::OrthogPolyBasis methods
     //@{
@@ -160,10 +160,10 @@ namespace Stokhos {
   private:
 
     // Prohibit copying
-    TensorProductBasis(const TensorProductBasis&);
+    TotalOrderBasis(const TotalOrderBasis&);
 
     // Prohibit Assignment
-    TensorProductBasis& operator=(const TensorProductBasis& b);
+    TotalOrderBasis& operator=(const TotalOrderBasis& b);
     
   protected:
 
@@ -205,22 +205,24 @@ namespace Stokhos {
     mutable Teuchos::Array< Teuchos::Array<value_type> > basis_eval_tmp;
 
     //! Predicate functor for building sparse triple products
-    struct tensor_product_predicate {
+    struct total_order_predicate {
+      ordinal_type max_order;
       const coeff_type& orders;
 
-      tensor_product_predicate(const coeff_type& orders_) : orders(orders_) {}
+      total_order_predicate(ordinal_type max_order_, const coeff_type& orders_) 
+	: max_order(max_order_), orders(orders_) {}
 
       bool operator() (const coeff_type& term) const { 
-	return term.termWiseLEQ(orders); 
+	return term.termWiseLEQ(orders) && term.order() <= max_order; 
       }
 
     };
 
-  }; // class TensorProductBasis
+  }; // class TotalOrderBasis
 
 } // Namespace Stokhos
 
 // Include template definitions
-#include "Stokhos_TensorProductBasisImp.hpp"
+#include "Stokhos_TotalOrderBasisImp.hpp"
 
 #endif

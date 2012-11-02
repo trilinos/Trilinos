@@ -244,10 +244,10 @@ TEUCHOS_UNIT_TEST(tAdaptivityManager, sum_in_op_eq_order)
          apply_ordering(indices,order);     
          apply_ordering(values,order);     
       
-         int rowTerm = basis->getIndex(sa_BasisPerDRow[determDof]->getTerm(stochBasis));
-         int colTerm0 = basis->getIndex(adaptMngr.getColStochasticBasis(determDof)->getTerm(0));
-         int colTerm1 = basis->getIndex(adaptMngr.getColStochasticBasis(determDof)->getTerm(1));
-         int colTerm2 = basis->getIndex(adaptMngr.getColStochasticBasis(determDof)->getTerm(2));
+         int rowTerm = basis->index(sa_BasisPerDRow[determDof]->term(stochBasis));
+         int colTerm0 = basis->index(adaptMngr.getColStochasticBasis(determDof)->term(0));
+         int colTerm1 = basis->index(adaptMngr.getColStochasticBasis(determDof)->term(1));
+         int colTerm2 = basis->index(adaptMngr.getColStochasticBasis(determDof)->term(2));
          double normValue = basis->norm_squared(rowTerm);
       
          // test middle row values
@@ -302,10 +302,10 @@ TEUCHOS_UNIT_TEST(tAdaptivityManager, sum_in_op_eq_order)
          apply_ordering(indices,order);     
          apply_ordering(values,order);     
       
-         int rowTerm = basis->getIndex(sa_BasisPerDRow[determDof]->getTerm(stochBasis));
-         int colTerm0 = basis->getIndex(adaptMngr.getColStochasticBasis(determDof)->getTerm(0));
-         int colTerm1 = basis->getIndex(adaptMngr.getColStochasticBasis(determDof)->getTerm(1));
-         int colTerm2 = basis->getIndex(adaptMngr.getColStochasticBasis(determDof)->getTerm(2));
+         int rowTerm = basis->index(sa_BasisPerDRow[determDof]->term(stochBasis));
+         int colTerm0 = basis->index(adaptMngr.getColStochasticBasis(determDof)->term(0));
+         int colTerm1 = basis->index(adaptMngr.getColStochasticBasis(determDof)->term(1));
+         int colTerm2 = basis->index(adaptMngr.getColStochasticBasis(determDof)->term(2));
       
          // test middle row values
          TEST_EQUALITY(values[0],stencil[0]*Cijk->getValue(rowTerm,colTerm0,0));
@@ -398,14 +398,14 @@ TEUCHOS_UNIT_TEST(tAdaptivityManager, sum_in_op_var_order)
          apply_ordering(values,order);     
       
          out << "grabbing row index, and row norm" << std::endl;
-         int rowTerm = basis->getIndex(sa_BasisPerDRow[determDof]->getTerm(stochBasis));
+         int rowTerm = basis->index(sa_BasisPerDRow[determDof]->term(stochBasis));
 
          out << "checking matrix" << std::endl;
          // test middle row values
          int offset = 0;
          for(int stochColBasisIndex = 0;stochColBasisIndex<3;stochColBasisIndex++) {
             for(int stochCol=0;stochCol<adaptMngr.getColStochasticBasisSize(stochColBasisIndex);stochCol++) {
-               int colTerm = basis->getIndex(adaptMngr.getColStochasticBasis(stochColBasisIndex)->getTerm(stochCol));
+               int colTerm = basis->index(adaptMngr.getColStochasticBasis(stochColBasisIndex)->term(stochCol));
    
                if(big(rowTerm,colTerm)) { 
                   TEST_EQUALITY(indices[offset],adaptMngr.getGlobalColId(stochColBasisIndex,stochCol));

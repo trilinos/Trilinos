@@ -890,15 +890,14 @@ namespace Stokhos {
      * the basis, and entry \f$l\f$ is given by \f$i_l\f$ where
      * \f$\Psi_i(x) = \psi_{i_1}(x_1)\dots\psi_{i_d}(x_d)\f$.
      */
-    virtual Teuchos::Array<ordinal_type> getTerm(ordinal_type i) const;
+    virtual const MultiIndex<ordinal_type>& term(ordinal_type i) const;
 
     //! Get index of the multivariate polynomial given orders of each coordinate
     /*!
      * Given the array \c term storing \f$i_1,\dots,\i_d\f$, returns the index
      * \f$i\f$ such that \f$\Psi_i(x) = \psi_{i_1}(x_1)\dots\psi_{i_d}(x_d)\f$.
      */
-    virtual ordinal_type 
-    getIndex(const Teuchos::Array<ordinal_type>& term) const;
+    virtual ordinal_type index(const MultiIndex<ordinal_type>& term) const;
 
     //! Return coordinate bases
     /*!

@@ -69,6 +69,9 @@ namespace Stokhos {
     typedef ordinal_t element_type;
 
     //! Constructor
+    MultiIndex() {}
+
+    //! Constructor
     MultiIndex(ordinal_type dim, ordinal_type v = ordinal_type(0)) : 
       index(dim,v) {}
 
@@ -78,16 +81,30 @@ namespace Stokhos {
     //! Dimension
     ordinal_type dimension() const { return index.size(); }
 
+    //! Size
+    ordinal_type size() const { return index.size(); }
+
     //! Term access
     const ordinal_type& operator[] (ordinal_type i) const { return index[i]; }
 
     //! Term access
     ordinal_type& operator[] (ordinal_type i) { return index[i]; }
 
+     //! Term access
+    const Teuchos::Array<element_type>& getTerm() const { return index; }
+
+    //! Term access
+    Teuchos::Array<element_type>& getTerm() { return index; }
+
     //! Initialize
     void init(ordinal_type v) {
       for (ordinal_type i=0; i<dimension(); i++) 
 	index[i] = v;
+    }
+
+    //! Resize
+    void resize(ordinal_type d, ordinal_type v = ordinal_type(0)) {
+      index.resize(d,v);
     }
 
     //! Compute total order of index
@@ -110,6 +127,15 @@ namespace Stokhos {
 
     //! Compare equality
     bool operator!=(const MultiIndex& idx) const { return !(*this == idx); }
+
+    //! Compare term-wise less-than or equal-to
+    bool termWiseLEQ(const MultiIndex& idx) const {
+      for (ordinal_type i=0; i<dimension(); i++) {
+        if (index[i] > idx.index[i])
+	  return false;
+       }
+       return true;
+    }
 
     //! Print multiindex
     std::ostream& print(std::ostream& os) const {
@@ -284,6 +310,186 @@ namespace Stokhos {
 
       //! Maximum order of iterator
       ordinal_type max_order;
+      
+      //! Current value of iterator
+      multiindex_type index;
+
+      //! Dimension
+      ordinal_type dim;
+
+      //! Maximum orders for each term to determine how to increment
+      Teuchos::Array<ordinal_type> orders;
+    };
+  };
+
+  //! An anisotropic total order index set
+  /*!
+   * Represents the set l <= |i| <= u and i_j <= u_j given upper and 
+   * lower order bounds l and u, upper component bounds u_j, 
+   * and |i| = i_1 + ... + i_d where d is the dimension of the index.
+   *
+   * Currently this class only really provides an input iterator for 
+   * iterating over the elements of the index set.  One should not make
+   * any assumption on the order of these elements.
+   */
+  template <typename ordinal_t>
+  class AnisotropicTotalOrderIndexSet {
+  public:
+
+    // Forward declaration of our iterator
+    class Iterator;
+
+    typedef ordinal_t ordinal_type;
+    typedef MultiIndex<ordinal_type> multiindex_type;
+    typedef Iterator iterator;
+    typedef Iterator const_iterator;
+
+    //! Constructor
+    /*!
+     * \c dim_ is the dimension of the index set, \c lower_ is the lower
+     * bound of the index set, and \c upper_ is the upper bound (inclusive)
+     */
+    AnisotropicTotalOrderIndexSet(ordinal_type upper_order_,
+				  const multiindex_type& lower_,
+				  const multiindex_type& upper_) :
+      dim(lower_.dimension()), 
+      upper_order(upper_order_),
+      lower(lower_), 
+      upper(upper_) {}
+
+    //! Constructor
+    /*!
+     * \c dim_ is the dimension of the index set, the lower bound is zero, 
+     * and \c upper_ is the upper bound (inclusive)
+     */
+    AnisotropicTotalOrderIndexSet(ordinal_type upper_order_,
+				  const multiindex_type& upper_) :
+      dim(upper_.dimension()), 
+      upper_order(upper_order_),
+      lower(dim,0),
+      upper(upper_) {}
+
+    //! Return dimension
+    ordinal_type dimension() const { return dim; }
+
+    //! Return maximum order for each dimension
+    multiindex_type max_orders() const { return upper; }
+
+    //! Return iterator for first element in the set
+    const_iterator begin() const { 
+      return Iterator(upper_order, upper, lower); 
+    }
+
+    //! Return iterator for end of the index set
+    const_iterator end() const { 
+      multiindex_type index(dim);
+      index[dim-1] = std::min(upper_order, upper[dim-1]) + 1;
+      return Iterator(upper_order, upper, index); 
+    }
+
+  protected:
+
+    //! Dimension
+    ordinal_type dim;
+
+    //! Lower order of index set
+    ordinal_type lower_order;
+
+    //! Upper order of index set
+    ordinal_type upper_order;
+
+    //! Component-wise lower bounds
+    multiindex_type lower;
+
+    //! Component-wise upper bounds
+    multiindex_type upper;
+
+  public:
+
+    //! Iterator class for iterating over elements of the index set
+    class Iterator : public std::iterator<std::input_iterator_tag,
+					  multiindex_type> {
+    public:
+
+      typedef std::iterator<std::input_iterator_tag,multiindex_type> base_type;
+      typedef typename base_type::iterator_category iterator_category;
+      typedef typename base_type::value_type value_type;
+      typedef typename base_type::difference_type difference_type;
+      typedef typename base_type::reference reference;
+      typedef typename base_type::pointer pointer;
+
+      typedef const multiindex_type& const_reference;
+      typedef const multiindex_type* const_pointer;
+
+      //! Constructor
+      /*!
+       * \c max_order_ is the maximum order of the set (inclusive) and
+       * \c index_ is the starting multi-index.
+       */
+      Iterator(ordinal_type max_order_, 
+	       const multiindex_type& component_max_order_,
+	       const multiindex_type& index_) : 
+	max_order(max_order_), 
+	component_max_order(component_max_order_), 
+	index(index_), 
+	dim(index.dimension()), 
+	orders(dim) 
+      {
+	orders[dim-1] = max_order;
+	for (ordinal_type i=dim-2; i>=0; --i)
+	  orders[i] = orders[i+1] - index[i+1];
+      }
+
+      //! Compare equality of iterators
+      bool operator==(const Iterator& it) const { return index == it.index; }
+
+      //! Compare inequality of iterators
+      bool operator!=(const Iterator& it) const { return index != it.index; }
+      
+      //! Dereference
+      const_reference operator*() const { return index; }
+
+      //! Dereference
+      const_pointer operator->() const { return &index; }
+      
+      //! Prefix increment, i.e., ++iterator
+      /*!
+       * No particular ordering of the indices is guaranteed.  The current 
+       * implementation produces multi-indices sorted lexographically 
+       * backwards among the elements, e.g., 
+       * [0 0], [1 0], [2 0], ... [0 1], [1 1], [2 1], ... 
+       * but one shouldn't assume that.  To obtain a specific
+       * ordering, one should implement a "less" functional and put the 
+       * indices in a sorted container such as std::map<>.
+       */
+      Iterator& operator++() {
+	++index[0];
+	ordinal_type i=0;
+	while (i<dim-1 && (index[i] > orders[i] || index[i] > component_max_order[i])) {
+	  index[i] = 0;
+	  ++i;
+	  ++index[i];
+	}
+	for (ordinal_type i=dim-2; i>=0; --i)
+	  orders[i] = orders[i+1] - index[i+1];
+
+	return *this;
+      }
+
+      //! Postfix increment, i.e., iterator++
+      Iterator& operator++(int) {
+	Iterator tmp(*this);
+	++(*this);
+	return tmp;
+      }
+
+    protected:
+
+      //! Maximum order of iterator
+      ordinal_type max_order;
+
+      //! Maximum order for each component
+      multiindex_type component_max_order;
       
       //! Current value of iterator
       multiindex_type index;
@@ -486,6 +692,9 @@ namespace Stokhos {
     //! Return dimension
     ordinal_type dimension() const { return term.size(); }
 
+     //! Return dimension
+    ordinal_type size() const { return term.size(); }
+
     //! Term access
     const element_type& operator[] (ordinal_type i) const { return term[i]; }
 
@@ -497,6 +706,12 @@ namespace Stokhos {
 
     //! Term access
     Teuchos::Array<element_type>& getTerm() { return term; }
+
+    //! Convert to ArrayView
+    operator Teuchos::ArrayView<element_type>() { return term; }
+
+    //! Convert to ArrayView
+    operator Teuchos::ArrayView<const element_type>() const { return term; }
 
     //! Compute total order of tensor product element
     element_type order() const {
@@ -742,27 +957,22 @@ namespace Stokhos {
 	      typename value_type,
 	      typename basis_set_type, 
 	      typename basis_map_type,
-	      typename coeff_predicate_type>
+	      typename coeff_predicate_type,
+	      typename k_coeff_predicate_type>
     static Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
     computeTripleProductTensor(
       const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& bases,
       const basis_set_type& basis_set,
       const basis_map_type& basis_map,
       const coeff_predicate_type& coeff_pred,
-      const TensorProductElement<ordinal_type,ordinal_type>& k_lim,
+      const k_coeff_predicate_type& k_coeff_pred,
       const value_type sparse_tol = 1.0e-12)
       {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
 	TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total Triple-Product Tensor Time");
 #endif
+	typedef typename basis_map_type::value_type coeff_type;
 	ordinal_type d = bases.size();
-	typename basis_set_type::const_iterator basis_set_end = basis_set.end();
-	typename basis_set_type::const_iterator k_end = basis_set.find(k_lim);
-	ordinal_type order;
-	if (k_end != basis_set_end)
-	  order = k_end->second;
-	else
-	  order = basis_set.size();
 
 	// The algorithm for computing Cijk = < \Psi_i \Psi_j \Psi_k > here 
 	// works by factoring 
@@ -780,12 +990,8 @@ namespace Stokhos {
 	// Create 1-D triple products
 	Teuchos::Array< Teuchos::RCP<Sparse3Tensor<ordinal_type,value_type> > > Cijk_1d(d);
 	for (ordinal_type i=0; i<d; i++) {
-	  if (k_lim[i] <= bases[i]->order()+1)
-	    Cijk_1d[i] = 
-	      bases[i]->computeSparseTripleProductTensor(k_lim[i]);
-	  else
-	    Cijk_1d[i] = 
-	      bases[i]->computeSparseTripleProductTensor(bases[i]->order()+1);
+	  Cijk_1d[i] = 
+	    bases[i]->computeSparseTripleProductTensor(bases[i]->order()+1);
 	}
 	
 	// Create i, j, k iterators for each dimension
@@ -798,7 +1004,7 @@ namespace Stokhos {
 	Teuchos::Array<k_iterator> k_iterators(d, Cijk_1d[0]->k_begin());
 	Teuchos::Array<kj_iterator > j_iterators(d, Cijk_1d[0]->j_begin(k_iterators[0]));
 	Teuchos::Array<kji_iterator > i_iterators(d, Cijk_1d[0]->i_begin(j_iterators[0]));
-	TensorProductElement<ordinal_type,ordinal_type> terms_i(d), terms_j(d), terms_k(d);
+	coeff_type terms_i(d), terms_j(d), terms_k(d);
 	for (ordinal_type dim=0; dim<d; dim++) {
 	  k_iterators[dim] = Cijk_1d[dim]->k_begin();
 	  j_iterators[dim] = Cijk_1d[dim]->j_begin(k_iterators[dim]);
@@ -813,7 +1019,7 @@ namespace Stokhos {
 	ordinal_type K = 0;
 	bool valid_i = coeff_pred(terms_i);
 	bool valid_j = coeff_pred(terms_j);
-	bool valid_k = coeff_pred(terms_k);
+	bool valid_k = k_coeff_pred(terms_k);
 	bool inc_i = true;
 	bool inc_j = true;
 	bool inc_k = true;
@@ -828,26 +1034,24 @@ namespace Stokhos {
 		basis_set.find(terms_k);
 	      K = k->second;
             }
-	    if (K < order) {
-	      if (inc_i) {
-	        typename basis_set_type::const_iterator i = 
-		  basis_set.find(terms_i);
-		I = i->second;
-              }
-	      if (inc_j) {
-	        typename basis_set_type::const_iterator j = 
-		  basis_set.find(terms_j);
-		J = j->second;
-              }
-	      value_type c = value_type(1.0);
-	      value_type nrm = value_type(1.0);
-	      for (ordinal_type dim=0; dim<d; dim++) {
-		c *= value(i_iterators[dim]);
-		nrm *= bases[dim]->norm_squared(terms_i[dim]);
-	      }
-	      if (std::abs(c/nrm) > sparse_tol)
-		Cijk->add_term(I,J,K,c);
+	    if (inc_i) {
+	      typename basis_set_type::const_iterator i = 
+		basis_set.find(terms_i);
+	      I = i->second;
 	    }
+	    if (inc_j) {
+	      typename basis_set_type::const_iterator j = 
+		basis_set.find(terms_j);
+	      J = j->second;
+	    }
+	    value_type c = value_type(1.0);
+	    value_type nrm = value_type(1.0);
+	    for (ordinal_type dim=0; dim<d; dim++) {
+	      c *= value(i_iterators[dim]);
+	      nrm *= bases[dim]->norm_squared(terms_i[dim]);
+	    }
+	    if (std::abs(c/nrm) > sparse_tol)
+	      Cijk->add_term(I,J,K,c);
 	  }
 	  
 	  // Increment iterators to the next valid term
@@ -878,14 +1082,13 @@ namespace Stokhos {
 		inc_k = true;
 		if (k_iterators[cdim] != Cijk_1d[cdim]->k_end()) {
 		  terms_k[cdim] = index(k_iterators[cdim]);
-		  valid_k = coeff_pred(terms_k);
+		  valid_k = k_coeff_pred(terms_k);
 		}
-		if (k_iterators[cdim] == Cijk_1d[cdim]->k_end() || 
-		    !valid_k) {
+		if (k_iterators[cdim] == Cijk_1d[cdim]->k_end() || !valid_k) {
 		  k_iterators[cdim] = Cijk_1d[cdim]->k_begin();
 		  ++cdim;
 		  terms_k[cur_dim] = index(k_iterators[cur_dim]);
-		  valid_k = coeff_pred(terms_k);
+		  valid_k = k_coeff_pred(terms_k);
 		}
 		else
 		  inc = false;
@@ -896,7 +1099,8 @@ namespace Stokhos {
 	      }
 	      else
 		inc = false;
-	      i_iterators[cur_dim] = Cijk_1d[cur_dim]->i_begin(j_iterators[cur_dim]);
+	      i_iterators[cur_dim] = 
+		Cijk_1d[cur_dim]->i_begin(j_iterators[cur_dim]);
 	      terms_i[cur_dim] = index(i_iterators[cur_dim]);
 	      valid_i = coeff_pred(terms_i);
 	    }
@@ -919,6 +1123,7 @@ namespace Stokhos {
       }
   };
 
+#if 0
   /*!
    * \brief An operator for building pseudo-spectral coefficients in a tensor
    * product basis using tensor-product quadrature.
@@ -1513,6 +1718,8 @@ namespace Stokhos {
 
   };
 
+#endif
+
   /*! 
    * \brief Utilities for indexing a multi-variate complete polynomial basis 
    */
@@ -1532,7 +1739,7 @@ namespace Stokhos {
     static ordinal_type 
     compute_terms(ordinal_type p, ordinal_type d, 
 		  ordinal_type& sz,
-		  Teuchos::Array< Teuchos::Array<ordinal_type> >& terms,
+		  Teuchos::Array< MultiIndex<ordinal_type> >& terms,
 		  Teuchos::Array<ordinal_type>& num_terms);
 
     /*!
@@ -1547,7 +1754,7 @@ namespace Stokhos {
     static ordinal_type 
     compute_terms(const Teuchos::Array<ordinal_type>& basis_orders, 
 		  ordinal_type& sz,
-		  Teuchos::Array< Teuchos::Array<ordinal_type> >& terms,
+		  Teuchos::Array< MultiIndex<ordinal_type> >& terms,
 		  Teuchos::Array<ordinal_type>& num_terms);
 
     /*!
@@ -1555,8 +1762,8 @@ namespace Stokhos {
      * dimension.
      */
     static ordinal_type 
-    compute_index(const Teuchos::Array<ordinal_type>& term,
-		  const Teuchos::Array< Teuchos::Array<ordinal_type> >& terms,
+    compute_index(const MultiIndex<ordinal_type>& term,
+		  const Teuchos::Array< MultiIndex<ordinal_type> >& terms,
 		  const Teuchos::Array<ordinal_type>& num_terms,
 		  ordinal_type max_p);
 
@@ -1569,7 +1776,7 @@ ordinal_type
 Stokhos::CompletePolynomialBasisUtils<ordinal_type, value_type>::
 compute_terms(ordinal_type p, ordinal_type d, 
 	      ordinal_type& sz,
-	      Teuchos::Array< Teuchos::Array<ordinal_type> >& terms,
+	      Teuchos::Array< Stokhos::MultiIndex<ordinal_type> >& terms,
 	      Teuchos::Array<ordinal_type>& num_terms)
 {
   Teuchos::Array<ordinal_type> basis_orders(d, p);
@@ -1581,7 +1788,7 @@ ordinal_type
 Stokhos::CompletePolynomialBasisUtils<ordinal_type, value_type>::
 compute_terms(const Teuchos::Array<ordinal_type>& basis_orders, 
 	      ordinal_type& sz,
-	      Teuchos::Array< Teuchos::Array<ordinal_type> >& terms,
+	      Teuchos::Array< Stokhos::MultiIndex<ordinal_type> >& terms,
 	      Teuchos::Array<ordinal_type>& num_terms)
 {
   // The approach here for ordering the terms is inductive on the total
@@ -1626,7 +1833,7 @@ compute_terms(const Teuchos::Array<ordinal_type>& basis_orders,
   }
 
   // Temporary array of terms grouped in terms of same order
-  Teuchos::Array< Teuchos::Array< Teuchos::Array<ordinal_type> > > terms_order(p+1);
+  Teuchos::Array< Teuchos::Array< MultiIndex<ordinal_type> > > terms_order(p+1);
 
   // Store number of terms up to each order
   num_terms.resize(p+2, ordinal_type(0));
@@ -1638,7 +1845,8 @@ compute_terms(const Teuchos::Array<ordinal_type>& basis_orders,
 
   // The array "cnt" stores the number of terms we need to increment for each
   // dimension.  
-  Teuchos::Array<ordinal_type> cnt(d), cnt_next(d), term(d);
+  Teuchos::Array<ordinal_type> cnt(d), cnt_next(d);
+  MultiIndex<ordinal_type> term(d);
   for (ordinal_type j=0; j<d; j++) {
     if (basis_orders[j] >= 1)
       cnt[j] = 1;
@@ -1703,8 +1911,8 @@ compute_terms(const Teuchos::Array<ordinal_type>& basis_orders,
 template <typename ordinal_type, typename value_type>
 ordinal_type 
 Stokhos::CompletePolynomialBasisUtils<ordinal_type, value_type>::
-compute_index(const Teuchos::Array<ordinal_type>& term,
-	      const Teuchos::Array< Teuchos::Array<ordinal_type> >& terms,
+compute_index(const Stokhos::MultiIndex<ordinal_type>& term,
+	      const Teuchos::Array< Stokhos::MultiIndex<ordinal_type> >& terms,
 	      const Teuchos::Array<ordinal_type>& num_terms,
 	      ordinal_type max_p)
 {
@@ -1713,7 +1921,7 @@ compute_index(const Teuchos::Array<ordinal_type>& term,
   // do a linear search through the terms_order array for this order
 
   // First compute order of term
-  ordinal_type d = term.size();
+  ordinal_type d = term.dimension();
   ordinal_type ord = 0;
   for (ordinal_type i=0; i<d; i++)
     ord += term[i];
