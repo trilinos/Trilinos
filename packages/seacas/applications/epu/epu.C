@@ -1637,20 +1637,20 @@ namespace {
     // Now, sort the global_element_map array.
     std::sort(global_element_map.begin(), global_element_map.end());
 
+    global->elementCount = global_element_map.size();
+
     // See if any duplicates...
-    std::vector<INT> temp(global_element_map);
-    temp.erase(std::unique(temp.begin(), temp.end()), temp.end());
-
-    if (temp.size() != global_element_map.size()) {
-      // Duplicates in the element id list...
-      // This is not yet handled.  Notify the user and continue for now...
-      std::cerr << "\n!!!! POSSIBLE ERROR: There were " << global_element_map.size() - temp.size()
-		<< " elements with duplicated ids detected.\n"
-		<< "!!!!\tThis may cause problems in the output file.\n\n";
+    for (size_t i=1; i < global->elementCount; i++) {
+      if (global_element_map[i-1] == global_element_map[i]) {
+	// Duplicates in the element id list...
+	// This is not yet handled.  Notify the user and continue for now...
+	std::cerr << "\n!!!! POSSIBLE ERROR: There were at least 2"
+		  << " elements with duplicated ids detected.\n"
+		  << "!!!!\tThis may cause problems in the output file.\n\n";
+	break;
+      }
     }
-
-    size_t total_num_elements = global_element_map.size();
-    global->elementCount = total_num_elements;
+    
 
     // See whether the element numbers are contiguous.  If so, we can map
     // the elements back to their original location. Since the elements are
