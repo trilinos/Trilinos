@@ -5,11 +5,25 @@ INCLUDE(TribitsLibraryMacros)
 # A) Package-specific configuration options
 #
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Boost)
-IF (${PACKAGE_NAME}_ENABLE_Boost)
-  SET(HAVE_TEUCHOS_BOOST TRUE)
-ENDIF()
+# Matain backward compatibility w.r.t. old Teuchos TPL dependencies.
+# This list of TPLs is as of 11/01/2012.  Future TPL Dependencies
+# should be listed and used as HAVE_TEUCHOS<SUBPACKAGE_NAME>_XXX which
+# this is handled automatically by TriBITS once 
+# #cmakedefine HAVE_TEUCHOS<SUBPACKAGE_NAME>_XXX is added to config.h file.
+SET(OldTeuchos_SUBPACKAGE_NAMES BinUtils Boost MPI ARPREC QD QT)
+FOREACH(OldTeuchos_SUBPACKAGE_NAME  ${OldTeuchos_SUBPACKAGE_NAMES})
+  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_${OldTeuchos_SUBPACKAGE_NAME})
+  IF (${PACKAGE_NAME}_ENABLE_${OldTeuchos_SUBPACKAGE_NAME})
+    # Must set the preprocessor directives that C++ code will use
+    STRING(TOUPPER "${OldTeuchos_SUBPACKAGE_NAME}" OldTeuchos_SUBPACKAGE_UNAME)
+    SET(HAVE_TEUCHOS_${OldTeuchos_SUBPACKAGE_UNAME} TRUE)
+    # Some client CMakeLists.txt code keys off of the old cmake variable names
+    # so we have to set them as global variables.
+    SET(Teuchos_ENABLE_${OldTeuchos_SUBPACKAGE_NAME} ON CACHE BOOL INTERNAL)
+  ENDIF()
+ENDFOREACH()
 
+# Looking forward to TeuchosParameterList customers ...
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${PARENT_PACKAGE_NAME}ParameterList)
 IF (${PROJECT_NAME}_ENABLE_${PARENT_PACKAGE_NAME}ParameterList)
   SET(HAVE_TEUCHOS_PARAMETERLIST TRUE)

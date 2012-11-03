@@ -50,7 +50,7 @@
 #include "Panzer_STK_config.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
-#include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_STK_SquareTriMeshFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
 
@@ -116,7 +116,7 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
          = buildFieldPattern<Intrepid::Basis_HGRAD_TRI_C1_FEM<double,FieldContainer> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildTriMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
 
    TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);

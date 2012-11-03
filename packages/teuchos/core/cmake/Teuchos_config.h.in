@@ -24,7 +24,10 @@
 /* define if the compiler supports abi::__cxa_demangle(...) */
 #cmakedefine HAVE_GCC_ABI_DEMANGLE
 
+/* Not namespaced so should be depreciated. */
 #cmakedefine HAVE_MPI
+
+#cmakedefine HAVE_TEUCHOS_MPI
 
 #cmakedefine HAVE_COMPLEX_BLAS_PROBLEM
 
@@ -46,15 +49,27 @@
 
 #cmakedefine HAVE_TEUCHOS_LAPACKLARND
 
+#cmakedefine HAVE_TEUCHOSCORE_BOOST
+
+/* Deprecated */
 #cmakedefine HAVE_TEUCHOS_BOOST
 
+#cmakedefine HAVE_TEUCHOSCORE_QT
+
+/* Deprecated */
 #cmakedefine HAVE_TEUCHOS_QT
 
 #cmakedefine HAVE_TEUCHOS_QD
 
+/* Deprecated */
+#cmakedefine HAVE_TEUCHOSCORE_QD
+
 #cmakedefine HAVE_TEUCHOS_DOUBLE_TO_QD
 
 #cmakedefine HAVE_TEUCHOS_ARPREC
+
+/* Deprecated */
+#cmakedefine HAVE_TEUCHOSCORE_ARPREC
 
 #cmakedefine HAVE_TEUCHOS_DOUBLE_TO_ARPREC
 

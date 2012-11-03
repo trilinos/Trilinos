@@ -1,7 +1,7 @@
 INCLUDE(TribitsPackageMacros)
 INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(CombinedOption)
- 
+
 #
 # A) Define the package
 #
@@ -15,6 +15,17 @@ TRIBITS_PACKAGE(MueLu)
 TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 TRIBITS_ADD_DEBUG_OPTION()
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
+# Disable Ifpack2 if Tpetra is off
+IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
+  SET(${PACKAGE_NAME}_ENABLE_Ifpack2 OFF)
+  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_IFPACK2 OFF)
+ENDIF ()
+
+# Enable experimental code (such as Energy-Minimization)
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  GLOBAL_SET(INCLUDE_${PACKAGE_NAME_UC}_EXPERIMENTAL ON)
+ENDIF ()
 
 # Profiling
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PROFILING
@@ -43,7 +54,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "Enable the use of explicit template instantiation with <double, int, int>."
     ON
     )
-  IF(${PACKAGE_NAME}_ENABLE_EXAMPLES OR ${PACKAGE_NAME}_ENABLE_TESTS) 
+  IF(${PACKAGE_NAME}_ENABLE_EXAMPLES OR ${PACKAGE_NAME}_ENABLE_TESTS)
     IF (NOT ${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
       MESSAGE(FATAL_ERROR "Error: MueLu examples and tests needs explicit template instantation with <double, int, int>. Turn on the option MueLu_INST_DOUBLE_INT_INT or disable examples and tests.")
     ENDIF()
@@ -84,8 +95,8 @@ ENDIF()
 # - HAVE_MUELU_INST_COMPLEX_INT_INT
 #
 # TODO: do we want also a MueLu_ENABLE_Complex option that turns ON automatically what we need?
-IF(((NOT ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION) AND Teuchos_ENABLE_COMPLEX) 
-    OR 
+IF(((NOT ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION) AND Teuchos_ENABLE_COMPLEX)
+    OR
     (HAVE_MUELU_INST_COMPLEX_INT_INT))
   SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX ON)
 ELSE()

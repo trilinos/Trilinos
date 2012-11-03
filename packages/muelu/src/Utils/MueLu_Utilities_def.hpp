@@ -606,15 +606,15 @@ if (mypid == 0)
   } //BuildMatrixDiagonal()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixDiagonal(RCP<Matrix> const &A)
+  Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixDiagonal(const Matrix &A)
   {
-    const RCP<const Map> rowmap = A->getRowMap();
+    const RCP<const Map> rowmap = A.getRowMap();
     size_t locSize = rowmap->getNodeNumElements();
     Teuchos::ArrayRCP<SC> diag(locSize);
     Teuchos::ArrayView<const LO> cols;
     Teuchos::ArrayView<const SC> vals;
     for (size_t i=0; i<locSize; ++i) {
-      A->getLocalRowView(i,cols,vals);
+      A.getLocalRowView(i,cols,vals);
       for (LO j=0; j<cols.size(); ++j) {
         //TODO this will break down if diagonal entry is not present
         //if (!(cols[j] > i))   //JG says this will work ... maybe
@@ -917,7 +917,7 @@ if (mypid == 0)
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix(RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse,
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix(RCP<Matrix> &Op, Teuchos::ArrayRCP<const SC> scalingVector, bool doInverse,
                                bool doFillComplete,
                                bool doOptimizeStorage)
   {

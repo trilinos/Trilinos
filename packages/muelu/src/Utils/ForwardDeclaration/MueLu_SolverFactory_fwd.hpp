@@ -1,9 +1,9 @@
 // @HEADER
+//
 // ***********************************************************************
 //
-//           Panzer: A partial differential equation assembly
-//       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,19 +35,24 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
+// Questions? Contact
+//                    Jeremie Gaidamour (jngaida@sandia.gov)
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
+//
 // ***********************************************************************
+//
 // @HEADER
+#ifndef MUELU_SOLVERFACTORY_FWD_HPP
+#define MUELU_SOLVERFACTORY_FWD_HPP
 
-#include "Panzer_config.hpp"
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class SolverFactory;
+}
 
-#include "Panzer_DOFManager2_decl.hpp"
-#include "Panzer_DOFManager2_impl.hpp"
-
-#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
-
-template class panzer::DOFManager2<int,long int>;
-template class panzer::DOFManager2<int,int>;
-
+#ifndef MUELU_SOLVERFACTORY_SHORT
+#define MUELU_SOLVERFACTORY_SHORT
 #endif
+
+#endif // MUELU_SOLVERFACTORY_FWD_HPP

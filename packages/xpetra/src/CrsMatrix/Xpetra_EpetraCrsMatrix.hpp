@@ -95,6 +95,9 @@ namespace Xpetra {
     //! Constructor specifying a previously constructed graph.
     EpetraCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &graph, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null);
 
+    //! Constructor making deep copy
+    EpetraCrsMatrix(const Teuchos::RCP<const EpetraCrsMatrix> matrix);
+
     //! Destructor.
     virtual ~EpetraCrsMatrix() { }
 
