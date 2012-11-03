@@ -717,8 +717,8 @@ class TimeMonitorSurrogateImpl : public CommandLineProcessor::TimeMonitorSurroga
 /// allows Teuchos to put CommandLineProcessor in a separate package
 /// from TimeMonitor.  We want to do this because TimeMonitor depends
 /// on Comm, and is therefore in the TeuchosComm subpackage (which
-/// depends on TeuchosCore), but CommandLineProcessor is in the
-/// TeuchosCore subpackage (which does not depend on TeuchosComm).
+/// depends on TeuchosCore), but CommandLineProcessor is in a
+/// different subpackage which does not depend on Comm.
 ///
 /// The TimeMonitorSurrogateImplInserter class' constructor ensures
 /// that CommandLineProcessor gets informed about TimeMonitor even
@@ -733,11 +733,11 @@ class TimeMonitorSurrogateImpl : public CommandLineProcessor::TimeMonitorSurroga
 /// This is an instance of the 
 /// <a href="http://en.wikipedia.org/wiki/Dependency_injection">Dependency injection</a>
 /// design pattern.  CommandLineProcessor is not supposed to know
-/// about TimeMonitor, because TimeMonitor lives in a subpackage that
-/// depends on CommandLineProcessor's subpackage.  Thus,
+/// about TimeMonitor, because CommandLineProcessor's subpackage does
+/// not depend on TimeMonitor's subpackage.  Thus,
 /// CommandLineProcessor interacts with TimeMonitor through the
 /// TimeMonitorSurrogate interface.  TimeMonitorSurrogateImplInserter
-/// "injects the dependency" at run time, if the TeuchosComm
+/// "injects" the dependency at run time, if the TeuchosComm
 /// subpackage was enabled and the application linked with its
 /// libraries.
 ///

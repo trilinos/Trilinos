@@ -570,7 +570,7 @@ public: // Hidden implementation stuff that clients should never see
   /// We want to do this because TimeMonitor depends on Comm, and is
   /// therefore in the TeuchosComm subpackage, but
   /// CommandLineProcessor does not depend on Comm, and is therefore
-  /// in the TeuchosCore subpackage.  This design lets
+  /// in a different subpackage.  This design lets
   /// CommandLineProcessor automatically support showing summary
   /// timings just by having the TeuchosComm subpackage enabled and
   /// having its libaries linked in.
@@ -586,10 +586,10 @@ public: // Hidden implementation stuff that clients should never see
   /// This is an instance of the <a
   /// href="http://en.wikipedia.org/wiki/Dependency_injection">Dependency
   /// injection</a> design pattern.  CommandLineProcessor is not
-  /// supposed to know about TimeMonitor, because TimeMonitor lives in
-  /// a subpackage that depends on CommandLineProcessor's subpackage.
-  /// Thus, CommandLineProcessor interacts with TimeMonitor through
-  /// the TimeMonitorSurrogate interface.
+  /// supposed to know about TimeMonitor, because
+  /// CommandLineProcessor's subpackage does not depend on
+  /// TimeMonitor's subpackage.  Thus, CommandLineProcessor interacts
+  /// with TimeMonitor through the TimeMonitorSurrogate interface.
   class TimeMonitorSurrogate {
   public:
     //! Summarize timings over all process(es) to the given output stream.
