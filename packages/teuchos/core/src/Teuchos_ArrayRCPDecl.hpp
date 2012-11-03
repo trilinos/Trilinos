@@ -51,35 +51,54 @@
 
 namespace Teuchos {
 
-/** \brief Array reference-counted pointer class.
- *
- * This is a reference-counted class similar to <tt>RCP</tt> except
- * that it is designed to use reference counting to manage an array of objects
- * that use value semantics.  Managing an array of objects is very different
- * from managing a pointer to an individual, possibly polymorphic, object.  For
- * example, while implicit conversions from derived to base types is a good
- * thing when dealing with pointers to single objects, it is a very bad thing
- * when working with arrays of objects.  Therefore, this class contains those
- * capabilities of raw pointers that are good dealing with arrays of objects
- * but excludes those that are bad, such as implicit conversions from derived
- * to base types.
- *
- * Note that all access will be checked at runtime to avoid reading invalid
- * memory if <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is defined which it is if
- * <tt>--enable-teuchos-abc</tt> is given to the <tt>configure</tt> script.
- * In order to be able to check access, every <tt>%ArrayRCP</tt> must
- * be constructed given a range.  When <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt>
- * is defined, this class simply does not give up a raw pointer or raw
- * reference to any internally referenced object if that object does not fall
- * with the range of valid data.
- *
- * <b>Type <tt>T</tt> requirements:</b><ul>
- * <li> Must have a valid <tt>Teuchos::TypeNameTraits<T></tt> specialization
- * </ul>
- *
- * ToDo: Finish documentation!
- *
+/** \brief Reference-counted smart pointer for managing arrays.
+ * \tparam T The type of each element in the array.
  * \ingroup teuchos_mem_mng_grp
+ *
+ * \section Teuchos_ArrayRCP_Summary Summary
+ *
+ * ArrayRCP manages an array of objects of type T.  Like RCP, it uses
+ * reference counting to decide when to deallocate the array.  This
+ * lets you share references to the array, without worrying about who
+ * is responsible for deallocating it.  We may thus call an ArrayRCP a
+ * "shared array."
+ *
+ * \section Teuchos_ArrayRCP_Details Details
+ *
+ * Managing an array of objects is very different from managing a
+ * pointer to an individual, possibly polymorphic, object.  For
+ * example, while implicit conversions from derived to base types can
+ * be useful when dealing with pointers to single objects, they often
+ * cause problems when working with arrays of objects.  Therefore,
+ * this class contains those capabilities of raw pointers that are
+ * good when working with arrays of objects, but excludes those that
+ * are bad, such as implicit conversions from derived to base types.
+ * If you really do want a shared array with implicit conversions from
+ * derived to base types, you may use an <tt>ArrayRCP<RCP<T> ></tt>.
+ *
+ * \section Teuchos_ArrayRCP_Bounds Optional bounds checking
+ *
+ * You may enable bounds checking and other safety checks for this
+ * class by setting the <tt>Teuchos_ENABLE_DEBUG:BOOL=ON</tt> CMake
+ * option when configuring your Trilinos build.  This option is off by
+ * default.  It incurs a significant performance penalty and so is not
+ * recommended for production builds.  Bounds checking requires that
+ * you always create ArrayRCP instances with the correct range.  For
+ * example, if you use one of the constructors that accepts a raw
+ * pointer, you are responsible for supplying the correct number of
+ * elements in the array.  Our bounds checking implementation does not
+ * attempt to replace memory debugging tools such as the Memcheck tool
+ * in <a href="http://en.wikipedia.org/wiki/Valgrind">Valgrind</a>.
+ *
+ * \section Teuchos_ArrayRCP_Req Requirements on the type T
+ *
+ * ArrayRCP imposes the following requirements on the type T of
+ * elements in the array:
+ * <ul>
+ * <li> T must be default constructible.
+ * <li> T must be copy constructible.
+ * <li> TypeNameTraits must have a specialization for T.
+ * </ul>
  */
 template<class T>
 class ArrayRCP {
@@ -88,37 +107,48 @@ public:
   //! @name Public types 
   //@{
 
-  /** \brief. */
+  //! Integer index type used throughout ArrayRCP.
   typedef Teuchos_Ordinal Ordinal;
 
-  /** \brief . */
+  //! Type representing the number of elements in an ArrayRCP or view thereof.
   typedef Ordinal size_type;
-  /** \brief . */
+
+  //! Type representing the difference between two iterators of an ArrayRCP.
   typedef Ordinal difference_type;
-  /** \brief . */
+
+  //! Category of ArrayRCP's iterator type.
   typedef std::random_access_iterator_tag iterator_category;
-  /** \brief . */
+
+  //! Type of an ArrayRCP's iterator.
   typedef  T* iterator_type;
-  /** \brief . */
+
+  //! Type of each array element.
   typedef  T value_type;
-  /** \brief . */
+
+  //! Type of a (nonconstant) reference to an array element.
   typedef T& reference; 
-  /** \brief . */
+
+  //! Type of a (constant) reference to an array element.
   typedef const T& const_reference; 
-  /** \brief . */
+
+  //! Type of a (raw) (nonconstant) pointer to an array element.
   typedef T* pointer;
-  /** \brief . */
+
+  //! Type of a (raw) (constant) pointer to an array element.
   typedef T* const_pointer;
-  /** \brief . */
+
+  //! Type of each array element.
   typedef T  element_type;
 
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  /** \brief . */
+  //! Nonconstant iterator type used if bounds checking is enabled.
   typedef ArrayRCP<T> iterator;
-  /** \brief . */
+  //! Constant iterator type used if bounds checking is enabled.
   typedef ArrayRCP<const T> const_iterator;
 #else
+  //! Nonconstant iterator type used if bounds checking is disabled.
   typedef T* iterator;
+  //! Constant iterator type used if bounds checking is disabled.
   typedef const T* const_iterator;
 #endif
 
@@ -129,7 +159,7 @@ public:
 
   /** \brief Initialize <tt>ArrayRCP<T></tt> to NULL.
    *
-   * This allows clients to write code like:
+   * This lets users write code like:
    \code
    ArrayRCP<int> p = null;
    \endcode
@@ -137,48 +167,74 @@ public:
    \code
    ArrayRCP<int> p;
    \endcode
-   * and construct to <tt>NULL</tt>
+   * Both lines of code above set the raw array pointer to <tt>NULL</tt>.
    */
   inline ArrayRCP( ENull null_arg = null );
 
   /** \brief Construct from a raw pointer and a valid range.
    *
-   * Postconditions:<ul>
-   * <li><tt>this->get() == p</tt>
-   * <li><tt>this->lowerOffset() == lowerOffset</tt>
-   * <li><tt>this->upperOffset() == size + lowerOffset - 1</tt>
-   * <li><tt>this->has_ownership() == has_ownership</tt>
-   * </ul>
+   * \param p [in] Raw array pointer.
+   * \param lowerOffset [in] Array index at which the range starts
+   *   (zero if at the beginning of the range).
+   * \param size [in] Number of array elements in the range.
+   * \param has_ownership [in] True if the ArrayRCP is responsible for
+   *   deallocating the raw array (using <tt>delete []</tt>) when the
+   *   reference count goes to zero.  If false, the ArrayRCP does not
+   *   deallocate the array.
+   * \param rcpNodeLookup [in] Whether to perform RCPNode lookup.  The
+   *   default value is fine for nearly all use cases.
    *
-   * WARNING!  You should avoid manipulating raw pointers and use other
-   * methods to construct an ArrayRCP object instead!
+   * \post <tt>this->get() == p</tt>
+   * \post <tt>this->lowerOffset() == lowerOffset</tt>
+   * \post <tt>this->upperOffset() == size + lowerOffset - 1</tt>
+   * \post <tt>this->has_ownership() == has_ownership</tt>
+   *
+   * \warning You should avoid manipulating raw pointers and use other
+   *   methods to construct an ArrayRCP object instead!
    */
   inline ArrayRCP( T* p, size_type lowerOffset, size_type size,
     bool has_ownership, const ERCPNodeLookup rcpNodeLookup = RCP_ENABLE_NODE_LOOKUP );
 
   /** \brief Construct from a raw pointer, a valid range, and a deallocator.
    *
-   * Postconditions:<ul>
-   * <li><tt>this->get() == p</tt>
-   * <li><tt>this->lowerOffset() == lowerOffset</tt>
-   * <li><tt>this->upperOffset() == size + lowerOffset - 1</tt>
-   * <li><tt>this->has_ownership() == has_ownership</tt>
-   * </ul>
+   * \param p [in] Raw array pointer.
+   * \param lowerOffset [in] Array index at which the range starts
+   *   (zero if at the beginning of the range).
+   * \param size [in] Number of array elements in the range.
+   * \param dealloc [in] Function (or object with an
+   *   <tt>operator()(T*)</tt> method) responsible for deallocating
+   *   the raw array when the reference count goes to zero.
+   * \param has_ownership [in] True if the ArrayRCP is responsible for
+   *   deallocating the raw array (using the given deallocator) when
+   *   the reference count goes to zero.  If false, the ArrayRCP does
+   *   not deallocate the array.
    *
-   * WARNING!  You should avoid manipulating raw pointers and use other
-   * methods to construct an ArrayRCP object instead!
+   * \post <tt>this->get() == p</tt>
+   * \post <tt>this->lowerOffset() == lowerOffset</tt>
+   * \post <tt>this->upperOffset() == size + lowerOffset - 1</tt>
+   * \post <tt>this->has_ownership() == has_ownership</tt>
+   *
+   * \warning You should avoid manipulating raw pointers and use other
+   *   methods to construct an ArrayRCP object instead!
    */
   template<class Dealloc_T>
   inline ArrayRCP( T* p, size_type lowerOffset, size_type size, Dealloc_T dealloc,
     bool has_ownership );
 
-  /** \brief Construct allocating an array of size n and filling.
+  /** \brief Construct an array with the given number of elements.
    *
-   * Postconditions:<ul>
-   * <li><tt>this->lowerOffset() == 0</tt>
-   * <li><tt>this->upperOffset() == size-1</tt>
-   * <li><tt>this->has_ownership() == true</tt>
-   * </ul>
+   * \param size [in] Number of elements in the array.
+   * \param val [in] Value with which to fill all elements of the
+   *   array.  
+   *
+   * This constructor fills the array as if with the following code:
+     \code
+     std::fill_n (begin (), n, val);
+     \endcode
+   *
+   * \post <tt>this->lowerOffset() == 0</tt>
+   * \post <tt>this->upperOffset() == size - 1</tt>
+   * \post <tt>this->has_ownership() == true</tt>
    */
   inline explicit ArrayRCP( size_type size, const T& val = T() );
 
@@ -187,50 +243,59 @@ public:
    * After construction, <tt>this</tt> and <tt>r_ptr</tt> will
    * reference the same array.
    *
-   * This form of the copy constructor is required even though the
-   * below more general templated version is sufficient since some
-   * compilers will generate this function automatically which will
-   * give an incorrect implementation.
+   * \post <tt>this->get() == r_ptr.get()</tt>
+   * \post <tt>this->count() == r_ptr.count()</tt>
+   * \post <tt>this->has_ownership() == r_ptr.has_ownership()</tt>
+   * \post  If <tt>r_ptr.get() != NULL</tt> then <tt>r_ptr.count()</tt> is incremented by 1.
    *
-   * Postconditions:<ul>
-   * <li><tt>this->get() == r_ptr.get()</tt>
-   * <li><tt>this->count() == r_ptr.count()</tt>
-   * <li><tt>this->has_ownership() == r_ptr.has_ownership()</tt>
-   * <li> If <tt>r_ptr.get() != NULL</tt> then <tt>r_ptr.count()</tt> is incremented by 1
-   * </ul>
+   * \note To implementers: In compilers that conform to the C++
+   *   standard, this copy constructor overload is unnecessary, since
+   *   the more general templated version of the copy constructor
+   *   below is sufficient.  However, not all compilers have handled
+   *   this code correctly in the past.  This version ensures correct
+   *   compilation with such compilers, without affecting compilers
+   *   that correctly implement the C++ standard.
    */
   inline ArrayRCP(const ArrayRCP<T>& r_ptr);
 
-  /** \brief Removes a reference to a dynamically allocated array and possibly deletes
-   * the array if owned.
+  /** \brief Destructor, that decrements the reference count.
    *
-   * Deallocates array if <tt>this->has_ownership() == true</tt> and
-   * <tt>this->count() == 1</tt>. If <tt>this->count() == 1</tt> but
-   * <tt>this->has_ownership() == false</tt> then the array is not deleted
-   * (usually using <tt>delete []</tt>). If <tt>this->count() > 1</tt> then
-   * the internal reference count shared by all the other related
-   * <tt>ArrayRCP<...></tt> objects for this shared array is
-   * deincremented by one. If <tt>this->get() == NULL</tt> then nothing
-   * happens.
+   * If <tt>this->get() == NULL</tt> then the destructor does nothing.
+   * Otherwise, it decrements the reference count of this and all
+   * other references to the array.  If the final reference count is
+   * zero, it also deallocates the array if owned (i.e., if
+   * <tt>this->has_ownership()</tt> returns true).  Deallocation uses
+   * the custom deallocator if one was supplied; otherwise it uses
+   * <tt>delete []</tt>.
    */
   inline ~ArrayRCP();
 
-  /** \brief Copy the pointer to the referenced array and increment the
-   * reference count.
+  /** \brief Assignment operator: Makes <tt>*this</tt> reference the input array.
    *
-   * If <tt>this->has_ownership() == true</tt> and <tt>this->count() == 1</tt>
-   * before this operation is called, then the array will be deleted prior to
-   * binding to the pointer (possibly <tt>NULL</tt>) pointed to in
-   * <tt>r_ptr</tt>. Assignment to self (i.e. <tt>this->get() ==
-   * r_ptr.get()</tt>) is harmless and this function does nothing.
+   * If the input array is a reference to <tt>*this</tt> (that is, if
+   * <tt>this->getRawPtr() == r_ptr.getRawPtr()</tt>), then this
+   * method does nothing.  Otherwise, it does the following:
+   * <ol>
+   * <li> Decrements the reference count of <tt>*this</tt> (as
+   *   if its destructor had been called)
+   * <li> Makes <tt>*this</tt> a reference to the input array
+   *   (thus incrementing its reference count)
+   * </ol>
+   * For example, after the following sample code is done, the array
+   * to which x originally pointed on construction will have reference
+   * count 2, and the array to which y originally pointed on
+   * constructor will have reference count 0 (and will thus be
+   * deallocated).
+     \code
+     ArrayRCP<T> x = arcp<T> (10);
+     ArrayRCP<T> y = arcp<T> (42);
+     x = y;     
+     \endcode
    *
-   * Postconditions:
-   * <ul>
-   * <li><tt>this->get() == r_ptr.get()</tt>
-   * <li><tt>this->count() == r_ptr.count()</tt>
-   * <li><tt>this->has_ownership() == r_ptr.has_ownership()</tt>
-   * <li> If <tt>r_ptr.get() != NULL</tt> then <tt>r_ptr.count()</tt> is incremented by 1
-   * </ul>
+   * \post <tt>this->get() == r_ptr.get()</tt>
+   * \post <tt>this->count() == r_ptr.count()</tt>
+   * \post <tt>this->has_ownership() == r_ptr.has_ownership()</tt>
+   * \post If <tt>r_ptr.get() != NULL</tt> then <tt>r_ptr.count()</tt> is incremented by 1
    */
   inline ArrayRCP<T>& operator=(const ArrayRCP<T>& r_ptr);
 
@@ -245,49 +310,39 @@ public:
   /** \brief Pointer (<tt>-></tt>) access to members of underlying object for
    * current position.
    *
-   * <b>Preconditions:</b><ul>
-   * <li><tt>this->get() != NULL</tt>
-   * <li><tt>this->lowerOffset() <= 0</tt>
-   * <li><tt>this->upperOffset() >= 0</tt>
-   * </ul>
+   * \pre <tt>this->get() != NULL</tt>
+   * \pre <tt>this->lowerOffset() <= 0</tt>
+   * \pre <tt>this->upperOffset() >= 0</tt>
    */
   inline T* operator->() const;
 
   /** \brief Dereference the underlying object for the current pointer
    * position.
    *
-   * <b>Preconditions:</b><ul>
-   * <li><tt>this->get() != NULL</tt>
-   * <li><tt>this->lowerOffset() <= 0</tt>
-   * <li><tt>this->upperOffset() >= 0</tt>
-   * </ul>
+   * \pre <tt>this->get() != NULL</tt>
+   * \pre <tt>this->lowerOffset() <= 0</tt>
+   * \pre <tt>this->upperOffset() >= 0</tt>
    */
   inline T& operator*() const;
 
   /** \brief Get the raw C++ pointer to the underlying object.
    *
-   * <b>Preconditions:</b><ul>
-   * <li>[<tt>*this != null</tt>] <tt>this->lowerOffset() <= 0</tt>
-   * <li>[<tt>*this != null</tt>] <tt>this->upperOffset() >= 0</tt>
-   * </ul>
+   * \pre [<tt>*this != null</tt>] <tt>this->lowerOffset() <= 0</tt>
+   * \pre [<tt>*this != null</tt>] <tt>this->upperOffset() >= 0</tt>
    */
   inline T* get() const;
 
   /** \brief Get the raw C++ pointer to the underlying object.
    *
-   * <b>Preconditions:</b><ul>
-   * <li>[<tt>*this != null</tt>] <tt>this->lowerOffset() <= 0</tt>
-   * <li>[<tt>*this != null</tt>] <tt>this->upperOffset() >= 0</tt>
-   * </ul>
+   * \pre [<tt>*this != null</tt>] <tt>this->lowerOffset() <= 0</tt>
+   * \pre [<tt>*this != null</tt>] <tt>this->upperOffset() >= 0</tt>
    */
   inline T* getRawPtr() const;
 
   /** \brief Random object access.
    *
-   * <b>Preconditions:</b><ul>
-   * <li><tt>this->get() != NULL</tt>
-   * <li><tt>this->lowerOffset() <= offset && offset <= this->upperOffset()</tt>
-   * </ul>
+   * \pre <tt>this->get() != NULL</tt>
+   * \pre <tt>this->lowerOffset() <= offset && offset <= this->upperOffset()</tt>
    */
   inline T& operator[](size_type offset) const;
 
@@ -300,11 +355,9 @@ public:
    *
    * Does nothing if <tt>this->get() == NULL</tt>.
    *
-   * <b>Postconditions:</b><ul>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>this->get()</tt> is incremented by <tt>1</tt>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>this->lowerOffset()</tt> is deincremented by <tt>1</tt>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is deincremented by <tt>1</tt>
-   * </ul>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>this->get()</tt> is incremented by <tt>1</tt>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>this->lowerOffset()</tt> is decremented by <tt>1</tt>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is decremented by <tt>1</tt>
    */
   inline ArrayRCP<T>& operator++();
 
@@ -312,35 +365,29 @@ public:
    *
    * Does nothing if <tt>this->get() == NULL</tt>.
    *
-   * <b>Postconditions:</b><ul>
-   * <li><tt>this->get()</tt> is incremented by <tt>1</tt>
-   * <li><tt>this->lowerOffset()</tt> is deincremented by <tt>1</tt>
-   * <li><tt>this->upperOffset()</tt> is deincremented by <tt>1</tt>
-   * </ul>
+   * \post <tt>this->get()</tt> is incremented by <tt>1</tt>
+   * \post <tt>this->lowerOffset()</tt> is decremented by <tt>1</tt>
+   * \post <tt>this->upperOffset()</tt> is decremented by <tt>1</tt>
    */
   inline ArrayRCP<T> operator++(int);
 
-  /** \brief Prefix deincrement of pointer (i.e. --ptr).
+  /** \brief Prefix decrement of pointer (i.e. --ptr).
    *
    * Does nothing if <tt>this->get() == NULL</tt>.
    *
-   * <b>Postconditions:</b><ul>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>this->get()</tt> is deincremented by <tt>1</tt>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>this->lowerOffset()</tt> is incremented by <tt>1</tt>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is incremented by <tt>1</tt>
-   * </ul>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>this->get()</tt> is decremented by <tt>1</tt>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>this->lowerOffset()</tt> is incremented by <tt>1</tt>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is incremented by <tt>1</tt>
    */
   inline ArrayRCP<T>& operator--();
 
-  /** \brief Postfix deincrement of pointer (i.e. ptr--).
+  /** \brief Postfix decrement of pointer (i.e. ptr--).
    *
    * Does nothing if <tt>this->get() == NULL</tt>.
    *
-   * <b>Postconditions:</b><ul>
-   * <li><tt>this->get()</tt> is dincremented by <tt>1</tt>
-   * <li><tt>this->lowerOffset()</tt> is incremented by <tt>1</tt>
-   * <li><tt>this->upperOffset()</tt> is incremented by <tt>1</tt>
-   * </ul>
+   * \post <tt>this->get()</tt> is decremented by <tt>1</tt>
+   * \post <tt>this->lowerOffset()</tt> is incremented by <tt>1</tt>
+   * \post <tt>this->upperOffset()</tt> is incremented by <tt>1</tt>
    */
   inline ArrayRCP<T> operator--(int);
 
@@ -348,11 +395,9 @@ public:
    *
    * Does nothing if <tt>this->get() == NULL</tt>.
    *
-   * <b>Postconditions:</b><ul>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>this->get()</tt> is incremented by <tt>offset</tt>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>this->lowerOffset()</tt> is deincremented by <tt>offset</tt>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is deincremented by <tt>offset</tt>
-   * </ul>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>this->get()</tt> is incremented by <tt>offset</tt>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>this->lowerOffset()</tt> is decremented by <tt>offset</tt>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is decremented by <tt>offset</tt>
    */
   inline ArrayRCP<T>& operator+=(size_type offset);
 
@@ -360,11 +405,9 @@ public:
    *
    * Does nothing if <tt>this->get() == NULL</tt>.
    *
-   * <b>Postconditions:</b><ul>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>this->get()</tt> is deincremented by <tt>offset</tt>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>this->lowerOffset()</tt> is incremented by <tt>offset</tt>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is incremented by <tt>offset</tt>
-   * </ul>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>this->get()</tt> is decremented by <tt>offset</tt>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>this->lowerOffset()</tt> is incremented by <tt>offset</tt>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is incremented by <tt>offset</tt>
    */
   inline ArrayRCP<T>& operator-=(size_type offset);
 
@@ -372,11 +415,9 @@ public:
    *
    * Returns a null pointer if <tt>this->get() == NULL</tt>.
    *
-   * <b>Postconditions:</b><ul>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>return->get() == this->get() + offset</tt>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>return->lowerOffset() == this->lowerOffset() - offset</tt>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>return->upperOffset() == this->upperOffset() - offset</tt>
-   * </ul>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>return->get() == this->get() + offset</tt>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>return->lowerOffset() == this->lowerOffset() - offset</tt>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>return->upperOffset() == this->upperOffset() - offset</tt>
    *
    * Note that since implicit conversion of <tt>ArrayRCP<T></tt>
    * objects is not allowed that it does not help at all to make this function
@@ -384,15 +425,13 @@ public:
    */
   inline ArrayRCP<T> operator+(size_type offset) const;
 
-  /** \brief Pointer integer deincrement (i.e. ptr-offset).
+  /** \brief Pointer integer decrement (i.e. ptr-offset).
    *
    * Returns a null pointer if <tt>this->get() == NULL</tt>.
    *
-   * <b>Postconditions:</b><ul>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>return->get() == this->get() - offset</tt>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>return->lowerOffset() == this->lowerOffset() + offset</tt>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>return->upperOffset() == this->upperOffset() + offset</tt>
-   * </ul>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>return->get() == this->get() - offset</tt>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>return->lowerOffset() == this->lowerOffset() + offset</tt>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>return->upperOffset() == this->upperOffset() + offset</tt>
    *
    * Note that since implicit conversion of <tt>ArrayRCP<T></tt>
    * objects is not allowed that it does not help at all to make this function
@@ -412,10 +451,8 @@ public:
    * checked at runtime. When <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is not
    * defined, the a raw pointer <tt>T*</tt> is returned for fast execution.
    *
-   * <b>Postconditions:</b><ul>
-   * <li>[this->get()!=NULL</tt>] <tt>&*return == this->get()</tt>
-   * <li>[<tt>this->get()==NULL</tt>] <tt>return == (null or NULL)</tt>
-   * </ul>
+   * \post [this->get()!=NULL</tt>] <tt>&*return == this->get()</tt>
+   * \post [<tt>this->get()==NULL</tt>] <tt>return == (null or NULL)</tt>
    */
   inline iterator begin() const;
 
@@ -426,10 +463,8 @@ public:
    * checked at runtime. When <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is not
    * defined, the a raw pointer <tt>T*</tt> is returned for fast execution.
    *
-   * <b>Postconditions:</b><ul>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>&*end == this->get()+(this->upperOffset()+1)</tt>
-   * <li>[<tt>this->get()==NULL</tt>] <tt>return == (null or NULL)</tt>
-   * </ul>
+   * \post [<tt>this->get()!=NULL</tt>] <tt>&*end == this->get()+(this->upperOffset()+1)</tt>
+   * \post [<tt>this->get()==NULL</tt>] <tt>return == (null or NULL)</tt>
    */
   inline iterator end() const;
 
@@ -447,20 +482,16 @@ public:
 
   /** \brief Return a persisting view of a contiguous range of elements.
    *
-   * <b>Preconditions:</b><ul>
-   * <li><tt>this->get() != NULL</tt>
-   * <li><tt>this->lowerOffset() <= lowerOffset</tt>
-   * <li><tt>lowerOffset + size - 1 <= this->upperOffset()</tt>
-   * </ul>
+   * \pre <tt>this->get() != NULL</tt>
+   * \pre <tt>this->lowerOffset() <= lowerOffset</tt>
+   * \pre <tt>lowerOffset + size - 1 <= this->upperOffset()</tt>
    *
-   * <b>Postconditions:</b><ul>
-   * <li><tt>return->get() == this->get() + lowerOffset</tt>
-   * <li><tt>return->lowerOffset() == 0</tt>
-   * <li><tt>return->upperOffset() == size-1</tt>
-   * </ul>
+   * \post <tt>return->get() == this->get() + lowerOffset</tt>
+   * \post <tt>return->lowerOffset() == 0</tt>
+   * \post <tt>return->upperOffset() == size-1</tt>
    *
-   * NOTE: A <tt>size==0</tt> view of even a null ArrayRCP is allowed and
-   * returns a <tt>null</tt> view.
+   * \note A <tt>size==0</tt> view of even a null ArrayRCP is allowed.
+   *   It returns a <tt>null</tt> view in that case.
    */
   inline ArrayRCP<T> persistingView( size_type lowerOffset, size_type size ) const;
 
@@ -487,36 +518,32 @@ public:
 
   /** \brief Return view of a contiguous range of elements.
    *
-   * <b>Preconditions:</b><ul>
-   * <li><tt>this->get() != NULL</tt>
-   * <li><tt>this->lowerOffset() <= lowerOffset</tt>
-   * <li><tt>lowerOffset + size - 1 <= this->upperOffset()</tt>
-   * </ul>
+   * \pre <tt>this->get() != NULL</tt>
+   * \pre <tt>this->lowerOffset() <= lowerOffset</tt>
+   * \pre <tt>lowerOffset + size - 1 <= this->upperOffset()</tt>
    *
-   * <b>Postconditions:</b><ul>
-   * <li><tt>return->get() == this->get() + lowerOffset</tt>
-   * <li><tt>return->lowerOffset() == 0</tt>
-   * <li><tt>return->upperOffset() == size-1</tt>
-   * </ul>
+   * \post <tt>return->get() == this->get() + lowerOffset</tt>
+   * \post <tt>return->lowerOffset() == 0</tt>
+   * \post <tt>return->upperOffset() == size-1</tt>
    *
-   * NOTE: A <tt>size==0</tt> view of even a null ArrayRCP is allowed and
-   * returns a <tt>null</tt> view.
+   * \note A <tt>size==0</tt> view of even a null ArrayRCP is allowed.
+   *   It returns a <tt>null</tt> view in that case.
    */
   inline ArrayView<T> view( size_type lowerOffset, size_type size ) const;
 
-  /** \brief Return a view of a contiguous range of elements (calls
-   * view(offset,size)).
+  /** \brief Return a nonpersisting view of a contiguous range of elements.
+   *
+   * This is equivalent to calling <tt>view (offset, size)</tt>.
    */
   inline ArrayView<T> operator()( size_type lowerOffset, size_type size ) const;
 
-  /** \brief Return an ArrayView of *this.
+  /** \brief Return a nonpersisting view of <tt>*this</tt>.
    *
-   * NOTE: This will return a null ArrayView if this->size() == 0.
+   * \note This will return a null ArrayView if <tt>this->size() == 0</tt>.
    */
   inline ArrayView<T> operator()() const;
 
   //@}
-
   //! @name Implicit conversions
   //@{
 
@@ -547,23 +574,20 @@ public:
   /** \brief Deep copy the elements from one ArrayView object into this
    * object.
    *
-   * Simply calls <tt>assign(av.begin(), av.end())</tt>
+   * This is equivalent to calling <tt>assign (av.begin (), av.end ())</tt>
    */
   inline void deepCopy(const ArrayView<const T>& av);
 
-  /** \brief Resize and append new elements if enlarging.
-   *
-   */
+  //! Resize and append new elements if necessary.
   inline void resize(const size_type n, const T &val = T());
 
-  /** \brief Resize to zero..
+  /** \brief Resize to zero.
    *
    * \postconditions <tt>size()==0</tt>
    */
   inline void clear();
 
   //@}
-
   //! @name Reference counting
   //@{
 
@@ -580,10 +604,10 @@ public:
    */
   inline ERCPStrength strength() const;
 
-  /** \brief Return if the underlying object pointer is still valid or not.
+  /** \brief Return whether the underlying object pointer is still valid.
    *
-   * The underlying object will not be valid if the strong count has gone to
-   * zero but the weak count thas not.
+   * The underlying object will not be valid if the strong count has
+   * gone to zero but the weak count has not.
    *
    * NOTE: Null is a valid object pointer.  If you want to know if there is a
    * non-null object and it is valid then <tt>!is_null() &&
