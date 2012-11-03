@@ -4467,6 +4467,9 @@ Epetra_IntSerialDenseVector& Epetra_CrsMatrix::ExpertExtractIndices() {
 
   Epetra_CrsGraphData& D=*Graph_.CrsGraphData_;
   int m=D.RowMap_.NumMyElements();
+
+  bool UseLL=false;
+  if(D.RowMap_.GlobalIndicesLongLong()) UseLL=true;
     
   // This only works for constant element size matrices w/ size=1
   if(!D.RowMap_.ConstantElementSize() || D.RowMap_.ElementSize()!=1 ||
@@ -4492,8 +4495,6 @@ Epetra_IntSerialDenseVector& Epetra_CrsMatrix::ExpertExtractIndices() {
   // Cleanup existing data
   for(int i=0;i<m;i++){
     if(Values_)            delete [] Values_[i];
-    //    if(D.data->Indices_)   delete [] D.data->Indices_[i];
-
     D.data->SortedEntries_[i].entries_.resize(0);
   }
   delete [] Values_;                 Values_=0;
@@ -4538,7 +4539,6 @@ Epetra_IntSerialDenseVector& Epetra_CrsMatrix::ExpertExtractIndices() {
 
     // Code copied from Epetra_CrsGraph.Determine_Triangular()
     if(NumIndices > 0) {
-      int ig = D.RowMap_.GID(i);
       const int* col_indices = & D.data->All_Indices_[D.IndexOffset_[i]];
 
       int jl_0 = col_indices[0];
@@ -4549,7 +4549,9 @@ Epetra_IntSerialDenseVector& Epetra_CrsMatrix::ExpertExtractIndices() {
 
       //jl will be the local-index for the diagonal that we
       //want to search for.
-      int jl = D.ColMap_.LID(ig);
+      int jl=0;
+      if (UseLL) jl=D.ColMap_.LID(D.RowMap_.GID64(i));
+      else jl=D.ColMap_.LID((int)D.RowMap_.GID64(i));
 
       int insertPoint = -1;
       if (Epetra_Util_binary_search(jl, col_indices, NumIndices, insertPoint)>-1) {
@@ -4586,8 +4588,14 @@ Epetra_IntSerialDenseVector& Epetra_CrsMatrix::ExpertExtractIndices() {
 
 
   // Global Info
-  D.NumGlobalRows_ = D.RangeMap_.NumGlobalPoints();
-  D.NumGlobalCols_ = D.DomainMap_.NumGlobalPoints();
+  if(UseLL) {
+    D.NumGlobalRows_ = D.RangeMap_.NumGlobalPoints64();
+    D.NumGlobalCols_ = D.DomainMap_.NumGlobalPoints64();
+  }
+  else {
+    D.NumGlobalRows_ = (int) D.RangeMap_.NumGlobalPoints64();
+    D.NumGlobalCols_ = (int) D.DomainMap_.NumGlobalPoints64();
+  }
 
   return 0;
 }
