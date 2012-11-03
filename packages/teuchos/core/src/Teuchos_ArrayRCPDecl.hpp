@@ -652,9 +652,9 @@ public:
   inline void set_has_ownership();
 
   /** \brief Returns true if <tt>this</tt> has ownership of object pointed to
-   * by <tt>this->get()</tt> in order to delete it.
+   * by <tt>this->get()</tt> in order to deallocate it.
    *
-   * See <tt>~ArrayRCP()</tt> above.
+   * See the above documentation for the destructor.
    *
    * \return If this->get() <tt>== NULL</tt> then this function always returns
    * <tt>false</tt>. Otherwise the value returned from this function depends
@@ -686,39 +686,36 @@ public:
    */
   inline T* release();
 
-  /** \brief Create a new weak RCP object from another (strong) RCP object.
+  /** \brief Create a new weak reference from another (strong) reference.
    *
-   * ToDo: Explain this!
+   * A "weak" reference gives access to the array, without
+   * incrementing its (strong) reference count.  This lets you have
+   * access to the array, without affecting when it gets deallocated.
    *
-   * <b>Preconditons:</b> <ul>
-   * <li> <tt>returnVal.is_valid_ptr()==true</tt>
-   * </ul>
+   * \pre <tt>returnVal.is_valid_ptr()==true</tt>
    *
-   * <b>Postconditons:</b> <ul>
-   * <li> <tt>returnVal.get() == this->get()</tt>
-   * <li> <tt>returnVal.strong_count() == this->strong_count()</tt>
-   * <li> <tt>returnVal.weak_count() == this->weak_count()+1</tt>
-   * <li> <tt>returnVal.strength() == RCP_WEAK</tt>
-   * <li> <tt>returnVal.has_ownership() == this->has_ownership()</tt>
-   * </ul>
+   * \post <tt>returnVal.get() == this->get()</tt>
+   * \post <tt>returnVal.strong_count() == this->strong_count()</tt>
+   * \post <tt>returnVal.weak_count() == this->weak_count()+1</tt>
+   * \post <tt>returnVal.strength() == RCP_WEAK</tt>
+   * \post <tt>returnVal.has_ownership() == this->has_ownership()</tt>
    */
   inline ArrayRCP<T> create_weak() const;
 
   /** \brief Create a new strong RCP object from another (weak) RCP object.
    *
-   * ToDo: Explain this!
+   * A "weak" reference gives access to the array, without
+   * incrementing its (strong) reference count.  This method lets you
+   * "promote" a weak reference into a strong reference.  If the array
+   * has been deallocated, the returned reference is null.
    *
-   * <b>Preconditons:</b> <ul>
-   * <li> <tt>returnVal.is_valid_ptr()==true</tt>
-   * </ul>
+   * \pre <tt>returnVal.is_valid_ptr()==true</tt>
    *
-   * <b>Postconditons:</b> <ul>
-   * <li> <tt>returnVal.get() == this->get()</tt>
-   * <li> <tt>returnVal.strong_count() == this->strong_count()+1</tt>
-   * <li> <tt>returnVal.weak_count() == this->weak_count()</tt>
-   * <li> <tt>returnVal.strength() == RCP_STRONG</tt>
-   * <li> <tt>returnVal.has_ownership() == this->has_ownership()</tt>
-   * </ul>
+   * \post <tt>returnVal.get() == this->get()</tt>
+   * \post <tt>returnVal.strong_count() == this->strong_count()+1</tt>
+   * \post <tt>returnVal.weak_count() == this->weak_count()</tt>
+   * \post <tt>returnVal.strength() == RCP_STRONG</tt>
+   * \post <tt>returnVal.has_ownership() == this->has_ownership()</tt>
    */
   inline ArrayRCP<T> create_strong() const;
 
@@ -732,7 +729,6 @@ public:
   inline bool shares_resource(const ArrayRCP<T2>& r_ptr) const;
 
   //@}
-
   //! @name Assertion Functions. 
   //@{
 
