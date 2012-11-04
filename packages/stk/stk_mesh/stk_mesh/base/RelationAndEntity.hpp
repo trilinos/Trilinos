@@ -662,8 +662,8 @@ extern const unsigned int INVALID_LOCAL_ID;
 extern const stk::mesh::RelationIterator INVALID_RELATION_ITR;
 
 namespace detail {
-bool set_attributes( stk::mesh::Entity , const int , const MeshObjSharedAttr*, const int);
-bool set_attributes( stk::mesh::Entity , const MeshObjSharedAttr*, const int);
+bool set_attributes( MeshBulkData& meshbulk, stk::mesh::Entity , const int , const MeshObjSharedAttr*, const int);
+bool set_attributes( MeshBulkData& meshbulk, stk::mesh::Entity , const MeshObjSharedAttr*, const int);
 void unset_shared_attr(stk::mesh::Entity );
 }
 
@@ -840,8 +840,8 @@ private:
   friend class sierra::Fmwk::MeshObjRoster;
   // These are free functions to facilitate the stk migration:
   friend const sierra::Fmwk::MeshObjSharedAttr * sierra::Fmwk::get_shared_attr(const Entity );
-  friend bool sierra::Fmwk::detail::set_attributes( Entity , const int, const sierra::Fmwk::MeshObjSharedAttr *, const int);
-  friend bool sierra::Fmwk::detail::set_attributes( Entity , const sierra::Fmwk::MeshObjSharedAttr *, const int);
+  friend bool sierra::Fmwk::detail::set_attributes( sierra::Fmwk::MeshBulkData&, Entity , const int, const sierra::Fmwk::MeshObjSharedAttr *, const int);
+  friend bool sierra::Fmwk::detail::set_attributes( sierra::Fmwk::MeshBulkData&, Entity , const sierra::Fmwk::MeshObjSharedAttr *, const int);
   friend void sierra::Fmwk::detail::unset_shared_attr(Entity );
   friend bool sierra::Fmwk::insert_relation( Entity , const stk::mesh::Relation::RelationType, Entity , const unsigned, const unsigned, const bool, sierra::Fmwk::MeshBulkData &);
   friend bool sierra::Fmwk::remove_relation(Entity , const stk::mesh::RelationIterator, sierra::Fmwk::MeshBulkData &);
