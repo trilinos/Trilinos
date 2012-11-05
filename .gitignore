@@ -32,6 +32,7 @@ doxygen_objdb_*.tmp
 /StarCCMExt/
 /Coupler/
 /DataTransferKit/
+/TeuchosWrappersExt
 
 # Ignore gtags generated files
 /GPATH
