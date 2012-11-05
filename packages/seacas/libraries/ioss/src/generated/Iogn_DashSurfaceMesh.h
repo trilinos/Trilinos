@@ -39,7 +39,7 @@ inline std::string getTopologyName(Topology topology)
 }
 
 struct ExodusData {
-    const std::vector<double> coordinates;
+    std::vector<double> coordinates;
     const std::vector< std::vector<int> > elementBlockConnectivity;
     const std::vector<int> globalNumberOfElementsInBlock;
     const std::vector<int> localNumberOfElementsInBlock;
