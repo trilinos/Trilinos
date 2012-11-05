@@ -26,7 +26,7 @@ using namespace stk::mesh::impl;
 
 std::ostream &Partition::streamit(std::ostream &os) const
 {
-    os << "{BucketFamily " << std::endl
+    os << "{Partition " << std::endl
        << "  m_repository = " << m_repository << "  m_rank = " << m_rank << std::endl
        << "  (" << m_beginBucketIndex << ", " << m_endBucketIndex << ")" << std::endl;
 
