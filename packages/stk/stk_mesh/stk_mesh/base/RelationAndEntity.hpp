@@ -715,16 +715,16 @@ public:
   //Entity(Entity* e) : m_entityImpl(e->m_entityImpl) {}
   //Entity& operator=(Entity* e) { m_entityImpl = e->m_entityImpl; return *this; }
   Entity operator*() const { return *this; }
-  friend bool operator==(void* lhs, Entity rhs)
-  {
-    assert(lhs == NULL);
-    return lhs == rhs.m_entityImpl;
-  }
-  friend bool operator==(Entity lhs, void* rhs)
-  {
-    assert(rhs == NULL);
-    return rhs == lhs.m_entityImpl;
-  }
+//  friend bool operator==(void* lhs, Entity rhs)
+//  {
+//    assert(lhs == NULL);
+//    return lhs == rhs.m_entityImpl;
+//  }
+//  friend bool operator==(Entity lhs, void* rhs)
+//  {
+//    assert(rhs == NULL);
+//    return rhs == lhs.m_entityImpl;
+//  }
   friend bool operator!=(void* lhs, Entity rhs)
   {
     assert(lhs == NULL);
