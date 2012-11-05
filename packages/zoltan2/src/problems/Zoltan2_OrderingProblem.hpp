@@ -166,7 +166,7 @@ void OrderingProblem<Adapter>::solve(bool newData)
 {
   HELLO;
 
-  size_t nVtx = this->graphModel_->getLocalNumVertices();
+  size_t nVtx = this->baseModel_->getLocalNumObjects();
 
   // TODO: Assuming one MPI process now. nVtx = ngids = nlids
   try
