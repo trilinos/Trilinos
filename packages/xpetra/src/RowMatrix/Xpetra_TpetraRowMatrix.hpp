@@ -57,6 +57,7 @@
 #include "Xpetra_Vector.hpp"
 
 #include "Xpetra_TpetraConfigDefs.hpp"
+#include "Xpetra_TpetraMap.hpp"
 
 #include "Tpetra_RowMatrix.hpp"
 
