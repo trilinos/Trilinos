@@ -111,22 +111,29 @@ namespace Xpetra {
 
         RCP<const CrsMatrix> oldCrsOp = oldOp->getCrsMatrix();
 
+#ifdef HAVE_XPETRA_EPETRA
         RCP<const EpetraCrsMatrix> oldECrsOp = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrix>(oldCrsOp);
         if (oldECrsOp != Teuchos::null) {
             // Underlying matrix is Epetra
-            RCP<const EpetraCrsMatrix> oldECrsOp = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrix>(oldCrsOp);
+            //RCP<const EpetraCrsMatrix> oldECrsOp = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrix>(oldCrsOp);
             RCP<EpetraCrsMatrix> newECrsOp(new EpetraCrsMatrix(*oldECrsOp));
             RCP<CrsMatrixWrap> newOp(new CrsMatrixWrap(newECrsOp));
 
             return newOp;
         }
+#endif
 
+#ifdef HAVE_XPETRA_TPETRA
         // Underlying matrix is Tpetra
         RCP<const TpetraCrsMatrix> oldTCrsOp = Teuchos::rcp_dynamic_cast<const TpetraCrsMatrix>(oldCrsOp);
         RCP<TpetraCrsMatrix> newTCrsOp(new TpetraCrsMatrix(*oldTCrsOp));
         RCP<CrsMatrixWrap> newOp(new CrsMatrixWrap(newTCrsOp));
 
         return newOp;
+#else
+        throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::EpetraCrsMatrix or Xpetra::TpetraCrsMatrix failed");
+        return Teuchos::null;  // make compiler happy
+#endif
     }
 
   };
