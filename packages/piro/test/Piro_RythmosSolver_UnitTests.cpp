@@ -52,6 +52,7 @@
 #endif /* Piro_ENABLE_NOX */
 
 #include "Piro_Test_ThyraSupport.hpp"
+#include "Piro_Test_WeakenedModelEvaluator.hpp"
 
 #include "MockModelEval_A.hpp"
 
@@ -243,6 +244,46 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_DefaultSolutionSensitivity)
 TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_DefaultResponseSensitivity)
 {
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+
+  const int responseIndex = 0;
+  const int parameterIndex = 0;
+
+  const Thyra::MEB::Derivative<double> dgdp_deriv_expected =
+    Thyra::create_DgDp_mv(*model, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<const Thyra::MultiVectorBase<double> > dgdp_expected = dgdp_deriv_expected.getMultiVector();
+  {
+    const Thyra::MEB::InArgs<double> modelInArgs = getStaticNominalValues(*model);
+    Thyra::MEB::OutArgs<double> modelOutArgs = model->createOutArgs();
+    modelOutArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv_expected);
+    model->evalModel(modelInArgs, modelOutArgs);
+  }
+
+  const double finalTime = 0.0;
+  const RCP<RythmosSolver<double> > solver = solverNew(model, finalTime);
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const Thyra::MEB::Derivative<double> dgdp_deriv =
+    Thyra::create_DgDp_mv(*solver, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<const Thyra::MultiVectorBase<double> > dgdp = dgdp_deriv.getMultiVector();
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+
+  TEST_EQUALITY(dgdp->domain()->dim(), dgdp_expected->domain()->dim());
+  TEST_EQUALITY(dgdp->range()->dim(), dgdp_expected->range()->dim());
+  for (int i = 0; i < dgdp_expected->domain()->dim(); ++i) {
+    const Array<double> actual = arrayFromVector(*dgdp->col(i));
+    const Array<double> expected = arrayFromVector(*dgdp_expected->col(i));
+    TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+  }
+}
+
+TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_DefaultResponseSensitivity_NoDgDxMv)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model(
+    new WeakenedModelEvaluator_NoDgDxMv(defaultModelNew()));
 
   const int responseIndex = 0;
   const int parameterIndex = 0;

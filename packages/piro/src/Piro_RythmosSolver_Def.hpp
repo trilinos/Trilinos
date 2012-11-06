@@ -329,12 +329,20 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::RythmosSolver<Scalar>::createOu
       // Only one response supported
       const int j = 0;
 
-      // Response sensitivity
-      outArgs.setSupports(
-          Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,
-          j,
-          l,
-          Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+      const Thyra::ModelEvaluatorBase::DerivativeSupport model_dgdx_support =
+        modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, l);
+      if (!model_dgdx_support.none()) {
+        const Thyra::ModelEvaluatorBase::DerivativeSupport model_dgdp_support =
+          modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
+        if (model_dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+          // Response sensitivity
+          outArgs.setSupports(
+              Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,
+              j,
+              l,
+              Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+        }
+      }
     }
   }
 
@@ -562,8 +570,7 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
       // require dgdx, dgdp from model
       Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
       {
-        const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdx_deriv =
-          Thyra::create_DgDx_mv(*model, j, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
+        const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdx_deriv(model->create_DgDx_op(j));
         modelOutArgs.set_DgDx(j, dgdx_deriv);
 
         const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv =
@@ -573,13 +580,13 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
 
       model->evalModel(modelInArgs, modelOutArgs);
 
-      const RCP<const Thyra::MultiVectorBase<Scalar> > dgdx =
-        modelOutArgs.get_DgDx(j).getMultiVector();
+      const RCP<const Thyra::LinearOpBase<Scalar> > dgdx =
+        modelOutArgs.get_DgDx(j).getLinearOp();
 
       // dgdp_out = dgdp + <dgdx, dxdp>
       Thyra::apply(
           *dgdx,
-          Thyra::TRANS,
+          Thyra::NOTRANS,
           *dxdp,
           dgdp_out.ptr(),
           Teuchos::ScalarTraits<Scalar>::one(),
