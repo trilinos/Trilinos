@@ -313,11 +313,29 @@ int  MatrixMatrix::mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
   }
   CSR_rowptr[m]=CSR_ip;
 
+#ifdef ENABLE_MMM_TIMINGS
+  Teuchos::Time myTime("global");
+  Teuchos::TimeMonitor M(myTime);
+  Teuchos::RCP<Teuchos::Time> mtime;
+  mtime=M.getNewTimer("Final Sort");
+  mtime->start();
+#endif
+
   // Sort the entries
   sort_crs_entries(m, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
 
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=M.getNewTimer("ESFC");
+  mtime->start();
+#endif
+
   // Update the CrsGraphData
   C.ExpertStaticFillComplete(B.DomainMap(),A.RangeMap());
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+#endif
 
   return 0;
 }
