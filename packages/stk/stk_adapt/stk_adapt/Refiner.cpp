@@ -2633,7 +2633,7 @@ namespace stk {
             }
           for (SetOfEntities::iterator ise=side_set.begin(); ise != side_set.end(); ++ise)
             {
-              stk::mesh::Entity side = **ise;
+              stk::mesh::Entity side = *ise;
               
               while (true) 
                 {
@@ -2843,7 +2843,7 @@ namespace stk {
             }
           if (!exists)
             {
-              m_eMesh.get_bulk_data()->declare_relation(*element, *side_elem, k_element_side);
+              m_eMesh.get_bulk_data()->declare_relation(element, side_elem, k_element_side);
             }
           else
             {

@@ -4092,7 +4092,7 @@ namespace stk {
                   nelem_node_size += nnode_per_elem + 1;
                   for (unsigned inode = 0; inode < elem_nodes.size(); inode++)
                     {
-                      stk::mesh::Entity node_i = *elem_nodes[inode].entity();
+                      stk::mesh::Entity node_i = elem_nodes[inode].entity();
                       node_map[node_i] = 0;  // just add to the list
                     }
                 }
@@ -4108,7 +4108,7 @@ namespace stk {
       
       for (NodeMap::iterator inode=node_map.begin(); inode != node_map.end(); ++inode)
         {
-          stk::mesh::Entity node_i = *inode->first;
+          stk::mesh::Entity node_i = inode->first;
           double *coord = PerceptMesh::field_data(get_coordinates_field(), node_i);
           for (int idim=0; idim < get_spatial_dim(); idim++)
             {
@@ -4132,7 +4132,7 @@ namespace stk {
                   file << elem_nodes.size() << " ";
                   for (unsigned inode = 0; inode < elem_nodes.size(); inode++)
                     {
-                      stk::mesh::Entity node_i = *elem_nodes[inode].entity();
+                      stk::mesh::Entity node_i = elem_nodes[inode].entity();
                       unsigned id = node_map[node_i];
                       file << id << " ";
                     }
