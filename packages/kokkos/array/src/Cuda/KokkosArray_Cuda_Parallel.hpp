@@ -190,9 +190,11 @@ struct CudaParallelLaunch< DriverType , true > {
       KokkosArray::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: Functor is too large") );
     }
 
-    // The default is to prefer Shared
-    if ( 0 == shmem ) {
-      cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferL1 );
+    if ( CudaTraits::SharedMemoryCapacity < shmem ) {
+      KokkosArray::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: shared memory request is too large") );
+    }
+    else if ( shmem ) {
+      cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferShared );
     }
 
     // Copy functor to constant memory on the device
@@ -212,9 +214,11 @@ struct CudaParallelLaunch< DriverType , false > {
                       const dim3       & block ,
                       const int          shmem )
   {
-    // The default is to prefer Shared
-    if ( 0 == shmem ) {
-      cudaFuncSetCacheConfig( cuda_parallel_launch_local_memory< DriverType > , cudaFuncCachePreferL1 );
+    if ( CudaTraits::SharedMemoryCapacity < shmem ) {
+      KokkosArray::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: shared memory request is too large") );
+    }
+    else if ( shmem ) {
+      cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferShared );
     }
 
     cuda_parallel_launch_local_memory< DriverType ><<< grid , block , shmem >>>( driver );
