@@ -57,52 +57,6 @@ namespace KokkosArray {
 template< class >
 struct ERROR__cannot_assign_value_to_constant_expression ;
 
-// Proxy for a proxy-array is itself:
-
-template< class ProxyType >
-struct ArrayProxy { typedef ProxyType type ; };
-
-// Proxy for an array value is a pointer to that data with
-// the cv-qualifier carried on the proxy type.
-
-template<>
-struct ArrayProxy< void >
-{ typedef const ArrayProxyContiguous type ; };
-
-template<>
-struct ArrayProxy< volatile void >
-{ typedef const volatile ArrayProxyContiguous type ; };
-
-//----------------------------------------------------------------------------
-
-struct ArrayProxyValue {};
-
-template< typename Type , unsigned N >
-class Array< Type , N , ArrayProxyValue >
-{
-private:
-
-  const Type value ;
-
-  Array();
-  Array & operator = ( const Array & );
-
-public:
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array( const          Type & arg ) : value( arg ) {}
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  Array( const volatile Type & arg ) : value( arg ) {}
-
-  template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
-  const Type & operator[]( const iType & ) const { return value ; }
-
-  void print_expression( std::ostream & s ) const
-    { s << value ; }
-};
-
 //----------------------------------------------------------------------------
 
 template< typename TypeRHS , typename TypeLHS >
@@ -218,7 +172,7 @@ KOKKOSARRAY_BINARYEXPRESSIONTYPE(int,unsigned int)
 namespace KokkosArray {
 namespace Impl {
 
-template< typename Type , unsigned N >
+template< typename Type >
 struct ArrayWeakOrdering
 {
   enum Result { EQUAL , LESS , GREATER , NOT_ORDERED };
@@ -229,7 +183,7 @@ struct ArrayWeakOrdering
   {
     Result result = EQUAL ; // Assume equal for 0 == Count
 
-    for ( unsigned i = 0 ; i < N && result != NOT_ORDERED ; ++i ) {
+    for ( unsigned i = 0 ; i < lhs.size() && result != NOT_ORDERED ; ++i ) {
       const Type L = lhs[i] ;
       const Type R = rhs[i] ;
 
@@ -246,7 +200,7 @@ struct ArrayWeakOrdering
   {
     Result result = EQUAL ; // Assume equal for 0 == Count
 
-    for ( unsigned i = 0 ; i < N && result != NOT_ORDERED ; ++i ) {
+    for ( unsigned i = 0 ; i < lhs.size() && result != NOT_ORDERED ; ++i ) {
       const Type L = lhs[i] ;
 
       if      ( L < R ) { result = result != GREATER ? LESS : NOT_ORDERED ; }
@@ -262,7 +216,7 @@ struct ArrayWeakOrdering
   {
     Result result = EQUAL ; // Assume equal for 0 == Count
 
-    for ( unsigned i = 0 ; i < N && result != NOT_ORDERED ; ++i ) {
+    for ( unsigned i = 0 ; i < rhs.size() && result != NOT_ORDERED ; ++i ) {
       const Type R = rhs[i] ;
 
       if      ( L < R ) { result = result != GREATER ? LESS : NOT_ORDERED ; }

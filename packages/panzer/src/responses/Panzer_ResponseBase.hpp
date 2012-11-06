@@ -44,7 +44,7 @@ public:
    virtual void ghostToGlobal(int) 
    { scatterResponse(); }
 
-   virtual void intializeData()
+   virtual void initializeData()
    { initializeResponse(); }
 
    //! Prepare the response for access by the user (do global communication)

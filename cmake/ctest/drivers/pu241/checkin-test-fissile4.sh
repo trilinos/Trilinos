@@ -41,13 +41,17 @@ TRILINOS_BASE_DIR_ABS=$(readlink -f $TRILINOS_BASE_DIR)
 DRIVERS_BASE_DIR="$TRILINOS_BASE_DIR_ABS/Trilinos/cmake/ctest/drivers/pu241"
 
 # Pakage in Trilinos to disable (mostly for auotmated CI server)
-DISABLE_PACKAGES=PyTrilinos,TriKota,Optika,Sundance,Stokhos
+DISABLE_PACKAGES=CTrilinos,ForTrilinos,PyTrilinos,Didasko,Mesquite,Phdmesh,Pliris,Claps
 
 # Check to make sure that the env has been loaded correctly
 if [ "$CASL_VERA_OFFICIAL_DEV_ENV_LOADED" == "" ] ; then
   echo "Error, must source /opt/casl_vri_dev_env/fissile_four/build_scripts/load_official_dev_env.[sh,csh] before running checkin-test-fissile4.sh!"
   exit 1
 fi
+
+echo "
+-DTrilinos_EXCLUDE_PACKAGES=CTeuchos
+" > COMMON.config
 
 #
 # Built-in Primary Stable (PS) builds (DO NOT MODIFY)
@@ -83,6 +87,7 @@ $TRILINOS_BASE_DIR/Trilinos/checkin-test.py \
 --ss-extra-builds=MPI_DEBUG_SS,SERIAL_RELEASE_SS \
 --disable-packages=$DISABLE_PACKAGES \
 --skip-case-no-email \
+--ctest-options="-E '(MOOCHO_|Piro_AnalysisDriver|Stokhos_Linear2D_Diffusion_GMRES_KLR|Panzer_STK_ResponseLibraryTest)'" \
 $EXTRA_ARGS  
 
 

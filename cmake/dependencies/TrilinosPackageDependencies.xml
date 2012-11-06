@@ -13,13 +13,83 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Teuchos" dir="packages/teuchos" type="PS">
+  <Package name="TeuchosCore" dir="packages/teuchos/core" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
+    <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="BinUtils,Boost,MPI,ARPREC,QD,QT"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="teuchos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Teuchos"/>
+  </Package>
+  <Package name="TeuchosParameterList" dir="packages/teuchos/parameterlist" type="PS">
+    <LIB_REQUIRED_DEP_PACKAGES value="TeuchosCore"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="teuchos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Teuchos"/>
+  </Package>
+  <Package name="TeuchosComm" dir="packages/teuchos/comm" type="PS">
+    <LIB_REQUIRED_DEP_PACKAGES value="TeuchosCore,TeuchosParameterList"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="teuchos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Teuchos"/>
+  </Package>
+  <Package name="TeuchosNumerics" dir="packages/teuchos/numerics" type="PS">
+    <LIB_REQUIRED_DEP_PACKAGES value="TeuchosCore,TeuchosComm"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="teuchos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Teuchos"/>
+  </Package>
+  <Package name="TeuchosRemainder" dir="packages/teuchos/remainder" type="PS">
+    <LIB_REQUIRED_DEP_PACKAGES value="TeuchosCore"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="teuchos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Teuchos"/>
+  </Package>
+  <Package name="Teuchos" dir="packages/teuchos" type="PS">
+    <LIB_REQUIRED_DEP_PACKAGES value="TeuchosCore,TeuchosParameterList,TeuchosComm,TeuchosNumerics,TeuchosRemainder"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -1053,7 +1123,7 @@
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Tpetra,KokkosClassic"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Xpetra,Zoltan2"/>
     <TEST_REQUIRED_DEP_PACKAGES value="Belos,Triutils,Galeri"/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Anasazi"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
@@ -1307,7 +1377,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="AztecOO,Stratimikos,Belos"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="ForUQTK,CUDA,Thrust,Clp,GLPK,qpOASES,Boost"/>
+    <LIB_OPTIONAL_DEP_TPLS value="ForUQTK,CUDA,Thrust,Clp,GLPK,qpOASES,Boost,MATLABLib"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>

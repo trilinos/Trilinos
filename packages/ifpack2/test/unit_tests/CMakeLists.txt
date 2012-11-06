@@ -46,6 +46,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SOURCES ${SOURCES}
     ARGS ""
     COMM serial mpi
-    DEPLIBS tpetra kokkos teuchos
+    DEPLIBS ifpack2_tpetra_testinst
   )
 

@@ -54,7 +54,7 @@
 #include "Panzer_BC.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_BasisIRLayout.hpp"
-#include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_BlockedDOFManagerFactory.hpp"
@@ -85,7 +85,7 @@
 #include "Panzer_STK_RythmosObserverFactory.hpp"
 #include "Panzer_STK_ParameterListCallback.hpp"
 #include "Panzer_STK_IOClosureModel_Factory_TemplateBuilder.hpp"
-#include "Panzer_STK_ResponseAggregator_SolutionWriter.hpp"
+#include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 
 #include <vector>
 
@@ -554,7 +554,8 @@ namespace panzer_stk {
       linObjFactory->globalToGhostContainer(*ae_inargs.container_,*ae_inargs.ghostedContainer_,panzer::LinearObjContainer::X);
 
       // fill STK mesh objects
-      solnWriter->evaluateVolumeFieldManagers<panzer::Traits::Residual>(ae_inargs,*mpi_comm);
+      solnWriter->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
+      solnWriter->evaluate<panzer::Traits::Residual>(ae_inargs);
 
     }
    
@@ -751,7 +752,7 @@ namespace panzer_stk {
 
   template<typename ScalarT>
   bool ModelEvaluatorFactory_Epetra<ScalarT>::determineCoordinateField(
-                                   const panzer::DOFManager<int,int> & globalIndexer,std::string & fieldName) const
+                                   const panzer::DOFManagerFEI<int,int> & globalIndexer,std::string & fieldName) const
   {
      std::vector<string> elementBlocks;
      globalIndexer.getElementBlockIds(elementBlocks);
@@ -780,7 +781,7 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
-  void ModelEvaluatorFactory_Epetra<ScalarT>::fillFieldPatternMap(const panzer::DOFManager<int,int> & globalIndexer,
+  void ModelEvaluatorFactory_Epetra<ScalarT>::fillFieldPatternMap(const panzer::DOFManagerFEI<int,int> & globalIndexer,
                                                                   const std::string & fieldName, 
                                                                   std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const
   {
@@ -871,37 +872,14 @@ namespace panzer_stk {
   {
      Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
         = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wc,ugi,lof));
+     
+     std::vector<std::string> eBlocks;
+     mesh->getElementBlockNames(eBlocks);
 
-     // register solution writer response aggregator with this library
-     // this is an "Action" only response aggregator
-     panzer::ResponseAggregator_Manager<panzer::Traits> & aggMngr = stkIOResponseLibrary->getAggregatorManager();
-     panzer_stk::ResponseAggregator_SolutionWriter_Builder builder(mesh);
-     builder.setLinearObjFactory(aggMngr.getLinearObjFactory());
-     builder.setGlobalIndexer(aggMngr.getGlobalIndexer());
-     aggMngr.defineAggregatorTypeFromBuilder("Solution Writer",builder);
+     panzer_stk::RespFactorySolnWriter_Builder builder;
+     builder.mesh = mesh;
+     stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
 
-
-     // require a particular "Solution Writer" response
-     panzer::ResponseId rid("Main Field Output","Solution Writer");
-     std::list<std::string> eTypes;
-     eTypes.push_back("Residual");
-      #ifdef HAVE_STOKHOS
-         eTypes.push_back("SGResidual");
-      #endif
-
-     // get a vector of all the element blocks : for some reason a list is used?
-     std::list<std::string> eBlocks;
-     {
-        // get all element blocks and add them to the list
-        std::vector<std::string> eBlockNames;
-        mesh->getElementBlockNames(eBlockNames);
-        for(std::size_t i=0;i<eBlockNames.size();i++)
-           eBlocks.push_back(eBlockNames[i]);
-     }
-
-     // reserve response guranteeing that we can evaluate it (assuming things are done correctly elsewhere)
-     stkIOResponseLibrary->reserveLabeledBlockAggregatedVolumeResponse("Main Field Output",rid,eBlocks,eTypes);
-    
      return stkIOResponseLibrary;
   }
 
@@ -914,10 +892,7 @@ namespace panzer_stk {
                                     int workset_size, Teuchos::ParameterList & user_data) const
   {      
      user_data.set<int>("Workset Size",workset_size);
-     rl.buildVolumeFieldManagersFromResponses(physicsBlocks,
-                                              cm_factory,
-                                              closure_models,
-                                              user_data);
+     rl.buildResponseEvaluators(physicsBlocks, cm_factory, closure_models, user_data);
   }
   
   template<typename ScalarT>
@@ -950,8 +925,8 @@ namespace panzer_stk {
           reqHandler = Teuchos::rcp(new Teko::RequestHandler);
        }
 
-       Teuchos::RCP<const panzer::DOFManager<int,int> > dofs =
-          Teuchos::rcp_dynamic_cast<const panzer::DOFManager<int,int> >(globalIndexer);
+       Teuchos::RCP<const panzer::DOFManagerFEI<int,int> > dofs =
+          Teuchos::rcp_dynamic_cast<const panzer::DOFManagerFEI<int,int> >(globalIndexer);
 
        // add in the coordinate parameter list callback handler
        if(dofs!=Teuchos::null && determineCoordinateField(*dofs,fieldName)) {
@@ -1045,11 +1020,11 @@ namespace panzer_stk {
              Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,int> >(globalIndexer);
 
           // loop over blocks
-          const std::vector<Teuchos::RCP<panzer::DOFManager<int,int> > > & dofVec
+          const std::vector<Teuchos::RCP<panzer::DOFManagerFEI<int,int> > > & dofVec
              = blkDofs->getFieldDOFManagers(); 
           for(std::size_t i=0;i<dofVec.size();i++) { 
             std::string fieldName;
-            Teuchos::RCP<const panzer::DOFManager<int,int> > dofs = dofVec[i];
+            Teuchos::RCP<const panzer::DOFManagerFEI<int,int> > dofs = dofVec[i];
 
             // add in the coordinate parameter list callback handler
             TEUCHOS_ASSERT(determineCoordinateField(*dofs,fieldName)); 

@@ -120,7 +120,7 @@ namespace Kokkos {
     struct CUSPARSEUnsupportedScalar
     {
       public:
-      static inline T notSupported() { return T::this_type_is_not_supported_by_CUSPARSE(); }
+      static inline cusparseStatus_t notSupported() { T::this_type_is_not_supported_by_CUSPARSE(); return CUSPARSE_STATUS_ARCH_MISMATCH; }
     };
 
 
@@ -1226,7 +1226,7 @@ namespace Kokkos {
         X.getNumCols() != Y.getNumCols(),
         std::runtime_error, "X and Y do not have the same number of column vectors.")
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        Y.getNumRows() != numRows_,
+        Y.getNumRows() != (size_t)numRows_,
         std::runtime_error, "Y does not have the same number of rows as does the matrix.")
     //
     RCP<cusparseSolveAnalysisInfo_t> solveInfo;

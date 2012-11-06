@@ -294,6 +294,11 @@ public:
    bool responseEvaluatorsBuilt() const
    { return responseEvaluatorsBuilt_; }
 
+   /** Add response objects to assembly data. 
+     */
+   template <typename EvalT> 
+   void addResponsesToInArgs(panzer::AssemblyEngineInArgs & input_args) const;
+
    /** Evaluate response library for a particular evaluation type.
      */
    template <typename EvalT> 

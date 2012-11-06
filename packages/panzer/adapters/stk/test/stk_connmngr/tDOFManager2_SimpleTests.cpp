@@ -83,7 +83,7 @@
 #include "Panzer_STK_CubeTetMeshFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
 
-#include "Panzer_DOFManager2.cpp"
+#include "Panzer_DOFManager.hpp"
 
 #ifdef HAVE_MPI
    #include "Epetra_MpiComm.h"
@@ -102,7 +102,7 @@ typedef Intrepid::FieldContainer<double> FieldContainer;
 
 namespace {
 
-  TEUCHOS_UNIT_TEST( DOFManager2_tests, BasicCreation ){
+  TEUCHOS_UNIT_TEST( DOFManager_tests, BasicCreation ){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",2);
@@ -113,8 +113,8 @@ namespace {
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-    RCP<panzer::DOFManager2<LO,GO> > my_DOFManager2 = Teuchos::rcp(new panzer::DOFManager2<LO,GO>());
-    TEST_EQUALITY(my_DOFManager2->getComm(),Teuchos::null);
+    RCP<panzer::DOFManager<LO,GO> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<LO,GO>());
+    TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
 
     RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager(mesh));
 
@@ -126,31 +126,31 @@ namespace {
     names.push_back("Velocity");
     names.push_back("Temperature");
     names.push_back("Radiation Levels");
-    my_DOFManager2->addField(names[0], pattern);
-    my_DOFManager2->addField(names[1], pattern);
-    my_DOFManager2->addField(names[2], pattern);
+    my_DOFManager->addField(names[0], pattern);
+    my_DOFManager->addField(names[1], pattern);
+    my_DOFManager->addField(names[2], pattern);
 
-    my_DOFManager2->setConnManager(conn, MPI_COMM_WORLD);
+    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
-    my_DOFManager2->buildGlobalUnknowns();
+    my_DOFManager->buildGlobalUnknowns();
     //Now that we have created the SingleBlockDOFManager, we can ensure it was created correctly.
-    TEST_EQUALITY(my_DOFManager2->getConnManager(),conn);
+    TEST_EQUALITY(my_DOFManager->getConnManager(),conn);
 
 
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Velocity"),0);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Temperature"),1);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Radiation Levels"),2);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Velocity"),0);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Temperature"),1);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Radiation Levels"),2);
 
-    TEST_EQUALITY(my_DOFManager2->getNumFields(), 3);
+    TEST_EQUALITY(my_DOFManager->getNumFields(), 3);
 
-    const std::vector<GO> & vel_offests = my_DOFManager2->getGIDFieldOffsets("eblock-0_0",0); 
-    const std::vector<GO> & tem_offests = my_DOFManager2->getGIDFieldOffsets("eblock-0_0",1); 
-    const std::vector<GO> & rad_offests = my_DOFManager2->getGIDFieldOffsets("eblock-0_0",2); 
+    const std::vector<GO> & vel_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",0); 
+    const std::vector<GO> & tem_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",1); 
+    const std::vector<GO> & rad_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",2); 
 
     TEST_EQUALITY(vel_offests.size(),tem_offests.size());
     TEST_EQUALITY(tem_offests.size(),rad_offests.size());
   }
-  TEUCHOS_UNIT_TEST( DOFManager2_tests, ReorderingFields ){
+  TEUCHOS_UNIT_TEST( DOFManager_tests, ReorderingFields ){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",2);
@@ -161,8 +161,8 @@ namespace {
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-    RCP<panzer::DOFManager2<LO,GO> > my_DOFManager2 = Teuchos::rcp(new panzer::DOFManager2<LO,GO>());
-    TEST_EQUALITY(my_DOFManager2->getComm(),Teuchos::null);
+    RCP<panzer::DOFManager<LO,GO> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<LO,GO>());
+    TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
 
     RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager(mesh));
 
@@ -170,7 +170,7 @@ namespace {
      
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
 
-    my_DOFManager2->setConnManager(conn, MPI_COMM_WORLD);
+    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     std::vector<std::string> names;
     names.push_back("Velocity");
@@ -181,26 +181,26 @@ namespace {
     names.push_back("Yaw");
     names.push_back("Brightness");
     names.push_back("Momentum");
-    my_DOFManager2->addField(names[0], pattern);
-    my_DOFManager2->addField(names[1], pattern);
-    my_DOFManager2->addField(names[2], pattern);
-    my_DOFManager2->addField(names[3], pattern);
-    my_DOFManager2->addField(names[4], pattern);
-    my_DOFManager2->addField(names[5], pattern);
-    my_DOFManager2->addField(names[6], pattern);
-    my_DOFManager2->addField(names[7], pattern);
+    my_DOFManager->addField(names[0], pattern);
+    my_DOFManager->addField(names[1], pattern);
+    my_DOFManager->addField(names[2], pattern);
+    my_DOFManager->addField(names[3], pattern);
+    my_DOFManager->addField(names[4], pattern);
+    my_DOFManager->addField(names[5], pattern);
+    my_DOFManager->addField(names[6], pattern);
+    my_DOFManager->addField(names[7], pattern);
 
 
-    TEST_EQUALITY(my_DOFManager2->getNumFields(),8);
+    TEST_EQUALITY(my_DOFManager->getNumFields(),8);
 
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Velocity"),0);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Temperature"),1);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Radiation Levels"),2);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Frequency"),3);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Pitch"),4);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Yaw"),5);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Brightness"),6);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Momentum"),7);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Velocity"),0);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Temperature"),1);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Radiation Levels"),2);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Frequency"),3);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Pitch"),4);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Yaw"),5);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Brightness"),6);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Momentum"),7);
 
 
     std::vector<std::string> invalid_names;
@@ -213,18 +213,18 @@ namespace {
     invalid_names.push_back("Brightness");
     invalid_names.push_back("Momentum");
 
-    TEST_ASSERT(my_DOFManager2->validFieldOrder(names));
-    TEST_ASSERT(!(my_DOFManager2->validFieldOrder(invalid_names)));
-    TEST_THROW(my_DOFManager2->setFieldOrder(invalid_names),std::logic_error);
+    TEST_ASSERT(my_DOFManager->validFieldOrder(names));
+    TEST_ASSERT(!(my_DOFManager->validFieldOrder(invalid_names)));
+    TEST_THROW(my_DOFManager->setFieldOrder(invalid_names),std::logic_error);
 
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Velocity"),0);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Temperature"),1);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Radiation Levels"),2);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Frequency"),3);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Pitch"),4);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Yaw"),5);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Brightness"),6);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Momentum"),7);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Velocity"),0);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Temperature"),1);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Radiation Levels"),2);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Frequency"),3);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Pitch"),4);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Yaw"),5);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Brightness"),6);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Momentum"),7);
 
     std::vector<std::string> new_names;
     new_names.push_back("Momentum");
@@ -236,49 +236,49 @@ namespace {
     new_names.push_back("Yaw");
     new_names.push_back("Radiation Levels");
 
-    TEST_ASSERT(my_DOFManager2->validFieldOrder(new_names));
-    TEST_NOTHROW(my_DOFManager2->setFieldOrder(new_names));
+    TEST_ASSERT(my_DOFManager->validFieldOrder(new_names));
+    TEST_NOTHROW(my_DOFManager->setFieldOrder(new_names));
 
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Velocity"),2);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Temperature"),3);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Radiation Levels"),7);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Frequency"),1);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Pitch"),4);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Yaw"),6);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Brightness"),5);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Momentum"),0);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Velocity"),2);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Temperature"),3);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Radiation Levels"),7);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Frequency"),1);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Pitch"),4);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Yaw"),6);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Brightness"),5);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Momentum"),0);
 
-    TEST_NOTHROW(my_DOFManager2->addField("Current",pattern));
+    TEST_NOTHROW(my_DOFManager->addField("Current",pattern));
 
-    TEST_EQUALITY(my_DOFManager2->getNumFields(),9);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Current"),8);
+    TEST_EQUALITY(my_DOFManager->getNumFields(),9);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Current"),8);
 
-    TEST_NOTHROW(my_DOFManager2->buildGlobalUnknowns());
+    TEST_NOTHROW(my_DOFManager->buildGlobalUnknowns());
 
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Current"),8);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Velocity"),2);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Temperature"),3);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Radiation Levels"),7);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Frequency"),1);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Pitch"),4);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Yaw"),6);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Brightness"),5);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Momentum"),0);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Current"),8);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Velocity"),2);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Temperature"),3);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Radiation Levels"),7);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Frequency"),1);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Pitch"),4);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Yaw"),6);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Brightness"),5);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Momentum"),0);
 
     new_names.push_back("Current");
 
     //You can't reassign anything.
-    TEST_THROW(my_DOFManager2->setFieldOrder(new_names),std::logic_error);
-    TEST_THROW(my_DOFManager2->buildGlobalUnknowns(),std::logic_error);
-    TEST_THROW(my_DOFManager2->addField("Tide",pattern),std::logic_error);
-    TEST_THROW(my_DOFManager2->setConnManager(conn,MPI_COMM_WORLD),std::logic_error);
+    TEST_THROW(my_DOFManager->setFieldOrder(new_names),std::logic_error);
+    TEST_THROW(my_DOFManager->buildGlobalUnknowns(),std::logic_error);
+    TEST_THROW(my_DOFManager->addField("Tide",pattern),std::logic_error);
+    TEST_THROW(my_DOFManager->setConnManager(conn,MPI_COMM_WORLD),std::logic_error);
 
     //All of the fields shoudl be in this block.
-    TEST_ASSERT(my_DOFManager2->fieldInBlock("Pitch","eblock-0_0"));
-    TEST_ASSERT(my_DOFManager2->fieldInBlock("Yaw","eblock-0_0"));
-    TEST_ASSERT(my_DOFManager2->fieldInBlock("Velocity","eblock-0_0"));
+    TEST_ASSERT(my_DOFManager->fieldInBlock("Pitch","eblock-0_0"));
+    TEST_ASSERT(my_DOFManager->fieldInBlock("Yaw","eblock-0_0"));
+    TEST_ASSERT(my_DOFManager->fieldInBlock("Velocity","eblock-0_0"));
 
-    std::vector<int> all_values = my_DOFManager2->getBlockFieldNumbers("eblock-0_0");
+    std::vector<int> all_values = my_DOFManager->getBlockFieldNumbers("eblock-0_0");
     std::vector<int> compare_values(9);
     compare_values[0]=0;
     compare_values[1]=1;
@@ -302,7 +302,7 @@ namespace {
     TEST_ASSERT(all_so_far);
   }
 
-  TEUCHOS_UNIT_TEST( DOFManager2_tests, myOwnedwithGhosted){
+  TEUCHOS_UNIT_TEST( DOFManager_tests, myOwnedwithGhosted){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",2);
@@ -313,8 +313,8 @@ namespace {
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-    RCP<panzer::DOFManager2<int,int> > my_DOFManager2 = Teuchos::rcp(new panzer::DOFManager2<int,int>());
-    TEST_EQUALITY(my_DOFManager2->getComm(),Teuchos::null);
+    RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
+    TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
 
     RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager(mesh));
 
@@ -322,23 +322,23 @@ namespace {
      
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
 
-    my_DOFManager2->setConnManager(conn, MPI_COMM_WORLD);
+    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     std::vector<std::string> names;
     names.push_back("Velocity");
     names.push_back("Temperature");
     names.push_back("Radiation Levels");
-    my_DOFManager2->addField(names[0], pattern);
-    my_DOFManager2->addField(names[1], pattern);
-    my_DOFManager2->addField(names[2], pattern);
+    my_DOFManager->addField(names[0], pattern);
+    my_DOFManager->addField(names[1], pattern);
+    my_DOFManager->addField(names[2], pattern);
 
-    my_DOFManager2->buildGlobalUnknowns();
+    my_DOFManager->buildGlobalUnknowns();
 
     std::vector<int> myo;
     std::vector<int> myog;
 
-    my_DOFManager2->getOwnedIndices(myo);
-    my_DOFManager2->getOwnedAndSharedIndices(myog);
+    my_DOFManager->getOwnedIndices(myo);
+    my_DOFManager->getOwnedAndSharedIndices(myog);
     //every value in my owned should be in my owned and ghosted.
     for (size_t i = 0; i < myo.size(); ++i) {
       bool found=false;
@@ -350,7 +350,7 @@ namespace {
     }
   }
 
-  TEUCHOS_UNIT_TEST( DOFManager2_tests, gidsAreSet){
+  TEUCHOS_UNIT_TEST( DOFManager_tests, gidsAreSet){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",2);
@@ -361,8 +361,8 @@ namespace {
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-    RCP<panzer::DOFManager2<int,int> > my_DOFManager2 = Teuchos::rcp(new panzer::DOFManager2<int,int>());
-    TEST_EQUALITY(my_DOFManager2->getComm(),Teuchos::null);
+    RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
+    TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
 
     RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager(mesh));
 
@@ -370,17 +370,17 @@ namespace {
      
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
 
-    my_DOFManager2->setConnManager(conn, MPI_COMM_WORLD);
+    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     std::vector<std::string> names;
     names.push_back("Velocity");
     names.push_back("Temperature");
     names.push_back("Radiation Levels");
-    my_DOFManager2->addField(names[0], pattern);
-    my_DOFManager2->addField(names[1], pattern);
-    my_DOFManager2->addField(names[2], pattern);
+    my_DOFManager->addField(names[0], pattern);
+    my_DOFManager->addField(names[1], pattern);
+    my_DOFManager->addField(names[2], pattern);
 
-    my_DOFManager2->buildGlobalUnknowns();
+    my_DOFManager->buildGlobalUnknowns();
 
     std::vector<std::string> block_names;
     conn->getElementBlockIds(block_names);
@@ -388,7 +388,7 @@ namespace {
       const std::vector<int> & myElements = conn->getElementBlock(block_names[b]);
       for (size_t e = 0; e < myElements.size(); ++e) {
         std::vector<int> acquiredGIDs;
-        my_DOFManager2->getElementGIDs(myElements[e],acquiredGIDs);
+        my_DOFManager->getElementGIDs(myElements[e],acquiredGIDs);
         //Now we need to make sure that acquiredGIDs form sets.
         for (size_t i = 0; i < acquiredGIDs.size(); ++i) {
           bool found=false;
@@ -403,7 +403,7 @@ namespace {
 
   }
 
-  TEUCHOS_UNIT_TEST( DOFManager2_tests, gidFieldAssociations){
+  TEUCHOS_UNIT_TEST( DOFManager_tests, gidFieldAssociations){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",1);
@@ -414,8 +414,8 @@ namespace {
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-    RCP<panzer::DOFManager2<int,int> > my_DOFManager2 = Teuchos::rcp(new panzer::DOFManager2<int,int>());
-    TEST_EQUALITY(my_DOFManager2->getComm(),Teuchos::null);
+    RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
+    TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
 
     RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager(mesh));
 
@@ -423,17 +423,17 @@ namespace {
      
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
 
-    my_DOFManager2->setConnManager(conn, MPI_COMM_WORLD);
+    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     std::vector<std::string> names;
     names.push_back("Velocity");
     names.push_back("Temperature");
     names.push_back("Radiation Levels");
-    my_DOFManager2->addField(names[0], pattern);
-    my_DOFManager2->addField(names[1], pattern);
-    my_DOFManager2->addField(names[2], pattern);
+    my_DOFManager->addField(names[0], pattern);
+    my_DOFManager->addField(names[1], pattern);
+    my_DOFManager->addField(names[2], pattern);
 
-    my_DOFManager2->buildGlobalUnknowns();
+    my_DOFManager->buildGlobalUnknowns();
 
     //Stores associated gid values. Indexed according to names. Local.
     //It would be helpful to do this test cross processor, but I'm not sure how.
@@ -447,9 +447,9 @@ namespace {
       const std::vector<int> & myElements = conn->getElementBlock(block_names[b]);
       for (size_t e = 0; e < myElements.size(); ++e) {
         std::vector<int> acquiredGIDs;
-        my_DOFManager2->getElementGIDs(myElements[e],acquiredGIDs);
+        my_DOFManager->getElementGIDs(myElements[e],acquiredGIDs);
         for (size_t i = 0; i < names.size(); ++i) {
-          const std::vector<int> offsets = my_DOFManager2->getGIDFieldOffsets(block_names[b],my_DOFManager2->getFieldNum(names[i]));
+          const std::vector<int> offsets = my_DOFManager->getGIDFieldOffsets(block_names[b],my_DOFManager->getFieldNum(names[i]));
           for (size_t j = 0; j < offsets.size(); ++j) {
             gids[i].push_back(acquiredGIDs[offsets[j]]);
           }
@@ -479,7 +479,7 @@ namespace {
 
 //=============================================================
 
-  TEUCHOS_UNIT_TEST( DOFManager2_tests, 3dmyOwnedwithGhosted){
+  TEUCHOS_UNIT_TEST( DOFManager_tests, 3dmyOwnedwithGhosted){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",1);
@@ -492,8 +492,8 @@ namespace {
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-    RCP<panzer::DOFManager2<int,int> > my_DOFManager2 = Teuchos::rcp(new panzer::DOFManager2<int,int>());
-    TEST_EQUALITY(my_DOFManager2->getComm(),Teuchos::null);
+    RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
+    TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
 
     RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager(mesh));
 
@@ -503,23 +503,23 @@ namespace {
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
     RCP< const panzer::FieldPattern> secpattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(secbasis));
 
-    my_DOFManager2->setConnManager(conn, MPI_COMM_WORLD);
+    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     std::vector<std::string> names;
     names.push_back("Velocity");
     names.push_back("Temperature");
     names.push_back("Radiation Levels");
-    my_DOFManager2->addField(names[0], pattern);
-    my_DOFManager2->addField(names[1], pattern);
-    my_DOFManager2->addField(names[2], secpattern);
+    my_DOFManager->addField(names[0], pattern);
+    my_DOFManager->addField(names[1], pattern);
+    my_DOFManager->addField(names[2], secpattern);
 
-    my_DOFManager2->buildGlobalUnknowns();
+    my_DOFManager->buildGlobalUnknowns();
 
     std::vector<int> myo;
     std::vector<int> myog;
 
-    my_DOFManager2->getOwnedIndices(myo);
-    my_DOFManager2->getOwnedAndSharedIndices(myog);
+    my_DOFManager->getOwnedIndices(myo);
+    my_DOFManager->getOwnedAndSharedIndices(myog);
     //every value in my owned should be in my owned and ghosted.
     for (size_t i = 0; i < myo.size(); ++i) {
       bool found=false;
@@ -531,7 +531,7 @@ namespace {
     }
   }
 
-  TEUCHOS_UNIT_TEST( DOFManager2_tests, 3dgidsAreSet){
+  TEUCHOS_UNIT_TEST( DOFManager_tests, 3dgidsAreSet){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",1);
@@ -544,8 +544,8 @@ namespace {
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-    RCP<panzer::DOFManager2<int,int> > my_DOFManager2 = Teuchos::rcp(new panzer::DOFManager2<int,int>());
-    TEST_EQUALITY(my_DOFManager2->getComm(),Teuchos::null);
+    RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
+    TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
 
     RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager(mesh));
 
@@ -555,17 +555,17 @@ namespace {
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
     RCP< const panzer::FieldPattern> secpattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(secbasis));
 
-    my_DOFManager2->setConnManager(conn, MPI_COMM_WORLD);
+    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     std::vector<std::string> names;
     names.push_back("Velocity");
     names.push_back("Temperature");
     names.push_back("Radiation Levels");
-    my_DOFManager2->addField(names[0], pattern);
-    my_DOFManager2->addField(names[1], pattern);
-    my_DOFManager2->addField(names[2], secpattern);
+    my_DOFManager->addField(names[0], pattern);
+    my_DOFManager->addField(names[1], pattern);
+    my_DOFManager->addField(names[2], secpattern);
 
-    my_DOFManager2->buildGlobalUnknowns();
+    my_DOFManager->buildGlobalUnknowns();
 
     std::vector<std::string> block_names;
     conn->getElementBlockIds(block_names);
@@ -573,7 +573,7 @@ namespace {
       const std::vector<int> & myElements = conn->getElementBlock(block_names[b]);
       for (size_t e = 0; e < myElements.size(); ++e) {
         std::vector<int> acquiredGIDs;
-        my_DOFManager2->getElementGIDs(myElements[e],acquiredGIDs);
+        my_DOFManager->getElementGIDs(myElements[e],acquiredGIDs);
         //Now we need to make sure that acquiredGIDs form sets.
         for (size_t i = 0; i < acquiredGIDs.size(); ++i) {
           bool found=false;
@@ -588,7 +588,7 @@ namespace {
 
   }
 
-  TEUCHOS_UNIT_TEST( DOFManager2_tests, 3dgidFieldAssociations){
+  TEUCHOS_UNIT_TEST( DOFManager_tests, 3dgidFieldAssociations){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",1);
@@ -601,8 +601,8 @@ namespace {
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-    RCP<panzer::DOFManager2<int,int> > my_DOFManager2 = Teuchos::rcp(new panzer::DOFManager2<int,int>());
-    TEST_EQUALITY(my_DOFManager2->getComm(),Teuchos::null);
+    RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
+    TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
 
     RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager(mesh));
 
@@ -612,17 +612,17 @@ namespace {
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
     RCP< const panzer::FieldPattern> secpattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(secbasis));
 
-    my_DOFManager2->setConnManager(conn, MPI_COMM_WORLD);
+    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     std::vector<std::string> names;
     names.push_back("Velocity");
     names.push_back("Temperature");
     names.push_back("Radiation Levels");
-    my_DOFManager2->addField(names[0], pattern);
-    my_DOFManager2->addField(names[1], pattern);
-    my_DOFManager2->addField(names[2], secpattern);
+    my_DOFManager->addField(names[0], pattern);
+    my_DOFManager->addField(names[1], pattern);
+    my_DOFManager->addField(names[2], secpattern);
 
-    my_DOFManager2->buildGlobalUnknowns();
+    my_DOFManager->buildGlobalUnknowns();
 
     //Stores associated gid values. Indexed according to names. Local.
     //It would be helpful to do this test cross processor, but I'm not sure how.
@@ -636,9 +636,9 @@ namespace {
       const std::vector<int> & myElements = conn->getElementBlock(block_names[b]);
       for (size_t e = 0; e < myElements.size(); ++e) {
         std::vector<int> acquiredGIDs;
-        my_DOFManager2->getElementGIDs(myElements[e],acquiredGIDs);
+        my_DOFManager->getElementGIDs(myElements[e],acquiredGIDs);
         for (size_t i = 0; i < names.size(); ++i) {
-          const std::vector<int> offsets = my_DOFManager2->getGIDFieldOffsets(block_names[b],my_DOFManager2->getFieldNum(names[i]));
+          const std::vector<int> offsets = my_DOFManager->getGIDFieldOffsets(block_names[b],my_DOFManager->getFieldNum(names[i]));
           for (size_t j = 0; j < offsets.size(); ++j) {
             gids[i].push_back(acquiredGIDs[offsets[j]]);
           }
@@ -666,7 +666,7 @@ namespace {
   }
 
   
-  TEUCHOS_UNIT_TEST( DOFManager2_tests, multiBloc){
+  TEUCHOS_UNIT_TEST( DOFManager_tests, multiBloc){
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
     pl->set("Y Blocks",2);
@@ -677,8 +677,8 @@ namespace {
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-    RCP<panzer::DOFManager2<LO,GO> > my_DOFManager2 = Teuchos::rcp(new panzer::DOFManager2<LO,GO>());
-    TEST_EQUALITY(my_DOFManager2->getComm(),Teuchos::null);
+    RCP<panzer::DOFManager<LO,GO> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<LO,GO>());
+    TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
 
     RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager(mesh));
 
@@ -690,32 +690,32 @@ namespace {
     names.push_back("Velocity");
     names.push_back("Temperature");
     names.push_back("Radiation Levels");
-    my_DOFManager2->setConnManager(conn, MPI_COMM_WORLD);
-    my_DOFManager2->addField("eblock-0_0",names[0], pattern);
-    my_DOFManager2->addField("eblock-0_1",names[1], pattern);
-    my_DOFManager2->addField(names[2], pattern);
+    my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
+    my_DOFManager->addField("eblock-0_0",names[0], pattern);
+    my_DOFManager->addField("eblock-0_1",names[1], pattern);
+    my_DOFManager->addField(names[2], pattern);
 
 
-    my_DOFManager2->buildGlobalUnknowns();
+    my_DOFManager->buildGlobalUnknowns();
     //Now that we have created the SingleBlockDOFManager, we can ensure it was created correctly.
-    TEST_EQUALITY(my_DOFManager2->getConnManager(),conn);
+    TEST_EQUALITY(my_DOFManager->getConnManager(),conn);
 
 
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Velocity"),0);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Temperature"),1);
-    TEST_EQUALITY(my_DOFManager2->getFieldNum("Radiation Levels"),2);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Velocity"),0);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Temperature"),1);
+    TEST_EQUALITY(my_DOFManager->getFieldNum("Radiation Levels"),2);
 
-    TEST_EQUALITY(my_DOFManager2->getNumFields(), 3);
+    TEST_EQUALITY(my_DOFManager->getNumFields(), 3);
 
-    //const std::vector<GO> & vel_offests = my_DOFManager2->getGIDFieldOffsets("eblock-0_0",0); 
-    //const std::vector<GO> & tem_offests = my_DOFManager2->getGIDFieldOffsets("eblock-0_0",1); 
-    //const std::vector<GO> & rad_offests = my_DOFManager2->getGIDFieldOffsets("eblock-0_0",2); 
-    TEST_ASSERT(my_DOFManager2->fieldInBlock("Velocity","eblock-0_0"));
-    TEST_ASSERT(!my_DOFManager2->fieldInBlock("Velocity","eblock-0_1"));
-    TEST_ASSERT(my_DOFManager2->fieldInBlock("Temperature","eblock-0_1"));
-    TEST_ASSERT(!my_DOFManager2->fieldInBlock("Temperature","eblock-0_0"));
-    TEST_ASSERT(my_DOFManager2->fieldInBlock("Radiation Levels","eblock-0_1"));
-    TEST_ASSERT(my_DOFManager2->fieldInBlock("Radiation Levels","eblock-0_0"));
+    //const std::vector<GO> & vel_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",0); 
+    //const std::vector<GO> & tem_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",1); 
+    //const std::vector<GO> & rad_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",2); 
+    TEST_ASSERT(my_DOFManager->fieldInBlock("Velocity","eblock-0_0"));
+    TEST_ASSERT(!my_DOFManager->fieldInBlock("Velocity","eblock-0_1"));
+    TEST_ASSERT(my_DOFManager->fieldInBlock("Temperature","eblock-0_1"));
+    TEST_ASSERT(!my_DOFManager->fieldInBlock("Temperature","eblock-0_0"));
+    TEST_ASSERT(my_DOFManager->fieldInBlock("Radiation Levels","eblock-0_1"));
+    TEST_ASSERT(my_DOFManager->fieldInBlock("Radiation Levels","eblock-0_0"));
 
     //TEST_EQUALITY(vel_offests.size(),tem_offests.size());
     //TEST_EQUALITY(tem_offests.size(),rad_offests.size());

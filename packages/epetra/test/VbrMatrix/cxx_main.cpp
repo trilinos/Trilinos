@@ -99,6 +99,8 @@ int checkMultiVectors( Epetra_MultiVector & X, Epetra_MultiVector & Y, string me
   return(globalbadvalue);
 }
 
+int checkVbrMatrixOptimizedGraph(Epetra_Comm& comm, bool verbose);
+
 int checkVbrRowMatrix(Epetra_RowMatrix& A, Epetra_RowMatrix & B, bool verbose);
 
 int CompareValues(double * A, int LDA, int NumRowsA, int NumColsA, 
@@ -196,7 +198,7 @@ int checkmultiply( bool transpose, Epetra_VbrMatrix& A, Epetra_MultiVector& X, E
   //
   Epetra_Vector *vecY =  dynamic_cast<Epetra_Vector *>( &Check_Y );
   Epetra_Vector *vecX =  dynamic_cast<Epetra_Vector *>( &X );
-  assert( vecX && vecY || (!vecX && !vecY) ) ;
+  assert( (vecX && vecY) || (!vecX && !vecY) ) ;
 
   if ( vecX && vecY ) {
     double normY, NormError;
@@ -658,11 +660,12 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   }
   EPETRA_TEST_ERR(forierr,ierr);
   forierr = 0;
-  if ( ! ExtraBlocks ) 
+  if ( ! ExtraBlocks ) {
     if ( FixedNumEntries ) 
       for (int i=0; i<NumMyElements; i++) forierr += !(A->NumMyBlockEntries(i)==3);
     else
       for (int i=0; i<NumMyElements; i++) forierr += !(A->NumMyBlockEntries(i)==NumNz[i]);
+  }
   EPETRA_TEST_ERR(forierr,ierr);
 
   if (verbose) cout << "\n\nNumEntries function check OK" << endl<< endl;
@@ -1382,6 +1385,8 @@ int main(int argc, char *argv[])
   }
   */
 
+  /* Active Issue: 5744: EPETRA_TEST_ERR( checkVbrMatrixOptimizedGraph(Comm, verbose), ierr); */
+
   EPETRA_TEST_ERR( checkMergeRedundantEntries(Comm, verbose), ierr);
 
   EPETRA_TEST_ERR( checkExtractMyRowCopy(Comm, verbose), ierr);
@@ -1757,7 +1762,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   int indexBase = 0;
 
   Epetra_BlockMap map(numGlobalRows, numMyRows,
-		      elemSize, indexBase, comm);
+                      elemSize, indexBase, comm);
 
   Epetra_VbrMatrix A(Copy, map, numCols);
 
@@ -1781,7 +1786,7 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
 
     for(int j=0; j<numCols; ++j) {
       EPETRA_TEST_ERR( A.SubmitBlockEntry(coef, elemSize,
-					  elemSize, elemSize), ierr);
+                                          elemSize, elemSize), ierr);
     }
 
     EPETRA_TEST_ERR( A.EndSubmitEntries(), ierr);
@@ -1811,26 +1816,26 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   for(int i=myFirstRow; i<=myLastRow; ++i) {
     BlockIndices[i-myFirstRow] = new int[numCols];
     EPETRA_TEST_ERR( A.ExtractGlobalBlockRowPointers(i, numCols,
-						     RowDim, numBlockEntries,
-						     BlockIndices[i-myFirstRow],
-						     Values), ierr);
+                                                     RowDim, numBlockEntries,
+                                                     BlockIndices[i-myFirstRow],
+                                                     Values), ierr);
 
     EPETRA_TEST_ERR( Aview.BeginInsertGlobalValues(i, numBlockEntries,
-					      BlockIndices[i-myFirstRow]), ierr);
+                                                   BlockIndices[i-myFirstRow]), ierr);
 
     if (numMyRows != numBlockEntries) return(-1);
     if (RowDim != elemSize) return(-2);
     for(int j=0; j<numBlockEntries; ++j) {
       if (Values[j]->A()[0] != 1.0) {
-	cout << "Row " << i << " Values["<<j<<"][0]: "<< Values[j][0]
-	     << " should be 1.0" << endl;
-	return(-3); //comment-out this return to de-activate this test
+        cout << "Row " << i << " Values["<<j<<"][0]: "<< Values[j][0]
+             << " should be 1.0" << endl;
+        return(-3); //comment-out this return to de-activate this test
       }
 
       EPETRA_TEST_ERR( Aview.SubmitBlockEntry(Values[j]->A(),
-					      Values[j]->LDA(),
-					      Values[j]->M(),
-					      Values[j]->N()), ierr);
+                                              Values[j]->LDA(),
+                                              Values[j]->M(),
+                                              Values[j]->N()), ierr);
     }
 
     EPETRA_TEST_ERR( Aview.EndSubmitEntries(), ierr);
@@ -1843,20 +1848,20 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
 
   for(int i=myFirstRow; i<=myLastRow; ++i) {
     EPETRA_TEST_ERR( Aview.ExtractGlobalBlockRowPointers(i, numMyRows,
-							 RowDim, numBlockEntries,
-							 BlockIndices[i-myFirstRow],
-							 Values), ierr);
+                                                         RowDim, numBlockEntries,
+                                                         BlockIndices[i-myFirstRow],
+                                                         Values), ierr);
 
     if (numMyRows != numBlockEntries) return(-1);
     if (RowDim != elemSize) return(-2);
     for(int j=0; j<numBlockEntries; ++j) {
       if (Values[j]->A()[0] != 1.0) {
-	cout << "Aview: Row " << i << " Values["<<j<<"][0]: "<< Values[j][0]
-	     << " should be 1.0" << endl;
-	return(-3); //comment-out this return to de-activate this test
+        cout << "Aview: Row " << i << " Values["<<j<<"][0]: "<< Values[j][0]
+             << " should be 1.0" << endl;
+        return(-3); //comment-out this return to de-activate this test
       }
     }
-    
+
     delete [] BlockIndices[i-myFirstRow];
   }
 
@@ -2087,6 +2092,186 @@ int checkEarlyDelete(Epetra_Comm& comm, bool verbose)
 
   return(0);
 }
+
+int checkVbrMatrixOptimizedGraph(Epetra_Comm& comm, bool verbose)
+{
+  using std::vector;
+
+  int ierr = 0;
+
+  const int node = comm.MyPID();
+  const int nodes = comm.NumProc();
+
+  int Ni    = 4;
+  int Nj    = 4;
+  int Gi    = 4;
+  // int Gj    = 4;
+  int i_off = 0;
+  int j_off = 0;
+
+  int first = 0;
+  int last  = 3;
+
+  Epetra_BlockMap* map;
+  if (nodes == 1)
+  {
+    map = new Epetra_BlockMap(-1, 16, 3, 0, comm);
+  }
+  else if (nodes == 2)
+  {
+    Ni = 2;
+    vector<int> l2g(8);
+    if (node == 1) 
+    {
+      i_off = 2;
+    }
+    for (int j = 0; j < 4; ++j)
+    {
+      for (int i = 0; i < 2; ++i)
+      {
+        l2g[i + 2 * j] = (i + i_off) + (j + j_off) * Gi;
+      }
+    }
+    map = new Epetra_BlockMap(-1, Ni*Nj, &l2g[0], 3, 0, comm); 
+  }
+  else if (nodes == 4)
+  {
+    Ni = 2;
+    Nj = 2;
+    vector<int> l2g(4);
+    if (node == 1) 
+    {
+      i_off = 2;
+    }
+    else if (node == 2)
+    {
+      j_off = 2;
+    }
+    else if (node == 3)
+    {
+      i_off = 2;
+      j_off = 2;
+    }
+    for (int j = 0; j < 2; ++j)
+    {
+      for (int i = 0; i < 2; ++i)
+      {
+        l2g[i + 2 * j] = (i + i_off) + (j + j_off) * Gi;
+      }
+    }
+    map = new Epetra_BlockMap(-1, Ni*Nj, &l2g[0], 3, 0, comm);
+  }
+  else {
+    map = NULL;
+    return 0;
+  }
+
+  // graph
+  Epetra_CrsGraph *graph = new Epetra_CrsGraph(Copy, *map, 5);
+  int indices[5];
+
+  for (int j = 0; j < Nj; ++j)
+  {
+    for (int i = 0; i < Ni; ++i)
+    {
+      int ctr = 0;
+      int gi  = i + i_off;
+      int gj  = j + j_off;
+      indices[ctr++] = gi + gj * Gi;
+      if (gi > first)
+        indices[ctr++] = (gi - 1) + gj * Gi;
+      if (gi < last)
+        indices[ctr++] = (gi + 1) + gj * Gi;
+      if (gj > first)
+        indices[ctr++] = gi + (gj - 1) * Gi;
+      if (gj < last)
+        indices[ctr++] = gi + (gj + 1) * Gi;
+      EPETRA_TEST_ERR( ! (ctr <= 5), ierr );
+      // assign the indices to the graph
+      graph->InsertGlobalIndices(indices[0], ctr, &indices[0]);
+    }
+  }
+
+  // complete the graph
+  int result = graph->FillComplete();
+  EPETRA_TEST_ERR( ! result == 0,               ierr );
+  EPETRA_TEST_ERR( ! graph->Filled(),           ierr );
+  EPETRA_TEST_ERR(   graph->StorageOptimized(), ierr );
+  EPETRA_TEST_ERR( ! graph->IndicesAreLocal(),  ierr );
+  result = graph->OptimizeStorage(); 
+  EPETRA_TEST_ERR( ! result == 0,               ierr );
+  EPETRA_TEST_ERR( ! graph->StorageOptimized(), ierr );
+
+  EPETRA_TEST_ERR( ! Ni*Nj   == graph->NumMyBlockRows(), ierr );
+  EPETRA_TEST_ERR( ! Ni*Nj*3 == graph->NumMyRows(),      ierr );
+
+  Epetra_VbrMatrix *matrix = new Epetra_VbrMatrix(Copy, *graph);
+  EPETRA_TEST_ERR( ! matrix->IndicesAreLocal(),          ierr );
+
+  Epetra_SerialDenseMatrix C(3, 3); 
+  Epetra_SerialDenseMatrix L(3, 3); 
+  Epetra_SerialDenseMatrix R(3, 3); 
+  EPETRA_TEST_ERR( ! 3 == C.LDA(), ierr );
+  EPETRA_TEST_ERR( ! 3 == L.LDA(), ierr );
+  EPETRA_TEST_ERR( ! 3 == R.LDA(), ierr );
+  std::fill(C.A(), C.A()+9, -4.0); 
+  std::fill(L.A(), L.A()+9,  2.0); 
+  std::fill(R.A(), R.A()+9,  2.0); 
+
+  // fill matrix
+  {
+    for (int j = 0; j < Nj; ++j)
+    {
+      for (int i = 0; i < Ni; ++i)
+      {
+        int ctr = 0;
+        int gi  = i + i_off;
+        int gj  = j + j_off;
+
+        int local  = i + j * Ni;
+        int global = gi + gj * Gi;
+
+        int left   = (gi - 1) + gj * Gi;
+        int right  = (gi + 1) + gj * Gi;
+        int bottom = gi + (gj - 1) * Gi;
+        int top    = gi + (gj + 1) * Gi;
+
+        EPETRA_TEST_ERR( ! local == matrix->LCID(global), ierr );
+
+        indices[ctr++] = local;
+        if (gi > first)
+          indices[ctr++] = left;
+        if (gi < last)
+          indices[ctr++] = right;;
+        if (gj > first)
+          indices[ctr++] = bottom;
+        if (gj < last)
+          indices[ctr++] = top;
+
+        matrix->BeginReplaceMyValues(local, ctr, &indices[0]);
+        matrix->SubmitBlockEntry(C);
+        if (gi > first) matrix->SubmitBlockEntry(L);
+        if (gi < last)  matrix->SubmitBlockEntry(R);
+        if (gj > first) matrix->SubmitBlockEntry(L);
+        if (gj < last)  matrix->SubmitBlockEntry(R);
+        matrix->EndSubmitEntries();
+      }
+    }
+  }
+  matrix->FillComplete();
+  EPETRA_TEST_ERR( ! matrix->Filled(),               ierr );
+  EPETRA_TEST_ERR( ! matrix->StorageOptimized(),     ierr );
+  EPETRA_TEST_ERR( ! matrix->IndicesAreContiguous(), ierr );
+  // EPETRA_TEST_ERR( matrix->StorageOptimized(),     ierr );
+  // EPETRA_TEST_ERR( matrix->IndicesAreContiguous(), ierr );
+  
+  delete matrix;
+  delete graph;
+  delete map;
+
+  return(0);
+}
+
 
 int checkVbrRowMatrix(Epetra_RowMatrix& A, Epetra_RowMatrix & B, bool verbose)  {  
 

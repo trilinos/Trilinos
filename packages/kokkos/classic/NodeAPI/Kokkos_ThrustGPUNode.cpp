@@ -46,19 +46,23 @@
 
 namespace Kokkos {
 
-  ThrustGPUNode::ThrustGPUNode(Teuchos::ParameterList &pl)
+  ThrustGPUNode::ThrustGPUNode(ParameterList &pl)
   {
     using std::cout;
     using std::cerr;
     using std::endl;
 
     // get node parameters
-    int device = pl.get<int>("Device Number",0);
-    int verbose = pl.get<int>("Verbose",0);
+    ParameterList params = getDefaultParameters();
+    params.setParameters(pl);
+    int device = params.get<int>("Device Number");
+    int verbose = params.get<int>("Verbose");
     // set device
     int deviceCount; cudaGetDeviceCount(&deviceCount); 
-    TEUCHOS_TEST_FOR_EXCEPTION(deviceCount == 0, std::runtime_error,
-        "ThrustGPUNode::ThrustGPUNode(): system has no CUDA devices.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        deviceCount == 0, std::runtime_error,
+        "ThrustGPUNode::ThrustGPUNode(): system has no CUDA devices."
+    );
     if (device < 0 || device >= deviceCount) {
       cerr << "ThrustGPUNode::ThrustGPUNode(): specified device number not valid. Using device 0." << endl;
       device = 0;
@@ -88,6 +92,13 @@ namespace Kokkos {
   } 
 
   ThrustGPUNode::~ThrustGPUNode() {}
+
+  ParameterList ThrustGPUNode::getDefaultParameters() {
+    ParameterList params;
+    params.set("Verbose",       0);
+    params.set("Device Number", 0);
+    return params;
+  }
 
   void ThrustGPUNode::sync() const {
     cudaError err = cudaThreadSynchronize();

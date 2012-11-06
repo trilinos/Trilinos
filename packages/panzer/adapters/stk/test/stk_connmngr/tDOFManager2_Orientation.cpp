@@ -50,7 +50,7 @@
 #include "Panzer_STK_config.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
-#include "Panzer_DOFManager2.hpp"
+#include "Panzer_DOFManager.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
 
@@ -99,7 +99,7 @@ RCP<const panzer::IntrepidFieldPattern> buildFieldPattern()
 
 
 // quad tests
-TEUCHOS_UNIT_TEST(tDOFManager2_Orientation, buildTest_quad_edge_orientations)
+TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -120,7 +120,7 @@ TEUCHOS_UNIT_TEST(tDOFManager2_Orientation, buildTest_quad_edge_orientations)
          = buildFieldPattern<Intrepid::Basis_HCURL_QUAD_I1_FEM<double,FieldContainer> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager2<int,int> > dofManager = rcp(new panzer::DOFManager2<int,int>());
+   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
    // build global (or serial communicator)
    dofManager->setOrientationsRequired(true);
    TEST_EQUALITY(dofManager->getOrientationsRequired(),true);
@@ -231,7 +231,7 @@ TEUCHOS_UNIT_TEST(tDOFManager2_Orientation, buildTest_quad_edge_orientations)
 }
 
 // quad tests
-TEUCHOS_UNIT_TEST(tDOFManager2_Orientation, buildTest_quad_edge_orientations2)
+TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations2)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -250,7 +250,7 @@ TEUCHOS_UNIT_TEST(tDOFManager2_Orientation, buildTest_quad_edge_orientations2)
          = buildFieldPattern<Intrepid::Basis_HCURL_QUAD_I1_FEM<double,FieldContainer> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager2<int,int> > dofManager = rcp(new panzer::DOFManager2<int,int>());
+   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
    dofManager->setOrientationsRequired(true);
    TEST_EQUALITY(dofManager->getOrientationsRequired(),true);
@@ -305,7 +305,7 @@ TEUCHOS_UNIT_TEST(tDOFManager2_Orientation, buildTest_quad_edge_orientations2)
 }
 
 // quad tests
-TEUCHOS_UNIT_TEST(tDOFManager2_Orientation, buildTest_quad_edge_orientations_fail)
+TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations_fail)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -323,7 +323,7 @@ TEUCHOS_UNIT_TEST(tDOFManager2_Orientation, buildTest_quad_edge_orientations_fai
          = buildFieldPattern<Intrepid::Basis_HCURL_QUAD_I1_FEM<double,FieldContainer> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager2<int,int> > dofManager = rcp(new panzer::DOFManager2<int,int>());
+   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
    dofManager->setOrientationsRequired(true);
    TEST_EQUALITY(dofManager->getOrientationsRequired(),true);

@@ -1845,7 +1845,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, MultiplyOp, LO, GO, Scalar, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, MixedMultiplyOp, LO, GO, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
@@ -2164,7 +2164,6 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, CopiesAndViews, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TriSolve, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, AlphaBetaMultiply, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MultiplyOp, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EmptyTriSolve, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ActiveFill, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Typedefs,      LO, GO, SCALAR, NODE ) \
@@ -2172,35 +2171,34 @@ typedef std::complex<double> ComplexDouble;
 
 
 #define UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, SerialNode )
-
-typedef Kokkos::DefaultNode::DefaultNodeType DefaultNode;
-#define UNIT_TEST_DEFAULTNODE(LO, GO, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, DefaultNode )
+      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, SerialNode ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MixedMultiplyOp, LO, GO, SCALAR, SerialNode )
 
 #ifdef HAVE_KOKKOSCLASSIC_TBB
 #define UNIT_TEST_TBBNODE(LO, GO, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, TBBNode )
+      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, TBBNode ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MixedMultiplyOp, LO, GO, SCALAR, TBBNode )
 #else
 #define UNIT_TEST_TBBNODE(LO, GO, SCALAR)
 #endif
 
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
 #define UNIT_TEST_TPINODE(LO, GO, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, TPINode )
+      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, TPINode ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MixedMultiplyOp, LO, GO, SCALAR, TPINode )
 #else
 #define UNIT_TEST_TPINODE(LO, GO, SCALAR)
 #endif
 
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
 #define UNIT_TEST_OMPNODE(LO, GO, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, OpenMPNode )
+      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, OpenMPNode ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MixedMultiplyOp, LO, GO, SCALAR, OpenMPNode )
 #else
 #define UNIT_TEST_OMPNODE(LO, GO, SCALAR)
 #endif
 
-// don't test Kokkos node for MPI builds, because we probably don't have multiple GPUs per node
-#if defined(HAVE_KOKKOSCLASSIC_CUSPARSE) && !defined(HAVE_TPETRA_MPI)
+#if defined(HAVE_KOKKOSCLASSIC_CUSPARSE)
 // float
 #if defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT)
 #  define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO) \
@@ -2238,7 +2236,10 @@ typedef Kokkos::DefaultNode::DefaultNodeType DefaultNode;
 #endif
 
 #define UNIT_TEST_ALLCPUNODES(LO, GO, SCALAR) \
-    UNIT_TEST_DEFAULTNODE(LO, GO, SCALAR) 
+    UNIT_TEST_SERIALNODE(LO, GO, SCALAR)  \
+    UNIT_TEST_OMPNODE(LO, GO, SCALAR)  \
+    UNIT_TEST_TPINODE(LO, GO, SCALAR)  \
+    UNIT_TEST_TBBNODE(LO, GO, SCALAR)
 
 #define UNIT_TEST_FLOAT(LO, GO) \
     UNIT_TEST_ALLCPUNODES(LO, GO, float) \

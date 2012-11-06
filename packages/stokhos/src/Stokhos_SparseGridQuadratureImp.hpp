@@ -51,11 +51,10 @@ SparseGridQuadrature(
   ordinal_type sz = product_basis->size();
   ordinal_type level = sparse_grid_level;
 
-  // Mike's heuristic formula for computing the level
+  // Make level = order the default, which is correct for Gaussian abscissas
+  // slow, linear growth, and total-order basis
   if (level == 0) {
-    level = static_cast<ordinal_type>(std::ceil(0.5*(p+d-1)));
-    if (level < d)
-      level = p;
+    level = p;
   }
 
   //std::cout << "Sparse grid level = " << level << std::endl;

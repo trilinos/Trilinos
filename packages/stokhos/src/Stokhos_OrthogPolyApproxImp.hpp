@@ -314,7 +314,7 @@ inner_product(const Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_
       "b.basis_ == null && b.coeff_.size() > 1");
   TEUCHOS_TEST_FOR_EXCEPTION(
     coeff_.size() != b.coeff_.size() && 
-    (coeff_.size() != 1 || b.coeff_.size() != 1), std::logic_error, 
+    coeff_.size() != 1 && b.coeff_.size() != 1, std::logic_error, 
     "Coefficient array sizes do not match");
 
   value_type v = 0.0;

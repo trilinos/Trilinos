@@ -230,6 +230,11 @@ namespace Xpetra {
 
     //@}
 
+#ifdef INCLUDE_XPETRA_EXPERIMENTAL
+    //! Deep copy constructor
+    EpetraCrsMatrix(const EpetraCrsMatrix& matrix);
+#endif
+
     //! Implements DistObject interface
     //{@
 

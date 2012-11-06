@@ -239,13 +239,14 @@ int main(int narg, char** arg)
   } catch (std::exception &e){
       if (comm->getSize() != 1)
       {
-          std::cout << "RCM does not support distributed matrices."
+          std::cout << "Ordering does not support distributed matrices."
              << std::endl;
           std::cout << "PASS" << std::endl;
       }
       else
       {
-          std::cout << "Exception from RCM Algorithm" << std::endl;
+          std::cout << "Exception from Ordering Algorithm" << std::endl;
+          std::cout << e.what() << std::endl;
           std::cout << "FAIL" << std::endl;
       }
       return 0;
