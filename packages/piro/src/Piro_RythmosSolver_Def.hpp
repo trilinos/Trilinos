@@ -150,9 +150,10 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
 
   }
   else
-    TEUCHOS_TEST_FOR_EXCEPTION( true, Teuchos::Exceptions::InvalidParameter,
-				std::endl << "Error! Piro::Epetra::RythmosSolver: Invalid Steper Type: "
-				<< stepperType << std::endl);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        true, Teuchos::Exceptions::InvalidParameter,
+        std::endl << "Error! Piro::Epetra::RythmosSolver: Invalid Steper Type: "
+        << stepperType << std::endl);
 
   // Step control strategy
   {
@@ -161,42 +162,39 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
       Teuchos::rcp_dynamic_cast<Rythmos::StepControlStrategyAcceptingStepperBase<Scalar> >(fwdStateStepper);
 
     if (Teuchos::nonnull(scsa_stepper)) {
-      std::string step_control_strategy = rythmosPL->get("Step Control Strategy Type", "None");
+      const std::string step_control_strategy = rythmosPL->get("Step Control Strategy Type", "None");
 
       if (step_control_strategy == "None") {
-	// don't do anything, stepper will build default
+        // don't do anything, stepper will build default
+      } else if (step_control_strategy == "ImplicitBDFRamping") {
+
+        const RCP<Rythmos::ImplicitBDFStepperRampingStepControl<Scalar> > rscs =
+          rcp(new Rythmos::ImplicitBDFStepperRampingStepControl<Scalar>);
+
+        const RCP<ParameterList> p = parameterList(rythmosPL->sublist("Rythmos Step Control Strategy"));
+        rscs->setParameterList(p);
+
+        scsa_stepper->setStepControlStrategy(rscs);
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(
+            true, std::logic_error,
+            "Error! Piro::Epetra::RythmosSolver: Invalid step control strategy type: "
+            << step_control_strategy << std::endl);
       }
-      else if (step_control_strategy == "ImplicitBDFRamping") {
-
-	const RCP<Rythmos::ImplicitBDFStepperRampingStepControl<Scalar> > rscs =
-	  rcp(new Rythmos::ImplicitBDFStepperRampingStepControl<Scalar>);
-
-	const RCP<ParameterList> p = parameterList(rythmosPL->sublist("Rythmos Step Control Strategy"));
-	rscs->setParameterList(p);
-
-	scsa_stepper->setStepControlStrategy(rscs);
-      }
-      else {
-	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,"Error! Piro::Epetra::RythmosSolver: Invalid step control strategy type: " << step_control_strategy << std::endl);
-      }
-
     }
-
   }
 
   {
-    RCP<Teuchos::ParameterList>
-      integrationControlPL = sublist(rythmosPL, "Rythmos Integration Control", true);
+    const RCP<Teuchos::ParameterList> integrationControlPL =
+      Teuchos::sublist(rythmosPL, "Rythmos Integration Control", true);
 
     RCP<Rythmos::DefaultIntegrator<Scalar> > defaultIntegrator;
-
     if (rythmosPL->get("Rythmos Integration Control Strategy", "Simple") == "Simple") {
       defaultIntegrator = Rythmos::controlledDefaultIntegrator<Scalar>(Rythmos::simpleIntegrationControlStrategy<Scalar>(integrationControlPL));
     }
     else if(rythmosPL->get<std::string>("Rythmos Integration Control Strategy") == "Ramping") {
       defaultIntegrator = Rythmos::controlledDefaultIntegrator<Scalar>(Rythmos::rampingIntegrationControlStrategy<Scalar>(integrationControlPL));
     }
-
     fwdStateIntegrator = defaultIntegrator;
   }
 
@@ -243,11 +241,14 @@ template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::RythmosSolver<Scalar>::get_p_space(int l) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
-                     std::endl <<
-                     "Error in Piro::RythmosSolver::get_p_map():  " <<
-                     "Invalid parameter index l = " <<
-                     l << std::endl);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      l >= num_p || l < 0,
+      Teuchos::Exceptions::InvalidParameter,
+      std::endl <<
+      "Error in Piro::RythmosSolver::get_p_map():  " <<
+      "Invalid parameter index l = " <<
+      l << std::endl);
+
   return model->get_p_space(l);
 }
 
@@ -255,14 +256,20 @@ template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::RythmosSolver<Scalar>::get_g_space(int j) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(j > num_g || j < 0, Teuchos::Exceptions::InvalidParameter,
-                     std::endl <<
-                     "Error in Piro::RythmosSolver::get_g_map():  " <<
-                     "Invalid response index j = " <<
-                     j << std::endl);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      j > num_g || j < 0,
+      Teuchos::Exceptions::InvalidParameter,
+      std::endl <<
+      "Error in Piro::RythmosSolver::get_g_map():  " <<
+      "Invalid response index j = " <<
+      j << std::endl);
 
-  if      (j < num_g) return model->get_g_space(j);
-  else return model->get_x_space(); // j == num_g
+  if (j < num_g) {
+    return model->get_g_space(j);
+  } else {
+    // j == num_g
+    return model->get_x_space();
+  }
 }
 
 template<typename Scalar>
