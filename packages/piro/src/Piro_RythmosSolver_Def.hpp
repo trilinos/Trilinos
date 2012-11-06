@@ -52,22 +52,18 @@
 #include "Rythmos_ImplicitBDFStepperRampingStepControl.hpp"
 #include "Rythmos_StepperAsModelEvaluator.hpp"
 #include "Rythmos_CompositeIntegrationObserver.hpp"
-#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
-#include "Rythmos_IntegratorBuilder.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Assert.hpp"
-#include "Piro_RythmosNOX_RowSumUpdater.hpp"
 
 #ifdef Piro_ENABLE_NOX
 #  include "Thyra_NonlinearSolver_NOX.hpp"
 #endif
 
-#include "Thyra_ScaledModelEvaluator.hpp"
-
-#include <iostream>
 #include <string>
+#include <stdexcept>
+#include <iostream>
 
 template <typename Scalar>
 Piro::RythmosSolver<Scalar>::RythmosSolver(

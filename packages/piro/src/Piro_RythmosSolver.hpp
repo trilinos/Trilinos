@@ -43,8 +43,6 @@
 #ifndef PIRO_RYTHMOSSOLVER_H
 #define PIRO_RYTHMOSSOLVER_H
 
-#include <iostream>
-
 #include "Thyra_ModelEvaluatorDefaultBase.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 
