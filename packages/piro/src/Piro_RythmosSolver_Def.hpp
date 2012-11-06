@@ -489,7 +489,8 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
           Teuchos::rcp_implicit_cast<Rythmos::StepperBase<Scalar> >(stateAndSensStepper),
           Teuchos::rcp_implicit_cast<Rythmos::IntegratorBase<Scalar> >(fwdStateIntegrator),
           state_and_sens_ic);
-    const int solutionResponseIndex = 0;
+    // StepperAsModelEvaluator outputs the solution as its last response
+    const int stateAndSensModelStateResponseIndex = stateAndSensIntegratorAsModel->Ng() - 1;
 
     *out << "\nUse the StepperAsModelEvaluator to integrate state + sens x_bar(p,t_final) ... \n";
     Teuchos::OSTab tab(out);
@@ -498,7 +499,7 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
     RCP<const Thyra::MultiVectorBase<Scalar> > dxdp;
 
     const RCP<Thyra::VectorBase<Scalar> > x_bar_final =
-      Thyra::createMember(stateAndSensIntegratorAsModel->get_g_space(j));
+      Thyra::createMember(stateAndSensIntegratorAsModel->get_g_space(stateAndSensModelStateResponseIndex));
     // Extract pieces of x_bar_final to prepare output
     {
       const RCP<const Thyra::ProductVectorBase<Scalar> > x_bar_final_downcasted =
@@ -524,7 +525,7 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
         *stateAndSensIntegratorAsModel,
         l, *state_ic.get_p(l),
         t_final,
-        solutionResponseIndex, &*x_bar_final
+        stateAndSensModelStateResponseIndex, x_bar_final.get()
         );
 
     *out
