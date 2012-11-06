@@ -40,55 +40,67 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_SCALAR_DECL_HPP
-#define PANZER_EVALUATOR_SCALAR_DECL_HPP
+#ifndef PANZER_EVALUATOR_DotProduct_IMPL_HPP
+#define PANZER_EVALUATOR_DotProduct_IMPL_HPP
 
 #include <string>
-#include "Panzer_Dimension.hpp"
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
-#include "Intrepid_FieldContainer.hpp"
+
+#include "Panzer_PointRule.hpp"
+#include "Panzer_Workset_Utilities.hpp"
+
+#include "Teuchos_RCP.hpp"
 
 namespace panzer {
-    
-/** This integrates a scalar quanity over each cell.
-  * It is useful for comptuing integral responses.
 
-  \verbatim
-    <ParameterList>
-      <Parameter name="Integral Name" type="string" value="<Name to give to the integral field>"/>
-      <Parameter name="Integrand Name" type="string" value="<Name of integrand>"/>
-      <Parameter name="IR" type="RCP<IntegrationRule>" value="<user specified IntegrationRule>"/>
-      <Parameter name="Multiplier" type="double" value="<Scaling factor, default=1>"/>
-      <Parameter name="Field Multipliers" type="RCP<const vector<string> >" value="<Other scalar multiplier fields>"/>
-    </ParameterList>
-  \endverbatim
-  */
-PHX_EVALUATOR_CLASS(Integrator_Scalar)
+//**********************************************************************
+PHX_EVALUATOR_CTOR(DotProduct,p)
+{
+  std::string result_name = p.get<std::string>("Result Name");
+  std::string vec_a_name = p.get<std::string>("Vector A Name");
+  std::string vec_b_name = p.get<std::string>("Vector B Name");
   
-  PHX::MDField<ScalarT,Cell> integral;  // result
-    
-  PHX::MDField<ScalarT,Cell,IP> scalar; // function to be integrated
+  const Teuchos::RCP<const panzer::PointRule> pr = 
+    p.get< Teuchos::RCP<const panzer::PointRule> >("Point Rule");
 
-  std::vector<PHX::MDField<ScalarT,Cell,IP> > field_multipliers;
+  vec_a_dot_vec_b = PHX::MDField<ScalarT>(result_name, pr->dl_scalar);
+  vec_a = PHX::MDField<ScalarT>(vec_a_name, pr->dl_vector);
+  vec_b = PHX::MDField<ScalarT>(vec_b_name, pr->dl_vector);
 
-  std::size_t num_qp;
-  std::size_t quad_index;
-  int quad_order;
+  this->addEvaluatedField(vec_a_dot_vec_b);
+  this->addDependentField(vec_a);
+  this->addDependentField(vec_b);
+ 
+  std::string n = "DotProduct: " + result_name + " = " + vec_a_name + " . " + vec_b_name;
+  this->setName(n);
+}
 
-  double multiplier;
+//**********************************************************************
+PHX_POST_REGISTRATION_SETUP(DotProduct,sd,fm)
+{
+  this->utils.setFieldData(vec_a_dot_vec_b,fm);
+  this->utils.setFieldData(vec_a,fm);
+  this->utils.setFieldData(vec_b,fm);
 
-  Intrepid::FieldContainer<ScalarT> tmp;
+  num_pts = vec_a.dimension(1);
+  num_dim = vec_a.dimension(2);
 
-public:
-  // for testing purposes
-  const PHX::FieldTag & getFieldTag() const 
-  { return integral.fieldTag(); }
+  TEUCHOS_ASSERT(vec_a.dimension(1) == vec_b.dimension(1));
+  TEUCHOS_ASSERT(vec_a.dimension(2) == vec_b.dimension(2));
+}
 
-private:
-  Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
+//**********************************************************************
+PHX_EVALUATE_FIELDS(DotProduct,workset)
+{ 
+  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (int p = 0; p < num_pts; ++p) {
+      vec_a_dot_vec_b(cell,p) = ScalarT(0.0);
+      for (int dim = 0; dim < num_dim; ++dim)
+	vec_a_dot_vec_b(cell,p) += vec_a(cell,p,dim) * vec_b(cell,p,dim); 
+    }
+  }
+}
 
-PHX_EVALUATOR_CLASS_END
+//**********************************************************************
 
 }
 

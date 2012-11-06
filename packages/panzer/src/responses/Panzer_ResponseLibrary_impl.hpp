@@ -587,6 +587,7 @@ template <typename TraitsT>
 void ResponseLibrary<TraitsT>::
 buildResponseEvaluators(
          const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+         const Teuchos::Ptr<const panzer::EquationSetFactory> & eqset_factory,
          const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
          const Teuchos::ParameterList& closure_models,
          const Teuchos::ParameterList& user_data,
@@ -635,7 +636,10 @@ buildResponseEvaluators(
 
    fmb2_->setWorksetContainer(wkstContainer_);
    fmb2_->setupVolumeFieldManagers(requiredVolPhysicsBlocks,cm_factory,closure_models,*linObjFactory_,user_data,rvef2);
-   fmb2_->setupBCFieldManagers(bcs,physicsBlocks,cm_factory,bc_factory,closure_models,*linObjFactory_,user_data);
+   if(eqset_factory==Teuchos::null)
+     fmb2_->setupBCFieldManagers(bcs,physicsBlocks,cm_factory,bc_factory,closure_models,*linObjFactory_,user_data);
+   else
+     fmb2_->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory_,user_data);
 
    // fourth build assembly engine from FMB
    ////////////////////////////////////////////////////////////////////////////////

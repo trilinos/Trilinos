@@ -40,56 +40,15 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_SCALAR_DECL_HPP
-#define PANZER_EVALUATOR_SCALAR_DECL_HPP
+#include "Panzer_config.hpp"
 
-#include <string>
-#include "Panzer_Dimension.hpp"
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
-#include "Intrepid_FieldContainer.hpp"
+#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 
-namespace panzer {
-    
-/** This integrates a scalar quanity over each cell.
-  * It is useful for comptuing integral responses.
+#include "Panzer_ExplicitTemplateInstantiation.hpp"
 
-  \verbatim
-    <ParameterList>
-      <Parameter name="Integral Name" type="string" value="<Name to give to the integral field>"/>
-      <Parameter name="Integrand Name" type="string" value="<Name of integrand>"/>
-      <Parameter name="IR" type="RCP<IntegrationRule>" value="<user specified IntegrationRule>"/>
-      <Parameter name="Multiplier" type="double" value="<Scaling factor, default=1>"/>
-      <Parameter name="Field Multipliers" type="RCP<const vector<string> >" value="<Other scalar multiplier fields>"/>
-    </ParameterList>
-  \endverbatim
-  */
-PHX_EVALUATOR_CLASS(Integrator_Scalar)
-  
-  PHX::MDField<ScalarT,Cell> integral;  // result
-    
-  PHX::MDField<ScalarT,Cell,IP> scalar; // function to be integrated
+#include "Panzer_DotProduct_decl.hpp"
+#include "Panzer_DotProduct_impl.hpp"
 
-  std::vector<PHX::MDField<ScalarT,Cell,IP> > field_multipliers;
-
-  std::size_t num_qp;
-  std::size_t quad_index;
-  int quad_order;
-
-  double multiplier;
-
-  Intrepid::FieldContainer<ScalarT> tmp;
-
-public:
-  // for testing purposes
-  const PHX::FieldTag & getFieldTag() const 
-  { return integral.fieldTag(); }
-
-private:
-  Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
-
-PHX_EVALUATOR_CLASS_END
-
-}
+PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::DotProduct)
 
 #endif

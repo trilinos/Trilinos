@@ -40,53 +40,30 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_SCALAR_DECL_HPP
-#define PANZER_EVALUATOR_SCALAR_DECL_HPP
+#ifndef PANZER_EVALUATOR_DotProduct_DECL_HPP
+#define PANZER_EVALUATOR_DotProduct_DECL_HPP
 
-#include <string>
-#include "Panzer_Dimension.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
-#include "Intrepid_FieldContainer.hpp"
 
 namespace panzer {
     
-/** This integrates a scalar quanity over each cell.
-  * It is useful for comptuing integral responses.
+  /** \brief Evaluates dot product at a set of points
 
-  \verbatim
-    <ParameterList>
-      <Parameter name="Integral Name" type="string" value="<Name to give to the integral field>"/>
-      <Parameter name="Integrand Name" type="string" value="<Name of integrand>"/>
-      <Parameter name="IR" type="RCP<IntegrationRule>" value="<user specified IntegrationRule>"/>
-      <Parameter name="Multiplier" type="double" value="<Scaling factor, default=1>"/>
-      <Parameter name="Field Multipliers" type="RCP<const vector<string> >" value="<Other scalar multiplier fields>"/>
-    </ParameterList>
-  \endverbatim
+      v_a \cdot v_b
+
+    <Parameter name="Result Name" type="string" value="<Name to give to dot product field>"/>
+    <Parameter name="Point Rule" type="RCP<const PointRule>" value="<user specified point rule>"/>
+    <Parameter name="Vector A Name" type="string" value="<vector a name>"/>
+    <Parameter name="Vector B Name" type="string" value="<vector b name>"/>
   */
-PHX_EVALUATOR_CLASS(Integrator_Scalar)
+PHX_EVALUATOR_CLASS(DotProduct)
   
-  PHX::MDField<ScalarT,Cell> integral;  // result
-    
-  PHX::MDField<ScalarT,Cell,IP> scalar; // function to be integrated
+  PHX::MDField<ScalarT> vec_a_dot_vec_b;
+  PHX::MDField<ScalarT> vec_a, vec_b;
 
-  std::vector<PHX::MDField<ScalarT,Cell,IP> > field_multipliers;
-
-  std::size_t num_qp;
-  std::size_t quad_index;
-  int quad_order;
-
-  double multiplier;
-
-  Intrepid::FieldContainer<ScalarT> tmp;
-
-public:
-  // for testing purposes
-  const PHX::FieldTag & getFieldTag() const 
-  { return integral.fieldTag(); }
-
-private:
-  Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
+  int num_pts;
+  int num_dim;
 
 PHX_EVALUATOR_CLASS_END
 

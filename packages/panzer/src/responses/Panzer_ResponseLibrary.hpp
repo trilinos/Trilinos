@@ -286,7 +286,21 @@ public:
          const Teuchos::ParameterList& closure_models,
          const Teuchos::ParameterList& user_data,
          const bool write_graphviz_file=false,
-         const std::string& graphviz_file_prefix="");
+         const std::string& graphviz_file_prefix="")
+   { buildResponseEvaluators(physicsBlocks,Teuchos::null,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix); }
+
+   /** Setup up field managers for all responses. Once this method is called
+     * no other responses can be added. An exception is thrown if they are.
+     */
+   void buildResponseEvaluators(
+         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+         const panzer::EquationSetFactory & eqset_factory,
+         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+         const Teuchos::ParameterList& closure_models,
+         const Teuchos::ParameterList& user_data,
+         const bool write_graphviz_file=false,
+         const std::string& graphviz_file_prefix="")
+   { buildResponseEvaluators(physicsBlocks,Teuchos::ptrFromRef(eqset_factory),cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix); }
 
    /** Have the response evaluators been built? True only if 
      * <code>buildResponseEvaluators</code> has been called and run to completion.
@@ -308,6 +322,18 @@ protected:
    //! Access a container field for a specified element block
    template <typename EvalT>
    Teuchos::RCP<ResponseContainerBase<TraitsT> > getVolumeContainer(const std::string & eBlock);
+
+   /** Setup up field managers for all responses. Once this method is called
+     * no other responses can be added. An exception is thrown if they are.
+     */
+   void buildResponseEvaluators(
+         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+         const Teuchos::Ptr<const panzer::EquationSetFactory> & eqset_factory,
+         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+         const Teuchos::ParameterList& closure_models,
+         const Teuchos::ParameterList& user_data,
+         const bool write_graphviz_file,
+         const std::string& graphviz_file_prefix);
 
 private:
    // This could be a template manager, but this turns out to be more in line with
