@@ -594,7 +594,7 @@ void BucketRepository::update_partitions()
         }
         Partition &partition = partitions.back();
         partition.m_stkPartition = buckets[begin_partition]->key_vector();
-        partition.m_stkPartition.pop_back();
+        // partition.m_stkPartition.pop_back();
         partition.m_beginBucketIndex = static_cast<unsigned>(begin_partition);
         partition.m_endBucketIndex = static_cast<unsigned>(end_partition);
       }

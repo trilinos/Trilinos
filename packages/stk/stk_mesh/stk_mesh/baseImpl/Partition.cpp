@@ -110,7 +110,7 @@ void Partition::compress()
 
 void Partition::sort()
 {
-    if (m_endBucketIndex >= m_beginBucketIndex )
+    if (m_beginBucketIndex >= m_endBucketIndex )
         return;
 
     std::vector<unsigned> partition_key = get_legacy_partition_id();
