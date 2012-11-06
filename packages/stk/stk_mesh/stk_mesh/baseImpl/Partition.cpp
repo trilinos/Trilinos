@@ -26,9 +26,9 @@ using namespace stk::mesh::impl;
 
 std::ostream &Partition::streamit(std::ostream &os) const
 {
-    os << "{Partition " << std::endl
-       << "  m_repository = " << m_repository << "  m_rank = " << m_rank << std::endl
-       << "  (" << m_beginBucketIndex << ", " << m_endBucketIndex << ")" << std::endl;
+    os << "{Partition [" << m_beginBucketIndex << ", " << m_endBucketIndex << ")"
+       << " in m_repository = " << m_repository << "  m_rank = " << m_rank
+       << "  (" << m_beginBucketIndex << ", " << m_endBucketIndex << ")";
 
     os << "  legacy partition id : {";
     const std::vector<unsigned> &family_key = get_legacy_partition_id();
@@ -36,7 +36,7 @@ std::ostream &Partition::streamit(std::ostream &os) const
     {
         os << " " << family_key[i];
     }
-    os << " }"  << std::endl << "}";
+    os << " }}";
 
     return os;
 }
@@ -192,4 +192,19 @@ void Partition::sort()
     }
     if (tmp_bucket)
         delete tmp_bucket;
+}
+
+
+void Partition::reverseEntityOrderWithinBuckets()
+{
+    for (std::vector<stk::mesh::Bucket *>::iterator b_i = begin(); b_i != end(); ++b_i)
+    {
+        stk::mesh::Bucket & b = **b_i;
+        std::reverse(b.m_entities.begin(), b.m_entities.end());
+        const unsigned n = b.size();
+        for ( unsigned i = 0 ; i < n ; ++i)
+        {
+            b.m_entities[i].m_entityImpl->set_bucket_and_ordinal(*b_i, i);
+        }
+    }
 }

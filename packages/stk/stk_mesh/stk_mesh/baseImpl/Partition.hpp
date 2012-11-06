@@ -48,6 +48,9 @@ public:
     // Just for unit testing.  Remove after refactor.
     static BucketRepository &getRepository(stk::mesh::BulkData &mesh);
 
+    // Just for unit testing.  DOES NOT SYNC DATA.
+    void reverseEntityOrderWithinBuckets();
+
 private:
 
     BucketRepository *m_repository;
