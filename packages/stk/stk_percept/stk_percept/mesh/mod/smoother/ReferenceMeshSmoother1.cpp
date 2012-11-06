@@ -820,7 +820,7 @@ namespace stk {
       const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->node_rank() );
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          if (on_locally_owned_part(**k))
+          if (on_locally_owned_part(**k) || on_globally_shared_part(**k))
             {
               stk::mesh::Bucket & bucket = **k ;
               const unsigned num_nodes_in_bucket = bucket.size();
@@ -830,7 +830,7 @@ namespace stk {
                   stk::mesh::Entity node = bucket[i_node];
                   double *cg_edge_length = PerceptMesh::field_data(cg_edge_length_field, node);
 
-                  if (on_locally_owned_part(node) || on_globally_shared_part(node))
+                  //if (on_locally_owned_part(node) || on_globally_shared_part(node))
                     {
                       double edge_length_ave = nodal_edge_length_ave(node);
                       cg_edge_length[0] = edge_length_ave;
