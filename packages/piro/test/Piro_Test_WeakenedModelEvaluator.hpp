@@ -93,7 +93,18 @@ private:
 class WeakenedModelEvaluator_NoDgDpMv : public Thyra::ModelEvaluatorDelegatorBase<double> {
 public:
   explicit WeakenedModelEvaluator_NoDgDpMv(const Teuchos::RCP<Thyra::ModelEvaluator<double> > &model) :
-    Thyra::ModelEvaluatorDelegatorBase<double>(model)
+    Thyra::ModelEvaluatorDelegatorBase<double>(model),
+    j_(0),
+    l_(0)
+  {}
+
+  WeakenedModelEvaluator_NoDgDpMv(
+      const Teuchos::RCP<Thyra::ModelEvaluator<double> > &model,
+      int j,
+      int l) :
+    Thyra::ModelEvaluatorDelegatorBase<double>(model),
+    j_(j),
+    l_(l)
   {}
 
 private:
@@ -105,7 +116,7 @@ private:
       const Thyra::ModelEvaluatorBase::OutArgs<double> &outArgs) const {
     const Thyra::ModelEvaluatorBase::DerivativeSupport expected_support =
       Thyra::ModelEvaluatorBase::DerivativeSupport(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
-    TEUCHOS_ASSERT(expected_support.isSameSupport(outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, 0, 0)));
+    TEUCHOS_ASSERT(expected_support.isSameSupport(outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j_, l_)));
     ModelEvaluatorBase::OutArgs<double> forwardedOutArgs = getUnderlyingModel()->createOutArgs();
     forwardedOutArgs.setArgs(outArgs);
     getUnderlyingModel()->evalModel(inArgs, forwardedOutArgs);
@@ -118,10 +129,12 @@ private:
     ModelEvaluatorBase::OutArgsSetup<double> outArgs = getUnderlyingModel()->createOutArgs();
     outArgs.setModelEvalDescription(this->description());
     const Thyra::ModelEvaluatorBase::DerivativeSupport newSupport(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
-    outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, 0, 0, newSupport);
+    outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j_, l_, newSupport);
     return outArgs;
   }
   //@}
+
+  int j_, l_;
 };
 
 /** \brief Simple ModelEvaluator wrapper with Jacobian-form MultiVector-based DgDp derivative disabled */

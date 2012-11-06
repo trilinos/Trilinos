@@ -308,6 +308,16 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::RythmosSolver<Scalar>::createOu
     // Only one parameter supported
     const int l = 0;
 
+    if (Teuchos::nonnull(initialConditionModel)) {
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar> initCondOutArgs =
+        initialConditionModel->createOutArgs();
+      const Thyra::ModelEvaluatorBase::DerivativeSupport init_dxdp_support =
+        initCondOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, initCondOutArgs.Ng() - 1, l);
+      if (!init_dxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+        return outArgs;
+      }
+    }
+
     // Solution sensitivity
     outArgs.setSupports(
         Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,

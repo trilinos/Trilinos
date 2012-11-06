@@ -68,6 +68,8 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Tuple.hpp"
 
+#include <stdexcept>
+
 using namespace Teuchos;
 using namespace Piro;
 using namespace Piro::Test;
@@ -350,21 +352,22 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, SteadyState_SolutionSensitivity)
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > steadyStateSolver(
       new NOXSolver<double>(rcp(new ParameterList), model));
 
-  const int solutionResponseIndex = steadyStateSolver->Ng() - 1;
   const int parameterIndex = 0;
+  const int initialSolutionIndex = steadyStateSolver->Ng() - 1;
 
   const Thyra::MEB::Derivative<double> dxdp_deriv_expected =
-    Thyra::create_DgDp_mv(*steadyStateSolver, solutionResponseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+    Thyra::create_DgDp_mv(*steadyStateSolver, initialSolutionIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
   const RCP<const Thyra::MultiVectorBase<double> > dxdp_expected = dxdp_deriv_expected.getMultiVector();
   {
     const Thyra::MEB::InArgs<double> steadyInArgs = steadyStateSolver->getNominalValues();
     Thyra::MEB::OutArgs<double> steadyOutArgs = steadyStateSolver->createOutArgs();
-    steadyOutArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv_expected);
+    steadyOutArgs.set_DgDp(initialSolutionIndex, parameterIndex, dxdp_deriv_expected);
     steadyStateSolver->evalModel(steadyInArgs, steadyOutArgs);
   }
 
   const double finalTime = 0.0;
   const RCP<RythmosSolver<double> > solver = solverNew(model, finalTime, steadyStateSolver);
+  const int solutionResponseIndex = solver->Ng() - 1;
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
 
@@ -382,6 +385,37 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, SteadyState_SolutionSensitivity)
     const Array<double> actual = arrayFromVector(*dxdp->col(i));
     const Array<double> expected = arrayFromVector(*dxdp_expected->col(i));
     TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+  }
+}
+
+TEUCHOS_UNIT_TEST(Piro_RythmosSolver, SteadyState_Sensitivities_NoDxinitDpMv)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > underlyingSteadyStateSolver(
+      new NOXSolver<double>(rcp(new ParameterList), model));
+
+  const int parameterIndex = 0;
+  const int initialSolutionIndex = underlyingSteadyStateSolver->Ng() - 1;
+
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > steadyStateSolver(
+      new WeakenedModelEvaluator_NoDgDpMv(underlyingSteadyStateSolver, initialSolutionIndex, parameterIndex));
+
+  const double finalTime = 0.0;
+  const RCP<RythmosSolver<double> > solver = solverNew(model, finalTime, steadyStateSolver);
+
+  const int solutionResponseIndex = solver->Ng() - 1;
+  const int responseIndex = 0;
+
+  const Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  {
+  const Thyra::MEB::DerivativeSupport dxdp_support =
+    outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, solutionResponseIndex, parameterIndex);
+  TEST_ASSERT(!dxdp_support.supports(Thyra::MEB::DERIV_MV_JACOBIAN_FORM));
+  }
+  {
+  const Thyra::MEB::DerivativeSupport dgdp_support =
+    outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, responseIndex, parameterIndex);
+  TEST_ASSERT(!dgdp_support.supports(Thyra::MEB::DERIV_MV_JACOBIAN_FORM));
   }
 }
 
