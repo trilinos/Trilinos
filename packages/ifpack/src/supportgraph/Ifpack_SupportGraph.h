@@ -364,7 +364,7 @@ public virtual Ifpack_Preconditioner
  double DiagPertRel_;
 
  //! Absolute diagonal pertubation
- double DiagPertAbs;
+ double DiagPertAbs_;
 
  //! Contains the option to keep the diagonal of original matrix, or weighted average
  double KeepDiag_;
@@ -862,7 +862,6 @@ int Ifpack_SupportGraph<T>::FindSupport()
               if (DiagPertAbs_)
                  diagonal[i] += DiagPertAbs_;
 	    }
-	    }
 
 	  if(i < indices[j])
 	    {
@@ -973,10 +972,11 @@ int Ifpack_SupportGraph<T>::FindSupport()
   // and the original matrix
 
   // First compute the "diagonal surplus" (in the original input matrix)
-  // If input is a (Dirichlet) graph Laplacian , this will be 0
-  // TODO: revisit maps for parallel case
-  Epetra_Vector ones(Matrix_->DomainMap());
-  Epetra_Vector surplus((Matrix_->RangeMap());
+  // If input is a (pure, Dirichlet) graph Laplacian , this will be 0
+  Epetra_Vector ones(Matrix_->OperatorDomainMap());
+  Epetra_Vector surplus(Matrix_->OperatorRangeMap());
+
+  ones.PutScalar(1.0);
   Matrix_->Multiply(false, ones, surplus);
 
   for(int i = 0; i < num_verts; i++)
