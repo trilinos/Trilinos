@@ -876,7 +876,8 @@ bool exodiff(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
       std::cout << "\nexodiff: Files are different" << std::endl;
     }
     else if (file1.Num_Times() != file2.Num_Times()) {
-      if (file1.Num_Times() - interface.time_step_offset == file2.Num_Times()) {
+      if ((file1.Num_Times() - interface.time_step_offset == file2.Num_Times()) ||
+	  (interface.time_step_stop > 0)) {
 	std::cout << "\nexodiff: Files are the same" << std::endl;
 	std::cout << "         The number of timesteps are different but "
 		  << "the timesteps that were compared are the same."
