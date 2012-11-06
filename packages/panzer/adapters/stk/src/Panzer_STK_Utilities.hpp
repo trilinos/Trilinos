@@ -49,7 +49,8 @@
 #include "Epetra_MultiVector.h"
 
 namespace panzer {
-   template <typename LO,typename GO> class DOFManagerFEI;
+   template <typename LO,typename GO> class UniqueGlobalIndexer;;
+   template <typename LO,typename GO> class DOFManagerFEI;;
 }
 
 namespace panzer_stk { 
@@ -64,8 +65,8 @@ namespace panzer_stk {
   */
 void write_cell_data(panzer_stk::STK_Interface & mesh,const std::vector<double> & data,const std::string & fieldName);
 
-void write_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefx="",const std::string & postfix="");
-void write_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix="",const std::string & postfix="");
+void write_solution_data(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefx="",const std::string & postfix="");
+void write_solution_data(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix="",const std::string & postfix="");
 
 void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const panzer_stk::STK_Interface & mesh,Epetra_MultiVector & x);
 void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const panzer_stk::STK_Interface & mesh,Epetra_Vector & x);
