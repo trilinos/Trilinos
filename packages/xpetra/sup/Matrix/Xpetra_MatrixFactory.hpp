@@ -104,6 +104,7 @@ namespace Xpetra {
       return mtx;
     }
 
+#ifdef INCLUDE_XPETRA_EXPERIMENTAL
     static RCP<Matrix> BuildCopy(const RCP<const Matrix> A) {
         RCP<const CrsMatrixWrap> oldOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(A);
         if (oldOp == Teuchos::null)
@@ -135,6 +136,7 @@ namespace Xpetra {
         return Teuchos::null;  // make compiler happy
 #endif
     }
+#endif // ifdef INCLUDE_XPETRA_EXPERIMENTAL
 
   };
 

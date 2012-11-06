@@ -239,10 +239,12 @@ namespace Xpetra {
 
     //@}
 
+#ifdef INCLUDE_XPETRA_EXPERIMENTAL
     //! Deep copy constructor
     TpetraCrsMatrix(const TpetraCrsMatrix& matrix)
     : mtx_(matrix.mtx_->template convert<Scalar>()) {
     }
+#endif
 
 
     //! Get a copy of the diagonal entries owned by this node, with local row idices.

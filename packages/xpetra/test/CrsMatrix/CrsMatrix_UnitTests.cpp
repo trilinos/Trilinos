@@ -198,6 +198,7 @@ namespace {
 #endif
   }
 
+#ifdef INCLUDE_XPETRA_EXPERIMENTAL
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, TpetraDeepCopy, Scalar, LO, GO, Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
@@ -307,6 +308,7 @@ namespace {
     TEUCHOS_TEST_COMPARE(s, <, 1e-16, out, success);
 #endif
   }
+#endif // ifdef INCLUDE_XPETRA_EXPERIMENTAL
 
 
 
@@ -325,8 +327,10 @@ namespace {
   typedef Kokkos::DefaultNode::DefaultNodeType DefaultNodeType;
 
   UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
+#ifdef INCLUDE_XPETRA_EXPERIMENTAL
   UNIT_TEST_GROUP_ORDINAL1(double, int, int, DefaultNodeType)
   UNIT_TEST_GROUP_ORDINAL2(double, int, int, DefaultNodeType)
+#endif
 
 }
 
