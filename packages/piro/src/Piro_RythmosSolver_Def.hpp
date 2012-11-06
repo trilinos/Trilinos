@@ -52,22 +52,23 @@
 #include "Rythmos_ImplicitBDFStepperRampingStepControl.hpp"
 #include "Rythmos_StepperAsModelEvaluator.hpp"
 #include "Rythmos_CompositeIntegrationObserver.hpp"
-#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
-#include "Rythmos_IntegratorBuilder.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_Tuple.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Assert.hpp"
-#include "Piro_RythmosNOX_RowSumUpdater.hpp"
+
+#include "Thyra_DefaultAddedLinearOp.hpp"
+#include "Thyra_DefaultMultipliedLinearOp.hpp"
 
 #ifdef Piro_ENABLE_NOX
 #  include "Thyra_NonlinearSolver_NOX.hpp"
 #endif
 
-#include "Thyra_ScaledModelEvaluator.hpp"
-
-#include <iostream>
 #include <string>
+#include <stdexcept>
+#include <iostream>
 
 template <typename Scalar>
 Piro::RythmosSolver<Scalar>::RythmosSolver(
@@ -75,8 +76,8 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
     Teuchos::RCP< Thyra::ModelEvaluatorDefaultBase<Scalar> > in_model,
     Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer) :
   model(in_model),
-  num_p(in_model->createInArgs().Np()),
-  num_g(in_model->createOutArgs().Ng()),
+  num_p(in_model->Np()),
+  num_g(in_model->Ng()),
   out(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
   using Teuchos::ParameterList;
@@ -154,9 +155,10 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
 
   }
   else
-    TEUCHOS_TEST_FOR_EXCEPTION( true, Teuchos::Exceptions::InvalidParameter,
-				std::endl << "Error! Piro::Epetra::RythmosSolver: Invalid Steper Type: "
-				<< stepperType << std::endl);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        true, Teuchos::Exceptions::InvalidParameter,
+        std::endl << "Error! Piro::Epetra::RythmosSolver: Invalid Steper Type: "
+        << stepperType << std::endl);
 
   // Step control strategy
   {
@@ -165,42 +167,39 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
       Teuchos::rcp_dynamic_cast<Rythmos::StepControlStrategyAcceptingStepperBase<Scalar> >(fwdStateStepper);
 
     if (Teuchos::nonnull(scsa_stepper)) {
-      std::string step_control_strategy = rythmosPL->get("Step Control Strategy Type", "None");
+      const std::string step_control_strategy = rythmosPL->get("Step Control Strategy Type", "None");
 
       if (step_control_strategy == "None") {
-	// don't do anything, stepper will build default
+        // don't do anything, stepper will build default
+      } else if (step_control_strategy == "ImplicitBDFRamping") {
+
+        const RCP<Rythmos::ImplicitBDFStepperRampingStepControl<Scalar> > rscs =
+          rcp(new Rythmos::ImplicitBDFStepperRampingStepControl<Scalar>);
+
+        const RCP<ParameterList> p = parameterList(rythmosPL->sublist("Rythmos Step Control Strategy"));
+        rscs->setParameterList(p);
+
+        scsa_stepper->setStepControlStrategy(rscs);
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(
+            true, std::logic_error,
+            "Error! Piro::Epetra::RythmosSolver: Invalid step control strategy type: "
+            << step_control_strategy << std::endl);
       }
-      else if (step_control_strategy == "ImplicitBDFRamping") {
-
-	const RCP<Rythmos::ImplicitBDFStepperRampingStepControl<Scalar> > rscs =
-	  rcp(new Rythmos::ImplicitBDFStepperRampingStepControl<Scalar>);
-
-	const RCP<ParameterList> p = parameterList(rythmosPL->sublist("Rythmos Step Control Strategy"));
-	rscs->setParameterList(p);
-
-	scsa_stepper->setStepControlStrategy(rscs);
-      }
-      else {
-	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,"Error! Piro::Epetra::RythmosSolver: Invalid step control strategy type: " << step_control_strategy << std::endl);
-      }
-
     }
-
   }
 
   {
-    RCP<Teuchos::ParameterList>
-      integrationControlPL = sublist(rythmosPL, "Rythmos Integration Control", true);
+    const RCP<Teuchos::ParameterList> integrationControlPL =
+      Teuchos::sublist(rythmosPL, "Rythmos Integration Control", true);
 
     RCP<Rythmos::DefaultIntegrator<Scalar> > defaultIntegrator;
-
     if (rythmosPL->get("Rythmos Integration Control Strategy", "Simple") == "Simple") {
       defaultIntegrator = Rythmos::controlledDefaultIntegrator<Scalar>(Rythmos::simpleIntegrationControlStrategy<Scalar>(integrationControlPL));
     }
     else if(rythmosPL->get<std::string>("Rythmos Integration Control Strategy") == "Ramping") {
       defaultIntegrator = Rythmos::controlledDefaultIntegrator<Scalar>(Rythmos::rampingIntegrationControlStrategy<Scalar>(integrationControlPL));
     }
-
     fwdStateIntegrator = defaultIntegrator;
   }
 
@@ -226,8 +225,8 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
   fwdTimeStepSolver(timeStepSolver),
   model(underlyingModel),
   initialConditionModel(icModel),
-  num_p(model->createInArgs().Np()),
-  num_g(model->createOutArgs().Ng()),
+  num_p(model->Np()),
+  num_g(model->Ng()),
   t_final(finalTime),
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   solnVerbLevel(verbosityLevel)
@@ -247,11 +246,14 @@ template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::RythmosSolver<Scalar>::get_p_space(int l) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
-                     std::endl <<
-                     "Error in Piro::RythmosSolver::get_p_map():  " <<
-                     "Invalid parameter index l = " <<
-                     l << std::endl);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      l >= num_p || l < 0,
+      Teuchos::Exceptions::InvalidParameter,
+      std::endl <<
+      "Error in Piro::RythmosSolver::get_p_map():  " <<
+      "Invalid parameter index l = " <<
+      l << std::endl);
+
   return model->get_p_space(l);
 }
 
@@ -259,14 +261,20 @@ template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::RythmosSolver<Scalar>::get_g_space(int j) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(j > num_g || j < 0, Teuchos::Exceptions::InvalidParameter,
-                     std::endl <<
-                     "Error in Piro::RythmosSolver::get_g_map():  " <<
-                     "Invalid response index j = " <<
-                     j << std::endl);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      j > num_g || j < 0,
+      Teuchos::Exceptions::InvalidParameter,
+      std::endl <<
+      "Error in Piro::RythmosSolver::get_g_map():  " <<
+      "Invalid response index j = " <<
+      j << std::endl);
 
-  if      (j < num_g) return model->get_g_space(j);
-  else return model->get_x_space(); // j == num_g
+  if (j < num_g) {
+    return model->get_g_space(j);
+  } else {
+    // j == num_g
+    return model->get_x_space();
+  }
 }
 
 template<typename Scalar>
@@ -305,6 +313,16 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::RythmosSolver<Scalar>::createOu
     // Only one parameter supported
     const int l = 0;
 
+    if (Teuchos::nonnull(initialConditionModel)) {
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar> initCondOutArgs =
+        initialConditionModel->createOutArgs();
+      const Thyra::ModelEvaluatorBase::DerivativeSupport init_dxdp_support =
+        initCondOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, initCondOutArgs.Ng() - 1, l);
+      if (!init_dxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+        return outArgs;
+      }
+    }
+
     // Solution sensitivity
     outArgs.setSupports(
         Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,
@@ -316,12 +334,25 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::RythmosSolver<Scalar>::createOu
       // Only one response supported
       const int j = 0;
 
-      // Response sensitivity
-      outArgs.setSupports(
-          Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,
-          j,
-          l,
-          Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+      const Thyra::ModelEvaluatorBase::DerivativeSupport model_dgdx_support =
+        modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, l);
+      if (!model_dgdx_support.none()) {
+        const Thyra::ModelEvaluatorBase::DerivativeSupport model_dgdp_support =
+          modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
+        // Response sensitivity
+        Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support;
+        if (model_dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+          dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+        }
+        if (model_dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
+          dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+        }
+        outArgs.setSupports(
+            Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,
+            j,
+            l,
+            dgdp_support);
+      }
     }
   }
 
@@ -384,7 +415,7 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
   *out << "\nstate_ic:\n" << Teuchos::describe(state_ic, solnVerbLevel);
 
   RCP<Thyra::MultiVectorBase<Scalar> > dgxdp_out;
-  RCP<Thyra::MultiVectorBase<Scalar> > dgdp_out;
+  Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv_out;
   if (num_p > 0) {
     const Thyra::ModelEvaluatorBase::DerivativeSupport dgxdp_support =
       outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, num_g, l);
@@ -398,15 +429,13 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
       const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
         outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
       if (dgxdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
-        const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv =
-          outArgs.get_DgDp(j, l);
-        dgdp_out = dgdp_deriv.getMultiVector();
+        dgdp_deriv_out = outArgs.get_DgDp(j, l);
       }
     }
   }
 
   const bool requestedSensitivities =
-    Teuchos::nonnull(dgxdp_out) || Teuchos::nonnull(dgdp_out);
+    Teuchos::nonnull(dgxdp_out) || !dgdp_deriv_out.isEmpty();
 
   RCP<const Thyra::VectorBase<Scalar> > finalSolution;
   if (!requestedSensitivities) {
@@ -489,7 +518,8 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
           Teuchos::rcp_implicit_cast<Rythmos::StepperBase<Scalar> >(stateAndSensStepper),
           Teuchos::rcp_implicit_cast<Rythmos::IntegratorBase<Scalar> >(fwdStateIntegrator),
           state_and_sens_ic);
-    const int solutionResponseIndex = 0;
+    // StepperAsModelEvaluator outputs the solution as its last response
+    const int stateAndSensModelStateResponseIndex = stateAndSensIntegratorAsModel->Ng() - 1;
 
     *out << "\nUse the StepperAsModelEvaluator to integrate state + sens x_bar(p,t_final) ... \n";
     Teuchos::OSTab tab(out);
@@ -498,7 +528,7 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
     RCP<const Thyra::MultiVectorBase<Scalar> > dxdp;
 
     const RCP<Thyra::VectorBase<Scalar> > x_bar_final =
-      Thyra::createMember(stateAndSensIntegratorAsModel->get_g_space(j));
+      Thyra::createMember(stateAndSensIntegratorAsModel->get_g_space(stateAndSensModelStateResponseIndex));
     // Extract pieces of x_bar_final to prepare output
     {
       const RCP<const Thyra::ProductVectorBase<Scalar> > x_bar_final_downcasted =
@@ -524,7 +554,7 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
         *stateAndSensIntegratorAsModel,
         l, *state_ic.get_p(l),
         t_final,
-        solutionResponseIndex, &*x_bar_final
+        stateAndSensModelStateResponseIndex, x_bar_final.get()
         );
 
     *out
@@ -536,7 +566,16 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
       Thyra::assign(dgxdp_out.ptr(), *dxdp);
     }
 
-    if (Teuchos::nonnull(dgdp_out)) {
+    if (!dgdp_deriv_out.isEmpty()) {
+      RCP<Thyra::DefaultAddedLinearOp<Scalar> > dgdp_op_out;
+      {
+        const RCP<Thyra::LinearOpBase<Scalar> > dgdp_op = dgdp_deriv_out.getLinearOp();
+        if (Teuchos::nonnull(dgdp_op)) {
+          dgdp_op_out = Teuchos::rcp_dynamic_cast<Thyra::DefaultAddedLinearOp<Scalar> >(dgdp_op);
+          dgdp_op_out.assert_not_null();
+        }
+      }
+
       Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = model->createInArgs();
       {
         modelInArgs.set_x(finalSolution);
@@ -548,28 +587,41 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
       // require dgdx, dgdp from model
       Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
       {
-        const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdx_deriv =
-          Thyra::create_DgDx_mv(*model, j, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
+        const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdx_deriv(model->create_DgDx_op(j));
         modelOutArgs.set_DgDx(j, dgdx_deriv);
 
-        const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv =
-          Thyra::ModelEvaluatorBase::Derivative<Scalar>(dgdp_out, Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+        Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv;
+        if (Teuchos::nonnull(dgdp_op_out)) {
+          dgdp_deriv = model->create_DgDp_op(j, l);
+        } else {
+          dgdp_deriv = dgdp_deriv_out;
+        }
         modelOutArgs.set_DgDp(j, l, dgdp_deriv);
       }
 
       model->evalModel(modelInArgs, modelOutArgs);
 
-      const RCP<const Thyra::MultiVectorBase<Scalar> > dgdx =
-        modelOutArgs.get_DgDx(j).getMultiVector();
+      const RCP<const Thyra::LinearOpBase<Scalar> > dgdx =
+        modelOutArgs.get_DgDx(j).getLinearOp();
 
       // dgdp_out = dgdp + <dgdx, dxdp>
-      Thyra::apply(
-          *dgdx,
-          Thyra::TRANS,
-          *dxdp,
-          dgdp_out.ptr(),
-          Teuchos::ScalarTraits<Scalar>::one(),
-          Teuchos::ScalarTraits<Scalar>::one());
+      if (Teuchos::nonnull(dgdp_op_out)) {
+        Teuchos::Array<RCP<const Thyra::LinearOpBase<Scalar> > > op_args(2);
+        {
+          op_args[0] = modelOutArgs.get_DgDp(j, l).getLinearOp();
+          op_args[1] = Thyra::multiply<Scalar>(dgdx, dxdp);
+        }
+        dgdp_op_out->initialize(op_args);
+      } else {
+        const RCP<Thyra::MultiVectorBase<Scalar> > dgdp_mv_out = dgdp_deriv_out.getMultiVector();
+        Thyra::apply(
+            *dgdx,
+            Thyra::NOTRANS,
+            *dxdp,
+            dgdp_mv_out.ptr(),
+            Teuchos::ScalarTraits<Scalar>::one(),
+            Teuchos::ScalarTraits<Scalar>::one());
+      }
     }
   }
 
@@ -598,6 +650,16 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
   if (Teuchos::nonnull(gx_out)) {
     Thyra::copy(*finalSolution, gx_out.ptr());
   }
+}
+
+template <typename Scalar>
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
+Piro::RythmosSolver<Scalar>::create_DgDp_op_impl(int j, int l) const
+{
+  TEUCHOS_ASSERT(j != num_g);
+  const Teuchos::Array<Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > > dummy =
+    Teuchos::tuple(zero(this->get_g_space(j), this->get_p_space(l)));
+  return Teuchos::rcp(new Thyra::DefaultAddedLinearOp<Scalar>(dummy));
 }
 
 template <typename Scalar>

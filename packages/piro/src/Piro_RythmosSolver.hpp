@@ -43,8 +43,6 @@
 #ifndef PIRO_RYTHMOSSOLVER_H
 #define PIRO_RYTHMOSSOLVER_H
 
-#include <iostream>
-
 #include "Thyra_ModelEvaluatorDefaultBase.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 
@@ -115,6 +113,8 @@ private:
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
   //@}
+
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DgDp_op_impl(int j, int l) const;
 
   /** \brief . */
   Teuchos::RCP<const Teuchos::ParameterList> getValidRythmosParameters() const;

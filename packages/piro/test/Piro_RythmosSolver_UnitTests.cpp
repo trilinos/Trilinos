@@ -52,6 +52,7 @@
 #endif /* Piro_ENABLE_NOX */
 
 #include "Piro_Test_ThyraSupport.hpp"
+#include "Piro_Test_WeakenedModelEvaluator.hpp"
 
 #include "MockModelEval_A.hpp"
 
@@ -67,6 +68,8 @@
 #include "Teuchos_Ptr.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Tuple.hpp"
+
+#include <stdexcept>
 
 using namespace Teuchos;
 using namespace Piro;
@@ -134,6 +137,13 @@ const RCP<RythmosSolver<double> > solverNew(
   return solverNew(thyraModelNew(epetraModel), finalTime);
 }
 
+Thyra::ModelEvaluatorBase::InArgs<double> getStaticNominalValues(const Thyra::ModelEvaluator<double> &model)
+{
+  Thyra::ModelEvaluatorBase::InArgs<double> result = model.getNominalValues();
+  result.set_x_dot(Teuchos::null);
+  return result;
+}
+
 void vectorAssign(Thyra::VectorBase<double> &target, const ArrayView<const double> &values) {
   for (int i = 0; i < values.size(); ++i) {
     Thyra::set_ele(i, values[i], ptrFromRef(target));
@@ -178,7 +188,7 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_Response)
   const RCP<Thyra::VectorBase<double> > expectedResponse =
     Thyra::createMember(model->get_g_space(responseIndex));
   {
-    const Thyra::MEB::InArgs<double> modelInArgs = model->getNominalValues();
+    const Thyra::MEB::InArgs<double> modelInArgs = getStaticNominalValues(*model);
     Thyra::MEB::OutArgs<double> modelOutArgs = model->createOutArgs();
     modelOutArgs.set_g(responseIndex, expectedResponse);
     model->evalModel(modelInArgs, modelOutArgs);
@@ -231,6 +241,36 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_DefaultSolutionSensitivity)
   }
 }
 
+TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_DefaultSolutionSensitivityOp)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+  const double finalTime = 0.0;
+
+  const RCP<RythmosSolver<double> > solver = solverNew(model, finalTime);
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const int solutionResponseIndex = solver->Ng() - 1;
+  const int parameterIndex = 0;
+  const Thyra::MEB::Derivative<double> dxdp_deriv =
+    solver->create_DgDp_op(solutionResponseIndex, parameterIndex);
+  const RCP<Thyra::LinearOpBase<double> > dxdp = dxdp_deriv.getLinearOp();
+  outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+
+  const Array<Array<double> > expected = tuple(
+      Array<double>(tuple(0.0, 0.0, 0.0, 0.0)),
+      Array<double>(tuple(0.0, 0.0, 0.0, 0.0)));
+  TEST_EQUALITY(dxdp->domain()->dim(), expected.size());
+  for (int i = 0; i < expected.size(); ++i) {
+  TEST_EQUALITY(dxdp->range()->dim(), expected[i].size());
+    const Array<double> actual = arrayFromLinOp(*dxdp, i);
+    TEST_COMPARE_FLOATING_ARRAYS(actual, expected[i], tol);
+  }
+}
+
 TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_DefaultResponseSensitivity)
 {
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
@@ -242,7 +282,7 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_DefaultResponseSensitivity)
     Thyra::create_DgDp_mv(*model, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
   const RCP<const Thyra::MultiVectorBase<double> > dgdp_expected = dgdp_deriv_expected.getMultiVector();
   {
-    const Thyra::MEB::InArgs<double> modelInArgs = model->getNominalValues();
+    const Thyra::MEB::InArgs<double> modelInArgs = getStaticNominalValues(*model);
     Thyra::MEB::OutArgs<double> modelOutArgs = model->createOutArgs();
     modelOutArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv_expected);
     model->evalModel(modelInArgs, modelOutArgs);
@@ -270,6 +310,125 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_DefaultResponseSensitivity)
   }
 }
 
+TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_DefaultResponseSensitivity_NoDgDxMv)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model(
+    new WeakenedModelEvaluator_NoDgDxMv(defaultModelNew()));
+
+  const int responseIndex = 0;
+  const int parameterIndex = 0;
+
+  const Thyra::MEB::Derivative<double> dgdp_deriv_expected =
+    Thyra::create_DgDp_mv(*model, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<const Thyra::MultiVectorBase<double> > dgdp_expected = dgdp_deriv_expected.getMultiVector();
+  {
+    const Thyra::MEB::InArgs<double> modelInArgs = getStaticNominalValues(*model);
+    Thyra::MEB::OutArgs<double> modelOutArgs = model->createOutArgs();
+    modelOutArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv_expected);
+    model->evalModel(modelInArgs, modelOutArgs);
+  }
+
+  const double finalTime = 0.0;
+  const RCP<RythmosSolver<double> > solver = solverNew(model, finalTime);
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const Thyra::MEB::Derivative<double> dgdp_deriv =
+    Thyra::create_DgDp_mv(*solver, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<const Thyra::MultiVectorBase<double> > dgdp = dgdp_deriv.getMultiVector();
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+
+  TEST_EQUALITY(dgdp->domain()->dim(), dgdp_expected->domain()->dim());
+  TEST_EQUALITY(dgdp->range()->dim(), dgdp_expected->range()->dim());
+  for (int i = 0; i < dgdp_expected->domain()->dim(); ++i) {
+    const Array<double> actual = arrayFromVector(*dgdp->col(i));
+    const Array<double> expected = arrayFromVector(*dgdp_expected->col(i));
+    TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+  }
+}
+
+TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_DefaultResponseSensitivityOp)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+
+  const int responseIndex = 0;
+  const int parameterIndex = 0;
+
+  const Thyra::MEB::Derivative<double> dgdp_deriv_expected =
+    model->create_DgDp_op(responseIndex, parameterIndex);
+  const RCP<const Thyra::LinearOpBase<double> > dgdp_expected = dgdp_deriv_expected.getLinearOp();
+  {
+    const Thyra::MEB::InArgs<double> modelInArgs = getStaticNominalValues(*model);
+    Thyra::MEB::OutArgs<double> modelOutArgs = model->createOutArgs();
+    modelOutArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv_expected);
+    model->evalModel(modelInArgs, modelOutArgs);
+  }
+
+  const double finalTime = 0.0;
+  const RCP<RythmosSolver<double> > solver = solverNew(model, finalTime);
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const Thyra::MEB::Derivative<double> dgdp_deriv =
+    solver->create_DgDp_op(responseIndex, parameterIndex);
+  const RCP<const Thyra::LinearOpBase<double> > dgdp = dgdp_deriv.getLinearOp();
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+
+  TEST_EQUALITY(dgdp->domain()->dim(), dgdp_expected->domain()->dim());
+  TEST_EQUALITY(dgdp->range()->dim(), dgdp_expected->range()->dim());
+  for (int i = 0; i < dgdp->domain()->dim(); ++i) {
+    const Array<double> actual = arrayFromLinOp(*dgdp, i);
+    const Array<double> expected = arrayFromLinOp(*dgdp_expected, i);
+    TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+  }
+}
+
+TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_DefaultResponseSensitivityOp_NoDgDpMv)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model(
+      new WeakenedModelEvaluator_NoDgDpMv(defaultModelNew()));
+
+  const int responseIndex = 0;
+  const int parameterIndex = 0;
+
+  const Thyra::MEB::Derivative<double> dgdp_deriv_expected =
+    model->create_DgDp_op(responseIndex, parameterIndex);
+  const RCP<const Thyra::LinearOpBase<double> > dgdp_expected = dgdp_deriv_expected.getLinearOp();
+  {
+    const Thyra::MEB::InArgs<double> modelInArgs = getStaticNominalValues(*model);
+    Thyra::MEB::OutArgs<double> modelOutArgs = model->createOutArgs();
+    modelOutArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv_expected);
+    model->evalModel(modelInArgs, modelOutArgs);
+  }
+
+  const double finalTime = 0.0;
+  const RCP<RythmosSolver<double> > solver = solverNew(model, finalTime);
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const Thyra::MEB::Derivative<double> dgdp_deriv =
+    solver->create_DgDp_op(responseIndex, parameterIndex);
+  const RCP<const Thyra::LinearOpBase<double> > dgdp = dgdp_deriv.getLinearOp();
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+
+  TEST_EQUALITY(dgdp->domain()->dim(), dgdp_expected->domain()->dim());
+  TEST_EQUALITY(dgdp->range()->dim(), dgdp_expected->range()->dim());
+  for (int i = 0; i < dgdp->domain()->dim(); ++i) {
+    const Array<double> actual = arrayFromLinOp(*dgdp, i);
+    const Array<double> expected = arrayFromLinOp(*dgdp_expected, i);
+    TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+  }
+}
+
 TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_ResponseAndDefaultSensitivities)
 {
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
@@ -280,7 +439,7 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_ResponseAndDefaultSensitivities)
   const RCP<Thyra::VectorBase<double> > expectedResponse =
     Thyra::createMember(model->get_g_space(responseIndex));
   {
-    const Thyra::MEB::InArgs<double> modelInArgs = model->getNominalValues();
+    const Thyra::MEB::InArgs<double> modelInArgs = getStaticNominalValues(*model);
     Thyra::MEB::OutArgs<double> modelOutArgs = model->createOutArgs();
     modelOutArgs.set_g(responseIndex, expectedResponse);
     model->evalModel(modelInArgs, modelOutArgs);
@@ -290,7 +449,7 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_ResponseAndDefaultSensitivities)
     Thyra::create_DgDp_mv(*model, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
   const RCP<const Thyra::MultiVectorBase<double> > dgdp_expected = dgdp_deriv_expected.getMultiVector();
   {
-    const Thyra::MEB::InArgs<double> modelInArgs = model->getNominalValues();
+    const Thyra::MEB::InArgs<double> modelInArgs = getStaticNominalValues(*model);
     Thyra::MEB::OutArgs<double> modelOutArgs = model->createOutArgs();
     modelOutArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv_expected);
     model->evalModel(modelInArgs, modelOutArgs);
@@ -343,21 +502,22 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, SteadyState_SolutionSensitivity)
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > steadyStateSolver(
       new NOXSolver<double>(rcp(new ParameterList), model));
 
-  const int solutionResponseIndex = steadyStateSolver->Ng() - 1;
   const int parameterIndex = 0;
+  const int initialSolutionIndex = steadyStateSolver->Ng() - 1;
 
   const Thyra::MEB::Derivative<double> dxdp_deriv_expected =
-    Thyra::create_DgDp_mv(*steadyStateSolver, solutionResponseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+    Thyra::create_DgDp_mv(*steadyStateSolver, initialSolutionIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
   const RCP<const Thyra::MultiVectorBase<double> > dxdp_expected = dxdp_deriv_expected.getMultiVector();
   {
     const Thyra::MEB::InArgs<double> steadyInArgs = steadyStateSolver->getNominalValues();
     Thyra::MEB::OutArgs<double> steadyOutArgs = steadyStateSolver->createOutArgs();
-    steadyOutArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv_expected);
+    steadyOutArgs.set_DgDp(initialSolutionIndex, parameterIndex, dxdp_deriv_expected);
     steadyStateSolver->evalModel(steadyInArgs, steadyOutArgs);
   }
 
   const double finalTime = 0.0;
   const RCP<RythmosSolver<double> > solver = solverNew(model, finalTime, steadyStateSolver);
+  const int solutionResponseIndex = solver->Ng() - 1;
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
 
@@ -375,6 +535,37 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, SteadyState_SolutionSensitivity)
     const Array<double> actual = arrayFromVector(*dxdp->col(i));
     const Array<double> expected = arrayFromVector(*dxdp_expected->col(i));
     TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+  }
+}
+
+TEUCHOS_UNIT_TEST(Piro_RythmosSolver, SteadyState_Sensitivities_NoDxinitDpMv)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > underlyingSteadyStateSolver(
+      new NOXSolver<double>(rcp(new ParameterList), model));
+
+  const int parameterIndex = 0;
+  const int initialSolutionIndex = underlyingSteadyStateSolver->Ng() - 1;
+
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > steadyStateSolver(
+      new WeakenedModelEvaluator_NoDgDpMv(underlyingSteadyStateSolver, initialSolutionIndex, parameterIndex));
+
+  const double finalTime = 0.0;
+  const RCP<RythmosSolver<double> > solver = solverNew(model, finalTime, steadyStateSolver);
+
+  const int solutionResponseIndex = solver->Ng() - 1;
+  const int responseIndex = 0;
+
+  const Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  {
+  const Thyra::MEB::DerivativeSupport dxdp_support =
+    outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, solutionResponseIndex, parameterIndex);
+  TEST_ASSERT(!dxdp_support.supports(Thyra::MEB::DERIV_MV_JACOBIAN_FORM));
+  }
+  {
+  const Thyra::MEB::DerivativeSupport dgdp_support =
+    outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, responseIndex, parameterIndex);
+  TEST_ASSERT(!dgdp_support.supports(Thyra::MEB::DERIV_MV_JACOBIAN_FORM));
   }
 }
 
@@ -415,6 +606,48 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, SteadyState_ResponseSensitivity)
   for (int i = 0; i < dgdp_expected->domain()->dim(); ++i) {
     const Array<double> actual = arrayFromVector(*dgdp->col(i));
     const Array<double> expected = arrayFromVector(*dgdp_expected->col(i));
+    TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+  }
+}
+
+TEUCHOS_UNIT_TEST(Piro_RythmosSolver, SteadyState_ResponseSensitivityOp_NoDgDpMv)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model(
+      new WeakenedModelEvaluator_NoDgDpMv(defaultModelNew()));
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > steadyStateSolver(
+      new NOXSolver<double>(rcp(new ParameterList), model));
+
+  const int responseIndex = 0;
+  const int parameterIndex = 0;
+
+  const Thyra::MEB::Derivative<double> dgdp_deriv_expected =
+    steadyStateSolver->create_DgDp_op(responseIndex, parameterIndex);
+  const RCP<const Thyra::LinearOpBase<double> > dgdp_expected = dgdp_deriv_expected.getLinearOp();
+  {
+    const Thyra::MEB::InArgs<double> steadyInArgs = steadyStateSolver->getNominalValues();
+    Thyra::MEB::OutArgs<double> steadyOutArgs = steadyStateSolver->createOutArgs();
+    steadyOutArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv_expected);
+    steadyStateSolver->evalModel(steadyInArgs, steadyOutArgs);
+  }
+
+  const double finalTime = 0.0;
+  const RCP<RythmosSolver<double> > solver = solverNew(model, finalTime, steadyStateSolver);
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const Thyra::MEB::Derivative<double> dgdp_deriv =
+    solver->create_DgDp_op(responseIndex, parameterIndex);
+  const RCP<const Thyra::LinearOpBase<double> > dgdp = dgdp_deriv.getLinearOp();
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+
+  TEST_EQUALITY(dgdp->domain()->dim(), dgdp_expected->domain()->dim());
+  TEST_EQUALITY(dgdp->range()->dim(), dgdp_expected->range()->dim());
+  for (int i = 0; i < dgdp_expected->domain()->dim(); ++i) {
+    const Array<double> actual = arrayFromLinOp(*dgdp, i);
+    const Array<double> expected = arrayFromLinOp(*dgdp_expected, i);
     TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
   }
 }
