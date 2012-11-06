@@ -1025,9 +1025,7 @@ void define_side_block(stk::mesh::Part &part,
     stk::io::get_cell_topology(part) :
     stk::mesh::MetaData::get(part).get_cell_topology(part).getCellTopologyData();
 
-  std::string io_topo = "unknown";
-  if (side_topology != NULL)
-    map_topology_cell_to_ioss(side_topology, spatial_dimension);
+  std::string io_topo = map_topology_cell_to_ioss(side_topology, spatial_dimension);
   std::string element_topo_name = "unknown";
 
   // Get sideblock parent element topology quantities...
