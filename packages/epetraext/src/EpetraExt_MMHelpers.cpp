@@ -337,7 +337,48 @@ int sort_crs_entries(int NumRows, const int *CRS_rowptr, int *CRS_colind, double
   }
   return(0);
 }
+//=========================================================================
+RemoteOnlyImport::RemoteOnlyImport(const Epetra_Import & Importer, Epetra_Map & RemoteOnlyTargetMap)
+{
+  int i;
 
+  // Build an "Importer" that only takes the remote parts of the Importer.
+  SourceMap_=&Importer.SourceMap();
+  TargetMap_=&RemoteOnlyTargetMap;
+
+  // Pull data from the Importer
+  NumRemoteIDs_       = Importer.NumRemoteIDs();
+  NumExportIDs_       = Importer.NumExportIDs();
+  Distor_             = &Importer.Distributor();
+  int * OldRemoteLIDs = Importer.RemoteLIDs();
+  int * OldExportLIDs = Importer.ExportLIDs();
+  
+  // Sanity Check
+  if(NumRemoteIDs_ != RemoteOnlyTargetMap.NumMyElements())
+    throw std::runtime_error("RemoteOnlyImport: Importer doesn't match RemoteOnlyTargetMap for number of remotes.");
+
+  // Copy the ExportIDs_, since they don't change
+  ExportLIDs_ = new int[NumExportIDs_];
+  for(i=0; i<NumExportIDs_; i++) 
+    ExportLIDs_[i] = OldExportLIDs[i];
+
+  // The RemoteIDs, on the other hand, do change.  So let's do this right.
+  RemoteLIDs_ = new int[NumRemoteIDs_];
+  for(i=0; i<NumRemoteIDs_; i++) 
+    RemoteLIDs_[i] = TargetMap_->LID(Importer.TargetMap().GID(OldRemoteLIDs[i]));
+
+  // Nowe we make sure these guys are in sorted order.  AztecOO, ML and all that jazz.
+  for(i=0; i<NumRemoteIDs_-1; i++) 
+    if(RemoteLIDs_[i] > RemoteLIDs_[i+1])
+      throw std::runtime_error("RemoteOnlyImport: Importer and RemoteOnlyTargetMap order don't match.");
+}
+//=========================================================================
+RemoteOnlyImport::~RemoteOnlyImport()
+{
+  delete [] ExportLIDs_;
+  delete [] RemoteLIDs_;
+  // Don't delete the Distributor, SourceMap_ or TargetMap_ - those were shallow copies
+}
 
 //=========================================================================
 template <class GO>
@@ -680,12 +721,9 @@ int LightweightCrsMatrix::PackAndPrepareWithOwningPIDs(const Epetra_DistObject &
   return(0);
 }
 
-
 //=========================================================================
-LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix, Epetra_Import & RowImporter):
-  RowMap_(RowImporter.TargetMap()),
-  ColMap_(RowImporter.TargetMap()),
-  DomainMap_(SourceMatrix.DomainMap())
+template<typename ImportType>
+void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, ImportType & RowImporter)
 {  
   // Do we need to use long long for GCIDs?
   bool UseLL=false;
@@ -990,6 +1028,30 @@ LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix
   mtime->stop();
 #endif
  }// end fused copy constructor
+
+
+
+
+//=========================================================================
+LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix, RemoteOnlyImport & RowImporter):
+  RowMap_(RowImporter.TargetMap()),
+  ColMap_(RowImporter.TargetMap()),
+  DomainMap_(SourceMatrix.DomainMap())
+{ 
+  Construct<RemoteOnlyImport>(SourceMatrix,RowImporter);
+}
+
+
+//=========================================================================
+LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix, Epetra_Import & RowImporter):
+  RowMap_(RowImporter.TargetMap()),
+  ColMap_(RowImporter.TargetMap()),
+  DomainMap_(SourceMatrix.DomainMap())
+{
+  Construct<Epetra_Import>(SourceMatrix,RowImporter);
+}
+
+
 
 
 }//namespace EpetraExt

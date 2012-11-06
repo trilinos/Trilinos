@@ -61,8 +61,17 @@ class LightweightCrsMatrix;
 
 #define LIGHTWEIGHT_MATRIX
 
+#define LIGHTWEIGHT_IMPORT
+
 //#define ENABLE_MMM_TIMINGS
 
+// Sanity checking
+#if defined(LIGHTWEIGHT_IMPORT) && !defined(LIGHTWEIGHT_MATRIX)
+#error "LIGHTWEIGHT_IMPORT only works with LIGHTWEIGHT_MATRIX!"
+#endif
+
+
+// ==============================================================
 //struct that holds views of the contents of a CrsMatrix. These
 //contents may be a mixture of local and remote rows of the
 //actual matrix.
@@ -95,6 +104,7 @@ public:
 
 int dumpCrsMatrixStruct(const CrsMatrixStruct& M);
 
+// ==============================================================
 class CrsWrapper {
  public:
   virtual ~CrsWrapper(){}
@@ -108,6 +118,7 @@ class CrsWrapper {
   virtual int SumIntoGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices) = 0;
 };
 
+// ==============================================================
 class CrsWrapper_Epetra_CrsMatrix : public CrsWrapper {
  public:
   CrsWrapper_Epetra_CrsMatrix(Epetra_CrsMatrix& epetracrsmatrix);
@@ -124,6 +135,7 @@ class CrsWrapper_Epetra_CrsMatrix : public CrsWrapper {
   Epetra_CrsMatrix& ecrsmat_;
 };
 
+// ==============================================================
 class CrsWrapper_GraphBuilder : public CrsWrapper {
  public:
   CrsWrapper_GraphBuilder(const Epetra_Map& emap);
@@ -146,6 +158,7 @@ class CrsWrapper_GraphBuilder : public CrsWrapper {
   int max_row_length_;
 };
 
+// ==============================================================
 void insert_matrix_locations(CrsWrapper_GraphBuilder& graphbuilder,
                               Epetra_CrsMatrix& C);
 
@@ -160,10 +173,50 @@ std::pair<int,int> get_col_range(const Epetra_CrsMatrix& mtx);
 
 int sort_crs_entries(int NumRows, const int *CRS_rowptr, int *CRS_colind, double *CRS_vals);
 
+// ==============================================================
+class RemoteOnlyImport {
+ public:
+  RemoteOnlyImport(const Epetra_Import & Importer, Epetra_Map & RemoteOnlyTargetMap);
+  ~RemoteOnlyImport();
 
+  int NumSameIDs() {return 0;}
+
+  int NumPermuteIDs() {return 0;} 
+
+  int NumRemoteIDs() {return NumRemoteIDs_;}
+
+  int NumExportIDs() {return NumExportIDs_;}
+
+  int* ExportLIDs() {return ExportLIDs_;}
+
+  int* RemoteLIDs() {return RemoteLIDs_;}  
+
+  int* PermuteToLIDs() {return 0;}
+
+  int* PermuteFromLIDs() {return 0;}
+  
+  Epetra_Distributor & Distributor() {return *Distor_;}  
+
+  const Epetra_BlockMap & SourceMap() const {return *SourceMap_;}
+  const Epetra_BlockMap & TargetMap() const {return *TargetMap_;}
+
+ private:
+  int NumRemoteIDs_;
+  int NumExportIDs_;
+  int * ExportLIDs_;
+  int * RemoteLIDs_;
+  Epetra_Distributor* Distor_;
+  const Epetra_BlockMap* SourceMap_;
+  const Epetra_BlockMap* TargetMap_;
+
+};
+   
+
+
+// ==============================================================
 class LightweightCrsMatrix {
  public:
- 
+  LightweightCrsMatrix(const Epetra_CrsMatrix & A, RemoteOnlyImport & RowImporter);
   LightweightCrsMatrix(const Epetra_CrsMatrix & A, Epetra_Import & RowImporter);
 
   // Standard crs data structures
@@ -183,6 +236,10 @@ class LightweightCrsMatrix {
   std::vector<int>    ColMapOwningPIDs_;
 
  private: 
+
+
+  template <typename ImportType>
+  void Construct(const Epetra_CrsMatrix & A, ImportType & RowImporter);
 
   // Templated versions of MakeColMapAndReindex (to prevent code duplication)
   template <class GO>
