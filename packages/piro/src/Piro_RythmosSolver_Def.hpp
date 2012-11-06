@@ -71,8 +71,8 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
     Teuchos::RCP< Thyra::ModelEvaluatorDefaultBase<Scalar> > in_model,
     Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer) :
   model(in_model),
-  num_p(in_model->createInArgs().Np()),
-  num_g(in_model->createOutArgs().Ng()),
+  num_p(in_model->Np()),
+  num_g(in_model->Ng()),
   out(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
   using Teuchos::ParameterList;
@@ -222,8 +222,8 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
   fwdTimeStepSolver(timeStepSolver),
   model(underlyingModel),
   initialConditionModel(icModel),
-  num_p(model->createInArgs().Np()),
-  num_g(model->createOutArgs().Ng()),
+  num_p(model->Np()),
+  num_g(model->Ng()),
   t_final(finalTime),
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   solnVerbLevel(verbosityLevel)
