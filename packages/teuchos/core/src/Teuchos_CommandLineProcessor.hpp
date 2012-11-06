@@ -592,6 +592,8 @@ public: // Hidden implementation stuff that clients should never see
   /// with TimeMonitor through the TimeMonitorSurrogate interface.
   class TimeMonitorSurrogate {
   public:
+    ///! brief.
+    virtual ~TimeMonitorSurrogate() {}
     //! Summarize timings over all process(es) to the given output stream.
     virtual void summarize(std::ostream &out=std::cout) = 0;
   };
