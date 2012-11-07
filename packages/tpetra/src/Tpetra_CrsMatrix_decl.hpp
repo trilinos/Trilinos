@@ -134,7 +134,7 @@ namespace Tpetra {
    interface like that of \c Epetra_CrsMatrix, but also allows
    insertion of data into nonowned rows, much like \c Epetra_FECrsMatrix.
 
-   \section Kokkos_CrsMatrix_prereq Prerequisites
+   \section Tpetra_CrsMatrix_prereq Prerequisites
 
    Before reading the rest of this documentation, it helps to know
    something about the Teuchos memory management classes, in
@@ -594,7 +594,7 @@ namespace Tpetra {
 
 
     //! Returns \c true if getLocalRowView() and getGlobalRowView() are valid for this class
-    virtual bool supportsRowViews() const; 
+    virtual bool supportsRowViews() const;
 
     //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
     /*!
