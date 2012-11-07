@@ -98,6 +98,8 @@
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuOp()
 
+#define NEUMANN
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::ArrayRCP;
@@ -208,7 +210,8 @@ int main(int argc, char *argv[]) {
   int nSmoothers=2;
   LO maxLevels = 3;
   LO its=10;
-  std::string coarseSolver="ifpack2";
+  // std::string coarseSolver="ifpack2";
+  std::string coarseSolver="amesos2";
   int pauseForDebugger=0;
   clp.setOption("nSmoothers",&nSmoothers,"number of Gauss-Seidel smoothers in the MergedSmootehrs");
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed. If 1, then a MergedSmoother is used on the coarse grid");
@@ -243,7 +246,7 @@ int main(int argc, char *argv[]) {
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
   RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
 
-#if 1
+#ifdef NEUMANN
   // Tranform matrix to Neumann b.c.
   // Essentially, we need to update two diagonal elements
   bool useTpetra = (Op->getRowMap()->lib() == Xpetra::UseTpetra);
@@ -327,7 +330,7 @@ int main(int argc, char *argv[]) {
 
 #else
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory() );
-#if 1
+#if 0
   Pfact->SetDampingFactor(0.0);
 #endif
 #endif
@@ -373,6 +376,15 @@ int main(int argc, char *argv[]) {
     X->putScalar( (SC) 0.0);
 
     H->Iterate(*RHS,its,*X);
+
+#ifdef NEUMANN
+    // Project X
+    X->norm1(norms);
+    size_t numElements = X->getGlobalLength();
+    SC alpha = norms[0]/numElements;
+    for (LO i = 0; i < numElements; i++)
+      X->getDataNonConst(0)[i] -= alpha;
+#endif
 
     X->norm2(norms);
     if (comm->getRank() == 0)
