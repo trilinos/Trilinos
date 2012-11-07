@@ -661,7 +661,7 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 			   Epetra_CrsMatrix& C,
 			   bool call_FillComplete_on_result){
 
-  int i;
+  int i,rv;
   Epetra_Map* mapunion1 = 0;
 
   // DEBUG
@@ -671,9 +671,12 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
   Teuchos::RCP<Teuchos::Time> mtime;
 #endif  
 
+
+
   // If the user doesn't want us to call FillComplete, use the general routine
   if(!call_FillComplete_on_result) {
-    return mult_A_B_general(A,Aview,B,Bview,C,false);
+    rv=mult_A_B_general(A,Aview,B,Bview,C,false);
+    return rv;
   }
 
   // Is this a "clean" matrix
@@ -688,12 +691,13 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 
   // It's a new matrix that hasn't been fill-completed, use the general routine
   if(!NewFlag && ExtractFailFlag){
-    return mult_A_B_general(A,Aview,B,Bview,C,call_FillComplete_on_result);
+    rv=mult_A_B_general(A,Aview,B,Bview,C,call_FillComplete_on_result);
+    return rv;
   }
 
 #ifdef ENABLE_MMM_TIMINGS
-  if(NewFlag) mtime=M.getNewTimer("M5 Setup");
-  else mtime=M.getNewTimer("M5r Setup");
+  if(NewFlag) mtime=M.getNewTimer("M5 CMap");
+  else mtime=M.getNewTimer("M5r CMap");
   mtime->start();
 #endif
   // If new, build & clobber a colmap for C
@@ -705,6 +709,13 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
     else
       EPETRA_CHK_ERR( C.ReplaceColMap(B.ColMap()) );
   }
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  if(NewFlag) mtime=M.getNewTimer("M5 Lookups");
+  else mtime=M.getNewTimer("M5r Lookups");
+  mtime->start();
+#endif
 
   // ********************************************
   // Setup Bcol2Ccol / Bimportcol2Ccol lookups
