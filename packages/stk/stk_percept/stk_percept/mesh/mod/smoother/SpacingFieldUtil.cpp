@@ -142,6 +142,9 @@ namespace stk {
       for (unsigned i_element = 0; i_element < node_elems.size(); i_element++)
         {
           stk::mesh::Entity element = node_elems[i_element].entity();
+          if (!MeshSmoother::select_bucket(element.bucket(), &m_eMesh))
+            continue;
+
           if (!element_selector || (*element_selector)(element))
             {
               ++num_elem;

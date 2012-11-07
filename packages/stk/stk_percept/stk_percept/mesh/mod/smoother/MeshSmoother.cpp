@@ -139,19 +139,26 @@ namespace stk {
         }
     }
 
-
-    bool MeshSmoother::get_fixed_flag(stk::mesh::Entity node_ptr)
+    std::pair<bool,int> MeshSmoother::get_fixed_flag(stk::mesh::Entity node_ptr)
     {
       int dof = -1;
-      bool fixed=true;
+      std::pair<bool,int> ret(true,MS_VERTEX);
       //if the owner is something other than the top-level owner, the node
       // is on the boundary; otherwise, it isn't.
+      bool& fixed = ret.first;
+      int& type = ret.second;
       if (m_boundarySelector)
         {
           if ((*m_boundarySelector)(node_ptr))
-            fixed=true;
+            {
+              fixed=true;
+              type=MS_ON_BOUNDARY;
+            }
           else
-            fixed=false;
+            {
+              fixed=false;
+              type = MS_NOT_ON_BOUNDARY;
+            }
         }
       else
         {
@@ -164,11 +171,13 @@ namespace stk {
               if (dof == 0)
                 {
                   fixed=true;
+                  type=MS_VERTEX;
                 }
               // curve (for now we hold these fixed)
               else if (dof == 1)
                 {
                   fixed=true;
+                  type=MS_CURVE;
                   //fixed=false;   // FIXME
                 }
               // surface - also fixed
@@ -176,22 +185,30 @@ namespace stk {
                 {
                   //fixed=false;
                   fixed=true;
+                  if (m_eMesh->get_smooth_surfaces())
+                    {
+                      fixed = false;
+                      //std::cout << "tmp srk found surface node unfixed= " << node_ptr.identifier() << std::endl;
+                    }
+                  type=MS_SURFACE;
                   if (DEBUG_PRINT) std::cout << "tmp srk found surface node unfixed= " << node_ptr.identifier() << std::endl;
                 }
               // interior/volume - free to move
               else
                 {
                   fixed=false;
+                  type=MS_VOLUME;
                 }
             }
           else
             {
               fixed=false;
+              type=MS_VOLUME;
             }
         }
-      if (DEBUG_PRINT) std::cout << "tmp srk classify node= " << node_ptr.identifier() << " dof= " << dof << " fixed= " << fixed << std::endl;
+      if (DEBUG_PRINT) std::cout << "tmp srk classify node= " << node_ptr.identifier() << " dof= " << dof << " fixed= " << fixed << " type= " << type << std::endl;
 
-      return fixed;
+      return ret;
     }
 
     void MeshSmoother::run( bool always_smooth, int debug)
@@ -235,6 +252,86 @@ namespace stk {
       CALLGRIND_TOGGLE_COLLECT
         CALLGRIND_STOP_INSTRUMENTATION
 #endif
+    }
+
+
+    void MeshSmoother::
+    project_delta_to_tangent_plane(stk::mesh::Entity node, double *delta)
+    {
+      if (!m_meshGeometry)
+        {
+          return;
+        }
+
+      std::vector<double> normal(3,0.0);
+      m_meshGeometry->normal_at(m_eMesh, node, normal);
+      double dot=0.0;
+      for (int i = 0; i < m_eMesh->get_spatial_dim(); i++)
+        {
+          dot += delta[i]*normal[i];
+        }
+      for (int i = 0; i < m_eMesh->get_spatial_dim(); i++)
+        {
+          delta[i] -= dot*normal[i];
+        }
+    }
+
+    //! Modifies "coordinate" so that it lies on the
+    //! domain to which "node" is constrained.
+    //! The node determines the domain.  The coordinate
+    //! is the proposed new position on that domain.
+    void MeshSmoother::
+    snap_to(stk::mesh::Entity node_ptr,
+            double *coordinate, bool reset) const 
+    {
+
+      if (!m_meshGeometry) return;
+      stk::mesh::FieldBase* field = m_eMesh->get_coordinates_field();
+      double *f_data = PerceptMesh::field_data(field, node_ptr);
+      double f_data_save[3] = {f_data[0], f_data[1], 0};
+      if (m_eMesh->get_spatial_dim() > 2) f_data_save[2] = f_data[2];
+
+      f_data[0] = coordinate[0];
+      f_data[1] = coordinate[1];
+      if (m_eMesh->get_spatial_dim() > 2) 
+        f_data[2] = coordinate[2];
+
+      static std::vector<stk::mesh::Entity > nodes(1);
+      nodes[0] = node_ptr;
+      m_meshGeometry->snap_points_to_geometry(m_eMesh, nodes);
+      coordinate[0] = f_data[0];
+      coordinate[1] = f_data[1];
+      if (m_eMesh->get_spatial_dim() > 2)
+        coordinate[2] = f_data[2];
+
+#if 0
+      //if (node_ptr->identifier() == 584)
+      if (0)
+        {
+          std::cout << "tmp snap_to: node= " << node_ptr->identifier() << " orig= " 
+                    << f_data_save[0] << " "
+                    << f_data_save[1] << " "
+                    << f_data_save[2] << " "
+                    << " new= " 
+                    << f_data[0] << " "
+                    << f_data[1] << " "
+                    << f_data[2] << " diff1= " 
+                    << (std::fabs(f_data[0] - f_data_save[0])+
+                        std::fabs(f_data[1] - f_data_save[1])+
+                        std::fabs(f_data[2] - f_data_save[2]))
+                    << std::endl;
+        }
+#endif
+
+      // reset the node
+      if (reset)
+        {
+          f_data[0] = f_data_save[0];
+          f_data[1] = f_data_save[1];
+          if (m_eMesh->get_spatial_dim() > 2)
+            f_data[2] = f_data_save[2];
+        }
+
     }
 
 

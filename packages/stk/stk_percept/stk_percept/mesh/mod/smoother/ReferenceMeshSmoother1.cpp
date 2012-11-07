@@ -136,7 +136,7 @@ namespace stk {
       double grad_check = gradNorm;
       if (m_stage == 0 && (m_dnew == 0.0 || m_total_metric == 0.0))
         {
-          std::cout << "tmp srk untangle m_dnew= " << m_dnew << " m_total_metric = " << m_total_metric << std::endl;
+          //std::cout << "tmp srk untangle m_dnew= " << m_dnew << " m_total_metric = " << m_total_metric << std::endl;
           return true; // for untangle
         }
       if (m_stage == 0 && m_num_invalid == 0 && (m_dmax < grad_check || m_grad_norm_scaled < grad_check))
@@ -148,11 +148,14 @@ namespace stk {
       if (m_num_invalid == 0 && (m_grad_norm_scaled < grad_check || (m_iter > 0 && m_dmax < grad_check && (m_dnew < grad_check*grad_check*m_d0 || scaled_grad_norm < grad_check) ) ) )
         //    if (m_num_invalid == 0 && (m_grad_norm_scaled < gradNorm || (m_iter > 0 && m_dmax < gradNorm ) ) )
         {
-          std::cout << "tmp srk untangle m_dnew(scaled nnode) check= " << (scaled_grad_norm  < grad_check)
-                    << " m_grad_norm_scaled check= " << (m_grad_norm_scaled < grad_check)
-                    << " m_dmax check= " << (m_dmax < grad_check)
-                    << " m_dnew check= " << (m_dnew < grad_check*grad_check*m_d0)
-                    << " m_total_metric = " << m_total_metric << std::endl;
+          if (0)
+            {
+              std::cout << "tmp srk untangle m_dnew(scaled nnode) check= " << (scaled_grad_norm  < grad_check)
+                        << " m_grad_norm_scaled check= " << (m_grad_norm_scaled < grad_check)
+                        << " m_dmax check= " << (m_dmax < grad_check)
+                        << " m_dnew check= " << (m_dnew < grad_check*grad_check*m_d0)
+                        << " m_total_metric = " << m_total_metric << std::endl;
+            }
           return true;
         }
       return false;
@@ -199,8 +202,8 @@ namespace stk {
                   for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                     {
                       stk::mesh::Entity node = bucket[i_node];
-                      bool fixed = this->get_fixed_flag(node);
-                      if (fixed)
+                      std::pair<bool,int> fixed = this->get_fixed_flag(node);
+                      if (fixed.first)
                         {
                           continue;
                         }
@@ -232,6 +235,10 @@ namespace stk {
                           m_scale = std::max(m_scale, std::abs(dd)/edge_length_ave);
 
                           cg_g[idim] = dd;
+                        }
+                      if (fixed.second == MS_SURFACE)
+                        {
+                          project_delta_to_tangent_plane(node, cg_g);
                         }
                     }
                 }
@@ -277,7 +284,7 @@ namespace stk {
 
                                   bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
                                   bool node_locally_owned = (eMesh->get_rank() == node.owner_rank());
-                                  bool fixed = this->get_fixed_flag(node);
+                                  bool fixed = this->get_fixed_flag(node).first;
                                   if (fixed || isGhostNode)
                                     continue;
 
@@ -301,7 +308,7 @@ namespace stk {
                           bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
                           //VERIFY_OP_ON(isGhostNode, ==, false, "hmmmm");
                           bool node_locally_owned = (eMesh->get_rank() == node.owner_rank());
-                          bool fixed = this->get_fixed_flag(node);
+                          bool fixed = this->get_fixed_flag(node).first;
                           if (fixed || isGhostNode)
                             continue;
 
@@ -540,6 +547,37 @@ namespace stk {
       VectorFieldType *cg_g_field_v = static_cast<VectorFieldType *>(cg_g_field);
       stk::mesh::parallel_reduce(*m_eMesh->get_bulk_data(), stk::mesh::sum(*cg_g_field_v));
 
+      // project deltas to surface
+      {
+        // node loop
+        const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
+        for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+          {
+            if (on_locally_owned_part(**k) || on_globally_shared_part(**k))
+              {
+                stk::mesh::Bucket & bucket = **k ;
+                const unsigned num_nodes_in_bucket = bucket.size();
+
+                for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
+                  {
+                    stk::mesh::Entity node = bucket[i_node];
+                    std::pair<bool,int> fixed = this->get_fixed_flag(node);
+                    if (fixed.first)
+                      {
+                        continue;
+                      }
+
+                    double *cg_g = PerceptMesh::field_data(cg_g_field, node);
+
+                    if (fixed.second == MS_SURFACE)
+                      {
+                        project_delta_to_tangent_plane(node, cg_g);
+                      }
+                  }
+              }
+          }
+      }
+
       {
         std::vector< const stk::mesh::FieldBase *> fields;
         fields.push_back(cg_g_field);
@@ -611,7 +649,7 @@ namespace stk {
 
                         bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
                         VERIFY_OP_ON(isGhostNode, ==, false, "hmmmm");
-                        bool fixed = this->get_fixed_flag(node);
+                        bool fixed = this->get_fixed_flag(node).first;
                         if (fixed || isGhostNode)
                           continue;
 
@@ -664,7 +702,7 @@ namespace stk {
                     stk::mesh::Entity node = bucket[i_node];
                     bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
                     VERIFY_OP_ON(isGhostNode, ==, false, "hmmmm");
-                    bool fixed = this->get_fixed_flag(node);
+                    bool fixed = this->get_fixed_flag(node).first;
                     if (fixed || isGhostNode)
                       continue;
 
@@ -783,7 +821,7 @@ namespace stk {
               ++file_i;
               m_eMesh->dump_vtk(node, file);
               bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
-              bool fixed = this->get_fixed_flag(node);
+              bool fixed = this->get_fixed_flag(node).first;
               PRINT_2(" tmp srk fixed= " << fixed << " isGhostNode= " << isGhostNode);
               if (fixed || isGhostNode)
                 {
@@ -1225,7 +1263,7 @@ namespace stk {
 
                   {
                     bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
-                    bool fixed = this->get_fixed_flag(node);
+                    bool fixed = this->get_fixed_flag(node).first;
                     if (fixed || isGhostNode)
                       {
                       }
@@ -1281,7 +1319,7 @@ namespace stk {
                 for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                   {
                     stk::mesh::Entity node = bucket[i_node];
-                    bool fixed = this->get_fixed_flag(node);
+                    bool fixed = this->get_fixed_flag(node).first;
                     bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
                     if (fixed || isGhostNode)
                       {
@@ -1336,7 +1374,7 @@ namespace stk {
       // cache coordinates
       m_eMesh->copy_field(coord_field_lagged, coord_field_current);
 
-      // node loop
+      // node loop - update positions
       {
         const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
         for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -1350,8 +1388,8 @@ namespace stk {
                 for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                   {
                     stk::mesh::Entity node = bucket[i_node];
-                    bool fixed = this->get_fixed_flag(node);
-                    if (fixed)
+                    std::pair<bool,int> fixed = this->get_fixed_flag(node);
+                    if (fixed.first)
                       {
                         continue;
                       }
@@ -1359,10 +1397,22 @@ namespace stk {
                     double *coord_current = PerceptMesh::field_data(coord_field_current, node);
                     double *cg_d = PerceptMesh::field_data(cg_d_field, node);
 
+                    // shouldn't be necessary
+                    if (0 && fixed.second == MS_SURFACE)
+                      {
+                        project_delta_to_tangent_plane(node, cg_d);
+                      }
+
+                    double coord_project[3] = {0,0,0};
                     for (int i=0; i < spatialDim; i++)
                       {
                         double dt = alpha * cg_d[i];
                         coord_current[i] += dt;
+                        coord_project[i] = coord_current[i];
+                      }
+                    if (fixed.second == MS_SURFACE)
+                      {
+                        snap_to(node, coord_project, false);
                       }
                   }
               }
@@ -1384,8 +1434,8 @@ namespace stk {
                   for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                     {
                       stk::mesh::Entity node = bucket[i_node];
-                      bool fixed = this->get_fixed_flag(node);
-                      if (fixed)
+                      std::pair<bool,int> fixed = this->get_fixed_flag(node);
+                      if (fixed.first)
                         {
                           continue;
                         }

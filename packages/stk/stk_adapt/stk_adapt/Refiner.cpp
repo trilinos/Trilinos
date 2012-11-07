@@ -2586,7 +2586,7 @@ namespace stk {
     {
       EXCEPTWATCH;
 
-      std::cout << "tmp fix_side_sets_2 start... " << std::endl;
+      //std::cout << "tmp fix_side_sets_2 start... " << std::endl;
 
       stk::mesh::EntityRank node_rank = m_eMesh.node_rank();
       stk::mesh::EntityRank side_rank = m_eMesh.side_rank();

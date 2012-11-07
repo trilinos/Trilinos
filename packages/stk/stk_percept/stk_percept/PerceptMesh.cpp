@@ -89,6 +89,7 @@ namespace stk {
       m_searcher(0)
       ,m_num_coordinate_field_states(1)
       ,m_do_respect_spacing(false)
+      ,m_do_smooth_surfaces(false)
     {
       init( m_comm);
     }

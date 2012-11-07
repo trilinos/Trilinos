@@ -513,6 +513,7 @@ namespace stk {
       int progress_meter = 0;
       int smooth_geometry = 0;
       int respect_spacing = 1;
+      int smooth_surfaces = 0;
       //double min_spacing_factor = 0.25; // range [0,0.5]
       int remove_geometry_blocks = 0;
       int sync_io_regions = 1;
@@ -573,6 +574,7 @@ namespace stk {
       run_environment.clp.setOption("progress_meter"           , &progress_meter           , "progress meter on or off");
       run_environment.clp.setOption("smooth_geometry"          , &smooth_geometry          , "smooth geometry - moves nodes after geometry projection to try to avoid bad meshes");
       run_environment.clp.setOption("respect_spacing"          , &respect_spacing          , "respect the initial mesh spacing during refinement");
+      run_environment.clp.setOption("smooth_surfaces"          , &smooth_surfaces          , "allow nodes to move on surfaces when smoothing");
       run_environment.clp.setOption("remove_geometry_blocks"   , &remove_geometry_blocks   , "remove geometry blocks from output Exodus file after refinement/geometry projection");
       run_environment.clp.setOption("sync_io_regions"          , &sync_io_regions          , "synchronize input/output region's Exodus id's");
       run_environment.clp.setOption("delete_parents"           , &delete_parents           , "DEBUG: delete parents from a nested, multi-refine mesh - used for debugging");
@@ -729,6 +731,7 @@ namespace stk {
             eMesh.set_respect_spacing(true);
             eMesh.add_spacing_fields();
           }
+          if (smooth_surfaces == 1) eMesh.set_smooth_surfaces(true);
           s_spatialDim = eMesh.get_spatial_dim();
           VERIFY_OP_ON(s_spatialDim, >=, 2, "AdaptMain bad spatial_dim");
         }
@@ -860,6 +863,7 @@ namespace stk {
                           eMesh.set_respect_spacing(true);
                           eMesh.add_spacing_fields();
                         }
+                        if (smooth_surfaces == 1) eMesh.set_smooth_surfaces(true);
                         if (!sync_io_regions) eMesh.set_sync_io_regions(false);
                         if (!s_spatialDim) s_spatialDim = eMesh.get_spatial_dim();
 
@@ -886,6 +890,8 @@ namespace stk {
                                       eMesh.set_respect_spacing(true);
                                       eMesh.add_spacing_fields();
                                     }
+                                    if (smooth_surfaces == 1) eMesh.set_smooth_surfaces(true);
+
                                   }
                               }
 

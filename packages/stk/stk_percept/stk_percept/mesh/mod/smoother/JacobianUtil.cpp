@@ -2,6 +2,7 @@
 #if !defined(__IBMCPP__)
 
 #include "JacobianUtil.hpp"
+#include "MeshSmoother.hpp"
 
 #include "mpi.h"
 
@@ -118,6 +119,7 @@ namespace stk {
     bool JacobianUtil::operator()(double& m,  PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::FieldBase *coord_field,
                                   const CellTopologyData * topology_data )
     {
+      EXCEPTWATCH;
       static DenseMatrix<3,3> J;
 
       //static Vector3D n;			// Surface normal for 2D objects
@@ -246,7 +248,20 @@ namespace stk {
 
         default:
           shards::CellTopology topology(topology_data);
+          //double *x=0;
+          //std::cout << "topology = " << *x;
           std::cout << "topology = " << topology.getName() << std::endl;
+          if (1)
+            {
+              shards::CellTopology cell_topo_bucket(eMesh.get_cell_topology(element.bucket()));
+              shards::CellTopology cell_topo_element(eMesh.get_cell_topology(element));
+              std::cout << "cell_topo_element = " << cell_topo_element.getName() << std::endl;
+              std::cout << "cell_topo_bucket = " << cell_topo_bucket.getName() << std::endl;
+              bool val = MeshSmoother::select_bucket(element.bucket(), &eMesh);
+              std::cout << "val= " << val << std::endl;
+            }
+
+
           throw std::runtime_error("unknown/unhandled topology in JacobianUtil");
           break;
 
@@ -376,7 +391,7 @@ namespace stk {
         default:
           shards::CellTopology topology(topology_data);
           std::cout << "topology = " << topology.getName() << std::endl;
-          throw std::runtime_error("unknown/unhandled topology in JacobianUtil");
+          throw std::runtime_error("unknown/unhandled topology in JacobianUtil 2");
           break;
 
         } // end switch over element type

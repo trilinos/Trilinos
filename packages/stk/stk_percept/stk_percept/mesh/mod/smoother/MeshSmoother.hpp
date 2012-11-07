@@ -27,6 +27,16 @@ namespace stk {
     const double PS_DEF_UNT_BETA = 1e-8;
     const double PS_DEF_SUC_EPS = 1e-4;
 
+
+    enum NodeClassifyType {
+      MS_VERTEX,
+      MS_CURVE,
+      MS_SURFACE,
+      MS_VOLUME,
+      MS_ON_BOUNDARY,
+      MS_NOT_ON_BOUNDARY
+    };
+
     /// Abstract base class smoother
     class MeshSmoother
     {
@@ -61,8 +71,12 @@ namespace stk {
       virtual void run_algorithm() = 0;
 
       static bool select_bucket(stk::mesh::Bucket& bucket, PerceptMesh *eMesh);
-      bool get_fixed_flag(stk::mesh::Entity node_ptr);
+      std::pair<bool,int> get_fixed_flag(stk::mesh::Entity node_ptr);
       int classify_node(stk::mesh::Entity node, size_t& curveOrSurfaceEvaluator) const;
+      void project_delta_to_tangent_plane(stk::mesh::Entity node, double *delta);
+      /// if reset is true, don't actually modify the node's coordinates and only 
+      /// return the snapped position in @param coordinate
+      void snap_to(stk::mesh::Entity node_ptr,  double *coordinate, bool reset=false) const;
 
 
     };

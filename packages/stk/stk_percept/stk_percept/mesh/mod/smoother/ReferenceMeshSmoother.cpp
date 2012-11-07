@@ -153,6 +153,8 @@ namespace stk {
           m_num_invalid = num_invalid;
           m_untangled = (m_num_invalid == 0);
 
+          eMesh->save_as("outer_iter_"+toString(outer)+"_m1_mesh.e");
+
           int iter_all=0;
 
           int do_anim = 0; // = frequency of anim writes

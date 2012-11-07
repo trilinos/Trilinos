@@ -386,6 +386,10 @@ namespace stk {
       void set_respect_spacing(bool do_respect_spacing=true) { m_do_respect_spacing = do_respect_spacing; }
       bool get_respect_spacing() { return m_do_respect_spacing; }
 
+      /// choose to allow nodes to move on surfaces when smoothing
+      void set_smooth_surfaces(bool do_smooth_surfaces=true) { m_do_smooth_surfaces = do_smooth_surfaces; }
+      bool get_smooth_surfaces() { return m_do_smooth_surfaces; }
+
 #ifndef SWIG
       //========================================================================================================================
       // low-level interfaces
@@ -700,6 +704,8 @@ namespace stk {
       unsigned                              m_num_coordinate_field_states;
 
       bool                                  m_do_respect_spacing;
+      bool                                  m_do_smooth_surfaces;
+
 
     private:
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
