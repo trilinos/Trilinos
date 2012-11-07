@@ -72,7 +72,7 @@ namespace stk {
   namespace adapt {
     namespace unit_tests {
 
-#define DO_TESTS 1
+#define DO_TESTS 0
 #if DO_TESTS
       static int print_infoLevel = 0;
 
