@@ -70,6 +70,8 @@ SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
+  "-DMueLu_ENABLE_Amesos2:BOOL=ON" # Amesos2 is experimental and must be explicitly enabled
+
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
   "-DTPL_SuperLU_INCLUDE_DIRS=/home/jngaida/opt/stow/superlu/4.1/include"
   "-DTPL_SuperLU_LIBRARIES=/home/jngaida/opt/stow/superlu/4.1/lib64/libsuperlu_4.1.a"

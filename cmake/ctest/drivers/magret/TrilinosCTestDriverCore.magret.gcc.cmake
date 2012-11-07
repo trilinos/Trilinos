@@ -72,7 +72,6 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   SET_DEFAULT( CTEST_PARALLEL_LEVEL "8" )
 
-  # Enable Amesos2
   SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
   # Only turn on PyTrilinos for shared libraries
