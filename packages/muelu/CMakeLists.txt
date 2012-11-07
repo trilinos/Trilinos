@@ -23,7 +23,7 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
 ENDIF ()
 
 # Enable experimental code (such as Energy-Minimization)
-IF (NOT Xpetra_ENABLE_EXPERIMENTAL)
+IF (NOT Xpetra_ENABLE_Experimental)
   SET(${PACKAGE_NAME}_ENABLE_Experimental OFF)
 ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
