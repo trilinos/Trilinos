@@ -146,6 +146,10 @@ namespace MueLu {
     RCP<const Matrix> A = rcpFromRef(Aref), B = rcpFromRef(Bref);
 
     size_t numRows = A->getNodeNumRows();
+
+    // In the future, one might need to restrict this test for only row maps
+    // For instance, if matrix B = M*A then they would have different colmaps
+    // See comments in the loop how to update the algorithm
     TEUCHOS_TEST_FOR_EXCEPTION(!A->getRowMap()->isSameAs(*(B->getRowMap())) ||
                                !A->getColMap()->isSameAs(*(B->getColMap())),
                                Exceptions::Incompatible, "MueLu::CGSolver: matrices' maps are incompatible");
@@ -155,6 +159,10 @@ namespace MueLu {
       Teuchos::ArrayView<const LO> indA, indB;
       Teuchos::ArrayView<const SC> valA, valB;
 
+      // If A and B have different colmaps, we need to replace
+      // indA and indB by their corresponding global indices
+      // It can be done, for instance, using getGlobalElement() function.
+      // We would also probably need to sort those GIDs.
       A->getLocalRowView(i, indA, valA);
       B->getLocalRowView(i, indB, valB);
 
