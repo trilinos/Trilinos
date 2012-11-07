@@ -192,6 +192,7 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
 
   NumGlobalElements_ = RowMatrixA_->NumGlobalRows();
   numentries_ = RowMatrixA_->NumGlobalNonzeros();
+  int indexBase = OriginalMatrixMap.IndexBase();
   assert( NumGlobalElements_ == RowMatrixA_->NumGlobalCols() );
 
   //
@@ -250,7 +251,7 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
   if (UseDataInPlace_ == 1) {
     SerialMatrix_ = StdIndexMatrix_;
   } else {
-    SerialMap_ = rcp(new Epetra_Map(NumGlobalElements_, NumMyElements_, 0, Comm()));
+    SerialMap_ = rcp(new Epetra_Map(NumGlobalElements_, NumMyElements_, indexBase, Comm()));
     
     if ( Problem_->GetRHS() ) 
       NumVectors_ = Problem_->GetRHS()->NumVectors() ; 
