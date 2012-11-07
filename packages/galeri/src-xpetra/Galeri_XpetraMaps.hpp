@@ -213,11 +213,11 @@ namespace Galeri {
                               "a perfect square, otherwise set nx and ny"));
           
             // Add computed values of 'nx' and 'ny' to the list. Users can retrieve the values after the creation of the map.
-            list.get("nx", nx);
-            list.get("ny", ny);
+            list.set("nx", nx);
+            list.set("ny", ny);
           }
 
-        list.get("n", nx * ny); // Add computed values of 'n' to the list if not already there
+        list.set("n", nx * ny); // Add computed values of 'n' to the list 
 
         // Get the number of domains
         GlobalOrdinal mx = -1; if (list.isParameter("mx")) mx = list.get<GlobalOrdinal>("mx");  //TODO: GlobalOrdinal or LocalOrdinal?
@@ -237,10 +237,9 @@ namespace Galeri {
             }
 
             // Add computed values of 'mx' and 'my' to the list. Users can retrieve the values after the creation of the map.
-            list.get("mx", mx);
-            list.get("my", my);
+            list.set("mx", mx);
+            list.set("my", my);
           } 
-
         return(Maps::Cartesian2D<LocalOrdinal, GlobalOrdinal, Map>(comm, nx, ny, mx, my));
       }
     /* TODO
