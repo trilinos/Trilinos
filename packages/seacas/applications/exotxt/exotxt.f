@@ -85,8 +85,8 @@ C     Set level to EXABRT for production use
 C     Program Information
 C.
       QAINFO(1) = 'exotxt                          '
-      QAINFO(2) = '2011/06/29                      '
-      QAINFO(3) = ' 1.21                           '
+      QAINFO(2) = '2012/11/07                      '
+      QAINFO(3) = ' 1.22                           '
       QAINFO(4) = '                                '
       QAINFO(5) = '                                '
       QAINFO(6) = '                                '
