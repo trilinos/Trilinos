@@ -13,6 +13,8 @@ APPEND_SET(HEADERS
   Galeri_XpetraMatrixFactory.hpp  
   Galeri_XpetraMatrixTypes.hpp
   Galeri_XpetraVectorTraits.hpp
+  Galeri_XpetraMaps.hpp
+  Maps/Galeri_XpetraCartesian2D.hpp
   )
 
 APPEND_SET(SOURCES

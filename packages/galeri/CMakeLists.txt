@@ -28,7 +28,7 @@ ADD_SUBDIRECTORY(src-xpetra)
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 
-TRIBITS_ADD_EXAMPLE_DIRECTORIES(example example-fem)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(example example-fem example-xpetra)
 
 #
 # Exclude files for source package.
@@ -44,8 +44,6 @@ TRIBITS_EXCLUDE_FILES(
   example-fem/TwoSquares.cpp
   src-fem/Galeri_FileGrid.h
   )
-
-
 
 #
 # D) Do standard postprocessing
