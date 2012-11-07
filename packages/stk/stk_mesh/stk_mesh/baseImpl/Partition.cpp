@@ -124,13 +124,13 @@ void Partition::sort()
 
     // Make sure that there is a vacancy somewhere.
     stk::mesh::Bucket *vacancy_bucket = *(buckets_end - 1);
-    size_t vacancy_offset = vacancy_bucket->size();
+    size_t vacancy_ordinal = vacancy_bucket->size();
     stk::mesh::Bucket *tmp_bucket = 0;
-    if (vacancy_offset >= vacancy_bucket->capacity())
+    if (vacancy_ordinal >= vacancy_bucket->capacity())
     {
         tmp_bucket = new Bucket(m_repository->m_mesh, m_rank, partition_key, 1);
         vacancy_bucket = tmp_bucket;
-        vacancy_offset = 0;
+        vacancy_ordinal = 0;
     }
 
     size_t new_i = 0;
@@ -147,36 +147,35 @@ void Partition::sort()
     // Now that we have the entities sorted, we need to put them and their data
     // in the right order in the buckets.
 
-    EntityRepository &entity_repository = m_repository->m_entity_repo;
     std::vector<Entity>::iterator j = entities.begin();
     bool change_this_partition = false ;
 
     for (std::vector<Bucket *>::iterator b_i = begin(); b_i != buckets_end; ++b_i)
     {
-        Bucket & b = **b_i;
-        const unsigned n = b.size();
+        Bucket *b = *b_i;
+        const unsigned n = b->size();
         for ( unsigned i = 0 ; i < n ; ++i , ++j )
         {
-            Entity const current = b[i];
+            Entity const current = (*b)[i];
 
             if ( current != *j )
             {
                 if ( current.is_valid() )
                 {
                     // Move current entity to the vacant spot
-                    vacancy_bucket->replace_fields(vacancy_offset, b, i );
-                    entity_repository.change_entity_bucket(*vacancy_bucket, current, vacancy_offset);
-                    vacancy_bucket->replace_entity( vacancy_offset , current ) ;
+                    vacancy_bucket->replace_fields(vacancy_ordinal, *b, i );
+                    current.m_entityImpl->set_bucket_and_ordinal(vacancy_bucket, vacancy_ordinal);
+                    vacancy_bucket->replace_entity( vacancy_ordinal , current ) ;
                 }
                 // Set the vacant spot to where the required entity is now.
                 vacancy_bucket = & (j->bucket()) ;
-                vacancy_offset = j->bucket_ordinal() ;
-                vacancy_bucket->replace_entity( vacancy_offset , Entity() ) ;
+                vacancy_ordinal = j->bucket_ordinal() ;
+                vacancy_bucket->replace_entity( vacancy_ordinal , Entity() ) ;
 
                 // Move required entity to the required spot
-                b.replace_fields(i, *vacancy_bucket , vacancy_offset );
-                entity_repository.change_entity_bucket( b, *j, i);
-                b.replace_entity( i, *j );
+                b->replace_fields(i, *vacancy_bucket , vacancy_ordinal );
+                j->m_entityImpl->set_bucket_and_ordinal(b, i);
+                b->replace_entity( i, *j );
                 change_this_partition = true ;
             }
 

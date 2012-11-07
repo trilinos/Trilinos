@@ -29,73 +29,77 @@ void initialize(SelectorFixture& fixture,
                 std::vector<stk::mesh::Entity> &ec5_arg
                 )
 {
-  fixture.m_meta_data.commit();
-  fixture.m_bulk_data.modification_begin();
-  fixture.generate_mesh();
+    fixture.m_meta_data.commit();
+    fixture.m_bulk_data.modification_begin();
+    fixture.generate_mesh();
 
-  const size_t bucket_size = 1000;  // Default value for BucketRepository constructor.
-  const size_t lb_num_buckets_per_partition = 3;
-  stk::mesh::EntityRank ent_type = 0; // rank
+    const size_t bucket_size = 1000;     // Default value for BucketRepository constructor.
+    const size_t lb_num_buckets_per_partition = 3;
+    stk::mesh::EntityRank ent_type = 0;  // rank
 
-  const size_t bf_size = bucket_size * lb_num_buckets_per_partition;
-  stk::mesh::EntityId ent_id = 1000;
-  std::vector<stk::mesh::Part*> partMembership;
+    const size_t bf_size = bucket_size * lb_num_buckets_per_partition;
+    stk::mesh::EntityId ent_id = 1001;   // Want to keep numerical alignment.
+    std::vector<stk::mesh::Part*> partMembership;
 
-  // Note that the loop variables start at 1 because SelectorFixture::generate_mesh() has
-  // already created an Entity in each partition.
+    // Note that the loop variables start at 1 because SelectorFixture::generate_mesh() has
+    // already created an Entity in each partition.
 
-  // Entities in collection 1 are contained in PartA
-  partMembership.clear();
-  partMembership.push_back( & fixture.m_partA );
-  for (size_t i = 1; i < bf_size; ++i)
-  {
-      stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
-      ec1_arg.push_back(ent);
-      ++ent_id;
-  }
+    // Entities in collection 1 are contained in PartA
+    partMembership.clear();
+    partMembership.push_back( & fixture.m_partA );
+    for (size_t i = 1; i < bf_size; ++i)
+    {
+        stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+        ec1_arg.push_back(ent);
+        ++ent_id;
+    }
 
-  // Entity2 is contained in PartA and PartB
-  partMembership.clear();
-  partMembership.push_back( & fixture.m_partA );
-  partMembership.push_back( & fixture.m_partB );
-  for (size_t i = 1; i < bf_size; ++i)
-  {
-      stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
-      ec2_arg.push_back(ent);
-      ++ent_id;
-  }
+    // Entity2 is contained in PartA and PartB
+    ++ent_id;     // For numerical alignment.
+    partMembership.clear();
+    partMembership.push_back( & fixture.m_partA );
+    partMembership.push_back( & fixture.m_partB );
+    for (size_t i = 1; i < bf_size; ++i)
+    {
+        stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+        ec2_arg.push_back(ent);
+        ++ent_id;
+    }
 
-  // Entity3 is contained in PartB and PartC
-  partMembership.clear();
-  partMembership.push_back( & fixture.m_partB );
-  partMembership.push_back( & fixture.m_partC );
-  for (size_t i = 1; i < bf_size; ++i)
-  {
-      stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
-      ec3_arg.push_back(ent);
-      ++ent_id;
-  }
+    // Entity3 is contained in PartB and PartC
+    ++ent_id;
+    partMembership.clear();
+    partMembership.push_back( & fixture.m_partB );
+    partMembership.push_back( & fixture.m_partC );
+    for (size_t i = 1; i < bf_size; ++i)
+    {
+        stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+        ec3_arg.push_back(ent);
+        ++ent_id;
+    }
 
-  // Entity4 is contained in PartC
-  partMembership.clear();
-  partMembership.push_back( & fixture.m_partC );
-  for (size_t i = 1; i < bf_size; ++i)
-  {
-      stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
-      ec4_arg.push_back(ent);
-      ++ent_id;
-  }
+    // Entity4 is contained in PartC
+    ++ent_id;
+    partMembership.clear();
+    partMembership.push_back( & fixture.m_partC );
+    for (size_t i = 1; i < bf_size; ++i)
+    {
+        stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+        ec4_arg.push_back(ent);
+        ++ent_id;
+    }
 
-  // Entity5 is not contained in any Part
-  partMembership.clear();
-  for (size_t i = 1; i < bf_size; ++i)
-  {
-      stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
-      ec5_arg.push_back(ent);
-      ++ent_id;
-  }
+    // Entity5 is not contained in any Part
+    ++ent_id;
+    partMembership.clear();
+    for (size_t i = 1; i < bf_size; ++i)
+    {
+        stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
+        ec5_arg.push_back(ent);
+        ++ent_id;
+    }
 
-  STKUNIT_ASSERT(fixture.m_bulk_data.modification_end());
+    STKUNIT_ASSERT(fixture.m_bulk_data.modification_end());
 }
 
 void initialize_reverse_ordered(SelectorFixture& fixture,
@@ -122,90 +126,6 @@ void initialize_reverse_ordered(SelectorFixture& fixture,
     }
 }
 
-#if 0
-void initialize_unsorted(SelectorFixture& fixture,
-                        std::vector<stk::mesh::Entity> &ec1_arg,
-                        std::vector<stk::mesh::Entity> &ec2_arg,
-                        std::vector<stk::mesh::Entity> &ec3_arg,
-                        std::vector<stk::mesh::Entity> &ec4_arg,
-                        std::vector<stk::mesh::Entity> &ec5_arg
-                        )
-{
-  fixture.m_meta_data.commit();
-  fixture.m_bulk_data.modification_begin();
-  fixture.generate_mesh();
-
-  const size_t bucket_size = 1000;  // Default value for BucketRepository constructor.
-  const size_t lb_num_buckets_per_partition = 3;
-  stk::mesh::EntityRank ent_type = 0; // rank
-
-  const size_t bf_size = bucket_size * lb_num_buckets_per_partition;
-  stk::mesh::EntityId fresh_id = 1000;
-  std::vector<stk::mesh::Part*> partMembership;
-
-  // Entities in collection 1 are contained in PartA
-  partMembership.clear();
-  partMembership.push_back( & fixture.m_partA );
-  stk::mesh::EntityId ent_id = fresh_id + bf_size - 1;
-  for (size_t i = 1; i < bf_size; ++i)
-  {
-      stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
-      ec1_arg.push_back(ent);
-      --ent_id;
-  }
-  fresh_id += bf_size;
-
-  // Entity2 is contained in PartA and PartB
-  partMembership.clear();
-  partMembership.push_back( & fixture.m_partA );
-  partMembership.push_back( & fixture.m_partB );
-  ent_id = fresh_id + bf_size - 1;
-  for (size_t i = 1; i < bf_size; ++i)
-  {
-      stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
-      ec2_arg.push_back(ent);
-      --ent_id;
-  }
-  fresh_id += bf_size;
-
-  // Entity3 is contained in PartB and PartC
-  partMembership.clear();
-  partMembership.push_back( & fixture.m_partB );
-  partMembership.push_back( & fixture.m_partC );
-  ent_id = fresh_id + bf_size - 1;
-  for (size_t i = 1; i < bf_size; ++i)
-  {
-      stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
-      ec3_arg.push_back(ent);
-      --ent_id;
-  }
-  fresh_id += bf_size;
-
-  // Entity4 is contained in PartC
-  partMembership.clear();
-  partMembership.push_back( & fixture.m_partC );
-  ent_id = fresh_id + bf_size - 1;
-  for (size_t i = 1; i < bf_size; ++i)
-  {
-      stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
-      ec4_arg.push_back(ent);
-      --ent_id;
-  }
-  fresh_id += bf_size;
-
-  // Entity5 is not contained in any Part
-  partMembership.clear();
-  ent_id = fresh_id + bf_size - 1;
-  for (size_t i = 1; i < bf_size; ++i)
-  {
-      stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
-      ec5_arg.push_back(ent);
-      --ent_id;
-  }
-
-  STKUNIT_ASSERT(fixture.m_bulk_data.modification_end());
-}
-#endif
 
 void initialize_data(SelectorFixture& fix)
 {
@@ -280,12 +200,6 @@ bool check_nonempty_strictly_ordered(Data_T data[], size_t sz)
 
     for (size_t i = 0; i < sz - 1; ++i)
     {
-#if 0
-        if (i < 10)
-        {
-            std::cout << " " << data[i];
-        }
-#endif
         if (data[i] >= data[i + 1])
         {
             std::cout << "i = " << i << ": data[i] = " << data[i]
@@ -311,13 +225,6 @@ void check_test_partition_invariant(const SelectorFixture& fix, const stk::mesh:
         {
             STKUNIT_EXPECT_TRUE(check_nonempty_strictly_ordered(field_data, bkt.size()));
         }
-#if 0
-        else
-        {
-            std::cout << "In partition " << partition << " bucket " << bkt.key()[bkt.key()[0]]
-                      << " has no field data" << std::endl;
-        }
-#endif
         const unsigned *bucket_key = bkt.key();
         for (size_t k = 0; k < partition_key.size() - 1; ++k)
         {
@@ -525,10 +432,6 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testSort)
     initialize_reverse_ordered(fix, ec1, ec2, ec3, ec4, ec5);
     initialize_data(fix);
 
-    //// NEED TO CHECK IN.
-    std::cout << "Skipping test UnitTestPartition.Partition_testSort" << std::endl;
-    return;
-
     stk::mesh::impl::BucketRepository &bucket_repository = stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
     bucket_repository.update_partitions();
 
@@ -539,7 +442,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testSort)
     for (size_t i = 0; i < num_partitions; ++i)
     {
         stk::mesh::impl::Partition &partition = *partitions[i];
-        check_test_partition_invariant(fix, partition);
+        // check_test_partition_invariant(fix, partition);
         partition.sort();
         check_test_partition_invariant(fix, partition);
     }
