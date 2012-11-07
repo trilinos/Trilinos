@@ -709,22 +709,6 @@ class EntityRepository;
 class Entity {
 public:
 
-  // TODO - REMOVE this block of operators
-
-  //Entity * operator&() const { return this; }
-  //Entity(Entity* e) : m_entityImpl(e->m_entityImpl) {}
-  //Entity& operator=(Entity* e) { m_entityImpl = e->m_entityImpl; return *this; }
-  friend bool operator!=(void* lhs, Entity rhs)
-  {
-    assert(lhs == NULL);
-    return lhs != rhs.m_entityImpl;
-  }
-  friend bool operator!=(Entity lhs, void* rhs)
-  {
-    assert(rhs == NULL);
-    return rhs != lhs.m_entityImpl;
-  }
-
   bool is_valid() const { return m_entityImpl != NULL; }
 
   /** \brief  Query the current state of the entity log */
