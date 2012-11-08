@@ -122,6 +122,9 @@ namespace Tpetra {
   INST_CPU_SCALAR(double)
 #if defined(HAVE_KOKKOSCLASSIC_CUSPARSE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(double,double,int,int,Kokkos::ThrustGPUNode)
+#ifdef HAVE_TPETRA_INST_INT_LONG
+    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(double,double,int,long,Kokkos::ThrustGPUNode)
+#endif
 #endif
 #endif // double
 
@@ -129,6 +132,9 @@ namespace Tpetra {
   INST_CPU_SCALAR(float)
 #if defined(HAVE_KOKKOSCLASSIC_CUSPARSE) && defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,float,int,int,Kokkos::ThrustGPUNode)
+#ifdef HAVE_TPETRA_INST_INT_LONG
+    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,float,int,long,Kokkos::ThrustGPUNode)
+#endif
 #endif 
 #endif // float
 
@@ -156,6 +162,10 @@ namespace Tpetra {
 #if defined(HAVE_KOKKOSCLASSIC_CUSPARSE) && defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(double,float,int,int,Kokkos::ThrustGPUNode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,double,int,int,Kokkos::ThrustGPUNode)
+#ifdef HAVE_TPETRA_INST_INT_LONG
+    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(double,float,int,long,Kokkos::ThrustGPUNode)
+    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,double,int,long,Kokkos::ThrustGPUNode)
+#endif
 #endif
 #endif
 
