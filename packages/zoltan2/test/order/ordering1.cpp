@@ -232,6 +232,14 @@ int main(int narg, char** arg)
   checkGIDs = soln->getGids(&dummy);
   checkPerm = soln->getPermutation(&dummy);
 
+#ifdef DEBUG
+  cout << "DEBUG: checkPerm= " << endl;
+  for (size_t i=0; i<checkLength; i++){
+    cout << " " << checkPerm[i];
+  }
+  cout << endl;
+#endif 
+
   cout << "Going to validate the soln" << endl;
   // Verify that checkPerm is a permutation
   testReturn = validatePerm(checkLength, checkPerm);
