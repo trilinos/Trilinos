@@ -142,8 +142,11 @@ int Ifpack_ShyLU::Initialize()
                                                 "Schur Complement Solver");
     slu_config_.schurAmesosSolver = List_.get<string>("Schur Amesos Solver",
     											"Amesos_Klu");
-    slu_config_.diagonalBlockSolver =
-            Teuchos::getParameter<string>(List_, "Diagonal Block Solver");
+    //slu_config_.diagonalBlockSolver =
+            //Teuchos::getParameter<string>(List_, "Diagonal Block Solver");
+    slu_config_.diagonalBlockSolver = List_.get<string>("Diagonal Block Solver",
+                                                    "Amesos_Klu");
+
 
     slu_config_.relative_threshold =  0.0;
     slu_config_.Sdiagfactor =  0.05;
