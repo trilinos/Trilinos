@@ -41,19 +41,79 @@ std::ostream &Partition::streamit(std::ostream &os) const
     return os;
 }
 
+
+Partition::Partition(BucketRepository *repo, EntityRank rank)
+    : m_repository(repo)
+    , m_rank(rank)
+    , m_beginBucketIndex(0)
+    , m_endBucketIndex(0)
+    , m_needSyncToRepo(false)
+{
+    // Nada.
+}
+
 Partition::~Partition()
 {
-    // TODO Auto-generated destructor stub
+    if (m_needSyncToRepo)
+    {
+        size_t num_bkts = m_buckets.size();
+        for (size_t i = 0; i < num_bkts; ++i)
+        {
+            delete m_buckets[i];
+            m_buckets[i] = 0;
+        }
+    }
 }
+
 
 BucketRepository &Partition::getRepository(stk::mesh::BulkData &mesh)
 {
     return mesh.m_bucket_repository;
 }
 
+
+bool Partition::remove(Entity &e_k)
+{
+    Bucket *bucket_k = e_k.bucket_ptr();
+    if (!belongs(bucket_k) || empty())
+    {
+        return false;
+    }
+    unsigned ord_k = e_k.m_entityImpl->bucket_ordinal();
+    Bucket *last = *(end() - 1);
+
+    if ( (last != bucket_k) || (bucket_k->size() != ord_k + 1))
+    {
+        // Copy last entity to spot being vacated.
+        Entity e_swap = (*last)[ last->size() - 1 ];
+        bucket_k->replace_fields(ord_k, *last , last->size() - 1 );
+        bucket_k->replace_entity(ord_k, e_swap ) ;
+        e_swap.m_entityImpl->set_bucket_and_ordinal(bucket_k, ord_k);
+
+        // Entity field data has relocated
+        m_repository->internal_propagate_relocation(e_swap);
+    }
+
+    last->decrement_size();
+    last->replace_entity( last->size() , Entity() ) ;
+
+    if ( 0 == last->size() )
+    {
+        take_bucket_control();
+        delete m_buckets.back();
+        m_buckets.pop_back();
+        if (m_buckets.size() > 0)
+        {
+            m_buckets[0]->set_last_bucket_in_partition(m_buckets.back());
+        }
+    }
+    return true;
+}
+
+
 void Partition::compress()
 {
-    if (m_endBucketIndex >= m_beginBucketIndex )
+    if (empty() )
         return;
 
     std::vector<unsigned> partition_key = get_legacy_partition_id();
@@ -63,9 +123,11 @@ void Partition::compress()
     size_t partition_size = compute_size();
     std::vector<Entity> entities(partition_size);
 
-    std::vector<Bucket *>::iterator buckets_end = end();
+    std::vector<Bucket *>::iterator buckets_begin, buckets_end;
+    buckets_begin = begin();
+    buckets_end = end();
     size_t new_i = 0;
-    for (std::vector<Bucket *>::iterator b_i = begin(); b_i != buckets_end; ++b_i)
+    for (std::vector<Bucket *>::iterator b_i = buckets_begin; b_i != buckets_end; ++b_i)
     {
         Bucket &b = **b_i;
         size_t b_size = b.size();
@@ -80,37 +142,44 @@ void Partition::compress()
     new_bucket->set_last_bucket_in_partition(new_bucket);  // First bucket points to new last bucket
     new_bucket->m_partition = this;
 
-    EntityRepository &entity_repository = m_repository->m_entity_repo;
     for(size_t new_ordinal = 0; new_ordinal < entities.size(); ++new_ordinal)
     {
         Entity entity = entities[new_ordinal];
         Bucket& old_bucket = entity.bucket();
         size_t old_ordinal = entity.bucket_ordinal();
 
-        //copy field data from old to new
         new_bucket->replace_fields(new_ordinal, old_bucket, old_ordinal);
-
-        entity_repository.change_entity_bucket( *new_bucket, entity, new_ordinal);
+        entity.m_entityImpl->set_bucket_and_ordinal(new_bucket, new_ordinal);
         new_bucket->replace_entity( new_ordinal , entity ) ;
         m_repository->internal_propagate_relocation(entity);
     }
     new_bucket->m_size = partition_size;
 
-    std::vector<Bucket *> &repo_buckets = m_repository->m_buckets[m_rank];
-    for (size_t ik = m_beginBucketIndex; ik < m_endBucketIndex; ++ik)
+    if (m_needSyncToRepo)
     {
-        delete repo_buckets[ik];
-        repo_buckets[ik] = NULL;
+        for (std::vector<Bucket *>::iterator b_i = buckets_begin; b_i != buckets_end; ++b_i)
+        {
+            delete *b_i;
+        }
     }
-
-    repo_buckets[m_beginBucketIndex] = new_bucket;
-    m_endBucketIndex = m_beginBucketIndex + 1;
+    else
+    {
+        std::vector<Bucket *> &repo_buckets = m_repository->m_buckets[m_rank];
+        for (size_t ik = m_beginBucketIndex; ik < m_endBucketIndex; ++ik)
+        {
+            delete repo_buckets[ik];
+            repo_buckets[ik] = NULL;
+        }
+    }
+    m_buckets.resize(1);
+    m_buckets[0] = new_bucket;
+    m_needSyncToRepo = true;
 }
 
 
 void Partition::sort()
 {
-    if (m_beginBucketIndex >= m_endBucketIndex )
+    if (empty())
         return;
 
     std::vector<unsigned> partition_key = get_legacy_partition_id();
@@ -120,7 +189,9 @@ void Partition::sort()
     size_t partition_size = compute_size();
     std::vector<Entity> entities(partition_size);
 
-    std::vector<Bucket *>::iterator buckets_end = end();
+    std::vector<Bucket *>::iterator buckets_begin, buckets_end;
+    buckets_begin = begin();
+    buckets_end = end();
 
     // Make sure that there is a vacancy somewhere.
     stk::mesh::Bucket *vacancy_bucket = *(buckets_end - 1);
@@ -191,6 +262,30 @@ void Partition::sort()
     }
     if (tmp_bucket)
         delete tmp_bucket;
+}
+
+
+bool Partition::take_bucket_control()
+{
+    if (m_needSyncToRepo)
+        return false;
+
+    if (m_beginBucketIndex == m_endBucketIndex)
+    {
+        m_buckets.clear();
+    }
+    else
+    {
+        size_t num_buckets = m_endBucketIndex - m_beginBucketIndex;
+        m_buckets.resize(num_buckets);
+        std::copy(begin(), end(), &m_buckets[0]);
+        for (std::vector<Bucket *>::iterator ob_i = begin(); ob_i != end(); ++ob_i)
+        {
+            *ob_i = 0;
+        }
+    }
+    m_needSyncToRepo = true;
+    return true;
 }
 
 

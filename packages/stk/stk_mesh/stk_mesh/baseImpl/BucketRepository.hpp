@@ -116,7 +116,10 @@ public:
 
   // Assuming that everything else is already up-to-date, update the contents of
   // m_partitions.
-  void update_partitions();
+  void sync_to_partitions();
+
+  // Update m_buckets from the partitions.
+  void sync_from_partitions();
 
   std::vector<Partition *> get_partitions(EntityRank rank);
 
@@ -131,7 +134,7 @@ private:
 
   EntityRepository                    & m_entity_repo ;
 
-  std::vector<std::vector<Partition> >         m_partitions;  // Experimental.
+  std::vector<std::vector<Partition *> >         m_partitions;  // Experimental.
 };
 
 } // namespace impl

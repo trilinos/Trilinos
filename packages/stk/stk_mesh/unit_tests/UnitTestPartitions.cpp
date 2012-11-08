@@ -113,7 +113,7 @@ void initialize_reverse_ordered(SelectorFixture& fixture,
 
     stk::mesh::impl::BucketRepository &bucket_repository =
             stk::mesh::impl::Partition::getRepository(fixture.m_bulk_data);
-    bucket_repository.update_partitions();
+    bucket_repository.sync_to_partitions();
 
     std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(0);
     size_t num_partitions = partitions.size();
@@ -131,7 +131,7 @@ void initialize_data(SelectorFixture& fix)
 {
     stk::mesh::impl::BucketRepository &bucket_repository =
             stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
-    bucket_repository.update_partitions();
+    bucket_repository.sync_to_partitions();
 
     std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(0);
     size_t num_partitions = partitions.size();
@@ -288,7 +288,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testInitialize )
     initialize_data(fix);
 
     stk::mesh::impl::BucketRepository &bucket_repository = stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
-    bucket_repository.update_partitions();
+    bucket_repository.sync_to_partitions();
 
     std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(0);
     size_t num_partitions = partitions.size();
@@ -368,7 +368,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_getPartitions)
     initialize_data(fix);
 
     stk::mesh::impl::BucketRepository &bucket_repository = stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
-    bucket_repository.update_partitions();
+    bucket_repository.sync_to_partitions();
 
     std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(0);
     size_t num_partitions = partitions.size();
@@ -400,7 +400,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testCompress)
     initialize_data(fix);
 
     stk::mesh::impl::BucketRepository &bucket_repository = stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
-    bucket_repository.update_partitions();
+    bucket_repository.sync_to_partitions();
 
     std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(0);
     size_t num_partitions = partitions.size();
@@ -433,7 +433,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testSort)
     initialize_data(fix);
 
     stk::mesh::impl::BucketRepository &bucket_repository = stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
-    bucket_repository.update_partitions();
+    bucket_repository.sync_to_partitions();
 
     std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(0);
     size_t num_partitions = partitions.size();

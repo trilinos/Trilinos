@@ -43,6 +43,19 @@ BucketRepository::~BucketRepository()
   // Destroy buckets, which were *not* allocated by the set.
 
   try {
+
+    for ( std::vector<std::vector<Partition *> >::iterator pv_i = m_partitions.begin();
+            pv_i != m_partitions.end(); ++pv_i)
+    {
+        for (std::vector<Partition *>::iterator p_j = pv_i->begin();
+                p_j != pv_i->end(); ++p_j)
+        {
+            delete *p_j;
+        }
+        pv_i->clear();
+    }
+    m_partitions.clear();
+
     for ( std::vector< std::vector<Bucket*> >::iterator
           i = m_buckets.end() ; i != m_buckets.begin() ; ) {
       try {
@@ -563,15 +576,25 @@ void BucketRepository::internal_propagate_relocation( Entity entity )
   }
 }
 
-void BucketRepository::update_partitions()
+void BucketRepository::sync_to_partitions()
 {
+    for ( std::vector<std::vector<Partition *> >::iterator pv_i = m_partitions.begin();
+            pv_i != m_partitions.end(); ++pv_i)
+    {
+        for (std::vector<Partition *>::iterator p_j = pv_i->begin();
+                p_j != pv_i->end(); ++p_j)
+        {
+            delete *p_j;
+        }
+        pv_i->clear();
+    }
     m_partitions.clear();
     m_partitions.resize(4);
 
     for ( EntityRank entity_rank = 0 ;
         entity_rank < m_buckets.size() ; ++entity_rank )
     {
-      std::vector<stk::mesh::impl::Partition> &partitions = m_partitions[entity_rank];
+      std::vector<stk::mesh::impl::Partition *> &partitions = m_partitions[entity_rank];
       std::vector<Bucket*> & buckets = m_buckets[ entity_rank ];
 
       size_t begin_partition = 0 ; // Offset to first bucket of the partition
@@ -580,7 +603,7 @@ void BucketRepository::update_partitions()
       //loop over families (of entity_rank) via buckets
       for ( ; begin_partition < buckets.size() ; begin_partition = end_partition )
       {
-        partitions.push_back(Partition(this, entity_rank));
+        partitions.push_back(new Partition(this, entity_rank));
         Bucket * last_bucket_in_partition = buckets[begin_partition]->last_bucket_in_partition();
 
         // Determine offset to the end bucket in this partition:
@@ -592,25 +615,67 @@ void BucketRepository::update_partitions()
         {
             ++end_partition ; //increment past the last bucket in the partition.
         }
-        Partition &partition = partitions.back();
-        partition.m_stkPartition = buckets[begin_partition]->key_vector();
+        Partition *partition = partitions.back();
+        partition->m_extPartitionKey = buckets[begin_partition]->key_vector();
         // partition.m_stkPartition.pop_back();
-        partition.m_beginBucketIndex = static_cast<unsigned>(begin_partition);
-        partition.m_endBucketIndex = static_cast<unsigned>(end_partition);
+        partition->m_beginBucketIndex = static_cast<unsigned>(begin_partition);
+        partition->m_endBucketIndex = static_cast<unsigned>(end_partition);
       }
 
       // Let all the buckets of entity_rank know about their bucket families.
       size_t num_partitions = partitions.size();
       for (size_t i = 0; i < num_partitions; ++i)
       {
-          stk::mesh::impl::Partition &partition = partitions[i];
-          std::vector<stk::mesh::Bucket *>::iterator bkt= partition.begin();
-          for (;bkt != partition.end(); ++bkt)
+          stk::mesh::impl::Partition *partition = partitions[i];
+          std::vector<stk::mesh::Bucket *>::iterator bkt= partition->begin();
+          for (;bkt != partition->end(); ++bkt)
           {
-              (*bkt)->m_partition = &partitions[i];
+              (*bkt)->m_partition = partitions[i];
           }
           // std::cout << partition << std::endl;
       }
+    }
+}
+
+void BucketRepository::sync_from_partitions()
+{
+    for (size_t rank = 0; rank < m_partitions.size(); ++rank)
+    {
+        bool need_sync = false;
+
+        std::vector<Partition *> &partitions = m_partitions[rank];
+        size_t num_partitions = partitions.size();
+        for (size_t p_i = 0; p_i < num_partitions; ++p_i)
+        {
+            if (partitions[p_i]->need_sync_to_repository())
+            {
+                need_sync = true;
+            }
+        }
+
+        if (need_sync)
+        {
+            size_t num_buckets = 0;
+            for (size_t p_i = 0; p_i < num_partitions; ++p_i)
+            {
+                partitions[p_i]->take_bucket_control();
+                num_buckets += partitions[p_i]->num_buckets();
+            }
+            if (!num_buckets)
+            {
+                return;
+            }
+            m_buckets[rank].resize(num_buckets);
+
+            std::vector<Bucket *>::iterator bkts_i = m_buckets[rank].begin();
+            for (size_t p_i = 0; p_i < num_partitions; ++p_i)
+            {
+                size_t num_bkts_in_partition = partitions[p_i]->num_buckets();
+                std::copy(partitions[p_i]->begin(), partitions[p_i]->end(),
+                          bkts_i);
+                bkts_i += num_bkts_in_partition;
+            }
+        }
     }
 }
 
@@ -622,10 +687,10 @@ std::vector<Partition *> BucketRepository::get_partitions(EntityRank rank)
         std::vector<Partition *>();
     }
     std::vector<Partition *> retval;
-    std::vector<Partition> &bf_vec = m_partitions[rank];
+    std::vector<Partition *> &bf_vec = m_partitions[rank];
     for (size_t i = 0; i < bf_vec.size(); ++i)
     {
-        retval.push_back(&bf_vec[i]);
+        retval.push_back(bf_vec[i]);
     }
     return retval;
 }
