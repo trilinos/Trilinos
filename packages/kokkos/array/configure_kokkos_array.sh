@@ -52,9 +52,9 @@ CMAKE_HWLOC="${CMAKE_HWLOC} -D HWLOC_LIBRARY_DIRS:FILEPATH=${HWLOC_BASE_DIR}/lib
 # Cuda compilation flags:
 
 CUDA_NVCC_FLAGS="-arch=sm_20"
-CUDA_NVCC_FLAGS="$CUDA_NVCC_FLAGS};-DCUDA_RELEASE_VERSION=`nvcc --version | sed -n -e '/release/{s/^.*release //;s/,.*$//;s/\./0/;p}'`"
-CUDA_NVCC_FLAGS="$CUDA_NVCC_FLAGS};-Xcompiler;-Wall,-ansi"
-CUDA_NVCC_FLAGS="$CUDA_NVCC_FLAGS};-O3"
+CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-DCUDA_RELEASE_VERSION=`nvcc --version | sed -n -e '/release/{s/^.*release //;s/,.*$//;s/\./0/;p}'`"
+CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-Xcompiler;-Wall,-ansi"
+CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-O3"
 
 CMAKE_CUDA=""
 CMAKE_CUDA="${CMAKE_CUDA} -D TPL_ENABLE_CUDA:BOOL=ON"
