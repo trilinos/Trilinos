@@ -196,7 +196,7 @@ namespace TensorProductUnitTest {
       *basis);
 
     success = Stokhos::testPseudoSpectralDiscreteOrthogonality(
-      basis, tp_op, setup.rtol, setup.atol, out);
+      *basis, tp_op, setup.rtol, setup.atol, out);
   }
 
   TEUCHOS_UNIT_TEST( TensorProduct, AnisotropicDiscreteOrthogonality ) {
@@ -211,7 +211,7 @@ namespace TensorProductUnitTest {
       *basis);
 
     success = Stokhos::testPseudoSpectralDiscreteOrthogonality(
-      basis, tp_op, setup.rtol, setup.atol, out);
+      *basis, tp_op, setup.rtol, setup.atol, out);
   }
 
   TEUCHOS_UNIT_TEST( TotalOrder, IsotropicPoints ) {
@@ -298,7 +298,7 @@ namespace TensorProductUnitTest {
       *basis);
 
     success = Stokhos::testPseudoSpectralDiscreteOrthogonality(
-      basis, tp_op, setup.rtol, setup.atol, out);
+      *basis, tp_op, setup.rtol, setup.atol, out);
   }
 
   TEUCHOS_UNIT_TEST( TotalOrder, AnisotropicDiscreteOrthogonality ) {
@@ -313,7 +313,7 @@ namespace TensorProductUnitTest {
       *basis);
 
     success = Stokhos::testPseudoSpectralDiscreteOrthogonality(
-      basis, tp_op, setup.rtol, setup.atol, out);
+      *basis, tp_op, setup.rtol, setup.atol, out);
   }
 
 }

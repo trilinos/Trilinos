@@ -28,37 +28,159 @@
 
 #include "Teuchos_TimeMonitor.hpp"
 
-template <typename ordinal_type, typename value_type>
-Stokhos::SmolyakBasis<ordinal_type, value_type>::
+template <typename ordinal_type, typename value_type, typename ordering_type>
+template <typename index_set_type,
+	  typename coeff_growth_rule_type>
+Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
 SmolyakBasis(
-	const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& bases_,
-	const value_type& sparse_tol_) :
+  const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& bases_,
+  const index_set_type& index_set,
+  const coeff_growth_rule_type& coeff_growth_rule,
+  const value_type& sparse_tol_,
+  const ordering_type& coeff_compare) :
   p(0),
   d(bases_.size()),
   sz(0),
   bases(bases_),
-  basis_orders(d),
   sparse_tol(sparse_tol_),
-  norms(),
-  terms()
+  max_orders(d),
+  basis_set(coeff_compare),
+  norms()
 {
-  // Compute total order
-  for (ordinal_type i=0; i<d; i++) {
-    basis_orders[i] = bases[i]->order();
-    if (basis_orders[i] > p)
-      p = basis_orders[i];
+  
+  // Generate index set for the final Smolyak coefficients
+  //
+  // The Smolyak operator is given by the formula
+  //
+  // A = \sum_{k\in\K} \bigotimes_{i=1}^d \Delta^i_{k_i}
+  //
+  // where \Delta^i_0 = 0, \Delta^i_{k_i} = L^i_{k_i} - L^i_{k_i-1},
+  // and K is the supplied index set.  This becomes 
+  //
+  // A = \sum_{k\in\tilde{K}} c(k) \bigotimes_{i=1}^d L^i_{k_i}
+  //
+  // for some new index set \tilde{K} and coefficient c(k).  Using the
+  // formula (cf. G W Wasilkowski and H Wozniakowski, "Explicit cost bounds 
+  // of algorithms for multivariate tensor product problems," 
+  // Journal of Complexity (11), 1995)
+  // 
+  // \bigotimes_{i=1}^d \Delta^i_{k_i} = 
+  //    \sum_{\alpha\in\Alpha} (-1)^{|\alpha|} 
+  //        \bigotimes_{i=1}^d L^i_{k_i-\alpha_i}
+  //
+  // where \Alpha = {0,1}^d and |\alpha| = \alpha_1 + ... + \alpha_d, we
+  // iterate over K and \Alpha, compute k-\alpha and the corresponding
+  // coefficient contribution (-1)^{|\alpha|} and store these in a map.  
+  // The keys of of this map with non-zero coefficients define
+  // \tilde{K} and c(k).
+  typedef Stokhos::TensorProductIndexSet<ordinal_type> alpha_set_type; 
+  typedef Stokhos::LexographicLess<multiindex_type> index_compare;
+  typedef std::map<multiindex_type,ordinal_type,index_compare> index_map_type;
+  ordinal_type dim = index_set.dimension();
+  alpha_set_type alpha_set(dim, 1);
+  typename alpha_set_type::iterator alpha_begin = alpha_set.begin();
+  typename alpha_set_type::iterator alpha_end = alpha_set.end();
+  typename index_set_type::iterator index_iterator = index_set.begin();
+  typename index_set_type::iterator index_end = index_set.end();
+  multiindex_type diff(dim);
+  index_map_type index_map;
+  for (; index_iterator != index_end; ++index_iterator) {
+    for (typename alpha_set_type::iterator alpha = alpha_begin; 
+	 alpha != alpha_end; ++alpha) {
+      bool valid_index = true;
+      for (ordinal_type i=0; i<dim; ++i) {
+	diff[i] = (*index_iterator)[i] - (*alpha)[i];
+	if (diff[i] < 0) {
+	  valid_index = false;
+	  break;
+	}
+      }
+      if (valid_index) {
+	ordinal_type alpha_order = alpha->order();
+	ordinal_type val;	  
+	if (alpha_order % 2 == 0)
+	  val = 1;
+	else
+	  val = -1;
+	typename index_map_type::iterator index_map_iterator =
+	  index_map.find(diff);
+	if (index_map_iterator == index_map.end())
+	  index_map[diff] = val;
+	else
+	  index_map_iterator->second += val;
+      }
+    }
   }
 
-  // Compute basis terms
-  compute_terms(basis_orders, sz, terms, num_terms);
-    
+  // Generate tensor product bases
+  typename index_map_type::iterator index_map_iterator = index_map.begin();
+  typename index_map_type::iterator index_map_end = index_map.end();
+  for (; index_map_iterator != index_map_end; ++index_map_iterator) {
+	
+    // Skip indices with zero coefficient
+    if (index_map_iterator->second == 0)
+      continue;
+
+    // Apply growth rule to cofficient multi-index
+    multiindex_type coeff_growth_index(dim);
+    for (ordinal_type i=0; i<dim; ++i) {
+      coeff_growth_index[i] = 
+	coeff_growth_rule[i](index_map_iterator->first[i]);
+    }
+
+    // Build tensor product basis for given index
+    Teuchos::RCP<tensor_product_basis_type> tp = 
+      Teuchos::rcp(new tensor_product_basis_type(
+		     bases, sparse_tol, coeff_growth_index));
+
+    // Include coefficients in union over all sets
+    for (ordinal_type i=0; i<tp->size(); ++i)
+      basis_set[tp->term(i)] = ordinal_type(0);
+
+    tp_bases.push_back(tp);
+    sm_pred.tp_preds.push_back( 
+      TensorProductPredicate<ordinal_type>(coeff_growth_index) );
+    smolyak_coeffs.push_back(index_map_iterator->second);
+  }
+  sz = basis_set.size();
+ 
+  // Generate linear odering of coefficients
+  ordinal_type idx = 0;
+  basis_map.resize(sz);
+  for (typename coeff_set_type::iterator i = basis_set.begin(); 
+       i != basis_set.end(); 
+       ++i) {
+    i->second = idx;
+    basis_map[idx] = i->first;
+    ++idx;
+  }
+
+  // Compute max coefficient orders
+  for (ordinal_type i=0; i<sz; ++i) {
+    for (ordinal_type j=0; j<dim; ++j)
+      if (basis_map[i][j] > max_orders[j])
+	max_orders[j] = basis_map[i][j];
+  }
+
+  // Resize bases to make sure they are high enough order
+  for (ordinal_type i=0; i<dim; i++)
+    if (bases[i]->order() < max_orders[i])
+      bases[i] = bases[i]->cloneWithOrder(max_orders[i]);
+
+  // Compute largest order
+  p = 0;
+  for (ordinal_type i=0; i<d; i++) {
+    if (max_orders[i] > p)
+      p = max_orders[i];
+  }
+  
   // Compute norms
   norms.resize(sz);
   value_type nrm;
   for (ordinal_type k=0; k<sz; k++) {
     nrm = value_type(1.0);
     for (ordinal_type i=0; i<d; i++)
-      nrm = nrm * bases[i]->norm_squared(terms[k][i]);
+      nrm = nrm * bases[i]->norm_squared(basis_map[k][i]);
     norms[k] = nrm;
   }
 
@@ -71,252 +193,92 @@ SmolyakBasis(
   // Allocate array for basis evaluation
   basis_eval_tmp.resize(d);
   for (ordinal_type j=0; j<d; j++)
-    basis_eval_tmp[j].resize(basis_orders[j]+1);
+    basis_eval_tmp[j].resize(max_orders[j]+1);
 }
 
-template <typename ordinal_type, typename value_type>
-Stokhos::SmolyakBasis<ordinal_type, value_type>::
+template <typename ordinal_type, typename value_type, typename ordering_type>
+Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
 ~SmolyakBasis()
 {
 }
 
-template <typename ordinal_type, typename value_type>
+template <typename ordinal_type, typename value_type, typename ordering_type>
 ordinal_type
-Stokhos::SmolyakBasis<ordinal_type, value_type>::
+Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
 order() const
 {
   return p;
 }
 
-template <typename ordinal_type, typename value_type>
+template <typename ordinal_type, typename value_type, typename ordering_type>
 ordinal_type
-Stokhos::SmolyakBasis<ordinal_type, value_type>::
+Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
 dimension() const
 {
   return d;
 }
 
-template <typename ordinal_type, typename value_type>
+template <typename ordinal_type, typename value_type, typename ordering_type>
 ordinal_type
-Stokhos::SmolyakBasis<ordinal_type, value_type>::
+Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
 size() const
 {
   return sz;
 }
 
-template <typename ordinal_type, typename value_type>
+template <typename ordinal_type, typename value_type, typename ordering_type>
 const Teuchos::Array<value_type>&
-Stokhos::SmolyakBasis<ordinal_type, value_type>::
+Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
 norm_squared() const
 {
   return norms;
 }
 
-template <typename ordinal_type, typename value_type>
+template <typename ordinal_type, typename value_type, typename ordering_type>
 const value_type&
-Stokhos::SmolyakBasis<ordinal_type, value_type>::
+Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
 norm_squared(ordinal_type i) const
 {
   return norms[i];
 }
 
-template <typename ordinal_type, typename value_type>
+template <typename ordinal_type, typename value_type, typename ordering_type>
 Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
-Stokhos::SmolyakBasis<ordinal_type, value_type>::
+Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
 computeTripleProductTensor(ordinal_type order) const
 {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total Triple-Product Tensor Fill Time");
 #endif
-  return computeTripleProductTensorNew(order);
+
+  SmolyakPredicate< TotalOrderPredicate<ordinal_type> > k_pred;
+  for (ordinal_type i=0; i<sm_pred.tp_preds.size(); ++i) {
+    k_pred.tp_preds.push_back(
+      TotalOrderPredicate<ordinal_type>(order, sm_pred.tp_preds[i].orders) );
+  }
+  
+  return ProductBasisUtils::computeTripleProductTensor(
+    bases, basis_set, basis_map, sm_pred, k_pred, sparse_tol);
 }
 
-template <typename ordinal_type, typename value_type>
-Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
-Stokhos::SmolyakBasis<ordinal_type, value_type>::
-computeTripleProductTensorNew(ordinal_type order) const
-{
-  // The algorithm for computing Cijk = < \Psi_i \Psi_j \Psi_k > here works
-  // by factoring 
-  // < \Psi_i \Psi_j \Psi_k > = 
-  //    < \psi^1_{i_1}\psi^1_{j_1}\psi^1_{k_1} >_1 x ... x
-  //    < \psi^d_{i_d}\psi^d_{j_d}\psi^d_{k_d} >_d
-  // We compute the sparse triple product < \psi^l_i\psi^l_j\psi^l_k >_l
-  // for each dimension l, and then compute all non-zero products of these
-  // terms.  The complexity arises from iterating through all possible
-  // combinations, throwing out terms that aren't in the basis and are beyond
-  // the k-order limit provided
-  Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
-    Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>);
-
-  // Map the specified order limit to a limit on each dimension
-  // Subtract 1 to get the term for the last order we want to include,
-  // add up the orders for each term to get the total order, then add 1
-  Teuchos::Array<ordinal_type> term = term(order-1);
-  ordinal_type k_lim = 0;
-  for (ordinal_type i=0; i<d; i++)
-    k_lim = k_lim + term[i];
-  k_lim++;
-
-  // Create 1-D triple products
-  Teuchos::Array< Teuchos::RCP<Sparse3Tensor<ordinal_type,value_type> > > Cijk_1d(d);
-  for (ordinal_type i=0; i<d; i++) {
-    if (k_lim <= basis_orders[i]+1)
-      Cijk_1d[i] = bases[i]->computeSparseTripleProductTensor(k_lim);
-    else
-      Cijk_1d[i] = bases[i]->computeSparseTripleProductTensor(basis_orders[i]+1);
-  }
-
-  // Create i, j, k iterators for each dimension
-  // Note:  we have to supply an initializer in the arrays of iterators to 
-  // avoid checked-stl errors about singular iterators
-  typedef Sparse3Tensor<ordinal_type,value_type> Cijk_type;
-  typedef typename Cijk_type::k_iterator k_iterator;
-  typedef typename Cijk_type::kj_iterator kj_iterator;
-  typedef typename Cijk_type::kji_iterator kji_iterator;
-  Teuchos::Array<k_iterator> k_iterators(d, Cijk_1d[0]->k_begin());
-  Teuchos::Array<kj_iterator > j_iterators(d, Cijk_1d[0]->j_begin(k_iterators[0]));
-  Teuchos::Array<kji_iterator > i_iterators(d, Cijk_1d[0]->i_begin(j_iterators[0]));
-  Teuchos::Array<ordinal_type> terms_i(d), terms_j(d), terms_k(d);
-  ordinal_type sum_i = 0;
-  ordinal_type sum_j = 0;
-  ordinal_type sum_k = 0;
-  for (ordinal_type dim=0; dim<d; dim++) {
-    k_iterators[dim] = Cijk_1d[dim]->k_begin();
-    j_iterators[dim] = Cijk_1d[dim]->j_begin(k_iterators[dim]);
-    i_iterators[dim] = Cijk_1d[dim]->i_begin(j_iterators[dim]);
-    terms_i[dim] = index(i_iterators[dim]);
-    terms_j[dim] = index(j_iterators[dim]);
-    terms_k[dim] = index(k_iterators[dim]);
-    sum_i += terms_i[dim];
-    sum_j += terms_j[dim];
-    sum_k += terms_k[dim];
-  }
-
-  ordinal_type I = 0;
-  ordinal_type J = 0;
-  ordinal_type K = 0;
-  bool inc_i = true;
-  bool inc_j = true;
-  bool inc_k = true;
-  bool stop = false;
-  ordinal_type cnt = 0;
-  while (!stop) {
-
-    // Add term if it is in the basis
-    if (sum_i <= p && sum_j <= p && sum_k <= p) {
-      if (inc_k)
-	K = compute_index(terms_k, terms, num_terms, p);
-      if (K < order) {
-	if (inc_i)
-	  I = compute_index(terms_i, terms, num_terms, p);
-	if (inc_j)
-	  J = compute_index(terms_j, terms, num_terms, p);
-	value_type c = value_type(1.0);
-	for (ordinal_type dim=0; dim<d; dim++)
-	  c *= value(i_iterators[dim]);
-	if (std::abs(c/norms[I]) > sparse_tol)
-	  Cijk->add_term(I,J,K,c);
-      }
-    }
-    
-    // Increment iterators to the next valid term
-    ordinal_type cdim = 0;
-    bool inc = true;
-    inc_i = false;
-    inc_j = false; 
-    inc_k = false;
-    while (inc && cdim < d) {
-      ordinal_type cur_dim = cdim;
-      ++i_iterators[cdim];
-      inc_i = true;
-      if (i_iterators[cdim] != Cijk_1d[cdim]->i_end(j_iterators[cdim])) {
-	terms_i[cdim] = index(i_iterators[cdim]);
-	sum_i = 0;
-	for (int dim=0; dim<d; dim++)
-	  sum_i += terms_i[dim];
-      }
-      if (i_iterators[cdim] == Cijk_1d[cdim]->i_end(j_iterators[cdim]) ||
-	sum_i > p) {
-	++j_iterators[cdim];
-	inc_j = true;
-	if (j_iterators[cdim] != Cijk_1d[cdim]->j_end(k_iterators[cdim])) {
-	  terms_j[cdim] = index(j_iterators[cdim]);
-	  sum_j = 0;
-	  for (int dim=0; dim<d; dim++)
-	    sum_j += terms_j[dim];
-	}
-	if (j_iterators[cdim] == Cijk_1d[cdim]->j_end(k_iterators[cdim]) ||
-	  sum_j > p) {
-	  ++k_iterators[cdim];
-	  inc_k = true;
-	  if (k_iterators[cdim] != Cijk_1d[cdim]->k_end()) {
-	    terms_k[cdim] = index(k_iterators[cdim]);
-	    sum_k = 0;
-	    for (int dim=0; dim<d; dim++)
-	      sum_k += terms_k[dim];
-	  }
-	  if (k_iterators[cdim] == Cijk_1d[cdim]->k_end() || sum_k > p) {
-	    k_iterators[cdim] = Cijk_1d[cdim]->k_begin();
-	    ++cdim;
-	    terms_k[cur_dim] = index(k_iterators[cur_dim]);
-	    sum_k = 0;
-	    for (int dim=0; dim<d; dim++)
-	      sum_k += terms_k[dim];
-	  }
-	  else
-	    inc = false;
-	  j_iterators[cur_dim] = 
-	    Cijk_1d[cur_dim]->j_begin(k_iterators[cur_dim]);
-	  terms_j[cur_dim] = index(j_iterators[cur_dim]);
-	  sum_j = 0;
-	  for (int dim=0; dim<d; dim++)
-	    sum_j += terms_j[dim];
-	}
-	else
-	  inc = false;
-	i_iterators[cur_dim] = Cijk_1d[cur_dim]->i_begin(j_iterators[cur_dim]);
-	terms_i[cur_dim] = index(i_iterators[cur_dim]);
-	sum_i = 0;
-	for (int dim=0; dim<d; dim++)
-	  sum_i += terms_i[dim];
-      }
-      else
-	inc = false;
-
-      if (sum_i > p || sum_j > p || sum_k > p)
-	inc = true;
-    }
-
-    if (cdim == d)
-      stop = true;
-
-    cnt++;
-  }
-
-  Cijk->fillComplete();
-
-  return Cijk;
-}
-
-template <typename ordinal_type, typename value_type>
+template <typename ordinal_type, typename value_type, typename ordering_type>
 value_type
-Stokhos::SmolyakBasis<ordinal_type, value_type>::
+Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
 evaluateZero(ordinal_type i) const
 {
   // z = psi_{i_1}(0) * ... * psi_{i_d}(0) where i_1,...,i_d are the basis
   // terms for coefficient i
   value_type z = value_type(1.0);
   for (ordinal_type j=0; j<d; j++)
-    z = z * bases[j]->evaluate(value_type(0.0), terms[i][j]);
+    z = z * bases[j]->evaluate(value_type(0.0), basis_map[i][j]);
 
   return z;
 }
 
-template <typename ordinal_type, typename value_type>
+template <typename ordinal_type, typename value_type, typename ordering_type>
 void
-Stokhos::SmolyakBasis<ordinal_type, value_type>::
-evaluateBases(const Teuchos::Array<value_type>& point,
+Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
+evaluateBases(const Teuchos::ArrayView<const value_type>& point,
 	      Teuchos::Array<value_type>& basis_vals) const
 {
   for (ordinal_type j=0; j<d; j++)
@@ -326,14 +288,14 @@ evaluateBases(const Teuchos::Array<value_type>& point,
   for (ordinal_type i=0; i<sz; i++) {
     value_type t = value_type(1.0);
     for (ordinal_type j=0; j<d; j++)
-      t *= basis_eval_tmp[j][terms[i][j]];
+      t *= basis_eval_tmp[j][basis_map[i][j]];
     basis_vals[i] = t;
   }
 }
 
-template <typename ordinal_type, typename value_type>
+template <typename ordinal_type, typename value_type, typename ordering_type>
 void
-Stokhos::SmolyakBasis<ordinal_type, value_type>::
+Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
 print(std::ostream& os) const
 {
   os << "Smolyak basis of order " << p << ", dimension " << d 
@@ -346,51 +308,45 @@ print(std::ostream& os) const
   os << "\n";
 }
 
-template <typename ordinal_type, typename value_type>
+template <typename ordinal_type, typename value_type, typename ordering_type>
 const Stokhos::MultiIndex<ordinal_type>&
-Stokhos::SmolyakBasis<ordinal_type, value_type>::
+Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
 term(ordinal_type i) const
 {
-  return terms[i];
+  return basis_map[i];
 }
 
-template <typename ordinal_type, typename value_type>
+template <typename ordinal_type, typename value_type, typename ordering_type>
 ordinal_type
-Stokhos::SmolyakBasis<ordinal_type, value_type>::
+Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
 index(const Stokhos::MultiIndex<ordinal_type>& term) const
 {
-  // Currentl do a linear search.  Will have to find a better
-  // data structure.
-  bool found = false;
-  ordinal_type k=0;
-  while (!found) {
-    boo matches = true;
-    for (ordinal_type i=0; i<d; i++) {
-      matches = matches && term[i] == terms[k][i];
-      if (!matches)
-	break;
-    }
-    if (matches)
-      found = true;
-    else
-      k++;
-  }
-
-  return k;
+  typename coeff_set_type::const_iterator it = basis_set.find(term);
+  TEUCHOS_TEST_FOR_EXCEPTION(it == basis_set.end(), std::logic_error,
+			     "Invalid term " << term);
+  return it->second;
 }
 
-template <typename ordinal_type, typename value_type>
+template <typename ordinal_type, typename value_type, typename ordering_type>
 const std::string&
-Stokhos::SmolyakBasis<ordinal_type, value_type>::
+Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
 getName() const
 {
   return name;
 }
 
-template <typename ordinal_type, typename value_type>
+template <typename ordinal_type, typename value_type, typename ordering_type>
 Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type, value_type> > >
-Stokhos::SmolyakBasis<ordinal_type, value_type>::
+Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
 getCoordinateBases() const
 {
   return bases;
+}
+
+template <typename ordinal_type, typename value_type, typename ordering_type>
+Stokhos::MultiIndex<ordinal_type>
+Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
+getMaxOrders() const
+{
+  return max_orders;
 }

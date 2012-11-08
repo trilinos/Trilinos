@@ -351,17 +351,25 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-# TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#   SmolyakBasisUnitTest
-#   SOURCES Stokhos_SmolyakBasisUnitTest.cpp
-#   COMM serial mpi
-#   STANDARD_PASS_OUTPUT
-#   NUM_MPI_PROCS 1
-#   )
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SmolyakBasisUnitTest
+  SOURCES Stokhos_SmolyakBasisUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TensorProductPseudoSpectralOperatorUnitTest
   SOURCES Stokhos_TensorProductPseudoSpectralOperatorUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SmolyakPseudoSpectralOperatorUnitTest
+  SOURCES Stokhos_SmolyakPseudoSpectralOperatorUnitTest.cpp
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1

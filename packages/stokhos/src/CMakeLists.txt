@@ -120,6 +120,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_QuadratureFactoryImp.hpp
   Stokhos_PseudoSpectralOperator.hpp
   Stokhos_TensorProductPseudoSpectralOperator.hpp
+  Stokhos_SmolyakPseudoSpectralOperator.hpp
+  Stokhos_SmolyakPseudoSpectralOperatorImp.hpp
   Stokhos_QuadraturePseudoSpectralOperator.hpp
   Stokhos_StandardStorage.hpp
   Stokhos_StaticStandardStorage.hpp

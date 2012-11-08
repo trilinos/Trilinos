@@ -879,6 +879,36 @@ namespace Stokhos {
     value_type operator() (const value_type& x) const { return x; }
   };
 
+  //! Predicate functor for building sparse triple products
+  template <typename ordinal_type>
+  struct TensorProductPredicate {
+    typedef MultiIndex<ordinal_type> coeff_type;
+    coeff_type orders;
+
+    TensorProductPredicate(const coeff_type& orders_) : orders(orders_) {}
+
+    bool operator() (const coeff_type& term) const { 
+      return term.termWiseLEQ(orders); 
+    }
+
+  };
+
+  //! Predicate functor for building sparse triple products based on total order
+  template <typename ordinal_type>
+  struct TotalOrderPredicate {
+    typedef MultiIndex<ordinal_type> coeff_type;
+    ordinal_type max_order;
+    coeff_type orders;
+
+    TotalOrderPredicate(ordinal_type max_order_, const coeff_type& orders_) 
+      : max_order(max_order_), orders(orders_) {}
+
+    bool operator() (const coeff_type& term) const { 
+      return term.termWiseLEQ(orders) && term.order() <= max_order; 
+    }
+
+  };
+
   /*! 
    * \brief Utilities for indexing a multi-variate complete polynomial basis 
    */

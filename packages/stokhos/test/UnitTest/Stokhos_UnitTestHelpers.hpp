@@ -262,10 +262,15 @@ namespace Stokhos {
     const scalar_type& sparse_tol,
     const scalar_type& rel_tol, 
     const scalar_type& abs_tol,
-    Teuchos::FancyOStream& out)
+    Teuchos::FancyOStream& out,
+    bool linear = false)
   {
     ordinal_type d = basis.dimension();
+    ordinal_type p = basis.order();
     ordinal_type sz = basis.size();
+    ordinal_type k_ord = p;
+    if (linear)
+      k_ord = 1;
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,scalar_type> > > bases = basis.getCoordinateBases();
     Stokhos::Sparse3Tensor<ordinal_type,scalar_type> Cijk2;
     Teuchos::Array< Teuchos::RCP<Stokhos::Dense3Tensor<ordinal_type,scalar_type> > > Cijk_1d(d);
@@ -277,15 +282,20 @@ namespace Stokhos {
 	Stokhos::MultiIndex<ordinal_type> terms_i = basis.term(i);
 	for (ordinal_type k=0; k<sz; k++) {
 	  Stokhos::MultiIndex<ordinal_type> terms_k = basis.term(k);
-	  scalar_type c = 1.0;
-	  for (ordinal_type l=0; l<d; l++)
-	    c *= (*Cijk_1d[l])(terms_i[l],terms_j[l],terms_k[l]);
-	  if (std::abs(c/basis.norm_squared(i)) > sparse_tol)
-	    Cijk2.add_term(i,j,k,c);
+	  if (terms_k.order() <= k_ord) {
+	    scalar_type c = 1.0;
+	    for (ordinal_type l=0; l<d; l++)
+	      c *= (*Cijk_1d[l])(terms_i[l],terms_j[l],terms_k[l]);
+	    if (std::abs(c/basis.norm_squared(i)) > sparse_tol)
+	      Cijk2.add_term(i,j,k,c);
+	  }
 	}
       }
     }
     Cijk2.fillComplete();
+
+    // std::cout << std::endl << Cijk << std::endl;
+    // std::cout << std::endl << Cijk2 << std::endl;
 
     bool success = compareSparse3Tensor(Cijk, "Cijk", Cijk2, "Cijk2",
 					rel_tol, abs_tol, out);
@@ -308,9 +318,10 @@ namespace Stokhos {
 
     // Check sizes
     TEUCHOS_TEST_EQUALITY(op1.point_size(), op2.point_size(), out, success);
-    ordinal_type point_sz = op1.point_size();
-    
+    if (!success) return false;
+
     // Compare points
+    ordinal_type point_sz = op1.point_size();
     point_iterator_type pi1 = op1.set_begin();
     point_iterator_type pi2 = op2.set_begin();
     while (pi1 != op1.set_end() || pi2 != op2.set_end()) {
@@ -353,13 +364,16 @@ namespace Stokhos {
     typedef typename operator_type1::const_iterator point_iterator_type;
 
     // Check sizes
-    TEUCHOS_TEST_EQUALITY(op1.point_size(), op2.point_size(), out, success);
     TEUCHOS_TEST_EQUALITY(op1.coeff_size(), op2.coeff_size(), out, success);
-    ordinal_type point_sz = op1.point_size();
+    if (!success)
+      return false;
+
+    ordinal_type point_sz1 = op1.point_size();
+    ordinal_type point_sz2 = op2.point_size();
     ordinal_type coeff_sz = op1.coeff_size();
 
     // Evaluate function at quadrature points
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> f(point_sz,2);
+    Teuchos::SerialDenseMatrix<ordinal_type,value_type> f(point_sz1,2);
     ordinal_type idx = 0;
     for (point_iterator_type pi = op1.begin(); pi != op1.end(); ++pi) {
       f(idx,0) = func1(*pi);
@@ -367,7 +381,7 @@ namespace Stokhos {
       ++idx;
     }
 
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> f2(point_sz,2);
+    Teuchos::SerialDenseMatrix<ordinal_type,value_type> f2(point_sz2,2);
     idx = 0;
     for (point_iterator_type pi = op2.begin(); pi != op2.end(); ++pi) {
       f2(idx,0) = func1(*pi);
@@ -376,8 +390,9 @@ namespace Stokhos {
     }
 
     // Compare function evaluations
-    success = success && 
-      Stokhos::compareSDM(f, "f", f2, "f2", rel_tol, abs_tol, out);
+    if (point_sz1 == point_sz2)
+      success = success && 
+	Stokhos::compareSDM(f, "f", f2, "f2", rel_tol, abs_tol, out);
 
     // Compute PCE coefficients
     Teuchos::SerialDenseMatrix<ordinal_type,value_type> x(coeff_sz,2);
@@ -410,13 +425,16 @@ namespace Stokhos {
     typedef typename operator_type1::const_iterator point_iterator_type;
 
     // Check sizes
-    TEUCHOS_TEST_EQUALITY(op1.point_size(), op2.point_size(), out, success);
     TEUCHOS_TEST_EQUALITY(op1.coeff_size(), op2.coeff_size(), out, success);
-    ordinal_type point_sz = op1.point_size();
+    if (!success)
+      return false;
+
+    ordinal_type point_sz1 = op1.point_size();
+    ordinal_type point_sz2 = op2.point_size();
     ordinal_type coeff_sz = op1.coeff_size();
 
     // Evaluate function at quadrature points
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> f(2,point_sz);
+    Teuchos::SerialDenseMatrix<ordinal_type,value_type> f(2,point_sz1);
     ordinal_type idx = 0;
     for (point_iterator_type pi = op1.begin(); pi != op1.end(); ++pi) {
       f(0,idx) = func1(*pi);
@@ -424,7 +442,7 @@ namespace Stokhos {
       ++idx;
     }
 
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> f2(2,point_sz);
+    Teuchos::SerialDenseMatrix<ordinal_type,value_type> f2(2,point_sz2);
     idx = 0;
     for (point_iterator_type pi = op2.begin(); pi != op2.end(); ++pi) {
       f2(0,idx) = func1(*pi);
@@ -433,8 +451,9 @@ namespace Stokhos {
     }
 
     // Compare function evaluations
-    success = success && 
-      Stokhos::compareSDM(f, "f", f2, "f2", rel_tol, abs_tol, out);
+    if (point_sz1 == point_sz2)
+      success = success && 
+	Stokhos::compareSDM(f, "f", f2, "f2", rel_tol, abs_tol, out);
 
     // Compute PCE coefficients
     Teuchos::SerialDenseMatrix<ordinal_type,value_type> x(2,coeff_sz);
@@ -467,7 +486,7 @@ namespace Stokhos {
     ordinal_type i = 0;
     typename operator_type::const_iterator pi = op.begin();
     for (; pi != op.end(); ++pi) {
-      basis->evaluateBases(*pi, vals);
+      basis.evaluateBases(*pi, vals);
       for (ordinal_type j=0; j<coeff_sz; ++j)
 	f(i,j) = vals[j];
 

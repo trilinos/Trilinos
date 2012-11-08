@@ -30,7 +30,6 @@
 #define STOKHOS_TOTAL_ORDER_BASIS_HPP
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "Stokhos_ProductBasis.hpp"
 #include "Stokhos_OneDOrthogPolyBasis.hpp"
@@ -40,7 +39,7 @@ namespace Stokhos {
 
   /*!
    * \brief Multivariate orthogonal polynomial basis generated from a
-   * tensor product of univariate polynomials.
+   * total order tensor product of univariate polynomials.
    */
   /*!
    * The multivariate polynomials are given by 
@@ -48,8 +47,7 @@ namespace Stokhos {
    *     \Psi_i(x) = \psi_{i_1}(x_1)\dots\psi_{i_d}(x_d)
    * \f]
    * where \f$d\f$ is the dimension of the basis and \f$i_j\leq p_j\f$,
-   * where \f$p_j\f$ is the order of the $j$th basis.  The size of the basis 
-   * is given by \f$(p_1+1)\dots(p_d+1)\f$.
+   * where \f$p_j\f$ is the order of the $j$th basis.  
    */
   template <typename ordinal_type, typename value_type,
 	    typename coeff_compare_type = 
@@ -67,7 +65,8 @@ namespace Stokhos {
     TotalOrderBasis(
       const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,
  value_type> > >& bases,
-      const value_type& sparse_tol = 1.0e-12);
+      const value_type& sparse_tol = 1.0e-12,
+      const coeff_compare_type& coeff_compare = coeff_compare_type());
 
     //! Destructor
     virtual ~TotalOrderBasis();
@@ -203,20 +202,6 @@ namespace Stokhos {
 
     //! Temporary array used in basis evaluation
     mutable Teuchos::Array< Teuchos::Array<value_type> > basis_eval_tmp;
-
-    //! Predicate functor for building sparse triple products
-    struct total_order_predicate {
-      ordinal_type max_order;
-      const coeff_type& orders;
-
-      total_order_predicate(ordinal_type max_order_, const coeff_type& orders_) 
-	: max_order(max_order_), orders(orders_) {}
-
-      bool operator() (const coeff_type& term) const { 
-	return term.termWiseLEQ(orders) && term.order() <= max_order; 
-      }
-
-    };
 
   }; // class TotalOrderBasis
 

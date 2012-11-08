@@ -30,7 +30,6 @@
 #define STOKHOS_TENSOR_PRODUCT_BASIS_HPP
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "Stokhos_ProductBasis.hpp"
 #include "Stokhos_OneDOrthogPolyBasis.hpp"
@@ -67,7 +66,9 @@ namespace Stokhos {
     TensorProductBasis(
       const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,
  value_type> > >& bases,
-      const value_type& sparse_tol = 1.0e-12);
+      const value_type& sparse_tol = 1.0e-12,
+      const MultiIndex<ordinal_type>& index = MultiIndex<ordinal_type>(),
+      const coeff_compare_type& coeff_compare = coeff_compare_type());
 
     //! Destructor
     virtual ~TensorProductBasis();
@@ -203,18 +204,6 @@ namespace Stokhos {
 
     //! Temporary array used in basis evaluation
     mutable Teuchos::Array< Teuchos::Array<value_type> > basis_eval_tmp;
-
-    //! Predicate functor for building sparse triple products
-    struct tensor_product_predicate {
-      const coeff_type& orders;
-
-      tensor_product_predicate(const coeff_type& orders_) : orders(orders_) {}
-
-      bool operator() (const coeff_type& term) const { 
-	return term.termWiseLEQ(orders); 
-      }
-
-    };
 
   }; // class TensorProductBasis
 

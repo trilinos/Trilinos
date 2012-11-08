@@ -31,15 +31,25 @@ template <typename ordinal_type, typename value_type, typename ordering_type>
 Stokhos::TensorProductBasis<ordinal_type, value_type, ordering_type>::
 TensorProductBasis(
   const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& bases_,
-  const value_type& sparse_tol_) :
+  const value_type& sparse_tol_,
+  const Stokhos::MultiIndex<ordinal_type>& index,
+  const ordering_type& coeff_compare) :
   p(0),
   d(bases_.size()),
   sz(0),
   bases(bases_),
   sparse_tol(sparse_tol_),
   max_orders(d),
+  basis_set(coeff_compare),
   norms()
 {
+  // Resize bases for given index if necessary
+  if (index.dimension() > 0) {
+    for (ordinal_type i=0; i<d; i++) {
+      if (index[i] != bases[i]->order())
+	bases[i] = bases[i]->cloneWithOrder(index[i]);
+    }
+  }
 
   // Compute largest order
   for (ordinal_type i=0; i<d; i++) {
@@ -133,16 +143,8 @@ computeTripleProductTensor(ordinal_type order) const
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total Triple-Product Tensor Fill Time");
 #endif
 
-  tensor_product_predicate predicate(max_orders);
-  // A hack until we change the interface to do this correctly
-  coeff_type k_lim(d);
-  if (order == d+1)
-    for (ordinal_type i=0; i<d; ++i)
-      k_lim[i] = 1;
-  else
-    for (ordinal_type i=0; i<d; ++i)
-      k_lim[i] = max_orders[i];
-  tensor_product_predicate k_predicate(k_lim);
+  TensorProductPredicate<ordinal_type> predicate(max_orders);
+  TotalOrderPredicate<ordinal_type> k_predicate(order, max_orders);
   
   return ProductBasisUtils::computeTripleProductTensor(
     bases, basis_set, basis_map, predicate, k_predicate, sparse_tol);

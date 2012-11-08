@@ -132,7 +132,7 @@ namespace TensorProductUnitTest {
 
   }
 
-  TEUCHOS_UNIT_TEST( Sparse3Tensor, Anisotropic ) {
+  TEUCHOS_UNIT_TEST( Sparse3Tensor, Anisotropic_Full ) {
     success = true;
 
     // Build anisotropic tensor product basis of dimension d
@@ -141,10 +141,25 @@ namespace TensorProductUnitTest {
       bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(i+1, true));
     Teuchos::RCP<const Stokhos::ProductBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::TensorProductBasis<ordinal_type,value_type>(bases, setup.sparse_tol));
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
-      basis->computeTripleProductTensor(basis->size());
+      basis->computeTripleProductTensor(basis->order());
 
     success = Stokhos::testSparse3Tensor(*Cijk, *basis, setup.sparse_tol, 
 					 setup.rtol, setup.atol, out);
+  }
+
+  TEUCHOS_UNIT_TEST( Sparse3Tensor, Anisotropic_Linear ) {
+    success = true;
+
+    // Build anisotropic tensor product basis of dimension d
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > > bases(setup.d);
+    for (ordinal_type i=0; i<setup.d; i++)
+      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(i+1, true));
+    Teuchos::RCP<const Stokhos::ProductBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::TensorProductBasis<ordinal_type,value_type>(bases, setup.sparse_tol));
+    Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
+      basis->computeTripleProductTensor(1);
+
+    success = Stokhos::testSparse3Tensor(*Cijk, *basis, setup.sparse_tol, 
+					 setup.rtol, setup.atol, out, true);
   }
 
   
