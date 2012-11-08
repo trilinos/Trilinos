@@ -17,7 +17,6 @@
 
 #include <stk_util/environment/ReportHandler.hpp>
 
-
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Part.hpp>
@@ -34,7 +33,6 @@ class MeshBulkData;
 
 }
 }
-
 
 #endif
 
