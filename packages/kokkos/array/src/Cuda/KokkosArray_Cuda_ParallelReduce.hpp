@@ -47,7 +47,6 @@
 #if defined( __CUDACC__ )
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <iostream>
 
 #include <vector>
