@@ -279,6 +279,14 @@ namespace stk {
       m_isCommitted = false;
       m_isAdopted = false;
       destroy();
+      if (m_iossRegion)
+        //if (m_iossRegion) 
+        {
+          delete m_iossRegion;
+          m_iossRegion = 0;
+          if (m_iossMeshData_created)
+            m_iossMeshData->m_input_region=0;
+        }
     }
 
 
@@ -931,6 +939,12 @@ namespace stk {
     PerceptMesh::~PerceptMesh()
     {
       destroy();
+      if (m_iossRegion && !m_iossMeshData_created) 
+        //if (m_iossRegion) 
+        {
+          delete m_iossRegion;
+          m_iossRegion = 0;
+        }
     }
 
     stk::mesh::BulkData * PerceptMesh::get_bulk_data()
@@ -1548,6 +1562,7 @@ namespace stk {
 
       // NOTE: 'in_region' owns 'dbi' pointer at this time...
       //m_iossRegion = Teuchos::rcp( new Ioss::Region(dbi, "input_model") );
+      if (m_iossRegion) { delete m_iossRegion; m_iossRegion = 0; }
       m_iossRegion = new Ioss::Region(dbi, "input_model");
       Ioss::Region& in_region = *m_iossRegion;
 
@@ -2097,7 +2112,13 @@ namespace stk {
       if (p_size == 1 && m_streaming_size)
         percept_create_output_mesh(out_filename, comm, bulk_data, mesh_data);
       else
-        stk::io::create_output_mesh(out_filename, comm, bulk_data, mesh_data);
+        {
+          if (m_iossMeshData_created && m_iossMeshData->m_output_region)
+            {
+              delete m_iossMeshData->m_output_region;
+            }
+          stk::io::create_output_mesh(out_filename, comm, bulk_data, mesh_data);
+        }
 
       stk::io::define_output_fields(mesh_data, meta_data, false);
 
