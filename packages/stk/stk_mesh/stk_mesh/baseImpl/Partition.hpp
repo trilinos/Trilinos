@@ -41,6 +41,10 @@ public:
         return m_extPartitionKey;
     }
 
+    bool add(Entity entity);
+
+    void move_to(Entity entity, Partition &dst_partition);
+
     bool remove(Entity entity);
 
     /// Compress this partion into a single bucket of sorted Entities.
@@ -90,8 +94,12 @@ private:
     // Flag that the set of buckets, and not just their contents, is being modified.
     bool m_modifyBucketSet;
 
+    bool no_buckets() const;
+
     // Take the buckets from the repository.
     bool take_bucket_control();
+
+    Bucket *get_non_full_back();
 
 };
 

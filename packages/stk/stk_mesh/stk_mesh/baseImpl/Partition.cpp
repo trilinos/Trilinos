@@ -72,6 +72,32 @@ BucketRepository &Partition::getRepository(stk::mesh::BulkData &mesh)
 }
 
 
+bool Partition::add(Entity entity)
+{
+    if (entity.bucket_ptr())
+    {
+        return false;
+    }
+
+    Bucket *bucket = get_non_full_back();
+    unsigned dst_ordinal = bucket->size();
+    bucket->initialize_fields(dst_ordinal);
+    bucket->replace_entity(dst_ordinal, entity);
+    entity.m_entityImpl->set_bucket_and_ordinal(bucket, dst_ordinal);
+    bucket->increment_size();
+
+    m_repository->internal_propagate_relocation(entity);
+
+    return true;
+}
+
+
+void Partition::move_to(Entity entity, Partition &dst_partition)
+{
+    // WRITE ME!
+}
+
+
 bool Partition::remove(Entity e_k)
 {
     Bucket *bucket_k = e_k.bucket_ptr();
@@ -90,7 +116,7 @@ bool Partition::remove(Entity e_k)
         bucket_k->replace_entity(ord_k, e_swap ) ;
         e_swap.m_entityImpl->set_bucket_and_ordinal(bucket_k, ord_k);
 
-        // Entity field data has relocated
+        // Entity field data has relocated.
         m_repository->internal_propagate_relocation(e_swap);
     }
 
@@ -100,14 +126,22 @@ bool Partition::remove(Entity e_k)
     if ( 0 == last->size() )
     {
         take_bucket_control();
-        if (m_buckets.size() > 1)
+
+        size_t num_buckets = m_buckets.size();
+        if (num_buckets > 1)
         {
             Bucket *new_last = *(m_buckets.end() - 2);
             m_buckets[0]->set_last_bucket_in_partition(new_last);
+
+            if (num_buckets > 2)
+            {
+                delete m_buckets.back();
+                m_buckets.pop_back();
+            }
         }
-        delete m_buckets.back();
-        m_buckets.pop_back();
     }
+
+    e_k.m_entityImpl->set_bucket_and_ordinal(0, 0);
     return true;
 }
 
@@ -140,7 +174,6 @@ void Partition::compress()
 
     Bucket * new_bucket = new Bucket( m_repository->m_mesh, m_rank, partition_key, partition_size);
     new_bucket->set_first_bucket_in_partition(new_bucket); // partition members point to first bucket
-    new_bucket->set_last_bucket_in_partition(new_bucket);  // First bucket points to new last bucket
     new_bucket->m_partition = this;
 
     for(size_t new_ordinal = 0; new_ordinal < entities.size(); ++new_ordinal)
@@ -287,6 +320,38 @@ bool Partition::take_bucket_control()
     }
     m_modifyBucketSet = true;
     return true;
+}
+
+
+stk::mesh::Bucket *Partition::get_non_full_back()
+{
+    std::vector<unsigned> partition_key = get_legacy_partition_id();
+    partition_key[ partition_key[0] ] = 0;
+
+    Bucket *bucket = 0;
+    if (empty())
+    {
+        if (no_buckets())
+        {
+            bucket = new Bucket( m_repository->m_mesh, m_rank, partition_key,
+                                 m_repository->bucket_capacity());
+            bucket->m_partition = this;
+            bucket->set_last_bucket_in_partition(bucket);
+        }
+        else
+        {
+            bucket = *begin();
+        }
+    }
+    if (bucket->size() == bucket->capacity())
+    {
+        partition_key[ partition_key[0] ] = m_buckets.size();
+        bucket = new Bucket( m_repository->m_mesh, m_rank, partition_key,
+                             m_repository->bucket_capacity());
+        bucket->set_first_bucket_in_partition(m_buckets[0]);
+        m_buckets.push_back(bucket);
+    }
+    return bucket;
 }
 
 

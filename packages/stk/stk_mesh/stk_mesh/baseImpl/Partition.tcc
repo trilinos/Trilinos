@@ -77,10 +77,14 @@ inline std::vector<Bucket *>::const_iterator Partition::end() const
 }
 
 
+inline bool Partition::no_buckets() const
+{
+    return begin() == end();
+}
 
 inline bool Partition::empty() const
 {
-    return begin() == end();
+    return (no_buckets() || ((*begin())->size() == 0));
 }
 
 inline bool Partition::belongs(Bucket *bkt) const
