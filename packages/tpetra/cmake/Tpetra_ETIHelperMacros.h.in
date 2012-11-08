@@ -3,6 +3,7 @@
 
 #include <Tpetra_ConfigDefs.hpp>
 
+/* Tpetra provides official support for the following nodes */
 #include <Kokkos_SerialNode.hpp>
 #if defined(HAVE_KOKKOSCLASSIC_TBB)
 #  include <Kokkos_TBBNode.hpp>
@@ -17,6 +18,7 @@
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
 
+/* Tpetra provides official support for dd_real and qd_real */
 #if defined(HAVE_TPETRA_QD)
 #include <qd/qd_real.h>
 #endif
@@ -26,5 +28,13 @@
 @TPETRA_ETIMACRO_SLGN@
 
 @TPETRA_ETIMACRO_LGN@
+
+@TPETRA_ETIMACRO_TSLG@
+
+@TPETRA_ETIMACRO_SLG@
+
+@TPETRA_ETIMACRO_LG@
+
+@TPETRA_ETIMACRO_N@
 
 #endif // TPETRA_ETIHELPERMACROS_H_

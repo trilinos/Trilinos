@@ -32,12 +32,11 @@ IF (${PROJECT_NAME}_ENABLE_CXX11)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
-
 ENDIF()
 
 # these use HybridPlatform, so must be disabled when GPU is enabled
 # they also use CXX11
-IF (${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_Thrust)
+IF (${PROJECT_NAME}_ENABLE_CXX11)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     RTITutorialSimple
@@ -53,17 +52,15 @@ IF (${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_Thrust)
     ARGS 
     COMM serial mpi
     STANDARD_PASS_OUTPUT
-    DEPLIBS tpetrartitestlib
   )
 
-  IF (Tpetra_ENABLE_QD)
+  IF (Tpetra_ENABLE_QD AND (NOT Tpetra_ENABLE_EXPLICIT_INSTANTIATION OR Tpetra_INST_QD_REAL))
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       RTIInlineCG_qd
       SOURCES RTIInlineCG_qd
       ARGS 
       COMM serial mpi
       STANDARD_PASS_OUTPUT
-      DEPLIBS tpetrartitestlib
     )
   ENDIF()
 

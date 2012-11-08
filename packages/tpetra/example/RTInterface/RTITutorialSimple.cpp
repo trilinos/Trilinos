@@ -47,6 +47,9 @@
 #include <Teuchos_DefaultMpiComm.hpp>
 
 #include <Tpetra_ConfigDefs.hpp>
+
+#undef HAVE_KOKKOSCLASSIC_THRUST
+
 #include <Tpetra_HybridPlatform.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Vector.hpp>

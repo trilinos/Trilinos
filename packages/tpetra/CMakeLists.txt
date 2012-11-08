@@ -39,11 +39,12 @@ SET(Tpetra_MACHINE_XML_FILE_DIR
 
 TRIBITS_SET_SS_FOR_DEV_MODE(SS_FOR_DEV_PS_FOR_RELEASE)
 
+ASSERT_DEFINED(KokkosClassic_DefaultNode)
 ASSERT_DEFINED(KokkosClassic_ENABLED_NODES)
-SET(Tpetra_ETI_SCALARS "int")
+SET(Tpetra_ETI_SCALARS "double;int")
 SET(Tpetra_ETI_GORDS   "int")
 SET(Tpetra_ETI_LORDS   "int")
-SET(Tpetra_ETI_NODES   KokkosClassic_ENABLED_NODES)
+SET(Tpetra_ETI_NODES   "${KokkosClassic_ENABLED_NODES}")
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_SS_TESTING
@@ -101,16 +102,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 IF(Tpetra_INST_FLOAT) 
   LIST(APPEND Tpetra_ETI_SCALARS "float")
-ENDIF()
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_INST_DOUBLE
-  HAVE_TPETRA_INST_DOUBLE
-  "If explicit instantiation is enabled, instantiate over scalar field double."
-  ON
-  )
-IF(Tpetra_INST_DOUBLE) 
-  LIST(APPEND Tpetra_ETI_SCALARS "double")
 ENDIF()
 
 IF (SS_FOR_DEV_PS_FOR_RELEASE AND HAVE_COMPLEX_BLAS AND HAVE_TEUCHOS_BLASFLOAT)
@@ -239,21 +230,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${KokkosClassic_ENABLE_TSQR}
   )
 
-IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
-  MESSAGE(STATUS "User-specified ETI set: ${Tpetra_ETI_Set}")
-  MESSAGE(STATUS "Full coverage explicit instantiation for following nodes: ${KokkosClassic_ENABLED_NODES}")
-  MESSAGE(STATUS "Full coverage explicit instantiation for following scalars: ${Tpetra_ETI_SCALARS}")
-  MESSAGE(STATUS "Full coverage explicit instantiation for following global ordinals: ${Tpetra_ETI_GORDS}")
-  MESSAGE(STATUS "Full coverage explicit instantiation for following local ordinals: ${Tpetra_ETI_LORDS}")
-  # generate ETI macros for Tpetra usage 
-  # this uses the following lists: 
-  #             nodes: KokkosClassic_ENABLED_NODES 
-  #           scalars: Tpetra_ETI_SCALARS
-  #   global ordinals: Tpetra_ETI_GORDS
-  TpetraExpandTypesetProduct(Tpetra_ETI_Set "${Tpetra_ETI_SCALARS}" "${Tpetra_ETI_LORDS}" "${Tpetra_ETI_GORDS}" "${KokkosClassic_ENABLED_NODES}")
-  MESSAGE(STATUS "Final ETI set: ${Tpetra_ETI_Set}")
-  GenerateTpetraETIMacros("${Tpetra_ETI_Set}" TPETRA_ETIMACRO_TSLGN TPETRA_ETIMACRO_SLGN TPETRA_ETIMACRO_LGN)
-ENDIF()
+# process the explicit instantiations for this package
+# this just includes cmake/ExplicitInstantiationSupport.cmake
+# later on, we'll move this out of the package-level CMakeLists.txt and into the package architecture
+TRIBITS_PROCESS_ETI()
 
 #
 # C) Add the libraries, tests, and examples
@@ -267,9 +247,7 @@ IF (Tpetra_ENABLE_RTI)
 ENDIF()
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
-
 TRIBITS_ADD_TEST_DIRECTORIES(example)
-
 
 #
 # Exclude files for source package.

@@ -53,6 +53,8 @@
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
+#undef HAVE_KOKKOSCLASSIC_THRUST
+
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_HybridPlatform.hpp>

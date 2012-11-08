@@ -17,7 +17,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS ${ARGS}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi tpetratestlib
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -28,7 +27,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   # ARGS ${ARGS}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
-  DEPLIBS tpetraext tpetratestlib
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraCrsMatrixCopyFiles
@@ -50,7 +48,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS ${ARGS}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi tpetrainout tpetratestlib
   )
 
 SET(TIMING_INSTALLS "")

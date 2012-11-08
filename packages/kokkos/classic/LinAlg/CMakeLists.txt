@@ -76,14 +76,7 @@ ENDIF()
 
 ASSERT_DEFINED(KokkosClassic_ENABLE_Thrust)
 IF (KokkosClassic_ENABLE_Thrust)
-  # this pulls in Thrust, CUSP, and Kokkos/NodeAPI
-  #include_directories(${Kokkos_INCLUDE_DIRS})
   PACKAGE_ADD_CUDA_LIBRARY(kokkoslinalg_cuda SOURCES ${CUDA_SOURCES})
-  #APPEND_SET(KOKKOS_LINALG_CUDALIBS "kokkoslinalg_cuda")
-  #TARGET_LINK_LIBRARIES(kokkoslinalg_cuda teuchos)
-  #SET(KOKKOS_LINALG_CUDALIBS "kokkoslinalg_cuda")
-#ELSE()
-#  SET(KOKKOS_LINALG_CUDALIBS "")
 ENDIF()
 
 ASSERT_DEFINED(KokkosClassic_ENABLE_MKL)

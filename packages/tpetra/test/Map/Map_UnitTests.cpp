@@ -45,6 +45,7 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_CommHelpers.hpp>
+#include <Tpetra_ETIHelperMacros.h>
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
@@ -117,6 +118,25 @@ namespace {
   // UNIT TESTS
   // 
 
+#if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_ENABLE_SS_TESTING) && defined(HAVE_TPETRA_MPI)
+  ////
+  TEUCHOS_UNIT_TEST( Map, RogersUnsignedGOBugVerification )
+  {
+    typedef Map<int,size_t> M;
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    if (numImages < 2) return;
+    const int myImageID = comm->getRank();
+    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
+    RCP<M> m;
+    TEST_NOTHROW( m = rcp(new M(GSTI, tuple<size_t>(myImageID), 0, comm)) );
+    if (m != Teuchos::null) {
+      TEST_EQUALITY( m->getMinAllGlobalIndex(), (size_t)0 );
+      TEST_EQUALITY( m->getMaxAllGlobalIndex(), (size_t)numImages-1 );
+    }
+  }
+#endif
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, invalidConstructor1, LO, GO )
@@ -185,27 +205,6 @@ namespace {
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
-
-
-#if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_ENABLE_SS_TESTING) && defined(HAVE_TPETRA_MPI)
-  ////
-  TEUCHOS_UNIT_TEST( Map, RogersUnsignedGOBugVerification )
-  {
-    typedef Map<int,size_t> M;
-    // create a comm  
-    RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
-    if (numImages < 2) return;
-    const int myImageID = comm->getRank();
-    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
-    RCP<M> m;
-    TEST_NOTHROW( m = rcp(new M(GSTI, tuple<size_t>(myImageID), 0, comm)) );
-    if (m != Teuchos::null) {
-      TEST_EQUALITY( m->getMinAllGlobalIndex(), (size_t)0 );
-      TEST_EQUALITY( m->getMaxAllGlobalIndex(), (size_t)numImages-1 );
-    }
-  }
-#endif
 
 
   ////
@@ -359,55 +358,25 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
-
   // 
   // INSTANTIATIONS
   //
 
-  // Uncomment this for really fast development cycles but make sure to comment
-  // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  // all ordinals, default node
+#define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor1, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor2, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor3, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, compatabilityTests, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, sameasTests, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ContigUniformMap, LO, GO )
 
-
-# ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-#   define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor1, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor2, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor3, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, compatabilityTests, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, sameasTests, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ContigUniformMap, LO, GO )
-
-    UNIT_TEST_GROUP_ORDINAL( char , int )
-    UNIT_TEST_GROUP_ORDINAL( int , int )
-
-# else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-#   define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor1, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor2, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor3, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, compatabilityTests, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, sameasTests, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ContigUniformMap, LO, GO )
-
-    // UNIT_TEST_GROUP_ORDINAL(char , int)
-
-    UNIT_TEST_GROUP_ORDINAL(int , int)
-
-    // typedef short int ShortInt;
-    // UNIT_TEST_GROUP_ORDINAL(ShortInt, int)
-
-    // typedef long int LongInt;
-    // UNIT_TEST_GROUP_ORDINAL(int , LongInt)
-
-#   ifdef HAVE_TEUCHOS_LONG_LONG_INT
-      // typedef long long int LongLongInt;
-      // UNIT_TEST_GROUP_ORDINAL(char , LongLongInt)
-      // UNIT_TEST_GROUP_ORDINAL(int , LongLongInt)
-#   endif
-
-# endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+  // test only what's enabled in the library
+  TPETRA_INSTANTIATE_LG(UNIT_TEST_GROUP_ORDINAL)
+#else
+  UNIT_TEST_GROUP(int,int)
+  UNIT_TEST_GROUP(int,long)
+#endif
 
 }

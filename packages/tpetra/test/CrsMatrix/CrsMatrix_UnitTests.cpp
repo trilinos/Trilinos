@@ -2257,9 +2257,7 @@ typedef std::complex<double> ComplexDouble;
     UNIT_TEST_ALLCPUNODES(LO, GO, ComplexDouble) \
     UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO)
 
-#if defined(HAVE_TPETRA_INST_DOUBLE)
   UNIT_TEST_DOUBLE(int, int)
-#endif
 
 #if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
     UNIT_TEST_COMPLEX_FLOAT(int, int)

@@ -10,7 +10,6 @@ IF (${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_Thrust)
     ARGS "--matrix-file=bcsstk14.hb --param-file=irtr_double.xml"
     COMM serial mpi
     STANDARD_PASS_OUTPUT
-    DEPLIBS tpetrartitestlib
   )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(MultiPrecInputMatrix
@@ -43,7 +42,6 @@ IF (${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_Thrust)
       ARGS "--matrix-file=bcsstk14.hb --param-file=qd.xml"
       COMM serial mpi
       STANDARD_PASS_OUTPUT
-      DEPLIBS tpetrartitestlib 
     )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(MultiPrecExample_qd_dd
@@ -51,7 +49,6 @@ IF (${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_Thrust)
       ARGS "--matrix-file=bcsstk14.hb --param-file=qd_dd.xml"
       COMM serial mpi
       STANDARD_PASS_OUTPUT
-      DEPLIBS tpetrartitestlib 
     )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(IRTR_qd
@@ -59,7 +56,6 @@ IF (${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_Thrust)
       ARGS "--matrix-file=bcsstk14.hb --param-file=irtr_qd.xml"
       COMM serial mpi
       STANDARD_PASS_OUTPUT
-      DEPLIBS tpetrartitestlib 
     )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(IRTR_qd_double
@@ -67,7 +63,6 @@ IF (${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_Thrust)
       ARGS "--matrix-file=bcsstk14.hb --param-file=irtr_qd.xml"
       COMM serial mpi
       STANDARD_PASS_OUTPUT
-      DEPLIBS tpetrartitestlib 
     )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(MultiPrecExample_qd_dd_double
@@ -75,7 +70,6 @@ IF (${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_Thrust)
       ARGS "--matrix-file=bcsstk14.hb --param-file=qd_dd_double.xml"
       COMM serial mpi
       STANDARD_PASS_OUTPUT
-      DEPLIBS tpetrartitestlib 
     )
   ENDIF()
 
@@ -98,7 +92,6 @@ IF (${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_Thrust)
     ARGS "--matrix-file=bcsstk14.hb --param-file=double_float.xml"
     COMM serial mpi
     STANDARD_PASS_OUTPUT
-    DEPLIBS tpetrartitestlib 
   )
 
 ENDIF()

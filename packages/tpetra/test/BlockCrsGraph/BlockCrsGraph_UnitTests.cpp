@@ -384,23 +384,9 @@ namespace {
   // INSTANTIATIONS
   //
 
-  // Uncomment this for really fast development cycles but make sure to comment
-  // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
 #define UNIT_TEST_GROUP_LO_GO( LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BlockCrsGraph, ColMap1  , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BlockCrsGraph, Queries  , LO, GO )
 
      UNIT_TEST_GROUP_LO_GO(int,int)
-// #ifndef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-// #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-//         typedef long long int LongLongInt;
-//         UNIT_TEST_GROUP_LO_GO(short,LongLongInt)
-// #else
-//         typedef long int LongInt;
-//         UNIT_TEST_GROUP_LO_GO(short,LongInt)
-// #endif
-// # endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
 }
