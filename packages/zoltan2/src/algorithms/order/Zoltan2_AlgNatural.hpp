@@ -72,16 +72,6 @@ int AlgNatural(
 
   int ierr= 0;
 
-#ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
-
-  Z2_THROW_EXPERIMENTAL("Zoltan2 natural ordering is strictly "
-                        "experimental software "
-                        "while it is being developed and tested.")
-  return ierr;
-
-#else //INCLUDE_ZOLTAN2_EXPERIMENTAL
-
-
   HELLO;
 
   // Local permutation only for now.
@@ -101,7 +91,6 @@ int AlgNatural(
 
   return ierr;
 
-#endif //INCLUDE_ZOLTAN2_EXPERIMENTAL
 }
 
 }
