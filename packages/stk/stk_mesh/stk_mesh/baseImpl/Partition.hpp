@@ -41,7 +41,7 @@ public:
         return m_extPartitionKey;
     }
 
-    bool remove(Entity &entity);
+    bool remove(Entity entity);
 
     /// Compress this partion into a single bucket of sorted Entities.
     void compress();
@@ -62,11 +62,11 @@ public:
         return partition_size;
     }
 
-    bool need_sync_to_repository() const { return m_needSyncToRepo; }
+    bool modify_bucket_set() const { return m_modifyBucketSet; }
 
     size_t num_buckets() const
     {
-        return (m_needSyncToRepo ? m_buckets.size() : m_endBucketIndex - m_beginBucketIndex);
+        return (m_modifyBucketSet ? m_buckets.size() : m_endBucketIndex - m_beginBucketIndex);
     }
 
     // Just for unit testing.  Remove after refactor.
@@ -87,8 +87,8 @@ private:
     unsigned m_beginBucketIndex;
     unsigned m_endBucketIndex;
 
-    // Need to sync m_buckets back to m_repository at the end of this modification cycle.
-    bool m_needSyncToRepo;
+    // Flag that the set of buckets, and not just their contents, is being modified.
+    bool m_modifyBucketSet;
 
     // Take the buckets from the repository.
     bool take_bucket_control();

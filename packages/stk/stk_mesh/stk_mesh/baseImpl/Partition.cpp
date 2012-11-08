@@ -47,14 +47,14 @@ Partition::Partition(BucketRepository *repo, EntityRank rank)
     , m_rank(rank)
     , m_beginBucketIndex(0)
     , m_endBucketIndex(0)
-    , m_needSyncToRepo(false)
+    , m_modifyBucketSet(false)
 {
     // Nada.
 }
 
 Partition::~Partition()
 {
-    if (m_needSyncToRepo)
+    if (m_modifyBucketSet)
     {
         size_t num_bkts = m_buckets.size();
         for (size_t i = 0; i < num_bkts; ++i)
@@ -72,7 +72,7 @@ BucketRepository &Partition::getRepository(stk::mesh::BulkData &mesh)
 }
 
 
-bool Partition::remove(Entity &e_k)
+bool Partition::remove(Entity e_k)
 {
     Bucket *bucket_k = e_k.bucket_ptr();
     if (!belongs(bucket_k) || empty())
@@ -100,12 +100,13 @@ bool Partition::remove(Entity &e_k)
     if ( 0 == last->size() )
     {
         take_bucket_control();
+        if (m_buckets.size() > 1)
+        {
+            Bucket *new_last = *(m_buckets.end() - 2);
+            m_buckets[0]->set_last_bucket_in_partition(new_last);
+        }
         delete m_buckets.back();
         m_buckets.pop_back();
-        if (m_buckets.size() > 0)
-        {
-            m_buckets[0]->set_last_bucket_in_partition(m_buckets.back());
-        }
     }
     return true;
 }
@@ -155,7 +156,7 @@ void Partition::compress()
     }
     new_bucket->m_size = partition_size;
 
-    if (m_needSyncToRepo)
+    if (m_modifyBucketSet)
     {
         for (std::vector<Bucket *>::iterator b_i = buckets_begin; b_i != buckets_end; ++b_i)
         {
@@ -173,7 +174,7 @@ void Partition::compress()
     }
     m_buckets.resize(1);
     m_buckets[0] = new_bucket;
-    m_needSyncToRepo = true;
+    m_modifyBucketSet = true;
 }
 
 
@@ -267,7 +268,7 @@ void Partition::sort()
 
 bool Partition::take_bucket_control()
 {
-    if (m_needSyncToRepo)
+    if (m_modifyBucketSet)
         return false;
 
     if (m_beginBucketIndex == m_endBucketIndex)
@@ -284,7 +285,7 @@ bool Partition::take_bucket_control()
             *ob_i = 0;
         }
     }
-    m_needSyncToRepo = true;
+    m_modifyBucketSet = true;
     return true;
 }
 

@@ -15,7 +15,7 @@ namespace impl {
 
 inline std::vector<Bucket *>::iterator Partition::begin()
 {
-    if (m_needSyncToRepo)
+    if (m_modifyBucketSet)
     {
         return m_buckets.begin();
     }
@@ -31,7 +31,7 @@ inline std::vector<Bucket *>::iterator Partition::begin()
 
 inline std::vector<Bucket *>::iterator Partition::end()
 {
-    if (m_needSyncToRepo)
+    if (m_modifyBucketSet)
     {
         return m_buckets.end();
     }
@@ -47,7 +47,7 @@ inline std::vector<Bucket *>::iterator Partition::end()
 
 inline std::vector<Bucket *>::const_iterator Partition::begin() const
 {
-    if (m_needSyncToRepo)
+    if (m_modifyBucketSet)
     {
         return m_buckets.begin();
     }
@@ -63,7 +63,7 @@ inline std::vector<Bucket *>::const_iterator Partition::begin() const
 
 inline std::vector<Bucket *>::const_iterator Partition::end() const
 {
-    if (m_needSyncToRepo)
+    if (m_modifyBucketSet)
     {
         return m_buckets.end();
     }

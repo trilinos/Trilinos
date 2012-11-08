@@ -647,7 +647,7 @@ void BucketRepository::sync_from_partitions()
         size_t num_partitions = partitions.size();
         for (size_t p_i = 0; p_i < num_partitions; ++p_i)
         {
-            if (partitions[p_i]->need_sync_to_repository())
+            if (partitions[p_i]->modify_bucket_set())
             {
                 need_sync = true;
             }
