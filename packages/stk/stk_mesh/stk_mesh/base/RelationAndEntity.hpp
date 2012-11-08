@@ -668,7 +668,7 @@ void unset_shared_attr(stk::mesh::Entity );
 }
 
 namespace roster_only {
-void destroy_meshobj(stk::mesh::Entity );
+void destroy_meshobj(stk::mesh::Entity, MeshBulkData& meshbulk );
 void set_shared_attr(stk::mesh::Entity , const MeshObjSharedAttr*);
 }
 
@@ -777,7 +777,10 @@ public:
 #endif
 
   //------------------------------------
-  /** \brief  Parallel processor rank of the processor which owns this entity */
+  /** \brief  Parallel processor rank of the processor which owns this entity.
+   * IMPORTANT NOTE: when sierra framework is handling communication for stk-mesh,
+   * this method will always return zero. If using stk-mesh beneath sierra framework,
+   * use the method owner_processor_rank() instead (defined below). */
   unsigned owner_rank() const { return m_entityImpl->owner_rank(); }
 
   /** \brief  Parallel processes which share this entity. */
@@ -833,7 +836,7 @@ private:
   friend bool sierra::Fmwk::insert_relation( Entity , const stk::mesh::Relation::RelationType, Entity , const unsigned, const unsigned, const bool, sierra::Fmwk::MeshBulkData &);
   friend bool sierra::Fmwk::remove_relation(Entity , const stk::mesh::RelationIterator, sierra::Fmwk::MeshBulkData &);
   friend bool sierra::Fmwk::verify_relations(const Entity );
-  friend void sierra::Fmwk::roster_only::destroy_meshobj(stk::mesh::Entity );
+  friend void sierra::Fmwk::roster_only::destroy_meshobj(stk::mesh::Entity, MeshBulkData& meshbulk );
   friend void sierra::Fmwk::roster_only::set_shared_attr(stk::mesh::Entity , const sierra::Fmwk::MeshObjSharedAttr*);
 
   typedef unsigned DerivedType; ///< Derived type identifier, the admissible values may be extended
