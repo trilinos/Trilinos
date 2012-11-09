@@ -197,6 +197,9 @@ namespace Xpetra {
     //! Returns true if fillComplete() has been called and the matrix is in compute mode.
     bool isFillComplete() const { XPETRA_MONITOR("TpetraCrsMatrix::isFillComplete"); return mtx_->isFillComplete(); }
 
+    //! Returns true if resumeFill() has been called and the matrix is in edit mode.
+    bool isFillActive() const { XPETRA_MONITOR("TpetraCrsMatrix::isFillActive"); return mtx_->isFillActive(); }
+
     //! Returns the Frobenius norm of the matrix.
     typename ScalarTraits< Scalar >::magnitudeType getFrobeniusNorm() const { XPETRA_MONITOR("TpetraCrsMatrix::getFrobeniusNorm"); return mtx_->getFrobeniusNorm(); }
 
