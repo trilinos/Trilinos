@@ -44,6 +44,7 @@
 //
 // @HEADER
 #include <iostream>
+#include <unistd.h>
 
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
