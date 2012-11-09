@@ -504,27 +504,98 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testRemove)
     {
         stk::mesh::impl::Partition &partition = *partitions[i];
 
+        size_t old_size = partition.compute_size();
+        size_t num_removed = 0;
+
         // Remove non-last entity in a bucket.
         stk::mesh::Bucket &bkt_0 = **partition.begin();
         partition.remove(bkt_0[0]);
+        ++num_removed;
 
         // Remove last entity in a bucket.
         stk::mesh::Bucket &bkt_1 = **partition.begin();
         stk::mesh::Entity e_last_in_1 = bkt_1[bkt_1.size() - 1];
         partition.remove(e_last_in_1);
+        ++num_removed;
 
         // Empty out the last bucket.
         stk::mesh::Bucket *last_bkt = *(partition.end() - 1);
         while (last_bkt == *(partition.end() - 1))
         {
             partition.remove((*last_bkt)[0]);
+            ++num_removed;
         }
-
         partition.sort();
-
+        STKUNIT_EXPECT_EQ(old_size,  partition.compute_size() + num_removed);
         check_test_partition_invariant(fix, partition);
     }
 }
+
+
+
+STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testAdd)
+{
+    std::vector<stk::mesh::Entity> ec1;
+    std::vector<stk::mesh::Entity> ec2;
+    std::vector<stk::mesh::Entity> ec3;
+    std::vector<stk::mesh::Entity> ec4;
+    std::vector<stk::mesh::Entity> ec5;
+
+    SelectorFixture fix;
+
+    if (fix.m_bulk_data.parallel_size() > 1)
+    {
+        return;
+    }
+    initialize(fix, ec1, ec2, ec3, ec4, ec5);
+    initialize_data(fix);
+
+    stk::mesh::impl::BucketRepository &bucket_repository = stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
+    bucket_repository.sync_to_partitions();
+
+    std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(0);
+    size_t num_partitions = partitions.size();
+    STKUNIT_EXPECT_EQ(num_partitions, 5u);
+
+    std::vector<stk::mesh::Entity> first_entities(num_partitions);
+    std::vector<size_t> old_sizes(num_partitions);
+
+    for (size_t i = 0; i < num_partitions; ++i)
+    {
+        stk::mesh::impl::Partition &partition = *partitions[i];
+        stk::mesh::Bucket &bkt = **partition.begin();
+        first_entities[i] = bkt[0];
+        old_sizes[i] = partition.compute_size();
+    }
+
+    for (size_t i = 0; i < num_partitions; ++i)
+    {
+         partitions[i]->remove(first_entities[i]);
+    }
+
+    for (size_t i = 0; i < num_partitions; ++i)
+    {
+        size_t dst_partition_idx = (i + 1) % num_partitions;
+        stk::mesh::impl::Partition &dst_partition = *partitions[dst_partition_idx];
+        stk::mesh::Entity entity = first_entities[i];;
+        dst_partition.add(entity);
+        stk::mesh::Bucket &bkt = entity.bucket();
+        double *field_data = bkt.field_data(fix.m_fieldABC, bkt[0]);
+        if (field_data)
+        {
+            field_data[entity.bucket_ordinal()] = entity.identifier();
+        }
+    }
+
+    for (size_t i = 0; i < num_partitions; ++i)
+    {
+        stk::mesh::impl::Partition &partition = *partitions[i];
+        partition.sort();
+        STKUNIT_EXPECT_EQ(old_sizes[i], partition.compute_size());
+        check_test_partition_invariant(fix, partition);
+    }
+}
+
 
 
 STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveTo)
@@ -552,12 +623,14 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveTo)
     STKUNIT_EXPECT_EQ(num_partitions, 5u);
 
     std::vector<stk::mesh::Entity> first_entities(num_partitions);
+    std::vector<size_t> old_sizes(num_partitions);
 
     for (size_t i = 0; i < num_partitions; ++i)
     {
         stk::mesh::impl::Partition &partition = *partitions[i];
         stk::mesh::Bucket &bkt = **partition.begin();
         first_entities[i] = bkt[0];
+        old_sizes[i] = partition.compute_size();
     }
 
     for (size_t i = 0; i < num_partitions; ++i)
@@ -577,6 +650,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveTo)
         {
             check_data_consistency = true;
         }
+        STKUNIT_EXPECT_EQ(old_sizes[i], partition.compute_size());
         check_test_partition_invariant(fix, partition, check_data_consistency);
     }
 }

@@ -135,6 +135,8 @@ bool Partition::remove(Entity e_k)
         m_repository->internal_propagate_relocation(e_swap);
     }
 
+    e_k.m_entityImpl->set_bucket_and_ordinal(0, 0);
+
     last->decrement_size();
     last->replace_entity( last->size() , Entity() ) ;
 
