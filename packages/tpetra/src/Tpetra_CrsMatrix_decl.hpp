@@ -367,6 +367,7 @@ namespace Tpetra {
 
     //! Replace matrix entries, using local IDs.
     /** All index values must be in the local space.
+        Note that if a value is not already present for the specified location in the matrix, the input value will be ignored silently.
      */
     void replaceLocalValues(LocalOrdinal localRow,
                             const ArrayView<const LocalOrdinal> &cols,
@@ -562,10 +563,14 @@ namespace Tpetra {
     //! \brief If matrix indices are in the global range, this function returns true. Otherwise, this function returns false.
     bool isGloballyIndexed() const;
 
-    //! Returns \c true if fillComplete() has been called and the matrix is in compute mode.
+    //! Returns \c true if the matrix is in compute mode, i.e. if fillComplete() has been called.
     bool isFillComplete() const;
 
-    //! Returns \c true if resumeFill() has been called and the matrix is in edit mode.
+    //! Returns \c true if the matrix is in edit mode.
+    /**
+       The matrix is in edit mode either before fillComplete() or after resumeFill().
+       Note: isFillActive() == !isFillComplete()
+    **/
     bool isFillActive() const;
 
     //! \brief Returns \c true if storage has been optimized.
