@@ -52,7 +52,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Assert.hpp"
 
-#include "Galeri_XpetraVectorTraits.hpp"
+#include "Galeri_VectorTraits.hpp"
 
 #include <iostream>
 
