@@ -79,7 +79,7 @@ bool Partition::add(Entity entity)
         return false;
     }
 
-    Bucket *bucket = get_non_full_back();
+    Bucket *bucket = get_bucket_for_adds();
     unsigned dst_ordinal = bucket->size();
     bucket->initialize_fields(dst_ordinal);
     bucket->replace_entity(dst_ordinal, entity);
@@ -94,7 +94,21 @@ bool Partition::add(Entity entity)
 
 void Partition::move_to(Entity entity, Partition &dst_partition)
 {
-    // WRITE ME!
+    Bucket *src_bucket = entity.m_entityImpl->bucket_ptr();
+    if (src_bucket && (src_bucket->getPartition() == &dst_partition))
+        return;
+    
+    unsigned src_ordinal = entity.m_entityImpl->bucket_ordinal();
+    
+    Bucket *dst_bucket = get_bucket_for_adds();
+    unsigned dst_ordinal = dst_bucket->size();
+    
+    dst_bucket->replace_fields(dst_ordinal, *src_bucket, src_ordinal);
+    remove(entity);
+    entity.m_entityImpl->set_bucket_and_ordinal(dst_bucket, dst_ordinal);
+    dst_bucket->replace_entity(dst_ordinal, entity) ;
+    
+    m_repository->internal_propagate_relocation(entity);
 }
 
 
@@ -323,28 +337,30 @@ bool Partition::take_bucket_control()
 }
 
 
-stk::mesh::Bucket *Partition::get_non_full_back()
+stk::mesh::Bucket *Partition::get_bucket_for_adds()
 {
-    std::vector<unsigned> partition_key = get_legacy_partition_id();
-    partition_key[ partition_key[0] ] = 0;
-
     Bucket *bucket = 0;
     if (empty())
     {
         if (no_buckets())
         {
+            std::vector<unsigned> partition_key = get_legacy_partition_id();
+            partition_key[ partition_key[0] ] = 0;
+            take_bucket_control();
             bucket = new Bucket( m_repository->m_mesh, m_rank, partition_key,
                                  m_repository->bucket_capacity());
             bucket->m_partition = this;
             bucket->set_last_bucket_in_partition(bucket);
+            m_buckets.push_back(bucket);
         }
         else
         {
             bucket = *begin();
         }
     }
-    if (bucket->size() == bucket->capacity())
+    else if (bucket->size() == bucket->capacity())
     {
+        std::vector<unsigned> partition_key = get_legacy_partition_id();
         partition_key[ partition_key[0] ] = m_buckets.size();
         bucket = new Bucket( m_repository->m_mesh, m_rank, partition_key,
                              m_repository->bucket_capacity());

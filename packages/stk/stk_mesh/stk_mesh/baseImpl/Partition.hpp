@@ -52,7 +52,7 @@ public:
 
     /// Sort the entities in this partition by EntityKey.
     void sort();
-
+    
     inline bool belongs(Bucket *bkt) const;
 
     size_t compute_size()
@@ -99,7 +99,7 @@ private:
     // Take the buckets from the repository.
     bool take_bucket_control();
 
-    Bucket *get_non_full_back();
+    Bucket *get_bucket_for_adds();
 
 };
 

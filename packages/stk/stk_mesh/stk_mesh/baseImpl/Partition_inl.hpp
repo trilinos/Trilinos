@@ -1,5 +1,5 @@
 /*
- * PartitionImpl.tcc
+ * Partition_inl.hpp
  *
  * Not really template cc file, but needs to be included like one.
  *
@@ -91,6 +91,7 @@ inline bool Partition::belongs(Bucket *bkt) const
 {
     return bkt->getPartition() == this;
 }
+
 
 } // impl
 } // mesh

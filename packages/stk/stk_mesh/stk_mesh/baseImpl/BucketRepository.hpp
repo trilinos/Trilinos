@@ -142,6 +142,6 @@ private:
 } // namespace stk
 
 
-#include <stk_mesh/baseImpl/Partition.tcc>
+#include <stk_mesh/baseImpl/Partition_inl.hpp>
 
 #endif // stk_mesh_BucketRepository_hpp
