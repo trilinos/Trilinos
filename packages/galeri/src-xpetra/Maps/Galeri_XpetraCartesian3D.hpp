@@ -46,8 +46,8 @@
 /*
   Direct translation of parts of Galeri matrix generator.
 */
-#ifndef GALERI_XPETRACARTESIAN2D_HPP
-#define GALERI_XPETRACARTESIAN2D_HPP
+#ifndef GALERI_XPETRACARTESIAN3D_HPP
+#define GALERI_XPETRACARTESIAN3D_HPP
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -55,11 +55,6 @@
 
 #include "Galeri_Exception.h"
 #include "Galeri_Utils.h"
-#include "Galeri_MapTraits.hpp"
-
-#ifdef HAVE_GALERI_TPETRA //TODO: this macro is not defined
-#include <Tpetra_Map.hpp>
-#endif
 
 namespace Galeri {
 
@@ -73,29 +68,38 @@ namespace Galeri {
 
       template <class LocalOrdinal, class GlobalOrdinal, class Map>
       RCP<Map>
-      Cartesian2D(const Teuchos::RCP<const Teuchos::Comm<int> > & comm, const GlobalOrdinal nx, const GlobalOrdinal ny,
-                  const GlobalOrdinal mx, const GlobalOrdinal my)
+      Cartesian3D(const Teuchos::RCP<const Teuchos::Comm<int> > & comm, const GlobalOrdinal nx, const GlobalOrdinal ny, const GlobalOrdinal nz,
+                  const GlobalOrdinal mx, const GlobalOrdinal my, const GlobalOrdinal mz)
       {
-        if (nx <= 0 || ny <= 0 || mx <= 0 || my <= 0 || (mx > nx) || (my > ny))
+        if (nx <= 0 || ny <= 0 || nz <= 0 ||
+            mx <= 0 || my <= 0 || mz <= 0 ||
+            (mx > nx) || (my > ny) || (mz > nz))
           throw(Exception(__FILE__, __LINE__,
-                          "Incorrect input parameter to Maps::Cartesian2D()",
+                          "Incorrect input parameter to Maps::Cartesian3D()",
                           "nx = " + toString(nx) +
                           ", ny = " + toString(ny) +
+                          ", nz = " + toString(nz) +
                           ", mx = " + toString(mx) +
-                          ", my = " + toString(my)));
+                          ", my = " + toString(my) +
+                          ", mz = " + toString(mz)));
 
         int MyPID = comm->getRank();
-        GlobalOrdinal startx, starty, endx, endy;
-        GlobalOrdinal xpid = MyPID % mx;
-        GlobalOrdinal ypid = MyPID / mx;
+        GlobalOrdinal startx, starty, startz, endx, endy, endz;
 
-        GlobalOrdinal PerProcSmallXDir = (GlobalOrdinal) (((double) nx)/((double) mx));
-        GlobalOrdinal PerProcSmallYDir = (GlobalOrdinal) (((double) ny)/((double) my));
+        GlobalOrdinal mxy  = mx * my;
+        GlobalOrdinal zpid = MyPID / mxy;
+        GlobalOrdinal xpid = (MyPID % mxy) % mx;
+        GlobalOrdinal ypid = (MyPID % mxy) / mx;
+
+        GlobalOrdinal PerProcSmallXDir = (int) (((double) nx)/((double) mx));
+        GlobalOrdinal PerProcSmallYDir = (int) (((double) ny)/((double) my));
+        GlobalOrdinal PerProcSmallZDir = (int) (((double) nz)/((double) mz));
         GlobalOrdinal NBigXDir         = nx - PerProcSmallXDir*mx;
         GlobalOrdinal NBigYDir         = ny - PerProcSmallYDir*my;
+        GlobalOrdinal NBigZDir         = nz - PerProcSmallZDir*mz;
 
         if (xpid < NBigXDir) startx =  xpid*(PerProcSmallXDir+1);
-        else                 startx = (xpid-NBigXDir)*PerProcSmallXDir + 
+        else                 startx = (xpid-NBigXDir)*PerProcSmallXDir +
           NBigXDir*(PerProcSmallXDir+1);
         endx = startx + PerProcSmallXDir;
         if (xpid < NBigXDir) endx++;
@@ -106,19 +110,26 @@ namespace Galeri {
         endy = starty + PerProcSmallYDir;
         if ( ypid < NBigYDir) endy++;
 
-        size_t NumMyElements = (endx - startx) * (endy - starty);
+        if (zpid < NBigZDir) startz =  zpid*(PerProcSmallZDir+1);
+        else                 startz = (zpid-NBigZDir)*PerProcSmallZDir +
+          NBigZDir*(PerProcSmallZDir+1);
+        endz = startz + PerProcSmallZDir;
+        if ( zpid < NBigZDir) endz++;
+
+        size_t NumMyElements = (endx - startx) * (endy - starty) * (endz - startz);
         vector<GlobalOrdinal> MyGlobalElements(NumMyElements);
         size_t count = 0;
 
         for (GlobalOrdinal i = startx ; i < endx ; ++i) 
           for (GlobalOrdinal j = starty ; j < endy ; ++j) 
-            MyGlobalElements[count++] = i + j * nx;
+            for (GlobalOrdinal k = startz ; k < endz ; ++k) 
+              MyGlobalElements[count++] = i + j * nx +k * (nx * ny);
 
-        global_size_t numGlobalElements = nx * ny;
+        global_size_t numGlobalElements = nx * ny * nz;
         const Teuchos::ArrayView<const GlobalOrdinal> elementList(MyGlobalElements);
         return MapTraits<GlobalOrdinal,Map>::Build(numGlobalElements, elementList, 0/*indexBase*/, comm /*TODO:node*/);
 
-      } // Cartesian2D()
+      } // Cartesian3D()
 
     } // namespace Maps
   } // namespace Xpetra

@@ -84,29 +84,54 @@ int main(int argc, char *argv[]) {
     lib = xpetraParameters.GetLib();
   }
 
-  // Creates an Xpetra::Map corresponding to a 2D Cartesian grid
-  // on the unit square. For parallel runs, the nodes are divided into
-  // strips, so that the total number of subdomains is comm->getSize() x 1.
+  {
+    // Creates an Xpetra::Map corresponding to a 2D Cartesian grid
+    // on the unit square. For parallel runs, the nodes are divided into
+    // strips, so that the total number of subdomains is comm->getSize() x 1.
+    
+    // Type of the object
+    string mapType = "Cartesian2D";
+    
+    // Container for parameters
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", 2 * comm->getSize()); 
+    galeriList.set("ny", 2);
+    galeriList.set("mx", comm->getSize());
+    galeriList.set("my", 1);
+    
+    // Creation of the map
+    RCP< ::Xpetra::Map<int, int, Kokkos::DefaultNode::DefaultNodeType> > map = Galeri::Xpetra::CreateMap<int, int, Kokkos::DefaultNode::DefaultNodeType>(lib, "Cartesian2D", comm, galeriList);
+
+    // Print out the parameters
+    cout << galeriList;
   
-  // Type of the object
-  string mapType = "Cartesian2D";
+    // Print out the map
+    RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    map->describe(*fos, Teuchos::VERB_EXTREME);
+  }
 
-  // Container for parameters
-  Teuchos::ParameterList galeriList;
-  galeriList.set("nx", 2 * comm->getSize()); 
-  galeriList.set("ny", 2);
-  galeriList.set("mx", comm->getSize());
-  galeriList.set("my", 1);
+  {
+    // Creates an Xpetra::Map corresponding to a 3D Cartesian grid
+    
+    // Type of the object
+    string mapType = "Cartesian3D";
+    
+    // Container for parameters
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", 2 * comm->getSize()); 
+    galeriList.set("ny", 2);
+    galeriList.set("nz", 2);
+    
+    // Creation of the map
+    RCP< ::Xpetra::Map<int, int, Kokkos::DefaultNode::DefaultNodeType> > map = Galeri::Xpetra::CreateMap<int, int, Kokkos::DefaultNode::DefaultNodeType>(lib, "Cartesian3D", comm, galeriList);
 
-  // Creation of the map
-  RCP< ::Xpetra::Map<int, int, Kokkos::DefaultNode::DefaultNodeType> > map = Galeri::Xpetra::CreateMap<int, int, Kokkos::DefaultNode::DefaultNodeType>(lib, "Cartesian2D", comm, galeriList);
-
-  // Print out the parameters
-  cout << galeriList;
+    // Print out the parameters
+    cout << galeriList;
   
-  // Print out the map
-  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  map->describe(*fos, Teuchos::VERB_EXTREME);
+    // Print out the map
+    RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    map->describe(*fos, Teuchos::VERB_EXTREME);
+  }
 
   return EXIT_SUCCESS;
 }
