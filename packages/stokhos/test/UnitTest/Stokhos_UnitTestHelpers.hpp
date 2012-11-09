@@ -321,7 +321,6 @@ namespace Stokhos {
     if (!success) return false;
 
     // Compare points
-    ordinal_type point_sz = op1.point_size();
     point_iterator_type pi1 = op1.set_begin();
     point_iterator_type pi2 = op2.set_begin();
     while (pi1 != op1.set_end() || pi2 != op2.set_end()) {

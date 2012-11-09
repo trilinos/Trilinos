@@ -115,7 +115,7 @@ namespace ProductBasisUtilsUnitTest {
 
     // Build sorted index set of dimension d and order p
     typedef Stokhos::TotalOrderIndexSet<ordinal_type> index_set_type;
-    typedef typename index_set_type::multiindex_type multiindex_type;
+    typedef index_set_type::multiindex_type multiindex_type;
     typedef Stokhos::TotalOrderLess<multiindex_type> less_type;
     typedef std::set<multiindex_type, less_type> multiindex_set;
     typedef multiindex_set::iterator iterator;
@@ -155,7 +155,7 @@ namespace ProductBasisUtilsUnitTest {
 
     // Build sorted index set of dimension d and order p
     typedef Stokhos::TotalOrderIndexSet<ordinal_type> index_set_type;
-    typedef typename index_set_type::multiindex_type multiindex_type;
+    typedef index_set_type::multiindex_type multiindex_type;
     typedef Stokhos::LexographicLess<multiindex_type> less_type;
     typedef std::set<multiindex_type, less_type> multiindex_set;
     typedef multiindex_set::iterator iterator;
@@ -218,8 +218,8 @@ namespace ProductBasisUtilsUnitTest {
 
     // Build index set of dimension d and order p
     typedef Stokhos::TotalOrderIndexSet<ordinal_type> index_set_type;
-    typedef typename index_set_type::multiindex_type multiindex_type;
-    typedef typename index_set_type::iterator iterator;
+    typedef index_set_type::multiindex_type multiindex_type;
+    typedef index_set_type::iterator iterator;
     index_set_type indexSet(setup.d, 0, setup.p);
 
     // Print index set
@@ -257,8 +257,8 @@ namespace ProductBasisUtilsUnitTest {
 
     // Build index set of dimension d and order p
     typedef Stokhos::AnisotropicTotalOrderIndexSet<ordinal_type> index_set_type;
-    typedef typename index_set_type::multiindex_type multiindex_type;
-    typedef typename index_set_type::iterator iterator;
+    typedef index_set_type::multiindex_type multiindex_type;
+    typedef index_set_type::iterator iterator;
     multiindex_type upper(setup.d);
     for (ordinal_type i=0; i<setup.d; ++i)
       upper[i] = i+1;
@@ -302,15 +302,15 @@ namespace ProductBasisUtilsUnitTest {
 
     // Build index set of dimension d and order p
     typedef Stokhos::TotalOrderIndexSet<ordinal_type> index_set_type;
-    typedef typename index_set_type::multiindex_type multiindex_type;
-    typedef typename index_set_type::iterator iterator;
+    typedef index_set_type::multiindex_type multiindex_type;
+    typedef index_set_type::iterator iterator;
     index_set_type indexSet(setup.d, 0, setup.p);
 
     // Build total-order basis from index set
     typedef Stokhos::TensorProductElement<ordinal_type,ordinal_type> coeff_type;
     typedef Stokhos::TotalOrderLess<coeff_type> less_type;
     typedef std::map<coeff_type, ordinal_type, less_type> basis_set_type;
-    typedef typename basis_set_type::iterator basis_set_iterator;
+    typedef basis_set_type::iterator basis_set_iterator;
     typedef Teuchos::Array<coeff_type> basis_map_type;
     basis_set_type basis_set;
     basis_map_type basis_map;
@@ -360,15 +360,15 @@ namespace ProductBasisUtilsUnitTest {
 
     // Build index set of dimension d and order p
     typedef Stokhos::TensorProductIndexSet<ordinal_type> index_set_type;
-    typedef typename index_set_type::multiindex_type multiindex_type;
-    typedef typename index_set_type::iterator iterator;
+    typedef index_set_type::multiindex_type multiindex_type;
+    typedef index_set_type::iterator iterator;
     index_set_type indexSet(setup.d, 0, setup.p);
 
     // Build total-order basis from index set
     typedef Stokhos::TensorProductElement<ordinal_type,ordinal_type> coeff_type;
     typedef Stokhos::TotalOrderLess<coeff_type> less_type;
     typedef std::map<coeff_type, ordinal_type, less_type> basis_set_type;
-    typedef typename basis_set_type::iterator basis_set_iterator;
+    typedef basis_set_type::iterator basis_set_iterator;
     typedef Teuchos::Array<coeff_type> basis_map_type;
     basis_set_type basis_set;
     basis_map_type basis_map;
@@ -447,15 +447,15 @@ namespace ProductBasisUtilsUnitTest {
 
     // Build index set of dimension d and order p
     typedef Stokhos::TotalOrderIndexSet<ordinal_type> index_set_type;
-    typedef typename index_set_type::multiindex_type multiindex_type;
-    typedef typename index_set_type::iterator iterator;
+    typedef index_set_type::multiindex_type multiindex_type;
+    typedef index_set_type::iterator iterator;
     index_set_type indexSet(dim, 0, order);
 
     // Build total-order basis from index set
     typedef Stokhos::TensorProductElement<ordinal_type,ordinal_type> coeff_type;
     typedef Stokhos::TotalOrderLess<coeff_type> less_type;
     typedef std::map<coeff_type, ordinal_type, less_type> basis_set_type;
-    typedef typename basis_set_type::iterator basis_set_iterator;
+    typedef basis_set_type::iterator basis_set_iterator;
     typedef Teuchos::Array<coeff_type> basis_map_type;
     basis_set_type basis_set;
     basis_map_type basis_map;
