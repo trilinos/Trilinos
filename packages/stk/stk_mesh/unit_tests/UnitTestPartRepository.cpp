@@ -183,4 +183,19 @@ STKUNIT_UNIT_TEST( UnitTestPartRepository, declare_attribute_no_delete )
 
 }
 
+STKUNIT_UNIT_TEST( UnitTestPartRepository, get_all_parts )
+{
+  UnitTestPartRepository upr;
+  const stk::mesh::PartVector & pv = upr.partRepo.get_all_parts();
+  STKUNIT_ASSERT_EQUAL( pv.size(), 5u );
+}
+
+STKUNIT_UNIT_TEST( UnitTestPartRepository, get_mesh_parts )
+{
+  UnitTestPartRepository upr;
+  stk::mesh::PartVector mpv = upr.partRepo.get_mesh_parts();
+  STKUNIT_ASSERT_EQUAL( mpv.size(), 4u );
+}
+
+
 }

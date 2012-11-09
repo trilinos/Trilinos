@@ -166,6 +166,9 @@ public:
   /** \brief  Query all parts of the mesh ordered by the parts' ordinal. */
   const PartVector & get_parts() const { return m_part_repo.get_all_parts(); }
 
+  /** \brief  Query non-internal parts of the mesh ordered by the parts' ordinal. */
+  const PartVector get_mesh_parts() const { return m_part_repo.get_mesh_parts(); }
+
   /** \brief  Declare a part of the given name and entity rank
    *          Redeclaration returns the previously declared part.
    *

@@ -116,6 +116,17 @@ const PartVector & PartRepository::get_all_parts() const
   return m_all_parts;
 }
 
+const PartVector PartRepository::get_mesh_parts() const
+{
+  PartVector non_internal_parts;
+  for (size_t i=0 ; i<m_all_parts.size() ; ++i) {
+    if (!is_internal(*m_all_parts[i])) {
+      non_internal_parts.push_back(m_all_parts[i]);
+    }
+  }
+  return non_internal_parts;
+}
+
 Part * PartRepository::declare_part( const std::string & arg_name , EntityRank arg_rank )
 {
   Trace_("stk::mesh::impl::PartRepository::declare_part");

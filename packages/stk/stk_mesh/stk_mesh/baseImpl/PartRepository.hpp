@@ -27,7 +27,8 @@ public:
 
   Part * universal_part() const;
 
-  const PartVector & get_all_parts() const;
+  const PartVector & get_all_parts()  const;  // returns all parts
+  const PartVector   get_mesh_parts() const; // returns the non-internal parts
 
   Part * declare_part( const std::string & arg_name , EntityRank arg_rank );
   Part * declare_part( const PartVector & part_intersect );
