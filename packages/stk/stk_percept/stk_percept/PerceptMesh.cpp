@@ -865,6 +865,8 @@ namespace stk {
         m_streaming_size(0),
         m_searcher(0)
       ,m_num_coordinate_field_states(1)
+      ,m_do_respect_spacing(false)
+      ,m_do_smooth_surfaces(false)
     {
       if (!bulkData)
         throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
