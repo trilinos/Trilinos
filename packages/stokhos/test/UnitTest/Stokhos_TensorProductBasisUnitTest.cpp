@@ -36,7 +36,9 @@
 #include "Stokhos.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
 
-namespace TensorProductUnitTest {
+#include <iterator>
+
+namespace TensorProductBasisUnitTest {
 
   // Common setup for unit tests
   template <typename OrdinalType, typename ValueType>

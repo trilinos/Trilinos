@@ -37,6 +37,8 @@
 #include "Stokhos.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
 
+#include <iterator>
+
 namespace ProductBasisUtilsUnitTest {
 
   // Common setup for unit tests
