@@ -58,6 +58,8 @@
 #include "MueLu_EminPFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
+#include "MueLu_NullspaceFactory.hpp"
+#include "MueLu_NullspacePresmoothFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_IfpackSmoother.hpp"
@@ -98,7 +100,7 @@
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuOp()
 
-#define NEUMANN
+// #define NEUMANN
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -210,8 +212,8 @@ int main(int argc, char *argv[]) {
   int nSmoothers=2;
   LO maxLevels = 3;
   LO its=10;
-  // std::string coarseSolver="ifpack2";
-  std::string coarseSolver="amesos2";
+  std::string coarseSolver="ifpack2";
+  // std::string coarseSolver="amesos2";
   int pauseForDebugger=0;
   clp.setOption("nSmoothers",&nSmoothers,"number of Gauss-Seidel smoothers in the MergedSmootehrs");
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed. If 1, then a MergedSmoother is used on the coarse grid");
@@ -311,39 +313,46 @@ int main(int argc, char *argv[]) {
 
   RCP<MueLu::Level> Finest = H->GetLevel();
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  Finest->Set("A",Op);
+  Finest->Set("A", Op);
   Finest->Set("Nullspace", nullSpace);
+
+  RCP<FactoryManager>   myFactManager = rcp(new FactoryManager());
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
   RCP<SaPFactory>           SaPFact   = rcp(new SaPFactory());
   RCP<TentativePFactory>    TentPFact = rcp(new TentativePFactory(UCAggFact));
 #if 1
   // Energy-minimization
-#if 1
-  // RCP<PatternFactory>       PatternFact = rcp(new PatternFactory(TentPFact));
-  RCP<PatternFactory>       PatternFact = rcp(new PatternFactory(SaPFact));
-  RCP<ConstraintFactory>    Cfact = rcp(new ConstraintFactory(PatternFact));
-  RCP<EminPFactory>         Pfact = rcp( new EminPFactory(TentPFact, Cfact) );
-#else
-  RCP<EminPFactory>         Pfact = rcp( new EminPFactory(SaPFact) );
-#endif
-
-#else
-  RCP<SaPFactory>       Pfact = rcp( new SaPFactory() );
 #if 0
-  Pfact->SetDampingFactor(0.0);
+  RCP<PatternFactory>       PatternFact = rcp(new PatternFactory(TentPFact));
+#else
+  RCP<PatternFactory>       PatternFact = rcp(new PatternFactory(SaPFact));
 #endif
+  RCP<ConstraintFactory>    Cfact = rcp(new ConstraintFactory(PatternFact));
+  RCP<EminPFactory>         Pfact = rcp(new EminPFactory(TentPFact, Cfact));
+
+  myFactManager->SetFactory("Ppattern", PatternFact);
+  myFactManager->SetFactory("Constraint", Cfact);
+#else
+  RCP<SaPFactory>       Pfact = SaPFact;
 #endif
 
-  RCP<RFactory>         Rfact = rcp( new TransPFactory() );
-  RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
+  myFactManager->SetFactory("P", Pfact);
+  myFactManager->SetFactory("A", rcp(new RAPFactory()));
+  myFactManager->SetFactory("R", rcp(new TransPFactory()));
+
+#if 1
+  RCP<NullspacePresmoothFactory> NPFact = rcp(new NullspacePresmoothFactory(rcp(new NullspaceFactory("Nullspace", TentPFact))));
+  myFactManager->SetFactory("Nullspace", NPFact);
+#endif
 
   RCP<SmootherPrototype> smooProto = gimmeMergedSmoother(nSmoothers, xpetraParameters.GetLib(), coarseSolver, comm->getRank());
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
-  Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+  myFactManager->SetFactory("Smoother", SmooFact);
 
   Teuchos::ParameterList status;
-  status = H->FullPopulate(*Pfact, *Rfact, *Acfact, *SmooFact, 0, maxLevels);
+
+  status = H->Setup(*myFactManager, 0, maxLevels);
   if (comm->getRank() == 0) {
     std::cout  << "======================\n Multigrid statistics \n======================" << std::endl;
     status.print(std::cout,Teuchos::ParameterList::PrintOptions().indent(2));

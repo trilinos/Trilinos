@@ -45,3 +45,4 @@ PatternFactory
 SteepestDescentSolver
 CGSolver
 Constraint
+NullspacePresmoothFactory
