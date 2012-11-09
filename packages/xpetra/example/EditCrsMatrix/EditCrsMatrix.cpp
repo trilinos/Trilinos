@@ -59,7 +59,7 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_CrsMatrixFactory.hpp>
 
-#include <Xpetra_EditCrsMatrix.hpp>
+//#include <Xpetra_EditCrsMatrix.hpp>
 
 typedef double Scalar;
 typedef int    LocalOrdinal;
