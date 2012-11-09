@@ -51,6 +51,7 @@
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraMatrixFactory.hpp>
 #include <Galeri_XpetraUtils.hpp>
+#include <Galeri_XpetraMaps.hpp>
 //
 
 #include <MueLu.hpp>
@@ -84,13 +85,17 @@ int main(int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp(false); // Note: 
 
-  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
-  Xpetra::Parameters             xpetraParameters(clp);      // manage parameters of xpetra
+  GO nx,ny,nz;
+  nx=100;
+  ny=100;
+  nz=100;
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
+  Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
   std::string xmlFileName = "scalingTest.xml"; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default 'scalingTest.xml'");
   int amgAsPrecond=1; clp.setOption("precond",&amgAsPrecond,"apply multigrid as preconditioner");
   int amgAsSolver=0; clp.setOption("fixPoint",&amgAsSolver,"apply multigrid as solver");
-  int printTimings=1; clp.setOption("timings",&printTimings,"print timings to screen");
+  bool printTimings=true; clp.setOption("timings","notimings",&printTimings,"print timings to screen");
 
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -99,7 +104,10 @@ int main(int argc, char *argv[]) {
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
-  if (comm->getRank() == 0) { std::cout << xpetraParameters << matrixParameters; }
+  if (comm->getRank() == 0) {
+    std::cout << "========================================================" << std::endl
+              << xpetraParameters << matrixParameters;
+  }
 
   //
   // Construct the problem
@@ -108,19 +116,49 @@ int main(int argc, char *argv[]) {
   RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
   RCP<TimeMonitor> tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
 
-  RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Matrix> A   = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
-    
+  RCP<const Map> map;
   RCP<MultiVector> coordinates;
+
+  // Retrieve matrix parameters (they may have been changed on the command line), and pass them to Galeri.
+  // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
+  //                                 d1  d2  d3
+  //                                 d4  d5  d6
+  //                                 d7  d8  d9
+  //                                 d10 d11 d12
+  // A perfect distribution is only possible when the #processors is a perfect square.
+  // This *will* result in "strip" distribution if the #processors is a prime number or if the factors are very different in
+  // size. For example, np=14 will give a 7-by-2 distribution.
+  // If you don't want Galeri to do this, specify mx or my on the galeriList.
+  Teuchos::ParameterList pl = matrixParameters.GetParameterList();
+  Teuchos::ParameterList galeriList;
+  galeriList.set("nx", pl.get("nx",nx));
+  galeriList.set("ny", pl.get("ny",ny));
+  //galeriList.set("mx", comm->getSize());
+  //galeriList.set("my", 1);
+
   if (matrixParameters.GetMatrixType() == "Laplace1D") {
+    map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
     coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D",map,matrixParameters.GetParameterList());
   }
   else if (matrixParameters.GetMatrixType() == "Laplace2D" || matrixParameters.GetMatrixType() == "Star2D") {
+    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
     coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",map,matrixParameters.GetParameterList());
   }
   else if (matrixParameters.GetMatrixType() == "Laplace3D") {
     coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D",map,matrixParameters.GetParameterList());
+    //map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList); //TODO when available in Galeri
+    map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
   }
+
+  if (comm->getRank() == 0) {
+    GO mx = galeriList.get("mx", -1);
+    GO my = galeriList.get("my", -1);
+    std::cout << "Processor subdomains in x direction: " << mx << std::endl
+              << "Processor subdomains in y direction: " << my << std::endl
+              << "========================================================" << std::endl;
+  }
+
+  RCP<Matrix> A   = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
 
   tm = Teuchos::null;
 
