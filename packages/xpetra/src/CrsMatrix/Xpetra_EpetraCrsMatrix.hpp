@@ -271,7 +271,7 @@ namespace Xpetra {
     //@{
 
     //! EpetraCrsMatrix constructor to wrap a Epetra_CrsMatrix object
-    EpetraCrsMatrix(const Teuchos::RCP<Epetra_CrsMatrix > &mtx) : mtx_(mtx) {  }
+    EpetraCrsMatrix(const Teuchos::RCP<Epetra_CrsMatrix > &mtx) : mtx_(mtx), isFillResumed_(false) {  }
 
     //! Get the underlying Epetra matrix
     RCP<const Epetra_CrsMatrix> getEpetra_CrsMatrix() const { return mtx_; }

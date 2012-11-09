@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
      }
   }
 
-#define TEST_REPLACEGLOBALVALUES
+  //#define TEST_REPLACEGLOBALVALUES -- serial only
 #ifdef  TEST_REPLACEGLOBALVALUES
   {
     Teuchos::ArrayView<const GlobalOrdinal> indices;
