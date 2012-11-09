@@ -78,7 +78,7 @@ BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
 
    // build and register the gather/scatter evaluators with 
    // the base class.
-   buildGatherScatterEvaluators(*this);
+   this->buildGatherScatterEvaluators(*this);
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -94,7 +94,7 @@ BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
 
    // build and register the gather/scatter evaluators with 
    // the base class.
-   buildGatherScatterEvaluators(*this);
+   this->buildGatherScatterEvaluators(*this);
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -220,21 +220,21 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    const BLOC & b_globalBCRows = Teuchos::dyn_cast<const BLOC>(globalBCRows); 
    BLOC & b_ghosted = Teuchos::dyn_cast<BLOC>(ghostedObjs); 
 
-   TEUCHOS_ASSERT(b_ghosted.get_A()!=Teuchos::null);
-   TEUCHOS_ASSERT(b_ghosted.get_f()!=Teuchos::null);
+   // TEUCHOS_ASSERT(b_ghosted.get_A()!=Teuchos::null);
+   // TEUCHOS_ASSERT(b_ghosted.get_f()!=Teuchos::null);
    TEUCHOS_ASSERT(b_localBCRows.get_x()!=Teuchos::null);
    TEUCHOS_ASSERT(b_globalBCRows.get_x()!=Teuchos::null);
 
    // cast each component as needed to their product form
-   RCP<PhysicallyBlockedLinearOpBase<double> > A = rcp_dynamic_cast<PhysicallyBlockedLinearOpBase<double> >(b_ghosted.get_A(),true);
-   RCP<ProductVectorBase<double> > f = rcp_dynamic_cast<ProductVectorBase<double> >(b_ghosted.get_f(),true);
+   RCP<PhysicallyBlockedLinearOpBase<double> > A = rcp_dynamic_cast<PhysicallyBlockedLinearOpBase<double> >(b_ghosted.get_A());
+   RCP<ProductVectorBase<double> > f = rcp_dynamic_cast<ProductVectorBase<double> >(b_ghosted.get_f());
    RCP<ProductVectorBase<double> > local_bcs  = rcp_dynamic_cast<ProductVectorBase<double> >(b_localBCRows.get_x(),true);
    RCP<ProductVectorBase<double> > global_bcs = rcp_dynamic_cast<ProductVectorBase<double> >(b_globalBCRows.get_x(),true);
 
    // sanity check!
-   TEUCHOS_ASSERT(A->productRange()->numBlocks()==(int) blockDim);
-   TEUCHOS_ASSERT(A->productDomain()->numBlocks()==(int) blockDim);
-   TEUCHOS_ASSERT(f->productSpace()->numBlocks()==(int) blockDim);
+   if(A!=Teuchos::null) TEUCHOS_ASSERT(A->productRange()->numBlocks()==(int) blockDim);
+   if(A!=Teuchos::null) TEUCHOS_ASSERT(A->productDomain()->numBlocks()==(int) blockDim);
+   if(f!=Teuchos::null) TEUCHOS_ASSERT(f->productSpace()->numBlocks()==(int) blockDim);
    TEUCHOS_ASSERT(local_bcs->productSpace()->numBlocks()==(int) blockDim);
    TEUCHOS_ASSERT(global_bcs->productSpace()->numBlocks()==(int) blockDim);
 
@@ -244,13 +244,17 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
       RCP<const Epetra_Vector> e_global_bcs = get_Epetra_Vector(*getGhostedMap(i),global_bcs->getVectorBlock(i));
 
       // pull out epetra values
-      RCP<VectorBase<double> > th_f = f->getNonconstVectorBlock(i);
-      RCP<Epetra_Vector> e_f = get_Epetra_Vector(*getGhostedMap(i),th_f);
+      RCP<VectorBase<double> > th_f = (f==Teuchos::null) ? Teuchos::null : f->getNonconstVectorBlock(i);
+      RCP<Epetra_Vector> e_f;
+      if(th_f==Teuchos::null)
+        e_f = Teuchos::null;
+      else
+        e_f = get_Epetra_Vector(*getGhostedMap(i),th_f);
 
       for(std::size_t j=0;j<blockDim;j++) {
 
          // pull out epetra values
-         RCP<LinearOpBase<double> > th_A = A->getNonconstBlock(i,j);
+         RCP<LinearOpBase<double> > th_A = (A== Teuchos::null)? Teuchos::null : A->getNonconstBlock(i,j);
  
          // don't do anyting if opertor is null
          RCP<Epetra_CrsMatrix> e_A;

@@ -65,6 +65,10 @@
 #include "MueLu_ZoltanInterface_fwd.hpp"
 #include "MueLu_AmalgamationFactory_fwd.hpp"
 #include "MueLu_CoarseMapFactory_fwd.hpp"
+#ifdef INCLUDE_MUELU_EXPERIMENTAL
+#include "MueLu_PatternFactory_fwd.hpp"
+#include "MueLu_ConstraintFactory_fwd.hpp"
+#endif
 
 namespace MueLu {
 

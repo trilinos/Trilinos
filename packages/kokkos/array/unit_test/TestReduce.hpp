@@ -182,7 +182,7 @@ public:
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
       for ( unsigned j = 0 ; j < Count ; ++j ) {
         const unsigned long correct = 0 == j % 3 ? nw : nsum ;
-        ASSERT_EQ( result[i].value[j], (ScalarType) correct);
+        ASSERT_EQ( (ScalarType) correct , result[i].value[j] );
       }
     }
   }
@@ -268,7 +268,7 @@ public:
 
       for ( unsigned j = 0 ; j < count ; ++j ) {
         const unsigned long correct = 0 == j % 3 ? nw : nsum ;
-        ASSERT_EQ( host_result(j), (ScalarType) correct );
+        ASSERT_EQ( (ScalarType) correct , host_result(j) );
         host_result(j) = 0 ;
       }
 

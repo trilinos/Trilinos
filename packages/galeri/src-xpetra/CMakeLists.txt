@@ -13,6 +13,8 @@ APPEND_SET(HEADERS
   Galeri_XpetraMatrixFactory.hpp  
   Galeri_XpetraMatrixTypes.hpp
   Galeri_XpetraVectorTraits.hpp
+  Galeri_XpetraMaps.hpp
+  Maps/Galeri_XpetraCartesian2D.hpp
   )
 
 APPEND_SET(SOURCES
@@ -23,5 +25,4 @@ TRIBITS_ADD_LIBRARY(
   galeri-xpetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS teuchos # for timers etc.
   )

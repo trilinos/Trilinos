@@ -204,12 +204,12 @@ int JustTryIt() ;
     // @{ Query methods
 
     //! Returns a character string describing the operator
-    const char* Label() const {return(Label_);}
+    const char* Label() const {return(Label_.c_str());}
 
     //! Sets label for \c this object.
-    int SetLabel(const char* Label_in)
+    int SetLabel(std::string Label_in)
     {
-        strcpy(Label_,Label_in);
+        Label_ = Label_in;
         return(0);
     }
 
@@ -347,7 +347,7 @@ int JustTryIt() ;
     //! If \c true, the preconditioner has been successfully computed.
     bool IsComputed_;
     //! Label of \c this object.
-    char Label_[160];
+    std::string Label_;
     //! Contains the number of successful calls to Initialize().
     int NumInitialize_;
     //! Contains the number of successful call to Compute().

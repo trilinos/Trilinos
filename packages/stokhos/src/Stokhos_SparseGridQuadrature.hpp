@@ -65,7 +65,7 @@ namespace Stokhos {
       const Teuchos::RCP<const ProductBasis<ordinal_type,value_type> >& product_basis, 
       ordinal_type sparse_grid_level = 0,
       value_type duplicate_tol = 1.0e-12,
-      ordinal_type growth_rate = Pecos::MODERATE_RESTRICTED_GROWTH);
+      ordinal_type growth_rate = Pecos::SLOW_RESTRICTED_GROWTH);
 
     //! Destructor
     virtual ~SparseGridQuadrature() {}

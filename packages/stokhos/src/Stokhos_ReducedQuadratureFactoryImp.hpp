@@ -29,6 +29,8 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Stokhos_SDMUtils.hpp"
+#include "Stokhos_OrthogonalizationFactory.hpp"
+#include "Stokhos_ProductBasisUtils.hpp"
 
 #include "Stokhos_ConfigDefs.h"
 #ifdef HAVE_STOKHOS_GLPK
@@ -204,7 +206,8 @@ reducedQuadrature_Q_Squared(
 	WQ(i,j) = u[i]*Q(i,j);
     ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
     TEUCHOS_ASSERT(ret == 0);
-    std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
+    std::cout << "||vec(I-Q^T*diag(u)*Q)||_infty = " << vec_norm_inf(err2) 
+	      << std::endl;
     //print_matlab(std::cout, err2);
   }
   
@@ -332,7 +335,8 @@ reducedQuadrature_Q_Squared_CPQR(
 	WQ(i,j) = u[i]*Q(i,j);
     ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
     TEUCHOS_ASSERT(ret == 0);
-    std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
+    std::cout << "||vec(I-Q^T*diag(u)*Q)||_infty = " << vec_norm_inf(err2) 
+	      << std::endl;
     //print_matlab(std::cout, err2);
   }
   
@@ -388,7 +392,7 @@ reducedQuadrature_Q_Squared_CPQR2(
   ordinal_type sz2 = sz*(sz+1)/2;
   ordinal_type nqp = Q.numRows();
   ordinal_type d = F.numCols();
-
+  
   // Compute Q-squared matrix with all possible products
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> Q2(nqp, sz2);
   ordinal_type jdx=0;
@@ -400,18 +404,44 @@ reducedQuadrature_Q_Squared_CPQR2(
     }
   }
   TEUCHOS_ASSERT(jdx == sz2);
-
+  
   // Compute QR decomposition of Q2:  Q2*P = Z*R
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> Z, R;
   Teuchos::Array<ordinal_type> piv;
-  CPQR_Householder(Q2, Z, R, piv);
-  ordinal_type r = computeRank(R, reduction_tol);
+  std::string orthogonalization_method = 
+    params.get("Orthogonalization Method", "Householder");
+  Teuchos::Array<value_type> ww(weights);
+  if (orthogonalization_method == "Householder")
+    for (ordinal_type i=0; i<nqp; ++i) ww[i] = 1.0;
+  typedef Stokhos::OrthogonalizationFactory<ordinal_type,value_type> SOF;
+  ordinal_type r = SOF::createOrthogonalBasis(
+    orthogonalization_method, reduction_tol, verbose, Q2, ww, 
+    Z, R, piv);
+  bool restrict_r = params.get("Restrict Rank", false);
+  if (restrict_r) {
+    ordinal_type d = F.numCols();
+    ordinal_type p = params.get<ordinal_type>("Order Restriction");
+    ordinal_type n = n_choose_k(p+d,d);
+    if (r > n) {
+      if (verbose)
+	std::cout << "Restricting rank from " << r << " to " << n << std::endl;
+      r = n;
+    } 
+  }
 
-  // Get the first r columns of Q2*P
+  // Get the first r columns of Q2*P or Z
+  bool use_Z = params.get("Use Q in LP", true);
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> QQ2(nqp, r);
-  for (ordinal_type j=0; j<r; j++)
-    for (ordinal_type i=0; i<nqp; i++)
-      QQ2(i,j) = Q2(i,piv[j]);
+  if (use_Z) {
+    for (ordinal_type j=0; j<r; j++)
+      for (ordinal_type i=0; i<nqp; i++)
+	QQ2(i,j) = Z(i,j);
+  }
+  else {
+    for (ordinal_type j=0; j<r; j++)
+      for (ordinal_type i=0; i<nqp; i++)
+	QQ2(i,j) = Q2(i,piv[j]);
+   }
 
   if (verbose) {
     std::cout << "Q2 rank = " << r << std::endl;
@@ -424,6 +454,9 @@ reducedQuadrature_Q_Squared_CPQR2(
   ordinal_type ret = 
     ee1.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, QQ2, w, 0.0);
   TEUCHOS_ASSERT(ret == 0);
+
+  // save_matlab("lp.mat", "A", QQ2, true);
+  // save_matlab("lp.mat", "b", ee1, false);
 
   // Solve problem
   Teuchos::SerialDenseVector<ordinal_type,value_type> u(nqp);
@@ -455,7 +488,8 @@ reducedQuadrature_Q_Squared_CPQR2(
 	WQ(i,j) = u[i]*Q(i,j);
     ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
     TEUCHOS_ASSERT(ret == 0);
-    std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
+    std::cout << "||vec(I-Q^T*diag(u)*Q)||_infty = " << vec_norm_inf(err2) 
+	      << std::endl;
     //print_matlab(std::cout, err2);
   }
   
@@ -550,7 +584,8 @@ reducedQuadrature_Q2(
 	WQ(i,j) = u[i]*Q(i,j);
     ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
     TEUCHOS_ASSERT(ret == 0);
-    std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
+    std::cout << "||vec(I-Q^T*diag(u)*Q)||_infty = " << vec_norm_inf(err2) 
+	      << std::endl;
   }
   
   ordinal_type rank = 0;
@@ -667,7 +702,8 @@ reducedQuadrature_Q2_CPQR(
 	WQ(i,j) = u[i]*Q(i,j);
     ret = err2.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, -1.0, Q, WQ, 1.0);
     TEUCHOS_ASSERT(ret == 0);
-    std::cout << "||I-Q^T*diag(u)*Q||_infty = " << err2.normInf() << std::endl;
+    std::cout << "||vec(I-Q^T*diag(u)*Q)||_infty = " << vec_norm_inf(err2) 
+	      << std::endl;
     //print_matlab(std::cout, err2);
   }
   
@@ -1278,4 +1314,24 @@ computeRank(
   }
 
   return rank;
+}
+
+template <typename ordinal_type, typename value_type>
+ordinal_type
+Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
+n_choose_k(const ordinal_type& n, const ordinal_type& k) const {
+  // Use formula
+  // n!/(k!(n-k)!) = n(n-1)...(k+1) / ( (n-k)(n-k-1)...1 )  ( n-k terms )
+  //               = n(n-1)...(n-k+1) / ( k(k-1)...1 )      ( k terms )
+  // which ever has fewer terms
+  if (k > n)
+    return 0;
+  ordinal_type num = 1;
+  ordinal_type den = 1;
+  ordinal_type l = std::min(n-k,k);
+  for (ordinal_type i=0; i<l; i++) {
+    num *= n-i;
+    den *= i+1;
+  }
+  return num / den;
 }

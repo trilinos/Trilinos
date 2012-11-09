@@ -303,9 +303,9 @@ int main(int argc, char *argv[]) {
     std::cout << "Enable AztecOO to see solution" << std::endl;
 #endif // HAVE_MUELU_AZTECOO
 
-    // std::cout << "Parameter list after ML run" << std::endl;
-    // const Teuchos::ParameterList & paramsAfterML = mlPrec->GetList();
-    // std::cout << paramsAfterML << std::endl;
+    std::cout << "Parameter list after ML run" << std::endl;
+    const Teuchos::ParameterList & paramsAfterML = mlPrec->GetList();
+    std::cout << paramsAfterML << std::endl;
     
   } // if (ml)
 

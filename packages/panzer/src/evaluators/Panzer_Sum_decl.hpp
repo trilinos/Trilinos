@@ -48,7 +48,16 @@
 
 namespace panzer {
     
-//! Sums entries on a single data layout
+/** Sums entries on a single data layout
+ 
+    \verbatim
+    <ParameterList>
+      <ParameterList name="Sum Name" type="string" value="<destination field name>"/>
+      <ParameterList name="Values Names" type="Teuchos::RCP<std::vector<std::string> >" value="<Source field names>"/>
+      <ParameterList name="Data Layout" type="Teuchos::RCP<PHX::DataLayout>" value="<data layout of all associated fields>"/>
+    </ParameterList>
+    \endverbatim
+  */
 PHX_EVALUATOR_CLASS(Sum)
   
   PHX::MDField<ScalarT> sum;

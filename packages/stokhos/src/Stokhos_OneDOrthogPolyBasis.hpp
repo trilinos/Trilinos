@@ -157,6 +157,12 @@ namespace Stokhos {
 		  Teuchos::Array<value_type>& weights,
 		  Teuchos::Array< Teuchos::Array<value_type> >& values) const = 0;
 
+    /*!
+     * Return polynomial degree of exactness for a given number of quadrature
+     * points.
+     */
+    virtual ordinal_type quadDegreeOfExactness(ordinal_type n) const = 0;
+
     /*! 
      * \brief Clone this object with the option of building a higher order
      * basis.

@@ -53,8 +53,6 @@
 
 #include "Shards_CellTopology.hpp"
 
-#include "Panzer_DOFManager.hpp"
-#include "Panzer_ConnManager.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_Workset.hpp"
 #include "Panzer_Workset_Builder.hpp"
@@ -173,6 +171,12 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
   std::vector<panzer::BC>::const_iterator bc;
   for (bc=bcs.begin(); bc != bcs.end(); ++bc) {
     std::string element_block_id = bc->elementBlockID(); 
+    std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator volume_pb_itr 
+        = physicsBlocks_map.find(element_block_id);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(volume_pb_itr==physicsBlocks_map.end(),std::logic_error,
+                               "panzer::FMB::setupBCFieldManagers: Cannot find physics block corresponsding to element block \"" << element_block_id << "\"");
+
     Teuchos::RCP<const panzer::PhysicsBlock> volume_pb = physicsBlocks_map.find(element_block_id)->second;
     Teuchos::RCP<const shards::CellTopology> volume_cell_topology = volume_pb->cellData().getCellTopology();
     int base_cell_dimension = volume_pb->cellData().baseCellDimension();

@@ -366,7 +366,7 @@ namespace Tpetra {
       using Teuchos::Array;
       using Teuchos::CommRequest;
       using Teuchos::RCP;
-      for (Array<RCP<CommRequest> >::const_iterator it = requests_.begin();
+      for (Array<RCP<CommRequest<int> > >::const_iterator it = requests_.begin();
            it != requests_.end(); ++it)
       {
         TEUCHOS_TEST_FOR_EXCEPTION( ! is_null (*it), std::runtime_error,
@@ -552,7 +552,7 @@ namespace Tpetra {
     // buffers that it knows won't go away.  This is why we use RCPs,
     // one RCP per nonblocking receive request.  They get allocated in
     // the loop below.
-    Array<RCP<CommRequest> > requests (actualNumReceives);
+    Array<RCP<CommRequest<int> > > requests (actualNumReceives);
     Array<RCP<size_t> > lengthsFromBuffers (actualNumReceives);
     Array<RCP<CommStatus<int> > > statuses (actualNumReceives);
 

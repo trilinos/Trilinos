@@ -394,6 +394,14 @@ getQuadPoints(ordinal_type quad_order,
 }
 
 template <typename ordinal_type, typename value_type>
+ordinal_type
+Stokhos::RecurrenceBasis<ordinal_type,value_type>::
+quadDegreeOfExactness(ordinal_type n) const
+{
+  return ordinal_type(2)*n-ordinal_type(1);
+}
+
+template <typename ordinal_type, typename value_type>
 void
 Stokhos::RecurrenceBasis<ordinal_type,value_type>::
 getRecurrenceCoefficients(Teuchos::Array<value_type>& a,

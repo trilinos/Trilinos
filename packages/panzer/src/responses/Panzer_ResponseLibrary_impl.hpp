@@ -587,6 +587,7 @@ template <typename TraitsT>
 void ResponseLibrary<TraitsT>::
 buildResponseEvaluators(
          const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+         const Teuchos::Ptr<const panzer::EquationSetFactory> & eqset_factory,
          const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
          const Teuchos::ParameterList& closure_models,
          const Teuchos::ParameterList& user_data,
@@ -635,7 +636,10 @@ buildResponseEvaluators(
 
    fmb2_->setWorksetContainer(wkstContainer_);
    fmb2_->setupVolumeFieldManagers(requiredVolPhysicsBlocks,cm_factory,closure_models,*linObjFactory_,user_data,rvef2);
-   fmb2_->setupBCFieldManagers(bcs,physicsBlocks,cm_factory,bc_factory,closure_models,*linObjFactory_,user_data);
+   if(eqset_factory==Teuchos::null)
+     fmb2_->setupBCFieldManagers(bcs,physicsBlocks,cm_factory,bc_factory,closure_models,*linObjFactory_,user_data);
+   else
+     fmb2_->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory_,user_data);
 
    // fourth build assembly engine from FMB
    ////////////////////////////////////////////////////////////////////////////////
@@ -644,6 +648,19 @@ buildResponseEvaluators(
    ae_tm2_.buildObjects(builder);
 
    responseEvaluatorsBuilt_ = true;
+}
+
+template <typename TraitsT>
+template <typename EvalT> 
+void ResponseLibrary<TraitsT>::
+addResponsesToInArgs(panzer::AssemblyEngineInArgs & input_args) const
+{
+   std::vector<Teuchos::RCP<ResponseBase> > responses;
+   this->getResponses<EvalT>(responses);
+
+   // add all responses to input args  
+   for(std::size_t i=0;i<responses.size();i++)
+     input_args.addGlobalEvaluationData(responses[i]->getLookupName(),responses[i]);
 }
 
 template <typename TraitsT>

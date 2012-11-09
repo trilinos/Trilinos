@@ -32,6 +32,14 @@ namespace Xpetra {
 
 $TMPL_PUBLIC_FUNCTIONS
 
+#ifdef INCLUDE_XPETRA_EXPERIMENTAL
+    //! Deep copy constructor
+    $TMPL_CLASS(const $TMPL_CLASS& matrix)
+    : mtx_(matrix.mtx_->template convert<Scalar>()) {
+    }
+#endif
+
+
     //! Get a copy of the diagonal entries owned by this node, with local row idices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { 
       XPETRA_MONITOR("TpetraCrsMatrix::getLocalDiagCopy");

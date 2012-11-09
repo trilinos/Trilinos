@@ -73,26 +73,58 @@ namespace Tpetra {
     GlobalIndices
   };
 
-  //! \brief A graph accessed by rows and stored sparsely.
-  /*!
+  /** \class CrsGraph
+   * \brief A distributed graph accessed by rows (adjacency lists) and stored sparsely.
 
-   \tparam LocalOrdinal A ordinal type for lists of local
-     indices. This specifies the \c LocalOrdinal type for Map objects
-     used by this graph.
+   \tparam LocalOrdinal The type of local indices.  Same as the \c
+     LocalOrdinal template parameter of \c Map objects used by this
+     matrix.  (In Epetra, this is just \c int.)  The default type is
+     \c int, which should suffice for most users.  This type must be
+     big enough to store the local (per process) number of rows or
+     columns.
 
-   \tparam GlobalOrdinal A ordinal type for lists of global
-     indices. This specifies the \c GlobalOrdinal type for Map objects
-     used by this graph.
+   \tparam GlobalOrdinal The type of global indices.  Same as the \c
+     GlobalOrdinal template parameter of \c Map objects used by this
+     matrix.  (In Epetra, this is just \c int.  One advantage of
+     Tpetra over Epetra is that you can use a 64-bit integer type here
+     if you want to solve big problems.)  The default type is
+     <tt>LocalOrdinal</tt>.  This type must be big enough to store the
+     global (over all processes in the communicator) number of rows or
+     columns.
 
-   \tparam Node A shared-memory node class, fulfilling the \ref
-     kokkos_node_api "Kokkos Node API"
+   \tparam Node A class implementing on-node shared-memory parallel
+     operations.  It must implement the
+     \ref kokkos_node_api "Kokkos Node API."
+     The default \c Node type should suffice for most users.
+     The actual default type depends on your Trilinos build options.
 
-   \tparam LocalMatOps A local sparse matrix operations class,
-     fulfiling the \ref kokkos_crs_ops "Kokkos CRS Ops API".
+   \tparam LocalMatOps Type implementing local sparse
+     matrix-(multi)vector multiply and local sparse triangular solve.
+     It must implement the \ref kokkos_crs_ops "Kokkos CRS Ops API."
+     The default \c LocalMatOps type should suffice for most users.
+     The actual default type depends on your Trilinos build options.
 
-   This class allows the construction of sparse graphs with row-access.
+   This class implements a distributed-memory parallel sparse graph.
+   It provides access by rows to the elements of the graph, as if the
+   local data were stored in compressed sparse row format (adjacency
+   lists, in graph terms).  (Implementations are <i>not</i> required
+   to store the data in this way internally.)  This class has an
+   interface like that of \c Epetra_CrsGraph, but also allows
+   insertion of data into nonowned rows, much like \c
+   Epetra_FECrsGraph.
 
-   <b>Local vs. Global</b>
+   \section Tpetra_CrsGraph_prereq Prerequisites
+
+   Before reading the rest of this documentation, it helps to know
+   something about the Teuchos memory management classes, in
+   particular Teuchos::RCP, Teuchos::ArrayRCP, and Teuchos::ArrayView.
+   You should also know a little bit about MPI (the Message Passing
+   Interface for distributed-memory programming).  You won't have to
+   use MPI directly to use CrsGraph, but it helps to be familiar with
+   the general idea of distributed storage of data over a
+   communicator.  Finally, you should read the documentation of Map.
+
+   \section Tpetra_CrsMatrix_local_vs_global Local vs. global indices and nonlocal insertion
 
    Graph entries can be added using either local or global coordinates
    for the indices. The accessors isGloballyIndexed() and

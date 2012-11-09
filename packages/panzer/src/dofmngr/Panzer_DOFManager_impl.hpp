@@ -40,548 +40,703 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_DOF_MANAGER_IMPL_HPP
-#define PANZER_DOF_MANAGER_IMPL_HPP
-
-// FEI includes
-#include "fei_Factory_Trilinos.hpp"
+#ifndef PANZER_DOF_MANAGER2_IMPL_HPP
+#define PANZER_DOF_MANAGER2_IMPL_HPP
 
 #include <map>
 
+#include "mpi.h"
+
+#include "Panzer_config.hpp"
+#include "Panzer_FieldPattern.hpp"
+#include "Panzer_FieldAggPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
+#include "Panzer_ConnManager.hpp"
+#include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Panzer_NodalFieldPattern.hpp"
 
-#include "Teuchos_DefaultMpiComm.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_ArrayView.hpp"
 
-using Teuchos::RCP;
+#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_Export.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Tpetra_MultiVector.hpp"
+
+#include "Kokkos_DefaultArithmetic.hpp"
+
+#include <boost/unordered_set.hpp> // a hash table
 
 namespace panzer {
 
-// ************************************************************
-// class DOFManager
-// ************************************************************
+using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::ArrayRCP;
+using Teuchos::Array;
+using Teuchos::ArrayView;
+using Kokkos::DefaultArithmetic;
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-DOFManager<LocalOrdinalT,GlobalOrdinalT>::DOFManager()
-   : numFields_(0), fieldsRegistered_(false), requireOrientations_(false)
+template <typename LO, typename GO>
+DOFManager<LO,GO>::DOFManager()
+  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false)
 { }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-DOFManager<LocalOrdinalT,GlobalOrdinalT>::DOFManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
-   : numFields_(0), fieldsRegistered_(false), requireOrientations_(false)
-{
-   setConnManager(connMngr,mpiComm);
+template <typename LO, typename GO>
+DOFManager<LO,GO>::DOFManager(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,MPI_Comm mpiComm)
+  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false)
+{ 
+  setConnManager(connMngr,mpiComm);
 }
 
-/** \brief Set the connection manager and MPI_Comm objects.
-  *
-  * Set the connection manager and MPI_Comm objects. If this method
-  * is called more than once, the behavior is to reset the indices in
-  * the DOF manager.  However, the fields will be the same (this assumes
-  * that the element blocks are consistent with the fields). The indices
-  * will need to be rebuilt by calling <code>buildGlobalUnknowns</code>.
-  *
-  * \param[in] connMngr Connection manager to use.
-  * \param[in] mpiComm  Communicator to use.
-  */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::setConnManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
+template <typename LO, typename GO>
+void DOFManager<LO,GO>::setConnManager(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr, MPI_Comm mpiComm)
 {
-   // make sure you own an MPI comm
-   communicator_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(mpiComm)));
-
-   // this kills any old connection manager as well as the old FEI objects
-   resetIndices();
-
-   connMngr_ = connMngr;
-
-   // build fei components
-   feiFactory_ = Teuchos::rcp(new Factory_Trilinos(*communicator_->getRawMpiComm()));
-
-   // build fei components
-   vectorSpace_ = feiFactory_->createVectorSpace(*communicator_->getRawMpiComm(),"problem_vs");
-   matrixGraph_ = feiFactory_->createMatrixGraph(vectorSpace_,vectorSpace_,"problem_mg");
-
-   nodeType_ = 0; 
-   vectorSpace_->defineIDTypes(1,&nodeType_);
-   edgeType_ = 1; 
-   vectorSpace_->defineIDTypes(1,&edgeType_);
-}
-
-/** \brief Reset the indicies for this DOF manager.
-  *
-  * This method resets the indices and wipes out internal state. This method
-  * does preserve the fields and the patterns added to the object. Also the
-  * old connection manager is returned.
-  *
-  * \returns Old connection manager.
-  */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > DOFManager<LocalOrdinalT,GlobalOrdinalT>::resetIndices()
-{
-   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr = connMngr_;
-
-   connMngr_ = Teuchos::null;
-
-   // wipe out FEI objects
-   patternNum_.clear();
-   feiFactory_ = Teuchos::null;
-   vectorSpace_.reset();
-   matrixGraph_.reset();
-
-   ownedGIDHashTable_.clear(); 
-
-   return connMngr;
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string & str,
-                                                        const Teuchos::RCP<const FieldPattern> & pattern)
-{
-   std::vector<std::string> elementBlockIds;
-   connMngr_->getElementBlockIds(elementBlockIds);
-
-   // loop over blocks adding field pattern to each 
-   for(std::size_t i=0;i<elementBlockIds.size();i++)
-      addField(elementBlockIds[i],str,pattern);
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string & blockId,const std::string & str,
-                                                        const Teuchos::RCP<const FieldPattern> & pattern)
-{
-   TEUCHOS_TEST_FOR_EXCEPTION(fieldsRegistered_,std::logic_error,
-                      "DOFManager::addField: addField cannot be called after registerFields or"
+  TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
+                      "DOFManager::setConnManager: setConnManager cannot be called after "
                       "buildGlobalUnknowns has been called"); 
-
-   fieldStringToPattern_[std::make_pair(blockId,str)] = pattern;
+  connMngr_ = connMngr;
+  //We acquire the block ordering from the connmanager.
+  connMngr_->getElementBlockIds(blockOrder_);
+  for (size_t i = 0; i < blockOrder_.size(); ++i) {
+    blockNameToID_.insert(std::map<std::string,int>::value_type(blockOrder_[i],i));
+    //We must also initialize vectors for FP associations.
+  }
+  blockToAssociatedFP_.resize(blockOrder_.size());
+  communicator_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(mpiComm)));
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields() 
+
+  //Adds a field to be used in creating the Global Numbering
+  //Returns the index for the field pattern
+template <typename LO, typename GO>
+int DOFManager<LO,GO>::addField(const std::string & str, const Teuchos::RCP<const FieldPattern> & pattern)
 {
-   numFields_ = 0;
-
-   // test validity of the field order
-   {
-      // build a unique set of fields, so we can compare validate the ordered list
-      std::set<std::string> fields;
-      for(std::map<std::pair<std::string,std::string>,Teuchos::RCP<const FieldPattern> >::const_iterator
-          fieldItr=fieldStringToPattern_.begin(); fieldItr!=fieldStringToPattern_.end();++fieldItr) {
-         std::string fieldName = fieldItr->first.second;
-         fields.insert(fieldName);
-      }
-
-      // construct default field order if neccessary
-      if(fieldOrder_.size()==0) {
-         std::set<std::string>::const_iterator itr;
-         for(itr=fields.begin();itr!=fields.end();itr++)
-            fieldOrder_.push_back(*itr);
-      }
-
-      // check validity of field order: no repeats, and everything is accounted for
-      bool validOrder = validFieldOrder(fieldOrder_,fields);
-      if(!validOrder) {
-         // for outputing
-         std::stringstream ss;
-
-         ss << "DOFManager::registerFields - Field order is invalid!\n";
-
-         ss << "   fields = [ ";
-         for(std::set<std::string>::const_iterator itr=fields.begin();
-             itr!=fields.end();++itr)
-            ss << "\"" << *itr << "\" ";
-         ss << " ]\n";
-
-         ss << "   fieldOrder = [ ";
-         for(std::vector<std::string>::const_iterator itr=fieldOrder_.begin();
-             itr!=fieldOrder_.end();++itr)
-            ss << "\"" << *itr << "\" ";
-         ss << " ]\n";
-
-         TEUCHOS_TEST_FOR_EXCEPTION(!validOrder,std::logic_error,ss.str());
-      }
-   }
-
-   // build field IDs
-   for(std::size_t fo_index=0;fo_index<fieldOrder_.size();fo_index++) {
-      std::string fieldName = fieldOrder_[fo_index];
-
-      // field doesn't exist...add it
-      int fieldNum = fo_index;
-      int size = 1; // fields are always size 1
-      vectorSpace_->defineFields(1,&fieldNum,&size);
-
-      fieldStrToInt_[fieldName] = fieldNum;
-      intToFieldStr_[fieldNum] = fieldName;
-   }      
-   numFields_ = fieldOrder_.size();
-
-   // initialize blockToField_ vector to have at least empty sets
-   // for each element block
-   std::vector<std::string> elementBlockIds;
-   getElementBlockIds(elementBlockIds);
-   for(std::size_t ebi=0;ebi<elementBlockIds.size();ebi++)
-      blockToField_.insert(std::make_pair(elementBlockIds[ebi],std::set<int>())); 
-
-   // associate blocks with particular field ids
-   for(std::map<std::pair<std::string,std::string>,Teuchos::RCP<const FieldPattern> >::const_iterator
-       fieldItr=fieldStringToPattern_.begin(); fieldItr!=fieldStringToPattern_.end();++fieldItr) {
- 
-      std::string blockId = fieldItr->first.first;
-      std::string fieldName = fieldItr->first.second;
-
-      std::map<std::string,int>::const_iterator itr = fieldStrToInt_.find(fieldName);
-      if(itr!=fieldStrToInt_.end()) {
-         // field already exists!
-         blockToField_[blockId].insert(itr->second); 
-         fieldIntToPattern_[std::make_pair(blockId,itr->second)] = fieldItr->second;
-      }
-      else {
-         // this statement should _never_ be executed. The reason is that
-         // the fieldIntToPattern_ was filled before this function was run
-         // directly from the fieldStringToPattern_ map. Possibly check the
-         // order validator for letting something slip through!
-         
-         TEUCHOS_TEST_FOR_EXCEPTION(false,std::logic_error,
-                            "DOFManager::registerFields - Impossible case discoverved!");
-      }
-   }
-
-   fieldsRegistered_ = true;
+  TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
+                      "DOFManager::addField: addField cannot be called after "
+                      "buildGlobalUnknowns has been called"); 
+  fieldPatterns_.push_back(pattern);
+  fieldNameToAID_.insert(std::map<std::string,int>::value_type(str, numFields_));
+  //The default values for IDs are the sequential order they are added in.
+  fieldStringOrder_.push_back(str);
+  fieldAIDOrder_.push_back(numFields_);
+  //This is going to be associated with everyblock.
+  FPsInAll_.push_back(numFields_);
+  ++numFields_;
+  return numFields_-1;
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-int DOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldNum(const std::string & str) const
+template <typename LO, typename GO>
+int DOFManager<LO,GO>::addField(const std::string & blockID, const std::string & str, const Teuchos::RCP<const FieldPattern> & pattern)
 {
-   std::map<std::string,int>::const_iterator itr = fieldStrToInt_.find(str);
-
-   // return based on what was found
-   if(itr==fieldStrToInt_.end()) {
-      // incorrect field name
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-                         "DOFManager::getFieldNum No field with the name \"" + str + "\" has been added");
-   }
-   else {
-      return itr->second;
-   }
+  TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
+                      "DOFManager::addField: addField cannot be called after "
+                      "buildGlobalUnknowns has been called"); 
+  TEUCHOS_TEST_FOR_EXCEPTION((connMngr_==Teuchos::null),std::logic_error,
+                             "DOFManager::addField: you must add a ConnManager before"
+                             "you can associate a FP with a given block.")
+  bool found=false;
+  size_t blocknum=0;
+  while(!found && blocknum<blockOrder_.size()){
+    if(blockOrder_[blocknum]==blockID){
+      found=true;
+      break;
+    }
+    blocknum++;
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(!found,std::logic_error, "DOFManager::addField: Invalid block name.");
+  //This will be different if the FieldPattern is already present.
+  //We need to check for that.
+  found=false;
+  std::map<std::string,int>::const_iterator fpIter = fieldNameToAID_.find(str);
+  if(fpIter!=fieldNameToAID_.end())
+    found=true;
+  
+  if(!found){
+    fieldPatterns_.push_back(pattern);
+    fieldNameToAID_.insert(std::map<std::string,int>::value_type(str, numFields_));
+    //The default values for IDs are the sequential order they are added in.
+    fieldStringOrder_.push_back(str);
+    fieldAIDOrder_.push_back(numFields_);
+    //This is going to be associated with blocknum.
+    blockToAssociatedFP_[blocknum].push_back(numFields_);
+    ++numFields_;
+    return numFields_-1;
+  }
+  else{
+    blockToAssociatedFP_[blocknum].push_back(fpIter->second);
+    return numFields_;
+  }
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::setFieldOrder(const std::vector<std::string> & fieldOrder)
+
+
+  //Returns the fieldpattern of the given name
+template <typename LO, typename GO>
+Teuchos::RCP<const FieldPattern> DOFManager<LO,GO>::getFieldPattern(const std::string & name)
 {
-   fieldOrder_ = fieldOrder;
+  return fieldPatterns_[fieldNameToAID_[name]];
 }
 
-/** Get the field order used. Return the field strings.
-  */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldOrder(std::vector<std::string> & fieldOrder) const
-{
-   fieldOrder = fieldOrder_;
+template <typename LO, typename GO>
+void DOFManager<LO,GO>::getOwnedIndices(std::vector<GO> & indicies) const{
+  indicies.resize(owned_.size());
+  for (size_t i = 0; i < owned_.size(); ++i) {
+    indicies[i]=owned_[i];
+  }
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-int DOFManager<LocalOrdinalT,GlobalOrdinalT>::getNumFields() const
+template <typename LO, typename GO>
+void DOFManager<LO,GO>::getOwnedAndSharedIndices(std::vector<GO> & indicies) const{
+  indicies.resize(owned_and_ghosted_.size());
+  for (size_t i = 0; i < owned_and_ghosted_.size(); ++i) {
+    indicies[i]=owned_and_ghosted_[i];
+  }
+}
+  
+  //gets the number of fields
+template <typename LO, typename GO>
+int DOFManager<LO,GO>::getNumFields() const
 {
-   return vectorSpace_->getNumFields();
+  return numFields_;
 }
 
-// build the global unknown numberings
-//   1. this builds the pattens
-//   2. initializes the connectivity
-//   3. calls initComplete
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern)
+template <typename LO, typename GO>
+const std::vector<int> & DOFManager<LO,GO>::getGIDFieldOffsets(const std::string & blockID, int fieldNum) const
 {
-   // this is a safety check to make sure that nodes are included
-   // in the geometric field pattern when orientations are required
-   if(getOrientationsRequired()) {
-      std::size_t sz = geomPattern->getSubcellIndices(0,0).size();
+  TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error, "DOFManager::getGIDFieldOffsets: cannot be called before buildGlobalUnknowns has been called");
+  std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(blockID);
+  if(bitr==blockNameToID_.end())
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid block name");
+  int bid=bitr->second;
+  return fa_fps_[bid]->localOffsets(fieldNum);
+}
+
+template <typename LO, typename GO>
+void DOFManager<LO,GO>::getElementGIDs(LO localElementID, std::vector<GO> & gids, const std::string & blockIdHint) const 
+{
+  gids = elementGIDs_[localElementID];
+}
+
+//builds the global unknowns array
+template <typename LO, typename GO>
+void DOFManager<LO,GO>::buildGlobalUnknowns()
+{
+  Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+  out.setOutputToRootOnly(-1);
+  out.setShowProcRank(true);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
+                      "DOFManager::buildGlobalUnknowns: buildGlobalUnknowns cannot be called again "
+                      "after buildGlobalUnknowns has been called"); 
+  //Some stuff for the Map.
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+  typedef Tpetra::Map<LO, GO, Node> Map;
+
+  typedef Tpetra::Vector<LO,GO> Vector;
+  typedef Tpetra::Export<LO,GO,Node> Export;
+  //For now the GIDs are of type GO. I'm not sure if this is a good idea, but that's
+  //the way it is
+  typedef Tpetra::MultiVector<GO,LO,GO,Node> MultiVector;
+  
+
+  Tpetra::DefaultPlatform::DefaultPlatformType &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+  RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+  RCP<Node> node = platform.getNode();
+  
+
+  /* STEPS.
+   * 1.  Build GA_FP and all block's FA_FP's and place into respective data structures.
+   */
+  //if you need orientations, be sure to extend to include nodes.
+  //
+  if(requireOrientations_){
+    //RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_TET_C1_FEM<double,FieldContainer>);
+    //RCP< const panzer::FieldPattern> first_patten = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
+    fieldPatterns_.push_back(Teuchos::rcp(new NodalFieldPattern(fieldPatterns_[0]->getCellTopology())));
+  }
+  ga_fp_ = Teuchos::rcp(new GeometricAggFieldPattern(fieldPatterns_));
+
+
+  connMngr_->buildConnectivity(*ga_fp_);
+
+  //We will iterate through all of the blocks, building a FieldAggPattern for
+  //each of them.
+
+  for (size_t b = 0; b < blockOrder_.size(); ++b) {
+    std::vector<std::pair< int, RCP<const panzer::FieldPattern> > > faConstruct;
+    //The ID is going to be the AID, and then everything will work.
+    //The ID should not be the AID, it should be the ID it has in the ordering.
+
+    for (size_t i = 0; i < fieldAIDOrder_.size(); ++i) {
+      int looking = fieldAIDOrder_[i];
+      //Check if in FPsInAll
+      std::vector<int>::const_iterator ret = std::find(FPsInAll_.begin(), FPsInAll_.end(), looking);
       
-      TEUCHOS_TEST_FOR_EXCEPTION(sz==0,std::logic_error,
-                                 "DOFManager::buildGlobalUnknowns requires a geometric pattern including "
-                                 "the nodes when orientations are needed!");
-   }
-
-   if(!fieldsRegistered_)
-      registerFields();
-
-   std::vector<std::string> fieldOrder;
-   getFieldOrder(fieldOrder);
-
-   Teuchos::RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr = connMngr_.getConst();
-   geomPattern_ = geomPattern;
-
-   // get element blocks
-   std::vector<std::string> elementBlockIds;
-   connMngr->getElementBlockIds(elementBlockIds);
-
-   // setup connectivity mesh
-   patternNum_.resize(connMngr->numElementBlocks()); 
-   std::vector<std::string>::const_iterator blockItr;
-   for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
-      std::string blockId = *blockItr;
-      std::size_t blockIndex = blockIdToIndex(blockId);
-
-      // build the pattern
-      bool patternBuilt = buildPattern(fieldOrder,blockId);
-
-      if(patternBuilt) {
-         // note that condition "patternBuilt==true" implies "fieldAggPattern_[blockId]!=Teuchos::null"
-
-         // figure out what IDs are active for this pattern
-         const std::vector<int> & numFieldsPerID = fieldAggPattern_[blockId]->numFieldsPerId();
-         std::vector<int> activeIds;
-         for(std::size_t i=0;i<numFieldsPerID.size();i++)
-            if(numFieldsPerID[i]>0) 
-               activeIds.push_back(i);
-         std::vector<int> reduceConn(activeIds.size()); // which IDs to use
-      
-         // grab elements for this block
-         const std::vector<LocalOrdinal> & elements = connMngr->getElementBlock(blockId);
-   
-         // build graph for this block
-         matrixGraph_->initConnectivityBlock(blockIndex,elements.size(),patternNum_[blockIndex]);
-         for(std::size_t e=0;e<elements.size();e++) {
-            const GlobalOrdinal * conn = connMngr->getConnectivity(elements[e]);
-            for(std::size_t i=0;i<activeIds.size();i++)
-               reduceConn[i] = conn[activeIds[i]];
+      if(!(ret==FPsInAll_.end())){
+        faConstruct.push_back(std::make_pair(i, fieldPatterns_[fieldAIDOrder_[i]]));
+      }
+      //Check if in b's fp list
+      std::vector<int>::const_iterator reu = std::find(blockToAssociatedFP_[b].begin(), blockToAssociatedFP_[b].end(), looking);
+      if(!(reu==blockToAssociatedFP_[b].end())){
+        faConstruct.push_back(std::make_pair(i, fieldPatterns_[fieldAIDOrder_[i]]));
+      }
+    }
     
-            matrixGraph_->initConnectivity(blockIndex,elements[e],&reduceConn[0]);
-         }
+    fa_fps_.push_back(rcp(new FieldAggPattern(faConstruct, ga_fp_)));
+  }
+
+  /*
+   * 2.  Iterate through all local elements and create the overlapVector
+   *     of concerned elements.
+   */
+
+  std::set<GO> overlapset;
+  for (size_t i = 0; i < blockOrder_.size(); ++i) {
+    const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[i]);
+    for (size_t e = 0; e < myElements.size(); ++e) {
+      LO connSize = connMngr_->getConnectivitySize(myElements[e]);
+      const GO * elmtConn = connMngr_->getConnectivity(myElements[e]);
+      for (int k = 0; k < connSize; ++k) {
+        overlapset.insert(elmtConn[k]);
       }
-      // else: no fields on this block, don't try to do anything with it.
-      //       basically no field has been added that is associated with this
-      //       element block. This is OK, but we need to correctly ignore it.
-   }
-   matrixGraph_->initComplete();
+    }
+  }
 
-   // build owned map
-   std::vector<GlobalOrdinal> ownedIndices;
-   getOwnedIndices(ownedIndices);
-   ownedGIDHashTable_.insert(ownedIndices.begin(),ownedIndices.end());  
 
-   // now that everything is built, build the global Orientations
-   if(getOrientationsRequired())
-      buildUnknownsOrientation();
+  Array<GO> overlapVector;
+  for (typename std::set<GO>::const_iterator itr = overlapset.begin(); itr!=overlapset.end(); ++itr){
+    overlapVector.push_back(*itr);
+  }
+
+  /* 3.  Construct an overlap map from this structure.
+   */
+  RCP<const Map> overlapmap = Tpetra::createNonContigMapWithNode<LO,GO>(overlapVector,comm,node);
+
+ /* 4.  Create an overlapped multivector from the overlap map.
+   */
+  Teuchos::RCP<MultiVector> overlap_mv;
+  overlap_mv = Tpetra::createMultiVector<GO>(overlapmap,(size_t)numFields_);
+
+
+ /* 5.  Iterate through all local elements again, checking with the FP
+   *     information. Mark up the overlap map accordingly.
+   */
+
+
+  ArrayRCP<ArrayRCP<GO> > edittwoview = overlap_mv->get2dViewNonConst();
+  for (size_t b = 0; b < blockOrder_.size(); ++b) {
+    const std::vector<LO> & numFields= fa_fps_[b]->numFieldsPerId();
+    const std::vector<LO> & fieldIds= fa_fps_[b]->fieldIds();
+    const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+    for (size_t l = 0; l < myElements.size(); ++l) {
+      LO connSize = connMngr_->getConnectivitySize(myElements[l]);
+      const GO * elmtConn = connMngr_->getConnectivity(myElements[l]);
+      int offset=0;
+      for (int c = 0; c < connSize; ++c) {
+        size_t lid = overlapmap->getLocalElement(elmtConn[c]);
+        for (int n = 0; n < numFields[c]; ++n) {
+          int whichField = fieldIds[offset];
+          //Row will be lid. column will be whichField.
+          //Shove onto local ordering
+          edittwoview[whichField][lid]=1;
+          offset++;
+        }
+      }
+    }
+  }
+  
+  
+ /* 6.  Create a OneToOne map from the overlap map.
+   */
+  RCP<const Map> non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlapmap);
+
+ /* 7.  Create a non-overlapped multivector from OneToOne map.
+   */
+  Teuchos::RCP<MultiVector> non_overlap_mv;
+  non_overlap_mv = Tpetra::createMultiVector<GO>(non_overlap_map,(size_t)numFields_);
+ /* 8.  Create an export between the two maps.
+   */
+  Export e(overlapmap,non_overlap_map);
+
+ /* 9.  Export data using ABSMAX.
+   */
+  non_overlap_mv->doExport(*overlap_mv,e,Tpetra::ABSMAX);
+ /* 10. Use Kokkos::DefaultArithmetic to locally sum.
+   */
+  typedef Kokkos::MultiVector<GO,Node> KMV;
+  Array<GO> columnSums(numFields_);
+  DefaultArithmetic<KMV>::Sum(non_overlap_mv->getLocalMVNonConst(), columnSums());
+  size_t localsum=0;
+  for(int i=0;i<columnSums.size();++i){
+    localsum+=columnSums[i];
+  }
+ /* 11. Create a map using local sums to generate final GIDs.
+   */
+  RCP<const Map> gid_map = Tpetra::createContigMapWithNode<LO,GO>(-1,localsum, comm, node);
+
+ /* 12. Iterate through the non-overlapping MV and assign GIDs to 
+   *     the necessary points. (Assign a -1 elsewhere.)
+   */
+  ArrayView<const GO> owned_ids = gid_map->getNodeElementList();
+  int which_id=0;
+  ArrayRCP<ArrayRCP<GO> > editnonoverlap = non_overlap_mv->get2dViewNonConst();
+  for(size_t i=0; i<non_overlap_mv->getLocalLength(); ++i){
+    for(int j=0; j<numFields_; ++j){
+      if(editnonoverlap[j][i]!=0){
+        editnonoverlap[j][i]=owned_ids[which_id];
+        which_id++;
+      }
+      else{
+        editnonoverlap[j][i]=-1;
+      }
+      
+    }
+  }
+
+ /* 13. Import data back to the overlap MV using REPLACE.
+   */
+  overlap_mv->doImport(*non_overlap_mv,e,Tpetra::REPLACE);
+
+ /* 14. Cross reference local element connectivity and overlap map to
+   *     create final GID vectors.
+   */
+
+  //To generate elementGIDs_ we need to go through all of the local elements.
+  ArrayRCP<ArrayRCP<const GO> > twoview = overlap_mv->get2dView();
+  
+  //And for each of the things in fa_fp.fieldIds we go to that column. To the the row,
+  //we move from globalID to localID in the map and use our local value for something.
+  for (size_t b = 0; b < blockOrder_.size(); ++b) {
+    const std::vector<int> & numFields= fa_fps_[b]->numFieldsPerId();
+    const std::vector<int> & fieldIds= fa_fps_[b]->fieldIds();
+    const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+    //
+    //
+    for (size_t l = 0; l < myElements.size(); ++l) {
+      LO connSize = connMngr_->getConnectivitySize(myElements[l]);
+      const GO * elmtConn = connMngr_->getConnectivity(myElements[l]);
+      std::vector<GO> localOrdering;
+      int offset=0;
+      for (int c = 0; c < connSize; ++c) {
+        size_t lid = overlapmap->getLocalElement(elmtConn[c]);
+        for (int n = 0; n < numFields[c]; ++n) {
+          int whichField = fieldIds[offset];
+          offset++;
+          //Row will be lid. column will be whichField.
+          //Shove onto local ordering
+          localOrdering.push_back(twoview[whichField][lid]);
+        }
+      }
+      LO thisID=myElements[l];
+      if(elementGIDs_.size()<=(size_t)thisID){
+        elementGIDs_.resize(thisID+1);
+      }
+      elementGIDs_[thisID]=localOrdering;
+    }
+  }
+
+  // build owned vector
+  {
+#if 0
+    //owned_ is made up of owned_ids.
+    Teuchos::ArrayRCP<const GO> nvals = non_overlap_mv->get1dView();
+    for (int j = 0; j < nvals.size(); ++j) {
+      if(nvals[j]!=-1)
+        owned_.push_back(nvals[j]);
+    }
+#else
+    typedef boost::unordered_set<GO> HashTable;
+    HashTable isOwned; // use to detect if global ID has been added to owned_and_ghosted_
+    //owned_ is made up of owned_ids.
+    Teuchos::ArrayRCP<const GO> nvals = non_overlap_mv->get1dView();
+    for (int j = 0; j < nvals.size(); ++j) {
+      if(nvals[j]!=-1)
+        isOwned.insert(nvals[j]);
+    }
+
+    HashTable hashTable; // use to detect if global ID has been added to owned_and_ghosted_
+    for (size_t b = 0; b < blockOrder_.size(); ++b) {
+      const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+
+      for (size_t l = 0; l < myElements.size(); ++l) {
+        const std::vector<GO> & localOrdering = elementGIDs_[myElements[l]];
+
+        // add "novel" global ids that are also owned to owned array
+        for(std::size_t i=0;i<localOrdering.size();i++) { 
+          // don't try to add if ID is not owned
+          if(isOwned.find(localOrdering[i])==isOwned.end())
+            continue;
+
+          // only add a global ID if it has not been added
+          std::pair<typename HashTable::iterator,bool> insertResult = hashTable.insert(localOrdering[i]);
+          if(insertResult.second)
+            owned_.push_back(localOrdering[i]);
+        }
+      }
+    }
+
+#endif
+  }
+
+
+  // build owned and ghosted array: The old simple way led to slow
+  // Jacobian assembly, the new way speeds up Jacobian assembly
+  {
+#if 0
+    std::vector<GO> owned_and_ghosted;
+    // owned_and_ghosted_;in post import overlap map.
+    Teuchos::ArrayRCP<const GO> vals = overlap_mv->get1dView();
+    for (int j = 0; j < vals.size(); ++j) {
+      if(vals[j]!=-1)
+        // owned_and_ghosted_.push_back(vals[j]);
+        owned_and_ghosted.push_back(vals[j]);
+    }
+
+#else
+    // loop over all elements. do greedy ordering of local values over elements for
+    // building owned_and_ghosted, hopefully this gives a better layout
+    // for element ordered assembly
+    typedef boost::unordered_set<GO> HashTable;
+    HashTable hashTable; // use to detect if global ID has been added to owned_and_ghosted_
+    for (size_t b = 0; b < blockOrder_.size(); ++b) {
+      const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+
+      for (size_t l = 0; l < myElements.size(); ++l) {
+        const std::vector<GO> & localOrdering = elementGIDs_[myElements[l]];
+
+        // add "novel" global ids into owned_and_ghosted_ vector.
+        for(std::size_t i=0;i<localOrdering.size();i++) { 
+          std::pair<typename HashTable::iterator,bool> insertResult = hashTable.insert(localOrdering[i]);
+
+          // if insertion succeeds, then this is "novel" to owned_and_ghosted_
+          // vector so include it
+          if(insertResult.second)
+            owned_and_ghosted_.push_back(localOrdering[i]);
+        }
+      }
+    }
+#endif
+  }
+
+  buildConnectivityRun_ = true;
+
+  // build orientations if required
+  if(requireOrientations_)
+    buildUnknownsOrientation();
 }
 
-// build the global unknown numberings
-//   1. this builds the pattens
-//   2. initializes the connectivity
-//   3. calls initComplete
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
-{
-   if(!fieldsRegistered_)
-      registerFields();
 
-   // build the pattern for the ID layout on the mesh
-   std::vector<RCP<const FieldPattern> > patVector;
-   RCP<GeometricAggFieldPattern> aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern);;
-   std::map<std::pair<std::string,int>,Teuchos::RCP<const FieldPattern> >::iterator f2p_itr;
-   for(f2p_itr=fieldIntToPattern_.begin();f2p_itr!=fieldIntToPattern_.end();f2p_itr++)
-      patVector.push_back(f2p_itr->second);
+template <typename LO, typename GO>
+int DOFManager<LO,GO>::getFieldNum(const std::string & string) const{
+  int ind=0;
+  bool found=false;
+  while(!found && (size_t)ind<fieldStringOrder_.size()){
+    if(fieldStringOrder_[ind]==string)
+      found=true;
+    else
+      ind++;
+  }
+  return ind;
 
-   // if you need orientations, be sure to extend your
-   // geometry pattern to include the nodes this is done using
-   // NodeFieldPattern class (and is basically the sole reason for
-   // its existance).
-   if(getOrientationsRequired())
-      patVector.push_back(Teuchos::rcp(new NodalFieldPattern(patVector[0]->getCellTopology())));
-
-   // build aggregate field pattern
-   aggFieldPattern->buildPattern(patVector);
-
-   // setup connectivity mesh
-   connMngr_->buildConnectivity(*aggFieldPattern);
-
-   // using new geometric pattern, build global unknowns
-   buildGlobalUnknowns(aggFieldPattern);
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildUnknownsOrientation()
+template <typename LO, typename GO>
+void DOFManager<LO,GO>::getFieldOrder(std::vector<std::string> & fieldOrder)
 {
-   orientation_.clear(); // clean up previous work
+fieldOrder.resize(fieldStringOrder_.size());
+for (size_t i = 0; i < fieldStringOrder_.size(); ++i) {
+  fieldOrder[i]=fieldStringOrder_[i];
+}
+}
+  
+template <typename LO, typename GO>
+bool DOFManager<LO,GO>::fieldInBlock(const std::string & field, const std::string & block) const{
+  std::map<std::string,int>::const_iterator fitr = fieldNameToAID_.find(field);
+  if(fitr==fieldNameToAID_.end())
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid field name");
+  std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(block);
+  if(bitr==blockNameToID_.end())
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid block name");
+  int fid=fitr->second;
+  int bid=bitr->second;
 
-   std::vector<std::string> elementBlockIds;
-   connMngr_->getElementBlockIds(elementBlockIds);
+  bool found=false;
+  for (size_t i = 0; i < blockToAssociatedFP_[bid].size(); ++i) {
+    if(blockToAssociatedFP_[bid][i]==fid){
+      found=true;
+      break;
+    }
+  }
+  for (size_t i = 0; i < FPsInAll_.size(); ++i) {
+    if(FPsInAll_[i]==fid){
+      found=true;
+      break;
+    }
+  }
+  
+  return found;
+}
 
-   // figure out how many total elements are owned by this processor (why is this so hard!)
-   std::size_t myElementCount = 0;
-   for(std::vector<std::string>::const_iterator blockItr=elementBlockIds.begin();
-       blockItr!=elementBlockIds.end();++blockItr)
-      myElementCount += connMngr_->getElementBlock(*blockItr).size();
+template <typename LO, typename GO>
+const std::vector<int> & DOFManager<LO,GO>::getBlockFieldNumbers(const std::string & blockId) const{
+  TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error,"DOFManager::getBlockFieldNumbers: BuildConnectivity must be run first.");
 
-   // allocate for each block
-   orientation_.resize(myElementCount);
-   
-   // loop over all element blocks
-   for(std::vector<std::string>::const_iterator blockItr=elementBlockIds.begin();
-       blockItr!=elementBlockIds.end();++blockItr) {
+  std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(blockId);
+  if(bitr==blockNameToID_.end())
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid block name");
+  int bid=bitr->second;
+  return fa_fps_[bid]->fieldIds();
+
+}
+
+template <typename LO, typename GO>
+const std::pair<std::vector<int>,std::vector<int> > & 
+DOFManager<LO,GO>::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const{
+  TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error,"DOFManager::getGIDFieldOffsets_closure: BuildConnectivity must be run first.");
+  std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(blockId);
+  if(bitr==blockNameToID_.end())
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "DOFManager::getGIDFieldOffsets_closure: invalid block name.");
+  return fa_fps_[bitr->second]->localOffsets_closure(fieldNum, subcellDim, subcellId);
+}
+
+template <typename LO, typename GO>
+void DOFManager<LO,GO>::ownedIndices(const std::vector<GO> & indices,std::vector<bool> & isOwned) const{
+  //Resizes the isOwned array.
+  if(indices.size()!=isOwned.size())
+    isOwned.resize(indices.size(),false);
+  typename std::vector<GO>::const_iterator endOf = owned_.end();
+  for (std::size_t i = 0; i < indices.size(); ++i) {
+    isOwned[i] = ( std::find(owned_.begin(), owned_.end(), indices[i])!=endOf );
+  }
+}
+
+template <typename LO, typename GO>
+void DOFManager<LO,GO>::setFieldOrder(const std::vector<std::string> & fieldOrder){
+  TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
+                      "DOFManager::setFieldOrder: setFieldOrder cannot be called after "
+                      "buildGlobalUnknowns has been called"); 
+  if(validFieldOrder(fieldOrder)){
+    fieldStringOrder_=fieldOrder;
+    //We also need to reassign the fieldAIDOrder_.
+    for (size_t i = 0; i < fieldStringOrder_.size(); ++i) {
+      fieldAIDOrder_[i]=fieldNameToAID_[fieldStringOrder_[i]];
+    }
+  }
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::setFieldOrder: Invalid Field Ordering!");
+    
+}
+
+
+template <typename LO, typename GO>
+bool DOFManager<LO,GO>::validFieldOrder(const std::vector<std::string> & proposed_fieldOrder){
+  if(fieldStringOrder_.size()!=proposed_fieldOrder.size())
+    return false;
+  //I'm using a not very efficient way of doing this, but there should never
+  //be that many fields, so it isn't that big of a deal.
+  for (size_t i = 0; i < fieldStringOrder_.size(); ++i) {
+    bool found=false;
+    for (size_t j = 0; j < proposed_fieldOrder.size(); ++j) {
+      if(fieldStringOrder_[i]==proposed_fieldOrder[j])
+        found=true;
+    }
+    if(!found)
+      return false;
+  }
+  return true;
+}
+
+template <typename LO, typename GO>
+const std::string & DOFManager<LO,GO>::getFieldString(int num) const{
+  //A reverse lookup through fieldStringOrder_.
+  if(num>=(int)fieldStringOrder_.size())
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "DOFManager::getFieldString: invalid number");
+  return fieldStringOrder_[num];
+//  bool found=false;
+//  size_t i=0;
+//  while(!found && i<fieldStringOrder_.size()){
+//    if(fieldStringOrder_[i]==num)
+//      found=true;
+//    else
+//      i++;
+//  }
+//  if(!found)
+//    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "DOFManager::getFieldString: invalid number");
+//  return i;
+}
+
+//Everything associated with orientation is not yeat built, but this
+//is the method as found in Panzer_DOFManager_impl.hpp. There are
+//going to need to be some substantial changes to the code as it applies
+//to this DOFManager, but the basic ideas and format should be similar.
+//
+template <typename LO, typename GO>
+void DOFManager<LO,GO>::buildUnknownsOrientation(){
+  orientation_.clear(); // clean up previous work
+
+  std::vector<std::string> elementBlockIds;
+  connMngr_->getElementBlockIds(elementBlockIds);
+
+  // figure out how many total elements are owned by this processor (why is this so hard!)
+  std::size_t myElementCount = 0;
+  for(std::vector<std::string>::const_iterator blockItr=elementBlockIds.begin(); blockItr!=elementBlockIds.end();++blockItr)
+    myElementCount += connMngr_->getElementBlock(*blockItr).size();
+
+  // allocate for each block
+  orientation_.resize(myElementCount);
+  
+  // loop over all element blocks
+  for(std::vector<std::string>::const_iterator blockItr=elementBlockIds.begin();
+    blockItr!=elementBlockIds.end();++blockItr) {
       const std::string & blockName = *blockItr; 
 
-      // this block has no unknowns (or elements)
-      std::map<std::string,Teuchos::RCP<FieldAggPattern> >::const_iterator fap = fieldAggPattern_.find(blockName);
-      if(fap==fieldAggPattern_.end() || fap->second==Teuchos::null) 
-         continue;
+     // this block has no unknowns (or elements)
+    std::map<std::string,int>::const_iterator fap = blockNameToID_.find(blockName);
+    if(fap==blockNameToID_.end()) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::buildUnknownsOrientation: invalid block name");
+    }
 
-      // grab field patterns, will be necessary to compute orientations
-      const FieldPattern & fieldPattern = *fap->second;
+    int bid=fap->second;
 
-      std::vector<std::pair<int,int> > topEdgeIndices;
-      orientation_helpers::computePatternEdgeIndices(*geomPattern_,topEdgeIndices);
+     // grab field patterns, will be necessary to compute orientations
+    const FieldPattern & fieldPattern = *fa_fps_[bid];
 
-      std::size_t numGIDs = getElementBlockGIDCount(blockName);
-      const std::vector<LocalOrdinal> & elmts = getElementBlock(blockName);
-      for(std::size_t e=0;e<elmts.size();e++) {
-         // this is the vector of orientations to fill: initialize it correctly
-         std::vector<char> & eOrientation = orientation_[elmts[e]];
-         eOrientation.resize(numGIDs);
-         for(std::size_t s=0;s<eOrientation.size();s++)
-            eOrientation[s] = 1; // put in 1 by default 
+    std::vector<std::pair<int,int> > topEdgeIndices;
+    //Should be ga_fp_
+    orientation_helpers::computePatternEdgeIndices(*ga_fp_,topEdgeIndices);
 
-         // get geometry ids
-         LocalOrdinalT connSz = connMngr_->getConnectivitySize(elmts[e]);
-         const GlobalOrdinalT * connPtr = connMngr_->getConnectivity(elmts[e]); 
-         const std::vector<GlobalOrdinalT> connectivity(connPtr,connPtr+connSz);
+    //How many GIDs are associated with a particular element bloc
+    //std::size_t numGIDs = getElementBlockGIDCount(blockName);
+    const std::vector<LO> & elmts = connMngr_->getElementBlock(blockName);
+    for(std::size_t e=0;e<elmts.size();e++) {
+        // this is the vector of orientations to fill: initialize it correctly
+      std::vector<char> & eOrientation = orientation_[elmts[e]];
+      //This resize seems to be the same as fieldPattern.numberIDs(). 
+      //When computer ede orientations is called, that is the assert.
+      //There should be no reason to make it anymore complicated.
+      eOrientation.resize(fieldPattern.numberIds());
+      //eOrientation.resize(8);
+      for(std::size_t s=0;s<eOrientation.size();s++)
+        eOrientation[s] = 1; // put in 1 by default 
 
-         orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity, fieldPattern, eOrientation);
-      }
-   }
+        // get geometry ids
+      LO connSz = connMngr_->getConnectivitySize(elmts[e]);
+      const GO * connPtr = connMngr_->getConnectivity(elmts[e]); 
+      const std::vector<GO> connectivity(connPtr,connPtr+connSz);
+
+
+      orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity, fieldPattern, eOrientation);
+    }
+  }
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOrderedBlock(const std::vector<std::string> & fieldOrder,
-                                                               const std::string & blockId,
-                                                               std::vector<int> & orderedBlock) const
-{
-   const std::set<int> & fieldSet = this->getFields(blockId);
-   orderedBlock.clear();
-
-   std::vector<std::string>::const_iterator itr;
-   for(itr=fieldOrder.begin();itr!=fieldOrder.end();++itr) {
-      int fieldNum = this->getFieldNum(*itr);
-
-      // if field in in a particular block add it 
-      if(fieldSet.find(fieldNum)!=fieldSet.end())
-         orderedBlock.push_back(fieldNum);
-   }
-}
-
-// build the pattern associated with this manager
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-bool DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildPattern(const std::vector<std::string> & fieldOrder,
-                                                            const std::string & blockId)
-{
-   using Teuchos::rcp;
-   using Teuchos::RCP;
-
-   // use some generic field ordering if the current one is empty
-   std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > blockPatterns;
-   std::vector<int> orderedBlock;
-   getOrderedBlock(fieldOrder,blockId,orderedBlock);
-
-   // get a map of field patterns
-   std::vector<int>::const_iterator itr;
-   for(itr=orderedBlock.begin();itr!=orderedBlock.end();++itr) {
-      Teuchos::RCP<const FieldPattern> fp = fieldIntToPattern_[std::make_pair(blockId,*itr)];
-      blockPatterns.push_back(std::make_pair(*itr,fp));
-   }
-
-   std::size_t blockIndex = blockIdToIndex(blockId);
-   if(blockPatterns.size()<=0) {
-      patternNum_[blockIndex] = -1; // this should cause an error
-                                    // if this is accidently visited
-      return false;
-   }
-   
-   // smash together all fields...do interlacing
-   fieldAggPattern_[blockId] = rcp(new FieldAggPattern(blockPatterns,geomPattern_));
-
-   // build FEI pattern
-   const std::vector<int> & fields = fieldAggPattern_[blockId]->fieldIds();
-   const std::vector<int> & numFieldsPerID = fieldAggPattern_[blockId]->numFieldsPerId();
-
-   std::vector<int> reduceNumFieldsPerID;
-   for(std::size_t i=0;i<numFieldsPerID.size();i++)
-      if(numFieldsPerID[i]>0) 
-         reduceNumFieldsPerID.push_back(numFieldsPerID[i]);
-
-   int idsPerElement  = reduceNumFieldsPerID.size();
-
-   patternNum_[blockIndex] 
-         = matrixGraph_->definePattern(idsPerElement,nodeType_,&reduceNumFieldsPerID[0],&fields[0]);
-
-   return true;
-}
-
-// "Get" functions
-/////////////////////////////////////////////////////////////////////
-
-namespace {
-// hide these functions
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-inline void getGIDsFromMatrixGraph(int blockIndex,int dof,LocalOrdinalT localElmtId,
-                                   fei::MatrixGraph & mg,std::vector<GlobalOrdinalT> & gids)
-{
-   std::vector<int> indices(dof);
-
-   // get elements indices
-   int localSize = -1;
-   mg.getConnectivityIndices(blockIndex,localElmtId,dof,&indices[0],localSize);
-   
-   // copy the indices
-   gids.resize(dof);
-   for(std::size_t i=0;i<indices.size();i++)
-      gids[i] = (GlobalOrdinalT) indices[i];
-}
-
-template <typename LocalOrdinalT>
-inline void getGIDsFromMatrixGraph(int blockIndex,int dof,LocalOrdinalT localElmtId,
-                                   fei::MatrixGraph & mg,std::vector<int> & gids)
-{
-   // get elements indices
-   gids.resize(dof);
-   int localSize = -1;
-   mg.getConnectivityIndices(blockIndex,localElmtId,dof,&gids[0],localSize);
-}
-
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids,const std::string & blockIdHint) const
-{
-   // this short circuits any lookup, and improves efficiency
-   std::string blockId;
-   if(blockIdHint!="") 
-      blockId = blockIdHint;
-   else
-      blockId = connMngr_->getBlockId(localElmtId);
-
-   // get information about number of indicies
-   std::size_t blockIndex = blockIdToIndex(blockId);
-   int dof = getElementBlockGIDCount(blockIndex);
-
-   // getConnectivityNumIndices returns -1 if no block is found or
-   // has been initialized. So if this DOFManager has no fields on
-   // the block it should be ignored (hence dof>0)
-   if(dof>0) {
-      getGIDsFromMatrixGraph(blockIndex,dof,localElmtId,*matrixGraph_,gids);
-   }
-   else
-      gids.resize(0); // no DOFs available, so shrink it
-}
-
-/** \brief Get a vector containg the orientation of the GIDs relative to the neighbors.
-  */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::
-getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const
+template <typename LO, typename GO>
+void DOFManager<LO,GO>::getElementOrientation(LO localElmtId,std::vector<double> & gidsOrientation) const
 {
    // TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::getElementOrientation not implemented yet!");
 
@@ -595,198 +750,6 @@ getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrient
    }
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std::ostream & os) const
-{
-   os << "DOFManager Field Information: " << std::endl;
-   
-   if(fieldsRegistered_) {
-      std::map<std::string,Teuchos::RCP<FieldAggPattern> >::const_iterator iter;
-      for(iter=fieldAggPattern_.begin();iter!=fieldAggPattern_.end();++iter) {
-         os << "Element Block = " << iter->first << std::endl; 
-         iter->second->print(os);
-   
-         // output field information
-         std::set<int>::const_iterator itr_fieldIds = blockToField_.find(iter->first)->second.begin(); 
-         std::set<int>::const_iterator end_fieldIds = blockToField_.find(iter->first)->second.end(); 
-         os << "   Field String to Field Id:\n";
-         for( /*empty*/ ;itr_fieldIds!=end_fieldIds;++itr_fieldIds)
-            os << "      \"" << getFieldString(*itr_fieldIds) << "\" is field ID " << *itr_fieldIds << std::endl;
-      }
-   }
-   else {
-      // fields are not registered
-      os << "Fields not yet registered! Unknowns not built (call buildGlobalUnknowns)" << std::endl;
-   }
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-Teuchos::RCP<const FieldPattern> DOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldPattern(const std::string & blockId, int fieldNum) const
-{
-   std::map<std::pair<std::string,int>,Teuchos::RCP<const FieldPattern> >::const_iterator itr;
-   itr = fieldIntToPattern_.find(std::make_pair(blockId,fieldNum));
-
-   if(itr==fieldIntToPattern_.end()) {
-      // could not find requiested field pattern...return null
-      return Teuchos::null;
-   }
-
-   return itr->second;
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-Teuchos::RCP<const FieldPattern> DOFManager<LocalOrdinalT,GlobalOrdinalT>::
-getFieldPattern(const std::string & blockId, const std::string & fieldName) const
-{
-   // return null even if field doesn't exist in manager
-   int fieldNum = -1;
-   try {
-      fieldNum = getFieldNum(fieldName);
-   }
-   catch(const std::logic_error & le) {
-      return Teuchos::null;
-   }
-
-   return getFieldPattern(blockId,fieldNum);
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-std::size_t DOFManager<LocalOrdinalT,GlobalOrdinalT>::blockIdToIndex(const std::string & blockId) const
-{
-   // use lazy evaluation to build block indices
-   if(blockIdToIndex_==Teuchos::null) {
-
-      std::vector<std::string> elementBlockIds;
-      connMngr_->getElementBlockIds(elementBlockIds);
-
-      // build ID to Index map
-      blockIdToIndex_ = Teuchos::rcp(new std::map<std::string,std::size_t>);
-      for(std::size_t i=0;i<elementBlockIds.size();i++)
-         (*blockIdToIndex_)[elementBlockIds[i]] = i;
-   }
- 
-   return (*blockIdToIndex_)[blockId];
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-const std::map<std::string,std::size_t> & DOFManager<LocalOrdinalT,GlobalOrdinalT>::blockIdToIndexMap() const
-{
-   // use lazy evaluation to build block indices
-   if(blockIdToIndex_==Teuchos::null) {
-
-      std::vector<std::string> elementBlockIds;
-      connMngr_->getElementBlockIds(elementBlockIds);
-
-      // build ID to Index map
-      blockIdToIndex_ = Teuchos::rcp(new std::map<std::string,std::size_t>);
-      for(std::size_t i=0;i<elementBlockIds.size();i++)
-         (*blockIdToIndex_)[elementBlockIds[i]] = i;
-   }
- 
-   return *blockIdToIndex_;
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const
-{
-   // verify size is correct
-   if(indices.size()!=isOwned.size())
-      isOwned.resize(indices.size(),false);
-
-   // use unordered set to check for ownership of the ID
-   typename boost::unordered_set<GlobalOrdinal>::const_iterator endItr = ownedGIDHashTable_.end();
-   for(std::size_t i=0;i<indices.size();i++) 
-      isOwned[i] = (ownedGIDHashTable_.find(indices[i])!=endItr);
-}
-
-// These two functions are "helpers" for DOFManager::getOwnedIndices
-///////////////////////////////////////////////////////////////////////////
-template <typename OrdinalType> 
-static void getOwnedIndices_T(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<OrdinalType> & indices) 
-{
-   int numIndices, ni;
-   numIndices = vs->getNumIndices_Owned();
-   indices.resize(numIndices);
-   std::vector<int> int_Indices; // until FEI is templated
-
-   // get the number of locally owned degrees of freedom...allocate space
-   int_Indices.resize(numIndices);
-
-   // get the global indices
-   vs->getIndices_Owned(numIndices,&int_Indices[0],ni);
-
-   for(std::size_t i=0;i<int_Indices.size();i++) 
-      indices[i] = (OrdinalType) int_Indices[i];
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const
-{
-   getOwnedIndices_T<GlobalOrdinalT>(vectorSpace_,indices);
-}
-
-/** Check the validity of a field order. This is used internally
-  * as a sanity check. Checks for no repeats, bogus fields, and all fields
-  * being included.
-  *
-  * \param[in] fieldOrder_ut Field order vector under test (ut).
-  *
-  * \returns true if the vector is valid, false otherwise.
-  */
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-bool DOFManager<LocalOrdinalT,GlobalOrdinalT>::validFieldOrder(const std::vector<std::string> & fieldOrder_ut,const std::set<std::string> & fields) const
-{
-   if(fields.size()!=fieldOrder_ut.size()) // something is wrong!
-      return false;
-
-   std::set<std::string> fieldOrderSet;
-
-   // first check the size by shoving everything into a set
-   std::vector<std::string>::const_iterator itr;
-   for(itr=fieldOrder_ut.begin();itr!=fieldOrder_ut.end();++itr)
-      fieldOrderSet.insert(*itr);
-
-   if(fieldOrderSet.size()!=fieldOrder_ut.size()) // there are repeat fields!
-      return false;
-
-   // check to make sure each field is represented
-   std::set<std::string>::const_iterator itr_ut = fieldOrderSet.begin();
-   std::set<std::string>::const_iterator itr_src = fields.begin();
-   while(itr_ut!=fieldOrderSet.end()) {
-      if(*itr_ut!=*itr_src) 
-         return false;
-
-      itr_ut++;
-      itr_src++;
-   }
-
-   return true;
-}
-
-///////////////////////////////////////////////////////////////////////////
-
-// These two functions are "helpers" for DOFManager::getOwnedAndSharedIndices
-///////////////////////////////////////////////////////////////////////////
-template <typename OrdinalType> 
-static void getOwnedAndSharedIndices_T(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<OrdinalType> & indices) 
-{
-   std::vector<int> int_Indices; // until FEI is templated
-
-   // get the global indices
-   vs->getIndices_SharedAndOwned(int_Indices);
-
-   indices.resize(int_Indices.size());
-   for(std::size_t i=0;i<int_Indices.size();i++) 
-      indices[i] = (OrdinalType) int_Indices[i];
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const
-{
-   getOwnedAndSharedIndices_T<GlobalOrdinalT>(vectorSpace_,indices);
-}
-///////////////////////////////////////////////////////////////////////////
-
-}
+} /*panzer*/
 
 #endif

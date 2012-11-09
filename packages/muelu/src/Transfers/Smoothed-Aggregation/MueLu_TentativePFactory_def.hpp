@@ -130,7 +130,7 @@ namespace MueLu {
     RCP<const Teuchos::Comm<int> > comm = fineA.getRowMap()->getComm();
 
     // number of aggregates
-    GO numAggs = aggregates.GetNumAggregates();
+    LO numAggs = aggregates.GetNumAggregates();
 
     // Compute array of aggregate sizes (in dofs).
     ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs,0);

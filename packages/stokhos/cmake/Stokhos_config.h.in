@@ -68,3 +68,6 @@
 
 /* Define if MueLu is enabled */
 #cmakedefine HAVE_STOKHOS_MUELU
+
+/* Define if MATLAB is enabled */
+#cmakedefine HAVE_STOKHOS_MATLABLIB

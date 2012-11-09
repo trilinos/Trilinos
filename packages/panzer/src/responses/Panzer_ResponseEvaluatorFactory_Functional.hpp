@@ -51,6 +51,10 @@ public:
                                            const panzer::PhysicsBlock & physicsBlock,
                                            const Teuchos::ParameterList & user_data) const;
 
+protected:
+   //! Accessor method for Cubature degree (can be used by sub classes)
+   int getCubatureDegree() const { return cubatureDegree_; }
+
 private:
    MPI_Comm comm_;
    int cubatureDegree_;

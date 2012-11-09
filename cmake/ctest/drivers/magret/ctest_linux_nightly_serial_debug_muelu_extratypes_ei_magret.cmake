@@ -70,6 +70,8 @@ SET(CTEST_TEST_TIMEOUT 900)
 SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
+  "-DMueLu_ENABLE_Amesos2:BOOL=ON" # Amesos2 is experimental and must be explicitly enabled
+
   "-DMueLu_ENABLE_EXPLICIT_INSTANTIATION=ON"
 
   "-DMueLu_INST_DOUBLE_INT_LONGLONGINT=ON"

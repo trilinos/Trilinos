@@ -245,7 +245,7 @@ RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_C
 
         Note -- it's assumed that A has been fillComplete'd.
     */
-    static Teuchos::ArrayRCP<SC> GetMatrixDiagonal(RCP<Matrix> const &A); //GetMatrixDiagonal
+    static Teuchos::ArrayRCP<SC> GetMatrixDiagonal(const Matrix &A); //GetMatrixDiagonal
 
     /*! @brief Left scale matrix by an arbitrary vector.
 
@@ -314,7 +314,7 @@ RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_C
     static Scalar PowerMethod(Matrix const &A, bool scaleByDiag=true,
                               LO niters=10, Magnitude tolerance=1e-2, bool verbose=false, unsigned int seed = 123); //PowerMethod
 
-   static void MyOldScaleMatrix(RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse=true,
+   static void MyOldScaleMatrix(RCP<Matrix> &Op, Teuchos::ArrayRCP<const SC> scalingVector, bool doInverse=true,
                                 bool doFillComplete=true,
                                 bool doOptimizeStorage=true); //ScaleMatrix()
 

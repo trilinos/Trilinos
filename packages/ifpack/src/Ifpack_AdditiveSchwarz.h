@@ -653,9 +653,11 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
   ReindexedCrsMatrix_.reset(&((*SubdomainMatrixReindexer_)(*SubdomainCrsMatrix_)), false);
   
   MatrixPtr = &*ReindexedCrsMatrix_;
-#endif
 
+  Inverse_ = Teuchos::rcp( new T(&*ReindexedCrsMatrix_) );
+#else
   Inverse_ = Teuchos::rcp( new T(MatrixPtr) );
+#endif
 
   if (Inverse_ == Teuchos::null)
     IFPACK_CHK_ERR(-5);

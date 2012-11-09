@@ -252,7 +252,7 @@ static int shylu_local_solve(
 {
     int err;
     int nvectors = X.NumVectors();
-    Epetra_SerialComm LComm;        // Use Serial Comm for the local blocks.
+    Epetra_MpiComm LComm(MPI_COMM_SELF);        // Use Serial Comm for the local blocks.
     //cout <<" In local solve " << endl;
 
     Epetra_Map LocalDMap(-1, data->Dnr, data->DRowElems, 0, LComm);
@@ -296,8 +296,9 @@ static int shylu_local_solve(
     if (config->schurSolver == "Amesos")
     {
         Amesos_BaseSolver *solver2 = data->dsolver;
-        data->LP2->SetLHS(&Xs);
-        data->LP2->SetRHS(&Bs);
+        data->OrigLP2->SetLHS(&Xs);
+        data->OrigLP2->SetRHS(&Bs);
+        data->ReIdx_LP2->fwd();
         //cout << "Calling solve *****************************" << endl;
         solver2->Solve();
         //cout << "Out of solve *****************************" << endl;

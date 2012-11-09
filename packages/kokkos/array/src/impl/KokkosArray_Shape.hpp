@@ -268,7 +268,7 @@ void assert_shape_bounds( const ShapeType & shape ,
                   6 == ShapeType::rank ? true : i6 < shape.N6 && (
                   7 == ShapeType::rank ? true : i7 < shape.N7 )))))));
   if ( ! ok ) {
-    AssertShapeBoundsAbort< KOKKOSARRAY_EXECUTION_SPACE >
+    AssertShapeBoundsAbort< ExecutionSpace >
       ::apply( ShapeType::rank ,
                shape.N0 , shape.N1 , shape.N2 , shape.N3 ,
                shape.N4 , shape.N5 , shape.N6 , shape.N7 ,
@@ -1173,12 +1173,12 @@ struct SubShape< Shape< Layout, ScalarSize, 1, 0 > ,
       assert_shape_bounds( src , span.first );
       assert_shape_bounds( src , span.second - 1 );
       shape.N0     = span.second - span.first ;
-      shape.Stride = 1 ;
+      shape.Stride = src.Stride ;
       offset       = span.first ;
     }
     else {
       shape.N0     = 0 ;
-      shape.Stride = 1 ;
+      shape.Stride = src.Stride ;
       offset       = 0 ;
     }
   }

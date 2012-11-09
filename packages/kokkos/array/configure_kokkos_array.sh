@@ -49,12 +49,19 @@ CMAKE_HWLOC="${CMAKE_HWLOC} -D HWLOC_LIBRARY_DIRS:FILEPATH=${HWLOC_BASE_DIR}/lib
 # Note:  Options to CUDA_NVCC_FLAGS must be semi-colon delimited,
 #        this is different than the standard CMAKE_CXX_FLAGS syntax.
 
+# Cuda compilation flags:
+
+CUDA_NVCC_FLAGS="-arch=sm_20"
+CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-DCUDA_RELEASE_VERSION=`nvcc --version | sed -n -e '/release/{s/^.*release //;s/,.*$//;s/\./0/;p}'`"
+CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-Xcompiler;-Wall,-ansi"
+CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-O3"
+
 CMAKE_CUDA=""
 CMAKE_CUDA="${CMAKE_CUDA} -D TPL_ENABLE_CUDA:BOOL=ON"
 CMAKE_CUDA="${CMAKE_CUDA} -D TPL_ENABLE_CUSPARSE:BOOL=ON"
 CMAKE_CUDA="${CMAKE_CUDA} -D CUDA_VERBOSE_BUILD:BOOL=OFF"
 CMAKE_CUDA="${CMAKE_CUDA} -D CUDA_PROPAGATE_HOST_FLAGS:BOOL=OFF"
-CMAKE_CUDA="${CMAKE_CUDA} -D CUDA_NVCC_FLAGS:STRING=-arch=sm_20;-Xcompiler;-Wall,-ansi;-O3"
+CMAKE_CUDA="${CMAKE_CUDA} -D CUDA_NVCC_FLAGS:STRING=${CUDA_NVCC_FLAGS}"
 
 #-----------------------------------------------------------------------------
 # KokkosArray cmake configuration to use Pthreads, HWLOC, and Cuda

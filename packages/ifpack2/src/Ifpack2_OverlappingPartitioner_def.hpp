@@ -243,7 +243,7 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
 
 	  // has this column already been inserted?
 	  vector<size_t>::iterator
-	    where = find(tmp[part].begin(), tmp[part].end(), (size_t) col);
+	    where = std::find(tmp[part].begin(), tmp[part].end(), (size_t) col);
 
 	  if (where == tmp[part].end()) {
 	    tmp[part].push_back(col);

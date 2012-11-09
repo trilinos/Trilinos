@@ -102,7 +102,7 @@ void SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatO
 
 
   // extract diagonal of F. store it in ArrayRCP object
-  Teuchos::ArrayRCP<SC> AdiagFinv = Utils::GetMatrixDiagonal(F);
+  Teuchos::ArrayRCP<SC> AdiagFinv = Utils::GetMatrixDiagonal(*F);
   ////////// EXPERIMENTAL
   // fix zeros on diagonal
   /*for(size_t t = 0; t < AdiagFinv.size(); t++) {

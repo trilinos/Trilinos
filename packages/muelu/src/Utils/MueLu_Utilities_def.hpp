@@ -606,15 +606,15 @@ if (mypid == 0)
   } //BuildMatrixDiagonal()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixDiagonal(RCP<Matrix> const &A)
+  Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixDiagonal(const Matrix &A)
   {
-    const RCP<const Map> rowmap = A->getRowMap();
+    const RCP<const Map> rowmap = A.getRowMap();
     size_t locSize = rowmap->getNodeNumElements();
     Teuchos::ArrayRCP<SC> diag(locSize);
     Teuchos::ArrayView<const LO> cols;
     Teuchos::ArrayView<const SC> vals;
     for (size_t i=0; i<locSize; ++i) {
-      A->getLocalRowView(i,cols,vals);
+      A.getLocalRowView(i,cols,vals);
       for (LO j=0; j<cols.size(); ++j) {
         //TODO this will break down if diagonal entry is not present
         //if (!(cols[j] > i))   //JG says this will work ... maybe
@@ -865,7 +865,8 @@ if (mypid == 0)
       throw(Exceptions::Incompatible("Utils::PowerMethod: operator must have domain and range maps that are equivalent."));
     }
     // create three vectors, fill z with random numbers
-    RCP<Vector> q = VectorFactory::Build(A.getRangeMap());
+    RCP<Vector> q = VectorFactory::Build(A.getDomainMap());
+    RCP<Vector> qinit = VectorFactory::Build(A.getDomainMap());
     RCP<Vector> r = VectorFactory::Build(A.getRangeMap());
     RCP<Vector> z = VectorFactory::Build(A.getRangeMap());
     z->setSeed(seed);  // seed random number generator
@@ -873,7 +874,11 @@ if (mypid == 0)
       
     Teuchos::Array<Magnitude> norms(1);
   
-    Scalar lambda=0.0;
+    
+    const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+    const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+
+    Scalar lambda=zero;
     Magnitude residual = 0.0;
     // power iteration
     RCP<Vector> diagVec,oneOverDiagonal;
@@ -883,14 +888,17 @@ if (mypid == 0)
       oneOverDiagonal = VectorFactory::Build(A.getRowMap());
       oneOverDiagonal->reciprocal(*diagVec);
     }
+    //FIXME for the moment, the following matvec gives q and z the same coefficient pattern
+    //FIXME for PCE scalar types.  Discuss this with ETP.
+    A.apply(*qinit, *q);
     for (int iter = 0; iter < niters; ++iter) {
       z->norm2(norms);                               // Compute 2-norm of z
-      q->update(1.0/norms[0],*z,0.);                 // Set q = z / normz
+      q->update(one / norms[0],*z,zero);                 // Set q = z / normz
       A.apply(*q, *z);                               // Compute z = A*q
-      if (scaleByDiag) z->elementWiseMultiply(1.0, *oneOverDiagonal, *z, 0.0);
+      if (scaleByDiag) z->elementWiseMultiply(one, *oneOverDiagonal, *z, zero);
       lambda = q->dot(*z);                            // Approximate maximum eigenvalue: lamba = dot(q,z)
       if ( iter % 100 == 0 || iter + 1 == niters ) {
-        r->update(1.0, *z, -lambda, *q, 0.0);         // Compute A*q - lambda*q
+        r->update(1.0, *z, -lambda, *q, zero);         // Compute A*q - lambda*q
         r->norm2(norms);
         residual = Teuchos::ScalarTraits<Scalar>::magnitude(norms[0] / lambda);
         if (verbose) {
@@ -909,7 +917,7 @@ if (mypid == 0)
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix(RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse,
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix(RCP<Matrix> &Op, Teuchos::ArrayRCP<const SC> scalingVector, bool doInverse,
                                bool doFillComplete,
                                bool doOptimizeStorage)
   {

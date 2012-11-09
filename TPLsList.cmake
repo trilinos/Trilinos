@@ -154,6 +154,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   SCALAPACK       "cmake/TPLs/"    SS
   MUMPS           "cmake/TPLs/"    SS
   PARDISO_MKL     "cmake/TPLs/"    EX
+  PARDISO         "cmake/TPLs/"    EX
   Oski            "cmake/TPLs/"    SS
   TAUCS           "cmake/TPLs/"    SS
   ForUQTK         "cmake/TPLs/"    EX
@@ -179,6 +180,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   qpOASES         "cmake/TPLs/"    EX
   Matio           "cmake/TPLs/"    SS
   PAPI            "cmake/TPLs/"    SS
+  MATLABLib       "cmake/TPLs/"    EX
   )
 
 # NOTES:

@@ -217,9 +217,8 @@ namespace panzer {
     lof->initializeGhostedContainer(panzer::LinearObjContainer::X,*gloc);
 
     panzer::AssemblyEngineInArgs ae_inargs(gloc,loc);
-    ae_inargs.addGlobalEvaluationData(iResp->getLookupName(),iResp);
-    ae_inargs.addGlobalEvaluationData(tResp->getLookupName(),tResp);
 
+    rLibrary->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
     rLibrary->evaluate<panzer::Traits::Residual>(ae_inargs);
 
     Teuchos::ArrayRCP<double> tData;
@@ -288,9 +287,8 @@ namespace panzer {
     lof->initializeGhostedContainer(panzer::LinearObjContainer::X,*gloc);
 
     panzer::AssemblyEngineInArgs ae_inargs(gloc,loc);
-    ae_inargs.addGlobalEvaluationData(blkResp->getLookupName(),blkResp);
-    ae_inargs.addGlobalEvaluationData(ssResp->getLookupName(),ssResp);
 
+    rLibrary->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
     rLibrary->evaluate<panzer::Traits::Residual>(ae_inargs);
 
     double iValue = -2.3;

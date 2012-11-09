@@ -44,13 +44,13 @@ specific unit test suites.
 #include <Teuchos_UnitTestRepository.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 
-#ifdef HAVE_IFPACK2_QD
+#if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
 #include <qd/dd_real.h>
 #endif
 
 int main( int argc, char* argv[] )
 {
-#ifdef HAVE_IFPACK2_QD
+#if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
   //If we're using extended-precision types, we have to run a QD-specific
   //function at the beginning and end of our main:
   unsigned int old_cw;
@@ -60,7 +60,7 @@ int main( int argc, char* argv[] )
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
-#ifdef HAVE_IFPACK2_QD
+#if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
   fpu_fix_end(&old_cw);
 #endif
 

@@ -67,13 +67,13 @@
 
 #ifdef HAVE_XPETRA_EPETRA
 #define XPETRA_FACTORY_ERROR_IF_EPETRA(lib)                            \
-  if ((lib) == Xpetra::UseEpetra)                                      \
-        TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::BadCast, "Epetra can only be used with Scalar=double and Ordinal=int");
+  if ((lib) == ::Xpetra::UseEpetra)                                     \
+    TEUCHOS_TEST_FOR_EXCEPTION(1, ::Xpetra::Exceptions::BadCast, "Epetra can only be used with Scalar=double and Ordinal=int");
 #else
 #define XPETRA_FACTORY_ERROR_IF_EPETRA(lib)
 #endif
 
-#define XPETRA_FACTORY_END TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::BadCast, "Unknown map->lib() type. Did you compile with Epetra and Tpetra support?");
+#define XPETRA_FACTORY_END TEUCHOS_TEST_FOR_EXCEPTION(1, ::Xpetra::Exceptions::BadCast, "Unknown map->lib() type. Did you compile with Epetra and Tpetra support?");
 
 namespace Xpetra {
   namespace Exceptions {

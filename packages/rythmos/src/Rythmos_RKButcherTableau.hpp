@@ -897,6 +897,8 @@ class SDIRK2Stage3rdOrder_RKBT :
       this->setMyDescription(myDescription.str());
       thirdOrderAStable_default_ = true;
       secondOrderLStable_default_ = false;
+      thirdOrderAStable_ = true;
+      secondOrderLStable_ = false;
       typedef ScalarTraits<Scalar> ST;
       Scalar one = ST::one();
       gamma_default_ = as<Scalar>( (3*one + ST::squareroot(3*one))/(6*one) );

@@ -58,7 +58,7 @@ namespace Stokhos {
     
     //! Copy array from \c src to \c dest of length \c sz
     static
-    KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+    KOKKOSARRAY_INLINE_FUNCTION
     void copy(const T* src, T*  dest, std::size_t sz) {
       for (std::size_t i=0; i<sz; ++i)
 	*(dest++) = *(src++);
@@ -66,7 +66,7 @@ namespace Stokhos {
 
     //! Zero out array \c dest of length \c sz
     static 
-    KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+    KOKKOSARRAY_INLINE_FUNCTION
     void zero(T* dest, std::size_t sz) {
       for (std::size_t i=0; i<sz; ++i)
 	*(dest++) = T(0.);
@@ -74,7 +74,7 @@ namespace Stokhos {
 
     //! Fill array \c dest of length \c sz with value \c v
     static 
-    KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+    KOKKOSARRAY_INLINE_FUNCTION
     void fill(T* dest, std::size_t sz, const T& v) {
       for (std::size_t i=0; i<sz; ++i)
 	*(dest++) = v;
@@ -94,21 +94,21 @@ namespace Stokhos {
     
     //! Copy array from \c src to \c dest of length \c sz
     static 
-    KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+    KOKKOSARRAY_INLINE_FUNCTION
     void copy(const T* src, T* dest, std::size_t sz) {
       if (sz > 0) std::memcpy(dest,src,sz*sizeof(T));
     }
     
     //! Zero out array \c dest of length \c sz
     static 
-    KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+    KOKKOSARRAY_INLINE_FUNCTION
     void zero(T* dest, std::size_t sz) {
       if (sz > 0) std::memset(dest,0,sz*sizeof(T));
     }
 
     //! Fill array \c dest of length \c sz with value \c v
     static 
-    KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+    KOKKOSARRAY_INLINE_FUNCTION
     void fill(T* dest, std::size_t sz, T v) {
       //std::memset(dest,v,sz*sizeof(T)); // memset doesn't work if v != 0?
       for (std::size_t i=0; i<sz; ++i)

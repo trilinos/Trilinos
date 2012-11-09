@@ -37,6 +37,7 @@
 #include "Stokhos_Dense3Tensor.hpp"
 #include "Stokhos_OneDOrthogPolyBasis.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_ArrayView.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace Stokhos {
@@ -105,8 +106,9 @@ namespace Stokhos {
      * Size of returned array is given by size(), and coefficients are
      * ordered from order 0 up to size size()-1.
      */
-    virtual void evaluateBases(const Teuchos::Array<value_type>& point,
-			       Teuchos::Array<value_type>& basis_vals) const = 0;
+    virtual void evaluateBases(
+      const Teuchos::ArrayView<const value_type>& point,
+      Teuchos::Array<value_type>& basis_vals) const = 0;
 
     //! Print basis to stream \c os
     virtual void print(std::ostream& os) const = 0;

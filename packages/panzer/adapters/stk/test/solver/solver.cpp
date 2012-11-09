@@ -64,7 +64,7 @@ using Teuchos::rcp;
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
-#include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_ModelEvaluator.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
@@ -303,7 +303,7 @@ namespace panzer {
     ghosted_solution.PutScalar(0.0);
     ghosted_solution.Import(*solution,*importer,Insert);
 
-    panzer_stk::write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,
+    panzer_stk::write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManagerFEI<int,int> >(dofManager),*mesh,
 	    		            ghosted_solution);
     mesh->writeToExodus("output.exo");
 
@@ -582,7 +582,7 @@ namespace panzer {
     ghosted_solution.PutScalar(0.0);
     ghosted_solution.Import(*solution,*importer,Insert);
 
-    panzer_stk::write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,
+    panzer_stk::write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManagerFEI<int,int> >(dofManager),*mesh,
 			            ghosted_solution);
     
   }

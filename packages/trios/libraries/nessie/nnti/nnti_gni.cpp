@@ -1,4 +1,46 @@
 /**
+//@HEADER
+// ************************************************************************
+//
+//                   Trios: Trilinos I/O Support
+//                 Copyright 2011 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+//Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
+//
+// *************************************************************************
+//@HEADER
+ */
+/**
  * nnti_gni.c
  *
  *  Created on: Jan 13, 2011
@@ -666,6 +708,52 @@ static wr_pool_t initiator_wr_pool;
 static nnti_gni_config config;
 
 
+/* ---------------- Wrappers to protect HPCToolkit issues ---------- */
+static
+gni_return_t GNI_CqWaitEvent_wrapper(
+        gni_cq_handle_t cq_hdl,
+        uint64_t timeout_per_call,
+        gni_cq_entry_t *ev_data)
+{
+    gni_return_t  rc;
+
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc = GNI_CqWaitEvent(cq_hdl, timeout_per_call, ev_data);
+    if (sampling) SAMPLING_START();
+
+    return rc;
+}
+
+static
+gni_return_t GNI_CdmAttach_wrapper(
+        gni_cdm_handle_t cdm_hndl,
+        uint32_t device_id,
+        uint32_t *local_addr,
+        gni_nic_handle_t *nic_hndl)
+{
+    gni_return_t rc;
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc=GNI_CdmAttach (cdm_hndl, device_id, local_addr, nic_hndl);
+    if (sampling) SAMPLING_START();
+    return rc;
+}
+
+static
+gni_return_t GNI_GetCompleted_wrapper(
+        gni_cq_handle_t cq_hndl,
+        gni_cq_entry_t event_data,
+        gni_post_descriptor_t **post_descr)
+{
+    gni_return_t rc;
+    bool sampling = SAMPLING_IS_ACTIVE();
+    if (sampling) SAMPLING_STOP();
+    rc=GNI_GetCompleted (cq_hndl, event_data, post_descr);
+    if (sampling) SAMPLING_START();
+    return rc;
+}
+
 /**
  * @brief Initialize NNTI to use a specific transport.
  *
@@ -844,17 +932,10 @@ NNTI_result_t NNTI_gni_init (
 
         trios_start_timer(call_time);
 
-        // The hpctoolkit signal interferes with this operation.  This will disable
-        // signals from hpctoolkit.
-        bool sampling = SAMPLING_IS_ACTIVE();
-        if (sampling) SAMPLING_STOP();
-
-        rc=GNI_CdmAttach (transport_global_data.cdm_hdl,
+        rc=GNI_CdmAttach_wrapper (transport_global_data.cdm_hdl,
                 transport_global_data.alps_info.device_id,
                 (uint32_t*)&transport_global_data.alps_info.local_addr, /* ALPS and GNI disagree about the type of local_addr.  cast here. */
                 &transport_global_data.nic_hdl);
-
-        if (sampling) SAMPLING_START();
 
         trios_stop_timer("CdmAttach", call_time);
         if (rc!=GNI_RC_SUCCESS) {
@@ -1929,7 +2010,7 @@ nthread_unlock(&nnti_gni_lock);
 //                log_debug(nnti_event_debug_level, "calling CqWaitEvent(wait)");
                 trios_start_timer(call_time);
 //                nthread_lock(&nnti_gni_lock);
-                rc=GNI_CqWaitEvent(cq_hdl, timeout_per_call, &ev_data);
+                rc=GNI_CqWaitEvent_wrapper(cq_hdl, timeout_per_call, &ev_data);
 //                nthread_unlock(&nnti_gni_lock);
                 print_cq_event(&ev_data);
                 trios_stop_timer("NNTI_gni_wait - CqWaitEvent", call_time);
@@ -3268,7 +3349,7 @@ static int process_event(
                     log_debug(debug_level, "SEND request event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
 
                     log_debug(debug_level, "calling GetComplete(fma put send request)");
-                    rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(fma send request post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3278,7 +3359,7 @@ static int process_event(
                     log_debug(debug_level, "SEND request Work Completion completion - event_buf==%p", event_buf);
 
                     log_debug(debug_level, "calling GetComplete(send request)");
-                    rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(fma send request post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3293,7 +3374,7 @@ static int process_event(
                     log_debug(debug_level, "SEND buffer event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
 
                     log_debug(debug_level, "calling GetComplete(fma put send buffer)");
-                    rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(fma send buffer post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3303,7 +3384,7 @@ static int process_event(
                     log_debug(debug_level, "SEND buffer Work Completion completion - event_buf==%p", event_buf);
 
                     log_debug(debug_level, "calling GetComplete(send buffer ACK)");
-                    rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(fma send buffer ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3316,7 +3397,7 @@ static int process_event(
                     log_debug(debug_level, "RDMA write event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
 
                     log_debug(debug_level, "calling GetComplete(fma put send)");
-                    rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(fma put send post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3332,7 +3413,7 @@ static int process_event(
                     log_debug(debug_level, "RDMA write ACK (initiator) completion - event_buf==%p", event_buf);
 
                     log_debug(debug_level, "calling GetComplete(fma put send ACK)");
-                    rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(fma put send ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3349,7 +3430,7 @@ static int process_event(
                     log_debug(debug_level, "RDMA write event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
 
                     log_debug(debug_level, "calling GetComplete(rdma put src)");
-                    rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(put src post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3365,7 +3446,7 @@ static int process_event(
                     log_debug(debug_level, "RDMA write ACK (initiator) completion - event_buf==%p", event_buf);
 
                     log_debug(debug_level, "calling GetComplete(rdma put src ACK)");
-                    rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(put src ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3377,7 +3458,7 @@ static int process_event(
                 log_debug(debug_level, "RDMA write ACK (initiator) completion - event_buf==%p", event_buf);
 
                 log_debug(debug_level, "calling GetComplete(rdma put src ACK)");
-                rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
                 if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(put src ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                 print_post_desc(wr->post_desc_ptr);
 
@@ -3393,7 +3474,7 @@ static int process_event(
                     log_debug(debug_level, "RDMA read event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
 
                     log_debug(debug_level, "calling GetComplete(rdma get dst)");
-                    rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(get dst post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3409,7 +3490,7 @@ static int process_event(
                     log_debug(debug_level, "RDMA read ACK (initiator) completion - event_buf==%p", event_buf);
 
                     log_debug(debug_level, "calling GetComplete(rdma get dst ACK)");
-                    rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(get dst ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3421,7 +3502,7 @@ static int process_event(
                 log_debug(debug_level, "RDMA read ACK (initiator) completion - event_buf==%p", event_buf);
 
                 log_debug(debug_level, "calling GetComplete(rdma get dst ACK)");
-                rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
                 if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(get dst ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                 print_post_desc(wr->post_desc_ptr);
 
@@ -3603,7 +3684,7 @@ static int process_event(
                     log_debug(debug_level, "RDMA target event - event_buf==%p, op_state==%d", event_buf, wr->op_state);
 
                     log_debug(debug_level, "calling GetComplete(rdma target (mem cq)");
-                    rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(post_desc_ptr) failed: %d", rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -3619,7 +3700,7 @@ static int process_event(
                     log_debug(debug_level, "RDMA target ACK completion - event_buf==%p", event_buf);
 
                     log_debug(debug_level, "calling GetComplete(rdma target ACK)");
-                    rc=GNI_GetCompleted (cq_hdl, *ev_data, &wr->post_desc_ptr);
+                    rc=GNI_GetCompleted_wrapper (cq_hdl, *ev_data, &wr->post_desc_ptr);
                     if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "GetCompleted(rdma target ACK post_desc_ptr(%p)) failed: %d", wr->post_desc_ptr, rc);
                     print_post_desc(wr->post_desc_ptr);
 
@@ -5746,7 +5827,7 @@ static int post_wait(
     for(i=0;i<=retries;i++) {
         log_debug(nnti_debug_level, "calling CqWaitEvent");
         trios_start_timer(call_time);
-        rc=GNI_CqWaitEvent (cq_hdl, timeout, &ev_data);
+        rc=GNI_CqWaitEvent_wrapper(cq_hdl, timeout, &ev_data);
         trios_stop_timer("post_wait - CqWaitEvent", call_time);
         if (rc==GNI_RC_SUCCESS) {
             break;
@@ -5757,7 +5838,7 @@ static int post_wait(
 
     log_debug(nnti_debug_level, "calling GetComplete");
     trios_start_timer(call_time);
-    rc=GNI_GetCompleted (cq_hdl, ev_data, &post_desc_ptr);
+    rc=GNI_GetCompleted_wrapper (cq_hdl, ev_data, &post_desc_ptr);
     trios_stop_timer("post_wait - GetCompleted", call_time);
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted failed: %d", rc);
     print_post_desc(post_desc_ptr);
@@ -5895,7 +5976,7 @@ static int fetch_add_buffer_offset(
             do {
                 log_debug(debug_level, "calling CqWaitEvent(unblock)");
                 trios_start_timer(call_time);
-                rc=GNI_CqWaitEvent (local_req_queue_attrs->unblock_mem_cq_hdl, 1000, &ev_data);
+                rc=GNI_CqWaitEvent_wrapper (local_req_queue_attrs->unblock_mem_cq_hdl, 1000, &ev_data);
                 trios_stop_timer("unblock", call_time);
                 if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "CqWaitEvent(unblock) failed: %d", rc);
             } while (rc!=GNI_RC_SUCCESS);
@@ -5928,7 +6009,7 @@ static int fetch_add_buffer_offset(
 
             /* absorb one unblock message */
             log_debug(nnti_event_debug_level, "calling CqGetEvent(absorb one unblock)");
-            rc=GNI_CqWaitEvent (local_req_queue_attrs->unblock_mem_cq_hdl, 1000, &ev_data);
+            rc=GNI_CqWaitEvent_wrapper (local_req_queue_attrs->unblock_mem_cq_hdl, 1000, &ev_data);
             if (rc==GNI_RC_SUCCESS) {
                 ui64=gni_cq_get_data(ev_data);
                 ptr32=(uint32_t*)&ui64;

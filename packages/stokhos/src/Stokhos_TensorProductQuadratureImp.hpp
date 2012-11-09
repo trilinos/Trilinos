@@ -70,7 +70,7 @@ TensorProductQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value
     }
     for (ordinal_type k=0; k<sz; k++) {
       quad_values[cnt][k] = value_type(1.0);
-      Teuchos::Array<ordinal_type> term = product_basis->getTerm(k);
+      const MultiIndex<ordinal_type>& term = product_basis->term(k);
       for (ordinal_type j=0; j<d; j++) 
         quad_values[cnt][k] *= gv[j][index[j]][term[j]];
     }
@@ -128,7 +128,7 @@ TensorProductQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value
     }
     for (ordinal_type k=0; k<sz; k++) {
       quad_values[cnt][k] = value_type(1.0);
-      Teuchos::Array<ordinal_type> term = product_basis->getTerm(k);
+      MultiIndex<ordinal_type> term = product_basis->term(k);
       for (ordinal_type j=0; j<d; j++) 
         quad_values[cnt][k] *= gv[j][index[j]][term[j]];
     }

@@ -69,7 +69,7 @@ public:
     typedef KokkosArray::CrsArray< unsigned , device > dView ;
     typedef typename dView::HostMirror hView ;
 
-    enum { LENGTH = 1000 };
+    const unsigned LENGTH = 1000 ;
     dView dx ;
     hView hx ;
 
@@ -102,7 +102,7 @@ public:
     typedef KokkosArray::CrsArray< unsigned[3] , device > dView ;
     typedef typename dView::HostMirror hView ;
 
-    enum { LENGTH = 10 };
+    const unsigned LENGTH = 10 ;
 
     std::vector< size_t > sizes( LENGTH );
 

@@ -44,6 +44,7 @@
 #ifndef KOKKOSARRAY_CUDA_SYMMETRICDIAGONALSPEC_HPP
 #define KOKKOSARRAY_CUDA_SYMMETRICDIAGONALSPEC_HPP
 
+#include <stdexcept>
 #include <Cuda/KokkosArray_Cuda_Parallel.hpp>
 
 //----------------------------------------------------------------------------

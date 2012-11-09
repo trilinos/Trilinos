@@ -43,14 +43,8 @@
 #ifndef PANZER_POINT_VALUES_IMPL_HPP
 #define PANZER_POINT_VALUES_IMPL_HPP
 
-#include "Shards_CellTopology.hpp"
-
-#include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_FunctionSpaceTools.hpp"
-#include "Intrepid_RealSpaceTools.hpp"
 #include "Intrepid_CellTools.hpp"
 
-#include "Panzer_ArrayTraits.hpp"
 #include "Panzer_Dimension.hpp"
 
 // ***********************************************************

@@ -57,7 +57,7 @@
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
-  
+
   template <class Scalar, class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
   class MatrixFactory {
 #undef XPETRA_MATRIXFACTORY_SHORT
@@ -66,9 +66,9 @@ namespace Xpetra {
   private:
     //! Private constructor. This is a static class.
     MatrixFactory() {}
-    
+
   public:
-    
+
     //! Constructor specifying the number of non-zeros for all rows.
     static RCP<Matrix> Build(const RCP<const Map> &rowMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile) {
       // if const block size && blocksize == 1
@@ -76,7 +76,7 @@ namespace Xpetra {
       return rcp( new CrsMatrixWrap(rowMap, maxNumEntriesPerRow, pftype) );
 
       // elseif
-      
+
       // return vbr
 
       // else
@@ -103,6 +103,40 @@ namespace Xpetra {
       mtx->fillComplete();
       return mtx;
     }
+
+#ifdef INCLUDE_XPETRA_EXPERIMENTAL
+    static RCP<Matrix> BuildCopy(const RCP<const Matrix> A) {
+        RCP<const CrsMatrixWrap> oldOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(A);
+        if (oldOp == Teuchos::null)
+            throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+
+        RCP<const CrsMatrix> oldCrsOp = oldOp->getCrsMatrix();
+
+#ifdef HAVE_XPETRA_EPETRA
+        RCP<const EpetraCrsMatrix> oldECrsOp = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrix>(oldCrsOp);
+        if (oldECrsOp != Teuchos::null) {
+            // Underlying matrix is Epetra
+            //RCP<const EpetraCrsMatrix> oldECrsOp = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrix>(oldCrsOp);
+            RCP<EpetraCrsMatrix> newECrsOp(new EpetraCrsMatrix(*oldECrsOp));
+            RCP<CrsMatrixWrap> newOp(new CrsMatrixWrap(newECrsOp));
+
+            return newOp;
+        }
+#endif
+
+#ifdef HAVE_XPETRA_TPETRA
+        // Underlying matrix is Tpetra
+        RCP<const TpetraCrsMatrix> oldTCrsOp = Teuchos::rcp_dynamic_cast<const TpetraCrsMatrix>(oldCrsOp);
+        RCP<TpetraCrsMatrix> newTCrsOp(new TpetraCrsMatrix(*oldTCrsOp));
+        RCP<CrsMatrixWrap> newOp(new CrsMatrixWrap(newTCrsOp));
+
+        return newOp;
+#else
+        throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::EpetraCrsMatrix or Xpetra::TpetraCrsMatrix failed");
+        return Teuchos::null;  // make compiler happy
+#endif
+    }
+#endif // ifdef INCLUDE_XPETRA_EXPERIMENTAL
 
   };
 

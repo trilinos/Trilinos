@@ -2568,25 +2568,29 @@ void ML_print_align(int int2match, char *space, int pad)
 /* submatrices, which is why this is a static function.  This should only be */
 /* called by ML_estimate_avg_nz_per_row.                                     */
 /* ************************************************************************* */
-static int ML_estimate_avg_nz_per_row_nosubmatrix(ML_Operator * matrix, int start_row, double * avg_nz) {
+static int ML_estimate_avg_nz_per_row_nosubmatrix(ML_Operator * matrix, int * total_nz, int * total_rows) {
   int N,row,*rowptr, *bindx, *cols;
   double * values;
   int maxrowlen, li,lj,lk;
   struct ML_CSR_MSRdata * ptr;
   int rv=-1;
-  N=matrix->getrow->Nrows - start_row;
+  int first_row=0, last_row=matrix->getrow->Nrows;
+  if(matrix->sub_matrix) first_row=matrix->sub_matrix->getrow->Nrows;
+  N=last_row-first_row;
+  (*total_rows)=N;
+  (*total_nz)=0;
   if(N==0) return 0;
 
   if (matrix->getrow->func_ptr == CSR_getrow){
     /* Case #1: CSR Matrix */
     ptr   = (struct ML_CSR_MSRdata *) matrix->data;
-    (*avg_nz) = ((double)(ptr->rowptr[N]-ptr->rowptr[0])) / N;
+    (*total_nz) = ptr->rowptr[N]-ptr->rowptr[0];
     rv=0;
   }
   else if (matrix->getrow->func_ptr == MSR_getrows) {
     /* Case #2: MSR Matrix */
     ptr   = (struct ML_CSR_MSRdata *) matrix->data;
-    (*avg_nz) = 1.0 + ((double)(ptr->columns[N]-ptr->columns[0])) / N;
+    (*total_nz) = N + ptr->columns[N]-ptr->columns[0];
     rv=0;
   }
 #ifdef ML_WITH_EPETRA
@@ -2594,7 +2598,7 @@ static int ML_estimate_avg_nz_per_row_nosubmatrix(ML_Operator * matrix, int star
     /* Case #3: EpetraCrsMatrix */
     rv=Epetra_ML_GetCrsDataptrs(matrix,&values,&bindx,&rowptr);
     if(rv == 0) 
-      (*avg_nz) = ((double)(rowptr[N]-rowptr[0])) / N;
+      (*total_nz) = N + rowptr[N]-rowptr[0];
   }
 #endif
 
@@ -2610,8 +2614,8 @@ static int ML_estimate_avg_nz_per_row_nosubmatrix(ML_Operator * matrix, int star
     matrix->getrow->func_ptr(matrix, 1, &row, maxrowlen, cols, values, &lj);
     row=N-1;
     matrix->getrow->func_ptr(matrix, 1, &row, maxrowlen, cols, values, &lk);
-    (*avg_nz) = ((double) (li+lj+lk))/3.0;
     
+    (*total_nz)=  (int) (N*(li+lj+lk)/3.0);
     ML_free(cols);
     ML_free(values);
     rv=0;
@@ -2626,34 +2630,32 @@ static int ML_estimate_avg_nz_per_row_nosubmatrix(ML_Operator * matrix, int star
 /* ************************************************************************* */
 int ML_estimate_avg_nz_per_row(ML_Operator * matrix, double * avg_nz) {
   ML_Operator *next;
-  double sub_nz;
-  int rv,last_row=0, sub_rows,total_rows=0;
-  double total_nz=0.0;
+  int sub_nz, sub_rows;
+  int rv,total_rows=0;
+  int total_nz=0;
 
   /* Sanity Check & Get Num Rows*/
   if(!matrix->getrow) { (*avg_nz)=0.0; return -1;}
-
-  if(matrix->sub_matrix) {
-    /* Loop through all the submatrices */
-    next = matrix->sub_matrix;
-    while ( (next != NULL) ) {
-      rv=ML_estimate_avg_nz_per_row_nosubmatrix(next,last_row,&sub_nz);
-      if(rv) {(*avg_nz)=0.0; return rv;}
-      
-      /* Running statistics */
-      total_rows = next->getrow->Nrows;
-      sub_rows   = total_rows-last_row;
-    total_nz  += sub_nz*sub_rows;
+  
+  /* Loop through all the submatrices, if any */
+  next = matrix->sub_matrix;
+  while ( (next != NULL) ) {
+    rv=ML_estimate_avg_nz_per_row_nosubmatrix(next,&sub_nz,&sub_rows);
+    if(rv) {(*avg_nz)=0.0; return rv;}
     
-    next    = next->sub_matrix;
-    }
-    if(total_rows==0) (*avg_nz)=0.0;
-    else (*avg_nz)=total_nz / total_rows;
+    /* Running statistics */
+    total_rows+= sub_rows;
+    total_nz  += sub_nz;    
+    next       = next->sub_matrix;
   }
-  else {
-    /* No submatrices */
-    rv=ML_estimate_avg_nz_per_row_nosubmatrix(matrix,0,avg_nz);   
-  }
+
+  /* Count the parent matrix */
+  rv=ML_estimate_avg_nz_per_row_nosubmatrix(matrix,&sub_nz,&sub_rows);
+  total_rows += sub_rows;
+  total_nz   += sub_nz;    
+
+  if(total_rows==0) (*avg_nz)=0.0;
+  else (*avg_nz)=((double)total_nz) / total_rows;
 
   return 0;
 }

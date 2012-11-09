@@ -1,8 +1,11 @@
 INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
 
-IF (${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_Thrust)
+# RTI examples can't use the GPU, so any HybridPlatform-supported example 
+# must be disabled when GPU is enabled
 
+# this example uses DefaultNode (no GPU), but does use C++11
+IF (${PROJECT_NAME}_ENABLE_CXX11)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     RTIExample
     SOURCES RTIExample
@@ -10,7 +13,6 @@ IF (${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_Thrust)
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
-    DEPLIBS tpetrartitestlib
   )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -19,6 +21,29 @@ IF (${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_Thrust)
     ARGS 
     COMM serial mpi
     NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    RTITutorialOperator
+    SOURCES RTITutorialOperator
+    ARGS 
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+
+ENDIF()
+
+# these use HybridPlatform, so must be disabled when GPU is enabled
+# they also use CXX11
+IF (${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_Thrust)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    RTITutorialSimple
+    SOURCES RTITutorialSimple
+    ARGS 
+    COMM mpi
     STANDARD_PASS_OUTPUT
   )
 

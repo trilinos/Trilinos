@@ -238,7 +238,10 @@ HostInternalHWLOC::HostInternalHWLOC()
 
     const bool bound_proc = node_rank < node_count ;
 
-    HostInternal::m_node_rank  = bound_proc ? node_rank : -1 ;
+    // If master process is not bound, choose NUMA region #0 to bind.
+    // This region will always exist.
+
+    HostInternal::m_node_rank  = bound_proc ? node_rank : 0 ;
     HostInternal::m_node_count = node_count ;
 
     for ( unsigned i = 0 ; i < node_count ; ++i ) {

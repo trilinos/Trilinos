@@ -208,11 +208,11 @@ int main(int argc, char *argv[])
     {
       Teuchos::ParameterList user_data(input_params->sublist("User Data"));
       user_data.set<int>("Workset Size",input_params->sublist("Assembly").get<unsigned long>("Workset Size"));
-  
-      stkIOResponseLibrary->buildVolumeFieldManagersFromResponses(physicsBlocks,
-                                                                  cm_factory,
-                                                                  input_params->sublist("Closure Models"),
-                                                                  user_data);
+    
+      stkIOResponseLibrary->buildResponseEvaluators(physicsBlocks,
+                                        cm_factory,
+                                        input_params->sublist("Closure Models"),
+                                        user_data);
     }
 
     

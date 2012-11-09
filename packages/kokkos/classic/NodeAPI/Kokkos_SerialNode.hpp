@@ -42,7 +42,6 @@
 #ifndef KOKKOS_SERIALNODE_HPP_
 #define KOKKOS_SERIALNODE_HPP_
 
-#include <Teuchos_ParameterList.hpp>
 #include <Kokkos_StandardNodeMemoryModel.hpp>
 #include "Kokkos_NodeHelpers.hpp"
 
@@ -54,7 +53,13 @@ namespace Kokkos {
   class SerialNode : public StandardNodeMemoryModel {
     public:
       /*! \brief Default constructor, accepts a parameter list but reads no parameters. */
-      SerialNode(Teuchos::ParameterList &pl) {}
+      SerialNode(ParameterList &pl) {}
+
+      /*! \brief Get default parameters for this node */
+      static ParameterList getDefaultParameters() {
+        ParameterList params;
+        return params;
+      }
 
       //! \begin parallel for skeleton, with a trivial serial implementation. See \ref kokkos_node_api "Kokkos Node API"
       template <class WDP>
