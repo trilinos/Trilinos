@@ -100,13 +100,14 @@ void Partition::move_to(Entity entity, Partition &dst_partition)
     
     unsigned src_ordinal = entity.m_entityImpl->bucket_ordinal();
     
-    Bucket *dst_bucket = get_bucket_for_adds();
+    Bucket *dst_bucket = dst_partition.get_bucket_for_adds();
     unsigned dst_ordinal = dst_bucket->size();
     
     dst_bucket->replace_fields(dst_ordinal, *src_bucket, src_ordinal);
     remove(entity);
     entity.m_entityImpl->set_bucket_and_ordinal(dst_bucket, dst_ordinal);
     dst_bucket->replace_entity(dst_ordinal, entity) ;
+    dst_bucket->increment_size();
     
     m_repository->internal_propagate_relocation(entity);
 }
@@ -358,14 +359,21 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
             bucket = *begin();
         }
     }
-    else if (bucket->size() == bucket->capacity())
+    else
     {
-        std::vector<unsigned> partition_key = get_legacy_partition_id();
-        partition_key[ partition_key[0] ] = m_buckets.size();
-        bucket = new Bucket( m_repository->m_mesh, m_rank, partition_key,
-                             m_repository->bucket_capacity());
-        bucket->set_first_bucket_in_partition(m_buckets[0]);
-        m_buckets.push_back(bucket);
+        bucket = *begin();
+
+        if (bucket->size() == bucket->capacity())
+        {
+            std::vector<unsigned> partition_key = get_legacy_partition_id();
+            take_bucket_control();
+            partition_key[ partition_key[0] ] = m_buckets.size();
+            bucket = new Bucket( m_repository->m_mesh, m_rank, partition_key,
+                                 m_repository->bucket_capacity());
+            bucket->m_partition = this;
+            bucket->set_first_bucket_in_partition(m_buckets[0]);
+            m_buckets.push_back(bucket);
+        }
     }
     return bucket;
 }
