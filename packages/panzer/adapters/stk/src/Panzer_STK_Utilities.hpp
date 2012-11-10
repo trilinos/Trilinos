@@ -49,8 +49,8 @@
 #include "Epetra_MultiVector.h"
 
 namespace panzer {
-   template <typename LO,typename GO> class UniqueGlobalIndexer;;
-   template <typename LO,typename GO> class DOFManagerFEI;;
+   template <typename LO,typename GO> class UniqueGlobalIndexer;
+   template <typename LO,typename GO> class DOFManagerFEI;
 }
 
 namespace panzer_stk { 
