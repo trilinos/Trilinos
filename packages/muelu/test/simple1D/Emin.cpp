@@ -100,7 +100,8 @@
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuOp()
 
-// #define NEUMANN
+#define NEUMANN
+#define EMIN
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -321,9 +322,9 @@ int main(int argc, char *argv[]) {
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
   RCP<SaPFactory>           SaPFact   = rcp(new SaPFactory());
   RCP<TentativePFactory>    TentPFact = rcp(new TentativePFactory(UCAggFact));
-#if 1
+#ifdef EMIN
   // Energy-minimization
-#if 0
+#if 1
   RCP<PatternFactory>       PatternFact = rcp(new PatternFactory(TentPFact));
 #else
   RCP<PatternFactory>       PatternFact = rcp(new PatternFactory(SaPFact));
@@ -341,7 +342,7 @@ int main(int argc, char *argv[]) {
   myFactManager->SetFactory("A", rcp(new RAPFactory()));
   myFactManager->SetFactory("R", rcp(new TransPFactory()));
 
-#if 1
+#ifdef EMIN
   RCP<NullspacePresmoothFactory> NPFact = rcp(new NullspacePresmoothFactory(rcp(new NullspaceFactory("Nullspace", TentPFact))));
   myFactManager->SetFactory("Nullspace", NPFact);
 #endif
@@ -391,7 +392,7 @@ int main(int argc, char *argv[]) {
     X->norm1(norms);
     size_t numElements = X->getGlobalLength();
     SC alpha = norms[0]/numElements;
-    for (LO i = 0; i < numElements; i++)
+    for (size_t i = 0; i < numElements; i++)
       X->getDataNonConst(0)[i] -= alpha;
 #endif
 
