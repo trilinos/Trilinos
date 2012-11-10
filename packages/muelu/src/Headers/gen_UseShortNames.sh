@@ -45,4 +45,4 @@ done
 echo "#ifdef MUELU_UTILITIES_SHORT" >> MueLu_UseShortNamesScalar.hpp
 echo "typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;" >> MueLu_UseShortNamesScalar.hpp
 echo "typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils2;" >> MueLu_UseShortNamesScalar.hpp
-echo "#endif" >> MueLu_UseShortNamesScalar.hpp 
+echo "#endif" >> MueLu_UseShortNamesScalar.hpp

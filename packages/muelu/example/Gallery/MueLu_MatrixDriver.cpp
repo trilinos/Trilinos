@@ -59,7 +59,7 @@
 #include <Tpetra_CrsMatrix.hpp>
 
 #include <Galeri_XpetraParameters.hpp>
-#include <Galeri_XpetraMatrixFactory.hpp> 
+#include <Galeri_XpetraMatrixFactory.hpp>
 
 /*
   This driver simply generates a Tpetra matrix, prints it to screen, and exits.
@@ -69,7 +69,7 @@
   Use the "--help" option to get verbose help.
 */
 
-int main(int argc, char** argv) 
+int main(int argc, char** argv)
 {
   using Teuchos::RCP;
 
@@ -86,16 +86,16 @@ int main(int argc, char** argv)
   /**********************************************************************************/
   // Note: use --help to list available options.
   Teuchos::CommandLineProcessor clp(false);
-  
+
   Galeri::Xpetra::Parameters<GO> matrixParameters(clp);   // manage parameters of the test case
-  
+
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
   case Teuchos::CommandLineProcessor::PARSE_ERROR:
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
-  
+
   matrixParameters.check();
   std::cout << matrixParameters;
 
@@ -121,4 +121,4 @@ int main(int argc, char** argv)
   A->describe(*out, Teuchos::VERB_EXTREME);
 
   return EXIT_SUCCESS;
-} 
+}

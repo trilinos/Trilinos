@@ -68,7 +68,7 @@ namespace MueLuTests {
 
     AmalgamationFactory amalgFact;
     CoalesceDropFactory dropFact(Teuchos::null, Teuchos::rcpFromRef(amalgFact));
-    
+
     // Setup aggregation factory (use default factory for graph)
     UCAggregationFactory aggFact(Teuchos::rcpFromRef(dropFact));
     aggFact.SetMinNodesPerAggregate(3);
@@ -133,7 +133,7 @@ namespace MueLuTests {
       }
     }
   }
-  
+
   TEUCHOS_UNIT_TEST(Aggregates, JustAggregation)
   {
     out << "version: " << MueLu::Version() << std::endl;
@@ -158,7 +158,7 @@ namespace MueLuTests {
 
       ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs);
       ComputeAggregateSizes(*aggregates, *amalgInfo, aggSizes);
-      
+
       bool foundAggNotSize3=false;
       for (int i=0; i<aggSizes.size(); ++i)
         if (aggSizes[i] != 3) {

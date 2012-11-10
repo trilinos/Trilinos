@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP; using Teuchos::rcp;
   using Teuchos::TimeMonitor;
   //using Galeri::Xpetra::CreateCartesianCoordinates;
-  
+
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
   if (pauseForDebugger) {
     Utils::PauseForDebugger();
   }
-  
+
   matrixParameters.check();
   xpetraParameters.check();
   // TODO: check custom parameters
@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
   RCP<MultiVector> Coordinates;
   {
     TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build"));
-   
+
     map = MapFactory::Build(lib, matrixParameters.GetNumGlobalElements(), 0, comm);
     A = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
 
@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
 #endif
       //#endif // TEUCHOS_LONG_LONG_INT
     } else {
-  
+
         H->SetImplicitTranspose(true);
         Acfact->SetImplicitTranspose(true);
       AcfactFinal = Acfact;
@@ -389,11 +389,11 @@ int main(int argc, char *argv[]) {
 
     if (maxLevels > 1) {
       FactoryManager M;
-      
+
       M.SetFactory("A",AcfactFinal);
       M.SetFactory("Smoother",SmooFact);
       M.SetFactory("Graph", GraphFact);
-      
+
       if (useExplicitR) {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
         M.SetFactory("P",permPFactory);
@@ -408,7 +408,7 @@ int main(int argc, char *argv[]) {
         M.SetFactory("P",SaPfact);
         M.SetFactory("R",Rfact);
       }
-      
+
       int startLevel=0;
       //      std::cout << startLevel << " " << maxLevels << std::endl;
       H->Setup(M,startLevel,maxLevels);
@@ -421,12 +421,12 @@ int main(int argc, char *argv[]) {
 
       H->SetCoarsestSolver(*SmooFact, MueLu::BOTH);
     }
-    
+
   } // end of Setup TimeMonitor
-  
+
   //   *out  << "======================\n Multigrid statistics \n======================" << std::endl;
   //   status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
-  
+
   // Define B
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
   RCP<MultiVector> B = MultiVectorFactory::Build(map,1);
@@ -436,13 +436,13 @@ int main(int argc, char *argv[]) {
   A->apply(*X,*B,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
   B->norm2(norms);
   B->scale(1.0/norms[0]);
-  
+
 #define AMG_SOLVER
 #ifdef AMG_SOLVER
   // Use AMG directly as an iterative method
   if (amgAsSolver) {
     //*out << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
-  
+
     {
       X->putScalar( (SC) 0.0);
 
@@ -506,16 +506,16 @@ int main(int argc, char *argv[]) {
       // Get the number of iterations for this solve.
       if (comm->getRank() == 0)
         std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-    
+
       // Compute actual residuals.
       int numrhs = 1;
       std::vector<double> actual_resids( numrhs ); //TODO: double?
       std::vector<double> rhs_norm( numrhs );
-      RCP<MultiVector> resid = MultiVectorFactory::Build(map, numrhs); 
+      RCP<MultiVector> resid = MultiVectorFactory::Build(map, numrhs);
 
       typedef Belos::OperatorTraits<SC,MV,OP>  OPT;
       typedef Belos::MultiVecTraits<SC,MV>     MVT;
-      
+
       OPT::Apply( *belosOp, *X, *resid );
       MVT::MvAddMv( -1.0, *resid, 1.0, *B, *resid );
       MVT::MvNorm( *resid, actual_resids );
@@ -543,13 +543,13 @@ int main(int argc, char *argv[]) {
     tm = Teuchos::null;
   } //if (amgAsPrecond)
 #endif // HAVE_MUELU_BELOS
- 
+
   // Timer final summaries
   globalTimeMonitor = Teuchos::null; // stop this timer before summary
 
   if (printTimings)
     TimeMonitor::summarize();
-    
+
   return EXIT_SUCCESS;
 }
 

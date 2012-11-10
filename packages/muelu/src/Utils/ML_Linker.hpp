@@ -56,7 +56,7 @@ extern int MueLu_DestroyGraph(MueLu_Graph *graph);
 /* This function should go away soon as we should start executing new MueLu      */
 /* aggregation inside MueLu.
 /**********************************************************************************/
-int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *mlAggregates, 
+int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *mlAggregates,
            ML_Matrix *Amatrix, ML_Matrix **Pmatrix, ML_Comm *comm)
 {
    MueLu_Graph     *graph;
@@ -83,13 +83,13 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *mlAggregates,
 
 //#ifdef out
 Epetra_IntVector Final( aggregates->vertex2AggId->Map() );
-for (int i = 0; i < aggregates->vertex2AggId->Map().NumMyElements(); i++) 
+for (int i = 0; i < aggregates->vertex2AggId->Map().NumMyElements(); i++)
    Final[i] = (*(aggregates->vertex2AggId))[i] + (*(aggregates->procWinner))[i]*1000;
 printf("finals\n");
 cout << Final << endl; sleep(2);
 //#endif
 
-   MueLu_AggregateDestroy(aggregates); 
+   MueLu_AggregateDestroy(aggregates);
    MueLu_DestroyGraph(graph);
    return 0;
 }

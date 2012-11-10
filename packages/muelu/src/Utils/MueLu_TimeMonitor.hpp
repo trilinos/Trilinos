@@ -72,7 +72,7 @@ namespace MueLu {
       SetVerbLevel(object.GetVerbLevel());
       setOStream(object.getOStream());
 
-      if (IsPrint(timerLevel) && 
+      if (IsPrint(timerLevel) &&
           /* disable timer if never printed: */ (IsPrint(RuntimeTimings) || (!IsPrint(NoTimeReport)))) {
 
         if (!IsPrint(NoTimeReport)) {
@@ -93,12 +93,12 @@ namespace MueLu {
 
         // Stop the timer
         timer_->stop();
-        
+
         if (IsPrint(RuntimeTimings)) {
           //FIXME: creates lot of barriers. An option to report time of proc0 only instead would be nice
           //FIXME: MPI_COMM_WORLD only... BTW, it is also the case in Teuchos::TimeMonitor...
           ArrayRCP<double> stats = ReduceMaxMinAvg(timer_->totalElapsedTime(), *Teuchos::DefaultComm<int>::getComm ());
-          
+
           //FIXME: Not very important for now, but timer will be printed even if verboseLevel of Monitor/Object changed
           //       between Monitor constructor and destructor.
           GetOStream(RuntimeTimings, 0) << "Timer: " << " max=" << stats[0] << " min=" << stats[1] << " avg=" << stats[2] << std::endl;
@@ -108,7 +108,7 @@ namespace MueLu {
 
   protected:
     TimeMonitor() { }
-    
+
   private:
     RCP<Teuchos::Time> timer_;
   };
@@ -126,7 +126,7 @@ namespace MueLu {
       SetVerbLevel(object.GetVerbLevel());
       setOStream(object.getOStream());
 
-      if (IsPrint(timerLevel) && 
+      if (IsPrint(timerLevel) &&
           /* disable timer if never printed: */ (IsPrint(RuntimeTimings) || (!IsPrint(NoTimeReport)))) {
 
         if (!IsPrint(NoTimeReport)) {
@@ -145,12 +145,12 @@ namespace MueLu {
 
         // Stop the timer
         timer_->stop();
-        
+
         if (IsPrint(RuntimeTimings)) {
           //FIXME: creates lot of barriers. An option to report time of proc0 only instead would be nice
           //FIXME: MPI_COMM_WORLD only... BTW, it is also the case in Teuchos::TimeMonitor...
 	  //TODO          ArrayRCP<double> stats = ReduceMaxMinAvg(timer_->totalElapsedTime(), *Teuchos::DefaultComm<int>::getComm ());
-          
+
           //FIXME: Not very important for now, but timer will be printed even if verboseLevel of Monitor/Object changed
           //       between Monitor constructor and destructor.
           //TODO GetOStream(RuntimeTimings, 0) << "Timer: " << " max=" << stats[0] << " min=" << stats[1] << " avg=" << stats[2] << std::endl;
@@ -160,11 +160,11 @@ namespace MueLu {
 
   protected:
     MutuallyExclusiveTimeMonitor() { }
-    
+
   private:
     RCP<MutuallyExclusiveTime<TagName> > timer_; // keep a reference on the timer to print stats if RuntimeTimings=ON //TODO:use base class instead
   };
-  
+
 } // namespace MueLu
 
 #endif // MUELU_TIMEMONITOR_HPP

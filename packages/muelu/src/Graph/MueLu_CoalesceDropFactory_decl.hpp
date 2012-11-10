@@ -72,7 +72,7 @@ namespace MueLu {
     @brief Factory for creating a graph base on a given matrix.
 
     Factory for creating graphs from matrices with entries selectively dropped.
-  
+
     - TODO This factory is very incomplete.
     - TODO The Build method simply builds the matrix graph with no dropping.
   */

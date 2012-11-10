@@ -56,11 +56,11 @@
 
 #include <BelosOperatorT.hpp>
 
-namespace Belos { 
+namespace Belos {
   using Teuchos::RCP;
   using Teuchos::rcpFromRef;
 
-  // 
+  //
   //! @name MueLu Adapter Exceptions
   //@{
 
@@ -73,41 +73,41 @@ namespace Belos {
 
   // TODO: doc
   // TODO: should be it named XpetraOp (if Xpetra used by other packages) ?
-  template <class Scalar, 
-            class LocalOrdinal  = int, 
-            class GlobalOrdinal = LocalOrdinal, 
-            class Node          = Kokkos::DefaultNode::DefaultNodeType, 
-            class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > 
-  class XpetraOp : 
+  template <class Scalar,
+            class LocalOrdinal  = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node          = Kokkos::DefaultNode::DefaultNodeType,
+            class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
+  class XpetraOp :
     public OperatorT<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 #ifdef HAVE_XPETRA_TPETRA
     , public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 #endif
-  {  
+  {
 
   public:
-    
+
     //! @name Constructor/Destructor
-    //@{ 
-    
+    //@{
+
     //! Default constructor
     XpetraOp(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & Op) : Op_(Op) {}
-    
+
     //! Destructor.
     virtual ~XpetraOp() {};
     //@}
-    
+
     //! @name Operator application method
-    //@{ 
-    
+    //@{
+
     /*! \brief This routine takes the Xpetra::MultiVector \c x and applies the operator
       to it resulting in the Xpetra::MultiVector \c y, which is returned.
       \note It is expected that any problem with applying this operator to \c x will be
       indicated by an std::exception being thrown.
     */
     void Apply ( const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, XpetraOpFailure, 
-                         "Belos::XpetraOp::Apply, transpose mode != NOTRANS not supported."); 
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, XpetraOpFailure,
+                         "Belos::XpetraOp::Apply, transpose mode != NOTRANS not supported.");
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       y.putScalar(0.0);
@@ -123,8 +123,8 @@ namespace Belos {
       indicated by an std::exception being thrown.
     */
     void Apply ( const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, XpetraOpFailure, 
-                         "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported."); 
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, XpetraOpFailure,
+                         "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported.");
 
 
       Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & temp_x = const_cast<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &>(x);
@@ -140,13 +140,13 @@ namespace Belos {
 #endif
 
   private:
-  
+
     RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Op_;
   };
 
-  template <> 
-  class XpetraOp<double, int, int>   
-    : 
+  template <>
+  class XpetraOp<double, int, int>
+    :
     public OperatorT<Xpetra::MultiVector<double, int, int> >
 #ifdef HAVE_XPETRA_TPETRA
     , public OperatorT<Tpetra::MultiVector<double, int, int> >
@@ -154,7 +154,7 @@ namespace Belos {
 #ifdef HAVE_XPETRA_EPETRA
     , public OperatorT<Epetra_MultiVector>
 #endif
-  {  
+  {
 
     typedef double Scalar;
     typedef int LocalOrdinal;
@@ -165,12 +165,12 @@ namespace Belos {
   public:
 
     XpetraOp(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & Op) : Op_(Op) {}
-    
+
     virtual ~XpetraOp() {};
 
     void Apply ( const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, XpetraOpFailure, 
-                         "Belos::XpetraOp::Apply, transpose mode != NOTRANS not supported."); 
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, XpetraOpFailure,
+                         "Belos::XpetraOp::Apply, transpose mode != NOTRANS not supported.");
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       y.putScalar(0.0);
@@ -180,8 +180,8 @@ namespace Belos {
 
 #ifdef HAVE_XPETRA_TPETRA
     void Apply ( const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, XpetraOpFailure, 
-                         "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported."); 
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, XpetraOpFailure,
+                         "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported.");
 
       Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & temp_x = const_cast<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &>(x);
 
@@ -203,8 +203,8 @@ namespace Belos {
       indicated by an std::exception being thrown.
     */
     void Apply ( const Epetra_MultiVector& x, Epetra_MultiVector& y, ETrans trans=NOTRANS ) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, XpetraOpFailure, 
-                         "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported."); 
+      TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, XpetraOpFailure,
+                         "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported.");
 
       Epetra_MultiVector & temp_x = const_cast<Epetra_MultiVector &>(x);
 
@@ -219,7 +219,7 @@ namespace Belos {
 #endif
 
   private:
-  
+
     RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Op_;
   };
 

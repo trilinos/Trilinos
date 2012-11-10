@@ -119,7 +119,7 @@ namespace MueLuTests {
     l.SetFactoryManager(facManager);
 
     RCP<FactoryBase> factory = rcp(new CoalesceDropFactory());
-    
+
     l.Request("Graph", factory.get());
     TEST_EQUALITY(l.IsRequested("Graph", factory.get()), true);
     TEST_EQUALITY(l.IsAvailable("Graph", factory.get()), false);
@@ -141,7 +141,7 @@ namespace MueLuTests {
 
     RCP<FactoryBase> graphFact = rcp(new CoalesceDropFactory());
     RCP<FactoryBase> aggFact   = rcp(new UCAggregationFactory(graphFact));
-    
+
     l.Request("Aggregates", aggFact.get());
     TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   true);
     TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   false);
@@ -319,13 +319,13 @@ namespace MueLuTests {
 
   // Helper class for unit test 'Level/CircularDependency'
   class CircularFactory : public MueLu::SingleLevelFactoryBase {
-    
+
   public:
-    
+
     CircularFactory(int value) : value_(value) { }
-    
+
     virtual ~CircularFactory() { }
- 
+
     void SetCircularFactory(RCP<FactoryBase> circular) { circular_ = circular; }
 
     void DeclareInput(Level &level) const {
@@ -349,7 +349,7 @@ namespace MueLuTests {
   //  Level must avoid self-recursive calls of Request
   TEUCHOS_UNIT_TEST(Level, CircularDependencyWith1Factory) {
     CircularFactory A(2);
-    
+
     A.SetCircularFactory(rcpFromRef(A));
 
     Level level; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
@@ -366,7 +366,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(Level, CircularDependencyWithTwoFactories) {
     CircularFactory A(2);
     CircularFactory B(3);
-    
+
     A.SetCircularFactory(rcpFromRef(B));
     B.SetCircularFactory(rcpFromRef(A));
 

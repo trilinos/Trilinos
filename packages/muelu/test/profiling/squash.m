@@ -5,7 +5,7 @@ function [newvec,newlabels] = squash(vec,labels,thresh,maxEntries)
   if (exist('maxEntries') ~= 1)
     maxEntries = 10;
   end
-  newleng = length(find(vec>thresh))+1; 
+  newleng = length(find(vec>thresh))+1;
   % limit number of entries in vector (as this is the number of slices in pie chart)
   if newleng > maxEntries, newleng=maxEntries; end
 

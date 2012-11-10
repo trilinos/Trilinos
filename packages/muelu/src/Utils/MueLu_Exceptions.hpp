@@ -52,7 +52,7 @@
 
 namespace MueLu {
   namespace Exceptions {
-    
+
     //! Exception indicating invalid cast attempted
     class BadCast : public Teuchos::ExceptionBase
     {
@@ -67,7 +67,7 @@ namespace MueLu {
     public:
       NotImplemented(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
     };
-      
+
     //! Exception throws to report errors in the internal logical of the program.
     class RuntimeError : public Teuchos::ExceptionBase
     {

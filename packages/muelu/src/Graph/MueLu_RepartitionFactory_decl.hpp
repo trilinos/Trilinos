@@ -49,7 +49,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #ifdef HAVE_MPI
 
-// Some classes are only used in the definition (_def.hpp) of this class 
+// Some classes are only used in the definition (_def.hpp) of this class
 // but forward declarations are needed here to enable the UseShortNames mechanism.
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
@@ -63,7 +63,7 @@
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_RepartitionFactory_fwd.hpp"
- 
+
 namespace MueLu {
 
   /*!
@@ -137,13 +137,13 @@ namespace MueLu {
   void SetStartLevel(int startLevel);
 
   /*! @brief Set imbalance threshold, below which repartitioning is initiatied.
-  
+
   Imbalance is measured by \f$\max_k{N_k} / min_k{N_k}\f$, where \f$N_k\f$ is the number of nonzeros in the local matrix on process \f$k\f$.
   */
   void SetImbalanceThreshold(double threshold);
 
   /*! @brief Set minimum allowable number of rows on any single process, below which repartitioning is initiated.
-      
+
       This option takes precedence over SetMinNnzPerProcessor.
   */
   void SetMinRowsPerProcessor(GO threshold);

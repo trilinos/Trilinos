@@ -76,7 +76,7 @@ namespace MueLu {
     @class FactoryManager class.
     @brief This class specifies the default factory that should generate some data on a Level if the data does not exist and
     the generating factory has not been specified.
-    
+
     Consider the following example.
 
     @code
@@ -95,7 +95,7 @@ namespace MueLu {
   class FactoryManager : public FactoryManagerBase {
 #undef MUELU_FACTORYMANAGER_SHORT
 #include "MueLu_UseShortNames.hpp"
-      
+
   public:
 
     //! @name Constructor/Destructors
@@ -108,7 +108,7 @@ namespace MueLu {
             @param[in] AcFact Factory to generate the coarse grid operator A.
     */
     FactoryManager(const RCP<const FactoryBase> PFact = Teuchos::null, const RCP<const FactoryBase> RFact = Teuchos::null, const RCP<const FactoryBase> AcFact = Teuchos::null);
-    
+
     //! Constructor used by HierarchyFactory (temporary, will be removed)
     FactoryManager(const std::map<std::string, RCP<const FactoryBase> >& factoryTable)
     {
@@ -122,7 +122,7 @@ namespace MueLu {
     //@}
 
     //! @name Get/Set functions.
-    //@{ 
+    //@{
 
     /*! @brief Set Factory
 
@@ -148,7 +148,7 @@ namespace MueLu {
     void Clean() const;
 
   private:
-    
+
     //! @name Helper functions
     //@{
 
@@ -175,7 +175,7 @@ namespace MueLu {
       -# <tt>defaultFactoryTable_</tt> is mutable because default factories are only added to the list when they are requested
       to avoid allocation of unused factories.
     */
-    mutable 
+    mutable
     std::map<std::string, RCP<const FactoryBase> > defaultFactoryTable_;
 
   }; // class

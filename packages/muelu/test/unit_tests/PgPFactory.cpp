@@ -267,12 +267,12 @@ TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
     Level 2
     [...]
     Setup Smoother (MueLu::AmesosSmoother{type = Klu})
-    
+
     p=0: *** Caught an integer std::exception with value = 1
     [FAILED]  (0.106 sec) PgPFactory_NonStandardMaps_UnitTest
     Location: /home/jngaida/dev/MueLu/src/preCopyrightTrilinos/muelu/test/unit_tests/PgPFactory.cpp:216
   */
-  
+
 #warning Unit test PgPFactory NonStandardMaps disabled
   return;
 
@@ -1038,7 +1038,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
       RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
-      
+
       FactoryManager M;
       M.SetFactory("P", Pfact);
       M.SetFactory("R", Rfact);
@@ -1047,7 +1047,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       M.SetFactory("Aggregates", UCAggFact);
       M.SetFactory("Smoother", SmooFact);
       M.SetFactory("CoarseSolver", coarseSolveFact);
-      
+
       H->Setup(M, 0, maxLevels);
 
       // test some basic multigrid data

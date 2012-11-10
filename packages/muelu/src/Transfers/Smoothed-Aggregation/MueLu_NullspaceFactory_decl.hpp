@@ -66,7 +66,7 @@ namespace MueLu {
       the fine level nullspace (Level 0 only). For all other levels it is used
       only to act as "generating factory" for the "Nullspace", which is actually
       handled by the TentativePFactory.
-      
+
       There are two types of constructors:
       \code{.cpp}
       NullspaceFactory(RCP<const FactoryBase> AFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null);
@@ -78,7 +78,7 @@ namespace MueLu {
       level nullspaces. It must not be Teuchos::null but a TentativePFactory.
       \note If there is a "Nullspace" variable stored on the finest level (given by
       the user) this is is preferred to generating the nullspace from A.
-      
+
       \code{.cpp}
       NullspaceFactory(std::string nspName, RCP<const FactoryBase> nullspaceFact = Teuchos::null);
       \endcode

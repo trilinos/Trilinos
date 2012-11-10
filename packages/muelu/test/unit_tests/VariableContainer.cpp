@@ -53,7 +53,7 @@ namespace MueLuTests {
   using MueLu::VariableContainer;
   using MueLu::KeepType;
 
-  TEUCHOS_UNIT_TEST(VariableContainer, Constructor) 
+  TEUCHOS_UNIT_TEST(VariableContainer, Constructor)
   {
     VariableContainer vc;
 
@@ -61,10 +61,10 @@ namespace MueLuTests {
     TEST_EQUALITY(keepFlag, 0);
   }
 
-  TEUCHOS_UNIT_TEST(VariableContainer, AddKeepFlag_RemoveKeepFlag) 
+  TEUCHOS_UNIT_TEST(VariableContainer, AddKeepFlag_RemoveKeepFlag)
   {
     VariableContainer vc;
-    
+
     // Test: default input parameter is UserData
     vc.AddKeepFlag();
     TEST_EQUALITY(vc.GetKeepFlag(), MueLu::UserData);

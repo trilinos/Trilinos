@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  // Note: the command line parameter --linAlgebra= is take into account. 
+  // Note: the command line parameter --linAlgebra= is take into account.
   // Xpetra parameters are added to the Teuchos::CommandLineProcessor of Teuchos::UnitTestRepository in MueLu_TestHelpers.cpp
 
 #ifdef ParallelDebug

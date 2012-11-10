@@ -13,7 +13,7 @@
 // - MV=Tpetra_MultiVector<...>, MV=Tpetra_MultiVector<...>
 //
 // In addition, wrappers around Epetra_MultiVector and Epetra_Operator are provided to turn these Epetra objects to Belos::MultiVec and Belos::Operator and use MV=Belos::MultiVec<...>, OP=Belos::Operator<...> with Epetra.
-// The wrappers are the classes Belos::EpetraMultiVec and Belos::EpetraOp 
+// The wrappers are the classes Belos::EpetraMultiVec and Belos::EpetraOp
 // So when using Epetra, you have the choice to:
 // - use Belos::LinearProblem<double, Belos::Operator<double>, Belos::MultiVec<double>>
 // - or Belos::LinearProblem<double, Epetra_Operator<double>, Epetra_MultiVec<double>>

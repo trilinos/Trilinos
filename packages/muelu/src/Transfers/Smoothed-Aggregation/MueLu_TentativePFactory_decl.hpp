@@ -46,7 +46,7 @@
 #ifndef MUELU_TENTATIVEPFACTORY_DECL_HPP
 #define MUELU_TENTATIVEPFACTORY_DECL_HPP
 
-#include <Teuchos_ScalarTraits.hpp> 
+#include <Teuchos_ScalarTraits.hpp>
 
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
@@ -76,7 +76,7 @@ namespace MueLu {
 
     Factory for creating tentative prolongator.   Nullspace vectors are split across aggregates so that they
     have local support.  The vectors with local support are factored via LAPACK QR.  The Q becomes the
-    tentative prolongator, and the R becomes the coarse nullspace. 
+    tentative prolongator, and the R becomes the coarse nullspace.
 
     @ingroup MueLuTransferClasses
   */
@@ -89,7 +89,7 @@ namespace MueLu {
   public:
     //! @name Constructors/Destructors.
     //@{
-    
+
     /*! @brief Constructor.
       \param aggregatesFact -- (optional) factory that creates aggregates.
       \param amalgFact -- (optional) factory creates (Un)Amalgamation information from matrix A
@@ -97,7 +97,7 @@ namespace MueLu {
       \param AFact -- (optional) factory that creates level matrix A
     */
     TentativePFactory(RCP<const FactoryBase> aggregatesFact = Teuchos::null, RCP<const FactoryBase> amalgFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null, RCP<const FactoryBase> coarseMapFact = Teuchos::null);
-    
+
     //! Destructor.
     virtual ~TentativePFactory();
     //@}
@@ -130,9 +130,9 @@ namespace MueLu {
   private:
     //! @name Static methods.
     //@{
-    
+
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
-    
+
     /*! @brief Make tentative prolongator with QR.
 
     We note that the implementation would have been *much* easier

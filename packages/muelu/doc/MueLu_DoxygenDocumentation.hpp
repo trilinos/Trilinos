@@ -82,7 +82,7 @@ development of new multigrid preconditioning techniques.
 \verbinclude COPYRIGHT_AND_LICENSE
 
 \section muelu_questions For All Questions and Comments...
-  
+
    Please contact Jeremie Gaidamour (jngaida@sandia.gov), Jonathan Hu (jhu@sandia.gov),
    or Ray Tuminaro (rstumin@sandia.gov).
 
@@ -130,7 +130,7 @@ Long Term:
 
 \ref faq2
 
-\section faq1 1. Why name the code MueLu?  
+\section faq1 1. Why name the code MueLu?
 Why not?
 
 \section faq2 2. Put your question here?

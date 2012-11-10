@@ -46,7 +46,7 @@
 
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 // usage: ./driver.exe -f A.dat -rbm rbm.dat -i options.xml
@@ -81,7 +81,7 @@ void ML_Exit(int mypid, int code, const char *fmt, ...);
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
   if (errcode) ML_Exit(mypid,EXIT_FAILURE,"error reading file %s", coordFile);
 
   // ML expects the rigid body modes in a single double vector.
-  
+
   double *rbmPointer=0;
   if (rbmVector) {
     int MyLength = rbmVector->MyLength();
@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
   }
 
   // ML expects coordinates in separate double vectors.
-  
+
   double* mv=0;
   int stride;
   errcode=0;

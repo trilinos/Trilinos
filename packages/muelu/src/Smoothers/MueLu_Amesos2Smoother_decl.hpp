@@ -78,7 +78,7 @@ namespace MueLu {
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class Amesos2Smoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
   {
-#undef MUELU_AMESOS2SMOOTHER_SHORT    
+#undef MUELU_AMESOS2SMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -123,12 +123,12 @@ namespace MueLu {
 
     RCP<SmootherPrototype> Copy() const;
 
-    //! @name Overridden from Teuchos::Describable 
+    //! @name Overridden from Teuchos::Describable
     //@{
-    
+
     //! Return a simple one-line description of this object.
     std::string description() const;
-    
+
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;

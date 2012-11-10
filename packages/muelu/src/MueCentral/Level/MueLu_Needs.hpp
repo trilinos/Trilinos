@@ -60,7 +60,7 @@
 #include "MueLu_NoFactory.hpp"
 
 namespace MueLu {
-  
+
   /*!
     @class Needs
     @brief Class that allows cross-factory communication of data needs.
@@ -107,7 +107,7 @@ namespace MueLu {
     //! @brief functions for setting data in data storage
     //@{
 
-    //      void Set(const Key1 & key1, const Key2 & key2, const Value & entry) 
+    //      void Set(const Key1 & key1, const Key2 & key2, const Value & entry)
 
     //! Store need label and its associated data. This does not increment the storage counter.
     template <class T>
@@ -148,7 +148,7 @@ namespace MueLu {
       const Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
       return Teuchos::getValue<T>(var->GetData());
     }
-    
+
     //! @brief Get data without decrementing associated storage counter (i.e., read-only access)
     // Usage: Level->Get< RCP<Matrix> >("A", factoryPtr)
     template <class T>
@@ -172,7 +172,7 @@ namespace MueLu {
 
     //! See documentation of Level::GetKeepFlag
     KeepType GetKeepFlag(const std::string& ename, const FactoryBase* factory) const;
-    
+
     //@}
 
     //! @name Utilities.

@@ -58,8 +58,8 @@ namespace MueLu {
     ++i;
     return i;
   }
-  
-  /*! 
+
+  /*!
     @class FactoryBase
     @brief Base class for factories (e.g., R, P, and A_coarse).
     @ingroup MueLuBaseClasses

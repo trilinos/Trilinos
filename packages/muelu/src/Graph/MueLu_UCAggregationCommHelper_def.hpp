@@ -57,7 +57,7 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   UCAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UCAggregationCommHelper(const RCP<const Map> & uniqueMap, const RCP<const Map> & nonUniqueMap) {
     import_ = ImportFactory::Build(uniqueMap, nonUniqueMap);
     tempVec_ = VectorFactory::Build(uniqueMap,false); //zeroed out before use
@@ -66,7 +66,7 @@ namespace MueLu {
     myPID_ = uniqueMap->getComm()->getRank();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void UCAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ArbitrateAndCommunicate(Vector &weight_, LOVector &procWinner_, LOVector *companion, const bool perturb) const {
     const RCP<const Map> weightMap = weight_.getMap();
     const size_t nodeNumElements = weightMap->getNodeNumElements();
@@ -123,7 +123,7 @@ namespace MueLu {
             for (int i = 0; i < 10; ++i) ST::random();
             perturbWt_->setSeed(static_cast<unsigned int>(ST::random()));
           }
-          perturbWt_->randomize(); 
+          perturbWt_->randomize();
           ArrayRCP<SC> lperturbWt = perturbWt_->getDataNonConst(0);
           for (size_t i=0; i < nodeNumElements; ++i)
             lperturbWt[i] = 1e-7*fabs(lperturbWt[i]); //FIXME this won't work for general SC
@@ -147,7 +147,7 @@ namespace MueLu {
         }
         //TODO is it necessary to return the *perturbed* weights?
       } //if (perturb)
-  
+
     // Communicate weights and store results in PostComm (which will be copied
     // back into weights later. When multiple processors have different weights
     // for the same GID, we take the largest weight. After this fragment every
@@ -160,7 +160,7 @@ namespace MueLu {
     //note: postComm_ is zeroed either in build above, or in loop below upon last touch.
 
     NonUnique2NonUnique(weight_, *postComm_, Xpetra::ABSMAX);
-   
+
     // Let every processor know who is the procWinner. For nonunique
     // copies of the same Gid, this corresponds to the processor with
     // the highest Wt[]. When several processors have the same positive value
@@ -170,7 +170,7 @@ namespace MueLu {
     // Note:This is accomplished by filling a vector with MyPid+1 if weight[k] is
     //      nonzero and PostComm[k]==weight[k]. NonUnique2NonUnique(...,AbsMax)
     //      is invoked to let everyone know the procWinner.
-    //      One is then subtracted so that procWinner[i] indicates the 
+    //      One is then subtracted so that procWinner[i] indicates the
     //      Pid of the winning processor.
     //      When all weight's for a GID are zero, the associated procWinner's
     //      are left untouched.
@@ -187,16 +187,16 @@ namespace MueLu {
       for (size_t i=0; i < nodeNumElements; ++i) {
         if (postComm[i] == weight[i]) candidateWinners[i] = (SC) MyPid+1;
         else                          candidateWinners[i] = 0;
-        weight[i]=postComm[i]; 
+        weight[i]=postComm[i];
       }
     }
     NonUnique2NonUnique(*candidateWinners_, *postComm_, Xpetra::ABSMAX);
 
-    // Note: 
+    // Note:
     //                      associated CandidateWinners[]
     //    weight[i]!=0  ==> on some proc is equal to its ==> postComm[i]!=0
     //                      MyPid+1.
-    //          
+    //
     int numMyWinners = 0;
     ArrayRCP<LO> procWinner = procWinner_.getDataNonConst(0);
     {
@@ -212,7 +212,7 @@ namespace MueLu {
     weight = Teuchos::null; //TODO why do we do this?
 
     if (companion != NULL) {
-      // Now build a new Map, WinnerMap which just consists of procWinners. 
+      // Now build a new Map, WinnerMap which just consists of procWinners.
       // This is done by extracting the Gids for Wt, and shoving
       // the subset that correspond to procWinners in MyWinners.
       // WinnerMap is then constructed using MyWinners.
@@ -221,7 +221,7 @@ namespace MueLu {
       //   1) Do the local number of entries in MyWinners differ?  If so, regenerate/repopulate MyWinners and regenerate winnerMap_.
       //   2) If the local number of entries in MyWinners are the same, do any entries differ?  If so, repopulate MyWinners and
       //      regenerate winnerMap_.
-   
+
       ArrayView<const GO> myGids = weightMap->getNodeElementList(); //== weightMap->MyGlobalElements(myGids);
       bool realloc=false;
       if (numMyWinners != numMyWinners_ || winnerMap_ == Teuchos::null) {
@@ -298,10 +298,10 @@ namespace MueLu {
         const Xpetra::global_size_t GSTI = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
         winnerMap_ = MapFactory::Build(weightMap->lib(), GSTI, myWinners_(), 0, weightMap->getComm());
       }
-       
+
       // Pull the Winners out of companion
       //     JustWinners <-- companion[Winners];
-   
+
       RCP<LOVector> justWinners = LOVectorFactory::Build(winnerMap_);
 
 #ifdef JG_DEBUG
@@ -378,7 +378,7 @@ namespace MueLu {
       // std::cout << MyPid << ": ERR3: An exception occurred." << std::endl;
 
       std::cout << MyPid << ": numMyWinners=" << numMyWinners << std::endl;
-            
+
       std::cout << MyPid << ": justWinners(Vector in)=" << std::endl;
       justWinners->describe(*out, Teuchos::VERB_EXTREME);
 
@@ -466,10 +466,10 @@ namespace MueLu {
 #endif
   } //ArbitrateAndCommunicate(Vector&, LOVector &, LOVector *, const bool) const
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void UCAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::NonUnique2NonUnique(const Vector &source, Vector &dest, const Xpetra::CombineMode what) const {
     tempVec_->putScalar(0.);
-     
+
     try
       {
         tempVec_->doExport(source, *import_, what);
@@ -482,7 +482,7 @@ namespace MueLu {
         throw e;
       }
   }
-  
+
 }
 
 #endif // MUELU_UCAGGREGATIONCOMMHELPER_DEF_HPP

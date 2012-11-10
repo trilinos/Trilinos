@@ -409,7 +409,7 @@ int main(int argc, char *argv[]) {
   std::vector<size_t> stridingInfo;
   stridingInfo.push_back(2);
   stridingInfo.push_back(1);
-  
+
   /////////////////////////////////////// build strided maps
   // build strided maps:
   // xstridedfullmap: full map (velocity and pressure dof gids), continous
@@ -423,7 +423,7 @@ int main(int argc, char *argv[]) {
   // this is needed for AztecOO
   const Teuchos::RCP<const Epetra_Map> fullmap = Teuchos::rcpFromRef(xstridedfullmap->getEpetra_Map());
   Teuchos::RCP<const Epetra_Map> velmap = Teuchos::rcpFromRef(xstridedvelmap->getEpetra_Map());
-  Teuchos::RCP<const Epetra_Map> premap = Teuchos::rcpFromRef(xstridedpremap->getEpetra_Map()); 
+  Teuchos::RCP<const Epetra_Map> premap = Teuchos::rcpFromRef(xstridedpremap->getEpetra_Map());
 
   /////////////////////////////////////// import problem matrix and RHS from files (-> Epetra)
 
@@ -455,7 +455,7 @@ int main(int argc, char *argv[]) {
     *out << "Problem with splitting matrix"<< std::endl;
 
   /////////////////////////////////////// transform Epetra objects to Xpetra (needed for MueLu)
-    
+
   // build Xpetra objects from Epetra_CrsMatrix objects
   Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA11 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A11));
   Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA12 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A12));
@@ -463,7 +463,7 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA22 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A22));
 
   /////////////////////////////////////// generate MapExtractor object
-  
+
   std::vector<Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > > xmaps;
   xmaps.push_back(xstridedvelmap);
   xmaps.push_back(xstridedpremap);
@@ -495,7 +495,7 @@ int main(int argc, char *argv[]) {
   // by A11Fact and A22Fact
   RCP<SubBlockAFactory> A11Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 0, 0));
   RCP<SubBlockAFactory> A22Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 1, 1));
- 
+
   ///////////////////////////////////////////// define smoother for A11
   // define block smoother for the first block matrix row in BlockGaussSeidel Smoother
   std::string ifpack11Type;
@@ -686,7 +686,7 @@ int main(int argc, char *argv[]) {
 
   H->Setup(M,0,maxLevels);
 
-  
+
   RCP<MultiVector> xLsg = MultiVectorFactory::Build(xstridedfullmap,1);
 
   // Use AMG directly as an iterative method

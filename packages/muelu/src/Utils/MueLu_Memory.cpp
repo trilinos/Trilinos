@@ -57,9 +57,9 @@
 //#define MUELU_USE_MALLINFO
 
 namespace MueLu {
-  
+
   namespace MemUtils {
-    
+
     std::string PrintMemoryUsage() {
 
 
@@ -83,7 +83,7 @@ namespace MueLu {
           mem << s;
           return mem.str();
         }
-      }      
+      }
       return mem.str();
 #endif
 
@@ -109,7 +109,7 @@ namespace MueLu {
           mem << s;
           return mem.str();
         }
-    
+
       }
       return mem.str();
 #endif
@@ -131,7 +131,7 @@ namespace MueLu {
       avgTime = localTime;
 #endif
       avgTime /= Comm.getSize();
-      //std::cout << "(" << Comm.getRank() << ") " << localTime << std::endl; 
+      //std::cout << "(" << Comm.getRank() << ") " << localTime << std::endl;
       if (Comm.getRank()==0) {
         std::cout << "&&&" << timer.name()
                  << " max=" << maxTime << " min=" << minTime << " avg=" << avgTime << std::endl;
@@ -146,5 +146,5 @@ namespace MueLu {
 #endif
 
   } //namespace MemUtils
-  
+
 } //namespace MueLu

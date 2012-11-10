@@ -50,7 +50,7 @@
 #include "MueLu_NoFactory.hpp"
 
 namespace MueLu {
-  
+
   Needs::Needs() { }
 
   Needs::~Needs() { }
@@ -83,7 +83,7 @@ namespace MueLu {
       Teuchos::RCP<MueLu::VariableContainer> newVar = Teuchos::rcp(new MueLu::VariableContainer);
       dataTable_.Set(factory, ename, newVar);
     }
-    
+
     // Set the flag
     Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
     var->AddKeepFlag(keep);
@@ -92,11 +92,11 @@ namespace MueLu {
   void Needs::RemoveKeepFlag(const std::string & ename, const FactoryBase* factory, KeepType keep) {
     // No entry = nothing to do
     if (!dataTable_.IsKey(factory,ename)) return;
-    
+
     // Remove the flag
     Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
     var->RemoveKeepFlag(keep);
-    
+
     // Remove data if no keep flag left and counter == 0
     if ((var->IsRequested() == false) && (var->GetKeepFlag() == 0)) {
       var = Teuchos::null; // free data
@@ -213,7 +213,7 @@ namespace MueLu {
       std::vector<std::string> enames = RequestedKeys(*kt);
       for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); ++it) {
         outputter.outputField(*it);                    // variable name
-        outputter.outputField(*kt);                    // factory ptr          
+        outputter.outputField(*kt);                    // factory ptr
         int reqcount = NumRequests(*it, *kt);          // request counter
         outputter.outputField(reqcount);
         if (GetKeepFlag(*it, *kt) != 0) outputter.outputField("true");

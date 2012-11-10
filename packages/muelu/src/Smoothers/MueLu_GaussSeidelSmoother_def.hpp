@@ -80,7 +80,7 @@ namespace MueLu {
 
     if (InitialGuessIsZero) // TODO: There is no optimization for InitialGuessIsZero = true
       x.putScalar(0.0);
-      
+
     // get matrix diagonal
     RCP<Vector> diag = VectorFactory::Build(A_->getRangeMap());
     A_->getLocalDiagCopy(*diag);

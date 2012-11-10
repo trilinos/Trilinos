@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   Teuchos::CommandLineProcessor clp(false);
-  
+
   Galeri::Xpetra::Parameters<GO> matrixParameters(clp); // manage parameters of the test case
   Xpetra::Parameters xpetraParameters(clp);       // manage parameters of xpetra
 
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
     Teuchos::EVerbosityLevel values[6] = {Teuchos::VERB_DEFAULT, Teuchos::VERB_NONE, Teuchos::VERB_LOW, Teuchos::VERB_MEDIUM, Teuchos::VERB_HIGH, Teuchos::VERB_EXTREME};
     const char* names[6] = {"DEFAULT", "NONE", "LOW", "MEDIUM", "HIGH", "EXTREME"};
     clp.setOption("verbLevel", &verbLevel, 6, values, names, "Verbose level");
-    
+
   }
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
-  
+
   matrixParameters.check();
   xpetraParameters.check();
 
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
   smootherParamList.set("relaxation: type", "symmetric Gauss-Seidel");
   smootherParamList.set("relaxation: sweeps", (LO) 1);
   smootherParamList.set("relaxation: damping factor", (SC) 1.0);
-  
+
   IfpackSmoother ifpackSmoo("point relaxation stand-alone", smootherParamList);
   ifpackSmoo.setObjectLabel("My Ifpack Smoother");
 
@@ -159,17 +159,17 @@ int main(int argc, char *argv[]) {
 
   //ifpackSmoo.describe(*fos, verbLevel);
 
-  std::cout << std::endl << std::endl;  
+  std::cout << std::endl << std::endl;
   ifpackSmoo.Setup(l);
   std::cout << std::endl << std::endl;
-  
+
   //ifpackSmoo.describe(*fos, verbLevel);
   ifpackSmoo.print(*fos, verbLevel);
 
   //
   //
   //
-  
+
   return EXIT_SUCCESS;
 
 }

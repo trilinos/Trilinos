@@ -66,7 +66,7 @@
 #include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
-  
+
   TEUCHOS_UNIT_TEST(MultiVectorTransferFactory, Constructor)
   {
     out << "version: " << MueLu::Version() << std::endl;
@@ -77,7 +77,7 @@ namespace MueLuTests {
   } // Constructor test
 
   //------------------------------------------------------------------------------------------
-  
+
   TEUCHOS_UNIT_TEST(MultiVectorTransferFactory, Build)
   {
     out << "version: " << MueLu::Version() << std::endl;
@@ -108,7 +108,7 @@ namespace MueLuTests {
 
     RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO>("onesVector","R",RFact));
 
-    coarseLevel.Request("onesVector",mvtf.get()); 
+    coarseLevel.Request("onesVector",mvtf.get());
     coarseLevel.Request("R",RFact.get());
     coarseLevel.Request("P",PtentFact.get());
 
@@ -122,7 +122,7 @@ namespace MueLuTests {
   } // Build test
 
   //------------------------------------------------------------------------------------------
-  
+
   TEUCHOS_UNIT_TEST(MultiVectorTransferFactory, ThreeLevels)
   {
     out << "version: " << MueLu::Version() << std::endl;
@@ -184,7 +184,7 @@ namespace MueLuTests {
 
 /*
     //FIXME we probably need to do some requests....
-    coarseLevel.Request("onesVector",mvtf.get()); 
+    coarseLevel.Request("onesVector",mvtf.get());
     coarseLevel.Request("R",RFact.get());
     coarseLevel.Request("P",PtentFact.get());
 */

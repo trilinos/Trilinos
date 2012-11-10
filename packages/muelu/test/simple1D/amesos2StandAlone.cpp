@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
 
   using Tpetra::global_size_t;
   using Teuchos::tuple;
-  
+
   std::ostream &out = std::cout;
   RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(rcpFromRef(out));
 

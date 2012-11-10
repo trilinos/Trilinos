@@ -28,11 +28,11 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetra)
-  
+
   APPEND_SET(HEADERS
     epetra/MueLu_EpetraOperator.hpp
     )
-  
+
   APPEND_SET(SOURCES
     epetra/MueLu_EpetraOperator.cpp
     )
@@ -46,11 +46,11 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/stratimikos/src)
-  
+
   APPEND_SET(HEADERS
     stratimikos/src/Thyra_MueLuPreconditionerFactory.hpp
     )
-  
+
   APPEND_SET(SOURCES
     stratimikos/src/Thyra_MueLuPreconditionerFactory.cpp
     )

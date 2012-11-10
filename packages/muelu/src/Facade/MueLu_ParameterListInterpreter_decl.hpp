@@ -63,7 +63,7 @@ namespace MueLu {
   class ParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> {
 #undef MUELU_PARAMETERLISTINTERPRETER_SHORT
 #include "MueLu_UseShortNames.hpp"
-      
+
   public:
 
     //@{
@@ -76,7 +76,7 @@ namespace MueLu {
 
     //!
     ParameterListInterpreter(const std::string & xmlFileName);
-    
+
     //! Destructor.
     virtual ~ParameterListInterpreter() { }
 

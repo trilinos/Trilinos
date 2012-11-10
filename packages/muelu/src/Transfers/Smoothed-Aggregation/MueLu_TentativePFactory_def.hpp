@@ -76,7 +76,7 @@ namespace MueLu {
 
     //stridedBlockId_ = -1; // default: blocked map with constant blocksize "NSDim"
   }
- 
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~TentativePFactory() {}
 
@@ -503,9 +503,9 @@ namespace MueLu {
     }
 
     Ptentative->fillComplete(coarseMap,fineA.getDomainMap()); //(domain,range) of Ptentative
-    
+
     // if available, use striding information of fine level matrix A for range map and coarseMap as domain map
-    // otherwise use plain range map of Ptent = plain range map of A for range map and coarseMap as domain map. 
+    // otherwise use plain range map of Ptent = plain range map of A for range map and coarseMap as domain map.
     // Note: the latter is not really safe, since there is no striding information for the range map. This is not
     // really a problem, since striding information is always available on the intermedium levels and the coarsest levels.
     if(fineA.IsView("stridedMaps") == true) {

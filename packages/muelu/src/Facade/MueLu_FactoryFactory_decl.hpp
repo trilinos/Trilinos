@@ -115,7 +115,7 @@ namespace MueLu {
       } else {
         paramList = Teuchos::getValue<Teuchos::ParameterList>(param);
         factoryName = paramList.get<std::string>("factory");
-      } 
+      }
 
       // TODO: see how Teko handles this.
       if (factoryName == "AmalgamationFactory") {
@@ -164,7 +164,7 @@ namespace MueLu {
 
       // Use a user defined factories (in <Factories> node)
       if (factoryMapIn.find(factoryName) != factoryMapIn.end()) {
-        TEUCHOS_TEST_FOR_EXCEPTION((param.isList() && (++paramList.begin() != paramList.end())), Exceptions::RuntimeError, 
+        TEUCHOS_TEST_FOR_EXCEPTION((param.isList() && (++paramList.begin() != paramList.end())), Exceptions::RuntimeError,
                                    "MueLu::FactoryFactory: Error during the parsing of: " << std::endl << paramList << std::endl
                                    << "'" << factoryName << "' is not a factory name but an existing instance of a factory." << std::endl
                                    << "Extra parameters cannot be specified after the creation of the object." << std::endl << std::endl
@@ -181,7 +181,7 @@ namespace MueLu {
 
       return Teuchos::null;
     }
-  
+
     //
     //
     //
@@ -194,7 +194,7 @@ namespace MueLu {
 
 #define MUELU_FACTORY_PARAM(name, var)                                  \
     RCP<const FactoryBase> var; if (paramList.isParameter(name)) { var = BuildFactory(paramList.getEntry(name), factoryMapIn); }
-    
+
     //! AmalgamationFactory
     RCP<FactoryBase> BuildAmalgamationFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       MUELU_FACTORY_PARAM("A", AFact);
@@ -218,13 +218,13 @@ namespace MueLu {
       MUELU_FACTORY_PARAM("UnAmalgamationInfo", AmalgFact);
       return rcp(new TentativePFactory(AggFact, AmalgFact, NullspaceFact, AFact));
     }
-    
+
     //! SaPFactory
     RCP<FactoryBase> BuildSaPFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       if (paramList.begin() == paramList.end()) // short-circuit. Use default parameters of constructor
         return rcp(new SaPFactory());
 
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "SaPFactory", Exceptions::RuntimeError, "");      
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "SaPFactory", Exceptions::RuntimeError, "");
       MUELU_FACTORY_PARAM("InitialP", InitialPFact);
       MUELU_FACTORY_PARAM("A", AFact);
 
@@ -253,7 +253,7 @@ namespace MueLu {
 //       if (paramList.begin() == paramList.end()) // short-circuit. Use default parameters of constructor
 //         return rcp(new TransPFactory());
 
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "TransPFactory", Exceptions::RuntimeError, "");      
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "TransPFactory", Exceptions::RuntimeError, "");
       MUELU_FACTORY_PARAM("P", PFact);
 
       return rcp(new TransPFactory(PFact));
@@ -274,7 +274,7 @@ namespace MueLu {
       if (paramList.begin() == paramList.end()) // short-circuit. Use default parameters of constructor
         return rcp(new RAPFactory());
 
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "RAPFactory", Exceptions::RuntimeError, "");      
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "RAPFactory", Exceptions::RuntimeError, "");
       MUELU_FACTORY_PARAM("P", PFact);
       MUELU_FACTORY_PARAM("R", RFact);
       MUELU_FACTORY_PARAM("A", AFact);
@@ -297,7 +297,7 @@ namespace MueLu {
       if (paramList.begin() == paramList.end()) // short-circuit. Use default parameters of constructor
         return rcp(new UCAggregationFactory());
 
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "UCAggregationFactory", Exceptions::RuntimeError, "");      
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "UCAggregationFactory", Exceptions::RuntimeError, "");
       MUELU_FACTORY_PARAM("Graph", GraphFact);
 
       RCP<UCAggregationFactory> f = rcp(new UCAggregationFactory(GraphFact));
@@ -319,7 +319,7 @@ namespace MueLu {
       if(paramList.isParameter("MaxNeighAlreadySelected")) {
         f->SetMaxNeighAlreadySelected(paramList.get<int>("MaxNeighAlreadySelected"));
       }
-      
+
       if(paramList.isParameter("Phase3AggCreation")) {
         f->SetPhase3AggCreation(paramList.get<double>("Phase3AggCreation"));
       }
@@ -357,63 +357,63 @@ namespace MueLu {
 
       return rcp(new SmootherFactory(rcp(new TrilinosSmoother(type, params, overlap))));
     }
-    
+
     RCP<FactoryBase> BuildDirectSolver(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       if (paramList.begin() == paramList.end())
         return rcp(new SmootherFactory(rcp(new DirectSolver())));
-      
+
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "DirectSolver", Exceptions::RuntimeError, "");
 
       std::string type;              if(paramList.isParameter("type"))          type = paramList.get<std::string>("type");
       // std::string verbose;        if(paramList.isParameter("verbose"))       verbose = paramList.get<std::string>("verbose");
       Teuchos::ParameterList params; if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
-      
+
       return rcp(new SmootherFactory(rcp(new DirectSolver(type, params))));
     }
 
     RCP<FactoryBase> BuildMultiVectorTransferFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "MultiVectorTransferFactory", Exceptions::RuntimeError, "");      
-      
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "MultiVectorTransferFactory", Exceptions::RuntimeError, "");
+
       std::string vectorName="";      vectorName = paramList.get<std::string>("vectorName");
       std::string restrictionName=""; restrictionName = paramList.get<std::string>("restrictionName");
       MUELU_FACTORY_PARAM("R", RFact);
-      
+
       return rcp(new MultiVectorTransferFactory(vectorName, restrictionName, RFact));
     }
 
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
     RCP<FactoryBase> BuildZoltanInterface(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "ZoltanInterface", Exceptions::RuntimeError, "");      
-      
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "ZoltanInterface", Exceptions::RuntimeError, "");
+
       MUELU_FACTORY_PARAM("A", AFact);
       MUELU_FACTORY_PARAM("TransferFactory", TransferFactory);
-      
+
       return rcp(new ZoltanInterface(AFact, TransferFactory));
     }
 #endif
 
 #ifdef HAVE_MPI
     RCP<FactoryBase> BuildRepartitionFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "RepartitionFactory", Exceptions::RuntimeError, "");      
-      
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "RepartitionFactory", Exceptions::RuntimeError, "");
+
       MUELU_FACTORY_PARAM("Factory", Factory);
       MUELU_FACTORY_PARAM("A", AFact);
       int minRowsPerProc=2000;     if(paramList.isParameter("minRowsPerProc"))   minRowsPerProc = paramList.get<int>("minRowsPerProc");
       double nonzeroImbalance=1.2; if(paramList.isParameter("nonzeroImbalance")) nonzeroImbalance = paramList.get<double>("nonzeroImbalance");
       int startLevel=1;            if(paramList.isParameter("startLevel"))       startLevel = paramList.get<int>("startLevel");
       int diffusive=0;             if(paramList.isParameter("diffusive"))        diffusive = paramList.get<int>("diffusive");
-      
+
       return rcp(new RepartitionFactory(Factory, AFact, minRowsPerProc, nonzeroImbalance, startLevel, diffusive));
     }
 #endif
 
     RCP<FactoryBase> BuildPermutedTransferFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "PermutedTransferFactory", Exceptions::RuntimeError, "");      
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "PermutedTransferFactory", Exceptions::RuntimeError, "");
 
       MUELU_FACTORY_PARAM("RepartitionFactory", RepartitionFact);
       MUELU_FACTORY_PARAM("A", AFact);
       MUELU_FACTORY_PARAM("P", PFact);
-      
+
       std::string type; type = paramList.get<std::string>("type");
       if (type == "Interpolation") {
         return rcp(new PermutedTransferFactory(RepartitionFact, AFact, PFact, MueLu::INTERPOLATION));

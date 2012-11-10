@@ -111,7 +111,7 @@ namespace MueLu {
     /*! Callback function that returns the local number of objects. Required by Zoltan.
 
     In this case, the number of objects is the number of local rows.
-     
+
     @param data (in) void pointer to an Xpetra::Matrix.
     @param ierr (out) error code.
     */
@@ -144,7 +144,7 @@ namespace MueLu {
 
     TODO -- should I return a view of the coordinates instead of copying them?
     */
-    static void GetProblemGeometry(void *data, int numGIDEntries, int numLIDEntries, int numObjectIDs, 
+    static void GetProblemGeometry(void *data, int numGIDEntries, int numLIDEntries, int numObjectIDs,
                                    ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int dim, double *coordinates, int *ierr);
 
     //@}

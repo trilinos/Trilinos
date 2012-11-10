@@ -121,7 +121,7 @@ namespace MueLu {
       throw(Exceptions::RuntimeError("Epetra (Err. 2)"));
 #endif
     }
-     
+
   } //Transpose
 
   // -- ------------------------------------------------------- --

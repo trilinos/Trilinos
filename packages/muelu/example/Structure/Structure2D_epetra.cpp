@@ -89,7 +89,7 @@
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_CoalesceFactory_def.hpp" // check me
 
-// 
+//
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 

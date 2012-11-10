@@ -58,16 +58,16 @@
 namespace MueLu {
 
   ///////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Aggregates(const Graph & graph) {
     nAggregates_  = 0;
-    
+
     vertex2AggId_ = LOVectorFactory::Build(graph.GetImportMap());
     vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
-    
+
     procWinner_ = LOVectorFactory::Build(graph.GetImportMap());
     procWinner_->putScalar(MUELU_UNASSIGNED);
-    
+
     isRoot_ = Teuchos::ArrayRCP<bool>(graph.GetImportMap()->getNodeNumElements());
     for (size_t i=0; i < graph.GetImportMap()->getNodeNumElements(); i++)
       isRoot_[i] = false;
@@ -116,11 +116,11 @@ namespace MueLu {
     out << "{nGlobalAggregates = " << GetNumGlobalAggregates() << "}";
     return out.str();
   }
-     
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
     MUELU_DESCRIBE;
-      
+
     if (verbLevel & Statistics0) {
       out0 << "Global number of aggregates: " << GetNumGlobalAggregates() << std::endl;
     }

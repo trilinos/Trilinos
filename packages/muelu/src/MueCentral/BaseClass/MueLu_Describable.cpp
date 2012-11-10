@@ -65,15 +65,15 @@ namespace MueLu {
       size_t found = str.find_first_of("<");
       if (found != std::string::npos)
         return str.substr(0, found);
-      
+
       return str;
     }
-    
+
     void Describable::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const { describe(out, toMueLuVerbLevel(verbLevel)); }
 
     std::string Describable::ShortClassName() const {
       std::string str = Teuchos::Describable::description();
-      
+
       // remove template parameters
       {
         size_t found = str.find_first_of("<");

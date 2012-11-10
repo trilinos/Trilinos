@@ -66,26 +66,26 @@ namespace MueLu {
 
     virtual ~FakeSmootherPrototype() {}
 
-    virtual RCP<SmootherPrototype> Copy() const { 
+    virtual RCP<SmootherPrototype> Copy() const {
       TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "Not a prototype. Do not copy"); // test not mandatory, but it is the only use case that we need.
-      return rcp(new FakeSmootherPrototype(*this)); 
+      return rcp(new FakeSmootherPrototype(*this));
     }
 
     void DeclareInput(Level &currentLevel) const { }
 
-    void Setup(Level &) { 
-      numOfSetupCall_++; 
+    void Setup(Level &) {
+      numOfSetupCall_++;
       if (SmootherPrototype::IsSetup()) return;
 
       numOfSetup_++;
 
-      SmootherPrototype::IsSetup(true); 
+      SmootherPrototype::IsSetup(true);
     }
 
-    void Apply(MultiVector &x, MultiVector const &rhs, bool const &InitialGuessIsZero) const { 
+    void Apply(MultiVector &x, MultiVector const &rhs, bool const &InitialGuessIsZero) const {
       TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::NotImplemented, "MueLu::FakeSmootherPrototype()::Apply(): this class is for test purpose only.")
     }
-    
+
     void SetParam(int param) { param_ = param; }
 
     int GetParam() const { return param_; }
@@ -95,7 +95,7 @@ namespace MueLu {
 
   private:
     int param_;
-  
+
     int numOfSetup_;
     int numOfSetupCall_;
   };

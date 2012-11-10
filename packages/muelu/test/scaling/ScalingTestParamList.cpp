@@ -59,7 +59,7 @@
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 
 #include <MueLu_UseDefaultTypes.hpp>
-#include <MueLu_UseShortNames.hpp>  
+#include <MueLu_UseShortNames.hpp>
 
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
   // Parameters
   //
 
-  Teuchos::CommandLineProcessor clp(false); // Note: 
+  Teuchos::CommandLineProcessor clp(false); // Note:
 
   GO nx,ny,nz;
   nx=100;
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
   nullspace->putScalar( (SC) 1.0);
   H->GetLevel(0)->Set("Nullspace", nullspace);
   nullspace=Teuchos::null;
-  
+
   //  H->GetLevel(0)->Set("Coordinates", coordinates);
 
   {
@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
       H->GetLevel(0)->Set("XCoordinates", coordCpy);
       //std::cout << coordCpy << std::endl;
     }
-    
+
     if (coordinates->getNumVectors() >= 2) {
       Teuchos::ArrayRCP<const SC> coord = coordinates->getData(1);
       Teuchos::ArrayRCP<SC> coordCpy(coord.size());
@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
   tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - LHS and RHS initialization")));
   RCP<Vector> X = VectorFactory::Build(map);
   RCP<Vector> B = VectorFactory::Build(map);
-  
+
   {
     X->setSeed(846930886);
     X->randomize();

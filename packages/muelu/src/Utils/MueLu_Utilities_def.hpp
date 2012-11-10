@@ -173,7 +173,7 @@ namespace MueLu {
 
 #ifdef HAVE_MUELU_TPETRA
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps> 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MV2TpetraMV(RCP<MultiVector> const Vec) {
     //rcp<const TpetraMultiVector> tmpVec = rcp_dynamic_cast<TpetraMultiVector>(Vec);
     RCP<const TpetraMultiVector > tmpVec;
@@ -333,7 +333,7 @@ t0 = MPI_Wtime();
     // has no handling for this
     // TODO: move this call to MLMultiply...
     C->CreateView("stridedMaps", A, transposeA, B, transposeB);
-    
+
 #ifdef HAVE_MPI
 t1 += MPI_Wtime() - t0;
 if (mypid == 0)
@@ -547,7 +547,7 @@ if (mypid == 0)
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MatrixPrint(RCP<Matrix> const &Op, std::string const &label) {
-#ifdef HAVE_MUELU_EPETRAEXT 
+#ifdef HAVE_MUELU_EPETRAEXT
     RCP<const Epetra_CrsMatrix> epOp = Op2EpetraCrs(Op);
     int mypid = epOp->RowMap().Comm().MyPID();
     if (mypid == 0)
@@ -708,7 +708,7 @@ if (mypid == 0)
     RES->norm2(norms);
     return norms;
   }
-    
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Residual(Matrix const &Op, MultiVector const &X, MultiVector const &RHS)
@@ -750,7 +750,7 @@ if (mypid == 0)
 #endif // HAVE_MUELU_EPETRAEXT
 
 #ifdef HAVE_MUELU_TPETRA
-    const RCP<const TpetraCrsMatrix> &tmp_TCrsMtx = rcp_dynamic_cast<const TpetraCrsMatrix>(tmp_CrsMtx);    
+    const RCP<const TpetraCrsMatrix> &tmp_TCrsMtx = rcp_dynamic_cast<const TpetraCrsMatrix>(tmp_CrsMtx);
     if (tmp_TCrsMtx != Teuchos::null) {
       RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A = tmp_TCrsMtx->getTpetra_CrsMatrix();
       Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >::writeSparseFile(fileName,A);
@@ -769,9 +769,9 @@ if (mypid == 0)
   void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PauseForDebugger()
   {
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-   
+
     int mypid = comm->getRank();
-   
+
     for (int i = 0; i <comm->getSize(); i++) {
       if (i == mypid ) {
         char buf[80];
@@ -785,7 +785,7 @@ if (mypid == 0)
         sleep(1);
       }
     }
-   
+
     if (mypid == 0) {
       printf( "** Enter a character to continue > "); fflush(stdout);
       char go = ' ';
@@ -815,7 +815,7 @@ if (mypid == 0)
       }
     }
     //AT->fillComplete(A->getRangeMap(),A->getDomainMap());
-      
+
     return AT;
   } //simple_Transpose
 #endif // HAVE_MUELU_TPETRA
@@ -850,7 +850,7 @@ if (mypid == 0)
         //}
       }
     }
-     
+
     return AT;
 
   } //simple_Transpose
@@ -871,10 +871,10 @@ if (mypid == 0)
     RCP<Vector> z = VectorFactory::Build(A.getRangeMap());
     z->setSeed(seed);  // seed random number generator
     z->randomize(true);// use Xpetra implementation: -> same results for Epetra and Tpetra
-      
+
     Teuchos::Array<Magnitude> norms(1);
-  
-    
+
+
     const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
     const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
 
@@ -1097,12 +1097,12 @@ if (mypid == 0)
 #else
       throw(Exceptions::RuntimeError("Tpetra"));
 #endif
-    } 
+    }
 
     //epetra case
     std::cout << "Utilities::Transpose() not implemented for Epetra" << std::endl;
     return Teuchos::null;
-     
+
   } //Transpose
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

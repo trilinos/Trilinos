@@ -63,14 +63,14 @@
 //
 // template <class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType>
 //  class TpetraMultiVector : public virtual Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
-// 
+//
 //  #include <MueLu_UseShortNames.hpp>
 //
 //  myMethod(RCP<const Map> & map) { [...] } // instead of myMethod(RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map)
 //
 //  [...]
 //
-// } 
+// }
 //
 
 #include "MueLu_UseShortNamesOrdinal.hpp"

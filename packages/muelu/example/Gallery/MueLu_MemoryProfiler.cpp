@@ -95,18 +95,18 @@ void PrintMemoryUsage(const std::string& description, const std::string& filenam
 #ifdef HAVE_MUELU_PROC_SELF_STATUS
   std::cout << description << ": " << GetMemoryUsage() << std::endl;
 #endif
-  
+
 #ifdef HAVE_MUELU_GOOGLE_PERFTOOLS
   if (IsHeapProfilerRunning()) {
-    
+
     char* profile = GetHeapProfile();
-    
+
     std::istringstream iss(profile);
     std::string sub;
     iss >> sub; iss >> sub; iss >> sub; // skip 3 first substring
     iss >> sub;
     double MB = atof(sub.c_str()) / (1024*1024);
-    
+
     // print
     if (description != "") {
       std::ostringstream sname; sname.precision(1);
@@ -114,13 +114,13 @@ void PrintMemoryUsage(const std::string& description, const std::string& filenam
       std::cout << sname.str() << std::endl;
     }
 
-    // dump to file    
+    // dump to file
     if (filename != "") {
       std::ofstream out(filename.c_str(), std::ios::out | std::ios::binary);
       if(!out) { std::cout << "Cannot open output file: " << filename << std::endl; return; }
       out.write(profile, strlen(profile));
       out.close();
-    
+
       // dump to file using HeapProfilerDump:
       // HeapProfilerDump(filename.c_str());
     }
@@ -129,5 +129,5 @@ void PrintMemoryUsage(const std::string& description, const std::string& filenam
 
   }
 #endif
-  
+
 }

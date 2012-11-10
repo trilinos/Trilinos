@@ -94,14 +94,14 @@ int main(int argc, char *argv[]) {
 
   int nIts = 9;
 
-  Teuchos::CommandLineProcessor clp(false); // Note: 
+  Teuchos::CommandLineProcessor clp(false); // Note:
 
   Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 256); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);      // manage parameters of xpetra
 
   std::string xmlFileName; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default an hard-coded parameter list.");
   int muelu = true;        clp.setOption("muelu", &muelu,       "use muelu"); //TODO: bool instead of int
-  int ml    = true;       
+  int ml    = true;
 #if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
   clp.setOption("ml",    &ml,          "use ml");
 #endif
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
   //
   // Preconditionner configuration
   //
-  
+
   // ML parameter list
   RCP<Teuchos::ParameterList> params;
   if (xmlFileName != "") {
@@ -143,11 +143,11 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Using hard-coded parameter list:" << std::endl;
     params = rcp(new Teuchos::ParameterList());
-    
+
     params->set("ML output",  10);
     params->set("max levels", 2);
     params->set("smoother: type", "symmetric Gauss-Seidel");
-    
+
     if (xpetraParameters.GetLib() == Xpetra::UseTpetra) // TODO: remove 'if' when Amesos2-KLU becomes available
       params->set("coarse: type","Amesos-Superlu");
     else
@@ -157,34 +157,34 @@ int main(int argc, char *argv[]) {
 
   std::cout << "Initial parameter list" << std::endl;
   std::cout << *params << std::endl;
-    
+
   if (muelu) {
 
     //
     // Construct a multigrid preconditioner
     //
-    
+
     // Multigrid Hierarchy
     MLParameterListInterpreter mueLuFactory(*params);
     RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
     H->GetLevel(0)->Set("A", A);
-    
+
     mueLuFactory.SetupHierarchy(*H);
 
     //
     // Solve Ax = b
     //
-    
+
     RCP<Vector> X = VectorFactory::Build(map);
     RCP<Vector> B = VectorFactory::Build(map);
-    
+
     X->putScalar((Scalar) 0.0);
     B->setSeed(846930886); B->randomize();
-    
+
     // AMG as a standalone solver
     H->IsPreconditioner(false);
     H->Iterate(*B, nIts, *X);
-    
+
     // Print relative residual norm
     ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
     if (comm->getRank() == 0)
@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
 
       // AMG as a preconditioner
 
-      //TODO: name mueluPrec and mlPrec not 
+      //TODO: name mueluPrec and mlPrec not
 
       H->IsPreconditioner(true);
       MueLu::EpetraOperator mueluPrec(H); // Wrap MueLu preconditioner into an Epetra Operator
@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
 
       RCP<Epetra_Vector> eX = rcp(new Epetra_Vector(eA->RowMap()));
       RCP<Epetra_Vector> eB = rcp(new Epetra_Vector(eA->RowMap()));
-    
+
       eX->PutScalar((Scalar) 0.0);
       eB->SetSeed(846930886); eB->Random();
 
@@ -224,11 +224,11 @@ int main(int argc, char *argv[]) {
       solver.SetPrecOperator(&mueluPrec);
       solver.SetAztecOption(AZ_solver, AZ_fixed_pt);
       solver.SetAztecOption(AZ_output, 1);
-    
+
       solver.Iterate(nIts, 1e-10);
 
       { //TODO: simplify this
-        RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX)); 
+        RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX));
         RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(eB));
         // Print relative residual norm
         ST::magnitudeType residualNorms2 = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
@@ -266,16 +266,16 @@ int main(int argc, char *argv[]) {
     }
 
     RCP<ML_Epetra::MultiLevelPreconditioner> mlPrec = rcp(new ML_Epetra::MultiLevelPreconditioner(*eA, *params));
-    
+
 #ifdef HAVE_MUELU_AZTECOO
 
     //
     // Solve Ax = b
     //
-    
+
     RCP<Epetra_Vector> eX = rcp(new Epetra_Vector(eA->RowMap()));
     RCP<Epetra_Vector> eB = rcp(new Epetra_Vector(eA->RowMap()));
-    
+
     eX->PutScalar((Scalar) 0.0);
     eB->SetSeed(846930886); eB->Random();
 
@@ -286,11 +286,11 @@ int main(int argc, char *argv[]) {
     solver.SetPrecOperator(mlPrec.get());
     solver.SetAztecOption(AZ_solver, AZ_fixed_pt);
     solver.SetAztecOption(AZ_output, 1);
-    
+
     solver.Iterate(nIts, 1e-10);
 
     { //TODO: simplify this
-      RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX)); 
+      RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX));
       RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(eB));
       // Print relative residual norm
       ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
@@ -306,7 +306,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Parameter list after ML run" << std::endl;
     const Teuchos::ParameterList & paramsAfterML = mlPrec->GetList();
     std::cout << paramsAfterML << std::endl;
-    
+
   } // if (ml)
 
 

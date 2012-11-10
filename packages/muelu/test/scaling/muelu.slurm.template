@@ -2,7 +2,7 @@
 
 #SBATCH --time=01:00:00            # WALLTIME
 #SBATCH --account=FY115672         # WC ID
-#SBATCH -N _NODES_                 # Number of nodes 
+#SBATCH -N _NODES_                 # Number of nodes
 
 nodes=$SLURM_JOB_NUM_NODES
 cores=_CPN_
