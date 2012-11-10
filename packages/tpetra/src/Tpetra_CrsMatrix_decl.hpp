@@ -176,6 +176,45 @@ namespace Tpetra {
    to globalAssemble() or fillComplete().  This means that CrsMatrix
    provides the same nonlocal insertion functionality that in Epetra
    is provided by Epetra_FECrsMatrix.
+
+   \section Tpetra_DistObject_MultDist Note for developers on DistObject
+  
+   DistObject only takes a single Map as input to its constructor.
+   MultiVector is an example of a subclass for which a single Map
+   suffices to describe its data distribution.  In that case,
+   DistObject's <tt>getMap()</tt> method obviously must return that
+   Map.  CrsMatrix is an example of a subclass that requires two Map
+   objects: a row Map and a column Map.  For CrsMatrix, \c getMap()
+   returns the row Map.  This means that \c doTransfer() (which
+   CrsMatrix does not override) uses the row Map objects of the source
+   and target CrsMatrix objects.  CrsMatrix in turn uses its column
+   Map (if it has one) to "filter" incoming sparse matrix entries
+   whose column indices are not in that process' column Map.  This
+   means that CrsMatrix may perform extra communication, though the
+   Import and Export operations are still correct.
+  
+   This is necessary if the CrsMatrix does not yet have a column Map.
+   Other processes might have added new entries to the matrix; the
+   calling process has to see them in order to accept them.  However,
+   the CrsMatrix may already have a column Map, for example, if it was
+   created with the constructor that takes both a row and a column
+   Map, or if it is fill complete (which creates the column Map if the
+   matrix does not yet have one).  In this case, it could be possible
+   to "filter" on the sender (instead of on the receiver, as CrsMatrix
+   currently does) and avoid sending data corresponding to columns
+   that the receiver does not own.  Doing this would require revising
+   the Import or Export object (instead of the incoming data) using
+   the column Map, to remove global indices and their target process
+   ranks from the send lists if the target process does not own those
+   columns, and to remove global indices and their source process
+   ranks from the receive lists if the calling process does not own
+   those columns.  (Abstractly, this is a kind of set difference
+   between an Import or Export object for the row Maps, and the Import
+   resp. Export object for the column Maps.)  This could be done
+   separate from DistObject, by creating a new "filtered" Import or
+   Export object, that keeps the same source and target Map objects
+   but has a different communication plan.  We have not yet
+   implemented this optimization.
   */
   template <class Scalar,
             class LocalOrdinal  = int,

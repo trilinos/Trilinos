@@ -155,6 +155,19 @@ namespace Tpetra {
   ///
   /// If at least one of the above are not true, then the map is
   /// "locally replicated."  (The two are mutually exclusive.)
+  ///
+  /// Globally distributed objects are partitioned across multiple
+  /// processes in a communicator.  Each process owns at least one
+  /// element in the object's Map that is not owned by another
+  /// process.  For locally replicated objects, each element in the
+  /// object's Map is owned redundantly by all processes in the
+  /// object's communicator.  Some algorithms use objects that are too
+  /// small to be distributed across all processes.  The upper
+  /// Hessenberg matrix in a GMRES iterative solve is a good example.
+  /// In other cases, such as with block iterative methods, block dot
+  /// product functions produce small dense matrices that are required
+  /// by all images.  Replicated local objects handle these
+  /// situations.
   template <class LocalOrdinal,
             class GlobalOrdinal = LocalOrdinal,
             class Node = Kokkos::DefaultNode::DefaultNodeType>
