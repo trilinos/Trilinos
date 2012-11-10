@@ -56,60 +56,106 @@ namespace Tpetra {
   /// \class DistObject 
   /// \brief Base class for distributed Tpetra objects that support data redistribution.
   ///
-  /// \c DistObject is a base class for all Tpetra distributed global
-  /// objects, including \c CrsMatrix and \c MultiVector.  It provides
-  /// the basic mechanisms and interface specifications for importing
-  /// and exporting operations using \c Import and \c Export objects.
+  /// DistObject is a base class for all Tpetra distributed global
+  /// objects, including CrsMatrix and MultiVector.  It provides the
+  /// basic mechanisms and interface specifications for importing and
+  /// exporting operations using Import and Export objects.
   ///
-  /// \tparam LocalOrdinal The type of local IDs.  Same as \c Map's \c
-  ///   LocalOrdinal template parameter.  This should be an integer
+  /// \tparam LocalOrdinal The type of local IDs.  Same as Map's 
+  ///   \c LocalOrdinal template parameter.  This should be an integer
   ///   type, preferably signed.
   ///
-  /// \tparam GlobalOrdinal The type of global IDs.  Same as Map's \c
-  ///   GlobalOrdinal template parameter.  Defaults to the same type
-  ///   as LocalOrdinal.  This should also be an integer type,
+  /// \tparam GlobalOrdinal The type of global IDs.  Same as Map's 
+  ///   \c GlobalOrdinal template parameter.  Defaults to the same type
+  ///   as \c LocalOrdinal.  This should also be an integer type,
   ///   preferably signed.
   ///
   /// \tparam Node Same as Map's \c Node template parameter.  Defaults
   ///   to the default Kokkos Node type.
   ///
-  /// Most Tpetra users will create subclasses of \c DistObject (like
-  /// \c CrsMatrix or \c MultiVector), describe data distribution via
-  /// \c Map instances, create data redistribution plans via \c Import
-  /// or \c Export, and invoke the \c doImport() or \c doExport()
-  /// methods of \c DistObject with an \c Import or \c Export object
-  /// to redistribute data.  Thus, the only methods of \c DistObject
-  /// of interest to most Tpetra users are \c doImport() and \c
-  /// doExport().
+  /// \section Tpetra_DistObject_Summary Summary
   ///
-  /// If you want to implement your own \c DistObject subclass, you
-  /// should start by implementing the four pure virtual methods: \c
-  /// checkSizes(), \c copyAndPermute(), \c packAndPrepare(), and \c
-  /// unpackAndCombine().  The implementation of \c doTransfer()
-  /// includes documentation that explains how \c DistObject uses
+  /// Most Tpetra users will only use this class' methods to perform
+  /// data redistribution for subclasses such as CrsMatrix,
+  /// MultiVector, and Vector.  DistObject provides four methods for
+  /// redistributing data: two versions of <tt>doImport()</tt>, and
+  /// two versions of <tt>doExport()</tt>.  Import operations
+  /// redistribute data from a nonoverlapping (one-to-one)
+  /// distribution to a possibly overlapping distribution.  Export
+  /// operations redistribute data from a possibly overlapping
+  /// distribution to a nonoverlapping (one-to-one) distribution.
+  /// Once you have precomputed a data redistribution plan (an Import
+  /// or Export object), you may use the plan to redistribute an input
+  /// object's data into this object, by calling one of these methods.
+  /// The input object of <tt>doImport()</tt> or <tt>doExport()</tt>
+  /// is always the "source" of the redistribution operation, which
+  /// sends the data.  The <tt>*this</tt> object is the target, which
+  /// receives and combines the data.  It has the distribution given
+  /// by <tt>this->getMap()</tt>.
+  ///
+  /// \section Tpetra_DistObject_FwdRev Forward or reverse redistribution modes
+  ///
+  /// Both Import and Export operations occur in two modes: forward
+  /// and reverse.  Forward mode is the usual case, where you are
+  /// calling a method with its matching plan type
+  /// (<tt>doImport()</tt> for an Import plan, or <tt>doExport()</tt>
+  /// for an Export plan).  In that case, the input DistObject must
+  /// have the same Map as the source Map of the plan, and the target
+  /// DistObject must have the same Map as the target Map of the plan.
+  /// Reverse mode is also possible, where you call a method with the
+  /// opposite plan type (<tt>doImport()</tt> for an Export plan, or
+  /// <tt>doExport()</tt> for an Import plan).  In that case, the
+  /// source DistObject's Map must be the same as the target Map of
+  /// the plan, and the target DistObject's Map must be the same as
+  /// the source Map of the plan.  If you call <tt>doImport()</tt>, we
+  /// still call this an Import operation, even if you are using an
+  /// Export plan in reverse.  Similarly, if you call
+  /// <tt>doExport()</tt>, we call this an Export operation.
+  ///
+  /// Most users will want to use forward mode.  However, reverse mode
+  /// is useful for some applications.  For example, suppose you are
+  /// solving a nonlinear partial differential equation using the
+  /// finite element method, with Newton's method for the nonlinear
+  /// equation.  When assembling into a vector, it is convenient and
+  /// efficient to do local assembly first into a vector with an
+  /// overlapping distribution, then do global assembly via forward
+  /// mode Export into a vector with a nonoverlapping distribution.
+  /// After the linear solve, you may want to bring the resulting
+  /// nonoverlapping distribution vector back to the overlapping
+  /// distribution for another update phase.  This would be a reverse
+  /// mode Import, using the precomputed Export object.  
+  ///
+  /// Another use case for reverse mode is in CrsMatrix, for the
+  /// transpose version of distributed sparse matrix-vector multiply
+  /// ("mat-vec").  Non-transpose mat-vec (a function from the domain
+  /// Map to the range Map) does an Import to bring in the source
+  /// vector's data from the domain Map to the column Map of the
+  /// sparse matrix, and an Export (if necessary) to bring the results
+  /// from the row Map of the sparse matrix to the range Map.
+  /// Transpose mat-vec (a function from the range Map to the domain
+  /// Map) uses these precomputed Import and Export objects in reverse
+  /// mode: first the Export in reverse mode to Import the source
+  /// vector's data to the row Map, and then the Import in reverse
+  /// mode to Export the results to the domain Map.  Reverse mode lets
+  /// us reuse the precomputed data redistribution plans for the
+  /// transpose case.
+  ///
+  /// \section Tpetra_DistObject_ImplSubclass How to implement a subclass
+  ///
+  /// If you want to implement your own DistObject subclass, you
+  /// should start by implementing the four pure virtual methods: 
+  /// \c checkSizes(), \c copyAndPermute(), \c packAndPrepare(), and 
+  /// \c unpackAndCombine().  The implementation of \c doTransfer()
+  /// includes documentation that explains how DistObject uses
   /// those methods to do data redistribution.
   ///
-  /// If you are writing a \c DistObject class that uses Kokkos
-  /// compute buffers and aims to work for any Kokkos Node type, you
-  /// should also implement the three hooks that create and release
-  /// views: \c createViews(), \c createViewsNonConst(), and \c
-  /// releaseViews().  The default implementation of these hooks does
-  /// nothing.  The documentation of these methods explains different
-  /// ways you might choose to implement them.
-  ///
-  /// Distributed Tpetra objects may be either "distributed global" or
-  /// "replicated local."  Distributed global objects are partitioned
-  /// across multiple processes in a communicator.  Each process owns
-  /// at least one element in the object's Map that is not owned by
-  /// another process.  For replicated local objects, each element in
-  /// the object's Map is owned redundantly by all processes in the
-  /// object's communicator.  Some algorithms use objects that are too
-  /// small to be distributed across all processes.  The upper
-  /// Hessenberg matrix in a GMRES iterative solve is a good example.
-  /// In other cases, such as with block iterative methods, block dot
-  /// product functions produce small dense matrices that are required
-  /// by all images.  Replicated local objects handle these
-  /// situations.
+  /// If you are writing a DistObject class that uses Kokkos compute
+  /// buffers and aims to work for any Kokkos Node type, you should
+  /// also implement the three hooks that create and release views: 
+  /// \c createViews(), \c createViewsNonConst(), and \c releaseViews().
+  /// The default implementation of these hooks does nothing.  The
+  /// documentation of these methods explains different ways you might
+  /// choose to implement them.
   template <class Packet, 
             class LocalOrdinal = int, 
             class GlobalOrdinal = LocalOrdinal, 
@@ -132,27 +178,95 @@ namespace Tpetra {
     //! @name Public methods for redistributing data
     //@{ 
 
-    //! Import using an Import object ("forward mode").
+    /// \brief Import data into this object using an Import object ("forward mode").
+    ///
+    /// The input DistObject is always the source of the data
+    /// redistribution operation, and the \c *this object is always
+    /// the target.
+    ///
+    /// If you don't know the difference between forward and reverse
+    /// mode, then you probably want forward mode.  Use this method
+    /// with your precomputed Import object if you want to do an
+    /// Import, else use \c doExport() with a precomputed Export
+    /// object.
+    ///
+    /// \param source [in] The "source" object for redistribution.
+    /// \param importer [in] Precomputed data redistribution plan.
+    ///   Its source Map must be the same as the input DistObject's Map,
+    ///   and its target Map must be the same as <tt>this->getMap()</tt>.
+    /// \param CM [in] How to combine incoming data with the same
+    ///   global index.
     void 
     doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source, 
               const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, 
               CombineMode CM);
 
-    //! Export using an Export object ("forward mode").
+    /// \brief Export data into this object using an Export object ("forward mode").
+    ///
+    /// The input DistObject is always the source of the data
+    /// redistribution operation, and the \c *this object is always
+    /// the target.
+    ///
+    /// If you don't know the difference between forward and reverse
+    /// mode, then you probably want forward mode.  Use this method
+    /// with your precomputed Export object if you want to do an
+    /// Export, else use \c doImport() with a precomputed Import
+    /// object.
+    ///
+    /// \param source [in] The "source" object for redistribution.
+    /// \param exporter [in] Precomputed data redistribution plan.
+    ///   Its source Map must be the same as the input DistObject's Map,
+    ///   and its target Map must be the same as <tt>this->getMap()</tt>.
+    /// \param CM [in] How to combine incoming data with the same
+    ///   global index.
     void 
-    doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &dest, 
+    doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source, 
               const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, 
               CombineMode CM);
 
-    //! Import using an Export object ("reverse mode").
+    /// \brief Import data into this object using an Export object ("reverse mode").
+    ///
+    /// The input DistObject is always the source of the data
+    /// redistribution operation, and the \c *this object is always
+    /// the target.
+    ///
+    /// If you don't know the difference between forward and reverse
+    /// mode, then you probably want forward mode.  Use the version of
+    /// \c doImport() that takes a precomputed Import object in that
+    /// case.
+    ///
+    /// \param source [in] The "source" object for redistribution.
+    /// \param exporter [in] Precomputed data redistribution plan.
+    ///   Its <i>target</i> Map must be the same as the input DistObject's Map,
+    ///   and its <i>source</i> Map must be the same as <tt>this->getMap()</tt>.
+    ///   (Note the difference from forward mode.)
+    /// \param CM [in] How to combine incoming data with the same
+    ///   global index.
     void 
     doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
               const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, 
               CombineMode CM);
 
-    //! Export using an Import object ("reverse mode").
+    /// \brief Export data into this object using an Import object ("reverse mode").
+    ///
+    /// The input DistObject is always the source of the data
+    /// redistribution operation, and the \c *this object is always
+    /// the target.
+    ///
+    /// If you don't know the difference between forward and reverse
+    /// mode, then you probably want forward mode.  Use the version of
+    /// \c doExport() that takes a precomputed Export object in that
+    /// case.
+    ///
+    /// \param source [in] The "source" object for redistribution.
+    /// \param importer [in] Precomputed data redistribution plan.
+    ///   Its <i>target</i> Map must be the same as the input DistObject's Map,
+    ///   and its <i>source</i> Map must be the same as <tt>this->getMap()</tt>.
+    ///   (Note the difference from forward mode.)
+    /// \param CM [in] How to combine incoming data with the same
+    ///   global index.
     void 
-    doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& dest,
+    doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
               const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, 
               CombineMode CM);
 
@@ -167,7 +281,13 @@ namespace Tpetra {
     /// isDistributed() method.
     inline bool isDistributed () const;
 
-    //! The Map with which this DistObject was constructed.
+    /// \brief The Map describing the parallel distribution of this object.
+    ///
+    /// Note that some Tpetra objects might be distributed using
+    /// multiple Map objects.  For example, CrsMatrix has both a row
+    /// Map and a column Map.  It is up to the subclass to decide
+    /// which Map to use when invoking the DistObject constructor.
+    /// (CrsMatrix uses the row Map.)
     inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& 
     getMap() const { return map_; }
 
@@ -180,9 +300,6 @@ namespace Tpetra {
     /// We generally assume that all MPI processes can print to the
     /// given stream.
     void print (std::ostream &os) const;
-
-    //@} 
-
 
     //@}
     //! @name Implementation of \c Teuchos::Describable
