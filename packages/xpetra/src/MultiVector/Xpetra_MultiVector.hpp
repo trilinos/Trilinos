@@ -71,7 +71,7 @@ namespace Xpetra {
   public:
 
     //! @name Constructor/Destructor Methods
-    //@{ 
+    //@{
 
     //! Destructor.
     virtual ~MultiVector() { }
@@ -180,7 +180,7 @@ namespace Xpetra {
 
     //! @name Xpetra specific
     //@{
- 
+
     //! Set seed for Random function.
     virtual void setSeed(unsigned int seed)= 0;
 

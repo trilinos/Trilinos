@@ -61,16 +61,16 @@
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
-  
+
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class CrsGraphFactory {
 
   private:
-    //! Private constructor. This is a static class. 
+    //! Private constructor. This is a static class.
     CrsGraphFactory() {}
-    
+
   public:
-    
+
     //! Constructor specifying the number of non-zeros for all rows.
     static Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
     Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, size_t NumVectors, ProfileType pftype=DynamicProfile) {
@@ -94,13 +94,13 @@ namespace Xpetra {
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
     typedef Kokkos::DefaultNode::DefaultNodeType Node;
-  
+
   private:
-    //! Private constructor. This is a static class. 
+    //! Private constructor. This is a static class.
     CrsGraphFactory() {}
-    
+
   public:
-    
+
     static RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
     Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, size_t NumVectors, ProfileType pftype=DynamicProfile) {
       XPETRA_MONITOR("CrsGraphFactory::Build");

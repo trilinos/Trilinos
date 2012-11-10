@@ -8,7 +8,7 @@ TRIBITS_ADD_EXECUTABLE(
   DEPLIBS xpetra
   )
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra)  
+IF (${PACKAGE_NAME}_ENABLE_Epetra)
 
 	TRIBITS_ADD_TEST(
 	  EditCrsMatrix
@@ -19,7 +19,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
 
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Tpetra)  
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
 
 	TRIBITS_ADD_TEST(
 	  EditCrsMatrix

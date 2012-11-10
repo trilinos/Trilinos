@@ -150,9 +150,9 @@ namespace Xpetra {
     RCP< const Tpetra::Export< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Export() const { return export_; }
 
     //@}
-    
+
   private:
-    
+
     RCP<const Tpetra::Export< LocalOrdinal, GlobalOrdinal, Node > > export_;
 
   }; // TpetraExport class

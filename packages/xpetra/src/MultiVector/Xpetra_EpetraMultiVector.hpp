@@ -53,7 +53,7 @@
 #include "Xpetra_MultiVector.hpp"
 #include "Xpetra_Vector.hpp"
 
-#include "Xpetra_EpetraMap.hpp" 
+#include "Xpetra_EpetraMap.hpp"
 #include "Xpetra_EpetraExport.hpp"
 #include "Xpetra_Utils.hpp"
 #include "Xpetra_EpetraUtils.hpp"
@@ -249,13 +249,13 @@ namespace Xpetra {
       Teuchos::ScalarTraits< Scalar >::seedrandom(seed);
       vec_->SetSeed(seed);
     }
- 
+
     //@}
-    
+
   private:
 
     RCP< Epetra_MultiVector > vec_;
-    
+
   }; // EpetraMultiVector class
 
 } // Xpetra namespace

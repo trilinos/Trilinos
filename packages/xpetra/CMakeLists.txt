@@ -2,7 +2,7 @@ INCLUDE(TribitsPackageMacros)
 INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(CombinedOption)
 INCLUDE(DualScopeSet)
- 
+
 #
 # A) Define the package
 #
@@ -62,4 +62,4 @@ TRIBITS_EXCLUDE_FILES(
 #
 
 TRIBITS_PACKAGE_POSTPROCESS()
- 
+

@@ -30,14 +30,14 @@ $TMPL_PUBLIC_FUNCTIONS
 
     //! Get the underlying Tpetra matrix
     RCP<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_RowMatrix() const { return mtx_; }
-    
+
     //! Get the underlying Tpetra matrix
     RCP<Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_RowMatrixNonConst() const { return mtx_; } //TODO: remove
- 
+
    //@}
-    
+
   private:
-    
+
     RCP< Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > mtx_;
 
   }; // $TMPL_CLASS class

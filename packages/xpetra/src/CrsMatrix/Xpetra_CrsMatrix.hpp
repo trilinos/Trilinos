@@ -66,7 +66,7 @@ namespace Xpetra {
   public:
 
     //! @name Constructor/Destructor Methods
-    //@{ 
+    //@{
 
     //! Destructor.
     virtual ~CrsMatrix() { }
@@ -99,7 +99,7 @@ namespace Xpetra {
     //! @name Transformational Methods
     //@{
 
-    //! 
+    //!
     virtual void resumeFill(const RCP< ParameterList > &params=null)= 0;
 
     //! Signal that data entry is complete, specifying domain and range maps.
@@ -190,7 +190,7 @@ namespace Xpetra {
     //! Returns the Map associated with the domain of this operator. This will be null until fillComplete() is called.
     virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const = 0;
 
-    //! 
+    //!
     virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const = 0;
 
     //@}

@@ -14,7 +14,7 @@ def buildFuncLineTpetra( functionNode ):
     tree = etree.parse(conf_XMLclass)
     root = tree.getroot() # root == <doxygen>
     classNode = root[0]   # classNode == <compounddef>
-    
+
     fullClassName = classNode.xpath('compoundname')[0].text # Tpetra::Map
     baseClassName = fullClassName.lstrip('Tpetra::')        # Map
     className = 'Tpetra'+baseClassName                      # TpetraMap
@@ -24,16 +24,16 @@ def buildFuncLineTpetra( functionNode ):
     name = functionNode.xpath('name')[0].text
     if name == baseClassName: name = className
     if name == '~'+baseClassName: name = '~'+className
-        
+
     # <type> = return type of the function
     type = functionNode.xpath('type')[0].xpath("string()")
-    
+
     # <argsstring>
     argsstring = functionNode.xpath('argsstring')[0].text
 
     # skip deprecated functions
     if 'TPETRA_DEPRECATED' in type: return ''
-    
+
     # hack for Vector:
     # - add missing 'typename'
     # - do not add MultiVector inherited methods
@@ -48,10 +48,10 @@ def buildFuncLineTpetra( functionNode ):
     #  if name == "scale" and "const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A" in argsstring: return ''
 
     #hack for CrsMatrix
-    if name == "getLocalRowCopy" and "const =0" in argsstring: return '' 
+    if name == "getLocalRowCopy" and "const =0" in argsstring: return ''
     if name == "TpetraCrsMatrix" and "const RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &graph" in argsstring: return ''
     if className == "TpetraCrsMatrix" and "const =0" in argsstring: argsstring = argsstring.replace("const =0", "const")
-    
+
     #hack for RowMatrix
     if className == "TpetraRowMatrix" and "const =0" in argsstring: argsstring = argsstring.replace("const =0", "const")
 
@@ -59,7 +59,7 @@ def buildFuncLineTpetra( functionNode ):
     # Simple version
     #        paramList = functionNode.xpath('param/declname/text()')
     #        paramStr  = ', '.join(param for param in paramList)
-    
+
     # More complete version
     paramStr  = ''
     paramNodes = functionNode.xpath('param')
@@ -70,14 +70,14 @@ def buildFuncLineTpetra( functionNode ):
             paramStr += "toTpetra(" + n + ")"
         else:
             paramStr += n
-            
+
         paramStr += ", "
-            
+
     paramStr = paramStr.rstrip(', ')
-                    
+
     # briefdescription
     briefdescription = functionNode.xpath("briefdescription")[0].xpath("string()")
-    
+
     if len(type) > 0:
         declStr = type + " " + name + argsstring
     else:
@@ -85,7 +85,7 @@ def buildFuncLineTpetra( functionNode ):
     declStr = declStr.rstrip()
 
     if name in conf_RemoveRefFunctionList: declStr = declStr.replace('&', '')
-    
+
     descStr = "    //! " + briefdescription.lstrip().rstrip() + "\n"
     defStr  = "    " + declStr
 
@@ -104,12 +104,12 @@ def buildFuncLineTpetra( functionNode ):
         defStr += "\n      " + ": " + conf_memberName + "(Teuchos::rcp(new " + fullClassName + "< "+templateParam+" >"
         defStr += "(" + paramStr + "))) { "
         defStr += " }"
-      
+
     # destructor
     if name == '~'+className:
         defStr += " { "
         defStr += " }"
-        
+
     return descStr + defStr + "\n" + "\n";
 
 ####
@@ -126,25 +126,25 @@ for file in os.listdir(conf_dir):
 #### READ CONFIG ####
         parser = SafeConfigParser()
         parser.read(conf_dir + file)
-        
+
         conf_XMLheaders = xml_dir + parser.get('io', 'XMLheaders')
         conf_XMLclass   = xml_dir + parser.get('io', 'XMLclass')
         conf_template   = tmpl_dir + parser.get('io', 'template')
         conf_output     = parser.get('io', 'output')
-        
+
         conf_SkipFunctionList = set(parser.get('function', 'skip').split(';'))
         conf_RemoveRefFunctionList = set(parser.get('function', 'removeref').split(';'))
         conf_SkipHeaderList = set(parser.get('header', 'skip').split(';'))
         conf_memberName = parser.get('member', 'name')
         conf_TypeWrapped = set(parser.get('type', 'wrapped').split(';'))
 #
-        
+
         template = open(conf_template, 'r').read()
         out = Template(template)
-        
+
         className = buildClassDefinition(conf_XMLclass, 'Tpetra')
         templateParam = buildTemplateParam2(conf_XMLclass)
-        
+
         out = out.substitute(
             TMPL_HEADERS=buildHeader(className, 'tpetra.py'),
             TMPL_INCLUDES=buildInclude(conf_XMLheaders, conf_SkipHeaderList),

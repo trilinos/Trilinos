@@ -46,7 +46,7 @@
 #ifndef XPETRA_CRSMATRIXFACTORY_FWD_HPP
 #define XPETRA_CRSMATRIXFACTORY_FWD_HPP
 
-namespace Xpetra {       
+namespace Xpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class CrsMatrixFactory;
 }

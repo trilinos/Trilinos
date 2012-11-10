@@ -42,12 +42,12 @@ namespace Xpetra {
     using TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::sumIntoLocalValue;    // overloading, not hiding
 
     //! @name Constructor/Destructor Methods
-    //@{ 
+    //@{
 
     //! Sets all vector entries to zero.
     TpetraVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true)
       : TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(map,1,zeroOut) { }
-    
+
     //! Set multi-vector values from an array using Teuchos memory management classes. (copy)
     TpetraVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView< const Scalar > &A)
       : TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(map,A,map->getNodeNumElements(),1) { }
@@ -76,7 +76,7 @@ $TMPL_PUBLIC_FUNCTIONS
     RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Vector() const { return this->TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::getTpetra_MultiVector()->getVectorNonConst(0); }
 
     //@}
-    
+
   }; // TpetraVector class
 
   // TODO: move that elsewhere

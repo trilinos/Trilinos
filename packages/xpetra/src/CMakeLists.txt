@@ -19,13 +19,13 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.hpp)
 
 SET(HEADERS "")
 
-SET(SOURCES 
+SET(SOURCES
   Utils/Xpetra_Utils.cpp
   Utils/Xpetra_EpetraUtils.cpp
   Platform/Xpetra_DefaultPlatform.cpp
   )
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  APPEND_GLOB(SOURCES 
+  APPEND_GLOB(SOURCES
     Map/Xpetra_EpetraMap.cpp
     Import/Xpetra_EpetraImport.cpp
     Export/Xpetra_EpetraExport.cpp

@@ -11,9 +11,9 @@ INCLUDE(TribitsCopyFilesToBinaryDir)
 #     COMM serial mpi
 #     STANDARD_PASS_OUTPUT
 #     )
-  
+
 #   TRIBITS_COPY_FILES_TO_BINARY_DIR(BlockedCrsMatrix_UnitTests_copyfiles
-#     SOURCE_FILES 
+#     SOURCE_FILES
 #       nsjac_test.mm
 #       nslhs_test.mm
 #       nsrhs_test.mm

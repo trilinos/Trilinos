@@ -126,7 +126,7 @@ namespace Xpetra {
     //! @name Transformational Methods
     //@{
 
-    //! 
+    //!
     void resumeFill(const RCP< ParameterList > &params=null);
 
     //! Signal that data entry is complete, specifying domain and range maps.
@@ -226,7 +226,7 @@ namespace Xpetra {
     //! Returns the Map associated with the domain of this operator. This will be null until fillComplete() is called.
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { XPETRA_MONITOR("EpetraCrsMatrix::getDomainMap"); return toXpetra(mtx_->DomainMap()); }
 
-    //! 
+    //!
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { XPETRA_MONITOR("EpetraCrsMatrix::getRangeMap"); return toXpetra(mtx_->RangeMap()); }
 
     //@}
@@ -275,14 +275,14 @@ namespace Xpetra {
 
     //! Get the underlying Epetra matrix
     RCP<const Epetra_CrsMatrix> getEpetra_CrsMatrix() const { return mtx_; }
-    
+
     //! Get the underlying Epetra matrix
     RCP<Epetra_CrsMatrix> getEpetra_CrsMatrixNonConst() const { return mtx_; } //TODO: remove
- 
+
    //@}
-    
+
   private:
-    
+
     RCP<Epetra_CrsMatrix> mtx_;
 
     bool isFillResumed_; //< For Epetra, fillResume() is a fictive operation but we need to keep track of it. This boolean is true only is resumeFill() have been called and fillComplete() have not been called afterward.

@@ -267,7 +267,7 @@ public:
 
       // sum up number of local elements
       size_t numGlobalElements = 0;
-      sumAll(rangemaps_->getFullMap()->getComm(), colmapentries.size(), numGlobalElements) 
+      sumAll(rangemaps_->getFullMap()->getComm(), colmapentries.size(), numGlobalElements)
 
       const Teuchos::ArrayView<const GlobalOrdinal> aView = Teuchos::ArrayView<const GlobalOrdinal>(colmapentries);
       fullcolmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rangemaps_->getFullMap()->lib(), numGlobalElements, aView, 0,rangemaps_->getFullMap()->getComm());

@@ -82,7 +82,7 @@
 #endif
 
 // FINISH: add test for MultiVector with a node containing zero local entries
-// FINISH: add tests for local MultiVectors 
+// FINISH: add tests for local MultiVectors
 
 namespace Teuchos {
   template <>
@@ -241,9 +241,9 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
-  //// 
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, NonMemberConstructors, MV, V, Ordinal, Scalar , Node )
   {
     RCP<Node> node = getNode<Node>();
@@ -270,7 +270,7 @@ namespace {
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
-    
+
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
@@ -304,7 +304,7 @@ namespace {
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -327,7 +327,7 @@ namespace {
     // numlocal > LDA
     // ergo, the arrayview doesn't contain enough data to specify the entries
     // also, if bounds checking is enabled, check that bad bounds are caught
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -340,7 +340,7 @@ namespace {
 #ifdef HAVE_TPETRA_DEBUG
     // too small an ArrayView (less than 4 values) is met with an exception, if debugging is on
     TEST_THROW(MV mvec(map,values(0,3),2,numVecs), std::runtime_error);
-    // it could also be too small for the given LDA: 
+    // it could also be too small for the given LDA:
     TEST_THROW(MV mvec(map,values(),2+1,numVecs), std::runtime_error);
     // too small for number of entries in a Vector
     TEST_THROW(V   vec(map,values(0,1)), std::runtime_error);
@@ -357,8 +357,8 @@ namespace {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     if (ScalarTraits<Scalar>::isOrdinal) return;
-    
-    
+
+
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     const Mag tol = errorTolSlack * errorTolSlack * ScalarTraits<Mag>::eps();   // extra slack on this test; dots() seem to be a little sensitive for single precision types
     const Mag M0  = ScalarTraits<Mag>::zero();
@@ -387,7 +387,7 @@ namespace {
       RCP<const MV> mvSubWeights = mvWeights.subView(inView1);
       mvOrig1.randomize();
       mvOrig2.randomize();
-      // 
+      //
       Array<Mag> nOrig2(numVecs), nOrig1(numVecs), nOrigI(numVecs), nOrigW(numVecs), nOrigW1(numVecs);
       Array<Scalar> meansOrig(numVecs), dotsOrig(numView);
       mvOrig1.norm1(nOrig1());
@@ -509,7 +509,7 @@ namespace {
         //   C = 2*A + 2*B - .5*C ->   C == B, A == 0,            update(alpha,mv,beta,mv,gamma)
         dvC->update(as<Scalar>(2),*dvA, as<Scalar>(2), *dvB, as<Scalar>(-.5));
         //   B = 0.5              ->   B = 0.5, A == 0,           putScalar(alpha)
-        dvB->putScalar( as<Scalar>(0.5) );                
+        dvB->putScalar( as<Scalar>(0.5) );
         //   C.recip(B)           ->   C = 2, B == 0.5, A == 0,   reciprocal(mv)
         dvC->reciprocal(*dvB);
         //   B = C/2              ->   A == 0, B == 1, C == 2
@@ -560,7 +560,7 @@ namespace {
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
-    
+
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -616,7 +616,7 @@ namespace {
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -670,8 +670,8 @@ namespace {
     }
     // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
     {
-      RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node), 
-                                            map2n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node); 
+      RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node),
+                                            map2n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
       RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map2l = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node),
                                             map3l = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node);
       MV mv3nx2(map3n,2),
@@ -698,7 +698,7 @@ namespace {
     RCP<Node> node = getNode<Node>();
     using Teuchos::View;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -706,8 +706,8 @@ namespace {
     const int numImages = comm->getSize();
 #endif
     // create a Map
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node), 
-                                          map2n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node); 
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node),
+                                          map2n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
     RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > lmap3 = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node),
                                           lmap2 = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node);
 #ifdef XPETRA_NOT_IMPLEMENTED
@@ -751,7 +751,7 @@ namespace {
          tmv2x2(lmap2,2),
          tmv3x3(lmap3,3);
       // fill multivectors with random, get copy of contents
-      tmv3x2.randomize();  tmv3x2.get1dCopy(tmvCopy1(),3); 
+      tmv3x2.randomize();  tmv3x2.get1dCopy(tmvCopy1(),3);
       tmv2x3.randomize();  tmv2x3.get1dCopy(tmvCopy2(),2);
       // point SerialDenseMatrices at copies
       SerialDenseMatrix<int,Scalar> sdm3x2(View,tmvCopy1.getRawPtr(),3,3,2);
@@ -804,7 +804,7 @@ namespace {
       ArrayRCP<const Scalar> tmpView;
       Teuchos::Array<Scalar> check(9,3*numImages);
       // test
-      mv2x2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx2,S0); 
+      mv2x2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx2,S0);
       tmpView = mv2x2.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
       mv2x3.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx3,S0);
       tmpView = mv2x3.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
@@ -842,8 +842,8 @@ namespace {
 #ifdef HAVE_XPETRA_TPETRA
     using Teuchos::View;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    
-    
+
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -887,7 +887,7 @@ namespace {
     // constructor takes ArrayView<ArrayView<Scalar> A, NumVectors
     // A.size() == NumVectors
     // A[i].size() >= MyLength
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -916,7 +916,7 @@ namespace {
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
-    
+
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
@@ -960,7 +960,7 @@ namespace {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     //TODO FAILED: const Scalar S0 = ScalarTraits<Scalar>::zero();
     const Mag M0 = ScalarTraits<Mag>::zero();
@@ -988,7 +988,7 @@ namespace {
     std::fill(ans.begin(), ans.end(), M0);
     TEST_COMPARE_FLOATING_ARRAYS(norms1,ans,M0);
     TEST_COMPARE_FLOATING_ARRAYS(norms1,ans,M0);
-    // replace local entries s.t. 
+    // replace local entries s.t.
     // mvec1 = [1 1]  and  mvec2 = [0 0]
     //         [0 0]               [1 1]
     // still numerically orthogonal even in finite arithmetic. norms are numImages.
@@ -1034,7 +1034,7 @@ namespace {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Scalar S0 = ScalarTraits<Scalar>::zero();
     const Mag M0 = ScalarTraits<Mag>::zero();
@@ -1149,8 +1149,8 @@ namespace {
           // ---|-----------|-----------
           //  0 | ArrayView | ArrayView
           //  1 |  Range1D  | ArrayView
-          //  2 | ArrayView |  Range1D 
-          //  3 |  Range1D  |  Range1D 
+          //  2 | ArrayView |  Range1D
+          //  3 |  Range1D  |  Range1D
           //
           // outer grabs 5-9
           // inner grabs 1-3 of those, corresponding to 6-8
@@ -1256,7 +1256,7 @@ namespace {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // TODO const Scalar S0 = ScalarTraits<Scalar>::zero();
     // TODO const Mag M0 = ScalarTraits<Mag>::zero();
@@ -1313,7 +1313,7 @@ namespace {
       // change to A1 or A2 should change A
       // A should be zero after setting A1 to zero and A2 to zero
       for (size_t i=0; i<numVectors; ++i) {
-        TEST_EQUALITY_CONST( A_aft1[i] < A_befr[i] + tol, true ); // shrunk as A1 = 0 
+        TEST_EQUALITY_CONST( A_aft1[i] < A_befr[i] + tol, true ); // shrunk as A1 = 0
         TEST_EQUALITY_CONST( A_aft2[i] < A_aft1[i] + tol, true ); // shurnk as A2 = 0
         TEST_EQUALITY_CONST( A_aft2[i] , M0 );                    // ... to zero
         TEST_EQUALITY_CONST( A1_aft1[i] , M0 );                   // was set to zero
@@ -1412,7 +1412,7 @@ namespace {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Mag M0 = ScalarTraits<Mag>::zero();
     // get a comm and node
@@ -1428,7 +1428,7 @@ namespace {
     //                            = [1 2]
     // values(2,6) = {2, 2, 4, 4} = [2 4]
     //                            = [2 4]
-    // a multivector A constructed from the first 
+    // a multivector A constructed from the first
     // has values .5 of a multivector B constructed from the second
     // then 2*A - B = 0
     // we test both scale(), both update(), and norm()
@@ -1444,9 +1444,9 @@ namespace {
     std::fill(zeros.begin(),zeros.end(),M0);
     //
     //      [.... ....]
-    // A == [ones ones] 
+    // A == [ones ones]
     //      [.... ....]
-    // 
+    //
     //      [.... ....]
     // B == [twos twos]
     //      [.... ....]
@@ -1500,7 +1500,7 @@ namespace {
     if (ScalarTraits<Scalar>::isOrdinal) return;
     Teuchos::ScalarTraits<Scalar>::seedrandom(0);   // consistent seed
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Mag tol = errorTolSlack * ScalarTraits<Mag>::eps();
     const Mag M0 = ScalarTraits<Mag>::zero();
@@ -1635,7 +1635,7 @@ namespace {
     //                      = [1]
     // values(2,2) = {2, 2} = [2]
     //                      = [2]
-    // a vector A constructed from the first 
+    // a vector A constructed from the first
     // has values .5 of a vector B constructed from the second
     // thus 2*A - B = 0
     // we test both scale(), both update(), and norm()
@@ -1651,7 +1651,7 @@ namespace {
     //      [....]
     // A == [ones]
     //      [....]
-    // 
+    //
     //      [....]
     // B == [twos]
     //      [....]
@@ -1707,7 +1707,7 @@ namespace {
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
-    
+
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Mag M0 = ScalarTraits<Mag>::zero();
@@ -1751,7 +1751,7 @@ namespace {
       // create random MV
       MV morig(map,numVectors);
       morig.randomize();
-      // test copy constructor with 
+      // test copy constructor with
       // copy it
       MV mcopy1(morig), mcopy2(morig);
       // verify that all three have identical values
@@ -1861,10 +1861,10 @@ namespace {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     // this documents a usage case in Anasazi::SVQBOrthoManager, which was failing
-    // error turned out to be a neglected return in both implementations of update(), 
+    // error turned out to be a neglected return in both implementations of update(),
     // after passing the buck to scale() in the case of alpha==0 or beta==0 or gamma=0
     if (ScalarTraits<Scalar>::isOrdinal) return;
-    
+
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Magnitude M1  = ScalarTraits<Magnitude>::one();
@@ -1919,7 +1919,7 @@ namespace {
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
-    
+
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Magnitude M0 = ScalarTraits<Magnitude>::zero();
@@ -1963,7 +1963,7 @@ namespace {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     // same as CountDot, but the A,LDA has a non-trivial LDA (i.e., LDA != myLen)
-    
+
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Magnitude M0 = ScalarTraits<Magnitude>::zero();
@@ -2014,7 +2014,7 @@ namespace {
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
-    
+
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const MT M0 = ScalarTraits<MT>::zero();
@@ -2068,7 +2068,7 @@ namespace {
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
-    
+
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const MT M0 = ScalarTraits<MT>::zero();
@@ -2107,7 +2107,7 @@ namespace {
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
-    
+
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const MT M0 = ScalarTraits<MT>::zero();
@@ -2143,7 +2143,7 @@ namespace {
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
-    
+
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Mag tol = errorTolSlack * ScalarTraits<Mag>::eps();
@@ -2182,7 +2182,7 @@ namespace {
 
     for (size_t j=0; j < numVectors; ++j) {
       Mag ww = ScalarTraits<Scalar>::real( ScalarTraits<Scalar>::conjugate(wvec[j]) * wvec[j] );
-      Mag expnorm = ScalarTraits<Mag>::squareroot( 
+      Mag expnorm = ScalarTraits<Mag>::squareroot(
                       ScalarTraits<Scalar>::real(dots[j]) / (as<Mag>(numImages * numLocal) * ww)
                     );
       Mag ww1 = ScalarTraits<Scalar>::real( ScalarTraits<Scalar>::conjugate(w1) * w1 );
@@ -2201,7 +2201,7 @@ namespace {
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
-    
+
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
@@ -2263,7 +2263,7 @@ namespace {
 #endif
   }
 
-// 
+//
 // INSTANTIATIONS
 //
 
@@ -2277,9 +2277,9 @@ typedef std::complex<double> ComplexDouble;
 
 #ifdef HAVE_XPETRA_TPETRA
   //TODO:TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, NonMemberConstructors, MV, V, ORDINAL, SCALAR, NODE )
-  //TODO:TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, NonContigView     , MV, V, ORDINAL, SCALAR, NODE ) 
+  //TODO:TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, NonContigView     , MV, V, ORDINAL, SCALAR, NODE )
   //TODO:TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, Typedefs          , MV, V, ORDINAL, SCALAR, NODE )
-  //      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, BadCombinations   , MV, V, ORDINAL, SCALAR, NODE ) 
+  //      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, BadCombinations   , MV, V, ORDINAL, SCALAR, NODE )
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, basic             , MV, V, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, BadConstNumVecs   , MV, V, ORDINAL, SCALAR, NODE ) \
@@ -2400,13 +2400,13 @@ typedef std::complex<double> ComplexDouble;
 // #if !defined(FAST_DEVELOPMENT_BUILD)
 // # if defined(HAVE_TPETRA_INST_FLOAT)
 //     UNIT_TEST_FLOAT((MMultiVector, MVector, int)
-// # endif 
+// # endif
 // # if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
 //     UNIT_TEST_COMPLEX_FLOAT((MMultiVector, MVector, int)
-// # endif 
+// # endif
 // # if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
 //     UNIT_TEST_COMPLEX_DOUBLE((MMultiVector, MVector, int)
-// # endif 
+// # endif
 // #endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
   // JG TODO: test with different Node type. It will require some work here ...

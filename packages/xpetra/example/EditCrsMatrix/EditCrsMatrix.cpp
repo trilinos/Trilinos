@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
- 
+
   //
   // Parse command line arguments
   //
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
     }
-    
+
     lib = xpetraParameters.GetLib();
   }
 
@@ -108,18 +108,18 @@ int main(int argc, char *argv[]) {
 
   for (size_t i = 0; i < numMyElements; i++) {
      if (myGlobalElements[i] == 0) {
-       A->insertGlobalValues(myGlobalElements[i], 
-                             Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i], myGlobalElements[i] +1), 
+       A->insertGlobalValues(myGlobalElements[i],
+                             Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i], myGlobalElements[i] +1),
                              Teuchos::tuple<Scalar> (2.0, -1.0));
      }
      else if (myGlobalElements[i] == numGlobalElements - 1) {
-       A->insertGlobalValues(myGlobalElements[i], 
-                             Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i]), 
+       A->insertGlobalValues(myGlobalElements[i],
+                             Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i]),
                              Teuchos::tuple<Scalar> (-1.0, 2.0));
      }
      else {
-       A->insertGlobalValues(myGlobalElements[i], 
-                             Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1), 
+       A->insertGlobalValues(myGlobalElements[i],
+                             Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1),
                              Teuchos::tuple<Scalar> (-1.0, 2.0, -1.0));
      }
   }
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
   //
   //
   //
- 
+
   A->fillComplete();
   TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == false || A->isFillActive() == true, std::runtime_error, "");
 
@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
   //
 
   A->describe(*out,Teuchos::VERB_EXTREME);
-  
+
   return EXIT_SUCCESS;
 }
 

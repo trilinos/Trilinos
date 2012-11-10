@@ -87,12 +87,12 @@
 #include <Kokkos_ConfigDefs.hpp>
 
 //! %Xpetra namespace
-namespace Xpetra { 
+namespace Xpetra {
   // Used in all Xpetra code that explicitly must a type (like a loop index)
   // that is used with the Teuchos::Array[View,RCP] classes.
 
   //! Size type for Teuchos Array objects.
-  typedef Teuchos_Ordinal Array_size_type; 
+  typedef Teuchos_Ordinal Array_size_type;
 }
 
 // these make some of the macros in Xpetra_Util.hpp much easier to describe
@@ -151,13 +151,13 @@ namespace Xpetra {
 
 //! Namespace for Xpetra classes and methods
 namespace Xpetra {
-  /** \brief Global size_t object. 
-  
+  /** \brief Global size_t object.
+
   Set at configure time, this type is intended to support scenarios where the global memory allocation is larger than that of a single node.
 
   Currently, it is typedefed to size_t.
   */
-      
+
   typedef size_t global_size_t;
 
   /*! Local versus global allocation of Map elements */
@@ -185,7 +185,7 @@ namespace Xpetra {
   };
 
   /*!  \brief Xpetra::Combine Mode enumerable type */
-  /*! 
+  /*!
     If set to Add, existing values will be summed with new values.
     If set to Insert, new values will be inserted that don't currently exist.
     If set to Replace, existing values will be replaced with new values.
@@ -207,7 +207,7 @@ namespace Xpetra {
     INSERT, /*!< TODO */
     ABSMAX  /*!< TODO: don't exist for Tpetra */
   };
- 
+
   // import Teuchos memory management classes into Xpetra
 #ifndef __CUDACC__
   using Teuchos::ArrayRCP;
