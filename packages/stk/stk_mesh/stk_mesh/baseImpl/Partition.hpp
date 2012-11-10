@@ -19,14 +19,59 @@ class BucketRepository;
 class Partition
 {
     friend class BucketRepository;
+
 public:
+
     Partition(BucketRepository *repo, EntityRank rank);
 
     virtual ~Partition();
 
-    std::ostream &streamit(std::ostream &os) const;
+    ////
+    //// The main part of the interface is Bucket-free.
+    ////
 
+    /// Rank of the entities in this partition.
     const EntityRank get_rank() const { return m_rank; }
+
+    /// Is this partition empty.
+    inline bool empty() const;
+
+    /// Returns the representation used by BucketRepository to identify a bucket,
+    /// including the parts it corresponds to.
+    const std::vector<PartOrdinal> &get_legacy_partition_id() const
+    {
+        return m_extPartitionKey;
+    }
+
+    /// Add an entity to this partition.  The entity must not be a member
+    /// of another partition.
+    bool add(Entity entity);
+
+    /// Move an entity from this partion to a destination partition.
+    void move_to(Entity entity, Partition &dst_partition);
+
+    /// Remove an entity from this partition.
+    bool remove(Entity entity);
+
+    /// Compress this partion into a single bucket of sorted Entities.
+    void compress();
+
+    /// Sort the entities in this partition by EntityKey without changing
+    /// the number or sizes of buckets.
+    void sort();
+    
+    ////
+    //// This part of the interface exposes the Buckets that are currently a part of
+    //// the implementation.
+    ////
+
+    /// Does the given bucket belong to this partition.
+    inline bool belongs(Bucket *bkt) const;
+
+    size_t num_buckets() const
+    {
+        return (m_modifyingBucketSet ? m_buckets.size() : m_endBucketIndex - m_beginBucketIndex);
+    }
 
     inline std::vector<Bucket *>::iterator begin();
     inline std::vector<Bucket *>::iterator end();
@@ -34,26 +79,9 @@ public:
     inline std::vector<Bucket *>::const_iterator begin() const;
     inline std::vector<Bucket *>::const_iterator end() const;
 
-    inline bool empty() const;
-
-    const std::vector<PartOrdinal> &get_legacy_partition_id() const
-    {
-        return m_extPartitionKey;
-    }
-
-    bool add(Entity entity);
-
-    void move_to(Entity entity, Partition &dst_partition);
-
-    bool remove(Entity entity);
-
-    /// Compress this partion into a single bucket of sorted Entities.
-    void compress();
-
-    /// Sort the entities in this partition by EntityKey.
-    void sort();
-    
-    inline bool belongs(Bucket *bkt) const;
+    ////
+    //// The following are used internally and for unit testing.
+    ////
 
     size_t compute_size()
     {
@@ -66,39 +94,47 @@ public:
         return partition_size;
     }
 
-    bool modify_bucket_set() const { return m_modifyBucketSet; }
-
-    size_t num_buckets() const
-    {
-        return (m_modifyBucketSet ? m_buckets.size() : m_endBucketIndex - m_beginBucketIndex);
-    }
+    // Enables sidestepping compiler fussiness wrt overloaded operator<<(..).
+    std::ostream &streamit(std::ostream &os) const;
 
     // Just for unit testing.  Remove after refactor.
     static BucketRepository &getRepository(stk::mesh::BulkData &mesh);
 
-    // Just for unit testing.  DOES NOT SYNC DATA.
+    // Just for unit testing. DOES NOT SYNC DATA.  Within each bucket locally reverse
+    // the order of the entities.
     void reverseEntityOrderWithinBuckets();
 
 private:
 
     BucketRepository *m_repository;
+
     EntityRank m_rank;
 
+    // Identifies the partition, borrowing the representation from BucketRepository.
     std::vector<PartOrdinal> m_extPartitionKey;
 
+    // Used if the set of buckets (not just bucket contents) are being modified.
     std::vector<Bucket *> m_buckets;
 
+    // Used when the vector of Bucket * in the BucketRepository is the representation
+    // being used.
     unsigned m_beginBucketIndex;
     unsigned m_endBucketIndex;
 
     // Flag that the set of buckets, and not just their contents, is being modified.
-    bool m_modifyBucketSet;
+    bool m_modifyingBucketSet;
 
+    // The partition has no buckets, not even an empty one left after removing all its
+    // entities.
     bool no_buckets() const;
 
-    // Take the buckets from the repository.
+    bool modifying_bucket_set() const { return m_modifyingBucketSet; }
+
+    // Take control of this partition's buckets away from the BucketRepository.
     bool take_bucket_control();
 
+    // Make sure that the last bucket has room for an entity to be added to it, adding
+    // an empty bucket if necessary.
     Bucket *get_bucket_for_adds();
 
 };

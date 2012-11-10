@@ -47,14 +47,14 @@ Partition::Partition(BucketRepository *repo, EntityRank rank)
     , m_rank(rank)
     , m_beginBucketIndex(0)
     , m_endBucketIndex(0)
-    , m_modifyBucketSet(false)
+    , m_modifyingBucketSet(false)
 {
     // Nada.
 }
 
 Partition::~Partition()
 {
-    if (m_modifyBucketSet)
+    if (m_modifyingBucketSet)
     {
         size_t num_bkts = m_buckets.size();
         for (size_t i = 0; i < num_bkts; ++i)
@@ -76,10 +76,13 @@ bool Partition::add(Entity entity)
 {
     if (entity.bucket_ptr())
     {
+        // If an entity already belongs to a partition, it cannot be added to one.
         return false;
     }
 
+    // If the last bucket is full, automatically create a new one.
     Bucket *bucket = get_bucket_for_adds();
+
     unsigned dst_ordinal = bucket->size();
     bucket->initialize_fields(dst_ordinal);
     bucket->replace_entity(dst_ordinal, entity);
@@ -98,13 +101,19 @@ void Partition::move_to(Entity entity, Partition &dst_partition)
     if (src_bucket && (src_bucket->getPartition() == &dst_partition))
         return;
     
+    ThrowRequireMsg(src_bucket && (src_bucket->getPartition() == this),
+                    "Partition::move_to  cannot move an entity that does not belong to it.");
+
     unsigned src_ordinal = entity.m_entityImpl->bucket_ordinal();
     
+    // If the last bucket is full, automatically create a new one.
     Bucket *dst_bucket = dst_partition.get_bucket_for_adds();
-    unsigned dst_ordinal = dst_bucket->size();
     
+    // Move the entity's data to the new bucket before removing the entity from its old bucket.
+    unsigned dst_ordinal = dst_bucket->size();
     dst_bucket->replace_fields(dst_ordinal, *src_bucket, src_ordinal);
     remove(entity);
+
     entity.m_entityImpl->set_bucket_and_ordinal(dst_bucket, dst_ordinal);
     dst_bucket->replace_entity(dst_ordinal, entity) ;
     dst_bucket->increment_size();
@@ -142,6 +151,8 @@ bool Partition::remove(Entity e_k)
 
     if ( 0 == last->size() )
     {
+        // If the last bucket is now empty, expect to delete it, which changes the
+        // set of buckets from what the repository had.
         take_bucket_control();
 
         size_t num_buckets = m_buckets.size();
@@ -150,6 +161,8 @@ bool Partition::remove(Entity e_k)
             Bucket *new_last = *(m_buckets.end() - 2);
             m_buckets[0]->set_last_bucket_in_partition(new_last);
 
+            // If there is only one bucket, keep it in case entities will get added to this partition
+            // before the end of the current modification cycle.
             if (num_buckets > 2)
             {
                 delete m_buckets.back();
@@ -175,6 +188,8 @@ void Partition::compress()
     size_t partition_size = compute_size();
     std::vector<Entity> entities(partition_size);
 
+    // Copy the entities (but not their data) into a vector, where they will be sorted.
+    //
     std::vector<Bucket *>::iterator buckets_begin, buckets_end;
     buckets_begin = begin();
     buckets_end = end();
@@ -189,6 +204,9 @@ void Partition::compress()
 
     std::sort( entities.begin(), entities.end(), EntityLess() );
 
+    // Now that the entities hav been sorted, we copy them and their field data into a
+    // single bucket in sorted order.
+    //
     Bucket * new_bucket = new Bucket( m_repository->m_mesh, m_rank, partition_key, partition_size);
     new_bucket->set_first_bucket_in_partition(new_bucket); // partition members point to first bucket
     new_bucket->m_partition = this;
@@ -206,7 +224,7 @@ void Partition::compress()
     }
     new_bucket->m_size = partition_size;
 
-    if (m_modifyBucketSet)
+    if (m_modifyingBucketSet)
     {
         for (std::vector<Bucket *>::iterator b_i = buckets_begin; b_i != buckets_end; ++b_i)
         {
@@ -215,6 +233,8 @@ void Partition::compress()
     }
     else
     {
+        // If we were not modifying the bucket set, then we need to set the corresponding pointers
+        // on the repository to NULL in addition to deleting the buckets.
         std::vector<Bucket *> &repo_buckets = m_repository->m_buckets[m_rank];
         for (size_t ik = m_beginBucketIndex; ik < m_endBucketIndex; ++ik)
         {
@@ -224,7 +244,7 @@ void Partition::compress()
     }
     m_buckets.resize(1);
     m_buckets[0] = new_bucket;
-    m_modifyBucketSet = true;
+    m_modifyingBucketSet = true;
 }
 
 
@@ -245,16 +265,21 @@ void Partition::sort()
     buckets_end = end();
 
     // Make sure that there is a vacancy somewhere.
+    //
     stk::mesh::Bucket *vacancy_bucket = *(buckets_end - 1);
     size_t vacancy_ordinal = vacancy_bucket->size();
     stk::mesh::Bucket *tmp_bucket = 0;
+
     if (vacancy_ordinal >= vacancy_bucket->capacity())
     {
+        // If we need a temporary bucket, it only needs to hold one entity and
+        // the corresponding field data.
         tmp_bucket = new Bucket(m_repository->m_mesh, m_rank, partition_key, 1);
         vacancy_bucket = tmp_bucket;
         vacancy_ordinal = 0;
     }
 
+    // Copy all the entities in the Partition into a vector for sorting.
     size_t new_i = 0;
     for (std::vector<Bucket *>::iterator b_i = begin(); b_i != buckets_end; ++b_i)
     {
@@ -318,7 +343,7 @@ void Partition::sort()
 
 bool Partition::take_bucket_control()
 {
-    if (m_modifyBucketSet)
+    if (m_modifyingBucketSet)
         return false;
 
     if (m_beginBucketIndex == m_endBucketIndex)
@@ -335,48 +360,49 @@ bool Partition::take_bucket_control()
             *ob_i = 0;
         }
     }
-    m_modifyBucketSet = true;
+    m_modifyingBucketSet = true;
     return true;
 }
 
 
 stk::mesh::Bucket *Partition::get_bucket_for_adds()
 {
-    Bucket *bucket = 0;
+    if (no_buckets())
+    {
+        take_bucket_control();
+
+        std::vector<unsigned> partition_key = get_legacy_partition_id();
+        partition_key[ partition_key[0] ] = 0;
+        Bucket *bucket = new Bucket( m_repository->m_mesh, m_rank, partition_key,
+                             m_repository->bucket_capacity());
+        bucket->m_partition = this;
+        bucket->set_last_bucket_in_partition(bucket);
+        m_buckets.push_back(bucket);
+
+        return bucket;
+    }
+
     if (empty())
     {
-        if (no_buckets())
-        {
-            std::vector<unsigned> partition_key = get_legacy_partition_id();
-            partition_key[ partition_key[0] ] = 0;
-            take_bucket_control();
-            bucket = new Bucket( m_repository->m_mesh, m_rank, partition_key,
-                                 m_repository->bucket_capacity());
-            bucket->m_partition = this;
-            bucket->set_last_bucket_in_partition(bucket);
-            m_buckets.push_back(bucket);
-        }
-        else
-        {
-            bucket = *begin();
-        }
+        // There is only one bucket, and it is empty.
+        return *begin();
     }
-    else
-    {
-        bucket = *begin();
 
-        if (bucket->size() == bucket->capacity())
-        {
-            std::vector<unsigned> partition_key = get_legacy_partition_id();
-            take_bucket_control();
-            partition_key[ partition_key[0] ] = m_buckets.size();
-            bucket = new Bucket( m_repository->m_mesh, m_rank, partition_key,
-                                 m_repository->bucket_capacity());
-            bucket->m_partition = this;
-            bucket->set_first_bucket_in_partition(m_buckets[0]);
-            m_buckets.push_back(bucket);
-        }
+    Bucket *bucket = *(end() - 1);  // Last bucket of the partition.
+
+    if (bucket->size() == bucket->capacity())
+    {
+        take_bucket_control();
+
+        std::vector<unsigned> partition_key = get_legacy_partition_id();
+        partition_key[ partition_key[0] ] = m_buckets.size();
+        bucket = new Bucket( m_repository->m_mesh, m_rank, partition_key,
+                             m_repository->bucket_capacity());
+        bucket->m_partition = this;
+        bucket->set_first_bucket_in_partition(m_buckets[0]);
+        m_buckets.push_back(bucket);
     }
+
     return bucket;
 }
 

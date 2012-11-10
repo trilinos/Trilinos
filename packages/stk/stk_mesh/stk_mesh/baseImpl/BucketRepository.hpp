@@ -114,8 +114,8 @@ public:
 
   friend class Partition;
 
-  // Assuming that everything else is already up-to-date, update the contents of
-  // m_partitions.
+  // Delete the Partitions in m_partitions, clear it, and then (re-)build the Partitions
+  // from the m_buckets.  This should become unnecessary.
   void sync_to_partitions();
 
   // Update m_buckets from the partitions.

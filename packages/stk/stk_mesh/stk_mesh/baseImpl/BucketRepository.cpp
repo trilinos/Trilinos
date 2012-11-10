@@ -576,6 +576,7 @@ void BucketRepository::internal_propagate_relocation( Entity entity )
   }
 }
 
+
 void BucketRepository::sync_to_partitions()
 {
     for ( std::vector<std::vector<Partition *> >::iterator pv_i = m_partitions.begin();
@@ -647,34 +648,39 @@ void BucketRepository::sync_from_partitions()
         size_t num_partitions = partitions.size();
         for (size_t p_i = 0; p_i < num_partitions; ++p_i)
         {
-            if (partitions[p_i]->modify_bucket_set())
+            if (partitions[p_i]->modifying_bucket_set())
             {
                 need_sync = true;
             }
         }
 
-        if (need_sync)
+        if (!need_sync)
         {
-            size_t num_buckets = 0;
-            for (size_t p_i = 0; p_i < num_partitions; ++p_i)
-            {
-                partitions[p_i]->take_bucket_control();
-                num_buckets += partitions[p_i]->num_buckets();
-            }
-            if (!num_buckets)
-            {
-                return;
-            }
-            m_buckets[rank].resize(num_buckets);
+            continue;
+        }
 
-            std::vector<Bucket *>::iterator bkts_i = m_buckets[rank].begin();
-            for (size_t p_i = 0; p_i < num_partitions; ++p_i)
-            {
-                size_t num_bkts_in_partition = partitions[p_i]->num_buckets();
-                std::copy(partitions[p_i]->begin(), partitions[p_i]->end(),
-                          bkts_i);
-                bkts_i += num_bkts_in_partition;
-            }
+        size_t num_buckets = 0;
+        for (size_t p_i = 0; p_i < num_partitions; ++p_i)
+        {
+            partitions[p_i]->take_bucket_control();
+            num_buckets += partitions[p_i]->num_buckets();
+        }
+
+        m_buckets[rank].resize(num_buckets);
+
+        std::vector<Bucket *>::iterator bkts_i = m_buckets[rank].begin();
+        unsigned b_idx = 0;
+        for (size_t p_i = 0; p_i < num_partitions; ++p_i)
+        {
+            Partition &partition = *partitions[p_i];
+            size_t num_bkts_in_partition = partition.num_buckets();
+            std::copy(partitions[p_i]->begin(), partitions[p_i]->end(), bkts_i);
+
+            partition.m_beginBucketIndex = b_idx;
+            b_idx += num_bkts_in_partition;
+            partition.m_endBucketIndex = b_idx;
+            partition.m_modifyingBucketSet = false;
+            bkts_i += num_bkts_in_partition;
         }
     }
 }

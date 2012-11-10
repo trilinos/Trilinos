@@ -12,14 +12,31 @@
 
 #include <stk_mesh/fixtures/SelectorFixture.hpp>
 
-// Borrow a lot from UnitTestSelector.  Bulk up the SelectorFixture to have parts
-// with enough entities so that each partition (bucket family) comprises multiple
-// buckets.
-
 namespace {
 
 using stk::mesh::fixtures::SelectorFixture ;
 
+
+// Borrow a lot from UnitTestSelector.  Bulk up the SelectorFixture to have parts
+// with enough entities so that each partition (bucket family) comprises multiple
+// buckets.
+
+stk::mesh::EntityId
+addEntitiesToFixture(SelectorFixture& fixture, stk::mesh::EntityId start_id, size_t num_to_add,
+                     const std::vector<stk::mesh::Part*> &partMembership,
+                     std::vector<stk::mesh::Entity> &collector)
+{
+    stk::mesh::EntityId ent_id = start_id;
+    for (size_t i = 0; i < num_to_add; ++i)
+    {
+        stk::mesh::Entity ent =
+                fixture.m_bulk_data.declare_entity(stk::mesh::MetaData::NODE_RANK,
+                                                   ent_id, partMembership);
+        collector.push_back(ent);
+        ++ent_id;
+    }
+    return ent_id;
+}
 
 void initialize(SelectorFixture& fixture,
                 std::vector<stk::mesh::Entity> &ec1_arg,
@@ -35,7 +52,6 @@ void initialize(SelectorFixture& fixture,
 
     const size_t bucket_size = 1000;     // Default value for BucketRepository constructor.
     const size_t lb_num_buckets_per_partition = 3;
-    stk::mesh::EntityRank ent_type = 0;  // rank
 
     const size_t bf_size = bucket_size * lb_num_buckets_per_partition;
     stk::mesh::EntityId ent_id = 1001;   // Want to keep numerical alignment.
@@ -47,75 +63,57 @@ void initialize(SelectorFixture& fixture,
     // Entities in collection 1 are contained in PartA
     partMembership.clear();
     partMembership.push_back( & fixture.m_partA );
-    for (size_t i = 1; i < bf_size; ++i)
-    {
-        stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
-        ec1_arg.push_back(ent);
-        ++ent_id;
-    }
+    ent_id = addEntitiesToFixture(fixture, ent_id, bf_size - 1, partMembership, ec1_arg);
 
-    // Entity2 is contained in PartA and PartB
+    // Entities in collection 2 are in PartA and PartB
     ++ent_id;     // For numerical alignment.
     partMembership.clear();
     partMembership.push_back( & fixture.m_partA );
     partMembership.push_back( & fixture.m_partB );
-    for (size_t i = 1; i < bf_size; ++i)
-    {
-        stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
-        ec2_arg.push_back(ent);
-        ++ent_id;
-    }
+    ent_id = addEntitiesToFixture(fixture, ent_id, bf_size - 1, partMembership, ec2_arg);
 
-    // Entity3 is contained in PartB and PartC
+    // Entities in collection 3 are in PartB and PartC
     ++ent_id;
     partMembership.clear();
     partMembership.push_back( & fixture.m_partB );
     partMembership.push_back( & fixture.m_partC );
-    for (size_t i = 1; i < bf_size; ++i)
-    {
-        stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
-        ec3_arg.push_back(ent);
-        ++ent_id;
-    }
+    ent_id = addEntitiesToFixture(fixture, ent_id, bf_size - 1, partMembership, ec3_arg);
 
-    // Entity4 is contained in PartC
+    // Entities in collection 4 are in PartC
     ++ent_id;
     partMembership.clear();
     partMembership.push_back( & fixture.m_partC );
-    for (size_t i = 1; i < bf_size; ++i)
-    {
-        stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
-        ec4_arg.push_back(ent);
-        ++ent_id;
-    }
+    ent_id = addEntitiesToFixture(fixture, ent_id, bf_size - 1, partMembership, ec4_arg);
 
-    // Entity5 is not contained in any Part
+    // Entities in collection 5 are not contained in any Part
     ++ent_id;
     partMembership.clear();
-    for (size_t i = 1; i < bf_size; ++i)
-    {
-        stk::mesh::Entity ent =  fixture.m_bulk_data.declare_entity(ent_type, ent_id, partMembership);
-        ec5_arg.push_back(ent);
-        ++ent_id;
-    }
+    ent_id = addEntitiesToFixture(fixture, ent_id, bf_size - 1, partMembership, ec5_arg);
 
     STKUNIT_ASSERT(fixture.m_bulk_data.modification_end());
 }
 
-void initialize_reverse_ordered(SelectorFixture& fixture,
-                                std::vector<stk::mesh::Entity> &ec1_arg,
-                                std::vector<stk::mesh::Entity> &ec2_arg,
-                                std::vector<stk::mesh::Entity> &ec3_arg,
-                                std::vector<stk::mesh::Entity> &ec4_arg,
-                                std::vector<stk::mesh::Entity> &ec5_arg )
+void initialize(SelectorFixture& fixture)
 {
-    initialize(fixture, ec1_arg, ec2_arg, ec3_arg, ec4_arg, ec5_arg);
+    std::vector<stk::mesh::Entity> ec1;
+    std::vector<stk::mesh::Entity> ec2;
+    std::vector<stk::mesh::Entity> ec3;
+    std::vector<stk::mesh::Entity> ec4;
+    std::vector<stk::mesh::Entity> ec5;
+
+    initialize(fixture, ec1, ec2, ec3, ec4, ec5);
+}
+
+void initialize_unsorted(SelectorFixture& fixture)
+{
+    initialize(fixture);
 
     stk::mesh::impl::BucketRepository &bucket_repository =
             stk::mesh::impl::Partition::getRepository(fixture.m_bulk_data);
     bucket_repository.sync_to_partitions();
 
-    std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(0);
+    std::vector<stk::mesh::impl::Partition *> partitions =
+            bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
     size_t num_partitions = partitions.size();
     STKUNIT_EXPECT_EQ(num_partitions, 5u);
 
@@ -126,14 +124,14 @@ void initialize_reverse_ordered(SelectorFixture& fixture,
     }
 }
 
-
+// Initialize field data in the fixture to correspond to the EntityIds of the entities.
 void initialize_data(SelectorFixture& fix)
 {
     stk::mesh::impl::BucketRepository &bucket_repository =
             stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
     bucket_repository.sync_to_partitions();
 
-    std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(0);
+    std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
     size_t num_partitions = partitions.size();
 
     for (size_t i = 0; i < num_partitions; ++i)
@@ -156,6 +154,18 @@ void initialize_data(SelectorFixture& fix)
             }
         }
     }
+}
+
+
+bool check_all_are_members(const stk::mesh::Selector selects,
+                           const std::vector<stk::mesh::Entity> &cands)
+{
+    for (size_t i = 0; i < cands.size(); ++i)
+    {
+        if (!selects(cands[i]))
+            return false;
+    }
+    return true;
 }
 
 bool check_bucket_ptrs(const stk::mesh::Bucket &bucket)
@@ -234,7 +244,8 @@ bool check_data_consistent(stk::mesh::Field<double> &data_field, const stk::mesh
 }
 
 
-void check_test_partition_invariant(const SelectorFixture& fix, const stk::mesh::impl::Partition &partition,
+void check_test_partition_invariant(const SelectorFixture& fix,
+                                    const stk::mesh::impl::Partition &partition,
                                     bool check_data_consistency = true)
 {
     const std::vector<unsigned> &partition_key = partition.get_legacy_partition_id();
@@ -294,9 +305,8 @@ void check_test_partition_invariant(const SelectorFixture& fix, const stk::mesh:
   *
   * */
 
-/** \brief Verify we can construct the unit testing fixture.
- *
- * */
+
+/// Verify we can construct the unit testing fixture.
 STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testInitialize )
 {
     std::vector<stk::mesh::Entity> ec1;
@@ -315,10 +325,12 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testInitialize )
     initialize(fix, ec1, ec2, ec3, ec4, ec5);
     initialize_data(fix);
 
-    stk::mesh::impl::BucketRepository &bucket_repository = stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
+    stk::mesh::impl::BucketRepository &bucket_repository =
+            stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
     bucket_repository.sync_to_partitions();
 
-    std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(0);
+    std::vector<stk::mesh::impl::Partition *> partitions =
+            bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
     size_t num_partitions = partitions.size();
     STKUNIT_EXPECT_EQ(num_partitions, 5u);
 
@@ -330,75 +342,40 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testInitialize )
 
     stk::mesh::Selector selector;
 
-    {
-        selector = fix.m_partA & !fix.m_partB;
-        for (size_t i = 0; i < ec1.size(); ++i)
-        {
-            const stk::mesh::Bucket & bucket = ec1[i].bucket() ;
-            bool result = selector(bucket);
-            STKUNIT_EXPECT_TRUE(result);
-        }
-    }
-    {
-        selector = fix.m_partA & fix.m_partB;
-        for (size_t i = 0; i < ec2.size(); ++i)
-        {
-            const stk::mesh::Bucket & bucket = ec2[i].bucket() ;
-            bool result = selector(bucket);
-            STKUNIT_EXPECT_TRUE(result);
-        }
-    }
-    {
-        selector = fix.m_partB & fix.m_partC;
-        for (size_t i = 0; i < ec3.size(); ++i)
-        {
-            const stk::mesh::Bucket & bucket = ec3[i].bucket() ;
-            bool result = selector(bucket);
-          STKUNIT_EXPECT_TRUE(result);
-        }
-    }
-    {
-        selector = !fix.m_partB & fix.m_partC;
-        for (size_t i = 0; i < ec4.size(); ++i)
-        {
-            const stk::mesh::Bucket & bucket = ec4[i].bucket() ;
-            bool result = selector(bucket);
-            STKUNIT_EXPECT_TRUE(result);
-        }
-    }
-    {
-      selector = !(fix.m_partA | fix.m_partB | fix.m_partC | fix.m_partD);
-      for (size_t i = 0; i < ec5.size(); ++i)
-      {
-          const stk::mesh::Bucket & bucket = ec5[i].bucket() ;
-          bool result = selector(bucket);
-          STKUNIT_EXPECT_TRUE(result);
-      }
-    }
+    selector = fix.m_partA & !fix.m_partB;
+    STKUNIT_EXPECT_TRUE(check_all_are_members(selector, ec1));
+
+    selector = fix.m_partA & fix.m_partB;
+    STKUNIT_EXPECT_TRUE(check_all_are_members(selector, ec2));
+
+    selector = fix.m_partB & fix.m_partC;
+    STKUNIT_EXPECT_TRUE(check_all_are_members(selector, ec3));
+
+    selector = !fix.m_partB & fix.m_partC;
+    STKUNIT_EXPECT_TRUE(check_all_are_members(selector, ec4));
+
+    selector = !(fix.m_partA | fix.m_partB | fix.m_partC | fix.m_partD);
+    STKUNIT_EXPECT_TRUE(check_all_are_members(selector, ec5));
 }
 
-
+/// Test that we can get the Partitions from a BucketRepository.
 STKUNIT_UNIT_TEST( UnitTestPartition, Partition_getPartitions)
 {
-    std::vector<stk::mesh::Entity> ec1;
-    std::vector<stk::mesh::Entity> ec2;
-    std::vector<stk::mesh::Entity> ec3;
-    std::vector<stk::mesh::Entity> ec4;
-    std::vector<stk::mesh::Entity> ec5;
-
     SelectorFixture fix;
 
     if (fix.m_bulk_data.parallel_size() > 1)
     {
         return;
     }
-    initialize(fix, ec1, ec2, ec3, ec4, ec5);
+    initialize(fix);
     initialize_data(fix);
 
-    stk::mesh::impl::BucketRepository &bucket_repository = stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
+    stk::mesh::impl::BucketRepository &bucket_repository =
+            stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
     bucket_repository.sync_to_partitions();
 
-    std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(0);
+    std::vector<stk::mesh::impl::Partition *> partitions =
+            bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
     size_t num_partitions = partitions.size();
     STKUNIT_EXPECT_EQ(num_partitions, 5u);
 
@@ -409,28 +386,24 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_getPartitions)
     }
 }
 
-
+/// Test of Partition::compress()
 STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testCompress)
 {
-    std::vector<stk::mesh::Entity> ec1;
-    std::vector<stk::mesh::Entity> ec2;
-    std::vector<stk::mesh::Entity> ec3;
-    std::vector<stk::mesh::Entity> ec4;
-    std::vector<stk::mesh::Entity> ec5;
-
     SelectorFixture fix;
 
     if (fix.m_bulk_data.parallel_size() > 1)
     {
         return;
     }
-    initialize(fix, ec1, ec2, ec3, ec4, ec5);
+    initialize(fix);
     initialize_data(fix);
 
-    stk::mesh::impl::BucketRepository &bucket_repository = stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
+    stk::mesh::impl::BucketRepository &bucket_repository =
+            stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
     bucket_repository.sync_to_partitions();
 
-    std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(0);
+    std::vector<stk::mesh::impl::Partition *> partitions =
+            bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
     size_t num_partitions = partitions.size();
     STKUNIT_EXPECT_EQ(num_partitions, 5u);
 
@@ -442,28 +415,24 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testCompress)
     }
 }
 
-
+/// Test Partition::sort()
 STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testSort)
 {
-    std::vector<stk::mesh::Entity> ec1;
-    std::vector<stk::mesh::Entity> ec2;
-    std::vector<stk::mesh::Entity> ec3;
-    std::vector<stk::mesh::Entity> ec4;
-    std::vector<stk::mesh::Entity> ec5;
-
     SelectorFixture fix;
 
     if (fix.m_bulk_data.parallel_size() > 1)
     {
         return;
     }
-    initialize_reverse_ordered(fix, ec1, ec2, ec3, ec4, ec5);
+    initialize_unsorted(fix);
     initialize_data(fix);
 
-    stk::mesh::impl::BucketRepository &bucket_repository = stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
+    stk::mesh::impl::BucketRepository &bucket_repository =
+            stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
     bucket_repository.sync_to_partitions();
 
-    std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(0);
+    std::vector<stk::mesh::impl::Partition *> partitions =
+            bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
     size_t num_partitions = partitions.size();
     STKUNIT_EXPECT_EQ(num_partitions, 5u);
 
@@ -476,27 +445,24 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testSort)
     }
 }
 
+/// Test Partition::remove(.)
 STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testRemove)
 {
-    std::vector<stk::mesh::Entity> ec1;
-    std::vector<stk::mesh::Entity> ec2;
-    std::vector<stk::mesh::Entity> ec3;
-    std::vector<stk::mesh::Entity> ec4;
-    std::vector<stk::mesh::Entity> ec5;
-
     SelectorFixture fix;
 
     if (fix.m_bulk_data.parallel_size() > 1)
     {
         return;
     }
-    initialize(fix, ec1, ec2, ec3, ec4, ec5);
+    initialize(fix);
     initialize_data(fix);
 
-    stk::mesh::impl::BucketRepository &bucket_repository = stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
+    stk::mesh::impl::BucketRepository &bucket_repository =
+            stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
     bucket_repository.sync_to_partitions();
 
-    std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(0);
+    std::vector<stk::mesh::impl::Partition *> partitions =
+            bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
     size_t num_partitions = partitions.size();
     STKUNIT_EXPECT_EQ(num_partitions, 5u);
 
@@ -525,41 +491,54 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testRemove)
             partition.remove((*last_bkt)[0]);
             ++num_removed;
         }
+
+        // Need to sort before checking whether the invariant holds.
         partition.sort();
+
         STKUNIT_EXPECT_EQ(old_size,  partition.compute_size() + num_removed);
+        check_test_partition_invariant(fix, partition);
+    }
+
+    //
+    // Now's a good time to exercise BucketRepository::sync_from_partitions().
+    //
+    bucket_repository.sync_from_partitions();
+    partitions = bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
+    num_partitions = partitions.size();
+    STKUNIT_EXPECT_EQ(num_partitions, 5u);
+
+    for (size_t i = 0; i < num_partitions; ++i)
+    {
+        stk::mesh::impl::Partition &partition = *partitions[i];
         check_test_partition_invariant(fix, partition);
     }
 }
 
-
-
+/// Test Partition::add(.).
 STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testAdd)
 {
-    std::vector<stk::mesh::Entity> ec1;
-    std::vector<stk::mesh::Entity> ec2;
-    std::vector<stk::mesh::Entity> ec3;
-    std::vector<stk::mesh::Entity> ec4;
-    std::vector<stk::mesh::Entity> ec5;
-
     SelectorFixture fix;
 
     if (fix.m_bulk_data.parallel_size() > 1)
     {
         return;
     }
-    initialize(fix, ec1, ec2, ec3, ec4, ec5);
+    initialize(fix);
     initialize_data(fix);
 
-    stk::mesh::impl::BucketRepository &bucket_repository = stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
+    stk::mesh::impl::BucketRepository &bucket_repository =
+            stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
     bucket_repository.sync_to_partitions();
 
-    std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(0);
+    std::vector<stk::mesh::impl::Partition *> partitions =
+            bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
     size_t num_partitions = partitions.size();
     STKUNIT_EXPECT_EQ(num_partitions, 5u);
 
     std::vector<stk::mesh::Entity> first_entities(num_partitions);
     std::vector<size_t> old_sizes(num_partitions);
 
+    // Get the first entity in each partition.
     for (size_t i = 0; i < num_partitions; ++i)
     {
         stk::mesh::impl::Partition &partition = *partitions[i];
@@ -568,11 +547,13 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testAdd)
         old_sizes[i] = partition.compute_size();
     }
 
+    // Now remove them from those partitions.
     for (size_t i = 0; i < num_partitions; ++i)
     {
          partitions[i]->remove(first_entities[i]);
     }
 
+    // "Rotate" each former first entity to another partition.
     for (size_t i = 0; i < num_partitions; ++i)
     {
         size_t dst_partition_idx = (i + 1) % num_partitions;
@@ -587,6 +568,8 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testAdd)
         }
     }
 
+    // Because the each first entity had a low identifier, it will again be
+    // the first entity in its new partition.
     for (size_t i = 0; i < num_partitions; ++i)
     {
         stk::mesh::impl::Partition &partition = *partitions[i];
@@ -596,35 +579,31 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testAdd)
     }
 }
 
-
-
+/// Test Partition::move_to(..)
 STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveTo)
 {
-    std::vector<stk::mesh::Entity> ec1;
-    std::vector<stk::mesh::Entity> ec2;
-    std::vector<stk::mesh::Entity> ec3;
-    std::vector<stk::mesh::Entity> ec4;
-    std::vector<stk::mesh::Entity> ec5;
-
     SelectorFixture fix;
 
     if (fix.m_bulk_data.parallel_size() > 1)
     {
         return;
     }
-    initialize(fix, ec1, ec2, ec3, ec4, ec5);
+    initialize(fix);
     initialize_data(fix);
 
-    stk::mesh::impl::BucketRepository &bucket_repository = stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
+    stk::mesh::impl::BucketRepository &bucket_repository =
+            stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
     bucket_repository.sync_to_partitions();
 
-    std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(0);
+    std::vector<stk::mesh::impl::Partition *> partitions =
+            bucket_repository.get_partitions(stk::mesh::MetaData::NODE_RANK);
     size_t num_partitions = partitions.size();
     STKUNIT_EXPECT_EQ(num_partitions, 5u);
 
     std::vector<stk::mesh::Entity> first_entities(num_partitions);
     std::vector<size_t> old_sizes(num_partitions);
 
+    // Get the first entity in each partition.
     for (size_t i = 0; i < num_partitions; ++i)
     {
         stk::mesh::impl::Partition &partition = *partitions[i];
@@ -633,6 +612,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveTo)
         old_sizes[i] = partition.compute_size();
     }
 
+    // "Rotate" each first entity to another partition.
     for (size_t i = 0; i < num_partitions; ++i)
     {
         size_t dst_partition_idx = (i + 1) % num_partitions;
@@ -640,12 +620,18 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveTo)
         partitions[i]->move_to(first_entities[i], dst_partition);
     }
 
+    // Because the each first entity had a low identifier, it will again be
+    // the first entity in its new partition.
     for (size_t i = 0; i < num_partitions; ++i)
     {
         stk::mesh::impl::Partition &partition = *partitions[i];
         partition.sort();
-        stk::mesh::impl::Partition &src_partition = *partitions[(i + num_partitions - 1) % num_partitions];
+        stk::mesh::impl::Partition &src_partition = *
+                partitions[(i + num_partitions - 1) % num_partitions];
         bool check_data_consistency = false;
+
+        // The '3' is due to default part memberships.  There is no field data for
+        // entities that are only on default parts.
         if ((*src_partition.begin())->key()[0] > 3)
         {
             check_data_consistency = true;
