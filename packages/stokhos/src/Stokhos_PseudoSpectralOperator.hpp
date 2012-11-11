@@ -107,7 +107,7 @@ namespace Stokhos {
     //! Get point for given index
     virtual const point_type& point(ordinal_type n) const  = 0;
 
-    //! Apply pseudo-spectral operator
+    //! Transform values at quadrature points to PCE coefficients
     /*!
      * \c input is a vector storing values of a function at the quadrature
      * points, and \c result will contain the resulting polynomial chaos
@@ -115,7 +115,22 @@ namespace Stokhos {
      * vector-valued functions and set \c trans to true if these (multi-) 
      * vectors are layed out in a transposed fashion.
      */
-    virtual void apply(
+    virtual void transformQP2PCE(
+      const value_type& alpha, 
+      const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& input,
+      Teuchos::SerialDenseMatrix<ordinal_type,value_type>& result, 
+      const value_type& beta,
+      bool trans = false) const = 0;
+
+    //! Transform PCE coefficients to quadrature values
+    /*!
+     * \c input is a vector storing polynomial chaos coefficients
+     * and \c result will contain the resulting values at the quadrature points.
+     * \c input and \c result can have multiple columns for
+     * vector-valued functions and set \c trans to true if these (multi-) 
+     * vectors are layed out in a transposed fashion.
+     */
+    virtual void transformPCE2QP(
       const value_type& alpha, 
       const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& input,
       Teuchos::SerialDenseMatrix<ordinal_type,value_type>& result, 

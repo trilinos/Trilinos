@@ -121,23 +121,27 @@ SmolyakPseudoSpectralOperator(
     }
   }
       
-  else {
+  //else {
     
     // Generate quadrature operator
     ordinal_type nqp = points.size();
     ordinal_type npc = coeff_sz;
-    A.reshape(npc,nqp);
-    A.putScalar(1.0);
+    qp2pce.reshape(npc,nqp);
+    pce2qp.reshape(nqp,npc);
+    qp2pce.putScalar(1.0);
+    pce2qp.putScalar(1.0);
     Teuchos::Array<value_type> vals(npc);
     for (set_iterator si = points.begin(); si != points.end(); ++si) {
       ordinal_type j = si->second.second;
       value_type w = si->second.first;
       point_type point = si->first;
       smolyak_basis.evaluateBases(point, vals);
-      for (ordinal_type i=0; i<npc; ++i)
-	A(i,j) = w*vals[i] / smolyak_basis.norm_squared(i);
+      for (ordinal_type i=0; i<npc; ++i) {
+	qp2pce(i,j) = w*vals[i] / smolyak_basis.norm_squared(i);
+	pce2qp(j,i) = vals[i];
+      }
     }
-  }
+    //}
   
 }
 
@@ -145,7 +149,7 @@ template <typename ordinal_type, typename value_type,
 	  typename point_compare_type>
 void
 Stokhos::SmolyakPseudoSpectralOperator<ordinal_type,value_type,point_compare_type>::
-apply(
+transformQP2PCE(
   const value_type& alpha, 
   const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& input,
   Teuchos::SerialDenseMatrix<ordinal_type,value_type>& result, 
@@ -153,9 +157,31 @@ apply(
   bool trans) const {
   
   if (use_smolyak)
-    apply_smolyak(alpha, input, result, beta, trans);
+    transformQP2PCE_smolyak(alpha, input, result, beta, trans);
   else
-    apply_direct(alpha, input, result, beta, trans);
+    apply_direct(qp2pce, alpha, input, result, beta, trans);
+}
+
+template <typename ordinal_type, typename value_type, 
+	  typename point_compare_type>
+void
+Stokhos::SmolyakPseudoSpectralOperator<ordinal_type,value_type,point_compare_type>::
+transformPCE2QP(
+  const value_type& alpha, 
+  const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& input,
+  Teuchos::SerialDenseMatrix<ordinal_type,value_type>& result, 
+  const value_type& beta,
+  bool trans) const {
+
+  // Currently we use the direct method for mapping PCE->QP because the
+  // current implementation doesn't work.  Need to evaluate tensor bases
+  // on all quad points, not just the quad points associated with that 
+  // basis.
+  
+  // if (use_smolyak)
+  //   transformPCE2QP_smolyak(alpha, input, result, beta, trans);
+  // else
+    apply_direct(pce2qp, alpha, input, result, beta, trans);
 }
 
 template <typename ordinal_type, typename value_type, 
@@ -163,26 +189,37 @@ template <typename ordinal_type, typename value_type,
 void
 Stokhos::SmolyakPseudoSpectralOperator<ordinal_type,value_type,point_compare_type>::
 apply_direct(
+  const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& A,
   const value_type& alpha, 
   const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& input,
   Teuchos::SerialDenseMatrix<ordinal_type,value_type>& result, 
   const value_type& beta,
   bool trans) const {
-  ordinal_type ret;
-  if (trans)
-    ret = result.multiply(Teuchos::NO_TRANS, Teuchos::TRANS, alpha, input,
-			  A, beta);
-  else
-    ret = result.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, alpha, A,
-			  input, beta);
-  TEUCHOS_ASSERT(ret == 0);
+  if (trans) {
+    TEUCHOS_ASSERT(input.numCols() <= A.numCols());
+    TEUCHOS_ASSERT(result.numCols() == A.numRows());
+    TEUCHOS_ASSERT(result.numRows() == input.numRows());
+    blas.GEMM(Teuchos::NO_TRANS, Teuchos::TRANS, input.numRows(), 
+	      A.numRows(), input.numCols(), alpha, input.values(), 
+	      input.stride(), A.values(), A.stride(), beta, 
+	      result.values(), result.stride());
+  }
+  else {
+    TEUCHOS_ASSERT(input.numRows() <= A.numCols());
+    TEUCHOS_ASSERT(result.numRows() == A.numRows());
+    TEUCHOS_ASSERT(result.numCols() == input.numCols());
+    blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, A.numRows(), 
+	      input.numCols(), input.numRows(), alpha, A.values(), 
+	      A.stride(), input.values(), input.stride(), beta, 
+	      result.values(), result.stride());
+  }
 }
 
 template <typename ordinal_type, typename value_type, 
 	  typename point_compare_type>
 void
 Stokhos::SmolyakPseudoSpectralOperator<ordinal_type,value_type,point_compare_type>::
-apply_smolyak(
+transformQP2PCE_smolyak(
   const value_type& alpha, 
   const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& input,
   Teuchos::SerialDenseMatrix<ordinal_type,value_type>& result, 
@@ -201,8 +238,38 @@ apply_smolyak(
       op_result.reshape(op->coeff_size(), result.numCols());
     }
     gather(gather_maps[i], input, trans, op_input);
-    op->apply(smolyak_coeffs[i], op_input, op_result, 0.0, trans);
+    op->transformQP2PCE(smolyak_coeffs[i], op_input, op_result, 0.0, trans);
     scatter(scatter_maps[i], op_result, trans, result);
+  }
+}
+
+template <typename ordinal_type, typename value_type, 
+	  typename point_compare_type>
+void
+Stokhos::SmolyakPseudoSpectralOperator<ordinal_type,value_type,point_compare_type>::
+transformPCE2QP_smolyak(
+  const value_type& alpha, 
+  const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& input,
+  Teuchos::SerialDenseMatrix<ordinal_type,value_type>& result, 
+  const value_type& beta,
+  bool trans) const {
+  Teuchos::SerialDenseMatrix<ordinal_type,value_type> op_input, op_result;
+  result.scale(beta);
+
+  for (ordinal_type i=0; i<operators.size(); i++) {
+    Teuchos::RCP<operator_type> op = operators[i];
+    if (trans) {
+      op_input.reshape(input.numRows(), op->coeff_size());
+      op_result.reshape(result.numRows(), op->point_size());
+    }
+    else {
+      op_input.reshape(op->coeff_size(), input.numCols());
+      op_result.reshape(op->point_size(), result.numCols());
+    }
+    
+    gather(scatter_maps[i], input, trans, op_input);
+    op->transformPCE2QP(smolyak_coeffs[i], op_input, op_result, 0.0, trans);
+    scatter(gather_maps[i], op_result, trans, result);
   }
 }
 

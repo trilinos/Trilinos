@@ -60,6 +60,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  PseudoSpectralExpansionUnitTest
+  SOURCES Stokhos_PseudoSpectralExpansionUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   AlgebraicExpansionUnitTest
   SOURCES Stokhos_AlgebraicExpansionUnitTest.cpp
   COMM serial mpi

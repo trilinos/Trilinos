@@ -146,7 +146,7 @@ namespace TensorProductUnitTest {
       tp_op, quad_op, quad_func1, quad_func2, setup.rtol, setup.atol, out);
   }
 
-  TEUCHOS_UNIT_TEST( TensorProduct, Apply_PST ) {
+  TEUCHOS_UNIT_TEST( TensorProduct, Apply_PST_Lexo ) {
     success = true;
 
     // Build anisotropic tensor product basis of dimension d
@@ -165,7 +165,25 @@ namespace TensorProductUnitTest {
       tp_op, quad_op, quad_func1, quad_func2, setup.rtol, setup.atol, out);
   }
 
-  TEUCHOS_UNIT_TEST( TensorProduct, Apply_PST_Trans ) {
+  TEUCHOS_UNIT_TEST( TensorProduct, Apply_PST_TotalOrder ) {
+    success = true;
+
+    // Build anisotropic tensor product basis of dimension d
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > > bases(setup.d);
+    for (ordinal_type i=0; i<setup.d; i++)
+      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(i+1, true));
+    Teuchos::RCP<const Stokhos::ProductBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::TensorProductBasis<ordinal_type,value_type>(bases));
+    Stokhos::TensorProductPseudoSpectralOperator<ordinal_type,value_type> tp_op(
+      *basis, true);
+    Stokhos::TensorProductQuadrature<ordinal_type,value_type> quad(basis);
+    Stokhos::QuadraturePseudoSpectralOperator<ordinal_type,value_type> quad_op(
+      *basis, quad);
+
+    success = Stokhos::testPseudoSpectralApply(
+      tp_op, quad_op, quad_func1, quad_func2, setup.rtol, setup.atol, out);
+  }
+
+  TEUCHOS_UNIT_TEST( TensorProduct, Apply_PST_Trans_Lexo ) {
     success = true;
 
     // Build anisotropic tensor product basis of dimension d
@@ -174,6 +192,24 @@ namespace TensorProductUnitTest {
       bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(i+1, true));
     typedef Stokhos::LexographicLess<Stokhos::MultiIndex<ordinal_type> > coeff_compare;
     Teuchos::RCP<const Stokhos::ProductBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::TensorProductBasis<ordinal_type,value_type,coeff_compare>(bases));
+    Stokhos::TensorProductPseudoSpectralOperator<ordinal_type,value_type> tp_op(
+      *basis, true);
+    Stokhos::TensorProductQuadrature<ordinal_type,value_type> quad(basis);
+    Stokhos::QuadraturePseudoSpectralOperator<ordinal_type,value_type> quad_op(
+      *basis, quad);
+
+    success = Stokhos::testPseudoSpectralApplyTrans(
+      tp_op, quad_op, quad_func1, quad_func2, setup.rtol, setup.atol, out);
+  }
+
+  TEUCHOS_UNIT_TEST( TensorProduct, Apply_PST_Trans_TotalOrder ) {
+    success = true;
+
+    // Build anisotropic tensor product basis of dimension d
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > > bases(setup.d);
+    for (ordinal_type i=0; i<setup.d; i++)
+      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(i+1, true));
+    Teuchos::RCP<const Stokhos::ProductBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::TensorProductBasis<ordinal_type,value_type>(bases));
     Stokhos::TensorProductPseudoSpectralOperator<ordinal_type,value_type> tp_op(
       *basis, true);
     Stokhos::TensorProductQuadrature<ordinal_type,value_type> quad(basis);
@@ -193,7 +229,7 @@ namespace TensorProductUnitTest {
       bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(setup.p, true));
     Teuchos::RCP<const Stokhos::ProductBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::TensorProductBasis<ordinal_type,value_type>(bases));
     Stokhos::TensorProductPseudoSpectralOperator<ordinal_type,value_type> tp_op(
-      *basis);
+      *basis, true);
 
     success = Stokhos::testPseudoSpectralDiscreteOrthogonality(
       *basis, tp_op, setup.rtol, setup.atol, out);
@@ -208,7 +244,7 @@ namespace TensorProductUnitTest {
       bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(i+1, true));
     Teuchos::RCP<const Stokhos::ProductBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::TensorProductBasis<ordinal_type,value_type>(bases));
     Stokhos::TensorProductPseudoSpectralOperator<ordinal_type,value_type> tp_op(
-      *basis);
+      *basis, true);
 
     success = Stokhos::testPseudoSpectralDiscreteOrthogonality(
       *basis, tp_op, setup.rtol, setup.atol, out);

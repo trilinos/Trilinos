@@ -143,6 +143,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_AlgebraicOrthogPolyExpansionImp.hpp
   Stokhos_QuadOrthogPolyExpansion.hpp
   Stokhos_QuadOrthogPolyExpansionImp.hpp
+  Stokhos_PseudoSpectralOrthogPolyExpansion.hpp
+  Stokhos_PseudoSpectralOrthogPolyExpansionImp.hpp
   Stokhos_DerivOrthogPolyExpansion.hpp
   Stokhos_DerivOrthogPolyExpansionImp.hpp
   Stokhos_ForUQTKOrthogPolyExpansion.hpp

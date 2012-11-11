@@ -32,6 +32,7 @@
 #include "Stokhos_PseudoSpectralOperator.hpp"
 #include "Stokhos_Quadrature.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_BLAS.hpp"
 
 namespace Stokhos {
 
@@ -90,14 +91,18 @@ namespace Stokhos {
       // Generate quadrature operator
       // This has to happen before we change the global index since
       // the point set likely will reorder the points
-      A.reshape(npc,nqp);
+      qp2pce.reshape(npc,nqp);
+      pce2qp.reshape(nqp,npc);
       typename point_set_type::iterator di = points.begin();
       typename point_set_type::iterator di_end = points.end();
       ordinal_type jdx = 0;
       for (; di != di_end; ++di) {
 	ordinal_type j = di->second.second;
-	for (ordinal_type i=0; i<npc; i++) 
-	  A(i,jdx) = quad_weights[j]*quad_vals[j][i] / basis.norm_squared(i);
+	for (ordinal_type i=0; i<npc; i++) {
+	  qp2pce(i,jdx) = quad_weights[j]*quad_vals[j][i] / 
+	    basis.norm_squared(i);
+	  pce2qp(jdx,i) = quad_vals[j][i];
+	}
 	++jdx;
       }
 
@@ -159,7 +164,7 @@ namespace Stokhos {
     //! Get point for given index
     const point_type& point(ordinal_type n) const { return point_map[n]; }
 
-    //! Apply pseudo-spectral quadrature operator
+    //! Transform values at quadrature points to PCE coefficients
     /*!
      * \c input is a vector storing values of a function at the quadrature
      * points, and \c result will contain the resulting polynomial chaos
@@ -167,19 +172,54 @@ namespace Stokhos {
      * vector-valued functions and set \c trans to true if these (multi-) 
      * vectors are layed out in a transposed fashion.
      */
-    void apply(const value_type& alpha, 
-	       const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& input,
-	       Teuchos::SerialDenseMatrix<ordinal_type,value_type>& result, 
-	       const value_type& beta,
-	       bool trans = false) const {
+    virtual void transformQP2PCE(
+      const value_type& alpha, 
+      const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& input,
+      Teuchos::SerialDenseMatrix<ordinal_type,value_type>& result, 
+      const value_type& beta,
+      bool trans = false) const {
       ordinal_type ret;
       if (trans)
-	ret = result.multiply(Teuchos::NO_TRANS, Teuchos::TRANS, alpha, input,
-			      A, beta);
+	ret = result.multiply(Teuchos::NO_TRANS, Teuchos::TRANS, alpha, 
+			      input, qp2pce, beta);
       else
-	ret = result.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, alpha, A,
-			      input, beta);
+	ret = result.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, alpha, 
+			      qp2pce, input, beta);
       TEUCHOS_ASSERT(ret == 0);
+    }
+
+    //! Transform PCE coefficients to quadrature values
+    /*!
+     * \c input is a vector storing polynomial chaos coefficients
+     * and \c result will contain the resulting values at the quadrature points.
+     * \c input and \c result can have multiple columns for
+     * vector-valued functions and set \c trans to true if these (multi-) 
+     * vectors are layed out in a transposed fashion.
+     */
+    virtual void transformPCE2QP(
+      const value_type& alpha, 
+      const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& input,
+      Teuchos::SerialDenseMatrix<ordinal_type,value_type>& result, 
+      const value_type& beta,
+      bool trans = false) const {
+      if (trans) {
+	TEUCHOS_ASSERT(input.numCols() <= pce2qp.numCols());
+	TEUCHOS_ASSERT(result.numCols() == pce2qp.numRows());
+	TEUCHOS_ASSERT(result.numRows() == input.numRows());
+	blas.GEMM(Teuchos::NO_TRANS, Teuchos::TRANS, input.numRows(), 
+		  pce2qp.numRows(), input.numCols(), alpha, input.values(), 
+		  input.stride(), pce2qp.values(), pce2qp.stride(), beta, 
+		  result.values(), result.stride());
+      }
+      else {
+	TEUCHOS_ASSERT(input.numRows() <= pce2qp.numCols());
+	TEUCHOS_ASSERT(result.numRows() == pce2qp.numRows());
+	TEUCHOS_ASSERT(result.numCols() == input.numCols());
+	blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, pce2qp.numRows(), 
+		  input.numCols(), input.numRows(), alpha, pce2qp.values(), 
+		  pce2qp.stride(), input.values(), input.stride(), beta, 
+		  result.values(), result.stride());
+      }
     }
 
   protected:
@@ -193,8 +233,14 @@ namespace Stokhos {
     //! Map index to point term
     point_map_type point_map;
 
-    //! Matrix mapping point to coefficients
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> A;
+    //! Matrix mapping points to coefficients
+    Teuchos::SerialDenseMatrix<ordinal_type,value_type> qp2pce;
+
+    //! Matrix mapping coefficients to points
+    Teuchos::SerialDenseMatrix<ordinal_type,value_type> pce2qp;
+
+    //! BLAS wrappers
+    Teuchos::BLAS<ordinal_type,value_type> blas;
 
   };
 

@@ -33,6 +33,7 @@
 #include "Stokhos_SmolyakBasis.hpp"
 #include "Stokhos_TensorProductPseudoSpectralOperator.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_BLAS.hpp"
 
 namespace Stokhos {
 
@@ -117,7 +118,7 @@ namespace Stokhos {
     //! Get point for given index
     const point_type& point(ordinal_type n) const { return point_map[n]; }
 
-    //! Apply pseudo-spectral quadrature operator
+    //! Transform values at quadrature points to PCE coefficients
     /*!
      * \c input is a vector storing values of a function at the quadrature
      * points, and \c result will contain the resulting polynomial chaos
@@ -125,7 +126,22 @@ namespace Stokhos {
      * vector-valued functions and set \c trans to true if these (multi-) 
      * vectors are layed out in a transposed fashion.
      */
-    void apply(
+    void transformQP2PCE(
+      const value_type& alpha, 
+      const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& input,
+      Teuchos::SerialDenseMatrix<ordinal_type,value_type>& result, 
+      const value_type& beta,
+      bool trans = false) const;
+
+    //! Transform PCE coefficients to quadrature values
+    /*!
+     * \c input is a vector storing polynomial chaos coefficients
+     * and \c result will contain the resulting values at the quadrature points.
+     * \c input and \c result can have multiple columns for
+     * vector-valued functions and set \c trans to true if these (multi-) 
+     * vectors are layed out in a transposed fashion.
+     */
+    virtual void transformPCE2QP(
       const value_type& alpha, 
       const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& input,
       Teuchos::SerialDenseMatrix<ordinal_type,value_type>& result, 
@@ -134,30 +150,31 @@ namespace Stokhos {
 
   protected:
 
-    //! Apply Smolyak pseudo-spectral operator using direct quadrature
-    /*!
-     * \c input is a vector storing values of a function at the quadrature
-     * points, and \c result will contain the resulting polynomial chaos
-     * coefficients.  \c input and \c result can have multiple columns for
-     * vector-valued functions and set \c trans to true if these (multi-) 
-     * vectors are layed out in a transposed fashion.
-     */
+    //! Apply transformation operator using direct method
     void apply_direct(
+      const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& A,
       const value_type& alpha, 
       const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& input,
       Teuchos::SerialDenseMatrix<ordinal_type,value_type>& result, 
       const value_type& beta,
       bool trans) const;
 
-    //! Apply Smolyak pseudo-spectral operator using Smolyak formula
-    /*!
-     * \c input is a vector storing values of a function at the quadrature
-     * points, and \c result will contain the resulting polynomial chaos
-     * coefficients.  \c input and \c result can have multiple columns for
-     * vector-valued functions and set \c trans to true if these (multi-) 
-     * vectors are layed out in a transposed fashion.
+    /*! 
+     * \brief Transform values at quadrature points to PCE coefficients 
+     * using Smolyak formula
      */
-    void apply_smolyak(
+    void transformQP2PCE_smolyak(
+      const value_type& alpha, 
+      const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& input,
+      Teuchos::SerialDenseMatrix<ordinal_type,value_type>& result, 
+      const value_type& beta,
+      bool trans) const;
+
+    /*! 
+     * \brief Transform PCE coefficients to values at quadrature points
+     * using Smolyak formula
+     */
+    void transformPCE2QP_smolyak(
       const value_type& alpha, 
       const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& input,
       Teuchos::SerialDenseMatrix<ordinal_type,value_type>& result, 
@@ -202,8 +219,14 @@ namespace Stokhos {
     //! Scatter maps for each operator for Smolyak apply
     Teuchos::Array< Teuchos::Array<ordinal_type> > scatter_maps;
 
-    //! Matrix mapping points to coefficients for direct apply
-    Teuchos::SerialDenseMatrix<ordinal_type,value_type> A;
+    //! Matrix mapping points to coefficients
+    Teuchos::SerialDenseMatrix<ordinal_type,value_type> qp2pce;
+
+    //! Matrix mapping coefficients to points
+    Teuchos::SerialDenseMatrix<ordinal_type,value_type> pce2qp;
+
+    //! BLAS wrappers
+    Teuchos::BLAS<ordinal_type,value_type> blas;
 
   };
 

@@ -395,10 +395,10 @@ namespace Stokhos {
 
     // Compute PCE coefficients
     Teuchos::SerialDenseMatrix<ordinal_type,value_type> x(coeff_sz,2);
-    op1.apply(1.0, f, x, 0.0);
+    op1.transformQP2PCE(1.0, f, x, 0.0);
 
     Teuchos::SerialDenseMatrix<ordinal_type,value_type> x2(coeff_sz,2);
-    op2.apply(1.0, f2, x2, 0.0);
+    op2.transformQP2PCE(1.0, f2, x2, 0.0);
 
     // Compare PCE coefficients
     success = success && 
@@ -456,10 +456,10 @@ namespace Stokhos {
 
     // Compute PCE coefficients
     Teuchos::SerialDenseMatrix<ordinal_type,value_type> x(2,coeff_sz);
-    op1.apply(1.0, f, x, 0.0, true);
+    op1.transformQP2PCE(1.0, f, x, 0.0, true);
 
     Teuchos::SerialDenseMatrix<ordinal_type,value_type> x2(2,coeff_sz);
-    op2.apply(1.0, f2, x2, 0.0, true);
+    op2.transformQP2PCE(1.0, f2, x2, 0.0, true);
 
     // Compare PCE coefficients
     success = success && 
@@ -468,6 +468,47 @@ namespace Stokhos {
     return success;
   }
 
+  template <typename basis_type, typename operator_type, typename scalar_type>
+  bool testPseudoSpectralDiscreteOrthogonality(const basis_type& basis,
+					       const operator_type& op,
+					       const scalar_type& rel_tol, 
+					       const scalar_type& abs_tol,
+					       Teuchos::FancyOStream& out) {
+    typedef typename operator_type::ordinal_type ordinal_type;
+    typedef typename operator_type::value_type value_type;
+
+    ordinal_type coeff_sz = op.coeff_size();
+    ordinal_type point_sz = op.point_size();
+    Teuchos::SerialDenseMatrix<ordinal_type,value_type> eye(coeff_sz,coeff_sz);
+    eye.putScalar(0.0);
+    for (ordinal_type i=0; i<coeff_sz; ++i)
+      eye(i,i) = 1.0;
+
+    // Map PCE coefficients to quad values
+    Teuchos::SerialDenseMatrix<ordinal_type,value_type> f(point_sz,coeff_sz);
+    op.transformPCE2QP(1.0, eye, f, 0.0);
+
+    // Map quad values to PCE coefficients
+    Teuchos::SerialDenseMatrix<ordinal_type,value_type> x(coeff_sz,coeff_sz);
+    op.transformQP2PCE(1.0, f, x, 0.0);
+
+    // Subtract identity
+    for (ordinal_type i=0; i<coeff_sz; ++i)
+      x(i,i) -= 1.0;
+
+    // Expected answer, which is zero
+    Teuchos::SerialDenseMatrix<ordinal_type,value_type> z(coeff_sz,coeff_sz);
+    z.putScalar(0.0);
+    
+    out << "Discrete orthogonality error = " << x.normInf() << std::endl;
+
+    // Compare PCE coefficients
+    bool success = Stokhos::compareSDM(x, "x", z, "zero", 1e-14, 1e-14, out);
+
+    return success;
+  }
+
+  /*
   template <typename basis_type, typename operator_type, typename scalar_type>
   bool testPseudoSpectralDiscreteOrthogonality(const basis_type& basis,
 					       const operator_type& op,
@@ -494,7 +535,7 @@ namespace Stokhos {
 
     // Compute PCE coefficients
     Teuchos::SerialDenseMatrix<ordinal_type,value_type> x(coeff_sz,coeff_sz);
-    op.apply(1.0, f, x, 0.0);
+    op.transformQP2PCE(1.0, f, x, 0.0);
 
     // Subtract identity
     for (ordinal_type i=0; i<coeff_sz; ++i)
@@ -511,6 +552,7 @@ namespace Stokhos {
 
     return success;
   }
+  */
 }
 
 #endif // STOKHOS_UNIT_TEST_HELPERS_HPP
