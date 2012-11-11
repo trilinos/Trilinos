@@ -1,7 +1,7 @@
 INCLUDE(TribitsPackageMacros)
 INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(CombinedOption)
-INCLUDE(TpetraETISupport)
+INCLUDE(TribitsETISupport)
 
 #
 # A) Define the package
@@ -24,6 +24,9 @@ COMBINED_OPTION( Tpetra_ENABLE_Thrust
   )
 
 TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
+
+# we use this for testing as well as library eti, so do it regardless
+TRIBITS_INCLUDE_ETI_SUPPORT()
 
 TRIBITS_ADD_DEBUG_OPTION()
 
@@ -230,11 +233,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${KokkosClassic_ENABLE_TSQR}
   )
 
-# process the explicit instantiations for this package
-# this just includes cmake/ExplicitInstantiationSupport.cmake
-# later on, we'll move this out of the package-level CMakeLists.txt and into the package architecture
-TRIBITS_PROCESS_ETI()
-
 #
 # C) Add the libraries, tests, and examples
 #
@@ -253,7 +251,10 @@ TRIBITS_ADD_TEST_DIRECTORIES(example)
 # Exclude files for source package.
 #
 
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
+GLOBAL_SET(Tpetra_ETI_SCALARS ${Tpetra_ETI_SCALARS})
+GLOBAL_SET(Tpetra_ETI_GORDS   ${Tpetra_ETI_GORDS})
+GLOBAL_SET(Tpetra_ETI_LORDS   ${Tpetra_ETI_LORDS})
+GLOBAL_SET(Tpetra_ETI_NODES   ${Tpetra_ETI_NODES})
 
 TRIBITS_EXCLUDE_FILES(
   doc/CodingGuidelines
