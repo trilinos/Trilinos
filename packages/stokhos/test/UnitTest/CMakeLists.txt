@@ -60,8 +60,27 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  PseudoSpectralExpansionUnitTest
-  SOURCES Stokhos_PseudoSpectralExpansionUnitTest.cpp
+  QuadraturePseudoSpectralExpansionUnitTest
+  SOURCES Stokhos_QuadraturePseudoSpectralExpansionUnitTest.cpp
+          Stokhos_PseudoSpectralExpansionUnitTest.hpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TensorProductPseudoSpectralExpansionUnitTest
+  SOURCES Stokhos_TensorProductPseudoSpectralExpansionUnitTest.cpp
+          Stokhos_PseudoSpectralExpansionUnitTest.hpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SmolyakPseudoSpectralExpansionUnitTest
+  SOURCES Stokhos_SmolyakPseudoSpectralExpansionUnitTest.cpp
+          Stokhos_PseudoSpectralExpansionUnitTest.hpp
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
