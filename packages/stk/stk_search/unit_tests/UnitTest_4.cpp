@@ -42,7 +42,7 @@ use_case_4_driver(
   std::vector<BoundingBox> range_vector;
 
   for (int i = parallel_rank*box_count; i < (parallel_rank + 1)*box_count; ++i) {
-    float box[6] = {i,0.0f,0.0f,i+1.0f,1.0f,1.0f };
+    float box[6] = {i*1.0f,0.0f,0.0f,i+1.0f,1.0f,1.0f };
 
     BoundingBox   range;
     range.key.ident = i;
@@ -54,7 +54,7 @@ use_case_4_driver(
   std::vector<BoundingBox> domain_vector;
 
   for (int i = parallel_rank*box_count; i < (parallel_rank + 1)*box_count; ++i) {
-    float box[6] = {i,0.0f,0.0f,i+1.0f,1.0f,1.0f };
+    float box[6] = {i*1.0f,0.0f,0.0f,i+1.0f,1.0f,1.0f };
 
     BoundingBox   domain;
     domain.key.ident = i;
