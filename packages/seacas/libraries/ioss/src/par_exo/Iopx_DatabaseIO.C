@@ -381,7 +381,7 @@ namespace Iopx {
 			 Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
 			 const Ioss::PropertyManager &props) :
     Ioss::DatabaseIO(region, filename, db_usage, communicator, props),
-    decomp(properties, communicator),
+    decomp(NULL), decomp32(NULL), decomp64(NULL),
     exodusFilePtr(-1), databaseTitle(""), exodusMode(EX_CLOBBER), dbRealWordSize(8),
     maximumNameLength(32), spatialDimension(0),
     nodeCount(0), edgeCount(0), faceCount(0), elementCount(0),
@@ -391,7 +391,6 @@ namespace Iopx {
     minimizeOpenFiles(false), blockAdjacenciesCalculated(false),
     nodeConnectivityStatusCalculated(false)
   {
-
     m_groupCount[EX_GLOBAL]     = 1; // To make some common code work more cleanly.
     m_groupCount[EX_NODE_BLOCK] = 1; // To make some common code work more cleanly.
 
@@ -603,13 +602,15 @@ namespace Iopx {
       float version;
 
       int mode = exodusMode;
-      if (int_byte_size_api() == 8)
+      if (int_byte_size_api() == 8) {
 	mode |= EX_ALL_INT64_API;
-
+      }
+      
       MPI_Info info = MPI_INFO_NULL;
       if (is_input()) {
 	exodusFilePtr = ex_open_par(get_filename().c_str(), EX_READ|mode|EX_MPIPOSIX,
 				    &cpu_word_size, &io_word_size, &version, util().communicator(), info);
+
       } else {
 	if (fileExists) {
 	  exodusFilePtr = ex_open_par(get_filename().c_str(), EX_WRITE|mode|EX_MPIPOSIX,
@@ -752,7 +753,17 @@ namespace Iopx {
 
   void DatabaseIO::read_meta_data()
   {
-    decomp.decompose_model(get_file_pointer());
+    int exoid = get_file_pointer(); // get_file_pointer() must be called first.
+
+    if (int_byte_size_api() == 8) {
+      decomp64 = new DecompositionData<int64_t>(properties, util().communicator());
+      decomp = decomp64;
+    } else {
+      decomp32 = new DecompositionData<int>(properties, util().communicator());
+      decomp = decomp32;
+    }
+    assert(decomp != NULL);
+    decomp->decompose_model(exoid);
 
     read_region();
     get_elemblocks();
@@ -794,11 +805,11 @@ namespace Iopx {
     if (error < 0)
       exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
-    spatialDimension = decomp.spatialDimension;
-    nodeCount = decomp.ioss_node_count();
+    spatialDimension = decomp->spatialDimension;
+    nodeCount = decomp->ioss_node_count();
     edgeCount = 0;
     faceCount = 0;
-    elementCount = decomp.ioss_elem_count();
+    elementCount = decomp->ioss_elem_count();
 
     m_groupCount[EX_NODE_BLOCK] = 1;
     m_groupCount[EX_EDGE_BLOCK] = info.num_edge_blk;
@@ -931,13 +942,13 @@ namespace Iopx {
     case EX_NODE_BLOCK:
     case EX_NODE_SET:
       return get_map(nodeMap, nodeCount,
-		     decomp.nodeOffset, decomp.nodeCount,
+		     decomp->nodeOffset, decomp->nodeCount,
 		     EX_NODE_MAP, EX_INQ_NODE_MAP);
 
     case EX_ELEM_BLOCK:
     case EX_ELEM_SET:
       return get_map(elemMap, elementCount,
-		     decomp.elementOffset, decomp.elementCount,
+		     decomp->elementOffset, decomp->elementCount,
 		     EX_ELEM_MAP, EX_INQ_ELEM_MAP);
 
     case EX_FACE_BLOCK:
@@ -1020,9 +1031,9 @@ namespace Iopx {
 
 	if (error >= 0) {
 	  if (entity_type == EX_NODE_MAP)
-	    new_this->decomp.communicate_node_data(TOPTR(file_data), &entity_map.map[1], 1);
+	    new_this->decomp->communicate_node_data(TOPTR(file_data), &entity_map.map[1], 1);
 	  else if (entity_type == EX_ELEM_MAP)
-	    new_this->decomp.communicate_element_data(TOPTR(file_data), &entity_map.map[1], 1);
+	    new_this->decomp->communicate_element_data(TOPTR(file_data), &entity_map.map[1], 1);
 	} else {
 	  // Clear out the vector...
 	  Ioss::MapContainer().swap(entity_map.map);
@@ -1137,19 +1148,19 @@ namespace Iopx {
       }
 
       for (int iblk = 0; iblk < m_groupCount[entity_type]; iblk++) {
-	int64_t id = decomp.el_blocks[iblk].id();
+	int64_t id = decomp->el_blocks[iblk].id();
 
 	std::string alias = Ioss::Utils::encode_entity_name(basename, id);
 	std::string block_name = get_entity_name(get_file_pointer(), entity_type, id, basename, maximumNameLength);
 
-	std::string save_type = decomp.el_blocks[iblk].topologyType;
-	std::string type = Ioss::Utils::fixup_type(decomp.el_blocks[iblk].topologyType,
-						   decomp.el_blocks[iblk].nodesPerEntity,
+	std::string save_type = decomp->el_blocks[iblk].topologyType;
+	std::string type = Ioss::Utils::fixup_type(decomp->el_blocks[iblk].topologyType,
+						   decomp->el_blocks[iblk].nodesPerEntity,
 						   spatialDimension-rank_offset);
 
 	Ioss::EntityBlock *io_block = NULL;
 	if (entity_type == EX_ELEM_BLOCK) {
-	  Ioss::ElementBlock *eblock = new Ioss::ElementBlock(this, block_name, type, decomp.el_blocks[iblk].ioss_count());
+	  Ioss::ElementBlock *eblock = new Ioss::ElementBlock(this, block_name, type, decomp->el_blocks[iblk].ioss_count());
 	  io_block = eblock;
 	  get_region()->add(eblock);
 #if 0
@@ -1205,7 +1216,7 @@ namespace Iopx {
 	  }
 	}
 	
-	io_block->property_add(Ioss::Property("global_entity_count", (int64_t)decomp.el_blocks[iblk].ioss_count()));
+	io_block->property_add(Ioss::Property("global_entity_count", (int64_t)decomp->el_blocks[iblk].ioss_count()));
 	
 	// See if this block is "omitted" by the calling code.
 	// This only affects the generation of surfaces...
@@ -1222,11 +1233,11 @@ namespace Iopx {
 	}
 	
 	// Check for additional variables.
-	add_attribute_fields(entity_type, io_block, decomp.el_blocks[iblk].attributeCount, type);
+	add_attribute_fields(entity_type, io_block, decomp->el_blocks[iblk].attributeCount, type);
 	add_results_fields(entity_type, io_block, iblk);
 	
 	if (entity_type == EX_ELEM_BLOCK) {
-	  add_map_fields(get_file_pointer(), (Ioss::ElementBlock*)io_block, decomp.el_blocks[iblk].ioss_count());
+	  add_map_fields(get_file_pointer(), (Ioss::ElementBlock*)io_block, decomp->el_blocks[iblk].ioss_count());
 	}
       }
     }
@@ -1293,14 +1304,14 @@ namespace Iopx {
 	if (my_element_count > 0) {
 	  if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
 	    std::vector<int64_t> conn(my_element_count * element_nodes);
-	    decomp.get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
+	    decomp64->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
 	    
 	    for (int64_t i=0; i < my_element_count * element_nodes; i++) {
 	      node_used[conn[i]-1] = blk_position+1;
 	    }
 	  } else {
 	    std::vector<int> conn(my_element_count * element_nodes);
-	    decomp.get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
+	    decomp32->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
 	    
 	    for (int64_t i=0; i < my_element_count * element_nodes; i++) {
 	      node_used[conn[i]-1] = blk_position+1;
@@ -1558,13 +1569,13 @@ namespace Iopx {
       if (my_element_count > 0) {
 	if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
 	  std::vector<int64_t> conn(my_element_count * element_nodes);
-	  decomp.get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
+	  decomp64->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
 	  for (int64_t j=0; j < my_element_count * element_nodes; j++) {
 	    nodeConnectivityStatus[conn[j]-1] |= status;
 	  }
 	} else {
 	  std::vector<int> conn(my_element_count * element_nodes);
-	  decomp.get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
+	  decomp32->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, order, element_nodes);
 	  for (int64_t j=0; j < my_element_count * element_nodes; j++) {
 	    nodeConnectivityStatus[conn[j]-1] |= status;
 	  }
@@ -1607,7 +1618,7 @@ namespace Iopx {
 	int error;
 
 	for (int i = 0; i < m_groupCount[EX_SIDE_SET]; i++) {
-	  int64_t id = decomp.side_sets[i].id();
+	  int64_t id = decomp->side_sets[i].id();
           std::vector<char> ss_name(maximumNameLength+1);
 	  error = ex_get_name(get_file_pointer(), EX_SIDE_SET, id, TOPTR(ss_name));
 	  if (error < 0) {
@@ -1637,7 +1648,7 @@ namespace Iopx {
       }
 
       for (int iss = 0; iss < m_groupCount[EX_SIDE_SET]; iss++) {
-	int64_t id = decomp.side_sets[iss].id();
+	int64_t id = decomp->side_sets[iss].id();
 	std::string sid = "";
 	TopologyMap topo_map;
 	TopologyMap side_map; // Used to determine side consistency
@@ -1679,8 +1690,8 @@ namespace Iopx {
 
 	  // Determine how many side blocks compose this side set.
 
-	  int64_t number_sides = decomp.side_sets[iss].ioss_count();
-	  number_distribution_factors = decomp.side_sets[iss].df_count();
+	  int64_t number_sides = decomp->side_sets[iss].ioss_count();
+	  number_distribution_factors = decomp->side_sets[iss].df_count();
 	  
 	  Ioss::Int64Vector element(number_sides);
 	  Ioss::Int64Vector sides(number_sides);
@@ -1692,15 +1703,15 @@ namespace Iopx {
 	    Ioss::Field elem_field("ids_raw", Ioss::Field::INTEGER, SCALAR(), Ioss::Field::MESH, number_sides);
 
 	    Ioss::IntVector e32(number_sides);
-	    decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(e32));
+	    decomp32->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(e32));
 	    std::copy(e32.begin(), e32.end(), sides.begin());
-	    decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, TOPTR(e32));
+	    decomp32->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, TOPTR(e32));
 	    std::copy(e32.begin(), e32.end(), element.begin());
 	  } else {
 	    Ioss::Field side_field("sides",   Ioss::Field::INT64, SCALAR(), Ioss::Field::MESH, number_sides);
 	    Ioss::Field elem_field("ids_raw", Ioss::Field::INT64, SCALAR(), Ioss::Field::MESH, number_sides);
-	    decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(sides));
-	    decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, TOPTR(element));
+	    decomp64->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(sides));
+	    decomp64->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, TOPTR(element));
 	  }
 
 	  if (!blockOmissions.empty()) {
@@ -1997,8 +2008,8 @@ namespace Iopx {
 	      
 	    Ioss::Field side_field("sides",   Ioss::Field::INTEGER, SCALAR(), Ioss::Field::MESH, number_sides);
 	    Ioss::Field elem_field("ids_raw", Ioss::Field::INTEGER, SCALAR(), Ioss::Field::MESH, number_sides);
-	    decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(sides));
-	    decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, TOPTR(element));
+	    decomp32->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(sides));
+	    decomp32->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, TOPTR(element));
 	      
 	    Ioss::ElementBlock *block = NULL;
 	    for (int64_t iel = 0; iel < number_sides; iel++) {
@@ -2015,8 +2026,8 @@ namespace Iopx {
 	    Ioss::Int64Vector sides(number_sides);
 	    Ioss::Field side_field("sides",   Ioss::Field::INT64, SCALAR(), Ioss::Field::MESH, number_sides);
 	    Ioss::Field elem_field("ids_raw", Ioss::Field::INT64, SCALAR(), Ioss::Field::MESH, number_sides);
-	    decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(sides));
-	    decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, TOPTR(element));
+	    decomp64->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(sides));
+	    decomp64->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, TOPTR(element));
 	      
 	    Ioss::ElementBlock *block = NULL;
 	    for (int64_t iel = 0; iel < number_sides; iel++) {
@@ -2116,7 +2127,7 @@ namespace Iopx {
 
 	// Get exodusII Xset metadata
 	for (int64_t ins=0; ins < count; ins++) {
-	  int64_t id = decomp.node_sets[ins].id();
+	  int64_t id = decomp->node_sets[ins].id();
 	  
 	  int num_attr = 0;
 	  int ierr = ex_get_attr_param(get_file_pointer(), type, id, &num_attr);
@@ -2126,7 +2137,7 @@ namespace Iopx {
 	  std::string Xset_name = get_entity_name(get_file_pointer(), type, id, base+"list",
 						  maximumNameLength);
 	  
-	  T* Xset = new T(this, Xset_name, decomp.node_sets[ins].ioss_count());
+	  T* Xset = new T(this, Xset_name, decomp->node_sets[ins].ioss_count());
 	  Xset->property_add(Ioss::Property("id", id));
 	  get_region()->add(Xset);
 	  get_region()->add_alias(Xset_name, Ioss::Utils::encode_entity_name(base+"list", id));
@@ -2173,7 +2184,7 @@ namespace Iopx {
 
 	// Create a single node commset
 	Ioss::CommSet *commset = new Ioss::CommSet(this, "commset_node", "node",
-						   decomp.nodeCommMap.size() / 2);
+						   decomp->get_commset_node_size());
 	commset->property_add(Ioss::Property("id", 1));
 	get_region()->add(commset);
       }
@@ -2224,7 +2235,7 @@ namespace Iopx {
 		field.get_name() == "mesh_model_coordinates_y" ||
 		field.get_name() == "mesh_model_coordinates_z" ||
 		field.get_name() == "mesh_model_coordinates") {
-	      decomp.get_node_coordinates(get_file_pointer(), (double*)data, field);
+	      decomp->get_node_coordinates(get_file_pointer(), (double*)data, field);
 	    }
 
 	    else if (field.get_name() == "ids") {
@@ -2292,7 +2303,7 @@ namespace Iopx {
 	    // The connectivity is stored in a 1D array.
 	    // The element_node index varies fastet
 
-	    decomp.get_block_connectivity(get_file_pointer(), (int*)data, id, order, element_nodes);
+	    decomp->get_block_connectivity(get_file_pointer(), data, id, order, element_nodes);
 	    get_map(EX_NODE_BLOCK).map_data(data, field, num_to_get*element_nodes);
 	  }
 #if 0
@@ -2325,7 +2336,8 @@ namespace Iopx {
 	    // The element_node index varies fastest
 	    int element_nodes = eb->get_property("topology_node_count").get_int();
 	    int order = eb->get_property("original_block_order").get_int();
-	    decomp.get_block_connectivity(get_file_pointer(), (int*)data, id, order, element_nodes);
+	    // FIXME SIZE
+	    decomp->get_block_connectivity(get_file_pointer(), data, id, order, element_nodes);
 	  }
 	  else if (field.get_name() == "ids") {
 	    // Map the local ids in this element block
@@ -2568,10 +2580,10 @@ namespace Iopx {
 	if (field.get_name() == "ids" ||
 	    field.get_name() == "ids_raw") {
 	  if (field.get_type() == Ioss::Field::INTEGER) {
-	    ierr = decomp.get_set_mesh_var(get_file_pointer(), EX_NODE_SET, id, field, 
+	    ierr = decomp32->get_set_mesh_var(get_file_pointer(), EX_NODE_SET, id, field, 
 					    static_cast<int*>(data));
 	  } else {
-	    ierr = decomp.get_set_mesh_var(get_file_pointer(), EX_NODE_SET, id, field,
+	    ierr = decomp64->get_set_mesh_var(get_file_pointer(), EX_NODE_SET, id, field,
 					    static_cast<int64_t*>(data));
 	  }
 	  if (ierr < 0)
@@ -2583,15 +2595,15 @@ namespace Iopx {
 	  }
 	} else if (field.get_name() == "orientation") {
 	  if (field.get_type() == Ioss::Field::INTEGER) {
-	    ierr = decomp.get_set_mesh_var(get_file_pointer(), EX_NODE_SET, id, field, static_cast<int*>(data));
+	    ierr = decomp32->get_set_mesh_var(get_file_pointer(), EX_NODE_SET, id, field, static_cast<int*>(data));
 	  } else {
-	    ierr = decomp.get_set_mesh_var(get_file_pointer(), EX_NODE_SET, id, field, static_cast<int64_t*>(data));
+	    ierr = decomp64->get_set_mesh_var(get_file_pointer(), EX_NODE_SET, id, field, static_cast<int64_t*>(data));
 	  }
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
 	} else if (field.get_name() == "distribution_factors") {
-	  ierr = decomp.get_set_mesh_var(get_file_pointer(), EX_NODE_SET, id, field, static_cast<double*>(data));
+	  ierr = decomp->get_set_mesh_double(get_file_pointer(), EX_NODE_SET, id, field, static_cast<double*>(data));
 	}
       } else if (role == Ioss::Field::ATTRIBUTE) {
 	num_to_get = read_attribute_field(type, field, ns, data);
@@ -2670,26 +2682,11 @@ namespace Iopx {
 	    if (type == "node") {
 
 	      // Convert local node id to global node id and store in 'data'
+	      const Ioss::MapContainer &map = get_map(EX_NODE_BLOCK).map;
 	      if (int_byte_size_api() == 4) {
-		int* entity_proc = static_cast<int*>(data);
-		const Ioss::MapContainer &map = get_map(EX_NODE_BLOCK).map;
-
-		size_t j=0;
-		for (size_t i=0; i < decomp.nodeCommMap.size(); i+=2) {
-		  int local_id = decomp.nodeCommMap[i];
-		  entity_proc[j++] = map[local_id];
-		  entity_proc[j++] = decomp.nodeCommMap[i+1];
-		}
+		decomp32->get_node_entity_proc_data(static_cast<int*>(data), map);
 	      } else {
-		int64_t* entity_proc = static_cast<int64_t*>(data);
-		const Ioss::MapContainer &map = get_map(EX_NODE_BLOCK).map;
-
-		size_t j=0;
-		for (size_t i=0; i < decomp.nodeCommMap.size(); i+=2) {
-		  int64_t local_id = decomp.nodeCommMap[i];
-		  entity_proc[j++] = map[local_id];
-		  entity_proc[j++] = decomp.nodeCommMap[i+1];
-		}
+		decomp64->get_node_entity_proc_data(static_cast<int64_t*>(data), map);
 	      }
 	    } else {
 	      std::ostringstream errmsg;
@@ -2723,7 +2720,7 @@ namespace Iopx {
 	IOSS_ERROR(errmsg);
       }
 
-      const SetDecompositionData &set = decomp.get_decomp_set(EX_SIDE_SET, id);
+      const SetDecompositionData &set = decomp->get_decomp_set(EX_SIDE_SET, id);
 
       int64_t number_sides = set.ioss_count();
       int64_t number_distribution_factors = set.df_count();
@@ -2752,7 +2749,7 @@ namespace Iopx {
 	  if (number_distribution_factors == num_to_get) {
 	    std::vector<double> real_ids(num_to_get);
 	    Ioss::Field df_field("distribution_factor", Ioss::Field::REAL, "scalar", Ioss::Field::MESH, num_to_get);
-	    decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, df_field, TOPTR(real_ids));
+	    decomp->get_set_mesh_double(get_file_pointer(), EX_SIDE_SET, id, df_field, TOPTR(real_ids));
 	    
 	    // Need to convert 'double' to 'int' for Sierra use...
 	    int* ids = static_cast<int*>(data);
@@ -2825,13 +2822,13 @@ namespace Iopx {
 	  if (fb->owner()->block_count() == 1) {
 	    if (int_byte_size_api() == 4) {
 	      int     *element_side = static_cast<int*>(data);
-	      decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, field, element_side);
+	      decomp32->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, field, element_side);
 	      for (ssize_t iel = 1; iel < 2*entity_count; iel+=2) {
 		element_side[iel] = element_side[iel] - side_offset;
 	      }
 	    } else {
 	      int64_t *element_side = static_cast<int64_t*>(data);
-	      decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, field, element_side);
+	      decomp64->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, field, element_side);
 	      for (ssize_t iel = 1; iel < 2*entity_count; iel+=2) {
 		element_side[iel] = element_side[iel] - side_offset;
 	      }
@@ -2843,13 +2840,13 @@ namespace Iopx {
 	    if (int_byte_size_api() == 4) {
 	      Ioss::Field elem_field("ids",   Ioss::Field::INTEGER, "scalar", Ioss::Field::MESH, number_sides);
 	      Ioss::Field side_field("sides", Ioss::Field::INTEGER, "scalar", Ioss::Field::MESH, number_sides);
-	      decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, (int*)TOPTR(element));
-	      decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int*)TOPTR(sides));
+	      decomp32->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, (int*)TOPTR(element));
+	      decomp32->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int*)TOPTR(sides));
 	    } else {
 	      Ioss::Field elem_field("ids",   Ioss::Field::INT64, "scalar", Ioss::Field::MESH, number_sides);
 	      Ioss::Field side_field("sides", Ioss::Field::INT64, "scalar", Ioss::Field::MESH, number_sides);
-	      decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, (int64_t*)TOPTR(element));
-	      decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int64_t*)TOPTR(sides));
+	      decomp64->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, (int64_t*)TOPTR(element));
+	      decomp64->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int64_t*)TOPTR(sides));
 	    }
 	    
 	    Ioss::IntVector is_valid_side;
@@ -2942,13 +2939,13 @@ namespace Iopx {
 	  if (int_byte_size_api() == 4) {
 	    Ioss::Field elem_field("ids",   Ioss::Field::INTEGER, "scalar", Ioss::Field::MESH, number_sides);
 	    Ioss::Field side_field("sides", Ioss::Field::INTEGER, "scalar", Ioss::Field::MESH, number_sides);
-	    decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, (int*)TOPTR(element));
-	    decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int*)TOPTR(sides));
+	    decomp32->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, (int*)TOPTR(element));
+	    decomp32->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int*)TOPTR(sides));
 	  } else {
 	    Ioss::Field elem_field("ids",   Ioss::Field::INT64, "scalar", Ioss::Field::MESH, number_sides);
 	    Ioss::Field side_field("sides", Ioss::Field::INT64, "scalar", Ioss::Field::MESH, number_sides);
-	    decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, (int64_t*)TOPTR(element));
-	    decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int64_t*)TOPTR(sides));
+	    decomp64->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, (int64_t*)TOPTR(element));
+	    decomp64->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int64_t*)TOPTR(sides));
 	  }
 	  Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, int_byte_size_api(),
 						      TOPTR(element), TOPTR(sides),
@@ -3026,7 +3023,7 @@ namespace Iopx {
       assert(offset-1+field.raw_storage()->component_count() <= attribute_count);
       if (offset == 1 && field.raw_storage()->component_count() == attribute_count) {
 	// Read all attributes in one big chunk...
-	int ierr = decomp.get_attr(get_file_pointer(), type, id, attribute_count, static_cast<double*>(data));
+	int ierr = decomp->get_attr(get_file_pointer(), type, id, attribute_count, static_cast<double*>(data));
 	if (ierr < 0)
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
       }
@@ -3035,7 +3032,7 @@ namespace Iopx {
 	// if higher-order (vector3d, ..) read each component and
 	// put into correct location...
 	if (field.raw_storage()->component_count() == 1) {
-	  int ierr = decomp.get_one_attr(get_file_pointer(), type, id,
+	  int ierr = decomp->get_one_attr(get_file_pointer(), type, id,
 					 offset, static_cast<double*>(data));
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -3047,7 +3044,7 @@ namespace Iopx {
 	  int comp_count = field.raw_storage()->component_count();
 	  double *rdata = static_cast<double*>(data);
 	  for (int i=0; i < comp_count; i++) {
-	    int ierr = decomp.get_one_attr(get_file_pointer(), type, id,
+	    int ierr = decomp->get_one_attr(get_file_pointer(), type, id,
 					   offset+i, TOPTR(local_data));
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -3092,7 +3089,7 @@ namespace Iopx {
 	int ierr = 0;
 	var_index = variables.find(var_name)->second;
 	assert(var_index > 0);
-	ierr = decomp.get_var(get_file_pointer(), step, type,
+	ierr = decomp->get_var(get_file_pointer(), step, type,
 			      var_index, id, num_entity, temp);
 	if (ierr < 0)
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -3150,7 +3147,7 @@ namespace Iopx {
 	int ierr = 0;
 	var_index = m_variables[EX_SIDE_SET].find(var_name)->second;
 	assert(var_index > 0);
-	ierr = decomp.get_var(get_file_pointer(), step, EX_SIDE_SET,
+	ierr = decomp->get_var(get_file_pointer(), step, EX_SIDE_SET,
 			      var_index, id, my_side_count, temp);
 	if (ierr < 0)
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -3220,13 +3217,13 @@ namespace Iopx {
       if (int_byte_size_api() == 4) {
 	Ioss::Field elem_field("ids",   Ioss::Field::INTEGER, "scalar", Ioss::Field::MESH, number_sides);
 	Ioss::Field side_field("sides", Ioss::Field::INTEGER, "scalar", Ioss::Field::MESH, number_sides);
-	decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, (int*)TOPTR(element));
-	decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int*)TOPTR(side));
+	decomp32->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, (int*)TOPTR(element));
+	decomp32->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int*)TOPTR(side));
       } else {
 	Ioss::Field elem_field("ids",   Ioss::Field::INT64, "scalar", Ioss::Field::MESH, number_sides);
 	Ioss::Field side_field("sides", Ioss::Field::INT64, "scalar", Ioss::Field::MESH, number_sides);
-	decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, (int64_t*)TOPTR(element));
-	decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int64_t*)TOPTR(side));
+	decomp64->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, (int64_t*)TOPTR(element));
+	decomp64->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int64_t*)TOPTR(side));
       }
 	    
       Ioss::IntVector is_valid_side;
@@ -3343,7 +3340,7 @@ namespace Iopx {
       // Allocate space for elements and local side numbers
       // Get size of data stored on the file...
 
-      const SetDecompositionData &set = decomp.get_decomp_set(EX_SIDE_SET, id);
+      const SetDecompositionData &set = decomp->get_decomp_set(EX_SIDE_SET, id);
       int64_t number_sides = set.ioss_count();
       int64_t number_distribution_factors = set.df_count();
       
@@ -3366,14 +3363,14 @@ namespace Iopx {
 	assert(number_sides == 0 || number_distribution_factors / number_sides == nfnodes);
 	std::string storage = "Real["+Ioss::Utils::to_string(nfnodes)+"]";
 	Ioss::Field dist("distribution_factors", Ioss::Field::REAL, storage, Ioss::Field::MESH, number_sides);
-	decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, dist, dist_fact);
+	decomp->get_set_mesh_double(get_file_pointer(), EX_SIDE_SET, id, dist, dist_fact);
 	return 0;
       }
 
       std::string storage = "Real["+Ioss::Utils::to_string(nfnodes)+"]";
       Ioss::Field field("distribution_factors", Ioss::Field::REAL, storage, Ioss::Field::MESH, number_distribution_factors/nfnodes);
       std::vector<double> dist(number_distribution_factors);
-      decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, field, TOPTR(dist));
+      decomp->get_set_mesh_double(get_file_pointer(), EX_SIDE_SET, id, field, TOPTR(dist));
 
       // Another easy situation (and common for exodusII) is if the input
       // distribution factors are all the same value (typically 1).  In
@@ -3413,13 +3410,13 @@ namespace Iopx {
       if (int_byte_size_api() == 4) {
 	Ioss::Field elem_field("ids",   Ioss::Field::INTEGER, "scalar", Ioss::Field::MESH, number_sides);
 	Ioss::Field side_field("sides", Ioss::Field::INTEGER, "scalar", Ioss::Field::MESH, number_sides);
-	decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, (int*)TOPTR(element));
-	decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int*)TOPTR(sides));
+	decomp32->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, (int*)TOPTR(element));
+	decomp32->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int*)TOPTR(sides));
       } else {
 	Ioss::Field elem_field("ids",   Ioss::Field::INT64, "scalar", Ioss::Field::MESH, number_sides);
 	Ioss::Field side_field("sides", Ioss::Field::INT64, "scalar", Ioss::Field::MESH, number_sides);
-	decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, (int64_t*)TOPTR(element));
-	decomp.get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int64_t*)TOPTR(sides));
+	decomp64->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, (int64_t*)TOPTR(element));
+	decomp64->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, (int64_t*)TOPTR(sides));
       }
       //----
 

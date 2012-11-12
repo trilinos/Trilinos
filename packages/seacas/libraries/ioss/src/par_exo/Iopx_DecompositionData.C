@@ -3,7 +3,7 @@
 #include <Ioss_Field.h>
 #include <Ioss_ElementTopology.h>
 #include <Ioss_ParallelUtils.h>
-
+#include <Ioss_Map.h>
 #include <exodusII_par.h>
 #include <assert.h>
 #include <mpi.h>
@@ -16,6 +16,10 @@
 #include <set>
 
 namespace {
+  MPI_Datatype mpi_type(double /*dummy*/)  {return MPI_DOUBLE;}
+  MPI_Datatype mpi_type(int /*dummy*/)     {return MPI_INT;}
+  MPI_Datatype mpi_type(int64_t /*dummy*/) {return MPI_LONG_LONG;}
+
   int exodus_byte_size_api(int exoid)
   {
     // Check byte-size of integers stored on the database...
@@ -27,6 +31,41 @@ namespace {
     }
   }
   
+  template <typename T>
+  int MY_Alltoallv(std::vector<T> &sendbuf, const std::vector<int64_t> &sendcnts, const std::vector<int64_t> &senddisp, 
+		   std::vector<T> &recvbuf, const std::vector<int64_t> &recvcnts, const std::vector<int64_t> &recvdisp, MPI_Comm comm)
+  {
+    // Wrapper to handle case where send/recv counts and displacements are 64-bit integers.
+    // Two cases:
+    // 1) They are of type 64-bit integers, but only storing data in the 32-bit integer range.
+    //    -- if (sendcnts[#proc-1] + senddisp[#proc-1] < 2^31, then we are ok
+    // 2) They are of type 64-bit integers, and storing data in the 64-bit integer range.
+    int processor_count = 0;
+    MPI_Comm_size(comm, &processor_count);
+    size_t max_comm = sendcnts[processor_count-1] + senddisp[processor_count-1];
+    if (max_comm < 1<<31) {
+      // count and displacement data in range, need to copy to integer vector.
+      std::vector<int> send_cnt(sendcnts.begin(), sendcnts.end());
+      std::vector<int> send_dis(senddisp.begin(), senddisp.end());
+      std::vector<int> recv_cnt(recvcnts.begin(), recvcnts.end());
+      std::vector<int> recv_dis(recvdisp.begin(), recvdisp.end());
+      return MPI_Alltoallv(TOPTR(sendbuf), (int*)TOPTR(send_cnt), (int*)TOPTR(send_dis), mpi_type(T(0)),
+			   TOPTR(recvbuf), (int*)TOPTR(recv_cnt), (int*)TOPTR(recv_dis), mpi_type(T(0)), comm);
+    }
+    else {
+      assert(1==0);
+      return -1;
+    }
+  }
+
+  template <typename T>
+  int MY_Alltoallv(std::vector<T> &sendbuf, const std::vector<int> &sendcnts, const std::vector<int> &senddisp, 
+		   std::vector<T> &recvbuf, const std::vector<int> &recvcnts, const std::vector<int> &recvdisp, MPI_Comm comm)
+  {
+    return MPI_Alltoallv(TOPTR(sendbuf), (int*)TOPTR(sendcnts), (int*)TOPTR(senddisp), mpi_type(T(0)),
+			 TOPTR(recvbuf), (int*)TOPTR(recvcnts), (int*)TOPTR(recvdisp), mpi_type(T(0)), comm);
+  }
+
   inline size_t min(size_t x, size_t y)
   {
     return y ^ ((x^y) & -(x<y));
@@ -105,7 +144,7 @@ namespace {
   int zoltan_num_dim(void *data, int *ierr)
   {
     // Return dimensionality of coordinate data.
-    Iopx::DecompositionData *zdata = (Iopx::DecompositionData *)(data);
+    Iopx::DecompositionDataBase *zdata = (Iopx::DecompositionDataBase *)(data);
 
     *ierr = ZOLTAN_OK;
     return zdata->spatialDimension;
@@ -114,7 +153,7 @@ namespace {
   int zoltan_num_obj(void *data, int *ierr)
   {
     // Return number of objects (element count) on this processor...
-    Iopx::DecompositionData *zdata = (Iopx::DecompositionData *)(data);
+    Iopx::DecompositionDataBase *zdata = (Iopx::DecompositionDataBase *)(data);
 
     *ierr = ZOLTAN_OK;
     return zdata->elementCount;
@@ -125,7 +164,7 @@ namespace {
 		       int wdim, float *wgts, int *ierr)
   {
     // Return list of object IDs, both local and global.
-    Iopx::DecompositionData *zdata = (Iopx::DecompositionData *)(data);
+    Iopx::DecompositionDataBase *zdata = (Iopx::DecompositionDataBase *)(data);
     
     // At the time this is called, we don't have much information
     // These routines are the ones that are developing that
@@ -133,16 +172,32 @@ namespace {
     size_t element_count  = zdata->elementCount;
     size_t element_offset = zdata->elementOffset;
     
-    assert(ngid_ent = element_count);
-    assert(nlid_ent = element_count);
-    
-    for (size_t i = 0; i < element_count; i++) {
-      gids[i] = element_offset + i;
-      if (lids) lids[i] = i;
-      if (wdim) wgts[i] = 1.0;
+    *ierr = ZOLTAN_OK;
+
+    if (lids) {
+      for (size_t i = 0; i < element_count; i++) {
+	lids[i] = i;
+      }
     }
 
-    *ierr = ZOLTAN_OK;
+    if (wdim) {
+      for (size_t i = 0; i < element_count; i++) {
+	wgts[i] = 1.0;
+      }
+    }
+
+    if (ngid_ent == 1) {
+      for (size_t i = 0; i < element_count; i++) {
+	gids[i] = element_offset + i;
+      }
+    } else if (ngid_ent == 2){
+      int64_t* global_ids = (int64_t*)gids;
+      for (size_t i = 0; i < element_count; i++) {
+	global_ids[i] = element_offset + i;
+      }
+    } else {
+      *ierr = ZOLTAN_FATAL;
+    }
     return;
   }
 
@@ -151,7 +206,7 @@ namespace {
 		   int ndim, double *geom, int *ierr)
   {
     // Return coordinates for objects.
-    Iopx::DecompositionData *zdata = (Iopx::DecompositionData *)(data);
+    Iopx::DecompositionDataBase *zdata = (Iopx::DecompositionDataBase *)(data);
   
     std::copy(zdata->centroids_.begin(), zdata->centroids_.end(), &geom[0]);
      
@@ -228,48 +283,57 @@ namespace {
 }
 
 namespace Iopx {
-  DecompositionData::DecompositionData(const Ioss::PropertyManager &props, MPI_Comm communicator)
-    : comm_(communicator), properties(props)
+  template DecompositionData<int>::DecompositionData(const Ioss::PropertyManager &props, MPI_Comm communicator);
+  template DecompositionData<int64_t>::DecompositionData(const Ioss::PropertyManager &props, MPI_Comm communicator);
+  
+  template <typename INT>
+  DecompositionData<INT>::DecompositionData(const Ioss::PropertyManager &props, MPI_Comm communicator)
+    : DecompositionDataBase(communicator), properties(props)
   {
     MPI_Comm_rank(comm_, &myProcessor);
     MPI_Comm_size(comm_, &processorCount);
   }
 
-  bool DecompositionData::i_own_node(size_t global_index) const
+  template <typename INT>
+  bool DecompositionData<INT>::i_own_node(size_t global_index) const
   {
     // global_index is 1-based index into global list of nodes [1..global_node_count]
     return std::binary_search(nodeGTL.begin(), nodeGTL.end(), global_index);
   }
 
-  bool DecompositionData::i_own_elem(size_t global_index) const
+  template <typename INT>
+  bool DecompositionData<INT>::i_own_elem(size_t global_index) const
   {
     // global_index is 1-based index into global list of nodes [1..global_node_count]
     return elemGTL.count(global_index) != 0;
   }
 
-  size_t DecompositionData::node_global_to_local(size_t global_index) const
+  template <typename INT>
+  size_t DecompositionData<INT>::node_global_to_local(size_t global_index) const
   {
     // global_index is 1-based index into global list of nodes [1..global_node_count]
     // return value is 1-based index into local list of nodes on this
     // processor (ioss-decomposition)
     // Note that for 'int', equivalence and equality are the same, so
     // lower_bound is OK here (EffectiveSTL, Item 19)
-    std::vector<int>::const_iterator I = lower_bound(nodeGTL.begin(), nodeGTL.end(), global_index);
+    typename std::vector<INT>::const_iterator I = lower_bound(nodeGTL.begin(), nodeGTL.end(), global_index);
     assert(I != nodeGTL.end());
     return std::distance(nodeGTL.begin(), I)+1; // Convert to 1-based index.
   }
     
-  size_t DecompositionData::elem_global_to_local(size_t global_index) const
+  template <typename INT>
+  size_t DecompositionData<INT>::elem_global_to_local(size_t global_index) const
   {
     // global_index is 1-based index into global list of elements [1..global_node_count]
     // return value is 1-based index into local list of elements on this
     // processor (ioss-decomposition)
-    std::map<int,int>::const_iterator I = elemGTL.find(global_index);
+    typename std::map<INT,INT>::const_iterator I = elemGTL.find(global_index);
     assert(I != elemGTL.end());
     return I->second;
   }
     
-  void DecompositionData::decompose_model(int exodusId)
+  template <typename INT>
+  void DecompositionData<INT>::decompose_model(int exodusId)
   {
     // Initial decomposition is linear where processor #p contains
     // elements from (#p * #element/#proc) to (#p+1 * #element/#proc)
@@ -281,8 +345,8 @@ namespace Iopx {
 
     // Generate element_dist/node_dist --  size proc_count + 1
     // processor p contains all elements/nodes from X_dist[p] .. X_dist[p+1]
-    std::vector<MY_INT> element_dist(processorCount+1);
-    std::vector<MY_INT> node_dist(processorCount+1);
+    std::vector<INT> element_dist(processorCount+1);
+    std::vector<INT> node_dist(processorCount+1);
 
     get_entity_dist(processorCount, myProcessor, info.num_elem,
 		    element_dist, &elementOffset, &elementCount);
@@ -291,8 +355,8 @@ namespace Iopx {
 
     //    std::cout << "Processor " << myProcessor << " has " << elementCount << " elements.\n";
     
-    std::vector<MY_INT> pointer; // Index into adjacency, processor list for each element...
-    std::vector<MY_INT> adjacency; // Size is sum of element connectivity sizes 
+    std::vector<INT> pointer; // Index into adjacency, processor list for each element...
+    std::vector<INT> adjacency; // Size is sum of element connectivity sizes 
     generate_adjacency_list(exodusId, pointer, adjacency, info.num_elem_blk);
     
     std::string method = "LINEAR";
@@ -371,16 +435,16 @@ namespace Iopx {
     // both owned and shared...
     get_local_node_list(pointer, adjacency, node_dist);
     
-    get_shared_node_list(MY_INT(0));
+    get_shared_node_list();
 
-    get_nodeset_data(exodusId, info.num_node_sets, (MY_INT)0);
+    get_nodeset_data(exodusId, info.num_node_sets);
 
     if (info.num_side_sets > 0) {
       // Create elemGTL map which is used for sidesets (also element sets)
       build_global_to_local_elem_map();
     }
     
-    get_sideset_data(exodusId, info.num_side_sets, (MY_INT)0);
+    get_sideset_data(exodusId, info.num_side_sets);
     
     // Have all the decomposition data needed (except for boundary
     // conditions...)
@@ -388,8 +452,8 @@ namespace Iopx {
   }
 
   template <typename INT>
-  void DecompositionData::simple_decompose(const std::string &method,
-					   const std::vector<INT> &element_dist)
+  void DecompositionData<INT>::simple_decompose(const std::string &method,
+						const std::vector<INT> &element_dist)
   {
     if (method == "LINEAR") {
       // The "ioss_decomposition" is the same as the "file_decomposition"
@@ -410,10 +474,10 @@ namespace Iopx {
   }
 
   template <typename INT>
-  void DecompositionData::metis_decompose(const std::string &method,
-					  const std::vector<INT> &element_dist,
-					  const std::vector<INT> &pointer,
-					  const std::vector<INT> &adjacency)
+  void DecompositionData<INT>::metis_decompose(const std::string &method,
+					       const std::vector<INT> &element_dist,
+					       const std::vector<INT> &pointer,
+					       const std::vector<INT> &adjacency)
   {
     idx_t wgt_flag = 0; // No weights
     idx_t *elm_wgt = NULL;
@@ -483,7 +547,7 @@ namespace Iopx {
     else if (method == "METIS_SFC") {
       std::vector<real_t> flt_cent(centroids_.begin(), centroids_.end());
       int rc = ParMETIS_V3_PartGeom((idx_t*)TOPTR(element_dist), &ndims, TOPTR(flt_cent),
-				TOPTR(elem_partition), &comm_);
+				    TOPTR(elem_partition), &comm_);
 
       if (rc != METIS_OK) {
 	std::ostringstream errmsg;
@@ -512,8 +576,8 @@ namespace Iopx {
     exportElementCount[myProcessor] = 0;
     
     importElementCount.resize(processorCount+1);
-    MPI_Alltoall(TOPTR(exportElementCount), 1, MPI_INT,
-		 TOPTR(importElementCount), 1, MPI_INT, comm_);
+    MPI_Alltoall(TOPTR(exportElementCount), 1, mpi_type((INT)0),
+		 TOPTR(importElementCount), 1, mpi_type((INT)0), comm_);
 
     // Now fill the vectors with the elements ...
     size_t exp_size = std::accumulate(exportElementCount.begin(), exportElementCount.end(), 0);
@@ -540,8 +604,8 @@ namespace Iopx {
       }
     }
 
-    MPI_Alltoallv(TOPTR(exportElementMap), TOPTR(exportElementCount), TOPTR(exportElementIndex), MPI_INT,
-		  TOPTR(importElementMap), TOPTR(importElementCount), TOPTR(importElementIndex), MPI_INT, comm_);
+    MY_Alltoallv(exportElementMap, exportElementCount, exportElementIndex, 
+		 importElementMap, importElementCount, importElementIndex, comm_);
     
     //std::cout << "Processor " << myProcessor << ":\t"
     //	      << elementCount-exp_size << " local, "
@@ -549,7 +613,8 @@ namespace Iopx {
     //	      << exp_size            << " exported elements\n";
   }
 
-  void DecompositionData::zoltan_decompose(const std::string &method)
+  template <typename INT>
+  void DecompositionData<INT>::zoltan_decompose(const std::string &method)
   {
     float version = 0.0;
     Zoltan_Initialize(0, NULL, &version);
@@ -566,6 +631,9 @@ namespace Iopx {
     // Set Zoltan parameters
     std::string num_proc = Ioss::Utils::to_string(processorCount);
     zz.Set_Param("NUM_GLOBAL_PARTS", num_proc);
+
+    int num_global = sizeof(INT)/sizeof(int);
+    zz.Set_Param("NUM_GID_ENTRIES", Ioss::Utils::to_string(num_global));
     zz.Set_Param("NUM_LID_ENTRIES", "0");
     zz.Set_Param("LB_METHOD", method);
     zz.Set_Param("REMAP", "0");
@@ -573,8 +641,7 @@ namespace Iopx {
     zz.Set_Param("DEBUG_LEVEL", "0");
 
     int changes = 0;
-    int num_global = 1;
-    int num_local  = 1;
+    int num_local  = 0;
     int num_import = 1;
     int  num_export = 1;
     ZOLTAN_ID_PTR import_global_ids = NULL;
@@ -586,8 +653,8 @@ namespace Iopx {
     int *export_procs   = NULL;
     int *export_to_part = NULL;
 
-    num_global = 1;
     num_local  = 1;
+
     // TODO: Check return value for error.
     zz.LB_Partition(changes, num_global, num_local,
 		    num_import, import_global_ids, import_local_ids, import_procs, import_to_part,
@@ -604,40 +671,64 @@ namespace Iopx {
     // Find all elements that remain locally owned...
     get_local_element_list(export_global_ids, num_export);
     
-    // Build exportElementMap...
-    std::vector<std::pair<int,int> > export_map;
-    export_map.reserve(num_export);
-    for (int i=0; i < num_export; i++) {
-      export_map.push_back(std::make_pair(export_procs[i],export_global_ids[i]));
-    }
+    // Build exportElementMap and importElementMap...
+    importElementMap.reserve(num_import);
+    importElementIndex.resize(processorCount+1);
+    importElementCount.resize(processorCount+1);
 
-    std::sort(export_map.begin(), export_map.end());
-    exportElementMap.reserve(num_export);
-    exportElementIndex.resize(processorCount+1);
-    exportElementCount.resize(processorCount+1);
-    for (int i=0; i < num_export; i++) {
-      exportElementMap.push_back(export_map[i].second);
-      exportElementCount[export_map[i].first]++;
+    if (num_global == 1) {
+      std::vector<std::pair<int,int> > export_map;
+      export_map.reserve(num_export);
+      for (int i=0; i < num_export; i++) {
+	export_map.push_back(std::make_pair(export_procs[i],export_global_ids[i]));
+      }
+
+      std::sort(export_map.begin(), export_map.end());
+      exportElementMap.reserve(num_export);
+      exportElementIndex.resize(processorCount+1);
+      exportElementCount.resize(processorCount+1);
+      for (int i=0; i < num_export; i++) {
+	exportElementMap.push_back(export_map[i].second);
+	exportElementCount[export_map[i].first]++;
+      }
+
+      for (int i=0; i < num_import; i++) {
+	importElementMap.push_back(import_global_ids[i]);
+	importElementCount[import_procs[i]]++;
+      }
+    } else {
+      std::vector<std::pair<int,int64_t> > export_map;
+      export_map.reserve(num_export);
+      int64_t *export_glob = (int64_t*)export_global_ids;
+      for (int i=0; i < num_export; i++) {
+	export_map.push_back(std::make_pair(export_procs[i],export_glob[i]));
+      }
+
+      std::sort(export_map.begin(), export_map.end());
+      exportElementMap.reserve(num_export);
+      exportElementIndex.resize(processorCount+1);
+      exportElementCount.resize(processorCount+1);
+      for (int i=0; i < num_export; i++) {
+	exportElementMap.push_back(export_map[i].second);
+	exportElementCount[export_map[i].first]++;
+      }
+
+      int64_t *import_glob = (int64_t*)import_global_ids;
+      for (int i=0; i < num_import; i++) {
+	importElementMap.push_back(import_glob[i]);
+	importElementCount[import_procs[i]]++;
+      }
     }
-    std::vector<std::pair<int,int> >().swap(export_map);
 
     std::copy(exportElementCount.begin(), exportElementCount.end(), exportElementIndex.begin());
     generate_index(exportElementIndex);
 
-    // Build importElementMap...
-    importElementMap.reserve(num_import);
-    importElementIndex.resize(processorCount+1);
-    importElementCount.resize(processorCount+1);
-    for (int i=0; i < num_import; i++) {
-      importElementMap.push_back(import_global_ids[i]);
-      importElementCount[import_procs[i]]++;
-    }
-    
     zz.LB_Free_Part(&import_global_ids, &import_local_ids, &import_procs, &import_to_part);
     zz.LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs, &export_to_part);
   }
 
-  void DecompositionData::build_global_to_local_elem_map()
+  template <typename INT>
+  void DecompositionData<INT>::build_global_to_local_elem_map()
   {
     // global_index is 1-based index into global list of elems [1..global_elem_count]
     for (size_t i=0; i < localElementMap.size(); i++) {
@@ -660,9 +751,9 @@ namespace Iopx {
   }
 
   template <typename INT>
-  void DecompositionData::get_local_node_list(const std::vector<INT> &pointer,
-					      const std::vector<INT> &adjacency,
-					      const std::vector<INT> &node_dist)
+  void DecompositionData<INT>::get_local_node_list(const std::vector<INT> &pointer,
+						   const std::vector<INT> &adjacency,
+						   const std::vector<INT> &node_dist)
   {
     // Get the connectivity of all imported elements...
     // First, determine how many nodes the exporting processors are
@@ -681,8 +772,8 @@ namespace Iopx {
       }
     }
 
-    MPI_Alltoall(TOPTR(export_conn_size), 1, MPI_INT,
-		 TOPTR(import_conn_size), 1, MPI_INT, comm_);
+    MPI_Alltoall(TOPTR(export_conn_size), 1, mpi_type((INT)0),
+		 TOPTR(import_conn_size), 1, mpi_type((INT)0), comm_);
     
     // Now fill the vectors with the nodes ...
     size_t exp_size = std::accumulate(export_conn_size.begin(), export_conn_size.end(), 0);
@@ -722,9 +813,8 @@ namespace Iopx {
     {
       std::vector<INT> import_conn(imp_size);
     
-      ct_assert(sizeof(INT) == sizeof(int));
-      MPI_Alltoallv(TOPTR(export_conn), TOPTR(export_conn_size), TOPTR(export_disp), MPI_INT,
-		    TOPTR(import_conn), TOPTR(import_conn_size), TOPTR(import_disp), MPI_INT, comm_);
+      MY_Alltoallv(export_conn, export_conn_size, export_disp,
+		   import_conn, import_conn_size, import_disp, comm_);
 
       // Done with export_conn...
       std::vector<INT>().swap(export_conn);
@@ -767,13 +857,13 @@ namespace Iopx {
     // Tell other processors how many nodes I will be importing from
     // them...
     importNodeCount[myProcessor] = 0;
-    MPI_Alltoall(TOPTR(importNodeCount), 1, MPI_INT,
-		 TOPTR(exportNodeCount), 1, MPI_INT, comm_);
+    MPI_Alltoall(TOPTR(importNodeCount), 1, mpi_type((INT)0),
+		 TOPTR(exportNodeCount), 1, mpi_type((INT)0), comm_);
 
     size_t import_sum = std::accumulate(importNodeCount.begin(), importNodeCount.end(), 0);
     size_t export_sum = std::accumulate(exportNodeCount.begin(), exportNodeCount.end(), 0);
 
-    std::vector<int> import_nodes;
+    std::vector<INT> import_nodes;
     import_nodes.reserve(import_sum);
     importNodeMap.reserve(import_sum);
     for (int p=0; p < processorCount; p++) {
@@ -805,9 +895,8 @@ namespace Iopx {
     std::copy(importNodeCount.begin(), importNodeCount.end(), importNodeIndex.begin());
     generate_index(importNodeIndex);
 
-    MPI_Alltoallv(TOPTR(import_nodes),    TOPTR(importNodeCount), TOPTR(importNodeIndex), MPI_INT,
-		  TOPTR(exportNodeMap), TOPTR(exportNodeCount), TOPTR(exportNodeIndex), MPI_INT,
-		  comm_);
+    MY_Alltoallv(import_nodes,  importNodeCount, importNodeIndex, 
+		 exportNodeMap, exportNodeCount, exportNodeIndex, comm_);
     
     // Map that converts nodes from the global index (1-based) to a local-per-processor index (1-based)
     nodeGTL.swap(nodes);
@@ -817,7 +906,7 @@ namespace Iopx {
   }
 
   template <typename INT>
-  void DecompositionData::get_shared_node_list(INT /*dummy*/)
+  void DecompositionData<INT>::get_shared_node_list()
   {
     // Need a list of all "shared" nodes (nodes on more than one
     // processor) and the list of processors that they are on for the
@@ -913,18 +1002,16 @@ namespace Iopx {
     }
 
     // Tell other processors how many nodes/procs I am sending them...
-    std::vector<int> recv_comm_map_count(processorCount);
-    MPI_Alltoall(TOPTR(send_comm_map_count), 1, MPI_INT,
-		 TOPTR(recv_comm_map_count), 1, MPI_INT, comm_);
+    std::vector<INT> recv_comm_map_count(processorCount);
+    MPI_Alltoall(TOPTR(send_comm_map_count), 1, mpi_type((INT)0),
+		 TOPTR(recv_comm_map_count), 1, mpi_type((INT)0), comm_);
     
 
-    std::vector<int> recv_comm_map_disp(recv_comm_map_count);
+    std::vector<INT> recv_comm_map_disp(recv_comm_map_count);
     generate_index(recv_comm_map_disp);
     nodeCommMap.resize(recv_comm_map_disp[processorCount-1] + recv_comm_map_count[processorCount-1]);
-    ct_assert(sizeof(INT) == sizeof(int));
-    MPI_Alltoallv(TOPTR(send_comm_map), TOPTR(send_comm_map_count), TOPTR(send_comm_map_disp), MPI_INT,
-		  TOPTR(nodeCommMap), TOPTR(recv_comm_map_count), TOPTR(recv_comm_map_disp), MPI_INT,
-		  comm_);
+    MY_Alltoallv(send_comm_map, send_comm_map_count, send_comm_map_disp, 
+		 nodeCommMap, recv_comm_map_count, recv_comm_map_disp, comm_);
     
     // Map global 0-based index to local 1-based index.
     for (size_t i=0; i < nodeCommMap.size(); i+=2) {
@@ -932,13 +1019,28 @@ namespace Iopx {
     }
   }
   
-  void DecompositionData::get_local_element_list(const ZOLTAN_ID_PTR &export_global_ids, size_t export_count)
+  template <typename INT>
+  void DecompositionData<INT>::get_local_element_list(const ZOLTAN_ID_PTR &export_global_ids, size_t export_count)
   {
     std::vector<size_t> elements(elementCount);
-    for (size_t i=0; i < export_count; i++) {
-      // flag all elements to be exported...
-      size_t elem = export_global_ids[i];
-      elements[elem-elementOffset] = 1;
+
+    size_t global_id_size = sizeof(INT)/sizeof(int);
+    
+    if (global_id_size == 1) {
+      for (size_t i=0; i < export_count; i++) {
+	// flag all elements to be exported...
+	size_t elem = export_global_ids[i];
+	elements[elem-elementOffset] = 1;
+      }
+    } else {
+      assert(global_id_size == 2);
+      int64_t *export_glob = (int64_t*)export_global_ids;
+      
+      for (size_t i=0; i < export_count; i++) {
+	// flag all elements to be exported...
+	size_t elem = export_glob[i];
+	elements[elem-elementOffset] = 1;
+      }
     }
       
     localElementMap.reserve(elementCount - export_count);
@@ -950,10 +1052,10 @@ namespace Iopx {
   }
 
   template <typename INT>
-  void DecompositionData::generate_adjacency_list(int exodusId,
-						  std::vector<INT> &pointer,
-						  std::vector<INT> &adjacency,
-						  size_t block_count)
+  void DecompositionData<INT>::generate_adjacency_list(int exodusId,
+						       std::vector<INT> &pointer,
+						       std::vector<INT> &adjacency,
+						       size_t block_count)
   {
     // Range of elements currently handled by this processor [)
     size_t p_start = elementOffset;
@@ -1005,7 +1107,6 @@ namespace Iopx {
     offset = 0;
     sum = 0; // Size of adjacency vector.
 
-    assert(sizeof(INT) == exodus_byte_size_api(exodusId));
     for (size_t b=0; b < block_count; b++) {
       // Range of elements in element block b [)
       size_t b_start = offset;  // offset is index of first element in this block...
@@ -1039,7 +1140,7 @@ namespace Iopx {
   }
 
   template <typename INT>
-  void DecompositionData::get_nodeset_data(int exodusId, size_t set_count, INT /*dummy*/)
+  void DecompositionData<INT>::get_nodeset_data(int exodusId, size_t set_count)
   {
     // Issues:
     // 1. Large node count in nodeset(s) that could overwhelm a single
@@ -1220,7 +1321,7 @@ namespace Iopx {
   }
 
   template <typename INT>
-  void DecompositionData::get_sideset_data(int exodusId, size_t set_count, INT /*dummy*/)
+  void DecompositionData<INT>::get_sideset_data(int exodusId, size_t set_count)
   {
     // Issues:
     // 0. See 'get_nodeset_data' for most issues.
@@ -1443,10 +1544,10 @@ namespace Iopx {
   }
 
   template <typename INT>
-  void DecompositionData::calculate_element_centroids(int exodusId,
-						      const std::vector<INT> &pointer,
-						      const std::vector<INT> &adjacency,
-						      const std::vector<INT> &node_dist)
+  void DecompositionData<INT>::calculate_element_centroids(int exodusId,
+							   const std::vector<INT> &pointer,
+							   const std::vector<INT> &adjacency,
+							   const std::vector<INT> &node_dist)
   {
     // recv_count is the number of nodes that I need to recv from the other processors
     // send_count is the number of nodes that I need to send to the other processors
@@ -1469,8 +1570,8 @@ namespace Iopx {
 
     // Tell each processor how many nodes worth of data to send to
     // every other processor...
-    MPI_Alltoall(TOPTR(recv_count), 1, MPI_INT,
-		 TOPTR(send_count), 1, MPI_INT, comm_);
+    MPI_Alltoall(TOPTR(recv_count), 1, mpi_type((INT)0),
+		 TOPTR(send_count), 1, mpi_type((INT)0), comm_);
 
     send_count[myProcessor] = 0;
     
@@ -1503,9 +1604,8 @@ namespace Iopx {
       }
     }
 
-    ct_assert(sizeof(INT) == sizeof(int));
-    MPI_Alltoallv(TOPTR(node_comm_recv), TOPTR(recv_count), TOPTR(recv_disp), MPI_INT,
-		  TOPTR(node_comm_send), TOPTR(send_count), TOPTR(send_disp), MPI_INT, comm_);
+    MY_Alltoallv(node_comm_recv, recv_count, recv_disp, 
+		 node_comm_send, send_count, send_disp, comm_);
 
     // At this point, 'node_comm_send' contains the list of nodes that I need to provide
     // coordinate data for.
@@ -1549,8 +1649,8 @@ namespace Iopx {
       recv_disp[i]  *= spatialDimension;
     }
 
-    MPI_Alltoallv(TOPTR(coord_send), TOPTR(send_count), TOPTR(send_disp), MPI_DOUBLE,
-		  TOPTR(coord_recv), TOPTR(recv_count), TOPTR(recv_disp), MPI_DOUBLE, comm_);
+    MY_Alltoallv(coord_send, send_count, send_disp, 
+		 coord_recv, recv_count, recv_disp, comm_);
 
     // Don't need coord_send data anymore ... clean out the vector.
     std::vector<double>().swap(coord_send);
@@ -1601,7 +1701,8 @@ namespace Iopx {
     }
   }
 
-  void DecompositionData::get_element_block_communication(size_t num_elem_block)
+  template <typename INT>
+  void DecompositionData<INT>::get_element_block_communication(size_t num_elem_block)
   {
     for (size_t b=0; b < num_elem_block; b++) {
       el_blocks[b].exportCount.resize(processorCount);
@@ -1672,68 +1773,112 @@ namespace Iopx {
 
   }
 
-  template void DecompositionData::communicate_node_data(int *file_data, int *ioss_data, size_t comp_count) const;
-  template void DecompositionData::communicate_node_data(int64_t *file_data, int64_t *ioss_data, size_t comp_count) const;
-  template void DecompositionData::communicate_node_data(double *file_data, double *ioss_data, size_t comp_count) const;
+  template void DecompositionData<int>::get_node_entity_proc_data(int *entity_proc, const Ioss::MapContainer &node_map) const;
+  template void DecompositionData<int64_t>::get_node_entity_proc_data(int64_t *entity_proc, const Ioss::MapContainer &node_map) const;
 
-  template <typename T>
-  void DecompositionData::communicate_node_data(T *file_data, T *ioss_data, size_t comp_count) const
+  template <typename INT>
+  void DecompositionData<INT>::get_node_entity_proc_data(INT *entity_proc, const Ioss::MapContainer &node_map) const
+  {
+    size_t j=0;
+    for (size_t i=0; i < nodeCommMap.size(); i+=2) {
+      INT local_id = nodeCommMap[i];
+      entity_proc[j++] = node_map[local_id];
+      entity_proc[j++] = nodeCommMap[i+1];
+    }
+  }
+  
+  template void DecompositionData<int>::communicate_node_data(int *file_data, int *ioss_data, size_t comp_count) const;
+  template void DecompositionData<int>::communicate_node_data(double *file_data, double *ioss_data, size_t comp_count) const;
+  template void DecompositionData<int64_t>::communicate_node_data(int64_t *file_data, int64_t *ioss_data, size_t comp_count) const;
+  template void DecompositionData<int64_t>::communicate_node_data(double *file_data, double *ioss_data, size_t comp_count) const;
+
+  template <typename INT> template <typename T>
+  void DecompositionData<INT>::communicate_node_data(T *file_data, T *ioss_data, size_t comp_count) const
   {
     // Transfer the file-decomposition based data in 'file_data' to
     // the ioss-decomposition based data in 'ioss_data'
     std::vector<T> export_data(exportNodeMap.size() * comp_count);
     std::vector<T> import_data(importNodeMap.size() * comp_count);
-    for (size_t i=0; i < exportNodeMap.size(); i++) {
-      size_t index = exportNodeMap[i] - nodeOffset;
-      assert(index < nodeCount);
-      for (size_t j=0; j < comp_count; j++) {
-	export_data[comp_count*i+j] = file_data[comp_count*index+j];
+
+    if (comp_count == 1) {
+      for (size_t i=0; i < exportNodeMap.size(); i++) {
+	size_t index = exportNodeMap[i] - nodeOffset;
+	assert(index < nodeCount);
+	export_data[i] = file_data[index];
       }
-    }
 
-    // Transfer all local data from file_data to ioss_data...
-    for (size_t i=0; i < localNodeMap.size(); i++) {
-      size_t index = localNodeMap[i] - nodeOffset;
-      assert(index < nodeCount);
-      for (size_t j=0; j < comp_count; j++) {
-	ioss_data[comp_count*(importPreLocalNodeIndex+i)+j] = file_data[comp_count*index+j];
+      // Transfer all local data from file_data to ioss_data...
+      for (size_t i=0; i < localNodeMap.size(); i++) {
+	size_t index = localNodeMap[i] - nodeOffset;
+	assert(index < nodeCount);
+	ioss_data[importPreLocalNodeIndex+i] = file_data[index];
       }
-    }
 
-    std::vector<int> export_count(exportNodeCount);
-    std::vector<int> export_disp(exportNodeIndex);
-    std::vector<int> import_count(importNodeCount);
-    std::vector<int> import_disp(importNodeIndex);
+      // Get my imported data and send my exported data...
+      MY_Alltoallv(export_data, exportNodeCount, exportNodeIndex,
+		   import_data, importNodeCount, importNodeIndex, comm_);
     
-    for (int i=0; i < processorCount; i++) {
-      export_count[i] *= sizeof(T) * comp_count;
-      export_disp[i] *= sizeof(T) * comp_count;
-      import_count[i] *= sizeof(T) * comp_count;
-      import_disp[i] *= sizeof(T) * comp_count;
-    }
+      // Copy the imported data into ioss_data...
+      for (size_t i=0; i < importNodeMap.size(); i++) {
+	size_t index = importNodeMap[i];
+	assert(index < ioss_node_count());
+	ioss_data[index] = import_data[i];
+      }
 
-    // Get my imported data and send my exported data...
-    MPI_Alltoallv(TOPTR(export_data), TOPTR(export_count), TOPTR(export_disp), MPI_BYTE,
-		  TOPTR(import_data), TOPTR(import_count), TOPTR(import_disp), MPI_BYTE, comm_);
+    } else { // Comp_count > 1
+      for (size_t i=0; i < exportNodeMap.size(); i++) {
+	size_t index = exportNodeMap[i] - nodeOffset;
+	assert(index < nodeCount);
+	for (size_t j=0; j < comp_count; j++) {
+	  export_data[comp_count*i+j] = file_data[comp_count*index+j];
+	}
+      }
+
+      // Transfer all local data from file_data to ioss_data...
+      for (size_t i=0; i < localNodeMap.size(); i++) {
+	size_t index = localNodeMap[i] - nodeOffset;
+	assert(index < nodeCount);
+	for (size_t j=0; j < comp_count; j++) {
+	  ioss_data[comp_count*(importPreLocalNodeIndex+i)+j] = file_data[comp_count*index+j];
+	}
+      }
+
+      std::vector<INT> export_count(exportNodeCount.begin(), exportNodeCount.end());
+      std::vector<INT> export_disp(exportNodeIndex.begin(), exportNodeIndex.end());
+      std::vector<INT> import_count(importNodeCount.begin(), importNodeCount.end());
+      std::vector<INT> import_disp(importNodeIndex.begin(), importNodeIndex.end());
     
-    // Copy the imported data into ioss_data...
-    for (size_t i=0; i < importNodeMap.size(); i++) {
-      size_t index = importNodeMap[i];
-      assert(index < ioss_node_count());
-      for (size_t j=0; j < comp_count; j++) {
-	ioss_data[comp_count*index+j] = import_data[comp_count*i+j];
+      for (int i=0; i < processorCount; i++) {
+	export_count[i] *= comp_count;
+	export_disp[i]  *= comp_count;
+	import_count[i] *= comp_count;
+	import_disp[i]  *= comp_count;
+      }
+
+      // Get my imported data and send my exported data...
+      MY_Alltoallv(export_data, export_count, export_disp, 
+		   import_data, import_count, import_disp, comm_);
+    
+      // Copy the imported data into ioss_data...
+      for (size_t i=0; i < importNodeMap.size(); i++) {
+	size_t index = importNodeMap[i];
+	assert(index < ioss_node_count());
+	for (size_t j=0; j < comp_count; j++) {
+	  ioss_data[comp_count*index+j] = import_data[comp_count*i+j];
+	}
       }
     }
   }
 
   // The following function is used if reading all element data on a processor instead of
   // just an element blocks worth...
-  template void DecompositionData::communicate_element_data(int *file_data, int *ioss_data, size_t comp_count) const;
-  template void DecompositionData::communicate_element_data(int64_t *file_data, int64_t *ioss_data, size_t comp_count) const;
-  template void DecompositionData::communicate_element_data(double *file_data, double *ioss_data, size_t comp_count) const;
+  template void DecompositionData<int>::communicate_element_data(int *file_data, int *ioss_data, size_t comp_count) const;
+  template void DecompositionData<int64_t>::communicate_element_data(int64_t *file_data, int64_t *ioss_data, size_t comp_count) const;
+  template void DecompositionData<int>::communicate_element_data(double *file_data, double *ioss_data, size_t comp_count) const;
+  template void DecompositionData<int64_t>::communicate_element_data(double *file_data, double *ioss_data, size_t comp_count) const;
 
-  template <typename T>
-  void DecompositionData::communicate_element_data(T *file_data, T *ioss_data, size_t comp_count) const
+  template <typename INT> template <typename T>
+  void DecompositionData<INT>::communicate_element_data(T *file_data, T *ioss_data, size_t comp_count) const
   {
     // Transfer the file-decomposition based data in 'file_data' to
     // the ioss-decomposition based data in 'ioss_data'
@@ -1752,21 +1897,9 @@ namespace Iopx {
 	ioss_data[importPreLocalElemIndex+i] = file_data[index];
       }
 
-      std::vector<int> export_count(exportElementCount);
-      std::vector<int> export_disp(exportElementIndex);
-      std::vector<int> import_count(importElementCount);
-      std::vector<int> import_disp(importElementIndex);
-    
-      for (int i=0; i < processorCount; i++) {
-	export_count[i] *= sizeof(T);
-	export_disp[i]  *= sizeof(T);
-	import_count[i] *= sizeof(T);
-	import_disp[i]  *= sizeof(T);
-      }
-
       // Get my imported data and send my exported data...
-      MPI_Alltoallv(TOPTR(export_data), TOPTR(export_count), TOPTR(export_disp), MPI_BYTE,
-		    TOPTR(import_data), TOPTR(import_count), TOPTR(import_disp), MPI_BYTE, comm_);
+      MY_Alltoallv(export_data, exportElementCount, exportElementIndex, 
+		   import_data, importElementCount, importElementIndex, comm_);
     
       // Copy the imported data into ioss_data...
       // Some comes before the local data...
@@ -1795,21 +1928,21 @@ namespace Iopx {
 	}
       }
 
-      std::vector<int> export_count(exportElementCount);
-      std::vector<int> export_disp(exportElementIndex);
-      std::vector<int> import_count(importElementCount);
-      std::vector<int> import_disp(importElementIndex);
+      std::vector<INT> export_count(exportElementCount.begin(), exportElementCount.end());
+      std::vector<INT> export_disp(exportElementIndex.begin(), exportElementIndex.end());
+      std::vector<INT> import_count(importElementCount.begin(), importElementCount.end());
+      std::vector<INT> import_disp(importElementIndex.begin(), importElementIndex.end());
     
       for (int i=0; i < processorCount; i++) {
-	export_count[i] *= sizeof(T) * comp_count;
-	export_disp[i]  *= sizeof(T) * comp_count;
-	import_count[i] *= sizeof(T) * comp_count;
-	import_disp[i]  *= sizeof(T) * comp_count;
+	export_count[i] *= comp_count;
+	export_disp[i]  *= comp_count;
+	import_count[i] *= comp_count;
+	import_disp[i]  *= comp_count;
       }
 
       // Get my imported data and send my exported data...
-      MPI_Alltoallv(TOPTR(export_data), TOPTR(export_count), TOPTR(export_disp), MPI_BYTE,
-		    TOPTR(import_data), TOPTR(import_count), TOPTR(import_disp), MPI_BYTE, comm_);
+      MY_Alltoallv(export_data, export_count, export_disp, 
+		   import_data, import_count, import_disp, comm_);
     
       // Copy the imported data into ioss_data...
       // Some comes before the local data...
@@ -1829,7 +1962,8 @@ namespace Iopx {
     }
   }
 
-  int DecompositionData::get_node_coordinates(int exodusId, double *ioss_data, const Ioss::Field &field) const
+  template <typename INT>
+  int DecompositionData<INT>::get_node_coordinates(int exodusId, double *ioss_data, const Ioss::Field &field) const
   {
     std::vector<double> tmp(nodeCount);
 	      
@@ -1896,11 +2030,11 @@ namespace Iopx {
     return ierr;
   }
   
-  template void DecompositionData::get_block_connectivity(int exodusId, int *data, int64_t id, size_t blk_seq, size_t nnpe) const;
-  template void DecompositionData::get_block_connectivity(int exodusId, int64_t *data, int64_t id, size_t blk_seq, size_t nnpe) const;
+  template void DecompositionData<int>::get_block_connectivity(int exodusId, int *data, int64_t id, size_t blk_seq, size_t nnpe) const;
+  template void DecompositionData<int64_t>::get_block_connectivity(int exodusId, int64_t *data, int64_t id, size_t blk_seq, size_t nnpe) const;
 
   template <typename INT>
-  void DecompositionData::get_block_connectivity(int exodusId, INT *data, int64_t id, size_t blk_seq, size_t nnpe) const
+  void DecompositionData<INT>::get_block_connectivity(int exodusId, INT *data, int64_t id, size_t blk_seq, size_t nnpe) const
   {
     BlockDecompositionData blk = el_blocks[blk_seq];
 
@@ -1924,12 +2058,13 @@ namespace Iopx {
     }
   }
 
-  template void DecompositionData::communicate_block_data(int64_t *file_data,   int64_t *ioss_data, size_t blk_seq, size_t comp_count) const;
-  template void DecompositionData::communicate_block_data(int *file_data,    int *ioss_data,  size_t blk_seq, size_t comp_count) const;
-  template void DecompositionData::communicate_block_data(double *file_data, double *ioss_data, size_t blk_seq, size_t comp_count) const;
+  template void DecompositionData<int64_t>::communicate_block_data(int64_t *file_data,   int64_t *ioss_data, size_t blk_seq, size_t comp_count) const;
+  template void DecompositionData<int>::communicate_block_data(int *file_data,    int *ioss_data,  size_t blk_seq, size_t comp_count) const;
+  template void DecompositionData<int64_t>::communicate_block_data(double *file_data, double *ioss_data, size_t blk_seq, size_t comp_count) const;
+  template void DecompositionData<int>::communicate_block_data(double *file_data, double *ioss_data, size_t blk_seq, size_t comp_count) const;
 
-  template <typename T>
-  void DecompositionData::communicate_block_data(T *file_data, T *ioss_data, size_t blk_seq, size_t comp_count) const
+  template <typename INT> template <typename T>
+  void DecompositionData<INT>::communicate_block_data(T *file_data, T *ioss_data, size_t blk_seq, size_t comp_count) const
   {
     BlockDecompositionData blk = el_blocks[blk_seq];
 
@@ -1942,10 +2077,10 @@ namespace Iopx {
 	exports.push_back(file_data[blk.exportMap[i]]);
       }
 
-      std::vector<int> export_count(blk.exportCount);
-      std::vector<int> export_disp(blk.exportIndex);
-      std::vector<int> import_count(blk.importCount);
-      std::vector<int> import_disp(blk.importIndex);
+      std::vector<int> export_count(blk.exportCount.begin(), blk.exportCount.end());
+      std::vector<int> export_disp(blk.exportIndex.begin(), blk.exportIndex.end());
+      std::vector<int> import_count(blk.importCount.begin(), blk.importCount.end());
+      std::vector<int> import_disp(blk.importIndex.begin(), blk.importIndex.end());
     
       for (int i=0; i < processorCount; i++) {
 	export_count[i] *= sizeof(T);
@@ -1955,8 +2090,8 @@ namespace Iopx {
       }
 
       // Get my imported data and send my exported data...
-      MPI_Alltoallv(TOPTR(exports), TOPTR(export_count), TOPTR(export_disp), MPI_BYTE,
-		    TOPTR(imports), TOPTR(import_count), TOPTR(import_disp), MPI_BYTE, comm_);
+      MY_Alltoallv(exports, blk.exportCount, blk.exportIndex, 
+		   imports, blk.importCount, blk.importIndex, comm_);
     
       // Map local and imported data to ioss_data.
       for (size_t i=0; i < blk.localMap.size(); i++) {
@@ -1973,21 +2108,21 @@ namespace Iopx {
 	}
       }
 
-      std::vector<int> export_count(blk.exportCount);
-      std::vector<int> export_disp(blk.exportIndex);
-      std::vector<int> import_count(blk.importCount);
-      std::vector<int> import_disp(blk.importIndex);
+      std::vector<int> export_count(blk.exportCount.begin(), blk.exportCount.end());
+      std::vector<int> export_disp(blk.exportIndex.begin(), blk.exportIndex.end());
+      std::vector<int> import_count(blk.importCount.begin(), blk.importCount.end());
+      std::vector<int> import_disp(blk.importIndex.begin(), blk.importIndex.end());
     
       for (int i=0; i < processorCount; i++) {
-	export_count[i] *= sizeof(T) * comp_count;
-	export_disp[i]  *= sizeof(T) * comp_count;
-	import_count[i] *= sizeof(T) * comp_count;
-	import_disp[i]  *= sizeof(T) * comp_count;
+	export_count[i] *= comp_count;
+	export_disp[i]  *= comp_count;
+	import_count[i] *= comp_count;
+	import_disp[i]  *= comp_count;
       }
 
       // Get my imported data and send my exported data...
-      MPI_Alltoallv(TOPTR(exports), TOPTR(export_count), TOPTR(export_disp), MPI_BYTE,
-		    TOPTR(imports), TOPTR(import_count), TOPTR(import_disp), MPI_BYTE, comm_);
+      MY_Alltoallv(exports, export_count, export_disp, 
+		   imports, import_count, import_disp, comm_);
     
       // Map local and imported data to ioss_data.
       for (size_t i=0; i < blk.localMap.size(); i++) {
@@ -2004,16 +2139,18 @@ namespace Iopx {
     }
   }
 
-  template void DecompositionData::communicate_set_data(int64_t *file_data,   int64_t *ioss_data,
-							const SetDecompositionData &set, size_t comp_count) const;
-  template void DecompositionData::communicate_set_data(int *file_data,    int *ioss_data,
-							const SetDecompositionData &set, size_t comp_count) const;
-  template void DecompositionData::communicate_set_data(double *file_data, double *ioss_data,
-							const SetDecompositionData &set, size_t comp_count) const;
+  template void DecompositionData<int64_t>::communicate_set_data(int64_t *file_data,   int64_t *ioss_data,
+								 const SetDecompositionData &set, size_t comp_count) const;
+  template void DecompositionData<int>::communicate_set_data(int *file_data,    int *ioss_data,
+							     const SetDecompositionData &set, size_t comp_count) const;
+  template void DecompositionData<int64_t>::communicate_set_data(double *file_data, double *ioss_data,
+								 const SetDecompositionData &set, size_t comp_count) const;
+  template void DecompositionData<int>::communicate_set_data(double *file_data, double *ioss_data,
+							     const SetDecompositionData &set, size_t comp_count) const;
 
-  template <typename T>
-  void DecompositionData::communicate_set_data(T *file_data, T *ioss_data,
-					       const SetDecompositionData &set, size_t comp_count) const
+  template <typename INT> template <typename T>
+  void DecompositionData<INT>::communicate_set_data(T *file_data, T *ioss_data,
+						    const SetDecompositionData &set, size_t comp_count) const
   {
     MPI_Status  status;
 
@@ -2031,7 +2168,7 @@ namespace Iopx {
       if (result != MPI_SUCCESS) {
 	std::ostringstream errmsg;
 	errmsg << "ERROR: MPI_Recv error on processor " << myProcessor
-	       << " in Iopx::DecompositionData::communicate_set_data";
+	       << " in Iopx::DecompositionData<INT>::communicate_set_data";
 	std::cerr << errmsg.str();
       }
     }
@@ -2079,8 +2216,9 @@ namespace Iopx {
     }
   }
 
-  int DecompositionData::get_var(int exodusId, int step, ex_entity_type type,
-				 int var_index, ex_entity_id id, int64_t num_entity, std::vector<double> &data) const
+  template <typename INT>
+  int DecompositionData<INT>::get_var(int exodusId, int step, ex_entity_type type,
+				      int var_index, ex_entity_id id, int64_t num_entity, std::vector<double> &data) const
   {
     if (type == EX_ELEM_BLOCK) {
       return get_elem_var(exodusId, step, var_index, id, num_entity, data);
@@ -2094,7 +2232,8 @@ namespace Iopx {
     }
   }
 
-  int DecompositionData::get_attr(int exodusId, ex_entity_type obj_type, ex_entity_id id, size_t attr_count, double* attrib) const
+  template <typename INT>
+  int DecompositionData<INT>::get_attr(int exodusId, ex_entity_type obj_type, ex_entity_id id, size_t attr_count, double* attrib) const
   {
     if (attr_count == 1) {
       return get_one_attr(exodusId, obj_type, id, 1, attrib);
@@ -2112,7 +2251,8 @@ namespace Iopx {
     }
   }
 
-  int DecompositionData::get_one_attr(int exodusId, ex_entity_type obj_type, ex_entity_id id, int attrib_index, double* attrib) const
+  template <typename INT>
+  int DecompositionData<INT>::get_one_attr(int exodusId, ex_entity_type obj_type, ex_entity_id id, int attrib_index, double* attrib) const
   {
     if (obj_type == EX_ELEM_BLOCK) {
       return get_one_elem_attr(exodusId, id, attrib_index, attrib);
@@ -2126,7 +2266,63 @@ namespace Iopx {
     }
   }
 
-  const SetDecompositionData &DecompositionData::get_decomp_set(ex_entity_type type, ex_entity_id id) const
+  template void DecompositionDataBase::communicate_node_data(int *file_data, int *ioss_data, size_t comp_count) const;
+  template void DecompositionDataBase::communicate_node_data(int64_t *file_data, int64_t *ioss_data, size_t comp_count) const;
+  template void DecompositionDataBase::communicate_node_data(double *file_data, double *ioss_data, size_t comp_count) const;
+
+  template <typename T>
+  void DecompositionDataBase::communicate_node_data(T *file_data, T *ioss_data, size_t comp_count) const
+  {
+    if (int_size() == sizeof(int)) {
+      const DecompositionData<int> *this32 = dynamic_cast<const DecompositionData<int>*>(this);
+      this32->communicate_node_data(file_data, ioss_data, comp_count);
+    } else {
+      const DecompositionData<int64_t> *this64 = dynamic_cast<const DecompositionData<int64_t>*>(this);
+      this64->communicate_node_data(file_data, ioss_data, comp_count);
+    }
+  }
+      
+  template void DecompositionDataBase::communicate_element_data(int *file_data, int *ioss_data, size_t comp_count) const;
+  template void DecompositionDataBase::communicate_element_data(int64_t *file_data, int64_t *ioss_data, size_t comp_count) const;
+  template void DecompositionDataBase::communicate_element_data(double *file_data, double *ioss_data, size_t comp_count) const;
+
+  template <typename T>
+  void DecompositionDataBase::communicate_element_data(T *file_data, T *ioss_data, size_t comp_count) const
+  {
+    if (int_size() == sizeof(int)) {
+      const DecompositionData<int> *this32 = dynamic_cast<const DecompositionData<int>*>(this);
+      this32->communicate_element_data(file_data, ioss_data, comp_count);
+    } else {
+      const DecompositionData<int64_t> *this64 = dynamic_cast<const DecompositionData<int64_t>*>(this);
+      this64->communicate_element_data(file_data, ioss_data, comp_count);
+    }
+  }
+
+
+  int DecompositionDataBase::get_set_mesh_double(int exodusId, ex_entity_type type, ex_entity_id id,
+						 const Ioss::Field& field, double *ioss_data) const
+  {
+    if (int_size() == sizeof(int)) {
+      const DecompositionData<int> *this32 = dynamic_cast<const DecompositionData<int>*>(this);
+      this32->get_set_mesh_var(exodusId, type, id, field, ioss_data);
+    } else {
+      const DecompositionData<int64_t> *this64 = dynamic_cast<const DecompositionData<int64_t>*>(this);
+      this64->get_set_mesh_var(exodusId, type, id, field, ioss_data);
+    }
+  }
+
+  void DecompositionDataBase::get_block_connectivity(int exodusId, void *data, int64_t id, size_t blk_seq, size_t nnpe) const
+  {
+    if (int_size() == sizeof(int)) {
+      const DecompositionData<int> *this32 = dynamic_cast<const DecompositionData<int>*>(this);
+      this32->get_block_connectivity(exodusId, (int*)data, id, blk_seq, nnpe);
+    } else {
+      const DecompositionData<int64_t> *this64 = dynamic_cast<const DecompositionData<int64_t>*>(this);
+      this64->get_block_connectivity(exodusId,  (int64_t*)data, id, blk_seq, nnpe);
+    }
+  }
+
+  const SetDecompositionData &DecompositionDataBase::get_decomp_set(ex_entity_type type, ex_entity_id id) const
   {
     if (type == EX_NODE_SET) {
       for (size_t i=0; i < node_sets.size(); i++) {
@@ -2154,7 +2350,8 @@ namespace Iopx {
     return node_sets[0];
   }
 
-  size_t DecompositionData::get_block_seq(ex_entity_type type, ex_entity_id id) const
+  template <typename INT>
+  size_t DecompositionData<INT>::get_block_seq(ex_entity_type type, ex_entity_id id) const
   {
     if (type == EX_ELEM_BLOCK) {
       for (size_t i=0; i < el_blocks.size(); i++) {
@@ -2166,7 +2363,8 @@ namespace Iopx {
     return el_blocks.size();
   }
 
-  size_t DecompositionData::get_block_element_count(size_t blk_seq) const
+  template <typename INT>
+  size_t DecompositionData<INT>::get_block_element_count(size_t blk_seq) const
   {
     // Determine number of file decomp elements are in this block;
     size_t bbeg = max(fileBlockIndex[blk_seq],   elementOffset);
@@ -2177,7 +2375,8 @@ namespace Iopx {
     return count;
   }
 
-  size_t DecompositionData::get_block_element_offset(size_t blk_seq) const
+  template <typename INT>
+  size_t DecompositionData<INT>::get_block_element_offset(size_t blk_seq) const
   {
     size_t offset = 0;
     if (elementOffset > fileBlockIndex[blk_seq])
@@ -2185,9 +2384,10 @@ namespace Iopx {
     return offset;
   }
 
-  int DecompositionData::get_set_var(int exodusId, int step, int var_index,
-				     ex_entity_type type, ex_entity_id id,
-				     int64_t num_entity, std::vector<double> &ioss_data) const
+  template <typename INT>
+  int DecompositionData<INT>::get_set_var(int exodusId, int step, int var_index,
+					  ex_entity_type type, ex_entity_id id,
+					  int64_t num_entity, std::vector<double> &ioss_data) const
   {
     // Find set corresponding to the specified id...
     const SetDecompositionData &set = get_decomp_set(type, id);
@@ -2206,7 +2406,8 @@ namespace Iopx {
     return ierr;
   }
   
-  int DecompositionData::get_set_attr(int exodusId, ex_entity_type type, ex_entity_id id, size_t comp_count, double *ioss_data) const
+  template <typename INT>
+  int DecompositionData<INT>::get_set_attr(int exodusId, ex_entity_type type, ex_entity_id id, size_t comp_count, double *ioss_data) const
   {
     // Find set corresponding to the specified id...
     const SetDecompositionData &set = get_decomp_set(type, id);
@@ -2225,7 +2426,8 @@ namespace Iopx {
     return ierr;
   }
   
-  int DecompositionData::get_one_set_attr(int exodusId, ex_entity_type type, ex_entity_id id, int attr_index, double *ioss_data) const
+  template <typename INT>
+  int DecompositionData<INT>::get_one_set_attr(int exodusId, ex_entity_type type, ex_entity_id id, int attr_index, double *ioss_data) const
   {
     // Find set corresponding to the specified id...
     const SetDecompositionData &set = get_decomp_set(type, id);
@@ -2244,8 +2446,9 @@ namespace Iopx {
     return ierr;
   }
   
-  int DecompositionData::get_node_var(int exodusId, int step, int var_index, ex_entity_id id,
-				      int64_t num_entity, std::vector<double> &ioss_data) const
+  template <typename INT>
+  int DecompositionData<INT>::get_node_var(int exodusId, int step, int var_index, ex_entity_id id,
+					   int64_t num_entity, std::vector<double> &ioss_data) const
   {
     std::vector<double> file_data(nodeCount);
     int ierr = ex_get_n_var(exodusId, step, EX_NODAL, var_index, id, nodeOffset+1, nodeCount, TOPTR(file_data));
@@ -2255,7 +2458,8 @@ namespace Iopx {
     return ierr;
   }
 
-  int DecompositionData::get_node_attr(int exodusId, ex_entity_id id, size_t comp_count, double *ioss_data) const
+  template <typename INT>
+  int DecompositionData<INT>::get_node_attr(int exodusId, ex_entity_id id, size_t comp_count, double *ioss_data) const
   {
     std::vector<double> file_data(nodeCount*comp_count);
     int ierr = ex_get_n_attr(exodusId, EX_NODAL, id, nodeOffset+1, nodeCount, TOPTR(file_data));
@@ -2265,7 +2469,8 @@ namespace Iopx {
     return ierr;
   }
 
-  int DecompositionData::get_one_node_attr(int exodusId, ex_entity_id id, int attr_index, double *ioss_data) const
+  template <typename INT>
+  int DecompositionData<INT>::get_one_node_attr(int exodusId, ex_entity_id id, int attr_index, double *ioss_data) const
   {
     std::vector<double> file_data(nodeCount);
     int ierr = ex_get_n_one_attr(exodusId, EX_NODAL, id, nodeOffset+1, nodeCount, attr_index, TOPTR(file_data));
@@ -2275,8 +2480,9 @@ namespace Iopx {
     return ierr;
   }
 
-  int DecompositionData::get_elem_var(int exodusId, int step, int var_index, ex_entity_id id,
-				      int64_t num_entity, std::vector<double> &ioss_data) const 
+  template <typename INT>
+  int DecompositionData<INT>::get_elem_var(int exodusId, int step, int var_index, ex_entity_id id,
+					   int64_t num_entity, std::vector<double> &ioss_data) const 
   {
     // Find blk_seq corresponding to block the specified id...
     size_t blk_seq = get_block_seq(EX_ELEM_BLOCK, id);
@@ -2292,7 +2498,8 @@ namespace Iopx {
     return ierr;
   }
 
-  int DecompositionData::get_elem_attr(int exodusId, ex_entity_id id, size_t comp_count, double *ioss_data) const 
+  template <typename INT>
+  int DecompositionData<INT>::get_elem_attr(int exodusId, ex_entity_id id, size_t comp_count, double *ioss_data) const 
   {
     // Find blk_seq corresponding to block the specified id...
     size_t blk_seq = get_block_seq(EX_ELEM_BLOCK, id);
@@ -2308,7 +2515,8 @@ namespace Iopx {
     return ierr;
   }
 
-  int DecompositionData::get_one_elem_attr(int exodusId, ex_entity_id id, int attr_index, double *ioss_data) const 
+  template <typename INT>
+  int DecompositionData<INT>::get_one_elem_attr(int exodusId, ex_entity_id id, int attr_index, double *ioss_data) const 
   {
     // Find blk_seq corresponding to block the specified id...
     size_t blk_seq = get_block_seq(EX_ELEM_BLOCK, id);
@@ -2324,16 +2532,18 @@ namespace Iopx {
     return ierr;
   }
 
-  template int DecompositionData::get_set_mesh_var(int exodusId, ex_entity_type type, ex_entity_id id,
-						   const Ioss::Field& field, int* ioss_data) const;
-  template int DecompositionData::get_set_mesh_var(int exodusId, ex_entity_type type, ex_entity_id id,
-						   const Ioss::Field& field, int64_t* ioss_data) const;
-  template int DecompositionData::get_set_mesh_var(int exodusId, ex_entity_type type, ex_entity_id id,
-						   const Ioss::Field& field, double* ioss_data) const;
+  template int DecompositionData<int>::get_set_mesh_var(int exodusId, ex_entity_type type, ex_entity_id id,
+							const Ioss::Field& field, int* ioss_data) const;
+  template int DecompositionData<int64_t>::get_set_mesh_var(int exodusId, ex_entity_type type, ex_entity_id id,
+							    const Ioss::Field& field, int64_t* ioss_data) const;
+  template int DecompositionData<int>::get_set_mesh_var(int exodusId, ex_entity_type type, ex_entity_id id,
+							const Ioss::Field& field, double* ioss_data) const;
+  template int DecompositionData<int64_t>::get_set_mesh_var(int exodusId, ex_entity_type type, ex_entity_id id,
+							    const Ioss::Field& field, double* ioss_data) const;
 
-  template <typename T>
-  int DecompositionData::get_set_mesh_var(int exodusId, ex_entity_type type, ex_entity_id id,
-					  const Ioss::Field& field, T* ioss_data) const 
+  template <typename INT> template <typename T>
+  int DecompositionData<INT>::get_set_mesh_var(int exodusId, ex_entity_type type, ex_entity_id id,
+					       const Ioss::Field& field, T* ioss_data) const 
   {
     // Sideset Distribution Factor data can be very complicated.
     // For some sanity, handle all requests for those in a separate routine...
@@ -2457,8 +2667,8 @@ namespace Iopx {
     return ierr;
   }
 
-  template <typename T>
-  int DecompositionData::handle_sset_df(int exodusId, ex_entity_id id, const Ioss::Field& field, T* ioss_data) const 
+  template <typename INT> template <typename T>
+  int DecompositionData<INT>::handle_sset_df(int exodusId, ex_entity_id id, const Ioss::Field& field, T* ioss_data) const 
   {
     int ierr = 0;
 

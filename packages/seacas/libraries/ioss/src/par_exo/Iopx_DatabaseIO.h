@@ -344,7 +344,10 @@ namespace Iopx {
 
 
     // Private member data...
-    Iopx::DecompositionData decomp;
+    mutable Iopx::DecompositionDataBase      *decomp;
+    mutable Iopx::DecompositionData<int>     *decomp32;
+    mutable Iopx::DecompositionData<int64_t> *decomp64;
+
     mutable int exodusFilePtr;
     mutable EntityIdSet ids_;
 
