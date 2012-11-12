@@ -252,50 +252,32 @@ int main(int argc, char *argv[]) {
 #ifdef NEUMANN
   // Tranform matrix to Neumann b.c.
   // Essentially, we need to update two diagonal elements
-  bool useTpetra = (Op->getRowMap()->lib() == Xpetra::UseTpetra);
 
-  std::vector<SC> newValuesVector(2, 0.0);
-  Teuchos::ArrayView<SC> newValues(newValuesVector);
+  // TODO: calls to getLocalRowView not really needed
 
-#ifdef HAVE_MUELU_TPETRA
-  if (useTpetra)
-    Utils::Op2NonConstTpetraCrs(Op)->resumeFill();
-#endif
+  Op->resumeFill();
+
   Teuchos::ArrayView<const LO> indices;
   Teuchos::ArrayView<const SC> values;
+  Teuchos::Array<SC> newValues(2, 0.0);
 
   size_t myRank = Op->getRowMap()->getComm()->getRank();
   size_t nCpus  = Op->getRowMap()->getComm()->getSize();
-  if (myRank == 0) {
-    LO firstRow = 0;
+  if (myRank == 0) { // JG TODO: can we use rowMap->isNodeLocalElement(0) instead for more genericity?
+    //LO firstRow = 0;
     newValues[0] = 1.0; newValues[1] = -1.0;
     Op->getLocalRowView(0, indices, values);
-#ifdef HAVE_MUELU_TPETRA
-    if (useTpetra)
-      Utils::Op2NonConstTpetraCrs(Op)->replaceLocalValues(0, indices, newValues);
-#endif
-#ifdef HAVE_MUELU_EPETRA
-    if (!useTpetra)
-      Utils::Op2NonConstEpetraCrs(Op)->ReplaceMyValues(0, 2, newValues.getRawPtr(), indices.getRawPtr());
-#endif
+    Op->replaceLocalValues(0, indices, newValues);
   }
-  if (myRank == nCpus-1) {
+  if (myRank == nCpus-1) { // JG TODO: can we use rowMap->isNodeLocalElement(lastRow) instead for more genericity?
     LO lastRow = Op->getNodeNumRows()-1;
     newValues[0] = -1.0; newValues[1] = 1.0;
     Op->getLocalRowView(lastRow, indices, values);
-#ifdef HAVE_MUELU_TPETRA
-    if (useTpetra)
-      Utils::Op2NonConstTpetraCrs(Op)->replaceLocalValues(lastRow, indices, newValues);
-#endif
-#ifdef HAVE_MUELU_EPETRA
-    if (!useTpetra)
-      Utils::Op2NonConstEpetraCrs(Op)->ReplaceMyValues(lastRow, 2, newValues.getRawPtr(), indices.getRawPtr());
-#endif
+    Op->replaceLocalValues(lastRow, indices, newValues);
   }
-#ifdef HAVE_MUELU_TPETRA
+
   Op->fillComplete();
-#endif
-#endif
+#endif // NEUMANN
 
   /**********************************************************************************/
   /*                                                                                */

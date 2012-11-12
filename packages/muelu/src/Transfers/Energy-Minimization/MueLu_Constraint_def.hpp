@@ -117,11 +117,7 @@ namespace MueLu {
     const size_t NSDim   = X_->getNumVectors();
     const size_t numRows = P.getNodeNumRows();
 
-    bool useTpetra = (Projected.getRowMap()->lib() == Xpetra::UseTpetra);
-#ifdef HAVE_MUELU_TPETRA
-    if (useTpetra)
-      Utils::Op2NonConstTpetraCrs(rcpFromRef(Projected))->resumeFill();
-#endif
+    Projected.resumeFill();
 
     Teuchos::SerialDenseVector<LO,SC> BcRow(NSDim, false);
     for (size_t i = 0; i < numRows; i++) {
@@ -134,8 +130,7 @@ namespace MueLu {
       size_t nnz  = pindices.size();    // number of nonzeros in the constrained matrix
       size_t nnz1 = indices.size();     // number of nonzeros in the supplied matrix
 
-      std::vector<SC> newValuesVector(nnz, 0.0);
-      Teuchos::ArrayView<SC> newValues(newValuesVector);
+      Teuchos::Array<SC> newValues(nnz, 0.0);
 
       // step 1: fix stencil
       // Projected already has the correct stencil
@@ -177,20 +172,14 @@ namespace MueLu {
       for (size_t j = 0; j < nnz; j++)
         newValues[j] -= val[j];
 
-#ifdef HAVE_MUELU_TPETRA
-      if (useTpetra)
-        Utils::Op2NonConstTpetraCrs(rcpFromRef(Projected))->replaceLocalValues(i, pindices, newValues);
-#endif
-#ifdef HAVE_MUELU_EPETRA
-      if (!useTpetra)
-        Utils::Op2NonConstEpetraCrs(rcpFromRef(Projected))->ReplaceMyValues(i, nnz, newValues.getRawPtr(), pindices.getRawPtr());
-#endif
+      Projected.replaceLocalValues(i, pindices, newValues);
     }
 
-    if (useTpetra)
-      Projected.fillComplete(Projected.getDomainMap(), Projected.getRangeMap());
+    Projected.fillComplete(Projected.getDomainMap(), Projected.getRangeMap()); //FIXME: maps needed?
   }
 
 } // namespace MueLu
 
 #endif //ifndef MUELU_CONSTRAINT_DEF_HPP
+
+// FIXME: faster way to do things?
