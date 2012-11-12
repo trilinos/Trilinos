@@ -61,6 +61,7 @@
 
 #include "Thyra_DefaultAddedLinearOp.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
+#include "Thyra_DefaultZeroLinearOp.hpp"
 
 #ifdef Piro_ENABLE_NOX
 #  include "Thyra_NonlinearSolver_NOX.hpp"
@@ -658,7 +659,7 @@ Piro::RythmosSolver<Scalar>::create_DgDp_op_impl(int j, int l) const
 {
   TEUCHOS_ASSERT(j != num_g);
   const Teuchos::Array<Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > > dummy =
-    Teuchos::tuple(zero(this->get_g_space(j), this->get_p_space(l)));
+    Teuchos::tuple(Thyra::zero<Scalar>(this->get_g_space(j), this->get_p_space(l)));
   return Teuchos::rcp(new Thyra::DefaultAddedLinearOp<Scalar>(dummy));
 }
 
