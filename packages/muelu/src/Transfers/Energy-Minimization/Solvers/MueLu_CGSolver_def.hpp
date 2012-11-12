@@ -176,7 +176,7 @@ namespace MueLu {
       A->getLocalRowView(i, indA, valA);
       B->getLocalRowView(i, indB, valB);
 
-      size_t nnzA = indA.size(), nnzB = indB.size();
+      size_t nnzA = indA.size()/*, nnzB = indB.size()*/;
 
       // We assume that indA and indB are sorted in increasing order
       for (size_t j0 = 0, j1 = 0; j0 < nnzA; j0++) {

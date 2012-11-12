@@ -321,7 +321,7 @@ namespace MueLu {
 
         // copy initial localQR values in temporary variable
         ArrayRCP<SC> tmplocalQR(localQRsize);
-        for (size_t i=0; i<myAggSize; i++) {
+        for (LO/*size_t*/ i=0; i<myAggSize; i++) {
           // loop over cols
           for (size_t j=0; j<NSDim; j++) {
             tmplocalQR[ myAggSize*j + i] = localQR[myAggSize*j + i];
@@ -330,7 +330,7 @@ namespace MueLu {
 
         // copy temporary variables back to correct positions (column size is now NSDim instead of myAggSize
         for (size_t j=0; j<NSDim; j++) {  // loop over cols
-          for (size_t i=0; i<myAggSize; i++) {  // loop over rows
+          for (LO /*size_t*/ i=0; i<myAggSize; i++) {  // loop over rows
             localQR[ NSDim*j + i] = tmplocalQR[myAggSize*j + i];
           }
           // fill NSDim-myAggSize rows with default null space

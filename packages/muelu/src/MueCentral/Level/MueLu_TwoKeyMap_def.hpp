@@ -74,7 +74,6 @@ namespace MueLu {
       // Get SubMap
       typename Map::const_iterator it = map_.find(key1);
       TEUCHOS_TEST_FOR_EXCEPTION(it == map_.end(), Exceptions::RuntimeError, "MueLu::TwoKeyMap::Get(): Key (" << key1 << ", *) does not exist.");
-      const SubMap & subMap = map_.find(key1)->second;
 
       // Get Value
       typename SubMap::const_iterator subit = it->second.find(key2);
@@ -145,8 +144,8 @@ namespace MueLu {
 
       std::vector<Key2> v;
       v.reserve(subMap.size());
-      for(typename SubMap::const_iterator it = subMap.begin(); it != subMap.end(); ++it)
-        v.push_back(it->first);
+      for(typename SubMap::const_iterator it2 = subMap.begin(); it2 != subMap.end(); ++it2)
+        v.push_back(it2->first);
 
       return v;
     }
