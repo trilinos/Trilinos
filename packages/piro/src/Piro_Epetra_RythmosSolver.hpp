@@ -47,11 +47,12 @@
 
 #include "Rythmos_IntegrationObserverBase.hpp"
 #include "Rythmos_DefaultIntegrator.hpp"
-#include "Rythmos_TimeStepNonlinearSolver.hpp"
 #include "Rythmos_StepperBase.hpp"
+#include "Rythmos_TimeStepNonlinearSolver.hpp"
 
 #include "Piro_RythmosSolver.hpp"
 
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 /** \brief . */
@@ -59,19 +60,18 @@
 namespace Piro {
 namespace Epetra {
 
-class RythmosSolver
-    : public EpetraExt::ModelEvaluator
+class RythmosSolver : public EpetraExt::ModelEvaluator
 {
-  public:
-
+public:
   typedef double Scalar;
+
   /** \name Constructors/initializers */
   //@{
-  /** \brief Takes the number of elements in the discretization . */
-  RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
-                Teuchos::RCP<EpetraExt::ModelEvaluator> model,
-                Teuchos::RCP<Rythmos::IntegrationObserverBase<double> > observer = Teuchos::null
-                );
+  /** \brief Initialize with internally built objects according to the given parameter list. */
+  RythmosSolver(
+      Teuchos::RCP<Teuchos::ParameterList> piroParams,
+      Teuchos::RCP<EpetraExt::ModelEvaluator> model,
+      Teuchos::RCP<Rythmos::IntegrationObserverBase<double> > observer = Teuchos::null);
 
   /** \brief Initialize using prebuilt objects. */
   RythmosSolver(
@@ -116,7 +116,7 @@ class RythmosSolver
   int Ng() const;
   //@}
 
-  private:
+private:
   /** \name Parameter list validation . */
   //@{
   //! Valid list for old "Rythmos" parameter list style
@@ -125,23 +125,13 @@ class RythmosSolver
   Teuchos::RCP<const Teuchos::ParameterList> getValidRythmosSolverParameters() const;
   //@}
 
-   Teuchos::RCP<EpetraExt::ModelEvaluator> model;
+  Teuchos::RCP<EpetraExt::ModelEvaluator> model;
 
-   int num_p;
-   int num_g;
+  int num_p;
+  int num_g;
 
-   typedef ::Piro::RythmosSolver<double> ThyraRythmosSolver;
-   Teuchos::RCP<ThyraRythmosSolver> thyraImplementation_;
-
-   // To pass to implementation
-   Teuchos::RCP<Rythmos::DefaultIntegrator<double> > fwdStateIntegrator;
-   Teuchos::RCP<Rythmos::StepperBase<double> > fwdStateStepper;
-   Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> > fwdTimeStepSolver;
-   double t_final;
-   Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > fwdStateModel;
-   Teuchos::EVerbosityLevel solnVerbLevel;
-
-   Teuchos::RCP<Teuchos::FancyOStream> out;
+  typedef ::Piro::RythmosSolver<double> ThyraRythmosSolver;
+  Teuchos::RCP<ThyraRythmosSolver> thyraImplementation_;
 };
 
 }
