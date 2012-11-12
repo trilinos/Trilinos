@@ -91,7 +91,7 @@ const RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModelNew(const RCP<Epe
 
 const RCP<NOXSolver<double> > solverNew(const RCP<Thyra::ModelEvaluatorDefaultBase<double> > &thyraModel)
 {
-  const RCP<Teuchos::ParameterList> piroParams(new Teuchos::ParameterList("Piro Parameters"));
+  const RCP<ParameterList> piroParams(new ParameterList("Piro Parameters"));
   return rcp(new NOXSolver<double>(piroParams, thyraModel));
 }
 
@@ -115,9 +115,9 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, Spaces)
   const int parameterIndex = 0;
   const int responseIndex = 0;
   const int solutionResponseIndex = solver->Ng() - 1;
-  TEST_ASSERT(Teuchos::nonnull(solver->get_p_space(parameterIndex)));
-  TEST_ASSERT(Teuchos::nonnull(solver->get_g_space(responseIndex)));
-  TEST_ASSERT(Teuchos::nonnull(solver->get_g_space(solutionResponseIndex)));
+  TEST_ASSERT(nonnull(solver->get_p_space(parameterIndex)));
+  TEST_ASSERT(nonnull(solver->get_g_space(responseIndex)));
+  TEST_ASSERT(nonnull(solver->get_g_space(solutionResponseIndex)));
 
   // TODO
   //TEST_THROW(solver->get_x_space(), std::exception);
@@ -196,7 +196,7 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SolutionSensitivityOp)
   const int parameterIndex = 0;
   const RCP<Thyra::LinearOpBase<double> > dxdp =
     solver->create_DgDp_op(solutionResponseIndex, parameterIndex);
-  TEST_ASSERT(Teuchos::nonnull(dxdp));
+  TEST_ASSERT(nonnull(dxdp));
 
   outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp);
 
@@ -228,7 +228,7 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SolutionSensitivityOp_NoDfDpMv)
   const int parameterIndex = 0;
   const RCP<Thyra::LinearOpBase<double> > dxdp =
     solver->create_DgDp_op(solutionResponseIndex, parameterIndex);
-  TEST_ASSERT(Teuchos::nonnull(dxdp));
+  TEST_ASSERT(nonnull(dxdp));
 
   outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp);
 
@@ -301,7 +301,7 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityOp)
   const int parameterIndex = 0;
   const RCP<Thyra::LinearOpBase<double> > dgdp =
     solver->create_DgDp_op(responseIndex, parameterIndex);
-  TEST_ASSERT(Teuchos::nonnull(dgdp));
+  TEST_ASSERT(nonnull(dgdp));
   const Thyra::MEB::Derivative<double> dgdp_deriv(dgdp);
   outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
 
@@ -382,7 +382,7 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityOp_NoDgDpMv)
   const int parameterIndex = 0;
   const RCP<Thyra::LinearOpBase<double> > dgdp =
     solver->create_DgDp_op(responseIndex, parameterIndex);
-  TEST_ASSERT(Teuchos::nonnull(dgdp));
+  TEST_ASSERT(nonnull(dgdp));
   const Thyra::MEB::Derivative<double> dgdp_deriv(dgdp);
   outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
 
@@ -408,7 +408,7 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGradWithSolutionSensitivityOp)
   const int solutionResponseIndex = solver->Ng() - 1;
   const RCP<Thyra::LinearOpBase<double> > dxdp =
     solver->create_DgDp_op(solutionResponseIndex, parameterIndex);
-  TEST_ASSERT(Teuchos::nonnull(dxdp));
+  TEST_ASSERT(nonnull(dxdp));
   outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp);
 
   // Request response sensitivity (LINOP layout)
@@ -461,7 +461,7 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityOpWithSolutionSensitivityMvJac)
   const int responseIndex = 0;
   const RCP<Thyra::LinearOpBase<double> > dgdp =
     solver->create_DgDp_op(responseIndex, parameterIndex);
-  TEST_ASSERT(Teuchos::nonnull(dgdp));
+  TEST_ASSERT(nonnull(dgdp));
   const Thyra::MEB::Derivative<double> dgdp_deriv(dgdp);
   outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
 
