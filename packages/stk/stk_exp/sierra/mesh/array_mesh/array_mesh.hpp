@@ -412,7 +412,8 @@ array_mesh::BlockIndex array_mesh::get_element_block(int ID) const
 inline
 array_mesh::SidesetIndex array_mesh::add_sideset(int ID, const std::string& name)
 {
-  SidesetIndex sideset_index = { m_sidesets.size() };
+  int ss_idx = m_sidesets.size();
+  SidesetIndex sideset_index = { ss_idx };
   detail::Sideset sideset;
   sideset.id = ID;
   sideset.name = name;
@@ -523,7 +524,8 @@ void array_mesh::get_side_nodes(int elem_num, int elem_local_side, std::vector<i
 inline
 array_mesh::NodesetIndex array_mesh::add_nodeset(int ID, const std::string& name)
 {
-	NodesetIndex nodeset_index = {m_nodesets.size()};
+  int ns_idx = m_nodesets.size();
+	NodesetIndex nodeset_index = {ns_idx};
 	detail::Nodeset nodeset;
 	m_nodesets.push_back(nodeset);
 	m_nodeset_indices.push_back(nodeset_index);
