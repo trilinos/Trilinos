@@ -43,23 +43,14 @@
 #ifndef PIRO_EPETRA_RYTHMOSSOLVER_H
 #define PIRO_EPETRA_RYTHMOSSOLVER_H
 
-#include <iostream>
-
-#include "Epetra_Vector.h"
-#include "Epetra_LocalMap.h"
-
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-
 #include "EpetraExt_ModelEvaluator.h"
 
-#include "Rythmos_DefaultIntegrator.hpp"
 #include "Rythmos_IntegrationObserverBase.hpp"
+#include "Rythmos_DefaultIntegrator.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
+#include "Rythmos_StepperBase.hpp"
 
+#include "Teuchos_ParameterList.hpp"
 
 /** \brief Epetra-based Model Evaluator subclass for Charon!
  *

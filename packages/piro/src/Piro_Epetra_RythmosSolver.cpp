@@ -40,14 +40,11 @@
 // ************************************************************************
 // @HEADER
 
-#include <cmath>
-
 #include "Piro_Epetra_RythmosSolver.hpp"
+
 #include "Piro_Epetra_InvertMassMatrixDecorator.hpp"
 #include "Piro_ValidPiroParameters.hpp"
 #include "Piro_Epetra_MatrixFreeDecorator.hpp"
-
-#include "EpetraExt_ModelEvaluator.h"
 
 #include "Rythmos_IntegratorBuilder.hpp"
 #include "Rythmos_BackwardEulerStepper.hpp"
@@ -55,10 +52,14 @@
 #include "Rythmos_SimpleIntegrationControlStrategy.hpp"
 #include "Rythmos_ForwardSensitivityStepper.hpp"
 #include "Rythmos_StepperAsModelEvaluator.hpp"
+
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
+
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 
+#include <string>
+#include <iostream>
 
 Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams_,
                           Teuchos::RCP<EpetraExt::ModelEvaluator> model_,
