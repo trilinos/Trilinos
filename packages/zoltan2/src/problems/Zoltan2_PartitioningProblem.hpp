@@ -954,6 +954,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
           for(int i = 0; i < arraySize; ++i){
         	  //cout <<  pl.getPtr<Array <int> >("pqParts")->getRawPtr()[i] << " ";
         	  totalPartCount *= pl.getPtr<Array <int> >("pqParts")->getRawPtr()[i];
+// TODO:  Using pointer in parameter list.   Ross says, "Bad."  Can't print it.
           }
           Teuchos::ParameterList newParams = pl;
           Teuchos::ParameterList &parParams = newParams.sublist("partitioning");
