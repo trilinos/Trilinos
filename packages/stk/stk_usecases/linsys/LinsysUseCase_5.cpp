@@ -441,14 +441,14 @@ void use_case_5_generate_mesh(
             const int * const local_node_id = & elem_conn[ j * 8 ] ;
 
             const stk::mesh::EntityId node_id[8] = {
-              local_node_id[0] ,
-              local_node_id[1] ,
-              local_node_id[2] ,
-              local_node_id[3] ,
-              local_node_id[4] ,
-              local_node_id[5] ,
-              local_node_id[6] ,
-              local_node_id[7]
+              static_cast<uint64_t>(local_node_id[0]),
+              static_cast<uint64_t>(local_node_id[1]),
+              static_cast<uint64_t>(local_node_id[2]),
+              static_cast<uint64_t>(local_node_id[3]),
+              static_cast<uint64_t>(local_node_id[4]),
+              static_cast<uint64_t>(local_node_id[5]),
+              static_cast<uint64_t>(local_node_id[6]),
+              static_cast<uint64_t>(local_node_id[7])
             };
 
             const stk::mesh::EntityId elem_id = elem_map[ j ];
@@ -465,10 +465,10 @@ void use_case_5_generate_mesh(
             const int * const local_node_id = & elem_conn[ j * 4 ] ;
 
             const stk::mesh::EntityId node_id[4] = {
-              local_node_id[0] ,
-              local_node_id[1] ,
-              local_node_id[2] ,
-              local_node_id[3]
+              static_cast<uint64_t>(local_node_id[0]),
+              static_cast<uint64_t>(local_node_id[1]),
+              static_cast<uint64_t>(local_node_id[2]),
+              static_cast<uint64_t>(local_node_id[3])
             };
 
             const stk::mesh::EntityId elem_id = elem_map[ j ];

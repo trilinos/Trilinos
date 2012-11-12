@@ -134,7 +134,7 @@ void use_case_AD_driver(
 
 void use_case_AD_driver( MPI_Comm comm , bool performance_test )
 {
-  int num_procs = stk::parallel_machine_size( comm );
+  unsigned num_procs = stk::parallel_machine_size( comm );
 
   if ( ! stk::parallel_machine_rank( comm ) ) {
     std::cout << " stk_mesh Use Case #AD - element internal force, begin" << std::endl ;
@@ -856,14 +856,14 @@ void use_case_AD_generate_mesh(
             const int * const local_node_id = & elem_conn[ j * 8 ] ;
 
             const stk::mesh::EntityId node_id[8] = {
-              local_node_id[0] ,
-              local_node_id[1] ,
-              local_node_id[2] ,
-              local_node_id[3] ,
-              local_node_id[4] ,
-              local_node_id[5] ,
-              local_node_id[6] ,
-              local_node_id[7]
+              static_cast<uint64_t>(local_node_id[0]),
+              static_cast<uint64_t>(local_node_id[1]),
+              static_cast<uint64_t>(local_node_id[2]),
+              static_cast<uint64_t>(local_node_id[3]),
+              static_cast<uint64_t>(local_node_id[4]),
+              static_cast<uint64_t>(local_node_id[5]),
+              static_cast<uint64_t>(local_node_id[6]),
+              static_cast<uint64_t>(local_node_id[7])
             };
 
             const stk::mesh::EntityId elem_id = elem_map[ j ];

@@ -124,7 +124,7 @@ void use_case_23_driver(
 
 void use_case_23_driver( MPI_Comm comm , bool performance_test )
 {
-  int num_procs = stk::parallel_machine_size( comm );
+  unsigned num_procs = stk::parallel_machine_size( comm );
 
   if ( ! stk::parallel_machine_rank( comm ) ) {
     std::cout << " stk_mesh Use Case #23 - element internal force with part properties, begin" << std::endl ;
