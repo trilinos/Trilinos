@@ -173,7 +173,7 @@ ENDFUNCTION()
 
 # generate the macros
 FUNCTION(TRIBITS_GENERATE_ETI_MACROS etifields etisetvar etiexcludelist manglingmacroname manglingmacrovar)
-  SET(manglingmacro "#define ${manglingmacroname}")
+  SET(manglingmacro "#define ${manglingmacroname}() ")
   SET(current_manglings "")
   SPLIT("${etifields}" "\\|" etifields)
   IF(${PROJECT}_VERBOSE_CONFIGURE)

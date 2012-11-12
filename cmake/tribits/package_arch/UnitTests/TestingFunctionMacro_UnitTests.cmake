@@ -1567,7 +1567,7 @@ FUNCTION(UNITTEST_TRIBITS_GENERATE_ETI_MACROS)
 
   UNITTEST_COMPARE_CONST(
     mangling_macro_var 
-"#define MMac\\
+"#define MMac() \\
 typedef Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > Teuchos_ArrayRCP1Teuchos_ArrayRCP0double01;")
 
 ENDFUNCTION()
