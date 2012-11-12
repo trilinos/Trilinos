@@ -43,6 +43,7 @@
 #include "Piro_NOXSolver.hpp"
 
 #include "Thyra_ModelEvaluatorHelpers.hpp"
+
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_DefaultAddedLinearOp.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
@@ -211,12 +212,20 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  // Solve the underlying model
-  // TODO: pass the parameters from inArgs down to the underlying model used by the solver.
-  // Currently, only the default values of p set in createInArgs are used in the nonlinear solver !
+  // Forward all parameters to underlying model
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = model->createInArgs();
+  for (int l = 0; l < num_p; ++l) {
+    modelInArgs.set_p(l, inArgs.get_p(l));
+  }
+
+  // Find the solution of the implicit underlying model
   {
-    const RCP<Thyra::VectorBase<Scalar> > initial_guess =
-      model->getNominalValues().get_x()->clone_v();
+    solver->setBasePoint(modelInArgs);
+
+    const RCP<const Thyra::VectorBase<Scalar> > modelNominalState =
+      model->getNominalValues().get_x();
+
+    const RCP<Thyra::VectorBase<Scalar> > initial_guess = modelNominalState->clone_v();
 
     const Thyra::SolveCriteria<Scalar> solve_criteria;
     const Thyra::SolveStatus<Scalar> solve_status =
@@ -228,27 +237,19 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
         "Nonlinear solver failed to converge");
   }
 
-  // Retrieve the solution at convergence to perform underlying model evaluation
-  const RCP<const Thyra::VectorBase<Scalar> > finalSolution = solver->get_current_x();
+  // Retrieve final solution to evaluate underlying model
+  const RCP<const Thyra::VectorBase<Scalar> > convergedSolution = solver->get_current_x();
+  modelInArgs.set_x(convergedSolution);
+
   // Solution at convergence is the response at index num_g
-  const RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g);
-  if (Teuchos::nonnull(gx_out)) {
-    Thyra::copy(*finalSolution, gx_out.ptr());
-  }
-
-  // Setup input for underlying model
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = model->createInArgs();
   {
-    // Evaluation to be done at final solution
-    modelInArgs.set_x(finalSolution);
-
-    // Forward all parameters
-    for (int l = 0; l < num_p; ++l) {
-      modelInArgs.set_p(l, inArgs.get_p(l));
+    const RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g);
+    if (Teuchos::nonnull(gx_out)) {
+      Thyra::copy(*convergedSolution, gx_out.ptr());
     }
   }
 
-  // Setup output for underlying model
+  // Setup output for final evalution of underlying model
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
   {
     // Responses
