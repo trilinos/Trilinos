@@ -113,6 +113,7 @@ public:
    */
   virtual ~MeshInput() {};
 
+// TODO NEED AN ARGUMENT TO THE METHODS SPECIFYING WHICH ENTITY TYPE TO RETURN
 
   /*! \brief Returns the number of identifiers (mesh entities) on this process.
    *
@@ -175,10 +176,18 @@ public:
    */
   virtual int getEntityCoordinateWeightDimension() const = 0;
 
+// TODO:  Consolidate WeightDimension here with Identifier version above.  
+// TODO:  Better name might be WeightsPerEntity 
+// TODO:  Will need to be changed in other adapters as well.
+// TODO  Perhaps consolidate further:  getEntities returns gids and weights.
+
   /*! \brief Return the number of coordinates on this process.                 
    *   \return  the count of coordinates on the local process.
    */
   virtual size_t getLocalNumberOfEntityCoordinates() const = 0;
+
+// TODO:  Consolidate this function with getLocalNumberOfEntityIdentifiers;
+// TODO:  make getLocalNumberOfEntities
 
   /*! \brief Provide a pointer to one dimension of this process' coordinates.  
       \param coordDim  is a value from 0 to one less than                      
@@ -220,11 +229,14 @@ public:
      const scalar_t *&weights, int &stride) const = 0;
 
 
+
   /*! \brief Returns the number entities on this process.
    *
    *  Some algorithms can partition a graph of mesh entities
    */
   virtual size_t getLocalNumberOfEntities() const = 0;
+// TODO:  This is the function we'll keep when we get rid of 
+// TODO   getLocalNumberOfEntityIdentifiers and getLocalNumberOfEntityCoordinates
 
   /*! \brief Returns the number adjacencies on this process.
    */
@@ -259,6 +271,14 @@ public:
       entityIds, offsets and adjacencyIds
       must remain valid for the lifetime of this InputAdapter.
    */
+
+// TODO:  Need concept of first and second adjacencies.
+// TODO:    getEntityFirstAdj(entityType source, entityType target, gid_t *entityIds,
+// TODO:                      lno_t *offsets, gid_t *adjIds);
+// TODO:    getEntitySecondAdj(entityType sourcetarget, entityType through, gid_t *entityIds,
+// TODO:                      lno_t *offsets, gid_t *adjIds);
+// TODO:  Later may allow user to not implement second adjacencies and, if we want them,
+// TODO:  we compute A^T A, where A is matrix of first adjacencies.
 
   virtual size_t getEntityListView(const gid_t *&entityIds, 
     const lno_t *&offsets, const gid_t *& adjacencyIds) const = 0; 
