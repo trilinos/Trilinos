@@ -140,7 +140,9 @@ const RCP<RythmosSolver<double> > solverNew(
 Thyra::ModelEvaluatorBase::InArgs<double> getStaticNominalValues(const Thyra::ModelEvaluator<double> &model)
 {
   Thyra::ModelEvaluatorBase::InArgs<double> result = model.getNominalValues();
-  result.set_x_dot(Teuchos::null);
+  if (result.supports(Thyra::ModelEvaluatorBase::IN_ARG_x_dot)) {
+    result.set_x_dot(Teuchos::null);
+  }
   return result;
 }
 
