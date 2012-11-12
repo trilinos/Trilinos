@@ -232,7 +232,9 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   solnVerbLevel(verbosityLevel)
 {
-  fwdStateStepper->setNonconstModel(underlyingModel);
+  if (fwdStateStepper->acceptsModel() && fwdStateStepper->getModel() != underlyingModel) {
+    fwdStateStepper->setNonconstModel(underlyingModel);
+  }
 }
 
 
