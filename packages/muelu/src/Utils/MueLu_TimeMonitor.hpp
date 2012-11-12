@@ -97,6 +97,8 @@ namespace MueLu {
         if (IsPrint(RuntimeTimings)) {
           //FIXME: creates lot of barriers. An option to report time of proc0 only instead would be nice
           //FIXME: MPI_COMM_WORLD only... BTW, it is also the case in Teuchos::TimeMonitor...
+	  //
+	  // mfh 11 Nov 2012: Actually, Teuchos::TimeMonitor::summarize() has multiple overloads that take a Teuchos::Comm.
           ArrayRCP<double> stats = ReduceMaxMinAvg(timer_->totalElapsedTime(), *Teuchos::DefaultComm<int>::getComm ());
 
           //FIXME: Not very important for now, but timer will be printed even if verboseLevel of Monitor/Object changed
@@ -150,6 +152,8 @@ namespace MueLu {
           //FIXME: creates lot of barriers. An option to report time of proc0 only instead would be nice
           //FIXME: MPI_COMM_WORLD only... BTW, it is also the case in Teuchos::TimeMonitor...
 	  //TODO          ArrayRCP<double> stats = ReduceMaxMinAvg(timer_->totalElapsedTime(), *Teuchos::DefaultComm<int>::getComm ());
+	  //
+	  // mfh 11 Nov 2012: Actually, Teuchos::TimeMonitor::summarize() has multiple overloads that take a Teuchos::Comm.
 
           //FIXME: Not very important for now, but timer will be printed even if verboseLevel of Monitor/Object changed
           //       between Monitor constructor and destructor.
