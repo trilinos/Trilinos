@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -101,13 +101,13 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
 //AGS: 6/2012: Separating into old and new parameter list styles. The
 //  old style has a Rythmos sublist, which is used here but not compatible
 //  with builders in Rythmos. The new style has a sublist called "Rythmos Solver"
-//  which inludes settings for this class, a Rytmos sublist that can be 
+//  which inludes settings for this class, a Rytmos sublist that can be
 //  directly passed to Rythmols builders, and a Stratimikos sublist. THe
 //  old way will be deprecated at some point.
 
 /** Old parameter list format **/
   if (piroParams->isSublist("Rythmos")) {
-  
+
       oldListStyle=true;
       RCP<Teuchos::ParameterList> rythmosPL = sublist(piroParams, "Rythmos", true);
       rythmosPL->validateParameters(*getValidRythmosParameters(),0);
@@ -125,7 +125,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
       const int numTimeSteps = rythmosPL->get("Num Time Steps", 10);
       const Scalar t_init = 0.0;
       t_final = rythmosPL->get("Final Time", 0.1);
-      
+
       const Rythmos::TimeRange<Scalar> fwdTimeRange(t_init, t_final);
       const Scalar delta_t = t_final / (double) numTimeSteps;
       *out << "\ndelta_t = " << delta_t;
@@ -138,19 +138,19 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
       // This is the linear solve strategy that will be used to solve for the
       // linear system with the W.
       //
-      
+
       Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
       linearSolverBuilder.setParameterList(sublist(rythmosPL, "Stratimikos", true));
       RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
 	W_factory = createLinearSolveStrategy(linearSolverBuilder);
-      
+
       //
       *out << "\nC) Create and initalize the forward model ...\n";
       //
-      
+
       // C.1) Create the underlying EpetraExt::ModelEvaluator
       // already constructed as "model". Decorate if needed.
-      
+
       if (stepperType == "Explicit RK") {
         if (rythmosPL->get("Invert Mass Matrix", false)) {
           Teuchos::RCP<EpetraExt::ModelEvaluator> origModel = model;
@@ -159,14 +159,14 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
                    sublist(rythmosPL,"Stratimikos", true), origModel));
         }
       }
-      
+
       // C.2) Create the Thyra-wrapped ModelEvaluator
-      
+
       fwdStateModel = epetraModelEvaluator(model, W_factory);
-      
+
       const RCP<const Thyra::VectorSpaceBase<Scalar> >
 	x_space = fwdStateModel->get_x_space();
-      
+
       //
       *out << "\nD) Create the stepper and integrator for the forward problem ...\n";
       //
@@ -184,7 +184,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
            (fwdStateModel, fwdTimeStepSolver);
       else if (stepperType == "Explicit RK")
         fwdStateStepper = Rythmos::explicitRKStepper<double>(fwdStateModel);
-      else 
+      else
         TEUCHOS_TEST_FOR_EXCEPTION( true, Teuchos::Exceptions::InvalidParameter,
                      std::endl << "Error! Piro::Epetra::RythmosSolver: Invalid Steper Type: "
                      << stepperType << std::endl);
@@ -234,19 +234,19 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
       // This is the linear solve strategy that will be used to solve for the
       // linear system with the W.
       //
-      
+
       Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
       linearSolverBuilder.setParameterList(sublist(rythmosSolverPL, "Stratimikos", true));
       RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
 	W_factory = createLinearSolveStrategy(linearSolverBuilder);
-      
+
       //
       *out << "\nC) Create and initalize the forward model ...\n";
       //
-      
+
       // C.1) Create the underlying EpetraExt::ModelEvaluator
       // already constructed as "model". Decorate if needed.
-      
+
       // TODO: Generelize to any explicit method, option to invert mass matrix
       if (stepperType == "Explicit RK") {
         if (rythmosSolverPL->get("Invert Mass Matrix", false)) {
@@ -256,14 +256,14 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
                    sublist(rythmosSolverPL,"Stratimikos", true), origModel));
         }
       }
-      
+
       // C.2) Create the Thyra-wrapped ModelEvaluator
-      
+
       fwdStateModel = epetraModelEvaluator(model, W_factory);
-      
+
       const RCP<const Thyra::VectorSpaceBase<Scalar> >
 	x_space = fwdStateModel->get_x_space();
-      
+
       //
       *out << "\nD) Create the stepper and integrator for the forward problem ...\n";
       //
@@ -287,12 +287,12 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
     fwdStateIntegrator = Teuchos::rcp_dynamic_cast<Rythmos::DefaultIntegrator<double> >(integrator,true);
   }
   else
-      TEUCHOS_TEST_FOR_EXCEPTION(piroParams->isSublist("Rythmos")||piroParams->isSublist("Rythmos Solver"), 
-        Teuchos::Exceptions::InvalidParameter, std::endl << 
+      TEUCHOS_TEST_FOR_EXCEPTION(piroParams->isSublist("Rythmos")||piroParams->isSublist("Rythmos Solver"),
+        Teuchos::Exceptions::InvalidParameter, std::endl <<
        "Error! Piro::Epetra::RythmosSolver: must have either Rythmos or Rythmos Solver sublist ");
 
 
-  if (observer != Teuchos::null) 
+  if (observer != Teuchos::null)
     fwdStateIntegrator->setIntegrationObserver(observer);
 
 }
@@ -391,9 +391,9 @@ void Piro::Epetra::RythmosSolver::evalModel( const InArgs& inArgs,
   if (num_p > 0) p_in = inArgs.get_p(0);
 
   // Parse OutArgs: always 1 extra
-  RCP<Epetra_Vector> g_out; 
-  if (num_g > 0) g_out = outArgs.get_g(0); 
-  RCP<Epetra_Vector> gx_out = outArgs.get_g(num_g); 
+  RCP<Epetra_Vector> g_out;
+  if (num_g > 0) g_out = outArgs.get_g(0);
+  RCP<Epetra_Vector> gx_out = outArgs.get_g(num_g);
 
   // Parse out-args for sensitivity calculation
   RCP<Epetra_MultiVector> dgdp_out;
@@ -416,20 +416,20 @@ void Piro::Epetra::RythmosSolver::evalModel( const InArgs& inArgs,
       //
       *out << "\nE) Solve the forward problem ...\n";
       //
-  
+
       if (oldListStyle) {
         fwdStateStepper->setInitialCondition(state_ic);
         fwdStateIntegrator->setStepper(fwdStateStepper, t_final, true);
-      } 
-      else 
+      }
+      else
         fwdStateIntegrator->getNonconstStepper()->setInitialCondition(state_ic);
-  
+
       Teuchos::Array<RCP<const Thyra::VectorBase<Scalar> > > x_final_array;
       fwdStateIntegrator->getFwdPoints(
         Teuchos::tuple<Scalar>(t_final), &x_final_array, NULL, NULL
         );
       const RCP<const Thyra::VectorBase<Scalar> > x_final = x_final_array[0];
-  
+
       finalSolution = Thyra::get_Epetra_Vector(*model->get_x_map(), x_final);
 
       if (Teuchos::VERB_MEDIUM <= solnVerbLevel)
@@ -546,11 +546,11 @@ void Piro::Epetra::RythmosSolver::evalModel( const InArgs& inArgs,
                                                    dgdp_out->GlobalLength()));
      Teuchos::Array<int> p_indexes =
        outArgs.get_DgDp(0,0).getDerivativeMultiVector().getParamIndexes();
- 
+
      EpetraExt::ModelEvaluator::DerivativeMultiVector dmv_dgdp(dgdp_out,
                                                                DERIV_MV_BY_COL,
                                                                p_indexes);
- 
+
      EpetraExt::ModelEvaluator::InArgs model_inargs = model->createInArgs();
      EpetraExt::ModelEvaluator::OutArgs model_outargs = model->createOutArgs();
      model_inargs.set_x(finalSolution);
@@ -565,7 +565,7 @@ void Piro::Epetra::RythmosSolver::evalModel( const InArgs& inArgs,
 
      model->evalModel(model_inargs, model_outargs);
 
- 
+
      // (3) Calculate dg/dp = dg/dx*dx/dp + dg/dp
      // This may be the transpose of what we want since we specified
      // we want dg/dp by column in createOutArgs().

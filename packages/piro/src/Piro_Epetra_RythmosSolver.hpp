@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -66,7 +66,7 @@
  * This class will support a wide number of different types of abstract
  * problem types that will allow NOX, LOCA, Rythmos, Aristos, and MOOCHO to
  * solve different types of problems with Charon.
- * 
+ *
  * ToDo: Finish documentation!
  */
 
@@ -122,7 +122,7 @@ class RythmosSolver
 
   //! Valid list for old "Rythmos" parameter list style
   Teuchos::RCP<const Teuchos::ParameterList> getValidRythmosParameters() const;
-  
+
   //! Valid list for new "Rythmos Solver" parameter list style
   Teuchos::RCP<const Teuchos::ParameterList> getValidRythmosSolverParameters() const;
 
