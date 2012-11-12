@@ -67,13 +67,21 @@ class RythmosSolver
   typedef double Scalar;
   /** \name Constructors/initializers */
   //@{
-
   /** \brief Takes the number of elements in the discretization . */
   RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
                 Teuchos::RCP<EpetraExt::ModelEvaluator> model,
                 Teuchos::RCP<Rythmos::IntegrationObserverBase<double> > observer = Teuchos::null
                 );
 
+  /** \brief Initialize using prebuilt objects. */
+  RythmosSolver(
+      const Teuchos::RCP<Rythmos::DefaultIntegrator<double> > &stateIntegrator,
+      const Teuchos::RCP<Rythmos::StepperBase<double> > &stateStepper,
+      const Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> > &timeStepSolver,
+      const Teuchos::RCP<EpetraExt::ModelEvaluator> &model,
+      const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > &lowsFactory,
+      double finalTime,
+      Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
   //@}
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */

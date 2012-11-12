@@ -299,6 +299,35 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
    solnVerbLevel));
 }
 
+Piro::Epetra::RythmosSolver::RythmosSolver(
+    const Teuchos::RCP<Rythmos::DefaultIntegrator<double> > &stateIntegrator,
+    const Teuchos::RCP<Rythmos::StepperBase<double> > &stateStepper,
+    const Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> > &timeStepSolver,
+    const Teuchos::RCP<EpetraExt::ModelEvaluator> &underlyingModel,
+    const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > &lowsFactory,
+    double finalTime,
+    Teuchos::EVerbosityLevel verbosityLevel) :
+  model(underlyingModel),
+  num_p(model->createInArgs().Np()),
+  num_g(model->createOutArgs().Ng()),
+  fwdStateIntegrator(stateIntegrator),
+  fwdStateStepper(stateStepper),
+  fwdTimeStepSolver(timeStepSolver),
+  t_final(finalTime),
+  fwdStateModel(Thyra::epetraModelEvaluator(model, lowsFactory)),
+  solnVerbLevel(verbosityLevel),
+  out(Teuchos::VerboseObjectBase::getDefaultOStream())
+{
+  thyraImplementation_ = rcp(new ThyraRythmosSolver(
+   fwdStateIntegrator,
+   fwdStateStepper,
+   fwdTimeStepSolver,
+   fwdStateModel,
+   t_final,
+   Teuchos::null, // No initial condition model
+   solnVerbLevel));
+}
+
 int Piro::Epetra::RythmosSolver::Np() const
 {
   return num_p;
