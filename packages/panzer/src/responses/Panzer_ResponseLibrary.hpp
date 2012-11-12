@@ -246,6 +246,18 @@ public:
    void addResponse(const std::string responseName,
                     const std::vector<std::string> & blocks,
                     const ResponseEvaluatorFactory_BuilderT & builder); 
+
+   /** Add a volumetric response using hte response factory builder.
+     *
+     * \param[in] responseName Name of the response to be added.
+     * \param[in] sideset_blocks Side set and element blocks to evaluate the response over
+     *                           (sideset name is first followed by element block id)
+     * \param[in] builder Builder that builds the correct response object.
+     */
+   template <typename ResponseEvaluatorFactory_BuilderT>
+   void addResponse(const std::string responseName,
+                    const std::vector<std::pair<std::string,std::string> > & sideset_blocks,
+                    const ResponseEvaluatorFactory_BuilderT & builder); 
                    
    /** Access a response by name and evaluation type.
      *
@@ -274,13 +286,32 @@ public:
          const Teuchos::ParameterList& closure_models,
          const Teuchos::ParameterList& user_data,
          const bool write_graphviz_file=false,
-         const std::string& graphviz_file_prefix="");
+         const std::string& graphviz_file_prefix="")
+   { buildResponseEvaluators(physicsBlocks,Teuchos::null,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix); }
+
+   /** Setup up field managers for all responses. Once this method is called
+     * no other responses can be added. An exception is thrown if they are.
+     */
+   void buildResponseEvaluators(
+         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+         const panzer::EquationSetFactory & eqset_factory,
+         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+         const Teuchos::ParameterList& closure_models,
+         const Teuchos::ParameterList& user_data,
+         const bool write_graphviz_file=false,
+         const std::string& graphviz_file_prefix="")
+   { buildResponseEvaluators(physicsBlocks,Teuchos::ptrFromRef(eqset_factory),cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix); }
 
    /** Have the response evaluators been built? True only if 
      * <code>buildResponseEvaluators</code> has been called and run to completion.
      */ 
    bool responseEvaluatorsBuilt() const
    { return responseEvaluatorsBuilt_; }
+
+   /** Add response objects to assembly data. 
+     */
+   template <typename EvalT> 
+   void addResponsesToInArgs(panzer::AssemblyEngineInArgs & input_args) const;
 
    /** Evaluate response library for a particular evaluation type.
      */
@@ -291,6 +322,18 @@ protected:
    //! Access a container field for a specified element block
    template <typename EvalT>
    Teuchos::RCP<ResponseContainerBase<TraitsT> > getVolumeContainer(const std::string & eBlock);
+
+   /** Setup up field managers for all responses. Once this method is called
+     * no other responses can be added. An exception is thrown if they are.
+     */
+   void buildResponseEvaluators(
+         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+         const Teuchos::Ptr<const panzer::EquationSetFactory> & eqset_factory,
+         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+         const Teuchos::ParameterList& closure_models,
+         const Teuchos::ParameterList& user_data,
+         const bool write_graphviz_file,
+         const std::string& graphviz_file_prefix);
 
 private:
    // This could be a template manager, but this turns out to be more in line with
@@ -331,9 +374,15 @@ private:
    Teuchos::RCP<FieldManagerBuilder> fmb2_;
    AssemblyEngine_TemplateManager<panzer::Traits> ae_tm2_;
 
+   typedef boost::unordered_map<panzer::BC,
+                                Teuchos::RCP<std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > >,
+                                BC::BCHash,BC::BCEquality > BCHashMap;
+
    // Store up response factories by element block
    boost::unordered_map<std::string,
                         std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > respFactories_;
+   BCHashMap respBCFactories_;
+   std::size_t nextBC_id;
  
    //! Store all the response objects 
    boost::unordered_map<std::string, Response_TemplateManager> responseObjects_;

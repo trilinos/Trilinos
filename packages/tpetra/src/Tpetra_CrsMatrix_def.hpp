@@ -1076,7 +1076,9 @@ namespace Tpetra {
     // operate whether indices are local or global
     const std::string tfecfFuncName("replaceLocalValues()");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isFillActive(), std::runtime_error,
-      " requires that fill is active.");
+      ": Fill must be active in order to call this method.  If you have already "
+      "called fillComplete(), you need to call resumeFill() before you can "
+      "replace values.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(values.size() != indices.size(),
       std::runtime_error, ": values.size() must equal indices.size().");
 
@@ -1772,13 +1774,13 @@ namespace Tpetra {
     // TRANSMIT SIZE INFO BETWEEN SENDERS AND RECEIVERS
     //////////////////////////////////////////////////////////////////////////////////////
     // perform non-blocking sends: send sizes to our recipients
-    Array<RCP<Teuchos::CommRequest> > sendRequests;
+    Array<RCP<Teuchos::CommRequest<int> > > sendRequests;
     for (size_t s=0; s < numSends ; ++s) {
       // we'll fake the memory management, because all communication will be local to this method and the scope of our data
       sendRequests.push_back( Teuchos::isend<int,size_t>(*getComm(),rcpFromRef(sendSizes[s]),sendIDs[s]) );
     }
     // perform non-blocking receives: receive sizes from our senders
-    Array<RCP<Teuchos::CommRequest> > recvRequests;
+    Array<RCP<Teuchos::CommRequest<int> > > recvRequests;
     Array<size_t> recvSizes(numRecvs);
     for (size_t r=0; r < numRecvs; ++r) {
       // we'll fake the memory management, because all communication will be local to this method and the scope of our data
@@ -1879,7 +1881,7 @@ namespace Tpetra {
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   resumeFill (const RCP<ParameterList> &params)
   {
-    std::string tfecfFuncName("resumeFill");
+    const std::string tfecfFuncName("resumeFill");
 #ifdef HAVE_TPETRA_DEBUG
     Teuchos::barrier( *getRowMap()->getComm() );
 #endif // HAVE_TPETRA_DEBUG

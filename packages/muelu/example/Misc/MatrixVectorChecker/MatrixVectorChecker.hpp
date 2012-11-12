@@ -89,7 +89,7 @@ int MatrixVectorChecker(const Teuchos::RCP<const Xpetra::Matrix<Scalar, LocalOrd
   const Teuchos::RCP<const Map> & ranMap = mat->getRangeMap();
   const int myPID = rowMap->getComm()->getRank();
 
-  // MyVector vv(domMap), yy(ranMap), ww(rowMap,true), zz(rowMap,true); 
+  // MyVector vv(domMap), yy(ranMap), ww(rowMap,true), zz(rowMap,true);
   Teuchos::RCP<Vector> vv = VectorFactory::Build(domMap); //TODO: RCP ?
   Teuchos::RCP<Vector> yy = VectorFactory::Build(ranMap);
   Teuchos::RCP<Vector> ww = VectorFactory::Build(rowMap,true);
@@ -99,7 +99,7 @@ int MatrixVectorChecker(const Teuchos::RCP<const Xpetra::Matrix<Scalar, LocalOrd
   Teuchos::ArrayRCP<SC> y = yy->getDataNonConst(0);
   Teuchos::ArrayRCP<SC> w = ww->getDataNonConst(0);
   Teuchos::ArrayRCP<SC> z = zz->getDataNonConst(0);
-  
+
   vv->randomize();
 
   for (unsigned int i = 0; i < domMap->getNodeNumElements(); i++) {
@@ -143,7 +143,7 @@ int MatrixVectorChecker(const Teuchos::RCP<const Xpetra::Matrix<Scalar, LocalOrd
   }
 
   // We need import/export stuff on a what/zhat somewhat similar to vhat above?
-  if (!ranMap->isCompatible(*rowMap)) 
+  if (!ranMap->isCompatible(*rowMap))
     std::cout << "Range and Rowmaps do not match. Some import/export code needs to be added" << std::endl;
 
   // print if abs(y[i] - w[i])/z[i] > 1.e-8
@@ -151,10 +151,10 @@ int MatrixVectorChecker(const Teuchos::RCP<const Xpetra::Matrix<Scalar, LocalOrd
   int Count = 0;
   for (size_t i = 0; i < rowMap->getNodeNumElements(); i++) {
     if (( fabs(y[i] - w[i])/z[i] > 1.e-8) && (Count++ < 20) ) {
-       std::cout << std::setw(5) << myPID << ":matvec/getrow mismatch,row (GID=" << 
-       std::setw(6) << rowMap->getGlobalElement(i) << ",LID=" << std::setw(6) << i << 
-       "), y w & z =" << std::setw(9) << std::scientific << 
-       std::setprecision(2) << y[i] << " " << std::setw(9) << w[i] 
+       std::cout << std::setw(5) << myPID << ":matvec/getrow mismatch,row (GID=" <<
+       std::setw(6) << rowMap->getGlobalElement(i) << ",LID=" << std::setw(6) << i <<
+       "), y w & z =" << std::setw(9) << std::scientific <<
+       std::setprecision(2) << y[i] << " " << std::setw(9) << w[i]
        << " " << std::setw(9) << z[i] << std::endl;
     }
   }
@@ -172,10 +172,10 @@ int MatrixVectorChecker(const Teuchos::RCP<const Xpetra::Matrix<Scalar, LocalOrd
      // create vector vCRS which is matrix version of v.
      int *mygids = new int [domMap.getNodeNumElements()+1];
      domMap.MyGlobalElements(mygids);
-     double *ptr;   
+     double *ptr;
      v.ExtractView(&ptr);
      int zero = 0;
-     for (int i = 0; i < domMap.getNodeNumElements(); i++) 
+     for (int i = 0; i < domMap.getNodeNumElements(); i++)
         vCRS.InsertGlobalValues(mygids[i], 1, &(ptr[domMap.LID(mygids[i])]), &zero);
 
      // create map with only element assigned to one processor.
@@ -184,36 +184,36 @@ int MatrixVectorChecker(const Teuchos::RCP<const Xpetra::Matrix<Scalar, LocalOrd
      vCRS.OptimizeStorage(); //JJH this is done by default now
      EpetraExt::MatrixMatrix::Multiply(*matCRS,false,vCRS,false,tCRS);
 
-     // now getrow tCRS and compare with y 
-     Count = 0; 
+     // now getrow tCRS and compare with y
+     Count = 0;
      for (int i = 0; i < rowMap.getNodeNumElements(); i++) {
         tCRS.ExtractMyRowCopy(i, colMap.getNodeNumElements(), RowLength, values, indices);
         if (RowLength == 0) {
            RowLength = 1; values[0] = 0.; indices[0] = 0;
          }
         if (RowLength != 1) {
-          std::cout << std::setw(5) << myPID << ":matvec/matmult row (GID=" << 
-          std::setw(6) << rowMap.GID(i) << ",LID=" << std::setw(6) << i << 
+          std::cout << std::setw(5) << myPID << ":matvec/matmult row (GID=" <<
+          std::setw(6) << rowMap.GID(i) << ",LID=" << std::setw(6) << i <<
           ") rowlength problem" << std::endl;
         }
         if (indices[0] != 0) {
-          std::cout << std::setw(5) << myPID << ":matvec/matmult row (GID=" << 
-          std::setw(6) << rowMap.GID(i) << ",LID=" << std::setw(6) << i << 
+          std::cout << std::setw(5) << myPID << ":matvec/matmult row (GID=" <<
+          std::setw(6) << rowMap.GID(i) << ",LID=" << std::setw(6) << i <<
           ") has Col Id = " << indices[0] << std::endl;
         }
         t[i] = values[0];
      }
-     // might need to do some import/export stuff if RangeMap and rowMap 
+     // might need to do some import/export stuff if RangeMap and rowMap
      // do not match. This all depends on what matmat mult does?
 
      // print if abs(y[i] - t[i])/z[i] > 1.e-8
 
      for (int i = 0; i < rowMap.getNodeNumElements(); i++) {
         if (( fabs(y[i] - t[i])/z[i] > 1.e-8) && (Count++ < 20) ) {
-          std::cout << std::setw(5) << myPID << ":matvec/matmult mismatch,row (GID=" << 
-          std::setw(6) << rowMap.GID(i) << ",LID=" << std::setw(6) << i << 
-          "), y t & z =" << std::setw(9) << std::scientific << 
-          std::setprecision(2) << y[i] << " " << std::setw(9) << values[0] 
+          std::cout << std::setw(5) << myPID << ":matvec/matmult mismatch,row (GID=" <<
+          std::setw(6) << rowMap.GID(i) << ",LID=" << std::setw(6) << i <<
+          "), y t & z =" << std::setw(9) << std::scientific <<
+          std::setprecision(2) << y[i] << " " << std::setw(9) << values[0]
           << " " << std::setw(9) << z[i] << std::endl;
         }
      } // for (int i = 0; ...

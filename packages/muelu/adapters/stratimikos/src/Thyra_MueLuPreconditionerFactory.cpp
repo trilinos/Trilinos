@@ -82,7 +82,7 @@ using Teuchos::ParameterList;
 
 // Constructors/initializers/accessors
 
-  
+
 MueLuPreconditionerFactory::MueLuPreconditionerFactory()
   :epetraFwdOpViewExtractor_(Teuchos::rcp(new EpetraOperatorViewExtractorStd()))
 {}
@@ -222,7 +222,7 @@ void MueLuPreconditionerFactory::initializePrec(
 //     // Get the forward operator and make sure that it matches what is
 //     // already being used!
 //     const Epetra_CrsMatrix & rm = muelu_precOp->CrsMatrix();
-   
+
 //     TEUCHOS_TEST_FOR_EXCEPTION(
 //        &rm!=&*epetraFwdRowMat, std::logic_error
 //        ,"MueLu requires Epetra_RowMatrix to be the same for each initialization of the preconditioner"
@@ -235,7 +235,7 @@ void MueLuPreconditionerFactory::initializePrec(
   // Perform initialization if needed
   //
   const bool startingOver = (muelu_precOp.get() == NULL);
-  if(startingOver) 
+  if(startingOver)
   {
     if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
       *out << "\nCreating the initial MueLu::EpetraOperator object...\n";
@@ -251,7 +251,7 @@ void MueLuPreconditionerFactory::initializePrec(
     const RCP<MueLu::Hierarchy<double,int, int, NO, LMO > > muelu_hierarchy = mueluFactory.CreateHierarchy();
     muelu_hierarchy->GetLevel(0)->Set("A", mueluA);
     muelu_precOp = rcp(new MueLu::EpetraOperator(muelu_hierarchy));
-    
+
     timer.stop();
     if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
       OSTab(out).o() <<"> Creation time = "<<timer.totalElapsedTime()<<" sec\n";
@@ -276,7 +276,7 @@ void MueLuPreconditionerFactory::initializePrec(
   timer.start(true);
 
   mueluFactory.SetupHierarchy(*muelu_precOp->GetHierarchy());
-  
+
   timer.stop();
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
     OSTab(out).o() <<"=> Setup time = "<<timer.totalElapsedTime()<<" sec\n";
@@ -446,7 +446,7 @@ MueLuPreconditionerFactory::getValidParameters() const
 //       "Parameters directly accepted by ML_Epetra interface."
 //       ).setParameters(*rcp(ML_Epetra::GetValidMueLuPParameters()));
 // */
-    
+
 //     {
 //       ParameterList &mlSettingsPL = pl->sublist(
 //         MueLuSettings_name, false,
@@ -511,7 +511,7 @@ void addMueLuToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & buil
 {
   TEUCHOS_TEST_FOR_EXCEPTION(builder.getValidParameters()->sublist("Preconditioner Types").isParameter(stratName),std::logic_error,
                              "MueLu::addMueLuToStratimikosBuilder cannot add \"" + stratName +"\" because it is already included in builder!");
-  
+
   // use default constructor to add Teko::StratimikosFactory
   builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Thyra::PreconditionerFactoryBase<double>,Thyra::MueLuPreconditionerFactory>(),
                                             stratName);

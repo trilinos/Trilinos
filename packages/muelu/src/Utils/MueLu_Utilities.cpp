@@ -121,7 +121,7 @@ namespace MueLu {
       throw(Exceptions::RuntimeError("Epetra (Err. 2)"));
 #endif
     }
-     
+
   } //Transpose
 
   // -- ------------------------------------------------------- --
@@ -158,6 +158,13 @@ namespace MueLu {
 
   void Utils2<double, int, int>::TwoMatrixAdd(RCP<Matrix> const &A, bool transposeA, SC alpha, RCP<Matrix> &B, SC beta)
   {
+    /*typedef double Scalar;
+    typedef int LocalOrdinal;
+    typedef int GlobalOrdinal;
+    typedef Kokkos::DefaultNode::DefaultNodeType Node;
+    typedef typename Kokkos::DefaultKernels<double,int,Node>::SparseOps LocalMatOps;*/
+    //typedef Kokkos::DefaultKernels<double,int,NO>::SparseOps LocalMatOps;
+
     if ( !(A->getRowMap()->isSameAs(*(B->getRowMap()))) ) {
       throw(Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same."));
     }
@@ -166,7 +173,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_EPETRAEXT
       RCP<const Epetra_CrsMatrix> epA = Utils<double,int,int>::Op2EpetraCrs(A);
       RCP<Epetra_CrsMatrix> epB = Utils<double,int,int>::Op2NonConstEpetraCrs(B);
-        
+
       //FIXME is there a bug if beta=0?
       int i = EpetraExt::MatrixMatrix::Add(*epA,transposeA,alpha,*epB,beta);
 
@@ -176,6 +183,7 @@ namespace MueLu {
         std::string msg = "EpetraExt::MatrixMatrix::Add return value of " + buf.str();
         throw(Exceptions::RuntimeError(msg));
       }
+      //Xpetra::MatrixMatrix::Add<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(*A,transposeA,alpha,*B,beta);
 #else
       throw(Exceptions::RuntimeError("MueLu must be compiled with EpetraExt."));
 #endif
@@ -183,8 +191,9 @@ namespace MueLu {
 #ifdef HAVE_MUELU_TPETRA
       RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA = Utils<double,int,int>::Op2TpetraCrs(A);
       RCP<Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpB = Utils<double,int,int>::Op2NonConstTpetraCrs(B);
-        
+
       Tpetra::MatrixMatrix::Add(*tpA, transposeA, alpha, *tpB, beta);
+      //Xpetra::MatrixMatrix::Add<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(*A,transposeA,alpha,*B,beta);
 #else
       throw(Exceptions::RuntimeError("MueLu must be compiled with Tpetra."));
 #endif
@@ -203,7 +212,7 @@ namespace MueLu {
     }
     if (C==Teuchos::null)
       //FIXME 5 is a complete guess as to the #nonzeros per row
-      C = rcp( new Xpetra::CrsMatrixWrap<double,int,int>(A->getRowMap(), 5) );
+      C = rcp( new Xpetra::CrsMatrixWrap<double,int,int,NO,LMO>(A->getRowMap(), 5) );
 
     if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRAEXT
@@ -221,6 +230,7 @@ namespace MueLu {
         std::string msg = "EpetraExt::MatrixMatrix::Add return value of " + buf.str();
         throw(Exceptions::RuntimeError(msg));
       }
+      //Xpetra::MatrixMatrix::Add<double, int, int, NO, LMO>(*A,transposeA,alpha,*B,transposeB,beta,C);
 #else
       throw(Exceptions::RuntimeError("MueLu must be compile with EpetraExt."));
 #endif
@@ -231,6 +241,7 @@ namespace MueLu {
       RCP<Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> >       tpC = Utils<double,int,int>::Op2NonConstTpetraCrs(C);
 
       Tpetra::MatrixMatrix::Add(*tpA, transposeA, alpha, *tpB, transposeB, beta, tpC);
+      //Xpetra::MatrixMatrix::Add<SC,LO,GO,NO,LMO>(*A,transposeA,alpha,*B,transposeB,beta,C);
 #else
       throw(Exceptions::RuntimeError("MueLu must be compile with Tpetra."));
 #endif
@@ -240,6 +251,5 @@ namespace MueLu {
     if(A->IsView("stridedMaps")) C->CreateView("stridedMaps", A);
     if(B->IsView("stridedMaps")) C->CreateView("stridedMaps", B);
     ///////////////////////// EXPERIMENTAL
-  } //Utils2::TwoMatrixAdd() (specialization)
-
+  }
 }

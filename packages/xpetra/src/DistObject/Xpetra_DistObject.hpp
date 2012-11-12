@@ -65,7 +65,7 @@ namespace Xpetra {
   public:
 
     //! @name Constructor/Destructor Methods
-    //@{ 
+    //@{
 
     //! Destructor.
     virtual ~DistObject() { }

@@ -39,16 +39,14 @@ size (ordinal_type n, ordinal_type m) const
 {
   //n is the polynomial order and m is the number of random variables
   // return (fact(n+m)/(fact(n)*fact(m)));
-  ordinal_type min, max;
+  ordinal_type min;
   if (n == 0 ) 
     return 1;
   else {
     if (n<=m){
-      max = m;
       min = n;
     }
     else {
-      max = n;
       min = m;
     }
     

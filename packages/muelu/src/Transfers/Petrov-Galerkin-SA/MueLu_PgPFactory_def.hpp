@@ -70,7 +70,7 @@ template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, clas
 PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PgPFactory(RCP</*PFactory*/const FactoryBase> InitialPFact, RCP< const FactoryBase /* SingleLevelFactoryBase*/> AFact)
 : initialPFact_(InitialPFact), AFact_(AFact),
   diagonalView_("current") {
- 
+
   min_norm_ = DINVANORM;
 
   bReUseRowBasedOmegas_ = false;
@@ -152,7 +152,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
 
   doFillComplete=true;
   optimizeStorage=false;
-  Teuchos::ArrayRCP<Scalar> diag = Utils::GetMatrixDiagonal(A);
+  Teuchos::ArrayRCP<Scalar> diag = Utils::GetMatrixDiagonal(*A);
   Utils::MyOldScaleMatrix(DinvAP0,diag,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 
   /////////////////// calculate local damping factors omega
@@ -210,9 +210,9 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
   {
     // prolongation factory is in prolongation mode
     coarseLevel.Set("P", P_smoothed, this);
-    
+
     ///////////////////////// EXPERIMENTAL
-    if(Ptent->IsView("stridedMaps")) P_smoothed->CreateView("stridedMaps", Ptent);  
+    if(Ptent->IsView("stridedMaps")) P_smoothed->CreateView("stridedMaps", Ptent);
     ///////////////////////// EXPERIMENTAL
   }
   else
@@ -220,9 +220,9 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
     // prolongation factory is in restriction mode
     RCP<Matrix> R = Utils2::Transpose(P_smoothed,true); // use Utils2 -> specialization for double
     coarseLevel.Set("R", R, this);
-    
+
     ///////////////////////// EXPERIMENTAL
-    if(Ptent->IsView("stridedMaps")) R->CreateView("stridedMaps", Ptent, true);  
+    if(Ptent->IsView("stridedMaps")) R->CreateView("stridedMaps", Ptent, true);
     ///////////////////////// EXPERIMENTAL
   }
 
@@ -289,7 +289,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Compute
     // compute D^{-1} * A * D^{-1} * A * P0
     bool doFillComplete=true;
     bool optimizeStorage=false;
-    Teuchos::ArrayRCP<Scalar> diagA = Utils::GetMatrixDiagonal(A);
+    Teuchos::ArrayRCP<Scalar> diagA = Utils::GetMatrixDiagonal(*A);
     RCP<Matrix> DinvADinvAP0 = Utils::TwoMatrixMultiply(A,false,DinvAP0,false,doFillComplete,optimizeStorage);
     Utils::MyOldScaleMatrix(DinvADinvAP0,diagA,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 

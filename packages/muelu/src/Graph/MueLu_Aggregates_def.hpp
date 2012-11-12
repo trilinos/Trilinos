@@ -46,6 +46,7 @@
 #ifndef MUELU_AGGREGATES_DEF_HPP
 #define MUELU_AGGREGATES_DEF_HPP
 
+#include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -57,16 +58,16 @@
 namespace MueLu {
 
   ///////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Aggregates(const Graph & graph) {
     nAggregates_  = 0;
-    
+
     vertex2AggId_ = LOVectorFactory::Build(graph.GetImportMap());
     vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
-    
+
     procWinner_ = LOVectorFactory::Build(graph.GetImportMap());
     procWinner_->putScalar(MUELU_UNASSIGNED);
-    
+
     isRoot_ = Teuchos::ArrayRCP<bool>(graph.GetImportMap()->getNodeNumElements());
     for (size_t i=0; i < graph.GetImportMap()->getNodeNumElements(); i++)
       isRoot_[i] = false;
@@ -115,11 +116,11 @@ namespace MueLu {
     out << "{nGlobalAggregates = " << GetNumGlobalAggregates() << "}";
     return out.str();
   }
-     
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
     MUELU_DESCRIBE;
-      
+
     if (verbLevel & Statistics0) {
       out0 << "Global number of aggregates: " << GetNumGlobalAggregates() << std::endl;
     }
@@ -130,6 +131,11 @@ namespace MueLu {
     LO nAggregates = GetNumAggregates();
     GO nGlobalAggregates; sumAll(vertex2AggId_->getMap()->getComm(), (GO)nAggregates, nGlobalAggregates);
     return nGlobalAggregates;
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMap() const {
+    return vertex2AggId_->getMap();
   }
 
 } //namespace MueLu

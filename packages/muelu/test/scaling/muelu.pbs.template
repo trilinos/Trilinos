@@ -9,5 +9,5 @@
 
 
 cd $PBS_O_WORKDIR
-aprun -n _CORES_ _BINARY_ --nx=_NX_ --ny=_NX_ --nz=_NX_ --linAlgebra=1 --explicitR=1 --matrixType=_MTYPE_ 
+aprun -n _CORES_ _BINARY_ --nx=_NX_ --ny=_NX_ --nz=_NX_ --linAlgebra=1 --explicitR=1 --matrixType=_MTYPE_
 

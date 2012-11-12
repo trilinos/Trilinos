@@ -131,15 +131,15 @@ namespace MueLu {
   bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetImplicitTranspose() const { return implicitTranspose_; }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Teuchos::ParameterList Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::FullPopulate(const FactoryBase & PFact, 
-                                                                                                         const FactoryBase & RFact, 
-                                                                                                         const TwoLevelFactoryBase & AcFact, 
-                                                                                                         const SmootherFactory & SmooFact, 
+  Teuchos::ParameterList Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::FullPopulate(const FactoryBase & PFact,
+                                                                                                         const FactoryBase & RFact,
+                                                                                                         const TwoLevelFactoryBase & AcFact,
+                                                                                                         const SmootherFactory & SmooFact,
                                                                                                          const int &startLevel, const int &numDesiredLevels) {
-    
+
     // Note: It's OK to use rcpFromRef here, because data will only be kept by the FactoryManager
     //       and the FactoryManager is deleted at the end of this function.
-    
+
 
     //TODO:FIXME
 
@@ -151,8 +151,8 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Teuchos::ParameterList Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::FillHierarchy(const PFactory & PFact, const RFactory & RFact, 
-                                       const TwoLevelFactoryBase & AcFact, 
+  Teuchos::ParameterList Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::FillHierarchy(const PFactory & PFact, const RFactory & RFact,
+                                       const TwoLevelFactoryBase & AcFact,
                                        const int startLevel, const int numDesiredLevels) {
     FactoryManager manager(rcpFromRef(PFact), rcpFromRef(RFact), rcpFromRef(AcFact));
     manager.SetFactory("Smoother",     Teuchos::null); //? TODO remove
@@ -161,9 +161,9 @@ namespace MueLu {
     return Setup(manager, startLevel, numDesiredLevels);
 
   } // FillHierarchy
-  
-  
-  
+
+
+
   // Coherence checks todo in Setup() (using an helper function):
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CheckLevel(Level& level, int levelID) {
@@ -363,7 +363,7 @@ namespace MueLu {
     manager->SetFactory("A", NoFactory::getRCP()); // SetCoarsestSolver() is called after the hierarchy build. So we use "Final" data instead of rebuilding everything.
 
     SetFactoryManager SFM(Levels_[LastLevelID()], manager);
-    
+
 
     level.Request("PreSmoother", &smooFact);
     level.Request("PostSmoother", &smooFact);
@@ -441,7 +441,7 @@ namespace MueLu {
 
     // Print residual information before iterating
     if (startLevel == 0 && IsPrint(Statistics1) && !isPreconditioner_) {
-      
+
       Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> rn;
       rn = Utils::ResidualNorm(*(Fine->Get< RCP<Matrix> >("A")), X, B);
       GetOStream(Statistics1, 0) << "iter:    "
@@ -451,9 +451,9 @@ namespace MueLu {
                                  << std::setprecision(10) << rn
                                  << std::endl;
     }
-    
+
     for (LO i=1; i<=nIts; i++) {
-      
+
       //X.norm2(norms);
       if (Fine->Get< RCP<Matrix> >("A")->getDomainMap()->isCompatible(*(X.getMap())) == false) {
         std::ostringstream buf;
@@ -549,7 +549,7 @@ namespace MueLu {
       }
 
     } //for (LO i=0; i<nIts; i++)
-    
+
   } //Iterate()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -557,19 +557,19 @@ namespace MueLu {
     for (Array<RCP<Level> >::iterator it = Levels_.begin(); it != Levels_.end(); ++it)
       (*it)->Keep(ename, factory);
   }
-  
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Delete(const std::string& ename, const FactoryBase* factory) {
     for (Array<RCP<Level> >::iterator it = Levels_.begin(); it != Levels_.end(); ++it)
       (*it)->Delete(ename, factory);
   }
-    
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddKeepFlag(const std::string & ename, const FactoryBase* factory, KeepType keep) {
     for (Array<RCP<Level> >::iterator it = Levels_.begin(); it != Levels_.end(); ++it)
       (*it)->AddKeepFlag(ename, factory, keep);
   }
-  
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RemoveKeepFlag(const std::string & ename, const FactoryBase* factory, KeepType keep) {
     for (Array<RCP<Level> >::iterator it = Levels_.begin(); it != Levels_.end(); ++it)
@@ -583,7 +583,7 @@ namespace MueLu {
     out << "{numLevels = " << GetNumLevels() << "}";
     return out.str();
   }
-    
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
@@ -591,12 +591,12 @@ namespace MueLu {
     if (verbLevel & Parameters0) {
       out0 << "Number of Levels: " << GetNumLevels() << endl;
     }
-      
-    if (verbLevel & Parameters1) { 
+
+    if (verbLevel & Parameters1) {
       out0 << "Max Coarse Size: "    << maxCoarseSize_ << endl;
       out0 << "Implicit Transpose: " << implicitTranspose_ << endl;
     }
-      
+
     if (verbLevel & Statistics1) {
       Teuchos::OSTab tab2(out);
       for(int i = 0; i < GetNumLevels(); i++) {

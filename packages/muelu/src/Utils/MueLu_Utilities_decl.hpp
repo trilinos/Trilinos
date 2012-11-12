@@ -66,7 +66,7 @@
 #ifdef HAVE_MUELU_EPETRA
 namespace Xpetra {
   class EpetraCrsMatrix; // TODO: replace by include of _fwd.hpp
-  //  class 
+  //  class
 }
 
 // needed because of inlined function
@@ -117,10 +117,10 @@ RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_C
   This class provides a number of static helper methods.  Some are temporary and will eventually
   go away, while others should be moved to Xpetra.
 */
-  template <class Scalar, 
-            class LocalOrdinal  = int, 
-            class GlobalOrdinal = LocalOrdinal, 
-            class Node          = Kokkos::DefaultNode::DefaultNodeType, 
+  template <class Scalar,
+            class LocalOrdinal  = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node          = Kokkos::DefaultNode::DefaultNodeType,
             class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
   class Utils {
 #undef MUELU_UTILITIES_SHORT
@@ -245,7 +245,7 @@ RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_C
 
         Note -- it's assumed that A has been fillComplete'd.
     */
-    static Teuchos::ArrayRCP<SC> GetMatrixDiagonal(RCP<Matrix> const &A); //GetMatrixDiagonal
+    static Teuchos::ArrayRCP<SC> GetMatrixDiagonal(const Matrix &A); //GetMatrixDiagonal
 
     /*! @brief Left scale matrix by an arbitrary vector.
 
@@ -273,7 +273,7 @@ RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_C
     // - void ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS, Array &)
    static Teuchos::Array<Magnitude>
    ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS);
-    
+
     static RCP<MultiVector> Residual(Matrix const &Op, MultiVector const &X, MultiVector const &RHS);
 
    /*! @brief Save matrix to file in Matrix Market format.
@@ -308,13 +308,13 @@ RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_C
       @param niters maximum number of iterations
       @param tolerance stopping tolerance
       @verbose if true, print iteration information
-      
+
       (Shamelessly grabbed from tpetra/examples.)
     */
     static Scalar PowerMethod(Matrix const &A, bool scaleByDiag=true,
                               LO niters=10, Magnitude tolerance=1e-2, bool verbose=false, unsigned int seed = 123); //PowerMethod
 
-   static void MyOldScaleMatrix(RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse=true,
+   static void MyOldScaleMatrix(RCP<Matrix> &Op, Teuchos::ArrayRCP<const SC> scalingVector, bool doInverse=true,
                                 bool doFillComplete=true,
                                 bool doOptimizeStorage=true); //ScaleMatrix()
 
@@ -362,7 +362,7 @@ std::string toString(T const &what) {
 
   Separate class for utilities that need a specialization for Epetra.
 */
-  template <class Scalar, 
+  template <class Scalar,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
             class Node          = Kokkos::DefaultNode::DefaultNodeType,

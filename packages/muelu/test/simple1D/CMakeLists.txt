@@ -32,3 +32,13 @@ ASSERT_DEFINED(
 #     COMM serial mpi
 #     DEPLIBS muelu xpetra
 #   )
+
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    simple1D-Emin
+    SOURCES Emin.cpp
+    ARGS ""
+    COMM serial mpi
+    DEPLIBS muelu xpetra
+    )
+ENDIF ()

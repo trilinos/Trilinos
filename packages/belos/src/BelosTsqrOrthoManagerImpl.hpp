@@ -1785,13 +1785,6 @@ namespace Belos {
 	}
 	norms[j] = ScalarTraits<mat_scalar_type>::squareroot (sumOfSquares);
       }
-      bool anyNonzero = false;
-      typedef typename std::vector<magnitude_type>::const_iterator iter_type;
-      for (iter_type it = norms.begin(); it != norms.end(); ++it) {
-	if (*it > relativeRankTolerance_) {
-	  anyNonzero = true;
-	}
-      }
       using std::cerr;
       using std::endl;
       cerr << "Norms of columns of B after orthogonalization: ";

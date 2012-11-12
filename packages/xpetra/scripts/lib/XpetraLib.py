@@ -32,7 +32,7 @@ def buildInclude( XMLfile, skipList=[] ):
             includesStr += "#include \"" + include.replace('Tpetra','Xpetra') + "\"" + "\n"
         else:
             includesStr += "#include <" + include + ">" + "\n"
-            
+
     includesStr = includesStr.rstrip()
 
     return includesStr
@@ -40,7 +40,7 @@ def buildInclude( XMLfile, skipList=[] ):
 
 def buildDestructor( className ):
     return '    //! @name Constructor/Destructor Methods' + "\n" +  '    //@{ ' + "\n" +  '' + "\n" +  '    //! Destructor.' + "\n" +  '    virtual ~' + className + '() { }' + "\n" +  "\n" +  '   //@}'
-        
+
 #### PARSE CLASS DEFINITION ####
 
 def buildClassDefinition( XMLfile, prefix='' ):
@@ -48,11 +48,11 @@ def buildClassDefinition( XMLfile, prefix='' ):
     root = tree.getroot() # root == <doxygen>
     classNode = root[0]   # classNode == <compounddef>
     checkDoxygenVersion(root)
-    
+
     className = classNode.xpath('compoundname')[0].text # Tpetra::Map
     className = className.lstrip('Tpetra::')            # Map
     #print(className)
-    
+
     className = prefix + className
 
     return className
@@ -63,13 +63,13 @@ def buildTemplateParam( XMLfile ):
     root = tree.getroot() # root == <doxygen>
     classNode = root[0]   # classNode == <compounddef>
     checkDoxygenVersion(root)
-    
+
     templateParamNode = classNode.xpath('templateparamlist')[0];
     str = ''
     for child in templateParamNode:
         type   = child.xpath('type')[0].text        # == 'class'
         name   = child.xpath('declname')[0].text    # == 'GlobalOrdinal'
-        
+
         defvalStr = ''
         defvalNode = child.xpath('defval')
         if len(defvalNode) == 1:
@@ -78,9 +78,9 @@ def buildTemplateParam( XMLfile ):
 
         str += type + ' ' + name + defvalStr + ', ' # str == 'class GlobalOrdinal = LocalOrdinal, '
         #print(str)
-    
+
     templateParamStr = 'template <' + str.rstrip(', ') + '>' # template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-    #print(templateParamStr) 
+    #print(templateParamStr)
 
     return templateParamStr
 
@@ -89,16 +89,16 @@ def buildTemplateParam2( XMLfile ):
     root = tree.getroot() # root == <doxygen>
     classNode = root[0]   # classNode == <compounddef>
     checkDoxygenVersion(root)
-    
+
     templateParamNode = classNode.xpath('templateparamlist')[0];
     str = ''
     for child in templateParamNode:
         name   = child.xpath('declname')[0].text    # == 'GlobalOrdinal'
         str += name + ', ' # str == 'GlobalOrdinal, '
         #print(str)
-    
+
     templateParamStr = str.rstrip(', ') # LocalOrdinal, GlobalOrdinal, Node
-    #print(templateParamStr) 
+    #print(templateParamStr)
 
     return templateParamStr
 ####
@@ -117,7 +117,7 @@ def buildClassFunctions( XMLfile, skipFunctionList, buildFuncLine ):
         header = sectiondefNode.xpath("header//text()")
         if len(header) > 0: header = header[0]
         else: header = ''
-        #description = sectiondefNode.xpath("description")[0].xpath("string()")        
+        #description = sectiondefNode.xpath("description")[0].xpath("string()")
 
         ###publicFunctionNodes = classNode.xpath("//memberdef[@kind='function' and @prot='public']")
         publicFunctionNodes = sectiondefNode.xpath("memberdef[@kind='function' and @prot='public']")
@@ -135,9 +135,9 @@ def buildClassFunctions( XMLfile, skipFunctionList, buildFuncLine ):
             functionStr += "    //@{\n\n"
             functionStr += functionSubStr
             functionStr += "    //@}\n\n"
-            
+
     functionStr = functionStr.rstrip()
-    
+
     return functionStr;
 
 ####

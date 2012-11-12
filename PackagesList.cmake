@@ -99,7 +99,7 @@ INCLUDE(TribitsListHelpers)
 #     of EX pacakges are encouraged to set up their own nightly testing for
 #     thier EX packages.
 #
-# NOTE: These packages must be listed in strictly assending order in terms of
+# NOTE: These packages must be listed in strictly ascending order in terms of
 # package dependencies.  If you get the order wrong, then an error message
 # will be printed during configuration with CMake.
 #

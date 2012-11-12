@@ -12,7 +12,7 @@ APPEND_GLOB(HEADERS */*.hpp)
 
 SET(SOURCES "mac.cpp") # Avoid empty library (MacOs 'ar' utility doesn't work on empty library).
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  APPEND_GLOB(SOURCES 
+  APPEND_GLOB(SOURCES
     StridedMap/Xpetra_StridedEpetraMap.cpp
     )
 ENDIF()

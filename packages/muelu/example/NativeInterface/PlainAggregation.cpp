@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
   Teuchos::CommandLineProcessor  clp(false);
   Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 81); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);     // manage parameters of xpetra
-  
+
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
   case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   default:;
   }
-  
+
   if (comm->getRank() == 0) std::cout << xpetraParameters << matrixParameters;
 
   //
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
   RCP<SmootherPrototype> coarseSolverPrototype = rcp( new DirectSolver() );
   RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarseSolverPrototype, Teuchos::null) );
 
-  // 
+  //
   FactoryManager M;
   M.SetFactory("P",            pFact);
   M.SetFactory("Aggregates",   aggregationFact);
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
 
   //
   // Multigrid setup phase
-  //  
+  //
 
   Hierarchy H;
 

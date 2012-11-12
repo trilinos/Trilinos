@@ -145,16 +145,16 @@ struct Dot
   Dot( const Type & arg_x , const Type & arg_y )
     : X(arg_x) , Y(arg_y) { }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( int i , value_type & update ) const
     { update += X[i] * Y[i]; }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & source )
     { update += source; }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 };
@@ -182,18 +182,18 @@ struct DotSingle
 
   DotSingle( const Type & arg_x ) : X(arg_x) {}
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( int i , value_type & update ) const
     {
       const typename Type::scalar_type x = X[i]; update += x * x ;
     }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & source )
     { update += source; }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 };
@@ -235,7 +235,7 @@ struct Scale
   Scale( const ScalarType & arg_alpha , const VectorType & arg_Y )
     : alpha( arg_alpha ), Y( arg_Y ) {}
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( int i ) const
     {
       Y[i] *= *alpha ;
@@ -297,7 +297,7 @@ struct AXPBY
          const VectorType      & arg_Y )
     : alpha( arg_alpha ), beta( arg_beta ), X( arg_X ), Y( arg_Y ) {}
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( int i ) const
     {
       Y[i] = *alpha * X[i] + *beta * Y[i] ;

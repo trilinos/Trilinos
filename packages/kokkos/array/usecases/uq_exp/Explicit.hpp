@@ -47,255 +47,16 @@
 #include <sys/time.h>
 #include <iostream>
 #include <iomanip>
-#include <cstdlib>
-#include <cmath>
 
 #include <impl/KokkosArray_Timer.hpp>
 
-#include <FEMesh.hpp>
+#include <ParallelDataMap.hpp>
+#include <ExplicitFunctors.hpp>
 
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 namespace Explicit {
-
-template< typename Scalar , class Device >
-struct Fields {
-
-  static const unsigned SpatialDim    = 3 ;
-  static const unsigned ElemNodeCount = 8 ;
-
-  // Indices for full 3x3 tensor:
-
-  static const unsigned K_F_XX = 0 ;
-  static const unsigned K_F_YY = 1 ;
-  static const unsigned K_F_ZZ = 2 ;
-  static const unsigned K_F_XY = 3 ;
-  static const unsigned K_F_YZ = 4 ;
-  static const unsigned K_F_ZX = 5 ;
-  static const unsigned K_F_YX = 6 ;
-  static const unsigned K_F_ZY = 7 ;
-  static const unsigned K_F_XZ = 8 ;
-  static const unsigned K_F_SIZE = 9 ;
-
-  //  Indexes into a 3 by 3 symmetric tensor stored as a length 6 vector
-
-  static const unsigned K_S_XX = 0 ;
-  static const unsigned K_S_YY = 1 ;
-  static const unsigned K_S_ZZ = 2 ;
-  static const unsigned K_S_XY = 3 ;
-  static const unsigned K_S_YZ = 4 ;
-  static const unsigned K_S_ZX = 5 ;
-  static const unsigned K_S_YX = 3 ;
-  static const unsigned K_S_ZY = 4 ;
-  static const unsigned K_S_XZ = 5 ;
-  static const unsigned K_S_SIZE = 6 ;
-
-  //  Indexes into a 3 by 3 skew symmetric tensor stored as a length 3 vector
-
-  static const unsigned K_V_XY = 0 ;
-  static const unsigned K_V_YZ = 1 ;
-  static const unsigned K_V_ZX = 2 ;
-  static const unsigned K_V_SIZE = 3 ;
-
-  typedef Device  device_type ;
-
-  typedef HybridFEM::FEMesh<double,ElemNodeCount,device_type>  FEMesh ;
-
-  typedef typename FEMesh::node_coords_type      node_coords_type ;
-  typedef typename FEMesh::elem_node_ids_type    elem_node_ids_type ;
-  typedef typename FEMesh::node_elem_ids_type    node_elem_ids_type ;
-  typedef typename KokkosArray::ParallelDataMap  parallel_data_map ;
-
-
-  typedef KokkosArray::View< Scalar*                , device_type >  scalar_view ;
-  typedef KokkosArray::View< Scalar**               , device_type >  array_view ;
-  typedef KokkosArray::View< Scalar**[ SpatialDim ] , device_type >  geom_array_view ;
-  typedef KokkosArray::View< Scalar**[ K_F_SIZE ]   , device_type >  tensor_array_view ;
-  typedef KokkosArray::View< Scalar**[ K_S_SIZE ]   , device_type >  sym_tensor_array_view ;
-
-  typedef KokkosArray::View< Scalar**[ SpatialDim ][ ElemNodeCount ] , device_type >
-    elem_node_geom_view ;
-
-  typedef KokkosArray::View< Scalar ,   device_type > value_view ;
-  typedef KokkosArray::View< Scalar* , device_type > property_view ;
-
-  // Parameters:
-  const unsigned num_nodes ;
-  const unsigned num_nodes_owned ;
-  const unsigned num_elements ;
-  const unsigned uq_count ;
-
-  const Scalar  lin_bulk_visc;
-  const Scalar  quad_bulk_visc;
-  const Scalar  two_mu;
-  const Scalar  bulk_modulus;
-  const Scalar  density;
-
-  // Views of mesh data:
-  const elem_node_ids_type  elem_node_connectivity ;
-  const node_elem_ids_type  node_elem_connectivity ;
-  const node_coords_type    model_coords ;
-
-  // Properties:
-  const property_view  nodal_mass ;
-  const property_view  elem_mass ;
-
-  // Compute data:
-        value_view             dt ;
-        value_view             dt_new ;
-        geom_array_view        displacement ;
-        geom_array_view        displacement_new ;
-        geom_array_view        velocity ;
-        geom_array_view        velocity_new ;
-        tensor_array_view      rotation ;
-        tensor_array_view      rotation_new ;
-
-  const geom_array_view        acceleration ;
-  const geom_array_view        internal_force ;
-  const array_view             internal_energy ;
-  const sym_tensor_array_view  stress ;
-  const elem_node_geom_view    element_force ;
-  const tensor_array_view      vel_grad ;
-  const sym_tensor_array_view  stretch ;
-  const sym_tensor_array_view  rot_stretch ;
-  
-  Fields(
-      const FEMesh & mesh,
-      const unsigned arg_uq_count ,
-      const Scalar   arg_lin_bulk_visc,
-      const Scalar   arg_quad_bulk_visc,
-      const Scalar   youngs_modulus,
-      const Scalar   poissons_ratio,
-      const Scalar   arg_density )
-    : num_nodes(       mesh.parallel_data_map.count_owned +
-                       mesh.parallel_data_map.count_receive )
-    , num_nodes_owned( mesh.parallel_data_map.count_owned )
-    , num_elements(    mesh.elem_node_ids.dimension(0) )
-    , uq_count(        arg_uq_count )
-    , lin_bulk_visc(   arg_lin_bulk_visc )
-    , quad_bulk_visc(  arg_quad_bulk_visc )
-    , two_mu(          youngs_modulus/(1.0+poissons_ratio) )
-    , bulk_modulus(    youngs_modulus/(3*(1.0-2.0*poissons_ratio)) )
-    , density(         arg_density )
-
-    // mesh
-
-    , elem_node_connectivity( mesh.elem_node_ids )
-    , node_elem_connectivity( mesh.node_elem_ids )
-    , model_coords(           mesh.node_coords )
-
-    // Properties:
-    , nodal_mass( "nodal_mass" , num_nodes_owned )
-    , elem_mass(  "elem_mass" ,  num_elements )
-
-    , dt(     "dt" )
-    , dt_new( "dt" )
-    , displacement(     "displacement" ,    num_nodes , uq_count )
-    , displacement_new( "displacement" ,    num_nodes , uq_count )
-    , velocity(         "velocity" ,        num_nodes , uq_count )
-    , velocity_new(     "velocity" ,        num_nodes , uq_count )
-    , rotation(         "rotation" ,        num_elements , uq_count )
-    , rotation_new(     "rotation" ,        num_elements , uq_count )
-    , acceleration(     "acceleration" ,    num_nodes_owned , uq_count )
-    , internal_force(   "internal_force" ,  num_nodes_owned , uq_count )
-    , internal_energy(  "internal_energy" , num_elements , uq_count )
-    , stress(           "stress" ,          num_elements , uq_count )
-    , element_force(    "element_force" ,   num_elements , uq_count )
-    , vel_grad(         "vel_grad" ,        num_elements , uq_count )
-    , stretch(          "stretch" ,         num_elements , uq_count )
-    , rot_stretch(      "rot_stretch" ,     num_elements , uq_count )
-    { }
-};
-
-template< class DataType , class LayoutType , class Device >
-void swap( KokkosArray::View< DataType , LayoutType , Device > & x ,
-           KokkosArray::View< DataType , LayoutType , Device > & y )
-{
-  const KokkosArray::View< DataType , LayoutType , Device > z = x ;
-  x = y ;
-  y = z ;
-}
-
-} /* namespace Explicit */
-
-//----------------------------------------------------------------------------
-
-namespace Explicit {
-
-template< class Fields > struct InitializeElement ;
-template< class Fields > struct InitializeNode ;
-template< class Fields > struct GradFunctor ;
-template< class Fields > struct DecompRotateFunctor ;
-template< class Fields > struct InternalForceFunctor ;
-template< class Fields , class Boundary > struct NodalUpdateFunctor ;
-template< class Fields > struct NodalBoundary ;
-template< class Fields > struct PackState ;
-template< class Fields > struct UnpackState ;
-
-template< class Fields >
-inline
-void initialize_element( const Fields & arg_fields )
-{ InitializeElement< Fields > op( arg_fields ); }
-
-template< class Fields >
-inline
-void initialize_node( const Fields & arg_fields )
-{ InitializeNode< Fields > op( arg_fields ); }
-
-template< class Fields >
-inline
-void gradient( const Fields & arg_fields )
-{ GradFunctor< Fields > op( arg_fields ); }
-
-template< class Fields >
-inline
-void decomp_rotate( const Fields & arg_fields )
-{ DecompRotateFunctor< Fields > op( arg_fields ); }
-
-template< class Fields >
-inline
-void internal_force( const Fields & arg_fields , float user_dt )
-{ InternalForceFunctor< Fields > op( arg_fields , user_dt ); }
-
-template< class Fields >
-inline
-void nodal_update( const Fields & arg_fields , const float x_bc )
-{
-  typedef NodalBoundary< Fields > Boundary ;
-  Boundary bc_op( arg_fields , x_bc );
-  NodalUpdateFunctor< Fields , Boundary > op( arg_fields , bc_op );
-}
-
-template< typename FieldsScalar , typename ValueType , class Device >
-inline
-void pack_state( const Fields< FieldsScalar , Device >  & arg_fields ,
-                 const KokkosArray::View< ValueType* , Device > & arg_buffer ,
-                 const unsigned node_begin ,
-                 const unsigned node_count )
-{
-  typedef Fields< FieldsScalar , Device > fields_type ;
-  typedef PackState< fields_type > Pack ;
-  if ( node_count ) {
-    Pack( arg_buffer , arg_fields , node_begin , node_count );
-  }
-}
-
-template< typename FieldsScalar , typename ValueType , class Device >
-inline
-void unpack_state( const Fields< FieldsScalar , Device >  & arg_fields ,
-                   const KokkosArray::View< ValueType* , Device > & arg_buffer ,
-                   const unsigned node_begin ,
-                   const unsigned node_count )
-{
-  typedef Fields< FieldsScalar , Device > fields_type ;
-  typedef UnpackState< fields_type > Unpack ;
-  if ( node_count ) {
-    Unpack( arg_buffer , arg_fields , node_begin , node_count );
-  }
-}
-
-//----------------------------------------------------------------------------
-
 
 struct PerformanceData {
   double mesh_time ;
@@ -381,10 +142,10 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   typename fields_type::node_coords_type::HostMirror
     model_coords_h = KokkosArray::create_mirror( mesh_fields.model_coords );
 
-  typename fields_type::geom_array_view::HostMirror
+  typename fields_type::spatial_precise_view::HostMirror
     displacement_h = KokkosArray::create_mirror( mesh_fields.displacement );
 
-  typename fields_type::geom_array_view::HostMirror
+  typename fields_type::spatial_precise_view::HostMirror
     velocity_h = KokkosArray::create_mirror( mesh_fields.velocity );
 
   KokkosArray::deep_copy( model_coords_h , mesh_fields.model_coords );
@@ -427,13 +188,13 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   perf_data.number_of_steps = total_num_steps ;
 
   typedef typename
-    fields_type::geom_array_view::scalar_type  comm_value_type ;
+    fields_type::spatial_precise_view::scalar_type  comm_value_type ;
 
   const unsigned comm_value_count = 6 ;
 
   KokkosArray::AsyncExchange< comm_value_type , device_type ,
                               KokkosArray::ParallelDataMap >
-    comm_exchange( mesh.parallel_data_map , comm_value_count );
+    comm_exchange( mesh.parallel_data_map , comm_value_count * uq_count );
 
   for ( int step = 0; step < total_num_steps; ++step ) {
 

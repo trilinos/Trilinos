@@ -1,49 +1,49 @@
 <!-- TEST: duplication of factories -->
 <ParameterList name="MueLu">
-   
+
   <ParameterList name="Hierarchy">
-    
+
     <Parameter name="numDesiredLevel" type="int" value="10"/>
-    
+
     <ParameterList name="FineLevel">
       <Parameter name="startLevel" type="int" value="0"/>
-      
+
       <ParameterList name="Smoother">
         <Parameter name="factory" type="string" value="TrilinosSmoother"/>
-        
-        <Parameter name="type"                         type="string" value="RELAXATION"/>            
+
+        <Parameter name="type"                         type="string" value="RELAXATION"/>
         <ParameterList name="ParameterList">
           <Parameter name="relaxation: type"           type="string" value="Symmetric Gauss-Seidel"/>
           <Parameter name="relaxation: sweeps"         type="int"    value="1"/>
           <Parameter name="relaxation: damping factor" type="double" value="1"/>
         </ParameterList>
       </ParameterList>
-      
+
     </ParameterList>
 
     <ParameterList name="OtherLevels">
       <Parameter name="startLevel" type="int" value="1"/>
-      
+
       <Parameter name="P" type="string" value="SaPFactory"/>
-      
+
       <ParameterList name="Smoother">
         <Parameter name="factory" type="string" value="TrilinosSmoother"/>
-        
-        <Parameter name="type"                         type="string" value="RELAXATION"/>    
+
+        <Parameter name="type"                         type="string" value="RELAXATION"/>
         <ParameterList name="ParameterList">
           <Parameter name="relaxation: type"           type="string" value="Symmetric Gauss-Seidel"/>
           <Parameter name="relaxation: sweeps"         type="int"    value="1"/>
           <Parameter name="relaxation: damping factor" type="double" value="1"/>
         </ParameterList>
-        
+
       </ParameterList>
     </ParameterList>
-    
+
     <ParameterList name="CoarsestLevel">
       <Parameter name="startLevel" type="int" value="-1"/>
-      
+
       <Parameter name="CoarseSolver" type="string" value="DirectSolver"/>
     </ParameterList>
-    
+
   </ParameterList>
 </ParameterList>

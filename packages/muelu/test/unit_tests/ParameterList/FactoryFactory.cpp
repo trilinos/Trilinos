@@ -78,7 +78,7 @@ namespace MueLuTests {
       }
     }
   }
-  
+
 } // namespace MueLuTests
 
 

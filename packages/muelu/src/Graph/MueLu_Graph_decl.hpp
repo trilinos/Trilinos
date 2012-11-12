@@ -62,7 +62,7 @@
 namespace MueLu {
 
   template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class Graph 
+  class Graph
     : public BaseClass {
 #undef MUELU_GRAPH_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
@@ -70,14 +70,14 @@ namespace MueLu {
   public:
 
     Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph), gBoundaryNodeMap_(Teuchos::null) {
-      //setObjectLabel(objectLabel); 
+      //setObjectLabel(objectLabel);
     }
 
     virtual ~Graph() {}
-    
+
     size_t GetNodeNumVertices() const { return graph_->getNodeNumRows(); }
     size_t GetNodeNumEdges()    const { return graph_->getNodeNumEntries(); }
-    
+
     Xpetra::global_size_t GetGlobalNumEdges() const { return graph_->getGlobalNumEntries(); }
 
     const RCP<const Teuchos::Comm<int> > GetComm() const { return graph_->getComm(); }

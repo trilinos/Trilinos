@@ -61,14 +61,14 @@ namespace MueLu {
     class TwoKeyMap : public BaseClass {
 
     private:
-     
+
       //! Sub-map container (Key2 -> Value)
       typedef Teuchos::map<Key2, Value> SubMap;
 
       //! Map of a map (Key1 -> SubMap)
       typedef Teuchos::map<Key1, SubMap> Map;
 
-      //! 
+      //!
       Map map_;
 
     public:

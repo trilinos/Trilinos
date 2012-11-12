@@ -116,8 +116,9 @@ namespace Stokhos {
      * Size of returned array is given by size(), and coefficients are
      * ordered from order 0 up to size size()-1.
      */
-    virtual void evaluateBases(const Teuchos::Array<value_type>& point,
-			       Teuchos::Array<value_type>& basis_vals) const;
+    virtual void evaluateBases(
+      const Teuchos::ArrayView<const value_type>& point,
+      Teuchos::Array<value_type>& basis_vals) const;
 
     //! Return string name of basis
     virtual const std::string& getName() const;
@@ -162,7 +163,7 @@ namespace Stokhos {
       value_type threshold,
       const Teuchos::Array< Stokhos::OrthogPolyApprox<ordinal_type, value_type> >& pce,
       const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad,
-      Teuchos::Array< Teuchos::Array<ordinal_type> >& terms_,
+      Teuchos::Array< Stokhos::MultiIndex<ordinal_type> >& terms_,
       Teuchos::Array<ordinal_type>& num_terms_,
       Teuchos::SerialDenseMatrix<ordinal_type,value_type>& Qp_, 
       Teuchos::SerialDenseMatrix<ordinal_type,value_type>& A_,
@@ -204,7 +205,7 @@ namespace Stokhos {
     ordinal_type sz;
 
     //! 2-D array of basis terms
-    Teuchos::Array< Teuchos::Array<ordinal_type> > terms;
+    Teuchos::Array< Stokhos::MultiIndex<ordinal_type> > terms;
 
     //! Number of terms up to each order
     Teuchos::Array<ordinal_type> num_terms;

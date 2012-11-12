@@ -28,10 +28,10 @@ else
     echo "output file '$2' exists"
   else
     echo "data = {..." > $2
-  
+
     # stick single quotes around first field, end line with ";..."
     cat $1 | egrep "^&&&" | egrep -v "MemFree" | sed "s/^&&&//" | sed "s/avg=//" | awk -v qt="'" '{printf "%s%s%s %s; ...\n",qt,$1,qt,$4}' >> $2
-  
+
     echo "};" >> $2
   fi
 fi

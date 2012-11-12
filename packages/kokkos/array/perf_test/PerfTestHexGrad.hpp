@@ -61,7 +61,7 @@ struct HexSimpleFill
   HexSimpleFill( const elem_coord_type & arg_coords )
     : coords( arg_coords ) {}
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( size_type ielem ) const
   {
     coords(ielem,0,0) = 0.;
@@ -129,7 +129,7 @@ struct HexGrad
     , grad_op( arg_grad_op )
     {}
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( size_type ielem ) const
   {
     // Repeated re-use of nodal coordinates,

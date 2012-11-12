@@ -67,29 +67,29 @@ namespace Xpetra {
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
     typedef Kokkos::DefaultNode::DefaultNodeType Node;
-    
+
   public:
 
     //! @name Constructor/Destructor Methods
-    //@{ 
+    //@{
 
     //! Sets all vector entries to zero.
-    explicit EpetraIntVector(const Teuchos::RCP<const Map<int,int> > &map, bool zeroOut=true) 
+    explicit EpetraIntVector(const Teuchos::RCP<const Map<int,int> > &map, bool zeroOut=true)
     {
       XPETRA_RCP_DYNAMIC_CAST(const EpetraMap, map, eMap, "Xpetra::EpetraCrsMatrix constructors only accept Xpetra::EpetraMap as input arguments.");
       vec_ = rcp(new Epetra_IntVector(eMap->getEpetra_BlockMap(), zeroOut));
     }
-    
-    //! Destructor.  
+
+    //! Destructor.
     ~EpetraIntVector() {  };
 
     //@}
 
     //! @name Mathematical methods
-    //@{ 
+    //@{
 
     //! TODO missing comment
-    int dot(const Vector<int,int,int> &a) const; 
+    int dot(const Vector<int,int,int> &a) const;
 
     //! Return 1-norm of this Vector.
     Teuchos::ScalarTraits<int>::magnitudeType norm1() const;
@@ -112,7 +112,7 @@ namespace Xpetra {
     //@}
 
     //! @name Post-construction modification routines
-    //@{ 
+    //@{
 
     //! Replace current value at the specified location with specified value.
     void replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value);
@@ -152,7 +152,7 @@ namespace Xpetra {
     //@}
 
     //! @name Mathematical methods
-    //@{ 
+    //@{
     //! Computes dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i])
     void dot(const MultiVector<int,int,int,Kokkos::DefaultNode::DefaultNodeType> &A, const Teuchos::ArrayView<int> &dots) const;
 
@@ -194,7 +194,7 @@ namespace Xpetra {
 
     //! Element-wise multiply of a Vector A with a EpetraMultiVector B.
     void elementWiseMultiply(int scalarAB, const Vector<int,int,int,Kokkos::DefaultNode::DefaultNodeType> &A, const MultiVector<int,int,int,Kokkos::DefaultNode::DefaultNodeType> &B, int scalarThis);
-    //@} 
+    //@}
 
     //! @name Post-construction modification routines
     //@{
@@ -214,7 +214,7 @@ namespace Xpetra {
     //@}
 
     //! @name Attribute access functions
-    //@{ 
+    //@{
 
     //! Returns the number of vectors in the multi-vector.
     size_t getNumVectors() const;
@@ -225,9 +225,9 @@ namespace Xpetra {
     //! Returns the global vector length of vectors in the multi-vector.
     global_size_t getGlobalLength() const {  return vec_->GlobalLength(); }
 
-    //@} 
+    //@}
 
-    //! @name Overridden from Teuchos::Describable 
+    //! @name Overridden from Teuchos::Describable
     //@{
 
     //! Return a simple one-line description of this object.
@@ -245,7 +245,7 @@ namespace Xpetra {
     }
 
     // Implementing DistObject
-    const Teuchos::RCP<const Map<int,int> > getMap() const { 
+    const Teuchos::RCP<const Map<int,int> > getMap() const {
       RCP<const Epetra_BlockMap> map = rcp(new Epetra_BlockMap(vec_->Map()));
       return rcp ( new Xpetra::EpetraMap(map) );
     }
@@ -260,7 +260,7 @@ namespace Xpetra {
 
   private:
     RCP< Epetra_IntVector > vec_;
-    
+
   }; // class EpetraIntVector
 
 } // namespace Xpetra

@@ -51,23 +51,9 @@ public:
                                            const panzer::PhysicsBlock & physicsBlock,
                                            const Teuchos::ParameterList & user_data) const;
 
-   /** Build and register evaluators for a response on a particular side set.
-     *
-     * \param[in] responseName The name of the response to be constructed
-     *                         by these evaluators.
-     * \param[in,out] fm Field manager to be fuild with the evaluators.
-     * \param[in] bc Boundary condition object for the sideset being used.
-     * \param[in] physicsBlock What physics block is being used for constructing
-     *                         the evaluators
-     * \param[in] user_data The user data parameter list, this stores things
-     *                      that the user may find useful.
-     */
-   virtual void buildAndRegisterEvaluators(const std::string & responseName,
-                                           PHX::FieldManager<panzer::Traits> & fm,
-                                           const panzer::BC & bc,
-                                           const panzer::PhysicsBlock & physicsBlock,
-                                           const Teuchos::ParameterList & user_data) const 
-   { }
+protected:
+   //! Accessor method for Cubature degree (can be used by sub classes)
+   int getCubatureDegree() const { return cubatureDegree_; }
 
 private:
    MPI_Comm comm_;

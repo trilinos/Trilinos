@@ -81,7 +81,7 @@ namespace MueLu {
 
   void LinkedList::DeleteHead() {
     if (IsEmpty()) throw(1);
-      
+
     MueLu_Node *newNode = nodeHead;
     nodeHead = newNode->next;
     delete newNode;

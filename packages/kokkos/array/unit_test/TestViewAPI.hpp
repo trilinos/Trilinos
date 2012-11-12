@@ -49,7 +49,7 @@
 
 /*--------------------------------------------------------------------------*/
 
-namespace {
+namespace Test {
 
 
 /*--------------------------------------------------------------------------*/
@@ -83,7 +83,7 @@ struct TestViewOperator
     KokkosArray::parallel_for( N , TestViewOperator() );
   }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const unsigned i ) const
   {
     const unsigned X = 0 ;
@@ -120,12 +120,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
 
   typedef int value_type ;
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -167,7 +167,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const size_type , value_type & update ) const
   {
     long offset ;
@@ -215,12 +215,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
 
   typedef int value_type ;
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -262,7 +262,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const size_type , value_type & update ) const
   {
     long offset ;
@@ -308,12 +308,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
 
   typedef int value_type ;
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -355,7 +355,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const size_type , value_type & update ) const
   {
     long offset ;
@@ -399,12 +399,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
 
   typedef int value_type ;
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -446,7 +446,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const size_type , value_type & update ) const
   {
     long offset ;
@@ -488,12 +488,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
 
   typedef int value_type ;
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -535,7 +535,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const size_type , value_type & update ) const
   {
     long offset ;
@@ -575,12 +575,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
 
   typedef int value_type ;
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -622,7 +622,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const size_type , value_type & update ) const
   {
     long offset ;
@@ -660,12 +660,12 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
 
   typedef int value_type ;
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update |= input ; }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
@@ -707,7 +707,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
     ASSERT_EQ( error_flag , 0 );
   }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const size_type , value_type & update ) const
   {
     long offset ;
@@ -796,12 +796,12 @@ public:
     ASSERT_EQ( hx.dimension(0) , 0u );
     ASSERT_EQ( hy.dimension(0) , 0u );
     ASSERT_EQ( hz.dimension(0) , 0u );
-    ASSERT_EQ( dx.dimension(1) , N1 );
-    ASSERT_EQ( dy.dimension(1) , N1 );
-    ASSERT_EQ( dz.dimension(1) , N1 );
-    ASSERT_EQ( hx.dimension(1) , N1 );
-    ASSERT_EQ( hy.dimension(1) , N1 );
-    ASSERT_EQ( hz.dimension(1) , N1 );
+    ASSERT_EQ( dx.dimension(1) , unsigned(N1) );
+    ASSERT_EQ( dy.dimension(1) , unsigned(N1) );
+    ASSERT_EQ( dz.dimension(1) , unsigned(N1) );
+    ASSERT_EQ( hx.dimension(1) , unsigned(N1) );
+    ASSERT_EQ( hy.dimension(1) , unsigned(N1) );
+    ASSERT_EQ( hz.dimension(1) , unsigned(N1) );
 
     dx = dView4( "dx" , N0 );
     dy = dView4( "dy" , N0 );
@@ -817,15 +817,15 @@ public:
     ASSERT_TRUE(dy);
     ASSERT_NE( dx , dy );
 
-    ASSERT_EQ( dx.dimension(0) , N0 );
-    ASSERT_EQ( dx.dimension(1) , N1 );
-    ASSERT_EQ( dx.dimension(2) , N2 );
-    ASSERT_EQ( dx.dimension(3) , N3 );
+    ASSERT_EQ( dx.dimension(0) , unsigned(N0) );
+    ASSERT_EQ( dx.dimension(1) , unsigned(N1) );
+    ASSERT_EQ( dx.dimension(2) , unsigned(N2) );
+    ASSERT_EQ( dx.dimension(3) , unsigned(N3) );
 
-    ASSERT_EQ( dy.dimension(0) , N0 );
-    ASSERT_EQ( dy.dimension(1) , N1 );
-    ASSERT_EQ( dy.dimension(2) , N2 );
-    ASSERT_EQ( dy.dimension(3) , N3 );
+    ASSERT_EQ( dy.dimension(0) , unsigned(N0) );
+    ASSERT_EQ( dy.dimension(1) , unsigned(N1) );
+    ASSERT_EQ( dy.dimension(2) , unsigned(N2) );
+    ASSERT_EQ( dy.dimension(3) , unsigned(N3) );
 
     hx = KokkosArray::create_mirror( dx );
     hy = KokkosArray::create_mirror( dy );
@@ -937,7 +937,7 @@ public:
   }
 };
 
-} // namespace
+} // namespace Test
 
 /*--------------------------------------------------------------------------*/
 

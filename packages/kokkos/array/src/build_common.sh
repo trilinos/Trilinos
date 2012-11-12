@@ -22,7 +22,7 @@ case ${ARG} in
 #----------- OPTIONS -----------
 OPT | opt | O3 | -O3 ) OPTFLAGS="${OPTFLAGS} -O3" ;;
 #-------------------------------
-DBG | dbg | g | -g )   OPTFLAGS="${OPTFLAGS} -g -DKOKKOSARRAY_BOUNDS_CHECK" ;;
+DBG | dbg | g | -g )   OPTFLAGS="${OPTFLAGS} -g -DKOKKOSARRAY_EXPRESSION_CHECK" ;;
 #-------------------------------
 HWLOC | hwloc ) HAVE_HWLOC=${1} ; shift 1 ;;
 #-------------------------------
@@ -34,14 +34,21 @@ MPI | mpi )
   ;;
 #-------------------------------
 CUDA | Cuda | cuda )
-  HAVE_CUDA=1
-  OPTFLAGS="${OPTFLAGS} -DHAVE_CUDA"
+  HAVE_CUDA="-DHAVE_CUDA"
+  OPTFLAGS="${OPTFLAGS} ${HAVE_CUDA}"
   NVCC_SOURCES="${NVCC_SOURCES} ${KOKKOSARRAY}/src/Cuda/*.cu"
-  LIB="${LIB} libCuda.a -L/usr/local/cuda/lib64 -lcudart -lcuda -lcusparse"
+  #
+  # Extract release version from compiler as m0n
+  # where m == major version number
+  # where n == minor version number
+  #
+  CUDA_RELEASE_VERSION="-DCUDA_RELEASE_VERSION=`nvcc --version | sed -n -e '/release/{s/^.*release //;s/,.*$//;s/\./0/;p}'`"
   #
   # -x cu : process all files through the Cuda compiler as Cuda code.
+  # -lib -o : produce library
   #
-  NVCC='nvcc --compiler-options "-Wall" -arch=sm_20 -lib -o libCuda.a -x cu'
+  NVCC="nvcc -Xcompiler -Wall,-ansi ${CUDA_RELEASE_VERSION} -arch=sm_20 -lib -o libCuda.a -x cu"
+  LIB="${LIB} libCuda.a -L/usr/local/cuda/lib64 -lcudart -lcuda -lcusparse"
   ;;
 #-------------------------------
 GNU | gnu | g++ )
@@ -49,6 +56,8 @@ GNU | gnu | g++ )
   # The Trilinos build system requires '-pedantic'
   # 
   CXX="g++ -Wall -Wextra -ansi -pedantic"
+  CXX="${CXX} -rdynamic -DENABLE_TRACEBACK"
+  LIB="${LIB} -ldl"
   ;;
 #-------------------------------
 INTEL | intel | icc )
@@ -89,7 +98,7 @@ INC_PATH="${INC_PATH} -I${KOKKOSARRAY}/src"
 
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_Host_Impl.cpp"
-CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_Host_MemorySpace.cpp"
+CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/Host/KokkosArray_HostSpace.cpp"
 
 #-----------------------------------------------------------------------------
 

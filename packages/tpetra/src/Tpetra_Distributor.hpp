@@ -552,7 +552,7 @@ namespace Tpetra {
     /// the number of outstanding nonblocking receives and sends.
     /// This means you should always resize to zero after completing
     /// receive and send requests.
-    Array<RCP<Teuchos::CommRequest> > requests_;
+    Array<RCP<Teuchos::CommRequest<int> > > requests_;
 
     /// \brief The reverse distributor.
     ///

@@ -104,10 +104,10 @@ namespace MueLu {
     void SetNodeGIDVector(RCP<std::vector<GlobalOrdinal> > nodegids) const;
 
     RCP<std::vector<GlobalOrdinal> > GetNodeGIDVector() const;
-    
+
     void SetNumberOfNodes(GlobalOrdinal cntNodes) const { cntNodes_ = cntNodes; }
     GlobalOrdinal GetNumberOfNodes() const { return cntNodes_; }
-    
+
   private:
 
     //! @name amalgamation information variables
@@ -121,7 +121,7 @@ namespace MueLu {
 
     /// number of nodes on current proc
     mutable GlobalOrdinal cntNodes_;
-    
+
     //@}
 
   };

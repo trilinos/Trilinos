@@ -111,15 +111,15 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
     oldView = A->SwitchToView(oldView);
     GetOStream(Debug, 0) << "CoalesceDropFactory::Build():" << " found blockdim=" << blockdim << " from strided maps. offset=" << offset << std::endl;
   } else GetOStream(Debug, 0) << "CoalesceDropFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
-  
-  // 2) build (un)amalgamation information 
+
+  // 2) build (un)amalgamation information
   //    prepare generation of nodeRowMap (of amalgamated matrix)
   // TODO: special handling for blockdim=1
   RCP<AmalgamationInfo> amalInfo = currentLevel.Get< RCP<AmalgamationInfo> >("UnAmalgamationInfo", AmalgFact_.get());
   RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids = amalInfo->GetGlobalAmalgamationParams();
   RCP<std::vector<GlobalOrdinal> > gNodeIds = amalInfo->GetNodeGIDVector();
   GlobalOrdinal cnt_amalRows = amalInfo->GetNumberOfNodes();
-  
+
   // inter processor communication: sum up number of block ids
   GlobalOrdinal num_blockids = 0;
   Teuchos::reduceAll<int,GlobalOrdinal>(*(A->getRowMap()->getComm()),Teuchos::REDUCE_SUM, cnt_amalRows, Teuchos::ptr(&num_blockids) );

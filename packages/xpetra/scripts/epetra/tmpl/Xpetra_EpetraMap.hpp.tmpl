@@ -47,9 +47,9 @@ $TMPL_PUBLIC_FUNCTIONS
 
     //! Destructor.
     virtual ~EpetraMap() { } // virtual because EpetraMap used as a base class of EpetraStridedMap
-    
+
     //! EpetraMap constructor to wrap a Epetra_Map object
-    EpetraMap(const Teuchos::RCP<const Epetra_BlockMap> &map) 
+    EpetraMap(const Teuchos::RCP<const Epetra_BlockMap> &map)
       : map_(map) { }
 
     //! Get the library used by this object (Epetra or Epetra?)
@@ -61,7 +61,7 @@ $TMPL_PUBLIC_FUNCTIONS
     const Epetra_Map& getEpetra_Map() const { return (Epetra_Map &)*map_; } // Ugly, but the same is done in Epetra_CrsMatrix.h to get the map.
 
     //@}
-   
+
   protected:
 
     RCP<const Epetra_BlockMap> map_;

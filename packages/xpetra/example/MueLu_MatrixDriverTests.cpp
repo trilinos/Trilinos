@@ -84,7 +84,7 @@ using Teuchos::RCP;
 
 // This is a test to see if the gallery is working with allowed matrices types.
 
-int main(int argc, char* argv[]) 
+int main(int argc, char* argv[])
 {
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
 #ifdef HAVE_XPETRA_TPETRA
   // Tpetra::CrsMatrix
   {
-    RCP<const Tpetra::Map<LO,GO> > map = rcp( new Tpetra::Map<LO,GO> (numGlobalElements, indexBase, comm) ); 
+    RCP<const Tpetra::Map<LO,GO> > map = rcp( new Tpetra::Map<LO,GO> (numGlobalElements, indexBase, comm) );
     RCP<Tpetra::CrsMatrix<SC,LO,GO> > A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Tpetra::Map<LO,GO>, Tpetra::CrsMatrix<SC,LO,GO> > (matrixType,map,matrixList);
     A->describe(*out, Teuchos::VERB_EXTREME);
   }
@@ -126,20 +126,20 @@ int main(int argc, char* argv[])
 
 #ifdef HAVE_XPETRA_EPETRA
   // Xpetra::EpetraCrsMatrix
-  { 
+  {
     RCP<const Xpetra::EpetraMap > map = rcp( new Xpetra::EpetraMap (numGlobalElements, indexBase, comm) );
     RCP<Xpetra::EpetraCrsMatrix> A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Xpetra::EpetraMap, Xpetra::EpetraCrsMatrix> (matrixType,map,matrixList);
     A->describe(*out, Teuchos::VERB_EXTREME);
-  } 
+  }
 #endif
 
 #ifdef HAVE_XPETRA_TPETRA
   // Xpetra::CrsMatrix (Tpetra)
   {
-    RCP<const Xpetra::Map<LO,GO> > map = rcp( new Xpetra::TpetraMap<LO,GO> (numGlobalElements, indexBase, comm) ); 
+    RCP<const Xpetra::Map<LO,GO> > map = rcp( new Xpetra::TpetraMap<LO,GO> (numGlobalElements, indexBase, comm) );
     RCP<Xpetra::CrsMatrix<SC,LO,GO> > A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Xpetra::Map<LO,GO>, Xpetra::CrsMatrix<SC,LO,GO> >  (matrixType,map,matrixList);
     A->describe(*out, Teuchos::VERB_EXTREME);
-  } 
+  }
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -148,7 +148,7 @@ int main(int argc, char* argv[])
     RCP<const Xpetra::Map<LO,GO> > map = rcp( new Xpetra::EpetraMap (numGlobalElements, indexBase, comm) );
     RCP<Xpetra::CrsMatrix<SC,LO,GO> > A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Xpetra::Map<LO,GO>, Xpetra::CrsMatrix<SC,LO,GO> >  (matrixType,map,matrixList);
     A->describe(*out, Teuchos::VERB_EXTREME);
-  } 
+  }
 #endif
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
     RCP<const Xpetra::Map<LO,GO> > map = rcp( new Xpetra::TpetraMap<LO,GO> (numGlobalElements, indexBase, comm) );
     RCP<Xpetra::Matrix<SC,LO,GO> > A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Xpetra::Map<LO,GO>, Xpetra::Matrix<SC,LO,GO> >  (matrixType,map,matrixList);
     A->describe(*out, Teuchos::VERB_EXTREME);
-  } 
+  }
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -166,8 +166,8 @@ int main(int argc, char* argv[])
     RCP<const Xpetra::Map<LO,GO> > map = rcp( new Xpetra::EpetraMap (numGlobalElements, indexBase, comm) );
     RCP<Xpetra::Matrix<SC,LO,GO> > A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Xpetra::Map<LO,GO>, Xpetra::Matrix<SC,LO,GO> >  (matrixType,map,matrixList);
     A->describe(*out, Teuchos::VERB_EXTREME);
-  } 
+  }
 #endif
-  
+
  return EXIT_SUCCESS;
 }

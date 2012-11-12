@@ -77,6 +77,7 @@
 #include "MueLu_LocalAggregationAlgorithm_decl.hpp" //AggOptions
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
+#include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
@@ -91,7 +92,7 @@ namespace MueLuTests {
 
     public:
       TestProblem(Xpetra::UnderlyingLib lib) : lib_(lib) { }
-    
+
       void Init() {
         if (A_ == Teuchos::null) {
 
@@ -103,22 +104,24 @@ namespace MueLuTests {
           // Create a Hierarchy
           {
             LO maxLevels = 3;
-      
+
             H_ = rcp(new Hierarchy(A_));
             RCP<Level> Finest = H_->GetLevel();
-      
+
             RCP<UCAggregationFactory> aggFact = rcp(new UCAggregationFactory());
             aggFact->SetMinNodesPerAggregate(3);
             aggFact->SetMaxNeighAlreadySelected(0);
             aggFact->SetOrdering(MueLu::AggOptions::NATURAL);
             aggFact->SetPhase3AggCreation(0.5);
-      
-            RCP<TentativePFactory> tentPFact = rcp(new TentativePFactory(aggFact));
-      
+
+            RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory(aggFact, Teuchos::null));
+
+            RCP<TentativePFactory> tentPFact = rcp(new TentativePFactory(aggFact, Teuchos::null, Teuchos::null, Teuchos::null, coarseMapFact));
+
             RCP<SaPFactory> Pfact  = rcp(new SaPFactory(tentPFact));
             RCP<RFactory>   Rfact  = rcp(new TransPFactory(Pfact));
             RCP<RAPFactory> Acfact = rcp(new RAPFactory(Pfact,Rfact));
-      
+
             Teuchos::ParameterList smootherParamList;
             smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
             smootherParamList.set("relaxation: sweeps", (LO) 1);
@@ -126,7 +129,7 @@ namespace MueLuTests {
             RCP<SmootherPrototype> smooProto = rcp(new TrilinosSmoother("RELAXATION", smootherParamList));
             RCP<SmootherFactory>   smooFact  = rcp(new SmootherFactory(smooProto));
             Acfact->setVerbLevel(Teuchos::VERB_HIGH);
-      
+
             Teuchos::ParameterList status;
             status = H_->FullPopulate(*Pfact, *Rfact, *Acfact, *smooFact, 0, maxLevels);
             RCP<SmootherPrototype> coarseProto = rcp(new DirectSolver());
@@ -138,10 +141,10 @@ namespace MueLuTests {
           {
             RCP<MultiVector> X = MultiVectorFactory::Build(A_->getRowMap(), 1);
             B_                 = MultiVectorFactory::Build(A_->getRowMap(), 1);
-        
+
             X->setSeed(846930886);
             X->randomize();
-        
+
             A_->apply(*X, *B_, Teuchos::NO_TRANS, (SC)1.0, (SC)0.0);
           }
         }
@@ -170,7 +173,7 @@ namespace MueLuTests {
       int libNum = (Xpetra::UseEpetra) ? 0 : 1;
       if (problem_[libNum] == Teuchos::null)
         problem_[libNum] = rcp(new TestProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(lib));
-    
+
       return problem_[libNum];
     }
 

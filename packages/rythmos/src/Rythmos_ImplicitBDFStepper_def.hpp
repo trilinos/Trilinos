@@ -899,7 +899,7 @@ void ImplicitBDFStepper<Scalar>::interpolateSolution_(
 
   // Set approximate accuracy
   if (accuracy_ptr) {
-    *accuracy_ptr = pow(usedStep_,kord);
+    *accuracy_ptr = Teuchos::ScalarTraits<Scalar>::pow(usedStep_,kord);
   }
   
 }

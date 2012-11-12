@@ -149,9 +149,9 @@ namespace Xpetra {
     RCP< const Epetra_Import> getEpetra_Import() const { return import_; }
 
     //@}
-    
+
   private:
-    
+
     RCP<const Epetra_Import> import_;
 
   }; // EpetraImport class

@@ -53,7 +53,7 @@ extern "C" {
 #include "zz_const.h"
 #include "zz_util_const.h"
 #include "phg.h"
-#include "matrix.h"
+#include "zoltan_matrix.h"
 
 static int
 matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_PTR *pinID,

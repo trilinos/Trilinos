@@ -60,7 +60,7 @@ namespace MueLu {
 
   NoFactory::~NoFactory() { }
 
-  void NoFactory::CallBuild(Level & requestedLevel) const {  
+  void NoFactory::CallBuild(Level & requestedLevel) const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::NoFactory::Build(): this method cannot be called.");
   }
 

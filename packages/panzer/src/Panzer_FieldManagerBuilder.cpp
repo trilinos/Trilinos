@@ -53,8 +53,6 @@
 
 #include "Shards_CellTopology.hpp"
 
-#include "Panzer_DOFManager.hpp"
-#include "Panzer_ConnManager.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_Workset.hpp"
 #include "Panzer_Workset_Builder.hpp"
@@ -66,6 +64,7 @@
 #include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_StlMap_Utilities.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
+#include "Panzer_EquationSet_Factory.hpp"
 
 //#include "EpetraExt_BlockMapOut.h"
 
@@ -142,7 +141,7 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
 void panzer::FieldManagerBuilder::
 setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
                      const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
-	             const panzer::EquationSetFactory & eqset_factory,
+                     const Teuchos::Ptr<const panzer::EquationSetFactory> & eqset_factory,
                      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
                      const panzer::BCStrategyFactory& bc_factory,
                      const Teuchos::ParameterList& closure_models,
@@ -172,6 +171,12 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
   std::vector<panzer::BC>::const_iterator bc;
   for (bc=bcs.begin(); bc != bcs.end(); ++bc) {
     std::string element_block_id = bc->elementBlockID(); 
+    std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator volume_pb_itr 
+        = physicsBlocks_map.find(element_block_id);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(volume_pb_itr==physicsBlocks_map.end(),std::logic_error,
+                               "panzer::FMB::setupBCFieldManagers: Cannot find physics block corresponsding to element block \"" << element_block_id << "\"");
+
     Teuchos::RCP<const panzer::PhysicsBlock> volume_pb = physicsBlocks_map.find(element_block_id)->second;
     Teuchos::RCP<const shards::CellTopology> volume_cell_topology = volume_pb->cellData().getCellTopology();
     int base_cell_dimension = volume_pb->cellData().baseCellDimension();
@@ -196,8 +201,13 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
 					    base_cell_dimension,
 					    wkst->first,volume_cell_topology);      
 
-      Teuchos::RCP<panzer::PhysicsBlock> side_pb 
-            = volume_pb->copyWithCellData(side_cell_data, eqset_factory);
+      // if there is an equation set factory to use, use it in copying the physics block 
+      // otherwise use the parroted one
+      Teuchos::RCP<panzer::PhysicsBlock> side_pb;
+      if(eqset_factory==Teuchos::null) 
+        side_pb = volume_pb->copyWithCellData(side_cell_data);
+      else
+        side_pb = volume_pb->copyWithCellData(side_cell_data,*eqset_factory);
 
       Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs = 
 	bc_factory.buildBCStrategy(*bc,side_pb->globalData());

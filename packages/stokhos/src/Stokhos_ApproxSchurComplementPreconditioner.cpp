@@ -88,10 +88,10 @@ ApproxSchurComplementPreconditioner(
   Teuchos::RCP<const Stokhos::ProductBasis<int,double> > prod_basis =
     Teuchos::rcp_dynamic_cast<const Stokhos::ProductBasis<int,double> >(sg_basis, true);
   int d = prod_basis->dimension();
-  Teuchos::Array<int> term(d);
+  MultiIndex<int> term(d);
   for (int p=0; p<=P; p++) {
     term[0] = p;
-    block_indices[p] = prod_basis->getIndex(term);
+    block_indices[p] = prod_basis->index(term);
     upper_block_Cijk[p] = Teuchos::rcp(new Cijk_type);
     lower_block_Cijk[p] = Teuchos::rcp(new Cijk_type);
   }

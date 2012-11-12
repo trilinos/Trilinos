@@ -53,6 +53,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_LegendreBasisImp.hpp
   Stokhos_ClenshawCurtisLegendreBasis.hpp
   Stokhos_ClenshawCurtisLegendreBasisImp.hpp
+  Stokhos_GaussPattersonLegendreBasis.hpp
+  Stokhos_GaussPattersonLegendreBasisImp.hpp
   Stokhos_StieltjesPCEBasis.hpp
   Stokhos_StieltjesPCEBasisImp.hpp
   Stokhos_StieltjesBasis.hpp
@@ -70,6 +72,12 @@ SET(HEADERS ${HEADERS}
   Stokhos_ProductBasisUtils.hpp
   Stokhos_CompletePolynomialBasis.hpp
   Stokhos_CompletePolynomialBasisImp.hpp
+  Stokhos_TensorProductBasis.hpp
+  Stokhos_TensorProductBasisImp.hpp
+  Stokhos_TotalOrderBasis.hpp
+  Stokhos_TotalOrderBasisImp.hpp
+  Stokhos_SmolyakBasis.hpp
+  Stokhos_SmolyakBasisImp.hpp
   Stokhos_GramSchmidtBasis.hpp
   Stokhos_GramSchmidtBasisImp.hpp
   Stokhos_ReducedPCEBasis.hpp
@@ -110,6 +118,11 @@ SET(HEADERS ${HEADERS}
   Stokhos_UserDefinedQuadratureImp.hpp
   Stokhos_QuadratureFactory.hpp
   Stokhos_QuadratureFactoryImp.hpp
+  Stokhos_PseudoSpectralOperator.hpp
+  Stokhos_TensorProductPseudoSpectralOperator.hpp
+  Stokhos_SmolyakPseudoSpectralOperator.hpp
+  Stokhos_SmolyakPseudoSpectralOperatorImp.hpp
+  Stokhos_QuadraturePseudoSpectralOperator.hpp
   Stokhos_StandardStorage.hpp
   Stokhos_StaticStandardStorage.hpp
   Stokhos_StaticFixedStandardStorage.hpp
@@ -130,6 +143,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_AlgebraicOrthogPolyExpansionImp.hpp
   Stokhos_QuadOrthogPolyExpansion.hpp
   Stokhos_QuadOrthogPolyExpansionImp.hpp
+  Stokhos_PseudoSpectralOrthogPolyExpansion.hpp
+  Stokhos_PseudoSpectralOrthogPolyExpansionImp.hpp
   Stokhos_DerivOrthogPolyExpansion.hpp
   Stokhos_DerivOrthogPolyExpansionImp.hpp
   Stokhos_ForUQTKOrthogPolyExpansion.hpp
@@ -294,9 +309,9 @@ IF (Stokhos_ENABLE_Sacado)
     )
   IF (Stokhos_ENABLE_KokkosArray)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos)
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/impl)
     SET(HEADERS ${HEADERS}
       sacado/kokkos/Stokhos_Sacado_Kokkos.hpp
+      sacado/kokkos/Stokhos_Sacado_Kokkos_MathFunctions.hpp
       sacado/kokkos/Stokhos_StaticArrayTraits.hpp
       sacado/kokkos/Stokhos_DynArrayTraits.hpp
       sacado/kokkos/Stokhos_LocalStorage.hpp
@@ -305,20 +320,10 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/Stokhos_DynamicStorage.hpp
       sacado/kokkos/Stokhos_DynamicStridedStorage.hpp
       sacado/kokkos/Stokhos_DynamicThreadedStorage.hpp
+      sacado/kokkos/Stokhos_DynamicThreadedStorage_cuda.hpp
       sacado/kokkos/Sacado_MP_Vector.hpp
       sacado/kokkos/Sacado_MP_VectorTraits.hpp
-      sacado/kokkos/Stokhos_Sacado_Kokkos_MathFunctions.hpp
-      sacado/kokkos/impl/Stokhos_StaticArrayTraits_impl.hpp
-      sacado/kokkos/impl/Stokhos_DynArrayTraits_impl.hpp
-      sacado/kokkos/impl/Stokhos_LocalStorage_impl.hpp
-      sacado/kokkos/impl/Stokhos_StaticStorage_impl.hpp
-      sacado/kokkos/impl/Stokhos_StaticFixedStorage_impl.hpp
-      sacado/kokkos/impl/Stokhos_DynamicStorage_impl.hpp
-      sacado/kokkos/impl/Stokhos_DynamicStridedStorage_impl.hpp
-      sacado/kokkos/impl/Stokhos_DynamicThreadedStorage_cuda_impl.hpp
-      sacado/kokkos/impl/Sacado_MP_Vector_impl.hpp
-      sacado/kokkos/impl/Sacado_MP_Vector_ops.hpp
-      sacado/kokkos/impl/Stokhos_Sacado_Kokkos_MathFunctions_impl.hpp
+      sacado/kokkos/Sacado_MP_Vector_ops.hpp
     )
   ENDIF()
   IF (Stokhos_ENABLE_MueLu)

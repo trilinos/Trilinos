@@ -208,7 +208,7 @@ namespace MueLu {
 
             ArrayRCP<const double> tmpData = permutedNnzPerRowVec->getData(0);
             ArrayRCP<size_t> permutedNnzPerRow(permutedNnzPerRowVec->getLocalLength());
-            for (size_t i=0; i<permutedNnzPerRowVec->getLocalLength(); ++i) 
+            for (size_t i=0; i<permutedNnzPerRowVec->getLocalLength(); ++i)
               permutedNnzPerRow[i] = Teuchos::as<size_t,double>(tmpData[i]);
 
             RCP<Matrix> permutedR = MatrixFactory::Build(permImporter->getTargetMap(), permutedNnzPerRow, Xpetra::StaticProfile);
@@ -237,7 +237,7 @@ namespace MueLu {
             // That is probably something for an external permutation factory
             //if(originalR->IsView("stridedMaps")) permutedR->CreateView("stridedMaps", originalR);
             ///////////////////////// EXPERIMENTAL
-         
+
             coarseLevel.Set< RCP<const Import> >("Importer",permImporter,this);
 
             if (coarseLevel.IsAvailable("Coordinates")) //FIXME JJH

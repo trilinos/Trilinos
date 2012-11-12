@@ -1,3 +1,45 @@
+/**
+//@HEADER
+// ************************************************************************
+//
+//                   Trios: Trilinos I/O Support
+//                 Copyright 2011 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+//Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
+//
+// *************************************************************************
+//@HEADER
+ */
 /*
  * xfer_util.cpp
  *
@@ -42,12 +84,24 @@ int xfer_write_server_url_file(
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &np);
 
+    // gather the string lengths for the input strings
+    int total_length=0;
+    int max_length=0;
+    int len = my_url.length();
+    MPI_Reduce(&len, &total_length, 1, MPI_INT, MPI_SUM, 0, comm);
+    MPI_Reduce(&len, &max_length, 1, MPI_INT, MPI_MAX, 0, comm);
+
+    // gather the lengths of the individual strings as offsets
+    std::vector<int> length_vector(np, 0);
+    MPI_Gather(&len, 1, MPI_INT, &length_vector[0], 1, MPI_INT, 0, MPI_COMM_WORLD);
+
     // output the config file
     if (!url_fname.empty()) {
 
         // gather the urls from all the servers
-        std::string urls(NSSI_URL_LEN*np, '\0');
-        MPI_Gather(&my_url[0], NSSI_URL_LEN, MPI_CHAR, &urls[0], NSSI_URL_LEN, MPI_CHAR, 0, comm);
+        std::string urls(max_length*np,0);
+
+        MPI_Gather(&my_url[0], len, MPI_CHAR, &urls[0], max_length, MPI_CHAR, 0, comm);
 
         // Write the urls to the config file
         if (rank == 0) {
@@ -57,14 +111,12 @@ int xfer_write_server_url_file(
             if (urlfile.is_open()) {
                 // write the number of servers as the first line
                 urlfile << np << std::endl;
+                size_t pos = 0;
 
                 for (i=0; i<np; i++) {
-                    // extract the URL and write it to the config file
-                    size_t pos = i*NSSI_URL_LEN;
-                    std::string url = urls.substr(pos, NSSI_URL_LEN);
-
+                    std::string url = urls.substr(pos, length_vector[i]);
+                    pos += length_vector[i];
                     log_debug(debug_level, "-- server %d : %s", i, url.c_str());
-
                     urlfile << url.c_str() << std::endl;
                 }
             }

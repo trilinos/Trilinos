@@ -80,7 +80,7 @@ See the preCopyrightTrilinos extra repo for examples of what these files
 should look like.
 
 
-3) Add an ignore for the source directory in Trilinos/.gitinore
+3) Add an ignore for the source directory in Trilinos/.gitignore
 
 Add the line:
 

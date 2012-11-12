@@ -54,7 +54,7 @@
 
 #include "shylu_symbolic.h"
 #include "shylu_probing_operator.h"
-#include "Ifpack_Amesos_Schur.h"
+#include "AmesosSchurOperator.h"
 
 //#include "shylu_debug_manager.hpp"
 
@@ -79,9 +79,13 @@ typedef struct
     Teuchos::RCP<Epetra_CrsMatrix> Sbar; // Approx Schur complement
     Teuchos::RCP<Epetra_CrsGraph> localSbargraph; // graph of local Sbar
     AztecOO *innersolver;            // inner solver
-    Epetra_LinearProblem *LP2;   // Local problem to solve
-    Amesos_BaseSolver *dsolver;  // Local Subdomain solver
-    Teuchos::RCP<Ifpack_Amesos_Schur> schur_prec;
+    Teuchos::RCP<Epetra_MultiVector> Sbarlhs;
+    Teuchos::RCP<Epetra_MultiVector> Sbarrhs;
+    Teuchos::RCP<Epetra_LinearProblem> LP2;   // Local problem to solve
+    Teuchos::RCP<Epetra_LinearProblem> OrigLP2;   // Local problem to solve D
+	Teuchos::RCP<EpetraExt::ViewTransform<Epetra_LinearProblem> > ReIdx_LP2;
+	Amesos_BaseSolver *dsolver;  // Local Subdomain solver
+    Teuchos::RCP<AmesosSchurOperator> schur_prec;
     Teuchos::RCP<ShyLU_Probing_Operator> schur_op;
     int lmax;                    // May be this is optimizing too much
     int rmax;                    // May be this is optimizing too much
@@ -104,6 +108,8 @@ typedef struct
     double inner_tolerance;     // relative residual tolerance for inner solver
     string libName;             // library for the outer solver
     string schurSolver;         // Solver for the Schur complement
+    string schurAmesosSolver;   // Amesos solver for the Schur complement
+    string diagonalBlockSolver; // Solver to use to factorize the diagonal blocks
     int sep_type;
     int debug_level;
     //DebugManager dm;

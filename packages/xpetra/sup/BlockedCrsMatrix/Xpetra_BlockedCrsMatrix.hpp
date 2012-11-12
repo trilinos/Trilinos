@@ -182,6 +182,13 @@ public:
         "insertLocalValues not supported by BlockedCrsMatrix!" );
   }
 
+  //! Scale the current values of a matrix, this = alpha*this.
+  void scale(const Scalar &alpha) {
+    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+                                "scale not supported by BlockedCrsMatrix!" );
+  }
+
+
   //@}
 
   //! @name Transformational Methods
@@ -260,7 +267,7 @@ public:
 
       // sum up number of local elements
       size_t numGlobalElements = 0;
-      sumAll(rangemaps_->getFullMap()->getComm(), colmapentries.size(), numGlobalElements) 
+      sumAll(rangemaps_->getFullMap()->getComm(), colmapentries.size(), numGlobalElements)
 
       const Teuchos::ArrayView<const GlobalOrdinal> aView = Teuchos::ArrayView<const GlobalOrdinal>(colmapentries);
       fullcolmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rangemaps_->getFullMap()->lib(), numGlobalElements, aView, 0,rangemaps_->getFullMap()->getComm());

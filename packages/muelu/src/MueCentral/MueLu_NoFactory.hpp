@@ -52,7 +52,7 @@
 namespace MueLu {
 
   class Level;
-  
+
   /*!
     @class NoFactory class.
     @brief NoFactory that is used for data stored in level class for that no generating factory is available/necessary.
@@ -71,7 +71,7 @@ namespace MueLu {
 
     //! Implementation of FactoryBase interface
     //@{
-    
+
     //!
     void CallBuild(Level & requestedLevel) const;
 
@@ -79,14 +79,14 @@ namespace MueLu {
     void CallDeclareInput(Level & requestedLevel) const;
 
     //@}
-    
+
     //! Static Get() functions
     //@{
-    
-    //! 
+
+    //!
     static const RCP<const NoFactory> getRCP();
 
-    //! 
+    //!
     static const NoFactory* get();
 
     //@}

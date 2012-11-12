@@ -62,9 +62,9 @@ namespace MueLu {
   class Describable
     : public Teuchos::Describable
   {
-    
+
   public:
-    
+
     //! Destructor.
     virtual ~Describable();
 
@@ -75,12 +75,12 @@ namespace MueLu {
 
     //@}
 
-    //! @name Overridden from Teuchos::Describable 
+    //! @name Overridden from Teuchos::Describable
     //@{
-    
+
     //! Return a simple one-line description of this object.
     virtual std::string description() const;
-    
+
     //! Print the object with some verbosity level to an FancyOStream object.
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
 

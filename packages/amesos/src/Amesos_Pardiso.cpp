@@ -45,12 +45,12 @@
 
 /* PARDISO prototype. */
 extern "C" int F77_PARDISOINIT
-    (void *, int *, int *);
+    (void *, int *, int *, int *, double *, int *);
 
 extern "C" int F77_PARDISO
     (void *, int *, int *, int *, int *, int *, 
      double *, int *, int *, int *, int *, int *, 
-     int *, double *, double *, int *);
+     int *, double *, double *, int *, double *);
 #endif
 
 #define IPARM(i) iparm_[i-1]
@@ -88,16 +88,15 @@ Amesos_Pardiso::Amesos_Pardiso(const Epetra_LinearProblem &prob) :
   iparm_[8] = 0; /* Not in use */
   iparm_[9] = 13; /* Perturb the pivot elements with 1E-13 */
   iparm_[10] = 1; /* Use nonsymmetric permutation and scaling MPS */
-  iparm_[11] = 0; /* Not in use */
-  iparm_[12] = 0; /* Not in use */
+  iparm_[11] = 0; /* Normal solve (0), or a transpose solve (1) */
+  iparm_[12] = 0; /* Do not use (non-)symmetric matchings */
   iparm_[13] = 0; /* Output: Number of perturbed pivots */
-  iparm_[14] = 0; /* Not in use */
-  iparm_[15] = 0; /* Not in use */
-  iparm_[16] = 0; /* Not in use */
+  iparm_[14] = 0; /* Peak memory in KB during analysis */
+  iparm_[15] = 0; /* Permanent mem in KB from anal. that is used in ph 2&3 */
+  iparm_[16] = 0; /* Peak double prec  mem in KB incl one LU factor */
   iparm_[17] = -1; /* Output: Number of nonzeros in the factor LU */
   iparm_[18] = -1; /* Output: Mflops for LU factorization */
   iparm_[19] = 0; /* Output: Numbers of CG Iterations */
- // iparm_[21] = 1; /* Pivoting for undefinite symmetric matrices */
 
   /* -------------------------------------------------------------------- */
   /* .. Initialize the internal solver memory pointer. This is only */
@@ -118,9 +117,15 @@ Amesos_Pardiso::~Amesos_Pardiso()
 
   if (pardiso_initialized_ ) {
     int n = SerialMatrix().NumMyRows();
+#ifdef HAVE_AMESOS_PARDISO_MKL
     F77_PARDISO(pt_, &maxfct_, &mnum_, &mtype_, &phase,
                 &n, &ddum, &ia_[0], &ja_[0], &idum, &nrhs_,
                 iparm_, &msglvl_, &ddum, &ddum, &error);
+#else
+    F77_PARDISO(pt_, &maxfct_, &mnum_, &mtype_, &phase,
+                &n, &ddum, &ia_[0], &ja_[0], &idum, &nrhs_,
+                iparm_, &msglvl_, &ddum, &ddum, &error, dparm_);
+#endif
   }
 
   AMESOS_CHK_ERRV(CheckError(error));
@@ -223,49 +228,27 @@ int Amesos_Pardiso::SetParameters( Teuchos::ParameterList &ParameterList)
 
   SetControlParameters( ParameterList );
 
-  // retrive PARDISO's specific parameters
-
-  if (ParameterList.isSublist("pardiso")) 
+  // We fill iparm_ using named parameters
+  if (ParameterList.isSublist("Pardiso"))
   {
-    const Teuchos::ParameterList& PardisoList = ParameterList.sublist("Pardiso");
-
-    if (PardisoList.isParameter("MSGLVL"))
-      msglvl_ = PardisoList.get<int>("MSGLVL");
-    else
-      if ( debug_ ) msglvl_ = 1 ; //  msglvl prints statistical information, but is the closest 
-    //  thing I found to debug print statements - KSS
-
-    if (PardisoList.isParameter("IPARM(1)"))
-      iparm_[0] = PardisoList.get<int>("IPARM(1)");
-
-    if (PardisoList.isParameter("IPARM(2)"))
-      iparm_[1] = PardisoList.get<int>("IPARM(2)");
-
-    if (PardisoList.isParameter("IPARM(3)"))
-      iparm_[2] = PardisoList.get<int>("IPARM(3)");
-
-    if (PardisoList.isParameter("IPARM(4)"))
-      iparm_[3] = PardisoList.get<int>("IPARM(4)");
-
-    if (PardisoList.isParameter("IPARM(8)"))
-      iparm_[7] = PardisoList.get<int>("IPARM(8)");
-
-    if (PardisoList.isParameter("IPARM(10)"))
-      iparm_[9] = PardisoList.get<int>("IPARM(10)");
-
-    if (PardisoList.isParameter("IPARM(11)"))
-      iparm_[10] = PardisoList.get<int>("IPARM(11)");
-
-    if (PardisoList.isParameter("IPARM(18)"))
-      iparm_[17] = PardisoList.get<int>("IPARM(18)");
-
-    if (PardisoList.isParameter("IPARM(19)"))
-      iparm_[18] = PardisoList.get<int>("IPARM(19)");
-
-    if (PardisoList.isParameter("IPARM(21)"))
-      iparm_[20] = PardisoList.get<int>("IPARM(21)");
+	param_ = ParameterList.sublist("Pardiso");
   }
-  
+
+  msglvl_ = param_.get<int>("Message level", static_cast<int>(debug_));
+  iparm_[0] = param_.get<int>("No default parameters", 1);
+  iparm_[1] = param_.get<int>("Use METIS reordering" , 2);
+  iparm_[2] = param_.get<int>("Number of processors", 1);
+  iparm_[3] = param_.get<int>("Do preconditioned CGS iterations", 0);
+  iparm_[4] = param_.get<int>("Use user permutation", 0);
+  iparm_[5] = param_.get<int>("Solution on X/B", 0);
+  iparm_[7] = param_.get<int>("Max num of iterative refinement steps", 0);
+  iparm_[9] = param_.get<int>("Perturbation for pivot elements 10^-k", 13);
+  iparm_[10] = param_.get<int>("Use (non-)symmetric scaling vectors", 1);
+  iparm_[11] = param_.get<int>("Solve transposed", 0);
+  iparm_[12] = param_.get<int>("Use (non-)symmetric matchings", 0);
+  iparm_[17] = param_.get<int>("Number of non-zeros in LU; -1 to compute", -1);
+  iparm_[18] = param_.get<int>("Mflops for LU fact; -1 to compute", -1);
+
   return 0;
 }
 
@@ -278,6 +261,8 @@ int Amesos_Pardiso::PerformSymbolicFactorization()
   {
     // at this point only read unsym matrix
     mtype_ = 11; 
+    int error = 0;
+    int solver = 0;
 
     // ============================================================== //
     // Setup Pardiso control parameters und initialize the solvers    //
@@ -287,9 +272,9 @@ int Amesos_Pardiso::PerformSymbolicFactorization()
     // Pardiso sublist.                                               //
     // ============================================================== //
 #ifndef HAVE_AMESOS_PARDISO_MKL
-    F77_PARDISOINIT(pt_,  &mtype_, iparm_);
+    F77_PARDISOINIT(pt_,  &mtype_, &solver, iparm_, dparm_, &error);
 #endif
-    pardiso_initialized_ = true; 
+    pardiso_initialized_ = true;
 
     int num_procs = 1;
     char* var = getenv("OMP_NUM_THREADS");
@@ -301,15 +286,20 @@ int Amesos_Pardiso::PerformSymbolicFactorization()
     mnum_   = 1;         /* Which factorization to use. */
 
     int phase = 11; 
-    int error = 0;
+    error = 0;
     int n = SerialMatrix().NumMyRows();
     int idum;
     double ddum;
 
+#ifdef HAVE_AMESOS_PARDISO_MKL
     F77_PARDISO(pt_, &maxfct_, &mnum_, &mtype_, &phase,
                        &n, &aa_[0], &ia_[0], &ja_[0], &idum, &nrhs_,
                        iparm_, &msglvl_, &ddum, &ddum, &error);
-
+#else
+    F77_PARDISO(pt_, &maxfct_, &mnum_, &mtype_, &phase,
+                       &n, &aa_[0], &ia_[0], &ja_[0], &idum, &nrhs_,
+                       iparm_, &msglvl_, &ddum, &ddum, &error, dparm_);
+#endif
     AMESOS_CHK_ERR(CheckError(error));
   }
 
@@ -331,9 +321,15 @@ int Amesos_Pardiso::PerformNumericFactorization( )
     int idum;
     double ddum;
 
+#ifdef HAVE_AMESOS_PARDISO_MKL
     F77_PARDISO (pt_, &maxfct_, &mnum_, &mtype_, &phase,
                        &n, &aa_[0], &ia_[0], &ja_[0], &idum, &nrhs_,
                        iparm_, &msglvl_, &ddum, &ddum, &error);
+#else
+    F77_PARDISO (pt_, &maxfct_, &mnum_, &mtype_, &phase,
+                       &n, &aa_[0], &ia_[0], &ja_[0], &idum, &nrhs_,
+                       iparm_, &msglvl_, &ddum, &ddum, &error, dparm_);
+#endif
 
     AMESOS_CHK_ERR(CheckError(error));
   }
@@ -475,13 +471,21 @@ int Amesos_Pardiso::Solve()
     int phase = 33;
 
     for (int i = 0 ; i < NumVectors ; ++i)
+#ifdef HAVE_AMESOS_PARDISO_MKL
       F77_PARDISO (pt_, &maxfct_, &mnum_, &mtype_, &phase,
                          &n, &aa_[0], &ia_[0], &ja_[0], &idum, &nrhs_,
                          iparm_, &msglvl_, 
                          SerialBValues + i * n,
                          SerialXValues + i * n,
                          &error);
-
+#else
+    F77_PARDISO (pt_, &maxfct_, &mnum_, &mtype_, &phase,
+                       &n, &aa_[0], &ia_[0], &ja_[0], &idum, &nrhs_,
+                       iparm_, &msglvl_,
+                       SerialBValues + i * n,
+                       SerialXValues + i * n,
+                       &error, dparm_);
+#endif
     AMESOS_CHK_ERR(CheckError(error));
   }
 

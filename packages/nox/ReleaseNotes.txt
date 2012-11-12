@@ -1,0 +1,9 @@
+Trilinos development
+====================
+
+* Merged the object code for the library noxthyra into the main nox library to work around a circular dependency for the pseudo-transient solver.
+
+* Added a pseudo-transient solver based on Thyra objects.  Still under development.
+
+Trilinos 11.0
+=============

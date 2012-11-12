@@ -166,7 +166,7 @@ namespace Xpetra {
     //RCP<Epetra_Vector> getEpetra_Vector() const { return this->EpetraMultiVector::getEpetra_MultiVector()->getVectorNonConst(0); }
 
     //@}
-    
+
   }; // EpetraVector class
 
 } // Xpetra namespace

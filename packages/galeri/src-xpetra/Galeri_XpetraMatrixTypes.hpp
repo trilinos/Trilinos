@@ -51,18 +51,11 @@
 
 #ifndef GALERI_XPETRAMATRIXTYPES_HPP
 #define GALERI_XPETRAMATRIXTYPES_HPP
-#include "Galeri_config.h"
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayView.hpp>
 
-#ifdef HAVE_GALERI_XPETRA
-// needed for the specialized traits:
-#include "Xpetra_Map.hpp"
-#include "Xpetra_CrsMatrix.hpp"
-#include "Xpetra_CrsMatrixFactory.hpp"
-#include "Xpetra_Matrix.hpp"
-#include "Xpetra_MatrixFactory.hpp"
-#endif
+#include "Galeri_config.h"
+#include "Galeri_MatrixTraits.hpp"
 
 namespace Galeri {
   
@@ -99,47 +92,6 @@ namespace Galeri {
                            GlobalOrdinal left=-2, GlobalOrdinal right=-2,
                            GlobalOrdinal lower=-2, GlobalOrdinal upper=-2);
     /* end of prototypes */
-
-    /* Default traits */
-    /* These traits work for the following couples of (Map,Matrix):
-       - Map = Tpetra::Map<...>,       and Matrix = Tpetra::CrsMatrix<...>  
-       - Map = Xpetra::TpetraMap<...> and Matrix = Xpetra::TpetraCrsMatrix<...>
-       - Map = Xpetra::EpetraMap,     and Matrix = Xpetra::EpetraCrsMatrix
-    */
-    template <class Map, class Matrix>
-    class MatrixTraits 
-    {
-    public:
-      static Teuchos::RCP<Matrix> Build(const Teuchos::RCP<const Map> &rowMap, size_t maxNumEntriesPerRow) // TODO: pftype
-      { return rcp( new Matrix(rowMap, maxNumEntriesPerRow) );
-      };
-    };
-
-#ifdef HAVE_GALERI_XPETRA
-
-    /* Specialized traits for:
-       - Map = Xpetra::Map<...>, Matrix = Xpetra::CrsMatrix<...> */
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-    class MatrixTraits < ::Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node>, ::Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> >
-    {
-    public:
-      static Teuchos::RCP< ::Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> > Build(const Teuchos::RCP<const ::Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow)
-      // Use the CrsMatrixFactory to decide what kind of matrix to create (Xpetra::TpetraCrsMatrix or Xpetra::EpetraCrsMatrix).
-      { return ::Xpetra::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps>::Build(rowMap,  maxNumEntriesPerRow); };
-    };
-
-    /* Specialized traits for:
-       - Map = Xpetra::Map<...>, Matrix = Xpetra::Matrix<...> */
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-    class MatrixTraits < ::Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node>, ::Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> >
-    {
-    public:
-      static Teuchos::RCP< ::Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> > Build(const Teuchos::RCP<const ::Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow)
-      // Use the CrsMatrixFactory to decide what kind of matrix to create (Xpetra::TpetraCrsMatrix or Xpetra::EpetraCrsMatrix).
-      { return ::Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps>::Build(rowMap, maxNumEntriesPerRow); };
-    };
-
-#endif
 
     /* ****************************************************************************************************** *
      *    (Scaled) Identity

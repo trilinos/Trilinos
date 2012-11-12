@@ -88,7 +88,7 @@ namespace MueLu {
     Teuchos::RCP<Aggregates> aggregates = fineLevel.Get< Teuchos::RCP<Aggregates> >("Aggregates",AggFact_);
     LocalOrdinal DofsPerNode =                 fineLevel.Get< LocalOrdinal > ("DofsPerNode", CoalesceDropFact_);
     Teuchos::RCP<AmalgamationInfo> amalgInfo = fineLevel.Get< RCP<AmalgamationInfo> >("UnAmalgamationInfo", AmalgFact_);
-    
+
     GetOStream(Runtime0, 0) << "AggregationExportFactory: DofsPerNode: " << DofsPerNode << std::endl;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = aggregates->GetMap()->getComm();
@@ -114,7 +114,7 @@ namespace MueLu {
     AmalgamationFactory::ComputeUnamalgamatedAggregateSizes(*aggregates, *amalgInfo, aggSizes);
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > aggToRowMap(aggSizes.size());
     AmalgamationFactory::UnamalgamateAggregates(*aggregates, *amalgInfo, aggSizes, aggToRowMap);
-        
+
     // write to file
     std::string outFile = outputFileName_;
     std::stringstream streamLevel; streamLevel << fineLevel.GetLevelID();

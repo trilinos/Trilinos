@@ -41,7 +41,8 @@ APPEND_SET(SOURCES
   SubBlockAFactory.cpp
   ParameterList/FactoryFactory.cpp
   ParameterList/ParameterListInterpreter.cpp
-  ParameterList/MLParameterListInterpreter.cpp
+# ParameterList/MLParameterListInterpreter.cpp
+  ParameterList/CreateSublists.cpp
   MultiVectorTransferFactory.cpp
 )
 
@@ -94,10 +95,10 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
     COMM serial mpi
     DEPLIBS muelu xpetra
     )
-  
+
   IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt
       AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos)
-    
+
     TRIBITS_ADD_TEST(
       UnitTests
       NAME "UnitTestsEpetra"
@@ -106,7 +107,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
       NUM_MPI_PROCS 1
       COMM serial mpi
       )
-    
+
     TRIBITS_ADD_TEST(
       UnitTests
       NAME "UnitTestsEpetra"
@@ -115,11 +116,11 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
       NUM_MPI_PROCS 4
       COMM mpi
       )
-    
+
   ENDIF()
 
   IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
-    
+
     TRIBITS_ADD_TEST(
       UnitTests
       NAME "UnitTestsTpetra"
@@ -128,7 +129,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
       NUM_MPI_PROCS 1
       COMM serial mpi
       )
-    
+
     TRIBITS_ADD_TEST(
       UnitTests
       NAME "UnitTestsTpetra"
@@ -137,7 +138,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
       NUM_MPI_PROCS 4
       COMM mpi
       )
-    
+
   ENDIF()
 
 ENDIF() # Galeri TMP
@@ -145,3 +146,4 @@ ENDIF() # Galeri TMP
 ADD_SUBDIRECTORY(ParameterList/FactoryFactory/)
 ADD_SUBDIRECTORY(ParameterList/ParameterListInterpreter/)
 ADD_SUBDIRECTORY(ParameterList/MLParameterListInterpreter/)
+ADD_SUBDIRECTORY(ParameterList/CreateSublists/)

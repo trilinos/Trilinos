@@ -37,3 +37,12 @@ MultiVectorTransferFactory
 SchurComplementFactory
 AmalgamationFactory
 AggStatTransferFactory
+CoarseMapFactory
+BlockedCoarseMapFactory
+EminPFactory
+ConstraintFactory
+PatternFactory
+SteepestDescentSolver
+CGSolver
+Constraint
+NullspacePresmoothFactory

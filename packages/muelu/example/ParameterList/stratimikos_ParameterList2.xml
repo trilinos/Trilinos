@@ -31,11 +31,11 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      
+
       <ParameterList name="Hierarchy">
-        
+
         <Parameter name="numDesiredLevel" type="int" value="10"/>
-        
+
         <ParameterList name="FineLevel">
           <Parameter name="startLevel" type="int" value="0"/>
           <Parameter name="Smoother"   type="string" value="SymGaussSeidel"/>
@@ -46,12 +46,12 @@
           <Parameter name="P"          type="string" value="SaPFactory"/>
           <Parameter name="Smoother"   type="string" value="SymGaussSeidel"/>
         </ParameterList>
-        
+
         <ParameterList name="CoarsestLevel">
           <Parameter name="startLevel"   type="int" value="-1"/>
           <Parameter name="CoarseSolver" type="string" value="DirectSolver"/>
         </ParameterList>
-        
+
       </ParameterList>
     </ParameterList>
 

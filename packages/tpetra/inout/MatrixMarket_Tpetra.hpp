@@ -454,9 +454,6 @@ namespace Tpetra {
          // Will be filled in below.
          myNumEntriesPerRow = arcp<size_t> (myNumRows);
 
-         // Teuchos::receive() returns an int; here is space for it.
-         int recvResult = 0;
-
          if (myRank != rootRank)
            {
              // Tell the root how many rows we have.  If we're sending
@@ -480,9 +477,9 @@ namespace Tpetra {
 
                  // Ask the root processor for my part of the array of the
                  // number of entries per row.
-                 recvResult = receive (*pComm, rootRank,
-                                       static_cast<int> (myNumRows),
-                                       myNumEntriesPerRow.getRawPtr());
+                 receive (*pComm, rootRank,
+                          static_cast<int> (myNumRows),
+                          myNumEntriesPerRow.getRawPtr());
 
                  // Use the resulting array to figure out how many column
                  // indices and values for which I should ask from the root
@@ -501,12 +498,12 @@ namespace Tpetra {
                  if (myNumEntries > 0)
                    { // Ask for that many column indices and values,
                      // if there are any.
-                     recvResult = receive (*pComm, rootRank,
-                                           static_cast<int> (myNumEntries),
-                                           myColInd.getRawPtr());
-                     recvResult = receive (*pComm, rootRank,
-                                           static_cast<int> (myNumEntries),
-                                           myValues.getRawPtr());
+                     receive (*pComm, rootRank,
+                              static_cast<int> (myNumEntries),
+                              myColInd.getRawPtr());
+                     receive (*pComm, rootRank,
+                              static_cast<int> (myNumEntries),
+                              myValues.getRawPtr());
                    }
                } // If I own at least one row
            } // If I am not the root processor
@@ -598,7 +595,7 @@ namespace Tpetra {
                  // have any, we can move on to the next proc.  This
                  // has to be a standard receive so that we can avoid
                  // the degenerate case of sending zero data.
-                 recvResult = receive (*pComm, p, &theirNumRows);
+                 receive (*pComm, p, &theirNumRows);
                  if (debug)
                    cerr << "-- Proc 0: Proc " << p << " owns "
                         << theirNumRows << " rows" << endl;
@@ -609,9 +606,9 @@ namespace Tpetra {
                      // themselves indices into the numEntriesPerRow
                      // array.
                      ArrayRCP<GO> theirRows = arcp<GO> (theirNumRows);
-                     recvResult = receive (*pComm, p,
-                                           static_cast<int> (theirNumRows),
-                                           theirRows.getRawPtr());
+                     receive (*pComm, p,
+                              static_cast<int> (theirNumRows),
+                              theirRows.getRawPtr());
                      // Extra test to make sure that the rows we
                      // received are all sensible.  This is a good
                      // idea since we are going to use the global row

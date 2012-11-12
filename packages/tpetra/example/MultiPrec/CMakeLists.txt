@@ -25,9 +25,13 @@ IF (${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_Thrust)
       EXEDEPS IRTR_double
       )
 
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(MultiPrecMachineFiles
+      SOURCE_DIR   ${Tpetra_MACHINE_XML_FILE_DIR} 
+      SOURCE_FILES threaded.xml serial.xml mpionly.xml 
+      EXEDEPS IRTR_double
+      )
   TRIBITS_COPY_FILES_TO_BINARY_DIR(MultiPrecInputStack
       SOURCE_FILES double.xml double_float.xml double_double.xml qd.xml qd_dd.xml qd_dd_double.xml
-                   threaded.xml serial.xml mpionly.xml 
                    irtr_double.xml irtr_qd.xml 
                    run_all_irtr.csh
       EXEDEPS IRTR_double

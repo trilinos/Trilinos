@@ -61,42 +61,42 @@ Declarations for the class Xpetra::MatrixView.
 */
 namespace Xpetra {
 
-  template <class LocalOrdinal  = int, 
-            class GlobalOrdinal = LocalOrdinal, 
+  template <class LocalOrdinal  = int,
+            class GlobalOrdinal = LocalOrdinal,
             class Node          = Kokkos::DefaultNode::DefaultNodeType>
   class MatrixView { // TODO : virtual public Teuchos::Describable {
     typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
 
   public:
-  
+
     //! @name Constructor/Destructor Methods
     //@{
 
     //! Constructor
-    MatrixView(const RCP<const Map> &rowMap, const RCP<const Map> &colMap) 
+    MatrixView(const RCP<const Map> &rowMap, const RCP<const Map> &colMap)
       : rowMap_ (rowMap), colMap_(colMap)
     { }
-  
+
     //! Destructor
     virtual ~MatrixView() {}
-    
+
     //@}
 
     //! @name Map access methods
     //@{
     //! Returns the Map that describes the row distribution in this matrix.
     const RCP<const Map> & GetRowMap() const { return rowMap_; }
-  
+
     //! \brief Returns the Map that describes the column distribution in this matrix.
     const RCP<const Map> & GetColMap() const { return colMap_; }
-  
+
     //! Returns the Map that describes the row distribution in this matrix.
     void SetRowMap(const RCP<const Map> & rowMap) { rowMap_ = rowMap; }
-  
+
     //! \brief Set the Map that describes the column distribution in this matrix.
     void SetColMap(const RCP<const Map> & colMap) { colMap_ = colMap; }
     //@}
-  
+
   private:
     RCP<const Map> rowMap_;
     RCP<const Map> colMap_;

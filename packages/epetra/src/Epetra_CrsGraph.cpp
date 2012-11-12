@@ -1242,6 +1242,7 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
   // For each row, remove column indices that are repeated.
 
   const int numMyBlockRows = NumMyBlockRows();
+  bool found_redundancies = false;
 
   if(NoRedundancies() == false) {
     int* numIndicesPerRow = CrsGraphData_->NumIndicesPerRow_.Values();
@@ -1254,8 +1255,16 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
         epetra_crsgraph_compress_out_duplicates(NumIndices, col_indices,
                                                 numIndicesPerRow[i]);
       }
-      // update vector size and address in memory
-      if (!CrsGraphData_->StaticProfile_) {
+      if (NumIndices != numIndicesPerRow[i]) {
+          found_redundancies = true;
+      }
+    }
+    if (found_redundancies && !CrsGraphData_->StaticProfile_)
+    {
+      for(int i=0; i<numMyBlockRows; ++i) {
+        int* col_indices = this->Indices(i);
+
+        // update vector size and address in memory
         intData.SortedEntries_[i].entries_.assign(col_indices, col_indices+numIndicesPerRow[i]);
         if (numIndicesPerRow[i] > 0) {
           intData.Indices_[i] = &(intData.SortedEntries_[i].entries_[0]);

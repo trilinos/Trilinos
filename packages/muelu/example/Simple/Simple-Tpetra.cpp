@@ -103,18 +103,18 @@ int main(int argc, char *argv[]) {
   // Add rows one-at-a-time
   for (size_t i = 0; i < numMyElements; i++) {
     if (myGlobalElements[i] == 0) {
-      A->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i], myGlobalElements[i] +1), 
+      A->insertGlobalValues(myGlobalElements[i],
+                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i], myGlobalElements[i] +1),
                             Teuchos::tuple<Scalar> (2.0, -1.0));
     }
     else if (myGlobalElements[i] == numGlobalElements - 1) {
-      A->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i]), 
+      A->insertGlobalValues(myGlobalElements[i],
+                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i]),
                             Teuchos::tuple<Scalar> (-1.0, 2.0));
     }
     else {
-      A->insertGlobalValues(myGlobalElements[i], 
-                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1), 
+      A->insertGlobalValues(myGlobalElements[i],
+                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1),
                             Teuchos::tuple<Scalar> (-1.0, 2.0, -1.0));
     }
   }
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
 
   RCP<Tpetra::Vector<SC, LO, GO, NO> > X = Tpetra::createVector<SC, LO, GO, NO>(map);
   RCP<Tpetra::Vector<SC, LO, GO, NO> > B = Tpetra::createVector<SC, LO, GO, NO>(map);
-  
+
   X->putScalar((Scalar) 0.0);
   Teuchos::ScalarTraits<Scalar>::seedrandom(846930886); B->randomize();
 
@@ -183,13 +183,13 @@ int main(int argc, char *argv[]) {
   // Construct a Belos LinearProblem object
   RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
   belosProblem->setLeftPrec(belosPrec);
-    
+
   bool set = belosProblem->setProblem();
   if (set == false) {
     std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
     return EXIT_FAILURE;
   }
-    
+
   // Belos parameter list
   int maxIts = 20;
   double tol = 1e-4;
@@ -200,23 +200,23 @@ int main(int argc, char *argv[]) {
 
   // Create an iterative solver manager
   RCP< Belos::SolverManager<SC, MV, OP> > solver = rcp(new Belos::BlockCGSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
-    
+
   // Perform solve
   Belos::ReturnType ret = solver->solve();
-  
+
   // Get the number of iterations for this solve.
   std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-  
+
   // Compute actual residuals.
   int numrhs=1;
   bool badRes = false;
   std::vector<SC> actual_resids(numrhs);
   std::vector<SC> rhs_norm(numrhs);
-  RCP<Tpetra::MultiVector<SC, LO, GO, NO> > resid = Tpetra::createMultiVector<SC, LO, GO, NO>(map, numrhs); 
+  RCP<Tpetra::MultiVector<SC, LO, GO, NO> > resid = Tpetra::createMultiVector<SC, LO, GO, NO>(map, numrhs);
 
   typedef Belos::OperatorTraits<SC, MV, OP> OPT;
   typedef Belos::MultiVecTraits<SC, MV>     MVT;
-    
+
   OPT::Apply(*belosOp, *X, *resid);
   MVT::MvAddMv(-1.0, *resid, 1.0, *B, *resid);
   MVT::MvNorm(*resid, actual_resids);

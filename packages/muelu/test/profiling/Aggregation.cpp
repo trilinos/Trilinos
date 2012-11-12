@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
   clp.setOption("aggOrdering",&aggOrdering,"aggregation ordering strategy (natural,random,graph)");
   clp.setOption("minPerAgg",&minPerAgg,"minimum #DOFs per aggregate");
   clp.setOption("maxNbrSel",&maxNbrAlreadySelected,"maximum # of nbrs allowed to be in other aggregates");
-  
+
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
   case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
   Level Finest;
   Finest.SetLevelID(0);  // must be level 0 for NullspaceFactory
   Finest.Set("A", A);
-  
+
   Finest.SetFactoryManager( rcp( new FactoryManager() ));
 
   UCAggregationFactory UCAggFact;

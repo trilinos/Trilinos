@@ -94,7 +94,7 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
   
   /* Validate List */
   Teuchos::ParameterList newList;
-  ML_CreateSublists(List_,newList,0);
+  ML_CreateSublists(List_,newList);
   List_ = newList;
   // TODO: Re-add validation
   //  ValidateGradDivParameters(List_);

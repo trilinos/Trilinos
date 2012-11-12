@@ -232,6 +232,14 @@ int main(int narg, char** arg)
   checkGIDs = soln->getGids(&dummy);
   checkPerm = soln->getPermutation(&dummy);
 
+#ifdef DEBUG
+  cout << "DEBUG: checkPerm= " << endl;
+  for (size_t i=0; i<checkLength; i++){
+    cout << " " << checkPerm[i];
+  }
+  cout << endl;
+#endif 
+
   cout << "Going to validate the soln" << endl;
   // Verify that checkPerm is a permutation
   testReturn = validatePerm(checkLength, checkPerm);
@@ -239,13 +247,14 @@ int main(int narg, char** arg)
   } catch (std::exception &e){
       if (comm->getSize() != 1)
       {
-          std::cout << "RCM does not support distributed matrices."
+          std::cout << "Ordering does not support distributed matrices."
              << std::endl;
           std::cout << "PASS" << std::endl;
       }
       else
       {
-          std::cout << "Exception from RCM Algorithm" << std::endl;
+          std::cout << "Exception from Ordering Algorithm" << std::endl;
+          std::cout << e.what() << std::endl;
           std::cout << "FAIL" << std::endl;
       }
       return 0;

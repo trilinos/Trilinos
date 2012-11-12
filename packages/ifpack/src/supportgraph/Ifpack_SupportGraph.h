@@ -35,10 +35,11 @@
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_Amesos.h"
 #include "Ifpack_Condest.h"
-#include "Epetra_MultiVector.h"
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Time.h"
+#include "Epetra_Vector.h"
+#include "Epetra_MultiVector.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
@@ -359,11 +360,17 @@ public virtual Ifpack_Preconditioner
  //! Contains the number of forests in the support graph
  int NumForests_;
 
- //! Contains the Offset to add to the diagonal of the support graph
- double Offset_;
+ //! Relative diagonal pertubation
+ double DiagPertRel_;
 
- //! Contains the option to keep the diagonal of original matrix
- int KeepDiag_;
+ //! Absolute diagonal pertubation
+ double DiagPertAbs_;
+
+ //! Contains the option to keep the diagonal of original matrix, or weighted average
+ double KeepDiag_;
+
+ //! Option to add random pertubation to edge weights, to get random spanning trees
+ int Randomize_;
 
 }; // class Ifpack_SupportGraph<T>
 
@@ -387,8 +394,10 @@ Matrix_(rcp(Matrix_in,false)),
   ComputeFlops_(0.0),
   ApplyInverseFlops_(0.0),
   NumForests_(1),
-  Offset_(1),
-  KeepDiag_(1)
+  DiagPertRel_(1.0),
+  DiagPertAbs_(0.0),
+  KeepDiag_(1.0),
+  Randomize_(0)
 {
   
   Teuchos::ParameterList List_in;
@@ -847,12 +856,22 @@ int Ifpack_SupportGraph<T>::FindSupport()
 	  if(i == indices[j])
 	    {
 	      diagonal[i] = values[j];
+              // Diagonal pertubation, only if requested
+              if (DiagPertRel_)
+                 diagonal[i] *= DiagPertRel_;
+              if (DiagPertAbs_)
+                 diagonal[i] += DiagPertAbs_;
 	    }
 
 	  if(i < indices[j])
 	    {
 	      edge_array[k] = E(i,indices[j]);
 	      weights[k] = values[j];
+              if (Randomize_)
+              {
+                // Add small random pertubation. 
+                weights[k] *= (1.0 + 1e-8 * drand48());
+              }
 
 	      k++;
 	    }
@@ -884,6 +903,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
   
   // Create an stl vector of stl vectors to hold indices and values (neighbour edges)
   std::vector< std::vector< int > > Indices(num_verts);
+  // TODO: Optimize for performance, may use arrays instead of vectors
   //std::vector<int> Indices[num_verts];
   //std::vector<double> Values[num_verts];
 
@@ -903,6 +923,8 @@ int Ifpack_SupportGraph<T>::FindSupport()
       l[i] = 1;
     }
   
+  // Add each spanning forest (tree) to the support graph and 
+  // remove it from original graph
   for(int i = 0; i < NumForests_; i++)
     {
       if(i > 0)
@@ -925,14 +947,12 @@ int Ifpack_SupportGraph<T>::FindSupport()
       for (std::vector < Edge >::iterator ei = spanning_tree.begin();
 	   ei != spanning_tree.end(); ++ei)
 	{
-	  if(KeepDiag_ == 0)
-	    {
-	      Values[source(*ei,g)][0] = Values[source(*ei,g)][0] - weight[*ei];
-	      Values[target(*ei,g)][0] = Values[target(*ei,g)][0] - weight[*ei];
-	    }
+          // Assume standard Laplacian with constant row-sum.
+          // Edge weights are negative, so subtract to make diagonal positive
 	  Indices[source(*ei,g)][0] = source(*ei,g);
+	  Values[source(*ei,g)][0] = Values[source(*ei,g)][0] - weight[*ei];
 	  Indices[target(*ei,g)][0] = target(*ei,g);
-
+	  Values[target(*ei,g)][0] = Values[target(*ei,g)][0] - weight[*ei];
 
 	  Indices[source(*ei,g)][l[source(*ei,g)]] = target(*ei,g);
 	  Values[source(*ei,g)][l[source(*ei,g)]] = weight[*ei];
@@ -948,13 +968,23 @@ int Ifpack_SupportGraph<T>::FindSupport()
     }
 
   
-  if(KeepDiag_ == 1)
-    {
-      for(int i = 0; i < num_verts; i++)
-	{
-	  Values[i][0] = diagonal[i];
-	}
-    }
+  // Set diagonal to weighted average of Laplacian preconditioner
+  // and the original matrix
+
+  // First compute the "diagonal surplus" (in the original input matrix)
+  // If input is a (pure, Dirichlet) graph Laplacian , this will be 0
+  Epetra_Vector ones(Matrix_->OperatorDomainMap());
+  Epetra_Vector surplus(Matrix_->OperatorRangeMap());
+
+  ones.PutScalar(1.0);
+  Matrix_->Multiply(false, ones, surplus);
+
+  for(int i = 0; i < num_verts; i++)
+     {
+	  Values[i][0] += surplus[i];
+          Values[i][0] = KeepDiag_*diagonal[i] + 
+                         (1.-KeepDiag_) * Values[i][0];
+     }
   
   // Create the CrsMatrix for the support graph                                                 
   Support_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(),l, true));
@@ -963,8 +993,6 @@ int Ifpack_SupportGraph<T>::FindSupport()
   // Fill in the matrix with the stl vectors for each row                                       
   for(int i = 0; i < num_verts; i++)
     {
-      Values[i][0] = Values[i][0] + Offset_;
-
       (*Support_).InsertGlobalValues(i,l[i],&Values[i][0],&Indices[i][0]);
     }
  
@@ -988,8 +1016,11 @@ int Ifpack_SupportGraph<T>::SetParameters(Teuchos::ParameterList& List_in)
 {
   List_ = List_in;
   NumForests_ = List_in.get("MST: forest number", NumForests_);
-  Offset_ = List_in.get("MST: diagonal offset", Offset_);
   KeepDiag_ = List_in.get("MST: keep diagonal", KeepDiag_);
+  Randomize_ = List_in.get("MST: randomize", Randomize_);
+  // Diagonal pertubation parameters have weird names to be compatible with rest of Ifpack!
+  DiagPertRel_ = List_in.get("fact: relative threshold", DiagPertRel_); 
+  DiagPertAbs_ = List_in.get("fact: absolute threshold", DiagPertAbs_); 
 
   return(0);
 }
@@ -1000,7 +1031,6 @@ int Ifpack_SupportGraph<T>::Initialize()
   IsInitialized_ = false;
   IsComputed_ = false;
 
-  
   
   if (Time_ == Teuchos::null)
     {

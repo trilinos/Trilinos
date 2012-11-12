@@ -61,10 +61,10 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TrilinosSmoother(std::string const & type, Teuchos::ParameterList const & paramList, LO const &overlap, RCP<FactoryBase> AFact)
     : type_(type), paramList_(paramList), overlap_(overlap), AFact_(AFact)
-  { 
+  {
     TEUCHOS_TEST_FOR_EXCEPTION(overlap_ < 0, Exceptions::RuntimeError, "overlap_ < 0");
   }
-    
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     currentLevel.DeclareInput("A", AFact_.get()); // TODO: also call Ifpack or Ifpack2::DeclareInput?
@@ -93,7 +93,7 @@ namespace MueLu {
     } else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "lib != UseTpetra && lib != UseEpetra");
     }
-    
+
     TEUCHOS_TEST_FOR_EXCEPTION(s_ == Teuchos::null, Exceptions::RuntimeError, "");
 
     s_->Setup(currentLevel);
@@ -119,7 +119,7 @@ namespace MueLu {
     if (type == "RELAXATION") { return "point relaxation stand-alone"; }
     if (type == "CHEBYSHEV")  { return "Chebyshev"; }
     if (type == "ILU")        { return "ILU"; } //TODO: ILU is not a valid Ifpack2 type. This is just a temporary work-around to use TrilinosSmoother with Epetra + ILU
-    
+
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Cannot convert Ifpack2 preconditioner name to Ifpack: unkown type: " + type);
   }
 
@@ -134,7 +134,7 @@ namespace MueLu {
         ifpack1List.set("relaxation: type", "symmetric Gauss-Seidel");
       }
     }
-      
+
     return ifpack1List;
   }
 
@@ -153,20 +153,20 @@ namespace MueLu {
     //       // Teuchos::OSTab tab2(out);
     //       s_->print(out, verbLevel);
     //     }
-    
+
     //     if (verbLevel & Debug) {
     MUELU_DESCRIBE;
 
     if (verbLevel & Parameters0) {
       out0 << "Prec. type: " << type_ << std::endl;
     }
-      
-    if (verbLevel & Parameters1) { 
+
+    if (verbLevel & Parameters1) {
       out0 << "PrecType: " << type_ << std::endl;
       out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
       out0 << "Overlap: " << overlap_ << std::endl;
     }
-      
+
     if (verbLevel & Debug) {
       out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl
            << "-" << std::endl

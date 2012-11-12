@@ -84,6 +84,8 @@ APPEND_SET(SOURCES
     Kokkos_NodeAPIVersion.cpp
   )
 
+MESSAGE(STATUS "Enabling node: Serial")
+
 ASSERT_DEFINED(KokkosClassic_ENABLE_Thrust)
 IF (KokkosClassic_ENABLE_Thrust)
   MESSAGE(STATUS "Enabling node: CUDA/Thrust")

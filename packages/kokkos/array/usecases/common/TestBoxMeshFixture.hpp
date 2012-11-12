@@ -78,16 +78,16 @@ private:
 
 public:
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type & update )
   { update = 0 ; }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & source )
   { update += source ; }
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const size_type i , value_type & update ) const
   {
     const size_type node_id = i + node_begin ;

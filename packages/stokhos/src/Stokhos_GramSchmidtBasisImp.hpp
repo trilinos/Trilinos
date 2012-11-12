@@ -202,7 +202,7 @@ evaluateZero(ordinal_type i) const
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
-evaluateBases(const Teuchos::Array<value_type>& point,
+evaluateBases(const Teuchos::ArrayView<const value_type>& point,
 	      Teuchos::Array<value_type>& basis_vals) const
 {
   basis->evaluateBases(point, basis_vals_tmp);

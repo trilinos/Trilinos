@@ -55,14 +55,14 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   UCAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UCAggregationFactory(RCP<const FactoryBase> graphFact)
     : graphFact_(graphFact)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(algo2_.GetMinNodesPerAggregate() != algo1_.GetMinNodesPerAggregate(), Exceptions::RuntimeError, "");
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void UCAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     //if(currentLevel.IsAvailable("Aggregates",this)) return; //TODO: Why??????
 
@@ -70,7 +70,7 @@ namespace MueLu {
     //currentLevel.DeclareInput("UnAmalgamationInfo", graphFact_.get(), this); // TODO, only provided by CoalesceDropFactory2
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void UCAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const
   {
     FactoryMonitor m(*this, "Aggregation", currentLevel);
@@ -82,18 +82,18 @@ namespace MueLu {
       //FIXME there ever be more than one graph?
       //FIXME TAW: The graph is always labeled with "Graph". There can be more than one graph of course
       //FIXME TAW: We can distinguish them by their factory!
-      
+
       // Level Get
       RCP<const Graph> graph = currentLevel.Get< RCP<Graph> >("Graph", graphFact_.get());
-      
+
       //if(currentLevel.IsAvailable("UnAmalgamationInfo", graphFact_.get())) {
       //  RCP<const AmalgamationInfo> graph = currentLevel.Get< RCP<AmalgamationInfo> >("UnAmalgamationInfo", graphFact_.get());
       //}
 
       // Build
-      aggregates = rcp(new Aggregates(*graph)); 
+      aggregates = rcp(new Aggregates(*graph));
       aggregates->setObjectLabel("UC");
-      
+
       algo1_.CoarsenUncoupled(*graph, *aggregates);
       algo2_.AggregateLeftovers(*graph, *aggregates);
 

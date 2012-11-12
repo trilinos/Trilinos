@@ -62,10 +62,10 @@ namespace MueLu {
     template <class Key1, class Key2, class Value>
     void TwoKeyMap<Key1, Key2, Value>::Set(const Key1 & key1, const Key2 & key2, const Value & entry) {
       SubMap & subMap = map_[key1]; // operator [] will add an entry in map_ for key 'key1' if it does not exists
-        
+
       // if (subMap.count(key2) != 0)
       //  GetOStream(Warnings0, 0) << "Warning: MueLu:TwoKeyMap::Set(): Value already exist for key (" << key1 << ", " << key2 << ")" << std::endl;
-        
+
       subMap[key2] = entry; // operator [] will add an entry in subMap for key 'key2' if it does not exists
     }
 
@@ -74,7 +74,7 @@ namespace MueLu {
       // Get SubMap
       TEUCHOS_TEST_FOR_EXCEPTION(map_.count(key1) != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::Get(): Key (" << key1 << ", *) does not exist.");
       const SubMap & subMap = map_.find(key1)->second;
-        
+
       // Get Value
       TEUCHOS_TEST_FOR_EXCEPTION(subMap.count(key2) != 1, Exceptions::RuntimeError, "MueLu::TwoKeyMap::Get(): Key (" << key1 << ", " << key2 << ") does not exist.");
       return subMap.find(key2)->second;

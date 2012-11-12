@@ -95,6 +95,7 @@
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
+#include "MueLu_CoarseMapFactory.hpp"
 
 //#include "MueLu_AggregationExportFactory.hpp"
 
@@ -115,7 +116,7 @@
 Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal stridedBlockId, GlobalOrdinal offset) {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  
+
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
@@ -227,9 +228,14 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
   // build transfer operators
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
 
-  TentPFact->setStridingData(stridingInfo);
+  /*TentPFact->setStridingData(stridingInfo);
   TentPFact->setStridedBlockId(stridedBlockId);
-  TentPFact->setDomainMapOffset(offset);
+  TentPFact->setDomainMapOffset(offset);*/
+
+  RCP<CoarseMapFactory> coarseMapFact = Teuchos::rcp(new CoarseMapFactory(UCAggFact));
+  coarseMapFact->setStridingData(stridingInfo);
+  coarseMapFact->setStridedBlockId(stridedBlockId);
+  coarseMapFact->setDomainMapOffset(offset);
 
   RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
   //RCP<PgPFactory> Pfact  = rcp( new PgPFactory(TentPFact) );
@@ -283,6 +289,7 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
   M.SetFactory("A", Acfact);
   M.SetFactory("Smoother", SmooFact);
   M.SetFactory("CoarseSolver", coarsestSmooFact);
+  M.SetFactory("CoarseMap", coarseMapFact);
 
   H->Setup(M, 0, maxLevels);
 
@@ -316,7 +323,7 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
 
     aztecSolver.Iterate(maxIts, tol);
   }
-  
+
   return xLsg;
 }
 
@@ -328,18 +335,18 @@ int main(int argc, char *argv[]) {
 
   std::vector<size_t> stridingInfo;
   stridingInfo.push_back(3);
-    
+
   // no striding, just one block of size 3, no offset
   Teuchos::RCP<Vector> ref = runExample(stridingInfo, -1, 0);
-  
+
   int cnt_errors = 0;
-  
+
   stridingInfo.push_back(1);
   // striding (3,1), use block 0, no offset
   Teuchos::RCP<Vector> lsg2 = runExample(stridingInfo, 0, 0);
   lsg2->update(-1.0, *ref, 1.0);
   if(lsg2->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
-  
+
   stridingInfo.push_back(4);
   // striding (3,1,4), use block 0, no offset
   Teuchos::RCP<Vector> lsg3 = runExample(stridingInfo, 0, 0);
@@ -351,27 +358,27 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<Vector> lsg4 = runExample(stridingInfo, 3, 0);
   lsg4->update(-1.0, *ref, 1.0);
   if(lsg4->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
-  
+
   ////////////////////////////////////////////// test with offset
   stridingInfo.clear();
   stridingInfo.push_back(3);
-  
+
   // no striding, just one block of size 3, offset 35
   Teuchos::RCP<Vector> lsg5 = runExample(stridingInfo, -1, 35);
   lsg5->update(-1.0, *ref, 1.0);
   if(lsg5->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
-  
+
   // no striding, use block 0, offset 35
   Teuchos::RCP<Vector> lsg6 = runExample(stridingInfo, 0, 35);
   lsg6->update(-1.0, *ref, 1.0);
   if(lsg6->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
- 
+
   stridingInfo.push_back(1);
   //striding (3,1), use block 0, offset 35
   Teuchos::RCP<Vector> lsg7 = runExample(stridingInfo, 0, 35);
   lsg7->update(-1.0, *ref, 1.0);
   if(lsg7->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
-  
+
   stridingInfo.push_back(3);
   //striding (3,1,3), use block 2, offset 35
   Teuchos::RCP<Vector> lsg8 = runExample(stridingInfo, 2, 35);
@@ -382,7 +389,7 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<Vector> lsg9 = runExample(stridingInfo, 2, 36);
   lsg9->update(-1.0, *ref, 1.0);
   if(lsg9->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
-  
+
   if(cnt_errors>0) {
     std::cout << "results do not match. Error" << std::endl;
     return EXIT_FAILURE;

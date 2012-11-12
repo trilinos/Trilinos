@@ -16,13 +16,13 @@ INPUT                  = ../thyra/doc/index.doc \
                          ../thyra/src
 FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
-EXCLUDE                = 
+EXCLUDE                =
 EXCLUDE_PATTERNS       = *.x *.o *.out
-EXAMPLE_PATH           = 
+EXAMPLE_PATH           =
 EXAMPLE_PATTERNS       = *.cpp *.hpp
-INPUT_FILTER           = 
+INPUT_FILTER           =
 ALPHABETICAL_INDEX     = YES
-IGNORE_PREFIX          = 
+IGNORE_PREFIX          =
 #
 # Links to other packages
 #

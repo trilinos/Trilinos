@@ -63,9 +63,9 @@
 namespace MueLuTests {
 
   using namespace TestHelpers::Smoothers;
-  
+
   TEUCHOS_UNIT_TEST(Ifpack2Smoother, NotSetup)
-  {     
+  {
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
       Ifpack2Smoother smoother("RELAXATION", Teuchos::ParameterList());
@@ -89,7 +89,7 @@ namespace MueLuTests {
 
       ST::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
-      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();   
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       switch (comm->getSize()) {
       case 1:
       case 4:
@@ -105,7 +105,7 @@ namespace MueLuTests {
 
   // Tests interface to Ifpack2's Gauss-Seidel preconditioner.
   TEUCHOS_UNIT_TEST(Ifpack2Smoother, HardCodedResult_GaussSeidel2)
-  { 
+  {
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
       Teuchos::ParameterList paramList;
@@ -113,9 +113,9 @@ namespace MueLuTests {
       paramList.set("relaxation: sweeps", (int) 10);
       paramList.set("relaxation: damping factor", (double) 1.0);
       paramList.set("relaxation: zero starting solution", false);
-    
+
       Ifpack2Smoother smoother("RELAXATION",paramList);
-    
+
       ST::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -136,7 +136,7 @@ namespace MueLuTests {
 
   // Tests interface to Ifpack2's Chebyshev preconditioner
   TEUCHOS_UNIT_TEST(Ifpack2Smoother, HardCodedResult_Chebyshev)
-  {  
+  {
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
       Teuchos::ParameterList paramList;
@@ -156,14 +156,14 @@ namespace MueLuTests {
 
   // Tests interface to Ifpack2's ILU(0) preconditioner.
   TEUCHOS_UNIT_TEST(Ifpack2Smoother, HardCodedResult_ILU)
-  {  
+  {
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
       //FIXME this will probably fail in parallel b/c it becomes block Jacobi
 
       Teuchos::ParameterList paramList;
       Ifpack2Smoother smoother("ILUT",paramList);
-    
+
       ST::magnitudeType residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -172,7 +172,7 @@ namespace MueLuTests {
       } else {
         out << "Pass/Fail is only checked in serial." << std::endl;
       }
-    
+
     }
   } // ILU
 

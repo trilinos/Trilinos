@@ -12,14 +12,14 @@ IF ({PACKAGE_NAME}_ENABLE_Galeri)
     COMM serial mpi
     DEPLIBS muelu xpetra muelu-adapters
     )
-  
+
   TRIBITS_ADD_EXECUTABLE(
     SaPtest
     SOURCES SaPtest.cpp
     COMM serial mpi
     DEPLIBS muelu xpetra muelu-adapters
     )
-  
+
   TRIBITS_ADD_EXECUTABLE(
     PgPtest
     SOURCES PgPtest.cpp

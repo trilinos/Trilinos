@@ -115,6 +115,12 @@ namespace Xpetra {
     //! Insert matrix entries, using local IDs.
     void insertLocalValues(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &cols, const ArrayView< const Scalar > &vals) { XPETRA_MONITOR("TpetraCrsMatrix::insertLocalValues"); mtx_->insertLocalValues(localRow, cols, vals); }
 
+    //! Replace matrix entries, using global IDs.
+    void replaceGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals) { XPETRA_MONITOR("TpetraCrsMatrix::replaceGlobalValues"); mtx_->replaceGlobalValues(globalRow, cols, vals); }
+
+    //! Replace matrix entries, using local IDs.
+    void replaceLocalValues(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &cols, const ArrayView< const Scalar > &vals) { XPETRA_MONITOR("TpetraCrsMatrix::replaceLocalValues"); mtx_->replaceLocalValues(localRow, cols, vals); }
+
     //! Set all matrix entries equal to scalarThis.
     void setAllToScalar(const Scalar &alpha) { XPETRA_MONITOR("TpetraCrsMatrix::setAllToScalar"); mtx_->setAllToScalar(alpha); }
 
@@ -125,6 +131,9 @@ namespace Xpetra {
 
     //! @name Transformational Methods
     //@{
+
+    //!
+    void resumeFill(const RCP< ParameterList > &params=null) { XPETRA_MONITOR("TpetraCrsMatrix::resumeFill"); mtx_->resumeFill(params); }
 
     //! Signal that data entry is complete, specifying domain and range maps.
     void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params=null) { XPETRA_MONITOR("TpetraCrsMatrix::fillComplete"); mtx_->fillComplete(toTpetra(domainMap), toTpetra(rangeMap), params); }
@@ -188,14 +197,17 @@ namespace Xpetra {
     //! Returns true if fillComplete() has been called and the matrix is in compute mode.
     bool isFillComplete() const { XPETRA_MONITOR("TpetraCrsMatrix::isFillComplete"); return mtx_->isFillComplete(); }
 
+    //! Returns true if resumeFill() has been called and the matrix is in edit mode.
+    bool isFillActive() const { XPETRA_MONITOR("TpetraCrsMatrix::isFillActive"); return mtx_->isFillActive(); }
+
     //! Returns the Frobenius norm of the matrix.
     typename ScalarTraits< Scalar >::magnitudeType getFrobeniusNorm() const { XPETRA_MONITOR("TpetraCrsMatrix::getFrobeniusNorm"); return mtx_->getFrobeniusNorm(); }
 
     //! Returns true if getLocalRowView() and getGlobalRowView() are valid for this class.
     bool supportsRowViews() const { XPETRA_MONITOR("TpetraCrsMatrix::supportsRowViews"); return mtx_->supportsRowViews(); }
 
-//     //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
-//     void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const { XPETRA_MONITOR("TpetraCrsMatrix::getLocalRowCopy"); mtx_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries); }
+    //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
+    void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const { XPETRA_MONITOR("TpetraCrsMatrix::getLocalRowCopy"); mtx_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries); }
 
     //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
     void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &indices, ArrayView< const Scalar > &values) const { XPETRA_MONITOR("TpetraCrsMatrix::getGlobalRowView"); mtx_->getGlobalRowView(GlobalRow, indices, values); }
@@ -214,7 +226,7 @@ namespace Xpetra {
     //! Returns the Map associated with the domain of this operator. This will be null until fillComplete() is called.
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { XPETRA_MONITOR("TpetraCrsMatrix::getDomainMap"); return toXpetra(mtx_->getDomainMap()); }
 
-    //! 
+    //!
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { XPETRA_MONITOR("TpetraCrsMatrix::getRangeMap"); return toXpetra(mtx_->getRangeMap()); }
 
     //@}
@@ -230,20 +242,20 @@ namespace Xpetra {
 
     //@}
 
-    //! @name Extraction Methods
-    //@{
+#ifdef INCLUDE_XPETRA_EXPERIMENTAL
+    //! Deep copy constructor
+    TpetraCrsMatrix(const TpetraCrsMatrix& matrix)
+    : mtx_(matrix.mtx_->template convert<Scalar>()) {
+    }
+#endif
 
-    //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
-    void getLocalRowCopy(LocalOrdinal LocalRow, const Teuchos::ArrayView< LocalOrdinal > &Indices, const Teuchos::ArrayView< Scalar > &Values, size_t &NumEntries) const { XPETRA_MONITOR("TpetraCrsMatrix::getLocalRowCopy"); mtx_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries); }
-
-    //@}
 
     //! Get a copy of the diagonal entries owned by this node, with local row idices.
-    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { 
+    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {
       XPETRA_MONITOR("TpetraCrsMatrix::getLocalDiagCopy");
       XPETRA_DYNAMIC_CAST(TpetraVectorClass, diag, tDiag, "Xpetra::TpetraCrsMatrix.getLocalDiagCopy() only accept Xpetra::TpetraVector as input arguments.");
-      mtx_->getLocalDiagCopy(*tDiag.getTpetra_Vector()); 
-      // mtx_->getLocalDiagCopy(toTpetra(diag)); 
+      mtx_->getLocalDiagCopy(*tDiag.getTpetra_Vector());
+      // mtx_->getLocalDiagCopy(toTpetra(diag));
     }
 
     //! Implements DistObject interface
@@ -253,8 +265,8 @@ namespace Xpetra {
     const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("TpetraCrsMatrix::getMap"); return rcp( new TpetraMap< LocalOrdinal, GlobalOrdinal, Node >(mtx_->getMap()) ); }
 
     //! Import.
-    void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source, 
-                  const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) { 
+    void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source,
+                  const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) {
       XPETRA_MONITOR("TpetraCrsMatrix::doImport");
 
       XPETRA_DYNAMIC_CAST(const TpetraCrsMatrixClass, source, tSource, "Xpetra::TpetraCrsMatrix::doImport only accept Xpetra::TpetraCrsMatrix as input arguments.");//TODO: remove and use toTpetra()
@@ -270,7 +282,7 @@ namespace Xpetra {
 
       XPETRA_DYNAMIC_CAST(const TpetraCrsMatrixClass, dest, tDest, "Xpetra::TpetraCrsMatrix::doImport only accept Xpetra::TpetraCrsMatrix as input arguments.");//TODO: remove and use toTpetra()
       RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > v = tDest.getTpetra_CrsMatrix();
-      mtx_->doExport(*v, toTpetra(importer), toTpetra(CM)); 
+      mtx_->doExport(*v, toTpetra(importer), toTpetra(CM));
 
     }
 
@@ -292,7 +304,7 @@ namespace Xpetra {
 
       XPETRA_DYNAMIC_CAST(const TpetraCrsMatrixClass, dest, tDest, "Xpetra::TpetraCrsMatrix::doImport only accept Xpetra::TpetraCrsMatrix as input arguments.");//TODO: remove and use toTpetra()
       RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > v = tDest.getTpetra_CrsMatrix();
-      mtx_->doExport(*v, toTpetra(exporter), toTpetra(CM)); 
+      mtx_->doExport(*v, toTpetra(exporter), toTpetra(CM));
 
     }
 
@@ -306,14 +318,14 @@ namespace Xpetra {
 
     //! Get the underlying Tpetra matrix
     RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > getTpetra_CrsMatrix() const { return mtx_; }
-    
+
     //! Get the underlying Tpetra matrix
     RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > getTpetra_CrsMatrixNonConst() const { return mtx_; } //TODO: remove
- 
+
    //@}
-    
+
   private:
-    
+
     RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mtx_;
 
   }; // TpetraCrsMatrix class

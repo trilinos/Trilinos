@@ -80,8 +80,8 @@ namespace MueLu {
 #endif
     } // if(type_ == "")
 
-    //TMP: Amesos2 KLU never available but most MueLu tests are using KLU by default 
-    // (ex: examples driven by ML parameter lists) 
+    //TMP: Amesos2 KLU never available but most MueLu tests are using KLU by default
+    // (ex: examples driven by ML parameter lists)
     // -> temporarily fallback to SUPERLU
     // Remove this when KLU becomes available.
 #if defined(HAVE_AMESOS2_SUPERLU)
@@ -113,7 +113,7 @@ namespace MueLu {
     RCP<Matrix> A_ = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
 
     RCP<Tpetra_CrsMatrix> tA = Utils::Op2NonConstTpetraCrs(A_);
-  
+
     prec_ = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(type_, tA);
     TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");
 
@@ -159,7 +159,7 @@ namespace MueLu {
     out << "{type = " << type_ << "}";
     return out.str();
   }
-    
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
@@ -167,11 +167,11 @@ namespace MueLu {
     if (verbLevel & Parameters0) {
       out0 << "Prec. type: " << type_ << std::endl;
     }
-      
-    if (verbLevel & Parameters1) { 
+
+    if (verbLevel & Parameters1) {
       out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
     }
-      
+
     if (verbLevel & External) {
       if (prec_ != Teuchos::null) { Teuchos::OSTab tab2(out); out << *prec_ << std::endl; }
     }

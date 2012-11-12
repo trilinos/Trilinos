@@ -69,10 +69,10 @@ namespace MueLu {
   // See also: FactoryManager
   //
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
-  class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> { 
+  class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> {
 #undef MUELU_HIERARCHYMANAGER_SHORT
 #include "MueLu_UseShortNames.hpp"
-      
+
   public:
 
     //!
@@ -93,7 +93,7 @@ namespace MueLu {
     void AddFactoryManager(int startLevel, int numDesiredLevel, RCP<FactoryManagerBase> manager) {
       const int lastLevel = startLevel + numDesiredLevel - 1;
       if (levelManagers_.size() < lastLevel + 1) levelManagers_.resize(lastLevel + 1);
-      
+
       for(int iLevel = startLevel; iLevel <= lastLevel; iLevel++) {
         levelManagers_[iLevel] = manager;
       }
@@ -116,7 +116,7 @@ namespace MueLu {
     virtual RCP<Hierarchy> CreateHierarchy() const {
       return rcp(new Hierarchy());
     }
-    
+
     //! Setup Hierarchy object
     virtual void SetupHierarchy(Hierarchy & H) const {
       TEUCHOS_TEST_FOR_EXCEPTION(!H.GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError, "No fine level operator");
@@ -139,10 +139,10 @@ namespace MueLu {
       bool isLastLevel = false;
 
       while(!isLastLevel) {
-        bool r = H.Setup(levelID, 
-                         LvlMngr(levelID-1, lastLevelID), 
-                         LvlMngr(levelID,   lastLevelID), 
-                         LvlMngr(levelID+1, lastLevelID)); 
+        bool r = H.Setup(levelID,
+                         LvlMngr(levelID-1, lastLevelID),
+                         LvlMngr(levelID,   lastLevelID),
+                         LvlMngr(levelID+1, lastLevelID));
 
         isLastLevel = r || (levelID == lastLevelID);
         levelID++;
@@ -164,7 +164,7 @@ namespace MueLu {
 
     // Hierarchy parameters
     VerbLevel             verbLevel_;
-    int                   numDesiredLevel_; 
+    int                   numDesiredLevel_;
     Xpetra::global_size_t maxCoarseSize_;
 
   private:
@@ -174,9 +174,9 @@ namespace MueLu {
 
     // Used in SetupHierarchy() to access levelManagers_
     // Inputs i=-1 and i=size() are allowed to simplify calls to hierarchy->Setup()
-    Teuchos::Ptr<FactoryManagerBase> LvlMngr(int levelID, int lastLevelID) const { 
+    Teuchos::Ptr<FactoryManagerBase> LvlMngr(int levelID, int lastLevelID) const {
 
-      // Please not that the order of the 'if' statements is important. 
+      // Please not that the order of the 'if' statements is important.
 
       if (levelID == -1)                    return Teuchos::null; // when this routine is called with levelID == '-1', it means that we are processing the finest Level (there is no finer level)
       if (levelID == lastLevelID+1)         return Teuchos::null; // when this routine is called with levelID == 'lastLevelID+1', it means that we are processing the last level (ie: there is no nextLevel...)
@@ -187,7 +187,7 @@ namespace MueLu {
         return defaultMngr();
       }
       if (levelID >= levelManagers_.size()) return levelManagers_[levelManagers_.size()-1](); // last levelManager is used for all the remaining levels.
-      
+
       return levelManagers_[levelID](); // throw exception if out of bound.
     }
 

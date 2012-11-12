@@ -82,5 +82,5 @@ namespace MueLuTests {
 #endif
       }
   }
-  
+
 } // namespace MueLuTests

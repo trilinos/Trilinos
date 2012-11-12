@@ -72,15 +72,31 @@ Declarations for the class Xpetra::Matrix.
 */
 namespace Xpetra {
 
+    /*!
+     @class Xpetra::Matrix class.
+     @brief Xpetra-specific matrix class.
+
+     This class is specific to Xpetra and has no analogue in Epetra or Tpetra.  The main motivation for this class is to be able to access matrix data in a manner different than how it is stored.
+     For example, it might be more convenient to treat ("view") a matrix stored in compressed row storage as if it were a block matrix.  The Xpetra::Matrix class is intended to manage these "views".
+
+     <B>How to create a Matrix from an existing CrsMatrix</B>
+
+     @code
+     RCP<Xpetra::CrsMatrix> crsA;
+     RCP<Xpetra::Matrix>    A  = rcp(new CrsMatrixWrap(crsA));
+     @endcode
+
+    */
+
   typedef std::string viewLabel_t;
 
-  template <class Scalar, 
-            class LocalOrdinal  = int, 
-            class GlobalOrdinal = LocalOrdinal, 
-            class Node          = Kokkos::DefaultNode::DefaultNodeType, 
+  template <class Scalar,
+            class LocalOrdinal  = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node          = Kokkos::DefaultNode::DefaultNodeType,
             class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
   class Matrix : virtual public Teuchos::Describable {
-    
+
     typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
     typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
     typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
@@ -91,7 +107,7 @@ namespace Xpetra {
     typedef Xpetra::MatrixView<LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 
   public:
-  
+
     //! @name Constructor/Destructor Methods
     //@{
 
@@ -109,9 +125,9 @@ namespace Xpetra {
       RCP<MatrixView> view = rcp(new MatrixView(rowMap, colMap));
       operatorViewTable_.put(viewLabel, view);
     }
-    
+
     void CreateView(const viewLabel_t viewLabel, const RCP<Matrix> & A, bool transposeA = false, const RCP<Matrix> & B = Teuchos::null, bool transposeB = false) {
-            
+
       RCP<const Map> domainMap = Teuchos::null;
       RCP<const Map> rangeMap  = Teuchos::null;
 
@@ -122,7 +138,7 @@ namespace Xpetra {
         domainMap = (transposeA) ? A->getRowMap() : A->getColMap(); // overwrite if B != Teuchos::null
         oldView = A->SwitchToView(oldView);
       } else rangeMap = (transposeA) ? A->getDomainMap() : A->getRangeMap();
-      
+
       // B has strided Maps
       if(B != Teuchos::null ) {
         if(B->IsView(viewLabel)) {
@@ -131,11 +147,11 @@ namespace Xpetra {
           oldView = B->SwitchToView(oldView);
         } else domainMap = (transposeB) ? B->getRangeMap() : B->getDomainMap();
       }
-      
-      
+
+
       if(IsView(viewLabel)) RemoveView(viewLabel);
-      
-      CreateView(viewLabel, rangeMap, domainMap);   
+
+      CreateView(viewLabel, rangeMap, domainMap);
     }
 
     //! Print all of the views associated with the Matrix.
@@ -152,13 +168,13 @@ namespace Xpetra {
       out.setOutputToRootOnly(last);
     }
 
-    
+
     void RemoveView(const viewLabel_t viewLabel) {
       TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.RemoveView(): view '" + viewLabel + "' does not exist.");
       TEUCHOS_TEST_FOR_EXCEPTION(viewLabel == GetDefaultViewLabel(), Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.RemoveView(): view '" + viewLabel + "' is the default view and cannot be removed.");
       operatorViewTable_.remove(viewLabel);
     }
-    
+
     const viewLabel_t SwitchToView(const viewLabel_t viewLabel) {
       TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.SwitchToView(): view '" + viewLabel + "' does not exist.");
       viewLabel_t oldViewLabel = GetCurrentViewLabel();
@@ -175,21 +191,21 @@ namespace Xpetra {
     const viewLabel_t & GetDefaultViewLabel() const { return defaultViewLabel_; }
 
     const viewLabel_t & GetCurrentViewLabel() const { return currentViewLabel_; }
-    
+
     //@}
 
     //! @name Insertion/Removal Methods
-    //@{ 
+    //@{
 
     //! Insert matrix entries, using global IDs.
-    /** All index values must be in the global space. 
+    /** All index values must be in the global space.
         \pre \c globalRow exists as an ID in the global row map
         \pre <tt>isLocallyIndexed() == false</tt>
         \pre <tt>isStorageOptimized() == false</tt>
 
         \post <tt>isGloballyIndexed() == true</tt>
 
-        \note If \c globalRow does not belong to the matrix on this node, then it will be communicated to the appropriate node when globalAssemble() is called (which will, at the latest, occur during the next call to fillComplete().) Otherwise, the entries will be inserted in the local matrix. 
+        \note If \c globalRow does not belong to the matrix on this node, then it will be communicated to the appropriate node when globalAssemble() is called (which will, at the latest, occur during the next call to fillComplete().) Otherwise, the entries will be inserted in the local matrix.
         \note If the matrix row already contains values at the indices corresponding to values in \c cols, then the new values will be summed with the old values; this may happen at insertion or during the next call to fillComplete().
         \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
     */
@@ -205,10 +221,13 @@ namespace Xpetra {
     */
     virtual void insertLocalValues(LocalOrdinal localRow, const ArrayView<const LocalOrdinal> &cols, const ArrayView<const Scalar> &vals) = 0;
 
+    //! Scale the current values of a matrix, this = alpha*this.
+    virtual void scale(const Scalar &alpha)= 0;
+
     //@}
 
     //! @name Transformational Methods
-    //@{ 
+    //@{
 
     /*! \brief Signal that data entry is complete, specifying domain and range maps.
 
@@ -220,10 +239,10 @@ namespace Xpetra {
     \post <tt>isFillActive() == false<tt>
     \post <tt>isFillComplete() == true<tt>
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
-    */ 
+    */
     virtual void fillComplete(const RCP<const Map> &domainMap, const RCP<const Map> &rangeMap, const RCP<ParameterList> &params = null) =0;
 
-    /*! \brief Signal that data entry is complete. 
+    /*! \brief Signal that data entry is complete.
 
     Off-node entries are distributed (via globalAssemble()), repeated entries are summed, and global indices are transformed to local indices.
 
@@ -242,15 +261,15 @@ namespace Xpetra {
     //@}
 
     //! @name Methods implementing RowMatrix
-    //@{ 
+    //@{
 
     //! Returns the Map that describes the row distribution in this matrix.
     virtual const RCP<const Map> & getRowMap() const { return getRowMap(GetCurrentViewLabel()); }
 
     //! Returns the Map that describes the row distribution in this matrix.
-    virtual const RCP<const Map> & getRowMap(viewLabel_t viewLabel) const { 
+    virtual const RCP<const Map> & getRowMap(viewLabel_t viewLabel) const {
       TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.GetRowMap(): view '" + viewLabel + "' does not exist.");
-      return operatorViewTable_.get(viewLabel)->GetRowMap(); 
+      return operatorViewTable_.get(viewLabel)->GetRowMap();
     }
 
     //! \brief Returns the Map that describes the column distribution in this matrix.
@@ -258,9 +277,9 @@ namespace Xpetra {
     virtual const RCP<const Map> & getColMap() const { return getColMap(GetCurrentViewLabel()); }
 
     //! \brief Returns the Map that describes the column distribution in this matrix.
-    virtual const RCP<const Map> & getColMap(viewLabel_t viewLabel) const { 
+    virtual const RCP<const Map> & getColMap(viewLabel_t viewLabel) const {
       TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.GetColMap(): view '" + viewLabel + "' does not exist.");
-      return operatorViewTable_.get(viewLabel)->GetColMap(); 
+      return operatorViewTable_.get(viewLabel)->GetColMap();
     }
 
     //! Returns the number of global rows in this matrix.
@@ -286,12 +305,12 @@ namespace Xpetra {
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const =0;
 
-    //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons. 
+    //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
     /** Undefined if isFillActive().
      */
     virtual global_size_t getGlobalNumDiags() const =0;
 
-    //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons. 
+    //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons.
     /** Undefined if isFillActive().
      */
     virtual size_t getNodeNumDiags() const =0;
@@ -323,13 +342,13 @@ namespace Xpetra {
       \param NumIndices - (Out) Number of indices.
 
       Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
-      with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is 
+      with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is
       returned as OrdinalTraits<size_t>::invalid().
 
       \pre <tt>isLocallyIndexed()==true</tt> or <tt>hasColMap() == true</tt>
     */
-    virtual void getLocalRowCopy(LocalOrdinal LocalRow, 
-                                 const ArrayView<LocalOrdinal> &Indices, 
+    virtual void getLocalRowCopy(LocalOrdinal LocalRow,
+                                 const ArrayView<LocalOrdinal> &Indices,
                                  const ArrayView<Scalar> &Values,
                                  size_t &NumEntries
                                  ) const =0;
@@ -359,7 +378,7 @@ namespace Xpetra {
     virtual void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const =0;
 
     //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
-    /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
+    /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
       the zero and non-zero diagonals owned by this node. */
     virtual void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const =0;
 
@@ -377,7 +396,7 @@ namespace Xpetra {
     Both are required to have constant stride, and they are not permitted to ocupy overlapping space. No runtime checking will be performed in a non-debug build.
 
     This method is templated on the scalar type of MultiVector objects, allowing this method to be applied to MultiVector objects of arbitrary type. However, it is recommended that multiply() not be called directly; instead, use the CrsMatrixMultiplyOp, as it will handle the import/exprt operations required to apply a matrix with non-trivial communication needs.
-          
+
     If \c beta is equal to zero, the operation will enjoy overwrite semantics (\c Y will be overwritten with the result of the multiplication). Otherwise, the result of the multiplication
     will be accumulated into \c Y.
     */
@@ -387,13 +406,13 @@ namespace Xpetra {
     //@}
 
     //! @name Methods implementing Matrix
-    //@{ 
+    //@{
 
     //! \brief Computes the sparse matrix-multivector multiplication.
     /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
       - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
     */
-    virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+    virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
                        Teuchos::ETransp mode = Teuchos::NO_TRANS,
                        Scalar alpha = ScalarTraits<Scalar>::one(),
                        Scalar beta = ScalarTraits<Scalar>::zero()) const =0;
@@ -408,7 +427,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name Overridden from Teuchos::Describable 
+    //! @name Overridden from Teuchos::Describable
     //@{
 
     // TODO: describe of views can be done here
@@ -434,7 +453,7 @@ namespace Xpetra {
 
     // JG: Added:
 
-    //! Returns the CrsGraph associated with this matrix. 
+    //! Returns the CrsGraph associated with this matrix.
     virtual RCP<const CrsGraph> getCrsGraph() const =0;
 
     // ----------------------------------------------------------------------------------
@@ -447,7 +466,7 @@ namespace Xpetra {
       std::vector<size_t> stridingInfo;
       stridingInfo.push_back(Teuchos::as<size_t>(blksize));
       LocalOrdinal stridedBlockId = -1;
-            
+
       RCP<const Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node> > stridedRangeMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(getRangeMap()->lib(),
                                                     getRangeMap(),
                                                     stridingInfo,
@@ -460,7 +479,7 @@ namespace Xpetra {
 					      );
 
       if(IsView("stridedMaps") == true) RemoveView("stridedMaps");
-      CreateView("stridedMaps", stridedRangeMap, stridedDomainMap); 
+      CreateView("stridedMaps", stridedRangeMap, stridedDomainMap);
     }
 
     //==========================================================================

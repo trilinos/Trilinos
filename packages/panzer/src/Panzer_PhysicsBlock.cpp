@@ -49,6 +49,7 @@
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_EquationSet_Factory.hpp"
+#include "Panzer_EquationSet_Factory_Parrot.hpp"
 #include "Shards_CellTopology.hpp"
 
 // *******************************************************************
@@ -433,6 +434,14 @@ const panzer::CellData & panzer::PhysicsBlock::cellData() const
 Teuchos::RCP<panzer::PhysicsBlock> panzer::PhysicsBlock::copyWithCellData(const panzer::CellData & cell_data,
                                                                           const panzer::EquationSetFactory & factory) const
 {
+  return Teuchos::rcp(new panzer::PhysicsBlock(*this,cell_data,factory));
+}
+
+// *******************************************************************
+Teuchos::RCP<panzer::PhysicsBlock> panzer::PhysicsBlock::copyWithCellData(const panzer::CellData & cell_data) const
+{
+  // use parrot to avoid needing an equation set factory
+  EquationSet_FactoryParrot factory(m_initializer.eq_sets,m_equation_sets);
   return Teuchos::rcp(new panzer::PhysicsBlock(*this,cell_data,factory));
 }
 

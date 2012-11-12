@@ -6,16 +6,16 @@
 # where file1 and file2 are epetra/tpetra screen dumps.  file1 and file2 can have any name you like, and order doesn't matter.
 #
 # You should see something like the following:
-#                                                                                          Tpetra       Epetra    T/E ratio   
+#                                                                                          Tpetra       Epetra    T/E ratio
 #                                                                                          --------------------------------
-#                          MueLu: IfpackSmoother: Setup Smoother (total, level=0)  ==>     0.0325       0.0119       2.72   
-#                MueLu: AmalgamationFactory: AmalgamationFactory (total, level=2)  ==>     0.0173       0.0130       1.34   
-#                              MueLu: TransPFactory: Transpose P (total, level=4)  ==>     0.0021       0.0006       3.70   
-#                         MueLu: AmalgamationFactory: AmalgamationFactory (total)  ==>     0.3636       0.3431       1.06   
-#                                   MueLu: AmesosSmoother: Setup Smoother (total)  ==>     0.0001       0.0008       0.10   
+#                          MueLu: IfpackSmoother: Setup Smoother (total, level=0)  ==>     0.0325       0.0119       2.72
+#                MueLu: AmalgamationFactory: AmalgamationFactory (total, level=2)  ==>     0.0173       0.0130       1.34
+#                              MueLu: TransPFactory: Transpose P (total, level=4)  ==>     0.0021       0.0006       3.70
+#                         MueLu: AmalgamationFactory: AmalgamationFactory (total)  ==>     0.3636       0.3431       1.06
+#                                   MueLu: AmesosSmoother: Setup Smoother (total)  ==>     0.0001       0.0008       0.10
 #
 # The first two columns are times in seconds, the last column is the ratio of the first two columns.
-# 
+#
 # Thanks to http://www.grymoire.com/Unix/Awk.html and CMS for help.
 
 #stuff that happens before processing any files

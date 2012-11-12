@@ -78,6 +78,28 @@
 
 namespace MueLu {
 
+  /*
+    Utility that from an existing Teuchos::ParameterList creates a new list, in
+    which level-specific parameters are replaced with sublists.
+
+    Currently, level-specific parameters that begin with "smoother:"
+    or "aggregation:" are placed in sublists. Coarse options are also placed
+    in a coarse list.
+
+    Example:
+    Input:
+    smoother: type (level 0) = symmetric Gauss-Seidel
+    smoother: sweeps (level 0) = 1
+    Output:
+    smoother: list (level 0) ->
+    smoother: type = symmetric Gauss-Seidel
+    smoother: sweeps = 1
+  */
+  // This function is a copy of ML_CreateSublists to avoid dependency on ML
+  // Throw exception on error instead of exit()
+  void CreateSublists(const ParameterList &List, ParameterList &newList);
+
+
   /*!
     @class MLParameterListInterpreter class.
     @brief Class that accepts ML-style parameters and builds a MueLu preconditioner.
@@ -88,7 +110,7 @@ namespace MueLu {
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class MLParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> { 
+  class MLParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> {
 #undef MUELU_MLPARAMETERLISTINTERPRETER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -116,7 +138,7 @@ namespace MueLu {
     //! The idea is to be able to add some factories that write out some debug information etc. which are not handled by the ML
     //! Parameter List itself. See information about the RAPFactory::AddTransferFactory method, too!
     MLParameterListInterpreter(const std::string & xmlFileName,std::vector<RCP<FactoryBase> > factoryList = std::vector<RCP<FactoryBase> >(0));
-    
+
     //! Destructor.
     virtual ~MLParameterListInterpreter() { }
 
@@ -142,10 +164,8 @@ namespace MueLu {
     //@{
 
     //! Read smoother options and build the corresponding smoother factory
-    // @param smootherType: "smoother" or "coarse"
-    // @param level: level number (must be specified if smootherType == "smootherType")
     // @param AFact: Factory used by smoother to find 'A'
-    static RCP<SmootherFactory> GetSmootherFactory(const Teuchos::ParameterList & topLevelParamList, const std::string & smootherType, const int levelID = -1, const RCP<FactoryBase> & AFact = Teuchos::null);
+    static RCP<SmootherFactory> GetSmootherFactory(const Teuchos::ParameterList & paramList, const RCP<FactoryBase> & AFact = Teuchos::null);
 
     //@}
 

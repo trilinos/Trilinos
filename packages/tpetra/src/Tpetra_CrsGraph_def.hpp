@@ -1866,7 +1866,7 @@ namespace Tpetra {
     // Array of pending nonblocking communication requests.  It's OK
     // to mix nonblocking send and receive requests in the same
     // waitAll() call.
-    Array<RCP<Teuchos::CommRequest> > requests;
+    Array<RCP<Teuchos::CommRequest<int> > > requests;
 
     // perform non-blocking sends: send sizes to our recipients
     for (size_t s = 0; s < numSends ; ++s) {

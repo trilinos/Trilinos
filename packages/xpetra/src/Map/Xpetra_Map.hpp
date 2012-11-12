@@ -68,7 +68,7 @@ namespace Xpetra {
   public:
 
     //! @name Constructor/Destructor Methods
-    //@{ 
+    //@{
 
     //! Destructor.
     virtual ~Map() { }
@@ -145,7 +145,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name 
+    //! @name
     //@{
 
     //! Get this Map's Comm object.
@@ -156,7 +156,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name 
+    //! @name
     //@{
 
     //! Return a simple one-line description of this object.

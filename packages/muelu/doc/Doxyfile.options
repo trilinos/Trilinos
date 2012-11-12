@@ -12,7 +12,7 @@ TAGFILES += \
   $(TRILINOS_HOME)/packages/common/tag_files/epetraext.tag=$(TRILINOS_HOME)/packages/epetraext/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/epetra/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/tpetra.tag=$(TRILINOS_HOME)/packages/tpetra/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/xpetra.tag=$(TRILINOS_HOME)/packages/xpetra/doc/html 
+  $(TRILINOS_HOME)/packages/common/tag_files/xpetra.tag=$(TRILINOS_HOME)/packages/xpetra/doc/html
 #
 # Use MathJax for nice rescaling of LaTeX output. Needs a fairly recent version of doxygen.
 #
@@ -31,12 +31,12 @@ OUTPUT_LANGUAGE        = English
 #
 # What and how documentation is extracted
 #
-IGNORE_PREFIX          = 
-INPUT_FILTER           = 
+IGNORE_PREFIX          =
+INPUT_FILTER           =
 IMAGE_PATH             = images
 EXAMPLE_PATTERNS       =
 EXAMPLE_PATH           = ../examples .
-EXCLUDE                = 
+EXCLUDE                =
 EXCLUDE_PATTERNS       = *.x *.o *.out
 RECURSIVE              = YES
 SUBGROUPING            = NO
@@ -51,7 +51,7 @@ REPEAT_BRIEF           = YES
 ALWAYS_DETAILED_SEC    = YES
 DETAILS_AT_TOP         = NO
 FULL_PATH_NAMES        = NO
-STRIP_FROM_PATH        = 
+STRIP_FROM_PATH        =
 SHOW_DIRECTORIES       = YES
 INTERNAL_DOCS          = NO
 CLASS_DIAGRAMS         = YES
@@ -69,7 +69,7 @@ INHERIT_DOCS           = YES
 INLINE_INFO            = YES
 SORT_MEMBER_DOCS       = NO
 TAB_SIZE               = 2
-ENABLED_SECTIONS       = 
+ENABLED_SECTIONS       =
 GENERATE_TODOLIST      = YES
 GENERATE_TESTLIST      = YES
 QUIET                  = NO
@@ -99,13 +99,13 @@ ENABLE_PREPROCESSING   = YES
 MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 SEARCH_INCLUDES        = YES
-INCLUDE_FILE_PATTERNS  = 
+INCLUDE_FILE_PATTERNS  =
 PREDEFINED             = DOXYGEN_COMPILE DOXYGEN_SHOULD_SKIP_THIS HAVE_MPI EPETRA_MPI \
                          HAVE_MUELU_AMESOS HAVE_MUELU_AMESOS2 \
                          HAVE_MUELU_BELOS \
                          HAVE_MUELU_EPETRA HAVE_MUELU_EPETRAEXT \
                          HAVE_MUELU_IFPACK HAVE_MUELU_IFPACK2 \
-                         HAVE_MUELU_ML \ 
+                         HAVE_MUELU_ML \
                          HAVE_MUELU_TPETRA \
                          HAVE_MUELU_ZOLTAN \
                          HAVE_MUELU_STOKHOS \

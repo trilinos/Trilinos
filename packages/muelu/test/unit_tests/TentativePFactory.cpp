@@ -62,6 +62,7 @@
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
+#include "MueLu_CoarseMapFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
@@ -121,14 +122,16 @@ namespace MueLuTests {
       UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
       UCAggFact->SetPhase3AggCreation(0.5);
 
-      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact,amalgFact));
+      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory(UCAggFact,Teuchos::null));
+
+      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact,amalgFact, Teuchos::null, Teuchos::null, coarseMapFact));
 
       coarseLevel.Request("P",TentativePFact.get());         // request Ptent
       coarseLevel.Request("Nullspace",TentativePFact.get()); // request coarse nullspace
       coarseLevel.Request(*TentativePFact);
       TentativePFact->Build(fineLevel,coarseLevel);
 
-      RCP<Matrix> Ptent; 
+      RCP<Matrix> Ptent;
       coarseLevel.Get("P",Ptent,TentativePFact.get());
 
       RCP<MultiVector> coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace", TentativePFact.get());
@@ -187,7 +190,9 @@ namespace MueLuTests {
       UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
       UCAggFact->SetPhase3AggCreation(0.5);
 
-      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact,amalgFact));
+      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory(UCAggFact,Teuchos::null));
+
+      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact,amalgFact,Teuchos::null,Teuchos::null,coarseMapFact));
 
       coarseLevel.Request("P",TentativePFact.get());  // request Ptent
       coarseLevel.Request("Nullspace",TentativePFact.get());
@@ -255,7 +260,7 @@ namespace MueLuTests {
     coarseLevel.Request(*tentativePFact);
     tentativePFact->Build(fineLevel,coarseLevel);
 
-    RCP<Matrix> Ptent; 
+    RCP<Matrix> Ptent;
     coarseLevel.Get("P",Ptent,tentativePFact.get());
 
     RCP<MultiVector> coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace",tentativePFact.get());
@@ -406,7 +411,7 @@ namespace MueLuTests {
     M.SetFactory("Aggregates", UCAggFact);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", SmooFact);
-    
+
     H->Setup(M, 0, maxLevels);
 
     RCP<Level> coarseLevel = H->GetLevel(1);
@@ -536,7 +541,7 @@ namespace MueLuTests {
             Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
             RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
-            
+
             FactoryManager M;
             M.SetFactory("P", Pfact);
             M.SetFactory("R", Rfact);
@@ -545,7 +550,7 @@ namespace MueLuTests {
             M.SetFactory("Aggregates", UCAggFact);
             M.SetFactory("Smoother", SmooFact);
             M.SetFactory("CoarseSolver", coarseSolveFact);
-            
+
             H->Setup(M, 0, maxLevels);
 
             // test some basic multgrid data

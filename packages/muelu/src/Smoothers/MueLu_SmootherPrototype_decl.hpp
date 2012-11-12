@@ -102,16 +102,16 @@ namespace MueLu {
 
     //! Get the state of a smoother prototype.
     bool IsSetup() const;
-    
+
     //! Set the state of a smoother prototype.
     // Developpers: this method must be called by our Setup() method.
     void IsSetup(bool const &ToF);
-    
+
     //@}
 
   private:
     bool isSetup_;
-  
+
   }; // class SmootherPrototype
 
 } // namespace MueLu

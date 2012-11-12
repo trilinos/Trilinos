@@ -1,0 +1,118 @@
+
+#cmakedefine HAVE_TEUCHOS_PARAMETERLIST
+
+/* Define the Fortran name mangling to be used for the BLAS */
+#define F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+
+/* Define to dummy `main' function (if any) required to link to the Fortran
+   libraries. */
+#cmakedefine F77_DUMMY_MAIN
+
+/* Define to a macro mangling the given C identifier (in lower and upper
+   case), which must not contain underscores, for linking with Fortran. */
+#define F77_FUNC@F77_FUNC@
+
+/* As F77_FUNC, but for C identifiers containing underscores. */
+#define F77_FUNC_@F77_FUNC_@
+
+/* Define if F77 and FC dummy `main' functions are identical. */
+#cmakedefine FC_DUMMY_MAIN_EQ_F77
+
+/* Define to 1 if you have the <fpu_control.h> header file. */
+#cmakedefine HAVE_FPU_CONTROL_H
+
+/* define if the compiler supports abi::__cxa_demangle(...) */
+#cmakedefine HAVE_GCC_ABI_DEMANGLE
+
+/* Not namespaced so should be depreciated. */
+#cmakedefine HAVE_MPI
+
+#cmakedefine HAVE_TEUCHOS_MPI
+
+#cmakedefine HAVE_COMPLEX_BLAS_PROBLEM
+
+#cmakedefine HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM
+
+#cmakedefine HAVE_SLAPY2_PROBLEM
+
+#cmakedefine HAVE_SLAPY2_DOUBLE_RETURN
+
+#cmakedefine HAVE_COMPLEX_BLAS
+
+/* define if the compiler supports access of protected templated nested
+   classes in derived classes */
+#cmakedefine HAVE_PROTECTED_NESTED_TEMPLATE_CLASS_ACCESS
+
+#cmakedefine HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+#cmakedefine HAVE_TEUCHOS_BLASFLOAT
+
+#cmakedefine HAVE_TEUCHOS_LAPACKLARND
+
+#cmakedefine HAVE_TEUCHOSCORE_BOOST
+
+/* Deprecated */
+#cmakedefine HAVE_TEUCHOS_BOOST
+
+#cmakedefine HAVE_TEUCHOSCORE_QT
+
+/* Deprecated */
+#cmakedefine HAVE_TEUCHOS_QT
+
+#cmakedefine HAVE_TEUCHOS_QD
+
+/* Deprecated */
+#cmakedefine HAVE_TEUCHOSCORE_QD
+
+#cmakedefine HAVE_TEUCHOS_DOUBLE_TO_QD
+
+#cmakedefine HAVE_TEUCHOS_ARPREC
+
+/* Deprecated */
+#cmakedefine HAVE_TEUCHOSCORE_ARPREC
+
+#cmakedefine HAVE_TEUCHOS_DOUBLE_TO_ARPREC
+
+#cmakedefine HAVE_TEUCHOS_COMM_TIMERS
+
+#cmakedefine HAVE_TEUCHOS_FLOAT
+
+#define TEUCHOS_ORDINAL_TYPE @Teuchos_ORDINAL_TYPE@
+
+#cmakedefine HAVE_TEUCHOS_COMPLEX
+
+#cmakedefine HAVE_TEUCHOS_LONG_LONG_INT
+
+#cmakedefine HAVE_TEUCHOS_DEBUG
+
+#cmakedefine HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING
+
+#cmakedefine HAS_TEUCHOS_BOOST_IS_POLYMORPHIC
+
+#cmakedefine HAVE_TEUCHOS_DEMANGLE
+
+#cmakedefine HAVE_TEUCHOS_EXPAT
+
+#cmakedefine HAVE_TEUCHOS_EXPLICIT_INSTANTIATION
+
+#cmakedefine HAVE_TEUCHOS_EXTENDED
+
+#cmakedefine HAVE_TEUCHOS_GNU_MP
+
+#cmakedefine HAVE_TEUCHOS_LIBXML2
+
+#cmakedefine HAVE_TEUCHOS_C_EXCEPTIONS
+
+#cmakedefine HAVE_TEUCHOS_LINK
+
+#cmakedefine HAVE_TEUCHOS_BFD
+
+#cmakedefine HAVE_TEUCHOS_STACKTRACE
+
+#cmakedefine HAVE_TEUCHOS_DEFAULT_STACKTRACE
+
+/* template qualifier required for calling template methods from non-template
+   code */
+#define INVALID_TEMPLATE_QUALIFIER @INVALID_TEMPLATE_QUALIFIER@
+
+@TEUCHOS_DEPRECATED_DECLARATIONS@

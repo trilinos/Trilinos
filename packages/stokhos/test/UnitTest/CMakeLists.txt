@@ -60,6 +60,33 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  QuadraturePseudoSpectralExpansionUnitTest
+  SOURCES Stokhos_QuadraturePseudoSpectralExpansionUnitTest.cpp
+          Stokhos_PseudoSpectralExpansionUnitTest.hpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TensorProductPseudoSpectralExpansionUnitTest
+  SOURCES Stokhos_TensorProductPseudoSpectralExpansionUnitTest.cpp
+          Stokhos_PseudoSpectralExpansionUnitTest.hpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SmolyakPseudoSpectralExpansionUnitTest
+  SOURCES Stokhos_SmolyakPseudoSpectralExpansionUnitTest.cpp
+          Stokhos_PseudoSpectralExpansionUnitTest.hpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   AlgebraicExpansionUnitTest
   SOURCES Stokhos_AlgebraicExpansionUnitTest.cpp
   COMM serial mpi
@@ -326,3 +353,55 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ProductBasisUtilsUnitTest
+  SOURCES Stokhos_ProductBasisUtilsUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TensorProductBasisUnitTest
+  SOURCES Stokhos_TensorProductBasisUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TotalOrderBasisUnitTest
+  SOURCES Stokhos_TotalOrderBasisUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SmolyakBasisUnitTest
+  SOURCES Stokhos_SmolyakBasisUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TensorProductPseudoSpectralOperatorUnitTest
+  SOURCES Stokhos_TensorProductPseudoSpectralOperatorUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+IF(Stokhos_ENABLE_TriKota)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SmolyakPseudoSpectralOperatorUnitTest
+    SOURCES Stokhos_SmolyakPseudoSpectralOperatorUnitTest.cpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    )
+
+ENDIF()

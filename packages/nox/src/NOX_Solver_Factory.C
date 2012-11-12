@@ -57,8 +57,7 @@
 #include "NOX_Solver_TrustRegionBased.H" // Trust region method
 #include "NOX_Solver_InexactTrustRegionBased.H" // Inexact Trust region method
 #include "NOX_Solver_TensorBased.H"      // Tensor method
-//#ifdef HAVE_NOX_THYRA
-#ifdef NOX_EXPERIMENTAL_THYRA_DEPENDENCE
+#ifdef HAVE_NOX_THYRA
 #include "NOX_Solver_PseudoTransient.hpp"      // Pseudo-Transient
 #endif
 #ifdef WITH_PRERELEASE
@@ -96,8 +95,7 @@ buildSolver(const Teuchos::RCP<NOX::Abstract::Group>& grp,
     solver = rcp(new InexactTrustRegionBased(grp, tests, params));
   else if (method == "Tensor Based") 
     solver = rcp(new TensorBased(grp, tests, params));
-//#ifdef HAVE_NOX_THYRA
-#ifdef NOX_EXPERIMENTAL_THYRA_DEPENDENCE
+#ifdef HAVE_NOX_THYRA
   else if (method == "Pseudo-Transient") 
     solver = rcp(new PseudoTransient(grp, tests, params));
 #endif

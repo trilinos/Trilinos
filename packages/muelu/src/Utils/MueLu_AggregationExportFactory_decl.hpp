@@ -103,7 +103,7 @@ namespace MueLu {
     void Build(Level &fineLevel, Level &coarseLevel) const;
 
     //@}
-   
+
 
   private:
 

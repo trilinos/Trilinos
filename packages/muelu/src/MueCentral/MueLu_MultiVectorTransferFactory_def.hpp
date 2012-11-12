@@ -125,7 +125,7 @@ namespace MueLu {
       // Convert format to Xpetra::MultiVector + Expand coordinates (both are needed for projection because projection operator is not coalesce and is an Xpetra::Matrix)
       if (fineLevel.IsAvailable("XCoordinates") && !fineLevel.IsAvailable("Coordinates")) {
         GetOStream(Runtime0,0) << "Converting coordinates from 3xArrayRCP to MultiVector" << std::endl;
-        
+
         TEUCHOS_TEST_FOR_EXCEPTION(fineLevel.GetLevelID() != 0, Exceptions::RuntimeError, "??" << fineLevel.GetLevelID());
 
         RCP<Matrix> A = fineLevel.Get<RCP<Matrix> >("A", NULL/*default A*/);
@@ -139,23 +139,23 @@ namespace MueLu {
           xcoords = expandCoordinates(coords, blksize);
           arrayOfPtrs.push_back(xcoords());
         }
-        
+
         if(fineLevel.IsAvailable("YCoordinates")) {
           ArrayRCP<SC> & coords = fineLevel.Get<ArrayRCP<SC> >("YCoordinates");
           ycoords = expandCoordinates(coords, blksize);
           arrayOfPtrs.push_back(ycoords());
         }
-        
+
         if(fineLevel.IsAvailable("ZCoordinates")) {
           TEUCHOS_TEST_FOR_EXCEPTION(!fineLevel.IsAvailable("YCoordinates"), Exceptions::RuntimeError, "ZCoordinates specified but no YCoordinates");
           ArrayRCP<SC> & coords = fineLevel.Get<ArrayRCP<SC> >("ZCoordinates");
           zcoords = expandCoordinates(coords, blksize);
           arrayOfPtrs.push_back(zcoords());
         }
-        
+
         RCP<MultiVector> coordinates = MultiVectorFactory::Build(A->getRowMap(), arrayOfPtrs, arrayOfPtrs.size());
         fineLevel.Set("Coordinates", coordinates);
-        
+
       }
     }
 
@@ -223,14 +223,14 @@ namespace MueLu {
 
     coarseLevel.Set<RCP<MultiVector> >(vectorName_, result, this);
     coarseLevel.Set<RCP<MultiVector> >(vectorName_, result); //FIXME
-    
+
   } //Build
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   ArrayRCP<Scalar> MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::expandCoordinates(ArrayRCP<SC> coord, LocalOrdinal blksize) {
     if (blksize == 1)
       return coord;
-    
+
     ArrayRCP<SC> expandCoord(coord.size()*blksize); //TODO: how to avoid automatic initialization of the vector? using arcp()?
 
     for(int i=0; i<coord.size(); i++) {
@@ -238,7 +238,7 @@ namespace MueLu {
         expandCoord[i*blksize + j] = coord[i];
       }
     }
-    
+
     //std::cout << coord << std::endl;
     //std::cout << expandCoord << std::endl;
 

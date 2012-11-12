@@ -919,13 +919,11 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // NOTE (mfh 12 Jan 2011) This overrides the "depTol" parameter that
   // may have been specified in "Orthogonalization Parameters".  We
   // retain this behavior for backwards compatibility.
-  bool gotValidOrthoKappa = false;
   if (params->isParameter ("Orthogonalization Constant")) {
     const MagnitudeType orthoKappa = 
       params->get ("Orthogonalization Constant", orthoKappa_default_);
     if (orthoKappa > 0) {
       orthoKappa_ = orthoKappa;
-      gotValidOrthoKappa = true;
       // Update parameter in our list.
       params_->set("Orthogonalization Constant", orthoKappa_);
       // Only DGKS currently accepts this parameter.

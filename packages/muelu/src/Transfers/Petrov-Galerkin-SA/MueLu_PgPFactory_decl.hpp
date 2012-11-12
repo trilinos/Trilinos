@@ -68,7 +68,7 @@ namespace MueLu {
     L2NORM = 1, /* L2 norm */
     DINVANORM  = 2 /* Dinv A norm */
   };
-  
+
   /*!
     @class PgPFactory class.
     @brief Factory for building Petrov-Galerkin Smoothed Aggregation prolongators.

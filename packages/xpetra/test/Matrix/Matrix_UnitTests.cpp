@@ -119,7 +119,7 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
 
   ////
@@ -155,20 +155,20 @@ namespace {
        TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), "newView");
        // b
        TEST_THROW(op.SwitchToView("notAView"), Xpetra::Exceptions::RuntimeError);
-              
+
        // Test of SwitchToDefaultView()
        // a
        viewLabel    = op.GetCurrentViewLabel();
        oldViewLabel = op.SwitchToDefaultView();
        TEST_EQUALITY_CONST(viewLabel, oldViewLabel);
        TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());
-       
+
        // Test of RemoveView()
        TEST_THROW(op.RemoveView(op.GetDefaultViewLabel()), Xpetra::Exceptions::RuntimeError); // a
        TEST_THROW(op.RemoveView("notAView"), Xpetra::Exceptions::RuntimeError);               // b
        op.RemoveView("newView");                                                               // c
        TEST_THROW(op.RemoveView("newView"), Xpetra::Exceptions::RuntimeError);
-       
+
        op.fillComplete();
      }
 #endif
@@ -229,14 +229,14 @@ namespace {
 #endif
   }
 
-  // 
+  //
   // INSTANTIATIONS
   //
 
 #   define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                       \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Matrix, ViewSwitching, SC, LO, GO, Node ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Matrix, StridedMaps, SC, LO, GO, Node )
-  
+
   typedef Kokkos::DefaultNode::DefaultNodeType DefaultNodeType;
   UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
 

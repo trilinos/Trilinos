@@ -55,19 +55,19 @@ Create requires 3 arguments:
   overlap among the processes.
 
 The first argument can assume the following values:
-- \c "point relaxation" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation>
+- \c "point relaxation" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation> (no Additive Schwarz in serial)
 - \c "point relaxation stand-alone" : returns an instance of Ifpack_PointRelaxation (value of overlap is ignored).
-- \c "block relaxation" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation>
+- \c "block relaxation" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation> (no Additive Schwarz in serial)
 - \c "block relaxation stand-alone)" : returns an instance of Ifpack_BlockRelaxation.
-- \c "Amesos" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_Amesos>.
+- \c "Amesos" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_Amesos> (no Additive Schwarz in serial)
 - \c "Amesos stand-alone" : returns an instance of Ifpack_Amesos.
-- \c "IC" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_IC>.
-- \c "IC stand-alone" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_IC>.
-- \c "ICT" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_ICT>.
+- \c "IC" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_IC> (no Additive Schwarz in serial)
+- \c "IC stand-alone" : returns an instance of Ifpack_IC.
+- \c "ICT" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_ICT> (no Additive Schwarz in serial)
 - \c "ICT stand-alone" : returns an instance of Ifpack_ICT.
-- \c "ILU" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_ILU>.
+- \c "ILU" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_ILU> (no Additive Schwarz in serial)
 - \c "ILU stand-alone" : returns an instance of Ifpack_ILU.
-- \c "ILUT" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_ILUT>.
+- \c "ILUT" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_ILUT> (no Additive Schwarz in serial)
 - \c "ILUT stand-alone" : returns an instance of Ifpack_ILUT.
 - otherwise, Create() returns 0.
 

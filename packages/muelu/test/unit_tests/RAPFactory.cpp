@@ -66,7 +66,7 @@
 #include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
-  
+
   TEUCHOS_UNIT_TEST(RAPFactory, Constructor)
   {
     out << "version: " << MueLu::Version() << std::endl;
@@ -126,12 +126,12 @@ namespace MueLuTests {
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(R->getRangeMap(),1);
     coarseOp->apply(*X,*result2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-  
+
     Teuchos::Array<ST::magnitudeType> normX(1), normResult1(1),normResult2(1);
     X->norm2(normX);
     out << "This test checks the correctness of the Galerkin triple "
         << "matrix product by comparing (RAP)*X to R(A(P*X))." << std::endl;
-    out << "||X||_2 = " << normX << std::endl; 
+    out << "||X||_2 = " << normX << std::endl;
     result1->norm2(normResult1);
     result2->norm2(normResult2);
     TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);
@@ -213,12 +213,12 @@ namespace MueLuTests {
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(P->getDomainMap(),1);
     coarseOp->apply(*X,*result2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-  
+
     Teuchos::Array<ST::magnitudeType> normX(1), normResult1(1),normResult2(1);
     X->norm2(normX);
     out << "This test checks the correctness of the Galerkin triple "
         << "matrix product by comparing (RAP)*X to R(A(P*X)), where R is the implicit tranpose of P." << std::endl;
-    out << "||X||_2 = " << normX << std::endl; 
+    out << "||X||_2 = " << normX << std::endl;
     result1->norm2(normResult1);
     result2->norm2(normResult2);
     TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);

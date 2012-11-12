@@ -68,7 +68,7 @@ EpetraLinearObjFactory<Traits,LocalOrdinalT>::EpetraLinearObjFactory(const Teuch
 
    // build and register the gather/scatter evaluators with 
    // the base class.
-   buildGatherScatterEvaluators(*this);
+   this->buildGatherScatterEvaluators(*this);
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -502,6 +502,7 @@ const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<Traits,LocalOrdinalT>
    RCP<Epetra_Export> exporter = getGhostedExport();
    graph->Export( *oGraph, *exporter, Insert );
    graph->FillComplete(*cMap,*rMap);
+   graph->OptimizeStorage();
    return graph;
 }
 
@@ -545,6 +546,7 @@ const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<Traits,LocalOrdinalT>
 
    // finish filling the graph
    graph->FillComplete(*cMap,*rMap);
+   graph->OptimizeStorage();
 
    return graph;
 }

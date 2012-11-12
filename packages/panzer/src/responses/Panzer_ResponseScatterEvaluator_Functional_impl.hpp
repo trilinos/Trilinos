@@ -90,7 +90,7 @@ void ResponseScatterEvaluator_Functional<EvalT,Traits>::
 preEvaluate(typename Traits::PreEvalData d)
 {
   // extract linear object container
-  responseObj_ = Teuchos::rcp_dynamic_cast<Response_Functional<ScalarT> >(
+  responseObj_ = Teuchos::rcp_dynamic_cast<Response_Functional<EvalT> >(
                                    d.getDataObject(ResponseBase::buildLookupName(responseName_)),true);
 }
 

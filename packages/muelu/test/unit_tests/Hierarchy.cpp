@@ -165,7 +165,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetSmoothers)
 
   // TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PreSmoother")->GetType(), "Ifpack: Gauss-Seidel");
   // TEST_EQUALITY(H.GetLevel(1)->template Get< RCP<SmootherBase> >("PostSmoother")->GetType(), "Ifpack: Gauss-Seidel");
-  
+
 #ifdef HAVE_MUELU_IFPACK
 
   RCP<SmootherPrototype> smooProto = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Jacobi");
@@ -195,11 +195,11 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetCoarsestSolver1)
 
   Hierarchy H(A);
   RCP<Level> levelOne = H.GetLevel();
-  
+
   //JG FIXME. This is a problem: Users cannot do specific Request(). Even worse if request on two level fact.
   RCP<MueLu::FactoryManagerBase> manager = rcp(new FactoryManager());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
   levelOne->SetFactoryManager(manager);
- 
+
   levelOne->Request("PreSmoother", &SmooFactory);
   levelOne->Request("PostSmoother", &SmooFactory);
 
@@ -241,7 +241,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetCoarsestSolver2)
   //JG FIXME. This is a problem: Users cannot do specific Request(). Even worse if request on two level fact.
   RCP<MueLu::FactoryManagerBase> manager = rcp(new FactoryManager());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
   levelOne->SetFactoryManager(manager);
- 
+
   levelOne->Request("PreSmoother", &SmooFactory);
   levelOne->Request("PostSmoother", &SmooFactory);
 
@@ -278,11 +278,11 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetCoarsestSolver3)
 
   Hierarchy H(A);
   RCP<Level> levelOne = H.GetLevel();
-  
+
   //JG FIXME. This is a problem: Users cannot do specific Request(). Even worse if request on two level fact.
   RCP<MueLu::FactoryManagerBase> manager = rcp(new FactoryManager());  // RCP<FactoryManager> manager = rcp(new FactoryManager());
   levelOne->SetFactoryManager(manager);
- 
+
   levelOne->Request("PreSmoother", &SmooFactory);
   levelOne->Request("PostSmoother", &SmooFactory);
 
@@ -414,7 +414,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
   RCP<RFactory>           Rfact = rcp( new TransPFactory());
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
-  
+
 
 #ifdef HAVE_MUELU_IFPACK
 #ifdef HAVE_MUELU_AMESOS
@@ -438,7 +438,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
   M.SetFactory("Aggregates", UCAggFact);
   M.SetFactory("Smoother", SmooFact);
   M.SetFactory("CoarseSolver", coarseSolveFact);
-  
+
   H.Setup(M, 0, maxLevels);
 
   RCP<MultiVector> X = MultiVectorFactory::Build(map, 1);
@@ -532,7 +532,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   M.SetFactory("Aggregates", UCAggFact);
   M.SetFactory("Smoother", SmooFact);
   M.SetFactory("CoarseSolver", coarseSolveFact);
-  
+
   H.Setup(M, 0, maxLevels);
 
   //  Teuchos::ParameterList status;
@@ -883,7 +883,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchyTestBreakCondition)
 
   RCP<Level> l0 = H.GetLevel(0);
   TEST_EQUALITY(l0->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false); // direct solve 
+  TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false); // direct solve
   TEST_EQUALITY(l0->IsAvailable("P",            MueLu::NoFactory::get()), false);
   TEST_EQUALITY(l0->IsAvailable("R",            MueLu::NoFactory::get()), false);
   TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);

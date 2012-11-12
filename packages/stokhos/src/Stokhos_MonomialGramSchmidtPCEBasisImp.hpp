@@ -65,7 +65,7 @@ buildReducedBasis(
   const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& A, 
   const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& F,
   const Teuchos::Array<value_type>& weights, 
-  Teuchos::Array< Teuchos::Array<ordinal_type> >& terms_,
+  Teuchos::Array< Stokhos::MultiIndex<ordinal_type> >& terms_,
   Teuchos::Array<ordinal_type>& num_terms_,
   Teuchos::SerialDenseMatrix<ordinal_type,value_type>& Qp_, 
   Teuchos::SerialDenseMatrix<ordinal_type,value_type>& Q_)

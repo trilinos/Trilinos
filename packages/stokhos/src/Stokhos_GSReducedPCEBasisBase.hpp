@@ -116,8 +116,9 @@ namespace Stokhos {
      * Size of returned array is given by size(), and coefficients are
      * ordered from order 0 up to size size()-1.
      */
-    virtual void evaluateBases(const Teuchos::Array<value_type>& point,
-			       Teuchos::Array<value_type>& basis_vals) const;
+    virtual void evaluateBases(
+      const Teuchos::ArrayView<const value_type>& point,
+      Teuchos::Array<value_type>& basis_vals) const;
 
     //! Print basis to stream \c os
     virtual void print(std::ostream& os) const;
@@ -165,7 +166,7 @@ namespace Stokhos {
       const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& A, 
       const Teuchos::SerialDenseMatrix<ordinal_type,value_type>& F,
       const Teuchos::Array<value_type>& weights, 
-      Teuchos::Array< Teuchos::Array<ordinal_type> >& terms_,
+      Teuchos::Array< Stokhos::MultiIndex<ordinal_type> >& terms_,
       Teuchos::Array<ordinal_type>& num_terms_,
       Teuchos::SerialDenseMatrix<ordinal_type,value_type>& Qp_, 
       Teuchos::SerialDenseMatrix<ordinal_type,value_type>& Q_) = 0;
@@ -206,7 +207,7 @@ namespace Stokhos {
     ordinal_type sz;
 
     //! 2-D array of basis terms
-    Teuchos::Array< Teuchos::Array<ordinal_type> > terms;
+    Teuchos::Array< Stokhos::MultiIndex<ordinal_type> > terms;
 
     //! Number of terms up to each order
     Teuchos::Array<ordinal_type> num_terms;

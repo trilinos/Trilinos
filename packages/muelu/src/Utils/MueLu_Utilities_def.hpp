@@ -173,7 +173,7 @@ namespace MueLu {
 
 #ifdef HAVE_MUELU_TPETRA
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps> 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MV2TpetraMV(RCP<MultiVector> const Vec) {
     //rcp<const TpetraMultiVector> tmpVec = rcp_dynamic_cast<TpetraMultiVector>(Vec);
     RCP<const TpetraMultiVector > tmpVec;
@@ -333,7 +333,7 @@ t0 = MPI_Wtime();
     // has no handling for this
     // TODO: move this call to MLMultiply...
     C->CreateView("stridedMaps", A, transposeA, B, transposeB);
-    
+
 #ifdef HAVE_MPI
 t1 += MPI_Wtime() - t0;
 if (mypid == 0)
@@ -547,7 +547,7 @@ if (mypid == 0)
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MatrixPrint(RCP<Matrix> const &Op, std::string const &label) {
-#ifdef HAVE_MUELU_EPETRAEXT 
+#ifdef HAVE_MUELU_EPETRAEXT
     RCP<const Epetra_CrsMatrix> epOp = Op2EpetraCrs(Op);
     int mypid = epOp->RowMap().Comm().MyPID();
     if (mypid == 0)
@@ -606,15 +606,15 @@ if (mypid == 0)
   } //BuildMatrixDiagonal()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixDiagonal(RCP<Matrix> const &A)
+  Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixDiagonal(const Matrix &A)
   {
-    const RCP<const Map> rowmap = A->getRowMap();
+    const RCP<const Map> rowmap = A.getRowMap();
     size_t locSize = rowmap->getNodeNumElements();
     Teuchos::ArrayRCP<SC> diag(locSize);
     Teuchos::ArrayView<const LO> cols;
     Teuchos::ArrayView<const SC> vals;
     for (size_t i=0; i<locSize; ++i) {
-      A->getLocalRowView(i,cols,vals);
+      A.getLocalRowView(i,cols,vals);
       for (LO j=0; j<cols.size(); ++j) {
         //TODO this will break down if diagonal entry is not present
         //if (!(cols[j] > i))   //JG says this will work ... maybe
@@ -708,7 +708,7 @@ if (mypid == 0)
     RES->norm2(norms);
     return norms;
   }
-    
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Residual(Matrix const &Op, MultiVector const &X, MultiVector const &RHS)
@@ -750,7 +750,7 @@ if (mypid == 0)
 #endif // HAVE_MUELU_EPETRAEXT
 
 #ifdef HAVE_MUELU_TPETRA
-    const RCP<const TpetraCrsMatrix> &tmp_TCrsMtx = rcp_dynamic_cast<const TpetraCrsMatrix>(tmp_CrsMtx);    
+    const RCP<const TpetraCrsMatrix> &tmp_TCrsMtx = rcp_dynamic_cast<const TpetraCrsMatrix>(tmp_CrsMtx);
     if (tmp_TCrsMtx != Teuchos::null) {
       RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A = tmp_TCrsMtx->getTpetra_CrsMatrix();
       Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >::writeSparseFile(fileName,A);
@@ -769,9 +769,9 @@ if (mypid == 0)
   void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PauseForDebugger()
   {
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-   
+
     int mypid = comm->getRank();
-   
+
     for (int i = 0; i <comm->getSize(); i++) {
       if (i == mypid ) {
         char buf[80];
@@ -785,7 +785,7 @@ if (mypid == 0)
         sleep(1);
       }
     }
-   
+
     if (mypid == 0) {
       printf( "** Enter a character to continue > "); fflush(stdout);
       char go = ' ';
@@ -815,7 +815,7 @@ if (mypid == 0)
       }
     }
     //AT->fillComplete(A->getRangeMap(),A->getDomainMap());
-      
+
     return AT;
   } //simple_Transpose
 #endif // HAVE_MUELU_TPETRA
@@ -850,7 +850,7 @@ if (mypid == 0)
         //}
       }
     }
-     
+
     return AT;
 
   } //simple_Transpose
@@ -865,20 +865,22 @@ if (mypid == 0)
       throw(Exceptions::Incompatible("Utils::PowerMethod: operator must have domain and range maps that are equivalent."));
     }
     // create three vectors, fill z with random numbers
-    RCP<MultiVector> q = MultiVectorFactory::Build(A.getRangeMap(),1);
-    RCP<MultiVector> r = MultiVectorFactory::Build(A.getRangeMap(),1);
-    RCP<MultiVector> z = MultiVectorFactory::Build(A.getRangeMap(),1);
+    RCP<Vector> q = VectorFactory::Build(A.getDomainMap());
+    RCP<Vector> qinit = VectorFactory::Build(A.getDomainMap());
+    RCP<Vector> r = VectorFactory::Build(A.getRangeMap());
+    RCP<Vector> z = VectorFactory::Build(A.getRangeMap());
     z->setSeed(seed);  // seed random number generator
     z->randomize(true);// use Xpetra implementation: -> same results for Epetra and Tpetra
-      
+
     Teuchos::Array<Magnitude> norms(1);
-  
-    //std::vector<Scalar> lambda(1);
-    //lambda[0] = 0.0;
-    Scalar lambda=0.0;
+
+
+    const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+    const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+
+    Scalar lambda=zero;
     Magnitude residual = 0.0;
     // power iteration
-    Teuchos::ArrayView<Scalar> avLambda(&lambda,1);
     RCP<Vector> diagVec,oneOverDiagonal;
     if (scaleByDiag) {
       diagVec = VectorFactory::Build(A.getRowMap());
@@ -886,14 +888,17 @@ if (mypid == 0)
       oneOverDiagonal = VectorFactory::Build(A.getRowMap());
       oneOverDiagonal->reciprocal(*diagVec);
     }
+    //FIXME for the moment, the following matvec gives q and z the same coefficient pattern
+    //FIXME for PCE scalar types.  Discuss this with ETP.
+    A.apply(*qinit, *q);
     for (int iter = 0; iter < niters; ++iter) {
       z->norm2(norms);                               // Compute 2-norm of z
-      q->update(1.0/norms[0],*z,0.);                 // Set q = z / normz
+      q->update(one / norms[0],*z,zero);                 // Set q = z / normz
       A.apply(*q, *z);                               // Compute z = A*q
-      if (scaleByDiag) z->elementWiseMultiply(1.0, *oneOverDiagonal, *z, 0.0);
-      q->dot(*z,avLambda);                            // Approximate maximum eigenvalue: lamba = dot(q,z)
+      if (scaleByDiag) z->elementWiseMultiply(one, *oneOverDiagonal, *z, zero);
+      lambda = q->dot(*z);                            // Approximate maximum eigenvalue: lamba = dot(q,z)
       if ( iter % 100 == 0 || iter + 1 == niters ) {
-        r->update(1.0, *z, -lambda, *q, 0.0);         // Compute A*q - lambda*q
+        r->update(1.0, *z, -lambda, *q, zero);         // Compute A*q - lambda*q
         r->norm2(norms);
         residual = Teuchos::ScalarTraits<Scalar>::magnitude(norms[0] / lambda);
         if (verbose) {
@@ -912,7 +917,7 @@ if (mypid == 0)
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix(RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse,
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix(RCP<Matrix> &Op, Teuchos::ArrayRCP<const SC> scalingVector, bool doInverse,
                                bool doFillComplete,
                                bool doOptimizeStorage)
   {
@@ -1092,12 +1097,12 @@ if (mypid == 0)
 #else
       throw(Exceptions::RuntimeError("Tpetra"));
 #endif
-    } 
+    }
 
     //epetra case
     std::cout << "Utilities::Transpose() not implemented for Epetra" << std::endl;
     return Teuchos::null;
-     
+
   } //Transpose
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -1121,7 +1126,7 @@ if (mypid == 0)
 #ifdef HAVE_MUELU_TPETRA
       RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpA = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2TpetraCrs(A);
       RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpB = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2NonConstTpetraCrs(B);
-        
+
       Tpetra::MatrixMatrix::Add(*tpA, transposeA, alpha, *tpB, beta);
 #else
       throw(Exceptions::RuntimeError("MueLu must be compiled with Tpetra."));
@@ -1163,7 +1168,6 @@ if (mypid == 0)
     ///////////////////////// EXPERIMENTAL
 
   } //Utils2::TwoMatrixAdd()
-
 
 } //namespace MueLu
 

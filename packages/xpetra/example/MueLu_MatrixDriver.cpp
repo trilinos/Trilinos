@@ -78,7 +78,7 @@
   Use the "--help" option to get verbose help.
 */
 
-int main(int argc, char* argv[]) 
+int main(int argc, char* argv[])
 {
   using Teuchos::RCP;
 
@@ -91,16 +91,16 @@ int main(int argc, char* argv[])
   /**********************************************************************************/
   // Note: use --help to list available options.
   Teuchos::CommandLineProcessor clp(false);
-  
+
   MueLu::Gallery::Parameters<GO> matrixParameters(clp); // manage parameters of the test case
   Xpetra::Parameters xpetraParameters(clp);       // manage parameters of xpetra
-  
+
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
-  
+
   matrixParameters.check();
   xpetraParameters.check();
 
@@ -121,18 +121,18 @@ int main(int argc, char* argv[])
 
   {
     RCP<Matrix> A = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, Matrix>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
-    
+
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     if (comm->getRank() == 0)
       std::cout << "\n================ MAP =====================================================\n" << std::endl;
     map->describe(*out, Teuchos::VERB_EXTREME);
     comm->barrier();
     //    sleep(1);
-    
+
     if (comm->getRank() == 0)
       std::cout << "\n================ MATRIX ==================================================\n" << std::endl;
     A->describe(*out, Teuchos::VERB_EXTREME);
   }
-  
+
   return EXIT_SUCCESS;
-} 
+}

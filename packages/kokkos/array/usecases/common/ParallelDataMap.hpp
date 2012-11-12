@@ -125,7 +125,7 @@ private:
 
 public:
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const size_type i ) const
   { output[i] = input(base+i); }
 
@@ -160,7 +160,7 @@ private:
 
 public:
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const size_type i ) const
   {
     for ( size_type j = 0 , k = i * N1 ; j < N1 ; ++j , ++k ) {
@@ -205,7 +205,7 @@ private:
 
 public:
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const size_type i ) const
   { output(base+i) = input[i]; }
 
@@ -240,7 +240,7 @@ private:
 
 public:
 
-  KOKKOSARRAY_INLINE_DEVICE_FUNCTION
+  KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const size_type i ) const
   {
     for ( size_type j = 0 , k = i * N1 ; j < N1 ; ++j , ++k ) {

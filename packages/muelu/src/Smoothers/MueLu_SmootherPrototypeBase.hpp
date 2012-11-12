@@ -53,7 +53,7 @@
 
 namespace MueLu {
   class Level;
-  
+
   /*!
     @class SmootherPrototypeBase
     @brief Base class for smoother prototypes
@@ -70,7 +70,7 @@ namespace MueLu {
     //@}
 
   public:
-    
+
     //! @name DeclareInput methods.
     //@{
 
