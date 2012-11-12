@@ -221,6 +221,24 @@ namespace Xpetra {
     */
     virtual void insertLocalValues(LocalOrdinal localRow, const ArrayView<const LocalOrdinal> &cols, const ArrayView<const Scalar> &vals) = 0;
 
+    //! \brief Replace matrix entries, using global IDs.
+    /** All index values must be in the global space.
+
+        \pre \c globalRow is a global row belonging to the matrix on this node.
+
+        \note If (globalRow,cols[i]) corresponds to an entry that is duplicated in this matrix row (likely because it was inserted more than once and fillComplete() has not been called in the interim), the behavior of this function is not defined. */
+    virtual void replaceGlobalValues(GlobalOrdinal globalRow,
+                                     const ArrayView<const GlobalOrdinal> &cols,
+                                     const ArrayView<const Scalar>        &vals) = 0;
+
+    //! Replace matrix entries, using local IDs.
+    /** All index values must be in the local space.
+        Note that if a value is not already present for the specified location in the matrix, the input value will be ignored silently.
+     */
+    virtual void replaceLocalValues(LocalOrdinal localRow,
+                                    const ArrayView<const LocalOrdinal> &cols,
+                                    const ArrayView<const Scalar>       &vals) = 0;
+
     //! Scale the current values of a matrix, this = alpha*this.
     virtual void scale(const Scalar &alpha)= 0;
 
@@ -228,6 +246,16 @@ namespace Xpetra {
 
     //! @name Transformational Methods
     //@{
+
+    /*! Resume fill operations.
+      After calling fillComplete(), resumeFill() must be called before initiating any changes to the matrix.
+
+      resumeFill() may be called repeatedly.
+
+      \post  <tt>isFillActive() == true<tt>
+      \post  <tt>isFillComplete() == false<tt>
+    */
+    virtual void resumeFill(const RCP< ParameterList > &params=null) = 0;
 
     /*! \brief Signal that data entry is complete, specifying domain and range maps.
 
