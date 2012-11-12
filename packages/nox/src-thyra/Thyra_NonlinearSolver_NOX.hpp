@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -116,7 +116,7 @@ public:
   get_nonconst_W(const bool forceUpToDate);
   /** \brief . */
   RCP< const LinearOpWithSolveBase<double> > get_W() const;
-  
+
   //@}
 
   RCP<const NOX::Solver::Generic> getNOXSolver() const;
@@ -127,7 +127,7 @@ private:
   void resetSolver();
 
   //! Builds status tests - first looks for parameter list to use, otherwise builds a default set of status tests.
-  RCP<NOX::StatusTest::Generic> 
+  RCP<NOX::StatusTest::Generic>
   buildStatusTests(Teuchos::ParameterList& p);
 
   void
