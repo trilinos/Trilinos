@@ -119,6 +119,7 @@ setModel(const Teuchos::RCP<const ModelEvaluator<double> >& model)
 {
   TEUCHOS_TEST_FOR_EXCEPT(model.get()==NULL);
   model_ = model;
+  basePoint_ = model_->createInArgs();
 }
 
 // ****************************************************************
@@ -127,6 +128,15 @@ Teuchos::RCP< const Thyra::ModelEvaluator<double> >
 Thyra::NOXNonlinearSolver::getModel() const
 {
   return model_;
+}
+
+// ****************************************************************
+// ****************************************************************
+void
+Thyra::NOXNonlinearSolver::setBasePoint(
+    const Thyra::ModelEvaluatorBase::InArgs<double> &modelInArgs)
+{
+  basePoint_ = modelInArgs;
 }
 
 // ****************************************************************
@@ -163,6 +173,8 @@ solve(VectorBase<double> *x,
     }
 
     nox_group_ = Teuchos::rcp(new NOX::Thyra::Group(initial_guess, model_, scaling_vector_));
+    nox_group_->getNonconstInArgs() = this->basePoint_;
+
     status_test_ = this->buildStatusTests(*param_list_);
     solver_ = NOX::Solver::buildSolver(nox_group_, status_test_, param_list_);
   }

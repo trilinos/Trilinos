@@ -101,6 +101,7 @@ public:
   void setModel(const RCP< const ModelEvaluator<double> > &model);
   /** \brief . */
   RCP< const ModelEvaluator<double> > getModel() const;
+
   /** \brief . */
   SolveStatus<double> solve(
     VectorBase<double> *x,
@@ -118,6 +119,9 @@ public:
   RCP< const LinearOpWithSolveBase<double> > get_W() const;
 
   //@}
+
+  /** \brief . */
+  void setBasePoint(const ModelEvaluatorBase::InArgs<double> &modelInArgs);
 
   RCP<const NOX::Solver::Generic> getNOXSolver() const;
 
@@ -144,6 +148,7 @@ private:
   RCP<Teuchos::ParameterList> param_list_;
   RCP<Teuchos::ParameterList> valid_param_list_;
   RCP<const ModelEvaluator<double> > model_;
+  ModelEvaluatorBase::InArgs<double> basePoint_;
 
   RCP<NOX::Thyra::Group> nox_group_;
   RCP<NOX::StatusTest::Generic> status_test_;
