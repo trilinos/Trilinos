@@ -115,18 +115,24 @@ public:
 
 // TODO NEED AN ARGUMENT TO THE METHODS SPECIFYING WHICH ENTITY TYPE TO RETURN
 
-  /*! \brief Returns the number of identifiers (mesh entities) on this process.
+  /*! \brief Returns the number of mesh entities on this process.
    *
    *  Some algorithms can partition a simple list of weighted identifiers
    *    with no geometry or topology provided.
+   *
+   *  Some algorithms can partition the coordinates of the mesh entities.
+   *
+   *  Some algorithms can partition a graph of mesh entities
    */
-  virtual size_t getLocalNumberOfEntityIdentifiers() const = 0;
 
-  /*! \brief Return the number of weights associated with each identifier.
-   *   If the number of weights is zero, then we assume that the identifiers
+  virtual size_t getLocalNumberOfEntities() const = 0;
+
+  /*! \brief Return the number of weights per entity.
+   *   \return the count of weights, zero or more per entity.              
+   *   If the number of weights is zero, then we assume that the entities
    *   are equally weighted.
    */
-  virtual int getEntityIdentifierWeightDimension() const = 0;
+  virtual int getNumberOfWeightsPerEntity() const = 0;
 
   /*! \brief Provide a pointer to this process' identifiers.
 
@@ -142,7 +148,7 @@ public:
                 optional identifier weights.
 
       \param dimension is a value ranging from zero to one less than
-                   getEntityIdentifierWeightDimension()
+                   getNumberOfWeightsPerEntity()
       \param weights on return will contain a list of the weights for the
                dimension specified.  If weights for
 	   this dimension are to be uniform for all identifiers in the
@@ -171,27 +177,9 @@ public:
    */
   virtual int getEntityCoordinateDimension() const = 0;
 
-  /*! \brief Return the number of weights per coordinate.                      
-   *   \return the count of weights, zero or more per coordinate.              
-   */
-  virtual int getEntityCoordinateWeightDimension() const = 0;
-
-// TODO:  Consolidate WeightDimension here with Identifier version above.  
-// TODO:  Better name might be WeightsPerEntity 
-// TODO:  Will need to be changed in other adapters as well.
-// TODO  Perhaps consolidate further:  getEntities returns gids and weights.
-
-  /*! \brief Return the number of coordinates on this process.                 
-   *   \return  the count of coordinates on the local process.
-   */
-  virtual size_t getLocalNumberOfEntityCoordinates() const = 0;
-
-// TODO:  Consolidate this function with getLocalNumberOfEntityIdentifiers;
-// TODO:  make getLocalNumberOfEntities
-
   /*! \brief Provide a pointer to one dimension of this process' coordinates.  
       \param coordDim  is a value from 0 to one less than                      
-         getLocalNumberOfEntityCoordinates() specifying which dimension is     
+         getLocalNumberOfEntities() specifying which dimension is     
          being provided in the coords list.                                    
       \param coords  points to a list of coordinate values for the dimension.  
       \param stride  describes the layout of the coordinate values in          
@@ -200,7 +188,7 @@ public:
               ith coordinate value is coords[2*i].                             
                                                                                
        \return The length of the \c coords list.  This may be more than        
-              getLocalNumberOfEntityCoordinates() because the \c stride       
+              getLocalNumberOfEntities() because the \c stride       
               may be more than one.                                            
                                                                                
       Zoltan2 does not copy your data.  The data pointed to coords             
@@ -214,7 +202,7 @@ public:
        to the coordinates returned in getEntityCoordinates().                        
                                                                                
       \param weightDim ranges from zero to one less than
-           getEntityCoordinateWeightDimension()  
+           getNumberOfWeightsPerEntity()  
       \param weights is the list of weights of the given dimension for         
            the coordinates listed in getEntityCoordinates().  If weights for  
            this dimension are to be uniform for all coordinates in the         
@@ -230,21 +218,9 @@ public:
 
 
 
-  /*! \brief Returns the number entities on this process.
-   *
-   *  Some algorithms can partition a graph of mesh entities
-   */
-  virtual size_t getLocalNumberOfEntities() const = 0;
-// TODO:  This is the function we'll keep when we get rid of 
-// TODO   getLocalNumberOfEntityIdentifiers and getLocalNumberOfEntityCoordinates
-
   /*! \brief Returns the number adjacencies on this process.
    */
   virtual size_t getLocalNumberOfAdjacencies() const = 0;
-
-  /*! \brief Returns the dimension (0 or greater) of entity weights.
-   */
-  virtual int getEntityWeightDimension() const = 0;
 
   /*! \brief Returns the dimension (0 or greater) of adjacency weights.
    */
@@ -286,7 +262,7 @@ public:
   /*! \brief  Provide a pointer to the entity weights, if any.
 
       \param weightDim ranges from zero to one less than 
-                   getEntityWeightDimension().
+                   getNumberOfWeightsPerEntity().
       \param weights is the list of weights of the given dimension for
            the entities returned in getEntityListView().  If weights for
            this dimension are to be uniform for all entities in the
