@@ -409,7 +409,7 @@ public:
     const unsigned long val = strtoul (t_ptr, &endptr, 10);
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      errno == ERANGE && (val == ULONG_MAX || val == ULONG_MIN),
+      errno == ERANGE && (val == ULONG_MAX || val == static_cast<unsigned long> (0)),
       std::range_error,
       "Teuchos::ValueTypeConversionTraits<unsigned long, std::string>::convert: "
       "The given std::string \"" << t << "\" is too big to fit into unsigned long.");
