@@ -26,6 +26,7 @@
 // ***********************************************************************
 // @HEADER
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_TestForException.hpp"
 
 template <typename ordinal_type, typename value_type, typename ordering_type>
 Stokhos::TensorProductBasis<ordinal_type, value_type, ordering_type>::
@@ -142,6 +143,11 @@ computeTripleProductTensor(ordinal_type order) const
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total Triple-Product Tensor Fill Time");
 #endif
+
+  // Check order is valid
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    order > p, std::logic_error, 
+    "Invalid order of " << order << " for Cijk.  Max order is " << p << ".");
 
   TensorProductPredicate<ordinal_type> predicate(max_orders);
   TotalOrderPredicate<ordinal_type> k_predicate(order, max_orders);
