@@ -22,7 +22,8 @@ class Partition
 
 public:
 
-    Partition(BucketRepository *repo, EntityRank rank);
+    Partition(BucketRepository *repo, EntityRank rank,
+              const std::vector<PartOrdinal> &key);
 
     virtual ~Partition();
 
@@ -42,6 +43,8 @@ public:
     {
         return m_extPartitionKey;
     }
+
+    const unsigned * key() const { return &m_extPartitionKey[0]; }
 
     /// Add an entity to this partition.  The entity must not be a member
     /// of another partition.
@@ -143,10 +146,43 @@ private:
 std::ostream &operator<<(std::ostream &, const stk::mesh::impl::Partition &);
 
 
+struct PartitionLess {
+  bool operator()( const Partition * lhs_Partition , const unsigned * rhs ) const ;
+  bool operator()( const unsigned * lhs , const Partition * rhs_Partition ) const ;
+};
+
+
+inline
+bool partition_key_less( const unsigned * lhs , const unsigned * rhs )
+{
+  const unsigned * const last_lhs = lhs + ( *lhs < *rhs ? *lhs : *rhs );
+  while ( last_lhs != lhs && *lhs == *rhs ) { ++lhs ; ++rhs ; }
+  return *lhs < *rhs ;
+}
+
+// The part count and part ordinals are less
+inline bool PartitionLess::operator()( const Partition * lhs_partition ,
+                             const unsigned * rhs ) const
+{
+    return partition_key_less( lhs_partition->key() , rhs ); }
+
+inline bool PartitionLess::operator()( const unsigned * lhs ,
+                             const Partition * rhs_partition ) const
+{ return partition_key_less( lhs , rhs_partition->key() ); }
+
+
+inline
+std::vector<Partition*>::iterator
+lower_bound( std::vector<Partition*> & v , const unsigned * key )
+{ return std::lower_bound( v.begin() , v.end() , key , PartitionLess() ); }
+
+
+
+
 } // impl
 } // mesh
 } // stk
 
 
 
-#endif /* BUCKETFAMILY_HPP_ */
+#endif /* PartitionFAMILY_HPP_ */

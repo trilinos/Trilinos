@@ -39,7 +39,7 @@ namespace mesh {
 
 //----------------------------------------------------------------------
 
-bool bucket_part_equal( const unsigned * lhs , const unsigned * rhs )
+bool raw_part_equal( const unsigned * lhs , const unsigned * rhs )
 {
   bool result = true ;
   {

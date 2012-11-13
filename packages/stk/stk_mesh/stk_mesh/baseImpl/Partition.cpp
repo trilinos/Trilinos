@@ -42,9 +42,11 @@ std::ostream &Partition::streamit(std::ostream &os) const
 }
 
 
-Partition::Partition(BucketRepository *repo, EntityRank rank)
+Partition::Partition(BucketRepository *repo, EntityRank rank,
+                     const std::vector<PartOrdinal> &key)
     : m_repository(repo)
     , m_rank(rank)
+    , m_extPartitionKey(key)
     , m_beginBucketIndex(0)
     , m_endBucketIndex(0)
     , m_modifyingBucketSet(false)
@@ -86,6 +88,7 @@ bool Partition::add(Entity entity)
     unsigned dst_ordinal = bucket->size();
     bucket->initialize_fields(dst_ordinal);
     bucket->replace_entity(dst_ordinal, entity);
+    entity.m_entityImpl->log_modified_and_propagate();
     entity.m_entityImpl->set_bucket_and_ordinal(bucket, dst_ordinal);
     bucket->increment_size();
 
@@ -114,6 +117,7 @@ void Partition::move_to(Entity entity, Partition &dst_partition)
     dst_bucket->replace_fields(dst_ordinal, *src_bucket, src_ordinal);
     remove(entity);
 
+    entity.m_entityImpl->log_modified_and_propagate();
     entity.m_entityImpl->set_bucket_and_ordinal(dst_bucket, dst_ordinal);
     dst_bucket->replace_entity(dst_ordinal, entity) ;
     dst_bucket->increment_size();

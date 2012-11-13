@@ -114,6 +114,9 @@ public:
 
   friend class Partition;
 
+  Partition *get_or_create_partition(const unsigned arg_entity_rank ,
+                                     const OrdinalVector &parts);
+
   // Delete the Partitions in m_partitions, clear it, and then (re-)build the Partitions
   // from the m_buckets.  This should become unnecessary.
   void sync_to_partitions();

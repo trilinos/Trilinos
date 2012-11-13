@@ -641,6 +641,41 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveTo)
     }
 }
 
+STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testGetOrCreate)
+{
+    SelectorFixture fix;
+
+    if (fix.m_bulk_data.parallel_size() > 1)
+    {
+        return;
+    }
+    initialize(fix);
+    initialize_data(fix);
+
+    stk::mesh::impl::BucketRepository &bucket_repository =
+            stk::mesh::impl::Partition::getRepository(fix.m_bulk_data);
+    bucket_repository.sync_to_partitions();
+
+    std::vector<stk::mesh::PartOrdinal> parts;
+    parts.push_back(fix.m_meta_data.universal_part().mesh_meta_data_ordinal());
+    parts.push_back(fix.m_meta_data.locally_owned_part().mesh_meta_data_ordinal());
+    parts.push_back(fix.m_partA.mesh_meta_data_ordinal() );
+    stk::mesh::impl::Partition *partitionA =
+            bucket_repository.get_or_create_partition(stk::mesh::MetaData::NODE_RANK, parts);
+    STKUNIT_ASSERT(0 != partitionA);
+    STKUNIT_EXPECT_EQ(3u, partitionA->num_buckets());
+
+    parts.push_back(fix.m_partC.mesh_meta_data_ordinal());
+    stk::mesh::impl::Partition *partitionAC =
+                bucket_repository.get_or_create_partition(stk::mesh::MetaData::NODE_RANK, parts);
+    STKUNIT_ASSERT(0 != partitionAC);
+    STKUNIT_EXPECT_EQ(0u, partitionAC->num_buckets());
+
+    stk::mesh::impl::Partition *partitionAC_again =
+                bucket_repository.get_or_create_partition(stk::mesh::MetaData::NODE_RANK, parts);
+    STKUNIT_ASSERT(partitionAC == partitionAC_again);
+}
+
 
 /** \} */
 

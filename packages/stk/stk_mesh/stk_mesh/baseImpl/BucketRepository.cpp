@@ -228,7 +228,7 @@ BucketRepository::declare_bucket(
   // If a member of the partition has space, it is the last one
   // since buckets are kept packed.
   const bool partition_exists =
-    ik != bucket_set.begin() && bucket_part_equal( ik[-1]->key() , &key[0] );
+    ik != bucket_set.begin() && raw_part_equal( ik[-1]->key() , &key[0] );
 
   Bucket * const last_bucket = partition_exists ? ik[-1] : NULL ;
 
@@ -577,6 +577,62 @@ void BucketRepository::internal_propagate_relocation( Entity entity )
 }
 
 
+Partition *BucketRepository::get_or_create_partition(
+                                const unsigned arg_entity_rank ,
+                                const OrdinalVector &parts)
+{
+    enum { KEY_TMP_BUFFER_SIZE = 64 };
+
+    TraceIf("stk::mesh::impl::BucketRepository::get_or_create", LOG_BUCKET);
+
+    ThrowRequireMsg(MetaData::get(m_mesh).check_rank(arg_entity_rank),
+            "Entity rank " << arg_entity_rank << " is invalid");
+
+    std::vector<Partition *> & partitions = m_partitions[ arg_entity_rank ];
+
+    const size_t part_count = parts.size();
+    std::vector<unsigned> key(2 + part_count) ;
+
+    //----------------------------------
+    // Key layout:
+    // { part_count + 1 , { part_ordinals } , partition_count }
+    // Thus partition_count = key[ key[0] ]
+    //
+    // for upper bound search use the maximum key for a bucket in the partition.
+    const unsigned max = static_cast<unsigned>(-1);
+    key[0] = part_count+1;
+    key[ key[0] ] = max ;
+
+    {
+        for ( unsigned i = 0 ; i < part_count ; ++i ) { key[i+1] = parts[i] ; }
+    }
+
+    //----------------------------------
+    // partition has all of the same parts.
+    // Look for the last bucket in this partition:
+
+    const std::vector<Partition *>::iterator ik = lower_bound( partitions , &key[0] );
+
+    //----------------------------------
+    // If a member of the partition has space, it is the last one
+    // since buckets are kept packed.
+    const bool partition_exists =
+            (ik != partitions.begin()) && raw_part_equal( ik[-1]->key() , &key[0] );
+
+    if (partition_exists)
+    {
+        return ik[-1];
+    }
+
+    key[key[0]] = 0;
+    Partition *partition = new Partition(this, arg_entity_rank, key);
+    partition->m_modifyingBucketSet = true;
+    partitions.insert( ik , partition );
+
+    return partition ;
+}
+
+
 void BucketRepository::sync_to_partitions()
 {
     for ( std::vector<std::vector<Partition *> >::iterator pv_i = m_partitions.begin();
@@ -604,7 +660,8 @@ void BucketRepository::sync_to_partitions()
       //loop over families (of entity_rank) via buckets
       for ( ; begin_partition < buckets.size() ; begin_partition = end_partition )
       {
-        partitions.push_back(new Partition(this, entity_rank));
+        partitions.push_back(new Partition(this, entity_rank,
+                                            buckets[begin_partition]->key_vector()));
         Bucket * last_bucket_in_partition = buckets[begin_partition]->last_bucket_in_partition();
 
         // Determine offset to the end bucket in this partition:
@@ -633,7 +690,6 @@ void BucketRepository::sync_to_partitions()
           {
               (*bkt)->m_partition = partitions[i];
           }
-          // std::cout << partition << std::endl;
       }
     }
 }

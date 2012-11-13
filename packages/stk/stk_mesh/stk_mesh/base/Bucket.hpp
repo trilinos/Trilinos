@@ -59,7 +59,7 @@ std::ostream &
 print( std::ostream & , const std::string & indent , const Bucket & );
 
 // The part count and parts are equal
-bool bucket_part_equal( const unsigned * lhs , const unsigned * rhs );
+bool raw_part_equal( const unsigned * lhs , const unsigned * rhs );
 
 //----------------------------------------------------------------------
 /** \brief  Is this bucket a subset of the given
