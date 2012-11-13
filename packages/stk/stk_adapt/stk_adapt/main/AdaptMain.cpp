@@ -512,6 +512,7 @@ namespace stk {
       int query_only = 0;
       int progress_meter = 0;
       int smooth_geometry = 0;
+      std::string internal_test = "";
       int respect_spacing = 1;
       int smooth_surfaces = 0;
       //double min_spacing_factor = 0.25; // range [0,0.5]
@@ -573,6 +574,7 @@ namespace stk {
       run_environment.clp.setOption("query_only"               , &query_only               , "query only, no refinement done");
       run_environment.clp.setOption("progress_meter"           , &progress_meter           , "progress meter on or off");
       run_environment.clp.setOption("smooth_geometry"          , &smooth_geometry          , "smooth geometry - moves nodes after geometry projection to try to avoid bad meshes");
+      run_environment.clp.setOption("internal_test"            , &internal_test            , "run the specified internal test");
       run_environment.clp.setOption("respect_spacing"          , &respect_spacing          , "respect the initial mesh spacing during refinement");
       run_environment.clp.setOption("smooth_surfaces"          , &smooth_surfaces          , "allow nodes to move on surfaces when smoothing");
       run_environment.clp.setOption("remove_geometry_blocks"   , &remove_geometry_blocks   , "remove geometry blocks from output Exodus file after refinement/geometry projection");
@@ -1036,6 +1038,7 @@ namespace stk {
                                     int ib = iBreak;
                                     if (!query_only) ib = 0;
                                     RefinementInfoByType::printTable(std::cout, breaker.getRefinementInfoByType(), ib , true);
+                                    RefinementInfoByType::printTable(stk::percept::pout(), breaker.getRefinementInfoByType(), ib , true);
                                     std::cout << std::endl;
                                   }
                                 if (print_memory_usage)

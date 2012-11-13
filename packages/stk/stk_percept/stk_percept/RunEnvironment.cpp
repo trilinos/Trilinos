@@ -227,7 +227,7 @@ namespace stk {
         if (m_debug && !parallel_rank) std::cout << "modified argv["<<i<<"]= " << m_argv_new[i] << std::endl;
       }
 
-      output_log_opt = "sierra.output.log";
+      output_log_opt = "percept.output.log";
       dw_opt = "";
       timer_opt = "";
       directory_opt = "";
@@ -320,6 +320,7 @@ namespace stk {
 
       stk::bind_output_streams(output_description);
 
+      std::cout << "tmp srk Output log binding: " << output_description << std::endl;
       dout() << "Output log binding: " << output_description << std::endl;
 
       // Start stk_percept root timer
@@ -553,7 +554,7 @@ namespace stk {
           std::ostringstream s;
 
           if (stk::get_log_ostream(out_path))
-            s << working_directory << "sierra.log." << parallel_size << "." << parallel_rank;
+            s << working_directory << "percept.log." << parallel_size << "." << parallel_rank;
           else
             s << out_path << "." << parallel_size << "." << parallel_rank;
           pout_path = s.str();
