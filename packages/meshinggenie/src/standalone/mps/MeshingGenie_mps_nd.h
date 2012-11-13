@@ -109,7 +109,7 @@ class MeshingGenie_mps_nd
 		inline void get_uncovered_children(size_t* icell, size_t refLevel, std::vector<size_t*> &children);
 
 		inline bool valid_dart(double* dart, size_t* dart_parent_cell);
-		inline bool covered_cell(size_t icell, size_t refLevel);
+		inline bool covered_cell(size_t* icell, size_t refLevel);
 
 		// use binary search to check if icell exists in cell_vec
 		inline bool cell_in_vec(size_t* icell, std::vector<size_t*> &cell_vec);

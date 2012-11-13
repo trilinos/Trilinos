@@ -838,15 +838,14 @@ inline bool MeshingGenie_mps_nd::valid_dart(double* dart, size_t* dart_parent_ce
 		if (x != 0)
 		{
 			// check if disk at x covers icell
-			double dd(0.0)
-			for (size_t idim = 0; idim < _n_dim; idim++)
+			double dd(0.0);
+			for (size_t idim = 0; idim < _ndim; idim++)
 			{
 				double dx = dart[idim] - x[idim];
 				dd+= dx;
 			}
 			if (dd < _rsq) 
 			{
-				delete[] iparent;
 				delete[] parent_neighbor;
 				return false;
 			}
@@ -857,7 +856,7 @@ inline bool MeshingGenie_mps_nd::valid_dart(double* dart, size_t* dart_parent_ce
 	#pragma endregion
 }
 
-inline bool MeshingGenie_mps_nd::covered_cell(size_t icell, size_t refLevel)
+inline bool MeshingGenie_mps_nd::covered_cell(size_t* icell, size_t refLevel)
 {
 	#pragma region Check if a cell is covered:
 	double ss = _s / ipow(2, refLevel);
@@ -893,10 +892,10 @@ inline bool MeshingGenie_mps_nd::covered_cell(size_t icell, size_t refLevel)
 		if (x != 0)
 		{
 			// check if disk at x covers icell
-			double dd(0.0)
-			for (size_t idim = 0; idim < _n_dim; idim++)
+			double dd(0.0);
+			for (size_t idim = 0; idim < _ndim; idim++)
 			{
-				double xx = _xmin + icell[idim] * ss;
+				double xx = _xmin[idim] + icell[idim] * ss;
 				if (fabs(x[idim] - xx) < fabs(x[idim] - xx - ss)) xx += ss;
 				double dx = xx - x[idim];
 				dd+= dx;
