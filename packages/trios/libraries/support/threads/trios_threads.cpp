@@ -111,7 +111,7 @@ int nthread_lock_init(
         return(-1);
     }
 #else
-
+#warning Semaphores are unavailable on this system.
 #endif
 
 //    log_debug(thread_debug_level, "nthread_lock_init: initialized lock(%p), lock->lock(%p), lock->name(%s)", lock, lock->lock, lock->name);
