@@ -64,6 +64,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToIntPositiveOverflow ) {
     // should fail, but leave the string unaffected.
     int intVal = 0;
     TEST_THROW(intVal = asSafe<int> (os.str ()), std::range_error);
+    (void) intVal; // Silence compiler warning.
 
     // Since the string is unaffected, conversion to long should work
     // just fine, and return the correct result.
@@ -99,6 +100,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToIntNegativeOverflow ) {
     // should fail, but leave the string unaffected.
     int intVal = 0;
     TEST_THROW(intVal = asSafe<int> (os.str ()), std::range_error);
+    (void) intVal; // Silence compiler warning
 
     // Since the string is unaffected, conversion to long should work
     // just fine, and return the correct result.
@@ -149,33 +151,61 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( asSafe, stringToIntegerShouldThrow, IntegerTy
   os << "This string definitely does not contain an integer.";
   IntegerType val = 0;
   TEST_THROW(val = asSafe<IntegerType> (os.str ()), std::invalid_argument);
+  (void) val; // Silence compiler warning
 }
+
+// Macros to instantiate templated unit tests for conversion from
+// std::string to built-in integer types.  AnyIntegerType may be
+// signed or unsigned; SignedIntegerType must be signed.
+
+#define UNIT_TEST_GROUP_ANY_INTEGER( AnyIntegerType ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, AnyIntegerType ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerShouldThrow, AnyIntegerType )
+
+#define UNIT_TEST_GROUP_SIGNED_INTEGER( SignedIntegerType ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerNegative, SignedIntegerType )
 
 // Instantiations of templated unit tests for conversion from
 // std::string to built-in integer types.
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, int )
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, unsigned int )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, long )
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, unsigned long )
-//#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, long long )
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, unsigned long long )
-//#endif // HAVE_TEUCHOS_LONG_LONG_INT
+UNIT_TEST_GROUP_ANY_INTEGER( int )
+UNIT_TEST_GROUP_ANY_INTEGER( long )
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerNegative, int )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerNegative, long )
-//#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerNegative, long long );
-//#endif // HAVE_TEUCHOS_LONG_LONG_INT
+//
+// Hack to work around Bug 5757
+//
+typedef unsigned int unsigned_int_type;
+//UNIT_TEST_GROUP_ANY_INTEGER( unsigned int )
+UNIT_TEST_GROUP_ANY_INTEGER( unsigned_int_type )
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerShouldThrow, int )
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerShouldThrow, unsigned int )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerShouldThrow, long )
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerShouldThrow, unsigned long )
-//#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerShouldThrow, long long );
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerShouldThrow, unsigned long long );
-//#endif // HAVE_TEUCHOS_LONG_LONG_INT
+//
+// Hack to work around Bug 5757
+//
+typedef unsigned long unsigned_long_type;
+//UNIT_TEST_GROUP_ANY_INTEGER( unsigned long )
+UNIT_TEST_GROUP_ANY_INTEGER( unsigned_long_type )
+
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+//
+// Hack to work around Bug 5757
+//
+typedef long long long_long_type;
+//UNIT_TEST_GROUP_ANY_INTEGER( long long )
+UNIT_TEST_GROUP_ANY_INTEGER( long_long_type )
+//UNIT_TEST_GROUP_SIGNED_INTEGER( long long )
+UNIT_TEST_GROUP_SIGNED_INTEGER( long_long_type )
+
+//
+// Hack to work around Bug 5757
+//
+typedef unsigned long long unsigned_long_long_type;
+//UNIT_TEST_GROUP_ANY_INTEGER( unsigned long long )
+UNIT_TEST_GROUP_ANY_INTEGER( unsigned_long_long_type )
+
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 } // namespace (anonymous)
+
+
+
