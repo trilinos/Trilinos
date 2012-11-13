@@ -50,6 +50,8 @@
 
 namespace Tpetra {
 
+  TPETRA_ETI_MANGLING_TYPEDEFS()
+
   TPETRA_INSTANTIATE_LGN(TPETRA_CRSGRAPH_INSTANT)
 
 } // namespace Tpetra

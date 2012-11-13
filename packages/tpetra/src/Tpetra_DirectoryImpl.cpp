@@ -55,6 +55,8 @@ namespace Tpetra {
 #  error "The TPETRA_DIRECTORY_IMPL_INSTANT macro didn't get defined!"
 #endif // TPETRA_DIRECTORY_IMPL_INSTANT
 
+    TPETRA_ETI_MANGLING_TYPEDEFS()
+
     TPETRA_INSTANTIATE_LGN(TPETRA_DIRECTORY_IMPL_INSTANT)
 
   } // namespace Details

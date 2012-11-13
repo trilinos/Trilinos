@@ -50,27 +50,13 @@
 
 namespace Tpetra {
 
-  // for default node
-  template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
-    createNonContigMap<int,int>(const Teuchos::ArrayView<const int> &elementList, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
-  template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
-    createContigMap<int,int>(size_t numElements, size_t numLocalElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
-  template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
-    createLocalMap<int,int>(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
-  template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
-    createUniformContigMap<int,int>(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
-#ifdef HAVE_TPETRA_INST_INT_LONG
-  template Teuchos::RCP< const Map<int,long,Kokkos::DefaultNode::DefaultNodeType> >
-    createNonContigMap<int,long>(const Teuchos::ArrayView<const long> &elementList, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
-  template Teuchos::RCP< const Map<int,long,Kokkos::DefaultNode::DefaultNodeType> >
-    createContigMap<int,long>(size_t numElements, size_t numLocalElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
-  template Teuchos::RCP< const Map<int,long,Kokkos::DefaultNode::DefaultNodeType> >
-    createLocalMap<int,long>(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
-  template Teuchos::RCP< const Map<int,long,Kokkos::DefaultNode::DefaultNodeType> >
-    createUniformContigMap<int,long>(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
-#endif
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
+  // for all nodes, lo, go
   TPETRA_INSTANTIATE_LGN(TPETRA_MAP_INSTANT)
+
+  // for default node, all lo,go
+  TPETRA_INSTANTIATE_LG(TPETRA_MAP_INSTANT_DEFAULTNODE)
 
 } // namespace Tpetra
 
