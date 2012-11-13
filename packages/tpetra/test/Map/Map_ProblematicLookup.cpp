@@ -75,8 +75,8 @@ TEUCHOS_UNIT_TEST( Map, ProblematicLookup )
   }
   Array<int> nodeIDs( 1 );
   Tpetra::LookupStatus lookup = map->getRemoteIndexList( tuple<int>(2), nodeIDs() );
-  // TEST_EQUALITY_CONST( map->isDistributed(), true )
-  // TEST_EQUALITY_CONST( map->isContiguous(), false )
-  // TEST_EQUALITY_CONST( lookup, Tpetra::IDNotPresent )
-  // TEST_COMPARE_ARRAYS( nodeIDs(), tuple<int>(-1) );
+  TEST_EQUALITY_CONST( map->isDistributed(), true )
+  TEST_EQUALITY_CONST( map->isContiguous(), false )
+  TEST_EQUALITY_CONST( lookup, Tpetra::IDNotPresent )
+  TEST_COMPARE_ARRAYS( nodeIDs(), tuple<int>(-1) );
 }
