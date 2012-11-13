@@ -1,5 +1,5 @@
-#ifndef __Panzer_ResponseEvaluatorFactory_Functional_hpp__
-#define __Panzer_ResponseEvaluatorFactory_Functional_hpp__
+#ifndef __Panzer_ResponseEvaluatorFactory_IPCoordinates_hpp__
+#define __Panzer_ResponseEvaluatorFactory_IPCoordinates_hpp__
 
 #include <string>
 
@@ -16,13 +16,13 @@ namespace panzer {
 /** This class defines a response based on a functional.
   */
 template <typename EvalT> 
-class ResponseEvaluatorFactory_Functional : public ResponseEvaluatorFactory<EvalT> {
+class ResponseEvaluatorFactory_IPCoordinates : public ResponseEvaluatorFactory<EvalT> {
 public:
 
-   ResponseEvaluatorFactory_Functional(MPI_Comm comm, int cubatureDegree=1,bool requiresCellIntegral=true) 
-     : comm_(comm), cubatureDegree_(cubatureDegree), requiresCellIntegral_(requiresCellIntegral) {}
+   ResponseEvaluatorFactory_IPCoordinates(int cubatureDegree)
+     : cubatureDegree_(cubatureDegree) {}
 
-   virtual ~ResponseEvaluatorFactory_Functional() {}
+   virtual ~ResponseEvaluatorFactory_IPCoordinates() {}
  
    /** Build the response object used by this factory. This object
      * assumes the role of the scatter target and will be accessible
@@ -33,15 +33,11 @@ public:
      *                         the response in the <code>GlobalEvaluationDataContainer</code>
      *                         object.
      */
-   virtual Teuchos::RCP<ResponseBase> buildResponseObject(const std::string & responseName) const;
-
    virtual Teuchos::RCP<ResponseBase> buildResponseObject(const std::string & responseName,
-                                                          const std::vector<std::string> & eBlocks) const 
-   { return buildResponseObject(responseName); }
-
+                                                          const std::vector<std::string> & eBlocks) const;
    virtual Teuchos::RCP<ResponseBase> buildResponseObject(const std::string & responseName,
                                                           const std::vector<std::pair<std::string,std::string> > & sideset_blocks) const
-   { return buildResponseObject(responseName); }
+   { TEUCHOS_ASSERT(false); return Teuchos::null; }
 
    /** Build and register evaluators for a response on a particular physics
      * block. 
@@ -64,13 +60,11 @@ protected:
    int getCubatureDegree() const { return cubatureDegree_; }
 
 private:
-   MPI_Comm comm_;
    int cubatureDegree_;
-   bool requiresCellIntegral_;
 };
 
 }
 
-#include "Panzer_ResponseEvaluatorFactory_Functional_impl.hpp"
+#include "Panzer_ResponseEvaluatorFactory_IPCoordinates_impl.hpp"
 
 #endif

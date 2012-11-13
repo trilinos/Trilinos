@@ -30,14 +30,31 @@ public:
  
    /** Build the response object used by this factory. This object
      * assumes the role of the scatter target and will be accessible
-     * by all the evaluators in the field managers. 
+     * by all the evaluators in the field managers. This is the volume
+     * version of the buildResponseObject function.
      *
      * \param[in] responseName Name of response to be built. This
      *                         name will be used for looking up
      *                         the response in the <code>GlobalEvaluationDataContainer</code>
      *                         object.
+     * \param[in] elementBlocks A vector of the element blocks this response is evaluate over.
      */
-   virtual Teuchos::RCP<ResponseBase> buildResponseObject(const std::string & responseName) const = 0; 
+   virtual Teuchos::RCP<ResponseBase> buildResponseObject(const std::string & responseName,
+                                                          const std::vector<std::string> & eBlocks) const = 0; 
+
+   /** Build the response object used by this factory. This object
+     * assumes the role of the scatter target and will be accessible
+     * by all the evaluators in the field managers. This is the sideset
+     * version of the buildResponseObject function.
+     *
+     * \param[in] responseName Name of response to be built. This
+     *                         name will be used for looking up
+     *                         the response in the <code>GlobalEvaluationDataContainer</code>
+     *                         object.
+     * \param[in] sidesets A vector of the sidesets this response is over (sideset name first, element block second)
+     */
+   virtual Teuchos::RCP<ResponseBase> buildResponseObject(const std::string & responseName,
+                                                          const std::vector<std::pair<std::string,std::string> > & sideset_blocks) const = 0; 
    
    /** Build and register evaluators for a response on a particular physics
      * block. Note that it is assumed that a field has been marked required
