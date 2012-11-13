@@ -42,7 +42,6 @@
 #include "Teuchos_as.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include <limits>
-#include <sstring>
 
 // Putting the unit tests in an anonymous namespace avoids name collisions.
 namespace {
@@ -65,6 +64,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToIntPositiveOverflow ) {
     // should fail, but leave the string unaffected.
     int intVal = 0;
     TEST_THROW(intVal = asSafe<int> (os.str ()), std::range_error);
+
     // Since the string is unaffected, conversion to long should work
     // just fine, and return the correct result.
     long longVal = 0;
@@ -99,6 +99,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToIntNegativeOverflow ) {
     // should fail, but leave the string unaffected.
     int intVal = 0;
     TEST_THROW(intVal = asSafe<int> (os.str ()), std::range_error);
+
     // Since the string is unaffected, conversion to long should work
     // just fine, and return the correct result.
     long longVal = 0;
@@ -117,7 +118,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToIntNegativeOverflow ) {
 
 // Unit test for conversion from std::string (containing a positive
 // integer) to built-in integer types (may be signed or unsigned).
-TEST_UNIT_TEST_TEMPLATE_1_DECL( asSafe, stringToIntegerPositive, IntegerType ) {
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( asSafe, stringToIntegerPositive, IntegerType ) {
   using Teuchos::asSafe;
 
   std::ostringstream os;
@@ -129,7 +130,7 @@ TEST_UNIT_TEST_TEMPLATE_1_DECL( asSafe, stringToIntegerPositive, IntegerType ) {
 
 // Unit test for conversion from std::string (containing a negative
 // integer) to built-in integer types (must be signed).
-TEST_UNIT_TEST_TEMPLATE_1_DECL( asSafe, stringToIntegerNegative, IntegerType ) {
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( asSafe, stringToIntegerNegative, IntegerType ) {
   using Teuchos::asSafe;
 
   std::ostringstream os;
@@ -141,37 +142,37 @@ TEST_UNIT_TEST_TEMPLATE_1_DECL( asSafe, stringToIntegerNegative, IntegerType ) {
 
 // Unit test for conversion from std::string (NOT containing an
 // integer) to built-in integer types (may be signed or unsigned).
-TEST_UNIT_TEST_TEMPLATE_1_DECL( asSafe, stringToIntegerShouldThrow, IntegerType ) {
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( asSafe, stringToIntegerShouldThrow, IntegerType ) {
   using Teuchos::asSafe;
 
   std::ostringstream os;
   os << "This string definitely does not contain an integer.";
   IntegerType val = 0;
-  TEST_THROW(val = asSafe<IntegerType> (os.str ()));
+  TEST_THROW(val = asSafe<IntegerType> (os.str ()), std::invalid_argument);
 }
 
 // Instantiations of templated unit tests for conversion from
 // std::string to built-in integer types.
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, int );
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, unsigned int );
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, long );
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, unsigned long );
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, int )
+//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, unsigned int )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, long )
+//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, unsigned long )
 //#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, long long );
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, unsigned long long );
+//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, long long )
+//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerPositive, unsigned long long )
 //#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerNegative, int );
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerNegative, long );
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerNegative, int )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerNegative, long )
 //#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 //TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerNegative, long long );
 //#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerShouldThrow, int );
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerShouldThrow, unsigned int );
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerShouldThrow, long );
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerShouldThrow, unsigned long );
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerShouldThrow, int )
+//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerShouldThrow, unsigned int )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerShouldThrow, long )
+//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerShouldThrow, unsigned long )
 //#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 //TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerShouldThrow, long long );
 //TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerShouldThrow, unsigned long long );
