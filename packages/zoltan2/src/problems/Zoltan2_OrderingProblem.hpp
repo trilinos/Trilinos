@@ -179,7 +179,6 @@ void OrderingProblem<Adapter>::solve(bool newData)
   // Need some exception handling here, too.
 
   string method = this->params_->template get<string>("order_method", "rcm");
-  typedef typename Adapter::base_adapter_t base_adapter_t;
 
   // TODO: Ignore case
   try
