@@ -46,6 +46,7 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_Version.hpp"
+#include "Teuchos_ConfigDefs.hpp"
 
 // Enum for the speed option
 enum ESpeed { SPEED_SLOW=-1, SPEED_MEDIUM=0, SPEED_FAST=+1 };
@@ -80,6 +81,9 @@ int main(int argc, char* argv[])
     // Set an integer command line option.
     int NumIters = 1550;
     My_CLP.setOption("iterations", &NumIters, "Number of iterations");
+    // Set a long integer command line option
+    long int MatrixDim = (long int)std::numeric_limits<int>::max() + 1;
+    My_CLP.setOption("matrix-dim", &MatrixDim, "Matrix dimension");    
     // Set a double-precision command line option.
     double Tolerance = 1e-10;
     My_CLP.setOption("tolerance", &Tolerance, "Tolerance");
@@ -140,6 +144,7 @@ int main(int argc, char* argv[])
     if (procRank == 0) {
       out << "\nPrinting user options after parsing ...\n\n";
       out << "NumIters     = " << NumIters << std::endl;
+      out << "MatrixDim    = " << MatrixDim << std::endl;
       out << "Tolerance    = " << Tolerance << std::endl;
       out << "Solver       = \"" << Solver << "\"\n";
       out << "Precondition = " << Precondition << std::endl;
