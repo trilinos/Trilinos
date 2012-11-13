@@ -791,10 +791,10 @@ private:
     return returnVal;
   }
 
-  int countChar (std::string inStr, char countChar){
+  int countChar (std::string inStr, char cntChar){
     int cnt = 0;
     for (unsigned int i = 0; i < inStr.size(); ++i){
-      if (inStr[i] == countChar) {
+      if (inStr[i] == cntChar) {
         cnt++;
       }
     }
