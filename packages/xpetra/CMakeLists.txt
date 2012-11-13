@@ -7,7 +7,7 @@ INCLUDE(DualScopeSet)
 # A) Define the package
 #
 
-TRIBITS_PACKAGE(Xpetra)
+TRIBITS_PACKAGE(Xpetra ENABLE_SHADOWING_WARNINGS)
 
 # Add directory xpetra/cmake/ to the cmake module search path
 DUAL_SCOPE_SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PACKAGE_SOURCE_DIR}/cmake)

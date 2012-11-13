@@ -136,12 +136,12 @@ ENDMACRO()
 #     If specified, then shadowing warnings will be turned on for supported
 #     platforms/compilers.  The default is for shadowing warnings to be turned
 #     off.  Note that this can be overridden globally by setting the cache
-#     variable ${PROJECT_NAME}_ENABLE_SHADOWING_WARNIGNS.
+#     variable ${PROJECT_NAME}_ENABLE_SHADOWING_WARNINGS.
 #
 #   DISABLE_STRONG_WARNINGS
 #
 #     If specified, then all strong warnings will be turned off, if they are
-#     not already turned off by global cache varaibles.
+#     not already turned off by global cache variables.
 #
 #   CLEANED
 #

@@ -6,7 +6,7 @@ INCLUDE(CombinedOption)
 # A) Define the package
 #
 
-TRIBITS_PACKAGE(MueLu)
+TRIBITS_PACKAGE(MueLu ENABLE_SHADOWING_WARNINGS)
 
 #
 # B) Set up package-specific options
