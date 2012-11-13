@@ -322,123 +322,174 @@ class asFunc {
 };
 
 
-//
-// Standard specializations of ValueTypeConversionTraits
-//
 
-/// \brief Convert an std::string to a long, without compiler warnings.
-///
-/// We assume the string stores a base-10 integer, if it stores an integer at all.
-template<>
-class ValueTypeConversionTraits<long, std::string> {
-public:
-  //! Convert the given std::string to a long.
-  static long safeConvert (const std::string& t) {
-    // We call strtol() instead of using std::istringstream, because
-    // we want more detailed information in case of failure to
-    // convert.  I have no idea what operator>>(std::istream&, long&)
-    // does if it encounters an integer too long to fit in long, for
-    // example.
+namespace { // anonymous
+
+  /// \brief Helper function for converting the given \c std::string to an integer of type IntType.
+  ///
+  /// \param t [in] The string to convert.
+  /// \param rawConvert [in] One of strtol, strtoul, strtoll,
+  ///   or strtoull.  It must return the same type as IntType.
+  /// \param intTypeName [in] Human-readable string which is the name
+  ///   of IntType.
+  template<class IntType>
+  IntType
+  intToString (const std::string& t,
+               IntType (*rawConvert) (const char*, char**, int),
+               const char* intTypeName)
+  {
+    // We call the "raw" conversion function instead of using
+    // std::istringstream, because we want more detailed information
+    // in case of failure to convert.  I have no idea what
+    // operator>>(std::istream&, unsigned long long&) does if it
+    // encounters an integer too long to fit in IntType, for example.
+    //
+    // mfh 13 Nov 2012: It's fair to assume that if you have "long
+    // long", then your implementation of the C standard library
+    // includes strtoul().  Ditto for "unsigned long long" and
+    // strtoull().  If this is not the case, we could include a
+    // configure-time test for these functions(), with a fall-back to
+    // an std::istringstream operator>> implementation.
     char* endptr = NULL;
     // Keep the pointer, because std::string doesn't necessarily
     // guarantee that this is the same across calls to c_str(), does
     // it?  Or perhaps it does...
     const char* t_ptr = t.c_str ();
     // We preset errno to 0, to distinguish success or failure after
-    // calling strtol.  Most implementations of the C standard library
-    // written with threads in mind have errno be a macro that expands
-    // to thread-local storage.  Thanks to the Linux documentation for
-    // strtol ("man 3 strtol", Red Hat Enterprise Linux 5) for advice
-    // with the following checks.
+    // calling strtoull.  Most implementations of the C standard
+    // library written with threads in mind have errno be a macro that
+    // expands to thread-local storage.  Thanks to the Linux
+    // documentation for strtol ("man 3 strtol", Red Hat Enterprise
+    // Linux 5) for advice with the following checks.
     errno = 0;
-    const long val = strtol (t_ptr, &endptr, 10);
+    const IntType val = rawConvert (t_ptr, &endptr, 10);
 
+    const IntType minVal = std::numeric_limits<IntType>::min ();
+    const IntType maxVal = std::numeric_limits<IntType>::max ();
     TEUCHOS_TEST_FOR_EXCEPTION(
-      errno == ERANGE && (val == LONG_MAX || val == LONG_MIN),
+      errno == ERANGE && (val == minVal || val == maxVal),
       std::range_error,
-      "Teuchos::ValueTypeConversionTraits<long, std::string>::convert: "
-      "The integer value in the given std::string \"" << t << "\" overflows long.");
+      "Teuchos::ValueTypeConversionTraits<" << intTypeName << ", std::string>::convert: "
+      "The integer value in the given string \"" << t << "\" overflows " << intTypeName << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(
       errno != 0 && val == 0,
       std::invalid_argument,
-      "Teuchos::ValueTypeConversionTraits<long, std::string>::convert: "
-      "stdtol was unable to convert the given std::string \"" << t << "\" to a long.");
+      "Teuchos::ValueTypeConversionTraits<" << intTypeName << ", std::string>::convert: "
+      "The conversion function was unable to convert the given string \"" << t << "\" to " << intTypeName << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(
       endptr == t_ptr, // See above discussion of c_str().
       std::invalid_argument,
-      "Teuchos::ValueTypeConversionTraits<long, std::string>::convert: "
-      "stdtol was unable to read any integer digits from the given std::string \"" << t << "\".");
-
+      "Teuchos::ValueTypeConversionTraits<" << intTypeName << ", std::string>::convert: "
+      "The conversion function was unable to read any integer digits from the given string "
+      "\"" << t << "\".");
     return val;
   }
+} // namespace (anonymous)
 
-  //! Convert the given std::string to a long.
+
+//
+// Standard specializations of ValueTypeConversionTraits
+//
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+
+/// \brief Convert an \c std::string to a <tt>long long</tt>.
+///
+/// We assume the string stores a base-10 integer, if it stores an integer at all.
+template<>
+class ValueTypeConversionTraits<long long, std::string> {
+public:
+  /// \brief Convert the given \c std::string to a <tt>long long</tt>, with checks.
+  ///
+  /// If the string overflows <tt>long long</tt>, this throws
+  /// <tt>std::range_error</tt>.  If it does not contain an integer,
+  /// this throws <tt>std::invalid_argument</tt>.
+  static long long safeConvert (const std::string& t) {
+    return intToString<long long> (t, &strtoll, "long long");
+  }
+
+  //! Convert the given \c std::string to a <tt>long long</tt>.
+  static long long convert (const std::string& t) {
+    return safeConvert (t);
+  }
+};
+
+
+/// \brief Convert an \c std::string to an <tt>unsigned long long</tt>.
+///
+/// We assume the string stores a base-10 integer, if it stores an integer at all.
+template<>
+class ValueTypeConversionTraits<unsigned long long, std::string> {
+public:
+  /// \brief Convert the given \c std::string to an <tt>unsigned long long</tt>, with checks.
+  ///
+  /// If the string overflows <tt>unsigned long long</tt>, this throws
+  /// <tt>std::range_error</tt>.  If it does not contain an integer,
+  /// this throws <tt>std::invalid_argument</tt>.
+  static unsigned long long safeConvert (const std::string& t) {
+    return intToString<unsigned long long> (t, &strtoull, "unsigned long long");
+  }
+
+  //! Convert the given \c std::string to an <tt>unsigned long long</tt>.
+  static unsigned long long convert (const std::string& t) {
+    return safeConvert (t);
+  }
+};
+
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
+
+/// \brief Convert an \c std::string to a \c long.
+///
+/// We assume the string stores a base-10 integer, if it stores an integer at all.
+template<>
+class ValueTypeConversionTraits<long, std::string> {
+public:
+  /// \brief Convert the given \c std::string to a \c long, with checks.
+  ///
+  /// If the string overflows <tt>long</tt>, this throws
+  /// <tt>std::range_error</tt>.  If it does not contain an integer,
+  /// this throws <tt>std::invalid_argument</tt>.
+  static long safeConvert (const std::string& t) {
+    return intToString<long> (t, &strtol, "long");
+  }
+
+  //! Convert the given \c std::string to a \c long.
   static long convert (const std::string& t) {
     return safeConvert (t);
   }
 };
 
 
-/// \brief Convert an std::string to a unsigned long, without compiler warnings.
+/// \brief Convert an \c std::string to an <tt>unsigned long</tt>.
 ///
 /// We assume the string stores a base-10 integer, if it stores an integer at all.
 template<>
 class ValueTypeConversionTraits<unsigned long, std::string> {
 public:
-  //! Convert the given std::string to a unsigned long.
+  /// \brief Convert the given std::string to an <tt>unsigned long</tt>, with checks.
+  ///
+  /// If the string overflows <tt>unsigned long</tt>, this throws
+  /// <tt>std::range_error</tt>.  If it does not contain an integer,
+  /// this throws <tt>std::invalid_argument</tt>.
   static unsigned long safeConvert (const std::string& t) {
-    // We call strtoul() instead of using std::istringstream, because
-    // we want more detailed information in case of failure to
-    // convert.  I have no idea what operator>>(std::istream&,
-    // unsigned long&) does if it encounters an integer too long to
-    // fit in unsigned long, for example.
-    char* endptr = NULL;
-    // Keep the pointer, because std::string doesn't necessarily
-    // guarantee that this is the same across calls to c_str(), does
-    // it?  Or perhaps it does...
-    const char* t_ptr = t.c_str ();
-    // We preset errno to 0, to distinguish success or failure after
-    // calling strtoul.  Most implementations of the C standard
-    // library written with threads in mind have errno be a macro that
-    // expands to thread-local storage.  Thanks to the Linux
-    // documentation for strtol ("man 3 strtol", Red Hat Enterprise
-    // Linux 5) for advice with the following checks.
-    errno = 0;
-    const unsigned long val = strtoul (t_ptr, &endptr, 10);
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      errno == ERANGE && (val == ULONG_MAX || val == static_cast<unsigned long> (0)),
-      std::range_error,
-      "Teuchos::ValueTypeConversionTraits<unsigned long, std::string>::convert: "
-      "The integer value in the given std::string \"" << t << "\" overflows unsigned long.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      errno != 0 && val == 0,
-      std::invalid_argument,
-      "Teuchos::ValueTypeConversionTraits<unsigned long, std::string>::convert: "
-      "stdtol was unable to convert the given std::string \"" << t << "\" to an unsigned long.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      endptr == t_ptr, // See above discussion of c_str().
-      std::invalid_argument,
-      "Teuchos::ValueTypeConversionTraits<unsigned long, std::string>::convert: "
-      "stdtol was unable to read any integer digits from the given std::string \"" << t << "\".");
-
-    return val;
+    return intToString<unsigned long> (t, &strtoul, "unsigned long");
   }
 
-  //! Convert the given std::string to an unsigned long.
+  //! Convert the given \c std::string to an <tt>unsigned long</tt>.
   static unsigned long convert (const std::string& t) {
     return safeConvert (t);
   }
 };
 
 
-/// \brief Convert an std::string to an int, without compiler warnings.
+/// \brief Convert an \c std::string to an \c int.
 ///
 /// We assume the string stores a base-10 integer, if it stores an integer at all.
 template<>
 class ValueTypeConversionTraits<int, std::string> {
 private:
-  //! Convert the given std::string to an intermediate long.
+  //! Convert the given \c std::string to an intermediate \c long, with checks.
   static long safeConvertToLong (const std::string& t) {
     long val = 0;
     try {
@@ -461,25 +512,29 @@ private:
   }
 
 public:
-  //! Convert the given std::string to an int.
+  /// \brief Convert the given \c std::string to an <tt>int</tt>, with checks.
+  ///
+  /// If the string overflows <tt>int</tt>, this throws
+  /// <tt>std::range_error</tt>.  If it does not contain an integer,
+  /// this throws <tt>std::invalid_argument</tt>.
   static int safeConvert (const std::string& t) {
     return asSafe<int> (safeConvertToLong (t));
   }
 
-  //! Convert the given std::string to an int.
+  //! Convert the given \c std::string to an \c int.
   static int convert (const std::string& t) {
     return as<int> (safeConvertToLong (t));
   }
 };
 
 
-/// \brief Convert an std::string to an unsigned int, without compiler warnings.
+/// \brief Convert an \c std::string to an <tt>unsigned int</tt>.
 ///
 /// We assume the string stores a base-10 integer, if it stores an integer at all.
 template<>
 class ValueTypeConversionTraits<unsigned int, std::string> {
 private:
-  //! Convert the given std::string to an intermediate unsigned long.
+  //! Convert the given \c std::string to an intermediate <tt>unsigned long</tt>, with checks.
   static unsigned long safeConvertToUnsignedLong (const std::string& t) {
     unsigned long val = 0;
     try {
@@ -502,12 +557,16 @@ private:
   }
 
 public:
-  //! Convert the given std::string to an unsigned int.
+  /// \brief Convert the given \c std::string to an <tt>unsigned int</tt>, with checks.
+  ///
+  /// If the string overflows <tt>unsigned int</tt>, this throws
+  /// <tt>std::range_error</tt>.  If it does not contain an integer,
+  /// this throws <tt>std::invalid_argument</tt>.
   static unsigned int safeConvert (const std::string& t) {
     return asSafe<unsigned int> (safeConvertToUnsignedLong (t));
   }
 
-  //! Convert the given std::string to an unsigned int.
+  //! Convert the given \c std::string to an <tt>unsigned int</tt>.
   static unsigned int convert (const std::string& t) {
     return as<unsigned int> (safeConvertToUnsignedLong (t));
   }
