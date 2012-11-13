@@ -89,8 +89,12 @@ class OrderingProblem : public Problem<Adapter>
 {
 public:
 
+  typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::user_t user_t;
+  typedef typename Adapter::base_adapter_t base_adapter_t;
 
 #ifdef HAVE_ZOLTAN2_MPI
    typedef Teuchos::OpaqueWrapper<MPI_Comm> mpiWrapper_t;
@@ -281,8 +285,6 @@ void OrderingProblem<Adapter>::createOrderingProblem()
       (method == string("minimum_degree"))) {
     modelType = GraphModelType;
   }
-
-  typedef typename Adapter::base_adapter_t base_adapter_t;
 
   // Select Model based on parameters and InputAdapter type
 
