@@ -1485,10 +1485,10 @@ nthread_lock(&nnti_mem_lock);
                 (uint64_t)gni_mem_hdl->type);
         log_debug(nnti_debug_level, "reg_buf.buf.hash==%llu",
                 (uint64_t)hash6432shift(reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
-        log_debug(LOG_ALL, "ref_count==1 called insert_buf_bufhash() (reg_buf=%p, reg_buf.hash6432=%llu)",
+        log_debug(nnti_debug_level, "ref_count==1 called insert_buf_bufhash() (reg_buf=%p, reg_buf.hash6432=%llu)",
                 reg_buf, (uint64_t)hash6432shift(reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
         NNTI_buffer_t *tmp_buf=get_buf_bufhash((uint64_t)hash6432shift(reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
-        log_debug(LOG_ALL, "immediate get_buf_bufhash() says tmp_buf=%p", tmp_buf);
+        log_debug(nnti_debug_level, "immediate get_buf_bufhash() says tmp_buf=%p", tmp_buf);
     }
 
 nthread_unlock(&nnti_mem_lock);
@@ -1498,7 +1498,7 @@ nthread_unlock(&nnti_mem_lock);
                 "end of NNTI_gni_register_memory", reg_buf);
     }
 
-    log_debug(LOG_ALL, "exit (reg_buf=%p, reg_buf.hash6432=%llu)", reg_buf, (uint64_t)hash6432shift(reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
+    log_debug(nnti_ee_debug_level, "exit (reg_buf=%p, reg_buf.hash6432=%llu)", reg_buf, (uint64_t)hash6432shift(reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
     return(rc);
 }
 
@@ -1586,7 +1586,7 @@ nthread_lock(&nnti_mem_lock);
 
 nthread_unlock(&nnti_mem_lock);
 
-    log_debug(LOG_ALL, "exit (reg_buf=%p)", reg_buf);
+    log_debug(nnti_ee_debug_level, "exit (reg_buf=%p)", reg_buf);
 
     return(rc);
 }
@@ -4982,7 +4982,7 @@ static NNTI_buffer_t *get_buf_bufhash(const uint32_t bufhash)
     nthread_unlock(&nnti_buf_bufhash_lock);
 
     if (buf != NULL) {
-        log_debug(LOG_ALL, "buffer found (buf=%p ; buf.hash=%llu)", buf, (uint64_t)bufhash);
+        log_debug(nnti_debug_level, "buffer found (buf=%p ; buf.hash=%llu)", buf, (uint64_t)bufhash);
         return buf;
     }
 
@@ -5007,7 +5007,7 @@ static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *victim)
     }
 
     if (buf != NULL) {
-        log_debug(LOG_ALL, "buffer found and deleted (victim=%p ; buf=%p ; bufhash=%llu)", victim, buf, (uint64_t)h);
+        log_debug(debug_level, "buffer found and deleted (victim=%p ; buf=%p ; bufhash=%llu)", victim, buf, (uint64_t)h);
         buffers_by_bufhash.erase(h);
     } else {
         log_debug(debug_level, "buffer NOT found");
@@ -5049,7 +5049,7 @@ static NNTI_result_t insert_wr_wrhash(gni_work_request *wr)
     assert(wr_by_wrhash.find(h) == wr_by_wrhash.end());
     wr_by_wrhash[h] = wr;
 
-    log_debug(LOG_ALL, "added wrhash work request (wr=%p ; wr.hash=%llu)", wr, (uint64_t)h);
+    log_debug(nnti_debug_level, "added wrhash work request (wr=%p ; wr.hash=%llu)", wr, (uint64_t)h);
 
     nthread_unlock(&nnti_wr_wrhash_lock);
 
@@ -5073,7 +5073,7 @@ static gni_work_request *get_wr_wrhash(const uint32_t wrhash)
     nthread_unlock(&nnti_wr_wrhash_lock);
 
     if (wr != NULL) {
-        log_debug(LOG_ALL, "work request found (wr=%p ; wrhash=%llu)", wr, (uint64_t)wrhash);
+        log_debug(nnti_debug_level, "work request found (wr=%p ; wrhash=%llu)", wr, (uint64_t)wrhash);
         return wr;
     }
 
@@ -5099,7 +5099,7 @@ static gni_work_request *del_wr_wrhash(gni_work_request *victim)
     }
 
     if (wr != NULL) {
-        log_debug(LOG_ALL, "work request found and deleted (victim=%p ; wr=%p ; wrhash=%llu)", victim, wr, (uint64_t)h);
+        log_debug(nnti_debug_level, "work request found and deleted (victim=%p ; wr=%p ; wrhash=%llu)", victim, wr, (uint64_t)h);
         wr_by_wrhash.erase(h);
     } else {
         log_debug(debug_level, "work request NOT found");
