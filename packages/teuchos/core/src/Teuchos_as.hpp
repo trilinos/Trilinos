@@ -42,13 +42,39 @@
 #ifndef TEUCHOS_AS_HPP
 #define TEUCHOS_AS_HPP
 
+/// \file Teuchos_as.hpp
+/// \brief Definition of Teuchos::as, for conversions between types.
+///
+/// This header file declares Teuchos::as, which is a template
+/// function that converts between two different types.  For example,
+/// the following code converts from \c double to \c int:
+/// \code
+/// double d = 3.14;
+/// int i = Teuchos::as<double> (d);
+/// assert (i == 3);
+/// \endcode
+/// In a debug build of Teuchos, this code would check for overflow
+/// when converting from double (64 bits) to int (32 bits, on most
+/// platforms these days), and throw an exception if overflow occurs.
+/// In a release build, this code would not check for overflow.  Users
+/// who want to check for overflow may use the Teuchos::asSafe
+/// template function.  This works the same way as Teuchos::as, except
+/// that it always checks for overflow.
+///
+/// This file includes definitions of a small number of useful
+/// conversions.  If you want to define your own conversions, you
+/// should specialize the Teuchos::ValueTypeConversionTraits template
+/// class for the "to" and "from" types in your conversion.  This
+/// automatically defines Teuchos::as and Teuchos::asSafe for your
+/// conversion.
+
 #include "Teuchos_Assert.hpp"
 #include <limits>
 
 #ifdef HAVE_TEUCHOS_QD
 #include <qd/qd_real.h>
 #include <qd/dd_real.h>
-#endif
+#endif // HAVE_TEUCHOS_QD
 
 namespace Teuchos {
 
@@ -147,8 +173,7 @@ public:
  * \brief Convert from one value type to another.
  * \ingroup teuchos_language_support_grp
  *
- * User documentation
- * ==================
+ * \section Teuchos_as_User User documentation
  *
  * This template function lets you convert from one value type to
  * another, possibly with checks for overflow (where appropriate) in a
@@ -184,8 +209,7 @@ public:
  *   double may result in truncation, since long long has 63 bits of
  *   significand and double has 53.
  *
- * Developer documentation
- * =======================
+ * \section Teuchos_as_Dev Developer documentation
  *
  * This function just uses the traits class ValueTypeConversionTraits
  * to perform the actual conversion.  If debug checking is turned on,
@@ -225,14 +249,13 @@ inline TypeTo as( const TypeFrom& t )
  *   checking for validity first if appropriate.
  * \ingroup teuchos_language_support_grp
  *
- * User documentation
- * ==================
+ * \section Teuchos_asSafe_User User documentation
  *
  * This template function lets you convert from one value type to
  * another.  For example, to convert between int and double:
  * \code
  * double d = 3.14;
- * int i = Teuchos::as<double> (d);
+ * int i = Teuchos::asSafe<double> (d);
  * assert (i == 3);
  * \endcode
  * This function always checks for validity of the conversion before
@@ -246,8 +269,7 @@ inline TypeTo as( const TypeFrom& t )
  * floating-point number, may truncate or round (as it does in the
  * above example).
  *
- * Developer documentation
- * =======================
+ * \section Teuchos_asSafe_Dev Developer documentation
  *
  * This function just uses the traits class ValueTypeConversionTraits
  * to perform the actual conversion.  It always uses the traits class'
