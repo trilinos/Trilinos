@@ -14,4 +14,5 @@ ADD_SUBDIRECTORIES(
   UnitTest
   Workspace
   dyn_cast
+  TypeConversions
   )
