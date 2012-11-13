@@ -51,10 +51,12 @@ ENDFUNCTION()
 # Explode an ETI set into a variable number of named component fields
 FUNCTION(TRIBITS_ETI_EXPLODE fields inst outvar)
   foreach (field ${fields})
-    IF(    "${inst}" MATCHES "( |^)${field}={([^}]*)}( |$)")
+    IF(    "${inst}" MATCHES "( |^)${field}={([^{}$=]*)}( |$)")
       LIST(APPEND result "${CMAKE_MATCH_2}")
-    ELSEIF("${inst}" MATCHES "( |^)${field}=([^{} $]*)( |$)")
+    ELSEIF("${inst}" MATCHES "( |^)${field}=([^{} $=]*)( |$)")
       LIST(APPEND result "${CMAKE_MATCH_2}")
+    ELSEIF(NOT "${inst}" MATCHES "( |^)${field}=")
+      LIST(APPEND result "TYPE-MISSING")
     ELSE()
       SET(result "TRIBITS_ETI_BAD_PARSE")
       BREAK()
@@ -152,7 +154,7 @@ ENDFUNCTION()
 # utility for mangling type names to make them safe for the C preprocessor
 # upon mangling, it automatically inserts an ifdef into the mangling macro
 FUNCTION(TRIBITS_ETI_MANGLE_SYMBOL_AUGMENT_MACRO
-         manglingmacrovar 
+         typedefvar 
          symbolvar
          manglistvar)
   SET(oldsymbol "${${symbolvar}}")
@@ -165,16 +167,15 @@ FUNCTION(TRIBITS_ETI_MANGLE_SYMBOL_AUGMENT_MACRO
   IF(${already_mangled} EQUAL -1)
     LIST(APPEND ${manglistvar} ${newsymbol})
     SET(${manglistvar} ${${manglistvar}} PARENT_SCOPE)
-    SET(${manglingmacrovar} 
-        "${${manglingmacrovar}}\\\ntypedef ${oldsymbol} ${newsymbol};"
-        PARENT_SCOPE)
+    LIST(APPEND ${typedefvar}  "typedef ${oldsymbol} ${newsymbol}")
+    SET(${typedefvar}  ${${typedefvar}}  PARENT_SCOPE)
   ENDIF()
 ENDFUNCTION()
 
 # generate the macros
-FUNCTION(TRIBITS_GENERATE_ETI_MACROS etifields etisetvar etiexcludelist manglingmacroname manglingmacrovar)
-  SET(manglingmacro "#define ${manglingmacroname}() ")
-  SET(current_manglings "")
+FUNCTION(TRIBITS_GENERATE_ETI_MACROS etifields etisetvar etiexcludelist manglinglistvar typedeflistvar)
+  SET(manglinglist  "${${manglinglistvar}}")
+  SET(typedeflist   "${${typedeflistvar}}")
   SPLIT("${etifields}" "\\|" etifields)
   IF(${PROJECT}_VERBOSE_CONFIGURE)
     MESSAGE(STATUS "ETI fields: ${etifields}")
@@ -203,17 +204,24 @@ FUNCTION(TRIBITS_GENERATE_ETI_MACROS etifields etisetvar etiexcludelist mangling
   ENDFOREACH()
   # process the exclusions once
   FOREACH(excl ${etiexcludelist})
-    TRIBITS_ETI_EXPLODE("${etifields}" "${excl}" excl)
-    LIST(APPEND processed_excludes "${excl}")
+    TRIBITS_ETI_EXPLODE("${etifields}" "${excl}" e_excl)
+    IF("${e_excl}" STREQUAL "TRIBITS_ETI_BAD_PARSE")
+      MESSAGE(FATAL_ERROR "TRIBITS_GENERATE_ETI_MACROS: exclusion did not parse: ${excl}")
+    ENDIF()
+    LIST(APPEND processed_excludes "${e_excl}")
   ENDFOREACH()
   LIST(LENGTH etifields numfields)
   MATH(EXPR NFm1 "${numfields}-1")
   FOREACH(inst ${etisetvar})
-    # strip out the types using regex; we're not assuming that they are ordered
     IF (${PROJECT}_VERBOSE_CONFIGURE) 
       MESSAGE(STATUS "Processing instantiation: ${inst}") # comment
     ENDIF()
-    TRIBITS_ETI_EXPLODE("${etifields}" "${inst}" inst)
+    TRIBITS_ETI_EXPLODE("${etifields}" "${inst}" tmp)
+    IF("${tmp}" STREQUAL "TRIBITS_ETI_BAD_PARSE")
+      MESSAGE(FATAL_ERROR "TRIBITS_GENERATE_ETI_MACROS: instantiation did not parse: ${inst}")
+    ELSE()
+      SET(inst "${tmp}")
+    ENDIF()
     # check whether it is on the exclude list
     TRIBITS_ETI_CHECK_EXCLUSION("${processed_excludes}" "${inst}" excluded)
     IF(NOT excluded) 
@@ -223,12 +231,18 @@ FUNCTION(TRIBITS_GENERATE_ETI_MACROS etifields etisetvar etiexcludelist mangling
         SET(tuple "")
         FOREACH(ind ${macroindex${m}})
           LIST(GET inst ${ind} t)
+          IF("${t}" STREQUAL "TYPE-MISSING")
+            SET(tuple "SKIP-TUPLE")
+            BREAK()
+          ENDIF()
           # mangle the types in the instantiation
-          TRIBITS_ETI_MANGLE_SYMBOL_AUGMENT_MACRO(manglingmacro t current_manglings)
+          TRIBITS_ETI_MANGLE_SYMBOL_AUGMENT_MACRO(typedeflist t manglinglist)
           LIST(APPEND tuple ${t})
         ENDFOREACH()
-        JOIN(tuple "|" FALSE "${tuple}")
-        LIST(APPEND macrotuples${m} ${tuple})
+        IF(NOT "${tuple}" STREQUAL "SKIP-TUPLE")
+          JOIN(tuple "|" FALSE "${tuple}")
+          LIST(APPEND macrotuples${m} ${tuple})
+        ENDIF()
       ENDFOREACH()
     ENDIF()
   ENDFOREACH()
@@ -242,6 +256,6 @@ FUNCTION(TRIBITS_GENERATE_ETI_MACROS etifields etisetvar etiexcludelist mangling
     SET(${macrovar${m}} "${mac}" PARENT_SCOPE)
   ENDFOREACH()
   # build the typedef string
-  SET(${PACKAGE_NAME}_ETI_TYPEDEFS manglingtypedefmacro PARENT_SCOPE)
-  SET(${manglingmacrovar} "${manglingmacro}"            PARENT_SCOPE)
+  SET(${manglinglistvar} ${manglinglist} PARENT_SCOPE)
+  SET(${typedeflistvar}  ${typedeflist}  PARENT_SCOPE)
 ENDFUNCTION()

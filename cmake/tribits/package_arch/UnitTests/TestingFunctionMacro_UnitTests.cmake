@@ -1447,20 +1447,39 @@ FUNCTION(UNITTEST_TRIBITS_ETI_EXPLODE)
     parsed
     "type1|type2|type3"
     )
+  
+  # empty for missing fields
 
-  MESSAGE("*** Test passing invalid arguments to TRIBITS_ETI_EXPLODE( ... )\n")
+  # missing field handled properly, extra fields ignored
+  SET(FIELDS F FF G)
+  TRIBITS_ETI_EXPLODE("${FIELDS}" "F=type1 G=type3 H=type4" parsed)
+  UNITTEST_COMPARE_CONST(
+    parsed
+    "type1|TYPE-MISSING|type3"
+    )
 
   # bad bracketing doesn't work
-  SET(FIELDS F FF G)
-  TRIBITS_ETI_EXPLODE("${FIELDS}" "F=type1 FF=type2 G=type3}" parsed)
+  TRIBITS_ETI_EXPLODE("F" "F=typea}" parsed)
   UNITTEST_COMPARE_CONST(
     parsed
     "TRIBITS_ETI_BAD_PARSE"
     )
-
-  # missing field
-  SET(FIELDS F FF G)
-  TRIBITS_ETI_EXPLODE("${FIELDS}" "F=type1 G=type3}" parsed)
+  TRIBITS_ETI_EXPLODE("F" "F={typea" parsed)
+  UNITTEST_COMPARE_CONST(
+    parsed
+    "TRIBITS_ETI_BAD_PARSE"
+    )
+  TRIBITS_ETI_EXPLODE("F" "F={typea}}" parsed)
+  UNITTEST_COMPARE_CONST(
+    parsed
+    "TRIBITS_ETI_BAD_PARSE"
+    )
+  TRIBITS_ETI_EXPLODE("F" "F={{typea}" parsed)
+  UNITTEST_COMPARE_CONST(
+    parsed
+    "TRIBITS_ETI_BAD_PARSE"
+    )
+  TRIBITS_ETI_EXPLODE("F" "F=typeaG=typeb" parsed)
   UNITTEST_COMPARE_CONST(
     parsed
     "TRIBITS_ETI_BAD_PARSE"
@@ -1478,34 +1497,34 @@ FUNCTION(UNITTEST_TRIBITS_ETI_MANGLE_SYMBOL)
     mangled
     "std_pair2std_complex1double1_std_complex0float02")
 
-  # test that POD isn't mangled, and that the method accumulates into the 
-  SET(mac_orig "#define m1")
-  SET(mac "${mac_orig}")
+  # test that POD isn't mangled, and that the method accumulates into the typedef list
+  SET(defs_orig "do not delete")
+  SET(defs "${defs_orig}")
   SET(symbol "double")
   SET(mangling_list "")
-  TRIBITS_ETI_MANGLE_SYMBOL_AUGMENT_MACRO(mac symbol mangling_list)
+  TRIBITS_ETI_MANGLE_SYMBOL_AUGMENT_MACRO(defs symbol mangling_list)
   UNITTEST_COMPARE_CONST(
     symbol
     "double")
   UNITTEST_COMPARE_CONST(
-    mac
-    "${mac_orig}")
+    defs
+    "${defs_orig}")
   UNITTEST_COMPARE_CONST(
     mangling_list
     "")
 
   # this is more like what we expect
-  SET(mac "#define m2")
+  SET(defs "")
   SET(mangling_list "")
   #
   SET(symbol "std::complex<float>")
-  TRIBITS_ETI_MANGLE_SYMBOL_AUGMENT_MACRO(mac symbol mangling_list)
+  TRIBITS_ETI_MANGLE_SYMBOL_AUGMENT_MACRO(defs symbol mangling_list)
   UNITTEST_COMPARE_CONST(
     symbol
     "std_complex0float0")
   #
   SET(symbol "std::pair<float,float>")
-  TRIBITS_ETI_MANGLE_SYMBOL_AUGMENT_MACRO(mac symbol mangling_list)
+  TRIBITS_ETI_MANGLE_SYMBOL_AUGMENT_MACRO(defs symbol mangling_list)
   UNITTEST_COMPARE_CONST(
     symbol
     "std_pair0float_float0")
@@ -1514,10 +1533,8 @@ FUNCTION(UNITTEST_TRIBITS_ETI_MANGLE_SYMBOL)
     mangling_list
     "std_complex0float0;std_pair0float_float0")
   UNITTEST_COMPARE_CONST(
-    mac
-    "#define m2\\
-typedef std::complex<float> std_complex0float0;\\
-typedef std::pair<float,float> std_pair0float_float0;")
+    defs
+    "typedef std::complex<float> std_complex0float0;typedef std::pair<float,float> std_pair0float_float0")
 
 ENDFUNCTION()
 
@@ -1532,23 +1549,20 @@ FUNCTION(UNITTEST_TRIBITS_GENERATE_ETI_MACROS)
     "F2=int | long"
     "F3=float"
   )
-
   TRIBITS_ETI_TYPE_EXPANSION(
     exclset
     "F1=.*"
     "F2=long"
     "F3=.*"
   )
-
   TRIBITS_GENERATE_ETI_MACROS(
     "F1|F2|F3" 
     "${etiset}" 
     "${exclset}"
-    "MMac"            mangling_macro_var
+    mangling_list     typedef_list
     "F1(F1)"          macro_f1_var
     "F312(F3,F1,F2)"  macro_f312_var
   )
-
   UNITTEST_COMPARE_CONST(
     macro_f1_var
 "#define F1(INSTMACRO)\\
@@ -1556,7 +1570,6 @@ FUNCTION(UNITTEST_TRIBITS_GENERATE_ETI_MACROS)
 \tINSTMACRO( double )
 "
     )
-
   UNITTEST_COMPARE_CONST(
     macro_f312_var
 "#define F312(INSTMACRO)\\
@@ -1564,11 +1577,36 @@ FUNCTION(UNITTEST_TRIBITS_GENERATE_ETI_MACROS)
 \tINSTMACRO( float , double , int )
 "
     )
-
   UNITTEST_COMPARE_CONST(
-    mangling_macro_var 
-"#define MMac() \\
-typedef Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > Teuchos_ArrayRCP1Teuchos_ArrayRCP0double01;")
+    typedef_list 
+    "typedef Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > Teuchos_ArrayRCP1Teuchos_ArrayRCP0double01")
+  UNITTEST_COMPARE_CONST(
+    mangling_list 
+    "Teuchos_ArrayRCP1Teuchos_ArrayRCP0double01")
+
+  SET(mangling_list "")
+  SET(typedef_list  "")
+  TRIBITS_GENERATE_ETI_MACROS(
+    "F1|F2"
+    "F1=a F2=b;F2=c;G1=d G2=e;G3=f"
+    ""
+    mangling_list     typedef_list
+    "F2(F2)"          macro_f2_var
+    "F12(F1,F2)"      macro_f12_var
+  )
+  UNITTEST_COMPARE_CONST( typedef_list "")
+  UNITTEST_COMPARE_CONST( mangling_list "")
+  UNITTEST_COMPARE_CONST(
+    macro_f2_var
+"#define F2(INSTMACRO)\\
+\tINSTMACRO( b )\\
+\tINSTMACRO( c )
+")
+  UNITTEST_COMPARE_CONST(
+    macro_f12_var
+"#define F12(INSTMACRO)\\
+\tINSTMACRO( a , b )
+")
 
 ENDFUNCTION()
 
@@ -1642,4 +1680,4 @@ MESSAGE("*** Determine final result of all unit tests")
 MESSAGE("***\n")
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(182)
+UNITTEST_FINAL_RESULT(191)
