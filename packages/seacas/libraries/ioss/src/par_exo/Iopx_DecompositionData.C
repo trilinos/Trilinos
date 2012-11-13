@@ -581,19 +581,11 @@ namespace Iopx {
 
     // Now fill the vectors with the elements ...
     size_t exp_size = std::accumulate(exportElementCount.begin(), exportElementCount.end(), 0);
-    size_t imp_size = std::accumulate(importElementCount.begin(), importElementCount.end(), 0);
 
     exportElementMap.resize(exp_size);
-    importElementMap.resize(imp_size);
-    
     exportElementIndex.resize(processorCount+1);
-    importElementIndex.resize(processorCount+1);
-
     std::copy(exportElementCount.begin(), exportElementCount.end(), exportElementIndex.begin());
     generate_index(exportElementIndex);
-
-    std::copy(importElementCount.begin(), importElementCount.end(), importElementIndex.begin());
-    generate_index(importElementIndex);
 
     {
       std::vector<INT> tmp_disp(exportElementIndex);
@@ -603,6 +595,13 @@ namespace Iopx {
 	}
       }
     }
+    std::vector<idx_t>().swap(elem_partition);
+
+    size_t imp_size = std::accumulate(importElementCount.begin(), importElementCount.end(), 0);
+    importElementMap.resize(imp_size);
+    importElementIndex.resize(processorCount+1);
+    std::copy(importElementCount.begin(), importElementCount.end(), importElementIndex.begin());
+    generate_index(importElementIndex);
 
     MY_Alltoallv(exportElementMap, exportElementCount, exportElementIndex, 
 		 importElementMap, importElementCount, importElementIndex, comm_);
