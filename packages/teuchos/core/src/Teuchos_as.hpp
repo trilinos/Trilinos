@@ -710,6 +710,60 @@ public:
 };
 
 
+
+
+//! Convert from <tt>unsigned int</tt> to <tt>long</tt>.
+template<>
+class ValueTypeConversionTraits<long, unsigned int> {
+public:
+  /// \brief Convert the given <tt>unsigned int</tt> to a \c long.
+  ///
+  /// \warning On some platforms (e.g., Windows, or any other platform
+  ///   that implements the LLP64 model), <tt>unsigned int</tt>
+  ///   integer values may overflow <tt>long</tt>.  You should use
+  ///   safeConvert() if you aren't sure that the given <tt>unsigned
+  ///   int</tt> value fits in a <tt>long</tt>.
+  static long convert (const unsigned int t) {
+    // Implicit conversion from unsigned int to long may cause
+    // compiler warnings, but static_cast does not.
+    return static_cast<long> (t);
+  }
+
+  //! Convert from <tt>unsigned int</tt> to \c long, checking for overflow first.
+  static long safeConvert (const unsigned int t) {
+    const long minLong = std::numeric_limits<long>::min ();
+    const long maxLong = std::numeric_limits<long>::max ();
+
+    // On some platforms, sizeof(int) == sizeof(long).  (This is the
+    // "LLP64" model of Win64, which aims for backwards compatibility
+    // with 32-bit code by making sizeof(int) == sizeof(long) == 4.)
+    // If this is the case, then we can't safely cast unsigned long to
+    // int, or unsigned int to long, because values with the most
+    // significant bit set will overflow to negative values.
+
+    // The C++ standard promises that sizeof (unsigned int) <= sizeof (long).
+    if (sizeof (unsigned int) == sizeof (long)) {
+      // The two types have the same number of bits.  Thus,
+      // two's-complement arithmetic means that if casting from
+      // unsigned int to long results in a negative number, it
+      // overflowed.  Otherwise, it didn't overflow (same number of
+      // bits).
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        static_cast<long> (t) < static_cast<long> (0),
+        std::range_error,
+        "Teuchos::ValueTypeConversionTraits<long, unsigned int>::safeConvert: "
+        "Input unsigned int t = " << t << " is out of the valid range ["
+        << minLong << ", " << maxLong << "] for conversion to long.");
+    }
+    // We don't need to check the other case, since it won't overflow.
+
+    // Implicit conversion from unsigned int to long may cause
+    // compiler warnings, but static_cast does not.
+    return static_cast<long> (t);
+  }
+};
+
+
 //! Convert from \c long to <tt>unsigned int</tt>.
 template<>
 class ValueTypeConversionTraits<unsigned int, long> {
