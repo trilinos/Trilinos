@@ -173,7 +173,7 @@ FUNCTION(TRIBITS_ETI_MANGLE_SYMBOL_AUGMENT_MACRO
 ENDFUNCTION()
 
 # generate the macros
-FUNCTION(TRIBITS_GENERATE_ETI_MACROS etifields etisetvar etiexcludelist manglinglistvar typedeflistvar)
+FUNCTION(TRIBITS_ETI_GENERATE_MACROS etifields etisetvar etiexcludelist manglinglistvar typedeflistvar)
   SET(manglinglist  "${${manglinglistvar}}")
   SET(typedeflist   "${${typedeflistvar}}")
   SPLIT("${etifields}" "\\|" etifields)
@@ -258,4 +258,13 @@ FUNCTION(TRIBITS_GENERATE_ETI_MACROS etifields etisetvar etiexcludelist mangling
   # build the typedef string
   SET(${manglinglistvar} ${manglinglist} PARENT_SCOPE)
   SET(${typedeflistvar}  ${typedeflist}  PARENT_SCOPE)
+ENDFUNCTION()
+
+# generate the typedef macro
+FUNCTION(TRIBITS_ETI_GENERATE_TYPEDEF_MACRO outputvar macroname typedeflist)
+  SET(mac "#define ${macroname}() ")
+  FOREACH(td ${typedeflist})
+    SET(mac "${mac} \\\n\t${td};")
+  ENDFOREACH()
+  SET(${outputvar} "${mac}" PARENT_SCOPE)
 ENDFUNCTION()
