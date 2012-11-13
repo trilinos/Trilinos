@@ -700,7 +700,8 @@ public:
         std::range_error,
         "Teuchos::ValueTypeConversionTraits<int, unsigned long>::safeConvert: "
         "Input unsigned long t = " << t << " is out of the valid range ["
-        << minInt << ", " << maxInt << "] for conversion to int.");
+        << minInt << ", " << maxInt << "] for conversion to int.  An unchecked "
+        "cast would have resulted in " << static_cast<int> (t) << ".");
     }
 
     // Implicit conversion from unsigned long to int may cause

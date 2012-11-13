@@ -478,25 +478,60 @@ namespace Tpetra {
       distor.createFromRecvs (globalIDs, dirImages (), sendGIDs, sendImages);
       const size_t numSends = sendGIDs.size ();
 
+      //
+      // mfh 13 Nov 2012:
+      //
+      // The code below temporarily stores LO, GO, and int values in
+      // an array of global_size_t.  If one of the signed types (LO
+      // and GO should both be signed) happened to be -1 (or some
+      // negative number, but -1 is the one that came up today), then
+      // conversion to global_size_t will result in a huge
+      // global_size_t value, and thus conversion back may overflow.
+      // (Teuchos::as doesn't know that we meant it to be an LO or GO
+      // all along.)
+      //
+      // The overflow normally would not be a problem, since it would
+      // just go back to -1 again.  However, Teuchos::as does range
+      // checking on conversions in a debug build, so it throws an
+      // exception (std::range_error) in this case.  Range checking is
+      // generally useful in debug mode, so we don't want to disable
+      // this behavior globally.
+      //
+      // We solve this problem by forgoing use of Teuchos::as for the
+      // conversions below from LO, GO, or int to global_size_t, and
+      // the later conversions back from global_size_t to LO, GO, or
+      // int.
+      //
+      // I've recorded this discussion as Bug 5760.
+      //
+
       //    global_size_t >= GO
       //    global_size_t >= size_t >= int
       //    global_size_t >= size_t >= LO
       // Therefore, we can safely store all of these in a global_size_t
       Array<global_size_t> exports (packetSize * numSends);
       {
+        // Packet format:
+        // - If computing LIDs: (GID, PID, LID)
+        // - Otherwise:         (GID, PID)
+        //
+        // "PID" means "process ID" (a.k.a. "node ID," a.k.a. "rank").
         LO curLID;
         typename Array<global_size_t>::iterator exportsIter = exports.begin();
         typename ArrayRCP<GO>::const_iterator gidIter = sendGIDs.begin();
         for ( ; gidIter != sendGIDs.end(); ++gidIter) {
-          *exportsIter++ = as<global_size_t> (*gidIter);
+          // Don't use as() here (see above note).
+          *exportsIter++ = static_cast<global_size_t> (*gidIter);
           curLID = directoryMap_->getLocalElement (*gidIter);
           TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
             Teuchos::typeName (*this) << "::getEntriesImpl(): The Directory "
             "Map's global ID " << *gidIter << " does not have a corresponding "
             "local ID.  Please report this bug to the Tpetra developers.");
-          *exportsIter++ = as<global_size_t> (nodeIDs_[curLID]);
+          // Don't use as() here (see above note).
+          *exportsIter++ = static_cast<global_size_t> (nodeIDs_[curLID]);
           if (computeLIDs) {
-            *exportsIter++ = as<global_size_t> (LIDs_[curLID]);
+            // Don't use as() here (see above note).
+            *exportsIter++ = static_cast<global_size_t> (LIDs_[curLID]);
           }
         }
       }
@@ -504,6 +539,10 @@ namespace Tpetra {
       Array<global_size_t> imports (packetSize * distor.getTotalReceiveLength ());
       distor.doPostsAndWaits (exports ().getConst (), packetSize, imports ());
 
+      //
+      // mfh 13 Nov 2012: See note above on conversions between
+      // global_size_t and LO, GO, or int.
+      //
       typename Array<global_size_t>::iterator ptr = imports.begin();
       const size_t numRecv = numEntries - numMissing;
 
@@ -518,14 +557,17 @@ namespace Tpetra {
       typedef typename Array<GO>::iterator IT;
       // we know these conversions are in range, because we loaded this data
       for (size_t i = 0; i < numRecv; ++i) {
-        GO curGID = as<GO> (*ptr++);
+        // Don't use as() here (see above note).
+        GO curGID = static_cast<GO> (*ptr++);
         std::pair<IT, IT> p1 = std::equal_range (sortedIDs.begin(), sortedIDs.end(), curGID);
         if (p1.first != p1.second) {
           //found it
           size_t j = p1.first - sortedIDs.begin();
-          nodeIDs[offset[j]] = as<int>(*ptr++);
+          // Don't use as() here (see above note).
+          nodeIDs[offset[j]] = static_cast<int>(*ptr++);
           if (computeLIDs) {
-            localIDs[offset[j]] = as<LO>(*ptr++);
+            // Don't use as() here (see above note).
+            localIDs[offset[j]] = static_cast<LO>(*ptr++);
           }
           if (nodeIDs[offset[j]] == -1) {
             res = IDNotPresent;
