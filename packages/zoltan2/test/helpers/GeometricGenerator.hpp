@@ -552,7 +552,7 @@ public:
 
   virtual ~CoordinateNormalDistribution(){};
 private:
-  T normalDist(T center, T sd, unsigned int &state) {
+  T normalDist(T center_, T sd, unsigned int &state) {
     static bool derived=false;
     static T storedDerivation;
     T polarsqrt, normalsquared, normal1, normal2;
@@ -566,11 +566,11 @@ private:
       polarsqrt=sqrt(-2.0*log(normalsquared)/normalsquared);
       storedDerivation=normal1*polarsqrt;
       derived=true;
-      return normal2*polarsqrt*sd + center;
+      return normal2*polarsqrt*sd + center_;
     }
     else {
       derived=false;
-      return storedDerivation*sd + center;
+      return storedDerivation*sd + center_;
     }
   }
 };
