@@ -1199,8 +1199,8 @@ private:
           std::string *stepstr = new std::string[stepCount];
           this->splitString(value, ',', stepstr);
           steps = new T[stepCount];
-          for (int i = 0; i < stepCount; ++i){
-            steps[i] = this->fromString<T>(stepstr[i]);
+          for (int ii = 0; ii < stepCount; ++ii){
+            steps[ii] = this->fromString<T>(stepstr[ii]);
           }
           delete [] stepstr;
         }
@@ -1209,8 +1209,8 @@ private:
           std::string *stepstr = new std::string[valueCount];
           this->splitString(value, ',', stepstr);
           values = new T[valueCount];
-          for (int i = 0; i < valueCount; ++i){
-            values[i] = this->fromString<T>(stepstr[i]);
+          for (int ii = 0; ii < valueCount; ++ii){
+            values[ii] = this->fromString<T>(stepstr[ii]);
           }
           delete [] stepstr;
         }
@@ -1244,7 +1244,6 @@ private:
       std::string proc_load_distributions = "";
       std::string distinctDescription = "";
       std::string coordinate_distributions = "";
-      std::string outfile = "";
       std::string weight_dimension_parameters[MAX_WEIGHT_DIM];
       for (int i = 0; i < MAX_WEIGHT_DIM; ++i){
         weight_dimension_parameters[i] = "";
