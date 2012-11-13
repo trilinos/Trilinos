@@ -484,7 +484,7 @@ inline bool mesh_impl::end_modification()
     }
 
     //update max_local_ids
-    for (entity_topology t={0}, e={m_local_ids.size()}; t<e; ++t) {
+    for (entity_topology t={0}, e=entity_topology::create(m_local_ids.size()); t<e; ++t) {
       max_local_id_changed_helper(t, max_local_id(t));
     }
 
@@ -571,7 +571,7 @@ interval<entity_key> mesh_impl::add_entities( entity_topology topology
   // Create keys for the new entities
   entity_key_interval keys = create_keys_helper(topology, how_many);
 
-  partition_offset first_offset = {m_descriptor_to_key_map[sub()].size()};
+  partition_offset first_offset = partition_offset::create(m_descriptor_to_key_map[sub()].size());
   partition_index first_descriptor = partition_index::create(rank, sub, first_offset);
   partition_index last_descriptor  = partition_index::create(rank, sub, first_offset + how_many);
   interval<partition_index> descriptors(first_descriptor, last_descriptor);
@@ -961,7 +961,7 @@ inline void mesh_impl::move_entities_helper( partition_id from
   //if moving the entity partition.  increment he to avoid integer overflow
   ++last_offset;
 
-  partition_offset to_offset = {to_map.size()};
+  partition_offset to_offset = partition_offset::create(to_map.size());
 
   //update d2k map
   to_map.insert(to_map.end(), from_map.begin()+last_offset(), from_map.end());

@@ -30,11 +30,11 @@ TEST(samba, scalar_field_basic)
   samba::partition_index entity_desc = mesh.convert(keys[0]);
   samba::partition_id partition = entity_desc.partition();
 
-  for (samba::partition_offset offset ={0}, e={mesh[partition].size()}; offset < e; ++offset) {
+  for (samba::partition_offset offset ={0}, e=samba::partition_offset::create(mesh[partition].size()); offset < e; ++offset) {
     EXPECT_EQ(field[partition][offset],default_value);
   }
 
-  for (samba::partition_offset offset ={0}, e={mesh[partition].size()}; offset < e; ++offset) {
+  for (samba::partition_offset offset ={0}, e=samba::partition_offset::create(mesh[partition].size()); offset < e; ++offset) {
     field[partition][offset] = 0.0;
   }
 
@@ -44,7 +44,7 @@ TEST(samba, scalar_field_basic)
   keys = mesh.add_entities(samba::entity_topology::hex_8(),num_add,&block_1,&block_1+1);
 
   //data should be reset to the default value
-  for (samba::partition_offset offset ={0}, e={mesh[partition].size()}; offset < e; ++offset) {
+  for (samba::partition_offset offset ={0}, e=samba::partition_offset::create(mesh[partition].size()); offset < e; ++offset) {
     EXPECT_EQ(field[partition][offset],default_value);
   }
 
@@ -76,7 +76,7 @@ TEST(samba, scalar_rank_field_basic)
   samba::partition_id partition = entity_desc.partition();
 
   // access by partition_index
-  for (samba::partition_offset offset ={0}, e={mesh[partition].size()}; offset < e; ++offset) {
+  for (samba::partition_offset offset ={0}, e=samba::partition_offset::create(mesh[partition].size()); offset < e; ++offset) {
     samba::partition_index pi = samba::partition_index::create(samba::entity_rank::element(), partition, offset);
     field[pi] = static_cast<double>(offset());
   }
@@ -95,7 +95,7 @@ TEST(samba, scalar_rank_field_basic)
   keys = mesh.add_entities(samba::entity_topology::hex_8(),num_add,&block_1,&block_1+1);
 
   // access by partition_index
-  for (samba::partition_offset offset ={0}, e={mesh[partition].size()}; offset < e; ++offset) {
+  for (samba::partition_offset offset ={0}, e=samba::partition_offset::create(mesh[partition].size()); offset < e; ++offset) {
     samba::partition_index pi = samba::partition_index::create(samba::entity_rank::element(), partition, offset);
     EXPECT_EQ(default_value, field[pi]);
   }
@@ -133,7 +133,7 @@ TEST(samba, field_move_default)
   samba::partition_index entity_desc = mesh.convert(keys[0]);
   samba::partition_id partition = entity_desc.partition();
 
-  for (samba::partition_offset offset ={0}, e={mesh[partition].size()}; offset < e; ++offset) {
+  for (samba::partition_offset offset ={0}, e=samba::partition_offset::create(mesh[partition].size()); offset < e; ++offset) {
     for (size_t i = 0, ee = samba::num_nodes(mesh[partition].topology()); i<ee; ++i) {
       EXPECT_EQ(field[partition][offset][i],default_value);
       field[partition][offset][i] = 42.0; // any value other than default
@@ -160,7 +160,7 @@ TEST(samba, field_move_default)
   EXPECT_EQ(num_add, mesh[partition].size());
 
   //check that the field has reset the values to the default
-  for (samba::partition_offset offset ={0}, e={mesh[partition].size()}; offset < e; ++offset) {
+  for (samba::partition_offset offset ={0}, e=samba::partition_offset::create(mesh[partition].size()); offset < e; ++offset) {
     for (size_t i = 0, ee = samba::num_nodes(mesh[partition].topology()); i<ee; ++i) {
       EXPECT_EQ(field[partition][offset][i],default_value);
     }
@@ -191,7 +191,7 @@ TEST(samba, init_mesh_before_field_during_mod)
   samba::partition_index entity_desc = mesh.convert(keys[0]);
   samba::partition_id partition = entity_desc.partition();
 
-  for (samba::partition_offset offset ={0}, e={mesh[partition].size()}; offset < e; ++offset) {
+  for (samba::partition_offset offset ={0}, e=samba::partition_offset::create(mesh[partition].size()); offset < e; ++offset) {
     EXPECT_EQ(field[partition][offset],default_value);
   }
 
@@ -222,7 +222,7 @@ TEST(samba, init_mesh_before_field_after_mod)
   samba::partition_index entity_desc = mesh.convert(keys[0]);
   samba::partition_id partition = entity_desc.partition();
 
-  for (samba::partition_offset offset ={0}, e={mesh[partition].size()}; offset < e; ++offset) {
+  for (samba::partition_offset offset ={0}, e=samba::partition_offset::create(mesh[partition].size()); offset < e; ++offset) {
     EXPECT_EQ(field[partition][offset],default_value);
   }
 }

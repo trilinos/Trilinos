@@ -70,7 +70,7 @@ void run_test(samba::mesh mesh, coordinate_field coordinates, int iterations, co
   const size_t num_elements = mesh.num_entities(samba::entity_rank::element());
 
   samba::partition_id partition;
-  const samba::partition_id partition_end = {mesh.num_partitions()};
+  const samba::partition_id partition_end = samba::partition_id::create(mesh.num_partitions());
 
   for(int iteration=0; iteration<iterations; ++iteration)
   {

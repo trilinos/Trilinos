@@ -323,7 +323,7 @@ struct entity_topology_edge_nodes_impl
 inline
 connectivity_ordinal const* const side_nodes(entity_topology t, unsigned side_id)
 {
-  entity_rank rank_of_side = {dimension(t) - 1};
+  entity_rank rank_of_side = entity_rank::create(dimension(t) - 1);
   if (rank_of_side == entity_rank::face()) {
     return face_nodes(t, side_id);
   }
@@ -463,7 +463,7 @@ struct entity_topology_face_topology_impl
 inline
 entity_topology side_topology(entity_topology t, unsigned side_id)
 {
-  entity_rank rank_of_side = {dimension(t) - 1};
+  entity_rank rank_of_side = entity_rank::create(dimension(t) - 1);
   if (rank_of_side == entity_rank::face()) {
     return face_topology(t, side_id);
   }

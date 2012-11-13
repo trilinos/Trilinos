@@ -43,7 +43,7 @@ field_impl<DataType, DimensionFunctor, IsRankField>::field_impl(
 {
   //find dimensions for partitions the field is restricted to
   get_dim<IsRankField> dim_functor;
-  for (partition_id s = {0}, e = {m_mesh->num_partitions()}; s < e; ++s) {
+  for (partition_id s = {0}, e = partition_id::create(m_mesh->num_partitions()); s < e; ++s) {
     partition_proxy p = (*m_mesh)[s];
     if (contains(restriction,p)) {
       const size_t dim = dim_functor(m_functor, p);

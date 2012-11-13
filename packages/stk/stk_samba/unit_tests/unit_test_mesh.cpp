@@ -39,7 +39,7 @@ TEST(samba, mesh_impl_basic)
 
     EXPECT_EQ(partition.size(),2U);
 
-    for (partition_offset i={0},e={partition.size()}; i<e; ++i) {
+    for (partition_offset i={0},e=partition_offset::create(partition.size()); i<e; ++i) {
       EXPECT_EQ(keys[i()],partition[i].key());
     }
 

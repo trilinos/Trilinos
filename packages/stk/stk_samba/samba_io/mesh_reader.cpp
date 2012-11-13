@@ -206,7 +206,7 @@ void mesh_reader::process_block(Ioss::EntityBlock *block, const entity_rank rank
                                                     process_id::invalid(),
                                                     entity_local_id::create(node_id));
       // std::cout << "Adding connectivity between " << entity_from << " and " << node_to << std::endl;
-      const connectivity_ordinal ro_j = {j};
+      const connectivity_ordinal ro_j = connectivity_ordinal::create(j);
       m_mesh.add_connectivity(entity_from, node_to, ro_j);
       m_mesh.add_connectivity(node_to, entity_from, ro_j);
     }

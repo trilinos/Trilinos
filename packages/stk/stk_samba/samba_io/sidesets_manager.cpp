@@ -121,7 +121,7 @@ sidesets_manager::process_sideset(const Ioss::SideSet* sset, const entity_key_ve
       entity_key side_key = side_keys[0];
 #endif
 
-      connectivity_ordinal side_ordinal = {local_side};
+      connectivity_ordinal side_ordinal = connectivity_ordinal::create(local_side);
       m_mesh.add_connectivity(elem_key, side_key, side_ordinal);
       if (use_face_element_connectivity)
       {
@@ -135,7 +135,7 @@ sidesets_manager::process_sideset(const Ioss::SideSet* sset, const entity_key_ve
       for (size_t nj = 0; nj < nodes_per_side; ++nj)
       {
         const entity_key node_to = *(elem_nodes_begin + side_nodes[nj]());
-        const connectivity_ordinal ro_j = {nj};
+        const connectivity_ordinal ro_j = connectivity_ordinal::create(nj);
         m_mesh.add_connectivity(side_key, node_to, ro_j);
 
         ++nn;
