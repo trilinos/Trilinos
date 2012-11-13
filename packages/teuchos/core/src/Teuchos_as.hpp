@@ -70,6 +70,9 @@
 
 #include "Teuchos_Assert.hpp"
 #include <limits>
+#include <cstdlib>
+#include <cerrno>
+#include <climits>
 
 #ifdef HAVE_TEUCHOS_QD
 #include <qd/qd_real.h>
@@ -322,6 +325,196 @@ class asFunc {
 //
 // Standard specializations of ValueTypeConversionTraits
 //
+
+/// \brief Convert an std::string to a long, without compiler warnings.  
+///
+/// We assume the string stores a base-10 integer, if it stores an integer at all.
+template<>
+class ValueTypeConversionTraits<long, std::string> {
+public:
+  //! Convert the given std::string to a long.
+  static long safeConvert (const std::string& t) {
+    // We call strtol() instead of using std::istringstream, because
+    // we want more detailed information in case of failure to
+    // convert.  I have no idea what operator>>(std::istream&, long&)
+    // does if it encounters an integer too long to fit in long, for
+    // example.
+    //
+    // We preset errno to 0, to distinguish success or failure after
+    // calling strtol.  Most implementations of the C standard library
+    // written with threads in mind have errno be a macro that expands
+    // to thread-local storage.  Thanks to the Linux documentation for
+    // strtol ("man 3 strtol", Red Hat Enterprise Linux 5) for advice
+    // with the following checks.
+    errno = 0; 
+    char* endptr = NULL;
+    // Keep the pointer, because std::string doesn't necessarily
+    // guarantee that this is the same across calls to c_str(), does
+    // it?  Or perhaps it does...
+    const char* t_ptr = t.c_str ();
+    const long val = strtol (t_ptr, &endptr, 10);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      errno == ERANGE && (val == LONG_MAX || val == LONG_MIN),
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<long, std::string>::convert: "
+      "The given std::string \"" << t << "\" is too big to fit into long.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      errno != 0 && val == 0,
+      std::invalid_argument,
+      "Teuchos::ValueTypeConversionTraits<long, std::string>::convert: "
+      "stdtol was unable to convert the given std::string \"" << t << "\" to a long.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      endptr == t_ptr, // See above discussion of c_str().
+      std::invalid_argument,
+      "Teuchos::ValueTypeConversionTraits<long, std::string>::convert: "
+      "stdtol was unable to read any integer digits from the given std::string \"" << t << "\".");
+
+    return val;
+  }
+
+  //! Convert the given std::string to a long.
+  static long convert (const std::string& t) {
+    return safeConvert (t);
+  }
+};
+
+
+/// \brief Convert an std::string to a unsigned long, without compiler warnings.  
+///
+/// We assume the string stores a base-10 integer, if it stores an integer at all.
+template<>
+class ValueTypeConversionTraits<unsigned long, std::string> {
+public:
+  //! Convert the given std::string to a unsigned long.
+  static unsigned long safeConvert (const std::string& t) {
+    // We call strtoul() instead of using std::istringstream, because
+    // we want more detailed information in case of failure to
+    // convert.  I have no idea what operator>>(std::istream&,
+    // unsigned long&) does if it encounters an integer too long to
+    // fit in unsigned long, for example.
+    //
+    // We preset errno to 0, to distinguish success or failure after
+    // calling strtoul.  Most implementations of the C standard
+    // library written with threads in mind have errno be a macro that
+    // expands to thread-local storage.  Thanks to the Linux
+    // documentation for strtol ("man 3 strtol", Red Hat Enterprise
+    // Linux 5) for advice with the following checks.
+    errno = 0; 
+    char* endptr = NULL;
+    // Keep the pointer, because std::string doesn't necessarily
+    // guarantee that this is the same across calls to c_str(), does
+    // it?  Or perhaps it does...
+    const char* t_ptr = t.c_str ();
+    const unsigned long val = strtoul (t_ptr, &endptr, 10);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      errno == ERANGE && (val == ULONG_MAX || val == ULONG_MIN),
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<unsigned long, std::string>::convert: "
+      "The given std::string \"" << t << "\" is too big to fit into unsigned long.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      errno != 0 && val == 0,
+      std::invalid_argument,
+      "Teuchos::ValueTypeConversionTraits<unsigned long, std::string>::convert: "
+      "stdtol was unable to convert the given std::string \"" << t << "\" to a unsigned long.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      endptr == t_ptr, // See above discussion of c_str().
+      std::invalid_argument,
+      "Teuchos::ValueTypeConversionTraits<unsigned long, std::string>::convert: "
+      "stdtol was unable to read any integer digits from the given std::string \"" << t << "\".");
+
+    return val;
+  }
+
+  //! Convert the given std::string to an unsigned long.
+  static unsigned long convert (const std::string& t) {
+    return safeConvert (t);
+  }
+};
+
+
+/// \brief Convert an std::string to an int, without compiler warnings.  
+///
+/// We assume the string stores a base-10 integer, if it stores an integer at all.
+template<>
+class ValueTypeConversionTraits<int, std::string> {
+private:
+  //! Convert the given std::string to an intermediate long.
+  static long safeConvertToLong (const std::string& t) {
+    long val = 0;
+    try {
+      val = ValueTypeConversionTraits<long, std::string>::safeConvert (t);
+    } catch (std::range_error&) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, 
+        std::range_error, 
+        "Teuchos::ValueTypeConversionTraits<int, std::string>::convert: "
+        "The given std::string \"" << t << "\" is too big to fit into long, so there is no way it could fit into int.");
+    } catch (std::invalid_argument& e) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true,
+        std::invalid_argument,
+        "Teuchos::ValueTypeConversionTraits<int, std::string>::convert: "
+	"Intermediate conversion from std::string to long failed, with the following error message: "
+	<< e.what ());
+    }
+    return val;
+  }
+
+public:
+  //! Convert the given std::string to an int.
+  static int safeConvert (const std::string& t) {
+    return asSafe<int> (safeConvertToLong (t));
+  }
+
+  //! Convert the given std::string to an int.
+  static int convert (const std::string& t) {
+    return as<int> (safeConvertToLong (t));
+  }
+};
+
+
+/// \brief Convert an std::string to an unsigned int, without compiler warnings.  
+///
+/// We assume the string stores a base-10 integer, if it stores an integer at all.
+template<>
+class ValueTypeConversionTraits<unsigned int, std::string> {
+private:
+  //! Convert the given std::string to an intermediate unsigned long.
+  static unsigned long safeConvertToUnsignedLong (const std::string& t) {
+    unsigned long val = 0;
+    try {
+      val = as<unsigned long> (t);
+    } catch (std::range_error&) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, 
+        std::range_error, 
+        "Teuchos::ValueTypeConversionTraits<unsigned int, std::string>::convert: "
+        "The given std::string \"" << t << "\" is too big to fit into unsigned long, so there is no way it could fit into unsigned int.");
+    } catch (std::invalid_argument& e) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true,
+        std::invalid_argument,
+        "Teuchos::ValueTypeConversionTraits<unsigned int, std::string>::convert: "
+	"Intermediate conversion from std::string to unsigned long failed, with the following error message: "
+	<< e.what ());
+    }
+    return val;
+  }
+
+public:
+  //! Convert the given std::string to an unsigned int.
+  static unsigned int safeConvert (const std::string& t) {
+    return asSafe<unsigned int> (safeConvertToUnsignedLong (t));
+  }
+
+  //! Convert the given std::string to an unsigned int.
+  static unsigned int convert (const std::string& t) {
+    return as<unsigned int> (safeConvertToUnsignedLong (t));
+  }
+};
+
 
 //! Convert double to int, without compiler warnings, with optional range check.
 template<>
