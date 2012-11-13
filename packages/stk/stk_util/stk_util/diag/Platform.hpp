@@ -10,7 +10,10 @@
 #define STK_UTIL_DIAG_Platform_h
 
 #include <iosfwd>
+#include <stk_util/stk_config.h>
+#if defined( STK_HAS_MPI )
 #include <mpi.h>
+#endif
 
 #include <stk_util/util/FeatureTest.hpp>
 #include <stk_util/diag/Env.hpp>

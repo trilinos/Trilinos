@@ -60,6 +60,7 @@ operator<<(
 }
 
 
+#if defined( STK_HAS_MPI )
 Writer &
 operator<<(
   Writer &        dout,
@@ -103,6 +104,7 @@ operator<<(
   return dout;
 }
 
+#endif // if defined( STK_HAS_MPI )
 
 } // namespace diag
 } // namespace stk

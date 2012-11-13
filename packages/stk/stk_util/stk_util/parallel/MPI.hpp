@@ -1,6 +1,9 @@
 #ifndef STK_UTIL_PARALLEL_MPI_hpp
 #define STK_UTIL_PARALLEL_MPI_hpp
 
+#include <stk_util/stk_config.h>
+#if defined( STK_HAS_MPI )
+
 #include <mpi.h>
 #include <vector>
 #include <iterator>
@@ -1026,4 +1029,5 @@ AllReduceCollected(MPI_Comm mpi_comm, MPI_Op op, U collector)
 } // namespace MPI
 } // namespace sierra
 
+#endif // if defined( STK_HAS_MPI )
 #endif // STK_UTIL_PARALLEL_MPI_hpp

@@ -19,6 +19,7 @@
 #include <string>
 #include <typeinfo>
 #include <vector>
+#include <stk_util/stk_config.h>
 #include <stk_util/util/VecMap.hpp>
 #include <stk_util/util/VecSet.hpp>
 
@@ -649,6 +650,7 @@ Writer &operator<<(Writer &dout, const sierra::String &s);
  */
 Writer &operator<<(Writer &dout, const sierra::Identifier &s);
 
+#if defined( STK_HAS_MPI )
 /**
  * @brief Function <b>operator<<</b> writes the MPI::Loc<int> type to the output stream.
  *
@@ -700,6 +702,8 @@ Writer &operator<<(Writer &dout, const sierra::MPI::Loc<float> &loc);
  * @return		a <b>Writer</b> reference to this object
  */
 Writer &operator<<(Writer &dout, const sierra::MPI::TempLoc &loc);
+
+#endif // if defined( STK_HAS_MPI )
 
 /**
  * @brief Template function <b>c_ptr_name</b> implements c_ptr_func with the function

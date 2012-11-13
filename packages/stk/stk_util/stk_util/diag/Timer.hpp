@@ -14,7 +14,10 @@
 #include <list>
 #include <string>
 
+#include <stk_util/stk_config.h>
+#if defined( STK_HAS_MPI )
 #include <mpi.h>
+#endif
 
 #include <stk_util/diag/TimerMetricTraits.hpp>
 #include <stk_util/parallel/Parallel.hpp>

@@ -11,7 +11,12 @@
 
 #include <ios> // #include <iosfwd> // ios_base is not defined in the forward file
 #include <string>
+
+#include <stk_util/stk_config.h>
+#if defined( STK_HAS_MPI )
 #include <mpi.h>
+#endif
+#include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_util/environment/ProgramOptions.hpp>
 #include <stk_util/util/Bootstrap.hpp>

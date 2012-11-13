@@ -69,7 +69,10 @@
 // #include <iostream> // for std::cerr
 #include <sstream>
 
+#include <stk_util/stk_config.h>
+#if defined( STK_HAS_MPI )
 #include <mpi.h>
+#endif
 
 #include <stk_util/environment/ReportHandler.hpp>
 
