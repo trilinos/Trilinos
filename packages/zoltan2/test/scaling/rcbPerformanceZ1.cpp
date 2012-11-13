@@ -296,17 +296,19 @@ const RCP<tMVector_t> getMeshCoordinates(
     yStart = 0;
   }
 
+  // TODO:  KDD ArrayRCP<ArrayView<>> has to go!
+
   ArrayView<const scalar_t> xArray(x, numLocalCoords);
   ArrayView<const scalar_t> yArray(y, numLocalCoords);
   ArrayView<const scalar_t> zArray(z, numLocalCoords);
-  ArrayRCP<ArrayView<const scalar_t> > coordinates =
+  ArrayRCP<ArrayView<const scalar_t> > coordinateArrays =
     arcp(new ArrayView<const scalar_t> [3], 0, 3);
-  coordinates[0] = xArray;
-  coordinates[1] = yArray;
-  coordinates[2] = zArray;
+  coordinateArrays[0] = xArray;
+  coordinateArrays[1] = yArray;
+  coordinateArrays[2] = zArray;
 
   ArrayRCP<const ArrayView<const scalar_t> > constCoords =
-   coordinates.getConst();
+   coordinateArrays.getConst();
 
   RCP<tMVector_t> meshCoords = rcp(new tMVector_t(
     idMap, constCoords.view(0,3), 3));
