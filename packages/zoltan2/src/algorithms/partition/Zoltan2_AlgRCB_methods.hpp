@@ -1001,8 +1001,8 @@ template <typename mvector_t>
       diffVec.Scale(-1.0);
       diffVec += targetLeftVector;
 
-      scalar_t testDiff = diffVec.Norm2(); // imbalance numerator
-      scalar_t prevTestDiff = testDiff;
+      testDiff = diffVec.Norm2(); // imbalance numerator
+      prevTestDiff = testDiff;
       cutLocation= -1;
 
       while (++cutLocation< numSums){
@@ -1014,7 +1014,7 @@ template <typename mvector_t>
         diffVec.Scale(-1.0);
         diffVec += targetLeftVector;
   
-        scalar_t testDiff = diffVec.Norm2();
+        testDiff = diffVec.Norm2();
         
         if (testDiff >= target)
           break;
