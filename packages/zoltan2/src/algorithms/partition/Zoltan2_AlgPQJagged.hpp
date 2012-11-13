@@ -3106,29 +3106,27 @@ void AlgPQJagged(
 
           if(ABS(coordinate_range) < _EPSILON ){
             for(lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
-
-              lno_t i = partitionedPointCoordinates[ii];
-              partIds[i] = 0;
+              partIds[partitionedPointCoordinates[ii]] = 0;
             }
           }
           else{
 
-        	  scalar_t slice = coordinate_range / partNo[i];
+            scalar_t slice = coordinate_range / partNo[i];
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
             for(lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
 
-              lno_t i = partitionedPointCoordinates[ii];
-              partId_t pp = partId_t((pqCoord[i] - minCoordinate) / slice);
-              //if( pp >= partNo[i])
+              lno_t iii = partitionedPointCoordinates[ii];
+              partId_t pp = partId_t((pqCoord[iii] - minCoordinate) / slice);
+              //if( pp >= partNo[iii])
               //{
-              //  partIds[i] = 0;
+              //  partIds[iii] = 0;
               //} else {
-              //  partIds[i] = total_part_count - 2 * pp;
+              //  partIds[iii] = total_part_count - 2 * pp;
               //}
-              partIds[i] = 2 * pp;
+              partIds[iii] = 2 * pp;
             }
           }
         }
