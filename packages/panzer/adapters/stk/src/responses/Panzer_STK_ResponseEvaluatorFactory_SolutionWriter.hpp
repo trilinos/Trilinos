@@ -39,6 +39,14 @@ public:
      *                         object.
      */
    virtual Teuchos::RCP<panzer::ResponseBase> buildResponseObject(const std::string & responseName) const;
+
+   virtual Teuchos::RCP<panzer::ResponseBase> buildResponseObject(const std::string & responseName,
+                                                          const std::vector<std::string> & eBlocks) const 
+   { return buildResponseObject(responseName); }
+
+   virtual Teuchos::RCP<panzer::ResponseBase> buildResponseObject(const std::string & responseName,
+                                                          const std::vector<std::pair<std::string,std::string> > & sideset_blocks) const
+   { return buildResponseObject(responseName); }
    
    /** Build and register evaluators for a response on a particular physics
      * block. 
