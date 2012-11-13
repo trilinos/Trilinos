@@ -22,12 +22,14 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_IFPACK2 OFF)
 ENDIF ()
 
-# Enable experimental code (such as Energy-Minimization)
-IF (NOT Xpetra_ENABLE_Experimental)
-  SET(${PACKAGE_NAME}_ENABLE_Experimental OFF)
-ENDIF()
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
-  GLOBAL_SET(INCLUDE_${PACKAGE_NAME_UC}_EXPERIMENTAL ON)
+# Enable experimental code
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Experimental
+  HAVE_${PACKAGE_NAME_UC}_EXPERIMENTAL
+  "Enable experimental code."
+  NO)
+IF (${PACKAGE_NAME}_ENABLE_Experimental AND NOT Xpetra_ENABLE_Experimental)
+  MESSAGE(FATAL_ERROR "Option MueLu_ENABLE_Experimental=ON requires Xpetra_ENABLE_Experimental=ON.")
 ENDIF ()
 
 # Profiling

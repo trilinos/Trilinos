@@ -242,7 +242,7 @@ namespace Xpetra {
 
     //@}
 
-#ifdef INCLUDE_XPETRA_EXPERIMENTAL
+#ifdef HAVE_XPETRA_EXPERIMENTAL
     //! Deep copy constructor
     TpetraCrsMatrix(const TpetraCrsMatrix& matrix)
     : mtx_(matrix.mtx_->template convert<Scalar>()) {

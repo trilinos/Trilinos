@@ -71,7 +71,7 @@ namespace Xpetra {
   EpetraCrsMatrix::EpetraCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &graph, const Teuchos::RCP< Teuchos::ParameterList > &plist)
     : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra(graph)))), isFillResumed_(false) { }
 
-#ifdef INCLUDE_XPETRA_EXPERIMENTAL
+#ifdef HAVE_XPETRA_EXPERIMENTAL
   EpetraCrsMatrix::EpetraCrsMatrix(const EpetraCrsMatrix& matrix)
     : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(*(matrix.mtx_)))), isFillResumed_(false) { }
 #endif

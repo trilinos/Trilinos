@@ -45,7 +45,7 @@
 // @HEADER
 #include "MueLu_ExplicitInstantiation.hpp"
 
-#ifdef INCLUDE_MUELU_EXPERIMENTAL
+#ifdef HAVE_MUELU_EXPERIMENTAL
 
 #include "MueLu_CGSolver_def.hpp"
 
@@ -70,4 +70,4 @@ template class MueLu::CGSolver<std::complex<double>, int, int, Kokkos::DefaultNo
 # endif
 #endif
 
-#endif // #ifdef INCLUDE_MUELU_EXPERIMENTAL
+#endif // #ifdef HAVE_MUELU_EXPERIMENTAL

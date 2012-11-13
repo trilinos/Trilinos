@@ -13,7 +13,7 @@
 
 #cmakedefine HAVE_MUELU_GOOGLE_PERFTOOLS
 
-#cmakedefine INCLUDE_MUELU_EXPERIMENTAL
+#cmakedefine HAVE_MUELU_EXPERIMENTAL
 
 /* Optional Dependencies */
 

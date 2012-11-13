@@ -242,7 +242,7 @@ namespace Xpetra {
 
     //@}
 
-#ifdef INCLUDE_XPETRA_EXPERIMENTAL
+#ifdef HAVE_XPETRA_EXPERIMENTAL
     //! Deep copy constructor
     EpetraCrsMatrix(const EpetraCrsMatrix& matrix);
 #endif
