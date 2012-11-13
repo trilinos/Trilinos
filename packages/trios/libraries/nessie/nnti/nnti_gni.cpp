@@ -357,7 +357,7 @@ typedef std::deque<gni_work_request *>::iterator wr_queue_iter_t;
 typedef struct {
     gni_buffer_type  type;
     gni_mem_handle_t mem_hdl;
-    wr_queue_t       wr_queue;
+    wr_queue_t       *wr_queue;
     nthread_lock_t   wr_queue_lock;
     uint32_t         ref_count;
 } gni_memory_handle;
@@ -381,8 +381,11 @@ typedef struct {
     gni_cq_handle_t           wc_mem_cq_hdl;
     gni_mem_handle_t          wc_mem_hdl;
 
+    uint64_t                  unblock_buffer;      /* small buffer to receive unblock messages */
+    uint64_t                  unblock_buffer_addr; /* address of the unblock buffer */
     gni_cq_handle_t           unblock_cq_hdl;
     gni_ep_handle_t           unblock_ep_hdl;
+    gni_mem_handle_t          unblock_mem_hdl;
 
     uint64_t                  req_processed_reset_limit;
     uint64_t                  req_processed;
@@ -415,6 +418,7 @@ typedef struct {
 
 
 static nthread_lock_t nnti_gni_lock;
+static nthread_lock_t nnti_mem_lock;
 
 
 static NNTI_result_t register_memory(
@@ -530,12 +534,12 @@ static void print_raw_buf(void *buf, uint32_t size);
 
 static NNTI_result_t insert_buf_bufhash(NNTI_buffer_t *buf);
 static NNTI_buffer_t *get_buf_bufhash(const uint32_t bufhash);
-static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf);
+static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *victim);
 static void print_bufhash_map(void);
 
 static NNTI_result_t insert_wr_wrhash(gni_work_request *);
 static gni_work_request *get_wr_wrhash(const uint32_t bufhash);
-static gni_work_request *del_wr_wrhash(gni_work_request *);
+static gni_work_request *del_wr_wrhash(gni_work_request *victim);
 static void print_wrhash_map(void);
 
 static NNTI_result_t wr_pool_init(uint32_t pool_size);
@@ -630,6 +634,8 @@ inline int DEQUEUE_POST_DESCRIPTOR(
         gni_cq_handle_t           cq_hdl,
         gni_cq_entry_t           *ev_data,
         gni_post_descriptor_t   **post_desc_ptr);
+inline int IS_RDMA_INITIATOR_BUFFER(
+        const gni_work_request *wr);
 inline int IS_RDMA_TARGET_BUFFER(
         const gni_work_request *wr);
 
@@ -823,6 +829,7 @@ NNTI_result_t NNTI_gni_init (
         nnti_ee_debug_level=nnti_debug_level;
 
         nthread_lock_init(&nnti_gni_lock);
+        nthread_lock_init(&nnti_mem_lock);
 
         // initialize the mutexes for the connection maps
         nthread_lock_init(&nnti_conn_peer_lock);
@@ -1373,12 +1380,15 @@ NNTI_result_t NNTI_gni_register_memory (
     assert(ops>0);
     assert(reg_buf);
 
-    log_debug(nnti_ee_debug_level, "enter");
+    log_debug(nnti_ee_debug_level, "enter (reg_buf=%p)", reg_buf);
+
+nthread_lock(&nnti_mem_lock);
 
     old_buf=get_buf_bufhash(hash6432shift((uint64_t)buffer));
     if (old_buf==NULL) {
-        gni_mem_hdl=new gni_memory_handle();
+        gni_mem_hdl=(gni_memory_handle*)calloc(1, sizeof(gni_memory_handle));
         assert(gni_mem_hdl);
+        gni_mem_hdl->wr_queue =new wr_queue_t;
         gni_mem_hdl->ref_count=1;
         nthread_lock_init(&gni_mem_hdl->wr_queue_lock);
     } else {
@@ -1475,14 +1485,20 @@ NNTI_result_t NNTI_gni_register_memory (
                 (uint64_t)gni_mem_hdl->type);
         log_debug(nnti_debug_level, "reg_buf.buf.hash==%llu",
                 (uint64_t)hash6432shift(reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
+        log_debug(LOG_ALL, "ref_count==1 called insert_buf_bufhash() (reg_buf=%p, reg_buf.hash6432=%llu)",
+                reg_buf, (uint64_t)hash6432shift(reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
+        NNTI_buffer_t *tmp_buf=get_buf_bufhash((uint64_t)hash6432shift(reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
+        log_debug(LOG_ALL, "immediate get_buf_bufhash() says tmp_buf=%p", tmp_buf);
     }
+
+nthread_unlock(&nnti_mem_lock);
 
     if (logging_debug(nnti_debug_level)) {
         fprint_NNTI_buffer(logger_get_file(), "reg_buf",
                 "end of NNTI_gni_register_memory", reg_buf);
     }
 
-    log_debug(nnti_ee_debug_level, "exit");
+    log_debug(LOG_ALL, "exit (reg_buf=%p, reg_buf.hash6432=%llu)", reg_buf, (uint64_t)hash6432shift(reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
     return(rc);
 }
 
@@ -1501,12 +1517,14 @@ NNTI_result_t NNTI_gni_unregister_memory (
 
     assert(reg_buf);
 
-    log_debug(nnti_ee_debug_level, "enter");
+    log_debug(nnti_ee_debug_level, "enter (reg_buf=%p)", reg_buf);
 
     if (logging_debug(nnti_debug_level)) {
         fprint_NNTI_buffer(logger_get_file(), "reg_buf",
                 "start of NNTI_gni_unregister_memory", reg_buf);
     }
+
+nthread_lock(&nnti_mem_lock);
 
     gni_mem_hdl=(gni_memory_handle *)reg_buf->transport_private;
     assert(gni_mem_hdl);
@@ -1528,10 +1546,10 @@ NNTI_result_t NNTI_gni_unregister_memory (
         del_buf_bufhash(reg_buf);
 
         nthread_lock(&gni_mem_hdl->wr_queue_lock);
-        while (!gni_mem_hdl->wr_queue.empty()) {
-            gni_work_request *wr=gni_mem_hdl->wr_queue.front();
+        while (!gni_mem_hdl->wr_queue->empty()) {
+            gni_work_request *wr=gni_mem_hdl->wr_queue->front();
             log_debug(nnti_debug_level, "removing pending wr=%p", wr);
-            gni_mem_hdl->wr_queue.pop_front();
+            gni_mem_hdl->wr_queue->pop_front();
             del_wr_wrhash(wr);
             if (config.use_wr_pool) {
                 if (wr->is_initiator==TRUE) {
@@ -1540,15 +1558,15 @@ NNTI_result_t NNTI_gni_unregister_memory (
                     wr_pool_target_push(wr);
                 }
             } else {
+                log_debug(nnti_debug_level, "unregister_wc (reg_buf=%p, wr=%p)", reg_buf, wr);
                 unregister_wc(wr);
+                log_debug(nnti_debug_level, "free(wr) (reg_buf=%p, wr=%p)", reg_buf, wr);
                 free(wr);
             }
         }
         nthread_unlock(&gni_mem_hdl->wr_queue_lock);
 
         nthread_lock_fini(&gni_mem_hdl->wr_queue_lock);
-
-        if (gni_mem_hdl) delete gni_mem_hdl;
 
         reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
         GNI_SET_MATCH_ANY(&reg_buf->buffer_owner);
@@ -1557,9 +1575,18 @@ NNTI_result_t NNTI_gni_unregister_memory (
         reg_buf->payload_size      = 0;
         reg_buf->payload           = 0;
         reg_buf->transport_private = 0;
+
+        if (gni_mem_hdl) {
+            delete gni_mem_hdl->wr_queue;
+            free(gni_mem_hdl);
+        }
+
+        memset(reg_buf, 0, sizeof(NNTI_buffer_t));
     }
 
-    log_debug(nnti_ee_debug_level, "exit");
+nthread_unlock(&nnti_mem_lock);
+
+    log_debug(LOG_ALL, "exit (reg_buf=%p)", reg_buf);
 
     return(rc);
 }
@@ -1660,7 +1687,8 @@ NNTI_result_t NNTI_gni_put (
     if (config.use_wr_pool) {
         wr=wr_pool_initiator_pop();
     } else {
-        wr=(gni_work_request *)calloc(1, sizeof(gni_work_request));
+        wr=(gni_work_request *)malloc(sizeof(gni_work_request));
+        memset(wr, 0, sizeof(gni_work_request));
         nthread_lock_init(&wr->lock);
     }
     assert(wr);
@@ -1711,12 +1739,12 @@ NNTI_result_t NNTI_gni_put (
     }
 
     nthread_lock(&gni_mem_hdl->wr_queue_lock);
-    gni_mem_hdl->wr_queue.push_back(wr);
+    gni_mem_hdl->wr_queue->push_back(wr);
     nthread_unlock(&gni_mem_hdl->wr_queue_lock);
 
-    nthread_lock(&nnti_wr_wrhash_lock);
+//    nthread_lock(&nnti_wr_wrhash_lock);
     insert_wr_wrhash(wr);
-    nthread_unlock(&nnti_wr_wrhash_lock);
+//    nthread_unlock(&nnti_wr_wrhash_lock);
 
 
     nthread_lock(&nnti_gni_lock);
@@ -1804,7 +1832,8 @@ NNTI_result_t NNTI_gni_get (
     if (config.use_wr_pool) {
         wr=wr_pool_initiator_pop();
     } else {
-        wr=(gni_work_request *)calloc(1, sizeof(gni_work_request));
+        wr=(gni_work_request *)malloc(sizeof(gni_work_request));
+        memset(wr, 0, sizeof(gni_work_request));
         nthread_lock_init(&wr->lock);
     }
     assert(wr);
@@ -1854,12 +1883,12 @@ NNTI_result_t NNTI_gni_get (
     }
 
 nthread_lock(&gni_mem_hdl->wr_queue_lock);
-    gni_mem_hdl->wr_queue.push_back(wr);
+    gni_mem_hdl->wr_queue->push_back(wr);
 nthread_unlock(&gni_mem_hdl->wr_queue_lock);
 
-nthread_lock(&nnti_wr_wrhash_lock);
+//nthread_lock(&nnti_wr_wrhash_lock);
     insert_wr_wrhash(wr);
-nthread_unlock(&nnti_wr_wrhash_lock);
+//nthread_unlock(&nnti_wr_wrhash_lock);
 
     nthread_lock(&nnti_gni_lock);
 
@@ -1952,7 +1981,7 @@ NNTI_result_t NNTI_gni_wait (
 
     trios_declare_timer(call_time);
 
-    log_debug(nnti_ee_debug_level, "enter");
+    log_debug(nnti_ee_debug_level, "enter (reg_buf=%p)", reg_buf);
 
     assert(reg_buf);
     assert(status);
@@ -1976,11 +2005,11 @@ NNTI_result_t NNTI_gni_wait (
 
     nthread_lock(&gni_mem_hdl->wr_queue_lock);
 
-    if (gni_mem_hdl->wr_queue.empty()) {
+    if (gni_mem_hdl->wr_queue->empty()) {
         log_debug(nnti_ee_debug_level, "work request queue is empty");
         nnti_rc=NNTI_ENOENT;
     } else {
-        wr=gni_mem_hdl->wr_queue.front();
+        wr=gni_mem_hdl->wr_queue->front();
         assert(wr);
     }
 
@@ -1999,12 +2028,14 @@ NNTI_result_t NNTI_gni_wait (
             complete=is_wr_complete(wr);
             if (complete == TRUE) {
                 if (first_pass) {
-                    log_debug(nnti_event_debug_level, "buffer op already complete (reg_buf=%p)", reg_buf);
+                    log_debug(nnti_debug_level, "buffer op already complete (reg_buf=%p, wr=%p)", reg_buf, wr);
                 } else {
-                    log_debug(nnti_event_debug_level, "buffer op complete (reg_buf=%p)", reg_buf);
+                    log_debug(nnti_debug_level, "buffer op complete (reg_buf=%p, wr=%p)", reg_buf, wr);
                 }
                 nnti_rc = NNTI_OK;
                 break;
+            } else {
+                log_debug(nnti_debug_level, "buffer op NOT complete (reg_buf=%p, wr=%p)", reg_buf, wr);
             }
             first_pass=false;
 
@@ -2056,7 +2087,7 @@ nthread_unlock(&nnti_gni_lock);
                 elapsed_time = (trios_get_time_ms() - entry_time);
 
                 /* if the caller asked for a legitimate timeout, we need to exit */
-                if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
+                if (((timeout >= 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
                     log_debug(nnti_debug_level, "CqWaitEvent timed out...timeout(%d) elapsed_time(%d) exit_now(%d)",
                             timeout, elapsed_time, trios_exit_now());
                     nnti_rc = NNTI_ETIMEDOUT;
@@ -2080,10 +2111,29 @@ nthread_unlock(&nnti_gni_lock);
                 log_error(nnti_debug_level, "CqWaitEvent failed (cq_hdl=%llu ; rc=%d) (recoverable=%llu) : %s",
                         (uint64_t)cq_hdl, rc, (uint64_t)recoverable, errstr);
                 print_failed_cq(reg_buf);
-                fprint_NNTI_buffer(logger_get_file(), "reg_buf",
-                        "NNTI_wait() error", reg_buf);
-                nnti_rc = NNTI_EIO;
-                break;
+
+                wait_buf=decode_event_buffer(reg_buf, &ev_data);
+//                if (wait_buf != reg_buf) {
+//                    gni_memory_handle *hdl=(gni_memory_handle *)wait_buf->transport_private;
+//nthread_lock(&hdl->wr_queue_lock);
+//                    gni_work_request *wait_wr=first_incomplete_wr(hdl);
+//nthread_unlock(&hdl->wr_queue_lock);
+//nthread_lock(&wait_wr->lock);
+//                    process_error(wait_buf, wait_wr, cq_hdl, &ev_data, post_desc_ptr);
+//nthread_unlock(&wait_wr->lock);
+//                } else {
+//nthread_lock(&wr->lock);
+//                    process_error(reg_buf, wr, cq_hdl, &ev_data, post_desc_ptr);
+//nthread_unlock(&wr->lock);
+//                }
+//                fprint_NNTI_buffer(logger_get_file(), "reg_buf",
+//                        "NNTI_wait() error", reg_buf);
+                if (wait_buf != reg_buf) {
+                    continue;
+                } else {
+                    nnti_rc = NNTI_EIO;
+                    break;
+                }
             }
 
             if (rc == GNI_RC_SUCCESS) {
@@ -2137,8 +2187,8 @@ nthread_unlock(&wr->lock);
             case REQUEST_BUFFER:
             case RECEIVE_BUFFER:
                 nthread_lock(&gni_mem_hdl->wr_queue_lock);
-//                wr=gni_mem_hdl->wr_queue.front();
-                gni_mem_hdl->wr_queue.pop_front();
+//                wr=gni_mem_hdl->wr_queue->front();
+                gni_mem_hdl->wr_queue->pop_front();
                 repost_recv_work_request((NNTI_buffer_t *)reg_buf, wr);
                 nthread_unlock(&gni_mem_hdl->wr_queue_lock);
                 break;
@@ -2147,8 +2197,8 @@ nthread_unlock(&wr->lock);
             case RDMA_TARGET_BUFFER:
                 if (config.use_rdma_target_ack) {
                     nthread_lock(&gni_mem_hdl->wr_queue_lock);
-//                    wr=gni_mem_hdl->wr_queue.front();
-                    gni_mem_hdl->wr_queue.pop_front();
+//                    wr=gni_mem_hdl->wr_queue->front();
+                    gni_mem_hdl->wr_queue->pop_front();
                     repost_recv_work_request((NNTI_buffer_t *)reg_buf, wr);
                     nthread_unlock(&gni_mem_hdl->wr_queue_lock);
                 }
@@ -2157,14 +2207,16 @@ nthread_unlock(&wr->lock);
             case GET_DST_BUFFER:
             case PUT_SRC_BUFFER:
                 nthread_lock(&gni_mem_hdl->wr_queue_lock);
-//                wr=gni_mem_hdl->wr_queue.front();
-                gni_mem_hdl->wr_queue.pop_front();
+//                wr=gni_mem_hdl->wr_queue->front();
+                gni_mem_hdl->wr_queue->pop_front();
                 nthread_unlock(&gni_mem_hdl->wr_queue_lock);
                 del_wr_wrhash(wr);
                 if (config.use_wr_pool) {
                     wr_pool_initiator_push(wr);
                 } else {
+                    log_debug(nnti_debug_level, "unregister_wc (reg_buf=%p, wr=%p)", reg_buf, wr);
                     unregister_wc(wr);
+                    log_debug(nnti_debug_level, "free(wr) (reg_buf=%p, wr=%p)", reg_buf, wr);
                     free(wr);
                 }
                 break;
@@ -2175,7 +2227,7 @@ nthread_unlock(&wr->lock);
         }
     }
 
-    log_debug(nnti_ee_debug_level, "exit");
+    log_debug(nnti_ee_debug_level, "exit (reg_buf=%p)", reg_buf);
     return((NNTI_result_t)nnti_rc);
 }
 
@@ -2309,7 +2361,7 @@ nthread_unlock(&nnti_gni_lock);
                 elapsed_time = (trios_get_time_ms() - entry_time);
 
                 /* if the caller asked for a legitimate timeout, we need to exit */
-                if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
+                if (((timeout >= 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
                     log_debug(nnti_debug_level, "CqVectorWaitEvent timed out...timeout(%d) elapsed_time(%d) exit_now(%d)",
                             timeout, elapsed_time, trios_exit_now());
                     nnti_rc = NNTI_ETIMEDOUT;
@@ -2388,7 +2440,7 @@ nthread_unlock(&wr_list[which_wr]->lock);
             case REQUEST_BUFFER:
             case RECEIVE_BUFFER:
                 nthread_lock(&gni_mem_hdl->wr_queue_lock);
-                gni_mem_hdl->wr_queue.pop_front();
+                gni_mem_hdl->wr_queue->pop_front();
                 repost_recv_work_request((NNTI_buffer_t *)buf_list[*which], wr_list[*which]);
                 nthread_unlock(&gni_mem_hdl->wr_queue_lock);
                 break;
@@ -2397,7 +2449,7 @@ nthread_unlock(&wr_list[which_wr]->lock);
             case RDMA_TARGET_BUFFER:
                 if (config.use_rdma_target_ack) {
                     nthread_lock(&gni_mem_hdl->wr_queue_lock);
-                    gni_mem_hdl->wr_queue.pop_front();
+                    gni_mem_hdl->wr_queue->pop_front();
                     repost_recv_work_request((NNTI_buffer_t *)buf_list[*which], wr_list[*which]);
                     nthread_unlock(&gni_mem_hdl->wr_queue_lock);
                 }
@@ -2406,7 +2458,7 @@ nthread_unlock(&wr_list[which_wr]->lock);
             case GET_DST_BUFFER:
             case PUT_SRC_BUFFER:
                 nthread_lock(&gni_mem_hdl->wr_queue_lock);
-                gni_mem_hdl->wr_queue.pop_front();
+                gni_mem_hdl->wr_queue->pop_front();
                 nthread_unlock(&gni_mem_hdl->wr_queue_lock);
                 del_wr_wrhash(wr_list[*which]);
                 if (config.use_wr_pool) {
@@ -2561,7 +2613,7 @@ nthread_unlock(&nnti_gni_lock);
                 elapsed_time = (trios_get_time_ms() - entry_time);
 
                 /* if the caller asked for a legitimate timeout, we need to exit */
-                if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
+                if (((timeout >= 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
                     log_debug(nnti_debug_level, "CqVectorWaitEvent timed out...timeout(%d) elapsed_time(%d) exit_now(%d)",
                             timeout, elapsed_time, trios_exit_now());
                     nnti_rc = NNTI_ETIMEDOUT;
@@ -2643,7 +2695,7 @@ nthread_unlock(&wr_list[which_wr]->lock);
                 case REQUEST_BUFFER:
                 case RECEIVE_BUFFER:
                     nthread_lock(&gni_mem_hdl->wr_queue_lock);
-                    gni_mem_hdl->wr_queue.pop_front();
+                    gni_mem_hdl->wr_queue->pop_front();
                     repost_recv_work_request((NNTI_buffer_t *)buf_list[i], wr_list[i]);
                     nthread_unlock(&gni_mem_hdl->wr_queue_lock);
                     break;
@@ -2652,7 +2704,7 @@ nthread_unlock(&wr_list[which_wr]->lock);
                 case RDMA_TARGET_BUFFER:
                     if (config.use_rdma_target_ack) {
                         nthread_lock(&gni_mem_hdl->wr_queue_lock);
-                        gni_mem_hdl->wr_queue.pop_front();
+                        gni_mem_hdl->wr_queue->pop_front();
                         repost_recv_work_request((NNTI_buffer_t *)buf_list[i], wr_list[i]);
                         nthread_unlock(&gni_mem_hdl->wr_queue_lock);
                     }
@@ -2661,7 +2713,7 @@ nthread_unlock(&wr_list[which_wr]->lock);
                 case GET_DST_BUFFER:
                 case PUT_SRC_BUFFER:
                     nthread_lock(&gni_mem_hdl->wr_queue_lock);
-                    gni_mem_hdl->wr_queue.pop_front();
+                    gni_mem_hdl->wr_queue->pop_front();
                     nthread_unlock(&gni_mem_hdl->wr_queue_lock);
                     del_wr_wrhash(wr_list[i]);
                     if (config.use_wr_pool) {
@@ -2724,6 +2776,7 @@ NNTI_result_t NNTI_gni_fini (
     }
 
     nthread_lock_fini(&nnti_gni_lock);
+    nthread_lock_fini(&nnti_mem_lock);
     nthread_lock_fini(&nnti_conn_peer_lock);
     nthread_lock_fini(&nnti_conn_instance_lock);
     nthread_lock_fini(&nnti_wr_wrhash_lock);
@@ -3365,23 +3418,33 @@ static const NNTI_buffer_t *decode_event_buffer(
                 log_error(nnti_debug_level, "ev_data.inst_id does NOT match either a bufhash or a wrhash.  what happened?  where did this event come from?");
                 print_cq_event(ev_data, true);
 
-                if (buffers_by_bufhash.begin() == buffers_by_bufhash.end()) {
+                if (nthread_lock(&nnti_buf_bufhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
+                if (buffers_by_bufhash.empty()) {
                     log_error(nnti_debug_level, "bufhash_map is emtpy");
                 } else {
                     buf_by_bufhash_iter_t bufhash_iter;
                     for (bufhash_iter=buffers_by_bufhash.begin(); bufhash_iter != buffers_by_bufhash.end(); bufhash_iter++) {
                         log_error(nnti_debug_level, "bufhash_map key=%llu buf=%p", bufhash_iter->first, bufhash_iter->second);
+                        if (bufhash_iter->first == 0) {
+                            break;
+                        }
                     }
                 }
+                nthread_unlock(&nnti_buf_bufhash_lock);
 
-                if (wr_by_wrhash.begin() == wr_by_wrhash.end()) {
+                if (nthread_lock(&nnti_wr_wrhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
+                if (wr_by_wrhash.empty()) {
                     log_error(nnti_debug_level, "wrhash_map is emtpy");
                 } else {
                     wr_by_wrhash_iter_t wrhash_iter;
                     for (wrhash_iter=wr_by_wrhash.begin(); wrhash_iter != wr_by_wrhash.end(); wrhash_iter++) {
                         log_error(nnti_debug_level, "wrhash_map key=%llu wr=%p", wrhash_iter->first, wrhash_iter->second);
+                        if (wrhash_iter->first == 0) {
+                            break;
+                        }
                     }
                 }
+                nthread_unlock(&nnti_wr_wrhash_lock);
 
                 assert(wr);
             } else {
@@ -3753,7 +3816,8 @@ static NNTI_result_t post_recv_work_request(
             wr=wr_pool_initiator_pop();
         }
     } else {
-        wr=(gni_work_request *)calloc(1, sizeof(gni_work_request));
+        wr=(gni_work_request *)malloc(sizeof(gni_work_request));
+        memset(wr, 0, sizeof(gni_work_request));
         nthread_lock_init(&wr->lock);
     }
     assert(wr);
@@ -3768,7 +3832,7 @@ static NNTI_result_t post_recv_work_request(
     wr->op_state.rdma_init=true;
 
     nthread_lock(&gni_mem_hdl->wr_queue_lock);
-    gni_mem_hdl->wr_queue.push_back(wr);
+    gni_mem_hdl->wr_queue->push_back(wr);
     nthread_unlock(&gni_mem_hdl->wr_queue_lock);
 
     reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.wc_addr           = (uint64_t)&wr->wc;
@@ -3799,7 +3863,7 @@ static NNTI_result_t repost_recv_work_request(
     memset(&wr->op_state, 0, sizeof(gni_op_state_t));
     wr->op_state.rdma_init  =true;
 
-    gni_mem_hdl->wr_queue.push_back(wr);
+    gni_mem_hdl->wr_queue->push_back(wr);
 
     reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.wc_addr           = (uint64_t)&wr->wc;
     reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.wc_mem_hdl.qword1 = wr->wc_mem_hdl.qword1;
@@ -3823,7 +3887,10 @@ static int8_t is_wr_complete(
         (wr->op_state.rdma_complete==true)) {
 
         if ((config.use_rdma_target_ack==false) &&
-            (IS_RDMA_TARGET_BUFFER(wr))) {
+            (IS_RDMA_TARGET_BUFFER(wr)==TRUE)) {
+            rc=TRUE;
+        } else if ((config.use_rdma_target_ack==false) &&
+                   (IS_RDMA_INITIATOR_BUFFER(wr)==TRUE)) {
             rc=TRUE;
         } else if (wr->op_state.wc_complete==true) {
             rc=TRUE;
@@ -3899,10 +3966,10 @@ static void create_wr_array(
         assert(gni_mem_hdl);
 
         nthread_lock(&gni_mem_hdl->wr_queue_lock);
-        if (gni_mem_hdl->wr_queue.empty()) {
+        if (gni_mem_hdl->wr_queue->empty()) {
             (*wr_list)[i]=NULL;
         } else {
-            (*wr_list)[i]=gni_mem_hdl->wr_queue.front();
+            (*wr_list)[i]=gni_mem_hdl->wr_queue->front();
             assert((*wr_list)[i]);
         }
         nthread_unlock(&gni_mem_hdl->wr_queue_lock);
@@ -3923,11 +3990,11 @@ static gni_work_request *first_incomplete_wr(
 
 //    nthread_lock(&gni_mem_hdl->wr_queue_lock);
 
-    if (gni_mem_hdl->wr_queue.empty()) {
+    if (gni_mem_hdl->wr_queue->empty()) {
         log_debug(nnti_ee_debug_level, "work request queue is empty");
     } else {
         wr_queue_iter_t i;
-        for (i=gni_mem_hdl->wr_queue.begin(); i != gni_mem_hdl->wr_queue.end(); i++) {
+        for (i=gni_mem_hdl->wr_queue->begin(); i != gni_mem_hdl->wr_queue->end(); i++) {
             wr=*i;
             assert(wr);
             if (is_wr_complete(wr) == FALSE) {
@@ -3957,7 +4024,7 @@ static int8_t is_wr_queue_empty(
     gni_mem_hdl=(gni_memory_handle *)reg_buf->transport_private;
     assert(gni_mem_hdl);
 
-    if (gni_mem_hdl->wr_queue.empty()) {
+    if (gni_mem_hdl->wr_queue->empty()) {
         rc=TRUE;
     }
 
@@ -3983,7 +4050,7 @@ static int8_t is_buf_op_complete(
         log_debug(nnti_ee_debug_level, "work request queue is empty - return FALSE");
         rc=FALSE;
     } else {
-        wr=gni_mem_hdl->wr_queue.front();
+        wr=gni_mem_hdl->wr_queue->front();
         assert(wr);
 
         rc = is_wr_complete(wr);
@@ -4883,12 +4950,17 @@ static NNTI_result_t insert_buf_bufhash(NNTI_buffer_t *buf)
     NNTI_result_t  rc=NNTI_OK;
     uint32_t h=hash6432shift((uint64_t)buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf);
 
-    if (nthread_lock(&nnti_buf_bufhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");;
+    if (nthread_lock(&nnti_buf_bufhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
+
+    log_debug(nnti_debug_level, "adding buf=%p ; bufhash=%llu", buf, (uint64_t)h);
+
     assert(buffers_by_bufhash.find(h) == buffers_by_bufhash.end());
     buffers_by_bufhash[h] = buf;
-    nthread_unlock(&nnti_buf_bufhash_lock);
 
     log_debug(nnti_debug_level, "bufhash buffer added (buf=%p ; buf.hash=%llu)", buf, (uint64_t)h);
+
+    nthread_unlock(&nnti_buf_bufhash_lock);
+
     print_bufhash_map();
 
     return(rc);
@@ -4897,41 +4969,54 @@ static NNTI_buffer_t *get_buf_bufhash(const uint32_t bufhash)
 {
     NNTI_buffer_t *buf=NULL;
 
+    if (nthread_lock(&nnti_buf_bufhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
+
     log_debug(nnti_debug_level, "looking for bufhash=%llu", (uint64_t)bufhash);
-    if (nthread_lock(&nnti_buf_bufhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");;
+
     if (buffers_by_bufhash.find(bufhash) != buffers_by_bufhash.end()) {
         buf = buffers_by_bufhash[bufhash];
     }
+
+    log_debug(nnti_debug_level, "found buffer (buf=%p ; buf.hash=%llu)", buf, (uint64_t)bufhash);
+
     nthread_unlock(&nnti_buf_bufhash_lock);
 
     if (buf != NULL) {
-        log_debug(nnti_debug_level, "buffer found (buf=%p)", buf);
+        log_debug(LOG_ALL, "buffer found (buf=%p ; buf.hash=%llu)", buf, (uint64_t)bufhash);
         return buf;
     }
 
     log_debug(nnti_debug_level, "buffer NOT found");
+
     print_bufhash_map();
 
     return(NULL);
 }
-static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf)
+static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *victim)
 {
-    uint32_t h=hash6432shift((uint64_t)buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf);
+    NNTI_buffer_t *buf=NULL;
+    uint32_t h=hash6432shift((uint64_t)victim->buffer_addr.NNTI_remote_addr_t_u.gni.buf);
     log_level debug_level = nnti_debug_level;
 
-    log_debug(debug_level, "deleting bufhash=%llu", (uint64_t)h);
     if (nthread_lock(&nnti_buf_bufhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
+
+    log_debug(debug_level, "deleting (victim=%p ; bufhash=%llu)", victim, (uint64_t)h);
+
     if (buffers_by_bufhash.find(h) != buffers_by_bufhash.end()) {
         buf = buffers_by_bufhash[h];
     }
 
     if (buf != NULL) {
-        log_debug(debug_level, "buffer found");
+        log_debug(LOG_ALL, "buffer found and deleted (victim=%p ; buf=%p ; bufhash=%llu)", victim, buf, (uint64_t)h);
         buffers_by_bufhash.erase(h);
     } else {
         log_debug(debug_level, "buffer NOT found");
     }
+
+    log_debug(debug_level, "deleted (victim=%p ; buf=%p ; bufhash=%llu)", victim, buf, (uint64_t)h);
+
     nthread_unlock(&nnti_buf_bufhash_lock);
+
     print_bufhash_map();
 
     return(buf);
@@ -4957,54 +5042,73 @@ static NNTI_result_t insert_wr_wrhash(gni_work_request *wr)
     NNTI_result_t  rc=NNTI_OK;
     uint32_t h=hash6432shift((uint64_t)wr);
 
-//    if (nthread_lock(&nnti_wr_wrhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
+    if (nthread_lock(&nnti_wr_wrhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
+
+    log_debug(nnti_debug_level, "adding wrhash work request (wr=%p ; wr.hash=%llu)", wr, (uint64_t)h);
+
     assert(wr_by_wrhash.find(h) == wr_by_wrhash.end());
     wr_by_wrhash[h] = wr;
-//    nthread_unlock(&nnti_wr_wrhash_lock);
 
-    log_debug(nnti_debug_level, "wrhash work request added (wr=%p ; wr.hash=%llu)", wr, (uint64_t)h);
+    log_debug(LOG_ALL, "added wrhash work request (wr=%p ; wr.hash=%llu)", wr, (uint64_t)h);
+
+    nthread_unlock(&nnti_wr_wrhash_lock);
 
     return(rc);
+
 }
 static gni_work_request *get_wr_wrhash(const uint32_t wrhash)
 {
     gni_work_request *wr=NULL;
 
-    log_debug(nnti_debug_level, "looking for wrhash=%llu", (uint64_t)wrhash);
     if (nthread_lock(&nnti_wr_wrhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
+
+    log_debug(nnti_debug_level, "looking for wrhash=%llu", (uint64_t)wrhash);
+
     if (wr_by_wrhash.find(wrhash) != wr_by_wrhash.end()) {
         wr = wr_by_wrhash[wrhash];
     }
+
+    log_debug(nnti_debug_level, "found work request (wr=%p ; wrhash=%llu)", wr, (uint64_t)wrhash);
+
     nthread_unlock(&nnti_wr_wrhash_lock);
 
     if (wr != NULL) {
-        log_debug(nnti_debug_level, "work request found (wr=%p)", wr);
+        log_debug(LOG_ALL, "work request found (wr=%p ; wrhash=%llu)", wr, (uint64_t)wrhash);
         return wr;
     }
 
     log_debug(nnti_debug_level, "work request NOT found");
+
     print_wrhash_map();
 
     return(NULL);
 }
-static gni_work_request *del_wr_wrhash(gni_work_request *wr)
+static gni_work_request *del_wr_wrhash(gni_work_request *victim)
 {
-    uint32_t h=hash6432shift((uint64_t)wr);
+    gni_work_request *wr=NULL;
+
+    uint32_t h=hash6432shift((uint64_t)victim);
     log_level debug_level = nnti_debug_level;
 
-    log_debug(debug_level, "deleting wrhash=%llu", (uint64_t)h);
     if (nthread_lock(&nnti_wr_wrhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
+
+    log_debug(debug_level, "deleting wrhash=%llu", (uint64_t)h);
+
     if (wr_by_wrhash.find(h) != wr_by_wrhash.end()) {
         wr = wr_by_wrhash[h];
     }
 
     if (wr != NULL) {
-        log_debug(debug_level, "work request found");
+        log_debug(LOG_ALL, "work request found and deleted (victim=%p ; wr=%p ; wrhash=%llu)", victim, wr, (uint64_t)h);
         wr_by_wrhash.erase(h);
     } else {
         log_debug(debug_level, "work request NOT found");
     }
+
+    log_debug(debug_level, "deleted (wr=%p ; wrhash=%llu)", wr, (uint64_t)h);
+
     nthread_unlock(&nnti_wr_wrhash_lock);
+
     print_wrhash_map();
 
     return(wr);
@@ -5017,8 +5121,8 @@ static void print_wrhash_map()
         return;
     }
 
-    if (nthread_lock(&nnti_wr_wrhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     wr_by_wrhash_iter_t i;
+    if (nthread_lock(&nnti_wr_wrhash_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     for (i=wr_by_wrhash.begin(); i != wr_by_wrhash.end(); i++) {
         log_debug(debug_level, "wrhash_map key=%llu wr=%p", i->first, i->second);
     }
@@ -5084,7 +5188,8 @@ static NNTI_result_t wr_pool_init(uint32_t pool_size)
     log_debug(nnti_debug_level, "enter");
 
     for (i=0;i<pool_size;i++) {
-        wr=(gni_work_request *)calloc(1, sizeof(gni_work_request));
+        wr=(gni_work_request *)malloc(sizeof(gni_work_request));
+        memset(wr, 0, sizeof(gni_work_request));
         assert(wr);
         nthread_lock_init(&wr->lock);
         rc=wr_pool_register(wr, transport_global_data.mem_cq_hdl);
@@ -5095,7 +5200,8 @@ static NNTI_result_t wr_pool_init(uint32_t pool_size)
         wr->is_initiator=FALSE;
         wr_pool_target_push(wr);
 
-        wr=(gni_work_request *)calloc(1, sizeof(gni_work_request));
+        wr=(gni_work_request *)malloc(sizeof(gni_work_request));
+        memset(wr, 0, sizeof(gni_work_request));
         assert(wr);
         nthread_lock_init(&wr->lock);
         rc=wr_pool_register(wr, NULL);
@@ -5238,20 +5344,22 @@ static void close_all_conn(void)
             connections_by_instance.size(), connections_by_peer.size());
 
     if (nthread_lock(&nnti_conn_instance_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
-    conn_by_inst_iter_t inst_iter;
-    for (inst_iter = connections_by_instance.begin(); inst_iter != connections_by_instance.end(); inst_iter++) {
+    conn_by_inst_iter_t inst_iter = connections_by_instance.begin();
+    while (inst_iter != connections_by_instance.end()) {
         log_debug(debug_level, "close connection (instance=%llu)", inst_iter->first);
         close_connection(inst_iter->second);
-        connections_by_instance.erase(inst_iter);
+
+        connections_by_instance.erase(inst_iter++);
     }
     nthread_unlock(&nnti_conn_instance_lock);
 
     if (nthread_lock(&nnti_conn_peer_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
-    conn_by_peer_iter_t peer_iter;
-    for (peer_iter = connections_by_peer.begin(); peer_iter != connections_by_peer.end(); peer_iter++) {
+    conn_by_peer_iter_t peer_iter = connections_by_peer.begin();
+    while (peer_iter != connections_by_peer.end()) {
         log_debug(debug_level, "close connection (peer.addr=%llu)", peer_iter->first.addr);
 //        close_connection(peer_iter->second);
-        connections_by_peer.erase(peer_iter);
+
+        connections_by_peer.erase(peer_iter++);
     }
     nthread_unlock(&nnti_conn_peer_lock);
 
@@ -5841,9 +5949,10 @@ static int post_wait(
 
     log_debug(nnti_ee_debug_level, "enter");
 
+retry:
     memset(&ev_data, 0, sizeof(ev_data));
-    log_debug(nnti_debug_level, "calling CqWaitEvent");
-nthread_lock(&nnti_gni_lock);
+    log_debug(nnti_ee_debug_level, "calling CqWaitEvent");
+//nthread_lock(&nnti_gni_lock);
     rc=GNI_CqWaitEvent_wrapper (cq_hdl, timeout, &ev_data);
     if (rc==GNI_RC_SUCCESS) {
         print_cq_event(&ev_data, false);
@@ -5851,10 +5960,13 @@ nthread_lock(&nnti_gni_lock);
         rc=GNI_GetCompleted_wrapper (cq_hdl, ev_data, &post_desc_ptr);
         if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "GetCompleted failed: %d", rc);
         print_post_desc(post_desc_ptr);
+    } else if (rc==GNI_RC_TIMEOUT) {
+        log_error(nnti_debug_level, "CqWaitEvent timed out: %d", rc);
+        goto retry;
     } else {
         log_error(nnti_debug_level, "CqWaitEvent failed: %d", rc);
     }
-nthread_unlock(&nnti_gni_lock);
+//nthread_unlock(&nnti_gni_lock);
 
     log_debug(nnti_ee_debug_level, "exit");
 
@@ -5875,6 +5987,8 @@ static int reset_req_index(
     gni_ep_handle_t reset_ep_hdl;
 
     log_debug(nnti_ee_debug_level, "enter");
+
+nthread_lock(&nnti_gni_lock);
 
     rc=GNI_CqCreate (transport_global_data.nic_hdl, 1, 0, GNI_CQ_BLOCKING, NULL, NULL, &reset_cq_hdl);
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "CqCreate(value_before_reset_cq_hdl) failed: %d", rc);
@@ -5907,9 +6021,7 @@ static int reset_req_index(
 
     log_debug(nnti_debug_level, "calling PostFma(reset index ep_hdl(%llu), local_addr=%llu, remote_addr=%llu)",
             reset_ep_hdl, post_desc.local_addr, post_desc.remote_addr);
-nthread_lock(&nnti_gni_lock);
     rc=GNI_PostFma(reset_ep_hdl, &post_desc);
-nthread_unlock(&nnti_gni_lock);
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "PostFma(reset index) failed: %d", rc);
 
     post_wait(reset_cq_hdl, 1000);
@@ -5924,6 +6036,8 @@ nthread_unlock(&nnti_gni_lock);
 
     rc=GNI_CqDestroy (reset_cq_hdl);
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "CqDestroy() failed: %d", rc);
+
+nthread_unlock(&nnti_gni_lock);
 
     req_queue_attrs->last_index_before_reset=value_before_reset;
     req_queue_attrs->req_processed_reset_limit=value_before_reset;
@@ -5974,10 +6088,10 @@ static int fetch_add_buffer_offset(
                 local_req_queue_attrs->req_index_ep_hdl, post_desc.local_addr, (uint64_t)post_desc.remote_addr);
 nthread_lock(&nnti_gni_lock);
         rc=GNI_PostFma(local_req_queue_attrs->req_index_ep_hdl, &post_desc);
-nthread_unlock(&nnti_gni_lock);
         if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "PostFma(fetch add) failed: %d", rc);
 
         rc=post_wait(local_req_queue_attrs->req_index_cq_hdl, 1000);
+nthread_unlock(&nnti_gni_lock);
         if (rc!=GNI_RC_SUCCESS) {
             log_error(debug_level, "post_wait(fetch add) failed: %d", rc);
             if (rc==GNI_RC_TRANSACTION_ERROR) {
@@ -5994,8 +6108,8 @@ nthread_unlock(&nnti_gni_lock);
              * The server needs to reset the offset counter and send an unblock
              * message.  I'll wait here for that unblock message to arrive.
              */
-            uint64_t  ui64;
-            uint32_t *ptr32=NULL;
+//            uint64_t  ui64;
+//            uint32_t *ptr32=NULL;
 
 
             log_debug(debug_level, "fetched queue_index(%llu) >= req_count(%llu)",
@@ -6005,16 +6119,16 @@ nthread_unlock(&nnti_gni_lock);
             do {
                 log_debug(debug_level, "calling CqWaitEvent(unblock)");
                 trios_start_timer(call_time);
-//nthread_lock(&nnti_gni_lock);
+nthread_lock(&nnti_gni_lock);
                 rc=GNI_CqWaitEvent_wrapper (local_req_queue_attrs->unblock_mem_cq_hdl, 1000, &ev_data);
-//nthread_unlock(&nnti_gni_lock);
+nthread_unlock(&nnti_gni_lock);
                 trios_stop_timer("unblock", call_time);
                 if (rc!=GNI_RC_SUCCESS) log_error(debug_level, "CqWaitEvent(unblock) failed: %d", rc);
             } while (rc!=GNI_RC_SUCCESS);
-            ui64=gni_cq_get_data(ev_data);
-            ptr32=(uint32_t*)&ui64;
-            ptr32++;
-            log_debug(debug_level, "received unblock from server (ACKing requests <= %llu)", *ptr32);
+//            ui64=gni_cq_get_data(ev_data);
+//            ptr32=(uint32_t*)&ui64;
+//            ptr32++;
+            log_debug(debug_level, "received unblock from server (ACKing requests <= %llu)", local_req_queue_attrs->unblock_buffer);
 
             /*
              * I have received the unblock message.  If the queue is small and
@@ -6027,16 +6141,16 @@ nthread_unlock(&nnti_gni_lock);
                 log_debug(debug_level, "calling CqGetEvent(absorb extra unblocks)");
                 do {
                     log_debug(debug_level, "calling CqGetEvent(absorb extra unblocks)");
-//nthread_lock(&nnti_gni_lock);
+nthread_lock(&nnti_gni_lock);
                     rc=GNI_CqGetEvent (local_req_queue_attrs->unblock_mem_cq_hdl, &ev_data);
-//nthread_unlock(&nnti_gni_lock);
+nthread_unlock(&nnti_gni_lock);
                     if (rc==GNI_RC_SUCCESS) {
                         extras_absorbed++;
 
-                        ui64=gni_cq_get_data(ev_data);
-                        ptr32=(uint32_t*)&ui64;
-                        ptr32++;
-                        log_debug(debug_level, "received extra unblock from server (ACKing requests <= %llu)", *ptr32);
+//                        ui64=gni_cq_get_data(ev_data);
+//                        ptr32=(uint32_t*)&ui64;
+//                        ptr32++;
+                        log_debug(debug_level, "received extra unblock from server (ACKing requests <= %llu)", local_req_queue_attrs->unblock_buffer);
                     }
                 } while (rc==GNI_RC_SUCCESS);
                 if ((rc!=GNI_RC_SUCCESS) && (rc!=GNI_RC_NOT_DONE)) log_error(debug_level, "CqGetEvent(absorb extra unblocks) failed: %d", rc);
@@ -6047,19 +6161,19 @@ nthread_unlock(&nnti_gni_lock);
              * Since I last fetched a queue offset, the server has reset.
              * There should be an unblock message waiting.  Clear the CQ.
              */
-            uint64_t  ui64;
-            uint32_t *ptr32=NULL;
+//            uint64_t  ui64;
+//            uint32_t *ptr32=NULL;
 
             /* absorb one unblock message */
-            log_debug(nnti_event_debug_level, "calling CqGetEvent(absorb one unblock)");
-//nthread_lock(&nnti_gni_lock);
+            log_debug(nnti_event_debug_level, "calling CqWaitEvent(absorb one unblock)");
+nthread_lock(&nnti_gni_lock);
             rc=GNI_CqWaitEvent_wrapper (local_req_queue_attrs->unblock_mem_cq_hdl, 1000, &ev_data);
-//nthread_unlock(&nnti_gni_lock);
+nthread_unlock(&nnti_gni_lock);
             if (rc==GNI_RC_SUCCESS) {
-                ui64=gni_cq_get_data(ev_data);
-                ptr32=(uint32_t*)&ui64;
-                ptr32++;
-                log_debug(nnti_event_debug_level, "received one unblock from server (ACKing requests <= %llu)", *ptr32);
+//                ui64=gni_cq_get_data(ev_data);
+//                ptr32=(uint32_t*)&ui64;
+//                ptr32++;
+                log_debug(debug_level, "received one unblock from server (ACKing requests <= %llu)", local_req_queue_attrs->unblock_buffer);
             } else if (rc!=GNI_RC_NOT_DONE) {
                 log_error(debug_level, "CqGetEvent(absorb one unblock) failed: %d", rc);
             }
@@ -6251,7 +6365,8 @@ static int request_send(
     if (config.use_wr_pool) {
         wr=wr_pool_initiator_pop();
     } else {
-        wr=(gni_work_request *)calloc(1, sizeof(gni_work_request));
+        wr=(gni_work_request *)malloc(sizeof(gni_work_request));
+        memset(wr, 0, sizeof(gni_work_request));
         nthread_lock_init(&wr->lock);
     }
     assert(wr);
@@ -6277,12 +6392,12 @@ static int request_send(
 
 
 nthread_lock(&gni_mem_hdl->wr_queue_lock);
-    gni_mem_hdl->wr_queue.push_back(wr);
+    gni_mem_hdl->wr_queue->push_back(wr);
 nthread_unlock(&gni_mem_hdl->wr_queue_lock);
 
-nthread_lock(&nnti_wr_wrhash_lock);
+//nthread_lock(&nnti_wr_wrhash_lock);
     insert_wr_wrhash(wr);
-nthread_unlock(&nnti_wr_wrhash_lock);
+//nthread_unlock(&nnti_wr_wrhash_lock);
 
 //    nthread_lock(&nnti_gni_lock);
 
@@ -6488,7 +6603,8 @@ static int buffer_send(
     if (config.use_wr_pool) {
         wr=wr_pool_initiator_pop();
     } else {
-        wr=(gni_work_request *)calloc(1, sizeof(gni_work_request));
+        wr=(gni_work_request *)malloc(sizeof(gni_work_request));
+        memset(wr, 0, sizeof(gni_work_request));
         nthread_lock_init(&wr->lock);
     }
     assert(wr);
@@ -6513,12 +6629,12 @@ static int buffer_send(
     wr->wc_dest_mem_hdl.qword2=dest_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.wc_mem_hdl.qword2;
 
 nthread_lock(&gni_mem_hdl->wr_queue_lock);
-    gni_mem_hdl->wr_queue.push_back(wr);
+    gni_mem_hdl->wr_queue->push_back(wr);
 nthread_unlock(&gni_mem_hdl->wr_queue_lock);
 
-nthread_lock(&nnti_wr_wrhash_lock);
+//nthread_lock(&nnti_wr_wrhash_lock);
     insert_wr_wrhash(wr);
-nthread_unlock(&nnti_wr_wrhash_lock);
+//nthread_unlock(&nnti_wr_wrhash_lock);
 
 //    nthread_lock(&nnti_gni_lock);
 
@@ -6550,7 +6666,7 @@ static int send_unblock(
 {
     int rc=0;
     gni_post_descriptor_t  post_desc;
-    uint32_t *ptr32=NULL;
+//    uint32_t *ptr32=NULL;
 
     trios_declare_timer(call_time);
 
@@ -6569,34 +6685,40 @@ static int send_unblock(
             print_instance_map();
         }
 
+
         memset(&post_desc, 0, sizeof(gni_post_descriptor_t));
-        post_desc.type           =GNI_POST_CQWRITE;
-        post_desc.cq_mode        =GNI_CQMODE_GLOBAL_EVENT|GNI_CQMODE_REMOTE_EVENT;
+        post_desc.type=GNI_POST_FMA_PUT;
+        post_desc.cq_mode=GNI_CQMODE_GLOBAL_EVENT|GNI_CQMODE_REMOTE_EVENT;
+
+        post_desc.local_addr    =local_req_queue_attrs->unblock_buffer_addr;
+        post_desc.local_mem_hndl=local_req_queue_attrs->unblock_mem_hdl;
+
+        post_desc.remote_addr           =conn->queue_remote_attrs.client.unblock_buffer_addr;
+        post_desc.remote_mem_hndl       =conn->queue_remote_attrs.client.unblock_mem_hdl;
+        post_desc.length                =sizeof(uint64_t);
 
         set_dlvr_mode(&post_desc);
         set_rdma_mode(&post_desc);
 
-        post_desc.remote_mem_hndl=conn->queue_remote_attrs.client.unblock_mem_hdl;
-        ptr32=(uint32_t*)&post_desc.cqwrite_value;
-        ptr32++;
-        *ptr32=local_req_queue_attrs->total_req_processed;
+        local_req_queue_attrs->unblock_buffer=local_req_queue_attrs->total_req_processed;
 
-
+nthread_lock(&nnti_gni_lock);
         rc=GNI_EpBind (local_req_queue_attrs->unblock_ep_hdl, conn->peer_alps_info.local_addr, conn->peer_instance);
         if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpBind(reset_ep_hdl, inst_id=%llu) failed: %d", conn->peer_instance, rc);
 
-        log_debug(nnti_debug_level, "calling PostCqWrite(send_unblock to instance(%llu))", conn->peer_instance);
+        log_debug(nnti_debug_level, "calling PostFma(send unblock ep_hdl(%llu), cq_hdl(%llu), local_addr=%llu, remote_addr=%llu)",
+                local_req_queue_attrs->unblock_ep_hdl, local_req_queue_attrs->unblock_cq_hdl, post_desc.local_addr, post_desc.remote_addr);
         trios_start_timer(call_time);
-//nthread_lock(&nnti_gni_lock);
-        rc=GNI_PostCqWrite(local_req_queue_attrs->unblock_ep_hdl, &post_desc);
-//nthread_unlock(&nnti_gni_lock);
-        trios_stop_timer("send_unblock", call_time);
-        if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "PostCqWrite(send_unblock, inst_id=%llu) failed: %d", conn->peer_instance, rc);
+        rc=GNI_PostFma(local_req_queue_attrs->unblock_ep_hdl, &post_desc);
+        trios_stop_timer("PostFma req", call_time);
+        if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "PostFma(send unblock) failed: %d", rc);
 
         post_wait(local_req_queue_attrs->unblock_cq_hdl, 1000);
 
         rc=GNI_EpUnbind (local_req_queue_attrs->unblock_ep_hdl);
         if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "EpUnbind(inst_id=%llu) failed: %d", conn->peer_instance, rc);
+nthread_unlock(&nnti_gni_lock);
+
     }
 //    nthread_unlock(&nnti_conn_instance_lock);
 
@@ -6755,11 +6877,17 @@ static int server_req_queue_init(
 
     q->wc_buffer_size=q->req_count * sizeof(nnti_gni_work_completion);
     q->wc_buffer     =(nnti_gni_work_completion *)calloc(q->req_count, sizeof(nnti_gni_work_completion));
+    memset(q->wc_buffer, 0, q->req_count*sizeof(nnti_gni_work_completion));
 
     q->req_index     =0;
     q->req_index_addr=(uint64_t)&q->req_index;
 
     log_debug(nnti_debug_level, "server_req_queue->req_index_addr=%llu", (uint64_t)q->req_index_addr);
+
+    q->unblock_buffer     =0;
+    q->unblock_buffer_addr=(uint64_t)&q->unblock_buffer;
+
+    log_debug(nnti_debug_level, "server_req_queue->unblock_buffer_addr=%llu", (uint64_t)q->unblock_buffer_addr);
 
     q->req_processed=0;
     q->req_processed_reset_limit=q->req_count;
@@ -6806,6 +6934,15 @@ static int server_req_queue_init(
             GNI_MEM_READWRITE,
             (uint32_t)-1,
             &q->req_index_mem_hdl);
+    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "MemRegister(1) failed: %d", rc);
+    rc=GNI_MemRegister (
+            transport_global_data.nic_hdl,
+            (uint64_t)q->unblock_buffer_addr,
+            sizeof(uint64_t),
+            NULL,
+            GNI_MEM_READWRITE,
+            (uint32_t)-1,
+            &q->unblock_mem_hdl);
     if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "MemRegister(1) failed: %d", rc);
     rc=GNI_MemRegister (
             transport_global_data.nic_hdl,
@@ -6902,8 +7039,8 @@ static void config_init(nnti_gni_config *c)
 {
     c->use_alps_ptag                    =true;
     c->use_wr_pool                      =false;
-    c->use_rdma_target_ack              =true;
-    c->use_rdma_events                  =true;
+    c->use_rdma_target_ack              =false;
+    c->use_rdma_events                  =false;
     c->use_rdma_fence                   =false;
     c->pi_ordering                      =PI_ORDERING_DEFAULT; /* DEFAULT, STRICT, RELAXED */
     c->rdma_mode                        =RDMA_MIXED;          /* FMA, BTE, MIXED, CROSSOVER */
@@ -7036,10 +7173,47 @@ inline int DEQUEUE_POST_DESCRIPTOR(
     return(rc);
 }
 
+inline int IS_RDMA_INITIATOR_BUFFER(
+        const gni_work_request *wr)
+{
+    int rc=FALSE;
+    gni_memory_handle *hdl=(gni_memory_handle *)wr->reg_buf->transport_private;
+
+    switch (hdl->type) {
+        case REQUEST_BUFFER:
+        case RECEIVE_BUFFER:
+        case SEND_BUFFER:
+        case GET_SRC_BUFFER:
+        case PUT_DST_BUFFER:
+            rc=FALSE;
+            break;
+        case GET_DST_BUFFER:
+        case PUT_SRC_BUFFER:
+            rc=TRUE;
+            break;
+        case RDMA_TARGET_BUFFER:
+            if ((wr->last_op==GNI_OP_GET_INITIATOR) ||
+                (wr->last_op==GNI_OP_PUT_INITIATOR)) {
+                rc=TRUE;
+            } else {
+                rc=FALSE;
+            }
+            break;
+        case UNKNOWN_BUFFER:
+        default:
+            log_error(nnti_debug_level, "Unknown buffer type: %d", hdl->type);
+            rc=FALSE;
+            break;
+    }
+
+    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
+    return(rc);
+}
+
 inline int IS_RDMA_TARGET_BUFFER(
         const gni_work_request *wr)
 {
-    int rc=GNI_RC_SUCCESS;
+    int rc=FALSE;
     gni_memory_handle *hdl=(gni_memory_handle *)wr->reg_buf->transport_private;
 
     switch (hdl->type) {
@@ -7058,8 +7232,10 @@ inline int IS_RDMA_TARGET_BUFFER(
             if ((wr->last_op==GNI_OP_GET_TARGET) ||
                 (wr->last_op==GNI_OP_PUT_TARGET)) {
                 rc=TRUE;
-                break;
+            } else {
+                rc=FALSE;
             }
+            break;
         case UNKNOWN_BUFFER:
         default:
             log_error(nnti_debug_level, "Unknown buffer type: %d", hdl->type);

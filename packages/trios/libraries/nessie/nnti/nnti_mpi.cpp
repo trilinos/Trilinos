@@ -69,13 +69,6 @@
 
 
 
-/* if undefined, the ACK message is NOT sent to the RDMA target when
- * the RDMA op is complete.  this creates one-sided semantics for RDMA
- * ops.  in this mode, the target has no idea when the RDMA op is
- * complete and what data was addressed.  NNTI_wait() returns NNTI_EINVAL
- * if passed a target buffer.
- */
-#undef USE_RDMA_TARGET_ACK
 /* if defined, the RDMA initiator will send an ACK message to the RDMA
  * target when the RDMA op is complete.  the target process must wait
  * on the target buffer in order to get the ACK.  this creates two-sided
@@ -83,6 +76,13 @@
  * the RDMA op is complete and status indicates what data was addressed.
  */
 #define USE_RDMA_TARGET_ACK
+/* if undefined, the ACK message is NOT sent to the RDMA target when
+ * the RDMA op is complete.  this creates one-sided semantics for RDMA
+ * ops.  in this mode, the target has no idea when the RDMA op is
+ * complete and what data was addressed.  NNTI_wait() returns NNTI_EINVAL
+ * if passed a target buffer.
+ */
+#undef USE_RDMA_TARGET_ACK
 
 
 #define NNTI_MPI_REQUEST_TAG  0x01
@@ -679,20 +679,19 @@ NNTI_result_t NNTI_mpi_unregister_memory (
 
     log_debug(nnti_debug_level, "unregistering reg_buf(%p) buf(%p)", reg_buf, reg_buf->payload);
 
-    wr_queue_iter_t i;
-    for (i=mpi_mem_hdl->wr_queue.begin(); i != mpi_mem_hdl->wr_queue.end(); i++) {
-        assert(*i);
-        if (is_wr_complete(*i) == FALSE) {
-        }
-    }
-
     while (!mpi_mem_hdl->wr_queue.empty()) {
-        mpi_work_request *wr=mpi_mem_hdl->wr_queue.front();
+        mpi_work_request *wr=NULL;
+
+        wr=mpi_mem_hdl->wr_queue.front();
+        mpi_mem_hdl->wr_queue.pop_front();
+
         log_debug(nnti_debug_level, "removing pending wr=%p", wr);
 
-        MPI_Cancel(wr->request_ptr);
+        if (wr->request_ptr) {
+            log_debug(nnti_debug_level, "canceling wr->request_ptr=%p", wr->request_ptr);
+//            MPI_Cancel(wr->request_ptr);
+        }
 
-        mpi_mem_hdl->wr_queue.pop_front();
         del_wr_wrhash(wr);
         free(wr);
     }
@@ -1162,14 +1161,12 @@ NNTI_result_t NNTI_mpi_wait (
             repost_RTR_recv_work_request((NNTI_buffer_t *)reg_buf, wr);
 
         }
-#if defined(USE_RDMA_TARGET_ACK)
         else if (mpi_mem_hdl->type == RDMA_TARGET_BUFFER) {
             wr=mpi_mem_hdl->wr_queue.front();
             mpi_mem_hdl->wr_queue.pop_front();
             repost_RTR_RTS_recv_work_request((NNTI_buffer_t *)reg_buf, wr);
 
         }
-#endif
         else {
             assert(mpi_mem_hdl);
             wr=mpi_mem_hdl->wr_queue.front();
@@ -1717,7 +1714,7 @@ static int process_event(
                         event->MPI_SOURCE, event->MPI_TAG);
                 wr->op_state = RDMA_RTS_COMPLETE;
 
-                wr->request_ptr=&wr->request[PUT_SEND_INDEX];
+                wr->request_ptr  =&wr->request[PUT_SEND_INDEX];
                 wr->request_count=1;
 
             } else if (wr->op_state == RDMA_RTS_COMPLETE) {
@@ -1744,7 +1741,7 @@ static int process_event(
                         mpi_mem_hdl->data_tag,
                         MPI_COMM_WORLD,
                         &wr->request[PUT_RECV_INDEX]);
-                wr->request_ptr=&wr->request[PUT_RECV_INDEX];
+                wr->request_ptr  =&wr->request[PUT_RECV_INDEX];
                 wr->request_count=1;
 
                 wr->dst_offset=wr->rts_msg.offset;
@@ -1763,7 +1760,7 @@ static int process_event(
                         event->MPI_SOURCE, event->MPI_TAG);
                 wr->op_state = RDMA_RTR_COMPLETE;
 
-                wr->request_ptr = &wr->request[GET_RECV_INDEX];
+                wr->request_ptr  =&wr->request[GET_RECV_INDEX];
                 wr->request_count=1;
 
             } else if (wr->op_state == RDMA_RTR_COMPLETE) {
@@ -1790,7 +1787,7 @@ static int process_event(
                         wr->rtr_msg.tag,
                         MPI_COMM_WORLD,
                         &wr->request[GET_SEND_INDEX]);
-                wr->request_ptr=&wr->request[GET_SEND_INDEX];
+                wr->request_ptr  =&wr->request[GET_SEND_INDEX];
                 wr->request_count=1;
 
                 wr->src_offset=wr->rtr_msg.offset;
@@ -1822,7 +1819,7 @@ static int process_event(
                             mpi_mem_hdl->data_tag,
                             MPI_COMM_WORLD,
                             &wr->request[PUT_RECV_INDEX]);
-                    wr->request_ptr=&wr->request[PUT_RECV_INDEX];
+                    wr->request_ptr  =&wr->request[PUT_RECV_INDEX];
                     wr->request_count=1;
 
                     wr->dst_offset=wr->rts_msg.offset;
@@ -1846,7 +1843,7 @@ static int process_event(
                             wr->rtr_msg.tag,
                             MPI_COMM_WORLD,
                             &wr->request[GET_SEND_INDEX]);
-                    wr->request_ptr=&wr->request[GET_SEND_INDEX];
+                    wr->request_ptr  =&wr->request[GET_SEND_INDEX];
                     wr->request_count=1;
 
                     wr->src_offset=wr->rtr_msg.offset;
@@ -1899,9 +1896,9 @@ static NNTI_result_t post_recv_work_request(
     wr->length     = length;
     wr->tag        = tag;
     if (request != NULL) {
-        wr->request_ptr = request;
+        wr->request_ptr=request;
     } else {
-        wr->request_ptr = &wr->request[0];
+        wr->request_ptr=&wr->request[0];
     }
     wr->request_count=1;
 

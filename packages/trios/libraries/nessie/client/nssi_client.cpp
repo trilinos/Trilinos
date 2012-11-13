@@ -200,6 +200,10 @@ static int process_result(char *encoded_short_res_buf, nssi_request *request)
     NNTI_buffer_t incoming_hdl;
     NNTI_status_t status;
 
+    int8_t        long_res_ack;
+    NNTI_buffer_t long_res_ack_hdl;
+    NNTI_status_t long_res_ack_status;
+
     log_level debug_level = rpc_debug_level;
 
     /* assign the result decoding function */
@@ -323,6 +327,36 @@ static int process_result(char *encoded_short_res_buf, nssi_request *request)
                 goto cleanup;
             }
             trios_stop_timer("xdr_decode_result - decode", call_time);
+
+            trios_start_timer(call_time);
+            rc=NNTI_register_memory(
+                    &transports[request->svc->transport_id],
+                    (char *)&long_res_ack,
+                    sizeof(long_res_ack),
+                    1,
+                    NNTI_SEND_SRC,
+                    &request->svc->svc_host,
+                    &long_res_ack_hdl);
+            trios_stop_timer("NNTI_register_memory - long result ack", call_time);
+            if (rc != NNTI_OK) {
+                log_error(debug_level, "failed registering long result ack: %s",
+                        nnti_err_str(rc));
+            }
+
+            trios_start_timer(call_time);
+            rc=NNTI_send(&request->svc->svc_host, &long_res_ack_hdl, &header.result_ack_addr);
+            trios_stop_timer("NNTI_send - long result ack", call_time);
+            if (rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed sending short result: %s",
+                        nnti_err_str(rc));
+            }
+            trios_start_timer(call_time);
+            rc=NNTI_wait(&long_res_ack_hdl, NNTI_SEND_SRC, -1, &long_res_ack_status);
+            trios_stop_timer("NNTI_wait - long result ack", call_time);
+            if (rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed waiting for short result: %s",
+                        nnti_err_str(rc));
+            }
         }
     }
 
@@ -338,6 +372,12 @@ cleanup:
         }
         if (buf != NULL) {
             free(buf);
+        }
+
+        NNTI_unregister_memory(&long_res_ack_hdl);
+        if (rc != NNTI_OK) {
+            log_error(debug_level, "failed unregistering long result ack: %s",
+                    nnti_err_str(rc));
         }
     }
 
@@ -808,7 +848,7 @@ int nssi_test(nssi_request *req, int *rc) {
 
 int nssi_wait(nssi_request *req, int *rc)
 {
-    log_debug(rpc_debug_level, "calling nssi_timedwait");
+    log_debug(rpc_debug_level, "calling nssi_timedwait(timeout=-1)");
     return nssi_timedwait(req, -1, rc);
 }
 
@@ -834,21 +874,6 @@ static int cleanup_long_args(
     }
 
     log_debug(rpc_debug_level, "waiting for long args");
-
-    /* If we created a portal for long arguments, we need to wait
-     * for the server to fetch the arguments.
-     */
-    trios_start_timer(call_time);
-    rc=NNTI_wait(
-            &req->long_args_hdl,
-            NNTI_GET_SRC,
-            -1,
-            &status);
-    trios_stop_timer("NNTI_wait - long args", call_time);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed waiting for service to get long args: %s",
-                nnti_err_str(rc));
-    }
 
     buf=NNTI_BUFFER_C_POINTER(&req->long_args_hdl);
     rc=NNTI_unregister_memory(&req->long_args_hdl);
@@ -1240,23 +1265,6 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
         break;
 
     default:
-        /* if the request status is not complete, we need to do some work */
-        if (req->data != NULL) {
-            log_debug(debug_level, "calling NNTI_wait for data_hdl");
-            trios_start_timer(call_time);
-            rc=NNTI_wait(
-                    &req->data_hdl,
-                    (NNTI_buf_ops_t)(NNTI_GET_SRC|NNTI_PUT_DST),
-                    timeout,
-                    &status);
-            trios_stop_timer("NNTI_wait - data", call_time);
-            if (status.result != NNTI_OK) {
-                log_info(debug_level, "NNTI_wait for data_hdl failed");
-                rc = status.result;
-                req->status = NSSI_REQUEST_ERROR;
-                break;
-            }
-        }
         log_debug(debug_level, "calling NNTI_wait for result");
         trios_start_timer(call_time);
         rc=NNTI_wait(
@@ -1265,6 +1273,11 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
                 timeout,
                 &status);
         trios_stop_timer("NNTI_wait - short result", call_time);
+        if (status.result == NNTI_ETIMEDOUT) {
+            log_info(debug_level, "NNTI_wait for result timed out");
+            rc = status.result;
+            return rc;
+        }
         if (status.result != NNTI_OK) {
             log_info(debug_level, "NNTI_wait for result failed");
             rc = status.result;

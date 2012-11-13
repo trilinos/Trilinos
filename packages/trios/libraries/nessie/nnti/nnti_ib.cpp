@@ -273,6 +273,7 @@ typedef struct {
 
 
 static nthread_lock_t nnti_ib_lock;
+static nthread_lock_t nnti_accept_lock;
 
 
 static int register_memory(
@@ -536,6 +537,8 @@ NNTI_result_t NNTI_ib_init (
     if (!ib_initialized) {
 
         nthread_lock_init(&nnti_ib_lock);
+
+        nthread_lock_init(&nnti_accept_lock);
 
         nthread_lock_init(&nnti_conn_peer_lock);
         nthread_lock_init(&nnti_conn_qpn_lock);
@@ -1697,7 +1700,7 @@ retry:
 //                    elapsed_time += timeout_per_call;
 
                     /* if the caller asked for a legitimate timeout, we need to exit */
-                    if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
+                    if (((timeout >= 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
                         logger_set_default_level(old_log_level);
                         log_debug(debug_level, "poll_comp_channel timed out");
                         nnti_rc = NNTI_ETIMEDOUT;
@@ -1945,7 +1948,7 @@ retry:
 //                    elapsed_time += timeout_per_call;
 
                     /* if the caller asked for a legitimate timeout, we need to exit */
-                    if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
+                    if (((timeout >= 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
                         log_debug(debug_level, "poll_comp_channel timed out");
                         nnti_rc = NNTI_ETIMEDOUT;
                         break;
@@ -2187,7 +2190,7 @@ retry:
 //                  elapsed_time += timeout_per_call;
 
                     /* if the caller asked for a legitimate timeout, we need to exit */
-                    if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
+                    if (((timeout >= 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
                         log_debug(debug_level, "poll_comp_channel timed out");
                         nnti_rc = NNTI_ETIMEDOUT;
                         break;
@@ -2303,6 +2306,9 @@ NNTI_result_t NNTI_ib_fini (
     ibv_close_device(transport_global_data.ctx);
 
     nthread_lock_fini(&nnti_ib_lock);
+
+    nthread_lock_fini(&nnti_accept_lock);
+
     nthread_lock_fini(&nnti_conn_peer_lock);
     nthread_lock_fini(&nnti_conn_qpn_lock);
     nthread_lock_fini(&nnti_wr_wrhash_lock);
@@ -4459,35 +4465,22 @@ static void close_all_conn(void)
 
     nthread_lock(&nnti_conn_qpn_lock);
     conn_by_qpn_iter_t qpn_iter = connections_by_qpn.begin();
-    conn_by_qpn_iter_t end_iter = connections_by_qpn.end();
-
-    // Each connection is stored in this queue twice. Once referenced by req_qpn, once
-    // referenced by data_qpn.
-    while (qpn_iter != end_iter) {
+    while (qpn_iter != connections_by_qpn.end()) {
         log_debug(debug_level, "close connection (qpn=%llu)", qpn_iter->first);
-        ib_connection *conn = qpn_iter->second;
-        //close_connection(conn);
+        close_connection(qpn_iter->second);
+
         connections_by_qpn.erase(qpn_iter++);
     }
 
     nthread_unlock(&nnti_conn_qpn_lock);
 
     nthread_lock(&nnti_conn_peer_lock);
-
     conn_by_peer_iter_t peer_iter = connections_by_peer.begin();
-    conn_by_peer_iter_t peer_end_iter = connections_by_peer.end();
-
-    static int connection_count=0;
-
-    // The peer connections should have each connection exactly once
     while (peer_iter != connections_by_peer.end()) {
         log_debug(debug_level, "close connection (peer.addr=%llu)", peer_iter->first.addr);
-        ib_connection *conn = peer_iter->second;
-        close_connection(peer_iter->second);
-        log_debug(LOG_ALL, "Freeing connection resources, connection %d", ++connection_count);
-        if (conn != NULL) free(conn);  // TODO:  MAKE SURE THIS IS THE RIGHT PLACE TO FREE THE CONNECTION
-        connections_by_peer.erase(peer_iter++);
+//        close_connection(peer_iter->second);
 
+        connections_by_peer.erase(peer_iter++);
     }
     nthread_unlock(&nnti_conn_peer_lock);
 
@@ -4651,9 +4644,11 @@ static NNTI_result_t check_listen_socket_for_new_connections()
 {
     bool done=false;
     while(!done) {
+        nthread_lock(&nnti_accept_lock);
         if (check_for_waiting_connection() != NNTI_OK) {
             done=true;
         }
+        nthread_unlock(&nnti_accept_lock);
     }
 
     return(NNTI_OK);
@@ -4836,7 +4831,7 @@ static void print_ib_conn(ib_connection *c)
 static void config_init(nnti_ib_config *c)
 {
     c->use_wr_pool        =false;
-    c->use_rdma_target_ack=true;
+    c->use_rdma_target_ack=false;
 }
 
 static void config_get_from_env(nnti_ib_config *c)
