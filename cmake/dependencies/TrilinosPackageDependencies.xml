@@ -279,7 +279,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Xpetra" dir="packages/xpetra" type="SS">
+  <Package name="Xpetra" dir="packages/xpetra" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,KokkosClassic,Tpetra"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
