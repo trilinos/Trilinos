@@ -127,19 +127,19 @@ int getDim(void *data, int *ierr)
 
 //////////////////////////
 void getObjList(void *data, int numGid, int numLid,
-  ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, 
+  ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
   int wgt_dim, float *obj_wgts, int *ierr)
 {
   *ierr = 0;
   DOTS *dots = (DOTS *) data;
 
   size_t localLen = dots->coordinates->getLocalLength();
-  const gno_t *ids = 
+  const gno_t *ids =
                dots->coordinates->getMap()->getNodeElementList().getRawPtr();
 
-  if (sizeof(ZOLTAN_ID_TYPE) == sizeof(gno_t)) 
+  if (sizeof(ZOLTAN_ID_TYPE) == sizeof(gno_t))
     memcpy(gids, ids, sizeof(ZOLTAN_ID_TYPE) * localLen);
-  else 
+  else
     for (size_t i=0; i < localLen; i++)
       gids[i] = static_cast<ZOLTAN_ID_TYPE>(ids[i]);
 
@@ -274,7 +274,7 @@ tMVector_t* makeMeshCoordinates(
   if (rank <= leftOver)
     gid0 = gno_t(rank) * (numLocalCoords+1);
   else
-    gid0 = (leftOver * (numLocalCoords+1)) + 
+    gid0 = (leftOver * (numLocalCoords+1)) +
            ((gno_t(rank) - leftOver) * numLocalCoords);
 
   if (rank < leftOver)
@@ -282,13 +282,13 @@ tMVector_t* makeMeshCoordinates(
 
   gno_t gid1 = gid0 + numLocalCoords;
 
-  gno_t *ids = new gno_t [numLocalCoords];
+  gno_t *ids = new gno_t[numLocalCoords];
   if (!ids)
     throw bad_alloc();
   ArrayView<gno_t> idArray(ids, numLocalCoords);
 
-  for (gno_t i=gid0; i < gid1; i++)
-    *ids++ = i;   
+  for (gno_t i=gid0, *idptr=ids; i < gid1; i++)
+    *idptr++ = i;
 
   RCP<const tMap_t> idMap = rcp(new tMap_t(num, idArray, 0, comm));
 
@@ -296,7 +296,7 @@ tMVector_t* makeMeshCoordinates(
 
   // Create a Tpetra::MultiVector of coordinates.
 
-  scalar_t *x = new scalar_t [numLocalCoords*3]; 
+  scalar_t *x = new scalar_t [numLocalCoords*3];
   if (!x) throw bad_alloc();
 
   scalar_t *y = x + numLocalCoords;
@@ -351,7 +351,7 @@ int main(int argc, char *argv[])
   // Default values
   gno_t numGlobalCoords = 1000;
   int weightDim = 0;
-  int debugLevel=0;
+  int debugLevel=2;
   string memoryOn("memoryOn");
   string memoryOff("memoryOff");
   bool doMemory=false;
@@ -368,11 +368,14 @@ int main(int argc, char *argv[])
 
   // Process command line input
   CommandLineProcessor commandLine(false, true);
-  commandLine.setOption("size", &numGlobalCoords, 
+  //commandLine.setOption("size", &numGlobalCoords,
+  //  "Approximate number of global coordinates.");
+  double tmpnumGlobalCoords = 1000.;
+  commandLine.setOption("size", &tmpnumGlobalCoords,
     "Approximate number of global coordinates.");
-  commandLine.setOption("numParts", &numGlobalParts, 
+  commandLine.setOption("numParts", &numGlobalParts,
     "Number of parts (default is one per proc).");
-  commandLine.setOption("weightDim", &weightDim, 
+  commandLine.setOption("weightDim", &weightDim,
     "Number of weights per coordinate, zero implies uniform weights.");
   commandLine.setOption("debug", &debugLevel, "Zoltan1 debug level");
   commandLine.setOption("remap", "no-remap", &remap,
@@ -394,7 +397,7 @@ int main(int argc, char *argv[])
   doc.append(": given multiple weights, balance the L2 norm of the weights.\n");
   commandLine.setOption("objective", &objective,  doc.c_str());
 
-  CommandLineProcessor::EParseCommandLineReturn rc = 
+  CommandLineProcessor::EParseCommandLineReturn rc =
     commandLine.parse(argc, argv);
   if (rc != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     if (rc == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
@@ -406,6 +409,8 @@ int main(int argc, char *argv[])
       return 0;
     }
   }
+
+  numGlobalCoords = (gno_t) tmpnumGlobalCoords;
 
   //MEMORY_CHECK(doMemory && rank==0, "After processing parameters");
 
@@ -430,7 +435,7 @@ int main(int argc, char *argv[])
 #endif
 
   if (weightDim > 0){
- 
+
     dots.weights.resize(weightDim);
 
     int wt = 0;
@@ -460,11 +465,11 @@ int main(int argc, char *argv[])
 
   struct Zoltan_Struct *zz;
   zz = Zoltan_Create(MPI_COMM_WORLD);
-  
+
   Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
   Zoltan_Set_Param(zz, "LB_APPROACH", "PARTITION");
   Zoltan_Set_Param(zz, "CHECK_GEOM", "0");
-  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
+  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1");
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "0");
   Zoltan_Set_Param(zz, "RETURN_LISTS", "PART");
   std::ostringstream oss;
@@ -554,7 +559,7 @@ int main(int argc, char *argv[])
               << "   max = " << maxSumWgtPerPart
                              << " in part " << maxSumWgtPart << std::endl
               << "   tot = " << totWgt << std::endl
-              << "   avg = " << totWgt / numGlobalParts 
+              << "   avg = " << totWgt / numGlobalParts
               << std::endl << std::endl << std::endl;
 
   delete [] sumWgtPerPart;
