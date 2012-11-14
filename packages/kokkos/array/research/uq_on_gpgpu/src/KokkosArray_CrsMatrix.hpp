@@ -95,6 +95,20 @@ void write_matrix_market(const CrsMatrix<MatrixValueType,Device> & A ,
   Impl::MatrixMarketWriter<MatrixValueType,Device>::write(A, filename);
 }
 
+template< typename ValueType, 
+	  typename VectorValueType ,
+          class Device >
+void update( const ValueType& alpha, 
+	     const View<VectorValueType[],Device> & x ,
+	     const ValueType& beta,
+	     const View<VectorValueType[],Device> & y )
+{
+  typedef ValueType                          value_type ;
+  typedef View<VectorValueType[],Device>     vector_type ;
+
+  Impl::Update<value_type,vector_type>::apply( alpha , x , beta, y );
+}
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
