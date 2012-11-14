@@ -8,7 +8,9 @@
 
 /*! @defgroup MueLuTimerClasses The MueLu timing classes.
 
-   These classes should be used to time parts of MueLu.
+   
+  You should use FactoryMonitor and SubFactoryMonitor within factories.
+  Use Monitor and SubMonitor in non-factory objects.
 */
 
 /*! @defgroup MueLuManagingDataDependencies Handling data dependencies between factories

@@ -90,7 +90,7 @@ namespace MueLu {
   };
 
   /*! @class Monitor
-     @brief Main MueLu time monitor.
+     @brief Timer to be used in non-factories.
 
      A timer is created only if 'timerLevel' (Timings0 by default) is enabled.
      This class manages verbosity, as well as times this object and all its children over all levels.
@@ -120,8 +120,9 @@ namespace MueLu {
   //---------------------------------------------------------------------------------------------------
 
   /*! @class SubMonitor
-    @brief Another version of Monitor that doesn't repeat the object description.
+    @brief Timer to be used in non-factories.  Similar to Monitor, but doesn't print object description.
 
+    Should be used in non-factory setting.
     Times object and all its children over all levels.
     A timer is created only if 'timerLevel' (Timings1 by default) is enabled.
 
@@ -149,7 +150,7 @@ namespace MueLu {
   //---------------------------------------------------------------------------------------------------
 
   /*! @class FactoryMonitor
-      @brief Similar to Monitor but with additional timers.
+      @brief Timer to be used in factories.  Similar to Monitor but with additional timers.
 
      This class provides the following three timers for an object:
      - Timer for this object over all levels, excluding calls to children.
@@ -207,15 +208,15 @@ namespace MueLu {
   //---------------------------------------------------------------------------------------------------
 
   /*! @class SubFactoryMonitor
-    @brief Similar to SubMonitor but adds a timer level by level.
+    @brief Timer to be used in factories.  Similar to SubMonitor but adds a timer level by level.
 
     Times an object and all its children on a level-by-level basis.
 
+    This timer is useful for timing just a part of a factory; the keyword \a sub denotes that this is output from a SubFactoryMonitor.
     The timer yields output such as
      \verbatim
        MueLu: SaPFactory: Eigenvalue estimate (sub, total, level=4)    0.01999 (1)      0.02103 (1)      0.02121 (1)      0.02103 (1)
      \endverbatim
-     Note that the keyword \a sub denotes that this is output from a SubFactoryMonitor.
      Note that the keyword \a total denotes timing of the object and its children.
 
      @ingroup MueLuTimerClasses

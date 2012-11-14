@@ -103,7 +103,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level & fineLevel, Level & coarseLevel) const {
 
-    FactoryMonitor m(*this, "Tentative prolongator", coarseLevel);
+    FactoryMonitor m(*this, "Build", coarseLevel);
 
     RCP<Matrix> A = fineLevel.Get< RCP<Matrix> >("A", AFact_.get());
 

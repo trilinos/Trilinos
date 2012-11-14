@@ -87,7 +87,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
-  FactoryMonitor m(*this, "CoalesceDropFactory", currentLevel);
+  FactoryMonitor m(*this, "Build", currentLevel);
   if(predrop_ != Teuchos::null) {
     GetOStream(Parameters0, 0) << predrop_->description();
   }

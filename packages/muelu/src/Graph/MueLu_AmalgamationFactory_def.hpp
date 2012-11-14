@@ -75,7 +75,7 @@ void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const
 {
-  FactoryMonitor m(*this, "AmalgamationFactory", currentLevel);
+  FactoryMonitor m(*this, "Build", currentLevel);
 
   RCP<Matrix> A = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
 
