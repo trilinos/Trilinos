@@ -72,12 +72,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleObjectDB, defaultConstruct, T )
   TEST_EQUALITY_CONST(sot.tableSize(), 0);
   TEST_EQUALITY_CONST(sot.numFreeIndexes(), 0);
   TEST_EQUALITY_CONST(sot.numObjects(), 0);
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEST_THROW(sot.getNonconstObjRCP(0), RangeError);
   TEST_THROW(sot.getConstObjRCP(0), RangeError);
   TEST_THROW(sot.getNonconstObjPtr(0), RangeError);
   TEST_THROW(sot.getConstObjPtr(0), RangeError);
-#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 }
 
 
@@ -358,9 +356,7 @@ TEUCHOS_UNIT_TEST( SimpleObjectDB, getNonconstObjRCPInvalid4 )
   ECHO(int id2 = sot.storeNonconstObj(A::create()));
   TEST_EQUALITY_CONST(id2, 1);
   ECHO(sot.removeNonconstObj(id));
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEST_THROW(sot.getNonconstObjRCP(id), NullReferenceError);
-#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 }
 
 
