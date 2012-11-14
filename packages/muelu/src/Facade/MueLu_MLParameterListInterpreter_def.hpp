@@ -213,22 +213,20 @@ namespace MueLu {
 
     RCP<PFactory> PFact;
     RCP<RFactory> RFact;
-
-    RCP<PFactory> PtentFact = rcp(new TentativePFactory(UCAggFact));
-
+    RCP<PFactory> PtentFact = rcp( new TentativePFactory() );
     if (agg_damping == 0.0 && bEnergyMinimization == false) {
       // tentative prolongation operator (PA-AMG)
-      PFact = PtentFact; //rcp( new TentativePFactory() );
+      PFact = PtentFact;
       RFact = rcp( new TransPFactory() );
     } else if (agg_damping != 0.0 && bEnergyMinimization == false) {
       // smoothed aggregation (SA-AMG)
-      RCP<SaPFactory> SaPFact =  rcp( new SaPFactory(PtentFact) );
+      RCP<SaPFactory> SaPFact =  rcp( new SaPFactory() );
       SaPFact->SetDampingFactor(agg_damping);
       PFact  = SaPFact;
       RFact  = rcp( new TransPFactory() );
     } else if (bEnergyMinimization == true) {
       // Petrov Galerkin PG-AMG smoothed aggregation (energy minimization in ML)
-      PFact  = rcp( new PgPFactory(PtentFact) );
+      PFact  = rcp( new PgPFactory() );
       RFact  = rcp( new GenericRFactory() );
     }
 

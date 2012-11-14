@@ -43,77 +43,77 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_TWOLEVELFACTORY_HPP
-#define MUELU_TWOLEVELFACTORY_HPP
+#ifndef MUELU_FACTORYBASE2_HPP
+#define MUELU_FACTORYBASE2_HPP
+
+#include <string>
+#include <map>
+
+#include "Teuchos_RCP.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_FactoryBase2.hpp"
+#include "MueLu_FactoryBase.hpp"
+
 #include "MueLu_Level.hpp"
 
 namespace MueLu {
 
-  /*!
-    @class TwoLevelFactoryBase class.
-    @brief Base class for factories that use two levels (fineLevel and coarseLevel).
+  template <class Key, class T>
+  const RCP<T> mapFind(const std::map<Key, RCP<T> > & map, Key & varName) {
+    typename std::map<Key, RCP<T> >::const_iterator f = map.find(varName);
+    if (f == map.end())
+      return Teuchos::null;
+      else
+        return f->second;
+  }
 
-    Examples of such factories are R, P, and A_coarse.
-
-    @ingroup MueLuBaseClasses
-  */
-
-
-  class TwoLevelFactoryBase : public FactoryBase2 {
+  class FactoryBase2 : public FactoryBase {
 
   public:
-
-    //! @name Constructors/Destructors.
-    //@{
+    //@{ Constructors/Destructors.
 
     //! Constructor.
-    TwoLevelFactoryBase() {}
+    FactoryBase2() { }
 
     //! Destructor.
-    virtual ~TwoLevelFactoryBase() {}
+    virtual ~FactoryBase2() { }
+    //@}
+
+    //@{
+    //! Configuration
+
+    //! SetFactory is for expert users only. To change configuration of the preconditioner, use a factory manager.
+    virtual void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory);
+
+    // GetFactory(...);
+
+    // SetParameterList(...);
+
+    // GetParameterList(...);
 
     //@}
 
-    //! Input
-    //@{
+  protected:
+     void Input(Level & level, const std::string & varName) const {
+       level.DeclareInput(varName, mapFind<const std::string, const FactoryBase>(factoryTable_, varName).get(), this);
+     }
 
-    /*! @brief Specifies the data that this class needs, and the factories that generate that data.
+     template <class T>
+     T Get(Level & level, const std::string & varName) const {
+       return level.Get<T>(varName, mapFind<const std::string, const FactoryBase>(factoryTable_, varName).get());
+     }
 
-        If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
-        will fall back to the settings in FactoryManager.
-    */
-    virtual void DeclareInput(Level &fineLevel, Level &coarseLevel) const = 0;
-
-    //!
-    virtual void CallDeclareInput(Level & requestedLevel) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(requestedLevel.GetPreviousLevel() == Teuchos::null, Exceptions::RuntimeError, "LevelID = " << requestedLevel.GetLevelID());
-      DeclareInput(*requestedLevel.GetPreviousLevel(), requestedLevel);
+    template <class T>
+    void Set(Level & level, const std::string & varName, T & data) const {
+      return level.Set<T>(varName, data, this);
     }
 
-    //@}
+  private:
+    std::map<const std::string, RCP<const FactoryBase> > factoryTable_;
 
-    //! @name Build methods.
-    //@{
-
-
-    //! Build an object with this factory.
-    virtual void Build(Level & fineLevel, Level & coarseLevel) const = 0;
-
-    //!
-    virtual void CallBuild(Level & requestedLevel) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(requestedLevel.GetPreviousLevel() == Teuchos::null, Exceptions::RuntimeError, "LevelID = " << requestedLevel.GetLevelID());
-      Build(*requestedLevel.GetPreviousLevel(), requestedLevel);
-    }
-
-    //@}
-
-  }; //class TwoLevelFactoryBase
-
+  }; //class FactoryBase2
 
 } //namespace MueLu
 
-#define MUELU_TWOLEVELFACTORY_SHORT
-#endif //ifndef MUELU_TWOLEVELFACTORY_HPP
+#define MUELU_FACTORYBASE2_SHORT
+#endif //ifndef MUELU_FACTORYBASE2_HPP

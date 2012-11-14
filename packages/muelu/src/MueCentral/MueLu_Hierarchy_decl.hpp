@@ -127,7 +127,6 @@ namespace MueLu {
     //! Add a new level at the end of the hierarchy
     void AddNewLevel();
 
-
     //! Retrieve a certain level from hierarchy.
     RCP<Level> & GetLevel(const int levelID = 0);
 
@@ -140,38 +139,6 @@ namespace MueLu {
     bool GetImplicitTranspose() const;
 
     //@}
-
-    //! @name Populate Methods.
-    //@{
-
-    /*!
-      @brief Constructs components of the hierarchy.
-
-      Invoke a set of factories to populate (construct prolongation,
-      restriction, coarse level discretizations, and smoothers in this
-      order) a multigrid Hierarchy starting with information on 'startLevel'
-      and continuing for at most 'numDesiredLevels'.
-    */
-    Teuchos::ParameterList FullPopulate(const FactoryBase & PFact,
-                                        const FactoryBase & RFact,
-                                        const TwoLevelFactoryBase & AcFact,
-                                        const SmootherFactory & SmooFact,
-                                        const int &startLevel = 0, const int &numDesiredLevels = 10);
-
-    /*! @brief Populate hierarchy with A's, R's, and P's.
-
-    Invoke a set of factories to populate (construct prolongation,
-    restriction, and coarse level discretizations in this
-    order) a multigrid Hierarchy starting with information on 'startLevel'
-    and continuing for at most 'numDesiredLevels'.
-
-    @return  List containing starting and ending level numbers, operator complexity, \#nonzeros in the fine
-    matrix, and the sum of nonzeros all matrices (including the fine).
-    */
-    Teuchos::ParameterList FillHierarchy(const PFactory & PFact, const RFactory & RFact,
-                                         const TwoLevelFactoryBase & AcFact,
-                                         const int startLevel = 0, const int numDesiredLevels = 10);
-    // FillHierarchy
 
     //! Helper function
     void CheckLevel(Level& level, int levelID);
@@ -219,33 +186,6 @@ namespace MueLu {
 
     //!
     Teuchos::ParameterList Setup(const FactoryManagerBase & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10); // Setup()
-
-    /*! @brief Set solve method for coarsest level.
-
-    @param smooFact  fully constructed SmootherFactory
-    @param pop       whether to use pre, post, or both pre and post smoothing
-
-    Note: Whether the SmootherFactory builds both a pre- and post-smoother can be also be
-    controlled by SmootherFactory::SetSmootherPrototypes. This approach is a bit cumbersome,
-    however.
-    */
-    //TODO: remove PRE/POST
-
-    void SetCoarsestSolver(SmootherFactoryBase const &smooFact, PreOrPost const &pop = BOTH);
-
-    /*! @brief Construct smoothers on all levels but the coarsest.
-
-    Invoke a set of factories to construct smoothers within
-    a multigrid Hierarchy starting with information on 'startLevel'
-    and continuing for at most 'numDesiredLevels'.
-
-    Note: last level smoother will not be set here. Use SetCoarsestSolver()
-    to define a smoother for the last level. Otherwise, a direct solve is
-    assumed
-    */
-    void SetSmoothers(SmootherFactory const & smooFact, LO const & startLevel = 0, LO numDesiredLevels = -1); //SetSmoothers()
-
-    // #define GimmeNorm(someVec, someLabel);
 
     /*!
       @brief Apply the multigrid preconditioner.

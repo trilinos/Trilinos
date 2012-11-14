@@ -114,27 +114,22 @@ namespace MueLuTests {
             aggFact->SetOrdering(MueLu::AggOptions::NATURAL);
             aggFact->SetPhase3AggCreation(0.5);
 
-            RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory(aggFact, Teuchos::null));
-
-            RCP<TentativePFactory> tentPFact = rcp(new TentativePFactory(aggFact, Teuchos::null, Teuchos::null, Teuchos::null, coarseMapFact));
-
-            RCP<SaPFactory> Pfact  = rcp(new SaPFactory(tentPFact));
-            RCP<RFactory>   Rfact  = rcp(new TransPFactory(Pfact));
-            RCP<RAPFactory> Acfact = rcp(new RAPFactory(Pfact,Rfact));
-
             Teuchos::ParameterList smootherParamList;
             smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
             smootherParamList.set("relaxation: sweeps", (LO) 1);
             smootherParamList.set("relaxation: damping factor", (SC) 1.0);
             RCP<SmootherPrototype> smooProto = rcp(new TrilinosSmoother("RELAXATION", smootherParamList));
             RCP<SmootherFactory>   smooFact  = rcp(new SmootherFactory(smooProto));
-            Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
-            Teuchos::ParameterList status;
-            status = H_->FullPopulate(*Pfact, *Rfact, *Acfact, *smooFact, 0, maxLevels);
             RCP<SmootherPrototype> coarseProto = rcp(new DirectSolver());
-            SmootherFactory coarseSolveFact(coarseProto);
-            H_->SetCoarsestSolver(coarseSolveFact, MueLu::PRE);
+            RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(coarseProto, Teuchos::null));
+
+            FactoryManager M;
+            M.SetFactory("Aggregates", aggFact);
+            M.SetFactory("Smoother", smooFact);
+            M.SetFactory("CoarseSolver", coarseSolveFact);
+
+            H_->Setup(M, 0, maxLevels);
           }
 
           // Create RHS
