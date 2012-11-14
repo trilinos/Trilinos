@@ -20,6 +20,16 @@ namespace {
   MPI_Datatype mpi_type(int /*dummy*/)     {return MPI_INT;}
   MPI_Datatype mpi_type(int64_t /*dummy*/) {return MPI_LONG_LONG;}
 
+  template <typename T>
+  bool is_sorted(const std::vector<T> &vec)
+  {
+    for (size_t i=1; i < vec.size(); i++) {
+      if (vec[i-1] > vec[i])
+	return false;
+    }
+    return true;
+  }
+		 
   int exodus_byte_size_api(int exoid)
   {
     // Check byte-size of integers stored on the database...
@@ -31,6 +41,73 @@ namespace {
     }
   }
   
+  int power_2(int count)
+  {
+    // Return the power of two which is equal to or greater than 'count'
+    // count = 15 -> returns 16
+    // count = 16 -> returns 16
+    // count = 17 -> returns 32
+
+    // Use brute force...
+    int pow2 = 1;
+    while (pow2 < count) {
+      pow2 *= 2;
+    }
+    return pow2;
+  }
+
+  template <typename T>
+  int MY_Alltoallv64(std::vector<T> &sendbuf, const std::vector<int64_t> &sendcounts, const std::vector<int64_t> &senddisp,
+		     std::vector<T> &recvbuf, const std::vector<int64_t> &recvcounts, const std::vector<int64_t> &recvdisp, MPI_Comm  comm)
+  {
+  
+  int myid,numnodes;
+
+  int processor_count = 0;
+  int my_processor = 0;
+  MPI_Comm_size(comm, &processor_count);
+  MPI_Comm_rank(comm, &my_processor);
+
+  // Verify that all 'counts' can fit in an integer. Symmetric
+  // communication, so recvcounts are sendcounts on another processor.
+  for (size_t i=0; i < processor_count; i++) {
+    int snd_cnt = (int)sendcounts[i];
+    if ((int64_t)snd_cnt != sendcounts[i]) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: The number of items that must be communicated via MPI calls from\n"
+	     << "       processor " << my_processor << " to processor " << i << " is " << sendcounts[i]
+	     << "\n       which exceeds the storage capacity of the integers used by MPI functions.\n";
+      std::cerr << errmsg.str();
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  size_t pow_2=power_2(processor_count);
+
+  for(size_t i=1; i < pow_2; i++) {
+    MPI_Status status;
+
+    int tag = 24713;
+    size_t exchange_proc = i ^ my_processor;
+    if(exchange_proc < processor_count){
+      int snd_cnt = (int)sendcounts[exchange_proc]; // Converts from int64_t to int as needed by mpi
+      int rcv_cnt = (int)recvcounts[exchange_proc];
+      if (my_processor < exchange_proc) {
+	MPI_Send(&sendbuf[senddisp[exchange_proc]], snd_cnt, mpi_type(T(0)), exchange_proc, tag, comm);
+	MPI_Recv(&recvbuf[recvdisp[exchange_proc]], rcv_cnt, mpi_type(T(0)), exchange_proc, tag, comm, &status);
+      }
+      else {
+	MPI_Recv(&recvbuf[recvdisp[exchange_proc]], rcv_cnt, mpi_type(T(0)), exchange_proc, tag, comm, &status);
+	MPI_Send(&sendbuf[senddisp[exchange_proc]], snd_cnt, mpi_type(T(0)), exchange_proc, tag, comm);
+      }
+    }
+  }
+
+  // Take care of this processor's data movement...
+  std::copy(&sendbuf[senddisp[my_processor]], &sendbuf[senddisp[my_processor]+sendcounts[my_processor]], &recvbuf[recvdisp[my_processor]]);
+  return 0;
+}
+
   template <typename T>
   int MY_Alltoallv(std::vector<T> &sendbuf, const std::vector<int64_t> &sendcnts, const std::vector<int64_t> &senddisp, 
 		   std::vector<T> &recvbuf, const std::vector<int64_t> &recvcnts, const std::vector<int64_t> &recvdisp, MPI_Comm comm)
@@ -40,6 +117,10 @@ namespace {
     // 1) They are of type 64-bit integers, but only storing data in the 32-bit integer range.
     //    -- if (sendcnts[#proc-1] + senddisp[#proc-1] < 2^31, then we are ok
     // 2) They are of type 64-bit integers, and storing data in the 64-bit integer range.
+    //    -- call special alltoallv which does point-to-point sends
+    assert(is_sorted(senddisp));
+    assert(is_sorted(recvdisp));
+
     int processor_count = 0;
     MPI_Comm_size(comm, &processor_count);
     size_t max_comm = sendcnts[processor_count-1] + senddisp[processor_count-1];
@@ -53,8 +134,12 @@ namespace {
 			   TOPTR(recvbuf), (int*)TOPTR(recv_cnt), (int*)TOPTR(recv_dis), mpi_type(T(0)), comm);
     }
     else {
-      assert(1==0);
-      return -1;
+      // Same as if each processor sent a message to every other process with:
+      //     MPI_Send(sendbuf+senddisp[i]*sizeof(sendtype),sendcnts[i], sendtype, i, tag, comm);
+      // And received a message from each processor with a call to:
+      //     MPI_Recv(recvbuf+recvdisp[i]*sizeof(recvtype),recvcnts[i], recvtype, i, tag, comm);
+      return MY_Alltoallv64(sendbuf, sendcnts, senddisp, recvbuf, recvcnts, recvdisp, comm);
+
     }
   }
 
@@ -62,6 +147,9 @@ namespace {
   int MY_Alltoallv(std::vector<T> &sendbuf, const std::vector<int> &sendcnts, const std::vector<int> &senddisp, 
 		   std::vector<T> &recvbuf, const std::vector<int> &recvcnts, const std::vector<int> &recvdisp, MPI_Comm comm)
   {
+    assert(is_sorted(senddisp));
+    assert(is_sorted(recvdisp));
+
     return MPI_Alltoallv(TOPTR(sendbuf), (int*)TOPTR(sendcnts), (int*)TOPTR(senddisp), mpi_type(T(0)),
 			 TOPTR(recvbuf), (int*)TOPTR(recvcnts), (int*)TOPTR(recvdisp), mpi_type(T(0)), comm);
   }
@@ -340,8 +428,10 @@ namespace Iopx {
 
     ex_init_params info;
     ex_get_init_ext(exodusId, &info);
-    
-    spatialDimension = info.num_dim;
+
+    globalElementCount = info.num_elem;
+    globalNodeCount    = info.num_nodes;
+    spatialDimension   = info.num_dim;
 
     // Generate element_dist/node_dist --  size proc_count + 1
     // processor p contains all elements/nodes from X_dist[p] .. X_dist[p+1]
@@ -479,84 +569,49 @@ namespace Iopx {
 					       const std::vector<INT> &pointer,
 					       const std::vector<INT> &adjacency)
   {
-    idx_t wgt_flag = 0; // No weights
-    idx_t *elm_wgt = NULL;
-    idx_t ncon = 1;
-    idx_t num_flag = 0; // Use C-based numbering
-    idx_t common_nodes = get_common_node_count(el_blocks, comm_);
-    
-    idx_t nparts = processorCount;
-    idx_t ndims = spatialDimension;
-    std::vector<real_t> tp_wgts(ncon*nparts, 1.0/nparts);
-    
-    std::vector<real_t> ub_vec(ncon, 1.01);
-    
-    idx_t edge_cuts = 0;
     std::vector<idx_t> elem_partition(elementCount);
+
+    // Determine whether sizeof(INT) matches sizeof(idx_t).
+    // If not, decide how to proceed...
+    if (sizeof(INT) == sizeof(idx_t)) {
+      internal_metis_decompose(method, (idx_t*)TOPTR(element_dist), (idx_t*)TOPTR(pointer), (idx_t*)TOPTR(adjacency), TOPTR(elem_partition));
+    } 
+
+    // Now know that they don't match... Are we widening or narrowing...
+    else if (sizeof(idx_t) > sizeof(INT)) {
+      assert(sizeof(idx_t) == 8);
+      // ... Widening; just create new wider arrays
+      std::vector<idx_t> dist_cv(element_dist.begin(), element_dist.end());
+      std::vector<idx_t> pointer_cv(pointer.begin(), pointer.end());
+      std::vector<idx_t> adjacency_cv(adjacency.begin(), adjacency.end());
+      internal_metis_decompose(method, TOPTR(dist_cv), TOPTR(pointer_cv), TOPTR(adjacency_cv), TOPTR(elem_partition));
+    }
+
+    else if (sizeof(idx_t) < sizeof(INT)) {
+      // ... Narrowing.  See if data range (#elements and/or #nodes) fits in 32-bit idx_t
+      // Can determine this by checking the pointer[
+      assert(sizeof(idx_t) == 4);
+      if (globalElementCount >= INT_MAX || globalNodeCount >= INT_MAX || pointer[elementCount] >= INT_MAX) {
+	// Can't narrow...
+	std::ostringstream errmsg;
+	errmsg << "ERROR: The metis/parmetis libraries being used with this application only support\n"
+	       << "       32-bit integers, but the mesh being decomposed requires 64-bit integers.\n"
+	       << "       You must either choose a different, non-metis decomposition method, or\n"
+	       << "       rebuild your metis/parmetis libraries with 64-bit integer support.\n"
+	       << "       Contact gdsjaar@sandia.gov for more details.\n";
+	std::cerr << errmsg.str();
+	exit(EXIT_FAILURE);
+      } else {
+	// Should be able to narrow...
+	std::vector<idx_t> dist_cv(element_dist.begin(), element_dist.end());
+	std::vector<idx_t> pointer_cv(pointer.begin(), pointer.end());
+	std::vector<idx_t> adjacency_cv(adjacency.begin(), adjacency.end());
+	internal_metis_decompose(method, TOPTR(dist_cv), TOPTR(pointer_cv), TOPTR(adjacency_cv), TOPTR(elem_partition));
+      }
+    }
+    // ------------------------------------------------------------------------
+    // Done with metis functions...
     
-    std::vector<idx_t> options(3);
-    options[0] = 1; // Use my values instead of default
-    options[1] = 0; // PARMETIS_DBGLVL_TIME; 
-    options[2] = 1234567; // Random number seed
-    
-    if (method == "KWAY") {
-      int rc = ParMETIS_V3_PartMeshKway((idx_t*)TOPTR(element_dist), (idx_t*)TOPTR(pointer), (idx_t*)TOPTR(adjacency),
-					elm_wgt, &wgt_flag, &num_flag, &ncon, &common_nodes, &nparts,
-					TOPTR(tp_wgts), TOPTR(ub_vec), TOPTR(options), &edge_cuts, TOPTR(elem_partition),
-					&comm_);
-      //std::cout << "Edge Cuts = " << edge_cuts << "\n";
-      if (rc != METIS_OK) {
-	std::ostringstream errmsg;
-	errmsg << "ERROR: Problem during call to ParMETIS_V3_PartMeshKWay decomposition\n";
-	std::cerr << errmsg.str();
-	exit(EXIT_FAILURE);
-      }
-    }
-    else if (method == "GEOM_KWAY" || method == "KWAY_GEOM") {
-
-      idx_t *dual_xadj = NULL;
-      idx_t *dual_adjacency = NULL;
-      int rc = ParMETIS_V3_Mesh2Dual((idx_t*)TOPTR(element_dist), (idx_t*)TOPTR(pointer), (idx_t*)TOPTR(adjacency),
-				     &num_flag, &common_nodes, &dual_xadj, &dual_adjacency, &comm_);
-
-      if (rc != METIS_OK) {
-	std::ostringstream errmsg;
-	errmsg << "ERROR: Problem during call to ParMETIS_V3_Mesh2Dual graph conversion\n";
-	std::cerr << errmsg.str();
-	exit(EXIT_FAILURE);
-      }
-
-      ct_assert(sizeof(double) == sizeof(real_t));
-      assert(sizeof(INT) == sizeof(idx_t)); // Can't be compile-time assert due to double-definition issues.
-
-      rc = ParMETIS_V3_PartGeomKway((idx_t*)TOPTR(element_dist), dual_xadj, dual_adjacency,
-				    elm_wgt, elm_wgt, &wgt_flag, &num_flag, &ndims, (real_t*)TOPTR(centroids_), &ncon, &nparts,
-				    TOPTR(tp_wgts), TOPTR(ub_vec), TOPTR(options), &edge_cuts, TOPTR(elem_partition), &comm_);
-
-      //std::cout << "Edge Cuts = " << edge_cuts << "\n";
-      METIS_Free(dual_xadj);
-      METIS_Free(dual_adjacency);
-      
-      if (rc != METIS_OK) {
-	std::ostringstream errmsg;
-	errmsg << "ERROR: Problem during call to ParMETIS_V3_PartGeomKWay decomposition\n";
-	std::cerr << errmsg.str();
-	exit(EXIT_FAILURE);
-      }
-    }
-    else if (method == "METIS_SFC") {
-      std::vector<real_t> flt_cent(centroids_.begin(), centroids_.end());
-      int rc = ParMETIS_V3_PartGeom((idx_t*)TOPTR(element_dist), &ndims, TOPTR(flt_cent),
-				    TOPTR(elem_partition), &comm_);
-
-      if (rc != METIS_OK) {
-	std::ostringstream errmsg;
-	errmsg << "ERROR: Problem during call to ParMETIS_V3_PartGeom decomposition\n";
-	std::cerr << errmsg.str();
-	exit(EXIT_FAILURE);
-      }
-    }
-
     // Determine how many elements I send to the other processors...
     // and how many remain local (on this processor)
     exportElementCount.resize(processorCount+1);
@@ -610,6 +665,93 @@ namespace Iopx {
     //	      << elementCount-exp_size << " local, "
     //	      << imp_size             << " imported and "
     //	      << exp_size            << " exported elements\n";
+  }
+
+  template <typename INT>
+  void DecompositionData<INT>::internal_metis_decompose(const std::string &method,
+							idx_t *element_dist,
+							idx_t *pointer,
+							idx_t *adjacency,
+							idx_t *elem_partition)
+  {
+    // Determine whether sizeof(INT) matches sizeof(idx_t).
+    // If not, decide how to proceed...
+    
+
+    idx_t wgt_flag = 0; // No weights
+    idx_t *elm_wgt = NULL;
+    idx_t ncon = 1;
+    idx_t num_flag = 0; // Use C-based numbering
+    idx_t common_nodes = get_common_node_count(el_blocks, comm_);
+    
+    idx_t nparts = processorCount;
+    idx_t ndims = spatialDimension;
+    std::vector<real_t> tp_wgts(ncon*nparts, 1.0/nparts);
+    
+    std::vector<real_t> ub_vec(ncon, 1.01);
+    
+    idx_t edge_cuts = 0;
+    
+    std::vector<idx_t> options(3);
+    options[0] = 1; // Use my values instead of default
+    options[1] = 0; // PARMETIS_DBGLVL_TIME; 
+    options[2] = 1234567; // Random number seed
+    
+    if (method == "KWAY") {
+      int rc = ParMETIS_V3_PartMeshKway(element_dist, pointer, adjacency,
+					elm_wgt, &wgt_flag, &num_flag, &ncon, &common_nodes, &nparts,
+					TOPTR(tp_wgts), TOPTR(ub_vec), TOPTR(options), &edge_cuts, elem_partition,
+					&comm_);
+      //std::cout << "Edge Cuts = " << edge_cuts << "\n";
+      if (rc != METIS_OK) {
+	std::ostringstream errmsg;
+	errmsg << "ERROR: Problem during call to ParMETIS_V3_PartMeshKWay decomposition\n";
+	std::cerr << errmsg.str();
+	exit(EXIT_FAILURE);
+      }
+    }
+    else if (method == "GEOM_KWAY" || method == "KWAY_GEOM") {
+
+      idx_t *dual_xadj = NULL;
+      idx_t *dual_adjacency = NULL;
+      int rc = ParMETIS_V3_Mesh2Dual(element_dist, pointer, adjacency,
+				     &num_flag, &common_nodes, &dual_xadj, &dual_adjacency, &comm_);
+
+      if (rc != METIS_OK) {
+	std::ostringstream errmsg;
+	errmsg << "ERROR: Problem during call to ParMETIS_V3_Mesh2Dual graph conversion\n";
+	std::cerr << errmsg.str();
+	exit(EXIT_FAILURE);
+      }
+
+      ct_assert(sizeof(double) == sizeof(real_t)); // centroids_ is double, make sure it matches real_t
+
+      rc = ParMETIS_V3_PartGeomKway(element_dist, dual_xadj, dual_adjacency,
+				    elm_wgt, elm_wgt, &wgt_flag, &num_flag, &ndims, (real_t*)TOPTR(centroids_), &ncon, &nparts,
+				    TOPTR(tp_wgts), TOPTR(ub_vec), TOPTR(options), &edge_cuts, elem_partition, &comm_);
+
+      //std::cout << "Edge Cuts = " << edge_cuts << "\n";
+      METIS_Free(dual_xadj);
+      METIS_Free(dual_adjacency);
+      
+      if (rc != METIS_OK) {
+	std::ostringstream errmsg;
+	errmsg << "ERROR: Problem during call to ParMETIS_V3_PartGeomKWay decomposition\n";
+	std::cerr << errmsg.str();
+	exit(EXIT_FAILURE);
+      }
+    }
+    else if (method == "METIS_SFC") {
+      ct_assert(sizeof(double) == sizeof(real_t)); // centroids_ is double, make sure it matches real_t
+      int rc = ParMETIS_V3_PartGeom(element_dist, &ndims, (real_t*)TOPTR(centroids_), elem_partition, &comm_);
+
+      if (rc != METIS_OK) {
+	std::ostringstream errmsg;
+	errmsg << "ERROR: Problem during call to ParMETIS_V3_PartGeom decomposition\n";
+	std::cerr << errmsg.str();
+	exit(EXIT_FAILURE);
+      }
+    }
   }
 
   template <typename INT>
@@ -1098,8 +1240,19 @@ namespace Iopx {
       el_blocks[b].attributeCount = ebs[b].num_attribute;
     }
 
-    pointer.reserve(elementCount+1);
+    // Make sure 'sum' can fit in INT...
+    INT tmp_sum = (INT)sum;
+    if ((size_t)tmp_sum != sum) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: The decomposition of this mesh requires 64-bit integers, but is being\n"
+	     << "       run with 32-bit integer code. Please rerun with the property INTEGER_SIZE_API\n"
+	     << "       set to 8. The details of how to do this vary with the code that is being run.\n"
+	     << "       Contact gdsjaar@sandia.gov for more details.\n";
+      std::cerr << errmsg.str();
+      exit(EXIT_FAILURE);
+    }
 
+    pointer.reserve(elementCount+1);
     adjacency.reserve(sum);
 
     // Now, populate the vectors...

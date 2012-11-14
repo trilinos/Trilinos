@@ -3,6 +3,8 @@
 
 #include <mpi.h>
 #include <vector>
+#include <parmetis.h>
+
 #undef MPICPP
 #include <zoltan_cpp.h>
 #include <exodusII_par.h>
@@ -83,7 +85,11 @@ namespace Iopx {
   class DecompositionDataBase
   {
   public:
-    DecompositionDataBase(MPI_Comm comm) : comm_(comm) {}
+    DecompositionDataBase(MPI_Comm comm) : comm_(comm),
+      myProcessor(0), processorCount(0), spatialDimension(0), globalNodeCount(0),
+      globalElementCount(0), elementCount(0), elementOffset(0), importPreLocalElemIndex(0),
+      nodeCount(0), nodeOffset(0), importPreLocalNodeIndex(0)
+      {}
       
     virtual int int_size() const = 0;
     virtual void decompose_model(int exodusId) = 0;
@@ -96,7 +102,9 @@ namespace Iopx {
     int processorCount;
       
     size_t spatialDimension;
-
+    size_t globalNodeCount;
+    size_t globalElementCount;
+    
     // Values for the file decomposition 
     size_t elementCount;
     size_t elementOffset;
@@ -278,6 +286,12 @@ namespace Iopx {
 			 const std::vector<INT> &element_dist,
 			 const std::vector<INT> &pointer,
 			 const std::vector<INT> &adjacency);
+
+    void internal_metis_decompose(const std::string &method,
+				  idx_t *element_dist,
+				  idx_t *pointer,
+				  idx_t *adjacency,
+				  idx_t *elem_partition);
 
     void simple_decompose(const std::string &method,
 			  const std::vector<INT> &element_dist);
