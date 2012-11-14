@@ -14,6 +14,9 @@
 #include <stk_mesh/base/Iterators.hpp>
 #include <stk_mesh/baseImpl/Partition.hpp>
 
+
+// #define USE_STK_MESH_IMPL_PARTITION
+
 namespace stk {
 namespace mesh {
 namespace impl {
@@ -34,16 +37,26 @@ public:
   const std::vector<Bucket*> & buckets( EntityRank rank ) const
   {
     ThrowAssertMsg( rank < m_buckets.size(), "Invalid entity rank " << rank );
+#ifdef USE_STK_MESH_IMPL_PARTITION
+    // ThrowAssertMsg(!m_need_sync_from_partitions[rank], "Getting buckets without sync-ing with partitions");
+    if (m_need_sync_from_partitions[rank])
+    {
+        const_cast<BucketRepository *>(this)->sync_from_partitions();
+    }
+#endif
 
     return m_buckets[ rank ];
   }
 
+#ifndef USE_STK_MESH_IMPL_PARTITION
   /*  Entity modification consequences:
    *  1) Change entity relation => update via part relation => change parts
    *  2) Change parts => update forward relations via part relation
    *                  => update via field relation
    */
   void remove_entity( Bucket * , unsigned );
+
+#endif
 
   //------------------------------------
   /** \brief  Query the upper bound on the number of mesh entities
@@ -72,12 +85,16 @@ public:
   void destroy_bucket( Bucket * bucket );
   void declare_nil_bucket();
   Bucket * get_nil_bucket() const { return m_nil_bucket; }
+
+#ifndef USE_STK_MESH_IMPL_PARTITION
   Bucket * declare_bucket(
       const unsigned entity_rank ,
       const unsigned part_count ,
       const unsigned part_ord[] ,
       const std::vector< FieldBase * > & field_set
       );
+#endif
+
   void copy_fields( Bucket & k_dst , unsigned i_dst ,
                            Bucket & k_src , unsigned i_src )
   { k_dst.replace_fields(i_dst,k_src,i_src); }
@@ -87,13 +104,14 @@ public:
   void internal_sort_bucket_entities();
 
   void optimize_buckets();
-  void sort_and_optimize_buckets();
 
+#ifndef USE_STK_MESH_IMPL_PARTITION
   void add_entity_to_bucket( Entity entity, Bucket & bucket )
   {
     bucket.replace_entity( bucket.size() , entity ) ;
     bucket.increment_size();
   }
+#endif
 
   void internal_propagate_relocation( Entity );
 
@@ -115,16 +133,23 @@ public:
   friend class Partition;
 
   Partition *get_or_create_partition(const unsigned arg_entity_rank ,
-                                     const OrdinalVector &parts);
+                                     const PartVector &parts);
 
-  // Delete the Partitions in m_partitions, clear it, and then (re-)build the Partitions
-  // from the m_buckets.  This should become unnecessary.
-  void sync_to_partitions();
+  Partition *get_or_create_partition(const unsigned arg_entity_rank ,
+                                     const OrdinalVector &parts);
 
   // Update m_buckets from the partitions.
   void sync_from_partitions();
+  void sync_from_partitions(EntityRank rank);
 
+  // Used in unit tests.  Returns the current partitions.
   std::vector<Partition *> get_partitions(EntityRank rank);
+
+  // Used in unit tests. Delete the Partitions in m_partitions, clear it, and then (re-)build
+  // the Partitions from the m_buckets.
+  void sync_to_partitions();
+
+  void babbleForEntity(EntityRank entity_rank, EntityId entity_id);
 
 
 private:
@@ -138,6 +163,7 @@ private:
   EntityRepository                    & m_entity_repo ;
 
   std::vector<std::vector<Partition *> >         m_partitions;  // Experimental.
+  std::vector<bool>                              m_need_sync_from_partitions;
 };
 
 } // namespace impl

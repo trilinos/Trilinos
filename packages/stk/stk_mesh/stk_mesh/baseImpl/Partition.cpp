@@ -12,6 +12,12 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
+//// See what happens when we try to force updating the bucket repository's m_buckets[rank]
+//// vector whenever a bucket is added or removed.
+////     The fuego test still failed.
+////     The fortissimo test still failed.
+////
+// #define BUCKET_REPOSITORY_SYNC_FROM_PARTITIONS_DURING_MODIFICATION_CYCLE
 
 std::ostream &operator<<(std::ostream &os, const stk::mesh::impl::Partition &bf)
 {
@@ -26,15 +32,26 @@ using namespace stk::mesh::impl;
 
 std::ostream &Partition::streamit(std::ostream &os) const
 {
-    os << "{Partition [" << m_beginBucketIndex << ", " << m_endBucketIndex << ")"
-       << " in m_repository = " << m_repository << "  m_rank = " << m_rank
-       << "  (" << m_beginBucketIndex << ", " << m_endBucketIndex << ")";
+    const MetaData & mesh_meta_data = m_repository->m_mesh.mesh_meta_data();
+
+//    os << "{Partition [" << m_beginBucketIndex << ", " << m_endBucketIndex << ")"
+//       << " in m_repository = " << m_repository << "  m_rank = " << m_rank
+//       << "  (" << m_beginBucketIndex << ", " << m_endBucketIndex << ")";
+
+
+    os << "{Partition " << this << " in m_repository = " << m_repository << " (m_rank) = " << m_rank
+       << " on P" << m_repository->m_mesh.parallel_rank();
 
     os << "  legacy partition id : {";
     const std::vector<unsigned> &family_key = get_legacy_partition_id();
     for (size_t i = 0; i < family_key.size(); ++i)
     {
         os << " " << family_key[i];
+        if ((i > 0) && (i < family_key.size() - 1))
+        {
+            const Part & part = mesh_meta_data.get_part( family_key[i] );
+            os << " " << part.name();
+        }
     }
     os << " }}";
 
@@ -50,6 +67,8 @@ Partition::Partition(BucketRepository *repo, EntityRank rank,
     , m_beginBucketIndex(0)
     , m_endBucketIndex(0)
     , m_modifyingBucketSet(false)
+    , m_updated_since_compress(false)
+    , m_updated_since_sort(false)
 {
     // Nada.
 }
@@ -92,8 +111,18 @@ bool Partition::add(Entity entity)
     entity.m_entityImpl->set_bucket_and_ordinal(bucket, dst_ordinal);
     bucket->increment_size();
 
+    m_updated_since_compress = m_updated_since_sort = true;
     m_repository->internal_propagate_relocation(entity);
+    entity.m_entityImpl->set_sync_count(m_repository->m_mesh.synchronized_count());
 
+    // std::cout << " added " << entity.entity_rank() << '.' << entity << " to " << *this << std::endl;
+
+#ifdef BUCKET_REPOSITORY_SYNC_FROM_PARTITIONS_DURING_MODIFICATION_CYCLE
+    if (m_modifyingBucketSet)
+    {
+        m_repository->sync_from_partitions(m_rank);
+    }
+#endif
     return true;
 }
 
@@ -115,18 +144,31 @@ void Partition::move_to(Entity entity, Partition &dst_partition)
     // Move the entity's data to the new bucket before removing the entity from its old bucket.
     unsigned dst_ordinal = dst_bucket->size();
     dst_bucket->replace_fields(dst_ordinal, *src_bucket, src_ordinal);
-    remove(entity);
+    remove(entity, false);
 
     entity.m_entityImpl->log_modified_and_propagate();
     entity.m_entityImpl->set_bucket_and_ordinal(dst_bucket, dst_ordinal);
     dst_bucket->replace_entity(dst_ordinal, entity) ;
     dst_bucket->increment_size();
+    dst_partition.m_updated_since_compress = dst_partition.m_updated_since_sort = true;
     
+    m_updated_since_compress = m_updated_since_sort = true;
     m_repository->internal_propagate_relocation(entity);
+    entity.m_entityImpl->set_sync_count(m_repository->m_mesh.synchronized_count());
+
+    // std::cout << " moved " << entity.entity_rank() << '.' << entity << " to " << dst_partition << std::endl;
+
+#ifdef BUCKET_REPOSITORY_SYNC_FROM_PARTITIONS_DURING_MODIFICATION_CYCLE
+    if (m_modifyingBucketSet)
+    {
+        m_repository->sync_from_partitions(m_rank);
+    }
+#endif
+
 }
 
 
-bool Partition::remove(Entity e_k)
+bool Partition::remove(Entity e_k, bool not_in_move_to)
 {
     Bucket *bucket_k = e_k.bucket_ptr();
     if (!belongs(bucket_k) || empty())
@@ -159,31 +201,51 @@ bool Partition::remove(Entity e_k)
         // set of buckets from what the repository had.
         take_bucket_control();
 
+        // take_bucket_control() makes the m_buckets the repn to use.
         size_t num_buckets = m_buckets.size();
+
+        // Don't delete the last bucket now --- might want it later in this modification cycle.
         if (num_buckets > 1)
         {
-            Bucket *new_last = *(m_buckets.end() - 2);
+            Bucket *new_last = m_buckets[num_buckets - 2];
             m_buckets[0]->set_last_bucket_in_partition(new_last);
-
-            // If there is only one bucket, keep it in case entities will get added to this partition
-            // before the end of the current modification cycle.
-            if (num_buckets > 2)
-            {
-                delete m_buckets.back();
-                m_buckets.pop_back();
-            }
+            delete m_buckets.back();
+            m_buckets.pop_back();
         }
+#ifndef PARTITION_HOLD_EMPTY_BUCKET_OPTIMIZATION
+        else
+        {
+            delete m_buckets.back();
+            m_buckets.pop_back();
+        }
+#endif
+
     }
 
     e_k.m_entityImpl->set_bucket_and_ordinal(0, 0);
+    e_k.m_entityImpl->set_sync_count(m_repository->m_mesh.synchronized_count());
+    m_updated_since_compress = m_updated_since_sort = true;
+
+#ifdef BUCKET_REPOSITORY_SYNC_FROM_PARTITIONS_DURING_MODIFICATION_CYCLE
+    if (m_modifyingBucketSet && not_in_move_to)
+    {
+        m_repository->sync_from_partitions(m_rank);
+    }
+#endif
+
     return true;
 }
 
 
-void Partition::compress()
+void Partition::compress(bool force)
 {
-    if (empty() )
+    if (!force && (empty() || !m_updated_since_compress))
         return;
+
+    if (m_buckets.size() <= 1)
+    {
+        return;
+    }
 
     std::vector<unsigned> partition_key = get_legacy_partition_id();
     //index of bucket in partition
@@ -249,12 +311,20 @@ void Partition::compress()
     m_buckets.resize(1);
     m_buckets[0] = new_bucket;
     m_modifyingBucketSet = true;
+    m_updated_since_compress = m_updated_since_sort = false;
+
+#ifdef BUCKET_REPOSITORY_SYNC_FROM_PARTITIONS_DURING_MODIFICATION_CYCLE
+    if (m_modifyingBucketSet)
+    {
+        m_repository->sync_from_partitions(m_rank);
+    }
+#endif
 }
 
 
-void Partition::sort()
+void Partition::sort(bool force)
 {
-    if (empty())
+    if (!force && (empty() || !m_updated_since_sort))
         return;
 
     std::vector<unsigned> partition_key = get_legacy_partition_id();
@@ -340,13 +410,26 @@ void Partition::sort()
             }
         }
     }
+    m_updated_since_sort = false;
+
     if (tmp_bucket)
         delete tmp_bucket;
 }
 
 
+void Partition::update_state() const
+{
+    std::vector<Bucket*>::const_iterator b_e = end();
+    for ( std::vector<Bucket*>::const_iterator ik = begin() ; ik != b_e; ++ik )
+    {
+      (*ik)->update_state();
+    }
+}
+
+
 bool Partition::take_bucket_control()
 {
+    m_repository->m_need_sync_from_partitions[m_rank] = true;
     if (m_modifyingBucketSet)
         return false;
 
@@ -380,7 +463,7 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
         Bucket *bucket = new Bucket( m_repository->m_mesh, m_rank, partition_key,
                              m_repository->bucket_capacity());
         bucket->m_partition = this;
-        bucket->set_last_bucket_in_partition(bucket);
+        bucket->set_first_bucket_in_partition(bucket);
         m_buckets.push_back(bucket);
 
         return bucket;
@@ -404,6 +487,7 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
                              m_repository->bucket_capacity());
         bucket->m_partition = this;
         bucket->set_first_bucket_in_partition(m_buckets[0]);
+        m_buckets[0]->set_last_bucket_in_partition(bucket);
         m_buckets.push_back(bucket);
     }
 

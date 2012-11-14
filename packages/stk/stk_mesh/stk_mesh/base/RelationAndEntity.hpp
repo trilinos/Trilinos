@@ -482,49 +482,19 @@ public:
   void comm_clear_ghosting();
   void comm_clear();
 
-  void set_bucket_and_ordinal( Bucket * in_bucket, unsigned ordinal )
-  {
-    TraceIfWatching("stk::mesh::impl::EntityRepository::set_bucket_and_ordinal", LOG_ENTITY, key());
-
-    m_bucket = in_bucket;
-    m_bucket_ord = ordinal;
-  }
+  void set_bucket_and_ordinal( Bucket * in_bucket, unsigned ordinal );
 
   // return true if entity was actually modified
-  bool set_owner_rank( unsigned in_owner_rank )
-  {
-    TraceIfWatching("stk::mesh::impl::EntityRepository::set_owner_rank", LOG_ENTITY, key());
+  bool set_owner_rank( unsigned in_owner_rank );
 
-    if ( in_owner_rank != m_owner_rank ) {
-      m_owner_rank = in_owner_rank;
-      return true;
-    }
-    return false;
-  }
-
-  void set_sync_count( size_t sync_count )
-  {
-    TraceIfWatching("stk::mesh::impl::EntityRepository::set_sync_count", LOG_ENTITY, key());
-
-    m_sync_count = sync_count;
-  }
+  void set_sync_count( size_t sync_count );
 
   // Change log access:
   EntityModificationLog log_query() const { return m_mod_log ; }
 
-  void log_clear()
-  {
-    TraceIfWatching("stk::mesh::impl::EntityRepository::log_clear", LOG_ENTITY, key());
+  void log_clear();
 
-    m_mod_log = EntityLogNoChange;
-  }
-
-  void log_deleted()
-  {
-    TraceIfWatching("stk::mesh::impl::EntityRepository::log_deleted", LOG_ENTITY, key());
-
-    m_mod_log = EntityLogDeleted;
-  }
+  void log_deleted();
 
   /**
    * Takes an entity that has been marked for deletion and reactivates it. IE
@@ -592,31 +562,6 @@ public:
 //  EntityImpl( const EntityImpl & ); ///< Copy constructor not allowed
   EntityImpl & operator = ( const EntityImpl & ); ///< Assignment operator not allowed
 };
-
-inline
-EntityImpl::EntityImpl( const EntityKey & arg_key )
-  : m_key(arg_key),
-    m_relation(),
-    m_bucket( NULL ),
-    m_bucket_ord(0),
-    m_owner_rank(0),
-    m_sync_count(0),
-    m_mod_log( EntityLogCreated )
-{
-  TraceIfWatching("stk::mesh::impl::EntityImpl::EntityImpl", LOG_ENTITY, arg_key);
-}
-
-inline
-EntityImpl::EntityImpl()
-  : m_key(),
-    m_relation(),
-    m_bucket( NULL ),
-    m_bucket_ord(0),
-    m_owner_rank(0),
-    m_sync_count(0),
-    m_mod_log( EntityLogCreated )
-{
-}
 
 //----------------------------------------------------------------------
 
@@ -1085,25 +1030,11 @@ public:
     return lhs_key < rhs;
   }
 
-  bool operator()( const EntityProc & lhs, const EntityProc & rhs) const
-  {
-    const EntityKey lhs_key = lhs.first.is_valid() ? lhs.first.key() : EntityKey() ;
-    const EntityKey rhs_key = rhs.first.is_valid() ? rhs.first.key() : EntityKey() ;
-    return lhs_key != rhs_key ? lhs_key < rhs_key : lhs.second < rhs.second ;
-  }
+  bool operator()( const EntityProc & lhs, const EntityProc & rhs) const;
 
-  bool operator()( const EntityProc & lhs, const Entity rhs) const
-  {
-    const EntityKey lhs_key = lhs.first.is_valid() ? lhs.first.key() : EntityKey();
-    const EntityKey rhs_key = rhs.is_valid()       ? rhs.key()       : EntityKey();
-    return lhs_key < rhs.key();
-  }
+  bool operator()( const EntityProc & lhs, const Entity rhs) const;
 
-  bool operator()( const EntityProc & lhs, const EntityKey & rhs) const
-  {
-    const EntityKey lhs_key = lhs.first.is_valid() ? lhs.first.key() : EntityKey();
-    return lhs_key < rhs ;
-  }
+  bool operator()( const EntityProc & lhs, const EntityKey & rhs) const;
 
 }; //class EntityLess
 
@@ -1180,6 +1111,82 @@ bool Relation::operator < ( const Relation & rhs ) const
   return result ;
 }
 
+namespace impl {
+
+inline
+EntityImpl::EntityImpl( const EntityKey & arg_key )
+  : m_key(arg_key),
+    m_relation(),
+    m_bucket( NULL ),
+    m_bucket_ord(0),
+    m_owner_rank(0),
+    m_sync_count(0),
+    m_mod_log( EntityLogCreated )
+{
+  TraceIfWatching("stk::mesh::impl::EntityImpl::EntityImpl", LOG_ENTITY, arg_key);
+}
+
+inline
+EntityImpl::EntityImpl()
+  : m_key(),
+    m_relation(),
+    m_bucket( NULL ),
+    m_bucket_ord(0),
+    m_owner_rank(0),
+    m_sync_count(0),
+    m_mod_log( EntityLogCreated )
+{
+}
+
+
+inline
+void EntityImpl::set_bucket_and_ordinal( Bucket * in_bucket, unsigned ordinal )
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::set_bucket_and_ordinal", LOG_ENTITY, key());
+
+  m_bucket = in_bucket;
+  m_bucket_ord = ordinal;
+}
+
+// return true if entity was actually modified
+inline
+bool EntityImpl::set_owner_rank( unsigned in_owner_rank )
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::set_owner_rank", LOG_ENTITY, key());
+
+  if ( in_owner_rank != m_owner_rank ) {
+    m_owner_rank = in_owner_rank;
+    return true;
+  }
+  return false;
+}
+
+inline
+void EntityImpl::set_sync_count( size_t sync_count )
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::set_sync_count", LOG_ENTITY, key());
+
+  m_sync_count = sync_count;
+}
+
+inline
+void EntityImpl::log_clear()
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::log_clear", LOG_ENTITY, key());
+
+  m_mod_log = EntityLogNoChange;
+}
+
+inline
+void EntityImpl::log_deleted()
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::log_deleted", LOG_ENTITY, key());
+
+  m_mod_log = EntityLogDeleted;
+}
+
+}
+
 #ifdef SIERRA_MIGRATION
 
 inline
@@ -1238,6 +1245,32 @@ void Entity::erase_and_clear_if_empty(RelationIterator rel_itr)
     reserve_relation(0);
   }
 }
+
+
+inline
+bool EntityLess::operator()( const EntityProc & lhs, const EntityProc & rhs) const
+{
+  const EntityKey lhs_key = lhs.first.is_valid() ? lhs.first.key() : EntityKey() ;
+  const EntityKey rhs_key = rhs.first.is_valid() ? rhs.first.key() : EntityKey() ;
+  return lhs_key != rhs_key ? lhs_key < rhs_key : lhs.second < rhs.second ;
+}
+
+inline
+bool EntityLess::operator()( const EntityProc & lhs, const Entity rhs) const
+{
+  const EntityKey lhs_key = lhs.first.is_valid() ? lhs.first.key() : EntityKey();
+  const EntityKey rhs_key = rhs.is_valid()       ? rhs.key()       : EntityKey();
+  return lhs_key < rhs.key();
+}
+
+inline
+bool EntityLess::operator()( const EntityProc & lhs, const EntityKey & rhs) const
+{
+  const EntityKey lhs_key = lhs.first.is_valid() ? lhs.first.key() : EntityKey();
+  return lhs_key < rhs ;
+}
+
+
 
 inline
 std::ostream& operator<<(std::ostream& out, Entity entity)

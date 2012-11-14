@@ -54,15 +54,17 @@ public:
     void move_to(Entity entity, Partition &dst_partition);
 
     /// Remove an entity from this partition.
-    bool remove(Entity entity);
+    bool remove(Entity entity, bool not_in_move_to = false);
 
     /// Compress this partion into a single bucket of sorted Entities.
-    void compress();
+    void compress(bool force = false);
 
     /// Sort the entities in this partition by EntityKey without changing
     /// the number or sizes of buckets.
-    void sort();
+    void sort(bool force = false);
     
+    void update_state() const;
+
     ////
     //// This part of the interface exposes the Buckets that are currently a part of
     //// the implementation.
@@ -126,6 +128,10 @@ private:
 
     // Flag that the set of buckets, and not just their contents, is being modified.
     bool m_modifyingBucketSet;
+
+    bool m_updated_since_compress;
+
+    bool m_updated_since_sort;
 
     // The partition has no buckets, not even an empty one left after removing all its
     // entities.

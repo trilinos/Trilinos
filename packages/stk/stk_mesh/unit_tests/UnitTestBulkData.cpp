@@ -1411,8 +1411,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
 
     mesh.modification_begin();
 
+
     // On the processor that owns the node, change its parts
     if (p_rank == 1) {
+
+      std::cout << "On the processor that owns the node, change its parts" << std::endl;
+
       PartVector add_parts(1, &extra_node_part);
       mesh.change_entity_parts(changing_node, add_parts);
     }
