@@ -47,6 +47,7 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_Version.hpp"
 #include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 
 // Enum for the speed option
 enum ESpeed { SPEED_SLOW=-1, SPEED_MEDIUM=0, SPEED_FAST=+1 };
@@ -82,7 +83,7 @@ int main(int argc, char* argv[])
     int NumIters = 1550;
     My_CLP.setOption("iterations", &NumIters, "Number of iterations");
     // Set a long integer command line option
-    long int MatrixDim = (long int)std::numeric_limits<int>::max() + 1;
+    long int MatrixDim = Teuchos::OrdinalTraits<long int>::max();
     My_CLP.setOption("matrix-dim", &MatrixDim, "Matrix dimension");    
     // Set a double-precision command line option.
     double Tolerance = 1e-10;
