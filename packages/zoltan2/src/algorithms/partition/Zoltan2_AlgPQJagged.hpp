@@ -1494,7 +1494,7 @@ void pqJagged_1DPart_getPartWeights(
         while(kk < noCuts){  // Needed when cuts shared the same position
           // kddnote Can this loop be disabled for RECTILINEAR BLOCKS?
           // kddnote Mehmet says it is probably needed anyway.
-          scalar_t distance =ABS(cutCoordinates_tmp[kk] - cut);
+          distance =ABS(cutCoordinates_tmp[kk] - cut);
           if(distance < _EPSILON){
             //cout << "yo" << endl;
             myPartWeights[2 * kk + 1] += w;
@@ -1514,7 +1514,7 @@ void pqJagged_1DPart_getPartWeights(
 
         kk = j - 1;
         while(kk >= 0){
-          scalar_t distance =ABS(cutCoordinates_tmp[kk] - cut);
+          distance =ABS(cutCoordinates_tmp[kk] - cut);
           if(distance < _EPSILON){
             myPartWeights[2 * kk + 1] += w;
             //cout << "3to part:" << 2*kk+1 << " coord:" << coord << endl;
@@ -1557,7 +1557,7 @@ void pqJagged_1DPart_getPartWeights(
           while(kk < noCuts){  // Needed when cuts shared the same position
             // kddnote Can this loop be disabled for RECTILINEAR BLOCKS?
             // kddnote Mehmet says it is probably needed anyway.
-            scalar_t distance =ABS(cutCoordinates_tmp[kk] - cut);
+            distance =ABS(cutCoordinates_tmp[kk] - cut);
             //cout << "distance:" << distance << endl;
             if(distance < _EPSILON){
               myPartWeights[2 * kk + 1] += w;
@@ -1577,7 +1577,7 @@ void pqJagged_1DPart_getPartWeights(
 
           kk = j - 1;
           while(kk >= 0){
-            scalar_t distance =ABS(cutCoordinates_tmp[kk] - cut);
+            distance =ABS(cutCoordinates_tmp[kk] - cut);
             if(distance < _EPSILON){
               myPartWeights[2 * kk + 1] += w;
               //cout << "6to part:" << 2*kk+1 << " coord:" << coord << endl;
@@ -1631,7 +1631,7 @@ void pqJagged_1DPart_getPartWeights(
           while(kk < noCuts){  // Needed when cuts shared the same position
             // kddnote Can this loop be disabled for RECTILINEAR BLOCKS?
             // kddnote Mehmet says it is probably needed anyway.
-            scalar_t distance =ABS(cutCoordinates_tmp[kk] - cut);
+            distance =ABS(cutCoordinates_tmp[kk] - cut);
             if(distance < _EPSILON){
               myPartWeights[2 * kk + 1] += w;
               myLeftClosest[kk] = 0;
