@@ -672,6 +672,171 @@ public:
 };
 
 
+namespace {
+// Implementation of conversion from an unsigned built-in integer
+// type, to an signed built-in integer type with the same number of
+// bits.
+template<class SignedIntType, class UnsignedIntType>
+class UnsignedToSignedValueTypeConversionTraits {
+public:
+  /// Convert from unsigned to signed.
+  ///
+  /// \warning Some unsigned integer values may overflow the signed
+  ///   integer type, resulting in a negative number when the original
+  ///   number was positive.  You should use safeConvert() if you
+  ///   aren't sure that the given unsigned value fits in the signed
+  ///   type.
+  static SignedIntType convert (const UnsignedIntType t) {
+    // Implicit conversion may cause compiler warnings, but
+    // static_cast does not.
+    return static_cast<SignedIntType> (t);
+  }
+
+  //! Convert from unsigned to signed, checking for overflow first.
+  static SignedIntType safeConvert (const UnsignedIntType t) {
+    using Teuchos::TypeNameTraits;
+    const SignedIntType maxSigned = std::numeric_limits<SignedIntType>::max ();
+
+    // SignedIntType and UnsignedIntType have the same number of bits,
+    // so it suffices (via two's complement arithmetic) to check
+    // whether the cast turned a positive number negative.
+    const SignedIntType signedVal = static_cast<SignedIntType> (t);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      signedVal < static_cast<SignedIntType> (0),
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<" << TypeNameTraits<SignedIntType>::name ()
+      << ", " << TypeNameTraits<UnsignedIntType>::name () << ">::safeConvert: "
+      "Input " << TypeNameTraits<UnsignedIntType>::name () << " t = " << t
+      << " is out of the valid range [0, " << ", " << maxSigned
+      << "] for conversion to " << TypeNameTraits<SignedIntType>::name () << ".");
+    return signedVal;
+  }
+};
+
+
+// Implementation of conversion from a signed built-in integer type,
+// to an unsigned built-in integer type with the same number of bits.
+template<class UnsignedIntType, class SignedIntType>
+class SignedToUnsignedValueTypeConversionTraits {
+public:
+  //! Convert the given unsigned integer to a signed integer of the same size.
+  static UnsignedIntType convert (const SignedIntType t) {
+    // Implicit conversion may cause compiler warnings, but
+    // static_cast does not.
+    return static_cast<UnsignedIntType> (t);
+  }
+
+  //! Convert from signed to unsigned, checking for underflow first.
+  static UnsignedIntType safeConvert (const SignedIntType t) {
+    using Teuchos::TypeNameTraits;
+
+    // SignedIntType and UnsignedIntType have the same number of bits,
+    // so it suffices (via two's complement arithmetic) to check
+    // whether the input is negative.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < static_cast<SignedIntType> (0),
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<" << TypeNameTraits<UnsignedIntType>::name ()
+      << ", " << TypeNameTraits<SignedIntType>::name () << ">::safeConvert: "
+      "Input " << TypeNameTraits<SignedIntType>::name () << " t = " << t
+      << " is negative, so it cannot be correctly converted to the unsigned type "
+      << TypeNameTraits<UnsignedIntType>::name () << ".");
+
+    return static_cast<UnsignedIntType> (t);
+  }
+};
+
+} // namespace (anonymous)
+
+
+//! Convert from <tt>unsigned int<tt> to \c int.
+template<>
+class ValueTypeConversionTraits<int, unsigned int> {
+public:
+  static int convert (const unsigned int t) {
+    return UnsignedToSignedValueTypeConversionTraits<int, unsigned int>::convert (t);
+  }
+
+  static int safeConvert (const unsigned int t) {
+    return UnsignedToSignedValueTypeConversionTraits<int, unsigned int>::safeConvert (t);
+  }
+};
+
+
+//! Convert from <tt>int<tt> to <tt>unsigned int</tt>.
+template<>
+class ValueTypeConversionTraits<unsigned int, int> {
+public:
+  static unsigned int convert (const int t) {
+    return SignedToUnsignedValueTypeConversionTraits<unsigned int, int>::convert (t);
+  }
+
+  static unsigned int safeConvert (const int t) {
+    return SignedToUnsignedValueTypeConversionTraits<unsigned int, int>::safeConvert (t);
+  }
+};
+
+
+//! Convert from <tt>unsigned long<tt> to \c long.
+template<>
+class ValueTypeConversionTraits<long, unsigned long> {
+public:
+  static long convert (const unsigned long t) {
+    return UnsignedToSignedValueTypeConversionTraits<long, unsigned long>::convert (t);
+  }
+
+  static long safeConvert (const unsigned long t) {
+    return UnsignedToSignedValueTypeConversionTraits<long, unsigned long>::safeConvert (t);
+  }
+};
+
+
+//! Convert from <tt>long<tt> to <tt>unsigned long</tt>.
+template<>
+class ValueTypeConversionTraits<unsigned long, long> {
+public:
+  static unsigned long convert (const long t) {
+    return SignedToUnsignedValueTypeConversionTraits<unsigned long, long>::convert (t);
+  }
+
+  static unsigned long safeConvert (const long t) {
+    return SignedToUnsignedValueTypeConversionTraits<unsigned long, long>::safeConvert (t);
+  }
+};
+
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+
+//! Convert from <tt>unsigned long long<tt> to <tt>long long</tt>.
+template<>
+class ValueTypeConversionTraits<long long, unsigned long long> {
+public:
+  static long long convert (const unsigned long long t) {
+    return UnsignedToSignedValueTypeConversionTraits<long long, unsigned long long>::convert (t);
+  }
+
+  static long long safeConvert (const unsigned long long t) {
+    return UnsignedToSignedValueTypeConversionTraits<long long, unsigned long long>::safeConvert (t);
+  }
+};
+
+
+//! Convert from <tt>long long<tt> to <tt>unsigned long long</tt>.
+template<>
+class ValueTypeConversionTraits<unsigned long long, long long> {
+public:
+  static unsigned long long convert (const long long t) {
+    return SignedToUnsignedValueTypeConversionTraits<unsigned long long, long long>::convert (t);
+  }
+
+  static unsigned long long safeConvert (const long long t) {
+    return SignedToUnsignedValueTypeConversionTraits<unsigned long long, long long>::safeConvert (t);
+  }
+};
+
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
+
 //! Convert from \c long to \c int.
 template<>
 class ValueTypeConversionTraits<int, long> {

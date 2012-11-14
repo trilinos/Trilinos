@@ -106,9 +106,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( as, positiveFirstIntToSecondInt, FirstIntType
 
 // Test for conversion between two built-in integer types
 // SignedIntType and UnsignedIntType.  The two types must have the
-// same number of bits.  The test uses a negative number that should
-// trigger asSafe() to throw std::range_error.  as() will only throw
-// std::range_error in a debug build.
+// same number of bits.  The test starts with a negative number that
+// should trigger asSafe() to throw std::range_error.  as() will only
+// throw std::range_error in a debug build, so we don't test it here.
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( asSafe, negativeSignedIntToUnsignedInt, SignedIntType, UnsignedIntType )
 {
   using Teuchos::asSafe;
@@ -132,12 +132,49 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( asSafe, negativeSignedIntToUnsignedInt, Signe
   (void) asSafeVal; // Silence compiler warning.
 
   // Casts from large unsigned values to negative signed values should
-  // not throw, because they are within range [minSignedVal,
-  // maxSignedVal] of the target type.
+  // throw, because they change positivity of the result.
   UnsignedIntType negVal = static_cast<UnsignedIntType> (origVal);
   SignedIntType backSafeVal = 0;
-  TEST_NOTHROW(backSafeVal = asSafe<SignedIntType> (negVal));
-  TEST_EQUALITY_CONST(origVal, backSafeVal);
+  TEST_THROW(backSafeVal = asSafe<SignedIntType> (negVal), std::range_error);
+  (void) backSafeVal; // Silence compiler warning.
+}
+
+// Test for conversion between two built-in signed integer types
+// FirstSignedIntType and SecondSignedIntType.  The test uses a
+// negative number that should not overflow in either case.  It tests
+// both as() and asSafe().
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( as, negativeSignedIntToSignedInt, FirstSignedIntType, SecondSignedIntType )
+{
+  using Teuchos::as;
+  using Teuchos::asSafe;
+
+  std::ostringstream os;
+  const FirstSignedIntType origVal = -42;
+
+  // Ensure that the two types are both signed.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! std::numeric_limits<FirstSignedIntType>::is_signed ||
+    ! std::numeric_limits<SecondSignedIntType>::is_signed,
+    std::logic_error,
+    "Unit test Teuchos,as,negativeSignedIntToSignedInt requires that the "
+    "two template parameters FirstSignedIntType and SecondSignedIntType "
+    "both be signed built-in integer types.");
+
+  // Test cast from FirstSignedIntType to SecondSignedIntType.
+  // The casts should not throw in either a debug or a release build.
+  SecondSignedIntType asVal = 0, asSafeVal = 0;
+  TEST_NOTHROW(asVal = as<SecondSignedIntType> (origVal));
+  TEST_NOTHROW(asSafeVal = asSafe<SecondSignedIntType> (origVal));
+  TEST_EQUALITY_CONST(asVal, static_cast<SecondSignedIntType> (origVal));
+  TEST_EQUALITY_CONST(asSafeVal, static_cast<SecondSignedIntType> (origVal));
+  TEST_EQUALITY_CONST(asVal, asSafeVal);
+
+  FirstSignedIntType backVal = 0, backSafeVal = 0;
+  TEST_NOTHROW(backVal = as<FirstSignedIntType> (origVal));
+  TEST_NOTHROW(backSafeVal = asSafe<FirstSignedIntType> (origVal));
+  TEST_EQUALITY_CONST(backVal, origVal);
+  TEST_EQUALITY_CONST(backSafeVal, origVal);
+  TEST_EQUALITY_CONST(backVal, backSafeVal);
 }
 
 //
@@ -203,6 +240,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, negativeSignedIntToUnsignedInt, lo
 
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, negativeSignedIntToUnsignedInt, long_long_type, unsigned_long_long_type )
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
+//
+// Instantiations of templated tests for conversions between two
+// possibly different signed integer types, for a negative value that
+// should not overflow.
+//
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, int, int )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, int, long )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long, int )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long, long )
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, int, long_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long, long_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long_long_type, int )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long_long_type, long )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long_long_type, long_long_type )
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 //
