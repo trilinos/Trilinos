@@ -1648,7 +1648,7 @@ void pqJagged_1DPart_getPartWeights(
 
           kk = j - 1;
           while(kk >= 0){
-            scalar_t distance =ABS(cutCoordinates_tmp[kk] - cut);
+            distance =ABS(cutCoordinates_tmp[kk] - cut);
             if(distance < _EPSILON){
               myPartWeights[2 * kk + 1] += w;
 
