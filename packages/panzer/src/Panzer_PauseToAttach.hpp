@@ -51,7 +51,7 @@
 
 namespace panzer {
   
-  void pauseToAttach(MPI_Comm mpicomm)
+  inline void pauseToAttach(MPI_Comm mpicomm)
   {
     Teuchos::RCP<Teuchos::Comm<int> > comm = 
       Teuchos::createMpiComm<int>(Teuchos::rcp(new Teuchos::OpaqueWrapper<MPI_Comm>(mpicomm)));
