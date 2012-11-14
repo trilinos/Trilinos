@@ -77,7 +77,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( asSafe, doubleToSignedIntTypeOverflow, Signed
   const double maxDouble = std::numeric_limits<double>::max ();
 
   SignedIntType val = 0;
-  if (sizeof (SignedIntType) <= sizeof (double)) {
+  if (sizeof (SignedIntType) < sizeof (double)) {
     TEST_THROW(val = asSafe<SignedIntType> (minDouble), std::range_error);
     TEST_THROW(val = asSafe<SignedIntType> (maxDouble), std::range_error);
   }
@@ -102,7 +102,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( asSafe, doubleToUnsignedIntTypeOverflow, Unsi
   const double maxDouble = std::numeric_limits<double>::max ();
 
   UnsignedIntType val = 0;
-  if (sizeof (UnsignedIntType) <= sizeof (double)) {
+  if (sizeof (UnsignedIntType) < sizeof (double)) {
     TEST_THROW(val = asSafe<UnsignedIntType> (minDouble), std::range_error);
     TEST_THROW(val = asSafe<UnsignedIntType> (maxDouble), std::range_error);
     (void) val; // Silence compiler errors.
