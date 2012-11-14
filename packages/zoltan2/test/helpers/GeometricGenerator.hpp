@@ -75,8 +75,8 @@ const std::string distribution[] = {"distribution", "uniform"};
 #define INVALID_SHAPE_ARG(SHAPE, REQUIRED) "Invalid argument count for shape " + SHAPE + ". Requires " + REQUIRED + " argument(s)."
 #define MAX_ITER_ALLOWED 500
 
-const std::string weight_distribution = "WeightDistribution";
-const std::string weight_distribution_string = weight_distribution + "-";
+// KDD const std::string weight_distribution = "WeightDistribution";
+const std::string weight_distribution_string = "WeightDistribution-";
 template <typename T>
 struct CoordinatePoint {
   T x;
@@ -1211,8 +1211,8 @@ private:
           std::string *stepstr = new std::string[stepCount];
           this->splitString(value, ',', stepstr);
           steps = new T[stepCount];
-          for (int ii = 0; ii < stepCount; ++ii){
-            steps[ii] = this->fromString<T>(stepstr[ii]);
+          for (int j = 0; j < stepCount; ++j){
+            steps[j] = this->fromString<T>(stepstr[j]);
           }
           delete [] stepstr;
         }
@@ -1221,8 +1221,8 @@ private:
           std::string *stepstr = new std::string[valueCount];
           this->splitString(value, ',', stepstr);
           values = new T[valueCount];
-          for (int ii = 0; ii < valueCount; ++ii){
-            values[ii] = this->fromString<T>(stepstr[ii]);
+          for (int j = 0; j < valueCount; ++j){
+            values[j] = this->fromString<T>(stepstr[j]);
           }
           delete [] stepstr;
         }
