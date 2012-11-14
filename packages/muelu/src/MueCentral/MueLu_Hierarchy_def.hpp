@@ -46,6 +46,8 @@
 #ifndef MUELU_HIERARCHY_DEF_HPP
 #define MUELU_HIERARCHY_DEF_HPP
 
+#include <sstream>
+
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 
@@ -61,18 +63,22 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 
+#ifdef HAVE_MUELU_BOOST
+#include "boost/graph/graphviz.hpp"
+#endif
+
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy()
-    : maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true)
+    : maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true), isDumpingEnabled_(false), dumpLevel_(-1)
   {
     AddLevel(rcp( new Level() ));
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy(const RCP<Matrix> & A)
-    :  maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true)
+    :  maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true), isDumpingEnabled_(false), dumpLevel_(-1)
   {
     RCP<Level> Finest = rcp( new Level() );
     AddLevel(Finest);
@@ -218,6 +224,9 @@ namespace MueLu {
       Levels_[coarseLevelID]->Request(TopSmootherFactory(rcpcoarseLevelManager, "CoarseSolver"));
     }
 
+    if (isDumpingEnabled_ && dumpLevel_ == 0 && coarseLevelID == 1)
+      DumpCurrentGraph();
+
     //
     // Requests for next coarse level
     //
@@ -250,6 +259,9 @@ namespace MueLu {
       GetOStream(Debug, 0) << "Debug: Level: " << coarseLevelID << " - R" << std::endl;
       level.Release(coarseRAPFactory);
     }
+
+    if (isDumpingEnabled_ && dumpLevel_ > 0 && coarseLevelID == dumpLevel_)
+      DumpCurrentGraph();
 
     // Test if we reach the end of the hierarchy
     {
@@ -612,6 +624,59 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::IsPreconditioner(const bool flag) {
     isPreconditioner_ = flag;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DumpCurrentGraph() const {
+#ifdef HAVE_MUELU_BOOST
+    // define boost graph types
+    typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS,
+            boost::property<boost::vertex_name_t, std::string,
+            boost::property<boost::vertex_color_t, std::string,
+            boost::property<boost::vertex_index_t, std::string> > >,
+            boost::property<boost::edge_name_t, std::string,
+            boost::property<boost::edge_color_t, std::string> > > Graph;
+    typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex_t;
+    typedef typename boost::graph_traits<Graph>::edge_descriptor   edge_t;
+
+    Graph graph;
+
+    boost::dynamic_properties dp;
+    dp.property("label", boost::get(boost::vertex_name,  graph));
+    dp.property("id",    boost::get(boost::vertex_index, graph));
+    dp.property("label", boost::get(boost::edge_name,    graph));
+    dp.property("color", boost::get(boost::edge_color,   graph));
+
+    // create local maps
+    std::map<const FactoryBase*, vertex_t>                                  vindices;
+    typedef std::map<std::pair<vertex_t,vertex_t>, std::string> emap; emap  edges;
+
+    for (int i = dumpLevel_; i <= dumpLevel_+1 && i < GetNumLevels(); i++) {
+      edges.clear();
+      Levels_[i]->UpdateGraph(vindices, edges, dp, graph);
+
+      for (emap::const_iterator eit = edges.begin(); eit != edges.end(); eit++) {
+        std::pair<edge_t, bool> boost_edge = boost::add_edge(eit->first.first, eit->first.second, graph);
+        boost::put("label", dp, boost_edge.first, eit->second);
+        if (i == dumpLevel_)
+          boost::put("color", dp, boost_edge.first, std::string("red"));
+        else
+          boost::put("color", dp, boost_edge.first, std::string("blue"));
+      }
+    }
+
+    // add legend
+    std::ostringstream legend;
+    legend << "< <TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\"> \
+               <TR><TD COLSPAN=\"2\">Legend</TD></TR> \
+               <TR><TD><FONT color=\"red\">Level " << dumpLevel_ << "</FONT></TD><TD><FONT color=\"blue\">Level " << dumpLevel_+1 << "</FONT></TD></TR> \
+               </TABLE> >";
+    vertex_t boost_vertex = boost::add_vertex(graph);
+    boost::put("label", dp, boost_vertex, legend.str());
+
+    std::ofstream out(dumpFile_.c_str());
+    boost::write_graphviz_dp(out, graph, dp, std::string("id"));
+#endif
   }
 
 } //namespace MueLu

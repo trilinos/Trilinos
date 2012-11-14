@@ -117,6 +117,7 @@ namespace MueLu {
 
   private:
     int LastLevelID() const;
+    void DumpCurrentGraph() const;
 
   public:
 
@@ -299,6 +300,12 @@ namespace MueLu {
 
     //@}
 
+    void EnableGraphDumping(const std::string& filename, int levelID = 1) {
+      isDumpingEnabled_ = true;
+      dumpLevel_ = levelID;
+      dumpFile_  = filename;
+    }
+
   private:
     //! Copy constructor is not implemented.
     Hierarchy(const Hierarchy &h);
@@ -309,6 +316,11 @@ namespace MueLu {
     Xpetra::global_size_t maxCoarseSize_;
     bool implicitTranspose_;
     bool isPreconditioner_;
+
+    //! graph dumping
+    bool isDumpingEnabled_;
+    int  dumpLevel_;
+    std::string dumpFile_;
 
   }; //class Hierarchy
 

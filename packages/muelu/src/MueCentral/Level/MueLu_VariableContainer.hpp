@@ -180,6 +180,9 @@ namespace MueLu {
     //! returns the keep flag combination
     KeepType GetKeepFlag() const { return keep_; }
 
+    typedef std::map<const FactoryBase*,int> request_container;
+    const request_container& Requests() const { return requests_; }
+
     //@}
 
   private:
@@ -188,7 +191,6 @@ namespace MueLu {
     KeepType                          keep_;        ///< keep flag
     int                               count_;       ///< number of requests by all factories
 
-    typedef std::map<const FactoryBase*,int> request_container;
     request_container                 requests_;    ///< requesting factories
   };
 
