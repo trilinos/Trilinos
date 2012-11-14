@@ -75,7 +75,7 @@ void *process_pending_reqs(void *arg)
 {
     int rc;
     nssi_svc_rpc_request *req = NULL;
-    log_level debug_level = LOG_ALL;
+    log_level debug_level = xfer_debug_level;
 
     intptr_t id = (intptr_t)arg;
 
@@ -154,7 +154,7 @@ int xfer_enqueue_rpc_request(nssi_svc_rpc_request *req)
         pthread_cond_wait(&pending_cond, &pending_mutex);
     }
 
-    log_debug(LOG_ALL, "Adding request %d to the pending queue", req->id);
+    log_debug(xfer_debug_level, "Adding request %d to the pending queue", req->id);
 
     // ok to add the request
     pending_reqs.push(req);
@@ -167,7 +167,7 @@ int xfer_enqueue_rpc_request(nssi_svc_rpc_request *req)
 
 int xfer_cancel_server_threads()
 {
-    log_debug(LOG_ALL, "Canceling server threads");
+    log_debug(xfer_debug_level, "Canceling server threads");
 
     pthread_mutex_lock(&pending_mutex);
     time_to_exit = true;
