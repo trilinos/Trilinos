@@ -1342,7 +1342,7 @@ template <typename Adapter>
 
       int numProcs = comm_->getSize();
 
-      for (size_t i=0; i < partList.size(); i++)
+      for (ArrayRCP<partId_t>::size_type i=0; i < partList.size(); i++)
         partCounter[parts[i]]++;
 
       lno_t *procCounter = new lno_t [numProcs];
@@ -1372,7 +1372,7 @@ template <typename Adapter>
 
       delete [] partCounter;
 
-      for (size_t i=0; i < partList.size(); i++){
+      for (ArrayRCP<partId_t>::size_type i=0; i < partList.size(); i++){
         if (partList[i] >= nGlobalParts_){
           // Solution has more parts that targeted.  These
           // objects just remain on this process.
