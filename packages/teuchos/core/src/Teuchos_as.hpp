@@ -593,13 +593,68 @@ public:
     const int minInt = std::numeric_limits<int>::min ();
     const int maxInt = std::numeric_limits<int>::max ();
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      t < static_cast<double> (minInt) || t > static_cast<double> (maxInt),
-      std::range_error,
-      "Teuchos::ValueTypeConversionTraits<int, double>::safeConvert: "
-      "Input double t = " << t << " is out of the valid range [" << minInt
-      << ", " << maxInt << "] for conversion to int.");
+    // Cases:
+    // 1. sizeof(int) <= sizeof(double) == 8
+    // 2. sizeof(int) > sizeof(double) == 8
+    //
+    // Overflow when converting from double to int is possible only
+    // for Case 1.  Case 2 is quite rare, but casting minInt or maxInt
+    // to double in this case could result in loss of accuracy or
+    // overflow.  Thus, we only do the cast for Case 1.
+    if (sizeof (int) <= sizeof (double)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        t < static_cast<double> (minInt) || t > static_cast<double> (maxInt),
+        std::range_error,
+        "Teuchos::ValueTypeConversionTraits<int, double>::safeConvert: "
+        "Input double t = " << t << " is out of the valid range [" << minInt
+        << ", " << maxInt << "] for conversion to int.");
+    }
     return static_cast<int> (t);
+  }
+};
+
+
+//! Convert from \c double to <tt>unsigned int</tt>.
+template<>
+class ValueTypeConversionTraits<unsigned int, double> {
+public:
+  //! Convert the given \c double to an <tt>unsigned int</tt>.
+  static unsigned int convert (const double t) {
+    // Implicit conversion may cause compiler warnings, but
+    // static_cast does not.
+    return static_cast<unsigned int> (t);
+  }
+
+  //! Convert the given \c double to an <tt>unsigned int</tt>, checking for overflow first.
+  static unsigned int safeConvert (const double t) {
+    const unsigned int minInt = 0;
+    const unsigned int maxInt = std::numeric_limits<unsigned int>::max ();
+
+    // Cases:
+    // 1. sizeof(int) <= sizeof(double) == 8
+    // 2. sizeof(int) > sizeof(double) == 8
+    //
+    // Overflow when converting from double to int is possible only
+    // for Case 1.  Case 2 is quite rare, but casting maxInt to double
+    // in this case could result in loss of accuracy or overflow.
+    // Thus, we only do the cast for Case 1.
+    if (sizeof (int) <= sizeof (double)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        t < static_cast<double> (minInt) || t > static_cast<double> (maxInt),
+       std::range_error,
+        "Teuchos::ValueTypeConversionTraits<unsigned int, double>::safeConvert: "
+        "Input double t = " << t << " is out of the valid range [" << minInt
+        << ", " << maxInt << "] for conversion to unsigned int.");
+    }
+    else { // Overflow isn't possible, but t < 0 isn't allowed.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+       t < static_cast<double> (minInt),
+       std::range_error,
+        "Teuchos::ValueTypeConversionTraits<unsigned int, double>::safeConvert: "
+        "Input double t = " << t << " is out of the valid range [" << minInt
+        << ", " << maxInt << "] for conversion to unsigned int.");
+    }
+    return static_cast<unsigned int> (t);
   }
 };
 
@@ -622,10 +677,15 @@ public:
     const int minInt = std::numeric_limits<int>::min ();
     const int maxInt = std::numeric_limits<int>::max ();
 
-    // It's legal for sizeof (unsigned int) == 8, but rare.  In that
-    // rare case, float certainly won't overflow unsigned int, but we
-    // wouldn't want to do the check below, because it casts maxInt to
-    // float.
+    // Cases:
+    // 1. sizeof(int) <= sizeof(float) == 4
+    // 2. sizeof(int) > sizeof(float) == 4
+    //
+    // Overflow when converting from float to int is possible only for
+    // Case 1.  Case 2 is rare, but casting minInt or maxInt to float
+    // in this case could result in loss of accuracy (sizeof(int) == 8
+    // or 16) or overflow (sizeof(int) > 16).  Thus, we only do the
+    // cast for Case 1.
     if (sizeof (unsigned int) <= sizeof (float)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         t < static_cast<float> (minInt) || t > static_cast<float> (maxInt),
@@ -655,10 +715,14 @@ public:
     const unsigned int minInt = 0; // Had better be, since it's unsigned.
     const unsigned int maxInt = std::numeric_limits<unsigned int>::max ();
 
-    // It's legal for sizeof (unsigned int) == 8, but rare.  In that
-    // rare case, float certainly won't overflow unsigned int, but we
-    // wouldn't want to do the check below, because it casts maxInt to
-    // float.
+    // Cases:
+    // 1. sizeof(unsigned int) <= sizeof(float) == 4
+    // 2. sizeof(unsigned int) > sizeof(float) == 4
+    //
+    // Overflow when converting from float to unsigned int is possible
+    // only for Case 1.  Case 2 is rare, but casting maxInt to float
+    // in this case could result in overflow.  Thus, we only do the
+    // cast for Case 1.
     if (sizeof (unsigned int) <= sizeof (float)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         t < static_cast<float> (minInt) || t > static_cast<float> (maxInt),
@@ -667,10 +731,187 @@ public:
         "Input float t = " << t << " is out of the valid range [" << minInt
         << ", " << maxInt << "] for conversion to unsigned int.");
     }
+    else { // Overflow isn't possible, but t < 0 isn't allowed.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+       t < static_cast<float> (minInt),
+       std::range_error,
+        "Teuchos::ValueTypeConversionTraits<unsigned int, float>::safeConvert: "
+        "Input double t = " << t << " is out of the valid range [" << minInt
+        << ", " << maxInt << "] for conversion to unsigned int.");
+    }
     return static_cast<unsigned int> (t);
   }
 };
 
+
+//! Convert from \c float to \c long.
+template<>
+class ValueTypeConversionTraits<long, float> {
+public:
+  //! Convert the given \c float to an \c long.
+  static long convert (const float t) {
+    // Implicit conversion from float to long may cause compiler
+    // warnings, but static_cast does not.  Overflow here would mean
+    // that sizeof(long) < sizeof(float), which is legal, but unlikely
+    // on platforms of longerest.
+    return static_cast<long> (t);
+  }
+
+  //! Convert the given \c float to an \c long, checking first for overflow.
+  static long safeConvert (const float t) {
+    const long minLong = std::numeric_limits<long>::min ();
+    const long maxLong = std::numeric_limits<long>::max ();
+
+    // Cases:
+    // 1. sizeof(long) <= sizeof(float) == 4
+    // 2. sizeof(long) > sizeof(float) == 4
+    //
+    // Overflow when converting from float to long is possible only
+    // for Case 1.  Case 2 is common (e.g., in the I32LP64 integer
+    // model of GNU/Linux and other operating systems), but casting
+    // minLong or maxLong to float in this case could result in loss
+    // of accuracy or overflow.  Thus, we only do the cast for Case 1.
+    if (sizeof (long) <= sizeof (float)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        t < static_cast<float> (minLong) || t > static_cast<float> (maxLong),
+        std::range_error,
+        "Teuchos::ValueTypeConversionTraits<long, float>::safeConvert: "
+        "Input float t = " << t << " is out of the valid range ["
+        << minLong << ", " << maxLong << "] for conversion to long.");
+    }
+    return static_cast<long> (t);
+  }
+};
+
+
+//! Convert from \c float to <tt>unsigned long</tt>.
+template<>
+class ValueTypeConversionTraits<unsigned long, float> {
+public:
+  //! Convert the given \c float to an <tt>unsigned long</tt>.
+  static unsigned long convert (const float t) {
+    // Implicit conversion from float to unsigned long may cause
+    // compiler warnings, but static_cast does not.
+    return static_cast<unsigned long> (t);
+  }
+
+  //! Convert the given \c float to an <tt>unsigned long</tt>, checking first or under- or overflow.
+  static unsigned long safeConvert (const float t) {
+    const unsigned long minLong = 0; // Had better be, since it's unsigned.
+    const unsigned long maxLong = std::numeric_limits<unsigned long>::max ();
+
+    // Cases:
+    // 1. sizeof(unsigned long) <= sizeof(float) == 4
+    // 2. sizeof(unsigned long) > sizeof(float) == 4
+    //
+    // Overflow when converting from float to unsigned long is
+    // possible only for Case 1.  Case 2 is common (e.g., in the
+    // I32LP64 integer model of GNU/Linux and other operating
+    // systems), but casting maxLong to float in this case could
+    // result in loss of accuracy or overflow.  Thus, we only do the
+    // cast for Case 1.
+    if (sizeof (unsigned long) <= sizeof (float)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        t < static_cast<float> (minLong) || t > static_cast<float> (maxLong),
+        std::range_error,
+        "Teuchos::ValueTypeConversionTraits<unsigned long, float>::safeConvert: "
+        "Input float t = " << t << " is out of the valid range [" << minLong
+        << ", " << maxLong << "] for conversion to unsigned long.");
+    }
+    else { // Overflow isn't possible, but t < 0 isn't allowed.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+       t < static_cast<float> (minLong),
+       std::range_error,
+        "Teuchos::ValueTypeConversionTraits<unsigned long, float>::safeConvert: "
+        "Input float t = " << t << " is out of the valid range [" << minLong
+        << ", " << maxLong << "] for conversion to unsigned long.");
+    }
+    return static_cast<unsigned long> (t);
+  }
+};
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+
+//! Convert from \c float to <tt>long long</tt>.
+template<>
+class ValueTypeConversionTraits<long long, float> {
+public:
+  //! Convert the given \c float to a <tt>long long</tt>.
+  static long long convert (const float t) {
+    return static_cast<long long> (t);
+  }
+
+  //! Convert the given \c float to a <tt>long long</tt>, checking first for overflow.
+  static long long safeConvert (const float t) {
+    const long long minLong = std::numeric_limits<long long>::min ();
+    const long long maxLong = std::numeric_limits<long long>::max ();
+
+    // Cases:
+    // 1. sizeof(long long) <= sizeof(float) == 4
+    // 2. sizeof(long long) > sizeof(float) == 4
+    //
+    // Overflow when converting from float to long long is possible
+    // only for Case 1.  Case 2 holds for all platforms I have ever
+    // seen (mfh 14 Nov 2012), but in that case, casting minLong or
+    // maxLong to float could result in loss of accuracy or overflow.
+    // Thus, we only do the cast for Case 1.
+    if (sizeof (long long) <= sizeof (float)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        t < static_cast<float> (minLong) || t > static_cast<float> (maxLong),
+        std::range_error,
+        "Teuchos::ValueTypeConversionTraits<long long, float>::safeConvert: "
+        "Input float t = " << t << " is out of the valid range ["
+        << minLong << ", " << maxLong << "] for conversion to long long.");
+    }
+    return static_cast<long long> (t);
+  }
+};
+
+
+//! Convert from \c float to <tt>unsigned long long</tt>.
+template<>
+class ValueTypeConversionTraits<unsigned long long, float> {
+public:
+  //! Convert the given \c float to an <tt>unsigned long long</tt>.
+  static unsigned long long convert (const float t) {
+    return static_cast<unsigned long long> (t);
+  }
+
+  //! Convert the given \c float to an <tt>unsigned long long</tt>, checking first for overflow.
+  static unsigned long long safeConvert (const float t) {
+    const unsigned long long minLong = std::numeric_limits<unsigned long long>::min ();
+    const unsigned long long maxLong = std::numeric_limits<unsigned long long>::max ();
+
+    // Cases:
+    // 1. sizeof(unsigned long long) <= sizeof(float) == 4
+    // 2. sizeof(unsigned long long) > sizeof(float) == 4
+    //
+    // Overflow when converting from float to unsigned long long is
+    // possible only for Case 1.  Case 2 holds for all platforms I
+    // have ever seen (mfh 14 Nov 2012), but in that case, casting
+    // minLong or maxLong to float could result in loss of accuracy or
+    // overflow.  Thus, we only do the cast for Case 1.
+    if (sizeof (unsigned long long) <= sizeof (float)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        t < static_cast<float> (minLong) || t > static_cast<float> (maxLong),
+        std::range_error,
+        "Teuchos::ValueTypeConversionTraits<unsigned long long, float>::safeConvert: "
+        "Input float t = " << t << " is out of the valid range ["
+        << minLong << ", " << maxLong << "] for conversion to unsigned long long.");
+    }
+    else { // Overflow isn't possible, but t < 0 isn't allowed.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+       t < static_cast<float> (minLong),
+       std::range_error,
+        "Teuchos::ValueTypeConversionTraits<unsigned long long, float>::safeConvert: "
+        "Input float t = " << t << " is out of the valid range [" << minLong
+        << ", " << maxLong << "] for conversion to unsigned long long.");
+    }
+    return static_cast<unsigned long long> (t);
+  }
+};
+
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 namespace {
 // Implementation of conversion from an unsigned built-in integer
@@ -1088,9 +1329,17 @@ public:
 
   //! Convert from <tt>long long</tt> to \c float, checking for overflow first.
   static float safeConvert (const long long t) {
-    const float minFloat = std::numeric_limits<float>::min ();
+    // std::numeric_limits<float>::min() gives the minimum _positive_
+    // normalized value of type float.  IEEE 754 floating-point values
+    // can change sign just by flipping the sign bit, so the "most
+    // negative" finite float is just the negative of the "most
+    // positive" finite float.
+    const float minFloat = -std::numeric_limits<float>::max ();
     const float maxFloat = std::numeric_limits<float>::max ();
 
+    // FIXME (mfh 14 Nov 2012) This only works if sizeof(long long) >
+    // sizeof(float).  It is on all platforms I've encountered, but
+    // that still doesn't make this code correct.
     TEUCHOS_TEST_FOR_EXCEPTION(
       t < static_cast<long long> (minFloat) ||
       t > static_cast<long long> (maxFloat),
@@ -1123,10 +1372,19 @@ public:
 
   //! Convert from <tt>unsigned long long</tt> to \c float, checking for overflow first.
   static float safeConvert (const unsigned long long t) {
-    const float minFloat = std::numeric_limits<float>::min ();
+    // std::numeric_limits<float>::min() gives the minimum _positive_
+    // normalized value of type float.  IEEE 754 floating-point values
+    // can change sign just by flipping the sign bit, so the "most
+    // negative" finite float is just the negative of the "most
+    // positive" finite float.
+    const float minFloat = -std::numeric_limits<float>::max ();
     const float maxFloat = std::numeric_limits<float>::max ();
 
     // t >= 0 by definition, because it is unsigned.
+    //
+    // FIXME (mfh 14 Nov 2012) This only works if sizeof(long long) >
+    // sizeof(float).  It is on all platforms I've encountered, but
+    // that still doesn't make this code correct.
     TEUCHOS_TEST_FOR_EXCEPTION(
       t > static_cast<unsigned long long> (maxFloat),
       std::invalid_argument,
