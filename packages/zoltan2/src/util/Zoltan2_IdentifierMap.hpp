@@ -740,10 +740,8 @@ template< typename User>
   }
 
   try{
-    ArrayView<const gid_t> gidView = gidOutBuf();
-    ArrayView<const int> countView = countOutBuf();
-    AlltoAllv<gid_t>(*comm_, *env_, gidView, countView,
-      gidInBuf, countInBuf);
+    AlltoAllv<gid_t>(*comm_, *env_, gidOutBuf(), countOutBuf(),
+                     gidInBuf, countInBuf);
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -826,9 +824,8 @@ template< typename User>
 
   if (needProcs){
     try{
-      ArrayView<const int> procView = procOutBuf.view(0, total);
-      ArrayView<const int> countView = countOutBuf();
-      AlltoAllv<int>(*comm_, *env_, procView, countView, procInBuf, countInBuf);
+      AlltoAllv<int>(*comm_, *env_, procOutBuf.view(0, total), countOutBuf(),
+                     procInBuf, countInBuf);
     }
     Z2_FORWARD_EXCEPTIONS;
 
@@ -837,9 +834,8 @@ template< typename User>
 
   if (needGnos){
     try{
-      ArrayView<const gno_t> gnoView = gnoOutBuf();
-      ArrayView<const int> countView = countOutBuf();
-      AlltoAllv<gno_t>(*comm_, *env_, gnoView, countView, gnoInBuf, countInBuf);
+      AlltoAllv<gno_t>(*comm_, *env_, gnoOutBuf(), countOutBuf(),
+                       gnoInBuf, countInBuf);
     }
     Z2_FORWARD_EXCEPTIONS;
 
@@ -950,12 +946,11 @@ template< typename User>
   if (!remoteGno){
 
     // Make a local call to get the gids
-
-    const gno_t *gnos = in_gno.getRawPtr();
-    ArrayView<gno_t> gnoList(const_cast<gno_t *>(gnos), inLen);
-
     try{
-      gidTranslate(out_gid, gnoList, TRANSLATE_LIB_TO_APP);
+      gidTranslate(out_gid,
+             ArrayView<gno_t>(const_cast<gno_t *>(in_gno.getRawPtr()),inLen),
+             TRANSLATE_LIB_TO_APP);
+
     }
     Z2_FORWARD_EXCEPTIONS;
 
