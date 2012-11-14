@@ -6,5 +6,10 @@
 /*! @defgroup MueLuTransferClasses The main MueLu prolongator classes
 */
 
+/*! @defgroup MueLuTimerClasses The MueLu timing classes.
+
+   These classes should be used to time parts of MueLu.
+*/
+
 /*! @defgroup MueLuManagingDataDependencies Handling data dependencies between factories
 */

@@ -100,6 +100,8 @@ namespace MueLu {
        MueLu: SaPFactory: Prolongator smoothing (total)             6.508 (6)        6.551 (6)        6.557 (6)        1.092 (6)
       \endverbatim
      Note that the keyword \a total denotes timing of the object and its children.
+
+     @ingroup MueLuTimerClasses
   */
   class Monitor: public BaseClass {
   public:
@@ -129,6 +131,8 @@ namespace MueLu {
      \endverbatim
      Note that the keyword \a sub denotes that this is output from a SubFactoryMonitor.
      Note that the keyword \a total denotes timing of the object and its children.
+
+     @ingroup MueLuTimerClasses
   */
   class SubMonitor: public BaseClass {
   public:
@@ -160,6 +164,8 @@ namespace MueLu {
      \endverbatim
 
      Note that the keyword \a total denotes timing of the object and its children.
+
+     @ingroup MueLuTimerClasses
   */
   class FactoryMonitor: public Monitor {
   public:
@@ -211,6 +217,8 @@ namespace MueLu {
      \endverbatim
      Note that the keyword \a sub denotes that this is output from a SubFactoryMonitor.
      Note that the keyword \a total denotes timing of the object and its children.
+
+     @ingroup MueLuTimerClasses
   */
   class SubFactoryMonitor: public SubMonitor {
   public:
