@@ -1320,49 +1320,49 @@ FUNCTION(UNITTEST_TRIBITS_ETI_CHECK_EXCLUSION)
   MESSAGE("*** Test passing valid arguments to TRIBITS_ETI_CHECK_EXCLUSION( ... )\n")
 
   message("empty exclusion list...")
-  TRIBITS_ETI_CHECK_EXCLUSION("" "{ta}|{tb}|{tc}" result)
+  TRIBITS_ETI_CHECK_EXCLUSION("" "ta|tb|tc" result)
   UNITTEST_COMPARE_CONST(
     result
     OFF
   )
 
   message("inst not excluded (no match)...")
-  TRIBITS_ETI_CHECK_EXCLUSION("{td}|{te}|{tf}" "{ta}|{tb}|{tc}" result)
+  TRIBITS_ETI_CHECK_EXCLUSION("td|te|tf" "ta|tb|tc" result)
   UNITTEST_COMPARE_CONST(
     result
     OFF
   )
 
   message("matches only on present types...")
-  TRIBITS_ETI_CHECK_EXCLUSION("{ta}|{TYPE-MISSING}|{tb}" "{ta}|{ta}|{tb}" result)
+  TRIBITS_ETI_CHECK_EXCLUSION("ta|ta|tb" "ta|TYPE-MISSING|tb" result)
   UNITTEST_COMPARE_CONST(
     result
     ON
   )
 
   message("no match: exclusion has the wrong rank (not an error)...")
-  TRIBITS_ETI_CHECK_EXCLUSION("{ta}|{ta}" "{ta}|{tb}|{tc}" result)
+  TRIBITS_ETI_CHECK_EXCLUSION("ta|ta" "ta|tb|tc" result)
   UNITTEST_COMPARE_CONST(
     result
     OFF
   )
 
   message("inst not excluded (partial match)...")
-  TRIBITS_ETI_CHECK_EXCLUSION("{ta}|{tb}|{ta};{tb}|{tb}|{tc};{ta}|{ta}|{tc}" "{ta}|{tb}|{tc}" result)
+  TRIBITS_ETI_CHECK_EXCLUSION("ta|tb|ta;tb|tb|tc;ta|ta|tc" "ta|tb|tc" result)
   UNITTEST_COMPARE_CONST(
     result
     OFF
   )
 
   message("inst exluded (full explicit)...")
-  TRIBITS_ETI_CHECK_EXCLUSION("{abcdf};{ta}|{tb}|{tc}" "{ta}|{tb}|{tc}" result)
+  TRIBITS_ETI_CHECK_EXCLUSION("abcdf;ta|tb|tc" "ta|tb|tc" result)
   UNITTEST_COMPARE_CONST(
     result
     ON
   )
 
   message("inst exluded (full regex)...")
-  TRIBITS_ETI_CHECK_EXCLUSION("{abcdf};{.*}|{.*}|{.*}" "{ta}|{tb}|{tc}" result)
+  TRIBITS_ETI_CHECK_EXCLUSION("abcdf;.*|.*|.*" "ta|tb|tc" result)
   UNITTEST_COMPARE_CONST(
     result
     ON
