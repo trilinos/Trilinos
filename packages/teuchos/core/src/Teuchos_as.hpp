@@ -737,31 +737,33 @@ public:
     // int, or unsigned int to long, because values with the most
     // significant bit set will overflow to negative values.
 
-    // The C++ standard promises that sizeof (int) <= sizeof (unsigned long).
-    if (sizeof (int) == sizeof (unsigned long)) {
-      // The two types have the same number of bits.  Thus,
-      // two's-complement arithmetic means that if casting from
-      // unsigned long to int results in a negative number, it
-      // overflowed.  Otherwise, it didn't overflow (same number of
-      // bits).
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<int> (t) < static_cast<int> (0),
-        std::range_error,
-        "Teuchos::ValueTypeConversionTraits<int, unsigned long>::safeConvert: "
-        "Input unsigned long t = " << t << " is out of the valid range ["
-        << minInt << ", " << maxInt << "] for conversion to int.");
-    }
-    else { // sizeof (int) < sizeof (unsigned long).
-      // t is unsigned, so it is >= 0 by definition.
-      // Casting from int to unsigned long won't overflow in this case.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        t > static_cast<unsigned long> (maxInt),
-        std::range_error,
-        "Teuchos::ValueTypeConversionTraits<int, unsigned long>::safeConvert: "
-        "Input unsigned long t = " << t << " is out of the valid range ["
-        << minInt << ", " << maxInt << "] for conversion to int.  An unchecked "
-        "cast would have resulted in " << static_cast<int> (t) << ".");
-    }
+    // The C++ standard promises that sizeof (int) <= sizeof (unsigned
+    // long).  We use #if with INT_MAX and LONG_MAX to test for this,
+    // rather than if statements, in order to avoid a compiler
+    // warning.  Thanks to Jeremie Gaidamour (13 Nov 2012) for letting
+    // me know about the warning.
+#if INT_MAX == LONG_MAX
+    // The two types have the same number of bits.  Thus,
+    // two's-complement arithmetic means that if casting from unsigned
+    // long to int results in a negative number, it overflowed.
+    // Otherwise, it didn't overflow (same number of bits).
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<int> (t) < static_cast<int> (0),
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<int, unsigned long>::safeConvert: "
+      "Input unsigned long t = " << t << " is out of the valid range ["
+      << minInt << ", " << maxInt << "] for conversion to int.");
+#else // INT_MAX < LONG_MAX
+    // t is unsigned, so it is >= 0 by definition.
+    // Casting from int to unsigned long won't overflow in this case.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t > static_cast<unsigned long> (maxInt),
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<int, unsigned long>::safeConvert: "
+      "Input unsigned long t = " << t << " is out of the valid range ["
+      << minInt << ", " << maxInt << "] for conversion to int.  An unchecked "
+      "cast would have resulted in " << static_cast<int> (t) << ".");
+#endif // INT_MAX == LONG_MAX
 
     // Implicit conversion from unsigned long to int may cause
     // compiler warnings, but static_cast does not.
