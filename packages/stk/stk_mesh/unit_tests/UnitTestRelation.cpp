@@ -24,6 +24,7 @@
 
 #include <stk_mesh/base/MetaData.hpp>
 
+#include <stk_mesh/fixtures/HexFixture.hpp>
 #include <stk_mesh/fixtures/BoxFixture.hpp>
 #include <stk_mesh/fixtures/RingFixture.hpp>
 
@@ -42,231 +43,158 @@ using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Ghosting;
 using stk::mesh::fixtures::BoxFixture;
+using stk::mesh::fixtures::HexFixture;
 using stk::mesh::fixtures::RingFixture;
 
 namespace {
 
 const EntityRank NODE_RANK = MetaData::NODE_RANK;
 
-STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
+STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationCoverage)
 {
-  (void)test_info_;
-  // Unit test the Part functionality in isolation:
+  // Test some relation error cases
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier ( MPI_COMM_WORLD );
 
-  typedef stk::mesh::Field<double>  ScalarFieldType;
- // static const char method[] = "stk::mesh::UnitTestRelation" ;
+  // Just use any random fixture for convenience
+  HexFixture fixture(pm, 3 /*x*/, 3 /*y*/, 3 /*z*/);
+  MetaData& meta  = fixture.m_fem_meta;
+  BulkData& bulk  = fixture.m_bulk_data;
 
-  std::vector<std::string> entity_names(10);
-  for ( size_t i = 0 ; i < 10 ; ++i ) {
-    std::ostringstream name ;
-    name << "EntityRank" << i ;
-    entity_names[i] = name.str();
-  }
-
-  unsigned max_bucket_size = 4;
-
-  BoxFixture fixture1(pm , max_bucket_size, entity_names),
-             fixture2(pm , max_bucket_size, entity_names);
-
-  MetaData& meta  = fixture1.fem_meta();
-  MetaData& meta2 = fixture2.fem_meta();
-  const int spatial_dimension = 3;
-  const EntityRank element_rank = MetaData::ELEMENT_RANK;
-
-  BulkData& bulk  = fixture1.bulk_data();
-  BulkData& bulk2 = fixture2.bulk_data();
-
-  ScalarFieldType & temperature =
-    meta.declare_field < ScalarFieldType > ( "temperature" , 4 );
-  ScalarFieldType & volume =
-    meta.declare_field < ScalarFieldType > ( "volume" , 4 );
-  ScalarFieldType & temperature2 =
-    meta2.declare_field < ScalarFieldType > ( "temperature" , 4 );
-  ScalarFieldType & volume2 =
-    meta2.declare_field < ScalarFieldType > ( "volume" , 4 );
-
-  Part & universal  = meta.universal_part ();
-  Part & universal2 = meta2.universal_part ();
-  Part & owned      = meta.locally_owned_part ();
-
-  stk::mesh::put_field ( temperature , NODE_RANK , universal );
-  stk::mesh::put_field ( volume , element_rank  , universal );
   meta.commit();
-  stk::mesh::put_field ( temperature2 , NODE_RANK , universal2 );
-  stk::mesh::put_field ( volume2 , element_rank  , universal2 );
 
-  meta2.commit();
+  fixture.generate_mesh();
+
+  Entity node0 = (*bulk.buckets(MetaData::NODE_RANK)[0])[0];
+  Entity node1 = (*bulk.buckets(MetaData::NODE_RANK)[0])[1];
 
   bulk.modification_begin();
-  bulk2.modification_begin();
-
-  const int root_box[3][2] = { { 0,4 } , { 0,5 } , { 0,6 } };
-  int local_box1[3][2] = { { 0,0 } , { 0,0 } , { 0,0 } };
-  int local_box2[3][2] = { { 0,0 } , { 0,0 } , { 0,0 } };
-
-  {
-    bulk.modification_begin();
-    fixture1.generate_boxes(root_box, local_box1);
-
-    const Ghosting & gg = bulk.create_ghosting( std::string("shared") );
-
-    // Test for coverage of comm_procs in EntityComm.cpp
-    EntityVector nodes;
-    stk::mesh::get_entities(bulk, NODE_RANK, nodes);
-    std::vector<unsigned> procs ;
-    STKUNIT_ASSERT(!nodes.empty());
-    stk::mesh::comm_procs( gg, nodes.front() , procs );
-
-    STKUNIT_ASSERT(bulk.modification_end());
-
-    bulk.modification_begin();
-    bulk.destroy_all_ghosting();
-    STKUNIT_ASSERT(bulk.modification_end());
-  }
-
-  {
-    bulk2.modification_begin();
-    fixture2.generate_boxes(root_box, local_box2);
-
-    bulk2.create_ghosting( std::string("shared") );
-
-    STKUNIT_ASSERT(bulk2.modification_end());
-
-    bulk2.modification_begin();
-    bulk2.destroy_all_ghosting();
-    STKUNIT_ASSERT(bulk2.modification_end());
-  }
-
-  Entity cell = *(bulk.buckets (3)[0]->begin());
-  Entity node = bulk.buckets (0)[0]-> operator [] ( 0 );
-  Entity nodeb = bulk.buckets (0)[0]-> operator [] ( 2 );
-
-  std::vector<Part *> parts;
-  parts.push_back ( &universal );
-  parts.push_back ( &owned );
-  bulk.modification_begin();
+  std::vector<Part*> empty_parts;
   stk::mesh::EntityId  new_id = bulk.parallel_rank() + 1;
-  Entity edge = bulk.declare_entity ( 1 , new_id , parts );
+  Entity edge = bulk.declare_entity( MetaData::EDGE_RANK , new_id , empty_parts );
 
-  Entity cell2 = *(bulk2.buckets (3)[0]->begin());
-  Entity node2 = *(bulk2.buckets (0)[0]->begin());
+  // Cannot declare a back relation
+  STKUNIT_ASSERT_THROW ( bulk.declare_relation ( node0 , edge , 0 /*rel ord*/) , std::runtime_error );
 
-  STKUNIT_ASSERT_THROW ( bulk.declare_relation ( node , cell , 0 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW ( bulk.declare_relation ( cell , node2 , 0 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW ( bulk.declare_relation ( cell2 , node , 0 ) , std::runtime_error );
+  // Test that you cannot declare relations between entities that are from
+  // different meshes.
+  {
+    HexFixture fixture2(pm, 3 /*x*/, 3 /*y*/, 3 /*z*/);
+    MetaData& meta2  = fixture2.m_fem_meta;
+    BulkData& bulk2  = fixture2.m_bulk_data;
 
-  bulk.declare_relation ( edge , node , 1 );
-  STKUNIT_ASSERT_THROW ( bulk.declare_relation ( edge , nodeb , 1 ) , std::runtime_error );
-  bulk.declare_relation ( edge , nodeb , 2 );
+    meta2.commit();
 
-  std::stringstream s;
-  s << *edge.relations().first ;
+    fixture2.generate_mesh();
+
+    bulk2.modification_begin();
+
+    Entity edge_from_other_mesh = bulk2.declare_entity( MetaData::EDGE_RANK , new_id , empty_parts );
+
+    // Actual test is here
+    STKUNIT_ASSERT_THROW ( bulk.declare_relation ( edge_from_other_mesh , node0 , 0 /*rel ord*/) , std::runtime_error );
+
+    bulk2.modification_end();
+  }
+
+  // Test that redeclaration of relation to different node but same ordinal throws
+  bulk.declare_relation ( edge , node0 , 1 );
+  STKUNIT_ASSERT_THROW ( bulk.declare_relation ( edge , node1 , 1 /*rel ord*/) , std::runtime_error );
 
   bulk.modification_end();
+}
 
-  //Testing on in_send_ghost and in_shared in EntityComm.cpp
-  enum { nPerProc = 10 };
+STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationNoGhosting)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
   const unsigned p_rank = stk::parallel_machine_rank( pm );
   const unsigned p_size = stk::parallel_machine_size( pm );
 
-  const unsigned nLocalElement = nPerProc ;
-  MetaData meta3( spatial_dimension );
+  const unsigned nPerProc = 10;
 
-  meta3.commit();
+  const bool aura_flag = false;
+  RingFixture mesh( pm , nPerProc , false /* No element parts */ );
+  mesh.m_meta_data.commit();
 
-  Selector select_owned( meta3.locally_owned_part() );
-  Selector select_used = meta3.locally_owned_part() ;
-  Selector select_all(  meta3.universal_part() );
+  BulkData& ring_bulk = mesh.m_bulk_data;
 
-  stk::mesh::PartVector no_parts ;
+  ring_bulk.modification_begin();
+  mesh.generate_mesh( );
+  STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(ring_bulk,
+                                                          aura_flag));
+  ring_bulk.modification_begin();
+  mesh.fixup_node_ownership( );
+  STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(ring_bulk,
+                                                          aura_flag));
 
-  std::vector<unsigned> local_count ;
+  // This process' first element in the loop
+  // if a parallel mesh has a shared node
 
-  //------------------------------
-  { // No ghosting
-    bool aura_flag = false;
-    RingFixture mesh2( pm , nPerProc , false /* No element parts */ );
-    mesh2.m_meta_data.commit();
+  Entity elementnew = ring_bulk.get_entity( MetaData::ELEMENT_RANK , mesh.m_element_ids[ nPerProc * p_rank ] );
 
-    mesh2.m_bulk_data.modification_begin();
-    mesh2.generate_mesh( );
-    STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(mesh2.m_bulk_data,
-                                                            aura_flag));
-    mesh2.m_bulk_data.modification_begin();
-    mesh2.fixup_node_ownership( );
-    STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(mesh2.m_bulk_data,
-                                                            aura_flag));
-
-    // This process' first element in the loop
-    // if a parallel mesh has a shared node
-
-    Entity elementnew = mesh2.m_bulk_data.get_entity( MetaData::ELEMENT_RANK , mesh2.m_element_ids[ nLocalElement * p_rank ] );
-
-    mesh2.m_bulk_data.modification_begin();
-    for ( unsigned p = 0 ; p < p_size ; ++p ) if ( p != p_rank ) {
+  ring_bulk.modification_begin();
+  for ( unsigned p = 0 ; p < p_size ; ++p ) {
+    if ( p != p_rank ) {
       STKUNIT_ASSERT_EQUAL( in_shared( elementnew , p ), false );
       STKUNIT_ASSERT_EQUAL( in_send_ghost( elementnew , p ), false );
     }
-
-    Entity elementnew2 = mesh2.m_bulk_data.get_entity( MetaData::ELEMENT_RANK , mesh2.m_element_ids[ nLocalElement * p_rank ] );
-    STKUNIT_ASSERT_EQUAL( in_send_ghost( elementnew2 , p_rank+100 ), false );
-
-    Entity node3 = mesh2.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh2.m_node_ids[ nLocalElement * p_rank ] );
-    STKUNIT_ASSERT_EQUAL( in_shared( node3 , p_rank+100 ), false );
   }
 
-  { //ghosting
+  elementnew = ring_bulk.get_entity( MetaData::ELEMENT_RANK , mesh.m_element_ids[ nPerProc * p_rank ] );
+  STKUNIT_ASSERT_EQUAL( in_send_ghost( elementnew , p_rank+100 ), false );
+
+  Entity node = ring_bulk.get_entity( MetaData::NODE_RANK , mesh.m_node_ids[ nPerProc * p_rank ] );
+  STKUNIT_ASSERT_EQUAL( in_shared( node , p_rank+100 ), false );
+}
+
+STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationWithGhosting)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  const unsigned p_rank = stk::parallel_machine_rank( pm );
+  const unsigned p_size = stk::parallel_machine_size( pm );
+
+  const unsigned nPerProc = 10;
 
   if ( 1 < p_size ) { // With ghosting
-    RingFixture mesh3( pm , nPerProc , false /* No element parts */ );
-    mesh3.m_meta_data.commit();
+    RingFixture mesh( pm , nPerProc , false /* No element parts */ );
+    mesh.m_meta_data.commit();
 
-    mesh3.m_bulk_data.modification_begin();
-    mesh3.generate_mesh();
-    STKUNIT_ASSERT(mesh3.m_bulk_data.modification_end());
+    mesh.m_bulk_data.modification_begin();
+    mesh.generate_mesh();
+    STKUNIT_ASSERT(mesh.m_bulk_data.modification_end());
 
-    mesh3.m_bulk_data.modification_begin();
-    mesh3.fixup_node_ownership();
-    STKUNIT_ASSERT(mesh3.m_bulk_data.modification_end());
+    mesh.m_bulk_data.modification_begin();
+    mesh.fixup_node_ownership();
+    STKUNIT_ASSERT(mesh.m_bulk_data.modification_end());
 
     const unsigned nNotOwned = nPerProc * p_rank ;
 
     // The not-owned shared entity:
-    Entity node3 = mesh3.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh3.m_node_ids[ nNotOwned ] );
-    Entity node4 = mesh3.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh3.m_node_ids[ nNotOwned ] );
+    Entity node = mesh.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh.m_node_ids[ nNotOwned ] );
 
-    //EntityId node_element_ids[2] ;
-    //node_element_ids[0] = node3->relations()[0].entity()->identifier();
-    //node_element_ids[1] = node3->relations()[1].entity()->identifier();
+    mesh.m_bulk_data.modification_begin();
 
-    mesh3.m_bulk_data.modification_begin();
-
-    for ( unsigned p = 0 ; p < p_size ; ++p ) if ( p != p_rank ) {
-      //FIXME for Carol the check below did not pass for -np 3 or 4
-      //STKUNIT_ASSERT_EQUAL( in_shared( *node3 , p ), true );
-      STKUNIT_ASSERT_EQUAL( in_send_ghost( node3 , p ), false );
+    for ( unsigned p = 0 ; p < p_size ; ++p ) {
+      if ( p != p_rank ) {
+        //FIXME for Carol the check below did not pass for -np 3 or 4
+        //STKUNIT_ASSERT_EQUAL( in_shared( *node3 , p ), true );
+        STKUNIT_ASSERT_EQUAL( in_send_ghost( node , p ), false );
+      }
     }
 
     //not owned and not shared
-    Entity node5 = mesh3.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh3.m_node_ids[ nLocalElement * p_rank ] );
+    Entity node2 = mesh.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh.m_node_ids[ nPerProc * p_rank ] );
 
-    //node_element_ids[0] = node5->relations()[0].entity()->identifier();
-    //node_element_ids[1] = node5->relations()[1].entity()->identifier();
-
-    STKUNIT_ASSERT_EQUAL( in_shared( node5 , p_rank+100 ), false );
-    STKUNIT_ASSERT_EQUAL( in_send_ghost( node4 , p_rank+100 ), false );
+    STKUNIT_ASSERT_EQUAL( in_shared( node2 , p_rank+100 ), false );
+    STKUNIT_ASSERT_EQUAL( in_send_ghost( node , p_rank+100 ), false );
   }
-
-  }
-
 }
 
 STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
 {
-  (void)test_info_;
   // Test that, if you set up degenerate relations, only of the relations
   // is deleted when you destroy one of the degenerate relations.
   // BulkData::destroy_relation has been changed to take a relation-id so
@@ -319,7 +247,6 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
 
 STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationAttribute)
 {
-  (void)test_info_;
   // Test relation attribute
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -356,7 +283,6 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationAttribute)
 
 STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
 {
- (void)test_info_;
   // It should be legal to declare the same relation between shared
   // entities on two procs.
   //
