@@ -1558,78 +1558,201 @@ public:
 template <>
 class ValueTypeConversionTraits<double, qd_real> {
 public:
-  inline static double convert( const qd_real t )
-    { return to_double(t); }
-  inline static double safeConvert( const qd_real t )
-    { return to_double(t); }
+  inline static double convert (const qd_real t) {
+    return to_double (t);
+  }
+  static double safeConvert (const qd_real t) {
+    // std::numeric_limits<double>::min() gives the minimum _positive_
+    // normalized value of type double.  IEEE 754 floating-point
+    // values can change sign just by flipping the sign bit, so the
+    // "most negative" finite double is just the negative of the "most
+    // positive" finite double.
+    const qd_real minVal = -std::numeric_limits<double>::max ();
+    const qd_real maxVal = std::numeric_limits<double>::max ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > maxVal,
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<double, qd_real>::safeConvert: "
+      "Input qd_real t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to double.");
+
+    return to_double (t);
+  }
 };
 
 /** \brief Convert qd_real to float. */
 template <>
 class ValueTypeConversionTraits<float, qd_real> {
 public:
-  inline static float convert( const qd_real t )
-    { return (float)to_double(t); }
-  inline static float safeConvert( const qd_real t )
-    { return (float)to_double(t); }
+  inline static float convert (const qd_real t) {
+    // In a debug build, this should also test the double->float
+    // conversion for overflow.
+    return as<float> (to_double (t));
+  }
+
+  static float safeConvert (const qd_real t) {
+    // std::numeric_limits<float>::min() gives the minimum _positive_
+    // normalized value of type float.  IEEE 754 floating-point
+    // values can change sign just by flipping the sign bit, so the
+    // "most negative" finite float is just the negative of the "most
+    // positive" finite float.
+    const qd_real minVal = -std::numeric_limits<float>::max ();
+    const qd_real maxVal = std::numeric_limits<float>::max ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > maxVal,
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<float, qd_real>::safeConvert: "
+      "Input qd_real t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to float.");
+
+    // This should also test the double->float conversion for overflow.
+    return asSafe<float> (to_double (t));
+  }
 };
 
 /** \brief Convert qd_real to int. */
 template <>
 class ValueTypeConversionTraits<int, qd_real> {
 public:
-  inline static int convert( const qd_real t )
-    { return to_int(t); }
-  inline static int safeConvert( const qd_real t )
-    { return to_int(t); }
+  inline static int convert (const qd_real t) {
+    return to_int (t);
+  }
+  static int safeConvert (const qd_real t) {
+    const qd_real minVal = std::numeric_limits<int>::min ();
+    const qd_real maxVal = std::numeric_limits<int>::max ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > maxVal,
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<int, qd_real>::safeConvert: "
+      "Input qd_real t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to int.");
+    return to_int (t);
+  }
 };
 
 /** \brief Convert qd_real to dd_real. */
 template <>
 class ValueTypeConversionTraits<dd_real, qd_real> {
 public:
-  inline static dd_real convert( const qd_real t )
-    { return to_dd_real(t); }
-  inline static dd_real safeConvert( const qd_real t )
-    { return to_dd_real(t); }
+  inline static dd_real convert (const qd_real t) {
+    return to_dd_real(t);
+  }
+  static dd_real safeConvert (const qd_real t) {
+    // std::numeric_limits<dd_real>::min() gives the minimum
+    // _positive_ (normalized? not sure what this means for dd_real --
+    // mfh 14 Nov 2012) value of type dd_real.  dd_real values are
+    // built from two IEEE 754 doubles.  This means they can change
+    // sign just by flipping the sign bit, so the "most negative"
+    // finite dd_real is just the negative of the "most positive"
+    // finite dd_real.
+    const qd_real minVal = -std::numeric_limits<dd_real>::max ();
+    const qd_real maxVal = std::numeric_limits<dd_real>::max ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > maxVal,
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<dd_real, qd_real>::safeConvert: "
+      "Input qd_real t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to dd_real.");
+
+    return to_dd_real (t);
+  }
 };
 
 /** \brief Convert dd_real to double. */
 template <>
 class ValueTypeConversionTraits<double, dd_real> {
 public:
-  inline static double convert( const dd_real t )
-    { return to_double(t); }
-  inline static double safeConvert( const dd_real t )
-    { return to_double(t); }
+  inline static double convert (const dd_real t) {
+    return to_double (t);
+  }
+  static double safeConvert (const dd_real t) {
+    // std::numeric_limits<double>::min() gives the minimum _positive_
+    // normalized value of type double.  IEEE 754 floating-point
+    // values can change sign just by flipping the sign bit, so the
+    // "most negative" finite double is just the negative of the "most
+    // positive" finite double.
+    const dd_real minVal = -std::numeric_limits<double>::max ();
+    const dd_real maxVal = std::numeric_limits<double>::max ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > maxVal,
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<double, dd_real>::safeConvert: "
+      "Input dd_real t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to double.");
+
+    return to_double (t);
+  }
 };
 
 /** \brief Convert dd_real to float. */
 template <>
 class ValueTypeConversionTraits<float, dd_real> {
 public:
-  inline static float convert( const dd_real t )
-    { return (float)to_double(t); }
-  inline static float safeConvert( const dd_real t )
-    { return (float)to_double(t); }
+  inline static float convert (const dd_real t) {
+    // This also checks for double->float overflow in a debug build.
+    return as<float> (to_double (t));
+  }
+  static float safeConvert (const dd_real t) {
+    // std::numeric_limits<float>::min() gives the minimum _positive_
+    // normalized value of type float.  IEEE 754 floating-point
+    // values can change sign just by flipping the sign bit, so the
+    // "most negative" finite float is just the negative of the "most
+    // positive" finite float.
+    const dd_real minVal = -std::numeric_limits<float>::max ();
+    const dd_real maxVal = std::numeric_limits<float>::max ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > maxVal,
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<float, dd_real>::safeConvert: "
+      "Input dd_real t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to float.");
+
+    // This also checks for double->float overflow.
+    return as<float> (to_double (t));
+  }
 };
 
 /** \brief Convert dd_real to int. */
 template <>
 class ValueTypeConversionTraits<int, dd_real> {
 public:
-  inline static int convert( const dd_real t )
-    { return to_int(t); }
-  inline static int safeConvert( const dd_real t )
-    { return to_int(t); }
+  inline static int convert (const dd_real t) {
+    return to_int (t);
+  }
+  static int safeConvert (const dd_real t) {
+    const dd_real minVal = std::numeric_limits<int>::min ();
+    const dd_real maxVal = std::numeric_limits<int>::max ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > maxVal,
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<int, dd_real>::safeConvert: "
+      "Input dd_real t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to int.");
+    return to_int (t);
+  }
 };
 
 /** \brief Convert long unsigned int to qd_real. */
 template <>
 class ValueTypeConversionTraits<qd_real, long unsigned int> {
 public:
-  inline static qd_real convert( const long unsigned int t )
-    { return ValueTypeConversionTraits<qd_real,int>::convert(ValueTypeConversionTraits<int,long unsigned int>::convert(t)); }
+  inline static qd_real convert( const long unsigned int t ) {
+    // FIXME (mfh 14 Nov 2012): qd_real unfortunately lacks a
+    // constructor or conversion function for conversions from
+    // built-in integer types other than int.  However, it does allow
+    // reading in values from a string.  We could use this to convert
+    // from any type to qd_real, by first writing the value to an
+    // std::ostringstream, then creating a qd_real from the resulting
+    // string.
+    return ValueTypeConversionTraits<qd_real,int>::convert(ValueTypeConversionTraits<int,long unsigned int>::convert(t));
+  }
   inline static qd_real safeConvert( const long unsigned int t )
     { return ValueTypeConversionTraits<qd_real,int>::safeConvert(ValueTypeConversionTraits<int,long unsigned int>::safeConvert(t)); }
 };
@@ -1638,8 +1761,16 @@ public:
 template <>
 class ValueTypeConversionTraits<dd_real, long unsigned int> {
 public:
-  inline static dd_real convert( const long unsigned int t )
-    { return ValueTypeConversionTraits<dd_real,int>::convert(ValueTypeConversionTraits<int,long unsigned int>::convert(t)); }
+  inline static dd_real convert( const long unsigned int t ) {
+    // FIXME (mfh 14 Nov 2012): dd_real unfortunately lacks a
+    // constructor or conversion function for conversions from
+    // built-in integer types other than int.  However, it does allow
+    // reading in values from a string.  We could use this to convert
+    // from any type to dd_real, by first writing the value to an
+    // std::ostringstream, then creating a dd_real from the resulting
+    // string.
+    return ValueTypeConversionTraits<dd_real,int>::convert(ValueTypeConversionTraits<int,long unsigned int>::convert(t));
+  }
   inline static dd_real safeConvert( const long unsigned int t )
     { return ValueTypeConversionTraits<dd_real,int>::safeConvert(ValueTypeConversionTraits<int,long unsigned int>::safeConvert(t)); }
 };
