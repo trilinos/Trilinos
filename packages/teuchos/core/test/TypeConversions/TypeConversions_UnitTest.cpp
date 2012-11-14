@@ -46,6 +46,169 @@
 // Putting the unit tests in an anonymous namespace avoids name collisions.
 namespace {
 
+//
+// Hack to work around Bug 5757 (unit test macros that instantiate
+// templated unit tests can't handle spaces in the name of the
+// template parameter).
+//
+typedef unsigned int unsigned_int_type;
+typedef unsigned long unsigned_long_type;
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+typedef long long long_long_type;
+typedef unsigned long long unsigned_long_long_type;
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
+//
+// Templated test for conversions between possibly different built-in
+// integer types.  The C++ standard guarantees the following:
+// - <tt>sizeof (char) == 1</tt>
+// - <tt>sizeof (char) <= sizeof (short) <= sizeof (int) <= sizeof (long)</tt>
+//
+// C99 also guarantees <tt>sizeof (long) <= sizeof (long long)</tt>.
+//
+// This means that any value that fits in a <tt>signed char</tt> must
+// also fit in any other built-in integer type.  (The standard does
+// not promise whether <tt>char</tt> is signed or unsigned.)
+//
+// We test both as() and asSafe to ensure correct behavior of both.
+//
+
+// Test for conversion between two built-in integer types FirstIntType
+// and SecondIntType.  The test uses a positive number that must fit
+// in both and must not overflow.  The test covers both as() and
+// asSafe().
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( as, positiveFirstIntToSecondInt, FirstIntType, SecondIntType )
+{
+  using Teuchos::as;
+  using Teuchos::asSafe;
+
+  std::ostringstream os;
+  const FirstIntType origVal = 42;
+  const SecondIntType origValSecond = 42;
+
+  SecondIntType asVal = 0, asSafeVal = 0;
+  TEST_NOTHROW(asVal = as<SecondIntType> (origVal));
+  TEST_NOTHROW(asSafeVal = asSafe<SecondIntType> (origVal));
+
+  TEST_EQUALITY_CONST(asVal, static_cast<SecondIntType> (origValSecond));
+  TEST_EQUALITY_CONST(asSafeVal, static_cast<SecondIntType> (origValSecond));
+  TEST_EQUALITY_CONST(asVal, asSafeVal);
+
+  FirstIntType backVal = 0, backSafeVal = 0;
+  TEST_NOTHROW(backVal = as<FirstIntType> (asVal));
+  TEST_NOTHROW(backSafeVal = asSafe<FirstIntType> (asSafeVal));
+
+  TEST_EQUALITY_CONST(backVal, origVal);
+  TEST_EQUALITY_CONST(backSafeVal, origVal);
+  TEST_EQUALITY_CONST(backVal, backSafeVal);
+}
+
+// Test for conversion between two built-in integer types
+// SignedIntType and UnsignedIntType.  The two types must have the
+// same number of bits.  The test uses a negative number that should
+// trigger asSafe() to throw std::range_error.  as() will only throw
+// std::range_error in a debug build.
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( asSafe, negativeSignedIntToUnsignedInt, SignedIntType, UnsignedIntType )
+{
+  using Teuchos::asSafe;
+
+  // Ensure that the two types have the same number of bits.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    sizeof (SignedIntType) != sizeof (UnsignedIntType),
+    std::logic_error,
+    "Unit test Teuchos,asSafe,negativeSignedIntToUnsignedInt requires that the "
+    "two template parameters SignedIntType and UnsignedIntType have the same "
+    "number of bits.");
+
+  std::ostringstream os;
+  const SignedIntType origVal = -1;
+
+  UnsignedIntType asSafeVal = 0;
+  // Casts from negative signed values to unsigned values should
+  // throw, because they are not within range [0, maxUnsignedVal] of
+  // the target type.
+  TEST_THROW(asSafeVal = asSafe<UnsignedIntType> (origVal), std::range_error);
+  (void) asSafeVal; // Silence compiler warning.
+
+  // Casts from large unsigned values to negative signed values should
+  // not throw, because they are within range [minSignedVal,
+  // maxSignedVal] of the target type.
+  UnsignedIntType negVal = static_cast<UnsignedIntType> (origVal);
+  SignedIntType backSafeVal = 0;
+  TEST_NOTHROW(backSafeVal = asSafe<SignedIntType> (negVal));
+  TEST_EQUALITY_CONST(origVal, backSafeVal);
+}
+
+//
+// Instantiations of templated tests for conversions between two
+// possibly different built-in integer types.
+//
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, int, int )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_int_type, unsigned_int_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, int, unsigned_int_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_int_type, int )
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, long, long )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_long_type, unsigned_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, long, unsigned_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_long_type, long )
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, int, long )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_int_type, long )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, int, unsigned_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_int_type, unsigned_long_type )
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, long, int )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_long_type, int )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, long, unsigned_int_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_long_type, unsigned_int_type )
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, long_long_type, long_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_long_long_type, unsigned_long_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, long_long_type, unsigned_long_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_long_long_type, long_long_type )
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, long, long_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_long_type, unsigned_long_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, long, unsigned_long_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_long_type, long_long_type )
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, long_long_type, long )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_long_long_type, unsigned_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, long_long_type, unsigned_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_long_long_type, long )
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, int, long_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_int_type, unsigned_long_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, int, unsigned_long_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_int_type, long_long_type )
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, long_long_type, int )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_long_long_type, unsigned_int_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, long_long_type, unsigned_int_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_long_long_type, int )
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
+//
+// Instantiations of templated tests for conversions from signed to
+// unsigned built-in integer types.  The two types must have the same
+// number of bits.
+//
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, negativeSignedIntToUnsignedInt, int, unsigned_int_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, negativeSignedIntToUnsignedInt, long, unsigned_long_type )
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, negativeSignedIntToUnsignedInt, long_long_type, unsigned_long_long_type )
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
+//
+// Tests for conversions from std::string to built-in integer types.
+//
+
 // Test for overflow when converting an std::string (containing a
 // positive integer too large to fit in int) to int.
 TEUCHOS_UNIT_TEST( asSafe, stringToIntPositiveOverflow ) {
@@ -165,44 +328,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( asSafe, stringToIntegerShouldThrow, IntegerTy
 #define UNIT_TEST_GROUP_SIGNED_INTEGER( SignedIntegerType ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, stringToIntegerNegative, SignedIntegerType )
 
+//
 // Instantiations of templated unit tests for conversion from
 // std::string to built-in integer types.
+//
 
 UNIT_TEST_GROUP_ANY_INTEGER( int )
+UNIT_TEST_GROUP_SIGNED_INTEGER( int )
 UNIT_TEST_GROUP_ANY_INTEGER( long )
+UNIT_TEST_GROUP_SIGNED_INTEGER( long )
 
-//
-// Hack to work around Bug 5757
-//
-typedef unsigned int unsigned_int_type;
 //UNIT_TEST_GROUP_ANY_INTEGER( unsigned int )
 UNIT_TEST_GROUP_ANY_INTEGER( unsigned_int_type )
-
-//
-// Hack to work around Bug 5757
-//
-typedef unsigned long unsigned_long_type;
 //UNIT_TEST_GROUP_ANY_INTEGER( unsigned long )
 UNIT_TEST_GROUP_ANY_INTEGER( unsigned_long_type )
 
-
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-//
-// Hack to work around Bug 5757
-//
-typedef long long long_long_type;
 //UNIT_TEST_GROUP_ANY_INTEGER( long long )
 UNIT_TEST_GROUP_ANY_INTEGER( long_long_type )
 //UNIT_TEST_GROUP_SIGNED_INTEGER( long long )
 UNIT_TEST_GROUP_SIGNED_INTEGER( long_long_type )
-
-//
-// Hack to work around Bug 5757
-//
-typedef unsigned long long unsigned_long_long_type;
 //UNIT_TEST_GROUP_ANY_INTEGER( unsigned long long )
 UNIT_TEST_GROUP_ANY_INTEGER( unsigned_long_long_type )
-
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 } // namespace (anonymous)
