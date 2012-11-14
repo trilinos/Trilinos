@@ -1333,6 +1333,13 @@ FUNCTION(UNITTEST_TRIBITS_ETI_CHECK_EXCLUSION)
     OFF
   )
 
+  message("matches only on present types...")
+  TRIBITS_ETI_CHECK_EXCLUSION("{ta}|{TYPE-MISSING}|{tb}" "{ta}|{ta}|{tb}" result)
+  UNITTEST_COMPARE_CONST(
+    result
+    ON
+  )
+
   message("no match: exclusion has the wrong rank (not an error)...")
   TRIBITS_ETI_CHECK_EXCLUSION("{ta}|{ta}" "{ta}|{tb}|{tc}" result)
   UNITTEST_COMPARE_CONST(
@@ -1680,4 +1687,4 @@ MESSAGE("*** Determine final result of all unit tests")
 MESSAGE("***\n")
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(191)
+UNITTEST_FINAL_RESULT(192)
