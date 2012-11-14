@@ -76,7 +76,6 @@
 // Frequently used Trilinos symbols
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_ArrayRCP.hpp>
