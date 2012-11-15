@@ -370,8 +370,7 @@ int main(int argc, char *argv[])
   CommandLineProcessor commandLine(false, true);
   //commandLine.setOption("size", &numGlobalCoords,
   //  "Approximate number of global coordinates.");
-  double tmpnumGlobalCoords = 1000.;
-  commandLine.setOption("size", &tmpnumGlobalCoords,
+  commandLine.setOption("size", &numGlobalCoords,
     "Approximate number of global coordinates.");
   commandLine.setOption("numParts", &numGlobalParts,
     "Number of parts (default is one per proc).");
@@ -409,8 +408,6 @@ int main(int argc, char *argv[])
       return 0;
     }
   }
-
-  numGlobalCoords = (gno_t) tmpnumGlobalCoords;
 
   //MEMORY_CHECK(doMemory && rank==0, "After processing parameters");
 
