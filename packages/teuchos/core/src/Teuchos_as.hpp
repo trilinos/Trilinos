@@ -735,6 +735,70 @@ public:
   }
 };
 
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+
+//! Convert from \c double to <tt>long long</tt>.
+template<>
+class ValueTypeConversionTraits<long long, double> {
+public:
+  //! Convert the given \c double to <tt>long long</tt>.
+  static long long convert (const double t) {
+    // Implicit conversion may cause compiler warnings, but
+    // static_cast does not.
+    return static_cast<long long> (t);
+  }
+
+  //! Convert the given \c double to <tt>long long</tt>, checking for overflow first.
+  static long safeConvert (const double t) {
+    // Cases:
+    // 1. sizeof(long long) < sizeof(double) == 8
+    // 2. sizeof(long long) == sizeof(double) == 8
+    // 3. sizeof(long long) > sizeof(double) == 8
+    //
+    // C99 (which defines long long) prohibits Case 1.  Case 2 could
+    // result in loss of accuracy (rounding), but safeConvert() only
+    // cares about overflow, not rounding.  In Case 3, casting minVal
+    // or maxVal to double could result in overflow.  Thus, we don't
+    // need to check anything here.
+    return static_cast<long long> (t);
+  }
+};
+
+
+//! Convert from \c double to <tt>unsigned long long</tt>.
+template<>
+class ValueTypeConversionTraits<unsigned long long, double> {
+public:
+  //! Convert the given \c double to <tt>unsigned long long</tt>.
+  static unsigned long long convert (const double t) {
+    // Implicit conversion may cause compiler warnings, but
+    // static_cast does not.
+    return static_cast<unsigned long long> (t);
+  }
+
+  //! Convert the given \c double to <tt>unsigned long long</tt>, checking for overflow first.
+  static long safeConvert (const double t) {
+    // Cases:
+    // 1. sizeof(unsigned long long) < sizeof(double) == 8
+    // 2. sizeof(unsigned long long) == sizeof(double) == 8
+    // 3. sizeof(unsigned long long) > sizeof(double) == 8
+    //
+    // C99 (which defines unsigned long long) prohibits Case 1.  Case
+    // 2 could result in loss of accuracy (rounding), but
+    // safeConvert() only cares about overflow, not rounding.  In Case
+    // 3, casting minVal or maxVal to double could result in overflow.
+    // Thus, we don't need to check the upper bound, though we still
+    // need to check if the input is negative.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < static_cast<double> (0),
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<unsigned long long, double>::safeConvert: "
+      "Input double t = " << t << " is negative, which is invalid for conversion to unsigned long long.");
+    return static_cast<unsigned long long> (t);
+  }
+};
+
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 //! Convert from \c float to \c int.
 template<>
