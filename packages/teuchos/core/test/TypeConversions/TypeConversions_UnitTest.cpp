@@ -131,7 +131,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( asSafe, realToUnsignedIntTypeOverflow, RealTy
       "Hey, how come val is 42?  It should be something completely different.  "
       "FYI, static_cast<" << TypeNameTraits<UnsignedIntType>::name ()
       << "> (minVal) = " << static_cast<UnsignedIntType> (minVal)
-      "and static_cast<" << TypeNameTraits<UnsignedIntType>::name ()
+      << "and static_cast<" << TypeNameTraits<UnsignedIntType>::name ()
       << "> (maxVal) = " << static_cast<UnsignedIntType> (maxVal)
       << ".  val should be equal to the latter.  It definitely shouldn't be 42.  "
       "This should be impossible.");
