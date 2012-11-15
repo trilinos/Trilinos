@@ -60,83 +60,105 @@ typedef unsigned long long unsigned_long_long_type;
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 //
-// Templated test for overflow for conversion from double to a
-// built-in signed integer type, if that should actually overflow
-// (depends on sizeof(SignedIntType).
+// Templated test for overflow for conversion from a built-in
+// real-valued (not complex) floating-point type (float or double) to
+// a built-in signed integer type, if that should actually overflow
+// (depends on sizeof(SignedIntType)).
 //
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( asSafe, doubleToSignedIntTypeOverflow, SignedIntType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( asSafe, realToSignedIntTypeOverflow, RealType, SignedIntType )
 {
   using Teuchos::asSafe;
 
-  // std::numeric_limits<double>::min() gives the minimum _positive_
-  // normalized value of type double.  IEEE 754 floating-point values
-  // can change sign just by flipping the sign bit, so the "most
-  // negative" finite double is just the negative of the "most
-  // positive" finite double.
-  const double minDouble = -std::numeric_limits<double>::max ();
-  const double maxDouble = std::numeric_limits<double>::max ();
+  // std::numeric_limits<RealType>::min() gives the minimum _positive_
+  // normalized value of type RealType.  IEEE 754 floating-point
+  // values can change sign just by flipping the sign bit, so the
+  // "most negative" finite RealType is just the negative of the "most
+  // positive" finite RealType.
+  const RealType minVal = -std::numeric_limits<RealType>::max ();
+  const RealType maxVal = std::numeric_limits<RealType>::max ();
 
   SignedIntType val = 0;
-  if (sizeof (SignedIntType) < sizeof (double)) {
-    TEST_THROW(val = asSafe<SignedIntType> (minDouble), std::range_error);
-    TEST_THROW(val = asSafe<SignedIntType> (maxDouble), std::range_error);
+  if (sizeof (SignedIntType) < sizeof (RealType)) {
+    TEST_THROW(val = asSafe<SignedIntType> (minVal), std::range_error);
+    TEST_THROW(val = asSafe<SignedIntType> (maxVal), std::range_error);
   }
   (void) val; // Silence compiler errors.
 }
 
 //
-// Templated test for overflow for conversion from double to a
-// built-in unsigned integer type, if that should actually overflow
-// (depends on sizeof(UnsignedIntType).
+// Templated test for overflow for conversion from a built-in
+// real-valued (not complex) floating-point type (float or double) to
+// a built-in unsigned integer type, if that should actually overflow
+// (depends on sizeof(UnsignedIntType)).
 //
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( asSafe, doubleToUnsignedIntTypeOverflow, UnsignedIntType )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( asSafe, realToUnsignedIntTypeOverflow, RealType, UnsignedIntType )
 {
   using Teuchos::asSafe;
 
-  // std::numeric_limits<double>::min() gives the minimum _positive_
-  // normalized value of type double.  IEEE 754 floating-point values
-  // can change sign just by flipping the sign bit, so the "most
-  // negative" finite double is just the negative of the "most
-  // positive" finite double.
-  const double minDouble = -std::numeric_limits<double>::max ();
-  const double maxDouble = std::numeric_limits<double>::max ();
+  // std::numeric_limits<RealType>::min() gives the minimum _positive_
+  // normalized value of type RealType.  IEEE 754 floating-point
+  // values can change sign just by flipping the sign bit, so the
+  // "most negative" finite RealType is just the negative of the "most
+  // positive" finite RealType.
+  const RealType minVal = -std::numeric_limits<RealType>::max ();
+  const RealType maxVal = std::numeric_limits<RealType>::max ();
 
   UnsignedIntType val = 0;
-  if (sizeof (UnsignedIntType) < sizeof (double)) {
-    TEST_THROW(val = asSafe<UnsignedIntType> (minDouble), std::range_error);
-    TEST_THROW(val = asSafe<UnsignedIntType> (maxDouble), std::range_error);
+  if (sizeof (UnsignedIntType) < sizeof (RealType)) {
+    TEST_THROW(val = asSafe<UnsignedIntType> (minVal), std::range_error);
+    TEST_THROW(val = asSafe<UnsignedIntType> (maxVal), std::range_error);
     (void) val; // Silence compiler errors.
   }
   else { // Only conversions from negative values should throw.
-    TEST_THROW(val = asSafe<UnsignedIntType> (minDouble), std::range_error);
-    TEST_NOTHROW(val = asSafe<UnsignedIntType> (maxDouble));
-    TEST_EQUALITY_CONST(val, static_cast<UnsignedIntType> (maxDouble));
+    TEST_THROW(val = asSafe<UnsignedIntType> (minVal), std::range_error);
+    TEST_NOTHROW(val = asSafe<UnsignedIntType> (maxVal));
+    TEST_EQUALITY_CONST(val, static_cast<UnsignedIntType> (maxVal));
   }
 
   // Conversion from any negative value should throw.
-  const double minusOne = -1;
+  const RealType minusOne = -1;
   TEST_THROW(val = asSafe<UnsignedIntType> (minusOne), std::range_error);
   (void) val; // Silence compiler errors.
 }
 
 //
-// Instantiations of templated tests for conversions between various
-// built-in integer types and double.
+// Instantiations of templated tests for conversions from double to
+// various built-in integer types.
 //
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, doubleToSignedIntTypeOverflow, int )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, doubleToSignedIntTypeOverflow, long )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, double, int )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, double, long )
 
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, doubleToSignedIntTypeOverflow, long_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, double, long_long_type )
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, doubleToUnsignedIntTypeOverflow, unsigned_int_type )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, doubleToUnsignedIntTypeOverflow, unsigned_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToUnsignedIntTypeOverflow, double, unsigned_int_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToUnsignedIntTypeOverflow, double, unsigned_long_type )
 
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( asSafe, doubleToUnsignedIntTypeOverflow, unsigned_long_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToUnsignedIntTypeOverflow, double, unsigned_long_long_type )
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
+
+//
+// Instantiations of templated tests for conversions from float to
+// various built-in integer types.
+//
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, float, int )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, float, long )
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, float, long_long_type )
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToUnsignedIntTypeOverflow, float, unsigned_int_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToUnsignedIntTypeOverflow, float, unsigned_long_type )
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToUnsignedIntTypeOverflow, float, unsigned_long_long_type )
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
 
 //
 // Templated test for conversions between possibly different built-in
