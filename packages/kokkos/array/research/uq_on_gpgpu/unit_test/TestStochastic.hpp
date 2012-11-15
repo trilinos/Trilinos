@@ -1028,7 +1028,7 @@ void performance_test_driver_poly( const int pdeg ,
 				   const int nIter ,
 				   const bool print )
 {
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<8,Device> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
   typedef KokkosArray::StochasticProductTensor< double , polynomial , Device , KokkosArray::SparseProductTensor > tensor_type ;
 
   std::cout.precision(8);

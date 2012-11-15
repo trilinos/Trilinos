@@ -865,7 +865,7 @@ template <typename User>
       Z2_FORWARD_EXCEPTIONS;
 
       if (numLocalEdges_){
-        gno_t *tmp = new gno_t [numLocalEdges_];
+        tmp = new gno_t [numLocalEdges_];
         env_->localMemoryAssertion(__FILE__, __LINE__, numLocalEdges_, tmp);
         edgeGnos_ = arcp(tmp, 0, numLocalEdges_);
         gnoArray = edgeGnos_.view(0, numLocalEdges_);
@@ -1342,7 +1342,7 @@ template <typename User>
       Z2_FORWARD_EXCEPTIONS;
 
       if (numLocalEdges_){
-        gno_t *tmp = new gno_t [numLocalEdges_];
+        tmp = new gno_t [numLocalEdges_];
         env_->localMemoryAssertion(__FILE__, __LINE__, numLocalEdges_, tmp);
         edgeGnos_ = arcp(tmp, 0, numLocalEdges_);
         gnoArray = edgeGnos_.view(0, numLocalEdges_);

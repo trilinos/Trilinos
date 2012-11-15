@@ -341,7 +341,7 @@ inline scalar_t pivotPos (scalar_t * cutUpperBounds, scalar_t *cutLowerBounds,si
  */
 template <typename T>
 void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolerance,
-    multiCriteriaNorm &mcnorm, std::bitset<NUM_RCB_PARAMS> &params,  int &numTestCuts, bool &ignoreWeights, bool &allowNonrectelinear, partId_t &concurrentPartCount,
+    multiCriteriaNorm &mcnorm, std::bitset<NUM_RCB_PARAMS> &params,  int &numTestCuts, bool &ignoreWeights, bool &allowNonrectilinear, partId_t &concurrentPartCount,
     bool &force_binary, bool &force_linear){
 
   string obj;
@@ -427,9 +427,9 @@ void pqJagged_getParameters(const Teuchos::ParameterList &pl, T &imbalanceTolera
 
   if (val == 1){
     params.set(rcb_rectilinearBlocks);
-    allowNonrectelinear = false;
+    allowNonrectilinear = false;
   } else {
-    allowNonrectelinear = true;
+    allowNonrectilinear = true;
   }
 
   numTestCuts = 1;
@@ -761,8 +761,8 @@ void pqJagged_getLocalMinMaxTotalCoord(
 #endif
       scalar_t myMin, myMax;
 
-      size_t j = partitionedPointPermutations[coordinateBegin];
-      myMin = myMax = pqJagged_coordinates[j];
+      myMin=myMax
+           =pqJagged_coordinates[partitionedPointPermutations[coordinateBegin]];
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
@@ -948,7 +948,7 @@ void pqJagged_getCutCoord_Weights(
  *
  * \param allowNonRectelinearPart is the boolean value whether partitioning should allow distributing the points on same coordinate to different parts.
  * \param nonRectelinearPartRatios holds how much percentage of the coordinates on the cutline should be put on left side.
- * \param rectelinearCutCount is the count of cut lines whose balance can be achived via distributing the points in same coordinate to different parts.
+ * \param rectilinearCutCount is the count of cut lines whose balance can be achived via distributing the points in same coordinate to different parts.
  * \param localCutWeights is the local weight of coordinates on cut lines.
  * \param globalCutWeights is the global weight of coordinates on cut lines.
  *
@@ -982,7 +982,7 @@ void getNewCoordinates(
 
     bool allowNonRectelinearPart,
     float *nonRectelinearPartRatios,
-    partId_t *rectelinearCutCount,
+    partId_t *rectilinearCutCount,
     scalar_t *localCutWeights,
     scalar_t *globalCutWeights,
 
@@ -1064,7 +1064,7 @@ void getNewCoordinates(
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp atomic
 #endif
-          *rectelinearCutCount += 1;
+          *rectilinearCutCount += 1;
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp atomic
@@ -1185,7 +1185,7 @@ void getNewCoordinates(
 #pragma omp single
 #endif
   {
-    if(*rectelinearCutCount > 0){
+    if(*rectilinearCutCount > 0){
       try{
         Teuchos::scan<int,scalar_t>(
             *comm, Teuchos::REDUCE_SUM,
@@ -1198,8 +1198,7 @@ void getNewCoordinates(
       for (partId_t i = 0; i < noCuts; ++i){
         //cout << "gw:" << globalCutWeights[i] << endl;
         if(globalCutWeights[i] > 0) {
-          scalar_t expected = targetPartWeightRatios[i];
-          scalar_t ew = globalTotalWeight * expected;
+          scalar_t ew = globalTotalWeight * targetPartWeightRatios[i];
           scalar_t expectedWeightOnLine = ew - globalPartWeights[i * 2];
           scalar_t myWeightOnLine = localCutWeights[i];
           scalar_t weightOnLineBefore = globalCutWeights[i];
@@ -1216,7 +1215,7 @@ void getNewCoordinates(
           }
         }
       }
-      *rectelinearCutCount = 0;
+      *rectilinearCutCount = 0;
     }
   }
 }
@@ -1332,7 +1331,7 @@ void pqJagged_1DPart_getPartWeights(
           while(kk < noCuts){  // Needed when cuts shared the same position
                                // kddnote Can this loop be disabled for RECTILINEAR BLOCKS?
                                // kddnote Mehmet says it is probably needed anyway.
-            scalar_t distance =ABS(cutCoordinates_tmp[kk] - cut);
+            distance =ABS(cutCoordinates_tmp[kk] - cut);
             if(distance < _EPSILON){
               myPartWeights[2 * kk + 1] += w;
 
@@ -1350,7 +1349,7 @@ void pqJagged_1DPart_getPartWeights(
 
           kk = j - 1;
           while(kk >= 0){
-            scalar_t distance =ABS(cutCoordinates_tmp[kk] - cut);
+            distance =ABS(cutCoordinates_tmp[kk] - cut);
             if(distance < _EPSILON){
               myPartWeights[2 * kk + 1] += w;
 
@@ -1378,7 +1377,7 @@ void pqJagged_1DPart_getPartWeights(
             }
             bool _break = false;
             if(j > 0){
-              scalar_t distance = coord - cutCoordinates_tmp[j - 1];
+              distance = coord - cutCoordinates_tmp[j - 1];
               if(distance > _EPSILON){
                 if (myRightClosest[j - 1] > distance){
                   myRightClosest[j - 1] = distance;
@@ -1406,7 +1405,7 @@ void pqJagged_1DPart_getPartWeights(
             }
             bool _break = false;
             if(j < noCuts - 1){
-              scalar_t distance = coord - cutCoordinates_tmp[j + 1];
+              distance = coord - cutCoordinates_tmp[j + 1];
               if(distance > _EPSILON){
                 if (myRightClosest[j + 1] > distance){
                   myRightClosest[j + 1] = distance;
@@ -1495,7 +1494,7 @@ void pqJagged_1DPart_getPartWeights(
         while(kk < noCuts){  // Needed when cuts shared the same position
           // kddnote Can this loop be disabled for RECTILINEAR BLOCKS?
           // kddnote Mehmet says it is probably needed anyway.
-          scalar_t distance =ABS(cutCoordinates_tmp[kk] - cut);
+          distance =ABS(cutCoordinates_tmp[kk] - cut);
           if(distance < _EPSILON){
             //cout << "yo" << endl;
             myPartWeights[2 * kk + 1] += w;
@@ -1515,7 +1514,7 @@ void pqJagged_1DPart_getPartWeights(
 
         kk = j - 1;
         while(kk >= 0){
-          scalar_t distance =ABS(cutCoordinates_tmp[kk] - cut);
+          distance =ABS(cutCoordinates_tmp[kk] - cut);
           if(distance < _EPSILON){
             myPartWeights[2 * kk + 1] += w;
             //cout << "3to part:" << 2*kk+1 << " coord:" << coord << endl;
@@ -1558,7 +1557,7 @@ void pqJagged_1DPart_getPartWeights(
           while(kk < noCuts){  // Needed when cuts shared the same position
             // kddnote Can this loop be disabled for RECTILINEAR BLOCKS?
             // kddnote Mehmet says it is probably needed anyway.
-            scalar_t distance =ABS(cutCoordinates_tmp[kk] - cut);
+            distance =ABS(cutCoordinates_tmp[kk] - cut);
             //cout << "distance:" << distance << endl;
             if(distance < _EPSILON){
               myPartWeights[2 * kk + 1] += w;
@@ -1578,7 +1577,7 @@ void pqJagged_1DPart_getPartWeights(
 
           kk = j - 1;
           while(kk >= 0){
-            scalar_t distance =ABS(cutCoordinates_tmp[kk] - cut);
+            distance =ABS(cutCoordinates_tmp[kk] - cut);
             if(distance < _EPSILON){
               myPartWeights[2 * kk + 1] += w;
               //cout << "6to part:" << 2*kk+1 << " coord:" << coord << endl;
@@ -1632,7 +1631,7 @@ void pqJagged_1DPart_getPartWeights(
           while(kk < noCuts){  // Needed when cuts shared the same position
             // kddnote Can this loop be disabled for RECTILINEAR BLOCKS?
             // kddnote Mehmet says it is probably needed anyway.
-            scalar_t distance =ABS(cutCoordinates_tmp[kk] - cut);
+            distance =ABS(cutCoordinates_tmp[kk] - cut);
             if(distance < _EPSILON){
               myPartWeights[2 * kk + 1] += w;
               myLeftClosest[kk] = 0;
@@ -1649,7 +1648,7 @@ void pqJagged_1DPart_getPartWeights(
 
           kk = j - 1;
           while(kk >= 0){
-            scalar_t distance =ABS(cutCoordinates_tmp[kk] - cut);
+            distance =ABS(cutCoordinates_tmp[kk] - cut);
             if(distance < _EPSILON){
               myPartWeights[2 * kk + 1] += w;
 
@@ -3107,29 +3106,27 @@ void AlgPQJagged(
 
           if(ABS(coordinate_range) < _EPSILON ){
             for(lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
-
-              lno_t i = partitionedPointCoordinates[ii];
-              partIds[i] = 0;
+              partIds[partitionedPointCoordinates[ii]] = 0;
             }
           }
           else{
 
-        	  scalar_t slice = coordinate_range / partNo[i];
+            scalar_t slice = coordinate_range / partNo[i];
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
             for(lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
 
-              lno_t i = partitionedPointCoordinates[ii];
-              partId_t pp = partId_t((pqCoord[i] - minCoordinate) / slice);
-              //if( pp >= partNo[i])
+              lno_t iii = partitionedPointCoordinates[ii];
+              partId_t pp = partId_t((pqCoord[iii] - minCoordinate) / slice);
+              //if( pp >= partNo[iii])
               //{
-              //  partIds[i] = 0;
+              //  partIds[iii] = 0;
               //} else {
-              //  partIds[i] = total_part_count - 2 * pp;
+              //  partIds[iii] = total_part_count - 2 * pp;
               //}
-              partIds[i] = 2 * pp;
+              partIds[iii] = 2 * pp;
             }
           }
         }

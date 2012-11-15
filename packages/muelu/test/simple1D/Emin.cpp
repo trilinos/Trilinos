@@ -301,37 +301,28 @@ int main(int argc, char *argv[]) {
 
   RCP<FactoryManager>   myFactManager = rcp(new FactoryManager());
 
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-  RCP<SaPFactory>           SaPFact   = rcp(new SaPFactory());
-  RCP<TentativePFactory>    TentPFact = rcp(new TentativePFactory(UCAggFact));
+  myFactManager->SetFactory("Aggregates", rcp(new UCAggregationFactory()));
+  myFactManager->SetFactory("Ptent",      rcp(new TentativePFactory()));
+  myFactManager->SetFactory("P",          rcp(new SaPFactory()));
+
 #ifdef EMIN
   // Energy-minimization
-#if 1
-  RCP<PatternFactory>       PatternFact = rcp(new PatternFactory(TentPFact));
+#if 0
+  myFactManager->SetFactory("Ppattern",   rcp(new PatternFactory(myFactManager->GetFactory("Ptent"))));
 #else
-  RCP<PatternFactory>       PatternFact = rcp(new PatternFactory(SaPFact));
+  myFactManager->SetFactory("Ppattern",   rcp(new PatternFactory(myFactManager->GetFactory("P"))));
 #endif
-  RCP<ConstraintFactory>    Cfact = rcp(new ConstraintFactory(PatternFact));
-  RCP<EminPFactory>         Pfact = rcp(new EminPFactory(TentPFact, Cfact));
+  myFactManager->SetFactory("Constraint", rcp(new ConstraintFactory()));
+  myFactManager->SetFactory("P",          rcp(new EminPFactory(myFactManager->GetFactory("Ptent"))));
 
-  myFactManager->SetFactory("Ppattern", PatternFact);
-  myFactManager->SetFactory("Constraint", Cfact);
-#else
-  RCP<SaPFactory>       Pfact = SaPFact;
+  myFactManager->SetFactory("Nullspace",  rcp(new NullspacePresmoothFactory(myFactManager->GetFactory("Nullspace"))));
 #endif
 
-  myFactManager->SetFactory("P", Pfact);
   myFactManager->SetFactory("A", rcp(new RAPFactory()));
   myFactManager->SetFactory("R", rcp(new TransPFactory()));
 
-#ifdef EMIN
-  RCP<NullspacePresmoothFactory> NPFact = rcp(new NullspacePresmoothFactory(rcp(new NullspaceFactory("Nullspace", TentPFact))));
-  myFactManager->SetFactory("Nullspace", NPFact);
-#endif
-
   RCP<SmootherPrototype> smooProto = gimmeMergedSmoother(nSmoothers, xpetraParameters.GetLib(), coarseSolver, comm->getRank());
-  RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
-  myFactManager->SetFactory("Smoother", SmooFact);
+  myFactManager->SetFactory("Smoother",   rcp(new SmootherFactory(smooProto)));
 
   Teuchos::ParameterList status;
 

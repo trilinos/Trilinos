@@ -101,7 +101,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level &coarseLevel) const {
 
-    FactoryMonitor m(*this, "MultiVectorTransferFactory", coarseLevel);
+    FactoryMonitor m(*this, "Build", coarseLevel);
 
     //TEUCHOS_TEST_FOR_EXCEPTION(!fineLevel.IsAvailable(vectorName_,MueLu::NoFactory::get()), Exceptions::RuntimeError,
     //                    "MueLu::MultiVectorTransferFactory::Build(): vector '" + vectorName_ + "' is not available.");

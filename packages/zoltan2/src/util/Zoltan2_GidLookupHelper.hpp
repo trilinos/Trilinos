@@ -239,4 +239,4 @@ template<typename T, typename lno_t>
 
 } // namespace Z2
 
-#endif // _ZOLTAN2_IDENTIFIERTRAITS
+#endif // _ZOLTAN2_GIDLOOKUPHELPER

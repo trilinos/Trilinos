@@ -85,7 +85,7 @@ namespace MueLu {
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   Build(Level &level) const
   {
-    FactoryMonitor m(*this, "ZoltanInterface", level);
+    FactoryMonitor m(*this, "Build", level);
     RCP<SubFactoryMonitor> m1;
 
     RCP<Matrix> A = level.Get< RCP<Matrix> >("A",AFact_.get());
