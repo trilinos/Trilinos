@@ -521,7 +521,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DumpCurrentGraph() const {
-#ifdef HAVE_MUELU_BOOST
+#if defined(HAVE_MUELU_BOOST) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
     // define boost graph types
     typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS,
             boost::property<boost::vertex_name_t, std::string,
@@ -529,8 +529,8 @@ namespace MueLu {
             boost::property<boost::vertex_index_t, std::string> > >,
             boost::property<boost::edge_name_t, std::string,
             boost::property<boost::edge_color_t, std::string> > > Graph;
-    typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex_t;
-    typedef typename boost::graph_traits<Graph>::edge_descriptor   edge_t;
+    typedef boost::graph_traits<Graph>::vertex_descriptor vertex_t;
+    typedef boost::graph_traits<Graph>::edge_descriptor   edge_t;
 
     Graph graph;
 

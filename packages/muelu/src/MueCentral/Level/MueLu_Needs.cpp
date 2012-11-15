@@ -252,7 +252,7 @@ namespace MueLu {
     }
   }
 
-#ifdef HAVE_MUELU_BOOST
+#if defined(HAVE_MUELU_BOOST) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
   void Needs::UpdateGraph(std::map<const FactoryBase*, long unsigned>&                           vindices,
                           std::map<std::pair<long unsigned, long unsigned>, std::string>&        edges,
                           boost::dynamic_properties&                                             dp,
@@ -270,8 +270,8 @@ namespace MueLu {
             boost::property<boost::vertex_index_t, std::string> > >,
             boost::property<boost::edge_name_t, std::string,
             boost::property<boost::edge_color_t, std::string> > > Graph;
-    typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex_t;
-    typedef typename boost::graph_traits<Graph>::edge_descriptor   edge_t;
+    typedef boost::graph_traits<Graph>::vertex_descriptor vertex_t;
+    typedef boost::graph_traits<Graph>::edge_descriptor   edge_t;
 
     for (typename UTILS::TwoKeyMap<const FactoryBase*, std::string, RCP<MueLu::VariableContainer> >::const_iterator it1 = dataTable_.begin(); it1 != dataTable_.end(); it1++) {
       if (vindices.find(it1->first) == vindices.end()) {

@@ -303,7 +303,7 @@ namespace MueLu {
     // TODO: print only shows requested variables. check if we also list kept factories with ref counter=0?
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
-#ifdef HAVE_MUELU_BOOST
+#if defined(HAVE_MUELU_BOOST) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
     void UpdateGraph(std::map<const FactoryBase*, long unsigned>&                           vindices,
                      std::map<std::pair<long unsigned, long unsigned>, std::string>&        edges,
                      boost::dynamic_properties&                                             dp,
