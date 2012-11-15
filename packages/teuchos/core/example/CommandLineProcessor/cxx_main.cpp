@@ -84,7 +84,11 @@ int main(int argc, char* argv[])
     My_CLP.setOption("iterations", &NumIters, "Number of iterations");
     // Set a long integer command line option
     long int MatrixDim = Teuchos::OrdinalTraits<long int>::max();
-    My_CLP.setOption("matrix-dim", &MatrixDim, "Matrix dimension");    
+    My_CLP.setOption("long-matrix-dim", &MatrixDim, "Matrix dimension (long)");    
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+    long long int MatrixDim2 = Teuchos::OrdinalTraits<long long int>::max();
+    My_CLP.setOption("long-long-matrix-dim", &MatrixDim2, "Matrix dimension (long long)");
+#endif
     // Set a double-precision command line option.
     double Tolerance = 1e-10;
     My_CLP.setOption("tolerance", &Tolerance, "Tolerance");
@@ -146,6 +150,7 @@ int main(int argc, char* argv[])
       out << "\nPrinting user options after parsing ...\n\n";
       out << "NumIters     = " << NumIters << std::endl;
       out << "MatrixDim    = " << MatrixDim << std::endl;
+      out << "MatrixDim2   = " << MatrixDim2 << std::endl;
       out << "Tolerance    = " << Tolerance << std::endl;
       out << "Solver       = \"" << Solver << "\"\n";
       out << "Precondition = " << Precondition << std::endl;
