@@ -1785,99 +1785,7 @@ public:
   }
 };
 
-//
-// * Conversions from built-in integer types to built-in real-valued
-//   floating-point types.
-//
-
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-
-//! Convert from <tt>long long</tt> to \c float.
-template<>
-class ValueTypeConversionTraits<float, long long> {
-public:
-  /// \brief Convert the given <tt>long long</tt> to a \c float.
-  ///
-  /// \warning <tt>long long</tt> integer values may overflow
-  ///   <tt>float</tt>.  You should use safeConvert() if you aren't
-  ///   sure that the given value fits in a <tt>float</tt>.
-  static float convert (const long long t) {
-    // Implicit conversion from long long to float may cause compiler
-    // warnings, but static_cast does not.
-    return static_cast<float> (t);
-  }
-
-  //! Convert from <tt>long long</tt> to \c float, checking for overflow first.
-  static float safeConvert (const long long t) {
-    // std::numeric_limits<float>::min() gives the minimum _positive_
-    // normalized value of type float.  IEEE 754 floating-point values
-    // can change sign just by flipping the sign bit, so the "most
-    // negative" finite float is just the negative of the "most
-    // positive" finite float.
-    const float minFloat = -std::numeric_limits<float>::max ();
-    const float maxFloat = std::numeric_limits<float>::max ();
-
-    // FIXME (mfh 14 Nov 2012) This only works if sizeof(long long) >
-    // sizeof(float).  It is on all platforms I've encountered, but
-    // that still doesn't make this code correct.
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      t < static_cast<long long> (minFloat) ||
-      t > static_cast<long long> (maxFloat),
-      std::range_error,
-      "Teuchos::ValueTypeConversionTraits<float, long long>::safeConvert: "
-      "Input long long t = " << t << " is out of the valid range [" << minFloat
-      << ", " << maxFloat << "] for conversion to float.");
-
-    // Implicit conversion from long long to float may cause compiler
-    // warnings, but static_cast does not.
-    return static_cast<float> (t);
-  }
-};
-
-
-//! Convert from <tt>unsigned long long</tt> to \c float.
-template<>
-class ValueTypeConversionTraits<float, unsigned long long> {
-public:
-  /// \brief Convert the given <tt>unsigned long long</tt> to a \c float.
-  ///
-  /// \warning <tt>unsigned long long</tt> integer values may overflow
-  ///   \c float.  You should use safeConvert() if you aren't sure
-  ///   that the given value fits in a \c float.
-  static float convert (const unsigned long long t) {
-    // Implicit conversion from unsigned long long to float may cause
-    // compiler warnings, but static_cast does not.
-    return static_cast<float> (t);
-  }
-
-  //! Convert from <tt>unsigned long long</tt> to \c float, checking for overflow first.
-  static float safeConvert (const unsigned long long t) {
-    // std::numeric_limits<float>::min() gives the minimum _positive_
-    // normalized value of type float.  IEEE 754 floating-point values
-    // can change sign just by flipping the sign bit, so the "most
-    // negative" finite float is just the negative of the "most
-    // positive" finite float.
-    const float minFloat = -std::numeric_limits<float>::max ();
-    const float maxFloat = std::numeric_limits<float>::max ();
-
-    // t >= 0 by definition, because it is unsigned.
-    //
-    // FIXME (mfh 14 Nov 2012) This only works if sizeof(long long) >
-    // sizeof(float).  It is on all platforms I've encountered, but
-    // that still doesn't make this code correct.
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      t > static_cast<unsigned long long> (maxFloat),
-      std::invalid_argument,
-      "Teuchos::ValueTypeConversionTraits<float, unsigned long long>::safeConvert: "
-      "Input unsigned long long t = " << t << " is out of the valid range [" << minFloat
-      << ", " << maxFloat << "] for conversion to float.");
-
-    // Implicit conversion from unsigned long long to float may cause
-    // compiler warnings, but static_cast does not.
-    return static_cast<float> (t);
-  }
-};
-
 
 //! Convert from <tt>long long</tt> to \c int.
 template<>
@@ -2016,6 +1924,101 @@ public:
     // Implicit conversion from unsigned long long to unsigned int may
     // cause compiler warnings, but static_cast does not.
     return static_cast<unsigned int> (t);
+  }
+};
+
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
+//
+// * Conversions from built-in integer types to built-in real-valued
+//   floating-point types.
+//
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+
+//! Convert from <tt>long long</tt> to \c float.
+template<>
+class ValueTypeConversionTraits<float, long long> {
+public:
+  /// \brief Convert the given <tt>long long</tt> to a \c float.
+  ///
+  /// \warning <tt>long long</tt> integer values may overflow
+  ///   <tt>float</tt>.  You should use safeConvert() if you aren't
+  ///   sure that the given value fits in a <tt>float</tt>.
+  static float convert (const long long t) {
+    // Implicit conversion from long long to float may cause compiler
+    // warnings, but static_cast does not.
+    return static_cast<float> (t);
+  }
+
+  //! Convert from <tt>long long</tt> to \c float, checking for overflow first.
+  static float safeConvert (const long long t) {
+    // std::numeric_limits<float>::min() gives the minimum _positive_
+    // normalized value of type float.  IEEE 754 floating-point values
+    // can change sign just by flipping the sign bit, so the "most
+    // negative" finite float is just the negative of the "most
+    // positive" finite float.
+    const float minFloat = -std::numeric_limits<float>::max ();
+    const float maxFloat = std::numeric_limits<float>::max ();
+
+    // FIXME (mfh 14 Nov 2012) This only works if sizeof(long long) >
+    // sizeof(float).  It is on all platforms I've encountered, but
+    // that still doesn't make this code correct.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < static_cast<long long> (minFloat) ||
+      t > static_cast<long long> (maxFloat),
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<float, long long>::safeConvert: "
+      "Input long long t = " << t << " is out of the valid range [" << minFloat
+      << ", " << maxFloat << "] for conversion to float.");
+
+    // Implicit conversion from long long to float may cause compiler
+    // warnings, but static_cast does not.
+    return static_cast<float> (t);
+  }
+};
+
+
+//! Convert from <tt>unsigned long long</tt> to \c float.
+template<>
+class ValueTypeConversionTraits<float, unsigned long long> {
+public:
+  /// \brief Convert the given <tt>unsigned long long</tt> to a \c float.
+  ///
+  /// \warning <tt>unsigned long long</tt> integer values may overflow
+  ///   \c float.  You should use safeConvert() if you aren't sure
+  ///   that the given value fits in a \c float.
+  static float convert (const unsigned long long t) {
+    // Implicit conversion from unsigned long long to float may cause
+    // compiler warnings, but static_cast does not.
+    return static_cast<float> (t);
+  }
+
+  //! Convert from <tt>unsigned long long</tt> to \c float, checking for overflow first.
+  static float safeConvert (const unsigned long long t) {
+    // std::numeric_limits<float>::min() gives the minimum _positive_
+    // normalized value of type float.  IEEE 754 floating-point values
+    // can change sign just by flipping the sign bit, so the "most
+    // negative" finite float is just the negative of the "most
+    // positive" finite float.
+    const float minFloat = -std::numeric_limits<float>::max ();
+    const float maxFloat = std::numeric_limits<float>::max ();
+
+    // t >= 0 by definition, because it is unsigned.
+    //
+    // FIXME (mfh 14 Nov 2012) This only works if sizeof(long long) >
+    // sizeof(float).  It is on all platforms I've encountered, but
+    // that still doesn't make this code correct.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t > static_cast<unsigned long long> (maxFloat),
+      std::invalid_argument,
+      "Teuchos::ValueTypeConversionTraits<float, unsigned long long>::safeConvert: "
+      "Input unsigned long long t = " << t << " is out of the valid range [" << minFloat
+      << ", " << maxFloat << "] for conversion to float.");
+
+    // Implicit conversion from unsigned long long to float may cause
+    // compiler warnings, but static_cast does not.
+    return static_cast<float> (t);
   }
 };
 
