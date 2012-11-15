@@ -33,6 +33,8 @@ namespace stk {
     const bool do_tot_test = false;
     bool do_print_elem_val = false;
 
+    static bool s_do_snap = false;
+
     void ReferenceMeshSmoother1::nodal_gradient(stk::mesh::Entity node, double alpha, double *coord_current, double *cg_d, bool& valid, double *ng)
     {
       int spatialDim = m_eMesh->get_spatial_dim();
@@ -889,7 +891,7 @@ namespace stk {
 
       stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
       stk::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
-      bool total_valid=true;
+      bool total_valid=false;
 
       if (m_iter == 0)
         {
@@ -926,6 +928,7 @@ namespace stk {
           m_grad_norm = std::sqrt(m_dnew);
         }
 
+      s_do_snap = false;
       double metric_check = total_metric( 0.0, 1.0, total_valid);
       m_total_metric = metric_check;
       if (check_convergence() || metric_check == 0.0)
@@ -941,6 +944,7 @@ namespace stk {
       //double alpha = m_scale;
       double alpha = m_scale/10.;
       {
+        total_valid = false;
         double metric_0 = total_metric( 0.0, 1.0, total_valid);
         double metric=0.0;
         double tau = 0.5;
@@ -952,6 +956,7 @@ namespace stk {
 
         double armijo_offset_factor = c0*norm_gradient2;
         bool converged = false;
+        total_valid = false;
         while (!converged)
           {
             metric = total_metric(alpha, 1.0, total_valid);
@@ -998,6 +1003,7 @@ namespace stk {
             PRINT_1( "tmp srk " << " metric_0= " << metric_0 << " metric(1.e-6) = " << metric_1 << " diff= " << metric_1-metric_0 );
             metric_1 = total_metric( -1.e-6, 1.0, total_valid);
             PRINT_1( "tmp srk " << " metric_0= " << metric_0 << " metric(-1.e-6)= " << metric_1 << " diff= " << metric_1-metric_0 );
+            total_valid = false;
           }
 
         while (!converged)
@@ -1084,6 +1090,18 @@ namespace stk {
       m_alpha = alpha;
       update_node_positions( alpha);
       //PRINT_1( "tmp srk iter= "<< m_iter << " dmax= " << m_dmax << " alpha= " << alpha);
+
+      // check if re-snapped geometry is acceptable
+      if (m_eMesh->get_smooth_surfaces())
+        {
+          snap_nodes();
+          if (m_stage != 0) 
+            {
+              bool total_valid_0=true;
+              total_metric( 0.0, 1.0, total_valid_0);
+              VERIFY_OP_ON(total_valid_0, ==, true, "bad mesh after snap_node_positions...");
+            }
+        }
 
       if (DEBUG_PRINT)
         {
@@ -1410,7 +1428,7 @@ namespace stk {
                         coord_current[i] += dt;
                         coord_project[i] = coord_current[i];
                       }
-                    if (fixed.second == MS_SURFACE)
+                    if (fixed.second == MS_SURFACE && (m_stage == 0 || s_do_snap))
                       {
                         snap_to(node, coord_project, false);
                       }
@@ -1497,6 +1515,69 @@ namespace stk {
       return mtot;
 
     }
+
+    void ReferenceMeshSmoother1::snap_nodes()
+    {
+      stk::mesh::FieldBase *coord_field = m_eMesh->get_coordinates_field();
+      stk::mesh::FieldBase *coord_field_current   = coord_field;
+
+      stk::mesh::Selector on_locally_owned_part =  ( m_eMesh->get_fem_meta_data()->locally_owned_part() );
+      stk::mesh::Selector on_globally_shared_part =  ( m_eMesh->get_fem_meta_data()->globally_shared_part() );
+      int spatialDim = m_eMesh->get_spatial_dim();
+
+      double dmax=0.0;
+
+      // node loop - snap...
+      {
+        const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
+        for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+          {
+            // update local and globally shared
+            if (on_locally_owned_part(**k) || on_globally_shared_part(**k))
+              {
+                stk::mesh::Bucket & bucket = **k ;
+                const unsigned num_nodes_in_bucket = bucket.size();
+
+                for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
+                  {
+                    stk::mesh::Entity node = bucket[i_node];
+                    std::pair<bool,int> fixed = this->get_fixed_flag(node);
+                    if (fixed.first)
+                      {
+                        continue;
+                      }
+
+                    double *coord_current = PerceptMesh::field_data(coord_field_current, node);
+
+                    double coord_project[3] = {0,0,0};
+                    double coord_old[3] = {0,0,0};
+                    for (int i=0; i < spatialDim; i++)
+                      {
+                        coord_project[i] = coord_current[i];
+                        coord_old[i] = coord_current[i];
+                      }
+
+                    if (fixed.second == MS_SURFACE)
+                      {
+                        bool keep_node_unchanged = false;
+                        snap_to(node, coord_project, keep_node_unchanged);
+                      }
+
+                    double dm = 0.0;
+                    for (int i=0; i < spatialDim; i++)
+                      {
+                        dm += (coord_old[i] - coord_project[i])*(coord_old[i] - coord_project[i]);
+                      }
+                    dm = std::sqrt(dm);
+                    dmax = std::max(dmax, dm);
+                  }
+              }
+          }
+      }
+      std::cout << "tmp srk snap_nodes dmax= " << dmax << std::endl;
+    }
+
+
   }
 }
 

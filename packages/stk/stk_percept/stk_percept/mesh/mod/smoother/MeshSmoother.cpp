@@ -280,6 +280,8 @@ namespace stk {
     //! domain to which "node" is constrained.
     //! The node determines the domain.  The coordinate
     //! is the proposed new position on that domain.
+    //!  if @param reset is true, the node_ptr's coordinates are unchanged, else
+    //!  they are set to the projected value - default is reset=false, so nodes are changed
     void MeshSmoother::
     snap_to(stk::mesh::Entity node_ptr,
             double *coordinate, bool reset) const 
