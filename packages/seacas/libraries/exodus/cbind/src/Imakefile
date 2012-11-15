@@ -90,6 +90,7 @@ SRCS =	ex_close.c \
 	ex_get_glob_var_time.c \
 	ex_get_glob_vars.c \
 	ex_get_id_map.c \
+	ex_get_partial_id_map.c \
 	ex_get_ids.c \
 	ex_get_info.c \
 	ex_get_init.c \
