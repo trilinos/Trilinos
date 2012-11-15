@@ -64,8 +64,8 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoarseMapFactory(RCP<const FactoryBase> aggregatesFact, RCP<const FactoryBase> nullspaceFact)
-  : aggregatesFact_(aggregatesFact), nullspaceFact_(nullspaceFact), domainGidOffset_(0)
+  CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoarseMapFactory()
+  : domainGidOffset_(0)
   {
     stridedBlockId_ = -1; // default: blocked map with constant blocksize "NSDim"
   }
@@ -75,8 +75,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("Aggregates", aggregatesFact_.get(), this);
-    currentLevel.DeclareInput("Nullspace",  nullspaceFact_.get(), this);
+    Input(currentLevel, "Aggregates");
+    Input(currentLevel,"Nullspace");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -96,14 +96,14 @@ namespace MueLu {
 
     //TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.GetLevelID() != 0, Exceptions::RuntimeError, "MueLu::NullspaceFactory::Build(): NullspaceFactory can be used for finest level (LevelID == 0) only.");
 
-    RCP<Aggregates>  aggregates = currentLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_.get());
+    RCP<Aggregates>  aggregates = Get< RCP<Aggregates> >(currentLevel, "Aggregates");
     GlobalOrdinal numAggs = aggregates->GetNumAggregates();
 
     // extract communicator
     RCP<const Teuchos::Comm<int> > comm = aggregates->GetMap()->getComm();
 
     // determine nullspace dimension
-    RCP<MultiVector> nullspace  = currentLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
+    RCP<MultiVector> nullspace  = Get< RCP<MultiVector> >(currentLevel, "Nullspace");
     const size_t NSDim = nullspace->getNumVectors();
 
     // check for consistency of striding information with NSDim and nCoarseDofs
@@ -135,7 +135,7 @@ namespace MueLu {
         stridedBlockId_,
         domainGidOffset_);
 
-    currentLevel.Set("CoarseMap", coarseMap, this);
+    Set(currentLevel, "CoarseMap", coarseMap);
   } // Build
 
 } //namespace MueLu

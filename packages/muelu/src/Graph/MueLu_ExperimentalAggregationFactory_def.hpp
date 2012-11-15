@@ -70,18 +70,17 @@
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ExperimentalAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ExperimentalAggregationFactory(RCP<const FactoryBase> graphFact)
-    : graphFact_(graphFact)
+  ExperimentalAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ExperimentalAggregationFactory()
   {
-    algo1_ = Teuchos::rcp(new MueLu::CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact));
+    algo1_ = Teuchos::rcp(new MueLu::CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(GetFactory("Graph")));
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ExperimentalAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("Graph", graphFact_.get(), this); // we should request data...
+    Input(currentLevel, "Graph");
 
-    if (currentLevel.GetLevelID() == 0) currentLevel.DeclareInput("coarseAggStat", MueLu::NoFactory::get(), this);
-    else                                currentLevel.DeclareInput("coarseAggStat", this, this);
+    if (currentLevel.GetLevelID() == 0) currentLevel.DeclareInput("coarseAggStat", MueLu::NoFactory::get(), this); // FIXME
+    else                                currentLevel.DeclareInput("coarseAggStat", this, this);                    // FIXME
 
   }
 
@@ -93,19 +92,18 @@ namespace MueLu {
     RCP<Aggregates> aggregates;
     {
       // Level Get
-      RCP<const Graph> graph = currentLevel.Get< RCP<Graph> >("Graph", graphFact_.get());
+      RCP<const Graph> graph = Get< RCP<Graph> >(currentLevel, "Graph");
 
       // Build
       aggregates = rcp(new Aggregates(*graph));
       aggregates->setObjectLabel("UC");
 
-
       const LocalOrdinal nRows = graph->GetNodeNumVertices();
 
       Teuchos::ArrayRCP<unsigned int> aggStat;
-      if(currentLevel.GetLevelID() == 0 && currentLevel.IsAvailable("coarseAggStat",MueLu::NoFactory::get())) {
-        aggStat = currentLevel.Get<Teuchos::ArrayRCP<unsigned int> >("coarseAggStat",MueLu::NoFactory::get());
-      } else if (currentLevel.IsAvailable("coarseAggStat", this)) {
+      if(currentLevel.GetLevelID() == 0 && currentLevel.IsAvailable("coarseAggStat",MueLu::NoFactory::get())) { //FIXME NoFactory ????
+        aggStat = currentLevel.Get<Teuchos::ArrayRCP<unsigned int> >("coarseAggStat", MueLu::NoFactory::get());
+      } else if (currentLevel.IsAvailable("coarseAggStat", this)) { //FIXME !!!!!!
         aggStat = currentLevel.Get<Teuchos::ArrayRCP<unsigned int> >("coarseAggStat",this);
       } else {
         if(nRows > 0) aggStat = Teuchos::arcp<unsigned int>(nRows);
@@ -128,11 +126,11 @@ namespace MueLu {
 
       LocalOrdinal numAggs = aggregates->GetNumAggregates();
       coarse_aggStat.resize(Teuchos::as<int>(numAggs));
-      currentLevel.Set("coarseAggStat", coarse_aggStat, this);
+      Set(currentLevel, "coarseAggStat", coarse_aggStat);
     }
 
     // Level Set
-    currentLevel.Set("Aggregates", aggregates, this);
+    Set(currentLevel, "Aggregates", aggregates);
 
     aggregates->describe(GetOStream(Statistics0, 0), getVerbLevel());
 

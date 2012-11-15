@@ -51,6 +51,7 @@
 #include "MueLu_Utilities.hpp"
 
 #include "MueLu_NoFactory.hpp"
+#include "MueLu_FactoryBase2.hpp"
 
 #include "MueLu_TestHelpers.hpp"
 
@@ -140,7 +141,8 @@ namespace MueLuTests {
     l.Set("A", A);
 
     RCP<FactoryBase> graphFact = rcp(new CoalesceDropFactory());
-    RCP<FactoryBase> aggFact   = rcp(new UCAggregationFactory(graphFact));
+    RCP<FactoryBase2> aggFact  = rcp(new UCAggregationFactory());
+    aggFact->SetFactory("Graph", graphFact);
 
     l.Request("Aggregates", aggFact.get());
     TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   true);
@@ -168,8 +170,9 @@ namespace MueLuTests {
     RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
     l.Set("A", A);
 
-    RCP<FactoryBase> graphFact = rcp(new CoalesceDropFactory());
-    RCP<FactoryBase> aggFact   = rcp(new UCAggregationFactory(graphFact));
+    RCP<FactoryBase2> graphFact = rcp(new CoalesceDropFactory());
+    RCP<FactoryBase2> aggFact   = rcp(new UCAggregationFactory());
+    aggFact->SetFactory("Graph", graphFact);
 
     l.Keep("Aggregates", aggFact.get());      // set keep flag
     TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   false);
@@ -205,7 +208,8 @@ namespace MueLuTests {
     l.Set("A", A);
 
     RCP<CoalesceDropFactory>  graphFact = rcp(new CoalesceDropFactory());
-    RCP<UCAggregationFactory> aggFact   = rcp(new UCAggregationFactory(graphFact));
+    RCP<UCAggregationFactory> aggFact   = rcp(new UCAggregationFactory());
+    aggFact->SetFactory("Graph", graphFact);
 
     l.Keep("Aggregates", aggFact.get());      // set keep flag
     TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   false);
@@ -269,7 +273,8 @@ namespace MueLuTests {
     l.Set("A", A);
 
     RCP<CoalesceDropFactory>  graphFact = rcp(new CoalesceDropFactory());
-    RCP<UCAggregationFactory> aggFact   = rcp(new UCAggregationFactory(graphFact));
+    RCP<UCAggregationFactory> aggFact   = rcp(new UCAggregationFactory());
+    aggFact->SetFactory("Graph", graphFact);
 
     TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   false);
     TEST_EQUALITY(l.IsAvailable("Aggregates", aggFact.get()),   false);

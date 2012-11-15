@@ -72,35 +72,6 @@ namespace MueLu {
 #undef MUELU_UCAGGREGATIONCOMMHELPER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  private:
-    RCP<const Import> import_;
-    mutable RCP<const Import> winnerImport_; //FIXME get rid of "mutable"
-    mutable RCP<Import> pushWinners_; //FIXME get rid of mutable
-    RCP<Vector> tempVec_;
-    mutable RCP<Vector> perturbWt_;
-    mutable RCP<Vector> postComm_;
-    mutable RCP<Vector> candidateWinners_;
-    mutable ArrayRCP<GO> myWinners_;
-    mutable int numMyWinners_;
-    mutable RCP<Map> winnerMap_;
-    mutable int numCalls_;
-    int myPID_;
-
-    //     uniqueMap                A subset of weight.getMap() where each GlobalId
-    //                              has only one unique copy on one processor.
-    //                              Normally, weight.getMap() would have both locals
-    //                              and ghost elements while uniqueMap would just
-    //                              have the locals. It should be possible to
-    //                              remove this or make it an optional argument
-    //                              and use some existing Epetra/Tpetra capability to
-    //                              make a uniqueMap.
-    //
-    //     import_                  This corresponds precisely to
-    //                                   Import import_(
-    //                                           weight.getMap(), uniqueMap);
-    //                              This could also be eliminated and created
-    //                              here, but for efficiency user's must pass in.
-    //
   public:
 
     //! @name Constructors/Destructors.
@@ -233,6 +204,35 @@ namespace MueLu {
     */
     void NonUnique2NonUnique(const Vector &source, Vector &dest, const Xpetra::CombineMode what) const;
 
+  private:
+    RCP<const Import> import_;
+    mutable RCP<const Import> winnerImport_; //FIXME get rid of "mutable"
+    mutable RCP<Import> pushWinners_; //FIXME get rid of mutable
+    RCP<Vector> tempVec_;
+    mutable RCP<Vector> perturbWt_;
+    mutable RCP<Vector> postComm_;
+    mutable RCP<Vector> candidateWinners_;
+    mutable ArrayRCP<GO> myWinners_;
+    mutable int numMyWinners_;
+    mutable RCP<Map> winnerMap_;
+    mutable int numCalls_;
+    int myPID_;
+
+    //     uniqueMap                A subset of weight.getMap() where each GlobalId
+    //                              has only one unique copy on one processor.
+    //                              Normally, weight.getMap() would have both locals
+    //                              and ghost elements while uniqueMap would just
+    //                              have the locals. It should be possible to
+    //                              remove this or make it an optional argument
+    //                              and use some existing Epetra/Tpetra capability to
+    //                              make a uniqueMap.
+    //
+    //     import_                  This corresponds precisely to
+    //                                   Import import_(
+    //                                           weight.getMap(), uniqueMap);
+    //                              This could also be eliminated and created
+    //                              here, but for efficiency user's must pass in.
+    //
   };
 
 

@@ -115,14 +115,19 @@ namespace MueLuTests {
       fineLevel.Set("Nullspace",nullSpace);
 
       RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
-      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory(Teuchos::null, amalgFact));
-      RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
+      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+      RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+      UCAggFact->SetFactory("Graph", dropFact);
+
       UCAggFact->SetMinNodesPerAggregate(3);
       UCAggFact->SetMaxNeighAlreadySelected(0);
       UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
       UCAggFact->SetPhase3AggCreation(0.5);
 
-      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory(UCAggFact,Teuchos::null));
+      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
+      coarseMapFact->SetFactory("Aggregates", UCAggFact);
 
       RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
       TentativePFact->SetFactory("Aggregates", UCAggFact);
@@ -186,15 +191,17 @@ namespace MueLuTests {
       fineLevel.Set("Nullspace",nullSpace);
 
       RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
-      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory(Teuchos::null, amalgFact));
-      RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
+      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+      RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+      UCAggFact->SetFactory("Graph", dropFact);
       UCAggFact->SetMinNodesPerAggregate(3);
       UCAggFact->SetMaxNeighAlreadySelected(0);
       UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
       UCAggFact->SetPhase3AggCreation(0.5);
 
-      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory(UCAggFact,Teuchos::null));
-
+      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
+      coarseMapFact->SetFactory("Aggregates", UCAggFact);
       RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
       TentativePFact->SetFactory("Aggregates", UCAggFact);
       TentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);

@@ -62,7 +62,7 @@
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::LocalAggregationAlgorithm(RCP<FactoryBase> const &graphFact)
+  LocalAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::LocalAggregationAlgorithm()
     : ordering_(NATURAL), minNodesPerAggregate_(1), maxNeighAlreadySelected_(0)
   { }
 

@@ -123,7 +123,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    LocalAggregationAlgorithm(RCP<FactoryBase> const &graphFact = Teuchos::null);
+    LocalAggregationAlgorithm();
 
     //! Destructor.
     virtual ~LocalAggregationAlgorithm() { }

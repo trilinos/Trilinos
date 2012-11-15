@@ -202,7 +202,8 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
   //dropFact->SetVariableBlockSize();
 
   // prepare aggregation strategy
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
+  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+  UCAggFact->SetFactory("Graph", dropFact);
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
   *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;

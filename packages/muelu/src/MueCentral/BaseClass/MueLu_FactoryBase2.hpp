@@ -63,8 +63,8 @@ namespace MueLu {
     typename std::map<Key, RCP<T> >::const_iterator f = map.find(varName);
     if (f == map.end())
       return Teuchos::null;
-      else
-        return f->second;
+    else
+      return f->second;
   }
 
   class FactoryBase2 : public FactoryBase {
@@ -94,14 +94,19 @@ namespace MueLu {
     //@}
 
   protected:
-     void Input(Level & level, const std::string & varName) const {
-       level.DeclareInput(varName, mapFind<const std::string, const FactoryBase>(factoryTable_, varName).get(), this);
-     }
 
-     template <class T>
-     T Get(Level & level, const std::string & varName) const {
-       return level.Get<T>(varName, mapFind<const std::string, const FactoryBase>(factoryTable_, varName).get());
-     }
+    const RCP<const FactoryBase> GetFactory(const std::string & varName) const {
+      return mapFind<const std::string, const FactoryBase>(factoryTable_, varName);
+    }
+
+    void Input(Level & level, const std::string & varName) const {
+      level.DeclareInput(varName, GetFactory(varName).get(), this);
+    }
+
+    template <class T>
+    T Get(Level & level, const std::string & varName) const {
+      return level.Get<T>(varName, GetFactory(varName).get());
+    }
 
     template <class T>
     void Set(Level & level, const std::string & varName, T & data) const {

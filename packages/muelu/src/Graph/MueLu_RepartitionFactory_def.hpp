@@ -75,10 +75,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RepartitionFactory(
-                RCP<const FactoryBase> loadBalancer, RCP<const FactoryBase> AFact,
                 LO minRowsPerProcessor, double nnzMaxMinRatio, GO startLevel, LO useDiffusiveHeuristic, GO minNnzPerProcessor) :
-    loadBalancer_(loadBalancer),
-    AFact_(AFact),
     minRowsPerProcessor_(minRowsPerProcessor),
     nnzMaxMinRatio_(nnzMaxMinRatio),
     startLevel_(startLevel),
@@ -95,7 +92,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("Partition",loadBalancer_.get(),this);
+    Input(currentLevel, "Partition");
   }
 
   //----------------------------------------------------------------------
@@ -108,7 +105,7 @@ namespace MueLu {
     using Teuchos::ArrayRCP;
 
     //TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
-    RCP<Matrix> A = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
+    RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
     RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
 
     { // scoping
@@ -188,7 +185,7 @@ namespace MueLu {
       else                                                  numPartitions = A->getGlobalNumRows() / minRowsPerProcessor_;
       if (numPartitions > comm->getSize())
         numPartitions = comm->getSize();
-      currentLevel.Set<GO>("number of partitions",numPartitions);
+      currentLevel.Set("number of partitions", numPartitions);
     }
     GetOStream(Statistics0,0) << "Number of partitions to use = " << numPartitions << std::endl;
 
@@ -197,7 +194,7 @@ namespace MueLu {
     // ======================================================================================================
     // Length of vector "decomposition" is local number of DOFs.  Its entries are partition numbers each DOF belongs to.
 
-    RCP<GOVector> decomposition = currentLevel.Get<RCP<GOVector> >("Partition", loadBalancer_.get());
+    RCP<GOVector> decomposition = Get<RCP<GOVector> >(currentLevel, "Partition");
 
     // Use a hashtable to record how many local rows belong to each partition.
     RCP<Teuchos::Hashtable<GO,GO> > hashTable;
@@ -508,7 +505,7 @@ namespace MueLu {
                     comm);
 
     RCP<const Import> importerForRepartitioning = ImportFactory::Build( A->getRowMap(),newRowMap);
-    currentLevel.Set<RCP<const Import> >("Importer",importerForRepartitioning, this);
+    Set(currentLevel, "Importer", importerForRepartitioning);
 
   } //Build
 
@@ -520,8 +517,8 @@ namespace MueLu {
   {
     FactoryMonitor m(*this, "DeterminePartitionPlacement", currentLevel);
 
-    GO numPartitions = currentLevel.Get<GO>("number of partitions");
-    RCP<Matrix> A = currentLevel.Get< RCP<Matrix> >("A",AFact_.get());
+    GO numPartitions = Get<GO>(currentLevel, "number of partitions");
+    RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
     RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
     int mypid = comm->getRank();
 
@@ -555,7 +552,7 @@ namespace MueLu {
     RCP<SubFactoryMonitor> m1 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: Setup", currentLevel));
 
 //RCP<SubFactoryMonitor> m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: getting 'Partition'", currentLevel));
-    RCP<GOVector> decomposition = currentLevel.Get<RCP<GOVector> >("Partition", loadBalancer_.get());
+    RCP<GOVector> decomposition = Get<RCP<GOVector> >(currentLevel, "Partition");
     // Figure out how many nnz there are per row.
 //m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: figuring out nnz per row", currentLevel));
     RCP<GOVector> nnzPerRowVector = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(A->getRowMap(),false);

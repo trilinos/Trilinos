@@ -50,6 +50,8 @@
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
 #include <Teuchos_Utils.hpp>
+#include <Teuchos_DefaultMpiComm.hpp> //TODO: fwd decl.
+#include <Teuchos_OpaqueWrapper.hpp>  //TODO: fwd decl.
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
@@ -58,23 +60,17 @@
 namespace MueLu {
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  ZoltanInterface(RCP<const FactoryBase> AFact, RCP<const FactoryBase> TransferFact)
-    : AFact_(AFact), TransferFact_(TransferFact)
-  {}
-
   //-------------------------------------------------------------------------------------------------------------
   // DeclareInput
   //-------------------------------------------------------------------------------------------------------------
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  DeclareInput(Level & level) const
+  DeclareInput(Level & currentLevel) const
   {
-    level.DeclareInput("A", AFact_.get());
-    level.DeclareInput("Coordinates", NoFactory::get()); //FIXME JJH
-    //level.DeclareInput("Coordinates", TransferFact_.get()); //FIXME JJH
+    Input(currentLevel, "A");
+    currentLevel.DeclareInput("Coordinates", NoFactory::get()); //FIXME JJH
+    //Input(currentLevel, "Coordinates"); //FIXME JJH
   } //DeclareInput()
 
   //-------------------------------------------------------------------------------------------------------------
@@ -88,7 +84,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", level);
     RCP<SubFactoryMonitor> m1;
 
-    RCP<Matrix> A = level.Get< RCP<Matrix> >("A",AFact_.get());
+    RCP<Matrix> A = Get< RCP<Matrix> >(level, "A");
     // Tell Zoltan what kind of local/global IDs we will use.
     // In our case, each GID is two ints and there are no local ids.
     // One can skip this step if the IDs are just single ints.
@@ -109,12 +105,11 @@ namespace MueLu {
 
     zoltanObj_->Set_Param("debug_level", "0");
 
-    GO numPartitions_ = level.Get<GO>("number of partitions");
+    GO numPartitions_ = Get<GO>(level, "number of partitions");
     std::stringstream ss;
     ss << numPartitions_;
     zoltanObj_->Set_Param("num_global_partitions",ss.str());
 
-    //if (level.IsAvailable("Coordinates",TransferFact_.get()) == false) //FIXME JJH
     //~~ if (level.IsAvailable("Coordinates",NoFactory::get()) == false) //FIXME JJH
     //~~  throw(Exceptions::HaltRepartitioning("MueLu::ZoltanInterface : no coordinates available"));
     //RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("Coordinates",TransferFact_.get()); //FIXME JJH
@@ -142,10 +137,10 @@ namespace MueLu {
 
     } else if (level.IsAvailable("Coordinates")) {
 
-      RCP<Matrix> Aloc = level.Get<RCP<Matrix> >("A", AFact_.get());
+      RCP<Matrix> Aloc = Get<RCP<Matrix> >(level, "A");
       LocalOrdinal blksize = Aloc->GetFixedBlockSize();
 
-      RCP<MultiVector> multiVectorXYZ = level.Get< RCP<MultiVector> >("Coordinates");
+      RCP<MultiVector> multiVectorXYZ = Get< RCP<MultiVector> >(level, "Coordinates");
       for (int i=0; i< (int)multiVectorXYZ->getNumVectors(); i++) { //FIXME cast
         XYZ.push_back(coalesceCoordinates(multiVectorXYZ->getDataNonConst(i), blksize)); // If blksize == 1, not copy but it's OK to leave 'open' the MultiVector until the destruction of XYZ because no communications using Xpetra
       }

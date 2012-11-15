@@ -83,7 +83,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    AmalgamationFactory(RCP<const FactoryBase> AFact = Teuchos::null);
+    AmalgamationFactory();
 
     //! Destructor
     virtual ~AmalgamationFactory() { }
@@ -124,11 +124,7 @@ namespace MueLu {
 
   private:
 
-    //! A Factory (e.g. subblock A Factory)
-    // should have strided map information
-    RCP<const FactoryBase> AFact_;
-
-    /// amalgamation information
+    // amalgamation information
     mutable RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids_;
 
   }; //class SubBlockUnAmalgamationFactory

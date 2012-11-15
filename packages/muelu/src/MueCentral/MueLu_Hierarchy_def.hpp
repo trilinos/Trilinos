@@ -576,7 +576,4 @@ namespace MueLu {
 
 // TODO: We need a Set/Get function to change the CycleType (for when Iterate() calls are embedded in a Belos Preconditionner for instance).
 
-// TODO: add timer on every function that are not calling Hierarchy::Setup(): SetCoarseLevel SetSmoothers etc. are part of the setup
-//       function that are calling Hierarchy::Setup() should not start a timer again
-
 #endif // MUELU_HIERARCHY_DEF_HPP

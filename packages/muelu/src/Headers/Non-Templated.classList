@@ -4,6 +4,7 @@ RFactory
 AmesosSmoother
 IfpackSmoother
 FactoryBase
+FactoryBase2
 FactoryManagerBase
 Level
 PFactory
