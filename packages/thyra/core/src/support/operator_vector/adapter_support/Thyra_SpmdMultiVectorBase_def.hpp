@@ -497,6 +497,8 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
     }
   }
   if (M_local.numSubCols() > 0) {
+    // AGS: Added std::max on ld? below, following what is done in
+    // Epetra_MultiVector Multiply use of GEMM. Allows for 0 length.
     blas_.GEMM(
       t_transp // TRANSA
       ,Teuchos::NO_TRANS // TRANSB
@@ -505,12 +507,12 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
       ,real_trans(M_trans)==NOTRANS ? M_local.numSubCols() : M_local.subDim() // K
       ,alpha // ALPHA
       ,const_cast<Scalar*>(M_local.values()) // A
-      ,M_local.leadingDim() // LDA
+      ,std::max((int) M_local.leadingDim(),1) // LDA
       ,const_cast<Scalar*>(X_local.values()) // B
-      ,X_local.leadingDim() // LDB
+      ,std::max((int) X_local.leadingDim(),1) // LDB
       ,localBeta // BETA
       ,Y_local_tmp.values().get() // C
-      ,Y_local_tmp.leadingDim() // LDC
+      ,std::max((int) Y_local_tmp.leadingDim(),1) // LDC
       );
   }
   else {

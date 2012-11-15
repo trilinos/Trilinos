@@ -207,8 +207,6 @@ int main(int argc, char *argv[]) {
     // TODO: print custom parameters // Or use paramList::print()!
   }
 
-
-
   /**********************************************************************************/
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
@@ -263,8 +261,8 @@ int main(int argc, char *argv[]) {
     Finest->Set("Nullspace",   nullSpace);
     Finest->Set("Coordinates", Coordinates); //FIXME: XCoordinates, YCoordinates, ..
 
-    RCP<FactoryManager>   M = rcp(new FactoryManager());
-    M->SetFactory("Graph", rcp(new CoalesceDropFactory()));        /* do not use the permuted nullspace (otherwise, circular dependencies) */
+    FactoryManager M;
+    M.SetFactory("Graph", rcp(new CoalesceDropFactory()));        /* do not use the permuted nullspace (otherwise, circular dependencies) */
 
     RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
     *out << "========================= Aggregate option summary  =========================" << std::endl;
@@ -287,19 +285,19 @@ int main(int argc, char *argv[]) {
       throw(MueLu::Exceptions::RuntimeError(msg));
     }
     UCAggFact->SetPhase3AggCreation(0.5);
-    M->SetFactory("Aggregates", UCAggFact);
+    M.SetFactory("Aggregates", UCAggFact);
     *out << "=============================================================================" << std::endl;
 
-    M->SetFactory("Ptent", rcp(new TentativePFactory()));
+    //  M.SetFactory("Ptent", rcp(new TentativePFactory()));
 
     RCP<SaPFactory> SaPfact = rcp(new SaPFactory() );
     SaPfact->SetDampingFactor(SADampingFactor);
-    M->SetFactory("P", SaPfact);
-    M->SetFactory("R", rcp(new TransPFactory(M->GetFactory("P"))));
+    M.SetFactory("P", SaPfact);
+    M.SetFactory("R", rcp(new TransPFactory(M.GetFactory("P"))));
 
-    RCP<RAPFactory> Acfact = rcp(new RAPFactory(M->GetFactory("P"), M->GetFactory("R")));
+    RCP<RAPFactory> Acfact = rcp(new RAPFactory(M.GetFactory("P"), M.GetFactory("R")));
     Acfact->setVerbLevel(Teuchos::VERB_HIGH);
-    M->SetFactory("A", Acfact);
+    M.SetFactory("A", Acfact);
 
     RCP<RAPFactory>       AcfactFinal;
 
@@ -314,7 +312,7 @@ int main(int argc, char *argv[]) {
 // #else
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
       //Matrix used to transfer coordinates to coarse grid
-      RCP<const FactoryBase> Rtentfact = M->GetFactory("R"); //for projecting coordinates
+      RCP<const FactoryBase> Rtentfact = M.GetFactory("R"); //for projecting coordinates
       //Factory that will invoke the coordinate transfer. This factory associates data and operator.
       mvTransFact = rcp(new MultiVectorTransferFactory("Coordinates","R", Rtentfact));
       //Register it with the coarse operator factory
@@ -323,9 +321,9 @@ int main(int argc, char *argv[]) {
       RCP<ZoltanInterface>      zoltan = rcp(new ZoltanInterface(Acfact,mvTransFact));
       RCP<RepartitionFactory> RepartitionFact = rcp(new RepartitionFactory(zoltan,Acfact,minRowsPerProc,nonzeroImbalance));
       permPFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, SaPfact, MueLu::INTERPOLATION) );
-      permRFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, M->GetFactory("R"), MueLu::RESTRICTION, M->GetFactory("Ptent"), mvTransFact));
+      permRFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, M.GetFactory("R"), MueLu::RESTRICTION, M.GetFactory("Ptent"), mvTransFact));
       AcfactFinal = rcp(new RAPFactory(permPFactory, permRFactory));
-      M->SetFactory("A", AcfactFinal);
+      M.SetFactory("A", AcfactFinal);
 #else
       AcfactFinal = Acfact;
 #endif
@@ -395,28 +393,27 @@ int main(int argc, char *argv[]) {
     */
 
     if (maxLevels > 1) {
-      M->SetFactory("A",        AcfactFinal);
-      M->SetFactory("Smoother", SmooFact);
+      M.SetFactory("A",AcfactFinal);
+      M.SetFactory("Smoother",SmooFact);
+      M.SetFactory("Aggregates", UCAggFact);
 
       if (useExplicitR) {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
-        M->SetFactory("P",permPFactory);
-        M->SetFactory("R",permRFactory);
-        M->SetFactory("Nullspace", permRFactory);
+        M.SetFactory("P",permPFactory);
+        M.SetFactory("R",permRFactory);
+        M.SetFactory("Nullspace", permRFactory);
 #endif
       }
 
       int startLevel=0;
       //      std::cout << startLevel << " " << maxLevels << std::endl;
-      H->Setup(*M,startLevel,maxLevels);
+      H->Setup(M,startLevel,maxLevels);
     }//maxLevels>1
 
 
     if (maxLevels == 1) {
-
-
-
-      H->SetCoarsestSolver(*SmooFact, MueLu::BOTH);
+      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Mue!");
+      // H->SetCoarsestSolver(*SmooFact, MueLu::BOTH);
     }
 
   } // end of Setup TimeMonitor

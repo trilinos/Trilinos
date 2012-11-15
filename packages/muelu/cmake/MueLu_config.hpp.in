@@ -45,3 +45,6 @@
 
 #cmakedefine HAVE_MUELU_ZOLTAN
 
+/* Optional TPL */
+
+// JG TODO #cmakedefine HAVE_MUELU_BOOST

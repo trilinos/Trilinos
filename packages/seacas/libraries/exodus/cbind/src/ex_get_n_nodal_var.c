@@ -43,11 +43,11 @@
 *	int	exoid			exodus file id
 *	int	time_step		whole time step number
 *	int	nodeal_var_index	index of desired nodal variable
-*       int     start_node_num		starting location for read
+*       int     start_node		starting location for read
 *	int	num_nodes		number of nodal points
 *
 * exit conditions -
-*	float*	nodal_var_vals		array of nodal variable values
+*	float*	var_vals		array of nodal variable values
 *
 * revision history -
 *
@@ -66,12 +66,70 @@
 int ex_get_n_nodal_var (int   exoid,
 		        int   time_step,
 		        int   nodal_var_index,
-                        int64_t   start_node_num,
+                        int64_t   start_node,
 		        int64_t   num_nodes,
-		        void *nodal_var_vals)
+		        void *var_vals)
 {
-  return ex_get_n_var(exoid, time_step, EX_NODAL,
-		      nodal_var_index, 1,
-		      start_node_num, num_nodes,
-		      nodal_var_vals);
+  int varid;
+  int status;
+  size_t start[3], count[3];
+  char errmsg[MAX_ERR_LENGTH];
+
+  exerrval = 0; /* clear error code */
+
+  /* inquire previously defined variable */
+
+  if (ex_large_model(exoid) == 0) {
+    /* read values of the nodal variable */
+    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR, &varid)) != NC_NOERR) {
+      exerrval = status;
+      sprintf(errmsg,
+              "Warning: could not find nodal variables in file id %d",
+              exoid);
+      ex_err("ex_get_n_nodal_var",errmsg,exerrval);
+      return (EX_WARN);
+    }
+
+    start[0] = --time_step;
+    start[1] = --nodal_var_index;
+    start[2] = --start_node;
+
+    count[0] = 1;
+    count[1] = 1;
+    count[2] = num_nodes;
+
+  } else {
+    /* read values of the nodal variable  -- stored as separate variables... */
+    /* Get the varid.... */
+    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index), &varid)) != NC_NOERR) {
+      exerrval = status;
+      sprintf(errmsg,
+              "Warning: could not find nodal variable %d in file id %d",
+              nodal_var_index, exoid);
+      ex_err("ex_get_n_nodal_var",errmsg,exerrval);
+      return (EX_WARN);
+    }
+
+    start[0] = --time_step;
+    start[1] = --start_node;
+
+    count[0] = 1;
+    count[1] = num_nodes;
+  }
+
+  if (ex_comp_ws(exoid) == 4) {
+    status = nc_get_vara_float(exoid, varid, start, count, var_vals);
+  } else {
+    status = nc_get_vara_double(exoid, varid, start, count, var_vals);
+  }
+
+  if (status != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+	    "Error: failed to get nodal variables in file id %d",
+	    exoid);
+    ex_err("ex_get_n_nodal_var",errmsg,exerrval);
+    return (EX_FATAL);
+  }
+  return (EX_NOERR);
 }

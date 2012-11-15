@@ -124,7 +124,10 @@ namespace MueLuTests {
 
       RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory(UCAggFact,Teuchos::null));
 
-      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact,amalgFact, Teuchos::null, Teuchos::null, coarseMapFact));
+      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
+      TentativePFact->SetFactory("Aggregates", UCAggFact);
+      TentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
+      TentativePFact->SetFactory("CoarseMap", coarseMapFact);
 
       coarseLevel.Request("P",TentativePFact.get());         // request Ptent
       coarseLevel.Request("Nullspace",TentativePFact.get()); // request coarse nullspace
@@ -192,7 +195,10 @@ namespace MueLuTests {
 
       RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory(UCAggFact,Teuchos::null));
 
-      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact,amalgFact,Teuchos::null,Teuchos::null,coarseMapFact));
+      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
+      TentativePFact->SetFactory("Aggregates", UCAggFact);
+      TentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
+      TentativePFact->SetFactory("CoarseMap", coarseMapFact);
 
       coarseLevel.Request("P",TentativePFact.get());  // request Ptent
       coarseLevel.Request("Nullspace",TentativePFact.get());
@@ -247,13 +253,7 @@ namespace MueLuTests {
 
     fineLevel.Set("A", A);
 
-    RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-    UCAggFact->SetMinNodesPerAggregate(3);
-    UCAggFact->SetMaxNeighAlreadySelected(0);
-    UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
-    UCAggFact->SetPhase3AggCreation(0.5);
-
-    RCP<TentativePFactory> tentativePFact = rcp(new TentativePFactory(UCAggFact));
+    RCP<TentativePFactory> tentativePFact = rcp(new TentativePFactory());
 
     coarseLevel.Request("P",tentativePFact.get());  // request Ptent
     coarseLevel.Request("Nullspace", tentativePFact.get());  // request coarse nullspace

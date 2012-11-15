@@ -279,6 +279,8 @@ int main (int argc, char **argv)
    ebids[5] = 15;
    ebids[6] = 16;
 
+   error = ex_put_name(exoid, EX_ELEM_BLOCK, ebids[0], block_names[0]);
+
    error = ex_put_elem_block (exoid, ebids[0], "quad", num_elem_in_block[0],
                               num_nodes_per_elem[0], 1);
    printf ("after ex_put_elem_block, error = %d\n", error);
@@ -343,8 +345,10 @@ int main (int argc, char **argv)
    }
 
    /* Write element block names */
-   error = ex_put_names(exoid, EX_ELEM_BLOCK, block_names);
-   printf ("after ex_put_names, error = %d\n", error);
+   for (i=0; i < 7; i++) {
+     error = ex_put_name(exoid, EX_ELEM_BLOCK, ebids[i], block_names[i]);
+     printf ("after ex_put_names, error = %d\n", error);
+   }
 
    if (error) {
      ex_close (exoid);

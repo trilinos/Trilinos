@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
 
   // Timing
   Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor M(myTime);
+  Teuchos::TimeMonitor Monitor(myTime);
 
 
 #ifndef HAVE_TEUCHOS_LONG_LONG_INT
@@ -160,7 +160,6 @@ int main(int argc, char *argv[]) {
   Finest->Set("A",Op);
   Finest->Set("Nullspace",nullSpace);
 
-
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
@@ -186,11 +185,6 @@ int main(int argc, char *argv[]) {
   *out << "=============================================================================" << std::endl;
 
   // build transfer operators
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
-  RCP<PgPFactory> Pfact = rcp( new PgPFactory(TentPFact) );
-  RCP<RFactory> Rfact = rcp( new GenericRFactory(Pfact));
-  RCP<RAPFactory> Acfact = rcp( new RAPFactory(Pfact, Rfact) );
-  Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   // build level smoothers
   RCP<SmootherPrototype> smooProto;
@@ -206,21 +200,17 @@ int main(int argc, char *argv[]) {
   if (maxLevels > 1)
     SmooFact = rcp( new SmootherFactory(smooProto) );
 
-  Teuchos::ParameterList status;
-  status = H->FullPopulate(*Pfact,*Rfact,*Acfact,*SmooFact,0,maxLevels);
+  RCP<FactoryManager> M = rcp(new FactoryManager());
+  M->SetFactory("Aggregates", UCAggFact);
+  M->SetFactory("Smoother", SmooFact);
 
-  H->SetCoarsestSolver(*SmooFact,MueLu::PRE);
-
-
-  *out << "======================\n Multigrid statistics \n======================" << std::endl;
-  status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
+  H->Setup(*M,0,maxLevels);
 
   // print out aggregation information
   for(LocalOrdinal l=0; l<H->GetNumLevels()-1;l++) {
     RCP<Level> level = H->GetLevel((int)l);
     ExportAggregates(level, UCAggFact.get(),comm);
   }
-
 
   return EXIT_SUCCESS;
 }
@@ -282,7 +272,3 @@ void ExportAggregates(const Teuchos::RCP<Level>& level, const MueLu::FactoryBase
   }
   fout.close();
 }
-
-
-
-

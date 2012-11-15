@@ -48,6 +48,9 @@
 #include "Thyra_TestingTools.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#include "Thyra_VectorSpaceTester.hpp"
+#include "Thyra_VectorStdOpsTester.hpp"
+
 
 //#define THYRA_DEFAULT_SPMD_VECTOR_SPACE_UNIT_TESTS_DUMP
 
@@ -212,42 +215,66 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
   locallyReplicatedParallelConstruct )
 
 
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, parallelConstructEmptyProc,
-//  Scalar )
-//{
-//
-//  ECHO(const RCP<const Teuchos::Comm<Ordinal> > comm =
-//    Teuchos::DefaultComm<Teuchos_Ordinal>::getComm());
-//  const int procRank = comm->getRank();
-//  ECHO(RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
-//    defaultSpmdVectorSpace<Scalar>(comm, procRank == 0 ? 0 : g_localDim, -1));
-//  TEST_EQUALITY(vs->getComm(), comm);
-//
-//  if (procRank == 0) {
-//    TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(0));
-//  }
-//  else {
-//    TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(g_localDim));
-//  }
-//  TEST_EQUALITY(vs->dim(), as<Ordinal>((comm->getSize()-1)*g_localDim));
-//
-//  if (vs->dim()) {
-//
-//    ECHO(const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs));
-//    ECHO(V_S(v.ptr(), as<Scalar>(1.0)));
-//    out << "v = " << *v;
-//    
-//    // ToDo: Fix MultiVector to work with empty processors
-//    //ECHO(const RCP<MultiVectorBase<Scalar> > mv = createMembers<Scalar>(vs, 1));
-//    //ECHO(assign(mv.ptr(), as<Scalar>(1.0)));
-//    //out << "mv = " << *mv;
-//
-//  }
-//
-//}
-//
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
-//  parallelConstructEmptyProc )
+/****
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, parallelConstructEmptyProc,
+  Scalar )
+{
+
+  ECHO(const RCP<const Teuchos::Comm<Ordinal> > comm =
+    Teuchos::DefaultComm<Teuchos_Ordinal>::getComm());
+  const int procRank = comm->getRank();
+  ECHO(RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+    defaultSpmdVectorSpace<Scalar>(comm, procRank == 0 ? 0 : g_localDim, -1));
+  TEST_EQUALITY(vs->getComm(), comm);
+
+  if (procRank == 0) {
+    TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(0));
+  }
+  else {
+    TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(g_localDim));
+  }
+  TEST_EQUALITY(vs->dim(), as<Ordinal>((comm->getSize()-1)*g_localDim));
+
+  if (vs->dim()) {
+
+    ECHO(const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs));
+    ECHO(V_S(v.ptr(), as<Scalar>(1.0)));
+    out << "v = " << *v;
+    
+    // ToDo: Fix MultiVector to work with empty processors
+    //ECHO(const RCP<MultiVectorBase<Scalar> > mv = createMembers<Scalar>(vs, 1));
+    //ECHO(assign(mv.ptr(), as<Scalar>(1.0)));
+    //out << "mv = " << *mv;
+
+  }
+
+  // AGS: Turn on vector space testor for emptyProc case
+
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType    ScalarMag;
+  Scalar tol = 1.0e-12;
+  bool showAllTests=true, dumpAll=true;
+
+  Thyra::VectorSpaceTester<Scalar> vectorSpaceTester;
+  vectorSpaceTester.warning_tol(ScalarMag(0.1)*tol);
+  vectorSpaceTester.error_tol(tol);
+  vectorSpaceTester.show_all_tests(showAllTests);
+  vectorSpaceTester.dump_all(dumpAll);
+
+  Thyra::VectorStdOpsTester<Scalar> vectorStdOpsTester;
+  vectorStdOpsTester.warning_tol(ScalarMag(0.1)*tol);
+  vectorStdOpsTester.error_tol(tol);
+
+  out << "\nTesting the VectorSpaceBase interface of vs ...\n";
+  TEUCHOS_TEST_ASSERT(vectorSpaceTester.check(*vs, &out), out, success);
+
+  out << "\nTesting standard vector ops for vs ...\n";
+  TEUCHOS_TEST_ASSERT(vectorStdOpsTester.checkStdOps(*vs, &out), out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
+  parallelConstructEmptyProc )
+****/
 
 
 //#ifndef THYRA_HIDE_DEPRECATED_CODE

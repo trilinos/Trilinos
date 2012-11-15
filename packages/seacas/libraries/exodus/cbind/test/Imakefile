@@ -39,18 +39,29 @@ EXOIITEST = -Wl,-R../src -L../src -lexodus
 LOCALEXO = ../src/libexodus.a
 LIBS = $(LOCALEXO) -L$(USRLIBDIR) $(NETCDF) $(EXTRANETCDFLIB)
 
+#if defined(ParallelAwareExodus)
+PARTEST = testrd_par
+#endif
+
 PROGS = testwt testwtd testrd testrd1 testrdd testwt1 testwt2 testwtm \
 	testwt_ss testwt_nossnsdf testrd_ss testrdwt testcp testcpd testcp_nl  \
 	testcp_ln testwt_clb testwt_nc testrd_nc testwt-zeroe testwt-zeron \
 	testwt-one-attrib create_mesh rd_wt_mesh \
 	testwt-partial testwt-nsided testrd-nsided testwt-nfaced \
 	testrd-nfaced testwt-long-name testrd-long-name \
-	oned twod MakeTestData test_nemesis
+	oned twod MakeTestData test_nemesis $(PARTEST)
 #if 0
 	CreateEdgeFace ReadEdgeFace
 #endif
 
 all:: check
+
+#if defined(ParallelAwareExodus)
+LOCALPAREXO = ../parallel/libexodus_par.a
+PLIBS = $(LOCALPAREXO) $(LOCALEXO) -L$(USRLIBDIR) $(NETCDF) $(EXTRANETCDFLIB)
+
+NormalProgramTarget(testrd_par,    testrd_par.o,    $(LOCALEXO), /**/, $(PLIBS))
+#endif
 
 NormalProgramTarget(oned,      oned.o,      $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(twod,      twod.o,      $(LOCALEXO), /**/, $(LIBS))

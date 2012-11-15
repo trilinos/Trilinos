@@ -90,13 +90,8 @@ namespace MueLu {
     //! @name Constructors/Destructors.
     //@{
 
-    /*! @brief Constructor.
-      \param aggregatesFact -- (optional) factory that creates aggregates.
-      \param amalgFact -- (optional) factory creates (Un)Amalgamation information from matrix A
-      \param nullspaceFact -- (optional) factory that creates (fine level) null space approximation
-      \param AFact -- (optional) factory that creates level matrix A
-    */
-    TentativePFactory(RCP<const FactoryBase> aggregatesFact = Teuchos::null, RCP<const FactoryBase> amalgFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null, RCP<const FactoryBase> coarseMapFact = Teuchos::null);
+    //! Constructor
+    TentativePFactory();
 
     //! Destructor.
     virtual ~TentativePFactory();
@@ -172,11 +167,6 @@ namespace MueLu {
                        RCP<MultiVector> & coarseNullspace, RCP<Matrix> & Ptentative) const;                  //-> OUTPUT
 
   private:
-    RCP<const FactoryBase> aggregatesFact_; //! Factory that creates aggregates
-    RCP<const FactoryBase> amalgFact_;      //! Factory that (Un)Amalgamation info from A
-    RCP<const FactoryBase> nullspaceFact_;  //! Factory creating the nullspace
-    RCP<const FactoryBase> AFact_;          //! Define which matrix A is used in this factory
-    RCP<const FactoryBase> coarseMapFact_;  //! coarseMap factory creates coarse map of prolongation transfer operator
 
     bool QR_; //! use QR decomposition for improving nullspace information per default
 

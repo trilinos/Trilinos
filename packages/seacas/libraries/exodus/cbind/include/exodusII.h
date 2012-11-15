@@ -44,6 +44,11 @@
 #define EXODUS_II_HDR
 
 #include "netcdf.h"
+
+#if defined(PARALLEL_AWARE_EXODUS)
+#include "netcdf_par.h"
+#endif
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -53,8 +58,8 @@
 #endif
 
 /* EXODUS II version number */
-#define EX_API_VERS 5.22f
-#define EX_API_VERS_NODOT 522
+#define EX_API_VERS 5.23f
+#define EX_API_VERS_NODOT 523
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION		EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT	EX_API_VERS_NODOT
@@ -112,6 +117,11 @@ extern "C" {
 #define EX_INQ_INT64_API       0x10000 /**< Integers passed to/from ex_inquire are int64_t */
 #define EX_ALL_INT64_API        (EX_MAPS_INT64_API|EX_IDS_INT64_API|EX_BULK_INT64_API|EX_INQ_INT64_API) /**< All of the above... */
 
+  /* Parallel IO mode flags... */
+#define EX_MPIIO               0x20000
+#define EX_MPIPOSIX            0x40000
+#define EX_PNETCDF             0x80000
+  
   /*@}*/
   
   /*! \sa ex_inquire() */
@@ -579,6 +589,12 @@ extern "C" {
 				  ex_entity_type obj_type,
 				  void_int *map);
   
+  EXODUS_EXPORT int ex_get_partial_id_map (int   exoid,
+					   ex_entity_type map_type,
+					   int64_t   start_entity_num,
+					   int64_t   num_entities,
+					   void_int*  map);
+
   EXODUS_EXPORT int ex_put_coordinate_frames(int exoid,
 					     int nframes,
 					     const void_int *cf_ids, 
@@ -768,6 +784,13 @@ extern "C" {
 				ex_entity_type obj_type,
 				ex_entity_id   obj_id,
 				void *attrib);
+
+  EXODUS_EXPORT int ex_get_n_attr(int exoid,
+				  ex_entity_type obj_type,
+				  ex_entity_id   obj_id,
+				  int64_t start_num,
+				  int64_t num_ent,
+				  void *attrib);
 
   /*  Write One Edge Face or Element Block Attribute */
   EXODUS_EXPORT int ex_put_one_attr(int exoid,

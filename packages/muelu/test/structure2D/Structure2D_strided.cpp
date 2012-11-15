@@ -226,22 +226,22 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
   *out << "=============================================================================" << std::endl;
 
   // build transfer operators
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
 
   /*TentPFact->setStridingData(stridingInfo);
   TentPFact->setStridedBlockId(stridedBlockId);
   TentPFact->setDomainMapOffset(offset);*/
 
-  RCP<CoarseMapFactory> coarseMapFact = Teuchos::rcp(new CoarseMapFactory(UCAggFact));
+  RCP<CoarseMapFactory> coarseMapFact = Teuchos::rcp(new CoarseMapFactory());
   coarseMapFact->setStridingData(stridingInfo);
   coarseMapFact->setStridedBlockId(stridedBlockId);
   coarseMapFact->setDomainMapOffset(offset);
 
   RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
-  //RCP<PgPFactory> Pfact  = rcp( new PgPFactory(TentPFact) );
-  //RCP<TentativePFactory> Pfact  = rcp( new TentativePFactory(UCAggFact) );
+  //RCP<PgPFactory> Pfact  = rcp( new PgPFactory() );
+  //RCP<TentativePFactory> Pfact  = rcp( new TentativePFactory() );
   RCP<RFactory>   Rfact  = rcp( new TransPFactory() );
-  //RCP<RFactory>   Rfact  = rcp( new GenericRFactory(Pfact) );
+  //RCP<RFactory>   Rfact  = rcp( new GenericRFactory() );
 
   // RAP Factory
   RCP<RAPFactory> Acfact = rcp( new RAPFactory() );
@@ -276,8 +276,6 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
 #endif
   RCP<SmootherFactory> coarsestSmooFact;
   coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto, Teuchos::null));
-  H->SetCoarsestSolver(*coarsestSmooFact);
-  //H->SetCoarsestSolver(*SmooFact);
 
   FactoryManager M;
   //M.SetFactory("Graph", dropFact);

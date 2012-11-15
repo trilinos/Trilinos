@@ -185,7 +185,7 @@ int ex_get_n_conn( int   exoid,
       return(EX_FATAL);
     }
 
-  if ( dnumedgent ) {
+  if ( edgeconn && dnumedgent ) {
     num_edges_per_entry = 0;
     if ((status = nc_inq_dimid(exoid, dnumedgent, &numedgperentdim)) != NC_NOERR) {
       numedgperentdim = -1;
@@ -201,7 +201,7 @@ int ex_get_n_conn( int   exoid,
     }
   }
 
-  if ( dnumfacent ) {
+  if ( faceconn && dnumfacent ) {
     num_faces_per_entry = 0;
     if ((status = nc_inq_dimid(exoid, dnumfacent, &numfacperentdim)) != NC_NOERR) {
       numfacperentdim = -1;

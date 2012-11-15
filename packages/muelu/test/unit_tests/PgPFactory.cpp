@@ -81,7 +81,6 @@ TEUCHOS_UNIT_TEST(PgPFactory, Test0)
   TEST_EQUALITY(pgpFactory != Teuchos::null, true);
 
   out << *pgpFactory << std::endl;
-
 }
 
 TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
@@ -134,7 +133,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
   UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
   UCAggFact->SetPhase3AggCreation(0.5);
 
-  RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(UCAggFact));
+  RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
   RCP<PgPFactory>         Pfact = rcp( new PgPFactory());
   RCP<RFactory>           Rfact = rcp( new GenericRFactory() );
   RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );

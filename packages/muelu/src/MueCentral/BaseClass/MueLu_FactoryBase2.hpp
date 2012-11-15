@@ -43,74 +43,77 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_TWOKEYMAP_DECL_HPP
-#define MUELU_TWOKEYMAP_DECL_HPP
+#ifndef MUELU_FACTORYBASE2_HPP
+#define MUELU_FACTORYBASE2_HPP
+
+#include <string>
+#include <map>
+
+#include "Teuchos_RCP.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_BaseClass.hpp"
-#include "MueLu_TwoKeyMap_fwd.hpp"
+#include "MueLu_FactoryBase.hpp"
+
+#include "MueLu_Level.hpp"
 
 namespace MueLu {
-  namespace UTILS {
 
-    //! TwoKeyMap is an associative container combining two keys with a mapped value.
+  template <class Key, class T>
+  const RCP<T> mapFind(const std::map<Key, RCP<T> > & map, Key & varName) {
+    typename std::map<Key, RCP<T> >::const_iterator f = map.find(varName);
+    if (f == map.end())
+      return Teuchos::null;
+      else
+        return f->second;
+  }
 
-    //  TwoKeyMap is currently implemented as a map of map (ie: map< Key1, map< Key2, Value > >)
+  class FactoryBase2 : public FactoryBase {
 
-    template <class Key1, class Key2, class Value>
-    class TwoKeyMap : public BaseClass {
+  public:
+    //@{ Constructors/Destructors.
 
-    private:
+    //! Constructor.
+    FactoryBase2() { }
 
-      //! Sub-map container (Key2 -> Value)
-      typedef Teuchos::map<Key2, Value> SubMap;
+    //! Destructor.
+    virtual ~FactoryBase2() { }
+    //@}
 
-      //! Map of a map (Key1 -> SubMap)
-      typedef Teuchos::map<Key1, SubMap> Map;
+    //@{
+    //! Configuration
 
-      //!
-      Map map_;
+    //! SetFactory is for expert users only. To change configuration of the preconditioner, use a factory manager.
+    virtual void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory);
 
-    public:
-      typedef typename Map::iterator iterator;
-      typedef typename Map::const_iterator const_iterator;
+    // GetFactory(...);
 
-    public:
+    // SetParameterList(...);
 
-      TwoKeyMap();
+    // GetParameterList(...);
 
-      void Set(const Key1 & key1, const Key2 & key2, const Value & entry);
+    //@}
 
-      const Value & Get(const Key1 & key1, const Key2 & key2) const;
+  protected:
+     void Input(Level & level, const std::string & varName) const {
+       level.DeclareInput(varName, mapFind<const std::string, const FactoryBase>(factoryTable_, varName).get(), this);
+     }
 
-      Value & Get(const Key1 & key1, const Key2 & key2);
+     template <class T>
+     T Get(Level & level, const std::string & varName) const {
+       return level.Get<T>(varName, mapFind<const std::string, const FactoryBase>(factoryTable_, varName).get());
+     }
 
-      void Remove(const Key1 & key1, const Key2 & key2);
+    template <class T>
+    void Set(Level & level, const std::string & varName, T & data) const {
+      return level.Set<T>(varName, data, this);
+    }
 
-      bool IsKey(const Key1 & key1, const Key2 & key2) const;
+  private:
+    std::map<const std::string, RCP<const FactoryBase> > factoryTable_;
 
-      //TODO: GetKeyList and GetKey2List looks expensive. Also return by value a vector...
+  }; //class FactoryBase2
 
-      std::vector<Key1> GetKeyList() const;
+} //namespace MueLu
 
-      std::vector<Key2> GetKey2List(const Key1 & key1) const;
-
-      void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
-
-      const Teuchos::map<Key2, Value> & Get(const Key1 & key1) const;
-
-      bool IsKey(const Key1 & key1) const;
-
-      iterator       begin()       { return map_.begin(); }
-      const_iterator begin() const { return map_.begin(); }
-
-      iterator       end()         { return map_.end(); }
-      const_iterator end() const   { return map_.end(); }
-    };
-
-  } // namespace UTILS
-
-} // namespace MueLu
-
-#define MUELU_TWOKEYMAP_SHORT
-#endif // MUELU_TWOKEYMAP_DECL_HPP
+#define MUELU_FACTORYBASE2_SHORT
+#endif //ifndef MUELU_FACTORYBASE2_HPP

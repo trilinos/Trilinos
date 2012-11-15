@@ -531,15 +531,14 @@ int main(int argc, char *argv[]) {
   ///////////////////////////////////////// define transfer ops for A11
 #if 0
   // use PG-AMG
-  RCP<TentativePFactory> P11tentFact = rcp(new TentativePFactory(UCAggFact11,amalgFact11)); // check me
+  RCP<PgPFactory> P11Fact = rcp(new PgPFactory());
 
-  RCP<PgPFactory> P11Fact = rcp(new PgPFactory(P11tentFact));
-
-  RCP<GenericRFactory> R11Fact = rcp(new GenericRFactory(P11Fact));
-
+  RCP<GenericRFactory> R11Fact = rcp(new GenericRFactory());
   Teuchos::RCP<NullspaceFactory> nspFact11 = Teuchos::rcp(new NullspaceFactory("Nullspace1",P11tentFact));
 
-  RCP<CoarseMapFactory> coarseMapFact11 = Teuchos::rcp(new CoarseMapFactory(UCAggFact11, nspFact11));
+  Teuchos::RCP<NullspaceFactory> nspFact11 = Teuchos::rcp(new NullspaceFactory("Nullspace1"));
+
+  RCP<CoarseMapFactory> coarseMapFact11 = Teuchos::rcp(new CoarseMapFactory());
   coarseMapFact11->setStridingData(stridingInfo);
   coarseMapFact11->setStridedBlockId(0);
 
@@ -548,17 +547,19 @@ int main(int argc, char *argv[]) {
   M11->SetFactory("A", A11Fact);
   M11->SetFactory("P", P11Fact);
   M11->SetFactory("R", R11Fact);
+  M11->SetFactory("Aggregates", UCAggFact11);
+  M11->SetFactory("UnAmalgamationInfo", amalgFact11);
   M11->SetFactory("Nullspace", nspFact11);
-  M11->SetFactory("Ptent", P11tentFact);
+  // M11->SetFactory("Ptent", P11tentFact);
   M11->SetFactory("CoarseMap", coarseMapFact11);
 #else
-  RCP<TentativePFactory> P11Fact = rcp(new TentativePFactory(UCAggFact11,amalgFact11)); // check me
+  RCP<TentativePFactory> P11Fact = rcp(new TentativePFactory());
 
-  RCP<TransPFactory> R11Fact = rcp(new TransPFactory(P11Fact));
+  RCP<TransPFactory> R11Fact = rcp(new TransPFactory());
 
   Teuchos::RCP<NullspaceFactory> nspFact11 = Teuchos::rcp(new NullspaceFactory("Nullspace1",P11Fact));
 
-  RCP<CoarseMapFactory> coarseMapFact11 = Teuchos::rcp(new CoarseMapFactory(UCAggFact11, nspFact11));
+  RCP<CoarseMapFactory> coarseMapFact11 = Teuchos::rcp(new CoarseMapFactory());
   coarseMapFact11->setStridingData(stridingInfo);
   coarseMapFact11->setStridedBlockId(0);
 
@@ -567,8 +568,10 @@ int main(int argc, char *argv[]) {
   M11->SetFactory("A", A11Fact);
   M11->SetFactory("P", P11Fact);
   M11->SetFactory("R", R11Fact);
+  M11->SetFactory("Aggregates", UCAggFact11);
+  M11->SetFactory("UnAmalgamationInfo", amalgFact11);
   M11->SetFactory("Nullspace", nspFact11);
-  M11->SetFactory("Ptent", P11Fact);
+  // M11->SetFactory("Ptent", P11Fact);
   M11->SetFactory("CoarseMap", coarseMapFact11);
 #endif
   M11->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
@@ -611,13 +614,13 @@ int main(int argc, char *argv[]) {
 
 #else
   // use TentativePFactory
-  RCP<AmalgamationFactory> amalgFact22 = rcp(new AmalgamationFactory(A22Fact));
-  RCP<TentativePFactory> P22Fact = rcp(new TentativePFactory(UCAggFact11, amalgFact22)); // check me (fed with A22) wrong column GIDS!!!
+  RCP<AmalgamationFactory> amalgFact22 = rcp(new AmalgamationFactory());
+  RCP<TentativePFactory> P22Fact = rcp(new TentativePFactory()); // check me (fed with A22) wrong column GIDS!!!
 
-  RCP<TransPFactory> R22Fact = rcp(new TransPFactory(P22Fact));
+  RCP<TransPFactory> R22Fact = rcp(new TransPFactory());
 
-  Teuchos::RCP<NullspaceFactory> nspFact22 = Teuchos::rcp(new NullspaceFactory("Nullspace2",P22Fact));
-  RCP<CoarseMapFactory> coarseMapFact22 = Teuchos::rcp(new CoarseMapFactory(UCAggFact11, nspFact22));
+  Teuchos::RCP<NullspaceFactory> nspFact22 = Teuchos::rcp(new NullspaceFactory("Nullspace2", P22Fact));
+  RCP<CoarseMapFactory> coarseMapFact22 = Teuchos::rcp(new CoarseMapFactory());
   coarseMapFact22->setStridingData(stridingInfo);
   coarseMapFact22->setStridedBlockId(1);
 
@@ -628,6 +631,7 @@ int main(int argc, char *argv[]) {
   M22->SetFactory("R", R22Fact);
   M22->SetFactory("Aggregates", UCAggFact11);
   M22->SetFactory("Nullspace", nspFact22);
+  M11->SetFactory("UnAmalgamationInfo", amalgFact22);
   M22->SetFactory("Ptent", P22Fact);
   M22->SetFactory("CoarseMap", coarseMapFact22);
   M22->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
@@ -732,7 +736,6 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
-  // TODO: don't forget to add Aztec as prerequisite in CMakeLists.txt!
   //
   // Solve Ax = b using AMG as a preconditioner in AztecOO
   //

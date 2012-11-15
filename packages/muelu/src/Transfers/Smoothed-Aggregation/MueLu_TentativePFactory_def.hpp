@@ -69,9 +69,8 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TentativePFactory(RCP<const FactoryBase> aggregatesFact, RCP<const FactoryBase> amalgFact, RCP<const FactoryBase> nullspaceFact, RCP<const FactoryBase> AFact, RCP<const FactoryBase> coarseMapFact)
-    : aggregatesFact_(aggregatesFact), amalgFact_(amalgFact), nullspaceFact_(nullspaceFact), AFact_(AFact),coarseMapFact_(coarseMapFact),
-      QR_(false)//,
+  TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TentativePFactory()
+    : QR_(false)//,
       /*domainGidOffset_(0)*/ {
 
     //stridedBlockId_ = -1; // default: blocked map with constant blocksize "NSDim"
@@ -82,11 +81,11 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & fineLevel, Level & coarseLevel) const {
-    fineLevel.DeclareInput("A", AFact_.get(), this);
-    fineLevel.DeclareInput("Aggregates", aggregatesFact_.get(), this);
-    fineLevel.DeclareInput("Nullspace",  nullspaceFact_.get(), this);
-    fineLevel.DeclareInput("UnAmalgamationInfo", amalgFact_.get(), this);
-    fineLevel.DeclareInput("CoarseMap", coarseMapFact_.get(), this);
+    Input(fineLevel, "A");
+    Input(fineLevel, "Aggregates");
+    Input(fineLevel, "Nullspace");
+    Input(fineLevel, "UnAmalgamationInfo");
+    Input(fineLevel, "CoarseMap");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -105,12 +104,11 @@ namespace MueLu {
 
     FactoryMonitor m(*this, "Build", coarseLevel);
 
-    RCP<Matrix> A = fineLevel.Get< RCP<Matrix> >("A", AFact_.get());
-
-    RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_.get());
-    RCP<AmalgamationInfo> amalgInfo = fineLevel.Get< RCP<AmalgamationInfo> >("UnAmalgamationInfo", amalgFact_.get());
-    RCP<MultiVector> nullspace  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
-    RCP<const Map> coarseMap = fineLevel.Get<RCP<const Map> >("CoarseMap",coarseMapFact_.get());
+    RCP<Matrix>           A          = Get< RCP<Matrix> >          (fineLevel, "A");
+    RCP<Aggregates>       aggregates = Get< RCP<Aggregates> >      (fineLevel, "Aggregates");
+    RCP<AmalgamationInfo> amalgInfo  = Get< RCP<AmalgamationInfo> >(fineLevel, "UnAmalgamationInfo");
+    RCP<MultiVector>      nullspace  = Get< RCP<MultiVector> >     (fineLevel, "Nullspace");
+    RCP<const Map>        coarseMap  = Get< RCP<const Map> >       (fineLevel, "CoarseMap");
 
     // Build
     RCP<MultiVector> coarseNullspace; RCP<Matrix> Ptentative; // output of MakeTentative()
@@ -118,8 +116,8 @@ namespace MueLu {
     MakeTentative(*A, *aggregates, *amalgInfo, *nullspace, coarseMap, coarseNullspace, Ptentative);
 
     // Level Set
-    coarseLevel.Set("Nullspace", coarseNullspace, this);
-    coarseLevel.Set("P", Ptentative, this);
+    Set(coarseLevel, "Nullspace", coarseNullspace);
+    Set(coarseLevel, "P",         Ptentative);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

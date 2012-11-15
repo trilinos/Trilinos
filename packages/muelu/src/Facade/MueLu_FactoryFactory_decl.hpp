@@ -195,6 +195,9 @@ namespace MueLu {
 #define MUELU_FACTORY_PARAM(name, var)                                  \
     RCP<const FactoryBase> var; if (paramList.isParameter(name)) { var = BuildFactory(paramList.getEntry(name), factoryMapIn); }
 
+#define MUELU_FACTORY_PARAM2(name)                                      \
+    if (paramList.isParameter(name)) { factory->SetFactory(name, BuildFactory(paramList.getEntry(name), factoryMapIn)); }
+
     //! AmalgamationFactory
     RCP<FactoryBase> BuildAmalgamationFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       MUELU_FACTORY_PARAM("A", AFact);
@@ -212,11 +215,12 @@ namespace MueLu {
 
     //! TentativePFactory
     RCP<FactoryBase> BuildTentativePFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      MUELU_FACTORY_PARAM("Aggregates", AggFact);
-      MUELU_FACTORY_PARAM("Nullspace",  NullspaceFact);
-      MUELU_FACTORY_PARAM("A", AFact);
-      MUELU_FACTORY_PARAM("UnAmalgamationInfo", AmalgFact);
-      return rcp(new TentativePFactory(AggFact, AmalgFact, NullspaceFact, AFact));
+      RCP<FactoryBase2> factory = rcp(new TentativePFactory());
+      MUELU_FACTORY_PARAM2("Aggregates");
+      MUELU_FACTORY_PARAM2("Nullspace");
+      MUELU_FACTORY_PARAM2("A");
+      MUELU_FACTORY_PARAM2("UnAmalgamationInfo");
+      return factory;
     }
 
     //! SaPFactory

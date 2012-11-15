@@ -59,6 +59,10 @@
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_NoFactory.hpp"
 
+#ifdef HAVE_MUELU_BOOST
+#include "boost/graph/graphviz.hpp"
+#endif
+
 namespace MueLu {
 
   /*!
@@ -227,6 +231,18 @@ namespace MueLu {
 
     //! Printing method
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
+
+#ifdef HAVE_MUELU_BOOST
+    void UpdateGraph(std::map<const FactoryBase*, long unsigned>&                                     vindices,
+                     std::map<std::pair<long unsigned,long unsigned>, std::string>&                             edges,
+                     boost::dynamic_properties&                                             dp,
+                     boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS,
+                     boost::property<boost::vertex_name_t, std::string,
+                     boost::property<boost::vertex_color_t, std::string,
+                     boost::property<boost::vertex_index_t, std::string> > >,
+                     boost::property<boost::edge_name_t, std::string,
+                     boost::property<boost::edge_color_t, std::string> > >&                 graph) const;
+#endif
 
     //@}
 

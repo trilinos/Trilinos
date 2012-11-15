@@ -89,6 +89,8 @@ int ex_get_n_one_attr( int   exoid,
 
   exerrval = 0; /* clear error code */
 
+  if (num_ent == 0)
+    return 0;
   /* Determine index of obj_id in vobjids array */
   if (obj_type != EX_NODAL) {
     obj_id_ndx = ex_id_lkup(exoid,obj_type,obj_id);

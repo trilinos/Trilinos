@@ -48,10 +48,9 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_FactoryBase.hpp"
+#include "MueLu_Level_fwd.hpp"
 
 namespace MueLu {
-
-  class Level;
 
   /*!
     @class NoFactory class.
