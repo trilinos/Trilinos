@@ -17,7 +17,7 @@
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/EntityComm.hpp>
+#include <stk_mesh/base/EntityCommDatabase.hpp>
 #include <stk_mesh/base/Comm.hpp>
 
 #include <stk_mesh/fixtures/BoxFixture.hpp>
@@ -63,18 +63,21 @@ void donate_one_element( BulkData & mesh , bool aura )
   std::vector<EntityProc> change ;
 
   // A shared node:
-  Entity node = Entity();
+  EntityKey node_key;
   Entity elem = Entity();
 
-  for ( std::vector<Entity>::const_iterator
-        i =  mesh.entity_comm().begin() ;
-        i != mesh.entity_comm().end() ; ++i ) {
-    if ( in_shared( *i ) && (*i).entity_rank() == BaseEntityRank ) {
-      node = *i ;
-      break ;
+  for ( std::vector<stk::mesh::EntityCommListInfo>::const_iterator
+        i =  mesh.comm_list().begin() ;
+        i != mesh.comm_list().end() ; ++i ) {
+    if ( mesh.in_shared( i->key ) && i->key.rank() == BaseEntityRank ) {
+      node_key = i->key;
+      break;
     }
   }
 
+  STKUNIT_ASSERT( stk::mesh::entity_key_valid(node_key) );
+
+  Entity node = mesh.get_entity(node_key);
   STKUNIT_ASSERT( node.is_valid() );
 
   for ( PairIterRelation rel = node.relations( 3 );
@@ -91,7 +94,7 @@ void donate_one_element( BulkData & mesh , bool aura )
   if ( 0 == p_rank ) {
     EntityProc entry ;
     entry.first = elem ;
-    entry.second = node.sharing()[0].proc ;
+    entry.second = mesh.entity_comm_sharing(node.key())[0].proc;
     change.push_back( entry );
     for ( PairIterRelation
           rel = elem.relations(0) ; ! rel.empty() ; ++rel ) {
@@ -129,18 +132,18 @@ void donate_all_shared_nodes( BulkData & mesh , bool aura )
 
   // Donate owned shared nodes to first sharing process.
 
-  const std::vector<Entity> & entity_comm = mesh.entity_comm();
+  const std::vector<stk::mesh::EntityCommListInfo> & entity_comm = mesh.comm_list();
 
   STKUNIT_ASSERT( ! entity_comm.empty() );
 
   std::vector<EntityProc> change ;
 
-  for ( std::vector<Entity>::const_iterator
+  for ( std::vector<stk::mesh::EntityCommListInfo>::const_iterator
         i =  entity_comm.begin() ;
         i != entity_comm.end() &&
-        (*i).entity_rank() == BaseEntityRank ; ++i ) {
-    Entity const node = *i ;
-    const stk::mesh::PairIterEntityComm ec = node.sharing();
+        i->key.rank() == BaseEntityRank ; ++i ) {
+    Entity const node = i->entity;
+    const stk::mesh::PairIterEntityComm ec = mesh.entity_comm_sharing(i->key);
 
     if ( node.owner_rank() == p_rank && ! ec.empty() ) {
       change.push_back( EntityProc( node , ec->proc ) );
@@ -317,8 +320,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
     {
       Entity const e0 = bulk.get_entity( MetaData::NODE_RANK , ids[id_give] );
       Entity const e1 = bulk.get_entity( MetaData::NODE_RANK , ids[id_give+1] );
-      STKUNIT_ASSERT( e0.is_valid() && e0.bucket().capacity() == 0 );
-      STKUNIT_ASSERT( e1.is_valid() && e1.bucket().capacity() == 0 );
+      STKUNIT_ASSERT( !e0.is_valid() );
+      STKUNIT_ASSERT( !e1.is_valid() );
     }
 
     STKUNIT_ASSERT( bulk.modification_begin() );
@@ -593,11 +596,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
       change[0].first = ring_mesh.m_bulk_data.get_entity( MetaData::NODE_RANK , ring_mesh.m_node_ids[1] );
       change[0].second = p_size ;
       // Error to change a ghost:
-      for ( std::vector<Entity>::const_iterator
-            ec =  ring_mesh.m_bulk_data.entity_comm().begin() ;
-            ec != ring_mesh.m_bulk_data.entity_comm().end() ; ++ec ) {
-        if ( in_receive_ghost( *ec ) ) {
-          change[1].first = *ec ;
+      for ( std::vector<stk::mesh::EntityCommListInfo>::const_iterator
+            ec =  ring_mesh.m_bulk_data.comm_list().begin() ;
+            ec != ring_mesh.m_bulk_data.comm_list().end() ; ++ec ) {
+        if ( bulk.in_receive_ghost( ec->key ) ) {
+          change[1].first = ec->entity;
           break ;
         }
       }
@@ -1403,7 +1406,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
     mesh.modification_end();
 
     // Expect that this is a shared node
-    STKUNIT_EXPECT_FALSE(changing_node.sharing().empty());
+    STKUNIT_EXPECT_FALSE(mesh.entity_comm_sharing(changing_node.key()).empty());
 
     // Expect that part change had no impact since it was on the proc that did not end
     // up as the owner

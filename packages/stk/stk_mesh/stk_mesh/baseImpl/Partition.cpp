@@ -112,15 +112,15 @@ void Partition::move_to(Entity entity, Partition &dst_partition)
     Bucket *src_bucket = entity.m_entityImpl->bucket_ptr();
     if (src_bucket && (src_bucket->getPartition() == &dst_partition))
         return;
-    
+
     ThrowRequireMsg(src_bucket && (src_bucket->getPartition() == this),
                     "Partition::move_to  cannot move an entity that does not belong to it.");
 
     unsigned src_ordinal = entity.m_entityImpl->bucket_ordinal();
-    
+
     // If the last bucket is full, automatically create a new one.
     Bucket *dst_bucket = dst_partition.get_bucket_for_adds();
-    
+
     // Move the entity's data to the new bucket before removing the entity from its old bucket.
     unsigned dst_ordinal = dst_bucket->size();
     dst_bucket->replace_fields(dst_ordinal, *src_bucket, src_ordinal);
@@ -132,7 +132,7 @@ void Partition::move_to(Entity entity, Partition &dst_partition)
     dst_bucket->increment_size();
     dst_partition.m_updated_since_compress = dst_partition.m_updated_since_sort = true;
     dst_partition.m_size++;
-    
+
     m_updated_since_compress = m_updated_since_sort = true;
     m_repository->internal_propagate_relocation(entity);
     entity.m_entityImpl->set_sync_count(m_repository->m_mesh.synchronized_count());
@@ -190,7 +190,6 @@ bool Partition::remove(Entity e_k, bool not_in_move_to)
 
     }
 
-    e_k.m_entityImpl->set_bucket_and_ordinal(0, 0);
     e_k.m_entityImpl->set_sync_count(m_repository->m_mesh.synchronized_count());
     m_updated_since_compress = m_updated_since_sort = true;
     --m_size;

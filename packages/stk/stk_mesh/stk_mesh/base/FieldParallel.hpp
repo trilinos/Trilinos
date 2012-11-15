@@ -76,7 +76,7 @@ void parallel_reduce( const BulkData & mesh ,
 
   communicate_field_data( mesh, 1, fields, sparse );
 
-  op( mesh.entity_comm() , sparse );
+  op( mesh, sparse );
 
   // For debugging:
   // communicate_field_data_verify_read( sparse );
@@ -99,8 +99,8 @@ void parallel_reduce( const BulkData & mesh ,
 
   communicate_field_data( mesh, 2, fields, sparse );
 
-  op1( mesh.entity_comm() , sparse );
-  op2( mesh.entity_comm() , sparse );
+  op1( mesh , sparse );
+  op2( mesh , sparse );
 
   // For debugging:
   // communicate_field_data_verify_read( sparse );
@@ -119,8 +119,7 @@ struct ParallelReduceField {
   ParallelReduceField( const field_type & f ) : field(f) {}
   ParallelReduceField( const ParallelReduceField & p ) : field(p.field) {}
 
-  void operator()( const std::vector<Entity> & entity_comm ,
-                   CommAll & sparse ) const ;
+  void operator()( const BulkData& mesh, CommAll & sparse ) const ;
 
 private:
   ParallelReduceField & operator = ( const ParallelReduceField & );
@@ -131,29 +130,31 @@ template< class ReduceOp ,
           class Tag4 , class Tag5, class Tag6, class Tag7 >
 void ParallelReduceField< ReduceOp , Type ,  Tag1,  Tag2,  Tag3 ,
                                      Tag4 ,  Tag5,  Tag6,  Tag7 >::
-  operator()( const std::vector<Entity> & entity_comm ,
-              CommAll & sparse ) const
+operator()(const BulkData& mesh, CommAll & sparse ) const
 {
   typedef EntityArray< field_type > array_type ;
 
-  for ( std::vector<Entity>::const_iterator
+  const std::vector<EntityCommListInfo>& entity_comm = mesh.comm_list();
+  for ( std::vector<EntityCommListInfo>::const_iterator
         i = entity_comm.begin(); i != entity_comm.end() ; ++i ) {
-    Entity entity = *i ;
-    array_type array( field , entity );
-    Type * const ptr_beg = array.contiguous_data();
-    Type * const ptr_end = ptr_beg + array.size();
+    Entity entity = i->entity;
+    if (entity.is_valid()) {
+      array_type array( field , entity );
+      Type * const ptr_beg = array.contiguous_data();
+      Type * const ptr_end = ptr_beg + array.size();
 
-    if (ptr_beg == NULL || ptr_end == NULL) continue;
+      if (ptr_beg == NULL || ptr_end == NULL) continue;
 
-    for ( PairIterEntityComm
-          ec = entity.comm() ; ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
+      for ( PairIterEntityComm
+              ec = mesh.entity_comm(i->key); ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
 
-      CommBuffer & b = sparse.recv_buffer( ec->proc );
+        CommBuffer & b = sparse.recv_buffer( ec->proc );
 
-      for ( Type * ptr = ptr_beg ; ptr < ptr_end ; ++ptr ) {
-        Type tmp ;
-        b.template unpack<unsigned char>( (unsigned char *)(&tmp), sizeof(Type) );
-        ReduceOp( ptr , & tmp );
+        for ( Type * ptr = ptr_beg ; ptr < ptr_end ; ++ptr ) {
+          Type tmp ;
+          b.template unpack<unsigned char>( (unsigned char *)(&tmp), sizeof(Type) );
+          ReduceOp( ptr , & tmp );
+        }
       }
     }
   }

@@ -184,10 +184,7 @@ size_t hash_value( EntityKey key) {
   return boost::hash_value(key.raw_key());
 }
 
-
-
 } // namespace mesh
 } // namespace stk
 
 #endif /* stk_mesh_EntityKey_hpp */
-

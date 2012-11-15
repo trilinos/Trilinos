@@ -49,18 +49,6 @@ inline bool is_degenerate_relation ( const Relation &r1 , const Relation &r2 )
 
 }
 
-void EntityImpl::log_resurrect()
-{
-  TraceIfWatching("stk::mesh::impl::EntityImpl::log_resurrect", LOG_ENTITY, key());
-
-  ThrowErrorMsgIf( EntityLogDeleted != m_mod_log,
-      "Trying to resurrect non-deleted entity: " <<
-      print_entity_key( MetaData::get( bucket() ), key() ) );
-
-  m_mod_log = EntityLogModified;
-  m_bucket = NULL;
-}
-
 void EntityImpl::log_modified_and_propagate()
 {
   TraceIfWatching("stk::mesh::impl::EntityImpl::log_modified_and_propagate", LOG_ENTITY, key());
@@ -218,46 +206,6 @@ void EntityImpl::update_key(EntityKey key)
     entity.log_modified_and_propagate();
   }
 
-}
-
-PairIterEntityComm EntityImpl::comm() const
-{
-  return BulkData::get(bucket()).entity_comm(m_key);
-}
-
-PairIterEntityComm EntityImpl::sharing() const
-{
-  return BulkData::get(bucket()).entity_comm_sharing(m_key);
-}
-
-PairIterEntityComm EntityImpl::comm( const Ghosting & sub ) const
-{
-  return BulkData::get(bucket()).entity_comm(m_key,sub);
-}
-
-bool EntityImpl::insert( const EntityCommInfo & val )
-{
-  return BulkData::get(bucket()).entity_comm_insert(m_key,val);
-}
-
-bool EntityImpl::erase( const EntityCommInfo & val )
-{
-  return BulkData::get(bucket()).entity_comm_erase(m_key,val);
-}
-
-bool EntityImpl::erase( const Ghosting & ghost )
-{
-  return BulkData::get(bucket()).entity_comm_erase(m_key,ghost);
-}
-
-void EntityImpl::comm_clear_ghosting()
-{
-  return BulkData::get(bucket()).entity_comm_clear_ghosting(m_key);
-}
-
-void EntityImpl::comm_clear()
-{
-  return BulkData::get(bucket()).entity_comm_clear(m_key);
 }
 
 } // namespace impl

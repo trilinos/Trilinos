@@ -21,7 +21,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/Trace.hpp>
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/EntityComm.hpp>
+#include <stk_mesh/base/EntityCommDatabase.hpp>
 
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/baseImpl/BucketRepository.hpp>
@@ -33,6 +33,41 @@
 
 namespace stk {
 namespace mesh {
+
+struct EntityCommListInfo
+{
+  EntityKey key;
+  Entity    entity; // Might be invalid if entity has been deleted
+  unsigned  owner;
+};
+
+inline
+bool operator<(const EntityKey& key, const EntityCommListInfo& comm)
+{ return key < comm.key; }
+
+inline
+bool operator<(const EntityCommListInfo& comm, const EntityKey& key)
+{ return comm.key < key; }
+
+inline
+bool operator<(const EntityCommListInfo& lhs, const EntityCommListInfo& rhs)
+{ return lhs.key < rhs.key; }
+
+inline
+bool operator==(const EntityCommListInfo& lhs, const EntityCommListInfo& rhs)
+{ return lhs.key == rhs.key; }
+
+inline
+bool operator!=(const EntityCommListInfo& lhs, const EntityCommListInfo& rhs)
+{ return !(lhs == rhs); }
+
+struct IsInvalid
+{
+  bool operator()(const EntityCommListInfo& comm) const
+  {
+    return comm.key == EntityKey();
+  }
+};
 
 /** \addtogroup stk_mesh_module
  *  \{
@@ -369,8 +404,8 @@ public:
   //------------------------------------
   //------------------------------------
   /** \brief  All entities with communication information. */
-  const std::vector<Entity> & entity_comm() const
-    { return m_entity_comm ; }
+  const std::vector<EntityCommListInfo> & comm_list() const
+    { return m_entity_comm_list; }
 
   //------------------------------------
   /** \brief  Query the shared-entity aura.
@@ -405,7 +440,7 @@ public:
    */
   void change_ghosting( Ghosting & ghosts,
                         const std::vector<EntityProc> & add_send ,
-                        const std::vector<Entity> & remove_receive );
+                        const std::vector<EntityKey> & remove_receive );
 
   /** \brief  Empty every single Ghosting.
    *          Same result, but more efficient than, calling
@@ -417,18 +452,37 @@ public:
   const std::vector<Ghosting*> & ghostings() const { return m_ghosting ; }
 
   /** \brief  Entity Comm functions that are now moved to BulkData
-   * These functions are only here for backwards compatibility.
-   * We plan to remove all comm accessors from the Entity in the future.
    */
   PairIterEntityComm entity_comm(const EntityKey & key) const { return m_entity_comm_map.comm(key); }
   PairIterEntityComm entity_comm_sharing(const EntityKey & key) const { return m_entity_comm_map.sharing(key); }
   PairIterEntityComm entity_comm(const EntityKey & key, const Ghosting & sub ) const { return m_entity_comm_map.comm(key,sub); }
-  bool entity_comm_insert( const EntityKey & key, const EntityCommInfo & val) { return m_entity_comm_map.insert(key,val); }
+  bool entity_comm_insert(Entity entity, const EntityCommInfo & val) { return m_entity_comm_map.insert(entity.key(), val, entity.owner_rank()); }
   bool entity_comm_erase(  const EntityKey & key, const EntityCommInfo & val) { return m_entity_comm_map.erase(key,val); }
   bool entity_comm_erase(  const EntityKey & key, const Ghosting & ghost) { return m_entity_comm_map.erase(key,ghost); }
   void entity_comm_clear_ghosting(const EntityKey & key ) { m_entity_comm_map.comm_clear_ghosting(key); }
   void entity_comm_clear(const EntityKey & key) { m_entity_comm_map.comm_clear(key); }
-  void entity_comm_swap(const EntityKey & key1, const EntityKey & key2) { m_entity_comm_map.comm_swap(key1, key2); }
+  unsigned entity_comm_owner(const EntityKey & key) const;
+
+  // Comm-related convenience methods
+
+  bool in_shared(EntityKey key) const { return !entity_comm_sharing(key).empty(); }
+
+  bool in_shared(EntityKey key, unsigned proc) const;
+
+  bool in_receive_ghost( EntityKey key ) const;
+
+  bool in_receive_ghost( const Ghosting & ghost , EntityKey entity ) const;
+
+  bool in_send_ghost( EntityKey key) const;
+
+  bool in_send_ghost( EntityKey key , unsigned proc ) const;
+
+  bool in_ghost( const Ghosting & ghost , EntityKey key , unsigned p ) const;
+
+  void comm_procs( EntityKey key, std::vector<unsigned> & procs ) const;
+
+  void comm_procs( const Ghosting & ghost ,
+                   EntityKey key, std::vector<unsigned> & procs ) const;
 
 private:
 
@@ -445,7 +499,10 @@ private:
   parallel::DistributedIndex          m_entities_index ;
   impl::EntityRepository              m_entity_repo ;
   impl::BucketRepository              m_bucket_repository ;
-  std::vector<Entity>                m_entity_comm ;
+
+  // Simply a list of data for entities that are being communicated
+  std::vector<EntityCommListInfo>     m_entity_comm_list ;
+
   std::vector<Ghosting*>              m_ghosting ; /**< Aura is [1] */
 
   // Other information:
@@ -458,7 +515,9 @@ private:
   bool               m_meta_data_verified ;
   bool               m_optimize_buckets;
   bool               m_mesh_finalized;
-  EntityComm         m_entity_comm_map;
+
+  // The full database of comm info for all communicated entities.
+  EntityCommDatabase m_entity_comm_map;
 
   /**
    * For all processors sharing an entity, find one to be the new
@@ -489,7 +548,8 @@ private:
 
   void internal_change_ghosting( Ghosting & ghosts,
                                  const std::vector<EntityProc> & add_send ,
-                                 const std::vector<Entity> & remove_receive );
+                                 const std::vector<EntityKey> & remove_receive,
+                                 bool is_full_regen = false);
 
   bool internal_modification_end( bool regenerate_aura );
     void internal_resolve_shared_modify_delete();
@@ -530,6 +590,10 @@ private:
   void internal_verify_change_parts( const MetaData   & meta ,
                                      const Entity entity ,
                                      const OrdinalVector & parts ) const;
+
+  void internal_change_owner_in_comm_data(const EntityKey& key, unsigned new_owner);
+
+  void internal_sync_comm_list_owners();
 
   //------------------------------------
 
@@ -722,10 +786,44 @@ void BulkData::change_entity_parts( Entity entity,
   return ;
 }
 
+inline
+unsigned BulkData::entity_comm_owner(const EntityKey & key) const
+{
+  const unsigned owner_rank = m_entity_comm_map.owner_rank(key);
+  ThrowAssertMsg(owner_rank == InvalidOrdinal || owner_rank == get_entity(key).owner_rank(),
+                 "Expect entity " << print_entity_key(m_mesh_meta_data, key) << " to have owner " <<
+                 get_entity(key).owner_rank() << " but it comm map, found " << owner_rank);
+  return owner_rank;
+}
+
+inline
+bool BulkData::in_receive_ghost( EntityKey key ) const
+{
+  // Ghost communication with owner.
+  const unsigned owner_rank = entity_comm_owner(key);
+  PairIterEntityComm ec = entity_comm(key);
+  return !ec.empty() && ec.front().ghost_id != 0 &&
+         ec.front().proc == owner_rank;
+}
+
+inline
+bool BulkData::in_receive_ghost( const Ghosting & ghost , EntityKey key ) const
+{
+  const unsigned owner_rank = entity_comm_owner(key);
+  return in_ghost( ghost , key , owner_rank );
+}
+
+inline
+bool BulkData::in_send_ghost( EntityKey key) const
+{
+  // Ghost communication with non-owner.
+  const unsigned owner_rank = entity_comm_owner(key);
+  PairIterEntityComm ec = entity_comm(key);
+  return ! ec.empty() && ec.back().ghost_id != 0 &&
+    ec.back().proc != owner_rank;
+}
+
 } // namespace mesh
 } // namespace stk
-
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
 
 #endif //  stk_mesh_BulkData_hpp

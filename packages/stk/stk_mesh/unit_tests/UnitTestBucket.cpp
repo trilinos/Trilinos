@@ -20,7 +20,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/EntityComm.hpp>
+#include <stk_mesh/base/EntityCommDatabase.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>

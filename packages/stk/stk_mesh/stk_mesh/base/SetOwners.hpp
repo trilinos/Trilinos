@@ -25,22 +25,22 @@ typedef std::greater<unsigned> HighestRankSharingProcOwns;
  * The default behavior of stk::mesh is to give ownership to the highest-rank sharing proc.
 */
 template<class OwnershipRule>
-void set_owners(BulkData& mesh_bulk_data)
+void set_owners(BulkData& mesh)
 {
   typedef std::set<unsigned,OwnershipRule> ProcSet ;
 
-  const unsigned local_proc = mesh_bulk_data.parallel_rank();
+  const unsigned local_proc = mesh.parallel_rank();
 
   std::vector<EntityProc> entity_new_owners;
 
-  const std::vector<Entity>& entity_comm = mesh_bulk_data.entity_comm();
+  const std::vector<EntityCommListInfo>& entity_comm = mesh.comm_list();
 
   for ( size_t i=0; i<entity_comm.size(); ++i) {
-    Entity const entity = entity_comm[i] ;
+    Entity const entity = entity_comm[i].entity;;
 
-    const PairIterEntityComm sharing = entity.sharing();
+    const PairIterEntityComm sharing = mesh.entity_comm_sharing(entity_comm[i].key);
 
-    if ( ! sharing.empty() && entity.owner_rank() == local_proc ) {
+    if ( ! sharing.empty() && entity_comm[i].owner == local_proc ) {
       ProcSet proc_set ;
 
       proc_set.insert( local_proc );
@@ -55,11 +55,11 @@ void set_owners(BulkData& mesh_bulk_data)
     }
   }
 
-  mesh_bulk_data.modification_begin();
+  mesh.modification_begin();
 
-  mesh_bulk_data.change_entity_owner( entity_new_owners );
+  mesh.change_entity_owner( entity_new_owners );
 
-  mesh_bulk_data.modification_end();
+  mesh.modification_end();
 }
 
 }//namespace mesh

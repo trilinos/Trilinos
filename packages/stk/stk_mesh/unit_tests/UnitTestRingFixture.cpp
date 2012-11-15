@@ -21,6 +21,7 @@ using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Selector;
 using stk::mesh::Entity;
+using stk::mesh::EntityKey;
 using stk::mesh::EntityProc;
 using stk::mesh::fixtures::RingFixture;
 
@@ -98,8 +99,8 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
     STKUNIT_ASSERT( node0.is_valid() );
     STKUNIT_ASSERT( node1.is_valid() );
 
-    STKUNIT_ASSERT_EQUAL( node0.sharing().size() , size_t(1) );
-    STKUNIT_ASSERT_EQUAL( node1.sharing().size() , size_t(1) );
+    STKUNIT_ASSERT_EQUAL( bulk.entity_comm_sharing(node0.key()).size(), 1u );
+    STKUNIT_ASSERT_EQUAL( bulk.entity_comm_sharing(node1.key()).size() , 1u );
   }
 
   // Test no-op first:
@@ -222,19 +223,20 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
   STKUNIT_ASSERT_EQUAL( local_count[MetaData::ELEMENT_RANK] , nLocalElement );
 
   unsigned count_shared = 0 ;
-  for ( std::vector<Entity>::const_iterator
-        i = bulk.entity_comm().begin() ;
-        i != bulk.entity_comm().end() ; ++i ) {
-    if ( in_shared( *i ) ) { ++count_shared ; }
+  for ( std::vector<stk::mesh::EntityCommListInfo>::const_iterator
+        i = bulk.comm_list().begin() ;
+        i != bulk.comm_list().end() ; ++i )
+  {
+    if ( bulk.in_shared( i->key ) ) { ++count_shared ; }
   }
   STKUNIT_ASSERT_EQUAL( count_shared , 2u );
 
   {
-    const Entity node_recv = bulk.get_entity( NODE_RANK , ring.m_node_ids[id_recv] );
-    const Entity node_send = bulk.get_entity( NODE_RANK , ring.m_node_ids[id_send] );
+    const EntityKey node_recv = EntityKey(NODE_RANK , ring.m_node_ids[id_recv]);
+    const EntityKey node_send = EntityKey(NODE_RANK , ring.m_node_ids[id_send]);
 
-    STKUNIT_ASSERT_EQUAL( node_recv.sharing().size() , 1u );
-    STKUNIT_ASSERT_EQUAL( node_send.sharing().size() , 1u );
+    STKUNIT_ASSERT_EQUAL( bulk.entity_comm_sharing(node_recv).size(), 1u );
+    STKUNIT_ASSERT_EQUAL( bulk.entity_comm_sharing(node_send).size() , 1u );
   }
 }
 

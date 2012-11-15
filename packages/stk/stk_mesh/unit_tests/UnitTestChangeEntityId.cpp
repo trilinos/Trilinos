@@ -12,8 +12,67 @@
 
 #include <boost/foreach.hpp>
 
+STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_small )
+{
+  // change_entity_id is a broken concept in parallel:
+  //   Only entity owners should have to call change-id. As it stands now,
+  //   every process that might know about the entity, even as a ghost,
+  //   must make the call. If any sharer/ghoster of the changing entity
+  //   forgets to make the call, or changes to wrong id, awful errors ensure
+  //   in the next modification_end. The only way to make this safe is to have
+  //   change_entity_id be a parallel call similar to change_entity_owner; this
+  //   would be very expensive. We need to implement the tracking of exodus-ids
+  //   in a different fashion in the long run.
 
-STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id )
+  // Demonstrate how change_entity_id should work
+
+  return;
+
+  using namespace stk::mesh;
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  const unsigned spatial_dim = 2;
+  MetaData meta_data(spatial_dim);
+  meta_data.commit();
+
+  BulkData mesh(meta_data, pm);
+  unsigned p_rank = mesh.parallel_rank();
+
+  mesh.modification_begin();
+
+  PartVector empty_parts;
+  Entity elem                 = mesh.declare_entity(MetaData::ELEMENT_RANK, p_rank + 1 /*id*/, empty_parts);
+
+  Entity node1_local_chg_id   = mesh.declare_entity(MetaData::NODE_RANK, p_rank*3 + 1 /*id*/, empty_parts);
+  Entity node2_shared_chg_id  = mesh.declare_entity(MetaData::NODE_RANK,            2 /*id*/, empty_parts);
+  Entity node3                = mesh.declare_entity(MetaData::NODE_RANK, p_rank*3 + 3 /*id*/, empty_parts);
+
+  mesh.declare_relation(elem, node1_local_chg_id , 1 /*relation ordinal*/);
+  mesh.declare_relation(elem, node2_shared_chg_id, 2 /*relation ordinal*/);
+  mesh.declare_relation(elem, node3              , 3 /*relation ordinal*/);
+
+  mesh.modification_end();
+
+  mesh.modification_begin();
+
+  const EntityId new_id_for_local_node = 42 + p_rank + 1;
+  const EntityId new_id_for_shared_node = 666;
+
+  mesh.change_entity_id(new_id_for_local_node, node1_local_chg_id);
+  if (node2_shared_chg_id.owner_rank() == p_rank) {
+    mesh.change_entity_id(new_id_for_shared_node, node2_shared_chg_id);
+  }
+
+  STKUNIT_EXPECT_EQ(new_id_for_local_node, node1_local_chg_id.identifier());
+
+  mesh.modification_end();
+
+  STKUNIT_EXPECT_EQ(new_id_for_local_node, node1_local_chg_id.identifier());
+  STKUNIT_EXPECT_EQ(new_id_for_shared_node, node2_shared_chg_id.identifier());
+}
+
+STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_large )
 {
   using namespace stk::mesh;
 
@@ -30,7 +89,6 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id )
              MetaData::NODE_RANK,
              hf.m_hex_part);
 
-
   //create nodal field on hex topo
 
   hf.m_fem_meta.commit();
@@ -38,24 +96,26 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id )
   hf.generate_mesh();
 
   stk::mesh::BulkData & mesh = hf.m_bulk_data;
+  if (mesh.parallel_size() > 1) {
+    return;
+  }
 
   mesh.modification_begin();
 
-  const BucketVector & nodes = mesh.buckets(MetaData::NODE_RANK);
+  const BucketVector & node_buckets = mesh.buckets(MetaData::NODE_RANK);
 
-  BOOST_FOREACH(Bucket * b, nodes) {
+  BOOST_FOREACH(Bucket * b, node_buckets) {
     BucketArray< Field<int> > nodal_field(simple_nodal_field,*b);
     for (int i =0; i<nodal_field.size(); ++i) {
       nodal_field[i] = 1;
     }
   }
 
-
-  const BucketVector & elems = mesh.buckets(MetaData::ELEMENT_RANK);
+  const BucketVector & elem_buckets = mesh.buckets(MetaData::ELEMENT_RANK);
 
   std::vector<EntityId> old_ids;
   old_ids.reserve(num_elems);
-  BOOST_FOREACH(Bucket * b, elems) {
+  BOOST_FOREACH(Bucket * b, elem_buckets) {
     for (size_t i =0; i<b->size(); ++i) {
       Entity e = (*b)[i];
       old_ids.push_back(e.identifier());
@@ -70,7 +130,7 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id )
 
   std::vector<EntityId> new_ids_minus_num_elems;
   new_ids_minus_num_elems.reserve(num_elems);
-  BOOST_FOREACH(Bucket * b, elems) {
+  BOOST_FOREACH(Bucket * b, elem_buckets) {
     for (size_t i =0; i<b->size(); ++i) {
       Entity e = (*b)[i];
       new_ids_minus_num_elems.push_back(e.identifier()-num_elems);
@@ -79,12 +139,10 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id )
 
   STKUNIT_EXPECT_TRUE(old_ids == new_ids_minus_num_elems);
 
-  BOOST_FOREACH(Bucket * b, nodes) {
+  BOOST_FOREACH(Bucket * b, node_buckets) {
     BucketArray< Field<int> > nodal_field(simple_nodal_field,*b);
     for (int i =0; i<nodal_field.size(); ++i) {
       STKUNIT_EXPECT_TRUE( nodal_field[i] == 1);
     }
   }
-
 }
-

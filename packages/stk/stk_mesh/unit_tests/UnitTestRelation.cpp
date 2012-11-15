@@ -19,7 +19,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/EntityComm.hpp>
+#include <stk_mesh/base/EntityCommDatabase.hpp>
 #include <stk_mesh/base/Ghosting.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
@@ -137,16 +137,16 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationNoGhosting)
   ring_bulk.modification_begin();
   for ( unsigned p = 0 ; p < p_size ; ++p ) {
     if ( p != p_rank ) {
-      STKUNIT_ASSERT_EQUAL( in_shared( elementnew , p ), false );
-      STKUNIT_ASSERT_EQUAL( in_send_ghost( elementnew , p ), false );
+      STKUNIT_ASSERT_EQUAL( ring_bulk.in_shared( elementnew.key() , p ), false );
+      STKUNIT_ASSERT_EQUAL( ring_bulk.in_send_ghost( elementnew.key() , p ), false );
     }
   }
 
   elementnew = ring_bulk.get_entity( MetaData::ELEMENT_RANK , mesh.m_element_ids[ nPerProc * p_rank ] );
-  STKUNIT_ASSERT_EQUAL( in_send_ghost( elementnew , p_rank+100 ), false );
+  STKUNIT_ASSERT_EQUAL( ring_bulk.in_send_ghost( elementnew.key() , p_rank+100 ), false );
 
   Entity node = ring_bulk.get_entity( MetaData::NODE_RANK , mesh.m_node_ids[ nPerProc * p_rank ] );
-  STKUNIT_ASSERT_EQUAL( in_shared( node , p_rank+100 ), false );
+  STKUNIT_ASSERT_EQUAL( ring_bulk.in_shared( node.key() , p_rank+100 ), false );
 }
 
 STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationWithGhosting)
@@ -161,35 +161,36 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationWithGhosting)
   if ( 1 < p_size ) { // With ghosting
     RingFixture mesh( pm , nPerProc , false /* No element parts */ );
     mesh.m_meta_data.commit();
+    BulkData& bulk = mesh.m_bulk_data;
 
-    mesh.m_bulk_data.modification_begin();
+    bulk.modification_begin();
     mesh.generate_mesh();
-    STKUNIT_ASSERT(mesh.m_bulk_data.modification_end());
+    STKUNIT_ASSERT(bulk.modification_end());
 
-    mesh.m_bulk_data.modification_begin();
+    bulk.modification_begin();
     mesh.fixup_node_ownership();
-    STKUNIT_ASSERT(mesh.m_bulk_data.modification_end());
+    STKUNIT_ASSERT(bulk.modification_end());
 
     const unsigned nNotOwned = nPerProc * p_rank ;
 
     // The not-owned shared entity:
-    Entity node = mesh.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh.m_node_ids[ nNotOwned ] );
+    Entity node = bulk.get_entity( MetaData::NODE_RANK , mesh.m_node_ids[ nNotOwned ] );
 
-    mesh.m_bulk_data.modification_begin();
+    bulk.modification_begin();
 
     for ( unsigned p = 0 ; p < p_size ; ++p ) {
       if ( p != p_rank ) {
         //FIXME for Carol the check below did not pass for -np 3 or 4
         //STKUNIT_ASSERT_EQUAL( in_shared( *node3 , p ), true );
-        STKUNIT_ASSERT_EQUAL( in_send_ghost( node , p ), false );
+        STKUNIT_ASSERT_EQUAL( bulk.in_send_ghost( node.key() , p ), false );
       }
     }
 
     //not owned and not shared
-    Entity node2 = mesh.m_bulk_data.get_entity( MetaData::NODE_RANK , mesh.m_node_ids[ nPerProc * p_rank ] );
+    Entity node2 = bulk.get_entity( MetaData::NODE_RANK , mesh.m_node_ids[ nPerProc * p_rank ] );
 
-    STKUNIT_ASSERT_EQUAL( in_shared( node2 , p_rank+100 ), false );
-    STKUNIT_ASSERT_EQUAL( in_send_ghost( node , p_rank+100 ), false );
+    STKUNIT_ASSERT_EQUAL( bulk.in_shared( node2.key() , p_rank+100 ), false );
+    STKUNIT_ASSERT_EQUAL( bulk.in_send_ghost( node.key() , p_rank+100 ), false );
   }
 }
 

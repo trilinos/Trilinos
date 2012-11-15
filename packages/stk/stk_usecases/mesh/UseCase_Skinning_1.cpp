@@ -14,7 +14,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/base/EntityComm.hpp>
+#include <stk_mesh/base/EntityCommDatabase.hpp>
 
 #include <stk_mesh/base/BoundaryAnalysis.hpp>
 #include <stk_mesh/base/SkinMesh.hpp>
@@ -98,7 +98,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
         //each node should be attached to only 1 element and 3 faces
         correct_relations &= ( current_node.relations().size() == 4 );
         //the entire closure of the element should exist on a single process
-        correct_comm      &= ( current_node.comm().size() == 0 );
+        correct_comm      &= ( mesh.entity_comm(current_node.key()).size() == 0 );
       }
     }
     passed &= (correct_skin && correct_relations && correct_comm);

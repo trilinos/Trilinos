@@ -14,6 +14,7 @@
 
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/DistributedIndex.hpp>
+#include <stk_util/environment/ReportHandler.hpp>
 
 #include <stk_util/util/RadixSort.hpp>
 
@@ -133,7 +134,8 @@ DistributedIndex::DistributedIndex (
     m_comm_size( parallel_machine_size( comm ) ),
     m_span_count(0),
     m_key_span(),
-    m_key_usage()
+    m_key_usage(),
+    m_removed_keys()
 {
   unsigned info[2] ;
   info[0] = partition_bounds.size();
@@ -425,10 +427,23 @@ struct RemoveKeyProc {
 
 }
 
+void DistributedIndex::update_keys( const std::vector<KeyType> & add_new_keys )
+{
+  std::vector<DistributedIndex::KeyType> removed_keys;
+  removed_keys.swap(m_removed_keys);
+
+  std::sort(removed_keys.begin(), removed_keys.end());
+  ThrowAssert(std::unique(removed_keys.begin(), removed_keys.end()) == removed_keys.end()); // should be no dups
+
+  update_keys(add_new_keys, removed_keys);
+}
+
 void DistributedIndex::update_keys(
   const std::vector<DistributedIndex::KeyType> & add_new_keys ,
   const std::vector<DistributedIndex::KeyType> & remove_existing_keys )
 {
+  ThrowAssert(m_removed_keys.empty()); // do not mix
+
   std::vector<unsigned long> count_remove( m_comm_size , (unsigned long)0 );
   std::vector<unsigned long> count_add(    m_comm_size , (unsigned long)0 );
 

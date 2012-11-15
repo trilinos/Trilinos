@@ -17,7 +17,7 @@
 
 #include <stk_mesh/base/MetaData.hpp>
 
-#include <stk_mesh/base/EntityComm.hpp>
+#include <stk_mesh/base/EntityCommDatabase.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 
 using stk::mesh::Part;
@@ -29,7 +29,7 @@ using stk::mesh::MetaData;
 
 namespace {
 
-void new_insert_transitive_closure( std::set<stk::mesh::EntityProc,stk::mesh::EntityLess> &  ,
+void new_insert_transitive_closure( stk::mesh::BulkData& bulk_data, std::set<stk::mesh::EntityProc,stk::mesh::EntityLess> &  ,
 					 const stk::mesh::EntityProc & entry );
 void new_comm_sync_send_recv(
    stk::mesh::BulkData & mesh ,
@@ -137,7 +137,6 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
 
   // Find a cell owned by this process
   stk::mesh::Entity cell_to_delete = stk::mesh::Entity();
-  stk::mesh::Entity cell_to_delete_copy = stk::mesh::Entity();
   std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk.buckets(3).begin();
   while ( cur_bucket != bulk.buckets(3).end() )
   {
@@ -155,11 +154,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
   }
 
   STKUNIT_ASSERT ( cell_to_delete.is_valid() );
-  cell_to_delete_copy = cell_to_delete;
   bulk.modification_begin();
   bulk.destroy_entity ( cell_to_delete );
-  // Destroying an already destroyed entity returns false
-  STKUNIT_ASSERT( false == bulk.destroy_entity( cell_to_delete_copy ) );
   bulk.modification_end();
 }
 
@@ -206,7 +202,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDetectsNonOwnerChange )
   stk::mesh::Entity shared_node = fixture.node(1 /*x*/, 1 /*y*/);
   // Assert that this node is shared
   if ( p_size > 1 && shared_node.is_valid() && (p_rank == 0 || p_rank == 1) ) {
-    STKUNIT_ASSERT_GE(shared_node.sharing().size(), 1u);
+    STKUNIT_ASSERT_GE(bulk.entity_comm_sharing(shared_node.key()).size(), 1u);
   }
 
   bulk.modification_begin();
@@ -355,25 +351,23 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyParallelAddParts )
 
   bulk.modification_begin();
 
-  for ( std::vector<stk::mesh::Entity>::const_iterator
-        cur_entity =  bulk.entity_comm().begin();
-        cur_entity != bulk.entity_comm().end() ; ++cur_entity ) {
-    stk::mesh::Entity entity = *cur_entity ;
-    if ( entity.entity_rank() == 0 ) {
-      if ( entity.owner_rank() == fixture.comm_rank() ) {
-        bulk.change_entity_parts ( entity, add_part, stk::mesh::PartVector() );
+  for ( std::vector<stk::mesh::EntityCommListInfo>::const_iterator
+        i =  bulk.comm_list().begin();
+        i != bulk.comm_list().end() ; ++i ) {
+    if ( i->key.rank() == 0 ) {
+      if ( i->owner == fixture.comm_rank() ) {
+        bulk.change_entity_parts ( i->entity, add_part, stk::mesh::PartVector() );
       }
     }
   }
 
   bulk.modification_end();
 
-  for ( std::vector<stk::mesh::Entity>::const_iterator
-        cur_entity =  bulk.entity_comm().begin();
-        cur_entity != bulk.entity_comm().end() ; ++cur_entity ) {
-    stk::mesh::Entity entity = *cur_entity ;
-    if ( entity.entity_rank() == 0 ) {
-      STKUNIT_ASSERT ( entity.bucket().member ( fixture.get_part_a_0 () ) );
+  for ( std::vector<stk::mesh::EntityCommListInfo>::const_iterator
+        i =  bulk.comm_list().begin();
+        i != bulk.comm_list().end() ; ++i ) {
+    if ( i->key.rank() == 0 ) {
+      STKUNIT_ASSERT ( i->entity.bucket().member ( fixture.get_part_a_0 () ) );
     }
   }
 }
@@ -480,7 +474,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
   unsigned send_rank = 0;
 
   std::vector<stk::mesh::EntityProc>  to_send;
-  std::vector<stk::mesh::Entity>    empty_vector;
+  std::vector<stk::mesh::EntityKey>   empty_vector;
   while ( cur_bucket != bulk.buckets(3).end() )
   {
     stk::mesh::Bucket::iterator cur_entity = (*cur_bucket)->begin();
@@ -503,7 +497,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
 
   {
     std::vector<stk::mesh::EntityProc> send_list ;
-    std::vector<stk::mesh::Entity>    recv_list ;
+    std::vector<stk::mesh::EntityKey>  recv_list ;
     ghosting.send_list( send_list );
     ghosting.receive_list( recv_list );
 
@@ -521,7 +515,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
 
   {
     std::vector<stk::mesh::EntityProc> send_list ;
-    std::vector<stk::mesh::Entity>    recv_list ;
+    std::vector<stk::mesh::EntityKey>  recv_list ;
     ghosting.send_list( send_list );
     ghosting.receive_list( recv_list );
 
@@ -553,7 +547,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangeGhostingGuards )
   bulk2.modification_begin();
 
   std::vector<stk::mesh::EntityProc>  to_send;
-  std::vector<stk::mesh::Entity>    empty_vector;
+  std::vector<stk::mesh::EntityKey>   empty_vector;
   std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk1.buckets(3).begin();
   unsigned send_rank = 0;
   while ( cur_bucket != bulk1.buckets(3).end() )
@@ -601,8 +595,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyOtherGhostingGuards )
 
   std::vector<stk::mesh::EntityProc>  to_send_unowned;
   std::vector<stk::mesh::EntityProc>  empty_send;
-  std::vector<stk::mesh::Entity>    to_remove_not_ghosted;
-  std::vector<stk::mesh::Entity>    empty_remove;
+  std::vector<stk::mesh::EntityKey>   to_remove_not_ghosted;
+  std::vector<stk::mesh::EntityKey>   empty_remove;
   std::vector<stk::mesh::Bucket *>::const_iterator cur_bucket = bulk.buckets(3).begin();
   unsigned send_rank = 0;
   while ( cur_bucket != bulk.buckets(3).end() )
@@ -619,7 +613,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyOtherGhostingGuards )
       }
       else
       {
-        to_remove_not_ghosted.push_back ( *cur_entity );
+        to_remove_not_ghosted.push_back ( cur_entity->key() );
       }
       ++cur_entity;
     }
@@ -834,7 +828,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
     for ( stk::mesh::PairIterRelation
           irel = i->relations(); ! irel.empty() ; ++irel ) {
       if ( irel->entity_rank() < erank &&
-           in_receive_ghost( ghosts , irel->entity() ) ) {
+           bulk.in_receive_ghost( ghosts , irel->entity().key() ) ) {
         new_recv.insert( irel->entity() );
       }
     }
@@ -848,7 +842,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
 
   for ( std::vector< stk::mesh::EntityProc >::const_iterator
         i = add_send.begin() ; i != add_send.end() ; ++i ) {
-        new_insert_transitive_closure( new_send , *i );
+        new_insert_transitive_closure( bulk, new_send , *i );
   }
 
   // Synchronize the send and receive list.
@@ -872,8 +866,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
 
     for ( std::set< stk::mesh::EntityProc , stk::mesh::EntityLess >::iterator
           j = new_send.begin(); j != new_send.end() ; ++j ) {
-          stk::mesh::Entity entity = j->first ;
-      if ( ! in_ghost( ghosts , entity , j->second ) ) {
+      stk::mesh::Entity entity = j->first ;
+      if ( ! bulk.in_ghost( ghosts , entity.key() , j->second ) ) {
         // Not already being sent , must send it.
         stk::CommBuffer & buf = comm.send_buffer( j->second );
         buf.pack<unsigned>( entity.entity_rank() );
@@ -886,8 +880,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
 
     for ( std::set< stk::mesh::EntityProc , stk::mesh::EntityLess >::iterator
           j = new_send.begin(); j != new_send.end() ; ++j ) {
-          stk::mesh::Entity entity = j->first ;
-      if ( ! in_ghost( ghosts , entity , j->second ) ) {
+      stk::mesh::Entity entity = j->first;
+      if ( ! bulk.in_ghost( ghosts , entity.key() , j->second ) ) {
         // Not already being sent , must send it.
         stk::CommBuffer & buf = comm.send_buffer( j->second );
         buf.pack<unsigned>( entity.entity_rank() );
@@ -954,14 +948,14 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testUninitializedMetaData )
 
 namespace {
 
-void new_insert_transitive_closure( std::set<stk::mesh::EntityProc,stk::mesh::EntityLess> & new_send ,
+void new_insert_transitive_closure( stk::mesh::BulkData& bulk_data, std::set<stk::mesh::EntityProc,stk::mesh::EntityLess> & new_send ,
                                 const stk::mesh::EntityProc & entry )
 {
   // Do not insert if I can determine that this entity is already
   // owned or shared by the receiving processor.
 
   if ( entry.second != entry.first.owner_rank() &&
-       ! in_shared( entry.first, entry.second ) ) {
+       ! bulk_data.in_shared( entry.first.key(), entry.second ) ) {
 
     std::pair< std::set<stk::mesh::EntityProc,stk::mesh::EntityLess>::iterator , bool >
       result = new_send.insert( entry );
@@ -975,7 +969,7 @@ void new_insert_transitive_closure( std::set<stk::mesh::EntityProc,stk::mesh::En
       for ( ; ! irel.empty() ; ++irel ) {
         if ( irel->entity_rank() < etype ) {
           stk::mesh::EntityProc tmp( irel->entity() , entry.second );
-          new_insert_transitive_closure( new_send , tmp );
+          new_insert_transitive_closure( bulk_data, new_send , tmp );
         }
       }
     }

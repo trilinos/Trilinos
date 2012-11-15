@@ -68,14 +68,14 @@ public:
    *          The local processor is in the output if it
    *          submitted a queried key.
    */
-  void query( const std::vector<KeyType> & keys , 
+  void query( const std::vector<KeyType> & keys ,
               std::vector<KeyProc> & sharing_of_keys ) const ;
 
   /** \brief  Query which processors added the given keys.
    *          The results of the query are pushed to the processes
    *          on which the keys are used.
    */
-  void query_to_usage( const std::vector<KeyType> & keys , 
+  void query_to_usage( const std::vector<KeyType> & keys ,
                        std::vector<KeyProc> & sharing_of_keys ) const ;
 
   /*------------------------------------------------------------------*/
@@ -85,6 +85,11 @@ public:
    */
   void update_keys( const std::vector<KeyType> & add_new_keys ,
                     const std::vector<KeyType> & remove_existing_keys );
+
+  void update_keys( const std::vector<KeyType> & add_new_keys );
+
+  void register_removed_key( KeyType removed_key )
+  { m_removed_keys.push_back(removed_key); }
 
   /** \brief  Request a collection of unused keys.
    *
@@ -97,7 +102,7 @@ public:
    *  Multiple request should be bundled to reduce
    *  parallel communication costs.
    *  The output 'requested_keys' are sorted according to the policy.
-   * 
+   *
    *  The the 'first' member of the requests are the lower bound
    *  value for the keys.
    *
@@ -160,6 +165,7 @@ private:
   size_t               m_span_count ;///< Number of spans of keys
   std::vector<KeySpan> m_key_span ;  ///< (min,max) for N span
   std::vector<KeyProc> m_key_usage ; ///< Index for all key usage
+  std::vector<KeyType> m_removed_keys;
 
   /*  Unit testing of internal methods requires the unit test to have
    *  access to those internal methods.

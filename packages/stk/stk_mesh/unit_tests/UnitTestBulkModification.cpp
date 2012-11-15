@@ -125,7 +125,7 @@ void UnitTestStkMeshBulkModification::test_closure_of_non_locally_used_entities(
 
   const stk::mesh::Ghosting & ghost = bulk_data.shared_aura();
 
-  std::vector< Entity> ghost_receive ;
+  std::vector<stk::mesh::EntityKey> ghost_receive ;
 
   ghost.receive_list( ghost_receive );
 
@@ -133,7 +133,7 @@ void UnitTestStkMeshBulkModification::test_closure_of_non_locally_used_entities(
     std::vector< Entity> entities;
     std::vector< Entity> entities_closure;
 
-    entities.push_back(ghost_receive.front());
+    entities.push_back(bulk_data.get_entity(ghost_receive.front()));
 
     STKUNIT_ASSERT_THROW(stk::mesh::find_closure(bulk_data, entities, entities_closure), std::runtime_error);
   }

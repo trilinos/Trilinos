@@ -424,7 +424,6 @@ public:
 
   EntityImpl( const EntityKey & arg_key );
   EntityImpl();
-  ~EntityImpl(){}
 
   // Exposed in external interface:
   EntityRank entity_rank() const { return stk::mesh::entity_rank( m_key ); }
@@ -445,10 +444,6 @@ public:
 
   RelationVector::const_iterator node_relation(unsigned ordinal) const
   { return m_relation.begin() + ordinal; }
-
-  PairIterEntityComm comm() const;
-  PairIterEntityComm sharing() const;
-  PairIterEntityComm comm( const Ghosting & sub ) const;
 
   Bucket & bucket() const
   {
@@ -475,15 +470,6 @@ public:
                          unsigned sync_count,
                          bool is_back_relation = false);
 
-  // Communication info access:
-  bool insert( const EntityCommInfo & val );
-  bool erase( const EntityCommInfo & val );
-  bool erase( const Ghosting & ghost );
-  void comm_clear_ghosting();
-  void comm_clear();
-
-  void set_bucket_and_ordinal( Bucket * in_bucket, unsigned ordinal );
-
   // return true if entity was actually modified
   bool set_owner_rank( unsigned in_owner_rank );
 
@@ -493,14 +479,6 @@ public:
   EntityModificationLog log_query() const { return m_mod_log ; }
 
   void log_clear();
-
-  void log_deleted();
-
-  /**
-   * Takes an entity that has been marked for deletion and reactivates it. IE
-   * takes an entity in the deleted state and changes it to modified.
-   */
-  void log_resurrect();
 
   /**
    * Mark this entity as modified (only changes from EntityLogNoChange
@@ -514,24 +492,10 @@ public:
   /** \brief  Log that this entity was created as a parallel copy. */
   void log_created_parallel_copy();
 
-  bool marked_for_destruction() const
-  {
-    // The original implementation of this method checked bucket capacity. In
-    // order to ensure that the addition of EntityLogDeleted does not change
-    // behavior, we put error check here.
-    //  ThrowErrorMsgIf((bucket().capacity() == 0) != (m_mod_log == EntityLogDeleted),
-    //      "Inconsistent destruction state; " <<
-    //      "destroyed entities should be in the nil bucket and vice versa.\n" <<
-    //      "Problem is with entity: " <<
-    //      print_entity_key( MetaData::get( bucket() ), key() ) <<
-    //      "\nWas in nil bucket: " << (bucket().capacity() == 0) << ", " <<
-    //      "was in destroyed state: " << (m_mod_log == EntityLogDeleted) );
-
-    return m_mod_log == EntityLogDeleted;
-  }
-
   //set_key is only to be used for setting a key on a newly-constructed entity.
   void set_key(EntityKey key);
+
+  void set_bucket_and_ordinal( Bucket * in_bucket, unsigned ordinal );
 
   //update_key is used to change the key for an entity that has been in use with
   //a different key.
@@ -711,15 +675,6 @@ public:
    * this method will always return zero. If using stk-mesh beneath sierra framework,
    * use the method owner_processor_rank() instead (defined below). */
   unsigned owner_rank() const { return m_entityImpl->owner_rank(); }
-
-  /** \brief  Parallel processes which share this entity. */
-  PairIterEntityComm sharing() const { return m_entityImpl->sharing(); }
-
-  /** \brief  Complete communicaiton list for this entity */
-  PairIterEntityComm comm() const { return m_entityImpl->comm(); }
-
-  /** \brief  Subset communicaiton list for this entity */
-  PairIterEntityComm comm( const Ghosting & sub ) const { return m_entityImpl->comm( sub ); }
 
 //  RelationVector& rel_vec() { return m_entityImpl->rel_vec(); }
   void compress_relation_capacity();
@@ -1260,14 +1215,6 @@ void impl::EntityImpl::log_clear()
   TraceIfWatching("stk::mesh::impl::EntityRepository::log_clear", LOG_ENTITY, key());
 
   m_mod_log = EntityLogNoChange;
-}
-
-inline
-void impl::EntityImpl::log_deleted()
-{
-  TraceIfWatching("stk::mesh::impl::EntityRepository::log_deleted", LOG_ENTITY, key());
-
-  m_mod_log = EntityLogDeleted;
 }
 
 } // namespace mesh

@@ -1,6 +1,6 @@
 
 #include <stk_adapt/UniformRefinerPattern.hpp>
-#include <stk_mesh/base/EntityComm.hpp>
+#include <stk_mesh/base/EntityCommDatabase.hpp>
 
 namespace stk {
   namespace adapt {
@@ -301,7 +301,7 @@ namespace stk {
           mesh::PairIterRelation parent_elem_nodes = parent_elem.relations( stk::mesh::MetaData::NODE_RANK );
           for (unsigned i = 0; i < parent_elem_nodes.size(); i++)
             {
-              if (!stk::mesh::in_shared(parent_elem_nodes[i].entity())) continue;
+              if (! eMesh.get_bulk_data()->in_shared(parent_elem_nodes[i].entity().key())) continue;
 
               bool found = false;
               mesh::PairIterRelation ft_nodes = family_tree.relations( stk::mesh::MetaData::NODE_RANK );
@@ -326,7 +326,7 @@ namespace stk {
             }
           for (unsigned i = 0; i < child_elem_nodes.size(); i++)
             {
-              if (!stk::mesh::in_shared(child_elem_nodes[i].entity())) continue;
+              if (!eMesh.get_bulk_data()->in_shared(child_elem_nodes[i].entity().key())) continue;
 
               bool found = false;
               mesh::PairIterRelation ft_nodes = family_tree.relations( stk::mesh::MetaData::NODE_RANK );
@@ -353,7 +353,7 @@ namespace stk {
               stk::mesh::PairIterRelation ft_level_0_nodes = family_tree_level_0.relations( stk::mesh::MetaData::NODE_RANK );
               for (unsigned i = 0; i < ft_level_0_nodes.size(); i++)
                 {
-                  if (!stk::mesh::in_shared(ft_level_0_nodes[i].entity())) continue;
+                  if (!eMesh.get_bulk_data()->in_shared(ft_level_0_nodes[i].entity().key())) continue;
 
                   bool found = false;
                   mesh::PairIterRelation ft_nodes = family_tree.relations( stk::mesh::MetaData::NODE_RANK );

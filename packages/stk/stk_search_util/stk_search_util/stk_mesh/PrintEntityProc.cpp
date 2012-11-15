@@ -10,7 +10,7 @@
 #include <stk_util/diag/Writer.hpp>
 #include <stk_util/diag/WriterExt.hpp>
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/EntityComm.hpp>
+#include <stk_mesh/base/EntityCommDatabase.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>
@@ -102,7 +102,7 @@ void print_entity_proc_map( stk::diag::Writer & writer ,
                             const stk::mesh::BulkData & mesh )
 {
   const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(mesh);
-  const std::vector<stk::mesh::Entity> & comm = mesh.entity_comm();
+  const std::vector<stk::mesh::EntityCommListInfo> & comm = mesh.comm_list();
   const std::vector<stk::mesh::Ghosting*> & ghost = mesh.ghostings();
 
   size_t counter = 0 ;
@@ -114,20 +114,18 @@ void print_entity_proc_map( stk::diag::Writer & writer ,
     writer << "P" << mesh.parallel_rank()
            << " " << g.name() << " Communication:" << std::endl ;
 
-    for ( std::vector<stk::mesh::Entity>::const_iterator
+    for ( std::vector<stk::mesh::EntityCommListInfo>::const_iterator
           i = comm.begin() ; i != comm.end() ; ++i ) {
-
-      const stk::mesh::Entity entity = *i;
 
       std::vector<unsigned> procs ;
 
-      stk::mesh::comm_procs( g , entity , procs );
+      mesh.comm_procs( g , i->key , procs );
 
       if ( ! procs.empty() ) {
         writer << "[" << counter << "] "
-               << meta.entity_rank_name( entity.entity_rank() )
-               << "[" << entity.identifier() << " " ;
-        if ( entity.owner_rank() != mesh.parallel_rank() ) {
+               << meta.entity_rank_name( i->key.rank() )
+               << "[" << i->key.id() << " " ;
+        if ( i->owner != mesh.parallel_rank() ) {
           writer << "not_" ;
         }
         writer << "owned ] {" ;

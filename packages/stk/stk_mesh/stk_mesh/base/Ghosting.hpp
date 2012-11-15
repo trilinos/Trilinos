@@ -14,6 +14,7 @@
 #include <string>
 #include <iosfwd>
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/EntityKey.hpp>
 
 namespace stk {
 namespace mesh {
@@ -51,7 +52,7 @@ public:
    *          This generated communication list for receiving updates
    *          is sorted by entity key.
    */
-  void receive_list( std::vector< Entity> & ) const ;
+  void receive_list( std::vector<EntityKey> & ) const ;
 
   /** \brief  Print the details of this object for debugging
    */

@@ -16,7 +16,7 @@
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/EntityComm.hpp>
+#include <stk_mesh/base/EntityCommDatabase.hpp>
 #include <stk_mesh/base/Comm.hpp>
 
 #include <stk_mesh/fixtures/BoxFixture.hpp>
@@ -47,9 +47,10 @@ const EntityRank NODE_RANK = MetaData::NODE_RANK;
 
 void printEntity(std::ostringstream& msg, Entity entity)
 {
+  BulkData& bulk = BulkData::get(entity);
   msg << " :: " << print_entity_key(entity) << ":o[" << entity.owner_rank() << "]:l[" << entity.log_query()
       << "]:ec[";
-  for ( PairIterEntityComm ec = entity.comm() ; ! ec.empty() ; ++ec ) {
+  for ( PairIterEntityComm ec = bulk.entity_comm(entity.key()) ; ! ec.empty() ; ++ec ) {
     msg << "(" << ec->ghost_id << "," << ec->proc << ")";
   }
   msg << "]";

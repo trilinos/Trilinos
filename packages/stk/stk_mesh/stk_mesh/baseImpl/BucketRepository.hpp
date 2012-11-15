@@ -13,7 +13,6 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Iterators.hpp>
 
-
 #define USE_STK_MESH_IMPL_PARTITION
 
 namespace stk {
@@ -82,8 +81,6 @@ public:
   // Destroy the last empty bucket in a partition:
   void destroy_bucket( const unsigned & entity_rank , Bucket * last );
   void destroy_bucket( Bucket * bucket );
-  void declare_nil_bucket();
-  Bucket * get_nil_bucket() const { return m_nil_bucket; }
 
 #ifndef USE_STK_MESH_IMPL_PARTITION
   Bucket * declare_bucket(
@@ -162,7 +159,6 @@ private:
   // location of Buckets when USE_STK_MESH_IMPL_PARTITION is #defined.
   std::vector< std::vector<Bucket*> >   m_buckets ;
 
-  Bucket                              * m_nil_bucket ; // nil bucket
   EntityRepository                    & m_entity_repo ;
 
   std::vector<std::vector<Partition *> >         m_partitions;

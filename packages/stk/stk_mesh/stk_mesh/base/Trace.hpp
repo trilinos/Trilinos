@@ -13,7 +13,7 @@
 // with tracing with: 'bake -c ; bake <product> cxxflags=-DSTK_MESH_TRACE_ENABLED'
 // You'll need to be sure you link with stk_util/use_cases.
 //
-// If a macro is setting up your main function, be sure to use STKUNIT_WITH_TRACING_MAIN.
+// If a macro is setting up your main function, you should be all set.
 // If you're setting up the main function yourself, be sure to set up the
 // environment with UseCaseEnvironment.
 //

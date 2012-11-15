@@ -40,51 +40,42 @@ Entity EntityRepository::allocate_entity(bool use_pool)
   }
 }
 
-void EntityRepository::internal_destroy_entity(Entity entity, bool use_pool)
+void EntityRepository::internal_destroy_entity(Entity entity)
 {
-  if (use_pool) {
+  if (m_use_pool) {
     entity_allocator().destroy(entity.m_entityImpl);
     entity_allocator().deallocate(entity.m_entityImpl, 1);
-    return;
   }
-  //else
-  delete entity.m_entityImpl;
-}
-
-void release_all_entity_memory(bool use_pool)
-{
-  if (use_pool) {
-    boost::singleton_pool<boost::fast_pool_allocator_tag, sizeof(EntityImpl)>::release_memory();
+  else {
+    delete entity.m_entityImpl;
   }
 }
 
 EntityRepository::~EntityRepository()
 {
-  try {
-    while ( ! m_entities.empty() ) {
+  if (m_use_pool) {
+    boost::singleton_pool<boost::fast_pool_allocator_tag, sizeof(EntityImpl)>::release_memory();
+  }
+  else {
+    while ( !m_entities.empty() ) {
       internal_expunge_entity( m_entities.begin() );
     }
-  } catch(...){}
-
-  release_all_entity_memory(m_use_pool);
+  }
 }
 
 void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
 {
-  TraceIfWatching("stk::mesh::impl::EntityRepository::internal_expunge_entity", LOG_ENTITY, i->first);
+  ThrowAssertMsg( i->second != Entity(),
+                  "For key " << entity_rank(i->first) << " " <<
+                  entity_id(i->first) << ", value was NULL");
 
-  ThrowErrorMsgIf( i->second == Entity(),
-                   "For key " << entity_rank(i->first) << " " <<
-                   entity_id(i->first) << ", value was NULL");
+  ThrowAssertMsg( i->first == i->second.key(),
+                  "Key (" << i->first.rank() << ", " << i->first.id() << ")" <<
+                  " != (" << i->second.key().rank() << ", " << i->second.key().rank() << ")");
 
-  ThrowErrorMsgIf( i->first != i->second.key(),
-    "Key " << print_entity_key(MetaData::get( i->second ), i->first) <<
-    " != " << print_entity_key(i->second));
 
   Entity deleted_entity = i->second;
-
-  internal_destroy_entity(deleted_entity, m_use_pool);
-  i->second = Entity();
+  internal_destroy_entity(deleted_entity);
   m_entities.erase( i );
 }
 
@@ -113,11 +104,6 @@ EntityRepository::internal_create_entity( const EntityKey & key )
     Entity new_entity = internal_allocate_entity(key);
     insert_result.first->second = result.first = new_entity;
   }
-  else if ( EntityLogDeleted == result.first.log_query() ) {
-    // resurrection
-    result.first.m_entityImpl->log_resurrect();
-    result.second = true;
-  }
 
   return result ;
 }
@@ -143,53 +129,9 @@ void EntityRepository::clean_changes()
 {
   TraceIf("stk::mesh::impl::EntityRepository::clean_changes", LOG_ENTITY);
 
-  for ( EntityMap::iterator
-      i = m_entities.begin() ; i != m_entities.end() ; )
-  {
-    const EntityMap::iterator j = i ;
-    ++i ;
-
-    if ( j->second.m_entityImpl->marked_for_destruction() ) {
-      // Clear out the entities destroyed in the previous modification.
-      // They were retained for change-logging purposes.
-      internal_expunge_entity( j );
-    }
-    else {
-      j->second.m_entityImpl->log_clear();
-    }
+  for ( EntityMap::iterator i = m_entities.begin() ; i != m_entities.end() ; ++i ) {
+    i->second.m_entityImpl->log_clear();
   }
-}
-
-bool EntityRepository::erase_ghosting( Entity e, const Ghosting & ghosts) const
-{
-  TraceIfWatching("stk::mesh::impl::EntityRepository::erase_ghosting", LOG_ENTITY, e.key());
-
-  return e.m_entityImpl->erase( ghosts );
-}
-
-bool EntityRepository::erase_comm_info( Entity e, const EntityCommInfo & comm_info) const
-{
-  TraceIfWatching("stk::mesh::impl::EntityRepository::erase_comm_info", LOG_ENTITY, e.key());
-
-  return e.m_entityImpl->erase( comm_info );
-}
-
-bool EntityRepository::insert_comm_info( Entity e, const EntityCommInfo & comm_info) const
-{
-  TraceIfWatching("stk::mesh::impl::EntityRepository::insert_comm_info", LOG_ENTITY, e.key());
-
-  return e.m_entityImpl->insert( comm_info );
-}
-
-void EntityRepository::destroy_later( Entity e, Bucket* nil_bucket )
-{
-  TraceIfWatching("stk::mesh::impl::EntityRepository::destroy_later", LOG_ENTITY, e.key());
-
-  ThrowErrorMsgIf( e.log_query() == EntityLogDeleted,
-                   "double deletion of entity: " << print_entity_key( e ));
-
-  change_entity_bucket( *nil_bucket, e, 0);
-  e.m_entityImpl->log_deleted(); //important that this come last
 }
 
 void EntityRepository::change_entity_bucket( Bucket & b, Entity e,
@@ -271,39 +213,17 @@ void EntityRepository::declare_relation( Entity e_from,
   }
 }
 
-void EntityRepository::update_entity_key(EntityKey key, Entity entity)
+void EntityRepository::update_entity_key(EntityKey new_key, Entity entity)
 {
   EntityKey old_key = entity.key();
 
+  ThrowAssert(m_entities.find(new_key) == m_entities.end());
+  m_entities.insert(std::make_pair(new_key, entity));
+  entity.m_entityImpl->update_key(new_key);
+
   EntityMap::iterator old_itr = m_entities.find( old_key );
-
-  EntityMap::iterator itr = m_entities.find(key);
-  if (itr != m_entities.end()) {
-    Entity key_entity = itr->second;
-    ThrowRequireMsg( key_entity.log_query() == EntityLogDeleted, "update_entity_key ERROR: non-deleted entity already present for new key (" << key.rank()<<","<<key.id()<<")");
-
-    //We found an entity with 'key', we'll change its key to old_key and then
-    //entity (old_itr) will adopt key.
-
-    key_entity.m_entityImpl->update_key(old_key);
-    //key_entity is already marked for deletion
-
-    old_itr->second.m_entityImpl->update_key(key);
-
-    //We also need to swap the entities on these map iterators so that
-    //they map to the right keys:
-    itr->second = old_itr->second;
-    old_itr->second = key_entity;
-  }
-  else {
-    m_entities.insert(std::make_pair(key, entity));
-
-    entity.m_entityImpl->update_key(key);
-
-    old_itr->second = internal_allocate_entity(old_key);
-
-    old_itr->second.m_entityImpl->log_deleted();
-  }
+  ThrowAssert(old_itr != m_entities.end());
+  m_entities.erase(old_itr);
 }
 
 } // namespace impl

@@ -593,7 +593,7 @@ namespace stk {
           //std::cout << "m_useCustomGhosting= " << m_useCustomGhosting << std::endl;
           stk::mesh::Ghosting & ghosting = m_eMesh.get_bulk_data()->create_ghosting( std::string("new_nodes") );
 
-          vector<stk::mesh::Entity> receive;
+          vector<stk::mesh::EntityKey> receive;
 
           ghosting.receive_list( receive );
           //if (receive.size()) std::cout << "NodeRegistry::endGetFromRemote receive.size() = " << receive.size() << std::endl;
@@ -1962,7 +1962,7 @@ namespace stk {
           {
             stk::mesh::Ghosting & ghosting = m_eMesh.get_bulk_data()->create_ghosting( std::string("new_nodes") );
 
-            vector<stk::mesh::Entity> receive;
+            vector<stk::mesh::EntityKey> receive;
             ghosting.receive_list( receive );
             //if (receive.size()) std::cout << "NodeRegistry::endGetFromRemote receive.size() = " << receive.size() << std::endl;
             m_eMesh.get_bulk_data()->change_ghosting( ghosting, nodes_to_ghost, receive);

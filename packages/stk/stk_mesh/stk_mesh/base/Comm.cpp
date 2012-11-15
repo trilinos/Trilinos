@@ -17,8 +17,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/EntityComm.hpp>
-
+#include <stk_mesh/base/EntityCommDatabase.hpp>
 
 namespace stk {
 namespace mesh {

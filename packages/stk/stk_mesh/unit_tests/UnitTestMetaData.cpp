@@ -156,21 +156,21 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testEntityRepository )
   bool use_memory_pool = false;
   stk::mesh::impl::EntityRepository e(use_memory_pool);
 
-  e.comm_clear( elem );
+  bulk.entity_comm_clear(elem.key());
 
-  e.comm_clear_ghosting( elem );
+  bulk.entity_comm_clear_ghosting(elem.key());
 
   const stk::mesh::Ghosting & ghost = bulk.shared_aura();
 
   bulk.modification_end();
 
-  STKUNIT_ASSERT_FALSE(e.erase_ghosting(elem, ghost));
+  STKUNIT_ASSERT_FALSE(bulk.entity_comm_erase(elem.key(), ghost));
 
   const stk::mesh::EntityCommInfo comm_info( ghost.ordinal() , 0 );
 
-  STKUNIT_ASSERT_FALSE(e.erase_comm_info(elem, comm_info));
+  STKUNIT_ASSERT_FALSE(bulk.entity_comm_erase(elem.key(), comm_info));
 
-  STKUNIT_ASSERT(e.insert_comm_info(elem, comm_info));
+  STKUNIT_ASSERT(bulk.entity_comm_insert(elem, comm_info));
 
   //Checking internal_create_entity
 

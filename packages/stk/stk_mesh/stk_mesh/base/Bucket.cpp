@@ -124,20 +124,6 @@ Bucket::Bucket( BulkData & arg_mesh ,
     m_field_map[ num_fields ].m_size = 0 ;
     m_field_map[ num_fields ].m_stride = NULL ;
   }
-  else { //nil bucket
-
-    FieldBase::Restriction::size_type empty_stride[ MaximumFieldDimension ];
-    Copy<MaximumFieldDimension>( empty_stride , FieldBase::Restriction::size_type(0) );
-
-    for ( size_t i = 0; i<num_fields; ++i) {
-      m_field_map[i].m_base = 0 ;
-      m_field_map[i].m_size = 0 ;
-      m_field_map[i].m_stride = empty_stride;
-    }
-    m_field_map[ num_fields ].m_base   = 0 ;
-    m_field_map[ num_fields ].m_size   = 0 ;
-    m_field_map[ num_fields ].m_stride = NULL ;
-  }
 
   //allocate space for the fields
   m_field_data = field_data_size > 0 ? new unsigned char[field_data_size] : NULL;
@@ -341,7 +327,6 @@ std::ostream & operator << ( std::ostream & s , const Bucket & k )
 {
   const MetaData & mesh_meta_data = MetaData::get(k);
   const std::string & entity_rank_name =
-    k.entity_rank() == InvalidEntityRank ? "Nil" :
     mesh_meta_data.entity_rank_names()[ k.entity_rank() ];
 
   PartVector parts ; k.supersets( parts );
@@ -361,7 +346,6 @@ print( std::ostream & os , const std::string & indent , const Bucket & bucket )
 {
   const MetaData & mesh_meta_data = MetaData::get(bucket);
   const std::string & entity_rank_name =
-    bucket.entity_rank() == InvalidEntityRank ? "Nil" :
     mesh_meta_data.entity_rank_names()[ bucket.entity_rank() ];
 
   const std::pair<const unsigned *, const unsigned *>

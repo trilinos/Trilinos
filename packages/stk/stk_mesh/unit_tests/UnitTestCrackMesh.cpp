@@ -41,10 +41,6 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy2D )
     }
 
     fixture.m_bulk_data.modification_end();
-
-    if ( elem.is_valid() ) {
-      STKUNIT_EXPECT_TRUE ( elem.log_query() == stk::mesh::EntityLogDeleted );
-    }
   }
   }
 }
@@ -76,10 +72,6 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy3D )
     }
 
     fixture.m_bulk_data.modification_end();
-
-    if ( elem.is_valid() ) {
-      STKUNIT_EXPECT_TRUE ( elem.log_query() == stk::mesh::EntityLogDeleted );
-    }
   }
   }
   }
@@ -93,7 +85,6 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
   // if all (incl ghosted) copies get updated.
 
   // Make the hex fixture
-
   stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, 2,2,2 );
   fixture.m_fem_meta.commit();
   fixture.generate_mesh();
@@ -103,12 +94,13 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
   // Hardwire which entities are being modified. Note that not every
   // process will know about these entities
 
-  stk::mesh::Entity const old_node = fixture.node(0,1,1);
+  stk::mesh::Entity old_node = fixture.node(0,1,1);
 
-  stk::mesh::Entity const right_element = fixture.elem(0,0,1);
+  stk::mesh::Entity right_element = fixture.elem(0,0,1);
+  const stk::mesh::EntityKey right_element_key = right_element.key();
 
   unsigned right_ordinal = 0;
-  unsigned new_node_id = 28;
+  const unsigned new_node_id = 28;
 
   // If this process knows about both entities, compute the ordinal
   // of the relation from right_element to old_node
@@ -144,15 +136,19 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
 
   mesh.modification_end();
 
+  // Refesh handle. If ghosting, it would have been deleted and recreated, so the unlying
+  // pointer may have changed.
+  right_element = mesh.get_entity(right_element_key);
+
   // Now that modification_end has been called, all processes that know
   // about right_element should know about the crack.
 
   if ( right_element.is_valid() ) {
     stk::mesh::PairIterRelation rel = right_element.relations();
+    STKUNIT_ASSERT_EQ(rel.size(), 8u);
     stk::mesh::Entity new_node      = rel.first[right_ordinal].entity();
+    STKUNIT_ASSERT(new_node.is_valid());
 
-    STKUNIT_EXPECT_TRUE ( new_node.identifier() == new_node_id );
+    STKUNIT_EXPECT_EQ ( new_node.identifier(), new_node_id );
   }
 }
-
-//----------------------------------------------------------------------------

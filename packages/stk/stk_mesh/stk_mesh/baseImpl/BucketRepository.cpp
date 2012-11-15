@@ -21,9 +21,6 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-//----------------------------------------------------------------------
-
-
 BucketRepository::BucketRepository(
     BulkData & mesh,
     unsigned bucket_capacity,
@@ -33,14 +30,12 @@ BucketRepository::BucketRepository(
   :m_mesh(mesh),
    m_bucket_capacity(bucket_capacity),
    m_buckets(entity_rank_count),
-   m_nil_bucket(NULL),
    m_entity_repo(entity_repo),
    m_partitions(entity_rank_count),
    m_need_sync_from_partitions(entity_rank_count, false)
 {
     // Nada.
 }
-
 
 BucketRepository::~BucketRepository()
 {
@@ -77,10 +72,7 @@ BucketRepository::~BucketRepository()
 
     m_buckets.clear();
   } catch(...) {}
-
-  try { if ( m_nil_bucket ) destroy_bucket( m_nil_bucket ); } catch(...) {}
 }
-
 
 //----------------------------------------------------------------------
 // The current 'last' bucket in a partition is to be deleted.
@@ -127,41 +119,12 @@ void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * b
   destroy_bucket( bucket_to_be_deleted );
 }
 
-//----------------------------------------------------------------------
 void BucketRepository::destroy_bucket( Bucket * bucket )
 {
   TraceIfWatching("stk::mesh::impl::BucketRepository::destroy_bucket", LOG_BUCKET, bucket);
 
   delete bucket;
 }
-
-//
-//----------------------------------------------------------------------
-// The input part ordinals are complete and contain all supersets.
-void
-BucketRepository::declare_nil_bucket()
-{
-  TraceIf("stk::mesh::impl::BucketRepository::declare_nil_bucket", LOG_BUCKET);
-
-  if (m_nil_bucket == NULL) {
-    // Key layout:
-    // { part_count + 1 , { part_ordinals } , partition_count }
-
-    std::vector<unsigned> new_key(2);
-    new_key[0] = 1 ; // part_count + 1
-    new_key[1] = 0 ; // partition_count
-
-    Bucket * bucket =
-      new Bucket(m_mesh, InvalidEntityRank, new_key, 0);
-
-    bucket->set_partition_pointer( bucket );
-
-    //----------------------------------
-
-    m_nil_bucket = bucket;
-  }
-}
-
 
 /** 11/9/10 Discussion between Kendall, Alan, Todd:
  *  Kendall is confused about why presto would run faster simply by removing
@@ -294,15 +257,11 @@ BucketRepository::declare_bucket(
 }
 #endif
 
-//----------------------------------------------------------------------
-
 void BucketRepository::initialize_fields( Bucket & k_dst , unsigned i_dst )
 {
   TraceIfWatching("stk::mesh::impl::BucketRepository::initialize_fields", LOG_BUCKET, &k_dst);
   k_dst.initialize_fields(i_dst);
 }
-
-//----------------------------------------------------------------------
 
 void BucketRepository::update_field_data_states() const
 {
@@ -337,7 +296,6 @@ void BucketRepository::update_field_data_states() const
 
 #endif
 }
-
 
 //----------------------------------------------------------------------
 
@@ -568,15 +526,11 @@ void BucketRepository::optimize_buckets()
 }
 #endif
 
-//----------------------------------------------------------------------
-
 #ifndef USE_STK_MESH_IMPL_PARTITION
 
 void BucketRepository::remove_entity( Bucket * k , unsigned i )
 {
   TraceIfWatching("stk::mesh::impl::BucketRepository::remove_entity", LOG_BUCKET, k);
-
-  ThrowRequireMsg( k != m_nil_bucket, "Cannot remove entity from nil_bucket" );
 
   const EntityRank entity_rank = k->entity_rank();
 
@@ -617,8 +571,6 @@ void BucketRepository::remove_entity( Bucket * k , unsigned i )
 
 #endif
 
-//----------------------------------------------------------------------
-
 void BucketRepository::internal_propagate_relocation( Entity entity )
 {
   TraceIf("stk::mesh::impl::BucketRepository::internal_propagate_relocation", LOG_BUCKET);
@@ -640,7 +592,6 @@ void BucketRepository::internal_propagate_relocation( Entity entity )
     }
   }
 }
-
 
 ////
 //// Note that in both versions of get_or_create_partition(..) we need to construct a
@@ -760,7 +711,6 @@ Partition *BucketRepository::get_or_create_partition(
 
     return partition ;
 }
-
 
 void BucketRepository::sync_to_partitions()
 {
@@ -915,7 +865,6 @@ void BucketRepository::babbleForEntity(EntityRank entity_rank, EntityId entity_i
 
 }
 
-
 std::vector<Partition *> BucketRepository::get_partitions(EntityRank rank)
 {
     if (m_mesh.synchronized_state() != BulkData::SYNCHRONIZED)
@@ -934,5 +883,3 @@ std::vector<Partition *> BucketRepository::get_partitions(EntityRank rank)
 } // namespace impl
 } // namespace mesh
 } // namespace stk
-
-

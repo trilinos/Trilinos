@@ -19,7 +19,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/base/EntityComm.hpp>
+#include <stk_mesh/base/EntityCommDatabase.hpp>
 
 #include <stk_mesh/base/BoundaryAnalysis.hpp>
 #include <stk_mesh/base/SkinMesh.hpp>
@@ -149,7 +149,7 @@ void copy_nodes_and_break_relations( stk::mesh::BulkData     & mesh,
       stk::mesh::Entity current_entity = (relations_pair.second->entity());
       size_t side_ordinal = relations_pair.second->identifier();
 
-      if (stk::mesh::in_receive_ghost(current_entity)) {
+      if (mesh.in_receive_ghost(current_entity.key())) {
         // TODO deleteing the ghost triggers a logic error at the
         // end of the NEXT modification cycle.  We need to fix this!
         //mesh.destroy_entity(current_entity);
@@ -202,7 +202,7 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
     stk::mesh::Entity node = nodes[i];
     stk::mesh::Entity new_node = new_nodes[i];
 
-    stk::mesh::PairIterEntityComm entity_comm = node.sharing();
+    stk::mesh::PairIterEntityComm entity_comm = mesh.entity_comm_sharing(node.key());
 
     for (; entity_comm.first != entity_comm.second; ++entity_comm.first) {
 
@@ -219,7 +219,7 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
     stk::mesh::Entity node = nodes[i];
     stk::mesh::Entity new_node = new_nodes[i];
 
-    stk::mesh::PairIterEntityComm entity_comm = node.sharing();
+    stk::mesh::PairIterEntityComm entity_comm = mesh.entity_comm_sharing(node.key());
 
     for (; entity_comm.first != entity_comm.second; ++entity_comm.first) {
 

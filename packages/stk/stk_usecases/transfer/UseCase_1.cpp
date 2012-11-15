@@ -198,7 +198,7 @@ use_case_1_driver(
       range_bulk_data.create_ghosting( std::string("transter_test") );
 
     {
-      std::vector<stk::mesh::Entity> receive;
+      std::vector<stk::mesh::EntityKey> receive;
       transfer_range_ghosting.receive_list( receive );
       range_bulk_data.change_ghosting( transfer_range_ghosting ,
                                        range_to_ghost ,

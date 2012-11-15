@@ -284,10 +284,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
 
   if ( parallel ) {
     // If parallel, check that the entities are shared across all procs.
-    STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , entity_0_1.sharing().size() );
-    STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , entity_1_1.sharing().size() );
-    STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , entity_2_1.sharing().size() );
-    STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , entity_3_1.sharing().size() );
+    STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , bulk.entity_comm_sharing(entity_0_1.key()).size() );
+    STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , bulk.entity_comm_sharing(entity_1_1.key()).size() );
+    STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , bulk.entity_comm_sharing(entity_2_1.key()).size() );
+    STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , bulk.entity_comm_sharing(entity_3_1.key()).size() );
   }
 
   bulk.modification_begin();

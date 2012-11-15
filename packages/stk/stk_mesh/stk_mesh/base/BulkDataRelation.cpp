@@ -102,8 +102,8 @@ void BulkData::require_valid_relation( const char action[] ,
   const bool error_mesh_from = & mesh != & BulkData::get(e_from);
   const bool error_mesh_to   = & mesh != & BulkData::get(e_to);
   const bool error_type      = e_from.entity_rank() <= e_to.entity_rank();
-  const bool error_nil_from  = EntityLogDeleted == e_from.log_query();
-  const bool error_nil_to    = EntityLogDeleted == e_to.log_query();
+  const bool error_nil_from  = !e_from.is_valid();
+  const bool error_nil_to    = !e_to.is_valid();
 
   if ( error_mesh_from || error_mesh_to || error_type ||
        error_nil_from || error_nil_to ) {
@@ -211,7 +211,7 @@ bool BulkData::destroy_relation( Entity e_from ,
   // When removing a relationship may need to
   // remove part membership and set field relation pointer to NULL
 
-  if ( parallel_size() < 2 || m_entity_comm_map.sharing(e_to.key()).empty() ) {
+  if ( parallel_size() < 2 || entity_comm_sharing(e_to.key()).empty() ) {
 
     //------------------------------
     // 'keep' contains the parts deduced from kept relations
@@ -336,7 +336,7 @@ void BulkData::internal_propagate_part_changes(
         }
       }
 
-      if ( parallel_size() < 2 || m_entity_comm_map.sharing(e_to.key()).empty() ) {
+      if ( parallel_size() < 2 || entity_comm_sharing(e_to.key()).empty() ) {
         // Entirely local, ok to remove memberships now
         internal_change_entity_parts( e_to , to_add , to_del );
       }
@@ -422,7 +422,7 @@ void BulkData::internal_propagate_part_changes(
         }
       }
 
-      if ( parallel_size() < 2 || m_entity_comm_map.sharing(e_to.key()).empty() ) {
+      if ( parallel_size() < 2 || entity_comm_sharing(e_to.key()).empty() ) {
         // Entirely local, ok to remove memberships now
         internal_change_entity_parts( e_to , to_add , to_del );
       }

@@ -91,17 +91,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_nodes)
     STKUNIT_ASSERT( bulk.destroy_entity( e ) );
     bulk.modification_end();
 
-    // Due to change logging the previously deleted entity
-    // should be gone, but the currently deleted entity
-    // should exist in the 'nil' set.
-
     if ( id_begin < i ) {
       STKUNIT_ASSERT( !bulk.get_entity( MetaData::NODE_RANK , ids[ i - 1 ] ).is_valid() );
     }
 
     e = bulk.get_entity( MetaData::NODE_RANK , ids[ i ] );
-    STKUNIT_ASSERT( e.is_valid() );
-    STKUNIT_ASSERT( 0 == e.bucket().capacity() );
+    STKUNIT_ASSERT( !e.is_valid() );
   }
 }
 
@@ -218,7 +213,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
 
     STKUNIT_ASSERT( node.is_valid() );
     STKUNIT_ASSERT_NE( p_rank , node.owner_rank() );
-    STKUNIT_ASSERT_EQUAL( size_t(1) , node.sharing().size() );
+    STKUNIT_ASSERT_EQUAL( size_t(1) , bulk.entity_comm_sharing(node.key()).size() );
     STKUNIT_ASSERT_EQUAL( size_t(2) , node.relations().size() );
 
     EntityId node_element_ids[2] ;
@@ -244,7 +239,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
     assert_is_destroyed( bulk.get_entity(MetaData::ELEMENT_RANK, node_element_ids[1] ) );
 
     // assert that no entities are shared or ghosted
-    STKUNIT_ASSERT( bulk.entity_comm().empty() );
+    STKUNIT_ASSERT( bulk.comm_list().empty() );
   }
   //------------------------------
   if ( 1 < p_size ) { // With ghosting
@@ -271,9 +266,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
     STKUNIT_ASSERT( node_not_owned.is_valid() );
     STKUNIT_ASSERT_NE( p_rank , node_not_owned.owner_rank() );
     STKUNIT_ASSERT_EQUAL( p_rank , node_owned.owner_rank() );
-    STKUNIT_ASSERT_EQUAL( size_t(1) , node_owned.sharing().size() );
-    STKUNIT_ASSERT_EQUAL( size_t(1) , node_not_owned.sharing().size() );
-    STKUNIT_ASSERT_EQUAL( size_t(2) , node_owned.relations().size() );
+    STKUNIT_ASSERT_EQUAL( 1u , bulk.entity_comm_sharing(node_owned.key()).size() );
+    STKUNIT_ASSERT_EQUAL( 1u , bulk.entity_comm_sharing(node_not_owned.key()).size() );
+    STKUNIT_ASSERT_EQUAL( 2u , node_owned.relations().size() );
 
     EntityId node_element_ids[2] ;
     node_element_ids[0] = node_owned.relations()[0].entity().identifier();
@@ -302,7 +297,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
     assert_is_destroyed( bulk.get_entity(MetaData::ELEMENT_RANK, node_element_ids[1] ) );
 
     // assert that no entities are shared or ghosted
-    STKUNIT_ASSERT( bulk.entity_comm().empty() );
+    STKUNIT_ASSERT( bulk.comm_list().empty() );
   }
 }
 

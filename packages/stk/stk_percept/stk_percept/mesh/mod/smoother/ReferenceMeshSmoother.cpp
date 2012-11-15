@@ -52,14 +52,14 @@ namespace stk {
 
         msg << std::endl ;
 
-        for ( std::vector<Entity>::const_iterator
-                i =  mesh.entity_comm().begin() ;
-              i != mesh.entity_comm().end() ; ++i ) {
+        for ( std::vector<EntityCommListInfo>::const_iterator
+                i =  mesh.comm_list().begin() ;
+              i != mesh.comm_list().end() ; ++i ) {
 
-          Entity entity = *i;
+          Entity entity = i->entity;
           msg << "P" << mesh.parallel_rank() << ": " ;
 
-          print_entity_key( msg , MetaData::get(mesh) , entity.key() );
+          print_entity_key( msg , MetaData::get(mesh) , i->key );
 
           msg << " owner(" << entity.owner_rank() << ")" ;
 
@@ -67,7 +67,7 @@ namespace stk {
           else if ( EntityLogDeleted == entity.log_query() ) { msg << " del" ; }
           else { msg << "    " ; }
 
-          for ( PairIterEntityComm ec = mesh.entity_comm(entity.key()); ! ec.empty() ; ++ec ) {
+          for ( PairIterEntityComm ec = mesh.entity_comm(i->key); ! ec.empty() ; ++ec ) {
             msg << " gid, proc (" << ec->ghost_id << "," << ec->proc << ")" ;
           }
           msg << std::endl ;

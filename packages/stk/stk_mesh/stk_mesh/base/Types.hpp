@@ -112,6 +112,8 @@ static const RelationIdentifier InvalidRelationIdentifier = InvalidOrdinal;
 typedef std::pair<Entity ,unsigned> EntityProc ;
 typedef std::vector<EntityProc>     EntityProcVec ;
 
+typedef std::pair<EntityKey, unsigned> EntityKeyProc;
+
 /** \brief  Spans of a vector of entity-processor pairs are common.
  *
  */

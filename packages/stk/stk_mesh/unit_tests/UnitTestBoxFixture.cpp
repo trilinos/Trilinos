@@ -163,7 +163,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
       ( i == local_box[0][0] && i != root_box[0][0] ) ||
       ( i == local_box[0][1] && i != root_box[0][1] );
     if (bulk.parallel_size() > 1) {
-      STKUNIT_ASSERT_EQUAL( shared , ! node.sharing().empty() );
+      STKUNIT_ASSERT_EQUAL( shared , ! bulk.entity_comm_sharing(node.key()).empty() );
     }
   }
   }
@@ -185,7 +185,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
                 Entity const node = bulk.get_entity( node_type , node_id );
                 STKUNIT_ASSERT( node.is_valid() );
                 // Must be shared with 'p'
-                stk::mesh::PairIterEntityComm iter = node.sharing();
+                stk::mesh::PairIterEntityComm iter = bulk.entity_comm_sharing(node.key());
                 for ( ; ! iter.empty() && iter->proc != p ; ++iter );
                 STKUNIT_ASSERT( ! iter.empty() );
 
@@ -196,11 +196,11 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
   }
 
   size_t count_shared_entities = 0 ;
-  for (std::vector<Entity>::const_iterator
-       i = bulk.entity_comm().begin() ;
-       i != bulk.entity_comm().end() ;
+  for (std::vector<stk::mesh::EntityCommListInfo>::const_iterator
+       i = bulk.comm_list().begin() ;
+       i != bulk.comm_list().end() ;
        ++i) {
-    const stk::mesh::PairIterEntityComm ec = i->sharing();
+    const stk::mesh::PairIterEntityComm ec = bulk.entity_comm_sharing(i->key);
     count_shared_entities += ec.size();
   }
   STKUNIT_ASSERT_EQUAL( count_shared_entities , count_shared_node_pairs );

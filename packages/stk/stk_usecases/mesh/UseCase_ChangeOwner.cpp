@@ -10,7 +10,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/EntityComm.hpp>
+#include <stk_mesh/base/EntityCommDatabase.hpp>
 
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/TopologyDimensions.hpp>
@@ -316,7 +316,7 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
 
     if ( p_rank==0 or p_rank==1 )
     {
-      ThrowErrorMsgIf( !stk::mesh::in_shared( n10 ), "NODE[10] not shared" );
+      ThrowErrorMsgIf( !bulk_data.in_shared( n10.key() ), "NODE[10] not shared" );
     }
 
     bulk_data.modification_begin();
@@ -335,7 +335,7 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
 
     if ( p_rank==0 or p_rank==1 )
     {
-      ThrowErrorMsgIf( stk::mesh::in_shared( n10 ), "NODE[10] shared" );
+      ThrowErrorMsgIf( bulk_data.in_shared( n10.key() ), "NODE[10] shared" );
     }
   }
 

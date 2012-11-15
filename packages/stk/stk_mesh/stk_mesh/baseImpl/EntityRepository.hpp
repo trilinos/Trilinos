@@ -26,7 +26,6 @@
 
 #include <stk_mesh/base/Entity.hpp>
 
-
 #include <boost/pool/pool_alloc.hpp>
 
 namespace stk {
@@ -38,8 +37,7 @@ class EntityRepository {
 #if STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TR1
   struct stk_entity_rep_hash : public std::unary_function< EntityKey, std::size_t >
   {
-    inline std::size_t
-    operator()(const EntityKey& x) const
+    std::size_t operator()(const EntityKey& x) const
     {
       return (std::size_t)(x.raw_key());
     }
@@ -84,22 +82,13 @@ class EntityRepository {
      * knows when it performs operations that modify entities. BulkData should
      * be the only caller of this method.
      */
-    inline void log_modified(Entity e) const;
+    void log_modified(Entity e) const;
 
-    inline void set_entity_owner_rank( Entity e, unsigned owner_rank);
-    inline void set_entity_sync_count( Entity e, size_t count);
-
-    inline void comm_clear( Entity e) const;
-    inline void comm_clear_ghosting( Entity e) const;
-
-    bool erase_ghosting( Entity e, const Ghosting & ghosts) const;
-    bool erase_comm_info( Entity e, const EntityCommInfo & comm_info) const;
-
-    bool insert_comm_info( Entity e, const EntityCommInfo & comm_info) const;
+    bool set_entity_owner_rank( Entity e, unsigned owner_rank);
+    void set_entity_sync_count( Entity e, size_t count);
 
     void change_entity_bucket( Bucket & b, Entity e, unsigned ordinal);
     Bucket * get_entity_bucket ( Entity e ) const;
-    void destroy_later( Entity e, Bucket* nil_bucket );
 
     bool destroy_relation( Entity e_from,
                            Entity e_to,
@@ -110,12 +99,13 @@ class EntityRepository {
                            const RelationIdentifier local_id,
                            unsigned sync_count );
 
-    void update_entity_key(EntityKey key, Entity entity);
+    void update_entity_key(EntityKey new_key, Entity entity);
+
+    void destroy_entity(Entity entity);
 
   private:
     void internal_expunge_entity( EntityMap::iterator i);
-
-    void internal_destroy_entity(Entity entity, bool use_pool);
+    void internal_destroy_entity(Entity entity);
 
     Entity internal_allocate_entity(EntityKey entity_key);
     Entity allocate_entity(bool use_pool);
@@ -130,6 +120,7 @@ class EntityRepository {
 
 /*---------------------------------------------------------------*/
 
+inline
 void EntityRepository::set_entity_sync_count( Entity e, size_t count)
 {
   TraceIfWatching("stk::mesh::impl::EntityRepository::set_entity_sync_count", LOG_ENTITY, e.key());
@@ -137,7 +128,8 @@ void EntityRepository::set_entity_sync_count( Entity e, size_t count)
   e.m_entityImpl->set_sync_count(count);
 }
 
-void EntityRepository::set_entity_owner_rank( Entity e, unsigned owner_rank)
+inline
+bool EntityRepository::set_entity_owner_rank( Entity e, unsigned owner_rank)
 {
   TraceIfWatching("stk::mesh::impl::EntityRepository::set_entity_owner_rank", LOG_ENTITY, e.key());
   DiagIfWatching(LOG_ENTITY, e.key(), "new owner: " << owner_rank);
@@ -146,27 +138,22 @@ void EntityRepository::set_entity_owner_rank( Entity e, unsigned owner_rank)
   if ( changed ) {
     e.m_entityImpl->log_modified_and_propagate();
   }
+  return changed;
 }
 
-void EntityRepository::comm_clear( Entity e) const
-{
-  TraceIfWatching("stk::mesh::impl::EntityRepository::comm_clear", LOG_ENTITY, e.key());
-
-  e.m_entityImpl->comm_clear();
-}
-
-void EntityRepository::comm_clear_ghosting( Entity e) const
-{
-  TraceIfWatching("stk::mesh::impl::EntityRepository::comm_clear_ghosting", LOG_ENTITY, e.key());
-
-  e.m_entityImpl->comm_clear_ghosting();
-}
-
+inline
 void EntityRepository::log_modified( Entity e ) const
 {
   TraceIfWatching("stk::mesh::impl::EntityRepository::log_modified", LOG_ENTITY, e.key());
 
   e.m_entityImpl->log_modified_and_propagate();
+}
+
+inline
+void EntityRepository::destroy_entity(Entity entity)
+{
+  m_entities.erase(entity.key());
+  internal_destroy_entity(entity);
 }
 
 } // namespace impl

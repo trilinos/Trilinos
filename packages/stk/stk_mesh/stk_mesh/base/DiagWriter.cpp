@@ -14,6 +14,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -130,10 +131,12 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Entity entity)
                  ", owner:" << entity.owner_rank();
 
   // print comm info
-  writer << ", COMM: ";
-  PairIterEntityComm comm_itr = entity.comm();
-  for ( ; !comm_itr.empty(); ++comm_itr ) {
-    writer << "(ghost:" << comm_itr->ghost_id << ", proc:" << comm_itr->proc << ") ";
+  if (entity.bucket_ptr() != NULL) {
+    writer << ", COMM: ";
+    PairIterEntityComm comm_itr = BulkData::get(entity).entity_comm(entity.key());
+    for ( ; !comm_itr.empty(); ++comm_itr ) {
+      writer << "(ghost:" << comm_itr->ghost_id << ", proc:" << comm_itr->proc << ") ";
+    }
   }
   return writer << "]";
 }

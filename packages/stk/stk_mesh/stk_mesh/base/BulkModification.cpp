@@ -16,14 +16,13 @@
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/EntityComm.hpp>
-
+#include <stk_mesh/base/EntityCommDatabase.hpp>
 
 namespace stk {
 namespace mesh {
 
 typedef std::set<Entity , EntityLess> EntitySet;
-typedef std::set<EntityProc , EntityLess> EntityProcSet;
+typedef std::set<EntityKeyProc> EntityProcSet;
 
 namespace {
 
@@ -71,9 +70,9 @@ void construct_communication_set( const BulkData & bulk, const EntitySet & closu
 
     // Add sharing processes and ghost-send processes to communication_set
 
-    for ( PairIterEntityComm ec = entity.comm(); ! ec.empty() ; ++ec ) {
+    for ( PairIterEntityComm ec = bulk.entity_comm(entity.key()); ! ec.empty() ; ++ec ) {
       if ( owned || ec->ghost_id == 0 ) {
-        EntityProc tmp( entity , ec->proc );
+        EntityKeyProc tmp( entity.key() , ec->proc );
         communication_set.insert( tmp );
       }
     }
@@ -129,7 +128,7 @@ void find_closure( const BulkData & bulk,
   //pack send_list for sizing
   for ( EntityProcSet::const_iterator
       ep = send_list.begin() ; ep != send_list.end() ; ++ep ) {
-    all.send_buffer( ep->second).pack<EntityKey>(ep->first.key());
+    all.send_buffer( ep->second).pack<EntityKey>(ep->first);
   }
 
 
@@ -154,7 +153,7 @@ void find_closure( const BulkData & bulk,
   //pack send_list
   for ( EntityProcSet::const_iterator
       ep = send_list.begin() ; ep != send_list.end() ; ++ep ) {
-    all.send_buffer( ep->second).pack<EntityKey>(ep->first.key());
+    all.send_buffer( ep->second).pack<EntityKey>(ep->first);
   }
 
 

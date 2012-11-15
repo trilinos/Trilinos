@@ -13,7 +13,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/FieldData.hpp>
-#include <stk_mesh/base/EntityComm.hpp>
+#include <stk_mesh/base/EntityCommDatabase.hpp>
 #include <stk_mesh/base/Relation.hpp>
 
 namespace stk {
@@ -21,66 +21,6 @@ namespace mesh {
 
 //----------------------------------------------------------------------------
 
-bool in_shared( const Entity entity )
-{
-  PairIterEntityComm ec = entity.comm();
-  return ! ec.empty() && ec.front().ghost_id == 0 ;
-}
-
-bool in_shared( const Entity entity , unsigned proc )
-{
-  for ( PairIterEntityComm ec = entity.comm();
-        ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
-    if ( proc == ec->proc ) {
-      return true ;
-    }
-  }
-  return false ;
-}
-
-bool in_receive_ghost( const Entity entity )
-{
-  // Ghost communication with owner.
-  PairIterEntityComm ec = entity.comm();
-  return ! ec.empty() && ec.front().ghost_id != 0 &&
-                         ec.front().proc == entity.owner_rank();
-}
-
-bool in_receive_ghost( const Ghosting & ghost , const Entity entity )
-{
-  return in_ghost( ghost , entity , entity.owner_rank() );
-}
-
-bool in_send_ghost( const Entity entity )
-{
-  // Ghost communication with non-owner.
-  PairIterEntityComm ec = entity.comm();
-  return ! ec.empty() && ec.back().ghost_id != 0 &&
-                         ec.back().proc != entity.owner_rank();
-}
-
-bool in_send_ghost( const Entity entity , unsigned proc )
-{
-  for ( PairIterEntityComm ec = entity.comm(); ! ec.empty() ; ++ec ) {
-    if ( ec->ghost_id != 0 &&
-         ec->proc   != entity.owner_rank() &&
-         ec->proc   == proc ) {
-      return true ;
-    }
-  }
-  return false ;
-}
-
-bool in_ghost( const Ghosting & ghost , const Entity entity , unsigned p )
-{
-  // Ghost communication from owner.
-  EntityCommInfo tmp( ghost.ordinal() , p );
-
-  std::vector<EntityCommInfo>::const_iterator i =
-    std::lower_bound( entity.comm().begin() , entity.comm().end() , tmp );
-
-  return i != entity.comm().end() && tmp == *i ;
-}
 
 /** \brief  Is in owned closure of the given process,
  *          typically the local process.
@@ -106,30 +46,6 @@ bool in_owned_closure( const Entity entity , unsigned proc )
 
   return result ;
 }
-
-void comm_procs( const Entity entity , std::vector<unsigned> & procs )
-{
-  procs.clear();
-  for ( PairIterEntityComm ec = entity.comm(); ! ec.empty() ; ++ec ) {
-    procs.push_back( ec->proc );
-  }
-  std::sort( procs.begin() , procs.end() );
-  std::vector<unsigned>::iterator
-    i = std::unique( procs.begin() , procs.end() );
-  procs.erase( i , procs.end() );
-}
-
-void comm_procs( const Ghosting & ghost ,
-                 const Entity entity , std::vector<unsigned> & procs )
-{
-  procs.clear();
-  for ( PairIterEntityComm ec = entity.comm(); ! ec.empty() ; ++ec ) {
-    if ( ec->ghost_id == ghost.ordinal() ) {
-      procs.push_back( ec->proc );
-    }
-  }
-}
-
 
 //----------------------------------------------------------------------------
 
@@ -194,7 +110,7 @@ void unpack_entity_info(
     buf.unpack<unsigned>( rel_attr );
     Entity const entity =
       mesh.get_entity( entity_rank(rel_key), entity_id(rel_key) );
-    if ( entity.is_valid() && EntityLogDeleted != entity.log_query() ) {
+    if ( entity.is_valid() ) {
       Relation rel( entity, rel_id );
       rel.set_attribute(rel_attr);
       relations.push_back( rel );
