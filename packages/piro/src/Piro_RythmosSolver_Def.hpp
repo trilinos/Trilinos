@@ -171,20 +171,21 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
       const std::string step_control_strategy = rythmosPL->get("Step Control Strategy Type", "None");
 
       if (step_control_strategy == "None") {
-	// don't do anything, stepper will build default
-      }
-      else if (step_control_strategy == "ImplicitBDFRamping") {
-	
-	const RCP<Rythmos::ImplicitBDFStepperRampingStepControl<Scalar> > rscs = 
-	  rcp(new Rythmos::ImplicitBDFStepperRampingStepControl<Scalar>);
-	
-	const RCP<ParameterList> p = parameterList(rythmosPL->sublist("Rythmos Step Control Strategy"));
-	rscs->setParameterList(p);
+        // don't do anything, stepper will build default
+      } else if (step_control_strategy == "ImplicitBDFRamping") {
 
-	scsa_stepper->setStepControlStrategy(rscs);
-      }
-      else {
-	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,"Error! Piro::RythmosSolver: Invalid step control strategy type: " << step_control_strategy << std::endl);
+        const RCP<Rythmos::ImplicitBDFStepperRampingStepControl<Scalar> > rscs =
+          rcp(new Rythmos::ImplicitBDFStepperRampingStepControl<Scalar>);
+
+        const RCP<ParameterList> p = parameterList(rythmosPL->sublist("Rythmos Step Control Strategy"));
+        rscs->setParameterList(p);
+
+        scsa_stepper->setStepControlStrategy(rscs);
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(
+            true, std::logic_error,
+            "Error! Piro::Epetra::RythmosSolver: Invalid step control strategy type: "
+            << step_control_strategy << std::endl);
       }
     }
   }
