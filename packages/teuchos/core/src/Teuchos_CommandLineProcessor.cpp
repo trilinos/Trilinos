@@ -168,7 +168,7 @@ void CommandLineProcessor::setOption(
 
 void CommandLineProcessor::setOption(
   const char     option_name[]
-  ,long int           *option_val
+  ,long int      *option_val
   ,const char    documentation[]
   ,const bool    required
   )
@@ -182,6 +182,26 @@ void CommandLineProcessor::setOption(
       any(option_val))
     );
 }
+
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+void CommandLineProcessor::setOption(
+  const char     option_name[]
+  ,long long int *option_val
+  ,const char    documentation[]
+  ,const bool    required
+  )
+{
+  add_extra_output_setup_options();
+  TEUCHOS_TEST_FOR_EXCEPT(!(option_val!=NULL));
+  options_list_[std::string(option_name)]
+    = opt_val_val_t(OPT_LONG_INT,any(option_val),required);
+  options_documentation_list_.push_back(
+    opt_doc_t(OPT_LONG_LONG_INT, option_name, "", std::string(documentation?documentation:""),
+      any(option_val))
+    );
+}
+#endif
 
 
 void CommandLineProcessor::setOption(
@@ -299,6 +319,11 @@ CommandLineProcessor::parse(
       case OPT_LONG_INT:
         *(any_cast<long int*>(opt_val_val.opt_val)) = Teuchos::ValueTypeConversionTraits<long int, std::string>::safeConvert( opt_val_str );
         break;
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+      case OPT_LONG_LONG_INT:
+        *(any_cast<long long int*>(opt_val_val.opt_val)) = Teuchos::ValueTypeConversionTraits<long long int, std::string>::safeConvert( opt_val_str );
+        break;
+#endif
       case OPT_DOUBLE:
         *(any_cast<double*>(opt_val_val.opt_val)) = std::atof(opt_val_str.c_str());
         break;
@@ -366,7 +391,7 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
     using std::setw;
     using std::endl;
     
-    const int opt_type_w = 10;
+    const int opt_type_w = 14;
     const char spc_chars[] = "  ";
     
     // Get the maximum length of an option name
@@ -473,6 +498,9 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
           break;
         case OPT_INT:
         case OPT_LONG_INT:
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+        case OPT_LONG_LONG_INT:
+#endif
         case OPT_DOUBLE:
         case OPT_STRING:
         case OPT_ENUM_INT:
@@ -490,6 +518,11 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
         case OPT_LONG_INT:
           out << "=" << (*(any_cast<long int*>(itr->default_val)));
           break;
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+        case OPT_LONG_LONG_INT:
+          out << "=" << (*(any_cast<long long int*>(itr->default_val)));
+          break;
+#endif
         case OPT_DOUBLE:
           out <<  "=" << (*(any_cast<double*>(itr->default_val)));
           break;
