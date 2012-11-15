@@ -144,30 +144,6 @@ public:
 
   virtual size_t getEntityIdentifierList(gid_t const *&Ids) const = 0;
 
-  /*! \brief Provide a pointer to one of the dimensions of this process'
-                optional identifier weights.
-
-      \param dimension is a value ranging from zero to one less than
-                   getNumberOfWeightsPerEntity()
-      \param weights on return will contain a list of the weights for the
-               dimension specified.  If weights for
-	   this dimension are to be uniform for all identifiers in the
-	   global problem, the \c weights should be a NULL pointer.
-
-      \param stride on return will indicate the stride of the weights list.
-
-      
-       If stride is \c k then the weight
-       corresponding to the identifier Ids[n] (returned in
-       getEntityIdentifierList) should be found at weights[k*n].
-
-       \return The number of values in the weights list.  This may be greater
-          than the number of identifiers, because the stride may be greater
-	  than one.
-  */
-
-  virtual size_t getEntityIdentifierWeights(int dimension,
-     const scalar_t *&weights, int &stride) const = 0;
 
 
   /*! \brief Return dimension of the coordinates.                              
@@ -197,24 +173,6 @@ public:
 
   virtual size_t getEntityCoordinates(int coordDim, const gid_t *&gids,
     const scalar_t *&coords, int &stride) const = 0;
-
-  /*! \brief  Provide a pointer to the weights, if any, corresponding          
-       to the coordinates returned in getEntityCoordinates().                        
-                                                                               
-      \param weightDim ranges from zero to one less than
-           getNumberOfWeightsPerEntity()  
-      \param weights is the list of weights of the given dimension for         
-           the coordinates listed in getEntityCoordinates().  If weights for  
-           this dimension are to be uniform for all coordinates in the         
-           global problem, the \c weights should be a NULL pointer.            
-       \param stride The k'th weight is located at weights[stride*k]           
-       \return The number of weights listed, which should be at least          
-                  the local number of coordinates times the stride for         
-                  non-uniform weights, zero otherwise.                         
-  */
-
-  virtual size_t getEntityCoordinateWeights(int weightDim,
-     const scalar_t *&weights, int &stride) const = 0;
 
 
 
@@ -259,24 +217,30 @@ public:
   virtual size_t getEntityListView(const gid_t *&entityIds, 
     const lno_t *&offsets, const gid_t *& adjacencyIds) const = 0; 
 
-  /*! \brief  Provide a pointer to the entity weights, if any.
+  /*! \brief Provide a pointer to one of the number of this process'
+                optional entity weights.
 
-      \param weightDim ranges from zero to one less than 
-                   getNumberOfWeightsPerEntity().
-      \param weights is the list of weights of the given dimension for
-           the entities returned in getEntityListView().  If weights for
-           this dimension are to be uniform for all entities in the
-           global problem, the \c weights should be a NULL pointer.
-       \param stride The k'th weight is located at weights[stride*k]
-      \return The number of weights listed, which should be at least
-                  the local number of entities times the stride for
-                  non-uniform weights, zero otherwise.
+      \param number is a value ranging from zero to one less than
+                   getNumberOfWeightsPerEntity()
+      \param weights on return will contain a list of the weights for the
+               number specified.  If weights for
+	   this number are to be uniform for all entities in the
+	   global problem, the \c weights should be a NULL pointer.
+
+      \param stride on return will indicate the stride of the weights list.
+
+      
+       The k'th weight is located at weights[stride*k].
+
+       \return The number of values in the weights list.  This may be greater
+          than the number of entities, because the stride may be greater
+	  than one.
 
       Zoltan2 does not copy your data.  The data pointed to by weights
       must remain valid for the lifetime of this InputAdapter.
-   */
+  */
 
-  virtual size_t getEntityWeights(int weightDim,
+  virtual size_t getEntityWeights(int number,
      const scalar_t *&weights, int &stride) const = 0;
 
   /*! \brief  Provide a pointer to the adjacency weights, if any.
