@@ -95,6 +95,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( asSafe, realToSignedIntTypeOverflow, RealType
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( asSafe, realToUnsignedIntTypeOverflow, RealType, UnsignedIntType )
 {
   using Teuchos::asSafe;
+  using Teuchos::TypeNameTraits;
 
   // std::numeric_limits<RealType>::min() gives the minimum _positive_
   // normalized value of type RealType.  IEEE 754 floating-point
@@ -104,7 +105,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( asSafe, realToUnsignedIntTypeOverflow, RealTy
   const RealType minVal = -std::numeric_limits<RealType>::max ();
   const RealType maxVal = std::numeric_limits<RealType>::max ();
 
-  UnsignedIntType val = 0;
+  // mfh 15 Nov 2012: Set val to a marker value, so we can see if the
+  // body of TEST_NOTHROW below actually did the assignment.
+  UnsignedIntType val = 42;
+  // Make sure that val starts off with a different value than what
+  // its final value should be.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    val == static_cast<UnsignedIntType> (maxVal),
+    std::logic_error,
+    "Dear test author, please pick a different marker value.  "
+    "Please report this bug to the Teuchos developers.");
+
   if (sizeof (UnsignedIntType) < sizeof (RealType)) {
     TEST_THROW(val = asSafe<UnsignedIntType> (minVal), std::range_error);
     TEST_THROW(val = asSafe<UnsignedIntType> (maxVal), std::range_error);
@@ -113,6 +124,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( asSafe, realToUnsignedIntTypeOverflow, RealTy
   else { // Only conversions from negative values should throw.
     TEST_THROW(val = asSafe<UnsignedIntType> (minVal), std::range_error);
     TEST_NOTHROW(val = asSafe<UnsignedIntType> (maxVal));
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      val == 42,
+      std::logic_error,
+      "Hey, how come val is 42?  It should be something completely different.  "
+      "FYI, static_cast<" << TypeNameTraits<UnsignedIntType>::name ()
+      << "> (minVal) = " << static_cast<UnsignedIntType> (minVal)
+      "and static_cast<" << TypeNameTraits<UnsignedIntType>::name ()
+      << "> (maxVal) = " << static_cast<UnsignedIntType> (maxVal)
+      << ".  val should be equal to the latter.  It definitely shouldn't be 42.  "
+      "This should be impossible.");
+
     TEST_EQUALITY_CONST(val, static_cast<UnsignedIntType> (maxVal));
   }
 
