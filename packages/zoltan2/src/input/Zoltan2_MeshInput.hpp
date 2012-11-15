@@ -5,8 +5,8 @@
 //   Zoltan2: A package of combinatorial algorithms for scientific computing
 //                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,      
-// the U.S. Government retains certain rights in this software.                
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //                                                                             
 // Redistribution and use in source and binary forms, with or without          
 // modification, are permitted provided that the following conditions are      
@@ -117,15 +117,24 @@ public:
 
   /*! \brief Returns the number of mesh entities on this process.
    *
-   *  Some algorithms can partition a simple list of weighted identifiers
-   *    with no geometry or topology provided.
-   *
-   *  Some algorithms can partition the coordinates of the mesh entities.
-   *
    *  Some algorithms can partition a graph of mesh entities
    */
 
   virtual size_t getLocalNumberOfEntities() const = 0;
+
+
+
+  /*! \brief Return dimension of the entity coordinates, if any.                    
+   *
+   *  Some algorithms can partition mesh entities using geometric coordinate
+   *    information
+   *
+   *  Some algorithms can use geometric entity coordinate 
+   *    information if it is present.
+   */
+  virtual int getEntityCoordinateDimension() const = 0;
+
+
 
   /*! \brief Return the number of weights per entity.
    *   \return the count of weights, zero or more per entity.              
@@ -134,24 +143,22 @@ public:
    */
   virtual int getNumberOfWeightsPerEntity() const = 0;
 
+
+
   /*! \brief Provide a pointer to this process' identifiers.
 
       \param Ids will on return point to the list of the global Ids for this
         process.
 
        \return The number of ids in the Ids list.
+    
+      Some algorithms can partition a simple list of weighted identifiers
+        with no geometry or topology provided.
   */
 
   virtual size_t getEntityIdentifierList(gid_t const *&Ids) const = 0;
 
 
-
-  /*! \brief Return dimension of the coordinates.                              
-   *
-   *  Some algorithms can partition mesh entities using geometric coordinate
-   *    information
-   */
-  virtual int getEntityCoordinateDimension() const = 0;
 
   /*! \brief Provide a pointer to one dimension of this process' coordinates.  
       \param coordDim  is a value from 0 to one less than                      
@@ -183,13 +190,6 @@ public:
   /*! \brief Returns the dimension (0 or greater) of adjacency weights.
    */
   virtual int getAdjacencyWeightDimension() const = 0;
-
-  /*! \brief Returns the dimension of the geometry, if any.
-   *
-   *  Some algorithms can use geometric entity coordinate 
-   *    information if it is present.
-   */
-  virtual int getCoordinateDimension() const = 0;
 
   /*! \brief Sets pointers to this process' mesh entries.
       \param EntityIds will on return a pointer to entity global Ids
