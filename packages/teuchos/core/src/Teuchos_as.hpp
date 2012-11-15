@@ -391,6 +391,10 @@ namespace { // anonymous
 // Standard specializations of ValueTypeConversionTraits
 //
 
+//
+// * Specializations for conversions from std::string to build-in integer types.
+//
+
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 
 /// \brief Convert an \c std::string to a <tt>long long</tt>.
@@ -569,6 +573,186 @@ public:
   //! Convert the given \c std::string to an <tt>unsigned int</tt>.
   static unsigned int convert (const std::string& t) {
     return as<unsigned int> (safeConvertToUnsignedLong (t));
+  }
+};
+
+
+/// \brief Convert an \c std::string to a \c short.
+///
+/// We assume the string stores a base-10 integer, if it stores an integer at all.
+template<>
+class ValueTypeConversionTraits<short, std::string> {
+private:
+  //! Convert the given \c std::string to an intermediate \c long, with checks.
+  static long safeConvertToLong (const std::string& t) {
+    long val = 0;
+    try {
+      val = ValueTypeConversionTraits<long, std::string>::safeConvert (t);
+    } catch (std::range_error&) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true,
+        std::range_error,
+        "Teuchos::ValueTypeConversionTraits<short, std::string>::convert: "
+        "The given std::string \"" << t << "\" is too big to fit into long, so there is no way it could fit into short.");
+    } catch (std::invalid_argument& e) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true,
+        std::invalid_argument,
+        "Teuchos::ValueTypeConversionTraits<short, std::string>::convert: "
+        "Intermediate conversion from std::string to long failed, with the following error message: "
+        << e.what ());
+    }
+    return val;
+  }
+
+public:
+  /// \brief Convert the given \c std::string to a <tt>short</tt>, with checks.
+  ///
+  /// If the string overflows <tt>short</tt>, this throws
+  /// <tt>std::range_error</tt>.  If it does not contain an integer,
+  /// this throws <tt>std::invalid_argument</tt>.
+  static short safeConvert (const std::string& t) {
+    return asSafe<short> (safeConvertToLong (t));
+  }
+
+  //! Convert the given \c std::string to a \c short.
+  static short convert (const std::string& t) {
+    return as<int> (safeConvertToLong (t));
+  }
+};
+
+
+/// \brief Convert an \c std::string to an <tt>unsigned short</tt>.
+///
+/// We assume the string stores a base-10 integer, if it stores an integer at all.
+template<>
+class ValueTypeConversionTraits<unsigned short, std::string> {
+private:
+  //! Convert the given \c std::string to an intermediate <tt>unsigned long</tt>, with checks.
+  static unsigned long safeConvertToUnsignedLong (const std::string& t) {
+    unsigned long val = 0;
+    try {
+      val = as<unsigned long> (t);
+    } catch (std::range_error&) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true,
+        std::range_error,
+        "Teuchos::ValueTypeConversionTraits<unsigned short, std::string>::convert: "
+        "The given std::string \"" << t << "\" is too big to fit into unsigned long, so there is no way it could fit into unsigned short.");
+    } catch (std::invalid_argument& e) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true,
+        std::invalid_argument,
+        "Teuchos::ValueTypeConversionTraits<unsigned short, std::string>::convert: "
+        "Intermediate conversion from std::string to unsigned long failed, with the following error message: "
+        << e.what ());
+    }
+    return val;
+  }
+
+public:
+  /// \brief Convert the given \c std::string to an <tt>unsigned short</tt>, with checks.
+  ///
+  /// If the string overflows <tt>unsigned short</tt>, this throws
+  /// <tt>std::range_error</tt>.  If it does not contain an integer,
+  /// this throws <tt>std::invalid_argument</tt>.
+  static unsigned short safeConvert (const std::string& t) {
+    return asSafe<unsigned short> (safeConvertToUnsignedLong (t));
+  }
+
+  //! Convert the given \c std::string to an <tt>unsigned short</tt>.
+  static unsigned short convert (const std::string& t) {
+    return as<unsigned short> (safeConvertToUnsignedLong (t));
+  }
+};
+
+//
+// * Specializations for conversions from built-in real-valued
+//   floating-point types (float and double) to build-in integer
+//   types.
+//
+
+//! Convert from \c double to \c short.
+template<>
+class ValueTypeConversionTraits<short, double> {
+public:
+  /// \brief Convert the given \c double to a \c short.
+  ///
+  /// \warning Double-precision floating-point values may overflow
+  ///   <tt>short</tt>.  You should use safeConvert() if you aren't sure
+  ///   that the given value fits in an <tt>short</tt>.
+  static short convert (const double t) {
+    // Implicit conversion may cause compiler warnings, but
+    // static_cast does not.
+    return static_cast<short> (t);
+  }
+
+  //! Convert the given \c double to a \c short, checking for overflow first.
+  static short safeConvert (const double t) {
+    const short minVal = std::numeric_limits<short>::min ();
+    const short maxVal = std::numeric_limits<short>::max ();
+
+    // Cases:
+    // 1. sizeof(short) < sizeof(double) == 8
+    // 2. sizeof(short) == sizeof(double) == 8
+    // 3. sizeof(short) > sizeof(double) == 8
+    //
+    // Overflow when converting from double to short is possible only
+    // for Case 1.  Loss of accuracy (rounding) is possible for Cases
+    // 2 and 3, but safeConvert() only cares about overflow, not
+    // rounding.  In Case 3, casting minVal or maxVal to double in
+    // this case could result in overflow.  Thus, we only do the cast
+    // for Case 1.
+    //
+    // All three cases are legal according to both C++03 and C99.
+    // However, I (mfh 15 Nov 2012) have never encountered Cases 2 and
+    // 3.
+    if (sizeof (short) < sizeof (double)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        t < static_cast<double> (minVal) || t > static_cast<double> (maxVal),
+        std::range_error,
+        "Teuchos::ValueTypeConversionTraits<short, double>::safeConvert: "
+        "Input double t = " << t << " is out of the valid range [" << minVal
+        << ", " << maxVal << "] for conversion to short.");
+    }
+    return static_cast<short> (t);
+  }
+};
+
+
+//! Convert from \c double to <tt>unsigned short</tt>.
+template<>
+class ValueTypeConversionTraits<unsigned short, double> {
+public:
+  //! Convert the given \c double to an <tt>unsigned short</tt>.
+  static unsigned short convert (const double t) {
+    // Implicit conversion may cause compiler warnings, but
+    // static_cast does not.
+    return static_cast<unsigned short> (t);
+  }
+
+  //! Convert the given \c double to an <tt>unsigned short</tt>, checking for overflow first.
+  static unsigned short safeConvert (const double t) {
+    const unsigned short minVal = 0;
+    const unsigned short maxVal = std::numeric_limits<unsigned short>::max ();
+
+    if (sizeof (unsigned short) < sizeof (double)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        t < static_cast<double> (minVal) || t > static_cast<double> (maxVal),
+        std::range_error,
+        "Teuchos::ValueTypeConversionTraits<unsigned short, double>::safeConvert: "
+        "Input double t = " << t << " is out of the valid range [" << minVal
+        << ", " << maxVal << "] for conversion to unsigned short.");
+    }
+    else { // Overflow isn't possible, but t < 0 isn't allowed.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+       t < static_cast<double> (minVal),
+       std::range_error,
+        "Teuchos::ValueTypeConversionTraits<unsigned short, double>::safeConvert: "
+        "Input double t = " << t << " is out of the valid range [" << minVal
+        << ", " << maxVal << "] for conversion to unsigned short.");
+    }
+    return static_cast<unsigned short> (t);
   }
 };
 
@@ -800,6 +984,94 @@ public:
 
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
+
+//! Convert from \c float to \c short.
+template<>
+class ValueTypeConversionTraits<short, float> {
+public:
+  /// \brief Convert the given \c float to a \c short.
+  ///
+  /// \warning Single-precision floating-point values may overflow
+  ///   <tt>short</tt>.  You should use safeConvert() if you aren't
+  ///   sure that the given value fits in an <tt>short</tt>.
+  static short convert (const float t) {
+    // Implicit conversion may cause compiler warnings, but
+    // static_cast does not.
+    return static_cast<short> (t);
+  }
+
+  //! Convert the given \c float to a \c short, checking for overflow first.
+  static short safeConvert (const float t) {
+    const short minVal = std::numeric_limits<short>::min ();
+    const short maxVal = std::numeric_limits<short>::max ();
+
+    // Cases:
+    // 1. sizeof(short) < sizeof(float) == 4
+    // 2. sizeof(short) == sizeof(float) == 4
+    // 3. sizeof(short) > sizeof(float) == 4
+    //
+    // Overflow when converting from float to short is possible only
+    // for Case 1.  Loss of accuracy (rounding) is possible for Cases
+    // 2 and 3, but safeConvert() only cares about overflow, not
+    // rounding.  In Case 3, casting minVal or maxVal to float in
+    // this case could result in overflow.  Thus, we only do the cast
+    // for Case 1.
+    //
+    // All three cases are legal according to both C++03 and C99.  I
+    // (mfh 15 Nov 2012) think Case 1 is the most common, but Case 2
+    // is certainly reasonable.  (For example, some hardware prefers
+    // to work only with 32-bit words, so _every_ built-in type has
+    // size a multiple of 4 bytes.)
+    if (sizeof (short) < sizeof (float)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        t < static_cast<float> (minVal) || t > static_cast<float> (maxVal),
+        std::range_error,
+        "Teuchos::ValueTypeConversionTraits<short, float>::safeConvert: "
+        "Input float t = " << t << " is out of the valid range [" << minVal
+        << ", " << maxVal << "] for conversion to short.");
+    }
+    return static_cast<short> (t);
+  }
+};
+
+
+//! Convert from \c float to <tt>unsigned short</tt>.
+template<>
+class ValueTypeConversionTraits<unsigned short, float> {
+public:
+  //! Convert the given \c float to an <tt>unsigned short</tt>.
+  static unsigned short convert (const float t) {
+    // Implicit conversion may cause compiler warnings, but
+    // static_cast does not.
+    return static_cast<unsigned short> (t);
+  }
+
+  //! Convert the given \c float to an <tt>unsigned short</tt>, checking for overflow first.
+  static unsigned short safeConvert (const float t) {
+    const unsigned short minVal = 0;
+    const unsigned short maxVal = std::numeric_limits<unsigned short>::max ();
+
+    if (sizeof (unsigned short) < sizeof (float)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        t < static_cast<float> (minVal) || t > static_cast<float> (maxVal),
+        std::range_error,
+        "Teuchos::ValueTypeConversionTraits<unsigned short, float>::safeConvert: "
+        "Input float t = " << t << " is out of the valid range [" << minVal
+        << ", " << maxVal << "] for conversion to unsigned short.");
+    }
+    else { // Overflow isn't possible, but t < 0 isn't allowed.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+       t < static_cast<float> (minVal),
+       std::range_error,
+        "Teuchos::ValueTypeConversionTraits<unsigned short, float>::safeConvert: "
+        "Input float t = " << t << " is out of the valid range [" << minVal
+        << ", " << maxVal << "] for conversion to unsigned short.");
+    }
+    return static_cast<unsigned short> (t);
+  }
+};
+
+
 //! Convert from \c float to \c int.
 template<>
 class ValueTypeConversionTraits<int, float> {
@@ -1011,6 +1283,12 @@ public:
 
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
+//
+// * Specializations for conversions between a unsigned built-in
+//   integer type and the signed version of the same type (either
+//   direction).
+//
+
 namespace {
 // Implementation of conversion from an unsigned built-in integer
 // type, to an signed built-in integer type with the same number of
@@ -1086,6 +1364,34 @@ public:
 };
 
 } // namespace (anonymous)
+
+
+//! Convert from <tt>unsigned short<tt> to \c short.
+template<>
+class ValueTypeConversionTraits<short, unsigned short> {
+public:
+  static short convert (const unsigned short t) {
+    return UnsignedToSignedValueTypeConversionTraits<short, unsigned short>::convert (t);
+  }
+
+  static short safeConvert (const unsigned short t) {
+    return UnsignedToSignedValueTypeConversionTraits<short, unsigned short>::safeConvert (t);
+  }
+};
+
+
+//! Convert from <tt>short<tt> to <tt>unsigned short</tt>.
+template<>
+class ValueTypeConversionTraits<unsigned short, short> {
+public:
+  static unsigned short convert (const short t) {
+    return SignedToUnsignedValueTypeConversionTraits<unsigned short, short>::convert (t);
+  }
+
+  static unsigned short safeConvert (const short t) {
+    return SignedToUnsignedValueTypeConversionTraits<unsigned short, short>::safeConvert (t);
+  }
+};
 
 
 //! Convert from <tt>unsigned int<tt> to \c int.
@@ -1175,6 +1481,80 @@ public:
 
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
+//
+// * Specializations for conversions between different built-in
+//   integer types.
+//
+
+//! Convert from \c int to \c short.
+template<>
+class ValueTypeConversionTraits<short, int> {
+public:
+  /// \brief Convert the given \c int to a \c short.
+  ///
+  /// \warning \c int values may overflow \c short, depending on your
+  ///   platform.  You should use safeConvert() if you aren't sure
+  ///   that the given \c int value fits in a \c short.
+  static short convert (const int t) {
+    // Implicit conversion may cause compiler warnings, but
+    // static_cast does not.
+    return static_cast<short> (t);
+  }
+
+  //! Convert from \c int to \c short, checking for overflow first.
+  static short safeConvert (const int t) {
+    const short minShort = std::numeric_limits<short>::min ();
+    const short maxShort = std::numeric_limits<short>::max ();
+
+    // Casting from short to int never overflows, since the C++
+    // standard guarantees that sizeof (short) <= sizeof (int).
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < static_cast<int> (minShort) ||
+      t > static_cast<int> (maxShort),
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<short, int>::safeConvert: "
+      "Input int t = " << t << " is out of the valid range [" << minShort
+      << ", " << maxShort << "] for conversion to short.");
+
+    return static_cast<short> (t);
+  }
+};
+
+
+//! Convert from \c long to \c short.
+template<>
+class ValueTypeConversionTraits<short, long> {
+public:
+  /// \brief Convert the given \c long to a \c short.
+  ///
+  /// \warning \c long integer values may overflow \c short, depending
+  ///   on your platform.  You should use safeConvert() if you aren't
+  ///   sure that the given \c long value fits in a \c short.
+  static short convert (const long t) {
+    // Implicit conversion may cause compiler warnings, but
+    // static_cast does not.
+    return static_cast<short> (t);
+  }
+
+  //! Convert from \c long to \c short, checking for overflow first.
+  static short safeConvert (const long t) {
+    const short minShort = std::numeric_limits<short>::min ();
+    const short maxShort = std::numeric_limits<short>::max ();
+
+    // Casting from short to long never overflows, since the C++
+    // standard guarantees that sizeof (short) <= sizeof (long).
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < static_cast<long> (minShort) ||
+      t > static_cast<long> (maxShort),
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<short, long>::safeConvert: "
+      "Input long t = " << t << " is out of the valid range [" << minShort
+      << ", " << maxShort << "] for conversion to short.");
+
+    return static_cast<short> (t);
+  }
+};
+
 
 //! Convert from \c long to \c int.
 template<>
@@ -1219,13 +1599,13 @@ class ValueTypeConversionTraits<int, unsigned long> {
 public:
   /// \brief Convert the given <tt>unsigned long</tt> to an \c int.
   ///
-  /// \warning <tt>unsigned long</tt> integer values may overflow
+  /// \warning <tt>unsigned long</tt> values may overflow
   ///   <tt>int</tt>, depending on your platform.  You should use
   ///   safeConvert() if you aren't sure that the given <tt>unsigned
   ///   long</tt> value fits in an <tt>int</tt>.
   static int convert (const unsigned long t) {
-    // Implicit conversion from unsigned long to int may cause
-    // compiler warnings, but static_cast does not.
+    // Implicit conversion may cause compiler warnings, but
+    // static_cast does not.
     return static_cast<int> (t);
   }
 
@@ -1274,8 +1654,6 @@ public:
     return static_cast<int> (t);
   }
 };
-
-
 
 
 //! Convert from <tt>unsigned int</tt> to <tt>long</tt>.
@@ -1407,6 +1785,10 @@ public:
   }
 };
 
+//
+// * Conversions from built-in integer types to built-in real-valued
+//   floating-point types.
+//
 
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 
@@ -1639,6 +2021,9 @@ public:
 
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
+//
+// * Other conversions
+//
 
 /** \brief Convert raw C string to std::string. */
 template<int N>
@@ -1649,6 +2034,10 @@ public:
   static std::string safeConvert( const char t[] )
     { return std::string(t); }
 };
+
+//
+// * Conversions for dd_real and qd_real
+//
 
 #ifdef HAVE_TEUCHOS_QD
 
