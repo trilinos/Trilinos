@@ -150,7 +150,9 @@ int main(int argc, char* argv[])
       out << "\nPrinting user options after parsing ...\n\n";
       out << "NumIters     = " << NumIters << std::endl;
       out << "MatrixDim    = " << MatrixDim << std::endl;
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
       out << "MatrixDim2   = " << MatrixDim2 << std::endl;
+#endif
       out << "Tolerance    = " << Tolerance << std::endl;
       out << "Solver       = \"" << Solver << "\"\n";
       out << "Precondition = " << Precondition << std::endl;
