@@ -21,7 +21,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack)
     TRIBITS_ADD_TEST(
         BlockedTransfer
         NAME "BlockedTransfer_Epetra"
-        ARGS "--linAlgebra=0"
+        ARGS "--linAlgebra=Epetra"
         COMM serial mpi
       )
 
@@ -32,7 +32,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
     TRIBITS_ADD_TEST(
         BlockedTransfer
         NAME "BlockedTransfer_Tpetra"
-        ARGS "--linAlgebra=1"
+        ARGS "--linAlgebra=Tpetra"
         COMM serial mpi
       )
 

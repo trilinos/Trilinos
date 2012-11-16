@@ -19,7 +19,7 @@ echo "===========================================" >> $outfile
 echo "Start Time: " `date` >> $outfile
 echo "===========================================" >> $outfile
 
-mpiexec -np $tcores /apps/contrib/numa_wrapper-16ppn _BINARY_ --nx=_NX_ --ny=_NX_ --nz=_NX_ --linAlgebra=1 --explicitR=1 --matrixType=_MTYPE_ --maxLevels=$maxLevels --maxCoarseSize=$maxCoarseSize --its=$its --tol=$tol 2>&1 >> $outfile
+mpiexec -np $tcores /apps/contrib/numa_wrapper-16ppn _BINARY_ --nx=_NX_ --ny=_NX_ --nz=_NX_ --linAlgebra=Tpetra --explicitR=1 --matrixType=_MTYPE_ --maxLevels=$maxLevels --maxCoarseSize=$maxCoarseSize --its=$its --tol=$tol 2>&1 >> $outfile
 
 echo "===========================================" >> $outfile
 echo "Stop Time: " `date` >>$outfile

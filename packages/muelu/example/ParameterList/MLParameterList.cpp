@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
   if (comm->getRank() == 0) { std::cout << xpetraParameters << matrixParameters; }
   if (ml && xpetraParameters.GetLib() == Xpetra::UseTpetra) {
     ml = false;
-    std::cout << "ML preconditionner can only be built if --linAlgebra=0 (Epetra). Option --ml ignored" << std::endl;
+    std::cout << "ML preconditionner can only be built if --linAlgebra=Epetra. Option --ml ignored" << std::endl;
   }
 
   //

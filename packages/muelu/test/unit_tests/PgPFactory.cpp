@@ -261,7 +261,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
 {
 
   //JG: This test is failing. Last known good version: 6ad0eeba
-  // mpirun -n 2 ./MueLu_UnitTests.exe --linAlgebra=0 --test=NonStandardMaps --group=PgPFactory
+  // mpirun -n 2 ./MueLu_UnitTests.exe --linAlgebra=Epetra --test=NonStandardMaps --group=PgPFactory
   /*
     Level 2
     [...]

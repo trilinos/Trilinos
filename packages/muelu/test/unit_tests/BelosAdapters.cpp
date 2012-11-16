@@ -272,7 +272,7 @@ namespace MueLuTests {
   // - MV: Xpetra::MultiVector
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA)
   TEUCHOS_UNIT_TEST(BelosAdapters, XpetraOp_XpetraMV_EpetraVsTpetra) {
-    // Unit test executable is called twice by ctest (for --linAlgebra=0 and 1). But there is no need to run this test twice. So it only runs for lib == Tpetra.
+    // Unit test executable is called twice by ctest (for --linAlgebra=Epetra and Tpetra). But there is no need to run this test twice. So it only runs for lib == Tpetra.
     if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) {
 
       // Test for Tpetra will be done by XpetraOp_XpetraMV.
