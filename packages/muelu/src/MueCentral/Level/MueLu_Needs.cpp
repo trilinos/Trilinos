@@ -273,14 +273,14 @@ namespace MueLu {
     typedef boost::graph_traits<Graph>::vertex_descriptor vertex_t;
     typedef boost::graph_traits<Graph>::edge_descriptor   edge_t;
 
-    for (typename UTILS::TwoKeyMap<const FactoryBase*, std::string, RCP<MueLu::VariableContainer> >::const_iterator it1 = dataTable_.begin(); it1 != dataTable_.end(); it1++) {
+    for (UTILS::TwoKeyMap<const FactoryBase*, std::string, RCP<MueLu::VariableContainer> >::const_iterator it1 = dataTable_.begin(); it1 != dataTable_.end(); it1++) {
       if (vindices.find(it1->first) == vindices.end()) {
         vertex_t boost_vertex = boost::add_vertex(graph);
         boost::put("label", dp, boost_vertex, it1->first->description());
         vindices[it1->first] = vind++;
       }
 
-      for (typename Teuchos::map<std::string, RCP<MueLu::VariableContainer> >::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++) {
+      for (Teuchos::map<std::string, RCP<MueLu::VariableContainer> >::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++) {
         const std::map<const FactoryBase*,int>& requests = it2->second->Requests();
         for (std::map<const FactoryBase*,int>::const_iterator rit = requests.begin(); rit != requests.end(); rit++) {
           if (vindices.find(rit->first) == vindices.end()) {
