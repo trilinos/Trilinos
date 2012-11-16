@@ -109,7 +109,7 @@ namespace MueLu {
     }
 
     template <class T>
-    void Set(Level & level, const std::string & varName, T & data) const {
+    void Set(Level & level, const std::string & varName, const T & data) const {
       return level.Set<T>(varName, data, this);
     }
 

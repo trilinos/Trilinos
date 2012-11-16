@@ -58,9 +58,7 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  NullspacePresmoothFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::NullspacePresmoothFactory(RCP<const FactoryBase> nullspaceFact,
-                                                                                                               RCP<const FactoryBase> AFact)
-    : nullspaceFact_(nullspaceFact), AFact_(AFact)
+  NullspacePresmoothFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::NullspacePresmoothFactory()
   { }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -68,10 +66,10 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void NullspacePresmoothFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("Nullspace", nullspaceFact_.get(), this);
+    Input(currentLevel, "Nullspace");
 
     if (currentLevel.GetLevelID() == 0)
-      currentLevel.DeclareInput("A", AFact_.get(), this);
+      Input(currentLevel, "A");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -82,8 +80,8 @@ namespace MueLu {
 
     RCP<MultiVector> newB;
     if (currentLevel.GetLevelID() == 0) {
-      RCP<Matrix>      A = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
-      RCP<MultiVector> B = currentLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
+      RCP<Matrix>      A = Get< RCP<Matrix> >     (currentLevel, "A");
+      RCP<MultiVector> B = Get< RCP<MultiVector> >(currentLevel, "Nullspace");
       newB = MultiVectorFactory::Build(B->getMap(), B->getNumVectors());
 
       Teuchos::ArrayRCP<SC> D = Utils::GetMatrixDiagonal(*A);
@@ -106,11 +104,11 @@ namespace MueLu {
         }
       }
     } else {
-      newB = currentLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
+      newB = Get< RCP<MultiVector> >(currentLevel, "Nullspace");
     }
 
     // provide "Nullspace" variable on current level
-    currentLevel.Set("Nullspace", newB, this);
+    Set(currentLevel, "Nullspace", newB);
 
   } // Build
 

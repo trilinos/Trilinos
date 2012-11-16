@@ -57,8 +57,7 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ConstraintFactory(RCP<const FactoryBase> PatternFact)
-  : patternFact_(PatternFact)
+  ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ConstraintFactory()
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -67,19 +66,21 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level& coarseLevel) const {
-    fineLevel.  DeclareInput("Nullspace", NULL, this);
-    coarseLevel.DeclareInput("Nullspace", NULL, this);
-    coarseLevel.DeclareInput("Ppattern", patternFact_.get(), this);
+    Input(fineLevel,   "Nullspace");
+    Input(coarseLevel, "Nullspace");
+    Input(coarseLevel, "Ppattern");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Constraint", coarseLevel);
 
-    RCP<Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > constraint(new Constraint<SC,LO,GO,NO,LMO>);
-    constraint->Setup(*fineLevel.Get< RCP<MultiVector> >("Nullspace", NULL), *coarseLevel.Get< RCP<MultiVector> >("Nullspace", NULL), coarseLevel.Get< RCP<const CrsGraph> >("Ppattern", patternFact_.get()));
+    RCP<Constraint> constraint(new Constraint);
+    constraint->Setup(*Get< RCP<MultiVector> >   (fineLevel,   "Nullspace"),
+                      *Get< RCP<MultiVector> >   (coarseLevel, "Nullspace"),
+                       Get< RCP<const CrsGraph> >(coarseLevel, "Ppattern"));
 
-    coarseLevel.Set("Constraint", constraint, this);
+    Set(coarseLevel, "Constraint", constraint);
   }
 
 

@@ -71,11 +71,8 @@ namespace MueLu {
     //! @name Constructors/Destructors.
     //@{
 
-    /*! @brief Constructor.
-      User can supply a factory for generating the tentative prolongator, a
-      factory generating constraints, and a factory generating the coarse matrix
-      */
-    EminPFactory(RCP<const FactoryBase> InitialPFact = Teuchos::null, RCP<const FactoryBase> ConstrFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null);
+    //! @brief Constructor.
+    EminPFactory();
 
     //! Destructor.
     virtual ~EminPFactory();

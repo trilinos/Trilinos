@@ -55,8 +55,7 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PatternFactory(RCP<const FactoryBase> PFact)
-  : PFact_(PFact)
+  PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PatternFactory()
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -65,17 +64,17 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("P", PFact_.get(), this);
+    Input(currentLevel, "P");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Ppattern", currentLevel);
 
-    RCP<Matrix> P = currentLevel.Get< RCP<Matrix> >("P", PFact_.get());
+    RCP<Matrix> P = Get< RCP<Matrix> >(currentLevel, "P");
 
     // When P goes away, does the pattern continue to exist?
-    currentLevel.Set("Ppattern", P->getCrsGraph(), this);
+    Set(currentLevel, "Ppattern", P->getCrsGraph());
   }
 
 
