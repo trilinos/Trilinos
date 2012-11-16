@@ -1,11 +1,8 @@
 ADD_SUBDIRECTORY(Gallery)
 
 ADD_SUBDIRECTORY(Simple)
-#ADD_SUBDIRECTORY(Facade)
 ADD_SUBDIRECTORY(ParameterList)
 ADD_SUBDIRECTORY(NativeInterface)
-
-#ADD_SUBDIRECTORY(AdvancedUsage)
 
 ADD_SUBDIRECTORY(Misc/Aggregation)
 ADD_SUBDIRECTORY(Misc/MatrixVectorChecker)
