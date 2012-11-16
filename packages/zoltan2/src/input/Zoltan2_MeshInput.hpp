@@ -116,8 +116,6 @@ public:
 // TODO NEED AN ARGUMENT TO THE METHODS SPECIFYING WHICH ENTITY TYPE TO RETURN
 
   /*! \brief Returns the number of mesh entities on this process.
-   *
-   *  Some algorithms can partition a graph of mesh entities
    */
 
   virtual size_t getLocalNumberOfEntities() const = 0;
@@ -142,6 +140,18 @@ public:
    *   are equally weighted.
    */
   virtual int getNumberOfWeightsPerEntity() const = 0;
+
+
+
+  /*! \brief Returns the number adjacencies on this process.
+   *
+   *  Some algorithms can partition a graph of mesh entities
+   */
+  virtual size_t getLocalNumberOfAdjacencies() const = 0;
+
+  /*! \brief Returns the number (0 or greater) of weights per adjacency.
+   */
+  virtual int getNumberOfWeightsPerAdjacency() const = 0;
 
 
 
@@ -182,14 +192,6 @@ public:
     const scalar_t *&coords, int &stride) const = 0;
 
 
-
-  /*! \brief Returns the number adjacencies on this process.
-   */
-  virtual size_t getLocalNumberOfAdjacencies() const = 0;
-
-  /*! \brief Returns the dimension (0 or greater) of adjacency weights.
-   */
-  virtual int getAdjacencyWeightDimension() const = 0;
 
   /*! \brief Sets pointers to this process' mesh entries.
       \param EntityIds will on return a pointer to entity global Ids
