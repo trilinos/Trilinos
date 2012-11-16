@@ -234,8 +234,7 @@ public:
   /// All output arguments are returned redundantly on all processes
   /// in the communicator.  That makes this method an all-reduce.
   ///
-  /// Statistics collected
-  /// --------------------
+  /// \section Teuchos_TimeMonitor_computeGlobalTimerStatistics_stats Statistics collected
   ///
   /// The "MinOverProcs" and "MaxOverProcs" timings are cumulative:
   /// the reported timing is for all calls.  Along with the min resp.
@@ -266,8 +265,7 @@ public:
   /// reason why we report call counts as \c double rather than \c
   /// int.  It has no particular connection to the mean timing.
   ///
-  /// Performance
-  /// -----------
+  /// \section Teuchos_TimeMonitor_computeGlobalTimerStatistics_perf Performance
   ///
   /// This operation requires interprocess communication.  Suppose
   /// there are \f$P\f$ processes in the given communicator, and
@@ -489,8 +487,7 @@ public:
   ///   and use the resulting parameters for all subsequent calls to
   ///   report() (until new parameters are set).
   ///
-  /// Supported parameters
-  /// --------------------
+  /// \section Teuchos_TimeMonitor_report_SupportedParams Supported parameters
   ///
   /// Here is the current set of supported parameters:
   /// - "Report format": "Table" (default), "YAML"
@@ -505,21 +502,21 @@ public:
   /// uses.  It displays times and call counts in a table that is easy
   /// for humans to read, but hard to parse.  "YAML" format uses a
   /// standard, structured, human-readable output format called YAML.
-  /// <a href="yaml.org">YAML</a> stands for YAML Ain't Markup
+  /// <a href="http://yaml.org">YAML</a> stands for YAML Ain't Markup
   /// Language.
   ///
   /// "YAML style" refers to two variants of YAML output that report()
-  /// can generate.  The "compact" style attempts to put as much data
+  /// can generate.  The "compact" mode attempts to put as much data
   /// on each line as possible.  It may be more readable when there
-  /// are a small number of timers.  The "spacious" style prefers one
-  /// line per datum whenever possible.  Both styles have the same
+  /// are a small number of timers.  The "spacious" mode prefers one
+  /// line per datum whenever possible.  Both modes have the same
   /// schema, that is, their output has the same hierarchical
   /// structure and thus the same parse tree.
   ///
-  /// (In technical terms: compact style uses YAML's so-called "flow
+  /// (In technical terms: compact mode uses YAML's so-called "flow
   /// style" for sequences and mappings whenever possible, except at
   /// the outermost level where it would hinder readability.  Spacious
-  /// style does not use "flow style" for lists or mappings.  For an
+  /// mode does not use "flow style" for lists or mappings.  For an
   /// explanation of YAML's flow style, see <a
   /// href="http://www.yaml.org/spec/1.2/spec.html#style/flow/">Chapter
   /// 7 of the YAML 1.2 spec</a>.)
@@ -690,7 +687,7 @@ namespace Teuchos {
 
 /// \class TimeMonitorSurrogateImpl
 /// \brief Implementation of TimeMonitorSurrogate that invokes TimeMonitor.
-/// \warning Users should not use this class or rely on it in any way.  
+/// \warning Users should not use this class or rely on it in any way.
 ///   It is an implementation detail.
 ///
 /// Please refer to the documentation of
@@ -702,11 +699,11 @@ class TimeMonitorSurrogateImpl : public CommandLineProcessor::TimeMonitorSurroga
     {
       TimeMonitor::summarize(out);
     }
-}; 
+};
 
 /// \class TimeMonitorSurrogateImplInserter
 /// \brief Injects run-time dependency of a class on TimeMonitor.
-/// \warning Users should not use this class or rely on it in any way.  
+/// \warning Users should not use this class or rely on it in any way.
 ///   It is an implementation detail.
 ///
 /// \section Teuchos_TimeMonitorSurrogateImplInserter_Summary Summary
@@ -730,7 +727,7 @@ class TimeMonitorSurrogateImpl : public CommandLineProcessor::TimeMonitorSurroga
 ///
 /// \section Teuchos_TimeMonitorSurrogateImplInserter_Note Note to Teuchos developers
 ///
-/// This is an instance of the 
+/// This is an instance of the
 /// <a href="http://en.wikipedia.org/wiki/Dependency_injection">Dependency injection</a>
 /// design pattern.  CommandLineProcessor is not supposed to know
 /// about TimeMonitor, because CommandLineProcessor's subpackage does
