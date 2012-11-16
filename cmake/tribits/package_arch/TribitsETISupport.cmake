@@ -248,7 +248,9 @@ FUNCTION(TRIBITS_ETI_GENERATE_MACROS etifields etisetvar etiexcludelist mangling
   ENDFOREACH()
   # remove duplicates from lists
   FOREACH(m RANGE 1 ${num_macros})
-    LIST(REMOVE_DUPLICATES macrotuples${m})
+    IF(DEFINED macrotuples${m})
+      LIST(REMOVE_DUPLICATES macrotuples${m})
+    ENDIF()
   ENDFOREACH()
   # build the macro strings
   FOREACH(m RANGE 1 ${num_macros})
