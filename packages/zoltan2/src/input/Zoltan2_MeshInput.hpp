@@ -124,7 +124,7 @@ public:
 
 
 
-  /*! \brief Return dimension of the entity coordinates, if any.                    
+  /*! \brief Return dimension of the entity coordinates, if any.               
    *
    *  Some algorithms can partition mesh entities using geometric coordinate
    *    information
@@ -160,9 +160,9 @@ public:
 
 
 
-  /*! \brief Provide a pointer to one dimension of this process' coordinates.  
+  /*! \brief Provide a pointer to one dimension of entity coordinates.  
       \param coordDim  is a value from 0 to one less than                      
-         getLocalNumberOfEntities() specifying which dimension is     
+         getEntityCoordinateDimension() specifying which dimension is     
          being provided in the coords list.                                    
       \param coords  points to a list of coordinate values for the dimension.  
       \param stride  describes the layout of the coordinate values in          
@@ -259,27 +259,6 @@ public:
 
   virtual size_t getAdjacencyWeights(int weightDim,
      const scalar_t *&weights, int &stride) const = 0;
-
-  /*! \brief Provide a pointer to one dimension of entity coordinates.
-      \param coordDim  is a value from 0 to one less than
-         getCoordinateDimension() specifying which dimension is
-         being provided in the coords list.
-      \param coords  points to a list of coordinate values for the dimension.
-      \param stride  describes the layout of the coordinate values in
-              the coords list.  If stride is one, then the ith coordinate
-              value is coords[i], but if stride is two, then the
-              ith coordinate value is coords[2*i].
-
-       \return The length of the \c coords list.  This may be more than
-              getLocalNumberOfEntities() because the \c stride
-              may be more than one.
-
-      Zoltan2 does not copy your data.  The data pointed to by coords
-      must remain valid for the lifetime of this InputAdapter.
-   */
-
-  virtual size_t getCoordinates(int coordDim, 
-    const scalar_t *&coords, int &stride) const = 0;
 
 
   /*! \brief Apply a partitioning problem solution to an input.  
