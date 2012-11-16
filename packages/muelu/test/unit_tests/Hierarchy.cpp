@@ -52,7 +52,6 @@
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_PFactory.hpp"
-#include "MueLu_RFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
@@ -167,10 +166,9 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
   RCP<CoalesceDropFactory> cdFact;
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
 
-  RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
-  RCP<RFactory>           Rfact = rcp( new TransPFactory());
-  RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
-
+  RCP<SaPFactory>    Pfact  = rcp( new SaPFactory() );
+  RCP<TransPFactory> Rfact  = rcp( new TransPFactory());
+  RCP<RAPFactory>    Acfact = rcp( new RAPFactory() );
 
 #ifdef HAVE_MUELU_IFPACK
 #ifdef HAVE_MUELU_AMESOS
@@ -262,7 +260,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
 
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
-  RCP<RFactory>           Rfact = rcp( new TransPFactory());
+  RCP<TransPFactory>      Rfact = rcp( new TransPFactory());
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
   Acfact->SetImplicitTranspose(true);
 

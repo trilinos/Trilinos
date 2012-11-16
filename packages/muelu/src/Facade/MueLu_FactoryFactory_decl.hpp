@@ -258,19 +258,19 @@ namespace MueLu {
 //         return rcp(new TransPFactory());
 
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "TransPFactory", Exceptions::RuntimeError, "");
-      MUELU_FACTORY_PARAM("P", PFact);
-
-      return rcp(new TransPFactory(PFact));
+      RCP<FactoryBase2> factory = rcp(new TransPFactory());
+      MUELU_FACTORY_PARAM2("P");
+      return factory;
     }
 
     //! GenericRFactory
     RCP<FactoryBase> BuildGenericRFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
 
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "GenericRFactory", Exceptions::RuntimeError, "");
-      MUELU_FACTORY_PARAM("P", PPFact);
-      Teuchos::RCP<PFactory> PFact = PFact = Teuchos::rcp_const_cast<PFactory>(Teuchos::rcp_dynamic_cast<const PFactory>(PPFact));
+      RCP<FactoryBase2> factory = rcp(new GenericRFactory());
+      MUELU_FACTORY_PARAM2("P");
 
-      return rcp(new GenericRFactory(PFact));
+      return factory;
     }
 
     //! RaPFactory
@@ -418,17 +418,21 @@ namespace MueLu {
     RCP<FactoryBase> BuildPermutedTransferFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "PermutedTransferFactory", Exceptions::RuntimeError, "");
 
-      MUELU_FACTORY_PARAM("RepartitionFactory", RepartitionFact);
-      MUELU_FACTORY_PARAM("A", AFact);
-      MUELU_FACTORY_PARAM("P", PFact);
-
       std::string type; type = paramList.get<std::string>("type");
       if (type == "Interpolation") {
-        return rcp(new PermutedTransferFactory(RepartitionFact, AFact, PFact, MueLu::INTERPOLATION));
+        RCP<FactoryBase2> factory = rcp(new PermutedTransferFactory(MueLu::INTERPOLATION));
+        MUELU_FACTORY_PARAM2("RepartitionFactory");
+        MUELU_FACTORY_PARAM2("A");
+        MUELU_FACTORY_PARAM2("P");
+        return factory;
       } else if (type == "Restriction") {
-        MUELU_FACTORY_PARAM("R", RFact);
-        MUELU_FACTORY_PARAM("TransferFactory", TransferFactory);
-        return rcp(new PermutedTransferFactory(RepartitionFact, AFact, RFact, MueLu::RESTRICTION, PFact, TransferFactory));
+        RCP<FactoryBase2> factory = rcp(new PermutedTransferFactory(MueLu::RESTRICTION));
+        MUELU_FACTORY_PARAM2("RepartitionFactory");
+        MUELU_FACTORY_PARAM2("A");
+        MUELU_FACTORY_PARAM2("P");
+        MUELU_FACTORY_PARAM2("R");
+        MUELU_FACTORY_PARAM2("TransferFactory");
+        return factory;
       } else {
         TEUCHOS_TEST_FOR_EXCEPT(1);
       }

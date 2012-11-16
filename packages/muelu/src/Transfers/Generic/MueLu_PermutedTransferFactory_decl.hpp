@@ -79,12 +79,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    PermutedTransferFactory(RCP<const FactoryBase> repartitionFact=Teuchos::null,
-                             RCP<const FactoryBase> initialAFact=Teuchos::null,
-                             RCP<const FactoryBase> initialTransferFact=Teuchos::null,
-                             TransferType PorR = MueLu::INTERPOLATION,
-                             RCP<const FactoryBase> nullspaceFact=Teuchos::null,
-                             RCP<const FactoryBase> coordinateFact=Teuchos::null);
+    PermutedTransferFactory(TransferType PorR = MueLu::INTERPOLATION);
 
     //! Destructor.
     virtual ~PermutedTransferFactory();
@@ -112,18 +107,8 @@ namespace MueLu {
     //@}
 
   private:
-    //! Factory that builds the permutation matrix.
-    RCP<const FactoryBase> repartitionFact_;
-    //! Factory that builds the A matrix.
-    RCP<const FactoryBase> initialAFact_;
-    //! Factory that builds the unpermuted grid transfer operator.
-    RCP<const FactoryBase> initialTransferFact_;
     //! Indicate that the transfer factory is for interpolation or restriction.
     TransferType     PorR_;
-    //! Factory that builds the unpermuted nullspace.
-    RCP<const FactoryBase> nullspaceFact_;
-    //! Factory that builds the unpermuted coordinates.
-    RCP<const FactoryBase> coordinateFact_;
 
   }; // class PermutedTransferFactory
 

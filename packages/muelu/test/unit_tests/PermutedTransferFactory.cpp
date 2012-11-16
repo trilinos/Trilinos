@@ -102,9 +102,9 @@ namespace MueLuTests {
     RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
     RCP<TentativePFactory>    Ptentfact = rcp(new TentativePFactory(UCAggFact));
     RCP<SaPFactory>           Pfact = rcp( new SaPFactory(Ptentfact));
-    RCP<RFactory>             Rfact = rcp( new TransPFactory(Pfact) );
+    RCP<FactoryBase2>             Rfact = rcp( new TransPFactory(Pfact) );
     RCP<RAPFactory>           Acfact = rcp( new RAPFactory(Pfact,Rfact) );
-    RCP<RFactory>             Rtentfact = rcp( new TransPFactory(Ptentfact) );
+    RCP<FactoryBase2>             Rtentfact = rcp( new TransPFactory(Ptentfact) );
 
     RCP<MultiVectorTransferFactory> mvTransFact = rcp(new MultiVectorTransferFactory("Coordinates","R",Rtentfact));
     Acfact->AddTransferFactory(mvTransFact);

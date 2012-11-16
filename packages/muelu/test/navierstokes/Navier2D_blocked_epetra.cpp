@@ -663,7 +663,8 @@ int main(int argc, char *argv[]) {
   PFact->AddFactoryManager(M11);
   PFact->AddFactoryManager(M22);
 
-  RCP<GenericRFactory> RFact = rcp(new GenericRFactory(PFact));
+  RCP<GenericRFactory> RFact = rcp(new GenericRFactory());
+  RFact->SetFactory("P", PFact);
 
   RCP<RAPFactory> AcFact = rcp(new RAPFactory());
   AcFact->SetFactory("P", PFact);

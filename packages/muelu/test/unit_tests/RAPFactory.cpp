@@ -90,7 +90,8 @@ namespace MueLuTests {
 
     TentativePFactory tentpFactory;
     SaPFactory sapFactory(rcpFromRef(tentpFactory));
-    TransPFactory transPFactory(rcpFromRef(sapFactory)); //todo:rcpFromRef
+    TransPFactory transPFactory;
+    transPFactory.SetFactory("P", rcpFromRef(sapFactory));  //todo:rcpFromRef
 
     coarseLevel.Request("P",&sapFactory);
     coarseLevel.Request("R",&transPFactory);
@@ -171,8 +172,8 @@ namespace MueLuTests {
 
     TentativePFactory tentpFactory;
     SaPFactory sapFactory(rcpFromRef(tentpFactory));
-    TransPFactory transPFactory(rcpFromRef(sapFactory));
-
+    TransPFactory transPFactory;
+    transPFactory.SetFactory("P", rcpFromRef(sapFactory));
     coarseLevel.Request("P", &sapFactory);
     coarseLevel.Request("R", &transPFactory);
 

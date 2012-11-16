@@ -91,8 +91,8 @@ namespace MueLuTests {
     fineLevel.Set("A",Op);
 
     SaPFactory sapFactory;
-    TransPFactory transPFact(rcpFromRef(sapFactory)); //todo:rcpFromRef
-
+    TransPFactory transPFact;
+    transPFact.SetFactory("P", rcpFromRef(sapFactory));
     coarseLevel.Request(sapFactory);
     coarseLevel.Request(transPFact);
 
@@ -100,7 +100,7 @@ namespace MueLuTests {
     coarseLevel.Request("R", &transPFact);
 
     sapFactory.BuildP(fineLevel,coarseLevel);
-    transPFact.BuildR(fineLevel,coarseLevel);
+    transPFact.Build(fineLevel,coarseLevel);
 
     RCP<Matrix> P = coarseLevel.Get< RCP<Matrix> >("P", &sapFactory);
     RCP<Matrix> R = coarseLevel.Get< RCP<Matrix> >("R", &transPFact);

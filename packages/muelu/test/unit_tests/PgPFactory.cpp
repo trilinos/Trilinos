@@ -134,8 +134,8 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
   UCAggFact->SetPhase3AggCreation(0.5);
 
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
-  RCP<PgPFactory>         Pfact = rcp( new PgPFactory());
-  RCP<RFactory>           Rfact = rcp( new GenericRFactory() );
+  RCP<PgPFactory>        Pfact = rcp( new PgPFactory());
+  RCP<FactoryBase2>      Rfact = rcp( new GenericRFactory() );
   RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
   H->SetMaxCoarseSize(1);
 
@@ -369,7 +369,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
 
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
   RCP<PgPFactory> Pfact = rcp(new PgPFactory());
-  RCP<RFactory>          Rfact = rcp( new GenericRFactory() );
+  RCP<FactoryBase2>          Rfact = rcp( new GenericRFactory() );
   RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
   H->SetMaxCoarseSize(1);
 
@@ -514,7 +514,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ColumnBasedOmegas)
 
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(UCAggFact));
   RCP<PgPFactory>        Pfact = rcp( new PgPFactory(Ptentfact));
-  RCP<RFactory>          Rfact = rcp( new GenericRFactory(Pfact) );
+  RCP<FactoryBase2>          Rfact = rcp( new GenericRFactory(Pfact) );
   RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
   H->SetMaxCoarseSize(1);
 
@@ -675,7 +675,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegas)
 
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
   RCP<PgPFactory>        Pfact = rcp( new PgPFactory());
-  RCP<RFactory>          Rfact = rcp( new GenericRFactory() );
+  RCP<FactoryBase2>          Rfact = rcp( new GenericRFactory() );
   RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
   H->SetMaxCoarseSize(1);
 
@@ -843,7 +843,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegasTransP)
 
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
   RCP<PgPFactory>        Pfact = rcp( new PgPFactory());
-  RCP<RFactory>          Rfact = rcp( new TransPFactory() );
+  RCP<FactoryBase2>          Rfact = rcp( new TransPFactory() );
   RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
   H->SetMaxCoarseSize(1);
 
@@ -1023,7 +1023,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
 
       RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
       RCP<PgPFactory>         Pfact = rcp( new PgPFactory());
-      RCP<RFactory>           Rfact = rcp( new GenericRFactory() );
+      RCP<FactoryBase2>           Rfact = rcp( new GenericRFactory() );
       RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
       H->SetMaxCoarseSize(1);
 

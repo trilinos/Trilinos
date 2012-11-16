@@ -353,7 +353,7 @@ int main(int argc, char *argv[]) {
   *out << "=============================================================================" << std::endl;
 
   RCP<PFactory> Pfact = Teuchos::null;
-  RCP<RFactory> Rfact = Teuchos::null;
+  RCP<FactoryBase2> Rfact = Teuchos::null;
 
   if (transferOpType == "PA-AMG") {
     Pfact = rcp(new TentativePFactory(UCAggFact));

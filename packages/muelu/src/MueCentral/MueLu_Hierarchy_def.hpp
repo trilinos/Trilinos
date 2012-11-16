@@ -59,7 +59,6 @@
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_FactoryManager.hpp"
 #include "MueLu_PFactory.hpp"
-#include "MueLu_RFactory.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 

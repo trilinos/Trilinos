@@ -185,6 +185,17 @@ int main(int argc, char *argv[]) {
   *out << "=============================================================================" << std::endl;
 
   // build transfer operators
+//   RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory()); // make sure that we can keep nullspace!!!
+//   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact,nspFact));
+//   //RCP<PgPFactory> Pfact = rcp( new PgPFactory(TentPFact) );
+//   //RCP<FactoryBase2> Rfact  = rcp( new GenericRFactory(Pfact));
+//   RCP<SaPFactory> Pfact  = rcp( new SaPFactory(TentPFact) );
+//   RCP<FactoryBase2>   Rfact  = rcp( new TransPFactory(Pfact) );
+//   RCP<RAPFactory> Acfact = rcp( new RAPFactory(Pfact, Rfact) );
+//   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+
+//   Finest->Keep("Aggregates",UCAggFact.get());
+//   Finest->Keep("Nullspace",nspFact.get());
 
   // build level smoothers
   RCP<SmootherPrototype> smooProto;

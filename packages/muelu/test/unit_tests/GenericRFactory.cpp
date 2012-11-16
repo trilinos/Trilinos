@@ -132,7 +132,7 @@ namespace MueLuTests {
     UCAggFact->SetPhase3AggCreation(0.5);
 
     RCP<SaPFactory>         Pfact = rcp( new SaPFactory());
-    RCP<RFactory>           Rfact = rcp( new GenericRFactory() );
+    RCP<FactoryBase2>           Rfact = rcp( new GenericRFactory() );
     H->SetMaxCoarseSize(1);
 
     // setup smoothers
@@ -253,7 +253,7 @@ namespace MueLuTests {
         out << "||NS|| = " << norms[0] << std::endl;
 
       RCP<PgPFactory>         Pfact = rcp( new PgPFactory());
-      RCP<RFactory>           Rfact = rcp( new GenericRFactory() );
+      RCP<FactoryBase2>           Rfact = rcp( new GenericRFactory() );
       RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
 
       // setup smoothers

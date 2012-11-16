@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
   RCP<TentativePFactory>    TentPFact = rcp(new TentativePFactory(UCAggFact));
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
-  RCP<RFactory>         Rfact = rcp( new TransPFactory() );
+  RCP<FactoryBase2>         Rfact = rcp( new TransPFactory() );
   RCP<GenericPRFactory> PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
 
