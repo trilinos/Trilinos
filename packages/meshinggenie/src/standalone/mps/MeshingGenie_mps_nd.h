@@ -55,7 +55,7 @@
  * The Random Number Generator is provided by George Marsaglia available at
    http://www.velocityreviews.com/forums/t720512-re-rngs-a-double-kiss.html
 
- * Last modified: 10/29/2012
+ * Last modified: 11/16/2012
 ********************************************************************************/
 
 
@@ -72,13 +72,16 @@ class MeshingGenie_mps_nd
    
 
         //! Destructor                
-        ~MeshingGenie_mps_nd(){ };
+        ~MeshingGenie_mps_nd(){ destroy_mps_data();};
 
 
 		int solve_mps(size_t ndim, double r, size_t random_seed, 
 			          std::vector< std::vector<double> > &boundary_points,
 			          std::vector< std::vector<size_t> > &boundary_faces, 
 				      std::vector< std::vector<double> > &sample_points);
+		
+		void destroy_mps_data();
+
 	private:
 		enum vec_range{empty,                     // vector is empty
 			           front,                     // entity < vec[first]
@@ -89,7 +92,8 @@ class MeshingGenie_mps_nd
 
 	private:
 		void init();
-		void cleanup();
+		inline void clear_cell_pool(std::vector<size_t*> &pool);
+		inline void clear_cell_points(std::vector<double*> &cell_points);
 
 		void initiate_random_generator(unsigned long x);
 		double generate_a_random_number();
@@ -137,8 +141,7 @@ class MeshingGenie_mps_nd
 		// returns the i^p
 		inline size_t ipow(size_t i, size_t p);
 
-    private:
-		
+    private:		
 
 		size_t _ndim;                                         // number of dimensions
 		double _r, _rsq;                                      // distribution radius
@@ -162,7 +165,7 @@ class MeshingGenie_mps_nd
 
 		// background grids
 		size_t _num_ghost_layers; 
-		size_t _num_valid_cells, _num_inserted_points;
+		size_t _num_active_cells, _num_inserted_points;
 
 		double _s;      // parent grid spacing
 		double _ss;     // active grid spacing
@@ -182,9 +185,13 @@ class MeshingGenie_mps_nd
 		std::vector< size_t* > _interior_cells;             // cells that lie inside the domain
 		std::vector< size_t* > _covered_cells;              //  cells that are already covered
 		
+		double* _current_dart;
+
 		std::vector< double* > _boundary_cell_points;       // sample points in boundary cells
 		std::vector< double* > _interior_cell_points;       // sample points in interior cells		
 		
+
+		friend class MeshingGenie_plotter_2d; // 2d plotter for 2d postscript results and debugging
 };
                                 
 #endif	

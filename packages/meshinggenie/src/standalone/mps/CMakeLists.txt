@@ -5,10 +5,12 @@ SET( CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE )
 SET( APP_HDRS
 	   MeshingGenie_defs.h
 	   MeshingGenie_mps_nd.h
+	   MeshingGenie_plotter_2d.h
    )
 
 SET( APP_SRCS
 	   MeshingGenie_mps_nd.cpp
+	   MeshingGenie_plotter_2d.cpp
    )
   
 
