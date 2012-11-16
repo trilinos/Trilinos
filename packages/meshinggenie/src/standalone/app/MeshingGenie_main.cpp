@@ -100,11 +100,17 @@ int main(int argc, char *argv[])
 	if (argc == 1)
 	{
 		std::cout<< "Meshing Genie: Please specify input file!" << std::endl;
+		char dummy_cc;
+		std::cout<< "\n*** enter q to quit ...";
+		std::cin >> dummy_cc;
 		return 1;
 	}
 
 	if(read_input(argv[1])) 
 	{
+		char dummy_cc;
+		std::cout<< "\n*** Error reading input file, enter q to quit ...";
+		std::cin >> dummy_cc;
 		return 1;
 	}
 
@@ -113,6 +119,11 @@ int main(int argc, char *argv[])
 		MeshingGenie_mps_nd genie_mps;
 		genie_mps.solve_mps(_ndim, _r, _random_seed, _boundary_points, _boundary_faces, _sample_points);
 	}
+
+	char dummy_cc;
+	std::cout<< "\n*** enter q to quit ...";
+    std::cin >> dummy_cc;
+
 	return 0;
 }
 
