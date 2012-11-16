@@ -50,6 +50,12 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
+#include <Tpetra_ConfigDefs.hpp>
+#if !defined(HAVE_KOKKOS_CUDA_DOUBLE)
+// disable GPU support in HybridPlatform before including its header file
+#undef HAVE_KOKKOSCLASSIC_THRUST
+#endif
+
 #include <Tpetra_HybridPlatform.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_MatrixIO.hpp>
@@ -110,14 +116,8 @@ class runTest {
     //
     // Get the data from the HB file and build the Map,Matrix
     //
-    // we prefer float for this test, as it is more likely to exercise the GPU
-#if   defined(HAVE_TPETRA_INST_FLOAT)
-    typedef float  TestScalar;
-      if (comm->getRank() == 0) cout << "running with scalar float" << std::endl;
-#elif defined(HAVE_TPETRA_INST_DOUBLE)
     typedef double TestScalar;
-      if (comm->getRank() == 0) cout << "running with scalar double" << std::endl;
-#endif
+    if (comm->getRank() == 0) cout << "running with scalar float" << std::endl;
     Teuchos::RCP< Tpetra::CrsMatrix<TestScalar,int,int,Node> > A;
     try {
       Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("ReadMatrix");

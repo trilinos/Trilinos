@@ -51,23 +51,11 @@
 #include <Teuchos_as.hpp>
 #include <Teuchos_TypeTraits.hpp>
 
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_BlockCrsGraph.hpp"
+#include <Tpetra_ConfigDefs.hpp>
+#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_BlockCrsGraph.hpp>
 
-#include "Kokkos_SerialNode.hpp"
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#include "Kokkos_TBBNode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#include "Kokkos_TPINode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-#include "Kokkos_OpenMPNode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-#include "Kokkos_ThrustGPUNode.hpp"
-#endif
+#include <Tpetra_ETIHelperMacros.h>
 
 namespace {
 
@@ -112,8 +100,6 @@ namespace {
   using Tpetra::DynamicProfile;
   using Tpetra::Array_size_type;
 
-  typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
-
   using Kokkos::SerialNode;
   RCP<SerialNode> snode;
 #ifdef HAVE_KOKKOSCLASSIC_TBB
@@ -127,10 +113,6 @@ namespace {
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
   using Kokkos::OpenMPNode;
   RCP<OpenMPNode> ompnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  using Kokkos::ThrustGPUNode;
-  RCP<ThrustGPUNode> thrustnode;
 #endif
 
   bool testMpi = true;
@@ -214,25 +196,12 @@ namespace {
   }
 #endif
 
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  template <>
-  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
-    if (thrustnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      pl.set<int>("Verbose",1);
-      thrustnode = rcp(new ThrustGPUNode(pl));
-    }
-    return thrustnode;
-  }
-#endif
-
   //
   // UNIT TESTS
   // 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BlockCrsGraph, ColMap1, LO, GO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BlockCrsGraph, ColMap1, LO, GO, Node )
   {
     //This test fills a (block-tri-diagonal) block-crs-graph such that in parallel
     //the column-map should have an overlapping set of entries (i.e.,
@@ -297,7 +266,7 @@ namespace {
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BlockCrsGraph, Queries, LO, GO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BlockCrsGraph, Queries, LO, GO, Node )
   {
     //This test fills a (block-tri-diagonal) block-crs-graph such that
     //in parallel the column-map should have an overlapping set of
@@ -384,9 +353,11 @@ namespace {
   // INSTANTIATIONS
   //
 
-#define UNIT_TEST_GROUP_LO_GO( LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BlockCrsGraph, ColMap1  , LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BlockCrsGraph, Queries  , LO, GO )
+#define UNIT_TEST_GROUP( LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BlockCrsGraph, ColMap1  , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BlockCrsGraph, Queries  , LO, GO, NODE )
 
-     UNIT_TEST_GROUP_LO_GO(int,int)
+    TPETRA_ETI_MANGLING_TYPEDEFS()
+
+    TPETRA_INSTANTIATE_LGN_NOGPU( UNIT_TEST_GROUP )
 }

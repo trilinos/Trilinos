@@ -327,6 +327,8 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
 namespace Tpetra {
   namespace Utils {
 
+    TPETRA_ETI_MANGLING_TYPEDEFS()
+
     TPETRA_INSTANTIATE_SLGN(TPETRA_MATRIXIO_INSTANT)
 
   } // namespace Tpetra::Utils

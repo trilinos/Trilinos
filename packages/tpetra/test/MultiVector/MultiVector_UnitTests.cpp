@@ -228,6 +228,14 @@ namespace {
   }
 #endif
 
+  // no ScalarTraits<>::eps() for integer types
+  template <class Scalar>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType testingTol() { return Teuchos::ScalarTraits<Scalar>::eps(); }
+  template <>
+  int testingTol<int>() { return 0; }
+  template <>
+  long testingTol<long>() { return 0; }
+
   //
   // UNIT TESTS
   // 
@@ -420,7 +428,7 @@ namespace {
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    const Mag tol = errorTolSlack * errorTolSlack * ScalarTraits<Mag>::eps();   // extra slack on this test; dots() seem to be a little sensitive for single precision types
+    const Mag tol = errorTolSlack * errorTolSlack * testingTol<Scalar>();   // extra slack on this test; dots() seem to be a little sensitive for single precision types
     const Mag M0  = ScalarTraits<Mag>::zero();
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
@@ -800,25 +808,25 @@ namespace {
         tmv3x3.multiply(NO_TRANS,NO_TRANS,S1,tmv3x2,tmv2x3,S0);
         sdm3x3.multiply(NO_TRANS,NO_TRANS,S1,sdm3x2,sdm2x3,S0);
         tmpView = tmv3x3.get1dView(); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
-        TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,ScalarTraits<Mag>::eps() * 10.);
+        TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
       }
       {
         tmv2x2.multiply(NO_TRANS,CONJ_TRANS,S1,tmv2x3,tmv2x3,S0);
         sdm2x2.multiply(NO_TRANS,CONJ_TRANS,S1,sdm2x3,sdm2x3,S0);
         tmpView = tmv2x2.get1dView(); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
-        TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,ScalarTraits<Mag>::eps() * 10.);
+        TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
       }
       {
         tmv2x2.multiply(CONJ_TRANS,NO_TRANS,S1,tmv3x2,tmv3x2,S0);
         sdm2x2.multiply(CONJ_TRANS,NO_TRANS,S1,sdm3x2,sdm3x2,S0);
         tmpView = tmv2x2.get1dView(); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
-        TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,ScalarTraits<Mag>::eps() * 10.);
+        TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
       }
       {
         tmv3x3.multiply(CONJ_TRANS,CONJ_TRANS,S1,tmv2x3,tmv3x2,S0);
         sdm3x3.multiply(CONJ_TRANS,CONJ_TRANS,S1,sdm2x3,sdm3x2,S0);
         tmpView = tmv3x3.get1dView(); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
-        TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,ScalarTraits<Mag>::eps() * 10.);
+        TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
       }
     }
     // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
@@ -1057,7 +1065,7 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Scalar S0 = ScalarTraits<Scalar>::zero();
     const Mag M0 = ScalarTraits<Mag>::zero();
-    const Mag tol = errorTolSlack * ScalarTraits<Mag>::eps();
+    const Mag tol = errorTolSlack * testingTol<Scalar>();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
@@ -1271,7 +1279,7 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Scalar S0 = ScalarTraits<Scalar>::zero();
     const Mag M0 = ScalarTraits<Mag>::zero();
-    const Mag tol = errorTolSlack * ScalarTraits<Mag>::eps();
+    const Mag tol = errorTolSlack * testingTol<Scalar>();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
@@ -1504,7 +1512,7 @@ namespace {
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Vector<Scalar,LO,GO,Node>       V;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    const Mag tol = errorTolSlack * ScalarTraits<Mag>::eps();
+    const Mag tol = errorTolSlack * testingTol<Scalar>();
     const Mag M0 = ScalarTraits<Mag>::zero();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -1896,7 +1904,7 @@ namespace {
     }
     mv.norm2(norms()); // should be all one now
     Array<Magnitude> ones(numVectors,M1);
-    TEST_COMPARE_FLOATING_ARRAYS(norms,ones,ScalarTraits<Magnitude>::eps()*as<Magnitude>(10.));
+    TEST_COMPARE_FLOATING_ARRAYS(norms,ones,testingTol<Scalar>()*errorTolSlack);
   }
 
 
@@ -2121,7 +2129,7 @@ namespace {
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    const Mag tol = errorTolSlack * ScalarTraits<Mag>::eps();
+    const Mag tol = errorTolSlack * testingTol<Scalar>();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
@@ -2267,11 +2275,13 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Describable       , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Typedefs          , LO, GO, SCALAR, NODE )
 
-#define VIEWMODETEST(NODE) TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, NODE )
+#define VIEWMODETEST(NODE) \
+        TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, NODE ) \
+        TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(      Vector, ViewModeConstructorTests, NODE )
 
-  TPETRA_ETI_MANGLING_TYPEDEFS
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_INSTANTIATE_N( VIEWMODETEST )
+  TPETRA_INSTANTIATE_N_NOGPU(VIEWMODETEST)
 
   TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 

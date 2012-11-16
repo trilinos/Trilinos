@@ -48,10 +48,10 @@
 
 #include <Kokkos_DefaultNode.hpp>
 
-#include "Tpetra_Version.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_MultiVector.hpp"
-#include "Tpetra_RTI.hpp"
+#include <Tpetra_Version.hpp>
+#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_MultiVector.hpp>
+#include <Tpetra_RTI.hpp>
 
 #include <iostream>
 #include <iomanip>

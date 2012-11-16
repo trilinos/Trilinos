@@ -9,6 +9,10 @@ IF (SITE STREQUAL "gabriel.sandia.gov")
     "${ARGS} --not-unit-test=CrsMatrix_int_ComplexFloat_FullMatrixComplex_UnitTest")
 ENDIF()
 
+JOIN(allnodes   "|" FALSE ${Tpetra_ETI_NODES}  )
+TRIBITS_ETI_TYPE_EXPANSION(conversions "SOUT=int" "SIN=double" "LO=int" "GO=int" "N=${allnodes}")
+TRIBITS_ADD_ETI_INSTANTIATIONS(Tpetra ${conversions})
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnitTests
   SOURCES

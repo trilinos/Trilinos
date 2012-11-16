@@ -407,4 +407,7 @@ Tpetra::createCrsMatrixMultiplyOp(const Teuchos::RCP<const Tpetra::CrsMatrix<Mat
               OPSCALAR alpha, OPSCALAR beta        \
               ) const;
 
+#define TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT_SINGLE(SCALAR,LO,GO,NODE) \
+        TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(SCALAR,SCALAR,LO,GO,NODE)
+
 #endif // TPETRA_CRSMATRIXMULTIPLYOP_DEF_HPP

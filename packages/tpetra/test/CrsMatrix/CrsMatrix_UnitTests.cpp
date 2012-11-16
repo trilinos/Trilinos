@@ -53,27 +53,15 @@
 #include <Teuchos_TypeTraits.hpp>
 #include <Kokkos_DefaultNode.hpp>
 
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_MultiVector.hpp"
-#include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_CrsMatrixSolveOp.hpp"
-#include "Tpetra_CrsMatrixMultiplyOp.hpp"
-#include "TpetraExt_MatrixMatrix.hpp"
+#include <Tpetra_ConfigDefs.hpp>
+#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_MultiVector.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_CrsMatrixSolveOp.hpp>
+#include <Tpetra_CrsMatrixMultiplyOp.hpp>
+#include <TpetraExt_MatrixMatrix.hpp>
 
-#include "Kokkos_SerialNode.hpp"
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#include "Kokkos_TBBNode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#include "Kokkos_TPINode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-#include "Kokkos_OpenMPNode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-#include "Kokkos_ThrustGPUNode.hpp"
-#endif
+#include <Tpetra_ETIHelperMacros.h>
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
@@ -1045,10 +1033,10 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const size_t M = 3;
-    const size_t P = 5;
-    const size_t N = comm->getSize();
-    const size_t myImageID = comm->getRank();
+    const int M = 3;
+    const int P = 5;
+    const int N = comm->getSize();
+    const int myImageID = comm->getRank();
     // create Maps
     // matrix is M*N-by-P
     //                  col
@@ -1080,7 +1068,7 @@ namespace {
     // 
     // 
     // 
-    const size_t numVecs  = 3;
+    const int numVecs  = 3;
     RCP<const Map<LO,GO,Node> > rowmap = createContigMapWithNode<LO,GO>(INVALID,M,comm,node);
     RCP<const Map<LO,GO,Node> > lclmap = createLocalMapWithNode<LO,GO,Node>(P,comm,node);
 
@@ -1131,10 +1119,10 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const size_t M = 3;
-    const size_t P = 5;
-    const size_t N = comm->getSize();
-    const size_t myImageID = comm->getRank();
+    const int M = 3;
+    const int P = 5;
+    const int N = comm->getSize();
+    const int myImageID = comm->getRank();
     // create Maps
     // matrix is M*N-by-P
     //                  col
@@ -1175,13 +1163,13 @@ namespace {
     // = sum k(i+j)MN + ij(MN)(MN) + k^2 = (i+j)(MN)^2(MN-1)/2 + ij(MN)^3 + (MN)(MN-1)(2MN-1)/6
     //   k=0
     // 
-    const size_t numVecs  = 3;
+    const int numVecs  = 3;
     RCP<const Map<LO,GO,Node> > rowmap = createContigMapWithNode<LO,GO>(INVALID,M,comm,node);
     RCP<const Map<LO,GO,Node> > lclmap = createLocalMapWithNode<LO,GO,Node>(P,comm,node);
     // create the matrix
     MAT A(rowmap,P);
-    for (size_t i=0; i<M; ++i) {
-      for (size_t j=0; j<P; ++j) {
+    for (int i=0; i<M; ++i) {
+      for (int j=0; j<P; ++j) {
         A.insertGlobalValues( static_cast<GO>(M*myImageID+i), tuple<GO>(j), tuple<Scalar>(M*myImageID+i + j*M*N) );
       }
     }
@@ -1192,15 +1180,15 @@ namespace {
     //A.describe(out, VERB_EXTREME);
     // build the input multivector X
     MV X(rowmap,numVecs);
-    for (size_t i=myImageID*M; i<myImageID*M+M; ++i) {
-      for (size_t j=0; j<numVecs; ++j) {
+    for (int i=myImageID*M; i<myImageID*M+M; ++i) {
+      for (int j=0; j<numVecs; ++j) {
         X.replaceGlobalValue(i,j,static_cast<Scalar>( i + j*M*N ) );
       }
     }
     // build the expected output multivector B
     MV Bexp(lclmap,numVecs), Bout(lclmap,numVecs);
-    for (size_t i=0; i<P; ++i) {
-      for (size_t j=0; j<numVecs; ++j) {
+    for (int i=0; i<P; ++i) {
+      for (int j=0; j<numVecs; ++j) {
         Bexp.replaceGlobalValue(i,j,static_cast<Scalar>( (i+j)*(M*N)*(M*N)*(M*N-1)/2 + i*j*(M*N)*(M*N)*(M*N) + (M*N)*(M*N-1)*(2*M*N-1)/6 ));
       }
     }
@@ -1232,8 +1220,8 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const size_t numImages = comm->getSize();
-    const size_t myImageID = comm->getRank();
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
     if (numImages == 1) return;
     // create Maps
     // matrix is:
@@ -1269,7 +1257,7 @@ namespace {
     // col map is [0,1,2] [1,2,3,4] [3,4,5,6] etc     (assembled by CrsMatrix, we construct one only for comparison)
     // domain map will be equal to the row map
     // range  map will be [0,np] [1,np+1] [2,np+2]
-    const size_t numVecs  = 5;
+    const int numVecs  = 5;
     RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,tuple<GO>(2*myImageID,2*myImageID+1),0,comm,node) );
     RCP<Map<LO,GO,Node> > rngmap = rcp( new Map<LO,GO,Node>(INVALID,tuple<GO>(myImageID,numImages+myImageID),0,comm,node) );
     RCP<RowMatrix<Scalar,LO,GO,Node> > tri;
@@ -1311,7 +1299,7 @@ namespace {
     TEST_EQUALITY_CONST(tri->getDomainMap()->isSameAs(*rowmap), true);
     // build the input and corresponding output multivectors
     MV mvin(rowmap,numVecs), mvout(rngmap,numVecs), mvexp(rngmap,numVecs);
-    for (size_t j=0; j<numVecs; ++j) {
+    for (int j=0; j<numVecs; ++j) {
       mvin.replaceLocalValue(0,j,static_cast<Scalar>(j*2*numImages+2*myImageID  )); // entry (2*myImageID  ,j)
       mvin.replaceLocalValue(1,j,static_cast<Scalar>(j*2*numImages+2*myImageID+1)); // entry (2*myImageID+1,j)
       // entry (myImageID,j)
@@ -2143,7 +2131,7 @@ namespace {
 typedef std::complex<float>  ComplexFloat;
 typedef std::complex<double> ComplexDouble;
 
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, NODE ) \
+#define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TheEyeOfTruth, LO, GO, SCALAR, NODE )  \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ZeroMatrix   , LO, GO, SCALAR, NODE )  \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, BadCalls     , LO, GO, SCALAR, NODE ) \
@@ -2169,98 +2157,8 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Typedefs,      LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, LeftRightScale,      LO, GO, SCALAR, NODE ) 
 
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
-#define UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, SerialNode ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MixedMultiplyOp, LO, GO, SCALAR, SerialNode )
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#define UNIT_TEST_TBBNODE(LO, GO, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, TBBNode ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MixedMultiplyOp, LO, GO, SCALAR, TBBNode )
-#else
-#define UNIT_TEST_TBBNODE(LO, GO, SCALAR)
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#define UNIT_TEST_TPINODE(LO, GO, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, TPINode ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MixedMultiplyOp, LO, GO, SCALAR, TPINode )
-#else
-#define UNIT_TEST_TPINODE(LO, GO, SCALAR)
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-#define UNIT_TEST_OMPNODE(LO, GO, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, OpenMPNode ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MixedMultiplyOp, LO, GO, SCALAR, OpenMPNode )
-#else
-#define UNIT_TEST_OMPNODE(LO, GO, SCALAR)
-#endif
-
-#if defined(HAVE_KOKKOSCLASSIC_CUSPARSE)
-// float
-#if defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT)
-#  define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, float, ThrustGPUNode )
-#else
-#  define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO)
-#endif
-// double
-#if defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
-#  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, double, ThrustGPUNode )
-#else
-#  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO)
-#endif
-// complex<float>
-#if defined(HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_FLOAT)
-#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, ComplexFloat, ThrustGPUNode )
-#else
-#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO)
-#endif
-// complex<double>
-#if defined(HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_DOUBLE)
-#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, ComplexDouble, ThrustGPUNode )
-#else
-#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO)
-#endif
-#else
-// none
-# define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO)
-# define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO)
-# define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO)
-# define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO)
-#endif
-
-#define UNIT_TEST_ALLCPUNODES(LO, GO, SCALAR) \
-    UNIT_TEST_SERIALNODE(LO, GO, SCALAR)  \
-    UNIT_TEST_OMPNODE(LO, GO, SCALAR)  \
-    UNIT_TEST_TPINODE(LO, GO, SCALAR)  \
-    UNIT_TEST_TBBNODE(LO, GO, SCALAR)
-
-#define UNIT_TEST_FLOAT(LO, GO) \
-    UNIT_TEST_ALLCPUNODES(LO, GO, float) \
-    UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO)
-
-#define UNIT_TEST_DOUBLE(LO, GO) \
-    UNIT_TEST_ALLCPUNODES(LO, GO, double) \
-    UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO)
-
-#define UNIT_TEST_COMPLEX_FLOAT(LO, GO) \
-    UNIT_TEST_ALLCPUNODES(LO, GO, ComplexFloat) \
-    UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO)
-
-#define UNIT_TEST_COMPLEX_DOUBLE(LO, GO) \
-    UNIT_TEST_ALLCPUNODES(LO, GO, ComplexDouble) \
-    UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO)
-
-  UNIT_TEST_DOUBLE(int, int)
-
-#if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
-    UNIT_TEST_COMPLEX_FLOAT(int, int)
-#endif 
+  TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 
 }

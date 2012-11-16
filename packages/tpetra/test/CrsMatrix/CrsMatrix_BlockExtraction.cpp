@@ -43,14 +43,17 @@
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include "TpetraExt_BlockExtraction.hpp"
+#include <TpetraExt_BlockExtraction.hpp>
 #include <numeric>
 #include <algorithm>
+
+#include <Tpetra_ETIHelperMacros.h>
 
 namespace {
 
   using std::string;
   using Teuchos::RCP;
+  using Teuchos::null;
   using Teuchos::rcp;
   using Teuchos::Comm;
   using Teuchos::ScalarTraits;
@@ -60,6 +63,25 @@ namespace {
   using Tpetra::CrsMatrix;
   using Tpetra::RowMatrix;
   using Tpetra::global_size_t;
+
+  using Kokkos::SerialNode;
+  RCP<SerialNode> snode;
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+  using Kokkos::TBBNode;
+  RCP<TBBNode> tbbnode;
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+  using Kokkos::TPINode;
+  RCP<TPINode> tpinode;
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+  using Kokkos::OpenMPNode;
+  RCP<OpenMPNode> ompnode;
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
+  using Kokkos::ThrustGPUNode;
+  RCP<ThrustGPUNode> thrustnode;
+#endif
 
   bool testMpi = true;
   // string filedir;
@@ -92,27 +114,91 @@ namespace {
     return ret;
   }
 
+  template <class Node>
+  RCP<Node> getNode() {
+    assert(false);
+  }
+
+  template <>
+  RCP<SerialNode> getNode<SerialNode>() {
+    if (snode == null) {
+      Teuchos::ParameterList pl;
+      snode = rcp(new SerialNode(pl));
+    }
+    return snode;
+  }
+
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+  template <>
+  RCP<TBBNode> getNode<TBBNode>() {
+    if (tbbnode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      tbbnode = rcp(new TBBNode(pl));
+    }
+    return tbbnode;
+  }
+#endif
+
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+  template <>
+  RCP<TPINode> getNode<TPINode>() {
+    if (tpinode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      tpinode = rcp(new TPINode(pl));
+    }
+    return tpinode;
+  }
+#endif
+
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+  template <>
+  RCP<OpenMPNode> getNode<OpenMPNode>() {
+    if (ompnode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      ompnode = rcp(new OpenMPNode(pl));
+    }
+    return ompnode;
+  }
+#endif
+
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
+  template <>
+  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
+    if (thrustnode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      pl.set<int>("Verbose",1);
+      thrustnode = rcp(new ThrustGPUNode(pl));
+    }
+    return thrustnode;
+  }
+#endif
+
   //
   // UNIT TESTS
   // 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BlockDiagonalExtraction, RuntimeExceptions, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockDiagonalExtraction, RuntimeExceptions, LO, GO, Scalar, Node )
   {
-    typedef Tpetra::Map<LO,GO> Map;
+    typedef Tpetra::Map<LO,GO,Node> Map;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<Node> node = getNode<Node>();
     // set the block sizes
     // note one block of zero size, to test capability
     Teuchos::Tuple<int,7> block_sizes = Teuchos::tuple<int>(1,3,5,0,5,3,1) ;
     const int maxBlockSize = *std::max_element( block_sizes.begin(), block_sizes.end() );
     // create a Map
     const size_t numLocal = std::accumulate( block_sizes.begin(), block_sizes.end(), (size_t)0 );
-    RCP<const Map> map = Tpetra::createContigMap<LO,GO>(INVALID,numLocal,comm);
-    RCP<const RowMatrix<Scalar,LO,GO> > mat;
+    RCP<const Map> map = Tpetra::createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm,node);
+    RCP<const RowMatrix<Scalar,LO,GO,Node> > mat;
     {
-      RCP<CrsMatrix<Scalar,LO,GO> > mat_crs = Tpetra::createCrsMatrix<Scalar>( map );
+      RCP<CrsMatrix<Scalar,LO,GO,Node> > mat_crs = Tpetra::createCrsMatrix<Scalar>( map );
       for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
         // add diagonal entries
         mat_crs->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar>(1.0) );
@@ -184,20 +270,21 @@ namespace {
       }
       Teuchos::ArrayRCP<Scalar> out_diags;
       Teuchos::ArrayRCP<LO>     out_offsets;
-      RCP<CrsMatrix<Scalar,LO,GO> > not_fill_complete = Tpetra::createCrsMatrix<Scalar>( map );
+      RCP<CrsMatrix<Scalar,LO,GO,Node> > not_fill_complete = Tpetra::createCrsMatrix<Scalar>( map );
       TEST_THROW( Tpetra::Ext::extractBlockDiagonals( *not_fill_complete, bfirsts().getConst(), out_diags, out_offsets ) , std::runtime_error );
     }
   }
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BlockDiagonalExtraction, SimpleExtraction, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockDiagonalExtraction, SimpleExtraction, LO, GO, Scalar, Node )
   {
-    typedef Tpetra::Map<LO,GO>           Map;
-    typedef Tpetra::BlockMap<LO,GO> BlockMap;
+    typedef Tpetra::Map<LO,GO,Node>           Map;
+    typedef Tpetra::BlockMap<LO,GO,Node> BlockMap;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<Node> node = getNode<Node>();
 
     //
     // set the block sizes
@@ -209,13 +296,13 @@ namespace {
     // create a point Map
     //
     const size_t numLocal = std::accumulate( block_sizes.begin(), block_sizes.end(), (size_t)0 );
-    RCP<const Map> map = Tpetra::createContigMap<LO,GO>(INVALID,numLocal,comm);
+    RCP<const Map> map = Tpetra::createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm,node);
     //
     // fill matrix for testing
     //
-    RCP<const RowMatrix<Scalar,LO,GO> > mat;
+    RCP<const RowMatrix<Scalar,LO,GO,Node> > mat;
     {
-      RCP<CrsMatrix<Scalar,LO,GO> > mat_crs = Tpetra::createCrsMatrix<Scalar>( map );
+      RCP<CrsMatrix<Scalar,LO,GO,Node> > mat_crs = Tpetra::createCrsMatrix<Scalar>( map );
       for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
         // add diagonal entries
         mat_crs->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar>(1.0) );
@@ -240,7 +327,7 @@ namespace {
     //
     Teuchos::ArrayRCP<Scalar> block_diagonals1;
     Teuchos::ArrayRCP<LO>     block_offsets1;
-    Tpetra::Ext::extractBlockDiagonals<Scalar,LO,GO>( *mat, block_firsts(), block_diagonals1, block_offsets1 );
+    Tpetra::Ext::extractBlockDiagonals<Scalar,LO,GO,Node>( *mat, block_firsts(), block_diagonals1, block_offsets1 );
     //
     // independently test first extraction
     // 
@@ -263,7 +350,7 @@ namespace {
     //
     Teuchos::ArrayRCP<Scalar> block_diagonals2;
     Teuchos::ArrayRCP<LO>     block_offsets2;
-    Tpetra::Ext::extractBlockDiagonals<Scalar,LO,GO>( *mat, *bmap, block_diagonals2, block_offsets2 );
+    Tpetra::Ext::extractBlockDiagonals<Scalar,LO,GO,Node>( *mat, *bmap, block_diagonals2, block_offsets2 );
     // 
     // independently test second extraction
     //
@@ -285,14 +372,15 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BlockRowExtraction, DiagonalExtraction, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockRowExtraction, DiagonalExtraction, LO, GO, Scalar, Node )
   {
-    typedef Tpetra::Map<LO,GO>           Map;
-    typedef Tpetra::BlockMap<LO,GO> BlockMap;
+    typedef Tpetra::Map<LO,GO,Node>           Map;
+    typedef Tpetra::BlockMap<LO,GO,Node> BlockMap;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     //
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<Node> node = getNode<Node>();
     const int myImageID = comm->getRank();
     //
     // set the block sizes
@@ -304,14 +392,14 @@ namespace {
     // create a point Map
     //
     const size_t numLocal = std::accumulate( block_sizes.begin(), block_sizes.end(), 0 );
-    RCP<const Map> map = Tpetra::createContigMap<LO,GO>(INVALID,numLocal,comm);
+    RCP<const Map> map = Tpetra::createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm,node);
     //
     // fill matrix for testing
     // 
     //
-    RCP<const RowMatrix<Scalar,LO,GO> > mat;
+    RCP<const RowMatrix<Scalar,LO,GO,Node> > mat;
     {
-      RCP<CrsMatrix<Scalar,LO,GO> > mat_crs = Tpetra::createCrsMatrix<Scalar>( map );
+      RCP<CrsMatrix<Scalar,LO,GO,Node> > mat_crs = Tpetra::createCrsMatrix<Scalar>( map );
       for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
         // add diagonal entries
         mat_crs->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar>(1.0) );
@@ -334,7 +422,7 @@ namespace {
     // 
     Teuchos::ArrayRCP<Scalar> block_diagonals;
     Teuchos::ArrayRCP<LO>     block_offsets;
-    Tpetra::Ext::extractBlockDiagonals<Scalar,LO,GO>( *mat, *bmap, block_diagonals, block_offsets );
+    Tpetra::Ext::extractBlockDiagonals<Scalar,LO,GO,Node>( *mat, *bmap, block_diagonals, block_offsets );
 
     // 
     // perform block row extractions
@@ -381,16 +469,14 @@ namespace {
   // INSTANTIATIONS
   //
 
-#define UNIT_TEST_ORDINAL_SCALAR(LO, GO, SCALAR) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BlockDiagonalExtraction, SimpleExtraction, LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BlockDiagonalExtraction, RuntimeExceptions, LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BlockRowExtraction,      DiagonalExtraction, LO, GO, SCALAR )
+#define UNIT_TEST_GROUP(SCALAR, LO, GO, NODE) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockDiagonalExtraction, SimpleExtraction, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockDiagonalExtraction, RuntimeExceptions, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockRowExtraction,      DiagonalExtraction, LO, GO, SCALAR, NODE )
 
-#define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
-        UNIT_TEST_ORDINAL_SCALAR(LO, GO, double)
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
-UNIT_TEST_GROUP_ORDINAL(int, int)
-UNIT_TEST_GROUP_ORDINAL(int, long)
+  TPETRA_INSTANTIATE_SLGN_NOGPU( UNIT_TEST_GROUP )
 
 }
 

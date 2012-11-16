@@ -1354,38 +1354,19 @@ Tpetra::createOneToOne (Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdina
 
 //! Explicit instantiation macro supporting the Map class, on the default node for specified ordinals.
 #define TPETRA_MAP_INSTANT_DEFAULTNODE(LO,GO) \
-  typedef Kokkos::DefaultNode::DefaultNodeType map_instant_kokkos_defaultnode; \
+  template Teuchos::RCP< const Map<LO,GO> > \
+  createLocalMap<LO,GO>( size_t, const Teuchos::RCP< const Teuchos::Comm< int > > &); \
   \
-  template class Map< LO , GO , map_instant_kokkos_defaultnode>; \
+  template Teuchos::RCP< const Map<LO,GO> > \
+  createContigMap<LO,GO>( global_size_t, size_t, \
+                          const Teuchos::RCP< const Teuchos::Comm< int > > &); \
   \
-  template Teuchos::RCP< const Map<LO,GO,map_instant_kokkos_defaultnode> > \
-  createLocalMapWithNode<LO,GO,map_instant_kokkos_defaultnode>(\
-                                      size_t, const Teuchos::RCP< const Teuchos::Comm< int > > &,  \
-                                      const Teuchos::RCP< map_instant_kokkos_defaultnode > &); \
+  template Teuchos::RCP< const Map<LO,GO> >  \
+  createNonContigMap(const Teuchos::ArrayView<const GO> &,          \
+                     const RCP<const Teuchos::Comm<int> > &); \
   \
-  template Teuchos::RCP< const Map<LO,GO,map_instant_kokkos_defaultnode> > \
-  createContigMapWithNode<LO,GO,map_instant_kokkos_defaultnode>(\
-                                      global_size_t, size_t, \
-                                      const Teuchos::RCP< const Teuchos::Comm< int > > &, \
-                                      const Teuchos::RCP< map_instant_kokkos_defaultnode > &); \
-  \
-  template Teuchos::RCP< const Map<LO,GO,map_instant_kokkos_defaultnode> >  \
-  createNonContigMapWithNode(const Teuchos::ArrayView<const GO> &,          \
-                             const RCP<const Teuchos::Comm<int> > &,        \
-                             const RCP<map_instant_kokkos_defaultnode> &);  \
-  template Teuchos::RCP< const Map<LO,GO,map_instant_kokkos_defaultnode> >  \
-  createUniformContigMapWithNode<LO,GO,map_instant_kokkos_defaultnode>(     \
-                                              global_size_t, \
-                                              const Teuchos::RCP< const Teuchos::Comm< int > > &, \
-                                              const Teuchos::RCP< map_instant_kokkos_defaultnode > &); \
-  \
-  template Teuchos::RCP< const Map<LO,GO,map_instant_kokkos_defaultnode> >  \
-  createWeightedContigMapWithNode<LO,GO,map_instant_kokkos_defaultnode>(    \
-                                              int, global_size_t, \
-                                              const Teuchos::RCP< const Teuchos::Comm< int > > &, \
-                                              const Teuchos::RCP< map_instant_kokkos_defaultnode > &); \
-  \
-  template Teuchos::RCP<const Map<LO,GO,map_instant_kokkos_defaultnode> > \
-  createOneToOne (Teuchos::RCP<const Map<LO,GO,map_instant_kokkos_defaultnode> > &);
+  template Teuchos::RCP< const Map<LO,GO> >  \
+  createUniformContigMap<LO,GO>( global_size_t, \
+                                 const Teuchos::RCP< const Teuchos::Comm< int > > &); \
 
 #endif // TPETRA_MAP_DEF_HPP
