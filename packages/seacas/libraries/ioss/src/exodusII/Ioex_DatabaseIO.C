@@ -779,6 +779,8 @@ namespace Ioex {
     
     get_commsets();
 
+    handle_groups();
+
     add_region_fields();
 
     if (!is_input() && open_create_behavior() == Ioss::DB_APPEND) {

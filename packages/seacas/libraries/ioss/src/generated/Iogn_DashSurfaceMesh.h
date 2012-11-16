@@ -39,7 +39,7 @@ inline std::string getTopologyName(Topology topology)
 }
 
 struct ExodusData {
-    const std::vector<double> coordinates;
+    std::vector<double> coordinates;
     const std::vector< std::vector<int> > elementBlockConnectivity;
     const std::vector<int> globalNumberOfElementsInBlock;
     const std::vector<int> localNumberOfElementsInBlock;
@@ -170,7 +170,7 @@ class ExodusMesh : public GeneratedMesh
 {
 public:
 
-    explicit ExodusMesh(ExodusData &exodusData);
+    explicit ExodusMesh(const ExodusData &exodusData);
 
     virtual ~ExodusMesh() { }
 
@@ -219,7 +219,7 @@ private:
     int64_t mGlobalNumberOfElements;
     int64_t mLocalNumberOfElements;
 
-    ExodusData & mExodusData;
+    const ExodusData & mExodusData;
     std::vector<int64_t> mElementOffsetForBlock;
 };
 

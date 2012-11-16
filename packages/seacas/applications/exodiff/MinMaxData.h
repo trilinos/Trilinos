@@ -49,13 +49,13 @@ class DiffData
     : diff(0.0), val1(0.0), val2(0.0), id(0), blk(0), type(mm_unknown)
     {}
     
-    void set_max(double d, double val_1, double val_2, int id_=0, int blk_=0)
+    void set_max(double d, double val_1, double val_2, int id_=-1, int blk_=0)
     {
       if (diff < d) {
 	diff = d;
 	val1 = val_1;
 	val2 = val_2;
-	if (id_  != 0) id  = id_;
+	if (id_  != -1) id  = id_;
 	if (blk_ != 0) blk = blk_;
       }
     }
@@ -84,23 +84,23 @@ class MinMaxData
     };
   MinMaxData()
     : min_val(DBL_MAX), min_step(0), min_id(0), min_blk(0), 
-    max_val(0.0),    max_step(0), max_id(0), max_blk(0),
+    max_val(-1.0),    max_step(0), max_id(0), max_blk(0),
     type(mm_unknown)
       {}
 
-    void spec_min_max(double val, int step, int id=0, int blk=0)
+    void spec_min_max(double val, int step, int id=-1, int blk=0)
     {
       if (fabs(val) < min_val) {
 	min_val = fabs(val);
 	min_step = step;
-	if (id  != 0) min_id  = id;
+	if (id  != -1) min_id  = id;
 	if (blk != 0) min_blk = blk;
       }
     
       if (fabs(val) > max_val) {
 	max_val = fabs(val);
 	max_step = step;
-	if (id  != 0) max_id  = id;
+	if (id  != -1) max_id  = id;
 	if (blk != 0) max_blk = blk;
       }
     }

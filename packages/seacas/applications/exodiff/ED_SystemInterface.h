@@ -106,9 +106,6 @@ class SystemInterface
   int time_step_start; // First step to compare (1-based)
   int time_step_stop;  // Last step to compare
   int time_step_increment;  // Step increment
-  int time_step_start2; // First step to compare (1-based) (2nd file)
-  int time_step_stop2;  // Last step to compare (2nd file)
-  int time_step_increment2;  // Step increment  (2nd file)
   
   int max_number_of_names;
   

@@ -775,6 +775,8 @@ namespace Iopx {
     
     get_commsets();
 
+    handle_groups();
+
     add_region_fields();
 
     // This closes the file.  It will be automatically opened the next time the file is
