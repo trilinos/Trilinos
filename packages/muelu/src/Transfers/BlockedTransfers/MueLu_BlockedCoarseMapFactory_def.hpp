@@ -142,7 +142,7 @@ namespace MueLu {
         CoarseMapFactory::stridedBlockId_,
         maxGlobalIndex + 1);
 
-    Set(currentLevel, "CoarseMap", coarseMap);
+    this->Set(currentLevel, "CoarseMap", coarseMap);
   } // Build
 
 } //namespace MueLu
