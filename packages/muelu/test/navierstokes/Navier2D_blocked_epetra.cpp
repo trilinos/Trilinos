@@ -665,7 +665,9 @@ int main(int argc, char *argv[]) {
 
   RCP<GenericRFactory> RFact = rcp(new GenericRFactory(PFact));
 
-  RCP<RAPFactory> AcFact = rcp(new RAPFactory(PFact, RFact));
+  RCP<RAPFactory> AcFact = rcp(new RAPFactory());
+  AcFact->SetFactory("P", PFact);
+  AcFact->SetFactory("R", RFact);
 
   //////////////////////////////////////////////////////////////////////
   // Smoothers

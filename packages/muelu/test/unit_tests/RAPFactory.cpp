@@ -100,7 +100,10 @@ namespace MueLuTests {
     sapFactory.Build(fineLevel,coarseLevel);
     transPFactory.Build(fineLevel,coarseLevel);
 
-    RAPFactory rap(rcpFromRef(sapFactory), rcpFromRef(transPFactory));
+    RAPFactory rap;
+    rap.SetFactory("P", rcpFromRef(sapFactory));
+    rap.SetFactory("R", rcpFromRef(transPFactory));
+
     coarseLevel.Request(rap);
 
     coarseLevel.Request("A",&rap);
@@ -177,8 +180,9 @@ namespace MueLuTests {
     coarseLevel.Request(transPFactory);
     sapFactory.Build(fineLevel, coarseLevel);
     transPFactory.Build(fineLevel,coarseLevel);
-    RAPFactory rap(rcpFromRef(sapFactory), rcpFromRef(transPFactory));
-
+    RAPFactory rap;
+    rap.SetFactory("P", rcpFromRef(sapFactory));
+    rap.SetFactory("R", rcpFromRef(transPFactory));
     coarseLevel.Request("A", &rap);
 
     rap.SetImplicitTranspose(true);

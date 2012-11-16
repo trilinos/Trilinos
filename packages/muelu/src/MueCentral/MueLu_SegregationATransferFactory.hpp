@@ -75,7 +75,7 @@ namespace MueLu {
 
   public:
     //@{ Constructors/Destructors.
-    SegregationATransferFactory(RCP<FactoryBase> PtentFact = Teuchos::null)
+    SegregationATransferFactory()
     : PtentFact_(PtentFact) {}
 
     virtual ~SegregationATransferFactory() {}

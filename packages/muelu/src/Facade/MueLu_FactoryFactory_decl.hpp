@@ -279,21 +279,21 @@ namespace MueLu {
         return rcp(new RAPFactory());
 
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "RAPFactory", Exceptions::RuntimeError, "");
-      MUELU_FACTORY_PARAM("P", PFact);
-      MUELU_FACTORY_PARAM("R", RFact);
-      MUELU_FACTORY_PARAM("A", AFact);
 
-      RCP<RAPFactory> r = rcp(new RAPFactory(PFact, RFact, AFact));
+      RCP<RAPFactory> factory = rcp(new RAPFactory());
+      MUELU_FACTORY_PARAM2("P");
+      MUELU_FACTORY_PARAM2("R");
+      MUELU_FACTORY_PARAM2("A");
 
       if (paramList.isSublist("TransferFactories")) {
         Teuchos::ParameterList transferList = paramList.sublist("TransferFactories");
         for (Teuchos::ParameterList::ConstIterator param = transferList.begin(); param != transferList.end(); ++param) {
           RCP<const FactoryBase> p = BuildFactory(transferList.entry(param), factoryMapIn);
-          r->AddTransferFactory(p);
+          factory->AddTransferFactory(p);
         }
       }
 
-      return r;
+      return factory;
     }
 
     //! UCAggregationFactory
@@ -380,9 +380,10 @@ namespace MueLu {
 
       std::string vectorName="";      vectorName = paramList.get<std::string>("vectorName");
       std::string restrictionName=""; restrictionName = paramList.get<std::string>("restrictionName");
-      MUELU_FACTORY_PARAM("R", RFact);
+      RCP<FactoryBase2> factory = rcp(new MultiVectorTransferFactory(vectorName, restrictionName));
+      MUELU_FACTORY_PARAM2(restrictionName);
 
-      return rcp(new MultiVectorTransferFactory(vectorName, restrictionName, RFact));
+      return factory;
     }
 
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)

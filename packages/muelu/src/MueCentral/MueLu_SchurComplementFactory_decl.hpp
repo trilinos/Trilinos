@@ -98,7 +98,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    SchurComplementFactory(Teuchos::RCP<const FactoryBase> AFact,Scalar omega/*, size_t row, size_t col, LocalOrdinal blksize = 1*/);
+    SchurComplementFactory(Scalar omega/*, size_t row, size_t col, LocalOrdinal blksize = 1*/);
 
     //! Destructor.
     virtual ~SchurComplementFactory();

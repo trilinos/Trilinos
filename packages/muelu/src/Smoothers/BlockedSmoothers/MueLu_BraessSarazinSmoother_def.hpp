@@ -83,7 +83,8 @@ namespace MueLu {
   BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BraessSarazinSmoother(LocalOrdinal sweeps, Scalar omega, RCP<const FactoryBase> AFact)
     : type_("Braess Sarazin"), nSweeps_(sweeps), omega_(omega), AFact_(AFact), A_(Teuchos::null)
   {
-    RCP<SchurComplementFactory> SchurFact = Teuchos::rcp(new SchurComplementFactory(AFact_,omega));
+    RCP<SchurComplementFactory> SchurFact = Teuchos::rcp(new SchurComplementFactory(omega));
+    SchurFact->SetFactory("A",AFact_);
 
     // define smoother/solver for BraessSarazin
     Teuchos::ParameterList SCparams;

@@ -90,8 +90,8 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    SegregationAFilterFactory(const std::string& ename, const FactoryBase* fac, Teuchos::RCP<const MapExtractorClass>& rangeMaps)
-      : varName_(ename), factory_(fac), mapextractor_(rangeMaps)
+    SegregationAFilterFactory(const std::string& ename, Teuchos::RCP<const MapExtractorClass>& rangeMaps)
+      : varName_(ename), mapextractor_(rangeMaps)
     { }
 
     //! Destructor.
@@ -102,7 +102,7 @@ namespace MueLu {
     //@{
 
     void DeclareInput(Level &currentLevel) const {
-      currentLevel.DeclareInput(varName_,factory_);
+      Input(currentLevel, varName_);
       currentLevel.DeclareInput("SegAMapExtractor", MueLu::NoFactory::get());
     }
 
@@ -124,7 +124,7 @@ namespace MueLu {
       RCP<const MapExtractorClass> mapextractor = currentLevel.Get< RCP<const MapExtractorClass> >("SegAMapExtractor",MueLu::NoFactory::get());
 
       // fetch matrix/operator from level
-      RCP<Matrix> Ain = currentLevel.Get< RCP<Matrix> >(varName_, factory_);
+      RCP<Matrix> Ain = Get< RCP<Matrix> >(currentLevel, varName_);
 
       // create new empty Matrix
       RCP<CrsMatrixWrap> Aout = rcp(new CrsMatrixWrap(Ain->getRowMap(),Ain->getGlobalMaxNumRowEntries(),Xpetra::StaticProfile));
@@ -211,9 +211,7 @@ namespace MueLu {
 
   private:
     std::string         varName_;                 ///< name of input and output variable
-    const FactoryBase*  factory_;                 ///< generating factory of input variable
     RCP<const MapExtractorClass> mapextractor_;   ///< user given map extractor (for finest level)
-
 
   }; // class ThresholdAFilterFactory
 
