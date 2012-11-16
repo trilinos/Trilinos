@@ -403,9 +403,9 @@ int main(int argc, char *argv[]) {
 #endif
 
   // custom parameters
-  LO maxLevels = 3;
+  LocalOrdinal maxLevels = 3;
 
-  GO maxCoarseSize=1; //FIXME clp doesn't like long long int
+  GlobalOrdinal maxCoarseSize=1; //FIXME clp doesn't like long long int
 
   int globalNumDofs = 8898;  // used for the maps
   int nDofsPerNode = 3;      // used for generating the fine level null-space
@@ -463,22 +463,22 @@ int main(int argc, char *argv[]) {
   /////////////////////////////////////// transform Epetra objects to Xpetra (needed for MueLu)
 
   // build Xpetra objects from Epetra_CrsMatrix objects
-  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA11 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A11));
-  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA12 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A12));
-  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA21 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A21));
-  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA22 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A22));
+  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xA11 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A11));
+  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xA12 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A12));
+  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xA21 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A21));
+  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xA22 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A22));
 
   /////////////////////////////////////// generate MapExtractor object
 
-  std::vector<Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > > xmaps;
+  std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > xmaps;
   xmaps.push_back(xstridedvelmap);
   xmaps.push_back(xstridedpremap);
 
-  Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LO,GO,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LO,GO>::Build(xstridedfullmap,xmaps);
+  Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LocalOrdinal,GlobalOrdinal>::Build(xstridedfullmap,xmaps);
 
   /////////////////////////////////////// build blocked transfer operator
   // using the map extractor
-  Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(map_extractor,map_extractor,10));
+  Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>(map_extractor,map_extractor,10));
   bOp->setMatrix(0,0,xA11);
   bOp->setMatrix(0,1,xA12);
   bOp->setMatrix(1,0,xA21);
@@ -667,8 +667,8 @@ int main(int argc, char *argv[]) {
     //Smoother Factory, using SFact as a factory for A
     std::string ifpackSCType;
     Teuchos::ParameterList ifpackSCList;
-    ifpackSCList.set("relaxation: sweeps", (LO) 3);
-    ifpackSCList.set("relaxation: damping factor", (SC) 1.0);
+    ifpackSCList.set("relaxation: sweeps", (LocalOrdinal) 3);
+    ifpackSCList.set("relaxation: damping factor", (Scalar) 1.0);
     ifpackSCType = "RELAXATION";
     ifpackSCList.set("relaxation: type", "Gauss-Seidel");
     RCP<SmootherPrototype> smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0, SFact) );
