@@ -423,8 +423,11 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, NonContigView, LO, GO, Scalar , Node )
   {
+    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) {
+      out << "skipping testing for integral-type scalar" << std::endl;
+      return;
+    }
     RCP<Node> node = getNode<Node>();
-    if (ScalarTraits<Scalar>::isOrdinal) return;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -511,7 +514,12 @@ namespace {
     }
     {
       MV mvOrigA(map,numVecs), mvOrigB(map,numVecs), mvOrigC(map,numVecs+1);
+      // we don't know what the distribution is, so that we don't know that abs(A) != A
+      // therefore, do some manipulation
       mvOrigA.randomize();
+      mvOrigB.randomize();
+      // A = A - B, then new (indendent) values for B
+      mvOrigA.update(as<Scalar>(-1),mvOrigB, as<Scalar>(1));
       mvOrigB.randomize();
       mvOrigC.randomize();
       Array<Mag> nrmOrigA(numVecs), nrmOrigB(numVecs), nrmOrigC(numVecs+1);
@@ -1087,22 +1095,22 @@ namespace {
                  Av_aft (inds1.size()),
                  Ac_bef(inds1.size()),
                  Ac_aft (inds1.size());
-      A.norm2(A_bef());
+      A.norm1(A_bef());
       // get view and its norms
       RCP<MV> Av = A.subViewNonConst(inds1);
-      Av->norm2(Av_bef());
+      Av->norm1(Av_bef());
       // get copy and its norms
       RCP<MV> Ac = A.subCopy(inds1);
-      Ac->norm2(Ac_bef());
+      Ac->norm1(Ac_bef());
       // set view to zero
       Av->putScalar(ScalarTraits<Scalar>::zero());
       // get norms of view
-      Av->norm2(Av_aft());
+      Av->norm1(Av_aft());
       // free the view, copying data back to A
       Av = Teuchos::null;
       // get norms of A and copy
-      Ac->norm2(Ac_aft());
-      A.norm2(A_aft());
+      Ac->norm1(Ac_aft());
+      A.norm1(A_aft());
       // norms of copy and view before should match norms of A
       for (size_t i=0; i < as<size_t>(inds1.size()); ++i) {
         TEST_FLOATING_EQUALITY( A_bef[inds1.lbound()+i], Ac_bef[i], tol );
@@ -1129,22 +1137,22 @@ namespace {
                  Av_aft (inds.size()),
                  Ac_bef(inds.size()),
                  Ac_aft (inds.size());
-      A.norm2(A_bef());
+      A.norm1(A_bef());
       // get view and its norms
       RCP<MV> Av = A.subViewNonConst(inds);
-      Av->norm2(Av_bef());
+      Av->norm1(Av_bef());
       // get copy and its norms
       RCP<MV> Ac = A.subCopy(inds);
-      Ac->norm2(Ac_bef());
+      Ac->norm1(Ac_bef());
       // set view to zero
       Av->putScalar(ScalarTraits<Scalar>::zero());
       // get norms of view
-      Av->norm2(Av_aft());
+      Av->norm1(Av_aft());
       // free the view, copying data back to A
       Av = Teuchos::null;
       // get norms of A and copy
-      Ac->norm2(Ac_aft());
-      A.norm2(A_aft());
+      Ac->norm1(Ac_aft());
+      A.norm1(A_aft());
       // norms of copy and view before should match norms of A
       for (size_t i=0; i < as<size_t>(inds.size()); ++i) {
         TEST_FLOATING_EQUALITY( A_bef[inds[i]], Ac_bef[i], tol );
@@ -1161,7 +1169,7 @@ namespace {
     {
       A.randomize();
       Array<Mag> Anorms(numVectors);
-      A.norm2(Anorms());
+      A.norm1(Anorms());
       TEUCHOS_TEST_FOR_EXCEPT(numVectors != 13);
       for (size_t vc=0; vc < 2; ++vc) {
         // vc == 0 -> view
@@ -1200,7 +1208,7 @@ namespace {
           }
           TEST_EQUALITY_CONST(sub2->getNumVectors(), 3);
           Array<Mag> subnorms(3);
-          sub2->norm2(subnorms());
+          sub2->norm1(subnorms());
           TEST_COMPARE_FLOATING_ARRAYS(Anorms(6,3),subnorms(),tol);
         }
       }
@@ -1226,7 +1234,7 @@ namespace {
         std::fill(view.begin(), view.end(), S0);
         view = Teuchos::null;
         Array<Mag> norms(numVectors), zeros(numVectors,M0);
-        A.norm2(norms());
+        A.norm1(norms());
         TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
       }
       A.randomize();
@@ -1263,7 +1271,7 @@ namespace {
         }
         views = Teuchos::null;
         Array<Mag> norms(numVectors), zeros(numVectors,M0);
-        A.norm2(norms());
+        A.norm1(norms());
         TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
       }
     }
@@ -1273,6 +1281,10 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, OffsetView, LO , GO , Scalar , Node )
   {
+    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) {
+      out << "skipping testing for integral-type scalar" << std::endl;
+      return;
+    }
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
@@ -1332,7 +1344,7 @@ namespace {
       // A should be zero after setting A1 to zero and A2 to zero
       for (size_t i=0; i<numVectors; ++i) {
         TEST_EQUALITY_CONST( A_aft1[i] < A_befr[i] + tol, true ); // shrunk as A1 = 0 
-        TEST_EQUALITY_CONST( A_aft2[i] < A_aft1[i] + tol, true ); // shurnk as A2 = 0
+        TEST_EQUALITY_CONST( A_aft2[i] < A_aft1[i] + tol, true ); // shrunk as A2 = 0
         TEST_EQUALITY_CONST( A_aft2[i] , M0 );                    // ... to zero
         TEST_EQUALITY_CONST( A1_aft1[i] , M0 );                   // was set to zero
         TEST_EQUALITY_CONST( A1_aft2[i] , M0 );                   // should not have been changed
@@ -1469,7 +1481,7 @@ namespace {
       MV A2(A);
       A2.scale(as<Scalar>(2));
       A2.update(as<Scalar>(-1),B,as<Scalar>(1));
-      A2.norm2(norms);
+      A2.norm1(norms);
       TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
     }
     //   set A2 = A
@@ -1477,7 +1489,7 @@ namespace {
     {
       MV A2(A);
       A2.update(as<Scalar>(-1),B,as<Scalar>(2));
-      A2.norm2(norms);
+      A2.norm1(norms);
       TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
     }
     //   set C random
@@ -1486,7 +1498,7 @@ namespace {
       MV C(map,numVectors);
       C.randomize();
       C.update(as<Scalar>(-1),B,as<Scalar>(2),A,as<Scalar>(0));
-      C.norm2(norms);
+      C.norm1(norms);
       TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
     }
     //   set C random
@@ -1496,7 +1508,7 @@ namespace {
       MV C(map,numVectors);
       C.scale(as<Scalar>(2),A);
       C.update(as<Scalar>(1),B,as<Scalar>(-1));
-      C.norm2(norms);
+      C.norm1(norms);
       TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
     }
   }
@@ -1506,7 +1518,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ScaleAndAssign, LO , GO , Scalar , Node )
   {
     RCP<Node> node = getNode<Node>();
-    if (ScalarTraits<Scalar>::isOrdinal) return;
     Teuchos::ScalarTraits<Scalar>::seedrandom(0);   // consistent seed
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
@@ -1531,7 +1542,7 @@ namespace {
        B(map,numVectors,false);
     A.randomize();
     Array<Mag> Anrms(numVectors);
-    A.norm2(Anrms());
+    A.norm1(Anrms());
     // set B = A * 2, using different techniques
     // * get vector, Vector::operator=
     // * get 1-vector subview(Range1D), MultiVector::operator=
@@ -1588,7 +1599,7 @@ namespace {
     // check that A wasn't modified
     {
       Array<Mag> Anrms_aft(numVectors);
-      A.norm2(Anrms_aft());
+      A.norm1(Anrms_aft());
       TEST_COMPARE_FLOATING_ARRAYS(Anrms(),Anrms_aft(),tol);
     }
     // check that C.Scale(A,2.0) == B
@@ -1597,7 +1608,7 @@ namespace {
       C.scale(as<Scalar>(2), A);
       C.update(-1.0,B,1.0);
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
-      C.norm2(Cnorms());
+      C.norm1(Cnorms());
       TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,tol);
     }
     // check that C=A, C.Scale(2.0) == B
@@ -1607,7 +1618,7 @@ namespace {
       C.scale(as<Scalar>(2));
       C.update(-1.0,B,1.0);
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
-      C.norm2(Cnorms());
+      C.norm1(Cnorms());
       TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,tol);
     }
     // check that C=A, C.Scale(tuple(2)) == B
@@ -1618,7 +1629,7 @@ namespace {
       C.scale(twos());
       C.update(-1.0,B,1.0);
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
-      C.norm2(Cnorms());
+      C.norm1(Cnorms());
       TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,tol);
     }
   }
@@ -1670,7 +1681,7 @@ namespace {
       V A2(A);
       A2.scale(as<Scalar>(2));
       A2.update(as<Scalar>(-1),B,as<Scalar>(1));
-      norm = A2.norm2(); A2.norm2(norms());
+      norm = A2.norm1(); A2.norm1(norms());
       TEST_EQUALITY(norm,M0);
       TEST_EQUALITY(norm,norms[0]);
     }
@@ -1679,7 +1690,7 @@ namespace {
     {
       V A2(A);
       A2.update(as<Scalar>(-1),B,as<Scalar>(2));
-      norm = A2.norm2(); A2.norm2(norms());
+      norm = A2.norm1(); A2.norm1(norms());
       TEST_EQUALITY(norm,M0);
       TEST_EQUALITY(norm,norms[0]);
     }
@@ -1689,7 +1700,7 @@ namespace {
       V C(map);
       C.randomize();
       C.update(as<Scalar>(-1),B,as<Scalar>(2),A,as<Scalar>(0));
-      norm = C.norm2(); C.norm2(norms());
+      norm = C.norm1(); C.norm1(norms());
       TEST_EQUALITY(norm,M0);
       TEST_EQUALITY(norm,norms[0]);
     }
@@ -1701,7 +1712,7 @@ namespace {
       C.randomize();
       C.scale(as<Scalar>(2),A);
       C.update(as<Scalar>(1),B,as<Scalar>(-1));
-      norm = C.norm2(); C.norm2(norms());
+      norm = C.norm1(); C.norm1(norms());
       TEST_EQUALITY(norm,M0);
       TEST_EQUALITY(norm,norms[0]);
     }
@@ -1848,7 +1859,7 @@ namespace {
     Magnitude err;
     // subtract v2 from v1; this should result in v1 = zeros
     v1.update(-1.0,v2,1.0);
-    err = v1.norm2();
+    err = v1.norm1();
     TEST_EQUALITY_CONST(err,SCT::zero());
   }
 
@@ -1856,11 +1867,14 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, SingleVecNormalize, LO , GO , Scalar , Node )
   {
+    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) {
+      out << "skipping testing for integral-type scalar" << std::endl;
+      return;
+    }
     RCP<Node> node = getNode<Node>();
     // this documents a usage case in Anasazi::SVQBOrthoManager, which was failing
     // error turned out to be a neglected return in both implementations of update(), 
     // after passing the buck to scale() in the case of alpha==0 or beta==0 or gamma=0
-    if (ScalarTraits<Scalar>::isOrdinal) return;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -2002,6 +2016,10 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, CountNorm1, LO , GO , Scalar , Node )
   {
+    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) {
+      out << "skipping testing for integral-type scalar" << std::endl;
+      return;
+    }
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
@@ -2091,6 +2109,10 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, Norm2, LO , GO , Scalar , Node )
   {
+    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) {
+      out << "skipping testing for integral-type scalar" << std::endl;
+      return;
+    }
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
@@ -2125,6 +2147,10 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, NormWeighted, LO , GO , Scalar , Node )
   {
+    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) {
+      out << "skipping testing for integral-type scalar" << std::endl;
+      return;
+    }
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
