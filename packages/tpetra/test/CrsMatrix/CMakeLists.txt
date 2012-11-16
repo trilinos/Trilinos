@@ -13,12 +13,17 @@ JOIN(allnodes   "|" FALSE ${Tpetra_ETI_NODES}  )
 TRIBITS_ETI_TYPE_EXPANSION(conversions "SOUT=int" "SIN=double" "LO=int" "GO=int" "N=${allnodes}")
 TRIBITS_ADD_ETI_INSTANTIATIONS(Tpetra ${conversions})
 
+IF(Tpetra_ENABLE_Thrust)
+  SET(MAXNP NUM_MPI_PROCS 1)
+ENDIF()
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnitTests
   SOURCES
     CrsMatrix_UnitTests
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
+  ${MAXNP}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
