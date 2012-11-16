@@ -63,11 +63,9 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MultiVectorTransferFactory(
     std::string const & vectorName,
-    std::string const & restrictionName,
-    RCP<const FactoryBase> const &restrictionFact)
+    std::string const & restrictionName)
     : vectorName_(vectorName),
-      restrictionName_(restrictionName),
-      restrictionFact_(restrictionFact)
+      restrictionName_(restrictionName)
   { }
 
   // ----------------------------------------------------------------------------------------
@@ -85,13 +83,12 @@ namespace MueLu {
   void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     if (fineLevel.GetLevelID() == 0) fineLevel.DeclareInput(vectorName_, MueLu::NoFactory::get(), this);
     else                             fineLevel.DeclareInput(vectorName_, this                   , this);
-    coarseLevel.DeclareInput(restrictionName_,restrictionFact_.get(),this);
+    coarseLevel.DeclareInput(restrictionName_,GetFactory(restrictionName_).get(),this);
     /*
     //FIXME ThreeLevels unit test dies
     fineLevel.DeclareInput(vectorName_, restrictionFact_.get(),this);
     coarseLevel.DeclareInput(restrictionName_,restrictionFact_.get(),this);
     */
-
   }
 
   // ----------------------------------------------------------------------------------------
@@ -164,7 +161,7 @@ namespace MueLu {
       //std::cout << "MultiVectorTransferFactory::Build -- requesting " << vectorName_ << " from factory " << MueLu::NoFactory::get() << std::endl;
     //FIXME JJH
 
-    RCP<Matrix> transferOp = coarseLevel.Get<RCP<Matrix> >(restrictionName_,restrictionFact_.get());
+    RCP<Matrix> transferOp = coarseLevel.Get<RCP<Matrix> >(restrictionName_,GetFactory(restrictionName_).get());
 
     //FIXME debugging output
 
@@ -186,8 +183,8 @@ namespace MueLu {
 
     /*
     //FIXME ThreeLevels unit test  dies
-    RCP<MultiVector> vector  = fineLevel.Get<RCP<MultiVector> >(vectorName_,restrictionFact_.get());
-    RCP<Matrix> transferOp = coarseLevel.Get<RCP<Matrix> >(restrictionName_,restrictionFact_.get());
+    RCP<MultiVector> vector  = fineLevel.Get<RCP<MultiVector> >(vectorName_,GetFactory(restrictionName_).get());
+    RCP<Matrix> transferOp = coarseLevel.Get<RCP<Matrix> >(restrictionName_,GetFactory(restrictionName_).get());
     */
 
     RCP<MultiVector> result = MultiVectorFactory::Build(transferOp->getRangeMap(),vector->getNumVectors());

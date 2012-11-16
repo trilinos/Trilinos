@@ -649,7 +649,9 @@ int main(int argc, char *argv[]) {
 
   RCP<GenericRFactory> RFact = rcp(new GenericRFactory(PFact));
 
-  RCP<RAPFactory> AcFact = rcp(new RAPFactory(PFact, RFact));
+  RCP<RAPFactory> AcFact = rcp(new RAPFactory());
+  AcFact->SetFactory("P", PFact);
+  AcFact->SetFactory("R", RFact);
 
   // register aggregation export factory in RAPFactory
   RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>("aggs_level%LEVELID_proc%PROCID.out", UCAggFact11.get(), dropFact11.get()));
@@ -663,7 +665,9 @@ int main(int argc, char *argv[]) {
   //Another factory manager for braes sarazin smoother
   //Schur Complement Factory, using the factory to generate AcFact
   SC omega = 1.3;
-    RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory(MueLu::NoFactory::getRCP(),omega));
+    RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory(omega));
+    SFact->SetFactory("A", MueLu::NoFactory::getRCP());
+
     //Smoother Factory, using SFact as a factory for A
     std::string ifpackSCType;
     Teuchos::ParameterList ifpackSCList;

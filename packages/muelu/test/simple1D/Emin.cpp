@@ -299,30 +299,33 @@ int main(int argc, char *argv[]) {
   Finest->Set("A", Op);
   Finest->Set("Nullspace", nullSpace);
 
-  RCP<FactoryManager>   myFactManager = rcp(new FactoryManager());
+  FactoryManager M;
 
-  myFactManager->SetFactory("Aggregates", rcp(new UCAggregationFactory()));
-  myFactManager->SetFactory("Ptent",      rcp(new TentativePFactory()));
-  myFactManager->SetFactory("P",          rcp(new SaPFactory()));
+  M.SetFactory("Aggregates", rcp(new UCAggregationFactory()));
+  M.SetFactory("Ptent",      rcp(new TentativePFactory()));
+  M.SetFactory("P",          rcp(new SaPFactory()));
 
 #ifdef EMIN
   // Energy-minimization
+  RCP<PatternFactory> PatternFact = rcp(new PatternFactory());
 #if 0
-  myFactManager->SetFactory("Ppattern",   rcp(new PatternFactory(myFactManager->GetFactory("Ptent"))));
+  PatternFact->SetFactory("P", M.GetFactory("Ptent"));
 #else
-  myFactManager->SetFactory("Ppattern",   rcp(new PatternFactory(myFactManager->GetFactory("P"))));
+  PatternFact->SetFactory("P", M.GetFactory("P"));
 #endif
-  myFactManager->SetFactory("Constraint", rcp(new ConstraintFactory()));
-  myFactManager->SetFactory("P",          rcp(new EminPFactory(myFactManager->GetFactory("Ptent"))));
+  M.SetFactory("Ppattern",   PatternFact);
 
-  myFactManager->SetFactory("Nullspace",  rcp(new NullspacePresmoothFactory(myFactManager->GetFactory("Nullspace"))));
+  RCP<EminPFactory> EminPFact = rcp(new EminPFactory());
+  EminPFact->SetFactory("P", M.GetFactory("Ptent"));
+  M.SetFactory("P",          EminPFact);
+
+  RCP<NullspacePresmoothFactory> NullPreFact = rcp(new NullspacePresmoothFactory());
+  NullPreFact->SetFactory("Nullspace", M.GetFactory("Nullspace"));
+  M.SetFactory("Nullspace",  NullPreFact);
 #endif
-
-  myFactManager->SetFactory("A", rcp(new RAPFactory()));
-  myFactManager->SetFactory("R", rcp(new TransPFactory()));
 
   RCP<SmootherPrototype> smooProto = gimmeMergedSmoother(nSmoothers, xpetraParameters.GetLib(), coarseSolver, comm->getRank());
-  myFactManager->SetFactory("Smoother",   rcp(new SmootherFactory(smooProto)));
+  M.SetFactory("Smoother",   rcp(new SmootherFactory(smooProto)));
 
   Teuchos::ParameterList status;
 
@@ -334,9 +337,9 @@ int main(int argc, char *argv[]) {
   }
   if (coarseProto == Teuchos::null) return EXIT_FAILURE;
   RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(coarseProto));
-  myFactManager->SetFactory("CoarseSolver", coarseSolveFact);
+  M.SetFactory("CoarseSolver", coarseSolveFact);
 
-  status = H->Setup(*myFactManager, 0, maxLevels);
+  status = H->Setup(M, 0, maxLevels);
   if (comm->getRank() == 0) {
     std::cout  << "======================\n Multigrid statistics \n======================" << std::endl;
     status.print(std::cout,Teuchos::ParameterList::PrintOptions().indent(2));

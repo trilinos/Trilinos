@@ -79,7 +79,7 @@ namespace MueLu {
     //! @name Constructors/Destructors.
     //@{
 
-    RAPFactory(RCP<const FactoryBase> PFact = Teuchos::null, RCP<const FactoryBase> RFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null);
+    RAPFactory();
 
     virtual ~RAPFactory();
     //@}
@@ -150,15 +150,6 @@ namespace MueLu {
     void CheckMainDiagonal(RCP<Matrix> & Ac) const;
     void CheckMainDiagonal(RCP<CrsMatrix> & Ac) const; ///< CrsMatrix version for blocked matrices
     //@}
-
-    //! P Factory
-    RCP<const FactoryBase> PFact_;
-
-    //! R Factory
-    RCP<const FactoryBase> RFact_;
-
-    //! A Factory
-    RCP<const FactoryBase> AFact_;
 
     //! list of user-defined transfer Factories
     std::vector<RCP<const FactoryBase> > TransferFacts_;

@@ -80,9 +80,9 @@ namespace MueLuTests {
 
     RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(20); //can be an empty operator
 
-    RCP<ThresholdAFilterFactory> AfilterFactory0 = rcp(new ThresholdAFilterFactory("A",NULL,0.1)); // keep all
-    RCP<ThresholdAFilterFactory> AfilterFactory1 = rcp(new ThresholdAFilterFactory("A",NULL,1.1)); // keep only diagonal
-    RCP<ThresholdAFilterFactory> AfilterFactory2 = rcp(new ThresholdAFilterFactory("A",NULL,3)); // keep only diagonal
+    RCP<ThresholdAFilterFactory> AfilterFactory0 = rcp(new ThresholdAFilterFactory("A",0.1)); // keep all
+    RCP<ThresholdAFilterFactory> AfilterFactory1 = rcp(new ThresholdAFilterFactory("A",1.1)); // keep only diagonal
+    RCP<ThresholdAFilterFactory> AfilterFactory2 = rcp(new ThresholdAFilterFactory("A",3));   // keep only diagonal
 
     aLevel.Set("A",A);
 

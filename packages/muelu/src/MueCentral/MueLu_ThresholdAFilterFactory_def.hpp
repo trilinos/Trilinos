@@ -57,8 +57,8 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ThresholdAFilterFactory(const std::string& ename, const FactoryBase* fac, const Scalar threshold)
-    : varName_(ename), factory_(fac), threshold_(threshold)
+  ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ThresholdAFilterFactory(const std::string& ename, const Scalar threshold)
+    : varName_(ename), threshold_(threshold)
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -66,7 +66,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput(varName_,factory_,this);
+    Input(currentLevel, varName_);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -76,7 +76,7 @@ namespace MueLu {
     typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OMatrix; //TODO
     typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOMatrix; //TODO
 
-    RCP<OMatrix> Ain = currentLevel.Get< RCP<OMatrix> >(varName_, factory_);
+    RCP<OMatrix> Ain = Get< RCP<OMatrix> >(currentLevel, varName_);
 
     // create new empty Matrix
     RCP<CrsOMatrix> Aout = rcp(new CrsOMatrix(Ain->getRowMap(),Ain->getGlobalMaxNumRowEntries(),Xpetra::StaticProfile)); //FIXME

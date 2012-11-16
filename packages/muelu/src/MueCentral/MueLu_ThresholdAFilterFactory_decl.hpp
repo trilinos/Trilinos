@@ -75,7 +75,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    ThresholdAFilterFactory(const std::string& ename, const FactoryBase* fac, const Scalar threshold);
+    ThresholdAFilterFactory(const std::string& ename, const Scalar threshold);
 
     //! Destructor.
     virtual ~ThresholdAFilterFactory();
@@ -98,7 +98,6 @@ namespace MueLu {
 
   private:
     std::string        varName_;   ///< name of input and output variable
-    const FactoryBase* factory_;   ///< generating factory of input variable
     const Scalar       threshold_; ///< threshold parameter
 
 

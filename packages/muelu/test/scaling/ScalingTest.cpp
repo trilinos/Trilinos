@@ -295,7 +295,10 @@ int main(int argc, char *argv[]) {
     M.SetFactory("P", SaPfact);
     M.SetFactory("R", rcp(new TransPFactory(M.GetFactory("P"))));
 
-    RCP<RAPFactory> Acfact = rcp(new RAPFactory(M.GetFactory("P"), M.GetFactory("R")));
+    RCP<RAPFactory> Acfact = rcp(new RAPFactory());
+    Acfact->SetFactory("P", M.GetFactory("P"));
+    Acfact->SetFactory("R", M.GetFactory("R"));
+
     Acfact->setVerbLevel(Teuchos::VERB_HIGH);
     M.SetFactory("A", Acfact);
 
@@ -314,7 +317,8 @@ int main(int argc, char *argv[]) {
       //Matrix used to transfer coordinates to coarse grid
       RCP<const FactoryBase> Rtentfact = M.GetFactory("R"); //for projecting coordinates
       //Factory that will invoke the coordinate transfer. This factory associates data and operator.
-      mvTransFact = rcp(new MultiVectorTransferFactory("Coordinates","R", Rtentfact));
+      mvTransFact = rcp(new MultiVectorTransferFactory("Coordinates","R"));
+      mvTransFact->SetFactory("R", Rtentfact);
       //Register it with the coarse operator factory
       Acfact->AddTransferFactory(mvTransFact);
       //Set up repartitioning
@@ -326,7 +330,9 @@ int main(int argc, char *argv[]) {
       RepartitionFact->SetFactory("A", Acfact);
       permPFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, SaPfact, MueLu::INTERPOLATION) );
       permRFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, M.GetFactory("R"), MueLu::RESTRICTION, M.GetFactory("Ptent"), mvTransFact));
-      AcfactFinal = rcp(new RAPFactory(permPFactory, permRFactory));
+      AcfactFinal = rcp(new RAPFactory());
+      AcfactFinal->SetFactory("P", permPFactory);
+      AcfactFinal->SetFactory("R", permRFactory);
       M.SetFactory("A", AcfactFinal);
 #else
       AcfactFinal = Acfact;

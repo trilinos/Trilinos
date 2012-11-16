@@ -144,7 +144,11 @@ namespace MueLu {
       if (varName == "PostSmoother")        return GetFactory("Smoother");
 
 #ifdef HAVE_MUELU_EXPERIMENTAL
-      if (varName == "Ppattern")            return SetAndReturnDefaultFactory(varName, rcp(new PatternFactory(GetFactory("Ptent"))));
+      if (varName == "Ppattern") {
+        RCP<PatternFactory> PpFact = rcp(new PatternFactory);
+        PpFact->SetFactory("P", GetFactory("Ptent"));
+        return SetAndReturnDefaultFactory(varName, PpFact);
+      }
       if (varName == "Constraint")          return SetAndReturnDefaultFactory(varName, rcp(new ConstraintFactory()));
 #endif
 

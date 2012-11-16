@@ -54,10 +54,21 @@
  * The Random Number Generator is provided by George Marsaglia available at
    http://www.velocityreviews.com/forums/t720512-re-rngs-a-double-kiss.html
 
- * Last modified: 10/29/2012
+ * Last modified: 11/16/2012
 ********************************************************************************/
 
+// Todo List:
+// 1. Add active cells from boundary cells
+// 2. Improve boundary face sampling by refining boundary faces and sampling non-covered only
+// 3. Prepare output, nearest neighbor queries
+// 4. Perform timing results
+
+
 #include "MeshingGenie_mps_nd.h"
+
+#include "MeshingGenie_plotter_2d.h"
+
+MeshingGenie_plotter_2d _plotter;
 
 int MeshingGenie_mps_nd::solve_mps(size_t ndim, double r, size_t random_seed, 
 			                       std::vector< std::vector<double> > &boundary_points,
@@ -69,6 +80,8 @@ int MeshingGenie_mps_nd::solve_mps(size_t ndim, double r, size_t random_seed,
 	_boundary_faces = &boundary_faces;
 	_sample_points = &sample_points;
 
+	_num_active_cells = 0; _num_inserted_points = 0;
+	_current_dart = 0;
 
 	clock_t start_time, end_time; double cpu_time;	 
 	start_time = clock();
@@ -93,9 +106,23 @@ int MeshingGenie_mps_nd::solve_mps(size_t ndim, double r, size_t random_seed,
 	for (size_t iref = 0; iref < 30; iref++)
 	{
 		throw_darts(iref);
-	}
+		
+		if (iref == 0 && _num_active_cells == 0) break;
 
+		if (_num_active_cells == 0)
+		{
+			// destroy parents of the previous level
+			size_t num_active_cells = _active_cells.size();
+			for (size_t icell = 0; icell < num_active_cells; icell++)
+			{
+				delete[] _active_cells[icell];
+			}
+			break;
+		}
+	}
 	end_time = clock();
+
+	//_plotter.plot_active_pool(this);
 
 	return 0;
 }
@@ -103,21 +130,61 @@ int MeshingGenie_mps_nd::solve_mps(size_t ndim, double r, size_t random_seed,
 void MeshingGenie_mps_nd::init()
 {
 	#pragma region Initialize Arrays:
-	// array of random numbers, a random location
+	// bavkground grid data
 	_xmin = new double[_ndim];
 	_xmax = new double[_ndim];
 	_nc = new size_t [_ndim];
 	#pragma endregion
 }
 
-void MeshingGenie_mps_nd::cleanup()
+void MeshingGenie_mps_nd::destroy_mps_data()
 {
 	#pragma region Clean up dynamic arrays:
-	delete[] _xmin;
-	delete[] _xmax;
-	delete[] _nc;
+	delete[] _xmin;	delete[] _xmax;	delete[] _nc;
+
+	clear_cell_pool(_boundary_cells);
+	clear_cell_pool(_exterior_cells);
+	clear_cell_pool(_interior_cells);
+	clear_cell_pool(_covered_cells);
+
+	clear_cell_points(_boundary_cell_points);
+	clear_cell_points(_interior_cell_points);
+
+	for (size_t icell = 0; icell< _num_neighbor_cells; icell++)
+	{
+		delete[] _generic_neighbor_cells[icell];
+	}
+	delete[] _generic_neighbor_cells;
+
+	_active_cells.clear();
 	#pragma endregion
 }
+
+inline void MeshingGenie_mps_nd::clear_cell_pool(std::vector<size_t*> &pool)
+{
+	#pragma region Clear Cell Pool:
+	size_t num_cells(pool.size());
+	for (size_t icell = 0; icell < num_cells; icell++)
+	{
+		delete[] pool[icell];
+	}
+	pool.clear();
+	#pragma endregion
+}
+
+inline void MeshingGenie_mps_nd::clear_cell_points(std::vector<double*> &cell_points)
+{
+	#pragma region Clear Cell points:
+	size_t num_cells(cell_points.size());
+	for (size_t icell = 0; icell < num_cells; icell++)
+	{
+		if (cell_points[icell] == 0) continue;
+		delete[] cell_points[icell];
+	}
+	cell_points.clear();
+	#pragma endregion
+}
+
 
 void MeshingGenie_mps_nd::initiate_random_generator(unsigned long x)
 {
@@ -678,7 +745,7 @@ void MeshingGenie_mps_nd::identify_exterior_and_interior_cells()
 
 void MeshingGenie_mps_nd::update_active_pool(size_t refLevel)
 {
-	#pragma region update active pool:
+	#pragma region update active pool - Still need to consider cells from boundary cells:
 	if (refLevel == 0)
 	{
 		size_t num_active_cells = _active_cells.size();
@@ -686,7 +753,9 @@ void MeshingGenie_mps_nd::update_active_pool(size_t refLevel)
 		{
 			delete[] _active_cells[icell];
 		}
+		_active_cells.clear();
 		num_active_cells = _interior_cells.size();
+		_active_cells.resize(num_active_cells);
 		for (size_t icell = 0; icell < num_active_cells; icell++)
 		{
 			_active_cells[icell] = _interior_cells[icell];
@@ -695,25 +764,49 @@ void MeshingGenie_mps_nd::update_active_pool(size_t refLevel)
 	else
 	{
 		// refine active cells, add noncovered
-
-		// refine boundary active cells, add interior noncovered
+		std::vector<size_t*> active_children;		
+		for (size_t icell = 0; icell < _num_active_cells; icell++)
+		{
+			get_uncovered_children(_active_cells[icell], refLevel, active_children);
+		}
+		if (refLevel > 1)
+		{
+			// destroy parents of the previous level
+			size_t num_active_cells = _active_cells.size();
+			for (size_t icell = 0; icell < num_active_cells; icell++)
+			{
+				delete[] _active_cells[icell];
+			}
+		}
+		_active_cells.clear();
+		size_t num_active_children = active_children.size();
+		_active_cells.resize(num_active_children);
+		for (size_t icell = 0; icell < num_active_children; icell++)
+		{
+			_active_cells[icell] = active_children[icell];
+		}
+		_ss *= 0.5;
 	}
+	//_plotter.plot_active_pool(this);
 	#pragma endregion
 }
 
 void MeshingGenie_mps_nd::throw_darts(size_t refLevel)
 {
+	#pragma region Throw darts:
+	update_active_pool(refLevel);
+
 	size_t* iparent = new size_t[_ndim];
-	size_t* jcell = new size_t[_ndim];
 	double* x = new double[_ndim];
-	size_t num_active_cells = _active_cells.size();
-	for (size_t idart = 0; idart< num_active_cells; idart++)
+	_num_active_cells = _active_cells.size();
+	size_t num_darts(_num_active_cells);
+	for (size_t idart = 0; idart < num_darts; idart++)
 	{
 		// pick a random cell
-		if (num_active_cells == 0) break;
+		if (_num_active_cells == 0) break;
 		double u = generate_a_random_number();
-		size_t icell = u * num_active_cells;
-		if (icell == num_active_cells) icell--; // since u could be 1
+		size_t icell = size_t(u * _num_active_cells);
+		if (icell == _num_active_cells) icell--; // since u could be 1
 
 		// get parent cell
 		for (size_t idim = 0; idim < _ndim; idim++) iparent[idim] = _active_cells[icell][idim] / ipow(2, refLevel);
@@ -721,8 +814,10 @@ void MeshingGenie_mps_nd::throw_darts(size_t refLevel)
 		if (cell_in_vec(iparent, _covered_cells))
 		{
 			// deactivate icell cause its parent is covered
-			_active_cells[icell] = _active_cells[num_active_cells - 1];
-			num_active_cells--;
+			_num_active_cells--;
+			size_t* tmp = _active_cells[icell];
+			_active_cells[icell] = _active_cells[_num_active_cells];
+			_active_cells[_num_active_cells] = tmp;
 			continue;
 		}
 
@@ -733,28 +828,39 @@ void MeshingGenie_mps_nd::throw_darts(size_t refLevel)
 			x[idim] = _xmin[idim] + (_active_cells[icell][idim] + u) * _ss;
 		}
 
+		_current_dart = x;
+		//_plotter.plot_active_pool(this);
+
 		if (valid_dart(x, iparent))
 		{
 			if (cell_in_vec(iparent, _boundary_cells))
 			{
 				size_t index = find_cell_binary(iparent, _boundary_cells);
-				_boundary_cell_points[index] = x;
+				_boundary_cell_points[index] = x; _num_inserted_points++;
 				x = new double[_ndim];
 			}
 			else if (cell_in_vec(iparent, _interior_cells))
 			{
 				size_t index = find_cell_binary(iparent, _interior_cells);
-				_interior_cell_points[index] = x;
+				_interior_cell_points[index] = x; _num_inserted_points++;
 				x = new double[_ndim];
 			}
 
 			// deactivate icell and cover its parent
-			_active_cells[icell] = _active_cells[num_active_cells - 1];
-			num_active_cells--;
+			_num_active_cells--;
+			size_t* tmp = _active_cells[icell];
+			_active_cells[icell] = _active_cells[_num_active_cells];
+			_active_cells[_num_active_cells] = tmp;
 			add_cell(iparent, _covered_cells);
+			iparent = new size_t[_ndim];
 			continue;
 		}
 	}
+
+	_current_dart = 0;
+	delete[] iparent;
+	delete[] x;
+	#pragma endregion
 }
 
 inline void MeshingGenie_mps_nd::get_uncovered_children(size_t* active_cell, size_t refLevel, std::vector<size_t*> &children)
@@ -772,7 +878,7 @@ inline void MeshingGenie_mps_nd::get_uncovered_children(size_t* active_cell, siz
 		{
 			for (size_t idim = 0; idim< _ndim; idim++) jcell[idim] = active_cell[idim] * 2 + icell[idim];
 
-			if (!covered_cell(jcell, refLevel + 1))
+			if (!covered_cell(jcell, refLevel))
 			{
 				children.push_back(jcell);
 				jcell = new size_t[_ndim];
@@ -842,7 +948,7 @@ inline bool MeshingGenie_mps_nd::valid_dart(double* dart, size_t* dart_parent_ce
 			for (size_t idim = 0; idim < _ndim; idim++)
 			{
 				double dx = dart[idim] - x[idim];
-				dd+= dx;
+				dd+= dx * dx;
 			}
 			if (dd < _rsq) 
 			{
@@ -862,9 +968,15 @@ inline bool MeshingGenie_mps_nd::covered_cell(size_t* icell, size_t refLevel)
 	double ss = _s / ipow(2, refLevel);
 	
 	size_t* iparent = new size_t[_ndim];
-	size_t* parent_neighbor = new size_t[_ndim];
 	for (size_t idim = 0; idim < _ndim; idim++) iparent[idim] = icell[idim] / ipow(2, refLevel);
 
+	if (cell_in_vec(iparent, _covered_cells))
+	{
+		delete[] iparent;
+		return true;
+	}
+
+	size_t* parent_neighbor = new size_t[_ndim];
 	for (size_t i_neighbor = 0; i_neighbor < _num_neighbor_cells; i_neighbor++)
 	{
 		bool valid_cell(true);
@@ -898,7 +1010,7 @@ inline bool MeshingGenie_mps_nd::covered_cell(size_t* icell, size_t refLevel)
 				double xx = _xmin[idim] + icell[idim] * ss;
 				if (fabs(x[idim] - xx) < fabs(x[idim] - xx - ss)) xx += ss;
 				double dx = xx - x[idim];
-				dd+= dx;
+				dd += dx * dx;
 			}
 			if (dd < _rsq) 
 			{

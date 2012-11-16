@@ -79,7 +79,7 @@ namespace MueLu {
        The operator associated with <tt>projectionName</tt> will be applied to the MultiVector associated with
        <tt>vectorName</tt>.
     */
-    MultiVectorTransferFactory(std::string const & vectorName, std::string const & restrictionName, RCP<const FactoryBase> const &restrictionFact=Teuchos::null);
+    MultiVectorTransferFactory(std::string const & vectorName, std::string const & restrictionName);
 
     //! Destructor.
     virtual ~MultiVectorTransferFactory();
@@ -111,8 +111,6 @@ namespace MueLu {
     std::string vectorName_;
     //! name of Matrix that will do the transfering.
     std::string restrictionName_;
-    //! factory that generates the transfer Matrix.
-    RCP<const FactoryBase> restrictionFact_;
 
     static ArrayRCP<SC> expandCoordinates(ArrayRCP<SC> coord, LocalOrdinal blksize);
 

@@ -63,7 +63,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    NullspacePresmoothFactory(RCP<const FactoryBase> nullspaceFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null);
+    NullspacePresmoothFactory();
 
     //! Destructor
     virtual ~NullspacePresmoothFactory();
@@ -91,11 +91,6 @@ namespace MueLu {
     //@}
 
   private:
-
-    //! Nullspace factory (used for level !=0)
-    RCP<const FactoryBase> nullspaceFact_;
-
-    RCP<const FactoryBase> AFact_;
 
   }; //class NullspacePresmoothFactory
 
