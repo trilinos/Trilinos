@@ -60,16 +60,13 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AmalgamationFactory(RCP<const FactoryBase> AFact)
-: AFact_(AFact)
+AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AmalgamationFactory()
   {
   }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-
-  currentLevel.DeclareInput("A", AFact_.get(),    this); // sub-block from blocked A
-
+  Input(currentLevel, "A"); // sub-block from blocked A
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -77,7 +74,7 @@ void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 {
   FactoryMonitor m(*this, "Build", currentLevel);
 
-  RCP<Matrix> A = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
+  RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
   LocalOrdinal  fullblocksize = 1;         // block dim for fixed size blocks
   GlobalOrdinal offset = 0;          // global offset of dof gids
@@ -164,7 +161,7 @@ void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   amalgamationData->SetAmalgamationParams(nodegid2dofgids_);
   amalgamationData->SetNodeGIDVector(gNodeIds);
   amalgamationData->SetNumberOfNodes(cnt_amalRows);
-  currentLevel.Set("UnAmalgamationInfo", amalgamationData, this);
+  Set(currentLevel, "UnAmalgamationInfo", amalgamationData);
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

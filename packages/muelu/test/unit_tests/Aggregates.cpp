@@ -60,31 +60,33 @@
 namespace MueLuTests {
 
   // Little utility to generate aggregates.
-  RCP<Aggregates> gimmeAggregates(RCP<Matrix> const &A, RCP<AmalgamationInfo> & amalgInfo)
+  RCP<Aggregates> gimmeAggregates(const RCP<Matrix> & A, RCP<AmalgamationInfo> & amalgInfo)
   {
     Level level;
     TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
     level.Set("A", A);
 
-    AmalgamationFactory amalgFact;
-    CoalesceDropFactory dropFact(Teuchos::null, Teuchos::rcpFromRef(amalgFact));
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
     // Setup aggregation factory (use default factory for graph)
-    UCAggregationFactory aggFact(Teuchos::rcpFromRef(dropFact));
-    aggFact.SetMinNodesPerAggregate(3);
-    aggFact.SetMaxNeighAlreadySelected(0);
-    aggFact.SetOrdering(MueLu::AggOptions::NATURAL);
-    aggFact.SetPhase3AggCreation(0.5);
+    RCP<UCAggregationFactory> aggFact = rcp(new UCAggregationFactory());
+    aggFact->SetFactory("Graph", dropFact);
+    aggFact->SetMinNodesPerAggregate(3);
+    aggFact->SetMaxNeighAlreadySelected(0);
+    aggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+    aggFact->SetPhase3AggCreation(0.5);
 
-    level.Request("Aggregates", &aggFact);
-    level.Request("UnAmalgamationInfo", &amalgFact);
+    level.Request("Aggregates", aggFact.get());
+    level.Request("UnAmalgamationInfo", amalgFact.get());
 
-    level.Request(aggFact);
-    aggFact.Build(level);
-    RCP<Aggregates> aggregates = level.Get<RCP<Aggregates> >("Aggregates",&aggFact); // fix me
-    amalgInfo = level.Get<RCP<AmalgamationInfo> >("UnAmalgamationInfo",&amalgFact); // fix me
-    level.Release("UnAmalgamationInfo", &amalgFact);
-    level.Release("Aggregates", &aggFact);
+    level.Request(*aggFact);
+    aggFact->Build(level);
+    RCP<Aggregates> aggregates = level.Get<RCP<Aggregates> >("Aggregates",aggFact.get()); // fix me
+    amalgInfo = level.Get<RCP<AmalgamationInfo> >("UnAmalgamationInfo",amalgFact.get()); // fix me
+    level.Release("UnAmalgamationInfo", amalgFact.get());
+    level.Release("Aggregates", aggFact.get());
     return aggregates;
   }  // gimmeAggregates
 

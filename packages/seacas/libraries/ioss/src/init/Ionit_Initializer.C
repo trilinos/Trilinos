@@ -34,6 +34,9 @@
 
 #if !defined(NO_EXODUS_SUPPORT)
 #include <exodusII/Ioex_IOFactory.h>
+#if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
+#include <par_exo/Iopx_IOFactory.h>
+#endif
 #endif
 #include <heartbeat/Iohb_DatabaseIO.h>
 #include <generated/Iogn_DatabaseIO.h>
@@ -46,6 +49,12 @@
 // plugin architecture, there is no overhead for sierra when the plugin is
 // not loaded.  The #define test is left here for now in case developers
 // need to use it.
+
+// NOTE: (gdsjaar) -- Do *not* remove the NO_PARAVIEWIMESH_SUPPORT define.
+//                    The Ioss is used in more products than just Sierra,
+//                    so we cannot always rely on the paraview catalyst
+//                    plugin being available.
+
 #if !defined(NO_PARAVIEWIMESH_SUPPORT)
 #include <visualization/Iovs_IOFactory.h>
 #endif
@@ -60,6 +69,9 @@ namespace Ioss {
     {
 #if !defined(NO_EXODUS_SUPPORT)
       Ioex::IOFactory::factory();    // ExodusII
+#if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
+      Iopx::IOFactory::factory();    // ExodusII
+#endif
 #endif
       Iohb::IOFactory::factory();   // HeartBeat
       Iogn::IOFactory::factory();  // Generated

@@ -522,9 +522,13 @@ int main(int argc, char *argv[]) {
 
   ///////////////////////////////////////// define CoalesceDropFactory and Aggregation for A11
   // set up amalgamation for A11. Note: we're using a default null space factory (Teuchos::null)
-  RCP<AmalgamationFactory> amalgFact11 = rcp(new AmalgamationFactory(A11Fact));
-  RCP<CoalesceDropFactory> dropFact11 = rcp(new CoalesceDropFactory(A11Fact,amalgFact11));
-  RCP<UCAggregationFactory> UCAggFact11 = rcp(new UCAggregationFactory(dropFact11));
+  RCP<AmalgamationFactory> amalgFact11 = rcp(new AmalgamationFactory());
+  amalgFact11->SetFactory("A", A11Fact);
+  RCP<CoalesceDropFactory> dropFact11 = rcp(new CoalesceDropFactory());
+  dropFact11->SetFactory("A", A11Fact);
+  dropFact11->SetFactory("UnAmalgamationInfo", amalgFact11);
+  RCP<UCAggregationFactory> UCAggFact11 = rcp(new UCAggregationFactory());
+  UCAggFact11->SetFactory("Graph", dropFact11);
   UCAggFact11->SetMinNodesPerAggregate(3);
   UCAggFact11->SetMaxNeighAlreadySelected(1);
   UCAggFact11->SetOrdering(MueLu::AggOptions::NATURAL);

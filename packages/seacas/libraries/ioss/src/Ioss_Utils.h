@@ -48,6 +48,8 @@
 #define IOSS_ERROR(errmsg) throw std::runtime_error(errmsg.str())
 #define IOSS_WARNING std::cerr
 
+#define ct_assert(e) extern char (*ct_assert(void)) [sizeof(char[1 - 2*!(e)])]
+
 namespace Ioss {
   class GroupingEntity;
   class SideBlock;

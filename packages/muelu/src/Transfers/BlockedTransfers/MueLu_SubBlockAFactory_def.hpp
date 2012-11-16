@@ -67,15 +67,17 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   SubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SubBlockAFactory(Teuchos::RCP<const FactoryBase> Afact, size_t row, size_t col, LocalOrdinal blksize)
-    : Afact_(Afact), row_(row), col_(col), blksize_(blksize)
-  { }
+    : row_(row), col_(col), blksize_(blksize)
+  {
+    SetFactory("A",Afact);
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   SubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~SubBlockAFactory() {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("A",Afact_.get(),this);
+    Input(currentLevel, "A");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -86,7 +88,7 @@ namespace MueLu {
     typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOMatrix; //TODO
     typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorClass;
 
-    RCP<OMatrix> Ain = currentLevel.Get< RCP<OMatrix> >("A", Afact_.get());
+    RCP<OMatrix> Ain = Get< RCP<OMatrix> >(currentLevel, "A");
     RCP<BlockedCrsOMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOMatrix>(Ain);
 
     TEUCHOS_TEST_FOR_EXCEPTION(bA==Teuchos::null, Exceptions::BadCast, "MueLu::SubBlockAFactory::Build: input matrix A is not of type BlockedCrsMatrix! error.");
@@ -98,19 +100,18 @@ namespace MueLu {
     Teuchos::RCP<CrsMatrixClass> A = bA->getMatrix(row_, col_);
 
     Teuchos::RCP<CrsMatrixWrapClass> Op = Teuchos::rcp(new CrsMatrixWrapClass(A));
-    //Op->SetFixedBlockSize(blksize_); // store block size information in Matrix TODO: implement View mechanism as in MueMat
 
     //////////////// EXPERIMENTAL
     // extract striding information from RangeMapExtractor
 
-    RCP<const MapExtractorClass> rgMapExtractor = bA->getRangeMapExtractor();
-    RCP<const MapExtractorClass> doMapExtractor = bA->getDomainMapExtractor();
+    Teuchos::RCP<const MapExtractorClass> rgMapExtractor = bA->getRangeMapExtractor();
+    Teuchos::RCP<const MapExtractorClass> doMapExtractor = bA->getDomainMapExtractor();
 
-    RCP<const Map> rgMap = rgMapExtractor->getMap(row_);
-    RCP<const Map> doMap = doMapExtractor->getMap(col_);
+    Teuchos::RCP<const Map> rgMap = rgMapExtractor->getMap(row_);
+    Teuchos::RCP<const Map> doMap = doMapExtractor->getMap(col_);
 
-    RCP<const StridedMap> srgMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rgMap);
-    RCP<const StridedMap> sdoMap = Teuchos::rcp_dynamic_cast<const StridedMap>(doMap);
+    Teuchos::RCP<const StridedMap> srgMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rgMap);
+    Teuchos::RCP<const StridedMap> sdoMap = Teuchos::rcp_dynamic_cast<const StridedMap>(doMap);
 
     TEUCHOS_TEST_FOR_EXCEPTION(srgMap==Teuchos::null, Exceptions::BadCast, "MueLu::SubBlockAFactory::Build: rangeMap " << row_ << " is not a strided map");
     TEUCHOS_TEST_FOR_EXCEPTION(sdoMap==Teuchos::null, Exceptions::BadCast, "MueLu::SubBlockAFactory::Build: domainMap " << col_ << " is not a strided map");

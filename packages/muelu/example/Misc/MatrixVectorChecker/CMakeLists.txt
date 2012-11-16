@@ -21,7 +21,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       MatrixVectorCheckerExample
       #NAME "MatrixVectorChecker Epetra"
       NAME "MatrixVectorChecker"
-      ARGS "--linAlgebra=0"
+      ARGS "--linAlgebra=Epetra"
       COMM serial
       # NUM_MPI_PROCS 2
       # PASS_REGULAR_EXPRESSION "Example Passed!"
@@ -33,7 +33,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       MatrixVectorCheckerExample
       #NAME "MatrixVectorChecker Epetra"
       NAME "MatrixVectorChecker"
-      ARGS "--linAlgebra=1"
+      ARGS "--linAlgebra=Tpetra"
       COMM serial
       # NUM_MPI_PROCS 2
       # PASS_REGULAR_EXPRESSION "Example Passed!"

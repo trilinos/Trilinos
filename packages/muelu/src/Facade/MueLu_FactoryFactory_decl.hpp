@@ -200,17 +200,17 @@ namespace MueLu {
 
     //! AmalgamationFactory
     RCP<FactoryBase> BuildAmalgamationFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      MUELU_FACTORY_PARAM("A", AFact);
-
-      return rcp(new AmalgamationFactory(AFact));
+      RCP<FactoryBase2> factory = rcp(new AmalgamationFactory());
+      MUELU_FACTORY_PARAM2("A");
+      return factory;
     }
 
     //! CoalesceDropFactory
     RCP<FactoryBase> BuildCoalesceDropFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      MUELU_FACTORY_PARAM("A", AFact);
-      MUELU_FACTORY_PARAM("UnAmalgamationInfo", AmalgFact);
-
-      return rcp(new CoalesceDropFactory(AFact, AmalgFact));
+      RCP<FactoryBase2> factory = rcp(new CoalesceDropFactory());
+      MUELU_FACTORY_PARAM2("A");
+      MUELU_FACTORY_PARAM2("UnAmalgamationInfo");
+      return factory;
     }
 
     //! TentativePFactory
@@ -302,9 +302,9 @@ namespace MueLu {
         return rcp(new UCAggregationFactory());
 
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "UCAggregationFactory", Exceptions::RuntimeError, "");
-      MUELU_FACTORY_PARAM("Graph", GraphFact);
 
-      RCP<UCAggregationFactory> f = rcp(new UCAggregationFactory(GraphFact));
+      RCP<UCAggregationFactory> factory = rcp(new UCAggregationFactory());
+      MUELU_FACTORY_PARAM2("Graph");
 
       if(paramList.isParameter("Ordering")) {
         std::string orderingStr = paramList.get<std::string>("Ordering");
@@ -317,22 +317,22 @@ namespace MueLu {
           ordering = GRAPH;
         else TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory::BuildUCAggregationFactory()::Unknown Ordering type");
 
-        f->SetOrdering(ordering);
+        factory->SetOrdering(ordering);
       }
 
       if(paramList.isParameter("MaxNeighAlreadySelected")) {
-        f->SetMaxNeighAlreadySelected(paramList.get<int>("MaxNeighAlreadySelected"));
+        factory->SetMaxNeighAlreadySelected(paramList.get<int>("MaxNeighAlreadySelected"));
       }
 
       if(paramList.isParameter("Phase3AggCreation")) {
-        f->SetPhase3AggCreation(paramList.get<double>("Phase3AggCreation"));
+        factory->SetPhase3AggCreation(paramList.get<double>("Phase3AggCreation"));
       }
 
       if(paramList.isParameter("MinNodesPerAggregate")) {
-        f->SetMinNodesPerAggregate(paramList.get<int>("MinNodesPerAggregate"));
+        factory->SetMinNodesPerAggregate(paramList.get<int>("MinNodesPerAggregate"));
       }
 
-      return f;
+      return factory;
     }
 
     //! TrilinosSmoother
@@ -389,10 +389,10 @@ namespace MueLu {
     RCP<FactoryBase> BuildZoltanInterface(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "ZoltanInterface", Exceptions::RuntimeError, "");
 
-      MUELU_FACTORY_PARAM("A", AFact);
-      MUELU_FACTORY_PARAM("TransferFactory", TransferFactory);
-
-      return rcp(new ZoltanInterface(AFact, TransferFactory));
+      RCP<FactoryBase2> factory = rcp(new ZoltanInterface());
+      MUELU_FACTORY_PARAM2("A");
+      MUELU_FACTORY_PARAM2("TransferFactory");
+      return factory;
     }
 #endif
 
@@ -400,14 +400,17 @@ namespace MueLu {
     RCP<FactoryBase> BuildRepartitionFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "RepartitionFactory", Exceptions::RuntimeError, "");
 
-      MUELU_FACTORY_PARAM("Factory", Factory);
-      MUELU_FACTORY_PARAM("A", AFact);
       int minRowsPerProc=2000;     if(paramList.isParameter("minRowsPerProc"))   minRowsPerProc = paramList.get<int>("minRowsPerProc");
       double nonzeroImbalance=1.2; if(paramList.isParameter("nonzeroImbalance")) nonzeroImbalance = paramList.get<double>("nonzeroImbalance");
       int startLevel=1;            if(paramList.isParameter("startLevel"))       startLevel = paramList.get<int>("startLevel");
       int diffusive=0;             if(paramList.isParameter("diffusive"))        diffusive = paramList.get<int>("diffusive");
 
-      return rcp(new RepartitionFactory(Factory, AFact, minRowsPerProc, nonzeroImbalance, startLevel, diffusive));
+      RCP<FactoryBase2> factory = rcp(new RepartitionFactory(minRowsPerProc, nonzeroImbalance, startLevel, diffusive));
+
+      MUELU_FACTORY_PARAM2("Factory");
+      MUELU_FACTORY_PARAM2("A");
+
+      return factory;
     }
 #endif
 

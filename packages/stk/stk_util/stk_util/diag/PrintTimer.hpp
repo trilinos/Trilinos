@@ -6,8 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef stk_util_diag_PrintTimer_hpp
-#define stk_util_diag_PrintTimer_hpp
+#ifndef STK_UTIL_DIAG_PrintTimer_hpp
+#define STK_UTIL_DIAG_PrintTimer_hpp
 
 #include <iosfwd>
 
@@ -26,4 +26,4 @@ std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask m
 } // namespace diag
 } // namespace stk
 
-#endif // stk_util_diag_PrintTimer_hpp
+#endif // STK_UTIL_DIAG_PrintTimer_hpp

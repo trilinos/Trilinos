@@ -62,12 +62,16 @@
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Monitor.hpp"
 
+#include "MueLu_FactoryBase2.hpp"
+
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BlockedCoarseMapFactory(RCP<const FactoryBase> prevCoarseMapFact, RCP<const FactoryBase> aggregatesFact, RCP<const FactoryBase> nullspaceFact)
-  : CoarseMapFactory(aggregatesFact, nullspaceFact), prevCoarseMapFact_(prevCoarseMapFact)
+  : prevCoarseMapFact_(prevCoarseMapFact)
   {
+    this->SetFactory("Aggregates", aggregatesFact);
+    this->SetFactory("Nullspace", nullspaceFact);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -86,8 +90,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("Aggregates", CoarseMapFactory::aggregatesFact_.get(), this);
-    currentLevel.DeclareInput("Nullspace",  CoarseMapFactory::nullspaceFact_.get(), this);
+    this->Input(currentLevel, "Aggregates");
+    this->Input(currentLevel, "Nullspace");
     currentLevel.DeclareInput("CoarseMap",  prevCoarseMapFact_.get(), this);
   }
 
@@ -99,14 +103,14 @@ namespace MueLu {
 
     GlobalOrdinal maxGlobalIndex = subPDomainMap->getMaxAllGlobalIndex();
 
-    RCP<Aggregates>  aggregates = currentLevel.Get< RCP<Aggregates> >("Aggregates", CoarseMapFactory::aggregatesFact_.get());
+    RCP<Aggregates> aggregates = FactoryBase2::Get< RCP<Aggregates> >(currentLevel, "Aggregates");
     GlobalOrdinal numAggs = aggregates->GetNumAggregates();
 
     // extract communicator
     RCP<const Teuchos::Comm<int> > comm = aggregates->GetMap()->getComm();
 
-// determine nullspace dimension
-    RCP<MultiVector> nullspace  = currentLevel.Get< RCP<MultiVector> >("Nullspace", CoarseMapFactory::nullspaceFact_.get());
+    // determine nullspace dimension
+    RCP<MultiVector> nullspace  = FactoryBase2::Get< RCP<MultiVector> >(currentLevel, "Nullspace");
     const size_t NSDim = nullspace->getNumVectors();
 
     // check for consistency of striding information with NSDim and nCoarseDofs
@@ -138,7 +142,7 @@ namespace MueLu {
         CoarseMapFactory::stridedBlockId_,
         maxGlobalIndex + 1);
 
-    currentLevel.Set("CoarseMap", coarseMap, this);
+    this->Set(currentLevel, "CoarseMap", coarseMap);
   } // Build
 
 } //namespace MueLu

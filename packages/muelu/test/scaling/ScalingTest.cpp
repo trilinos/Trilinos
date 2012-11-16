@@ -318,8 +318,12 @@ int main(int argc, char *argv[]) {
       //Register it with the coarse operator factory
       Acfact->AddTransferFactory(mvTransFact);
       //Set up repartitioning
-      RCP<ZoltanInterface>      zoltan = rcp(new ZoltanInterface(Acfact,mvTransFact));
-      RCP<RepartitionFactory> RepartitionFact = rcp(new RepartitionFactory(zoltan,Acfact,minRowsPerProc,nonzeroImbalance));
+      RCP<ZoltanInterface>      zoltan = rcp(new ZoltanInterface());
+      zoltan->SetFactory("A", Acfact);
+      zoltan->SetFactory("Coordinates", mvTransFact);
+      RCP<RepartitionFactory> RepartitionFact = rcp(new RepartitionFactory(minRowsPerProc,nonzeroImbalance));
+      RepartitionFact->SetFactory("Partition", zoltan);
+      RepartitionFact->SetFactory("A", Acfact);
       permPFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, SaPfact, MueLu::INTERPOLATION) );
       permRFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, M.GetFactory("R"), MueLu::RESTRICTION, M.GetFactory("Ptent"), mvTransFact));
       AcfactFinal = rcp(new RAPFactory(permPFactory, permRFactory));

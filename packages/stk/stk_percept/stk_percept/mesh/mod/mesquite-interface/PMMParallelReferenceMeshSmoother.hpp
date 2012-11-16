@@ -35,7 +35,17 @@ namespace stk {
                                        double grad_norm =1.e-8,
                                        int parallel_iterations = 20)
         : PMMParallelShapeImprover::PMMParallelShapeImprovementWrapper(inner_iterations, cpu_time, grad_norm, parallel_iterations),
+
+          m_scale(0),
+          m_dmax(0),
+          m_dnew(0), m_dold(0), m_d0(0), m_dmid(0), m_dd(0), m_alpha(0), m_grad_norm(0), m_scaled_grad_norm(0),
+          m_total_metric(0),
+          m_stage(0),
+          m_omega(0),
+          m_omega_prev(0),
+          m_iter(0),
           m_num_invalid(0), m_global_metric(std::numeric_limits<double>::max()), m_untangled(false), m_num_nodes(0)
+
       {}
 
 
@@ -72,6 +82,8 @@ namespace stk {
       NodeMap m_delta;
       NodeMap m_weight;
       NodeMap m_nweight;
+
+      double m_scale;
       double m_dmax;
       double m_dnew, m_dold, m_d0, m_dmid, m_dd, m_alpha, m_grad_norm, m_scaled_grad_norm;
       double m_total_metric;
@@ -79,6 +91,7 @@ namespace stk {
       double m_omega;
       double m_omega_prev;
       int m_iter;
+
       int m_num_invalid;
       double m_global_metric;
       bool m_untangled;
@@ -93,6 +106,7 @@ namespace stk {
       stk::mesh::FieldBase *m_coord_field_lagged;
 
       PMMSmootherMetric *m_metric;
+      
     };
 
 

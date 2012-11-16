@@ -97,6 +97,8 @@ namespace Ioss {
     virtual double get_state_time(int state=-1) const;
     virtual double begin_state(int state);
     virtual double end_state(int state);
+    bool model_defined() const {return modelDefined;}
+    bool transient_defined() const {return transientDefined;}
 
     /**
      * Return a pair consisting of the step (1-based) corresponding to
@@ -227,6 +229,8 @@ namespace Ioss {
 
     int currentState;
     mutable int stateCount;
+    bool modelDefined;
+    bool transientDefined;
   };
 }
 inline bool Ioss::Region::supports_field_type(Ioss::EntityType fld_type) const

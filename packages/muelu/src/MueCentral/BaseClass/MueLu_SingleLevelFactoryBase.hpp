@@ -47,7 +47,7 @@
 #define MUELU_SINGLELEVELFACTORY_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_FactoryBase.hpp"
+#include "MueLu_FactoryBase2.hpp"
 
 #include "MueLu_Level_fwd.hpp"
 
@@ -59,7 +59,7 @@ namespace MueLu {
 
     @ingroup MueLuBaseClasses
   */
-  class SingleLevelFactoryBase : public FactoryBase {
+  class SingleLevelFactoryBase : public FactoryBase2 {
 
   public:
     //! @name Constructors/Destructors.

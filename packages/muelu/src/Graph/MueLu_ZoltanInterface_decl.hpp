@@ -49,8 +49,6 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
-#include <Teuchos_DefaultMpiComm.hpp> //TODO: fwd decl.
-#include <Teuchos_OpaqueWrapper.hpp>  //TODO: fwd decl.
 
 #include <zoltan_cpp.h>
 
@@ -88,7 +86,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    ZoltanInterface(RCP<const FactoryBase> AFact = Teuchos::null, RCP<const FactoryBase> TransferFact = Teuchos::null);
+    ZoltanInterface() {}
 
     //! Destructor
     virtual ~ZoltanInterface() { }
@@ -150,9 +148,6 @@ namespace MueLu {
     //@}
 
   private:
-
-    RCP<const FactoryBase> AFact_;
-    RCP<const FactoryBase> TransferFact_;
 
     static ArrayRCP<double> coalesceCoordinates(ArrayRCP<double> coord, LocalOrdinal blksize);
 

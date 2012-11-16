@@ -108,6 +108,7 @@ Ioss::Pyramid5::Pyramid5()
 {
   Ioss::ElementTopology::alias("pyramid5", "pyramid");
   Ioss::ElementTopology::alias("pyramid5", "Solid_Pyramid_5_3D");
+  Ioss::ElementTopology::alias("pyramid5", "pyra5");
 }
 
 Ioss::Pyramid5::~Pyramid5() {}

@@ -497,11 +497,13 @@ namespace {
     while (i != nss.end()) {
       int64_t    count     = (*i)->get_property("entity_count").get_int();
       int64_t    num_attrib= (*i)->get_property("attribute_count").get_int();
+      int64_t    num_dist  = (*i)->get_property("distribution_factor_count").get_int();
       if (!summary) {
 	OUTPUT << '\n' << (*i)->type_string() << " " << std::setw(16)  << (*i)->name()
 	       << " id: " << std::setw(6) << id(*i)   << ", "
 	       << std::setw(8) << count << " nodes" 
-	       << std::setw(3) << num_attrib << " attributes.\n";
+	       << std::setw(3) << num_attrib << " attributes"
+	       << std::setw(8) << num_dist << " distribution factors.\n";
 	info_fields(*i, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 	info_fields(*i, Ioss::Field::TRANSIENT, "\tTransient:  ");
       }

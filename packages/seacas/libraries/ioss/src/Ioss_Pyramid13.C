@@ -108,6 +108,7 @@ Ioss::Pyramid13::Pyramid13()
   : Ioss::ElementTopology("pyramid13", "Pyramid_13")
 {
   Ioss::ElementTopology::alias("pyramid13", "Solid_Pyramid_13_3D");
+  Ioss::ElementTopology::alias("pyramid13", "pyra13");
 }
 
 Ioss::Pyramid13::~Pyramid13() {}

@@ -82,7 +82,7 @@ public:
   //@{
 
   //! Constructor.
-  ExperimentalAggregationFactory(RCP<const FactoryBase> graphFact = Teuchos::null);
+  ExperimentalAggregationFactory();
 
   //! Destructor.
   virtual ~ExperimentalAggregationFactory() { }
@@ -121,12 +121,8 @@ public:
 
 private:
 
-  //! Graph Factory
-  RCP<const FactoryBase> graphFact_;
-
   //! Algorithms
   RCP<MueLu::CheapAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > algo1_;
-
 
 }; // class ExperimentalAggregationFactory
 

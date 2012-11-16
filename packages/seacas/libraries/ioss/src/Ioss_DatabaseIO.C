@@ -188,6 +188,15 @@ void Ioss::DatabaseIO::set_field_separator(const char separator)
   properties.add(Ioss::Property("FIELD_SUFFIX_SEPARATOR", tmp));
 }
 
+Ioss::IfDatabaseExistsBehavior Ioss::DatabaseIO::open_create_behavior() const
+{
+  Ioss::IfDatabaseExistsBehavior exists = Ioss::DB_OVERWRITE;
+  if (properties.exists("APPEND_OUTPUT")) {
+    exists = (Ioss::IfDatabaseExistsBehavior)properties.get("APPEND_OUTPUT").get_int();
+  }
+  return exists;
+}
+
 void Ioss::DatabaseIO::verify_and_log(const Ioss::GroupingEntity *ge, const Ioss::Field& field) const
 {
   assert(is_parallel_consistent(singleProcOnly, ge, field, util_));

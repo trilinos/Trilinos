@@ -426,7 +426,7 @@ namespace MueLu {
         // ^^ nonzero initial guess
 
         // update X+=P * coarseX
-        //P->apply(*coarseX, X, Teuchos::NO_TRANS, 1.0, 1.0);  //Xpetra throws an error if linAlgebra==0
+        //P->apply(*coarseX, X, Teuchos::NO_TRANS, 1.0, 1.0);  //Xpetra throws an error if linAlgebra==Epetra
         RCP<MultiVector> correction = MultiVectorFactory::Build(P->getRangeMap(), X.getNumVectors());
         P->apply(*coarseX, *correction, Teuchos::NO_TRANS, 1.0, 0.0);
         X.update(1.0, *correction, 1.0);
@@ -521,7 +521,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DumpCurrentGraph() const {
-#ifdef HAVE_MUELU_BOOST
+#if defined(HAVE_MUELU_BOOST) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
     // define boost graph types
     typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS,
             boost::property<boost::vertex_name_t, std::string,
@@ -529,8 +529,8 @@ namespace MueLu {
             boost::property<boost::vertex_index_t, std::string> > >,
             boost::property<boost::edge_name_t, std::string,
             boost::property<boost::edge_color_t, std::string> > > Graph;
-    typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex_t;
-    typedef typename boost::graph_traits<Graph>::edge_descriptor   edge_t;
+    typedef boost::graph_traits<Graph>::vertex_descriptor vertex_t;
+    typedef boost::graph_traits<Graph>::edge_descriptor   edge_t;
 
     Graph graph;
 
@@ -575,8 +575,5 @@ namespace MueLu {
 } //namespace MueLu
 
 // TODO: We need a Set/Get function to change the CycleType (for when Iterate() calls are embedded in a Belos Preconditionner for instance).
-
-// TODO: add timer on every function that are not calling Hierarchy::Setup(): SetCoarseLevel SetSmoothers etc. are part of the setup
-//       function that are calling Hierarchy::Setup() should not start a timer again
 
 #endif // MUELU_HIERARCHY_DEF_HPP

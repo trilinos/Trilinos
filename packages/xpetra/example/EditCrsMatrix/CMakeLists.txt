@@ -13,7 +13,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
 	TRIBITS_ADD_TEST(
 	  EditCrsMatrix
           NAME "EditCrsMatrixEpetra"
-          ARGS "--linAlgebra=0"
+          ARGS "--linAlgebra=Epetra"
           COMM serial mpi
 	  )
 
@@ -24,7 +24,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
 	TRIBITS_ADD_TEST(
 	  EditCrsMatrix
           NAME "EditCrsMatrixTpetra"
-          ARGS "--linAlgebra=1"
+          ARGS "--linAlgebra=Tpetra"
           COMM serial mpi
 	  )
 

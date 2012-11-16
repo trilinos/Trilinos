@@ -431,11 +431,20 @@ void BucketRepository::optimize_buckets()
       while ( end_family < buckets.size() && last_bucket_in_family != buckets[end_family] ) { ++end_family ; }
       if (end_family < buckets.size())  ++end_family ; //increment past the end
 
-      //only one bucket in the family
-      //go to the next family
-      if (end_family - begin_family == 1) {
-        tmp_buckets.push_back(buckets[begin_family]);
-        continue;
+      //if compressed and sorted go to the next family
+      const bool is_compressed =    (end_family-begin_family == 1)
+                                 && (buckets[begin_family]->size() == buckets[begin_family]->capacity());
+      if (is_compressed) {
+        const Bucket & b = *buckets[begin_family];
+        bool is_sorted = true;
+        for (size_t i=0, end=b.size()-1; i<end && is_sorted; ++i)
+        {
+          if(b[i].key() >= b[i+1].key()) is_sorted = false;
+        }
+        if (is_sorted) {
+          tmp_buckets.push_back(buckets[begin_family]);
+          continue;
+        }
       }
 
       std::vector<unsigned> new_key = buckets[begin_family]->m_bucketImpl.key_vector();
@@ -444,7 +453,7 @@ void BucketRepository::optimize_buckets()
 
       unsigned new_capacity = 0 ;
       for ( size_t i = begin_family ; i != end_family ; ++i ) {
-        new_capacity += buckets[i]->m_bucketImpl.capacity();
+        new_capacity += buckets[i]->m_bucketImpl.size();
       }
 
       std::vector<Entity*> entities;

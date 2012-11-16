@@ -124,15 +124,12 @@ namespace MueLu {
     LocalOrdinal GetFixedBlockSize() const;
     // ----------------------------------------------------------------------------------
   private:
-    Teuchos::RCP<const FactoryBase> Afact_;   ///< generating factory of input variable
     const size_t                    row_;     ///< row id
     const size_t                    col_;     ///< column id
 
     // ----------------------------------------------------------------------------------
     // "TEMPORARY" VIEW MECHANISM
-    // TODO: the view mechanism should be implemented as in MueMat.
     LocalOrdinal blksize_;
-    // RCP<GOVector> variableBlockSizeInfo_; TODO: should be moved from CoalesceDropFactory to here.
     // ----------------------------------------------------------------------------------
   }; // class SubBlockAFactory
 

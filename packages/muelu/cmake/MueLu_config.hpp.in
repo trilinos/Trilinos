@@ -47,4 +47,4 @@
 
 /* Optional TPL */
 
-// JG TODO #cmakedefine HAVE_MUELU_BOOST
+#cmakedefine HAVE_MUELU_BOOST

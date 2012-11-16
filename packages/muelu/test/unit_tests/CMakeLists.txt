@@ -102,7 +102,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
     TRIBITS_ADD_TEST(
       UnitTests
       NAME "UnitTestsEpetra"
-      ARGS "--linAlgebra=0"
+      ARGS "--linAlgebra=Epetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 1
       COMM serial mpi
@@ -111,7 +111,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
     TRIBITS_ADD_TEST(
       UnitTests
       NAME "UnitTestsEpetra"
-      ARGS "--linAlgebra=0"
+      ARGS "--linAlgebra=Epetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 4
       COMM mpi
@@ -124,7 +124,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
     TRIBITS_ADD_TEST(
       UnitTests
       NAME "UnitTestsTpetra"
-      ARGS "--linAlgebra=1"
+      ARGS "--linAlgebra=Tpetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 1
       COMM serial mpi
@@ -133,7 +133,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
     TRIBITS_ADD_TEST(
       UnitTests
       NAME "UnitTestsTpetra"
-      ARGS "--linAlgebra=1"
+      ARGS "--linAlgebra=Tpetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 4
       COMM mpi

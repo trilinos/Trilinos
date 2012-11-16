@@ -38,6 +38,13 @@ Writer.hpp
 WriterManip.hpp
 WriterOStream.hpp
 WriterParser.hpp
+Platform.hpp
+Env.hpp
+Option.hpp
+PrintTable.hpp
+SlibDiagWriter.hpp
+String.hpp
+WriterRegistry.hpp
   )
 
 APPEND_SET(SOURCES
@@ -49,6 +56,12 @@ Writer.cpp
 WriterExt.cpp
 WriterManip.cpp
 WriterParser.cpp
+Platform.cpp
+Option.cpp
+PrintTable.cpp
+SlibDiagWriter.cpp
+String.cpp
+WriterRegistry.cpp
   )
 
 IF (TPL_ENABLE_MPI)

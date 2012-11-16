@@ -326,12 +326,6 @@ int main(int argc, char *argv[]) {
 
   Teuchos::ParameterList status;
 
-  status = H->Setup(*myFactManager, 0, maxLevels);
-  if (comm->getRank() == 0) {
-    std::cout  << "======================\n Multigrid statistics \n======================" << std::endl;
-    status.print(std::cout,Teuchos::ParameterList::PrintOptions().indent(2));
-  }
-
   RCP<SmootherPrototype> coarseProto;
   if (maxLevels != 1) {
     coarseProto = gimmeCoarseProto(xpetraParameters.GetLib(), coarseSolver, comm->getRank());
@@ -339,8 +333,14 @@ int main(int argc, char *argv[]) {
     coarseProto = gimmeMergedSmoother(nSmoothers, xpetraParameters.GetLib(), coarseSolver, comm->getRank());
   }
   if (coarseProto == Teuchos::null) return EXIT_FAILURE;
-  SmootherFactory coarseSolveFact(coarseProto);
-  H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
+  RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(coarseProto));
+  myFactManager->SetFactory("CoarseSolver", coarseSolveFact);
+
+  status = H->Setup(*myFactManager, 0, maxLevels);
+  if (comm->getRank() == 0) {
+    std::cout  << "======================\n Multigrid statistics \n======================" << std::endl;
+    status.print(std::cout,Teuchos::ParameterList::PrintOptions().indent(2));
+  }
 
   // Define RHS
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
@@ -351,6 +351,7 @@ int main(int argc, char *argv[]) {
   X->norm2(norms);
   if (comm->getRank() == 0)
     std::cout << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+
 
   Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
@@ -363,8 +364,8 @@ int main(int argc, char *argv[]) {
 #ifdef NEUMANN
     // Project X
     X->norm1(norms);
-    size_t numElements = X->getGlobalLength();
-    SC alpha = norms[0]/numElements;
+    size_t numGlobalElements = X->getGlobalLength(), numElements = X->getLocalLength();
+    SC alpha = norms[0]/numGlobalElements;
     for (size_t i = 0; i < numElements; i++)
       X->getDataNonConst(0)[i] -= alpha;
 #endif

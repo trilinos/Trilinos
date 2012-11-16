@@ -75,7 +75,10 @@ namespace Ioss {
     public:
 
       // Check to see if database state is ok...
-      virtual bool ok(bool write_message = false) const {return dbState != Ioss::STATE_INVALID;}
+      // If 'write_message' true, then output a warning message indicating the problem.
+      // If 'error_message' non-null, then put the warning message into the string and return it.
+      virtual bool ok(bool write_message = false, std::string *error_message=NULL) const
+      {return dbState != Ioss::STATE_INVALID;}
 
       // Check capabilities of input/output database...  Returns an
       // unsigned int with the supported Ioss::EntityTypes or'ed
@@ -88,14 +91,20 @@ namespace Ioss {
 
       virtual ~DatabaseIO();
 
+      // Eliminate as much memory as possible, but still retain meta data information
+      // Typically, eliminate the maps...
+      virtual void release_memory() {}
+
       std::string get_filename() const {return DBFilename;}
       bool is_input() const {return isInput;}
       Ioss::DatabaseUsage usage() const {return dbUsage;}
       
+      Ioss::IfDatabaseExistsBehavior open_create_behavior() const;
+      
       void set_region(Region* region) {region_ = region;}
 
-      virtual void openDatabase() const {};
-      virtual void closeDatabase() const {};
+      virtual void openDatabase() const {}
+      virtual void closeDatabase() const {}
 
       virtual bool begin(Ioss::State state) = 0;
       virtual bool   end(Ioss::State state) = 0;
@@ -105,7 +114,7 @@ namespace Ioss {
 
       // Metadata-related functions.
       virtual void read_meta_data() = 0;
-      virtual void get_step_times() {};
+      virtual void get_step_times() {}
 
       virtual bool internal_edges_available() const {return false;}
       virtual bool internal_faces_available() const {return false;}

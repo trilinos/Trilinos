@@ -9,7 +9,6 @@ ADD_SUBDIRECTORY(NativeInterface)
 
 ADD_SUBDIRECTORY(Misc/Aggregation)
 ADD_SUBDIRECTORY(Misc/MatrixVectorChecker)
-ADD_SUBDIRECTORY(Misc/TentativePDebug)
 ADD_SUBDIRECTORY(Misc/MultipleFactoryManager)
 
 IF (${PACKAGE_NAME}_ENABLE_Ifpack)
