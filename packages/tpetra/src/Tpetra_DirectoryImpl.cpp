@@ -45,58 +45,15 @@
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-#include <Kokkos_SerialNode.hpp>
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-#  include <Kokkos_TBBNode.hpp>
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-#  include <Kokkos_TPINode.hpp>
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-#  include <Kokkos_OpenMPNode.hpp>
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THRUST)
-#  include <Kokkos_ThrustGPUNode.hpp>
-#endif
-
+#include "Tpetra_ETIHelperMacros.h"
 #include "Tpetra_DirectoryImpl_def.hpp"
 
 namespace Tpetra {
   namespace Details {
 
-#ifndef TPETRA_DIRECTORY_IMPL_INSTANT
-#  error "The TPETRA_DIRECTORY_IMPL_INSTANT macro didn't get defined!"
-#endif // TPETRA_DIRECTORY_IMPL_INSTANT
+    TPETRA_ETI_MANGLING_TYPEDEFS()
 
-    TPETRA_DIRECTORY_IMPL_INSTANT(int,int,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-    TPETRA_DIRECTORY_IMPL_INSTANT(int,int,Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-    TPETRA_DIRECTORY_IMPL_INSTANT(int,int,Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-    TPETRA_DIRECTORY_IMPL_INSTANT(int,int,Kokkos::OpenMPNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THRUST)
-    TPETRA_DIRECTORY_IMPL_INSTANT(int,int,Kokkos::ThrustGPUNode)
-#endif
-
-#ifdef HAVE_TPETRA_INST_INT_LONG
-    TPETRA_DIRECTORY_IMPL_INSTANT(int,long,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-    TPETRA_DIRECTORY_IMPL_INSTANT(int,long,Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-    TPETRA_DIRECTORY_IMPL_INSTANT(int,long,Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-    TPETRA_DIRECTORY_IMPL_INSTANT(int,long,Kokkos::OpenMPNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THRUST)
-    TPETRA_DIRECTORY_IMPL_INSTANT(int,long,Kokkos::ThrustGPUNode)
-#endif
-#endif // <int,long>
+    TPETRA_INSTANTIATE_LGN(TPETRA_DIRECTORY_IMPL_INSTANT)
 
   } // namespace Details
 } // namespace Tpetra

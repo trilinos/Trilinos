@@ -1,7 +1,7 @@
-
 INCLUDE(TribitsPackageMacros)
 INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(CombinedOption)
+INCLUDE(TribitsETISupport)
 
 #
 # A) Define the package
@@ -25,6 +25,9 @@ COMBINED_OPTION( Tpetra_ENABLE_Thrust
 
 TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 
+# we use this for testing as well as library eti, so do it regardless
+TRIBITS_ADD_ETI_SUPPORT()
+
 TRIBITS_ADD_DEBUG_OPTION()
 
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
@@ -39,8 +42,12 @@ SET(Tpetra_MACHINE_XML_FILE_DIR
 
 TRIBITS_SET_SS_FOR_DEV_MODE(SS_FOR_DEV_PS_FOR_RELEASE)
 
-SET(INST_LIST_SCALAR)
-SET(INST_LIST_GORD "int")
+ASSERT_DEFINED(KokkosClassic_DefaultNode)
+ASSERT_DEFINED(KokkosClassic_ENABLED_NODES)
+SET(Tpetra_ETI_SCALARS "double;int")
+SET(Tpetra_ETI_GORDS   "int")
+SET(Tpetra_ETI_LORDS   "int")
+SET(Tpetra_ETI_NODES   "${KokkosClassic_ENABLED_NODES}")
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_SS_TESTING
@@ -97,17 +104,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${HAVE_TPETRA_INST_FLOAT_DEFAULT}
   )
 IF(Tpetra_INST_FLOAT) 
-  LIST(APPEND INST_LIST_SCALAR "float")
-ENDIF()
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_INST_DOUBLE
-  HAVE_TPETRA_INST_DOUBLE
-  "If explicit instantiation is enabled, instantiate over scalar field double."
-  ON
-  )
-IF(Tpetra_INST_DOUBLE) 
-  LIST(APPEND INST_LIST_SCALAR "double")
+  LIST(APPEND Tpetra_ETI_SCALARS "float")
 ENDIF()
 
 IF (SS_FOR_DEV_PS_FOR_RELEASE AND HAVE_COMPLEX_BLAS AND HAVE_TEUCHOS_BLASFLOAT)
@@ -118,11 +115,11 @@ ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_COMPLEX_FLOAT
   HAVE_TPETRA_INST_COMPLEX_FLOAT
-  "If explicit instantiation is enabled, instantiate over scalar field complex<float>."
+  "If explicit instantiation is enabled, instantiate over scalar field std::complex<float>."
   ${HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT}  
   )
 IF(Tpetra_INST_COMPLEX_FLOAT) 
-  LIST(APPEND INST_LIST_SCALAR "complex<float>")
+  LIST(APPEND Tpetra_ETI_SCALARS "std::complex<float>")
 ENDIF()
 
 IF (SS_FOR_DEV_PS_FOR_RELEASE AND HAVE_COMPLEX_BLAS)
@@ -133,42 +130,42 @@ ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_COMPLEX_DOUBLE
   HAVE_TPETRA_INST_COMPLEX_DOUBLE
-  "If explicit instantiation is enabled, instantiate over scalar field complex<double>."
+  "If explicit instantiation is enabled, instantiate over scalar field std::complex<double>."
   ${HAVE_TPETRA_INST_DOUBLE_DEFAULT}  
   )
 IF(Tpetra_INST_COMPLEX_DOUBLE) 
-  LIST(APPEND INST_LIST_SCALAR "complex<double>")
+  LIST(APPEND Tpetra_ETI_SCALARS "std::complex<double>")
 ENDIF()
 
-# IF (SS_FOR_DEV_PS_FOR_RELEASE AND Tpetra_ENABLE_QD)
-#   GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT ON)
-# ELSE()
-#   GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT OFF)
-# ENDIF()
-# TRIBITS_ADD_OPTION_AND_DEFINE(
-#   ${PACKAGE_NAME}_INST_QD_REAL
-#   HAVE_TPETRA_INST_QD_REAL
-#   "If explicit instantiation is enabled, instantiate over scalar field qd_real (requries TPL QD)."
-#   ${HAVE_TPETRA_INST_QD_REAL_DEFAULT}  
-#   )
-# IF(Tpetra_INST_QD_REAL) 
-#   LIST(APPEND INST_LIST_SCALAR "qd_real")
-# ENDIF()
+IF (SS_FOR_DEV_PS_FOR_RELEASE AND Tpetra_ENABLE_QD)
+  GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT ON)
+ELSE()
+  GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT OFF)
+ENDIF()
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_QD_REAL
+  HAVE_TPETRA_INST_QD_REAL
+  "If explicit instantiation is enabled, instantiate over scalar field qd_real (requries TPL QD)."
+  ${HAVE_TPETRA_INST_QD_REAL_DEFAULT}  
+  )
+IF(Tpetra_INST_QD_REAL) 
+  LIST(APPEND Tpetra_ETI_SCALARS "qd_real")
+ENDIF()
 
-# IF (SS_FOR_DEV_PS_FOR_RELEASE AND Tpetra_ENABLE_QD)
-#   GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT ON)
-# ELSE()
-#   GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT OFF)
-# ENDIF()
-# TRIBITS_ADD_OPTION_AND_DEFINE(
-#   ${PACKAGE_NAME}_INST_DD_REAL
-#   HAVE_TPETRA_INST_DD_REAL
-#   "If explicit instantiation is enabled, instantiate over scalar field dd_real (requries TPL QD)."
-#   ${HAVE_TPETRA_INST_DD_REAL_DEFAULT}  
-#   )
-# IF(Tpetra_INST_DD_REAL) 
-#   LIST(APPEND INST_LIST_SCALAR "dd_real")
-# ENDIF()
+IF (SS_FOR_DEV_PS_FOR_RELEASE AND Tpetra_ENABLE_QD)
+  GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT ON)
+ELSE()
+  GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT OFF)
+ENDIF()
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_DD_REAL
+  HAVE_TPETRA_INST_DD_REAL
+  "If explicit instantiation is enabled, instantiate over scalar field dd_real (requries TPL QD)."
+  ${HAVE_TPETRA_INST_DD_REAL_DEFAULT}  
+  )
+IF(Tpetra_INST_DD_REAL) 
+  LIST(APPEND Tpetra_ETI_SCALARS "dd_real")
+ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_INT_LONG
@@ -177,9 +174,8 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ON
   )
 IF(Tpetra_INST_INT_LONG) 
-  LIST(APPEND INST_LIST_GORD "int long")
+  LIST(APPEND Tpetra_ETI_GORDS "long")
 ENDIF()
-
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Threaded_MKL
@@ -237,11 +233,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${KokkosClassic_ENABLE_TSQR}
   )
 
-IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
-  MESSAGE(STATUS "Explicitly instantiating the following scalars: ${INST_LIST_SCALAR}")
-  MESSAGE(STATUS "Explicitly instantiating the following global ordinals: ${INST_LIST_GORD}")
-ENDIF()
-
 #
 # C) Add the libraries, tests, and examples
 #
@@ -254,15 +245,16 @@ IF (Tpetra_ENABLE_RTI)
 ENDIF()
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
-
 TRIBITS_ADD_TEST_DIRECTORIES(example)
-
 
 #
 # Exclude files for source package.
 #
 
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
+GLOBAL_SET(Tpetra_ETI_SCALARS ${Tpetra_ETI_SCALARS})
+GLOBAL_SET(Tpetra_ETI_GORDS   ${Tpetra_ETI_GORDS})
+GLOBAL_SET(Tpetra_ETI_LORDS   ${Tpetra_ETI_LORDS})
+GLOBAL_SET(Tpetra_ETI_NODES   ${Tpetra_ETI_NODES})
 
 TRIBITS_EXCLUDE_FILES(
   doc/CodingGuidelines

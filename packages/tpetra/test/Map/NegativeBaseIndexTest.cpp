@@ -104,8 +104,8 @@ namespace {
 
     RCP<Map> map = rcp(new Map(GINV, elements(), baseIndexIsNegOne, comm));
 
-    TEST_EQUALITY( map->getNodeNumElements(),   numElements );
-    TEST_EQUALITY( map->getGlobalNumElements(), numElements*numImages );
+    TEST_EQUALITY( (global_size_t)map->getNodeNumElements(),   (global_size_t)numElements );
+    TEST_EQUALITY( (global_size_t)map->getGlobalNumElements(), (global_size_t)numElements*numImages );
     TEST_EQUALITY( map->getIndexBase(), -1 );
     TEST_EQUALITY( map->getMinGlobalIndex(),     -1 );
     TEST_EQUALITY( map->getMinAllGlobalIndex(),  -1 );

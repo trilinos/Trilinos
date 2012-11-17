@@ -43,6 +43,7 @@
 #define KOKKOS_DEFAULT_NODE_HPP_
 
 #include "Kokkos_ConfigDefs.hpp"
+#include "KokkosClassic_DefaultNode_config.h"
 #include "Kokkos_SerialNode.hpp"
 #ifdef HAVE_KOKKOSCLASSIC_TBB
 #include "Kokkos_TBBNode.hpp"
@@ -52,6 +53,9 @@
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
 #include "Kokkos_OpenMPNode.hpp"
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_THRUST
+#include "Kokkos_ThrustGPUNode.hpp"
 #endif
 
 #include <Teuchos_RCP.hpp>
@@ -63,12 +67,14 @@ namespace Kokkos {
     */
   class DefaultNode {
     public:
-#if   defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+#if   defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
       typedef TPINode DefaultNodeType;
-#elif defined(HAVE_KOKKOSCLASSIC_TBB)
+#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE)
       typedef TBBNode DefaultNodeType;
-#elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
+#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE)
       typedef OpenMPNode DefaultNodeType;
+#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE)
+      typedef ThrustGPUNode DefaultNodeType;
 #else
       //! Typedef specifying the default node type.
       typedef SerialNode DefaultNodeType;

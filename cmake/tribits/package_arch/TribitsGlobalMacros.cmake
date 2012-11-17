@@ -1490,6 +1490,7 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
   GLOBAL_NULL_SET(${PROJECT_NAME}_INCLUDE_DIRS)
   GLOBAL_NULL_SET(${PROJECT_NAME}_LIBRARY_DIRS)
   GLOBAL_NULL_SET(${PROJECT_NAME}_LIBRARIES)
+  GLOBAL_NULL_SET(${PROJECT_NAME}_ETI_PACKAGES)
 
   #
   # B) Define the source and binary directories for all of the pacakges that
@@ -1500,7 +1501,7 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
   SET(PACKAGE_IDX 0)
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
 
-   # Get all the package soruces independent if they are enabled or not.
+   # Get all the package sources independent of whether they are enabled or not.
    # There are some messed up packages that grab parts out of unrelated
    # downstream packages that might not even be enabled.  To support this,
    # allow this.
@@ -1508,7 +1509,7 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
    SET(${TRIBITS_PACKAGE}_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${PACKAGE_DIR})
    #PRINT_VAR(${TRIBITS_PACKAGE}_SOURCE_DIR)
 
-    TRIBITS_DETERMINE_IF_PROCESS_PACKAGE(${TRIBITS_PACKAGE}
+   TRIBITS_DETERMINE_IF_PROCESS_PACKAGE(${TRIBITS_PACKAGE}
       PROCESS_PACKAGE  PACKAGE_ENABLE_STR)
 
     IF (PROCESS_PACKAGE)
@@ -1520,7 +1521,7 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
           SET(${TRIBITS_PACKAGE}_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${${TRIBITS_PACKAGE}_SPECIFIED_BINARY_DIR})
         ENDIF()
       ELSE()
-	SET(${TRIBITS_PACKAGE}_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_DIR})
+        SET(${TRIBITS_PACKAGE}_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_DIR})
       ENDIF()
       #PRINT_VAR(${TRIBITS_PACKAGE}_BINARY_DIR)
 
@@ -1581,6 +1582,29 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
     MATH(EXPR PACKAGE_IDX "${PACKAGE_IDX}+1")
 
   ENDFOREACH()
+
+  #
+  # C part 2) Loop backwards over ETI packages if ETI is enabled
+  #
+
+  # do this regardless of whether project level ETI is enabled
+  IF("${${PROJECT_NAME}_ETI_PACKAGES}" STREQUAL "")
+    MESSAGE("\nNo ETI support requested by packages.\n")
+  ELSE()
+    #IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE("\nProcessing explicit instantiation support for enabled packages ...\n")
+    #ENDIF()
+    SET(REVERSE_ETI_LIST ${${PROJECT_NAME}_ETI_PACKAGES})
+    LIST(REVERSE REVERSE_ETI_LIST)
+    FOREACH(PACKAGE_NAME ${REVERSE_ETI_LIST})
+      MESSAGE("Processing ETI support: ${PACKAGE_NAME}")
+      SET(ETIFILE ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/ExplicitInstantiationSupport.cmake)
+      IF(NOT EXISTS "${ETIFILE}")
+        MESSAGE(FATAL_ERROR "Could not find ${PACKAGE_NAME} ETI support file ${ETIFILE}")
+      ENDIF()
+      INCLUDE("${ETIFILE}")
+    ENDFOREACH()
+  ENDIF()
 
   #
   # D) Check if no packages are enabled and if that is allowed

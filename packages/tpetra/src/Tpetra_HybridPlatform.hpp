@@ -52,7 +52,7 @@
 #ifdef HAVE_KOKKOSCLASSIC_TBB
 #include <Kokkos_TBBNode.hpp>
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+#if HAVE_KOKKOSCLASSIC_THREADPOOL
 #include <Kokkos_TPINode.hpp>
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
