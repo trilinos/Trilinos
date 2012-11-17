@@ -2,7 +2,7 @@
 #define STRING_UTILS_H
 
 #include <sstream>
-
+#include <vector>
 namespace stringUtils
 {
 
