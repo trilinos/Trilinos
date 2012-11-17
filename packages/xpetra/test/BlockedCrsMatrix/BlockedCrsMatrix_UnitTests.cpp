@@ -1026,7 +1026,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult2x1, SC, LO, GO, Node )
 
   typedef Kokkos::DefaultNode::DefaultNodeType DefaultNodeType;
-  
+
   UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
 
 }

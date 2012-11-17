@@ -90,7 +90,7 @@ namespace MueLu {
       @param InitialGuessIsZero if true, indicates that x is zero, and that some flops might be avoided
     */
     void Apply(MultiVector &x, MultiVector const &rhs, bool const &InitialGuessIsZero = false) const; // Apply ()
-    
+
     //@}
 
     //! @name Utilities.

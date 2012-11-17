@@ -33,16 +33,16 @@
 #include <iostream>
 #include <sstream>
 
+// NOX
+#include "NOX.H"
+#include "NOX_Epetra.H"
+
 // Epetra communicator
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
-
-// NOX
-#include "NOX.H"
-#include "NOX_Epetra.H"
 
 // Stokhos Stochastic Galerkin
 #include "Stokhos_Epetra.hpp"

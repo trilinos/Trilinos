@@ -128,7 +128,7 @@ namespace MueLuTests {
     } //for (LocalOrdinal i = 0; i < NumMyElements; ++i)
 
     mtx->fillComplete(map,map);
-    
+
     return mtx;
   }
 
@@ -150,7 +150,7 @@ namespace MueLuTests {
     GO numElements2 = 100;
 
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
-    
+
     std::vector<size_t> stridingInfo;
     stridingInfo.push_back(1);
 
@@ -172,7 +172,7 @@ namespace MueLuTests {
 
     RCP<CrsMatrixWrap> Op11 = GenerateProblemMatrix(map1,2,-1,-1);
     RCP<CrsMatrixWrap> Op22 = GenerateProblemMatrix(map2,3,-2,-1);
-    
+
     // build blocked operator
     Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node,LocalMatOps> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node,LocalMatOps>(mapExtractor,mapExtractor,10));
 

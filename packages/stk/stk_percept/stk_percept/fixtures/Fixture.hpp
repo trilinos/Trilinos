@@ -10,7 +10,7 @@
 
 #include <stk_util/diag/Writer.hpp>
 #include <stk_util/environment/WallTime.hpp>
-#include <stk_util/util/PrintTable.hpp>
+#include <stk_util/diag/PrintTable.hpp>
 
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/Util.hpp>

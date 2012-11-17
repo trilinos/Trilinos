@@ -46,6 +46,8 @@
 #ifndef MUELU_FACTORYBASE_HPP
 #define MUELU_FACTORYBASE_HPP
 
+#include <string>
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 
@@ -53,13 +55,7 @@
 
 namespace MueLu {
 
-  static int generateUniqueFactoryId() {
-    static int i = 0;
-    ++i;
-    return i;
-  }
-  
-  /*! 
+  /*!
     @class FactoryBase
     @brief Base class for factories (e.g., R, P, and A_coarse).
     @ingroup MueLuBaseClasses
@@ -71,11 +67,24 @@ namespace MueLu {
 
     //! Constructor.
     FactoryBase()
-      : id_(MueLu::generateUniqueFactoryId())
+      : id_(FactoryBase::GenerateUniqueId())
     { }
 
     //! Destructor.
     virtual ~FactoryBase() { }
+    //@}
+
+    //@{
+    //! Configuration
+
+    //    virtual void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory);
+
+    // GetFactory(...);
+
+    // SetParameterList(...);
+
+    // GetParameterList(...);
+
     //@}
 
     //@{
@@ -90,12 +99,27 @@ namespace MueLu {
     //! @name Access factory properties
 
     /// return unique factory id
-    int getID() const { return id_; };
+    int GetID() const { return id_; };
 
     //@}
 
+  protected:
+//     void DeclareInput(Level & level, const std::string & varName) const {
+//       level.DeclareInput(varName, factoryTable_[varName], this);
+//     }
+
+//     template <class T>
+//     T Get(Level & level, const std::string & varName) const {
+//       return level.Get<T>(varName, factoryTable_[varName]);
+//     }
+
   private:
+
+    static int GenerateUniqueId();
+
     const int id_;
+
+    //std::map<const std::string, const RCP<const FactoryBase> > factoryTable_;
 
   }; //class FactoryBase
 
@@ -103,5 +127,3 @@ namespace MueLu {
 
 #define MUELU_FACTORYBASE_SHORT
 #endif //ifndef MUELU_FACTORYBASE_HPP
-
-//TODO: use unique ID instead of ptr in Level

@@ -22,7 +22,7 @@
 #include <stk_percept/fixtures/Fixture.hpp>
 
 #include <stk_util/environment/WallTime.hpp>
-#include <stk_util/util/PrintTable.hpp>
+#include <stk_util/diag/PrintTable.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 

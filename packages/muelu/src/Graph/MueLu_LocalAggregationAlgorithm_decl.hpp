@@ -123,7 +123,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    LocalAggregationAlgorithm(RCP<FactoryBase> const &graphFact = Teuchos::null);
+    LocalAggregationAlgorithm();
 
     //! Destructor.
     virtual ~LocalAggregationAlgorithm() { }
@@ -136,7 +136,7 @@ namespace MueLu {
     void SetOrdering(Ordering ordering)                          { ordering_                = ordering;                }
     void SetMinNodesPerAggregate(int minNodesPerAggregate)       { minNodesPerAggregate_    = minNodesPerAggregate;    }
     void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) { maxNeighAlreadySelected_ = maxNeighAlreadySelected; }
-    
+
     Ordering GetOrdering()                const { return ordering_;                }
     int      GetMinNodesPerAggregate()    const { return minNodesPerAggregate_;    }
     int      GetMaxNeighAlreadySelected() const { return maxNeighAlreadySelected_; }
@@ -162,13 +162,13 @@ namespace MueLu {
       @param list On input, a bunch of integers. On output, the same integers in a different order
       that is determined randomly.
     */
-    void RandomReorder(Teuchos::ArrayRCP<LO> list) const; 
+    void RandomReorder(Teuchos::ArrayRCP<LO> list) const;
 
     /*! @brief Generate a random number in the range [min, max] */
     int RandomOrdinal(int min, int max) const;
 
     //@}
-  
+
   }; //class LocalAggregationFactory
 
 } //namespace MueLu

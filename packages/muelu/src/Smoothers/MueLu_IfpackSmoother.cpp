@@ -93,7 +93,7 @@ namespace MueLu {
       if (maxEigenValue == -1.0) {
         maxEigenValue = Utils::PowerMethod(*A_,true,10,1e-4);
         paramList_.set("chebyshev: max eigenvalue",maxEigenValue);
-          
+
         GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue" << " = " << maxEigenValue << std::endl;
       }
     }
@@ -160,19 +160,19 @@ namespace MueLu {
     out << "{type = " << type_ << "}";
     return out.str();
   }
-    
+
   void IfpackSmoother::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
     if (verbLevel & Parameters0) {
       out0 << "Prec. type: " << type_ << std::endl;
     }
-      
-    if (verbLevel & Parameters1) { 
+
+    if (verbLevel & Parameters1) {
       out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
       out0 << "Overlap: "        << overlap_ << std::endl;
     }
-      
+
     if (verbLevel & External) {
       if (prec_ != Teuchos::null) { Teuchos::OSTab tab2(out); out << *prec_ << std::endl; }
     }

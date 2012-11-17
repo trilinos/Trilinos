@@ -98,6 +98,7 @@ namespace Belos {
   /// \class ReorthogonalizationCallback
   /// \brief Interface of callback invoked by TsqrOrthoManager on reorthogonalization.
   /// \author Mark Hoemmen
+  /// \tparam Scalar The same type as the template parameter of TsqrOrthoManagerImpl.
   ///
   /// This callback's \c operator() is invoked by \c
   /// TsqrOrthoManagerImpl, and therefore by \c TsqrOrthoManager.  It
@@ -126,9 +127,6 @@ namespace Belos {
   /// reorthogonalization, but the callback lets you define what
   /// metrics you want to collect and how you want to display them
   /// yourself.
-  ///
-  /// \warning Please do not rely on this interface.  It may change or
-  ///   go away at any time.
   template<class Scalar>
   class ReorthogonalizationCallback : 
     public std::binary_function<Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>, 
@@ -136,7 +134,12 @@ namespace Belos {
 				void>
   {
   public:
+    //! The template parameter of this class; the type of an inner product result.
     typedef Scalar scalar_type;
+    /// \brief The type of a norm result.
+    ///
+    /// This may differ from scalar_type.  For example, if scalar_type
+    /// is complex, magnitude_type will be real.
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
     /// \brief Callback invoked by TsqrOrthoManager on reorthogonalization.
@@ -254,18 +257,16 @@ namespace Belos {
     /// This callback is invoked right after the first projection
     /// step, and only if reorthogonalization will be necessary.  It
     /// is called before actually reorthogonalizing.  The first
-    /// argument gives the norms of the columns of the input
-    /// multivector before the first projection pass, and the second
-    /// argument gives their norms after the first projection pass.
+    /// argument is a Teuchos::ArrayView of the norms of the columns
+    /// of the input multivector before the first projection pass, and
+    /// the second argument is a Teuchos::ArrayView of their norms
+    /// after the first projection pass.
     ///
     /// The callback is null by default.  If the callback is null, no
     /// callback will be invoked.
     ///
     /// For details and suggested uses, please refer to the
     /// documentation of \c ReorthogonalizationCallback.
-    ///
-    /// \warning Please do not rely on the interface to this method.
-    ///   This method may change or go away at any time.
     ///
     /// \warning We assume that the input arguments of the callback's
     ///   operator() are only valid views within the scope of the
@@ -546,10 +547,12 @@ namespace Belos {
 
     //! Timer for normalization operations
     Teuchos::RCP<Teuchos::Time> timerNormalize_;
+#endif // BELOS_TEUCHOS_TIME_MONITOR
 
     //! Callback invoked if reorthogonalization is necessary.
     Teuchos::RCP<ReorthogonalizationCallback<Scalar> > reorthogCallback_;
 
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
     /// Instantiate and return a timer with an appropriate label.
     ///
     /// \param prefix [in] Prefix for the timer label, e.g., "Belos"

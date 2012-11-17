@@ -1730,6 +1730,14 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
       // Inform the linear problem that we are finished with this block linear system.
       problem_->setCurrLS();
 
+      // If we didn't build a recycle space this solve but ran at least k iterations,
+      // force build of new recycle space
+
+      if (!builtRecycleSpace_) {
+        buildRecycleSpace2(gcrodr_iter);
+        printer_->stream(Debug) << " Generated new recycled subspace using RHS index " << currIdx[0] << " of dimension " << keff << std::endl << std::endl;
+      }
+
       // Update indices for the linear systems to be solved.
       numRHS2Solve -= 1;
       if ( numRHS2Solve > 0 ) {
@@ -1740,14 +1748,6 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
       }
       else {
         currIdx.resize( numRHS2Solve );
-      }
-
-      // If we didn't build a recycle space this solve but ran at least k iterations,
-      // force build of new recycle space
-
-      if (!builtRecycleSpace_) {
-        buildRecycleSpace2(gcrodr_iter);
-        printer_->stream(Debug) << " Generated new recycled subspace using RHS index " << currIdx[0] << " of dimension " << keff << std::endl << std::endl;
       }
 
     }// while ( numRHS2Solve > 0 )

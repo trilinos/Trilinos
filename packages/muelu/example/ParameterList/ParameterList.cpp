@@ -50,7 +50,7 @@
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 
 #include <MueLu_UseDefaultTypes.hpp>
-#include <MueLu_UseShortNames.hpp>  
+#include <MueLu_UseShortNames.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   // Parameters
   //
 
-  Teuchos::CommandLineProcessor clp(false); // Note: 
+  Teuchos::CommandLineProcessor clp(false); // Note:
 
   Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 256); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);      // manage parameters of xpetra
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
 
   RCP<Vector> X = VectorFactory::Build(map);
   RCP<Vector> B = VectorFactory::Build(map);
-  
+
   X->putScalar((Scalar) 0.0);
   B->setSeed(846930886); B->randomize();
 

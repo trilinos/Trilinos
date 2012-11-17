@@ -107,11 +107,11 @@ namespace MueLu {
         // When a fine nullspace have already been defined by user using Set("Nullspace", ...), we use it.
         nullspace = currentLevel.Get< RCP<MultiVector> >(nspName_);
         GetOStream(Runtime1, 0) << "Use user-given nullspace " << nspName_ << ": nullspace dimension=" << nullspace->getNumVectors() << " nullspace length=" << nullspace->getGlobalLength() << std::endl;
-      
+
       } else {
         // "Nullspace" (nspName_) is not available
         RCP<Matrix> A = currentLevel.Get< RCP<Matrix> >("A", AFact_.get()); // no request since given by user
-        
+
         // determine numPDEs
         LocalOrdinal numPDEs = 1;
         if(A->IsView("stridedMaps")==true) {
@@ -120,10 +120,10 @@ namespace MueLu {
           numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
           oldView = A->SwitchToView(oldView);
         }
-        
+
         GetOStream(Runtime1, 0) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
         nullspace = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
-        
+
         for (int i=0; i<numPDEs; ++i) {
           ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
           int numBlocks = nsValues.size() / numPDEs;
@@ -137,12 +137,12 @@ namespace MueLu {
         // tentative P factory to be "Nullspace"
 
         nullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
-       
+
       }
 
     // provide "Nullspace" variable on current level (used by TentativePFactory)
     currentLevel.Set("Nullspace", nullspace, this);
-    
+
   } // Build
 
 } //namespace MueLu

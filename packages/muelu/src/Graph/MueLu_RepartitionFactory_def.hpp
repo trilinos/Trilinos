@@ -75,10 +75,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RepartitionFactory(
-                RCP<const FactoryBase> loadBalancer, RCP<const FactoryBase> AFact,
                 LO minRowsPerProcessor, double nnzMaxMinRatio, GO startLevel, LO useDiffusiveHeuristic, GO minNnzPerProcessor) :
-    loadBalancer_(loadBalancer),
-    AFact_(AFact),
     minRowsPerProcessor_(minRowsPerProcessor),
     nnzMaxMinRatio_(nnzMaxMinRatio),
     startLevel_(startLevel),
@@ -95,7 +92,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("Partition",loadBalancer_.get(),this);
+    Input(currentLevel, "Partition");
   }
 
   //----------------------------------------------------------------------
@@ -108,25 +105,25 @@ namespace MueLu {
     using Teuchos::ArrayRCP;
 
     //TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
-    RCP<Matrix> A = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
+    RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
     RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
-      
-    { // scoping 
+
+    { // scoping
 
       // ======================================================================================================
       // Determine whether partitioning is needed.
       // ======================================================================================================
       // TODO: Result of the test can be stored in the level to avoid doing this several time.
-      
+
       // Repartitionning iff !(Test1 || Test2) && (Test3 || Test4)
       // This is implemented with a short-circuit evaluation
 
-      // Test1: skip partitioning if level is too big   
+      // Test1: skip partitioning if level is too big
       std::ostringstream msg1; msg1 << std::endl << "    current level = " << currentLevel.GetLevelID() << ", first level where repartitioning can happen is " << startLevel_ << ".";
       if (currentLevel.GetLevelID() < startLevel_) {
         throw(MueLu::Exceptions::HaltRepartitioning("No repartitioning necessary:" + msg1.str()));
       }
-      
+
       // Test 2: check whether A is spread over more than one process.
       // Note: using type 'int' as it is enough (comm->getSize() is an int). Test can also be done with 'bool' but numActiveProcesses is printed later
       // TODO: this global communication can be avoided if we store the information with the matrix (it is known when matrix is created)
@@ -136,10 +133,10 @@ namespace MueLu {
       if (numActiveProcesses == 1) {
         throw(MueLu::Exceptions::HaltRepartitioning("No repartitioning necessary:" + msg2.str()));
       }
-      
+
       bool doRepartition = false;
       std::ostringstream msg3, msg4, *msgDoRepartition=NULL; // msgDoRepartition == msg3 or msg4 depending on Test3 and Test4 evalution
-      
+
       // Test3: check whether any node has too few rows
       // Note: (!Test2) ensures that repartitionning is not done when only 1 proc and globalNumRow < minRowsPerProcessor_
       if (minRowsPerProcessor_ > 0) { // skip test if criteria not used
@@ -154,7 +151,7 @@ namespace MueLu {
           msgDoRepartition = &msg3;
         }
       }
-      
+
       // Test4: check whether the number of nonzeros per process is imbalanced
       if (doRepartition == false) { // skip test if we already now that we will do repartitioning
         size_t numMyNnz  = A->getNodeNumEntries();
@@ -168,14 +165,14 @@ namespace MueLu {
           msgDoRepartition = &msg4;
         }
       }
-      
+
       if (!doRepartition) {
         throw(MueLu::Exceptions::HaltRepartitioning("No repartitioning necessary:" + msg1.str() + msg2.str() + msg3.str() + msg4.str()));
       }
-      
+
       // print only conditions that triggered the repartitioning
       GetOStream(Statistics0,0) << "Repartitioning necessary:" << msg1.str() << msg2.str() << msgDoRepartition->str() << std::endl;
-      
+
     } // scoping
 
     // FIXME Quick way to figure out how many partitions there should be. (Same as what's done in ML.)
@@ -188,7 +185,7 @@ namespace MueLu {
       else                                                  numPartitions = A->getGlobalNumRows() / minRowsPerProcessor_;
       if (numPartitions > comm->getSize())
         numPartitions = comm->getSize();
-      currentLevel.Set<GO>("number of partitions",numPartitions);
+      currentLevel.Set("number of partitions", numPartitions);
     }
     GetOStream(Statistics0,0) << "Number of partitions to use = " << numPartitions << std::endl;
 
@@ -197,7 +194,7 @@ namespace MueLu {
     // ======================================================================================================
     // Length of vector "decomposition" is local number of DOFs.  Its entries are partition numbers each DOF belongs to.
 
-    RCP<GOVector> decomposition = currentLevel.Get<RCP<GOVector> >("Partition", loadBalancer_.get());
+    RCP<GOVector> decomposition = Get<RCP<GOVector> >(currentLevel, "Partition");
 
     // Use a hashtable to record how many local rows belong to each partition.
     RCP<Teuchos::Hashtable<GO,GO> > hashTable;
@@ -228,14 +225,14 @@ namespace MueLu {
     hashTable->arrayify(allPartitionsIContributeTo,allLocalPartSize);
 
     GO indexBase = decomposition->getMap()->getIndexBase();
-   
+
     // Source map is overlapping.  GIDs owned by this pid are the partition numbers found above.
     RCP<Map> sourceMap = MapFactory::Build(decomposition->getMap()->lib(),
                                            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
                                            allPartitionsIContributeTo(),
                                            decomposition->getMap()->getIndexBase(),
                                            comm);
-   
+
     // Store # of local DOFs in each partition in a vector based on above map.
     RCP<GOVector> localPartSizeVec = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(sourceMap,false);
     ArrayRCP<GO> data;
@@ -244,7 +241,7 @@ namespace MueLu {
     for (int i=0; i<hashTable->size(); ++i)
       data[i] = allLocalPartSize[i];
     data = Teuchos::null;
-   
+
     // Target map is nonoverlapping.  Pid k has GID N if and only if k owns partition N.
     GO myPartitionNumber;
     Array<int> partitionOwners;
@@ -265,7 +262,7 @@ namespace MueLu {
     sleep(1); comm->barrier();
     // FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME FIXME
 */
-   
+
     GO numDofsThatStayWithMe=0;
     Teuchos::Array<GO> partitionsIContributeTo;
     Teuchos::Array<GO> localPartSize;
@@ -275,21 +272,21 @@ namespace MueLu {
         partitionsIContributeTo.push_back(allPartitionsIContributeTo[i]);
         localPartSize.push_back(allLocalPartSize[i]);
       }
-      else 
+      else
         numDofsThatStayWithMe = allLocalPartSize[i];
     }
-   
+
     // Note: "numPartitionsISendTo" does not include this PID
     GO numPartitionsISendTo = hashTable->size();
     // I'm a partition owner, so don't count my own.
     if (myPartitionNumber >= 0 && numPartitionsISendTo>0 && numDofsThatStayWithMe>0) numPartitionsISendTo--;
     assert(numPartitionsISendTo == partitionsIContributeTo.size());
-   
+
     Array<int> partitionOwnersISendTo;
     for (int i=0; i<partitionsIContributeTo.size(); ++i) {
       partitionOwnersISendTo.push_back(partitionOwners[partitionsIContributeTo[i]]);
     }
-   
+
     Array<GO> localMapElement;
     if (myPartitionNumber >= 0)
       localMapElement.push_back(myPartitionNumber);
@@ -298,7 +295,7 @@ namespace MueLu {
                                            localMapElement(),
                                            decomposition->getMap()->getIndexBase(),
                                            comm);
-   
+
     RCP<const Export> exporter = ExportFactory::Build( sourceMap,targetMap);
 
     // If this pid owns a partition, globalPartSizeVec has one local entry that is the global size of said partition.
@@ -324,7 +321,7 @@ namespace MueLu {
       // don't count myself as someone I send to... (sourceMap is based on allPartitionsIContributeTo)
       if (sourceMap->getGlobalElement(i) != myPartitionNumber)
         data[i] = 1;
-      else 
+      else
         data[i] = 0;
     }
     data = Teuchos::null;
@@ -508,7 +505,7 @@ namespace MueLu {
                     comm);
 
     RCP<const Import> importerForRepartitioning = ImportFactory::Build( A->getRowMap(),newRowMap);
-    currentLevel.Set<RCP<const Import> >("Importer",importerForRepartitioning, this);
+    Set(currentLevel, "Importer", importerForRepartitioning);
 
   } //Build
 
@@ -520,8 +517,8 @@ namespace MueLu {
   {
     FactoryMonitor m(*this, "DeterminePartitionPlacement", currentLevel);
 
-    GO numPartitions = currentLevel.Get<GO>("number of partitions");
-    RCP<Matrix> A = currentLevel.Get< RCP<Matrix> >("A",AFact_.get());
+    GO numPartitions = Get<GO>(currentLevel, "number of partitions");
+    RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
     RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
     int mypid = comm->getRank();
 
@@ -555,7 +552,7 @@ namespace MueLu {
     RCP<SubFactoryMonitor> m1 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: Setup", currentLevel));
 
 //RCP<SubFactoryMonitor> m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: getting 'Partition'", currentLevel));
-    RCP<GOVector> decomposition = currentLevel.Get<RCP<GOVector> >("Partition", loadBalancer_.get());
+    RCP<GOVector> decomposition = Get<RCP<GOVector> >(currentLevel, "Partition");
     // Figure out how many nnz there are per row.
 //m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: figuring out nnz per row", currentLevel));
     RCP<GOVector> nnzPerRowVector = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(A->getRowMap(),false);
@@ -617,7 +614,7 @@ namespace MueLu {
     RCP<Xpetra::Vector<SC,LO,GO,NO> > scalarProcWinnerVec = Xpetra::VectorFactory<SC,LO,GO,NO>::Build(targetMap);
 
 //m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build unique map", currentLevel));
-    Array<GO> myPidArray; 
+    Array<GO> myPidArray;
     myPidArray.push_back(mypid);
 
     // intermediate map required by ArbitrateAndCommunicate
@@ -642,7 +639,7 @@ namespace MueLu {
 
        The contributions of process i to all other partitions are set to 0 (effectively meaning
        i can't be assigned another partition by A&C), and A&C is called again.
-      
+
        continues until all partitions have been uniquely assigned.
     */
 
@@ -758,7 +755,7 @@ namespace MueLu {
     if (leftOvers > 0) {
       for (int i=0; i<leftOvers; ++i)
         GetOStream(Statistics0,0) << grid[ctr++];
- 
+
       Array<char> aos(sizeOfARow-leftOvers,' ');
       std::string spaces(aos.begin(),aos.end());
       GetOStream(Statistics0,0) << spaces << "      " << pidCtr << ":" << pidCtr+leftOvers-1 << std::endl;;

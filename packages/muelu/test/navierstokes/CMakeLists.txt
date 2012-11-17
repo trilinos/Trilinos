@@ -14,9 +14,9 @@ ASSERT_DEFINED(
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND
     ${PACKAGE_NAME}_ENABLE_EpetraExt AND
-    ${PACKAGE_NAME}_ENABLE_Amesos) 
+    ${PACKAGE_NAME}_ENABLE_Amesos)
 
-  IF(Trilinos_ENABLE_AztecOO) 
+  IF(Trilinos_ENABLE_AztecOO)
     # build only if AztecOO available, too
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Navier2D_Test
@@ -24,7 +24,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
       COMM serial mpi
       DEPLIBS muelu xpetra
       )
-    
+
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Navier2DBlocked_Test
       SOURCES Navier2D_blocked_epetra.cpp
@@ -49,5 +49,5 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
       SOURCE_FILES A5932_re1000.txt b5932_re1000.txt
       )
   ENDIF()
-  
+
 ENDIF()

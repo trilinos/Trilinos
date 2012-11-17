@@ -63,7 +63,7 @@
 // If the dynamic cast failed, throw an exception of type Xpetra::Exception::Bad_Cast (using the message exceptionMsg).
 #define XPETRA_RCP_DYNAMIC_CAST(type, obj, newObj, exceptionMsg)        \
   const RCP<type > & newObj = Teuchos::rcp_dynamic_cast<type >(obj);    \
-  TEUCHOS_TEST_FOR_EXCEPTION(newObj == Teuchos::null, Xpetra::Exceptions::BadCast, "Cannot cast '" #obj "' to a " #type ". " #exceptionMsg); 
+  TEUCHOS_TEST_FOR_EXCEPTION(newObj == Teuchos::null, Xpetra::Exceptions::BadCast, "Cannot cast '" #obj "' to a " #type ". " #exceptionMsg);
 
 #ifdef HAVE_XPETRA_EPETRA
 #define XPETRA_FACTORY_ERROR_IF_EPETRA(lib)                            \
@@ -77,7 +77,7 @@
 
 namespace Xpetra {
   namespace Exceptions {
-    
+
     //! Exception indicating invalid cast attempted
     /** For instance, this exception is throw when you try to mix Epetra and Tpetra objects: for example, a Xpetra::EpetraCrsMatrix cannot be built from a Xpetra::TpetraMap. **/
     class BadCast : public Teuchos::ExceptionBase
@@ -93,7 +93,7 @@ namespace Xpetra {
     public:
       NotImplemented(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
     };
-      
+
     //! Exception throws to report errors in the internal logical of the program.
     class RuntimeError : public Teuchos::ExceptionBase
     {

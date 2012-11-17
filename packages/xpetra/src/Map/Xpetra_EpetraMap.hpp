@@ -160,7 +160,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name 
+    //! @name
     //@{
 
     //! Get this Map's Comm object.
@@ -171,7 +171,7 @@ namespace Xpetra {
 
     //@}
 
-    //! @name 
+    //! @name
     //@{
 
     //! Return a simple one-line description of this object.
@@ -196,9 +196,9 @@ namespace Xpetra {
 
     //! Destructor.
     virtual ~EpetraMap() { } // virtual because EpetraMap used as a base class of EpetraStridedMap
-    
+
     //! EpetraMap constructor to wrap a Epetra_Map object
-    EpetraMap(const Teuchos::RCP<const Epetra_BlockMap> &map) 
+    EpetraMap(const Teuchos::RCP<const Epetra_BlockMap> &map)
       : map_(map) { }
 
     //! Get the library used by this object (Epetra or Epetra?)
@@ -210,7 +210,7 @@ namespace Xpetra {
     const Epetra_Map& getEpetra_Map() const { return (Epetra_Map &)*map_; } // Ugly, but the same is done in Epetra_CrsMatrix.h to get the map.
 
     //@}
-   
+
   protected:
 
     RCP<const Epetra_BlockMap> map_;

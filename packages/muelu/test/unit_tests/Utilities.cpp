@@ -60,7 +60,7 @@
 // This file is intended to house all the tests for MueLu_Utilities.hpp.
 
 namespace MueLuTests {
-  
+
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRAEXT)
   TEUCHOS_UNIT_TEST(Utilities,MatMatMult_EpetraVsTpetra)
   {

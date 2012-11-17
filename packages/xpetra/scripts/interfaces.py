@@ -15,10 +15,10 @@ def buildFuncLineInterface( functionNode ):
 
     # <type> = return type of the function
     type = functionNode.xpath('type')[0].xpath("string()")
-    
+
     # <argsstring>
     argsstring = functionNode.xpath('argsstring')[0].text
-    
+
     # briefdescription
     briefdescription = functionNode.xpath("briefdescription")[0].xpath("string()")
 
@@ -48,7 +48,7 @@ def buildFuncLineInterface( functionNode ):
 
     #
     if name in conf_RemoveRefFunctionList: declStr = declStr.replace('&', '')
-        
+
     descStr = "    //! " + briefdescription.lstrip().rstrip() + "\n"
     declStr = "    virtual " + declStr + "= 0;"
     declStr = declStr.replace('=0= 0', '= 0')    #there may be repeated =0's, so fix that here
@@ -68,20 +68,20 @@ for file in os.listdir(conf_dir):
 #### READ CONFIG ####
         parser = SafeConfigParser()
         parser.read(conf_dir + file)
-        
+
         conf_XMLheaders = xml_dir + parser.get('io', 'XMLheaders')
         conf_XMLclass   = xml_dir + parser.get('io', 'XMLclass')
         conf_template   = tmpl_dir + parser.get('io', 'template')
         conf_output     = parser.get('io', 'output')
-        
+
         conf_SkipFunctionList = set(parser.get('function', 'skip').split(';'))
         conf_RemoveRefFunctionList = set(parser.get('function', 'removeref').split(';'))
         conf_SkipHeaderList = set(parser.get('header', 'skip').split(';'))
 #
-        
+
         template = open(conf_template, 'r').read()
         out = Template(template)
-        
+
         className = buildClassDefinition(conf_XMLclass)
         out = out.substitute(
             TMPL_HEADERS=buildHeader(className, 'interfaces.py'),

@@ -67,7 +67,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~SaPFactory() {}
-  
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetDampingFactor(Scalar dampingFactor) {
     dampingFactor_ = dampingFactor;
@@ -169,8 +169,8 @@ namespace MueLu {
 
       {
         SubFactoryMonitor m2(*this, "M+M: P = (Ptentative) + (D^{-1} x A x Ptentative)", coarseLevel);
-        
-        bool doTranspose=false; 
+
+        bool doTranspose=false;
         if (AP->isFillComplete())
           Utils2::TwoMatrixAdd(Ptent,doTranspose,Teuchos::ScalarTraits<Scalar>::one(),AP,doTranspose,-dampingFactor_/lambdaMax,finalP);
         else {
@@ -183,7 +183,7 @@ namespace MueLu {
         SubFactoryMonitor m2(*this, "FillComplete() of P", coarseLevel);
         finalP->fillComplete( Ptent->getDomainMap(), Ptent->getRangeMap() );
       }
-      
+
     } else {
       finalP = Ptent;
     }
@@ -193,7 +193,7 @@ namespace MueLu {
       {
         // prolongation factory is in prolongation mode
         coarseLevel.Set("P", finalP, this);
-	
+
         ///////////////////////// EXPERIMENTAL
         if(Ptent->IsView("stridedMaps")) finalP->CreateView("stridedMaps", Ptent);
         ///////////////////////// EXPERIMENTAL
@@ -203,7 +203,7 @@ namespace MueLu {
         // prolongation factory is in restriction mode
         RCP<Matrix> R = Utils2::Transpose(finalP,true); // use Utils2 -> specialization for double
         coarseLevel.Set("R", R, this);
-	
+
         ///////////////////////// EXPERIMENTAL
         if(Ptent->IsView("stridedMaps")) R->CreateView("stridedMaps", Ptent, true);
         ///////////////////////// EXPERIMENTAL

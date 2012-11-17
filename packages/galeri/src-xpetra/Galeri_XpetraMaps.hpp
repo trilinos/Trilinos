@@ -47,10 +47,13 @@
   Direct translation of parts of Galeri matrix generator.
 
   Differences with Galeri1: 
-   - This function only supports mapType=Cartesian2D
+   - This function only supports mapType=Cartesian2D and Cartesian3D
    - Parameters that are not set by user but computed inside of this function are saved on the parameter list. This allows users to retrieve these parameters after the creation of the map.
      (In Galeri1, such parameters was set to -1 instead)
 */
+
+//TODO: Check is some GlobalOrdinal are avoidable.
+
 #ifndef GALERI_XPETRAMAPS_HPP
 #define GALERI_XPETRAMAPS_HPP
 
@@ -72,7 +75,6 @@
 #endif
 
 namespace Galeri {
-
   namespace Xpetra {
 
     using Teuchos::RCP;
@@ -108,7 +110,7 @@ namespace Galeri {
 //#include "Maps/Galeri_XpetraLinear.hpp"
 //#include "Maps/Galeri_XpetraNodeCartesian2D.hpp"
 #include "Maps/Galeri_XpetraCartesian2D.hpp"
-//#include "Maps/Galeri_XpetraCartesian3D.hpp"
+#include "Maps/Galeri_XpetraCartesian3D.hpp"
 //#include "Maps/Galeri_XpetraRandom.hpp"
 //#include "Maps/Galeri_XpetraInterlaced.hpp"
 
@@ -127,8 +129,9 @@ namespace Galeri {
 
   namespace Xpetra {
 
-#ifdef HAVE_GALERI_XPETRA
+    using Teuchos::RCP;
 
+#ifdef HAVE_GALERI_XPETRA
     //! Map creation function (for Xpetra::Map with UnderlyingLib parameter) 
     template <class LocalOrdinal, class GlobalOrdinal, class Node>
     RCP< ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > CreateMap(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
@@ -198,9 +201,7 @@ namespace Galeri {
         
         if (nx == -1 || ny == -1) 
           {
-            // global parameters
             GlobalOrdinal n = -1; if (list.isParameter("n")) list.get<GlobalOrdinal>("n");
-
             if (n <= 0)
               throw(Exception(__FILE__, __LINE__,
                               "If nx or ny are not set, then n must be set"));
@@ -220,7 +221,7 @@ namespace Galeri {
         list.set("n", nx * ny); // Add computed values of 'n' to the list 
 
         // Get the number of domains
-        GlobalOrdinal mx = -1; if (list.isParameter("mx")) mx = list.get<GlobalOrdinal>("mx");  //TODO: GlobalOrdinal or LocalOrdinal?
+        GlobalOrdinal mx = -1; if (list.isParameter("mx")) mx = list.get<GlobalOrdinal>("mx");
         GlobalOrdinal my = -1; if (list.isParameter("my")) my = list.get<GlobalOrdinal>("my");
 
         if (mx == -1 || my == -1) 
@@ -297,16 +298,17 @@ namespace Galeri {
           } 
   
         return(Maps::NodeCartesian2D(comm, *Nodecomm, MyNodeID, nx, ny, ndx, ndy, px,py));
-      }  
+        } */ 
     else if (mapType == "Cartesian3D")
       {
         // Get matrix dimension
-        int nx = list.get("nx", -1);
-        int ny = list.get("ny", -1);
-        int nz = list.get("nz", -1);
+        GlobalOrdinal nx = -1; if (list.isParameter("nx")) nx = list.get<GlobalOrdinal>("nx");
+        GlobalOrdinal ny = -1; if (list.isParameter("ny")) ny = list.get<GlobalOrdinal>("ny");
+        GlobalOrdinal nz = -1; if (list.isParameter("nz")) nz = list.get<GlobalOrdinal>("nz");
 
         if (nx == -1 || ny == -1 || nz == -1) 
           {
+            GlobalOrdinal n = -1; if (list.isParameter("n")) list.get<GlobalOrdinal>("n");
             if (n <= 0)
               throw(Exception(__FILE__, __LINE__,
                               "If nx or ny or nz are not set, then n must be set"));
@@ -319,12 +321,19 @@ namespace Galeri {
                               "The number of global elements n (" +
                               toString(n) + ") must be",
                               "a perfect cube, otherwise set nx, ny and nz"));
+
+            // Add computed values of 'nx', 'ny' and 'nz' to the list. Users can retrieve the values after the creation of the map.
+            list.set("nx", nx);
+            list.set("ny", ny);
+            list.set("nz", nz);
           }
 
+        list.set("n", nx * ny * nz); // Add computed values of 'n' to the list 
+
         // Get the number of domains
-        int mx = list.get("mx", -1);
-        int my = list.get("my", -1);
-        int mz = list.get("mz", -1);
+        GlobalOrdinal mx = -1; if (list.isParameter("mx")) mx = list.get<GlobalOrdinal>("mx");
+        GlobalOrdinal my = -1; if (list.isParameter("my")) my = list.get<GlobalOrdinal>("my");
+        GlobalOrdinal mz = -1; if (list.isParameter("mz")) mz = list.get<GlobalOrdinal>("mz");
 
         if (mx == -1 || my == -1 || mz == -1) 
           {
@@ -336,20 +345,20 @@ namespace Galeri {
               // simple attempt to find a set of processor assignments
               mx = 1; my = 1; mz = 1;
               int ProcTemp = comm->getSize();
-              int factors[50];
-              for (int jj = 0; jj < 50; jj++) factors[jj] = 0;
-              for (int jj = 2; jj < 50; jj++) {
-                int flag = 1;
-                while (flag == 1) {
-                  int temp = ProcTemp/jj;
+              GlobalOrdinal factors[50];
+              for (GlobalOrdinal jj = 0; jj < 50; jj++) factors[jj] = 0;
+              for (GlobalOrdinal jj = 2; jj < 50; jj++) {
+                bool flag = true;
+                while (flag) {
+                  GlobalOrdinal temp = ProcTemp/jj;
                   if (temp*jj == ProcTemp) {
                     factors[jj]++; ProcTemp = temp;
                   }
-                  else flag = 0;
+                  else flag = false;
                 }
               }
               mx = ProcTemp;
-              for (int jj = 50-1; jj > 0; jj--) {
+              for (GlobalOrdinal jj = 50-1; jj > 0; jj--) {
                 while (factors[jj] != 0) {
                   if (  (mx <= my) && (mx <= mz) ) mx = mx*jj;
                   else if (  (my <= mx) && (my <= mz) ) my = my*jj;
@@ -359,7 +368,11 @@ namespace Galeri {
               }
         
             }
-          } 
+            // Add computed values of 'mx' and 'my' to the list. Users can retrieve the values after the creation of the map.
+            list.set("mx", mx);
+            list.set("my", my);
+            list.set("mz", mz);
+          }
         else 
           {
             if (mx * my * mz != comm->getSize()) 
@@ -369,9 +382,8 @@ namespace Galeri {
                               + ", mz = " + toString(mz)));
           }
 
-        return(Maps::Cartesian3D(comm, nx, ny, nz, mx, my, mz));
+        return(Maps::Cartesian3D<LocalOrdinal, GlobalOrdinal, Map>(comm, nx, ny, nz, mx, my, mz));
       }
-    */
     else 
       {
         throw(Exception(__FILE__, __LINE__,
@@ -380,7 +392,7 @@ namespace Galeri {
                         "Check the documentation for a list of valid choices"));
       }
   } // CreateMap()
-
+    
   } // namespace Xpetra
 } // namespace Galeri
 

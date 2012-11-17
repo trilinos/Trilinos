@@ -70,16 +70,16 @@ namespace Xpetra {
   StridedEpetraMap::StridedEpetraMap(global_size_t numGlobalElements, int indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                         LocalOrdinal stridedBlockId, GlobalOrdinal offset, LocalGlobal lg, const Teuchos::RCP<Node> &node)
   : EpetraMap(numGlobalElements, indexBase, comm, lg, node), StridedMap<int, int>(numGlobalElements, indexBase, stridingInfo, comm, stridedBlockId, offset)
-  {    
+  {
     // check input data and reorganize map
     global_size_t numGlobalNodes = Teuchos::OrdinalTraits<global_size_t>::invalid();
     if(numGlobalElements != Teuchos::OrdinalTraits<global_size_t>::invalid())
       numGlobalNodes = numGlobalElements / getFixedBlockSize();	// number of nodes (over all processors)
-    
+
     // build an equally distributed node map
     RCP<Epetra_Map> nodeMap = Teuchos::null;
     IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((nodeMap = (rcp(new Epetra_Map(static_cast<int>(numGlobalNodes), indexBase, *toEpetra(comm))))));
-    
+
      // translate local node ids to local dofs
     int nStridedOffset = 0;
     int nDofsPerNode = Teuchos::as<int>(getFixedBlockSize()); // dofs per node for local striding block
@@ -89,7 +89,7 @@ namespace Xpetra {
         nStridedOffset += stridingInfo[j];
       }
       nDofsPerNode = stridingInfo[stridedBlockId];
-      
+
       numGlobalElements = nodeMap->NumGlobalElements()*nDofsPerNode;
     }
     std::vector<int> dofgids;
@@ -107,19 +107,19 @@ namespace Xpetra {
     } else {
       IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, dofgids.size(), &dofgids[0], 1, indexBase, *toEpetra(comm))))));
     }
-    
+
     TEUCHOS_TEST_FOR_EXCEPTION(map_->NumMyPoints() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
     if(stridedBlockId == -1) {
       TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->NumMyElements()*nDofsPerNode), Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
       TEUCHOS_TEST_FOR_EXCEPTION(getGlobalNumElements() != Teuchos::as<size_t>(nodeMap->NumGlobalElements()*nDofsPerNode), Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
     } else {
-      TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() < Teuchos::as<size_t>(stridedBlockId), Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: stridedBlockId > stridingInfo.size()");      
+      TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() < Teuchos::as<size_t>(stridedBlockId), Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: stridedBlockId > stridingInfo.size()");
       int nDofsInStridedBlock = stridingInfo[stridedBlockId];
       TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->NumMyElements()*nDofsInStridedBlock), Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
       TEUCHOS_TEST_FOR_EXCEPTION(getGlobalNumElements() != Teuchos::as<size_t>(nodeMap->NumGlobalElements()*nDofsInStridedBlock), Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
-    }  
-    
-    TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: CheckConsistency() == false");      
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: CheckConsistency() == false");
   }
 
   StridedEpetraMap::StridedEpetraMap(global_size_t numGlobalElements, size_t numLocalElements, int indexBase,
@@ -136,11 +136,11 @@ namespace Xpetra {
     //  blockSize = stridingInfo[stridedBlockId];
     //}
     size_t        numLocalNodes  = numLocalElements / blockSize;      // number of nodes (on each processor)
-    
+
     // build an equally distributed node map
     RCP<Epetra_Map> nodeMap = Teuchos::null;
     IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((nodeMap = (rcp(new Epetra_Map(static_cast<int>(numGlobalNodes), numLocalNodes, indexBase, *toEpetra(comm))))));
-    
+
     // translate local node ids to local dofs
     int nStridedOffset = 0;
     int nDofsPerNode = Teuchos::as<int>(getFixedBlockSize()); // dofs per node for local striding block
@@ -150,7 +150,7 @@ namespace Xpetra {
         nStridedOffset += stridingInfo[j];
       }
       nDofsPerNode = stridingInfo[stridedBlockId];
-      
+
       numGlobalElements = nodeMap->NumGlobalElements()*nDofsPerNode;
     }
     std::vector<int> dofgids;
@@ -162,27 +162,27 @@ namespace Xpetra {
         dofgids.push_back(offset_ + gid*getFixedBlockSize() + nStridedOffset + dof);
       }
     }
-    
+
     if (numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid()) {
       IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(-1, dofgids.size(), &dofgids[0], 1, indexBase, *toEpetra(comm))))));
     } else {
       IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, dofgids.size(), &dofgids[0], 1, indexBase, *toEpetra(comm))))));
     }
-    
+
     TEUCHOS_TEST_FOR_EXCEPTION(map_->NumMyPoints() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
     if(stridedBlockId == -1) {
       TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->NumMyElements()*nDofsPerNode), Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
       TEUCHOS_TEST_FOR_EXCEPTION(getGlobalNumElements() != Teuchos::as<size_t>(nodeMap->NumGlobalElements()*nDofsPerNode), Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
     } else {
-      TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() < Teuchos::as<size_t>(stridedBlockId), Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: stridedBlockId > stridingInfo.size()");      
+      TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() < Teuchos::as<size_t>(stridedBlockId), Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: stridedBlockId > stridingInfo.size()");
       int nDofsInStridedBlock = stridingInfo[stridedBlockId];
       TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->NumMyElements()*nDofsInStridedBlock), Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
       TEUCHOS_TEST_FOR_EXCEPTION(getGlobalNumElements() != Teuchos::as<size_t>(nodeMap->NumGlobalElements()*nDofsInStridedBlock), Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
-    }    
-    
-    TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: CheckConsistency() == false");      
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: CheckConsistency() == false");
   }
-    
+
 
   StridedEpetraMap::StridedEpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase,
                        std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, LocalOrdinal stridedBlockId, const Teuchos::RCP<Node> &node)
@@ -215,7 +215,7 @@ namespace Xpetra {
   }
 
   void StridedEpetraMap::describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
-      
+
     const Teuchos::RCP<const Teuchos::Comm<int> > comm_ = EpetraMap::getComm();
 
     // This implementation come from Tpetra_Map_def.hpp (without modification)
@@ -227,23 +227,23 @@ namespace Xpetra {
     using Teuchos::VERB_MEDIUM;
     using Teuchos::VERB_HIGH;
     using Teuchos::VERB_EXTREME;
-     
+
     const size_t nME = EpetraMap::getNodeNumElements();
     Teuchos::ArrayView<const int> myEntries = EpetraMap::getNodeElementList();
     int myImageID = comm_->getRank();
     int numImages = comm_->getSize();
-     
+
     Teuchos::EVerbosityLevel vl = verbLevel;
     if (vl == VERB_DEFAULT) vl = VERB_LOW;
-     
+
     size_t width = 1;
     for (size_t dec=10; dec<EpetraMap::getGlobalNumElements(); dec *= 10) {
       ++width;
     }
     width = std::max<size_t>(width,12) + 2;
-     
+
     Teuchos::OSTab tab(out);
-     
+
     if (vl == VERB_NONE) {
       // do nothing
     }

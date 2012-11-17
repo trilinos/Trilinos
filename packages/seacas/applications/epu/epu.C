@@ -50,6 +50,7 @@
 #include <stdlib.h>
 #include <float.h>
 #include <math.h>
+#include <limits.h>
 
 #include <string.h>
 #include <time.h>
@@ -386,6 +387,37 @@ int main(int argc, char* argv[])
     if (interface.subcycle() < 0 || (interface.subcycle() > 0 && interface.cycle() >= 0)) {
       break;
     }
+  }
+
+  if (interface.subcycle() > 0 && interface.cycle() < 0 && interface.subcycle_join()) {
+    // Now, join the subcycled parts into a single file...
+    start_part = 0;
+    part_count = interface.subcycle();
+    interface.subcycle(0);
+    interface.processor_count(part_count);
+    interface.step_min(1);
+    interface.step_max(INT_MAX);
+    interface.step_interval(1);
+    
+    if (!ExodusFile::initialize(interface, start_part, part_count)) {
+      std::cerr << "ERROR: Problem initializing input and/or output files.\n";
+      exit(EXIT_FAILURE);
+    }
+
+    if (ExodusFile::io_word_size() == 4) { // Reals are floats
+      if (interface.int64()) {
+	error = epu(interface, start_part, part_count, 0, (float)0.0, (int64_t)0);
+      } else {
+	error = epu(interface, start_part, part_count, 0, (float)0.0, (int)0);
+      }
+    } else { // Reals are doubles
+      if (interface.int64()) { 
+	error = epu(interface, start_part, part_count, 0, (double)0.0, (int64_t)0);
+      } else {
+	error = epu(interface, start_part, part_count, 0, (double)0.0, (int)0);
+      }
+    }
+    
   }
 
   time_t end_time = time(NULL);
@@ -829,7 +861,8 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
   // Determine how many steps will be written...
   int output_steps = (ts_max - ts_min) / ts_step + 1;
-
+  int subcycles = interface.subcycle();
+  
   double start_time = seacas_timer();
 
   for (time_step = ts_min-1; time_step < ts_max; time_step+=ts_step) {
@@ -1046,6 +1079,10 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     if (debug_level & 1)
       std::cout << time_stamp(tsFormat);
 
+    if (subcycles > 2) {
+      std::cout << cycle+1 << "/" << subcycles << " ";
+    }
+
     std::cout << "Wrote step " << std::setw(2) << time_step+1 << ", time "
 	      << std::scientific << std::setprecision(4) << time_val;
 
@@ -1078,6 +1115,10 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   // EXIT program
   if (debug_level & 1)
     std::cout << time_stamp(tsFormat);
+  if (subcycles > 2) {
+    std::cout << cycle+1 << "/" << subcycles << " ";
+  }
+  
   std::cout << "******* END *******\n";
   return(error);
 }
@@ -1596,20 +1637,20 @@ namespace {
     // Now, sort the global_element_map array.
     std::sort(global_element_map.begin(), global_element_map.end());
 
+    global->elementCount = global_element_map.size();
+
     // See if any duplicates...
-    std::vector<INT> temp(global_element_map);
-    temp.erase(std::unique(temp.begin(), temp.end()), temp.end());
-
-    if (temp.size() != global_element_map.size()) {
-      // Duplicates in the element id list...
-      // This is not yet handled.  Notify the user and continue for now...
-      std::cerr << "\n!!!! POSSIBLE ERROR: There were " << global_element_map.size() - temp.size()
-		<< " elements with duplicated ids detected.\n"
-		<< "!!!!\tThis may cause problems in the output file.\n\n";
+    for (size_t i=1; i < global->elementCount; i++) {
+      if (global_element_map[i-1] == global_element_map[i]) {
+	// Duplicates in the element id list...
+	// This is not yet handled.  Notify the user and continue for now...
+	std::cerr << "\n!!!! POSSIBLE ERROR: There were at least 2"
+		  << " elements with duplicated ids detected.\n"
+		  << "!!!!\tThis may cause problems in the output file.\n\n";
+	break;
+      }
     }
-
-    size_t total_num_elements = global_element_map.size();
-    global->elementCount = total_num_elements;
+    
 
     // See whether the element numbers are contiguous.  If so, we can map
     // the elements back to their original location. Since the elements are
@@ -1664,7 +1705,7 @@ namespace {
 	}
       }
 
-      IntVector element_map;
+      std::vector<INT> element_map;
       for (int p = 0; p < part_count; p++) {
 	size_t element_count = local_mesh[p].elementCount;
 	element_map.resize(element_count);

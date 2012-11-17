@@ -60,19 +60,21 @@ $TMPL_PUBLIC_FUNCTIONS
     //@{
 
     //! EpetraCrsMatrix constructor to wrap a Epetra_CrsMatrix object
-    EpetraCrsMatrix(const Teuchos::RCP<Epetra_CrsMatrix > &mtx) : mtx_(mtx) {  }
+    EpetraCrsMatrix(const Teuchos::RCP<Epetra_CrsMatrix > &mtx) : mtx_(mtx), isFillResumed_(false) {  }
 
     //! Get the underlying Epetra matrix
     RCP<const Epetra_CrsMatrix> getEpetra_CrsMatrix() const { return mtx_; }
-    
+
     //! Get the underlying Epetra matrix
     RCP<Epetra_CrsMatrix> getEpetra_CrsMatrixNonConst() const { return mtx_; } //TODO: remove
- 
+
    //@}
-    
+
   private:
-    
+
     RCP<Epetra_CrsMatrix> mtx_;
+
+    bool isFillResumed_; //< For Epetra, fillResume() is a fictive operation but we need to keep track of it. This boolean is true only is resumeFill() have been called and fillComplete() have not been called afterward.
 
   }; // EpetraImport class
 

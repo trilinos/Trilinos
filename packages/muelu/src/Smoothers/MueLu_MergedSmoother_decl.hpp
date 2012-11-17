@@ -57,7 +57,7 @@ namespace MueLu {
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class MergedSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
   {
-#undef MUELU_MERGEDSMOOTHER_SHORT    
+#undef MUELU_MERGEDSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -69,7 +69,7 @@ namespace MueLu {
 
     //! Constructor
     MergedSmoother(ArrayRCP<RCP<SmootherPrototype> > & smootherList, bool verbose=false);
-    
+
     //! Copy constructor (performs a deep copy of input object)
     MergedSmoother(const MergedSmoother& src);
 
@@ -86,7 +86,7 @@ namespace MueLu {
 
     void StandardOrder();
     void ReverseOrder();
- 
+
     bool GetReverseOrder() const; // TODO: GetOrder() is a better name (+ enum to define order)
 
     // UNUSED // TODO: GetSmoother() do not take into account the reverseOrder option. Might be confusing... To be changed in MueMat too
@@ -115,22 +115,22 @@ namespace MueLu {
     @param InitialGuessIsZero
     */
     void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const;
-      
+
     //@}
-    
+
     //! @name Utilities.
     //@{
     void Print(std::string prefix) const;
 
     void CopyParameters(RCP<SmootherPrototype> src); // TODO: wrong prototype. We do not need an RCP here.
-  
+
     ArrayRCP<RCP<SmootherPrototype> > SmootherListDeepCopy(const ArrayRCP<const RCP<SmootherPrototype> >& srcSmootherList);
 
     //@}
 
   private:
     // List of smoothers. It is an ArrayRCP of RCP because:
-    //  1) I need a vector of pointers (to avoid slicing problems) 
+    //  1) I need a vector of pointers (to avoid slicing problems)
     //  2) I can use an std::vector insead of an ArrayRCP but then the constructor will do a copy of user input
     ArrayRCP<RCP<SmootherPrototype> > smootherList_;
 

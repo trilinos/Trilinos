@@ -62,37 +62,18 @@
 
 namespace MueLu {
 
-  // ----------------------------------------------------------------------------------------
-  // Constructor
-  // ----------------------------------------------------------------------------------------
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  AggStatTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AggStatTransferFactory(
-    std::string const & varName,
-    RCP<const FactoryBase> const &genFact)
-    : varName_(varName),
-      genFact_(genFact)
+  AggStatTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AggStatTransferFactory(std::string const & varName)
+    : varName_(varName)
   { }
-
-  // ----------------------------------------------------------------------------------------
-  // Destructor
-  // ----------------------------------------------------------------------------------------
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   AggStatTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~AggStatTransferFactory() {}
 
-  // ----------------------------------------------------------------------------------------
-  // DeclareInput
-  // ----------------------------------------------------------------------------------------
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void AggStatTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    fineLevel.DeclareInput(varName_, genFact_.get(), this);
+    Input(fineLevel, varName_);
   }
-
-  // ----------------------------------------------------------------------------------------
-  // Build
-  // ----------------------------------------------------------------------------------------
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void AggStatTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level &coarseLevel) const {
@@ -104,8 +85,8 @@ namespace MueLu {
     // Therefor we have to add the functionality to the Level class.
     // not sure we wanna do this. -> do decided later
     if (varName_ == "coarseAggStat") {
-      Teuchos::ArrayRCP<unsigned int> data = fineLevel.Get<Teuchos::ArrayRCP<unsigned int> >(varName_,genFact_.get());
-      coarseLevel.Set<Teuchos::ArrayRCP<unsigned int> >(varName_, data, genFact_.get());
+      Teuchos::ArrayRCP<unsigned int> data = Get<Teuchos::ArrayRCP<unsigned int> >(fineLevel,varName_);
+      Set<Teuchos::ArrayRCP<unsigned int> >(coarseLevel, varName_, data);
     }
 
   } //Build

@@ -69,11 +69,8 @@ namespace MueLu {
     //! @name Constructors/Destructors.
     //@{
 
-    /*! @brief Constructor.
-      User can supply a factory for generating the prolongator. The nonzero pattern of the
-      constructed prolongator will be used for the nonzero pattern.
-      */
-    PatternFactory(RCP<const FactoryBase> PFact = Teuchos::null);
+    //! @brief Constructor.
+    PatternFactory();
 
     //! Destructor.
     virtual ~PatternFactory();
@@ -100,7 +97,6 @@ namespace MueLu {
     //@}
 
   private:
-    RCP<const FactoryBase> PFact_;              //!< Prolongator factory
   }; // class PatternFactory
 
 

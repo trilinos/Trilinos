@@ -18,7 +18,7 @@ Examples:
  Simple-Belos     - How to use MueLu as a preconditioner for Belos.
  Simple-Epetra    - How to use MueLu with existing Epetra code.
  Simple-Tpetra    - How to use MueLu with existing Tpetra code.
- 
+
  Simple-AztecOO   - How to use MueLu as a preconditioner for AztecOO.
 
 Usage:

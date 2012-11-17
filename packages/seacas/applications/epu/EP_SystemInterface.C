@@ -79,7 +79,7 @@ Excn::SystemInterface::SystemInterface()
     debugLevel_(0), screenWidth_(0),
     stepMin_(1), stepMax_(INT_MAX), stepInterval_(1), subcycle_(-1), cycle_(-1), compressData_(0),
     sumSharedNodes_(false), addProcessorId_(false), mapIds_(true), omitNodesets_(false), omitSidesets_(false),
-    largeModel_(false), append_(false), intIs64Bit_(false)
+    largeModel_(false), append_(false), intIs64Bit_(false), subcycleJoin_(false)
 {
   enroll_options();
 }
@@ -181,6 +181,11 @@ void Excn::SystemInterface::enroll_options()
 		  "\t\tcycle $val ($val < #).  The cycle number is 0-based.",
 		  "-1");
 
+  options_.enroll("join_subcycles", GetLongOption::NoValue,
+		  "If -subcycle is specified, then after the subcycle files are processed,\n"
+		  "\t\trun epu one more time and join the subcycle files into a single file.",
+		  NULL);
+  
   options_.enroll("sum_shared_nodes", GetLongOption::NoValue,
 		  "The nodal results data on all shared nodes (nodes on processor boundaries)\n"
 		  "\t\twill be the sum of the individual nodal results data on each shared node.\n"
@@ -428,6 +433,10 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     if (temp != NULL) {
       cycle_ = strtol(temp, NULL, 10);
     }
+  }
+
+  if (options_.retrieve("join_subcycles")) {
+    subcycleJoin_ = true;
   }
 
   if (options_.retrieve("map")) {

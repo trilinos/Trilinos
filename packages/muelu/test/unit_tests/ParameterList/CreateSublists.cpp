@@ -74,15 +74,15 @@ namespace MueLuTests {
 
       Teuchos::RCP<const Teuchos::ParameterList> inputList = Teuchos::getParametersFromXmlFile(dir + fileList[i]);
       Teuchos::ParameterList outputList;
-      
+
       MueLu::CreateSublists(*inputList, outputList);
-      
+
       // Test against reference output (replace '.xml' by '.output' to get the filename)
       Teuchos::RCP<Teuchos::ParameterList> refOutputList = Teuchos::getParametersFromXmlFile(dir + fileList[i].substr(0, fileList[i].find_last_of(".")) + ".output");
       TEST_EQUALITY(outputList, *refOutputList);
     }
   }
- 
+
 #ifdef HAVE_MUELU_ML
   TEUCHOS_UNIT_TEST(ML_CreateSublists, SetParameterList)
   {
@@ -95,7 +95,7 @@ namespace MueLuTests {
 
       Teuchos::RCP<const Teuchos::ParameterList> inputList = Teuchos::getParametersFromXmlFile(dir + fileList[i]);
       Teuchos::ParameterList outputList;
-      
+
       ML_CreateSublists(*inputList, outputList);
 
       // Test against reference output (replace '.xml' by '.output' to get the filename)

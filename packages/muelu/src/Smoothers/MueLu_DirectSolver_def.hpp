@@ -92,7 +92,7 @@ namespace MueLu {
     } else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "lib != UseTpetra && lib != UseEpetra");
     }
-    
+
     TEUCHOS_TEST_FOR_EXCEPTION(s_ == Teuchos::null, Exceptions::RuntimeError, "");
 
     s_->Setup(currentLevel);
@@ -120,7 +120,7 @@ namespace MueLu {
     out << "{type = " << type_ << "}";
     return out.str();
   }
-    
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     //TODO
@@ -128,19 +128,19 @@ namespace MueLu {
     //       // Teuchos::OSTab tab2(out);
     //       s_->print(out, verbLevel);
     //     }
-    
+
     //     if (verbLevel & Debug) {
     MUELU_DESCRIBE;
-    
+
     if (verbLevel & Parameters0) {
       out0 << "Prec. type: " << type_ << std::endl;
     }
-    
-    if (verbLevel & Parameters1) { 
+
+    if (verbLevel & Parameters1) {
       out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab3(out); out << paramList_; }
     }
 
-    if (verbLevel & Debug) {    
+    if (verbLevel & Debug) {
       out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl;
     }
   }

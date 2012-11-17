@@ -59,8 +59,12 @@
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_NoFactory.hpp"
 
+#ifdef HAVE_MUELU_BOOST
+#include "boost/graph/graphviz.hpp"
+#endif
+
 namespace MueLu {
-  
+
   /*!
     @class Needs
     @brief Class that allows cross-factory communication of data needs.
@@ -107,7 +111,7 @@ namespace MueLu {
     //! @brief functions for setting data in data storage
     //@{
 
-    //      void Set(const Key1 & key1, const Key2 & key2, const Value & entry) 
+    //      void Set(const Key1 & key1, const Key2 & key2, const Value & entry)
 
     //! Store need label and its associated data. This does not increment the storage counter.
     template <class T>
@@ -148,7 +152,7 @@ namespace MueLu {
       const Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
       return Teuchos::getValue<T>(var->GetData());
     }
-    
+
     //! @brief Get data without decrementing associated storage counter (i.e., read-only access)
     // Usage: Level->Get< RCP<Matrix> >("A", factoryPtr)
     template <class T>
@@ -172,7 +176,7 @@ namespace MueLu {
 
     //! See documentation of Level::GetKeepFlag
     KeepType GetKeepFlag(const std::string& ename, const FactoryBase* factory) const;
-    
+
     //@}
 
     //! @name Utilities.
@@ -227,6 +231,18 @@ namespace MueLu {
 
     //! Printing method
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
+
+#if defined(HAVE_MUELU_BOOST) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
+    void UpdateGraph(std::map<const FactoryBase*, long unsigned>&                           vindices,
+                     std::map<std::pair<long unsigned,long unsigned>, std::string>&         edges,
+                     boost::dynamic_properties&                                             dp,
+                     boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS,
+                     boost::property<boost::vertex_name_t, std::string,
+                     boost::property<boost::vertex_color_t, std::string,
+                     boost::property<boost::vertex_index_t, std::string> > >,
+                     boost::property<boost::edge_name_t, std::string,
+                     boost::property<boost::edge_color_t, std::string> > >&                 graph) const;
+#endif
 
     //@}
 

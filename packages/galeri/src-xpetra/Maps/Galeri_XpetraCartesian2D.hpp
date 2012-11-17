@@ -55,82 +55,19 @@
 
 #include "Galeri_Exception.h"
 #include "Galeri_Utils.h"
+#include "Galeri_MapTraits.hpp"
 
 #ifdef HAVE_GALERI_TPETRA //TODO: this macro is not defined
 #include <Tpetra_Map.hpp>
 #endif
 
-#ifdef HAVE_GALERI_XPETRA
-#include <Xpetra_MapFactory.hpp>
-#endif
-
-#ifdef HAVE_GALERI_XPETRA
-#include <Xpetra_ConfigDefs.hpp>
-#include <Xpetra_Exceptions.hpp>
-#ifdef HAVE_XPETRA_TPETRA
-#include <Xpetra_TpetraMap.hpp>
-#endif
-#ifdef HAVE_XPETRA_EPETRA
-#include <Xpetra_EpetraMap.hpp>
-#endif
-#endif // HAVE_GALERI_XPETRA
-
 namespace Galeri {
 
   namespace Xpetra {
 
-    using Tpetra::global_size_t;
-
-    // TODO: move Map traits.
-    // TODO: Epetra_Map trait not implemented
-    // TODO: add parameter 'const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()' to Build()
-    template <typename T>
-    struct UndefinedMapTraits
-    {
-      static inline T notDefined() { return T::this_type_is_missing_a_specialization(); }
-    };
-
-    /* Default traits (not implemented) */
-    template <class GlobalOrdinal, class Map>
-    class MapTraits 
-    {
-    public:
-      static Teuchos::RCP<Map> Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
-      { return UndefinedMapTraits<Map>::notDefined(); }
-    };
-
-#ifdef HAVE_GALERI_TPETRA //TODO: this macro is not defined
-    /* Tpetra traits */
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-    class MapTraits 
-    {
-    public:
-      static Teuchos::RCP<Map> Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
-      { return rcp( new Tpetra::Map(numGlobalElements, elementList, indexBase, comm) ); }
-    };
-#endif // HAVE_GALERI_TPETRA
-
-#ifdef HAVE_GALERI_XPETRA
-    /* Specialized traits for Map = Xpetra::TpetraMap<...> */
-    template <class LocalOrdinal, class GlobalOrdinal, class Node>
-    class MapTraits <GlobalOrdinal, ::Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal, Node> >
-    {
-    public:
-      static Teuchos::RCP< ::Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal, Node> > Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
-      { return rcp( new ::Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal, Node>(numGlobalElements, elementList, indexBase, comm) ); }
-    };
-
-    /* Specialized traits for Map = Xpetra::EpetraMap<int,int> */
-    template <>
-    class MapTraits <int, ::Xpetra::EpetraMap >
-    {
-    public:
-      static Teuchos::RCP< ::Xpetra::EpetraMap> Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
-      { return rcp( new ::Xpetra::EpetraMap(numGlobalElements, elementList, indexBase, comm) ); }
-    };
-#endif
-
     namespace Maps {
+
+      using Tpetra::global_size_t;
 
       //TODO: avoid using GlobalOrdinal everywhere?
 
@@ -169,9 +106,9 @@ namespace Galeri {
         endy = starty + PerProcSmallYDir;
         if ( ypid < NBigYDir) endy++;
 
-        GlobalOrdinal NumMyElements = (endx - startx) * (endy - starty);
+        size_t NumMyElements = (endx - startx) * (endy - starty);
         vector<GlobalOrdinal> MyGlobalElements(NumMyElements);
-        GlobalOrdinal count = 0;
+        size_t count = 0;
 
         for (GlobalOrdinal i = startx ; i < endx ; ++i) 
           for (GlobalOrdinal j = starty ; j < endy ; ++j) 

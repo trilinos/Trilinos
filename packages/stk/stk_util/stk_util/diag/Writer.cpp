@@ -324,3 +324,33 @@ operator<<(
 
 } // namespace diag
 } // namespace stk
+
+namespace sierra {
+namespace Diag {
+
+Writer &
+operator<<(
+  Writer &	        dout,
+  const String &        str)
+{
+  if (dout.shouldPrint())
+    dout.getStream() << str;
+
+  return dout;
+}
+
+
+Writer &
+operator<<(
+  Writer &                      dout,
+  const sierra::Identifier &    s)
+{
+  if (dout.shouldPrint())
+    dout.getStream() << '\'' << s << '\'';
+
+  return dout;
+}
+
+} // namespace Diag
+} // namespace sierra
+

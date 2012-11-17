@@ -1,15 +1,11 @@
 ADD_SUBDIRECTORY(Gallery)
 
 ADD_SUBDIRECTORY(Simple)
-#ADD_SUBDIRECTORY(Facade)
 ADD_SUBDIRECTORY(ParameterList)
 ADD_SUBDIRECTORY(NativeInterface)
 
-#ADD_SUBDIRECTORY(AdvancedUsage)
-
 ADD_SUBDIRECTORY(Misc/Aggregation)
 ADD_SUBDIRECTORY(Misc/MatrixVectorChecker)
-ADD_SUBDIRECTORY(Misc/TentativePDebug)
 ADD_SUBDIRECTORY(Misc/MultipleFactoryManager)
 
 IF (${PACKAGE_NAME}_ENABLE_Ifpack)

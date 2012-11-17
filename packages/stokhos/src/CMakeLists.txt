@@ -53,6 +53,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_LegendreBasisImp.hpp
   Stokhos_ClenshawCurtisLegendreBasis.hpp
   Stokhos_ClenshawCurtisLegendreBasisImp.hpp
+  Stokhos_GaussPattersonLegendreBasis.hpp
+  Stokhos_GaussPattersonLegendreBasisImp.hpp
   Stokhos_StieltjesPCEBasis.hpp
   Stokhos_StieltjesPCEBasisImp.hpp
   Stokhos_StieltjesBasis.hpp
@@ -70,6 +72,12 @@ SET(HEADERS ${HEADERS}
   Stokhos_ProductBasisUtils.hpp
   Stokhos_CompletePolynomialBasis.hpp
   Stokhos_CompletePolynomialBasisImp.hpp
+  Stokhos_TensorProductBasis.hpp
+  Stokhos_TensorProductBasisImp.hpp
+  Stokhos_TotalOrderBasis.hpp
+  Stokhos_TotalOrderBasisImp.hpp
+  Stokhos_SmolyakBasis.hpp
+  Stokhos_SmolyakBasisImp.hpp
   Stokhos_GramSchmidtBasis.hpp
   Stokhos_GramSchmidtBasisImp.hpp
   Stokhos_ReducedPCEBasis.hpp
@@ -110,6 +118,11 @@ SET(HEADERS ${HEADERS}
   Stokhos_UserDefinedQuadratureImp.hpp
   Stokhos_QuadratureFactory.hpp
   Stokhos_QuadratureFactoryImp.hpp
+  Stokhos_PseudoSpectralOperator.hpp
+  Stokhos_TensorProductPseudoSpectralOperator.hpp
+  Stokhos_SmolyakPseudoSpectralOperator.hpp
+  Stokhos_SmolyakPseudoSpectralOperatorImp.hpp
+  Stokhos_QuadraturePseudoSpectralOperator.hpp
   Stokhos_StandardStorage.hpp
   Stokhos_StaticStandardStorage.hpp
   Stokhos_StaticFixedStandardStorage.hpp
@@ -130,6 +143,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_AlgebraicOrthogPolyExpansionImp.hpp
   Stokhos_QuadOrthogPolyExpansion.hpp
   Stokhos_QuadOrthogPolyExpansionImp.hpp
+  Stokhos_PseudoSpectralOrthogPolyExpansion.hpp
+  Stokhos_PseudoSpectralOrthogPolyExpansionImp.hpp
   Stokhos_DerivOrthogPolyExpansion.hpp
   Stokhos_DerivOrthogPolyExpansionImp.hpp
   Stokhos_ForUQTKOrthogPolyExpansion.hpp

@@ -73,7 +73,7 @@
 #include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
-  
+
   TEUCHOS_UNIT_TEST(PermutedTransfer, Constructor)
   {
     out << "version: " << MueLu::Version() << std::endl;
@@ -81,7 +81,7 @@ namespace MueLuTests {
     RCP<PermutedTransferFactory> ptFactory = rcp(new PermutedTransferFactory);
     TEST_EQUALITY(ptFactory != Teuchos::null, true);
   } // Constructor test
-  
+
   TEUCHOS_UNIT_TEST(PermutedTransfer, Build1)
   {
     out << "version: " << MueLu::Version() << std::endl;

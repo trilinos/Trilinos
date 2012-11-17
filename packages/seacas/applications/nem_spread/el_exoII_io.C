@@ -946,6 +946,21 @@ void NemSpread<T,INT>::read_coord(int exoid, int max_name_length)
 	break;
       }
     }
+
+    // Check that map is valid 1 <= global_node_id[*]
+    // If not, output a warning and disable the map.
+    for (size_t i=0; i < globals.Num_Node; i++) {
+      if (global_node_ids[i] <= 0) {
+	fprintf(stderr,"---------------------------------------------------------------------\n"
+		"ERROR: Local node %d has a global id of %d which is invalid.\n"
+		"       All global ids must be greater than 0. The map will be ignored.\n"
+                "---------------------------------------------------------------------\n",
+		i+1, global_node_ids[i]);
+	sequential = 1; // Map is invalid, ignore it.
+	break;
+      }
+    }
+    
     if (sequential == 0) {
       for (int iproc=Proc_Info[4]; iproc <Proc_Info[4]+Proc_Info[5]; iproc++) {
 

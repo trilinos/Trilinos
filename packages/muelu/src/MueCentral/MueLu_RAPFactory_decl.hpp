@@ -79,7 +79,7 @@ namespace MueLu {
     //! @name Constructors/Destructors.
     //@{
 
-    RAPFactory(RCP<const FactoryBase> PFact = Teuchos::null, RCP<const FactoryBase> RFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null);
+    RAPFactory();
 
     virtual ~RAPFactory();
     //@}
@@ -101,16 +101,16 @@ namespace MueLu {
 
     //! Indicate that the restriction operator action should be implicitly defined by the transpose of the prolongator.
     void SetImplicitTranspose(bool const &implicit);
-    
+
     //! Indicate that zero entries on the diagonal of Ac shall be repaired (i.e. if A(i,i) == 0.0 set A(i,i) = 1.0)
-    void SetRepairZeroDiagonal(bool const &repair) { 
-      repairZeroDiagonals_ = repair; 
+    void SetRepairZeroDiagonal(bool const &repair) {
+      repairZeroDiagonals_ = repair;
       if(repair) checkAc_ = true; // make sure that plausibility check is performed. Otherwise SetRepairZeroDiagonal(true) has no effect.
     }
-    
+
     //! Indicate that a simple plausibility check shall be done for Ac after building RAP
     void SetPlausibilityCheck(bool const &check) {
-      checkAc_ = check; 
+      checkAc_ = check;
     }
 
     /*! @brief Add transfer factory in the end of list of transfer factories in RAPFactory.
@@ -145,36 +145,27 @@ namespace MueLu {
     void PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag) const; //TODO: static
     void PrintLoadBalancingInfo(const Matrix & Ac, const std::string & msgTag) const;
     //@}
-    
+
     //! @name internal plausibility check methods
     void CheckMainDiagonal(RCP<Matrix> & Ac) const;
     void CheckMainDiagonal(RCP<CrsMatrix> & Ac) const; ///< CrsMatrix version for blocked matrices
     //@}
-
-    //! P Factory
-    RCP<const FactoryBase> PFact_;
-
-    //! R Factory
-    RCP<const FactoryBase> RFact_;
-  
-    //! A Factory
-    RCP<const FactoryBase> AFact_;
 
     //! list of user-defined transfer Factories
     std::vector<RCP<const FactoryBase> > TransferFacts_;
 
     //! If true, the action of the restriction operator action is implicitly defined by the transpose of the prolongator.
     bool implicitTranspose_;
-    
+
     //! If true, perform a basic plausibility check on Ac (default = false)
     //! note, that the repairZeroDiagonals_ flag only is valid for checkAc_ == true
     bool checkAc_;
-    
+
     //! If true, the CheckMainDiagonal routine automatically repairs zero entries on main diagonal (default = false)
     //! i.e. if A(i,i) == 0.0 set A(i,i) = 1.0
     //! note, that the repairZeroDiagonals_ flag only is valid for checkAc_ == true
     bool repairZeroDiagonals_;
-    
+
   }; //class RAPFactory
 
 } //namespace MueLu

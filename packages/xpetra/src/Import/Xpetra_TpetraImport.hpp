@@ -151,9 +151,9 @@ namespace Xpetra {
     RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Import() const { return import_; }
 
     //@}
-    
+
   private:
-    
+
     RCP<const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > import_;
 
   }; // TpetraImport class

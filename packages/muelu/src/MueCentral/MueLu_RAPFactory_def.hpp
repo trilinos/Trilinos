@@ -61,19 +61,19 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RAPFactory(RCP<const FactoryBase> PFact, RCP<const FactoryBase> RFact, RCP<const FactoryBase> AFact)
-: PFact_(PFact), RFact_(RFact), AFact_(AFact), implicitTranspose_(false), checkAc_(false), repairZeroDiagonals_(false) {}
+RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RAPFactory()
+: implicitTranspose_(false), checkAc_(false), repairZeroDiagonals_(false) {}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~RAPFactory() {}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-  fineLevel.DeclareInput("A", AFact_.get(), this);  // AFact per default Teuchos::null -> default factory for this
-  coarseLevel.DeclareInput("P", PFact_.get(), this); // transfer operators (from PRFactory, not from PFactory and RFactory!)
-  coarseLevel.DeclareInput("R", RFact_.get(), this); //TODO: must be request according to (implicitTranspose flag!!!!!
-  coarseLevel.DeclareInput("A", PFact_.get(), this); //FIXME hack
-  coarseLevel.DeclareInput("Importer", RFact_.get(), this); //FIXME hack, could result in redundant work...
+  Input(fineLevel, "A");
+  Input(coarseLevel, "P");
+  Input(coarseLevel, "R"); //TODO: must be requested according to the implicitTranspose flag
+  coarseLevel.DeclareInput("A", GetFactory("P").get(), this); //FIXME hack
+  coarseLevel.DeclareInput("Importer", GetFactory("R").get(), this); //FIXME hack, could result in redundant work...
 
   // call DeclareInput of all user-given transfer factories
   for(std::vector<RCP<const FactoryBase> >::const_iterator it = TransferFacts_.begin(); it!=TransferFacts_.end(); ++it) {
@@ -133,8 +133,8 @@ void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
     // Inputs: A, P
     //
 
-    RCP<Matrix> A = fineLevel.Get< RCP<Matrix> >("A", AFact_.get());
-    RCP<Matrix> P = coarseLevel.Get< RCP<Matrix> >("P", PFact_.get());
+    RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel, "A");
+    RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
 
     //
     // Build Ac = RAP
@@ -143,7 +143,7 @@ void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
 
     const RCP<BlockedCrsMatrixClass> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrixClass>(A);
     if( bA != Teuchos::null) {
-      RCP<Matrix> R = coarseLevel.Get< RCP<Matrix> >("R", RFact_.get());
+      RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
       Ac = BuildRAPBlock(R, A, P, levelID); // Triple matrix product for BlockedCrsMatrixClass
       // TODO add plausibility check
     } else {
@@ -151,15 +151,15 @@ void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
       // refactoring needed >>>>>>>>
       // the following code should be moved to his own factory
       //
-      if ( coarseLevel.IsAvailable("A",PFact_.get()) && coarseLevel.IsAvailable("Importer",RFact_.get()) ) {
+      if ( coarseLevel.IsAvailable("A",GetFactory("P").get()) && coarseLevel.IsAvailable("Importer",GetFactory("R").get()) ) {
         SubFactoryMonitor m1(*this, "Rebalancing existing Ac", levelID);
-        Ac = coarseLevel.Get< RCP<Matrix> >("A", PFact_.get());
+        Ac = coarseLevel.Get< RCP<Matrix> >("A", GetFactory("P").get());
         RCP<Matrix> newAc = MatrixFactory::Build(P->getDomainMap(), Ac->getGlobalMaxNumRowEntries());
         RCP<CrsMatrixWrap> crsOp = rcp_dynamic_cast<CrsMatrixWrap>(newAc);
         RCP<CrsMatrix> crsMtx = crsOp->getCrsMatrix();
         RCP<CrsMatrixWrap> origOp = rcp_dynamic_cast<CrsMatrixWrap>(Ac);
         RCP<CrsMatrix> origMtx = origOp->getCrsMatrix();
-        RCP<const Import> permImporter = coarseLevel.Get< RCP<const Import> >("Importer",RFact_.get());
+        RCP<const Import> permImporter = coarseLevel.Get< RCP<const Import> >("Importer",GetFactory("R").get());
         crsMtx->doImport(*origMtx, *permImporter,Xpetra::INSERT);
         crsMtx = Teuchos::null;
         //TODO add plausibility check
@@ -170,10 +170,10 @@ void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
         PrintMatrixInfo(*Ac, "Ac (rebalanced)");
         PrintLoadBalancingInfo(*Ac, "Ac (rebalanced)");
 
-      } else if (coarseLevel.IsAvailable("A",PFact_.get())) {
+      } else if (coarseLevel.IsAvailable("A",GetFactory("P").get())) {
         // Ac already built by the load balancing process and no load balancing needed
         SubFactoryMonitor m1(*this, "Ac already computed", levelID);
-        Ac = coarseLevel.Get< RCP<Matrix> >("A", PFact_.get());
+        Ac = coarseLevel.Get< RCP<Matrix> >("A", GetFactory("P").get());
       }
       // <<<<<<<< refactoring needed
 
@@ -185,7 +185,7 @@ void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
           Ac = BuildRAPImplicit(A, P, levelID);
         } else {
           // explicit version
-          RCP<Matrix> R = coarseLevel.Get< RCP<Matrix> >("R", RFact_.get());
+          RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
           Ac = BuildRAPExplicit(R, A, P, levelID);
         }
 
@@ -395,15 +395,15 @@ size_t RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::NumTr
   return TransferFacts_.size();
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-RCP<const FactoryBase> RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetPFactory() const {
-  return PFact_;
-}
+// template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+// RCP<const FactoryBase> RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetPFactory() const {
+//   return GetFactory("P");
+// }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-RCP<const FactoryBase> RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetRFactory() const {
-  return RFact_;
-}
+// template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+// RCP<const FactoryBase> RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetRFactory() const {
+//   return GetFactory("R");
+// }
 
 
 } //namespace MueLu

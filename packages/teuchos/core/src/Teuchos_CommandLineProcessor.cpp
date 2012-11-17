@@ -48,6 +48,7 @@
 #include "Teuchos_VerboseObject.hpp"
 //#include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_as.hpp"
 
 #ifdef HAVE_MPI
 #  include "mpi.h"
@@ -167,6 +168,44 @@ void CommandLineProcessor::setOption(
 
 void CommandLineProcessor::setOption(
   const char     option_name[]
+  ,long int      *option_val
+  ,const char    documentation[]
+  ,const bool    required
+  )
+{
+  add_extra_output_setup_options();
+  TEUCHOS_TEST_FOR_EXCEPT(!(option_val!=NULL));
+  options_list_[std::string(option_name)]
+    = opt_val_val_t(OPT_LONG_INT,any(option_val),required);
+  options_documentation_list_.push_back(
+    opt_doc_t(OPT_LONG_INT, option_name, "", std::string(documentation?documentation:""),
+      any(option_val))
+    );
+}
+
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+void CommandLineProcessor::setOption(
+  const char     option_name[]
+  ,long long int *option_val
+  ,const char    documentation[]
+  ,const bool    required
+  )
+{
+  add_extra_output_setup_options();
+  TEUCHOS_TEST_FOR_EXCEPT(!(option_val!=NULL));
+  options_list_[std::string(option_name)]
+    = opt_val_val_t(OPT_LONG_INT,any(option_val),required);
+  options_documentation_list_.push_back(
+    opt_doc_t(OPT_LONG_LONG_INT, option_name, "", std::string(documentation?documentation:""),
+      any(option_val))
+    );
+}
+#endif
+
+
+void CommandLineProcessor::setOption(
+  const char     option_name[]
   ,double        *option_val
   ,const char    documentation[]
   ,const bool    required
@@ -275,8 +314,16 @@ CommandLineProcessor::parse(
         *(any_cast<bool*>(opt_val_val.opt_val)) = false;
         break;
       case OPT_INT:
-        *(any_cast<int*>(opt_val_val.opt_val)) = std::atoi(opt_val_str.c_str());
+        *(any_cast<int*>(opt_val_val.opt_val)) = Teuchos::ValueTypeConversionTraits<int, std::string>::safeConvert( opt_val_str );
         break;
+      case OPT_LONG_INT:
+        *(any_cast<long int*>(opt_val_val.opt_val)) = Teuchos::ValueTypeConversionTraits<long int, std::string>::safeConvert( opt_val_str );
+        break;
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+      case OPT_LONG_LONG_INT:
+        *(any_cast<long long int*>(opt_val_val.opt_val)) = Teuchos::ValueTypeConversionTraits<long long int, std::string>::safeConvert( opt_val_str );
+        break;
+#endif
       case OPT_DOUBLE:
         *(any_cast<double*>(opt_val_val.opt_val)) = std::atof(opt_val_str.c_str());
         break;
@@ -344,7 +391,7 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
     using std::setw;
     using std::endl;
     
-    const int opt_type_w = 8;
+    const int opt_type_w = 14;
     const char spc_chars[] = "  ";
     
     // Get the maximum length of an option name
@@ -450,6 +497,10 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
             itr->opt_name : itr->opt_name_false );
           break;
         case OPT_INT:
+        case OPT_LONG_INT:
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+        case OPT_LONG_LONG_INT:
+#endif
         case OPT_DOUBLE:
         case OPT_STRING:
         case OPT_ENUM_INT:
@@ -464,6 +515,14 @@ void CommandLineProcessor::printHelpMessage( const char program_name[],
         case OPT_INT:
           out << "=" << (*(any_cast<int*>(itr->default_val)));
           break;
+        case OPT_LONG_INT:
+          out << "=" << (*(any_cast<long int*>(itr->default_val)));
+          break;
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+        case OPT_LONG_LONG_INT:
+          out << "=" << (*(any_cast<long long int*>(itr->default_val)));
+          break;
+#endif
         case OPT_DOUBLE:
           out <<  "=" << (*(any_cast<double*>(itr->default_val)));
           break;

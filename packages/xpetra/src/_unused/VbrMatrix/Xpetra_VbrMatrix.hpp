@@ -93,10 +93,10 @@ to the optimized-storage state by calling the method fillComplete().
 Once in the optimized-storage state, the VbrMatrix can not be returned to the
 non-optimized-storage state.
 */
-template <class Scalar, 
-          class LocalOrdinal  = int, 
-          class GlobalOrdinal = LocalOrdinal, 
-          class Node          = Kokkos::DefaultNode::DefaultNodeType, 
+template <class Scalar,
+          class LocalOrdinal  = int,
+          class GlobalOrdinal = LocalOrdinal,
+          class Node          = Kokkos::DefaultNode::DefaultNodeType,
           class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::BlockSparseOps >
 class VbrMatrix { //: public Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
  public:
@@ -172,7 +172,7 @@ class VbrMatrix { //: public Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
                     Teuchos::ETransp trans = Teuchos::NO_TRANS,
                     Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
                     Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const =0;
-  
+
   //! Triangular Solve -- Matrix must be triangular.
   /*! Find X such that A*X = Y.
       Both \c X and \c Y are required to have constant stride.
@@ -374,7 +374,7 @@ class VbrMatrix { //: public Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
   */
   virtual void getLocalBlockEntryView(LocalOrdinal localBlockRow,
                              LocalOrdinal localBlockCol,
-                             LocalOrdinal& numPtRows, 
+                             LocalOrdinal& numPtRows,
                              LocalOrdinal& numPtCols,
                              Teuchos::ArrayRCP<const Scalar>& blockEntry) const =0;
 
@@ -407,7 +407,7 @@ class VbrMatrix { //: public Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     Throws an exception if the input-vector's map is not the same as
     getBlockRowMap()->getPointMap().
   */
-  //TODO: need Vector  
+  //TODO: need Vector
 virtual void getLocalDiagCopy(Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const =0;
 #endif // XPETRA_NOT_IMPLEMENTED
   //@}

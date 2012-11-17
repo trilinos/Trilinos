@@ -68,7 +68,7 @@ namespace Xpetra {
 
   using Teuchos::RCP;
 
-  const RCP<const Epetra_Comm> toEpetra(const RCP<const Teuchos::Comm<int> > & comm) { 
+  const RCP<const Epetra_Comm> toEpetra(const RCP<const Teuchos::Comm<int> > & comm) {
 #ifdef HAVE_MPI
     const RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
     if (mpiComm != Teuchos::null) {
@@ -78,14 +78,14 @@ namespace Xpetra {
       if ((Teuchos::rcp_dynamic_cast<const Teuchos::SerialComm<int> >(comm) != Teuchos::null))
         return Teuchos::rcp(new Epetra_SerialComm());
       else
-        TEUCHOS_TEST_FOR_EXCEPTION(1,Xpetra::Exceptions::BadCast,"Cannot convert a Teuchos::Comm to an Epetra_Comm: The exact type of the Teuchos::Comm object is unknown"); 
+        TEUCHOS_TEST_FOR_EXCEPTION(1,Xpetra::Exceptions::BadCast,"Cannot convert a Teuchos::Comm to an Epetra_Comm: The exact type of the Teuchos::Comm object is unknown");
   }
 
   const RCP<const Teuchos::Comm<int> > toXpetra(const Epetra_Comm & comm) {
 #ifdef HAVE_MPI
     try {
       const Epetra_MpiComm& mpiComm = dynamic_cast<const Epetra_MpiComm&>(comm);
-      return Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(mpiComm.Comm()))); 
+      return Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(mpiComm.Comm())));
     } catch (std::bad_cast & b) {}
 #endif
     try {
@@ -97,15 +97,15 @@ namespace Xpetra {
     }
   }
 
-  bool toEpetra(Teuchos::ETransp trans) { 
+  bool toEpetra(Teuchos::ETransp trans) {
     if (trans == Teuchos::NO_TRANS)
       return false;
     else if (trans == Teuchos::TRANS)
       return true;
-    else { 
+    else {
       TEUCHOS_TEST_FOR_EXCEPTION((trans != Teuchos::NO_TRANS) && (trans == Teuchos::TRANS), Xpetra::Exceptions::NotImplemented, "Cannot convert Teuchos::ETransp to a boolean.");
     }
-    
+
     return false; // to skip a compilation warning msg.
   }
 

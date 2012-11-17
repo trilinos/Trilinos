@@ -93,22 +93,22 @@ namespace MueLuTests {
   using Teuchos::rcpFromRef;
 
   namespace TestHelpers {
-    
+
     using Xpetra::global_size_t;
 
     class Parameters {
 
     private:
       Parameters() {} // static class
-      
+
     public:
-      
+
       static Xpetra::Parameters xpetraParameters;
-      
+
       inline static RCP<const Teuchos::Comm<int> > getDefaultComm() {
         return Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
       }
-      
+
       inline static Xpetra::UnderlyingLib getLib() {
         return TestHelpers::Parameters::xpetraParameters.GetLib();
       }
@@ -118,7 +118,7 @@ namespace MueLuTests {
     class Factory {
 #include "MueLu_UseShortNames.hpp"
 
-    private: 
+    private:
       Factory() {} // static class
 
     public:
@@ -126,14 +126,14 @@ namespace MueLuTests {
       //
       // Method that creates a map containing a specified number of local elements per process.
       //
-      static const RCP<const Map> BuildMap(LO numElementsPerProc) { 
+      static const RCP<const Map> BuildMap(LO numElementsPerProc) {
 
         RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  
+
         const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
-  
+
         return MapFactory::Build(TestHelpers::Parameters::getLib(), INVALID, numElementsPerProc, 0, comm);
-  
+
       } // BuildMap()
 
       // Create a matrix as specified by parameter list options
@@ -190,7 +190,7 @@ namespace MueLuTests {
         RCP<Matrix> A = BuildMatrix(matrixList,lib);
         return A;
       } // Build2DPoisson()
- 
+
       // Needed to initialize correctly a level used for testing SingleLevel factory Build() methods.
       // This method initializes LevelID and linked list of level
       static void createSingleLevelHierarchy(Level& currentLevel) {
@@ -199,7 +199,7 @@ namespace MueLuTests {
 
         currentLevel.SetLevelID(0);
       }
-      
+
       // Needed to initialize correctly levels used for testing TwoLevel factory Build() methods.
       // This method initializes LevelID and linked list of level
       static void createTwoLevelHierarchy(Level& fineLevel, Level& coarseLevel) {
@@ -212,7 +212,7 @@ namespace MueLuTests {
         fineLevel.SetLevelID(0);
         coarseLevel.SetLevelID(1);
       }
-      
+
 #ifdef HAVE_MUELU_IFPACK
       static RCP<SmootherPrototype> createSmootherPrototype(const std::string& type="Gauss-Seidel", LO sweeps=1) {
         Teuchos::ParameterList  ifpackList;
@@ -228,14 +228,14 @@ namespace MueLuTests {
 
 
     //! Return the list of files in the directory. Only files that are matching '*filter*' are returned.
-    ArrayRCP<std::string> GetFileList(const std::string & dirPath, const std::string & filter);     
+    ArrayRCP<std::string> GetFileList(const std::string & dirPath, const std::string & filter);
 
   } // namespace TestHelpers
 
 } // namespace MueLu
 
 
-// Macro to skip a test when UnderlyingLib==Epetra or Tpetra 
+// Macro to skip a test when UnderlyingLib==Epetra or Tpetra
 #define MUELU_TEST_ONLY_FOR(UnderlyingLib) \
   if (TestHelpers::Parameters::getLib() == UnderlyingLib)
 

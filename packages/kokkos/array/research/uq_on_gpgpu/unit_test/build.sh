@@ -38,6 +38,7 @@ CXX_SOURCES="${CXX_SOURCES} main.cpp TestHost.cpp"
 #-----------------------------------------------------------------------------
 # Put path to Trilinos top-level build directory after "stokhos" on command
 # line to enable the original matrix-free algorithm, which uses stokhos
+NVCC_FLAGS=""
 if [ -n "${HAVE_STOKHOS}" ]
 then
     if [ ! -d ${HAVE_STOKHOS} ] ;
@@ -49,12 +50,20 @@ then
     TRILINOS_BUILD_PATH="${HAVE_STOKHOS}"
     #TRILINOS_BUILD_PATH="/home/etphipp/Trilinos/build/opt_serial_cuda"
     
-    TEUCHOS_INC="-I../../../../../teuchos/src -I${TRILINOS_BUILD_PATH}/packages/teuchos/src"
+    TEUCHOS_SRC="../../../../../teuchos"
+    TEUCHOS_BIN="${TRILINOS_BUILD_PATH}/packages/teuchos"
+    TEUCHOS_CORE="-I${TEUCHOS_SRC}/core/src -I${TEUCHOS_BIN}/core/src"
+    TEUCHOS_PARM="-I${TEUCHOS_SRC}/parameterlist/src -I${TEUCHOS_BIN}/parameterlist/src"
+    TEUCHOS_COMM="-I${TEUCHOS_SRC}/comm/src -I${TEUCHOS_BIN}/comm/src"
+    TEUCHOS_NUM="-I${TEUCHOS_SRC}/numerics/src -I${TEUCHOS_BIN}/numerics/src"
+    TEUCHOS_INC="${TEUCHOS_CORE} ${TEUCHOS_PARM} ${TEUCHOS_COMM} ${TEUCHOS_NUM}"
     STOKHOS_INC="-I../../../../../stokhos/src -I${TRILINOS_BUILD_PATH}/packages/stokhos/src"
-    TEUCHOS_LIB="${TRILINOS_BUILD_PATH}/packages/teuchos/src"
+    TEUCHOS_LIB="-L${TEUCHOS_BIN}/core/src -L${TEUCHOS_BIN}/parameterlist/src -L${TEUCHOS_BIN}/comm/src -L${TEUCHOS_BIN}/numerics/src -lteuchosnumerics -lteuchoscomm -lteuchosparameterlist -lteuchoscore"
     INC_PATH="${INC_PATH} ${TEUCHOS_INC} ${STOKHOS_INC}"
-    LIB="${LIB} -L${TEUCHOS_LIB} -lteuchos /usr/lib64/liblapack.so.3 /usr/lib64/libblas.so.3 -lm"
+    LAPACK="/usr/lib64/liblapack.so.3 /usr/lib64/libblas.so.3 -lm"
+    LIB="${LIB} ${TEUCHOS_LIB} ${LAPACK}"
     CXX="${CXX} -DHAVE_KOKKOSARRAY_STOKHOS"
+    NVCC_FLAGS="-DHAVE_KOKKOSARRAY_STOKHOS"
 fi
 
 #-----------------------------------------------------------------------------
@@ -64,7 +73,7 @@ if [ -n "${NVCC}" ] ;
 then
   NVCC_SOURCES="${NVCC_SOURCES} TestCuda.cu"
 
-  ${NVCC}  ${INC_PATH} ${NVCC_SOURCES}
+  ${NVCC} ${NVCC_FLAGS} ${INC_PATH} ${NVCC_SOURCES}
 
 else
   CXX_SOURCES="${CXX_SOURCES} TestCudaStub.cpp"

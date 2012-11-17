@@ -71,14 +71,14 @@
                                  /* ArbitrateAndCommunicate() is            */
                                  /* invoked to arbitrate.                   */
 
-/***************************************************************************** 
+/*****************************************************************************
    Structure holding aggregate information. Right now, nAggregates, IsRoot,
    Vertex2AggId, procWinner are populated.  This allows us to look at a node
-   and determine the aggregate to which it has been assigned and the id of the 
+   and determine the aggregate to which it has been assigned and the id of the
    processor that owns this aggregate. It is not so easy to determine vertices
    within the kth aggregate or the size of the kth aggregate. Thus, it might be
-   useful to have a secondary structure which would be a rectangular CrsGraph 
-   where rows (or vertices) correspond to aggregates and colunmns (or edges) 
+   useful to have a secondary structure which would be a rectangular CrsGraph
+   where rows (or vertices) correspond to aggregates and colunmns (or edges)
    correspond to nodes. While not strictly necessary, it might be convenient.
 ****************************************************************************/
 
@@ -90,7 +90,7 @@ namespace MueLu {
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
-     
+
     /*! @brief Standard constructor for Aggregates structure
      *
      * Standard constructor of aggregates takes a Graph object as parameter.
@@ -111,7 +111,7 @@ namespace MueLu {
      *
      */
     virtual ~Aggregates() { }
-     
+
     LO GetNumAggregates() const           { return nAggregates_;        } ///< returns the number of aggregates of the current processor. Note: could/should be renamed to GetNumLocalAggregates?
     void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates; } ///< set number of local aggregates on current processor. This has to be done by the aggregation routines.
     RCP<LOVector> & GetVertex2AggIdNonConst()     { return vertex2AggId_;       } ///< provide access to the underlaying aggregation information. Vertex2AggId provides a mapping of the local node id to the local aggregate id on the current processor
@@ -121,29 +121,29 @@ namespace MueLu {
 
     bool IsRoot(LO i) const               { return isRoot_[i];          } ///< returns true if node with given local node id is marked to be a root node
     void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         } ///< set root node information. Used by aggregation methods only.
-    
+
     const RCP<const Map> GetMap() const; ///< returns (overlapping) map of aggregate/node distribution
 
     /*! @brief Compute sizes of aggregates
-     * 
+     *
      * returns the number of nodes in each aggregate in an array.
-     * 
+     *
      */
     Teuchos::ArrayRCP<LO> ComputeAggregateSizes() const;
 
-    //! @name Overridden from Teuchos::Describable 
+    //! @name Overridden from Teuchos::Describable
     //@{
-     
+
     //! Return a simple one-line description of this object.
     std::string description() const;
-     
+
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
     void print(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const;
 
   private:
     LO   nAggregates_;              /* Number of aggregates on this processor  */
-    
+
     RCP<LOVector> vertex2AggId_;    /* vertex2AggId[k] gives a local id        */
                                     /* corresponding to the aggregate to which */
                                     /* local id k has been assigned.  While k  */

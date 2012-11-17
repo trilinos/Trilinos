@@ -58,6 +58,8 @@
 #include "MueLu_EminPFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
+#include "MueLu_NullspaceFactory.hpp"
+#include "MueLu_NullspacePresmoothFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_IfpackSmoother.hpp"
@@ -99,6 +101,7 @@
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuOp()
 
 #define NEUMANN
+#define EMIN
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -210,8 +213,8 @@ int main(int argc, char *argv[]) {
   int nSmoothers=2;
   LO maxLevels = 3;
   LO its=10;
-  // std::string coarseSolver="ifpack2";
-  std::string coarseSolver="amesos2";
+  std::string coarseSolver="ifpack2";
+  // std::string coarseSolver="amesos2";
   int pauseForDebugger=0;
   clp.setOption("nSmoothers",&nSmoothers,"number of Gauss-Seidel smoothers in the MergedSmootehrs");
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed. If 1, then a MergedSmoother is used on the coarse grid");
@@ -249,50 +252,32 @@ int main(int argc, char *argv[]) {
 #ifdef NEUMANN
   // Tranform matrix to Neumann b.c.
   // Essentially, we need to update two diagonal elements
-  bool useTpetra = (Op->getRowMap()->lib() == Xpetra::UseTpetra);
 
-  std::vector<SC> newValuesVector(2, 0.0);
-  Teuchos::ArrayView<SC> newValues(newValuesVector);
+  // TODO: calls to getLocalRowView not really needed
 
-#ifdef HAVE_MUELU_TPETRA
-  if (useTpetra)
-    Utils::Op2NonConstTpetraCrs(Op)->resumeFill();
-#endif
+  Op->resumeFill();
+
   Teuchos::ArrayView<const LO> indices;
   Teuchos::ArrayView<const SC> values;
+  Teuchos::Array<SC> newValues(2, 0.0);
 
   size_t myRank = Op->getRowMap()->getComm()->getRank();
   size_t nCpus  = Op->getRowMap()->getComm()->getSize();
-  if (myRank == 0) {
-    LO firstRow = 0;
+  if (myRank == 0) { // JG TODO: can we use rowMap->isNodeLocalElement(0) instead for more genericity?
+    //LO firstRow = 0;
     newValues[0] = 1.0; newValues[1] = -1.0;
     Op->getLocalRowView(0, indices, values);
-#ifdef HAVE_MUELU_TPETRA
-    if (useTpetra)
-      Utils::Op2NonConstTpetraCrs(Op)->replaceLocalValues(0, indices, newValues);
-#endif
-#ifdef HAVE_MUELU_EPETRA
-    if (!useTpetra)
-      Utils::Op2NonConstEpetraCrs(Op)->ReplaceMyValues(0, 2, newValues.getRawPtr(), indices.getRawPtr());
-#endif
+    Op->replaceLocalValues(0, indices, newValues);
   }
-  if (myRank == nCpus-1) {
+  if (myRank == nCpus-1) { // JG TODO: can we use rowMap->isNodeLocalElement(lastRow) instead for more genericity?
     LO lastRow = Op->getNodeNumRows()-1;
     newValues[0] = -1.0; newValues[1] = 1.0;
     Op->getLocalRowView(lastRow, indices, values);
-#ifdef HAVE_MUELU_TPETRA
-    if (useTpetra)
-      Utils::Op2NonConstTpetraCrs(Op)->replaceLocalValues(lastRow, indices, newValues);
-#endif
-#ifdef HAVE_MUELU_EPETRA
-    if (!useTpetra)
-      Utils::Op2NonConstEpetraCrs(Op)->ReplaceMyValues(lastRow, 2, newValues.getRawPtr(), indices.getRawPtr());
-#endif
+    Op->replaceLocalValues(lastRow, indices, newValues);
   }
-#ifdef HAVE_MUELU_TPETRA
+
   Op->fillComplete();
-#endif
-#endif
+#endif // NEUMANN
 
   /**********************************************************************************/
   /*                                                                                */
@@ -311,43 +296,38 @@ int main(int argc, char *argv[]) {
 
   RCP<MueLu::Level> Finest = H->GetLevel();
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  Finest->Set("A",Op);
+  Finest->Set("A", Op);
   Finest->Set("Nullspace", nullSpace);
 
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-  RCP<SaPFactory>           SaPFact   = rcp(new SaPFactory());
-  RCP<TentativePFactory>    TentPFact = rcp(new TentativePFactory(UCAggFact));
-#if 1
+  FactoryManager M;
+
+  M.SetFactory("Aggregates", rcp(new UCAggregationFactory()));
+  M.SetFactory("Ptent",      rcp(new TentativePFactory()));
+  M.SetFactory("P",          rcp(new SaPFactory()));
+
+#ifdef EMIN
   // Energy-minimization
-#if 1
-  // RCP<PatternFactory>       PatternFact = rcp(new PatternFactory(TentPFact));
-  RCP<PatternFactory>       PatternFact = rcp(new PatternFactory(SaPFact));
-  RCP<ConstraintFactory>    Cfact = rcp(new ConstraintFactory(PatternFact));
-  RCP<EminPFactory>         Pfact = rcp( new EminPFactory(TentPFact, Cfact) );
-#else
-  RCP<EminPFactory>         Pfact = rcp( new EminPFactory(SaPFact) );
-#endif
-
-#else
-  RCP<SaPFactory>       Pfact = rcp( new SaPFactory() );
+  RCP<PatternFactory> PatternFact = rcp(new PatternFactory());
 #if 0
-  Pfact->SetDampingFactor(0.0);
+  PatternFact->SetFactory("P", M.GetFactory("Ptent"));
+#else
+  PatternFact->SetFactory("P", M.GetFactory("P"));
 #endif
-#endif
+  M.SetFactory("Ppattern",   PatternFact);
 
-  RCP<RFactory>         Rfact = rcp( new TransPFactory() );
-  RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
+  RCP<EminPFactory> EminPFact = rcp(new EminPFactory());
+  EminPFact->SetFactory("P", M.GetFactory("Ptent"));
+  M.SetFactory("P",          EminPFact);
+
+  RCP<NullspacePresmoothFactory> NullPreFact = rcp(new NullspacePresmoothFactory());
+  NullPreFact->SetFactory("Nullspace", M.GetFactory("Nullspace"));
+  M.SetFactory("Nullspace",  NullPreFact);
+#endif
 
   RCP<SmootherPrototype> smooProto = gimmeMergedSmoother(nSmoothers, xpetraParameters.GetLib(), coarseSolver, comm->getRank());
-  RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
-  Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+  M.SetFactory("Smoother",   rcp(new SmootherFactory(smooProto)));
 
   Teuchos::ParameterList status;
-  status = H->FullPopulate(*Pfact, *Rfact, *Acfact, *SmooFact, 0, maxLevels);
-  if (comm->getRank() == 0) {
-    std::cout  << "======================\n Multigrid statistics \n======================" << std::endl;
-    status.print(std::cout,Teuchos::ParameterList::PrintOptions().indent(2));
-  }
 
   RCP<SmootherPrototype> coarseProto;
   if (maxLevels != 1) {
@@ -356,8 +336,14 @@ int main(int argc, char *argv[]) {
     coarseProto = gimmeMergedSmoother(nSmoothers, xpetraParameters.GetLib(), coarseSolver, comm->getRank());
   }
   if (coarseProto == Teuchos::null) return EXIT_FAILURE;
-  SmootherFactory coarseSolveFact(coarseProto);
-  H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
+  RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(coarseProto));
+  M.SetFactory("CoarseSolver", coarseSolveFact);
+
+  status = H->Setup(M, 0, maxLevels);
+  if (comm->getRank() == 0) {
+    std::cout  << "======================\n Multigrid statistics \n======================" << std::endl;
+    status.print(std::cout,Teuchos::ParameterList::PrintOptions().indent(2));
+  }
 
   // Define RHS
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
@@ -368,6 +354,7 @@ int main(int argc, char *argv[]) {
   X->norm2(norms);
   if (comm->getRank() == 0)
     std::cout << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+
 
   Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
@@ -380,9 +367,9 @@ int main(int argc, char *argv[]) {
 #ifdef NEUMANN
     // Project X
     X->norm1(norms);
-    size_t numElements = X->getGlobalLength();
-    SC alpha = norms[0]/numElements;
-    for (LO i = 0; i < numElements; i++)
+    size_t numGlobalElements = X->getGlobalLength(), numElements = X->getLocalLength();
+    SC alpha = norms[0]/numGlobalElements;
+    for (size_t i = 0; i < numElements; i++)
       X->getDataNonConst(0)[i] -= alpha;
 #endif
 

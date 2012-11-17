@@ -49,8 +49,12 @@
 
 #include "MueLu_NoFactory.hpp"
 
+#ifdef HAVE_MUELU_BOOST
+#include "boost/graph/graphviz.hpp"
+#endif
+
 namespace MueLu {
-  
+
   Needs::Needs() { }
 
   Needs::~Needs() { }
@@ -83,7 +87,7 @@ namespace MueLu {
       Teuchos::RCP<MueLu::VariableContainer> newVar = Teuchos::rcp(new MueLu::VariableContainer);
       dataTable_.Set(factory, ename, newVar);
     }
-    
+
     // Set the flag
     Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
     var->AddKeepFlag(keep);
@@ -92,11 +96,11 @@ namespace MueLu {
   void Needs::RemoveKeepFlag(const std::string & ename, const FactoryBase* factory, KeepType keep) {
     // No entry = nothing to do
     if (!dataTable_.IsKey(factory,ename)) return;
-    
+
     // Remove the flag
     Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
     var->RemoveKeepFlag(keep);
-    
+
     // Remove data if no keep flag left and counter == 0
     if ((var->IsRequested() == false) && (var->GetKeepFlag() == 0)) {
       var = Teuchos::null; // free data
@@ -213,7 +217,7 @@ namespace MueLu {
       std::vector<std::string> enames = RequestedKeys(*kt);
       for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); ++it) {
         outputter.outputField(*it);                    // variable name
-        outputter.outputField(*kt);                    // factory ptr          
+        outputter.outputField(*kt);                    // factory ptr
         int reqcount = NumRequests(*it, *kt);          // request counter
         outputter.outputField(reqcount);
         if (GetKeepFlag(*it, *kt) != 0) outputter.outputField("true");
@@ -247,5 +251,50 @@ namespace MueLu {
       }
     }
   }
+
+#if defined(HAVE_MUELU_BOOST) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
+  void Needs::UpdateGraph(std::map<const FactoryBase*, long unsigned>&                           vindices,
+                          std::map<std::pair<long unsigned, long unsigned>, std::string>&        edges,
+                          boost::dynamic_properties&                                             dp,
+                          boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS,
+                          boost::property<boost::vertex_name_t, std::string,
+                          boost::property<boost::vertex_color_t, std::string,
+                          boost::property<boost::vertex_index_t, std::string> > >,
+                          boost::property<boost::edge_name_t, std::string,
+                          boost::property<boost::edge_color_t, std::string> > >&                 graph) const {
+    size_t vind = vindices.size();
+
+    typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS,
+            boost::property<boost::vertex_name_t, std::string,
+            boost::property<boost::vertex_color_t, std::string,
+            boost::property<boost::vertex_index_t, std::string> > >,
+            boost::property<boost::edge_name_t, std::string,
+            boost::property<boost::edge_color_t, std::string> > > Graph;
+    typedef boost::graph_traits<Graph>::vertex_descriptor vertex_t;
+    typedef boost::graph_traits<Graph>::edge_descriptor   edge_t;
+
+    for (UTILS::TwoKeyMap<const FactoryBase*, std::string, RCP<MueLu::VariableContainer> >::const_iterator it1 = dataTable_.begin(); it1 != dataTable_.end(); it1++) {
+      if (vindices.find(it1->first) == vindices.end()) {
+        vertex_t boost_vertex = boost::add_vertex(graph);
+        boost::put("label", dp, boost_vertex, it1->first->description());
+        vindices[it1->first] = vind++;
+      }
+
+      for (Teuchos::map<std::string, RCP<MueLu::VariableContainer> >::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++) {
+        const std::map<const FactoryBase*,int>& requests = it2->second->Requests();
+        for (std::map<const FactoryBase*,int>::const_iterator rit = requests.begin(); rit != requests.end(); rit++) {
+          if (vindices.find(rit->first) == vindices.end()) {
+            // requested by factory which is unknown
+            vertex_t boost_vertex = boost::add_vertex(graph);
+            boost::put("label", dp, boost_vertex, rit->first->description());
+            vindices[rit->first] = vind++;
+          }
+
+          edges[std::pair<long unsigned,long unsigned>(vindices[rit->first], vindices[it1->first])] =  it2->first;
+        }
+      }
+    }
+  }
+#endif
 
 } //namespace MueLu

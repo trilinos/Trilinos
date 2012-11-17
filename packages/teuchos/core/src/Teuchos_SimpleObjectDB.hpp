@@ -194,12 +194,7 @@ private:
   tableOfObjects_t tableOfObjects_;
   freedIndices_t freedIndices_;
 
-  void validateIndex(const int index) const
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-    ;
-#else
-    {}
-#endif
+  void validateIndex(const int index) const;
 
   template <class T2>
   int storeObjectImpl(const RCP<T2> &robj);
@@ -354,7 +349,6 @@ void SimpleObjectDB<T>::purge()
 // private
 
 
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 template <class T>
 void SimpleObjectDB<T>::validateIndex(const int index) const
 {
@@ -369,7 +363,6 @@ void SimpleObjectDB<T>::validateIndex(const int index) const
     "Error, the object at index "<<index<<" of type "
     <<TypeNameTraits<T>::name()<<" has already been deleted!");
 }
-#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
 
 template <class T>

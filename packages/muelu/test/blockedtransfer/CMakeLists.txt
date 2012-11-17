@@ -21,7 +21,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack)
     TRIBITS_ADD_TEST(
         BlockedTransfer
         NAME "BlockedTransfer_Epetra"
-        ARGS "--linAlgebra=0"
+        ARGS "--linAlgebra=Epetra"
         COMM serial mpi
       )
 
@@ -32,10 +32,10 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
     TRIBITS_ADD_TEST(
         BlockedTransfer
         NAME "BlockedTransfer_Tpetra"
-        ARGS "--linAlgebra=1"
+        ARGS "--linAlgebra=Tpetra"
         COMM serial mpi
       )
-  
+
 ENDIF()
 
 ENDIF() # Galeri
@@ -49,7 +49,7 @@ ENDIF() # Galeri
 
 #IF (${PACKAGE_NAME}_ENABLE_Epetra AND
 #    ${PACKAGE_NAME}_ENABLE_EpetraExt AND
-#    ${PACKAGE_NAME}_ENABLE_Amesos) 
+#    ${PACKAGE_NAME}_ENABLE_Amesos)
 
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #    TSIExample
@@ -58,9 +58,9 @@ ENDIF() # Galeri
 #    COMM serial mpi
 #    DEPLIBS muelu xpetra
 #  )
-  
+
 #TRIBITS_COPY_FILES_TO_BINARY_DIR(TSIExample_test_cp
 #SOURCE_FILES TSImatrix.out TSIbvector.out nspvector.out
 #)
-  
+
 #ENDIF()

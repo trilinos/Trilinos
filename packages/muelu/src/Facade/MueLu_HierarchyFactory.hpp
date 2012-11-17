@@ -74,11 +74,11 @@ namespace MueLu {
     //       In the future, we might have an abstract Hierarchy class and several derived Hierarchy classes.
     //       Using this function will then be the recommended way to generate a Hierarchy.
     //
-    // This method is called Create() instead of Build(), because it return an non-initialized 
-    // object (ie: MG setup is not done). 
+    // This method is called Create() instead of Build(), because it return an non-initialized
+    // object (ie: MG setup is not done).
     // Build() function in MueLu returns initialized objects.
     virtual RCP<Hierarchy> CreateHierarchy() const = 0;
-    
+
     //! Setup Hierarchy object
     virtual void SetupHierarchy(Hierarchy & H) const = 0;
 

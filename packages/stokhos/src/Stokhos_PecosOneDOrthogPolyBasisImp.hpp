@@ -246,6 +246,7 @@ getQuadPoints(ordinal_type quad_order,
 	      Teuchos::Array<value_type>& quad_weights,
 	      Teuchos::Array< Teuchos::Array<value_type> >& quad_values) const
 {
+  // This assumes Gaussian quadrature
   ordinal_type num_points = 
     static_cast<ordinal_type>(std::ceil((quad_order+1)/2.0));
   const Pecos::RealArray& gp = pecosPoly->collocation_points(num_points);
@@ -263,6 +264,14 @@ getQuadPoints(ordinal_type quad_order,
     quad_values[i].resize(p+1);
     evaluateBases(quad_points[i], quad_values[i]);
   }
+}
+
+template <typename ordinal_type, typename value_type>
+ordinal_type
+Stokhos::PecosOneDOrthogPolyBasis<ordinal_type,value_type>::
+quadDegreeOfExactness(ordinal_type n) const
+{
+  return ordinal_type(2)*n-ordinal_type(1);
 }
 
 template <typename ordinal_type, typename value_type>

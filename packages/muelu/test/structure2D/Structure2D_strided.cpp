@@ -116,7 +116,7 @@
 Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal stridedBlockId, GlobalOrdinal offset) {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  
+
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
@@ -202,7 +202,8 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
   //dropFact->SetVariableBlockSize();
 
   // prepare aggregation strategy
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
+  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+  UCAggFact->SetFactory("Graph", dropFact);
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
   *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
@@ -226,22 +227,22 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
   *out << "=============================================================================" << std::endl;
 
   // build transfer operators
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
 
   /*TentPFact->setStridingData(stridingInfo);
   TentPFact->setStridedBlockId(stridedBlockId);
   TentPFact->setDomainMapOffset(offset);*/
 
-  RCP<CoarseMapFactory> coarseMapFact = Teuchos::rcp(new CoarseMapFactory(UCAggFact));
+  RCP<CoarseMapFactory> coarseMapFact = Teuchos::rcp(new CoarseMapFactory());
   coarseMapFact->setStridingData(stridingInfo);
   coarseMapFact->setStridedBlockId(stridedBlockId);
   coarseMapFact->setDomainMapOffset(offset);
 
   RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
-  //RCP<PgPFactory> Pfact  = rcp( new PgPFactory(TentPFact) );
-  //RCP<TentativePFactory> Pfact  = rcp( new TentativePFactory(UCAggFact) );
+  //RCP<PgPFactory> Pfact  = rcp( new PgPFactory() );
+  //RCP<TentativePFactory> Pfact  = rcp( new TentativePFactory() );
   RCP<RFactory>   Rfact  = rcp( new TransPFactory() );
-  //RCP<RFactory>   Rfact  = rcp( new GenericRFactory(Pfact) );
+  //RCP<RFactory>   Rfact  = rcp( new GenericRFactory() );
 
   // RAP Factory
   RCP<RAPFactory> Acfact = rcp( new RAPFactory() );
@@ -276,8 +277,6 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
 #endif
   RCP<SmootherFactory> coarsestSmooFact;
   coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto, Teuchos::null));
-  H->SetCoarsestSolver(*coarsestSmooFact);
-  //H->SetCoarsestSolver(*SmooFact);
 
   FactoryManager M;
   //M.SetFactory("Graph", dropFact);
@@ -323,7 +322,7 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
 
     aztecSolver.Iterate(maxIts, tol);
   }
-  
+
   return xLsg;
 }
 
@@ -335,18 +334,18 @@ int main(int argc, char *argv[]) {
 
   std::vector<size_t> stridingInfo;
   stridingInfo.push_back(3);
-    
+
   // no striding, just one block of size 3, no offset
   Teuchos::RCP<Vector> ref = runExample(stridingInfo, -1, 0);
-  
+
   int cnt_errors = 0;
-  
+
   stridingInfo.push_back(1);
   // striding (3,1), use block 0, no offset
   Teuchos::RCP<Vector> lsg2 = runExample(stridingInfo, 0, 0);
   lsg2->update(-1.0, *ref, 1.0);
   if(lsg2->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
-  
+
   stridingInfo.push_back(4);
   // striding (3,1,4), use block 0, no offset
   Teuchos::RCP<Vector> lsg3 = runExample(stridingInfo, 0, 0);
@@ -358,27 +357,27 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<Vector> lsg4 = runExample(stridingInfo, 3, 0);
   lsg4->update(-1.0, *ref, 1.0);
   if(lsg4->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
-  
+
   ////////////////////////////////////////////// test with offset
   stridingInfo.clear();
   stridingInfo.push_back(3);
-  
+
   // no striding, just one block of size 3, offset 35
   Teuchos::RCP<Vector> lsg5 = runExample(stridingInfo, -1, 35);
   lsg5->update(-1.0, *ref, 1.0);
   if(lsg5->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
-  
+
   // no striding, use block 0, offset 35
   Teuchos::RCP<Vector> lsg6 = runExample(stridingInfo, 0, 35);
   lsg6->update(-1.0, *ref, 1.0);
   if(lsg6->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
- 
+
   stridingInfo.push_back(1);
   //striding (3,1), use block 0, offset 35
   Teuchos::RCP<Vector> lsg7 = runExample(stridingInfo, 0, 35);
   lsg7->update(-1.0, *ref, 1.0);
   if(lsg7->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
-  
+
   stridingInfo.push_back(3);
   //striding (3,1,3), use block 2, offset 35
   Teuchos::RCP<Vector> lsg8 = runExample(stridingInfo, 2, 35);
@@ -389,7 +388,7 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<Vector> lsg9 = runExample(stridingInfo, 2, 36);
   lsg9->update(-1.0, *ref, 1.0);
   if(lsg9->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
-  
+
   if(cnt_errors>0) {
     std::cout << "results do not match. Error" << std::endl;
     return EXIT_FAILURE;

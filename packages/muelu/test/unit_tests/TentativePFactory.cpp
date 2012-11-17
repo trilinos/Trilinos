@@ -115,23 +115,31 @@ namespace MueLuTests {
       fineLevel.Set("Nullspace",nullSpace);
 
       RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
-      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory(Teuchos::null, amalgFact));
-      RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
+      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+      RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+      UCAggFact->SetFactory("Graph", dropFact);
+
       UCAggFact->SetMinNodesPerAggregate(3);
       UCAggFact->SetMaxNeighAlreadySelected(0);
       UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
       UCAggFact->SetPhase3AggCreation(0.5);
 
-      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory(UCAggFact,Teuchos::null));
+      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
+      coarseMapFact->SetFactory("Aggregates", UCAggFact);
 
-      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact,amalgFact, Teuchos::null, Teuchos::null, coarseMapFact));
+      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
+      TentativePFact->SetFactory("Aggregates", UCAggFact);
+      TentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
+      TentativePFact->SetFactory("CoarseMap", coarseMapFact);
 
       coarseLevel.Request("P",TentativePFact.get());         // request Ptent
       coarseLevel.Request("Nullspace",TentativePFact.get()); // request coarse nullspace
       coarseLevel.Request(*TentativePFact);
       TentativePFact->Build(fineLevel,coarseLevel);
 
-      RCP<Matrix> Ptent; 
+      RCP<Matrix> Ptent;
       coarseLevel.Get("P",Ptent,TentativePFact.get());
 
       RCP<MultiVector> coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace", TentativePFact.get());
@@ -183,16 +191,21 @@ namespace MueLuTests {
       fineLevel.Set("Nullspace",nullSpace);
 
       RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
-      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory(Teuchos::null, amalgFact));
-      RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
+      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+      RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+      UCAggFact->SetFactory("Graph", dropFact);
       UCAggFact->SetMinNodesPerAggregate(3);
       UCAggFact->SetMaxNeighAlreadySelected(0);
       UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
       UCAggFact->SetPhase3AggCreation(0.5);
 
-      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory(UCAggFact,Teuchos::null));
-
-      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory(UCAggFact,amalgFact,Teuchos::null,Teuchos::null,coarseMapFact));
+      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
+      coarseMapFact->SetFactory("Aggregates", UCAggFact);
+      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
+      TentativePFact->SetFactory("Aggregates", UCAggFact);
+      TentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
+      TentativePFact->SetFactory("CoarseMap", coarseMapFact);
 
       coarseLevel.Request("P",TentativePFact.get());  // request Ptent
       coarseLevel.Request("Nullspace",TentativePFact.get());
@@ -247,20 +260,14 @@ namespace MueLuTests {
 
     fineLevel.Set("A", A);
 
-    RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-    UCAggFact->SetMinNodesPerAggregate(3);
-    UCAggFact->SetMaxNeighAlreadySelected(0);
-    UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
-    UCAggFact->SetPhase3AggCreation(0.5);
-
-    RCP<TentativePFactory> tentativePFact = rcp(new TentativePFactory(UCAggFact));
+    RCP<TentativePFactory> tentativePFact = rcp(new TentativePFactory());
 
     coarseLevel.Request("P",tentativePFact.get());  // request Ptent
     coarseLevel.Request("Nullspace", tentativePFact.get());  // request coarse nullspace
     coarseLevel.Request(*tentativePFact);
     tentativePFact->Build(fineLevel,coarseLevel);
 
-    RCP<Matrix> Ptent; 
+    RCP<Matrix> Ptent;
     coarseLevel.Get("P",Ptent,tentativePFact.get());
 
     RCP<MultiVector> coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace",tentativePFact.get());
@@ -411,7 +418,7 @@ namespace MueLuTests {
     M.SetFactory("Aggregates", UCAggFact);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", SmooFact);
-    
+
     H->Setup(M, 0, maxLevels);
 
     RCP<Level> coarseLevel = H->GetLevel(1);
@@ -541,7 +548,7 @@ namespace MueLuTests {
             Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
             RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
-            
+
             FactoryManager M;
             M.SetFactory("P", Pfact);
             M.SetFactory("R", Rfact);
@@ -550,7 +557,7 @@ namespace MueLuTests {
             M.SetFactory("Aggregates", UCAggFact);
             M.SetFactory("Smoother", SmooFact);
             M.SetFactory("CoarseSolver", coarseSolveFact);
-            
+
             H->Setup(M, 0, maxLevels);
 
             // test some basic multgrid data

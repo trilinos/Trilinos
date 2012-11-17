@@ -63,11 +63,11 @@
 namespace Xpetra {
 
 template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-class TpetraBlockMap 
+class TpetraBlockMap
   : public BlockMap<LocalOrdinal,GlobalOrdinal,Node>
 {
  public:
-  
+
   // The following typedef are used by the XPETRA_DYNAMIC_CAST() macro.
   typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
 
@@ -100,7 +100,7 @@ class TpetraBlockMap
                  GlobalOrdinal indexBase,
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                  const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalBlocks, myGlobalBlockIDs, myFirstGlobalPointInBlocks, myBlockSizes, indexBase, comm, node))) {  }
-  
+
   /*! \brief TpetraBlockMap constructor which takes a "regular" Map.
    * The arrays myGlobalBlockIDs and myBlockSizes must be the same length, and
    * sum(myBlockSizes) must equal pointMap->getNodeNumElements().
@@ -111,7 +111,7 @@ class TpetraBlockMap
                  const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
                  const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
                  const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) {
-    
+
     XPETRA_RCP_DYNAMIC_CAST(const TpetraMapClass, pointMap, tPointMap, "Xpetra::TpetraBlockMap constructors only accept Xpetra::TpetraMap as input arguments.");
     map_ = rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(tPointMap->getTpetra_Map(), myGlobalBlockIDs, myBlockSizes, node));
   }

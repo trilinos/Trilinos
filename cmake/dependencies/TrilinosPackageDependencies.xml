@@ -279,7 +279,7 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Xpetra" dir="packages/xpetra" type="SS">
+  <Package name="Xpetra" dir="packages/xpetra" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,KokkosClassic,Tpetra"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -1363,7 +1363,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="AztecOO,Epetra,EpetraExt,Galeri,Tpetra,Belos"/>
     <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="Boost"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>

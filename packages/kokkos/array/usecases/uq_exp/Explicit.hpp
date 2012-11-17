@@ -142,10 +142,10 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   typename fields_type::node_coords_type::HostMirror
     model_coords_h = KokkosArray::create_mirror( mesh_fields.model_coords );
 
-  typename fields_type::geom_array_view::HostMirror
+  typename fields_type::spatial_precise_view::HostMirror
     displacement_h = KokkosArray::create_mirror( mesh_fields.displacement );
 
-  typename fields_type::geom_array_view::HostMirror
+  typename fields_type::spatial_precise_view::HostMirror
     velocity_h = KokkosArray::create_mirror( mesh_fields.velocity );
 
   KokkosArray::deep_copy( model_coords_h , mesh_fields.model_coords );
@@ -188,13 +188,13 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   perf_data.number_of_steps = total_num_steps ;
 
   typedef typename
-    fields_type::geom_array_view::scalar_type  comm_value_type ;
+    fields_type::spatial_precise_view::scalar_type  comm_value_type ;
 
   const unsigned comm_value_count = 6 ;
 
   KokkosArray::AsyncExchange< comm_value_type , device_type ,
                               KokkosArray::ParallelDataMap >
-    comm_exchange( mesh.parallel_data_map , comm_value_count );
+    comm_exchange( mesh.parallel_data_map , comm_value_count * uq_count );
 
   for ( int step = 0; step < total_num_steps; ++step ) {
 

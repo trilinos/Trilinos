@@ -20,12 +20,12 @@
   //
   // PB of 1): Right now, Xpetra::Operator is way to complicated to be the common interface.
   //           At some point, Xpetra::Operator should correspond to the Tpetra::Operator interface and the old one should be renamed
-  //           1a) is the approach of Ifpack in some sense: Ifpack Preconditionner implements Epetra_Operator but there is problem 
+  //           1a) is the approach of Ifpack in some sense: Ifpack Preconditionner implements Epetra_Operator but there is problem
   //           with Apply vs ApplyInverse and so it ends up with an approach more similar to 1b).
   //
   // PB of 2b): If the new interface is only for Belos, we should not introduce inheritence dependency to it
   //            Approach 2b) is very close to 1a) if the Xpetra::Operator is changed to be === to Tpetra::Operator
   //
-  // Righ now, I adopt the approach 2b). The common interface is OperatorT. 
+  // Righ now, I adopt the approach 2b). The common interface is OperatorT.
   // This approach is very similar with what is done with Belos::Operator but here, we don't need to wrap Xpetra::MultiVector
   // I think that the OperatorT interface should be provided by Belos and replace the Belos::Operator

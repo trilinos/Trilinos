@@ -13,7 +13,8 @@ INCLUDE_DIRECTORIES(
 )
 
 
-SET(EXECUTABLE_OUTPUT_PATH ../bin)
+#SET(EXECUTABLE_OUTPUT_PATH ../bin)
+#SET(CMAKE_FILES_DIRECTORY  ../bin)
 
 #specify the sources to compile into our exe
 ADD_EXECUTABLE(MeshingGenie ${APP_SRCS})

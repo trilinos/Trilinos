@@ -73,9 +73,9 @@ namespace MueLu {
      - aggregates ("Aggegates")
 
      Factory options:
-     - 
-     - 
-     - 
+     -
+     -
+     -
   */
 
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
@@ -88,7 +88,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    UCAggregationFactory(RCP<const FactoryBase> graphFact = Teuchos::null);
+    UCAggregationFactory();
 
     //! Destructor.
     virtual ~UCAggregationFactory() { }
@@ -131,9 +131,6 @@ namespace MueLu {
 
   private:
 
-    //! Graph Factory
-    RCP<const FactoryBase> graphFact_;
- 
     //! Algorithms
     LocalAggregationAlgorithm algo1_;
     LeftoverAggregationAlgorithm algo2_;
@@ -143,7 +140,7 @@ namespace MueLu {
 } //namespace MueLu
 
 //TODO: can be more generic:
-// - allow to choose algo 
+// - allow to choose algo
 // - base class for algorithm and options forward to algorithm as parameter list
 
 #define MUELU_UCAGGREGATIONFACTORY_SHORT

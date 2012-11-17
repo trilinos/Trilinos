@@ -68,7 +68,7 @@ namespace MueLu {
   void GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     RCP<PFactory> PFact = PFact_;
     if (PFact_ == Teuchos::null) { PFact = Teuchos::rcp_const_cast<PFactory>(rcp_dynamic_cast<const PFactory>(coarseLevel.GetFactoryManager()->GetFactory("P"))); /* ! */ }
-    
+
     bool rmode = PFact->isRestrictionModeSet();
     PFact->setRestrictionMode(true);             // set restriction mode
 

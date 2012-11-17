@@ -95,6 +95,9 @@ struct Fields {
 
   typedef Device  device_type ;
 
+  typedef double ScalarPrecise ;
+  typedef float  ScalarCompact ;
+
   typedef HybridFEM::FEMesh<double,ElemNodeCount,device_type>  FEMesh ;
 
   typedef typename FEMesh::node_coords_type      node_coords_type ;
@@ -102,15 +105,17 @@ struct Fields {
   typedef typename FEMesh::node_elem_ids_type    node_elem_ids_type ;
   typedef typename KokkosArray::ParallelDataMap  parallel_data_map ;
 
+  typedef KokkosArray::View< ScalarPrecise ** [ SpatialDim ] , device_type > spatial_precise_view ;
+  typedef KokkosArray::View< ScalarCompact  ** [ SpatialDim ] , device_type > spatial_compact_view ;
+
 
   typedef KokkosArray::View< Scalar*                , device_type >  scalar_view ;
   typedef KokkosArray::View< Scalar**               , device_type >  array_view ;
-  typedef KokkosArray::View< Scalar**[ SpatialDim ] , device_type >  geom_array_view ;
   typedef KokkosArray::View< Scalar**[ K_F_SIZE ]   , device_type >  tensor_array_view ;
   typedef KokkosArray::View< Scalar**[ K_S_SIZE ]   , device_type >  sym_tensor_array_view ;
 
-  typedef KokkosArray::View< Scalar**[ SpatialDim ][ ElemNodeCount ] , device_type >
-    elem_node_geom_view ;
+  typedef KokkosArray::View< ScalarCompact**[ SpatialDim ][ ElemNodeCount ] , device_type >
+    elem_node_spatial_view ;
 
   typedef KokkosArray::View< Scalar ,   device_type > value_view ;
   typedef KokkosArray::View< Scalar* , device_type > property_view ;
@@ -121,11 +126,11 @@ struct Fields {
   const unsigned num_elements ;
   const unsigned uq_count ;
 
-  const Scalar  lin_bulk_visc;
-  const Scalar  quad_bulk_visc;
-  const Scalar  two_mu;
-  const Scalar  bulk_modulus;
-  const Scalar  density;
+  const float  lin_bulk_visc;
+  const float  quad_bulk_visc;
+  const float  two_mu;
+  const float  bulk_modulus;
+  const float  density;
 
   // Views of mesh data:
   const elem_node_ids_type  elem_node_connectivity ;
@@ -139,18 +144,18 @@ struct Fields {
   // Compute data:
         value_view             dt ;
         value_view             dt_new ;
-        geom_array_view        displacement ;
-        geom_array_view        displacement_new ;
-        geom_array_view        velocity ;
-        geom_array_view        velocity_new ;
+        spatial_precise_view   displacement ;
+        spatial_precise_view   displacement_new ;
+        spatial_precise_view   velocity ;
+        spatial_precise_view   velocity_new ;
         tensor_array_view      rotation ;
         tensor_array_view      rotation_new ;
 
-  const geom_array_view        acceleration ;
-  const geom_array_view        internal_force ;
+  const spatial_compact_view   acceleration ;
+  const spatial_compact_view   internal_force ;
   const array_view             internal_energy ;
   const sym_tensor_array_view  stress ;
-  const elem_node_geom_view    element_force ;
+  const elem_node_spatial_view    element_force ;
   const tensor_array_view      vel_grad ;
   const sym_tensor_array_view  stretch ;
   const sym_tensor_array_view  rot_stretch ;
@@ -158,11 +163,11 @@ struct Fields {
   Fields(
       const FEMesh & mesh,
       const unsigned arg_uq_count ,
-      const Scalar   arg_lin_bulk_visc,
-      const Scalar   arg_quad_bulk_visc,
-      const Scalar   youngs_modulus,
-      const Scalar   poissons_ratio,
-      const Scalar   arg_density )
+      const float    arg_lin_bulk_visc,
+      const float    arg_quad_bulk_visc,
+      const float    youngs_modulus,
+      const float    poissons_ratio,
+      const float    arg_density )
     : num_nodes(       mesh.parallel_data_map.count_owned +
                        mesh.parallel_data_map.count_receive )
     , num_nodes_owned( mesh.parallel_data_map.count_owned )
@@ -290,14 +295,10 @@ void unpack_state( const Fields< FieldsScalar , Device >  & arg_fields ,
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< typename Scalar , class DeviceType >
-struct InitializeElement< Explicit::Fields< Scalar, DeviceType > >
+template< class Fields >
+struct InitializeElement
 {
-  typedef DeviceType     device_type ;
-
-  typedef Explicit::Fields< Scalar , device_type > Fields ;
-
-  typedef Hex8Functions<device_type> ElemFunc ;
+  typedef typename Fields::device_type     device_type ;
 
   const typename Fields::elem_node_ids_type     elem_node_connectivity ;
   const typename Fields::node_coords_type       model_coords ;
@@ -307,8 +308,15 @@ struct InitializeElement< Explicit::Fields< Scalar, DeviceType > >
   const typename Fields::tensor_array_view      rotation_new ;
   const typename Fields::property_view          elem_mass ;
 
-  const Scalar   density ;
+  const float    density ;
   const unsigned uq_count ;
+  const unsigned K_S_XX ;
+  const unsigned K_S_YY ;
+  const unsigned K_S_ZZ ;
+  const unsigned K_F_XX ;
+  const unsigned K_F_YY ;
+  const unsigned K_F_ZZ ;
+
 
   InitializeElement( const Fields & mesh_fields )
     : elem_node_connectivity( mesh_fields.elem_node_connectivity )
@@ -319,6 +327,12 @@ struct InitializeElement< Explicit::Fields< Scalar, DeviceType > >
     , elem_mass(              mesh_fields.elem_mass )
     , density(                mesh_fields.density )
     , uq_count(               mesh_fields.stretch.dimension(1) )
+    , K_S_XX( Hex8Functions::K_S_XX )
+    , K_S_YY( Hex8Functions::K_S_YY )
+    , K_S_ZZ( Hex8Functions::K_S_ZZ )
+    , K_F_XX( Hex8Functions::K_F_XX )
+    , K_F_YY( Hex8Functions::K_F_YY )
+    , K_F_ZZ( Hex8Functions::K_F_ZZ )
     {
       KokkosArray::parallel_for( mesh_fields.num_elements , *this );
     }
@@ -326,17 +340,14 @@ struct InitializeElement< Explicit::Fields< Scalar, DeviceType > >
   KOKKOSARRAY_INLINE_FUNCTION
   void operator()( unsigned ielem )const
   {
-    const unsigned K_XX = 0 ;
-    const unsigned K_YY = 1 ;
-    const unsigned K_ZZ = 2 ;
-    const Scalar ONE12TH = 1.0 / 12.0 ;
+    const float ONE12TH = 1.0 / 12.0 ;
 
-    Scalar x[ Fields::ElemNodeCount ];
-    Scalar y[ Fields::ElemNodeCount ];
-    Scalar z[ Fields::ElemNodeCount ];
-    Scalar grad_x[ Fields::ElemNodeCount ];
-    Scalar grad_y[ Fields::ElemNodeCount ];
-    Scalar grad_z[ Fields::ElemNodeCount ];
+    typename Fields::ScalarPrecise x[ Fields::ElemNodeCount ];
+    typename Fields::ScalarPrecise y[ Fields::ElemNodeCount ];
+    typename Fields::ScalarPrecise z[ Fields::ElemNodeCount ];
+    typename Fields::ScalarCompact grad_x[ Fields::ElemNodeCount ];
+    typename Fields::ScalarCompact grad_y[ Fields::ElemNodeCount ];
+    typename Fields::ScalarCompact grad_z[ Fields::ElemNodeCount ];
 
     for ( unsigned i = 0 ; i < Fields::ElemNodeCount ; ++i ) {
       const unsigned n = elem_node_connectivity( ielem , i );
@@ -346,23 +357,23 @@ struct InitializeElement< Explicit::Fields< Scalar, DeviceType > >
       z[i]  = model_coords( n , 2 );
     }
 
-    ElemFunc::grad( x, y, z, grad_x, grad_y, grad_z);
+    Hex8Functions::grad( x, y, z, grad_x, grad_y, grad_z);
 
-    elem_mass(ielem) = ONE12TH * density * ElemFunc::dot8( x , grad_x );
+    elem_mass(ielem) = ONE12TH * density * Hex8Functions::dot8( x , grad_x );
 
     for ( unsigned jp = 0 ; jp < uq_count ; ++jp ) {
 
-      stretch(ielem,jp,K_XX) = 1 ;
-      stretch(ielem,jp,K_YY) = 1 ;
-      stretch(ielem,jp,K_ZZ) = 1 ;
+      stretch(ielem,jp,K_S_XX) = 1 ;
+      stretch(ielem,jp,K_S_YY) = 1 ;
+      stretch(ielem,jp,K_S_ZZ) = 1 ;
 
-      rotation(ielem,jp,K_XX) = 1 ;
-      rotation(ielem,jp,K_YY) = 1 ;
-      rotation(ielem,jp,K_ZZ) = 1 ;
+      rotation(ielem,jp,K_F_XX) = 1 ;
+      rotation(ielem,jp,K_F_YY) = 1 ;
+      rotation(ielem,jp,K_F_ZZ) = 1 ;
 
-      rotation_new(ielem,jp,K_XX) = 1 ;
-      rotation_new(ielem,jp,K_YY) = 1 ;
-      rotation_new(ielem,jp,K_ZZ) = 1 ;
+      rotation_new(ielem,jp,K_F_XX) = 1 ;
+      rotation_new(ielem,jp,K_F_YY) = 1 ;
+      rotation_new(ielem,jp,K_F_ZZ) = 1 ;
     }
   }
 };
@@ -415,7 +426,6 @@ struct GradFunctor< Explicit::Fields< Scalar , DeviceType > >
   typedef DeviceType device_type ;
 
   typedef Explicit::Fields< Scalar , device_type >  Fields ;
-  typedef Hex8Functions<device_type> ElemFunc ;
 
   static const unsigned ElemNodeCount = Fields::ElemNodeCount ;
   static const unsigned K_F_SIZE      = Fields::K_F_SIZE ;
@@ -427,10 +437,10 @@ struct GradFunctor< Explicit::Fields< Scalar , DeviceType > >
   const typename Fields::node_coords_type    model_coords ;
 
   const typename Fields::value_view          dt ;
-  const typename Fields::geom_array_view     displacement ; 
-  const typename Fields::geom_array_view     velocity ; 
-  const typename Fields::tensor_array_view   vel_grad ;
-  const unsigned                             uq_count ;
+  const typename Fields::spatial_precise_view  displacement ; 
+  const typename Fields::spatial_precise_view  velocity ; 
+  const typename Fields::tensor_array_view     vel_grad ;
+  const unsigned                               uq_count ;
 
   // Constructor on the Host to populate this device functor.
   // All array view copies are shallow.
@@ -520,23 +530,23 @@ struct GradFunctor< Explicit::Fields< Scalar , DeviceType > >
         z[i]  = model_z[i] + displacement( n , jp , Z ) + dt_scale * vz[i];
       }
 
-      ElemFunc::grad( x, y, z, grad_x, grad_y, grad_z);
+      Hex8Functions::grad( x, y, z, grad_x, grad_y, grad_z);
 
       //  Calculate hexahedral volume from x model_coords and gradient information
 
-      const Scalar inv_vol = 1.0 / ElemFunc::dot8( x , grad_x );
+      const Scalar inv_vol = 1.0 / Hex8Functions::dot8( x , grad_x );
 
-      vel_grad( ielem, jp, K_F_XX ) = inv_vol * ElemFunc::dot8( vx , grad_x );
-      vel_grad( ielem, jp, K_F_YX ) = inv_vol * ElemFunc::dot8( vy , grad_x );
-      vel_grad( ielem, jp, K_F_ZX ) = inv_vol * ElemFunc::dot8( vz , grad_x );
+      vel_grad( ielem, jp, K_F_XX ) = inv_vol * Hex8Functions::dot8( vx , grad_x );
+      vel_grad( ielem, jp, K_F_YX ) = inv_vol * Hex8Functions::dot8( vy , grad_x );
+      vel_grad( ielem, jp, K_F_ZX ) = inv_vol * Hex8Functions::dot8( vz , grad_x );
 
-      vel_grad( ielem, jp, K_F_XY ) = inv_vol * ElemFunc::dot8( vx , grad_y );
-      vel_grad( ielem, jp, K_F_YY ) = inv_vol * ElemFunc::dot8( vy , grad_y );
-      vel_grad( ielem, jp, K_F_ZY ) = inv_vol * ElemFunc::dot8( vz , grad_y );
+      vel_grad( ielem, jp, K_F_XY ) = inv_vol * Hex8Functions::dot8( vx , grad_y );
+      vel_grad( ielem, jp, K_F_YY ) = inv_vol * Hex8Functions::dot8( vy , grad_y );
+      vel_grad( ielem, jp, K_F_ZY ) = inv_vol * Hex8Functions::dot8( vz , grad_y );
 
-      vel_grad( ielem, jp, K_F_XZ ) = inv_vol * ElemFunc::dot8( vx , grad_z );
-      vel_grad( ielem, jp, K_F_YZ ) = inv_vol * ElemFunc::dot8( vy , grad_z );
-      vel_grad( ielem, jp, K_F_ZZ ) = inv_vol * ElemFunc::dot8( vz , grad_z );
+      vel_grad( ielem, jp, K_F_XZ ) = inv_vol * Hex8Functions::dot8( vx , grad_z );
+      vel_grad( ielem, jp, K_F_YZ ) = inv_vol * Hex8Functions::dot8( vy , grad_z );
+      vel_grad( ielem, jp, K_F_ZZ ) = inv_vol * Hex8Functions::dot8( vz , grad_z );
     }
   }
 };
@@ -549,8 +559,6 @@ struct DecompRotateFunctor< Explicit::Fields< Scalar , DeviceType > >
   typedef DeviceType device_type ;
 
   typedef Explicit::Fields< Scalar , device_type >  Fields ;
-
-  typedef Hex8Functions< device_type > ElemFunc ;
 
   static const unsigned K_F_SIZE = Fields::K_F_SIZE ;
   static const unsigned K_S_SIZE = Fields::K_S_SIZE ;
@@ -597,12 +605,12 @@ struct DecompRotateFunctor< Explicit::Fields< Scalar , DeviceType > >
       for ( unsigned i = 0; i < K_S_SIZE ; ++i ) str[i]  = stretch(  ielem, jp, i );
 
       // Update stress, compute stretch tensor and rotated stretch
-      ElemFunc::polar_decomp( step , v_gr, str, str_ten, rot );
+      Hex8Functions::polar_decomp( step , v_gr, str, str_ten, rot );
 
       for ( unsigned i = 0; i < K_S_SIZE ; ++i ) stretch(      ielem, jp, i ) = str[i] ;
       for ( unsigned i = 0; i < K_F_SIZE ; ++i ) rotation_new( ielem, jp, i ) = rot[i] ;
 
-      ElemFunc::rotate_tensor( str_ten , rot , rot_str );
+      Hex8Functions::rotate_tensor( str_ten , rot , rot_str );
 
       for ( unsigned i = 0 ; i < K_S_SIZE ; ++i ) rot_stretch( ielem , jp , i ) = rot_str[i] ;
     }
@@ -617,7 +625,6 @@ struct InternalForceFunctor< Explicit::Fields< Scalar , DeviceType > >
   typedef DeviceType device_type ;
 
   typedef Explicit::Fields< Scalar , device_type >  Fields ;
-  typedef Hex8Functions< device_type > ElemFunc ;
 
   static const unsigned ElemNodeCount = Fields::ElemNodeCount ;
   static const unsigned SpatialDim    = Fields::SpatialDim ;
@@ -665,12 +672,12 @@ struct InternalForceFunctor< Explicit::Fields< Scalar , DeviceType > >
   const typename Fields::node_coords_type        model_coords ;
 
   const typename Fields::value_view             dt ;
-  const typename Fields::geom_array_view        displacement ;
-  const typename Fields::geom_array_view        velocity ;
+  const typename Fields::spatial_precise_view   displacement ;
+  const typename Fields::spatial_precise_view   velocity ;
   const typename Fields::property_view          elem_mass ;
   const typename Fields::array_view             internal_energy ;
   const typename Fields::sym_tensor_array_view  stress ;
-  const typename Fields::elem_node_geom_view    element_force ;
+  const typename Fields::elem_node_spatial_view    element_force ;
   const typename Fields::tensor_array_view      rotation_new ;
   const typename Fields::sym_tensor_array_view  rot_stretch ;
 
@@ -764,14 +771,14 @@ struct InternalForceFunctor< Explicit::Fields< Scalar , DeviceType > >
 
       // Gradient:
 
-      ElemFunc::grad( x , y , z , grad_x , grad_y , grad_z );
+      Hex8Functions::grad( x , y , z , grad_x , grad_y , grad_z );
 
-      const Scalar mid_vol = ElemFunc::dot8( x , grad_x );
+      const Scalar mid_vol = Hex8Functions::dot8( x , grad_x );
 
       const Scalar aspect = 6.0 * mid_vol /
-                            ( ElemFunc::dot8( grad_x , grad_x ) +
-                              ElemFunc::dot8( grad_y , grad_y ) +
-                              ElemFunc::dot8( grad_z , grad_z ) );
+                            ( Hex8Functions::dot8( grad_x , grad_x ) +
+                              Hex8Functions::dot8( grad_y , grad_y ) +
+                              Hex8Functions::dot8( grad_z , grad_z ) );
 
       const Scalar shr    = two_mu ;
       const Scalar dil    = bulk_modulus + ((2.0*shr)/3.0);
@@ -791,11 +798,11 @@ struct InternalForceFunctor< Explicit::Fields< Scalar , DeviceType > >
       for ( unsigned i = 0 ; i < K_F_SIZE ; ++i ) { rot[i] = rotation_new( ielem , kp , i ); }
       for ( unsigned i = 0 ; i < K_S_SIZE ; ++i ) { stress_work[i] = stress( ielem , kp , i ); }
 
-      ElemFunc::update_stress( step , two_mu , bulk_modulus , rot_str , stress_work );
+      Hex8Functions::update_stress( step , two_mu , bulk_modulus , rot_str , stress_work );
 
       for ( unsigned i = 0 ; i < K_S_SIZE ; ++i ) { stress( ielem , kp , i ) = stress_work[i]; }
 
-      ElemFunc::rotate_tensor_backward( stress_work , rot , total_stress12th );
+      Hex8Functions::rotate_tensor_backward( stress_work , rot , total_stress12th );
 
       total_stress12th[0] = ONE12TH*( total_stress12th[ 0 ] + bulkq );
       total_stress12th[1] = ONE12TH*( total_stress12th[ 1 ] + bulkq );
@@ -806,7 +813,7 @@ struct InternalForceFunctor< Explicit::Fields< Scalar , DeviceType > >
 
       Scalar energy ;
 
-      ElemFunc::comp_force( vx, vy, vz, grad_x, grad_y, grad_z, total_stress12th, force, energy );
+      Hex8Functions::comp_force( vx, vy, vz, grad_x, grad_y, grad_z, total_stress12th, force, energy );
 
       for ( unsigned i = 0 ; i < ElemNodeCount ; ++i ) {
         element_force( ielem, kp , 0 , i ) = force[i][0] ;
@@ -877,16 +884,16 @@ struct NodalUpdateFunctor< Fields< Scalar , DeviceType > , Boundary >
   const typename Fields::node_coords_type     model_coords ;
   const typename Fields::property_view        nodal_mass ;
 
-  const typename Fields::value_view           dt ;
-  const typename Fields::value_view           dt_new ;
-  const typename Fields::geom_array_view      displacement ;
-  const typename Fields::geom_array_view      displacement_new ;
-  const typename Fields::geom_array_view      velocity ;
-  const typename Fields::geom_array_view      velocity_new ;
-  const typename Fields::geom_array_view      acceleration ;
-  const typename Fields::geom_array_view      internal_force ;
-  const typename Fields::elem_node_geom_view  element_force ;
-  const unsigned                              uq_count ;
+  const typename Fields::value_view            dt ;
+  const typename Fields::value_view            dt_new ;
+  const typename Fields::spatial_precise_view  displacement ;
+  const typename Fields::spatial_precise_view  displacement_new ;
+  const typename Fields::spatial_precise_view  velocity ;
+  const typename Fields::spatial_precise_view  velocity_new ;
+  const typename Fields::spatial_compact_view  acceleration ;
+  const typename Fields::spatial_compact_view  internal_force ;
+  const typename Fields::elem_node_spatial_view   element_force ;
+  const unsigned                               uq_count ;
 
   NodalUpdateFunctor( const Fields  & mesh_fields ,
                       const Boundary & arg_boundary )
@@ -991,13 +998,13 @@ struct PackState< Explicit::Fields< Scalar , DeviceType > >
 
   typedef Explicit::Fields< Scalar , device_type >  Fields ;
 
-  typedef typename Fields::geom_array_view::scalar_type    value_type ;
+  typedef typename Fields::spatial_precise_view::scalar_type    value_type ;
   typedef KokkosArray::View< value_type*, device_type >  buffer_type ;
 
   static const unsigned value_count = 6 ;
 
-  const typename Fields::geom_array_view  displacement ;
-  const typename Fields::geom_array_view  velocity ;
+  const typename Fields::spatial_precise_view  displacement ;
+  const typename Fields::spatial_precise_view  velocity ;
   const buffer_type  output ;
   const unsigned     inode_base ;
   const unsigned     uq_count ;
@@ -1019,11 +1026,9 @@ struct PackState< Explicit::Fields< Scalar , DeviceType > >
   void operator()( const unsigned i ) const
   {
     const unsigned inode  = inode_base + i ;
-    const unsigned jbegin = i * value_count ;
+    unsigned j = i * value_count * uq_count ;
 
     for ( unsigned kq = 0 ; kq < uq_count ; ++kq ) {
-
-      unsigned j = jbegin ;
 
       output[j++] = displacement( inode , kq , 0 );
       output[j++] = displacement( inode , kq , 1 );
@@ -1043,13 +1048,13 @@ struct UnpackState< Explicit::Fields< Scalar , DeviceType > >
 
   typedef Explicit::Fields< Scalar , device_type >  Fields ;
 
-  typedef typename Fields::geom_array_view::scalar_type     value_type ;
+  typedef typename Fields::spatial_precise_view::scalar_type     value_type ;
   typedef KokkosArray::View< value_type* , device_type >  buffer_type ;
 
   static const unsigned value_count = 6 ;
 
-  const typename Fields::geom_array_view  displacement ;
-  const typename Fields::geom_array_view  velocity ;
+  const typename Fields::spatial_precise_view  displacement ;
+  const typename Fields::spatial_precise_view  velocity ;
   const buffer_type  input ;
   const unsigned     inode_base ;
   const unsigned     uq_count ;
@@ -1071,10 +1076,9 @@ struct UnpackState< Explicit::Fields< Scalar , DeviceType > >
   void operator()( const unsigned i ) const
   {
     const unsigned inode = inode_base + i ;
-    const unsigned jbegin = i * value_count ;
+    unsigned j = i * value_count * uq_count ;
 
     for ( unsigned kq = 0 ; kq < uq_count ; ++kq ) {
-      unsigned j = jbegin ;
 
       displacement( inode , kq , 0 ) = input[j++] ;
       displacement( inode , kq , 1 ) = input[j++] ;

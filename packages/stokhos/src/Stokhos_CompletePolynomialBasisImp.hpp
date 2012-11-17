@@ -197,7 +197,7 @@ computeTripleProductTensorNew(ordinal_type order) const
   // Map the specified order limit to a limit on each dimension
   // Subtract 1 to get the term for the last order we want to include,
   // add up the orders for each term to get the total order, then add 1
-  Teuchos::Array<ordinal_type> term = getTerm(order-1);
+  MultiIndex<ordinal_type> term = this->term(order-1);
   ordinal_type k_lim = 0;
   for (ordinal_type i=0; i<d; i++)
     k_lim = k_lim + term[i];
@@ -222,7 +222,7 @@ computeTripleProductTensorNew(ordinal_type order) const
   Teuchos::Array<k_iterator> k_iterators(d, Cijk_1d[0]->k_begin());
   Teuchos::Array<kj_iterator > j_iterators(d, Cijk_1d[0]->j_begin(k_iterators[0]));
   Teuchos::Array<kji_iterator > i_iterators(d, Cijk_1d[0]->i_begin(j_iterators[0]));
-  Teuchos::Array<ordinal_type> terms_i(d), terms_j(d), terms_k(d);
+  MultiIndex<ordinal_type> terms_i(d), terms_j(d), terms_k(d);
   ordinal_type sum_i = 0;
   ordinal_type sum_j = 0;
   ordinal_type sum_k = 0;
@@ -230,9 +230,9 @@ computeTripleProductTensorNew(ordinal_type order) const
     k_iterators[dim] = Cijk_1d[dim]->k_begin();
     j_iterators[dim] = Cijk_1d[dim]->j_begin(k_iterators[dim]);
     i_iterators[dim] = Cijk_1d[dim]->i_begin(j_iterators[dim]);
-    terms_i[dim] = index(i_iterators[dim]);
-    terms_j[dim] = index(j_iterators[dim]);
-    terms_k[dim] = index(k_iterators[dim]);
+    terms_i[dim] = Stokhos::index(i_iterators[dim]);
+    terms_j[dim] = Stokhos::index(j_iterators[dim]);
+    terms_k[dim] = Stokhos::index(k_iterators[dim]);
     sum_i += terms_i[dim];
     sum_j += terms_j[dim];
     sum_k += terms_k[dim];
@@ -276,7 +276,7 @@ computeTripleProductTensorNew(ordinal_type order) const
       ++i_iterators[cdim];
       inc_i = true;
       if (i_iterators[cdim] != Cijk_1d[cdim]->i_end(j_iterators[cdim])) {
-	terms_i[cdim] = index(i_iterators[cdim]);
+	terms_i[cdim] = Stokhos::index(i_iterators[cdim]);
 	sum_i = 0;
 	for (int dim=0; dim<d; dim++)
 	  sum_i += terms_i[dim];
@@ -286,7 +286,7 @@ computeTripleProductTensorNew(ordinal_type order) const
 	++j_iterators[cdim];
 	inc_j = true;
 	if (j_iterators[cdim] != Cijk_1d[cdim]->j_end(k_iterators[cdim])) {
-	  terms_j[cdim] = index(j_iterators[cdim]);
+	  terms_j[cdim] = Stokhos::index(j_iterators[cdim]);
 	  sum_j = 0;
 	  for (int dim=0; dim<d; dim++)
 	    sum_j += terms_j[dim];
@@ -296,7 +296,7 @@ computeTripleProductTensorNew(ordinal_type order) const
 	  ++k_iterators[cdim];
 	  inc_k = true;
 	  if (k_iterators[cdim] != Cijk_1d[cdim]->k_end()) {
-	    terms_k[cdim] = index(k_iterators[cdim]);
+	    terms_k[cdim] = Stokhos::index(k_iterators[cdim]);
 	    sum_k = 0;
 	    for (int dim=0; dim<d; dim++)
 	      sum_k += terms_k[dim];
@@ -304,7 +304,7 @@ computeTripleProductTensorNew(ordinal_type order) const
 	  if (k_iterators[cdim] == Cijk_1d[cdim]->k_end() || sum_k > p) {
 	    k_iterators[cdim] = Cijk_1d[cdim]->k_begin();
 	    ++cdim;
-	    terms_k[cur_dim] = index(k_iterators[cur_dim]);
+	    terms_k[cur_dim] = Stokhos::index(k_iterators[cur_dim]);
 	    sum_k = 0;
 	    for (int dim=0; dim<d; dim++)
 	      sum_k += terms_k[dim];
@@ -313,7 +313,7 @@ computeTripleProductTensorNew(ordinal_type order) const
 	    inc = false;
 	  j_iterators[cur_dim] = 
 	    Cijk_1d[cur_dim]->j_begin(k_iterators[cur_dim]);
-	  terms_j[cur_dim] = index(j_iterators[cur_dim]);
+	  terms_j[cur_dim] = Stokhos::index(j_iterators[cur_dim]);
 	  sum_j = 0;
 	  for (int dim=0; dim<d; dim++)
 	    sum_j += terms_j[dim];
@@ -321,7 +321,7 @@ computeTripleProductTensorNew(ordinal_type order) const
 	else
 	  inc = false;
 	i_iterators[cur_dim] = Cijk_1d[cur_dim]->i_begin(j_iterators[cur_dim]);
-	terms_i[cur_dim] = index(i_iterators[cur_dim]);
+	terms_i[cur_dim] = Stokhos::index(i_iterators[cur_dim]);
 	sum_i = 0;
 	for (int dim=0; dim<d; dim++)
 	  sum_i += terms_i[dim];
@@ -364,14 +364,14 @@ computeDerivTripleProductTensor(
   for (ordinal_type k=0; k<sz; k++) {
     for (typename Cijk_type::k_iterator m_it=Cijk->k_begin(); 
 	 m_it!=Cijk->k_end(); ++m_it) {
-      m = index(m_it);
+      m = Stokhos::index(m_it);
       for (typename Cijk_type::kj_iterator j_it = Cijk->j_begin(m_it); 
 	   j_it != Cijk->j_end(m_it); ++j_it) {
-	j = index(j_it);
+	j = Stokhos::index(j_it);
 	for (typename Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
 	     i_it != Cijk->i_end(j_it); ++i_it) {
-	  i = index(i_it);
-	  c = value(i_it);
+	  i = Stokhos::index(i_it);
+	  c = Stokhos::value(i_it);
 	  (*Dijk)(i,j,k) += (*Bij)(m,k)*c/norms[m];
 	}
       }
@@ -435,7 +435,7 @@ evaluateZero(ordinal_type i) const
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
-evaluateBases(const Teuchos::Array<value_type>& point,
+evaluateBases(const Teuchos::ArrayView<const value_type>& point,
 	      Teuchos::Array<value_type>& basis_vals) const
 {
   for (ordinal_type j=0; j<d; j++)
@@ -466,9 +466,9 @@ print(std::ostream& os) const
 }
 
 template <typename ordinal_type, typename value_type>
-Teuchos::Array<ordinal_type>
+const Stokhos::MultiIndex<ordinal_type>&
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
-getTerm(ordinal_type i) const
+term(ordinal_type i) const
 {
   return terms[i];
 }
@@ -476,7 +476,7 @@ getTerm(ordinal_type i) const
 template <typename ordinal_type, typename value_type>
 ordinal_type
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
-getIndex(const Teuchos::Array<ordinal_type>& term) const
+index(const Stokhos::MultiIndex<ordinal_type>& term) const
 {
   return CPBUtils::compute_index(term, terms, num_terms, p);
 }
@@ -495,4 +495,15 @@ Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 getCoordinateBases() const
 {
   return bases;
+}
+
+template <typename ordinal_type, typename value_type>
+Stokhos::MultiIndex<ordinal_type>
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+getMaxOrders() const
+{
+  MultiIndex<ordinal_type> max_orders(d);
+  for (ordinal_type i=0; i<d; ++i)
+    max_orders[i] = basis_orders[i];
+  return max_orders;
 }

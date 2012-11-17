@@ -52,6 +52,8 @@
 #include "Ioss_DBUsage.h"
 #include "Ioss_Field.h"
 #include "Ioss_GroupingEntity.h"
+#include "Ioss_SideSet.h"
+#include "Ioss_SideBlock.h"
 #include "Ioss_Property.h"
 #include "Ioss_SerializeIO.h"
 #include "Ioss_State.h"
@@ -89,17 +91,18 @@ namespace {
 #endif
 }
 
-Ioss::DatabaseIO::DatabaseIO(Ioss::Region* region, const std::string& filename,
-			     Ioss::DatabaseUsage db_usage,
+namespace Ioss {
+DatabaseIO::DatabaseIO(Region* region, const std::string& filename,
+			     DatabaseUsage db_usage,
 			     MPI_Comm communicator,
-			     const Ioss::PropertyManager &props)
+			     const PropertyManager &props)
   : properties(props), commonSideTopology(NULL), DBFilename(filename), dbState(STATE_INVALID),
     isParallel(false), isSerialParallel(false), myProcessor(0), cycleCount(0), overlayCount(0),
-    splitType(Ioss::SPLIT_BY_TOPOLOGIES),
+    splitType(SPLIT_BY_TOPOLOGIES),
     dbUsage(db_usage),dbIntSizeAPI(USE_INT32_API),
     nodeGlobalIdBackwardCompatibility(false), lowerCaseVariableNames(true),
     util_(communicator), region_(region), isInput(is_input_event(db_usage)),
-    singleProcOnly(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT || Ioss::SerializeIO::isEnabled()),
+    singleProcOnly(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT || SerializeIO::isEnabled()),
     doLogging(false)
 {
   isParallel  = util_.parallel_size() > 1;
@@ -113,20 +116,20 @@ Ioss::DatabaseIO::DatabaseIO(Ioss::Region* region, const std::string& filename,
     // env_props string should be of the form
     // "PROP1=VALUE1:PROP2=VALUE2:..."
     std::vector<std::string> prop_val;
-    Ioss::tokenize(env_props, ":", prop_val);
+    tokenize(env_props, ":", prop_val);
     
     for (size_t i=0; i < prop_val.size(); i++) {
       std::vector<std::string> property;
-      Ioss::tokenize(prop_val[i], "=", property);
+      tokenize(prop_val[i], "=", property);
       if (property.size() != 2) {
 	std::ostringstream errmsg;
 	errmsg << "ERROR: Invalid property specification found in IOSS_PROPERTIES environment variable\n"
 	       << "       Found '" << prop_val[i] << "' which is not of the correct PROPERTY=VALUE form";
 	IOSS_ERROR(errmsg);
       }
-      std::string prop = Ioss::Utils::uppercase(property[0]);
+      std::string prop = Utils::uppercase(property[0]);
       std::string value = property[1];
-      std::string up_value = Ioss::Utils::uppercase(value);
+      std::string up_value = Utils::uppercase(value);
       bool all_digit = value.find_first_not_of("0123456789") == std::string::npos;
 
       if (myProcessor == 0) 
@@ -134,40 +137,40 @@ Ioss::DatabaseIO::DatabaseIO(Ioss::Region* region, const std::string& filename,
       
       if (all_digit) {
 	int int_value = std::strtol(value.c_str(), NULL, 10);
-	properties.add(Ioss::Property(prop, int_value));
+	properties.add(Property(prop, int_value));
       }
       else if (up_value == "TRUE" || up_value == "YES") {
-	properties.add(Ioss::Property(prop, 1));
+	properties.add(Property(prop, 1));
       }
       else if (up_value == "FALSE" || up_value == "NO") {
-	properties.add(Ioss::Property(prop, 0));
+	properties.add(Property(prop, 0));
       }
       else {
-	properties.add(Ioss::Property(prop, value));
+	properties.add(Property(prop, value));
       }
     }
   }
 }
 
-Ioss::DatabaseIO::~DatabaseIO()
+DatabaseIO::~DatabaseIO()
 {
 }
 
-int Ioss::DatabaseIO::int_byte_size_api() const
+int DatabaseIO::int_byte_size_api() const
 {
-  if (dbIntSizeAPI == Ioss::USE_INT32_API) {
+  if (dbIntSizeAPI == USE_INT32_API) {
     return 4;
   } else {
     return 8;
   }
 }
 
-void Ioss::DatabaseIO::set_int_byte_size_api(Ioss::DataSize size) const
+void DatabaseIO::set_int_byte_size_api(DataSize size) const
 {
   dbIntSizeAPI = size; // mutable
 }
 
-char Ioss::DatabaseIO::get_field_separator() const
+char DatabaseIO::get_field_separator() const
 {
   char suffix = '_'; // Default
   if (properties.exists("FIELD_SUFFIX_SEPARATOR")) {
@@ -177,7 +180,7 @@ char Ioss::DatabaseIO::get_field_separator() const
   return suffix;
 }
 
-void Ioss::DatabaseIO::set_field_separator(const char separator)
+void DatabaseIO::set_field_separator(const char separator)
 {
   if (properties.exists("FIELD_SUFFIX_SEPARATOR")) {
     properties.erase("FIELD_SUFFIX_SEPARATOR");
@@ -185,10 +188,19 @@ void Ioss::DatabaseIO::set_field_separator(const char separator)
   char tmp[2];
   tmp[0] = separator;
   tmp[1] = 0;
-  properties.add(Ioss::Property("FIELD_SUFFIX_SEPARATOR", tmp));
+  properties.add(Property("FIELD_SUFFIX_SEPARATOR", tmp));
 }
 
-void Ioss::DatabaseIO::verify_and_log(const Ioss::GroupingEntity *ge, const Ioss::Field& field) const
+IfDatabaseExistsBehavior DatabaseIO::open_create_behavior() const
+{
+  IfDatabaseExistsBehavior exists = DB_OVERWRITE;
+  if (properties.exists("APPEND_OUTPUT")) {
+    exists = (IfDatabaseExistsBehavior)properties.get("APPEND_OUTPUT").get_int();
+  }
+  return exists;
+}
+
+void DatabaseIO::verify_and_log(const GroupingEntity *ge, const Field& field) const
 {
   assert(is_parallel_consistent(singleProcOnly, ge, field, util_));
   if (get_logging()) {
@@ -197,28 +209,143 @@ void Ioss::DatabaseIO::verify_and_log(const Ioss::GroupingEntity *ge, const Ioss
 }
 
 // Default versions do nothing...
-bool Ioss::DatabaseIO::begin_state(Ioss::Region */* region */, int /* state */, double /* time */)
+bool DatabaseIO::begin_state(Region */* region */, int /* state */, double /* time */)
 {
   return true;
 }
 
-bool Ioss::DatabaseIO::end_state(Ioss::Region */* region */, int /* state */, double /* time */)
+bool DatabaseIO::end_state(Region */* region */, int /* state */, double /* time */)
 {
   return true;
+}
+
+void DatabaseIO::handle_groups()
+{
+  // Set Grouping requests are specified as properties...
+  // See if the property exists and decode...
+  // There is a property for each "type":
+  // GROUP_SIDESET, GROUP_NODESET, GROUP_EDGESET, GROUP_FACESET, GROUP_ELEMSET.
+  // Within the property, the "value" consists of multiple groups separated by ":"
+  // Within the group, the names are "," separated:
+  //
+  // new_surf1,member1,member2,member3:new_surf2,mem1,mem2,mem3,mem4:new_surf3,....
+  //
+  // Currently does not check for duplicate entity membership in a set -- union with duplicates
+  //
+  create_groups("GROUP_SIDESET", SIDESET, "side", (SideSet*)NULL);
+  create_groups("GROUP_NODESET", NODESET, "node", (NodeSet*)NULL);
+  create_groups("GROUP_EDGESET", EDGESET, "edge", (EdgeSet*)NULL);
+  create_groups("GROUP_FACESET", FACESET, "face", (FaceSet*)NULL);
+  create_groups("GROUP_ELEMSET", ELEMENTSET, "elem", (ElementSet*)NULL);
+}
+
+template <typename T>
+void DatabaseIO::create_groups(const std::string &property_name, EntityType type,
+			       const std::string &type_name, const T* set_type)
+{
+  if (!properties.exists(property_name))
+    return;
+
+  std::string prop = properties.get(property_name).get_string();
+  std::vector<std::string> groups;
+  tokenize(prop, ":", groups);
+  for (size_t i=0; i < groups.size(); i++) {
+    std::vector<std::string> group_spec;
+    tokenize(groups[i], ",", group_spec);
+
+    // group_spec should contain the name of the new group as
+    // the first location and the members of the group as subsequent
+    // locations.  OK to have a single member
+    if (group_spec.size() < 2) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Invalid " << type_name << " group specification '" << groups[i] << "'\n"
+	     << "       Correct syntax is 'new_group,member1,...,memberN' and their must "
+	     << "       be at least 1 member of the group";
+      IOSS_ERROR(errmsg);
+    }
+	  
+    create_group(type, type_name, group_spec, set_type);
+  }
+}
+
+template <typename T>
+void DatabaseIO::create_group(EntityType type, const std::string &type_name,
+			      const std::vector<std::string> &group_spec, const T* set_type)
+{
+  IOSS_WARNING << "WARNING: Grouping of " << type_name << " sets is not yet implemented.\n"
+	       << "         Skipping the creation of " << type_name << " set '" << group_spec[0] << "'\n\n";
+}
+
+template <>
+void DatabaseIO::create_group(EntityType type, const std::string &type_name,
+			      const std::vector<std::string> &group_spec, const SideSet* set_type)
+{
+  // Not generalized yet... This only works for T == SideSet
+  if (type != SIDESET)
+    return;
+	
+  int64_t entity_count = 0;
+  int64_t df_count = 0;
+
+  // Create the new set...
+  SideSet* new_set = new SideSet(this, group_spec[0]);
+	
+  get_region()->add(new_set);
+	
+  // Find the member SideSets...
+  for (size_t i=1; i < group_spec.size(); i++) {
+    SideSet* set = get_region()->get_sideset(group_spec[i]);
+    if (set != NULL) {
+      SideBlockContainer side_blocks = set->get_side_blocks();
+      SideBlockContainer::const_iterator J;
+
+      for (J=side_blocks.begin(); J != side_blocks.end(); ++J) {
+	SideBlock *sbold = *J;
+	size_t side_count = sbold->get_property("entity_count").get_int();
+	SideBlock *sbnew = new SideBlock(this, sbold->name(),
+						     sbold->topology()->name(),
+						     sbold->parent_element_topology()->name(),
+						     side_count);
+	int64_t id = sbold->get_property("id").get_int();
+	sbnew->property_add(Property("set_offset", entity_count));
+	sbnew->property_add(Property("set_df_offset", df_count));
+	sbnew->property_add(Property("id", id));
+	      
+	new_set->add(sbnew);
+
+	size_t old_df_count   = sbold->get_property("distribution_factor_count").get_int();
+	if (old_df_count > 0) {
+	  std::string storage = "Real[";
+	  storage += Utils::to_string(sbnew->topology()->number_nodes());
+	  storage += "]";
+	  sbnew->field_add(Field("distribution_factors",
+				       Field::REAL, storage,
+				       Field::MESH, side_count));
+	}
+	entity_count += side_count;
+	df_count     += old_df_count;
+      }
+    }
+    else {
+      IOSS_WARNING << "WARNING: While creating the grouped surface '" << group_spec[0]
+		   << "', the surface '" << group_spec[i] << "' does not exist. "
+		   << "This surface will skipped and not added to the group.\n\n";
+    }
+  }
 }
 
 // Utility function that may be used by derived classes.  Determines
 // whether all elements in the model have the same face topology.
 // This can be used to speed-up certain algorithms since they don't
 // have to check each face (or group of faces) individually.
-void Ioss::DatabaseIO::set_common_side_topology() const
+void DatabaseIO::set_common_side_topology() const
 {
-  Ioss::DatabaseIO *new_this = const_cast<Ioss::DatabaseIO*>(this);
+  DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
 
-  Ioss::ElementBlockContainer element_blocks =
+  ElementBlockContainer element_blocks =
     get_region()->get_element_blocks();
-  Ioss::ElementBlockContainer::const_iterator I  = element_blocks.begin();
-  Ioss::ElementBlockContainer::const_iterator IE = element_blocks.end();
+  ElementBlockContainer::const_iterator I  = element_blocks.begin();
+  ElementBlockContainer::const_iterator IE = element_blocks.end();
 
   while (I != IE) {
     size_t element_count = (*I)->get_property("entity_count").get_int();
@@ -239,25 +366,25 @@ void Ioss::DatabaseIO::set_common_side_topology() const
   }
 }
 
-void Ioss::DatabaseIO::add_information_records(const std::vector<std::string> &info)
+void DatabaseIO::add_information_records(const std::vector<std::string> &info)
 {
   informationRecords.reserve(informationRecords.size()+info.size());
   informationRecords.insert(informationRecords.end(), info.begin(), info.end());
 }
 
-void Ioss::DatabaseIO::add_information_record(const std::string &info)
+void DatabaseIO::add_information_record(const std::string &info)
 {
   informationRecords.push_back(info);
 }
 
-void Ioss::DatabaseIO::set_block_omissions(const std::vector<std::string> &omissions)
+void DatabaseIO::set_block_omissions(const std::vector<std::string> &omissions)
 {
   blockOmissions.assign(omissions.begin(), omissions.end());
   std::sort(blockOmissions.begin(), blockOmissions.end());
 }
 
 // Check topology of all sides (face/edges) in model...
-void Ioss::DatabaseIO::check_side_topology() const
+void DatabaseIO::check_side_topology() const
 {
   // The following code creates the sideTopology sets which contain
   // a list of the side topologies in this model.
@@ -277,12 +404,12 @@ void Ioss::DatabaseIO::check_side_topology() const
     // Set contains (parent_element, boundary_topology) pairs...
     std::set<std::pair<const ElementTopology*, const ElementTopology*> > side_topo;
 
-    Ioss::ElementBlockContainer element_blocks =
+    ElementBlockContainer element_blocks =
       get_region()->get_element_blocks();
-    Ioss::ElementBlockContainer::const_iterator I;
+    ElementBlockContainer::const_iterator I;
 
     for (I=element_blocks.begin(); I != element_blocks.end(); ++I) {
-      const Ioss::ElementBlock *block = *I;
+      const ElementBlock *block = *I;
       const ElementTopology *elem_type = block->topology();
       const ElementTopology *side_type = elem_type->boundary_type();
       if (side_type == NULL) {
@@ -306,19 +433,20 @@ void Ioss::DatabaseIO::check_side_topology() const
       if (element_blocks.empty()) {
 	side_topo.insert(std::make_pair(ftopo, ftopo));
       } else {
-	const Ioss::ElementBlock *block = *element_blocks.begin();
+	const ElementBlock *block = *element_blocks.begin();
 	side_topo.insert(std::make_pair(block->topology(), ftopo));
       }
     }
     assert(side_topo.size() > 0);
     assert(sideTopology.size() == 0);
     // Copy into the sideTopology container...
-    Ioss::DatabaseIO *new_this = const_cast<Ioss::DatabaseIO*>(this);
+    DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
     std::copy(side_topo.begin(), side_topo.end(),
 	      std::back_inserter(new_this->sideTopology));
   }
   assert(sideTopology.size() > 0);
 }
+} // namespace Ioss
 
 #include <sys/time.h>
 

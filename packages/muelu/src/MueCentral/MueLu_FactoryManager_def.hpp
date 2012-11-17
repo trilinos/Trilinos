@@ -69,7 +69,7 @@
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 
-#ifdef INCLUDE_MUELU_EXPERIMENTAL
+#ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
 #endif
@@ -143,8 +143,12 @@ namespace MueLu {
       if (varName == "PreSmoother")         return GetFactory("Smoother");
       if (varName == "PostSmoother")        return GetFactory("Smoother");
 
-#ifdef INCLUDE_MUELU_EXPERIMENTAL
-      if (varName == "Ppattern")            return SetAndReturnDefaultFactory(varName, rcp(new PatternFactory(GetFactory("Ptent"))));
+#ifdef HAVE_MUELU_EXPERIMENTAL
+      if (varName == "Ppattern") {
+        RCP<PatternFactory> PpFact = rcp(new PatternFactory);
+        PpFact->SetFactory("P", GetFactory("Ptent"));
+        return SetAndReturnDefaultFactory(varName, PpFact);
+      }
       if (varName == "Constraint")          return SetAndReturnDefaultFactory(varName, rcp(new ConstraintFactory()));
 #endif
 

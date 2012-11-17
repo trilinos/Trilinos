@@ -409,7 +409,7 @@ int main(int argc, char *argv[]) {
   std::vector<size_t> stridingInfo;
   stridingInfo.push_back(2);
   stridingInfo.push_back(1);
-  
+
   /////////////////////////////////////// build strided maps
   // build strided maps:
   // xstridedfullmap: full map (velocity and pressure dof gids), continous
@@ -423,7 +423,7 @@ int main(int argc, char *argv[]) {
   // this is needed for AztecOO
   const Teuchos::RCP<const Epetra_Map> fullmap = Teuchos::rcpFromRef(xstridedfullmap->getEpetra_Map());
   Teuchos::RCP<const Epetra_Map> velmap = Teuchos::rcpFromRef(xstridedvelmap->getEpetra_Map());
-  Teuchos::RCP<const Epetra_Map> premap = Teuchos::rcpFromRef(xstridedpremap->getEpetra_Map()); 
+  Teuchos::RCP<const Epetra_Map> premap = Teuchos::rcpFromRef(xstridedpremap->getEpetra_Map());
 
   /////////////////////////////////////// import problem matrix and RHS from files (-> Epetra)
 
@@ -455,7 +455,7 @@ int main(int argc, char *argv[]) {
     *out << "Problem with splitting matrix"<< std::endl;
 
   /////////////////////////////////////// transform Epetra objects to Xpetra (needed for MueLu)
-    
+
   // build Xpetra objects from Epetra_CrsMatrix objects
   Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA11 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A11));
   Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA12 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A12));
@@ -463,7 +463,7 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA22 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A22));
 
   /////////////////////////////////////// generate MapExtractor object
-  
+
   std::vector<Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > > xmaps;
   xmaps.push_back(xstridedvelmap);
   xmaps.push_back(xstridedpremap);
@@ -495,7 +495,7 @@ int main(int argc, char *argv[]) {
   // by A11Fact and A22Fact
   RCP<SubBlockAFactory> A11Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 0, 0));
   RCP<SubBlockAFactory> A22Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 1, 1));
- 
+
   ///////////////////////////////////////////// define smoother for A11
   // define block smoother for the first block matrix row in BlockGaussSeidel Smoother
   std::string ifpack11Type;
@@ -522,9 +522,13 @@ int main(int argc, char *argv[]) {
 
   ///////////////////////////////////////// define CoalesceDropFactory and Aggregation for A11
   // set up amalgamation for A11. Note: we're using a default null space factory (Teuchos::null)
-  RCP<AmalgamationFactory> amalgFact11 = rcp(new AmalgamationFactory(A11Fact));
-  RCP<CoalesceDropFactory> dropFact11 = rcp(new CoalesceDropFactory(A11Fact,amalgFact11));
-  RCP<UCAggregationFactory> UCAggFact11 = rcp(new UCAggregationFactory(dropFact11));
+  RCP<AmalgamationFactory> amalgFact11 = rcp(new AmalgamationFactory());
+  amalgFact11->SetFactory("A", A11Fact);
+  RCP<CoalesceDropFactory> dropFact11 = rcp(new CoalesceDropFactory());
+  dropFact11->SetFactory("A", A11Fact);
+  dropFact11->SetFactory("UnAmalgamationInfo", amalgFact11);
+  RCP<UCAggregationFactory> UCAggFact11 = rcp(new UCAggregationFactory());
+  UCAggFact11->SetFactory("Graph", dropFact11);
   UCAggFact11->SetMinNodesPerAggregate(3);
   UCAggFact11->SetMaxNeighAlreadySelected(1);
   UCAggFact11->SetOrdering(MueLu::AggOptions::NATURAL);
@@ -533,15 +537,15 @@ int main(int argc, char *argv[]) {
   ///////////////////////////////////////// define transfer ops for A11
 #if 1
   // use PG-AMG
-  RCP<TentativePFactory> P11tentFact = rcp(new TentativePFactory(UCAggFact11,amalgFact11)); // check me
+  RCP<TentativePFactory> P11tentFact = rcp(new TentativePFactory()); // check me
 
-  RCP<PgPFactory> P11Fact = rcp(new PgPFactory(P11tentFact));
+  RCP<PgPFactory> P11Fact = rcp(new PgPFactory());
 
-  RCP<GenericRFactory> R11Fact = rcp(new GenericRFactory(P11Fact));
+  RCP<GenericRFactory> R11Fact = rcp(new GenericRFactory());
 
   Teuchos::RCP<NullspaceFactory> nspFact11 = Teuchos::rcp(new NullspaceFactory("Nullspace1",P11tentFact));
 
-  RCP<CoarseMapFactory> coarseMapFact11 = Teuchos::rcp(new CoarseMapFactory(UCAggFact11, nspFact11));
+  RCP<CoarseMapFactory> coarseMapFact11 = Teuchos::rcp(new CoarseMapFactory());
   coarseMapFact11->setStridingData(stridingInfo);
   coarseMapFact11->setStridedBlockId(0);
 
@@ -551,6 +555,8 @@ int main(int argc, char *argv[]) {
   M11->SetFactory("P", P11Fact);
   M11->SetFactory("R", R11Fact);
   M11->SetFactory("Nullspace", nspFact11);
+  M11->SetFactory("Aggregates", UCAggFact11);
+  M11->SetFactory("UnAmalgamationInfo", amalgFact11);
   M11->SetFactory("Ptent", P11tentFact);
   M11->SetFactory("Smoother", Smoo11Fact);
   M11->SetFactory("CoarseMap", coarseMapFact11);
@@ -628,14 +634,14 @@ int main(int argc, char *argv[]) {
 
 #else
   // use TentativePFactory
-  RCP<AmalgamationFactory> amalgFact22 = rcp(new AmalgamationFactory(A22Fact));
-  RCP<TentativePFactory> P22Fact = rcp(new TentativePFactory(UCAggFact11, amalgFact22 )); // check me (fed with A22) wrong column GIDS!!!
+  RCP<AmalgamationFactory> amalgFact22 = rcp(new AmalgamationFactory());
+  RCP<TentativePFactory> P22Fact = rcp(new TentativePFactory()); // check me (fed with A22) wrong column GIDS!!!
 
-  RCP<TransPFactory> R22Fact = rcp(new TransPFactory(P22Fact));
+  RCP<TransPFactory> R22Fact = rcp(new TransPFactory());
 
   Teuchos::RCP<NullspaceFactory> nspFact22 = Teuchos::rcp(new NullspaceFactory("Nullspace2",P22Fact));
 
-  RCP<CoarseMapFactory> coarseMapFact22 = Teuchos::rcp(new CoarseMapFactory(UCAggFact11, nspFact22));
+  RCP<CoarseMapFactory> coarseMapFact22 = Teuchos::rcp(new CoarseMapFactory());
   coarseMapFact22->setStridingData(stridingInfo);
   coarseMapFact22->setStridedBlockId(1);
 
@@ -659,7 +665,9 @@ int main(int argc, char *argv[]) {
 
   RCP<GenericRFactory> RFact = rcp(new GenericRFactory(PFact));
 
-  RCP<RAPFactory> AcFact = rcp(new RAPFactory(PFact, RFact));
+  RCP<RAPFactory> AcFact = rcp(new RAPFactory());
+  AcFact->SetFactory("P", PFact);
+  AcFact->SetFactory("R", RFact);
 
   //////////////////////////////////////////////////////////////////////
   // Smoothers
@@ -686,7 +694,7 @@ int main(int argc, char *argv[]) {
 
   H->Setup(M,0,maxLevels);
 
-  
+
   RCP<MultiVector> xLsg = MultiVectorFactory::Build(xstridedfullmap,1);
 
   // Use AMG directly as an iterative method

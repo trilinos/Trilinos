@@ -385,7 +385,7 @@ namespace MueLuTests {
     // level.Set("Coordinates",XYZ); "Coordinates" == uncoalesce. "X,Y,ZCoordinates" == coalesce
     {
       RCP<MultiVector> coordinates = XYZ;
-      
+
       // making a copy because I don't want to keep 'open' the Xpetra_MultiVector
       if (coordinates->getNumVectors() >= 1) {
         Teuchos::ArrayRCP<const SC> coord = coordinates->getData(0);
@@ -396,7 +396,7 @@ namespace MueLuTests {
         level.Set("XCoordinates", coordCpy);
         //std::cout << coordCpy << std::endl;
       }
-      
+
       if (coordinates->getNumVectors() >= 2) {
         Teuchos::ArrayRCP<const SC> coord = coordinates->getData(1);
         Teuchos::ArrayRCP<SC> coordCpy(coord.size());
@@ -405,7 +405,7 @@ namespace MueLuTests {
         }
         level.Set("YCoordinates", coordCpy);
       }
-      
+
       /*if (coordinates->getNumVectors() >= 3) {
         Teuchos::ArrayRCP<const SC> coord = coordinates->getData(2);
         Teuchos::ArrayRCP<SC> coordCpy(coord.size());

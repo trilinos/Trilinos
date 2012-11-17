@@ -5,8 +5,8 @@
 //   Zoltan2: A package of combinatorial algorithms for scientific computing
 //                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,      
-// the U.S. Government retains certain rights in this software.                
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //                                                                             
 // Redistribution and use in source and binary forms, with or without          
 // modification, are permitted provided that the following conditions are      
@@ -113,19 +113,43 @@ public:
    */
   virtual ~MeshInput() {};
 
+// TODO NEED AN ARGUMENT TO THE METHODS SPECIFYING WHICH ENTITY TYPE TO RETURN
 
-  /*! \brief Returns the number of identifiers (mesh entities) on this process.
-   *
-   *  Some algorithms can partition a simple list of weighted identifiers
-   *    with no geometry or topology provided.
+  /*! \brief Returns the number of mesh entities on this process.
    */
-  virtual size_t getLocalNumberOfEntityIdentifiers() const = 0;
 
-  /*! \brief Return the number of weights associated with each identifier.
-   *   If the number of weights is zero, then we assume that the identifiers
+  virtual size_t getLocalNumberOfEntities() const = 0;
+
+
+  /*! \brief Return dimension of the entity coordinates, if any.               
+   *
+   *  Some algorithms can partition mesh entities using geometric coordinate
+   *    information
+   *
+   *  Some algorithms can use geometric entity coordinate 
+   *    information if it is present.
+   */
+  virtual int getEntityCoordinateDimension() const = 0;
+
+
+  /*! \brief Return the number of weights per entity.
+   *   \return the count of weights, zero or more per entity.              
+   *   If the number of weights is zero, then we assume that the entities
    *   are equally weighted.
    */
-  virtual int getEntityIdentifierWeightDimension() const = 0;
+  virtual int getNumberOfWeightsPerEntity() const = 0;
+
+
+  /*! \brief Returns the number adjacencies on this process.
+   *
+   *  Some algorithms can partition a graph of mesh entities
+   */
+  virtual size_t getLocalNumberOfEntityAdjacencies() const = 0;
+
+  /*! \brief Returns the number (0 or greater) of weights per adjacency.
+   */
+  virtual int getNumberOfWeightsPerEntityAdjacency() const = 0;
+
 
   /*! \brief Provide a pointer to this process' identifiers.
 
@@ -133,56 +157,17 @@ public:
         process.
 
        \return The number of ids in the Ids list.
+    
+      Some algorithms can partition a simple list of weighted identifiers
+        with no geometry or topology provided.
   */
 
   virtual size_t getEntityIdentifierList(gid_t const *&Ids) const = 0;
 
-  /*! \brief Provide a pointer to one of the dimensions of this process'
-                optional identifier weights.
 
-      \param dimension is a value ranging from zero to one less than
-                   getEntityIdentifierWeightDimension()
-      \param weights on return will contain a list of the weights for the
-               dimension specified.  If weights for
-	   this dimension are to be uniform for all identifiers in the
-	   global problem, the \c weights should be a NULL pointer.
-
-      \param stride on return will indicate the stride of the weights list.
-
-      
-       If stride is \c k then the weight
-       corresponding to the identifier Ids[n] (returned in
-       getEntityIdentifierList) should be found at weights[k*n].
-
-       \return The number of values in the weights list.  This may be greater
-          than the number of identifiers, because the stride may be greater
-	  than one.
-  */
-
-  virtual size_t getEntityIdentifierWeights(int dimension,
-     const scalar_t *&weights, int &stride) const = 0;
-
-
-  /*! \brief Return dimension of the coordinates.                              
-   *
-   *  Some algorithms can partition mesh entities using geometric coordinate
-   *    information
-   */
-  virtual int getEntityCoordinateDimension() const = 0;
-
-  /*! \brief Return the number of weights per coordinate.                      
-   *   \return the count of weights, zero or more per coordinate.              
-   */
-  virtual int getEntityCoordinateWeightDimension() const = 0;
-
-  /*! \brief Return the number of coordinates on this process.                 
-   *   \return  the count of coordinates on the local process.
-   */
-  virtual size_t getLocalNumberOfEntityCoordinates() const = 0;
-
-  /*! \brief Provide a pointer to one dimension of this process' coordinates.  
+  /*! \brief Provide a pointer to one dimension of entity coordinates.  
       \param coordDim  is a value from 0 to one less than                      
-         getLocalNumberOfEntityCoordinates() specifying which dimension is     
+         getEntityCoordinateDimension() specifying which dimension is     
          being provided in the coords list.                                    
       \param coords  points to a list of coordinate values for the dimension.  
       \param stride  describes the layout of the coordinate values in          
@@ -191,7 +176,7 @@ public:
               ith coordinate value is coords[2*i].                             
                                                                                
        \return The length of the \c coords list.  This may be more than        
-              getLocalNumberOfEntityCoordinates() because the \c stride       
+              getLocalNumberOfEntities() because the \c stride       
               may be more than one.                                            
                                                                                
       Zoltan2 does not copy your data.  The data pointed to coords             
@@ -201,49 +186,6 @@ public:
   virtual size_t getEntityCoordinates(int coordDim, const gid_t *&gids,
     const scalar_t *&coords, int &stride) const = 0;
 
-  /*! \brief  Provide a pointer to the weights, if any, corresponding          
-       to the coordinates returned in getEntityCoordinates().                        
-                                                                               
-      \param weightDim ranges from zero to one less than
-           getEntityCoordinateWeightDimension()  
-      \param weights is the list of weights of the given dimension for         
-           the coordinates listed in getEntityCoordinates().  If weights for  
-           this dimension are to be uniform for all coordinates in the         
-           global problem, the \c weights should be a NULL pointer.            
-       \param stride The k'th weight is located at weights[stride*k]           
-       \return The number of weights listed, which should be at least          
-                  the local number of coordinates times the stride for         
-                  non-uniform weights, zero otherwise.                         
-  */
-
-  virtual size_t getEntityCoordinateWeights(int weightDim,
-     const scalar_t *&weights, int &stride) const = 0;
-
-
-  /*! \brief Returns the number entities on this process.
-   *
-   *  Some algorithms can partition a graph of mesh entities
-   */
-  virtual size_t getLocalNumberOfEntities() const = 0;
-
-  /*! \brief Returns the number adjacencies on this process.
-   */
-  virtual size_t getLocalNumberOfAdjacencies() const = 0;
-
-  /*! \brief Returns the dimension (0 or greater) of entity weights.
-   */
-  virtual int getEntityWeightDimension() const = 0;
-
-  /*! \brief Returns the dimension (0 or greater) of adjacency weights.
-   */
-  virtual int getAdjacencyWeightDimension() const = 0;
-
-  /*! \brief Returns the dimension of the geometry, if any.
-   *
-   *  Some algorithms can use geometric entity coordinate 
-   *    information if it is present.
-   */
-  virtual int getCoordinateDimension() const = 0;
 
   /*! \brief Sets pointers to this process' mesh entries.
       \param EntityIds will on return a pointer to entity global Ids
@@ -260,34 +202,50 @@ public:
       must remain valid for the lifetime of this InputAdapter.
    */
 
+// TODO:  Need concept of first and second adjacencies.
+// TODO:    getEntityFirstAdj(entityType source, entityType target, gid_t *entityIds,
+// TODO:                      lno_t *offsets, gid_t *adjIds);
+// TODO:    getEntitySecondAdj(entityType sourcetarget, entityType through, gid_t *entityIds,
+// TODO:                      lno_t *offsets, gid_t *adjIds);
+// TODO:  Later may allow user to not implement second adjacencies and, if we want them,
+// TODO:  we compute A^T A, where A is matrix of first adjacencies.
+
   virtual size_t getEntityListView(const gid_t *&entityIds, 
     const lno_t *&offsets, const gid_t *& adjacencyIds) const = 0; 
 
-  /*! \brief  Provide a pointer to the entity weights, if any.
 
-      \param weightDim ranges from zero to one less than 
-                   getEntityWeightDimension().
-      \param weights is the list of weights of the given dimension for
-           the entities returned in getEntityListView().  If weights for
-           this dimension are to be uniform for all entities in the
-           global problem, the \c weights should be a NULL pointer.
-       \param stride The k'th weight is located at weights[stride*k]
-      \return The number of weights listed, which should be at least
-                  the local number of entities times the stride for
-                  non-uniform weights, zero otherwise.
+  /*! \brief Provide a pointer to one of the number of this process'
+                optional entity weights.
+
+      \param number is a value ranging from zero to one less than
+                   getNumberOfWeightsPerEntity()
+      \param weights on return will contain a list of the weights for the
+               number specified.  If weights for
+	   this number are to be uniform for all entities in the
+	   global problem, the \c weights should be a NULL pointer.
+
+      \param stride on return will indicate the stride of the weights list.
+
+      
+       The k'th weight is located at weights[stride*k].
+
+       \return The number of values in the weights list.  This may be greater
+          than the number of entities, because the stride may be greater
+	  than one.
 
       Zoltan2 does not copy your data.  The data pointed to by weights
       must remain valid for the lifetime of this InputAdapter.
-   */
+  */
 
-  virtual size_t getEntityWeights(int weightDim,
+  virtual size_t getEntityWeights(int number,
      const scalar_t *&weights, int &stride) const = 0;
+
 
   /*! \brief  Provide a pointer to the adjacency weights, if any.
 
-      \param weightDim ranges from zero to one less than 
-                   getAdjacencyWeightDimension().
-      \param weights is the list of weights of the given dimension for
+      \param number ranges from zero to one less than 
+                   getNumberOfWeightsPerEntityAdjacency().
+      \param weights is the list of weights of the given number for
            the adjacencies returned in getEntityListView().
        \param stride The k'th weight is located at weights[stride*k]
        \return The number of weights listed, which should be the same
@@ -297,29 +255,8 @@ public:
       must remain valid for the lifetime of this InputAdapter.
    */
 
-  virtual size_t getAdjacencyWeights(int weightDim,
+  virtual size_t getEntityAdjacencyWeights(int number,
      const scalar_t *&weights, int &stride) const = 0;
-
-  /*! \brief Provide a pointer to one dimension of entity coordinates.
-      \param coordDim  is a value from 0 to one less than
-         getCoordinateDimension() specifying which dimension is
-         being provided in the coords list.
-      \param coords  points to a list of coordinate values for the dimension.
-      \param stride  describes the layout of the coordinate values in
-              the coords list.  If stride is one, then the ith coordinate
-              value is coords[i], but if stride is two, then the
-              ith coordinate value is coords[2*i].
-
-       \return The length of the \c coords list.  This may be more than
-              getLocalNumberOfEntities() because the \c stride
-              may be more than one.
-
-      Zoltan2 does not copy your data.  The data pointed to by coords
-      must remain valid for the lifetime of this InputAdapter.
-   */
-
-  virtual size_t getCoordinates(int coordDim, 
-    const scalar_t *&coords, int &stride) const = 0;
 
 
   /*! \brief Apply a partitioning problem solution to an input.  

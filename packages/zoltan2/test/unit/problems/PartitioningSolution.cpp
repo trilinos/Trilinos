@@ -63,7 +63,6 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::arcp;
 
-double epsilon = 10e-6;
 
 typedef zoltan2_partId_t partId_t;
 
@@ -89,6 +88,7 @@ int main(int argc, char *argv[])
   int nprocs = comm->getSize();
   int rank = comm->getRank();
   int fail=0, gfail=0;
+  double epsilon = 10e-6;
 
   ////////////////
   // Arrays to hold part Ids and part Sizes for each weight dimension.

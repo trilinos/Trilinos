@@ -5,7 +5,7 @@
 //        MueLu: A package for multigrid based preconditioning
 //                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation, 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,8 @@
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
 // PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
@@ -94,14 +94,14 @@
   if (paramList.isParameter(paramStr))                                  \
     outParamList.set<varType>(outParamStr, paramList.get<varType>(paramStr)); \
   else outParamList.set<varType>(outParamStr, defaultValue);            \
-  
+
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLParameterListInterpreter(Teuchos::ParameterList & paramList, std::vector<RCP<FactoryBase> > factoryList) : nullspace_(NULL), TransferFacts_(factoryList), blksize_(1) {
     SetParameterList(paramList);
   }
-  
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLParameterListInterpreter(const std::string & xmlFileName, std::vector<RCP<FactoryBase> > factoryList) : nullspace_(NULL), TransferFacts_(factoryList), blksize_(1) {
     Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile(xmlFileName);
@@ -111,7 +111,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetParameterList(const Teuchos::ParameterList & paramList_in) {
     Teuchos::ParameterList paramList = paramList_in;
-    
+
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); // TODO: use internal out (GetOStream())
 
     //
@@ -122,15 +122,15 @@ namespace MueLu {
     MUELU_READ_PARAM(paramList, "ML output",                                int,                   0,       verbosityLevel);
     MUELU_READ_PARAM(paramList, "max levels",                               int,                  10,       maxLevels);
     MUELU_READ_PARAM(paramList, "PDE equations",                            int,                   1,       nDofsPerNode);
-                                                                                                                                                                                                 
+
     MUELU_READ_PARAM(paramList, "coarse: max size",                         int,                 128,       maxCoarseSize);
-                                                                                                                                                                                                   
+
     MUELU_READ_PARAM(paramList, "aggregation: type",                std::string,         "Uncoupled",       agg_type);
     MUELU_READ_PARAM(paramList, "aggregation: threshold",                double,                 0.0,       agg_threshold);
     MUELU_READ_PARAM(paramList, "aggregation: damping factor",           double, (double)4/(double)3,       agg_damping);
     MUELU_READ_PARAM(paramList, "aggregation: smoothing sweeps",            int,                   1,       agg_smoothingsweeps);
     MUELU_READ_PARAM(paramList, "aggregation: nodes per aggregate",         int,                   1,       minPerAgg);
-          
+
     MUELU_READ_PARAM(paramList, "null space: type",                 std::string,   "default vectors",       nullspaceType);
     MUELU_READ_PARAM(paramList, "null space: dimension",                    int,                  -1,       nullspaceDim); // TODO: ML default not in documentation
     MUELU_READ_PARAM(paramList, "null space: vectors",                   double*,               NULL,       nullspaceVec); // TODO: ML default not in documentation
@@ -150,7 +150,7 @@ namespace MueLu {
 
     // std::cout << std::endl << "Parameter list after CreateSublists" << std::endl;
     // std::cout << paramListWithSubList << std::endl;
-    
+
     //
     // Validate parameter list
     //
@@ -158,7 +158,7 @@ namespace MueLu {
     {
       bool validate = paramList.get("ML validate parameter list", true); /* true = default in ML */
       if (validate) {
-      
+
 #ifdef HAVE_MUELU_ML
         // Validate parameter list using ML validator
         int depth = paramList.get("ML validate depth", 5); /* 5 = default in ML */
@@ -213,22 +213,20 @@ namespace MueLu {
 
     RCP<PFactory> PFact;
     RCP<RFactory> RFact;
-
-    RCP<PFactory> PtentFact = rcp(new TentativePFactory(UCAggFact));
-
+    RCP<PFactory> PtentFact = rcp( new TentativePFactory() );
     if (agg_damping == 0.0 && bEnergyMinimization == false) {
       // tentative prolongation operator (PA-AMG)
-      PFact = PtentFact; //rcp( new TentativePFactory() );
+      PFact = PtentFact;
       RFact = rcp( new TransPFactory() );
     } else if (agg_damping != 0.0 && bEnergyMinimization == false) {
       // smoothed aggregation (SA-AMG)
-      RCP<SaPFactory> SaPFact =  rcp( new SaPFactory(PtentFact) );
+      RCP<SaPFactory> SaPFact =  rcp( new SaPFactory() );
       SaPFact->SetDampingFactor(agg_damping);
       PFact  = SaPFact;
       RFact  = rcp( new TransPFactory() );
     } else if (bEnergyMinimization == true) {
       // Petrov Galerkin PG-AMG smoothed aggregation (energy minimization in ML)
-      PFact  = rcp( new PgPFactory(PtentFact) );
+      PFact  = rcp( new PgPFactory() );
       RFact  = rcp( new GenericRFactory() );
     }
 
@@ -236,7 +234,7 @@ namespace MueLu {
     for (size_t i = 0; i<TransferFacts_.size(); i++) {
       AcFact->AddTransferFactory(TransferFacts_[i]);
     }
-    
+
     //
     // Nullspace factory
     //
@@ -304,7 +302,7 @@ namespace MueLu {
         // std::cout << levelSmootherParam << std::endl;
 
         RCP<SmootherFactory> smootherFact = GetSmootherFactory(levelSmootherParam); // TODO: missing AFact input arg.
-       
+
         manager->SetFactory("Smoother", smootherFact);
       }
 
@@ -316,11 +314,11 @@ namespace MueLu {
       manager->SetFactory("Graph", dropFact);
       manager->SetFactory("Aggregates", UCAggFact);
       manager->SetFactory("DofsPerNode", dropFact);
-      manager->SetFactory("A", AcFact);              
-      manager->SetFactory("P", PFact);               
-      manager->SetFactory("Ptent", PtentFact);       
-      manager->SetFactory("R", RFact);               
-      manager->SetFactory("Nullspace", nspFact);     
+      manager->SetFactory("A", AcFact);
+      manager->SetFactory("P", PFact);
+      manager->SetFactory("Ptent", PtentFact);
+      manager->SetFactory("R", RFact);
+      manager->SetFactory("Nullspace", nspFact);
 
       this->AddFactoryManager(levelID, 1, manager);
     } // for (level loop)
@@ -335,7 +333,7 @@ namespace MueLu {
       RCP<Level> fineLevel = H.GetLevel(0);
       const RCP<const Map> rowMap = fineLevel->Get< RCP<Matrix> >("A")->getRowMap();
       RCP<MultiVector> nullspace = MultiVectorFactory::Build(rowMap, nullspaceDim_, true);
-      
+
       for ( size_t i=0; i < Teuchos::as<size_t>(nullspaceDim_); i++) {
         Teuchos::ArrayRCP<Scalar> nullspacei = nullspace->getDataNonConst(i);
         const size_t              myLength   = nullspace->getLocalLength();

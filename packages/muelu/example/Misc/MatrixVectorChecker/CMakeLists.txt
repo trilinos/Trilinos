@@ -21,19 +21,19 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       MatrixVectorCheckerExample
       #NAME "MatrixVectorChecker Epetra"
       NAME "MatrixVectorChecker"
-      ARGS "--linAlgebra=0"
+      ARGS "--linAlgebra=Epetra"
       COMM serial
       # NUM_MPI_PROCS 2
       # PASS_REGULAR_EXPRESSION "Example Passed!"
       )
   ENDIF()
-  
+
   IF (${PACKAGE_NAME}_ENABLE_Tpetra)
     TRIBITS_ADD_TEST(
       MatrixVectorCheckerExample
       #NAME "MatrixVectorChecker Epetra"
       NAME "MatrixVectorChecker"
-      ARGS "--linAlgebra=1"
+      ARGS "--linAlgebra=Tpetra"
       COMM serial
       # NUM_MPI_PROCS 2
       # PASS_REGULAR_EXPRESSION "Example Passed!"
@@ -51,7 +51,7 @@ ENDIF()
 # Note: as of Oct2,2012, this test is failing on Apples.  It appears to be a problem reading in matrix header info,
 #       but the problem goes away as soon as I compile with -g -O0, grrr.  So disabling for the moment on the only
 #       nightly Apple machine.
-IF (${PACKAGE_NAME}_ENABLE_Epetra) 
+IF (${PACKAGE_NAME}_ENABLE_Epetra)
   IF (${PACKAGE_NAME}_ENABLE_Galeri)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       read_MatrixMarket

@@ -32,27 +32,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-/*****************************************************************************
-*
-* exgev - ex_get_n_var
-*
-* entry conditions - 
-*   input parameters:
-*       int     exoid                exodus file id
-*       int     time_step            time step number
-*       ex_entity_type var_type             block/variable type
-*                                      node, edge/face/element block, or
-*                                      node/edge/face/side/element set
-*       int     var_index            variable index
-*       int     obj_id               object id
-*       int     start_num               starting index of the variables to be written
-*       int     num_ent                 number of entities to write variables for.
-*
-*
-* exit conditions - 
-*       float*  var_vals                array of element variable values
-*
-*****************************************************************************/
 
 #include "exodusII.h"
 #include "exodusII_int.h"
@@ -86,11 +65,14 @@ int ex_get_n_var( int   exoid,
 		  int64_t   num_entities,
 		  void* var_vals )
 {
-  int status;
+  int status = 0;
   int varid, obj_id_ndx;
   size_t start[2], count[2];
   char errmsg[MAX_ERR_LENGTH];
 
+  if (num_entities == 0)
+    return status;
+  
   if (var_type == EX_NODAL) {
     /* FIXME: Special case: ignore obj_id, possible large_file complications, etc. */
     return ex_get_n_nodal_var( exoid, time_step, var_index, start_index, num_entities, var_vals );

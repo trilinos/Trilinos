@@ -167,7 +167,7 @@ namespace MueLu {
       @param list On input, a bunch of integers. On output, the same integers in a different order
       that is determined randomly.
     */
-    void RandomReorder(Teuchos::ArrayRCP<LO> list) const; 
+    void RandomReorder(Teuchos::ArrayRCP<LO> list) const;
 
     /*! @brief Generate a random number in the range [min, max] */
     int RandomOrdinal(int min, int max) const;

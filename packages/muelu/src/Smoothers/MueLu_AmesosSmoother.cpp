@@ -126,7 +126,7 @@ namespace MueLu {
     // unfortunately there is no reindex for Amesos2, yet. So, this only works for Epetra based problems
     if(A_->getRowMap()->isDistributed() == true && A_->getRowMap()->isContiguous() == false)
       paramList_.set("Reindex", true);
-    
+
     prec_->SetParameters(paramList_);
 
     int r = prec_->NumericFactorization();
@@ -157,14 +157,14 @@ namespace MueLu {
   RCP<MueLu::SmootherPrototype<double,int,int> > AmesosSmoother::Copy() const {
     return rcp( new AmesosSmoother(*this) );
   }
-    
+
   std::string AmesosSmoother::description() const {
     std::ostringstream out;
     out << SmootherPrototype::description();
     out << "{type = " << type_ << "}";
     return out.str();
   }
-    
+
   //using MueLu::Describable::describe; // overloading, not hiding
   void AmesosSmoother::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
@@ -172,11 +172,11 @@ namespace MueLu {
     if (verbLevel & Parameters0) {
       out0 << "Prec. type: " << type_ << std::endl;
     }
-      
-    if (verbLevel & Parameters1) { 
+
+    if (verbLevel & Parameters1) {
       out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
     }
-      
+
     if (verbLevel & External) {
       if (prec_ != Teuchos::null) { prec_->PrintStatus(); prec_->PrintTiming(); } //TODO: redirect output?
     }

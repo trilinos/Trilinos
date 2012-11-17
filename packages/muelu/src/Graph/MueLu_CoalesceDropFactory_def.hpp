@@ -70,16 +70,15 @@ namespace MueLu {
 
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoalesceDropFactory(RCP<const FactoryBase> AFact, RCP<const FactoryBase> AmalgFact)
-: AFact_(AFact), AmalgFact_(AmalgFact)
+CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoalesceDropFactory()
   {
     predrop_ = Teuchos::null;
   }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-  currentLevel.DeclareInput("A", AFact_.get(), this);
-  currentLevel.DeclareInput("UnAmalgamationInfo", AmalgFact_.get(), this);
+  Input(currentLevel, "A");
+  Input(currentLevel, "UnAmalgamationInfo");
 }
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -87,14 +86,14 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
-  FactoryMonitor m(*this, "CoalesceDropFactory", currentLevel);
+  FactoryMonitor m(*this, "Build", currentLevel);
   if(predrop_ != Teuchos::null) {
     GetOStream(Parameters0, 0) << predrop_->description();
   }
 
   //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
-  RCP<Matrix> A = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
+  RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
 
   LocalOrdinal blockdim = 1;         // block dim for fixed size blocks
@@ -111,15 +110,15 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
     oldView = A->SwitchToView(oldView);
     GetOStream(Debug, 0) << "CoalesceDropFactory::Build():" << " found blockdim=" << blockdim << " from strided maps. offset=" << offset << std::endl;
   } else GetOStream(Debug, 0) << "CoalesceDropFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
-  
-  // 2) build (un)amalgamation information 
+
+  // 2) build (un)amalgamation information
   //    prepare generation of nodeRowMap (of amalgamated matrix)
   // TODO: special handling for blockdim=1
-  RCP<AmalgamationInfo> amalInfo = currentLevel.Get< RCP<AmalgamationInfo> >("UnAmalgamationInfo", AmalgFact_.get());
+  RCP<AmalgamationInfo> amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
   RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids = amalInfo->GetGlobalAmalgamationParams();
   RCP<std::vector<GlobalOrdinal> > gNodeIds = amalInfo->GetNodeGIDVector();
   GlobalOrdinal cnt_amalRows = amalInfo->GetNumberOfNodes();
-  
+
   // inter processor communication: sum up number of block ids
   GlobalOrdinal num_blockids = 0;
   Teuchos::reduceAll<int,GlobalOrdinal>(*(A->getRowMap()->getComm()),Teuchos::REDUCE_SUM, cnt_amalRows, Teuchos::ptr(&num_blockids) );
@@ -208,8 +207,8 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 
   // 7) store results in Level
   graph->SetBoundaryNodeMap(gBoundaryNodeMap);
-  currentLevel.Set("DofsPerNode", blockdim, this);
-  currentLevel.Set("Graph", graph, this);
+  Set(currentLevel, "DofsPerNode", blockdim);
+  Set(currentLevel, "Graph", graph);
 }
 
 } //namespace MueLu

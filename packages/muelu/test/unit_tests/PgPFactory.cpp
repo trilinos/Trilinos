@@ -81,7 +81,6 @@ TEUCHOS_UNIT_TEST(PgPFactory, Test0)
   TEST_EQUALITY(pgpFactory != Teuchos::null, true);
 
   out << *pgpFactory << std::endl;
-
 }
 
 TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
@@ -134,7 +133,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
   UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
   UCAggFact->SetPhase3AggCreation(0.5);
 
-  RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(UCAggFact));
+  RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
   RCP<PgPFactory>         Pfact = rcp( new PgPFactory());
   RCP<RFactory>           Rfact = rcp( new GenericRFactory() );
   RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
@@ -262,17 +261,17 @@ TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
 {
 
   //JG: This test is failing. Last known good version: 6ad0eeba
-  // mpirun -n 2 ./MueLu_UnitTests.exe --linAlgebra=0 --test=NonStandardMaps --group=PgPFactory
+  // mpirun -n 2 ./MueLu_UnitTests.exe --linAlgebra=Epetra --test=NonStandardMaps --group=PgPFactory
   /*
     Level 2
     [...]
     Setup Smoother (MueLu::AmesosSmoother{type = Klu})
-    
+
     p=0: *** Caught an integer std::exception with value = 1
     [FAILED]  (0.106 sec) PgPFactory_NonStandardMaps_UnitTest
     Location: /home/jngaida/dev/MueLu/src/preCopyrightTrilinos/muelu/test/unit_tests/PgPFactory.cpp:216
   */
-  
+
 #warning Unit test PgPFactory NonStandardMaps disabled
   return;
 
@@ -1038,7 +1037,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
       RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
-      
+
       FactoryManager M;
       M.SetFactory("P", Pfact);
       M.SetFactory("R", Rfact);
@@ -1047,7 +1046,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       M.SetFactory("Aggregates", UCAggFact);
       M.SetFactory("Smoother", SmooFact);
       M.SetFactory("CoarseSolver", coarseSolveFact);
-      
+
       H->Setup(M, 0, maxLevels);
 
       // test some basic multigrid data

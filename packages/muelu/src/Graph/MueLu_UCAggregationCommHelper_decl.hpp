@@ -72,35 +72,6 @@ namespace MueLu {
 #undef MUELU_UCAGGREGATIONCOMMHELPER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  private:
-    RCP<const Import> import_;
-    mutable RCP<const Import> winnerImport_; //FIXME get rid of "mutable"
-    mutable RCP<Import> pushWinners_; //FIXME get rid of mutable
-    RCP<Vector> tempVec_;
-    mutable RCP<Vector> perturbWt_;
-    mutable RCP<Vector> postComm_;
-    mutable RCP<Vector> candidateWinners_;
-    mutable ArrayRCP<GO> myWinners_;
-    mutable int numMyWinners_;
-    mutable RCP<Map> winnerMap_;
-    mutable int numCalls_;
-    int myPID_;
-
-    //     uniqueMap                A subset of weight.getMap() where each GlobalId 
-    //                              has only one unique copy on one processor.
-    //                              Normally, weight.getMap() would have both locals
-    //                              and ghost elements while uniqueMap would just
-    //                              have the locals. It should be possible to
-    //                              remove this or make it an optional argument
-    //                              and use some existing Epetra/Tpetra capability to 
-    //                              make a uniqueMap.
-    //
-    //     import_                  This corresponds precisely to 
-    //                                   Import import_(
-    //                                           weight.getMap(), uniqueMap);
-    //                              This could also be eliminated and created
-    //                              here, but for efficiency user's must pass in.
-    //
   public:
 
     //! @name Constructors/Destructors.
@@ -135,39 +106,39 @@ namespace MueLu {
     A non-unique map is one that has at least one global ID that occurs on two or more processes.  For each repeated ID \f$i\f$, the
     algorithm finds the maximum value \f$v[i]\f$ in the weight vector \f$v\f$.  This value is communicated to all processors that
     have \f$i\f$ in their local map.  More details are below.
- 
+
 
      For each GlobalId \f$K\f$ associated with weight.getMap():
-    
+
           -# Find the maximum absolute value of \f$weight[K]\f$ across all
-             processors and assign this to all local elements of weight[] (across 
+             processors and assign this to all local elements of weight[] (across
              processors) that are associated with \f$K\f$.
           -# Set procWinner[] to the MyPid() that had the largest element.
-             procWinner[] is still set if only one processor owns a GlobalId. 
-    
+             procWinner[] is still set if only one processor owns a GlobalId.
+
              The ONLY CASE when procWinner[i] is NOT set corresponds to when
              all local weights associated with a GlobalId are zero. This allows
              one to effectively skip the maximum/winner calculation for a subset
              of GlobalId's.  This might occur when a processor has already
              claimed ownership for a GlobalId and so all local copies have
-             the same value. We want to skip the maximum calculation with 
+             the same value. We want to skip the maximum calculation with
              tiebreaking to avoid another processor claiming ownership.
-    
+
           -# Optionally, set companion[] (across all relevant processors) to the
              local companion value associated with the procWinner[] processor.
-    
+
          @param weight[in,out]
                                  - On input, vector of NONNEGATIVE weights.
                                  - On output, \f$ \mbox{weight}[k]  \Leftarrow  \max(\mbox{weight}[k_{p1}],\dots,\mbox{weight}[k_{pn}]) \f$
                                   where \f$ \mbox{weight}[k_{pj}] \f$ is processor \f$pj\f$'s value for GID \f$k\f$.
-    
+
          @param procWinner[in,out]
                                   - On input, allocated but contents ignored.
                                   - On output, \f$\mbox{procWinner}[k] \Leftarrow pj\f$  such that
                                     \f$\mbox{weight}[k_{pj}] = \max(\mbox{weight}[k_{p1}],...,\mbox{weight}[k_{pn}])\f$, where
                                     \f$ \mbox{weight}[k_{pj}] \f$ is processor \f$pj\f$'s value for GID \f$k\f$.
                                   NOTE: If all input \f$\mbox{weight}[k_{pi}]\f$'s are zero, then \f$\mbox{procWinner}[k]\f$ is left untouched.
-    
+
          @param companion[in,out]
                                   - On input, either NULL or allocated but contents ignored.  If NULL, step 3 above is skipped.
                                   - On output, if not null, \f$\mbox{companion}[k] \Leftarrow \mbox{companion}[k_j]\f$ where
@@ -177,30 +148,30 @@ namespace MueLu {
                                         has a value of procWinner that matches
                                         its MyPid, the corresponding companion
                                         is not altered.
-    
 
-         @param perturb[in]                  Optional arguments that is either true or 
+
+         @param perturb[in]                  Optional arguments that is either true or
                                              false (default: true). weight is perturbed
                                              and the perturbed values are used in step 1)
                                              above. Returned values reflect the perturbed
                                              data. This option avoids having lots of
                                              tiebreaks where the large MyPid() always wins.
-    
+
       */
       /*
       Output:
          @param weight            \f$ weight[k]  \Leftarrow  \max(weight[k_1],\dots,weight[k_n]) \f$
                                   where \f$ weight[k_j] \f$ live on different processors
                                   but have the same GlobalId as weight[k] on this processor.
-    
+
          @param procWinner               procWinner[k] <-- MyPid associated with the
-                                  kj yielding the max in 
+                                  kj yielding the max in
                                         Max(weight[k1],...,weight[kn]) .
                                   See weight Output comments.
                                   NOTE: If all input weight[kj]'s are zero,
                                         then procWinner[k] is left untouched.
-    
-         @param companion                If not null, 
+
+         @param companion                If not null,
                                      companion[k] <-- companion[kj] where
                                   companion[kj] lives on processor procWinner[k].
                                   and corresponds to the same GlobalId as k.
@@ -212,33 +183,62 @@ namespace MueLu {
     void ArbitrateAndCommunicate(Vector &weight, LOVector &procWinner, LOVector *companion, const bool perturb) const; //ArbitrateAndCommunicate(Vector&, LOVector &, LOVector *, const bool) const
 
     /*!  @brief Redistribute data in source to dest where both source and dest might have multiple copies of the same global id across many processors.
-       
-       The source may not have the same value for all of these multiple copies, but on 
+
+       The source may not have the same value for all of these multiple copies, but on
        termination dest will have a unique value for each global id.  When multiple
-       copies exist in source, 'what' determines how they are combined to make a 
+       copies exist in source, 'what' determines how they are combined to make a
        unique value in dest (see CombineMode).
-      
+
         Input:
            @param[in] source        Vector where multiple copies of some GlobalIds
                                     might exist and might have different values.
-      
+
            @param[in,out] dest      On input, allocated but contents ignored.
                                     On output, contains redistributed data from source where
                                     'what' determines how multiple copies of source
                                     values associated with the same GlobalId are
                                     combined into a unique value on all processors.
-      
+
            @param[in] what          Determines how multiple copies of the same
                                     GlobalId are combined (see CombineMode).
     */
     void NonUnique2NonUnique(const Vector &source, Vector &dest, const Xpetra::CombineMode what) const;
-   
+
+  private:
+    RCP<const Import> import_;
+    mutable RCP<const Import> winnerImport_; //FIXME get rid of "mutable"
+    mutable RCP<Import> pushWinners_; //FIXME get rid of mutable
+    RCP<Vector> tempVec_;
+    mutable RCP<Vector> perturbWt_;
+    mutable RCP<Vector> postComm_;
+    mutable RCP<Vector> candidateWinners_;
+    mutable ArrayRCP<GO> myWinners_;
+    mutable int numMyWinners_;
+    mutable RCP<Map> winnerMap_;
+    mutable int numCalls_;
+    int myPID_;
+
+    //     uniqueMap                A subset of weight.getMap() where each GlobalId
+    //                              has only one unique copy on one processor.
+    //                              Normally, weight.getMap() would have both locals
+    //                              and ghost elements while uniqueMap would just
+    //                              have the locals. It should be possible to
+    //                              remove this or make it an optional argument
+    //                              and use some existing Epetra/Tpetra capability to
+    //                              make a uniqueMap.
+    //
+    //     import_                  This corresponds precisely to
+    //                                   Import import_(
+    //                                           weight.getMap(), uniqueMap);
+    //                              This could also be eliminated and created
+    //                              here, but for efficiency user's must pass in.
+    //
   };
 
 
 }
 
-//JG: 
+//JG:
 // - procWinner is an array of proc ID -> LocalOrdinal
 // - companion == aggregates.GetVertex2AggId() == local aggregate ID -> LocalOrdinal
 

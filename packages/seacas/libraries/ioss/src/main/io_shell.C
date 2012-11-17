@@ -77,6 +77,7 @@ namespace {
   struct Globals
   {
     std::string working_directory;
+    std::string decomp_method;
     double maximum_time;
     double minimum_time;
     int  surface_split_type;
@@ -235,6 +236,46 @@ int main(int argc, char *argv[])
       i++;
       globals.compression_level = std::strtol(argv[i++], NULL, 10);
     }
+    else if (std::strcmp("--rcb", argv[i]) == 0) {
+      globals.decomp_method = "RCB";
+      i++;
+    }
+    else if (std::strcmp("--rib", argv[i]) == 0) {
+      globals.decomp_method = "RIB";
+      i++;
+    }
+    else if (std::strcmp("--hsfc", argv[i]) == 0) {
+      globals.decomp_method = "HSFC";
+      i++;
+    }
+    else if (std::strcmp("--metis_sfc", argv[i]) == 0) {
+      globals.decomp_method = "METIS_SFC";
+      i++;
+    }
+    else if (std::strcmp("--kway", argv[i]) == 0) {
+      globals.decomp_method = "KWAY";
+      i++;
+    }
+    else if (std::strcmp("--kway_geom", argv[i]) == 0) {
+      globals.decomp_method = "KWAY_GEOM";
+      i++;
+    }
+    else if (std::strcmp("--linear", argv[i]) == 0) {
+      globals.decomp_method = "LINEAR";
+      i++;
+    }
+    else if (std::strcmp("--cyclic", argv[i]) == 0) {
+      globals.decomp_method = "CYCLIC";
+      i++;
+    }
+    else if (std::strcmp("--random", argv[i]) == 0) {
+      globals.decomp_method = "RANDOM";
+      i++;
+    }
+    else if (std::strcmp("--external", argv[i]) == 0) {
+      globals.decomp_method = "EXTERNAL";
+      i++;
+    }
     else if (std::strcmp("--debug", argv[i]) == 0) {
       i++;
       globals.debug = true;
@@ -345,6 +386,8 @@ namespace {
     OUTPUT << "\t--Maximum_Time {time} : maximum time from input mesh to transfer to output mesh\n";
     OUTPUT << "\t--Minimum_Time {time} : minimum time from input mesh to transfer to output mesh\n";
     OUTPUT << "\t--Surface_Split_Scheme {TOPOLOGY|ELEMENT_BLOCK|NO_SPLIT} -- how to split sidesets\n";
+    OUTPUT << "\tDecomposition Methods: --rcb, --rib, --hsfc, --metis_sfc, --kway, --kway_geom,\n";
+    OUTPUT << "\t                       --linear, --cyclic, -- random, --external.\n";
     Ioss::NameList db_types;
     Ioss::IOFactory::describe(&db_types);
     OUTPUT << "\nSupports database types:\n\t";
@@ -358,12 +401,12 @@ namespace {
 		 const std::string& outfile, const std::string& output_type,
 		 Globals& globals)
   {
-    //========================================================================
-    // INPUT ...
-    // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
-    //========================================================================
-    Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART,
-						    (MPI_Comm)MPI_COMM_WORLD);
+    Ioss::PropertyManager properties_in;
+    if (!globals.decomp_method.empty()) {
+      properties_in.add(Ioss::Property("DECOMPOSITION_METHOD", globals.decomp_method));
+    }
+    Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_MODEL,
+						    (MPI_Comm)MPI_COMM_WORLD, properties_in);
     if (dbi == NULL || !dbi->ok(true)) {
       std::exit(EXIT_FAILURE);
     }

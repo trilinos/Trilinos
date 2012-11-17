@@ -60,13 +60,13 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::LeftoverAggregationAlgorithm():
     phase3AggCreation_(.5),
     minNodesPerAggregate_(1)
   { }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AggregateLeftovers(Graph const &graph, Aggregates &aggregates) const {
     Monitor m(*this, "Leftovers");
 
@@ -91,7 +91,7 @@ namespace MueLu {
       ArrayRCP<const LO> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
       ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
       ArrayRCP<double>    weights     = distWeights->getDataNonConst(0);
-          
+
       for (size_t i=0;i<nonUniqueMap->getNodeNumElements();i++) {
         if (procWinner[i] == MUELU_UNASSIGNED) {
           if (vertex2AggId[i] != MUELU_UNAGGREGATED) {
@@ -100,7 +100,7 @@ namespace MueLu {
           }
         }
       }
-          
+
       // views on distributed vectors are freed here.
     }
 
@@ -114,12 +114,12 @@ namespace MueLu {
       ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
       ArrayRCP<double>   weights      = distWeights->getDataNonConst(0);
 
-      for (my_size_t i = 0; i < nVertices; i++) { 
+      for (my_size_t i = 0; i < nVertices; i++) {
         if ( aggregates.IsRoot(i) && (procWinner[i] == myPid) ) {
-              
+
           // neighOfINode is the neighbor node list of node 'i'.
           ArrayView<const LO> neighOfINode = graph.getNeighborVertices(i);
-              
+
           for (typename ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
             int colj = *it;
             if (vertex2AggId[colj] == MUELU_UNAGGREGATED) {
@@ -140,18 +140,18 @@ namespace MueLu {
     GO total_phase_one_aggregated = 0;
     {
       ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-            
+
       GO phase_one_aggregated = 0;
       for (my_size_t i = 0; i < nVertices; i++) {
         if (vertex2AggId[i] != MUELU_UNAGGREGATED)
           phase_one_aggregated++;
       }
-          
+
       sumAll(graph.GetComm(), phase_one_aggregated, total_phase_one_aggregated);
 
       GO local_nVertices = nVertices, total_nVertices = 0;
       sumAll(graph.GetComm(), local_nVertices, total_nVertices);
-          
+
       /* Among unaggregated points, see if we can make a reasonable size    */
       /* aggregate out of it. We do this by looking at neighbors and seeing */
       /* how many are unaggregated and on my processor. Loosely,            */
@@ -163,15 +163,15 @@ namespace MueLu {
       double factor = 1.;
       factor = ((double) total_phase_one_aggregated)/((double)(total_nVertices + 1));
       factor = pow(factor, GetPhase3AggCreation());
-          
+
       for (my_size_t i = 0; i < nVertices; i++) {
-        if (vertex2AggId[i] == MUELU_UNAGGREGATED) 
+        if (vertex2AggId[i] == MUELU_UNAGGREGATED)
           {
-                
+
             // neighOfINode is the neighbor node list of node 'iNode'.
             ArrayView<const LO> neighOfINode = graph.getNeighborVertices(i);
             int rowi_N = neighOfINode.size();
-                
+
             int nonaggd_neighbors = 0;
             for (typename ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
               int colj = *it;
@@ -224,7 +224,7 @@ namespace MueLu {
     //         std::cout << "nonUniqueMap=" << nonUniqueMap->getNodeNumElements() << std::endl;
 
     RCP<Xpetra::Vector<double,LO,GO,NO> > temp_ = Xpetra::VectorFactory<double,LO,GO,NO> ::Build(nonUniqueMap,false); //no need to zero out vector in ctor
-    temp_->putScalar(1.);  
+    temp_->putScalar(1.);
 
     RCP<Xpetra::Vector<double,LO,GO,NO> > tempOutput_ = Xpetra::VectorFactory<double,LO,GO,NO> ::Build(nonUniqueMap);
 
@@ -234,25 +234,25 @@ namespace MueLu {
     {
       ArrayRCP<const double> tempOutput = tempOutput_->getData(0);
       for (int i = 0; i < exp_nRows; i++) {
-        if (tempOutput[i] > 1.) 
-          gidNotShared[i] = false; 
-        else 
-          gidNotShared[i] = true; 
+        if (tempOutput[i] > 1.)
+          gidNotShared[i] = false;
+        else
+          gidNotShared[i] = true;
       }
     }
 
-    // Phase 4. 
-    double nAggregatesTarget; 
-    nAggregatesTarget = ((double)  uniqueMap->getGlobalNumElements())* (((double) uniqueMap->getGlobalNumElements())/ ((double) graph.GetGlobalNumEdges())); 
-        
-    GO nAggregatesLocal=nAggregates, nAggregatesGlobal; sumAll(graph.GetComm(), nAggregatesLocal, nAggregatesGlobal); 
+    // Phase 4.
+    double nAggregatesTarget;
+    nAggregatesTarget = ((double)  uniqueMap->getGlobalNumElements())* (((double) uniqueMap->getGlobalNumElements())/ ((double) graph.GetGlobalNumEdges()));
 
-    LO minNAggs; minAll(graph.GetComm(), nAggregates, minNAggs); 
+    GO nAggregatesLocal=nAggregates, nAggregatesGlobal; sumAll(graph.GetComm(), nAggregatesLocal, nAggregatesGlobal);
+
+    LO minNAggs; minAll(graph.GetComm(), nAggregates, minNAggs);
     LO maxNAggs; maxAll(graph.GetComm(), nAggregates, maxNAggs);
 
     //
     // Only do this phase if things look really bad. THIS
-    // CODE IS PRETTY EXPERIMENTAL 
+    // CODE IS PRETTY EXPERIMENTAL
     //
 #define MUELU_PHASE4BUCKETS 6
     if ((nAggregatesGlobal < graph.GetComm()->getSize()) &&
@@ -268,7 +268,7 @@ namespace MueLu {
         temp_->setSeed(static_cast<unsigned int>(scalarTrait::random()));
       }
 
-      temp_->randomize(); 
+      temp_->randomize();
 
       ArrayRCP<double> temp = temp_->getDataNonConst(0);
 
@@ -292,7 +292,7 @@ namespace MueLu {
 
         double nTargetNewGuys =  nAggregatesTarget - nAggregatesGlobal;
         double threshold      =  priorThreshold + (1. - priorThreshold)*nTargetNewGuys/(nCandidatesGlobal + .001);
-         
+
         threshold = (threshold*(kkk+1.))/((double) MUELU_PHASE4BUCKETS);
         priorThreshold = threshold;
 
@@ -300,8 +300,8 @@ namespace MueLu {
           ArrayRCP<LO>     vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
           ArrayRCP<double> weights      = distWeights->getDataNonConst(0);
 
-          for (int k = 0; k < nCandidates; k++ ) { 
-            int i = candidates[k];                  
+          for (int k = 0; k < nCandidates; k++ ) {
+            int i = candidates[k];
             if ((vertex2AggId[i] == MUELU_UNAGGREGATED) && (fabs(temp[i])  < threshold)) {
               // Note: priorThreshold <= fabs(temp[i]) <= 1
 
@@ -345,18 +345,18 @@ namespace MueLu {
         sumAll(graph.GetComm(), nAggregatesLocal, nAggregatesGlobal);
 
         // check that there are no aggregates sizes below minNodesPerAggregate
-           
+
         aggregates.SetNumAggregates(nAggregates);
 
         RemoveSmallAggs(aggregates, minNodesPerAggregate, distWeights, myWidget);
-            
+
         nAggregates = aggregates.GetNumAggregates();
       }   // one possibility
     }
 
     // Initialize things for Phase 5. This includes building the transpose
     // of the matrix ONLY for transposed rows that correspond to unaggregted
-    // ghost vertices. Further, the transpose is only a local transpose. 
+    // ghost vertices. Further, the transpose is only a local transpose.
     // Nonzero edges which exist on other processors are not represented.
 
 
@@ -368,7 +368,7 @@ namespace MueLu {
       for(LO k = 0; k < vertex2AggId.size(); ++k )
         if(vertex2AggId[k]>observedNAgg)
           observedNAgg=vertex2AggId[k];
-      observedNAgg++; 
+      observedNAgg++;
     }
 
     ArrayRCP<int> Mark = Teuchos::arcp<int>(exp_nRows+1);
@@ -409,13 +409,13 @@ namespace MueLu {
     }
     RowPtr[exp_nRows-nVertices] = iSum;
     std::vector<LO> cols(iSum+1);
-         
+
     //     c) Traverse matrix and insert entries in proper location.
     for (int i = 0; i < nVertices;  i++) {
 
       // neighOfINode is the neighbor node list of node 'iNode'.
       ArrayView<const LO> neighOfINode = graph.getNeighborVertices(i);
-          
+
       for (typename ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
         int j = *it;
         if ( (j >= nVertices) && (vertex2AggIdCst[j] == MUELU_UNAGGREGATED)){
@@ -428,7 +428,7 @@ namespace MueLu {
     for (int i = exp_nRows; i > nVertices;  i--)
       RowPtr[i-nVertices] = RowPtr[i-1-nVertices];
     RowPtr[0] = 0;
-          
+
     // views on distributed vectors are freed here.
     vertex2AggIdCst = Teuchos::null;
     //}
@@ -436,7 +436,7 @@ namespace MueLu {
     int bestScoreCutoff;
     int thresholds[10] = {300,200,100,50,25,13,7,4,2,0};
 
-    // Stick unaggregated vertices into existing aggregates as described above. 
+    // Stick unaggregated vertices into existing aggregates as described above.
 
     {
       int ncalls=0;
@@ -464,7 +464,7 @@ namespace MueLu {
               LO *rowi_col = NULL, rowi_N;
               rowi_col = &(cols[RowPtr[i-nVertices]]);
               rowi_N   = RowPtr[i+1-nVertices] - RowPtr[i-nVertices];
-                
+
               neighOfINode = ArrayView<const LO>(rowi_col, rowi_N);
             }
             for (typename ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
@@ -473,8 +473,8 @@ namespace MueLu {
 
               //Adjacent is aggregated and either I own the aggregate
               // or I could own the aggregate after arbitration.
-              if ((AdjacentAgg != MUELU_UNAGGREGATED) && 
-                  ((procWinner[Adjacent] == myPid) ||     
+              if ((AdjacentAgg != MUELU_UNAGGREGATED) &&
+                  ((procWinner[Adjacent] == myPid) ||
                    (procWinner[Adjacent] == MUELU_UNASSIGNED))){
                 SumOfMarks[AdjacentAgg] += Mark[Adjacent];
               }
@@ -489,13 +489,13 @@ namespace MueLu {
               int AdjacentAgg = vertex2AggId[Adjacent];
               //Adjacent is unaggregated, has some value and no
               //other processor has definitively claimed him
-              if ((AdjacentAgg != MUELU_UNAGGREGATED) && 
+              if ((AdjacentAgg != MUELU_UNAGGREGATED) &&
                   (SumOfMarks[AdjacentAgg] != 0) &&
                   ((procWinner[Adjacent] == myPid) ||
                    (procWinner[Adjacent] == MUELU_UNASSIGNED ))) {
 
                 // first figure out the penalty associated with
-                // AdjacentAgg having already been incremented 
+                // AdjacentAgg having already been incremented
                 // during this phase, then compute score.
 
                 double penalty = (double) (INCR_SCALING*agg_incremented[AdjacentAgg]);
@@ -503,16 +503,16 @@ namespace MueLu {
                   penalty = MUELU_PENALTYFACTOR*((double)SumOfMarks[AdjacentAgg]);
                 int score = SumOfMarks[AdjacentAgg]- ((int) floor(penalty));
 
-                if (score > best_score) { 
-                  best_agg             = AdjacentAgg; 
+                if (score > best_score) {
+                  best_agg             = AdjacentAgg;
                   best_score           = score;
                   BestMark             = Mark[Adjacent];
                   cannotLoseAllFriends = false;
-       
+
                   // This address issue mentioned above by checking whether
                   // Adjacent could be lost in arbitration. weight==0 means that
                   // Adjacent was not set during this loop of Phase 5 (and so it
-                  // has already undergone arbitration). GidNotShared == true 
+                  // has already undergone arbitration). GidNotShared == true
                   // obviously implies that Adjacent cannot be lost to arbitration
                   if ((weights[Adjacent]== 0.) || (gidNotShared[Adjacent] == true))
                     cannotLoseAllFriends = true;
@@ -533,8 +533,8 @@ namespace MueLu {
               int AdjacentAgg = vertex2AggId[Adjacent];
               if (AdjacentAgg >= 0) SumOfMarks[AdjacentAgg] = 0;
             }
-            // Tentatively assign vertex to best_agg. 
-            if ( (best_score >= bestScoreCutoff) && (cannotLoseAllFriends)) { 
+            // Tentatively assign vertex to best_agg.
+            if ( (best_score >= bestScoreCutoff) && (cannotLoseAllFriends)) {
 
               TEUCHOS_TEST_FOR_EXCEPTION(best_agg == -1 || BestMark == -1, MueLu::Exceptions::RuntimeError, "MueLu::UCAggregationFactory internal error"); // should never happen
 
@@ -556,7 +556,7 @@ namespace MueLu {
         myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
         // All tentatively assigned vertices are now definitive
       }
-      
+
       //       if (graph.GetComm()->getRank()==0)
       //         std::cout << "#calls to Arb&Comm=" << ncalls << std::endl;
     }
@@ -577,7 +577,7 @@ namespace MueLu {
       ArrayRCP<const LO> procWinner = aggregates.GetProcWinner()->getData(0);
 
       int count = 0;
-      for (my_size_t i = 0; i < nVertices; i++) { 
+      for (my_size_t i = 0; i < nVertices; i++) {
         if (vertex2AggId[i] == MUELU_UNAGGREGATED) {
           Nleftover++;
 
@@ -601,13 +601,13 @@ namespace MueLu {
             }
           }
           if ( count >= minNodesPerAggregate) {
-            nAggregates++; 
+            nAggregates++;
             count = 0;
           }
         }
       }
 
-      // We have something which is under minNodesPerAggregate when 
+      // We have something which is under minNodesPerAggregate when
       if (count != 0) {
 #ifdef FIXME
         // Can stick small aggregate with 0th aggregate?
@@ -652,7 +652,7 @@ namespace MueLu {
     myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, false);
 
     if (IsPrint(Statistics1)) {
-      GO total_Nsingle=0;   sumAll(graph.GetComm(), (GO)Nsingle,     total_Nsingle);    
+      GO total_Nsingle=0;   sumAll(graph.GetComm(), (GO)Nsingle,     total_Nsingle);
       GO total_Nleftover=0; sumAll(graph.GetComm(), (GO)Nleftover,   total_Nleftover);
       // GO total_aggs;        sumAll(graph.GetComm(), (GO)nAggregates, total_aggs);
       // GetOStream(Statistics1, 0) << "Phase 6 - total aggregates = " << total_aggs << std::endl;
@@ -663,12 +663,12 @@ namespace MueLu {
 
   } //AggregateLeftovers
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RootCandidates(my_size_t nVertices, ArrayView<const LO> & vertex2AggId, Graph const &graph,
                       ArrayRCP<LO> &candidates, my_size_t &nCandidates, global_size_t &nCandidatesGlobal) const
   {
     nCandidates = 0;
-       
+
     for (my_size_t i = 0; i < nVertices; i++ ) {
       if (vertex2AggId[i] == MUELU_UNAGGREGATED) {
         bool noAggdNeighbors = true;
@@ -678,7 +678,7 @@ namespace MueLu {
 
         for (typename ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
           int adjacent    = *it;
-          if (vertex2AggId[adjacent] != MUELU_UNAGGREGATED) 
+          if (vertex2AggId[adjacent] != MUELU_UNAGGREGATED)
             noAggdNeighbors = false;
         }
         if (noAggdNeighbors == true) candidates[nCandidates++] = i;
@@ -689,11 +689,11 @@ namespace MueLu {
 
   } //RootCandidates
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   int LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RemoveSmallAggs(Aggregates& aggregates, int min_size,
                       RCP<Xpetra::Vector<double,LO,GO,NO> > & distWeights, const MueLu::UCAggregationCommHelper<LO,GO,NO,LMO> & myWidget) const {
     int myPid = aggregates.GetMap()->getComm()->getRank();
-        
+
     LO nAggregates = aggregates.GetNumAggregates();
 
     ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
@@ -709,9 +709,9 @@ namespace MueLu {
     // Make a list of all aggregates indicating New AggId
     // Use AggInfo array for this.
 
-    LO NewNAggs = 0; 
+    LO NewNAggs = 0;
     for (LO i = 0; i < nAggregates; i++) {
-      if ( AggInfo[i] < min_size) { 
+      if ( AggInfo[i] < min_size) {
         AggInfo[i] =  MUELU_UNAGGREGATED;
       }
       else AggInfo[i] = NewNAggs++;
@@ -723,7 +723,7 @@ namespace MueLu {
           vertex2AggId[k] = AggInfo[vertex2AggId[k]];
           weights[k] = 1.;
         }
-        if (vertex2AggId[k] ==  MUELU_UNAGGREGATED) 
+        if (vertex2AggId[k] ==  MUELU_UNAGGREGATED)
           aggregates.SetIsRoot(k,false);
       }
     }
@@ -732,17 +732,17 @@ namespace MueLu {
     myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
     // All tentatively assigned vertices are now definitive
 
-    // procWinner is not set correctly for aggregates which have 
+    // procWinner is not set correctly for aggregates which have
     // been eliminated
     for (LO i = 0; i < size; i++) {
-      if (vertex2AggId[i] == MUELU_UNAGGREGATED) 
+      if (vertex2AggId[i] == MUELU_UNAGGREGATED)
         procWinner[i] = MUELU_UNASSIGNED;
     }
     aggregates.SetNumAggregates(nAggregates);
 
     return 0; //TODO
   } //RemoveSmallAggs
-  
+
 } //namespace MueLu
 
 #endif // MUELU_LEFTOVERAGGREGATIONALGORITHM_DEF_HPP

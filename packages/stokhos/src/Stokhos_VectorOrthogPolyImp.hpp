@@ -112,9 +112,9 @@ term(ordinal_type dimension, ordinal_type order)
   Teuchos::RCP< const Stokhos::ProductBasis<ordinal_type, value_type> > 
     product_basis = Teuchos::rcp_dynamic_cast< const Stokhos::ProductBasis<ordinal_type, value_type> >(basis_, true);
   ordinal_type d = product_basis->dimension();
-  Teuchos::Array<ordinal_type> term(d);
+  MultiIndex<ordinal_type> term(d);
   term[dimension] = order;
-  ordinal_type index = product_basis->getIndex(term);
+  ordinal_type index = product_basis->index(term);
   return *(this->coeff_[this->map_->LID(index)]);
 }
 
@@ -126,9 +126,9 @@ term(ordinal_type dimension, ordinal_type order) const
   Teuchos::RCP< const Stokhos::ProductBasis<ordinal_type, value_type> > 
     product_basis = Teuchos::rcp_dynamic_cast< const Stokhos::ProductBasis<ordinal_type, value_type> >(basis_, true);
   ordinal_type d = product_basis->dimension();
-  Teuchos::Array<ordinal_type> term(d);
+  MultiIndex<ordinal_type> term(d);
   term[dimension] = order;
-  ordinal_type index = product_basis->getIndex(term);
+  ordinal_type index = product_basis->index(term);
   return *(this->coeff_[this->map_->LID(index)]);
 }
 
@@ -166,7 +166,6 @@ std::ostream&
 Stokhos::VectorOrthogPoly<coeff_type>::
 print(std::ostream& os) const
 {
-  Teuchos::Array<ordinal_type> trm;
   ordinal_type sz = this->coeff_.size();
   os << "Stokhos::VectorOrthogPoly of global size " 
      << this->map_->NumGlobalElements() << ", local size " << sz << " in basis "
@@ -177,7 +176,7 @@ print(std::ostream& os) const
 
   if (product_basis != Teuchos::null) {
     for (ordinal_type i=0; i<sz; i++) {
-      trm = product_basis->getTerm(i);
+      const MultiIndex<ordinal_type>& trm = product_basis->term(i);
       os << "Term " << i << " (";
       for (ordinal_type j=0; j<static_cast<ordinal_type>(trm.size())-1; j++)
 	os << trm[j] << ", ";

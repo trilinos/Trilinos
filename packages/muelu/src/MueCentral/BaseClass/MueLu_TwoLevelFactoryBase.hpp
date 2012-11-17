@@ -47,7 +47,7 @@
 #define MUELU_TWOLEVELFACTORY_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_FactoryBase.hpp"
+#include "MueLu_FactoryBase2.hpp"
 #include "MueLu_Level.hpp"
 
 namespace MueLu {
@@ -62,7 +62,7 @@ namespace MueLu {
   */
 
 
-  class TwoLevelFactoryBase : public FactoryBase {
+  class TwoLevelFactoryBase : public FactoryBase2 {
 
   public:
 

@@ -15,7 +15,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DZ1_TEST_DIR=\"${CMAKE_CURRENT_SOURCE_D
 # A) Define the package
 #
 
-TRIBITS_PACKAGE(Zoltan2)
+TRIBITS_PACKAGE(Zoltan2 ENABLE_SHADOWING_WARNINGS)
 
 #
 # B) Set up package-specific options

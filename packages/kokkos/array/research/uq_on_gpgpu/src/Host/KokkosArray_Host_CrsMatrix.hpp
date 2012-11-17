@@ -151,7 +151,8 @@ public:
                      const std::vector<vector_type> & x ,
                      const std::vector<vector_type> & y )
   {
-    parallel_for( A.graph.row_map.length() , MMultiply(A,x,y) );
+    const size_t row_count = A.graph.row_map.dimension(0) - 1 ;
+    parallel_for( row_count , MMultiply(A,x,y) );
   }
 };
 

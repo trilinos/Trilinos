@@ -66,7 +66,7 @@ namespace Xpetra {
   public:
 
     //! @name Constructor/Destructor Methods
-    //@{ 
+    //@{
 
     //! Destructor.
     virtual ~CrsMatrix() { }
@@ -82,6 +82,12 @@ namespace Xpetra {
     //! Insert matrix entries, using local IDs.
     virtual void insertLocalValues(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &cols, const ArrayView< const Scalar > &vals)= 0;
 
+    //! Replace matrix entries, using global IDs.
+    virtual void replaceGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals)= 0;
+
+    //! Replace matrix entries, using local IDs.
+    virtual void replaceLocalValues(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &cols, const ArrayView< const Scalar > &vals)= 0;
+
     //! Set all matrix entries equal to scalarThis.
     virtual void setAllToScalar(const Scalar &alpha)= 0;
 
@@ -92,6 +98,9 @@ namespace Xpetra {
 
     //! @name Transformational Methods
     //@{
+
+    //!
+    virtual void resumeFill(const RCP< ParameterList > &params=null)= 0;
 
     //! Signal that data entry is complete, specifying domain and range maps.
     virtual void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params=null)= 0;
@@ -152,6 +161,9 @@ namespace Xpetra {
     //! Returns true if fillComplete() has been called and the matrix is in compute mode.
     virtual bool isFillComplete() const = 0;
 
+    //! Returns true if resumeFill() has been called and the matrix is in edit mode.
+    virtual bool isFillActive() const = 0;
+
     //! Returns the Frobenius norm of the matrix.
     virtual typename ScalarTraits< Scalar >::magnitudeType getFrobeniusNorm() const = 0;
 
@@ -178,7 +190,7 @@ namespace Xpetra {
     //! Returns the Map associated with the domain of this operator. This will be null until fillComplete() is called.
     virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const = 0;
 
-    //! 
+    //!
     virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const = 0;
 
     //@}

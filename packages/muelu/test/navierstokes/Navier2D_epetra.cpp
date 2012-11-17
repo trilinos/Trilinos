@@ -197,7 +197,8 @@ int main(int argc, char *argv[]) {
 
   //RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
   //dropFact->SetPreDropFunction(predrop);
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
+  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+  UCAggFact->SetFactory("Graph", dropFact);
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
   *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
@@ -292,7 +293,7 @@ int main(int argc, char *argv[]) {
     xRhs->update((SC)-1.0,*xTmp,(SC)1.0);
     xRhs->norm2(norms);
     *out << "||x|| = " << norms[0] << std::endl;
-    
+
   }
 
   // TODO: don't forget to add Aztec as prerequisite in CMakeLists.txt!

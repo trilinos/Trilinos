@@ -78,7 +78,7 @@ TEUCHOS_UNIT_TEST( Stokhos_LogNormal_TP, UnitTest ) {
     w_mean += u.term(j,1)*u.term(j,1)/2.0;
   w_mean = std::exp(w_mean);
   for (int i=0; i<basis->size(); i++) {
-    Teuchos::Array<int> multiIndex = basis->getTerm(i);
+    Stokhos::MultiIndex<int> multiIndex = basis->term(i);
     double s = 1.0;
     for (int j=0; j<d; j++)
       s *= std::pow(u.term(j,1), multiIndex[j]);
@@ -129,7 +129,7 @@ TEUCHOS_UNIT_TEST( Stokhos_LogNormal_SG, UnitTest ) {
     w_mean += u.term(j,1)*u.term(j,1)/2.0;
   w_mean = std::exp(w_mean);
   for (int i=0; i<basis->size(); i++) {
-    Teuchos::Array<int> multiIndex = basis->getTerm(i);
+    Stokhos::MultiIndex<int> multiIndex = basis->term(i);
     double s = 1.0;
     for (int j=0; j<d; j++)
       s *= std::pow(u.term(j,1), multiIndex[j]);

@@ -124,7 +124,7 @@ namespace MueLuTests {
     GO indexBase = 0;
     RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map,false);
-    
+
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
@@ -142,10 +142,10 @@ namespace MueLuTests {
 
     /* Assign the partition that each unknown belongs to.  In this case,
 
-       partition 0 has 6 unknowns 
-       partition 1 has 6 unknowns 
-       partition 2 has 9 unknowns 
-       partition 3 has 3 unknowns 
+       partition 0 has 6 unknowns
+       partition 1 has 6 unknowns
+       partition 2 has 9 unknowns
+       partition 3 has 3 unknowns
     */
 
     switch (mypid)  {
@@ -169,7 +169,7 @@ namespace MueLuTests {
         partitionThisDofBelongsTo[1] = 0;           //           5          5
         partitionThisDofBelongsTo[0] = 2;           //           1
         partitionThisDofBelongsTo[2] = 2;           //           5          8
-        partitionThisDofBelongsTo[3] = 2;           //           1    
+        partitionThisDofBelongsTo[3] = 2;           //           1
         partitionThisDofBelongsTo[4] = 2;           //           1
         partitionThisDofBelongsTo[5] = 3;           //           5          5
         break;
@@ -205,7 +205,8 @@ namespace MueLuTests {
     level.Request("Partition",zoltan.get());
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
-    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(zoltan, Teuchos::null, 1000, 1.2, 1, 10/*useDiffusiveHeuristic*/, -1));
+    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(1000, 1.2, 1, 10/*useDiffusiveHeuristic*/, -1));
+    repart->SetFactory("Partition", zoltan);
 
     GO myPartitionNumber;
     Array<int> partitionOwners;
@@ -261,7 +262,7 @@ namespace MueLuTests {
     GO indexBase = 0;
     RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map,false);
-    
+
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
@@ -277,10 +278,10 @@ namespace MueLuTests {
 
     /* Assign the partition that each unknown belongs to.  In this case,
 
-       partition 0 has 6 unknowns 
-       partition 1 has 6 unknowns 
-       partition 2 has 8 unknowns 
-       partition 3 has 4 unknowns 
+       partition 0 has 6 unknowns
+       partition 1 has 6 unknowns
+       partition 2 has 8 unknowns
+       partition 3 has 4 unknowns
     */
 
     switch (mypid)  {
@@ -340,7 +341,8 @@ namespace MueLuTests {
     level.Request("Partition",zoltan.get());
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
-    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(zoltan, Teuchos::null, 1000, 1.2, 1, 10/*useDiffusiveHeuristic*/, -1));
+    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(1000, 1.2, 1, 10/*useDiffusiveHeuristic*/, -1));
+    repart->SetFactory("Partition", zoltan);
 
     GO myPartitionNumber;
     Array<int> partitionOwners;
@@ -397,7 +399,7 @@ namespace MueLuTests {
     GO indexBase = 0;
     RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map,false);
-    
+
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
@@ -414,10 +416,10 @@ namespace MueLuTests {
 
     /* Assign the partition that each unknown belongs to.  In this case,
 
-       partition 0 has 3 unknowns 
-       partition 1 has 4 unknowns 
-       partition 2 has 3 unknowns 
-       partition 3 has 5 unknowns 
+       partition 0 has 3 unknowns
+       partition 1 has 4 unknowns
+       partition 2 has 3 unknowns
+       partition 3 has 5 unknowns
     */
 
     switch (mypid)  {
@@ -468,7 +470,8 @@ namespace MueLuTests {
     level.Request("Partition",zoltan.get());
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
-    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(zoltan, Teuchos::null, 1000, 1.2, 1, 10/*useDiffusiveHeuristic*/, -1));
+    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(1000, 1.2, 1, 10/*useDiffusiveHeuristic*/, -1));
+    repart->SetFactory("Partition", zoltan);
 
     GO myPartitionNumber;
     Array<int> partitionOwners;
@@ -525,7 +528,7 @@ namespace MueLuTests {
     GO indexBase = 0;
     RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map,false);
-    
+
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
@@ -542,10 +545,10 @@ namespace MueLuTests {
 
     /* Assign the partition that each unknown belongs to.  In this case,
 
-       partition 0 has 3 unknowns 
-       partition 1 has 4 unknowns 
-       partition 2 has 3 unknowns 
-       partition 3 has 5 unknowns 
+       partition 0 has 3 unknowns
+       partition 1 has 4 unknowns
+       partition 2 has 3 unknowns
+       partition 3 has 5 unknowns
     */
 
     switch (mypid)  {
@@ -597,7 +600,8 @@ namespace MueLuTests {
     level.Request("Partition",zoltan.get());
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
-    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(zoltan, Teuchos::null, 1000, 1.2, 1, 10/*useDiffusiveHeuristic*/, -1));
+    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(1000, 1.2, 1, 10/*useDiffusiveHeuristic*/, -1));
+    repart->SetFactory("Partition", zoltan);
 
     GO myPartitionNumber;
     Array<int> partitionOwners;
@@ -654,7 +658,7 @@ namespace MueLuTests {
     GO indexBase = 0;
     RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map,false);
-    
+
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
@@ -671,9 +675,9 @@ namespace MueLuTests {
 
     /* Assign the partition that each unknown belongs to.  In this case,
 
-       partition 0 has 6 unknowns 
-       partition 1 has 4 unknowns 
-       partition 2 has 5 unknowns 
+       partition 0 has 6 unknowns
+       partition 1 has 4 unknowns
+       partition 2 has 5 unknowns
        there is no partition 3
     */
 
@@ -726,7 +730,8 @@ namespace MueLuTests {
     level.Request("Partition",zoltan.get());
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
-    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(zoltan, Teuchos::null, 1000, 1.2, 1, 10/*useDiffusiveHeuristic*/, -1));
+    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(1000, 1.2, 1, 10/*useDiffusiveHeuristic*/, -1));
+    repart->SetFactory("Partition", zoltan);
     level.Request("Importer",repart.get());  // request permutation matrix
 
     repart->Build(level);
@@ -820,7 +825,7 @@ namespace MueLuTests {
     GO indexBase = 0;
     RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map,false);
-    
+
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
@@ -837,9 +842,9 @@ namespace MueLuTests {
 
     /* Assign the partition that each unknown belongs to.  In this case,
 
-       partition 0 has 6 unknowns 
-       partition 1 has 4 unknowns 
-       partition 2 has 5 unknowns 
+       partition 0 has 6 unknowns
+       partition 1 has 4 unknowns
+       partition 2 has 5 unknowns
        there is no partition 3
     */
 
@@ -892,7 +897,8 @@ namespace MueLuTests {
     level.Request("Partition",zoltan.get());
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
-    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(zoltan));
+    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
+    repart->SetFactory("Partition", zoltan);
     //RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(zoltan, Teuchos::null, 1000, 1.2, 1, 10/*useDiffusiveHeuristic*/, -1));
     //level.Request("Permutation",repart.get());  // request permutation matrix
     level.Request("Importer",repart.get());  // request permutation matrix

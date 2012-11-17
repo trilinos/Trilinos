@@ -431,8 +431,8 @@ private:
   RCP<const Comm<int> > comm_;             // the problem communicator
   RCP<const IdentifierMap<user_t> > idMap_;
 
-  gno_t nGlobalParts_;// target global number of parts
-  lno_t nLocalParts_; // number of parts to be on this process
+  partId_t nGlobalParts_;// target global number of parts
+  partId_t nLocalParts_; // number of parts to be on this process
 
   scalar_t localFraction_; // approx fraction of a part on this process
   int weightDim_;      // if user has no weights, this is 1
@@ -517,7 +517,7 @@ private:
 
   bool haveSolution_;
 
-  gno_t nGlobalPartsSolution_; // global number of parts in solution
+  partId_t nGlobalPartsSolution_; // global number of parts in solution
 
   ////////////////////////////////////////////////////////////////
   // The solution calculates this from the part assignments,
@@ -599,10 +599,10 @@ template <typename Adapter>
   const Teuchos::ParameterEntry *pe = pl.getEntryPtr("num_global_parts");
 
   if (pe){
-    val = pe->getValue<double>(&val);
-    haveGlobalNumParts = 1;
-    numGlobal = static_cast<int>(val);
-    nGlobalParts_ = gno_t(numGlobal);
+    val = pe->getValue<double>(&val);  // TODO: KDD Skip this double get
+    haveGlobalNumParts = 1;            // TODO: KDD Should be unnecessary once
+    numGlobal = static_cast<int>(val); // TODO: KDD paramlist handles long long.
+    nGlobalParts_ = partId_t(numGlobal); // TODO: KDD  also do below.
   }
 
   pe = pl.getEntryPtr("num_local_parts");
@@ -611,7 +611,7 @@ template <typename Adapter>
     val = pe->getValue<double>(&val);
     haveLocalNumParts = 1;
     numLocal = static_cast<int>(val);
-    nLocalParts_ = lno_t(numLocal);
+    nLocalParts_ = partId_t(numLocal);
   }
 
   try{
@@ -632,7 +632,7 @@ template <typename Adapter>
   else if (partDist_.size() > 0){   // more procs than parts
     nGlobalParts_ = partDist_.size() - 1;
     int pstart = partDist_[0];
-    for (int i=1; i <= nGlobalParts_; i++){
+    for (partId_t i=1; i <= nGlobalParts_; i++){
       int pend = partDist_[i];
       if (rank >= pstart && rank < pend){
         int numOwners = pend - pstart;
@@ -1342,16 +1342,17 @@ template <typename Adapter>
 
       int numProcs = comm_->getSize();
 
-      for (lno_t i=0; i < partList.size(); i++)
+      for (ArrayRCP<partId_t>::size_type i=0; i < partList.size(); i++)
         partCounter[parts[i]]++;
 
       lno_t *procCounter = new lno_t [numProcs];
       env_->localMemoryAssertion(__FILE__, __LINE__, numProcs, procCounter);
       
+      int proc1;
       int proc2 = partDist_[0];
 
-      for (lno_t part=1; part < nGlobalParts_; part++){
-        int proc1 = proc2;
+      for (partId_t part=1; part < nGlobalParts_; part++){
+        proc1 = proc2;
         proc2 = partDist_[part+1];
         int numprocs = proc2 - proc1;
 
@@ -1371,7 +1372,7 @@ template <typename Adapter>
 
       delete [] partCounter;
 
-      for (lno_t i=0; i < partList.size(); i++){
+      for (ArrayRCP<partId_t>::size_type i=0; i < partList.size(); i++){
         if (partList[i] >= nGlobalParts_){
           // Solution has more parts that targeted.  These
           // objects just remain on this process.
@@ -1379,10 +1380,10 @@ template <typename Adapter>
           continue;
         }
         partId_t partNum = parts[i];
-        int proc1 = partDist_[partNum];
-        int proc2 = partDist_[partNum + 1];
-        int proc=0;
-        
+        proc1 = partDist_[partNum];
+        proc2 = partDist_[partNum + 1];
+
+        int proc;
         for (proc=proc1; proc < proc2; proc++){
           if (procCounter[proc] > 0){
             procs[i] = proc;

@@ -55,7 +55,7 @@ elif [ $MACHINE == "redsky" ]; then
   else
     NXBASE=150
   fi
-else	
+else
   echo "Unknown Machine!"
   exit 1;
 fi
@@ -73,10 +73,10 @@ calc(){
 template_nodes(){
   MULT=$1
 
-  if [ $MATRIX == "Laplace1D"   ]; then 
+  if [ $MATRIX == "Laplace1D"   ]; then
     expr $MULT
-  elif [ $MATRIX == "Laplace2D" ]; then 
-    expr $MULT \* $MULT 
+  elif [ $MATRIX == "Laplace2D" ]; then
+    expr $MULT \* $MULT
   else
     expr $MULT \* $MULT \* $MULT
   fi
@@ -92,7 +92,7 @@ ocoee_build(){
   # Make directory, if needed
   if [ -d $DIR ]; then :
   else mkdir $DIR; fi
- 
+
   # Link Binary file, if needed
   if [ -e $DIR/$BINARY ]; then :
   else cd $DIR; ln -s $CDIR/$BINARY .; cd $CDIR; fi
@@ -116,7 +116,7 @@ ocoee_clean(){
 ###############################
 ocoee_run(){
   NODES=$1; DIR=$2; BATCH=$3
-  echo "Running $DIR..." 
+  echo "Running $DIR..."
 
   cd $DIR
   $SUB $SPREF-$NODES.$EXT
@@ -133,7 +133,7 @@ ocoee_analyze(){
   if [ $EXEC -eq 0 ]; then
     echo "$DIR: not run"
   else
-    FNAME=`ls -rt screen.out* |tail -n 2`   
+    FNAME=`ls -rt screen.out* |tail -n 2`
 
    for ((M=0;M<${#TIMELINES[@]};M++)); do
      T=${TIMELINES[${M}]}
@@ -143,11 +143,11 @@ ocoee_analyze(){
 
    NORM=`grep 'Problem 0' screen.out.* | cut -f2 -d':' | awk '{printf "%6.4e", $1}'`
 
-   if [ $NODES == 1 ] ; then 
+   if [ $NODES == 1 ] ; then
      for ((M=0;M<${#TIMELINES[@]};M++)); do
        BASE_TIME[$M]=${TIME[$M]}
      done
-   fi 
+   fi
 
    for ((M=0;M<${#TIMELINES[@]};M++)); do
      if [ "${TIME[$M]}" == "" ]; then EFF[$M]=0.0;
@@ -172,10 +172,10 @@ OPT=$1
 if [ "$OPT" != "b" ] && [ "$OPT" != "r" ] && [ "$OPT" != "c" ] && [ "$OPT" != "a" ]; then   echo "Syntax: $0 [b|r|c|a]"; exit 1; fi
 
 # Analyze header
-if [ "$OPT" == "a" ]; then 
+if [ "$OPT" == "a" ]; then
   OUTSTR=""
   for ((M=0;M<${#LABELS[@]};M++)); do
-    TL=`echo ${LABELS[$M]} | awk '{ printf "%7s-time    eff", $1 }'`  
+    TL=`echo ${LABELS[$M]} | awk '{ printf "%7s-time    eff", $1 }'`
     OUTSTR="$OUTSTR $TL"
   done
     echo "% file              :       norm$OUTSTR"
@@ -188,7 +188,7 @@ for I in $MULTX; do
     BIN="$BINARY_EXE"
     DIR=${DPREF}_$NODES
     NX=`expr $I \* $NXBASE`
- 
+
       # Build Mode
     if [ "$OPT" == "b" ]; then
 	ocoee_build $NODES $DIR $BIN $CPN $NX

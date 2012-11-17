@@ -92,7 +92,7 @@ RCP<SmootherPrototype> gimmeGaussSeidelProto(Xpetra::UnderlyingLib lib) {
   Teuchos::ParameterList ifpackList;
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
-  
+
   if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_IFPACK
     ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
@@ -169,7 +169,7 @@ RCP<SmootherPrototype> gimmeMergedSmoother(int nSmoothers, Xpetra::UnderlyingLib
   //verbose mode: return rcp (new MergedSmoother(smootherList, true));
 }
 
- 
+
 int main(int argc, char *argv[]) {
 
   Teuchos::oblackholestream blackhole;
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   // Note: use --help to list available options.
   Teuchos::CommandLineProcessor clp(false);
-  
+
   // Default is Laplace1D with nx = 8748.
   // It's a nice size for 1D and perfect aggregation. (6561=3^8)
   //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
@@ -199,14 +199,14 @@ int main(int argc, char *argv[]) {
   clp.setOption("its",&its,"number of multigrid cycles");
   clp.setOption("coarseSolver",&coarseSolver,"amesos2 or ifpack2 (Tpetra specific. Ignored for Epetra)");
   clp.setOption("debug",&pauseForDebugger,"pause to attach debugger");
-  
+
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
   case Teuchos::CommandLineProcessor::PARSE_ERROR:
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
-  
+
   matrixParameters.check();
   xpetraParameters.check();
   // TODO: check custom parameters

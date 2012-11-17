@@ -86,7 +86,7 @@ namespace Xpetra {
 
     //! Returns the Map that describes the row distribution in this matrix.
     const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const { XPETRA_MONITOR("TpetraRowMatrix::getRowMap"); return toXpetra(mtx_->getRowMap()); }
-      
+
     //! Returns the Map that describes the column distribution in this matrix.
     const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const { XPETRA_MONITOR("TpetraRowMatrix::getColMap"); return toXpetra(mtx_->getColMap()); }
 
@@ -186,14 +186,14 @@ namespace Xpetra {
 
     //! Get the underlying Tpetra matrix
     RCP<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_RowMatrix() const { return mtx_; }
-    
+
     //! Get the underlying Tpetra matrix
     RCP<Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_RowMatrixNonConst() const { return mtx_; } //TODO: remove
- 
+
    //@}
-    
+
   private:
-    
+
     RCP< Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > mtx_;
 
   }; // TpetraRowMatrix class

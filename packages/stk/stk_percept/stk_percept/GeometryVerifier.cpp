@@ -10,7 +10,7 @@
 #include <stk_percept/Util.hpp>
 #include "PerceptMesh.hpp"
 
-#include <stk_util/util/PrintTable.hpp>
+#include <stk_util/diag/PrintTable.hpp>
 #include <stk_util/util/ci_string.hpp>
 #include <Teuchos_RCP.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>

@@ -118,7 +118,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Triutils              packages/triutils                 PS
   Tpetra                packages/tpetra                   PS
   EpetraExt             packages/epetraext                PS
-  Xpetra                packages/xpetra                   SS
+  Xpetra                packages/xpetra                   PS
   Thyra                 packages/thyra                    PS
   OptiPack              packages/optipack                 PS
   Isorropia             packages/isorropia                PS

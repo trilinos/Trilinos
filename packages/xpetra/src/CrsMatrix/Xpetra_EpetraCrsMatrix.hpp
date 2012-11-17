@@ -109,6 +109,12 @@ namespace Xpetra {
     //! Insert matrix entries, using local IDs.
     void insertLocalValues(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &cols, const ArrayView< const Scalar > &vals);
 
+    //! Replace matrix entries, using global IDs.
+    void replaceGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals);
+
+    //! Replace matrix entries, using local IDs.
+    void replaceLocalValues(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &cols, const ArrayView< const Scalar > &vals);
+
     //! Set all matrix entries equal to scalarThis.
     void setAllToScalar(const Scalar &alpha) { XPETRA_MONITOR("EpetraCrsMatrix::setAllToScalar"); mtx_->PutScalar(alpha); }
 
@@ -119,6 +125,9 @@ namespace Xpetra {
 
     //! @name Transformational Methods
     //@{
+
+    //!
+    void resumeFill(const RCP< ParameterList > &params=null);
 
     //! Signal that data entry is complete, specifying domain and range maps.
     void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params=null);
@@ -183,7 +192,10 @@ namespace Xpetra {
     bool isGloballyIndexed() const { XPETRA_MONITOR("EpetraCrsMatrix::isGloballyIndexed"); return mtx_->IndicesAreGlobal(); }
 
     //! Returns true if fillComplete() has been called and the matrix is in compute mode.
-    bool isFillComplete() const { XPETRA_MONITOR("EpetraCrsMatrix::isFillComplete"); return mtx_->Filled(); }
+    bool isFillComplete() const;
+
+    //! Returns true if resumeFill() has been called and the matrix is in edit mode.
+    bool isFillActive() const;
 
     //! Returns the Frobenius norm of the matrix.
     ScalarTraits< Scalar >::magnitudeType getFrobeniusNorm() const { XPETRA_MONITOR("EpetraCrsMatrix::getFrobeniusNorm"); return mtx_->NormFrobenius(); }
@@ -214,7 +226,7 @@ namespace Xpetra {
     //! Returns the Map associated with the domain of this operator. This will be null until fillComplete() is called.
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { XPETRA_MONITOR("EpetraCrsMatrix::getDomainMap"); return toXpetra(mtx_->DomainMap()); }
 
-    //! 
+    //!
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { XPETRA_MONITOR("EpetraCrsMatrix::getRangeMap"); return toXpetra(mtx_->RangeMap()); }
 
     //@}
@@ -230,7 +242,7 @@ namespace Xpetra {
 
     //@}
 
-#ifdef INCLUDE_XPETRA_EXPERIMENTAL
+#ifdef HAVE_XPETRA_EXPERIMENTAL
     //! Deep copy constructor
     EpetraCrsMatrix(const EpetraCrsMatrix& matrix);
 #endif
@@ -259,19 +271,21 @@ namespace Xpetra {
     //@{
 
     //! EpetraCrsMatrix constructor to wrap a Epetra_CrsMatrix object
-    EpetraCrsMatrix(const Teuchos::RCP<Epetra_CrsMatrix > &mtx) : mtx_(mtx) {  }
+    EpetraCrsMatrix(const Teuchos::RCP<Epetra_CrsMatrix > &mtx) : mtx_(mtx), isFillResumed_(false) {  }
 
     //! Get the underlying Epetra matrix
     RCP<const Epetra_CrsMatrix> getEpetra_CrsMatrix() const { return mtx_; }
-    
+
     //! Get the underlying Epetra matrix
     RCP<Epetra_CrsMatrix> getEpetra_CrsMatrixNonConst() const { return mtx_; } //TODO: remove
- 
+
    //@}
-    
+
   private:
-    
+
     RCP<Epetra_CrsMatrix> mtx_;
+
+    bool isFillResumed_; //< For Epetra, fillResume() is a fictive operation but we need to keep track of it. This boolean is true only is resumeFill() have been called and fillComplete() have not been called afterward.
 
   }; // EpetraImport class
 

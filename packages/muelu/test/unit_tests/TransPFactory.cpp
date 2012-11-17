@@ -52,10 +52,10 @@
 #include "MueLu_Version.hpp"
 
 #include "MueLu_TransPFactory.hpp"
-#include "MueLu_SaPFactory.hpp"  
+#include "MueLu_SaPFactory.hpp"
 
-#include "MueLu_UseDefaultTypes.hpp"  
-#include "MueLu_UseShortNames.hpp"  
+#include "MueLu_UseDefaultTypes.hpp"
+#include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
 
@@ -92,7 +92,7 @@ namespace MueLuTests {
 
     SaPFactory sapFactory;
     TransPFactory transPFact(rcpFromRef(sapFactory)); //todo:rcpFromRef
-    
+
     coarseLevel.Request(sapFactory);
     coarseLevel.Request(transPFact);
 
@@ -118,7 +118,7 @@ namespace MueLuTests {
     Teuchos::Array<ST::magnitudeType> normX(1), normResult1(1),normResult2(1);
     X->norm2(normX);
     out << "This test checks the correctness of the R created by TransPFactory." << std::endl;
-    out << "||X||_2 = " << normX << std::endl; 
+    out << "||X||_2 = " << normX << std::endl;
     result1->norm2(normResult1);
     result2->norm2(normResult2);
     TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);

@@ -69,24 +69,23 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TentativePFactory(RCP<const FactoryBase> aggregatesFact, RCP<const FactoryBase> amalgFact, RCP<const FactoryBase> nullspaceFact, RCP<const FactoryBase> AFact, RCP<const FactoryBase> coarseMapFact)
-    : aggregatesFact_(aggregatesFact), amalgFact_(amalgFact), nullspaceFact_(nullspaceFact), AFact_(AFact),coarseMapFact_(coarseMapFact),
-      QR_(false)//,
+  TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TentativePFactory()
+    : QR_(false)//,
       /*domainGidOffset_(0)*/ {
 
     //stridedBlockId_ = -1; // default: blocked map with constant blocksize "NSDim"
   }
- 
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~TentativePFactory() {}
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & fineLevel, Level & coarseLevel) const {
-    fineLevel.DeclareInput("A", AFact_.get(), this);
-    fineLevel.DeclareInput("Aggregates", aggregatesFact_.get(), this);
-    fineLevel.DeclareInput("Nullspace",  nullspaceFact_.get(), this);
-    fineLevel.DeclareInput("UnAmalgamationInfo", amalgFact_.get(), this);
-    fineLevel.DeclareInput("CoarseMap", coarseMapFact_.get(), this);
+    Input(fineLevel, "A");
+    Input(fineLevel, "Aggregates");
+    Input(fineLevel, "Nullspace");
+    Input(fineLevel, "UnAmalgamationInfo");
+    Input(fineLevel, "CoarseMap");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -103,14 +102,13 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level & fineLevel, Level & coarseLevel) const {
 
-    FactoryMonitor m(*this, "Tentative prolongator", coarseLevel);
+    FactoryMonitor m(*this, "Build", coarseLevel);
 
-    RCP<Matrix> A = fineLevel.Get< RCP<Matrix> >("A", AFact_.get());
-
-    RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_.get());
-    RCP<AmalgamationInfo> amalgInfo = fineLevel.Get< RCP<AmalgamationInfo> >("UnAmalgamationInfo", amalgFact_.get());
-    RCP<MultiVector> nullspace  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
-    RCP<const Map> coarseMap = fineLevel.Get<RCP<const Map> >("CoarseMap",coarseMapFact_.get());
+    RCP<Matrix>           A          = Get< RCP<Matrix> >          (fineLevel, "A");
+    RCP<Aggregates>       aggregates = Get< RCP<Aggregates> >      (fineLevel, "Aggregates");
+    RCP<AmalgamationInfo> amalgInfo  = Get< RCP<AmalgamationInfo> >(fineLevel, "UnAmalgamationInfo");
+    RCP<MultiVector>      nullspace  = Get< RCP<MultiVector> >     (fineLevel, "Nullspace");
+    RCP<const Map>        coarseMap  = Get< RCP<const Map> >       (fineLevel, "CoarseMap");
 
     // Build
     RCP<MultiVector> coarseNullspace; RCP<Matrix> Ptentative; // output of MakeTentative()
@@ -118,8 +116,8 @@ namespace MueLu {
     MakeTentative(*A, *aggregates, *amalgInfo, *nullspace, coarseMap, coarseNullspace, Ptentative);
 
     // Level Set
-    coarseLevel.Set("Nullspace", coarseNullspace, this);
-    coarseLevel.Set("P", Ptentative, this);
+    Set(coarseLevel, "Nullspace", coarseNullspace);
+    Set(coarseLevel, "P",         Ptentative);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -321,7 +319,7 @@ namespace MueLu {
 
         // copy initial localQR values in temporary variable
         ArrayRCP<SC> tmplocalQR(localQRsize);
-        for (size_t i=0; i<myAggSize; i++) {
+        for (LO/*size_t*/ i=0; i<myAggSize; i++) {
           // loop over cols
           for (size_t j=0; j<NSDim; j++) {
             tmplocalQR[ myAggSize*j + i] = localQR[myAggSize*j + i];
@@ -330,7 +328,7 @@ namespace MueLu {
 
         // copy temporary variables back to correct positions (column size is now NSDim instead of myAggSize
         for (size_t j=0; j<NSDim; j++) {  // loop over cols
-          for (size_t i=0; i<myAggSize; i++) {  // loop over rows
+          for (LO /*size_t*/ i=0; i<myAggSize; i++) {  // loop over rows
             localQR[ NSDim*j + i] = tmplocalQR[myAggSize*j + i];
           }
           // fill NSDim-myAggSize rows with default null space
@@ -503,9 +501,9 @@ namespace MueLu {
     }
 
     Ptentative->fillComplete(coarseMap,fineA.getDomainMap()); //(domain,range) of Ptentative
-    
+
     // if available, use striding information of fine level matrix A for range map and coarseMap as domain map
-    // otherwise use plain range map of Ptent = plain range map of A for range map and coarseMap as domain map. 
+    // otherwise use plain range map of Ptent = plain range map of A for range map and coarseMap as domain map.
     // Note: the latter is not really safe, since there is no striding information for the range map. This is not
     // really a problem, since striding information is always available on the intermedium levels and the coarsest levels.
     if(fineA.IsView("stridedMaps") == true) {

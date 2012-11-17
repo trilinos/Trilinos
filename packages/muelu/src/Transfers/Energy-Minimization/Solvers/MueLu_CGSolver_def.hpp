@@ -70,7 +70,7 @@ namespace MueLu {
 
     RCP<Matrix> X, P, R, Z, AP;
     RCP<Matrix> newX, newR, newP, tmpAP;
-    SC oldRZ, newRZ, alpha, beta;
+    SC oldRZ, newRZ, alpha, beta, app;
 
     // T is used only for projecting onto
     RCP<CrsMatrix> T_ = CrsMatrixFactory::Build(C.GetPattern());
@@ -109,7 +109,17 @@ namespace MueLu {
       C.Apply(*tmpAP, *T);
       AP = T;
 
-      alpha = oldRZ / Frobenius(*AP, *P);
+      app = Frobenius(*AP, *P);
+      if (Teuchos::ScalarTraits<SC>::magnitude(app) < Teuchos::ScalarTraits<SC>::sfmin()) {
+        // It happens, for instance, if P = 0
+        // For example, if we use TentativePFactory for both nonzero pattern and initial guess
+        // I think it might also happen because of numerical breakdown, but we don't test for that yet
+        if (k == 0)
+          X = MatrixFactory::BuildCopy(rcpFromRef(P0));
+        break;
+      }
+
+      alpha = oldRZ / app;
 
       newX = Teuchos::null;
       Utils2::TwoMatrixAdd(P, false, alpha, X, false, Teuchos::ScalarTraits<Scalar>::one(), newX);
@@ -166,7 +176,7 @@ namespace MueLu {
       A->getLocalRowView(i, indA, valA);
       B->getLocalRowView(i, indB, valB);
 
-      size_t nnzA = indA.size(), nnzB = indB.size();
+      size_t nnzA = indA.size()/*, nnzB = indB.size()*/;
 
       // We assume that indA and indB are sorted in increasing order
       for (size_t j0 = 0, j1 = 0; j0 < nnzA; j0++) {

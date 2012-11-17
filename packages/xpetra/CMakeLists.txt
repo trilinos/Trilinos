@@ -2,12 +2,12 @@ INCLUDE(TribitsPackageMacros)
 INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(CombinedOption)
 INCLUDE(DualScopeSet)
- 
+
 #
 # A) Define the package
 #
 
-TRIBITS_PACKAGE(Xpetra)
+TRIBITS_PACKAGE(Xpetra ENABLE_SHADOWING_WARNINGS)
 
 # Add directory xpetra/cmake/ to the cmake module search path
 DUAL_SCOPE_SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PACKAGE_SOURCE_DIR}/cmake)
@@ -21,9 +21,11 @@ TRIBITS_ADD_DEBUG_OPTION()
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 # Enable experimental code
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
-  GLOBAL_SET(INCLUDE_${PACKAGE_NAME_UC}_EXPERIMENTAL ON)
-ENDIF ()
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Experimental
+  HAVE_${PACKAGE_NAME_UC}_EXPERIMENTAL
+  "Enable experimental code."
+  NO)
 
 GLOBAL_SET(HAVE_XPETRA_TPETRA ${${PACKAGE_NAME}_ENABLE_Tpetra})
 
@@ -62,4 +64,4 @@ TRIBITS_EXCLUDE_FILES(
 #
 
 TRIBITS_PACKAGE_POSTPROCESS()
- 
+

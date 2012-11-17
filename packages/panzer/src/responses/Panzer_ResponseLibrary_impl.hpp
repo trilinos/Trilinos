@@ -423,15 +423,33 @@ reinitializeResponseData()
 namespace {
   // This is a builder for building a ResponseBase object by evaluation type
   template <typename TraitsT>
-  struct ResponseBase_Builder {
+  class ResponseBase_Builder {
     Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > respFact_;
     std::string respName_;
+    std::vector<std::string> eBlocks_;
+    std::vector<std::pair<std::string,std::string> > sidesets_;
+
+  public:
+
     ResponseBase_Builder(const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & respFact,
-                         const std::string & respName)
-      : respFact_(respFact), respName_(respName) {}
+                         const std::string & respName, const std::vector<std::string> & eBlocks)
+      : respFact_(respFact), respName_(respName), eBlocks_(eBlocks) {}
+
+    ResponseBase_Builder(const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & respFact,
+                         const std::string & respName, const std::vector<std::pair<std::string,std::string> > & sidesets)
+      : respFact_(respFact), respName_(respName), sidesets_(sidesets) {}
+
     template <typename T>
     Teuchos::RCP<ResponseBase> build() const 
-    { return respFact_->template getAsBase<T>()->buildResponseObject(respName_); }
+    { 
+      if(eBlocks_.size()>0)
+        return respFact_->template getAsBase<T>()->buildResponseObject(respName_,eBlocks_); 
+      if(sidesets_.size()>0)
+        return respFact_->template getAsBase<T>()->buildResponseObject(respName_,sidesets_); 
+
+      TEUCHOS_ASSERT(false);
+      return Teuchos::null;
+    }
   };
 }
 
@@ -451,7 +469,7 @@ addResponse(const std::string responseName,
    modelFact_tm->buildObjects(builder);
 
    // build a response object for each evaluation type
-   ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName);
+   ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName,blocks);
    responseObjects_[responseName].buildObjects(respData_builder);
 
    // associate response objects with all element blocks required
@@ -481,7 +499,7 @@ addResponse(const std::string responseName,
    modelFact_tm->buildObjects(builder);
 
    // build a response object for each evaluation type
-   ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName);
+   ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName,sideset_blocks);
    responseObjects_[responseName].buildObjects(respData_builder);
 
    // associate response objects with all element blocks required
@@ -587,6 +605,7 @@ template <typename TraitsT>
 void ResponseLibrary<TraitsT>::
 buildResponseEvaluators(
          const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+         const Teuchos::Ptr<const panzer::EquationSetFactory> & eqset_factory,
          const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
          const Teuchos::ParameterList& closure_models,
          const Teuchos::ParameterList& user_data,
@@ -635,7 +654,10 @@ buildResponseEvaluators(
 
    fmb2_->setWorksetContainer(wkstContainer_);
    fmb2_->setupVolumeFieldManagers(requiredVolPhysicsBlocks,cm_factory,closure_models,*linObjFactory_,user_data,rvef2);
-   fmb2_->setupBCFieldManagers(bcs,physicsBlocks,cm_factory,bc_factory,closure_models,*linObjFactory_,user_data);
+   if(eqset_factory==Teuchos::null)
+     fmb2_->setupBCFieldManagers(bcs,physicsBlocks,cm_factory,bc_factory,closure_models,*linObjFactory_,user_data);
+   else
+     fmb2_->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory_,user_data);
 
    // fourth build assembly engine from FMB
    ////////////////////////////////////////////////////////////////////////////////

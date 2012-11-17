@@ -899,8 +899,9 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     // matrix, graph, and so on).  We pass a pointer to the input
     // adapter, cast as the base input type.
 
-    typedef typename Adapter::base_adapter_t base_adapter_t;
-    const Teuchos::ParameterList pl = this->envConst_->getParameters();
+    //KDD Not sure why this shadow declaration is needed
+    //KDD Comment out for now; revisit later if problems.
+    //KDD const Teuchos::ParameterList pl = this->envConst_->getParameters();
     bool exceptionThrow = true;
 
     switch (modelType_) {
@@ -954,9 +955,14 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
           for(int i = 0; i < arraySize; ++i){
         	  //cout <<  pl.getPtr<Array <int> >("pqParts")->getRawPtr()[i] << " ";
         	  totalPartCount *= pl.getPtr<Array <int> >("pqParts")->getRawPtr()[i];
+// TODO:  Using pointer in parameter list.   Ross says, "Bad."  Can't print it.
           }
           Teuchos::ParameterList newParams = pl;
+// TODO:  KDD I thought we got rid of sublists in the parameter list??
           Teuchos::ParameterList &parParams = newParams.sublist("partitioning");
+
+// TODO:  KDD Is there a more elegant solution here than changing the paramlist?
+// TODO:  How does this even work?  Where is newParams used?
 
           parParams.set("num_global_parts", totalPartCount);
 

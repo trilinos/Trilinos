@@ -786,9 +786,9 @@ template <typename mvector_t>
 
   // An empty input_t object implies uniform weights.
 
-  input_t *info = new input_t [weightDim];
-  env->localMemoryAssertion(__FILE__, __LINE__, weightDim, info);
-  ArrayRCP<input_t> weight(info, 0, weightDim, true);
+  input_t *wgtinfo = new input_t [weightDim];
+  env->localMemoryAssertion(__FILE__, __LINE__, weightDim, wgtinfo);
+  ArrayRCP<input_t> weight(wgtinfo, 0, weightDim, true);
 
   if (numNonUniformWeights > 0){
     for (int wdim = 0, widx=coordDim; wdim < weightDim; wdim++){
@@ -1001,8 +1001,8 @@ template <typename mvector_t>
       diffVec.Scale(-1.0);
       diffVec += targetLeftVector;
 
-      scalar_t testDiff = diffVec.Norm2(); // imbalance numerator
-      scalar_t prevTestDiff = testDiff;
+      testDiff = diffVec.Norm2(); // imbalance numerator
+      prevTestDiff = testDiff;
       cutLocation= -1;
 
       while (++cutLocation< numSums){
@@ -1014,7 +1014,7 @@ template <typename mvector_t>
         diffVec.Scale(-1.0);
         diffVec += targetLeftVector;
   
-        scalar_t testDiff = diffVec.Norm2();
+        testDiff = diffVec.Norm2();
         
         if (testDiff >= target)
           break;

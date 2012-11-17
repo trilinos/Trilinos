@@ -93,6 +93,7 @@ namespace response_bc_adapters {
 					    const Teuchos::ParameterList& models,
 					    const Teuchos::ParameterList& user_data) const
     { 
+      side_pb.buildAndRegisterEquationSetEvaluators(fm, user_data);
       side_pb.buildAndRegisterClosureModelEvaluatorsForType<EvalT>(fm,factory,models,user_data);
 
       for(std::size_t i=0;i<refVec_.size();i++)
@@ -110,7 +111,8 @@ namespace response_bc_adapters {
 					           const panzer::PhysicsBlock& side_pb,
 						   const LinearObjFactory<panzer::Traits> & lof,
 						   const Teuchos::ParameterList& user_data) const
-    { side_pb.buildAndRegisterGatherAndOrientationEvaluators(fm,lof,user_data); }
+    { side_pb.buildAndRegisterGatherAndOrientationEvaluators(fm,lof,user_data); 
+      side_pb.buildAndRegisterDOFProjectionsToIPEvaluators(fm,user_data); }
 
     //@}
 

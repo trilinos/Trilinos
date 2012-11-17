@@ -1,5 +1,8 @@
 
 INCLIST=exodusII.h exodusII_int.h
-
 InstallIncludeList(install,$(INCLIST),$(INCDIR))
 
+#if defined(BuildParallelAwareExodus)
+INCLISTP=exodusII_par.h
+InstallIncludeList(install,$(INCLISTP),$(INCDIR))
+#endif

@@ -14,7 +14,7 @@ def buildFuncLineEpetra( functionNode ):
     tree = etree.parse(conf_XMLclass)
     root = tree.getroot() # root == <doxygen>
     classNode = root[0]   # classNode == <compounddef>
-    
+
     fullClassName = classNode.xpath('compoundname')[0].text # Tpetra::Map
     baseClassName = fullClassName.lstrip('Tpetra::')        # Map
     className = 'Epetra'+baseClassName                      # EpetraMap
@@ -24,10 +24,10 @@ def buildFuncLineEpetra( functionNode ):
     name = functionNode.xpath('name')[0].text
     if name == baseClassName: name = className
     if name == '~'+baseClassName: name = '~'+className
-        
+
     # <type> = return type of the function
     type = functionNode.xpath('type')[0].xpath("string()")
-    
+
     # <argsstring>
     argsstring = functionNode.xpath('argsstring')[0].text
 
@@ -42,7 +42,7 @@ def buildFuncLineEpetra( functionNode ):
     # Simple version
     #        paramList = functionNode.xpath('param/declname/text()')
     #        paramStr  = ', '.join(param for param in paramList)
-    
+
     # More complete version
     paramStr  = ''
     paramNodes = functionNode.xpath('param')
@@ -53,14 +53,14 @@ def buildFuncLineEpetra( functionNode ):
             paramStr += "toEpetra(" + n + ")"
         else:
             paramStr += n
-            
+
         paramStr += ", "
-            
+
     paramStr = paramStr.rstrip(', ')
-                    
+
     # briefdescription
     briefdescription = functionNode.xpath("briefdescription")[0].xpath("string()")
-    
+
     if len(type) > 0:
         declStr = type + " " + name + argsstring
     else:
@@ -77,12 +77,12 @@ def buildFuncLineEpetra( functionNode ):
     # hack for Vector
     if name == 'EpetraVector' and 'Map' in argsstring: declStr = 'explicit ' + declStr
     if className == "EpetraVector" and 'ArrayView' in argsstring: return ''
-    
+
     # hack for CrsMatrix
     if name == "EpetraCrsMatrix" and "const RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &graph" in argsstring: return ''
 
     if name in conf_RemoveRefFunctionList: declStr = declStr.replace('&', '')
-    
+
     descStr = "    //! " + briefdescription.lstrip().rstrip() + "\n"
     defStr  = "    " + declStr
 
@@ -109,11 +109,11 @@ def buildFuncLineEpetra( functionNode ):
     if name == className:
         defStr += "\n      " + ": " + conf_memberName + "(Teuchos::rcp(new " + fullClassName.replace('Tpetra::','Epetra_')
         defStr += "(" + paramStr + "))) { }"
-      
+
     # destructor
     if name == '~'+className:
         defStr += " { }"
-        
+
     return descStr + defStr + "\n" + "\n";
 
 ####
@@ -129,12 +129,12 @@ for file in os.listdir(conf_dir):
 #### READ CONFIG ####
         parser = SafeConfigParser()
         parser.read(conf_dir + file)
-        
+
         conf_XMLheaders = xml_dir + parser.get('io', 'XMLheaders')
         conf_XMLclass   = xml_dir + parser.get('io', 'XMLclass')
         conf_template   = tmpl_dir + parser.get('io', 'template')
         conf_output     = parser.get('io', 'output')
-        
+
         conf_SkipFunctionList = set(parser.get('function', 'skip').split(';'))
         conf_RemoveRefFunctionList = set(parser.get('function', 'removeref').split(';'))
         if parser.has_option('function', 'inCppFile'):
@@ -145,13 +145,13 @@ for file in os.listdir(conf_dir):
         conf_memberName = parser.get('member', 'name')
         conf_TypeWrapped = set(parser.get('type', 'wrapped').split(';'))
 #
-        
+
         template = open(conf_template, 'r').read()
         out = Template(template)
-        
+
         className = buildClassDefinition(conf_XMLclass, 'Epetra')
 #unused        templateParam = buildTemplateParam2(conf_XMLclass)
-        
+
         out = out.substitute(
             TMPL_HEADERS=buildHeader(className, 'epetra.py'),
             TMPL_INCLUDES=buildInclude(conf_XMLheaders, conf_SkipHeaderList),

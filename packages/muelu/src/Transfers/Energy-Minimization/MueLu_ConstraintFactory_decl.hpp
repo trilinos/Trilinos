@@ -48,6 +48,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
+#include "MueLu_Constraint_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 
 namespace MueLu {
@@ -75,7 +76,7 @@ namespace MueLu {
       User can supply a factory for generating the nonzero pattern. The nullspace vectors (both fine and coarse) will
       be taken from the corresponding level factories
       */
-    ConstraintFactory(RCP<const FactoryBase> PatternFact = Teuchos::null);
+    ConstraintFactory();
 
     //! Destructor.
     virtual ~ConstraintFactory();
@@ -99,9 +100,6 @@ namespace MueLu {
     void Build(Level & fineLevel, Level& coarseLevel) const;
 
     //@}
-
-  private:
-    RCP<const FactoryBase> patternFact_;
   }; // class ConstraintFactory
 
 

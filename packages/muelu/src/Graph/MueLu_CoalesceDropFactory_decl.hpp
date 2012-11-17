@@ -72,7 +72,7 @@ namespace MueLu {
     @brief Factory for creating a graph base on a given matrix.
 
     Factory for creating graphs from matrices with entries selectively dropped.
-  
+
     - TODO This factory is very incomplete.
     - TODO The Build method simply builds the matrix graph with no dropping.
   */
@@ -88,7 +88,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    CoalesceDropFactory(RCP<const FactoryBase> AFact = Teuchos::null, RCP<const FactoryBase> AmalgFact = Teuchos::null);
+    CoalesceDropFactory();
 
     //! Destructor
     virtual ~CoalesceDropFactory() { }
@@ -111,14 +111,8 @@ namespace MueLu {
 
   private:
 
-    //! A Factory
-    RCP<const FactoryBase> AFact_;
-
-    /// pre-drop function
+    // pre-drop function
     RCP<PreDropFunctionBaseClass> predrop_;
-
-    /// SubBlockUnAmalgamationFactory (for generating the UnAmalgamation information)
-    RCP<const FactoryBase> AmalgFact_;
 
   }; //class CoalesceDropFactory
 

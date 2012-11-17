@@ -530,7 +530,7 @@ Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Piro::NOXSolver<Scalar>::create_DgDp_op_impl(int j, int l) const
 {
   const Teuchos::Array<Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > > dummy =
-    Teuchos::tuple(zero(this->get_g_space(j), this->get_p_space(l)));
+    Teuchos::tuple(Thyra::zero<Scalar>(this->get_g_space(j), this->get_p_space(l)));
   if (j == num_g)  {
     return Thyra::defaultMultipliedLinearOp<Scalar>(dummy);
   } else {

@@ -4,7 +4,7 @@ def remove_method_body(arg, level):
     chars = ""
     n = 0
     ignoreNext = False
-    
+
     for c in arg:
         if ignoreNext:
             ignoreNext = False
@@ -21,7 +21,7 @@ def remove_method_body(arg, level):
 
             if n < level:
                chars += c
-        
+
             if c == '}':
                n -= 1
 

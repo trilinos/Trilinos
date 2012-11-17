@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
 #else
   Epetra_SerialComm comm;
 #endif
-  
+
   //
   // Parameters
   //
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
     if (myGlobalElements[i] == 0) {
 
       //TODO: should be rewritten in an Epetra style
-      A->InsertGlobalValues(myGlobalElements[i], 2, 
+      A->InsertGlobalValues(myGlobalElements[i], 2,
                             Teuchos::tuple<Scalar> (2.0, -1.0).getRawPtr(),
                             Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i], myGlobalElements[i] +1).getRawPtr());
 
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
 
   RCP<Epetra_Vector> X = rcp(new Epetra_Vector(map));
   RCP<Epetra_Vector> B = rcp(new Epetra_Vector(map));
-  
+
   X->PutScalar((Scalar) 0.0);
   B->SetSeed(846930886); B->Random();
   //B->PutScalar((Scalar) 1.0);

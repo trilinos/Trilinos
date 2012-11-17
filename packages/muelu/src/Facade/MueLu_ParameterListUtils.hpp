@@ -5,7 +5,7 @@
 //        MueLu: A package for multigrid based preconditioning
 //                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation, 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,8 @@
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
 // PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
@@ -52,18 +52,18 @@
 #include "MueLu_ConfigDefs.hpp"
 
 namespace MueLu {
-  
+
   /* See also: ML_Epetra::UpdateList */
   void MergeParameterList(const Teuchos::ParameterList &source, Teuchos::ParameterList &dest, bool overWrite);
 
   void CreateSublists(const Teuchos::ParameterList &List, Teuchos::ParameterList &newList);
-  
+
   // Usage: GetMLSubList(paramList, "smoother", 2);
   const Teuchos::ParameterList & GetMLSubList(const Teuchos::ParameterList & paramList, const std::string & type, int levelID);
-  
+
   // Extract all the parameters that begin with "str:" (but skip sublist)
   Teuchos::RCP<Teuchos::ParameterList> ExtractSetOfParameters(const Teuchos::ParameterList & paramList, const std::string & str);
-  
+
 } // namespace MueLu
 
 #endif // MUELU_PARAMETERLISTUTILS_HPP

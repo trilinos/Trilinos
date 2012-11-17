@@ -58,7 +58,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   bool SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::IsSetup() const { return isSetup_; }
-    
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::IsSetup(bool const &ToF) { isSetup_ = ToF; }
 

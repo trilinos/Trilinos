@@ -66,7 +66,7 @@
 #ifdef HAVE_MUELU_EPETRA
 namespace Xpetra {
   class EpetraCrsMatrix; // TODO: replace by include of _fwd.hpp
-  //  class 
+  //  class
 }
 
 // needed because of inlined function
@@ -117,10 +117,10 @@ RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_C
   This class provides a number of static helper methods.  Some are temporary and will eventually
   go away, while others should be moved to Xpetra.
 */
-  template <class Scalar, 
-            class LocalOrdinal  = int, 
-            class GlobalOrdinal = LocalOrdinal, 
-            class Node          = Kokkos::DefaultNode::DefaultNodeType, 
+  template <class Scalar,
+            class LocalOrdinal  = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node          = Kokkos::DefaultNode::DefaultNodeType,
             class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
   class Utils {
 #undef MUELU_UTILITIES_SHORT
@@ -273,7 +273,7 @@ RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_C
     // - void ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS, Array &)
    static Teuchos::Array<Magnitude>
    ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS);
-    
+
     static RCP<MultiVector> Residual(Matrix const &Op, MultiVector const &X, MultiVector const &RHS);
 
    /*! @brief Save matrix to file in Matrix Market format.
@@ -308,7 +308,7 @@ RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_C
       @param niters maximum number of iterations
       @param tolerance stopping tolerance
       @verbose if true, print iteration information
-      
+
       (Shamelessly grabbed from tpetra/examples.)
     */
     static Scalar PowerMethod(Matrix const &A, bool scaleByDiag=true,
@@ -362,7 +362,7 @@ std::string toString(T const &what) {
 
   Separate class for utilities that need a specialization for Epetra.
 */
-  template <class Scalar, 
+  template <class Scalar,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
             class Node          = Kokkos::DefaultNode::DefaultNodeType,

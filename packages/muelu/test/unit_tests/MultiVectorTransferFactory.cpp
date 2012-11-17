@@ -66,18 +66,20 @@
 #include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
-  
+
   TEUCHOS_UNIT_TEST(MultiVectorTransferFactory, Constructor)
   {
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<TentativePFactory>    PtentFact = rcp(new TentativePFactory());
-    RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO>("Coordinates","P",PtentFact));
+    RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO>("Coordinates","P"));
+    mvtf->SetFactory("P", PtentFact);
+
     TEST_EQUALITY(mvtf != Teuchos::null, true);
   } // Constructor test
 
   //------------------------------------------------------------------------------------------
-  
+
   TEUCHOS_UNIT_TEST(MultiVectorTransferFactory, Build)
   {
     out << "version: " << MueLu::Version() << std::endl;
@@ -106,9 +108,10 @@ namespace MueLuTests {
     //    fineLevel.SetFactoryManager(M);
     coarseLevel.SetFactoryManager(M);
 
-    RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO>("onesVector","R",RFact));
+    RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO>("onesVector","R"));
+    mvtf->SetFactory("R",RFact);
 
-    coarseLevel.Request("onesVector",mvtf.get()); 
+    coarseLevel.Request("onesVector",mvtf.get());
     coarseLevel.Request("R",RFact.get());
     coarseLevel.Request("P",PtentFact.get());
 
@@ -122,7 +125,7 @@ namespace MueLuTests {
   } // Build test
 
   //------------------------------------------------------------------------------------------
-  
+
   TEUCHOS_UNIT_TEST(MultiVectorTransferFactory, ThreeLevels)
   {
     out << "version: " << MueLu::Version() << std::endl;
@@ -176,7 +179,8 @@ namespace MueLuTests {
     RCP<MultiVector> fineOnes = MultiVectorFactory::Build(A->getRowMap(),1);
     fineOnes->putScalar(1.0);
     fineLevel->Set("onesVector",fineOnes);
-    RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO>("onesVector","R",RFact));
+    RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO>("onesVector","R"));
+    mvtf->SetFactory("R",RFact);
     AcFact->AddTransferFactory(mvtf);
 
     int maxLevels = 3;
@@ -184,7 +188,7 @@ namespace MueLuTests {
 
 /*
     //FIXME we probably need to do some requests....
-    coarseLevel.Request("onesVector",mvtf.get()); 
+    coarseLevel.Request("onesVector",mvtf.get());
     coarseLevel.Request("R",RFact.get());
     coarseLevel.Request("P",PtentFact.get());
 */

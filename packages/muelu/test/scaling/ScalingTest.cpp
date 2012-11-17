@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP; using Teuchos::rcp;
   using Teuchos::TimeMonitor;
   //using Galeri::Xpetra::CreateCartesianCoordinates;
-  
+
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
   if (pauseForDebugger) {
     Utils::PauseForDebugger();
   }
-  
+
   matrixParameters.check();
   xpetraParameters.check();
   // TODO: check custom parameters
@@ -207,8 +207,6 @@ int main(int argc, char *argv[]) {
     // TODO: print custom parameters // Or use paramList::print()!
   }
 
-
-
   /**********************************************************************************/
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
@@ -218,7 +216,7 @@ int main(int argc, char *argv[]) {
   RCP<MultiVector> Coordinates;
   {
     TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build"));
-   
+
     map = MapFactory::Build(lib, matrixParameters.GetNumGlobalElements(), 0, comm);
     A = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
 
@@ -259,11 +257,12 @@ int main(int argc, char *argv[]) {
 
     RCP<MueLu::Level> Finest = H->GetLevel();
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-    Finest->Set("A",A);
-    Finest->Set("Nullspace",nullSpace);
-    Finest->Set("Coordinates",Coordinates); //FIXME: XCoordinates, YCoordinates, ..
+    Finest->Set("A",           A);
+    Finest->Set("Nullspace",   nullSpace);
+    Finest->Set("Coordinates", Coordinates); //FIXME: XCoordinates, YCoordinates, ..
 
-    RCP<CoalesceDropFactory> GraphFact = rcp(new CoalesceDropFactory()); /* do not use the permuted nullspace (otherwise, circular dependencies) */
+    FactoryManager M;
+    M.SetFactory("Graph", rcp(new CoalesceDropFactory()));        /* do not use the permuted nullspace (otherwise, circular dependencies) */
 
     RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
     *out << "========================= Aggregate option summary  =========================" << std::endl;
@@ -286,15 +285,23 @@ int main(int argc, char *argv[]) {
       throw(MueLu::Exceptions::RuntimeError(msg));
     }
     UCAggFact->SetPhase3AggCreation(0.5);
+    M.SetFactory("Aggregates", UCAggFact);
     *out << "=============================================================================" << std::endl;
 
-    RCP<TentativePFactory> PtentFact = rcp(new TentativePFactory(UCAggFact));
+    //  M.SetFactory("Ptent", rcp(new TentativePFactory()));
 
-    RCP<SaPFactory>       SaPfact = rcp( new SaPFactory(PtentFact) );
+    RCP<SaPFactory> SaPfact = rcp(new SaPFactory() );
     SaPfact->SetDampingFactor(SADampingFactor);
-    RCP<RFactory>         Rfact = rcp( new TransPFactory(SaPfact));
-    RCP<RAPFactory>       Acfact = rcp( new RAPFactory(SaPfact,Rfact) );
+    M.SetFactory("P", SaPfact);
+    M.SetFactory("R", rcp(new TransPFactory(M.GetFactory("P"))));
+
+    RCP<RAPFactory> Acfact = rcp(new RAPFactory());
+    Acfact->SetFactory("P", M.GetFactory("P"));
+    Acfact->SetFactory("R", M.GetFactory("R"));
+
     Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+    M.SetFactory("A", Acfact);
+
     RCP<RAPFactory>       AcfactFinal;
 
     RCP<PermutedTransferFactory> permPFactory, permRFactory;
@@ -308,23 +315,31 @@ int main(int argc, char *argv[]) {
 // #else
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
       //Matrix used to transfer coordinates to coarse grid
-      RCP<RFactory> Rtentfact = rcp( new TransPFactory(PtentFact) ); //for projecting coordinates
+      RCP<const FactoryBase> Rtentfact = M.GetFactory("R"); //for projecting coordinates
       //Factory that will invoke the coordinate transfer. This factory associates data and operator.
-      mvTransFact = rcp(new MultiVectorTransferFactory("Coordinates","R",Rtentfact));
+      mvTransFact = rcp(new MultiVectorTransferFactory("Coordinates","R"));
+      mvTransFact->SetFactory("R", Rtentfact);
       //Register it with the coarse operator factory
       Acfact->AddTransferFactory(mvTransFact);
       //Set up repartitioning
-      RCP<ZoltanInterface>      zoltan = rcp(new ZoltanInterface(Acfact,mvTransFact));
-      RCP<RepartitionFactory> RepartitionFact = rcp(new RepartitionFactory(zoltan,Acfact,minRowsPerProc,nonzeroImbalance));
+      RCP<ZoltanInterface>      zoltan = rcp(new ZoltanInterface());
+      zoltan->SetFactory("A", Acfact);
+      zoltan->SetFactory("Coordinates", mvTransFact);
+      RCP<RepartitionFactory> RepartitionFact = rcp(new RepartitionFactory(minRowsPerProc,nonzeroImbalance));
+      RepartitionFact->SetFactory("Partition", zoltan);
+      RepartitionFact->SetFactory("A", Acfact);
       permPFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, SaPfact, MueLu::INTERPOLATION) );
-      permRFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, Rfact, MueLu::RESTRICTION, PtentFact, mvTransFact));
-      AcfactFinal = rcp( new RAPFactory(permPFactory,permRFactory) );
+      permRFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, M.GetFactory("R"), MueLu::RESTRICTION, M.GetFactory("Ptent"), mvTransFact));
+      AcfactFinal = rcp(new RAPFactory());
+      AcfactFinal->SetFactory("P", permPFactory);
+      AcfactFinal->SetFactory("R", permRFactory);
+      M.SetFactory("A", AcfactFinal);
 #else
       AcfactFinal = Acfact;
 #endif
       //#endif // TEUCHOS_LONG_LONG_INT
     } else {
-  
+
         H->SetImplicitTranspose(true);
         Acfact->SetImplicitTranspose(true);
       AcfactFinal = Acfact;
@@ -388,27 +403,18 @@ int main(int argc, char *argv[]) {
     */
 
     if (maxLevels > 1) {
-      FactoryManager M;
-      
       M.SetFactory("A",AcfactFinal);
       M.SetFactory("Smoother",SmooFact);
-      M.SetFactory("Graph", GraphFact);
-      
+      M.SetFactory("Aggregates", UCAggFact);
+
       if (useExplicitR) {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
         M.SetFactory("P",permPFactory);
         M.SetFactory("R",permRFactory);
         M.SetFactory("Nullspace", permRFactory);
-#else
-        M.SetFactory("P",SaPfact);
-        M.SetFactory("R",Rfact);
-        M.SetFactory("Ptent", PtentFact); // for nullspace
 #endif
-      } else {
-        M.SetFactory("P",SaPfact);
-        M.SetFactory("R",Rfact);
       }
-      
+
       int startLevel=0;
       //      std::cout << startLevel << " " << maxLevels << std::endl;
       H->Setup(M,startLevel,maxLevels);
@@ -416,17 +422,15 @@ int main(int argc, char *argv[]) {
 
 
     if (maxLevels == 1) {
-
-
-
-      H->SetCoarsestSolver(*SmooFact, MueLu::BOTH);
+      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Mue!");
+      // H->SetCoarsestSolver(*SmooFact, MueLu::BOTH);
     }
-    
+
   } // end of Setup TimeMonitor
-  
+
   //   *out  << "======================\n Multigrid statistics \n======================" << std::endl;
   //   status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
-  
+
   // Define B
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
   RCP<MultiVector> B = MultiVectorFactory::Build(map,1);
@@ -436,13 +440,13 @@ int main(int argc, char *argv[]) {
   A->apply(*X,*B,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
   B->norm2(norms);
   B->scale(1.0/norms[0]);
-  
+
 #define AMG_SOLVER
 #ifdef AMG_SOLVER
   // Use AMG directly as an iterative method
   if (amgAsSolver) {
     //*out << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
-  
+
     {
       X->putScalar( (SC) 0.0);
 
@@ -506,16 +510,16 @@ int main(int argc, char *argv[]) {
       // Get the number of iterations for this solve.
       if (comm->getRank() == 0)
         std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-    
+
       // Compute actual residuals.
       int numrhs = 1;
       std::vector<double> actual_resids( numrhs ); //TODO: double?
       std::vector<double> rhs_norm( numrhs );
-      RCP<MultiVector> resid = MultiVectorFactory::Build(map, numrhs); 
+      RCP<MultiVector> resid = MultiVectorFactory::Build(map, numrhs);
 
       typedef Belos::OperatorTraits<SC,MV,OP>  OPT;
       typedef Belos::MultiVecTraits<SC,MV>     MVT;
-      
+
       OPT::Apply( *belosOp, *X, *resid );
       MVT::MvAddMv( -1.0, *resid, 1.0, *B, *resid );
       MVT::MvNorm( *resid, actual_resids );
@@ -543,13 +547,13 @@ int main(int argc, char *argv[]) {
     tm = Teuchos::null;
   } //if (amgAsPrecond)
 #endif // HAVE_MUELU_BELOS
- 
+
   // Timer final summaries
   globalTimeMonitor = Teuchos::null; // stop this timer before summary
 
   if (printTimings)
     TimeMonitor::summarize();
-    
+
   return EXIT_SUCCESS;
 }
 

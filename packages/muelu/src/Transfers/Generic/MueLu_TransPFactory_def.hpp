@@ -64,7 +64,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~TransPFactory() {}
- 
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     coarseLevel.DeclareInput("P", PFact_.get(), this);
@@ -92,9 +92,9 @@ namespace MueLu {
     RCP<Matrix> R = Utils2::Transpose(P,true);
 
     coarseLevel.Set("R", R, this);
-    
+
     ///////////////////////// EXPERIMENTAL
-    if(P->IsView("stridedMaps")) R->CreateView("stridedMaps", P, true);  
+    if(P->IsView("stridedMaps")) R->CreateView("stridedMaps", P, true);
     ///////////////////////// EXPERIMENTAL
 
   } //BuildR

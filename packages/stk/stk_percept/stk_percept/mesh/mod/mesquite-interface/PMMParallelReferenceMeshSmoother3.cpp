@@ -27,7 +27,7 @@ namespace MESQUITE_NS {
 namespace stk {
   namespace percept {
 
-    static double sqrt_eps = std::sqrt(std::numeric_limits<double>::epsilon());
+    //static double sqrt_eps = std::sqrt(std::numeric_limits<double>::epsilon());
 
     using namespace Mesquite;
 

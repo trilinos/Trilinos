@@ -279,12 +279,6 @@ void CudaInternal::initialize( int cuda_device_id )
       m_maxWarpCount = Impl::CudaTraits::WarpSize ;
     }
 
-    //----------------------------------
-    // HCE 2012-October
-    // Prefer L1 by default to improve occupancy for non-reductions.
-
-    CUDA_SAFE_CALL( cudaDeviceSetCacheConfig( cudaFuncCachePreferL1 ) );
-
     m_maxSharedWords = cudaProp.sharedMemPerBlock / WordSize ;
 
     //----------------------------------

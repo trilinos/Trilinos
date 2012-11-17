@@ -164,6 +164,14 @@ void eval_model_explicit(
   if (inArgs.supports(MEB::IN_ARG_t)) {
     inArgs.set_t(t_in);
   }
+  // For model evaluators whose state function f(x, x_dot, t) describes
+  // an implicit ODE, and which accept an optional x_dot input argument,
+  // make sure the latter is set to null in order to request the evaluation
+  // of a state function corresponding to the explicit ODE formulation
+  // x_dot = f(x, t)
+  if (inArgs.supports(MEB::IN_ARG_x_dot)) {
+    inArgs.set_x_dot(Teuchos::null);
+  }
   outArgs.set_f(Teuchos::rcp(&*f_out,false));
   model.evalModel(inArgs,outArgs);
 }

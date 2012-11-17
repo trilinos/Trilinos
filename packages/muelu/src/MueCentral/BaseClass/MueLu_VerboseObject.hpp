@@ -82,9 +82,9 @@ namespace MueLu {
   class VerboseObject
     : public Teuchos::VerboseObject<VerboseObject>
   {
-    
+
   public:
-    
+
     //! @name Constructors/Destructors.
     //@{
     VerboseObject();
@@ -98,7 +98,7 @@ namespace MueLu {
        If a verbosity level has not been specified for this object (using SetVerbLevel), this method returns the default/global verbose level.
     */
     VerbLevel GetVerbLevel() const;
-  
+
     //! Set the verbosity level of this object
     void SetVerbLevel(const VerbLevel verbLevel);
 
@@ -117,12 +117,12 @@ namespace MueLu {
     Teuchos::FancyOStream & GetBlackHole() const;
 
     static void SetDefaultOStream(const RCP<Teuchos::FancyOStream> &defaultOStream);
-    
+
     static RCP<Teuchos::FancyOStream> GetDefaultOStream();
 
-    //! @name Public static member functions 
+    //! @name Public static member functions
     //@{
-    
+
     //! Set the default (global) verbosity level.
     static void SetDefaultVerbLevel(const VerbLevel defaultVerbLevel);
 

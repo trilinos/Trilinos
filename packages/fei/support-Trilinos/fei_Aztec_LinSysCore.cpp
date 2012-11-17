@@ -314,12 +314,22 @@ int Aztec_LinSysCore::parameters(int numParams, const char*const * params) {
    char* dbgFileName = NULL;
    char* dbgPath = NULL;
 
+   bool output_level_on = false;
+   param = snl_fei::getParamValue("FEI_OUTPUT_LEVEL",numParams,params);
+   if (param != NULL) {
+     std::string str(param);
+     if (str == "ALL" || str == "MATRIX_FILES" || str == "FULL_LOGS") {
+       output_level_on = true;
+     }
+   }
+
    param = snl_fei::getParamValue("debugOutput",numParams,params);
-   if (param != NULL){
+   if (param != NULL || output_level_on){
       dbgOutputParam = true;
       dbgFileName = new char[128];
-      dbgPath = new char[strlen(param)+1];
-      strcpy(dbgPath, param);
+      dbgPath = param==NULL ? new char[3] : new char[strlen(param)+1];
+      if (param == NULL) sprintf(dbgPath, "./");
+      else strcpy(dbgPath, param);
 
       sprintf(dbgFileName, "AZLSC.%d.%d.%d",
               numProcs_, thisProc_, azlsc_debugFileCounter_);
@@ -2773,7 +2783,7 @@ int Aztec_LinSysCore::launchSolver(int& solveStatus, int& iterations) {
 
    if (debugOutput_) {
       FEI_OSTRINGSTREAM osstr;
-      osstr << name_ << "_Aztec.slv"<<counter;
+      osstr << name_ << "_Aztec.np"<<numProcs_<<".slv"<<counter;
       std::string str = osstr.str();
 
       FEI_OSTRINGSTREAM x_osstr;

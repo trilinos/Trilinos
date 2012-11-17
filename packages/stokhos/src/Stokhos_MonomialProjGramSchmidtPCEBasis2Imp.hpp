@@ -77,7 +77,7 @@ MonomialProjGramSchmidtPCEBasis2(
   SDM Q2;
   if (quad_params.isParameter("Reduced Quadrature Method") &&
       quad_params.get<std::string>("Reduced Quadrature Method") == "Q2") {
-    Teuchos::Array< Teuchos::Array<ordinal_type> > terms2;
+    Teuchos::Array< Stokhos::MultiIndex<ordinal_type> > terms2;
     Teuchos::Array<ordinal_type> num_terms2;
     value_type rank_threshold2 = quad_params.get("Q2 Rank Threshold", 
 						 rank_threshold);
@@ -170,7 +170,7 @@ buildQ(
   value_type threshold, 
   const Teuchos::Array< Stokhos::OrthogPolyApprox<ordinal_type, value_type> >& pce,
   const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad,
-  Teuchos::Array< Teuchos::Array<ordinal_type> >& terms_,
+  Teuchos::Array< Stokhos::MultiIndex<ordinal_type> >& terms_,
   Teuchos::Array<ordinal_type>& num_terms_,
   SDM& Qp_, SDM& A_, SDM& F_)
 {
@@ -336,7 +336,7 @@ evaluateZero(ordinal_type i) const
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::MonomialProjGramSchmidtPCEBasis2<ordinal_type, value_type>::
-evaluateBases(const Teuchos::Array<value_type>& point,
+evaluateBases(const Teuchos::ArrayView<const value_type>& point,
 	      Teuchos::Array<value_type>& basis_vals) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented!");

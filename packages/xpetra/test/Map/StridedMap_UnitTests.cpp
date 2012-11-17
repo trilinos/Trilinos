@@ -109,18 +109,18 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, invalidConstructor1, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
-    
+
     std::vector<size_t> stridedInfo(1,1);
     // bad constructor calls: (num global elements, index base)
     TEST_THROW(M map(GSTI,0,stridedInfo,comm), std::invalid_argument);
@@ -129,7 +129,7 @@ namespace {
       TEST_THROW(M map((myImageID == 0 ?  1 : 0),0,stridedInfo,comm), std::invalid_argument);
       TEST_THROW(M map(0,(myImageID == 0 ? 0 : 1),stridedInfo, comm), std::invalid_argument);
     }
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
@@ -139,7 +139,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, invalidConstructor2, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -152,7 +152,7 @@ namespace {
       TEST_THROW(M map((myImageID == 0 ?  1 :  0),0,0,stridedInfo,comm), std::invalid_argument);
       TEST_THROW(M map(0,0,(myImageID == 0 ? 0 : 1),stridedInfo,comm), std::invalid_argument);
     }
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
@@ -162,7 +162,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, invalidConstructor3, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -175,16 +175,16 @@ namespace {
       TEST_THROW(M map((myImageID == 0 ? GSTI :  0),tuple<GO>(myImageID+1),1,stridedInfo, comm), std::invalid_argument);
       TEST_THROW(M map(0, tuple<GO>(myImageID+1), (myImageID == 0 ? 0 : 1),stridedInfo, comm), std::invalid_argument);
     }
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
-  
+
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, Constructor1, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // constructor calls: (num global elements, index base)
@@ -214,14 +214,14 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, Constructor2, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // constructor calls: (num global elements, index base)
     global_size_t numGlobalElements = 10 * numImages;
     size_t numLocalElements = 10;
     std::vector<size_t> stridedInfo(1,1);
-    
+
     M map(numGlobalElements, numLocalElements, 0, stridedInfo, comm);
     TEST_EQUALITY_CONST( map.getFixedBlockSize(), 1 );
     TEST_EQUALITY_CONST( map.isStrided(), false );
@@ -232,7 +232,7 @@ namespace {
     stridedInfo.clear();
     stridedInfo.push_back(2);
     stridedInfo.push_back(1);
-    
+
     M map2(numGlobalElements, numLocalElements, 0, stridedInfo, comm);
     TEST_EQUALITY_CONST( map2.getFixedBlockSize(), 3 );
     TEST_EQUALITY_CONST( map2.isStrided(), true );
@@ -251,7 +251,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, StridedPartConstructor1, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
 
@@ -261,7 +261,7 @@ namespace {
     std::vector<size_t> stridedInfo;
     stridedInfo.push_back(2);
     stridedInfo.push_back(1);
-    
+
     M map(numGlobalElements, numLocalElements, 0,stridedInfo, comm, 0);
     TEST_EQUALITY_CONST( map.getFixedBlockSize(), 3 );
     TEST_EQUALITY_CONST( map.isStrided(), true );
@@ -271,7 +271,7 @@ namespace {
     TEST_EQUALITY_CONST( map.isContiguous(), false);
     TEST_EQUALITY_CONST( map.getNodeNumElements() % 2 , 0);
     TEST_EQUALITY_CONST( map.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[0] );
-    
+
     M map2(numGlobalElements, numLocalElements, 0,stridedInfo, comm, 1);
     TEST_EQUALITY_CONST( map2.getFixedBlockSize(), 3 );
     TEST_EQUALITY_CONST( map2.isStrided(), true );
@@ -285,7 +285,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, StridedPartConstructor2, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
 
@@ -296,7 +296,7 @@ namespace {
     stridedInfo.push_back(3);
     stridedInfo.push_back(4);
     stridedInfo.push_back(5);
-    
+
     M map(numGlobalElements, 0,stridedInfo, comm, 0);
     TEST_EQUALITY_CONST( map.getFixedBlockSize(), 12 );
     TEST_EQUALITY_CONST( map.isStrided(), true );
@@ -306,7 +306,7 @@ namespace {
     TEST_EQUALITY_CONST( map.isContiguous(), false);
     TEST_EQUALITY_CONST( map.getNodeNumElements() % 3 , 0);
     TEST_EQUALITY_CONST( map.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[0] );
-    
+
     M map2(numGlobalElements, 0,stridedInfo, comm, 1);
     TEST_EQUALITY_CONST( map2.getFixedBlockSize(), 12 );
     TEST_EQUALITY_CONST( map2.isStrided(), true );
@@ -316,7 +316,7 @@ namespace {
     TEST_EQUALITY_CONST( map2.isContiguous(), false);
     TEST_EQUALITY_CONST( map2.getNodeNumElements() % 4 , 0);
     TEST_EQUALITY_CONST( map2.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[1]);
-    
+
     M map3(numGlobalElements, 0,stridedInfo, comm, 2);
     TEST_EQUALITY_CONST( map3.getFixedBlockSize(), 12 );
     TEST_EQUALITY_CONST( map3.isStrided(), true );
@@ -327,16 +327,16 @@ namespace {
     TEST_EQUALITY_CONST( map3.getNodeNumElements() % 5 , 0);
     TEST_EQUALITY_CONST( map3.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[2]);
   }
-  
+
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, StridedPartConstructorWithOffset, M, LO, GO )
   {
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
 
     GO offset = 111;
-    
+
     // constructor calls: (num global elements, index base)
     global_size_t numGlobalElements = 120 * numImages;
     size_t numLocalElements = 120;
@@ -344,7 +344,7 @@ namespace {
     stridedInfo.push_back(3);
     stridedInfo.push_back(4);
     stridedInfo.push_back(5);
-    
+
     M map(numGlobalElements, 0,stridedInfo, comm, 0, offset);
     TEST_EQUALITY_CONST( map.getFixedBlockSize(), 12 );
     TEST_EQUALITY_CONST( map.isStrided(), true );
@@ -354,7 +354,7 @@ namespace {
     TEST_EQUALITY_CONST( map.isContiguous(), false);
     TEST_EQUALITY_CONST( map.getNodeNumElements() % 3 , 0);
     TEST_EQUALITY_CONST( map.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[0] );
-    
+
     M map2(numGlobalElements, 0,stridedInfo, comm, 1, offset);
     TEST_EQUALITY_CONST( map2.getFixedBlockSize(), 12 );
     TEST_EQUALITY_CONST( map2.isStrided(), true );
@@ -364,7 +364,7 @@ namespace {
     TEST_EQUALITY_CONST( map2.isContiguous(), false);
     TEST_EQUALITY_CONST( map2.getNodeNumElements() % 4 , 0);
     TEST_EQUALITY_CONST( map2.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[1]);
-    
+
     M map3(numGlobalElements, 0,stridedInfo, comm, 2, offset);
     TEST_EQUALITY_CONST( map3.getFixedBlockSize(), 12 );
     TEST_EQUALITY_CONST( map3.isStrided(), true );
@@ -374,9 +374,9 @@ namespace {
     TEST_EQUALITY_CONST( map3.isContiguous(), false);
     TEST_EQUALITY_CONST( map3.getNodeNumElements() % 5 , 0);
     TEST_EQUALITY_CONST( map3.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[2]);
-  }  
-  
-  // 
+  }
+
+  //
   // INSTANTIATIONS
   //
 

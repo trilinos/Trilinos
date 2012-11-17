@@ -27,7 +27,7 @@
 #include <stk_percept/RunEnvironment.hpp>
 
 #include <stk_util/environment/WallTime.hpp>
-#include <stk_util/util/PrintTable.hpp>
+#include <stk_util/diag/PrintTable.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 

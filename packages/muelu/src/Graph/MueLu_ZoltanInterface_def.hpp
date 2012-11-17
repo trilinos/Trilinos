@@ -50,6 +50,8 @@
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
 #include <Teuchos_Utils.hpp>
+#include <Teuchos_DefaultMpiComm.hpp> //TODO: fwd decl.
+#include <Teuchos_OpaqueWrapper.hpp>  //TODO: fwd decl.
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
@@ -58,37 +60,31 @@
 namespace MueLu {
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
-  ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  ZoltanInterface(RCP<const FactoryBase> AFact, RCP<const FactoryBase> TransferFact)
-    : AFact_(AFact), TransferFact_(TransferFact)
-  {}
-
   //-------------------------------------------------------------------------------------------------------------
   // DeclareInput
   //-------------------------------------------------------------------------------------------------------------
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  DeclareInput(Level & level) const
+  DeclareInput(Level & currentLevel) const
   {
-    level.DeclareInput("A", AFact_.get());
-    level.DeclareInput("Coordinates", NoFactory::get()); //FIXME JJH
-    //level.DeclareInput("Coordinates", TransferFact_.get()); //FIXME JJH
+    Input(currentLevel, "A");
+    currentLevel.DeclareInput("Coordinates", NoFactory::get()); //FIXME JJH
+    //Input(currentLevel, "Coordinates"); //FIXME JJH
   } //DeclareInput()
 
   //-------------------------------------------------------------------------------------------------------------
   // Build
   //-------------------------------------------------------------------------------------------------------------
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   Build(Level &level) const
   {
-    FactoryMonitor m(*this, "ZoltanInterface", level);
+    FactoryMonitor m(*this, "Build", level);
     RCP<SubFactoryMonitor> m1;
 
-    RCP<Matrix> A = level.Get< RCP<Matrix> >("A",AFact_.get());
+    RCP<Matrix> A = Get< RCP<Matrix> >(level, "A");
     // Tell Zoltan what kind of local/global IDs we will use.
     // In our case, each GID is two ints and there are no local ids.
     // One can skip this step if the IDs are just single ints.
@@ -109,12 +105,11 @@ namespace MueLu {
 
     zoltanObj_->Set_Param("debug_level", "0");
 
-    GO numPartitions_ = level.Get<GO>("number of partitions");
+    GO numPartitions_ = Get<GO>(level, "number of partitions");
     std::stringstream ss;
     ss << numPartitions_;
     zoltanObj_->Set_Param("num_global_partitions",ss.str());
 
-    //if (level.IsAvailable("Coordinates",TransferFact_.get()) == false) //FIXME JJH
     //~~ if (level.IsAvailable("Coordinates",NoFactory::get()) == false) //FIXME JJH
     //~~  throw(Exceptions::HaltRepartitioning("MueLu::ZoltanInterface : no coordinates available"));
     //RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("Coordinates",TransferFact_.get()); //FIXME JJH
@@ -126,15 +121,15 @@ namespace MueLu {
 
     // Build XYZ from XCoordinates, YCoordinates and ZCoordinates
     if (level.IsAvailable("XCoordinates")) {
-      
-      { 
+
+      {
         XYZ.push_back(level.Get< ArrayRCP<SC> >("XCoordinates"));
       }
-      
+
       if (level.IsAvailable("YCoordinates")) {
         XYZ.push_back(level.Get< ArrayRCP<SC> >("YCoordinates"));
       }
-      
+
       if (level.IsAvailable("ZCoordinates")) {
         TEUCHOS_TEST_FOR_EXCEPTION(!level.IsAvailable("YCoordinates"), Exceptions::RuntimeError, "ZCoordinates specified but no YCoordinates");
         XYZ.push_back(level.Get< ArrayRCP<SC> >("ZCoordinates"));
@@ -142,10 +137,10 @@ namespace MueLu {
 
     } else if (level.IsAvailable("Coordinates")) {
 
-      RCP<Matrix> Aloc = level.Get<RCP<Matrix> >("A", AFact_.get());
+      RCP<Matrix> Aloc = Get<RCP<Matrix> >(level, "A");
       LocalOrdinal blksize = Aloc->GetFixedBlockSize();
 
-      RCP<MultiVector> multiVectorXYZ = level.Get< RCP<MultiVector> >("Coordinates");
+      RCP<MultiVector> multiVectorXYZ = Get< RCP<MultiVector> >(level, "Coordinates");
       for (int i=0; i< (int)multiVectorXYZ->getNumVectors(); i++) { //FIXME cast
         XYZ.push_back(coalesceCoordinates(multiVectorXYZ->getDataNonConst(i), blksize)); // If blksize == 1, not copy but it's OK to leave 'open' the MultiVector until the destruction of XYZ because no communications using Xpetra
       }
@@ -166,18 +161,18 @@ namespace MueLu {
     zoltanObj_->Set_Geom_Multi_Fn(GetProblemGeometry, (void *) &XYZ);
 
     // Data pointers that Zoltan requires.
-    ZOLTAN_ID_PTR import_gids = NULL;  // Global nums of objs to be imported   
-    ZOLTAN_ID_PTR import_lids = NULL;  // Local indices to objs to be imported 
+    ZOLTAN_ID_PTR import_gids = NULL;  // Global nums of objs to be imported
+    ZOLTAN_ID_PTR import_lids = NULL;  // Local indices to objs to be imported
     int   *import_procs = NULL;        // Proc IDs of procs owning objs to be imported.
     int   *import_to_part = NULL;      // Partition #s to which imported objs should be assigned.
-    ZOLTAN_ID_PTR export_gids = NULL;  // Global nums of objs to be exported   
-    ZOLTAN_ID_PTR export_lids = NULL;  // local indices to objs to be exported 
+    ZOLTAN_ID_PTR export_gids = NULL;  // Global nums of objs to be exported
+    ZOLTAN_ID_PTR export_lids = NULL;  // local indices to objs to be exported
     int   *export_procs = NULL;        // Proc IDs of destination procs for objs to be exported.
     int   *export_to_part = NULL;      // Partition #s for objs to be exported.
-    int   num_imported;                // Number of objs to be imported.          
-    int   num_exported;                // Number of objs to be exported.          
-    int   newDecomp;                   // Flag indicating whether the decomposition has changed 
-    int   num_gid_entries;             // Number of array entries in a global ID.  
+    int   num_imported;                // Number of objs to be imported.
+    int   num_exported;                // Number of objs to be exported.
+    int   newDecomp;                   // Flag indicating whether the decomposition has changed
+    int   num_gid_entries;             // Number of array entries in a global ID.
     int   num_lid_entries;
 
     m1 = rcp(new SubFactoryMonitor(*this, "Zoltan RCB", level));
@@ -221,7 +216,7 @@ namespace MueLu {
   // GetLocalNumberOfRows
   //-------------------------------------------------------------------------------------------------------------
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   int ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   GetLocalNumberOfRows(void *data, int *ierr)
   {
@@ -242,7 +237,7 @@ namespace MueLu {
   // GetLocalNumberOfNonzeros
   //-------------------------------------------------------------------------------------------------------------
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   GetLocalNumberOfNonzeros(void *data, int NumGidEntries, int NumLidEntries, ZOLTAN_ID_PTR gids,
                            ZOLTAN_ID_PTR lids, int wgtDim, float *weights, int *ierr)
@@ -286,7 +281,7 @@ namespace MueLu {
   // GetProblemDimension
   //-------------------------------------------------------------------------------------------------------------
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   int ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   GetProblemDimension(void *data, int *ierr)
   {
@@ -300,9 +295,9 @@ namespace MueLu {
   // GetProblemGeometry
   //-------------------------------------------------------------------------------------------------------------
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  GetProblemGeometry(void *data, int numGIDEntries, int numLIDEntries, int numObjectIDs, 
+  GetProblemGeometry(void *data, int numGIDEntries, int numLIDEntries, int numObjectIDs,
                      ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int dim, double *coordinates, int *ierr)
   {
     if (data == NULL) {
@@ -324,7 +319,7 @@ namespace MueLu {
 
     //~ assert(numObjectIDs == XYZ->getLocalLength());
     for(int j=0; j<dim; j++) {
-      assert(numObjectIDs == XYZ[j].size()); //FIXME: TEST_FOR_EXCEPTION instead?      
+      assert(numObjectIDs == XYZ[j].size()); //FIXME: TEST_FOR_EXCEPTION instead?
     }
 
     /*~~
@@ -352,7 +347,7 @@ namespace MueLu {
   ArrayRCP<double> ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::coalesceCoordinates(ArrayRCP<double> coord, LocalOrdinal blksize) {
     if (blksize == 1)
       return coord;
-    
+
     ArrayRCP<double> coalesceCoord(coord.size()/blksize); //TODO: how to avoid automatic initialization of the vector? using arcp()?
 
     for(int i=0; i<coord.size(); i++) {
@@ -364,7 +359,7 @@ namespace MueLu {
 #endif
       coalesceCoord[i] = coalesceCoord[i*blksize];
     }
-    
+
     //std::cout << coord << std::endl;
     //std::cout << coalesceCoord << std::endl;
 

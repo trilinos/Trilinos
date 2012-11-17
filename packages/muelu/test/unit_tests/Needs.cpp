@@ -57,7 +57,7 @@ namespace MueLuTests {
   using MueLu::Needs;
 
   //this macro declares the unit-test-class:
-  TEUCHOS_UNIT_TEST(Needs, Constructor) 
+  TEUCHOS_UNIT_TEST(Needs, Constructor)
   {
     //we are now in a class method declared by the above macro, and
     //that method has these input arguments:
