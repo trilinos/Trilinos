@@ -32,28 +32,18 @@
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
 #include "Ifpack2_BorderedOperator_def.hpp"
-#include "Ifpack2_ExplicitInstantiationHelpers.hpp"
+#include "Ifpack2_ETIHelperMacros.h"
 
-#define IFPACK2_BO_INST(CLASSNAME,S,LO,GO) \
-  template class CLASSNAME<S,LO,GO, \
+#define IFPACK2_BO_INST(S,LO,GO) \
+  template class BorderedOperator<S,LO,GO, \
                  Kokkos::DefaultNode::DefaultNodeType >
 
-
-
 namespace Ifpack2 {
-#ifdef HAVE_TPETRA_INST_FLOAT
-IFPACK2_BO_INST(BorderedOperator,float,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_DOUBLE
-IFPACK2_BO_INST(BorderedOperator,double,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-IFPACK2_BO_INST(BorderedOperator,std::complex<float>,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-IFPACK2_BO_INST(BorderedOperator,std::complex<double>,int,int);
-#endif
+
+  IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+  IFPACK2_INSTANTIATE_SLG(IFPACK2_BO_INST)
+
 }
 
 #endif
-

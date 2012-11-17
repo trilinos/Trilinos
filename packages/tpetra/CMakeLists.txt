@@ -248,14 +248,14 @@ ENDIF()
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 TRIBITS_ADD_TEST_DIRECTORIES(example)
 
-#
-# Exclude files for source package.
-#
-
 GLOBAL_SET(Tpetra_ETI_SCALARS ${Tpetra_ETI_SCALARS})
 GLOBAL_SET(Tpetra_ETI_GORDS   ${Tpetra_ETI_GORDS})
 GLOBAL_SET(Tpetra_ETI_LORDS   ${Tpetra_ETI_LORDS})
 GLOBAL_SET(Tpetra_ETI_NODES   ${Tpetra_ETI_NODES})
+
+#
+# Exclude files for source package.
+#
 
 TRIBITS_EXCLUDE_FILES(
   doc/CodingGuidelines

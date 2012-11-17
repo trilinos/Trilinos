@@ -33,14 +33,17 @@
 
 #include "Ifpack2_Chebyshev_def.hpp"
 #include "Ifpack2_ExplicitInstantiationHelpers.hpp"
+#include "Ifpack2_ETIHelperMacros.h"
 
 namespace Ifpack2 {
-#ifdef HAVE_TPETRA_INST_FLOAT
-IFPACK2_INST(Chebyshev,float,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_DOUBLE
-IFPACK2_INST(Chebyshev,double,int,int);
-#endif
+
+  #define LCLINST(S,LO,GO) \
+          IFPACK2_INST(Chebyshev,S,LO,GO)
+
+  IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+  IFPACK2_INSTANTIATE_SLG_REAL(LCLINST)
+
 }
 
 #endif

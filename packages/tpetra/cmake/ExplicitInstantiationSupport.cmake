@@ -69,11 +69,15 @@ IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
   ENDIF()
 ELSEIF()
   # these macros are used only for testing
-  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_LIBRARYSET "CS=int|double" "DS=int|double" 
-                                                   "LO=int" "GO=int|long" "N=${Tpetra_ETI_NODES}")
+  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_LIBRARYSET "S=double" 
+                                                   "LO=int" 
+                                                   "GO=int" 
+                                                   "N=${Tpetra_ETI_NODES}")
   IF (SS_FOR_DEV_PS_FOR_RELEASE AND HAVE_COMPLEX_BLAS)
-    TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_LIBRARYSET "CS=std::complex<double>" "DS=std::complex<double>" 
-                                                     "LO=int" "GO=int|long" "N=${Tpetra_ETI_NODES}")
+    TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_LIBRARYSET "S=std::complex<double>" 
+                                                     "LO=int" 
+                                                     "GO=int" 
+                                                     "N=${Tpetra_ETI_NODES}")
   ENDIF()
 ENDIF()
 
