@@ -423,10 +423,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, NonContigView, LO, GO, Scalar , Node )
   {
-    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) {
-      out << "skipping testing for integral-type scalar" << std::endl;
-      return;
-    }
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
@@ -1281,10 +1277,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, OffsetView, LO , GO , Scalar , Node )
   {
-    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) {
-      out << "skipping testing for integral-type scalar" << std::endl;
-      return;
-    }
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
@@ -1867,10 +1859,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, SingleVecNormalize, LO , GO , Scalar , Node )
   {
-    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) {
-      out << "skipping testing for integral-type scalar" << std::endl;
-      return;
-    }
     RCP<Node> node = getNode<Node>();
     // this documents a usage case in Anasazi::SVQBOrthoManager, which was failing
     // error turned out to be a neglected return in both implementations of update(), 
@@ -2016,10 +2004,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, CountNorm1, LO , GO , Scalar , Node )
   {
-    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) {
-      out << "skipping testing for integral-type scalar" << std::endl;
-      return;
-    }
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
@@ -2109,10 +2093,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, Norm2, LO , GO , Scalar , Node )
   {
-    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) {
-      out << "skipping testing for integral-type scalar" << std::endl;
-      return;
-    }
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
@@ -2147,10 +2127,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, NormWeighted, LO , GO , Scalar , Node )
   {
-    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) {
-      out << "skipping testing for integral-type scalar" << std::endl;
-      return;
-    }
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -2309,6 +2285,6 @@ namespace {
 
   TPETRA_INSTANTIATE_N_NOGPU(VIEWMODETEST)
 
-  TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
+  TPETRA_INSTANTIATE_TESTMV( UNIT_TEST_GROUP )
 
 }
