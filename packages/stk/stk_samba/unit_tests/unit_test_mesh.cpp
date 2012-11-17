@@ -227,7 +227,7 @@ TEST(samba, mesh_hex_fixture)
     for (uint32_t y=0; y<=NY; ++y) {
       for (uint32_t z=0; z<=NZ; ++z) {
          const size_t num_dim_not_on_bounary = (x != 0 && x != NX) + (y != 0 && y != NY) + (z != 0 && z != NZ);
-         const int expected_num_back_rels = 1 << num_dim_not_on_bounary; // 2^num
+         const unsigned int expected_num_back_rels = 1 << num_dim_not_on_bounary; // 2^num
          samba::entity_key node = nodes[node_offset( x, y, z)];
 
          EXPECT_EQ( expected_num_back_rels, boost::size(mesh[node].elements<samba::entity_key>()) );
