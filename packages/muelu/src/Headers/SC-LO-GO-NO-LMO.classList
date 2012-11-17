@@ -26,11 +26,8 @@ PreDropFunctionConstVal
 NullspaceFactory
 FactoryManager
 ThresholdAFilterFactory
-SegregationAFilterFactory
-SegregationATransferFactory
 RepartitionFactory
 MLParameterListInterpreter
-#AggregationExportFactory
 BlockedPFactory
 SubBlockAFactory
 SchurComplementFactory
