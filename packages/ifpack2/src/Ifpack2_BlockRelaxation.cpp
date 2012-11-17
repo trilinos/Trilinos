@@ -45,10 +45,10 @@
 
 // Note: Add similar explicit instantiation for SparseContainer<ILU> and DenseContainer when those get implemented
 
-#define IFPACK2_INST_SPARSE_ILUT(BlockRelaxation,S,LO,GO) \
+#define IFPACK2_INST_SPARSE_ILUT(S,LO,GO) \
   template class BlockRelaxation<Tpetra::CrsMatrix<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, \
 			   Ifpack2::SparseContainer<Tpetra::CrsMatrix<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, \
-						    Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,LO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > > >
+						    Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,LO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > > >;
 
 namespace Ifpack2 {
 

@@ -36,7 +36,7 @@
 
 #define IFPACK2_BO_INST(S,LO,GO) \
   template class BorderedOperator<S,LO,GO, \
-                 Kokkos::DefaultNode::DefaultNodeType >
+                 Kokkos::DefaultNode::DefaultNodeType >;
 
 namespace Ifpack2 {
 
