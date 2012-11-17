@@ -35,7 +35,6 @@
 #include "Ifpack2_ETIHelperMacros.h"
 
 namespace Ifpack2 {
-#ifdef HAVE_TPETRA_INST_FLOAT
 
   #define LCLINST(S,LO,GO) \
           IFPACK2_INST(RILUK,S,LO,GO)
@@ -47,4 +46,3 @@ namespace Ifpack2 {
 }
 
 #endif
-

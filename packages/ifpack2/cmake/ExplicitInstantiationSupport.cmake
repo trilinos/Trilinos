@@ -32,7 +32,7 @@ ENDIF()
 
 TRIBITS_ETI_GENERATE_MACROS("${Ifpack2_ETI_FIELDS}" "${Ifpack2_ETI_LIBRARYSET}" "${Ifpack2_ETI_EXCLUDE_SET}"  
                             list_of_manglings eti_typedefs
-                            "IFPACK2_INSTANTIATE_LG(S,LO,GO)"       IFPACK2_ETIMACRO_LG
+                            "IFPACK2_INSTANTIATE_LG(LO,GO)"         IFPACK2_ETIMACRO_LG
                             "IFPACK2_INSTANTIATE_SLG(S,LO,GO)"      IFPACK2_ETIMACRO_SLG)
 TRIBITS_ETI_GENERATE_MACROS("${Ifpack2_ETI_FIELDS}" "${Ifpack2_ETI_LIBRARYSET}" 
                             "${Ifpack2_ETI_EXCLUDE_SET};S=std::complex<double> LO=.* GO=.*; S=std::complex<float> LO=.* GO=.*"  
