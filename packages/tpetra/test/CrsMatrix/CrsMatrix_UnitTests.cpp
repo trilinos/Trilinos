@@ -554,7 +554,11 @@ namespace {
       matrix.getLocalDiagCopy(dvec);
       Array<Scalar> expectedDiags(numLocal, static_cast<Scalar>(2));
       ArrayRCP<const Scalar> dvec_view = dvec.get1dView();
-      TEST_COMPARE_FLOATING_ARRAYS( expectedDiags(), dvec_view, MT::zero() );
+      if (ST::isOrdinal) {
+        TEST_COMPARE_ARRAYS(expectedDiags(), dvec_view);
+      } else {
+        TEST_COMPARE_FLOATING_ARRAYS( expectedDiags(), dvec_view, MT::zero() );
+      }
     }
     {
       // create a simple diagonal graph
@@ -602,7 +606,11 @@ namespace {
       TEST_NOTHROW( matrix.localSolve(y,y,NO_TRANS) );
       ArrayRCP<const Scalar> x_view = x.get1dView();
       ArrayRCP<const Scalar> y_view = y.get1dView();
-      TEST_COMPARE_FLOATING_ARRAYS( y_view, x_view, MT::zero() );
+      if (ST::isOrdinal) {
+        TEST_COMPARE_ARRAYS( y_view, x_view );
+      } else {
+        TEST_COMPARE_FLOATING_ARRAYS( y_view, x_view, MT::zero() );
+      }
     }
     {
       // create a simple diagonal graph
@@ -768,7 +776,11 @@ namespace {
     matrix.getLocalDiagCopy(dvec);
     Array<Scalar> expectedDiags(numLocal, static_cast<Scalar>(2));
     ArrayRCP<const Scalar> dvec_view = dvec.get1dView();
-    TEST_COMPARE_FLOATING_ARRAYS( expectedDiags(), dvec_view, MT::zero() );
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS( expectedDiags(), dvec_view );
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS( expectedDiags(), dvec_view, MT::zero() );
+    }
   }
 
 
@@ -1024,8 +1036,12 @@ namespace {
     eye->apply(mvrand,mvres);
     mvres.update(-ST::one(),mvrand,ST::one());
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
-    mvres.norm2(norms());
-    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    mvres.norm1(norms());
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS(norms,zeros);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    }
   }
 
 
@@ -1109,8 +1125,12 @@ namespace {
     A.apply(X,Bout);
     Bout.update(-ST::one(),Bexp,ST::one());
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
-    Bout.norm2(norms());
-    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    Bout.norm1(norms());
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS(norms, zeros);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    }
   }
 
 
@@ -1211,8 +1231,12 @@ namespace {
     //Bexp.describe(out, VERB_EXTREME);
     Bout.update(-ST::one(),Bexp,ST::one());
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
-    Bout.norm2(norms());
-    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    Bout.norm1(norms());
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS(norms,zeros);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    }
   }
 
 
@@ -1330,8 +1354,12 @@ namespace {
     tri->apply(mvin,mvout);
     mvout.update(-ST::one(),mvexp,ST::one());
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
-    mvout.norm2(norms());
-    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    mvout.norm1(norms());
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS(norms,zeros);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    }
   }
 
 
@@ -1386,8 +1414,12 @@ namespace {
     eye->apply(mvrand,mvres);
     mvres.update(-ST::one(),mvrand,ST::one());
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
-    mvres.norm2(norms());
-    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    mvres.norm1(norms());
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS(norms,zeros);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    }
   }
 
 
@@ -1464,8 +1496,12 @@ namespace {
     // now, threes should be 3*ones
     threes.update(static_cast<Scalar>(-3)*ST::one(),ones,ST::one());
     Array<Mag> norms(1), zeros(1,MT::zero());
-    threes.norm2(norms());
-    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    threes.norm1(norms());
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS(norms,zeros);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    }
   }
 
 
@@ -1519,10 +1555,14 @@ namespace {
       //
       Xhat.update(-ST::one(),X,ST::one());
       Array<Mag> errnrms(numVecs), normsB(numVecs), zeros(numVecs, MT::zero());
-      Xhat.norm2(errnrms());
-      B.norm2(normsB());
+      Xhat.norm1(errnrms());
+      B.norm1(normsB());
       Mag maxBnrm = *std::max_element( normsB.begin(), normsB.end() );
-      TEST_COMPARE_FLOATING_ARRAYS( errnrms, zeros, maxBnrm );
+      if (ST::isOrdinal) {
+        TEST_COMPARE_ARRAYS(errnrms, zeros);
+      } else {
+        TEST_COMPARE_FLOATING_ARRAYS( errnrms, zeros, maxBnrm );
+      }
     }
   }
 
@@ -1659,10 +1699,14 @@ namespace {
       //
       Xhat.update(-ST::one(),X,ST::one());
       Array<Mag> errnrms(numVecs), normsB(numVecs), zeros(numVecs, MT::zero());
-      Xhat.norm2(errnrms());
-      B.norm2(normsB());
+      Xhat.norm1(errnrms());
+      B.norm1(normsB());
       Mag maxBnrm = *std::max_element( normsB.begin(), normsB.end() );
-      TEST_COMPARE_FLOATING_ARRAYS( errnrms, zeros, maxBnrm );
+      if (ST::isOrdinal) {
+        TEST_COMPARE_ARRAYS(errnrms, zeros);
+      } else {
+        TEST_COMPARE_FLOATING_ARRAYS( errnrms, zeros, maxBnrm );
+      }
     }
   }
 
@@ -1803,8 +1847,12 @@ namespace {
     A.apply(mveye,mvres);
     mvres.update(-ST::one(),mvans,ST::one());
     Array<Mag> norms(numImages), zeros(numImages,MT::zero());
-    mvres.norm2(norms());
-    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    mvres.norm1(norms());
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS(norms,zeros);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    }
   }
 
 
@@ -1847,9 +1895,13 @@ namespace {
     AOp->apply(X,Y,NO_TRANS,alpha,beta);
     // 
     Array<Mag> normY(1), normZ(1);
-    Z.norm2(normZ());
-    Y.norm2(normY());
-    TEST_COMPARE_FLOATING_ARRAYS(normY,normZ,testingTol<Mag>());
+    Z.norm1(normZ());
+    Y.norm1(normY());
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS(normY,normZ);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(normY,normZ,testingTol<Mag>());
+    }
   }
 
 
@@ -1892,8 +1944,12 @@ namespace {
     // Z -= Y  -> zero
     Z.update(-ST::one(),Y,ST::one());
     Array<Mag> norms(1), zeros(1,MT::zero());
-    Z.norm2(norms());
-    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    Z.norm1(norms());
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS(norms,zeros);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    }
   }
 
 
@@ -1960,8 +2016,12 @@ namespace {
     mvres.randomize();
     zero.apply(mvrand,mvres);
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
-    mvres.norm2(norms());
-    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    mvres.norm1(norms());
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS(norms,zeros);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    }
   }
 
   ////
