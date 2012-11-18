@@ -363,7 +363,7 @@ namespace {
   //
 
   // all ordinals, default node
-#define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
+#define UNIT_TEST_GROUP( LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor1, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor2, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor3, LO, GO ) \
@@ -371,12 +371,6 @@ namespace {
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, sameasTests, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ContigUniformMap, LO, GO )
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
-  // test only what's enabled in the library
-  TPETRA_INSTANTIATE_LG(UNIT_TEST_GROUP_ORDINAL)
-#else
-  UNIT_TEST_GROUP(int,int)
-  UNIT_TEST_GROUP(int,long)
-#endif
+  TPETRA_INSTANTIATE_LG(UNIT_TEST_GROUP)
 
 }
