@@ -78,6 +78,10 @@ typedef MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOp
 typedef MueLu::Amesos2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Amesos2Smoother;
 #endif
 
+#ifdef MUELU_PROJECTORSMOOTHER_SHORT
+typedef MueLu::ProjectorSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ProjectorSmoother;
+#endif
+
 #ifdef MUELU_DIRECTSOLVER_SHORT
 typedef MueLu::DirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DirectSolver;
 #endif

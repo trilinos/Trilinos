@@ -46,3 +46,4 @@ SteepestDescentSolver
 CGSolver
 Constraint
 NullspacePresmoothFactory
+ProjectorSmoother
