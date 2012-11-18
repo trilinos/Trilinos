@@ -80,7 +80,7 @@ namespace MueLu {
        @param varName The name of the quantity to be restricted.
        @param genFact The generating factory
     */
-    AggStatTransferFactory(std::string const & varName);
+    AggStatTransferFactory(std::string const & varName, Teuchos::RCP<const FactoryBase> const &genFact = Teuchos::null);
 
     //! Destructor.
     virtual ~AggStatTransferFactory();
@@ -111,6 +111,8 @@ namespace MueLu {
     //! name of variable to be transfered.
     std::string varName_;
 
+    //! factory that generates variable
+    Teuchos::RCP<const FactoryBase> genFact_;
   }; // class MultiVectorTransferFactory
 
 } // namespace MueLu
