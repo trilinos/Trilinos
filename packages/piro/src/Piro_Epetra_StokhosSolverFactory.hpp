@@ -78,6 +78,9 @@ namespace Epetra {
     //! Destructor
     ~StokhosSolverFactory();
 
+    //! Reset Stokhos solver parameters
+    void resetSolverParameters(const Teuchos::ParameterList& new_solver_params);
+
     /** \name Factory methods */
     //@{
 

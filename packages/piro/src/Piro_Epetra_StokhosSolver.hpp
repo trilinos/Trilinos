@@ -72,6 +72,9 @@ namespace Epetra {
     void setup(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
 	       const Teuchos::RCP<NOX::Epetra::Observer>& noxObserver = Teuchos::null);
 
+    //! Reset Stokhos solver parameters
+    void resetSolverParameters(const Teuchos::ParameterList& new_solver_params);
+
 
     //@}
 
