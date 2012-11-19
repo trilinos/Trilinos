@@ -76,7 +76,7 @@ namespace Galeri {
 
   namespace Xpetra {
 
-    using Tpetra::global_size_t;
+    typedef size_t global_size_t;
 
     // TODO: Epetra_Map trait not implemented
     // TODO: add parameter 'const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()' to Build()

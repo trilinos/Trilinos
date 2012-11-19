@@ -67,7 +67,7 @@ namespace Galeri {
 
     namespace Maps {
 
-      using Tpetra::global_size_t;
+      typedef size_t global_size_t;
 
       //TODO: avoid using GlobalOrdinal everywhere?
 
