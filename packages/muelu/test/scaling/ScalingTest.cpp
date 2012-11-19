@@ -293,7 +293,7 @@ int main(int argc, char *argv[]) {
     RCP<SaPFactory> SaPfact = rcp(new SaPFactory() );
     SaPfact->SetDampingFactor(SADampingFactor);
     M.SetFactory("P", SaPfact);
-    RCP<FactoryBase2> rfact = rcp(new TransPFactory());
+    RCP<Factory> rfact = rcp(new TransPFactory());
     rfact->SetFactory("P", M.GetFactory("P"));
     M.SetFactory("R", rfact);
 

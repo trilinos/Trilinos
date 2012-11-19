@@ -200,14 +200,14 @@ namespace MueLu {
 
     //! AmalgamationFactory
     RCP<FactoryBase> BuildAmalgamationFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      RCP<FactoryBase2> factory = rcp(new AmalgamationFactory());
+      RCP<Factory> factory = rcp(new AmalgamationFactory());
       MUELU_FACTORY_PARAM2("A");
       return factory;
     }
 
     //! CoalesceDropFactory
     RCP<FactoryBase> BuildCoalesceDropFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      RCP<FactoryBase2> factory = rcp(new CoalesceDropFactory());
+      RCP<Factory> factory = rcp(new CoalesceDropFactory());
       MUELU_FACTORY_PARAM2("A");
       MUELU_FACTORY_PARAM2("UnAmalgamationInfo");
       return factory;
@@ -215,7 +215,7 @@ namespace MueLu {
 
     //! TentativePFactory
     RCP<FactoryBase> BuildTentativePFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      RCP<FactoryBase2> factory = rcp(new TentativePFactory());
+      RCP<Factory> factory = rcp(new TentativePFactory());
       MUELU_FACTORY_PARAM2("Aggregates");
       MUELU_FACTORY_PARAM2("Nullspace");
       MUELU_FACTORY_PARAM2("A");
@@ -258,7 +258,7 @@ namespace MueLu {
 //         return rcp(new TransPFactory());
 
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "TransPFactory", Exceptions::RuntimeError, "");
-      RCP<FactoryBase2> factory = rcp(new TransPFactory());
+      RCP<Factory> factory = rcp(new TransPFactory());
       MUELU_FACTORY_PARAM2("P");
       return factory;
     }
@@ -267,7 +267,7 @@ namespace MueLu {
     RCP<FactoryBase> BuildGenericRFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
 
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "GenericRFactory", Exceptions::RuntimeError, "");
-      RCP<FactoryBase2> factory = rcp(new GenericRFactory());
+      RCP<Factory> factory = rcp(new GenericRFactory());
       MUELU_FACTORY_PARAM2("P");
 
       return factory;
@@ -380,7 +380,7 @@ namespace MueLu {
 
       std::string vectorName="";      vectorName = paramList.get<std::string>("vectorName");
       std::string restrictionName=""; restrictionName = paramList.get<std::string>("restrictionName");
-      RCP<FactoryBase2> factory = rcp(new MultiVectorTransferFactory(vectorName, restrictionName));
+      RCP<Factory> factory = rcp(new MultiVectorTransferFactory(vectorName, restrictionName));
       MUELU_FACTORY_PARAM2(restrictionName);
 
       return factory;
@@ -390,7 +390,7 @@ namespace MueLu {
     RCP<FactoryBase> BuildZoltanInterface(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "ZoltanInterface", Exceptions::RuntimeError, "");
 
-      RCP<FactoryBase2> factory = rcp(new ZoltanInterface());
+      RCP<Factory> factory = rcp(new ZoltanInterface());
       MUELU_FACTORY_PARAM2("A");
       MUELU_FACTORY_PARAM2("TransferFactory");
       return factory;
@@ -406,7 +406,7 @@ namespace MueLu {
       int startLevel=1;            if(paramList.isParameter("startLevel"))       startLevel = paramList.get<int>("startLevel");
       int diffusive=0;             if(paramList.isParameter("diffusive"))        diffusive = paramList.get<int>("diffusive");
 
-      RCP<FactoryBase2> factory = rcp(new RepartitionFactory(minRowsPerProc, nonzeroImbalance, startLevel, diffusive));
+      RCP<Factory> factory = rcp(new RepartitionFactory(minRowsPerProc, nonzeroImbalance, startLevel, diffusive));
 
       MUELU_FACTORY_PARAM2("Factory");
       MUELU_FACTORY_PARAM2("A");
@@ -435,13 +435,13 @@ namespace MueLu {
 
 //       std::string type; type = paramList.get<std::string>("type");
 //       if (type == "Interpolation") {
-//         RCP<FactoryBase2> factory = rcp(new PermutedTransferFactory(MueLu::INTERPOLATION));
+//         RCP<Factory> factory = rcp(new PermutedTransferFactory(MueLu::INTERPOLATION));
 //         MUELU_FACTORY_PARAM2("RepartitionFactory");
 //         MUELU_FACTORY_PARAM2("A");
 //         MUELU_FACTORY_PARAM2("P");
 //         return factory;
 //       } else if (type == "Restriction") {
-//         RCP<FactoryBase2> factory = rcp(new PermutedTransferFactory(MueLu::RESTRICTION));
+//         RCP<Factory> factory = rcp(new PermutedTransferFactory(MueLu::RESTRICTION));
 //         MUELU_FACTORY_PARAM2("RepartitionFactory");
 //         MUELU_FACTORY_PARAM2("A");
 //         MUELU_FACTORY_PARAM2("P");

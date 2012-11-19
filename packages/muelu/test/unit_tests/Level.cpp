@@ -44,14 +44,14 @@
 //
 // @HEADER
 #include "Teuchos_UnitTestHarness.hpp"
-#include "MueLu_config.hpp"
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Version.hpp"
 
 #include "MueLu_Utilities.hpp"
 
 #include "MueLu_NoFactory.hpp"
-#include "MueLu_FactoryBase2.hpp"
+#include "MueLu_Factory.hpp"
 
 #include "MueLu_TestHelpers.hpp"
 
@@ -60,10 +60,11 @@
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_Factory.hpp"
+
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
-
-#include "MueLu_SingleLevelFactoryBase.hpp"
 
 namespace MueLuTests {
 
@@ -141,7 +142,7 @@ namespace MueLuTests {
     l.Set("A", A);
 
     RCP<FactoryBase> graphFact = rcp(new CoalesceDropFactory());
-    RCP<FactoryBase2> aggFact  = rcp(new UCAggregationFactory());
+    RCP<Factory> aggFact  = rcp(new UCAggregationFactory());
     aggFact->SetFactory("Graph", graphFact);
 
     l.Request("Aggregates", aggFact.get());
@@ -170,8 +171,8 @@ namespace MueLuTests {
     RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
     l.Set("A", A);
 
-    RCP<FactoryBase2> graphFact = rcp(new CoalesceDropFactory());
-    RCP<FactoryBase2> aggFact   = rcp(new UCAggregationFactory());
+    RCP<Factory> graphFact = rcp(new CoalesceDropFactory());
+    RCP<Factory> aggFact   = rcp(new UCAggregationFactory());
     aggFact->SetFactory("Graph", graphFact);
 
     l.Keep("Aggregates", aggFact.get());      // set keep flag

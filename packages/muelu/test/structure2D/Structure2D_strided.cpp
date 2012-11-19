@@ -241,8 +241,8 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
   RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
   //RCP<PgPFactory> Pfact  = rcp( new PgPFactory() );
   //RCP<TentativePFactory> Pfact  = rcp( new TentativePFactory() );
-  RCP<FactoryBase2>   Rfact  = rcp( new TransPFactory() );
-  //RCP<FactoryBase2>   Rfact  = rcp( new GenericRFactory() );
+  RCP<Factory>   Rfact  = rcp( new TransPFactory() );
+  //RCP<Factory>   Rfact  = rcp( new GenericRFactory() );
 
   // RAP Factory
   RCP<RAPFactory> Acfact = rcp( new RAPFactory() );

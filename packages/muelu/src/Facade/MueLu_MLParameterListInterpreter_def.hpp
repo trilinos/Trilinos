@@ -211,9 +211,9 @@ namespace MueLu {
     UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
     UCAggFact->SetPhase3AggCreation(0.5);
 
-    RCP<FactoryBase2> PFact;
-    RCP<FactoryBase2> RFact;
-    RCP<FactoryBase2> PtentFact = rcp( new TentativePFactory() );
+    RCP<Factory> PFact;
+    RCP<Factory> RFact;
+    RCP<Factory> PtentFact = rcp( new TentativePFactory() );
     if (agg_damping == 0.0 && bEnergyMinimization == false) {
       // tentative prolongation operator (PA-AMG)
       PFact = PtentFact;

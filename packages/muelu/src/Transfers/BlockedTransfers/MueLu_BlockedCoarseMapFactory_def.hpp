@@ -62,7 +62,7 @@
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Monitor.hpp"
 
-#include "MueLu_FactoryBase2.hpp"
+#include "MueLu_Factory.hpp"
 
 namespace MueLu {
 
@@ -103,14 +103,14 @@ namespace MueLu {
 
     GlobalOrdinal maxGlobalIndex = subPDomainMap->getMaxAllGlobalIndex();
 
-    RCP<Aggregates> aggregates = FactoryBase2::Get< RCP<Aggregates> >(currentLevel, "Aggregates");
+    RCP<Aggregates> aggregates = Factory::Get< RCP<Aggregates> >(currentLevel, "Aggregates");
     GlobalOrdinal numAggs = aggregates->GetNumAggregates();
 
     // extract communicator
     RCP<const Teuchos::Comm<int> > comm = aggregates->GetMap()->getComm();
 
     // determine nullspace dimension
-    RCP<MultiVector> nullspace  = FactoryBase2::Get< RCP<MultiVector> >(currentLevel, "Nullspace");
+    RCP<MultiVector> nullspace  = Factory::Get< RCP<MultiVector> >(currentLevel, "Nullspace");
     const size_t NSDim = nullspace->getNumVectors();
 
     // check for consistency of striding information with NSDim and nCoarseDofs

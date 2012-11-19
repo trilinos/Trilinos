@@ -154,7 +154,7 @@ namespace MueLuTests {
     UCAggFact->SetPhase3AggCreation(0.5);
 
     RCP<TentativePFactory> PFact = rcp(new TentativePFactory()); //just using plain aggregation
-    RCP<FactoryBase2>          RFact = rcp( new TransPFactory() );
+    RCP<Factory>          RFact = rcp( new TransPFactory() );
     RCP<RAPFactory>        AcFact = rcp( new RAPFactory() );
     H->SetMaxCoarseSize(1);
 

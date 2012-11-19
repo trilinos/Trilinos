@@ -147,7 +147,7 @@ namespace MueLuTests {
 
             RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
             RCP<SaPFactory>        Pfact = rcp( new SaPFactory());
-            RCP<FactoryBase2>      Rfact = rcp( new TransPFactory() );
+            RCP<Factory>      Rfact = rcp( new TransPFactory() );
             RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
             H->SetMaxCoarseSize(1);
 

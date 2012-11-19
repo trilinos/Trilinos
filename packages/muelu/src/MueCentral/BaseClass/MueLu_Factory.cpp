@@ -43,82 +43,13 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_FACTORYBASE2_HPP
-#define MUELU_FACTORYBASE2_HPP
 
-#include <string>
-#include <map>
-
-#include "Teuchos_RCP.hpp"
-
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_FactoryBase.hpp"
-
-#include "MueLu_Level.hpp"
+#include "MueLu_Factory.hpp"
 
 namespace MueLu {
 
-  template <class Key, class T>
-  const RCP<T> mapFind(const std::map<Key, RCP<T> > & map, Key & varName) {
-    typename std::map<Key, RCP<T> >::const_iterator f = map.find(varName);
-    if (f == map.end())
-      return Teuchos::null;
-    else
-      return f->second;
+  void Factory::SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory) {
+    factoryTable_[varName] = factory;
   }
 
-  class FactoryBase2 : public FactoryBase {
-
-  public:
-    //@{ Constructors/Destructors.
-
-    //! Constructor.
-    FactoryBase2() { }
-
-    //! Destructor.
-    virtual ~FactoryBase2() { }
-    //@}
-
-    //@{
-    //! Configuration
-
-    //! SetFactory is for expert users only. To change configuration of the preconditioner, use a factory manager.
-    virtual void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory);
-
-    // GetFactory(...);
-
-    // SetParameterList(...);
-
-    // GetParameterList(...);
-
-    //@}
-
-  protected:
-
-    const RCP<const FactoryBase> GetFactory(const std::string & varName) const {
-      return mapFind<const std::string, const FactoryBase>(factoryTable_, varName);
-    }
-
-    void Input(Level & level, const std::string & varName) const {
-      level.DeclareInput(varName, GetFactory(varName).get(), this);
-    }
-
-    template <class T>
-    T Get(Level & level, const std::string & varName) const {
-      return level.Get<T>(varName, GetFactory(varName).get());
-    }
-
-    template <class T>
-    void Set(Level & level, const std::string & varName, const T & data) const {
-      return level.Set<T>(varName, data, this);
-    }
-
-  private:
-    std::map<const std::string, RCP<const FactoryBase> > factoryTable_;
-
-  }; //class FactoryBase2
-
-} //namespace MueLu
-
-#define MUELU_FACTORYBASE2_SHORT
-#endif //ifndef MUELU_FACTORYBASE2_HPP
+} // namespace MueLu
