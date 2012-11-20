@@ -190,16 +190,16 @@ namespace Xpetra {
     //! Compute 1-norm of each vector in multi-vector.
     void norm1(const Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const { XPETRA_MONITOR("TpetraMultiVector::norm1"); vec_->norm1(norms); }
 
-    //! Compute 2-norm of each vector in multi-vector.
+    //!
     void norm2(const Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const { XPETRA_MONITOR("TpetraMultiVector::norm2"); vec_->norm2(norms); }
 
     //! Compute Inf-norm of each vector in multi-vector.
     void normInf(const Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const { XPETRA_MONITOR("TpetraMultiVector::normInf"); vec_->normInf(norms); }
 
-    //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
+    //!
     void normWeighted(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &weights, const Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const { XPETRA_MONITOR("TpetraMultiVector::normWeighted"); vec_->normWeighted(toTpetra(weights), norms); }
 
-    //! Compute mean (average) value of each vector in multi-vector.
+    //! Compute mean (average) value of each vector in multi-vector. The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
     void meanValue(const Teuchos::ArrayView< Scalar > &means) const { XPETRA_MONITOR("TpetraMultiVector::meanValue"); vec_->meanValue(means); }
 
     //! Matrix-matrix multiplication: this = beta*this + alpha*op(A)*op(B).
