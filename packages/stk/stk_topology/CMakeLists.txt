@@ -1,4 +1,0 @@
-ADD_SUBDIRECTORY(stk_topology)
-
-TRIBITS_ADD_TEST_DIRECTORIES(unit_tests)
-
