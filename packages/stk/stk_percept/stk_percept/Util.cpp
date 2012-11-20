@@ -12,7 +12,9 @@
 #include <iomanip>
 #include <algorithm>
 #include <locale>
+#if !defined(__APPLE__)
 #include <malloc.h>
+#endif
 #include <stdlib.h>
 
 #include <stk_percept/Util.hpp>
