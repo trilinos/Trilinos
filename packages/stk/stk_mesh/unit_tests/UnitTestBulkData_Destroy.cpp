@@ -112,7 +112,7 @@ void assert_is_destroyed( const Entity entity )
   STKUNIT_ASSERT( !entity.is_valid() || entity.bucket().capacity() == 0 );
 }
 
-STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestory_ring)
+STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );

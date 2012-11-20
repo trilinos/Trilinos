@@ -37,8 +37,6 @@ namespace mesh {
 
 Ghosting & BulkData::create_ghosting( const std::string & name )
 {
-  Trace_("stk::mesh::BulkData::create_ghosting");
-
   require_ok_to_modify();
 
   // Verify name is the same on all processors,

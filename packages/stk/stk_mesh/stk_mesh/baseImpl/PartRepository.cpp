@@ -105,7 +105,6 @@ void assert_rank_ordering( const Part & superset ,
 
 } // namespace
 
-
 Part * PartRepository::universal_part() const
 {
   return m_universal_part;
@@ -129,7 +128,7 @@ const PartVector PartRepository::get_mesh_parts() const
 
 Part * PartRepository::declare_part( const std::string & arg_name , EntityRank arg_rank )
 {
-  Trace_("stk::mesh::impl::PartRepository::declare_part");
+  TraceIf("stk::mesh::impl::PartRepository::declare_part", LOG_PART);
 
   const PartVector & all_parts = get_all_parts();
   Part * p = find( all_parts, arg_name );
@@ -147,7 +146,7 @@ Part * PartRepository::declare_part( const std::string & arg_name , EntityRank a
 Part * PartRepository::declare_part( const PartVector & part_intersect )
 {
   static const char method[] = "stk::mesh::impl::PartRepository::declare_part" ;
-  Trace_(method);
+  TraceIf(method, LOG_PART);
 
   PartVector pset_clean ;
 
@@ -222,7 +221,6 @@ Part * PartRepository::declare_part( const PartVector & part_intersect )
   return p ;
 }
 
-
 Part * PartRepository::declare_part_impl( const std::string & name, EntityRank rank)
 {
   size_t ordinal = get_all_parts().size();
@@ -232,18 +230,16 @@ Part * PartRepository::declare_part_impl( const std::string & name, EntityRank r
   return part;
 }
 
-
 void PartRepository::declare_subset_impl( Part & superset_part, Part & subset_part )
 {
   superset_part.m_partImpl.add_part_to_subset( subset_part );
   subset_part.m_partImpl.add_part_to_superset( superset_part );
 }
 
-
 void PartRepository::declare_subset( Part & superset, Part & subset )
 {
   static const char method[] = "stk::mesh::impl::PartRepository::declare_subset" ;
-  Trace_(method);
+  TraceIf(method, LOG_PART);
 
   if ( ! contain( subset.supersets() , superset ) ) {
 
@@ -292,11 +288,10 @@ void PartRepository::declare_subset( Part & superset, Part & subset )
   }
 }
 
-
 void PartRepository::declare_part_relation( Part & root_part, PartRelation relation, Part & target_part )
 {
   static const char method[] = "stk::mesh::impl::PartRepository::declare_part_relation" ;
-  Trace_(method);
+  TraceIf(method, LOG_PART);
 
   assert_not_same(      root_part   , target_part        , method );
   assert_same_universe( root_part   , target_part        , method );
@@ -306,7 +301,6 @@ void PartRepository::declare_part_relation( Part & root_part, PartRelation relat
   root_part.m_partImpl.add_relation( relation );
   target_part.m_partImpl.add_relation( relation );
 }
-
 
 PartRepository::PartRepository(MetaData * meta)
   : m_meta_data(meta),
