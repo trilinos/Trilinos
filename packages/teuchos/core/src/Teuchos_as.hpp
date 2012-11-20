@@ -172,9 +172,11 @@ public:
   }
 };
 
-/** \fn as
- * \brief Convert from one value type to another.
+/** \brief Convert from one value type to another.
  * \ingroup teuchos_language_support_grp
+ *
+ * \tparam TypeTo The type to which to convert; the output type.
+ * \tparam TypeFrom The type from which to convert; the input type.
  *
  * \section Teuchos_as_User User documentation
  *
@@ -247,10 +249,11 @@ inline TypeTo as( const TypeFrom& t )
 }
 
 
-/** \fn asSafe
- * \brief Convert from one value type to another,
- *   checking for validity first if appropriate.
+/** \brief Convert from one value type to another, with validity checks if appropriate.
  * \ingroup teuchos_language_support_grp
+ *
+ * \tparam TypeTo The type to which to convert; the output type.
+ * \tparam TypeFrom The type from which to convert; the input type.
  *
  * \section Teuchos_asSafe_User User documentation
  *
@@ -325,13 +328,23 @@ class asFunc {
 
 namespace { // anonymous
 
-  /// \brief Helper function for converting the given \c std::string to an integer of type IntType.
+  /// Helper function for converting the given \c std::string to an
+  /// integer of type <tt>IntType</tt>.
+  ///
+  /// \tparam IntType A built-in integer type, like \c int or \c long.
+  ///   It may be signed or unsigned.
   ///
   /// \param t [in] The string to convert.
-  /// \param rawConvert [in] One of strtol, strtoul, strtoll,
-  ///   or strtoull.  It must return the same type as IntType.
+  ///
+  /// \param rawConvert [in] A function with the same arguments as
+  ///   strtol, strtoul, strtoll, or strtoull, which returns
+  ///   <tt>IntType<tt>.  It must return the same type as
+  ///   <tt>IntType</tt>.  Note that all of these but strtol require
+  ///   C99 support.  It's up to you to pick the right function for
+  ///   <tt>IntType</tt>.
+  ///
   /// \param intTypeName [in] Human-readable string which is the name
-  ///   of IntType.
+  ///   of <tt>IntType</tt>.
   template<class IntType>
   IntType
   intToString (const std::string& t,
@@ -384,12 +397,187 @@ namespace { // anonymous
       "\"" << t << "\".");
     return val;
   }
+
+  /// Helper function for converting the given \c std::string to a
+  /// real-valued floating-point number of type RealType.
+  ///
+  /// \tparam RealType The real-valued floating-point type of the
+  ///   return value.  We always assume that RealType is default
+  ///   constructible and that <tt>operator>>(std::istream&,
+  ///   RealType&)</tt> is defined.  We also assume that <tt>t !=
+  ///   0</tt> is a well-formed Boolean expression for t of type
+  ///   RealType.
+  ///
+  /// \param t [in] The string to convert.
+  ///
+  /// \param rawConvert [in] If not NULL, this must be one of the
+  ///   following C standard library functions: strtod, strtof, or
+  ///   strtold.  (strtof and strtold require C99 support.)  In that
+  ///   case, we use this function to read the value from the input
+  ///   string.  If NULL, we use <tt>operator>>(std::istream&,
+  ///   RealType&)</tt> to read the value from the string (via
+  ///   std::istringstream).
+  ///
+  /// \param realTypeName [in] Human-readable string which is the name
+  ///   of RealType.
+  template<class RealType>
+  RealType
+  realToString (const std::string& t,
+               RealType (*rawConvert) (const char*, char**),
+               const char* realTypeName)
+  {
+    if (rawConvert == NULL) {
+      std::istringstream in (t);
+      RealType out;
+      in >> out;
+      return out;
+    }
+    else {
+      char* endptr = NULL;
+      // Keep the pointer, because std::string doesn't necessarily
+      // guarantee that this is the same across calls to c_str(), does
+      // it?  Or perhaps it does...
+      const char* t_ptr = t.c_str ();
+      // We preset errno to 0, to distinguish success or failure after
+      // calling strtoull.  Most implementations of the C standard
+      // library written with threads in mind have errno be a macro that
+      // expands to thread-local storage.  Thanks to the Linux
+      // documentation for strtod ("man 3 strtod", Red Hat Enterprise
+      // Linux 5) for advice with the following checks.
+      errno = 0;
+      const RealType val = rawConvert (t_ptr, &endptr);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        errno == ERANGE && (val != 0),
+        std::range_error,
+        "Teuchos::ValueTypeConversionTraits<" << realTypeName
+        << ", std::string>::convert: "
+        "The value in the given string \"" << t << "\" overflows "
+        << realTypeName << ".");
+      //
+      // mfh 20 Nov 2012: Should we treat underflow as an error?
+      //
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        errno == ERANGE && val == 0,
+        std::invalid_argument,
+        "Teuchos::ValueTypeConversionTraits<" << realTypeName
+        << ", std::string>::convert: "
+        "The value in the given string \"" << t << "\" underflows "
+        << realTypeName << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        endptr == t_ptr, // See above discussion of c_str().
+        std::invalid_argument,
+        "Teuchos::ValueTypeConversionTraits<" << realTypeName
+        << ", std::string>::convert: "
+        "The conversion function was unable to read any floating-point data "
+        "from the given string \"" << t << "\".");
+      return val;
+    }
+  }
+
 } // namespace (anonymous)
 
 
 //
 // Standard specializations of ValueTypeConversionTraits
 //
+
+//
+// * Partial specialization for conversion from std::string to any type T.
+//   There are full specializations for specific types T below.
+//
+
+/// \brief Convert an \c std::string to a type \c OutType.
+///
+/// This partial specialization assumes that \c OutType is default
+/// constructible, and that <tt>operator>>(std::istream&,
+/// OutType&)</tt> has been defined.  It does no bounds checking or
+/// other input validation.
+///
+/// If you would like to add input validation for a specific output
+/// type \c OutType, please implement a full specialization.  We
+/// include many different full specializations in this file, so
+/// please check this file first to see if we have already done the
+/// work for you.
+template<class OutType>
+class ValueTypeConversionTraits<OutType, std::string> {
+public:
+  static OutType safeConvert (const std::string& t) {
+    return convert (t);
+  }
+
+  static OutType convert (const std::string& t) {
+    std::istringstream in (t);
+    OutType out;
+    t >> out;
+    return out;
+  }
+};
+
+//
+// * Specializations for conversions from std::string to build-in
+//   real-valued floating-point types.
+//
+
+//! Convert an \c std::string to a \c double.
+template<>
+class ValueTypeConversionTraits<double, std::string> {
+public:
+  static double convert (const std::string& t) {
+    return realToString<double> (t, &strtod, "double");
+  }
+
+  static double safeConvert (const std::string& t) {
+    return realToString<double> (t, &strtod, "double");
+  }
+};
+
+//! Convert an \c std::string to a \c float.
+template<>
+class ValueTypeConversionTraits<float, std::string> {
+public:
+  static float convert (const std::string& t) {
+#ifdef _ISOC99_SOURCE
+    return realToString<float> (t, &strtof, "float");
+#else
+    // strtof is new in C99.  If you don't have it, just use strtod
+    // and convert the resulting double to float.
+    const double d = realToString<double> (t, &strtod, "double");
+    return as<float> (d);
+#endif // _ISOC99_SOURCE
+  }
+
+  static float safeConvert (const std::string& t) {
+#ifdef _ISOC99_SOURCE
+    return realToString<float> (t, &strtof, "float");
+#else
+    // strtof is new in C99.  If you don't have it, just use strtod
+    // and convert the resulting double to float.
+    const double d = realToString<double> (t, &strtod, "double");
+    return asSafe<float> (d);
+#endif // _ISOC99_SOURCE
+  }
+};
+
+//! Convert an \c std::string to a <tt>long double</tt>.
+template<>
+class ValueTypeConversionTraits<long double, std::string> {
+public:
+  static long double convert (const std::string& t) {
+#ifdef _ISOC99_SOURCE
+    return realToString<long double> (t, &strtold, "long double");
+#else
+    // strtof is new in C99.  If you don't have it, just use
+    // operator>>(std::istream&, long double&).
+    return realToString<long double> (t, NULL, "long double");
+#endif // _ISOC99_SOURCE
+  }
+
+  static long double safeConvert (const std::string& t) {
+    return convert (t);
+  }
+};
+
 
 //
 // * Specializations for conversions from std::string to build-in integer types.
@@ -665,6 +853,104 @@ public:
     return as<unsigned short> (safeConvertToUnsignedLong (t));
   }
 };
+
+//
+// * Specializations for conversions between built-in real-valued
+//   floating-point types (like float and double).
+//
+
+//! Convert from \c double to \c float.
+template<>
+class ValueTypeConversionTraits<float, double> {
+public:
+  static float safeConvert (const double t) {
+    // For floating-point types T, std::numeric_limits<T>::min()
+    // returns the smallest positive value.  IEEE 754 types have a
+    // sign bit, so the largest-magnitude negative value is the
+    // negative of the largest-magnitude positive value.
+    const float minVal = -std::numeric_limits<float>::max ();
+    const float maxVal = std::numeric_limits<float>::max ();
+
+    // NaN is neither less than nor greater than anything.  We just
+    // let it pass through, per the rules for propagation of silent
+    // NaN.  (Signaling NaN will signal, but that's OK.)
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > maxVal,
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<float, double>::safeConvert: "
+      "Input double t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to float.");
+
+    return static_cast<float> (t);
+  }
+
+  static float convert (const double t) {
+    return static_cast<float> (t);
+  }
+};
+
+
+//! Convert from <tt>long double</tt> to \c float.
+template<>
+class ValueTypeConversionTraits<float, long double> {
+public:
+  static float safeConvert (const long double t) {
+    // For floating-point types T, std::numeric_limits<T>::min()
+    // returns the smallest positive value.  IEEE 754 types have a
+    // sign bit, so the largest-magnitude negative value is the
+    // negative of the largest-magnitude positive value.
+    const float minVal = -std::numeric_limits<float>::max ();
+    const float maxVal = std::numeric_limits<float>::max ();
+
+    // NaN is neither less than nor greater than anything.  We just
+    // let it pass through, per the rules for propagation of silent
+    // NaN.  (Signaling NaN will signal, but that's OK.)
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > maxVal,
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<float, long double>::safeConvert: "
+      "Input long double t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to float.");
+
+    return static_cast<float> (t);
+  }
+
+  static float convert (const long double t) {
+    return static_cast<float> (t);
+  }
+};
+
+
+//! Convert from <tt>long double</tt> to \c double.
+template<>
+class ValueTypeConversionTraits<double, long double> {
+public:
+  static double safeConvert (const long double t) {
+    // For floating-point types T, std::numeric_limits<T>::min()
+    // returns the smallest positive value.  IEEE 754 types have a
+    // sign bit, so the largest-magnitude negative value is the
+    // negative of the largest-magnitude positive value.
+    const double minVal = -std::numeric_limits<double>::max ();
+    const double maxVal = std::numeric_limits<double>::max ();
+
+    // NaN is neither less than nor greater than anything.  We just
+    // let it pass through, per the rules for propagation of silent
+    // NaN.  (Signaling NaN will signal, but that's OK.)
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > maxVal,
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<double, long double>::safeConvert: "
+      "Input long double t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to double.");
+
+    return static_cast<double> (t);
+  }
+
+  static double convert (const long double t) {
+    return static_cast<double> (t);
+  }
+};
+
 
 //
 // * Specializations for conversions from built-in real-valued
