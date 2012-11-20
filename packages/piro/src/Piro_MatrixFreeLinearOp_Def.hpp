@@ -196,7 +196,7 @@ Piro::MatrixFreeLinearOp<Scalar>::applyImpl(
       }
     } else {
       // Scalar perturbation
-      const ScalarMagnitude eta = relative_pert_ratio * (norm_x_base / magnitude_dx + relative_pert_ratio);
+      const ScalarMagnitude eta = (relative_pert_ratio * (norm_x_base + relative_pert_ratio)) / magnitude_dx;
 
       // Compute perturbed residual
       // Dynamic: f_pert <- f(x_dot_base + eta * (W_alpha * X), x_base + eta * (W_beta * X))
