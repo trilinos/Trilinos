@@ -87,13 +87,13 @@ namespace Teuchos {
  * \ingroup teuchos_language_support_grp
  *
  * \note Users should never call this class directly.  Please use the
- *   <tt>as()</tt> or <tt>asSafe()</tt> template functions.
+ *   as() or asSafe() template functions.
  *
  * \tparam TypeTo The type to which to convert; the output type.
  * \tparam TypeFrom The type from which to convert; the input type.
  *
- * The type conversion functions <tt>as()</tt> and <tt>asSafe()</tt>
- * use this traits class to convert between types.  The default
+ * The type conversion functions as() and asSafe() defined in this
+ * file use this traits class to convert between types.  The default
  * implementation of this class simply does an implicit type
  * conversion.  Syntactically, it expects either that TypeTo have a
  * constructor which takes a single TypeFrom argument, like this:
@@ -113,16 +113,16 @@ namespace Teuchos {
  * Any conversions which are built into C++ and are safe to do will
  * not need a traits class specialization, and should not generate any
  * compiler warnings.  This includes the conversions <tt>float</tt> to
- * <tt>double</tt>, <tt>short type</tt> to <tt>type</tt>,
- * <tt>type</tt> to <tt>long type</tt>, or an enum value to
- * <tt>int</tt> (where <tt>type</tt> may be either <tt>int</tt> or
- * <tt>unsigned int</tt>).
+ * <tt>double</tt>, <tt>short</tt> to <tt>int</tt>, <tt>int</tt> to
+ * <tt>long</tt>, or an enum value to <tt>int</tt>.
  *
  * Any conversion which is not syntactically legal according to the
- * above rules _must_ have a specialization.  There are a number of
- * examples in the header file below, including <tt>qd_real</tt>.
- * Other examples include <tt>std::string</tt> to <tt>int</tt>,
- * <tt>double</tt>, etc.
+ * above rules <i>must</i> have a specialization.  There are a number
+ * of examples in the header file below, including conversions between
+ * <tt>qd_real</tt> and various built-in types for which
+ * <tt>qd_real</tt> does not provide a native conversion operator.
+ * Other examples include <tt>std::string</tt> to <tt>int</tt> or
+ * <tt>double</tt>.
  *
  * Any conversion that <i>is</i> syntactically legal, but could cause
  * compiler warnings and/or result in incorrect behavior at run time
@@ -134,14 +134,14 @@ namespace Teuchos {
  * - <tt>double</tt> to <tt>int</tt>, or between any floating-point
  *   and integer types where overflow is possible
  *
- * If the user (through <tt>as()</tt> or <tt>asSafe()</tt>) requests a
- * conversion for which no specialization of this class exists), then
- * the default implementation below will be instantiated.  If the
- * conversion is not syntactically correct, then the compiler will
- * report a compiler error.  If the conversion is syntactically
- * correct but unsafe, the compiler _may_ report a warning.  In either
- * case, you can fix the error or warning by specializing this class
- * for your combination of types.  There are a number of examples of
+ * If the user (through as() or asSafe()) requests a conversion for
+ * which no specialization of this class exists, then the default
+ * implementation below will be instantiated.  If the conversion is
+ * not syntactically correct, then the compiler will report a compiler
+ * error.  If the conversion is syntactically correct but unsafe, the
+ * compiler <i>may</i> report a warning.  In either case, you can fix
+ * the error or warning by specializing this class for your
+ * combination of types.  There are a number of examples of
  * specializations in this header file, some of which include bounds
  * checking for overflow (for safeConvert()).
  *
@@ -161,7 +161,7 @@ public:
     return t;
   }
 
-  //! Convert t from a TypeFrom object to a TypeTo object, in a more safe way.
+  //! Convert t from a TypeFrom object to a TypeTo object, with checks for validity.
   static TypeTo safeConvert (const TypeFrom t) {
     // This default implementation is just an implicit conversion and
     // may generate compiler warnings on dangerous conversions.  No
@@ -193,20 +193,22 @@ public:
  * there are some double-precision floating-point values that do not
  * fit in a 32-bit integer.  In a release build, this will not check
  * for overflow.  You are responsible for knowing the difference.  If
- * you _always_ want to check for overflow (e.g., to validate user
- * input), use the asSafe() function.  Note that conversion from a
- * floating-point number to an integer, or from a higher-precision
+ * you <i>always</i> want to check for overflow (e.g., to validate
+ * user input), use the asSafe() function.  Note that conversion from
+ * a floating-point number to an integer, or from a higher-precision
  * floating-point number to a lower-precision floating-point number,
- * may truncate or round (as it does in the above example).
+ * may truncate or round (as it does in the above example).  We do
+ * not check for truncation or rounding.
  *
  * "Debug build of Teuchos" means more than just building with debug
  * compiler flags.  It means debug checking was turned on when
  * Trilinos was built.  If you are building Trilinos yourself, you may
- * turn on debug checking by setting the Trilinos_ENABLE_DEBUG CMake
- * configure option to ON (rather than OFF, which is the default).
- * Note that enabling debug checking affects other operations in
- * Teuchos besides this conversion, and may have a significant
- * run-time cost, especially for RCP and ArrayRCP.
+ * turn on debug checking by setting the
+ * <tt>Trilinos_ENABLE_DEBUG</tt> CMake configure option to \c ON
+ * (rather than \c OFF, which is the default).  Note that enabling
+ * debug checking affects other operations in Teuchos besides this
+ * conversion, and may have a significant run-time cost, especially
+ * for RCP and ArrayRCP.
  *
  * \note We cannot promise that converting from a type T1 to another
  *   type T2 and back again will result in the same T1 value with
@@ -216,8 +218,8 @@ public:
  *
  * \section Teuchos_as_Dev Developer documentation
  *
- * This function just uses the traits class ValueTypeConversionTraits
- * to perform the actual conversion.  If debug checking is turned on,
+ * This function uses the traits class ValueTypeConversionTraits to
+ * perform checking and conversion.  If debug checking is turned on,
  * this function uses the traits class' safeConvert() method to
  * perform possibly checked conversion.  Otherwise, it uses the traits
  * class' convert() method for unchecked conversion.
@@ -226,10 +228,10 @@ public:
  * specialize ValueTypeConversionTraits for your combination of input
  * and output types (TypeFrom resp. TypeTo).  Be sure to define the
  * specialization in the Teuchos namespace.  We provide
- * specializations of ValueTypeConversionTraits for a variety of
- * types.  You must define both safeConvert() and convert() in the
- * specialization, since as() will call safeConvert() in a debug build
- * and convert() in a release build.
+ * specializations of ValueTypeConversionTraits in this file for a
+ * variety of types.  You must define both safeConvert() and convert()
+ * in the specialization, since as() will call safeConvert() in a
+ * debug build and convert() in a release build.
  *
  * \note The implementations below do not consider truncation of
  *   floating-point values to be unsafe conversion.  For example,
@@ -277,9 +279,10 @@ inline TypeTo as( const TypeFrom& t )
  *
  * \section Teuchos_asSafe_Dev Developer documentation
  *
- * This function just uses the traits class ValueTypeConversionTraits
- * to perform the actual conversion.  It always uses the traits class'
- * safeConvert() method to perform a possibly checked conversion.
+ * This function uses the traits class ValueTypeConversionTraits to
+ * perform the actual checking and conversion.  It always uses the
+ * traits class' safeConvert() method to perform a possibly checked
+ * conversion.
  *
  * If you want to specialize this function's behavior, you should
  * specialize ValueTypeConversionTraits for your combination of input
@@ -312,10 +315,11 @@ inline TypeTo asSafe( const TypeFrom& t )
 /// function as a first-class object, for example as a function
 /// argument of generic algorithms such as std::transform().  In this
 /// case, you may use this class, which invokes as() in its operator()
-/// method.
+/// method.  The operator() method is templated on the input type
+/// TypeFrom.
 template <class TypeTo>
 class asFunc {
-  public:
+public:
   asFunc() {}
 
   template <class TypeFrom>
