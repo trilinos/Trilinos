@@ -98,7 +98,7 @@ namespace MueLuTests {
 
           // Create a matrix
           {
-            A_ = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99);
+            A_ = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(99);
           }
 
           // Create a Hierarchy

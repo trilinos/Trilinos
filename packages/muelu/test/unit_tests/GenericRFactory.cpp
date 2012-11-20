@@ -238,7 +238,7 @@ namespace MueLuTests {
     for (int i=1; i<5; i++) {
       // generate problem
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-      RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(50*i*comm->getSize());
+      RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(50*i*comm->getSize());
 
       // Multigrid Hierarchy
       Hierarchy H(A);

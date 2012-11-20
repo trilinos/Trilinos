@@ -319,7 +319,7 @@ namespace MueLuTests {
       RCP<SmootherFactory> smooFact = rcp( new SmootherFactory(smooProtoA, smooProtoB) );
 
       Level level; //level.SetupPhase(true);
-      TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+      TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
 
       level.Request("PreSmoother",smooFact.get());
       level.Request("PostSmoother", smooFact.get());
@@ -342,7 +342,7 @@ namespace MueLuTests {
       RCP<SmootherFactory> smooFact = rcp( new SmootherFactory(smooProtoA, smooProtoB) );
 
       Level level; //level.SetupPhase(true);
-      TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+      TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
 
       level.Request("PreSmoother",smooFact.get());
       level.Request("PostSmoother", smooFact.get());
@@ -362,7 +362,7 @@ namespace MueLuTests {
       RCP<SmootherFactory> smooFact = rcp( new SmootherFactory(smooProtoA, smooProtoB) );
 
       Level level; //level.SetupPhase(true);
-      TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+      TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
 
       level.Request("PreSmoother",smooFact.get());
       level.Request("PostSmoother", smooFact.get());

@@ -113,7 +113,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, KeepAggregates)
   out << "version: " << MueLu::Version() << std::endl;
 
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(399*comm->getSize());
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(399*comm->getSize());
 
   Hierarchy H(A);
   H.SetMaxCoarseSize(1);
@@ -140,7 +140,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
 
   //matrix
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Matrix> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
+  RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
   RCP<const Map > map = Op->getRowMap();
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
@@ -172,7 +172,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
 
 #ifdef HAVE_MUELU_IFPACK
 #ifdef HAVE_MUELU_AMESOS
-  RCP<SmootherPrototype> smooProto = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel", 2);
+  RCP<SmootherPrototype> smooProto = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel", 2);
 
   RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
@@ -234,7 +234,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
 
   //matrix
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Matrix> Op = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
+  RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
   RCP<const Map > map = Op->getRowMap();
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
@@ -266,7 +266,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
 
 #ifdef HAVE_MUELU_IFPACK
 #ifdef HAVE_MUELU_AMESOS
-  RCP<SmootherPrototype> smooProto = TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel", 2);
+  RCP<SmootherPrototype> smooProto = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel", 2);
 
   RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
@@ -328,7 +328,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy1level)
     {
 #ifdef HAVE_MUELU_AMESOS2
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
 
   // Multigrid Hierarchy
   Hierarchy H(A);
@@ -373,7 +373,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy2level)
     {
 #ifdef HAVE_MUELU_AMESOS
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
 
   // Multigrid Hierarchy
   Hierarchy H(A);
@@ -437,7 +437,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3level)
   MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
     {
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
 
   // Multigrid Hierarchy
   Hierarchy H(A);
@@ -519,7 +519,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3levelFacManagers)
   MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
     {
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
 
   // Multigrid Hierarchy
   Hierarchy H(A);
@@ -617,7 +617,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchyTestBreakCondition)
   MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
     {
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
 
   // Multigrid Hierarchy
   Hierarchy H(A);
