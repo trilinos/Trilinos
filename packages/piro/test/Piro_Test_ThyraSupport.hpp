@@ -49,6 +49,8 @@
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 
+#include "Thyra_VectorStdOps.hpp"
+
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Tuple.hpp"
 
