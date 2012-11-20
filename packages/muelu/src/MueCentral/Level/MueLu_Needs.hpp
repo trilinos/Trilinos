@@ -47,21 +47,19 @@
 #define MUELU_NEEDS_HPP
 
 #include <string>
-#include <Teuchos_ParameterEntry.hpp>
-#include "MueLu_VariableContainer.hpp"
 
-#include "MueLu_ConfigDefs.hpp"
+#include "MueLu_BoostGraphviz.hpp"
+
+#include <Teuchos_ParameterEntry.hpp>
+
 #include "MueLu_BaseClass.hpp"
 
 #include "MueLu_Exceptions.hpp"
 
 #include "MueLu_TwoKeyMap.hpp"
+#include "MueLu_VariableContainer.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_NoFactory.hpp"
-
-#ifdef HAVE_MUELU_BOOST
-#include "boost/graph/graphviz.hpp"
-#endif
 
 namespace MueLu {
 
