@@ -75,6 +75,14 @@ namespace Xpetra {
 
   void EpetraIntVector::setSeed(unsigned int seed) { XPETRA_MONITOR("EpetraIntVector::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVector::setSeed(): Functionnality not available in Epetra"); }
 
+  Teuchos::RCP< const Vector< int,int,int > > EpetraIntVector::getVector(size_t j) const {
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
+  }
+
+  Teuchos::RCP< Vector< int,int,int > > EpetraIntVector::getVectorNonConst(size_t j) {
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
+  }
+
   Teuchos::ArrayRCP<const int> EpetraIntVector::getData(size_t j) const {
     XPETRA_MONITOR("EpetraIntVector::getData");
 

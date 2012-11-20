@@ -58,6 +58,7 @@
 #include "Xpetra_TpetraExport.hpp"
 
 #include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Vector.hpp"
 
 namespace Xpetra {
 
@@ -73,6 +74,16 @@ namespace Xpetra {
   // forward declaration of TpetraVector, needed to prevent circular inclusions
   template<class S, class LO, class GO, class N> class TpetraVector;
 #endif
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec);
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<const Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec);
+
+  //
+  //
+  //
 
   template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class TpetraMultiVector
@@ -133,6 +144,12 @@ namespace Xpetra {
 
     //! @name Data Copy and View get methods
     //@{
+
+    //! Return a Vector which is a const view of column j.
+    Teuchos::RCP< const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVector(size_t j) const { XPETRA_MONITOR("TpetraMultiVector::getVector"); return toXpetra(vec_->getVector(j)); }
+
+    //! Return a Vector which is a nonconst view of column j.
+    Teuchos::RCP< Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVectorNonConst(size_t j) { XPETRA_MONITOR("TpetraMultiVector::getVectorNonConst"); return toXpetra(vec_->getVectorNonConst(j)); }
 
     //! Const view of the local values in a particular vector of this multivector.
     Teuchos::ArrayRCP< const Scalar > getData(size_t j) const { XPETRA_MONITOR("TpetraMultiVector::getData"); return vec_->getData(j); }

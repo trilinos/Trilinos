@@ -11,6 +11,9 @@ python interfaces.py
 python tpetra.py
 python epetra.py
 
+echo Removing trailing whitespace...
+find ../src -iname "*.?pp" -exec sed -i 's/[ \t]*$//' {} \;
+
 echo Removing tpetra/doc/xml ...
 rm -rf ../../tpetra/doc/xml
 

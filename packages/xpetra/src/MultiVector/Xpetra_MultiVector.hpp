@@ -101,6 +101,12 @@ namespace Xpetra {
     //! @name Data Copy and View get methods
     //@{
 
+    //! Return a Vector which is a const view of column j.
+    virtual Teuchos::RCP< const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVector(size_t j) const = 0;
+
+    //! Return a Vector which is a nonconst view of column j.
+    virtual Teuchos::RCP< Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVectorNonConst(size_t j)= 0;
+
     //! Const view of the local values in a particular vector of this multivector.
     virtual Teuchos::ArrayRCP< const Scalar > getData(size_t j) const = 0;
 
