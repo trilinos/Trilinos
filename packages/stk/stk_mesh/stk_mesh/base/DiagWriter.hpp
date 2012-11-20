@@ -8,18 +8,14 @@
 #include <stk_util/diag/WriterOStream.hpp>
 #include <stk_util/diag/WriterParser.hpp>
 
+#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/DiagWriter_fwd.hpp>
-#include <stk_mesh/base/Part.hpp>
 
 // Note, this classes/functions in this header are for internal use only.
 // The API for tracing is defined in Trace.hpp
 
 namespace stk {
 namespace mesh {
-
-class Part;
-class Entity;
-union EntityKey;
 
 // Must be called before theDiagWriter/meshlog
 void initDiagWriter(std::ostream& stream);

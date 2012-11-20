@@ -18,6 +18,7 @@
 #include <stk_mesh/base/PartRelation.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Trace.hpp>
+#include <stk_mesh/base/Entity.hpp>
 
 #include <stk_mesh/baseImpl/PartImpl.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
@@ -36,7 +37,6 @@ void PartImpl::add_part_to_subset( Part & part)
 
   insert( m_subsets, part );
 }
-
 
 void PartImpl::add_part_to_superset( Part & part )
 {

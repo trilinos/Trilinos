@@ -16,6 +16,10 @@
 #include <mpi.h>
 #endif
 
+#ifdef STK_MESH_TRACE_ENABLED
+#include <stk_util/use_cases/UseCaseEnvironment.hpp>
+#endif
+
 //
 //This file is kind of like a unit-test abstraction layer:
 //A series of STKUNIT_* macros are defined in terms of either
@@ -152,6 +156,8 @@ STKUNIT_ARGV = argv; \
 
 #define STKUNIT_UNIT_TEST(testclass,testmethod) TEST(testclass,testmethod)
 
+#ifndef STK_MESH_TRACE_ENABLED
+
 #define STKUNIT_MAIN(argc,argv)                                    \
 int* STKUNIT_ARGC;                                                 \
 char** STKUNIT_ARGV;                                               \
@@ -170,7 +176,9 @@ int main(int argc, char **argv) {                                  \
   return error;                                                    \
 }
 
-#define STKUNIT_WITH_TRACING_MAIN(argc, argv)                      \
+#else
+
+#define STKUNIT_MAIN(argc, argv)                                   \
 int* STKUNIT_ARGC;                                                 \
 char** STKUNIT_ARGV;                                               \
 int main(int argc, char **argv) {                                  \
@@ -183,6 +191,8 @@ int main(int argc, char **argv) {                                  \
   RUN_TEST_REDUCE(error);                                          \
   return error;                                                    \
 }
+
+#endif
 
 #define STKUNIT_WITH_SIERRA_MAIN(argc,argv,prod)    \
 int main(int argc, char **argv) { \

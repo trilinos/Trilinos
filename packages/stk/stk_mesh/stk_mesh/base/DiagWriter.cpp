@@ -145,7 +145,7 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityKey& key)
 
 stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityProc& entity_proc)
 {
-  return writer << "EntityProc[entity:" << *entity_proc.first << ", proc: " << entity_proc.second << "]";
+  return writer << "EntityProc[entity:" << entity_proc.first << ", proc: " << entity_proc.second << "]";
 }
 
 } // namespace mesh

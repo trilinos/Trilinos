@@ -1111,82 +1111,6 @@ bool Relation::operator < ( const Relation & rhs ) const
   return result ;
 }
 
-namespace impl {
-
-inline
-EntityImpl::EntityImpl( const EntityKey & arg_key )
-  : m_key(arg_key),
-    m_relation(),
-    m_bucket( NULL ),
-    m_bucket_ord(0),
-    m_owner_rank(0),
-    m_sync_count(0),
-    m_mod_log( EntityLogCreated )
-{
-  TraceIfWatching("stk::mesh::impl::EntityImpl::EntityImpl", LOG_ENTITY, arg_key);
-}
-
-inline
-EntityImpl::EntityImpl()
-  : m_key(),
-    m_relation(),
-    m_bucket( NULL ),
-    m_bucket_ord(0),
-    m_owner_rank(0),
-    m_sync_count(0),
-    m_mod_log( EntityLogCreated )
-{
-}
-
-
-inline
-void EntityImpl::set_bucket_and_ordinal( Bucket * in_bucket, unsigned ordinal )
-{
-  TraceIfWatching("stk::mesh::impl::EntityRepository::set_bucket_and_ordinal", LOG_ENTITY, key());
-
-  m_bucket = in_bucket;
-  m_bucket_ord = ordinal;
-}
-
-// return true if entity was actually modified
-inline
-bool EntityImpl::set_owner_rank( unsigned in_owner_rank )
-{
-  TraceIfWatching("stk::mesh::impl::EntityRepository::set_owner_rank", LOG_ENTITY, key());
-
-  if ( in_owner_rank != m_owner_rank ) {
-    m_owner_rank = in_owner_rank;
-    return true;
-  }
-  return false;
-}
-
-inline
-void EntityImpl::set_sync_count( size_t sync_count )
-{
-  TraceIfWatching("stk::mesh::impl::EntityRepository::set_sync_count", LOG_ENTITY, key());
-
-  m_sync_count = sync_count;
-}
-
-inline
-void EntityImpl::log_clear()
-{
-  TraceIfWatching("stk::mesh::impl::EntityRepository::log_clear", LOG_ENTITY, key());
-
-  m_mod_log = EntityLogNoChange;
-}
-
-inline
-void EntityImpl::log_deleted()
-{
-  TraceIfWatching("stk::mesh::impl::EntityRepository::log_deleted", LOG_ENTITY, key());
-
-  m_mod_log = EntityLogDeleted;
-}
-
-}
-
 #ifdef SIERRA_MIGRATION
 
 inline
@@ -1246,7 +1170,6 @@ void Entity::erase_and_clear_if_empty(RelationIterator rel_itr)
   }
 }
 
-
 inline
 bool EntityLess::operator()( const EntityProc & lhs, const EntityProc & rhs) const
 {
@@ -1270,12 +1193,81 @@ bool EntityLess::operator()( const EntityProc & lhs, const EntityKey & rhs) cons
   return lhs_key < rhs ;
 }
 
-
-
 inline
 std::ostream& operator<<(std::ostream& out, Entity entity)
 {
   return out << entity.identifier();
+}
+
+inline
+impl::EntityImpl::EntityImpl( const EntityKey & arg_key )
+  : m_key(arg_key),
+    m_relation(),
+    m_bucket( NULL ),
+    m_bucket_ord(0),
+    m_owner_rank(0),
+    m_sync_count(0),
+    m_mod_log( EntityLogCreated )
+{
+  TraceIfWatching("stk::mesh::impl::EntityImpl::EntityImpl", LOG_ENTITY, arg_key);
+}
+
+inline
+impl::EntityImpl::EntityImpl()
+  : m_key(),
+    m_relation(),
+    m_bucket( NULL ),
+    m_bucket_ord(0),
+    m_owner_rank(0),
+    m_sync_count(0),
+    m_mod_log( EntityLogCreated )
+{
+}
+
+inline
+void impl::EntityImpl::set_bucket_and_ordinal( Bucket * in_bucket, unsigned ordinal )
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::set_bucket_and_ordinal", LOG_ENTITY, key());
+
+  m_bucket = in_bucket;
+  m_bucket_ord = ordinal;
+}
+
+// return true if entity was actually modified
+inline
+bool impl::EntityImpl::set_owner_rank( unsigned in_owner_rank )
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::set_owner_rank", LOG_ENTITY, key());
+
+  if ( in_owner_rank != m_owner_rank ) {
+    m_owner_rank = in_owner_rank;
+    return true;
+  }
+  return false;
+}
+
+inline
+void impl::EntityImpl::set_sync_count( size_t sync_count )
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::set_sync_count", LOG_ENTITY, key());
+
+  m_sync_count = sync_count;
+}
+
+inline
+void impl::EntityImpl::log_clear()
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::log_clear", LOG_ENTITY, key());
+
+  m_mod_log = EntityLogNoChange;
+}
+
+inline
+void impl::EntityImpl::log_deleted()
+{
+  TraceIfWatching("stk::mesh::impl::EntityRepository::log_deleted", LOG_ENTITY, key());
+
+  m_mod_log = EntityLogDeleted;
 }
 
 } // namespace mesh

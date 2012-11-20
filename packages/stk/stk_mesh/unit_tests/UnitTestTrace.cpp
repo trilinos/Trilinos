@@ -12,6 +12,7 @@
 
 #include <stk_mesh/base/Trace.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
+#include <stk_mesh/base/Entity.hpp>
 
 #include <sstream>
 

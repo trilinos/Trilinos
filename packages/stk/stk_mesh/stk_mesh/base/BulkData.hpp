@@ -20,6 +20,7 @@
 #include <stk_mesh/base/Ghosting.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/Trace.hpp>
+#include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityComm.hpp>
 
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
