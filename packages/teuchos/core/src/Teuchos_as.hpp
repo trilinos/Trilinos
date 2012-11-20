@@ -701,7 +701,7 @@ public:
     // for Case 1.  Loss of accuracy (rounding) is possible for Cases
     // 2 and 3, but safeConvert() only cares about overflow, not
     // rounding.  In Case 3, casting minVal or maxVal to double in
-    // this case could result in overflow.  Thus, we only do the cast
+    // this case could result in overflow.  Thus, we only do the test
     // for Case 1.
     //
     // All three cases are legal according to both C++03 and C99.
@@ -709,7 +709,7 @@ public:
     // 3.
     if (sizeof (short) < sizeof (double)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        t < static_cast<double> (minVal) || t > static_cast<double> (maxVal),
+        t < minVal || t > maxVal,
         std::range_error,
         "Teuchos::ValueTypeConversionTraits<short, double>::safeConvert: "
         "Input double t = " << t << " is out of the valid range [" << minVal
@@ -738,7 +738,7 @@ public:
 
     if (sizeof (unsigned short) < sizeof (double)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        t < static_cast<double> (minVal) || t > static_cast<double> (maxVal),
+        t < minVal || t > maxVal,
         std::range_error,
         "Teuchos::ValueTypeConversionTraits<unsigned short, double>::safeConvert: "
         "Input double t = " << t << " is out of the valid range [" << minVal
@@ -746,7 +746,7 @@ public:
     }
     else { // Overflow isn't possible, but t < 0 isn't allowed.
       TEUCHOS_TEST_FOR_EXCEPTION(
-       t < static_cast<double> (minVal),
+       t < minVal,
        std::range_error,
         "Teuchos::ValueTypeConversionTraits<unsigned short, double>::safeConvert: "
         "Input double t = " << t << " is out of the valid range [" << minVal
@@ -790,7 +790,7 @@ public:
     // do the cast for Case 1.
     if (sizeof (int) < sizeof (double)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        t < static_cast<double> (minVal) || t > static_cast<double> (maxVal),
+        t < minVal || t > maxVal,
         std::range_error,
         "Teuchos::ValueTypeConversionTraits<int, double>::safeConvert: "
         "Input double t = " << t << " is out of the valid range [" << minVal
@@ -819,7 +819,7 @@ public:
 
     if (sizeof (unsigned int) < sizeof (double)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        t < static_cast<double> (minVal) || t > static_cast<double> (maxVal),
+        t < minVal || t > maxVal,
         std::range_error,
         "Teuchos::ValueTypeConversionTraits<unsigned int, double>::safeConvert: "
         "Input double t = " << t << " is out of the valid range [" << minVal
@@ -827,7 +827,7 @@ public:
     }
     else { // Overflow isn't possible, but t < 0 isn't allowed.
       TEUCHOS_TEST_FOR_EXCEPTION(
-       t < static_cast<double> (minVal),
+       t < minVal,
        std::range_error,
         "Teuchos::ValueTypeConversionTraits<unsigned int, double>::safeConvert: "
         "Input double t = " << t << " is out of the valid range [" << minVal
@@ -863,8 +863,7 @@ public:
     // for Case 1.  Loss of accuracy (rounding) is possible for Cases
     // 2 and 3, but safeConvert() only cares about overflow, not
     // rounding.  In Case 3, casting minVal or maxVal to double could
-    // result in overflow.  Thus, we only test (doing the cast to
-    // double) for Case 1.
+    // result in overflow.  Thus, we only test for Case 1.
     //
     // Case 1 is entirely possible, for example on Win64 (an
     // implementation of the LLP64 integer model, on which
@@ -872,7 +871,7 @@ public:
     // 8).
     if (sizeof (long) < sizeof (double)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        t < static_cast<double> (minVal) || t > static_cast<double> (maxVal),
+        t < minVal || t > maxVal,
         std::range_error,
         "Teuchos::ValueTypeConversionTraits<long, double>::safeConvert: "
         "Input double t = " << t << " is out of the valid range [" << minVal
@@ -901,7 +900,7 @@ public:
 
     if (sizeof (unsigned long) < sizeof (double)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        t < static_cast<double> (minVal) || t > static_cast<double> (maxVal),
+        t < minVal || t > maxVal,
         std::range_error,
         "Teuchos::ValueTypeConversionTraits<unsigned long, double>::safeConvert: "
         "Input double t = " << t << " is out of the valid range [" << minVal
@@ -909,7 +908,7 @@ public:
     }
     else { // Overflow isn't possible, but t < 0 isn't allowed.
       TEUCHOS_TEST_FOR_EXCEPTION(
-       t < static_cast<double> (minVal),
+       t < minVal,
        std::range_error,
         "Teuchos::ValueTypeConversionTraits<unsigned long, double>::safeConvert: "
         "Input double t = " << t << " is out of the valid range [" << minVal
@@ -974,7 +973,7 @@ public:
     // Thus, we don't need to check the upper bound, though we still
     // need to check if the input is negative.
     TEUCHOS_TEST_FOR_EXCEPTION(
-      t < static_cast<double> (0),
+      t < 0,
       std::range_error,
       "Teuchos::ValueTypeConversionTraits<unsigned long long, double>::safeConvert: "
       "Input double t = " << t << " is negative, which is invalid for conversion to unsigned long long.");
@@ -1013,9 +1012,9 @@ public:
     // Overflow when converting from float to short is possible only
     // for Case 1.  Loss of accuracy (rounding) is possible for Cases
     // 2 and 3, but safeConvert() only cares about overflow, not
-    // rounding.  In Case 3, casting minVal or maxVal to float in
-    // this case could result in overflow.  Thus, we only do the cast
-    // for Case 1.
+    // rounding.  In Case 3, casting minVal or maxVal to float in this
+    // case could result in overflow.  Thus, we only do the test for
+    // Case 1.
     //
     // All three cases are legal according to both C++03 and C99.  I
     // (mfh 15 Nov 2012) think Case 1 is the most common, but Case 2
@@ -1024,12 +1023,13 @@ public:
     // size a multiple of 4 bytes.)
     if (sizeof (short) < sizeof (float)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        t < static_cast<float> (minVal) || t > static_cast<float> (maxVal),
+        t < minVal || t > maxVal,
         std::range_error,
         "Teuchos::ValueTypeConversionTraits<short, float>::safeConvert: "
         "Input float t = " << t << " is out of the valid range [" << minVal
         << ", " << maxVal << "] for conversion to short.");
     }
+
     return static_cast<short> (t);
   }
 };
@@ -1053,7 +1053,7 @@ public:
 
     if (sizeof (unsigned short) < sizeof (float)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        t < static_cast<float> (minVal) || t > static_cast<float> (maxVal),
+        t < minVal || t > maxVal,
         std::range_error,
         "Teuchos::ValueTypeConversionTraits<unsigned short, float>::safeConvert: "
         "Input float t = " << t << " is out of the valid range [" << minVal
@@ -1101,10 +1101,10 @@ public:
     // rounding.  Case 3 is rare, but casting minVal or maxVal to
     // float in this case could result in loss of accuracy
     // (sizeof(int) == 8 or 16) or overflow (sizeof(int) > 16).  Thus,
-    // we only do the cast for Case 1.
+    // we only do the test for Case 1.
     if (sizeof (unsigned int) < sizeof (float)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        t < static_cast<float> (minVal) || t > static_cast<float> (maxVal),
+        t < minVal || t > maxVal,
         std::range_error,
         "Teuchos::ValueTypeConversionTraits<int, float>::safeConvert: "
         "Input float t = " << t << " is out of the valid range ["
@@ -1133,7 +1133,7 @@ public:
 
     if (sizeof (unsigned int) < sizeof (float)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        t < static_cast<float> (minVal) || t > static_cast<float> (maxVal),
+        t < minVal || t > maxVal,
         std::range_error,
         "Teuchos::ValueTypeConversionTraits<unsigned int, float>::safeConvert: "
         "Input float t = " << t << " is out of the valid range [" << minVal
@@ -1141,7 +1141,7 @@ public:
     }
     else { // Overflow isn't possible, but t < 0 isn't allowed.
       TEUCHOS_TEST_FOR_EXCEPTION(
-       t < static_cast<float> (minVal),
+       t < minVal,
        std::range_error,
         "Teuchos::ValueTypeConversionTraits<unsigned int, float>::safeConvert: "
         "Input double t = " << t << " is out of the valid range [" << minVal
@@ -1190,7 +1190,7 @@ public:
     // GNU/Linux and other operating systems).
     if (sizeof (long) < sizeof (float)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        t < static_cast<float> (minVal) || t > static_cast<float> (maxVal),
+        t < minVal || t > maxVal,
         std::range_error,
         "Teuchos::ValueTypeConversionTraits<long, float>::safeConvert: "
         "Input float t = " << t << " is out of the valid range ["
@@ -1217,22 +1217,16 @@ public:
     const unsigned long minVal = 0; // Had better be, since it's unsigned.
     const unsigned long maxVal = std::numeric_limits<unsigned long>::max ();
 
-    if (sizeof (unsigned long) < sizeof (float)) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        t < static_cast<float> (minVal) || t > static_cast<float> (maxVal),
-        std::range_error,
-        "Teuchos::ValueTypeConversionTraits<unsigned long, float>::safeConvert: "
-        "Input float t = " << t << " is out of the valid range [" << minVal
-        << ", " << maxVal << "] for conversion to unsigned long.");
-    }
-    else { // Overflow isn't possible, but t < 0 isn't allowed.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-       t < static_cast<float> (minVal),
-       std::range_error,
-        "Teuchos::ValueTypeConversionTraits<unsigned long, float>::safeConvert: "
-        "Input float t = " << t << " is out of the valid range [" << minVal
-        << ", " << maxVal << "] for conversion to unsigned long.");
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > maxVal,
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<unsigned long, float>::safeConvert: "
+      << std::endl
+      << "Input float t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to unsigned long.  "
+      << std:: endl
+      << "(Remember that unsigned types cannot represent negative values.)");
+
     return static_cast<unsigned long> (t);
   }
 };
@@ -1273,7 +1267,7 @@ public:
     // we still forbid negative inputs, since the target type is
     // unsigned.
     TEUCHOS_TEST_FOR_EXCEPTION(
-      t < static_cast<float> (0),
+      t < 0,
       std::range_error,
       "Teuchos::ValueTypeConversionTraits<unsigned long long, float>::safeConvert: "
       "Input float t = " << t << " is negative, which is invalid for conversion to unsigned long long.");
@@ -1319,7 +1313,7 @@ public:
     // whether the cast turned a positive number negative.
     const SignedIntType signedVal = static_cast<SignedIntType> (t);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      signedVal < static_cast<SignedIntType> (0),
+      signedVal < 0,
       std::range_error,
       "Teuchos::ValueTypeConversionTraits<" << TypeNameTraits<SignedIntType>::name ()
       << ", " << TypeNameTraits<UnsignedIntType>::name () << ">::safeConvert: "
@@ -1962,12 +1956,17 @@ public:
     const float minFloat = -std::numeric_limits<float>::max ();
     const float maxFloat = std::numeric_limits<float>::max ();
 
-    // FIXME (mfh 14 Nov 2012) This only works if sizeof(long long) >
-    // sizeof(float).  It is on all platforms I've encountered, but
-    // that still doesn't make this code correct.
+    // mfh 16 Nov 2012: On my platform (gcc 4.7.2, Red Hat Linux 5,
+    // Intel x86_64), first casting [minFloat,maxFloat] to long long
+    // (so that the comparison only compares long long values)
+    // gives different results in the comparison below than just
+    // comparing t (as a long long) with minFloat and maxFloat.  It
+    // doesn't matter whether you use static_cast<long long> (...) or
+    // (long long) (...) to do the cast: the original float interval
+    // of [-3.40282e+38, 3.40282e+38] becomes [-9223372036854775808,
+    // -9223372036854775808], which is obviously wrong.
     TEUCHOS_TEST_FOR_EXCEPTION(
-      t < static_cast<long long> (minFloat) ||
-      t > static_cast<long long> (maxFloat),
+      t < minFloat || t > maxFloat,
       std::range_error,
       "Teuchos::ValueTypeConversionTraits<float, long long>::safeConvert: "
       "Input long long t = " << t << " is out of the valid range [" << minFloat
@@ -2007,11 +2006,11 @@ public:
 
     // t >= 0 by definition, because it is unsigned.
     //
-    // FIXME (mfh 14 Nov 2012) This only works if sizeof(long long) >
-    // sizeof(float).  It is on all platforms I've encountered, but
-    // that still doesn't make this code correct.
+    // mfh 16 Nov 2012: See my note above on the <float, long long>
+    // specialization that explains why I don't cast maxFloat to
+    // unsigned long long here.
     TEUCHOS_TEST_FOR_EXCEPTION(
-      t > static_cast<unsigned long long> (maxFloat),
+      t > maxFloat,
       std::invalid_argument,
       "Teuchos::ValueTypeConversionTraits<float, unsigned long long>::safeConvert: "
       "Input unsigned long long t = " << t << " is out of the valid range [" << minFloat
@@ -2088,8 +2087,11 @@ public:
     // values can change sign just by flipping the sign bit, so the
     // "most negative" finite float is just the negative of the "most
     // positive" finite float.
-    const qd_real minVal = -std::numeric_limits<float>::max ();
-    const qd_real maxVal = std::numeric_limits<float>::max ();
+    //
+    // qd_real has a constructor for double, but not for float,
+    // so we cast to double first.
+    const qd_real minVal = static_cast<double> (-std::numeric_limits<float>::max ());
+    const qd_real maxVal = static_cast<double> (std::numeric_limits<float>::max ());
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       t < minVal || t > maxVal,
@@ -2111,6 +2113,7 @@ public:
     return to_int (t);
   }
   static int safeConvert (const qd_real t) {
+    // qd_real has a constructor for int.
     const qd_real minVal = std::numeric_limits<int>::min ();
     const qd_real maxVal = std::numeric_limits<int>::max ();
 
@@ -2139,6 +2142,8 @@ public:
     // sign just by flipping the sign bit, so the "most negative"
     // finite dd_real is just the negative of the "most positive"
     // finite dd_real.
+    //
+    // qd_real has a constructor for dd_real.
     const qd_real minVal = -std::numeric_limits<dd_real>::max ();
     const qd_real maxVal = std::numeric_limits<dd_real>::max ();
 
@@ -2166,6 +2171,8 @@ public:
     // values can change sign just by flipping the sign bit, so the
     // "most negative" finite double is just the negative of the "most
     // positive" finite double.
+    //
+    // qd_real has a constructor for double.
     const dd_real minVal = -std::numeric_limits<double>::max ();
     const dd_real maxVal = std::numeric_limits<double>::max ();
 
@@ -2194,8 +2201,11 @@ public:
     // values can change sign just by flipping the sign bit, so the
     // "most negative" finite float is just the negative of the "most
     // positive" finite float.
-    const dd_real minVal = -std::numeric_limits<float>::max ();
-    const dd_real maxVal = std::numeric_limits<float>::max ();
+    //
+    // dd_real has a constructor for double but not for float,
+    // so we cast to double first.
+    const dd_real minVal = static_cast<double> (-std::numeric_limits<float>::max ());
+    const dd_real maxVal = static_cast<double> (std::numeric_limits<float>::max ());
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       t < minVal || t > maxVal,
@@ -2217,6 +2227,7 @@ public:
     return to_int (t);
   }
   static int safeConvert (const dd_real t) {
+    // dd_real has a constructor for int.
     const dd_real minVal = std::numeric_limits<int>::min ();
     const dd_real maxVal = std::numeric_limits<int>::max ();
 
