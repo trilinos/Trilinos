@@ -12,6 +12,8 @@
 
 #include <stk_mesh/fixtures/SelectorFixture.hpp>
 
+#ifdef USE_STK_MESH_IMPL_PARTITION
+
 namespace {
 
 using stk::mesh::fixtures::SelectorFixture ;
@@ -795,3 +797,6 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveToBetter)
         check_test_partition_invariant(fix, partition);
     }
 }
+
+#endif
+

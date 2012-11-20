@@ -242,7 +242,7 @@ void Partition::compress(bool force)
     if (!force && (empty() || !m_updated_since_compress))
         return;
 
-    if (m_buckets.size() <= 1)
+    if (!force && (m_buckets.size() <= 1))
     {
         return;
     }
