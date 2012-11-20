@@ -97,28 +97,29 @@ namespace MueLu {
     for (int i = 0; i < m; i++) {
       Scalar rayleigh = br[i] / bb[i];
 
-      if (rayleigh < 1e-12)
+      if (Teuchos::ScalarTraits<Scalar>::magnitude(rayleigh) < 1e-12)
         selectedIndices.push_back(i);
     }
     this->GetOStream(Runtime0, 0) << "Coarse level orth indices: " << selectedIndices << std::endl;
 
-#ifdef HAVE_MUELU_TPETRA && HAVE_XPETRA_TPETRA
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_XPETRA_TPETRA)
     // Orthonormalize
     RCP<const Tpetra::MultiVector<SC,LO,GO,NO> > B_ = Utils::MV2TpetraMV(B);
     RCP<Tpetra::MultiVector<SC,LO,GO,NO> > Borth = B_->subCopy(selectedIndices);               // copy
     for (int i = 0; i < selectedIndices.size(); i++) {
       RCP<Tpetra::Vector<SC,LO,GO,NO> > Bi = Borth->getVectorNonConst(i);
 
-      Teuchos::Array<Scalar> dot(1);
+      Scalar dot;
+      typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm;
       for (int k = 0; k < i; k++) {                                     // orthogonalize
         RCP<const Tpetra::Vector<SC,LO,GO,NO> > Bk = Borth->getVector(k);
 
-        Bi->dot(*Bk, dot);
-        Bi->update(-dot[0], *Bk, Teuchos::ScalarTraits<Scalar>::one());
+        dot = Bi->dot(*Bk);
+        Bi->update(-dot, *Bk, Teuchos::ScalarTraits<Scalar>::one());
       }
 
-      Bi->norm2(dot);
-      Bi->scale(Teuchos::ScalarTraits<Scalar>::one()/dot[0]);           // normalize
+      norm = Bi->norm2();
+      Bi->scale(Teuchos::ScalarTraits<Scalar>::one()/norm);           // normalize
     }
 
     Borth_ = rcp(static_cast<MultiVector*>(new TpetraMultiVector(Borth)));
@@ -132,7 +133,7 @@ namespace MueLu {
   {
     coarseSolver_->Apply(X, B, InitialGuessIsZero);
 
-#ifdef HAVE_MUELU_TPETRA && HAVE_XPETRA_TPETRA
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_XPETRA_TPETRA)
     int m = Borth_->getNumVectors();
     int n = X.getNumVectors();
 
