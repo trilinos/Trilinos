@@ -118,14 +118,14 @@ namespace {
     // for the list of valid send types, but setOption() needs a const
     // char[], not an std::string.
     clp.setOption ("distributor-send-type", &distributorSendType,
-		   "In MPI tests, the type of send operation that the Tpetra::"
-		   "Distributor will use.  Valid values include \"Isend\", "
-		   "\"Rsend\", \"Send\", and \"Ssend\".");
+                   "In MPI tests, the type of send operation that the Tpetra::"
+                   "Distributor will use.  Valid values include \"Isend\", "
+                   "\"Rsend\", \"Send\", and \"Ssend\".");
     clp.setOption ("barrier-between", "no-barrier-between", &barrierBetween,
-		   "In MPI tests, whether Tpetra::Distributor will execute a "
-		   "barrier between posting receives and posting sends.");
+                   "In MPI tests, whether Tpetra::Distributor will execute a "
+                   "barrier between posting receives and posting sends.");
     clp.setOption ("verbose", "quiet", &verbose, "Whether to print verbose "
-		   "output.");
+                   "output.");
   }
 
   RCP<const Comm<int> > 
@@ -149,12 +149,12 @@ namespace {
       plist->set ("Barrier between receives and sends", barrierBetween);
 
       if (verbose && getDefaultComm()->getRank() == 0) {
-	cout << "ParameterList for Distributor: " << *plist << endl;
+        cout << "ParameterList for Distributor: " << *plist << endl;
       }
 
       if (verbose) {
-	// Tell Distributor to print verbose output.
-	Teuchos::VerboseObject<Tpetra::Distributor>::setDefaultVerbLevel (Teuchos::VERB_EXTREME);
+        // Tell Distributor to print verbose output.
+        Teuchos::VerboseObject<Tpetra::Distributor>::setDefaultVerbLevel (Teuchos::VERB_EXTREME);
       }
     }
     return plist;
@@ -176,7 +176,7 @@ namespace {
       plist->set ("Export", * (getExportParameterList ()));
 
       if (verbose && getDefaultComm()->getRank() == 0) {
-	cout << "ParameterList for CrsGraph: " << *plist << endl;
+        cout << "ParameterList for CrsGraph: " << *plist << endl;
       }
     }
     return plist;
@@ -220,31 +220,31 @@ namespace {
     {
       const int tgt_num_local_elements = 3;
       const int src_num_local_elements = 
-	(myImageID == 0 ? numImages*tgt_num_local_elements : 0);
+        (myImageID == 0 ? numImages*tgt_num_local_elements : 0);
 
       // create Maps
       if (doPrint) {
-	out << "Creating source and target Maps" << endl;
+        out << "Creating source and target Maps" << endl;
       }
       RCP<const Map<Ordinal> > src_map = 
-	createContigMap<Ordinal,Ordinal> (INVALID, src_num_local_elements, comm);
+        createContigMap<Ordinal,Ordinal> (INVALID, src_num_local_elements, comm);
       RCP<const Map<Ordinal> > tgt_map =
-	createContigMap<Ordinal,Ordinal> (INVALID, tgt_num_local_elements, comm);
+        createContigMap<Ordinal,Ordinal> (INVALID, tgt_num_local_elements, comm);
 
       // create CrsGraph objects
       if (doPrint) {
-	out << "Creating source and target CrsGraphs" << endl;
+        out << "Creating source and target CrsGraphs" << endl;
       }
       RCP<CrsGraph<Ordinal> > src_graph = 
-	rcp (new CrsGraph<Ordinal>(src_map, 1, DynamicProfile, 
-				   getCrsGraphParameterList ()));
+        rcp (new CrsGraph<Ordinal>(src_map, 1, DynamicProfile, 
+                                   getCrsGraphParameterList ()));
       RCP<CrsGraph<Ordinal> > tgt_graph = 
-	rcp (new CrsGraph<Ordinal>(tgt_map, 1, DynamicProfile, 
-				   getCrsGraphParameterList ()));
+        rcp (new CrsGraph<Ordinal>(tgt_map, 1, DynamicProfile, 
+                                   getCrsGraphParameterList ()));
 
       // Create a simple diagonal source graph.
       if (doPrint) {
-	out << "Filling source CrsGraph" << endl;
+        out << "Filling source CrsGraph" << endl;
       }
       Array<Ordinal> diag(1);
       Ordinal row = 0;
@@ -256,7 +256,7 @@ namespace {
 
       // Import from the source graph to the target graph.
       if (doPrint) {
-	out << "Importing from source to target CrsGraph" << endl;
+        out << "Importing from source to target CrsGraph" << endl;
       }
       Import<Ordinal> importer (src_map, tgt_map, getImportParameterList ());
       tgt_graph->doImport (*src_graph, importer, INSERT);
@@ -264,7 +264,7 @@ namespace {
 
       // Loop through the target graph and make sure it is diagonal.
       if (doPrint) {
-	out << "Verifying target CrsGraph" << endl;
+        out << "Verifying target CrsGraph" << endl;
       }
       row = 0;
       for (size_t i = 0; i < tgt_map->getNodeNumElements (); ++i, ++row) {
@@ -285,28 +285,28 @@ namespace {
       // process.
       Ordinal src_num_local = 5;
       if (myImageID % 2 == 0) {
-	src_num_local = 3;
+        src_num_local = 3;
       }
       Ordinal tgt_num_local = 4;
 
       RCP<const Map<Ordinal> > src_map = 
-	createContigMap<Ordinal,Ordinal> (INVALID, src_num_local, comm);
+        createContigMap<Ordinal,Ordinal> (INVALID, src_num_local, comm);
       RCP<const Map<Ordinal> > tgt_map = 
-	createContigMap<Ordinal,Ordinal> (INVALID, tgt_num_local, comm);  
+        createContigMap<Ordinal,Ordinal> (INVALID, tgt_num_local, comm);  
 
       RCP<CrsGraph<Ordinal> > src_graph = 
-	rcp (new CrsGraph<Ordinal> (src_map, 24, DynamicProfile, 
-				    getCrsGraphParameterList ()));
+        rcp (new CrsGraph<Ordinal> (src_map, 24, DynamicProfile, 
+                                    getCrsGraphParameterList ()));
       RCP<CrsGraph<Ordinal> > tgt_graph = 
-	rcp (new CrsGraph<Ordinal> (tgt_map, 24, DynamicProfile, 
-				    getCrsGraphParameterList ()));
+        rcp (new CrsGraph<Ordinal> (tgt_map, 24, DynamicProfile, 
+                                    getCrsGraphParameterList ()));
 
       // This time make src_graph be a full lower-triangular graph.
       // Each row of column indices will have length 'globalrow'+1,
       // and contain column indices 0 .. 'globalrow'.
       Array<Ordinal> cols(1);
       for (Ordinal globalrow = src_map->getMinGlobalIndex ();
-	   globalrow <= src_map->getMaxGlobalIndex (); ++globalrow) {
+           globalrow <= src_map->getMaxGlobalIndex (); ++globalrow) {
         cols.resize(globalrow+1);
         for (Ordinal col = 0; col < globalrow+1; ++col) {
           cols[col] = col;
@@ -325,8 +325,8 @@ namespace {
       RCP<const Map<Ordinal> > colmap = tgt_graph->getColMap ();
 
       for (Ordinal globalrow = tgt_map->getMinGlobalIndex (); 
-	   globalrow <= tgt_map->getMaxGlobalIndex (); 
-	   ++globalrow) {
+           globalrow <= tgt_map->getMaxGlobalIndex (); 
+           ++globalrow) {
         Ordinal localrow = tgt_map->getLocalElement (globalrow);
         ArrayView<const Ordinal> rowview; 
         tgt_graph->getLocalRowView (localrow, rowview);
@@ -361,29 +361,29 @@ namespace {
     {
       const Ordinal tgt_num_local_elements = 3;
       const Ordinal src_num_local_elements = 
-	(myImageID == 0) ? numImages*tgt_num_local_elements : 0;
+        (myImageID == 0) ? numImages*tgt_num_local_elements : 0;
 
       // Create Maps.
       RCP<const Map<Ordinal> > src_map = 
-	createContigMap<Ordinal,Ordinal> (INVALID,src_num_local_elements,comm);
+        createContigMap<Ordinal,Ordinal> (INVALID,src_num_local_elements,comm);
       RCP<const Map<Ordinal> > tgt_map = 
-	createContigMap<Ordinal,Ordinal> (INVALID,tgt_num_local_elements,comm);
+        createContigMap<Ordinal,Ordinal> (INVALID,tgt_num_local_elements,comm);
 
       // Create CrsMatrix objects.
       RCP<CrsMatrix<Scalar,Ordinal> > src_mat = 
-	rcp (new CrsMatrix<Scalar,Ordinal> (src_map, 1, StaticProfile, 
-					    crsMatPlist));
+        rcp (new CrsMatrix<Scalar,Ordinal> (src_map, 1, StaticProfile, 
+                                            crsMatPlist));
       RCP<CrsMatrix<Scalar,Ordinal> > tgt_mat = 
-	rcp (new CrsMatrix<Scalar,Ordinal> (tgt_map, 1, StaticProfile, 
-					    crsMatPlist));
+        rcp (new CrsMatrix<Scalar,Ordinal> (tgt_map, 1, StaticProfile, 
+                                            crsMatPlist));
 
       // Create a simple diagonal source graph.
       for (Ordinal globalrow = src_map->getMinGlobalIndex(); 
-	   globalrow <= src_map->getMaxGlobalIndex(); 
-	   ++globalrow) {
+           globalrow <= src_map->getMaxGlobalIndex(); 
+           ++globalrow) {
         src_mat->insertGlobalValues (globalrow, 
-				     tuple<Ordinal> (globalrow), 
-				     tuple<Scalar> (globalrow));
+                                     tuple<Ordinal> (globalrow), 
+                                     tuple<Scalar> (globalrow));
       }
       src_mat->fillComplete ();
 
@@ -395,8 +395,8 @@ namespace {
 
       // Loop through tgt_mat and make sure it is diagonal.
       for (Ordinal localrow = tgt_map->getMinLocalIndex(); 
-	   localrow <= tgt_map->getMaxLocalIndex(); 
-	   ++localrow) 
+           localrow <= tgt_map->getMaxLocalIndex(); 
+           ++localrow) 
       {
         ArrayView<const Ordinal> rowinds;
         ArrayView<const Scalar>  rowvals;
@@ -412,10 +412,10 @@ namespace {
       // should equal tgt_mat.
       typedef CrsMatrix<Scalar, Ordinal> crs_type;
       RCP<crs_type> A_tgt2 = 
-	Tpetra::importAndFillCompleteCrsMatrix<crs_type> (src_mat, importer, 
-							  Teuchos::null, 
-							  Teuchos::null,
-							  crsMatPlist);
+        Tpetra::importAndFillCompleteCrsMatrix<crs_type> (src_mat, importer, 
+                                                          Teuchos::null, 
+                                                          Teuchos::null,
+                                                          crsMatPlist);
 
       // Make sure that A_tgt2's row Map is the same as tgt_map, and
       // is also the same as the Import's targetMap.  They should have
@@ -423,9 +423,9 @@ namespace {
       // also in the sense of pointer equality.  (A Map isSameAs
       // itself, so we only need to test for pointer equality.)
       TEST_EQUALITY(A_tgt2->getRowMap ().getRawPtr (), 
-		    tgt_map.getRawPtr ());
+                    tgt_map.getRawPtr ());
       TEST_EQUALITY(A_tgt2->getRowMap ().getRawPtr (), 
-		    importer.getTargetMap ().getRawPtr ());
+                    importer.getTargetMap ().getRawPtr ());
 
       // Loop through A_tgt2 and make sure each row has the same
       // entries as tgt_mat.  In the fully general case, the
@@ -438,49 +438,49 @@ namespace {
       // can't get inside the Import to see which values it's adding
       // together, so we make a rough guess.
       const magnitude_type tol = 
-	as<magnitude_type> (10) * ScalarTraits<magnitude_type>::eps ();
+          as<magnitude_type> (10) * ScalarTraits<magnitude_type>::eps ();
 
       Array<Ordinal> tgtRowInds;
       Array<Scalar>  tgtRowVals;
       Array<Ordinal> tgt2RowInds;
       Array<Scalar>  tgt2RowVals;
       for (Ordinal localrow = tgt_map->getMinLocalIndex(); 
-	   localrow <= tgt_map->getMaxLocalIndex(); 
-	   ++localrow) 
+           localrow <= tgt_map->getMaxLocalIndex(); 
+           ++localrow) 
       {
-	size_t tgtNumEntries = tgt_mat->getNumEntriesInLocalRow (localrow);
-	size_t tgt2NumEntries = tgt_mat->getNumEntriesInLocalRow (localrow);
+        size_t tgtNumEntries = tgt_mat->getNumEntriesInLocalRow (localrow);
+        size_t tgt2NumEntries = tgt_mat->getNumEntriesInLocalRow (localrow);
 
-	// Same number of entries in each row?
-	TEST_EQUALITY(tgtNumEntries, tgt2NumEntries);
+        // Same number of entries in each row?
+        TEST_EQUALITY(tgtNumEntries, tgt2NumEntries);
 
-	if (tgtNumEntries > as<size_t> (tgtRowInds.size ())) {
-	  tgtRowInds.resize (tgtNumEntries);
-	  tgtRowVals.resize (tgtNumEntries);
-	}
-	if (tgt2NumEntries > as<size_t> (tgt2RowInds.size ())) {
-	  tgt2RowInds.resize (tgt2NumEntries);
-	  tgt2RowVals.resize (tgt2NumEntries);
-	}
+        if (tgtNumEntries > as<size_t> (tgtRowInds.size ())) {
+          tgtRowInds.resize (tgtNumEntries);
+          tgtRowVals.resize (tgtNumEntries);
+        }
+        if (tgt2NumEntries > as<size_t> (tgt2RowInds.size ())) {
+          tgt2RowInds.resize (tgt2NumEntries);
+          tgt2RowVals.resize (tgt2NumEntries);
+        }
         tgt_mat->getLocalRowCopy (localrow, tgtRowInds(), tgtRowVals(), tgtNumEntries);
         A_tgt2->getLocalRowCopy (localrow, tgt2RowInds(), tgt2RowVals(), tgt2NumEntries);
 
-	// Entries should be sorted, but let's sort them by column
-	// index just in case.  This is why we got a row copy instead
-	// of a row view.
-	Tpetra::sort2 (tgtRowInds.begin(), tgtRowInds.end(), tgtRowVals.begin());
-	Tpetra::sort2 (tgt2RowInds.begin(), tgt2RowInds.end(), tgt2RowVals.begin());
+        // Entries should be sorted, but let's sort them by column
+        // index just in case.  This is why we got a row copy instead
+        // of a row view.
+        Tpetra::sort2 (tgtRowInds.begin(), tgtRowInds.end(), tgtRowVals.begin());
+        Tpetra::sort2 (tgt2RowInds.begin(), tgt2RowInds.end(), tgt2RowVals.begin());
 
-	// Now that the entries are sorted, compare to make sure they
-	// have the same column indices and values.  In the fully
-	// general case, the redistribution may have added together
-	// values, resulting in small rounding errors.
-	typedef typename Array<Scalar>::size_type size_type;
-	for (size_type k = 0; k < as<size_type> (tgtNumEntries); ++k) {
+        // Now that the entries are sorted, compare to make sure they
+        // have the same column indices and values.  In the fully
+        // general case, the redistribution may have added together
+        // values, resulting in small rounding errors.
+        typedef typename Array<Scalar>::size_type size_type;
+        for (size_type k = 0; k < as<size_type> (tgtNumEntries); ++k) {
           TEST_EQUALITY(tgtRowInds[k], tgt2RowInds[k]);
-	  // The "out" and "success" variables should have been
-	  // automatically defined by the unit test framework, in case
-	  // you're wondering where they came from.
+          // The "out" and "success" variables should have been
+          // automatically defined by the unit test framework, in case
+          // you're wondering where they came from.
           TEUCHOS_TEST_FLOATING_EQUALITY(tgtRowVals[k], tgt2RowVals[k], tol, out, success);
         } // for each entry in the current row
       } // for each row in the matrix
@@ -498,14 +498,14 @@ namespace {
       const Ordinal tgt_num_local = 4;
 
       RCP<const Map<Ordinal> > src_map = 
-	createContigMap<Ordinal,Ordinal> (INVALID, src_num_local, comm);
+        createContigMap<Ordinal,Ordinal> (INVALID, src_num_local, comm);
       RCP<const Map<Ordinal> > tgt_map = 
-	createContigMap<Ordinal,Ordinal> (INVALID, tgt_num_local, comm);
+        createContigMap<Ordinal,Ordinal> (INVALID, tgt_num_local, comm);
 
       RCP<CrsMatrix<Scalar,Ordinal> > src_mat = 
-	rcp (new CrsMatrix<Scalar,Ordinal> (src_map, 24, DynamicProfile, crsMatPlist));
+        rcp (new CrsMatrix<Scalar,Ordinal> (src_map, 24, DynamicProfile, crsMatPlist));
       RCP<CrsMatrix<Scalar,Ordinal> > tgt_mat = 
-	rcp (new CrsMatrix<Scalar,Ordinal> (tgt_map, 24, DynamicProfile, crsMatPlist));
+        rcp (new CrsMatrix<Scalar,Ordinal> (tgt_map, 24, DynamicProfile, crsMatPlist));
 
       // This time make src_mat a full lower-triangular matrix.  Each
       // row of column-indices will have length 'globalrow', and
@@ -513,8 +513,8 @@ namespace {
       Array<Ordinal> cols(1);
       Array<Scalar>  vals(1);
       for (Ordinal globalrow = src_map->getMinGlobalIndex(); 
-	   globalrow <= src_map->getMaxGlobalIndex(); 
-	   ++globalrow) {
+           globalrow <= src_map->getMaxGlobalIndex(); 
+           ++globalrow) {
         if (globalrow > 0) {
           cols.resize(globalrow);
           vals.resize(globalrow);
