@@ -438,7 +438,7 @@ namespace {
       // can't get inside the Import to see which values it's adding
       // together, so we make a rough guess.
       const magnitude_type tol = 
-	as<Scalar> (10) * ScalarTraits<magnitude_type>::eps ();
+	as<magnitude_type> (10) * ScalarTraits<magnitude_type>::eps ();
 
       Array<Ordinal> tgtRowInds;
       Array<Scalar>  tgtRowVals;
