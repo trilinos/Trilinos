@@ -64,7 +64,7 @@
    6. S. A. Mitchell, A. Rand, M. S. Ebeida and C. Bajaj, "Variable radii 
       Poisson-disk sampling", 24th Canadian Conference on Computational Geometry
 	  (CCCG'12), Charlottetown, August 2012.
- * Last modified: 10/15/2012
+ * Last modified: 11/21/2012
 ********************************************************************************/
 
 #include "MeshingGenie_defs.h"

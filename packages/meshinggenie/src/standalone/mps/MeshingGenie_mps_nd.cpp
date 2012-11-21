@@ -54,7 +54,7 @@
  * The Random Number Generator is provided by George Marsaglia available at
    http://www.velocityreviews.com/forums/t720512-re-rngs-a-double-kiss.html
 
- * Last modified: 11/16/2012
+ * Last modified: 11/21/2012
 ********************************************************************************/
 
 // Todo List:
