@@ -88,6 +88,8 @@ namespace {
   static std::string interpolationBufferSettings_name = "Interpolation Buffer Settings";
   static std::string interpolationBufferSelection_name = "Trailing Interpolation Buffer Selection";
   static std::string interpolationBufferAppenderSelection_name = "Interpolation Buffer Appender Selection";
+  static std::string initialTime_name = "Initial Time";
+  static int initialTime_default = 0; // Should be Scalar(0.0)
   static std::string finalTime_name = "Final Time";
   static int finalTime_default = 1; // Should be Scalar(1.0)
   static std::string landOnFinalTime_name = "Land On Final Time";
@@ -286,6 +288,8 @@ IntegratorBuilder<Scalar>::getValidParameters() const
     // Integrator Settings
     ParameterList& integratorSettingsPL = pl->sublist(integratorSettings_name,false,integratorSettings_docs);
     {
+      // Initial Time
+      integratorSettingsPL.set(initialTime_name,Teuchos::as<Scalar>(initialTime_default));
       // Final Time
       integratorSettingsPL.set(finalTime_name,Teuchos::as<Scalar>(finalTime_default));
       // Land On Final Time

@@ -84,6 +84,18 @@ public:
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
   //@}
 
+  /** \brief Initialize using prebuilt objects - passing initial time. */
+  RythmosSolver(
+      const Teuchos::RCP<Rythmos::DefaultIntegrator<double> > &stateIntegrator,
+      const Teuchos::RCP<Rythmos::StepperBase<double> > &stateStepper,
+      const Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> > &timeStepSolver,
+      const Teuchos::RCP<EpetraExt::ModelEvaluator> &model,
+      const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > &lowsFactory,
+      double initialTime,
+      double finalTime,
+      Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
+  //@}
+
   /** \name Overridden from EpetraExt::ModelEvaluator . */
   //@{
   /** \brief . */

@@ -51,7 +51,8 @@
 #include "LOCA_StatusTest_MaxIters.H" // class definition
 #include "LOCA_StatusTest_Abstract.H"
 
-#include "LOCA_Stepper.H"
+//#include "LOCA_Stepper.H"
+#include "LOCA_Abstract_Iterator.H"
 
 // FIXME remove these headers?
 #include "NOX_Utils.H"
@@ -85,7 +86,8 @@ LOCA::StatusTest::MaxIters::~MaxIters()
 }
 
 LOCA::StatusTest::StatusType LOCA::StatusTest::MaxIters::
-checkStatus(const LOCA::Stepper& stepper,
+//checkStatus(const LOCA::Stepper& stepper,
+checkStatus(const LOCA::Abstract::Iterator& stepper,
 	    LOCA::StatusTest::CheckType checkType)
 {
   switch (checkType)

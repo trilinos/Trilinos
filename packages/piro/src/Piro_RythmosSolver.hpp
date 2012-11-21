@@ -88,6 +88,18 @@ public:
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
   //@}
 
+  /** \brief Initialize using prebuilt objects - supplying initial time value. */
+  RythmosSolver(
+      const Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > &stateIntegrator,
+      const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stateStepper,
+      const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
+      const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &model,
+      Scalar initialTime,
+      Scalar finalTime,
+      const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &initialConditionModel = Teuchos::null,
+      Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
+  //@}
+
   Teuchos::RCP<const Rythmos::IntegratorBase<Scalar> > getRythmosIntegrator() const;
 
   /** \name Overridden from Thyra::ModelEvaluatorBase. */
@@ -126,6 +138,7 @@ private:
   Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > model;
   Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > initialConditionModel;
 
+  Scalar t_initial;
   Scalar t_final;
 
   int num_p;

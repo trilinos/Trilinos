@@ -137,7 +137,8 @@ LOCA::StatusTest::Combo::~Combo()
 }
 
 LOCA::StatusTest::StatusType LOCA::StatusTest::Combo::
-checkStatus(const LOCA::Stepper& stepper,
+//checkStatus(const LOCA::Stepper& stepper,
+checkStatus(const LOCA::Abstract::Iterator& stepper,
 	    LOCA::StatusTest::CheckType checkType)
 {
   if (type == OR)
@@ -154,7 +155,8 @@ getStatus() const
   return status;
 }
 
-void LOCA::StatusTest::Combo::orOp(const LOCA::Stepper& stepper,
+//void LOCA::StatusTest::Combo::orOp(const LOCA::Stepper& stepper,
+void LOCA::StatusTest::Combo::orOp(const LOCA::Abstract::Iterator& stepper,
 				   LOCA::StatusTest::CheckType checkType)
 {
   if (checkType == LOCA::StatusTest::None)
@@ -182,7 +184,8 @@ void LOCA::StatusTest::Combo::orOp(const LOCA::Stepper& stepper,
   return;
 }
 
-void LOCA::StatusTest::Combo::andOp(const LOCA::Stepper& stepper,
+//void LOCA::StatusTest::Combo::andOp(const LOCA::Stepper& stepper,
+void LOCA::StatusTest::Combo::andOp(const LOCA::Abstract::Iterator& stepper,
 				   LOCA::StatusTest::CheckType checkType)
 {
   if (checkType == LOCA::StatusTest::None)

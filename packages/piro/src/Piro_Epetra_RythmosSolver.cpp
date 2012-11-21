@@ -80,6 +80,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
   RCP<Rythmos::DefaultIntegrator<double> > stateIntegrator;
   RCP<Rythmos::StepperBase<double> > stateStepper;
   RCP<Rythmos::TimeStepNonlinearSolver<double> > timeStepSolver;
+  double initialTime;
   double finalTime;
   RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModel;
 
@@ -122,11 +123,11 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     }
 
     const int numTimeSteps = rythmosPL->get("Num Time Steps", 10);
-    const double t_init = 0.0;
+    initialTime = rythmosPL->get("Initial Time", 0.0);
     finalTime = rythmosPL->get("Final Time", 0.1);
 
-    const Rythmos::TimeRange<double> fwdTimeRange(t_init, finalTime);
-    const double delta_t = finalTime / (double) numTimeSteps;
+    const Rythmos::TimeRange<double> fwdTimeRange(initialTime, finalTime);
+    const double delta_t = (finalTime - initialTime) / (double) numTimeSteps;
     *out << "\ndelta_t = " << delta_t;
 
     const string stepperType = rythmosPL->get("Stepper Type", "Backward Euler");
@@ -220,6 +221,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
       else if (verbosity == "VERB_EXTREME") solnVerbLevel = Teuchos::VERB_EXTREME;
     }
 
+    initialTime = rythmosPL->sublist("Integrator Settings").get("Initial Time", 0.0);
     finalTime = rythmosPL->sublist("Integrator Settings").get("Final Time", 0.1);
 
     const string stepperType = rythmosPL->sublist("Stepper Settings")
@@ -299,6 +301,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
         stateStepper,
         timeStepSolver,
         thyraModel,
+        initialTime,
         finalTime,
         Teuchos::null, // No initial condition model
         solnVerbLevel));
@@ -321,6 +324,30 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
         stateStepper,
         timeStepSolver,
         Thyra::epetraModelEvaluator(underlyingModel, lowsFactory),
+        finalTime,
+        Teuchos::null, // No initial condition model
+        verbosityLevel));
+}
+
+Piro::Epetra::RythmosSolver::RythmosSolver(
+    const Teuchos::RCP<Rythmos::DefaultIntegrator<double> > &stateIntegrator,
+    const Teuchos::RCP<Rythmos::StepperBase<double> > &stateStepper,
+    const Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> > &timeStepSolver,
+    const Teuchos::RCP<EpetraExt::ModelEvaluator> &underlyingModel,
+    const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > &lowsFactory,
+    double initialTime,
+    double finalTime,
+    Teuchos::EVerbosityLevel verbosityLevel) :
+  model(underlyingModel),
+  num_p(model->createInArgs().Np()),
+  num_g(model->createOutArgs().Ng())
+{
+  thyraImplementation_ = rcp(new ThyraRythmosSolver(
+        stateIntegrator,
+        stateStepper,
+        timeStepSolver,
+        Thyra::epetraModelEvaluator(underlyingModel, lowsFactory),
+        initialTime,
         finalTime,
         Teuchos::null, // No initial condition model
         verbosityLevel));
@@ -433,6 +460,7 @@ EpetraExt::ModelEvaluator::OutArgs Piro::Epetra::RythmosSolver::createOutArgs() 
 
 void Piro::Epetra::RythmosSolver::evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
 {
+
   Thyra::ModelEvaluatorBase::InArgs<double> thyraInArgs = thyraImplementation_->createInArgs();
   for (int l = 0; l < thyraInArgs.Np(); ++l) {
     const Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(l);
@@ -485,6 +513,7 @@ Piro::Epetra::RythmosSolver::getValidRythmosParameters() const
     Teuchos::rcp(new Teuchos::ParameterList("ValidRythmosParams"));;
   validPL->sublist("NonLinear Solver", false, "");
   validPL->set<int>("Num Time Steps", 0, "");
+  validPL->set<double>("Initial Time", 0.0, "");
   validPL->set<double>("Final Time", 1.0, "");
   validPL->sublist("Rythmos Stepper", false, "");
   validPL->sublist("Rythmos Integrator", false, "");

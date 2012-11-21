@@ -54,7 +54,8 @@
 #include "NOX_Utils.H"
 #include "LOCA_MultiContinuation_AbstractStrategy.H"
 #include "LOCA_MultiContinuation_ExtendedVector.H"
-#include "LOCA_Stepper.H"
+//#include "LOCA_Stepper.H"
+#include "LOCA_Abstract_Iterator.H"
 
 LOCA::StepSize::Constant::Constant(
 	const Teuchos::RCP<LOCA::GlobalData>& global_data,
@@ -88,7 +89,8 @@ LOCA::StepSize::Constant::computeStepSize(
 		     const LOCA::MultiContinuation::ExtendedVector& predictor,
 		     const NOX::Solver::Generic& solver,
 		     const LOCA::Abstract::Iterator::StepStatus& stepStatus,
-		     const LOCA::Stepper& stepper,
+//		     const LOCA::Stepper& stepper,
+		     const LOCA::Abstract::Iterator& stepper,
 		     double& stepSize) 
 {
 

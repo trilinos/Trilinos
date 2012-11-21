@@ -55,7 +55,7 @@ MPI_BASE_DIR=/sierra/Sntools/extras/mpi/RHEL5/openmpi-1.4.5/gcc-4.6.3-64Bit
 NETCDF=/ascldap/users/gahanse/local/parallel
 HDFDIR=/ascldap/users/gahanse/local/parallel
 BLASDIR=/sierra/Sntools/extras/compilers/acml4.3.0/gfortran64/lib
-FORTRAN_LIBS="-lgfortran"
+FORTRAN_LIBS="-lgfortran -lboost_system"
 
 echo "
 -D BUILD_SHARED_LIBS:BOOL=ON
@@ -65,7 +65,7 @@ echo "
 -D TPL_ENABLE_Netcdf:BOOL=ON
 -D TPL_Netcdf_INCLUDE_DIRS:PATH=$NETCDF/include
 -D TPL_Netcdf_LIBRARY_DIRS:PATH=$NETCDF/lib
--D Trilinos_EXTRA_LINK_FLAGS:STRING=${FORTRAN_LIBS}
+-D Trilinos_EXTRA_LINK_FLAGS:STRING=\"-lgfortran -lboost_system\"
 -D BLAS_LIBRARY_DIRS:FILEPATH=$BLASDIR \
 -D BLAS_LIBRARY_NAMES:STRING=\"acml\"
 -D LAPACK_LIBRARY_DIRS:FILEPATH=$BLASDIR
@@ -77,6 +77,12 @@ echo "
 -DTPL_ENABLE_MPI:BOOL=ON 
 -DMPI_BASE_DIR:PATH=$MPI_BASE_DIR
 " > MPI_DEBUG.config
+
+echo "
+-DCMAKE_BUILD_TYPE:STRING=DEBUG
+-DTPL_ENABLE_MPI:BOOL=ON 
+-DMPI_BASE_DIR:PATH=$MPI_BASE_DIR
+" > MPI_DEBUG_SS.config
 
 echo "
 -DCMAKE_BUILD_TYPE:STRING=DEBUG

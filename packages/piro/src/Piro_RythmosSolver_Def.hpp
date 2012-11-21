@@ -103,6 +103,7 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
     else if (verbosity == "VERB_EXTREME") solnVerbLevel = Teuchos::VERB_EXTREME;
   }
 
+  t_initial = rythmosPL->get("Initial Time", 0.0);
   t_final = rythmosPL->get("Final Time", 0.1);
 
   const std::string stepperType = rythmosPL->get("Stepper Type", "Backward Euler");
@@ -228,6 +229,34 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
   initialConditionModel(icModel),
   num_p(model->Np()),
   num_g(model->Ng()),
+  t_initial(0.0),
+  t_final(finalTime),
+  out(Teuchos::VerboseObjectBase::getDefaultOStream()),
+  solnVerbLevel(verbosityLevel)
+{
+  if (fwdStateStepper->acceptsModel() && fwdStateStepper->getModel() != underlyingModel) {
+    fwdStateStepper->setNonconstModel(underlyingModel);
+  }
+}
+
+template <typename Scalar>
+Piro::RythmosSolver<Scalar>::RythmosSolver(
+    const Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > &stateIntegrator,
+    const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stateStepper,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
+    const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &underlyingModel,
+    Scalar initialTime,
+    Scalar finalTime,
+    const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > &icModel,
+    Teuchos::EVerbosityLevel verbosityLevel) :
+  fwdStateIntegrator(stateIntegrator),
+  fwdStateStepper(stateStepper),
+  fwdTimeStepSolver(timeStepSolver),
+  model(underlyingModel),
+  initialConditionModel(icModel),
+  num_p(model->Np()),
+  num_g(model->Ng()),
+  t_initial(initialTime),
   t_final(finalTime),
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   solnVerbLevel(verbosityLevel)
@@ -388,6 +417,13 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
   const RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g);
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> state_ic = model->getNominalValues();
+
+  // Set initial time in ME if needed
+
+  if(t_initial > 0.0 && state_ic.supports(Thyra::ModelEvaluatorBase::IN_ARG_t))
+
+    state_ic.set_t(t_initial);
+
 
   if (Teuchos::nonnull(initialConditionModel)) {
     // The initial condition depends on the parameter
@@ -686,6 +722,7 @@ Piro::RythmosSolver<Scalar>::getValidRythmosParameters() const
   validPL->sublist("Rythmos Builder", false, "");
 
 
+  validPL->set<double>("Initial Time", 0.0, "");
   validPL->set<double>("Final Time", 1.0, "");
   validPL->sublist("Rythmos Stepper", false, "");
   validPL->sublist("Rythmos Integrator", false, "");

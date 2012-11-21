@@ -126,7 +126,8 @@ public:
     See addOp() and orOp() for details.
   */
   virtual LOCA::StatusTest::StatusType
-  checkStatus( const LOCA::Stepper         & stepper,
+//  checkStatus( const LOCA::Stepper         & stepper,
+  checkStatus( const LOCA::Abstract::Iterator         & stepper,
                LOCA::StatusTest::CheckType   checkType
              );
 
@@ -152,7 +153,8 @@ protected:
     this combination test without that check.
   */
   virtual void
-  orOp( const LOCA::Stepper               & stepper,
+//  orOp( const LOCA::Stepper               & stepper,
+  orOp( const LOCA::Abstract::Iterator               & stepper,
               LOCA::StatusTest::CheckType   checkType);
 
   //! Use this for checkStatus when this is an AND type combo. Updates LOCA::StatusTest::Combo::status.
@@ -171,7 +173,8 @@ protected:
     this combination test without that check.
   */
   virtual void
-  andOp( const LOCA::Stepper               & stepper,
+//  andOp( const LOCA::Stepper               & stepper,
+  andOp( const LOCA::Abstract::Iterator               & stepper,
                LOCA::StatusTest::CheckType   checkType );
 
   /*! \brief Check whether or not it is safe to add \c a to this list
