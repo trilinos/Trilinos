@@ -113,12 +113,10 @@ public:
    */
   virtual ~MeshInput() {};
 
-// TODO NEED AN ARGUMENT TO THE METHODS SPECIFYING WHICH ENTITY TYPE TO RETURN
-
   /*! \brief Returns the number of mesh entities on this process.
    */
 
-  virtual size_t getLocalNumberOfEntities() const = 0;
+  virtual size_t getLocalNumEntityIDs(entityType etype) const = 0;
 
 
   /*! \brief Return dimension of the entity coordinates, if any.               
@@ -129,7 +127,7 @@ public:
    *  Some algorithms can use geometric entity coordinate 
    *    information if it is present.
    */
-  virtual int getEntityCoordinateDimension() const = 0;
+  virtual int getEntityCoordinateDimension(entityType etype) const = 0;
 
 
   /*! \brief Return the number of weights per entity.
@@ -137,18 +135,18 @@ public:
    *   If the number of weights is zero, then we assume that the entities
    *   are equally weighted.
    */
-  virtual int getNumberOfWeightsPerEntity() const = 0;
+  virtual int getNumWeightsPerEntityID(entityType etype) const = 0;
 
 
   /*! \brief Returns the number adjacencies on this process.
    *
    *  Some algorithms can partition a graph of mesh entities
    */
-  virtual size_t getLocalNumberOfEntityAdjacencies() const = 0;
+  virtual size_t getLocalNumAdjacencyIDs(entityType etype) const = 0;
 
   /*! \brief Returns the number (0 or greater) of weights per adjacency.
    */
-  virtual int getNumberOfWeightsPerEntityAdjacency() const = 0;
+  virtual int getNumWeightsPerAdjacencyID(entityType etype) const = 0;
 
 
   /*! \brief Provide a pointer to this process' identifiers.
@@ -162,7 +160,8 @@ public:
         with no geometry or topology provided.
   */
 
-  virtual size_t getEntityIdentifierList(gid_t const *&Ids) const = 0;
+  virtual size_t getLocalEntityIDsView(entityType etype,
+				       gid_t const *&Ids) const = 0;
 
 
   /*! \brief Provide a pointer to one dimension of entity coordinates.  
@@ -176,29 +175,30 @@ public:
               ith coordinate value is coords[2*i].                             
                                                                                
        \return The length of the \c coords list.  This may be more than        
-              getLocalNumberOfEntities() because the \c stride       
+              getLocalNumEntityIDs() because the \c stride
               may be more than one.                                            
                                                                                
       Zoltan2 does not copy your data.  The data pointed to coords             
       must remain valid for the lifetime of this InputAdapter.                 
   */
 
-  virtual size_t getEntityCoordinates(int coordDim, const gid_t *&gids,
+  virtual size_t getLocalEntityCoordinatesView(entityType etype, int coordDim,
     const scalar_t *&coords, int &stride) const = 0;
 
 
   /*! \brief Sets pointers to this process' mesh entries.
-      \param EntityIds will on return a pointer to entity global Ids
+      \param etype 
       \param offsets is an array of size numEntities + 1.  
-         The adjacency Ids for entityId[i] begin at adjacencyIds[offsets[i]].  
+         The adjacency Ids for Ids[i] (returned in getLocalEntityIDsView())
+	 begin at adjacencyIds[offsets[i]].  
           The last element of offsets
           is the size of the adjacencyIds array.
       \param adjacencyIds on return will point to the global adjacency Ids for
          for each entity.
-       \return The number of ids in the entityIds list.
+       \return The number of ids in the adjacencyIds list.
 
       Zoltan2 does not copy your data.  The data pointed to by 
-      entityIds, offsets and adjacencyIds
+      offsets and adjacencyIds
       must remain valid for the lifetime of this InputAdapter.
    */
 
@@ -210,15 +210,15 @@ public:
 // TODO:  Later may allow user to not implement second adjacencies and, if we want them,
 // TODO:  we compute A^T A, where A is matrix of first adjacencies.
 
-  virtual size_t getEntityListView(const gid_t *&entityIds, 
-    const lno_t *&offsets, const gid_t *& adjacencyIds) const = 0; 
+  virtual size_t getLocalAdjacencyIDsView(entityType etype,
+     const lno_t *&offsets, const gid_t *& adjacencyIds) const = 0; 
 
 
   /*! \brief Provide a pointer to one of the number of this process'
                 optional entity weights.
 
       \param number is a value ranging from zero to one less than
-                   getNumberOfWeightsPerEntity()
+                   getNumWeightsPerEntityID()
       \param weights on return will contain a list of the weights for the
                number specified.  If weights for
 	   this number are to be uniform for all entities in the
@@ -237,25 +237,25 @@ public:
       must remain valid for the lifetime of this InputAdapter.
   */
 
-  virtual size_t getEntityWeights(int number,
+  virtual size_t getLocalEntityIDsWeightsView(entityType etype, int number,
      const scalar_t *&weights, int &stride) const = 0;
 
 
   /*! \brief  Provide a pointer to the adjacency weights, if any.
 
       \param number ranges from zero to one less than 
-                   getNumberOfWeightsPerEntityAdjacency().
+                   getNumWeightsPerAdjacencyID().
       \param weights is the list of weights of the given number for
-           the adjacencies returned in getEntityListView().
+           the adjacencies returned in getLocalAdjacencyIDsView().
        \param stride The k'th weight is located at weights[stride*k]
        \return The number of weights listed, which should be the same
-               as the number of adjacencies in getEntityListView().
+               as the number of adjacencies in getLocalAdjacencyIDsView().
 
       Zoltan2 does not copy your data.  The data pointed to by weights
       must remain valid for the lifetime of this InputAdapter.
    */
 
-  virtual size_t getEntityAdjacencyWeights(int number,
+  virtual size_t getLocalAdjacencyIDWeightsView(entityType etype, int number,
      const scalar_t *&weights, int &stride) const = 0;
 
 
