@@ -150,6 +150,7 @@ IF (Piro_ENABLE_Rythmos)
     SOURCES
     Piro_Epetra_RythmosSolver_UnitTests.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_EpetraSupport.hpp
     MockModelEval_A.hpp
     MockModelEval_A.cpp
     NUM_MPI_PROCS 1-4
