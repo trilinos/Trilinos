@@ -46,7 +46,8 @@
 #ifndef MUELU_LEVEL_HPP
 #define MUELU_LEVEL_HPP
 
-#include "MueLu_ConfigDefs.hpp"
+#include "MueLu_BoostGraphviz.hpp"
+
 #include "MueLu_BaseClass.hpp"
 
 #include "MueLu_Needs.hpp"
@@ -55,10 +56,6 @@
 #include "MueLu_FactoryManagerBase_fwd.hpp"
 
 #include "MueLu_SmootherPrototypeBase.hpp"
-
-#ifdef HAVE_MUELU_BOOST
-#include "boost/graph/graphviz.hpp"
-#endif
 
 namespace MueLu {
 

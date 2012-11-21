@@ -121,7 +121,6 @@ public:
   virtual size_t getLocalNumberOfEntities() const = 0;
 
 
-
   /*! \brief Return dimension of the entity coordinates, if any.               
    *
    *  Some algorithms can partition mesh entities using geometric coordinate
@@ -133,7 +132,6 @@ public:
   virtual int getEntityCoordinateDimension() const = 0;
 
 
-
   /*! \brief Return the number of weights per entity.
    *   \return the count of weights, zero or more per entity.              
    *   If the number of weights is zero, then we assume that the entities
@@ -142,17 +140,15 @@ public:
   virtual int getNumberOfWeightsPerEntity() const = 0;
 
 
-
   /*! \brief Returns the number adjacencies on this process.
    *
    *  Some algorithms can partition a graph of mesh entities
    */
-  virtual size_t getLocalNumberOfAdjacencies() const = 0;
+  virtual size_t getLocalNumberOfEntityAdjacencies() const = 0;
 
   /*! \brief Returns the number (0 or greater) of weights per adjacency.
    */
-  virtual int getNumberOfWeightsPerAdjacency() const = 0;
-
+  virtual int getNumberOfWeightsPerEntityAdjacency() const = 0;
 
 
   /*! \brief Provide a pointer to this process' identifiers.
@@ -167,7 +163,6 @@ public:
   */
 
   virtual size_t getEntityIdentifierList(gid_t const *&Ids) const = 0;
-
 
 
   /*! \brief Provide a pointer to one dimension of entity coordinates.  
@@ -190,7 +185,6 @@ public:
 
   virtual size_t getEntityCoordinates(int coordDim, const gid_t *&gids,
     const scalar_t *&coords, int &stride) const = 0;
-
 
 
   /*! \brief Sets pointers to this process' mesh entries.
@@ -219,6 +213,7 @@ public:
   virtual size_t getEntityListView(const gid_t *&entityIds, 
     const lno_t *&offsets, const gid_t *& adjacencyIds) const = 0; 
 
+
   /*! \brief Provide a pointer to one of the number of this process'
                 optional entity weights.
 
@@ -245,11 +240,12 @@ public:
   virtual size_t getEntityWeights(int number,
      const scalar_t *&weights, int &stride) const = 0;
 
+
   /*! \brief  Provide a pointer to the adjacency weights, if any.
 
-      \param weightDim ranges from zero to one less than 
-                   getAdjacencyWeightDimension().
-      \param weights is the list of weights of the given dimension for
+      \param number ranges from zero to one less than 
+                   getNumberOfWeightsPerEntityAdjacency().
+      \param weights is the list of weights of the given number for
            the adjacencies returned in getEntityListView().
        \param stride The k'th weight is located at weights[stride*k]
        \return The number of weights listed, which should be the same
@@ -259,7 +255,7 @@ public:
       must remain valid for the lifetime of this InputAdapter.
    */
 
-  virtual size_t getAdjacencyWeights(int weightDim,
+  virtual size_t getEntityAdjacencyWeights(int number,
      const scalar_t *&weights, int &stride) const = 0;
 
 

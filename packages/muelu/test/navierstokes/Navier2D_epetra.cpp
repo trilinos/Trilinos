@@ -223,9 +223,9 @@ int main(int argc, char *argv[]) {
 
   // build transfer operators
   RCP<PgPFactory> Pfact = rcp( new PgPFactory() );
-  RCP<RFactory> Rfact  = rcp( new GenericRFactory());
+  RCP<Factory> Rfact  = rcp( new GenericRFactory());
   //RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
-  //RCP<RFactory>   Rfact  = rcp( new TransPFactory() );
+  //RCP<Factory>   Rfact  = rcp( new TransPFactory() );
   RCP<RAPFactory> Acfact = rcp( new RAPFactory() );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 

@@ -89,9 +89,9 @@ namespace MueLuTests {
     out << "equal to the number of fine degrees of freedom." << std::endl;
 
     Level fineLevel, coarseLevel;
-    TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
     GO nx = 199;
-    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(nx);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(nx);
     fineLevel.Set("A",A);
 
     RCP<MultiVector> fineOnes = MultiVectorFactory::Build(A->getRowMap(),1);
@@ -133,7 +133,7 @@ namespace MueLuTests {
     out << "Tests usage on a three-level hierarchy." << std::endl;
 
     GO nx = 199;
-    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(nx);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(nx);
 
 
     // Set up three level hierarchy.
@@ -154,7 +154,7 @@ namespace MueLuTests {
     UCAggFact->SetPhase3AggCreation(0.5);
 
     RCP<TentativePFactory> PFact = rcp(new TentativePFactory()); //just using plain aggregation
-    RCP<RFactory>          RFact = rcp( new TransPFactory() );
+    RCP<Factory>          RFact = rcp( new TransPFactory() );
     RCP<RAPFactory>        AcFact = rcp( new RAPFactory() );
     H->SetMaxCoarseSize(1);
 

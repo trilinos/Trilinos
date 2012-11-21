@@ -43,47 +43,82 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_RFACTORY_HPP
-#define MUELU_RFACTORY_HPP
+#ifndef MUELU_FACTORY_HPP
+#define MUELU_FACTORY_HPP
+
+#include <string>
+#include <map>
+
+#include "Teuchos_RCP.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_TwoLevelFactoryBase.hpp"
+#include "MueLu_FactoryBase.hpp"
+
+#include "MueLu_Level.hpp"
 
 namespace MueLu {
 
-/*!
-  @class RFactory
-  @brief Factory that provides an interface for a concrete implementation of a restriction operator.
+  template <class Key, class T>
+  const RCP<T> mapFind(const std::map<Key, RCP<T> > & map, Key & varName) {
+    typename std::map<Key, RCP<T> >::const_iterator f = map.find(varName);
+    if (f == map.end())
+      return Teuchos::null;
+    else
+      return f->second;
+  }
 
-  For a concrete implementation the user has to overwrite the virtual Build method.
-*/
-
-class RFactory : public TwoLevelFactoryBase {
+  class Factory : public FactoryBase {
 
   public:
-    //! @name Constructors/Destructors.
-    //@{
+    //@{ Constructors/Destructors.
 
     //! Constructor.
-    RFactory() { }
+    Factory() { }
 
     //! Destructor.
-    virtual ~RFactory() {}
+    virtual ~Factory() { }
     //@}
 
-    //! @name Build methods.
     //@{
+    //! Configuration
 
-    /*!
-      @brief Abstract Build method.
-    */
-    virtual void BuildR(Level &fineLevel, Level &coarseLevel) const = 0;
+    //! SetFactory is for expert users only. To change configuration of the preconditioner, use a factory manager.
+    virtual void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory);
+
+    // GetFactory(...);
+
+    // SetParameterList(...);
+
+    // GetParameterList(...);
+
     //@}
 
-}; //class RFactory
+  protected:
+
+    const RCP<const FactoryBase> GetFactory(const std::string & varName) const {
+      return mapFind<const std::string, const FactoryBase>(factoryTable_, varName);
+    }
+
+    void Input(Level & level, const std::string & varName) const {
+      level.DeclareInput(varName, GetFactory(varName).get(), this);
+    }
+
+    template <class T>
+    T Get(Level & level, const std::string & varName) const {
+      return level.Get<T>(varName, GetFactory(varName).get());
+    }
+
+    template <class T>
+    void Set(Level & level, const std::string & varName, const T & data) const {
+      return level.Set<T>(varName, data, this);
+    }
+
+  private:
+    std::map<const std::string, RCP<const FactoryBase> > factoryTable_;
+
+  }; //class Factory
 
 } //namespace MueLu
 
-#define MUELU_RFACTORY_SHORT
-
-#endif //ifndef MUELU_RFACTORY_HPP
+#define MUELU_FACTORY_SHORT
+#endif //ifndef MUELU_FACTORY_HPP

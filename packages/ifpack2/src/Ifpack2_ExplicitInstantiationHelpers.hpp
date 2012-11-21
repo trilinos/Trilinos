@@ -8,7 +8,11 @@
 #define IFPACK2_INST(CLASSNAME,S,LO,GO) \
   template class CLASSNAME<Tpetra::CrsMatrix<S,LO,GO, \
                  Kokkos::DefaultNode::DefaultNodeType, \
-                 Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> >
+                 Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> >;
+
+#define IFPACK2_INST_GRAPH(CLASSNAME,LO,GO)	   \
+  template class CLASSNAME<Tpetra::CrsGraph<LO,GO, \
+                 Kokkos::DefaultNode::DefaultNodeType > >;
   
 #define IFPACK2_CLASS_CrsMatrix_float_int_int_defaultNode_defaultOps(CLASSNAME) \
   IFPACK2_INST(CLASSNAME,float,int,int)
@@ -27,10 +31,6 @@
   IFPACK2_INST(CLASSNAME,std::complex<float>,int,int) 
 
 
-
-#define IFPACK2_INST_GRAPH(CLASSNAME,LO,GO)	   \
-  template class CLASSNAME<Tpetra::CrsGraph<LO,GO, \
-                 Kokkos::DefaultNode::DefaultNodeType > >
 
 
 

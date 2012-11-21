@@ -54,11 +54,11 @@ typedef int GlobalOrdinal;
 #include "Ifpack2_ExplicitInstantiationHelpers.hpp"
 
 namespace Ifpack2 {
-IFPACK2_INST(RILUK,Scalar,LocalOrdinal,GlobalOrdinal);
-IFPACK2_INST(ILUT,Scalar,LocalOrdinal,GlobalOrdinal);
-IFPACK2_INST(Chebyshev,Scalar,LocalOrdinal,GlobalOrdinal);
-IFPACK2_INST(Diagonal,Scalar,LocalOrdinal,GlobalOrdinal);
-IFPACK2_INST(Relaxation,Scalar,LocalOrdinal,GlobalOrdinal);
+IFPACK2_INST(RILUK,Scalar,LocalOrdinal,GlobalOrdinal)
+IFPACK2_INST(ILUT,Scalar,LocalOrdinal,GlobalOrdinal)
+IFPACK2_INST(Chebyshev,Scalar,LocalOrdinal,GlobalOrdinal)
+IFPACK2_INST(Diagonal,Scalar,LocalOrdinal,GlobalOrdinal)
+IFPACK2_INST(Relaxation,Scalar,LocalOrdinal,GlobalOrdinal)
 }
 
 #endif

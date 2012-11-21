@@ -34,10 +34,17 @@
 #include "Ifpack2_LinearPartitioner_def.hpp"
 #include "Ifpack2_OverlappingPartitioner_def.hpp"
 #include "Ifpack2_ExplicitInstantiationHelpers.hpp"
+#include "Ifpack2_ETIHelperMacros.h"
 
 namespace Ifpack2 {
-IFPACK2_INST_GRAPH(LinearPartitioner,int,int);
+
+  #define LCLINST(LO,GO) \
+          IFPACK2_INST_GRAPH(LinearPartitioner,LO,GO)
+
+  IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+  IFPACK2_INSTANTIATE_LG(LCLINST)
+
 }
 
 #endif
-

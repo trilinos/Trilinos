@@ -30,6 +30,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
 BroadcastArg.hpp
 DistributedIndex.hpp
+MPI.hpp
 ParallelComm.hpp
 Parallel.hpp
 ParallelIndex.hpp

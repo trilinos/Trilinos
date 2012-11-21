@@ -141,6 +141,50 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, Solution)
   TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
 }
 
+TEUCHOS_UNIT_TEST(Piro_NOXSolver, SolutionForMissingParameterValues)
+{
+  const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew());
+
+  Thyra::MEB::InArgs<double> inArgs = solver->createInArgs();
+  const int parameterIndex = 0;
+  inArgs.set_p(parameterIndex, null);
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const int solutionResponseIndex = solver->Ng() - 1;
+  outArgs.set_g(solutionResponseIndex, Thyra::createMember(*solver->get_g_space(solutionResponseIndex)));
+
+  solver->evalModel(inArgs, outArgs);
+
+  const Array<double> actual = arrayFromVector(*outArgs.get_g(solutionResponseIndex));
+  const Array<double> expected = tuple(1.0, 2.0, 3.0, 4.0);
+  TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+}
+
+TEUCHOS_UNIT_TEST(Piro_NOXSolver, SolutionForAlternateParameterValues)
+{
+  const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew());
+
+  Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+  {
+    const int parameterIndex = 0;
+    const RCP<Thyra::VectorBase<double> > p_in = Thyra::createMember(*solver->get_p_space(0));
+    TEST_EQUALITY(p_in->space()->dim(), 2);
+    Thyra::set_ele(0, 1.0, p_in.ptr());
+    Thyra::set_ele(1, 0.0, p_in.ptr());
+    inArgs.set_p(parameterIndex, p_in);
+  }
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const int solutionResponseIndex = solver->Ng() - 1;
+  outArgs.set_g(solutionResponseIndex, Thyra::createMember(*solver->get_g_space(solutionResponseIndex)));
+
+  solver->evalModel(inArgs, outArgs);
+
+  const Array<double> actual = arrayFromVector(*outArgs.get_g(solutionResponseIndex));
+  const Array<double> expected = tuple(1.0, 1.0, 2.0, 3.0);
+  TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+}
+
 TEUCHOS_UNIT_TEST(Piro_NOXSolver, Response)
 {
   const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew());
@@ -155,6 +199,50 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, Response)
 
   const Array<double> actual = arrayFromVector(*outArgs.get_g(responseIndex));
   const Array<double> expected = tuple(8.0);
+  TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+}
+
+TEUCHOS_UNIT_TEST(Piro_NOXSolver, ResponseForMissingParameterValues)
+{
+  const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew());
+
+  Thyra::MEB::InArgs<double> inArgs = solver->createInArgs();
+  const int parameterIndex = 0;
+  inArgs.set_p(parameterIndex, null);
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const int responseIndex = 0;
+  outArgs.set_g(responseIndex, Thyra::createMember(*solver->get_g_space(responseIndex)));
+
+  solver->evalModel(inArgs, outArgs);
+
+  const Array<double> actual = arrayFromVector(*outArgs.get_g(responseIndex));
+  const Array<double> expected = tuple(8.0);
+  TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+}
+
+TEUCHOS_UNIT_TEST(Piro_NOXSolver, ResponseForAlternateParameterValues)
+{
+  const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew());
+
+  Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+  {
+    const int parameterIndex = 0;
+    const RCP<Thyra::VectorBase<double> > p_in = Thyra::createMember(*solver->get_p_space(0));
+    TEST_EQUALITY(p_in->space()->dim(), 2);
+    Thyra::set_ele(0, 1.0, p_in.ptr());
+    Thyra::set_ele(1, 0.0, p_in.ptr());
+    inArgs.set_p(parameterIndex, p_in);
+  }
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const int responseIndex = 0;
+  outArgs.set_g(responseIndex, Thyra::createMember(*solver->get_g_space(responseIndex)));
+
+  solver->evalModel(inArgs, outArgs);
+
+  const Array<double> actual = arrayFromVector(*outArgs.get_g(responseIndex));
+  const Array<double> expected = tuple(18.0);
   TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
 }
 

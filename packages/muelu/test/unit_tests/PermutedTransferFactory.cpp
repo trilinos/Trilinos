@@ -87,9 +87,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     Level fineLevel, coarseLevel;
-    TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
     GO nx = 199;
-    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(nx);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(nx);
     fineLevel.Set("A",A);
 
     //build coordinates
@@ -102,9 +102,9 @@ namespace MueLuTests {
     RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
     RCP<TentativePFactory>    Ptentfact = rcp(new TentativePFactory(UCAggFact));
     RCP<SaPFactory>           Pfact = rcp( new SaPFactory(Ptentfact));
-    RCP<RFactory>             Rfact = rcp( new TransPFactory(Pfact) );
+    RCP<Factory>             Rfact = rcp( new TransPFactory(Pfact) );
     RCP<RAPFactory>           Acfact = rcp( new RAPFactory(Pfact,Rfact) );
-    RCP<RFactory>             Rtentfact = rcp( new TransPFactory(Ptentfact) );
+    RCP<Factory>             Rtentfact = rcp( new TransPFactory(Ptentfact) );
 
     RCP<MultiVectorTransferFactory> mvTransFact = rcp(new MultiVectorTransferFactory("Coordinates","R",Rtentfact));
     Acfact->AddTransferFactory(mvTransFact);

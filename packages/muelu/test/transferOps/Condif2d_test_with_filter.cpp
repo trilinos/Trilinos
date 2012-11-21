@@ -203,12 +203,12 @@ int main(int argc, char *argv[]) {
 
   *out << " afer TentativePFactory " << std::endl;
   //RCP<TentativePFactory> Pfact = rcp(new TentativePFactory(UCAggFact));
-  //RCP<RFactory>          Rfact = rcp( new TransPFactory(Pfact));
+  //RCP<Factory>          Rfact = rcp( new TransPFactory(Pfact));
   //RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
-  //RCP<RFactory>         Rfact = rcp( new TransPFactory(Pfact));
+  //RCP<Factory>         Rfact = rcp( new TransPFactory(Pfact));
   RCP<ThresholdAFilterFactory> Afiltered = rcp(new ThresholdAFilterFactory("A",NULL,0.0005));
   RCP<PgPFactory>       Pfact = rcp( new PgPFactory(TentPFact,Afiltered) );
-  RCP<RFactory>         Rfact = rcp( new GenericRFactory(Pfact));
+  RCP<Factory>         Rfact = rcp( new GenericRFactory(Pfact));
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory(Pfact, Rfact) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 

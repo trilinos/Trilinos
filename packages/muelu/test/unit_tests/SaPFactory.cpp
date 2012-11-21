@@ -146,8 +146,8 @@ namespace MueLuTests {
             UCAggFact->SetPhase3AggCreation(0.5);
 
             RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
-            RCP<SaPFactory>         Pfact = rcp( new SaPFactory());
-            RCP<RFactory>           Rfact = rcp( new TransPFactory() );
+            RCP<SaPFactory>        Pfact = rcp( new SaPFactory());
+            RCP<Factory>      Rfact = rcp( new TransPFactory() );
             RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
             H->SetMaxCoarseSize(1);
 

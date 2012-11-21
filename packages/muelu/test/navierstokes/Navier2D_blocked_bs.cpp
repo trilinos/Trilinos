@@ -647,14 +647,18 @@ int main(int argc, char *argv[]) {
   PFact->AddFactoryManager(M11);
   PFact->AddFactoryManager(M22);
 
-  RCP<GenericRFactory> RFact = rcp(new GenericRFactory(PFact));
+  RCP<GenericRFactory> RFact = rcp(new GenericRFactory());
+  RFact->SetFactory("P", PFact);
 
   RCP<RAPFactory> AcFact = rcp(new RAPFactory());
   AcFact->SetFactory("P", PFact);
   AcFact->SetFactory("R", RFact);
 
   // register aggregation export factory in RAPFactory
-  RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>("aggs_level%LEVELID_proc%PROCID.out", UCAggFact11.get(), dropFact11.get()));
+  RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>("aggs_level%LEVELID_proc%PROCID.out"));
+  aggExpFact->SetFactory("Aggregates", UCAggFact11);
+  aggExpFact->SetFactory("DofsPerNode", dropFact11);
+
   AcFact->AddTransferFactory(aggExpFact);
 
   *out << "Creating Braess-Sarazin Smoother" << std::endl;

@@ -45,54 +45,14 @@
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
+#include "Tpetra_ETIHelperMacros.h"
 #include "Tpetra_BlockMap_def.hpp"
-
-#include <Kokkos_SerialNode.hpp>
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-#  include <Kokkos_TBBNode.hpp>
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-#  include <Kokkos_TPINode.hpp>
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THRUST)
-#  include <Kokkos_ThrustGPUNode.hpp>
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-#  include <Kokkos_OpenMPNode.hpp>
-#endif
 
 namespace Tpetra {
 
-  TPETRA_BLOCKMAP_INSTANT(int,int,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-  TPETRA_BLOCKMAP_INSTANT(int,int,Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-    TPETRA_BLOCKMAP_INSTANT(int,int,Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THRUST)
-    TPETRA_BLOCKMAP_INSTANT(int,int,Kokkos::ThrustGPUNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-    TPETRA_BLOCKMAP_INSTANT(int,int,Kokkos::OpenMPNode)
-#endif
-
-#ifdef HAVE_TPETRA_INST_INT_LONG
-  TPETRA_BLOCKMAP_INSTANT(int,long,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-  TPETRA_BLOCKMAP_INSTANT(int,long,Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-    TPETRA_BLOCKMAP_INSTANT(int,long,Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THRUST)
-    TPETRA_BLOCKMAP_INSTANT(int,long,Kokkos::ThrustGPUNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-    TPETRA_BLOCKMAP_INSTANT(int,long,Kokkos::OpenMPNode)
-#endif
-
-#endif
+  TPETRA_ETI_MANGLING_TYPEDEFS()
+  
+  TPETRA_INSTANTIATE_LGN_NOGPU(TPETRA_BLOCKMAP_INSTANT)
 
 } // namespace Tpetra
 

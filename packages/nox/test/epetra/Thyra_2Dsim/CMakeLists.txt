@@ -42,7 +42,12 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     Thyra_PseudoTransient
     SOURCES  ${UNIT_TEST_DRIVER} Thyra_PseudoTransient.cpp NOX_RosenbrockModelEvaluator.hpp NOX_RosenbrockModelEvaluator.cpp
     NUM_MPI_PROCS 1
-    PASS_REGULAR_EXPRESSION "Test passed!"
+    )
+  
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Thyra_JFNK
+    SOURCES  ${UNIT_TEST_DRIVER} EpetraModelEval2DSim.H EpetraModelEval2DSim.C Thyra_2Dsim_JFNK.C
+    NUM_MPI_PROCS 1
     )
   
 ENDIF()

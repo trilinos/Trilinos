@@ -950,7 +950,8 @@ namespace Tpetra {
       SCT::one() / as<typename SCT::magnitudeType> (getGlobalLength ());
     for (typename ArrayView<Scalar>::iterator i = means.begin();
          i != means.begin() + numVecs;
-         ++i) {
+         ++i) 
+    {
       (*i) = (*i) * OneOverN;
     }
   }

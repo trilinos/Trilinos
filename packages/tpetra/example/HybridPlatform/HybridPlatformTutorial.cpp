@@ -47,6 +47,11 @@
 #include <Teuchos_DefaultMpiComm.hpp>
 
 #include <Tpetra_ConfigDefs.hpp>
+#if !defined(HAVE_KOKKOS_CUDA_DOUBLE)
+// disable GPU support in HybridPlatform before including its header file
+#undef HAVE_KOKKOSCLASSIC_THRUST
+#endif
+
 #include <Tpetra_HybridPlatform.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Vector.hpp>

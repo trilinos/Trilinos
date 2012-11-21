@@ -73,7 +73,7 @@ StokhosSolverFactory(const Teuchos::RCP<Teuchos::ParameterList>& piroParams_,
   sgParams.validateParameters(*getValidSGParameters(),0);
 
   sgSolverParams = 
-    // Teuchos::rcp(&(sgParams.sublist("SG Solver Parameters")),false);
+    //Teuchos::rcp(&(sgParams.sublist("SG Solver Parameters")),false);
     Teuchos::rcp(new Teuchos::ParameterList(sgParams.sublist("SG Solver Parameters")));
 
   // Get SG expansion type
@@ -136,6 +136,13 @@ Piro::Epetra::StokhosSolverFactory::~StokhosSolverFactory()
   // Get rid of circular dependencies
   piroParams->set("Interface", Teuchos::null);
   piroParams->set("Linear System", Teuchos::null);
+}
+
+void 
+Piro::Epetra::StokhosSolverFactory::
+resetSolverParameters(const Teuchos::ParameterList& new_solver_params)
+{
+  *sgSolverParams = new_solver_params;
 }
 
 Teuchos::RCP<Stokhos::SGModelEvaluator>

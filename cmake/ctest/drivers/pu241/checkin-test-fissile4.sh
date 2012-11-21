@@ -50,7 +50,7 @@ if [ "$CASL_VERA_OFFICIAL_DEV_ENV_LOADED" == "" ] ; then
 fi
 
 echo "
--DTrilinos_EXCLUDE_PACKAGES=CTeuchos
+-DTrilinos_EXCLUDE_PACKAGES=CTrilinos
 " > COMMON.config
 
 #

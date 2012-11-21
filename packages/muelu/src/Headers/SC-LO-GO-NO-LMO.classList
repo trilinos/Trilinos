@@ -17,6 +17,7 @@ Utils
 GaussSeidelSmoother
 Ifpack2Smoother
 Amesos2Smoother
+ProjectorSmoother
 DirectSolver
 TrilinosSmoother
 MergedSmoother
@@ -26,11 +27,8 @@ PreDropFunctionConstVal
 NullspaceFactory
 FactoryManager
 ThresholdAFilterFactory
-SegregationAFilterFactory
-SegregationATransferFactory
 RepartitionFactory
 MLParameterListInterpreter
-#AggregationExportFactory
 BlockedPFactory
 SubBlockAFactory
 SchurComplementFactory

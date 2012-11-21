@@ -28,6 +28,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
+FArray.hpp
 PrintTimer.hpp
 Timer.hpp
 Trace.hpp
@@ -41,9 +42,11 @@ WriterParser.hpp
 Platform.hpp
 Env.hpp
 Option.hpp
+Mapv.hpp
 PrintTable.hpp
 SlibDiagWriter.hpp
 String.hpp
+StringUtil.hpp
 WriterRegistry.hpp
   )
 

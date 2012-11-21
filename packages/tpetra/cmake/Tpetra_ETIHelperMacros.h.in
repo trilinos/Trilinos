@@ -1,0 +1,62 @@
+#ifndef TPETRA_ETIHELPERMACROS_H_
+#define TPETRA_ETIHELPERMACROS_H_
+
+#include <Tpetra_ConfigDefs.hpp>
+
+/* Tpetra provides official support for the following nodes */
+#include <Kokkos_SerialNode.hpp>
+#if defined(HAVE_KOKKOSCLASSIC_TBB)
+#  include <Kokkos_TBBNode.hpp>
+#endif
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+#  include <Kokkos_TPINode.hpp>
+#endif
+#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
+#  include <Kokkos_OpenMPNode.hpp>
+#endif
+#if defined(HAVE_KOKKOSCLASSIC_THRUST)
+#  include <Kokkos_ThrustGPUNode.hpp>
+#endif
+
+/* Tpetra provides official support for dd_real and qd_real */
+#if defined(HAVE_TPETRA_QD)
+#include <qd/qd_real.h>
+#endif
+
+@TPETRA_ETIMACRO_TSLGN@
+
+@TPETRA_ETIMACRO_CONVERT@
+
+@TPETRA_ETIMACRO_SLGN@
+
+@TPETRA_ETIMACRO_LGN@
+
+@TPETRA_ETIMACRO_TSLG@
+
+@TPETRA_ETIMACRO_SLG@
+
+@TPETRA_ETIMACRO_LG@
+
+@TPETRA_ETIMACRO_N@
+
+@TPETRA_ETIMACRO_SLGN_NOGPU@
+
+@TPETRA_ETIMACRO_LGN_NOGPU@  
+
+@TPETRA_ETIMACRO_SLG_NOGPU@  
+
+@TPETRA_ETIMACRO_LG_NOGPU@   
+
+@TPETRA_ETIMACRO_N_NOGPU@    
+
+@TPETRA_ETIMACRO_TSLGN_NOGPU@
+
+@TPETRA_ETIMACRO_TSLG_NOGPU@ 
+
+@TPETRA_ETIMACRO_CONVERT_NOGPU@
+
+@TPETRA_ETIMACRO_TESTMV@
+
+@TPETRA_ETI_TYPEDEFS@
+
+#endif // TPETRA_ETIHELPERMACROS_H_

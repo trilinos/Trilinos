@@ -52,10 +52,10 @@ using Teuchos::RCP;
 using Teuchos::Array;
 using Teuchos::ArrayView;
 typedef int LO;
-typedef long GO;
+typedef int GO;
 typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
 typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-typedef Tpetra::Map<int, long, Node> Map;
+typedef Tpetra::Map<LO, GO, Node> Map;
 typedef Tpetra::Directory<LO, GO, Node> Directory;
     
 

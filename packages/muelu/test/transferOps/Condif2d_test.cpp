@@ -213,11 +213,11 @@ int main(int argc, char *argv[]) {
 
   *out << " afer TentativePFactory " << std::endl;
   //RCP<TentativePFactory> Pfact = rcp(new TentativePFactory(UCAggFact));
-  //RCP<RFactory>          Rfact = rcp( new TransPFactory(Pfact));
+  //RCP<Factory>          Rfact = rcp( new TransPFactory(Pfact));
   //RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
-  //RCP<RFactory>         Rfact = rcp( new TransPFactory(Pfact));
+  //RCP<Factory>         Rfact = rcp( new TransPFactory(Pfact));
   RCP<PgPFactory>       Pfact = rcp( new PgPFactory(TentPFact) );
-  RCP<RFactory>         Rfact = rcp( new GenericRFactory(Pfact));
+  RCP<Factory>         Rfact = rcp( new GenericRFactory(Pfact));
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory(Pfact, Rfact) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 

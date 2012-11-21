@@ -1,13 +1,13 @@
-/*
 // @HEADER
+//
 // ***********************************************************************
-// 
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
-// 
+//
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,59 +35,35 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
-// ************************************************************************
+// Questions? Contact
+//                    Jeremie Gaidamour (jngaida@sandia.gov)
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
+//
+// ***********************************************************************
+//
 // @HEADER
-*/
+#include "MueLu_ExplicitInstantiation.hpp"
 
-#include "Tpetra_ConfigDefs.hpp"
+#include "MueLu_ProjectorSmoother_def.hpp"
 
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_QD)
-
-#include <qd/qd_real.h>
-
-// definitions
-#include "Tpetra_Map_decl.hpp"
-#include "Tpetra_Map_def.hpp"
-#include "Tpetra_MultiVector_decl.hpp"
-#include "Tpetra_MultiVector_def.hpp"
-#include "Tpetra_Vector_decl.hpp"
-#include "Tpetra_Vector_def.hpp"
-
-// nodes
-#include <Kokkos_SerialNode.hpp>
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-#  include <Kokkos_TBBNode.hpp>
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-#  include <Kokkos_TPINode.hpp>
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-#  include <Kokkos_OpenMPNode.hpp>
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
+template class MueLu::ProjectorSmoother<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
 #endif
 
-/* these examples require some explicit instantiations that is not enabled in the build of the library 
-*/
-
-#define INSTANT_ALL( NODE ) \
-  TPETRA_MULTIVECTOR_INSTANT(qd_real,int,int,NODE) \
-  TPETRA_VECTOR_INSTANT(     qd_real,int,int,NODE)
-
-namespace Tpetra {
-
-  INSTANT_ALL(Kokkos::SerialNode)
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-  INSTANT_ALL(Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-  INSTANT_ALL(Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-  INSTANT_ALL(Kokkos::OpenMPNode)
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
+# ifdef HAVE_TEUCHOS_LONG_LONG_INT
+template class MueLu::ProjectorSmoother<double, int, long long int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+# else
+# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
+# endif
 #endif
 
-}
-
+#ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
+# ifdef HAVE_TEUCHOS_COMPLEX
+#include <complex>
+template class MueLu::ProjectorSmoother<std::complex<double>, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+# else
+# warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
+# endif
 #endif
-

@@ -78,6 +78,10 @@ typedef MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOp
 typedef MueLu::Amesos2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Amesos2Smoother;
 #endif
 
+#ifdef MUELU_PROJECTORSMOOTHER_SHORT
+typedef MueLu::ProjectorSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ProjectorSmoother;
+#endif
+
 #ifdef MUELU_DIRECTSOLVER_SHORT
 typedef MueLu::DirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DirectSolver;
 #endif
@@ -112,14 +116,6 @@ typedef MueLu::FactoryManager<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps
 
 #ifdef MUELU_THRESHOLDAFILTERFACTORY_SHORT
 typedef MueLu::ThresholdAFilterFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ThresholdAFilterFactory;
-#endif
-
-#ifdef MUELU_SEGREGATIONAFILTERFACTORY_SHORT
-typedef MueLu::SegregationAFilterFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SegregationAFilterFactory;
-#endif
-
-#ifdef MUELU_SEGREGATIONATRANSFERFACTORY_SHORT
-typedef MueLu::SegregationATransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SegregationATransferFactory;
 #endif
 
 #ifdef MUELU_REPARTITIONFACTORY_SHORT

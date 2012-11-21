@@ -1349,6 +1349,24 @@ Tpetra::createOneToOne (Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdina
                                               const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< NODE > &node); \
   \
   template Teuchos::RCP<const Map<LO,GO,NODE> > \
-  createOneToOne (Teuchos::RCP<const Map<LO,GO,NODE> > &M); \
+  createOneToOne (Teuchos::RCP<const Map<LO,GO,NODE> > &M);
+
+
+//! Explicit instantiation macro supporting the Map class, on the default node for specified ordinals.
+#define TPETRA_MAP_INSTANT_DEFAULTNODE(LO,GO) \
+  template Teuchos::RCP< const Map<LO,GO> > \
+  createLocalMap<LO,GO>( size_t, const Teuchos::RCP< const Teuchos::Comm< int > > &); \
+  \
+  template Teuchos::RCP< const Map<LO,GO> > \
+  createContigMap<LO,GO>( global_size_t, size_t, \
+                          const Teuchos::RCP< const Teuchos::Comm< int > > &); \
+  \
+  template Teuchos::RCP< const Map<LO,GO> >  \
+  createNonContigMap(const Teuchos::ArrayView<const GO> &,          \
+                     const RCP<const Teuchos::Comm<int> > &); \
+  \
+  template Teuchos::RCP< const Map<LO,GO> >  \
+  createUniformContigMap<LO,GO>( global_size_t, \
+                                 const Teuchos::RCP< const Teuchos::Comm< int > > &); \
 
 #endif // TPETRA_MAP_DEF_HPP

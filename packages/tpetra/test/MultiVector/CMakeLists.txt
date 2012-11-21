@@ -2,6 +2,9 @@ INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsAddExecutable)
 
 
+IF(Tpetra_ENABLE_Thrust)
+  SET(MAXNP NUM_MPI_PROCS 1)
+ENDIF()
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MultiVector_UnitTests
   SOURCES
@@ -9,6 +12,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
+  ${MAXNP}
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   )
 

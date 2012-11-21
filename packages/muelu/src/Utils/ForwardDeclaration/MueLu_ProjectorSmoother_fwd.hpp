@@ -1,13 +1,13 @@
-/*
 // @HEADER
+//
 // ***********************************************************************
-// 
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
-// 
+//
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,59 +35,24 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
-// ************************************************************************
+// Questions? Contact
+//                    Jeremie Gaidamour (jngaida@sandia.gov)
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
+//
+// ***********************************************************************
+//
 // @HEADER
-*/
+#ifndef MUELU_PROJECTORSMOOTHER_FWD_HPP
+#define MUELU_PROJECTORSMOOTHER_FWD_HPP
 
-#include "Tpetra_ConfigDefs.hpp"
-
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_QD)
-
-#include <qd/dd_real.h>
-
-// definitions
-#include "Tpetra_Map_decl.hpp"
-#include "Tpetra_Map_def.hpp"
-#include "Tpetra_MultiVector_decl.hpp"
-#include "Tpetra_MultiVector_def.hpp"
-#include "Tpetra_Vector_decl.hpp"
-#include "Tpetra_Vector_def.hpp"
-
-// nodes
-#include <Kokkos_SerialNode.hpp>
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-#  include <Kokkos_TBBNode.hpp>
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-#  include <Kokkos_TPINode.hpp>
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-#  include <Kokkos_OpenMPNode.hpp>
-#endif
-
-/* these examples require some explicit instantiations that is not enabled in the build of the library 
-*/
-
-#define INSTANT_ALL( NODE ) \
-  TPETRA_MULTIVECTOR_INSTANT(dd_real,int,int,NODE) \
-  TPETRA_VECTOR_INSTANT(     dd_real,int,int,NODE)
-
-namespace Tpetra {
-
-  INSTANT_ALL(Kokkos::SerialNode)
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-  INSTANT_ALL(Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-  INSTANT_ALL(Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-  INSTANT_ALL(Kokkos::OpenMPNode)
-#endif
-
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class ProjectorSmoother;
 }
 
+#ifndef MUELU_PROJECTORSMOOTHER_SHORT
+#define MUELU_PROJECTORSMOOTHER_SHORT
 #endif
 
+#endif // MUELU_PROJECTORSMOOTHER_FWD_HPP

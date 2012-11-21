@@ -35,30 +35,20 @@
 
 #include "Ifpack2_ILUT_decl.hpp"
 #include "Ifpack2_ILUT_def.hpp"
-#include "Ifpack2_ExplicitInstantiationHelpers.hpp"
-
+#include "Ifpack2_ETIHelperMacros.h"
 
 // Note: Add similar explicit instantiation for ILU when this gets implemented
 
-#define IFPACK2_INST_SPARSE_ILUT(CLASSNAME,S,LO,GO) \
-  template class CLASSNAME<Tpetra::CrsMatrix<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, \
-			   Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,LO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > >
-
-
+#define IFPACK2_INST_SPARSE_ILUT(S,LO,GO) \
+  template class AdditiveSchwarz<Tpetra::CrsMatrix<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, \
+			   Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,LO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > >;
 
 namespace Ifpack2 {
-#ifdef HAVE_TPETRA_INST_FLOAT
-IFPACK2_INST_SPARSE_ILUT(AdditiveSchwarz,float,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_DOUBLE
-IFPACK2_INST_SPARSE_ILUT(AdditiveSchwarz,double,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-IFPACK2_INST_SPARSE_ILUT(AdditiveSchwarz,std::complex<float>,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-IFPACK2_INST_SPARSE_ILUT(AdditiveSchwarz,std::complex<double>,int,int);
-#endif
+  
+  IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+  IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_SPARSE_ILUT)
+
 }
 
 #endif
