@@ -28,7 +28,7 @@
 
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/CPUTime.hpp>
-#include <stk_util/util/MallocUsed.h>
+#include <stk_util/util/memory_util.hpp>
 
 #include <stk_mesh/base/MemoryUsage.hpp>
 
@@ -201,14 +201,14 @@ namespace stk {
     static MemorySizeType memory_dump(int dump_level, const stk::ParallelMachine& comm, stk::mesh::BulkData& bulkData, NodeRegistry* node_reg, std::string msg)
     {
       MemorySizeType returned_total_memory;
-      MemorySizeType malloc_used_0 = malloc_used();
-      MemorySizeType malloc_footprint_0 = malloc_footprint();
-      MemorySizeType malloc_max_footprint_0 = malloc_max_footprint();
-      MemorySizeType MB = 1024*1024;
+      MemorySizeType rss_current_0 = 0;
+      MemorySizeType rss_high_water_mark_0 = 0;
+      get_memory_usage(rss_current_0, rss_high_water_mark_0);
 
-      stk::all_reduce( comm, stk::ReduceSum<1>( &malloc_used_0 ) );
-      stk::all_reduce( comm, stk::ReduceSum<1>( &malloc_footprint_0 ) );
-      stk::all_reduce( comm, stk::ReduceSum<1>( &malloc_max_footprint_0 ) );
+      const MemorySizeType MB = 1024*1024;
+
+      stk::all_reduce( comm, stk::ReduceSum<1>( &rss_current_0 ) );
+      stk::all_reduce( comm, stk::ReduceSum<1>( &rss_high_water_mark_0 ) );
 
       stk::mesh::MemoryUsage mem_usage;
       stk::mesh::compute_memory_usage(bulkData, mem_usage);
@@ -227,15 +227,6 @@ namespace stk {
       stk::all_reduce( comm, stk::ReduceMax<1>( &mem_total_bytes_max ) );
       if (bulkData.parallel_rank() == 0)
         {
-#if !defined(SIERRA_PTMALLOC3_ALLOCATOR) && !defined(SIERRA_PTMALLOC2_ALLOCATOR)
-          std::cout << "WARNING: ptmalloc2|3 not compiled in so malloc_used info unavailable.  Recompile with e.g. 'bake allocator=ptmalloc2 (or 3)'.  Printing zeros..." << std::endl;
-
-          //  intelcray
-
-#else
-
-#endif
-
           if (dump_level > 1)
 
             {
@@ -244,24 +235,23 @@ namespace stk {
               if (dump_level > 2)
                 stk::mesh::print_memory_usage(mem_usage, std::cout);
 
-              std::cout << "P[" << bulkData.parallel_rank() << "] AdaptMain::memory_dump malloc_used total (sum all proc) at stage [" << msg << "] = "
-                        << " malloc_used malloc_footprint malloc_max_footprint [MB]= " << ((double)malloc_used_0)/MB
-                        << " , " << ((double)malloc_footprint_0)/MB
-                        << " , " << ((double)malloc_max_footprint_0)/MB
+              std::cout << "P[" << bulkData.parallel_rank() << "] AdaptMain::memory_dump rss total (sum all proc) at stage [" << msg << "] = "
+                        << " current high-water-mark [MB]= " << ((double)rss_current_0)/MB
+                        << " , " << ((double)rss_high_water_mark_0)/MB
                         << std::endl;
             }
 
           {
-            std::cout << "AdaptMain::memory_dump summary for " << msg << " : stk_mesh [sum], NodeRegistry [sum], ptmalloc[sum] [MB] "
+            std::cout << "AdaptMain::memory_dump summary for " << msg << " : stk_mesh [sum], NodeRegistry [sum], rss[sum] [MB] "
                       << ((double)mem_total_bytes_sum)/MB << " , "
                       << ((double)node_reg_mem_sum)/MB << " , "
-                      << ((double)malloc_used_0)/MB
+                      << ((double)rss_current_0)/MB
                       << std::endl;
           }
 
         }
-      if (malloc_used_0)
-        returned_total_memory = malloc_used_0;
+      if (rss_current_0)
+        returned_total_memory = rss_current_0;
       else
         returned_total_memory = mem_total_bytes_sum+node_reg_mem_sum;
 

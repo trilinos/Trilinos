@@ -31,8 +31,7 @@
 
 #include <stk_percept/fixtures/Fixture.hpp>
 #include <stk_percept/fixtures/QuadFixture.hpp>
-#include <stk_util/util/MallocUsed.h>
-
+#include <stk_util/util/memory_util.hpp>
 
 namespace stk
 {
@@ -48,36 +47,23 @@ typedef uint64_t MemorySizeType;
 
 struct MemoryInfo
 {
-  MemorySizeType m_malloc_used;
-  MemorySizeType m_malloc_footprint;
-  MemorySizeType m_malloc_max_footprint;
+  MemorySizeType m_rss_current;
+  MemorySizeType m_rss_high_water_mark;
   static const MemorySizeType MB = 1024*1024;
 
   MemoryInfo() { get_memory_usage(); }
 
   void get_memory_usage() 
   {
-#if DO_MEMORY_ACCOUNTING
-#if !defined(SIERRA_PTMALLOC3_ALLOCATOR) && !defined(SIERRA_PTMALLOC2_ALLOCATOR)
-          std::cout << "WARNING: ptmalloc2|3 not compiled in so malloc_used info unavailable.  Recompile with e.g. 'bake allocator=ptmalloc2 (or 3)'.  Printing zeros..." << std::endl;
-#else
-
-#endif
-    m_malloc_used = malloc_used();
-    m_malloc_footprint = malloc_footprint();
-    m_malloc_max_footprint = malloc_max_footprint();
-#else
-    m_malloc_used = 0;
-    m_malloc_footprint = 0;
-    m_malloc_max_footprint = 0;
-#endif
+    m_rss_current = 0;
+    m_rss_high_water_mark = 0;
+    stk::get_memory_usage(m_rss_current, m_rss_high_water_mark);
   }
   void set_state() { get_memory_usage(); }
   void get_increment() {
     MemoryInfo old_state = *this;
     get_memory_usage();
-    m_malloc_used -= old_state.m_malloc_used;
-    m_malloc_footprint -= old_state.m_malloc_footprint;
+    m_rss_current -= old_state.m_rss_current;
   }
 
 };
@@ -87,8 +73,8 @@ inline double MegaByte(MemorySizeType x) { return  ((double)x/1024.0/1024.0); }
 std::ostream& operator<<(std::ostream& os, const MemoryInfo& mem)
 {
   char buf[1024];
-  sprintf(buf, "\n%20s %20s %20s\n%20g %20g %20g\n", "used [MB]", "footprint [MB]", "max_footprint [MB]",
-          MegaByte(mem.m_malloc_used), MegaByte(mem.m_malloc_footprint), MegaByte(mem.m_malloc_max_footprint) );
+  sprintf(buf, "\n%20s %20s\n%20g %20g\n", "current_rss [MB]", "max_rss [MB]",
+          MegaByte(mem.m_rss_current), MegaByte(mem.m_rss_high_water_mark) );
   os << buf;
   return os;
 }
@@ -127,7 +113,7 @@ STKUNIT_UNIT_TEST(adapt, count_memory)
       eMesh.get_bulk_data()->modification_end();
 
       mem_delta_node.get_increment();
-      double mem_per_node = double(mem_delta_node.m_malloc_used)/double(num_new_nodes);
+      double mem_per_node = double(mem_delta_node.m_rss_current)/double(num_new_nodes);
       std::cout << "\nstk_mesh count_memory mem_per_node = " << mem_per_node << "\n" << std::endl;
 
       MemoryInfo mem_delta_elem_0, mem_delta_elem_1;
@@ -151,8 +137,8 @@ STKUNIT_UNIT_TEST(adapt, count_memory)
       eMesh.get_bulk_data()->modification_end();
 
       mem_delta_elem_1.get_increment();
-      double mem_per_elem_0 = double(mem_delta_elem_0.m_malloc_used)/double(num_new_tris);
-      double mem_per_elem_1 = double(mem_delta_elem_1.m_malloc_used)/double(num_new_tris);
+      double mem_per_elem_0 = double(mem_delta_elem_0.m_rss_current)/double(num_new_tris);
+      double mem_per_elem_1 = double(mem_delta_elem_1.m_rss_current)/double(num_new_tris);
 
       time += stk::percept::Util::cpu_time();
 
