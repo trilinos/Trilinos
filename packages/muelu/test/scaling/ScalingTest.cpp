@@ -330,28 +330,19 @@ int main(int argc, char *argv[]) {
       RCP<RepartitionFactory> RepartitionFact = rcp(new RepartitionFactory(minRowsPerProc,nonzeroImbalance));
       RepartitionFact->SetFactory("Partition", zoltan);
       RepartitionFact->SetFactory("A", Acfact);
-//       permPFactory = rcp( new PermutedTransferFactory(MueLu::INTERPOLATION));
-//       permPFactory->SetFactory("A", Acfact);
-//       permPFactory->SetFactory("P", SaPfact);
-//       permPFactory->SetFactory("Importer", RepartitionFact);
 
-      permPFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, SaPfact, MueLu::INTERPOLATION));
+      permPFactory = rcp( new PermutedTransferFactory(MueLu::INTERPOLATION));
+      permPFactory->SetFactory("Importer", RepartitionFact);
+      permPFactory->SetFactory("A", Acfact);
+      permPFactory->SetFactory("P", SaPfact);
 
-//     PermutedTransferFactory(RCP<const FactoryBase> repartitionFact=Teuchos::null,
-//                              RCP<const FactoryBase> initialAFact=Teuchos::null,
-//                              RCP<const FactoryBase> initialTransferFact=Teuchos::null,
-//                              TransferType PorR = MueLu::INTERPOLATION,
-//                              RCP<const FactoryBase> nullspaceFact=Teuchos::null,
-//                              RCP<const FactoryBase> coordinateFact=Teuchos::null);
+      permRFactory = rcp( new PermutedTransferFactory(MueLu::RESTRICTION));
+      permRFactory->SetFactory("Importer", RepartitionFact);
+      permRFactory->SetFactory("A", Acfact);
+      permRFactory->SetFactory("R", M.GetFactory("R"));
+      permRFactory->SetFactory("Nullspace", M.GetFactory("Ptent"));
+      permRFactory->SetFactory("Coordinates", mvTransFact);
 
-
-//       permRFactory = rcp( new PermutedTransferFactory(MueLu::RESTRICTION));
-//       permRFactory->SetFactory("A", Acfact);
-//       permPFactory->SetFactory("P", M.GetFactory("Ptent"));
-//       permRFactory->SetFactory("R", M.GetFactory("R"));
-//       permRFactory->SetFactory("Importer", RepartitionFact);
-//       permRFactory->SetFactory("Nullspace", mvTransFact);
-    permRFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, M.GetFactory("R"), MueLu::RESTRICTION, M.GetFactory("Ptent"), mvTransFact));
 
       AcfactFinal = rcp(new RAPFactory());
       AcfactFinal->SetFactory("P", permPFactory);
