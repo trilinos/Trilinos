@@ -301,7 +301,7 @@ STKUNIT_UNIT_TEST(norm, surface_area)
   }
 
   Norm<2> l2Norm(bulkData, &selector, TURBO_NONE, is_surface_norm);
-  Norm<2> l2Norm1(bulkData, "surface_1");
+  Norm<2> l2Norm1(bulkData, "surface_1", TURBO_NONE);
   l2Norm1.set_is_surface_norm(true);
 
   /// get the l2 norm of identity
@@ -917,7 +917,7 @@ STKUNIT_UNIT_TEST(norm, h1_volume_1)
 
   /// the function to be integrated - here it is just the identity, and when integrated should produce the volume
   StringFunction plane("x+2.0*y+3.0*z", Name("plane"));
-  std::string grad[] = {"1", "2", "3"};
+  std::string grad[] = {"1.0", "2.0", "3.0"};
   plane.set_gradient_strings(grad, 3);
 
   /// A place to hold the result.

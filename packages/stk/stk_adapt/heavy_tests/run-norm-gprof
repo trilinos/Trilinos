@@ -1,0 +1,5 @@
+
+#mpiexec -n 1 $CODE/bin/stk_adapt_htest --gtest_filter=heavy_norm.string_function_turbo_timings
+
+mpiexec -n 1 $CODE/bin/stk_adapt_htest --gtest_filter=heavy_norm.string_function_turbo_timings_bucket
+mpiexec -n 1 $CODE/bin/stk_adapt_htest --gtest_filter=heavy_norm.string_function_turbo_timings_bucket_prof

@@ -123,7 +123,7 @@ namespace stk
       unsigned m_cubDegree;
     public:
 
-      Norm(mesh::BulkData& bulkData, std::string partName, TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) :
+      Norm(mesh::BulkData& bulkData, std::string partName, TurboOption turboOpt=TURBO_BUCKET, bool is_surface_norm=false) :
         FunctionOperator(bulkData, (mesh::Part*)0), m_is_surface_norm(is_surface_norm), m_turboOpt(turboOpt), m_cubDegree(2)
       {
         mesh::Part * part = stk::mesh::MetaData::get(bulkData).get_part(partName);
@@ -132,7 +132,7 @@ namespace stk
         error_check_is_surface_norm();
       }
 
-      Norm(mesh::BulkData& bulkData, MDArrayString& partNames, TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) :
+      Norm(mesh::BulkData& bulkData, MDArrayString& partNames, TurboOption turboOpt=TURBO_BUCKET, bool is_surface_norm=false) :
         FunctionOperator(bulkData, (mesh::Part*)0), m_is_surface_norm(is_surface_norm), m_turboOpt(turboOpt), m_cubDegree(2)
       {
         if (partNames.rank() != 1) throw std::runtime_error("Input array of strings should be rank 1 multi-d array (numpy array if from Python)");
@@ -149,14 +149,14 @@ namespace stk
         error_check_is_surface_norm();
       }
 
-      Norm(mesh::BulkData& bulkData, mesh::Part *part = 0, TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) :
+      Norm(mesh::BulkData& bulkData, mesh::Part *part = 0, TurboOption turboOpt=TURBO_BUCKET, bool is_surface_norm=false) :
         FunctionOperator(bulkData, part), m_is_surface_norm(is_surface_norm), m_turboOpt(turboOpt), m_cubDegree(2)
      {
         error_check_is_surface_norm();
      }
 
 #ifndef SWIG
-      Norm(mesh::BulkData& bulkData, mesh::Selector * selector,TurboOption turboOpt=TURBO_NONE,  bool is_surface_norm = false) :
+      Norm(mesh::BulkData& bulkData, mesh::Selector * selector,TurboOption turboOpt=TURBO_BUCKET,  bool is_surface_norm = false) :
         FunctionOperator(bulkData, selector), m_is_surface_norm(is_surface_norm), m_turboOpt(turboOpt), m_cubDegree(2)
      {
         error_check_is_surface_norm();

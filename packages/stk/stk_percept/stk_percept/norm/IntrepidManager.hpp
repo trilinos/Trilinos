@@ -45,6 +45,10 @@
 #include "Teuchos_oblackholestream.hpp"
 //#include "Teuchos_Assert.hpp"
 
+#ifdef SHARDS_ARRAY_BOUNDS_CHECKING
+xxx error 
+#endif
+
 
 using namespace std;
 using namespace Intrepid;
