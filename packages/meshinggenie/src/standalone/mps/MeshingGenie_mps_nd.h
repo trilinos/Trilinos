@@ -79,6 +79,10 @@ class MeshingGenie_mps_nd
 			          std::vector< std::vector<double> > &boundary_points,
 			          std::vector< std::vector<size_t> > &boundary_faces, 
 				      std::vector< std::vector<double> > &sample_points);
+
+		void save_maximal_sample(std::string file_name);
+
+		double* get_closest_sample_point(double* xin);
 		
 		void destroy_mps_data();
 
