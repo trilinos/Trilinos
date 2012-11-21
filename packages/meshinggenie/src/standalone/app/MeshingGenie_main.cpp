@@ -118,6 +118,7 @@ int main(int argc, char *argv[])
 	{
 		MeshingGenie_mps_nd genie_mps;
 		genie_mps.solve_mps(_ndim, _r, _random_seed, _boundary_points, _boundary_faces, _sample_points);
+		genie_mps.save_maximal_sample("maximal_sample.dat");
 	}
 
 	char dummy_cc;
