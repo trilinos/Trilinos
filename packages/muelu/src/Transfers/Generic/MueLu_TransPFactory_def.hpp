@@ -58,30 +58,17 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TransPFactory(RCP<const FactoryBase> PFact)
-    : PFact_(PFact)
-  { }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~TransPFactory() {}
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    coarseLevel.DeclareInput("P", PFact_.get(), this);
+    Input(coarseLevel, "P");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level & coarseLevel) const {
-    return BuildR(fineLevel,coarseLevel);
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildR(Level & fineLevel, Level & coarseLevel) const {
     FactoryMonitor m(*this, "Transpose P", coarseLevel);
 
     Teuchos::OSTab tab(this->getOStream());
     Teuchos::ParameterList matrixList;
-    RCP<Matrix> P = coarseLevel.Get< RCP<Matrix> >("P", PFact_.get());
+    RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
 
     //doesn't work -- bug in EpetraExt?
     //RCP<Matrix> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrixWrap>("Identity",P->getRangeMap(),matrixList);
@@ -91,13 +78,13 @@ namespace MueLu {
 
     RCP<Matrix> R = Utils2::Transpose(P,true);
 
-    coarseLevel.Set("R", R, this);
+    Set(coarseLevel, "R", R);
 
     ///////////////////////// EXPERIMENTAL
     if(P->IsView("stridedMaps")) R->CreateView("stridedMaps", P, true);
     ///////////////////////// EXPERIMENTAL
 
-  } //BuildR
+  } //Build
 
 } //namespace MueLu
 

@@ -47,6 +47,7 @@
 #ifdef Piro_ENABLE_Rythmos
 #include "Piro_Epetra_RythmosSolver.hpp"
 
+#include "Piro_Test_EpetraSupport.hpp"
 #include "MockModelEval_A.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"
@@ -57,32 +58,10 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Tuple.hpp"
-#include "Teuchos_Assert.hpp"
-
-#include <stdexcept>
 
 using namespace Teuchos;
 using namespace Piro;
-
-#include "Epetra_LocalMap.h"
-#include "Epetra_Vector.h"
-#include "Epetra_Import.h"
-
-Array<double> arrayFromVector(const Epetra_Vector &vec) {
-  const Epetra_BlockMap &vecMap = vec.Map();
-  const Epetra_LocalMap localMap(vecMap.NumGlobalElements(), 0, vec.Comm());
-  const Epetra_Import localImporter(localMap, vecMap);
-
-  Epetra_Vector localVec(localMap, false);
-  localVec.Import(vec, localImporter, Insert);
-
-  return Array<double>(localVec.Values(), localVec.Values() + localVec.MyLength());
-}
-
-Array<double> arrayFromVector(const Epetra_MultiVector &mv, int col)
-{
-  return arrayFromVector(*mv(col));
-}
+using namespace Piro::Test;
 
 RCP<EpetraExt::ModelEvaluator> epetraModelNew()
 {
@@ -113,22 +92,6 @@ RCP<Epetra::RythmosSolver> solverNew(const RCP<EpetraExt::ModelEvaluator> &model
         model,
         lowsFactory,
         finalTime));
-}
-
-RCP<Epetra_Vector> vectorNew(const Epetra_BlockMap &map)
-{
-  return rcp(new Epetra_Vector(map));
-}
-
-RCP<Epetra_MultiVector> multiVectorNew(const Epetra_BlockMap &map, int vectorCount)
-{
-  return rcp(new Epetra_MultiVector(map, vectorCount));
-}
-
-RCP<Epetra_MultiVector> multiVectorNew(const Epetra_BlockMap &map, const Epetra_BlockMap &colMap)
-{
-  TEUCHOS_ASSERT(colMap.NumGlobalElements() == colMap.NumMyElements());
-  return multiVectorNew(map, colMap.NumGlobalElements());
 }
 
 EpetraExt::ModelEvaluator::InArgs createNominalInArgs(const EpetraExt::ModelEvaluator &model)

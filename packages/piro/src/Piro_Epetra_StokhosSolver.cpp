@@ -66,6 +66,13 @@ setup(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
   sg_solver = sg_solver_factory.createSGSolverAdapter(sg_block_solver);
 }
 
+void
+Piro::Epetra::StokhosSolver::
+resetSolverParameters(const Teuchos::ParameterList& new_solver_params)
+{
+  sg_solver_factory.resetSolverParameters(new_solver_params);
+}
+
 Teuchos::RCP<const Epetra_Comm>
 Piro::Epetra::StokhosSolver::
 getSpatialComm() const

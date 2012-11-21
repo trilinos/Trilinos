@@ -59,7 +59,7 @@ IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
     ENDFOREACH()
   ENDFOREACH()
   JOIN(Tpetra_ETI_SCALARS "|" FALSE ${Tpetra_ETI_SCALARS})
-  TRIBITS_ADD_ETI_INSTANTIATIONS(Tpetra ${DualScalarInsts})
+  #TRIBITS_ADD_ETI_INSTANTIATIONS(Tpetra ${DualScalarInsts})
   # assemble single scalar instantiations
   TRIBITS_ETI_TYPE_EXPANSION(SingleScalarInsts   "S=${Tpetra_ETI_SCALARS}" "N=${Tpetra_ETI_NODES}"
                                                  "LO=${Tpetra_ETI_LORDS}" "GO=${Tpetra_ETI_GORDS}")

@@ -44,14 +44,14 @@
 //
 // @HEADER
 #include "Teuchos_UnitTestHarness.hpp"
-#include "MueLu_config.hpp"
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Version.hpp"
 
 #include "MueLu_Utilities.hpp"
 
 #include "MueLu_NoFactory.hpp"
-#include "MueLu_FactoryBase2.hpp"
+#include "MueLu_Factory.hpp"
 
 #include "MueLu_TestHelpers.hpp"
 
@@ -60,10 +60,11 @@
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_Factory.hpp"
+
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
-
-#include "MueLu_SingleLevelFactoryBase.hpp"
 
 namespace MueLuTests {
 
@@ -72,9 +73,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     Level aLevel;
-    TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(aLevel);
+    TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(aLevel);
 
-    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2); //can be an empty operator
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(2); //can be an empty operator
 
     aLevel.Set("Hitchhiker's Guide", 42);
     int fff = aLevel.Get<int>("Hitchhiker's Guide");
@@ -113,7 +114,7 @@ namespace MueLuTests {
     Level l;
     l.SetLevelID(0);
 
-    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
     l.Set("A", A);
 
     RCP<FactoryManager> facManager = rcp(new FactoryManager());
@@ -137,11 +138,11 @@ namespace MueLuTests {
     RCP<FactoryManager> facManager = rcp(new FactoryManager());
     l.SetFactoryManager(facManager);
 
-    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
     l.Set("A", A);
 
     RCP<FactoryBase> graphFact = rcp(new CoalesceDropFactory());
-    RCP<FactoryBase2> aggFact  = rcp(new UCAggregationFactory());
+    RCP<Factory> aggFact  = rcp(new UCAggregationFactory());
     aggFact->SetFactory("Graph", graphFact);
 
     l.Request("Aggregates", aggFact.get());
@@ -167,11 +168,11 @@ namespace MueLuTests {
     RCP<FactoryManager> facManager = rcp(new FactoryManager());
     l.SetFactoryManager(facManager);
 
-    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
     l.Set("A", A);
 
-    RCP<FactoryBase2> graphFact = rcp(new CoalesceDropFactory());
-    RCP<FactoryBase2> aggFact   = rcp(new UCAggregationFactory());
+    RCP<Factory> graphFact = rcp(new CoalesceDropFactory());
+    RCP<Factory> aggFact   = rcp(new UCAggregationFactory());
     aggFact->SetFactory("Graph", graphFact);
 
     l.Keep("Aggregates", aggFact.get());      // set keep flag
@@ -204,7 +205,7 @@ namespace MueLuTests {
     RCP<FactoryManager> facManager = rcp(new FactoryManager());
     l.SetFactoryManager(facManager);
 
-    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(144);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(144);
     l.Set("A", A);
 
     RCP<CoalesceDropFactory>  graphFact = rcp(new CoalesceDropFactory());
@@ -269,7 +270,7 @@ namespace MueLuTests {
     RCP<FactoryManager> facManager = rcp(new FactoryManager());
     l.SetFactoryManager(facManager);
 
-    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(144);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(144);
     l.Set("A", A);
 
     RCP<CoalesceDropFactory>  graphFact = rcp(new CoalesceDropFactory());
@@ -357,7 +358,7 @@ namespace MueLuTests {
 
     A.SetCircularFactory(rcpFromRef(A));
 
-    Level level; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+    Level level; TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
 
     level.Request("data", &A);
 
@@ -375,7 +376,7 @@ namespace MueLuTests {
     A.SetCircularFactory(rcpFromRef(B));
     B.SetCircularFactory(rcpFromRef(A));
 
-    Level level; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
+    Level level; TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(level);
 
     level.Request("data", &A);
 

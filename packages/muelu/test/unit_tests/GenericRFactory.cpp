@@ -132,7 +132,7 @@ namespace MueLuTests {
     UCAggFact->SetPhase3AggCreation(0.5);
 
     RCP<SaPFactory>         Pfact = rcp( new SaPFactory());
-    RCP<RFactory>           Rfact = rcp( new GenericRFactory() );
+    RCP<Factory>           Rfact = rcp( new GenericRFactory() );
     H->SetMaxCoarseSize(1);
 
     // setup smoothers
@@ -238,7 +238,7 @@ namespace MueLuTests {
     for (int i=1; i<5; i++) {
       // generate problem
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-      RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(50*i*comm->getSize());
+      RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(50*i*comm->getSize());
 
       // Multigrid Hierarchy
       Hierarchy H(A);
@@ -253,7 +253,7 @@ namespace MueLuTests {
         out << "||NS|| = " << norms[0] << std::endl;
 
       RCP<PgPFactory>         Pfact = rcp( new PgPFactory());
-      RCP<RFactory>           Rfact = rcp( new GenericRFactory() );
+      RCP<Factory>           Rfact = rcp( new GenericRFactory() );
       RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
 
       // setup smoothers

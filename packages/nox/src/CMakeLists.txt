@@ -223,6 +223,8 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA)
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_PrePostOperator_RowSumScaling.H
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_MeritFunction_Weighted.hpp
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Solver_PseudoTransient.hpp
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_MatrixFreeJacobianOperator.hpp
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_MatrixFreeJacobianOperator_impl.hpp
   )
   APPEND_SET(SOURCES
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_Vector.C

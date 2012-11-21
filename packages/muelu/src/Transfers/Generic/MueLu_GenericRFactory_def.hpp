@@ -50,6 +50,7 @@
 
 #include "MueLu_GenericRFactory_decl.hpp"
 
+#include "MueLu_FactoryBase.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Monitor.hpp"
@@ -57,17 +58,10 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GenericRFactory(RCP<PFactory> PFact)
-    : PFact_(PFact)
-  { }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~GenericRFactory() {}
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    RCP<PFactory> PFact = PFact_;
-    if (PFact_ == Teuchos::null) { PFact = Teuchos::rcp_const_cast<PFactory>(rcp_dynamic_cast<const PFactory>(coarseLevel.GetFactoryManager()->GetFactory("P"))); /* ! */ }
+    RCP<const FactoryBase> PFact1 = GetFactory("P");
+    if (PFact1 == Teuchos::null) { PFact1 = coarseLevel.GetFactoryManager()->GetFactory("P"); }
+    RCP<PFactory> PFact = Teuchos::rcp_const_cast<PFactory>(rcp_dynamic_cast<const PFactory>(PFact1));;
 
     bool rmode = PFact->isRestrictionModeSet();
     PFact->setRestrictionMode(true);             // set restriction mode
@@ -88,15 +82,11 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level & coarseLevel) const {
-    return BuildR(fineLevel,coarseLevel);
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildR(Level & fineLevel, Level & coarseLevel) const {
     FactoryMonitor m(*this, "Call prolongator factory for calculating restrictor", coarseLevel);
 
-    RCP<PFactory> PFact = PFact_;
-    if (PFact_ == Teuchos::null) { PFact = Teuchos::rcp_const_cast<PFactory>(rcp_dynamic_cast<const PFactory>(coarseLevel.GetFactoryManager()->GetFactory("P"))); /* ! */ }
+    RCP<const FactoryBase> PFact1 = GetFactory("P");
+    if (PFact1 == Teuchos::null) { PFact1 = coarseLevel.GetFactoryManager()->GetFactory("P"); }
+    RCP<PFactory> PFact = Teuchos::rcp_const_cast<PFactory>(rcp_dynamic_cast<const PFactory>(PFact1));;
 
     // BuildR
     bool rmode = PFact->isRestrictionModeSet();
@@ -107,7 +97,7 @@ namespace MueLu {
 
     PFact->setRestrictionMode(rmode);    // reset restriction mode flag
 
-    coarseLevel.Set("R", R, this);
+    Set(coarseLevel, "R", R);
 
   } //BuildR
 

@@ -70,9 +70,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     Level fineLevel;
-    TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(fineLevel);
+    TestHelpers::TestFactory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(fineLevel);
 
-    RCP<Matrix> A = TestHelpers::Factory<SC,LO,GO,NO,LMO>::Build1DPoisson(36);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC,LO,GO,NO,LMO>::Build1DPoisson(36);
     fineLevel.Set("A", A);
 
     CoalesceDropFactory coalesceDropFact;
@@ -86,9 +86,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     Level fineLevel;
-    TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(fineLevel);
+    TestHelpers::TestFactory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(fineLevel);
 
-    RCP<Matrix> A = TestHelpers::Factory<SC,LO,GO,NO,LMO>::Build1DPoisson(3);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC,LO,GO,NO,LMO>::Build1DPoisson(3);
     fineLevel.Set("A", A);
     A->describe(out,Teuchos::VERB_EXTREME);
 

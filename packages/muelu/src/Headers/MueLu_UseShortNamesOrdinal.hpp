@@ -90,8 +90,8 @@ typedef MueLu::IfpackSmoother IfpackSmoother;
 typedef MueLu::FactoryBase FactoryBase;
 #endif
 
-#ifdef MUELU_FACTORYBASE2_SHORT
-typedef MueLu::FactoryBase2 FactoryBase2;
+#ifdef MUELU_FACTORY_SHORT
+typedef MueLu::Factory Factory;
 #endif
 
 #ifdef MUELU_FACTORYMANAGERBASE_SHORT

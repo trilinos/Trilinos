@@ -252,6 +252,8 @@ namespace NOX {
 
       const ::Thyra::ModelEvaluatorBase::InArgs<double>& getInArgs() const;
 
+      Teuchos::RCP< const ::Thyra::ModelEvaluator<double> > getModel() const;
+
     protected:
 
       //! resets the isValid flags to false
@@ -273,8 +275,6 @@ namespace NOX {
       void scaleResidualAndJacobian() const;
 
       void unscaleResidualAndJacobian() const;
-
-      Teuchos::RCP< const ::Thyra::ModelEvaluator<double> > getModel() const;
 
     protected:
 

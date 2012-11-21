@@ -77,7 +77,7 @@ namespace MueLuTests {
     }
 #endif
 
-    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(99);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(99);
 
     ArrayRCP<std::string> fileList = TestHelpers::GetFileList(std::string("ParameterList/MLParameterListInterpreter/"), std::string(".xml"));
 

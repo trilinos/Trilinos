@@ -1,10 +1,10 @@
-// @HEADER
-//
-// ***********************************************************************
-//
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
-//
+
+//@HEADER
+// ************************************************************************
+// 
+//               MeshingGenie: Fracture Meshing Services Package 
+//                 Copyright 2011 Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,55 +35,47 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
-// @HEADER
-#ifndef MUELU_RFACTORY_HPP
-#define MUELU_RFACTORY_HPP
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_TwoLevelFactoryBase.hpp"
+/*******************************************************************************
+ * Author: Mohamed S. Ebeida (msebeid@sandia.gov)
+ * Description: 
+      This class helps debugging the method presented in the following article
+      M. S. Ebeida, S. A. Mitchell, A. Patney, A. A. Davidson, and J. D. Owens, 
+      "A simple algorithm for maximal Poisson-disk sampling in high dimensions", 
+	  Computer Graphics Forum (Eurographics 2012), 31(2), May 2012.
+   
+   input: mesh data (Active pool, boundary cells, ... etc)
 
-namespace MueLu {
+   output: a postscript file that shows various details
 
-/*!
-  @class RFactory
-  @brief Factory that provides an interface for a concrete implementation of a restriction operator.
+ * Last modified: 11/21/2012
+********************************************************************************/
 
-  For a concrete implementation the user has to overwrite the virtual Build method.
-*/
 
-class RFactory : public TwoLevelFactoryBase {
+#ifndef MESHING_GENIE_PLOTTER_2D_H
+#define MESHING_GENIE_PLOTTER_2D_H
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+#include "MeshingGenie_defs.h"
+#include "MeshingGenie_mps_nd.h"
 
-    //! Constructor.
-    RFactory() { }
+class MeshingGenie_plotter_2d   
+{	
+    public:
+        //! constructor
+		MeshingGenie_plotter_2d(){ };
+   
 
-    //! Destructor.
-    virtual ~RFactory() {}
-    //@}
+        //! Destructor                
+        ~MeshingGenie_plotter_2d(){ };
 
-    //! @name Build methods.
-    //@{
+		int plot_active_pool(MeshingGenie_mps_nd* mps_solver);
+};
+                                
+#endif	
 
-    /*!
-      @brief Abstract Build method.
-    */
-    virtual void BuildR(Level &fineLevel, Level &coarseLevel) const = 0;
-    //@}
 
-}; //class RFactory
 
-} //namespace MueLu
-
-#define MUELU_RFACTORY_SHORT
-
-#endif //ifndef MUELU_RFACTORY_HPP

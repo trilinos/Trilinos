@@ -55,7 +55,7 @@
  * The Random Number Generator is provided by George Marsaglia available at
    http://www.velocityreviews.com/forums/t720512-re-rngs-a-double-kiss.html
 
- * Last modified: 11/16/2012
+ * Last modified: 11/21/2012
 ********************************************************************************/
 
 
@@ -165,7 +165,7 @@ class MeshingGenie_mps_nd
 
 		// background grids
 		size_t _num_ghost_layers; 
-		size_t _num_active_cells, _num_inserted_points;
+		size_t _num_active_cells, _num_inserted_points, _num_darts;
 
 		double _s;      // parent grid spacing
 		double _ss;     // active grid spacing

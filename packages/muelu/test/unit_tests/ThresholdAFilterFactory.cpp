@@ -76,9 +76,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     Level aLevel;
-    TestHelpers::Factory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(aLevel);
+    TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createSingleLevelHierarchy(aLevel);
 
-    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(20); //can be an empty operator
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(20); //can be an empty operator
 
     RCP<ThresholdAFilterFactory> AfilterFactory0 = rcp(new ThresholdAFilterFactory("A",0.1)); // keep all
     RCP<ThresholdAFilterFactory> AfilterFactory1 = rcp(new ThresholdAFilterFactory("A",1.1)); // keep only diagonal

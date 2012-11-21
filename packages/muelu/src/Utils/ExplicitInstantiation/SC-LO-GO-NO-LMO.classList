@@ -38,3 +38,4 @@ AmalgamationFactory
 AggStatTransferFactory
 CoarseMapFactory
 BlockedCoarseMapFactory
+ProjectorSmoother

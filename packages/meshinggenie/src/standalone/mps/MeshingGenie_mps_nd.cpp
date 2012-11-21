@@ -54,7 +54,7 @@
  * The Random Number Generator is provided by George Marsaglia available at
    http://www.velocityreviews.com/forums/t720512-re-rngs-a-double-kiss.html
 
- * Last modified: 11/16/2012
+ * Last modified: 11/21/2012
 ********************************************************************************/
 
 // Todo List:
@@ -80,7 +80,7 @@ int MeshingGenie_mps_nd::solve_mps(size_t ndim, double r, size_t random_seed,
 	_boundary_faces = &boundary_faces;
 	_sample_points = &sample_points;
 
-	_num_active_cells = 0; _num_inserted_points = 0;
+	_num_active_cells = 0; _num_inserted_points = 0; _num_darts = 0;
 	_current_dart = 0;
 
 	clock_t start_time, end_time; double cpu_time;	 
@@ -106,8 +106,10 @@ int MeshingGenie_mps_nd::solve_mps(size_t ndim, double r, size_t random_seed,
 	for (size_t iref = 0; iref < 30; iref++)
 	{
 		throw_darts(iref);
-		
-		if (iref == 0 && _num_active_cells == 0) break;
+		if (iref == 0 && _num_active_cells == 0) 
+		{			
+			break;
+		}
 
 		if (_num_active_cells == 0)
 		{
@@ -122,7 +124,17 @@ int MeshingGenie_mps_nd::solve_mps(size_t ndim, double r, size_t random_seed,
 	}
 	end_time = clock();
 
-	//_plotter.plot_active_pool(this);
+	// Report Number of points and time consumed
+
+	cpu_time = ((double) (end_time - start_time)) / CLOCKS_PER_SEC;
+
+	std::cout<< "======================= MeshingGenie =============================" << std::endl;
+	std::cout<< "Distribution Radius = " << _r << std::endl;
+	std::cout<< "Number of inserted points = " << _num_inserted_points << std::endl;
+	std::cout<< "Number of thrown darts = " << _num_darts << std::endl;
+	std::cout<< "Execution Time = " << cpu_time << " seconds." << std::endl;
+	std::cout<< "==================================================================" << std::endl;
+
 
 	return 0;
 }
@@ -484,7 +496,7 @@ void MeshingGenie_mps_nd::identify_boundary_cells()
 		}
 
 		// Estimating the number of cells that this face extends through
-		size_t num_sample_points(10);
+		size_t num_sample_points(100);
 		for (size_t idim = 0; idim < _ndim; idim++)
 		{
 			size_t num_oneD_cells = (size_t) ceil((xfmax[idim]- xfmin[idim]) / _ss);
@@ -820,6 +832,8 @@ void MeshingGenie_mps_nd::throw_darts(size_t refLevel)
 			_active_cells[_num_active_cells] = tmp;
 			continue;
 		}
+
+		_num_darts++;
 
 		// pick a random point from icell
 		for (size_t idim = 0; idim < _ndim; idim++)

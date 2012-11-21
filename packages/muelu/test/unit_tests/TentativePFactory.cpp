@@ -101,11 +101,11 @@ namespace MueLuTests {
     out << "Test QR with user-supplied nullspace" << std::endl;
 
     Level fineLevel, coarseLevel;
-    TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
     fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
     coarseLevel.SetFactoryManager(Teuchos::null);
 
-    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(/*199*/29);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(/*199*/29);
     A->SetFixedBlockSize(1);
     fineLevel.Set("A",A);
 
@@ -176,11 +176,11 @@ namespace MueLuTests {
       out << "Test QR with user-supplied nullspace" << std::endl;
 
       Level fineLevel, coarseLevel;
-      TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+      TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
       fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
       coarseLevel.SetFactoryManager(Teuchos::null);
 
-      RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
+      RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
       fineLevel.Request("A");
       fineLevel.Set("A",A);
 
@@ -254,9 +254,9 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR when nullspace isn't supplied by user" << std::endl;
 
-    Level fineLevel, coarseLevel; TestHelpers::Factory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    Level fineLevel, coarseLevel; TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
-    RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
 
     fineLevel.Set("A", A);
 
@@ -397,7 +397,7 @@ namespace MueLuTests {
     UCAggFact->SetPhase3AggCreation(0.5);
 
     RCP<TentativePFactory> Pfact = rcp(new TentativePFactory());
-    RCP<RFactory>          Rfact = rcp( new TransPFactory() );
+    RCP<Factory>          Rfact = rcp( new TransPFactory() );
     RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
     H->SetMaxCoarseSize(1);
 
@@ -534,7 +534,7 @@ namespace MueLuTests {
             UCAggFact->SetPhase3AggCreation(0.5);
 
             RCP<TentativePFactory> Pfact = rcp(new TentativePFactory());
-            RCP<RFactory>          Rfact = rcp( new TransPFactory() );
+            RCP<Factory>          Rfact = rcp( new TransPFactory() );
             RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
             H->SetMaxCoarseSize(1);
 

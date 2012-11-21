@@ -64,6 +64,7 @@
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
+#include "MueLu_ProjectorSmoother.hpp"
 
 #include "MueLu_MergedSmoother.hpp"
 #include "MueLu_AmesosSmoother.hpp"
@@ -330,14 +331,24 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList status;
 
   RCP<SmootherPrototype> coarseProto;
-  if (maxLevels != 1) {
+  if (maxLevels != 1)
     coarseProto = gimmeCoarseProto(xpetraParameters.GetLib(), coarseSolver, comm->getRank());
-  } else {
+  else
     coarseProto = gimmeMergedSmoother(nSmoothers, xpetraParameters.GetLib(), coarseSolver, comm->getRank());
-  }
-  if (coarseProto == Teuchos::null) return EXIT_FAILURE;
-  RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(coarseProto));
+
+  if (coarseProto == Teuchos::null)
+    return EXIT_FAILURE;
+
+#ifdef NEUMANN
+  // Use coarse level projection solver
+  RCP<SmootherPrototype> projectedSolver = rcp(new ProjectorSmoother(coarseProto));
+  RCP<SmootherFactory> coarseSolveFact   = rcp(new SmootherFactory(projectedSolver));
+#else
+  RCP<SmootherFactory> coarseSolveFact   = rcp(new SmootherFactory(coarseProto));
+#endif
   M.SetFactory("CoarseSolver", coarseSolveFact);
+
+  H->EnableGraphDumping("graph.dot", 2);
 
   status = H->Setup(M, 0, maxLevels);
   if (comm->getRank() == 0) {
@@ -363,15 +374,6 @@ int main(int argc, char *argv[]) {
     X->putScalar( (SC) 0.0);
 
     H->Iterate(*RHS,its,*X);
-
-#ifdef NEUMANN
-    // Project X
-    X->norm1(norms);
-    size_t numGlobalElements = X->getGlobalLength(), numElements = X->getLocalLength();
-    SC alpha = norms[0]/numGlobalElements;
-    for (size_t i = 0; i < numElements; i++)
-      X->getDataNonConst(0)[i] -= alpha;
-#endif
 
     X->norm2(norms);
     if (comm->getRank() == 0)

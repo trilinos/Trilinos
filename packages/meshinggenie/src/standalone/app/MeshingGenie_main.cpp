@@ -64,7 +64,7 @@
    6. S. A. Mitchell, A. Rand, M. S. Ebeida and C. Bajaj, "Variable radii 
       Poisson-disk sampling", 24th Canadian Conference on Computational Geometry
 	  (CCCG'12), Charlottetown, August 2012.
- * Last modified: 10/15/2012
+ * Last modified: 11/21/2012
 ********************************************************************************/
 
 #include "MeshingGenie_defs.h"
@@ -100,11 +100,17 @@ int main(int argc, char *argv[])
 	if (argc == 1)
 	{
 		std::cout<< "Meshing Genie: Please specify input file!" << std::endl;
+		char dummy_cc;
+		std::cout<< "\n*** enter q to quit ...";
+		std::cin >> dummy_cc;
 		return 1;
 	}
 
 	if(read_input(argv[1])) 
 	{
+		char dummy_cc;
+		std::cout<< "\n*** Error reading input file, enter q to quit ...";
+		std::cin >> dummy_cc;
 		return 1;
 	}
 
@@ -113,6 +119,11 @@ int main(int argc, char *argv[])
 		MeshingGenie_mps_nd genie_mps;
 		genie_mps.solve_mps(_ndim, _r, _random_seed, _boundary_points, _boundary_faces, _sample_points);
 	}
+
+	char dummy_cc;
+	std::cout<< "\n*** enter q to quit ...";
+    std::cin >> dummy_cc;
+
 	return 0;
 }
 

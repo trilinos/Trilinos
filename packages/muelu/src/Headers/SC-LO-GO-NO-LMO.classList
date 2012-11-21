@@ -17,6 +17,7 @@ Utils
 GaussSeidelSmoother
 Ifpack2Smoother
 Amesos2Smoother
+ProjectorSmoother
 DirectSolver
 TrilinosSmoother
 MergedSmoother

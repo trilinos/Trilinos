@@ -49,7 +49,7 @@
 #include <Xpetra_Matrix_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_RFactory.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_TransPFactory_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
@@ -66,7 +66,7 @@ namespace MueLu {
   */
 
 template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class TransPFactory : public RFactory {
+  class TransPFactory : public TwoLevelFactoryBase {
 #undef MUELU_TRANSPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -75,10 +75,10 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     //@{
 
     //! Constructor.
-    TransPFactory(RCP<const FactoryBase> PFact = Teuchos::null);
+    TransPFactory() { }
 
     //! Destructor.
-    virtual ~TransPFactory();
+    virtual ~TransPFactory() { }
     //@}
 
     //! Input
@@ -90,15 +90,8 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 
     //! @name Build methods.
     //@{
-/*
-   FIXME this uses the Tpetra RowMatrixTransposer.  This has revealed a bug somewhere.
-   FIXME so disabling it right now.
-    void BuildR(Level & fineLevel, Level & coarseLevel); //BuildR
-*/
 
     void Build(Level & fineLevel, Level & coarseLevel) const;
-
-    void BuildR(Level & fineLevel, Level & coarseLevel) const; //BuildR
 
     //@}
 
@@ -106,9 +99,6 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     //@{
     void UsePtent(bool ToF);
     //@}
-
-    //! P Factory
-    RCP<const FactoryBase> PFact_;
 
   }; //class TransPFactory
 

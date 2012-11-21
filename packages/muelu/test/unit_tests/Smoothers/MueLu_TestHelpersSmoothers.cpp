@@ -130,14 +130,14 @@ namespace MueLuTests {
 
     // SmootherPrototype helper function
     void setupSmoother(RCP<Matrix>& A, SmootherPrototype & smoother, Teuchos::FancyOStream & out, bool & success) {
-      Level level; TestHelpers::Factory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
+      Level level; TestHelpers::TestFactory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
       level.Set("A", A);
       smoother.Setup(level);
     }
 
     // SmootherPrototype test
     ST::magnitudeType testApply_A125_X1_RHS0(SmootherPrototype & smoother, Teuchos::FancyOStream & out, bool & success) {
-      Teuchos::RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
+      Teuchos::RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
 
       setupSmoother(A, smoother, out, success);
       return testApply_X1_RHS0(*A, smoother, out, success); // in MueLuTests::SmootherBase
@@ -145,7 +145,7 @@ namespace MueLuTests {
 
     // SmootherPrototype test
     ST::magnitudeType testApply_A125_X0_RandomRHS(SmootherPrototype & smoother, Teuchos::FancyOStream & out, bool & success) {
-      Teuchos::RCP<Matrix> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
+      Teuchos::RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
 
       setupSmoother(A, smoother, out, success);
       return testApply_X0_RandomRHS(*A, smoother, out, success); // in MueLuTests::SmootherBase

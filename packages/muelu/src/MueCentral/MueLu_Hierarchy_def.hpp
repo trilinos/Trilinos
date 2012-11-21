@@ -47,6 +47,7 @@
 #define MUELU_HIERARCHY_DEF_HPP
 
 #include <sstream>
+#include "MueLu_BoostGraphviz.hpp"
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Matrix.hpp>
@@ -59,13 +60,8 @@
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_FactoryManager.hpp"
 #include "MueLu_PFactory.hpp"
-#include "MueLu_RFactory.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
-
-#ifdef HAVE_MUELU_BOOST
-#include "boost/graph/graphviz.hpp"
-#endif
 
 namespace MueLu {
 

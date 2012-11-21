@@ -43,15 +43,14 @@
 // ***********************************************************************
 //
 // @HEADER
+
+#include "MueLu_BoostGraphviz.hpp"
+
 #include <Teuchos_TabularOutputter.hpp>
 
 #include "MueLu_Needs.hpp"
 
 #include "MueLu_NoFactory.hpp"
-
-#ifdef HAVE_MUELU_BOOST
-#include "boost/graph/graphviz.hpp"
-#endif
 
 namespace MueLu {
 

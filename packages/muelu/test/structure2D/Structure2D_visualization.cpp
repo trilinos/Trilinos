@@ -229,15 +229,18 @@ int main(int argc, char *argv[]) {
   *out << "=============================================================================" << std::endl;
 
   // build transfer operators
-  RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
-  RCP<RFactory>   Rfact  = rcp( new TransPFactory() );
+  RCP<SaPFactory>    Pfact  = rcp( new SaPFactory() );
+  RCP<TransPFactory> Rfact  = rcp( new TransPFactory() );
 
   // RAP Factory
   RCP<RAPFactory> Acfact = rcp( new RAPFactory() );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   // register aggregation export factory in RAPFactory
-  RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>("aggs_level%LEVELID_proc%PROCID.out", UCAggFact.get(), dropFact.get()));
+  RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>("aggs_level%LEVELID_proc%PROCID.out"));
+  aggExpFact->SetFactory("Aggregates", UCAggFact);
+  aggExpFact->SetFactory("DofsPerNode", dropFact);
+
   Acfact->AddTransferFactory(aggExpFact);
 
   // build level smoothers

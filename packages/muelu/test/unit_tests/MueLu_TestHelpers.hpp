@@ -115,11 +115,11 @@ namespace MueLuTests {
     };
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-    class Factory {
+    class TestFactory {
 #include "MueLu_UseShortNames.hpp"
 
     private:
-      Factory() {} // static class
+      TestFactory() {} // static class
 
     public:
 
