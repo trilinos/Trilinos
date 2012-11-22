@@ -56,23 +56,28 @@
 
 namespace MueLu {
 
-  //! This class wraps a Teuchos::Time and maintains a mutually exclusive property between wrapped timers.
-  //! When a MutuallyExclusiveTime is running, other timers are not running.
-  //! Timers have three state: running, stopped or paused to enforce the mutually exclusive property.
-  //! When the running timer is stopped, the last active timer is restarted. A stack of timers is used internally to support this functionality.
-  //! This class is useful to exclude from a timer the execution time of a subroutine.
-  //!
-  //! Example:
-  //!
-  //! Note: Only one timer can be active at a time but all timers can be inactive at the same time. Timers cannot be destroyed when they are in 'paused'.
+  /*! @class MutuallyExclusiveTime
 
-  //TODO: inheritence from PerformanceMonitorBase<Time> ?
+      @brief This class wraps a Teuchos::Time and maintains a mutually exclusive property between wrapped timers.
 
-  template<class TagName> //! The template parameter of this class can be used to define several set of mutually exclusive timer.
+      This class is useful to exclude from a timer the execution time of a subroutine;
+      when a MutuallyExclusiveTime is running, other timers are not running.
+      Timers have three states (running, stopped, paused) to enforce the mutually exclusive property.
+      When the running timer is stopped, the last active timer is restarted. A stack of timers is used internally to support this functionality.
+      The template parameter of this class can be used to define several sets of mutually exclusive timers.
+     
+      Note: Only one timer can be active at a time but all timers can be inactive at the same time. Timers cannot be destroyed when they are in 'paused'.
+
+      @todo inheritence from PerformanceMonitorBase<Time> ?
+  */
+  template<class TagName>
   class MutuallyExclusiveTime : public BaseClass {
 
   public:
 
+    //! @name Constructor/Destructor
+    //@{
+    //!Constructor
     MutuallyExclusiveTime(const std::string &name, bool startFlag=false)
       : timer_(rcp(new Teuchos::Time(name, false))),  // second argument is false in any case, because if start==true,
                                                       // timer has to be started by MutuallyExclusiveTime::start() instead of Teuchos::Time::start().
@@ -81,6 +86,7 @@ namespace MueLu {
       if (startFlag == true) timer_->start();
     }
 
+    //!Destructor
     ~MutuallyExclusiveTime() {
       // This timer can only be destroyed if it is not in the stack
       if (isPaused()) {
@@ -91,10 +97,11 @@ namespace MueLu {
 
       stop(); // if isRunning(), remove from the stack, resume previous timer
     }
+    //@}
 
-    //! Starts the timer. If a MutuallyExclusiveTime is running, it will be stopped.
-    //! Precondition: timer is not already paused
-    //! Postcondition: timer is running. Other MutuallyExclusiveTime are paused or stop.
+    //! @brief Starts the timer. If a MutuallyExclusiveTime is running, it will be stopped.
+    //! @pre Timer is not already paused.
+    //! @post Timer is running. Other MutuallyExclusiveTime objects are paused or stopped.
     void start(bool reset=false) {
       TEUCHOS_TEST_FOR_EXCEPTION(isPaused(), Exceptions::RuntimeError, "MueLu::MutuallyExclusiveTime::start(): timer is paused. Use resume().");
 
@@ -103,7 +110,7 @@ namespace MueLu {
 
       // pause currently running timer
       if (!timerStack_.empty()) {
-	timerStack_.top()->pause();
+	    timerStack_.top()->pause();
       }
 
       // start this timer
@@ -111,10 +118,12 @@ namespace MueLu {
       timerStack_.push(this);
     }
 
-    // {@ Functions that can only be called on the most recent timer (= running timer or last paused timer)
+    //! @name Functions that can only be called on the most recent timer (i.e., the running or last paused timer)
+    //@{
 
-    //!	Stops the timer. The previous MutuallyExclusiveTime that has been paused when this timer was started will be resumed.
-    // stop() can be called on an already stopped timer or on the currently running timer
+    //!	@brief Stops the timer.
+    //! The previous MutuallyExclusiveTime that has been paused when this timer was started will be resumed.
+    //! This method can be called on an already stopped timer or on the currently running timer.
     double stop() {
       TEUCHOS_TEST_FOR_EXCEPTION(isPaused(), Exceptions::RuntimeError, "MueLu::MutuallyExclusiveTime::start(): timer is paused. Use resume().");
       if (!isRunning()) { return timer_->stop(); } // stop() can be called on stopped timer
@@ -126,7 +135,7 @@ namespace MueLu {
       double r = timer_->stop();
 
       if (!timerStack_.empty()) {
-	timerStack_.top()->resume();
+	    timerStack_.top()->resume();
       }
 
       return r;
@@ -143,9 +152,10 @@ namespace MueLu {
       isPaused_ = true;
     }
 
-    //! Resume paused timer. Used internally by stop()
-    //! Precondition: timer is at the top of the stack
-    //! Timer is not reset
+    //! @brief Resume paused timer.
+    //! Used internally by stop().  Timer is not reset.
+    //! @pre Timer is at the top of the stack.
+
     void resume() {
       TopOfTheStack();
 
@@ -157,14 +167,16 @@ namespace MueLu {
       isPaused_ = false;
     }
 
-    // @}
+    //@}
 
+
+    //! @name Query methods.
     //@{
 
     bool isRunning() {
       if (timer_->isRunning()) {
-	TEUCHOS_TEST_FOR_EXCEPTION(timerStack_.top() != this, Exceptions::RuntimeError,
-				   "MueLu::MutuallyExclusiveTime::isRunning(): this timer is active so it is supposed to be the head of the stack");
+        TEUCHOS_TEST_FOR_EXCEPTION(timerStack_.top() != this, Exceptions::RuntimeError,
+                   "MueLu::MutuallyExclusiveTime::isRunning(): this timer is active so it is supposed to be the head of the stack");
       }
       return timer_->isRunning();
     }
@@ -176,7 +188,7 @@ namespace MueLu {
 
     //@}
 
-    //! Return a new MutuallyExclusiveTime that is register with the Teuchos::TimeMonitor (for timer summary)
+    //! Return a new MutuallyExclusiveTime that is registered with the Teuchos::TimeMonitor (for timer summary).
     // Note: this function is provided by the timer class, not by a monitor (!= Teuchos)
     static RCP<MutuallyExclusiveTime<TagName> > getNewTimer(const std::string& name) {
       RCP<MutuallyExclusiveTime<TagName> > timer = rcp(new MutuallyExclusiveTime<TagName>(Teuchos::TimeMonitor::getNewTimer(name)));
@@ -188,15 +200,16 @@ namespace MueLu {
 
   private:
 
-    // This constructor is not public because I'm concerned that users will used Teuchos::Time::start()/stop()
-    // instead of MutuallyExclusiveTime::start()/stop() if they have access to the underlying Teuchos::Time object.
+    //! This constructor is not public to prevent users from using Teuchos::Time::start()/stop()
+    //! instead of MutuallyExclusiveTime::start()/stop(), if they have access to the underlying Teuchos::Time object.
     MutuallyExclusiveTime(RCP<Teuchos::Time> timer)
       : timer_(timer), isPaused_(false)
     { }
 
     // MutuallyExclusiveTime() { }
 
-    RCP<Teuchos::Time> timer_; // using an RCP allows to use Teuchos::TimeMonitor to keep track of the timer.
+    //! Using an RCP allows to use Teuchos::TimeMonitor to keep track of the timer.
+    RCP<Teuchos::Time> timer_;
     bool isPaused_;
 
     //! Stack of started timers (active or paused timers).
