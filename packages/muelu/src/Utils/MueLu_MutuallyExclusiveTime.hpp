@@ -99,9 +99,9 @@ namespace MueLu {
     }
     //@}
 
-    //! @brief Starts the timer. If a MutuallyExclusiveTime is running, it will be stopped.
+    //! @brief Starts the timer. If a MutuallyExclusiveTime timer is running, it will be stopped.
     //! @pre Timer is not already paused.
-    //! @post Timer is running. Other MutuallyExclusiveTime objects are paused or stopped.
+    //! @post Timer is running. Other MutuallyExclusiveTime timers are paused or stopped.
     void start(bool reset=false) {
       TEUCHOS_TEST_FOR_EXCEPTION(isPaused(), Exceptions::RuntimeError, "MueLu::MutuallyExclusiveTime::start(): timer is paused. Use resume().");
 
@@ -212,7 +212,7 @@ namespace MueLu {
     RCP<Teuchos::Time> timer_;
     bool isPaused_;
 
-    //! Stack of started timers (active or paused timers).
+    //! Stack of created timers (active or paused timers).
     // - empty when no active timer
     // - head is the active timer
     // - other timers are timers paused to enforce the mutually exclusive property of the timer set.
