@@ -87,11 +87,6 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-// Template params are <PID,GID>
-static inline bool lessthan12(std::pair<int,int> i, std::pair<int,int> j){
-  return ((i.first<j.first) || (i.first==j.first && i.second <j.second));
-}
-
 #ifdef LIGHTWEIGHT_MATRIX
 int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const LightweightCrsMatrix &Bimport, Epetra_Map*& unionmap)
 #else
@@ -99,21 +94,23 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Epetra_
 #endif
 {
 #ifdef HAVE_MPI
-  // As per Mike Heroux, AztecOO is very picky about how matrix column maps are ordered.  Specifically:
-  // 1) Local entries (row is owned by the processor) must come first.
-  // 2) Off-processor entries are ordered by processor
-  //
-  // ML and IFPACK add the following constraint for blocking reasons:
-  // 3) Unknown ordering within a processor must be preserved. That is, the local numbering of b is less than c if the global numbering of b 
-  //    is less than c and if both b and c are owned by the same processor. 
-
-  // This routine will merge two colmaps into "unionmap" that will meet those criteria ordering criteria
-
-
-  // NTS: Should this be re-implemented in the same way as MakeColMap?
-  
+  // So we need to merge the ColMap of B and the TargetMap of Bimport in an AztecOO/Ifpack/ML compliant order.
   Epetra_Util util;
-  int MyPID = B.Comm().MyPID();
+  int i,MyPID = B.Comm().MyPID(), NumProc = B.Comm().NumProc();
+  int Bstart=0, Istart=0, Cstart=0;
+
+  const Epetra_Map & BColMap   = B.ColMap();
+  const Epetra_Map & DomainMap = B.DomainMap();
+#ifdef LIGHTWEIGHT_MATRIX
+  const Epetra_BlockMap & IColMap   = Bimport.ColMap_;
+#else
+  const Epetra_Map & IColMap   = Bimport.ColMap();
+#endif
+
+  int Nb         = BColMap.NumMyElements();
+  int Ni         = IColMap.NumMyElements();
+  int * Bgids    = BColMap.MyGlobalElements();
+  int * Igids    = IColMap.MyGlobalElements();  
 
   // Since we're getting called, we know we have to be using an MPI implementation of Epetra.  Which means we should have an MpiDistributor for both B and Bimport
 #ifdef LIGHTWEIGHT_MATRIX
@@ -122,74 +119,166 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Epetra_
   if(!B.Importer() || !Bimport.Importer()) EPETRA_CHK_ERR(-1);
 #endif
 
-  // Get the (PID,GID) pairs
-  std::vector< std::pair<int,int> > Bpgids, Bimportpgids,Mpgids;
-  Epetra_MpiDistributor *Bdist=dynamic_cast<Epetra_MpiDistributor*>(&B.Importer()->Distributor());
-  if(!Bdist) EPETRA_CHK_ERR(-2);
-
-  util.GetPidGidPairs(*B.Importer(),Bpgids,true);
+  // DEBUG
+#ifdef ENABLE_MMM_TIMINGS
+  Teuchos::Time myTime("global");
+  Teuchos::TimeMonitor M(myTime);
+  Teuchos::RCP<Teuchos::Time> mtime;
+  mtime=M.getNewTimer("NewMapUnion 1");
+  mtime->start();
+#endif  
+  
+  // **********************
+  // Stage 1: Get the owning PIDs
+  // **********************
+  std::vector<int> Bpids(Nb), Ipids(Ni);
+  EPETRA_CHK_ERR(util.GetPids(*B.Importer(),Bpids,true));
 #ifdef LIGHTWEIGHT_MATRIX
-  int Nimport=Bimport.ColMap_.NumMyElements();
-  if(Nimport != (int) Bimport.ColMapOwningPIDs_.size()) {
-    //    printf("[%d] Nimport = %d  Bimport.ColMapOwningPIDs_.size() = %d\n",B.Comm().MyPID(),Nimport, Bimport.ColMapOwningPIDs_.size());
+  if(Ni != (int) Bimport.ColMapOwningPIDs_.size()) {
     EPETRA_CHK_ERR(-21);
-
   }
-  Bimportpgids.resize(Nimport);
-  for(int i=0;i<Nimport;i++){
-    Bimportpgids[i].first = (Bimport.ColMapOwningPIDs_[i]==MyPID)?(-1):(Bimport.ColMapOwningPIDs_[i]);
-    Bimportpgids[i].second= Bimport.ColMap_.GID(i);
+  for(i=0;i<Ni;i++){
+    Ipids[i] = (Bimport.ColMapOwningPIDs_[i]==MyPID)?(-1):(Bimport.ColMapOwningPIDs_[i]);    
   }
 #else
-  Epetra_MpiDistributor *Bidist=dynamic_cast<Epetra_MpiDistributor*>(&Bimport.Importer()->Distributor());
-  if(!Bidist) EPETRA_CHK_ERR(-2);
-  util.GetPidGidPairs(*Bimport.Importer(),Bimportpgids,true);
+  EPETRA_CHK_ERR(util.GetPids(*Bimport.Importer(),Ipids,true));
 #endif
- 
-  // Sort the (PID,GID) pairs by PID then GID (pre-merge)
-  std::sort(Bpgids.begin(),Bpgids.end(),lessthan12);
-  std::sort(Bimportpgids.begin(),Bimportpgids.end(),lessthan12);
 
-  // Make sure the merge list is big enough
-  Mpgids.resize(Bpgids.size()+Bimportpgids.size());
+  // **********************
+  // Stage 2: Allocate memory
+  // **********************
+  // Initial size guess: 22% larger than B (This is should let us do a 30^3 mesh w/o resizing
+  int Csize=(int)(1.22 * BColMap.NumMyElements());
+  std::vector<int> Cgids(Csize);
 
-  // Merge, then unique the sorted lists.
-  // The default == for std::pair is OK, the default < is not
-  std::merge(Bpgids.begin(),Bpgids.end(),Bimportpgids.begin(),Bimportpgids.end(),Mpgids.begin(),lessthan12);
-  std::vector< std::pair<int,int> >::iterator last_el=std::unique(Mpgids.begin(),Mpgids.end());
-  int NumUniqueCols=last_el-Mpgids.begin();
-
-  // Flag all the colids actually in my domain map, copy all into vector for Map constructor
-  const Epetra_Map& DomainMap=B.DomainMap();
-  std::vector<bool> LocalGCIDs(DomainMap.NumMyElements(),false);
-  std::vector<int> MyGCIDs(NumUniqueCols);
-
-  for(int i=0;i<NumUniqueCols; i++){
-    MyGCIDs[i]=Mpgids[i].second;
-    if(Mpgids[i].first==-1){
-      int LID=DomainMap.LID(Mpgids[i].second);
-      if(LID!=-1) LocalGCIDs[LID]=true;
-      else EPETRA_CHK_ERR(-3);
+  // **********************
+  // Stage 3: Local Unknowns
+  // **********************
+  if(BColMap.NumMyElements() == DomainMap.NumMyElements()) {
+    // B's colmap has all of the domain elements.  We can just copy those into the start of the array.
+    DomainMap.MyGlobalElements(&Cgids[0]);
+    Cstart=DomainMap.NumMyElements();
+    Bstart=DomainMap.NumMyElements();
+  }
+  else {
+    // There are more entries in the DomainMap than B's ColMap.  So we stream through both B and Bimport for the copy.
+    int NumDomainElements     = DomainMap.NumMyElements();
+    for(i = 0; i < NumDomainElements; i++) {      
+      int GID = DomainMap.GID(i);
+      int LID = BColMap.LID(GID);
+      // B has this guy
+      if(LID!=-1) {
+	Cgids[Cstart] = GID;
+	Cstart++;
+	Bstart++;
+      }
+      else {
+	// B import has this guy
+	LID = IColMap.LID(GID);
+	if(LID!=-1) {
+	  Cgids[Cstart] = GID;
+	  Cstart++;
+	}	
+      }
     }
   }
 
-  // Re-order the local unknowns to be in the same order as the domain map
-  // This code is more or less what FillComplete does.
-  for(int i=0;i<DomainMap.NumMyElements();i++){
-    if(LocalGCIDs[i]){
-      MyGCIDs[i]=DomainMap.GID(i);
-    }
-  }
+  // Now advance Ilast to the last owned unknown in Bimport
+  for(i=0;i<Ni && Ipids[i]==-1; i++) {}
+  Istart=i;
 
+  // **********************
+  // Stage 4: Processor-by-processor set_union
+  // **********************
+  std::vector<int> Btemp(20), Itemp(20);
+
+  while (Bstart < Nb || Istart < Ni) {
+    //    printf("[%d] Loop Top\n",MyPID); fflush(stdout);
+    /*    B.Comm().Barrier();
+    B.Comm().Barrier();
+    B.Comm().Barrier();*/
+
+    int Bproc=NumProc+1, Iproc=NumProc+1, Cproc;
+
+    // Find the next active processor ID
+    if(Bstart < Nb) Bproc=Bpids[Bstart];
+    if(Istart < Ni) Iproc=Ipids[Istart];
+    Cproc = (Bproc < Iproc)?Bproc:Iproc;
+
+    
+    if(Bproc == Cproc && Iproc != Cproc) {
+      // Only B has this processor.  Copy the data.
+      // NOTE: We keep B's sorted (or not) ordering
+      for(i=Bstart; i<Nb && Bpids[i]==Bproc; i++) {
+	// Resize C if needed
+	if(Cstart >= Csize)  {Csize*=2; Cgids.resize(Csize);}
+	Cgids[Cstart] = Bgids[i];
+	Cstart++;
+      }
+      Bstart=i;
+    }
+    else if(Bproc != Cproc && Iproc == Cproc) {
+      // Only I has this processor.  Copy the data.
+      // NOTE: We keep I's sorted (or not) ordering
+      for(i=Istart; i<Ni && Ipids[i]==Iproc; i++) {
+	// Resize C if needed
+	if(Cstart >= Csize)  {Csize*=2; Cgids.resize(Csize);}
+	Cgids[Cstart] = Igids[i];
+	Cstart++;
+      }      
+      Istart=i;
+    }
+    else {
+      // Both B and I have this processor, so we need to do a set_union.  So we need to sort.
+      int Bnext, Inext;
+      // B: Find the beginning of the next processor
+      for(i=Bstart; i<Nb && Bpids[i]==Bproc; i++) {}
+      Bnext=i;
+
+      // I: Find the beginning of the next processor
+      for(i=Istart; i<Ni && Ipids[i]==Iproc; i++) {}
+      Inext=i;
+
+      // Copy data to temp
+      int tBsize = Bnext-Bstart;
+      int tIsize = Inext-Istart;
+      int tCsize = tBsize+tIsize;
+      if(Btemp.size() < (size_t)tBsize) Btemp.resize(tBsize);
+      if(Itemp.size() < (size_t)tIsize) Itemp.resize(tIsize);
+
+      if(Csize        < Cstart+tCsize) {Csize=2*Csize; Cgids.resize(Csize);}
+
+      for(i=Bstart; i<Bnext; i++) Btemp[i-Bstart]=Bgids[i];
+      for(i=Istart; i<Inext; i++) Itemp[i-Istart]=Igids[i];
+
+      // Sort & set_union
+      util.Sort(true, tBsize, &Btemp[0], 0, 0, 0, 0);
+      util.Sort(true, tIsize, &Itemp[0], 0, 0, 0, 0);
+      std::vector<int>::iterator mycstart = Cgids.begin()+Cstart;
+      std::vector<int>::iterator last_el=std::set_union(Btemp.begin(),Btemp.begin()+tBsize,Itemp.begin(),Itemp.begin()+tIsize,mycstart);
+
+      Cstart = (last_el - mycstart) + Cstart;
+      Bstart=Bnext;
+      Istart=Inext;
+    }
+
+  } // end while
+
+  // **********************
+  // Stage 5: Call constructor
+  // **********************
   // Make the map
-  unionmap=new Epetra_Map(-1,NumUniqueCols,&MyGCIDs[0],B.ColMap().IndexBase(),B.Comm());
+  unionmap=new Epetra_Map(-1,Cstart,&Cgids[0],B.ColMap().IndexBase(),B.Comm());
+
+#ifdef ENABLE_MMM_TIMINGS
+ mtime->stop();
+#endif
+
   return 0;
 #else
   return -1;
 #endif
 }
-
-
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -670,8 +759,6 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
   Teuchos::TimeMonitor M(myTime);
   Teuchos::RCP<Teuchos::Time> mtime;
 #endif  
-
-
 
   // If the user doesn't want us to call FillComplete, use the general routine
   if(!call_FillComplete_on_result) {
