@@ -63,7 +63,7 @@ class LightweightCrsMatrix;
 
 #define LIGHTWEIGHT_IMPORT
 
-//#define ENABLE_MMM_TIMINGS
+#define ENABLE_MMM_TIMINGS
 
 // Sanity checking
 #if defined(LIGHTWEIGHT_IMPORT) && !defined(LIGHTWEIGHT_MATRIX)

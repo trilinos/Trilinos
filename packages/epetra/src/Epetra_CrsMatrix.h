@@ -1317,7 +1317,7 @@ or if the number of entries in this row exceed the Length parameter.
       This routine is needed to support the EpetraExt::MatrixMatrix::Multiply and should not be called by users.
        \warning This method is intended for expert developer use only, and should never be called by user code.
     */
-    int ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, bool MakeImportExport=true);
+    int ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, int NumMyDiagonals=-1);
 
 
     //! Makes sure this matrix has a unique CrsGraphData object

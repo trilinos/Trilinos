@@ -309,6 +309,7 @@ int  MatrixMatrix::mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
   // Improved Parallel Gustavson in Local IDs
   // *****************************
   const Epetra_Map * colmap_C = &(C.ColMap());
+  int NumMyDiagonals=0; // Counter to speed up ESFC
 
   int m=A.NumMyRows();
   int n=colmap_C->NumMyElements();
@@ -345,6 +346,7 @@ int  MatrixMatrix::mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
 
   // For each row of A/C
   for(i=0; i<m; i++){			       
+    bool found_diagonal=false;
     CSR_rowptr[i]=CSR_ip;
 
     for(k=Arowptr[i]; k<Arowptr[i+1]; k++){
@@ -358,6 +360,8 @@ int  MatrixMatrix::mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
 	double* Bvals_k= Bview.values[Ak];
 	for(j=0; j<Bview.numEntriesPerRow[Ak]; ++j) {
 	  int Cj=Bcol2Ccol[Bcol_inds[j]];
+
+	  if(Cj==i && !found_diagonal) {found_diagonal=true; NumMyDiagonals++;}
 
 	  if(c_status[Cj]<OLD_ip){
 	    // New entry
@@ -377,6 +381,8 @@ int  MatrixMatrix::mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
 	
 	for(j=0; j<Bview.numEntriesPerRow[Ak]; ++j) {
 	  int Cj=Bimportcol2Ccol[Bcol_inds[j]];
+	  
+	  if(Cj==i && !found_diagonal) {found_diagonal=true; NumMyDiagonals++;}
 
 	  if(c_status[Cj]<OLD_ip){
 	    // New entry
@@ -420,7 +426,7 @@ int  MatrixMatrix::mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
 #endif
 
   // Update the CrsGraphData
-  C.ExpertStaticFillComplete(B.DomainMap(),A.RangeMap());
+  C.ExpertStaticFillComplete(B.DomainMap(),A.RangeMap(),NumMyDiagonals);
 
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();

@@ -4467,7 +4467,7 @@ int Epetra_CrsMatrix::ExpertMakeUniqueCrsGraphData(){
 #include <Teuchos_TimeMonitor.hpp>
 #define ENABLE_MMM_TIMINGS
 #endif
-int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, bool MakeImportExport){
+int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, int NumMyDiagonals){
 
   Epetra_CrsGraphData& D=*Graph_.CrsGraphData_;
   int m=D.RowMap_.NumMyElements();
@@ -4490,7 +4490,7 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
   mtime=M.getNewTimer("ESFC: IE");
   mtime->start();
 #endif
-  if(MakeImportExport) D.MakeImportExport();
+  D.MakeImportExport();
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
   mtime=M.getNewTimer("ESFC: Constants");
@@ -4569,26 +4569,32 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
       if(jl_n > i) D.LowerTriangular_ = false;
       if(jl_0 < i) D.UpperTriangular_ = false;
 
-      // Binary search in GID space
-      // NOTE: This turns out to be noticibly faster than doing a single LID lookup and then binary searching
-      // on the LIDs directly.
-      int insertPoint = -1;
-      if(UseLL)  {
-	long long jg = D.RowMap_.GID64(i);
-	if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements64(), NumIndices, insertPoint)>-1) {
-	  D.NumMyBlockDiagonals_++;
-	  D.NumMyDiagonals_ ++; 
+
+      if(NumMyDiagonals == -1) {
+	// Binary search in GID space
+	// NOTE: This turns out to be noticibly faster than doing a single LID lookup and then binary searching
+	// on the LIDs directly.
+	int insertPoint = -1;
+	if(UseLL)  {
+	  long long jg = D.RowMap_.GID64(i);
+	  if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements64(), NumIndices, insertPoint)>-1) {
+	    D.NumMyBlockDiagonals_++;
+	    D.NumMyDiagonals_ ++; 
+	  }
 	}
-      }
-      else {
-	int jg = D.RowMap_.GID(i);
-	if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements(), NumIndices, insertPoint)>-1) {
-	  D.NumMyBlockDiagonals_++;
-	  D.NumMyDiagonals_ ++; 
+	else {
+	  int jg = D.RowMap_.GID(i);
+	  if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements(), NumIndices, insertPoint)>-1) {
+	    D.NumMyBlockDiagonals_++;
+	    D.NumMyDiagonals_ ++; 
+	  }
 	}
       }
     }
-  }
+  } // end DetermineTriangular
+
+  if(NumMyDiagonals > -1) D.NumMyDiagonals_ = D.NumMyBlockDiagonals_ = NumMyDiagonals;
+
   D.MaxNumNonzeros_=D.MaxNumIndices_;
 
 #ifdef ENABLE_MMM_TIMINGS
