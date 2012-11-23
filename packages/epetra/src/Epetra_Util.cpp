@@ -583,6 +583,63 @@ int Epetra_Util_binary_search(long long item,
   return Epetra_Util_binary_search<long long>(item, list, len, insertPoint);
 }
 
+//----------------------------------------------------------------------------
+template<typename T>
+int Epetra_Util_binary_search_aux(T item,
+                              const int* list,
+                              const T* aux_list,
+                              int len,
+                              int& insertPoint)
+{
+  if (len < 1) {
+    insertPoint = 0;
+    return(-1);
+  }
+
+  unsigned start = 0, end = len - 1;
+
+  while(end - start > 1) {
+    unsigned mid = (start + end) >> 1;
+    if (aux_list[list[mid]] < item) start = mid;
+    else end = mid;
+  }
+
+  if (aux_list[list[start]] == item) return(start);
+  if (aux_list[list[end]] == item) return(end);
+
+  if (aux_list[list[end]] < item) {
+    insertPoint = end+1;
+    return(-1);
+  }
+
+  if (aux_list[list[start]] < item) insertPoint = end;
+  else insertPoint = start;
+
+  return(-1);
+}
+
+//----------------------------------------------------------------------------
+int Epetra_Util_binary_search_aux(int item,
+                              const int* list,
+                              const int* aux_list,
+                              int len,
+                              int& insertPoint)
+{
+  return Epetra_Util_binary_search_aux<int>(item, list, aux_list, len, insertPoint);
+}
+
+//----------------------------------------------------------------------------
+int Epetra_Util_binary_search_aux(long long item,
+                              const int* list,
+                              const long long* aux_list,
+                              int len,
+                              int& insertPoint)
+{
+  return Epetra_Util_binary_search_aux<long long>(item, list, aux_list, len, insertPoint);
+}
+
+
+
 //=========================================================================
 int Epetra_Util_ExtractHbData(Epetra_CrsMatrix * A, Epetra_MultiVector * LHS,
             Epetra_MultiVector * RHS,

@@ -260,6 +260,42 @@ EPETRA_LIB_DLL_EXPORT int Epetra_Util_binary_search(long long item,
                               int len,
                               int& insertPoint);
 
+/** Utility function to perform a binary-search on a list of data.
+    Important assumption: data is assumed to be sorted.
+
+    @param item to be searched for
+    @param list to be searched in
+    @param aux_list
+    @param len Length of list
+    @param insertPoint Input/Output. If item is found, insertPoint is not
+    referenced. If item is not found, insertPoint is set to the offset at which
+    item should be inserted in list such that order (sortedness) would be
+    maintained.
+    @return offset Location in list at which aux_list[list[i]] item was found. -1 if not found.
+*/
+template<typename T>
+int Epetra_Util_binary_search_aux(T item,
+                              const int* list,
+                              const T* aux_list,
+                              int len,
+                              int& insertPoint);
+
+EPETRA_LIB_DLL_EXPORT int Epetra_Util_binary_search_aux(int item,
+                              const int* list,
+                              const int* aux_list,						       
+                              int len,
+                              int& insertPoint);
+
+EPETRA_LIB_DLL_EXPORT int Epetra_Util_binary_search_aux(long long item,
+                              const int* list,
+                              const long long* aux_list,						       
+                              int len,
+                              int& insertPoint);
+
+
+
+
+
 template<class T>
 int Epetra_Util_insert_empty_positions(T*& array, int& usedLength,
                                        int& allocatedLength,

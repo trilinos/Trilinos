@@ -4454,7 +4454,7 @@ Epetra_IntSerialDenseVector& Epetra_CrsMatrix::ExpertExtractIndices() {
  }
 
 //=============================================================================    
- int Epetra_CrsMatrix::ExpertMakeUniqueCrsGraphData(){
+int Epetra_CrsMatrix::ExpertMakeUniqueCrsGraphData(){
    if(Graph_.CrsGraphData_->ReferenceCount() > 1){
      Graph_.CrsGraphData_->DecrementReferenceCount();
      Graph_.CrsGraphData_=new Epetra_CrsGraphData(Copy, RowMap(),ColMap(),true); // true is for StaticProfile
@@ -4463,7 +4463,11 @@ Epetra_IntSerialDenseVector& Epetra_CrsMatrix::ExpertExtractIndices() {
  }
 
 //=============================================================================    
- int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, bool MakeImportExport){
+#ifdef HAVE_EPETRA_TEUCHOS
+#include <Teuchos_TimeMonitor.hpp>
+#define ENABLE_MMM_TIMINGS
+#endif
+int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, bool MakeImportExport){
 
   Epetra_CrsGraphData& D=*Graph_.CrsGraphData_;
   int m=D.RowMap_.NumMyElements();
@@ -4479,7 +4483,19 @@ Epetra_IntSerialDenseVector& Epetra_CrsMatrix::ExpertExtractIndices() {
   // Maps, import export
   D.DomainMap_ = DomainMap;
   D.RangeMap_  = RangeMap;
+#ifdef ENABLE_MMM_TIMINGS
+  Teuchos::Time myTime("global");
+  Teuchos::TimeMonitor M(myTime);
+  Teuchos::RCP<Teuchos::Time> mtime;
+  mtime=M.getNewTimer("ESFC: IE");
+  mtime->start();
+#endif
   if(MakeImportExport) D.MakeImportExport();
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=M.getNewTimer("ESFC: Constants");
+  mtime->start();
+#endif
 
   // Matrix constants
   Allocated_                  = true;
@@ -4531,6 +4547,12 @@ Epetra_IntSerialDenseVector& Epetra_CrsMatrix::ExpertExtractIndices() {
   D.GlobalMaxRowDim_ = 1;
   D.GlobalMaxColDim_ = 1;
 
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=M.getNewTimer("ESFC: Index Loop");
+  mtime->start();
+#endif
+
   // Compute max NZ per row, indices, diagonals, triangular
   D.MaxNumIndices_=0;
   for(int i=0; i<m; i++){
@@ -4547,21 +4569,34 @@ Epetra_IntSerialDenseVector& Epetra_CrsMatrix::ExpertExtractIndices() {
       if(jl_n > i) D.LowerTriangular_ = false;
       if(jl_0 < i) D.UpperTriangular_ = false;
 
-      //jl will be the local-index for the diagonal that we
-      //want to search for.
-      int jl=0;
-      if (UseLL) jl=D.ColMap_.LID(D.RowMap_.GID64(i));
-      else jl=D.ColMap_.LID((int)D.RowMap_.GID64(i));
-
+      // Binary search in GID space
+      // NOTE: This turns out to be noticibly faster than doing a single LID lookup and then binary searching
+      // on the LIDs directly.
       int insertPoint = -1;
-      if (Epetra_Util_binary_search(jl, col_indices, NumIndices, insertPoint)>-1) {
-        D.NumMyBlockDiagonals_++;
-	D.NumMyDiagonals_ ++; 
+      if(UseLL)  {
+	long long jg = D.RowMap_.GID64(i);
+	if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements64(), NumIndices, insertPoint)>-1) {
+	  D.NumMyBlockDiagonals_++;
+	  D.NumMyDiagonals_ ++; 
+	}
+      }
+      else {
+	int jg = D.RowMap_.GID(i);
+	if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements(), NumIndices, insertPoint)>-1) {
+	  D.NumMyBlockDiagonals_++;
+	  D.NumMyDiagonals_ ++; 
+	}
       }
     }
-    // end Determine_Triangular()
   }
   D.MaxNumNonzeros_=D.MaxNumIndices_;
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=M.getNewTimer("ESFC: Constants");
+  mtime->start();
+#endif
+
 
   // Compute global constants - Code copied from Epetra_CrsGraph.ComputeGlobalConstants()
   Epetra_IntSerialDenseVector tempvec(8); // Temp space
@@ -4596,6 +4631,10 @@ Epetra_IntSerialDenseVector& Epetra_CrsMatrix::ExpertExtractIndices() {
     D.NumGlobalRows_ = (int) D.RangeMap_.NumGlobalPoints64();
     D.NumGlobalCols_ = (int) D.DomainMap_.NumGlobalPoints64();
   }
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+#endif
 
   return 0;
 }
