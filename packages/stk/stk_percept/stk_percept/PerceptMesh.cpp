@@ -2,6 +2,7 @@
 #include <stdexcept>
 
 #include <sstream>
+#include <algorithm>
 #include <map>
 #include <stdio.h>
 
@@ -2984,6 +2985,9 @@ namespace stk {
       return cell_topo_data;
     }
 
+    struct part_compare {
+      bool operator() (stk::mesh::Part *i, stk::mesh::Part *j) { return (i->name() < j->name()); }
+    };
 
     bool PerceptMesh::
     mesh_difference(stk::mesh::MetaData& metaData_1,
@@ -3040,8 +3044,8 @@ namespace stk {
       }
 
       // Parts information
-      const std::vector< stk::mesh::Part * > & parts_1 = metaData_1.get_parts();
-      const std::vector< stk::mesh::Part * > & parts_2 = metaData_2.get_parts();
+      std::vector< stk::mesh::Part * > parts_1 = metaData_1.get_parts();
+      std::vector< stk::mesh::Part * > parts_2 = metaData_2.get_parts();
       if (parts_1.size() != parts_2.size())
         {
           msg += "| parts size diff "+toString((unsigned)parts_1.size()) + " " +toString((unsigned)parts_2.size()) +"|\n";
@@ -3049,6 +3053,10 @@ namespace stk {
         }
       else
         {
+
+          std::sort(parts_1.begin(), parts_1.end(), part_compare());
+          std::sort(parts_2.begin(), parts_2.end(), part_compare());
+
           unsigned nparts = parts_1.size();
           if (print)
             {
@@ -3164,44 +3172,54 @@ namespace stk {
                           {
                             const unsigned num_entities_in_bucket_1 = bucket_1.size();
                             const unsigned num_entities_in_bucket_2 = bucket_2.size();
+                            bool bucket_size_equal = true;
                             if (num_entities_in_bucket_1 != num_entities_in_bucket_2)
                               {
                                 msg += "| num_entities_in_bucket diff |\n";
                                 diff = true;
+                                bucket_size_equal = false;
                               }
 
                             //dw().m(LOG_APPLICATION) << "num_entities_in_bucket = " << num_entities_in_bucket<< " element ids = " << stk::diag::dendl;
                             //dw() << "num_entities_in_bucket = " << num_entities_in_bucket<< " element ids = " << stk::diag::dendl;
 
                             //bool local_diff = false;
-                            for (unsigned iEntity = 0; iEntity < num_entities_in_bucket_1; iEntity++)
+                            if (bucket_size_equal)
                               {
-                                stk::mesh::Entity entity_1 = bucket_1[iEntity];
-                                stk::mesh::Entity entity_2 = bucket_2[iEntity];
+                                for (unsigned iEntity = 0; iEntity < num_entities_in_bucket_1; iEntity++)
+                                  {
+                                    stk::mesh::Entity entity_1 = bucket_1[iEntity];
+                                    stk::mesh::Entity entity_2 = bucket_2[iEntity];
 
-                                stk::mesh::PairIterRelation elem_nodes_1 = entity_1.relations(stk::mesh::MetaData::NODE_RANK);
-                                stk::mesh::PairIterRelation elem_nodes_2 = entity_2.relations(stk::mesh::MetaData::NODE_RANK);
-                                if (elem_nodes_1.size() != elem_nodes_2.size())
-                                  {
-                                    msg += "| entity relations size diff |\n";
-                                    diff = true;
-                                    break;
-                                  }
-                                for (unsigned i = 0; i < elem_nodes_1.size(); i++)
-                                  {
-                                    stk::mesh::Entity node_1 = elem_nodes_1[i].entity();
-                                    stk::mesh::Entity node_2 = elem_nodes_2[i].entity();
-                                    if (elem_nodes_1[i].identifier() != elem_nodes_2[i].identifier())
+                                    stk::mesh::PairIterRelation elem_nodes_1 = entity_1.relations(stk::mesh::MetaData::NODE_RANK);
+                                    stk::mesh::PairIterRelation elem_nodes_2 = entity_2.relations(stk::mesh::MetaData::NODE_RANK);
+                                    if (elem_nodes_1.size() != elem_nodes_2.size())
                                       {
-                                        msg += "| entity relations identifier diff |\n";
+                                        msg += "| entity relations size diff |\n";
                                         diff = true;
                                         break;
                                       }
-                                    if (node_1.identifier() != node_2.identifier())
+                                    bool ldiff=false;
+                                    for (unsigned i = 0; i < elem_nodes_1.size(); i++)
                                       {
-                                        msg += "| node ids diff |\n";
-                                        diff = true;
+                                        stk::mesh::Entity node_1 = elem_nodes_1[i].entity();
+                                        stk::mesh::Entity node_2 = elem_nodes_2[i].entity();
+                                        if (elem_nodes_1[i].identifier() != elem_nodes_2[i].identifier())
+                                          {
+                                            msg += "| entity relations identifier diff |\n";
+                                            diff = true;
+                                            ldiff = true;
+                                            break;
+                                          }
+                                        if (node_1.identifier() != node_2.identifier())
+                                          {
+                                            msg += "| node ids diff |\n";
+                                            diff = true;
+                                            ldiff = true;
+                                            break;
+                                          }
                                       }
+                                    if (ldiff) break;
                                   }
                               }
                           }
@@ -3291,82 +3309,102 @@ namespace stk {
                     stk::mesh::Selector on_locally_owned_part_2 =  ( metaData_2.locally_owned_part() );
                     const std::vector<stk::mesh::Bucket*> & buckets_1 = bulkData_1.buckets( rank );
                     const std::vector<stk::mesh::Bucket*> & buckets_2 = bulkData_2.buckets( rank );
-                    for (unsigned k = 0; k < buckets_1.size(); k++)
+
+                    bool buckets_size_equal=true;
+                    if (buckets_1.size() != buckets_2.size())
                       {
-                        stk::mesh::Bucket& bucket_1 = *buckets_1[k];
-                        stk::mesh::Bucket& bucket_2 = *buckets_2[k];
-                        if (on_locally_owned_part_1(bucket_1))  // this is where we do part selection
+                        msg += "| field compare num_buckets diff |\n";
+                        diff = true;
+                        buckets_size_equal=false;
+                      }
+
+                    if (buckets_size_equal)
+                      {
+                        for (unsigned k = 0; k < buckets_1.size(); k++)
                           {
-                            const unsigned num_entities_in_bucket_1 = bucket_1.size();
-                            //const unsigned num_entities_in_bucket_2 = bucket_2.size();
-
-                            bool local_local_diff = false;
-                            for (unsigned iEntity = 0; iEntity < num_entities_in_bucket_1; iEntity++)
+                            stk::mesh::Bucket& bucket_1 = *buckets_1[k];
+                            stk::mesh::Bucket& bucket_2 = *buckets_2[k];
+                            if (on_locally_owned_part_1(bucket_1))  // this is where we do part selection
                               {
-                                stk::mesh::Entity entity_1 = bucket_1[iEntity];
-                                stk::mesh::Entity entity_2 = bucket_2[iEntity];
+                                const unsigned num_entities_in_bucket_1 = bucket_1.size();
+                                const unsigned num_entities_in_bucket_2 = bucket_2.size();
 
-                                unsigned loc_stride_1 = 0;
-                                unsigned loc_stride_2 = 0;
-                                double * fdata_1 = PerceptMesh::field_data( field_1 , entity_1,  &loc_stride_1);
-                                double * fdata_2 = PerceptMesh::field_data( field_2 , entity_2,  &loc_stride_2);
-
-                                if ((fdata_1 == 0) != (fdata_2 == 0) || (loc_stride_1 != loc_stride_2))
+                                bool nb12_equal = true;
+                                if (num_entities_in_bucket_2 != num_entities_in_bucket_1)
                                   {
-                                    msg += "| (fdata_1 == 0) != (fdata_2 == 0)) |\n";
+                                    msg += "| field compare num_entities_in_bucket diff |\n";
                                     diff = true;
+                                    nb12_equal = false;
+                                    continue;
                                   }
-
-                                if (fdata_1)
+                                bool local_local_diff = false;
+                                for (unsigned iEntity = 0; iEntity < num_entities_in_bucket_1; iEntity++)
                                   {
-                                    bool is_same=true;
-                                    double tol = 1.e-5;
-                                    for (unsigned istride = 0; istride < loc_stride_1; istride++)
+                                    stk::mesh::Entity entity_1 = bucket_1[iEntity];
+                                    stk::mesh::Entity entity_2 = bucket_2[iEntity];
+
+                                    unsigned loc_stride_1 = 0;
+                                    unsigned loc_stride_2 = 0;
+                                    double * fdata_1 = PerceptMesh::field_data( field_1 , entity_1,  &loc_stride_1);
+                                    double * fdata_2 = PerceptMesh::field_data( field_2 , entity_2,  &loc_stride_2);
+
+                                    if ((fdata_1 == 0) != (fdata_2 == 0) || (loc_stride_1 != loc_stride_2))
                                       {
-                                        double fd1 = fdata_1[istride];
-                                        double fd2 = fdata_2[istride];
-                                        if (!Util::approx_equal_relative(fd1, fd2, tol))
-                                          {
-                                            is_same=false;
-                                            break;
-                                          }
+                                        msg += "| (fdata_1 == 0) != (fdata_2 == 0)) |\n";
+                                        diff = true;
                                       }
 
-                                    if (!is_same)
+                                    if (fdata_1)
                                       {
-                                        if (!printed_header)
-                                          {
-                                            msg += std::string("\n| field data not equal field_1= ") +field_1->name()+" field_2= "+field_2->name()+" |";
-                                            printed_header = true;
-                                          }
-                                        msg += "\n|{";
+                                        bool is_same=true;
+                                        double tol = 1.e-5;
                                         for (unsigned istride = 0; istride < loc_stride_1; istride++)
                                           {
                                             double fd1 = fdata_1[istride];
                                             double fd2 = fdata_2[istride];
-                                            //                                             msg += "\n| "+toString(fd1).substr(0,print_field_width)+" - "+toString(fd2).substr(0,print_field_width)+" = "
-                                            //                                               +toString(fd1-fd2).substr(0,print_field_width)+
-                                            //                                               " [ "+toString(100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)).substr(0,print_percent_width)+" % ]  |";
-                                            //std::ostringstream ostr;
-                                            //                                             ostr << "\n| " << std::setw(print_field_width) << fd1 << " - " << fd2 << " = "
-                                            //                                                  << (fd1-fd2)
-                                            //                                                  << std::setw(print_percent_width) << " [ " << (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)) << " % ]  |";
-                                            //msg += ostr.str();
-                                            char buf[1024];
-                                            sprintf(buf, ", | %12.3g - %12.3g = %12.3g [ %10.3g %% ] |", fd1, fd2, (fd1-fd2), (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)));
-                                            //                                                  << (fd1-fd2)
-                                            //                                                  << std::setw(print_percent_width) << " [ " << (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)) << " % ]  |";
-                                            msg += buf;
-                                            diff = true;
-                                            local_local_diff = true;
-                                            max_diff = std::max(max_diff, std::abs(fd1-fd2));
-                                            min_diff = std::min(min_diff, std::abs(fd1-fd2));
+                                            if (!Util::approx_equal_relative(fd1, fd2, tol))
+                                              {
+                                                is_same=false;
+                                                break;
+                                              }
                                           }
-                                        msg += "}|";
-                                      }
-                                  }
 
-                                if (!print_all_field_diffs && local_local_diff) break;
+                                        if (!is_same)
+                                          {
+                                            if (!printed_header)
+                                              {
+                                                msg += std::string("\n| field data not equal field_1= ") +field_1->name()+" field_2= "+field_2->name()+" |";
+                                                printed_header = true;
+                                              }
+                                            msg += "\n|{";
+                                            for (unsigned istride = 0; istride < loc_stride_1; istride++)
+                                              {
+                                                double fd1 = fdata_1[istride];
+                                                double fd2 = fdata_2[istride];
+                                                //                                             msg += "\n| "+toString(fd1).substr(0,print_field_width)+" - "+toString(fd2).substr(0,print_field_width)+" = "
+                                                //                                               +toString(fd1-fd2).substr(0,print_field_width)+
+                                                //                                               " [ "+toString(100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)).substr(0,print_percent_width)+" % ]  |";
+                                                //std::ostringstream ostr;
+                                                //                                             ostr << "\n| " << std::setw(print_field_width) << fd1 << " - " << fd2 << " = "
+                                                //                                                  << (fd1-fd2)
+                                                //                                                  << std::setw(print_percent_width) << " [ " << (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)) << " % ]  |";
+                                                //msg += ostr.str();
+                                                char buf[1024];
+                                                sprintf(buf, ", | %12.3g - %12.3g = %12.3g [ %10.3g %% ] |", fd1, fd2, (fd1-fd2), (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)));
+                                                //                                                  << (fd1-fd2)
+                                                //                                                  << std::setw(print_percent_width) << " [ " << (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)) << " % ]  |";
+                                                msg += buf;
+                                                diff = true;
+                                                local_local_diff = true;
+                                                max_diff = std::max(max_diff, std::abs(fd1-fd2));
+                                                min_diff = std::min(min_diff, std::abs(fd1-fd2));
+                                              }
+                                            msg += "}|";
+                                          }
+                                      }
+
+                                    if (!print_all_field_diffs && local_local_diff) break;
+                                  }
                               }
                           }
                       }

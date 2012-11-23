@@ -16,6 +16,7 @@ namespace stk
 
       re.clp.setOption("mesh1",      &mesh_opt_1,        "mesh file #1." );
       re.clp.setOption("mesh2",      &mesh_opt_2,        "mesh file #2." );
+      re.clp.setOption("print_all_field_diffs",      &print_all_field_diffs,        "print all field diffs" );
 
     }
 
@@ -77,7 +78,7 @@ namespace stk
       mesh2.open_read_only(file_name2);
       std::cout << "read in file2: " << file_name2 << std::endl;
 
-      PerceptMesh::mesh_difference(mesh1, mesh2, "diff", true, true);
+      PerceptMesh::mesh_difference(mesh1, mesh2, "diff", true, print_all_field_diffs);
     }
 
       

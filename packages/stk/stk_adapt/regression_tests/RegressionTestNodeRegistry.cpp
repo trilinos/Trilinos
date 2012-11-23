@@ -472,11 +472,11 @@ namespace stk
 #endif
 
 
-                          unsigned expectedId_p2= 41u;
+                          unsigned expectedId_p2= 42u;
 #if SDS_ENTITY_TYPE_ID
-                          expectedId_p2= 41u;
+                          expectedId_p2= 42u;
 #else
-                          expectedId_p2= 41u;
+                          expectedId_p2= 42u;
 #endif
 
                           if (p_rank==1) std::cout << "P["<<p_rank<<"] nodeIds_onSE_1[0]= " << nodeIds_onSE_1.m_entity_id_vector[0] << "should be " << expectedId    << std::endl;

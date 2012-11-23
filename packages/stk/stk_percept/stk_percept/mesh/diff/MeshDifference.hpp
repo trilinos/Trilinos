@@ -22,12 +22,13 @@ namespace stk
     class MeshDifference
     {
     public:
-      MeshDifference() {}
+      MeshDifference() :mesh_opt_1(""),mesh_opt_2(""),print_all_field_diffs(0){}
       void run(int argc,  char** argv);
 
       void process_options(RunEnvironment& re);
       // command line
       std::string mesh_opt_1, mesh_opt_2;
+      int print_all_field_diffs;
     };
 
       
