@@ -520,9 +520,6 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
   }
   else {
     int* MyGlobalElements = DomainMap_.MyGlobalElements();
-    int* ElementSizeList = 0;
-    if(DoSizes) 
-      ElementSizeList = DomainMap_.ElementSizeList();
     int NumLocalAgain = 0;
     use_local_permute = true;    
     for(i = 0; i < numDomainElements; i++) {
