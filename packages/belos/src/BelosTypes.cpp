@@ -48,13 +48,13 @@ namespace Belos {
     convertStatusTypeToRawString (const StatusType status)
     {
       if (status == Passed) {
-	return "Passed";
+        return "Passed";
       } else if (status == Failed) {
-	return "Failed";
+        return "Failed";
       } else if (status == Undefined) {
-	return "Undefined";
+        return "Undefined";
       } else {
-	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
           "Belos::convertStatusTypeToRawString: Invalid StatusType enum value "
           << status << ".");
       }
@@ -84,12 +84,12 @@ namespace Belos {
       return Undefined;
     } else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Belos::convertStringToStatusType: Invalid string \"" << status 
+        "Belos::convertStringToStatusType: Invalid string \"" << status
         << "\".");
     }
   }
 
-  ScaleType 
+  ScaleType
   convertStringToScaleType (const std::string& scaleType)
   {
     if (scaleType == "Norm of Initial Residual") {
@@ -100,9 +100,11 @@ namespace Belos {
        return Belos::NormOfRHS;
     } else if (scaleType == "None") {
       return Belos::None;
+    } else if (scaleType == "User Provided") {
+      return Belos::UserProvided;
     } else {
       TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
-        "Belos::convertStringToScaleType(): Invalid residual scaling type \"" 
+        "Belos::convertStringToScaleType(): Invalid residual scaling type \""
         << scaleType << "\".");
     }
   }
@@ -118,14 +120,16 @@ namespace Belos {
       return "Norm of RHS";
     } else if (scaleType == Belos::None) {
       return "None";
+    } else if (scaleType == Belos::UserProvided) {
+      return "User Provided";
     } else {
       TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
-        "Belos::convertScaleTypeToString(): Invalid residual scaling type " 
+        "Belos::convertScaleTypeToString(): Invalid residual scaling type "
         "value " << scaleType << ".");
     }
   }
 
-  std::string 
+  std::string
   convertMsgTypeToString (const MsgType msgType)
   {
     typedef std::vector<int>::size_type size_type;
@@ -134,8 +138,8 @@ namespace Belos {
     // be enumerated?
     const size_type numValidTypes = 8;
     const int validTypes[] = {
-      Belos::Errors, 
-      Belos::Warnings, 
+      Belos::Errors,
+      Belos::Warnings,
       Belos::IterationDetails,
       Belos::OrthoDetails,
       Belos::FinalSummary,
@@ -144,8 +148,8 @@ namespace Belos {
       Belos::Debug
     };
     const char* typeNames[] = {
-      "Errors", 
-      "Warnings", 
+      "Errors",
+      "Warnings",
       "IterationDetails",
       "OrthoDetails",
       "FinalSummary",
@@ -162,7 +166,7 @@ namespace Belos {
     std::vector<size_type> theList;
     for (size_type nameIndex = 0; nameIndex < numValidTypes; ++nameIndex) {
       if (msgType & validTypes[nameIndex]) {
-	theList.push_back (nameIndex);
+        theList.push_back (nameIndex);
       }
     }
     std::ostringstream os;
@@ -170,13 +174,13 @@ namespace Belos {
       const size_type nameIndex = theList[k];
       os << typeNames[nameIndex];
       if (nameIndex < theList.size() - 1) {
-	os << ",";
+        os << ",";
       }
     }
     return os.str();
   }
 
-  std::string 
+  std::string
   convertReturnTypeToString (const ReturnType result)
   {
     if (result == Belos::Converged) {
@@ -184,8 +188,8 @@ namespace Belos {
     } else if (result == Belos::Unconverged) {
       return "Unconverged";
     } else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
-        "Belos::convertReturnTypeToString: Invalid ReturnType enum value " 
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "Belos::convertReturnTypeToString: Invalid ReturnType enum value "
         << result << ".");
     }
   }

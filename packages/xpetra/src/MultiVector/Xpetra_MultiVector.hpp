@@ -101,6 +101,12 @@ namespace Xpetra {
     //! @name Data Copy and View get methods
     //@{
 
+    //! Return a Vector which is a const view of column j.
+    virtual Teuchos::RCP< const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVector(size_t j) const = 0;
+
+    //! Return a Vector which is a nonconst view of column j.
+    virtual Teuchos::RCP< Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVectorNonConst(size_t j)= 0;
+
     //! Const view of the local values in a particular vector of this multivector.
     virtual Teuchos::ArrayRCP< const Scalar > getData(size_t j) const = 0;
 
@@ -133,16 +139,16 @@ namespace Xpetra {
     //! Compute 1-norm of each vector in multi-vector.
     virtual void norm1(const Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const = 0;
 
-    //! Compute 2-norm of each vector in multi-vector.
+    //!
     virtual void norm2(const Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const = 0;
 
     //! Compute Inf-norm of each vector in multi-vector.
     virtual void normInf(const Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const = 0;
 
-    //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
+    //!
     virtual void normWeighted(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &weights, const Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const = 0;
 
-    //! Compute mean (average) value of each vector in multi-vector.
+    //! Compute mean (average) value of each vector in multi-vector. The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
     virtual void meanValue(const Teuchos::ArrayView< Scalar > &means) const = 0;
 
     //! Matrix-matrix multiplication: this = beta*this + alpha*op(A)*op(B).

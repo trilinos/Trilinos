@@ -85,7 +85,9 @@ namespace MueLu {
     //! SetFactory is for expert users only. To change configuration of the preconditioner, use a factory manager.
     virtual void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory);
 
-    // GetFactory(...);
+    const RCP<const FactoryBase> GetFactory(const std::string & varName) const {
+      return mapFind<const std::string, const FactoryBase>(factoryTable_, varName);
+    }
 
     // SetParameterList(...);
 
@@ -94,10 +96,6 @@ namespace MueLu {
     //@}
 
   protected:
-
-    const RCP<const FactoryBase> GetFactory(const std::string & varName) const {
-      return mapFind<const std::string, const FactoryBase>(factoryTable_, varName);
-    }
 
     void Input(Level & level, const std::string & varName) const {
       level.DeclareInput(varName, GetFactory(varName).get(), this);
@@ -111,6 +109,10 @@ namespace MueLu {
     template <class T>
     void Set(Level & level, const std::string & varName, const T & data) const {
       return level.Set<T>(varName, data, this);
+    }
+
+    bool IsAvailable(Level & level, const std::string & varName) const {
+      return level.IsAvailable(varName, GetFactory(varName).get());
     }
 
   private:

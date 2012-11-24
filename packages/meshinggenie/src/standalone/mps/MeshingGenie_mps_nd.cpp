@@ -75,6 +75,7 @@ int MeshingGenie_mps_nd::solve_mps(size_t ndim, double r, size_t random_seed,
 			                       std::vector< std::vector<size_t> > &boundary_faces, 
 				                   std::vector< std::vector<double> > &sample_points)
 {
+	#pragma region Solve an MPS problem:
 	_ndim = ndim; _r = r; _rsq = _r * _r; _random_seed = random_seed;
 	_boundary_points = &boundary_points;
 	_boundary_faces = &boundary_faces;
@@ -135,8 +136,97 @@ int MeshingGenie_mps_nd::solve_mps(size_t ndim, double r, size_t random_seed,
 	std::cout<< "Execution Time = " << cpu_time << " seconds." << std::endl;
 	std::cout<< "==================================================================" << std::endl;
 
-
 	return 0;
+	#pragma endregion
+}
+
+void MeshingGenie_mps_nd::save_maximal_sample(std::string file_name)
+{
+	#pragma region Save Maximal Sample Data:
+	std::fstream file(file_name.c_str(), std::ios::out);
+	// Points
+	file << _ndim << " " << _r << " " << _num_inserted_points << std::endl;           // number of dimensions - number of points	
+		
+	file.precision(15); file << std::fixed;
+
+	size_t num_interior_cells(_interior_cell_points.size());
+	for (size_t icell = 0; icell < num_interior_cells; icell++)
+	{		
+		if (_interior_cell_points[icell] == 0) continue;
+		file << _interior_cell_points[icell][0];
+		for (size_t idim = 1; idim < _ndim; idim++) file << " " << _interior_cell_points[icell][idim];
+		file << std::endl;			
+	}
+	size_t num_boundary_cells(_boundary_cell_points.size());
+	for (size_t icell = 0; icell < num_boundary_cells; icell++)
+	{		
+		if (_boundary_cell_points[icell] == 0) continue;
+		file << _boundary_cell_points[icell][0];
+		for (size_t idim = 1; idim < _ndim; idim++) file << " " << _boundary_cell_points[icell][idim];
+		file << std::endl;			
+	}
+	#pragma endregion
+}
+
+
+double* MeshingGenie_mps_nd::get_closest_sample_point(double* xin)
+{
+	#pragma region Get Closets Point:
+	if (_num_inserted_points == 0) return 0;
+
+	double* xclosest(0);
+	size_t* parent_cell = new size_t[_ndim];
+	size_t* parent_neighbor = new size_t[_ndim];
+
+	for (size_t idim = 0; idim < _ndim; idim++)
+	{
+		parent_cell[idim] = size_t(floor((xin[idim] - _xmin[idim]) / _s));
+	}
+	double ddmin(-1.0);
+	for (size_t i_neighbor = 0; i_neighbor < _num_neighbor_cells; i_neighbor++)
+	{
+		bool valid_cell(true);
+		for (size_t idim = 0; idim < _ndim; idim++)
+		{
+			if ((int)parent_cell[idim] + _generic_neighbor_cells[i_neighbor][idim] < 0) {valid_cell = false; break;}
+
+			if ((int)parent_cell[idim] + _generic_neighbor_cells[i_neighbor][idim] >= (int)_nc[idim]) {valid_cell = false; break;}
+
+			parent_neighbor[idim] = parent_cell[idim] + _generic_neighbor_cells[i_neighbor][idim];
+		}
+		if (!valid_cell) continue;
+
+		double* x = 0;
+		if (cell_in_vec(parent_neighbor, _boundary_cells))
+		{
+			size_t index = find_cell_binary(parent_neighbor, _boundary_cells);
+			x = _boundary_cell_points[index];
+		}
+		else if (cell_in_vec(parent_neighbor, _interior_cells))
+		{
+			size_t index = find_cell_binary(parent_neighbor, _interior_cells);
+			x = _interior_cell_points[index];
+		}
+		if (x != 0)
+		{
+			// check if disk at x covers icell
+			double dd(0.0);
+			for (size_t idim = 0; idim < _ndim; idim++)
+			{
+				double dx = xin[idim] - x[idim];
+				dd+= dx * dx;
+			}
+			if (dd < ddmin || xclosest == 0) 
+			{
+				ddmin = dd;
+				xclosest = x;
+			}
+		}
+	}
+	delete[] parent_cell;
+	delete[] parent_neighbor;
+	return xclosest;
+	#pragma endregion
 }
 
 void MeshingGenie_mps_nd::init()

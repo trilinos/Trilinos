@@ -81,6 +81,14 @@ namespace Xpetra {
     vec_ = Teuchos::rcp(new Epetra_MultiVector(Copy, toEpetra(map), rawArrayOfRawPtrs, NumVectors));
   }
 
+  Teuchos::RCP< const Vector< double, int, int > > EpetraMultiVector::getVector(size_t j) const {
+    XPETRA_MONITOR("EpetraVector::getVector"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
+  }
+
+  Teuchos::RCP< Vector< double, int, int > > EpetraMultiVector::getVectorNonConst(size_t j) {
+    XPETRA_MONITOR("EpetraVector::getVectorNonConst"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
+  }
+
   Teuchos::ArrayRCP<const double> EpetraMultiVector::getData(size_t j) const {
     XPETRA_MONITOR("EpetraMultiVector::getData");
 
@@ -91,7 +99,7 @@ namespace Xpetra {
     double * data = arrayOfPointers[j];
     int localLength = vec_->MyLength();
 
-    return ArrayRCP<double>(data, 0, localLength, false); // not ownership
+    return ArrayRCP<double>(data, 0, localLength, false); // no ownership
   }
 
   Teuchos::ArrayRCP<double> EpetraMultiVector::getDataNonConst(size_t j) {
@@ -104,7 +112,7 @@ namespace Xpetra {
     double * data = arrayOfPointers[j];
     int localLength = vec_->MyLength();
 
-    return ArrayRCP<double>(data, 0, localLength, false); // not ownership
+    return ArrayRCP<double>(data, 0, localLength, false); // no ownership
   }
 
   void EpetraMultiVector::dot(const MultiVector<double,int,int> &A, const Teuchos::ArrayView<double> &dots) const {

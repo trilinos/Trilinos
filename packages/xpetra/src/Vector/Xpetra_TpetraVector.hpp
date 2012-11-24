@@ -69,6 +69,14 @@ namespace Xpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Tpetra::Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> > toTpetra(const Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> &);
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<const Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec);
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec);
+
+  //
   //
 
   template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
@@ -161,7 +169,7 @@ namespace Xpetra {
     //@{
 
     //! TpetraMultiVector constructor to wrap a Tpetra::MultiVector object
-    TpetraVector(const Teuchos::RCP<Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) : TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(vec) { } // TODO: removed const of Tpetra::Vector
+    TpetraVector(const Teuchos::RCP<Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) : TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(vec) { }
 
     //! Get the underlying Tpetra multivector
     RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Vector() const { return this->TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::getTpetra_MultiVector()->getVectorNonConst(0); }
@@ -184,6 +192,18 @@ namespace Xpetra {
     XPETRA_DYNAMIC_CAST(const TpetraVectorClass, x, tX, "toTpetra");
     return tX.getTpetra_Vector();
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec) {
+    return rcp( new TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(vec));
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<const Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec) {
+    // We cast away the const to wrap the Tpetra vector into an Xpetra object. But it's OK because the Xpetra vector is returned as const.
+    return toXpetra(Teuchos::rcp_const_cast<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > (vec));
+  }
+
   //
 
 } // Xpetra namespace

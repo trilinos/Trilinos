@@ -191,10 +191,10 @@ namespace Xpetra {
     //! If matrix indices are in the global range, this function returns true. Otherwise, this function returns false.
     bool isGloballyIndexed() const { XPETRA_MONITOR("EpetraCrsMatrix::isGloballyIndexed"); return mtx_->IndicesAreGlobal(); }
 
-    //! Returns true if fillComplete() has been called and the matrix is in compute mode.
+    //! Returns true if the matrix is in compute mode, i.e. if fillComplete() has been called.
     bool isFillComplete() const;
 
-    //! Returns true if resumeFill() has been called and the matrix is in edit mode.
+    //! Returns true if the matrix is in edit mode.
     bool isFillActive() const;
 
     //! Returns the Frobenius norm of the matrix.

@@ -158,10 +158,10 @@ namespace Xpetra {
     //! If matrix indices are in the global range, this function returns true. Otherwise, this function returns false.
     virtual bool isGloballyIndexed() const = 0;
 
-    //! Returns true if fillComplete() has been called and the matrix is in compute mode.
+    //! Returns true if the matrix is in compute mode, i.e. if fillComplete() has been called.
     virtual bool isFillComplete() const = 0;
 
-    //! Returns true if resumeFill() has been called and the matrix is in edit mode.
+    //! Returns true if the matrix is in edit mode.
     virtual bool isFillActive() const = 0;
 
     //! Returns the Frobenius norm of the matrix.

@@ -58,6 +58,7 @@
 #include "Xpetra_TpetraExport.hpp"
 
 #include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Vector.hpp"
 
 namespace Xpetra {
 
@@ -73,6 +74,16 @@ namespace Xpetra {
   // forward declaration of TpetraVector, needed to prevent circular inclusions
   template<class S, class LO, class GO, class N> class TpetraVector;
 #endif
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec);
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<const Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec);
+
+  //
+  //
+  //
 
   template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class TpetraMultiVector
@@ -134,6 +145,12 @@ namespace Xpetra {
     //! @name Data Copy and View get methods
     //@{
 
+    //! Return a Vector which is a const view of column j.
+    Teuchos::RCP< const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVector(size_t j) const { XPETRA_MONITOR("TpetraMultiVector::getVector"); return toXpetra(vec_->getVector(j)); }
+
+    //! Return a Vector which is a nonconst view of column j.
+    Teuchos::RCP< Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > getVectorNonConst(size_t j) { XPETRA_MONITOR("TpetraMultiVector::getVectorNonConst"); return toXpetra(vec_->getVectorNonConst(j)); }
+
     //! Const view of the local values in a particular vector of this multivector.
     Teuchos::ArrayRCP< const Scalar > getData(size_t j) const { XPETRA_MONITOR("TpetraMultiVector::getData"); return vec_->getData(j); }
 
@@ -190,16 +207,16 @@ namespace Xpetra {
     //! Compute 1-norm of each vector in multi-vector.
     void norm1(const Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const { XPETRA_MONITOR("TpetraMultiVector::norm1"); vec_->norm1(norms); }
 
-    //! Compute 2-norm of each vector in multi-vector.
+    //!
     void norm2(const Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const { XPETRA_MONITOR("TpetraMultiVector::norm2"); vec_->norm2(norms); }
 
     //! Compute Inf-norm of each vector in multi-vector.
     void normInf(const Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const { XPETRA_MONITOR("TpetraMultiVector::normInf"); vec_->normInf(norms); }
 
-    //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
+    //!
     void normWeighted(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &weights, const Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const { XPETRA_MONITOR("TpetraMultiVector::normWeighted"); vec_->normWeighted(toTpetra(weights), norms); }
 
-    //! Compute mean (average) value of each vector in multi-vector.
+    //! Compute mean (average) value of each vector in multi-vector. The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
     void meanValue(const Teuchos::ArrayView< Scalar > &means) const { XPETRA_MONITOR("TpetraMultiVector::meanValue"); vec_->meanValue(means); }
 
     //! Matrix-matrix multiplication: this = beta*this + alpha*op(A)*op(B).
