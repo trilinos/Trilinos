@@ -174,7 +174,7 @@ public:
               value is coords[i], but if stride is two, then the               
               ith coordinate value is coords[2*i].                             
                                                                                
-       \return The length of the \c coords list.  This may be more than        
+v       \return The length of the \c coords list.  This may be more than        
               getLocalNumEntityIDs() because the \c stride
               may be more than one.                                            
                                                                                
@@ -188,7 +188,7 @@ public:
 
   /*! \brief Sets pointers to this process' mesh entries.
       \param etype 
-      \param offsets is an array of size numEntities + 1.  
+      \param offsets is an array of size getLocalNumEntityIDs + 1.  
          The adjacency Ids for Ids[i] (returned in getLocalEntityIDsView())
 	 begin at adjacencyIds[offsets[i]].  
           The last element of offsets
