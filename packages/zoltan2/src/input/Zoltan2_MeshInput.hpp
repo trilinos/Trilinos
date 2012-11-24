@@ -188,7 +188,7 @@ v       \return The length of the \c coords list.  This may be more than
 
   /*! \brief Sets pointers to this process' mesh entries.
       \param etype 
-      \param offsets is an array of size getLocalNumEntityIDs + 1.  
+      \param offsets is an array of size getLocalNumEntityIDs() + 1.  
          The adjacency Ids for Ids[i] (returned in getLocalEntityIDsView())
 	 begin at adjacencyIds[offsets[i]].  
           The last element of offsets
