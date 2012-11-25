@@ -161,9 +161,6 @@ public:
 
 private:
 
-  //! Graph Factory
-  RCP<const FactoryBase> graphFact_;
-
   //! aggregation algorithms
   std::vector<RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > > algos_;
 

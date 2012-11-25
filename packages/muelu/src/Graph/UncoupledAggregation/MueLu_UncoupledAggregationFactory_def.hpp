@@ -74,8 +74,9 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UncoupledAggregationFactory(RCP<const FactoryBase> graphFact, bool bMaxLinkAggregation, bool bEmergencyAggregation)
-    : graphFact_(graphFact), bDefinitionPhase_(true)
+    : bDefinitionPhase_(true)
   {
+    SetFactory("Graph", graphFact); // for compatibility with old code
     algos_.push_back(Teuchos::rcp(new MueLu::OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
     algos_.push_back(Teuchos::rcp(new MueLu::UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
     if (bMaxLinkAggregation)   algos_.push_back(Teuchos::rcp(new MueLu::MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
@@ -84,7 +85,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("Graph", graphFact_.get(), this); // we should request data...
+    Input(currentLevel, "Graph");
 
     if (currentLevel.GetLevelID() == 0) currentLevel.DeclareInput("coarseAggStat", MueLu::NoFactory::get(), this);
     else                                currentLevel.DeclareInput("coarseAggStat", this, this);
@@ -107,7 +108,7 @@ namespace MueLu {
     RCP<Aggregates> aggregates;
     {
       // Level Get
-      RCP<const Graph> graph = currentLevel.Get< RCP<Graph> >("Graph", graphFact_.get());
+      RCP<const Graph> graph = Get< RCP<Graph> >(currentLevel, "Graph");
 
       // Build
       aggregates = rcp(new Aggregates(*graph));
@@ -146,7 +147,7 @@ namespace MueLu {
     }
 
     // Level Set
-    currentLevel.Set("Aggregates", aggregates, this);
+    Set(currentLevel, "Aggregates", aggregates);
 
     aggregates->describe(GetOStream(Statistics0, 0), getVerbLevel());
 
