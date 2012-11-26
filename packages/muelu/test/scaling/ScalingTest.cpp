@@ -76,7 +76,6 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
@@ -127,10 +126,10 @@ int main(int argc, char *argv[]) {
   //out->setOutputToRootOnly(-1);
   //out->precision(12);
 
-//FIXME we need a HAVE_MUELU_LONG_LONG_INT option
-//#ifndef HAVE_TEUCHOS_LONG_LONG_INT
+  //FIXME we need a HAVE_MUELU_LONG_LONG_INT option
+  //#ifndef HAVE_TEUCHOS_LONG_LONG_INT
   *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
-//#endif
+  //#endif
 
   //
   // SET TEST PARAMETERS
@@ -170,8 +169,8 @@ int main(int argc, char *argv[]) {
   int optSweeps = 2;                      clp.setOption("sweeps",         &optSweeps,             "sweeps to be used in SGS (or Chebyshev degree)");
 
   // - Repartitioning
-  LO optMinRowsPerProc = 2000;            clp.setOption("minRowsPerProc", &optMinRowsPerProc,        "min #rows allowable per proc before repartitioning occurs");
-  double optNnzImbalance = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,      "max allowable nonzero imbalance before repartitioning occurs");
+  LO optMinRowsPerProc = 2000;            clp.setOption("minRowsPerProc", &optMinRowsPerProc,     "min #rows allowable per proc before repartitioning occurs");
+  double optNnzImbalance = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,       "max allowable nonzero imbalance before repartitioning occurs");
 
   // - Solve
   int    optFixPoint = 1;                 clp.setOption("fixPoint",       &optFixPoint,           "apply multigrid as solver");
@@ -250,8 +249,17 @@ int main(int argc, char *argv[]) {
   {
     TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup"));
 
-    H = rcp( new Hierarchy() );
+    //
+    // Hierarchy
+    //
+
+    H = rcp(new Hierarchy());
     H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+    H->SetMaxCoarseSize((GO) optMaxCoarseSize);
+
+    //
+    // Finest level
+    //
 
     RCP<MueLu::Level> Finest = H->GetLevel();
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
@@ -259,8 +267,15 @@ int main(int argc, char *argv[]) {
     Finest->Set("Nullspace",   nullSpace);
     Finest->Set("Coordinates", coordinates); //FIXME: XCoordinates, YCoordinates, ..
 
+    //
+    // FactoryManager
+    //
+
     FactoryManager M;
-    M.SetFactory("Graph", rcp(new CoalesceDropFactory()));        /* do not use the permuted nullspace (otherwise, circular dependencies) */
+
+    //
+    // Aggregation
+    //
 
     RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
     *out << " == == == == == == == == == == == == = Aggregate option summary  == == == == == == == == == == == == = " << std::endl;
@@ -286,11 +301,14 @@ int main(int argc, char *argv[]) {
     M.SetFactory("Aggregates", UCAggFact);
     *out << " == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == = " << std::endl;
 
-    //  M.SetFactory("Ptent", rcp(new TentativePFactory()));
+    //
+    // Transfer
+    //
 
-    RCP<SaPFactory> SaPfact = rcp(new SaPFactory() );
+    RCP<SaPFactory> SaPfact = rcp(new SaPFactory());
     SaPfact->SetDampingFactor(optSaDamping);
     M.SetFactory("P", SaPfact);
+
     RCP<Factory> rfact = rcp(new TransPFactory());
     rfact->SetFactory("P", M.GetFactory("P"));
     M.SetFactory("R", rfact);
@@ -304,15 +322,19 @@ int main(int argc, char *argv[]) {
 
     RCP<RAPFactory>       AcfactFinal;
 
+    //
+    // Reordering
+    //
+
     RCP<PermutedTransferFactory> permPFactory, permRFactory;
     RCP<MultiVectorTransferFactory> mvTransFact;
     if (optExplicitR) {
 
-//FIXME we need a HAVE_MUELU_LONG_LONG_INT option
-// #if defined(HAVE_TEUCHOS_LONG_LONG_INT)
-//       // for long long
-//       AcfactFinal = Acfact;
-// #else
+      //FIXME we need a HAVE_MUELU_LONG_LONG_INT option
+      // #if defined(HAVE_TEUCHOS_LONG_LONG_INT)
+      //       // for long long
+      //       AcfactFinal = Acfact;
+      // #else
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
       //Matrix used to transfer coordinates to coarse grid
       RCP<const FactoryBase> Rtentfact = M.GetFactory("R"); //for projecting coordinates
@@ -329,12 +351,12 @@ int main(int argc, char *argv[]) {
       RepartitionFact->SetFactory("Partition", zoltan);
       RepartitionFact->SetFactory("A", Acfact);
 
-      permPFactory = rcp( new PermutedTransferFactory(MueLu::INTERPOLATION));
+      permPFactory = rcp(new PermutedTransferFactory(MueLu::INTERPOLATION));
       permPFactory->SetFactory("Importer", RepartitionFact);
       permPFactory->SetFactory("A", Acfact);
       permPFactory->SetFactory("P", SaPfact);
 
-      permRFactory = rcp( new PermutedTransferFactory(MueLu::RESTRICTION));
+      permRFactory = rcp(new PermutedTransferFactory(MueLu::RESTRICTION));
       permRFactory->SetFactory("Importer", RepartitionFact);
       permRFactory->SetFactory("A", Acfact);
       permRFactory->SetFactory("R", M.GetFactory("R"));
@@ -352,72 +374,79 @@ int main(int argc, char *argv[]) {
       //#endif // TEUCHOS_LONG_LONG_INT
     } else {
 
-        H->SetImplicitTranspose(true);
-        Acfact->SetImplicitTranspose(true);
+      H->SetImplicitTranspose(true);
+      Acfact->SetImplicitTranspose(true);
       AcfactFinal = Acfact;
-        if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n" << std::endl;
+      if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n" << std::endl;
     } //if (optExplicitR)
 
-    H->SetMaxCoarseSize((GO) optMaxCoarseSize);
-
-    RCP<SmootherPrototype> smooProto;
-    std::string ifpackType;
-    Teuchos::ParameterList ifpackList;
-    ifpackList.set("relaxation: sweeps", (LO) optSweeps);
-    ifpackList.set("relaxation: damping factor", (SC) 1.0);
-    if (optSmooType == "sgs") {
-      ifpackType = "RELAXATION";
-      ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-    }
-    else if (optSmooType == "l1-sgs") {
-      ifpackType = "RELAXATION";
-      ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-      ifpackList.set("relaxation: use l1", true);
-    } else if (optSmooType == "cheby") {
-      ifpackType = "CHEBYSHEV";
-      ifpackList.set("chebyshev: degree", (LO) optSweeps);
-
-      if (matrixParameters.GetMatrixType() == "Laplace1D") {
-	ifpackList.set("chebyshev: ratio eigenvalue", (SC) 3);
-      }
-      else if (matrixParameters.GetMatrixType() == "Laplace2D") {
-	ifpackList.set("chebyshev: ratio eigenvalue", (SC) 7);
-      }
-      else if (matrixParameters.GetMatrixType() == "Laplace3D") {
-	ifpackList.set("chebyshev: ratio eigenvalue", (SC) 20);
-      }
-      // ifpackList.set("chebyshev: max eigenvalue", (double) -1.0);
-      // ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
-    }
-
-    smooProto = rcp( new TrilinosSmoother(ifpackType, ifpackList) );
-
-    /* test direct solve */
-    /*    if (optMaxLevels == 1) {
-          Teuchos::ParameterList amesosList;
-          amesosList.set("PrintTiming", true);
-          smooProto = rcp( new DirectSolver("", amesosList) );
-          }
-    */
-
-    RCP<SmootherFactory> SmooFact;
-    SmooFact = rcp( new SmootherFactory(smooProto) );
     AcfactFinal->setVerbLevel(Teuchos::VERB_HIGH);
 
+    //
+    // Smoothers
+    //
+    RCP<SmootherFactory> SmooFact;
+    {
+      RCP<SmootherPrototype> smooProto;
+      std::string ifpackType;
+      Teuchos::ParameterList ifpackList;
+      ifpackList.set("relaxation: sweeps", (LO) optSweeps);
+      ifpackList.set("relaxation: damping factor", (SC) 1.0);
+      if (optSmooType == "sgs") {
+        ifpackType = "RELAXATION";
+        ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
+      }
+      else if (optSmooType == "l1-sgs") {
+        ifpackType = "RELAXATION";
+        ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
+        ifpackList.set("relaxation: use l1", true);
+      } else if (optSmooType == "cheby") {
+        ifpackType = "CHEBYSHEV";
+        ifpackList.set("chebyshev: degree", (LO) optSweeps);
+
+        if (matrixParameters.GetMatrixType() == "Laplace1D") {
+          ifpackList.set("chebyshev: ratio eigenvalue", (SC) 3);
+        }
+        else if (matrixParameters.GetMatrixType() == "Laplace2D") {
+          ifpackList.set("chebyshev: ratio eigenvalue", (SC) 7);
+        }
+        else if (matrixParameters.GetMatrixType() == "Laplace3D") {
+          ifpackList.set("chebyshev: ratio eigenvalue", (SC) 20);
+        }
+        // ifpackList.set("chebyshev: max eigenvalue", (double) -1.0);
+        // ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
+      }
+
+      smooProto = rcp(new TrilinosSmoother(ifpackType, ifpackList));
+
+      /* test direct solve */
+      /*    if (optMaxLevels == 1) {
+            Teuchos::ParameterList amesosList;
+            amesosList.set("PrintTiming", true);
+            smooProto = rcp(new DirectSolver("", amesosList));
+            }
+      */
+
+      SmooFact = rcp(new SmootherFactory(smooProto));
+    }
+
+    //
+    //
+    //
+
     /*
-    for (int i = 0; i<comm->getSize(); ++i) {
+      for (int i = 0; i<comm->getSize(); ++i) {
       if (comm->getRank() == i) {
-        std::cout << "pid " << i << ": address(Acfact)      = " << Acfact.get() << std::endl;
-        std::cout << "pid " << i << ": address(AcfactFinal) = " << AcfactFinal.get() << std::endl;
+      std::cout << "pid " << i << ": address(Acfact)      = " << Acfact.get() << std::endl;
+      std::cout << "pid " << i << ": address(AcfactFinal) = " << AcfactFinal.get() << std::endl;
       }
       comm->barrier();
-    }
+      }
     */
 
     if (optMaxLevels > 1) {
       M.SetFactory("A", AcfactFinal);
       M.SetFactory("Smoother", SmooFact);
-      M.SetFactory("Aggregates", UCAggFact);
 
       if (optExplicitR) {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
@@ -427,21 +456,31 @@ int main(int argc, char *argv[]) {
 #endif
       }
 
+      //
+      // Setup preconditioner
+      //
+
       int startLevel = 0;
       //      std::cout << startLevel << " " << optMaxLevels << std::endl;
       H->Setup(M, startLevel, optMaxLevels);
-    }//optMaxLevels>1
+    } else {
 
+      // optMaxLevels == 1
 
-    if (optMaxLevels == 1) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Mue!");
       // H->SetCoarsestSolver(*SmooFact, MueLu::BOTH);
-    }
+
+    } // optMaxLevels > 1
 
   } // end of Setup TimeMonitor
 
   //   *out  << " == == == == == == == == == == == \n Multigrid statistics \n == == == == == == == == == == == " << std::endl;
   //   status.print(*out, Teuchos::ParameterList::PrintOptions().indent(2));
+
+
+  //
+  // Solve
+  //
 
   // Define B
   RCP<MultiVector> X = MultiVectorFactory::Build(map, 1);
