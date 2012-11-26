@@ -59,27 +59,27 @@
 
 namespace MueLu {
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetDampingFactor(Scalar dampingFactor) {
     dampingFactor_ = dampingFactor;
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetDiagonalView(std::string const& diagView) {
     diagonalView_ = diagView;
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Scalar SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDampingFactor() {
     return dampingFactor_;
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   std::string SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDiagonalView() {
     return diagonalView_;
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     Input(fineLevel, "A");
 
@@ -87,15 +87,15 @@ namespace MueLu {
     // Getting it that way ensure that the same factory instance will be used for both SaPFactory and NullspaceFactory.
     RCP<const FactoryBase> initialPFact = GetFactory("P");
     if (initialPFact == Teuchos::null) { initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
-    coarseLevel.DeclareInput("P",initialPFact.get(),this);
+    coarseLevel.DeclareInput("P", initialPFact.get(), this); // --
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level &coarseLevel) const {
-    return BuildP(fineLevel,coarseLevel);
+    return BuildP(fineLevel, coarseLevel);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Prolongator smoothing", coarseLevel);
 
@@ -113,7 +113,7 @@ namespace MueLu {
 
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
-      A = Utils2::Transpose(A,true); // build transpose of A explicitely
+      A = Utils2::Transpose(A, true); // build transpose of A explicitely
     }
 
     //Build final prolongator
@@ -125,8 +125,8 @@ namespace MueLu {
     if (dampingFactor_ != Teuchos::ScalarTraits<Scalar>::zero()) {
 
       //Teuchos::ParameterList matrixList;
-      //RCP<Matrix> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsMatrixWrap>("Identity",Get< RCP<Matrix> >(fineLevel,"A")->getRowMap(),matrixList);
-      //RCP<Matrix> newPtent = Utils::TwoMatrixMultiply(I,false,Ptent,false);
+      //RCP<Matrix> I = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>("Identity", Get< RCP<Matrix> >(fineLevel, "A")->getRowMap(), matrixList);
+      //RCP<Matrix> newPtent = Utils::TwoMatrixMultiply(I, false, Ptent, false);
       //Ptent = newPtent; //I tried a checkout of the original Ptent, and it seems to be gone now (which is good)
 
       RCP<Matrix> AP;
@@ -137,7 +137,7 @@ namespace MueLu {
         //JJH -- in the scaling.  Long story short, we're doing 2 fillCompletes, where ideally we'd do just one.
         bool doFillComplete=true;
         bool optimizeStorage=false;
-        AP = Utils::TwoMatrixMultiply(A,false,Ptent,false,doFillComplete,optimizeStorage);
+        AP = Utils::TwoMatrixMultiply(A, false, Ptent, false, doFillComplete, optimizeStorage);
       }
 
       {
@@ -145,7 +145,7 @@ namespace MueLu {
         bool doFillComplete=false;
         bool optimizeStorage=false;
         Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(*A);
-        Utils::MyOldScaleMatrix(AP,diag,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
+        Utils::MyOldScaleMatrix(AP, diag, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
       }
 
       Scalar lambdaMax;
@@ -153,7 +153,7 @@ namespace MueLu {
         SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
         Magnitude stopTol = 1e-4;
         lambdaMax = Utils::PowerMethod(*A, true, (LO) 10, stopTol);
-        //Scalar lambdaMax = Utils::PowerMethod(*A, true, (LO) 50,(Scalar)1e-7, true);
+        //Scalar lambdaMax = Utils::PowerMethod(*A, true, (LO) 50, (Scalar)1e-7, true);
         GetOStream(Statistics1, 0) << "Damping factor = " << dampingFactor_/lambdaMax << " (" << dampingFactor_ << " / " << lambdaMax << ")" << std::endl;
       }
 
@@ -162,9 +162,9 @@ namespace MueLu {
 
         bool doTranspose=false;
         if (AP->isFillComplete())
-          Utils2::TwoMatrixAdd(Ptent,doTranspose,Teuchos::ScalarTraits<Scalar>::one(),AP,doTranspose,-dampingFactor_/lambdaMax,finalP);
+          Utils2::TwoMatrixAdd(Ptent, doTranspose, Teuchos::ScalarTraits<Scalar>::one(), AP, doTranspose, -dampingFactor_/lambdaMax, finalP);
         else {
-          Utils2::TwoMatrixAdd(Ptent,doTranspose,Teuchos::ScalarTraits<Scalar>::one(),AP,-dampingFactor_/lambdaMax);
+          Utils2::TwoMatrixAdd(Ptent, doTranspose, Teuchos::ScalarTraits<Scalar>::one(), AP, -dampingFactor_/lambdaMax);
           finalP = AP;
         }
       }
@@ -191,7 +191,7 @@ namespace MueLu {
     else
       {
         // prolongation factory is in restriction mode
-        RCP<Matrix> R = Utils2::Transpose(finalP,true); // use Utils2 -> specialization for double
+        RCP<Matrix> R = Utils2::Transpose(finalP, true); // use Utils2 -> specialization for double
         Set(coarseLevel, "R", R);
 
         ///////////////////////// EXPERIMENTAL
