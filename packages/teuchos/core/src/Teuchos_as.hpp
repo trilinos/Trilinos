@@ -458,6 +458,52 @@ namespace { // anonymous
     return val;
   }
 
+  /// Convert the given InputRealType real-valued floating-point
+  /// number to OutputRealType, also a real-valued floating-point
+  /// number with a possibly different precision.  Optionally do
+  /// bounds checking and throw std::range_error on overflow.
+  ///
+  /// This function is useful for ValueTypeConversionTraits<float,
+  /// std::string>::safeConvert(), and in general whenever we need to
+  /// use an intermediate floating-point type to convert from a string
+  /// to an final floating-point type.  This is because asSafe() does
+  /// not do bounds checking when converting between floating-point
+  /// types.
+  template<class OutputRealType, class InputRealType>
+  OutputRealType
+  realToReal (const InputRealType& x, const bool doBoundsChecking)
+  {
+    using Teuchos::TypeNameTraits;
+
+    if (doBoundsChecking) {
+      // For floating-point types T, std::numeric_limits<T>::min()
+      // returns the smallest positive value.  IEEE 754 types have a
+      // sign bit, so the largest-magnitude negative value is the
+      // negative of the largest-magnitude positive value.
+      const OutputRealType minVal = -std::numeric_limits<OutputRealType>::max ();
+      const OutputRealType maxVal = std::numeric_limits<OutputRealType>::max ();
+
+      // NaN is neither less than nor greater than anything.  We just
+      // let it pass through, per the rules for propagation of silent
+      // NaN.  (Signaling NaN will signal, but that's OK.)
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        x < minVal || x > maxVal,
+        std::range_error,
+        "realToReal<" << TypeNameTraits<OutputRealType>::name () << ", "
+        << TypeNameTraits<InputRealType>::name () << ">: "
+        "Input value x = " << x << " is out of the valid range [" << minVal
+        << ", " << maxVal << "] for conversion to the output type.");
+
+      return asSafe<OutputRealType> (x);
+    }
+    else {
+      return as<OutputRealType> (x);
+    }
+  }
+
+
+  /// \brief Convert the given string to a RealType floating-point number.
+  ///
   /// Helper function for converting the given \c std::string to a
   /// real-valued floating-point number of type RealType.
   ///
@@ -603,7 +649,7 @@ public:
     // strtof is new in C99.  If you don't have it, just use strtod
     // and convert the resulting double to float.
     const double d = stringToReal<double> (t, &strtod, "double");
-    return as<float> (d);
+    return realToReal<float, double> (d, false);
 #endif // _ISOC99_SOURCE
   }
 
@@ -614,7 +660,7 @@ public:
     // strtof is new in C99.  If you don't have it, just use strtod
     // and convert the resulting double to float.
     const double d = stringToReal<double> (t, &strtod, "double");
-    return asSafe<float> (d);
+    return realToReal<float, double> (d, true);
 #endif // _ISOC99_SOURCE
   }
 };
