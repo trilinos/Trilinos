@@ -251,7 +251,8 @@ namespace MueLu {
       nullspace_    = nullspaceVec;
     }
 
-    Teuchos::RCP<NullspaceFactory> nspFact = Teuchos::rcp(new NullspaceFactory("Nullspace", PtentFact));
+    Teuchos::RCP<NullspaceFactory> nspFact = Teuchos::rcp(new NullspaceFactory());
+    nspFact->SetFactory("Nullspace", PtentFact);
 
     //
     // Hierarchy + FactoryManager

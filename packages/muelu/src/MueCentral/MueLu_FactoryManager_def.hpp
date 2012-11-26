@@ -136,7 +136,9 @@ namespace MueLu {
 //       }
 
       if (varName == "Nullspace") {
-        return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory(Teuchos::null, GetFactory("Ptent")))); // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
+        RCP<Factory> factory = rcp(new NullspaceFactory());
+        factory->SetFactory("Nullspace", GetFactory("Ptent")); // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
+        return SetAndReturnDefaultFactory(varName, factory);
       }
 
       if (varName == "Graph")               return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));

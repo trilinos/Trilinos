@@ -57,26 +57,13 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::NullspaceFactory(RCP<const FactoryBase> AFact, RCP<const FactoryBase> nullspaceFact)
-    : nspName_("Nullspace"), AFact_(AFact), nullspaceFact_(nullspaceFact)
-  { }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::NullspaceFactory(std::string nspName, RCP<const FactoryBase> nullspaceFact)
-    : nspName_(nspName), AFact_(Teuchos::null), nullspaceFact_(nullspaceFact)
-  {  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~NullspaceFactory() {}
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
 
     // only request "A" in DeclareInput if
     // 1) there is not nspName_ (e.g. "Nullspace") is available in Level AND
     // 2) it is the finest level (i.e. LevelID == 0)
     if (currentLevel.IsAvailable(nspName_) == false && currentLevel.GetLevelID() == 0)
-      currentLevel.DeclareInput("A", AFact_.get(),this);
+      currentLevel.DeclareInput("A", GetFactory("A").get(),this);
 
     if (currentLevel.GetLevelID() !=0) {
 
@@ -87,7 +74,7 @@ namespace MueLu {
       // 2) nullspaceFact_ must be a TentativePFactory i.e. at least a TwoLevelFactoryBase derived object
 
 
-      currentLevel.DeclareInput("Nullspace", nullspaceFact_.get(),this);
+      currentLevel.DeclareInput("Nullspace", GetFactory(nspName_).get(),this); /* ! "Nullspace" and nspName_ mismatch possible here */
     }
   }
 
@@ -110,7 +97,7 @@ namespace MueLu {
 
       } else {
         // "Nullspace" (nspName_) is not available
-        RCP<Matrix> A = currentLevel.Get< RCP<Matrix> >("A", AFact_.get()); // no request since given by user
+        RCP<Matrix> A = currentLevel.Get< RCP<Matrix> >("A", GetFactory("A").get()); // no request since given by user
 
         // determine numPDEs
         LocalOrdinal numPDEs = 1;
@@ -133,12 +120,12 @@ namespace MueLu {
         }
       } // end if "Nullspace" not available
     } else {
-        // on coarser levels always use "Nullspace" as variable name, since it is expected by
-        // tentative P factory to be "Nullspace"
+      // on coarser levels always use "Nullspace" as variable name, since it is expected by
+      // tentative P factory to be "Nullspace"
 
-        nullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
+      nullspace = currentLevel.Get< RCP<MultiVector> >("Nullspace", GetFactory(nspName_).get());
 
-      }
+    }
 
     // provide "Nullspace" variable on current level (used by TentativePFactory)
     currentLevel.Set("Nullspace", nullspace, this);
