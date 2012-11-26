@@ -114,8 +114,11 @@ TEUCHOS_UNIT_TEST( asSafe, realToReal ) {
   //
   // Test double -> float conversions.
   //
-  TEST_THROW(valF = asSafe<float> (minD), std::range_error);
-  TEST_THROW(valF = asSafe<float> (maxD), std::range_error);
+  // mfh 25 Nov 2012: Disabled throwing std::range_error on overflow
+  // for conversions between build-in floating-point types, in favor
+  // of IEEE 754 overflow semantics.
+  // TEST_THROW(valF = asSafe<float> (minD), std::range_error);
+  // TEST_THROW(valF = asSafe<float> (maxD), std::range_error);
 
   TEST_NOTHROW(valF = asSafe<float> (minusOneF));
   TEST_EQUALITY_CONST(valF, minusOneF);
@@ -188,8 +191,11 @@ TEUCHOS_UNIT_TEST( asSafe, realToReal ) {
   //
   // Test long double -> float conversions.
   //
-  TEST_THROW(valF = asSafe<float> (minLD), std::range_error);
-  TEST_THROW(valF = asSafe<float> (maxLD), std::range_error);
+  // mfh 25 Nov 2012: Disabled throwing std::range_error on overflow
+  // for conversions between build-in floating-point types, in favor
+  // of IEEE 754 overflow semantics.
+  // TEST_THROW(valF = asSafe<float> (minLD), std::range_error);
+  // TEST_THROW(valF = asSafe<float> (maxLD), std::range_error);
   TEST_NOTHROW(valF = asSafe<float> (minusOneLD));
   TEST_EQUALITY_CONST(valF, minusOneLD);
   TEST_NOTHROW(valF = as<float> (minusOneLD));
