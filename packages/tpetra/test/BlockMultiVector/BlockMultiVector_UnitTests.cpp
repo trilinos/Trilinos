@@ -62,8 +62,8 @@
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
 #include "Kokkos_TPINode.hpp"
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-#include "Kokkos_ThrustGPUNode.hpp"
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#include "Kokkos_OpenMPNode.hpp"
 #endif
 
 // FINISH: add test for BlockMultiVector with a node containing zero local entries
@@ -136,9 +136,9 @@ namespace {
   using Kokkos::TPINode;
   RCP<TPINode> tpinode;
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  using Kokkos::ThrustGPUNode;
-  RCP<ThrustGPUNode> thrustnode;
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+  using Kokkos::OpenMPNode;
+  RCP<OpenMPNode> ompnode;
 #endif
 
   bool testMpi = true;
@@ -207,16 +207,15 @@ namespace {
   }
 #endif
 
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
   template <>
-  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
-    if (thrustnode == null) {
+  RCP<OpenMPNode> getNode<OpenMPNode>() {
+    if (ompnode == null) {
       Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      pl.set<int>("Verbose",1);
-      thrustnode = rcp(new ThrustGPUNode(pl));
+      pl.set<int>("Num Threads",1);
+      ompnode = rcp(new OpenMPNode(pl));
     }
-    return thrustnode;
+    return ompnode;
   }
 #endif
 
@@ -225,10 +224,10 @@ namespace {
   // 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BlockMultiVector, basic, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMultiVector, basic, LO, GO, Scalar , Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef Tpetra::BlockMultiVector<Scalar,Ordinal,Ordinal,Node> BMV;
+    typedef Tpetra::BlockMultiVector<Scalar,LO,GO,Node> BMV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
@@ -237,9 +236,9 @@ namespace {
     // create a BlockMap
     const size_t numLocal = 12;
     const size_t numLocalBlocks = 4;
-    const Ordinal blockSize = 3;
+    const LO blockSize = 3;
     const size_t numVecs  = 7;
-    RCP<BlockMap<Ordinal,Ordinal,Node> > blkmap = rcp( new BlockMap<Ordinal,Ordinal,Node>(INVALID,numLocalBlocks,blockSize,0,comm,node) );
+    RCP<BlockMap<LO,GO,Node> > blkmap = rcp( new BlockMap<LO,GO,Node>(INVALID,numLocalBlocks,blockSize,0,comm,node) );
     BMV bmvec(blkmap,numVecs,true);
     TEST_EQUALITY( bmvec.getNumVectors(), numVecs );
     TEST_EQUALITY( bmvec.getLocalLength(), numLocal );
@@ -258,11 +257,11 @@ namespace {
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BlockMultiVector, OrthoDot, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMultiVector, OrthoDot, LO, GO, Scalar , Node )
   {
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    typedef Tpetra::BlockMultiVector<Scalar,Ordinal,Ordinal,Node> BMV;
+    typedef Tpetra::BlockMultiVector<Scalar,LO,GO,Node> BMV;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Scalar S0 = ScalarTraits<Scalar>::zero();
     const Mag M0 = ScalarTraits<Mag>::zero();
@@ -270,11 +269,11 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // create a Map
-    const Ordinal indexBase = 0;
+    const LO indexBase = 0;
     const size_t numLocalBlocks = 4;
-    const Ordinal blockSize = 3;
+    const LO blockSize = 3;
     const size_t numVectors = 3;
-    RCP<BlockMap<Ordinal,Ordinal,Node> > blkmap = rcp( new BlockMap<Ordinal,Ordinal,Node>(INVALID,numLocalBlocks,blockSize,indexBase,comm,node) );
+    RCP<BlockMap<LO,GO,Node> > blkmap = rcp( new BlockMap<LO,GO,Node>(INVALID,numLocalBlocks,blockSize,indexBase,comm,node) );
     const bool zeroOut = true;
     BMV bmvec1(blkmap,numVectors,zeroOut),
         bmvec2(blkmap,numVectors,zeroOut);
@@ -335,108 +334,12 @@ namespace {
 // INSTANTIATIONS
 //
 
+#define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( SCALAR, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockMultiVector, basic             , LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockMultiVector, OrthoDot          , LO, GO, SCALAR, NODE )
 
-  // Uncomment this for really fast development cycles but make sure to comment
-  // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
-typedef std::complex<float>  ComplexFloat;
-typedef std::complex<double> ComplexDouble;
-
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BlockMultiVector, basic             , ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BlockMultiVector, OrthoDot          , ORDINAL, SCALAR, NODE )
-
-#define UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, SerialNode )
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#define UNIT_TEST_TBBNODE(ORDINAL, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, TBBNode )
-#else
-#define UNIT_TEST_TBBNODE(ORDINAL, SCALAR)
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#define UNIT_TEST_TPINODE(ORDINAL, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, TPINode )
-#else
-#define UNIT_TEST_TPINODE(ORDINAL, SCALAR)
-#endif
-
-// don't test Kokkos node for MPI builds, because we probably don't have multiple GPUs per node
-#if defined(HAVE_KOKKOSCLASSIC_THRUST) && !defined(HAVE_TPETRA_MPI)
-// float
-#if defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT)
-#  define UNIT_TEST_THRUSTGPUNODE_FLOAT(ORDINAL) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, float, ThrustGPUNode )
-#else
-#  define UNIT_TEST_THRUSTGPUNODE_FLOAT(ORDINAL)
-#endif
-// double
-#if defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
-#  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(ORDINAL) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, double, ThrustGPUNode )
-#else
-#  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(ORDINAL)
-#endif
-// complex<float>
-#if defined(HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_FLOAT)
-#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(ORDINAL) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, ComplexFloat, ThrustGPUNode )
-#else
-#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(ORDINAL)
-#endif
-// complex<double>
-#if defined(HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_DOUBLE)
-#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(ORDINAL) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, ComplexDouble, ThrustGPUNode )
-#else
-#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(ORDINAL)
-#endif
-#else
-// none
-# define UNIT_TEST_THRUSTGPUNODE_FLOAT(ORDINAL)
-# define UNIT_TEST_THRUSTGPUNODE_DOUBLE(ORDINAL)
-# define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(ORDINAL)
-# define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(ORDINAL)
-#endif
-
-#define UNIT_TEST_ALLCPUNODES(ORDINAL, SCALAR) \
-    UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
-    UNIT_TEST_TBBNODE(ORDINAL, SCALAR) \
-    UNIT_TEST_TPINODE(ORDINAL, SCALAR)
-
-#define UNIT_TEST_FLOAT(ORDINAL) \
-    UNIT_TEST_ALLCPUNODES(ORDINAL, float) \
-    UNIT_TEST_THRUSTGPUNODE_FLOAT(ORDINAL)
-
-#define UNIT_TEST_DOUBLE(ORDINAL) \
-    UNIT_TEST_ALLCPUNODES(ORDINAL, double) \
-    UNIT_TEST_THRUSTGPUNODE_DOUBLE(ORDINAL)
-
-#define UNIT_TEST_COMPLEX_FLOAT(ORDINAL) \
-    UNIT_TEST_ALLCPUNODES(ORDINAL, ComplexFloat) \
-    UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(ORDINAL)
-
-#define UNIT_TEST_COMPLEX_DOUBLE(ORDINAL) \
-    UNIT_TEST_ALLCPUNODES(ORDINAL, ComplexDouble) \
-    UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(ORDINAL)
-
-#if defined(HAVE_TPETRA_INST_DOUBLE)
-  UNIT_TEST_DOUBLE(int)
-#endif
-
-#if !defined(FAST_DEVELOPMENT_BUILD)
-# if defined(HAVE_TPETRA_INST_FLOAT)
-    UNIT_TEST_FLOAT(int)
-# endif 
-# if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
-    UNIT_TEST_COMPLEX_FLOAT(int)
-# endif 
-# if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
-    UNIT_TEST_COMPLEX_DOUBLE(int)
-# endif 
-#endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  TPETRA_INSTANTIATE_SLGN_NOGPU(VIEWMODETEST)
 
 }
