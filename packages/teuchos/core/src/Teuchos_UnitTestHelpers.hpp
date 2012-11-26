@@ -44,10 +44,15 @@
 
 
 /*! \file Teuchos_UnitTestHelpers.hpp
+\brief Macros for defining unit tests.
 
-\brief Macros for helping to create concrete unit tests.
+The macros in this file are for naming and defining unit tests.  They
+give your unit test a group and name, so that you can identify it in
+the test output.  You are responsible for filling in the actual test.
+
+For macros (like TEST_NOTHROW) to help you write the actual unit test,
+see Teuchos_LocalTestingHelpers.hpp and Teuchos_TestingHelpers.hpp.
 */
-
 
 #include "Teuchos_UnitTestBase.hpp"
 #include "Teuchos_StaticSetupMacro.hpp"
