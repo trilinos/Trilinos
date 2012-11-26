@@ -88,9 +88,9 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
 /*****************************************************************************/
 /*****************************************************************************/
 #ifdef LIGHTWEIGHT_MATRIX
-int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const LightweightCrsMatrix &Bimport, Epetra_Map*& unionmap)
+  int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const LightweightCrsMatrix &Bimport, Epetra_Map*& unionmap)
 #else
-int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Epetra_CrsMatrix &Bimport, Epetra_Map*& unionmap)
+    int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Epetra_CrsMatrix &Bimport, Epetra_Map*& unionmap)
 #endif
 {
 #ifdef HAVE_MPI
@@ -113,11 +113,15 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Epetra_
   int * Igids    = IColMap.MyGlobalElements();  
 
   // Since we're getting called, we know we have to be using an MPI implementation of Epetra.  Which means we should have an MpiDistributor for both B and Bimport
+  
 #ifdef LIGHTWEIGHT_MATRIX
   if(!B.Importer()) EPETRA_CHK_ERR(-1);
 #else
   if(!B.Importer() || !Bimport.Importer()) EPETRA_CHK_ERR(-1);
 #endif
+
+  Epetra_MpiDistributor *Distor=dynamic_cast<Epetra_MpiDistributor*>(&B.Importer()->Distributor());
+  if(!Distor) EPETRA_CHK_ERR(-2);
 
   // DEBUG
 #ifdef ENABLE_MMM_TIMINGS
@@ -147,8 +151,8 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Epetra_
   // **********************
   // Stage 2: Allocate memory
   // **********************
-  // Initial size guess: 22% larger than B (This is should let us do a 30^3 mesh w/o resizing
-  int Csize=(int)(1.22 * BColMap.NumMyElements());
+  int initial_c_size=2.25*BColMap.NumMyElements() - B.RowMap().NumMyElements();
+  int Csize=initial_c_size;
   std::vector<int> Cgids(Csize);
 
   // **********************
@@ -190,7 +194,11 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Epetra_
   // **********************
   // Stage 4: Processor-by-processor set_union
   // **********************
-  std::vector<int> Btemp(20), Itemp(20);
+  // NOTE: Intial sizes for Btemp/Itemp from B's distributor.  This should be exact for Btemp and a decent guess for Itemp
+  int initial_temp_length = 0;
+  const int * lengths_from = Distor->LengthsFrom();
+  for(i=0; i < Distor->NumReceives(); i++) initial_temp_length += lengths_from[i];
+  std::vector<int> Btemp(initial_temp_length), Itemp(initial_temp_length);
 
   while (Bstart < Nb || Istart < Ni) {
     //    printf("[%d] Loop Top\n",MyPID); fflush(stdout);
@@ -204,7 +212,6 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Epetra_
     if(Bstart < Nb) Bproc=Bpids[Bstart];
     if(Istart < Ni) Iproc=Ipids[Istart];
     Cproc = (Bproc < Iproc)?Bproc:Iproc;
-
     
     if(Bproc == Cproc && Iproc != Cproc) {
       // Only B has this processor.  Copy the data.
