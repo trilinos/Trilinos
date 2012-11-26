@@ -99,12 +99,6 @@ namespace MueLu {
 
     //@}
 
-  private:
-
-    RCP<const FactoryBase> initialPFact_;   //!< Ptentative Factory
-    RCP<const FactoryBase> constrFact_;     //!< Constraint Factory
-    RCP<const FactoryBase> AFact_;          //!< A Factory
-
   }; // class EminPFactory
 
 } // namespace MueLu
