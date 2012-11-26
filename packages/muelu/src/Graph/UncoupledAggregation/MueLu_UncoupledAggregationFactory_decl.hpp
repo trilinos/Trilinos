@@ -103,7 +103,7 @@ public:
 
   // Options shared by all aggregation algorithms
 
-  void SetOrdering(AggOptions::UncoupledOrdering ordering) {
+  void SetOrdering(AggOptions::Ordering ordering) {
     for(size_t a = 0; a < algos_.size(); a++) {
       algos_[a]->SetOrdering(ordering);
     }
@@ -119,7 +119,7 @@ public:
     }
   }
 
-  AggOptions::UncoupledOrdering GetOrdering() const {
+  AggOptions::Ordering GetOrdering() const {
     TEUCHOS_TEST_FOR_EXCEPTION(algos_.size()==0,Exceptions::RuntimeError,"MueLu::UncoupledAggregationFactory::Build: no aggregation algorithms set. Call Append() before. Error.");
     return algos_[0]->GetOrdering();
   }

@@ -62,6 +62,8 @@
 #include "MueLu_Graph.hpp"
 #include "MueLu_Aggregates.hpp"
 
+#include "MueLu_AggOptions.hpp"
+
 // MPI helper
 #define sumAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
@@ -72,16 +74,7 @@
 
 namespace MueLu {
 
-namespace AggOptions {
-/* Options defining how to pick-up the next root node in the local aggregation procedure */
-enum UncoupledOrdering {
-  NATURAL = 0, /* node ordering   */
-  RANDOM  = 1, /* random ordering */
-  GRAPH   = 2  /* graph ordering  */   // TODO rename GRAPH
-};
-} // namespace AggOptions
-
-using namespace AggOptions; // necessary to hide MPI::GRAPH
+using namespace AggOptions; // necessary
 
 /* In the algorithm, aggStat[]=READY/NOTSEL/SELECTED indicates whether a node has been aggregated. */
 namespace NodeStats {
@@ -180,11 +173,11 @@ class AggregationAlgorithmBase
   //! @name Set/get methods.
   //@{
 
-  void SetOrdering(AggOptions::UncoupledOrdering ordering)                          { ordering_                = ordering;                }
+  void SetOrdering(AggOptions::Ordering ordering)                          { ordering_                = ordering;                }
   void SetMinNodesPerAggregate(int minNodesPerAggregate)       { minNodesPerAggregate_    = minNodesPerAggregate;    }
   void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) { maxNeighAlreadySelected_ = maxNeighAlreadySelected; }
 
-  AggOptions::UncoupledOrdering GetOrdering()                const { return ordering_;                }
+  AggOptions::Ordering GetOrdering()                const { return ordering_;                }
   int      GetMinNodesPerAggregate()    const { return minNodesPerAggregate_;    }
   int      GetMaxNeighAlreadySelected() const { return maxNeighAlreadySelected_; }
 
@@ -193,7 +186,7 @@ class AggregationAlgorithmBase
 
   private:
     //! Aggregation options (TODO: Teuchos::ParameterList?)
-    AggOptions::UncoupledOrdering ordering_;                /**<  natural, random, graph           */
+    AggOptions::Ordering ordering_;                /**<  natural, random, graph           */
     int      minNodesPerAggregate_;    /**<  aggregate size control           */
     int      maxNeighAlreadySelected_; /**<  complexity control               */
 
