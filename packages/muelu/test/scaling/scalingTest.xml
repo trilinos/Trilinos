@@ -24,7 +24,7 @@
 
     <ParameterList name="myProlongatorFact">
       <Parameter name="factory"  type="string" value="SaPFactory"/>
-      <Parameter name="InitialP" type="string" value="myTentativePFact"/>
+      <Parameter name="P" type="string" value="myTentativePFact"/>
       <!--    <Parameter name="DampingFactor" type="double" value="4./3"/> -->
     </ParameterList>
 

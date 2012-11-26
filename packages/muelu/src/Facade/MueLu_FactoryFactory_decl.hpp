@@ -229,13 +229,13 @@ namespace MueLu {
         return rcp(new SaPFactory());
 
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "SaPFactory", Exceptions::RuntimeError, "");
-      MUELU_FACTORY_PARAM("InitialP", InitialPFact);
-      MUELU_FACTORY_PARAM("A", AFact);
+      RCP<SaPFactory> factory = rcp(new SaPFactory());
+      MUELU_FACTORY_PARAM2("A");
+      MUELU_FACTORY_PARAM2("P");
 
-      RCP<SaPFactory> f = rcp(new SaPFactory(InitialPFact, AFact));
-      if (paramList.isParameter("DampingFactor")) f->SetDampingFactor(paramList.get<Scalar>("DampingFactor"));
+      if (paramList.isParameter("DampingFactor")) factory->SetDampingFactor(paramList.get<Scalar>("DampingFactor"));
 
-      return f;
+      return factory;
     }
 
     //! PgPFactory

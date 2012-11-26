@@ -115,7 +115,12 @@ namespace MueLu {
     } else {
 
       if (varName == "A")             return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
-      if (varName == "P")             return SetAndReturnDefaultFactory(varName, rcp(new SaPFactory(GetFactory("Ptent")))); // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
+      if (varName == "P") {
+        RCP<Factory> factory = rcp(new SaPFactory());
+        factory->SetFactory("P", GetFactory("Ptent")); // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
+        return SetAndReturnDefaultFactory(varName, factory);
+      }
+
       if (varName == "R")             return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 //       if (varName == "Partition")     {
