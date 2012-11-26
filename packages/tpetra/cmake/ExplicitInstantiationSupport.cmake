@@ -16,11 +16,11 @@ IF(Tpetra_ENABLE_Thrust)
   ENDFOREACH()
   # no dd_real/qd_real support for CUDA, nor int/complex even via Cusp :( 
   SET(CUDA_UNSUPPORTED_SCALARS "long|int|dd_real|qd_real|std::complex<double>|std::complex<float>")
-  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "CS=${CUDA_UNSUPPORTED_SCALARS}" "DS=.*"    "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
-  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "CS=.*" "DS=${CUDA_UNSUPPORTED_SCALARS}"    "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
-  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "S=${CUDA_UNSUPPORTED_SCALARS}"             "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
-  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "SIN=.*" "SOUT=${CUDA_UNSUPPORTED_SCALARS}" "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
-  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "SIN=${CUDA_UNSUPPORTED_SCALARS}" "SOUT=.*" "LO=.*" "GO=.*" "N=Kokkos::ThrustGPUNode")
+  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "CS=${CUDA_UNSUPPORTED_SCALARS}"   "N=Kokkos::ThrustGPUNode")
+  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "DS=${CUDA_UNSUPPORTED_SCALARS}"   "N=Kokkos::ThrustGPUNode")
+  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "S=${CUDA_UNSUPPORTED_SCALARS}"    "N=Kokkos::ThrustGPUNode")
+  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "SOUT=${CUDA_UNSUPPORTED_SCALARS}" "N=Kokkos::ThrustGPUNode")
+  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET "SIN=${CUDA_UNSUPPORTED_SCALARS}"  "N=Kokkos::ThrustGPUNode")
   #
   ASSERT_DEFINED(KokkosClassic_ENABLE_CUDA_DOUBLE)
   IF(NOT KokkosClassic_ENABLE_CUDA_DOUBLE)
@@ -51,18 +51,7 @@ IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
   JOIN(Tpetra_ETI_LORDS   "|" FALSE ${Tpetra_ETI_LORDS}  )
   JOIN(Tpetra_ETI_GORDS   "|" FALSE ${Tpetra_ETI_GORDS}  )
   JOIN(Tpetra_ETI_NODES   "|" FALSE ${Tpetra_ETI_NODES}  )
-  FOREACH(ds ${Tpetra_ETI_SCALARS})
-    FOREACH(cs ${Tpetra_ETI_SCALARS})
-      IF(NOT "${cs}" STREQUAL "${ds}")
-        TRIBITS_ETI_TYPE_EXPANSION(DualScalarInsts   "CS=${cs}" "DS=${ds}" 
-                                                     "LO=${Tpetra_ETI_LORDS}" "GO=${Tpetra_ETI_GORDS}" 
-                                                     "N=${Tpetra_ETI_NODES}")
-      ENDIF()
-    ENDFOREACH()
-  ENDFOREACH()
   JOIN(Tpetra_ETI_SCALARS "|" FALSE ${Tpetra_ETI_SCALARS})
-  # ogb: no default support for dual scalar instantiations at this time
-  #TRIBITS_ADD_ETI_INSTANTIATIONS(Tpetra ${DualScalarInsts})
   # assemble single scalar instantiations
   TRIBITS_ETI_TYPE_EXPANSION(SingleScalarInsts   "S=${Tpetra_ETI_SCALARS}" "N=${Tpetra_ETI_NODES}"
                                                  "LO=${Tpetra_ETI_LORDS}" "GO=${Tpetra_ETI_GORDS}")
@@ -72,14 +61,10 @@ IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
   ENDIF()
 ELSEIF()
   # these macros are used only for testing
-  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_LIBRARYSET "S=double" 
-                                                   "LO=int" 
-                                                   "GO=int" 
+  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_LIBRARYSET "S=double" "LO=int" "GO=int" 
                                                    "N=${Tpetra_ETI_NODES}")
   IF (SS_FOR_DEV_PS_FOR_RELEASE AND HAVE_COMPLEX_BLAS)
-    TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_LIBRARYSET "S=std::complex<double>" 
-                                                     "LO=int" 
-                                                     "GO=int" 
+    TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_LIBRARYSET "S=std::complex<double>" "LO=int" "GO=int" 
                                                      "N=${Tpetra_ETI_NODES}")
   ENDIF()
 ENDIF()
