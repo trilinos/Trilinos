@@ -55,16 +55,7 @@
 #include "Tpetra_BlockMultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 
-#include "Kokkos_SerialNode.hpp"
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#include "Kokkos_TBBNode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#include "Kokkos_TPINode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-#include "Kokkos_OpenMPNode.hpp"
-#endif
+#include "Tpetra_ETIHelperMacros.h"
 
 // FINISH: add test for BlockMultiVector with a node containing zero local entries
 // FINISH: add tests for local BlockMultiVectors 
@@ -334,12 +325,12 @@ namespace {
 // INSTANTIATIONS
 //
 
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( SCALAR, LO, GO, NODE ) \
+#define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockMultiVector, basic             , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockMultiVector, OrthoDot          , LO, GO, SCALAR, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_INSTANTIATE_SLGN_NOGPU(VIEWMODETEST)
+  TPETRA_INSTANTIATE_TESTMV_NOGPU( UNIT_TEST_GROUP )
 
 }
