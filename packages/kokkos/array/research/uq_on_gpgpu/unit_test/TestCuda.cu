@@ -71,7 +71,7 @@
 #include <TestStochastic.hpp>
 
 
-int mainCuda()
+int mainCuda(bool test_flat, bool test_orig, bool test_block)
 {
   typedef unsigned long long int IntType ;
 
@@ -111,7 +111,8 @@ int mainCuda()
   unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Cuda,IntType>( 100 , 10 );
 
   std::cout << std::endl << "\"Cuda Performance\"" << std::endl ;
-  unit_test::performance_test_driver<KokkosArray::Cuda>();
+  unit_test::performance_test_driver<KokkosArray::Cuda>(
+    test_flat, test_orig, test_block);
 
   KokkosArray::Cuda::finalize();
 

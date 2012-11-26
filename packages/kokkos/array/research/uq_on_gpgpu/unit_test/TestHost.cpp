@@ -67,7 +67,7 @@
 #include <TestTensorCrsMatrix.hpp>
 #include <TestStochastic.hpp>
 
-int mainHost()
+int mainHost(bool test_flat, bool test_orig, bool test_block)
 {
   const size_t node_count = KokkosArray::Host::detect_node_count();
   const size_t node_thread_count = KokkosArray::Host::detect_node_core_count() / 2 ;
@@ -116,7 +116,8 @@ int mainHost()
 
   std::cout << std::endl << "\"Host Performance with "
             << node_count * node_thread_count << " threads\"" << std::endl ;
-  unit_test::performance_test_driver<KokkosArray::Host>();
+  unit_test::performance_test_driver<KokkosArray::Host>(
+    test_flat, test_orig, test_block);
 
   KokkosArray::Host::finalize();
 
