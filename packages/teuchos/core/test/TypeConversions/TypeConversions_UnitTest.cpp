@@ -265,15 +265,26 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   const double minusOneD = -1;
   const double maxD = std::numeric_limits<double>::max ();
 
-  // Make sure that long double is as long as the standard requires.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    sizeof (long double) <= sizeof (double),
-    std::logic_error,
-    "Your system does not have an IEEE 754 - compliant implementation of long double.  "
-    "The IEEE 754 standard requires that long double be longer than double.  "
-    "In fact, it must use at least 80 bits. "
-    "However, sizeof (long double) = " << sizeof (long double)
-    << " < sizeof (double) = " << sizeof (double) << ".");
+  // mfh 26 Nov 2012: C89 does not mandate that "long double"
+  // implement the extended-precision 80-bit format of IEEE 754.  In
+  // fact, Microsoft Visual Studio implements long double just as
+  // double.  (This goes all the way back to Bill Gates' initial
+  // discussions with the Intel x87 architects.)  Relaxing the sizeof
+  // (long double) > sizeof (double) requirement will prevent test
+  // failures such as the following (on Windows):
+  //
+  // http://testing.sandia.gov/cdash/testDetails.php?test=10628321&build=801972
+  // http://testing.sandia.gov/cdash/testDetails.php?test=10739503&build=810247
+
+  // // Make sure that long double is as long as the standard requires.
+  // TEUCHOS_TEST_FOR_EXCEPTION(
+  //   sizeof (long double) <= sizeof (double),
+  //   std::logic_error,
+  //   "Your system does not have an IEEE 754 - compliant implementation of long double.  "
+  //   "The IEEE 754 standard requires that long double be longer than double.  "
+  //   "In fact, it must use at least 80 bits. "
+  //   "However, sizeof (long double) = " << sizeof (long double)
+  //   << " < sizeof (double) = " << sizeof (double) << ".");
 
   const long double minLD = -std::numeric_limits<long double>::max ();
   const long double minusOneLD = -1;
@@ -372,19 +383,22 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   }
 
   //
-  // Test string -> double conversions that should throw.
+  // Test string -> double conversions that should throw,
+  // if sizeof(long double) > sizeof(double).
   //
-  {
-    std::ostringstream os;
-    os.precision (17);
-    os << minLD;
-    TEST_THROW(valD = asSafe<double> (os.str ()), std::range_error);
-  }
-  {
-    std::ostringstream os;
-    os.precision (17);
-    os << maxLD;
-    TEST_THROW(valD = asSafe<double> (os.str ()), std::range_error);
+  if (sizeof (long double) > sizeof (double)) {
+    {
+      std::ostringstream os;
+      os.precision (17);
+      os << minLD;
+      TEST_THROW(valD = asSafe<double> (os.str ()), std::range_error);
+    }
+    {
+      std::ostringstream os;
+      os.precision (17);
+      os << maxLD;
+      TEST_THROW(valD = asSafe<double> (os.str ()), std::range_error);
+    }
   }
 
   //

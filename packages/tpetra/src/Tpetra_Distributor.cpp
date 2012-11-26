@@ -505,10 +505,33 @@ namespace Tpetra {
         *comm_);
 #endif // HAVE_TEUCHOS_DEBUG
 
-      // Each process will get back only one item (hence, counts =
-      // ones) from the array of global sums, namely that entry
-      // corresponding to the process, and detailing how many receives
-      // it has.  This total includes self sends.
+      // Compute the number of receives that this process needs to
+      // post.  The number of receives includes any self sends (i.e.,
+      // messages sent by this process to itself).
+      //
+      // (We will use numReceives_ this below to post exactly that
+      // number of receives, with MPI_ANY_SOURCE as the sending rank.
+      // This will tell us from which processes this process expects
+      // to receive, and how many packets of data we expect to receive
+      // from each process.)
+      //
+      // toNodesFromMe[i] is the number of messages sent by this
+      // process to process i.  Compute the sum (elementwise) of all
+      // the toNodesFromMe arrays on all processes in the
+      // communicator.  If the array x is that sum, then if this
+      // process has rank j, x[j] is the number of messages sent
+      // to process j, that is, the number of receives on process j
+      // (including any messages sent by process j to itself).
+      //
+      // Yes, this requires storing and operating on an array of
+      // length P, where P is the number of processes in the
+      // communicator.  Epetra does this too.  Avoiding this O(P)
+      // memory bottleneck would require some research.
+      //
+      // In the (wrapped) MPI_Reduce_scatter call below, since the
+      // counts array contains only ones, there is only one output on
+      // each process, namely numReceives_ (which is x[j], in the
+      // above notation).
       //
       // mfh 09 Jan 2012: The reduceAllAndScatter really isn't
       // necessary here.  Since counts is just all ones, we could
@@ -522,8 +545,9 @@ namespace Tpetra {
       // can't be more than twice as fast as the all-reduce, even if
       // the scatter is free).
       Array<int> counts (numProcs, 1);
-      reduceAllAndScatter (*comm_, REDUCE_SUM, numProcs, &toNodesFromMe[0],
-                           &counts[0], &numReceives_);
+      reduceAllAndScatter (*comm_, REDUCE_SUM, numProcs,
+                           toNodesFromMe.getRawPtr (),
+                           counts.getRawPtr (), &numReceives_);
     }
 
     // Now we know numReceives_, which is this process' number of
@@ -560,6 +584,7 @@ namespace Tpetra {
     // (receive data from any process).
     const int anySourceProc = -1;
 
+    // Post the (nonblocking) receives.
     for (size_t i = 0; i < actualNumReceives; ++i) {
       lengthsFromBuffers[i] = rcp (new size_t (0));
       // Once the receive completes, we can ask the corresponding
@@ -569,8 +594,10 @@ namespace Tpetra {
       requests[i] = ireceive (*comm_, lengthsFromBuffers[i], anySourceProc);
     }
 
-    // Tell each process to which we are sending how many packets it
-    // should expect from us in the communication pattern.
+    // Post the sends: Tell each process to which we are sending how
+    // many packets it should expect from us in the communication
+    // pattern.  We could use nonblocking sends here, as long as we do
+    // a waitAll() on all the sends and receives at once.
     //
     // We assume that numSends_ and selfMessage_ have already been
     // set.  The value of numSends_ (my process' number of sends) does
@@ -655,17 +682,18 @@ namespace Tpetra {
     //   * minimize latency/overhead in the comm routines (nice)
     //   * match the number of receives and sends between nodes (necessary)
     //
-    // Teuchos::Comm requires that the data for a send is contiguous
+    // Teuchos::Comm requires that the data for a send are contiguous
     // in a send buffer.  Therefore, if the data in the send buffer
-    // for doPosts() is not contiguous, it will need to be copied into
-    // a contiguous buffer.  The user has specified this noncontiguous
-    // pattern and we can't do anything about it.  However, if they do
-    // not provide an efficient pattern, we will warn them if one of
-    // the following compile-time options has been set:
+    // for doPosts() are not contiguous, they will need to be copied
+    // into a contiguous buffer.  The user has specified this
+    // noncontiguous pattern and we can't do anything about it.
+    // However, if they do not provide an efficient pattern, we will
+    // warn them if one of the following compile-time options has been
+    // set:
     //   * HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
     //   * HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
     //
-    // If the data is contiguous, then we can post the sends in situ
+    // If the data are contiguous, then we can post the sends in situ
     // (i.e., without needing to copy them into a send buffer).
     //
     // Determine contiguity. There are a number of ways to do this:
@@ -683,7 +711,7 @@ namespace Tpetra {
     // If so, indices_to -> 0.
 
     // Set up data structures for quick traversal of arrays.
-    // This contains the number of sends for each image id.
+    // This contains the number of sends for each process ID.
     Teuchos::Array<size_t> starts (numImages + 1, 0);
 
     // numActive is the number of sends that are not Null
@@ -698,12 +726,17 @@ namespace Tpetra {
         break;
       }
       else if (exportID >= 0) {
-        // increment starts[exportID]
+        // exportID is a valid process ID.  Increment the number of
+        // messages this process will send to that process.
         ++starts[exportID];
-        // if after incrementing it is greater than one, check that the
-        // previous export went to this node
-        // this is a safe comparison, because starts[exportID] > 1
-        // implies that i > 1.
+
+        // If we're sending more than one message to process exportID,
+        // then it is possible that the data are not contiguous.
+        // Check by seeing if the previous process ID in the list
+        // (exportNodeIDs[i-1]) is the same.  It's safe to use i-1,
+        // because if starts[exportID] > 1, then i must be > 1 (since
+        // the starts array was filled with zeros initially).
+
         // null entries break continuity.
         // e.g.,  [ 0, 0, 0, 1, -99, 1, 2, 2, 2] is not contiguous
         if (needSendBuff==0 && starts[exportID] > 1 && exportID != exportNodeIDs[i-1]) {
@@ -712,11 +745,17 @@ namespace Tpetra {
         ++numActive;
       }
     }
+
+    // Test whether any process in the communicator got an invalid
+    // process ID.  If badID != -1 on this process, then it equals
+    // this process' rank.  The max of all badID over all processes is
+    // the max rank which has an invalid process ID.
     {
       int gbl_badID;
       Teuchos::reduceAll(*comm_,Teuchos::REDUCE_MAX,badID,outArg(gbl_badID));
       TEUCHOS_TEST_FOR_EXCEPTION(gbl_badID >= 0, std::runtime_error,
-          Teuchos::typeName(*this) << "::createFromSends(): bad node id listed on node " << gbl_badID << ".");
+        Teuchos::typeName(*this) << "::createFromSends(): Process  " << gbl_badID
+        << ", perhaps among other processes, got a bad send process ID.");
     }
 
 #   if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
