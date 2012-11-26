@@ -7,33 +7,33 @@
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//                                                                             
-// Redistribution and use in source and binary forms, with or without          
-// modification, are permitted provided that the following conditions are      
-// met:                                                                        
-//                                                                             
-// 1. Redistributions of source code must retain the above copyright           
-// notice, this list of conditions and the following disclaimer.               
-//                                                                             
-// 2. Redistributions in binary form must reproduce the above copyright        
-// notice, this list of conditions and the following disclaimer in the         
-// documentation and/or other materials provided with the distribution.        
-//                                                                             
-// 3. Neither the name of the Corporation nor the names of the                 
-// contributors may be used to endorse or promote products derived from        
-// this software without specific prior written permission.                    
-//                                                                             
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY             
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE           
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR          
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE         
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,       
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,         
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR          
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF      
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING        
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS          
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Vitus Leung (vjleung@sandia.gov)
 //
@@ -119,19 +119,19 @@ public:
   virtual size_t getLocalNumEntityIDs(entityType etype) const = 0;
 
 
-  /*! \brief Return dimension of the entity coordinates, if any.               
+  /*! \brief Return dimension of the entity coordinates, if any.
    *
    *  Some algorithms can partition mesh entities using geometric coordinate
    *    information
    *
-   *  Some algorithms can use geometric entity coordinate 
+   *  Some algorithms can use geometric entity coordinate
    *    information if it is present.
    */
   virtual int getEntityCoordinateDimension(entityType etype) const = 0;
 
 
   /*! \brief Return the number of weights per entity.
-   *   \return the count of weights, zero or more per entity.              
+   *   \return the count of weights, zero or more per entity.
    *   If the number of weights is zero, then we assume that the entities
    *   are equally weighted.
    */
@@ -164,40 +164,40 @@ public:
 				       gid_t const *&Ids) const = 0;
 
 
-  /*! \brief Provide a pointer to one dimension of entity coordinates.  
-      \param coordDim  is a value from 0 to one less than                      
-         getEntityCoordinateDimension() specifying which dimension is     
-         being provided in the coords list.                                    
-      \param coords  points to a list of coordinate values for the dimension.  
-      \param stride  describes the layout of the coordinate values in          
-              the coords list.  If stride is one, then the ith coordinate      
-              value is coords[i], but if stride is two, then the               
-              ith coordinate value is coords[2*i].                             
-                                                                               
-v       \return The length of the \c coords list.  This may be more than        
+  /*! \brief Provide a pointer to one dimension of entity coordinates.
+      \param coords  points to a list of coordinate values for the dimension.
+      \param stride  describes the layout of the coordinate values in
+              the coords list.  If stride is one, then the ith coordinate
+              value is coords[i], but if stride is two, then the
+              ith coordinate value is coords[2*i].
+      \param coordDim  is a value from 0 to one less than
+         getEntityCoordinateDimension() specifying which dimension is
+         being provided in the coords list.
+
+       \return The length of the \c coords list.  This may be more than
               getLocalNumEntityIDs() because the \c stride
-              may be more than one.                                            
-                                                                               
-      Zoltan2 does not copy your data.  The data pointed to coords             
-      must remain valid for the lifetime of this InputAdapter.                 
+              may be more than one.
+
+      Zoltan2 does not copy your data.  The data pointed to coords
+      must remain valid for the lifetime of this InputAdapter.
   */
 
-  virtual size_t getLocalEntityCoordinatesView(entityType etype, int coordDim,
-    const scalar_t *&coords, int &stride) const = 0;
+  virtual size_t getLocalEntityCoordinatesView(entityType etype,
+    const scalar_t *&coords, int &stride, int coordDim) const = 0;
 
 
   /*! \brief Sets pointers to this process' mesh entries.
-      \param etype 
-      \param offsets is an array of size getLocalNumEntityIDs() + 1.  
+      \param etype
+      \param offsets is an array of size getLocalNumEntityIDs() + 1.
          The adjacency Ids for Ids[i] (returned in getLocalEntityIDsView())
-	 begin at adjacencyIds[offsets[i]].  
+	 begin at adjacencyIds[offsets[i]].
           The last element of offsets
           is the size of the adjacencyIds array.
       \param adjacencyIds on return will point to the global adjacency Ids for
          for each entity.
        \return The number of ids in the adjacencyIds list.
 
-      Zoltan2 does not copy your data.  The data pointed to by 
+      Zoltan2 does not copy your data.  The data pointed to by
       offsets and adjacencyIds
       must remain valid for the lifetime of this InputAdapter.
    */
@@ -211,7 +211,7 @@ v       \return The length of the \c coords list.  This may be more than
 // TODO:  we compute A^T A, where A is matrix of first adjacencies.
 
   virtual size_t getLocalAdjacencyIDsView(entityType etype,
-     const lno_t *&offsets, const gid_t *& adjacencyIds) const = 0; 
+     const lno_t *&offsets, const gid_t *& adjacencyIds) const = 0;
 
 
   /*! \brief Provide a pointer to one of the number of this process'
