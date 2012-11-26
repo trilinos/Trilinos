@@ -41,14 +41,64 @@
 //@HEADER
 */
 
+#include <string>
+#include <iostream>
 
-extern int mainHost();
-extern int mainCuda();
+extern int mainHost(bool test_flat, bool test_orig, bool test_block);
+extern int mainCuda(bool test_flat, bool test_orig, bool test_block);
 
-int main()
+int main(int argc, char *argv[])
 {
-  mainHost();
-  mainCuda();
+  // Defaults
+  bool test_host = true;
+  bool test_cuda = true;
+  bool test_block = true;
+  bool test_flat = true;
+  bool test_orig = true;
+
+  // Parse command line arguments
+  bool print_usage = false;
+  for (int i=1; i<argc; ++i) {
+    std::string s(argv[i]);
+    if (s == "cuda")
+      test_cuda = true;
+    else if (s == "no-cuda")
+      test_cuda = false;
+    else if (s == "host")
+      test_host = true;
+    else if (s == "no-host")
+      test_host = false;
+    else if (s == "block")
+      test_block = true;
+    else if (s == "no-block")
+      test_block = false;
+    else if (s == "flat")
+      test_flat = true;
+    else if (s == "no-flat")
+      test_flat = false;
+    else if (s == "orig")
+      test_orig = true;
+    else if (s == "no-orig")
+      test_orig = false;
+    else if (s == "-h" || s == "--help")
+      print_usage = true;
+    else {
+      std::cout << "Invalid argument:  " << s << std::endl;
+      print_usage = true;
+    }
+    if (print_usage) {
+      std::cout << "Usage:" << std::endl
+		<< "\t" << argv[0] << " [no-][cuda|host|block|flat|orig]" 
+		<< std::endl << "Defaults are all enabled." << std::endl;
+     return -1;
+    }
+  }
+
+  if (test_host)
+    mainHost(test_flat, test_orig, test_block);
+  if (test_cuda)
+    mainCuda(test_flat, test_orig, test_block);
+
   return 0 ;
 }
 

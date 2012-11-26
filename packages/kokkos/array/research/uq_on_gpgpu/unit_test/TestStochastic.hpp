@@ -693,7 +693,8 @@ test_original_matrix_free_block(
   const std::vector<int> & var_degree ,
   const int nGrid ,
   const int iterCount ,
-  const bool print_flag = false )
+  const bool print_flag = false ,
+  const bool test_block = false )
 {
   typedef ScalarType value_type ;
   typedef Stokhos::OneDOrthogPolyBasis<int,value_type> abstract_basis_type;
@@ -790,7 +791,7 @@ test_original_matrix_free_block(
 	  yy[jdx] = tmp[j];
 	  jdx++;
 	}
-        KokkosArray::multiply( matrix[k] , xx , yy );
+        KokkosArray::multiply( matrix[k] , xx , yy, test_block );
         n_apply += nj;
 	jdx = 0;
 	for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
@@ -934,7 +935,8 @@ void performance_test_driver_all( const int pdeg ,
 				  const int maxvar ,
 				  const int nGrid ,
 				  const int nIter ,
-				  const bool print )
+				  const bool print ,
+				  const bool test_block )
 {
   typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
   typedef KokkosArray::StochasticProductTensor< double , polynomial , Device , KokkosArray::SparseProductTensor > tensor_type ;
@@ -989,7 +991,7 @@ void performance_test_driver_all( const int pdeg ,
 
 #ifdef HAVE_KOKKOSARRAY_STOKHOS
     const std::vector<double> perf_original_mat_free_block =
-      test_original_matrix_free_block<double,Device>( var_degree , nGrid , nIter , print );
+      test_original_matrix_free_block<double,Device>( var_degree , nGrid , nIter , print , test_block );
 #endif
 
     std::cout << nGrid << " , " << nvar << " , " << pdeg << " , "
@@ -1026,7 +1028,8 @@ void performance_test_driver_poly( const int pdeg ,
 				   const int maxvar ,
 				   const int nGrid ,
 				   const int nIter ,
-				   const bool print )
+				   const bool print ,
+				   const bool test_block)
 {
   typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
   typedef KokkosArray::StochasticProductTensor< double , polynomial , Device , KokkosArray::SparseProductTensor > tensor_type ;
@@ -1057,7 +1060,7 @@ void performance_test_driver_poly( const int pdeg ,
       test_product_tensor_matrix<double,Device,KokkosArray::CrsProductTensor>( var_degree , nGrid , nIter , print );
 
     const std::vector<double> perf_original_mat_free_block =
-      test_original_matrix_free_block<double,Device>( var_degree , nGrid , nIter , print );
+      test_original_matrix_free_block<double,Device>( var_degree , nGrid , nIter , print , test_block );
 
     std::cout << nGrid << " , " << nvar << " , " << pdeg << " , "
 	      << tensor.dimension() << " , "
@@ -1079,26 +1082,34 @@ void performance_test_driver_poly( const int pdeg ,
 
 
 template< class Device >
-void performance_test_driver()
+void performance_test_driver(bool test_flat, bool test_orig, bool test_block)
 {
   int nGrid;
   int nIter; 
   bool print;
 
   // All methods compared against flat-original
-  nGrid = 5 ;
-  nIter = 10 ; 
-  print = false ;
-  performance_test_driver_all<Device>( 3 , 1 ,  9 , nGrid , nIter , print );
-  performance_test_driver_all<Device>( 5 , 1 ,  5 , nGrid , nIter , print );
+  if (test_flat) {
+    nGrid = 5 ;
+    nIter = 10 ; 
+    print = false ;
+    performance_test_driver_all<Device>( 3 , 1 ,  9 , nGrid , nIter , print ,
+					 test_block );
+    performance_test_driver_all<Device>( 5 , 1 ,  5 , nGrid , nIter , print ,
+					 test_block );
+  }
 
 #ifdef HAVE_KOKKOSARRAY_STOKHOS
   // Just polynomial methods compared against original
-  nGrid = 32 ;
-  nIter = 1 ; 
-  print = false ;
-  performance_test_driver_poly<Device>( 3 , 1 , 12 , nGrid , nIter , print );
-  performance_test_driver_poly<Device>( 5 , 1 ,  6 , nGrid , nIter , print );
+  if (test_orig) {
+    nGrid = 32 ;
+    nIter = 1 ; 
+    print = false ;
+    performance_test_driver_poly<Device>( 3 , 1 , 12 , nGrid , nIter , print , 
+					  test_block );
+    performance_test_driver_poly<Device>( 5 , 1 ,  6 , nGrid , nIter , print ,
+					  test_block );
+  }
 #endif
 
   //------------------------------
