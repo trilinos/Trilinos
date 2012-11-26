@@ -42,3 +42,11 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     DEPLIBS muelu xpetra
     )
 ENDIF ()
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    simple1D-UncoupledAggregation
+    SOURCES simple1D-UncoupledAggregation.cpp
+    ARGS ""
+    COMM serial mpi
+    DEPLIBS muelu xpetra
+    )

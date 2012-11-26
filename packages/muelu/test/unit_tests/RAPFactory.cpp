@@ -89,7 +89,8 @@ namespace MueLuTests {
     fineLevel.Set("A",Op);
 
     TentativePFactory tentpFactory;
-    SaPFactory sapFactory(rcpFromRef(tentpFactory));
+    SaPFactory sapFactory;
+    sapFactory.SetFactory("P",rcpFromRef(tentpFactory));
     TransPFactory transPFactory;
     transPFactory.SetFactory("P", rcpFromRef(sapFactory));  //todo:rcpFromRef
 
@@ -171,7 +172,8 @@ namespace MueLuTests {
     fineLevel.Set("A",Op);
 
     TentativePFactory tentpFactory;
-    SaPFactory sapFactory(rcpFromRef(tentpFactory));
+    SaPFactory sapFactory;
+    sapFactory.SetFactory("P",rcpFromRef(tentpFactory));
     TransPFactory transPFactory;
     transPFactory.SetFactory("P", rcpFromRef(sapFactory));
     coarseLevel.Request("P", &sapFactory);

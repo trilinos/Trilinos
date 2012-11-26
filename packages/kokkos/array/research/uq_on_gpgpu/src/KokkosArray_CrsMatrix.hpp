@@ -79,12 +79,18 @@ template< typename MatrixValueType ,
           class Device >
 void multiply( const CrsMatrix<MatrixValueType,Device> & A ,
                const std::vector< View<VectorValueType[],Device> >   & x ,
-               const std::vector< View<VectorValueType[],Device> >   & y )
+               const std::vector< View<VectorValueType[],Device> >   & y,
+	       bool use_block_multiply = true)
 {
   typedef CrsMatrix<MatrixValueType,Device>  matrix_type ;
   typedef View<VectorValueType[],Device>     vector_type ;
 
-  Impl::MMultiply<matrix_type,vector_type,vector_type>::apply( A , x , y );
+  if (use_block_multiply)
+    Impl::MMultiply<matrix_type,vector_type,vector_type>::apply( A , x , y );
+  else
+    for (size_t i=0; i<x.size(); ++i)
+      Impl::Multiply<matrix_type,vector_type,vector_type>::apply( 
+	A , x[i] , y[i] );
 }
 
 template< typename MatrixValueType ,

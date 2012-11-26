@@ -543,7 +543,8 @@ int main(int argc, char *argv[]) {
 
   RCP<GenericRFactory> R11Fact = rcp(new GenericRFactory());
 
-  Teuchos::RCP<NullspaceFactory> nspFact11 = Teuchos::rcp(new NullspaceFactory("Nullspace1",P11tentFact));
+  Teuchos::RCP<NullspaceFactory> nspFact11 = Teuchos::rcp(new NullspaceFactory("Nullspace1"));
+  nspFact11->SetFactory("Nullspace1", P11tentFact);
 
   RCP<CoarseMapFactory> coarseMapFact11 = Teuchos::rcp(new CoarseMapFactory());
   coarseMapFact11->setStridingData(stridingInfo);
@@ -639,7 +640,8 @@ int main(int argc, char *argv[]) {
 
   RCP<TransPFactory> R22Fact = rcp(new TransPFactory());
 
-  Teuchos::RCP<NullspaceFactory> nspFact22 = Teuchos::rcp(new NullspaceFactory("Nullspace2",P22Fact));
+  Teuchos::RCP<NullspaceFactory> nspFact22 = Teuchos::rcp(new NullspaceFactory("Nullspace2"));
+  nspFact22->SetFactory("Nullspace2",P22Fact);
 
   RCP<CoarseMapFactory> coarseMapFact22 = Teuchos::rcp(new CoarseMapFactory());
   coarseMapFact22->setStridingData(stridingInfo);

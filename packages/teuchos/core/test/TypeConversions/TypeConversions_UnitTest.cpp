@@ -114,8 +114,11 @@ TEUCHOS_UNIT_TEST( asSafe, realToReal ) {
   //
   // Test double -> float conversions.
   //
-  TEST_THROW(valF = asSafe<float> (minD), std::range_error);
-  TEST_THROW(valF = asSafe<float> (maxD), std::range_error);
+  // mfh 25 Nov 2012: Disabled throwing std::range_error on overflow
+  // for conversions between build-in floating-point types, in favor
+  // of IEEE 754 overflow semantics.
+  // TEST_THROW(valF = asSafe<float> (minD), std::range_error);
+  // TEST_THROW(valF = asSafe<float> (maxD), std::range_error);
 
   TEST_NOTHROW(valF = asSafe<float> (minusOneF));
   TEST_EQUALITY_CONST(valF, minusOneF);
@@ -145,15 +148,25 @@ TEUCHOS_UNIT_TEST( asSafe, realToReal ) {
   TEST_NOTHROW(valD = as<double> (minusOneF));
   TEST_EQUALITY_CONST(valD, minusOneF);
 
-  // Make sure that long double is as long as the standard requires.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    sizeof (long double) <= sizeof (double),
-    std::logic_error,
-    "Your system does not have an IEEE 754 - compliant implementation of long double.  "
-    "The IEEE 754 standard requires that long double be longer than double.  "
-    "In fact, it must use at least 80 bits. "
-    "However, sizeof (long double) = " << sizeof (long double)
-    << " < sizeof (double) = " << sizeof (double) << ".");
+  // mfh 25 Nov 2012: C89 does not mandate that "long double"
+  // implement the extended-precision 80-bit format of IEEE 754.  In
+  // fact, Microsoft Visual Studio implements long double just as
+  // double.  (This goes all the way back to Bill Gates' initial
+  // discussions with the Intel x87 architects.)  Relaxing the sizeof
+  // (long double) > sizeof (double) requirement will prevent test
+  // failures such as the following (on Windows):
+  //
+  // http://testing.sandia.gov/cdash/testDetails.php?test=10628321&build=801972
+
+  // // Make sure that long double is as long as the standard requires.
+  // TEUCHOS_TEST_FOR_EXCEPTION(
+  //   sizeof (long double) <= sizeof (double),
+  //   std::logic_error,
+  //   "Your system does not have an IEEE 754 - compliant implementation of long double.  "
+  //   "The IEEE 754 standard requires that long double be longer than double.  "
+  //   "In fact, it must use at least 80 bits. "
+  //   "However, sizeof (long double) = " << sizeof (long double)
+  //   << " < sizeof (double) = " << sizeof (double) << ".");
 
   const long double minLD = -std::numeric_limits<long double>::max ();
   const long double minusOneLD = -1;
@@ -178,8 +191,11 @@ TEUCHOS_UNIT_TEST( asSafe, realToReal ) {
   //
   // Test long double -> float conversions.
   //
-  TEST_THROW(valF = asSafe<float> (minLD), std::range_error);
-  TEST_THROW(valF = asSafe<float> (maxLD), std::range_error);
+  // mfh 25 Nov 2012: Disabled throwing std::range_error on overflow
+  // for conversions between build-in floating-point types, in favor
+  // of IEEE 754 overflow semantics.
+  // TEST_THROW(valF = asSafe<float> (minLD), std::range_error);
+  // TEST_THROW(valF = asSafe<float> (maxLD), std::range_error);
   TEST_NOTHROW(valF = asSafe<float> (minusOneLD));
   TEST_EQUALITY_CONST(valF, minusOneLD);
   TEST_NOTHROW(valF = as<float> (minusOneLD));
@@ -188,8 +204,11 @@ TEUCHOS_UNIT_TEST( asSafe, realToReal ) {
   //
   // Test long double -> double conversions.
   //
-  TEST_THROW(valD = asSafe<double> (minLD), std::range_error);
-  TEST_THROW(valD = asSafe<double> (maxLD), std::range_error);
+  // mfh 25 Nov 2012: See above note on how long double is the same as
+  // double on some systems.
+  //
+  // TEST_THROW(valD = asSafe<double> (minLD), std::range_error);
+  // TEST_THROW(valD = asSafe<double> (maxLD), std::range_error);
   TEST_NOTHROW(valD = as<float> (minusOneLD));
   TEST_EQUALITY_CONST(valD, minusOneLD);
 

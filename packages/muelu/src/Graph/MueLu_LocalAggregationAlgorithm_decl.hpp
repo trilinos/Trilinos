@@ -54,6 +54,8 @@
 #include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_Graph_fwd.hpp"
 
+#include "MueLu_AggOptions.hpp" // includes Ordering enum
+
 // MPI helper
 #define sumAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
@@ -64,16 +66,7 @@
 
 namespace MueLu {
 
-  namespace AggOptions {
-    /* Options defining how to pick-up the next root node in the local aggregation procedure */
-    enum Ordering {
-      NATURAL = 0, /* node ordering   */
-      RANDOM  = 1, /* random ordering */
-      GRAPH   = 2  /* graph ordering  */
-    };
-  } // namespace AggOptions
-
-  using namespace AggOptions;
+  using namespace AggOptions; // necessary
 
   /* ************************************************************************* */
   /* definition of the structure from ML for holding aggregate information     */

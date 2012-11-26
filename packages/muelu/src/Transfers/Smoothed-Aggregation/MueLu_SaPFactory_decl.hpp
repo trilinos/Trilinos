@@ -78,10 +78,10 @@ namespace MueLu {
     /*! @brief Constructor.
       User can supply a factory for generating the tentative prolongator.
     */
-    SaPFactory(RCP<const FactoryBase> InitialPFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null);
+    SaPFactory() : dampingFactor_(4./3), diagonalView_("current") { }
 
     //! Destructor.
-    virtual ~SaPFactory();
+    virtual ~SaPFactory() { }
 
     //@}
 
@@ -134,12 +134,7 @@ namespace MueLu {
     function SetDiagonalView(this, diagonalView)
     */
 
-
   private:
-
-    //! Input factories
-    RCP<const FactoryBase> initialPFact_; //! Ptentative Factory
-    RCP<const FactoryBase> AFact_;        //! A Factory
 
     //! Factory parameters
     Scalar dampingFactor_;

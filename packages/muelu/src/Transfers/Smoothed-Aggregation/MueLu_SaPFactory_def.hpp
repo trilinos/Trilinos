@@ -60,15 +60,6 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SaPFactory(RCP<const FactoryBase> InitialPFact, RCP<const FactoryBase> AFact)
-    : initialPFact_(InitialPFact), AFact_(AFact),
-      dampingFactor_(4./3), diagonalView_("current") {
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~SaPFactory() {}
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetDampingFactor(Scalar dampingFactor) {
     dampingFactor_ = dampingFactor;
   }
@@ -90,12 +81,11 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    fineLevel.DeclareInput("A",AFact_.get(),this);
+    Input(fineLevel, "A");
 
     // Get default tentative prolongator factory
     // Getting it that way ensure that the same factory instance will be used for both SaPFactory and NullspaceFactory.
-    // -- Warning: Do not use directly initialPFact_. Use initialPFact instead everywhere!
-    RCP<const FactoryBase> initialPFact = initialPFact_;
+    RCP<const FactoryBase> initialPFact = GetFactory("P");
     if (initialPFact == Teuchos::null) { initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
     coarseLevel.DeclareInput("P",initialPFact.get(),this);
   }
@@ -114,11 +104,11 @@ namespace MueLu {
     // Get default tentative prolongator factory
     // Getting it that way ensure that the same factory instance will be used for both SaPFactory and NullspaceFactory.
     // -- Warning: Do not use directly initialPFact_. Use initialPFact instead everywhere!
-    RCP<const FactoryBase> initialPFact = initialPFact_;
+    RCP<const FactoryBase> initialPFact = GetFactory("P");
     if (initialPFact == Teuchos::null) { initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
 
     // Level Get
-    RCP<Matrix> A     = fineLevel.  Get< RCP<Matrix> >("A", AFact_.get());
+    RCP<Matrix> A     = Get< RCP<Matrix> >(fineLevel, "A");
     RCP<Matrix> Ptent = coarseLevel.Get< RCP<Matrix> >("P", initialPFact.get());
 
     if(restrictionMode_) {
@@ -135,7 +125,7 @@ namespace MueLu {
     if (dampingFactor_ != Teuchos::ScalarTraits<Scalar>::zero()) {
 
       //Teuchos::ParameterList matrixList;
-      //RCP<Matrix> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsMatrixWrap>("Identity",fineLevel.Get< RCP<Matrix> >("A")->getRowMap(),matrixList);
+      //RCP<Matrix> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsMatrixWrap>("Identity",Get< RCP<Matrix> >(fineLevel,"A")->getRowMap(),matrixList);
       //RCP<Matrix> newPtent = Utils::TwoMatrixMultiply(I,false,Ptent,false);
       //Ptent = newPtent; //I tried a checkout of the original Ptent, and it seems to be gone now (which is good)
 
@@ -192,7 +182,7 @@ namespace MueLu {
     if(!restrictionMode_)
       {
         // prolongation factory is in prolongation mode
-        coarseLevel.Set("P", finalP, this);
+        Set(coarseLevel, "P", finalP);
 
         ///////////////////////// EXPERIMENTAL
         if(Ptent->IsView("stridedMaps")) finalP->CreateView("stridedMaps", Ptent);
@@ -202,7 +192,7 @@ namespace MueLu {
       {
         // prolongation factory is in restriction mode
         RCP<Matrix> R = Utils2::Transpose(finalP,true); // use Utils2 -> specialization for double
-        coarseLevel.Set("R", R, this);
+        Set(coarseLevel, "R", R);
 
         ///////////////////////// EXPERIMENTAL
         if(Ptent->IsView("stridedMaps")) R->CreateView("stridedMaps", Ptent, true);

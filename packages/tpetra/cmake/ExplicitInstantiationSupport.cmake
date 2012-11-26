@@ -107,6 +107,9 @@ TRIBITS_ETI_GENERATE_MACROS("${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" "$
 TRIBITS_ETI_GENERATE_MACROS("${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" "${Tpetra_ETI_EXCLUDE_SET};S=int LO=.* GO=.* N=.*;S=long LO=.* GO=.* N=.*"
                             list_of_manglings eti_typedefs
                             "TPETRA_INSTANTIATE_TESTMV(S,LO,GO,N)"            TPETRA_ETIMACRO_TESTMV)
+TRIBITS_ETI_GENERATE_MACROS("${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" "${Tpetra_ETI_EXCLUDE_SET};S=int LO=.* GO=.* N=.*;S=long LO=.* GO=.* N=.*;S=.* LO=.* GO=.* N=.*"
+                            list_of_manglings eti_typedefs
+                            "TPETRA_INSTANTIATE_TESTMV_NOGPU(S,LO,GO,N)"      TPETRA_ETIMACRO_TESTMV_NOGPU)
 TRIBITS_ETI_GENERATE_TYPEDEF_MACRO(TPETRA_ETI_TYPEDEFS "TPETRA_ETI_MANGLING_TYPEDEFS" "${eti_typedefs}")
 
 CONFIGURE_FILE(${Tpetra_SOURCE_DIR}/cmake/Tpetra_ETIHelperMacros.h.in ${Tpetra_BINARY_DIR}/src/Tpetra_ETIHelperMacros.h)

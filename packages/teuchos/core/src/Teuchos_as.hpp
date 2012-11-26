@@ -131,8 +131,8 @@ namespace Teuchos {
  *
  * - <tt>type</tt> to and from <tt>unsigned type</tt>, where
  *   <tt>type</tt> is a built-in integer type
- * - <tt>double</tt> to <tt>int</tt>, or between any floating-point
- *   and integer types where overflow is possible
+ * - <tt>double</tt> to <tt>int</tt>, or from any floating-point
+ *   type to any integer type where overflow is possible
  *
  * If the user (through as() or asSafe()) requests a conversion for
  * which no specialization of this class exists, then the default
@@ -144,6 +144,25 @@ namespace Teuchos {
  * combination of types.  There are a number of examples of
  * specializations in this header file, some of which include bounds
  * checking for overflow (for safeConvert()).
+ *
+ * The IEEE 754 standard defines the result of conversions from a
+ * larger to a smaller built-in floating-point type, including
+ * <tt>double</tt> to <tt>float</tt>, <tt>long double</tt> to
+ * <tt>float</tt>, and \c <tt>long double</tt> to <tt>double</tt>.
+ * Such conversions might overflow (result in a value too large in
+ * magnitude to fit in the target type) or underflow (result in a
+ * value too small to fit in a normalized value of the target type).
+ * We <i>never</i> check for overflow or underflow for these
+ * conversions.  Their behavior depends on the current rounding mode
+ * and whether your hardware and compiler correctly implement
+ * denormalized values.  Typically, overflow results in an Inf of the
+ * same sign as the input, and underflow results in either a
+ * denormalized value or zero.  If you want to do bounds checking, you
+ * should set the appropriate trap so that overflow or underflow will
+ * raise the SIGFPE signal.  Please refer to the IEEE 754 standard for
+ * details.  Note that safeConvert() conversions from e.g.,
+ * std::string to built-in floating-point types still should check for
+ * overflow.
  *
  * \note We cannot promise that converting from T1 to T2 and back
  *   again will result in the same T1 value with which we started.
@@ -209,6 +228,25 @@ public:
  * debug checking affects other operations in Teuchos besides this
  * conversion, and may have a significant run-time cost, especially
  * for RCP and ArrayRCP.
+ *
+ * The IEEE 754 standard defines the result of conversions from a
+ * larger to a smaller built-in floating-point type, including
+ * <tt>double</tt> to <tt>float</tt>, <tt>long double</tt> to
+ * <tt>float</tt>, and \c <tt>long double</tt> to <tt>double</tt>.
+ * Such conversions might overflow (result in a value too large in
+ * magnitude to fit in the target type) or underflow (result in a
+ * value too small to fit in a normalized value of the target type).
+ * We <i>never</i> check for overflow or underflow for these
+ * conversions.  Their behavior depends on the current rounding mode
+ * and whether your hardware and compiler correctly implement
+ * denormalized values.  Typically, overflow results in an Inf of the
+ * same sign as the input, and underflow results in either a
+ * denormalized value or zero.  If you want to do bounds checking, you
+ * should set the appropriate trap so that overflow or underflow will
+ * raise the SIGFPE signal.  Please refer to the IEEE 754 standard for
+ * details.  Note that debug-mode as() conversions from e.g.,
+ * std::string to built-in floating-point types still check for
+ * overflow.
  *
  * \note We cannot promise that converting from a type T1 to another
  *   type T2 and back again will result in the same T1 value with
@@ -276,6 +314,24 @@ inline TypeTo as( const TypeFrom& t )
  * higher-precision floating-point number to a lower-precision
  * floating-point number, may truncate or round (as it does in the
  * above example).
+ *
+ * The IEEE 754 standard defines the result of conversions from a
+ * larger to a smaller built-in floating-point type, including
+ * <tt>double</tt> to <tt>float</tt>, <tt>long double</tt> to
+ * <tt>float</tt>, and \c <tt>long double</tt> to <tt>double</tt>.
+ * Such conversions might overflow (result in a value too large in
+ * magnitude to fit in the target type) or underflow (result in a
+ * value too small to fit in a normalized value of the target type).
+ * We <i>never</i> check for overflow or underflow for these
+ * conversions.  Their behavior depends on the current rounding mode
+ * and whether your hardware and compiler correctly implement
+ * denormalized values.  Typically, overflow results in an Inf of the
+ * same sign as the input, and underflow results in either a
+ * denormalized value or zero.  If you want to do bounds checking, you
+ * should set the appropriate trap so that overflow or underflow will
+ * raise the SIGFPE signal.  Please refer to the IEEE 754 standard for
+ * details.  Note that asSafe() conversions from e.g., std::string to
+ * built-in floating-point types still check for overflow.
  *
  * \section Teuchos_asSafe_Dev Developer documentation
  *
@@ -868,6 +924,10 @@ template<>
 class ValueTypeConversionTraits<float, double> {
 public:
   static float safeConvert (const double t) {
+    // mfh 25 Nov 2012: Disabling bounds checking, in favor of IEEE
+    // 754 overflow semantics.  Users who want bounds checking should
+    // set the appropriate trap.
+#if 0
     // For floating-point types T, std::numeric_limits<T>::min()
     // returns the smallest positive value.  IEEE 754 types have a
     // sign bit, so the largest-magnitude negative value is the
@@ -884,6 +944,7 @@ public:
       "Teuchos::ValueTypeConversionTraits<float, double>::safeConvert: "
       "Input double t = " << t << " is out of the valid range [" << minVal
       << ", " << maxVal << "] for conversion to float.");
+#endif // 0
 
     return static_cast<float> (t);
   }
@@ -899,6 +960,10 @@ template<>
 class ValueTypeConversionTraits<float, long double> {
 public:
   static float safeConvert (const long double t) {
+    // mfh 25 Nov 2012: Disabling bounds checking, in favor of IEEE
+    // 754 overflow semantics.  Users who want bounds checking should
+    // set the appropriate trap.
+#if 0
     // For floating-point types T, std::numeric_limits<T>::min()
     // returns the smallest positive value.  IEEE 754 types have a
     // sign bit, so the largest-magnitude negative value is the
@@ -915,6 +980,7 @@ public:
       "Teuchos::ValueTypeConversionTraits<float, long double>::safeConvert: "
       "Input long double t = " << t << " is out of the valid range [" << minVal
       << ", " << maxVal << "] for conversion to float.");
+#endif // 0
 
     return static_cast<float> (t);
   }
@@ -930,6 +996,10 @@ template<>
 class ValueTypeConversionTraits<double, long double> {
 public:
   static double safeConvert (const long double t) {
+    // mfh 25 Nov 2012: Disabling bounds checking, in favor of IEEE
+    // 754 overflow semantics.  Users who want bounds checking should
+    // set the appropriate trap.
+#if 0
     // For floating-point types T, std::numeric_limits<T>::min()
     // returns the smallest positive value.  IEEE 754 types have a
     // sign bit, so the largest-magnitude negative value is the
@@ -946,6 +1016,7 @@ public:
       "Teuchos::ValueTypeConversionTraits<double, long double>::safeConvert: "
       "Input long double t = " << t << " is out of the valid range [" << minVal
       << ", " << maxVal << "] for conversion to double.");
+#endif // 0
 
     return static_cast<double> (t);
   }
