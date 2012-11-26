@@ -598,21 +598,25 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   Mview.deleteContents();
 
   const Epetra_Map& Mrowmap = M.RowMap();
-
-  int numProcs = Mrowmap.Comm().NumProc();
-
-  Mview.numRows = targetMap.NumMyElements();
-
-  int* Mrows = targetMap.MyGlobalElements();
+  int numProcs              = Mrowmap.Comm().NumProc();
+  Mview.numRows             = targetMap.NumMyElements();
+  int* Mrows                = targetMap.MyGlobalElements();
 
   if (Mview.numRows > 0) {
     Mview.numEntriesPerRow = new int[Mview.numRows];
     Mview.indices = new int*[Mview.numRows];
-    Mview.values = new double*[Mview.numRows];
-    Mview.remote = new bool[Mview.numRows];
+    Mview.values  = new double*[Mview.numRows];
+    Mview.remote  = new bool[Mview.numRows];
   }
 
-  Mview.numRemote = 0;
+  Mview.origRowMap   = &(M.RowMap());
+  Mview.rowMap       = &targetMap;
+  Mview.colMap       = &(M.ColMap());
+  Mview.domainMap    = &(M.DomainMap());
+  Mview.importColMap = NULL;
+  Mview.numRemote    = 0;
+
+
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
   mtime=MM.getNewTimer("All I&X Extract");
@@ -624,29 +628,40 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   double *vals=0;
 
   EPETRA_CHK_ERR( M.ExtractCrsDataPointers(rowptr,colind,vals) );
-  for(i=0; i<Mview.numRows; ++i) {
-    int mlid = Mrowmap.LID(Mrows[i]);
-    if (mlid < 0) {
-      Mview.remote[i] = true;
-      ++Mview.numRemote;
-    }
-    else {
-      Mview.numEntriesPerRow[i] = rowptr[mlid+1]-rowptr[mlid];
-      Mview.indices[i]          = &colind[rowptr[mlid]];
-      Mview.values[i]           = &vals[rowptr[mlid]];
+
+  if(Mrowmap.SameAs(targetMap)) {
+    for(i=0; i<Mview.numRows; ++i) {
+      Mview.numEntriesPerRow[i] = rowptr[i+1]-rowptr[i];
+      Mview.indices[i]          = &colind[rowptr[i]];
+      Mview.values[i]           = &vals[rowptr[i]];
       Mview.remote[i]           = false;
     }
+#ifdef ENABLE_MMM_TIMINGS
+    mtime->stop();
+#endif
+    return 0;
   }
+  else {  
+    for(i=0; i<Mview.numRows; ++i) {
+      int mlid = Mrowmap.LID(Mrows[i]);
+      if (mlid < 0) {
+	Mview.remote[i] = true;
+	++Mview.numRemote;
+      }
+      else {
+	Mview.numEntriesPerRow[i] = rowptr[mlid+1]-rowptr[mlid];
+	Mview.indices[i]          = &colind[rowptr[mlid]];
+	Mview.values[i]           = &vals[rowptr[mlid]];
+	Mview.remote[i]           = false;
+      }
+    }
+  }
+
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
   mtime->start();
 #endif
 
-  Mview.origRowMap = &(M.RowMap());
-  Mview.rowMap = &targetMap;
-  Mview.colMap = &(M.ColMap());
-  Mview.domainMap = &(M.DomainMap());
-  Mview.importColMap = NULL;
 
   if (numProcs < 2) {
     if (Mview.numRemote > 0) {
