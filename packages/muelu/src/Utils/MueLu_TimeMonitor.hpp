@@ -60,7 +60,10 @@ namespace MueLu {
   // Helper function. Similar to Teuchos::TimeMonitor::summarize().
   ArrayRCP<double> ReduceMaxMinAvg(double localValue, Teuchos::Comm<int> const &comm, int rootNode = 0);
 
-  //! Integration of Teuchos::TimeMonitor with MueLu verbosity system
+  /*! @class TimeMonitor
+  
+      @brief Integrates Teuchos::TimeMonitor with MueLu verbosity system.
+  */
   class TimeMonitor : public BaseClass {
 
   public:
@@ -97,8 +100,8 @@ namespace MueLu {
         if (IsPrint(RuntimeTimings)) {
           //FIXME: creates lot of barriers. An option to report time of proc0 only instead would be nice
           //FIXME: MPI_COMM_WORLD only... BTW, it is also the case in Teuchos::TimeMonitor...
-	  //
-	  // mfh 11 Nov 2012: Actually, Teuchos::TimeMonitor::summarize() has multiple overloads that take a Teuchos::Comm.
+          //
+          // mfh 11 Nov 2012: Actually, Teuchos::TimeMonitor::summarize() has multiple overloads that take a Teuchos::Comm.
           ArrayRCP<double> stats = ReduceMaxMinAvg(timer_->totalElapsedTime(), *Teuchos::DefaultComm<int>::getComm ());
 
           //FIXME: Not very important for now, but timer will be printed even if verboseLevel of Monitor/Object changed
@@ -113,10 +116,15 @@ namespace MueLu {
 
   private:
     RCP<Teuchos::Time> timer_;
-  };
+  }; //class TimeMonitor
 
   //TODO: code duplication MutuallyExclusiveTimeMonitor / TimeMonitor
 
+  /*! @class MutuallyExclusiveTimeMonitor
+
+      @brief Similar to TimeMonitor, but uses MutuallyExclusiveTime objects.
+
+  */
   template <class TagName>
   class MutuallyExclusiveTimeMonitor : public BaseClass {
 
@@ -151,9 +159,9 @@ namespace MueLu {
         if (IsPrint(RuntimeTimings)) {
           //FIXME: creates lot of barriers. An option to report time of proc0 only instead would be nice
           //FIXME: MPI_COMM_WORLD only... BTW, it is also the case in Teuchos::TimeMonitor...
-	  //TODO          ArrayRCP<double> stats = ReduceMaxMinAvg(timer_->totalElapsedTime(), *Teuchos::DefaultComm<int>::getComm ());
-	  //
-	  // mfh 11 Nov 2012: Actually, Teuchos::TimeMonitor::summarize() has multiple overloads that take a Teuchos::Comm.
+          //TODO          ArrayRCP<double> stats = ReduceMaxMinAvg(timer_->totalElapsedTime(), *Teuchos::DefaultComm<int>::getComm ());
+          //
+          // mfh 11 Nov 2012: Actually, Teuchos::TimeMonitor::summarize() has multiple overloads that take a Teuchos::Comm.
 
           //FIXME: Not very important for now, but timer will be printed even if verboseLevel of Monitor/Object changed
           //       between Monitor constructor and destructor.
@@ -167,7 +175,7 @@ namespace MueLu {
 
   private:
     RCP<MutuallyExclusiveTime<TagName> > timer_; // keep a reference on the timer to print stats if RuntimeTimings=ON //TODO:use base class instead
-  };
+  }; //class MutuallyExclusiveTimeMonitor
 
 } // namespace MueLu
 
