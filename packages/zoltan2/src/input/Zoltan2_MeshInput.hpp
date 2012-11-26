@@ -217,8 +217,6 @@ public:
   /*! \brief Provide a pointer to one of the number of this process'
                 optional entity weights.
 
-      \param number is a value ranging from zero to one less than
-                   getNumWeightsPerEntityID()
       \param weights on return will contain a list of the weights for the
                number specified.  If weights for
 	   this number are to be uniform for all entities in the
@@ -226,8 +224,10 @@ public:
 
       \param stride on return will indicate the stride of the weights list.
 
-      
        The k'th weight is located at weights[stride*k].
+
+      \param number is a value ranging from zero to one less than
+                   getNumWeightsPerEntityID()
 
        \return The number of values in the weights list.  This may be greater
           than the number of entities, because the stride may be greater
@@ -237,17 +237,17 @@ public:
       must remain valid for the lifetime of this InputAdapter.
   */
 
-  virtual size_t getLocalEntityIDsWeightsView(entityType etype, int number,
-     const scalar_t *&weights, int &stride) const = 0;
+  virtual size_t getLocalEntityIDsWeightsView(entityType etype,
+     const scalar_t *&weights, int &stride, int number) const = 0;
 
 
   /*! \brief  Provide a pointer to the adjacency weights, if any.
 
-      \param number ranges from zero to one less than 
-                   getNumWeightsPerAdjacencyID().
       \param weights is the list of weights of the given number for
            the adjacencies returned in getLocalAdjacencyIDsView().
-       \param stride The k'th weight is located at weights[stride*k]
+      \param stride The k'th weight is located at weights[stride*k]
+      \param number ranges from zero to one less than 
+                   getNumWeightsPerAdjacencyID().
        \return The number of weights listed, which should be the same
                as the number of adjacencies in getLocalAdjacencyIDsView().
 
@@ -255,8 +255,8 @@ public:
       must remain valid for the lifetime of this InputAdapter.
    */
 
-  virtual size_t getLocalAdjacencyIDWeightsView(entityType etype, int number,
-     const scalar_t *&weights, int &stride) const = 0;
+  virtual size_t getLocalAdjacencyIDWeightsView(entityType etype,
+     const scalar_t *&weights, int &stride, int number) const = 0;
 
 
   /*! \brief Apply a partitioning problem solution to an input.  
