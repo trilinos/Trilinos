@@ -475,7 +475,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testRemove)
     {
         stk::mesh::impl::Partition &partition = *partitions[i];
 
-        size_t old_size = partition.compute_size();
+        size_t old_size = partition.size();
         size_t num_removed = 0;
 
         // Remove non-last entity in a bucket.
@@ -500,7 +500,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testRemove)
         // Need to sort before checking whether the invariant holds.
         partition.sort();
 
-        STKUNIT_EXPECT_EQ(old_size,  partition.compute_size() + num_removed);
+        STKUNIT_EXPECT_EQ(old_size,  partition.size() + num_removed);
         check_test_partition_invariant(fix, partition);
     }
 
@@ -549,7 +549,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testAdd)
         stk::mesh::impl::Partition &partition = *partitions[i];
         stk::mesh::Bucket &bkt = **partition.begin();
         first_entities[i] = bkt[0];
-        old_sizes[i] = partition.compute_size();
+        old_sizes[i] = partition.size();
     }
 
     // Now remove them from those partitions.
@@ -579,7 +579,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testAdd)
     {
         stk::mesh::impl::Partition &partition = *partitions[i];
         partition.sort();
-        STKUNIT_EXPECT_EQ(old_sizes[i], partition.compute_size());
+        STKUNIT_EXPECT_EQ(old_sizes[i], partition.size());
         check_test_partition_invariant(fix, partition);
     }
 }
@@ -618,7 +618,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveTo)
         stk::mesh::impl::Partition &partition = *data_partitions[i];
         stk::mesh::Bucket &bkt = **partition.begin();
         first_entities[i] = bkt[0];
-        old_sizes[i] = partition.compute_size();
+        old_sizes[i] = partition.size();
     }
 
     // "Rotate" each first entity to another partition.
@@ -636,7 +636,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveTo)
         stk::mesh::impl::Partition &partition = *data_partitions[i];
         partition.sort();
 
-        STKUNIT_EXPECT_EQ(old_sizes[i], partition.compute_size());
+        STKUNIT_EXPECT_EQ(old_sizes[i], partition.size());
         check_test_partition_invariant(fix, partition);
     }
 }
@@ -763,7 +763,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveToBetter)
         {
             entities_to_move[i].push_back(bkt[j]);
         }
-        old_sizes[i] = partition.compute_size();
+        old_sizes[i] = partition.size();
         STKUNIT_EXPECT_EQ(old_sizes[i], 3000u);
     }
 
@@ -788,12 +788,12 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveToBetter)
         stk::mesh::impl::Partition &partition = *data_partitions[i];
         partition.sort();
 
-        STKUNIT_EXPECT_EQ(partition.compute_size(), old_sizes[i]);
+        STKUNIT_EXPECT_EQ(partition.size(), old_sizes[i]);
 
         // std::cout << "Check " << partition << std::endl;
         // std::cout << "source partition was " << src_partition << std::endl;
 
-        STKUNIT_EXPECT_EQ(old_sizes[i], partition.compute_size());
+        STKUNIT_EXPECT_EQ(old_sizes[i], partition.size());
         check_test_partition_invariant(fix, partition);
     }
 }

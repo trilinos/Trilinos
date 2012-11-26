@@ -84,6 +84,8 @@ public:
     inline std::vector<Bucket *>::const_iterator begin() const;
     inline std::vector<Bucket *>::const_iterator end() const;
 
+    size_t size() const { return m_size; }
+
     ////
     //// The following are used internally and for unit testing.
     ////
@@ -96,6 +98,8 @@ public:
         {
             partition_size += (*b_i)->size();
         }
+        m_size = partition_size;
+
         return partition_size;
     }
 
@@ -120,6 +124,8 @@ private:
 
     // Used if the set of buckets (not just bucket contents) are being modified.
     std::vector<Bucket *> m_buckets;
+
+    size_t m_size;
 
     // Used when the vector of Bucket * in the BucketRepository is the representation
     // being used.

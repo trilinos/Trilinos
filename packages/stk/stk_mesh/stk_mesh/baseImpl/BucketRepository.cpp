@@ -801,6 +801,7 @@ void BucketRepository::sync_to_partitions()
             }
             partition->m_beginBucketIndex = static_cast<unsigned>(begin_partition);
             partition->m_endBucketIndex = static_cast<unsigned>(end_partition);
+            partition->compute_size();
         }
 
         // Let each bucket of entity_rank know about its partition.
@@ -827,7 +828,7 @@ void BucketRepository::sync_from_partitions()
     }
 }
 
-bool isNull(stk::mesh::impl::Partition *p) { return (p ? false : true);}
+inline bool isNull(stk::mesh::impl::Partition *p) { return (p ? false : true);}
 
 void BucketRepository::sync_from_partitions(EntityRank rank)
 {
@@ -840,6 +841,7 @@ void BucketRepository::sync_from_partitions(EntityRank rank)
         if (partitions[p_i]->modifying_bucket_set())
         {
             need_sync = true;
+            break;
         }
     }
 
@@ -890,7 +892,9 @@ void BucketRepository::sync_from_partitions(EntityRank rank)
         std::vector<Partition *>::iterator new_end;
         new_end = std::remove_if(partitions.begin(), partitions.end(), isNull);
 
-        size_t new_size = std::distance(partitions.begin(), new_end);
+        // size_t new_size = std::distance(partitions.begin(), new_end);
+        size_t new_size = new_end - partitions.begin();  // OK because has_hole is true.
+
         // std::cout << "resizing partitions to length " << new_size << std::endl;
         partitions.resize(new_size);
 

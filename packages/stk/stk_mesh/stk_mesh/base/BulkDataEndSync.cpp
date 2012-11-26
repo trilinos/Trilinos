@@ -853,10 +853,6 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
 
   m_sync_state = SYNCHRONIZED ;
 
-//
-//  m_bucket_repository.babbleForEntity(MetaData::NODE_RANK, EntityId(9271));
-//
-
   return true ;
 }
 

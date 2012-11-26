@@ -34,11 +34,6 @@ std::ostream &Partition::streamit(std::ostream &os) const
 {
     const MetaData & mesh_meta_data = m_repository->m_mesh.mesh_meta_data();
 
-//    os << "{Partition [" << m_beginBucketIndex << ", " << m_endBucketIndex << ")"
-//       << " in m_repository = " << m_repository << "  m_rank = " << m_rank
-//       << "  (" << m_beginBucketIndex << ", " << m_endBucketIndex << ")";
-
-
     os << "{Partition " << this << " in m_repository = " << m_repository << " (m_rank) = " << m_rank
        << " on P" << m_repository->m_mesh.parallel_rank();
 
@@ -64,6 +59,7 @@ Partition::Partition(BucketRepository *repo, EntityRank rank,
     : m_repository(repo)
     , m_rank(rank)
     , m_extPartitionKey(key)
+    , m_size(0)
     , m_beginBucketIndex(0)
     , m_endBucketIndex(0)
     , m_modifyingBucketSet(false)
@@ -110,6 +106,7 @@ bool Partition::add(Entity entity)
     entity.m_entityImpl->log_modified_and_propagate();
     entity.m_entityImpl->set_bucket_and_ordinal(bucket, dst_ordinal);
     bucket->increment_size();
+    ++m_size;
 
     m_updated_since_compress = m_updated_since_sort = true;
     m_repository->internal_propagate_relocation(entity);
@@ -151,6 +148,7 @@ void Partition::move_to(Entity entity, Partition &dst_partition)
     dst_bucket->replace_entity(dst_ordinal, entity) ;
     dst_bucket->increment_size();
     dst_partition.m_updated_since_compress = dst_partition.m_updated_since_sort = true;
+    dst_partition.m_size++;
     
     m_updated_since_compress = m_updated_since_sort = true;
     m_repository->internal_propagate_relocation(entity);
@@ -225,6 +223,7 @@ bool Partition::remove(Entity e_k, bool not_in_move_to)
     e_k.m_entityImpl->set_bucket_and_ordinal(0, 0);
     e_k.m_entityImpl->set_sync_count(m_repository->m_mesh.synchronized_count());
     m_updated_since_compress = m_updated_since_sort = true;
+    --m_size;
 
 #ifdef BUCKET_REPOSITORY_SYNC_FROM_PARTITIONS_DURING_MODIFICATION_CYCLE
     if (m_modifyingBucketSet && not_in_move_to)
@@ -251,8 +250,7 @@ void Partition::compress(bool force)
     //index of bucket in partition
     partition_key[ partition_key[0] ] = 0;
 
-    size_t partition_size = compute_size();
-    std::vector<Entity> entities(partition_size);
+    std::vector<Entity> entities(m_size);
 
     // Copy the entities (but not their data) into a vector, where they will be sorted.
     //
@@ -273,7 +271,7 @@ void Partition::compress(bool force)
     // Now that the entities hav been sorted, we copy them and their field data into a
     // single bucket in sorted order.
     //
-    Bucket * new_bucket = new Bucket( m_repository->m_mesh, m_rank, partition_key, partition_size);
+    Bucket * new_bucket = new Bucket( m_repository->m_mesh, m_rank, partition_key, m_size);
     new_bucket->set_first_bucket_in_partition(new_bucket); // partition members point to first bucket
     new_bucket->m_partition = this;
 
@@ -288,7 +286,7 @@ void Partition::compress(bool force)
         new_bucket->replace_entity( new_ordinal , entity ) ;
         m_repository->internal_propagate_relocation(entity);
     }
-    new_bucket->m_size = partition_size;
+    new_bucket->m_size = m_size;
 
     if (m_modifyingBucketSet)
     {
@@ -331,8 +329,7 @@ void Partition::sort(bool force)
     //index of bucket in partition
     partition_key[ partition_key[0] ] = 0;
 
-    size_t partition_size = compute_size();
-    std::vector<Entity> entities(partition_size);
+    std::vector<Entity> entities(m_size);
 
     std::vector<Bucket *>::iterator buckets_begin, buckets_end;
     buckets_begin = begin();
@@ -467,12 +464,6 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
         m_buckets.push_back(bucket);
 
         return bucket;
-    }
-
-    if (empty())
-    {
-        // There is only one bucket, and it is empty.
-        return *begin();
     }
 
     Bucket *bucket = *(end() - 1);  // Last bucket of the partition.

@@ -15,7 +15,7 @@
 #include <stk_mesh/baseImpl/Partition.hpp>
 
 
-// #define USE_STK_MESH_IMPL_PARTITION
+#define USE_STK_MESH_IMPL_PARTITION
 
 namespace stk {
 namespace mesh {
