@@ -94,7 +94,7 @@ TRIBITS_ETI_GENERATE_MACROS("${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" "$
                             "TPETRA_INSTANTIATE_TSLGN(CS,DS,LO,GO,N)"       TPETRA_ETIMACRO_TSLGN 
                             "TPETRA_INSTANTIATE_TSLG(CS,DS,LO,GO)"          TPETRA_ETIMACRO_TSLG
                             "TPETRA_INSTANTIATE_CONVERT(SOUT,SIN,LO,GO,N)"  TPETRA_ETIMACRO_CONVERT)
-TRIBITS_ETI_GENERATE_MACROS("${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" "${Tpetra_ETI_EXCLUDE_SET};SIN=.* SOUT=.* CS=.* DS=.* S=.* LO=.* GO=.* N=Kokkos::ThrustGPUNode"  
+TRIBITS_ETI_GENERATE_MACROS("${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" "${Tpetra_ETI_EXCLUDE_SET};N=Kokkos::ThrustGPUNode"  
                             list_of_manglings eti_typedefs
                             "TPETRA_INSTANTIATE_SLGN_NOGPU(S,LO,GO,N)"            TPETRA_ETIMACRO_SLGN_NOGPU
                             "TPETRA_INSTANTIATE_LGN_NOGPU(LO,GO,N)"               TPETRA_ETIMACRO_LGN_NOGPU
@@ -104,10 +104,10 @@ TRIBITS_ETI_GENERATE_MACROS("${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" "$
                             "TPETRA_INSTANTIATE_TSLGN_NOGPU(CS,DS,LO,GO,N)"       TPETRA_ETIMACRO_TSLGN_NOGPU
                             "TPETRA_INSTANTIATE_TSLG_NOGPU(CS,DS,LO,GO)"          TPETRA_ETIMACRO_TSLG_NOGPU
                             "TPETRA_INSTANTIATE_CONVERT_NOGPU(SOUT,SIN,LO,GO,N)"  TPETRA_ETIMACRO_CONVERT_NOGPU)
-TRIBITS_ETI_GENERATE_MACROS("${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" "${Tpetra_ETI_EXCLUDE_SET};S=int LO=.* GO=.* N=.*;S=long LO=.* GO=.* N=.*"
+TRIBITS_ETI_GENERATE_MACROS("${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" "${Tpetra_ETI_EXCLUDE_SET};S=int;S=long"
                             list_of_manglings eti_typedefs
                             "TPETRA_INSTANTIATE_TESTMV(S,LO,GO,N)"            TPETRA_ETIMACRO_TESTMV)
-TRIBITS_ETI_GENERATE_MACROS("${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" "${Tpetra_ETI_EXCLUDE_SET};S=int LO=.* GO=.* N=Kokkos::ThrustGPUNode;S=long LO=.* GO=.* N=Kokkos::ThrustGPUNode"
+TRIBITS_ETI_GENERATE_MACROS("${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" "${Tpetra_ETI_EXCLUDE_SET};S=int;S=long;N=Kokkos::ThrustGPUNode"
                             list_of_manglings eti_typedefs
                             "TPETRA_INSTANTIATE_TESTMV_NOGPU(S,LO,GO,N)"      TPETRA_ETIMACRO_TESTMV_NOGPU)
 TRIBITS_ETI_GENERATE_TYPEDEF_MACRO(TPETRA_ETI_TYPEDEFS "TPETRA_ETI_MANGLING_TYPEDEFS" "${eti_typedefs}")
