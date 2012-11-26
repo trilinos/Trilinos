@@ -482,7 +482,7 @@ namespace { // anonymous
   ///   of RealType.
   template<class RealType>
   RealType
-  realToString (const std::string& t,
+  stringToReal (const std::string& t,
                RealType (*rawConvert) (const char*, char**),
                const char* realTypeName)
   {
@@ -584,11 +584,11 @@ template<>
 class ValueTypeConversionTraits<double, std::string> {
 public:
   static double convert (const std::string& t) {
-    return realToString<double> (t, &strtod, "double");
+    return stringToReal<double> (t, &strtod, "double");
   }
 
   static double safeConvert (const std::string& t) {
-    return realToString<double> (t, &strtod, "double");
+    return stringToReal<double> (t, &strtod, "double");
   }
 };
 
@@ -598,22 +598,22 @@ class ValueTypeConversionTraits<float, std::string> {
 public:
   static float convert (const std::string& t) {
 #ifdef _ISOC99_SOURCE
-    return realToString<float> (t, &strtof, "float");
+    return stringToReal<float> (t, &strtof, "float");
 #else
     // strtof is new in C99.  If you don't have it, just use strtod
     // and convert the resulting double to float.
-    const double d = realToString<double> (t, &strtod, "double");
+    const double d = stringToReal<double> (t, &strtod, "double");
     return as<float> (d);
 #endif // _ISOC99_SOURCE
   }
 
   static float safeConvert (const std::string& t) {
 #ifdef _ISOC99_SOURCE
-    return realToString<float> (t, &strtof, "float");
+    return stringToReal<float> (t, &strtof, "float");
 #else
     // strtof is new in C99.  If you don't have it, just use strtod
     // and convert the resulting double to float.
-    const double d = realToString<double> (t, &strtod, "double");
+    const double d = stringToReal<double> (t, &strtod, "double");
     return asSafe<float> (d);
 #endif // _ISOC99_SOURCE
   }
@@ -625,11 +625,11 @@ class ValueTypeConversionTraits<long double, std::string> {
 public:
   static long double convert (const std::string& t) {
 #ifdef _ISOC99_SOURCE
-    return realToString<long double> (t, &strtold, "long double");
+    return stringToReal<long double> (t, &strtold, "long double");
 #else
     // strtof is new in C99.  If you don't have it, just use
     // operator>>(std::istream&, long double&).
-    return realToString<long double> (t, NULL, "long double");
+    return stringToReal<long double> (t, NULL, "long double");
 #endif // _ISOC99_SOURCE
   }
 
