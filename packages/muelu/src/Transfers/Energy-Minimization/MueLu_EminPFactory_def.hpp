@@ -20,14 +20,6 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::EminPFactory()
-  { }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~EminPFactory()
-  { }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     Input(fineLevel,   "A");
     Input(fineLevel,   "Nullspace");

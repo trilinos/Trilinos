@@ -70,10 +70,10 @@ namespace MueLu {
     //@{
 
     //! @brief Constructor.
-    PatternFactory();
+    PatternFactory() { }
 
     //! Destructor.
-    virtual ~PatternFactory();
+    virtual ~PatternFactory() { }
 
     //@}
 
@@ -96,7 +96,6 @@ namespace MueLu {
 
     //@}
 
-  private:
   }; // class PatternFactory
 
 

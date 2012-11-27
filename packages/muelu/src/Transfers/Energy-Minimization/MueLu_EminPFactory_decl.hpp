@@ -72,10 +72,10 @@ namespace MueLu {
     //@{
 
     //! @brief Constructor.
-    EminPFactory();
+    EminPFactory() { }
 
     //! Destructor.
-    virtual ~EminPFactory();
+    virtual ~EminPFactory() { }
 
     //@}
 

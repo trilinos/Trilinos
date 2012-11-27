@@ -296,9 +296,10 @@ C) Configuring (Makefile Generator)
 
     NOTES:
  
-    1) Setting CMAKE_<LANG>_FLAGS with override but will not replace any other
+    1) Setting CMAKE_<LANG>_FLAGS will override but will not replace any other
     internally set flags in CMAKE_<LANG>_FLAGS defined by the Trilinos CMake
-    system.  To get rid of these default flags, see below.
+    system because these flags will come after those set internally.  To get
+    rid of these default flags, see below.
 
     2) For each compiler type (e.g. C, C++ (CXX), Fortran), CMake passes
     compiler options to the compiler in the order:
