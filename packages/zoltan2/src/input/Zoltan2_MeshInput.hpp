@@ -138,6 +138,12 @@ public:
   virtual int getNumWeightsPerEntityID(entityType etype) const = 0;
 
 
+  /*! \brief Returns the number of first adjacencies on this process.
+   */
+  virtual size_t getLocalNumAdjacencyIDs(entityType source,
+					 entityType target) const = 0;
+
+
   /*! \brief Returns the number of second adjacencies on this process.
    *
    *  Some algorithms can partition a graph of mesh entities
@@ -188,14 +194,14 @@ public:
     const scalar_t *&coords, int &stride, int coordDim) const = 0;
 
 
-  /*! \brief Sets pointers to this process' mesh second adjacencies.
-      \param sourcetarget
+  /*! \brief Sets pointers to this process' mesh first adjacencies.
+      \param source
       \param offsets is an array of size getLocalNumEntityIDs() + 1.
-         The second adjacency Ids for Ids[i] (returned in getLocalEntityIDsView())
+         The first adjacency Ids for Ids[i] (returned in getLocalEntityIDsView())
 	 begin at adjacencyIds[offsets[i]].
           The last element of offsets
           is the size of the adjacencyIds array.
-      \param adjacencyIds on return will point to the global second adjacency Ids for
+      \param adjacencyIds on return will point to the global first adjacency Ids
          for each entity.
        \return The number of ids in the adjacencyIds list.
 
@@ -204,9 +210,26 @@ public:
       must remain valid for the lifetime of this InputAdapter.
    */
 
-// TODO:  Need concept of first adjacencies.
-// TODO:    getEntityFirstAdj(entityType source, entityType target, gid_t *entityIds,
-// TODO:                      lno_t *offsets, gid_t *adjIds);
+  virtual size_t getLocalAdjacencyIDsView(entityType source,
+     entityType target, const lno_t *&offsets, const gid_t *& adjacencyIds) const = 0;
+
+
+  /*! \brief Sets pointers to this process' mesh second adjacencies.
+      \param sourcetarget
+      \param offsets is an array of size getLocalNumEntityIDs() + 1.
+         The second adjacency Ids for Ids[i] (returned in getLocalEntityIDsView())
+	 begin at adjacencyIds[offsets[i]].
+          The last element of offsets
+          is the size of the adjacencyIds array.
+      \param adjacencyIds on return will point to the global second adjacency Ids
+         for each entity.
+       \return The number of ids in the adjacencyIds list.
+
+      Zoltan2 does not copy your data.  The data pointed to by
+      offsets and adjacencyIds
+      must remain valid for the lifetime of this InputAdapter.
+   */
+
 // TODO:  Later may allow user to not implement second adjacencies and, if we want them,
 // TODO:  we compute A^T A, where A is matrix of first adjacencies.
 
