@@ -82,10 +82,11 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    MapTransferFactory(std::string mapName, Teuchos::RCP<const FactoryBase> PtentFact = Teuchos::null, Teuchos::RCP<const FactoryBase> mapFact = Teuchos::null);
+    //MapTransferFactory(std::string mapName, Teuchos::RCP<const FactoryBase> PtentFact = Teuchos::null, Teuchos::RCP<const FactoryBase> mapFact = Teuchos::null);
+    MapTransferFactory(std::string mapName, Teuchos::RCP<const FactoryBase> mapFact = Teuchos::null);
 
     //! Destructor.
-    virtual ~MapTransferFactory();
+    virtual ~MapTransferFactory() {}
     //@}
 
     //! Input
@@ -106,7 +107,7 @@ namespace MueLu {
   private:
 
     std::string              mapName_;   ///< name of input and output variable
-    RCP<const FactoryBase>   PtentFact_; ///< tentative P Factory
+    //RCP<const FactoryBase>   PtentFact_; ///< tentative P Factory
     RCP<const FactoryBase>   mapFact_;   ///< generating factory of input variable
 
   }; // class MapTransferFactory
