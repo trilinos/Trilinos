@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
   //
 
   RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
-  RCP<TimeMonitor> tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
+  RCP<TimeMonitor> tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("RAPScalingTest: 1 - Matrix creation")));
 
   RCP<const Map> map;
   RCP<MultiVector> coordinates;
@@ -157,21 +157,35 @@ int main(int argc, char *argv[]) {
 
   RCP<Matrix> A   = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
 
-  tm = Teuchos::null;
+  tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("RAPScalingTest: 2 - Setup")));
 
   Level fineLevel, coarseLevel;
   MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy( fineLevel, coarseLevel);
 
   fineLevel.Set("A",A);
 
+  TentativePFactory tentpFactory;
+  SaPFactory sapFactory(rcpFromRef(tentpFactory));
+  TransPFactory transPFactory;
+  transPFactory.SetFactory("P", rcpFromRef(sapFactory));
+  coarseLevel.Request("P", &sapFactory);
+  coarseLevel.Request("R", &transPFactory);
+
+  sapFactory.Build(fineLevel, coarseLevel);
+  transPFactory.Build(fineLevel,coarseLevel);
   RAPFactory rap;
+  rap.SetFactory("P", rcpFromRef(sapFactory));
+  rap.SetFactory("R", rcpFromRef(transPFactory));
 
   for (int i=0; i<numRAPs; ++i) {
     coarseLevel.Request("A",&rap);
+    tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("RAPScalingTest: 3 - RAP kernel")));
     RCP<Matrix> Ac = coarseLevel.Get< RCP<Matrix> >("A", &rap);
+    tm = Teuchos::null;
     coarseLevel.Release("A",&rap);
   }
 
+  tm = Teuchos::null;
   globalTimeMonitor = Teuchos::null;
 
   if (printTimings) {
