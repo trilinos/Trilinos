@@ -33,6 +33,7 @@ BraessSarazinSmoother
 AggregationExportFactory
 PermutedTransferFactory
 MultiVectorTransferFactory
+MapTransferFactory
 SchurComplementFactory
 AmalgamationFactory
 AggStatTransferFactory

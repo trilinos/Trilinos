@@ -154,6 +154,10 @@ typedef MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,L
 typedef MueLu::MultiVectorTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MultiVectorTransferFactory;
 #endif
 
+#ifdef MUELU_MAPTRANSFERFACTORY_SHORT
+typedef MueLu::MapTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MapTransferFactory;
+#endif
+
 #ifdef MUELU_PERMUTEDTRANSFERFACTORY_SHORT
 typedef MueLu::PermutedTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PermutedTransferFactory;
 #endif
