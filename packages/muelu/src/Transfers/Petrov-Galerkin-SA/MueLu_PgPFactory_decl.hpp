@@ -88,10 +88,10 @@ namespace MueLu {
     /*! @brief Constructor.
       User can supply a factory for generating the tentative prolongator.
     */
-    PgPFactory(RCP</*PFactory*/const FactoryBase> InitialPFact = Teuchos::null, RCP< const FactoryBase /* SingleLevelFactoryBase*/> AFact = Teuchos::null);
+    PgPFactory();
 
     //! Destructor.
-    virtual ~PgPFactory();
+    virtual ~PgPFactory() { }
 
     //@}
 
@@ -147,12 +147,6 @@ namespace MueLu {
     void ComputeRowBasedOmega(Level& fineLevel, Level &coarseLevel, const RCP<Matrix>& A, const RCP<Matrix>& P0, const RCP<Matrix>& DinvAP0, RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & RowBasedOmega) const;
 
   private:
-
-    //! Input factories
-    //RCP<PFactory> initialPFact_;        //! Ptentative Factory
-    RCP<const FactoryBase> initialPFact_;        //! Ptentative Factory
-    //RCP<SingleLevelFactoryBase> AFact_; //! A Factory
-    RCP<const FactoryBase> AFact_; //! A Factory
 
     //! Factory parameters
     std::string diagonalView_;

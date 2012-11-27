@@ -43,16 +43,27 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_AGGSTATTRANSFERFACTORY_FWD_HPP
-#define MUELU_AGGSTATTRANSFERFACTORY_FWD_HPP
+#include "MueLu_ExplicitInstantiation.hpp"
 
-namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class AggStatTransferFactory;
-}
+#include "MueLu_MapTransferFactory_def.hpp"
 
-#ifndef MUELU_AGGSTATTRANSFERFACTORY_SHORT
-#define MUELU_AGGSTATTRANSFERFACTORY_SHORT
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
+template class MueLu::MapTransferFactory<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
 #endif
 
-#endif // MUELU_AGGSTATTRANSFERFACTORY_FWD_HPP
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
+# ifdef HAVE_TEUCHOS_LONG_LONG_INT
+template class MueLu::MapTransferFactory<double, int, long long int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+# else
+# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
+# endif
+#endif
+
+#ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
+# ifdef HAVE_TEUCHOS_COMPLEX
+#include <complex>
+template class MueLu::MapTransferFactory<std::complex<double>, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+# else
+# warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
+# endif
+#endif

@@ -36,9 +36,9 @@ BlockedGaussSeidelSmoother
 BraessSarazinSmoother
 AggregationExportFactory
 MultiVectorTransferFactory
+MapTransferFactory
 PermutedTransferFactory
 AmalgamationFactory
-AggStatTransferFactory
 CoarseMapFactory
 BlockedCoarseMapFactory
 EminPFactory

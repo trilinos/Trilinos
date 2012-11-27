@@ -192,9 +192,6 @@ namespace MueLu {
     //
     //
 
-#define MUELU_FACTORY_PARAM(name, var)                                  \
-    RCP<const FactoryBase> var; if (paramList.isParameter(name)) { var = BuildFactory(paramList.getEntry(name), factoryMapIn); }
-
 #define MUELU_FACTORY_PARAM2(name)                                      \
     if (paramList.isParameter(name)) { factory->SetFactory(name, BuildFactory(paramList.getEntry(name), factoryMapIn)); }
 
@@ -244,19 +241,15 @@ namespace MueLu {
         return rcp(new PgPFactory());
 
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "PgPFactory", Exceptions::RuntimeError, "");
-      MUELU_FACTORY_PARAM("InitialP", InitialPFact);
-      MUELU_FACTORY_PARAM("A", AFact);
+      RCP<PgPFactory> factory = rcp(new PgPFactory());
+      MUELU_FACTORY_PARAM2("A");
+      MUELU_FACTORY_PARAM2("P");
 
-      RCP<PgPFactory> f = rcp(new PgPFactory(InitialPFact, AFact));
-
-      return f;
+      return factory;
     }
 
     //! TransPFactory
     RCP<FactoryBase> BuildTransPFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-//       if (paramList.begin() == paramList.end()) // short-circuit. Use default parameters of constructor
-//         return rcp(new TransPFactory());
-
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "TransPFactory", Exceptions::RuntimeError, "");
       RCP<Factory> factory = rcp(new TransPFactory());
       MUELU_FACTORY_PARAM2("P");

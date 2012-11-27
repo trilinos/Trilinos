@@ -43,18 +43,16 @@
 // ***********************************************************************
 //
 // @HEADER
-#include "MueLu_ExplicitInstantiation.hpp"
-#include "Stokhos_ConfigDefs.h"
+#ifndef MUELU_MAPTRANSFERFACTORY_FWD_HPP
+#define MUELU_MAPTRANSFERFACTORY_FWD_HPP
 
-#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class MapTransferFactory;
+}
 
-// Sacado headers must be included first so that overloaded operators
-// are defined in the muelu template code
-#include "Stokhos_Sacado.hpp"
-#include "MueLu_AggStatTransferFactory_def.hpp"
-
-typedef Stokhos::StandardStorage<int,double> Storage;
-typedef Sacado::PCE::OrthogPoly<double,Storage> pce_type;
-template class MueLu::AggStatTransferFactory<pce_type, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
-
+#ifndef MUELU_MAPTRANSFERFACTORY_SHORT
+#define MUELU_MAPTRANSFERFACTORY_SHORT
 #endif
+
+#endif // MUELU_MAPTRANSFERFACTORY_FWD_HPP

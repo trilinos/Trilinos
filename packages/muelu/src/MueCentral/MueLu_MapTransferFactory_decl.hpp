@@ -44,78 +44,69 @@
 //
 // @HEADER
 /*
- * MueLu_VariableTransferFactory_decl.hpp
+ * MueLu_ContactMapTransferFactory_decl.hpp
  *
- *  Created on: Jul 30, 2012
+ *  Created on: Aug 2, 2012
  *      Author: wiesner
  */
 
-#ifndef MUELU_AGGSTATTRANSFERFACTORY_DECL_HPP_
-#define MUELU_AGGSTATTRANSFERFACTORY_DECL_HPP_
+#ifndef MUELU_MAPTRANSFERFACTORY_DECL_HPP_
+#define MUELU_MAPTRANSFERFACTORY_DECL_HPP_
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
-#include "MueLu_AggStatTransferFactory_fwd.hpp"
 
 namespace MueLu {
 
   /*!
-    @class AggStatTransferFactory class.
-    @brief Simple class for transferring aggregation status information to next coarser level
+    @class MapTransferFactory class.
+    @brief transfer factory for maps
+    
+    Factory that transfers a map (given by a variable name and a generating factory) for building
+    a coarse version of the map. The coarse map is stored on the coarse level using the same variable name
+    and generating factory than the original fine level map.
 
-    This is to be used in conjunction with Muelu::RAPFactory::AddTransferFactory().
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class AggStatTransferFactory : public TwoLevelFactoryBase {
-#undef MUELU_AGGSTATTRANSFERFACTORY_SHORT
-#include "MueLu_UseShortNames.hpp"
+  class MapTransferFactory : public TwoLevelFactoryBase {
+#undef MUELU_MAPTRANSFERFACTORY_SHORT
+    #include "MueLu_UseShortNames.hpp"
 
   public:
     //! @name Constructors/Destructors.
     //@{
 
-    /*! @brief Constructor.
-
-       @param varName The name of the quantity to be restricted.
-       @param genFact The generating factory
-    */
-    AggStatTransferFactory(std::string const & varName, Teuchos::RCP<const FactoryBase> const &genFact = Teuchos::null);
+    //! Constructor.
+    MapTransferFactory(std::string mapName, Teuchos::RCP<const FactoryBase> mapFact = Teuchos::null);
 
     //! Destructor.
-    virtual ~AggStatTransferFactory();
-
+    virtual ~MapTransferFactory() {}
     //@}
 
-    //! @name Input
+    //! Input
     //@{
 
-    /*! @brief Specifies the data that this class needs, and the factories that generate that data.
-
-        If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
-        will fall back to the settings in FactoryManager.
-    */
-    void DeclareInput(Level &finelevel, Level &coarseLevel) const;
+    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
 
     //@}
 
+    //@{
     //! @name Build methods.
-    //@{
 
     //! Build an object with this factory.
-    void Build(Level & fineLevel, Level &coarseLevel) const;
+    void Build(Level &fineLevel, Level &coarseLevel) const;
 
     //@}
 
   private:
-    //! name of variable to be transfered.
-    std::string varName_;
 
-    //! factory that generates variable
-    Teuchos::RCP<const FactoryBase> genFact_;
-  }; // class MultiVectorTransferFactory
+    std::string              mapName_;   ///< name of input and output variable
+    RCP<const FactoryBase>   mapFact_;   ///< generating factory of input variable
+
+  }; // class MapTransferFactory
 
 } // namespace MueLu
 
-#define MUELU_AGGSTATTRANSFERFACTORY_SHORT
-#endif /* MUELU_AGGSTATTRANSFERFACTORY_DECL_HPP_ */
+#define MUELU_MAPTRANSFERFACTORY_SHORT
+#endif /* MUELU_MAPTRANSFERFACTORY_DECL_HPP_ */

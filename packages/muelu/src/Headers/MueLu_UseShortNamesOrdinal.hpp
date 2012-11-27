@@ -86,12 +86,12 @@ typedef MueLu::AmesosSmoother AmesosSmoother;
 typedef MueLu::IfpackSmoother IfpackSmoother;
 #endif
 
-#ifdef MUELU_FACTORYBASE_SHORT
-typedef MueLu::FactoryBase FactoryBase;
-#endif
-
 #ifdef MUELU_FACTORY_SHORT
 typedef MueLu::Factory Factory;
+#endif
+
+#ifdef MUELU_FACTORYBASE_SHORT
+typedef MueLu::FactoryBase FactoryBase;
 #endif
 
 #ifdef MUELU_FACTORYMANAGERBASE_SHORT

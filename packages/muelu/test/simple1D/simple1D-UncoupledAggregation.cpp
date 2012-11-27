@@ -175,6 +175,7 @@ int main(int argc, char *argv[]) {
   UCAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
 
   Finest->Request("Graph",dropFact.get());
+  Finest->Request("DofsPerNode",dropFact.get());
   Finest->Request("UnAmalgamationInfo",amalgFact.get());
   UCAggFact->Build(*Finest);
 

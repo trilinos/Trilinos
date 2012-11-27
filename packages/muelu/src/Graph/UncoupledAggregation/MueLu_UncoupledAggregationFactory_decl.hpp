@@ -56,6 +56,7 @@
 
 
 #include <Xpetra_Map_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 
@@ -118,6 +119,11 @@ public:
       algos_[a]->SetMinNodesPerAggregate(minNodesPerAggregate);
     }
   }
+  // set information about 1-node aggregates (map name and generating factory)
+  void SetOnePtMapName(const std::string name, Teuchos::RCP<const FactoryBase> mapFact) {
+    mapName_ = name;
+    mapFact_ = mapFact;
+  }
 
   AggOptions::Ordering GetOrdering() const {
     TEUCHOS_TEST_FOR_EXCEPTION(algos_.size()==0,Exceptions::RuntimeError,"MueLu::UncoupledAggregationFactory::Build: no aggregation algorithms set. Call Append() before. Error.");
@@ -168,6 +174,10 @@ private:
   //! if true, the aggregation algorithms still can be set and changed.
   //! if false, no change in aggregation algorithms is possible any more
   mutable bool bDefinitionPhase_;
+
+  //! string für map, that defines DOFs which shall not be aggregated (so-called 1-point aggregates)
+  std::string mapName_;
+  Teuchos::RCP<const FactoryBase> mapFact_;
 
 }; // class UncoupledAggregationFactory
 

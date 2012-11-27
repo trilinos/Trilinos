@@ -26,28 +26,28 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 IF(Trilinos_ENABLE_AztecOO)
 	# build only if AztecOO available, too
 	TRIBITS_ADD_EXECUTABLE_AND_TEST(
-	  Structure2D_MLmode_Test
-	  SOURCES Structure2D_MLmode_epetra.cpp
+	  Structure2D_MLmode_Epetra
+	  SOURCES Structure2D_MLmode_Epetra.cpp
 	  COMM serial mpi
 	  DEPLIBS muelu xpetra
 	)
 
 	TRIBITS_ADD_EXECUTABLE_AND_TEST(
-	  Structure2D_visualization
-	  SOURCES Structure2D_visualization.cpp
+	  Structure2D_Visualization
+	  SOURCES Structure2D_Visualization.cpp
 	  COMM serial mpi
 	  DEPLIBS muelu xpetra
 	)
 
 	TRIBITS_ADD_EXECUTABLE_AND_TEST(
-	  Structure2D_strided
-	  SOURCES Structure2D_strided.cpp
+	  Structure2D_Strided
+	  SOURCES Structure2D_Strided.cpp
 	  COMM serial mpi
 	  DEPLIBS muelu xpetra
 	)
 ENDIF()
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(Structure2d_test_cp
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Structure2d_cp
 SOURCE_FILES stru2d_A.txt stru2d_b.txt stru2d_ns.txt nodes0.txt MueLu_Agg2VTK.py
 )
 

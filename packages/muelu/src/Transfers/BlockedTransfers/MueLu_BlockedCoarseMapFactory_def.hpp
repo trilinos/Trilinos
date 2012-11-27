@@ -92,7 +92,7 @@ namespace MueLu {
   void BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     this->Input(currentLevel, "Aggregates");
     this->Input(currentLevel, "Nullspace");
-    currentLevel.DeclareInput("CoarseMap",  prevCoarseMapFact_.get(), this);
+    currentLevel.DeclareInput("CoarseMap",  prevCoarseMapFact_.get(), this); // --
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
