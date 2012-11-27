@@ -147,6 +147,9 @@ public:
   /*! \brief Returns the number of second adjacencies on this process.
    *
    *  Some algorithms can partition a graph of mesh entities
+   *
+   *  Parameters will specify algorithm options:
+   *   balance_entity_type==entityType, adjacency_through==entityType
    */
   virtual size_t getLocalNum2ndAdjacencyIDs(entityType sourcetarget,
 					    entityType through) const = 0;
@@ -155,6 +158,16 @@ public:
    */
   virtual int getNumWeightsPer2ndAdjacencyID(entityType sourcetarger,
 					     entityType through) const = 0;
+
+
+  /*! \brief Returns whether a first adjacency combination is available.
+   */
+  virtual bool availAdjacency(entityType source, entityType target);
+
+
+  /*! \brief Returns whether a second adjacency combination is available.
+   */
+  virtual bool avail2ndAdjacency(entityType sourcetarget, entityType through);
 
 
   /*! \brief Provide a pointer to this process' identifiers.
