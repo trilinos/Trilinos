@@ -660,7 +660,7 @@ int read_matrix(const std::string& filename,
                 Epetra_CrsMatrix*& mat)
 {
   (void)Comm;
-  int err = EpetraExt::MatrixMarketFileToCrsMatrix(filename.c_str(), *rowmap, *colmap,
+  int err = EpetraExt::MatrixMarketFileToCrsMatrix(filename.c_str(), *rowmap,
                                                    *rangemap, *domainmap, mat);
 
   return(err);
