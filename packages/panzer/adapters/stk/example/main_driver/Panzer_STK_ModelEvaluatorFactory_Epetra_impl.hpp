@@ -238,6 +238,7 @@ namespace panzer_stk {
       if (solncntl_params.sublist("NOX").get<std::string>("Nonlinear Solver") == "Pseudo-Transient")
 	is_transient = true;
     }
+    m_is_transient = is_transient;
 
     bool useDiscreteAdjoint = p.get<bool>("Use Discrete Adjoint");
     

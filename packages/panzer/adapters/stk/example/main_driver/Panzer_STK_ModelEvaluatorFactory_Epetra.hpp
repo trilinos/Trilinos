@@ -139,6 +139,9 @@ namespace panzer_stk {
     { m_req_handler = reqHandler; }
     #endif     
 
+    bool isTransient() const  
+    { return m_is_transient; }
+
   protected:
     void addVolumeResponses(panzer::ResponseLibrary<panzer::Traits> & rLibrary,
                             const panzer_stk::STK_Interface & mesh,const Teuchos::ParameterList & pl) const;
@@ -217,6 +220,7 @@ namespace panzer_stk {
     Teuchos::RCP<Teko::RequestHandler> m_req_handler;
     #endif
     bool useDiscreteAdjoint;
+    bool m_is_transient;
   };
 
 }

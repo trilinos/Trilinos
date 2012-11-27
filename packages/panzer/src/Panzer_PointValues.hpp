@@ -51,13 +51,20 @@ namespace panzer {
 
   template <typename Scalar,typename Array>
   struct PointValues {
+    typedef typename ArrayTraits<Scalar,Array>::size_type size_type;
     
     //! Sizes/allocates memory for arrays
     template <typename ArrayFactory>
     void setupArrays(const Teuchos::RCP<const panzer::PointRule>& pr,const ArrayFactory & af);
 
     template <typename NodeCoordinateArray,typename PointCoordinateArray>
-    void evaluateValues(const NodeCoordinateArray & node_coordinates,const PointCoordinateArray & point_coordinates);
+    inline void evaluateValues(const NodeCoordinateArray & node_coordinates,const PointCoordinateArray & point_coordinates);
+
+    template <typename CoordinateArray>
+    void copyNodeCoords(const CoordinateArray& in_node_coords);
+
+    template <typename CoordinateArray>
+    void copyPointCoords(const CoordinateArray& in_point_coords);
 
     Array coords_ref;          // <Point,Dim>
     Array node_coordinates;    // <Cell,NODE,Dim>
