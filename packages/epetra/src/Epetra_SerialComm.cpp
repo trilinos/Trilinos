@@ -80,6 +80,13 @@ int Epetra_SerialComm::Broadcast(long * Values, int Count, int Root) const {
   return(0);
 }
 //=============================================================================
+int Epetra_SerialComm::Broadcast(long long * Values, int Count, int Root) const{
+  (void)Values;
+  (void)Count;
+  (void)Root;
+  return(0);
+}
+//=============================================================================
 int Epetra_SerialComm::Broadcast(char * Values, int Count, int Root) const {
   (void)Values;
   (void)Count;
