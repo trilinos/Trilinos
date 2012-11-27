@@ -118,15 +118,8 @@ private:
     // Used if the set of buckets (not just bucket contents) are being modified.
     std::vector<Bucket *> m_buckets;
 
+    // Number of entities in this partition.
     size_t m_size;
-
-//    // Used when the vector of Bucket * in the BucketRepository is the representation
-//    // being used.
-//    unsigned m_beginBucketIndex;
-//    unsigned m_endBucketIndex;
-
-    // Flag that the set of buckets, and not just their contents, is being modified.
-    bool m_modifyingBucketSet;
 
     bool m_updated_since_compress;
 
@@ -135,9 +128,6 @@ private:
     // The partition has no buckets, not even an empty one left after removing all its
     // entities.
     bool no_buckets() const { return m_buckets.empty(); }
-
-//    // Take control of this partition's buckets away from the BucketRepository.
-//    bool take_bucket_control();
 
     // Make sure that the last bucket has room for an entity to be added to it, adding
     // an empty bucket if necessary.

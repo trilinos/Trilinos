@@ -37,7 +37,7 @@ BucketRepository::BucketRepository(
    m_partitions(entity_rank_count),
    m_need_sync_from_partitions(entity_rank_count, false)
 {
-    // sync_to_partitions();
+    // Nada.
 }
 
 
@@ -769,7 +769,7 @@ void BucketRepository::sync_to_partitions()
         for (std::vector<Partition *>::iterator p_j = pv_i->begin();
                 p_j != pv_i->end(); ++p_j)
         {
-            (*p_j)->m_buckets.clear();
+            (*p_j)->m_buckets.clear();  // Since we assume that m_buckets is up-to-date; happens in testing.
             delete *p_j;
         }
         pv_i->clear();
@@ -860,7 +860,6 @@ void BucketRepository::sync_from_partitions(EntityRank rank)
 
     bool has_hole = false;
     std::vector<Bucket *>::iterator bkts_i = m_buckets[rank].begin();
-    unsigned b_idx = 0;
     for (size_t p_i = 0; p_i < num_partitions; ++p_i)
     {
         Partition &partition = *partitions[p_i];
@@ -874,11 +873,6 @@ void BucketRepository::sync_from_partitions(EntityRank rank)
         }
         size_t num_bkts_in_partition = partition.num_buckets();
         std::copy(partition.begin(), partition.end(), bkts_i);
-
-//        partition.m_beginBucketIndex = b_idx;
-        b_idx += num_bkts_in_partition;
-//        partition.m_endBucketIndex = b_idx;
-//       partition.m_modifyingBucketSet = false;
         bkts_i += num_bkts_in_partition;
     }
 
@@ -886,13 +880,8 @@ void BucketRepository::sync_from_partitions(EntityRank rank)
     {
         std::vector<Partition *>::iterator new_end;
         new_end = std::remove_if(partitions.begin(), partitions.end(), isNull);
-
-        // size_t new_size = std::distance(partitions.begin(), new_end);
         size_t new_size = new_end - partitions.begin();  // OK because has_hole is true.
-
-        // std::cout << "resizing partitions to length " << new_size << std::endl;
         partitions.resize(new_size);
-
     }
 
     m_need_sync_from_partitions[rank] = false;

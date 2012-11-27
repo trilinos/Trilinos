@@ -8,19 +8,13 @@
 
 #include <iostream>
 
-// #define PARTITION_DONT_COMPRESS_SMALL_PARTITIONS
+#define PARTITION_DONT_COMPRESS_SMALL_PARTITIONS
 // #define PARTITION_DONT_SORT_SMALL_PARTITIONS_ON_COMPRESS
 
 namespace stk {
 namespace mesh {
 namespace impl {
 
-//// See what happens when we try to force updating the bucket repository's m_buckets[rank]
-//// vector whenever a bucket is added or removed.
-////     The fuego test still failed.
-////     The fortissimo test still failed.
-////
-// #define BUCKET_REPOSITORY_SYNC_FROM_PARTITIONS_DURING_MODIFICATION_CYCLE
 
 std::ostream &operator<<(std::ostream &os, const stk::mesh::impl::Partition &bf)
 {
@@ -63,9 +57,6 @@ Partition::Partition(BucketRepository *repo, EntityRank rank,
     , m_rank(rank)
     , m_extPartitionKey(key)
     , m_size(0)
-//    , m_beginBucketIndex(0)
-//    , m_endBucketIndex(0)
-    , m_modifyingBucketSet(false)
     , m_updated_since_compress(false)
     , m_updated_since_sort(false)
 {
@@ -112,14 +103,6 @@ bool Partition::add(Entity entity)
     m_repository->internal_propagate_relocation(entity);
     entity.m_entityImpl->set_sync_count(m_repository->m_mesh.synchronized_count());
 
-    // std::cout << " added " << entity.entity_rank() << '.' << entity << " to " << *this << std::endl;
-
-#ifdef BUCKET_REPOSITORY_SYNC_FROM_PARTITIONS_DURING_MODIFICATION_CYCLE
-    if (m_modifyingBucketSet)
-    {
-        m_repository->sync_from_partitions(m_rank);
-    }
-#endif
     return true;
 }
 
@@ -153,16 +136,6 @@ void Partition::move_to(Entity entity, Partition &dst_partition)
     m_updated_since_compress = m_updated_since_sort = true;
     m_repository->internal_propagate_relocation(entity);
     entity.m_entityImpl->set_sync_count(m_repository->m_mesh.synchronized_count());
-
-    // std::cout << " moved " << entity.entity_rank() << '.' << entity << " to " << dst_partition << std::endl;
-
-#ifdef BUCKET_REPOSITORY_SYNC_FROM_PARTITIONS_DURING_MODIFICATION_CYCLE
-    if (m_modifyingBucketSet)
-    {
-        m_repository->sync_from_partitions(m_rank);
-    }
-#endif
-
 }
 
 
@@ -222,13 +195,6 @@ bool Partition::remove(Entity e_k, bool not_in_move_to)
     m_updated_since_compress = m_updated_since_sort = true;
     --m_size;
 
-#ifdef BUCKET_REPOSITORY_SYNC_FROM_PARTITIONS_DURING_MODIFICATION_CYCLE
-    if (m_modifyingBucketSet && not_in_move_to)
-    {
-        m_repository->sync_from_partitions(m_rank);
-    }
-#endif
-
     return true;
 }
 
@@ -268,7 +234,7 @@ void Partition::compress(bool force)
 #ifdef PARTITION_DONT_SORT_SMALL_PARTITIONS_ON_COMPRESS
     // Note that we use this particular conditional because m_buckets is not used until the set of
     // buckets in the partition needs to change.
-    if (m_size > m_repository->m_bucket_capacity)
+    if (num_buckets() > 1)
     {
         std::sort( entities.begin(), entities.end(), EntityLess() );
     }
@@ -306,13 +272,6 @@ void Partition::compress(bool force)
     m_repository->m_need_sync_from_partitions[m_rank] = true;
     // m_modifyingBucketSet = true;
     m_updated_since_compress = m_updated_since_sort = false;
-
-#ifdef BUCKET_REPOSITORY_SYNC_FROM_PARTITIONS_DURING_MODIFICATION_CYCLE
-    if (m_modifyingBucketSet)
-    {
-        m_repository->sync_from_partitions(m_rank);
-    }
-#endif
 }
 
 
@@ -393,7 +352,7 @@ void Partition::sort(bool force)
                 change_this_partition = true ;
             }
 
-            // Once a change has occured then need to propagate the
+            // Once a change has occurred then need to propagate the
             // relocation for the remainder of the partition.
             // This allows the propagation to be performed once per
             // entity as opposed to both times the entity is moved.
@@ -418,31 +377,6 @@ void Partition::update_state() const
       (*ik)->update_state();
     }
 }
-
-
-//bool Partition::take_bucket_control()
-//{
-//    m_repository->m_need_sync_from_partitions[m_rank] = true;
-//    if (m_modifyingBucketSet)
-//        return false;
-//
-//    if (m_beginBucketIndex == m_endBucketIndex)
-//    {
-//        m_buckets.clear();
-//    }
-//    else
-//    {
-//        size_t num_buckets = m_endBucketIndex - m_beginBucketIndex;
-//        m_buckets.resize(num_buckets);
-//        std::copy(begin(), end(), &m_buckets[0]);
-//        for (std::vector<Bucket *>::iterator ob_i = begin(); ob_i != end(); ++ob_i)
-//        {
-//            *ob_i = 0;
-//        }
-//    }
-//    m_modifyingBucketSet = true;
-//    return true;
-//}
 
 
 stk::mesh::Bucket *Partition::get_bucket_for_adds()
