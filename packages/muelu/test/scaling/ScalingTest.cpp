@@ -123,8 +123,8 @@ int main(int argc, char *argv[]) {
   out->setOutputToRootOnly(0);
   *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
-  //out->setOutputToRootOnly(-1);
-  //out->precision(12);
+  // out->setOutputToRootOnly(-1);
+  // out->precision(12);
 
   //FIXME we need a HAVE_MUELU_LONG_LONG_INT option
   //#ifndef HAVE_TEUCHOS_LONG_LONG_INT
@@ -169,8 +169,13 @@ int main(int argc, char *argv[]) {
   int optSweeps = 2;                      clp.setOption("sweeps",         &optSweeps,             "sweeps to be used in SGS (or Chebyshev degree)");
 
   // - Repartitioning
+#if defined(HAVE_MPI) || defined(HAVE_MUELU_ZOLTAN)
+  int optRepartition = 1;                 clp.setOption("repartition",    &optRepartition,        "enable repartitioning");
   LO optMinRowsPerProc = 2000;            clp.setOption("minRowsPerProc", &optMinRowsPerProc,     "min #rows allowable per proc before repartitioning occurs");
   double optNnzImbalance = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,       "max allowable nonzero imbalance before repartitioning occurs");
+#else
+  int optRepartition = 0;
+#endif // HAVE_MPI && HAVE_MUELU_ZOLTAN
 
   // - Solve
   int    optFixPoint = 1;                 clp.setOption("fixPoint",       &optFixPoint,           "apply multigrid as solver");
@@ -236,16 +241,22 @@ int main(int argc, char *argv[]) {
     Utils::Write(fileName, *A);
   }
 
-  RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
-  nullSpace->putScalar( (SC) 1.0);
+  RCP<MultiVector> nullspace = MultiVectorFactory::Build(map, 1);
+  nullspace->putScalar( (SC) 1.0);
   Teuchos::Array<ST::magnitudeType> norms(1);
 
-  nullSpace->norm1(norms);
+  nullspace->norm1(norms);
   if (comm->getRank() == 0)
     std::cout << "||NS|| = " << norms[0] << std::endl;
 
-  Teuchos::ParameterList status;
   RCP<MueLu::Hierarchy<SC, LO, GO, NO, LMO> > H;
+
+  //
+  //
+  // SETUP
+  //
+  //
+
   {
     TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup"));
 
@@ -261,10 +272,10 @@ int main(int argc, char *argv[]) {
     // Finest level
     //
 
-    RCP<MueLu::Level> Finest = H->GetLevel();
+    RCP<Level> Finest = H->GetLevel();
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     Finest->Set("A",           A);
-    Finest->Set("Nullspace",   nullSpace);
+    Finest->Set("Nullspace",   nullspace);
     Finest->Set("Coordinates", coordinates); //FIXME: XCoordinates, YCoordinates, ..
 
     //
@@ -274,120 +285,131 @@ int main(int argc, char *argv[]) {
     FactoryManager M;
 
     //
+    //
     // Aggregation
     //
 
-    RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-    *out << " == == == == == == == == == == == == = Aggregate option summary  == == == == == == == == == == == == = " << std::endl;
-    *out << "min DOFs per aggregate :                " << optMinPerAgg << std::endl;
-    *out << "min # of root nbrs already aggregated : " << optMaxNbrSel << std::endl;
-    UCAggFact->SetMinNodesPerAggregate(optMinPerAgg);  //TODO should increase if run anything other than 1D
-    UCAggFact->SetMaxNeighAlreadySelected(optMaxNbrSel);
-    std::transform(optAggOrdering.begin(), optAggOrdering.end(), optAggOrdering.begin(), ::tolower);
-    if (optAggOrdering == "natural") {
-      *out << "aggregate ordering :                    NATURAL" << std::endl;
-      UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
-    } else if (optAggOrdering == "random") {
-      *out << "aggregate ordering :                    RANDOM" << std::endl;
-      UCAggFact->SetOrdering(MueLu::AggOptions::RANDOM);
-    } else if (optAggOrdering == "graph") {
-      *out << "aggregate ordering :                    GRAPH" << std::endl;
-      UCAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
-    } else {
-      std::string msg = "main: bad aggregation option """ + optAggOrdering + """.";
-      throw(MueLu::Exceptions::RuntimeError(msg));
+    {
+      RCP<UCAggregationFactory> AggregationFact = rcp(new UCAggregationFactory());
+      *out << "========================= Aggregate option summary =========================" << std::endl;
+      *out << "min DOFs per aggregate :                " << optMinPerAgg << std::endl;
+      *out << "min # of root nbrs already aggregated : " << optMaxNbrSel << std::endl;
+      AggregationFact->SetMinNodesPerAggregate(optMinPerAgg);  //TODO should increase if run anything othpermRFacter than 1D
+      AggregationFact->SetMaxNeighAlreadySelected(optMaxNbrSel);
+      std::transform(optAggOrdering.begin(), optAggOrdering.end(), optAggOrdering.begin(), ::tolower);
+      if (optAggOrdering == "natural") {
+        *out << "aggregate ordering :                    NATURAL" << std::endl;
+        AggregationFact->SetOrdering(MueLu::AggOptions::NATURAL);
+      } else if (optAggOrdering == "random") {
+        *out << "aggregate ordering :                    RANDOM" << std::endl;
+        AggregationFact->SetOrdering(MueLu::AggOptions::RANDOM);
+      } else if (optAggOrdering == "graph") {
+        *out << "aggregate ordering :                    GRAPH" << std::endl;
+        AggregationFact->SetOrdering(MueLu::AggOptions::GRAPH);
+      } else {
+        std::string msg = "main: bad aggregation option """ + optAggOrdering + """.";
+        throw(MueLu::Exceptions::RuntimeError(msg));
+      }
+      AggregationFact->SetPhase3AggCreation(0.5);
+      M.SetFactory("Aggregates", AggregationFact);
+
+    *out << "=============================================================================" << std::endl;
     }
-    UCAggFact->SetPhase3AggCreation(0.5);
-    M.SetFactory("Aggregates", UCAggFact);
-    *out << " == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == = " << std::endl;
 
     //
     // Transfer
     //
 
-    RCP<SaPFactory> SaPfact = rcp(new SaPFactory());
-    SaPfact->SetDampingFactor(optSaDamping);
-    M.SetFactory("P", SaPfact);
+    {
+      //
+      // Non permuted factories
+      //
 
-    RCP<Factory> rfact = rcp(new TransPFactory());
-    rfact->SetFactory("P", M.GetFactory("P"));
-    M.SetFactory("R", rfact);
+      RCP<SaPFactory> PFact = rcp(new SaPFactory());
+      PFact->SetDampingFactor(optSaDamping);
 
-    RCP<RAPFactory> Acfact = rcp(new RAPFactory());
-    Acfact->SetFactory("P", M.GetFactory("P"));
-    Acfact->SetFactory("R", M.GetFactory("R"));
+      RCP<Factory>    RFact = rcp(new TransPFactory());
 
-    Acfact->setVerbLevel(Teuchos::VERB_HIGH);
-    M.SetFactory("A", Acfact);
+      RCP<RAPFactory> AFact = rcp(new RAPFactory());
+      AFact->setVerbLevel(Teuchos::VERB_HIGH);
+      if (!optExplicitR) {
+        H->SetImplicitTranspose(true);
+        AFact->SetImplicitTranspose(true);
+        if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n" << std::endl;
+      }
 
-    RCP<RAPFactory>       AcfactFinal;
+      //
+      // Repartitioning (if needed)
+      //
 
-    //
-    // Reordering
-    //
+      if (!optRepartition) {
+        // No repartitioning
 
-    RCP<PermutedTransferFactory> permPFactory, permRFactory;
-    RCP<MultiVectorTransferFactory> mvTransFact;
-    if (optExplicitR) {
+        // Configure FactoryManager
+        M.SetFactory("P", PFact);
+        M.SetFactory("R", RFact);
+        M.SetFactory("A", AFact);
 
-      //FIXME we need a HAVE_MUELU_LONG_LONG_INT option
-      // #if defined(HAVE_TEUCHOS_LONG_LONG_INT)
-      //       // for long long
-      //       AcfactFinal = Acfact;
-      // #else
-#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
-      //Matrix used to transfer coordinates to coarse grid
-      RCP<const FactoryBase> Rtentfact = M.GetFactory("R"); //for projecting coordinates
-      //Factory that will invoke the coordinate transfer. This factory associates data and operator.
-      mvTransFact = rcp(new MultiVectorTransferFactory("Coordinates", "R"));
-      mvTransFact->SetFactory("R", Rtentfact);
-      //Register it with the coarse operator factory
-      Acfact->AddTransferFactory(mvTransFact);
-      //Set up repartitioning
-      RCP<ZoltanInterface>      zoltan = rcp(new ZoltanInterface());
-      zoltan->SetFactory("A", Acfact);
-      zoltan->SetFactory("Coordinates", mvTransFact);
-      RCP<RepartitionFactory> RepartitionFact = rcp(new RepartitionFactory(optMinRowsPerProc, optNnzImbalance));
-      RepartitionFact->SetFactory("Partition", zoltan);
-      RepartitionFact->SetFactory("A", Acfact);
+      } else {
 
-      permPFactory = rcp(new PermutedTransferFactory(MueLu::INTERPOLATION));
-      permPFactory->SetFactory("Importer", RepartitionFact);
-      permPFactory->SetFactory("A", Acfact);
-      permPFactory->SetFactory("P", SaPfact);
+        // Repartitioning
 
-      permRFactory = rcp(new PermutedTransferFactory(MueLu::RESTRICTION));
-      permRFactory->SetFactory("Importer", RepartitionFact);
-      permRFactory->SetFactory("A", Acfact);
-      permRFactory->SetFactory("R", M.GetFactory("R"));
-      permRFactory->SetFactory("Nullspace", M.GetFactory("Ptent"));
-      permRFactory->SetFactory("Coordinates", mvTransFact);
+        // The Factory Manager will be configured to return the permuted versions of P, R, A by default.
+        // Everytime we want to use the non-permuted versions, we need to explicitly define the generating factory.
+        RFact->SetFactory("P", PFact);
+        //
+        AFact->SetFactory("P", PFact);
+        AFact->SetFactory("R", RFact);
 
+        // Transfer coordinates
+        RCP<MultiVectorTransferFactory> TransferCoordinatesFact = rcp(new MultiVectorTransferFactory("Coordinates", "R"));
+        TransferCoordinatesFact->SetFactory("R", RFact);
+        AFact->AddTransferFactory(TransferCoordinatesFact); // FIXME REMOVE
 
-      AcfactFinal = rcp(new RAPFactory());
-      AcfactFinal->SetFactory("P", permPFactory);
-      AcfactFinal->SetFactory("R", permRFactory);
-      M.SetFactory("A", AcfactFinal);
-#else
-      AcfactFinal = Acfact;
-#endif
-      //#endif // TEUCHOS_LONG_LONG_INT
-    } else {
+        // Compute partition (creates "Partition" object)
+        RCP<Factory> ZoltanFact = rcp(new ZoltanInterface());
+        ZoltanFact->SetFactory("A", AFact);
+        ZoltanFact->SetFactory("Coordinates", TransferCoordinatesFact);
 
-      H->SetImplicitTranspose(true);
-      Acfact->SetImplicitTranspose(true);
-      AcfactFinal = Acfact;
-      if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n" << std::endl;
-    } //if (optExplicitR)
+        // Repartitioning (creates "Importer" from "Partition")
+        RCP<Factory> RepartitionFact = rcp(new RepartitionFactory(optMinRowsPerProc, optNnzImbalance));
+        RepartitionFact->SetFactory("A", AFact);
+        RepartitionFact->SetFactory("Partition", ZoltanFact);
 
-    AcfactFinal->setVerbLevel(Teuchos::VERB_HIGH);
+        // Reordering of the transfer operators
+        RCP<Factory> permPFact = rcp(new PermutedTransferFactory(MueLu::INTERPOLATION));
+        //        permPFact->SetFactory("Importer", RepartitionFact);
+        permPFact->SetFactory("A", AFact);
+        permPFact->SetFactory("P", PFact);
+
+        RCP<Factory> permRFact = rcp(new PermutedTransferFactory(MueLu::RESTRICTION));
+        //        permRFact->SetFactory("Importer", RepartitionFact);
+        permRFact->SetFactory("A", AFact);
+        permRFact->SetFactory("R", RFact);
+        permRFact->SetFactory("Coordinates", TransferCoordinatesFact);
+        permRFact->SetFactory("Nullspace", M.GetFactory("Ptent")); // TODO
+
+        // Compute Ac from permuted P and R
+        RCP<Factory> permAFact = rcp(new RAPFactory());
+        permAFact->setVerbLevel(Teuchos::VERB_HIGH);
+        permAFact->SetFactory("P", permPFact); // why is this needed?
+
+        // Configure FactoryManager
+        M.SetFactory("A", permAFact);
+        M.SetFactory("P", permPFact);
+        M.SetFactory("R", permRFact);
+        M.SetFactory("Nullspace", permRFact);
+        M.SetFactory("Importer", RepartitionFact);
+
+      } // optRepartition
+
+    } // Transfer
 
     //
     // Smoothers
     //
-    RCP<SmootherFactory> SmooFact;
+
     {
-      RCP<SmootherPrototype> smooProto;
       std::string ifpackType;
       Teuchos::ParameterList ifpackList;
       ifpackList.set("relaxation: sweeps", (LO) optSweeps);
@@ -417,72 +439,27 @@ int main(int argc, char *argv[]) {
         // ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
       }
 
-      smooProto = rcp(new TrilinosSmoother(ifpackType, ifpackList));
-
-      /* test direct solve */
-      /*    if (optMaxLevels == 1) {
-            Teuchos::ParameterList amesosList;
-            amesosList.set("PrintTiming", true);
-            smooProto = rcp(new DirectSolver("", amesosList));
-            }
-      */
-
-      SmooFact = rcp(new SmootherFactory(smooProto));
+      RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(ifpackType, ifpackList));
+      M.SetFactory("Smoother", rcp(new SmootherFactory(smootherPrototype)));
     }
 
     //
+    // Setup preconditioner
     //
-    //
 
-    /*
-      for (int i = 0; i<comm->getSize(); ++i) {
-      if (comm->getRank() == i) {
-      std::cout << "pid " << i << ": address(Acfact)      = " << Acfact.get() << std::endl;
-      std::cout << "pid " << i << ": address(AcfactFinal) = " << AcfactFinal.get() << std::endl;
-      }
-      comm->barrier();
-      }
-    */
-
-    if (optMaxLevels > 1) {
-      M.SetFactory("A", AcfactFinal);
-      M.SetFactory("Smoother", SmooFact);
-
-      if (optExplicitR) {
-#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
-        M.SetFactory("P", permPFactory);
-        M.SetFactory("R", permRFactory);
-        M.SetFactory("Nullspace", permRFactory);
-#endif
-      }
-
-      //
-      // Setup preconditioner
-      //
-
-      int startLevel = 0;
-      //      std::cout << startLevel << " " << optMaxLevels << std::endl;
-      H->Setup(M, startLevel, optMaxLevels);
-    } else {
-
-      // optMaxLevels == 1
-
-      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Mue!");
-      // H->SetCoarsestSolver(*SmooFact, MueLu::BOTH);
-
-    } // optMaxLevels > 1
+    int startLevel = 0;
+    //      std::cout << startLevel << " " << optMaxLevels << std::endl;
+    H->Setup(M, startLevel, optMaxLevels);
 
   } // end of Setup TimeMonitor
 
-  //   *out  << " == == == == == == == == == == == \n Multigrid statistics \n == == == == == == == == == == == " << std::endl;
-  //   status.print(*out, Teuchos::ParameterList::PrintOptions().indent(2));
-
-
   //
-  // Solve
+  //
+  // SOLVE
+  //
   //
 
-  // Define B
+  // Define X, B
   RCP<MultiVector> X = MultiVectorFactory::Build(map, 1);
   RCP<MultiVector> B = MultiVectorFactory::Build(map, 1);
 
@@ -492,29 +469,29 @@ int main(int argc, char *argv[]) {
   B->norm2(norms);
   B->scale(1.0/norms[0]);
 
-#define AMG_SOLVER
-#ifdef AMG_SOLVER
+  //
   // Use AMG directly as an iterative method
+  //
+
   if (optFixPoint) {
-    //*out << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
-    {
-      X->putScalar( (SC) 0.0);
+    X->putScalar( (SC) 0.0);
 
-      TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 3 - Fixed Point Solve"));
+    TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 3 - Fixed Point Solve"));
 
-      H->IsPreconditioner(false);
-      H->Iterate(*B, optIts, *X);
+    H->IsPreconditioner(false);
+    H->Iterate(*B, optIts, *X);
 
-      //X->norm2(norms);
-      //*out << "||X_" << std::setprecision(2) << optIts << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
-    }
-  } // if (fixedPt)
-#endif //ifdef AMG_SOLVER
+  } // optFixedPt
 
+  //
   // Use AMG as a preconditioner in Belos
+  //
+
 #ifdef HAVE_MUELU_BELOS
+
   if (optPrecond) {
+
     RCP<TimeMonitor> tm;
     tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Belos Solve")));
     // Operator and Multivector type that will be used with Belos
@@ -596,17 +573,34 @@ int main(int argc, char *argv[]) {
       if (comm->getRank() == 0) std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
     }
     tm = Teuchos::null;
+
   } //if (optPrecond)
+
 #endif // HAVE_MUELU_BELOS
 
+  //
   // Timer final summaries
+  //
+
   globalTimeMonitor = Teuchos::null; // stop this timer before summary
 
   if (optTimings)
     TimeMonitor::summarize();
+
+  //
 
   return EXIT_SUCCESS;
 }
 
 // TODO: add warning if:
 // DEBUG_MODE, LONG_LONG or KLU
+
+/* test direct solve */
+/*    if (optMaxLevels == 1) {
+      Teuchos::ParameterList amesosList;
+      amesosList.set("PrintTiming", true);
+      smootherPrototype = rcp(new DirectSolver("", amesosList));
+      }
+*/
+
+// TODO: option one level
