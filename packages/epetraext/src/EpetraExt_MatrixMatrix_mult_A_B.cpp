@@ -94,7 +94,16 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
 #endif
 {
 #ifdef HAVE_MPI
-  // So we need to merge the ColMap of B and the TargetMap of Bimport in an AztecOO/Ifpack/ML compliant order.
+ 
+#ifdef ENABLE_MMM_TIMINGS
+  Teuchos::Time myTime("global");
+  Teuchos::TimeMonitor M(myTime);
+  Teuchos::RCP<Teuchos::Time> mtime;
+  mtime=M.getNewTimer("M5 CMap 1");
+  mtime->start();
+#endif
+
+ // So we need to merge the ColMap of B and the TargetMap of Bimport in an AztecOO/Ifpack/ML compliant order.
   Epetra_Util util;
   int i,MyPID = B.Comm().MyPID(), NumProc = B.Comm().NumProc();
   int Bstart=0, Istart=0, Cstart=0;
@@ -123,15 +132,6 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
   Epetra_MpiDistributor *Distor=dynamic_cast<Epetra_MpiDistributor*>(&B.Importer()->Distributor());
   if(!Distor) EPETRA_CHK_ERR(-2);
 
-  // DEBUG
-#ifdef ENABLE_MMM_TIMINGS
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor M(myTime);
-  Teuchos::RCP<Teuchos::Time> mtime;
-  mtime=M.getNewTimer("NewMapUnion 1");
-  mtime->start();
-#endif  
-  
   // **********************
   // Stage 1: Get the owning PIDs
   // **********************
@@ -151,14 +151,21 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
   // **********************
   // Stage 2: Allocate memory
   // **********************
-  int initial_c_size=2.25*BColMap.NumMyElements() - B.RowMap().NumMyElements();
+  int initial_c_size=1.5*BColMap.NumMyElements();
   int Csize=initial_c_size;
   std::vector<int> Cgids(Csize);
+
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=M.getNewTimer("M5 CMap 2");
+  mtime->start();
+#endif
 
   // **********************
   // Stage 3: Local Unknowns
   // **********************
-  if(BColMap.NumMyElements() == DomainMap.NumMyElements()) {
+  if(B.Importer()->NumSameIDs() == DomainMap.NumMyElements()) {
     // B's colmap has all of the domain elements.  We can just copy those into the start of the array.
     DomainMap.MyGlobalElements(&Cgids[0]);
     Cstart=DomainMap.NumMyElements();
@@ -191,6 +198,13 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
   for(i=0;i<Ni && Ipids[i]==-1; i++) {}
   Istart=i;
 
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=M.getNewTimer("M5 CMap 3");
+  mtime->start();
+#endif
+
+
   // **********************
   // Stage 4: Processor-by-processor set_union
   // **********************
@@ -201,16 +215,13 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
   std::vector<int> Btemp(initial_temp_length), Itemp(initial_temp_length);
 
   while (Bstart < Nb || Istart < Ni) {
-    //    printf("[%d] Loop Top\n",MyPID); fflush(stdout);
-    /*    B.Comm().Barrier();
-    B.Comm().Barrier();
-    B.Comm().Barrier();*/
-
     int Bproc=NumProc+1, Iproc=NumProc+1, Cproc;
 
     // Find the next active processor ID
     if(Bstart < Nb) Bproc=Bpids[Bstart];
     if(Istart < Ni) Iproc=Ipids[Istart];
+    //    printf("[%d] B=%2d/%2d[proc %d] I=%2d/%2d[proc %d]\n",B.Comm().MyPID(),Bstart,Nb,Bproc,Istart,Ni,Iproc);
+
     Cproc = (Bproc < Iproc)?Bproc:Iproc;
     
     if(Bproc == Cproc && Iproc != Cproc) {
@@ -271,14 +282,20 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
 
   } // end while
 
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=M.getNewTimer("M5 CMap 4");
+  mtime->start();
+#endif
+
+
   // **********************
   // Stage 5: Call constructor
   // **********************
   // Make the map
   unionmap=new Epetra_Map(-1,Cstart,&Cgids[0],B.ColMap().IndexBase(),B.Comm());
-
 #ifdef ENABLE_MMM_TIMINGS
- mtime->stop();
+  mtime->stop();
 #endif
 
   return 0;
@@ -311,6 +328,13 @@ int  MatrixMatrix::mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
 		       std::vector<int> & Bcol2Ccol,
 		       std::vector<int> & Bimportcol2Ccol,
 		       Epetra_CrsMatrix& C){
+#ifdef ENABLE_MMM_TIMINGS
+  Teuchos::Time myTime("global");
+  Teuchos::TimeMonitor M(myTime);
+  Teuchos::RCP<Teuchos::Time> mtime;
+  mtime=M.getNewTimer("M5 SerialCore");
+  mtime->start();
+#endif
 
   // *****************************
   // Improved Parallel Gustavson in Local IDs
@@ -416,9 +440,7 @@ int  MatrixMatrix::mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
   CSR_rowptr[m]=CSR_ip;
 
 #ifdef ENABLE_MMM_TIMINGS
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor M(myTime);
-  Teuchos::RCP<Teuchos::Time> mtime;
+  mtime->stop();
   mtime=M.getNewTimer("Final Sort");
   mtime->start();
 #endif
@@ -857,9 +879,6 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
-  if(NewFlag) mtime=M.getNewTimer("M5 Core");
-  else mtime=M.getNewTimer("M5r Core");
-  mtime->start();
 #endif
 
   // Call the appropriate core routine
@@ -869,10 +888,6 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
   else {
     EPETRA_CHK_ERR(mult_A_B_reuse(A,B,Bview,Bcol2Ccol,Bimportcol2Ccol,C));
   }
-  
-#ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-#endif
 
   // Cleanup      
   delete mapunion1;

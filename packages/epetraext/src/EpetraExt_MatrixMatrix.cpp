@@ -587,6 +587,10 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   //of M, then those remotely-owned rows will be imported into
   //'Mview.importMatrix', and views of them will be included in 'Mview'.
 
+  // The prototype importer, if used, has to know who owns all of the PIDs in M's rowmap.  
+  // The typical use of this is to provide A's column map when I&XV is called for B, for
+  // a C = A * B multiply.  
+
 #ifdef ENABLE_MMM_TIMINGS
   Teuchos::Time myTime("global");
   Teuchos::TimeMonitor MM(myTime);
@@ -630,6 +634,7 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   EPETRA_CHK_ERR( M.ExtractCrsDataPointers(rowptr,colind,vals) );
 
   if(Mrowmap.SameAs(targetMap)) {
+    // Short Circuit: The Row and Target Maps are the Same
     for(i=0; i<Mview.numRows; ++i) {
       Mview.numEntriesPerRow[i] = rowptr[i+1]-rowptr[i];
       Mview.indices[i]          = &colind[rowptr[i]];
@@ -641,7 +646,32 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 #endif
     return 0;
   }
-  else {  
+  else if(prototypeImporter && prototypeImporter->SourceMap().SameAs(M.RowMap()) && prototypeImporter->TargetMap().SameAs(targetMap)){
+    // The prototypeImporter can tell me what is local and what is remote
+    int * PermuteToLIDs   = prototypeImporter->PermuteToLIDs();
+    int * PermuteFromLIDs = prototypeImporter->PermuteFromLIDs();
+    int * RemoteLIDs      = prototypeImporter->RemoteLIDs();
+    for(int i=0; i<prototypeImporter->NumSameIDs();i++){    
+      Mview.numEntriesPerRow[i] = rowptr[i+1]-rowptr[i];
+      Mview.indices[i]          = &colind[rowptr[i]];
+      Mview.values[i]           = &vals[rowptr[i]];
+      Mview.remote[i]           = false;
+    }
+    for(int i=0; i<prototypeImporter->NumPermuteIDs();i++){
+      int to                     = PermuteToLIDs[i];
+      int from                   = PermuteFromLIDs[i];
+      Mview.numEntriesPerRow[to] = rowptr[from+1]-rowptr[from];
+      Mview.indices[to]          = &colind[rowptr[from]];
+      Mview.values[to]           = &vals[rowptr[from]];
+      Mview.remote[to]           = false;
+    }
+    for(int i=0; i<prototypeImporter->NumRemoteIDs();i++){
+      Mview.remote[RemoteLIDs[i]] = true;
+      ++Mview.numRemote;
+    }
+  }
+  else {
+    // Only LID can tell me who is local and who is remote
     for(i=0; i<Mview.numRows; ++i) {
       int mlid = Mrowmap.LID(Mrows[i]);
       if (mlid < 0) {
@@ -713,9 +743,9 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 #ifdef LIGHTWEIGHT_IMPORT
     Epetra_Import    * importer=0;
     RemoteOnlyImport * Rimporter=0;
-    if(prototypeImporter && prototypeImporter->SourceMap().SameAs(M.RowMap())) {
+    if(prototypeImporter && prototypeImporter->SourceMap().SameAs(M.RowMap()) && prototypeImporter->TargetMap().SameAs(targetMap)) {
       Rimporter = new RemoteOnlyImport(*prototypeImporter,MremoteRowMap);
-      //      if(!M.Comm().MyPID()) printf("Using RemoteOnlyImport\n");
+      //if(!M.Comm().MyPID()) printf("Using RemoteOnlyImport\n");
     }
     else if(!prototypeImporter) {
       importer=new Epetra_Import(MremoteRowMap, Mrowmap);
@@ -742,16 +772,12 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 #endif
       Mview.importMatrix = new LightweightCrsMatrix(M,*importer);
 #else
-    //  if(Mview.importMatrix) delete Mview.importMatrix;
-    //  Mview.importMatrix = new Epetra_CrsMatrix(M,importer,MremoteRowMap);
-    //    Mview.importMatrix = new Epetra_CrsMatrix(M,importer,M.RangeMap());
     Mview.importMatrix = new Epetra_CrsMatrix(Copy, MremoteRowMap, 1);
     EPETRA_CHK_ERR( Mview.importMatrix->Import(M, *importer, Insert) );
     EPETRA_CHK_ERR( Mview.importMatrix->FillComplete(M.DomainMap(), M.RangeMap()) );
 #endif
 
 #ifdef ENABLE_MMM_TIMINGS
-    mtime->stop();
     mtime->stop();
     mtime=MM.getNewTimer("All I&X Import-4");
     mtime->start();
@@ -1097,7 +1123,7 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
 
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
-  mtime=M.getNewTimer("All Solve");
+  mtime=M.getNewTimer("All Multiply");
   mtime->start();
 #endif
 

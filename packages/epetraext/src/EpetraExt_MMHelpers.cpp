@@ -1035,7 +1035,19 @@ LightweightCrsMatrix::LightweightCrsMatrix(const Epetra_CrsMatrix & SourceMatrix
   ColMap_(RowImporter.TargetMap()),
   DomainMap_(SourceMatrix.DomainMap())
 { 
+#ifdef ENABLE_MMM_TIMINGS
+  Teuchos::Time myTime("global");
+  Teuchos::TimeMonitor MM(myTime);
+  Teuchos::RCP<Teuchos::Time> mtime;
+  mtime=MM.getNewTimer("LWCRS Total");
+  mtime->start();
+#endif
+
   Construct<RemoteOnlyImport>(SourceMatrix,RowImporter);
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+#endif
+
 }
 
 
