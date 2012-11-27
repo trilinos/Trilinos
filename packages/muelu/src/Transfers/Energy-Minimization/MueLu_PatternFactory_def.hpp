@@ -55,14 +55,6 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PatternFactory()
-  { }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~PatternFactory()
-  { }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "P");
   }
