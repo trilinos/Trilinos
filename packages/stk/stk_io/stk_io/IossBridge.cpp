@@ -1179,6 +1179,35 @@ void define_element_block(stk::mesh::Part &part,
   ioss_add_fields(part, part_primary_entity_rank(part), eb, Ioss::Field::ATTRIBUTE);
 }
 
+void define_communication_maps(const stk::mesh::BulkData &bulk,
+			       Ioss::Region &io_region,
+			       const stk::mesh::Selector *anded_selector)
+{
+  if (bulk.parallel_size() > 1) {
+    const stk::mesh::MetaData & meta = mesh::MetaData::get(bulk);
+    const std::string cs_name("node_symm_comm_spec");
+    
+    mesh::Selector selector = meta.globally_shared_part();
+    if (anded_selector) selector &= *anded_selector;
+
+    std::vector<mesh::Entity> entities;
+    get_selected_entities(selector, bulk.buckets(node_rank(meta)), entities);
+  
+    size_t size = 0;
+    for (size_t i=0; i < entities.size(); i++) {
+      for ( stk::mesh::PairIterEntityComm ec = bulk.entity_comm(entities[i].key()); ! ec.empty() ; ++ec ) {
+	if (ec->ghost_id == 0) {
+	  size++;
+	}
+      }
+    }
+
+    Ioss::DatabaseIO *dbo = io_region.get_database();
+    Ioss::CommSet *io_cs = new Ioss::CommSet(dbo, cs_name, "node", size);
+    io_region.add(io_cs);
+  }
+}
+
 void define_side_set(stk::mesh::Part &part,
                      const stk::mesh::BulkData &bulk,
                      Ioss::Region &io_region,
@@ -1279,6 +1308,8 @@ void define_output_db(Ioss::Region & io_region ,
 	}
   }
 
+  define_communication_maps(bulk_data, io_region, anded_selector);
+  
   if (input_region != NULL)
 	io_region.synchronize_id_and_name(input_region, true);
 
@@ -1584,6 +1615,43 @@ void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk,
 }
 
 template <typename INT>
+void output_communication_maps(Ioss::Region &io_region,
+			       const stk::mesh::BulkData &bulk,
+			       const stk::mesh::Selector *anded_selector,
+			       INT /*dummy*/)
+{
+  if (bulk.parallel_size() > 1) {
+    const stk::mesh::MetaData & meta = mesh::MetaData::get(bulk);
+    mesh::Selector selector = meta.globally_shared_part();
+    if (anded_selector) selector &= *anded_selector;
+
+    std::vector<mesh::Entity> entities;
+    get_selected_entities(selector, bulk.buckets(node_rank(meta)), entities);
+  
+    const std::string cs_name("node_symm_comm_spec");
+    Ioss::CommSet * io_cs = io_region.get_commset(cs_name);
+    ThrowRequire(io_cs != NULL);
+
+    // Allocate data space to store <id, processor> pair
+    assert(io_cs->field_exists("entity_processor"));
+    int size = io_cs->get_field("entity_processor").raw_count();
+
+    std::vector<INT> ep;
+    ep.reserve(size*2);
+
+    for (size_t i=0; i < entities.size(); i++) {
+      for ( stk::mesh::PairIterEntityComm ec = bulk.entity_comm(entities[i].key()); ! ec.empty() ; ++ec ) {
+	if (ec->ghost_id == 0) {
+	  ep.push_back(entities[i].identifier());
+	  ep.push_back(ec->proc);
+	}
+      }
+    }
+    io_cs->put_field_data("entity_processor", ep);
+  }
+}
+
+template <typename INT>
 void output_side_set(Ioss::SideSet *ss,
                      const stk::mesh::BulkData &bulk,
                      const stk::mesh::Selector *anded_selector, INT dummy)
@@ -1650,6 +1718,11 @@ void write_output_db(Ioss::Region& io_region,
 	  output_side_set(*it, bulk, anded_selector, z32);
   }
 
+  if (ints64bit)
+    output_communication_maps(io_region, bulk, anded_selector, z64);
+  else
+    output_communication_maps(io_region, bulk, anded_selector, z32);
+  
   io_region.end_mode( Ioss::STATE_MODEL );
 }
 
