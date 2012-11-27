@@ -67,19 +67,15 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MapTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MapTransferFactory(std::string mapName, /*Teuchos::RCP<const FactoryBase> PtentFact,*/ Teuchos::RCP<const FactoryBase> mapFact)
-  : mapName_(mapName), /*PtentFact_(PtentFact),*/ mapFact_(mapFact)
+  MapTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MapTransferFactory(std::string mapName, Teuchos::RCP<const FactoryBase> mapFact)
+  : mapName_(mapName), mapFact_(mapFact)
     {
 
     }
 
-  //template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  //MapTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~MapTransferFactory() {}
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void MapTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     fineLevel.DeclareInput(mapName_,mapFact_.get(),this);
-    //coarseLevel.DeclareInput("P", PtentFact_.get(),this);
     Teuchos::RCP<const FactoryBase> tentPFact = GetFactory("P");
     if (tentPFact == Teuchos::null) { tentPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
     coarseLevel.DeclareInput("P", tentPFact.get(), this);

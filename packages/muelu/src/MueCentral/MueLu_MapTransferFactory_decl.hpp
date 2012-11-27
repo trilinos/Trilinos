@@ -56,8 +56,6 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
 
-//#include <Xpetra_MapExtractorFactory.hpp> // why no forward declarations in Xpetra?
-
 namespace MueLu {
 
   /*!
@@ -75,14 +73,11 @@ namespace MueLu {
 #undef MUELU_MAPTRANSFERFACTORY_SHORT
     #include "MueLu_UseShortNames.hpp"
 
-    //typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorClass; // TODO move me to ShortNames...
-
   public:
     //! @name Constructors/Destructors.
     //@{
 
     //! Constructor.
-    //MapTransferFactory(std::string mapName, Teuchos::RCP<const FactoryBase> PtentFact = Teuchos::null, Teuchos::RCP<const FactoryBase> mapFact = Teuchos::null);
     MapTransferFactory(std::string mapName, Teuchos::RCP<const FactoryBase> mapFact = Teuchos::null);
 
     //! Destructor.
@@ -107,7 +102,6 @@ namespace MueLu {
   private:
 
     std::string              mapName_;   ///< name of input and output variable
-    //RCP<const FactoryBase>   PtentFact_; ///< tentative P Factory
     RCP<const FactoryBase>   mapFact_;   ///< generating factory of input variable
 
   }; // class MapTransferFactory
