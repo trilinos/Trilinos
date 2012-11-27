@@ -37,7 +37,6 @@ MultiVectorTransferFactory
 MapTransferFactory
 SchurComplementFactory
 AmalgamationFactory
-AggStatTransferFactory
 CoarseMapFactory
 BlockedCoarseMapFactory
 EminPFactory

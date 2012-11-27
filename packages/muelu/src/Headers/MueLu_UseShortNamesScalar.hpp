@@ -166,10 +166,6 @@ typedef MueLu::PermutedTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,Lo
 typedef MueLu::AmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AmalgamationFactory;
 #endif
 
-#ifdef MUELU_AGGSTATTRANSFERFACTORY_SHORT
-typedef MueLu::AggStatTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AggStatTransferFactory;
-#endif
-
 #ifdef MUELU_COARSEMAPFACTORY_SHORT
 typedef MueLu::CoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> CoarseMapFactory;
 #endif
