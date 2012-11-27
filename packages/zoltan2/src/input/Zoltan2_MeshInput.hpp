@@ -210,8 +210,8 @@ public:
 // TODO:  Later may allow user to not implement second adjacencies and, if we want them,
 // TODO:  we compute A^T A, where A is matrix of first adjacencies.
 
-  virtual size_t getLocal2ndAdjacencyIDsView(entityType sourcetarget, entityType through,
-     const lno_t *&offsets, const gid_t *& adjacencyIds) const = 0;
+  virtual size_t getLocal2ndAdjacencyIDsView(entityType sourcetarget,
+     entityType through, const lno_t *&offsets, const gid_t *& adjacencyIds) const = 0;
 
 
   /*! \brief Provide a pointer to one of the number of this process'
@@ -241,22 +241,22 @@ public:
      const scalar_t *&weights, int &stride, int number) const = 0;
 
 
-  /*! \brief  Provide a pointer to the adjacency weights, if any.
+  /*! \brief  Provide a pointer to the second adjacency weights, if any.
 
       \param weights is the list of weights of the given number for
-           the adjacencies returned in getLocalAdjacencyIDsView().
+           the second adjacencies returned in getLocal2ndAdjacencyIDsView().
       \param stride The k'th weight is located at weights[stride*k]
       \param number ranges from zero to one less than 
-                   getNumWeightsPerAdjacencyID().
+                   getNumWeightsPer2ndAdjacencyID().
        \return The number of weights listed, which should be the same
-               as the number of adjacencies in getLocalAdjacencyIDsView().
+               as the number of adjacencies in getLocal2ndAdjacencyIDsView().
 
       Zoltan2 does not copy your data.  The data pointed to by weights
       must remain valid for the lifetime of this InputAdapter.
    */
 
-  virtual size_t getLocalAdjacencyIDWeightsView(entityType etype,
-     const scalar_t *&weights, int &stride, int number) const = 0;
+  virtual size_t getLocal2ndAdjacencyIDWeightsView(entityType sourcetarget,
+     entityType through, const scalar_t *&weights, int &stride, int number) const = 0;
 
 
   /*! \brief Apply a partitioning problem solution to an input.  
