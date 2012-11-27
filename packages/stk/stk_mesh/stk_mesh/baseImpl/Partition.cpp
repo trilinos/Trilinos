@@ -232,8 +232,6 @@ void Partition::compress(bool force)
     }
 
 #ifdef PARTITION_DONT_SORT_SMALL_PARTITIONS_ON_COMPRESS
-    // Note that we use this particular conditional because m_buckets is not used until the set of
-    // buckets in the partition needs to change.
     if (num_buckets() > 1)
     {
         std::sort( entities.begin(), entities.end(), EntityLess() );
@@ -270,7 +268,6 @@ void Partition::compress(bool force)
     m_buckets.resize(1);
     m_buckets[0] = new_bucket;
     m_repository->m_need_sync_from_partitions[m_rank] = true;
-    // m_modifyingBucketSet = true;
     m_updated_since_compress = m_updated_since_sort = false;
 }
 

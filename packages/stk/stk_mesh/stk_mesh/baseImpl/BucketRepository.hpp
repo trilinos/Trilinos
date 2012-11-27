@@ -12,7 +12,6 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Iterators.hpp>
-#include <stk_mesh/baseImpl/Partition.hpp>
 
 
 #define USE_STK_MESH_IMPL_PARTITION

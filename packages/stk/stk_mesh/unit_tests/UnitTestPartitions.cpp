@@ -6,6 +6,7 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
+#include <stk_mesh/baseImpl/Partition.hpp>
 #include <stk_util/environment/WallTime.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>

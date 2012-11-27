@@ -11,6 +11,7 @@
 #include <stdexcept>
 
 #include <stk_mesh/baseImpl/BucketRepository.hpp>
+#include <stk_mesh/baseImpl/Partition.hpp>
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>

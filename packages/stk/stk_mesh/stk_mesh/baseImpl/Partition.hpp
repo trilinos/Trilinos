@@ -170,7 +170,6 @@ lower_bound( std::vector<Partition*> & v , const unsigned * key )
 { return std::lower_bound( v.begin() , v.end() , key , PartitionLess() ); }
 
 
-
 } // impl
 } // mesh
 } // stk
