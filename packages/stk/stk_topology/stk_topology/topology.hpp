@@ -6,6 +6,7 @@
 
 namespace stk {
 
+
 struct topology
 {
 
@@ -20,6 +21,7 @@ struct topology
     , INVALID_RANK = END_RANK
   };
 
+  //To add new topologies consult the toolkit team
   enum topology_t
   {
       BEGIN_TOPOLOGY
@@ -65,15 +67,15 @@ struct topology
     , WEDGE_6
     , WEDGE_15
     , WEDGE_18
-    , HEX_8, HEXAHEDRON_8  = HEX_8
+    , HEX_8,  HEXAHEDRON_8  = HEX_8
     , HEX_20, HEXAHEDRON_20 = HEX_20
     , HEX_27, HEXAHEDRON_27 = HEX_27
     , END_TOPOLOGY
     , INVALID_TOPOLOGY = END_TOPOLOGY
   };
 
-  static const char * rank_names[];
-  static const char * topology_names[];
+  static const char * rank_names[];     // indexed by rank_t
+  static const char * topology_names[]; // indexed by topology_t
 
   //***************************************************************************
   //member functions
@@ -124,6 +126,9 @@ struct topology
   /// how many different node permutations does this topology have
   int num_permutations() const;
 
+  /// how many different node permutations does this topology have
+  int num_positive_permutations() const;
+
   /// is this topology defined on the given spatial dimension
   bool defined_on_spatial_dimension(int spatial_dimension) const;
 
@@ -171,6 +176,10 @@ struct topology
   template <typename NodeArray, typename NodeOutputIterator>
   void permutation_nodes(const NodeArray & nodes, int permutation_ordinal, NodeOutputIterator output_nodes) const;
 
+  /// do the two arrays defined equivalent entities (same nodes, but maybe a different permutation)
+  /// return a pair<bool, permutation_number> bool and permutation number from a to b
+  //template <typename NodeArrayA, typename NodeArrayB>
+  //std::pair<bool,int> equivalent(const NodeArrayA & a, const NodeArrayB & b);
 
   /// fill the output ordinals with the ordinals that make up the given sub topology
   template <typename OrdinalOutputIterator>

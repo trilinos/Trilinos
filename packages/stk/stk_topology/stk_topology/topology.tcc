@@ -120,6 +120,7 @@ STKTOPOLOGY_SIMPLE_MEMBER(num_edges,int)
 STKTOPOLOGY_SIMPLE_MEMBER(num_faces,int)
 STKTOPOLOGY_SIMPLE_MEMBER(num_sides,int)
 STKTOPOLOGY_SIMPLE_MEMBER(num_permutations,int)
+STKTOPOLOGY_SIMPLE_MEMBER(num_positive_permutations,int)
 STKTOPOLOGY_SIMPLE_MEMBER(base,topology)
 
 STKTOPOLOGY_ORDINAL_MEMBER(defined_on_spatial_dimension,bool)

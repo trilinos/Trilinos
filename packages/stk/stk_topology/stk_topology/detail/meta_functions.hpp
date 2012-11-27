@@ -6,7 +6,8 @@
 #include <boost/mpl/bool.hpp>
 #include <boost/mpl/integral_c.hpp>
 #include <boost/mpl/at.hpp>
-#include <boost/mpl/if.hpp>
+#include <boost/mpl/eval_if.hpp>
+#include <boost/mpl/identity.hpp>
 
 #define STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(name,result)     \
   template <typename Topology>                                   \
@@ -38,65 +39,65 @@ STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(base,topology::topology_t)
 
 template <typename Topology, int SpatialDimension>
 struct defined_on_spatial_dimension_
-  : public boost::mpl::if_c<  (SpatialDimension < 4)
-      , typename boost::mpl::at_c< typename Topology::spatial_dimension_vector, SpatialDimension >::type
-      , boost::mpl::false_
+  : public boost::mpl::eval_if_c<  (SpatialDimension < 4)
+      , boost::mpl::at_c< typename Topology::spatial_dimension_vector, SpatialDimension >
+      , boost::mpl::identity< boost::mpl::false_>
     >::type
 {};
 
 template <typename Topology, int EdgeOrdinal>
 struct edge_topology_
-  : public boost::mpl::if_c<  (EdgeOrdinal < num_edges_<Topology>::value)
-      , typename boost::mpl::at_c< typename Topology::edge_topology_vector, EdgeOrdinal >::type
-      , boost::mpl::integral_c<topology::topology_t, topology::INVALID_TOPOLOGY>
+  : public boost::mpl::eval_if_c<  (EdgeOrdinal < num_edges_<Topology>::value)
+      , boost::mpl::at_c< typename Topology::edge_topology_vector, EdgeOrdinal >
+      , boost::mpl::identity< boost::mpl::integral_c<topology::topology_t, topology::INVALID_TOPOLOGY> >
     >::type
 {};
 
 template <typename Topology, int EdgeOrdinal>
 struct edge_node_ordinals_
-  : public boost::mpl::if_c<  (EdgeOrdinal < num_edges_<Topology>::value)
-      , typename  boost::mpl::at_c< typename Topology::edge_node_ordinals_vector, EdgeOrdinal >::type
-      , boost::mpl::vector_c<int>
+  : public boost::mpl::eval_if_c<  (EdgeOrdinal < num_edges_<Topology>::value)
+      , boost::mpl::at_c< typename Topology::edge_node_ordinals_vector, EdgeOrdinal >
+      , boost::mpl::identity< boost::mpl::vector_c<int> >
     >::type
 {};
 
 template <typename Topology, int FaceOrdinal>
 struct face_topology_
-  : public boost::mpl::if_c<  (FaceOrdinal < num_faces_<Topology>::value)
-      , typename  boost::mpl::at_c< typename Topology::face_topology_vector, FaceOrdinal >::type
-      , boost::mpl::integral_c<topology::topology_t, topology::INVALID_TOPOLOGY>
+  : public boost::mpl::eval_if_c<  (FaceOrdinal < num_faces_<Topology>::value)
+      , boost::mpl::at_c< typename Topology::face_topology_vector, FaceOrdinal >
+      , boost::mpl::identity< boost::mpl::integral_c<topology::topology_t, topology::INVALID_TOPOLOGY> >
     >::type
 {};
 
 template <typename Topology, int FaceOrdinal>
 struct face_node_ordinals_
-  : public boost::mpl::if_c<  (FaceOrdinal < num_faces_<Topology>::value)
-      , typename  boost::mpl::at_c< typename Topology::face_node_ordinals_vector, FaceOrdinal >::type
-      , boost::mpl::vector_c<int>
+  : public boost::mpl::eval_if_c<  (FaceOrdinal < num_faces_<Topology>::value)
+      , boost::mpl::at_c< typename Topology::face_node_ordinals_vector, FaceOrdinal >
+      , boost::mpl::identity< boost::mpl::vector_c<int> >
     >::type
 {};
 
 template <typename Topology, int FaceOrdinal>
 struct side_topology_
-  : public boost::mpl::if_c<  (FaceOrdinal < num_sides_<Topology>::value)
-      , typename  boost::mpl::at_c< typename Topology::side_topology_vector, FaceOrdinal >::type
-      , boost::mpl::integral_c<topology::topology_t, topology::INVALID_TOPOLOGY>
+  : public boost::mpl::eval_if_c<  (FaceOrdinal < num_sides_<Topology>::value)
+      , boost::mpl::at_c< typename Topology::side_topology_vector, FaceOrdinal >
+      , boost::mpl::identity< boost::mpl::integral_c<topology::topology_t, topology::INVALID_TOPOLOGY> >
     >::type
 {};
 
 template <typename Topology, int FaceOrdinal>
 struct side_node_ordinals_
-  : public boost::mpl::if_c<  (FaceOrdinal < num_sides_<Topology>::value)
-      , typename  boost::mpl::at_c< typename Topology::side_node_ordinals_vector, FaceOrdinal >::type
-      , boost::mpl::vector_c<int>
+  : public boost::mpl::eval_if_c<  (FaceOrdinal < num_sides_<Topology>::value)
+      , boost::mpl::at_c< typename Topology::side_node_ordinals_vector, FaceOrdinal >
+      , boost::mpl::identity< boost::mpl::vector_c<int> >
     >::type
 {};
 
 template <typename Topology, int PermutationOrdinal>
 struct permutation_node_ordinals_
-  : public boost::mpl::if_c<  (PermutationOrdinal < num_permutations_<Topology>::value)
-      , typename  boost::mpl::at_c< typename Topology::permutation_node_ordinals_vector, PermutationOrdinal >::type
-      , boost::mpl::vector_c<int>
+  : public boost::mpl::eval_if_c<  (PermutationOrdinal < num_permutations_<Topology>::value)
+      , boost::mpl::at_c< typename Topology::permutation_node_ordinals_vector, PermutationOrdinal >
+      , boost::mpl::identity< boost::mpl::vector_c<int> >
     >::type
 {};
 

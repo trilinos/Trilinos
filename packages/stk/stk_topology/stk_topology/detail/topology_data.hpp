@@ -32,6 +32,7 @@ struct topology_data
   static const int num_edges = 0;
   static const int num_faces = 0;
   static const int num_permutations = 0;
+  static const int num_positive_permutations = 0;
 
   typedef boost::mpl::vector_c<   bool
                                 , false // 0d
@@ -74,6 +75,7 @@ struct topology_data<topology::NODE>
   static const int num_edges = 0;
   static const int num_faces = 0;
   static const int num_permutations = 0;
+  static const int num_positive_permutations = 0;
 
   typedef boost::mpl::vector_c<   bool
                                 , false // 0d
@@ -116,6 +118,7 @@ struct topology_data<topology::PARTICLE>
   static const int num_edges = 0;
   static const int num_faces = 0;
   static const int num_permutations = 1;
+  static const int num_positive_permutations = 1;
 
   typedef boost::mpl::vector_c<   bool
                                 , false // 0d
@@ -165,6 +168,7 @@ struct topology_data<topology::LINE_2>
   static const int num_edges = 0;
   static const int num_faces = 0;
   static const int num_permutations = 2;
+  static const int num_positive_permutations = 1;
 
   typedef boost::mpl::vector_c<   bool
                                 , false // 0d
@@ -440,6 +444,7 @@ struct topology_data<topology::TRI_3>
   static const int num_edges = 3;
   static const int num_faces = 0;
   static const int num_permutations = 6;
+  static const int num_positive_permutations = 3;
 
   typedef boost::mpl::vector_c<   bool
                                 , false // 0d
@@ -773,6 +778,7 @@ struct topology_data<topology::QUAD_4>
   static const int num_edges = 4;
   static const int num_faces = 0;
   static const int num_permutations = 8;
+  static const int num_positive_permutations = 4;
 
   typedef boost::mpl::vector_c<   bool
                                 , false // 0d
@@ -1062,6 +1068,7 @@ struct topology_data<topology::TET_4>
   static const int num_edges = 6;
   static const int num_faces = 4;
   static const int num_permutations = 1;
+  static const int num_positive_permutations = 1;
 
   typedef boost::mpl::vector_c<   bool
                                 , false // 0d
@@ -1215,6 +1222,7 @@ struct topology_data<topology::PYRAMID_5>
   static const int num_edges = 8;
   static const int num_faces = 5;
   static const int num_permutations = 1;
+  static const int num_positive_permutations = 1;
 
   typedef boost::mpl::vector_c<   bool
                                 , false // 0d
@@ -1372,6 +1380,7 @@ struct topology_data<topology::WEDGE_6>
   static const int num_edges = 9;
   static const int num_faces = 5;
   static const int num_permutations = 1;
+  static const int num_positive_permutations = 1;
 
   typedef boost::mpl::vector_c<   bool
                                 , false // 0d
@@ -1618,6 +1627,7 @@ struct topology_data<topology::HEX_8>
   static const int num_edges = 12;
   static const int num_faces = 6;
   static const int num_permutations = 1;
+  static const int num_positive_permutations = 1;
 
   typedef boost::mpl::vector_c<   bool
                                 , false // 0d

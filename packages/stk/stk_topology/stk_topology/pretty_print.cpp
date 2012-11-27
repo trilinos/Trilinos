@@ -63,14 +63,26 @@ void verbose_print_topology(std::ostream &out, topology t)
   }
 
   out << std::setw(shiftwidth) << "num permutations: " << t.num_permutations() << std::endl;
+  out << std::setw(shiftwidth) << "num positive permutations: " << t.num_positive_permutations() << std::endl;
   if (t.num_permutations() > 0) {
-    for (int i=0, e=t.num_permutations(); i<e; ++i) {
+    for (int i=0, e=t.num_positive_permutations(); i<e; ++i) {
       out << std::setw(shiftwidth) << i << ": (";
       t.permutation_node_ordinals(i,node_ordinals);
       for (int j=0, ne = t.num_nodes(); j < ne; ++j) {
         out << node_ordinals[j] << ", ";
       }
       out << "\b\b)  " << std::endl;
+    }
+    out << std::setw(shiftwidth) << "num negative permutations: " << t.num_permutations() - t.num_positive_permutations() << std::endl;
+    if (t.num_positive_permutations() < t.num_permutations()) {
+      for (int i=t.num_positive_permutations(), e=t.num_permutations(); i<e; ++i) {
+        out << std::setw(shiftwidth) << i << ": (";
+        t.permutation_node_ordinals(i,node_ordinals);
+        for (int j=0, ne = t.num_nodes(); j < ne; ++j) {
+          out << node_ordinals[j] << ", ";
+        }
+        out << "\b\b)  " << std::endl;
+      }
     }
   }
 
