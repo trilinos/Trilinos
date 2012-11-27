@@ -19,6 +19,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
 # ScalingTest is compile with long long int when Teuchos_ENABLE_LONG_LONG_INT=ON
 # The name of the executable is changed to make sure that long int support is correctly
@@ -50,6 +51,13 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
   TRIBITS_ADD_EXECUTABLE( #TODO: to be add to nightly tests
     ScalingTestParamList  #TODO: Suffix Int/LongInt when done in the source code
     SOURCES ScalingTestParamList.cpp
+    COMM serial mpi
+    DEPLIBS muelu xpetra muelu-adapters
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    RAPScalingTest
+    SOURCES RAPScalingTest.cpp
     COMM serial mpi
     DEPLIBS muelu xpetra muelu-adapters
     )
