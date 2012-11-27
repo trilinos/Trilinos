@@ -164,8 +164,7 @@ int main(int argc, char *argv[]) {
 
   fineLevel.Set("A",A);
 
-  TentativePFactory tentpFactory;
-  SaPFactory sapFactory(rcpFromRef(tentpFactory));
+  SaPFactory sapFactory;
   TransPFactory transPFactory;
   transPFactory.SetFactory("P", rcpFromRef(sapFactory));
   coarseLevel.Request("P", &sapFactory);
