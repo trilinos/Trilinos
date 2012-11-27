@@ -5,6 +5,9 @@
 # syntax:
 #    compareTE.sh [-hasl] file1 file2
 #
+# example:
+#    compareTE.sh -a screen.epetra screen.tpetra
+#
 # optional arguments:
 #   -h           help
 #   -a           all timings (no by default)
@@ -30,10 +33,10 @@
 # http://blog.mafr.de/2007/08/05/cmdline-options-in-shell-scripts
 
 USAGE="Usage: `basename $0` [-hasl] file1 file2"
-OPTDESCR="\n  -h  help\n   -a  all timings\n  -s  timings summed over all levels\n  -l  timings level-by-level\n"
+OPTDESCR="\n  -h  help\n   -a  all timings [off]\n  -s  timings summed over all levels [off]\n  -l  timings level-by-level[off]\n"
 
 numReqd=2;
-printAll=0;
+printAll=1;
 printSummedStats=0;
 printLevelStats=0;
 # Parse command line options.
