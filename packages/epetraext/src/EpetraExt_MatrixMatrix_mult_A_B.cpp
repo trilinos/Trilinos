@@ -797,7 +797,14 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 
   // If the user doesn't want us to call FillComplete, use the general routine
   if(!call_FillComplete_on_result) {
+#ifdef ENABLE_MMM_TIMINGS
+    mtime=M.getNewTimer("M4 Multiply");
+    mtime->start();
+#endif
     rv=mult_A_B_general(A,Aview,B,Bview,C,false);
+#ifdef ENABLE_MMM_TIMINGS
+    mtime->stop();
+#endif
     return rv;
   }
 
@@ -813,7 +820,14 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 
   // It's a new matrix that hasn't been fill-completed, use the general routine
   if(!NewFlag && ExtractFailFlag){
+#ifdef ENABLE_MMM_TIMINGS
+    mtime=M.getNewTimer("M4 Multiply");
+    mtime->start();
+#endif
     rv=mult_A_B_general(A,Aview,B,Bview,C,call_FillComplete_on_result);
+#ifdef ENABLE_MMM_TIMINGS
+    mtime->stop();
+#endif
     return rv;
   }
 
