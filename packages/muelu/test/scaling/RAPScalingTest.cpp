@@ -58,17 +58,17 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_SaPFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
+#include "MueLu_RAPFactory.hpp"
 
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_UseShortNames.hpp>
 
 
 int main(int argc, char *argv[]) {
-  using Teuchos::RCP; // reference count pointers
+  using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::Time;
   using Teuchos::TimeMonitor;
 
   //
@@ -82,19 +82,19 @@ int main(int argc, char *argv[]) {
   // Parameters
   //
 
-  Teuchos::CommandLineProcessor clp(false); // Note:
+  Teuchos::CommandLineProcessor clp(false);
 
-  GO nx,ny,nz;
+  GO nx, ny, nz;
   nx=350;
   ny=350;
   nz=350;
   Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  int  numRAPs=100; clp.setOption("nraps",&numRAPs,"number of RAPS to perform");
-  bool printTimings=true; clp.setOption("timings","notimings",&printTimings,"print timings to screen");
+  int  optNraps   = 100;  clp.setOption("nraps",                &optNraps,   "number of RAPS to perform");
+  bool optTimings = true; clp.setOption("timings", "notimings", &optTimings, "print timings to screen");
 
-  switch (clp.parse(argc,argv)) {
+  switch (clp.parse(argc, argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
   case Teuchos::CommandLineProcessor::PARSE_ERROR:
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
@@ -110,84 +110,94 @@ int main(int argc, char *argv[]) {
   // Construct the problem
   //
 
-  RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
-  RCP<TimeMonitor> tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("RAPScalingTest: 1 - Matrix creation")));
+  {
+    TimeMonitor globalTimeMonitor(*TimeMonitor::getNewTimer("RAPScalingTest: S - Global Time"));
 
-  RCP<const Map> map;
-  RCP<MultiVector> coordinates;
+    RCP<Matrix> A;
+    RCP<MultiVector> coordinates;
+    {
+      TimeMonitor tm(*TimeMonitor::getNewTimer("RAPScalingTest: 1 - Matrix creation"));
 
-  // Retrieve matrix parameters (they may have been changed on the command line), and pass them to Galeri.
-  // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
-  //                                 d1  d2  d3
-  //                                 d4  d5  d6
-  //                                 d7  d8  d9
-  //                                 d10 d11 d12
-  // A perfect distribution is only possible when the #processors is a perfect square.
-  // This *will* result in "strip" distribution if the #processors is a prime number or if the factors are very different in
-  // size. For example, np=14 will give a 7-by-2 distribution.
-  // If you don't want Galeri to do this, specify mx or my on the galeriList.
-  Teuchos::ParameterList pl = matrixParameters.GetParameterList();
-  Teuchos::ParameterList galeriList;
-  galeriList.set("nx", pl.get("nx",nx));
-  galeriList.set("ny", pl.get("ny",ny));
-  galeriList.set("mx", comm->getSize()); //mx and my are the number of domains
-  galeriList.set("my", 1);
+      RCP<const Map> map;
 
-  if (matrixParameters.GetMatrixType() == "Laplace1D") {
-    map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D",map,matrixParameters.GetParameterList());
-  }
-  else if (matrixParameters.GetMatrixType() == "Laplace2D" || matrixParameters.GetMatrixType() == "Star2D") {
-    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",map,matrixParameters.GetParameterList());
-  }
-  else if (matrixParameters.GetMatrixType() == "Laplace3D") {
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D",map,matrixParameters.GetParameterList());
-    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
-  }
+      // Retrieve matrix parameters (they may have been changed on the command line), and pass them to Galeri.
+      // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
+      //                                 d1  d2  d3
+      //                                 d4  d5  d6
+      //                                 d7  d8  d9
+      //                                 d10 d11 d12
+      // A perfect distribution is only possible when the #processors is a perfect square.
+      // This *will* result in "strip" distribution if the #processors is a prime number or if the factors are very different in
+      // size. For example, np=14 will give a 7-by-2 distribution.
+      // If you don't want Galeri to do this, specify mx or my on the galeriList.
+      Teuchos::ParameterList pl = matrixParameters.GetParameterList();
+      Teuchos::ParameterList galeriList;
+      galeriList.set("nx", pl.get("nx", nx));
+      galeriList.set("ny", pl.get("ny", ny));
+      galeriList.set("mx", comm->getSize()); //mx and my are the number of domains
+      galeriList.set("my", 1);
 
-//FIXME
-  if (comm->getRank() == 0) {
-    GO mx = galeriList.get("mx", -1);
-    GO my = galeriList.get("my", -1);
-    std::cout << "Processor subdomains in x direction: " << mx << std::endl
-              << "Processor subdomains in y direction: " << my << std::endl
-              << "========================================================" << std::endl;
-  }
+      if (matrixParameters.GetMatrixType() == "Laplace1D") {
+        map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("1D", map, matrixParameters.GetParameterList());
+      }
+      else if (matrixParameters.GetMatrixType() == "Laplace2D" || matrixParameters.GetMatrixType() == "Star2D") {
+        map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
+        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("2D", map, matrixParameters.GetParameterList());
+      }
+      else if (matrixParameters.GetMatrixType() == "Laplace3D") {
+        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("3D", map, matrixParameters.GetParameterList());
+        map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
+      }
 
-  RCP<Matrix> A   = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+      //FIXME
+      if (comm->getRank() == 0) {
+        GO mx = galeriList.get("mx", -1);
+        GO my = galeriList.get("my", -1);
+        std::cout << "Processor subdomains in x direction: " << mx << std::endl
+                  << "Processor subdomains in y direction: " << my << std::endl
+                  << "========================================================" << std::endl;
+      }
 
-  tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("RAPScalingTest: 2 - Setup")));
+      A = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+    }
 
-  Level fineLevel, coarseLevel;
-  MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy( fineLevel, coarseLevel);
+    Level fineLevel, coarseLevel;
+    RAPFactory AcFact;
+    {
+      TimeMonitor tm(*TimeMonitor::getNewTimer("RAPScalingTest: 2 - Setup"));
 
-  fineLevel.Set("A",A);
+      MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel); // set a default FactoryManager
+      fineLevel.Set("A", A);
 
-  SaPFactory sapFactory;
-  TransPFactory transPFactory;
-  transPFactory.SetFactory("P", rcpFromRef(sapFactory));
-  coarseLevel.Request("P", &sapFactory);
-  coarseLevel.Request("R", &transPFactory);
+      RCP<SaPFactory>    PFact = rcp(new SaPFactory());
+      RCP<TransPFactory> RFact = rcp(new TransPFactory());
+      RFact->SetFactory("P", PFact);
 
-  sapFactory.Build(fineLevel, coarseLevel);
-  transPFactory.Build(fineLevel,coarseLevel);
-  RAPFactory rap;
-  rap.SetFactory("P", rcpFromRef(sapFactory));
-  rap.SetFactory("R", rcpFromRef(transPFactory));
+      coarseLevel.Request("P", PFact.get());
+      coarseLevel.Request("R", RFact.get());
 
-  for (int i=0; i<numRAPs; ++i) {
-    coarseLevel.Request("A",&rap);
-    tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("RAPScalingTest: 3 - RAP kernel")));
-    RCP<Matrix> Ac = coarseLevel.Get< RCP<Matrix> >("A", &rap);
-    tm = Teuchos::null;
-    coarseLevel.Release("A",&rap);
-  }
+      PFact->Build(fineLevel, coarseLevel);
+      RFact->Build(fineLevel, coarseLevel);
 
-  tm = Teuchos::null;
-  globalTimeMonitor = Teuchos::null;
+      AcFact.SetFactory("P", PFact);
+      AcFact.SetFactory("R", RFact);
+    }
 
-  if (printTimings) {
+    RCP<Time> RAPKernelTimer = TimeMonitor::getNewTimer("RAPScalingTest: 3 - RAP kernel"); // re-use the same timer in the loop
+
+    for (int i=0; i<optNraps; ++i) {
+      coarseLevel.Request("A", &AcFact);
+      {
+        TimeMonitor tm(*RAPKernelTimer);
+        RCP<Matrix> Ac = coarseLevel.Get< RCP<Matrix> >("A", &AcFact);
+      }
+      coarseLevel.Release("A", &AcFact);
+    }
+
+  } // end of globalTimeMonitor
+
+  if (optTimings) {
     Teuchos::TableFormat &format = TimeMonitor::format();
     format.setPrecision(25);
     TimeMonitor::summarize();
