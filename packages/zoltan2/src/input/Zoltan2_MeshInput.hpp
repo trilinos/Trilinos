@@ -168,6 +168,19 @@ public:
   virtual size_t getLocalEntityIDsWeightsView(entityType etype,
      const scalar_t *&weights, int &stride, int number) const = 0;
 
+  /*! \brief Copy the weights for a specific ID into array provided by
+                Zoltan2.
+
+      \param id specific ID.  Works only if id is local to this process.
+
+      \param wgts array provided by Zoltan2.
+		wgts has size getNumWeightsPerID()
+
+      \return not sure what is needed, if anything.
+  */
+
+  virtual size_t getWeigths(gid_t id, scalar_t *wgts) const = 0;
+
 
   /*! \brief Return dimension of the entity coordinates, if any.
    *
