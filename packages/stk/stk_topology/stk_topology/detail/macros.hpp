@@ -1,0 +1,10 @@
+#ifndef STKTOPOLOGY_DETAIL_MACROS_HPP
+#define STKTOPOLOGY_DETAIL_MACROS_HPP
+
+#ifdef __CUDACC__
+#define STKTOPOLOGY_INLINE_FUNCTION inline __device__ __host__
+#else
+#define STKTOPOLOGY_INLINE_FUNCTION inline
+#endif
+
+#endif //STKTOPOLOGY_DETAIL_MACROS_HPP
