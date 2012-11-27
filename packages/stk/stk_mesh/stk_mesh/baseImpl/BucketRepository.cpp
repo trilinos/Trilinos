@@ -59,6 +59,7 @@ BucketRepository::~BucketRepository()
     }
     m_partitions.clear();
 
+#ifndef USE_STK_MESH_IMPL_PARTITION
     for ( std::vector< std::vector<Bucket*> >::iterator
           i = m_buckets.end() ; i != m_buckets.begin() ; ) {
       try {
@@ -71,6 +72,8 @@ BucketRepository::~BucketRepository()
         kset.clear();
       } catch(...) {}
     }
+#endif
+
     m_buckets.clear();
   } catch(...) {}
 
@@ -696,7 +699,7 @@ Partition *BucketRepository::get_or_create_partition(
 
     key[key[0]] = 0;
     Partition *partition = new Partition(this, arg_entity_rank, key);
-    partition->m_modifyingBucketSet = true;
+    m_need_sync_from_partitions[arg_entity_rank] = true;
     partitions.insert( ik , partition );
 
     return partition ;
@@ -751,7 +754,7 @@ Partition *BucketRepository::get_or_create_partition(
 
     key[key[0]] = 0;
     Partition *partition = new Partition(this, arg_entity_rank, key);
-    partition->m_modifyingBucketSet = true;
+    m_need_sync_from_partitions[arg_entity_rank] = true;
     partitions.insert( ik , partition );
 
     return partition ;
@@ -766,6 +769,7 @@ void BucketRepository::sync_to_partitions()
         for (std::vector<Partition *>::iterator p_j = pv_i->begin();
                 p_j != pv_i->end(); ++p_j)
         {
+            (*p_j)->m_buckets.clear();
             delete *p_j;
         }
         pv_i->clear();
@@ -799,8 +803,11 @@ void BucketRepository::sync_to_partitions()
             {
                 ++end_partition ; //increment past the last bucket in the partition.
             }
-            partition->m_beginBucketIndex = static_cast<unsigned>(begin_partition);
-            partition->m_endBucketIndex = static_cast<unsigned>(end_partition);
+
+            size_t num_buckets_in_partition = end_partition - begin_partition;
+            partition->m_buckets.resize(num_buckets_in_partition);
+            std::copy(&buckets[begin_partition],&buckets[end_partition], &partition->m_buckets[0]);
+
             partition->compute_size();
         }
 
@@ -832,29 +839,17 @@ inline bool isNull(stk::mesh::impl::Partition *p) { return (p ? false : true);}
 
 void BucketRepository::sync_from_partitions(EntityRank rank)
 {
-    bool need_sync = false;
-
-    std::vector<Partition *> &partitions = m_partitions[rank];
-    size_t num_partitions = partitions.size();
-    for (size_t p_i = 0; p_i < num_partitions; ++p_i)
+    if (!m_need_sync_from_partitions[rank])
     {
-        if (partitions[p_i]->modifying_bucket_set())
-        {
-            need_sync = true;
-            break;
-        }
-    }
-
-    if (!need_sync)
-    {
-        m_need_sync_from_partitions[rank] = false;
         return;
     }
 
+    std::vector<Partition *> &partitions = m_partitions[rank];
+
+    size_t num_partitions = partitions.size();
     size_t num_buckets = 0;
     for (size_t p_i = 0; p_i < num_partitions; ++p_i)
     {
-        partitions[p_i]->take_bucket_control();
         if (!partitions[p_i]->empty())
         {
             num_buckets += partitions[p_i]->num_buckets();
@@ -880,10 +875,10 @@ void BucketRepository::sync_from_partitions(EntityRank rank)
         size_t num_bkts_in_partition = partition.num_buckets();
         std::copy(partition.begin(), partition.end(), bkts_i);
 
-        partition.m_beginBucketIndex = b_idx;
+//        partition.m_beginBucketIndex = b_idx;
         b_idx += num_bkts_in_partition;
-        partition.m_endBucketIndex = b_idx;
-        partition.m_modifyingBucketSet = false;
+//        partition.m_endBucketIndex = b_idx;
+//       partition.m_modifyingBucketSet = false;
         bkts_i += num_bkts_in_partition;
     }
 

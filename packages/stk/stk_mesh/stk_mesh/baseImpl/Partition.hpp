@@ -34,15 +34,13 @@ public:
     /// Rank of the entities in this partition.
     const EntityRank get_rank() const { return m_rank; }
 
-    /// Is this partition empty.
-    inline bool empty() const;
+    bool empty() const { return m_size == 0; }
+
+    size_t size() const { return m_size; }
 
     /// Returns the representation used by BucketRepository to identify a bucket,
     /// including the parts it corresponds to.
-    const std::vector<PartOrdinal> &get_legacy_partition_id() const
-    {
-        return m_extPartitionKey;
-    }
+    const std::vector<PartOrdinal> &get_legacy_partition_id() const { return m_extPartitionKey; }
 
     const unsigned * key() const { return &m_extPartitionKey[0]; }
 
@@ -71,20 +69,15 @@ public:
     ////
 
     /// Does the given bucket belong to this partition.
-    inline bool belongs(Bucket *bkt) const;
+    bool belongs(Bucket *bkt) const { return bkt->getPartition() == this;}
 
-    size_t num_buckets() const
-    {
-        return (m_modifyingBucketSet ? m_buckets.size() : m_endBucketIndex - m_beginBucketIndex);
-    }
+    size_t num_buckets() const { return m_buckets.size();}
 
-    inline std::vector<Bucket *>::iterator begin();
-    inline std::vector<Bucket *>::iterator end();
+    inline std::vector<Bucket *>::iterator begin() { return m_buckets.begin(); }
+    inline std::vector<Bucket *>::iterator end() { return m_buckets.end(); }
 
-    inline std::vector<Bucket *>::const_iterator begin() const;
-    inline std::vector<Bucket *>::const_iterator end() const;
-
-    size_t size() const { return m_size; }
+    inline std::vector<Bucket *>::const_iterator begin() const { return m_buckets.begin(); }
+    inline std::vector<Bucket *>::const_iterator end() const { return m_buckets.end(); }
 
     ////
     //// The following are used internally and for unit testing.
@@ -127,10 +120,10 @@ private:
 
     size_t m_size;
 
-    // Used when the vector of Bucket * in the BucketRepository is the representation
-    // being used.
-    unsigned m_beginBucketIndex;
-    unsigned m_endBucketIndex;
+//    // Used when the vector of Bucket * in the BucketRepository is the representation
+//    // being used.
+//    unsigned m_beginBucketIndex;
+//    unsigned m_endBucketIndex;
 
     // Flag that the set of buckets, and not just their contents, is being modified.
     bool m_modifyingBucketSet;
@@ -141,12 +134,10 @@ private:
 
     // The partition has no buckets, not even an empty one left after removing all its
     // entities.
-    bool no_buckets() const;
+    bool no_buckets() const { return m_buckets.empty(); }
 
-    bool modifying_bucket_set() const { return m_modifyingBucketSet; }
-
-    // Take control of this partition's buckets away from the BucketRepository.
-    bool take_bucket_control();
+//    // Take control of this partition's buckets away from the BucketRepository.
+//    bool take_bucket_control();
 
     // Make sure that the last bucket has room for an entity to be added to it, adding
     // an empty bucket if necessary.
@@ -187,7 +178,6 @@ inline
 std::vector<Partition*>::iterator
 lower_bound( std::vector<Partition*> & v , const unsigned * key )
 { return std::lower_bound( v.begin() , v.end() , key , PartitionLess() ); }
-
 
 
 

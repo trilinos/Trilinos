@@ -127,7 +127,8 @@ public:
   }
 
   ////
-  //// Experimental section.
+  //// Partitions are now the primary location of buckets (when USE_STK_MESH_IMPL_PARTITION
+  ////  is #defined).
   ////
 
   friend class Partition;
@@ -157,12 +158,15 @@ private:
 
   BulkData                            & m_mesh ; // Associated Bulk Data Aggregate
   unsigned                              m_bucket_capacity ; // Maximum number of entities per bucket
-  std::vector< std::vector<Bucket*> >   m_buckets ; // Vector of bucket pointers by rank
-  Bucket                              * m_nil_bucket ; // nil bucket
 
+  // Vector of bucket pointers by rank.  This is now a cache and no longer the primary
+  // location of Buckets when USE_STK_MESH_IMPL_PARTITION is #defined.
+  std::vector< std::vector<Bucket*> >   m_buckets ;
+
+  Bucket                              * m_nil_bucket ; // nil bucket
   EntityRepository                    & m_entity_repo ;
 
-  std::vector<std::vector<Partition *> >         m_partitions;  // Experimental.
+  std::vector<std::vector<Partition *> >         m_partitions;
   std::vector<bool>                              m_need_sync_from_partitions;
 };
 
@@ -171,6 +175,6 @@ private:
 } // namespace stk
 
 
-#include <stk_mesh/baseImpl/Partition_inl.hpp>
+// #include <stk_mesh/baseImpl/Partition_inl.hpp>
 
 #endif // stk_mesh_BucketRepository_hpp

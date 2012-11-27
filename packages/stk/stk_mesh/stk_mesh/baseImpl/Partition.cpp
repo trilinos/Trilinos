@@ -8,6 +8,9 @@
 
 #include <iostream>
 
+// #define PARTITION_DONT_COMPRESS_SMALL_PARTITIONS
+// #define PARTITION_DONT_SORT_SMALL_PARTITIONS_ON_COMPRESS
+
 namespace stk {
 namespace mesh {
 namespace impl {
@@ -60,8 +63,8 @@ Partition::Partition(BucketRepository *repo, EntityRank rank,
     , m_rank(rank)
     , m_extPartitionKey(key)
     , m_size(0)
-    , m_beginBucketIndex(0)
-    , m_endBucketIndex(0)
+//    , m_beginBucketIndex(0)
+//    , m_endBucketIndex(0)
     , m_modifyingBucketSet(false)
     , m_updated_since_compress(false)
     , m_updated_since_sort(false)
@@ -71,14 +74,11 @@ Partition::Partition(BucketRepository *repo, EntityRank rank,
 
 Partition::~Partition()
 {
-    if (m_modifyingBucketSet)
+    size_t num_bkts = m_buckets.size();
+    for (size_t i = 0; i < num_bkts; ++i)
     {
-        size_t num_bkts = m_buckets.size();
-        for (size_t i = 0; i < num_bkts; ++i)
-        {
-            delete m_buckets[i];
-            m_buckets[i] = 0;
-        }
+        delete m_buckets[i];
+        m_buckets[i] = 0;
     }
 }
 
@@ -195,17 +195,13 @@ bool Partition::remove(Entity e_k, bool not_in_move_to)
 
     if ( 0 == last->size() )
     {
-        // If the last bucket is now empty, expect to delete it, which changes the
-        // set of buckets from what the repository had.
-        take_bucket_control();
-
-        // take_bucket_control() makes the m_buckets the repn to use.
         size_t num_buckets = m_buckets.size();
 
         // Don't delete the last bucket now --- might want it later in this modification cycle.
         if (num_buckets > 1)
         {
             Bucket *new_last = m_buckets[num_buckets - 2];
+            m_repository->m_need_sync_from_partitions[m_rank] = true;
             m_buckets[0]->set_last_bucket_in_partition(new_last);
             delete m_buckets.back();
             m_buckets.pop_back();
@@ -213,6 +209,7 @@ bool Partition::remove(Entity e_k, bool not_in_move_to)
 #ifndef PARTITION_HOLD_EMPTY_BUCKET_OPTIMIZATION
         else
         {
+            m_repository->m_need_sync_from_partitions[m_rank] = true;
             delete m_buckets.back();
             m_buckets.pop_back();
         }
@@ -241,10 +238,12 @@ void Partition::compress(bool force)
     if (!force && (empty() || !m_updated_since_compress))
         return;
 
+#ifdef PARTITION_DONT_COMPRESS_SMALL_PARTITIONS
     if (!force && (m_buckets.size() <= 1))
     {
         return;
     }
+#endif
 
     std::vector<unsigned> partition_key = get_legacy_partition_id();
     //index of bucket in partition
@@ -266,7 +265,16 @@ void Partition::compress(bool force)
         new_i += b_size;
     }
 
+#ifdef PARTITION_DONT_SORT_SMALL_PARTITIONS_ON_COMPRESS
+    // Note that we use this particular conditional because m_buckets is not used until the set of
+    // buckets in the partition needs to change.
+    if (m_size > m_repository->m_bucket_capacity)
+    {
+        std::sort( entities.begin(), entities.end(), EntityLess() );
+    }
+#else
     std::sort( entities.begin(), entities.end(), EntityLess() );
+#endif
 
     // Now that the entities hav been sorted, we copy them and their field data into a
     // single bucket in sorted order.
@@ -288,27 +296,15 @@ void Partition::compress(bool force)
     }
     new_bucket->m_size = m_size;
 
-    if (m_modifyingBucketSet)
+    for (std::vector<Bucket *>::iterator b_i = buckets_begin; b_i != buckets_end; ++b_i)
     {
-        for (std::vector<Bucket *>::iterator b_i = buckets_begin; b_i != buckets_end; ++b_i)
-        {
-            delete *b_i;
-        }
+        delete *b_i;
     }
-    else
-    {
-        // If we were not modifying the bucket set, then we need to set the corresponding pointers
-        // on the repository to NULL in addition to deleting the buckets.
-        std::vector<Bucket *> &repo_buckets = m_repository->m_buckets[m_rank];
-        for (size_t ik = m_beginBucketIndex; ik < m_endBucketIndex; ++ik)
-        {
-            delete repo_buckets[ik];
-            repo_buckets[ik] = NULL;
-        }
-    }
+
     m_buckets.resize(1);
     m_buckets[0] = new_bucket;
-    m_modifyingBucketSet = true;
+    m_repository->m_need_sync_from_partitions[m_rank] = true;
+    // m_modifyingBucketSet = true;
     m_updated_since_compress = m_updated_since_sort = false;
 
 #ifdef BUCKET_REPOSITORY_SYNC_FROM_PARTITIONS_DURING_MODIFICATION_CYCLE
@@ -424,36 +420,36 @@ void Partition::update_state() const
 }
 
 
-bool Partition::take_bucket_control()
-{
-    m_repository->m_need_sync_from_partitions[m_rank] = true;
-    if (m_modifyingBucketSet)
-        return false;
-
-    if (m_beginBucketIndex == m_endBucketIndex)
-    {
-        m_buckets.clear();
-    }
-    else
-    {
-        size_t num_buckets = m_endBucketIndex - m_beginBucketIndex;
-        m_buckets.resize(num_buckets);
-        std::copy(begin(), end(), &m_buckets[0]);
-        for (std::vector<Bucket *>::iterator ob_i = begin(); ob_i != end(); ++ob_i)
-        {
-            *ob_i = 0;
-        }
-    }
-    m_modifyingBucketSet = true;
-    return true;
-}
+//bool Partition::take_bucket_control()
+//{
+//    m_repository->m_need_sync_from_partitions[m_rank] = true;
+//    if (m_modifyingBucketSet)
+//        return false;
+//
+//    if (m_beginBucketIndex == m_endBucketIndex)
+//    {
+//        m_buckets.clear();
+//    }
+//    else
+//    {
+//        size_t num_buckets = m_endBucketIndex - m_beginBucketIndex;
+//        m_buckets.resize(num_buckets);
+//        std::copy(begin(), end(), &m_buckets[0]);
+//        for (std::vector<Bucket *>::iterator ob_i = begin(); ob_i != end(); ++ob_i)
+//        {
+//            *ob_i = 0;
+//        }
+//    }
+//    m_modifyingBucketSet = true;
+//    return true;
+//}
 
 
 stk::mesh::Bucket *Partition::get_bucket_for_adds()
 {
     if (no_buckets())
     {
-        take_bucket_control();
+        m_repository->m_need_sync_from_partitions[m_rank] = true;
 
         std::vector<unsigned> partition_key = get_legacy_partition_id();
         partition_key[ partition_key[0] ] = 0;
@@ -470,7 +466,7 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
 
     if (bucket->size() == bucket->capacity())
     {
-        take_bucket_control();
+        m_repository->m_need_sync_from_partitions[m_rank] = true;
 
         std::vector<unsigned> partition_key = get_legacy_partition_id();
         partition_key[ partition_key[0] ] = m_buckets.size();
