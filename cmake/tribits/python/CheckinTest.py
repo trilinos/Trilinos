@@ -1151,11 +1151,11 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
 
     if inOptions.doConfigure and not preConfigurePassed:
 
-      print "\nSkipping "+buildTestCaseName+" configure because pre-configure failed (see above)!\n"
+      print "\nSKIPPED: "+buildTestCaseName+" configure skipped because pre-configure failed (see above)!\n"
 
     elif not (enablePackagesList or inOptions.enableAllPackages == 'on'):
 
-      print "\nSkipping "+buildTestCaseName+" configure because no packages are enabled!\n"
+      print "\nSKIPPED: "+buildTestCaseName+" configure skipped because no packages are enabled!\n"
       buildTestCase.skippedConfigureDueToNoEnables = True
   
     elif inOptions.doConfigure:
@@ -1213,7 +1213,7 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
   
     elif inOptions.doBuild and not configurePassed:
 
-      print "\nFAILED: Skipping the build since configure did not pass!\n"
+      print "\nSKIPPED: "+buildTestCaseName+" build skipped because configure did not pass!\n"
       
     else:
 
@@ -1251,17 +1251,13 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
 
     elif inOptions.doTest and buildTestCase.skippedConfigureDueToNoEnables:
 
-      print "\nSkipping tests because because no packages are enabled!"
+      print "\nSKIPPED: "+buildTestCaseName+" tests skipped because no packages are enabled!"
       echoRunSysCmnd("touch "+getTestSuccessFileName())
       # NOTE: We have to create this test success file because the presents of
       # this file is used to determine in the build/test case is successful
       # and therefore is okay to push.  This is needed when the script is run
       # a second time to determine if a build/test is successful and therefore
       # allow a push.
-  
-    elif inOptions.doTest and not buildPassed:
-
-      print "\nFAILED: Skipping running tests since the build failed!\n"
   
     else:
   

@@ -1173,8 +1173,12 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      "Skipping MPI_DEBUG configure because no packages are enabled!\n" \
-      "Skipping SERIAL_RELEASE configure because no packages are enabled!\n" \
+      "SKIPPED: MPI_DEBUG configure skipped because no packages are enabled!\n" \
+      "SKIPPED: MPI_DEBUG build skipped because configure did not pass!\n" \
+      "SKIPPED: MPI_DEBUG tests skipped because no packages are enabled!\n" \
+      "SKIPPED: SERIAL_RELEASE configure skipped because no packages are enabled!\n" \
+      "SKIPPED: SERIAL_RELEASE build skipped because configure did not pass!\n" \
+      "SKIPPED: SERIAL_RELEASE tests skipped because no packages are enabled!\n" \
       +"subjectLine = .passed: Trilinos/MPI_DEBUG: skipped configure, build, test due to no enabled packages.\n" \
       +"subjectLine = .passed: Trilinos/SERIAL_RELEASE: skipped configure, build, test due to no enabled packages.\n" \
       +"0) MPI_DEBUG => Skipped configure, build, test due to no enabled packages! => Does not affect push readiness!\n" \
@@ -2818,7 +2822,7 @@ class test_checkin_test(unittest.TestCase):
       +"ERROR: Illegal TPL enable -DTPL_ENABLE_MPI:BOOL=ON in ../MPI_DEBUG.config!\n" \
       +"ERROR: Illegal enable -DTrilinos_ENABLE_STK:BOOL=ON in ../MPI_DEBUG.config!\n" \
       +"ERROR: Illegal enable -DTrilinos_ENABLE_Phalanx=ON in ../MPI_DEBUG.config!\n" \
-      +"Skipping MPI_DEBUG configure because pre-configure failed (see above)!\n" \
+      +"SKIPPED: MPI_DEBUG configure skipped because pre-configure failed (see above)!\n" \
       +"0) MPI_DEBUG => FAILED: pre-configure failed => Not ready to push!\n" \
       +"Configure: FAILED\n" \
       +"FAILED CONFIGURE/BUILD/TEST: Trilinos:\n" \
