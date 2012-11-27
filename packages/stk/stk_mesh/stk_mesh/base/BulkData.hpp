@@ -231,8 +231,14 @@ public:
    *  and identifier then the sharing and ownership of these entities
    *  will be resolved by the call to 'modification_end'.
    */
-  Entity declare_entity( EntityRank ent_rank ,
-      EntityId ent_id , const PartVector& parts);
+  Entity declare_entity( EntityRank ent_rank , EntityId ent_id , const PartVector& parts);
+  Entity declare_entity( EntityRank ent_rank , EntityId ent_id , Part& part);
+
+  /** This overloading of declare_entity that doesn't take a part
+   * creates the new entity in the 'universal' part.
+   */
+  Entity declare_entity( EntityRank ent_rank , EntityId ent_id);
+
 
   void change_entity_id( EntityId id, Entity entity);
 

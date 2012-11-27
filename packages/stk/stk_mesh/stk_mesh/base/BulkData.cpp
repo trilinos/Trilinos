@@ -246,8 +246,8 @@ Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
 
   Part * const owns = & m_mesh_meta_data.locally_owned_part();
 
-  std::vector<Part*> rem ;
-  std::vector<Part*> add( parts );
+  PartVector rem ;
+  PartVector add( parts );
   add.push_back( owns );
 
   change_entity_parts( declared_entity , add , rem );
@@ -255,6 +255,55 @@ Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
   // m_transaction_log.insert_entity ( *(result.first) );
 
   return declared_entity ;
+}
+
+Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
+                                   Part & part )
+{
+  require_ok_to_modify();
+
+  require_good_rank_and_id(ent_rank, ent_id);
+
+  EntityKey key( ent_rank , ent_id );
+  TraceIfWatching("stk::mesh::BulkData::declare_entity", LOG_ENTITY, key);
+  DiagIfWatching(LOG_ENTITY, key, "declaring entity with parts " << parts);
+
+  std::pair< Entity , bool > result = m_entity_repo.internal_create_entity( key );
+
+  Entity declared_entity = result.first;
+
+  if ( result.second ) {
+    // A new application-created entity
+    m_entity_repo.set_entity_owner_rank( declared_entity, m_parallel_rank);
+    m_entity_repo.set_entity_sync_count( declared_entity, m_sync_count);
+    DiagIfWatching(LOG_ENTITY, key, "new entity: " << declared_entity);
+  }
+  else {
+    // An existing entity, the owner must match.
+    require_entity_owner( declared_entity , m_parallel_rank );
+    DiagIfWatching(LOG_ENTITY, key, "existing entity: " << declared_entity);
+  }
+
+  //------------------------------
+
+  Part * const owns = & m_mesh_meta_data.locally_owned_part();
+
+  PartVector rem ;
+  PartVector add;
+  add.push_back( &part );
+  add.push_back( owns );
+
+  change_entity_parts( declared_entity , add , rem );
+
+  // m_transaction_log.insert_entity ( *(result.first) );
+
+  return declared_entity ;
+}
+
+Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id)
+{
+    Part& universal = mesh_meta_data().universal_part();
+    return declare_entity(ent_rank, ent_id, universal);
 }
 
 void BulkData::change_entity_id( EntityId id, Entity entity)
