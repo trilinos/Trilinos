@@ -127,7 +127,7 @@ namespace MueLu {
     std::sort(coarseMapGids.begin(), coarseMapGids.end());
     coarseMapGids.erase(std::unique(coarseMapGids.begin(), coarseMapGids.end()), coarseMapGids.end());
     Teuchos::ArrayView<GlobalOrdinal> coarseMapGidsView (&coarseMapGids[0],coarseMapGids.size());
-    RCP<const Map> coarseTransferMap = MapFactoryClass::Build(Ptent->getColMap()->lib(), -1, coarseMapGidsView, Ptent->getColMap()->getIndexBase(), Ptent->getColMap()->getComm());
+    Teuchos::RCP<const MapClass> coarseTransferMap = MapFactoryClass::Build(Ptent->getColMap()->lib(), -1, coarseMapGidsView, Ptent->getColMap()->getIndexBase(), Ptent->getColMap()->getComm());
 
     // store map extractor in coarse level
     coarseLevel.Set(mapName_, coarseTransferMap, mapFact_.get());
