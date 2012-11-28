@@ -317,7 +317,11 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   //
   {
     std::ostringstream os;
-    os.precision (9);
+    // mfh 27 Nov 2012: Write all 17 digits that the double deserves.
+    // If you just write 9, it might round (as it does on some
+    // platforms) to a value that can't be represented in float.
+    // os.precision (9);
+    os.precision (17);
     os << minF;
     TEST_NOTHROW_WITH_MESSAGE(valF = asSafe<float> (os.str ()));
     TEST_EQUALITY_CONST(valF, minF);
@@ -326,7 +330,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   }
   {
     std::ostringstream os;
-    os.precision (9);
+    os.precision (17);
     os << maxF;
     TEST_NOTHROW_WITH_MESSAGE(valF = asSafe<float> (os.str ()));
     TEST_EQUALITY_CONST(valF, maxF);
@@ -335,7 +339,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   }
   {
     std::ostringstream os;
-    os.precision (9);
+    os.precision (17);
     os << minusOneF;
     TEST_NOTHROW_WITH_MESSAGE(valF = asSafe<float> (os.str ()));
     TEST_EQUALITY_CONST(valF, minusOneF);
@@ -345,7 +349,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   // Write -1 as double, read as float; shouldn't throw.
   {
     std::ostringstream os;
-    os.precision (9);
+    os.precision (17);
     os << minusOneD;
     TEST_NOTHROW_WITH_MESSAGE(valF = asSafe<float> (os.str ()));
     TEST_EQUALITY_CONST(valF, minusOneF);
@@ -407,13 +411,13 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   if (sizeof (long double) > sizeof (double)) {
     {
       std::ostringstream os;
-      os.precision (17);
+      os.precision (36);
       os << minLD;
       TEST_THROW(valD = asSafe<double> (os.str ()), std::range_error);
     }
     {
       std::ostringstream os;
-      os.precision (17);
+      os.precision (36);
       os << maxLD;
       TEST_THROW(valD = asSafe<double> (os.str ()), std::range_error);
     }
@@ -424,7 +428,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   //
   {
     std::ostringstream os;
-    os.precision (30);
+    os.precision (36);
     os << minLD;
     TEST_NOTHROW(valLD = asSafe<long double> (os.str ()));
     TEST_EQUALITY_CONST(valLD, minLD);
@@ -433,7 +437,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   }
   {
     std::ostringstream os;
-    os.precision (30);
+    os.precision (36);
     os << maxLD;
     TEST_NOTHROW(valLD = asSafe<long double> (os.str ()));
     TEST_EQUALITY_CONST(valLD, maxLD);
@@ -442,7 +446,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   }
   {
     std::ostringstream os;
-    os.precision (30);
+    os.precision (36);
     os << minusOneLD;
     TEST_NOTHROW(valLD = asSafe<long double> (os.str ()));
     TEST_EQUALITY_CONST(valLD, minusOneLD);
