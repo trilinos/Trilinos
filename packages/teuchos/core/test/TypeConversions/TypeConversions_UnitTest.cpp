@@ -51,13 +51,13 @@
     code; \
     (out) << "passes\n"; \
   } \
-  catch (std::exception& e) {      \
+  catch (std::exception& theException) {      \
     (success) = false; \
     out << "failed\n"; \
     out << "\nException message for unexpected exception:\n\n"; \
     { \
       Teuchos::OSTab l_tab(out); \
-      out << except.what() << "\n\n"; \
+      out << theException.what() << "\n\n"; \
     } \
   }
 
