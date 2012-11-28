@@ -9,7 +9,6 @@ STKUNIT_UNIT_TEST( stk_topology, line_2)
 
   topology t = topology::LINE_2;
 
-  STKUNIT_EXPECT_TRUE( strcmp(t.name(),"LINE_2") == 0 );
 
   STKUNIT_EXPECT_TRUE(t.is_valid());
   STKUNIT_EXPECT_FALSE(t.has_homogeneous_edges());
@@ -56,7 +55,6 @@ STKUNIT_UNIT_TEST( stk_topology, line_3)
 
   topology t = topology::LINE_3;
 
-  STKUNIT_EXPECT_TRUE( strcmp(t.name(),"LINE_3") == 0 );
 
   STKUNIT_EXPECT_TRUE(t.is_valid());
   STKUNIT_EXPECT_FALSE(t.has_homogeneous_edges());
@@ -104,7 +102,6 @@ STKUNIT_UNIT_TEST( stk_topology, line_2_1d)
 
   topology t = topology::LINE_2_1D;
 
-  STKUNIT_EXPECT_TRUE( strcmp(t.name(),"LINE_2_1D") == 0 );
 
   STKUNIT_EXPECT_TRUE(t.is_valid());
   STKUNIT_EXPECT_FALSE(t.has_homogeneous_edges());
@@ -151,7 +148,6 @@ STKUNIT_UNIT_TEST( stk_topology, line_3_1d)
 
   topology t = topology::LINE_3_1D;
 
-  STKUNIT_EXPECT_TRUE( strcmp(t.name(),"LINE_3_1D") == 0 );
 
   STKUNIT_EXPECT_TRUE(t.is_valid());
   STKUNIT_EXPECT_FALSE(t.has_homogeneous_edges());

@@ -7,8 +7,6 @@ STKUNIT_UNIT_TEST( stk_topology, node)
 
   topology t = topology::NODE;
 
-  STKUNIT_EXPECT_TRUE( strcmp(t.name(),"NODE") == 0 );
-
   STKUNIT_EXPECT_TRUE(t.is_valid());
   STKUNIT_EXPECT_FALSE(t.has_homogeneous_edges());
   STKUNIT_EXPECT_FALSE(t.has_homogeneous_faces());

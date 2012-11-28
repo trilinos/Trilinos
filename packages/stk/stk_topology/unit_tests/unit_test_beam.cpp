@@ -7,7 +7,6 @@ STKUNIT_UNIT_TEST( stk_topology, beam_2)
 
   topology t = topology::BEAM_2;
 
-  STKUNIT_EXPECT_TRUE( strcmp(t.name(),"BEAM_2") == 0 );
 
   STKUNIT_EXPECT_TRUE(t.is_valid());
   STKUNIT_EXPECT_TRUE(t.has_homogeneous_edges());
@@ -60,7 +59,6 @@ STKUNIT_UNIT_TEST( stk_topology, beam_3)
 
   topology t = topology::BEAM_3;
 
-  STKUNIT_EXPECT_TRUE( strcmp(t.name(),"BEAM_3") == 0 );
 
   STKUNIT_EXPECT_TRUE(t.is_valid());
   STKUNIT_EXPECT_TRUE(t.has_homogeneous_edges());
