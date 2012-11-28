@@ -275,6 +275,8 @@ void Multiply(
     if (!B.isFillComplete())
       throw(Xpetra::Exceptions::RuntimeError("B is not fill-completed"));
 
+    bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
+
     if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
 #       ifndef HAVE_XPETRA_EPETRAEXT
       throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Multiply requires EpetraExt to be compiled."));
@@ -284,8 +286,7 @@ void Multiply(
       Epetra_CrsMatrix & epC = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(C);
 
 
-      //int i = EpetraExt::MatrixMatrix::Multiply(*epA,transposeA,*epB,transposeB,*epC,false);
-      int i = EpetraExt::MatrixMatrix::Multiply(epA,transposeA,epB,transposeB,epC,false);
+      int i = EpetraExt::MatrixMatrix::Multiply(epA,transposeA,epB,transposeB,epC,haveMultiplyDoFillComplete);
       if (i != 0) {
         std::ostringstream buf;
         buf << i;
@@ -300,14 +301,13 @@ void Multiply(
       const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & tpB = Xpetra::MatrixMatrix::Op2TpetraCrs(B);
       Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> &       tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
 
-      //Tpetra::MatrixMatrix::Multiply(*tpA,transposeA,*tpB,transposeB,*tpC,false);
-      Tpetra::MatrixMatrix::Multiply(tpA,transposeA,tpB,transposeB,tpC,false);
+      Tpetra::MatrixMatrix::Multiply(tpA,transposeA,tpB,transposeB,tpC,haveMultiplyDoFillComplete);
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
     }
 
-    if(call_FillComplete_on_result) {
+    if(call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
       RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
       params->set("Optimize Storage",doOptimizeStorage);
       C.fillComplete((transposeB) ? B.getRangeMap() : B.getDomainMap(),
