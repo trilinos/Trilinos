@@ -182,13 +182,70 @@ setParameters (const Teuchos::ParameterList& params)
     "parameter by this point, or have thrown an exception.  "
     "Please let the Ifpack2 developers know about this bug.");
 
+  //
   // overlapLevel was always int.  ILUT doesn't have this parameter.
+  // However, some tests (as of 28 Nov 2012:
+  // Ifpack2_RILUK_small_belos_MPI_1) depend on being able to set this
+  // as a double instead of an int.  Thus, we go through the same
+  // procedure as above with fill level.
+  //
+
+  bool gotOverlapLevel = false;
   try {
     overlapLevel = params.get<int> ("fact: iluk level-of-overlap");
+    gotOverlapLevel = true;
+  }
+  catch (InvalidParameterType&) {
+    // Throwing again in the catch block would just unwind the stack.
+    // Instead, we do nothing here, and check the Boolean outside to
+    // see if we got the value.
   }
   catch (InvalidParameterName&) {
-    // Accept the default value.
+    gotOverlapLevel = true; // Accept the default value.
   }
+
+  if (! gotOverlapLevel) {
+    try {
+      // Try magnitude_type, for compatibility with ILUT.
+      // The cast from magnitude_type to int must succeed.
+      overlapLevel = as<int> (params.get<magnitude_type> ("fact: iluk level-of-overlap"));
+      gotOverlapLevel = true;
+    }
+    catch (InvalidParameterType&) {
+      // Try double next.
+    }
+    // Don't catch InvalidParameterName here; we've already done that above.
+  }
+
+  if (! gotOverlapLevel) {
+    try {
+      // Try double, for compatibility with ILUT.
+      // The cast from double to int must succeed.
+      overlapLevel = as<int> (params.get<double> ("fact: iluk level-of-overlap"));
+      gotOverlapLevel = true;
+    }
+    catch (InvalidParameterType& e) {
+      // We're out of options.  The user gave us the parameter, but it
+      // doesn't have the right type.  The best thing for us to do in
+      // that case is to throw, telling the user to use the right
+      // type.
+      throw e;
+    }
+    // Don't catch InvalidParameterName here; we've already done that above.
+  }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! gotOverlapLevel,
+    std::logic_error,
+    "Ifpack2::RILUK::setParameters: We should never get here!  "
+    "The method should either have read the \"fact: iluk level-of-overlap\"  "
+    "parameter by this point, or have thrown an exception.  "
+    "Please let the Ifpack2 developers know about this bug.");
+
+  //
+  // For the other parameters, we prefer magnitude_type, but allow
+  // double for backwards compatibility.
+  //
 
   try {
     absThresh = params.get<magnitude_type> ("fact: absolute threshold");
