@@ -250,11 +250,11 @@ int checkCommMethods(Epetra_Comm& petracomm, bool verbose, bool verbose1, int& N
   long long* llVals = new long long[count];
   if (rank == 0) {
      for (i=0; i<count; i++)
-       llVals[i] = i+INT_MAX; // if these values are changed, the values in llBVals must also be changed
+       llVals[i] = (long long)i+INT_MAX; // if these values are changed, the values in llBVals must also be changed
   }    
   long long* llBVals = new long long[count]; // Values to be checked against the values broadcast to the non root processors
   for (i=0; i<count; i++)
-    llBVals[i] = i+INT_MAX; // if these values are changed, the values in dVals must also be changed
+    llBVals[i] = (long long)i+INT_MAX; // if these values are changed, the values in dVals must also be changed
 
   const char *cConst = "Heidi, do you want a cookie?";
   int cCount = strlen(cConst)+1;
