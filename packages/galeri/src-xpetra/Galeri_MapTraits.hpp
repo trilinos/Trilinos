@@ -108,6 +108,7 @@ namespace Galeri {
 #endif // HAVE_GALERI_TPETRA
 
 #ifdef HAVE_GALERI_XPETRA
+#ifdef HAVE_XPETRA_TPETRA
     /* Specialized traits for Map = Xpetra::TpetraMap<...> */
     template <class LocalOrdinal, class GlobalOrdinal, class Node>
     class MapTraits <GlobalOrdinal, ::Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal, Node> >
@@ -116,7 +117,9 @@ namespace Galeri {
       static Teuchos::RCP< ::Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal, Node> > Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
       { return rcp( new ::Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal, Node>(numGlobalElements, elementList, indexBase, comm) ); }
     };
+#endif
 
+#ifdef HAVE_XPETRA_EPETRA
     /* Specialized traits for Map = Xpetra::EpetraMap<int,int> */
     template <>
     class MapTraits <int, ::Xpetra::EpetraMap >
@@ -125,6 +128,7 @@ namespace Galeri {
       static Teuchos::RCP< ::Xpetra::EpetraMap> Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
       { return rcp( new ::Xpetra::EpetraMap(numGlobalElements, elementList, indexBase, comm) ); }
     };
+#endif
 
 #endif // HAVE_GALERI_XPETRA
 
