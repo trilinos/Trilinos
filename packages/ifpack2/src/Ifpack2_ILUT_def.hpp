@@ -44,6 +44,9 @@ namespace Ifpack2 {
 
     /// \brief Default drop tolerance for ILUT.
     ///
+    /// \tparam ScalarType The type of entries in the input sparse
+    ///   matrix to ILUT; same as the scalar_type typedef of ILUT.
+    ///
     /// \warning This is an implementation detail of Ifpack2.  Do NOT
     ///   depend on this function or use it in your code.  It may go
     ///   away entirely or change interface or behavior without
@@ -55,27 +58,34 @@ namespace Ifpack2 {
     /// it provides a more reasonable default for other Scalar types
     /// of possibly lower or higher precision than double.
     ///
-    /// This function is templated on ScalarType <i>and</i>
-    /// MagnitudeType, so that we can handle complex numbers specially
-    /// if desired.
+    /// This function is templated on ScalarType, rather than its
+    /// magnitude type, so that we can handle complex numbers
+    /// specially if desired.
     ///
     /// In order to override the default, just specialize this
-    /// function for your particular combination of MagnitudeType and
-    /// ScalarType.
-    template<class MagnitudeType, class ScalarType>
-    MagnitudeType
+    /// function for your particular ScalarType.
+    template<class ScalarType>
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
     ilutDefaultDropTolerance () {
       using Teuchos::as;
       typedef Teuchos::ScalarTraits<ScalarType> STS;
+      typedef typename STS::magnitudeType magnitude_type;
+      typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
-      return as<MagnitudeType> (1000) * STS::magnitude (STS::eps ());
+      // 1/2.  Hopefully this can be represented in magnitude_type.
+      const magnitude_type oneHalf = STM::one() / (STM::one() + STM::one());
+
+      // The min ensures that in case magnitude_type has very low
+      // precision, we'll at least get some value strictly less than
+      // one.
+      return std::min (as<magnitude_type> (1000) * STS::magnitude (STS::eps ()), oneHalf);
     }
 
     // Full specialization for MagnitudeType = ScalarType = double.
     // This specialization preserves ILUT's previous default behavior.
     template<>
-    double
-    ilutDefaultDropTolerance<double, double> () {
+    Teuchos::ScalarTraits<double>::magnitudeType
+    ilutDefaultDropTolerance<double> () {
       return 1e-12;
     }
 
@@ -91,8 +101,8 @@ ILUT<MatrixType>::ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOr
   Athresh_(0.0),
   Rthresh_(1.0),
   RelaxValue_(0.0),
-  LevelOfFill_(1.0),
-  DropTolerance_(1e-12),
+  LevelOfFill_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
+  DropTolerance_ (ilutDefaultDropTolerance<scalar_type> ()),
   Condest_(-1.0),
   IsInitialized_(false),
   IsComputed_(false),
@@ -118,22 +128,107 @@ ILUT<MatrixType>::~ILUT() {
 //==========================================================================
 template <class MatrixType>
 void ILUT<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
-  Ifpack2::getParameter(params, "fact: ilut level-of-fill", LevelOfFill_);
-  TEUCHOS_TEST_FOR_EXCEPTION(LevelOfFill_ <= 0.0, std::runtime_error,
+  using Teuchos::as;
+  using Teuchos::Exceptions::InvalidParameterName;
+  using Teuchos::Exceptions::InvalidParameterType;
+  typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+  // Default values of the various parameters.
+  magnitude_type fillLevel = STM::one ();
+  magnitude_type absThresh = STM::zero ();
+  magnitude_type relThresh = STM::one ();
+  magnitude_type relaxValue = STM::zero ();
+  magnitude_type dropTol = ilutDefaultDropTolerance<scalar_type> ();
+
+  try {
+    fillLevel = params.get<magnitude_type> ("fact: ilut level-of-fill");
+  }
+  catch (InvalidParameterType&) {
+    // Try double, for backwards compatibility.
+    // The cast from double to magnitude_type must succeed.
+    fillLevel = as<magnitude_type> (params.get<double> ("fact: ilut level-of-fill"));
+  }
+  catch (InvalidParameterName&) {
+    // Accept the default value.
+  }
+
+  // FIXME (mfh 28 Nov 2012) This doesn't make any sense.  Isn't zero
+  // fill allowed?  The exception test doesn't match the exception
+  // message.  However, I'm leaving it alone for now, so as not to
+  // change current behavior.
+  TEUCHOS_TEST_FOR_EXCEPTION(fillLevel <= 0.0, std::runtime_error,
     "Ifpack2::ILUT::SetParameters ERROR, level-of-fill must be >= 0.");
 
-  double tmp = -1;
-  Ifpack2::getParameter(params, "fact: absolute threshold", tmp);
-  if (tmp != -1) Athresh_ = tmp;
-  tmp = -1;
-  Ifpack2::getParameter(params, "fact: relative threshold", tmp);
-  if (tmp != -1) Rthresh_ = tmp;
-  tmp = -1;
-  Ifpack2::getParameter(params, "fact: relax value", tmp);
-  if (tmp != -1) RelaxValue_ = tmp;
-  tmp = -1;
-  Ifpack2::getParameter(params, "fact: drop tolerance", tmp);
-  if (tmp != -1) DropTolerance_ = tmp;
+  try {
+    absThresh = params.get<magnitude_type> ("fact: absolute threshold");
+  }
+  catch (InvalidParameterType&) {
+    // Try double, for backwards compatibility.
+    // The cast from double to magnitude_type must succeed.
+    absThresh = as<magnitude_type> (params.get<double> ("fact: absolute threshold"));
+  }
+  catch (InvalidParameterName&) {
+    // Accept the default value.
+  }
+
+  try {
+    relThresh = params.get<magnitude_type> ("fact: relative threshold");
+  }
+  catch (InvalidParameterType&) {
+    // Try double, for backwards compatibility.
+    // The cast from double to magnitude_type must succeed.
+    relThresh = as<magnitude_type> (params.get<double> ("fact: relative threshold"));
+  }
+  catch (InvalidParameterName&) {
+    // Accept the default value.
+  }
+
+  try {
+    relaxValue = params.get<magnitude_type> ("fact: relax value");
+  }
+  catch (InvalidParameterType&) {
+    // Try double, for backwards compatibility.
+    // The cast from double to magnitude_type must succeed.
+    relaxValue = as<magnitude_type> (params.get<double> ("fact: relax value"));
+  }
+  catch (InvalidParameterName&) {
+    // Accept the default value.
+  }
+
+  try {
+    dropTol = params.get<magnitude_type> ("fact: drop tolerance");
+  }
+  catch (InvalidParameterType&) {
+    // Try double, for backwards compatibility.
+    // The cast from double to magnitude_type must succeed.
+    dropTol = as<magnitude_type> (params.get<double> ("fact: drop tolerance"));
+  }
+  catch (InvalidParameterName&) {
+    // Accept the default value.
+  }
+
+  // "Commit" the values only after validating all of them.  This
+  // ensures that there are no side effects if this routine throws an
+  // exception.
+
+  // mfh 28 Nov 2012: The previous code would not assign Athresh_,
+  // Rthresh_, RelaxValue_, or DropTolerance_ if the read-in value was
+  // -1.  I don't know if keeping this behavior is correct, but I'll
+  // keep it just so as not to change previous behavior.
+
+  LevelOfFill_ = fillLevel;
+  if (absThresh != -STM::one ()) {
+    Athresh_ = absThresh;
+  }
+  if (relThresh != -STM::one ()) {
+    Rthresh_ = relThresh;
+  }
+  if (relaxValue != -STM::one ()) {
+    RelaxValue_ = relaxValue;
+  }
+  if (dropTol != -STM::one ()) {
+    DropTolerance_ = dropTol;
+  }
 }
 
 //==========================================================================
@@ -270,6 +365,8 @@ typename Teuchos::ScalarTraits<Scalar>::magnitudeType scalar_mag(const Scalar& s
 //==========================================================================
 template<class MatrixType>
 void ILUT<MatrixType>::compute() {
+  using Teuchos::as;
+
   //--------------------------------------------------------------------------
   // Ifpack2::ILUT is a translation of the Aztec ILUT implementation. The Aztec
   // ILUT implementation was written by Ray Tuminaro.
@@ -325,10 +422,22 @@ void ILUT<MatrixType>::compute() {
   std::ofstream ofsU("U.tif.mtx", std::ios::out);
 #endif
 
+  // mfh 28 Nov 2012: The code here uses double for fill calculations.
+  // This really has nothing to do with magnitude_type.  The point is
+  // to avoid rounding and overflow for integer calculations.  That
+  // should work just fine for reasonably-sized integer values, so I'm
+  // leaving it.  However, the fill level parameter is a
+  // magnitude_type, so I do need to cast to double.  Typical values
+  // of the fill level are small, so this should not cause overflow.
+
   // Calculate how much fill will be allowed in addition to the space that
   // corresponds to the input matrix entries.
   double local_nnz = static_cast<double>(A_->getNodeNumEntries());
-  double fill = ((getLevelOfFill()-1)*local_nnz)/(2*NumMyRows_);
+  double fill;
+  {
+    const double fillLevel = as<double> (getLevelOfFill ());
+    fill = ((fillLevel - 1) * local_nnz) / (2 * NumMyRows_);
+  }
 
   // std::ceil gives the smallest integer larger than the argument.
   // this may give a slightly different result than Aztec's fill value in

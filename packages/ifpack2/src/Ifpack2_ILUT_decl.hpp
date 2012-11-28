@@ -228,17 +228,18 @@ public:
   //! Returns the time spent in apply().
   double getApplyTime() const;
 
-  inline double getLevelOfFill() const {
+  //! The level of fill.
+  inline magnitude_type getLevelOfFill() const {
     return(LevelOfFill_);
   }
 
   //! Get absolute threshold value
-  inline double getAbsoluteThreshold() const {
+  inline magnitude_type getAbsoluteThreshold() const {
     return(Athresh_);
   }
 
   //! Get relative threshold value
-  inline double getRelativeThreshold() const {
+  inline magnitude_type getRelativeThreshold() const {
     return(Rthresh_);
   }
 
@@ -294,15 +295,15 @@ private:
   //! U factor
   Teuchos::RCP<MatrixType> U_;
   //! Absolute threshold
-  double Athresh_;
+  magnitude_type Athresh_;
   //! Relative threshold
-  double Rthresh_;
+  magnitude_type Rthresh_;
   magnitude_type RelaxValue_;
-  //! Level-of-fill
-  double LevelOfFill_;
-  //! Discards all elements below this tolerance
+  //! Level of fill
+  magnitude_type LevelOfFill_;
+  //! Discard all elements below this tolerance
   magnitude_type DropTolerance_;
-  //! Condition number estimate.
+  //! Condition number estimate
   magnitude_type Condest_;
   //! \c true if \c this object has been initialized
   bool IsInitialized_;
