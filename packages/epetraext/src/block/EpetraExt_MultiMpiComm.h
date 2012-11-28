@@ -142,6 +142,8 @@ class MultiMpiComm: public EpetraExt::MultiComm, public Epetra_MpiComm,
           { return myComm->Broadcast( MyVals, Count, Root); };
   virtual int Broadcast(long * MyVals, int Count, int Root) const
           { return myComm->Broadcast( MyVals, Count, Root); };
+  virtual int Broadcast(long long * MyVals, int Count, int Root) const
+          { return myComm->Broadcast( MyVals, Count, Root); };
   virtual int Broadcast(char * MyVals, int Count, int Root) const
           { return myComm->Broadcast( MyVals, Count, Root); };
   virtual int GatherAll(double * MyVals, double * AllVals, int Count) const
