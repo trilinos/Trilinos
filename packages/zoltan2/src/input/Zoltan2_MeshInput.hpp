@@ -273,12 +273,6 @@ public:
   virtual size_t getLocalNum2ndAdjacencyIDs(entityType sourcetarget,
 					    entityType through) const = 0;
 
-  /*! \brief Returns the number (0 or greater) of weights per second adjacency.
-   */
-  virtual int getNumWeightsPer2ndAdjacencyID(entityType sourcetarger,
-					     entityType through) const = 0;
-
-
   /*! \brief Sets pointers to this process' mesh second adjacencies.
       \param sourcetarget
       \param offsets is an array of size getLocalNumEntityIDs() + 1.
@@ -301,6 +295,12 @@ public:
   virtual size_t getLocal2ndAdjacencyIDsView(entityType sourcetarget,
      entityType through, const lno_t *&offsets,
      const gid_t *& adjacencyIds) const = 0;
+
+
+  /*! \brief Returns the number (0 or greater) of weights per second adjacency.
+   */
+  virtual int getNumWeightsPer2ndAdjacencyID(entityType sourcetarger,
+					     entityType through) const = 0;
 
 
   /*! \brief  Provide a pointer to the second adjacency weights, if any.
