@@ -399,6 +399,24 @@ namespace stk {
       return metric_valid;
     }
 
+    void JacobianUtil::stretch_eigens(PerceptMesh& eMesh, stk::mesh::Entity element, 
+                                      double stretch_eigens[3],
+                                      stk::mesh::FieldBase *coord_field ,
+                                      const CellTopologyData * topology_data_in  )
+    {
+      double averageJ = 0.0;
+      bool valid = this->operator()(averageJ, eMesh, element, coord_field, topology_data_in);
+      (void)valid;
+      static DenseMatrix<3,3> A_ave;
+      A_ave.zero();
+      for (int i=0; i < m_num_nodes; i++)
+        {
+          A_ave += m_J[i];
+        }
+      A_ave /= double(m_num_nodes);
+      
+    }
+
   }
 }
 

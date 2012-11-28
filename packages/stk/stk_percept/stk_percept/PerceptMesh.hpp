@@ -390,9 +390,13 @@ namespace stk {
       void set_smooth_surfaces(bool do_smooth_surfaces=true) { m_do_smooth_surfaces = do_smooth_surfaces; }
       bool get_smooth_surfaces() { return m_do_smooth_surfaces; }
 
+      void print(const stk::mesh::Entity entity, bool cr=true);
+
+      
 #ifndef SWIG
       //========================================================================================================================
       // low-level interfaces
+      static PerceptMesh *get_static_instance() { return s_static_singleton_instance; }
 
       void set_sync_io_regions(bool val) { m_sync_io_regions = val; }
 
@@ -706,6 +710,7 @@ namespace stk {
       bool                                  m_do_respect_spacing;
       bool                                  m_do_smooth_surfaces;
 
+      static PerceptMesh* s_static_singleton_instance;
 
     private:
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);

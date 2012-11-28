@@ -180,6 +180,7 @@ namespace stk {
 
   namespace percept {
 
+
 #define ENABLE_PAUSE 1
     //#define ENABLE_PAUSE (1 && NDEBUG)
 
@@ -289,6 +290,7 @@ namespace stk {
           pos += replace_with.length();
         }
     }
+
 
 
 

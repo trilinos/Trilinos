@@ -53,6 +53,36 @@ namespace stk {
       bool grad_metric_util( PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::FieldBase *coord_field,
                              const CellTopologyData * topology_data );
 
+      /// compute an approximate element diameter (diameter of circumscribing sphere) by computing
+      ///   max of distance between all pairs of vertices
+      /// The average of distance between vertex pairs is returned in @param ave_pair_length_returned
+      double approx_diameter(PerceptMesh& eMesh, stk::mesh::Entity element, double& ave_pair_length_returned,
+                             stk::mesh::FieldBase *coord_field = 0,
+                             const CellTopologyData * topology_data_in = 0 );
+
+      // element "h" based on gradient of a given field - "h" is computed by the "h" in the direction
+      //   of the field's gradient - uses the formula h = || grad u || / || J^-1 grad u ||
+      //   If || grad u || ~0, it returns approx_diameter()
+      double grad_based_diameter(PerceptMesh& eMesh, stk::mesh::Entity element, 
+                                 stk::mesh::FieldBase *field_for_grad,
+                                 stk::mesh::FieldBase *coord_field = 0,
+                                 const CellTopologyData * topology_data_in = 0 );
+
+      /// compute edge length min, max and average between pairs of vertices that form element edges
+      void edge_lengths(PerceptMesh& eMesh, stk::mesh::Entity element, 
+                        double& min_edge_length, double& max_edge_length, double& ave_edge_length,
+                        stk::mesh::FieldBase *coord_field = 0,
+                        const CellTopologyData * topology_data_in = 0 );
+
+      /// return sorted (largest first) eigenvalues of U (stretch matrix) of the polar decomposition
+      ///   of Jacobian, J = R U, where R is a rotation.  These represent stretch w.r.t. principal
+      ///   axes of the element, and are thus somewhat representative of mesh parameter.  Here, J is
+      ///   the average J from the vertex-based (corner-based) Jacobians.
+      void stretch_eigens(PerceptMesh& eMesh, stk::mesh::Entity element, 
+                          double stretch_eigens[3],
+                          stk::mesh::FieldBase *coord_field = 0,
+                          const CellTopologyData * topology_data_in = 0 );
+
     private:
       inline bool jacobian_matrix_3D(double &detJ, DenseMatrix<3,3>& A, const double *x0, const double *x1, const double *x2, const double *x3)
       {

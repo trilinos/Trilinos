@@ -56,6 +56,8 @@
 namespace stk {
   namespace percept {
 
+    PerceptMesh *PerceptMesh::s_static_singleton_instance = 0;
+
     //std::string PerceptMesh::s_omit_part = "_urp_original";
     //std::string PerceptMesh::s_omit_part = "_urporig";
     std::string PerceptMesh::s_omit_part = "_uo";  // stk_io now lowercases everything
@@ -93,6 +95,7 @@ namespace stk {
       ,m_do_smooth_surfaces(false)
     {
       init( m_comm);
+      s_static_singleton_instance = this;
     }
 
     /// reads and commits mesh, editing disabled
@@ -874,6 +877,7 @@ namespace stk {
       m_comm = bulkData->parallel();
 
       setCoordinatesField();
+      s_static_singleton_instance = this;
     }
 
     void PerceptMesh::
@@ -4216,6 +4220,47 @@ namespace stk {
                 }
             }      
         }
+    }
+
+    void PerceptMesh::print(const stk::mesh::Entity entity, bool cr)
+    {
+      std::ostream& out = std::cout;
+      if (entity.entity_rank() != stk::mesh::MetaData::NODE_RANK)
+        {
+          out << "Elem: " << entity.identifier() << " rank= " << entity.entity_rank() << " nodes: ";
+
+          const mesh::PairIterRelation elem_nodes = entity.relations(node_rank() );
+          unsigned num_node = elem_nodes.size();
+          for (unsigned inode=0; inode < num_node; inode++)
+            {
+              mesh::Entity node = elem_nodes[ inode ].entity();
+              double *coord = PerceptMesh::field_data( get_coordinates_field() , node );
+
+              out << " id: " <<  node.identifier() << " x: ";
+              for (int i=0; i < get_spatial_dim(); i++)
+                {
+                  out << " " << coord[i];
+                }
+            }
+          //out << std::endl;
+        }
+
+      else if (entity.entity_rank() == stk::mesh::MetaData::NODE_RANK)
+        {
+          out << "Node: id: " << entity.identifier() << " x: ";
+          double *coord = PerceptMesh::field_data( get_coordinates_field() ,entity );
+
+          for (int i=0; i < get_spatial_dim(); i++)
+            {
+              out << " " << coord[i];
+            }
+
+        }
+      else
+        {
+          out << "rank unknown: " << entity.entity_rank();
+        }
+      if (cr) out << std::endl;
     }
 
     //====================================================================================================================================

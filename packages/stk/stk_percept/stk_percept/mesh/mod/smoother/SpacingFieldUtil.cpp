@@ -158,6 +158,11 @@ namespace stk {
               jacA(A_, m_eMesh, element, m_eMesh.get_coordinates_field(), topology_data);
 
               unsigned inode = node_elems[i_element].identifier();
+              const mesh::PairIterRelation elem_nodes = element.relations( m_eMesh.node_rank() );
+              VERIFY_OP_ON(inode, >=, 0, "elem_nodes 1");
+              VERIFY_OP_ON(inode, <, elem_nodes.size(), "elem_nodes 2");
+              VERIFY_OP_ON(elem_nodes[inode].entity().identifier(), ==, node.identifier(), "elem_nodes 3");
+
               DenseMatrix<3,3>& A = jacA.m_J[inode];
               inverse(A, AI);
               double spacing[3] = {0,0,0};
@@ -175,11 +180,23 @@ namespace stk {
               double sum=0.0;
               for (int jdim=0; jdim < spatial_dim; jdim++)
                 {
-                  //std::cout << " spacing[" << jdim << "]= " << spacing[jdim] << std::endl;
+                  if ( 0 && element.identifier() == 6659) 
+                    {
+                      std::cout << " nodeid= " << node.identifier() << " spacing[" << jdim << "]= " << spacing[jdim] << " unit_vector_dir= " << unit_vector_dir[jdim] << std::endl;
+                      PerceptMesh::get_static_instance()->print(element);
+                    }
                   sum += spacing[jdim]*spacing[jdim];
                 }
               sum = std::sqrt(sum);
+              VERIFY_OP_ON(sum, >, 1.e-12, "bad sum");
               spacing_ave += 1.0/sum;
+
+              if (0 && element.identifier() == 6659) 
+                {
+                  PerceptMesh::get_static_instance()->print(element, false);
+                  std::cout << " nodeid= " << node.identifier() << " spacing= " << 1.0/sum << std::endl;
+                }
+
             }
         }
       //std::cout << "spacing_ave= " << spacing_ave << std::endl;

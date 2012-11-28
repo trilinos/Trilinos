@@ -126,6 +126,10 @@ namespace stk {
         subDimEntity.clear(); 
         subDimEntity.insert(nodes[iv0]);
         subDimEntity.insert(nodes[iv1]);
+        bool swapped=false;
+        if (nodes[iv0] != subDimEntity[0])
+          swapped = true;
+
         static SubDimCellData new_SubDimCellData;
         static SubDimCellData empty_SubDimCellData;
 
@@ -158,7 +162,7 @@ namespace stk {
         for (unsigned ipts=0; ipts < nsz; ipts++)
           {
             alp[ipts] = nodeId_elementOwnderId.get<SDC_DATA_SPACING>()[ipts];
-            VERIFY_OP_ON(alp[ipts], >, 0.0, "hmmm33");
+            VERIFY_OP_ON(alp[ipts], >=, 0.0, "hmmm33");
             alpsum += alp[ipts];
           }
         for (unsigned ipts=0; ipts < nsz; ipts++)
@@ -176,6 +180,7 @@ namespace stk {
                 lsum += alp[jpts];
               }
             alp1[ipts] = (alp[ipts] + lsum1*fac)/(facden*lsum);
+
           }
         double sum=0.0;
         for (unsigned ipts=0; ipts < nsz; ipts++)
@@ -186,6 +191,8 @@ namespace stk {
           {
             alp1[ipts] /= sum;
           }
+        VERIFY_OP_ON(alp1[0], <=, 1.0, "hmmm35");
+        if (swapped) alp1[0] = 1.0-alp1[0];
         double candidate_alpha = 1.0-alp1[0];
         if (candidate_alpha < m_min_spacing_factor) candidate_alpha=m_min_spacing_factor;
         return candidate_alpha;
@@ -259,7 +266,7 @@ namespace stk {
       }
 
 
-    void NodeRegistry::normalize_spacing(std::vector<stk::mesh::Entity> &nodes,
+    void NodeRegistry::normalize_spacing(stk::mesh::Entity element, std::vector<stk::mesh::Entity> &nodes,
                                          unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3], double *coord[8])
       {
         s_nsz_parent = nsz;
@@ -302,6 +309,17 @@ namespace stk {
                 double y = 0.5*(alp12+alp03);
                 if (isp == 0)
                   {
+                    if (0 && element.identifier() == 6659) 
+                      {
+                        PerceptMesh::get_static_instance()->print(element, false);
+                        std::cout 
+                          << " alp01= " << alp01 
+                          << " alp32= " << alp32
+                          << " alp12= " << alp12 
+                          << " alp03= " << alp03 
+                          << std::endl;
+                      }
+
                     spc[0][0] = (1-x)*(1-y);
                     spc[1][0] = x*(1-y);
                     spc[2][0] = x*y;
@@ -498,12 +516,12 @@ namespace stk {
             std::vector<stk::mesh::Entity> nodes(8, stk::mesh::Entity());
             unsigned nsz = 0;
             bool is_element = false;
+            stk::mesh::Entity element_p = stk::mesh::Entity();
 
             if (needed_entity_rank == stk::mesh::MetaData::ELEMENT_RANK)
               {
                 EXCEPTWATCH;
                 is_element = true;
-                stk::mesh::Entity element_p = stk::mesh::Entity();
                 {
                   SDSEntityType elementId = *subDimEntity.begin();
                   //!!element_p = get_entity_element(*m_eMesh.get_bulk_data(), stk::mesh::MetaData::ELEMENT_RANK, elementId);
@@ -649,7 +667,7 @@ namespace stk {
                         }
 
                     }
-                  normalize_spacing(nodes, nsz, spatialDim, spc, den_xyz, coord);
+                  normalize_spacing(element_p, nodes, nsz, spatialDim, spc, den_xyz, coord);
                   if (0 && nsz==2 && (coord[1][0] < 1.e-3 && coord[0][0] < 1.e-3))
                     for (ipts=0; ipts < nsz; ipts++)
                       for (int isp = 0; isp < spatialDim; isp++)

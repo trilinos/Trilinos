@@ -12,6 +12,11 @@
 #include <stk_percept/Percept.hpp>
 #if !defined(__IBMCPP__) 
 
+#include <algorithm>
+#include <functional>
+
+#include <stk_percept/Util.hpp>
+
 namespace stk {
   namespace percept {
 
@@ -983,6 +988,102 @@ namespace stk {
       I(2,1) = 0.0;
       I(2,2) = 1.0;
     }
+
+    /** from {{{shudder}}} wikipedia
+     *
+     * % Given an real symmetric 3x3 matrix A, compute the eigenvalues
+     *  
+     * p = A(1,2)^2 + A(1,3)^2 + A(2,3)^2
+     * if (p == 0) 
+     *    % A is diagonal.
+     *    eig1 = A(1,1)
+     *    eig2 = A(2,2)
+     *    eig3 = A(3,3)
+     * else
+     *    q = trace(A)/3
+     *    p = (A(1,1) - q)^2 + (A(2,2) - q)^2 + (A(3,3) - q)^2 + 2 * p
+     *    p = sqrt(p / 6)
+     *    B = (1 / p) * (A - q * I)       % I is the identity matrix
+     *    r = det(B) / 2
+     *  
+     *    % In exact arithmetic for a symmetric matrix  -1 <= r <= 1
+     *    % but computation error can leave it slightly outside this range.
+     *    if (r <= -1) 
+     *       phi = pi / 3
+     *    elseif (r >= 1)
+     *       phi = 0
+     *    else
+     *       phi = acos(r) / 3
+     *    end
+     *  
+     *    % the eigenvalues satisfy eig3 <= eig2 <= eig1
+     *    eig1 = q + 2 * p * cos(phi)
+     *    eig3 = q + 2 * p * cos(phi + pi * (2/3))
+     *    eig2 = 3 * q - eig1 - eig3     % since trace(A) = eig1 + eig2 + eig3
+     * end
+     */
+
+#define DM_SQR(a) ((a)*(a))    
+
+    inline void eigen_3x3(DenseMatrix<3,3>& A, double eigen[3])
+    {
+      double q=0,r=0, phi=0;
+      double eig0=0,eig1=0,eig2=0;
+      static DenseMatrix<3,3> B;
+      static DenseMatrix<3,3> I;
+      identity(I);
+
+      double p = DM_SQR(A(0,1)) + DM_SQR(A(0,2)) + DM_SQR(A(1,2));
+      if (p < 1.e-10) 
+        {
+          // A is diagonal.
+          eig0 = A(0,0);
+          eig1 = A(1,1);
+          eig2 = A(2,2);
+          eigen[0] = eig0;
+          eigen[1] = eig1;
+          eigen[2] = eig2;
+          std::sort(eigen,eigen+3,std::greater<double>());
+        }            
+      else
+        {
+          q = trace(A)/3;
+          p = DM_SQR(A(0,0) - q) + DM_SQR(A(1,1) - q) + DM_SQR(A(2,2) - q) + 2 * p;
+          p = std::sqrt(p / 6);
+
+          //B = (1 / p) * (A - q * I);       // I is the identity matrix
+          for (int i = 0; i < 3; i++)
+            {
+              for (int j = 0; j < 3; j++)
+                {
+                  B(i,j) = (1. / p) * (A(i,j) - q * I(i,j));       
+                }
+            }
+
+          r = det(B) / 2;
+ 
+          // In exact arithmetic for a symmetric matrix  -1 <= r <= 1
+          //   but computation error can leave it slightly outside this range.
+          if (r <= -1) 
+            phi = M_PI / 3;
+          else if (r >= 1)
+            phi = 0;
+          else
+            phi = std::acos(r) / 3;
+ 
+          // the eigenvalues satisfy eig2 <= eig1 <= eig0
+          eig0 = q + 2 * p * std::cos(phi);
+          eig2 = q + 2 * p * std::cos(phi + M_PI * (2./3.));
+          eig1 = 3 * q - eig0 - eig2;     // since trace(A) = eig0 + eig1 + eig2
+          eigen[0] = eig0;
+          eigen[1] = eig1;
+          eigen[2] = eig2;
+          VERIFY_OP_ON(eig0, <=, eig1, "eig0 < 1");
+          VERIFY_OP_ON(eig1, <=, eig2, "eig1 < 2");
+        }
+    }
+        
+
 
   }
 }

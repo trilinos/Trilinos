@@ -1241,7 +1241,7 @@ namespace stk {
       double spacing_edge(std::vector<stk::mesh::Entity>& nodes,
                           unsigned iv0, unsigned iv1, unsigned nsz, unsigned nsp,  double lspc[8][3], double den_xyz[3], double *coord[8]);
 
-      void normalize_spacing(std::vector<stk::mesh::Entity> &nodes,
+      void normalize_spacing(stk::mesh::Entity element, std::vector<stk::mesh::Entity> &nodes,
                              unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3], double *coord[8]);
 
       void makeCentroid(stk::mesh::FieldBase *field, unsigned *subDimSize_in=0);
