@@ -179,7 +179,7 @@ public:
       \return not sure what is needed, if anything.
   */
 
-  virtual size_t getWeights(gid_t id, scalar_t *wgts) const = 0;
+  virtual size_t getEntityIDWeights(gid_t id, scalar_t *wgts) const = 0;
 
 
   /*! \brief Return dimension of the entity coordinates, if any.
@@ -224,7 +224,7 @@ public:
 
       \return not sure what is needed, if anything.
   */
-  virtual size_t getCoordinates(gid_t id, scalar_t *coords) const = 0;
+  virtual size_t getEntityCoordinates(gid_t id, scalar_t *coords) const = 0;
 
 
   /*! \brief Returns whether a first adjacency combination is available.
@@ -304,6 +304,15 @@ public:
      entityType through, const lno_t *&offsets,
      const gid_t *& adjacencyIds) const = 0;
 
+  /*! \brief Copy the second adjacency IDs for all adjacencies incident to a
+         specific entity into array provided by Zoltan2.
+      \param sourcetarget
+      \param id specific entity.  Works only if id is local to this process.
+      \param nborIds array provided by Zoltan2.
+      \return not sure what is needed, if anything.
+  */
+  virtual size_t getEntity2ndAdjacencyIDs(entityType sourcetarget,
+     entityType through, gid_t id, gid_t *nborIds) const = 0;
 
   /*! \brief Returns the number (0 or greater) of weights per second adjacency.
    */
