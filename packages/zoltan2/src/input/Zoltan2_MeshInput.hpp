@@ -113,6 +113,8 @@ public:
    */
   virtual ~MeshInput() {};
 
+  enum entityType = {REGION, FACE, EDGE, VERTEX};
+
   /*! \brief Return the global number of IDs across all processes
    */
   virtual size_t getGlobalNumEntityIDs(entityType etype) const = 0;
@@ -227,11 +229,11 @@ public:
 
   /*! \brief Returns whether a first adjacency combination is available.
    */
-  virtual bool availAdjacencyIDs(entityType source, entityType target);
+  virtual bool availAdjacencies(entityType source, entityType target);
 
   /*! \brief Returns the number of first adjacencies on this process.
    */
-  virtual size_t getLocalNumAdjacencyIDs(entityType source,
+  virtual size_t getLocalNumAdjacencies(entityType source,
 					 entityType target) const = 0;
 
   /*! \brief Sets pointers to this process' mesh first adjacencies.
@@ -249,20 +251,20 @@ public:
       offsets and adjacencyIds
       must remain valid for the lifetime of this InputAdapter.
    */
-  virtual size_t getLocalAdjacencyIDsView(entityType source, entityType target,
+  virtual size_t getLocalAdjacenciesView(entityType source, entityType target,
      const lno_t *&offsets, const gid_t *& adjacencyIds) const = 0;
 
 
   /*! \brief Returns whether a second adjacency combination is available.
    */
-  virtual bool avail2ndAdjacencyIDs(entityType sourcetarget, entityType through);
+  virtual bool avail2ndAdjacencies(entityType sourcetarget, entityType through);
 
 
   /*! \brief Return the global number of entity second adjacencies across all
    *    processes
    *  TODO:  Do we need this function?
    */
-  virtual size_t getGlobalNum2ndAdjacencyIDs(entityType sourcetarget,
+  virtual size_t getGlobalNum2ndAdjacencies(entityType sourcetarget,
 					     entityType through) const = 0;
 
 
@@ -273,7 +275,7 @@ public:
    *  Parameters will specify algorithm options:
    *   balance_entity_type==entityType, adjacency_through==entityType
    */
-  virtual size_t getLocalNum2ndAdjacencyIDs(entityType sourcetarget,
+  virtual size_t getLocalNum2ndAdjacencies(entityType sourcetarget,
 					    entityType through) const = 0;
 
 
@@ -282,7 +284,7 @@ public:
    *  \param id specific entity.  Works only if id is local to this process.
    *  \return number of second adjacendies to entity.
    */
-  virtual lno_t getEntityNum2ndAdjacencyIDs(entityType sourcetarget,
+  virtual lno_t getEntityNum2ndAdjacencies(entityType sourcetarget,
      entityType through, gid_t id) const = 0;
 
 
@@ -303,7 +305,7 @@ public:
    */
 // TODO:  Later may allow user to not implement second adjacencies and, if we want them,
 // TODO:  we compute A^T A, where A is matrix of first adjacencies.
-  virtual size_t getLocal2ndAdjacencyIDsView(entityType sourcetarget,
+  virtual size_t getLocal2ndAdjacenciesView(entityType sourcetarget,
      entityType through, const lno_t *&offsets,
      const gid_t *& adjacencyIds) const = 0;
 
@@ -315,30 +317,30 @@ public:
       \param nborIds array provided by Zoltan2.
       \return not sure what is needed, if anything.
   */
-  virtual size_t getEntity2ndAdjacencyIDs(entityType sourcetarget,
+  virtual size_t getEntity2ndAdjacencies(entityType sourcetarget,
      entityType through, gid_t id, gid_t *nborIds) const = 0;
 
 
   /*! \brief Returns the number (0 or greater) of weights per second adjacency.
    */
-  virtual int getNumWeightsPer2ndAdjacencyID(entityType sourcetarger,
+  virtual int getNumWeightsPer2ndAdjacency(entityType sourcetarger,
 					     entityType through) const = 0;
 
 
   /*! \brief  Provide a pointer to the second adjacency weights, if any.
 
       \param weights is the list of weights of the given number for
-           the second adjacencies returned in getLocal2ndAdjacencyIDsView().
+           the second adjacencies returned in getLocal2ndAdjacenciesView().
       \param stride The k'th weight is located at weights[stride*k]
       \param number ranges from zero to one less than 
-                   getNumWeightsPer2ndAdjacencyID().
+                   getNumWeightsPer2ndAdjacency().
        \return The number of weights listed, which should be the same
-               as the number of adjacencies in getLocal2ndAdjacencyIDsView().
+               as the number of adjacencies in getLocal2ndAdjacenciesView().
 
       Zoltan2 does not copy your data.  The data pointed to by weights
       must remain valid for the lifetime of this InputAdapter.
    */
-  virtual size_t getLocal2ndAdjacencyIDWeightsView(entityType sourcetarget,
+  virtual size_t getLocal2ndAdjacencyWeightsView(entityType sourcetarget,
      entityType through, const scalar_t *&weights, int &stride,
      int number) const = 0;
 
@@ -350,7 +352,7 @@ public:
       \param ewgts array provided by Zoltan2.
       \return not sure what is needed, if anything.
   */
-  virtual size_t getEntity2ndAdjacencyIDWeights(entityType sourcetarget,
+  virtual size_t getEntity2ndAdjacencyWeights(entityType sourcetarget,
      entityType through, gid_t id, scalar_t *ewgts);
 
 
