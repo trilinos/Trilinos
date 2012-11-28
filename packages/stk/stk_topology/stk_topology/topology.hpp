@@ -21,6 +21,7 @@ struct topology
     , ELEM_RANK, ELEMENT_RANK = ELEM_RANK
     , END_RANK
     , INVALID_RANK = END_RANK
+    , NUM_RANKS = END_RANK
   };
 
   //To add new topologies consult the toolkit team
@@ -74,6 +75,7 @@ struct topology
     , HEX_27, HEXAHEDRON_27 = HEX_27
     , END_TOPOLOGY
     , INVALID_TOPOLOGY = END_TOPOLOGY
+    , NUM_TOPOLOGIES = END_TOPOLOGY
   };
 
   static const char * rank_names[];     // indexed by rank_t
