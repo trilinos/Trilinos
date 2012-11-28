@@ -514,20 +514,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( asSafe, realToUnsignedIntTypeOverflow, RealTy
     "Dear test author, please pick a different marker value.  "
     "Please report this bug to the Teuchos developers.");
 
-  if (maxUnsignedIntVal < maxVal) {
-    TEST_THROW(val = asSafe<UnsignedIntType> (minVal), std::range_error);
+  // Conversion from any negative value should throw.
+  TEST_THROW(val = asSafe<UnsignedIntType> (minVal), std::range_error);
+  const RealType minusOne = -1;
+  TEST_THROW(val = asSafe<UnsignedIntType> (minusOne), std::range_error);
 
+  // Only test overflow checks if overflow can actually take place.
+  if (maxUnsignedIntVal < maxVal) {
+    TEST_THROW(val = asSafe<UnsignedIntType> (maxVal), std::range_error);
     try {
-      std::cerr << std::endl << "*** maxVal = " << maxVal
-                << ", asSafe (maxVal) = "
-                << asSafe<UnsignedIntType> (maxVal) << std::endl;
+      std::cerr << std::endl 
+		<< "*** RealType = " << TypeNameTraits<RealType>::name ()
+		<< ", UnsignedIntType = " << TypeNameTraits<UnsignedIntType>::name ()
+		<< ", maxVal = " << maxVal
+                << ", maxUnsignedIntVal = " << maxUnsignedIntVal
+		<< ", asSafe (maxVal) = " << asSafe<UnsignedIntType> (maxVal) 
+		<< std::endl;
     } catch (...) {
+      std::cerr << "(asSafe threw an exception)" << std::endl;
     }
-    //TEST_THROW(val = asSafe<UnsignedIntType> (maxVal), std::range_error);
-    (void) val; // Silence compiler errors.
   }
   else { // Only conversions from negative values should throw.
-    TEST_THROW(val = asSafe<UnsignedIntType> (minVal), std::range_error);
     TEST_NOTHROW(val = asSafe<UnsignedIntType> (maxVal));
     TEST_EQUALITY_CONST(val, static_cast<UnsignedIntType> (maxVal));
 
@@ -549,9 +556,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( asSafe, realToUnsignedIntTypeOverflow, RealTy
 #endif // 0
   }
 
-  // Conversion from any negative value should throw.
-  const RealType minusOne = -1;
-  TEST_THROW(val = asSafe<UnsignedIntType> (minusOne), std::range_error);
   (void) val; // Silence compiler errors.
 }
 
