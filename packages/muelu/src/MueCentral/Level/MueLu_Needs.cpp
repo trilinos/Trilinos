@@ -252,29 +252,15 @@ namespace MueLu {
   }
 
 #if defined(HAVE_MUELU_BOOST) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
-  void Needs::UpdateGraph(std::map<const FactoryBase*, long unsigned>&                           vindices,
-                          std::map<std::pair<long unsigned, long unsigned>, std::string>&        edges,
-                          boost::dynamic_properties&                                             dp,
-                          boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS,
-                          boost::property<boost::vertex_name_t, std::string,
-                          boost::property<boost::vertex_color_t, std::string,
-                          boost::property<boost::vertex_index_t, std::string> > >,
-                          boost::property<boost::edge_name_t, std::string,
-                          boost::property<boost::edge_color_t, std::string> > >&                 graph) const {
+  void Needs::UpdateGraph(std::map<const FactoryBase*, BoostVertex>&            vindices,
+                   std::map<std::pair<BoostVertex, BoostVertex>, std::string>&  edges,
+                   BoostProperties&                                             dp,
+                   BoostGraph&                                                  graph) const {
     size_t vind = vindices.size();
-
-    typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS,
-            boost::property<boost::vertex_name_t, std::string,
-            boost::property<boost::vertex_color_t, std::string,
-            boost::property<boost::vertex_index_t, std::string> > >,
-            boost::property<boost::edge_name_t, std::string,
-            boost::property<boost::edge_color_t, std::string> > > Graph;
-    typedef boost::graph_traits<Graph>::vertex_descriptor vertex_t;
-    typedef boost::graph_traits<Graph>::edge_descriptor   edge_t;
 
     for (UTILS::TwoKeyMap<const FactoryBase*, std::string, RCP<MueLu::VariableContainer> >::const_iterator it1 = dataTable_.begin(); it1 != dataTable_.end(); it1++) {
       if (vindices.find(it1->first) == vindices.end()) {
-        vertex_t boost_vertex = boost::add_vertex(graph);
+        BoostVertex boost_vertex = boost::add_vertex(graph);
         boost::put("label", dp, boost_vertex, it1->first->description());
         vindices[it1->first] = vind++;
       }
@@ -284,12 +270,12 @@ namespace MueLu {
         for (std::map<const FactoryBase*,int>::const_iterator rit = requests.begin(); rit != requests.end(); rit++) {
           if (vindices.find(rit->first) == vindices.end()) {
             // requested by factory which is unknown
-            vertex_t boost_vertex = boost::add_vertex(graph);
+            BoostVertex boost_vertex = boost::add_vertex(graph);
             boost::put("label", dp, boost_vertex, rit->first->description());
             vindices[rit->first] = vind++;
           }
 
-          edges[std::pair<long unsigned,long unsigned>(vindices[rit->first], vindices[it1->first])] =  it2->first;
+          edges[std::pair<BoostVertex,BoostVertex>(vindices[rit->first], vindices[it1->first])] =  it2->first;
         }
       }
     }

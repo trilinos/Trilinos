@@ -314,18 +314,18 @@ CommandLineProcessor::parse(
         *(any_cast<bool*>(opt_val_val.opt_val)) = false;
         break;
       case OPT_INT:
-        *(any_cast<int*>(opt_val_val.opt_val)) = Teuchos::ValueTypeConversionTraits<int, std::string>::safeConvert( opt_val_str );
+        *(any_cast<int*>(opt_val_val.opt_val)) = asSafe<int> (opt_val_str);
         break;
       case OPT_LONG_INT:
-        *(any_cast<long int*>(opt_val_val.opt_val)) = Teuchos::ValueTypeConversionTraits<long int, std::string>::safeConvert( opt_val_str );
+        *(any_cast<long int*>(opt_val_val.opt_val)) = asSafe<long int> (opt_val_str);
         break;
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
       case OPT_LONG_LONG_INT:
-        *(any_cast<long long int*>(opt_val_val.opt_val)) = Teuchos::ValueTypeConversionTraits<long long int, std::string>::safeConvert( opt_val_str );
+        *(any_cast<long long int*>(opt_val_val.opt_val)) = asSafe<long long int> (opt_val_str);
         break;
 #endif
       case OPT_DOUBLE:
-        *(any_cast<double*>(opt_val_val.opt_val)) = std::atof(opt_val_str.c_str());
+        *(any_cast<double*>(opt_val_val.opt_val)) = asSafe<double> (opt_val_str);
         break;
       case OPT_STRING:
         *(any_cast<std::string*>(opt_val_val.opt_val)) = remove_quotes(opt_val_str);

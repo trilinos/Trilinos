@@ -24,6 +24,18 @@
 #endif // GCC_VERSION
 #endif // __GNUC__
 
+// define boost graph types
+typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS,
+        boost::property<boost::vertex_name_t, std::string,
+        boost::property<boost::vertex_color_t, std::string,
+        boost::property<boost::vertex_index_t, std::string> > >,
+        boost::property<boost::edge_name_t, std::string,
+        boost::property<boost::edge_color_t, std::string> > >               BoostGraph;
+typedef boost::dynamic_properties                                           BoostProperties;
+typedef boost::graph_traits<BoostGraph>::vertex_descriptor                  BoostVertex;
+typedef boost::graph_traits<BoostGraph>::edge_descriptor                    BoostEdge;
+
+
 #endif // HAVE_MUELU_BOOST
 
 #endif // MUELU_BOOSTGRAPHVIZ_HPP

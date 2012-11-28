@@ -82,7 +82,7 @@ namespace MueLu {
     MultiVectorTransferFactory(std::string const & vectorName, std::string const & restrictionName);
 
     //! Destructor.
-    virtual ~MultiVectorTransferFactory();
+    virtual ~MultiVectorTransferFactory() { }
 
     //@}
 

@@ -119,23 +119,24 @@ namespace MueLu {
 
     Array<ArrayRCP<SC> > XYZ; // Using this format because no communications needed here. No need for a map and a Xpetra::MultiVector
 
-    // Build XYZ from XCoordinates, YCoordinates and ZCoordinates
-    if (level.IsAvailable("XCoordinates")) {
+//     // Build XYZ from XCoordinates, YCoordinates and ZCoordinates
+//     if (level.IsAvailable("XCoordinates")) {
 
-      {
-        XYZ.push_back(level.Get< ArrayRCP<SC> >("XCoordinates"));
-      }
+//       {
+//         XYZ.push_back(level.Get< ArrayRCP<SC> >("XCoordinates"));
+//       }
 
-      if (level.IsAvailable("YCoordinates")) {
-        XYZ.push_back(level.Get< ArrayRCP<SC> >("YCoordinates"));
-      }
+//       if (level.IsAvailable("YCoordinates")) {
+//         XYZ.push_back(level.Get< ArrayRCP<SC> >("YCoordinates"));
+//       }
 
-      if (level.IsAvailable("ZCoordinates")) {
-        TEUCHOS_TEST_FOR_EXCEPTION(!level.IsAvailable("YCoordinates"), Exceptions::RuntimeError, "ZCoordinates specified but no YCoordinates");
-        XYZ.push_back(level.Get< ArrayRCP<SC> >("ZCoordinates"));
-      }
+//       if (level.IsAvailable("ZCoordinates")) {
+//         TEUCHOS_TEST_FOR_EXCEPTION(!level.IsAvailable("YCoordinates"), Exceptions::RuntimeError, "ZCoordinates specified but no YCoordinates");
+//         XYZ.push_back(level.Get< ArrayRCP<SC> >("ZCoordinates"));
+//       }
 
-    } else if (level.IsAvailable("Coordinates")) {
+//     } else
+      if (level.IsAvailable("Coordinates")) {
 
       RCP<Matrix> Aloc = Get<RCP<Matrix> >(level, "A");
       LocalOrdinal blksize = Aloc->GetFixedBlockSize();
