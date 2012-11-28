@@ -43,6 +43,23 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include <limits>
 
+// Like TEST_NOTHROW, but showing the exception message if the code does throw.
+#define TEST_NOTHROW_WITH_MESSAGE( code ) \
+  try { \
+    (out) << "Test that code {"#code";} does not throw : "; \
+    code; \
+    (out) << "passes\n"; \
+  } \
+  catch (...) { \
+    (success) = false; \
+    out << "failed\n"; \
+    out << "\nException message for unexpected exception:\n\n"; \
+    { \
+      Teuchos::OSTab l_tab(out); \
+      out << except.what() << "\n\n"; \
+    } \
+  }
+
 // Putting the unit tests in an anonymous namespace avoids name collisions.
 namespace {
 
@@ -301,27 +318,27 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
     std::ostringstream os;
     os.precision (9);
     os << minF;
-    TEST_NOTHROW(valF = asSafe<float> (os.str ()));
+    TEST_NOTHROW_WITH_MESSAGE(valF = asSafe<float> (os.str ()));
     TEST_EQUALITY_CONST(valF, minF);
-    TEST_NOTHROW(valF = as<float> (os.str ()));
+    TEST_NOTHROW_WITH_MESSAGE(valF = as<float> (os.str ()));
     TEST_EQUALITY_CONST(valF, minF);
   }
   {
     std::ostringstream os;
     os.precision (9);
     os << maxF;
-    TEST_NOTHROW(valF = asSafe<float> (os.str ()));
+    TEST_NOTHROW_WITH_MESSAGE(valF = asSafe<float> (os.str ()));
     TEST_EQUALITY_CONST(valF, maxF);
-    TEST_NOTHROW(valF = as<float> (os.str ()));
+    TEST_NOTHROW_WITH_MESSAGE(valF = as<float> (os.str ()));
     TEST_EQUALITY_CONST(valF, maxF);
   }
   {
     std::ostringstream os;
     os.precision (9);
     os << minusOneF;
-    TEST_NOTHROW(valF = asSafe<float> (os.str ()));
+    TEST_NOTHROW_WITH_MESSAGE(valF = asSafe<float> (os.str ()));
     TEST_EQUALITY_CONST(valF, minusOneF);
-    TEST_NOTHROW(valF = as<float> (os.str ()));
+    TEST_NOTHROW_WITH_MESSAGE(valF = as<float> (os.str ()));
     TEST_EQUALITY_CONST(valF, minusOneF);
   }
   // Write -1 as double, read as float; shouldn't throw.
@@ -329,9 +346,9 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
     std::ostringstream os;
     os.precision (9);
     os << minusOneD;
-    TEST_NOTHROW(valF = asSafe<float> (os.str ()));
+    TEST_NOTHROW_WITH_MESSAGE(valF = asSafe<float> (os.str ()));
     TEST_EQUALITY_CONST(valF, minusOneF);
-    TEST_NOTHROW(valF = as<float> (os.str ()));
+    TEST_NOTHROW_WITH_MESSAGE(valF = as<float> (os.str ()));
     TEST_EQUALITY_CONST(valF, minusOneF);
   }
 
