@@ -292,7 +292,7 @@ struct topology_data<topology::BEAM_3>
   static const topology::rank_t side_rank = topology::EDGE_RANK;
 
   static const bool has_homogeneous_edges = true;
-  static const bool is_shell = true;
+  static const bool is_shell = false;
   static const int dimension = 2;
   static const int num_edges = 1;
 

@@ -143,5 +143,41 @@ STKTOPOLOGY_NODES_MEMBER(permutation_nodes)
 #undef STKTOPOLOGY_ORDINAL_NODES_MEMBER
 #undef STKTOPOLOGY_NODES_MEMBER
 
+
+namespace stk { namespace detail {
+
+template <typename NodeArrayA, typename NodeArrayB>
+struct equivalent_impl {
+  typedef std::pair<bool,int> result_type;
+
+  STKTOPOLOGY_INLINE_FUNCTION
+  equivalent_impl( const NodeArrayA &a , const NodeArrayB &b )
+    : m_a(a), m_b(b)
+  {}
+
+  template <typename Topology>
+  STKTOPOLOGY_INLINE_FUNCTION
+  result_type operator()(Topology) const
+  { return Topology::equivalent(m_a, m_b); }
+
+  const NodeArrayA & m_a;
+  const NodeArrayB & m_b;
+};
+
+}} /*namespace stk::detail*/
+
+namespace stk {
+
+template <typename NodeArrayA, typename NodeArrayB>
+STKTOPOLOGY_INLINE_FUNCTION
+std::pair<bool,int> topology::equivalent( const NodeArrayA &a, const NodeArrayB &b) const
+{ typedef detail::equivalent_impl<NodeArrayA,NodeArrayB> functor;
+  functor f(a,b);
+  topology::apply_functor< functor > apply( f );
+  return apply(m_value);
+}
+
+} /*namespace stk*/
+
 #endif //STKTOPOLOGY_TOPOLOGY_TCC
 
