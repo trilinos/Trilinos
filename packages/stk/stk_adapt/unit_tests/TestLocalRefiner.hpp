@@ -20,7 +20,7 @@ namespace stk {
     protected:
       virtual unsigned
       doForAllElements(stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function, 
-                       vector< ColorerSetType >& elementColors, unsigned elementType,
+                       unsigned elementType,
                        vector<NeededEntityType>& needed_entity_ranks,
                        bool only_count=false, bool doAllElements=true);
 

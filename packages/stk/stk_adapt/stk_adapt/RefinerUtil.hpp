@@ -19,7 +19,6 @@
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/ProgressMeter.hpp>
 #include <stk_adapt/UniformRefinerPattern.hpp>
-#include <stk_adapt/Colorer.hpp>
 
 #include <stk_adapt/NodeRegistry.hpp>
 

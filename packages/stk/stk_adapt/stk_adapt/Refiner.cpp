@@ -627,7 +627,9 @@ namespace stk {
       ///// Do the mesh coloring step for each type of element
       ///////////////////////////////////////////////////////////
 
-      vector< vector< ColorerSetType > > elementColorsByType = vector < vector< ColorerSetType > > (ranks.size());
+      //d vector< vector< ColorerSetType > > elementColorsByType = vector < vector< ColorerSetType > > (ranks.size());
+      typedef  std::pair<stk::mesh::EntityRank, unsigned > ElementRankTypeInfo;
+      vector< std::pair<stk::mesh::EntityRank, unsigned > > elementRankTypeInfo (ranks.size());
 
       for (unsigned irank = 0; irank < ranks.size(); irank++)
         {
@@ -640,20 +642,27 @@ namespace stk {
                                            << " cell_topo= " << cell_topo.getName()
                                            << std::endl;
 
-          std::vector<stk::mesh::EntityRank> ranks_one(1, ranks[irank]);
+          //d std::vector<stk::mesh::EntityRank> ranks_one(1, ranks[irank]);
 
-          // this gives a list of colored elements for this element type only
-          stk::mesh::PartVector * fromParts = 0;
-          fromParts = &(m_breakPattern[irank]->getFromParts());
+          //d this gives a list of colored elements for this element type only
+          //d stk::mesh::PartVector * fromParts = 0;
+          //d fromParts = &(m_breakPattern[irank]->getFromParts());
 
           //!FIXME add part info
-          Colorer meshColorerThisTypeOnly(elementColorsByType[irank], ranks_one);   TRACE_PRINT("Refiner: Color mesh (all top level rank elements)... ");
-          meshColorerThisTypeOnly.color(m_eMesh, &elementType, fromParts);          TRACE_PRINT("Refiner: Color mesh (all top level rank elements)...done ");
+          //d Colorer meshColorerThisTypeOnly(elementColorsByType[irank], ranks_one);   TRACE_PRINT("Refiner: Color mesh (all top level rank elements)... ");
+          //d meshColorerThisTypeOnly.color(m_eMesh, &elementType, fromParts);          TRACE_PRINT("Refiner: Color mesh (all top level rank elements)...done ");
+          
+          elementRankTypeInfo[irank] = ElementRankTypeInfo(ranks[irank], elementType);
 
-          if (0 && elementColorsByType[irank].size() == 0)
+#if 0
+          stk::mesh::PartVector * fromParts = &(m_breakPattern[irank]->getFromParts());
+          mesh::Selector selector(m_eMesh.get_fem_meta_data()->universal_part());
+          if (fromParts)
             {
-              std::cout << "WARNING: no elements found of this type: " << cell_topo.getName() << " key= " << elementType << std::endl;
+              selector = mesh::selectUnion(*fromParts);
             }
+#endif
+
         }
 
       // FIXME warn if a topology shows up without a break pattern
@@ -697,7 +706,10 @@ namespace stk {
               {
                 EXCEPTWATCH;
 
-                vector< ColorerSetType >& elementColors = elementColorsByType[irank];
+                //d vector< ColorerSetType >& elementColors = elementColorsByType[irank];
+                ElementRankTypeInfo e_info = elementRankTypeInfo[irank];
+                VERIFY_OP_ON(ranks[irank], ==, e_info.first,"er1");
+                VERIFY_OP_ON(elementType, ==, e_info.second,"er2");
 
                 vector<NeededEntityType> needed_entity_ranks;
                 m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
@@ -706,7 +718,8 @@ namespace stk {
                 bool doAllElements = true;
 
                 unsigned num_elem_not_ghost_0_incr = doForAllElements(irank, "Register New Nodes",
-                                                                      ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, elementType, needed_entity_ranks,
+                                                                      ranks[irank], &NodeRegistry::registerNeedNewNode, 
+                                                                      elementType, needed_entity_ranks,
                                                                       count_only, doAllElements);
 
                 num_elem_not_ghost_0 += num_elem_not_ghost_0_incr;
@@ -751,14 +764,15 @@ namespace stk {
               //if (ranks[irank] >= m_eMesh.face_rank())
               {
                 EXCEPTWATCH;
-                vector< ColorerSetType >& elementColors = elementColorsByType[irank];
+                //d vector< ColorerSetType >& elementColors = elementColorsByType[irank];
+                ElementRankTypeInfo e_info = elementRankTypeInfo[irank];
 
                 vector<NeededEntityType> needed_entity_ranks;
                 m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
 
                 bool count_only = false;
                 bool doAllElements = false;  // only do ghost elements
-                num_elem = doForAllElements(irank, "Check For Comm", ranks[irank], &NodeRegistry::checkForRemote, elementColors, elementType, needed_entity_ranks, count_only, doAllElements);
+                num_elem = doForAllElements(irank, "Check For Comm", ranks[irank], &NodeRegistry::checkForRemote, elementType, needed_entity_ranks, count_only, doAllElements);
               }
             }
           m_nodeRegistry->endCheckForRemote();                /**/   TRACE_PRINT("Refiner: endCheckForRemote (top-level rank)... ");
@@ -797,14 +811,15 @@ namespace stk {
               {
                 EXCEPTWATCH;
 
-                vector< ColorerSetType >& elementColors = elementColorsByType[irank];
+                //d vector< ColorerSetType >& elementColors = elementColorsByType[irank];
+                ElementRankTypeInfo e_info = elementRankTypeInfo[irank];
 
                 vector<NeededEntityType> needed_entity_ranks;
                 m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
 
                 bool count_only = false;
                 bool doAllElements = false;   // ghost elements only
-                num_elem = doForAllElements(irank, "Get From Remote", ranks[irank], &NodeRegistry::getFromRemote, elementColors, elementType, needed_entity_ranks,  count_only, doAllElements);
+                num_elem = doForAllElements(irank, "Get From Remote", ranks[irank], &NodeRegistry::getFromRemote,  elementType, needed_entity_ranks,  count_only, doAllElements);
               }
             }
 
@@ -850,7 +865,8 @@ namespace stk {
 
           std::vector<stk::mesh::EntityRank> ranks_one(1, ranks[irank]);
 
-          vector< ColorerSetType >& elementColors = elementColorsByType[irank];
+          //d vector< ColorerSetType >& elementColors = elementColorsByType[irank];
+          ElementRankTypeInfo e_info = elementRankTypeInfo[irank];
 
           // loop over elements, build faces, edges in threaded mode (guaranteed no mem conflicts)
           // (note: invoke UniformRefinerPattern: what entities are needed)
@@ -867,7 +883,7 @@ namespace stk {
             bool count_only = true;
             bool doAllElements = true;
             /**/                                                TRACE_PRINT("Refiner: registerNeedNewNode count_only(true) ranks[irank]==ranks[0]... ");
-            unsigned num_elem_not_ghost = doForAllElements(irank, "Register New Nodes", ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, elementType, needed_entity_ranks, count_only, doAllElements);
+            unsigned num_elem_not_ghost = doForAllElements(irank, "Register New Nodes", ranks[irank], &NodeRegistry::registerNeedNewNode,  elementType, needed_entity_ranks, count_only, doAllElements);
             /**/                                                TRACE_PRINT("Refiner: registerNeedNewNode count_only(true) ranks[irank]==ranks[0]... done ");
 
             unsigned num_elem_needed = num_elem_not_ghost * m_breakPattern[irank]->getNumNewElemPerElem();
@@ -875,16 +891,10 @@ namespace stk {
             // FIXME TMP
             if (CHECK_DEBUG)
               {
-                unsigned nele_col=0;
-                for (unsigned icolor = 0; icolor < elementColors.size(); icolor++)
-                  {
-                    nele_col += elementColors[icolor].size();
-                  }
                 std::cout << "tmp Refiner::doBreak: irank= " << irank << " ranks[irank]= " << ranks[irank] << " bp= ["
                           << m_breakPattern[irank]->getFromTopoPartName() << " ==> "
                           << m_breakPattern[irank]->getToTopoPartName() << "] num_elem_needed= " << num_elem_needed
                           << " num_elem_not_ghost= " << num_elem_not_ghost
-                          << " nelementColors= " << nele_col << " elementColors.size()= " << elementColors.size()
                           << std::endl;
               }
 
@@ -913,7 +923,8 @@ namespace stk {
           /**/                                                TRACE_PRINT("Refiner: createElementsAndNodesAndConnectLocal... ");
           /**/                                                TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL);
 
-          createElementsAndNodesAndConnectLocal(irank, ranks[irank], m_breakPattern[irank], elementColors, needed_entity_ranks, new_elements);
+
+          createElementsAndNodesAndConnectLocal(irank, ranks[irank], m_breakPattern[irank], e_info.second, needed_entity_ranks, new_elements);
 
           /**/                                                TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL);
           /**/                                                TRACE_PRINT("Refiner: createElementsAndNodesAndConnectLocal...done ");
@@ -1350,7 +1361,7 @@ namespace stk {
     unsigned Refiner::
     doForAllElements(unsigned irank, std::string function_info,
                      stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function,
-                     vector< ColorerSetType >& elementColors, unsigned elementType,
+                     unsigned elementType,
                      vector<NeededEntityType>& needed_entity_ranks,
                      bool only_count, bool doAllElements)
     //bool only_count=false, bool doAllElements=true)
@@ -1362,7 +1373,7 @@ namespace stk {
       if (m_doProgress)
         {
           m_doProgress = false;
-          progress_meter_num_total = doForAllElements(irank, function_info, rank, function, elementColors, elementType, needed_entity_ranks,  true, doAllElements);
+          progress_meter_num_total = doForAllElements(irank, function_info, rank, function, elementType, needed_entity_ranks,  true, doAllElements);
           m_doProgress = true;
           std::ostringstream oss; oss << function_info <<" [" << 100.0*((double)irank)/((double)m_ranks.size()) << " %]";
           ProgressMeterData pd(ProgressMeterData::INIT, 0.0, oss.str());
@@ -1373,24 +1384,43 @@ namespace stk {
         progress_meter_when_to_post = 1;
       double d_progress_meter_num_total = progress_meter_num_total;
 
-      for (unsigned icolor = 0; icolor < elementColors.size(); icolor++)
+      stk::mesh::BulkData& bulkData = *m_eMesh.get_bulk_data();
+
+      mesh::Selector selector(m_eMesh.get_fem_meta_data()->universal_part());
+      stk::mesh::PartVector * fromParts = &(m_breakPattern[irank]->getFromParts());
+      if (fromParts)
         {
-          if (elementColors[icolor].size() == 0)
+          selector = mesh::selectUnion(*fromParts);
+        }
+
+      const vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( rank );
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          stk::mesh::Bucket & bucket = **k ;
+          if (!selector(bucket))
             {
-              std::cout << "tmp doForAllElements elementColors size = 0!!!" << std::endl;
               continue;
             }
 
-          //stk::mesh::Entity first_element_p = *(elementColors[icolor].begin());
-          //const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*first_element_p);
-
-          // do in threaded mode FIXME
-          for (ColorerSetType::iterator iele = elementColors[icolor].begin();
-               iele !=  elementColors[icolor].end();
-               iele++)
+          bool doThisBucket = true;
+          const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+          shards::CellTopology topo(bucket_cell_topo_data);
+          if ( topo.getKey() != elementType)
             {
-              const stk::mesh::Entity element_p = *iele;
-              const stk::mesh::Entity element   = element_p;
+              doThisBucket = false;
+            }
+
+          if (!doThisBucket)
+            {
+              continue;
+            }
+
+          const unsigned num_elements_in_bucket = bucket.size();
+
+          for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+            {
+              stk::mesh::Entity element = bucket[iElement];
+              const stk::mesh::Entity element_p = element;
 
               // FIXME
               // skip elements that are already a parent (if there's no family tree yet, it's not a parent, so avoid throwing an error if isParentElement)
@@ -1418,8 +1448,8 @@ namespace stk {
                   if (0) std::cout << "progress_meter_percent = " << progress_meter_percent << std::endl;
                 }
 
-            } // elements in this color
-        } // icolor
+            } // elements
+        } // buckets
 
       if (m_doProgress)
         {
@@ -1433,7 +1463,7 @@ namespace stk {
 
     void Refiner::
     createElementsAndNodesAndConnectLocal(unsigned irank, stk::mesh::EntityRank rank, UniformRefinerPatternBase *breakPattern,
-                                          vector< ColorerSetType >& elementColors,   vector<NeededEntityType>& needed_entity_ranks,
+                                          unsigned elementType,   vector<NeededEntityType>& needed_entity_ranks,
                                           vector<stk::mesh::Entity>& new_elements_pool)
     {
       EXCEPTWATCH;
@@ -1446,11 +1476,28 @@ namespace stk {
       int jele = 0;
       int numPrints = 20;
 
+      mesh::Selector selector(m_eMesh.get_fem_meta_data()->universal_part());
+      stk::mesh::PartVector * fromParts = &(m_breakPattern[irank]->getFromParts());
+      if (fromParts)
+        {
+          selector = mesh::selectUnion(*fromParts);
+        }
+
       // create new elements and connect them up
 
-      for (unsigned icolor = 0; icolor < elementColors.size(); icolor++)
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( rank );
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          jele += elementColors[icolor].size();
+          stk::mesh::Bucket & bucket = **k ;
+          if (selector(bucket))
+            {
+              const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+              shards::CellTopology topo(bucket_cell_topo_data);
+              if (topo.getKey() == elementType)
+                {
+                  jele += bucket.size();
+                }
+            }
         }
 
       int nele = jele;
@@ -1460,7 +1507,7 @@ namespace stk {
       if (0)
         {
           std::cout << "Refiner::createElementsAndNodesAndConnectLocal: rank= " << rank
-                    << " elementColors.size() = " << elementColors.size() << " num elements = " << nele
+                    << " num elements = " << nele
                     << " printEvery= " << printEvery
                     << std::endl;
         }
@@ -1471,26 +1518,28 @@ namespace stk {
           notifyObservers(&pd);
         }
 
-      for (unsigned icolor = 0; icolor < elementColors.size(); icolor++)
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          TRACE_PRINT(  "Refiner:createElementsAndNodesAndConnectLocal color= " + percept::toString(icolor) + " [ " +
-                        (percept::toString (((double)icolor)/((double)elementColors.size())*100 )).substr(0,4) + " %] ");
-
-          if (elementColors[icolor].size() == 0)
+          stk::mesh::Bucket & bucket = **k ;
+          const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+          shards::CellTopology topo(bucket_cell_topo_data);
+          if (!(selector(bucket) && topo.getKey() == elementType))
             {
-              std::cout << "tmp elementColors size = 0!!!" << std::endl;
               continue;
             }
 
-          stk::mesh::Entity first_element_p = *(elementColors[icolor].begin());
+          stk::mesh::Entity first_element_p = bucket[0];
 
           const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(first_element_p);
           shards::CellTopology cell_topo(cell_topo_data);
 
-          for (ColorerSetType::iterator iele = elementColors[icolor].begin();  iele !=  elementColors[icolor].end();  iele++)
-            {
+          const unsigned num_elements_in_bucket = bucket.size();
 
-              stk::mesh::Entity element_p = *iele;
+          for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+            {
+              stk::mesh::Entity element = bucket[iElement];
+              const stk::mesh::Entity element_p = element;
+
               if (!element_p.is_valid())
                 {
                   throw std::runtime_error("Refiner::createElementsAndNodesAndConnectLocal");
@@ -1507,8 +1556,6 @@ namespace stk {
                   ProgressMeterData pd(ProgressMeterData::RUNNING, 100.0*((double)jele)/((double)std::max(nele,1)), oss.str());
                   notifyObservers(&pd);
                 }
-
-              stk::mesh::Entity element = element_p;
 
               if (m_proc_rank_field && rank == stk::mesh::MetaData::ELEMENT_RANK)
                 {

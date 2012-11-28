@@ -34,7 +34,7 @@ namespace stk {
     // test uniform refinement using bulk data and buckets directly (not using the element color vectors)
     unsigned TestLocalRefiner::
     doForAllElements(stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function, 
-                     vector< ColorerSetType >& elementColors, unsigned elementType,
+                     unsigned elementType,
                      vector<NeededEntityType>& needed_entity_ranks, 
                      bool only_count, bool doAllElements)
     //bool only_count=false, bool doAllElements=true)
@@ -46,7 +46,7 @@ namespace stk {
       if (m_doProgress)
         {
           m_doProgress = false;
-          progress_meter_num_total = doForAllElements(rank, function, elementColors, elementType, needed_entity_ranks,  true, doAllElements);
+          progress_meter_num_total = doForAllElements(rank, function, elementType, needed_entity_ranks,  true, doAllElements);
           m_doProgress = true;
           ProgressMeterData pd(ProgressMeterData::INIT, 0.0, "NodeRegistry passes");
           notifyObservers(&pd);

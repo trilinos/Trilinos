@@ -23,7 +23,6 @@
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/ProgressMeter.hpp>
 #include <stk_adapt/UniformRefinerPattern.hpp>
-#include <stk_adapt/Colorer.hpp>
 
 #include <stk_adapt/NodeRegistry.hpp>
 
@@ -253,7 +252,7 @@ namespace stk {
       virtual unsigned
       doForAllElements(unsigned irank, std::string function_info,
                        stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function,
-                       vector< ColorerSetType >& elementColors, unsigned elementType,
+                       unsigned elementType,
                        vector<NeededEntityType>& needed_entity_ranks,  
                        bool only_count=false, bool doAllElements=true) ;
 
@@ -275,7 +274,8 @@ namespace stk {
        */
       virtual void
       createElementsAndNodesAndConnectLocal(unsigned irank,  stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern,
-                                            vector< ColorerSetType >& elementColors,   vector<NeededEntityType>& needed_entity_ranks,
+                                            unsigned elementType,
+                                            vector<NeededEntityType>& needed_entity_ranks,
                                             vector<stk::mesh::Entity>& new_elements_pool) ;
 
       /** This is a helper method that loops over all sub-dimensional entities whose rank matches on of those in @param needed_entity_ranks
