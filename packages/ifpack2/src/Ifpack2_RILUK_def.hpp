@@ -1,28 +1,28 @@
 //@HEADER
 // ***********************************************************************
-// 
+//
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2010) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 //@HEADER
 
@@ -33,7 +33,7 @@ namespace Ifpack2 {
 
 //==============================================================================
 template<class MatrixType>
-RILUK<MatrixType>::RILUK(const Teuchos::RCP<const MatrixType>& Matrix_in) 
+RILUK<MatrixType>::RILUK(const Teuchos::RCP<const MatrixType>& Matrix_in)
   : isOverlapped_(false),
     Graph_(),
     A_(Matrix_in),
@@ -57,7 +57,7 @@ RILUK<MatrixType>::RILUK(const Teuchos::RCP<const MatrixType>& Matrix_in)
 
 //==============================================================================
 //template<class MatrixType>
-//RILUK<MatrixType>::RILUK(const RILUK<MatrixType>& src) 
+//RILUK<MatrixType>::RILUK(const RILUK<MatrixType>& src)
 //  : isOverlapped_(src.isOverlapped_),
 //    Graph_(src.Graph_),
 //    UseTranspose_(src.UseTranspose_),
@@ -107,17 +107,143 @@ void RILUK<MatrixType>::allocate_L_and_U() {
 //==========================================================================
 template<class MatrixType>
 void RILUK<MatrixType>::setParameters(const Teuchos::ParameterList& parameterlist) {
-  Ifpack2::getParameter(parameterlist, "fact: iluk level-of-fill", LevelOfFill_);
-  Ifpack2::getParameter(parameterlist, "fact: iluk level-of-overlap", LevelOfOverlap_);
-  double tmp = -1;
-  Ifpack2::getParameter(parameterlist, "fact: absolute threshold", tmp);
-  if (tmp != -1) Athresh_ = tmp;
-  tmp = -1;
-  Ifpack2::getParameter(parameterlist, "fact: relative threshold", tmp);
-  if (tmp != -1) Rthresh_ = tmp;
-  tmp = -1;
-  Ifpack2::getParameter(parameterlist, "fact: relax value", tmp);
-  if (tmp != -1) RelaxValue_ = tmp;
+  using Teuchos::as;
+  using Teuchos::Exceptions::InvalidParameterName;
+  using Teuchos::Exceptions::InvalidParameterType;
+  typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+  // Default values of the various parameters.
+  int fillLevel = 0;
+  int overlapLevel = 0;
+  magnitude_type absThresh = STM::zero ();
+  magnitude_type relThresh = STM::one ();
+  magnitude_type relaxValue = STM::zero ();
+
+  //
+  // "fact: iluk level-of-fill" parsing is more complicated, because
+  // we want to allow as many types as make sense.  int is the native
+  // type, but we also want to accept magnitude_type (for
+  // compatibility with ILUT) and double (for backwards compatibilty
+  // with ILUT).
+  //
+
+  bool gotFillLevel = false;
+  try {
+    fillLevel = params.get<int> ("fact: iluk level-of-fill");
+    gotFillLevel = true;
+  }
+  catch (InvalidParameterType&) {
+    // Throwing again in the catch would just unwind the stack.
+    // Instead, we do nothing here, and check the Boolean outside to
+    // see if we got the value.
+  }
+  catch (InvalidParameterName&) {
+    gotFillLevel = true; // Accept the default value.
+  }
+
+  if (! gotFillLevel) {
+    try {
+      // Try magnitude_type, for compatibility with ILUT.
+      // The cast from magnitude_type to int must succeed.
+      fillLevel = as<int> (params.get<magnitude_type> ("fact: iluk level-of-fill"));
+      gotFillLevel = true;
+    }
+    catch (InvalidParameterType&) {
+      // Try double next.
+    }
+    // Don't catch InvalidParameterName here; we've already done that above.
+  }
+
+  if (! gotFillLevel) {
+    try {
+      // Try double, for compatibility with ILUT.
+      // The cast from double to int must succeed.
+      fillLevel = as<int> (params.get<double> ("fact: iluk level-of-fill"));
+      gotFillLevel = true;
+    }
+    catch (InvalidParameterType& e) {
+      // We're out of options.  The user gave us the parameter, but it
+      // doesn't have the right type.  The best thing for us to do in
+      // that case is to throw, telling the user to use the right
+      // type.
+      throw e;
+    }
+    // Don't catch InvalidParameterName here; we've already done that above.
+  }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! gotFillLevel,
+    std::logic_error,
+    "Ifpack2::RILUK::setParameters: We should never get here!  "
+    "The method should either have read the \"fact: iluk level-of-fill\"  "
+    "parameter by this point, or have thrown an exception.  "
+    "Please let the Ifpack2 developers know about this bug.");
+
+  // overlapLevel was always int.  ILUT doesn't have this parameter.
+  try {
+    overlapLevel = params.get<int> ("fact: iluk level-of-overlap");
+  }
+  catch (InvalidParameterName&) {
+    // Accept the default value.
+  }
+
+  try {
+    absThresh = params.get<magnitude_type> ("fact: absolute threshold");
+  }
+  catch (InvalidParameterType&) {
+    // Try double, for backwards compatibility.
+    // The cast from double to magnitude_type must succeed.
+    absThresh = as<magnitude_type> (params.get<double> ("fact: absolute threshold"));
+  }
+  catch (InvalidParameterName&) {
+    // Accept the default value.
+  }
+
+  try {
+    relThresh = params.get<magnitude_type> ("fact: relative threshold");
+  }
+  catch (InvalidParameterType&) {
+    // Try double, for backwards compatibility.
+    // The cast from double to magnitude_type must succeed.
+    relThresh = as<magnitude_type> (params.get<double> ("fact: relative threshold"));
+  }
+  catch (InvalidParameterName&) {
+    // Accept the default value.
+  }
+
+  try {
+    relaxValue = params.get<magnitude_type> ("fact: relax value");
+  }
+  catch (InvalidParameterType&) {
+    // Try double, for backwards compatibility.
+    // The cast from double to magnitude_type must succeed.
+    relaxValue = as<magnitude_type> (params.get<double> ("fact: relax value"));
+  }
+  catch (InvalidParameterName&) {
+    // Accept the default value.
+  }
+
+  // "Commit" the values only after validating all of them.  This
+  // ensures that there are no side effects if this routine throws an
+  // exception.
+
+  LevelOfFill_ = fillLevel;
+  LevelOfOverlap_ = overlapLevel;
+
+  // mfh 28 Nov 2012: The previous code would not assign Athresh_,
+  // Rthresh_, or RelaxValue_, if the read-in value was -1.  I don't
+  // know if keeping this behavior is correct, but I'll keep it just
+  // so as not to change previous behavior.
+
+  if (absThresh != -STM::one ()) {
+    Athresh_ = absThresh;
+  }
+  if (relThresh != -STM::one ()) {
+    Rthresh_ = relThresh;
+  }
+  if (relaxValue != -STM::one ()) {
+    RelaxValue_ = relaxValue;
+  }
 }
 
 //==========================================================================
@@ -186,13 +312,13 @@ void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdina
     LocalOrdinal local_row = rowMap->getLocalElement(global_row);
 
     OverlapA.getGlobalRowCopy(global_row, InI(), InV(), NumIn); // Get Values and Indices
-    
+
     // Split into L and U (we don't assume that indices are ordered).
-    
-    NumL = 0; 
-    NumU = 0; 
+
+    NumL = 0;
+    NumU = 0;
     DiagFound = false;
-    
+
     for (size_t j=0; j< NumIn; j++) {
       GlobalOrdinal k = InI[j];
 
@@ -219,7 +345,7 @@ void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdina
 //        throw std::runtime_error("out of range in Ifpack2::RILUK::initAllValues");
 //      }
     }
-    
+
     // Check in things for this row of L and U
 
     if (DiagFound) ++NumNonzeroDiags;
@@ -278,7 +404,7 @@ void RILUK<MatrixType>::compute() {
   TEUCHOS_TEST_FOR_EXCEPTION(isComputed() == true, std::runtime_error,
       "Ifpack2::RILUK::compute() ERROR: Can't have already computed factors.");
 
-  // MinMachNum should be officially defined, for now pick something a little 
+  // MinMachNum should be officially defined, for now pick something a little
   // bigger than IEEE underflow value
 
   Scalar MinDiagonalValue = Teuchos::ScalarTraits<Scalar>::rmin();
@@ -301,7 +427,7 @@ void RILUK<MatrixType>::compute() {
   // Now start the factorization.
 
   // Need some integer workspace and pointers
-  size_t NumUU; 
+  size_t NumUU;
   Teuchos::ArrayView<const LocalOrdinal> UUI;
   Teuchos::ArrayView<const Scalar> UUV;
   for (size_t j=0; j<num_cols; j++) colflag[j] = - 1;
@@ -316,7 +442,7 @@ void RILUK<MatrixType>::compute() {
 
     InV[NumL] = DV[i]; // Put in diagonal
     InI[NumL] = local_row;
-    
+
     U_->getLocalRowCopy(local_row, InI(NumL+1,MaxNumEntries-NumL-1), InV(NumL+1,MaxNumEntries-NumL-1), NumU);
     NumIn = NumL+NumU+1;
 
@@ -330,7 +456,7 @@ void RILUK<MatrixType>::compute() {
       Scalar multiplier = InV[jj]; // current_mults++;
 
       InV[jj] *= DV[j];
- 
+
       U_->getLocalRowView(j, UUI, UUV); // View of row above
       NumUU = UUI.size();
 
@@ -385,16 +511,16 @@ void RILUK<MatrixType>::compute() {
 
   // Validate that the L and U factors are actually lower and upper triangular
 
-  if( !L_->isLowerTriangular() ) 
+  if( !L_->isLowerTriangular() )
     throw std::runtime_error("Ifpack2::RILUK::compute() ERROR, L isn't lower triangular.");
-  if( !U_->isUpperTriangular() ) 
+  if( !U_->isUpperTriangular() )
     throw std::runtime_error("Ifpack2::RILUK::compute() ERROR, U isn't lower triangular.");
-  
+
   // Add up flops
- 
+
   double current_flops = 2 * current_madds;
   double total_flops = 0;
-    
+
   // Get total madds across all PEs
   Teuchos::reduceAll(*L_->getRowMap()->getComm(),Teuchos::REDUCE_SUM,
                      1,&current_flops,&total_flops);
@@ -413,7 +539,7 @@ void RILUK<MatrixType>::compute() {
 //=============================================================================
 template<class MatrixType>
 void RILUK<MatrixType>::apply(
-       const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+       const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
              Teuchos::ETransp mode, Scalar alpha, Scalar beta) const
 {
@@ -450,20 +576,20 @@ void RILUK<MatrixType>::apply(
     Y1->elementWiseMultiply(one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
     L_->localSolve(*Y1, *Y1,mode);
     if (isOverlapped_) {Y.doExport(*Y1,*U_->getGraph()->getImporter(), OverlapMode_);} // Export computed Y values if needed
-  } 
+  }
 
   ++numApply_;
 }
 
 //=============================================================================
 template<class MatrixType>
-int RILUK<MatrixType>::Multiply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-			      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+int RILUK<MatrixType>::Multiply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+                              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
             Teuchos::ETransp mode) const {
 //
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
 //
-    
+
   // First generate X and Y as needed for this function
   Teuchos::RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > X1;
   Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Y1;
@@ -477,7 +603,7 @@ int RILUK<MatrixType>::Multiply(const Tpetra::MultiVector<Scalar,LocalOrdinal,Gl
 //  }
 
   if (!mode == Teuchos::NO_TRANS) {
-    U_->apply(*X1, *Y1,mode); // 
+    U_->apply(*X1, *Y1,mode); //
     Y1->update(1.0, *X1, 1.0); // Y1 = Y1 + X1 (account for implicit unit diagonal)
     Y1->elementWiseMultiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Y1temp(*Y1); // Need a temp copy of Y1
@@ -494,7 +620,7 @@ int RILUK<MatrixType>::Multiply(const Tpetra::MultiVector<Scalar,LocalOrdinal,Gl
     U_->apply(Y1temp, *Y1,mode);
     Y1->update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
     if (isOverlapped_) {Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);}
-  } 
+  }
   return(0);
 }
 
@@ -522,10 +648,10 @@ RILUK<MatrixType>::computeCondEst(Teuchos::ETransp mode) const {
 
 //=========================================================================
 template<class MatrixType>
-void RILUK<MatrixType>::generateXY(Teuchos::ETransp mode, 
+void RILUK<MatrixType>::generateXY(Teuchos::ETransp mode,
     const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xin,
     const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Yin,
-    Teuchos::RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Xout, 
+    Teuchos::RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Xout,
     Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Yout) const {
 
   // Generate an X and Y suitable for performing Solve() and Multiply() methods
