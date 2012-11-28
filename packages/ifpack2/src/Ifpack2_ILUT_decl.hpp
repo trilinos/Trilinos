@@ -1,28 +1,28 @@
 /*@HEADER
 // ***********************************************************************
-// 
+//
 //       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 //@HEADER
 */
@@ -65,8 +65,8 @@ namespace Ifpack2 {
 //! A class for constructing and using an ILUT factorization
 // of a given Tpetra::RowMatrix.
 
-/*! Ifpack2::ILUT computes an ILUT factorization with specified fill 
-    and drop-tolerance, of a given Tpetra::RowMatrix. 
+/*! Ifpack2::ILUT computes an ILUT factorization with specified fill
+    and drop-tolerance, of a given Tpetra::RowMatrix.
 
   For all valid parameters, see the method ILUT::setParameters.
 */
@@ -74,11 +74,39 @@ template<class MatrixType>
 class ILUT: virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
 
 public:
-  typedef typename MatrixType::scalar_type Scalar;
-  typedef typename MatrixType::local_ordinal_type LocalOrdinal;
-  typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
-  typedef typename MatrixType::node_type Node;
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  //! The type of the entries of the input MatrixType.
+  typedef typename MatrixType::scalar_type scalar_type;
+
+  //! Preserved only for backwards compatibility.  Please use "scalar_type".
+  TEUCHOS_DEPRECATED typedef typename MatrixType::scalar_type Scalar;
+
+
+  //! The type of local indices in the input MatrixType.
+  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
+
+  //! Preserved only for backwards compatibility.  Please use "local_ordinal_type".
+  TEUCHOS_DEPRECATED typedef typename MatrixType::local_ordinal_type LocalOrdinal;
+
+
+  //! The type of global indices in the input MatrixType.
+  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
+
+  //! Preserved only for backwards compatibility.  Please use "global_ordinal_type".
+  TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
+
+
+  //! The type of the Kokkos Node used by the input MatrixType.
+  typedef typename MatrixType::node_type node_type;
+
+  //! Preserved only for backwards compatibility.  Please use "node_type".
+  TEUCHOS_DEPRECATED typedef typename MatrixType::node_type Node;
+
+
+  //! The type of the magnitude (absolute value) of a matrix entry.
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+
+  //! Preserved only for backwards compatibility.  Please use "magnitude_type".
+  TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
   // \name Constructors and Destructors
   //@{
@@ -95,10 +123,10 @@ public:
   /**
     <ul>
      <li> "fact: ilut level-of-fill" (int)<br>
-     <li> "fact: drop tolerance" (magnitude-type)<br>
-     <li> "fact: absolute threshold" (magnitude-type)<br>
-     <li> "fact: relative threshold" (magnitude-type)<br>
-     <li> "fact: relax value" (magnitude-type)<br>
+     <li> "fact: drop tolerance" (magnitude_type)<br>
+     <li> "fact: absolute threshold" (magnitude_type)<br>
+     <li> "fact: relative threshold" (magnitude_type)<br>
+     <li> "fact: relax value" (magnitude_type)<br>
     </ul>
   */
   void setParameters(const Teuchos::ParameterList& params);
@@ -131,16 +159,14 @@ public:
   //@}
 
   //! @name Methods implementing Tpetra::Operator.
-  //@{ 
+  //@{
 
   //! Returns the result of a ILUT forward/back solve on a Tpetra::MultiVector X in Y.
-  /*! 
-    \param 
+  /*!
+    \param
     X - (In) A Tpetra::MultiVector of dimension NumVectors to solve for.
-    \param 
-    Y - (Out) A Tpetra::MultiVector of dimension NumVectorscontaining result.
-    
-    \return Integer error code, set to 0 if successful.
+    \param
+    Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing result.
   */
   void apply(
       const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
@@ -149,12 +175,13 @@ public:
                Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
                Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
-  //! Returns the Tpetra::Map object associated with the domain of this operator.
+  //! Tpetra::Map representing the domain of this operator.
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getDomainMap() const;
 
-  //! Returns the Tpetra::Map object associated with the range of this operator.
+  //! Tpetra::Map representing the range of this operator.
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getRangeMap() const;
 
+  //! Whether this object's apply() method can apply the transpose (or conjugate transpose, if applicable).
   bool hasTransposeApply() const;
 
   //@}
@@ -163,13 +190,13 @@ public:
   //! \name Mathematical functions.
 
   //! Computes the estimated condition number and returns the value.
-  magnitudeType computeCondEst(CondestType CT = Cheap, 
+  magnitude_type computeCondEst(CondestType CT = Cheap,
                                LocalOrdinal MaxIters = 1550,
-                               magnitudeType Tol = 1e-9,
+                               magnitude_type Tol = 1e-9,
                                const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &Matrix_in = Teuchos::null);
 
   //! Returns the computed estimated condition number, or -1.0 if no computed.
-  magnitudeType getCondEst() const { return Condest_; }
+  magnitude_type getCondEst() const { return Condest_; }
 
   //! Returns the Tpetra::BlockMap object associated with the range of this matrix operator.
   const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
@@ -179,10 +206,10 @@ public:
 
   //! Returns a reference to the L factor.
   const Teuchos::RCP<const MatrixType> getL() const { return L_; }
-  
+
   //! Returns a reference to the U factor.
   const Teuchos::RCP<const MatrixType> getU() const { return U_; }
-    
+
   //! Returns the number of calls to Initialize().
   int getNumInitialize() const;
 
@@ -216,12 +243,12 @@ public:
   }
 
   //! Get the relax value
-  inline magnitudeType getRelaxValue() const {
+  inline magnitude_type getRelaxValue() const {
     return(RelaxValue_);
   }
 
   //! Gets the dropping tolerance
-  inline magnitudeType getDropTolerance() const {
+  inline magnitude_type getDropTolerance() const {
     return(DropTolerance_);
   }
 
@@ -233,7 +260,7 @@ public:
 
   // @}
 
-  //! @name Overridden from Teuchos::Describable 
+  //! @name Overridden from Teuchos::Describable
   //@{
 
   /** \brief Return a simple one-line description of this object. */
@@ -270,13 +297,13 @@ private:
   double Athresh_;
   //! Relative threshold
   double Rthresh_;
-  magnitudeType RelaxValue_;
+  magnitude_type RelaxValue_;
   //! Level-of-fill
   double LevelOfFill_;
   //! Discards all elements below this tolerance
-  magnitudeType DropTolerance_;
+  magnitude_type DropTolerance_;
   //! Condition number estimate.
-  magnitudeType Condest_;
+  magnitude_type Condest_;
   //! \c true if \c this object has been initialized
   bool IsInitialized_;
   //! \c true if \c this object has been computed

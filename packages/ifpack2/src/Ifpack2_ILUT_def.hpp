@@ -1,28 +1,28 @@
 /*@HEADER
 // ***********************************************************************
-// 
+//
 //       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 //@HEADER
 */
@@ -39,6 +39,47 @@
 #define IFPACK2_ILUT_DEF_HPP
 
 namespace Ifpack2 {
+
+  namespace {
+
+    /// \brief Default drop tolerance for ILUT.
+    ///
+    /// \warning This is an implementation detail of Ifpack2.  Do NOT
+    ///   depend on this function or use it in your code.  It may go
+    ///   away entirely or change interface or behavior without
+    ///   warning.
+    ///
+    /// This function preserves the previous default drop tolerance
+    /// (1e-12, independent of Scalar type), thus ensuring backwards
+    /// compatibility for the common case of Scalar=double.  However,
+    /// it provides a more reasonable default for other Scalar types
+    /// of possibly lower or higher precision than double.
+    ///
+    /// This function is templated on ScalarType <i>and</i>
+    /// MagnitudeType, so that we can handle complex numbers specially
+    /// if desired.
+    ///
+    /// In order to override the default, just specialize this
+    /// function for your particular combination of MagnitudeType and
+    /// ScalarType.
+    template<class MagnitudeType, class ScalarType>
+    MagnitudeType
+    ilutDefaultDropTolerance () {
+      using Teuchos::as;
+      typedef Teuchos::ScalarTraits<ScalarType> STS;
+
+      return as<MagnitudeType> (1000) * STS::magnitude (STS::eps ());
+    }
+
+    // Full specialization for MagnitudeType = ScalarType = double.
+    // This specialization preserves ILUT's previous default behavior.
+    template<>
+    double
+    ilutDefaultDropTolerance<double, double> () {
+      return 1e-12;
+    }
+
+  } // namespace (anonymous)
 
 //Definitions for the ILUT methods:
 
@@ -64,8 +105,8 @@ ILUT<MatrixType>::ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOr
   Time_("Ifpack2::ILUT"),
   NumMyRows_(-1),
   NumGlobalNonzeros_(0)
-{ 
-  TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error,
       Teuchos::typeName(*this) << "::ILUT(): input matrix reference was null.");
 }
 
@@ -97,7 +138,7 @@ void ILUT<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
 
 //==========================================================================
 template <class MatrixType>
-const Teuchos::RCP<const Teuchos::Comm<int> > & 
+const Teuchos::RCP<const Teuchos::Comm<int> > &
 ILUT<MatrixType>::getComm() const{
   return(Comm_);
 }
@@ -169,7 +210,7 @@ double ILUT<MatrixType>::getApplyTime() const {
 
 //==========================================================================
 template<class MatrixType>
-global_size_t ILUT<MatrixType>::getGlobalNumEntries() const { 
+global_size_t ILUT<MatrixType>::getGlobalNumEntries() const {
   return(L_->getGlobalNumEntries() + U_->getGlobalNumEntries());
 }
 
@@ -181,12 +222,12 @@ size_t ILUT<MatrixType>::getNodeNumEntries() const {
 
 //=============================================================================
 template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-ILUT<MatrixType>::computeCondEst(
-                     CondestType CT,
-                     LocalOrdinal MaxIters, 
-                     magnitudeType Tol,
-                     const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix) {
+typename ILUT<MatrixType>::magnitude_type
+ILUT<MatrixType>::
+computeCondEst (CondestType CT,
+                LocalOrdinal MaxIters,
+                magnitude_type Tol,
+                const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix) {
   if (!isComputed()) { // cannot compute right now
     return(-1.0);
   }
@@ -311,8 +352,8 @@ void ILUT<MatrixType>::compute() {
 
   Teuchos::Array<int> pattern(max_col, UNUSED);
   Teuchos::Array<Scalar> cur_row(max_col, zero);
-  Teuchos::Array<magnitudeType> unorm(max_col);
-  magnitudeType rownorm;
+  Teuchos::Array<magnitude_type> unorm(max_col);
+  magnitude_type rownorm;
   Teuchos::Array<LocalOrdinal> L_cols_heap;
   Teuchos::Array<LocalOrdinal> U_cols;
   Teuchos::Array<LocalOrdinal> L_vals_heap;
@@ -357,7 +398,7 @@ void ILUT<MatrixType>::compute() {
     pattern[row_i] = ORIG;
 
     Tsize_t L_cols_heaplen = 0;
-    rownorm = (magnitudeType)0;
+    rownorm = Teuchos::ScalarTraits<magnitude_type>::zero ();
     for(size_t i=0; i<RowNnz; ++i) {
       if (ColIndicesA[i] < NumMyRows_) {
         if (ColIndicesA[i] < row_i) {
@@ -376,7 +417,7 @@ void ILUT<MatrixType>::compute() {
     // Alter the diagonal according to the absolute-threshold and
     // relative-threshold values. If not set, those values default
     // to zero and one respectively.
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rthresh = getRelativeThreshold();
+    const magnitude_type rthresh = getRelativeThreshold();
     const Scalar& v = cur_row[row_i];
     cur_row[row_i] = (Scalar)(getAbsoluteThreshold()*IFPACK2_SGN(v)) + rthresh*v;
 
@@ -391,7 +432,7 @@ void ILUT<MatrixType>::compute() {
 
       Scalar multiplier = cur_row[row_k] * InvDiagU[row_k];
       cur_row[row_k] = multiplier;
-      magnitudeType mag_mult = scalar_mag(multiplier);
+      magnitude_type mag_mult = scalar_mag(multiplier);
       if (mag_mult*unorm[row_k] < rownorm) {
         pattern[row_k] = UNUSED;
         rm_heap_root(L_cols_heap, L_cols_heaplen);
@@ -635,9 +676,9 @@ void ILUT<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerb
   Teuchos::OSTab tab(out);
   //    none: print nothing
   //     low: print O(1) info from node 0
-  //  medium: 
-  //    high: 
-  // extreme: 
+  //  medium:
+  //    high:
+  // extreme:
   if (vl != VERB_NONE && myImageID == 0) {
     out << this->description() << endl;
     out << endl;
