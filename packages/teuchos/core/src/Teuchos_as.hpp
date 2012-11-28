@@ -1144,22 +1144,13 @@ public:
     const unsigned short minVal = 0;
     const unsigned short maxVal = std::numeric_limits<unsigned short>::max ();
 
-    if (sizeof (unsigned short) < sizeof (double)) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        t < minVal || t > maxVal,
-        std::range_error,
-        "Teuchos::ValueTypeConversionTraits<unsigned short, double>::safeConvert: "
-        "Input double t = " << t << " is out of the valid range [" << minVal
-        << ", " << maxVal << "] for conversion to unsigned short.");
-    }
-    else { // Overflow isn't possible, but t < 0 isn't allowed.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-       t < minVal,
-       std::range_error,
-        "Teuchos::ValueTypeConversionTraits<unsigned short, double>::safeConvert: "
-        "Input double t = " << t << " is out of the valid range [" << minVal
-        << ", " << maxVal << "] for conversion to unsigned short.");
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > maxVal,
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<unsigned short, double>::safeConvert: "
+      "Input double t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to unsigned short.");
+
     return static_cast<unsigned short> (t);
   }
 };
@@ -1225,22 +1216,13 @@ public:
     const unsigned int minVal = 0;
     const unsigned int maxVal = std::numeric_limits<unsigned int>::max ();
 
-    if (sizeof (unsigned int) < sizeof (double)) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        t < minVal || t > maxVal,
-        std::range_error,
-        "Teuchos::ValueTypeConversionTraits<unsigned int, double>::safeConvert: "
-        "Input double t = " << t << " is out of the valid range [" << minVal
-        << ", " << maxVal << "] for conversion to unsigned int.");
-    }
-    else { // Overflow isn't possible, but t < 0 isn't allowed.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-       t < minVal,
-       std::range_error,
-        "Teuchos::ValueTypeConversionTraits<unsigned int, double>::safeConvert: "
-        "Input double t = " << t << " is out of the valid range [" << minVal
-        << ", " << maxVal << "] for conversion to unsigned int.");
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > maxVal,
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<unsigned int, double>::safeConvert: "
+      "Input double t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to unsigned int.");
+
     return static_cast<unsigned int> (t);
   }
 };
@@ -1306,22 +1288,13 @@ public:
     const unsigned long minVal = 0;
     const unsigned long maxVal = std::numeric_limits<unsigned long>::max ();
 
-    if (sizeof (unsigned long) < sizeof (double)) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        t < minVal || t > maxVal,
-        std::range_error,
-        "Teuchos::ValueTypeConversionTraits<unsigned long, double>::safeConvert: "
-        "Input double t = " << t << " is out of the valid range [" << minVal
-        << ", " << maxVal << "] for conversion to unsigned long.");
-    }
-    else { // Overflow isn't possible, but t < 0 isn't allowed.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-       t < minVal,
-       std::range_error,
-        "Teuchos::ValueTypeConversionTraits<unsigned long, double>::safeConvert: "
-        "Input double t = " << t << " is out of the valid range [" << minVal
-        << ", " << maxVal << "] for conversion to unsigned long.");
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > maxVal,
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<unsigned long, double>::safeConvert: "
+      "Input double t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to unsigned long.");
+
     return static_cast<unsigned long> (t);
   }
 };
@@ -1368,23 +1341,17 @@ public:
   }
 
   //! Convert the given \c double to <tt>unsigned long long</tt>, checking for overflow first.
-  static long safeConvert (const double t) {
-    // Cases:
-    // 1. sizeof(unsigned long long) < sizeof(double) == 8
-    // 2. sizeof(unsigned long long) == sizeof(double) == 8
-    // 3. sizeof(unsigned long long) > sizeof(double) == 8
-    //
-    // C99 (which defines unsigned long long) prohibits Case 1.  Case
-    // 2 could result in loss of accuracy (rounding), but
-    // safeConvert() only cares about overflow, not rounding.  In Case
-    // 3, casting minVal or maxVal to double could result in overflow.
-    // Thus, we don't need to check the upper bound, though we still
-    // need to check if the input is negative.
+  static unsigned long long safeConvert (const double t) {
+    const unsigned long long minVal = 0; // unsigned, so min value is 0.
+    const unsigned long long maxVal = std::numeric_limits<unsigned long long>::max ();
+
     TEUCHOS_TEST_FOR_EXCEPTION(
-      t < 0,
+      t < minVal || t > maxVal,
       std::range_error,
       "Teuchos::ValueTypeConversionTraits<unsigned long long, double>::safeConvert: "
-      "Input double t = " << t << " is negative, which is invalid for conversion to unsigned long long.");
+      "Input double t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to unsigned long long.");
+
     return static_cast<unsigned long long> (t);
   }
 };
@@ -1459,22 +1426,13 @@ public:
     const unsigned short minVal = 0;
     const unsigned short maxVal = std::numeric_limits<unsigned short>::max ();
 
-    if (sizeof (unsigned short) < sizeof (float)) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        t < minVal || t > maxVal,
-        std::range_error,
-        "Teuchos::ValueTypeConversionTraits<unsigned short, float>::safeConvert: "
-        "Input float t = " << t << " is out of the valid range [" << minVal
-        << ", " << maxVal << "] for conversion to unsigned short.");
-    }
-    else { // Overflow isn't possible, but t < 0 isn't allowed.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-       t < static_cast<float> (minVal),
-       std::range_error,
-        "Teuchos::ValueTypeConversionTraits<unsigned short, float>::safeConvert: "
-        "Input float t = " << t << " is out of the valid range [" << minVal
-        << ", " << maxVal << "] for conversion to unsigned short.");
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > maxVal,
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<unsigned short, float>::safeConvert: "
+      "Input float t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to unsigned short.");
+
     return static_cast<unsigned short> (t);
   }
 };
@@ -1510,7 +1468,7 @@ public:
     // float in this case could result in loss of accuracy
     // (sizeof(int) == 8 or 16) or overflow (sizeof(int) > 16).  Thus,
     // we only do the test for Case 1.
-    if (sizeof (unsigned int) < sizeof (float)) {
+    if (sizeof (int) < sizeof (float)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         t < minVal || t > maxVal,
         std::range_error,
@@ -1539,22 +1497,13 @@ public:
     const unsigned int minVal = 0; // Had better be, since it's unsigned.
     const unsigned int maxVal = std::numeric_limits<unsigned int>::max ();
 
-    if (sizeof (unsigned int) < sizeof (float)) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        t < minVal || t > maxVal,
-        std::range_error,
-        "Teuchos::ValueTypeConversionTraits<unsigned int, float>::safeConvert: "
-        "Input float t = " << t << " is out of the valid range [" << minVal
-        << ", " << maxVal << "] for conversion to unsigned int.");
-    }
-    else { // Overflow isn't possible, but t < 0 isn't allowed.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-       t < minVal,
-       std::range_error,
-        "Teuchos::ValueTypeConversionTraits<unsigned int, float>::safeConvert: "
-        "Input double t = " << t << " is out of the valid range [" << minVal
-        << ", " << maxVal << "] for conversion to unsigned int.");
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > maxVal,
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<unsigned int, float>::safeConvert: "
+      "Input double t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to unsigned int.");
+
     return static_cast<unsigned int> (t);
   }
 };
@@ -1629,11 +1578,8 @@ public:
       t < minVal || t > maxVal,
       std::range_error,
       "Teuchos::ValueTypeConversionTraits<unsigned long, float>::safeConvert: "
-      << std::endl
       << "Input float t = " << t << " is out of the valid range [" << minVal
-      << ", " << maxVal << "] for conversion to unsigned long.  "
-      << std:: endl
-      << "(Remember that unsigned types cannot represent negative values.)");
+      << ", " << maxVal << "] for conversion to unsigned long.");
 
     return static_cast<unsigned long> (t);
   }
@@ -1670,15 +1616,16 @@ public:
 
   //! Convert the given \c float to an <tt>unsigned long long</tt>, checking first for overflow.
   static unsigned long long safeConvert (const float t) {
-    // The C99 standard (Section 5.2.4.2.1) actually requires
-    // sizeof(long long) >= 64, so overflow is impossible.  However,
-    // we still forbid negative inputs, since the target type is
-    // unsigned.
+    const unsigned long long minVal = 0; // unsigned, so min value is 0.
+    const unsigned long long maxVal = std::numeric_limits<unsigned long long>::max ();
+
     TEUCHOS_TEST_FOR_EXCEPTION(
-      t < 0,
+      t < minVal || t > maxVal,
       std::range_error,
       "Teuchos::ValueTypeConversionTraits<unsigned long long, float>::safeConvert: "
-      "Input float t = " << t << " is negative, which is invalid for conversion to unsigned long long.");
+      "Input float t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to unsigned long long.");
+
     return static_cast<unsigned long long> (t);
   }
 };

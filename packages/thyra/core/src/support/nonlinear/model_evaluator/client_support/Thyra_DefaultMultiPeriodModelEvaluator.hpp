@@ -263,6 +263,8 @@ public:
   /** \breif . */
   RCP<LinearOpBase<Scalar> > create_W_op() const;
   /** \breif . */
+  RCP<PreconditionerBase<Scalar> > create_W_prec() const;
+  /** \breif . */
   RCP<const LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
@@ -596,6 +598,14 @@ DefaultMultiPeriodModelEvaluator<Scalar>::create_W_op() const
   }
   W_op_bar->endBlockFill();
   return W_op_bar;
+}
+
+
+template<class Scalar>
+RCP<PreconditionerBase<Scalar> >
+DefaultMultiPeriodModelEvaluator<Scalar>::create_W_prec() const
+{
+  return Teuchos::null;
 }
 
 

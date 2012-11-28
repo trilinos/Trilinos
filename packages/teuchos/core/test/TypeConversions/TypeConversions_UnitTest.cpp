@@ -317,7 +317,11 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   //
   {
     std::ostringstream os;
-    os.precision (9);
+    // mfh 27 Nov 2012: Write all 17 digits that the double deserves.
+    // If you just write 9, it might round (as it does on some
+    // platforms) to a value that can't be represented in float.
+    // os.precision (9);
+    os.precision (17);
     os << minF;
     TEST_NOTHROW_WITH_MESSAGE(valF = asSafe<float> (os.str ()));
     TEST_EQUALITY_CONST(valF, minF);
@@ -326,7 +330,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   }
   {
     std::ostringstream os;
-    os.precision (9);
+    os.precision (17);
     os << maxF;
     TEST_NOTHROW_WITH_MESSAGE(valF = asSafe<float> (os.str ()));
     TEST_EQUALITY_CONST(valF, maxF);
@@ -335,7 +339,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   }
   {
     std::ostringstream os;
-    os.precision (9);
+    os.precision (17);
     os << minusOneF;
     TEST_NOTHROW_WITH_MESSAGE(valF = asSafe<float> (os.str ()));
     TEST_EQUALITY_CONST(valF, minusOneF);
@@ -345,7 +349,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   // Write -1 as double, read as float; shouldn't throw.
   {
     std::ostringstream os;
-    os.precision (9);
+    os.precision (17);
     os << minusOneD;
     TEST_NOTHROW_WITH_MESSAGE(valF = asSafe<float> (os.str ()));
     TEST_EQUALITY_CONST(valF, minusOneF);
@@ -407,13 +411,13 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   if (sizeof (long double) > sizeof (double)) {
     {
       std::ostringstream os;
-      os.precision (17);
+      os.precision (36);
       os << minLD;
       TEST_THROW(valD = asSafe<double> (os.str ()), std::range_error);
     }
     {
       std::ostringstream os;
-      os.precision (17);
+      os.precision (36);
       os << maxLD;
       TEST_THROW(valD = asSafe<double> (os.str ()), std::range_error);
     }
@@ -424,7 +428,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   //
   {
     std::ostringstream os;
-    os.precision (30);
+    os.precision (36);
     os << minLD;
     TEST_NOTHROW(valLD = asSafe<long double> (os.str ()));
     TEST_EQUALITY_CONST(valLD, minLD);
@@ -433,7 +437,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   }
   {
     std::ostringstream os;
-    os.precision (30);
+    os.precision (36);
     os << maxLD;
     TEST_NOTHROW(valLD = asSafe<long double> (os.str ()));
     TEST_EQUALITY_CONST(valLD, maxLD);
@@ -442,7 +446,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   }
   {
     std::ostringstream os;
-    os.precision (30);
+    os.precision (36);
     os << minusOneLD;
     TEST_NOTHROW(valLD = asSafe<long double> (os.str ()));
     TEST_EQUALITY_CONST(valLD, minusOneLD);
@@ -510,20 +514,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( asSafe, realToUnsignedIntTypeOverflow, RealTy
     "Dear test author, please pick a different marker value.  "
     "Please report this bug to the Teuchos developers.");
 
-  if (maxUnsignedIntVal < maxVal) {
-    TEST_THROW(val = asSafe<UnsignedIntType> (minVal), std::range_error);
+  // Conversion from any negative value should throw.
+  TEST_THROW(val = asSafe<UnsignedIntType> (minVal), std::range_error);
+  const RealType minusOne = -1;
+  TEST_THROW(val = asSafe<UnsignedIntType> (minusOne), std::range_error);
 
+  // Only test overflow checks if overflow can actually take place.
+  if (maxUnsignedIntVal < maxVal) {
+    TEST_THROW(val = asSafe<UnsignedIntType> (maxVal), std::range_error);
     try {
-      std::cerr << std::endl << "*** maxVal = " << maxVal
-                << ", asSafe (maxVal) = "
-                << asSafe<UnsignedIntType> (maxVal) << std::endl;
+      std::cerr << std::endl 
+		<< "*** RealType = " << TypeNameTraits<RealType>::name ()
+		<< ", UnsignedIntType = " << TypeNameTraits<UnsignedIntType>::name ()
+		<< ", maxVal = " << maxVal
+                << ", maxUnsignedIntVal = " << maxUnsignedIntVal
+		<< ", asSafe (maxVal) = " << asSafe<UnsignedIntType> (maxVal) 
+		<< std::endl;
     } catch (...) {
+      std::cerr << "(asSafe threw an exception)" << std::endl;
     }
-    //TEST_THROW(val = asSafe<UnsignedIntType> (maxVal), std::range_error);
-    (void) val; // Silence compiler errors.
   }
   else { // Only conversions from negative values should throw.
-    TEST_THROW(val = asSafe<UnsignedIntType> (minVal), std::range_error);
     TEST_NOTHROW(val = asSafe<UnsignedIntType> (maxVal));
     TEST_EQUALITY_CONST(val, static_cast<UnsignedIntType> (maxVal));
 
@@ -545,9 +556,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( asSafe, realToUnsignedIntTypeOverflow, RealTy
 #endif // 0
   }
 
-  // Conversion from any negative value should throw.
-  const RealType minusOne = -1;
-  TEST_THROW(val = asSafe<UnsignedIntType> (minusOne), std::range_error);
   (void) val; // Silence compiler errors.
 }
 
