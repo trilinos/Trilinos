@@ -64,6 +64,11 @@ int main( int argc, char* argv[] )
     int size = 1;
     clp.setOption( "size", &size, "Size of memory blocks created." );
 
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+    long long longLongOption = 42;
+    clp.setOption( "longLongOption", &longLongOption, "An option of type long long." );
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
     // Parse the current input, which should return succesful.
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if (verbose)
