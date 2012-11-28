@@ -168,10 +168,10 @@ public:
   virtual size_t getLocalEntityIDsWeightsView(entityType etype,
      const scalar_t *&weights, int &stride, int number) const = 0;
 
-  /*! \brief Copy the weights for a specific ID into array provided by
+  /*! \brief Copy the weights for a specific entity into array provided by
                 Zoltan2.
 
-      \param id specific ID.  Works only if id is local to this process.
+      \param id specific entity.  Works only if id is local to this process.
 
       \param wgts array provided by Zoltan2.
 		wgts has size getNumWeightsPerID().
@@ -272,6 +272,14 @@ public:
    */
   virtual size_t getLocalNum2ndAdjacencyIDs(entityType sourcetarget,
 					    entityType through) const = 0;
+
+  /*! \brief Return number of second adjacencies to specific entity.
+   *  \param sourcetarget
+   *  \param id specific entity.  Works only if id is local to this process.
+   *  \return number of second adjacendies to entity.
+   */
+  virtual lno_t getEntityNum2ndAdjacencyIDs(entityType sourcetarget,
+     entityType through, gid_t id) const = 0;
 
   /*! \brief Sets pointers to this process' mesh second adjacencies.
       \param sourcetarget
