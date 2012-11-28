@@ -301,7 +301,11 @@ void Multiply(
       const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & tpB = Xpetra::MatrixMatrix::Op2TpetraCrs(B);
       Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> &       tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
 
-      Tpetra::MatrixMatrix::Multiply(tpA,transposeA,tpB,transposeB,tpC,haveMultiplyDoFillComplete);
+      //FIXME change this
+      Tpetra::MatrixMatrix::Multiply(tpA,transposeA,tpB,transposeB,tpC,false);
+      haveMultiplyDoFillComplete=false;
+      //FIXME to the following once Tpetra MM works with fillComplete
+      //Tpetra::MatrixMatrix::Multiply(tpA,transposeA,tpB,transposeB,tpC,haveMultiplyDoFillComplete);
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif

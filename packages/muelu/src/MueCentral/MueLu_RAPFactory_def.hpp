@@ -216,7 +216,7 @@ RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > RAP
   RCP<Matrix> AP;
   {
     SubFactoryMonitor m2(*this, "MxM: A x P", levelID);
-    AP = Utils::TwoMatrixMultiply(A, false, P, !checkAc_);
+    AP = Utils::TwoMatrixMultiply(A, false, P, false);
     //std::string filename="AP.dat";
     //Utils::Write(filename, AP);
   }
@@ -240,7 +240,7 @@ RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > RAP
   SubFactoryMonitor m(*this, "Build RAP implicitly", levelID);
 
   GetOStream(Warnings0, 0) << "The implicitTranspose_ flag within RAPFactory for Epetra in parallel produces wrong results" << std::endl;
-  RCP<Matrix> AP  = Utils::TwoMatrixMultiply(A, false, P, !checkAc_);
+  RCP<Matrix> AP  = Utils::TwoMatrixMultiply(A, false, P, false);
   RCP<Matrix> RAP = Utils::TwoMatrixMultiply(P, true, AP, false, true, !checkAc_); // FIXME: no optimization of storage since insertLocalValues cannot be called after fillComplete when values are optimized out (Epetra)
 
   if(checkAc_) CheckMainDiagonal(RAP);
