@@ -7,7 +7,6 @@
 #include <stk_topology/detail/topology_data.hpp>
 #include <stk_topology/detail/meta_functions.hpp>
 #include <stk_topology/detail/side.hpp>
-#include <stk_topology/detail/equivalent_helper.hpp>
 
 #include <boost/mpl/for_each.hpp>
 #include <boost/mpl/assert.hpp>
@@ -285,7 +284,7 @@ struct topology::topology_type
   /// fill the output ordinals with the ordinals that make up the given sub topology
   template <typename OrdinalOutputIterator>
   STKTOPOLOGY_INLINE_FUNCTION
-  static void sub_topology_node_ordinals(rank_t sub_rank, int sub_ordinal, OrdinalOutputIterator output_ordinals)
+  void sub_topology_node_ordinals(rank_t sub_rank, int sub_ordinal, OrdinalOutputIterator output_ordinals) const
   {
     switch(sub_rank)
     {
@@ -299,7 +298,7 @@ struct topology::topology_type
   /// fill the output nodes with the nodes that make up the given sub topology
   template <typename NodeArray, typename NodeOutputIterator>
   STKTOPOLOGY_INLINE_FUNCTION
-  static void sub_topology_nodes(const NodeArray & nodes, rank_t sub_rank, int sub_ordinal, NodeOutputIterator output_nodes)
+  void sub_topology_nodes(const NodeArray & nodes, rank_t sub_rank, int sub_ordinal, NodeOutputIterator output_nodes) const
   {
     switch(sub_rank)
     {
@@ -312,7 +311,7 @@ struct topology::topology_type
 
   /// how many 'sub topologies' does this topology have
   STKTOPOLOGY_INLINE_FUNCTION
-  static int num_sub_topology(rank_t sub_rank)
+  int num_sub_topology(rank_t sub_rank) const
   {
     switch(sub_rank)
     {
@@ -328,7 +327,7 @@ struct topology::topology_type
 
   /// what is the topology of the given sub topology
   STKTOPOLOGY_INLINE_FUNCTION
-  static topology sub_topology(rank_t sub_rank, int sub_ordinal = 0)
+  topology sub_topology(rank_t sub_rank, int sub_ordinal = 0) const
   {
     switch(sub_rank)
     {
@@ -339,16 +338,6 @@ struct topology::topology_type
     }
     return INVALID_TOPOLOGY;
   }
-
-  /// do the two arrays defined equivalent entities (same nodes, but maybe a different permutation)
-  /// return a pair<bool, permutation_number> bool and permutation number from a to b
-  template <typename NodeArrayA, typename NodeArrayB>
-  STKTOPOLOGY_INLINE_FUNCTION
-  static std::pair<bool,int> equivalent(const NodeArrayA & a, const NodeArrayB & b)
-  {
-    return detail::equivalent_helper(type(),a,b,a[0]);
-  }
-
 
 };
 

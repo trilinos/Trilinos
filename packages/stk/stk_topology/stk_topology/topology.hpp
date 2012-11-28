@@ -3,8 +3,6 @@
 
 #include <stk_topology/detail/macros.hpp>
 
-#include <utility>
-
 
 namespace stk {
 
@@ -180,8 +178,8 @@ struct topology
 
   /// do the two arrays defined equivalent entities (same nodes, but maybe a different permutation)
   /// return a pair<bool, permutation_number> bool and permutation number from a to b
-  template <typename NodeArrayA, typename NodeArrayB>
-  std::pair<bool,int> equivalent(const NodeArrayA & a, const NodeArrayB & b) const;
+  //template <typename NodeArrayA, typename NodeArrayB>
+  //std::pair<bool,int> equivalent(const NodeArrayA & a, const NodeArrayB & b);
 
   /// fill the output ordinals with the ordinals that make up the given sub topology
   template <typename OrdinalOutputIterator>
