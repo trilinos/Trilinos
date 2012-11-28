@@ -485,6 +485,13 @@ EpetraModelEvaluator::create_W_op() const
 }
 
 
+RCP<PreconditionerBase<double> >
+EpetraModelEvaluator::create_W_prec() const
+{
+  return Teuchos::null;
+}
+
+
 RCP<const LinearOpWithSolveFactoryBase<double> >
 EpetraModelEvaluator::get_W_factory() const
 {
