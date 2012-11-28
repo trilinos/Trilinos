@@ -195,7 +195,7 @@ void CommandLineProcessor::setOption(
   add_extra_output_setup_options();
   TEUCHOS_TEST_FOR_EXCEPT(!(option_val!=NULL));
   options_list_[std::string(option_name)]
-    = opt_val_val_t(OPT_LONG_INT,any(option_val),required);
+    = opt_val_val_t(OPT_LONG_LONG_INT,any(option_val),required);
   options_documentation_list_.push_back(
     opt_doc_t(OPT_LONG_LONG_INT, option_name, "", std::string(documentation?documentation:""),
       any(option_val))
