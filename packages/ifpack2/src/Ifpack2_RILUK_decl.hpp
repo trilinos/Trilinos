@@ -255,7 +255,7 @@ Not currently supported.
    <li> "fact: relax value" (magnitude-type)<br>
    </ul>
   */
-  void setParameters(const Teuchos::ParameterList& parameterlist);
+  void setParameters(const Teuchos::ParameterList& params);
 
   void initialize();
   bool isInitialized() const {return isInitialized_;}

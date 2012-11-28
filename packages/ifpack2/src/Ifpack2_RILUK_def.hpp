@@ -106,7 +106,10 @@ void RILUK<MatrixType>::allocate_L_and_U() {
 
 //==========================================================================
 template<class MatrixType>
-void RILUK<MatrixType>::setParameters(const Teuchos::ParameterList& parameterlist) {
+void
+RILUK<MatrixType>::
+setParameters (const Teuchos::ParameterList& params)
+{
   using Teuchos::as;
   using Teuchos::Exceptions::InvalidParameterName;
   using Teuchos::Exceptions::InvalidParameterType;
@@ -133,7 +136,7 @@ void RILUK<MatrixType>::setParameters(const Teuchos::ParameterList& parameterlis
     gotFillLevel = true;
   }
   catch (InvalidParameterType&) {
-    // Throwing again in the catch would just unwind the stack.
+    // Throwing again in the catch block would just unwind the stack.
     // Instead, we do nothing here, and check the Boolean outside to
     // see if we got the value.
   }
