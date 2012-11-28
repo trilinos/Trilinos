@@ -115,7 +115,7 @@ public:
 
   /*! \brief Return the global number of IDs across all processes
    */
-  virtual global_size_t getGlobalNumEntityIDs(entityType etype) const = 0;
+  virtual size_t getGlobalNumEntityIDs(entityType etype) const = 0;
 
 
   /*! \brief Returns the number of mesh entities on this process.
@@ -227,7 +227,7 @@ public:
 
   /*! \brief Returns whether a first adjacency combination is available.
    */
-  virtual bool availAdjacency(entityType source, entityType target);
+  virtual bool availAdjacencyIDs(entityType source, entityType target);
 
   /*! \brief Returns the number of first adjacencies on this process.
    */
@@ -255,7 +255,15 @@ public:
 
   /*! \brief Returns whether a second adjacency combination is available.
    */
-  virtual bool avail2ndAdjacency(entityType sourcetarget, entityType through);
+  virtual bool avail2ndAdjacencyIDs(entityType sourcetarget, entityType through);
+
+
+  /*! \brief Return the global number of entity second adjacencies across all
+   *    processes
+   *  TODO:  Do we need this function?
+   */
+  virtual size_t getGlobalNum2ndAdjacencyIDs(entityType sourcetarget,
+					     entityType through) const = 0;
 
 
   /*! \brief Returns the number of second adjacencies on this process.
