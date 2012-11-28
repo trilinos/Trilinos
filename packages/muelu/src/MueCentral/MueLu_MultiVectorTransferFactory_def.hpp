@@ -117,45 +117,6 @@ namespace MueLu {
     }
     */
 
-    if (vectorName_ == "Coordinates") { // very elegant!
-
-      // Convert format to Xpetra::MultiVector + Expand coordinates (both are needed for projection because projection operator is not coalesce and is an Xpetra::Matrix)
-      if (fineLevel.IsAvailable("XCoordinates") && !fineLevel.IsAvailable("Coordinates")) {
-        GetOStream(Runtime0,0) << "Converting coordinates from 3xArrayRCP to MultiVector" << std::endl;
-
-        TEUCHOS_TEST_FOR_EXCEPTION(fineLevel.GetLevelID() != 0, Exceptions::RuntimeError, "??" << fineLevel.GetLevelID());
-
-        RCP<Matrix> A = fineLevel.Get<RCP<Matrix> >("A", NULL/*default A*/);
-        LocalOrdinal blksize = A->GetFixedBlockSize();
-
-        Array< ArrayView<const SC> > arrayOfPtrs; /* This is the data format needed to call the MultiVector constructor */
-        ArrayRCP<SC> xcoords, ycoords, zcoords;   /* Previous data structure is using ArrayView but the ArrayRCP have to be kept. */
-
-        {
-          ArrayRCP<SC> & coords = fineLevel.Get<ArrayRCP<SC> >("XCoordinates");
-          xcoords = expandCoordinates(coords, blksize);
-          arrayOfPtrs.push_back(xcoords());
-        }
-
-        if(fineLevel.IsAvailable("YCoordinates")) {
-          ArrayRCP<SC> & coords = fineLevel.Get<ArrayRCP<SC> >("YCoordinates");
-          ycoords = expandCoordinates(coords, blksize);
-          arrayOfPtrs.push_back(ycoords());
-        }
-
-        if(fineLevel.IsAvailable("ZCoordinates")) {
-          TEUCHOS_TEST_FOR_EXCEPTION(!fineLevel.IsAvailable("YCoordinates"), Exceptions::RuntimeError, "ZCoordinates specified but no YCoordinates");
-          ArrayRCP<SC> & coords = fineLevel.Get<ArrayRCP<SC> >("ZCoordinates");
-          zcoords = expandCoordinates(coords, blksize);
-          arrayOfPtrs.push_back(zcoords());
-        }
-
-        RCP<MultiVector> coordinates = MultiVectorFactory::Build(A->getRowMap(), arrayOfPtrs, arrayOfPtrs.size());
-        fineLevel.Set("Coordinates", coordinates);
-
-      }
-    }
-
     //FIXME JJH and get rid of this
       vector  = fineLevel.Get<RCP<MultiVector> >(vectorName_,MueLu::NoFactory::get());
       //std::cout << "MultiVectorTransferFactory::Build -- requesting " << vectorName_ << " from factory " << MueLu::NoFactory::get() << std::endl;
