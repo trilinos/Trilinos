@@ -231,15 +231,10 @@ namespace MueLu {
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
 #if defined(HAVE_MUELU_BOOST) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
-    void UpdateGraph(std::map<const FactoryBase*, long unsigned>&                           vindices,
-                     std::map<std::pair<long unsigned,long unsigned>, std::string>&         edges,
-                     boost::dynamic_properties&                                             dp,
-                     boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS,
-                     boost::property<boost::vertex_name_t, std::string,
-                     boost::property<boost::vertex_color_t, std::string,
-                     boost::property<boost::vertex_index_t, std::string> > >,
-                     boost::property<boost::edge_name_t, std::string,
-                     boost::property<boost::edge_color_t, std::string> > >&                 graph) const;
+    void UpdateGraph(std::map<const FactoryBase*, BoostVertex>&                   vindices,
+                     std::map<std::pair<BoostVertex, BoostVertex>, std::string>&  edges,
+                     BoostProperties&                                             dp,
+                     BoostGraph&                                                  graph) const;
 #endif
 
     //@}
