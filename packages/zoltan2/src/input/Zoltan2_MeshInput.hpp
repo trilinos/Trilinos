@@ -115,7 +115,6 @@ public:
 
   /*! \brief Returns the number of mesh entities on this process.
    */
-
   virtual size_t getLocalNumEntityIDs(entityType etype) const = 0;
 
 
@@ -137,7 +136,6 @@ public:
       Some algorithms can partition a simple list of weighted identifiers
         with no geometry or topology provided.
   */
-
   virtual size_t getLocalEntityIDsView(entityType etype,
 				       gid_t const *&Ids) const = 0;
 
@@ -164,9 +162,9 @@ public:
       Zoltan2 does not copy your data.  The data pointed to by weights
       must remain valid for the lifetime of this InputAdapter.
   */
-
   virtual size_t getLocalEntityIDsWeightsView(entityType etype,
      const scalar_t *&weights, int &stride, int number) const = 0;
+
 
   /*! \brief Copy the weights for a specific entity into array provided by
                 Zoltan2.
@@ -178,7 +176,6 @@ public:
 
       \return not sure what is needed, if anything.
   */
-
   virtual size_t getEntityIDWeights(gid_t id, scalar_t *wgts) const = 0;
 
 
@@ -191,7 +188,6 @@ public:
    *    information if it is present.
    */
   virtual int getEntityCoordinateDimension(entityType etype) const = 0;
-
 
   /*! \brief Provide a pointer to one dimension of entity coordinates.
       \param coords  points to a list of coordinate values for the dimension.
@@ -210,7 +206,6 @@ public:
       Zoltan2 does not copy your data.  The data pointed to coords
       must remain valid for the lifetime of this InputAdapter.
   */
-
   virtual size_t getLocalEntityCoordinatesView(entityType etype,
     const scalar_t *&coords, int &stride, int coordDim) const = 0;
 
@@ -231,12 +226,10 @@ public:
    */
   virtual bool availAdjacency(entityType source, entityType target);
 
-
   /*! \brief Returns the number of first adjacencies on this process.
    */
   virtual size_t getLocalNumAdjacencyIDs(entityType source,
 					 entityType target) const = 0;
-
 
   /*! \brief Sets pointers to this process' mesh first adjacencies.
       \param source
@@ -253,7 +246,6 @@ public:
       offsets and adjacencyIds
       must remain valid for the lifetime of this InputAdapter.
    */
-
   virtual size_t getLocalAdjacencyIDsView(entityType source, entityType target,
      const lno_t *&offsets, const gid_t *& adjacencyIds) const = 0;
 
@@ -273,6 +265,7 @@ public:
   virtual size_t getLocalNum2ndAdjacencyIDs(entityType sourcetarget,
 					    entityType through) const = 0;
 
+
   /*! \brief Return number of second adjacencies to specific entity.
    *  \param sourcetarget
    *  \param id specific entity.  Works only if id is local to this process.
@@ -280,6 +273,7 @@ public:
    */
   virtual lno_t getEntityNum2ndAdjacencyIDs(entityType sourcetarget,
      entityType through, gid_t id) const = 0;
+
 
   /*! \brief Sets pointers to this process' mesh second adjacencies.
       \param sourcetarget
@@ -296,13 +290,12 @@ public:
       offsets and adjacencyIds
       must remain valid for the lifetime of this InputAdapter.
    */
-
 // TODO:  Later may allow user to not implement second adjacencies and, if we want them,
 // TODO:  we compute A^T A, where A is matrix of first adjacencies.
-
   virtual size_t getLocal2ndAdjacencyIDsView(entityType sourcetarget,
      entityType through, const lno_t *&offsets,
      const gid_t *& adjacencyIds) const = 0;
+
 
   /*! \brief Copy the second adjacency IDs for all adjacencies incident to a
          specific entity into array provided by Zoltan2.
@@ -313,6 +306,7 @@ public:
   */
   virtual size_t getEntity2ndAdjacencyIDs(entityType sourcetarget,
      entityType through, gid_t id, gid_t *nborIds) const = 0;
+
 
   /*! \brief Returns the number (0 or greater) of weights per second adjacency.
    */
@@ -333,10 +327,21 @@ public:
       Zoltan2 does not copy your data.  The data pointed to by weights
       must remain valid for the lifetime of this InputAdapter.
    */
-
   virtual size_t getLocal2ndAdjacencyIDWeightsView(entityType sourcetarget,
      entityType through, const scalar_t *&weights, int &stride,
      int number) const = 0;
+
+
+  /*! \brief  Copy the second adjacency weights incident to a specific entity
+          id into array provided by Zoltan2.
+      \param sourcetarget
+      \param id specific entity id.  Works only if id is local to this process.
+      \param ewgts array provided by Zoltan2.
+      \return not sure what is needed, if anything.
+  */
+  virtual size_t getEntity2ndAdjacencyIDWeights(entityType sourcetarget,
+     entityType through, gid_t id, scalar_t *ewgts);
+
 
   /*! \brief Apply a partitioning problem solution to an input.  
    *
