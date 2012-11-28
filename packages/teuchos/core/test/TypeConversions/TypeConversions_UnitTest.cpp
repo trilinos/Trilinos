@@ -44,13 +44,14 @@
 #include <limits>
 
 // Like TEST_NOTHROW, but showing the exception message if the code does throw.
+// The exception must be a subclass of std::exception.
 #define TEST_NOTHROW_WITH_MESSAGE( code ) \
   try { \
     (out) << "Test that code {"#code";} does not throw : "; \
     code; \
     (out) << "passes\n"; \
   } \
-  catch (...) { \
+  catch (std::exception& e) {      \
     (success) = false; \
     out << "failed\n"; \
     out << "\nException message for unexpected exception:\n\n"; \
