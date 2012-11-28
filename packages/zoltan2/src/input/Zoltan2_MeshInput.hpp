@@ -113,13 +113,18 @@ public:
    */
   virtual ~MeshInput() {};
 
+  /*! \brief Return the global number of IDs across all processes
+   */
+  virtual global_size_t getGlobalNumEntityIDs(entityType etype) const = 0;
+
+
   /*! \brief Returns the number of mesh entities on this process.
    */
   virtual size_t getLocalNumEntityIDs(entityType etype) const = 0;
 
 
   /*! \brief Return the number of weights per entity.
-   *   \return the count of weights, zero or more per entity.
+   *  \return the count of weights, zero or more per entity.
    *   If the number of weights is zero, then we assume that the entities
    *   are equally weighted.
    */
@@ -127,11 +132,9 @@ public:
 
 
   /*! \brief Provide a pointer to this process' identifiers.
-
       \param Ids will on return point to the list of the global Ids for this
-        process.
-
-       \return The number of ids in the Ids list.
+       process.
+      \return The number of ids in the Ids list.
     
       Some algorithms can partition a simple list of weighted identifiers
         with no geometry or topology provided.
