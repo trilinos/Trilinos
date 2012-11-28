@@ -493,12 +493,13 @@ namespace { // anonymous
         << TypeNameTraits<InputRealType>::name () << ">: "
         "Input value x = " << x << " is out of the valid range [" << minVal
         << ", " << maxVal << "] for conversion to the output type.");
+    }
 
-      return asSafe<OutputRealType> (x);
-    }
-    else {
-      return as<OutputRealType> (x);
-    }
+    // Call as() and not static_cast, because there might not
+    // necessarily be a conversion defined between the two types,
+    // other than via as().  Definitely don't call asSafe(), because
+    // that could cause infinite recursion.
+    return as<OutputRealType> (x);
   }
 
 
