@@ -81,9 +81,9 @@
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
-#include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_PermutedTransferFactory.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
+#include "MueLu_ZoltanInterface.hpp"
 
 // Belos
 #ifdef HAVE_MUELU_BELOS
@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
   int optSweeps = 2;                      clp.setOption("sweeps",         &optSweeps,             "sweeps to be used in SGS (or Chebyshev degree)");
 
   // - Repartitioning
-#if defined(HAVE_MPI) || defined(HAVE_MUELU_ZOLTAN)
+#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN)
   int optRepartition = 1;                 clp.setOption("repartition",    &optRepartition,        "enable repartitioning");
   LO optMinRowsPerProc = 2000;            clp.setOption("minRowsPerProc", &optMinRowsPerProc,     "min #rows allowable per proc before repartitioning occurs");
   double optNnzImbalance = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,       "max allowable nonzero imbalance before repartitioning occurs");
@@ -351,7 +351,7 @@ int main(int argc, char *argv[]) {
         M.SetFactory("A", AFact);
 
       } else {
-
+#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN)
         // Repartitioning
 
         // The Factory Manager will be configured to return the permuted versions of P, R, A by default.
@@ -400,7 +400,9 @@ int main(int argc, char *argv[]) {
         M.SetFactory("R", permRFact);
         M.SetFactory("Nullspace", permRFact);
         M.SetFactory("Importer", RepartitionFact);
-
+#else
+        TEUCHOS_TEST_FOR_EXCEPT(true);
+#endif
       } // optRepartition
 
     } // Transfer
