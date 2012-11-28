@@ -80,7 +80,7 @@ namespace NOX {
 
   namespace Thyra {
 
-    /** \brief A concrete implementaiton of the NOX::Abstract::Group using Thyra.
+    /** \brief A concrete implementation of the NOX::Abstract::Group using Thyra.
 
         NOTE: This Group supports row sum scaling of the function
         (residual and Jacobian).  This is enabled by setting a weight
@@ -95,9 +95,45 @@ namespace NOX {
 
     public:
 
-      //! Constructor
+      /** \brief The default constructor that uses the linear solver from the ModelEvaluator.
+
+          Most users should use this constructor.  It is meant to be
+          used in conjunction with a stratimikos linear solver that is
+          built as part of the input model evaluator.  For finer
+          grained control over the use of the preconditioner and for
+          Jacobian-Free Newton-Krylov cases, the power user
+          constructor should be used.
+
+          \param[in] initial_guess Initial guess for the solution vector
+	  \param[in] model ModelEvaluator
+	  \param[in] weight_vector Optional diagonal weighting vector for the model.
+      */
       Group(const NOX::Thyra::Vector& initial_guess,
-	    const Teuchos::RCP< const ::Thyra::ModelEvaluator<double> >& model,
+	    const Teuchos::RCP<const ::Thyra::ModelEvaluator<double> >& model,
+	    const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null);
+
+      /** \brief Power user constructor that takes explicit linear solver objects to handle different combinations.
+
+          This class allows the user to set user-defined linear
+          operators and preconditioners (and corresponding
+          factories). The user can set the linear_op to be a
+          Jacobian-Free Newton Krylov operator (use the class
+          NOX::Thyra::MatrixFreeJacobianOperator).
+
+          \param[in] initial_guess Initial guess for the solution vector
+	  \param[in] model ModelEvaluator
+	  \param[in] linear_op Forward operator for the Jacobian.  Must be non-null
+	  \param[in] lows_factory Factory for building and updating linear solver.
+	  \param[in] prec_op Preconditioner operator.  If set to Teuchos::null, no preconditioner will be used.
+	  \param[in] prec_factory Factory for updating the precondiitoner.  If set to Teuchos::null and there is a non-null prec_op, then the preconditioner will be updated using the model evaluator as long as the ModelEvaluator::outArgs supports W_prec.
+	  \param[in] weight_vector Optional diagonal weighting vector for the model.
+      */
+      Group(const NOX::Thyra::Vector& initial_guess,
+	    const Teuchos::RCP<const ::Thyra::ModelEvaluator<double> >& model,
+	    const Teuchos::RCP< ::Thyra::LinearOpBase<double> >& linear_op,
+	    const Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<double> >& lows_factory,
+	    const Teuchos::RCP< ::Thyra::PreconditionerBase<double> >& prec_op,
+	    const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double> >& prec_factory,
 	    const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null);
 
       //! Copy constructor
@@ -313,20 +349,20 @@ namespace NOX {
           >
         > shared_jacobian_;
     
-      //! Thyra LOWS factory for building Jacobians
-      Teuchos::RCP< const ::Thyra::LinearOpWithSolveFactoryBase<double> > lows_factory_;
-
       //! Jacobian operator 
       Teuchos::RCP< ::Thyra::LinearOpBase<double> > lop_;
+
+      //! Thyra LOWS factory for building Jacobians
+      Teuchos::RCP< const ::Thyra::LinearOpWithSolveFactoryBase<double> > lows_factory_;
 
       //! Source base needed to create preconditioner
       Teuchos::RCP< const ::Thyra::DefaultLinearOpSource<double> > losb_;
 
-      //! Preconditioner factory
-      Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double> > prec_factory_;
-
       //! Preconditioner for Jacobian
       Teuchos::RCP< ::Thyra::PreconditionerBase<double> > prec_;
+
+      //! Preconditioner factory
+      Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double> > prec_factory_;
 
       //! Residual InArgs
       ::Thyra::ModelEvaluatorBase::InArgs<double> in_args_;

@@ -90,10 +90,10 @@ Group(const NOX::Thyra::Vector& initial_guess,
   gradient_vec_ = 
     Teuchos::rcp(new NOX::Thyra::Vector(*x_vec_, ShapeCopy));
   
+  lop_ = model->create_W_op();
+
   // create jacobian operator
   lows_factory_ = model->get_W_factory();
-
-  lop_ = model->create_W_op();
 
   // Create jacobian with solver
   shared_jacobian_ = Teuchos::rcp(new NOX::SharedObject< ::Thyra::LinearOpWithSolveBase<double>, NOX::Thyra::Group >(lows_factory_->createOp()));
@@ -113,14 +113,63 @@ Group(const NOX::Thyra::Vector& initial_guess,
   resetIsValidFlags();
 }
 
+NOX::Thyra::Group::
+Group(const NOX::Thyra::Vector& initial_guess,
+      const Teuchos::RCP< const ::Thyra::ModelEvaluator<double> >& model,
+      const Teuchos::RCP< ::Thyra::LinearOpBase<double> >& linear_op,
+      const Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<double> >& lows_factory,
+      const Teuchos::RCP< ::Thyra::PreconditionerBase<double> >& prec_op,
+      const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double> >& prec_factory,
+      const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector):
+  model_(model),
+  lop_(linear_op),
+  lows_factory_(lows_factory),
+  prec_(prec_op),
+  prec_factory_(prec_factory)
+{
+  TEUCHOS_ASSERT(nonnull(lop_));
+  TEUCHOS_ASSERT(nonnull(lows_factory_));
+
+  x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(initial_guess, DeepCopy));
+
+  // To support implicit function scaling, all vectors must be copy
+  // constructed/cloned from a NOX::Thyra::Vector that already has the
+  // weight vector set or you must manually set the weighting vector.
+  // Here we set the x_vec_ to have the weighting and clone that for
+  // everything.
+  if (nonnull(weight_vector)) {
+    weight_vec_ = weight_vector;
+    x_vec_->setWeightVector(weight_vec_);
+  }
+
+  f_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*x_vec_, ShapeCopy));
+  newton_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*x_vec_, ShapeCopy));
+  gradient_vec_ = 
+    Teuchos::rcp(new NOX::Thyra::Vector(*x_vec_, ShapeCopy));
+  
+  // Create jacobian with solver
+  shared_jacobian_ = Teuchos::rcp(new NOX::SharedObject< ::Thyra::LinearOpWithSolveBase<double>, NOX::Thyra::Group >(lows_factory_->createOp()));
+
+  losb_ = Teuchos::rcp(new ::Thyra::DefaultLinearOpSource<double>(lop_));
+
+  if ( nonnull(prec_factory_) && is_null(prec_) )
+    prec_ = prec_factory_->createPrec();
+
+  // Create in/out args
+  in_args_ = model_->createInArgs();
+  out_args_ = model_->createOutArgs();
+
+  resetIsValidFlags();
+}
+
 NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
   model_(source.model_),
   shared_jacobian_(source.shared_jacobian_),
-  lows_factory_(source.lows_factory_),
   lop_(source.lop_),
+  lows_factory_(source.lows_factory_),
   losb_(source.losb_),
-  prec_factory_(source.prec_factory_),
-  prec_(source.prec_)
+  prec_(source.prec_),
+  prec_factory_(source.prec_factory_)
 {
 
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*source.x_vec_, type));
@@ -652,7 +701,7 @@ void NOX::Thyra::Group::updateLOWS() const
   {
     NOX_FUNC_TIME_MONITOR("NOX Total Preconditioner Construction");
     
-    if (Teuchos::nonnull(prec_factory_)) {
+    if (nonnull(prec_factory_)) {
       prec_factory_->initializePrec(losb_, prec_.get());
       
       ::Thyra::initializePreconditionedOp<double>(*lows_factory_,
@@ -660,6 +709,23 @@ void NOX::Thyra::Group::updateLOWS() const
 						  prec_,
 						  shared_jacobian_->getObject(this).ptr());
     }
+/*  RPP: Uncomment this block when Ross adds W_prec support to Thyra::ME
+    else if ( nonnull(prec_) && (out_args_.supports_W_prec()) ) {
+
+      in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
+      out_args_.set_W_prec(f_vec_->getThyraRCPVector().assert_not_null());
+      model_->evalModel(in_args_, out_args_);
+      in_args_.set_x(Teuchos::null);
+      out_args_.set_W_prec(Teuchos::null);
+
+      if (out_args_.isFailed())
+  
+      ::Thyra::initializePreconditionedOp<double>(*lows_factory_,
+						  lop_,
+						  prec_,
+						  shared_jacobian_->getObject(this).ptr());
+    }
+*/
     else {
       ::Thyra::initializeOp<double>(*lows_factory_,
 				    lop_,
