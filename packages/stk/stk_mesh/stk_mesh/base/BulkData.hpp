@@ -542,7 +542,7 @@ private:
 
   void require_entity_owner( const Entity entity, unsigned owner) const ;
 
-  void require_metadata_committed() const;
+  void require_metadata_committed();
 
   void require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const;
 

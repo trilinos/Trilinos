@@ -163,9 +163,11 @@ void BulkData::require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) co
       print_entity_key(m_mesh_meta_data, EntityKey(ent_rank, ent_id) ) );
 }
 
-void BulkData::require_metadata_committed() const
+void BulkData::require_metadata_committed()
 {
-  ThrowRequireMsg( m_mesh_meta_data.is_commit(), "MetaData not committed." );
+  if (!m_mesh_meta_data.is_commit()) {
+    m_mesh_meta_data.commit();
+  }
 }
 
 //----------------------------------------------------------------------
