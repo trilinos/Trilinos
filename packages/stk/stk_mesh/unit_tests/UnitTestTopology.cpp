@@ -134,9 +134,8 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_multiple_topologies )
   PartVector add_parts;
   add_parts.push_back( &fix.element_tet_part );
   add_parts.push_back( &fix.element_wedge_part );
-  fix.bulk.change_entity_parts( elem, add_parts );
+  STKUNIT_ASSERT_THROW(fix.bulk.change_entity_parts( elem, add_parts ), std::runtime_error);
   fix.bulk.modification_end();
-  STKUNIT_ASSERT_THROW( stk::mesh::get_cell_topology( elem ).getCellTopologyData(), std::runtime_error );
 }
 
 // No longer in the public API

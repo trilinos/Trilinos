@@ -31,6 +31,8 @@
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
 #include <stk_mesh/baseImpl/FieldRepository.hpp>
 
+#include <stk_topology/topology.hpp>
+
 namespace stk {
 namespace mesh {
 
@@ -564,6 +566,13 @@ CellTopology get_cell_topology(const Bucket &bucket);
 
 /** Get the cell_topology off an entity */
 CellTopology get_cell_topology(const Entity entity);
+
+
+/** get the stk::topology given a Shards Cell Topology */
+stk::topology get_topology(CellTopology shards_topology, int spatial_dimension = 3);
+
+/** Get the Shards Cell Topology given a stk::topology  */
+CellTopology get_cell_topology(stk::topology topo);
 
 /** Get default entity rank names */
 const std::vector<std::string>& entity_rank_names();

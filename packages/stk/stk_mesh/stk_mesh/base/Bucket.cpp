@@ -21,6 +21,8 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/FindRestriction.hpp>
 
+#include <stk_topology/pretty_print.hpp>
+
 //----------------------------------------------------------------------
 namespace {
 inline unsigned align( size_t nb )
@@ -78,6 +80,7 @@ Bucket::Bucket( BulkData & arg_mesh ,
         )
   : m_mesh(arg_mesh)
   , m_entity_rank(arg_entity_rank)
+  , m_topology()
   , m_key(arg_key)
   , m_capacity(arg_capacity)
   , m_size(0)
@@ -89,6 +92,8 @@ Bucket::Bucket( BulkData & arg_mesh ,
   , m_partition(NULL)
 {
   //calculate the size of the field_data
+
+  m_topology = get_topology( get_cell_topology(*this), m_mesh.mesh_meta_data().spatial_dimension() );
 
   const std::vector< FieldBase * > & field_set =
     arg_mesh.mesh_meta_data().get_fields();

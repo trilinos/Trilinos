@@ -22,6 +22,8 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Entity.hpp>
 
+#include <stk_topology/topology.hpp>
+
 //----------------------------------------------------------------------
 
 #ifdef SIERRA_MIGRATION
@@ -102,6 +104,7 @@ private:
 
   BulkData             & m_mesh ;        // Where this bucket resides
   const EntityRank       m_entity_rank ; // Type of entities for this bucket
+  stk::topology          m_topology ;    // The topology of this bucket
   std::vector<unsigned>  m_key ;
   const size_t           m_capacity ;    // Capacity for entities
   size_t                 m_size ;        // Number of entities
@@ -113,6 +116,8 @@ private:
   unsigned char* m_field_data_end;
 
   impl::Partition    *m_partition;
+
+
 
 
 #ifdef SIERRA_MIGRATION
@@ -135,6 +140,9 @@ public:
   ////
   //// End New API functions.
   ////
+
+
+  stk::topology topology() const { return m_topology; }
 
   //--------------------------------
   // Container-like types and methods:
