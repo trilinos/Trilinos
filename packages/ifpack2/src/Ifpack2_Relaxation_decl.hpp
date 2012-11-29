@@ -255,6 +255,17 @@ public:
   /// perform Gauss-Seidel in reverse mode.  The default value is
   /// false, meaning that we do forward-mode Gauss-Seidel.  This only
   /// affects standard Gauss-Seidel, not symmetric Gauss-Seidel.
+  ///
+  /// The last two parameters govern the L1 variant of Gauss-Seidel.
+  /// The "relaxation: use l1" (bool) parameter, if true, turns on the
+  /// L1 variant.  It is false by default.  The "relaxation: l1 eta"
+  /// (magnitude_type) parameter is the \f$\eta \f$ parameter
+  /// associated with that method; its default value is 1.5.  Recall
+  /// that "magnitude_type" is the type of the absolute value of a
+  /// scalar_type value.  This is the same as scalar_type for
+  /// real-valued floating-point types (like \c float and \c double).
+  /// If scalar_type is <tt>std::complex<T></tt> for some type \c T,
+  /// then magnitude_type is \c T.
   void setParameters(const Teuchos::ParameterList& params);
 
   //! Initialize the preconditioner.
