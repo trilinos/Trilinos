@@ -74,6 +74,9 @@ template<class MatrixType>
 class ILUT: virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
 
 public:
+  // \name Typedefs
+  //@{
+
   //! The type of the entries of the input MatrixType.
   typedef typename MatrixType::scalar_type scalar_type;
 
@@ -108,6 +111,7 @@ public:
   //! Preserved only for backwards compatibility.  Please use "magnitude_type".
   TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
+  //@}
   // \name Constructors and Destructors
   //@{
 

@@ -211,10 +211,10 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
 
 
   //! The type of the magnitude (absolute value) of a matrix entry.
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+  typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
   //! Preserved only for backwards compatibility.  Please use "magnitude_type".
-  TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
   //! RILUK constuctor with variable number of indices per row.
   /*! Creates a RILUK object and allocates storage.
@@ -285,38 +285,38 @@ Not currently supported.
   // Mathematical functions.
 
 
-  //! Returns the result of a RILUK forward/back solve on a Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> X in Y.
+  //! Returns the result of a RILUK forward/back solve on a Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> X in Y.
   /*!
     \param In
     Trans -If true, solve transpose problem.
     \param In
-    X - A Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> of dimension NumVectors to solve for.
+    X - A Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> of dimension NumVectors to solve for.
     \param Out
-    Y -A Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> of dimension NumVectorscontaining result.
+    Y -A Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> of dimension NumVectorscontaining result.
 
     \return Integer error code, set to 0 if successful.
   */
   void apply(
-      const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-            Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+      const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
             Teuchos::ETransp mode = Teuchos::NO_TRANS,
-               Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-               Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+               scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+               scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
 
-  //! Returns the result of multiplying U, D and L in that order on an Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> X in Y.
+  //! Returns the result of multiplying U, D and L in that order on an Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> X in Y.
   /*!
     \param In
     Trans -If true, multiply by L^T, D and U^T in that order.
     \param In
-    X - A Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> of dimension NumVectors to solve for.
+    X - A Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> of dimension NumVectors to solve for.
     \param Out
-    Y -A Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> of dimension NumVectorscontaining result.
+    Y -A Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> of dimension NumVectorscontaining result.
 
     \return Integer error code, set to 0 if successful.
   */
-  int Multiply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-                     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+  int Multiply(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
                Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //! Returns the maximum over all the condition number estimate for each local ILU set of factors.
@@ -328,11 +328,11 @@ Not currently supported.
     ConditionNumberEstimate - The maximum across all processors of
     the infinity-norm estimate of the condition number of the inverse of LDU.
   */
-  magnitudeType computeCondEst(Teuchos::ETransp mode) const;
-  magnitudeType computeCondEst(CondestType CT = Ifpack2::Cheap,
-                               LocalOrdinal MaxIters = 1550,
+  magnitude_type computeCondEst(Teuchos::ETransp mode) const;
+  magnitude_type computeCondEst(CondestType CT = Ifpack2::Cheap,
+                               local_ordinal_type MaxIters = 1550,
                                magnitude_type Tol = 1e-9,
-                               const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &Matrix = Teuchos::null)
+                               const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &Matrix = Teuchos::null)
   {
     std::cerr << "Warning, Ifpack2::RILUK::computeCondEst currently does not use MaxIters/Tol/etc arguments..." << std::endl;
     return computeCondEst(Teuchos::NO_TRANS);
@@ -340,7 +340,7 @@ Not currently supported.
 
   magnitude_type getCondEst() const {return Condest_;}
 
-  Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getMatrix() const
+  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > getMatrix() const
   {
     return A_;
   }
@@ -365,13 +365,13 @@ Not currently supported.
   int getGlobalNumEntries() const {return(getL().getGlobalNumEntries()+getU().getGlobalNumEntries());}
 
   //! Returns the Ifpack2::IlukGraph associated with this factored matrix.
-  const Teuchos::RCP<Ifpack2::IlukGraph<LocalOrdinal,GlobalOrdinal,Node> >& getGraph() const {return(Graph_);}
+  const Teuchos::RCP<Ifpack2::IlukGraph<local_ordinal_type,global_ordinal_type,node_type> >& getGraph() const {return(Graph_);}
 
   //! Returns the L factor associated with this factored matrix.
   const MatrixType& getL() const {return(*L_);}
 
   //! Returns the D factor associated with this factored matrix.
-  const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & getD() const {return(*D_);}
+  const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> & getD() const {return(*D_);}
 
   //! Returns the U factor associated with this factored matrix.
   const MatrixType& getU() const {return(*U_);}
@@ -379,11 +379,11 @@ Not currently supported.
   //@{ \name Additional methods required to support the Tpetra::Operator interface.
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getDomainMap() const
+  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getDomainMap() const
   { return Graph_->getL_Graph()->getDomainMap(); }
 
   //! Returns the Tpetra::Map object associated with the range of this operator.
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getRangeMap() const
+  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getRangeMap() const
   { return Graph_->getU_Graph()->getRangeMap(); }
 
   //@}
@@ -398,18 +398,18 @@ Not currently supported.
 
 
   void allocate_L_and_U();
-  void initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & overlapA);
+  void initAllValues(const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> & overlapA);
   void generateXY(Teuchos::ETransp mode,
-                 const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xin,
-     const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Yin,
-     Teuchos::RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Xout,
-     Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Yout) const;
+                 const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Xin,
+     const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Yin,
+     Teuchos::RCP<const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Xout,
+     Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Yout) const;
   bool isOverlapped_;
-  Teuchos::RCP<Ifpack2::IlukGraph<LocalOrdinal,GlobalOrdinal,Node> > Graph_;
+  Teuchos::RCP<Ifpack2::IlukGraph<local_ordinal_type,global_ordinal_type,node_type> > Graph_;
   const Teuchos::RCP<const MatrixType> A_;
   Teuchos::RCP<MatrixType> L_;
   Teuchos::RCP<MatrixType> U_;
-  Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > D_;
+  Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > D_;
   bool UseTranspose_;
 
   int LevelOfFill_;
@@ -427,8 +427,8 @@ Not currently supported.
   magnitude_type Rthresh_;
   mutable magnitude_type Condest_;
 
-  mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > OverlapX_;
-  mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > OverlapY_;
+  mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > OverlapX_;
+  mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > OverlapY_;
   Tpetra::CombineMode OverlapMode_;
 };
 

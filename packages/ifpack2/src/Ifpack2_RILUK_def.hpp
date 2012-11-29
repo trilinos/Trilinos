@@ -75,7 +75,7 @@ RILUK<MatrixType>::RILUK(const Teuchos::RCP<const MatrixType>& Matrix_in)
 //{
 //  L_ = Teuchos::rcp( new MatrixType(src.getL()) );
 //  U_ = Teuchos::rcp( new MatrixType(src.getU()) );
-//  D_ = Teuchos::rcp( new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(src.getD()) );
+//  D_ = Teuchos::rcp( new Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(src.getD()) );
 //}
 
 //==============================================================================
@@ -100,7 +100,7 @@ void RILUK<MatrixType>::allocate_L_and_U() {
     std::cout << "error in triangular detection" << std::endl;
   }
 
-  D_ = Teuchos::rcp( new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Graph_->getL_Graph()->getRowMap()) );
+  D_ = Teuchos::rcp( new Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(Graph_->getL_Graph()->getRowMap()) );
   setAllocated(true);
 }
 
@@ -312,7 +312,7 @@ void RILUK<MatrixType>::initialize() {
 
   if (Graph_ != Teuchos::null) return;
 
-  Graph_ = Teuchos::rcp(new Ifpack2::IlukGraph<LocalOrdinal,GlobalOrdinal,Node>(A_->getCrsGraph(), LevelOfFill_, LevelOfOverlap_));
+  Graph_ = Teuchos::rcp(new Ifpack2::IlukGraph<local_ordinal_type,global_ordinal_type,node_type>(A_->getCrsGraph(), LevelOfFill_, LevelOfOverlap_));
 
   Graph_->constructFilledGraph();
 
@@ -335,7 +335,7 @@ void RILUK<MatrixType>::initialize() {
 
 //==========================================================================
 template<class MatrixType>
-void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & OverlapA) {
+void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> & OverlapA) {
 
   size_t NumIn = 0, NumL = 0, NumU = 0;
   bool DiagFound = false;
@@ -343,12 +343,12 @@ void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdina
   size_t MaxNumEntries = OverlapA.getGlobalMaxNumRowEntries();
 
 
-  Teuchos::Array<GlobalOrdinal> InI(MaxNumEntries); // Allocate temp space
-  Teuchos::Array<GlobalOrdinal> LI(MaxNumEntries);
-  Teuchos::Array<GlobalOrdinal> UI(MaxNumEntries);
-  Teuchos::Array<Scalar> InV(MaxNumEntries);
-  Teuchos::Array<Scalar> LV(MaxNumEntries);
-  Teuchos::Array<Scalar> UV(MaxNumEntries);
+  Teuchos::Array<global_ordinal_type> InI(MaxNumEntries); // Allocate temp space
+  Teuchos::Array<global_ordinal_type> LI(MaxNumEntries);
+  Teuchos::Array<global_ordinal_type> UI(MaxNumEntries);
+  Teuchos::Array<scalar_type> InV(MaxNumEntries);
+  Teuchos::Array<scalar_type> LV(MaxNumEntries);
+  Teuchos::Array<scalar_type> UV(MaxNumEntries);
 
   bool ReplaceValues = (L_->isStaticGraph() || L_->isLocallyIndexed()); // Check if values should be inserted or replaced
 
@@ -360,16 +360,16 @@ void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdina
   }
 
   D_->putScalar(0.0); // Set diagonal values to zero
-  Teuchos::ArrayRCP<Scalar> DV = D_->get1dViewNonConst(); // Get view of diagonal
+  Teuchos::ArrayRCP<scalar_type> DV = D_->get1dViewNonConst(); // Get view of diagonal
 
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap =
+  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& rowMap =
     L_->getRowMap();
 
   // First we copy the user's matrix into L and U, regardless of fill level
 
-  for (GlobalOrdinal i=rowMap->getMinGlobalIndex(); i<=rowMap->getMaxGlobalIndex(); ++i) {
-    GlobalOrdinal global_row = i;
-    LocalOrdinal local_row = rowMap->getLocalElement(global_row);
+  for (global_ordinal_type i=rowMap->getMinGlobalIndex(); i<=rowMap->getMaxGlobalIndex(); ++i) {
+    global_ordinal_type global_row = i;
+    local_ordinal_type local_row = rowMap->getLocalElement(global_row);
 
     OverlapA.getGlobalRowCopy(global_row, InI(), InV(), NumIn); // Get Values and Indices
 
@@ -380,7 +380,7 @@ void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdina
     DiagFound = false;
 
     for (size_t j=0; j< NumIn; j++) {
-      GlobalOrdinal k = InI[j];
+      global_ordinal_type k = InI[j];
 
       if (k==i) {
         DiagFound = true;
@@ -467,20 +467,20 @@ void RILUK<MatrixType>::compute() {
   // MinMachNum should be officially defined, for now pick something a little
   // bigger than IEEE underflow value
 
-  Scalar MinDiagonalValue = Teuchos::ScalarTraits<Scalar>::rmin();
-  Scalar MaxDiagonalValue = Teuchos::ScalarTraits<Scalar>::one()/MinDiagonalValue;
+  scalar_type MinDiagonalValue = Teuchos::ScalarTraits<scalar_type>::rmin();
+  scalar_type MaxDiagonalValue = Teuchos::ScalarTraits<scalar_type>::one()/MinDiagonalValue;
 
   size_t NumIn, NumL, NumU;
 
   // Get Maximun Row length
   size_t MaxNumEntries = L_->getNodeMaxNumRowEntries() + U_->getNodeMaxNumRowEntries() + 1;
 
-  Teuchos::Array<LocalOrdinal> InI(MaxNumEntries); // Allocate temp space
-  Teuchos::Array<Scalar> InV(MaxNumEntries);
+  Teuchos::Array<local_ordinal_type> InI(MaxNumEntries); // Allocate temp space
+  Teuchos::Array<scalar_type> InV(MaxNumEntries);
   size_t num_cols = U_->getColMap()->getNodeNumElements();
   Teuchos::Array<int> colflag(num_cols);
 
-  Teuchos::ArrayRCP<Scalar> DV = D_->get1dViewNonConst(); // Get view of diagonal
+  Teuchos::ArrayRCP<scalar_type> DV = D_->get1dViewNonConst(); // Get view of diagonal
 
   size_t current_madds = 0; // We will count multiply-add as they happen
 
@@ -488,12 +488,12 @@ void RILUK<MatrixType>::compute() {
 
   // Need some integer workspace and pointers
   size_t NumUU;
-  Teuchos::ArrayView<const LocalOrdinal> UUI;
-  Teuchos::ArrayView<const Scalar> UUV;
+  Teuchos::ArrayView<const local_ordinal_type> UUI;
+  Teuchos::ArrayView<const scalar_type> UUV;
   for (size_t j=0; j<num_cols; j++) colflag[j] = - 1;
 
   for(size_t i=0; i<L_->getNodeNumRows(); i++) {
-    LocalOrdinal local_row = i;
+    local_ordinal_type local_row = i;
 
  // Fill InV, InI with current row of L, D and U combined
 
@@ -509,11 +509,11 @@ void RILUK<MatrixType>::compute() {
     // Set column flags
     for (size_t j=0; j<NumIn; j++) colflag[InI[j]] = j;
 
-    Scalar diagmod = 0.0; // Off-diagonal accumulator
+    scalar_type diagmod = 0.0; // Off-diagonal accumulator
 
     for (size_t jj=0; jj<NumL; jj++) {
-      LocalOrdinal j = InI[jj];
-      Scalar multiplier = InV[jj]; // current_mults++;
+      local_ordinal_type j = InI[jj];
+      scalar_type multiplier = InV[jj]; // current_mults++;
 
       InV[jj] *= DV[j];
 
@@ -549,12 +549,12 @@ void RILUK<MatrixType>::compute() {
       // current_madds++;
     }
 
-    if (Teuchos::ScalarTraits<Scalar>::magnitude(DV[i]) > Teuchos::ScalarTraits<Scalar>::magnitude(MaxDiagonalValue)) {
-      if (Teuchos::ScalarTraits<Scalar>::real(DV[i]) < 0) DV[i] = - MinDiagonalValue;
+    if (Teuchos::ScalarTraits<scalar_type>::magnitude(DV[i]) > Teuchos::ScalarTraits<scalar_type>::magnitude(MaxDiagonalValue)) {
+      if (Teuchos::ScalarTraits<scalar_type>::real(DV[i]) < 0) DV[i] = - MinDiagonalValue;
       else DV[i] = MinDiagonalValue;
     }
     else
-      DV[i] = Teuchos::ScalarTraits<Scalar>::one()/DV[i]; // Invert diagonal value
+      DV[i] = Teuchos::ScalarTraits<scalar_type>::one()/DV[i]; // Invert diagonal value
 
     for (size_t j=0; j<NumU; j++) InV[NumL+1+j] *= DV[i]; // Scale U by inverse of diagonal
 
@@ -599,9 +599,9 @@ void RILUK<MatrixType>::compute() {
 //=============================================================================
 template<class MatrixType>
 void RILUK<MatrixType>::apply(
-       const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-             Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-             Teuchos::ETransp mode, Scalar alpha, Scalar beta) const
+       const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+             Teuchos::ETransp mode, scalar_type alpha, scalar_type beta) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
     "Ifpack2::RILUK::apply() ERROR, compute() hasn't been called yet.");
@@ -614,12 +614,12 @@ void RILUK<MatrixType>::apply(
 //
 
   // First generate X and Y as needed for this function
-  Teuchos::RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > X1;
-  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Y1;
+  Teuchos::RCP<const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > X1;
+  Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Y1;
   generateXY(mode, X, Y, X1, Y1);
 
-  Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-  Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  scalar_type one = Teuchos::ScalarTraits<scalar_type>::one();
+  scalar_type zero = Teuchos::ScalarTraits<scalar_type>::zero();
 
   if (mode == Teuchos::NO_TRANS) {
 
@@ -643,16 +643,16 @@ void RILUK<MatrixType>::apply(
 
 //=============================================================================
 template<class MatrixType>
-int RILUK<MatrixType>::Multiply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-                              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+int RILUK<MatrixType>::Multiply(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
             Teuchos::ETransp mode) const {
 //
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
 //
 
   // First generate X and Y as needed for this function
-  Teuchos::RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > X1;
-  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Y1;
+  Teuchos::RCP<const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > X1;
+  Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Y1;
   generateXY(mode, X, Y, X1, Y1);
 
 //  Epetra_Flops * counter = this->GetFlopCounter();
@@ -666,7 +666,7 @@ int RILUK<MatrixType>::Multiply(const Tpetra::MultiVector<Scalar,LocalOrdinal,Gl
     U_->apply(*X1, *Y1,mode); //
     Y1->update(1.0, *X1, 1.0); // Y1 = Y1 + X1 (account for implicit unit diagonal)
     Y1->elementWiseMultiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
-    Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Y1temp(*Y1); // Need a temp copy of Y1
+    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> Y1temp(*Y1); // Need a temp copy of Y1
     L_->apply(Y1temp, *Y1,mode);
     Y1->update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
     if (isOverlapped_) {Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);} // Export computed Y values if needed
@@ -676,7 +676,7 @@ int RILUK<MatrixType>::Multiply(const Tpetra::MultiVector<Scalar,LocalOrdinal,Gl
     L_->apply(*X1, *Y1,mode);
     Y1->update(1.0, *X1, 1.0); // Y1 = Y1 + X1 (account for implicit unit diagonal)
     Y1->elementWiseMultiply(1, *D_, *Y1, 0); // y = D*y (D_ has inverse of diagonal)
-    Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Y1temp(*Y1); // Need a temp copy of Y1
+    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> Y1temp(*Y1); // Need a temp copy of Y1
     U_->apply(Y1temp, *Y1,mode);
     Y1->update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
     if (isOverlapped_) {Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);}
@@ -693,13 +693,13 @@ RILUK<MatrixType>::computeCondEst(Teuchos::ETransp mode) const {
     return Condest_;
   }
   // Create a vector with all values equal to one
-  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Ones(U_->getDomainMap());
-  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> OnesResult(L_->getRangeMap());
+  Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> Ones(U_->getDomainMap());
+  Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> OnesResult(L_->getRangeMap());
   Ones.putScalar(1.0);
 
   apply(Ones, OnesResult,mode); // Compute the effect of the solve on the vector of ones
   OnesResult.abs(OnesResult); // Make all values non-negative
-  Teuchos::Array<magnitudeType> norms(1);
+  Teuchos::Array<magnitude_type> norms(1);
   OnesResult.normInf(norms());
   Condest_ = norms[0];
   return Condest_;
@@ -709,10 +709,10 @@ RILUK<MatrixType>::computeCondEst(Teuchos::ETransp mode) const {
 //=========================================================================
 template<class MatrixType>
 void RILUK<MatrixType>::generateXY(Teuchos::ETransp mode,
-    const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xin,
-    const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Yin,
-    Teuchos::RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Xout,
-    Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Yout) const {
+    const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Xin,
+    const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Yin,
+    Teuchos::RCP<const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Xout,
+    Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Yout) const {
 
   // Generate an X and Y suitable for performing Solve() and Multiply() methods
 
@@ -720,8 +720,8 @@ void RILUK<MatrixType>::generateXY(Teuchos::ETransp mode,
        "Ifpack2::RILUK::GenerateXY ERROR: X and Y not the same size");
 
   //cout << "Xin = " << Xin << endl;
-  Xout = Teuchos::rcp( (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> *) &Xin, false );
-  Yout = Teuchos::rcp( (Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> *) &Yin, false );
+  Xout = Teuchos::rcp( (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> *) &Xin, false );
+  Yout = Teuchos::rcp( (Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> *) &Yin, false );
   if (!isOverlapped_) return; // Nothing more to do
 
   if (isOverlapped_) {
@@ -733,8 +733,8 @@ void RILUK<MatrixType>::generateXY(Teuchos::ETransp mode,
       }
     }
     if (OverlapX_==Teuchos::null) { // Need to allocate space for overlap X and Y
-      OverlapX_ = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(U_->getColMap(), Xout->getNumVectors()) );
-      OverlapY_ = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(L_->getRowMap(), Yout->getNumVectors()) );
+      OverlapX_ = Teuchos::rcp( new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(U_->getColMap(), Xout->getNumVectors()) );
+      OverlapY_ = Teuchos::rcp( new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(L_->getRowMap(), Yout->getNumVectors()) );
     }
     if (mode == Teuchos::NO_TRANS) {
       OverlapX_->doImport(*Xout,*U_->getGraph()->getImporter(), Tpetra::INSERT); // Import X values for solve
