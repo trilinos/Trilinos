@@ -38,6 +38,14 @@ typedef MueLu::TransPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
 typedef MueLu::RAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RAPFactory;
 #endif
 
+#ifdef MUELU_BLOCKEDRAPFACTORY_SHORT
+typedef MueLu::BlockedRAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> BlockedRAPFactory;
+#endif
+
+#ifdef MUELU_REPARTITIONACFACTORY_SHORT
+typedef MueLu::RepartitionAcFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RepartitionAcFactory;
+#endif
+
 #ifdef MUELU_SMOOTHERPROTOTYPE_SHORT
 typedef MueLu::SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SmootherPrototype;
 #endif

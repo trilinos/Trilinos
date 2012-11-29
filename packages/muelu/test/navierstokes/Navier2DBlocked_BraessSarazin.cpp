@@ -90,7 +90,7 @@
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
+#include "MueLu_BlockedRAPFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Exceptions.hpp"
@@ -652,16 +652,18 @@ int main(int argc, char *argv[]) {
   RCP<GenericRFactory> RFact = rcp(new GenericRFactory());
   RFact->SetFactory("P", PFact);
 
-  RCP<RAPFactory> AcFact = rcp(new RAPFactory());
+  RCP<Factory> AcFact = rcp(new BlockedRAPFactory());
   AcFact->SetFactory("P", PFact);
   AcFact->SetFactory("R", RFact);
 
+  /* TODO: not available yet for BlockedRAPFactory. Need some inheritence.
   // register aggregation export factory in RAPFactory
   RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>("aggs_level%LEVELID_proc%PROCID.out"));
   aggExpFact->SetFactory("Aggregates", UCAggFact11);
   aggExpFact->SetFactory("DofsPerNode", dropFact11);
 
   AcFact->AddTransferFactory(aggExpFact);
+  */
 
   *out << "Creating Braess-Sarazin Smoother" << std::endl;
 

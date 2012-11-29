@@ -81,13 +81,29 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos AND (NOT Teuchos_ENABLE_LONG_LONG_INT))
   XPETRA_ADD_TEST_EPETRA(${MueLu_ScalingTestName} 4)
   XPETRA_ADD_TEST_EPETRA(ScalingTestParamList 4)
-  XPETRA_ADD_TEST_EPETRA(RAPScalingTest 4)
+
+  TRIBITS_ADD_TEST(
+    RAPScalingTest
+    NAME "RAPScalingTestEpetra"
+    ARGS "--linAlgebra=Epetra --nraps=2"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
+
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   XPETRA_ADD_TEST_TPETRA(${MueLu_ScalingTestName} 4)
   XPETRA_ADD_TEST_TPETRA(ScalingTestParamList 4)
-  XPETRA_ADD_TEST_TPETRA(RAPScalingTest 4)
+
+  TRIBITS_ADD_TEST(
+    RAPScalingTest
+    NAME "RAPScalingTestTpetra"
+    ARGS "--linAlgebra=Tpetra --nraps=2"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
+
 ENDIF()
 
 ENDIF() # Galeri

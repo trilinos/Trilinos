@@ -16,6 +16,8 @@ NullspaceFactory
 PgPFactory
 PreDropFunctionConstVal
 RAPFactory
+BlockedRAPFactory
+RepartitionAcFactory
 SaPFactory
 SmootherFactory
 SmootherPrototype

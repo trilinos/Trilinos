@@ -89,7 +89,7 @@
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
+#include "MueLu_BlockedRAPFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Exceptions.hpp"
@@ -668,7 +668,7 @@ int main(int argc, char *argv[]) {
   RCP<GenericRFactory> RFact = rcp(new GenericRFactory());
   RFact->SetFactory("P", PFact);
 
-  RCP<RAPFactory> AcFact = rcp(new RAPFactory());
+  RCP<Factory> AcFact = rcp(new BlockedRAPFactory());
   AcFact->SetFactory("P", PFact);
   AcFact->SetFactory("R", RFact);
 

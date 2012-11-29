@@ -43,42 +43,46 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_RAPFACTORY_DECL_HPP
-#define MUELU_RAPFACTORY_DECL_HPP
-
-#include <string>
+#ifndef MUELU_REPARTITIONACFACTORY_DECL_HPP
+#define MUELU_REPARTITIONACFACTORY_DECL_HPP
 
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_CrsMatrix_fwd.hpp>
+#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
-#include "MueLu_RAPFactory_fwd.hpp"
+#include "MueLu_RepartitionAcFactory_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
+#include "MueLu_RAPFactory_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
+// MPI helper
+#define sumAll(rcpComm, in, out)                                        \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
+
 namespace MueLu {
   /*!
-    @class RAPFactory
+    @class RepartitionAcFactory
     @brief Factory for building coarse matrices.
   */
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
-  class RAPFactory : public TwoLevelFactoryBase {
-#undef MUELU_RAPFACTORY_SHORT
+  class RepartitionAcFactory : public TwoLevelFactoryBase {
+#undef MUELU_REPARTITIONACFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
     //! @name Constructors/Destructors.
     //@{
 
-    RAPFactory();
+    RepartitionAcFactory() { }
 
-    virtual ~RAPFactory() { }
+    virtual ~RepartitionAcFactory() { }
     //@}
 
     //! @name Input
@@ -93,78 +97,9 @@ namespace MueLu {
     void Build(Level &fineLevel, Level &coarseLevel) const;
     //@}
 
-    //! @name Handling of user-defined transfer factories
-    //@{
-
-    //! Indicate that the restriction operator action should be implicitly defined by the transpose of the prolongator.
-    void SetImplicitTranspose(bool const &implicit) {
-      implicitTranspose_ = implicit;
-    }
-
-    //! Indicate that zero entries on the diagonal of Ac shall be repaired (i.e. if A(i,i) == 0.0 set A(i,i) = 1.0)
-    void SetRepairZeroDiagonal(bool const &repairZeroDiagonals) {
-      repairZeroDiagonals_ = repairZeroDiagonals;
-      if(repairZeroDiagonals_) checkAc_ = true; // make sure that plausibility check is performed. Otherwise SetRepairZeroDiagonal(true) has no effect.
-    }
-
-    //! Indicate that a simple plausibility check shall be done for Ac after building RAP
-    void SetPlausibilityCheck(bool const &checkAc) {
-      checkAc_ = checkAc;
-    }
-
-    //@}
-
-    //@{
-    /*! @brief Add transfer factory in the end of list of transfer factories in RepartitionAcFactory.
-
-    Transfer factories are derived from TwoLevelFactoryBase and project some data from the fine level to
-    the next coarser level.
-    */
-    void AddTransferFactory(const RCP<const FactoryBase>& factory);
-
-    // TODO add a function to remove a specific transfer factory?
-
-    //! Returns number of transfer factories.
-    size_t NumTransferFactories() const { return transferFacts_.size(); }
-
-    //@}
-
-    //! @name internal print methods.
-    static std::string PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag);
-
-    static std::string PrintLoadBalancingInfo(const Matrix & Ac, const std::string & msgTag);
-
-  private:
-
-    //! @name internal plausibility check methods
-    void CheckMainDiagonal(RCP<Matrix> & Ac) const;
-
-    //@{
-
-    //! If true, the action of the restriction operator action is implicitly defined by the transpose of the prolongator.
-    bool implicitTranspose_;
-
-    //! If true, perform a basic plausibility check on Ac (default = false)
-    //! note, that the repairZeroDiagonals_ flag is only valid for checkAc_ == true
-    bool checkAc_;
-
-    //! If true, the CheckMainDiagonal routine automatically repairs zero entries on main diagonal (default = false)
-    //! i.e. if A(i,i) == 0.0 set A(i,i) = 1.0
-    //! note, that the repairZeroDiagonals_ flag is only valid for checkAc_ == true
-    bool repairZeroDiagonals_;
-
-    //@}
-
-    //@{
-
-    //! list of user-defined transfer Factories
-    std::vector<RCP<const FactoryBase> > transferFacts_;
-
-    //@}
-
-  }; //class RAPFactory
+  }; //class RepartitionAcFactory
 
 } //namespace MueLu
 
-#define MUELU_RAPFACTORY_SHORT
-#endif // MUELU_RAPFACTORY_DECL_HPP
+#define MUELU_REPARTITIONACFACTORY_SHORT
+#endif // MUELU_REPARTITIONACFACTORY_DECL_HPP

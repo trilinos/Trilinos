@@ -84,6 +84,7 @@
 #include "MueLu_PermutedTransferFactory.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
+#include "MueLu_RepartitionAcFactory.hpp"
 
 // Belos
 #ifdef HAVE_MUELU_BELOS
@@ -409,7 +410,7 @@ int main(int argc, char *argv[]) {
         permRFact->SetFactory("Nullspace", M.GetFactory("Ptent")); // TODO
 
         // Compute Ac from permuted P and R
-        RCP<Factory> permAFact = rcp(new RAPFactory());
+        RCP<Factory> permAFact = rcp(new RepartitionAcFactory());
         permAFact->setVerbLevel(Teuchos::VERB_HIGH);
         permAFact->SetFactory("P", permPFact); // why is this needed?
 

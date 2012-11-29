@@ -66,6 +66,7 @@
 #include "MueLu_AmalgamationFactory.hpp" //TMP
 #include "MueLu_CoalesceDropFactory.hpp" //TMP
 #include "MueLu_RAPFactory.hpp" //TMP
+#include "MueLu_RepartitionAcFactory.hpp" //TMP
 #include "MueLu_TransPFactory.hpp" //TMP
 #include "MueLu_GenericRFactory.hpp" //TMP
 #include "MueLu_SaPFactory.hpp" //TMP
@@ -135,6 +136,9 @@ namespace MueLu {
       }
       if (factoryName == "RAPFactory") {
         return BuildRAPFactory(paramList, factoryMapIn);
+      }
+      if (factoryName == "RepartitionAcFactory") {
+        return BuildRepartitionAcFactory(paramList, factoryMapIn);
       }
       if (factoryName == "UCAggregationFactory") {
         return BuildUCAggregationFactory(paramList, factoryMapIn);
@@ -266,7 +270,7 @@ namespace MueLu {
       return factory;
     }
 
-    //! RaPFactory
+    //! RAPFactory
     RCP<FactoryBase> BuildRAPFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       if (paramList.begin() == paramList.end()) // short-circuit. Use default parameters of constructor
         return rcp(new RAPFactory());
@@ -285,6 +289,21 @@ namespace MueLu {
           factory->AddTransferFactory(p);
         }
       }
+
+      return factory;
+    }
+
+    //! RepartitionAcFactory
+    RCP<FactoryBase> BuildRepartitionAcFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
+      if (paramList.begin() == paramList.end()) // short-circuit. Use default parameters of constructor
+        return rcp(new RepartitionAcFactory());
+
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "RepartitionAcFactory", Exceptions::RuntimeError, "");
+
+      RCP<RepartitionAcFactory> factory = rcp(new RepartitionAcFactory());
+      MUELU_FACTORY_PARAM2("P"); //TODO
+      MUELU_FACTORY_PARAM2("R");
+      MUELU_FACTORY_PARAM2("A");
 
       return factory;
     }

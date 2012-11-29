@@ -85,7 +85,7 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_TentativePFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
+#include "MueLu_BlockedRAPFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
 
   RCP<GenericRFactory> RFact = rcp(new GenericRFactory());
 
-  RCP<RAPFactory> AcFact = rcp(new RAPFactory());
+  RCP<Factory> AcFact = rcp(new BlockedRAPFactory());
 
   // Smoothers
   //RCP<SmootherPrototype> smootherPrototype     = rcp( new GaussSeidelSmoother(1, 1.0) );
