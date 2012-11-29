@@ -79,7 +79,9 @@ int ex_put_partial_id_map (int  exoid,
   const char* vmap;
 
   exerrval = 0; /* clear error code */
-
+  if (num_entities == 0)
+    return (EX_NOERR);
+  
   switch ( map_type ) {
   case EX_NODE_MAP:
     tname = "node";

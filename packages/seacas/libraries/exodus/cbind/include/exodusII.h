@@ -850,6 +850,14 @@ extern "C" {
 			       const void_int *set_entry_list,
 			       const void_int *set_extra_list);
 
+  EXODUS_EXPORT int ex_put_partial_set(int exoid,
+				       ex_entity_type set_type,
+				       ex_entity_id   set_id,
+				       int64_t offset,
+				       int64_t count,
+				       const void_int *set_entry_list,
+				       const void_int *set_extra_list);
+
   /*  Read a Node Edge Face or Side Set */
   EXODUS_EXPORT int ex_get_set(int exoid,
 			       ex_entity_type set_type,
