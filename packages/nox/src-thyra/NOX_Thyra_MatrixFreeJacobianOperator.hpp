@@ -79,6 +79,7 @@ Central (2nd order accurate):
 
 where \f$J\f$ is the Jacobian, \f$y\f$ is the vector that the Jacobian is to be applied to, \f$x\f$ is the solution vector, \f$F(x)\f$ is the residual evaluation at \f$ x \f$,and \f$\delta\f$ is a scalar perturbation calculated by a variety of formulas (see MatrixFreeJacobianOperator::E_PerturbationType for references).
 
+NOTE: The base evaluation \f$f(x)\f$ and its corresponding base solution \f$x\f$ is assumed to be supplied from an exterior source and that \f$f(x)\f$ is up to date wrt \f$x\f$.  Otherwise this algorithm would be inefficient due to extra base evaluations for every Jacobian-vector product.  A call must be made to either setBaseEvaluationToRawThyra() or setBaseEvaluationToNOXGroup() to set up the base objects.  If a NOX Group is used, the evaluation will be ensured to be correct because of the mechanics for isF().  In the case of raw objects, the user must take care to keep the base values up-to-date. 
 */
 template<typename Scalar>
 class MatrixFreeJacobianOperator : public ::Thyra::LinearOpBase<Scalar>,
