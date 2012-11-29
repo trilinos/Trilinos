@@ -136,7 +136,8 @@ namespace MueLu {
         //JJH -- The final prolongator is wrong, to boot.  So right now, I fillComplete AP, but avoid fillComplete
         //JJH -- in the scaling.  Long story short, we're doing 2 fillCompletes, where ideally we'd do just one.
         bool doFillComplete=true;
-        bool optimizeStorage=false;
+        bool optimizeStorage=true;
+        if (A->getRowMap()->lib() == Xpetra::UseTpetra) optimizeStorage=false;
         AP = Utils::TwoMatrixMultiply(A, false, Ptent, false, doFillComplete, optimizeStorage);
       }
 
