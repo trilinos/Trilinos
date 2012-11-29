@@ -259,12 +259,6 @@ namespace MueLu {
                                          bool doFillComplete,
                                          bool doOptimizeStorage)
   {
-#ifdef HAVE_MPI
-int mypid=-1;
-static double t0=0,t1=0;
-t0 = MPI_Wtime();
-#endif
-
     RCP<Matrix> C;
     //TODO Can we come up with an estimate for nnz-per-row for result C?
     if(transposeA) C = MatrixFactory::Build(A->getDomainMap(), 1);
@@ -275,6 +269,32 @@ t0 = MPI_Wtime();
     if (!B->isFillComplete())
       throw(Exceptions::RuntimeError("B is not fill-completed"));
 
+    switch (C->getRowMap()->lib()) {
+
+      case Xpetra::UseEpetra:
+#       ifdef HAVE_MUELU_ML
+        if (!transposeA && !transposeB) {
+            RCP<Epetra_CrsMatrix> epA = Op2NonConstEpetraCrs(A);
+            RCP<Epetra_CrsMatrix> epB = Op2NonConstEpetraCrs(B);
+            RCP<Epetra_CrsMatrix> epC = Op2NonConstEpetraCrs(C);
+            RCP<Epetra_CrsMatrix> epAB = MLTwoMatrixMultiply(*epA, *epB);
+            C = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(epAB);
+            if(doFillComplete) {
+              RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
+              params->set("Optimize Storage",doOptimizeStorage);
+              C->fillComplete(B->getDomainMap(), A->getRangeMap(), params);
+            }
+            break; // if ML is not available automatically fall back to EpetraExt
+        }
+#       endif // HAVE_MUELU_ML
+        //Fall through to default case if either ML is unavailable or one of the matrices should be implicitly transposed.
+
+      default:
+        Xpetra::MatrixMatrix::Multiply(*A,transposeA,*B,transposeB,*C,doFillComplete,doOptimizeStorage);
+
+    } //switch
+
+#ifdef OLD_MM_CODE
     if (C->getRowMap()->lib() == Xpetra::UseEpetra)
       {
       // check first for EpetraExt since this is the MatrixMatrix multiplication which
@@ -327,18 +347,13 @@ t0 = MPI_Wtime();
 		      (transposeA) ? A->getDomainMap() : A->getRangeMap(),
 		      params);
     }
+#endif //ifdef OLD_MM_CODE
 
     // fill strided maps information
     // this is necessary since the ML matrix matrix multiplication routine
     // has no handling for this
     // TODO: move this call to MLMultiply...
     C->CreateView("stridedMaps", A, transposeA, B, transposeB);
-
-#ifdef HAVE_MPI
-t1 += MPI_Wtime() - t0;
-if (mypid == 0)
-  std::cout << "cumulative MM time = " << t1 << std::endl;
-#endif
 
     return C;
   } //TwoMatrixMultiply()

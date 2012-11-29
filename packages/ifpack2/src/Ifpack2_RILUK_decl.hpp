@@ -1,28 +1,28 @@
 /*@HEADER
 // ***********************************************************************
-// 
+//
 //       Ifpack2: Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 //@HEADER
 */
@@ -47,12 +47,12 @@ namespace Ifpack2 {
 
 //! A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Tpetra::RowMatrix.
 
-/*! Ifpack2::RILUK computes a "Relaxed" ILU factorization with level k fill 
+/*! Ifpack2::RILUK computes a "Relaxed" ILU factorization with level k fill
     of a given Tpetra::RowMatrix.
 
 For a complete list of valid parameters, see Ifpack2::RILUK::setParameters.
 
-  The factorization 
+  The factorization
     that is produced is a function of several parameters:
 <ol>
   <li> The pattern of the matrix - All fill is derived from the original matrix nonzero structure.  Level zero fill
@@ -76,8 +76,8 @@ For a complete list of valid parameters, see Ifpack2::RILUK::setParameters.
        of overlap, the entire matrix would be part of each processor's local ILU factorization process.
        Level of overlap is defined during the construction of the Ifpack2_IlukGraph object.
 
-       Once the factorization is computed, applying the factorization \(LUy = x\) 
-       results in redundant approximations for any elements of y that correspond to 
+       Once the factorization is computed, applying the factorization \(LUy = x\)
+       results in redundant approximations for any elements of y that correspond to
        rows that are part of more than one local ILU factor.  The OverlapMode (changed by calling SetOverlapMode())
        defines how these redundancies are
        handled using the Tpetra::CombineMode enum.  The default is to zero out all values of y for rows that
@@ -92,7 +92,7 @@ For a complete list of valid parameters, see Ifpack2::RILUK::setParameters.
        RelaxValue is between 0 and 1, then RelaxValue times the sum of extra entries will be added to the diagonal.
 
        For most situations, RelaxValue should be set to zero.  For certain kinds of problems, e.g., reservoir modeling,
-       there is a conservation principle involved such that any operator should obey a zero row-sum property.  MILU 
+       there is a conservation principle involved such that any operator should obey a zero row-sum property.  MILU
        was designed for these cases and you should set the RelaxValue to 1.  For other situations, setting RelaxValue to
        some nonzero value may improve the stability of factorization, and can be used if the computed ILU factors
        are poorly conditioned.
@@ -157,7 +157,7 @@ the factorization, we compute a diagonal perturbation of our matrix
 matrix.  The overhead cost of perturbing the diagonal is minimal since
 the first step in computing the incomplete factors is to copy the
 matrix \f$A\f$ into the memory space for the incomplete factors.  We
-simply compute the perturbed diagonal at this point. 
+simply compute the perturbed diagonal at this point.
 
 The actual perturbation values we use are the diagonal values \f$(d_1, d_2, \ldots, d_n)\f$
 with \f$d_i = sgn(d_i)\alpha + d_i\rho\f$, \f$i=1, 2, \ldots, n\f$, where
@@ -171,31 +171,59 @@ the sign of the original diagonal entry.
 
 Each Ifpack2::RILUK object keeps track of the number
 of \e serial floating point operations performed using the specified object as the \e this argument
-to the function.  The Flops() function returns this number as a double precision number.  Using this 
+to the function.  The Flops() function returns this number as a double precision number.  Using this
 information, in conjunction with the Teuchos::Time class, one can get accurate parallel performance
 numbers.  The ResetFlops() function resets the floating point counter.
 
-*/    
+*/
 
 
 template<class MatrixType>
 class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
-      
+
  public:
-  typedef typename MatrixType::scalar_type Scalar;
-  typedef typename MatrixType::local_ordinal_type LocalOrdinal;
-  typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
-  typedef typename MatrixType::node_type Node;
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  //! The type of the entries of the input MatrixType.
+  typedef typename MatrixType::scalar_type scalar_type;
+
+  //! Preserved only for backwards compatibility.  Please use "scalar_type".
+  TEUCHOS_DEPRECATED typedef typename MatrixType::scalar_type Scalar;
+
+
+  //! The type of local indices in the input MatrixType.
+  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
+
+  //! Preserved only for backwards compatibility.  Please use "local_ordinal_type".
+  TEUCHOS_DEPRECATED typedef typename MatrixType::local_ordinal_type LocalOrdinal;
+
+
+  //! The type of global indices in the input MatrixType.
+  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
+
+  //! Preserved only for backwards compatibility.  Please use "global_ordinal_type".
+  TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
+
+
+  //! The type of the Kokkos Node used by the input MatrixType.
+  typedef typename MatrixType::node_type node_type;
+
+  //! Preserved only for backwards compatibility.  Please use "node_type".
+  TEUCHOS_DEPRECATED typedef typename MatrixType::node_type Node;
+
+
+  //! The type of the magnitude (absolute value) of a matrix entry.
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+
+  //! Preserved only for backwards compatibility.  Please use "magnitude_type".
+  TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
   //! RILUK constuctor with variable number of indices per row.
-  /*! Creates a RILUK object and allocates storage.  
-    
+  /*! Creates a RILUK object and allocates storage.
+
     \param In
            Graph_in - Graph generated by IlukGraph.
   */
   RILUK(const Teuchos::RCP<const MatrixType>& A_in);
-  
+
  private:
   //! Copy constructor.
   RILUK(const RILUK<MatrixType> & src);
@@ -205,13 +233,13 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
   virtual ~RILUK();
 
   //! Set RILU(k) relaxation parameter
-  void SetRelaxValue( magnitudeType RelaxValue) {RelaxValue_ = RelaxValue;}
+  void SetRelaxValue( magnitude_type RelaxValue) {RelaxValue_ = RelaxValue;}
 
   //! Set absolute threshold value
-  void SetAbsoluteThreshold( magnitudeType Athresh) {Athresh_ = Athresh;}
+  void SetAbsoluteThreshold( magnitude_type Athresh) {Athresh_ = Athresh;}
 
   //! Set relative threshold value
-  void SetRelativeThreshold( magnitudeType Rthresh) {Rthresh_ = Rthresh;}
+  void SetRelativeThreshold( magnitude_type Rthresh) {Rthresh_ = Rthresh;}
 
   //! Set overlap mode type
   void SetOverlapMode( Tpetra::CombineMode OverlapMode) {OverlapMode_ = OverlapMode;}
@@ -227,7 +255,7 @@ Not currently supported.
    <li> "fact: relax value" (magnitude-type)<br>
    </ul>
   */
-  void setParameters(const Teuchos::ParameterList& parameterlist);
+  void setParameters(const Teuchos::ParameterList& params);
 
   void initialize();
   bool isInitialized() const {return isInitialized_;}
@@ -246,7 +274,7 @@ Not currently supported.
 
   //! If compute() is completed, this query returns true, otherwise it returns false.
   bool isComputed() const {return(Factored_);}
-  
+
   int getNumCompute() const {return numCompute_;}
   int getNumApply() const {return numApply_;}
 
@@ -255,17 +283,17 @@ Not currently supported.
   double getApplyTime() const {return -1;}
 
   // Mathematical functions.
-  
-  
+
+
   //! Returns the result of a RILUK forward/back solve on a Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> X in Y.
-  /*! 
+  /*!
     \param In
     Trans -If true, solve transpose problem.
     \param In
     X - A Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> of dimension NumVectors to solve for.
     \param Out
     Y -A Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> of dimension NumVectorscontaining result.
-    
+
     \return Integer error code, set to 0 if successful.
   */
   void apply(
@@ -277,14 +305,14 @@ Not currently supported.
 
 
   //! Returns the result of multiplying U, D and L in that order on an Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> X in Y.
-  /*! 
+  /*!
     \param In
     Trans -If true, multiply by L^T, D and U^T in that order.
     \param In
     X - A Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> of dimension NumVectors to solve for.
     \param Out
     Y -A Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> of dimension NumVectorscontaining result.
-    
+
     \return Integer error code, set to 0 if successful.
   */
   int Multiply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
@@ -297,20 +325,20 @@ Not currently supported.
    \param In
     Trans -If true, solve transpose problem.
     \param Out
-    ConditionNumberEstimate - The maximum across all processors of 
+    ConditionNumberEstimate - The maximum across all processors of
     the infinity-norm estimate of the condition number of the inverse of LDU.
   */
   magnitudeType computeCondEst(Teuchos::ETransp mode) const;
   magnitudeType computeCondEst(CondestType CT = Ifpack2::Cheap,
                                LocalOrdinal MaxIters = 1550,
-                               magnitudeType Tol = 1e-9,
+                               magnitude_type Tol = 1e-9,
                                const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &Matrix = Teuchos::null)
   {
     std::cerr << "Warning, Ifpack2::RILUK::computeCondEst currently does not use MaxIters/Tol/etc arguments..." << std::endl;
     return computeCondEst(Teuchos::NO_TRANS);
   }
 
-  magnitudeType getCondEst() const {return Condest_;}
+  magnitude_type getCondEst() const {return Condest_;}
 
   Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getMatrix() const
   {
@@ -318,30 +346,30 @@ Not currently supported.
   }
 
   // Attribute access functions
-  
+
   //! Get RILU(k) relaxation parameter
-  magnitudeType GetRelaxValue() const {return RelaxValue_;}
+  magnitude_type GetRelaxValue() const {return RelaxValue_;}
 
   //! Get absolute threshold value
-  magnitudeType getAbsoluteThreshold() const {return Athresh_;}
+  magnitude_type getAbsoluteThreshold() const {return Athresh_;}
 
   //! Get relative threshold value
-  magnitudeType getRelativeThreshold() const {return Rthresh_;}
+  magnitude_type getRelativeThreshold() const {return Rthresh_;}
 
   int getLevelOfFill() const { return LevelOfFill_; }
 
   //! Get overlap mode type
   Tpetra::CombineMode getOverlapMode() {return OverlapMode_;}
- 
+
   //! Returns the number of nonzero entries in the global graph.
   int getGlobalNumEntries() const {return(getL().getGlobalNumEntries()+getU().getGlobalNumEntries());}
- 
+
   //! Returns the Ifpack2::IlukGraph associated with this factored matrix.
   const Teuchos::RCP<Ifpack2::IlukGraph<LocalOrdinal,GlobalOrdinal,Node> >& getGraph() const {return(Graph_);}
 
   //! Returns the L factor associated with this factored matrix.
   const MatrixType& getL() const {return(*L_);}
-    
+
   //! Returns the D factor associated with this factored matrix.
   const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & getD() const {return(*D_);}
 
@@ -365,16 +393,16 @@ Not currently supported.
   void setInitialized(bool Flag) {isInitialized_ = Flag;}
   bool isAllocated() const {return(isAllocated_);}
   void setAllocated(bool Flag) {isAllocated_ = Flag;}
-  
+
  private:
-  
-  
+
+
   void allocate_L_and_U();
   void initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & overlapA);
-  void generateXY(Teuchos::ETransp mode, 
-		 const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xin,
+  void generateXY(Teuchos::ETransp mode,
+                 const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xin,
      const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Yin,
-     Teuchos::RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Xout, 
+     Teuchos::RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Xout,
      Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Yout) const;
   bool isOverlapped_;
   Teuchos::RCP<Ifpack2::IlukGraph<LocalOrdinal,GlobalOrdinal,Node> > Graph_;
@@ -394,10 +422,10 @@ Not currently supported.
   mutable int numCompute_;
   mutable int numApply_;
   bool Factored_;
-  magnitudeType RelaxValue_;
-  magnitudeType Athresh_;
-  magnitudeType Rthresh_;
-  mutable magnitudeType Condest_;
+  magnitude_type RelaxValue_;
+  magnitude_type Athresh_;
+  magnitude_type Rthresh_;
+  mutable magnitude_type Condest_;
 
   mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > OverlapX_;
   mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > OverlapY_;
