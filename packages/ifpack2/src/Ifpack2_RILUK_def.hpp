@@ -603,8 +603,19 @@ void RILUK<MatrixType>::apply(
              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
              Teuchos::ETransp mode, scalar_type alpha, scalar_type beta) const
 {
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
+
   TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
     "Ifpack2::RILUK::apply() ERROR, compute() hasn't been called yet.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    alpha != STS::one (), 
+    std::logic_error,
+    "Ifpack2::RILUK::apply() does not currently allow alpha != 1.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    beta != STS::zero (), 
+    std::logic_error,
+    "Ifpack2::RILUK::apply() does not currently allow zero != 0.");
 
 //
 // This function finds Y such that

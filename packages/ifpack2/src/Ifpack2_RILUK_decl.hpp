@@ -45,19 +45,21 @@ namespace Teuchos {
 
 namespace Ifpack2 {
 
-//! A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Tpetra::RowMatrix.
+/** \class RILUK
+\brief ILU(k) (incomplete LU with fill level k) factorization of a given Tpetra::RowMatrix.
+\tparam MatrixType A specialization of Tpetra::RowMatrix.
 
-/*! Ifpack2::RILUK computes a "Relaxed" ILU factorization with level k fill
-    of a given Tpetra::RowMatrix.
+This class implements a "relaxed" incomplete ILU (ILU) factorization with level k fill.
 
-For a complete list of valid parameters, see Ifpack2::RILUK::setParameters.
+\section Ifpack2_RILUK_Parameters Parameters
 
-  The factorization
-    that is produced is a function of several parameters:
+For a complete list of valid parameters, see the documentation of setParameters().
+
+The computed factorization is a function of several parameters:
 <ol>
   <li> The pattern of the matrix - All fill is derived from the original matrix nonzero structure.  Level zero fill
        is defined as the original matrix pattern (nonzero structure), even if the matrix value at an entry is stored
-       as a zero. (Thus it is possible to add entries to the ILU factors by adding zero entries the original matrix.)
+       as a zero. (Thus it is possible to add entries to the ILU factors by adding zero entries to the original matrix.)
 
   <li> Level of fill - Starting with the original matrix pattern as level fill of zero, the next level of fill is
        determined by analyzing the graph of the previous level and determining nonzero fill that is a result of combining
@@ -66,7 +68,7 @@ For a complete list of valid parameters, see Ifpack2::RILUK::setParameters.
        recursively.  For sufficiently large values of k, the fill would eventually be complete and an exact LU
        factorization would be computed.
 
-  <li> Level of overlap - All Ifpack2 preconditioners work on parallel distributed memory computers by using
+  <li> Level of overlap - All Ifpack2 preconditioners work on parallel distributed-memory computers by using
        the row partitioning the user input matrix to determine the partitioning for local ILU factors.  If the level of
        overlap is set to zero,
        the rows of the user matrix that are stored on a given processor are treated as a self-contained local matrix
@@ -106,24 +108,25 @@ For a complete list of valid parameters, see Ifpack2::RILUK::setParameters.
        The absolute and relative threshold values are set by calling SetAbsoluteThreshold() and SetRelativeThreshold(), respectively.
 </ol>
 
-<b> Estimating Preconditioner Condition Numbers </b>
+\section Ifpack2_RILUK_CondEst Estimating preconditioner condition numbers
 
-For ill-conditioned matrices, we often have difficulty computing usable incomplete
-factorizations.  The most common source of problems is that the factorization may encounter a small or zero pivot,
-in which case the factorization can fail, or even if the factorization
+For ill-conditioned matrices, we often have difficulty computing
+usable incomplete factorizations.  The most common source of problems
+is that the factorization may encounter a small or zero pivot.  In
+that case, the factorization may fail.  Even if the factorization
 succeeds, the factors may be so poorly conditioned that use of them in
 the iterative phase produces meaningless results.  Before we can fix
 this problem, we must be able to detect it.  To this end, we use a
 simple but effective condition number estimate for \f$(LU)^{-1}\f$.
 
-The condition of a matrix \f$B\f$, called \f$cond_p(B)\f$, is defined as
-\f$cond_p(B) = \|B\|_p\|B^{-1}\|_p\f$ in some appropriate norm \f$p\f$.  \f$cond_p(B)\f$
-gives some indication of how many accurate floating point
-digits can be expected from operations involving the matrix and its
-inverse.  A condition number approaching the accuracy of a given
-floating point number system, about 15 decimal digits in IEEE double
-precision, means that any results involving \f$B\f$ or \f$B^{-1}\f$ may be
-meaningless.
+The condition number of a matrix \f$B\f$, called \f$cond_p(B)\f$, is
+defined as \f$cond_p(B) = \|B\|_p\|B^{-1}\|_p\f$ in some appropriate
+norm \f$p\f$.  \f$cond_p(B)\f$ gives some indication of how many
+accurate floating point digits can be expected from operations
+involving the matrix and its inverse.  A condition number approaching
+the accuracy of a given floating point number system, about 15 decimal
+digits in IEEE double precision, means that any results involving
+\f$B\f$ or \f$B^{-1}\f$ may be meaningless.
 
 The \f$\infty\f$-norm of a vector \f$y\f$ is defined as the maximum of the
 absolute values of the vector entries, and the \f$\infty\f$-norm of a
@@ -143,21 +146,18 @@ estimate of \f$cond_\infty(LU)\f$ is performed by setting \f$y = e\f$, calling
 the solve kernel to compute \f$z\f$ and then
 computing \f$\|z\|_\infty\f$.
 
+\section Ifpack2_RILUK_DiagPerturb A priori diagonal perturbations
 
-<b>\e A \e priori Diagonal Perturbations</b>
-
-Given the above method to estimate the conditioning of the incomplete factors,
-if we detect that our factorization is too ill-conditioned
-we can improve the conditioning by perturbing the matrix diagonal and
-restarting the factorization using
-this more diagonally dominant matrix.  In order to apply perturbation,
-prior to starting
-the factorization, we compute a diagonal perturbation of our matrix
-\f$A\f$ and perform the factorization on this perturbed
-matrix.  The overhead cost of perturbing the diagonal is minimal since
-the first step in computing the incomplete factors is to copy the
-matrix \f$A\f$ into the memory space for the incomplete factors.  We
-simply compute the perturbed diagonal at this point.
+If we detect using the above method that our factorization is too
+ill-conditioned, we can improve the conditioning by perturbing the
+matrix diagonal and restarting the factorization using this more
+diagonally dominant matrix.  In order to apply perturbation, prior to
+starting the factorization, we compute a diagonal perturbation of our
+matrix \f$A\f$ and perform the factorization on this perturbed matrix.
+The overhead cost of perturbing the diagonal is minimal since the
+first step in computing the incomplete factors is to copy the matrix
+\f$A\f$ into the memory space for the incomplete factors.  We simply
+compute the perturbed diagonal at this point.
 
 The actual perturbation values we use are the diagonal values \f$(d_1, d_2, \ldots, d_n)\f$
 with \f$d_i = sgn(d_i)\alpha + d_i\rho\f$, \f$i=1, 2, \ldots, n\f$, where
@@ -167,17 +167,36 @@ forcing the diagonal values to have minimal magnitude of \f$\alpha\f$ and
 to increase each by an amount proportional to \f$\rho\f$, and still keep
 the sign of the original diagonal entry.
 
-<b> Counting Floating Point Operations </b>
+\section Ifpack2_RILUK_Phases Phases of computation
 
-Each Ifpack2::RILUK object keeps track of the number
-of \e serial floating point operations performed using the specified object as the \e this argument
-to the function.  The Flops() function returns this number as a double precision number.  Using this
-information, in conjunction with the Teuchos::Time class, one can get accurate parallel performance
-numbers.  The ResetFlops() function resets the floating point counter.
+Every Ifpack2 preconditioner has the following phases of computation:
+1. initialize()
+2. compute()
+3. apply()
 
+RILUK constructs the symbolic incomplete factorization (that is, the
+structure of the incomplete factors) in the initialize() phase.  It
+computes the numerical incomplete factorization (that is, it fills in
+the factors' entries with their correct values) in the compute()
+phase.  The apply() phase applies the incomplete factorization to a
+given multivector using two triangular solves.
+
+\section Ifpack2_RILUK_Measuring Measuring performance
+
+Each RILUK object keeps track of both the time required for various
+operations, and the number of times those operations have been applied
+for that object.  The operations tracked include:
+- initialize() (via getNumInitialize() and getInitializeTime())
+- compute() (via getNumCompute() and getComputeTime())
+- apply() (via getNumApply() and getApplyTime())
+
+The <tt>getNum*</tt> methods return the number of times that operation
+was called.  The <tt>get*Time</tt> methods return the number of
+seconds spent in <i>all</i> invocations of that operation.  For
+example, getApplyTime() returns the number of seconds spent in all
+apply() calls.  For an average time per apply() call, divide by
+getNumApply(), the total number of calls to apply().  
 */
-
-
 template<class MatrixType>
 class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
 
@@ -244,38 +263,45 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
   //! Set overlap mode type
   void SetOverlapMode( Tpetra::CombineMode OverlapMode) {OverlapMode_ = OverlapMode;}
 
-  //! Set parameters using a Teuchos::ParameterList object.
-  /**
-   <ul>
-   <li> "fact: iluk level-of-fill" (int)<br>
-   <li> "fact: iluk level-of-overlap" (int)<br>
-Not currently supported.
-   <li> "fact: absolute threshold" (magnitude-type)<br>
-   <li> "fact: relative threshold" (magnitude-type)<br>
-   <li> "fact: relax value" (magnitude-type)<br>
-   </ul>
-  */
+  /// Set parameters for the incomplete factorization.
+  ///
+  /// This preconditioner supports the following parameters:
+  /// - "fact: iluk level-of-fill" (int)
+  /// - "fact: absolute threshold" (magnitude_type)
+  /// - "fact: relative threshold" (magnitude_type)
+  /// - "fact: relax value" (magnitude_type)
+  ///
+  /// It will eventually also support the following parameter,
+  /// although it currently does not:
+  /// - "fact: iluk level-of-overlap" (int)
   void setParameters(const Teuchos::ParameterList& params);
 
+  //! Initialize by computing the symbolic incomplete factorization.
   void initialize();
+
+  //! Whether initialize() has been called.
   bool isInitialized() const {return isInitialized_;}
+
+  //! How many times initialize() has been called for this object.
   int getNumInitialize() const {return numInitialize_;}
 
-  //! Compute ILU factors L and U using the specified diagonal perturbation thresholds and relaxation parameters.
-  /*! This function computes the RILU(k) factors L and U using the current:
-    <ol>
-    <li> Ifpack2_IlukGraph specifying the structure of L and U.
-    <li> Value for the RILU(k) relaxation parameter.
-    <li> Value for the \e a \e priori diagonal threshold values.
-    </ol>
-    initialize() must be called before the factorization can proceed.
-   */
+  /// \brief Compute the (numeric) incomplete factorization.
+  ///
+  /// This function computes the RILU(k) factors L and U using the current:
+  /// - Ifpack2_IlukGraph specifying the structure of L and U.
+  /// - Value for the RILU(k) relaxation parameter.
+  /// - Value for the a priori diagonal threshold values.
+  ///
+  /// initialize() must be called first, before this method may be called.
   void compute();
 
-  //! If compute() is completed, this query returns true, otherwise it returns false.
+  //! Whether compute() has been called.
   bool isComputed() const {return(Factored_);}
 
+  //! How many times compute() has been called for this object.
   int getNumCompute() const {return numCompute_;}
+
+  //! How many times apply() has been called for this object.
   int getNumApply() const {return numApply_;}
 
   double getInitializeTime() const {return -1;}
@@ -284,18 +310,24 @@ Not currently supported.
 
   // Mathematical functions.
 
-
-  //! Returns the result of a RILUK forward/back solve on a Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> X in Y.
-  /*!
-    \param In
-    Trans -If true, solve transpose problem.
-    \param In
-    X - A Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> of dimension NumVectors to solve for.
-    \param Out
-    Y -A Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> of dimension NumVectorscontaining result.
-
-    \return Integer error code, set to 0 if successful.
-  */
+  /// \brief Apply the (inverse of the) incomplete factorization to X, resulting in Y.
+  ///
+  /// In Matlab(tm) notation, if the incomplete factorization is \f$A \approx LDU\f$, 
+  /// this method computes <tt>Y = beta*Y + alpha*(U \ (D \ (L \ X)))</tt> if mode=Teuchos::NO_TRANS, or 
+  /// <tt>Y = beta*Y + alpha*(L^T \ (D^T \ (U^T \ X)))</tt> if mode=Teuchos::TRANS, or
+  /// <tt>Y = beta*Y + alpha*(L^* \ (D^* \ (U^* \ X)))</tt> if mode=Teuchos::CONJ_TRANS.
+  ///
+  /// \param X [in] The input multivector.
+  ///
+  /// \param Y [in/out] The output multivector.
+  ///
+  /// \param mode [in] If Teuchos::TRANS resp. Teuchos::CONJ_TRANS,
+  ///   apply the transpose resp. conjugate transpose of the incomplete
+  ///   factorization.  Otherwise, don't apply the tranpose.
+  ///
+  /// \param alpha [in] Scaling factor for the result of applying the preconditioner.
+  ///
+  /// \param beta [in] Scaling factor for the initial value of Y.
   void apply(
       const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
@@ -304,17 +336,20 @@ Not currently supported.
                scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
 
-  //! Returns the result of multiplying U, D and L in that order on an Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> X in Y.
-  /*!
-    \param In
-    Trans -If true, multiply by L^T, D and U^T in that order.
-    \param In
-    X - A Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> of dimension NumVectors to solve for.
-    \param Out
-    Y -A Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> of dimension NumVectorscontaining result.
-
-    \return Integer error code, set to 0 if successful.
-  */
+  /// \brief Apply the incomplete factorization (as a product) to X, resulting in Y.
+  ///
+  /// In Matlab(tm) notation, if the incomplete factorization is \f$A \approx LDU\f$, 
+  /// this method computes <tt>Y = beta*Y + alpha*(L \ (D \ (U \ X)))</tt> mode=Teuchos::NO_TRANS, or 
+  /// <tt>Y = beta*Y + alpha*(U^T \ (D^T \ (L^T \ X)))</tt> if mode=Teuchos::TRANS, or
+  /// <tt>Y = beta*Y + alpha*(U^* \ (D^* \ (L^* \ X)))</tt> if mode=Teuchos::CONJ_TRANS.
+  /// 
+  /// \param X [in] The input multivector.
+  ///
+  /// \param Y [in/out] The output multivector.
+  ///
+  /// \param mode [in] If Teuchos::TRANS resp. Teuchos::CONJ_TRANS,
+  ///   apply the transpose resp. conjugate transpose of the incomplete
+  ///   factorization.  Otherwise, don't apply the tranpose.
   int Multiply(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
                Teuchos::ETransp mode = Teuchos::NO_TRANS) const;

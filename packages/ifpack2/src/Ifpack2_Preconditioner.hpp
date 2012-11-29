@@ -173,16 +173,16 @@ class Preconditioner : virtual public Tpetra::Operator<Scalar,LocalOrdinal,Globa
     //! Returns the number of calls to compute().
     virtual int getNumCompute() const = 0;
 
-    //! Returns the number of calls to Apply().
+    //! Returns the number of calls to apply().
     virtual int getNumApply() const = 0;
 
-    //! Returns the time spent in Initialize().
+    //! Returns the time spent in initialize().
     virtual double getInitializeTime() const = 0;
 
-    //! Returns the time spent in Compute().
+    //! Returns the time spent in compute().
     virtual double getComputeTime() const = 0;
 
-    //! Returns the time spent in Apply().
+    //! Returns the time spent in apply().
     virtual double getApplyTime() const = 0;
 
 };//class Preconditioner
