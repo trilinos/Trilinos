@@ -264,6 +264,17 @@ public:
      const lno_t *&offsets, const gid_t *& adjacencyIds) const = 0;
 
 
+  /*! \brief Copy all the first adjacency IDs for a specific entity into arrays
+         provided by Zoltan2.
+      \param source
+      \param id specific entity.  Works only if id is local to this process.
+      \param adjacencyIds array provided by Zoltan2.
+      \return not sure what is needed, if anything.
+  */
+  virtual size_t getEntityAdjs(entityType source, entityType target,
+			       gid_t id, gid_t *adjacencyIds) const = 0;
+
+
   /*! \brief Returns whether a second adjacency combination is available.
    */
   virtual bool avail2ndAdjs(entityType sourcetarget, entityType through);
