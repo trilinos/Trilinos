@@ -155,12 +155,14 @@ void ModelEvaluator2DSim<Scalar>::evalModelImpl(
   const RCP< Thyra::LinearOpBase< Scalar > > W_out = outArgs.get_W_op();
 
   if (nonnull(f_out)) {
+    NOX_FUNC_TIME_MONITOR("ModelEvaluator2DSim::eval f_out");
     const Thyra::DetachedVectorView<Scalar> f(f_out);
     f[0] = x[0] + x[1] * x[1] - p_[0];
     f[1] = d_ * (x[0] * x[0] - x[1] - p_[1]);
   }
 
   if (nonnull(W_out)) {
+    NOX_FUNC_TIME_MONITOR("ModelEvaluator2DSim::eval W_op_out");
     RCP<Epetra_Operator> W_epetra= Thyra::get_Epetra_Operator(*W_out);
     RCP<Epetra_CrsMatrix> W_epetracrs = rcp_dynamic_cast<Epetra_CrsMatrix>(W_epetra);
     TEUCHOS_ASSERT(nonnull(W_epetracrs));

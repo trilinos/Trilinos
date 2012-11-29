@@ -330,6 +330,8 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, JFNK_solve_no_prec)
   Teuchos::RCP<Teuchos::ParameterList> p = 
     Teuchos::rcp(new Teuchos::ParameterList);
   p->set("Linear Solver Type", "AztecOO");
+  p->sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").set("Tolerance",1.0e-1);
+  p->sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").sublist("AztecOO Settings").set("Output Frequency",1);
   //p->set("Linear Solver Type", "Belos");
   p->set("Preconditioner Type", "None");
   //p->set("Enable Delayed Solver Construction", true);
@@ -401,4 +403,5 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, JFNK_solve_no_prec)
   // Final return value (0 = successfull, non-zero = failure)
   TEST_ASSERT(solvStatus == NOX::StatusTest::Converged);
 
+  Teuchos::TimeMonitor::summarize();
 }
