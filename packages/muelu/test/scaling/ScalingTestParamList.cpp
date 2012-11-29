@@ -178,10 +178,9 @@ int main(int argc, char *argv[]) {
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map,1);
   nullspace->putScalar( (SC) 1.0);
   H->GetLevel(0)->Set("Nullspace", nullspace);
-  nullspace=Teuchos::null;
+  H->GetLevel(0)->Set("Coordinates", coordinates);
 
-  //  H->GetLevel(0)->Set("Coordinates", coordinates);
-
+  /*
   {
     // coordinates->getVector(0)->get1dCopy(xcoords); TODO: this method is not available in Xpetra
 
@@ -215,8 +214,7 @@ int main(int argc, char *argv[]) {
     }
 
   }
-
-  coordinates=Teuchos::null;
+  */
 
   mueLuFactory.SetupHierarchy(*H);
 
