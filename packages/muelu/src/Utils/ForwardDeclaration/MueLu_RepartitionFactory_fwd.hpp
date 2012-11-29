@@ -46,10 +46,15 @@
 #ifndef MUELU_REPARTITIONFACTORY_FWD_HPP
 #define MUELU_REPARTITIONFACTORY_FWD_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MPI
+
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class RepartitionFactory;
 }
+
+#endif
 
 #ifndef MUELU_REPARTITIONFACTORY_SHORT
 #define MUELU_REPARTITIONFACTORY_SHORT
