@@ -128,7 +128,7 @@ namespace MueLu {
 //       }
 #endif //ifdef HAVE_MPI
       if (varName == "Importer") {
-        return SetAndReturnDefaultFactory(varName, NoFactory::getRCP()); // allows calls to IsAvailable() from RAPFActory
+        return SetAndReturnDefaultFactory(varName, NoFactory::getRCP()); // allows calls to IsAvailable() from RAPFActory //FIXME
       }
       //JJH FIXME is this going to bite me in the backside?
 //       if (varName == "Coordinates") {

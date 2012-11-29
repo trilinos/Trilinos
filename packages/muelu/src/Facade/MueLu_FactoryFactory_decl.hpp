@@ -401,8 +401,8 @@ namespace MueLu {
 
       RCP<Factory> factory = rcp(new RepartitionFactory(minRowsPerProc, nonzeroImbalance, startLevel, diffusive));
 
-      MUELU_FACTORY_PARAM2("Factory");
       MUELU_FACTORY_PARAM2("A");
+      MUELU_FACTORY_PARAM2("Partition");
 
       return factory;
     }

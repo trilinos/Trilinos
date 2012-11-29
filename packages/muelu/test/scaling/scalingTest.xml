@@ -8,18 +8,12 @@
   <!-- Factory collection -->
   <ParameterList name="Factories">
 
+    <!-- -->
+    <!-- Non-permuted factories -->
+    <!-- -->
+
     <ParameterList name="myTentativePFact">
       <Parameter name="factory" type="string" value="TentativePFactory"/>
-    </ParameterList>
-
-    <ParameterList name="myTentativeRFact">
-      <Parameter name="factory" type="string" value="TransPFactory"/>
-      <Parameter name="P" type="string" value="myTentativePFact"/>
-    </ParameterList>
-
-    <ParameterList name="myCoalesceDropFact">
-      <Parameter name="factory" type="string" value="CoalesceDropFactory"/>
-      <Parameter name="Nullspace" type="string" value="myTentativePFact"/>
     </ParameterList>
 
     <ParameterList name="myProlongatorFact">
@@ -33,11 +27,11 @@
       <Parameter name="P" type="string" value="myProlongatorFact"/>
     </ParameterList>
 
-    <ParameterList name="myCoordinateTransfertFact">
+    <ParameterList name="myTransferCoordinatesFact">
       <Parameter name="factory"         type="string" value="MultiVectorTransferFactory"/>
       <Parameter name="vectorName"      type="string" value="Coordinates"/>
       <Parameter name="restrictionName" type="string" value="R"/>
-      <Parameter name="R"               type="string" value="myTentativeRFact"/>
+      <Parameter name="R"               type="string" value="myRestrictorFact"/>
     </ParameterList>
 
     <ParameterList name="myRAPFact">
@@ -45,28 +39,24 @@
       <Parameter name="P" type="string" value="myProlongatorFact"/>
       <Parameter name="R" type="string" value="myRestrictorFact"/>
       <ParameterList name="TransferFactories">
-        <Parameter name="For Coordinates" type="string" value="myCoordinateTransfertFact"/>
+        <Parameter name="For Coordinates" type="string" value="myTransferCoordinatesFact"/>
       </ParameterList>
     </ParameterList>
 
-
-
 <!-- -->
-<!-- -->
-<!-- -->
-<!-- -->
+<!-- Repartitioning -->
 <!-- -->
 
     <ParameterList name="myZoltanInterface">
       <Parameter name="factory" type="string" value="ZoltanInterface"/>
       <Parameter name="A"        type="string" value="myRAPFact"/>
-      <Parameter name="TransferFactory" type="string" value="myCoordinateTransfertFact"/>
+      <Parameter name="Coordinates" type="string" value="myTransferCoordinatesFact"/>
     </ParameterList>
 
     <ParameterList name="myRepartitionFact">
       <Parameter name="factory" type="string" value="RepartitionFactory"/>
-      <Parameter name="Factory"          type="string" value="myZoltanInterface"/>
       <Parameter name="A"                type="string" value="myRAPFact"/>
+      <Parameter name="Partition"        type="string" value="myZoltanInterface"/>
       <Parameter name="minRowsPerProc"   type="int"    value="800"/> <!-- default = 2000 -->
       <Parameter name="nonzeroImbalance" type="double" value="1.1"/> <!-- default = 1.2 -->
       <Parameter name="startLevel"       type="int"    value="2"/>   <!-- default = 1 -->
@@ -74,25 +64,25 @@
 
     <ParameterList name="myPermutedProlongatorFact">
       <Parameter name="factory" type="string" value="PermutedTransferFactory"/>
-      <Parameter name="RepartitionFactory" type="string" value="myRepartitionFact"/>
+      <Parameter name="type"               type="string" value="Interpolation"/>
       <Parameter name="A"                  type="string" value="myRAPFact"/>
       <Parameter name="P"                  type="string" value="myProlongatorFact"/>
-      <Parameter name="type"     type="string" value="Interpolation"/>
+      <Parameter name="Importer"   type="string" value="myRepartitionFact"/>
     </ParameterList>
 
     <ParameterList name="myPermutedRestrictionFact">
       <Parameter name="factory" type="string" value="PermutedTransferFactory"/>
-      <Parameter name="RepartitionFactory" type="string" value="myRepartitionFact"/>
-      <Parameter name="R"                  type="string" value="myRestrictorFact"/>
       <Parameter name="type"               type="string" value="Restriction"/>
-      <Parameter name="P"                  type="string" value="myTentativePFact"/>
-      <Parameter name="TransferFactory"    type="string" value="myCoordinateTransfertFact"/>
+      <Parameter name="A"                  type="string" value="myRAPFact"/>
+      <Parameter name="R"                  type="string" value="myRestrictorFact"/>
+      <Parameter name="Coordinates"        type="string" value="myTransferCoordinatesFact"/>
+      <Parameter name="Nullspace"          type="string" value="myTentativePFact"/>
+      <Parameter name="Importer"   type="string" value="myRepartitionFact"/>
     </ParameterList>
 
-    <ParameterList name="myPermutedRAPFactory">
+    <ParameterList name="myPermutedAFact">
       <Parameter name="factory" type="string" value="RAPFactory"/>
       <Parameter name="P" type="string" value="myPermutedProlongatorFact"/>
-      <Parameter name="R" type="string" value="myPermutedRestrictionFact"/>
     </ParameterList>
 
 <!-- -->
@@ -144,18 +134,19 @@
       <Parameter name="startLevel" type="int" value="0"/>
       <Parameter name="Smoother"   type="string" value="SymGaussSeidel"/>
       <Parameter name="Aggregates" type="string" value="myAggregationFact"/>
-      <Parameter name="Graph"      type="string" value="myCoalesceDropFact"/>
+      <Parameter name="Nullspace"  type="string" value="myPermutedRestrictionFact"/>
+      <Parameter name="Importer"   type="string" value="myRepartitionFact"/>
     </ParameterList>
 
     <ParameterList name="OtherLevels">
       <Parameter name="startLevel" type="int" value="1"/>
-      <Parameter name="A"          type="string" value="myPermutedRAPFactory"/>
-      <Parameter name="P"          type="string" value="myPermutedProlongatorFact"/> <!-- TODO: should not be needed -->
-      <Parameter name="R"          type="string" value="myPermutedRestrictionFact"/> <!-- TODO: should not be needed -->
+      <Parameter name="A"          type="string" value="myPermutedAFact"/>
+      <Parameter name="P"          type="string" value="myPermutedProlongatorFact"/>
+      <Parameter name="R"          type="string" value="myPermutedRestrictionFact"/>
       <Parameter name="Smoother"   type="string" value="SymGaussSeidel"/>
       <Parameter name="Aggregates" type="string" value="myAggregationFact"/>
-      <Parameter name="Graph"      type="string" value="myCoalesceDropFact"/>
       <Parameter name="Nullspace"  type="string" value="myPermutedRestrictionFact"/>
+      <Parameter name="Importer"   type="string" value="myRepartitionFact"/>
     </ParameterList>
 
     <ParameterList name="CoarsestLevel">
