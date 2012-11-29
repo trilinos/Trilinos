@@ -381,7 +381,8 @@ int main(int argc, char *argv[]) {
 
         // Transfer coordinates
         RCP<MultiVectorTransferFactory> TransferCoordinatesFact = rcp(new MultiVectorTransferFactory("Coordinates", "R"));
-        TransferCoordinatesFact->SetFactory("R", RFact);
+        RCP<Factory> TentativeRFact = rcp(new TransPFactory()); TentativeRFact->SetFactory("P", M.GetFactory("Ptent")); // Use Ptent for coordinate projection
+        TransferCoordinatesFact->SetFactory("R", TentativeRFact);
         AFact->AddTransferFactory(TransferCoordinatesFact); // FIXME REMOVE
 
         // Compute partition (creates "Partition" object)

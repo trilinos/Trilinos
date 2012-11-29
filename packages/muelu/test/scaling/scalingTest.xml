@@ -22,6 +22,11 @@
       <!--    <Parameter name="DampingFactor" type="double" value="4./3"/> -->
     </ParameterList>
 
+    <ParameterList name="myTentativeRFact"> <!-- for projecting coordinates -->
+      <Parameter name="factory" type="string" value="TransPFactory"/>
+      <Parameter name="P" type="string" value="myTentativePFact"/>
+    </ParameterList>
+
     <ParameterList name="myRestrictorFact">
       <Parameter name="factory" type="string" value="TransPFactory"/>
       <Parameter name="P" type="string" value="myProlongatorFact"/>
@@ -31,7 +36,7 @@
       <Parameter name="factory"         type="string" value="MultiVectorTransferFactory"/>
       <Parameter name="vectorName"      type="string" value="Coordinates"/>
       <Parameter name="restrictionName" type="string" value="R"/>
-      <Parameter name="R"               type="string" value="myRestrictorFact"/>
+      <Parameter name="R"               type="string" value="myTentativeRFact"/>
     </ParameterList>
 
     <ParameterList name="myRAPFact">
