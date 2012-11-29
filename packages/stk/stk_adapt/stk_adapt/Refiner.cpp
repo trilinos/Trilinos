@@ -1347,8 +1347,6 @@ namespace stk {
         progress_meter_when_to_post = 1;
       double d_progress_meter_num_total = progress_meter_num_total;
 
-      stk::mesh::BulkData& bulkData = *m_eMesh.get_bulk_data();
-
       mesh::Selector selector(m_eMesh.get_fem_meta_data()->universal_part());
       stk::mesh::PartVector * fromParts = &(m_breakPattern[irank]->getFromParts());
       if (fromParts)
@@ -1356,63 +1354,61 @@ namespace stk {
           selector = mesh::selectUnion(*fromParts);
         }
 
-      const vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( rank );
+      std::vector<stk::mesh::Entity> elems;
+
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( rank );
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
           stk::mesh::Bucket & bucket = **k ;
-          if (!selector(bucket))
+          if (selector(bucket))
             {
-              continue;
-            }
-
-          bool doThisBucket = true;
-          const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
-          shards::CellTopology topo(bucket_cell_topo_data);
-          if ( topo.getKey() != elementType)
-            {
-              doThisBucket = false;
-            }
-
-          if (!doThisBucket)
-            {
-              continue;
-            }
-
-          const unsigned num_elements_in_bucket = bucket.size();
-
-          for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
-            {
-              stk::mesh::Entity element = bucket[iElement];
-              const stk::mesh::Entity element_p = element;
-
-              // FIXME
-              // skip elements that are already a parent (if there's no family tree yet, it's not a parent, so avoid throwing an error if isParentElement)
-              const bool check_for_family_tree = false;
-              bool isParent = m_eMesh.isParentElement(element, check_for_family_tree);
-
-              if (isParent)
-                continue;
-
-              bool elementIsGhost = m_eMesh.isGhostElement(element);
-              if (!elementIsGhost)
-                ++num_elem;
-
-              if (!only_count && (doAllElements || elementIsGhost))
+              const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+              shards::CellTopology topo(bucket_cell_topo_data);
+              if (topo.getKey() == elementType)
                 {
-                  refineMethodApply(function, element, needed_entity_ranks);
+                  unsigned num_elements_in_bucket = bucket.size();
+                  //jele += num_elements_in_bucket;
+                  for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+                    {
+                      stk::mesh::Entity element = bucket[iElement];
+                      elems.push_back(element);
+                    }
                 }
+            }
+        }
 
-              if (m_doProgress && (num_elem % progress_meter_when_to_post == 0) )
-                {
-                  double progress_meter_percent = 100.0*((double)num_elem)/std::max(d_progress_meter_num_total,1.0);
-                  std::ostringstream oss; oss << function_info << " [" << 100.0*((double)irank)/((double)m_ranks.size()) << " %]";
-                  ProgressMeterData pd(ProgressMeterData::RUNNING, progress_meter_percent, oss.str());
-                  notifyObservers(&pd);
-                  if (0) std::cout << "progress_meter_percent = " << progress_meter_percent << std::endl;
-                }
+      int nele = elems.size();
+      for (int iElement = 0; iElement < nele; iElement++)
+        {
+          stk::mesh::Entity element = elems[iElement];
 
-            } // elements
-        } // buckets
+          // FIXME
+          // skip elements that are already a parent (if there's no family tree yet, it's not a parent, so avoid throwing an error if isParentElement)
+          const bool check_for_family_tree = false;
+          bool isParent = m_eMesh.isParentElement(element, check_for_family_tree);
+
+          if (isParent)
+            continue;
+
+          bool elementIsGhost = m_eMesh.isGhostElement(element);
+          if (!elementIsGhost)
+            ++num_elem;
+
+          if (!only_count && (doAllElements || elementIsGhost))
+            {
+              refineMethodApply(function, element, needed_entity_ranks);
+            }
+
+          if (m_doProgress && (num_elem % progress_meter_when_to_post == 0) )
+            {
+              double progress_meter_percent = 100.0*((double)num_elem)/std::max(d_progress_meter_num_total,1.0);
+              std::ostringstream oss; oss << function_info << " [" << 100.0*((double)irank)/((double)m_ranks.size()) << " %]";
+              ProgressMeterData pd(ProgressMeterData::RUNNING, progress_meter_percent, oss.str());
+              notifyObservers(&pd);
+              if (0) std::cout << "progress_meter_percent = " << progress_meter_percent << std::endl;
+            }
+
+        } // elements
 
       if (m_doProgress)
         {
