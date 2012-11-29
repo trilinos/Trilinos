@@ -822,13 +822,12 @@ template <typename T>
         if (len > 0)
           sendVal = static_cast<size_t>(v0);
     
-        Array<size_t> sendBuf(nprocs, sendVal);
-        ArrayRCP<size_t> recvBuf;
+        size_t *recvBuf = new size_t[nprocs];
     
-        try{
-          AlltoAll<size_t>(comm, env, sendBuf, 1, recvBuf);
+        try {
+          Teuchos::gatherAll<int, size_t>(comm, 1, &sendVal, nprocs, recvBuf);
         }
-        Z2_FORWARD_EXCEPTIONS;
+        Z2_THROW_OUTSIDE_ERROR(env);
     
         int numNoIds = 0;  // number of procs with no ids
         for (int i=0; i < nprocs; i++)
@@ -877,6 +876,7 @@ template <typename T>
             }
           }
         }
+        delete [] recvBuf;
       }
     }  // all processes have locally consecutive values
 
