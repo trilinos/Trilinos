@@ -59,7 +59,7 @@
 #include <Xpetra_CrsGraph.hpp>
 
 #include <MatrixMarket_Tpetra.hpp>
-#include <Galeri_XpetraMatrixFactory.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
 #include <Galeri_XpetraParameters.hpp>
 
 #include <Kokkos_DefaultNode.hpp>
@@ -709,10 +709,10 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
   }
 
   try{
-    M_ = Galeri::Xpetra::CreateCrsMatrix<scalar_t, lno_t, gno_t, 
-      Tpetra::Map<lno_t, gno_t>, 
-      Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> >(params.GetMatrixType(),
-         map, params.GetParameterList()); 
+    RCP<Galeri::Xpetra::Problem<Tpetra::Map<lno_t, gno_t>, Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > > problem =
+        Galeri::Xpetra::BuildProblem<scalar_t, lno_t, gno_t, Tpetra::Map<lno_t, gno_t>, Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> >(params.GetMatrixType(),
+         map, params.GetParameterList());
+    M_ = problem->BuildMatrix();
   }
   catch (std::exception &e) {    // Probably not enough memory
     TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());

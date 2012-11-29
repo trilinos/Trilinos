@@ -507,7 +507,8 @@ namespace MueLuTests {
             const RCP<const Map> map = MapFactory::Build(lib, nEle, 0, comm);
             Teuchos::ParameterList matrixParameters;
             matrixParameters.set("nx",nEle);
-            RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>("Laplace1D", map, matrixParameters);
+            RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap> > Pr = Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap>("Laplace1D", map, matrixParameters);
+            RCP<Matrix> Op = Pr->BuildMatrix();
 
             // build nullspace
             RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);

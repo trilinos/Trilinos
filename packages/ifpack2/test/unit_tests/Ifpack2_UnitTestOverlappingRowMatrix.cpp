@@ -50,7 +50,7 @@
 #include <Xpetra_TpetraMap.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
-#include <Galeri_XpetraMatrixFactory.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
 #include <Galeri_XpetraMatrixTypes.hpp>
 #endif
 
@@ -99,7 +99,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, Lo
 
   const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
   Teuchos::RCP<XMapType > xmap = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal>::Build(xpetraParameters.GetLib(), INVALID, numElementsPerProc, 0, comm);
-  Teuchos::RCP<XCrsType> XA = Galeri::Xpetra::CreateCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,XMapType,XCrsType>(string("Laplace2D"),xmap,GaleriList);
+  Teuchos::RCP<Galeri::Xpetra::Problem<XMapType,XCrsType> > Pr = Galeri::Xpetra::BuildProblem<Scalar,LocalOrdinal,GlobalOrdinal,XMapType,XCrsType>(string("Laplace2D"),xmap,GaleriList);
+  Teuchos::RCP<XCrsType> XA = Pr->BuildMatrix();
   Teuchos::RCP<CrsType> A = XA->getTpetra_CrsMatrixNonConst();
 
   TEST_INEQUALITY(A,Teuchos::null);

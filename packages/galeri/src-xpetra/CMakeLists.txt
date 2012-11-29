@@ -11,7 +11,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../src/Headers)
 APPEND_SET(HEADERS
   Galeri_XpetraParameters.hpp
 
-  Galeri_XpetraMatrixFactory.hpp  
+  Galeri_XpetraProblemFactory.hpp
   Galeri_XpetraMatrixTypes.hpp
 
   Galeri_VectorTraits.hpp

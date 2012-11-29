@@ -69,7 +69,7 @@
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
-#include <Galeri_XpetraMatrixFactory.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
 
 // MueLu
 #include "MueLu_ConfigDefs.hpp"

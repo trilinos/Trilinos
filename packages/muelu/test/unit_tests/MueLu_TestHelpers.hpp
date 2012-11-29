@@ -72,7 +72,7 @@
 #include "MueLu_Level.hpp"
 
 // Galeri
-#include "Galeri_XpetraMatrixFactory.hpp"
+#include "Galeri_XpetraProblemFactory.hpp"
 #include "Galeri_XpetraMatrixTypes.hpp"
 
 #include "MueLu_NoFactory.hpp"
@@ -163,7 +163,8 @@ namespace MueLuTests {
         }
 
         RCP<const Map> map = MapFactory::Build(lib, numGlobalElements, 0, comm);
-        RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrixWrap>(matrixType,map,matrixList);
+        RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap> > Pr = Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap>(matrixType, map, matrixList);
+        RCP<Matrix> Op = Pr->BuildMatrix();
 
         return Op;
       } // BuildMatrix()

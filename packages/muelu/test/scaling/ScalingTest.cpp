@@ -63,7 +63,7 @@
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
-#include <Galeri_XpetraMatrixFactory.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
 #include <Galeri_XpetraUtils.hpp>
 
 // MueLu
@@ -219,7 +219,9 @@ int main(int argc, char *argv[]) {
     TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build"));
 
     map = MapFactory::Build(lib, matrixParameters.GetNumGlobalElements(), 0, comm);
-    A = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
+    Teuchos::RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap> > Pr =
+        Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
+    A = Pr->BuildMatrix();
 
     if (matrixParameters.GetMatrixType() == "Laplace1D") {
       coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("1D", map, matrixParameters.GetParameterList());

@@ -130,7 +130,8 @@ namespace MueLuTests {
     matrixList.set("ny",ny);
     matrixList.set("keepBCs",true); //keeps Dirichlet rows
 
-    RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrixWrap>("Laplace2D",map,matrixList);
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap> > Pr = Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap>("Laplace2D",map,matrixList);
+    RCP<Matrix> Op = Pr->BuildMatrix();
     level.Set<RCP<Matrix> >("A",Op);
 
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
@@ -266,7 +267,8 @@ namespace MueLuTests {
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
-    RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrixWrap>("Laplace2D",map,matrixList);
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap> > Pr = Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap>("Laplace2D",map,matrixList);
+    RCP<Matrix> Op = Pr->BuildMatrix();
     level.Set<RCP<Matrix> >("A",Op);
 
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
@@ -404,7 +406,8 @@ namespace MueLuTests {
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
 
-    RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrixWrap>("Laplace2D",map,matrixList);
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap> > Pr = Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap>("Laplace2D",map,matrixList);
+    RCP<Matrix> Op = Pr->BuildMatrix();
     level.Set<RCP<Matrix> >("A",Op);
 
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
@@ -533,7 +536,8 @@ namespace MueLuTests {
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
 
-    RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrixWrap>("Laplace2D",map,matrixList);
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap> > Pr = Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap>("Laplace2D",map,matrixList);
+    RCP<Matrix> Op = Pr->BuildMatrix();
     level.Set<RCP<Matrix> >("A",Op);
 
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
@@ -663,7 +667,8 @@ namespace MueLuTests {
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
 
-    RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrixWrap>("Laplace2D",map,matrixList);
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap> > Pr = Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap>("Laplace2D",map,matrixList);
+    RCP<Matrix> Op = Pr->BuildMatrix();
     level.Set<RCP<Matrix> >("A",Op);
 
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;
@@ -830,7 +835,8 @@ namespace MueLuTests {
     matrixList.set("nx",nx);
     matrixList.set("ny",ny);
 
-    RCP<Matrix> Op = Galeri::Xpetra::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrixWrap>("Laplace2D",map,matrixList);
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap> > Pr = Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap>("Laplace2D",map,matrixList);
+    RCP<Matrix> Op = Pr->BuildMatrix();
     level.Set<RCP<Matrix> >("A",Op);
 
     Teuchos::ArrayRCP<GO> partitionThisDofBelongsTo;

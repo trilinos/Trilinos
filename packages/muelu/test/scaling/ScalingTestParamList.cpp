@@ -49,7 +49,7 @@
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
-#include <Galeri_XpetraMatrixFactory.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
 #include <Galeri_XpetraUtils.hpp>
 #include <Galeri_XpetraMaps.hpp>
 //
@@ -158,7 +158,8 @@ int main(int argc, char *argv[]) {
               << "========================================================" << std::endl;
   }
 
-  RCP<Matrix> A   = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap> > Pr = Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Matrix> A = Pr->BuildMatrix();
 
   tm = Teuchos::null;
 

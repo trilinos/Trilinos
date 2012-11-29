@@ -60,7 +60,7 @@
 #include <Tpetra_CrsMatrix.hpp>
 
 #include <Galeri_XpetraParameters.hpp>
-#include <Galeri_XpetraMatrixFactory.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
 
 /*
   This driver simply generates a Tpetra matrix, prints it to screen, and exits.
@@ -104,7 +104,8 @@ int main(int argc, char** argv)
   /* CREATE INITAL MATRIX                                                           */
   /**********************************************************************************/
   RCP<const Tpetra::Map<LO,GO> > map = rcp( new Tpetra::Map<LO,GO>(matrixParameters.GetNumGlobalElements(), 0, comm) );
-  RCP<Tpetra::CrsMatrix<SC,LO,GO> > A = Galeri::Xpetra::CreateCrsMatrix<SC, LO, GO, Tpetra::Map<LO,GO>, Tpetra::CrsMatrix<SC,LO,GO> >(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Galeri::Xpetra::Problem> problem = Galeri::Xpetra::BuildProblem(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Matrix> A = problem->BuildMatrix();
 
   /**********************************************************************************/
   /*                                                                                */
