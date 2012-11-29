@@ -302,10 +302,10 @@ namespace Ioex {
     {return elemMap.global_to_local(global);}
 
     // Internal data handling
-    int64_t handle_node_ids(void* ids, int64_t num_to_get);
-    int64_t handle_element_ids(const Ioss::ElementBlock *eb, void* ids, size_t num_to_get);
-    int64_t handle_face_ids(const Ioss::FaceBlock *eb, void* ids, size_t num_to_get);
-    int64_t handle_edge_ids(const Ioss::EdgeBlock *eb, void* ids, size_t num_to_get);
+    int64_t handle_node_ids(void* ids, int64_t num_to_get) const;
+    int64_t handle_element_ids(const Ioss::ElementBlock *eb, void* ids, size_t num_to_get) const;
+    int64_t handle_face_ids(const Ioss::FaceBlock *eb, void* ids, size_t num_to_get) const;
+    int64_t handle_edge_ids(const Ioss::EdgeBlock *eb, void* ids, size_t num_to_get) const;
 
     void add_attribute_fields(ex_entity_type ent_type, Ioss::GroupingEntity *block,
 			      int attribute_count,  const std::string& type);

@@ -1925,17 +1925,24 @@ namespace Iopx {
 
   }
 
-  template void DecompositionData<int>::get_node_entity_proc_data(int *entity_proc, const Ioss::MapContainer &node_map) const;
-  template void DecompositionData<int64_t>::get_node_entity_proc_data(int64_t *entity_proc, const Ioss::MapContainer &node_map) const;
+  template void DecompositionData<int>::get_node_entity_proc_data(int *entity_proc, const Ioss::MapContainer &node_map, bool do_map) const;
+  template void DecompositionData<int64_t>::get_node_entity_proc_data(int64_t *entity_proc, const Ioss::MapContainer &node_map, bool do_map) const;
 
   template <typename INT>
-  void DecompositionData<INT>::get_node_entity_proc_data(INT *entity_proc, const Ioss::MapContainer &node_map) const
+  void DecompositionData<INT>::get_node_entity_proc_data(INT *entity_proc, const Ioss::MapContainer &node_map, bool do_map) const
   {
     size_t j=0;
-    for (size_t i=0; i < nodeCommMap.size(); i+=2) {
-      INT local_id = nodeCommMap[i];
-      entity_proc[j++] = node_map[local_id];
-      entity_proc[j++] = nodeCommMap[i+1];
+    if (do_map) {
+      for (size_t i=0; i < nodeCommMap.size(); i+=2) {
+	INT local_id = nodeCommMap[i];
+	entity_proc[j++] = node_map[local_id];
+	entity_proc[j++] = nodeCommMap[i+1];
+      }
+    } else {
+      for (size_t i=0; i < nodeCommMap.size(); i+=2) {
+	entity_proc[j++] = nodeCommMap[i+0];
+	entity_proc[j++] = nodeCommMap[i+1];
+      }
     }
   }
   
@@ -3000,5 +3007,80 @@ namespace Iopx {
       }
     }
   }
+
+  template void DecompositionData<int>::create_implicit_global_map(const std::vector<int> &owning_proc,
+								   std::vector<int64_t> &global_implicit_map,
+								   Ioss::Map &node_map, int64_t *locally_owned_count,
+								   int64_t *processor_offset);
+  template void DecompositionData<int64_t>::create_implicit_global_map(const std::vector<int> &owning_proc,
+								   std::vector<int64_t> &global_implicit_map,
+								   Ioss::Map &node_map, int64_t *locally_owned_count,
+								   int64_t *processor_offset);
+
+  template <typename INT>
+  void DecompositionData<INT>::create_implicit_global_map(const std::vector<int> &owning_proc,
+							  std::vector<int64_t> &global_implicit_map,
+							  Ioss::Map &node_map, int64_t *locally_owned_count,
+							  int64_t *processor_offset)
+  {
+    // If the node is locally owned, then its position is basically
+    // determined by removing all shared nodes from the list and
+    // then compressing the list. This location plus the proc_offset
+    // gives its location in the global-implicit file.
+    //
+    // If it is shared, then need to communicate with the owning
+    // processor to determine where that processor is putting it.
+    //
+    // First, iterate nodeOwningProcessor list and set the implicit
+    // map for all locally-owned nodes and also determine how many
+    // of my nodes are owned by which other processors.
+
+    global_implicit_map.resize(owning_proc.size());
+
+    std::vector<int64_t> snd_count(processorCount);
+    std::vector<int64_t> rcv_count(processorCount);
+
+    size_t position = 0;
+    for (size_t i=0; i < global_implicit_map.size(); i++) {
+      snd_count[owning_proc[i]]++;
+      if (owning_proc[i] == myProcessor) {
+	global_implicit_map[i] = position++;
+      } 
+    }
+    snd_count[myProcessor] = 0;
+      
+    // The number of locally-owned nodes on this processor is 'position'
+    *locally_owned_count = position;
+    
+    MPI_Allgather(locally_owned_count, 1, MPI_LONG_LONG_INT,
+		  &rcv_count[0],       1, MPI_LONG_LONG_INT, comm_);
+
+    // Determine the offset of the nodes on this processor. The offset is the
+    // total number of locally-owned nodes on all processors prior to this processor.
+    *processor_offset = 0;
+    for (int i=0; i < myProcessor; i++) {
+      *processor_offset += rcv_count[i];
+    }
+    
+    // Now, tell the other processors how many nodes I will be sending
+    // them (Nodes they own that I share with them)
+    MPI_Alltoall(TOPTR(snd_count), 1, MPI_LONG_LONG,
+		 TOPTR(rcv_count), 1, MPI_LONG_LONG, comm_);
+
+    std::vector<int64_t> snd_offset(snd_count);
+    generate_index(snd_offset);
+    std::vector<int64_t> tmp_disp(snd_offset);
+    
+    std::vector<int64_t> send_list(*snd_offset.rbegin() + *snd_count.rbegin());
+    // Now create the list of nodes to send...
+    for (size_t i=0; i < global_implicit_map.size(); i++) {
+      if (owning_proc[i] != myProcessor) {
+	int64_t global_id = node_map.map[i+1];
+	send_list[tmp_disp[owning_proc[i]]++] = global_id;
+      }
+    }
+    
+  }
+
 }
 

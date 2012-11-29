@@ -66,8 +66,8 @@ namespace Iopx {
   {
     int proc_count = 1;
     MPI_Comm_size(communicator, &proc_count);
-    // READ_RESTART not officially supported.  Here just so gdsjaar can experiment
-    if (proc_count > 1 && (db_usage == Ioss::READ_MODEL || db_usage == Ioss::READ_RESTART)) {
+    // db_usage == *_RESTART not officially supported.  Here just so gdsjaar can experiment
+    if (proc_count > 1) {
       return new Iopx::DatabaseIO(NULL, filename, db_usage, communicator, properties);
     } else {
       return new Ioex::DatabaseIO(NULL, filename, db_usage, communicator, properties);

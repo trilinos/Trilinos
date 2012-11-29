@@ -246,7 +246,7 @@ namespace Iopx {
       void communicate_block_data(T *file_data, T *ioss_data, size_t blk_seq, size_t comp_count) const;
       
     void get_block_connectivity(int exodusId, INT *data, int64_t id, size_t blk_seq, size_t nnpe) const;
-    void get_node_entity_proc_data(INT *entity_proc, const Ioss::MapContainer &node_map) const;
+    void get_node_entity_proc_data(INT *entity_proc, const Ioss::MapContainer &node_map, bool do_map) const;
     size_t get_commset_node_size() const {return nodeCommMap.size()/2;}
 
     int get_attr(int exoid, ex_entity_type obj_type, ex_entity_id   obj_id, size_t attr_count, double* attrib) const;
@@ -264,6 +264,10 @@ namespace Iopx {
     size_t get_block_element_count(size_t blk_seq) const;
     size_t get_block_element_offset(size_t blk_seq) const;
     
+    void create_implicit_global_map(const std::vector<int> &owning_proc,
+				    std::vector<int64_t> &global_implicit_map,
+				    Ioss::Map &node_map, int64_t *locally_owned_count,
+				    int64_t *processor_offset);
   private:
 
     /*! 

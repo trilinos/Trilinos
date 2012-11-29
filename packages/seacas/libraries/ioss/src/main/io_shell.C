@@ -46,6 +46,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <exodusII.h>
 
 #ifdef HAVE_MPI
@@ -143,6 +144,9 @@ namespace {
   void file_copy(const std::string& inpfile, const std::string& input_type,
 		 const std::string& outfile, const std::string& output_type,
 		 Globals& globals);
+
+  template <typename INT>
+  void set_owned_node_count(Ioss::Region &region, int processor, INT dummy);
 }
 // ========================================================================
 
@@ -706,7 +710,25 @@ namespace {
       Ioss::NodeBlock *nb = new Ioss::NodeBlock(output_region.get_database(), name, num_nodes, degree);
       output_region.add(nb);
 
+      
       transfer_properties(*i, nb);
+
+      // If the "owning_processor" field exists on the input
+      // nodeblock, transfer it and the "ids" field to the output
+      // nodeblock at this time since it is used to determine
+      // per-processor sizes of nodeblocks and nodesets.
+      if ((*i)->field_exists("owning_processor")) {
+	size_t isize = (*i)->get_field("ids").get_size();
+	data.resize(isize);
+	(*i)->get_field_data("ids", &data[0], isize);
+	nb->put_field_data("ids", &data[0], isize);
+
+	isize = (*i)->get_field("owning_processor").get_size();
+	data.resize(isize);
+	(*i)->get_field_data("owning_processor", &data[0], isize);
+	nb->put_field_data("owning_processor", &data[0], isize);
+      }
+
       transfer_fields(*i, nb, Ioss::Field::MESH);
       transfer_fields(*i, nb, Ioss::Field::ATTRIBUTE);
       ++i;
@@ -1064,6 +1086,7 @@ namespace {
     if (field_name == "element_side_raw") return;
     if (field_name == "ids_raw") return;
     if (field_name == "node_connectivity_status") return;
+    if (field_name == "owning_processor") return;
 
     if (data.size() < isize) {
       std::cerr << "Field: " << field_name << "\tIsize = " << isize << "\tdata size = " << data.size() << "\n";
@@ -1097,5 +1120,32 @@ namespace {
     OUTPUT.setf(std::ios::showpoint);
     OUTPUT << "     Time step " << std::setw(5) << istep
 	   << " at time " << std::setprecision(5) << time << '\n';
+  }
+
+  template <typename INT>
+  void set_owned_node_count(Ioss::Region &region, int my_processor, INT /*dummy*/)
+  {
+    Ioss::NodeBlock *nb = region.get_node_block("nodeblock_1");
+    if (nb->field_exists("owning_processor")) {
+      std::vector<INT> data;
+      nb->get_field_data("owning_processor", data);
+
+      INT owned = std::count(data.begin(), data.end(), my_processor);
+      nb->property_add(Ioss::Property("locally_owned_count", owned));
+
+      // Set locally_owned_count property on all nodesets...
+      Ioss::NodeSetContainer nss = region.get_nodesets();
+      for (size_t i=0; i < nss.size(); i++) {
+	Ioss::NodeSet *ns = nss[i];
+	std::vector<INT> ids;
+	ns->get_field_data("ids_raw", ids);
+	owned = 0;
+	for (size_t n=0; n < ids.size(); n++) {
+	  INT id = ids[n];
+	  owned += data[id-1];
+	}
+	ns->property_add(Ioss::Property("locally_owned_count", owned));
+      }
+    }
   }
 }
