@@ -159,7 +159,6 @@ namespace stk {
 
               unsigned inode = node_elems[i_element].identifier();
               const mesh::PairIterRelation elem_nodes = element.relations( m_eMesh.node_rank() );
-              VERIFY_OP_ON(inode, >=, 0, "elem_nodes 1");
               VERIFY_OP_ON(inode, <, elem_nodes.size(), "elem_nodes 2");
               VERIFY_OP_ON(elem_nodes[inode].entity().identifier(), ==, node.identifier(), "elem_nodes 3");
 

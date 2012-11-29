@@ -164,12 +164,13 @@ namespace stk {
       static void normalize(tri_tuple_type_local& face)
       {
         //tri_tuple_type_local new_face;
-        int nodes[3] = {face.get<0>(), face.get<1>(), face.get<2>() };
-        int min_node_val = 1000;
+        unsigned nodes[3] = {face.get<0>(), face.get<1>(), face.get<2>() };
+        throw std::runtime_error("this method not implemented: RefinerPattern_Tet4_Tet4_N::normalize");
+        int min_node_val = 1000;  // FIXME - is this a global ID, then 1000 is wrong - maybe this was a local ID on a generic tet...
         int min_node_index = -1;
         for (int i = 0; i < 3; i++)
           {
-            if (nodes[i] < min_node_val)
+            if ((int)nodes[i] < min_node_val)
               {
                 min_node_val = nodes[i];
                 min_node_index = i;
@@ -431,6 +432,7 @@ namespace stk {
                 return;
               }
 
+            // The following is experimental code, it is not used, nor has it been tested...
 
             tets.resize(0);
             std::vector<tri_tuple_type_local> tet_faces;

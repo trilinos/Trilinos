@@ -340,33 +340,31 @@ namespace stk {
     {
     public:
 
-      enum
-        {
-          fromTopoKey         = FromTopology::key,
-          toTopoKey           = ToTopology::key,
-          topo_key_hex27      = shards::Hexahedron<27>::key,
-          topo_key_hex20      = shards::Hexahedron<20>::key,
-          topo_key_quad8      = shards::Quadrilateral<8>::key,
-          topo_key_shellquad8 = shards::ShellQuadrilateral<8>::key,
-          topo_key_shellquad9 = shards::ShellQuadrilateral<9>::key,
-          topo_key_quad9      = shards::Quadrilateral<9>::key,
-          topo_key_wedge15    = shards::Wedge<15>::key,
-          topo_key_pyramid13  = shards::Pyramid<13>::key,
-          topo_key_pyramid5   = shards::Pyramid<5>::key,
-          topo_key_tet4       = shards::Tetrahedron<4>::key,
-          
-          s_shell_line_2_key = shards::ShellLine<2>::key,
-          s_shell_line_3_key = shards::ShellLine<3>::key,
-          s_shell_tri_3_key  = shards::ShellTriangle<3>::key,
-          s_shell_tri_6_key  = shards::ShellTriangle<6>::key,
-          s_shell_quad_4_key = shards::ShellQuadrilateral<4>::key,
-          s_shell_quad_8_key = shards::ShellQuadrilateral<8>::key,
-          s_shell_quad_9_key = shards::ShellQuadrilateral<9>::key,
+      static const unsigned fromTopoKey         = FromTopology::key;
+      static const unsigned toTopoKey           = ToTopology::key;
 
-          centroid_node       = (toTopoKey == topo_key_quad9 ? 8 :
-                            (toTopoKey == topo_key_hex27 ? 20 : 0)
-                            )
-        };
+      static const unsigned topo_key_hex27      = shards::Hexahedron<27>::key;
+      static const unsigned topo_key_hex20      = shards::Hexahedron<20>::key;
+      static const unsigned topo_key_quad8      = shards::Quadrilateral<8>::key;
+      static const unsigned topo_key_shellquad8 = shards::ShellQuadrilateral<8>::key;
+      static const unsigned topo_key_shellquad9 = shards::ShellQuadrilateral<9>::key;
+      static const unsigned topo_key_quad9      = shards::Quadrilateral<9>::key;
+      static const unsigned topo_key_wedge15    = shards::Wedge<15>::key;
+      static const unsigned topo_key_pyramid13  = shards::Pyramid<13>::key;
+      static const unsigned topo_key_pyramid5   = shards::Pyramid<5>::key;
+      static const unsigned topo_key_tet4       = shards::Tetrahedron<4>::key;
+          
+      static const unsigned s_shell_line_2_key = shards::ShellLine<2>::key;
+      static const unsigned s_shell_line_3_key = shards::ShellLine<3>::key;
+      static const unsigned s_shell_tri_3_key  = shards::ShellTriangle<3>::key;
+      static const unsigned s_shell_tri_6_key  = shards::ShellTriangle<6>::key;
+      static const unsigned s_shell_quad_4_key = shards::ShellQuadrilateral<4>::key;
+      static const unsigned s_shell_quad_8_key = shards::ShellQuadrilateral<8>::key;
+      static const unsigned s_shell_quad_9_key = shards::ShellQuadrilateral<9>::key;
+
+      static const unsigned centroid_node       = (toTopoKey == topo_key_quad9 ? 8 :
+                                                   (toTopoKey == topo_key_hex27 ? 20 : 0)
+                                                   );
 
       // return the type of element this pattern can refine
       virtual unsigned getFromTypeKey() { return fromTopoKey; }

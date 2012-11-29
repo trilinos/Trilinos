@@ -65,7 +65,8 @@ namespace stk
     class Transform : public VectorFieldGeneralFunction
     {
     public:
-      Transform() {};
+      Transform() {}
+      virtual ~Transform() {}
       virtual Coord  operator()(const Coord& x)
       {
         Coord y;
