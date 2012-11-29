@@ -216,7 +216,7 @@ typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
 Relaxation<MatrixType>::computeCondEst(
                      CondestType CT,
                      typename MatrixType::local_ordinal_type MaxIters, 
-                     magnitudeType Tol,
+                     magnitude_type Tol,
      const Teuchos::Ptr<const Tpetra::RowMatrix<typename MatrixType::scalar_type,
                                                 typename MatrixType::local_ordinal_type,
                                                 typename MatrixType::global_ordinal_type,
@@ -375,7 +375,7 @@ void Relaxation<MatrixType>::compute()
 
     for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
       A_->getLocalRowCopy(i, Indices(), Values(), NumEntries);      
-      magnitudeType diagonal_boost=Teuchos::ScalarTraits<magnitudeType>::zero();
+      magnitude_type diagonal_boost=Teuchos::ScalarTraits<magnitude_type>::zero();
       for (size_t k = 0 ; k < NumEntries ; ++k) 
 	if((size_t)Indices[k] > i)
 	  diagonal_boost+= Teuchos::ScalarTraits<Scalar>::magnitude(Values[k]/two);  
