@@ -1047,9 +1047,9 @@ namespace stk {
         }            
       else
         {
-          q = trace(A)/3;
-          p = DM_SQR(A(0,0) - q) + DM_SQR(A(1,1) - q) + DM_SQR(A(2,2) - q) + 2 * p;
-          p = std::sqrt(p / 6);
+          q = trace(A)/3.0;
+          p = DM_SQR(A(0,0) - q) + DM_SQR(A(1,1) - q) + DM_SQR(A(2,2) - q) + 2.0 * p;
+          p = std::sqrt(p / 6.0);
 
           //B = (1 / p) * (A - q * I);       // I is the identity matrix
           for (int i = 0; i < 3; i++)
@@ -1060,26 +1060,26 @@ namespace stk {
                 }
             }
 
-          r = det(B) / 2;
+          r = det(B) / 2.0;
  
           // In exact arithmetic for a symmetric matrix  -1 <= r <= 1
           //   but computation error can leave it slightly outside this range.
-          if (r <= -1) 
-            phi = M_PI / 3;
-          else if (r >= 1)
-            phi = 0;
+          if (r <= -1.0) 
+            phi = M_PI / 3.0;
+          else if (r >= 1.0)
+            phi = 0.;
           else
-            phi = std::acos(r) / 3;
+            phi = std::acos(r) / 3.;
  
           // the eigenvalues satisfy eig2 <= eig1 <= eig0
-          eig0 = q + 2 * p * std::cos(phi);
-          eig2 = q + 2 * p * std::cos(phi + M_PI * (2./3.));
-          eig1 = 3 * q - eig0 - eig2;     // since trace(A) = eig0 + eig1 + eig2
+          eig0 = q + 2. * p * std::cos(phi);
+          eig2 = q + 2. * p * std::cos(phi + M_PI * (2.0/3.0));
+          eig1 = 3. * q - eig0 - eig2;     // since trace(A) = eig0 + eig1 + eig2
           eigen[0] = eig0;
           eigen[1] = eig1;
           eigen[2] = eig2;
-          VERIFY_OP_ON(eig0, <=, eig1, "eig0 < 1");
-          VERIFY_OP_ON(eig1, <=, eig2, "eig1 < 2");
+          VERIFY_OP_ON(eig0, >=, eig1, "eig0 > 1");
+          VERIFY_OP_ON(eig1, >=, eig2, "eig1 > 2");
         }
     }
         
