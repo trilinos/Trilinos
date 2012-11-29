@@ -418,39 +418,6 @@ void AlltoAllv(const Comm<int> &comm,
   recvBuf = arcp_reinterpret_cast<unsigned char>(newRecvBuf);
 }
 
-/*! \brief AlltoAll sends a fixed number of objects to/from all processes.
- *
- *  \param  comm   The communicator for the process group involved
- *  \param  env    The environment, required for error messages
- *  \param  sendBuf  The data to be sent, in destination process rank order
- *  \param  count    The number of Ts to sendBuf to send to each process.
- *                   This must be the same on all processes.
- *  \param  recvBuf  On return, recvBuf has been allocated and contains
- *                   the packets sent to this process by others.
- */
-
-template <typename T>
-void AlltoAll(const Comm<int> &comm,
-              const Environment &env,
-              const ArrayView<const T> &sendBuf,
-              int count,
-              ArrayRCP<T> &recvBuf)         // output - allocated here
-{
-  int nprocs = comm.getSize();
-
-  if (count == 0) return;   // count is the same on all procs
-
-  int *counts = new int [nprocs];
-  for (int i=0; i < nprocs; i++)
-    counts[i] = count;
-
-  ArrayView<const int> sendCounts(counts, nprocs);
-  ArrayRCP<int> recvCounts;
-
-  AlltoAllv<T>(comm, env, sendBuf, sendCounts, recvBuf, recvCounts, true);
-
-  delete [] counts;
-}
 
 }                   // namespace Z2
 #endif
