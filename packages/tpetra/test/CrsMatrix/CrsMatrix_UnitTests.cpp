@@ -508,6 +508,8 @@ namespace {
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     RCP<ParameterList> params = parameterList();
     params->set("Optimize Storage",true);
+    RCP<ParameterList> fillparams = sublist(params,"Local Sparse Ops");
+    fillparams->set("Prepare Solve", true);
     {
       //////////////////////////////////
       // create a simple tridiagonal graph
@@ -2008,12 +2010,13 @@ namespace {
     const size_t numLocal = 10;
     const size_t numVecs  = 5;
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
-    MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
-    mvrand.randomize();
     // create the zero matrix
     MAT zero(map,0);
     zero.fillComplete();
-    mvres.randomize();
+    //
+    MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
+    mvrand.randomize();
+    mvres.putScalar(1);
     zero.apply(mvrand,mvres);
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
     mvres.norm1(norms());
@@ -2240,9 +2243,6 @@ typedef std::complex<double> ComplexDouble;
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  // CGB: Something has gone wrong (and un-noticed) with ThrustGPUNode and CrsGraph/CrsMatrix
-  // disabling for now
-  // TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
-  TPETRA_INSTANTIATE_SLGN_NOGPU( UNIT_TEST_GROUP )
+  TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 
 }

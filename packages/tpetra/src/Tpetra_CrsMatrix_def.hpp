@@ -625,7 +625,10 @@ namespace Tpetra {
     const bool default_OptimizeStorage =
       ! isStaticGraph () || staticGraph_->isStorageOptimized ();
     const bool requestOptimizedStorage =
-      params != null && params->get ("Optimize Storage", default_OptimizeStorage);
+      (params != null && params->get ("Optimize Storage", default_OptimizeStorage))
+      || 
+      (params == null && default_OptimizeStorage);
+
 
     // The graph has optimized storage when indices are allocated,
     // numRowEntries_ is null, and there are more than zero rows on
