@@ -225,6 +225,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA)
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Solver_PseudoTransient.hpp
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_MatrixFreeJacobianOperator.hpp
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_MatrixFreeJacobianOperator_impl.hpp
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_MatrixFree_ModelEvaluatorDecorator.hpp
   )
   APPEND_SET(SOURCES
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_Vector.C

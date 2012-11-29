@@ -76,6 +76,7 @@
 #include "ModelEvaluator2DSim.hpp"
 
 #include "NOX_Thyra_MatrixFreeJacobianOperator.hpp"
+#include "NOX_MatrixFree_ModelEvaluatorDecorator.hpp"
 
 using namespace std;
 
@@ -317,7 +318,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, JFNK_solve_no_prec)
   double p1 = 0.0;
   double x00 = 0.0;
   double x01 = 1.0;
-  Teuchos::RCP<ModelEvaluator2DSim<double> > thyraModel = 
+  Teuchos::RCP<ModelEvaluator2DSim<double> > model = 
     modelEvaluator2DSim<double>(Teuchos::rcp(&Comm,false),d,p0,p1,x00,x01);
 
   // Create the linear solver type with Stratimikos
@@ -328,7 +329,8 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, JFNK_solve_no_prec)
   
   Teuchos::RCP<Teuchos::ParameterList> p = 
     Teuchos::rcp(new Teuchos::ParameterList);
-  p->set("Linear Solver Type", "Belos");
+  p->set("Linear Solver Type", "AztecOO");
+  //p->set("Linear Solver Type", "Belos");
   p->set("Preconditioner Type", "None");
   //p->set("Enable Delayed Solver Construction", true);
   builder.setParameterList(p);
@@ -336,11 +338,11 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, JFNK_solve_no_prec)
   Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
     lowsFactory = builder.createLinearSolveStrategy("");
 
-  thyraModel->set_W_factory(lowsFactory);
+  model->set_W_factory(lowsFactory);
 
   // Create the initial guess
   Teuchos::RCP< ::Thyra::VectorBase<double> >
-    initial_guess = thyraModel->getNominalValues().get_x()->clone_v();
+    initial_guess = model->getNominalValues().get_x()->clone_v();
 
   // Create the JFNK operator
   Teuchos::ParameterList printParams;
@@ -353,6 +355,10 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, JFNK_solve_no_prec)
   jfnkOp->setParameterList(jfnkParams);
   jfnkParams->print(out);
   
+  // Wrap the model evaluator in a JFNK Model Evaluator
+  Teuchos::RCP< ::Thyra::ModelEvaluator<double> > thyraModel = 
+    Teuchos::rcp(new NOX::MatrixFreeModelEvaluatorDecorator<double>(model));
+
   // Create the NOX::Thyra::Group
   Teuchos::RCP<NOX::Thyra::Group> nox_group = 
     Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel, jfnkOp, lowsFactory, Teuchos::null, Teuchos::null));
