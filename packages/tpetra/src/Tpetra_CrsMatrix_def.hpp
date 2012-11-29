@@ -2000,8 +2000,8 @@ namespace Tpetra {
       if (myGraph_->isGloballyIndexed()) {
         myGraph_->makeIndicesLocal();
       }
-      sortEntries();
-      mergeRedundantEntries();
+      if (! myGraph_->isSorted()) sortEntries();
+      if (! myGraph_->isMerged()) mergeRedundantEntries();
       myGraph_->makeImportExport(); // Make Import and Export objects
       myGraph_->computeGlobalConstants();
       myGraph_->fillComplete_ = true;

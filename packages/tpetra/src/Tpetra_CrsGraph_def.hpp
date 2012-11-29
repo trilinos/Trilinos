@@ -75,6 +75,8 @@ namespace Tpetra {
   , indicesAreAllocated_(false)
   , indicesAreLocal_(false)
   , indicesAreGlobal_(false)
+  , indicesAreSorted_(true)
+  , noRedundancies_(true)
   , haveRowInfo_(true)
   , insertGlobalIndicesWarnedEfficiency_(false)
   , insertLocalIndicesWarnedEfficiency_(false)
@@ -1014,7 +1016,7 @@ namespace Tpetra {
     numRowEntries_[rowinfo.localRow] += numNewInds;
     nodeNumEntries_ += numNewInds;
     setSorted(false);
-    noRedundancies_ = false;
+    setMerged(false);
     return numNewInds;
   }
 
@@ -1090,6 +1092,11 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::mergeRowIndices(RowInfo rowinfo)
   {
+    std::string tfecfFuncName("mergRowIndices()");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isStorageOptimized() == true, std::logic_error, 
+      ": The graph is already storage optimized, so we shouldn't be merging any indices." 
+      " Please report this bug to the Tpetra developers.");
     ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst(rowinfo);
     typename ArrayView<LocalOrdinal>::iterator beg, end, newend;
     beg = inds_view.begin();
@@ -1113,6 +1120,11 @@ namespace Tpetra {
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   mergeRowIndicesAndValues(RowInfo rowinfo, Iter rowValueIter, BinaryFunction f)
   {
+    std::string tfecfFuncName("mergRowIndicesAndValues()");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isStorageOptimized() == true, std::logic_error, 
+      ": The graph is already storage optimized, so we shouldn't be merging any indices/values." 
+      " Please report this bug to the Tpetra developers.");
     ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst(rowinfo);
     typename ArrayView<LocalOrdinal>::iterator beg, end, newend;
 
@@ -1978,10 +1990,11 @@ namespace Tpetra {
     clearGlobalConstants();
     lclGraph_ = null;
     if (params != null) this->setParameterList (params);
-    setSorted(true);
     lowerTriangular_  = false;
     upperTriangular_  = false;
-    noRedundancies_   = false;
+    // either still sorted/merged or initially sorted/merged
+    setSorted(true);
+    setMerged(true);
     fillComplete_ = false;
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
