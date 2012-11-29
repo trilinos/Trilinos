@@ -36,7 +36,7 @@ namespace Ifpack2 {
 
 //==========================================================================
 template<class MatrixType>
-Relaxation<MatrixType>::Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A)
+Relaxation<MatrixType>::Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& A)
 : A_(A),
   Comm_(A->getRowMap()->getComm()),
   Time_( Teuchos::rcp( new Teuchos::Time("Ifpack2::Relaxation") ) ),
@@ -244,8 +244,8 @@ void Relaxation<MatrixType>::apply(
                                     typename MatrixType::global_ordinal_type,
                                     typename MatrixType::node_type>& Y,
                 Teuchos::ETransp mode,
-                 Scalar alpha,
-                 Scalar beta) const
+                 scalar_type alpha,
+                 scalar_type beta) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(isComputed() == false, std::runtime_error,
      "Ifpack2::Relaxation::apply ERROR: isComputed() must be true prior to calling apply.");
@@ -257,9 +257,9 @@ void Relaxation<MatrixType>::apply(
 
   // If X and Y are pointing to the same memory location,
   // we need to create an auxiliary vector, Xcopy
-  Teuchos::RCP< const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xcopy;
+  Teuchos::RCP< const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Xcopy;
   if (X.getLocalMV().getValues() == Y.getLocalMV().getValues())
-    Xcopy = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(X) );
+    Xcopy = Teuchos::rcp( new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(X) );
   else
     Xcopy = Teuchos::rcp( &X, false );
 
@@ -348,13 +348,13 @@ void Relaxation<MatrixType>::compute()
   TEUCHOS_TEST_FOR_EXCEPTION(NumSweeps_ < 0, std::runtime_error,
     "Ifpack2::Relaxation::compute, NumSweeps_ must be >= 0");
   
-  Diagonal_ = Teuchos::rcp( new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap()) );
+  Diagonal_ = Teuchos::rcp( new Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(A_->getRowMap()) );
 
   TEUCHOS_TEST_FOR_EXCEPTION(Diagonal_ == Teuchos::null, std::runtime_error,
     "Ifpack2::Relaxation::compute, failed to create Diagonal_");
 
   A_->getLocalDiagCopy(*Diagonal_);
-  Teuchos::ArrayRCP<Scalar> DiagView = Diagonal_->get1dViewNonConst();
+  Teuchos::ArrayRCP<scalar_type> DiagView = Diagonal_->get1dViewNonConst();
   
   // Setup for L1 Methods.
   // Here we add half the value of the off-processor entries in the row, 
@@ -367,19 +367,19 @@ void Relaxation<MatrixType>::compute()
   // SIAM J. Sci. Comput., Vol. 33, No. 5. (2011), pp. 2864--2887.
   if(DoL1Method_ && IsParallel_) {
     size_t maxLength = A_->getNodeMaxNumRowEntries();
-    Teuchos::Array<LocalOrdinal> Indices(maxLength);
-    Teuchos::Array<Scalar> Values(maxLength);
+    Teuchos::Array<local_ordinal_type> Indices(maxLength);
+    Teuchos::Array<scalar_type> Values(maxLength);
     size_t NumEntries;
 
-    Scalar two=Teuchos::ScalarTraits<Scalar>::one()+Teuchos::ScalarTraits<Scalar>::one();
+    scalar_type two=Teuchos::ScalarTraits<scalar_type>::one()+Teuchos::ScalarTraits<scalar_type>::one();
 
     for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
       A_->getLocalRowCopy(i, Indices(), Values(), NumEntries);      
       magnitude_type diagonal_boost=Teuchos::ScalarTraits<magnitude_type>::zero();
       for (size_t k = 0 ; k < NumEntries ; ++k) 
 	if((size_t)Indices[k] > i)
-	  diagonal_boost+= Teuchos::ScalarTraits<Scalar>::magnitude(Values[k]/two);  
-      if (Teuchos::ScalarTraits<Scalar>::magnitude(DiagView[i]) < L1Eta_*diagonal_boost)
+	  diagonal_boost+= Teuchos::ScalarTraits<scalar_type>::magnitude(Values[k]/two);  
+      if (Teuchos::ScalarTraits<scalar_type>::magnitude(DiagView[i]) < L1Eta_*diagonal_boost)
 	DiagView[i]+=diagonal_boost;
     }
   }
@@ -388,11 +388,11 @@ void Relaxation<MatrixType>::compute()
   // no zeros are around. If an element is zero, then by default
   // its inverse is zero as well (that is, the row is ignored).
   for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
-    Scalar& diag = DiagView[i];
-    if (Teuchos::ScalarTraits<Scalar>::magnitude(diag) < Teuchos::ScalarTraits<Scalar>::magnitude(MinDiagonalValue_))
+    scalar_type& diag = DiagView[i];
+    if (Teuchos::ScalarTraits<scalar_type>::magnitude(diag) < Teuchos::ScalarTraits<scalar_type>::magnitude(MinDiagonalValue_))
       diag = MinDiagonalValue_;
-    if (diag != Teuchos::ScalarTraits<Scalar>::zero())
-      diag = Teuchos::ScalarTraits<Scalar>::one() / diag;
+    if (diag != Teuchos::ScalarTraits<scalar_type>::zero())
+      diag = Teuchos::ScalarTraits<scalar_type>::one() / diag;
   }
   ComputeFlops_ += NumMyRows_;
 
@@ -406,7 +406,7 @@ void Relaxation<MatrixType>::compute()
   if (IsParallel_ && ((PrecType_ == Ifpack2::GS) || (PrecType_ == Ifpack2::SGS))) {
     Importer_=A_->getGraph()->getImporter();
     if(Importer_==Teuchos::null)
-      Importer_ = Teuchos::rcp( new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(A_->getDomainMap(),
+      Importer_ = Teuchos::rcp( new Tpetra::Import<local_ordinal_type,global_ordinal_type,Node>(A_->getDomainMap(),
 										    A_->getColMap()) );
 
     TEUCHOS_TEST_FOR_EXCEPTION(Importer_ == Teuchos::null, std::runtime_error,
@@ -423,11 +423,11 @@ void Relaxation<MatrixType>::compute()
 //==========================================================================
 template<class MatrixType>
 void Relaxation<MatrixType>::ApplyInverseJacobi(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X, 
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   int NumVectors = X.getNumVectors();
-  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> A_times_Y( Y.getMap(),NumVectors );
+  Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> A_times_Y( Y.getMap(),NumVectors );
 
   for (int j = 0; j < NumSweeps_ ; j++) {
     applyMat(Y,A_times_Y);
@@ -449,8 +449,8 @@ void Relaxation<MatrixType>::ApplyInverseJacobi(
 //==========================================================================
 template<class MatrixType>
 void Relaxation<MatrixType>::ApplyInverseGS(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X, 
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   const MatrixType* CrsMatrix = dynamic_cast<const MatrixType*>(&*A_);
   // try to pick the best option; performances may be improved
@@ -467,26 +467,26 @@ void Relaxation<MatrixType>::ApplyInverseGS(
 //==========================================================================
 template<class MatrixType>
 void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X, 
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   size_t NumVectors = X.getNumVectors();
 
   size_t maxLength = A_->getNodeMaxNumRowEntries();
-  Teuchos::Array<LocalOrdinal> Indices(maxLength);
-  Teuchos::Array<Scalar> Values(maxLength);
+  Teuchos::Array<local_ordinal_type> Indices(maxLength);
+  Teuchos::Array<scalar_type> Values(maxLength);
 
-  Teuchos::RCP< Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Y2;
+  Teuchos::RCP< Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Y2;
   if (IsParallel_)
-    Y2 = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Importer_->getTargetMap(), NumVectors) );
+    Y2 = Teuchos::rcp( new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(Importer_->getTargetMap(), NumVectors) );
   else
     Y2 = Teuchos::rcp( &Y, false );
 
   // extract views (for nicer and faster code)
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > y_ptr = Y.get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > y2_ptr = Y2->get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr =  X.get2dView();
-  Teuchos::ArrayRCP<const Scalar> d_ptr = Diagonal_->get1dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > y_ptr = Y.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > y2_ptr = Y2->get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > x_ptr =  X.get2dView();
+  Teuchos::ArrayRCP<const scalar_type> d_ptr = Diagonal_->get1dView();
  
   for (int j = 0; j < NumSweeps_ ; j++) {
 
@@ -503,9 +503,9 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
         
         for (size_t m = 0 ; m < NumVectors ; ++m) {
 
-          Scalar dtemp = 0.0;
+          scalar_type dtemp = 0.0;
           for (size_t k = 0 ; k < NumEntries ; ++k) {
-            LocalOrdinal col = Indices[k];
+            local_ordinal_type col = Indices[k];
             dtemp += Values[k] * y2_ptr[m][col];
           }
           
@@ -521,9 +521,9 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
 
         for (size_t m = 0 ; m < NumVectors ; ++m) {
           
-          Scalar dtemp = 0.0;
+          scalar_type dtemp = 0.0;
           for (size_t k = 0 ; k < NumEntries ; ++k) {
-            LocalOrdinal col = Indices[k];
+            local_ordinal_type col = Indices[k];
             dtemp += Values[k] * y2_ptr[m][col];
           }
 
@@ -547,25 +547,25 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
 template<class MatrixType>
 void Relaxation<MatrixType>::ApplyInverseGS_CrsMatrix(
         const MatrixType& A,
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   size_t NumVectors = X.getNumVectors();
 
-  Teuchos::ArrayView<const LocalOrdinal> Indices;
-  Teuchos::ArrayView<const Scalar> Values;
+  Teuchos::ArrayView<const local_ordinal_type> Indices;
+  Teuchos::ArrayView<const scalar_type> Values;
 
-  Teuchos::RCP< Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Y2;
+  Teuchos::RCP< Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Y2;
   if (IsParallel_) {
-    Y2 = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Importer_->getTargetMap(), NumVectors) );
+    Y2 = Teuchos::rcp( new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(Importer_->getTargetMap(), NumVectors) );
   }
   else
     Y2 = Teuchos::rcp( &Y, false );
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > y_ptr = Y.get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > y2_ptr = Y2->get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr =  X.get2dView();
-  Teuchos::ArrayRCP<const Scalar> d_ptr = Diagonal_->get1dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > y_ptr = Y.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > y2_ptr = Y2->get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > x_ptr =  X.get2dView();
+  Teuchos::ArrayRCP<const scalar_type> d_ptr = Diagonal_->get1dView();
   
   for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
     
@@ -577,15 +577,15 @@ void Relaxation<MatrixType>::ApplyInverseGS_CrsMatrix(
       /* Forward Mode */
       for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
 
-        LocalOrdinal col;
-        Scalar diag = d_ptr[i];
+        local_ordinal_type col;
+        scalar_type diag = d_ptr[i];
         
         A.getLocalRowView(i, Indices, Values);
         size_t NumEntries = Indices.size();
         
         for (size_t m = 0 ; m < NumVectors ; ++m) {
           
-          Scalar dtemp = 0.0;
+          scalar_type dtemp = 0.0;
           
           for (size_t k = 0; k < NumEntries; ++k) {
             col = Indices[k];
@@ -600,15 +600,15 @@ void Relaxation<MatrixType>::ApplyInverseGS_CrsMatrix(
       /* Backward Mode */
       for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
 
-        LocalOrdinal col;
-        Scalar diag = d_ptr[i];
+        local_ordinal_type col;
+        scalar_type diag = d_ptr[i];
         
         A.getLocalRowView(i, Indices, Values);
         size_t NumEntries = Indices.size();
         
         for (size_t m = 0 ; m < NumVectors ; ++m) {
           
-          Scalar dtemp = 0.0;
+          scalar_type dtemp = 0.0;
           for (size_t k = 0; k < NumEntries; ++k) {
             col = Indices[k];
             dtemp += Values[k] * y2_ptr[m][col];
@@ -633,8 +633,8 @@ void Relaxation<MatrixType>::ApplyInverseGS_CrsMatrix(
 //==========================================================================
 template<class MatrixType>
 void Relaxation<MatrixType>::ApplyInverseSGS(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X, 
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   const MatrixType* CrsMatrix = dynamic_cast<const MatrixType*>(&*A_);
   // try to pick the best option; performance may be improved
@@ -650,25 +650,25 @@ void Relaxation<MatrixType>::ApplyInverseSGS(
 //==========================================================================
 template<class MatrixType>
 void Relaxation<MatrixType>::ApplyInverseSGS_RowMatrix(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X, 
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   size_t NumVectors = X.getNumVectors();
   size_t maxLength = A_->getNodeMaxNumRowEntries();
-  Teuchos::Array<LocalOrdinal> Indices(maxLength);
-  Teuchos::Array<Scalar> Values(maxLength);
+  Teuchos::Array<local_ordinal_type> Indices(maxLength);
+  Teuchos::Array<scalar_type> Values(maxLength);
 
-  Teuchos::RCP< Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Y2;
+  Teuchos::RCP< Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Y2;
   if (IsParallel_) {
-    Y2 = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Importer_->getTargetMap(), NumVectors) );
+    Y2 = Teuchos::rcp( new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(Importer_->getTargetMap(), NumVectors) );
   }
   else
     Y2 = Teuchos::rcp( &Y, false );
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > y_ptr = Y.get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > y2_ptr = Y2->get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr =  X.get2dView();
-  Teuchos::ArrayRCP<const Scalar> d_ptr = Diagonal_->get1dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > y_ptr = Y.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > y2_ptr = Y2->get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > x_ptr =  X.get2dView();
+  Teuchos::ArrayRCP<const scalar_type> d_ptr = Diagonal_->get1dView();
   
   for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
     
@@ -679,16 +679,16 @@ void Relaxation<MatrixType>::ApplyInverseSGS_RowMatrix(
     for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
 
       size_t NumEntries;
-      Scalar diag = d_ptr[i];
+      scalar_type diag = d_ptr[i];
 
       A_->getLocalRowCopy(i, Indices(), Values(), NumEntries);
 
       for (size_t m = 0 ; m < NumVectors ; ++m) {
 
-        Scalar dtemp = 0.0;
+        scalar_type dtemp = 0.0;
 
         for (size_t k = 0 ; k < NumEntries ; ++k) {
-          LocalOrdinal col = Indices[k];
+          local_ordinal_type col = Indices[k];
           dtemp += Values[k] * y2_ptr[m][col];
         }
 
@@ -699,15 +699,15 @@ void Relaxation<MatrixType>::ApplyInverseSGS_RowMatrix(
     for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
 
       size_t NumEntries;
-      Scalar diag = d_ptr[i];
+      scalar_type diag = d_ptr[i];
 
       A_->getLocalRowCopy(i, Indices(), Values(), NumEntries);
 
       for (size_t m = 0 ; m < NumVectors ; ++m) {
 
-        Scalar dtemp = Teuchos::ScalarTraits<Scalar>::zero();
+        scalar_type dtemp = Teuchos::ScalarTraits<scalar_type>::zero();
         for (size_t k = 0 ; k < NumEntries ; ++k) {
-          LocalOrdinal col = Indices[k];
+          local_ordinal_type col = Indices[k];
           dtemp += Values[k] * y2_ptr[m][col];
         }
 
@@ -729,25 +729,25 @@ void Relaxation<MatrixType>::ApplyInverseSGS_RowMatrix(
 template<class MatrixType>
 void Relaxation<MatrixType>::ApplyInverseSGS_CrsMatrix(
         const MatrixType& A,
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X, 
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   size_t NumVectors = X.getNumVectors();
 
-  Teuchos::ArrayView<const LocalOrdinal> Indices;
-  Teuchos::ArrayView<const Scalar> Values;
+  Teuchos::ArrayView<const local_ordinal_type> Indices;
+  Teuchos::ArrayView<const scalar_type> Values;
 
-  Teuchos::RCP< Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Y2;
+  Teuchos::RCP< Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Y2;
   if (IsParallel_) {
-    Y2 = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Importer_->getTargetMap(), NumVectors) );
+    Y2 = Teuchos::rcp( new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(Importer_->getTargetMap(), NumVectors) );
   }
   else
     Y2 = Teuchos::rcp( &Y, false );
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > y_ptr = Y.get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > y2_ptr = Y2->get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr =  X.get2dView();
-  Teuchos::ArrayRCP<const Scalar> d_ptr = Diagonal_->get1dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > y_ptr = Y.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > y2_ptr = Y2->get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > x_ptr =  X.get2dView();
+  Teuchos::ArrayRCP<const scalar_type> d_ptr = Diagonal_->get1dView();
   
   for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
 
@@ -758,18 +758,18 @@ void Relaxation<MatrixType>::ApplyInverseSGS_CrsMatrix(
 
     for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
 
-      Scalar diag = d_ptr[i];
+      scalar_type diag = d_ptr[i];
 
       A.getLocalRowView(i, Indices, Values);
       size_t NumEntries = Indices.size();
 
       for (size_t m = 0 ; m < NumVectors ; ++m) {
 
-        Scalar dtemp = Teuchos::ScalarTraits<Scalar>::zero();
+        scalar_type dtemp = Teuchos::ScalarTraits<scalar_type>::zero();
 
         for (size_t k = 0; k < NumEntries; ++k) {
 
-          LocalOrdinal col = Indices[k];
+          local_ordinal_type col = Indices[k];
           dtemp += Values[k] * y2_ptr[m][col];
         }
 
@@ -779,17 +779,17 @@ void Relaxation<MatrixType>::ApplyInverseSGS_CrsMatrix(
 
     for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
 
-      Scalar diag = d_ptr[i];
+      scalar_type diag = d_ptr[i];
 
       A.getLocalRowView(i, Indices, Values);
       size_t NumEntries = Indices.size();
 
       for (size_t m = 0 ; m < NumVectors ; ++m) {
 
-        Scalar dtemp = Teuchos::ScalarTraits<Scalar>::zero();
+        scalar_type dtemp = Teuchos::ScalarTraits<scalar_type>::zero();
         for (size_t k = 0; k < NumEntries; ++k) {
 
-          LocalOrdinal col = Indices[k];
+          local_ordinal_type col = Indices[k];
           dtemp += Values[k] * y2_ptr[m][col];
         }
 
@@ -850,21 +850,23 @@ void Relaxation<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos:
   using Teuchos::VERB_MEDIUM;
   using Teuchos::VERB_HIGH;
   using Teuchos::VERB_EXTREME;
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
+
   Teuchos::EVerbosityLevel vl = verbLevel;
   if (vl == VERB_DEFAULT) vl = VERB_LOW;
   const int myImageID = Comm_->getRank();
   Teuchos::OSTab tab(out);
 
-  Scalar MinVal = Teuchos::ScalarTraits<Scalar>::zero();
-  Scalar MaxVal = Teuchos::ScalarTraits<Scalar>::zero();
+  scalar_type MinVal = STS::zero();
+  scalar_type MaxVal = STS::zero();
 
   if (IsComputed_) {
-    Teuchos::ArrayRCP<Scalar> DiagView = Diagonal_->get1dViewNonConst();
-    Scalar myMinVal = DiagView[0];
-    Scalar myMaxVal = DiagView[0];
-    for(typename Teuchos::ArrayRCP<Scalar>::size_type i=0; i<DiagView.size(); ++i) {
-      if (Teuchos::ScalarTraits<Scalar>::magnitude(myMinVal) > Teuchos::ScalarTraits<Scalar>::magnitude(DiagView[i])) myMinVal = DiagView[i];
-      if (Teuchos::ScalarTraits<Scalar>::magnitude(myMaxVal) < Teuchos::ScalarTraits<Scalar>::magnitude(DiagView[i])) myMaxVal = DiagView[i];
+    Teuchos::ArrayRCP<scalar_type> DiagView = Diagonal_->get1dViewNonConst();
+    scalar_type myMinVal = DiagView[0];
+    scalar_type myMaxVal = DiagView[0];
+    for(typename Teuchos::ArrayRCP<scalar_type>::size_type i=0; i<DiagView.size(); ++i) {
+      if (STS::magnitude(myMinVal) > STS::magnitude(DiagView[i])) myMinVal = DiagView[i];
+      if (STS::magnitude(myMaxVal) < STS::magnitude(DiagView[i])) myMaxVal = DiagView[i];
     }
 
     Teuchos::reduceAll(*Comm_, Teuchos::REDUCE_MIN, 1, &myMinVal, &MinVal);
