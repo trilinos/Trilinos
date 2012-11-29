@@ -509,14 +509,6 @@ namespace stk {
       stk::mesh::BulkData& bulkData = *m_eMesh.get_bulk_data();
       static SubDimCellData empty_SubDimCellData;
 
-      // color elements
-#if 0
-      struct EntityExcluder
-      {
-        virtual bool exclude(stk::mesh::Entity element) = 0;
-      };
-#endif
-
       std::vector<stk::mesh::EntityRank>& ranks = m_ranks;
       // check logic of break pattern setup and also build ranks used vector
       checkBreakPatternValidityAndBuildRanks(ranks);
@@ -623,11 +615,6 @@ namespace stk {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       unsigned num_elem_not_ghost_0 = 0;
 
-      ///////////////////////////////////////////////////////////
-      ///// Do the mesh coloring step for each type of element
-      ///////////////////////////////////////////////////////////
-
-      //d vector< vector< ColorerSetType > > elementColorsByType = vector < vector< ColorerSetType > > (ranks.size());
       typedef  std::pair<stk::mesh::EntityRank, unsigned > ElementRankTypeInfo;
       vector< std::pair<stk::mesh::EntityRank, unsigned > > elementRankTypeInfo (ranks.size());
 
@@ -641,28 +628,8 @@ namespace stk {
                                            << " elementType= " << elementType
                                            << " cell_topo= " << cell_topo.getName()
                                            << std::endl;
-
-          //d std::vector<stk::mesh::EntityRank> ranks_one(1, ranks[irank]);
-
-          //d this gives a list of colored elements for this element type only
-          //d stk::mesh::PartVector * fromParts = 0;
-          //d fromParts = &(m_breakPattern[irank]->getFromParts());
-
-          //!FIXME add part info
-          //d Colorer meshColorerThisTypeOnly(elementColorsByType[irank], ranks_one);   TRACE_PRINT("Refiner: Color mesh (all top level rank elements)... ");
-          //d meshColorerThisTypeOnly.color(m_eMesh, &elementType, fromParts);          TRACE_PRINT("Refiner: Color mesh (all top level rank elements)...done ");
           
           elementRankTypeInfo[irank] = ElementRankTypeInfo(ranks[irank], elementType);
-
-#if 0
-          stk::mesh::PartVector * fromParts = &(m_breakPattern[irank]->getFromParts());
-          mesh::Selector selector(m_eMesh.get_fem_meta_data()->universal_part());
-          if (fromParts)
-            {
-              selector = mesh::selectUnion(*fromParts);
-            }
-#endif
-
         }
 
       // FIXME warn if a topology shows up without a break pattern
@@ -706,7 +673,6 @@ namespace stk {
               {
                 EXCEPTWATCH;
 
-                //d vector< ColorerSetType >& elementColors = elementColorsByType[irank];
                 ElementRankTypeInfo e_info = elementRankTypeInfo[irank];
                 VERIFY_OP_ON(ranks[irank], ==, e_info.first,"er1");
                 VERIFY_OP_ON(elementType, ==, e_info.second,"er2");
@@ -764,7 +730,6 @@ namespace stk {
               //if (ranks[irank] >= m_eMesh.face_rank())
               {
                 EXCEPTWATCH;
-                //d vector< ColorerSetType >& elementColors = elementColorsByType[irank];
                 ElementRankTypeInfo e_info = elementRankTypeInfo[irank];
 
                 vector<NeededEntityType> needed_entity_ranks;
@@ -811,7 +776,6 @@ namespace stk {
               {
                 EXCEPTWATCH;
 
-                //d vector< ColorerSetType >& elementColors = elementColorsByType[irank];
                 ElementRankTypeInfo e_info = elementRankTypeInfo[irank];
 
                 vector<NeededEntityType> needed_entity_ranks;
@@ -865,7 +829,6 @@ namespace stk {
 
           std::vector<stk::mesh::EntityRank> ranks_one(1, ranks[irank]);
 
-          //d vector< ColorerSetType >& elementColors = elementColorsByType[irank];
           ElementRankTypeInfo e_info = elementRankTypeInfo[irank];
 
           // loop over elements, build faces, edges in threaded mode (guaranteed no mem conflicts)
@@ -1485,6 +1448,8 @@ namespace stk {
 
       // create new elements and connect them up
 
+      std::vector<stk::mesh::Entity> elems;
+
       const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( rank );
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
@@ -1495,7 +1460,13 @@ namespace stk {
               shards::CellTopology topo(bucket_cell_topo_data);
               if (topo.getKey() == elementType)
                 {
-                  jele += bucket.size();
+                  unsigned num_elements_in_bucket = bucket.size();
+                  jele += num_elements_in_bucket;
+                  for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+                    {
+                      stk::mesh::Entity element = bucket[iElement];
+                      elems.push_back(element);
+                    }
                 }
             }
         }
@@ -1518,94 +1489,84 @@ namespace stk {
           notifyObservers(&pd);
         }
 
-      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+      if (nele == 0)
+        return;
+
+      stk::mesh::Entity first_element = elems[0];
+      const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(first_element);
+      shards::CellTopology cell_topo(cell_topo_data);
+
+      for (int iElement = 0; iElement < nele; iElement++)
         {
-          stk::mesh::Bucket & bucket = **k ;
-          const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
-          shards::CellTopology topo(bucket_cell_topo_data);
-          if (!(selector(bucket) && topo.getKey() == elementType))
+          stk::mesh::Entity element = elems[iElement];
+          const stk::mesh::Entity element_p = element;
+
+          if (!element_p.is_valid())
             {
-              continue;
+              throw std::runtime_error("Refiner::createElementsAndNodesAndConnectLocal");
             }
 
-          stk::mesh::Entity first_element_p = bucket[0];
-
-          const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(first_element_p);
-          shards::CellTopology cell_topo(cell_topo_data);
-
-          const unsigned num_elements_in_bucket = bucket.size();
-
-          for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+          if (0 && (jele % printEvery == 0))
             {
-              stk::mesh::Entity element = bucket[iElement];
-              const stk::mesh::Entity element_p = element;
-
-              if (!element_p.is_valid())
-                {
-                  throw std::runtime_error("Refiner::createElementsAndNodesAndConnectLocal");
-                }
-
-              if (0 && (jele % printEvery == 0))
-                {
-                  std::cout << "Refiner::createElementsAndNodesAndConnectLocal: element # = " << jele << " ["
-                            << (((double)jele)/((double)nele)*100.0) << " %]" << std::endl;
-                }
-              if (m_doProgress && (jele % printEvery == 0))
-                {
-                  std::ostringstream oss; oss << "Create Elements pass [" << 100.0*((double)irank)/((double)m_ranks.size()) << " %]";
-                  ProgressMeterData pd(ProgressMeterData::RUNNING, 100.0*((double)jele)/((double)std::max(nele,1)), oss.str());
-                  notifyObservers(&pd);
-                }
-
-              if (m_proc_rank_field && rank == stk::mesh::MetaData::ELEMENT_RANK)
-                {
-                  double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_proc_rank_field) , element );
-                  fdata[0] = double(element.owner_rank());
-                  //if (1 || element.owner_rank() == 3)
-                  //  std::cout << "tmp element.owner_rank() = " << element.owner_rank() << std::endl;
-                }
-              // FIXME
-
-              // skip elements that are already a parent (if there's no family tree yet, it's not a parent, so avoid throwing an error if isParentElement)
-              const bool check_for_family_tree = false;
-              bool isParent = m_eMesh.isParentElement(element, check_for_family_tree);
-              if (0)
-                {
-                  const unsigned FAMILY_TREE_RANK = stk::mesh::MetaData::ELEMENT_RANK + 1u;
-                  stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
-                  if (element_to_family_tree_relations.size() == 1)
-                    {
-                      std::cout << "tmp isParent = " << isParent << " isChild = " << m_eMesh.isChildElement(element) << " element_to_family_tree_relations.size() = " << element_to_family_tree_relations.size() << std::endl;
-                    }
-                }
-
-              if (isParent)
-                continue;
-
-
-              if (!m_eMesh.isGhostElement(element))
-                {
-                  //std::cout << "P["<< m_eMesh.get_rank() << "] element.owner_rank() = " << element.owner_rank() << std::endl;
-                  /**/                                                TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_createNewNeededNodes);
-
-                  if (createNewNeededNodeIds(cell_topo_data, element, needed_entity_ranks, new_sub_entity_nodes))
-                    {
-                      std::cout << "typeid= " << typeid(*breakPattern).name() << std::endl;
-                      throw std::logic_error("needed_entity_ranks[ineed_ent].second");
-                    }
-
-                  /**/                                                TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_createNewNeededNodes);
-
-                  /**/                                                TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_createNewElements);
-
-                  breakPattern->createNewElements(m_eMesh, *m_nodeRegistry, element, new_sub_entity_nodes, element_pool_it, m_proc_rank_field);
-
-                  /**/                                                TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_createNewElements);
-                }
-
-              ++jele;
+              std::cout << "Refiner::createElementsAndNodesAndConnectLocal: element # = " << jele << " ["
+                        << (((double)jele)/((double)nele)*100.0) << " %]" << std::endl;
             }
+          if (m_doProgress && (jele % printEvery == 0))
+            {
+              std::ostringstream oss; oss << "Create Elements pass [" << 100.0*((double)irank)/((double)m_ranks.size()) << " %]";
+              ProgressMeterData pd(ProgressMeterData::RUNNING, 100.0*((double)jele)/((double)std::max(nele,1)), oss.str());
+              notifyObservers(&pd);
+            }
+
+          if (m_proc_rank_field && rank == stk::mesh::MetaData::ELEMENT_RANK)
+            {
+              double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_proc_rank_field) , element );
+              fdata[0] = double(element.owner_rank());
+              //if (1 || element.owner_rank() == 3)
+              //  std::cout << "tmp element.owner_rank() = " << element.owner_rank() << std::endl;
+            }
+          // FIXME
+
+          // skip elements that are already a parent (if there's no family tree yet, it's not a parent, so avoid throwing an error if isParentElement)
+          const bool check_for_family_tree = false;
+          bool isParent = m_eMesh.isParentElement(element, check_for_family_tree);
+          if (0)
+            {
+              const unsigned FAMILY_TREE_RANK = stk::mesh::MetaData::ELEMENT_RANK + 1u;
+              stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+              if (element_to_family_tree_relations.size() == 1)
+                {
+                  std::cout << "tmp isParent = " << isParent << " isChild = " << m_eMesh.isChildElement(element) << " element_to_family_tree_relations.size() = " << element_to_family_tree_relations.size() << std::endl;
+                }
+            }
+
+          if (isParent)
+            continue;
+
+
+          if (!m_eMesh.isGhostElement(element))
+            {
+              //std::cout << "P["<< m_eMesh.get_rank() << "] element.owner_rank() = " << element.owner_rank() << std::endl;
+              /**/                                                TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_createNewNeededNodes);
+
+              if (createNewNeededNodeIds(cell_topo_data, element, needed_entity_ranks, new_sub_entity_nodes))
+                {
+                  std::cout << "typeid= " << typeid(*breakPattern).name() << std::endl;
+                  throw std::logic_error("needed_entity_ranks[ineed_ent].second");
+                }
+
+              /**/                                                TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_createNewNeededNodes);
+
+              /**/                                                TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_createNewElements);
+
+              breakPattern->createNewElements(m_eMesh, *m_nodeRegistry, element, new_sub_entity_nodes, element_pool_it, m_proc_rank_field);
+
+              /**/                                                TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_createNewElements);
+            }
+
+          ++jele;
         }
+
 
       if (m_doProgress)
         {
