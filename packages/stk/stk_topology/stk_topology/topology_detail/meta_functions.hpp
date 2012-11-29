@@ -15,7 +15,7 @@
     : public boost::mpl::integral_c< result, Topology::name >    \
   {};
 
-namespace stk { namespace detail {
+namespace stk { namespace topology_detail {
 
 STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(is_valid,bool)
 STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION(is_shell,bool)
@@ -101,7 +101,7 @@ struct permutation_node_ordinals_
     >::type
 {};
 
-}} //namespace stk::detail
+}} //namespace stk::topology_detail
 
 #undef STKTOPOLOGY_DETAIL_SIMPLE_META_FUNCTION
 

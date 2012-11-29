@@ -10,7 +10,7 @@
 //TODO implement permutations for tets, pyramids, wedges and hexes
 //TODO implement permutations polarity
 
-namespace stk { namespace detail {
+namespace stk { namespace topology_detail {
 
 template <topology::topology_t Topology>
 struct topology_data
@@ -1431,7 +1431,7 @@ struct topology_data<topology::WEDGE_6>
                             > face_node_ordinals_vector;
 
   typedef boost::mpl::vector<
-      boost::mpl::vector_c<int, 0, 1, 2, 3, 4, 5, 6>
+      boost::mpl::vector_c<int, 0, 1, 2, 3, 4, 5>
                             > permutation_node_ordinals_vector;
 
 };
@@ -1786,6 +1786,6 @@ struct topology_data<topology::HEX_27>
 
 };
 
-}} // namespace stk::detail
+}} // namespace stk::topology_detail
 
 #endif //STKTOPOLOGY_DETAIL_TOPOLOGY_DATA_HPP

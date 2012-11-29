@@ -53,3 +53,25 @@ STKUNIT_UNIT_TEST( stk_topology, pretty_print_topologies)
   STKUNIT_EXPECT_TRUE( std::equal(topology_names.begin(), topology_names.end(), output_topology_names.begin()) );
 
 }
+
+
+STKUNIT_UNIT_TEST( stk_topology, lexicographical_smallest_permutation)
+{
+  using stk::topology;
+
+  topology t = topology::TRI_3;
+
+  const char nodes[]="bac";
+
+  char permutation_nodes[4] = "";
+
+  int permutation_index = t.lexicographical_smallest_permutation(nodes);
+  t.permutation_nodes(nodes,permutation_index,permutation_nodes);
+
+  STKUNIT_EXPECT_EQ( std::string("abc"), std::string(permutation_nodes));
+
+  permutation_index = t.lexicographical_smallest_permutation(nodes,true);
+  t.permutation_nodes(nodes,permutation_index,permutation_nodes);
+
+  STKUNIT_EXPECT_EQ( std::string("acb"), std::string(permutation_nodes));
+}

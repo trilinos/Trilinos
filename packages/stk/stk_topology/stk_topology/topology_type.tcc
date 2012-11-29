@@ -3,11 +3,11 @@
 
 #include <stk_topology/topology.hpp>
 
-#include <stk_topology/detail/fill_container.hpp>
-#include <stk_topology/detail/topology_data.hpp>
-#include <stk_topology/detail/meta_functions.hpp>
-#include <stk_topology/detail/side.hpp>
-#include <stk_topology/detail/equivalent_helper.hpp>
+#include <stk_topology/topology_detail/fill_container.hpp>
+#include <stk_topology/topology_detail/topology_data.hpp>
+#include <stk_topology/topology_detail/meta_functions.hpp>
+#include <stk_topology/topology_detail/side.hpp>
+#include <stk_topology/topology_detail/equivalent_helper.hpp>
 
 #include <boost/mpl/for_each.hpp>
 #include <boost/mpl/assert.hpp>
@@ -75,7 +75,7 @@ template <topology::topology_t Topology>
 struct topology::topology_type
 {
 
-  typedef detail::topology_data<Topology> data;
+  typedef topology_detail::topology_data<Topology> data;
   typedef topology_type<Topology>         type;
   typedef topology_t                      value_type;
 
@@ -86,14 +86,14 @@ struct topology::topology_type
   static const rank_t side_rank               = data::side_rank;
   static const bool has_homogeneous_edges     = data::has_homogeneous_edges;
   static const bool has_homogeneous_faces     = data::has_homogeneous_faces;
-  static const bool has_homogeneous_sides     = detail::has_homogeneous_sides_helper<data>::value;
+  static const bool has_homogeneous_sides     = topology_detail::has_homogeneous_sides_helper<data>::value;
   static const bool is_shell                  = data::is_shell;
   static const int dimension                  = data::dimension;
   static const int num_nodes                  = data::num_nodes;
   static const int num_vertices               = data::num_vertices;
   static const int num_edges                  = data::num_edges;
   static const int num_faces                  = data::num_faces;
-  static const int num_sides                  = detail::num_sides_helper<data>::value;
+  static const int num_sides                  = topology_detail::num_sides_helper<data>::value;
   static const int num_permutations           = data::num_permutations;
   static const int num_positive_permutations  = data::num_positive_permutations;
 
@@ -102,8 +102,8 @@ struct topology::topology_type
   typedef typename data::face_topology_vector                            face_topology_vector;
   typedef typename data::edge_node_ordinals_vector                       edge_node_ordinals_vector;
   typedef typename data::face_node_ordinals_vector                       face_node_ordinals_vector;
-  typedef typename detail::side_topology_vector_helper<data>::type       side_topology_vector;
-  typedef typename detail::side_node_ordinals_vector_helper<data>::type  side_node_ordinals_vector;
+  typedef typename topology_detail::side_topology_vector_helper<data>::type       side_topology_vector;
+  typedef typename topology_detail::side_node_ordinals_vector_helper<data>::type  side_node_ordinals_vector;
   typedef typename data::permutation_node_ordinals_vector                permutation_node_ordinals_vector;
 
 
@@ -121,9 +121,9 @@ struct topology::topology_type
   {
     switch(spatial_dimension)
     {
-    case 1: return detail::defined_on_spatial_dimension_< type, 1>::value;
-    case 2: return detail::defined_on_spatial_dimension_< type, 2>::value;
-    case 3: return detail::defined_on_spatial_dimension_< type, 3>::value;
+    case 1: return topology_detail::defined_on_spatial_dimension_< type, 1>::value;
+    case 2: return topology_detail::defined_on_spatial_dimension_< type, 2>::value;
+    case 3: return topology_detail::defined_on_spatial_dimension_< type, 3>::value;
     default: break;
     }
     return false;
@@ -133,7 +133,7 @@ struct topology::topology_type
   STKTOPOLOGY_INLINE_FUNCTION
   static topology edge_topology(int edge_ordinal = 0)
   {
-    STKTOPOLOGY_META_FUNCTION_SWITCH(edge_ordinal, detail::edge_topology_)
+    STKTOPOLOGY_META_FUNCTION_SWITCH(edge_ordinal, topology_detail::edge_topology_)
 
     return INVALID_TOPOLOGY;
   }
@@ -142,7 +142,7 @@ struct topology::topology_type
   STKTOPOLOGY_INLINE_FUNCTION
   static topology face_topology(int face_ordinal = 0)
   {
-    STKTOPOLOGY_META_FUNCTION_SWITCH(face_ordinal, detail::face_topology_)
+    STKTOPOLOGY_META_FUNCTION_SWITCH(face_ordinal, topology_detail::face_topology_)
 
     return INVALID_TOPOLOGY;
   }
@@ -151,7 +151,7 @@ struct topology::topology_type
   STKTOPOLOGY_INLINE_FUNCTION
   static topology side_topology(int side_ordinal = 0)
   {
-    STKTOPOLOGY_META_FUNCTION_SWITCH(side_ordinal, detail::side_topology_)
+    STKTOPOLOGY_META_FUNCTION_SWITCH(side_ordinal, topology_detail::side_topology_)
 
     return INVALID_TOPOLOGY;
   }
@@ -161,9 +161,9 @@ struct topology::topology_type
   STKTOPOLOGY_INLINE_FUNCTION
   static void edge_node_ordinals(int edge_ordinal, OrdinalOutputIterator output_ordinals)
   {
-    detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
+    topology_detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
 
-    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(edge_ordinal, detail::edge_node_ordinals_, f)
+    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(edge_ordinal, topology_detail::edge_node_ordinals_, f)
 
     return;
   }
@@ -173,9 +173,9 @@ struct topology::topology_type
   STKTOPOLOGY_INLINE_FUNCTION
   static void face_node_ordinals(int face_ordinal, OrdinalOutputIterator output_ordinals)
   {
-    detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
+    topology_detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
 
-    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(face_ordinal, detail::face_node_ordinals_, f)
+    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(face_ordinal, topology_detail::face_node_ordinals_, f)
 
     return;
   }
@@ -190,9 +190,9 @@ struct topology::topology_type
                           , (topology_type<Topology>)
                         );
 
-    detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
+    topology_detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
 
-    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(side_ordinal, detail::side_node_ordinals_, f)
+    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(side_ordinal, topology_detail::side_node_ordinals_, f)
 
     return;
   }
@@ -207,9 +207,9 @@ struct topology::topology_type
                           , (topology_type<Topology>)
                         );
 
-    detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
+    topology_detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
 
-    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(permutation_ordinal, detail::permutation_node_ordinals_, f)
+    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(permutation_ordinal, topology_detail::permutation_node_ordinals_, f)
 
     return;
   }
@@ -224,9 +224,9 @@ struct topology::topology_type
                           , (topology_type<Topology>)
                         );
 
-    detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
+    topology_detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
 
-    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(edge_ordinal, detail::edge_node_ordinals_, f)
+    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(edge_ordinal, topology_detail::edge_node_ordinals_, f)
 
     return;
   }
@@ -241,9 +241,9 @@ struct topology::topology_type
                           , (topology_type<Topology>)
                         );
 
-    detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
+    topology_detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
 
-    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(face_ordinal, detail::face_node_ordinals_, f)
+    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(face_ordinal, topology_detail::face_node_ordinals_, f)
 
     return;
   }
@@ -258,9 +258,9 @@ struct topology::topology_type
                           , (topology_type<Topology>)
                         );
 
-    detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
+    topology_detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
 
-    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(side_ordinal, detail::side_node_ordinals_, f)
+    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(side_ordinal, topology_detail::side_node_ordinals_, f)
 
     return;
   }
@@ -275,9 +275,9 @@ struct topology::topology_type
                           , (topology_type<Topology>)
                         );
 
-    detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
+    topology_detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
 
-    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(permutation_ordinal, detail::permutation_node_ordinals_, f)
+    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(permutation_ordinal, topology_detail::permutation_node_ordinals_, f)
 
     return;
   }
@@ -346,7 +346,13 @@ struct topology::topology_type
   STKTOPOLOGY_INLINE_FUNCTION
   static std::pair<bool,int> equivalent(const NodeArrayA & a, const NodeArrayB & b)
   {
-    return detail::equivalent_helper(type(),a,b,a[0]);
+    return topology_detail::equivalent_helper(type(),a,b,a[0]);
+  }
+
+  template <typename NodeArray>
+  static int lexicographical_smallest_permutation( const NodeArray & nodes, bool only_positive_permutations = false)
+  {
+    return topology_detail::lexicographical_smallest_permutation_helper( type(), nodes, only_positive_permutations, nodes[0]);
   }
 
 

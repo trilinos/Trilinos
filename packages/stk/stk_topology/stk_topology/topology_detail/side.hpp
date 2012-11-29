@@ -6,7 +6,7 @@
 #include <boost/mpl/vector.hpp>
 #include <boost/mpl/vector_c.hpp>
 
-namespace stk { namespace detail {
+namespace stk { namespace topology_detail {
 // mpl vector of side topologies
 // NOTE: This assumes that the only topologies with a side rank of NODE_RANK is a LINE or PARTICLE
 template <typename TopologyData>
@@ -59,6 +59,6 @@ struct has_homogeneous_sides_helper
 };
 
 
-}} // namespace stk::detail
+}} // namespace stk::topology_detail
 
 #endif //STKTOPOLOGY_DETAIL_SIDE_HPP

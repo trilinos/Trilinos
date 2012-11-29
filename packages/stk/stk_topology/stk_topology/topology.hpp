@@ -1,7 +1,7 @@
 #ifndef STKTOPOLOGY_TOPOLOGY_HPP
 #define STKTOPOLOGY_TOPOLOGY_HPP
 
-#include <stk_topology/detail/macros.hpp>
+#include <stk_topology/topology_detail/macros.hpp>
 
 #include <utility>
 
@@ -183,6 +183,11 @@ struct topology
   /// return a pair<bool, permutation_number> bool and permutation number from a to b
   template <typename NodeArrayA, typename NodeArrayB>
   std::pair<bool,int> equivalent(const NodeArrayA & a, const NodeArrayB & b) const;
+
+
+  /// return the permutation index which gives the lowest lexicographical ordering of the nodes
+  template <typename NodeArray>
+  int lexicographical_smallest_permutation(const NodeArray &nodes, bool only_positive_permutations = false) const;
 
   /// fill the output ordinals with the ordinals that make up the given sub topology
   template <typename OrdinalOutputIterator>

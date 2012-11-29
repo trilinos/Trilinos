@@ -4,7 +4,7 @@
 
 // functors used with boost::mpl::for_each
 // to extract values from boost::mpl::vectors
-namespace stk { namespace detail {
+namespace stk { namespace topology_detail {
 
 template <typename OrdinalOutputIterator>
 struct fill_ordinal_container {
@@ -37,7 +37,7 @@ struct fill_node_container {
 };
 
 
-}} // namespace stk::detail
+}} // namespace stk::topology_detail
 
 #endif //STKTOPOLOGY_DETAIL_FILL_UNSIGNED_CONTAINER_HPP
 
