@@ -72,9 +72,8 @@
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
-#include "Thyra_EpetraModelEvaluator.hpp"
 #include <Thyra_SpmdVectorBase_decl.hpp>
-#include "EpetraModelEval2DSim.H"
+#include "ModelEvaluator2DSim.hpp"
 
 #include "NOX_Thyra_MatrixFreeJacobianOperator.hpp"
 
@@ -99,9 +98,8 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
   double p1 = 0.0;
   double x00 = 0.0;
   double x01 = 1.0;
-  Teuchos::RCP<EpetraExt::ModelEvaluator> epetraModel = 
-    Teuchos::rcp(new EpetraModelEval2DSim(Teuchos::rcp(&Comm,false),
-				 d,p0,p1,x00,x01));
+  Teuchos::RCP<ModelEvaluator2DSim<double> > thyraModel = 
+    modelEvaluator2DSim<double>(Teuchos::rcp(&Comm,false),d,p0,p1,x00,x01);
 
   // Create the linear solver type with Stratimikos
   //Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
@@ -119,13 +117,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
   Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
     lowsFactory = builder.createLinearSolveStrategy("");
 
-  // Create the Thyra model evalutor (form the epetraext model and
-  // linear solver)
-  Teuchos::RCP< ::Thyra::EpetraModelEvaluator>
-    epetraThyraModel = rcp(new ::Thyra::EpetraModelEvaluator());
-  epetraThyraModel->initialize(epetraModel,lowsFactory);
-  Teuchos::RCP< ::Thyra::ModelEvaluator<double> > thyraModel = 
-    epetraThyraModel;
+  thyraModel->set_W_factory(lowsFactory);
 
   // Create the initial guess
   Teuchos::RCP< ::Thyra::VectorBase<double> >
@@ -134,8 +126,6 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
   // Create the NOX::Thyra::Group
   Teuchos::RCP<NOX::Thyra::Group> nox_group = 
     Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel));
-
-  //Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel, Teuchos::null, jfnkOp));
 
   nox_group->computeF();
 
@@ -303,11 +293,74 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
     jfnkOp->setUserDefinedDelta(1.0e-7);
     TEST_FLOATING_EQUALITY(jfnkOp->getDelta(),1.0e-5,tol_mach_eps);
     ::Thyra::apply(*jfnkOp,::Thyra::NOTRANS,*input,output.ptr());
-    TEST_FLOATING_EQUALITY(jfnkOp->getDelta(),1.0e-7,tol_mach_eps);    
+    TEST_FLOATING_EQUALITY(jfnkOp->getDelta(),1.0e-7,tol_mach_eps);
   }
 
+}
   
-  /*
+TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, JFNK_solve_no_prec)
+{
+  // Create a communicator for Epetra objects
+#ifdef HAVE_MPI
+  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+#else
+  Epetra_SerialComm Comm;
+#endif
+
+  // Check we have only one processor since this problem doesn't work
+  // for more than one proc
+  TEST_ASSERT(Comm.NumProc() == 1);
+
+  // Create the EpetraExt model evaluator object
+  double d = 10.0;
+  double p0 = 2.0;
+  double p1 = 0.0;
+  double x00 = 0.0;
+  double x01 = 1.0;
+  Teuchos::RCP<ModelEvaluator2DSim<double> > thyraModel = 
+    modelEvaluator2DSim<double>(Teuchos::rcp(&Comm,false),d,p0,p1,x00,x01);
+
+  // Create the linear solver type with Stratimikos
+  //Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
+  //lowsFactory = rcp(new Thyra::AmesosLinearOpWithSolveFactory());
+
+  ::Stratimikos::DefaultLinearSolverBuilder builder;
+  
+  Teuchos::RCP<Teuchos::ParameterList> p = 
+    Teuchos::rcp(new Teuchos::ParameterList);
+  p->set("Linear Solver Type", "Belos");
+  p->set("Preconditioner Type", "None");
+  //p->set("Enable Delayed Solver Construction", true);
+  builder.setParameterList(p);
+
+  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
+    lowsFactory = builder.createLinearSolveStrategy("");
+
+  thyraModel->set_W_factory(lowsFactory);
+
+  // Create the initial guess
+  Teuchos::RCP< ::Thyra::VectorBase<double> >
+    initial_guess = thyraModel->getNominalValues().get_x()->clone_v();
+
+  // Create the JFNK operator
+  Teuchos::ParameterList printParams;
+  Teuchos::RCP<Teuchos::ParameterList> jfnkParams = Teuchos::parameterList();
+  jfnkParams->set("Difference Type","Forward");
+  jfnkParams->set("Perturbation Algorithm","KSP NOX 2001");
+  jfnkParams->set("lambda",1.0e-4);
+  Teuchos::RCP<NOX::Thyra::MatrixFreeJacobianOperator<double> > jfnkOp = 
+    Teuchos::rcp(new NOX::Thyra::MatrixFreeJacobianOperator<double>(printParams));
+  jfnkOp->setParameterList(jfnkParams);
+  jfnkParams->print(out);
+  
+  // Create the NOX::Thyra::Group
+  Teuchos::RCP<NOX::Thyra::Group> nox_group = 
+    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel, jfnkOp, lowsFactory, Teuchos::null, Teuchos::null));
+
+  nox_group->computeF();
+
+  // VERY IMPORTANT!!!
+  jfnkOp->setBaseEvaluationToNOXGroup(nox_group);
 
   // Create the NOX status tests and the solver
   // Create the convergence tests
@@ -341,7 +394,5 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
 
   // Final return value (0 = successfull, non-zero = failure)
   TEST_ASSERT(solvStatus == NOX::StatusTest::Converged);
-
-  */
 
 }

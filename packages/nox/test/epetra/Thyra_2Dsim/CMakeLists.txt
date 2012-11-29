@@ -18,7 +18,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
   
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Thyra_NonlinearSolver_NOX_2Dsim
-    SOURCES EpetraModelEval2DSim.H EpetraModelEval2DSim.C 
+    SOURCES ModelEvaluator2DSim.hpp ModelEvaluator2DSim_def.hpp 
             Thyra_NonlinearSolver_NOX_2Dsim.C
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "Test passed!"
@@ -26,14 +26,14 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
   
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Thyra_2Dsim
-    SOURCES EpetraModelEval2DSim.H EpetraModelEval2DSim.C Thyra_2Dsim.C
+    SOURCES ModelEvaluator2DSim.hpp ModelEvaluator2DSim_def.hpp Thyra_2Dsim.C
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "Test passed!"
     )
   
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Thyra_RowSumScaling
-    SOURCES EpetraModelEval2DSim.H EpetraModelEval2DSim.C Thyra_RowSumScaling.C
+    SOURCES ModelEvaluator2DSim.hpp ModelEvaluator2DSim_def.hpp Thyra_RowSumScaling.C
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "Test passed!"
     )
@@ -46,7 +46,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
   
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Thyra_JFNK
-    SOURCES  ${UNIT_TEST_DRIVER} EpetraModelEval2DSim.H EpetraModelEval2DSim.C Thyra_2Dsim_JFNK.C
+    SOURCES  ${UNIT_TEST_DRIVER} ModelEvaluator2DSim.hpp ModelEvaluator2DSim_def.hpp Thyra_2Dsim_JFNK.C
     NUM_MPI_PROCS 1
     )
   
