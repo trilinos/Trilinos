@@ -386,10 +386,87 @@ namespace {
     axdat = null;
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, ZeroMultiply, Ordinal, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          DSM;
+    typedef typename DSM::template bind_scalar<Scalar>::other_type           OPS;
+    typedef typename OPS::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
+    typedef typename OPS::template graph<Ordinal,Node>::graph_type          GRPH;
+    typedef MultiVector<Scalar,Node>                                          MV;
+    typedef Teuchos::ScalarTraits<Scalar>                                     ST;
+    const Scalar ONE = ST::one(),
+                ZERO = ST::zero();
+    // generate zero matrix diag(zeros()), one "entry" per row
+    if (N<2) return;
+    RCP<GRPH> G = rcp(new GRPH (N,N,node,null) );
+    RCP<MAT>  A = rcp(new MAT  (G,null) );
+    // allocate buffers for ptrs, indices and values
+    const Ordinal totalNNZ = N;
+    ArrayRCP<size_t>  ptrs(N+1);
+    ArrayRCP<Ordinal> inds(totalNNZ);
+    ArrayRCP<Scalar>  vals(totalNNZ);
+    // fill the buffers on the host
+    {
+      std::fill(vals.begin(), vals.end(), ZERO);
+      for (int i=0; i < N; ++i) {
+        inds[i] = i;
+        ptrs[i] = i;
+      }
+      ptrs[N] = N;
+    }
+    G->setStructure(ptrs, inds);
+    A->setValues(vals);
+    ptrs = Teuchos::null;
+    inds = Teuchos::null;
+    vals = Teuchos::null;
+    OPS::finalizeGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,*A,null);
+    OPS dsm(node);
+    out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
+    dsm.setGraphAndMatrix(G,A);
+
+    ArrayRCP<Scalar> xdat, axdat;
+    xdat  = node->template allocBuffer<Scalar>(N);
+    axdat = node->template allocBuffer<Scalar>(N);
+    MV X(node), AX(node);
+    X.initializeValues( N,1, xdat,N);
+    AX.initializeValues(N,1,axdat,N);
+    DefaultArithmetic<MV>::Init( X,1);
+    DefaultArithmetic<MV>::Init(AX,1);
+    // AX = A*X
+    dsm.multiply(Teuchos::NO_TRANS,ONE,X,AX);
+    // AX should be zero
+    {
+      ArrayRCP<const Scalar> axview = node->template viewBuffer<Scalar>(N,axdat);
+      Scalar err = ZERO;
+      for (int i=0; i<N; ++i) {
+        err += ST::magnitude(axview[i]);
+      }
+      TEST_EQUALITY_CONST(err, ZERO);
+    }
+    // do that same multiplication, testing alpha=1 and beta=0 "accumulation"
+    // AX = 0*AX + A*X = 0*ones() + 1*Zero*ones()
+    DefaultArithmetic<MV>::Init( X,1);
+    DefaultArithmetic<MV>::Init(AX,1);
+    dsm.multiply(Teuchos::NO_TRANS,ONE,X,ZERO,AX);
+    // AX should again be zero
+    {
+      ArrayRCP<const Scalar> axview = node->template viewBuffer<Scalar>(N,axdat);
+      Scalar err = ZERO;
+      for (int i=0; i<N; ++i) {
+        err += ST::magnitude(axview[i]);
+      }
+      TEST_EQUALITY_CONST(err, ZERO);
+    }
+    xdat = null;
+    axdat = null;
+  }
+
 #include "CrsMatrix_DefaultMultiplyTests.hpp"
 
 #define ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix,        SparseMultiply, ORDINAL, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix,        ZeroMultiply,   ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix,     TransposeMultiply, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( DefaultSparseOps, NodeTest,       ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( DefaultSparseOps, ResubmitMatrix, ORDINAL, SCALAR, NODE )

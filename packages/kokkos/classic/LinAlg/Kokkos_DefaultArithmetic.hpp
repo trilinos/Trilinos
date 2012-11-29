@@ -230,10 +230,10 @@ namespace Kokkos {
     /// <tt>C(i,j) = scalarC * C(i,j) + scalarAB * B(i,j) * A(i,1)</tt>,
     /// where the input multivector A has only 1 column.
     static void ElemMult (MV& C, 
-			  typename MV::ScalarType scalarC,
-			  typename MV::ScalarType scalarAB,
-			  const MV& A,
-			  const MV& B);
+                          typename MV::ScalarType scalarC,
+                          typename MV::ScalarType scalarAB,
+                          const MV& A,
+                          const MV& B);
 
     //! Assign B to A: <tt>A(i,j) = B(i,j)</tt>.
     static void Assign (MV& A, const MV& B);
@@ -255,8 +255,8 @@ namespace Kokkos {
     /// depending on \c transB.
     static void 
     GEMM (MV &C, Teuchos::ETransp transA, Teuchos::ETransp transB, 
-	  typename MV::ScalarType alpha, const MV &A, 
-	  const MV &B, typename MV::ScalarType beta);
+          typename MV::ScalarType alpha, const MV &A, 
+          const MV &B, typename MV::ScalarType beta);
 
     //! Compute <tt>B = alpha * A + beta * B</tt>.
     static void 
@@ -265,7 +265,7 @@ namespace Kokkos {
     //! Compute <tt>C = alpha * A + beta * B + gamma * C</tt>.
     static void 
     GESUM (MV &C, typename MV::ScalarType alpha, const MV &A, 
-	   typename MV::ScalarType beta, const MV &B, typename MV::ScalarType gamma);
+           typename MV::ScalarType beta, const MV &B, typename MV::ScalarType gamma);
 
     //! Compute the one-norm of each column of \c A.
     static void Norm1 (const MV &A, const ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
@@ -324,8 +324,8 @@ namespace Kokkos {
     /// \pre <tt>stride >= numRows</tt> 
     static void 
     initializeValues (MV &A, size_t numRows, size_t numCols,
-		      const ArrayRCP<typename MV::ScalarType> &values,
-		      size_t stride);
+                      const ArrayRCP<typename MV::ScalarType> &values,
+                      size_t stride);
 
     //! Get a const pointer to A's data; the same pointer set by initializeValues().
     static ArrayRCP<const typename MV::ScalarType> getValues (const MV &A);
@@ -513,8 +513,8 @@ namespace Kokkos {
 
     static void 
     Assign (MultiVector<Scalar,Node>& A, 
-	    const MultiVector<Scalar,Node>& B, 
-	    const ArrayView<const size_t>& whichVectors)
+            const MultiVector<Scalar,Node>& B, 
+            const ArrayView<const size_t>& whichVectors)
     {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
@@ -526,7 +526,7 @@ namespace Kokkos {
         "The MultiVectors A and B(whichVectors) do not have compatible dimensions.  "
         "A is " << nR << " x " << nC << ", but B has "
         << B.getNumRows() << ", and there are " << numColsToCopy 
-	<< " columns of B to copy into A.");
+        << " columns of B to copy into A.");
       if (nR == 0 || numColsToCopy == 0) {
         return; // Nothing to do!
       }
@@ -545,8 +545,8 @@ namespace Kokkos {
       // One kernel invocation for each column of B to copy.
       for (size_t j = 0; j < numColsToCopy; ++j) {
         wdp.x = A.getValuesNonConst (j).getRawPtr ();
-	wdp.y = B.getValues (whichVectors[j]).getRawPtr ();
-	node->template parallel_for<AssignOp<Scalar> > (0, nR, wdp);
+        wdp.y = B.getValues (whichVectors[j]).getRawPtr ();
+        node->template parallel_for<AssignOp<Scalar> > (0, nR, wdp);
       }
     }
 
