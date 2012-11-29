@@ -194,17 +194,17 @@ public:
 
 
   //! The type of the magnitude (absolute value) of a matrix entry.
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+  typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
   //! Preserved only for backwards compatibility.  Please use "magnitude_type".
-  TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
   //@}
   //! \name Constructors and Destructors
   //@{ 
 
   //! Relaxation constructor with given Tpetra::RowMatrix input.
-  explicit Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix);
+  explicit Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Matrix);
 
   //! Relaxation Destructor.
   virtual ~Relaxation();
@@ -300,17 +300,17 @@ public:
 
     \warning This routine is NOT AztecOO compliant.
   */
-  void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-             Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+  void apply(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
              Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                 Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-                 Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+                 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+                 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getDomainMap() const;
+  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getDomainMap() const;
 
   //! Returns the Tpetra::Map object associated with the range of this operator.
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getRangeMap() const;
+  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getRangeMap() const;
 
   bool hasTransposeApply() const;
 
@@ -321,8 +321,8 @@ public:
     \param 
     Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing the result.
     */
-  void applyMat(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+  void applyMat(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
                 Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //@}
@@ -332,9 +332,9 @@ public:
 
   //! Computes the estimated condition number and returns the value.
   magnitude_type computeCondEst(CondestType CT = Cheap, 
-                               LocalOrdinal MaxIters = 1550,
+                               local_ordinal_type MaxIters = 1550,
                                magnitude_type Tol = 1e-9,
-                               const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix = Teuchos::null);
+                               const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix = Teuchos::null);
 
   //@}
 
@@ -348,7 +348,7 @@ public:
   const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
 
   //! Returns a reference to the matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getMatrix() const;
+  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > getMatrix() const;
 
   //! Returns the number of flops in the computation phase.
   double getComputeFlops() const;
@@ -399,59 +399,59 @@ private:
 
   //! Applies the Jacobi preconditioner to X, returns the result in Y.
   void ApplyInverseJacobi(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X, 
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //! Applies the Gauss-Seidel preconditioner to X, returns the result in Y.
   void ApplyInverseGS(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X, 
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   void ApplyInverseGS_RowMatrix(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X, 
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   void ApplyInverseGS_CrsMatrix(
         const MatrixType& A,
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //! Applies the symmetric Gauss-Seidel preconditioner to X, returns the result in Y.
   void ApplyInverseSGS(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X, 
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   void ApplyInverseSGS_RowMatrix(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X, 
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   void ApplyInverseSGS_CrsMatrix(
         const MatrixType& A,
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X, 
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //@}
 
   // @{ Internal data and parameters
 
   //! reference to the matrix to be preconditioned
-  const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
+  const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > A_;
   //! Reference to the communicator object
   const Teuchos::RCP<const Teuchos::Comm<int> > Comm_;
   //! Time object to track timing.
   Teuchos::RCP<Teuchos::Time> Time_;
   //! Importer for parallel GS and SGS
-  Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > Importer_;
+  Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > Importer_;
   //! Contains the diagonal elements of \c Matrix.
-  mutable Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Diagonal_;
+  mutable Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Diagonal_;
   //! Number of application of the preconditioner (should be greater than 0).
   int NumSweeps_;
   //! Which type of point relaxation approach to use
   int PrecType_;
   //! Minimum diagonal value
-  Scalar MinDiagonalValue_;
+  scalar_type MinDiagonalValue_;
   //! Damping factor.
-  Scalar DampingFactor_;
+  scalar_type DampingFactor_;
   //! If \c true, more than 1 processor is currently used.
   bool IsParallel_;
   //! If \c true, the starting solution is always the zero vector.
