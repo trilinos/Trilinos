@@ -406,7 +406,7 @@ void Relaxation<MatrixType>::compute()
   if (IsParallel_ && ((PrecType_ == Ifpack2::GS) || (PrecType_ == Ifpack2::SGS))) {
     Importer_=A_->getGraph()->getImporter();
     if(Importer_==Teuchos::null)
-      Importer_ = Teuchos::rcp( new Tpetra::Import<local_ordinal_type,global_ordinal_type,Node>(A_->getDomainMap(),
+      Importer_ = Teuchos::rcp( new Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type>(A_->getDomainMap(),
 										    A_->getColMap()) );
 
     TEUCHOS_TEST_FOR_EXCEPTION(Importer_ == Teuchos::null, std::runtime_error,

@@ -44,8 +44,9 @@ namespace Ifpack2 {
 
     /// \brief Default drop tolerance for ILUT.
     ///
-    /// \tparam ScalarType The type of entries in the input sparse
-    ///   matrix to ILUT; same as the scalar_type typedef of ILUT.
+    /// \tparam ScalarType The "scalar type"; the type of entries in
+    ///   the input sparse matrix to ILUT.  This is the same as the
+    ///   scalar_type typedef of ILUT.
     ///
     /// \warning This is an implementation detail of Ifpack2.  Do NOT
     ///   depend on this function or use it in your code.  It may go
@@ -53,10 +54,11 @@ namespace Ifpack2 {
     ///   warning.
     ///
     /// This function preserves the previous default drop tolerance
-    /// (1e-12, independent of Scalar type), thus ensuring backwards
-    /// compatibility for the common case of Scalar=double.  However,
-    /// it provides a more reasonable default for other Scalar types
-    /// of possibly lower or higher precision than double.
+    /// (1e-12, independent of scalar type), thus ensuring backwards
+    /// compatibility for the common case of ScalarType=double.
+    /// However, it provides a more reasonable default for other
+    /// scalar types of possibly lower or higher precision than
+    /// double.
     ///
     /// This function is templated on ScalarType, rather than its
     /// magnitude type, so that we can handle complex numbers
@@ -81,7 +83,7 @@ namespace Ifpack2 {
       return std::min (as<magnitude_type> (1000) * STS::magnitude (STS::eps ()), oneHalf);
     }
 
-    // Full specialization for MagnitudeType = ScalarType = double.
+    // Full specialization for ScalarType = double.
     // This specialization preserves ILUT's previous default behavior.
     template<>
     Teuchos::ScalarTraits<double>::magnitudeType
@@ -95,7 +97,7 @@ namespace Ifpack2 {
 
 //==============================================================================
 template <class MatrixType>
-ILUT<MatrixType>::ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A) :
+ILUT<MatrixType>::ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& A) :
   A_(A),
   Comm_(A->getRowMap()->getComm()),
   Athresh_(0.0),
@@ -320,9 +322,9 @@ template<class MatrixType>
 typename ILUT<MatrixType>::magnitude_type
 ILUT<MatrixType>::
 computeCondEst (CondestType CT,
-                LocalOrdinal MaxIters,
+                local_ordinal_type MaxIters,
                 magnitude_type Tol,
-                const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix) {
+                const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix) {
   if (!isComputed()) { // cannot compute right now
     return(-1.0);
   }
@@ -356,10 +358,10 @@ void ILUT<MatrixType>::initialize() {
   InitializeTime_ += Time_.totalElapsedTime();
 }
 
-template<typename Scalar>
-typename Teuchos::ScalarTraits<Scalar>::magnitudeType scalar_mag(const Scalar& s)
+template<typename ScalarType>
+typename Teuchos::ScalarTraits<ScalarType>::magnitudeType scalar_mag(const ScalarType& s)
 {
-  return Teuchos::ScalarTraits<Scalar>::magnitude(s);
+  return Teuchos::ScalarTraits<ScalarType>::magnitude(s);
 }
 
 //==========================================================================
@@ -404,15 +406,15 @@ void ILUT<MatrixType>::compute() {
   TEUCHOS_TEST_FOR_EXCEPTION(L_ == Teuchos::null || U_ == Teuchos::null, std::runtime_error,
      "Ifpack2::ILUT::Compute ERROR, failed to allocate L_ or U_");
 
-  const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-  const Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
+  const scalar_type zero = Teuchos::ScalarTraits<scalar_type>::zero();
+  const scalar_type one  = Teuchos::ScalarTraits<scalar_type>::one();
 
   // CGB: note, this caching approach may not be necessary anymore
   // We will store ArrayView objects that are views of the rows of U, so that
   // we don't have to repeatedly retrieve the view for each row. These will
   // be populated row by row as the factorization proceeds.
-  Teuchos::Array<Teuchos::ArrayView<const LocalOrdinal> > Uindices(NumMyRows_);
-  Teuchos::Array<Teuchos::ArrayView<const Scalar> >       Ucoefs(NumMyRows_);
+  Teuchos::Array<Teuchos::ArrayView<const local_ordinal_type> > Uindices(NumMyRows_);
+  Teuchos::Array<Teuchos::ArrayView<const scalar_type> >       Ucoefs(NumMyRows_);
 
   // If this macro is defined, files containing the L and U factors
   // will be written. DON'T CHECK IN THE CODE WITH THIS MACRO ENABLED!!!
@@ -444,50 +446,50 @@ void ILUT<MatrixType>::compute() {
   // some cases.
   double fill_ceil=std::ceil(fill);
 
-  typedef typename Teuchos::Array<LocalOrdinal>::size_type      Tsize_t;
+  typedef typename Teuchos::Array<local_ordinal_type>::size_type      Tsize_t;
 
   // Similarly to Aztec, we will allow the same amount of fill for each
   // row, half in L and half in U.
   Tsize_t fillL = static_cast<Tsize_t>(fill_ceil);
   Tsize_t fillU = static_cast<Tsize_t>(fill_ceil);
 
-  Teuchos::Array<Scalar> InvDiagU(NumMyRows_,zero);
+  Teuchos::Array<scalar_type> InvDiagU(NumMyRows_,zero);
 
-  Teuchos::Array<LocalOrdinal> tmp_idx;
-  Teuchos::Array<Scalar> tmpv;
+  Teuchos::Array<local_ordinal_type> tmp_idx;
+  Teuchos::Array<scalar_type> tmpv;
 
   enum { UNUSED, ORIG, FILL };
-  LocalOrdinal max_col = NumMyRows_;
+  local_ordinal_type max_col = NumMyRows_;
 
   Teuchos::Array<int> pattern(max_col, UNUSED);
-  Teuchos::Array<Scalar> cur_row(max_col, zero);
+  Teuchos::Array<scalar_type> cur_row(max_col, zero);
   Teuchos::Array<magnitude_type> unorm(max_col);
   magnitude_type rownorm;
-  Teuchos::Array<LocalOrdinal> L_cols_heap;
-  Teuchos::Array<LocalOrdinal> U_cols;
-  Teuchos::Array<LocalOrdinal> L_vals_heap;
-  Teuchos::Array<LocalOrdinal> U_vals_heap;
+  Teuchos::Array<local_ordinal_type> L_cols_heap;
+  Teuchos::Array<local_ordinal_type> U_cols;
+  Teuchos::Array<local_ordinal_type> L_vals_heap;
+  Teuchos::Array<local_ordinal_type> U_vals_heap;
 
   // A comparison object which will be used to create 'heaps' of indices
   // that are ordered according to the corresponding values in the
   // 'cur_row' array.
-  greater_indirect<Scalar,LocalOrdinal> vals_comp(cur_row);
+  greater_indirect<scalar_type,local_ordinal_type> vals_comp(cur_row);
 
   // =================== //
   // start factorization //
   // =================== //
 
-  Teuchos::ArrayRCP<LocalOrdinal> ColIndicesARCP;
-  Teuchos::ArrayRCP<Scalar>       ColValuesARCP;
+  Teuchos::ArrayRCP<local_ordinal_type> ColIndicesARCP;
+  Teuchos::ArrayRCP<scalar_type>       ColValuesARCP;
   if(!A_->supportsRowViews()){
     size_t maxnz=A_->getNodeMaxNumRowEntries();
     ColIndicesARCP.resize(maxnz);
     ColValuesARCP.resize(maxnz);
   }
 
-  for (LocalOrdinal row_i = 0 ; row_i < NumMyRows_ ; ++row_i) {
-    Teuchos::ArrayView<const LocalOrdinal> ColIndicesA;
-    Teuchos::ArrayView<const Scalar> ColValuesA;
+  for (local_ordinal_type row_i = 0 ; row_i < NumMyRows_ ; ++row_i) {
+    Teuchos::ArrayView<const local_ordinal_type> ColIndicesA;
+    Teuchos::ArrayView<const scalar_type> ColValuesA;
     size_t RowNnz;
 
     if(A_->supportsRowViews()) {
@@ -527,8 +529,8 @@ void ILUT<MatrixType>::compute() {
     // relative-threshold values. If not set, those values default
     // to zero and one respectively.
     const magnitude_type rthresh = getRelativeThreshold();
-    const Scalar& v = cur_row[row_i];
-    cur_row[row_i] = (Scalar)(getAbsoluteThreshold()*IFPACK2_SGN(v)) + rthresh*v;
+    const scalar_type& v = cur_row[row_i];
+    cur_row[row_i] = as<scalar_type> (getAbsoluteThreshold() * IFPACK2_SGN(v)) + rthresh*v;
 
     Tsize_t orig_U_len = U_cols.size();
     RowNnz = L_cols_heap.size() + orig_U_len;
@@ -537,9 +539,9 @@ void ILUT<MatrixType>::compute() {
     // The following while loop corresponds to the 'L30' goto's in Aztec.
     Tsize_t L_vals_heaplen = 0;
     while(L_cols_heaplen > 0) {
-      LocalOrdinal row_k = L_cols_heap.front();
+      local_ordinal_type row_k = L_cols_heap.front();
 
-      Scalar multiplier = cur_row[row_k] * InvDiagU[row_k];
+      scalar_type multiplier = cur_row[row_k] * InvDiagU[row_k];
       cur_row[row_k] = multiplier;
       magnitude_type mag_mult = scalar_mag(multiplier);
       if (mag_mult*unorm[row_k] < rownorm) {
@@ -566,14 +568,14 @@ void ILUT<MatrixType>::compute() {
 
       /* Reduce current row */
 
-      Teuchos::ArrayView<const LocalOrdinal>& ColIndicesU = Uindices[row_k];
-      Teuchos::ArrayView<const Scalar>& ColValuesU = Ucoefs[row_k];
+      Teuchos::ArrayView<const local_ordinal_type>& ColIndicesU = Uindices[row_k];
+      Teuchos::ArrayView<const scalar_type>& ColValuesU = Ucoefs[row_k];
       Tsize_t ColNnzU = ColIndicesU.size();
 
       for(Tsize_t j=0; j<ColNnzU; ++j) {
         if (ColIndicesU[j] > row_k) {
-          Scalar tmp = multiplier * ColValuesU[j];
-          LocalOrdinal col_j = ColIndicesU[j];
+          scalar_type tmp = multiplier * ColValuesU[j];
+          local_ordinal_type col_j = ColIndicesU[j];
           if (pattern[col_j] != UNUSED) {
             cur_row[col_j] -= tmp;
           }
@@ -646,7 +648,7 @@ void ILUT<MatrixType>::compute() {
 
     Tsize_t U_vals_heaplen = 0;
     for(Tsize_t j=1; j<U_cols.size(); ++j) {
-      LocalOrdinal col = U_cols[j];
+      local_ordinal_type col = U_cols[j];
       if (pattern[col] != ORIG) {
         if (U_vals_heaplen < fillU) {
           add_to_heap(col, U_vals_heap, U_vals_heaplen, vals_comp);
@@ -722,9 +724,9 @@ void ILUT<MatrixType>::apply(
 
   // If X and Y are pointing to the same memory location,
   // we need to create an auxiliary vector, Xcopy
-  Teuchos::RCP< const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xcopy;
+  Teuchos::RCP< const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Xcopy;
   if (X.getLocalMV().getValues() == Y.getLocalMV().getValues())
-    Xcopy = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(X) );
+    Xcopy = Teuchos::rcp( new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(X) );
   else
     Xcopy = Teuchos::rcp( &X, false );
 

@@ -103,16 +103,16 @@ public:
 
 
   //! The type of the magnitude (absolute value) of a matrix entry.
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+  typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
   //! Preserved only for backwards compatibility.  Please use "magnitude_type".
-  TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
   // \name Constructors and Destructors
   //@{
 
   //! ILUT explicit constuctor with Tpetra::RowMatrix input.
-  explicit ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A);
+  explicit ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &A);
 
   //! ILUT Destructor
   virtual ~ILUT();
@@ -169,17 +169,17 @@ public:
     Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing result.
   */
   void apply(
-      const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-            Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+      const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
             Teuchos::ETransp mode = Teuchos::NO_TRANS,
-               Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-               Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+               scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+               scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Tpetra::Map representing the domain of this operator.
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getDomainMap() const;
+  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getDomainMap() const;
 
   //! Tpetra::Map representing the range of this operator.
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getRangeMap() const;
+  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getRangeMap() const;
 
   //! Whether this object's apply() method can apply the transpose (or conjugate transpose, if applicable).
   bool hasTransposeApply() const;
@@ -191,9 +191,9 @@ public:
 
   //! Computes the estimated condition number and returns the value.
   magnitude_type computeCondEst(CondestType CT = Cheap,
-                               LocalOrdinal MaxIters = 1550,
+                               local_ordinal_type MaxIters = 1550,
                                magnitude_type Tol = 1e-9,
-                               const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &Matrix_in = Teuchos::null);
+                               const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &Matrix_in = Teuchos::null);
 
   //! Returns the computed estimated condition number, or -1.0 if no computed.
   magnitude_type getCondEst() const { return Condest_; }
@@ -202,7 +202,7 @@ public:
   const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
 
   //! Returns a reference to the matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getMatrix() const;
+  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > getMatrix() const;
 
   //! Returns a reference to the L factor.
   const Teuchos::RCP<const MatrixType> getL() const { return L_; }
@@ -287,7 +287,7 @@ private:
   // @{ Internal data and parameters
 
   //! reference to the matrix to be preconditioned.
-  const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
+  const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > A_;
   //! Reference to the communicator object.
   const Teuchos::RCP<const Teuchos::Comm<int> > Comm_;
   //! L factor
@@ -324,7 +324,7 @@ private:
   //! Used for timing purposes
   mutable Teuchos::Time Time_;
   //! Number of local rows.
-  LocalOrdinal NumMyRows_;
+  local_ordinal_type NumMyRows_;
   //! Global number of nonzeros in L and U factors
   global_size_t NumGlobalNonzeros_;
 
