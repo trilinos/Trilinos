@@ -172,6 +172,8 @@ namespace panzer {
     void writeVolumeGraphvizDependencyFiles(std::string filename_prefix,
 					    const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks) const;
 
+    void writeBCGraphvizDependencyFiles(std::string filename_prefix) const;
+
   private:
     /** Build the BC field managers. This is the real deal, it correclty handles not having an equation set factory.
       */

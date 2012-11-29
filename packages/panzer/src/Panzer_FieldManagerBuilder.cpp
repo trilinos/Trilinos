@@ -240,11 +240,35 @@ void panzer::FieldManagerBuilder::
 writeVolumeGraphvizDependencyFiles(std::string filename_prefix,
 				   const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks) const
 {  
+  if(phx_volume_field_managers_.size()<1)
+    return; // nothing to see here folks
+
+  TEUCHOS_ASSERT(phx_volume_field_managers_.size()==physicsBlocks.size());
+
   std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator blkItr;
   int index = 0;
   for (blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr,++index) {
     std::string blockId = (*blkItr)->elementBlockID();
     phx_volume_field_managers_[index]->writeGraphvizFile(filename_prefix+blockId);
+  }
+
+}
+
+//=======================================================================
+//=======================================================================
+void panzer::FieldManagerBuilder::
+writeBCGraphvizDependencyFiles(std::string filename_prefix) const
+{  
+  typedef std::map<panzer::BC,std::map<unsigned,PHX::FieldManager<panzer::Traits> >,panzer::LessBC> FMMap;
+
+  FMMap::const_iterator blkItr;
+  for (blkItr=bc_field_managers_.begin();blkItr!=bc_field_managers_.end();++blkItr) {
+    panzer::BC bc = blkItr->first;
+    const PHX::FieldManager<panzer::Traits> & fm = blkItr->second.begin()->second; // get the first field manager 
+
+    std::string blockId = bc.elementBlockID();
+    std::string sideId = bc.sidesetID();
+    fm.writeGraphvizFile(filename_prefix+blockId+"_"+sideId);
   }
 
 }

@@ -659,6 +659,11 @@ buildResponseEvaluators(
    else
      fmb2_->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory_,user_data);
 
+   if(write_graphviz_file) {
+     fmb2_->writeVolumeGraphvizDependencyFiles("Response_Volume_"+graphviz_file_prefix,requiredVolPhysicsBlocks);
+     fmb2_->writeBCGraphvizDependencyFiles("Response_Surface_"+graphviz_file_prefix);
+   }
+
    // fourth build assembly engine from FMB
    ////////////////////////////////////////////////////////////////////////////////
 
