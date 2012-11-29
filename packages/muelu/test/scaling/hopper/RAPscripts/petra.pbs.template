@@ -1,0 +1,46 @@
+#PBS -q regular
+#PBS -l mppwidth=_CORES_
+#PBS -l walltime=00:09:00
+#PBS -N laplace2D__CORES_
+#PBS -e screen.err.$PBS_JOBID
+#PBS -o screen.out.$PBS_JOBID
+#PBS -V
+#PBS -A m1327
+#PBS -S /bin/bash
+
+## #PBS -m e
+## #PBS -M jhu@sandia.gov
+
+cd $PBS_O_WORKDIR
+
+NumRuns=1
+CMS_EXEC=./MueLu_RAPScalingTest_UsingCMSMMM.exe*
+ML_EXEC=./MueLu_RAPScalingTest_UsingMLMMM.exe
+
+echo ""
+echo "==========================================="
+echo "Start Time: " `date`
+echo "==========================================="
+
+for ((ii=1;ii<${NumRuns}+1;ii++)); do
+  echo "---- run ${ii} of ${NumRuns} ----"
+
+  #CMS improvements
+  myRunCommand="aprun -ss -cc numa_node -n _CORES_ ${CMS_EXEC} --nx=_NX_ --ny=_NX_ --matrixType=_MTYPE_ --linAlgebra=Epetra --nraps=_NMULT_"
+  echo ${myRunCommand}
+  epfile="screen_${ii}.cms"
+  ${myRunCommand} > ${epfile}
+  #${myRunCommand} > screen.epetra
+
+  #ML MMM
+  myRunCommand="aprun -ss -cc numa_node -n _CORES_ ${ML_EXEC} --nx=_NX_ --ny=_NX_ --matrixType=_MTYPE_ --linAlgebra=Epetra --nraps=_NMULT_"
+  echo ${myRunCommand}
+  tpfile="screen_${ii}.ml"
+  ${myRunCommand} > ${tpfile}
+  #${myRunCommand} > screen.tpetra
+  #compareTE.sh -a ${epfile} ${tpfile} > screen_${ii}.compare
+done
+
+echo "==========================================="
+echo "Stop Time: " `date`
+echo "==========================================="
