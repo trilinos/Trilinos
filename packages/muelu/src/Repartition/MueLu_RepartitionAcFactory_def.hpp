@@ -60,9 +60,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RepartitionAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    Input(fineLevel, "A");
     Input(coarseLevel, "P");
-    Input(coarseLevel, "R"); //TODO: must be requested according to the implicitTranspose flag
     coarseLevel.DeclareInput("A", GetFactory("P").get(), this); //FIXME hack
     coarseLevel.DeclareInput("Importer", GetFactory("R").get(), this); //FIXME hack, could result in redundant work...
   }
@@ -71,16 +69,8 @@ namespace MueLu {
   void RepartitionAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Computing Ac", coarseLevel);
 
-    //
-    // Inputs: A, P
-    //
-
-    RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel, "A");
     RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
 
-    //
-    // Build Ac = RAP
-    //
     RCP<Matrix> Ac;
 
     if ( coarseLevel.IsAvailable("A",GetFactory("P").get()) && coarseLevel.IsAvailable("Importer",GetFactory("R").get()) ) {
@@ -96,6 +86,7 @@ namespace MueLu {
       RCP<const Import> permImporter = coarseLevel.Get< RCP<const Import> >("Importer",GetFactory("R").get());
       crsMtx->doImport(*origMtx, *permImporter,Xpetra::INSERT);
       crsMtx = Teuchos::null;
+
       //TODO add plausibility check
 
       newAc->fillComplete(P->getDomainMap(), P->getDomainMap());
