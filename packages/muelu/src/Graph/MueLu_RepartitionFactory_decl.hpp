@@ -174,7 +174,7 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#endif //ifdef HAVE_MPI
-
 #define MUELU_REPARTITIONFACTORY_SHORT
+
+#endif //ifdef HAVE_MPI
 #endif // MUELU_REPARTITIONFACTORY_DECL_HPP

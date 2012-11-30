@@ -9,10 +9,10 @@ namespace MueLu {
   class ZoltanInterface;
 }
 
-#endif
-
 #ifndef MUELU_ZOLTANINTERFACE_SHORT
 #define MUELU_ZOLTANINTERFACE_SHORT
-#endif
+#endif // MUELU_ZOLTANINTERFACE_SHORT
+
+#endif // HAVE_MUELU_ZOLTAN && HAVE_MPI
 
 #endif // MUELU_ZOLTANINTERFACE_FWD_HPP

@@ -795,5 +795,4 @@ namespace MueLu {
 
 #endif //ifdef HAVE_MPI
 
-#define MUELU_REPARTITIONFACTORY_SHORT
 #endif // MUELU_REPARTITIONFACTORY_DEF_HPP

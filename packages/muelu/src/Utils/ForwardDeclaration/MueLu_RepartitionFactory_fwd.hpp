@@ -54,10 +54,10 @@ namespace MueLu {
   class RepartitionFactory;
 }
 
-#endif
-
 #ifndef MUELU_REPARTITIONFACTORY_SHORT
 #define MUELU_REPARTITIONFACTORY_SHORT
-#endif
+#endif // MUELU_REPARTITIONFACTORY_SHORT
+
+#endif // HAVE_MPI
 
 #endif // MUELU_REPARTITIONFACTORY_FWD_HPP
