@@ -81,10 +81,10 @@
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
-#include "MueLu_PermutedTransferFactory.hpp"
+#include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
-#include "MueLu_RepartitionAcFactory.hpp"
+#include "MueLu_RebalanceAcFactory.hpp"
 
 // Belos
 #ifdef HAVE_MUELU_BELOS
@@ -397,18 +397,18 @@ int main(int argc, char *argv[]) {
         RepartitionFact->SetFactory("Partition", ZoltanFact);
 
         // Reordering of the transfer operators
-        RCP<Factory> permPFact = rcp(new PermutedTransferFactory(MueLu::INTERPOLATION));
+        RCP<Factory> permPFact = rcp(new RebalanceTransferFactory(MueLu::INTERPOLATION));
         permPFact->SetFactory("A", AFact);
         permPFact->SetFactory("P", PFact);
 
-        RCP<Factory> permRFact = rcp(new PermutedTransferFactory(MueLu::RESTRICTION));
+        RCP<Factory> permRFact = rcp(new RebalanceTransferFactory(MueLu::RESTRICTION));
         permRFact->SetFactory("A", AFact);
         permRFact->SetFactory("R", RFact);
         permRFact->SetFactory("Coordinates", TransferCoordinatesFact);
         permRFact->SetFactory("Nullspace", M.GetFactory("Ptent")); // TODO
 
         // Compute Ac from permuted P and R
-        RCP<Factory> permAFact = rcp(new RepartitionAcFactory());
+        RCP<Factory> permAFact = rcp(new RebalanceAcFactory());
         permAFact->setVerbLevel(Teuchos::VERB_HIGH);
         permAFact->SetFactory("A", AFact);
 

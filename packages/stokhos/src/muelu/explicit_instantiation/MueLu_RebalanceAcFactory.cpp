@@ -43,16 +43,18 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_REPARTITIONACFACTORY_FWD_HPP
-#define MUELU_REPARTITIONACFACTORY_FWD_HPP
+#include "MueLu_ExplicitInstantiation.hpp"
+#include "Stokhos_ConfigDefs.h"
 
-namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class RepartitionAcFactory;
-}
+#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
 
-#ifndef MUELU_REPARTITIONACFACTORY_SHORT
-#define MUELU_REPARTITIONACFACTORY_SHORT
+// Sacado headers must be included first so that overloaded operators
+// are defined in the muelu template code
+#include "Stokhos_Sacado.hpp"
+#include "MueLu_RebalanceAcFactory_def.hpp"
+
+typedef Stokhos::StandardStorage<int,double> Storage;
+typedef Sacado::PCE::OrthogPoly<double,Storage> pce_type;
+template class MueLu::RebalanceAcFactory<pce_type, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+
 #endif
-
-#endif // MUELU_REPARTITIONACFACTORY_FWD_HPP

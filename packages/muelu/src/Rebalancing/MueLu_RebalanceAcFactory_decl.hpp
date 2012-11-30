@@ -43,27 +43,63 @@
 // ***********************************************************************
 //
 // @HEADER
-#include "MueLu_ExplicitInstantiation.hpp"
+#ifndef MUELU_REBALANCEACFACTORY_DECL_HPP
+#define MUELU_REBALANCEACFACTORY_DECL_HPP
 
-#include "MueLu_PermutedTransferFactory_def.hpp"
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_CrsMatrix_fwd.hpp>
+#include <Xpetra_CrsMatrixWrap_fwd.hpp>
+#include <Xpetra_MatrixFactory_fwd.hpp>
+#include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_VectorFactory_fwd.hpp>
 
-#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
-template class MueLu::PermutedTransferFactory<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
-#endif
+#include "MueLu_ConfigDefs.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp"
+#include "MueLu_RebalanceAcFactory_fwd.hpp"
 
-#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
-# ifdef HAVE_TEUCHOS_LONG_LONG_INT
-template class MueLu::PermutedTransferFactory<double, int, long long int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
-# else
-# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
-# endif
-#endif
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_RAPFactory_fwd.hpp"
+#include "MueLu_FactoryBase_fwd.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
-#ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
-# ifdef HAVE_TEUCHOS_COMPLEX
-#include <complex>
-template class MueLu::PermutedTransferFactory<std::complex<double>, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
-# else
-# warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
-# endif
-#endif
+// MPI helper
+#define sumAll(rcpComm, in, out)                                        \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
+
+namespace MueLu {
+  /*!
+    @class RebalanceAcFactory
+    @brief Factory for building coarse matrices.
+  */
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
+  class RebalanceAcFactory : public TwoLevelFactoryBase {
+#undef MUELU_REBALANCEACFACTORY_SHORT
+#include "MueLu_UseShortNames.hpp"
+
+  public:
+    //! @name Constructors/Destructors.
+    //@{
+
+    RebalanceAcFactory() { }
+
+    virtual ~RebalanceAcFactory() { }
+    //@}
+
+    //! @name Input
+    //@{
+
+    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+
+    //@}
+
+    //! @name Build methods.
+    //@{
+    void Build(Level &fineLevel, Level &coarseLevel) const;
+    //@}
+
+  }; //class RebalanceAcFactory
+
+} //namespace MueLu
+
+#define MUELU_REBALANCEACFACTORY_SHORT
+#endif // MUELU_REBALANCEACFACTORY_DECL_HPP

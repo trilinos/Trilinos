@@ -16,7 +16,7 @@ PgPFactory
 PreDropFunctionConstVal
 RAPFactory
 BlockedRAPFactory
-RepartitionAcFactory
+RebalanceAcFactory
 SaPFactory
 SmootherFactory
 SmootherPrototype
@@ -28,13 +28,13 @@ TrilinosSmoother
 DemoFactory
 MLParameterListInterpreter
 #AggregationExportFactory
-RepartitionFactory
+#RepartitionFactory
 BlockedPFactory
 SubBlockAFactory
 BlockedGaussSeidelSmoother
 BraessSarazinSmoother
 AggregationExportFactory
-PermutedTransferFactory
+RebalanceTransferFactory
 MultiVectorTransferFactory
 MapTransferFactory
 SchurComplementFactory

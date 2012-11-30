@@ -42,8 +42,8 @@ typedef MueLu::RAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RA
 typedef MueLu::BlockedRAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> BlockedRAPFactory;
 #endif
 
-#ifdef MUELU_REPARTITIONACFACTORY_SHORT
-typedef MueLu::RepartitionAcFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RepartitionAcFactory;
+#ifdef MUELU_REBALANCEACFACTORY_SHORT
+typedef MueLu::RebalanceAcFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RebalanceAcFactory;
 #endif
 
 #ifdef MUELU_SMOOTHERPROTOTYPE_SHORT
@@ -166,8 +166,8 @@ typedef MueLu::MultiVectorTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 typedef MueLu::MapTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MapTransferFactory;
 #endif
 
-#ifdef MUELU_PERMUTEDTRANSFERFACTORY_SHORT
-typedef MueLu::PermutedTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PermutedTransferFactory;
+#ifdef MUELU_REBALANCETRANSFERFACTORY_SHORT
+typedef MueLu::RebalanceTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RebalanceTransferFactory;
 #endif
 
 #ifdef MUELU_AMALGAMATIONFACTORY_SHORT

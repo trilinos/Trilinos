@@ -43,63 +43,27 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_REPARTITIONACFACTORY_DECL_HPP
-#define MUELU_REPARTITIONACFACTORY_DECL_HPP
+#include "MueLu_ExplicitInstantiation.hpp"
 
-#include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_CrsMatrix_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
-#include <Xpetra_MatrixFactory_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
+#include "MueLu_RebalanceAcFactory_def.hpp"
 
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_TwoLevelFactoryBase.hpp"
-#include "MueLu_RepartitionAcFactory_fwd.hpp"
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
+template class MueLu::RebalanceAcFactory<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+#endif
 
-#include "MueLu_Level_fwd.hpp"
-#include "MueLu_RAPFactory_fwd.hpp"
-#include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
+# ifdef HAVE_TEUCHOS_LONG_LONG_INT
+template class MueLu::RebalanceAcFactory<double, int, long long int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+# else
+# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
+# endif
+#endif
 
-// MPI helper
-#define sumAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
-
-namespace MueLu {
-  /*!
-    @class RepartitionAcFactory
-    @brief Factory for building coarse matrices.
-  */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
-  class RepartitionAcFactory : public TwoLevelFactoryBase {
-#undef MUELU_REPARTITIONACFACTORY_SHORT
-#include "MueLu_UseShortNames.hpp"
-
-  public:
-    //! @name Constructors/Destructors.
-    //@{
-
-    RepartitionAcFactory() { }
-
-    virtual ~RepartitionAcFactory() { }
-    //@}
-
-    //! @name Input
-    //@{
-
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
-
-    //@}
-
-    //! @name Build methods.
-    //@{
-    void Build(Level &fineLevel, Level &coarseLevel) const;
-    //@}
-
-  }; //class RepartitionAcFactory
-
-} //namespace MueLu
-
-#define MUELU_REPARTITIONACFACTORY_SHORT
-#endif // MUELU_REPARTITIONACFACTORY_DECL_HPP
+#ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
+# ifdef HAVE_TEUCHOS_COMPLEX
+#include <complex>
+template class MueLu::RebalanceAcFactory<std::complex<double>, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+# else
+# warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
+# endif
+#endif

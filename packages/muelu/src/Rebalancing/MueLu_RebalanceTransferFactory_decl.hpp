@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_PERMUTEDTRANSFER_FACTORY_DECL_HPP
-#define MUELU_PERMUTEDTRANSFER_FACTORY_DECL_HPP
+#ifndef MUELU_REBALANCETRANSFERFACTORY_DECL_HPP
+#define MUELU_REBALANCETRANSFERFACTORY_DECL_HPP
 
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
@@ -57,21 +57,21 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
-#include "MueLu_PermutedTransferFactory_fwd.hpp"
+#include "MueLu_RebalanceTransferFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 #include "MueLu_Types.hpp"
 
 namespace MueLu {
 
   /*!
-    @class PermutedTransferFactory class.
+    @class RebalanceTransferFactory class.
     @brief Applies permutation to grid transfer operators.
     @ingroup MueLuTransferClasses
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class PermutedTransferFactory : public TwoLevelFactoryBase {
-#undef MUELU_PERMUTEDTRANSFERFACTORY_SHORT
+  class RebalanceTransferFactory : public TwoLevelFactoryBase {
+#undef MUELU_REBALANCETRANSFERFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -79,10 +79,10 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    PermutedTransferFactory(TransferType PorR = MueLu::INTERPOLATION) : PorR_(PorR) { }
+    RebalanceTransferFactory(TransferType PorR = MueLu::INTERPOLATION) : PorR_(PorR) { }
 
     //! Destructor.
-    virtual ~PermutedTransferFactory() { }
+    virtual ~RebalanceTransferFactory() { }
 
     //@}
 
@@ -122,9 +122,9 @@ namespace MueLu {
     //! Factory that builds the unpermuted coordinates.
     RCP<const FactoryBase> coordinateFact_;
     */
-  }; // class PermutedTransferFactory
+  }; // class RebalanceTransferFactory
 
 } // namespace MueLu
 
-#define MUELU_PERMUTEDTRANSFERFACTORY_SHORT
-#endif // MUELU_PERMUTEDTRANSFER_FACTORY_DECL_HPP
+#define MUELU_REBALANCETRANSFERFACTORY_SHORT
+#endif // MUELU_REBALANCETRANSFERFACTORY_DECL_HPP

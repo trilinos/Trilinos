@@ -66,7 +66,7 @@
 #include "MueLu_AmalgamationFactory.hpp" //TMP
 #include "MueLu_CoalesceDropFactory.hpp" //TMP
 #include "MueLu_RAPFactory.hpp" //TMP
-#include "MueLu_RepartitionAcFactory.hpp" //TMP
+#include "MueLu_RebalanceAcFactory.hpp" //TMP
 #include "MueLu_TransPFactory.hpp" //TMP
 #include "MueLu_GenericRFactory.hpp" //TMP
 #include "MueLu_SaPFactory.hpp" //TMP
@@ -78,7 +78,7 @@
 #include "MueLu_DirectSolver.hpp" //TMP
 #include "MueLu_Exceptions.hpp" //TMP
 #include "MueLu_MultiVectorTransferFactory.hpp"
-#include "MueLu_PermutedTransferFactory.hpp"
+#include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 
@@ -137,8 +137,8 @@ namespace MueLu {
       if (factoryName == "RAPFactory") {
         return BuildRAPFactory(paramList, factoryMapIn);
       }
-      if (factoryName == "RepartitionAcFactory") {
-        return BuildRepartitionAcFactory(paramList, factoryMapIn);
+      if (factoryName == "RebalanceAcFactory") {
+        return BuildRebalanceAcFactory(paramList, factoryMapIn);
       }
       if (factoryName == "UCAggregationFactory") {
         return BuildUCAggregationFactory(paramList, factoryMapIn);
@@ -167,8 +167,8 @@ namespace MueLu {
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a RepartitionFactory object: HAVE_MPI == false.");
 #endif // HAVE_MPI
       }
-      if (factoryName == "PermutedTransferFactory") {
-        return BuildPermutedTransferFactory(paramList, factoryMapIn);
+      if (factoryName == "RebalanceTransferFactory") {
+        return BuildRebalanceTransferFactory(paramList, factoryMapIn);
       }
 
       // Use a user defined factories (in <Factories> node)
@@ -298,14 +298,14 @@ namespace MueLu {
       return factory;
     }
 
-    //! RepartitionAcFactory
-    RCP<FactoryBase> BuildRepartitionAcFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
+    //! RebalanceAcFactory
+    RCP<FactoryBase> BuildRebalanceAcFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       if (paramList.begin() == paramList.end()) // short-circuit. Use default parameters of constructor
-        return rcp(new RepartitionAcFactory());
+        return rcp(new RebalanceAcFactory());
 
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "RepartitionAcFactory", Exceptions::RuntimeError, "");
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "RebalanceAcFactory", Exceptions::RuntimeError, "");
 
-      RCP<RepartitionAcFactory> factory = rcp(new RepartitionAcFactory());
+      RCP<RebalanceAcFactory> factory = rcp(new RebalanceAcFactory());
       MUELU_FACTORY_PARAM2("P"); //TODO
       MUELU_FACTORY_PARAM2("R");
       MUELU_FACTORY_PARAM2("A");
@@ -432,18 +432,18 @@ namespace MueLu {
     }
 #endif
 
-    RCP<FactoryBase> BuildPermutedTransferFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "PermutedTransferFactory", Exceptions::RuntimeError, "");
+    RCP<FactoryBase> BuildRebalanceTransferFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "RebalanceTransferFactory", Exceptions::RuntimeError, "");
 
       std::string type; type = paramList.get<std::string>("type");
       if (type == "Interpolation") {
-        RCP<Factory> factory = rcp(new PermutedTransferFactory(MueLu::INTERPOLATION));
+        RCP<Factory> factory = rcp(new RebalanceTransferFactory(MueLu::INTERPOLATION));
         MUELU_FACTORY_PARAM2("Importer");
         MUELU_FACTORY_PARAM2("A");
         MUELU_FACTORY_PARAM2("P");
         return factory;
       } else if (type == "Restriction") {
-        RCP<Factory> factory = rcp(new PermutedTransferFactory(MueLu::RESTRICTION));
+        RCP<Factory> factory = rcp(new RebalanceTransferFactory(MueLu::RESTRICTION));
         MUELU_FACTORY_PARAM2("Importer");
         MUELU_FACTORY_PARAM2("A");
         MUELU_FACTORY_PARAM2("R");

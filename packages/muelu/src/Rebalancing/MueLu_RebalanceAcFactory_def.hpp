@@ -43,15 +43,15 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_REPARTITIONACFACTORY_DEF_HPP
-#define MUELU_REPARTITIONACFACTORY_DEF_HPP
+#ifndef MUELU_REBALANCEACFACTORY_DEF_HPP
+#define MUELU_REBALANCEACFACTORY_DEF_HPP
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 
-#include "MueLu_RepartitionAcFactory_decl.hpp"
+#include "MueLu_RebalanceAcFactory_decl.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
@@ -59,14 +59,14 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RepartitionAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     Input(coarseLevel, "A"); // input A == before rebalancing
     Input(coarseLevel, "P");
     Input(coarseLevel, "Importer");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RepartitionAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
+  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Computing Ac", coarseLevel);
 
     RCP<Matrix> originalAc = Get< RCP<Matrix> >(coarseLevel, "A");
@@ -106,5 +106,4 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#define MUELU_REPARTITIONACFACTORY_SHORT
-#endif // MUELU_REPARTITIONACFACTORY_DEF_HPP
+#endif // MUELU_REBALANCEACFACTORY_DEF_HPP

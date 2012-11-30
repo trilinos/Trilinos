@@ -8,7 +8,7 @@ GenericRFactory
 TransPFactory
 RAPFactory
 BlockedRAPFactory
-RepartitionAcFactory
+RebalanceAcFactory
 SmootherPrototype
 FakeSmootherPrototype
 SmootherBase
@@ -39,7 +39,7 @@ BraessSarazinSmoother
 AggregationExportFactory
 MultiVectorTransferFactory
 MapTransferFactory
-PermutedTransferFactory
+RebalanceTransferFactory
 AmalgamationFactory
 CoarseMapFactory
 BlockedCoarseMapFactory

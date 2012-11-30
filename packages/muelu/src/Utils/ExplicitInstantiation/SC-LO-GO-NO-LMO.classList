@@ -17,7 +17,7 @@ PgPFactory
 PreDropFunctionConstVal
 RAPFactory
 BlockedRAPFactory
-RepartitionAcFactory
+RebalanceAcFactory
 SaPFactory
 SmootherFactory
 SmootherPrototype
@@ -33,7 +33,7 @@ SubBlockAFactory
 BlockedGaussSeidelSmoother
 BraessSarazinSmoother
 AggregationExportFactory
-PermutedTransferFactory
+RebalanceTransferFactory
 MultiVectorTransferFactory
 MapTransferFactory
 SchurComplementFactory

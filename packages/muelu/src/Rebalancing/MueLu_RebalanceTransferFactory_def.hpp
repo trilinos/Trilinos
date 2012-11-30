@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_PERMUTEDTRANSFER_FACTORY_DEF_HPP
-#define MUELU_PERMUTEDTRANSFER_FACTORY_DEF_HPP
+#ifndef MUELU_REBALANCETRANSFERFACTORY_DEF_HPP
+#define MUELU_REBALANCETRANSFERFACTORY_DEF_HPP
 
 #include "Xpetra_Vector.hpp"
 #include "Xpetra_VectorFactory.hpp"
@@ -55,7 +55,7 @@
 #include <Xpetra_Import.hpp>
 #include <Xpetra_ImportFactory.hpp>
 
-#include "MueLu_PermutedTransferFactory_decl.hpp"
+#include "MueLu_RebalanceTransferFactory_decl.hpp"
 #include "MueLu_Utilities.hpp"
 
 #include "MueLu_Level.hpp"
@@ -64,7 +64,7 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PermutedTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     Input(coarseLevel, "A");
     if (PorR_ == MueLu::INTERPOLATION) {
       Input(coarseLevel, "P");
@@ -88,7 +88,7 @@ namespace MueLu {
   //-----------------------------------------------------------------------------------------------------
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PermutedTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
+  void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     RCP<const Import> rebalanceImporter;
@@ -233,5 +233,4 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#define MUELU_PERMUTEDTRANSFER_FACTORY_SHORT
-#endif // MUELU_PERMUTEDTRANSFER_FACTORY_DEF_HPP
+#endif // MUELU_REBALANCETRANSFERFACTORY_DEF_HPP
