@@ -7,8 +7,10 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING)
   GET_FILENAME_COMPONENT(Trilinos_SOURCE_PATH ${Trilinos_SOURCE_DIR} PATH)
 
   # Automatically update the version file for sierra
-  TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE("Trilinos" "."
-    ${Trilinos_SOURCE_DIR}/SIERRA/bjam/config_headers/${PROJECT_NAME}_version.h)
+  IF (NOT MSVC)
+    TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE("Trilinos" "."
+      ${Trilinos_SOURCE_DIR}/SIERRA/bjam/config_headers/${PROJECT_NAME}_version.h)
+  ENDIF()
 
   SET(CPACK_SOURCE_IGNORE_FILES
     ${CPACK_SOURCE_IGNORE_FILES}
