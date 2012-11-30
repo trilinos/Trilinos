@@ -60,7 +60,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RepartitionAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    Input(coarseLevel, "A");
+    Input(coarseLevel, "A"); // input A == before rebalancing
     Input(coarseLevel, "P");
     Input(coarseLevel, "Importer");
   }
@@ -69,39 +69,38 @@ namespace MueLu {
   void RepartitionAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Computing Ac", coarseLevel);
 
-    RCP<Matrix> Ac = Get< RCP<Matrix> >(coarseLevel, "A");
+    RCP<Matrix> originalAc = Get< RCP<Matrix> >(coarseLevel, "A");
 
     if (IsAvailable(coarseLevel, "Importer")) {
-      SubFactoryMonitor subM(*this, "Rebalancing existing Ac", coarseLevel);
 
-      RCP<Matrix> P  = Get< RCP<Matrix> >(coarseLevel, "P");
+      RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
+      RCP<Matrix> rebalancedAc;
 
-      RCP<Matrix> newAc = MatrixFactory::Build(P->getDomainMap(), Ac->getGlobalMaxNumRowEntries());
-      RCP<CrsMatrixWrap> crsOp = rcp_dynamic_cast<CrsMatrixWrap>(newAc);
-      RCP<CrsMatrix> crsMtx = crsOp->getCrsMatrix();
-      RCP<CrsMatrixWrap> origOp = rcp_dynamic_cast<CrsMatrixWrap>(Ac);
-      RCP<CrsMatrix> origMtx = origOp->getCrsMatrix();
-      RCP<const Import> permImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
-      crsMtx->doImport(*origMtx, *permImporter,Xpetra::INSERT);
-      crsMtx = Teuchos::null;
+      {
+        SubFactoryMonitor subM(*this, "Rebalancing existing Ac", coarseLevel);
 
-      //TODO add plausibility check
+        rebalancedAc = MatrixFactory::Build(P->getDomainMap(), originalAc->getGlobalMaxNumRowEntries());
 
-      newAc->fillComplete(P->getDomainMap(), P->getDomainMap());
-      Ac = newAc;  // TODO: rename variables to avoid this swap operation
+        RCP<const Import> rebalanceImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
+        rebalancedAc->doImport(*originalAc, *rebalanceImporter, Xpetra::INSERT);
+        rebalancedAc->fillComplete(P->getDomainMap(), P->getDomainMap());
 
-      GetOStream(Statistics0, 0) << RAPFactory::PrintMatrixInfo(*Ac, "Ac (rebalanced)");
-      GetOStream(Statistics0, 0) << RAPFactory::PrintLoadBalancingInfo(*Ac, "Ac (rebalanced)");
+        Set(coarseLevel, "A", rebalancedAc);
+
+      }
+
+      GetOStream(Statistics0, 0) << RAPFactory::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)");
+      GetOStream(Statistics0, 0) << RAPFactory::PrintLoadBalancingInfo(*rebalancedAc, "Ac (rebalanced)");
 
     } else {
 
       // Ac already built by the load balancing process and no load balancing needed
-      GetOStream(Warnings0, 0) << "No repartitioning" << std::endl;
+      GetOStream(Warnings0, 0) << "No rebalancing" << std::endl;
       GetOStream(Warnings0, 0) <<  "Jamming A into Level " << coarseLevel.GetLevelID() << " w/ generating factory "
                                << this << std::endl;
-    }
 
-    Set(coarseLevel, "A", Ac);
+      Set(coarseLevel, "A", originalAc);
+    }
 
   } //Build()
 
