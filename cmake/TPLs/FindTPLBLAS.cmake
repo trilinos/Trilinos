@@ -53,6 +53,15 @@
 # ************************************************************************
 # @HEADER
 
+IF (MSVC AND NOT TPL_BLAS_LIBRARIES)
+  # find the CLAPACK built by CMake on the machine for MSVC
+  # if found it will set the BLAS and LAPACK libraries
+  FIND_PACKAGE(CLAPACK 3.2.1 NO_MODULE)
+  IF (CLAPACK_FOUND)
+    SET(TPL_BLAS_LIBRARIES blas CACHE INTERNAL "")
+  ENDIF()
+ENDIF()
+
 INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( BLAS

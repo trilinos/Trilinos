@@ -53,6 +53,10 @@
 # ************************************************************************
 # @HEADER
 
+IF (MSVC AND NOT TPL_LAPACK_LIBRARIES AND CLAPACK_FOUND)
+  SET(TPL_LAPACK_LIBRARIES lapack CACHE INTERNAL "")
+ENDIF()
+
 INCLUDE(TribitsTplDeclareLibraries)
 
 TRIBITS_TPL_DECLARE_LIBRARIES( LAPACK

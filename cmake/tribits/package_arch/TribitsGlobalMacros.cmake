@@ -1188,17 +1188,11 @@ MACRO(TRIBITS_SETUP_ENV)
 
   # Set up Windows interface stuff
 
-  IF(MSVC)
+  IF (MSVC)
     ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE 
       -D_CRT_NONSTDC_NO_DEPRECATE  -D_SCL_SECURE_NO_WARNINGS)
-    INCLUDE_DIRECTORIES(${${PROJECT_NAME}_TRIBITS_DIR}/common_tools/win_interface/include)
-    # find the CLAPACK built by CMake on the machine for MSVC
-    # if found it will set the BLAS and LAPACK libraries
-    FIND_PACKAGE(CLAPACK 3.2.1 NO_MODULE)
-    IF(CLAPACK_FOUND)
-      SET(TPL_BLAS_LIBRARIES blas CACHE INTERNAL "")
-      SET(TPL_LAPACK_LIBRARIES lapack CACHE INTERNAL "")
-    ENDIF()
+    INCLUDE_DIRECTORIES(
+      ${${PROJECT_NAME}_TRIBITS_DIR}/common_tools/win_interface/include)
   ENDIF()
   
   IF (WIN32 AND NOT CYGWIN)
