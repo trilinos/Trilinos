@@ -398,12 +398,10 @@ int main(int argc, char *argv[]) {
 
         // Reordering of the transfer operators
         RCP<Factory> permPFact = rcp(new PermutedTransferFactory(MueLu::INTERPOLATION));
-        //        permPFact->SetFactory("Importer", RepartitionFact);
         permPFact->SetFactory("A", AFact);
         permPFact->SetFactory("P", PFact);
 
         RCP<Factory> permRFact = rcp(new PermutedTransferFactory(MueLu::RESTRICTION));
-        //        permRFact->SetFactory("Importer", RepartitionFact);
         permRFact->SetFactory("A", AFact);
         permRFact->SetFactory("R", RFact);
         permRFact->SetFactory("Coordinates", TransferCoordinatesFact);

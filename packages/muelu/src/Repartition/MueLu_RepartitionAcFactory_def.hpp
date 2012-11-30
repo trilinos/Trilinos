@@ -61,8 +61,8 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RepartitionAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     Input(coarseLevel, "P");
+    Input(coarseLevel, "Importer");
     coarseLevel.DeclareInput("A", GetFactory("P").get(), this); //FIXME hack
-    coarseLevel.DeclareInput("Importer", GetFactory("R").get(), this); //FIXME hack, could result in redundant work...
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -73,7 +73,7 @@ namespace MueLu {
 
     RCP<Matrix> Ac;
 
-    if ( coarseLevel.IsAvailable("A",GetFactory("P").get()) && coarseLevel.IsAvailable("Importer",GetFactory("R").get()) ) {
+    if ( coarseLevel.IsAvailable("A",GetFactory("P").get()) && IsAvailable(coarseLevel, "Importer") ) {
 
       SubFactoryMonitor subM(*this, "Rebalancing existing Ac", coarseLevel);
 
@@ -83,7 +83,7 @@ namespace MueLu {
       RCP<CrsMatrix> crsMtx = crsOp->getCrsMatrix();
       RCP<CrsMatrixWrap> origOp = rcp_dynamic_cast<CrsMatrixWrap>(Ac);
       RCP<CrsMatrix> origMtx = origOp->getCrsMatrix();
-      RCP<const Import> permImporter = coarseLevel.Get< RCP<const Import> >("Importer",GetFactory("R").get());
+      RCP<const Import> permImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
       crsMtx->doImport(*origMtx, *permImporter,Xpetra::INSERT);
       crsMtx = Teuchos::null;
 

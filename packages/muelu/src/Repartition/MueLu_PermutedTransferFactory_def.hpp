@@ -212,8 +212,6 @@ namespace MueLu {
             //if(originalR->IsView("stridedMaps")) permutedR->CreateView("stridedMaps", originalR);
             ///////////////////////// EXPERIMENTAL
 
-            Set(coarseLevel, "Importer", permImporter);
-
             if (coarseLevel.IsAvailable("Coordinates")) //FIXME JJH
             {
               SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel.GetLevelID());

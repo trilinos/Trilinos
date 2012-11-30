@@ -72,7 +72,6 @@
       <Parameter name="type"               type="string" value="Interpolation"/>
       <Parameter name="A"                  type="string" value="myRAPFact"/>
       <Parameter name="P"                  type="string" value="myProlongatorFact"/>
-      <Parameter name="Importer"   type="string" value="myRepartitionFact"/>
     </ParameterList>
 
     <ParameterList name="myPermutedRestrictionFact">
@@ -82,7 +81,6 @@
       <Parameter name="R"                  type="string" value="myRestrictorFact"/>
       <Parameter name="Coordinates"        type="string" value="myTransferCoordinatesFact"/>
       <Parameter name="Nullspace"          type="string" value="myTentativePFact"/>
-      <Parameter name="Importer"   type="string" value="myRepartitionFact"/>
     </ParameterList>
 
     <ParameterList name="myPermutedAFact">
