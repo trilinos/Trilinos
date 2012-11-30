@@ -1140,7 +1140,7 @@ void Array<T>::insert(iterator position, size_type n, const value_type& x)
   const typename std::vector<T>::iterator raw_poss = raw_position(position);
   vec(true, true).insert(raw_poss, n, x);
 #else
-  return vec_.insert(position, n, x);
+  vec_.insert(position, n, x);
 #endif
 }
 
@@ -1152,7 +1152,7 @@ void Array<T>::insert(iterator position, InputIterator first, InputIterator last
   const typename std::vector<T>::iterator raw_poss = raw_position(position);
   vec(true, true).insert(raw_poss, first, last);
 #else
-  return vec_.insert(position, first, last);
+  vec_.insert(position, first, last);
 #endif
 }
 
