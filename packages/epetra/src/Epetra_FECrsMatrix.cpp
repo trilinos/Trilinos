@@ -942,22 +942,22 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
     if ( colMap_ == NULL ) {
       std::vector<int_type> cols;
 
-    for(size_t i=0; i<nonlocalRows_var.size(); ++i) {
-      for(size_t j=0; j<nonlocalCols_var[i].size(); ++j) {
-        int_type col = nonlocalCols_var[i][j];
-        typename std::vector<int_type>::iterator it =
-           std::lower_bound(cols.begin(), cols.end(), col);
-        if (it == cols.end() || *it != col) {
-          cols.insert(it, col);
+      for(size_t i=0; i<nonlocalRows_var.size(); ++i) {
+        for(size_t j=0; j<nonlocalCols_var[i].size(); ++j) {
+          int_type col = nonlocalCols_var[i][j];
+          typename std::vector<int_type>::iterator it =
+            std::lower_bound(cols.begin(), cols.end(), col);
+          if (it == cols.end() || *it != col) {
+            cols.insert(it, col);
+          }
         }
       }
+
+      int_type* cols_ptr = cols.size() > 0 ? &cols[0] : 0;
+
+      colMap_ = new Epetra_Map((int_type) -1, (int) cols.size(), cols_ptr,
+                               Map().IndexBase(), Map().Comm());
     }
-
-    int_type* cols_ptr = cols.size() > 0 ? &cols[0] : 0;
-
-    colMap_ = new Epetra_Map((int_type) -1, (int) cols.size(), cols_ptr,
-          Map().IndexBase(), Map().Comm());
-
     //now we need to create a matrix with sourceMap and colMap, and fill it with
     //our nonlocal data so we can then export it to the correct owning processors.
 
@@ -972,9 +972,9 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
 
     for(size_t i=0; i<nonlocalRows_var.size(); ++i) {
       EPETRA_CHK_ERR( tempMat->InsertGlobalValues(nonlocalRows_var[i],
-             (int) nonlocalCols_var[i].size(),
-             &nonlocalCoefs_[i][0],
-             &nonlocalCols_var[i][0]) );
+                                                  (int) nonlocalCols_var[i].size(),
+                                                  &nonlocalCoefs_[i][0],
+                                                  &nonlocalCols_var[i][0]) );
     }
 
     if (!save_off_and_reuse_map_exporter) {
@@ -982,7 +982,6 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
       delete colMap_;
       sourceMap_ = colMap_ = NULL;
     }
-  }
 
   //Next we need to make sure the 'indices-are-global' attribute of tempMat's
   //graph is set to true, in case this processor doesn't end up calling the
@@ -1038,14 +1037,14 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
 
   if(RowMap().GlobalIndicesInt())
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-    return GlobalAssemble<int>(domain_map, range_map, callFillComplete, combineMode);
+    return GlobalAssemble<int>(domain_map, range_map, callFillComplete, combineMode, save_off_and_reuse_map_exporter);
 #else
     throw ReportError("Epetra_FECrsMatrix::GlobalAssemble: ERROR, GlobalIndicesInt but no API for it.",-1);
 #endif
 
   if(RowMap().GlobalIndicesLongLong())
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-    return GlobalAssemble<long long>(domain_map, range_map, callFillComplete, combineMode);
+    return GlobalAssemble<long long>(domain_map, range_map, callFillComplete, combineMode, save_off_and_reuse_map_exporter);
 #else
     throw ReportError("Epetra_FECrsMatrix::GlobalAssemble: ERROR, GlobalIndicesLongLong but no API for it.",-1);
 #endif
