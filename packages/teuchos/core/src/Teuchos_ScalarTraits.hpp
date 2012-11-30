@@ -39,18 +39,12 @@
 // ***********************************************************************
 // @HEADER
 
-// Kris
-// 06.18.03 -- Minor formatting changes
-//          -- Changed calls to LAPACK objects to use new <OType, SType> templates
-// 07.08.03 -- Move into Teuchos package/namespace
-// 07.11.03 -- Added ScalarTraits for ARPREC mp_real
-// 07.14.03 -- Fixed int rand() function (was set up to return a floating-point style random number)
-// 07.17.03 -- Added squareroot() function
+// NOTE: Before adding specializations of ScalarTraits, make sure that they do
+// not duplicate specializations already present in PyTrilinos (see
+// packages/PyTrilinos/src/Teuchos_Traits.i)
 
-// NOTE: Before adding specializations of ScalarTraits, make sure that they do not duplicate 
-// specializations already present in PyTrilinos (see packages/PyTrilinos/src/Teuchos_Traits.i)
-
-// NOTE: halfPrecision and doublePrecision are not currently implemented for ARPREC, GMP or the ordinal types (e.g., int, char)
+// NOTE: halfPrecision and doublePrecision are not currently implemented for
+// ARPREC, GMP or the ordinal types (e.g., int, char)
 
 #ifndef _TEUCHOS_SCALARTRAITS_HPP_
 #define _TEUCHOS_SCALARTRAITS_HPP_
@@ -85,6 +79,7 @@ namespace Teuchos {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 
+TEUCHOSCORE_LIB_DLL_EXPORT
 void throwScalarTraitsNanInfError( const std::string &errMsg );
 
 

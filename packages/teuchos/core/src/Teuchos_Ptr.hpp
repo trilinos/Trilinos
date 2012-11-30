@@ -52,7 +52,7 @@ namespace Teuchos {
 
 
 namespace PtrPrivateUtilityPack {
-void throw_null( const std::string &type_name );
+TEUCHOSCORE_LIB_DLL_EXPORT void throw_null( const std::string &type_name );
 } // namespace PtrPrivateUtilityPack
 
 

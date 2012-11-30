@@ -133,7 +133,7 @@ std::string concreteTypeName( const T &t )
 
 #define TEUCHOS_TYPE_NAME_TRAITS_BUILTIN_TYPE_SPECIALIZATION(TYPE) \
 template<> \
-class TEUCHOSCORE_LIB_DLL_EXPORT TypeNameTraits<TYPE> { \
+class TypeNameTraits<TYPE> { \
 public: \
   static std::string name() { return (#TYPE); } \
   static std::string concreteName(const TYPE&) { return name(); } \
