@@ -104,6 +104,8 @@ namespace Iopx {
 
     void release_memory();
 
+    bool needs_shared_node_information() const {return true;}
+
     // Check to see if database state is ok...
     bool ok(bool write_message = false) const;
 
@@ -391,6 +393,7 @@ namespace Iopx {
 
     mutable IntVector   nodeOwningProcessor;   // Processor that owns each node on this processor
     mutable Int64Vector nodeGlobalImplicitMap; // Position of this node in the global-implicit ordering
+    mutable Int64Vector elemGlobalImplicitMap; // Position of this element in the global-implicit ordering
     
     // --- Nodal/Element/Attribute Variable Names -- Maps from sierra
     // field names to index of nodal/element/attribute variable in

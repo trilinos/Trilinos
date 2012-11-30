@@ -471,6 +471,21 @@ namespace {
     transfer_properties(&region, &output_region);
 
     transfer_nodeblock(region, output_region, globals.debug);
+
+#ifdef HAVE_MPI
+    // This also assumes that the node order and count is the same for input
+    // and output regions... (This is checked during nodeset output)
+    if (output_region.get_database()->needs_shared_node_information()) {
+      int rank = 0;
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+      if (globals.ints_64_bit)
+	set_owned_node_count(region, rank, (int64_t)0);
+      else
+	set_owned_node_count(region, rank, (int)0);
+    }
+#endif
+
     transfer_edgeblocks(region, output_region, globals.debug);
     transfer_faceblocks(region, output_region, globals.debug);
     transfer_elementblocks(region, output_region, globals.debug);
@@ -713,20 +728,22 @@ namespace {
       
       transfer_properties(*i, nb);
 
-      // If the "owning_processor" field exists on the input
-      // nodeblock, transfer it and the "ids" field to the output
-      // nodeblock at this time since it is used to determine
-      // per-processor sizes of nodeblocks and nodesets.
-      if ((*i)->field_exists("owning_processor")) {
-	size_t isize = (*i)->get_field("ids").get_size();
-	data.resize(isize);
-	(*i)->get_field_data("ids", &data[0], isize);
-	nb->put_field_data("ids", &data[0], isize);
+      if (output_region.get_database()->needs_shared_node_information()) {
+	// If the "owning_processor" field exists on the input
+	// nodeblock, transfer it and the "ids" field to the output
+	// nodeblock at this time since it is used to determine
+	// per-processor sizes of nodeblocks and nodesets.
+	if ((*i)->field_exists("owning_processor")) {
+	  size_t isize = (*i)->get_field("ids").get_size();
+	  data.resize(isize);
+	  (*i)->get_field_data("ids", &data[0], isize);
+	  nb->put_field_data("ids", &data[0], isize);
 
-	isize = (*i)->get_field("owning_processor").get_size();
-	data.resize(isize);
-	(*i)->get_field_data("owning_processor", &data[0], isize);
-	nb->put_field_data("owning_processor", &data[0], isize);
+	  isize = (*i)->get_field("owning_processor").get_size();
+	  data.resize(isize);
+	  (*i)->get_field_data("owning_processor", &data[0], isize);
+	  nb->put_field_data("owning_processor", &data[0], isize);
+	}
       }
 
       transfer_fields(*i, nb, Ioss::Field::MESH);
@@ -1142,7 +1159,8 @@ namespace {
 	owned = 0;
 	for (size_t n=0; n < ids.size(); n++) {
 	  INT id = ids[n];
-	  owned += data[id-1];
+	  if (data[id-1] == my_processor)
+	    owned++;
 	}
 	ns->property_add(Ioss::Property("locally_owned_count", owned));
       }

@@ -145,7 +145,8 @@ namespace {
 
   template <typename T>
   int MY_Alltoallv(std::vector<T> &sendbuf, const std::vector<int> &sendcnts, const std::vector<int> &senddisp, 
-		   std::vector<T> &recvbuf, const std::vector<int> &recvcnts, const std::vector<int> &recvdisp, MPI_Comm comm)
+		   std::vector<T> &recvbuf, const std::vector<int> &recvcnts, const std::vector<int> &recvdisp,
+		   MPI_Comm comm)
   {
     assert(is_sorted(senddisp));
     assert(is_sorted(recvdisp));
@@ -3062,6 +3063,10 @@ namespace Iopx {
       *processor_offset += rcv_count[i];
     }
     
+    for (size_t i=0; i < global_implicit_map.size(); i++) {
+      global_implicit_map[i] += *processor_offset+1;
+    }
+
     // Now, tell the other processors how many nodes I will be sending
     // them (Nodes they own that I share with them)
     MPI_Alltoall(TOPTR(snd_count), 1, MPI_LONG_LONG,
@@ -3069,17 +3074,45 @@ namespace Iopx {
 
     std::vector<int64_t> snd_offset(snd_count);
     generate_index(snd_offset);
-    std::vector<int64_t> tmp_disp(snd_offset);
-    
-    std::vector<int64_t> send_list(*snd_offset.rbegin() + *snd_count.rbegin());
-    // Now create the list of nodes to send...
-    for (size_t i=0; i < global_implicit_map.size(); i++) {
-      if (owning_proc[i] != myProcessor) {
-	int64_t global_id = node_map.map[i+1];
-	send_list[tmp_disp[owning_proc[i]]++] = global_id;
+    std::vector<int64_t> snd_list(*snd_offset.rbegin() + *snd_count.rbegin());
+
+    {
+      std::vector<int64_t> tmp_disp(snd_offset);
+      // Now create the list of nodes to send...
+      for (size_t i=0; i < global_implicit_map.size(); i++) {
+	if (owning_proc[i] != myProcessor) {
+	  int64_t global_id = node_map.map[i+1];
+	  snd_list[tmp_disp[owning_proc[i]]++] = global_id;
+	}
       }
     }
-    
+
+    std::vector<int64_t> rcv_offset(rcv_count);
+    generate_index(rcv_offset);
+    std::vector<int64_t> rcv_list(*rcv_offset.rbegin() + *rcv_count.rbegin());
+
+    MY_Alltoallv(snd_list, snd_count, snd_offset,
+		 rcv_list, rcv_count, rcv_offset, comm_);
+
+    // Iterate rcv_list and convert global ids to the global-implicit position...
+    for (size_t i=0; i < rcv_list.size(); i++) {
+      int64_t local_id = node_map.global_to_local(rcv_list[i]) - 1;
+      int64_t position = global_implicit_map[local_id];
+      rcv_list[i] = position;
+    }
+
+    // Send the data back now...
+    MY_Alltoallv(rcv_list, rcv_count, rcv_offset,
+		 snd_list, snd_count, snd_offset, comm_);
+
+    // Fill in the remaining portions of the global_implicit_map...
+    std::vector<int64_t> tmp_disp(snd_offset);
+      for (size_t i=0; i < global_implicit_map.size(); i++) {
+	if (owning_proc[i] != myProcessor) {
+	  int64_t implicit = snd_list[tmp_disp[owning_proc[i]]++];
+	  global_implicit_map[i] = implicit;
+	}
+      }
   }
 
 }

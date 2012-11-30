@@ -399,6 +399,14 @@ namespace {
       index += stride;
     }
   }
+
+  template <typename INT>
+  void map_local_to_global_implicit(INT *data, size_t count, const std::vector<int64_t> &global_implicit_map)
+  {
+    for (size_t i=0; i < count; i++) {
+      data[i] = global_implicit_map[data[i]-1];
+    }
+  }
 }
 
 namespace Iopx {
@@ -3638,6 +3646,7 @@ namespace Iopx {
 	    // Another 'const-cast' since we are modifying the database just
 	    // for efficiency; which the client does not see...
 	    handle_node_ids(data, num_to_get, proc_offset, file_count);
+
 	  } else if (field.get_name() == "connectivity") {
 	    // Do nothing, just handles an idiosyncracy of the GroupingEntity
 	  } else if (field.get_name() == "connectivity_raw") {
@@ -3693,7 +3702,17 @@ namespace Iopx {
 	  if (my_element_count > 0) {
 	    // Map element connectivity from global node id to local node id.
 	    int element_nodes = eb->get_property("topology_node_count").get_int();
+
+	    // Maps global to local
 	    nodeMap.reverse_map_data(data, field, num_to_get*element_nodes);
+
+	    // Maps local to "global_implicit"
+	    if (int_byte_size_api() == 4) {
+	      map_local_to_global_implicit((int*)data, num_to_get*element_nodes, nodeGlobalImplicitMap);
+	    } else {
+	      map_local_to_global_implicit((int64_t*)data, num_to_get*element_nodes, nodeGlobalImplicitMap);
+	    }
+
 	    ierr = ex_put_n_elem_conn(get_file_pointer(), id, proc_offset+1, file_count, data);
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -3718,7 +3737,14 @@ namespace Iopx {
 	  }
 	} else if (field.get_name() == "connectivity_raw") {
 	  if (my_element_count > 0) {
-	    // Element connectivity is already in local node id.
+	    // Element connectivity is already in local node id, map local to "global_implicit"
+	    int element_nodes = eb->get_property("topology_node_count").get_int();
+	    if (int_byte_size_api() == 4) {
+	      map_local_to_global_implicit((int*)data, num_to_get*element_nodes, nodeGlobalImplicitMap);
+	    } else {
+	      map_local_to_global_implicit((int64_t*)data, num_to_get*element_nodes, nodeGlobalImplicitMap);
+	    }
+
 	    ierr = ex_put_n_elem_conn(get_file_pointer(), id, proc_offset+1, file_count, data);
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -3967,43 +3993,45 @@ namespace Iopx {
        *       should be in the orginal order...
        */
       if (dbState == Ioss::STATE_MODEL || dbState == Ioss::STATE_DEFINE_MODEL) {
-	if (nodeMap.map.empty()) {
-	  nodeMap.map.resize(num_to_get+1);
-	  nodeMap.map[0] = -1;
+	if (!nodeMap.defined) {
+	  if (nodeMap.map.empty()) {
+	    nodeMap.map.resize(num_to_get+1);
+	    nodeMap.map[0] = -1;
+	  }
+
+	  if (nodeMap.map[0] == -1) {
+	    if (int_byte_size_api() == 4) {
+	      nodeMap.set_map(static_cast<int*>(ids), num_to_get, 0);
+	    } else {
+	      nodeMap.set_map(static_cast<int64_t*>(ids), num_to_get, 0);
+	    }
+	  }
+
+	  nodeMap.build_reverse_map(myProcessor);
+	  nodeMap.build_reorder_map(0, num_to_get);
+
+	  // Only a single nodeblock and all set
+	  assert(nodeMap.map[0] == -1 || nodeMap.reverse.size() == (size_t)num_to_get);
+	  assert(get_region()->get_property("node_block_count").get_int() == 1);
+	  nodeMap.defined = true;
 	}
 
-	if (nodeMap.map[0] == -1) {
-	  if (int_byte_size_api() == 4) {
-	    nodeMap.set_map(static_cast<int*>(ids), num_to_get, 0);
-	  } else {
-	    nodeMap.set_map(static_cast<int64_t*>(ids), num_to_get, 0);
-	  }	    
-	}
-
-	nodeMap.build_reverse_map(myProcessor);
-
-	// Only a single nodeblock and all set
-	assert(nodeMap.map[0] == -1 || nodeMap.reverse.size() == (size_t)num_to_get);
-	assert(get_region()->get_property("node_block_count").get_int() == 1);
-
-#if 0
 	// Write to the database...
-	int ierr;
-	if (int_byte_size_api() == 4) {
-	  std::vector<int> file_ids; file_ids.reserve(count);
-	  map_data(nodeOwningProcessor, myProcessor, (int*)ids, file_ids);
-	  ierr = ex_put_partial_id_map(get_file_pointer(), EX_NODE_MAP, offset+1, count, TOPTR(file_ids));
-	} else {
-	  std::vector<int64_t> file_ids; file_ids.reserve(count);
-	  map_data(nodeOwningProcessor, myProcessor, (int64_t*)ids, file_ids);
-	  ierr = ex_put_partial_id_map(get_file_pointer(), EX_NODE_MAP, offset+1, count, TOPTR(file_ids));
+	if (dbState == Ioss::STATE_MODEL) {
+	  int ierr;
+	  if (int_byte_size_api() == 4) {
+	    std::vector<int> file_ids; file_ids.reserve(count);
+	    map_data(nodeOwningProcessor, myProcessor, (int*)ids, file_ids);
+	    ierr = ex_put_partial_id_map(get_file_pointer(), EX_NODE_MAP, offset+1, count, TOPTR(file_ids));
+	  } else {
+	    std::vector<int64_t> file_ids; file_ids.reserve(count);
+	    map_data(nodeOwningProcessor, myProcessor, (int64_t*)ids, file_ids);
+	    ierr = ex_put_partial_id_map(get_file_pointer(), EX_NODE_MAP, offset+1, count, TOPTR(file_ids));
+	  }
+	  if (ierr < 0)
+	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	}
-	if (ierr < 0)
-	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
-#endif
       }
-
-      nodeMap.build_reorder_map(0, num_to_get);
       return num_to_get;
     }
 
@@ -4161,6 +4189,21 @@ namespace Iopx {
     int64_t DatabaseIO::handle_element_ids(const Ioss::ElementBlock *eb, void* ids, size_t num_to_get,
 					   size_t offset, size_t count) const
     {
+      if (dbState == Ioss::STATE_MODEL) {
+	if (elemGlobalImplicitMap.empty()) {
+	  elemGlobalImplicitMap.resize(elementCount);
+	}
+	// Build the implicit_global map used to map an elements
+	// local-implicit position to the global-implicit
+	// position. Primarily used for sideset elements.  'count'
+	// Elements starting at 'eb_offset' map to the global implicit
+	// position of 'offset'
+	int64_t eb_offset = eb->get_offset();
+	for (size_t i=0; i < count; i++) {
+	  elemGlobalImplicitMap[eb_offset+i] = offset+i+1;
+	}
+      }
+
       if (elemMap.map.empty()) {
 	elemMap.map.resize(elementCount+1);
 	elemMap.map[0] = -1;
@@ -4276,7 +4319,7 @@ namespace Iopx {
 	  std::vector<double> file_temp; file_temp.reserve(file_count);
 	  map_data(nodeOwningProcessor, myProcessor, TOPTR(temp), file_temp);
 	  int ierr = ex_put_n_var(get_file_pointer(), step, EX_NODE_BLOCK, var_index, 0,
-				  proc_offset+1, file_count, TOPTR(temp));
+				  proc_offset+1, file_count, TOPTR(file_temp));
 	  if (ierr < 0) {
 	    std::ostringstream errmsg;
 	    errmsg << "ERROR: Problem outputting nodal variable '" << var_name
@@ -4373,7 +4416,15 @@ namespace Iopx {
 	    size_t offset = ge->get_property("set_offset").get_int();
 	    ierr = ex_put_n_var(get_file_pointer(), step, type, var_index, id, offset+1, count, TOPTR(temp));
 	  } else {
-	    ierr = ex_put_var(get_file_pointer(), step, type, var_index, id, count, TOPTR(temp));
+	    // Write the variable...
+	    size_t proc_offset = 0;
+	    if (ge->property_exists("processor_offset"))
+	      proc_offset = ge->get_property("processor_offset").get_int();
+	    size_t file_count = count;
+	    if (ge->property_exists("locally_owned_count"))
+	      file_count = ge->get_property("locally_owned_count").get_int();
+	    ierr = ex_put_n_var(get_file_pointer(), step, type, var_index, id,
+				proc_offset+1, file_count, TOPTR(temp));
 	  }
 
 	  if (ierr < 0)
@@ -4547,10 +4598,14 @@ namespace Iopx {
 	      if (int_byte_size_api() == 4) {
 		i32data.reserve(file_count);
 		map_nodeset_data(nodeOwningProcessor, myProcessor, (int*)data, num_to_get, i32data);
+
+		// Maps local to "global_implicit"
+		map_local_to_global_implicit(TOPTR(i32data), file_count, nodeGlobalImplicitMap);
 		out_data = &i32data[0];
 	      } else {
 		i64data.reserve(file_count);
 		map_nodeset_data(nodeOwningProcessor, myProcessor, (int64_t*)data, num_to_get, i64data);
+		map_local_to_global_implicit(TOPTR(i64data), file_count, nodeGlobalImplicitMap);
 		out_data = &i64data[0];
 	      }
 	    }
@@ -4717,6 +4772,10 @@ namespace Iopx {
 
 	    size_t index = 0;
 
+	    size_t proc_offset = 0;
+	    if (fb->property_exists("processor_offset"))
+	      proc_offset = fb->get_property("processor_offset").get_int();
+
 	    if (field.get_type() == Ioss::Field::INTEGER) {
 	      Ioss::IntVector element(num_to_get);
 	      Ioss::IntVector side(num_to_get);
@@ -4727,7 +4786,8 @@ namespace Iopx {
 		side[i]    = el_side[index++]+side_offset;
 	      }
 	      
-	      int ierr = ex_put_n_side_set(get_file_pointer(), id, offset+1, entity_count,
+	      map_local_to_global_implicit(TOPTR(element), num_to_get, elemGlobalImplicitMap);
+	      int ierr = ex_put_n_side_set(get_file_pointer(), id, proc_offset+offset+1, num_to_get,
 					   TOPTR(element), TOPTR(side));
 	      if (ierr < 0) exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	    } else {
@@ -4740,7 +4800,8 @@ namespace Iopx {
 		side[i]    = el_side[index++]+side_offset;
 	      }
 	      
-	      int ierr = ex_put_n_side_set(get_file_pointer(), id, offset+1, entity_count,
+	      map_local_to_global_implicit(TOPTR(element), num_to_get, elemGlobalImplicitMap);
+	      int ierr = ex_put_n_side_set(get_file_pointer(), id, proc_offset+offset+1, num_to_get,
 					   TOPTR(element), TOPTR(side));
 	      if (ierr < 0) exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	    }
@@ -5103,8 +5164,8 @@ namespace Iopx {
       }
 
       {
-	//	put_qa();
-	//	put_info();
+	put_qa();
+	put_info();
       
 	// Write the metadata to the exodusII file...
 	Iopx::Internals data(get_file_pointer(), maximumNameLength, util());
@@ -5113,34 +5174,35 @@ namespace Iopx {
 	if (ierr < 0)
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
-	// Write attribute names (if any)...
-	char field_suffix_separator = get_field_separator();
-	write_attribute_names(get_file_pointer(), EX_NODE_SET,   get_region()->get_nodesets(),
-			      field_suffix_separator);
-	write_attribute_names(get_file_pointer(), EX_EDGE_SET,   get_region()->get_edgesets(),
-			      field_suffix_separator);
-	write_attribute_names(get_file_pointer(), EX_FACE_SET,   get_region()->get_facesets(),
-			      field_suffix_separator);
-	write_attribute_names(get_file_pointer(), EX_ELEM_SET,   get_region()->get_elementsets(),
-			      field_suffix_separator);
-	write_attribute_names(get_file_pointer(), EX_NODE_BLOCK, get_region()->get_node_blocks(),
-			      field_suffix_separator);
-	write_attribute_names(get_file_pointer(), EX_EDGE_BLOCK, get_region()->get_edge_blocks(),
-			      field_suffix_separator);
-	write_attribute_names(get_file_pointer(), EX_FACE_BLOCK, get_region()->get_face_blocks(),
-			      field_suffix_separator);
-	write_attribute_names(get_file_pointer(), EX_ELEM_BLOCK, get_region()->get_element_blocks(),
-			      field_suffix_separator);
+	if (myProcessor == 0) {
+	  // Write attribute names (if any)...
+	  char field_suffix_separator = get_field_separator();
+	  write_attribute_names(get_file_pointer(), EX_NODE_SET,   get_region()->get_nodesets(),
+				field_suffix_separator);
+	  write_attribute_names(get_file_pointer(), EX_EDGE_SET,   get_region()->get_edgesets(),
+				field_suffix_separator);
+	  write_attribute_names(get_file_pointer(), EX_FACE_SET,   get_region()->get_facesets(),
+				field_suffix_separator);
+	  write_attribute_names(get_file_pointer(), EX_ELEM_SET,   get_region()->get_elementsets(),
+				field_suffix_separator);
+	  write_attribute_names(get_file_pointer(), EX_NODE_BLOCK, get_region()->get_node_blocks(),
+				field_suffix_separator);
+	  write_attribute_names(get_file_pointer(), EX_EDGE_BLOCK, get_region()->get_edge_blocks(),
+				field_suffix_separator);
+	  write_attribute_names(get_file_pointer(), EX_FACE_BLOCK, get_region()->get_face_blocks(),
+				field_suffix_separator);
+	  write_attribute_names(get_file_pointer(), EX_ELEM_BLOCK, get_region()->get_element_blocks(),
+				field_suffix_separator);
       
-	// Write coordinate names...
-	char const *labels[3];
-	labels[0] = "x";
-	labels[1] = "y";
-	labels[2] = "z";
-	ierr = ex_put_coord_names(get_file_pointer(), (char**)labels);
-	if (ierr < 0)
-	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
-
+	  // Write coordinate names...
+	  char const *labels[3];
+	  labels[0] = "x";
+	  labels[1] = "y";
+	  labels[2] = "z";
+	  ierr = ex_put_coord_names(get_file_pointer(), (char**)labels);
+	  if (ierr < 0)
+	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	}
       }
       // Set the processor offset property. Specifies where in the global list, the data from this
       // processor begins...
@@ -5184,6 +5246,14 @@ namespace Iopx {
       for (size_t i=0; i < ssets.size(); i++) {
 	ssets[i]->property_add(Ioss::Property("processor_offset", mesh.sidesets[i].procOffset));
 	ssets[i]->property_add(Ioss::Property("processor_df_offset", mesh.sidesets[i].dfProcOffset));
+
+	// Propogate down to owned sideblocks...
+	Ioss::SideBlockContainer side_blocks = ssets[i]->get_side_blocks();
+	Ioss::SideBlockContainer::const_iterator J;
+	for (J=side_blocks.begin(); J != side_blocks.end(); ++J) {
+	  (*J)->property_add(Ioss::Property("processor_offset", mesh.sidesets[i].procOffset));
+	  (*J)->property_add(Ioss::Property("processor_df_offset", mesh.sidesets[i].dfProcOffset));
+	}
       }
 
     }
@@ -5583,6 +5653,12 @@ namespace Iopx {
       int64_t processor_offset = 0;
       compose.create_implicit_global_map(nodeOwningProcessor, nodeGlobalImplicitMap,
 					 nodeMap, &locally_owned_count, &processor_offset);
+
+      Ioss::NodeBlockContainer node_blocks = get_region()->get_node_blocks();
+      if (!node_blocks[0]->property_exists("locally_owned_count")) 
+	node_blocks[0]->property_add(Ioss::Property("locally_owned_count", locally_owned_count));
+      if (!node_blocks[0]->property_exists("processor_offset")) 
+	node_blocks[0]->property_add(Ioss::Property("processor_offset", locally_owned_count));
     }      
 
     void DatabaseIO::finalize_write(double sim_time)
