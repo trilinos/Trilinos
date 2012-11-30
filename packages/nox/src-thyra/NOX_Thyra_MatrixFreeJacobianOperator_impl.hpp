@@ -210,9 +210,12 @@ MatrixFreeJacobianOperator<Scalar>::applyImpl(const ::Thyra::EOpTransp M_trans,
    * u = Jy =   -----------------------
    *                     delta
    */
-
-  const ::Thyra::VectorBase<Scalar>& y = dynamic_cast<const ::Thyra::VectorBase<Scalar>&>(thyra_mv_y);
-  ::Thyra::VectorBase<Scalar>& u = dynamic_cast< ::Thyra::VectorBase<Scalar>&>(*thyra_mv_u);
+  TEUCHOS_ASSERT(thyra_mv_y.domain()->dim() == 1);
+  TEUCHOS_ASSERT(thyra_mv_u->domain()->dim() == 1);
+  const Teuchos::RCP<const ::Thyra::VectorBase<Scalar> > y_ptr = thyra_mv_y.col(0);
+  const Teuchos::RCP< ::Thyra::VectorBase<Scalar> > u_ptr = thyra_mv_u->col(0);
+  const ::Thyra::VectorBase<Scalar>& y = *y_ptr;
+  ::Thyra::VectorBase<Scalar>& u = *u_ptr;
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm_2_x = ::Thyra::norm(*x_base_);
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm_2_y = ::Thyra::norm(y);
 

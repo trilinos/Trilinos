@@ -82,6 +82,8 @@ using namespace std;
 
 TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
 {
+  Teuchos::TimeMonitor::zeroOutTimers();
+
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
@@ -297,10 +299,13 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
     TEST_FLOATING_EQUALITY(jfnkOp->getDelta(),1.0e-7,tol_mach_eps);
   }
 
+  Teuchos::TimeMonitor::summarize();
 }
   
 TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, JFNK_solve_no_prec)
 {
+  Teuchos::TimeMonitor::zeroOutTimers();
+
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
