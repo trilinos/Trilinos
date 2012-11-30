@@ -243,3 +243,21 @@ int main(int argc, char*argv[])
   
   return 0;
 }
+
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+#include "Ifpack2_Diagonal_decl.hpp"
+#include "Ifpack2_Diagonal_def.hpp"
+#include "Tpetra_ETIHelperMacros.h"
+namespace Ifpack2 {
+
+  // use the Tpetra macros, because they are node-aware
+  #define LCLINST(S,LO,GO,N) \
+          template class Diagonal<Tpetra::CrsMatrix<S,LO,GO,N,Kokkos::DefaultKernels<S,LO,N>::SparseOps> >;
+
+  TPETRA_ETI_MANGLING_TYPEDEFS()
+
+  TPETRA_INSTANTIATE_SLGN(LCLINST)
+
+}
+#endif
+
