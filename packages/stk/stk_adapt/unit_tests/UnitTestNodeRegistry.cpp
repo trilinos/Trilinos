@@ -572,9 +572,13 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
       eMesh.get_bulk_data()->declare_relation(element_local, node, edge_ord);
     }
 
-    std::vector<stk::mesh::Part*> add_parts(1, &block_hex_20);
-    std::vector<stk::mesh::Part*> remove_parts(1, block_hex_8);
-    eMesh.get_bulk_data()->change_entity_parts( element_local, add_parts, remove_parts );
+    if (0)
+      {
+        // stk_mesh no longer allows elements to change parts if topology is changed.
+        std::vector<stk::mesh::Part*> add_parts(1, &block_hex_20);
+        std::vector<stk::mesh::Part*> remove_parts(1, block_hex_8);
+        eMesh.get_bulk_data()->change_entity_parts( element_local, add_parts, remove_parts );
+      }
 
     eMesh.get_bulk_data()->modification_end();
     eMesh.print_info("After quadratic");
