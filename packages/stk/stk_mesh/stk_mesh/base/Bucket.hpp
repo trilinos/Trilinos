@@ -339,6 +339,11 @@ private:
     typedef unsigned char * byte_p ;
     const DataMap & data_map = m_field_map[ field_ordinal ];
     unsigned char * ptr = NULL;
+
+
+    //std::cout<<"FIELD MAP SIZE: "<<m_field_map.size()<<std::endl;
+    //std::cout<<"DATA MAP SIZE:  "<<data_map.m_size<<std::endl;
+
     if ( data_map.m_size ) {
       ptr = const_cast<unsigned char*>(m_field_data) + data_map.m_base + data_map.m_size * entity_ordinal;
       ThrowAssert(ptr < m_field_data_end);
