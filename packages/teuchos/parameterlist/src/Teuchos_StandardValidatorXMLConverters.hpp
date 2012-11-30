@@ -257,7 +257,7 @@ void StringToIntegralValidatorXMLConverter<IntegralType>::convertValidator(
   />
   \endcode
  */
-class TEUCHOS_LIB_DLL_EXPORT AnyNumberValidatorXMLConverter : public ValidatorXMLConverter
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT AnyNumberValidatorXMLConverter : public ValidatorXMLConverter
 {
 
 public:
@@ -453,7 +453,7 @@ void EnhancedNumberValidatorXMLConverter<T>::convertValidator(
  *
  * The "fileMustExist" XML attribute is optional.
  */
-class TEUCHOS_LIB_DLL_EXPORT FileNameValidatorXMLConverter : public ValidatorXMLConverter
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT FileNameValidatorXMLConverter : public ValidatorXMLConverter
 {
 
 public:
@@ -509,7 +509,7 @@ private:
   </Validator>
  \endcode
  */
-class TEUCHOS_LIB_DLL_EXPORT StringValidatorXMLConverter : public ValidatorXMLConverter
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT StringValidatorXMLConverter : public ValidatorXMLConverter
 {
 
 public:

@@ -103,7 +103,7 @@ inline void debugAssertStrength(ERCPStrength strength)
  * \ingroup teuchos_mem_mng_grp 
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT ToStringTraits<ERCPStrength> {
+class TEUCHOSCORE_LIB_DLL_EXPORT ToStringTraits<ERCPStrength> {
 public:
   static std::string toString( const ERCPStrength &t )
     {
@@ -140,7 +140,7 @@ public:
  *
  * \ingroup teuchos_mem_mng_grp 
  */
-class TEUCHOS_LIB_DLL_EXPORT RCPNode {
+class TEUCHOSCORE_LIB_DLL_EXPORT RCPNode {
 public:
   /** \brief . */
   RCPNode(bool has_ownership_in)
@@ -279,7 +279,7 @@ public:
  *
  * \relates RCPNode
  */
-TEUCHOS_LIB_DLL_EXPORT void throw_null_ptr_error( const std::string &type_name );
+TEUCHOSCORE_LIB_DLL_EXPORT void throw_null_ptr_error( const std::string &type_name );
 
 
 /** \brief Debug-mode RCPNode tracing class.
@@ -298,7 +298,7 @@ TEUCHOS_LIB_DLL_EXPORT void throw_null_ptr_error( const std::string &type_name )
  *
  * \ingroup teuchos_mem_mng_grp 
  */
-class TEUCHOS_LIB_DLL_EXPORT RCPNodeTracer {
+class TEUCHOSCORE_LIB_DLL_EXPORT RCPNodeTracer {
 public:
 
   /** \name Public types. */
@@ -638,7 +638,7 @@ private:
  *
  * \ingroup teuchos_mem_mng_grp
  */
-class TEUCHOS_LIB_DLL_EXPORT ActiveRCPNodesSetup {
+class TEUCHOSCORE_LIB_DLL_EXPORT ActiveRCPNodesSetup {
 public:
   /** \brief . */
   ActiveRCPNodesSetup();
@@ -683,7 +683,7 @@ namespace Teuchos {
  *
  * \ingroup teuchos_mem_mng_grp 
  */
-class TEUCHOS_LIB_DLL_EXPORT RCPNodeHandle {
+class TEUCHOSCORE_LIB_DLL_EXPORT RCPNodeHandle {
 public:
   /** \brief . */
   RCPNodeHandle(ENull null_arg = null)
@@ -970,7 +970,7 @@ std::ostream& operator<<(std::ostream& out, const RCPNodeHandle& node)
  * will delete the underlying object and therefore this class should *not*
  * call delete_obj()!
  */
-class TEUCHOS_LIB_DLL_EXPORT RCPNodeThrowDeleter {
+class TEUCHOSCORE_LIB_DLL_EXPORT RCPNodeThrowDeleter {
 public:
   /** \brief . */
   RCPNodeThrowDeleter(RCPNode *node)

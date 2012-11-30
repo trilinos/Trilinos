@@ -60,7 +60,7 @@ namespace Teuchos {
 /** \brief An abstract base class for converting Dependencies to
  * and from XML.
  */
-class TEUCHOS_LIB_DLL_EXPORT ConditionXMLConverter : public Describable {
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ConditionXMLConverter : public Describable {
 
 public:
 

@@ -56,7 +56,7 @@ namespace Teuchos {
  *
  * Note, <tt>HAVE_MPI</tt> must be defined to use this class!.
  */
-class TEUCHOS_LIB_DLL_EXPORT MpiReductionOpBase : virtual public Describable {
+class TEUCHOSCOMM_LIB_DLL_EXPORT MpiReductionOpBase : virtual public Describable {
 public:
   /** \brief . */
   virtual void reduce(
@@ -119,7 +119,7 @@ mpiReductionOp( const RCP<const ValueTypeReductionOp<Ordinal,char> > &reductOp )
  *
  * Note, <tt>HAVE_MPI</tt> must be defined to use this class!.
  */
-class TEUCHOS_LIB_DLL_EXPORT MpiReductionOpSetter {
+class TEUCHOSCOMM_LIB_DLL_EXPORT MpiReductionOpSetter {
 public:
 
   /** \brief Construct a new <tt>MPI_Op</tt> object which uses the passed in

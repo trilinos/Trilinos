@@ -58,22 +58,22 @@ namespace Teuchos {
 */
 
 /** \brief Increment the throw number.  \ingroup TestForException_grp */
-TEUCHOS_LIB_DLL_EXPORT void TestForException_incrThrowNumber();
+TEUCHOSCORE_LIB_DLL_EXPORT void TestForException_incrThrowNumber();
 
 /** \brief Increment the throw number.  \ingroup TestForException_grp */
-TEUCHOS_LIB_DLL_EXPORT int TestForException_getThrowNumber();
+TEUCHOSCORE_LIB_DLL_EXPORT int TestForException_getThrowNumber();
 
 /** \brief The only purpose for this function is to set a breakpoint.
     \ingroup TestForException_grp */
-TEUCHOS_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
+TEUCHOSCORE_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
 
 /** \brief Set at runtime if stacktracing functionality is enabled when *
     exceptions are thrown.  \ingroup TestForException_grp */
-TEUCHOS_LIB_DLL_EXPORT void TestForException_setEnableStacktrace(bool enableStrackTrace);
+TEUCHOSCORE_LIB_DLL_EXPORT void TestForException_setEnableStacktrace(bool enableStrackTrace);
 
 /** \brief Get at runtime if stacktracing functionality is enabled when
  * exceptions are thrown. */
-TEUCHOS_LIB_DLL_EXPORT bool TestForException_getEnableStacktrace();
+TEUCHOSCORE_LIB_DLL_EXPORT bool TestForException_getEnableStacktrace();
 
 
 } // namespace Teuchos

@@ -58,7 +58,7 @@ namespace Teuchos
    * parsing the XML and using a TreeBuildingXMLHandler to construct an
    * XMLObject.
    */
-  class TEUCHOS_LIB_DLL_EXPORT XMLParser
+  class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT XMLParser
     {
     public:
      

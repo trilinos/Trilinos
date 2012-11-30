@@ -69,7 +69,7 @@ namespace Teuchos{
  * sure that you program code takes
  * this into account.
  */
-class TEUCHOS_LIB_DLL_EXPORT VisualDependency : public Dependency{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT VisualDependency : public Dependency{
 
 public:
 
@@ -189,7 +189,7 @@ private:
 /**
  * \brief An abstract base class for all validator dependencies.
  */
-class TEUCHOS_LIB_DLL_EXPORT ValidatorDependency : public Dependency{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ValidatorDependency : public Dependency{
 
 public:
 
@@ -241,7 +241,7 @@ public:
  * Please see StringVisualDependencyXMLConverter for documentation
  * regarding the XML representation of this Dependency.
  */
-class TEUCHOS_LIB_DLL_EXPORT StringVisualDependency : public VisualDependency{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT StringVisualDependency : public VisualDependency{
 
 public:
 
@@ -392,7 +392,7 @@ private:
  * \relates StringVisualDependency
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<StringVisualDependency>{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT DummyObjectGetter<StringVisualDependency>{
 
 public:
 
@@ -422,7 +422,7 @@ public:
  * Please see BoolVisualDependencyXMLConverter for documentation
  * regarding the XML representation of this Dependency.
  */
-class TEUCHOS_LIB_DLL_EXPORT BoolVisualDependency : public VisualDependency{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT BoolVisualDependency : public VisualDependency{
 
 public:
 
@@ -494,7 +494,7 @@ protected:
  * \relates BoolVisualDependency
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<BoolVisualDependency>{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT DummyObjectGetter<BoolVisualDependency>{
 
 public:
 
@@ -526,7 +526,7 @@ public:
  * Please see ConditionVisualDependencyXMLConverter for documentation
  * regarding the XML representation of this Dependency.
  */
-class TEUCHOS_LIB_DLL_EXPORT ConditionVisualDependency : public VisualDependency{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ConditionVisualDependency : public VisualDependency{
 
 public:
 
@@ -620,7 +620,7 @@ private:
  * \relates ConditionVisualDependency
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<ConditionVisualDependency>{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT DummyObjectGetter<ConditionVisualDependency>{
 
 public:
 
@@ -1244,7 +1244,7 @@ RCP<NumberArrayLengthDependency<DependeeType, DependentType> >
  * Please see StringValidatorDependencyXMLConverter for documentation
  * regarding the XML representation of this Dependency.
  */
-class TEUCHOS_LIB_DLL_EXPORT StringValidatorDependency : public ValidatorDependency{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT StringValidatorDependency : public ValidatorDependency{
 
 public:
 
@@ -1374,7 +1374,7 @@ private:
  * \relates StringValidatorDependency
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<StringValidatorDependency>{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT DummyObjectGetter<StringValidatorDependency>{
 
 public:
 
@@ -1404,7 +1404,7 @@ public:
  * Please see BoolValidatorDependencyXMLConverter for documentation
  * regarding the XML representation of this Dependency.
  */
-class TEUCHOS_LIB_DLL_EXPORT BoolValidatorDependency : public ValidatorDependency{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT BoolValidatorDependency : public ValidatorDependency{
 
 public:
 
@@ -1501,7 +1501,7 @@ private:
  * \relates BoolValidatorDependency
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<BoolValidatorDependency>{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT DummyObjectGetter<BoolValidatorDependency>{
 
 public:
 

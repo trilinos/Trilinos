@@ -1,4 +1,6 @@
 
+#cmakedefine BUILD_SHARED_LIBS
+
 #cmakedefine HAVE_TEUCHOS_PARAMETERLIST
 
 /* Define the Fortran name mangling to be used for the BLAS */

@@ -58,7 +58,7 @@ namespace Teuchos {
  * Writes out a raw string representation to xml and sets ParameterEntryValues
  * as strings when they are read back in.
  */
-class TEUCHOS_LIB_DLL_EXPORT AnyParameterEntryConverter : public ParameterEntryXMLConverter{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT AnyParameterEntryConverter : public ParameterEntryXMLConverter{
 
 public:
 

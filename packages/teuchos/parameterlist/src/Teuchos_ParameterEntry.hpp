@@ -64,7 +64,7 @@ class ParameterList; // another parameter type (forward declaration)
     parameter (isUsed, isDefault, etc.).  The type of parameter is chosen through the
     templated Set/Get methods.
 */
-class TEUCHOS_LIB_DLL_EXPORT ParameterEntry {
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ParameterEntry {
 
 public:
 

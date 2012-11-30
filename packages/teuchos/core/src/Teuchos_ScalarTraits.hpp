@@ -441,7 +441,7 @@ struct ScalarTraits<unsigned long long int>
 
 
 #ifndef __sun
-extern TEUCHOS_LIB_DLL_EXPORT const float flt_nan;
+extern TEUCHOSCORE_LIB_DLL_EXPORT const float flt_nan;
 #endif
 
  
@@ -537,7 +537,7 @@ struct ScalarTraits<float>
 
 
 #ifndef __sun
-extern TEUCHOS_LIB_DLL_EXPORT const double dbl_nan;
+extern TEUCHOSCORE_LIB_DLL_EXPORT const double dbl_nan;
 #endif
 
  

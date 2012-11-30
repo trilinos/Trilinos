@@ -68,7 +68,7 @@ namespace Teuchos
    * <tt>--enable-expat</tt>.
    *	</ul>
    */
-  class TEUCHOS_LIB_DLL_EXPORT XMLInputSource
+  class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT XMLInputSource
     {
     public:
       /** \brief Empty constructor */

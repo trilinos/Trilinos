@@ -63,7 +63,7 @@ namespace  Teuchos {
  *
  * \ingroup teuchos_language_support_grp
  */
-TEUCHOS_LIB_DLL_EXPORT std::string demangleName( const std::string &mangledName );
+TEUCHOSCORE_LIB_DLL_EXPORT std::string demangleName( const std::string &mangledName );
 
 
 /** \brief Default traits class that just returns <tt>typeid(T).name()</tt>.
@@ -133,7 +133,7 @@ std::string concreteTypeName( const T &t )
 
 #define TEUCHOS_TYPE_NAME_TRAITS_BUILTIN_TYPE_SPECIALIZATION(TYPE) \
 template<> \
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<TYPE> { \
+class TEUCHOSCORE_LIB_DLL_EXPORT TypeNameTraits<TYPE> { \
 public: \
   static std::string name() { return (#TYPE); } \
   static std::string concreteName(const TYPE&) { return name(); } \
@@ -149,7 +149,7 @@ TEUCHOS_TYPE_NAME_TRAITS_BUILTIN_TYPE_SPECIALIZATION(double);
 
 
 template<typename T>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<T*> {
+class TEUCHOSCORE_LIB_DLL_EXPORT TypeNameTraits<T*> {
 public:
   typedef T* T_ptr;
   static std::string name() { return TypeNameTraits<T>::name() + "*"; }
@@ -158,7 +158,7 @@ public:
 
 
 template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<std::string> {
+class TEUCHOSCORE_LIB_DLL_EXPORT TypeNameTraits<std::string> {
 public:
   static std::string name() { return "string"; }
   static std::string concreteName(const std::string&)
@@ -167,7 +167,7 @@ public:
 
 
 template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<void*> {
+class TEUCHOSCORE_LIB_DLL_EXPORT TypeNameTraits<void*> {
 public:
   static std::string name() { return "void*"; }
   static std::string concreteName(const std::string&) { return name(); }
@@ -180,7 +180,7 @@ public:
 //
 // I'm imitating the specialization of void* above.
 template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<void> {
+class TEUCHOSCORE_LIB_DLL_EXPORT TypeNameTraits<void> {
 public:
   static std::string name() { return "void"; }
   static std::string concreteName(const std::string&) { return name(); }
@@ -191,7 +191,7 @@ public:
 
 
 template<typename T>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<std::complex<T> > {
+class TEUCHOSCORE_LIB_DLL_EXPORT TypeNameTraits<std::complex<T> > {
 public:
   static std::string name()
     { return "complex<"+TypeNameTraits<T>::name()+">"; }

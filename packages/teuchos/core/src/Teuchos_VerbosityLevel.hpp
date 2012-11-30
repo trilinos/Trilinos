@@ -77,7 +77,7 @@ TEUCHOS_ENUM_INPUT_STREAM_OPERATOR(EVerbosityLevel)
  *
  * \ingroup teuchos_outputting_grp
  */
-TEUCHOS_LIB_DLL_EXPORT std::string toString(const EVerbosityLevel verbLevel);
+TEUCHOSCORE_LIB_DLL_EXPORT std::string toString(const EVerbosityLevel verbLevel);
 
 
 /** \brief Return true if the verbosity level includes the given level.
@@ -93,7 +93,7 @@ TEUCHOS_LIB_DLL_EXPORT std::string toString(const EVerbosityLevel verbLevel);
  *           this case, if <tt>verbLevel==VERB_DEFAULT</tt>, then this function
  *           will return <tt>true</tt>.  The default value is <tt>false</tt>.
  */
-TEUCHOS_LIB_DLL_EXPORT bool includesVerbLevel(
+TEUCHOSCORE_LIB_DLL_EXPORT bool includesVerbLevel(
   const EVerbosityLevel verbLevel,
   const EVerbosityLevel requestedVerbLevel,
   const bool isDefaultLevel = false
@@ -109,7 +109,7 @@ TEUCHOS_LIB_DLL_EXPORT bool includesVerbLevel(
  *
  * See the function implementation for details on what it does!
  */
-TEUCHOS_LIB_DLL_EXPORT EVerbosityLevel incrVerbLevel(
+TEUCHOSCORE_LIB_DLL_EXPORT EVerbosityLevel incrVerbLevel(
   const EVerbosityLevel inputVerbLevel,
   const int numLevels
   );

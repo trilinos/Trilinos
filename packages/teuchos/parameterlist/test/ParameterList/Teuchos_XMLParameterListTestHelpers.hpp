@@ -59,7 +59,7 @@ namespace Teuchos {
  * \return The read in parameter list.
  * \ingroup XML
  */
-TEUCHOS_LIB_DLL_EXPORT
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
 RCP<ParameterList> writeThenReadPL(ParameterList& myList);
 
 
@@ -77,7 +77,7 @@ RCP<ParameterList> writeThenReadPL(ParameterList& myList);
  * \return The read in parameter list.
  * \ingroup XML
  */
-TEUCHOS_LIB_DLL_EXPORT
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
 RCP<ParameterList> writeThenReadPL(ParameterList& myList, RCP<DependencySheet> depSheetIn,
   RCP<DependencySheet> depSheetOut);
 

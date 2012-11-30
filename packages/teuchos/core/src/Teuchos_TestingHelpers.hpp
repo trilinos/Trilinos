@@ -75,7 +75,7 @@ inline const std::string passfail(const bool result);
  *
  * \ingroup teuchos_testing_grp
  */
-TEUCHOS_LIB_DLL_EXPORT const std::string passfail_with_location(const bool result, const std::string &file, const int lineNumber);
+TEUCHOSCORE_LIB_DLL_EXPORT const std::string passfail_with_location(const bool result, const std::string &file, const int lineNumber);
 
 /** \brief Set if TEUCHOS_PASS_FAIL(...) should print test failure location.
  *

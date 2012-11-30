@@ -68,7 +68,7 @@ namespace Teuchos {
  *
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlFile(
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT void updateParametersFromXmlFile(
   const std::string &xmlFileName,
   const Ptr<ParameterList> &paramList
   );
@@ -82,7 +82,7 @@ TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlFile(
  *
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT 
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT 
 RCP<ParameterList> getParametersFromXmlFile(const std::string &xmlFileName);
 
 
@@ -97,7 +97,7 @@ RCP<ParameterList> getParametersFromXmlFile(const std::string &xmlFileName);
  * 
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
 RCP<ParameterList> getParametersFromXmlFile(const std::string &xmlFileName,
   RCP<DependencySheet> depSheet);
 
@@ -114,7 +114,7 @@ RCP<ParameterList> getParametersFromXmlFile(const std::string &xmlFileName,
  *
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
 void updateParametersFromXmlString(
   const std::string &xmlStr,
   const Ptr<ParameterList> &paramList
@@ -128,7 +128,7 @@ void updateParametersFromXmlString(
  *
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
 RCP<ParameterList> getParametersFromXmlString(const std::string &xmlStr);
 
 
@@ -141,7 +141,7 @@ RCP<ParameterList> getParametersFromXmlString(const std::string &xmlStr);
  * 
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
 RCP<ParameterList> getParametersFromXmlString( const std::string &xmlStr,
   RCP<DependencySheet> depSheet);
 
@@ -157,7 +157,7 @@ RCP<ParameterList> getParametersFromXmlString( const std::string &xmlStr,
  *
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
 void writeParameterListToXmlOStream(
   const ParameterList &paramList,
   std::ostream &xmlOut,
@@ -177,7 +177,7 @@ void writeParameterListToXmlOStream(
  *
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
 void writeParameterListToXmlFile(
   const ParameterList &paramList,
   const std::string &xmlFileName,

@@ -54,7 +54,7 @@ namespace Teuchos {
 
 
 /** \brief Maps Validators to integers. */
-class TEUCHOS_LIB_DLL_EXPORT IDtoValidatorMap {
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT IDtoValidatorMap {
 public:
 
   /** \brief . */
@@ -101,7 +101,7 @@ private:
 
 
 /** \brief A class for mapping validators to integers. */
-class TEUCHOS_LIB_DLL_EXPORT ValidatortoIDMap {
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ValidatortoIDMap {
 public:
   
   /** \brief . */

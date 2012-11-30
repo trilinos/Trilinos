@@ -58,7 +58,7 @@ class Condition;
 
 /** \brief Provides ability to lookup ConditionXMLConverters
  */
-class TEUCHOS_LIB_DLL_EXPORT ConditionXMLConverterDB {
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ConditionXMLConverterDB {
 
 public:
 

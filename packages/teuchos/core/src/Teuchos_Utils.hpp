@@ -56,7 +56,7 @@ namespace Teuchos
 {
   using std::string;
 
-  class TEUCHOS_LIB_DLL_EXPORT Utils
+  class TEUCHOSCORE_LIB_DLL_EXPORT Utils
     {
     public:
 

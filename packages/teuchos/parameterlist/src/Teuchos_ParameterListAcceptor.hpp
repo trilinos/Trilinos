@@ -54,7 +54,7 @@ template<class T> class RCP;
  *
  * ToDo: Finish Documentation!
  */
-class TEUCHOS_LIB_DLL_EXPORT ParameterListAcceptor {
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ParameterListAcceptor {
 public:
 
   /** \brief . */

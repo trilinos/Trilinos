@@ -58,7 +58,7 @@ namespace Teuchos {
 
 /** \brief A class used to convert parameter entries to xml and vice versa.
  */
-class TEUCHOS_LIB_DLL_EXPORT ParameterEntryXMLConverter : public Describable {
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ParameterEntryXMLConverter : public Describable {
 
 public:
 

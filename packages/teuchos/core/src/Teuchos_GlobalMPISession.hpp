@@ -93,7 +93,7 @@ namespace Teuchos {
 /// for MPI communicators (see Comm and its subclasses) which allow
 /// you to use a subset of MPI functionality without needing to
 /// include mpi.h or depend on MPI in any way.
-class TEUCHOS_LIB_DLL_EXPORT GlobalMPISession
+class TEUCHOSCORE_LIB_DLL_EXPORT GlobalMPISession
 {
 public:
 

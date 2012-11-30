@@ -440,7 +440,7 @@ std::string getTwoDArrayTypeNameTraitsFormat(){
 
 /** \brief TypeNameTraits specialization for Array.  */
 template<typename T>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<TwoDArray<T> > {
+class TEUCHOSCORE_LIB_DLL_EXPORT TypeNameTraits<TwoDArray<T> > {
 public:
   static std::string name(){ 
     std::string formatString = getTwoDArrayTypeNameTraitsFormat();

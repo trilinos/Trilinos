@@ -65,7 +65,7 @@ namespace Teuchos{
  * parameter and returns a bool based on the condition of
  * that value.
  */
-class TEUCHOS_LIB_DLL_EXPORT ParameterCondition : public Condition{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ParameterCondition : public Condition{
 
 public:
 
@@ -141,7 +141,7 @@ private:
  * Please see StringConditionConverter for documenation 
  * regarding the XML representation of this condition.
  */
-class TEUCHOS_LIB_DLL_EXPORT StringCondition : public ParameterCondition{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT StringCondition : public ParameterCondition{
 
 public:
 
@@ -229,7 +229,7 @@ private:
  * \relates StringCondition
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<StringCondition>{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT DummyObjectGetter<StringCondition>{
 
 public:
 
@@ -371,7 +371,7 @@ RCP<NumberCondition<T> >
  * Please see BoolConditionConverter for documenation 
  * regarding the XML representation of this condition.
  */
-class TEUCHOS_LIB_DLL_EXPORT BoolCondition : public ParameterCondition{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT BoolCondition : public ParameterCondition{
 
 public:
 
@@ -414,7 +414,7 @@ public:
  * \relates BoolCondition
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<BoolCondition>{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT DummyObjectGetter<BoolCondition>{
 
 public:
 
@@ -438,7 +438,7 @@ public:
  * Logical operation on a set of conditions. The set of conditions
  * may be an aribtrary size as long as it is two or greater.
  */
-class TEUCHOS_LIB_DLL_EXPORT BoolLogicCondition : public Condition{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT BoolLogicCondition : public Condition{
 
 public:
 
@@ -534,7 +534,7 @@ private:
  * Please see OrConditionConverter for documenation 
  * regarding the XML representation of this condition.
  */
-class TEUCHOS_LIB_DLL_EXPORT OrCondition : public BoolLogicCondition{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT OrCondition : public BoolLogicCondition{
 
 public:
 
@@ -581,7 +581,7 @@ public:
  * \relates OrCondition
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<OrCondition>{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT DummyObjectGetter<OrCondition>{
 
 public:
 
@@ -605,7 +605,7 @@ public:
  * Please see AndConditionConverter for documenation 
  * regarding the XML representation of this condition.
  */
-class TEUCHOS_LIB_DLL_EXPORT AndCondition : public BoolLogicCondition{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT AndCondition : public BoolLogicCondition{
 
 public:
 
@@ -653,7 +653,7 @@ public:
  * \relates AndCondition
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<AndCondition>{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT DummyObjectGetter<AndCondition>{
 
 public:
 
@@ -677,7 +677,7 @@ public:
  * Please see EqualsConditionConverter for documenation 
  * regarding the XML representation of this condition.
  */
-class TEUCHOS_LIB_DLL_EXPORT EqualsCondition : public BoolLogicCondition{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT EqualsCondition : public BoolLogicCondition{
 
 public:
 
@@ -724,7 +724,7 @@ public:
  * \relates EqualsCondition
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<EqualsCondition>{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT DummyObjectGetter<EqualsCondition>{
 
 public:
 
@@ -749,7 +749,7 @@ public:
  * Please see NotConditionConverter for documenation 
  * regarding the XML representation of this condition.
  */
-class TEUCHOS_LIB_DLL_EXPORT NotCondition : public Condition{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT NotCondition : public Condition{
 
 public:
 
@@ -819,7 +819,7 @@ private:
  * \relates NotCondition
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<NotCondition>{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT DummyObjectGetter<NotCondition>{
 
 public:
 

@@ -64,7 +64,7 @@ namespace Teuchos {
     /// line," contains information for interpreting the rest of the
     /// file.  This class parses the first line, canonicalizes the
     /// information therein, and stores it for later use.
-    class TEUCHOS_LIB_DLL_EXPORT Banner {
+    class TEUCHOSNUMERICS_LIB_DLL_EXPORT Banner {
     public:
       /// Constructor
       ///
@@ -148,7 +148,7 @@ namespace Teuchos {
     /// \param banner [in] The Matrix Market banner to print
     ///
     /// \return The output stream \c out
-    TEUCHOS_LIB_DLL_EXPORT std::ostream& operator<< (std::ostream& out, const Banner& banner);
+    TEUCHOSNUMERICS_LIB_DLL_EXPORT std::ostream& operator<< (std::ostream& out, const Banner& banner);
 
   } // namespace MatrixMarket
 } // namespace Teuchos

@@ -55,7 +55,7 @@ namespace Teuchos
   /** \ingroup XML
    * \brief Instantiation of XMLInputSource class for reading XML from a file.
    */
-  class TEUCHOS_LIB_DLL_EXPORT FileInputSource : public XMLInputSource
+  class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT FileInputSource : public XMLInputSource
     {
     public:
       /** \brief Constructor */

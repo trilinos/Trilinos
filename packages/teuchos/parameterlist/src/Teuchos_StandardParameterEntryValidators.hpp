@@ -496,7 +496,7 @@ RCP<StringToIntegralParameterEntryValidator<IntegralType> >
  * Please see <tt>AnyNumberValidatorXMLConverter</tt> for documenation
  * regarding the XML representation of this validator.
  */
-class TEUCHOS_LIB_DLL_EXPORT AnyNumberParameterEntryValidator
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT AnyNumberParameterEntryValidator
  : public ParameterEntryValidator
 {
 public:
@@ -759,7 +759,7 @@ private:
  *
  * \relates AnyNumberParameterEntryValidator
  */
-TEUCHOS_LIB_DLL_EXPORT RCP<AnyNumberParameterEntryValidator>
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT RCP<AnyNumberParameterEntryValidator>
 anyNumberParameterEntryValidator();
 
 
@@ -767,7 +767,7 @@ anyNumberParameterEntryValidator();
  *
  * \relates AnyNumberParameterEntryValidator
  */
-TEUCHOS_LIB_DLL_EXPORT RCP<AnyNumberParameterEntryValidator>
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT RCP<AnyNumberParameterEntryValidator>
 anyNumberParameterEntryValidator(
   AnyNumberParameterEntryValidator::EPreferredType const preferredType,
   AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
@@ -778,7 +778,7 @@ anyNumberParameterEntryValidator(
  *
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT void setIntParameter(
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT void setIntParameter(
   std::string const& paramName,
   int const value, std::string const& docString,
   ParameterList *paramList,
@@ -792,7 +792,7 @@ TEUCHOS_LIB_DLL_EXPORT void setIntParameter(
  *
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT void setDoubleParameter(
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT void setDoubleParameter(
   std::string const& paramName,
   double const& value, std::string const& docString,
   ParameterList *paramList,
@@ -806,7 +806,7 @@ TEUCHOS_LIB_DLL_EXPORT void setDoubleParameter(
  *
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT void setNumericStringParameter(
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT void setNumericStringParameter(
   std::string const& paramName,
   std::string const& value, std::string const& docString,
   ParameterList *paramList,
@@ -829,7 +829,7 @@ TEUCHOS_LIB_DLL_EXPORT void setNumericStringParameter(
  *
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT int getIntParameter(
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT int getIntParameter(
   ParameterList const& paramList, std::string const& paramName
   );
 
@@ -848,7 +848,7 @@ TEUCHOS_LIB_DLL_EXPORT int getIntParameter(
  *
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT double getDoubleParameter(
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT double getDoubleParameter(
   ParameterList const& paramList,
   std::string const& paramName
   );
@@ -869,7 +869,7 @@ TEUCHOS_LIB_DLL_EXPORT double getDoubleParameter(
  *
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT std::string getNumericStringParameter(
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT std::string getNumericStringParameter(
   ParameterList const& paramList,
   std::string const& paramName
   );
@@ -880,7 +880,7 @@ TEUCHOS_LIB_DLL_EXPORT std::string getNumericStringParameter(
  * \relates AnyNumberParameterEntryValidator
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<AnyNumberParameterEntryValidator>{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT DummyObjectGetter<AnyNumberParameterEntryValidator>{
 
 public:
 
@@ -1342,7 +1342,7 @@ RCP<EnhancedNumberValidator<T> >
  * Please see <tt>FileNameValidatorXMLConverter</tt> for documenation
  * regarding the XML representation of this validator.
  */
-class TEUCHOS_LIB_DLL_EXPORT FileNameValidator : public ParameterEntryValidator {
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT FileNameValidator : public ParameterEntryValidator {
 
 public:
 
@@ -1434,7 +1434,7 @@ private:
  * \relates FileNameValidator
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<FileNameValidator>{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT DummyObjectGetter<FileNameValidator>{
 
 public:
 
@@ -1457,7 +1457,7 @@ public:
  * Please see <tt>StringValidatorXMLConverter</tt> for documenation
  * regarding the XML representation of this validator.
  */
-class TEUCHOS_LIB_DLL_EXPORT StringValidator : public ParameterEntryValidator {
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT StringValidator : public ParameterEntryValidator {
 
 public:
 
@@ -1528,7 +1528,7 @@ private:
  * \relates StringValidator
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<StringValidator>{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT DummyObjectGetter<StringValidator>{
 
 public:
 
@@ -1733,7 +1733,7 @@ RCP<TwoDArrayValidator<ValidatorType, EntryType> >
 /** \brief Convience class for StringValidators that are to be applied to
  * TwoDArrays.
  */
-class TEUCHOS_LIB_DLL_EXPORT TwoDArrayStringValidator :
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT TwoDArrayStringValidator :
   public TwoDArrayValidator<StringValidator, std::string>{
 
 public:
@@ -1754,7 +1754,7 @@ public:
  * TwoDArrays.
  *
  */
-class TEUCHOS_LIB_DLL_EXPORT TwoDArrayFileNameValidator :
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT TwoDArrayFileNameValidator :
   public TwoDArrayValidator<FileNameValidator, std::string>{
 
 public:
@@ -1922,7 +1922,7 @@ RCP<ArrayValidator<ValidatorType, EntryType> >
  * however I wanted to maintain consistency with the ArrayNumberValidator
  * class which cannot be typedef'd.
  */
-class TEUCHOS_LIB_DLL_EXPORT ArrayStringValidator :
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ArrayStringValidator :
   public ArrayValidator<StringValidator, std::string>{
 
 public:
@@ -1947,7 +1947,7 @@ public:
  * however I wanted to maintain consistency with the ArrayNumberValidator
  * class which cannot be typedef'd.
  */
-class TEUCHOS_LIB_DLL_EXPORT ArrayFileNameValidator : public ArrayValidator<FileNameValidator, std::string>{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ArrayFileNameValidator : public ArrayValidator<FileNameValidator, std::string>{
 
 public:
 

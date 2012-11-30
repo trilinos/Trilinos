@@ -161,7 +161,7 @@ typedef std::map<std::string, std::vector<std::pair<double, double> > > stat_map
 /// \warning This class must only be used to time functions that are
 ///   called only within the main program.  It may _not_ be used in
 ///   pre-program setup or post-program teardown!
-class TEUCHOS_LIB_DLL_EXPORT TimeMonitor : public PerformanceMonitorBase<Time>
+class TEUCHOSCOMM_LIB_DLL_EXPORT TimeMonitor : public PerformanceMonitorBase<Time>
 {
 public:
 

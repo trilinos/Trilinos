@@ -57,7 +57,7 @@ namespace Teuchos
    * \brief Utilities for generating hashcodes.
    */
 
-  class HashUtils
+  class TEUCHOSCORE_LIB_DLL_EXPORT HashUtils
     {
     public:
       /* Get the next prime in a sequence of hashtable sizes */

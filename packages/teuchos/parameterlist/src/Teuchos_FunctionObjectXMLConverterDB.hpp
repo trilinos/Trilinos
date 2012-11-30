@@ -58,7 +58,7 @@ namespace Teuchos {
 /** 
  * \brief Provides ability to lookup FunctionObjectXMLConverters
  */
-class TEUCHOS_LIB_DLL_EXPORT FunctionObjectXMLConverterDB {
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT FunctionObjectXMLConverterDB {
 
 public:
 

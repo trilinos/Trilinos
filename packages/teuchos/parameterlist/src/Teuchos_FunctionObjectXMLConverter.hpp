@@ -61,7 +61,7 @@ namespace Teuchos {
 /** \brief An abstract base class for converting FunctionObjects to
  * and from XML.
  */
-class TEUCHOS_LIB_DLL_EXPORT FunctionObjectXMLConverter : public Describable {
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT FunctionObjectXMLConverter : public Describable {
 
 public:
 

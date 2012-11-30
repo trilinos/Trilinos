@@ -60,7 +60,7 @@ namespace Teuchos{
  * \reference DependencySheet
  * \reference ParameterList
  */
-class TEUCHOS_LIB_DLL_EXPORT Dependency : public Describable{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT Dependency : public Describable{
 
 public:
 

@@ -63,7 +63,7 @@ namespace Teuchos {
  * The output stream type is <tt>FancyOStream</tt> which allows for automated
  * indentation (using the <tt>OSTab</tt> class) and has other useful features.
  */
-class TEUCHOS_LIB_DLL_EXPORT VerboseObjectBase {
+class TEUCHOSCORE_LIB_DLL_EXPORT VerboseObjectBase {
 public:
 
   //! @name Public static member functions 

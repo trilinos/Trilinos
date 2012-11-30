@@ -89,7 +89,7 @@ namespace Teuchos {
     ///   we have to handle them specially.
     ///
     /// \return True if the line is a comment line, else false.
-    TEUCHOS_LIB_DLL_EXPORT bool
+    TEUCHOSNUMERICS_LIB_DLL_EXPORT bool
     checkCommentLine (const std::string& line,
                       size_t& start,
                       size_t& size,

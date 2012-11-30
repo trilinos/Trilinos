@@ -63,7 +63,7 @@ class CommandLineProcessor;
 
 
 /** \brief Singleton unit testing repository. */
-class TEUCHOS_LIB_DLL_EXPORT UnitTestRepository {
+class TEUCHOSCORE_LIB_DLL_EXPORT UnitTestRepository {
 public:
 
   /** \brief . */

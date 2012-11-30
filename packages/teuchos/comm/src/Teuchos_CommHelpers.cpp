@@ -79,7 +79,7 @@ std::string getMpiErrorString (const int errCode) {
 //
 // To make Windows builds happy, declarations of full template
 // specializations (as found in Teuchos_CommHelpers.hpp) must use the
-// TEUCHOS_LIB_DLL_EXPORT macro.  However, _definitions_ of the
+// TEUCHOSCOMM_LIB_DLL_EXPORT macro.  However, _definitions_ of the
 // specializations (as found in this file) must _not_ use the macro.
 // That's why we don't use that macro here.
 

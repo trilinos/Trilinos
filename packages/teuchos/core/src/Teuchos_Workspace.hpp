@@ -81,11 +81,11 @@ class RawWorkspace;
  * <li><tt>get_default_workspace_store().get() == default_workspace_store.get()</tt>.
  * </ul>
  */
-TEUCHOS_LIB_DLL_EXPORT void set_default_workspace_store( const Teuchos::RCP<WorkspaceStore> &default_workspace_store );
+TEUCHOSCORE_LIB_DLL_EXPORT void set_default_workspace_store( const Teuchos::RCP<WorkspaceStore> &default_workspace_store );
 
 /** \brief Get the global workspace object set by <tt>set_default_workspace_store()</tt>.
  */
-TEUCHOS_LIB_DLL_EXPORT Teuchos::RCP<WorkspaceStore> get_default_workspace_store();
+TEUCHOSCORE_LIB_DLL_EXPORT Teuchos::RCP<WorkspaceStore> get_default_workspace_store();
 
 /** \brief Print statistics on memory usage.
  *
@@ -94,13 +94,13 @@ TEUCHOS_LIB_DLL_EXPORT Teuchos::RCP<WorkspaceStore> get_default_workspace_store(
  *                         <tt>out</tt>.
  * @param  out              [in/out] Stream used for printing to.
  */
-TEUCHOS_LIB_DLL_EXPORT void print_memory_usage_stats( const WorkspaceStore* workspace_store, std::ostream& out );
+TEUCHOSCORE_LIB_DLL_EXPORT void print_memory_usage_stats( const WorkspaceStore* workspace_store, std::ostream& out );
 
 /** \brief Encapulsation object for raw temporary workspace that has been allocated.
  * These objects can only be created on the stack and should not be included
  * as the member of any other classes.
  */
-class TEUCHOS_LIB_DLL_EXPORT RawWorkspace {
+class TEUCHOSCORE_LIB_DLL_EXPORT RawWorkspace {
 public:
 	/** \brief . */
 	friend class WorkspaceStore;
@@ -264,7 +264,7 @@ private:
  * available workspace and can not directly instantiate objects of this type.
  * Instead it must create a derived WorkspaceStoreInitializeable object defined later.
  */
-class TEUCHOS_LIB_DLL_EXPORT WorkspaceStore {
+class TEUCHOSCORE_LIB_DLL_EXPORT WorkspaceStore {
 public:
 	/** \brief . */
 	friend class RawWorkspace;

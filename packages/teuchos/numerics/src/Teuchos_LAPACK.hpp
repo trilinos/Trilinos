@@ -950,7 +950,7 @@ namespace Teuchos
   // BEGIN INT, FLOAT SPECIALIZATION DECLARATION //
 
   template<>
-  class TEUCHOS_LIB_DLL_EXPORT LAPACK<int, float>
+  class TEUCHOSNUMERICS_LIB_DLL_EXPORT LAPACK<int, float>
   {
   public:
     inline LAPACK(void) {}
@@ -1069,7 +1069,7 @@ namespace Teuchos
   // BEGIN INT, DOUBLE SPECIALIZATION DECLARATION //
 
   template<>
-  class TEUCHOS_LIB_DLL_EXPORT LAPACK<int, double>
+  class TEUCHOSNUMERICS_LIB_DLL_EXPORT LAPACK<int, double>
   {
   public:
     inline LAPACK(void) {}
@@ -1187,7 +1187,7 @@ namespace Teuchos
   // BEGIN INT, COMPLEX<FLOAT> SPECIALIZATION DECLARATION //
 
   template<>
-  class TEUCHOS_LIB_DLL_EXPORT LAPACK<int, std::complex<float> >
+  class TEUCHOSNUMERICS_LIB_DLL_EXPORT LAPACK<int, std::complex<float> >
   {
   public:
     inline LAPACK(void) {}
@@ -1286,7 +1286,7 @@ namespace Teuchos
   // BEGIN INT, COMPLEX<DOUBLE> SPECIALIZATION DECLARATION //
 
   template<>
-  class TEUCHOS_LIB_DLL_EXPORT LAPACK<int, std::complex<double> >
+  class TEUCHOSNUMERICS_LIB_DLL_EXPORT LAPACK<int, std::complex<double> >
   {
   public:
     inline LAPACK(void) {}

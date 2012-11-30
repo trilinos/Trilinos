@@ -71,7 +71,7 @@ namespace Teuchos {
  *
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT
+TEUCHOSCOMM_LIB_DLL_EXPORT
 void updateParametersFromXmlFileAndBroadcast(
   const std::string &xmlFileName,
   const Ptr<ParameterList> &paramList,

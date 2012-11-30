@@ -199,7 +199,7 @@ public:
 
 /** \brief An xml converter for ParameterConditions
  */
-class TEUCHOS_LIB_DLL_EXPORT ParameterConditionConverter : public ConditionXMLConverter{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ParameterConditionConverter : public ConditionXMLConverter{
 
 public:
 

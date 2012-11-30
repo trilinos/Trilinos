@@ -164,25 +164,25 @@ std::string ArrayView<T>::toString() const
 // Specialization for float.  We use sufficient precision that no
 // digits are lost after writing to string and reading back in again.
 template<>
-TEUCHOS_LIB_DLL_EXPORT std::string
+TEUCHOSCORE_LIB_DLL_EXPORT std::string
 ArrayView<float>::toString() const;
 
 // Specialization for (const) float.  We use sufficient precision that no
 // digits are lost after writing to string and reading back in again.
 template<>
-TEUCHOS_LIB_DLL_EXPORT std::string
+TEUCHOSCORE_LIB_DLL_EXPORT std::string
 ArrayView<const float>::toString() const;
 
 // Specialization for double.  We use sufficient precision that no
 // digits are lost after writing to string and reading back in again.
 template<>
-TEUCHOS_LIB_DLL_EXPORT std::string
+TEUCHOSCORE_LIB_DLL_EXPORT std::string
 ArrayView<double>::toString() const;
 
 // Specialization for (const) double.  We use sufficient precision that no
 // digits are lost after writing to string and reading back in again.
 template<>
-TEUCHOS_LIB_DLL_EXPORT std::string
+TEUCHOSCORE_LIB_DLL_EXPORT std::string
 ArrayView<const double>::toString() const;
 
 

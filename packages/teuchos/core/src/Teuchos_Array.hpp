@@ -729,7 +729,7 @@ std::string getArrayTypeNameTraitsFormat(){
  * \ingroup teuchos_mem_mng_grp
  */
 template<typename T>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<Array<T> > {
+class TEUCHOSCORE_LIB_DLL_EXPORT TypeNameTraits<Array<T> > {
 public:
   static std::string name(){
     std::string formatString = getArrayTypeNameTraitsFormat();

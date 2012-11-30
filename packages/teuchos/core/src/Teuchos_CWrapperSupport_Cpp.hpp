@@ -57,7 +57,7 @@ namespace Teuchos {
 /** \brief Static C Wrapper Error Handling Policy Class.
  *
  */
-class TEUCHOS_LIB_DLL_EXPORT CWrapperErrorHandling {
+class TEUCHOSCORE_LIB_DLL_EXPORT CWrapperErrorHandling {
 public:
 
   /** \brief Set the ostream that will be printed to when errors occur.

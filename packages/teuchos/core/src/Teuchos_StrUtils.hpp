@@ -58,7 +58,7 @@ namespace Teuchos {
    * \brief Provides std::string manipulation utilities that are not provided in the
    * standard C++ std::string class.
    */
-class TEUCHOS_LIB_DLL_EXPORT StrUtils
+class TEUCHOSCORE_LIB_DLL_EXPORT StrUtils
 {
 public:
   /** \brief Read a file, putting each line into a std::string */

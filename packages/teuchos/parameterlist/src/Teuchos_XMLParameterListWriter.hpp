@@ -61,7 +61,7 @@ namespace Teuchos {
 /** \ingroup XML 
  * \brief Writes a ParameterList to an XML object
  */
-class TEUCHOS_LIB_DLL_EXPORT XMLParameterListWriter {
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT XMLParameterListWriter {
 
 public:
 

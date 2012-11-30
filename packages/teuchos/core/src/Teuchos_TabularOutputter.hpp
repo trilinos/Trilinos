@@ -58,7 +58,7 @@ namespace Teuchos {
  * of output.
  *
  */
-class TEUCHOS_LIB_DLL_EXPORT TabularOutputter {
+class TEUCHOSCORE_LIB_DLL_EXPORT TabularOutputter {
 public:
 
   /** \name Public types */

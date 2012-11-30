@@ -90,7 +90,7 @@ namespace Teuchos {
  * </ul>
  */ 
 
-class TEUCHOS_LIB_DLL_EXPORT Time
+class TEUCHOSCORE_LIB_DLL_EXPORT Time
 {
 
 public:

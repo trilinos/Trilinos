@@ -72,7 +72,7 @@
 
 namespace Teuchos {
 
-class TEUCHOS_LIB_DLL_EXPORT CommandLineProcessor {
+class TEUCHOSCORE_LIB_DLL_EXPORT CommandLineProcessor {
 public:
 
   //! @name Public types 

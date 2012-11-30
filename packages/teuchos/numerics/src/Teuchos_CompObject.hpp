@@ -62,7 +62,7 @@
 
 namespace Teuchos
 {
-class TEUCHOS_LIB_DLL_EXPORT CompObject
+class TEUCHOSNUMERICS_LIB_DLL_EXPORT CompObject
 {
 
   public:

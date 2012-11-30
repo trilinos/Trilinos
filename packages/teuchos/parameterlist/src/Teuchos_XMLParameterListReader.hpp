@@ -60,7 +60,7 @@ namespace Teuchos {
  *
  * \ingroup XML 
  */
-class TEUCHOS_LIB_DLL_EXPORT XMLParameterListReader{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT XMLParameterListReader{
 
 public:
   

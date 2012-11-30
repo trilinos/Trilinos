@@ -59,7 +59,7 @@ class EmptyXMLError : public std::runtime_error
  * \brief Representation of an XML data tree. XMLObject is a ref-counted
  * handle to a XMLObjectImplem object, allowing storage by reference.
  */
-class TEUCHOS_LIB_DLL_EXPORT XMLObject{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT XMLObject{
 public:
 
   //! @name Constructors 
@@ -220,19 +220,19 @@ private:
 
 
 template<>
-TEUCHOS_LIB_DLL_EXPORT bool XMLObject::getRequired<bool>(const std::string& name) const;
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT bool XMLObject::getRequired<bool>(const std::string& name) const;
 
 template<>
-TEUCHOS_LIB_DLL_EXPORT int XMLObject::getRequired<int>(const std::string& name) const;
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT int XMLObject::getRequired<int>(const std::string& name) const;
 
 template<>
-TEUCHOS_LIB_DLL_EXPORT double XMLObject::getRequired<double>(const std::string& name) const;
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT double XMLObject::getRequired<double>(const std::string& name) const;
 
 template<>
-TEUCHOS_LIB_DLL_EXPORT std::string XMLObject::getRequired<std::string>(const std::string& name) const;
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT std::string XMLObject::getRequired<std::string>(const std::string& name) const;
 
 template<>
-TEUCHOS_LIB_DLL_EXPORT void XMLObject::addAttribute<const std::string&>(const std::string& name, const std::string& value);
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT void XMLObject::addAttribute<const std::string&>(const std::string& name, const std::string& value);
 
 
 /** \brief Write XMLObject to \c os stream.

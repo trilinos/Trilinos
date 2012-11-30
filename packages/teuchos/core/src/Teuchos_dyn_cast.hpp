@@ -67,7 +67,7 @@ public:
 
 
 // Throw <tt>m_bad_cast</tt> for below function
-TEUCHOS_LIB_DLL_EXPORT void dyn_cast_throw_exception(
+TEUCHOSCORE_LIB_DLL_EXPORT void dyn_cast_throw_exception(
   const std::string &T_from,
   const std::string &T_from_concr,
   const std::string &T_to

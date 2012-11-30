@@ -44,7 +44,7 @@
 namespace Teuchos {
 
 template<>
-TEUCHOS_LIB_DLL_EXPORT std::string
+TEUCHOSCORE_LIB_DLL_EXPORT std::string
 ArrayView<float>::toString() const
 {
   using Teuchos::as;
@@ -70,7 +70,7 @@ ArrayView<float>::toString() const
 }
 
 template<>
-TEUCHOS_LIB_DLL_EXPORT std::string
+TEUCHOSCORE_LIB_DLL_EXPORT std::string
 ArrayView<const float>::toString() const
 {
   using Teuchos::as;
@@ -96,7 +96,7 @@ ArrayView<const float>::toString() const
 }
 
 template<>
-TEUCHOS_LIB_DLL_EXPORT std::string
+TEUCHOSCORE_LIB_DLL_EXPORT std::string
 ArrayView<double>::toString() const
 {
   using Teuchos::as;
@@ -122,7 +122,7 @@ ArrayView<double>::toString() const
 }
 
 template<>
-TEUCHOS_LIB_DLL_EXPORT std::string
+TEUCHOSCORE_LIB_DLL_EXPORT std::string
 ArrayView<const double>::toString() const
 {
   using Teuchos::as;

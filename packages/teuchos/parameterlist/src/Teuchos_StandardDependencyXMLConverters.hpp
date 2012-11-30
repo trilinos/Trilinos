@@ -58,7 +58,7 @@ namespace Teuchos {
 
 /** \brief An xml converter for VisualDepenencies
  */
-class TEUCHOS_LIB_DLL_EXPORT VisualDependencyXMLConverter : public DependencyXMLConverter{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT VisualDependencyXMLConverter : public DependencyXMLConverter{
 
 public:
 
@@ -137,7 +137,7 @@ private:
 
 /** \brief An xml converter for ValidatorDependencies.
  */
-class TEUCHOS_LIB_DLL_EXPORT ValidatorDependencyXMLConverter : public DependencyXMLConverter{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ValidatorDependencyXMLConverter : public DependencyXMLConverter{
 
 public:
 
@@ -217,7 +217,7 @@ public:
   The "showIf" XML attribute is optional and if not present will be considered
   true.
  */
-class TEUCHOS_LIB_DLL_EXPORT StringVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT StringVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
 
 public:
 
@@ -280,7 +280,7 @@ private:
  *  The "showIf" XML attribute is optional and if not present will be considered
  *  true.
  */
-class TEUCHOS_LIB_DLL_EXPORT BoolVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT BoolVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
 
 public:
 
@@ -406,7 +406,7 @@ NumberVisualDependencyXMLConverter<T>::convertSpecialVisualAttributes(
  *  The "showIf" XML attribute is optional and if not present will be considered
  *  true.
  */
-class TEUCHOS_LIB_DLL_EXPORT ConditionVisualDependencyXMLConverter : 
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ConditionVisualDependencyXMLConverter : 
   public VisualDependencyXMLConverter
 {
 
@@ -453,7 +453,7 @@ public:
   \endcode
  * The "defaultValidatorId" XML attribute is optional.
  */
-class TEUCHOS_LIB_DLL_EXPORT StringValidatorDependencyXMLConverter : 
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT StringValidatorDependencyXMLConverter : 
   public ValidatorDependencyXMLConverter{
 
 public:
@@ -531,7 +531,7 @@ private:
  * You don't have to include both a "trueValidatorId" and "falseValidatorId" 
  * XML attribute, but you must include at least one of them.
  */
-class TEUCHOS_LIB_DLL_EXPORT BoolValidatorDependencyXMLConverter : public ValidatorDependencyXMLConverter{
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT BoolValidatorDependencyXMLConverter : public ValidatorDependencyXMLConverter{
 
 public:
 

@@ -123,10 +123,10 @@ functions that include the macro:
 */
 namespace Teuchos
 {
-  extern TEUCHOS_LIB_DLL_EXPORT const char ESideChar[];
-  extern TEUCHOS_LIB_DLL_EXPORT const char ETranspChar[];
-  extern TEUCHOS_LIB_DLL_EXPORT const char EUploChar[];
-  extern TEUCHOS_LIB_DLL_EXPORT const char EDiagChar[];
+  extern TEUCHOSNUMERICS_LIB_DLL_EXPORT const char ESideChar[];
+  extern TEUCHOSNUMERICS_LIB_DLL_EXPORT const char ETranspChar[];
+  extern TEUCHOSNUMERICS_LIB_DLL_EXPORT const char EUploChar[];
+  extern TEUCHOSNUMERICS_LIB_DLL_EXPORT const char EDiagChar[];
 
   //! Default implementation for BLAS routines
   /*!
@@ -240,7 +240,7 @@ namespace Teuchos
   };
 
   template<typename OrdinalType, typename ScalarType>
-  class TEUCHOS_LIB_DLL_EXPORT BLAS : public DefaultBLASImpl<OrdinalType,ScalarType>
+  class TEUCHOSNUMERICS_LIB_DLL_EXPORT BLAS : public DefaultBLASImpl<OrdinalType,ScalarType>
   {
 
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -2223,7 +2223,7 @@ namespace Teuchos
   // Explicit instantiation for template<int,float>
 
   template <>
-  class TEUCHOS_LIB_DLL_EXPORT BLAS<int, float>
+  class TEUCHOSNUMERICS_LIB_DLL_EXPORT BLAS<int, float>
   {
   public:
     inline BLAS(void) {}
@@ -2251,7 +2251,7 @@ namespace Teuchos
   // Explicit instantiation for template<int,double>
 
   template<>
-  class TEUCHOS_LIB_DLL_EXPORT BLAS<int, double>
+  class TEUCHOSNUMERICS_LIB_DLL_EXPORT BLAS<int, double>
   {
   public:
     inline BLAS(void) {}
@@ -2279,7 +2279,7 @@ namespace Teuchos
   // Explicit instantiation for template<int,complex<float> >
 
   template<>
-  class TEUCHOS_LIB_DLL_EXPORT BLAS<int, std::complex<float> >
+  class TEUCHOSNUMERICS_LIB_DLL_EXPORT BLAS<int, std::complex<float> >
   {
   public:
     inline BLAS(void) {}
@@ -2307,7 +2307,7 @@ namespace Teuchos
   // Explicit instantiation for template<int,complex<double> >
 
   template<>
-  class TEUCHOS_LIB_DLL_EXPORT BLAS<int, std::complex<double> >
+  class TEUCHOSNUMERICS_LIB_DLL_EXPORT BLAS<int, std::complex<double> >
   {
   public:
     inline BLAS(void) {}

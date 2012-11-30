@@ -99,7 +99,7 @@ enum EValidateDefaults {
           <li> Both char* and std::string std::map to are stored as strings internally. 
 	  </ul>
 */
-class TEUCHOS_LIB_DLL_EXPORT ParameterList {
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ParameterList {
 
   //! Internal data-structure
   typedef StringIndexedOrderedValueObjectContainer<ParameterEntry> params_t;
@@ -684,7 +684,7 @@ RCP<ParameterList> createParameterList(const std::string &name)
  * \relates ParameterList
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<ParameterList> {
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT TypeNameTraits<ParameterList> {
 public:
   static std::string name() { return "ParameterList"; }
   static std::string concreteName( const ParameterList& /*t2*/ )
@@ -696,7 +696,7 @@ public:
  *
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT bool operator==( const ParameterList& list1, const ParameterList& list2 );
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT bool operator==( const ParameterList& list1, const ParameterList& list2 );
 
 
 /** \brief Returns true if two parameter lists are <b>not</tt> the same.
@@ -721,7 +721,7 @@ bool operator!=( const ParameterList& list1, const ParameterList& list2 )
  *
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT bool haveSameValues( const ParameterList& list1, const ParameterList& list2 );
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT bool haveSameValues( const ParameterList& list1, const ParameterList& list2 );
 
 
 // /////////////////////////////////////////////////////

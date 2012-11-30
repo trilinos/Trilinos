@@ -56,7 +56,7 @@ namespace Teuchos {
 
 
 /** \brief Unit test base class. */
-class TEUCHOS_LIB_DLL_EXPORT UnitTestBase : public Describable {
+class TEUCHOSCORE_LIB_DLL_EXPORT UnitTestBase : public Describable {
 public:
   
   /** \brief . */
