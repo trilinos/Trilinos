@@ -1,48 +1,6 @@
 #ifndef STKTOPOLOGY_TOPOLOGY_TCC
 #define STKTOPOLOGY_TOPOLOGY_TCC
 
-#define STKTOPOLOGY_SIMPLE_MEMBER(name,result)                                     \
-  namespace stk { namespace topology_detail {                                      \
-  struct name##_impl {                                                             \
-    typedef result result_type;                                                    \
-    template <typename Topology>                                                   \
-    STKTOPOLOGY_INLINE_FUNCTION                                                    \
-    result_type operator()(Topology) const                                         \
-    { return Topology::name; }                                                     \
-  };                                                                               \
-  }} /*namespace stk::topology_detail*/                                            \
-  namespace stk {                                                                  \
-  STKTOPOLOGY_INLINE_FUNCTION                                                      \
-  result topology::name() const                                                    \
-  { topology::apply_functor< topology_detail::name##_impl > apply;                 \
-    return apply(m_value);                                                         \
-  }                                                                                \
-  } /*namespace stk*/
-
-#define STKTOPOLOGY_ORDINAL_MEMBER(name,result)                                    \
-  namespace stk { namespace topology_detail {                                      \
-  struct name##_impl {                                                             \
-    typedef result result_type;                                                    \
-    STKTOPOLOGY_INLINE_FUNCTION                                                    \
-    name##_impl(int ordinal)                                                       \
-      : m_ordinal(ordinal)                                                         \
-    {}                                                                             \
-    template <typename Topology>                                                   \
-    STKTOPOLOGY_INLINE_FUNCTION                                                    \
-    result_type operator()(Topology) const                                         \
-    { return Topology::name(m_ordinal); }                                          \
-    int m_ordinal;                                                                 \
-  };                                                                               \
-  }} /*namespace stk::topology_detail*/                                            \
-  namespace stk {                                                                  \
-  STKTOPOLOGY_INLINE_FUNCTION                                                      \
-  result topology::name(int ordinal) const                                         \
-  { topology_detail::name##_impl f(ordinal);                                       \
-    topology::apply_functor< topology_detail::name##_impl > apply( f );            \
-    return apply(m_value);                                                         \
-  }                                                                                \
-  } /*namespace stk*/
-
 #define STKTOPOLOGY_ORDINAL_NODES_MEMBER(name)                                     \
   namespace stk { namespace topology_detail {                                      \
   template <typename OrdinalOutputIterator>                                        \
@@ -107,26 +65,6 @@
   }                                                                                \
   } /*namespace stk*/
 
-STKTOPOLOGY_SIMPLE_MEMBER(has_homogeneous_edges,bool)
-STKTOPOLOGY_SIMPLE_MEMBER(has_homogeneous_faces,bool)
-STKTOPOLOGY_SIMPLE_MEMBER(has_homogeneous_sides,bool)
-STKTOPOLOGY_SIMPLE_MEMBER(is_shell,bool)
-STKTOPOLOGY_SIMPLE_MEMBER(rank,topology::rank_t)
-STKTOPOLOGY_SIMPLE_MEMBER(side_rank,topology::rank_t)
-STKTOPOLOGY_SIMPLE_MEMBER(dimension,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_nodes,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_vertices,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_edges,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_faces,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_sides,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_permutations,int)
-STKTOPOLOGY_SIMPLE_MEMBER(num_positive_permutations,int)
-STKTOPOLOGY_SIMPLE_MEMBER(base,topology)
-
-STKTOPOLOGY_ORDINAL_MEMBER(defined_on_spatial_dimension,bool)
-STKTOPOLOGY_ORDINAL_MEMBER(edge_topology,topology)
-STKTOPOLOGY_ORDINAL_MEMBER(face_topology,topology)
-STKTOPOLOGY_ORDINAL_MEMBER(side_topology,topology)
 
 STKTOPOLOGY_ORDINAL_NODES_MEMBER(edge_node_ordinals)
 STKTOPOLOGY_ORDINAL_NODES_MEMBER(face_node_ordinals)
@@ -138,8 +76,6 @@ STKTOPOLOGY_NODES_MEMBER(face_nodes)
 STKTOPOLOGY_NODES_MEMBER(side_nodes)
 STKTOPOLOGY_NODES_MEMBER(permutation_nodes)
 
-#undef STKTOPOLOGY_SIMPLE_MEMBER
-#undef STKTOPOLOGY_ORDINAL_MEMBER
 #undef STKTOPOLOGY_ORDINAL_NODES_MEMBER
 #undef STKTOPOLOGY_NODES_MEMBER
 

@@ -185,11 +185,6 @@ struct topology::topology_type
   STKTOPOLOGY_INLINE_FUNCTION
   static void side_node_ordinals(int side_ordinal, OrdinalOutputIterator output_ordinals)
   {
-    BOOST_MPL_ASSERT_MSG(   (num_sides <= 12)
-                          , SIDE_NODES_CASE_NEEDS_TO_BE_EXPANDED_TO_HANDLE_MORE_SIDES
-                          , (topology_type<Topology>)
-                        );
-
     topology_detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
 
     STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(side_ordinal, topology_detail::side_node_ordinals_, f)
@@ -202,11 +197,6 @@ struct topology::topology_type
   STKTOPOLOGY_INLINE_FUNCTION
   static void permutation_node_ordinals(int permutation_ordinal, OrdinalOutputIterator output_ordinals)
   {
-    BOOST_MPL_ASSERT_MSG(   (num_permutations <= 12)
-                          , PERMUTATION_NODES_CASE_NEEDS_TO_BE_EXPANDED_TO_HANDLE_MORE_PERMUTATIONS
-                          , (topology_type<Topology>)
-                        );
-
     topology_detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
 
     STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(permutation_ordinal, topology_detail::permutation_node_ordinals_, f)
@@ -219,11 +209,6 @@ struct topology::topology_type
   STKTOPOLOGY_INLINE_FUNCTION
   static void edge_nodes(const NodeArray & nodes, int edge_ordinal, NodeOutputIterator output_nodes)
   {
-    BOOST_MPL_ASSERT_MSG(   (num_edges <= 12)
-                          , EDGE_NODES_CASE_NEEDS_TO_BE_EXPANDED_TO_HANDLE_MORE_EDGES
-                          , (topology_type<Topology>)
-                        );
-
     topology_detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
 
     STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(edge_ordinal, topology_detail::edge_node_ordinals_, f)
@@ -236,11 +221,6 @@ struct topology::topology_type
   STKTOPOLOGY_INLINE_FUNCTION
   static void face_nodes(const NodeArray & nodes, int face_ordinal, NodeOutputIterator output_nodes)
   {
-    BOOST_MPL_ASSERT_MSG(   (num_faces <= 6)
-                          , FACE_NODES_CASE_NEEDS_TO_BE_EXPANDED_TO_HANDLE_MORE_FACES
-                          , (topology_type<Topology>)
-                        );
-
     topology_detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
 
     STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(face_ordinal, topology_detail::face_node_ordinals_, f)
@@ -253,11 +233,6 @@ struct topology::topology_type
   STKTOPOLOGY_INLINE_FUNCTION
   static void side_nodes(const NodeArray & nodes, int side_ordinal, NodeOutputIterator output_nodes)
   {
-    BOOST_MPL_ASSERT_MSG(   (num_sides <= 12)
-                          , SIDE_NODES_CASE_NEEDS_TO_BE_EXPANDED_TO_HANDLE_MORE_SIDES
-                          , (topology_type<Topology>)
-                        );
-
     topology_detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
 
     STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(side_ordinal, topology_detail::side_node_ordinals_, f)
@@ -270,11 +245,6 @@ struct topology::topology_type
   STKTOPOLOGY_INLINE_FUNCTION
   static void permutation_nodes(const NodeArray & nodes, int permutation_ordinal, NodeOutputIterator output_nodes)
   {
-    BOOST_MPL_ASSERT_MSG(   (num_permutations <= 12)
-                          , SIDE_NODES_CASE_NEEDS_TO_BE_EXPANDED_TO_HANDLE_MORE_PERMUTATIONS
-                          , (topology_type<Topology>)
-                        );
-
     topology_detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
 
     STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(permutation_ordinal, topology_detail::permutation_node_ordinals_, f)
