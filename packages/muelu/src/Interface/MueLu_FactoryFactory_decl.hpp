@@ -152,16 +152,21 @@ namespace MueLu {
       if (factoryName == "MultiVectorTransferFactory") {
         return BuildMultiVectorTransferFactory(paramList, factoryMapIn);
       }
-#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
       if (factoryName == "ZoltanInterface") {
+#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
         return BuildZoltanInterface(paramList, factoryMapIn);
+#else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a ZoltanInterface object: Zoltan is disabled: HAVE_MUELU_ZOLTAN && HAVE_MPI == false.");
+#endif // HAVE_MUELU_ZOLTAN && HAVE_MPI
       }
-#endif
-#ifdef HAVE_MPI
+
       if (factoryName == "RepartitionFactory") {
+#ifdef HAVE_MPI
         return BuildRepartitionFactory(paramList, factoryMapIn);
+#else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a RepartitionFactory object: HAVE_MPI == false.");
+#endif // HAVE_MPI
       }
-#endif
       if (factoryName == "PermutedTransferFactory") {
         return BuildPermutedTransferFactory(paramList, factoryMapIn);
       }

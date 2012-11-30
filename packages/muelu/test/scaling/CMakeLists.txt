@@ -80,7 +80,16 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos AND (NOT Teuchos_ENABLE_LONG_LONG_INT))
   XPETRA_ADD_TEST_EPETRA(${MueLu_ScalingTestName} 4)
-  XPETRA_ADD_TEST_EPETRA(ScalingTestParamList 4)
+
+  IF (${PACKAGE_NAME}_ENABLE_Zoltan)
+    TRIBITS_ADD_TEST(
+      ScalingTestParamList
+      NAME "ScalingTestParamListEpetra"
+      ARGS "--linAlgebra=Epetra"
+      NUM_MPI_PROCS 4
+      COMM mpi # HAVE_MPI required
+      )
+  ENDIF()
 
   TRIBITS_ADD_TEST(
     RAPScalingTest
@@ -94,7 +103,16 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   XPETRA_ADD_TEST_TPETRA(${MueLu_ScalingTestName} 4)
-  XPETRA_ADD_TEST_TPETRA(ScalingTestParamList 4)
+
+  IF (${PACKAGE_NAME}_ENABLE_Zoltan)
+    TRIBITS_ADD_TEST(
+      ScalingTestParamList
+      NAME "ScalingTestParamListTpetra"
+      ARGS "--linAlgebra=Tpetra"
+      NUM_MPI_PROCS 4
+      COMM mpi # HAVE_MPI required
+      )
+  ENDIF()
 
   TRIBITS_ADD_TEST(
     RAPScalingTest
