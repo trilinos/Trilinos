@@ -28,6 +28,8 @@ namespace NOX {
     ::Thyra::ModelEvaluatorBase::OutArgs<ScalarT> createOutArgsImpl() const
     {
       ::Thyra::ModelEvaluatorBase::OutArgsSetup<ScalarT> outArgs(this->getUnderlyingModel()->createOutArgs());
+      outArgs.setModelEvalDescription(this->description());
+
       if (outArgs.supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_op))
 	  return outArgs;
 
@@ -38,14 +40,21 @@ namespace NOX {
     void evalModelImpl(const ::Thyra::ModelEvaluatorBase::InArgs<ScalarT> &inArgs,
 		       const ::Thyra::ModelEvaluatorBase::OutArgs<ScalarT> &outArgs) const
     {
-      ::Thyra::ModelEvaluatorBase::OutArgs<ScalarT> outArgsWithoutW_op = this->getUnderlyingModel()->createOutArgs();
-      
-      outArgsWithoutW_op.setArgs(outArgs, true);
-      
-      if (outArgsWithoutW_op.supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_op))
-	outArgsWithoutW_op.set_W_op(Teuchos::null);
+      // The inArgs/outArgs model descriptions must match the
+      // evaluator description, so create pass through in/out args for
+      // the underlying models.
+      ::Thyra::ModelEvaluatorBase::InArgs<ScalarT> modelInArgs = this->getUnderlyingModel()->createInArgs();
+      modelInArgs.setArgs(inArgs,false);
 
-      this->getUnderlyingModel()->evalModel(inArgs,outArgsWithoutW_op);
+      // model may not support W_op (hence JFNK)
+      ::Thyra::ModelEvaluatorBase::OutArgs<ScalarT> modelOutArgs = this->getUnderlyingModel()->createOutArgs();
+      modelOutArgs.setArgs(outArgs, true);
+      
+      // In some cases is may still support W_op, be sure to disable for JFNK
+      if (modelOutArgs.supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_op))
+	modelOutArgs.set_W_op(Teuchos::null);
+
+      this->getUnderlyingModel()->evalModel(modelInArgs,modelOutArgs);
     }
 
   };

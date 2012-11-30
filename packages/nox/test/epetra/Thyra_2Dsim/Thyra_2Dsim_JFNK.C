@@ -372,8 +372,9 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, JFNK_solve_no_prec)
 
   nox_group->computeF();
 
-  // VERY IMPORTANT!!!
-  jfnkOp->setBaseEvaluationToNOXGroup(nox_group);
+  // VERY IMPORTANT!!!  jfnk object needs base evaluation objects.
+  // This creates a circular dependency, so use a weak pointer.
+  jfnkOp->setBaseEvaluationToNOXGroup(nox_group.create_weak());
 
   // Create the NOX status tests and the solver
   // Create the convergence tests
