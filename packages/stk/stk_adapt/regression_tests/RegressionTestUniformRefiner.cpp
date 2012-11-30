@@ -20,6 +20,8 @@
 #include <mpi.h>
 #endif
 
+#include <stk_mesh/base/Trace.hpp>
+
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 #include <stk_util/environment/WallTime.hpp>
@@ -980,6 +982,48 @@ namespace stk
         MPI_Barrier( MPI_COMM_WORLD );
 
         // start_demo_uniformRefiner_hex8_tet4_6_12_1
+
+        /*
+          const EntityKey watch_key(0, 1);
+          const EntityKey not_watch_key(0, 2);
+          const std::string tracing_func = "stk::mesh::BulkData";
+          const std::string not_tracing_func = "stk::mesh::MetaData";
+          const stk::mesh::LogMask active_mask = stk::mesh::LOG_ENTITY;
+          const stk::mesh::LogMask inactive_mask = stk::mesh::LOG_BUCKET;
+
+          // Set up a dummy trace configuration. Here, we're telling the tracing
+          // system that we want to trace BulkData calls related to entities,
+          // specifically Node[1].
+          std::ostringstream trace_output;
+          stk::mesh::setStream(trace_output);
+          meshlog.setPrintMask(active_mask | stk::mesh::LOG_TRACE);
+          stk::mesh::watch(watch_key);
+          stk::diag::Trace::addTraceFunction(tracing_func);
+
+          //      stk::mesh::setStream(use_case::dwout());
+          //   meshlog.setPrintMask(stk::mesh::LOG_ENTITY | stk::mesh::LOG_TRACE | stk::mesh::LOG_TRACE_SUB_CALLS);
+          //   stk::mesh::watch(stk::mesh::EntityKey(0, 11)); // Node 11
+          //   stk::diag::Trace::addTraceFunction("stk::mesh::");
+
+          */
+#if defined(STK_MESH_TRACE_ENABLED)
+#if 1
+        const EntityKey watch_key(0, 1);
+        //const EntityKey not_watch_key(0, 2);
+        const std::string tracing_func = "stk::mesh::BulkData";
+        //const std::string not_tracing_func = "stk::mesh::MetaData";
+        const stk::mesh::LogMask active_mask = stk::mesh::LOG_ENTITY;
+        //const stk::mesh::LogMask inactive_mask = stk::mesh::LOG_BUCKET;
+
+        //std::ostringstream trace_output;
+        stk::mesh::setStream(std::cout);
+        meshlog.setPrintMask(active_mask | stk::mesh::LOG_TRACE);
+        stk::mesh::watch(watch_key);
+        stk::diag::Trace::addTraceFunction(tracing_func);
+#else
+        stk::mesh::setStream(std::cout);
+#endif
+#endif
 
         percept::PerceptMesh eMesh(3u);
 

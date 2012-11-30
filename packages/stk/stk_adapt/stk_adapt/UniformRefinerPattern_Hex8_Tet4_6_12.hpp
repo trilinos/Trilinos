@@ -349,7 +349,7 @@ namespace stk {
             element_pool++;
           }
 
-        if (1 && new_elements.size() == 6)
+        if (0 && new_elements.size() == 6)
           {
             for (unsigned ielem=0; ielem < 6; ielem++)
               {
