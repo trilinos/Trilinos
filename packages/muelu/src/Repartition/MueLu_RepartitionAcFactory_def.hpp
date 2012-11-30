@@ -60,24 +60,22 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RepartitionAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+    Input(coarseLevel, "A");
     Input(coarseLevel, "P");
     Input(coarseLevel, "Importer");
-    coarseLevel.DeclareInput("A", GetFactory("P").get(), this); //FIXME hack
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RepartitionAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Computing Ac", coarseLevel);
 
-    RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
+    RCP<Matrix> Ac = Get< RCP<Matrix> >(coarseLevel, "A");
 
-    RCP<Matrix> Ac;
-
-    if ( coarseLevel.IsAvailable("A",GetFactory("P").get()) && IsAvailable(coarseLevel, "Importer") ) {
-
+    if (IsAvailable(coarseLevel, "Importer")) {
       SubFactoryMonitor subM(*this, "Rebalancing existing Ac", coarseLevel);
 
-      Ac = coarseLevel.Get< RCP<Matrix> >("A", GetFactory("P").get());
+      RCP<Matrix> P  = Get< RCP<Matrix> >(coarseLevel, "P");
+
       RCP<Matrix> newAc = MatrixFactory::Build(P->getDomainMap(), Ac->getGlobalMaxNumRowEntries());
       RCP<CrsMatrixWrap> crsOp = rcp_dynamic_cast<CrsMatrixWrap>(newAc);
       RCP<CrsMatrix> crsMtx = crsOp->getCrsMatrix();
@@ -95,16 +93,12 @@ namespace MueLu {
       GetOStream(Statistics0, 0) << RAPFactory::PrintMatrixInfo(*Ac, "Ac (rebalanced)");
       GetOStream(Statistics0, 0) << RAPFactory::PrintLoadBalancingInfo(*Ac, "Ac (rebalanced)");
 
-    } else if (coarseLevel.IsAvailable("A",GetFactory("P").get())) {
-
-      // Ac already built by the load balancing process and no load balancing needed
-      SubFactoryMonitor subM(*this, "Ac already computed", coarseLevel);
-      Ac = coarseLevel.Get< RCP<Matrix> >("A", GetFactory("P").get());
-
     } else {
 
-      TEUCHOS_TEST_FOR_EXCEPT(true);
-
+      // Ac already built by the load balancing process and no load balancing needed
+      GetOStream(Warnings0, 0) << "No repartitioning" << std::endl;
+      GetOStream(Warnings0, 0) <<  "Jamming A into Level " << coarseLevel.GetLevelID() << " w/ generating factory "
+                               << this << std::endl;
     }
 
     Set(coarseLevel, "A", Ac);

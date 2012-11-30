@@ -85,7 +85,7 @@
 
     <ParameterList name="myPermutedAFact">
       <Parameter name="factory" type="string" value="RepartitionAcFactory"/>
-      <Parameter name="P" type="string" value="myPermutedProlongatorFact"/>
+      <Parameter name="A" type="string" value="myRAPFact"/>
     </ParameterList>
 
 <!-- -->

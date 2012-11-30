@@ -91,13 +91,6 @@ namespace MueLu {
   void PermutedTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
-    if (PorR_ == MueLu::INTERPOLATION) {
-      GetOStream(Warnings0, 0) <<  "Jamming A into Level " << coarseLevel.GetLevelID() << " w/ generating factory "
-                               << this << std::endl;
-      RCP<Matrix> A = Get< RCP<Matrix> >(coarseLevel, "A");
-      Set(coarseLevel, "A", A);
-    }
-
     RCP<const Import> permImporter;
     try {
       permImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
