@@ -883,8 +883,8 @@ get_cell_topology(
         }
         else {
           ThrowErrorMsgIf( top.getCellTopologyData() && top != cell_topology,
-            "Cell topology is ambiguously defined. It is defined as " << cell_topology.getName() <<
-            " on part " << first_found_part->name() << " and as " << top.getName() << " on its superset part " << part.name() );
+            "Cell topology is ambiguously defined for the bucket. It is defined as " << cell_topology.getName() <<
+             " and as " << top.getName() );
         }
       }
     }
