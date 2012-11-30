@@ -450,12 +450,50 @@ public:
 
   //@}
 
+  //! Implements DistObject interface
+  //{@
+
+  //! Access function for the Tpetra::Map this DistObject was constructed with.
+  const Teuchos::RCP< const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const {
+    return matrixData_->getMap();
+  }
+
+  //! Import.
+  void doImport(const Matrix &source,
+                const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) {
+    const CrsMatrixWrap & sourceWrp = dynamic_cast<const CrsMatrixWrap &>(source);
+    matrixData_->doImport(*sourceWrp.getCrsMatrix(), importer, CM);
+  }
+
+  //! Export.
+  void doExport(const Matrix &dest,
+                const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) {
+    const CrsMatrixWrap & destWrp = dynamic_cast<const CrsMatrixWrap &>(dest);
+    matrixData_->doExport(*destWrp.getCrsMatrix(), importer, CM);
+  }
+
+  //! Import (using an Exporter).
+  void doImport(const Matrix &source,
+                const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
+    const CrsMatrixWrap & sourceWrp = dynamic_cast<const CrsMatrixWrap &>(source);
+    matrixData_->doImport(*sourceWrp.getCrsMatrix(), exporter, CM);
+  }
+
+  //! Export (using an Importer).
+  void doExport(const Matrix &dest,
+                const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
+    const CrsMatrixWrap & destWrp = dynamic_cast<const CrsMatrixWrap &>(dest);
+    matrixData_->doExport(*destWrp.getCrsMatrix(), exporter, CM);
+  }
+
+  // @}
+
   //! @name Overridden from Teuchos::Describable
   //@{
 
   /** \brief Return a simple one-line description of this object. */
   std::string description() const {
-    return "Xpetra_CrsMatrixWrap.description()";
+    return "Xpetra::CrsMatrixWrap";
   }
 
   /** \brief Print the object with some verbosity level to an FancyOStream object. */

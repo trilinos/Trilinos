@@ -165,8 +165,8 @@ public:
   */
   void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "insertGlobalValues not supported by BlockedCrsMatrix!" );
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "insertGlobalValues not supported by BlockedCrsMatrix" );
   }
 
   //! Insert matrix entries, using local IDs.
@@ -178,8 +178,8 @@ public:
       \post <tt>isLocallyIndexed() == true</tt>
   */
   void insertLocalValues(LocalOrdinal localRow, const ArrayView<const LocalOrdinal> &cols, const ArrayView<const Scalar> &vals) {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "insertLocalValues not supported by BlockedCrsMatrix!" );
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "insertLocalValues not supported by BlockedCrsMatrix" );
   }
 
   //! \brief Replace matrix entries, using global IDs.
@@ -191,8 +191,8 @@ public:
   void replaceGlobalValues(GlobalOrdinal globalRow,
                            const ArrayView<const GlobalOrdinal> &cols,
                            const ArrayView<const Scalar>        &vals) {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-                                "replaceGlobalValues not supported by BlockedCrsMatrix!" );
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+                                "replaceGlobalValues not supported by BlockedCrsMatrix" );
   }
 
   //! Replace matrix entries, using local IDs.
@@ -202,14 +202,14 @@ public:
   void replaceLocalValues(LocalOrdinal localRow,
                           const ArrayView<const LocalOrdinal> &cols,
                           const ArrayView<const Scalar>       &vals) {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-                                "replaceLocalValues not supported by BlockedCrsMatrix!" );
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+                                "replaceLocalValues not supported by BlockedCrsMatrix" );
   }
 
   //! Scale the current values of a matrix, this = alpha*this.
   void scale(const Scalar &alpha) {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-                                "scale not supported by BlockedCrsMatrix!" );
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+                                "scale not supported by BlockedCrsMatrix" );
   }
 
 
@@ -227,8 +227,8 @@ public:
     \post  <tt>isFillComplete() == false<tt>
   */
   void resumeFill(const RCP< ParameterList > &params=null) {
-     TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-                                "resumeFill not supported for block matrices!" );
+     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+                                "resumeFill not supported for block matrices" );
   }
 
   /*! \brief Signal that data entry is complete, specifying domain and range maps.
@@ -244,8 +244,8 @@ public:
   */
   void fillComplete(const RCP<const MapClass> &domainMap, const RCP<const MapClass> &rangeMap, const RCP<ParameterList> &params=null)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-                                "fillComplete with arguments not supported for block matrices!" );
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+                                "fillComplete with arguments not supported for block matrices" );
   }
 
   /*! \brief Signal that data entry is complete.
@@ -385,8 +385,8 @@ public:
   /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
   size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getNumEntriesInLocalRow not supported by BlockedCrsMatrix!" );
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "getNumEntriesInLocalRow not supported by BlockedCrsMatrix" );
     return 0;
   }
 
@@ -395,8 +395,8 @@ public:
    */
   global_size_t getGlobalNumDiags() const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getGlobalNumDiags() not supported by BlockedCrsMatrix!" );
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "getGlobalNumDiags() not supported by BlockedCrsMatrix" );
     return 0;
   }
 
@@ -405,8 +405,8 @@ public:
    */
   size_t getNodeNumDiags() const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getNodeNumDiags() not supported by BlockedCrsMatrix!" );
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "getNodeNumDiags() not supported by BlockedCrsMatrix" );
     return 0;
   }
 
@@ -415,8 +415,8 @@ public:
    */
   size_t getGlobalMaxNumRowEntries() const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getGlobalMaxNumRowEntries() not supported by BlockedCrsMatrix!" );
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "getGlobalMaxNumRowEntries() not supported by BlockedCrsMatrix" );
     return 0;
   }
 
@@ -425,8 +425,8 @@ public:
    */
   size_t getNodeMaxNumRowEntries() const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getNodeMaxNumRowEntries() not supported by BlockedCrsMatrix!" );
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "getNodeMaxNumRowEntries() not supported by BlockedCrsMatrix" );
     return 0;
   }
 
@@ -482,8 +482,8 @@ public:
                                  size_t &NumEntries
                                  ) const
     {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-          "getLocalRowCopy not supported by BlockedCrsMatrix!" );
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+          "getLocalRowCopy not supported by BlockedCrsMatrix" );
     }
 
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
@@ -498,8 +498,8 @@ public:
   */
   void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &indices, ArrayView<const Scalar> &values) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getGlobalRowView not supported by BlockedCrsMatrix!" );
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "getGlobalRowView not supported by BlockedCrsMatrix" );
   }
 
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
@@ -514,8 +514,8 @@ public:
   */
   void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getLocalRowView not supported by BlockedCrsMatrix!" );
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "getLocalRowView not supported by BlockedCrsMatrix" );
   }
 
   //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
@@ -523,15 +523,15 @@ public:
     the zero and non-zero diagonals owned by this node. */
   void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getLocalDiagCopy not supported by BlockedCrsMatrix!" );
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "getLocalDiagCopy not supported by BlockedCrsMatrix" );
   }
 
   //! Get Frobenius norm of the matrix
   virtual typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getFrobeniusNorm() not supported by BlockedCrsMatrix, yet!" );
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "getFrobeniusNorm() not supported by BlockedCrsMatrix, yet" );
   }
 
   //@}
@@ -609,7 +609,7 @@ public:
       Y.update(alpha,*tmpY,beta);
     }
     else
-      TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
           "apply() only supports NO_TRANS and TRANS." );
 
   }
@@ -655,6 +655,40 @@ public:
   }
 
   //@}
+
+  //! Implements DistObject interface
+  //{@
+
+  //! Access function for the Tpetra::Map this DistObject was constructed with.
+  const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::getMap(): operation not supported.");
+  }
+
+  //! Import.
+  void doImport(const Matrix &source,
+                const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::doImport(): operation not supported.");
+  }
+
+  //! Export.
+  void doExport(const Matrix &dest,
+                const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::doExport(): operation not supported.");
+  }
+
+  //! Import (using an Exporter).
+  void doImport(const Matrix &source,
+                const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::doImport(): operation not supported.");
+  }
+
+  //! Export (using an Importer).
+  void doExport(const Matrix &dest,
+                const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::doExport(): operation not supported.");
+  }
+
+  // @}
 
   //! @name Overridden from Teuchos::Describable
   //@{
@@ -709,8 +743,8 @@ public:
   //! Returns the CrsGraph associated with this matrix.
   RCP<const CrsGraph> getCrsGraph() const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
-        "getCrsGraph() not supported by BlockedCrsMatrix!" );
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "getCrsGraph() not supported by BlockedCrsMatrix");
     return Teuchos::null;
   }
 
@@ -733,12 +767,12 @@ public:
   {
     // TODO: if filled -> return error
 
-    TEUCHOS_TEST_FOR_EXCEPTION( r > Rows(), std::out_of_range, "Error, r = " << Rows() << " is too big" );
-    TEUCHOS_TEST_FOR_EXCEPTION( c > Cols(), std::out_of_range, "Error, c = " << Cols() << " is too big" );
+    TEUCHOS_TEST_FOR_EXCEPTION(r > Rows(), std::out_of_range, "Error, r = " << Rows() << " is too big");
+    TEUCHOS_TEST_FOR_EXCEPTION(c > Cols(), std::out_of_range, "Error, c = " << Cols() << " is too big");
 
     // check row map
     //if (!rangemaps_->Map(r)->isSameAs(mat->getRowMap()))
-    //  TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError, "Error. row maps do not fit." );
+    //  TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Error. row maps do not fit.");
 
     // set matrix
     blocks_[r*Cols()+c] = mat;
@@ -780,8 +814,8 @@ private:
    */
   void Add(Teuchos::RCP<CrsMatrixClass>& A, const Scalar scalarA, Teuchos::RCP<CrsMatrixClass>& B, const Scalar scalarB) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( !A->isFillComplete(), Xpetra::Exceptions::RuntimeError,
-        "Matrix A is not completed" );
+    TEUCHOS_TEST_FOR_EXCEPTION(!A->isFillComplete(), Xpetra::Exceptions::RuntimeError,
+        "Matrix A is not completed");
 
     B->scale(scalarB);
 

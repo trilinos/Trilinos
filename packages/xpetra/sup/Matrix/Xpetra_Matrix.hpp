@@ -455,6 +455,32 @@ namespace Xpetra {
 
     //@}
 
+    //! Implements DistObject interface
+    //{@
+
+    //! Access function for the Tpetra::Map this DistObject was constructed with.
+    virtual const Teuchos::RCP< const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const =0;
+
+    // TODO: first argument of doImport/doExport should be a Xpetra::DistObject
+
+    //! Import.
+    virtual void doImport(const Matrix &source,
+                          const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) =0;
+
+    //! Export.
+    virtual void doExport(const Matrix &dest,
+                          const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) =0;
+
+    //! Import (using an Exporter).
+    virtual void doImport(const Matrix &source,
+                          const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) =0;
+
+    //! Export (using an Importer).
+    virtual void doExport(const Matrix &dest,
+                          const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) =0;
+
+    // @}
+
     //! @name Overridden from Teuchos::Describable
     //@{
 
