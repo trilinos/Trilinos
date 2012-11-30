@@ -810,6 +810,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
    Epetra_Map* sourceMap_;
    Epetra_Map* colMap_;
    Epetra_Export* exporter_;
+   Epetra_CrsMatrix* tempMat_;
 
    template<typename int_type>
    int SumIntoGlobalValues(int_type GlobalRow, int NumEntries, const double* values, const int_type* Indices);
