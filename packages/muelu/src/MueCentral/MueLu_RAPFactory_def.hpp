@@ -106,7 +106,6 @@ namespace MueLu {
       if (implicitTranspose_) {
         SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
 
-        GetOStream(Warnings0, 0) << "MueLu::RAPFactory::Build(): The implicit version of RAPFactory produces wrong results in parallel for Epetra" << std::endl;
         Ac = Utils::TwoMatrixMultiply(P, true, AP, false, true, doOptimizedStorage);
 
       } else {
