@@ -607,7 +607,7 @@ Partition *BucketRepository::get_or_create_partition(
 {
     enum { KEY_TMP_BUFFER_SIZE = 64 };
 
-    TraceIf("stk::mesh::impl::BucketRepository::get_or_create", LOG_BUCKET);
+    TraceIf("stk::mesh::impl::BucketRepository::get_or_create_partition", LOG_BUCKET);
 
     ThrowRequireMsg(MetaData::get(m_mesh).check_rank(arg_entity_rank),
             "Entity rank " << arg_entity_rank << " is invalid");
@@ -665,7 +665,7 @@ Partition *BucketRepository::get_or_create_partition(
 {
     enum { KEY_TMP_BUFFER_SIZE = 64 };
 
-    TraceIf("stk::mesh::impl::BucketRepository::get_or_create", LOG_BUCKET);
+    TraceIf("stk::mesh::impl::BucketRepository::get_or_create_partition", LOG_BUCKET);
 
     ThrowRequireMsg(MetaData::get(m_mesh).check_rank(arg_entity_rank),
             "Entity rank " << arg_entity_rank << " is invalid");

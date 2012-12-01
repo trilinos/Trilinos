@@ -99,6 +99,9 @@ public:
     // Enables sidestepping compiler fussiness wrt overloaded operator<<(..).
     std::ostream &streamit(std::ostream &os) const;
 
+    // Output including Entities.
+    std::ostream &dumpit(std::ostream &os) const;
+
     // Just for unit testing.  Remove after refactor.
     static BucketRepository &getRepository(stk::mesh::BulkData &mesh);
 

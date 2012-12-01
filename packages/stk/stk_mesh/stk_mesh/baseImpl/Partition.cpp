@@ -1,15 +1,30 @@
 /*
  * Partition.cpp
  *
- *  Created on: Oct 22, 2012
  */
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/baseImpl/Partition.hpp>
+#include <stk_util/environment/OutputLog.hpp>
 
 #include <iostream>
 
-#define PARTITION_DONT_COMPRESS_SMALL_PARTITIONS
-// #define PARTITION_DONT_SORT_SMALL_PARTITIONS_ON_COMPRESS
+// Uncomment to babble to sierra::pout().
+// #define PARTITION_BABBLE
+
+// No more than one of these 4 should be set to 1.
+#define PARTITION_DONT_COMPRESS_SMALL_PARTITIONS                     0
+#define PARTITION_DONT_COMPRESS_SINGLE_BUCKET_PARTITIONS             1
+#define PARTITION_DONT_SORT_SMALL_PARTITIONS_ON_COMPRESS             0
+#define PARTITION_DONT_SORT_SINGLE_BUCKET_PARTITIONS_ON_COMPRESS     0
+
+// Somewhat contradicts a reason for compress, but useful for debugging
+// and experimentation.
+#define PARTITION_MAINTAIN_SINGLE_BUCKET_CAPACITY_ON_COMPRESS        0
+
+#ifdef PARTITION_BABBLE
+#define HAS_SIERRA_ENV_PARALLEL_RANK
+#include <stk_util/diag/Env.hpp>
+#endif
 
 namespace stk {
 namespace mesh {
@@ -31,8 +46,10 @@ std::ostream &Partition::streamit(std::ostream &os) const
 {
     const MetaData & mesh_meta_data = m_repository->m_mesh.mesh_meta_data();
 
-    os << "{Partition " << this << " in m_repository = " << m_repository << " (m_rank) = " << m_rank
-       << " on P" << m_repository->m_mesh.parallel_rank();
+    os << "{Partition " << this << " in m_repository = " << m_repository << " (m_rank) = " << m_rank;
+#ifdef HAS_SIERRA_ENV_PARALLEL_RANK
+    os << " on P" << sierra::Env::parallel_rank();
+#endif
 
     os << "  legacy partition id : {";
     const std::vector<unsigned> &family_key = get_legacy_partition_id();
@@ -47,6 +64,21 @@ std::ostream &Partition::streamit(std::ostream &os) const
     }
     os << " }}";
 
+    return os;
+}
+
+std::ostream &Partition::dumpit(std::ostream &os) const
+{
+#ifdef HAS_SIERRA_ENV_PARALLEL_RANK
+    os << "P" << sierra::Env::parallel_rank();
+#endif
+    os << "{ Partition (rank = " << m_rank << ")  \n";
+    for (std::vector<Bucket *>::const_iterator b_i = begin(); b_i != end(); ++b_i)
+    {
+        Bucket &b = **b_i;
+        print(os, "  ", b );
+    }
+    os << "}\n";
     return os;
 }
 
@@ -149,7 +181,9 @@ bool Partition::remove(Entity e_k, bool not_in_move_to)
     unsigned ord_k = e_k.m_entityImpl->bucket_ordinal();
     Bucket *last = *(end() - 1);
 
-    if ( (last != bucket_k) || (bucket_k->size() != ord_k + 1))
+    const bool NOT_last_entity_in_last_bucket =
+            (last != bucket_k) || (bucket_k->size() != ord_k + 1);
+    if ( NOT_last_entity_in_last_bucket )
     {
         // Copy last entity to spot being vacated.
         Entity e_swap = (*last)[ last->size() - 1 ];
@@ -200,15 +234,55 @@ bool Partition::remove(Entity e_k, bool not_in_move_to)
 
 void Partition::compress(bool force)
 {
+    // An easy optimization.
     if (!force && (empty() || !m_updated_since_compress))
         return;
 
-#ifdef PARTITION_DONT_COMPRESS_SMALL_PARTITIONS
-    if (!force && (m_buckets.size() <= 1))
+    const bool dont_compress_small_partitions =                 PARTITION_DONT_COMPRESS_SMALL_PARTITIONS;
+    const bool dont_sort_small_partitions_on_compress =         PARTITION_DONT_SORT_SMALL_PARTITIONS_ON_COMPRESS;
+    const bool dont_compress_single_bucket_partitions =         PARTITION_DONT_COMPRESS_SINGLE_BUCKET_PARTITIONS;
+    const bool dont_sort_single_bucket_partitions_on_compress = PARTITION_DONT_SORT_SINGLE_BUCKET_PARTITIONS_ON_COMPRESS;
+
+    const bool maintain_single_bucket_capacity_on_compress =    PARTITION_MAINTAIN_SINGLE_BUCKET_CAPACITY_ON_COMPRESS;
+
+    const bool single_bucket_case = (m_buckets.size() <= 1);
+    const bool small_partition_case = (m_size <= m_repository->bucket_capacity() );
+
+    // Default values
+    bool dont_sort_or_compress = false;    // Policy for shortcutting out.
+    bool sort_partition = true;
+
+    if (dont_compress_single_bucket_partitions)
     {
+        dont_sort_or_compress = single_bucket_case;
+    }
+    if (dont_compress_small_partitions)
+    {
+        dont_sort_or_compress = small_partition_case;
+    }
+
+    if (dont_sort_single_bucket_partitions_on_compress)
+    {
+        sort_partition = !single_bucket_case;
+    }
+    if (dont_sort_small_partitions_on_compress)
+    {
+        sort_partition = !small_partition_case;
+    }
+
+
+    if (!force && dont_sort_or_compress)
+    {
+#ifdef PARTITION_BABBLE
+#ifdef HAS_SIERRA_ENV_PARALLEL_RANK
+        sierra::pout() << "P" << sierra::Env::parallel_rank();
+#endif
+        sierra::pout() << " Partition::compress is skipping out\n";
+        dumpit(sierra::pout());
+#endif
+        m_updated_since_compress = false;  // correct in the sense that compress(.) has been called.
         return;
     }
-#endif
 
     std::vector<unsigned> partition_key = get_legacy_partition_id();
     //index of bucket in partition
@@ -230,19 +304,35 @@ void Partition::compress(bool force)
         new_i += b_size;
     }
 
-#ifdef PARTITION_DONT_SORT_SMALL_PARTITIONS_ON_COMPRESS
-    if (num_buckets() > 1)
+    if (sort_partition)
     {
-        std::sort( entities.begin(), entities.end(), EntityLess() );
-    }
-#else
-    std::sort( entities.begin(), entities.end(), EntityLess() );
+#ifdef PARTITION_BABBLE
+#ifdef HAS_SIERRA_ENV_PARALLEL_RANK
+        sierra::pout() << "P" << sierra::Env::parallel_rank();
 #endif
+        sierra::pout() << " Partition::compress is sorting "
+                       << m_size << " entities in " << m_buckets.size() << " buckets\n";
+#endif
+        std::sort( entities.begin(), entities.end(), EntityLess() );
+        m_updated_since_sort = false;
+    }
+    else
+    {
+#ifdef PARTITION_BABBLE
+#ifdef HAS_SIERRA_ENV_PARALLEL_RANK
+        sierra::pout() << "P" << sierra::Env::parallel_rank();
+#endif
+        sierra::pout() << " Partition::compress is NOT sorting\n";
+#endif
+    }
+
+    const size_t new_bucket_capacity = (single_bucket_case && maintain_single_bucket_capacity_on_compress
+                                        ? m_buckets[0]->capacity() : m_size);
 
     // Now that the entities hav been sorted, we copy them and their field data into a
     // single bucket in sorted order.
     //
-    Bucket * new_bucket = new Bucket( m_repository->m_mesh, m_rank, partition_key, m_size);
+    Bucket * new_bucket = new Bucket( m_repository->m_mesh, m_rank, partition_key, new_bucket_capacity);
     new_bucket->set_first_bucket_in_partition(new_bucket); // partition members point to first bucket
     new_bucket->m_partition = this;
 
@@ -267,7 +357,11 @@ void Partition::compress(bool force)
     m_buckets.resize(1);
     m_buckets[0] = new_bucket;
     m_repository->m_need_sync_from_partitions[m_rank] = true;
-    m_updated_since_compress = m_updated_since_sort = false;
+    m_updated_since_compress = false;
+
+#ifdef PARTITION_BABBLE
+    dumpit(sierra::pout());
+#endif
 }
 
 
