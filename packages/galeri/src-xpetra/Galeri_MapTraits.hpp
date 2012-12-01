@@ -99,7 +99,7 @@ namespace Galeri {
 #ifdef HAVE_GALERI_TPETRA //TODO: this macro is not defined
     /* Tpetra traits */
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-    class MapTraits 
+    class MapTraits  <GlobalOrdinal, Tpetra::Map<LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> >
     {
     public:
       static Teuchos::RCP<Map> Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
@@ -122,7 +122,7 @@ namespace Galeri {
 #ifdef HAVE_XPETRA_EPETRA
     /* Specialized traits for Map = Xpetra::EpetraMap<int,int> */
     template <>
-    class MapTraits <int, ::Xpetra::EpetraMap >
+    class MapTraits <int, ::Xpetra::EpetraMap>
     {
     public:
       static Teuchos::RCP< ::Xpetra::EpetraMap> Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
