@@ -882,9 +882,9 @@ get_cell_topology(
             first_found_part = &part;
         }
         else {
-          ThrowErrorMsgIf( top.getCellTopologyData() && top != cell_topology,
-            "Cell topology is ambiguously defined for the bucket. It is defined as " << cell_topology.getName() <<
-             " and as " << top.getName() );
+          //ThrowErrorMsgIf( top.getCellTopologyData() && top != cell_topology,
+          //  "Cell topology is ambiguously defined for the bucket. It is defined as " << cell_topology.getName() <<
+          //   " and as " << top.getName() );
         }
       }
     }
