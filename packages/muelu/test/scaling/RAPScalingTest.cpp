@@ -85,13 +85,13 @@ int main(int argc, char *argv[]) {
   Teuchos::CommandLineProcessor clp(false);
 
   GO nx, ny, nz;
-  nx=350;
-  ny=350;
-  nz=350;
+  nx=50;
+  ny=50;
+  nz=50;
   Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  int  optNraps   = 100;  clp.setOption("nraps",                &optNraps,   "number of RAPS to perform");
+  int  optNraps   = 5;  clp.setOption("nraps",                &optNraps,   "number of RAPS to perform");
   bool optTimings = true; clp.setOption("timings", "notimings", &optTimings, "print timings to screen");
 
   switch (clp.parse(argc, argv)) {
