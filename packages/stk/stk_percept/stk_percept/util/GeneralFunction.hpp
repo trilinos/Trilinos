@@ -59,6 +59,7 @@ namespace stk {
       public:
         GeneralFunction() {}
   
+        virtual ~GeneralFunction() {}
         /// single value (default impl is identity op)
         virtual codomain operator()(const domain& x) { return x; }  // return value or reference?  
         virtual void operator()(const domain& x, codomain& y) { y = x; }
