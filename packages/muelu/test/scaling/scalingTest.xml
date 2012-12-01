@@ -95,8 +95,14 @@
 <!-- -->
 
     <ParameterList name="myAggregationFact">
+<!--
+      <Parameter name="factory" type="string" value="UncoupledAggregationFactory"/>
+      <Parameter name="Ordering"                type="string" value="Natural"/>
+      <Parameter name="MaxNeighAlreadySelected" type="int"    value="0"/>
+      <Parameter name="MinNodesPerAggregate"    type="int"    value="5"/>
+-->
       <Parameter name="factory" type="string" value="UCAggregationFactory"/>
-      <Parameter name="Ordering"                type="string" value="Natural"/> <!-- Natural, Random, Graph -->
+      <Parameter name="Ordering"                type="string" value="Natural"/>
       <Parameter name="MaxNeighAlreadySelected" type="int"    value="0"/>
       <Parameter name="Phase3AggCreation"       type="double" value="0.5"/>
       <Parameter name="MinNodesPerAggregate"    type="int"    value="2"/>
@@ -132,6 +138,7 @@
   <ParameterList name="Hierarchy">
 
     <Parameter name="numDesiredLevel" type="int" value="10"/> <!-- Max number of levels -->
+    <Parameter name="maxCoarseSize"   type="int" value="500"/> <!-- Min number of rows on coarsest level -->
 
     <ParameterList name="FineLevel">
       <Parameter name="startLevel" type="int" value="0"/>
