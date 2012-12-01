@@ -145,6 +145,7 @@ namespace MueLu {
       if (varName == "UnAmalgamationInfo")  return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory())); //GetFactory("Graph"));
       if (varName == "Aggregates")          return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
       if (varName == "CoarseMap")           return SetAndReturnDefaultFactory(varName, rcp(new CoarseMapFactory()));
+      if (varName == "DofsPerNode")         return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
 
       // Same factory for both Pre and Post Smoother. Factory for key "Smoother" can be set by users.
       if (varName == "PreSmoother")         return GetFactory("Smoother");

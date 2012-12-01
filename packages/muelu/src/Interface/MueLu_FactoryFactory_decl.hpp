@@ -75,6 +75,7 @@
 #include "MueLu_SmootherFactory.hpp" //TMP
 #include "MueLu_TentativePFactory.hpp" //TMP
 #include "MueLu_UCAggregationFactory.hpp" //TMP
+#include "MueLu_UncoupledAggregationFactory.hpp" //TMP
 #include "MueLu_DirectSolver.hpp" //TMP
 #include "MueLu_Exceptions.hpp" //TMP
 #include "MueLu_MultiVectorTransferFactory.hpp"
@@ -84,6 +85,12 @@
 
 namespace MueLu {
 
+/*! class FactoryFactory
+
+    @brief Factory that can generate other factories from 
+
+
+*/
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
   class FactoryFactory {
 #undef MUELU_FACTORYFACTORY_SHORT
@@ -142,6 +149,9 @@ namespace MueLu {
       }
       if (factoryName == "UCAggregationFactory") {
         return BuildUCAggregationFactory(paramList, factoryMapIn);
+      }
+      if (factoryName == "UncoupledAggregationFactory") {
+        return BuildUncoupledAggregationFactory(paramList, factoryMapIn);
       }
       if (factoryName == "TrilinosSmoother") {
         return BuildTrilinosSmoother(paramList, factoryMapIn);
@@ -343,6 +353,41 @@ namespace MueLu {
 
       if(paramList.isParameter("Phase3AggCreation")) {
         factory->SetPhase3AggCreation(paramList.get<double>("Phase3AggCreation"));
+      }
+
+      if(paramList.isParameter("MinNodesPerAggregate")) {
+        factory->SetMinNodesPerAggregate(paramList.get<int>("MinNodesPerAggregate"));
+      }
+
+      return factory;
+    }
+
+    //! UncoupledAggregationFactory
+    RCP<FactoryBase> BuildUncoupledAggregationFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
+      if (paramList.begin() == paramList.end()) // short-circuit. Use default parameters of constructor
+        return rcp(new UncoupledAggregationFactory());
+
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "UncoupledAggregationFactory", Exceptions::RuntimeError, "");
+
+      RCP<UncoupledAggregationFactory> factory = rcp(new UncoupledAggregationFactory());
+      MUELU_FACTORY_PARAM2("Graph");
+
+      if(paramList.isParameter("Ordering")) {
+        std::string orderingStr = paramList.get<std::string>("Ordering");
+        Ordering ordering;
+        if (orderingStr == "Natural")
+          ordering = NATURAL;
+        else if (orderingStr == "Random")
+          ordering = RANDOM;
+        else if (orderingStr == "Graph")
+          ordering = GRAPH;
+        else TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory::BuildUncoupledAggregationFactory()::Unknown Ordering type");
+
+        factory->SetOrdering(ordering);
+      }
+
+      if(paramList.isParameter("MaxNeighAlreadySelected")) {
+        factory->SetMaxNeighAlreadySelected(paramList.get<int>("MaxNeighAlreadySelected"));
       }
 
       if(paramList.isParameter("MinNodesPerAggregate")) {
