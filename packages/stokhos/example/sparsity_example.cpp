@@ -52,10 +52,26 @@
 //     terms.
 
 // Basis types
-enum BasisType { HERMITE, LEGENDRE, RYS };
-const int num_basis_types = 3;
-const BasisType basis_type_values[] = { HERMITE, LEGENDRE, RYS };
-const char *basis_type_names[] = { "hermite", "legendre", "rys" };
+enum BasisType { HERMITE, LEGENDRE, CC_LEGENDRE, GP_LEGENDRE, RYS };
+const int num_basis_types = 5;
+const BasisType basis_type_values[] = { 
+  HERMITE, LEGENDRE, CC_LEGENDRE, GP_LEGENDRE, RYS };
+const char *basis_type_names[] = { 
+  "hermite", "legendre", "clenshaw-curtis", "gauss-patterson", "rys" };
+
+// Growth policies
+const int num_growth_types = 2;
+const Stokhos::GrowthPolicy growth_type_values[] = {
+  Stokhos::SLOW_GROWTH, Stokhos::MODERATE_GROWTH };
+const char *growth_type_names[] = { "slow", "moderate" };
+
+// Product Basis types
+enum ProductBasisType { COMPLETE, TENSOR, TOTAL, SMOLYAK };
+const int num_prod_basis_types = 4;
+const ProductBasisType prod_basis_type_values[] = { 
+  COMPLETE, TENSOR, TOTAL, SMOLYAK };
+const char *prod_basis_type_names[] = { 
+  "complete", "tensor", "total", "smolyak" };
 
 int main(int argc, char **argv)
 {
@@ -74,7 +90,7 @@ int main(int argc, char **argv)
     CLP.setOption("dimension", &d, "Stochastic dimension");
     int p = 5;
     CLP.setOption("order", &p, "Polynomial order");
-    double drop = 1.0e-15;
+    double drop = 1.0e-12;
     CLP.setOption("drop", &drop, "Drop tolerance");
     std::string file = "A.mm";
     CLP.setOption("filename", &file, "Matrix Market filename");
@@ -82,6 +98,15 @@ int main(int argc, char **argv)
     CLP.setOption("basis", &basis_type, 
 		  num_basis_types, basis_type_values, basis_type_names, 
 		  "Basis type");
+    Stokhos::GrowthPolicy growth_type = Stokhos::SLOW_GROWTH;
+    CLP.setOption("growth", &growth_type, 
+		  num_growth_types, growth_type_values, growth_type_names, 
+		  "Growth type");
+    ProductBasisType prod_basis_type = COMPLETE;
+    CLP.setOption("product_basis", &prod_basis_type, 
+		  num_prod_basis_types, prod_basis_type_values, 
+		  prod_basis_type_names, 
+		  "Product basis type");
     bool full = true;
     CLP.setOption("full", "linear", &full, "Use full or linear expansion");
     bool use_old = false;
@@ -94,24 +119,57 @@ int main(int argc, char **argv)
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
     for (int i=0; i<d; i++) {
       if (basis_type == HERMITE)
-	bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p));
+	bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(
+				  p, true, growth_type));
       else if (basis_type == LEGENDRE)
-	bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p));
+	bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(
+				  p, true, growth_type));
+      else if (basis_type == CC_LEGENDRE)
+	bases[i] = 
+	  Teuchos::rcp(new Stokhos::ClenshawCurtisLegendreBasis<int,double>(
+			 p, true));
+      else if (basis_type == GP_LEGENDRE)
+	bases[i] = 
+	  Teuchos::rcp(new Stokhos::GaussPattersonLegendreBasis<int,double>(
+			 p, true));
       else if (basis_type == RYS)
-	bases[i] = Teuchos::rcp(new Stokhos::RysBasis<int,double>(p, 1.0, 
-								  false));
+	bases[i] = Teuchos::rcp(new Stokhos::RysBasis<int,double>(
+				  p, 1.0, true, growth_type));
     }
-    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
-      Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases,
-								    drop,
-								    use_old));
+    Teuchos::RCP<const Stokhos::ProductBasis<int,double> > basis;
+    if (prod_basis_type == COMPLETE)
+      basis = 
+	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(
+		       bases, drop, use_old));
+    else if (prod_basis_type == TENSOR)
+      basis = 
+	Teuchos::rcp(new Stokhos::TensorProductBasis<int,double>(
+		       bases, drop));
+    else if (prod_basis_type == TOTAL)
+      basis = 
+	Teuchos::rcp(new Stokhos::TotalOrderBasis<int,double>(
+		       bases, drop));
+    else if (prod_basis_type == SMOLYAK) {
+      Stokhos::TotalOrderIndexSet<int> index_set(d, p);
+      basis = 
+	Teuchos::rcp(new Stokhos::SmolyakBasis<int,double>(
+		       bases, index_set, drop));
+    }
 
     // Triple product tensor
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
-    if (full)
-      Cijk = basis->computeTripleProductTensor(basis->size());
-    else
-      Cijk = basis->computeTripleProductTensor(basis->dimension()+1);
+    if (prod_basis_type == COMPLETE) {
+      if (full)
+	Cijk = basis->computeTripleProductTensor(basis->size());
+      else
+	Cijk = basis->computeTripleProductTensor(basis->dimension()+1);
+    }
+    else {
+      if (full)
+	Cijk = basis->computeTripleProductTensor(p);
+      else
+	Cijk = basis->computeTripleProductTensor(1);
+    }
 
     std::cout << "basis size = " << basis->size() 
 	      << " num nonzero Cijk entries = " << Cijk->num_entries() 
