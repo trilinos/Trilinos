@@ -75,19 +75,6 @@ namespace MueLu {
     //@}
 
     //@{
-    //! Configuration
-
-    //    virtual void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory);
-
-    // GetFactory(...);
-
-    // SetParameterList(...);
-
-    // GetParameterList(...);
-
-    //@}
-
-    //@{
     //! @name Build methods.
 
     virtual void CallBuild(Level & requestedLevel) const = 0;
@@ -103,23 +90,11 @@ namespace MueLu {
 
     //@}
 
-  protected:
-//     void DeclareInput(Level & level, const std::string & varName) const {
-//       level.DeclareInput(varName, factoryTable_[varName], this);
-//     }
-
-//     template <class T>
-//     T Get(Level & level, const std::string & varName) const {
-//       return level.Get<T>(varName, factoryTable_[varName]);
-//     }
-
   private:
 
     static int GenerateUniqueId();
 
     const int id_;
-
-    //std::map<const std::string, const RCP<const FactoryBase> > factoryTable_;
 
   }; //class FactoryBase
 

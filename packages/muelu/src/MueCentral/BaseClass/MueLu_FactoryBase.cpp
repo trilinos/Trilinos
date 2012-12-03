@@ -53,8 +53,4 @@ namespace MueLu {
     return i++;
   }
 
-//   void FactoryBase::SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory) {
-//     factoryTable_[varName] = factory;
-//   }
-
 } // namespace MueLu

@@ -79,7 +79,7 @@ namespace MueLu {
 
     // Free temporarily hold data at the end of Hierarchy::Setup()
     // This method is const because the clean concerns only mutable data.
-    virtual void Clean() const { }
+    virtual void Clean() const { } // TODO: should be used inside of MueLu::Hierarchy
 
     //! returns internal IgnoreUserData flag
     //! The FactoryManager has some control over the Level::GetFactory function
