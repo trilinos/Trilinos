@@ -51,6 +51,316 @@
 #include <algorithm>
 #include <vector>
 
+#ifdef HAVE_EPETRA_TEUCHOS
+#include <Teuchos_TimeMonitor.hpp>
+#define ENABLE_MMM_TIMINGS
+#endif
+
+//==============================================================================
+// Epetra_Import constructor function for a Epetra_BlockMap object
+template<typename int_type>
+void Epetra_Import::Construct_dummy( const Epetra_BlockMap &  targetMap, const Epetra_BlockMap & sourceMap, int NumRemotePIDs, const int * UserRemotePIDs)
+{
+  int i,ierr;
+#ifdef ENABLE_MMM_TIMINGS
+  Teuchos::Time myTime("global");
+  Teuchos::TimeMonitor M(myTime);
+  Teuchos::RCP<Teuchos::Time> mtime;
+  mtime=M.getNewTimer("IE 1");
+  mtime->start();
+#endif
+  // Build three ID lists:
+  // NumSameIDs - Number of IDs in TargetMap and SourceMap that are identical, up to the first
+  //              nonidentical ID.
+  // NumPermuteIDs - Number of IDs in SourceMap that must be indirectly loaded but are on this processor.
+  // NumRemoteIDs - Number of IDs that are in SourceMap but not in TargetMap, and thus must be imported.
+  
+  int NumSourceIDs = sourceMap.NumMyElements();
+  int NumTargetIDs = targetMap.NumMyElements();
+  
+  int_type *TargetGIDs = 0;
+  if (NumTargetIDs>0) {
+    TargetGIDs = new int_type[NumTargetIDs];
+    targetMap.MyGlobalElements(TargetGIDs);
+  }
+  
+  int_type * SourceGIDs = 0;
+  if (NumSourceIDs>0) {
+    SourceGIDs = new int_type[NumSourceIDs];
+    sourceMap.MyGlobalElements(SourceGIDs);
+  }
+  
+  int MinIDs = EPETRA_MIN(NumSourceIDs, NumTargetIDs);
+  
+  
+  NumSameIDs_ = 0;
+  for (i=0; i< MinIDs; i++) if (TargetGIDs[i]==SourceGIDs[i]) NumSameIDs_++; else break;
+  
+  
+  // Find count of Target IDs that are truly remote and those that are local but permuted
+
+  NumPermuteIDs_ = 0;
+  NumRemoteIDs_ = 0;
+  for (i=NumSameIDs_; i< NumTargetIDs; i++) 
+    if (sourceMap.MyGID(TargetGIDs[i])) NumPermuteIDs_++; // Check if Target GID is a local Source GID
+    else NumRemoteIDs_++; // If not, then it is remote
+  
+  
+  
+  // Define remote and permutation lists
+  
+  int_type * RemoteGIDs=0;
+  RemoteLIDs_ = 0;
+  if (NumRemoteIDs_>0) {
+    RemoteLIDs_ = new int[NumRemoteIDs_];
+    RemoteGIDs = new int_type[NumRemoteIDs_];
+  }
+  if (NumPermuteIDs_>0)  {
+    PermuteToLIDs_ = new int[NumPermuteIDs_];
+    PermuteFromLIDs_ = new int[NumPermuteIDs_];
+  }
+  
+  NumPermuteIDs_ = 0;
+  NumRemoteIDs_ = 0;
+  for (i=NumSameIDs_; i< NumTargetIDs; i++) {
+    if (sourceMap.MyGID(TargetGIDs[i])) {
+      PermuteToLIDs_[NumPermuteIDs_] = i;
+      PermuteFromLIDs_[NumPermuteIDs_++] = sourceMap.LID(TargetGIDs[i]);
+    }
+    else {
+      //NumRecv_ +=TargetMap.ElementSize(i); // Count total number of entries to receive
+      NumRecv_ +=targetMap.MaxElementSize(); // Count total number of entries to receive (currently need max)
+      RemoteGIDs[NumRemoteIDs_] = TargetGIDs[i];
+      RemoteLIDs_[NumRemoteIDs_++] = i;
+    }
+  }
+
+  if( NumRemoteIDs_>0 && !sourceMap.DistributedGlobal() )
+    ReportError("Warning in Epetra_Import: Serial Import has remote IDs. (Importing to Subset of Target Map)", 1);
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=M.getNewTimer("IE 2");
+  mtime->start();
+#endif
+
+  
+  // Test for distributed cases
+  int * RemotePIDs = 0;
+  
+  if (sourceMap.DistributedGlobal()) {
+    if (NumRemoteIDs_>0)  RemotePIDs = new int[NumRemoteIDs_];
+
+
+    //HAQ: DEBUG
+    if(UserRemotePIDs){ 
+      int myeq = (NumRemotePIDs==NumRemoteIDs_);
+      int globaleq=0;
+      sourceMap.Comm().MinAll(&myeq,&globaleq,1);
+      if(globaleq!=1) { 
+	printf("[%d] UserRemotePIDs count wrong %d != %d\n",sourceMap.Comm().MyPID(),NumRemotePIDs,NumRemoteIDs_);
+	fflush(stdout);
+	sourceMap.Comm().Barrier();
+	sourceMap.Comm().Barrier();
+	sourceMap.Comm().Barrier();
+	exit(1);
+      }
+    }
+
+    if(UserRemotePIDs && NumRemotePIDs==NumRemoteIDs_){
+      // Since I need to sort these, I'll copy them
+      for(i=0; i<NumRemoteIDs_; i++)  RemotePIDs[i] = UserRemotePIDs[i];
+    }
+    else{
+      ierr=sourceMap.RemoteIDList(NumRemoteIDs_, RemoteGIDs, RemotePIDs, 0); // Get remote PIDs
+      if (ierr) throw ReportError("Error in sourceMap.RemoteIDList call", ierr);
+    }
+
+    //Get rid of IDs that don't exist in SourceMap
+    if(NumRemoteIDs_>0) {
+      int cnt = 0;
+      for( i = 0; i < NumRemoteIDs_; ++i )
+        if( RemotePIDs[i] == -1 ) ++cnt;
+      if( cnt ) {
+        if( NumRemoteIDs_-cnt ) {
+          int_type * NewRemoteGIDs = new int_type[NumRemoteIDs_-cnt];
+          int * NewRemotePIDs = new int[NumRemoteIDs_-cnt];
+          int * NewRemoteLIDs = new int[NumRemoteIDs_-cnt];
+          cnt = 0;
+          for( i = 0; i < NumRemoteIDs_; ++i )
+            if( RemotePIDs[i] != -1 ) {
+              NewRemoteGIDs[cnt] = RemoteGIDs[i];
+              NewRemotePIDs[cnt] = RemotePIDs[i];
+              NewRemoteLIDs[cnt] = targetMap.LID(RemoteGIDs[i]);
+              ++cnt;
+            }
+          NumRemoteIDs_ = cnt;
+          delete [] RemoteGIDs;
+          delete [] RemotePIDs;
+          delete [] RemoteLIDs_;
+          RemoteGIDs = NewRemoteGIDs;
+          RemotePIDs = NewRemotePIDs;
+          RemoteLIDs_ = NewRemoteLIDs;
+          ReportError("Warning in Epetra_Import: Target IDs not found in Source Map (Do you want to import to subset of Target Map?)", 1);
+        }
+        else { //valid RemoteIDs empty
+          NumRemoteIDs_ = 0;
+          delete [] RemoteGIDs;
+          RemoteGIDs = 0;
+          delete [] RemotePIDs;
+          RemotePIDs = 0;
+        }
+      }
+    }
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=M.getNewTimer("IE 3");
+  mtime->start();
+#endif
+
+
+    //Sort Remote IDs by processor so DoReverses will work
+    Epetra_Util util;
+
+  if(targetMap.GlobalIndicesLongLong())
+  {
+      util.Sort(true,NumRemoteIDs_,RemotePIDs,0,0, 1,&RemoteLIDs_, 1,(long long**)&RemoteGIDs);
+  }
+  else if(targetMap.GlobalIndicesInt())
+  {
+    int* ptrs[2] = {RemoteLIDs_, (int*)RemoteGIDs};
+    util.Sort(true,NumRemoteIDs_,RemotePIDs,0,0,2,&ptrs[0], 0, 0);
+  }
+  else
+  {
+    throw ReportError("Epetra_Import::Epetra_Import: GlobalIndices Internal Error", -1);
+  }
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=M.getNewTimer("IE 4");
+  mtime->start();
+#endif
+
+
+    Distor_ = sourceMap.Comm().CreateDistributor();
+    
+    // Construct list of exports that calling processor needs to send as a result
+    // of everyone asking for what it needs to receive.
+    
+    bool Deterministic = true;
+  int_type* tmp_ExportLIDs; //Export IDs come in as GIDs
+  ierr = Distor_->CreateFromRecvs( NumRemoteIDs_, RemoteGIDs, RemotePIDs,
+             Deterministic, NumExportIDs_, tmp_ExportLIDs, ExportPIDs_ );
+  if (ierr!=0) throw ReportError("Error in Epetra_Distributor.CreateFromRecvs()", ierr);
+
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=M.getNewTimer("IE 5");
+  mtime->start();
+#endif
+
+  // Export IDs come in as GIDs, convert to LIDs
+  if(targetMap.GlobalIndicesLongLong())
+  {
+    ExportLIDs_ = new int[NumExportIDs_];
+
+    for (i=0; i< NumExportIDs_; i++) {
+      if (ExportPIDs_[i] < 0) throw ReportError("targetMap requested a GID that is not in the sourceMap.", -1);
+      ExportLIDs_[i] = sourceMap.LID(tmp_ExportLIDs[i]);
+      NumSend_ += sourceMap.MaxElementSize(); // Count total number of entries to send (currently need max)
+    }
+
+    delete[] tmp_ExportLIDs;
+  }
+  else if(targetMap.GlobalIndicesInt())
+  {
+    for (i=0; i< NumExportIDs_; i++) {
+      if (ExportPIDs_[i] < 0) throw ReportError("targetMap requested a GID that is not in the sourceMap.", -1);
+      tmp_ExportLIDs[i] = sourceMap.LID(tmp_ExportLIDs[i]);
+      NumSend_ += sourceMap.MaxElementSize(); // Count total number of entries to send (currently need max)
+    }
+
+    ExportLIDs_ = reinterpret_cast<int *>(tmp_ExportLIDs); // Can't reach here if tmp_ExportLIDs is long long.
+  }
+  else
+  {
+    throw ReportError("Epetra_Import::Epetra_Import: GlobalIndices Internal Error", -1);
+  }
+  }
+
+  if( NumRemoteIDs_>0 ) delete [] RemoteGIDs;
+  if( NumRemoteIDs_>0 ) delete [] RemotePIDs;
+
+  if (NumTargetIDs>0) delete [] TargetGIDs;
+  if (NumSourceIDs>0) delete [] SourceGIDs;
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+#endif
+
+  
+  return;
+}
+
+Epetra_Import::Epetra_Import( const Epetra_BlockMap &  targetMap, const Epetra_BlockMap & sourceMap,int NumRemotePIDs,const int * RemotePIDs)
+  : Epetra_Object("Epetra::Import"),
+    TargetMap_(targetMap),
+    SourceMap_(sourceMap),
+    NumSameIDs_(0),
+    NumPermuteIDs_(0),
+    PermuteToLIDs_(0),
+    PermuteFromLIDs_(0),
+    NumRemoteIDs_(0),
+    RemoteLIDs_(0),
+    NumExportIDs_(0),
+    ExportLIDs_(0),
+    ExportPIDs_(0),
+    NumSend_(0),
+    NumRecv_(0),
+    Distor_(0)
+{
+  if(!targetMap.GlobalIndicesTypeMatch(sourceMap))
+    throw ReportError("Epetra_Import::Epetra_Import: GlobalIndicesTypeMatch failed", -1);
+
+  if(targetMap.GlobalIndicesInt())
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+    Construct_dummy<int>(targetMap, sourceMap,NumRemotePIDs,RemotePIDs);
+#else
+    throw ReportError("Epetra_Import::Epetra_Import: ERROR, GlobalIndicesInt but no API for it.",-1);
+#endif
+  else if(targetMap.GlobalIndicesLongLong())
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    Construct_dummy<long long>(targetMap, sourceMap,NumRemotePIDs,RemotePIDs);
+#else
+    throw ReportError("Epetra_Import::Epetra_Import: ERROR, GlobalIndicesLongLong but no API for it.",-1);
+#endif
+  else
+    throw ReportError("Epetra_Import::Epetra_Import: Bad global indices type", -1);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //==============================================================================
 // Epetra_Import constructor function for a Epetra_BlockMap object
 template<typename int_type>

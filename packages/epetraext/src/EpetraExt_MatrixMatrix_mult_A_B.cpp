@@ -82,15 +82,25 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
   nnzperrow*=nnzperrow;
  
   return (int)(A.NumMyRows()*nnzperrow*0.75 + 100);
- }
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+static inline int auto_resize(std::vector<int> &x,int num_new){
+  int newsize=x.size() + EPETRA_MAX((int)x.size(),num_new);
+  x.resize(newsize);
+  return newsize;
+}
+
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 #ifdef LIGHTWEIGHT_MATRIX
-  int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const LightweightCrsMatrix &Bimport, Epetra_Map*& unionmap)
+  int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const LightweightCrsMatrix &Bimport, Epetra_Map*& unionmap, std::vector<int>& Cremotepids)
 #else
-    int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Epetra_CrsMatrix &Bimport, Epetra_Map*& unionmap)
+    int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Epetra_CrsMatrix &Bimport, Epetra_Map*& unionmap, std::vector<int>& Cremotepids)
 #endif
 {
 #ifdef HAVE_MPI
@@ -106,7 +116,7 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
  // So we need to merge the ColMap of B and the TargetMap of Bimport in an AztecOO/Ifpack/ML compliant order.
   Epetra_Util util;
   int i,MyPID = B.Comm().MyPID(), NumProc = B.Comm().NumProc();
-  int Bstart=0, Istart=0, Cstart=0;
+  int Bstart=0, Istart=0, Cstart=0,Pstart=0;
 
   const Epetra_Map & BColMap   = B.ColMap();
   const Epetra_Map & DomainMap = B.DomainMap();
@@ -121,22 +131,23 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
   int * Bgids    = BColMap.MyGlobalElements();
   int * Igids    = IColMap.MyGlobalElements();  
 
-  // Since we're getting called, we know we have to be using an MPI implementation of Epetra.  Which means we should have an MpiDistributor for both B and Bimport
-  
-#ifdef LIGHTWEIGHT_MATRIX
-  if(!B.Importer()) EPETRA_CHK_ERR(-1);
-#else
-  if(!B.Importer() || !Bimport.Importer()) EPETRA_CHK_ERR(-1);
-#endif
-
-  Epetra_MpiDistributor *Distor=dynamic_cast<Epetra_MpiDistributor*>(&B.Importer()->Distributor());
-  if(!Distor) EPETRA_CHK_ERR(-2);
+  // Since we're getting called, we know we have to be using an MPI implementation of Epetra.  
+  // Which means we should have an MpiDistributor for both B and Bimport.  
+  // Unless all of B's columns are owned by the calling proc (e.g. MueLu for A*Ptent w/ uncoupled aggregation)
+  Epetra_MpiDistributor *Distor=0;
+  if(B.Importer()) { 
+    Distor=dynamic_cast<Epetra_MpiDistributor*>(&B.Importer()->Distributor());
+    if(!Distor) EPETRA_CHK_ERR(-2);
+  }
 
   // **********************
   // Stage 1: Get the owning PIDs
   // **********************
+  // Note: if B doesn't have an importer, the calling proc owns all its colids...
   std::vector<int> Bpids(Nb), Ipids(Ni);
-  EPETRA_CHK_ERR(util.GetPids(*B.Importer(),Bpids,true));
+  if(B.Importer()) {EPETRA_CHK_ERR(util.GetPids(*B.Importer(),Bpids,true));}
+  else Bpids.assign(Nb,-1);
+
 #ifdef LIGHTWEIGHT_MATRIX
   if(Ni != (int) Bimport.ColMapOwningPIDs_.size()) {
     EPETRA_CHK_ERR(-21);
@@ -151,10 +162,11 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
   // **********************
   // Stage 2: Allocate memory
   // **********************
-  int initial_c_size=1.5*BColMap.NumMyElements();
+  int initial_c_size=EPETRA_MIN((int)(1.5*Nb),Nb+Ni);
   int Csize=initial_c_size;
+  int Psize=EPETRA_MAX(Ni,10);
   std::vector<int> Cgids(Csize);
-
+  Cremotepids.resize(Psize);
 
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
@@ -165,7 +177,7 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
   // **********************
   // Stage 3: Local Unknowns
   // **********************
-  if(B.Importer()->NumSameIDs() == DomainMap.NumMyElements()) {
+  if(!B.Importer() || (B.Importer()->NumSameIDs() == DomainMap.NumMyElements())) {
     // B's colmap has all of the domain elements.  We can just copy those into the start of the array.
     DomainMap.MyGlobalElements(&Cgids[0]);
     Cstart=DomainMap.NumMyElements();
@@ -210,8 +222,13 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
   // **********************
   // NOTE: Intial sizes for Btemp/Itemp from B's distributor.  This should be exact for Btemp and a decent guess for Itemp
   int initial_temp_length = 0;
-  const int * lengths_from = Distor->LengthsFrom();
-  for(i=0; i < Distor->NumReceives(); i++) initial_temp_length += lengths_from[i];
+  const int * lengths_from=0;
+  if(Distor) {
+    lengths_from= Distor->LengthsFrom();
+    for(i=0; i < Distor->NumReceives(); i++) initial_temp_length += lengths_from[i];
+  }
+  else initial_temp_length=100;
+
   std::vector<int> Btemp(initial_temp_length), Itemp(initial_temp_length);
 
   while (Bstart < Nb || Istart < Ni) {
@@ -220,7 +237,6 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
     // Find the next active processor ID
     if(Bstart < Nb) Bproc=Bpids[Bstart];
     if(Istart < Ni) Iproc=Ipids[Istart];
-    //    printf("[%d] B=%2d/%2d[proc %d] I=%2d/%2d[proc %d]\n",B.Comm().MyPID(),Bstart,Nb,Bproc,Istart,Ni,Iproc);
 
     Cproc = (Bproc < Iproc)?Bproc:Iproc;
     
@@ -229,9 +245,12 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
       // NOTE: We keep B's sorted (or not) ordering
       for(i=Bstart; i<Nb && Bpids[i]==Bproc; i++) {
 	// Resize C if needed
-	if(Cstart >= Csize)  {Csize*=2; Cgids.resize(Csize);}
-	Cgids[Cstart] = Bgids[i];
+	if(Cstart >= Csize)  Csize=auto_resize(Cgids,1);
+	if(Pstart >= Psize)  Psize=auto_resize(Cremotepids,1);
+	Cgids[Cstart]       = Bgids[i];
+	Cremotepids[Pstart] = Cproc;
 	Cstart++;
+	Pstart++;
       }
       Bstart=i;
     }
@@ -240,9 +259,12 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
       // NOTE: We keep I's sorted (or not) ordering
       for(i=Istart; i<Ni && Ipids[i]==Iproc; i++) {
 	// Resize C if needed
-	if(Cstart >= Csize)  {Csize*=2; Cgids.resize(Csize);}
-	Cgids[Cstart] = Igids[i];
+	if(Cstart >= Csize)  Csize=auto_resize(Cgids,1);
+	if(Pstart >= Psize)  Psize=auto_resize(Cremotepids,1);
+	Cgids[Cstart]       = Igids[i];
+	Cremotepids[Pstart] = Cproc;
 	Cstart++;
+	Pstart++;
       }      
       Istart=i;
     }
@@ -264,7 +286,8 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
       if(Btemp.size() < (size_t)tBsize) Btemp.resize(tBsize);
       if(Itemp.size() < (size_t)tIsize) Itemp.resize(tIsize);
 
-      if(Csize        < Cstart+tCsize) {Csize=2*Csize; Cgids.resize(Csize);}
+      if(Cstart+tCsize >= Csize)  Csize=auto_resize(Cgids,Csize+tCsize-Cstart+1);
+      if(Pstart+tCsize >= Psize)  Psize=auto_resize(Cremotepids,Psize+tCsize-Pstart+1);
 
       for(i=Bstart; i<Bnext; i++) Btemp[i-Bstart]=Bgids[i];
       for(i=Istart; i<Inext; i++) Itemp[i-Istart]=Igids[i];
@@ -275,12 +298,15 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
       std::vector<int>::iterator mycstart = Cgids.begin()+Cstart;
       std::vector<int>::iterator last_el=std::set_union(Btemp.begin(),Btemp.begin()+tBsize,Itemp.begin(),Itemp.begin()+tIsize,mycstart);
 
+      for(i=Pstart; i<(last_el - mycstart) + Pstart; i++) Cremotepids[i]=Cproc;
       Cstart = (last_el - mycstart) + Cstart;
+      Pstart = (last_el - mycstart) + Pstart;
       Bstart=Bnext;
       Istart=Inext;
     }
-
   } // end while
+
+
 
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
@@ -288,6 +314,8 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
   mtime->start();
 #endif
 
+  // Resize the RemotePIDs down
+  Cremotepids.resize(Pstart);
 
   // **********************
   // Stage 5: Call constructor
@@ -297,7 +325,6 @@ static inline int C_estimate_nnz(const Epetra_CrsMatrix & A, const Epetra_CrsMat
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
 #endif
-
   return 0;
 #else
   return -1;
@@ -322,12 +349,13 @@ inline void resize_doubles(int nold,int nnew,double*& d){
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int  MatrixMatrix::mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
-		       const Epetra_CrsMatrix & B,
-		       CrsMatrixStruct& Bview,
-		       std::vector<int> & Bcol2Ccol,
-		       std::vector<int> & Bimportcol2Ccol,
-		       Epetra_CrsMatrix& C){
+int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
+			const Epetra_CrsMatrix & B,
+			CrsMatrixStruct& Bview,
+			std::vector<int> & Bcol2Ccol,
+			std::vector<int> & Bimportcol2Ccol,
+			std::vector<int>& Cremotepids,
+			Epetra_CrsMatrix& C){
 #ifdef ENABLE_MMM_TIMINGS
   Teuchos::Time myTime("global");
   Teuchos::TimeMonitor M(myTime);
@@ -450,16 +478,32 @@ int  MatrixMatrix::mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
 
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
+  mtime=M.getNewTimer("Fast IE");
+  mtime->start();
+#endif
+
+  // Do a fast build of C's importer
+  Epetra_Import * Cimport=0; 
+  if(Cremotepids.size() > 0) {
+    Cimport = new Epetra_Import(C.ColMap(),B.DomainMap(),Cremotepids.size(),&Cremotepids[0]);
+  }
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
   mtime=M.getNewTimer("ESFC");
   mtime->start();
 #endif
 
   // Update the CrsGraphData
-  C.ExpertStaticFillComplete(B.DomainMap(),A.RangeMap(),NumMyDiagonals);
+  C.ExpertStaticFillComplete(B.DomainMap(),A.RangeMap(),&*Cimport,NumMyDiagonals);
+
 
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
 #endif
+
+  // Cleanup 
+  //  delete Cimport;
 
   return 0;
 }
@@ -471,7 +515,7 @@ int  MatrixMatrix::mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
 
 
 
-int MatrixMatrix::mult_A_B_reuse(const Epetra_CrsMatrix & A,
+int mult_A_B_reuse(const Epetra_CrsMatrix & A,
 		   const Epetra_CrsMatrix & B,
 		   CrsMatrixStruct& Bview,
 		   std::vector<int> & Bcol2Ccol,
@@ -576,8 +620,6 @@ int MatrixMatrix::mult_A_B_reuse(const Epetra_CrsMatrix & A,
 		       Epetra_CrsMatrix& C,
 		       bool call_FillComplete_on_result)
 {
- printf("A*B general\n");
-
   int C_firstCol = Bview.colMap->MinLID();
   int C_lastCol = Bview.colMap->MaxLID();
 
@@ -777,7 +819,6 @@ int MatrixMatrix::mult_A_B_reuse(const Epetra_CrsMatrix & A,
 
 
 
-
 int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 			   CrsMatrixStruct & Aview,
 			   const Epetra_CrsMatrix & B,
@@ -786,7 +827,8 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 			   bool call_FillComplete_on_result){
 
   int i,rv;
-  Epetra_Map* mapunion1 = 0;
+  Epetra_Map* mapunion = 0;
+  std::vector<int> Cremotepids;
 
   // DEBUG
 #ifdef ENABLE_MMM_TIMINGS
@@ -810,7 +852,6 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 
   // Is this a "clean" matrix
   bool NewFlag=!C.IndicesAreLocal() && !C.IndicesAreGlobal();
-
 
   // Does ExtractCrsDataPointers work?
   int *C_rowptr, *C_colind;
@@ -839,10 +880,10 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
   // If new, build & clobber a colmap for C
   if(NewFlag){
     if(Bview.importMatrix) {
-      EPETRA_CHK_ERR( aztecoo_and_ml_compatible_map_union(B,*Bview.importMatrix,mapunion1) );
-      EPETRA_CHK_ERR( C.ReplaceColMap(*mapunion1) );
+      EPETRA_CHK_ERR( aztecoo_and_ml_compatible_map_union(B,*Bview.importMatrix,mapunion,Cremotepids) );
+      EPETRA_CHK_ERR( C.ReplaceColMap(*mapunion) );
     }
-    else
+    else 
       EPETRA_CHK_ERR( C.ReplaceColMap(B.ColMap()) );
   }
 
@@ -897,14 +938,14 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 
   // Call the appropriate core routine
   if(NewFlag) {
-    EPETRA_CHK_ERR(mult_A_B_newmatrix(A,B,Bview,Bcol2Ccol,Bimportcol2Ccol,C));
+    EPETRA_CHK_ERR(mult_A_B_newmatrix(A,B,Bview,Bcol2Ccol,Bimportcol2Ccol,Cremotepids,C));
   }
   else {
     EPETRA_CHK_ERR(mult_A_B_reuse(A,B,Bview,Bcol2Ccol,Bimportcol2Ccol,C));
   }
 
   // Cleanup      
-  delete mapunion1;
+  delete mapunion;
   return 0;
 }
 

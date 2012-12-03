@@ -4467,7 +4467,7 @@ int Epetra_CrsMatrix::ExpertMakeUniqueCrsGraphData(){
 #include <Teuchos_TimeMonitor.hpp>
 #define ENABLE_MMM_TIMINGS
 #endif
-int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, int NumMyDiagonals){
+int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, const Epetra_Import * Importer,int NumMyDiagonals){
 
   Epetra_CrsGraphData& D=*Graph_.CrsGraphData_;
   int m=D.RowMap_.NumMyElements();
@@ -4490,7 +4490,40 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
   mtime=M.getNewTimer("ESFC: IE");
   mtime->start();
 #endif
-  D.MakeImportExport();
+
+  //  D.MakeImportExport();
+  // HAQ to enable timings
+  if (!D.ColMap_.SameAs(D.DomainMap_)) {
+    if (D.Importer_ != 0) {
+      delete D.Importer_;
+      D.Importer_ = 0;
+    }
+    if(Importer && Importer->SourceMap().SameAs(D.DomainMap_) && Importer->TargetMap().SameAs(D.ColMap_)){
+      //      if(!Comm().MyPID()) printf("CMS: Using user-provided importer\n");fflush(stdout);
+      D.Importer_=Importer;
+    }
+    else {
+      //      if(!Comm().MyPID()) printf("CMS: Generating fresh importer\n");
+      delete Importer;
+      D.Importer_ = new Epetra_Import(D.ColMap_, D.DomainMap_,0,0);fflush(stdout);
+    }
+  }
+  
+  if (!D.RowMap_.SameAs(D.RangeMap_)) {
+    if (D.Exporter_ != 0) {
+      delete D.Exporter_;
+      D.Exporter_ = 0;
+    }
+    D.Exporter_ = new Epetra_Export(D.RowMap_, D.RangeMap_); // Create Export object. 
+  }
+  // end HAQ
+  
+
+
+
+
+
+
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
   mtime=M.getNewTimer("ESFC: Constants");

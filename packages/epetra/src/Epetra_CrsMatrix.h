@@ -1314,10 +1314,11 @@ or if the number of entries in this row exceed the Length parameter.
 
     //! Performs a FillComplete on an object that aready has filled CRS data
     /*! Performs a lightweight FillComplete on an object that already has filled IndexOffsets, All_Indices and All_Values.
-      This routine is needed to support the EpetraExt::MatrixMatrix::Multiply and should not be called by users.
+      This routine is needed to support the EpetraExt::MatrixMatrix::Multiply and should not be called by users.    
+       \warning Epetra_CrsMatrix will assume ownership of the Importer you pass in.  You should not deallocate it afterwards.
        \warning This method is intended for expert developer use only, and should never be called by user code.
     */
-    int ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, int NumMyDiagonals=-1);
+    int ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, const Epetra_Import * Importer=0, int NumMyDiagonals=-1);
 
 
     //! Makes sure this matrix has a unique CrsGraphData object
