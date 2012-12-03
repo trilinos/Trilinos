@@ -53,11 +53,12 @@
 # ************************************************************************
 # @HEADER
 
-IF (MSVC AND NOT TPL_LAPACK_LIBRARIES AND CLAPACK_FOUND)
-  SET(TPL_LAPACK_LIBRARIES lapack CACHE INTERNAL "")
-ENDIF()
-
 INCLUDE(TribitsTplDeclareLibraries)
+
+IF (MSVC AND NOT TPL_LAPACK_LIBRARIES AND CLAPACK_FOUND)
+  ADVANCED_SET(TPL_LAPACK_LIBRARIES lapack
+      CACHE FILEPATH "Set from MSVC CLAPACK specialization")
+ENDIF()
 
 TRIBITS_TPL_DECLARE_LIBRARIES( LAPACK
   REQUIRED_LIBS_NAMES "lapack lapack_win32")
