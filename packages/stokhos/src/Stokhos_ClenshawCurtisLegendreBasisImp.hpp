@@ -117,8 +117,8 @@ Stokhos::ClenshawCurtisLegendreBasis<ordinal_type,value_type>::
 coefficientGrowth(ordinal_type n) const
 {
   if (n == ordinal_type(0)) 
-    return ordinal_type(0);
-  return std::pow(ordinal_type(2),n-ordinal_type(1));
+    return 0;
+  return (1 << (n-1)); // std::pow(2,n-1);
 }
 
 template <typename ordinal_type, typename value_type>

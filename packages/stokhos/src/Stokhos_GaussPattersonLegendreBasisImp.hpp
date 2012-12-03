@@ -88,7 +88,7 @@ getQuadPoints(ordinal_type quad_order,
     num_points = 1;
   else {
     ordinal_type l = std::ceil(std::log((quad_order+1.0)/3.0)/std::log(2.0));
-    num_points = std::pow(2,l+1)-1;
+    num_points = (1 << (l+1)) - 1; // std::pow(2,l+1)-1;
   }
   
   quad_points.resize(num_points);
@@ -119,7 +119,7 @@ quadDegreeOfExactness(ordinal_type n) const
   if (n == ordinal_type(1))
     return 1;
   ordinal_type l = std::floor(std::log(n+1.0)/std::log(2.0)-1.0);
-  return 3*std::pow(2,l)-1;
+  return (3 << l) - 1; // 3*std::pow(2,l)-1;
 }
 
 template <typename ordinal_type, typename value_type>
@@ -140,9 +140,9 @@ coefficientGrowth(ordinal_type n) const
   // Since discrete orthogonality requires integrating polynomials of
   // order 2*p, setting p = 3*2^{l-1}-1 will yield the largest p such that
   // 2*p <= 3*2^l-1
-  if (n == ordinal_type(0)) 
-    return ordinal_type(0);
-  return ordinal_type(3)*std::pow(ordinal_type(2),n-ordinal_type(1))-ordinal_type(1);
+  if (n == 0) 
+    return 0;
+  return (3 << (n-1)) - 1; // 3*std::pow(2,n-1) - 1;
 }
 
 template <typename ordinal_type, typename value_type>
