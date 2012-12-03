@@ -74,7 +74,7 @@ void get_entities_through_relations(
 
 inline
 void insert_part_and_supersets(OrdinalVector& induced_parts,
-                               Part& part,
+                               const Part& part,
                                bool include_supersets)
 {
   insert_ordinal( induced_parts , part.mesh_meta_data_ordinal() );
@@ -148,7 +148,7 @@ bool membership_is_induced( const Part & part , unsigned entity_rank )
 
 //----------------------------------------------------------------------
 
-void induced_part_membership( Part & part ,
+void induced_part_membership( const Part & part ,
                               unsigned entity_rank_from ,
                               unsigned entity_rank_to ,
                               RelationIdentifier relation_identifier ,

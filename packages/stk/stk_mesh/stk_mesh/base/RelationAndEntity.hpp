@@ -300,7 +300,7 @@ bool membership_is_induced( const Part & part , unsigned entity_rank );
 /** \brief  Induce entities' part membership based upon relationships
  *          between entities. Insert the result into 'induced_parts'.
  */
-void induced_part_membership( Part & part ,
+void induced_part_membership( const Part & part ,
                               unsigned entity_rank_from ,
                               unsigned entity_rank_to ,
                               RelationIdentifier relation_identifier ,

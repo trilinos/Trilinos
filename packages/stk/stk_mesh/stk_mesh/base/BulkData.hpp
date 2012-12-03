@@ -25,6 +25,7 @@
 
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/baseImpl/BucketRepository.hpp>
+#include <stk_mesh/baseImpl/Partition.hpp>
 
 #include <algorithm>
 #include <map>
@@ -267,7 +268,12 @@ public:
    *  will be resolved by the call to 'modification_end'.
    */
   Entity declare_entity( EntityRank ent_rank , EntityId ent_id , const PartVector& parts);
-  Entity declare_entity( EntityRank ent_rank , EntityId ent_id , Part& part);
+
+  Entity declare_entity( EntityRank ent_rank , EntityId ent_id , Part& part)
+  {
+    PartVector parts(1, &part);
+    return declare_entity( ent_rank, ent_id, parts);
+  }
 
   /** This overloading of declare_entity that doesn't take a part
    * creates the new entity in the 'universal' part.
@@ -295,10 +301,10 @@ public:
                         remove_parts.begin(), remove_parts.end());
   }
 
-//Optional parameter 'always_propagate_internal_changes' is always true except when this function
-//is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
-//internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
-//the propagation that stk-mesh does.
+  //Optional parameter 'always_propagate_internal_changes' is always true except when this function
+  //is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
+  //internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
+  //the propagation that stk-mesh does.
   template<typename AddIterator, typename RemoveIterator>
   void change_entity_parts( Entity entity,
                             AddIterator begin_add_parts, AddIterator end_add_parts,
@@ -530,21 +536,14 @@ private:
    *  2) Change parts => update forward relations via part relation
    *                  => update via field relation
    */
+  template <typename PartT>
   void internal_change_entity_parts( Entity ,
-                                     const PartVector & add_parts ,
-                                     const PartVector & remove_parts );
-
-//Optional parameter 'always_propagate_internal_changes' is always true except when this function
-//is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
-//internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
-//the propagation that stk-mesh does.
-  void internal_change_entity_parts( Entity ,
-                                     const OrdinalVector & add_parts ,
-                                     const OrdinalVector & remove_parts,
+                                     const std::vector<PartT> & add_parts ,
+                                     const std::vector<PartT> & remove_parts,
                                      bool always_propagate_internal_changes=true);
 
-  void internal_propagate_part_changes( Entity entity, const PartVector & removed );
-  void internal_propagate_part_changes( Entity entity, const OrdinalVector & removed );
+  template <typename PartT>
+  void internal_propagate_part_changes( Entity entity, const std::vector<PartT> & removed );
 
   void internal_change_ghosting( Ghosting & ghosts,
                                  const std::vector<EntityProc> & add_send ,
@@ -583,13 +582,10 @@ private:
                                          const unsigned entity_rank,
                                          const unsigned undef_rank) const;
 
+  template <typename PartT>
   void internal_verify_change_parts( const MetaData   & meta ,
                                      const Entity entity ,
-                                     const PartVector & parts ) const;
-
-  void internal_verify_change_parts( const MetaData   & meta ,
-                                     const Entity entity ,
-                                     const OrdinalVector & parts ) const;
+                                     const std::vector<PartT> & parts ) const;
 
   void internal_change_owner_in_comm_data(const EntityKey& key, unsigned new_owner);
 
@@ -682,110 +678,6 @@ inline bool BulkData::internal_quick_verify_change_part(const Part* part,
   return intersection_ok && rel_target_ok && rank_ok;
 }
 
-//Optional parameter 'always_propagate_internal_changes' is always true except when this function
-//is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
-//internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
-//the propagation that stk-mesh does.
-template<typename AddIterator, typename RemoveIterator>
-void BulkData::change_entity_parts( Entity entity,
-                                    AddIterator begin_add_parts, AddIterator end_add_parts,
-                                    RemoveIterator begin_remove_parts, RemoveIterator end_remove_parts,
-                                    bool always_propagate_internal_changes)
-{
-  TraceIfWatching("stk::mesh::BulkData::change_entity_parts", LOG_ENTITY, entity.key());
-  DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
-  //DiagIfWatching(LOG_ENTITY, entity.key(), "add_parts: " << add_parts);
-  //DiagIfWatching(LOG_ENTITY, entity.key(), "remove_parts: " << remove_parts);
-
-  require_ok_to_modify();
-
-  require_entity_owner( entity , m_parallel_rank );
-
-  const EntityRank entity_rank = entity.entity_rank();
-  const EntityRank undef_rank  = InvalidEntityRank;
-
-  // Transitive addition and removal:
-  // 1) Include supersets of add_parts
-  // 2) Do not include a remove_part if it appears in the add_parts
-  // 3) Include subsets of remove_parts
-
-  // most parts will at least have universal and topology part as supersets
-  const unsigned expected_min_num_supersets = 2;
-
-  OrdinalVector a_parts;
-  a_parts.reserve( std::distance(begin_add_parts, end_add_parts) * (expected_min_num_supersets + 1) );
-  for(AddIterator add_iter=begin_add_parts; add_iter!=end_add_parts; ++add_iter) {
-    a_parts.push_back((*add_iter)->mesh_meta_data_ordinal());
-  }
-  bool quick_verify_check = true;
-
-  for ( AddIterator ia = begin_add_parts; ia != end_add_parts ; ++ia ) {
-    quick_verify_check = quick_verify_check &&
-      internal_quick_verify_change_part(*ia, entity_rank, undef_rank);
-    const PartVector& supersets = (*ia)->supersets();
-    for(PartVector::const_iterator s_iter=supersets.begin(), s_end=supersets.end();
-        s_iter!=s_end; ++s_iter) {
-      a_parts.push_back((*s_iter)->mesh_meta_data_ordinal());
-    }
-  }
-
-  order(a_parts);
-
-  OrdinalVector::const_iterator a_parts_begin = a_parts.begin(),
-                                a_parts_end   = a_parts.end();
-  OrdinalVector r_parts ;
-
-  for ( RemoveIterator ir = begin_remove_parts; ir != end_remove_parts ; ++ir ) {
-
-    // The following guards should be in the public interface to
-    // changing parts.  However, internal mechanisms such as changing
-    // ownership calls this function to add or remove an entity from
-    // the three special parts.  Without refactoring, these guards
-    // cannot be put in place.
-    /*
-    ThrowErrorMsgIf( m_mesh_meta_data.universal_part() == **ir,
-                     "Cannot remove entity from universal part" );
-    ThrowErrorMsgIf( m_mesh_meta_data.locally_owned_part() == **ir,
-                     "Cannot remove entity from locally owned part" );
-    ThrowErrorMsgIf( m_mesh_meta_data.globally_shared_part() == **ir,
-                     "Cannot remove entity from globally shared part" );
-    */
-
-    quick_verify_check = quick_verify_check &&
-      internal_quick_verify_change_part(*ir, entity_rank, undef_rank);
-
-    if ( ! contains_ordinal( a_parts_begin, a_parts_end , (*ir)->mesh_meta_data_ordinal() ) ) {
-      r_parts.push_back( (*ir)->mesh_meta_data_ordinal() );
-      for ( PartVector::const_iterator  cur_part = (*ir)->subsets().begin() ;
-            cur_part != (*ir)->subsets().end() ;
-            ++cur_part )
-        if ( entity.bucket().member ( **cur_part ) )
-          r_parts.push_back ( (*cur_part)->mesh_meta_data_ordinal() );
-    }
-  }
-
-  order(r_parts);
-
-  // If it looks like we have a problem, run the full check and we should
-  // expect to see an exception thrown; otherwise, only do the full check in
-  // debug mode because it incurs significant overhead.
-  if ( ! quick_verify_check ) {
-    internal_verify_change_parts( m_mesh_meta_data , entity , a_parts );
-    internal_verify_change_parts( m_mesh_meta_data , entity , r_parts );
-    ThrowRequireMsg(false, "Expected throw from verify methods above.");
-  }
-  else {
-#ifndef NDEBUG
-    internal_verify_change_parts( m_mesh_meta_data , entity , a_parts );
-    internal_verify_change_parts( m_mesh_meta_data , entity , r_parts );
-#endif
-  }
-
-  internal_change_entity_parts( entity , a_parts , r_parts , always_propagate_internal_changes );
-
-  return ;
-}
-
 inline
 unsigned BulkData::entity_comm_owner(const EntityKey & key) const
 {
@@ -825,5 +717,7 @@ bool BulkData::in_send_ghost( EntityKey key) const
 
 } // namespace mesh
 } // namespace stk
+
+#include <stk_mesh/base/BulkDataPartOperations.tcc>
 
 #endif //  stk_mesh_BulkData_hpp

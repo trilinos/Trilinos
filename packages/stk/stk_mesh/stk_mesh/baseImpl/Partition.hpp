@@ -1,13 +1,11 @@
 /*
  * Partition.hpp
- *
  */
 
 #ifndef STK_MESH_IMPL_PARTITION_HPP_
 #define STK_MESH_IMPL_PARTITION_HPP_
 
 #include <stk_mesh/base/Types.hpp>
-
 
 namespace stk {
 namespace mesh {
@@ -60,7 +58,7 @@ public:
     /// Sort the entities in this partition by EntityKey without changing
     /// the number or sizes of buckets.
     void sort(bool force = false);
-    
+
     /** \brief  Rotate the field data of multistate fields.
      *
      *  <PRE>
@@ -189,7 +187,5 @@ lower_bound( std::vector<Partition*> & v , const unsigned * key )
 } // impl
 } // mesh
 } // stk
-
-
 
 #endif /* PartitionFAMILY_HPP_ */
