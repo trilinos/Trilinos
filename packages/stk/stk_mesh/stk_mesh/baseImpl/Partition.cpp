@@ -132,7 +132,7 @@ bool Partition::add(Entity entity)
     ++m_size;
 
     m_updated_since_compress = m_updated_since_sort = true;
-    m_repository->internal_propagate_relocation(entity);
+    internal_propagate_relocation(entity);
     entity.m_entityImpl->set_sync_count(m_repository->m_mesh.synchronized_count());
 
     return true;
@@ -166,7 +166,7 @@ void Partition::move_to(Entity entity, Partition &dst_partition)
     dst_partition.m_size++;
 
     m_updated_since_compress = m_updated_since_sort = true;
-    m_repository->internal_propagate_relocation(entity);
+    internal_propagate_relocation(entity);
     entity.m_entityImpl->set_sync_count(m_repository->m_mesh.synchronized_count());
 }
 
@@ -192,7 +192,7 @@ bool Partition::remove(Entity e_k, bool not_in_move_to)
         e_swap.m_entityImpl->set_bucket_and_ordinal(bucket_k, ord_k);
 
         // Entity field data has relocated.
-        m_repository->internal_propagate_relocation(e_swap);
+        internal_propagate_relocation(e_swap);
     }
 
     e_k.m_entityImpl->set_bucket_and_ordinal(0, 0);
@@ -207,6 +207,8 @@ bool Partition::remove(Entity e_k, bool not_in_move_to)
         // Don't delete the last bucket now --- might want it later in this modification cycle.
         if (num_buckets > 1)
         {
+            // The current 'last' bucket in a partition is to be deleted.
+            // The previous 'last' bucket becomes the new 'last' bucket in the partition.
             Bucket *new_last = m_buckets[num_buckets - 2];
             m_repository->m_need_sync_from_partitions[m_rank] = true;
             m_buckets[0]->set_last_bucket_in_partition(new_last);
@@ -345,7 +347,7 @@ void Partition::compress(bool force)
         new_bucket->replace_fields(new_ordinal, old_bucket, old_ordinal);
         entity.m_entityImpl->set_bucket_and_ordinal(new_bucket, new_ordinal);
         new_bucket->replace_entity( new_ordinal , entity ) ;
-        m_repository->internal_propagate_relocation(entity);
+        internal_propagate_relocation(entity);
     }
     new_bucket->m_size = m_size;
 
@@ -448,7 +450,7 @@ void Partition::sort(bool force)
             // entity as opposed to both times the entity is moved.
             if ( change_this_partition )
             {
-                m_repository->internal_propagate_relocation( *j );
+                internal_propagate_relocation( *j );
             }
         }
     }
@@ -503,6 +505,29 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
     }
 
     return bucket;
+}
+
+
+void Partition::internal_propagate_relocation( Entity entity )
+{
+  TraceIf("stk::mesh::impl::BucketRepository::internal_propagate_relocation", LOG_BUCKET);
+
+  const EntityRank erank = entity.entity_rank();
+  PairIterRelation rel = entity.relations();
+
+  for ( ; ! rel.empty() ; ++rel ) {
+    const EntityRank rel_rank = rel->entity_rank();
+    if ( rel_rank < erank ) {
+      Entity e_to = rel->entity();
+
+      set_field_relations( entity, e_to, rel->identifier() );
+    }
+    else if ( erank < rel_rank ) {
+      Entity e_from = rel->entity();
+
+      set_field_relations( e_from, entity, rel->identifier() );
+    }
+  }
 }
 
 

@@ -61,6 +61,17 @@ public:
     /// the number or sizes of buckets.
     void sort(bool force = false);
     
+    /** \brief  Rotate the field data of multistate fields.
+     *
+     *  <PRE>
+     *  Rotation of states:
+     *    StateN   <- StateNP1 (StateOld <- StateNew)
+     *    StateNM1 <- StateN   (StateNM1 <- StateOld)
+     *    StateNM2 <- StateNM1
+     *    StateNM3 <- StateNM2
+     *    StateNM3 <- StateNM2
+     *  </PRE>
+     */
     void update_state() const;
 
     ////
@@ -135,6 +146,8 @@ private:
     // Make sure that the last bucket has room for an entity to be added to it, adding
     // an empty bucket if necessary.
     Bucket *get_bucket_for_adds();
+
+    void internal_propagate_relocation( Entity );
 
 };
 

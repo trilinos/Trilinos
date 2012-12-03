@@ -58,65 +58,6 @@ BucketRepository::~BucketRepository()
   } catch(...) {}
 }
 
-//----------------------------------------------------------------------
-// The current 'last' bucket in a partition is to be deleted.
-// The previous 'last' bucket becomes the new 'last' bucket in the partition.
-
-void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * bucket_to_be_deleted )
-{
-  TraceIfWatching("stk::mesh::impl::BucketRepository::destroy_bucket", LOG_BUCKET, bucket_to_be_deleted);
-
-  ThrowRequireMsg(MetaData::get(m_mesh).check_rank(entity_rank),
-                  "Entity rank " << entity_rank << " is invalid");
-
-  std::vector<Bucket *> & bucket_set = m_buckets[entity_rank];
-
-  // Get the first bucket in the same partition as the bucket being deleted
-  Bucket * const first = bucket_to_be_deleted->first_bucket_in_partition();
-
-  ThrowRequireMsg( bucket_to_be_deleted->in_same_partition(*first), "Logic error - bucket_to_be_deleted is not in same partition as first bucket in partition");
-  ThrowRequireMsg( first->in_same_partition(*bucket_to_be_deleted), "Logic error - first bucket in partition is not in same partition as bucket_to_be_deleted");
-
-  ThrowRequireMsg( bucket_to_be_deleted->size() == 0,
-      "Destroying non-empty bucket " << *(bucket_to_be_deleted->key()) );
-
-  ThrowRequireMsg( bucket_to_be_deleted == first->get_partition_pointer(),
-                   "Destroying partition") ;
-
-  std::vector<Bucket*>::iterator ik = lower_bound(bucket_set, bucket_to_be_deleted->key());
-  ThrowRequireMsg( ik != bucket_set.end() && bucket_to_be_deleted == *ik,
-      "Bucket not found in bucket set for entity rank " << entity_rank );
-
-  ik = bucket_set.erase( ik );
-
-  if ( first != bucket_to_be_deleted ) {
-
-    ThrowRequireMsg( ik != bucket_set.begin(),
-                     "Where did first bucket go?" );
-
-    first->set_last_bucket_in_partition( *--ik );
-
-    ThrowRequireMsg ( first->get_partition_pointer()->size() != 0,
-                      "TODO: Explain" );
-  }
-
-  destroy_bucket( bucket_to_be_deleted );
-}
-
-void BucketRepository::destroy_bucket( Bucket * bucket )
-{
-  TraceIfWatching("stk::mesh::impl::BucketRepository::destroy_bucket", LOG_BUCKET, bucket);
-
-  delete bucket;
-}
-
-
-void BucketRepository::initialize_fields( Bucket & k_dst , unsigned i_dst )
-{
-  TraceIfWatching("stk::mesh::impl::BucketRepository::initialize_fields", LOG_BUCKET, &k_dst);
-  k_dst.initialize_fields(i_dst);
-}
-
 
 void BucketRepository::update_field_data_states() const
 {
@@ -165,28 +106,6 @@ void BucketRepository::optimize_buckets()
     }
 }
 
-
-void BucketRepository::internal_propagate_relocation( Entity entity )
-{
-  TraceIf("stk::mesh::impl::BucketRepository::internal_propagate_relocation", LOG_BUCKET);
-
-  const EntityRank erank = entity.entity_rank();
-  PairIterRelation rel = entity.relations();
-
-  for ( ; ! rel.empty() ; ++rel ) {
-    const EntityRank rel_rank = rel->entity_rank();
-    if ( rel_rank < erank ) {
-      Entity e_to = rel->entity();
-
-      set_field_relations( entity, e_to, rel->identifier() );
-    }
-    else if ( erank < rel_rank ) {
-      Entity e_from = rel->entity();
-
-      set_field_relations( e_from, entity, rel->identifier() );
-    }
-  }
-}
 
 ////
 //// Note that in both versions of get_or_create_partition(..) we need to construct a
@@ -253,7 +172,6 @@ Partition *BucketRepository::get_or_create_partition(
 }
 
 
-
 Partition *BucketRepository::get_or_create_partition(
                                 const unsigned arg_entity_rank ,
                                 const OrdinalVector &parts)
@@ -306,6 +224,7 @@ Partition *BucketRepository::get_or_create_partition(
 
     return partition ;
 }
+
 
 void BucketRepository::sync_to_partitions()
 {
@@ -373,6 +292,7 @@ void BucketRepository::sync_to_partitions()
     }
 }
 
+
 void BucketRepository::sync_from_partitions()
 {
     for (EntityRank rank = stk::mesh::MetaData::NODE_RANK; rank < m_partitions.size(); ++rank)
@@ -381,7 +301,9 @@ void BucketRepository::sync_from_partitions()
     }
 }
 
+
 inline bool isNull(stk::mesh::impl::Partition *p) { return (p ? false : true);}
+
 
 void BucketRepository::sync_from_partitions(EntityRank rank)
 {
@@ -433,32 +355,6 @@ void BucketRepository::sync_from_partitions(EntityRank rank)
     m_need_sync_from_partitions[rank] = false;
 }
 
-
-void BucketRepository::babbleForEntity(EntityRank entity_rank, EntityId entity_id)
-{
-    Entity entity = m_entity_repo.get_entity( EntityKey(entity_rank, entity_id));
-
-    if (!entity.is_valid())
-        return;
-
-    const Bucket *bkt = entity.bucket_ptr();
-
-    if (!bkt)
-        return;
-
-    std::cout << m_mesh.synchronized_count()
-              << ": P" << m_mesh.parallel_rank() << " Entity(" << entity_rank << "):" << entity_id;
-    const std::vector<unsigned> &bucket_key = bkt->key_vector();
-    std::cout << " [ ";
-    for (size_t i = 0; i < bucket_key.size(); ++i)
-    {
-        std::cout << bucket_key[i] << " ";
-    }
-    std::cout << "]  ord = " << entity.bucket_ordinal() << std::endl;
-    print(std::cout, " ", *bkt);
-
-
-}
 
 std::vector<Partition *> BucketRepository::get_partitions(EntityRank rank)
 {

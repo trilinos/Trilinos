@@ -19,7 +19,8 @@ namespace impl {
 
 class EntityRepository;
 
-class BucketRepository {
+class BucketRepository
+{
 public:
   ~BucketRepository();
   BucketRepository(
@@ -29,7 +30,7 @@ public:
       EntityRepository & entity_repo
       );
 
-  /** \brief  Query all buckets of a given entity rank */
+  /** \brief  Query to get all buckets of a given entity rank */
   const std::vector<Bucket*> & buckets( EntityRank rank ) const
   {
     ThrowAssertMsg( rank < m_buckets.size(), "Invalid entity rank " << rank );
@@ -42,13 +43,11 @@ public:
     return m_buckets[ rank ];
   }
 
-
   //------------------------------------
   /** \brief  Query the upper bound on the number of mesh entities
     *         that may be associated with a single bucket.
     */
   unsigned bucket_capacity() const { return m_bucket_capacity; }
-
 
   //------------------------------------
 
@@ -65,21 +64,13 @@ public:
    */
   void update_field_data_states() const ;
 
-  // Destroy the last empty bucket in a partition:
-  void destroy_bucket( const unsigned & entity_rank , Bucket * last );
-  void destroy_bucket( Bucket * bucket );
-
   void copy_fields( Bucket & k_dst , unsigned i_dst ,
                            Bucket & k_src , unsigned i_src )
   { k_dst.replace_fields(i_dst,k_src,i_src); }
 
-  void initialize_fields( Bucket & k_dst , unsigned i_dst );
-
   void internal_sort_bucket_entities();
 
   void optimize_buckets();
-
-  void internal_propagate_relocation( Entity );
 
   AllBucketsRange get_bucket_range() const
   {
@@ -119,8 +110,6 @@ public:
   // Used in unit tests. Delete the Partitions in m_partitions, clear it, and then (re-)build
   // the Partitions from the m_buckets.
   void sync_to_partitions();
-
-  void babbleForEntity(EntityRank entity_rank, EntityId entity_id);
 
 
 private:
