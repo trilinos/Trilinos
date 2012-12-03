@@ -71,14 +71,12 @@
     <ParameterList name="myRebalanceProlongatorFact">
       <Parameter name="factory" type="string" value="RebalanceTransferFactory"/>
       <Parameter name="type"               type="string" value="Interpolation"/>
-      <Parameter name="A"                  type="string" value="myRAPFact"/>
       <Parameter name="P"                  type="string" value="myProlongatorFact"/>
     </ParameterList>
 
     <ParameterList name="myRebalanceRestrictionFact">
       <Parameter name="factory" type="string" value="RebalanceTransferFactory"/>
       <Parameter name="type"               type="string" value="Restriction"/>
-      <Parameter name="A"                  type="string" value="myRAPFact"/>
       <Parameter name="R"                  type="string" value="myRestrictorFact"/>
       <Parameter name="Coordinates"        type="string" value="myTransferCoordinatesFact"/>
       <Parameter name="Nullspace"          type="string" value="myTentativePFact"/>

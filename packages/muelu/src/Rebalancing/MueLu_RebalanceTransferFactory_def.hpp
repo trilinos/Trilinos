@@ -65,7 +65,6 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    Input(coarseLevel, "A");
     if (PorR_ == MueLu::INTERPOLATION) {
       Input(coarseLevel, "P");
     } else {

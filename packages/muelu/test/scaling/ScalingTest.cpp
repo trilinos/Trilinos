@@ -380,11 +380,9 @@ int main(int argc, char *argv[]) {
 
         // Reordering of the transfer operators
         RCP<Factory> permPFact = rcp(new RebalanceTransferFactory(MueLu::INTERPOLATION));
-        permPFact->SetFactory("A", AFact);
         permPFact->SetFactory("P", PFact);
 
         RCP<Factory> permRFact = rcp(new RebalanceTransferFactory(MueLu::RESTRICTION));
-        permRFact->SetFactory("A", AFact);
         permRFact->SetFactory("R", RFact);
         permRFact->SetFactory("Coordinates", TransferCoordinatesFact);
         permRFact->SetFactory("Nullspace", M.GetFactory("Ptent")); // TODO
