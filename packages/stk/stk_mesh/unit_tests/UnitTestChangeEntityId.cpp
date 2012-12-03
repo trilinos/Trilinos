@@ -18,15 +18,13 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_small )
   //   Only entity owners should have to call change-id. As it stands now,
   //   every process that might know about the entity, even as a ghost,
   //   must make the call. If any sharer/ghoster of the changing entity
-  //   forgets to make the call, or changes to wrong id, awful errors ensure
+  //   forgets to make the call, or changes to wrong id, awful errors ensue
   //   in the next modification_end. The only way to make this safe is to have
   //   change_entity_id be a parallel call similar to change_entity_owner; this
   //   would be very expensive. We need to implement the tracking of exodus-ids
   //   in a different fashion in the long run.
 
   // Demonstrate how change_entity_id should work
-
-  return;
 
   using namespace stk::mesh;
 
@@ -38,15 +36,19 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_small )
 
   BulkData mesh(meta_data, pm);
   unsigned p_rank = mesh.parallel_rank();
+  unsigned p_numProcs = mesh.parallel_size();
+  if (p_numProcs > 1) {
+    //change-entity-id test only supported in serial
+    return;
+  }
 
   mesh.modification_begin();
 
-  PartVector empty_parts;
-  Entity elem                 = mesh.declare_entity(MetaData::ELEMENT_RANK, p_rank + 1 /*id*/, empty_parts);
+  Entity elem                 = mesh.declare_entity(MetaData::ELEMENT_RANK, p_rank + 1 /*id*/);
 
-  Entity node1_local_chg_id   = mesh.declare_entity(MetaData::NODE_RANK, p_rank*3 + 1 /*id*/, empty_parts);
-  Entity node2_shared_chg_id  = mesh.declare_entity(MetaData::NODE_RANK,            2 /*id*/, empty_parts);
-  Entity node3                = mesh.declare_entity(MetaData::NODE_RANK, p_rank*3 + 3 /*id*/, empty_parts);
+  Entity node1_local_chg_id   = mesh.declare_entity(MetaData::NODE_RANK, p_rank*3 + 1 /*id*/);
+  Entity node2_shared_chg_id  = mesh.declare_entity(MetaData::NODE_RANK,            2 /*id*/);
+  Entity node3                = mesh.declare_entity(MetaData::NODE_RANK, p_rank*3 + 3 /*id*/);
 
   mesh.declare_relation(elem, node1_local_chg_id , 1 /*relation ordinal*/);
   mesh.declare_relation(elem, node2_shared_chg_id, 2 /*relation ordinal*/);
