@@ -89,13 +89,6 @@ namespace MueLu {
       Incompatible(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
     };
 
-    //! Exception throws to report no repartitioning possible.
-    class HaltRepartitioning : public Teuchos::ExceptionBase
-    {
-    public:
-      HaltRepartitioning(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
-    };
-
   }
 }
 

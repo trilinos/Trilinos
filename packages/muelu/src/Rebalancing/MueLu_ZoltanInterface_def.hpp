@@ -149,7 +149,7 @@ namespace MueLu {
       // TODO: level.Set(XCoordinates / YCoordinates / ZCoordinates as it is computed and might be needed somewhere else. But can wait for now. This code have to be moved anyway.
 
     } else {
-      throw(Exceptions::HaltRepartitioning("MueLu::ZoltanInterface : no coordinates available"));
+      throw(Exceptions::RuntimeError("MueLu::ZoltanInterface::Build(): no coordinates available"));
     }
 
     //~~ size_t problemDimension_ = XYZ->getNumVectors();

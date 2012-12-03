@@ -70,14 +70,13 @@ namespace MueLu {
 
     RCP<Matrix> originalAc = Get< RCP<Matrix> >(coarseLevel, "A");
 
-    if (IsAvailable(coarseLevel, "Importer")) {
+    RCP<const Import> rebalanceImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
+
+    if (rebalanceImporter != Teuchos::null) {
 
       RCP<Matrix> rebalancedAc;
-
       {
         SubFactoryMonitor subM(*this, "Rebalancing existing Ac", coarseLevel);
-
-        RCP<const Import> rebalanceImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
 
         RCP<const Map> targetMap = rebalanceImporter->getTargetMap();
         rebalancedAc = MatrixFactory::Build(targetMap, originalAc->getGlobalMaxNumRowEntries());

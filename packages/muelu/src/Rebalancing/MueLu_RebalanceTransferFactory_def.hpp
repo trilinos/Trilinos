@@ -91,17 +91,7 @@ namespace MueLu {
   void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
-    RCP<const Import> rebalanceImporter;
-    try {
-      rebalanceImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
-    }
-    catch(MueLu::Exceptions::HaltRepartitioning e) { //TODO: rename exceptions->HaltRebalancing
-      std::string gridTransferType;
-      GetOStream(Warnings0, 0) <<  "Skipping permuting of "
-                               << ((PorR_ == MueLu::INTERPOLATION) ? "prolongator" : "restriction")
-                               << ".  No permutation is available for the following reason:"
-                               << std::endl << e.what() << std::endl;
-    }
+    RCP<const Import> rebalanceImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
 
     switch (PorR_) {
 
@@ -164,46 +154,53 @@ namespace MueLu {
         RCP<Matrix> originalR = Get< RCP<Matrix> >(coarseLevel, "R");
         if (rebalanceImporter != Teuchos::null) {
           SubFactoryMonitor m2(*this, "Rebalancing restriction", coarseLevel);
-          RCP<SubFactoryMonitor> m1 = rcp( new SubFactoryMonitor(*this, "Rebalancing restriction -- allocate new R", coarseLevel) );
 
-          //TODO is there a better preallocation strategy?
-          /*
-            Answer:  YES! :
-            Count nnz per row of R
-            Put this in a MV
-            Use the rebalanceImporter to communicate this
-            Allocate rebalancedR according to the nnz info
-            Proceed as usual
-          */
-          //Note is to avoid that Epetra only supports vectors of type int or double, not size_t, which is unsigned.
-          RCP<Xpetra::Vector<double, LO, GO> > originalNnzPerRowVec = Xpetra::VectorFactory<double, LO, GO>::Build(rebalanceImporter->getSourceMap());
-          ArrayRCP<double> nnzPerRow = originalNnzPerRowVec->getDataNonConst(0);
-          for (size_t i=0; i<originalR->getNodeNumRows(); ++i)
-            nnzPerRow[i] = originalR->getNumEntriesInLocalRow(i);
-          nnzPerRow = Teuchos::null;
-          RCP<Xpetra::Vector<double, LO, GO> > permutedNnzPerRowVec = Xpetra::VectorFactory<double, LO, GO>::Build(rebalanceImporter->getTargetMap());
-          permutedNnzPerRowVec->doImport(*originalNnzPerRowVec, *rebalanceImporter, Xpetra::INSERT);
+          RCP<Matrix> rebalancedR;
 
-          ArrayRCP<const double> tmpData = permutedNnzPerRowVec->getData(0);
-          ArrayRCP<size_t> permutedNnzPerRow(permutedNnzPerRowVec->getLocalLength());
-          for (size_t i=0; i<permutedNnzPerRowVec->getLocalLength(); ++i)
-            permutedNnzPerRow[i] = Teuchos::as<size_t, double>(tmpData[i]);
+          {
+            SubFactoryMonitor subM(*this, "Rebalancing restriction -- allocate new R", coarseLevel);
 
-          RCP<Matrix> rebalancedR = MatrixFactory::Build(rebalanceImporter->getTargetMap(), permutedNnzPerRow, Xpetra::StaticProfile);
-          permutedNnzPerRow = Teuchos::null;
-          m1 = Teuchos::null;
-          m1 = rcp( new SubFactoryMonitor(*this, "Rebalancing restriction -- import", coarseLevel) );
-          rebalancedR->doImport(*originalR, *rebalanceImporter, Xpetra::INSERT);
+            //TODO is there a better preallocation strategy?
+            /*
+              Answer:  YES! :
+              Count nnz per row of R
+              Put this in a MV
+              Use the rebalanceImporter to communicate this
+              Allocate rebalancedR according to the nnz info
+              Proceed as usual
+            */
+            //Note is to avoid that Epetra only supports vectors of type int or double, not size_t, which is unsigned.
+            RCP<Xpetra::Vector<double, LO, GO> > originalNnzPerRowVec = Xpetra::VectorFactory<double, LO, GO>::Build(rebalanceImporter->getSourceMap());
+            ArrayRCP<double> nnzPerRow = originalNnzPerRowVec->getDataNonConst(0);
+            for (size_t i=0; i<originalR->getNodeNumRows(); ++i)
+              nnzPerRow[i] = originalR->getNumEntriesInLocalRow(i);
+            nnzPerRow = Teuchos::null;
+            RCP<Xpetra::Vector<double, LO, GO> > permutedNnzPerRowVec = Xpetra::VectorFactory<double, LO, GO>::Build(rebalanceImporter->getTargetMap());
+            permutedNnzPerRowVec->doImport(*originalNnzPerRowVec, *rebalanceImporter, Xpetra::INSERT);
 
-          //TODO is the following range map correct?
-          //TODO RangeMap controls where a coarse grid vector's data resides after applying R
-          //TODO if the targetMap of the importer is used, then we must either resumeFill or copy/fillComplete P so
-          //TODO its domain map matches the range map of R.
-          m1 = Teuchos::null;
-          m1 = rcp( new SubFactoryMonitor(*this, "Rebalancing restriction -- fillComplete", coarseLevel) );
-          rebalancedR->fillComplete( originalR->getDomainMap(), rebalanceImporter->getTargetMap() );
-          //Set(coarseLevel, "newR", rebalancedR);
-          m1 = Teuchos::null;
+            ArrayRCP<const double> tmpData = permutedNnzPerRowVec->getData(0);
+            ArrayRCP<size_t> permutedNnzPerRow(permutedNnzPerRowVec->getLocalLength());
+            for (size_t i=0; i<permutedNnzPerRowVec->getLocalLength(); ++i)
+              permutedNnzPerRow[i] = Teuchos::as<size_t, double>(tmpData[i]);
+
+            rebalancedR = MatrixFactory::Build(rebalanceImporter->getTargetMap(), permutedNnzPerRow, Xpetra::StaticProfile);
+          }
+
+          {
+            SubFactoryMonitor subM(*this, "Rebalancing restriction -- import", coarseLevel);
+            rebalancedR->doImport(*originalR, *rebalanceImporter, Xpetra::INSERT);
+          }
+
+          {
+            SubFactoryMonitor subM(*this, "Rebalancing restriction -- fillComplete", coarseLevel);
+
+            //TODO is the following range map correct?
+            //TODO RangeMap controls where a coarse grid vector's data resides after applying R
+            //TODO if the targetMap of the importer is used, then we must either resumeFill or copy/fillComplete P so
+            //TODO its domain map matches the range map of R.
+            rebalancedR->fillComplete( originalR->getDomainMap(), rebalanceImporter->getTargetMap() );
+          }
+
           Set(coarseLevel, "R", rebalancedR);
 
           ///////////////////////// EXPERIMENTAL
@@ -243,4 +240,4 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#endif // MUELU_REBALANCETRANSFERFACTORY_DEF_HPP
+#endif // MUELU_REBALANCETRANSFERFACTORY_DEF_HPP_HPP

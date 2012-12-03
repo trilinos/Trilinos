@@ -121,7 +121,9 @@ namespace MueLu {
       // Test1: skip partitioning if level is too big
       std::ostringstream msg1; msg1 << std::endl << "    current level = " << currentLevel.GetLevelID() << ", first level where repartitioning can happen is " << startLevel_ << ".";
       if (currentLevel.GetLevelID() < startLevel_) {
-        throw(MueLu::Exceptions::HaltRepartitioning("No repartitioning necessary:" + msg1.str()));
+        GetOStream(Warnings0, 0) << "No repartitioning necessary:" + msg1.str() << std::endl;
+        Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
+        return;
       }
 
       // Test 2: check whether A is spread over more than one process.
@@ -131,7 +133,9 @@ namespace MueLu {
       sumAll(comm, (int)((A->getNodeNumRows() > 0) ? 1 : 0), numActiveProcesses);
       std::ostringstream msg2; msg2 << std::endl << "    # processes with rows = " << numActiveProcesses;
       if (numActiveProcesses == 1) {
-        throw(MueLu::Exceptions::HaltRepartitioning("No repartitioning necessary:" + msg2.str()));
+        GetOStream(Warnings0, 0) << "No repartitioning necessary:" + msg2.str() << std::endl;
+        Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
+        return;
       }
 
       bool doRepartition = false;
@@ -167,7 +171,9 @@ namespace MueLu {
       }
 
       if (!doRepartition) {
-        throw(MueLu::Exceptions::HaltRepartitioning("No repartitioning necessary:" + msg1.str() + msg2.str() + msg3.str() + msg4.str()));
+        GetOStream(Warnings0, 0) << "No repartitioning necessary:" + msg1.str() + msg2.str() + msg3.str() + msg4.str() << std::endl;
+        Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
+        return;
       }
 
       // print only conditions that triggered the repartitioning
