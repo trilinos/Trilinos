@@ -66,10 +66,15 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    SingleLevelFactoryBase() {}
+    SingleLevelFactoryBase()
+#ifdef HAVE_MUELU_DEBUG
+      : multipleCallCheck_(FIRSTCALL), levelIDOfLastCall_(-1)
+#endif
+    { }
 
     //! Destructor.
-    virtual ~SingleLevelFactoryBase() {}
+    virtual ~SingleLevelFactoryBase() { }
+
     //@}
 
     //! @name Input
@@ -92,6 +97,11 @@ namespace MueLu {
 
     //!
     virtual void CallBuild(Level & requestedLevel) const {
+#ifdef HAVE_MUELU_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION((multipleCallCheck_ == ENABLED) && (levelIDOfLastCall_ == requestedLevel.GetLevelID()), Exceptions::RuntimeError, this->ShortClassName() << "::Build() called twice for the same level (levelID=" << requestedLevel.GetLevelID() << "). This is likely due to a configuration error.");
+      if (multipleCallCheck_ == FIRSTCALL) multipleCallCheck_ = ENABLED;
+      levelIDOfLastCall_ = requestedLevel.GetLevelID();
+#endif
       Build(requestedLevel);
     }
 
@@ -101,6 +111,20 @@ namespace MueLu {
     }
 
     //@}
+
+    void DisableMultipleCallCheck() {
+#ifdef HAVE_MUELU_DEBUG
+      multipleCallCheck_ = DISABLED;
+#endif
+    }
+
+#ifdef HAVE_MUELU_DEBUG
+  private:
+
+    enum multipleCallCheckEnum { ENABLED, DISABLED, FIRSTCALL };
+    mutable multipleCallCheckEnum multipleCallCheck_;
+    mutable int levelIDOfLastCall_;
+#endif
 
   }; //class SingleLevelFactoryBase
 

@@ -164,6 +164,7 @@ int main(int argc, char *argv[]) {
 
     Level fineLevel, coarseLevel;
     RAPFactory AcFact;
+    AcFact.DisableMultipleCallCheck();
     {
       TimeMonitor tm(*TimeMonitor::getNewTimer("RAPScalingTest: 2 - Setup"));
 
