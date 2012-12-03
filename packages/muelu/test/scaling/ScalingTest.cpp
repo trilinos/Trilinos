@@ -409,7 +409,6 @@ int main(int argc, char *argv[]) {
 
         // Compute Ac from permuted P and R
         RCP<Factory> permAFact = rcp(new RebalanceAcFactory());
-        permAFact->setVerbLevel(Teuchos::VERB_HIGH);
         permAFact->SetFactory("A", AFact);
 
         // Configure FactoryManager
