@@ -75,7 +75,7 @@ public:
 
   //! Build the LOCA solution group
   virtual Teuchos::RCP<LOCA::Epetra::Group> 
-       buildSolutionGroup();
+       buildSolutionGroup() = 0;
 
   virtual void projectCurrentSolution();
 
