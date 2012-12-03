@@ -96,24 +96,6 @@
 #include "BelosMueLuAdapter.hpp"  // this header defines Belos::MueLuOp()
 #endif
 
-// JGTMP --
-#ifdef HAVE_MUELU_ZOLTAN
-#warning HAVE_MUELU_ZOLTAN is ON
-#else
-#warning HAVE_MUELU_ZOLTAN is OFF
-#endif
-
-#ifdef HAVE_MPI
-#warning HAVE_MPI is ON
-#else
-#warning HAVE_MPI is OFF
-#endif
-
-#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN)
-#warning HAVE_MPI and HAVE_MUELU_ZOLTAN is ON
-#endif
-// JGTMP --
-
 //
 typedef double Scalar;
 typedef int    LocalOrdinal;
