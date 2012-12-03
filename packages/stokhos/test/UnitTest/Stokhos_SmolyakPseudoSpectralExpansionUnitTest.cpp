@@ -62,13 +62,13 @@ namespace PseudoSpectralExpansionUnitTest {
       catol = 1e-12;
       a = 3.1;
       const OrdinalType d = 2;
-      const OrdinalType p = 5;
+      const OrdinalType p = 7;
       
       // Create product basis
       Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<OrdinalType,ValueType> > > bases(d);
       for (OrdinalType i=0; i<d; i++)
 	bases[i] = 
-	  Teuchos::rcp(new Stokhos::GaussPattersonLegendreBasis<OrdinalType,ValueType>(p));
+	  Teuchos::rcp(new Stokhos::LegendreBasis<OrdinalType,ValueType>(p));
 
       Stokhos::TotalOrderIndexSet<OrdinalType> coeff_index_set(d, p);
       basis =
