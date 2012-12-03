@@ -47,8 +47,10 @@ MeanBasedPreconditioner(
   num_blocks(0),
   prec_factory(prec_factory_),
   mean_prec(),
-  useTranspose(false)
+  useTranspose(false),
+  use_block_apply(true)
 {
+  use_block_apply = params_->get("Use Block Apply", true);
 }
 
 Stokhos::MeanBasedPreconditioner::
@@ -89,10 +91,24 @@ Stokhos::MeanBasedPreconditioner::
 Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
   int myBlockRows = epetraCijk->numMyRows();
-  EpetraExt::BlockMultiVector sg_input(View, *base_map, Input);
-  EpetraExt::BlockMultiVector sg_result(View, *base_map, Result);
-  for (int i=0; i<myBlockRows; i++) {
-    mean_prec->Apply(*(sg_input.GetBlock(i)), *(sg_result.GetBlock(i)));
+
+  if (!use_block_apply) {
+    EpetraExt::BlockMultiVector sg_input(View, *base_map, Input);
+    EpetraExt::BlockMultiVector sg_result(View, *base_map, Result);
+    for (int i=0; i<myBlockRows; i++) {
+      mean_prec->Apply(*(sg_input.GetBlock(i)), *(sg_result.GetBlock(i)));
+    }
+  }
+
+  else {
+    int m = Input.NumVectors();
+    Epetra_MultiVector input_block(
+      View, *base_map, Input.Values(), base_map->NumMyElements(), 
+      m*myBlockRows);
+    Epetra_MultiVector result_block(
+      View, *base_map, Result.Values(), base_map->NumMyElements(), 
+      m*myBlockRows);
+    mean_prec->Apply(input_block, result_block);
   }
 
   return 0;
@@ -103,10 +119,25 @@ Stokhos::MeanBasedPreconditioner::
 ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
   int myBlockRows = epetraCijk->numMyRows();
-  EpetraExt::BlockMultiVector sg_input(View, *base_map, Input);
-  EpetraExt::BlockMultiVector sg_result(View, *base_map, Result);
-  for (int i=0; i<myBlockRows; i++) {
-    mean_prec->ApplyInverse(*(sg_input.GetBlock(i)), *(sg_result.GetBlock(i)));
+
+  if (!use_block_apply) {
+    EpetraExt::BlockMultiVector sg_input(View, *base_map, Input);
+    EpetraExt::BlockMultiVector sg_result(View, *base_map, Result);
+    for (int i=0; i<myBlockRows; i++) {
+      mean_prec->ApplyInverse(*(sg_input.GetBlock(i)), 
+			      *(sg_result.GetBlock(i)));
+    }
+  }
+ 
+  else {
+    int m = Input.NumVectors();
+    Epetra_MultiVector input_block(
+      View, *base_map, Input.Values(), base_map->NumMyElements(), 
+      m*myBlockRows);
+    Epetra_MultiVector result_block(
+      View, *base_map, Result.Values(), base_map->NumMyElements(), 
+      m*myBlockRows);
+    mean_prec->ApplyInverse(input_block, result_block);
   }
 
   return 0;
