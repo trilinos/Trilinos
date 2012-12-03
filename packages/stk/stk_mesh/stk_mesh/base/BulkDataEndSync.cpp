@@ -835,10 +835,7 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
 
   // ------------------------------
 
-#ifdef USE_STK_MESH_IMPL_PARTITION
   m_bucket_repository.sync_from_partitions();
-#endif
-
   m_sync_state = SYNCHRONIZED ;
 
   return true ;

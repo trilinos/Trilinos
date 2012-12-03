@@ -515,237 +515,6 @@ void merge_in( std::vector<unsigned> & vec , const OrdinalVector & parts )
 }
 
 
-#ifndef USE_STK_MESH_IMPL_PARTITION
-
-//  The 'add_parts' and 'remove_parts' are complete and disjoint.
-//  Changes need to have parallel resolution during
-//  modification_end.
-
-void BulkData::internal_change_entity_parts(
-  Entity entity ,
-  const PartVector & add_parts ,
-  const PartVector & remove_parts )
-{
-  TraceIfWatching("stk::mesh::BulkData::internal_change_entity_parts", LOG_ENTITY, entity.key());
-  DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
-  DiagIfWatching(LOG_ENTITY, entity.key(), "add_parts: " << add_parts);
-  DiagIfWatching(LOG_ENTITY, entity.key(), "remove_parts: " << remove_parts);
-
-  Bucket * const k_old = m_entity_repo.get_entity_bucket( entity );
-
-  const unsigned i_old = entity.bucket_ordinal() ;
-
-  if ( k_old && k_old->member_all( add_parts ) &&
-              ! k_old->member_any( remove_parts ) ) {
-    // Is already a member of all add_parts,
-    // is not a member of any remove_parts,
-    // thus nothing to do.
-    return ;
-  }
-
-  PartVector parts_removed ;
-
-  OrdinalVector parts_total ; // The final part list
-
-  //--------------------------------
-
-  if ( k_old ) {
-    // Keep any of the existing bucket's parts
-    // that are not a remove part.
-    // This will include the 'intersection' parts.
-    //
-    // These parts are properly ordered and unique.
-
-    const std::pair<const unsigned *, const unsigned*>
-      bucket_parts = k_old->superset_part_ordinals();
-
-    const unsigned * parts_begin = bucket_parts.first;
-    const unsigned * parts_end   = bucket_parts.second;
-
-    const unsigned num_bucket_parts = parts_end - parts_begin;
-    parts_total.reserve( num_bucket_parts + add_parts.size() );
-    parts_total.insert( parts_total.begin(), parts_begin , parts_end);
-
-    if ( !remove_parts.empty() ) {
-      parts_removed.reserve(remove_parts.size());
-      filter_out( parts_total , remove_parts , parts_removed );
-    }
-  }
-  else {
-    parts_total.reserve(add_parts.size());
-  }
-
-  if ( !add_parts.empty() ) {
-    merge_in( parts_total , add_parts );
-  }
-
-  if ( parts_total.empty() ) {
-    // Always a member of the universal part.
-    const unsigned univ_ord =
-      m_mesh_meta_data.universal_part().mesh_meta_data_ordinal();
-    parts_total.push_back( univ_ord );
-  }
-
-  //--------------------------------
-  // Move the entity to the new bucket.
-
-  Bucket * k_new =
-    m_bucket_repository.declare_bucket(
-        entity.entity_rank(),
-        parts_total.size(),
-        & parts_total[0] ,
-        m_mesh_meta_data.get_fields()
-        );
-
-  // If changing buckets then copy its field values from old to new bucket
-
-  if ( k_old ) {
-    m_bucket_repository.copy_fields( *k_new , k_new->size() , *k_old , i_old );
-  }
-  else {
-    m_bucket_repository.initialize_fields( *k_new , k_new->size() );
-  }
-
-  // Set the new bucket
-  m_entity_repo.change_entity_bucket( *k_new, entity, k_new->size() );
-  m_bucket_repository.add_entity_to_bucket( entity, *k_new );
-
-  // If changing buckets then remove the entity from the bucket,
-  if ( k_old && k_old->capacity() > 0) { m_bucket_repository.remove_entity( k_old , i_old ); }
-
-  // Update the change counter to the current cycle.
-  m_entity_repo.set_entity_sync_count( entity, m_sync_count );
-
-  // Propagate part changes through the entity's relations.
-
-  internal_propagate_part_changes( entity , parts_removed );
-
-#ifndef NDEBUG
-  //ensure_part_superset_consistency( entity );
-#endif
-}
-
-void BulkData::internal_change_entity_parts(
-  Entity entity ,
-  const OrdinalVector & add_parts ,
-  const OrdinalVector & remove_parts,
-  bool always_propagate_internal_changes )
-{
-  TraceIfWatching("stk::mesh::BulkData::internal_change_entity_parts", LOG_ENTITY, entity.key());
-  DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
-  DiagIfWatching(LOG_ENTITY, entity.key(), "add_parts: " << add_parts);
-  DiagIfWatching(LOG_ENTITY, entity.key(), "remove_parts: " << remove_parts);
-
-  Bucket * const k_old = m_entity_repo.get_entity_bucket( entity );
-
-  const unsigned i_old = entity.bucket_ordinal() ;
-
-  if ( k_old && k_old->member_all( add_parts ) &&
-              ! k_old->member_any( remove_parts ) ) {
-    // Is already a member of all add_parts,
-    // is not a member of any remove_parts,
-    // thus nothing to do.
-    return ;
-  }
-
-  OrdinalVector parts_removed ;
-
-  OrdinalVector parts_total ; // The final part list
-
-  //--------------------------------
-
-  if ( k_old ) {
-    // Keep any of the existing bucket's parts
-    // that are not a remove part.
-    // This will include the 'intersection' parts.
-    //
-    // These parts are properly ordered and unique.
-
-    const std::pair<const unsigned *, const unsigned*>
-      bucket_parts = k_old->superset_part_ordinals();
-
-    const unsigned * parts_begin = bucket_parts.first;
-    const unsigned * parts_end   = bucket_parts.second;
-
-    const unsigned num_bucket_parts = parts_end - parts_begin;
-    parts_total.reserve( num_bucket_parts + add_parts.size() );
-    parts_total.insert( parts_total.begin(), parts_begin , parts_end);
-
-    if ( !remove_parts.empty() ) {
-      parts_removed.reserve(remove_parts.size());
-      filter_out( parts_total , remove_parts , parts_removed );
-    }
-  }
-  else {
-    parts_total.reserve(add_parts.size());
-  }
-
-  if ( !add_parts.empty() ) {
-    merge_in( parts_total , add_parts );
-  }
-
-  if ( parts_total.empty() ) {
-    // Always a member of the universal part.
-    const unsigned univ_ord =
-      m_mesh_meta_data.universal_part().mesh_meta_data_ordinal();
-    parts_total.push_back( univ_ord );
-  }
-
-  //--------------------------------
-  // Move the entity to the new bucket.
-
-  Bucket * k_new =
-    m_bucket_repository.declare_bucket(
-        entity.entity_rank(),
-        parts_total.size(),
-        & parts_total[0] ,
-        m_mesh_meta_data.get_fields()
-        );
-
-  // If changing buckets then copy its field values from old to new bucket
-
-  if ( k_old ) {
-    m_bucket_repository.copy_fields( *k_new , k_new->size() , *k_old , i_old );
-  }
-  else {
-    m_bucket_repository.initialize_fields( *k_new , k_new->size() );
-  }
-
-  // Set the new bucket
-  m_entity_repo.change_entity_bucket( *k_new, entity, k_new->size() );
-  m_bucket_repository.add_entity_to_bucket( entity, *k_new );
-
-  // If changing buckets then remove the entity from the bucket,
-  if ( k_old && k_old->capacity() > 0) { m_bucket_repository.remove_entity( k_old , i_old ); }
-
-  // Update the change counter to the current cycle.
-  m_entity_repo.set_entity_sync_count( entity, m_sync_count );
-
-  // Propagate part changes through the entity's relations.
-  //(Only propagate part changes for parts which have a primary-entity-rank that matches
-  // the entity's rank. Other parts don't get induced...)
-
-  const PartVector& all_parts = m_mesh_meta_data.get_parts();
-
-  OrdinalVector rank_parts_removed;
-  for(OrdinalVector::const_iterator pr=parts_removed.begin(), prend=parts_removed.end(); pr!=prend; ++pr) {
-    if (all_parts[*pr]->primary_entity_rank() == entity.entity_rank()) {
-      rank_parts_removed.push_back(*pr);
-    }
-  }
-
-  if (always_propagate_internal_changes ||
-      !rank_parts_removed.empty() || !m_mesh_meta_data.get_field_relations().empty()) {
-    internal_propagate_part_changes( entity , rank_parts_removed );
-  }
-
-#ifndef NDEBUG
-  //ensure_part_superset_consistency( entity );
-#endif
-}
-
-
-#else
 
 
 ////.
@@ -952,9 +721,6 @@ void BulkData::internal_change_entity_parts(
 }
 
 
-#endif // USE_STK_MESH_IMPL_PARTITION
-
-
 //----------------------------------------------------------------------
 
 bool BulkData::destroy_entity( Entity entity )
@@ -1002,11 +768,6 @@ bool BulkData::destroy_entity( Entity entity )
   // which would cause problems in m_entity_repo.destroy_later because it
   // makes references to the entity's original bucket.
 
-#ifndef USE_STK_MESH_IMPL_PARTITION
-  Bucket& orig_bucket = entity.bucket();
-  unsigned orig_bucket_ordinal = entity.bucket_ordinal();
-#endif
-
   // Need to invalidate Entity handles in comm-list
   std::vector<EntityCommListInfo>::iterator lb_itr =
     std::lower_bound(m_entity_comm_list.begin(), m_entity_comm_list.end(), entity.key());
@@ -1016,13 +777,8 @@ bool BulkData::destroy_entity( Entity entity )
 
   m_entities_index.register_removed_key( entity.key().raw_key() );
 
-#ifdef USE_STK_MESH_IMPL_PARTITION
   entity.bucket().getPartition()->remove(entity);
   m_entity_repo.destroy_entity( entity );
-#else
-  m_entity_repo.destroy_entity( entity );
-  m_bucket_repository.remove_entity( &orig_bucket , orig_bucket_ordinal );
-#endif
 
   return true ;
 }

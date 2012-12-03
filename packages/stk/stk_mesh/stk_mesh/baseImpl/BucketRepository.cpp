@@ -54,22 +54,6 @@ BucketRepository::~BucketRepository()
         pv_i->clear();
     }
     m_partitions.clear();
-
-#ifndef USE_STK_MESH_IMPL_PARTITION
-    for ( std::vector< std::vector<Bucket*> >::iterator
-          i = m_buckets.end() ; i != m_buckets.begin() ; ) {
-      try {
-        std::vector<Bucket*> & kset = *--i ;
-
-        while ( ! kset.empty() ) {
-          try { destroy_bucket( kset.back() ); } catch(...) {}
-          kset.pop_back();
-        }
-        kset.clear();
-      } catch(...) {}
-    }
-#endif
-
     m_buckets.clear();
   } catch(...) {}
 }
@@ -126,136 +110,6 @@ void BucketRepository::destroy_bucket( Bucket * bucket )
   delete bucket;
 }
 
-/** 11/9/10 Discussion between Kendall, Alan, Todd:
- *  Kendall is confused about why presto would run faster simply by removing
- *  several fields that are not even used.  We considered this and posed the
- *  following possibility.  The current bucket allocation system guarantees
- *  that all the fields for a bucket are layed out contiguously in memory so
- *  that they can be accessed in a fast cache-friendly manner.  This also
- *  guarantees means that if a field is allocated but not used, it will still
- *  be chopped up and carried around in the bucket field data as part of the
- *  contiguous block of memory and that it will have to be skipped over as the
- *  computations progress over that block of data.  This would result in cache
- *  misses and reduced performance.  When they're removed, it makes sense that
- *  the performance might get better.
- *
- *  This leads to the idea that maybe we should test this in a use-case or
- *  performance test case and that we should include this in the performance
- *  comparison of the up-and-coming pluggable data module for the Bucket memory
- *  allocation.
- *
- *  It may be that a flat-array style data allocation for field data would
- *  eliminate this issue.
- **/
-#ifndef USE_STK_MESH_IMPL_PARTITION
-
-//----------------------------------------------------------------------
-// The input part ordinals are complete and contain all supersets.
-Bucket *
-BucketRepository::declare_bucket(
-                        const unsigned arg_entity_rank ,
-                        const unsigned part_count ,
-                        const unsigned part_ord[] ,
-                        const std::vector< FieldBase * > & field_set
-                              )
-{
-  enum { KEY_TMP_BUFFER_SIZE = 64 };
-
-  TraceIf("stk::mesh::impl::BucketRepository::declare_bucket", LOG_BUCKET);
-
-  const unsigned max = static_cast<unsigned>(-1);
-
-  ThrowRequireMsg(MetaData::get(m_mesh).check_rank(arg_entity_rank),
-                  "Entity rank " << arg_entity_rank << " is invalid");
-
-  ThrowRequireMsg( !m_buckets.empty(),
-    "m_buckets is empty! Did you forget to initialize MetaData before creating BulkData?");
-  std::vector<Bucket *> & bucket_set = m_buckets[ arg_entity_rank ];
-
-
-  std::vector<unsigned> key(2+part_count) ;
-
-  //----------------------------------
-  // Key layout:
-  // { part_count + 1 , { part_ordinals } , partition_count }
-  // Thus partition_count = key[ key[0] ]
-  //
-  // for upper bound search use the maximum key.
-
-  key[0] = part_count+1;
-  key[ key[0] ] = max ;
-
-  {
-    for ( unsigned i = 0 ; i < part_count ; ++i ) { key[i+1] = part_ord[i] ; }
-  }
-
-  //----------------------------------
-  // partition has all of the same parts.
-  // Look for the last bucket in this partition:
-
-  const std::vector<Bucket*>::iterator ik = lower_bound( bucket_set , &key[0] );
-
-  //----------------------------------
-  // If a member of the partition has space, it is the last one
-  // since buckets are kept packed.
-  const bool partition_exists =
-    ik != bucket_set.begin() && raw_part_equal( ik[-1]->key() , &key[0] );
-
-  Bucket * const last_bucket = partition_exists ? ik[-1] : NULL ;
-
-  Bucket          * bucket    = NULL ;
-
-  if ( last_bucket == NULL ) { // First bucket in this partition
-    key[ key[0] ] = 0 ; // Set the partition key's bucket count to zero
-  }
-  else { // Last bucket present, can it hold one more entity?
-
-    ThrowRequireMsg( last_bucket->size() != 0,
-                     "Last bucket should not be empty.");
-
-    //field_map = last_bucket->get_field_map();
-
-    const unsigned last_count = last_bucket->key()[ key[0] ];
-
-    const unsigned cap = last_bucket->capacity();
-
-    if ( last_bucket->size() < cap ) {
-      bucket = last_bucket ;
-    }
-    else if ( last_count < max ) {
-      key[ key[0] ] = 1 + last_count ; // Increment the partition key's bucket count.
-    }
-    else {
-      // ERROR insane number of buckets!
-      ThrowRequireMsg( false, "Insanely large number of buckets" );
-    }
-  }
-
-
-  //----------------------------------
-
-  //Required bucket does not exist
-  if ( NULL == bucket )
-  {
-    bucket = new Bucket( m_mesh, arg_entity_rank, key, m_bucket_capacity);
-
-    Bucket * first_bucket = last_bucket ? last_bucket->first_bucket_in_partition() : bucket ;
-
-    bucket->set_first_bucket_in_partition(first_bucket); // partition members point to first bucket
-
-    first_bucket->set_last_bucket_in_partition(bucket); // First bucket points to new last bucket
-
-    bucket_set.insert( ik , bucket );
-  }
-
-  //----------------------------------
-
-  ThrowRequireMsg( bucket->in_same_partition(*bucket->first_bucket_in_partition()), "Logic error - new bucket is not in same partition as first bucket in partition");
-  ThrowRequireMsg( bucket->first_bucket_in_partition()->in_same_partition(*bucket), "Logic error - first bucket in partition is not in same partition as new bucket");
-
-  return bucket ;
-}
-#endif
 
 void BucketRepository::initialize_fields( Bucket & k_dst , unsigned i_dst )
 {
@@ -263,11 +117,10 @@ void BucketRepository::initialize_fields( Bucket & k_dst , unsigned i_dst )
   k_dst.initialize_fields(i_dst);
 }
 
+
 void BucketRepository::update_field_data_states() const
 {
   TraceIf("stk::mesh::impl::BucketRepository::update_field_data_states", LOG_BUCKET);
-
-#ifdef USE_STK_MESH_IMPL_PARTITION
 
   for (std::vector<std::vector<Partition *> >::const_iterator
         i = m_partitions.begin() ; i != m_partitions.end() ; ++i  )
@@ -280,26 +133,9 @@ void BucketRepository::update_field_data_states() const
           (*ip)->update_state();
       }
   }
-
-#else
-
-  for ( std::vector< std::vector<Bucket*> >::const_iterator
-        i = m_buckets.begin() ; i != m_buckets.end() ; ++i ) {
-
-    const std::vector<Bucket*> & kset = *i ;
-
-    for ( std::vector<Bucket*>::const_iterator
-          ik = kset.begin() ; ik != kset.end() ; ++ik ) {
-      (*ik)->update_state();
-    }
-  }
-
-#endif
 }
 
-//----------------------------------------------------------------------
 
-#ifdef USE_STK_MESH_IMPL_PARTITION
 void BucketRepository::internal_sort_bucket_entities()
 {
     for (std::vector<std::vector<Partition *> >::const_iterator
@@ -313,117 +149,8 @@ void BucketRepository::internal_sort_bucket_entities()
         }
     }
 }
-#else
-
-void BucketRepository::internal_sort_bucket_entities()
-{
-  TraceIf("stk::mesh::impl::BucketRepository::internal_sort_bucket_entities", LOG_BUCKET);
-
-  for ( EntityRank entity_rank = 0 ;
-        entity_rank < m_buckets.size() ; ++entity_rank ) {
-
-    std::vector<Bucket*> & buckets = m_buckets[ entity_rank ];
-
-    size_t bk = 0 ; // Offset to first bucket of the partition
-    size_t ek = 0 ; // Offset to end   bucket of the partition
-
-    for ( ; bk < buckets.size() ; bk = ek ) {
-      Bucket * b_scratch = NULL ;
-      Bucket * ik_vacant = buckets[bk]->last_bucket_in_partition();
-      unsigned ie_vacant = ik_vacant->size();
-
-      if ( ik_vacant->capacity() <= ie_vacant ) {
-        // Have to create a bucket just for the scratch space...
-        const unsigned * const bucket_key = buckets[bk]->key() ;
-        const unsigned         part_count = bucket_key[0] - 1 ;
-        const unsigned * const part_ord   = bucket_key + 1 ;
-
-        b_scratch = declare_bucket( entity_rank ,
-            part_count , part_ord ,
-            MetaData::get(m_mesh).get_fields() );
-
-        ik_vacant = b_scratch ;
-        ie_vacant = 0 ;
-      }
-
-      ik_vacant->replace_entity( ie_vacant , Entity() ) ;
-
-      // Determine offset to the end bucket in this partition:
-      while ( ek < buckets.size() && ik_vacant != buckets[ek] ) { ++ek ; }
-      if (ek < buckets.size()) ++ek ;
-
-      unsigned count = 0 ;
-      for ( size_t ik = bk ; ik != ek ; ++ik ) {
-        count += buckets[ik]->size();
-      }
-
-      std::vector<Entity> entities( count );
-
-      std::vector<Entity>::iterator j = entities.begin();
-
-      for ( size_t ik = bk ; ik != ek ; ++ik ) {
-        Bucket & b = * buckets[ik];
-        const unsigned n = b.size();
-        for ( unsigned i = 0 ; i < n ; ++i , ++j ) {
-          *j = b[i];
-        }
-      }
-
-      std::sort( entities.begin() , entities.end() , EntityLess() );
-
-      j = entities.begin();
-
-      bool change_this_partition = false ;
-
-      for ( size_t ik = bk ; ik != ek ; ++ik ) {
-        Bucket & b = * buckets[ik];
-        const unsigned n = b.size();
-        for ( unsigned i = 0 ; i < n ; ++i , ++j ) {
-          Entity const current = b[i];
-
-          if ( current != *j ) {
-
-            if ( current.is_valid() ) {
-              // Move current entity to the vacant spot
-              copy_fields( *ik_vacant , ie_vacant , b, i );
-              m_entity_repo.change_entity_bucket(*ik_vacant, current, ie_vacant);
-              ik_vacant->replace_entity( ie_vacant , current ) ;
-            }
-
-            // Set the vacant spot to where the required entity is now.
-            ik_vacant = & (j->bucket()) ;
-            ie_vacant = j->bucket_ordinal() ;
-            ik_vacant->replace_entity( ie_vacant , Entity() ) ;
-
-            // Move required entity to the required spot
-            copy_fields( b, i, *ik_vacant , ie_vacant );
-            m_entity_repo.change_entity_bucket( b, *j, i);
-            b.replace_entity( i, *j );
-
-            change_this_partition = true ;
-          }
-
-          // Once a change has occured then need to propagate the
-          // relocation for the remainder of the partition.
-          // This allows the propagation to be performed once per
-          // entity as opposed to both times the entity is moved.
-
-          if ( change_this_partition ) { internal_propagate_relocation( *j ); }
-        }
-      }
-
-      if ( b_scratch ) {
-        // Created a last bucket, now have to destroy it.
-        destroy_bucket( entity_rank , b_scratch );
-        --ek ;
-      }
-    }
-  }
-}
-#endif
 
 
-#ifdef USE_STK_MESH_IMPL_PARTITION
 void BucketRepository::optimize_buckets()
 {
     for (std::vector<std::vector<Partition *> >::const_iterator
@@ -437,139 +164,7 @@ void BucketRepository::optimize_buckets()
         }
     }
 }
-#else
-void BucketRepository::optimize_buckets()
-{
-  TraceIf("stk::mesh::impl::BucketRepository::optimize_buckets", LOG_BUCKET);
 
-  for ( EntityRank entity_rank = 0 ;
-      entity_rank < m_buckets.size() ; ++entity_rank )
-  {
-
-    std::vector<Bucket*> & buckets = m_buckets[ entity_rank ];
-
-    std::vector<Bucket*> tmp_buckets;
-
-    size_t begin_partition = 0 ; // Offset to first bucket of the partition
-    size_t end_partition = 0 ; // Offset to end   bucket of the partition
-
-    //loop over families
-    for ( ; begin_partition < buckets.size() ; begin_partition = end_partition ) {
-      Bucket * last_bucket_in_partition  = buckets[begin_partition]->last_bucket_in_partition();
-
-      // Determine offset to the end bucket in this partition:
-      while ( end_partition < buckets.size() && last_bucket_in_partition != buckets[end_partition] ) { ++end_partition ; }
-      if (end_partition < buckets.size())  ++end_partition ; //increment past the end
-
-      //only one bucket in the partition
-      //go to the next partition
-      if (end_partition - begin_partition == 1) {
-        tmp_buckets.push_back(buckets[begin_partition]);
-        continue;
-      }
-
-      std::vector<unsigned> new_key = buckets[begin_partition]->key_vector();
-      //index of bucket in partition
-      new_key[ new_key[0] ] = 0;
-
-      unsigned new_capacity = 0 ;
-      for ( size_t i = begin_partition ; i != end_partition ; ++i ) {
-        new_capacity += buckets[i]->capacity();
-      }
-
-      std::vector<Entity> entities;
-      entities.reserve(new_capacity);
-
-      for ( size_t i = begin_partition ; i != end_partition ; ++i ) {
-        Bucket& b = *buckets[i];
-        for(size_t j=0; j<b.size(); ++j) {
-          entities.push_back(b[j]);
-        }
-      }
-
-      std::sort( entities.begin(), entities.end(), EntityLess() );
-
-      Bucket * new_bucket = new Bucket( m_mesh,
-          entity_rank,
-          new_key,
-          new_capacity
-          );
-
-      new_bucket->set_first_bucket_in_partition(new_bucket); // partition members point to first bucket
-      new_bucket->set_last_bucket_in_partition(new_bucket); // First bucket points to new last bucket
-
-      tmp_buckets.push_back(new_bucket);
-
-      for(size_t new_ordinal=0; new_ordinal<entities.size(); ++new_ordinal) {
-        //increase size of the new_bucket
-        new_bucket->increment_size();
-
-        Entity entity = entities[new_ordinal];
-        Bucket& old_bucket = entity.bucket();
-        unsigned old_ordinal = entity.bucket_ordinal();
-
-        //copy field data from old to new
-        copy_fields( *new_bucket, new_ordinal, old_bucket, old_ordinal);
-        m_entity_repo.change_entity_bucket( *new_bucket, entity, new_ordinal);
-        new_bucket->replace_entity( new_ordinal , entity ) ;
-        internal_propagate_relocation(entity);
-      }
-
-      for (size_t ik = begin_partition; ik != end_partition; ++ik) {
-        delete buckets[ik];
-        buckets[ik] = NULL;
-      }
-    }
-
-    buckets.swap(tmp_buckets);
-  }
-}
-#endif
-
-#ifndef USE_STK_MESH_IMPL_PARTITION
-
-void BucketRepository::remove_entity( Bucket * k , unsigned i )
-{
-  TraceIfWatching("stk::mesh::impl::BucketRepository::remove_entity", LOG_BUCKET, k);
-
-  const EntityRank entity_rank = k->entity_rank();
-
-  // Last bucket in the partition of buckets with the same parts.
-  // The last bucket is the only non-full bucket in the partition.
-
-  Bucket * const last = k->last_bucket_in_partition();
-
-  ThrowRequireMsg( last->in_same_partition(*k), "Logic error - last bucket's partition is not bucket's");
-  ThrowRequireMsg( k->in_same_partition(*last), "Logic error - bucket's partition is not last bucket's");
-
-  // Fill in the gap if it is not the last entity being removed
-
-  if ( last != k || k->size() != i + 1 ) {
-
-    // Copy last entity in last bucket to bucket *k slot i
-
-    Entity entity = (*last)[ last->size() - 1 ];
-
-    copy_fields( *k , i , *last , last->size() - 1 );
-
-    k->replace_entity(i, entity ) ;
-    m_entity_repo.change_entity_bucket( *k, entity, i);
-
-    // Entity field data has relocated
-
-    internal_propagate_relocation( entity );
-  }
-
-  last->decrement_size();
-
-  last->replace_entity( last->size() , Entity() ) ;
-
-  if ( 0 == last->size() ) {
-    destroy_bucket( entity_rank , last );
-  }
-}
-
-#endif
 
 void BucketRepository::internal_propagate_relocation( Entity entity )
 {

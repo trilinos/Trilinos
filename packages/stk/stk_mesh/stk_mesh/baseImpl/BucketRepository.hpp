@@ -13,8 +13,6 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Iterators.hpp>
 
-#define USE_STK_MESH_IMPL_PARTITION
-
 namespace stk {
 namespace mesh {
 namespace impl {
@@ -35,26 +33,15 @@ public:
   const std::vector<Bucket*> & buckets( EntityRank rank ) const
   {
     ThrowAssertMsg( rank < m_buckets.size(), "Invalid entity rank " << rank );
-#ifdef USE_STK_MESH_IMPL_PARTITION
-    // ThrowAssertMsg(!m_need_sync_from_partitions[rank], "Getting buckets without sync-ing with partitions");
+
     if (m_need_sync_from_partitions[rank])
     {
-        const_cast<BucketRepository *>(this)->sync_from_partitions();
+        const_cast<BucketRepository *>(this)->sync_from_partitions(rank);
     }
-#endif
 
     return m_buckets[ rank ];
   }
 
-#ifndef USE_STK_MESH_IMPL_PARTITION
-  /*  Entity modification consequences:
-   *  1) Change entity relation => update via part relation => change parts
-   *  2) Change parts => update forward relations via part relation
-   *                  => update via field relation
-   */
-  void remove_entity( Bucket * , unsigned );
-
-#endif
 
   //------------------------------------
   /** \brief  Query the upper bound on the number of mesh entities
@@ -82,15 +69,6 @@ public:
   void destroy_bucket( const unsigned & entity_rank , Bucket * last );
   void destroy_bucket( Bucket * bucket );
 
-#ifndef USE_STK_MESH_IMPL_PARTITION
-  Bucket * declare_bucket(
-      const unsigned entity_rank ,
-      const unsigned part_count ,
-      const unsigned part_ord[] ,
-      const std::vector< FieldBase * > & field_set
-      );
-#endif
-
   void copy_fields( Bucket & k_dst , unsigned i_dst ,
                            Bucket & k_src , unsigned i_src )
   { k_dst.replace_fields(i_dst,k_src,i_src); }
@@ -101,30 +79,26 @@ public:
 
   void optimize_buckets();
 
-#ifndef USE_STK_MESH_IMPL_PARTITION
-  void add_entity_to_bucket( Entity entity, Bucket & bucket )
-  {
-    bucket.replace_entity( bucket.size() , entity ) ;
-    bucket.increment_size();
-  }
-#endif
-
   void internal_propagate_relocation( Entity );
 
   AllBucketsRange get_bucket_range() const
   {
+    const_cast<BucketRepository *>(this)->sync_from_partitions();
     return stk::mesh::get_bucket_range(m_buckets);
   }
 
   AllBucketsRange get_bucket_range(EntityRank entity_rank) const
   {
+    if (m_need_sync_from_partitions[entity_rank])
+    {
+        const_cast<BucketRepository *>(this)->sync_from_partitions(entity_rank);
+    }
     std::vector< std::vector<Bucket*> >::const_iterator itr = m_buckets.begin() + entity_rank;
     return stk::mesh::get_bucket_range(m_buckets, itr);
   }
 
   ////
-  //// Partitions are now the primary location of buckets (when USE_STK_MESH_IMPL_PARTITION
-  ////  is #defined).
+  //// Partitions are now the primary location of buckets.
   ////
 
   friend class Partition;
