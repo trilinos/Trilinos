@@ -119,7 +119,7 @@ quadDegreeOfExactness(ordinal_type n) const
   if (n == ordinal_type(1))
     return 1;
   ordinal_type l = std::floor(std::log(n+1.0)/std::log(2.0)-1.0);
-  return 3*std::pow(2,l)-1;
+  return 3*static_cast<ordinal_type>(std::pow(2.0,l))-1;
 }
 
 template <typename ordinal_type, typename value_type>
@@ -142,7 +142,7 @@ coefficientGrowth(ordinal_type n) const
   // 2*p <= 3*2^l-1
   if (n == ordinal_type(0)) 
     return ordinal_type(0);
-  return ordinal_type(3)*std::pow(ordinal_type(2),n-ordinal_type(1))-ordinal_type(1);
+  return ordinal_type(3)*static_cast<ordinal_type>(std::pow(2.0,n-ordinal_type(1)))-ordinal_type(1);
 }
 
 template <typename ordinal_type, typename value_type>

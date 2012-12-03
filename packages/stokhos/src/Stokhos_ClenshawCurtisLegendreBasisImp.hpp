@@ -118,7 +118,7 @@ coefficientGrowth(ordinal_type n) const
 {
   if (n == ordinal_type(0)) 
     return ordinal_type(0);
-  return std::pow(ordinal_type(2),n-ordinal_type(1));
+  return static_cast<ordinal_type>(std::pow(2.0,n-ordinal_type(1)));
 }
 
 template <typename ordinal_type, typename value_type>
