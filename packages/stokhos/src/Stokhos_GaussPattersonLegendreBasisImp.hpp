@@ -130,3 +130,25 @@ cloneWithOrder(ordinal_type p) const
   return 
     Teuchos::rcp(new Stokhos::GaussPattersonLegendreBasis<ordinal_type,value_type>(p,*this));
 }
+
+template <typename ordinal_type, typename value_type>
+ordinal_type
+Stokhos::GaussPattersonLegendreBasis<ordinal_type,value_type>::
+coefficientGrowth(ordinal_type n) const
+{
+  // Gauss-Patterson rules have precision 3*2^l-1, which is odd.
+  // Since discrete orthogonality requires integrating polynomials of
+  // order 2*p, setting p = 3*2^{l-1}-1 will yield the largest p such that
+  // 2*p <= 3*2^l-1
+  if (n == ordinal_type(0)) 
+    return ordinal_type(0);
+  return ordinal_type(3)*std::pow(ordinal_type(2),n-ordinal_type(1))-ordinal_type(1);
+}
+
+template <typename ordinal_type, typename value_type>
+ordinal_type
+Stokhos::GaussPattersonLegendreBasis<ordinal_type,value_type>::
+pointGrowth(ordinal_type n) const
+{
+  return n;
+}

@@ -110,3 +110,21 @@ cloneWithOrder(ordinal_type p) const
   return 
     Teuchos::rcp(new Stokhos::ClenshawCurtisLegendreBasis<ordinal_type,value_type>(p,*this));
 }
+
+template <typename ordinal_type, typename value_type>
+ordinal_type
+Stokhos::ClenshawCurtisLegendreBasis<ordinal_type,value_type>::
+coefficientGrowth(ordinal_type n) const
+{
+  if (n == ordinal_type(0)) 
+    return ordinal_type(0);
+  return std::pow(ordinal_type(2),n-ordinal_type(1));
+}
+
+template <typename ordinal_type, typename value_type>
+ordinal_type
+Stokhos::ClenshawCurtisLegendreBasis<ordinal_type,value_type>::
+pointGrowth(ordinal_type n) const
+{
+  return n;
+}

@@ -65,11 +65,9 @@ namespace Stokhos {
     typedef Teuchos::Array< Teuchos::RCP<operator_type> > operator_set_type;
     
     //! Constructor
-    template <typename coeff_compare_type,
-	      typename point_growth_rule_type>
+    template <typename coeff_compare_type>
     SmolyakPseudoSpectralOperator(
       const SmolyakBasis<ordinal_type,value_type,coeff_compare_type>& smolyak_basis, 
-      const point_growth_rule_type& point_growth_rule,
       bool use_smolyak_apply = true,
       bool use_pst = true,
       const point_compare_type& point_compare = point_compare_type());

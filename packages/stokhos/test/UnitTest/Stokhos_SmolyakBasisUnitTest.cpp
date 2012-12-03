@@ -96,10 +96,8 @@ namespace SmolyakBasisUtilsUnitTest {
     for (ordinal_type i=0; i<setup.d; i++)
       bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(setup.p, true));
     Stokhos::TotalOrderIndexSet<ordinal_type> coeff_index_set(setup.d, setup.p);
-    Teuchos::Array< Stokhos::IdentityGrowthRule<ordinal_type> > coeff_growth(
-      setup.d);
     Stokhos::SmolyakBasis<ordinal_type,value_type> smolyak_basis(
-      bases, coeff_index_set, coeff_growth);
+      bases, coeff_index_set);
     
     // Build isotropic total order basis of dimension d and order p
     Stokhos::TotalOrderBasis<ordinal_type,value_type> total_order_basis(bases);
@@ -120,10 +118,8 @@ namespace SmolyakBasisUtilsUnitTest {
     }
     Stokhos::AnisotropicTotalOrderIndexSet<ordinal_type> coeff_index_set(
       setup.d, upper);  // largest order is setup.d-1+1
-    Teuchos::Array< Stokhos::IdentityGrowthRule<ordinal_type> > coeff_growth(
-      setup.d);
     Stokhos::SmolyakBasis<ordinal_type,value_type> smolyak_basis(
-      bases, coeff_index_set, coeff_growth);
+      bases, coeff_index_set);
     
     // Build isotropic total order basis of dimension d and order p
     Stokhos::TotalOrderBasis<ordinal_type,value_type> total_order_basis(bases);
@@ -146,10 +142,8 @@ namespace SmolyakBasisUtilsUnitTest {
     }
     Stokhos::AnisotropicTotalOrderIndexSet<ordinal_type> coeff_index_set(
       setup.d, upper);  // largest order is setup.d-1+1
-    Teuchos::Array< Stokhos::IdentityGrowthRule<ordinal_type> > coeff_growth(
-      setup.d);
     Stokhos::SmolyakBasis<ordinal_type,value_type> smolyak_basis(
-      bases, coeff_index_set, coeff_growth);
+      bases, coeff_index_set);
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk1 = 
       smolyak_basis.computeTripleProductTensor(smolyak_basis.order());
     
@@ -190,10 +184,8 @@ namespace SmolyakBasisUtilsUnitTest {
     }
     Stokhos::AnisotropicTotalOrderIndexSet<ordinal_type> coeff_index_set(
       setup.d, upper);  // largest order is setup.d-1+1
-    Teuchos::Array< Stokhos::IdentityGrowthRule<ordinal_type> > coeff_growth(
-      setup.d);
     Stokhos::SmolyakBasis<ordinal_type,value_type> smolyak_basis(
-      bases, coeff_index_set, coeff_growth, setup.sparse_tol);
+      bases, coeff_index_set, setup.sparse_tol);
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
       smolyak_basis.computeTripleProductTensor(smolyak_basis.order());
 
@@ -220,15 +212,13 @@ namespace SmolyakBasisUtilsUnitTest {
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > > bases(setup.d);
     Stokhos::MultiIndex<ordinal_type> upper(setup.d);
     for (ordinal_type i=0; i<setup.d; i++) {
-      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(i+1, true));
+      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(i+1, true, Stokhos::MODERATE_GROWTH));
       upper[i] = i+1;
     }
     Stokhos::AnisotropicTotalOrderIndexSet<ordinal_type> coeff_index_set(
       setup.d, upper);  // largest order is setup.d-1+1
-    Teuchos::Array< Stokhos::LinearGrowthRule<ordinal_type> > coeff_growth(
-      setup.d, Stokhos::LinearGrowthRule<ordinal_type>(2,0));
     Stokhos::SmolyakBasis<ordinal_type,value_type> smolyak_basis(
-      bases, coeff_index_set, coeff_growth, setup.sparse_tol);
+      bases, coeff_index_set, setup.sparse_tol);
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
       smolyak_basis.computeTripleProductTensor(smolyak_basis.order());
 
@@ -262,10 +252,8 @@ namespace SmolyakBasisUtilsUnitTest {
     }
     Stokhos::AnisotropicTotalOrderIndexSet<ordinal_type> coeff_index_set(
       setup.d, upper);  // largest order is setup.d-1+1
-    Teuchos::Array< Stokhos::ClenshawCurtisExponentialGrowthRule<ordinal_type> > coeff_growth(
-      setup.d);
     Stokhos::SmolyakBasis<ordinal_type,value_type> smolyak_basis(
-      bases, coeff_index_set, coeff_growth, setup.sparse_tol);
+      bases, coeff_index_set, setup.sparse_tol);
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
       smolyak_basis.computeTripleProductTensor(smolyak_basis.order());
 
@@ -297,10 +285,8 @@ namespace SmolyakBasisUtilsUnitTest {
     }
     Stokhos::AnisotropicTotalOrderIndexSet<ordinal_type> coeff_index_set(
       setup.d, upper);  // largest order is setup.d-1+1
-    Teuchos::Array< Stokhos::GaussPattersonExponentialGrowthRule<ordinal_type> > coeff_growth(
-      setup.d);
     Stokhos::SmolyakBasis<ordinal_type,value_type> smolyak_basis(
-      bases, coeff_index_set, coeff_growth, setup.sparse_tol);
+      bases, coeff_index_set, setup.sparse_tol);
     Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
       smolyak_basis.computeTripleProductTensor(smolyak_basis.order());
 

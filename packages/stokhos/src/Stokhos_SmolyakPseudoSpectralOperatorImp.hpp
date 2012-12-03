@@ -27,11 +27,10 @@
 // @HEADER
 template <typename ordinal_type, typename value_type, 
 	  typename point_compare_type>
-template <typename coeff_compare_type, typename point_growth_rule_type>
+template <typename coeff_compare_type>
 Stokhos::SmolyakPseudoSpectralOperator<ordinal_type,value_type,point_compare_type>:: 
 SmolyakPseudoSpectralOperator(
   const SmolyakBasis<ordinal_type,value_type,coeff_compare_type>& smolyak_basis, 
-  const point_growth_rule_type& point_growth_rule,
   bool use_smolyak_apply,
   bool use_pst,
   const point_compare_type& point_compare) :
@@ -57,7 +56,8 @@ SmolyakPseudoSpectralOperator(
     // Apply growth rule to cofficient multi-index
     multiindex_type point_growth_index(dim);
     for (ordinal_type j=0; j<dim; ++j) {
-      point_growth_index[j] = point_growth_rule[j](coeff_index[j]);
+      point_growth_index[j] = 
+	smolyak_basis.getCoordinateBases()[j]->pointGrowth(coeff_index[j]);
     }
     
     // Build tensor product operator for given index

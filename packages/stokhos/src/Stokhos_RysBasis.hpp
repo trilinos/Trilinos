@@ -58,9 +58,10 @@ namespace Stokhos {
      * \param c defines domain of support of weight function
      * \param normalize whether polynomials should be given unit norm
      */
-    RysBasis(ordinal_type p, value_type c, bool normalize) :
+    RysBasis(ordinal_type p, value_type c, bool normalize, 
+	     GrowthPolicy growth = SLOW_GROWTH) :
       DiscretizedStieltjesBasis<ordinal_type,value_type>(
-	"Rys", p, rysWeight, -c, c, normalize) {}
+	"Rys", p, rysWeight, -c, c, normalize, growth) {}
     
     //! Destructor
     ~RysBasis() {}

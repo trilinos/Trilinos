@@ -159,6 +159,12 @@ namespace Stokhos {
      */
     virtual ordinal_type quadDegreeOfExactness(ordinal_type n) const;
 
+    //! Evaluate coefficient growth rule for Smolyak-type bases
+    virtual ordinal_type coefficientGrowth(ordinal_type n) const;
+
+    //! Evaluate point growth rule for Smolyak-type bases
+    virtual ordinal_type pointGrowth(ordinal_type n) const;
+
     //! Function pointer needed for level_to_order mappings
     typedef typename OneDOrthogPolyBasis<ordinal_type,value_type>::LevelToOrderFnPtr LevelToOrderFnPtr;
 

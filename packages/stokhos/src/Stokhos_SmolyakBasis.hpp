@@ -39,94 +39,6 @@
 
 namespace Stokhos {
 
-  //! A linear growth rule
-  template <typename ordinal_type>
-  class LinearGrowthRule {
-  public:
-    //! Constructor
-    LinearGrowthRule(const ordinal_type& a_ = ordinal_type(1), 
-		     const ordinal_type& b_ = ordinal_type(0)) : 
-      a(a_), b(b_) {}
-
-    //! Destructor
-    ~LinearGrowthRule() {}
-
-    //! Evaluate growth rule
-    ordinal_type operator() (const ordinal_type& x) const { return a*x+b; }
-
-  protected:
-
-    //! Slope
-    ordinal_type a;
-
-    //! Offset
-    ordinal_type b;
-  };
-
-  //! A growth rule that always makes the supplied order even
-  /*!
-   * When used in conjunction with Gaussian quadrature that generates n+1
-   * points for a quadrature of order n, this always results in an odd
-   * number of points, and thus includes 0.  This allows some nesting
-   * in Gaussian-based sparse grids.
-   */
-  template <typename ordinal_type>
-  class EvenGrowthRule {
-  public:
-    //! Constructor
-    EvenGrowthRule() {}
-
-    //! Destructor
-    ~EvenGrowthRule() {}
-
-    //! Evaluate growth rule
-    ordinal_type operator() (const ordinal_type& x) const { 
-      if (x % 2 == 1) return x+1;
-      return x;
-    }
-
-  };
-
-  //! An exponential growth rule for Clenshaw-Curtis
-  template <typename ordinal_type>
-  class ClenshawCurtisExponentialGrowthRule {
-  public:
-    //! Constructor
-    ClenshawCurtisExponentialGrowthRule() {}
-
-    //! Destructor
-    ~ClenshawCurtisExponentialGrowthRule() {}
-
-    //! Evaluate growth rule
-    ordinal_type operator() (const ordinal_type& x) const { 
-      if (x == 0) return 0;
-      return std::pow(ordinal_type(2),x-1);
-    }
-
-  };
-
-  //! An exponential growth rule for Gauss-Patterson
-  template <typename ordinal_type>
-  class GaussPattersonExponentialGrowthRule {
-  public:
-    //! Constructor
-    GaussPattersonExponentialGrowthRule() {}
-
-    //! Destructor
-    ~GaussPattersonExponentialGrowthRule() {}
-
-    //! Evaluate growth rule
-    ordinal_type operator() (const ordinal_type& x) const { 
-      // Gauss-Patterson rules have precision 3*2*l-1, which is odd.
-      // Since discrete orthogonality requires integrating polynomials of
-      // order 2*p, setting p = 3*2*{l-1}-1 will yield the largest p such that
-      // 2*p <= 3*2^l-1
-      if (x == 0) return 0;
-      return 3*std::pow(2,x-1)-1;
-    }
-
-  };
-
   /*!
    * \brief Multivariate orthogonal polynomial basis generated from a
    * Smolyak sparse grid.
@@ -144,13 +56,11 @@ namespace Stokhos {
      * \param sparse_tol tolerance used to drop terms in sparse triple-product
      *                   tensors
      */
-    template <typename index_set_type,
-	      typename coeff_growth_rule_type>
+    template <typename index_set_type>
     SmolyakBasis(
       const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,
  value_type> > >& bases,
       const index_set_type& index_set,
-      const coeff_growth_rule_type& coeff_growth_rule,
       const value_type& sparse_tol = 1.0e-12,
       const coeff_compare_type& coeff_compare = coeff_compare_type());
 

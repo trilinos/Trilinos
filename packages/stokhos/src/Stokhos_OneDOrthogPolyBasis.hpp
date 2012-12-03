@@ -175,6 +175,12 @@ namespace Stokhos {
      */
     virtual Teuchos::RCP<OneDOrthogPolyBasis<ordinal_type,value_type> > cloneWithOrder(ordinal_type p) const = 0;
 
+    //! Evaluate coefficient growth rule for Smolyak-type bases
+    virtual ordinal_type coefficientGrowth(ordinal_type n) const = 0;
+
+    //! Evaluate point growth rule for Smolyak-type bases
+    virtual ordinal_type pointGrowth(ordinal_type n) const = 0;
+
     //! Function pointer needed for level_to_order mappings
     typedef int ( *LevelToOrderFnPtr ) ( int level, int growth );
 

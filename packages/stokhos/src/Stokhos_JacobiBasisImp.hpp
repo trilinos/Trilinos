@@ -32,8 +32,8 @@ template <typename ordinal_type, typename value_type>
 Stokhos::JacobiBasis<ordinal_type, value_type>::
 JacobiBasis(ordinal_type p,  
   value_type alphaIndex, 
-  value_type betaIndex, bool normalize) :
-  RecurrenceBasis<ordinal_type, value_type>("Jacobi", p, normalize),
+  value_type betaIndex, bool normalize, Stokhos::GrowthPolicy growth) :
+  RecurrenceBasis<ordinal_type, value_type>("Jacobi", p, normalize, growth),
   alphaIndex_(alphaIndex),
   betaIndex_(betaIndex)
 {

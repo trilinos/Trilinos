@@ -85,15 +85,11 @@ namespace SmolyakBasisUtilsUnitTest {
     for (ordinal_type i=0; i<setup.d; i++)
       bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(setup.p, true));
     Stokhos::TotalOrderIndexSet<ordinal_type> coeff_index_set(setup.d, setup.p);
-    Teuchos::Array< Stokhos::IdentityGrowthRule<ordinal_type> > coeff_growth(
-      setup.d);
-    Teuchos::RCP< Stokhos::SmolyakBasis<ordinal_type,value_type> > smolyak_basis = Teuchos::rcp(new Stokhos::SmolyakBasis<ordinal_type,value_type>(bases, coeff_index_set, coeff_growth));
+    Teuchos::RCP< Stokhos::SmolyakBasis<ordinal_type,value_type> > smolyak_basis = Teuchos::rcp(new Stokhos::SmolyakBasis<ordinal_type,value_type>(bases, coeff_index_set));
 
     // Build corresponding pseudospectral operator
-    Teuchos::Array< Stokhos::EvenGrowthRule<ordinal_type> > point_growth(
-      setup.d);
     Stokhos::SmolyakPseudoSpectralOperator<ordinal_type,value_type> sm_op(
-      *smolyak_basis, point_growth, false);
+      *smolyak_basis, false);
 
      // Generate sparse grids using original approach
     Stokhos::SparseGridQuadrature<ordinal_type,value_type> quad(
@@ -126,17 +122,13 @@ namespace SmolyakBasisUtilsUnitTest {
     // moderate linear growth 
      Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > > bases(setup.d);
     for (ordinal_type i=0; i<setup.d; i++)
-      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(setup.p, true));
+      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(setup.p, true, Stokhos::MODERATE_GROWTH));
     Stokhos::TotalOrderIndexSet<ordinal_type> coeff_index_set(setup.d, setup.p);
-    Teuchos::Array< Stokhos::LinearGrowthRule<ordinal_type> > coeff_growth(
-      setup.d, Stokhos::LinearGrowthRule<ordinal_type>(2,0));
-    Teuchos::RCP< Stokhos::SmolyakBasis<ordinal_type,value_type> > smolyak_basis = Teuchos::rcp(new Stokhos::SmolyakBasis<ordinal_type,value_type>(bases, coeff_index_set, coeff_growth));
+    Teuchos::RCP< Stokhos::SmolyakBasis<ordinal_type,value_type> > smolyak_basis = Teuchos::rcp(new Stokhos::SmolyakBasis<ordinal_type,value_type>(bases, coeff_index_set));
 
     // Build corresponding pseudospectral operator
-    Teuchos::Array< Stokhos::IdentityGrowthRule<ordinal_type> > point_growth(
-      setup.d);
     Stokhos::SmolyakPseudoSpectralOperator<ordinal_type,value_type> sm_op(
-      *smolyak_basis, point_growth, false);
+      *smolyak_basis, false);
 
     // Generate sparse grids using original approach
     Stokhos::SparseGridQuadrature<ordinal_type,value_type> quad(
@@ -168,15 +160,11 @@ namespace SmolyakBasisUtilsUnitTest {
     for (ordinal_type i=0; i<setup.d; i++)
       bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(setup.p, true));
     Stokhos::TotalOrderIndexSet<ordinal_type> coeff_index_set(setup.d, setup.p);
-    Teuchos::Array< Stokhos::IdentityGrowthRule<ordinal_type> > coeff_growth(
-      setup.d);
-    Teuchos::RCP< Stokhos::SmolyakBasis<ordinal_type,value_type> > smolyak_basis = Teuchos::rcp(new Stokhos::SmolyakBasis<ordinal_type,value_type>(bases, coeff_index_set, coeff_growth));
+    Teuchos::RCP< Stokhos::SmolyakBasis<ordinal_type,value_type> > smolyak_basis = Teuchos::rcp(new Stokhos::SmolyakBasis<ordinal_type,value_type>(bases, coeff_index_set));
 
     // Build corresponding pseudospectral operator
-    Teuchos::Array< Stokhos::EvenGrowthRule<ordinal_type> > point_growth(
-      setup.d);
     Stokhos::SmolyakPseudoSpectralOperator<ordinal_type,value_type> sm_op(
-      *smolyak_basis, point_growth, true);
+      *smolyak_basis, true);
 
     // Generate sparse grids using original approach
     Stokhos::SparseGridQuadrature<ordinal_type,value_type> quad(
@@ -213,17 +201,13 @@ namespace SmolyakBasisUtilsUnitTest {
     // moderate linear growth 
      Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > > bases(setup.d);
     for (ordinal_type i=0; i<setup.d; i++)
-      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(setup.p, true));
+      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(setup.p, true, Stokhos::MODERATE_GROWTH));
     Stokhos::TotalOrderIndexSet<ordinal_type> coeff_index_set(setup.d, setup.p);
-    Teuchos::Array< Stokhos::LinearGrowthRule<ordinal_type> > coeff_growth(
-      setup.d, Stokhos::LinearGrowthRule<ordinal_type>(2,0));
-    Teuchos::RCP< Stokhos::SmolyakBasis<ordinal_type,value_type> > smolyak_basis = Teuchos::rcp(new Stokhos::SmolyakBasis<ordinal_type,value_type>(bases, coeff_index_set, coeff_growth));
+    Teuchos::RCP< Stokhos::SmolyakBasis<ordinal_type,value_type> > smolyak_basis = Teuchos::rcp(new Stokhos::SmolyakBasis<ordinal_type,value_type>(bases, coeff_index_set));
 
     // Build corresponding pseudospectral operator
-    Teuchos::Array< Stokhos::IdentityGrowthRule<ordinal_type> > point_growth(
-      setup.d);
     Stokhos::SmolyakPseudoSpectralOperator<ordinal_type,value_type> sm_op(
-      *smolyak_basis, point_growth, true);
+      *smolyak_basis, true);
 
     // Generate sparse grids using original approach
     Stokhos::SparseGridQuadrature<ordinal_type,value_type> quad(
@@ -264,14 +248,11 @@ namespace SmolyakBasisUtilsUnitTest {
     for (ordinal_type i=0; i<setup.d; i++)
       bases[i] = Teuchos::rcp(new Stokhos::ClenshawCurtisLegendreBasis<ordinal_type,value_type>(setup.p, true));
     Stokhos::TotalOrderIndexSet<ordinal_type> coeff_index_set(setup.d, setup.p);
-    Teuchos::Array< Stokhos::ClenshawCurtisExponentialGrowthRule<ordinal_type> > coeff_growth(setup.d);
-    Teuchos::RCP< Stokhos::SmolyakBasis<ordinal_type,value_type> > smolyak_basis = Teuchos::rcp(new Stokhos::SmolyakBasis<ordinal_type,value_type>(bases, coeff_index_set, coeff_growth));
+    Teuchos::RCP< Stokhos::SmolyakBasis<ordinal_type,value_type> > smolyak_basis = Teuchos::rcp(new Stokhos::SmolyakBasis<ordinal_type,value_type>(bases, coeff_index_set));
 
     // Build corresponding pseudospectral operator
-    Teuchos::Array< Stokhos::IdentityGrowthRule<ordinal_type> > point_growth(
-      setup.d);
     Stokhos::SmolyakPseudoSpectralOperator<ordinal_type,value_type> sm_op(
-      *smolyak_basis, point_growth, false);
+      *smolyak_basis, false);
 
     // Generate sparse grids using original approach
     Stokhos::SparseGridQuadrature<ordinal_type,value_type> quad(
@@ -303,14 +284,11 @@ namespace SmolyakBasisUtilsUnitTest {
     for (ordinal_type i=0; i<setup.d; i++)
       bases[i] = Teuchos::rcp(new Stokhos::GaussPattersonLegendreBasis<ordinal_type,value_type>(setup.p, true));
     Stokhos::TotalOrderIndexSet<ordinal_type> coeff_index_set(setup.d, setup.p);
-    Teuchos::Array< Stokhos::GaussPattersonExponentialGrowthRule<ordinal_type> > coeff_growth(setup.d);
-    Teuchos::RCP< Stokhos::SmolyakBasis<ordinal_type,value_type> > smolyak_basis = Teuchos::rcp(new Stokhos::SmolyakBasis<ordinal_type,value_type>(bases, coeff_index_set, coeff_growth));
+    Teuchos::RCP< Stokhos::SmolyakBasis<ordinal_type,value_type> > smolyak_basis = Teuchos::rcp(new Stokhos::SmolyakBasis<ordinal_type,value_type>(bases, coeff_index_set));
 
     // Build corresponding pseudospectral operator
-    Teuchos::Array< Stokhos::IdentityGrowthRule<ordinal_type> > point_growth(
-      setup.d);
     Stokhos::SmolyakPseudoSpectralOperator<ordinal_type,value_type> sm_op(
-      *smolyak_basis, point_growth, false);
+      *smolyak_basis, false);
 
     // Generate sparse grids using original approach
     Stokhos::SparseGridQuadrature<ordinal_type,value_type> quad(
@@ -342,14 +320,11 @@ namespace SmolyakBasisUtilsUnitTest {
     for (ordinal_type i=0; i<setup.d; i++)
       bases[i] = Teuchos::rcp(new Stokhos::ClenshawCurtisLegendreBasis<ordinal_type,value_type>(setup.p, true));
     Stokhos::TotalOrderIndexSet<ordinal_type> coeff_index_set(setup.d, setup.p);
-    Teuchos::Array< Stokhos::ClenshawCurtisExponentialGrowthRule<ordinal_type> > coeff_growth(setup.d);
-    Teuchos::RCP< Stokhos::SmolyakBasis<ordinal_type,value_type> > smolyak_basis = Teuchos::rcp(new Stokhos::SmolyakBasis<ordinal_type,value_type>(bases, coeff_index_set, coeff_growth));
+    Teuchos::RCP< Stokhos::SmolyakBasis<ordinal_type,value_type> > smolyak_basis = Teuchos::rcp(new Stokhos::SmolyakBasis<ordinal_type,value_type>(bases, coeff_index_set));
 
     // Build corresponding pseudospectral operator
-    Teuchos::Array< Stokhos::IdentityGrowthRule<ordinal_type> > point_growth(
-      setup.d);
     Stokhos::SmolyakPseudoSpectralOperator<ordinal_type,value_type> sm_op(
-      *smolyak_basis, point_growth, true);
+      *smolyak_basis, true);
 
     // Generate sparse grids using original approach
     Stokhos::SparseGridQuadrature<ordinal_type,value_type> quad(
@@ -388,14 +363,11 @@ namespace SmolyakBasisUtilsUnitTest {
     for (ordinal_type i=0; i<setup.d; i++)
       bases[i] = Teuchos::rcp(new Stokhos::GaussPattersonLegendreBasis<ordinal_type,value_type>(setup.p, true));
     Stokhos::TotalOrderIndexSet<ordinal_type> coeff_index_set(setup.d, setup.p);
-    Teuchos::Array< Stokhos::GaussPattersonExponentialGrowthRule<ordinal_type> > coeff_growth(setup.d);
-    Teuchos::RCP< Stokhos::SmolyakBasis<ordinal_type,value_type> > smolyak_basis = Teuchos::rcp(new Stokhos::SmolyakBasis<ordinal_type,value_type>(bases, coeff_index_set, coeff_growth));
+    Teuchos::RCP< Stokhos::SmolyakBasis<ordinal_type,value_type> > smolyak_basis = Teuchos::rcp(new Stokhos::SmolyakBasis<ordinal_type,value_type>(bases, coeff_index_set));
 
     // Build corresponding pseudospectral operator
-    Teuchos::Array< Stokhos::IdentityGrowthRule<ordinal_type> > point_growth(
-      setup.d);
     Stokhos::SmolyakPseudoSpectralOperator<ordinal_type,value_type> sm_op(
-      *smolyak_basis, point_growth, true);
+      *smolyak_basis, true);
 
     // Generate sparse grids using original approach
     Stokhos::SparseGridQuadrature<ordinal_type,value_type> quad(

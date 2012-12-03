@@ -32,8 +32,9 @@ DiscretizedStieltjesBasis(const std::string& label,
 			  value_type (*weightFn)(const value_type&),
 			  const value_type& leftEndPt,
 			  const value_type& rightEndPt, 
-			  bool normalize) :
-  RecurrenceBasis<ordinal_type,value_type>(std::string("DiscretizedStieltjes -- ") + label, p, normalize),
+			  bool normalize, 
+			  Stokhos::GrowthPolicy growth) :
+  RecurrenceBasis<ordinal_type,value_type>(std::string("DiscretizedStieltjes -- ") + label, p, normalize, growth),
   scaleFactor(1),
   leftEndPt_(leftEndPt),
   rightEndPt_(rightEndPt),

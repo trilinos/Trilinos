@@ -62,27 +62,25 @@ namespace PseudoSpectralExpansionUnitTest {
       catol = 1e-12;
       a = 3.1;
       const OrdinalType d = 2;
-      const OrdinalType p = 7;
+      const OrdinalType p = 5;
       
       // Create product basis
       Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<OrdinalType,ValueType> > > bases(d);
       for (OrdinalType i=0; i<d; i++)
 	bases[i] = 
-	  Teuchos::rcp(new Stokhos::LegendreBasis<OrdinalType,ValueType>(p));
+	  Teuchos::rcp(new Stokhos::GaussPattersonLegendreBasis<OrdinalType,ValueType>(p));
 
       Stokhos::TotalOrderIndexSet<OrdinalType> coeff_index_set(d, p);
-      Teuchos::Array< Stokhos::IdentityGrowthRule<OrdinalType> > coeff_growth(d);
       basis =
-	Teuchos::rcp(new product_basis_type(bases, coeff_index_set, coeff_growth));
+	Teuchos::rcp(new product_basis_type(bases, coeff_index_set));
       
       // Tensor product quadrature
       quad = 
 	Teuchos::rcp(new Stokhos::TensorProductQuadrature<OrdinalType,ValueType>(basis));
 
       // Tensor product pseudospectral operator
-      Teuchos::Array< Stokhos::EvenGrowthRule<OrdinalType> > point_growth(d);
       ps_op = 
-	Teuchos::rcp(new Stokhos::SmolyakPseudoSpectralOperator<OrdinalType,ValueType>(*basis, point_growth, true, true));
+	Teuchos::rcp(new Stokhos::SmolyakPseudoSpectralOperator<OrdinalType,ValueType>(*basis, true, true));
 
       // Triple product tensor
       Cijk = basis->computeTripleProductTensor(basis->order());

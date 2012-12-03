@@ -30,13 +30,11 @@
 #include "Teuchos_TestForException.hpp"
 
 template <typename ordinal_type, typename value_type, typename ordering_type>
-template <typename index_set_type,
-	  typename coeff_growth_rule_type>
+template <typename index_set_type>
 Stokhos::SmolyakBasis<ordinal_type, value_type, ordering_type>::
 SmolyakBasis(
   const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& bases_,
   const index_set_type& index_set,
-  const coeff_growth_rule_type& coeff_growth_rule,
   const value_type& sparse_tol_,
   const ordering_type& coeff_compare) :
   p(0),
@@ -126,7 +124,7 @@ SmolyakBasis(
     multiindex_type coeff_growth_index(dim);
     for (ordinal_type i=0; i<dim; ++i) {
       coeff_growth_index[i] = 
-	coeff_growth_rule[i](index_map_iterator->first[i]);
+	bases[i]->coefficientGrowth(index_map_iterator->first[i]);
     }
 
     // Build tensor product basis for given index

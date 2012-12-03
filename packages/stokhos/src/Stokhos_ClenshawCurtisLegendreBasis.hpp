@@ -92,6 +92,12 @@ namespace Stokhos {
      */
     virtual Teuchos::RCP<OneDOrthogPolyBasis<ordinal_type,value_type> > cloneWithOrder(ordinal_type p) const;
 
+    //! Evaluate coefficient growth rule for Smolyak-type bases
+    virtual ordinal_type coefficientGrowth(ordinal_type n) const;
+
+    //! Evaluate point growth rule for Smolyak-type bases
+    virtual ordinal_type pointGrowth(ordinal_type n) const;
+
     //@}
 
   protected:

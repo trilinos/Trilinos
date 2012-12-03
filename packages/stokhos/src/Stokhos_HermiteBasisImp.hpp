@@ -30,8 +30,8 @@
 
 template <typename ordinal_type, typename value_type>
 Stokhos::HermiteBasis<ordinal_type,value_type>::
-HermiteBasis(ordinal_type p, bool normalize) :
-  RecurrenceBasis<ordinal_type,value_type>("Hermite", p, normalize)
+HermiteBasis(ordinal_type p, bool normalize, Stokhos::GrowthPolicy growth) :
+  RecurrenceBasis<ordinal_type,value_type>("Hermite", p, normalize, growth)
 {
   this->setup();
 

@@ -513,6 +513,7 @@ Piro::Epetra::StokhosSolverFactory::getValidSGParameters() const
   validPL->sublist("SG Solver Parameters", false, "");
   validPL->sublist("MP Solver Parameters", false, "");
   validPL->sublist("Basis", false, "");
+  validPL->sublist("Pseudospectral Operator", false, "");
   validPL->sublist("Expansion", false, "");
   validPL->sublist("Quadrature", false, "");
   validPL->set<std::string>("SG Method", "","");

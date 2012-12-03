@@ -282,3 +282,21 @@ cloneWithOrder(ordinal_type p) const
   return 
     Teuchos::rcp(new Stokhos::PecosOneDOrthogPolyBasis<ordinal_type,value_type>(p,*this));
 }
+
+template <typename ordinal_type, typename value_type>
+ordinal_type
+Stokhos::PecosOneDOrthogPolyBasis<ordinal_type,value_type>::
+coefficientGrowth(ordinal_type n) const
+{
+  return n;
+}
+
+template <typename ordinal_type, typename value_type>
+ordinal_type
+Stokhos::PecosOneDOrthogPolyBasis<ordinal_type,value_type>::
+pointGrowth(ordinal_type n) const
+{
+  if (n % ordinal_type(2) == ordinal_type(1))
+    return n + ordinal_type(1);
+  return n;
+}

@@ -30,8 +30,8 @@
 
 template <typename ordinal_type, typename value_type>
 Stokhos::LegendreBasis<ordinal_type, value_type>::
-LegendreBasis(ordinal_type p, bool normalize) :
-  RecurrenceBasis<ordinal_type, value_type>("Legendre", p, normalize)
+LegendreBasis(ordinal_type p, bool normalize, Stokhos::GrowthPolicy growth) :
+  RecurrenceBasis<ordinal_type, value_type>("Legendre", p, normalize, growth)
 {
   this->setup();
 

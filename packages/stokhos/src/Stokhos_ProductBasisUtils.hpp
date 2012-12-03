@@ -36,6 +36,7 @@
 
 #include "Stokhos_SDMUtils.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
+#include "Stokhos_GrowthRules.hpp"
 
 namespace Stokhos {
 
@@ -863,20 +864,6 @@ namespace Stokhos {
     //! Tolerance
     value_type tol;
 
-  };
-
-  //! A growth rule that is the identity
-  template <typename value_type>
-  class IdentityGrowthRule {
-  public:
-    //! Constructor
-    IdentityGrowthRule() {}
-
-    //! Destructor
-    ~IdentityGrowthRule() {}
-
-    //! Evaluate growth rule
-    value_type operator() (const value_type& x) const { return x; }
   };
 
   //! Predicate functor for building sparse triple products

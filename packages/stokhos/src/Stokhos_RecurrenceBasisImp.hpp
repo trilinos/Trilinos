@@ -33,10 +33,12 @@
 
 template <typename ordinal_type, typename value_type>
 Stokhos::RecurrenceBasis<ordinal_type, value_type>::
-RecurrenceBasis(const std::string& name_, ordinal_type p_, bool normalize_) :
+RecurrenceBasis(const std::string& name_, ordinal_type p_, bool normalize_,
+		Stokhos::GrowthPolicy growth_) :
   name(name_),
   p(p_),
   normalize(normalize_),
+  growth(growth_),
   quad_zero_tol(1.0e-14),
 #ifdef HAVE_STOKHOS_DAKOTA
   sparse_grid_growth_rule(webbur::level_to_order_linear_nn),
@@ -57,6 +59,7 @@ RecurrenceBasis(ordinal_type p_, const RecurrenceBasis& basis) :
   name(basis.name),
   p(p_),
   normalize(basis.normalize),
+  growth(basis.growth),
   quad_zero_tol(basis.quad_zero_tol),
   sparse_grid_growth_rule(basis.sparse_grid_growth_rule),
   alpha(p+1, value_type(0.0)),
@@ -399,6 +402,34 @@ Stokhos::RecurrenceBasis<ordinal_type,value_type>::
 quadDegreeOfExactness(ordinal_type n) const
 {
   return ordinal_type(2)*n-ordinal_type(1);
+}
+
+template <typename ordinal_type, typename value_type>
+ordinal_type
+Stokhos::RecurrenceBasis<ordinal_type,value_type>::
+coefficientGrowth(ordinal_type n) const
+{
+  if (growth == SLOW_GROWTH)
+    return n;
+
+  // else moderate
+  return ordinal_type(2)*n;
+}
+
+template <typename ordinal_type, typename value_type>
+ordinal_type
+Stokhos::RecurrenceBasis<ordinal_type,value_type>::
+pointGrowth(ordinal_type n) const
+{
+  if (growth == SLOW_GROWTH) {
+    if (n % ordinal_type(2) == ordinal_type(1))
+      return n + ordinal_type(1);
+    else
+      return n;
+  }
+
+  // else moderate
+  return n;
 }
 
 template <typename ordinal_type, typename value_type>

@@ -35,6 +35,12 @@
 
 namespace Stokhos {
 
+  //! Enumerated type for determining Smolyak growth policies
+  enum GrowthPolicy {
+    SLOW_GROWTH,
+    MODERATE_GROWTH
+  };
+
   /*! 
    * \brief Implementation of OneDOrthogPolyBasis based on the general
    * three-term recurrence relationship:
@@ -171,6 +177,12 @@ namespace Stokhos {
      */
     virtual ordinal_type quadDegreeOfExactness(ordinal_type n) const;
 
+    //! Evaluate coefficient growth rule for Smolyak-type bases
+    virtual ordinal_type coefficientGrowth(ordinal_type n) const;
+
+    //! Evaluate point growth rule for Smolyak-type bases
+    virtual ordinal_type pointGrowth(ordinal_type n) const;
+
     //! Function pointer needed for level_to_order mappings
     typedef typename OneDOrthogPolyBasis<ordinal_type,value_type>::LevelToOrderFnPtr LevelToOrderFnPtr;
 
@@ -219,10 +231,11 @@ namespace Stokhos {
      * tolerance with zero (which can help with duplicate removal in sparse
      * grid calculations).
      */
-     RecurrenceBasis(const std::string& name, ordinal_type p, bool normalize);
+    RecurrenceBasis(const std::string& name, ordinal_type p, bool normalize,
+		    GrowthPolicy growth = SLOW_GROWTH);
 
-     //! Copy constructor with specified order
-     RecurrenceBasis(ordinal_type p, const RecurrenceBasis& basis);
+    //! Copy constructor with specified order
+    RecurrenceBasis(ordinal_type p, const RecurrenceBasis& basis);
 
     //! Compute recurrence coefficients
     /*!
@@ -273,6 +286,9 @@ namespace Stokhos {
 
     //! Normalize basis
     bool normalize;
+
+    //! Smolyak growth policy
+    GrowthPolicy growth;
 
     //! Tolerance for quadrature points near zero
     value_type quad_zero_tol;

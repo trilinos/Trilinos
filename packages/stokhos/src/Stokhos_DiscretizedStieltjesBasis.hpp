@@ -64,7 +64,8 @@ namespace Stokhos {
       value_type (*weightFn)(const value_type&),
       const value_type& leftEndPt,
       const value_type& rightEndPt,
-      bool normalize);
+      bool normalize, 
+      GrowthPolicy growth = SLOW_GROWTH);
 
     //! Destructor
     ~DiscretizedStieltjesBasis();

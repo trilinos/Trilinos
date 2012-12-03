@@ -69,6 +69,7 @@ SET(HEADERS ${HEADERS}
   Stokhos_OrthogPolyBasis.hpp
   Stokhos_ProductBasis.hpp
   Stokhos_DerivBasis.hpp
+  Stokhos_GrowthRules.hpp
   Stokhos_ProductBasisUtils.hpp
   Stokhos_CompletePolynomialBasis.hpp
   Stokhos_CompletePolynomialBasisImp.hpp
@@ -123,6 +124,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_SmolyakPseudoSpectralOperator.hpp
   Stokhos_SmolyakPseudoSpectralOperatorImp.hpp
   Stokhos_QuadraturePseudoSpectralOperator.hpp
+  Stokhos_PseudoSpectralOperatorFactory.hpp
+  Stokhos_PseudoSpectralOperatorFactoryImp.hpp
   Stokhos_StandardStorage.hpp
   Stokhos_StaticStandardStorage.hpp
   Stokhos_StaticFixedStandardStorage.hpp
