@@ -61,7 +61,6 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     Input(coarseLevel, "A"); // input A == before rebalancing
-    Input(coarseLevel, "P");
     Input(coarseLevel, "Importer");
   }
 
@@ -73,20 +72,20 @@ namespace MueLu {
 
     if (IsAvailable(coarseLevel, "Importer")) {
 
-      RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
       RCP<Matrix> rebalancedAc;
 
       {
         SubFactoryMonitor subM(*this, "Rebalancing existing Ac", coarseLevel);
 
-        rebalancedAc = MatrixFactory::Build(P->getDomainMap(), originalAc->getGlobalMaxNumRowEntries());
-
         RCP<const Import> rebalanceImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
+
+        RCP<const Map> targetMap = rebalanceImporter->getTargetMap();
+        rebalancedAc = MatrixFactory::Build(targetMap, originalAc->getGlobalMaxNumRowEntries());
+
         rebalancedAc->doImport(*originalAc, *rebalanceImporter, Xpetra::INSERT);
-        rebalancedAc->fillComplete(P->getDomainMap(), P->getDomainMap());
+        rebalancedAc->fillComplete(targetMap, targetMap);
 
         Set(coarseLevel, "A", rebalancedAc);
-
       }
 
       GetOStream(Statistics0, 0) << RAPFactory::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)");
