@@ -37,7 +37,6 @@ modelEvaluator2DSim(const Teuchos::RCP<const Epetra_Comm>& comm,
  *
  * This is really more of a mock test driver model for Thyra than an example
  * of implementing a real simulation-constrained ModelEvaluator subclass.
- * That is really what the EpetraExt::ModelEvaluator is for.
  */
 template<class Scalar>
 class ModelEvaluator2DSim

@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  // Create the EpetraExt model evaluator object
+  // Create the model evaluator object
   double d = 10.0;
   double p0 = 2.0;
   double p1 = 0.0;

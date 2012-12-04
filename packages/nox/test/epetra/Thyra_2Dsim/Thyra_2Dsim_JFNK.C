@@ -95,7 +95,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
   // for more than one proc
   TEST_ASSERT(Comm.NumProc() == 1);
 
-  // Create the EpetraExt model evaluator object
+  // Create the model evaluator object
   double d = 10.0;
   double p0 = 2.0;
   double p1 = 0.0;
@@ -317,7 +317,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, JFNK_solve_no_prec)
   // for more than one proc
   TEST_ASSERT(Comm.NumProc() == 1);
 
-  // Create the EpetraExt model evaluator object
+  // Create the model evaluator object
   double d = 10.0;
   double p0 = 2.0;
   double p1 = 0.0;

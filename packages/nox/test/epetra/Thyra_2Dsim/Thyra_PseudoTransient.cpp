@@ -73,7 +73,7 @@
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_ScaledModelEvaluator.hpp"
-#include "NOX_RosenbrockModelEvaluator.hpp"
+#include "ModelEvaluatorRosenbrock.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 
