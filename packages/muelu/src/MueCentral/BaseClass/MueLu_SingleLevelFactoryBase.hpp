@@ -112,7 +112,13 @@ namespace MueLu {
 
     //@}
 
-    void DisableMultipleCallCheck() {
+    void EnableMultipleCallCheck() const {
+#ifdef HAVE_MUELU_DEBUG
+      multipleCallCheck_ = ENABLED;
+#endif
+    }
+
+    void DisableMultipleCallCheck() const {
 #ifdef HAVE_MUELU_DEBUG
       multipleCallCheck_ = DISABLED;
 #endif

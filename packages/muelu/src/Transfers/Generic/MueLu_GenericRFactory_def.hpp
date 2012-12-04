@@ -53,6 +53,7 @@
 #include "MueLu_FactoryBase.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_DisableMultipleCallCheck.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
@@ -87,6 +88,7 @@ namespace MueLu {
     RCP<const FactoryBase> PFact1 = GetFactory("P");
     if (PFact1 == Teuchos::null) { PFact1 = coarseLevel.GetFactoryManager()->GetFactory("P"); }
     RCP<PFactory> PFact = Teuchos::rcp_const_cast<PFactory>(rcp_dynamic_cast<const PFactory>(PFact1));;
+    MueLu::DisableMultipleCallCheck check(PFact);
 
     // BuildR
     bool rmode = PFact->isRestrictionModeSet();

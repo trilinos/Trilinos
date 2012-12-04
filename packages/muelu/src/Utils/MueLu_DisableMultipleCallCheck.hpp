@@ -43,59 +43,24 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_TRANSPFACTORY_DEF_HPP
-#define MUELU_TRANSPFACTORY_DEF_HPP
+#ifndef MUELU_DISABLEMULTIPLECALLCHECK_HPP
+#define MUELU_DISABLEMULTIPLECALLCHECK_HPP
 
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_Time.hpp>
+#include <Teuchos_RCP.hpp>
 
-#include <Xpetra_Matrix.hpp>
-
-#include "MueLu_TransPFactory_decl.hpp"
-#include "MueLu_Utilities.hpp"
-#include "MueLu_Monitor.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
-#include "MueLu_DisableMultipleCallCheck.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp"
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & fineLevel, Level & coarseLevel) const {
-    Input(coarseLevel, "P");
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level & coarseLevel) const {
-    FactoryMonitor m(*this, "Transpose P", coarseLevel);
-
-    // PFact might be called twice: once for P, once for R. Disabling the debug check.
-    RCP<const FactoryBase> PFact = GetFactory("P");
-    if (PFact == Teuchos::null) { PFact = coarseLevel.GetFactoryManager()->GetFactory("P"); }
-    MueLu::DisableMultipleCallCheck check(rcp_dynamic_cast<const TwoLevelFactoryBase>(PFact));
-
-    //
-    //
-    //
-
-    RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
-
-    //doesn't work -- bug in EpetraExt?
-    // Teuchos::ParameterList matrixList;
-    //RCP<Matrix> I = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>("Identity", P->getRangeMap(), matrixList);
-    //      RCP<CrsMatrixWrap> I = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>("Identity", P->getDomainMap(), matrixList);
-    //RCP<Matrix> R = Utils::TwoMatrixMultiply(P, true, I, false); //doesn't work -- bug in EpetraExt?
-    //      RCP<Matrix> R = Utils::TwoMatrixMultiply(I, false, P, true);
-
-    RCP<Matrix> R = Utils2::Transpose(P, true);
-
-    Set(coarseLevel, "R", R);
-
-    ///////////////////////// EXPERIMENTAL
-    if(P->IsView("stridedMaps")) R->CreateView("stridedMaps", P, true);
-    ///////////////////////// EXPERIMENTAL
-
-  } //Build
+  //! An exception safe way to call the method TwoLevelFactoryBase::DisableMultipleCallCheck
+  class DisableMultipleCallCheck {
+  public:
+    DisableMultipleCallCheck(const RCP<const TwoLevelFactoryBase> & fact) : fact_(fact) { fact_->DisableMultipleCallCheck(); }
+    ~DisableMultipleCallCheck() { fact_->EnableMultipleCallCheck(); }
+  private:
+    const RCP<const TwoLevelFactoryBase> fact_;
+  };
 
 } //namespace MueLu
 
-#endif // MUELU_TRANSPFACTORY_DEF_HPP
+#endif // MUELU_DISABLEMULTIPLECALLCHECK_HPP
