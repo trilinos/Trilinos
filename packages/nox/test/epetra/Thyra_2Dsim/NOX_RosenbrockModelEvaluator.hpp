@@ -43,13 +43,12 @@
 #ifndef NOX_THYRA_ROSENBROCK_MODEL_EVALUATOR_HPP
 #define NOX_THYRA_ROSENBROCK_MODEL_EVALUATOR_HPP
 
-#include "EpetraExt_ModelEvaluator.h"
+#include "Thyra_StateFuncModelEvaluatorBase.hpp"
+
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Comm.h"
 #include "Epetra_CrsGraph.h"
-
-namespace NOX {
 
 /** \brief ModelEvaluator for the Roesenbrock problem
 
@@ -92,48 +91,61 @@ namespace NOX {
    \right]
    \f]
  */
-class RosenbrockModelEvaluator : public EpetraExt::ModelEvaluator {
+class RosenbrockModelEvaluator : public Thyra::StateFuncModelEvaluatorBase<double> {
 public:
 
   RosenbrockModelEvaluator(const Teuchos::RCP<const Epetra_Comm>& comm);
 
-  /** \name Overridden from EpetraExt::ModelEvaluator . */
+  /** \name Public functions overridden from ModelEvaulator. */
   //@{
 
-  Teuchos::RCP<const Epetra_Map> get_x_map() const;
-
-  Teuchos::RCP<const Epetra_Map> get_f_map() const;
-
-  Teuchos::RCP<const Epetra_Vector> get_x_init() const;
-
-  Teuchos::RCP<Epetra_Operator> create_W() const;
-
-  InArgs createInArgs() const;
-
-  OutArgs createOutArgs() const;
-
-  void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > get_x_space() const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > get_f_space() const;
+  Thyra::ModelEvaluatorBase::InArgs<double> getNominalValues() const;
+  Teuchos::RCP<Thyra::LinearOpBase<double> > create_W_op() const;
+  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > get_W_factory() const;
+  Thyra::ModelEvaluatorBase::InArgs<double> createInArgs() const;
 
   //@}
+
+  void set_W_factory(const Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<double> >& W_factory);
 
   Teuchos::RCP<const Epetra_Vector> get_analytic_solution() const;
 
 private:
 
+  /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
+  //@{
+
+  Thyra::ModelEvaluatorBase::OutArgs<double> createOutArgsImpl() const;
+
+  void evalModelImpl(
+    const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs,
+    const Thyra::ModelEvaluatorBase::OutArgs<double> &outArgs
+    ) const;
+
+  //@}
+
+private:
+
   double    d_;
 
-  bool      isInitialized_;
-  
   Teuchos::RCP<const Epetra_Comm>  epetra_comm_;
+
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > x_space_;
   Teuchos::RCP<const Epetra_Map>   map_x_;
   
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > f_space_;
+  Teuchos::RCP<const Epetra_Map>   f_epetra_map_;
+
   Teuchos::RCP<Epetra_Vector> x0_;
   Teuchos::RCP<Epetra_Vector> x_analytic_;
   
   Teuchos::RCP<Epetra_CrsGraph>  W_graph_;
   
-};
+  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > W_factory_;
 
-}
+  mutable Thyra::ModelEvaluatorBase::InArgs<double> nominal_values_;
+};
 
 #endif

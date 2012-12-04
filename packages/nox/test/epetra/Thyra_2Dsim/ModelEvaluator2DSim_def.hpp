@@ -3,8 +3,7 @@
 #ifndef NOX_THYRA_MODEL_EVALUATOR_2DSIM_DEF_HPP
 #define NOX_THYRA_MODEL_EVALUATOR_2DSIM_DEF_HPP
 
-
-//#include "Thyra_SimpleDenseLinearOp.hpp"
+// Thyra support
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
@@ -13,7 +12,7 @@
 #include "Thyra_VectorStdOps.hpp"
 
 // Epetra support
-#include "Thyra_EpetraThyraWrappers.cpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
 
 // Nonmember constuctors

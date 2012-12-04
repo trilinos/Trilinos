@@ -72,7 +72,6 @@
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
-#include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_ScaledModelEvaluator.hpp"
 #include "NOX_RosenbrockModelEvaluator.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
@@ -96,9 +95,6 @@ TEUCHOS_UNIT_TEST(dimension, default)
 
   TEST_ASSERT(Comm.NumProc() == 1);
 
-  Teuchos::RCP<NOX::RosenbrockModelEvaluator> epetraModel = 
-    Teuchos::rcp(new NOX::RosenbrockModelEvaluator(Teuchos::rcp(&Comm,false)));
-
   ::Stratimikos::DefaultLinearSolverBuilder builder;
   
   Teuchos::RCP<Teuchos::ParameterList> p = 
@@ -119,13 +115,10 @@ TEUCHOS_UNIT_TEST(dimension, default)
   Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
     lowsFactory = builder.createLinearSolveStrategy("");
 
-  // Create the Thyra model evalutor (form the epetraext model and
-  // linear solver)
-  Teuchos::RCP< ::Thyra::EpetraModelEvaluator>
-    epetraThyraModel = rcp(new ::Thyra::EpetraModelEvaluator());
-  epetraThyraModel->initialize(epetraModel,lowsFactory);
-  Teuchos::RCP< ::Thyra::ModelEvaluator<double> > thyraModel = 
-    epetraThyraModel;
+  Teuchos::RCP<RosenbrockModelEvaluator> thyraModel = 
+    Teuchos::rcp(new RosenbrockModelEvaluator(Teuchos::rcp(&Comm,false)));
+
+  thyraModel->set_W_factory(lowsFactory);
 
   // Create nox parameter list
   Teuchos::RCP<Teuchos::ParameterList> nl_params =
@@ -217,7 +210,7 @@ TEUCHOS_UNIT_TEST(dimension, default)
     Teuchos::rcp_dynamic_cast< ::Thyra::NOXNonlinearSolver>(solver);
   TEST_EQUALITY(thyra_nox_solver->getNOXSolver()->getNumIterations(), 13);
 
-  Teuchos::RCP<const Epetra_Vector> x_analytic = epetraModel->get_analytic_solution();
+  Teuchos::RCP<const Epetra_Vector> x_analytic = thyraModel->get_analytic_solution();
 
   Teuchos::RCP<const NOX::Abstract::Vector> x = thyra_nox_solver->getNOXSolver()->getSolutionGroup().getXPtr();
 
