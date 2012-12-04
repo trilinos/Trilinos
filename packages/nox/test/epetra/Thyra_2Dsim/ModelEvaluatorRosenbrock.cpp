@@ -41,7 +41,7 @@
 */
 
 #include "NOX_Common.H"
-#include "NOX_RosenbrockModelEvaluator.hpp"
+#include "ModelEvaluatorRosenbrock.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Epetra_CrsMatrix.h"
 
