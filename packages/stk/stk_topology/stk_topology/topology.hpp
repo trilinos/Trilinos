@@ -18,6 +18,7 @@ struct topology
     , EDGE_RANK
     , FACE_RANK
     , ELEM_RANK, ELEMENT_RANK = ELEM_RANK
+    , CONSTRAINT_RANK
     , END_RANK
     , INVALID_RANK = END_RANK
     , NUM_RANKS = END_RANK

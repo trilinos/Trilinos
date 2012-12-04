@@ -7,7 +7,9 @@ namespace stk {
 
 std::ostream & operator<<(std::ostream &out, topology::rank_t r)
 {
-  return out << topology::rank_names[r];
+  if ( r <= topology::END_RANK )
+    return out << topology::rank_names[r];
+  return out << static_cast<int>(r) << "_RANK";
 }
 
 std::ostream & operator<<(std::ostream &out, topology t)

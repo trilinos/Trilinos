@@ -70,6 +70,7 @@ const char * topology::rank_names[] =
   , "EDGE_RANK"
   , "FACE_RANK"
   , "ELEMENT_RANK"
+  , "CONSTRAINT_RANK"
   , "INVALID_RANK"
 };
 

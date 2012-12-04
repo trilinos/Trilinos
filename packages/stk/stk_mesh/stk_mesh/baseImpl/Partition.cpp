@@ -5,6 +5,8 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/baseImpl/Partition.hpp>
 #include <stk_util/environment/OutputLog.hpp>
+#include <stk_topology/topology.hpp>
+#include <stk_topology/pretty_print.hpp>
 
 #include <iostream>
 
@@ -152,6 +154,12 @@ void Partition::move_to(Entity entity, Partition &dst_partition)
 
     // If the last bucket is full, automatically create a new one.
     Bucket *dst_bucket = dst_partition.get_bucket_for_adds();
+
+   ThrowErrorMsgIf(src_bucket && src_bucket->topology().is_valid() && (src_bucket->topology() != dst_bucket->topology()),
+        "Error: cannot change topology of entity (rank: "
+        << static_cast<stk::topology::rank_t>(entity.entity_rank()) << ", global_id: " << entity.identifier() << ") from "
+        << src_bucket->topology() << "to " << dst_bucket->topology() << "."
+       );
 
     // Move the entity's data to the new bucket before removing the entity from its old bucket.
     unsigned dst_ordinal = dst_bucket->size();
