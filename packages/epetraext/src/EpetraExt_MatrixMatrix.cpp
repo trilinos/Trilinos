@@ -741,7 +741,6 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 #endif
     //Create an importer with target-map MremoteRowMap and 
     //source-map Mrowmap.
-#ifdef LIGHTWEIGHT_IMPORT
     Epetra_Import    * importer=0;
     RemoteOnlyImport * Rimporter=0;
     if(prototypeImporter && prototypeImporter->SourceMap().SameAs(M.RowMap()) && prototypeImporter->TargetMap().SameAs(targetMap)) {
@@ -754,9 +753,6 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
     }
     else
       throw std::runtime_error("prototypeImporter->SourceMap() does not match M.RowMap()!");
-#else
-    Epetra_Import *importer=new Epetra_Import(MremoteRowMap, Mrowmap);
-#endif
 
 
 #ifdef ENABLE_MMM_TIMINGS
@@ -766,11 +762,8 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 #endif
 
     if(Mview.importMatrix) delete Mview.importMatrix;
-#ifdef LIGHTWEIGHT_IMPORT
     if(Rimporter) Mview.importMatrix = new LightweightCrsMatrix(M,*Rimporter);
-    else 
-#endif
-      Mview.importMatrix = new LightweightCrsMatrix(M,*importer);
+    else Mview.importMatrix = new LightweightCrsMatrix(M,*importer);
 
 #ifdef ENABLE_MMM_TIMINGS
     mtime->stop();

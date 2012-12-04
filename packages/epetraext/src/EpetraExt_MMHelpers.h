@@ -58,9 +58,6 @@ class Epetra_Distributor;
 namespace EpetraExt {
 class LightweightCrsMatrix;
 
-
-#define LIGHTWEIGHT_IMPORT
-
 #define ENABLE_MMM_TIMINGS
 
 // ==============================================================
