@@ -628,6 +628,13 @@ extern "C" {
 				       int   attrib_index,
 				       const void *attrib );
 
+  EXODUS_EXPORT int ex_put_n_attr( int   exoid,
+				   ex_entity_type obj_type,
+				   ex_entity_id   obj_id,
+				   int64_t   start_num,
+				   int64_t   num_ent,
+				   const void *attrib );
+
   EXODUS_EXPORT int ex_put_prop (int   exoid,
 				 ex_entity_type obj_type,
 				 ex_entity_id   obj_id,
