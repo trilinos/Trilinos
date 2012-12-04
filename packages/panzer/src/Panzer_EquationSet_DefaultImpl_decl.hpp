@@ -48,6 +48,8 @@
 #include "Panzer_GlobalDataAcceptor_DefaultImpl.hpp"
 #include "Panzer_CellData.hpp"
 
+#include <map>
+
 namespace PHX {
   template<typename Traits> class FieldManager;
 }
@@ -124,7 +126,78 @@ namespace panzer {
     const panzer::InputEquationSet& getInputEquationSet() const;
 
   protected:
+    // The set of functions below are for use by derived classes to specify the 
+    // provided degree of freedom (and associated residual name), in addition
+    // to enabling the, gradient, curl and time derivative for those.
+
+    /** Alert the panzer library of a DOF provided by this equation set.
+      * This automatically sets up the gather/scatter routines neccessary
+      * to evaluate and assemble with this unknown.
+      *
+      * \param[in] dofName Name of field to lookup in the unique global
+      *                        indexer. This also serves as a key for the remaining
+      *                        <code>addDOF*</code> methods.
+      * \param[in] residualName Name of field that is to be scattered associated with
+      *                         this DOF.
+      */
+    void addProvidedDOF(const std::string & dofName,
+                        const std::string & residualName);
+
+    /** Alert the panzer library of a DOF provided by this equation set.
+      * This version of the method does not sets up the scatter routines
+      * because there is no specified residual name.
+      *
+      * \param[in] dofName Name of field to lookup in the unique global
+      *                        indexer. This also serves as a key for the remaining
+      *                        <code>addDOF*</code> methods.
+      */
+    void addProvidedDOF(const std::string & dofName);
+
+    /** Alert the panzer library that a gradient of particular a DOF is needed.
+      *
+      * \param[in] dofName Name of field to lookup in the unique global indexer. 
+      * \param[in] gradName Name of the gradient field associated with
+      *                         this DOF.
+      */
+    void addDOFGrad(const std::string & dofName,
+                    const std::string & gradName);
+
+    /** Alert the panzer library that a curl of particular a DOF is needed.
+      *
+      * \param[in] dofName Name of field to lookup in the unique global indexer. 
+      * \param[in] curlName Name of the curl field associated with
+      *                         this DOF.
+      */
+    void addDOFCurl(const std::string & dofName,
+                    const std::string & curlName);
+
+    /** Alert the panzer library that a time derivative of particular a DOF is needed.
+      *
+      * \param[in] dofName Name of field to lookup in the unique global indexer. 
+      * \param[in] dotName Name of the time derivative field associated with
+      *                         this DOF.
+      */
+    void addDOFTimeDerivative(const std::string & dofName,
+                              const std::string & dotName);
+
+    struct DOFDescriptor {
+      DOFDescriptor() 
+        : dofName("")
+        , residualName(std::make_pair(false,""))
+        , grad(std::make_pair(false,""))
+        , curl(std::make_pair(false,""))
+        , timeDerivative(std::make_pair(false,"")) {}
+
+      std::string dofName;
+      std::pair<bool,std::string> residualName;
+      std::pair<bool,std::string> grad;
+      std::pair<bool,std::string> curl;
+      std::pair<bool,std::string> timeDerivative;
+    };
+
+    std::map<std::string,DOFDescriptor> m_provided_dofs_desc;
     
+
     const panzer::InputEquationSet m_input_eq_set;
     const panzer::CellData m_cell_data;
     const bool m_build_transient_support;

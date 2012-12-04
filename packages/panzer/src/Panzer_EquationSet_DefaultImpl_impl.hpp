@@ -81,6 +81,40 @@ template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 setupDOFs(int equation_dimension)
 {
+  if(m_provided_dofs_desc.size()>0) {
+
+    // this conditional and following assert is needed to check that the new
+    // approach is not interfering with the old approach of specifying DOFs.
+    bool backward_compatibility_check
+           = (m_dof_names->size()==0) && 
+             (m_dof_gradient_names->size()==0) && 
+             (m_dof_curl_names->size()==0) && 
+             (m_dof_time_derivative_names->size()==0) && 
+             (m_residual_names->size()==0);
+ 
+    TEUCHOS_TEST_FOR_EXCEPTION(!backward_compatibility_check,std::runtime_error,
+                               "EquationSet_DefaultImpl::setupDOFs: You cannot call both addProvidedDOFs (and it's ilk) and set m_dof_names (for example). "
+                               "The later approach to using the default implementation of the equation set is now deprecated."); 
+  }
+  else {
+    // register with the "new" equation set way the various fields
+    for(std::size_t i=0;i<m_dof_names->size();i++) {
+      if(m_residual_names->size()>0)        
+        addProvidedDOF((*m_dof_names)[i],(*m_residual_names)[i]);
+      else
+        addProvidedDOF((*m_dof_names)[i]);
+
+      if(m_dof_gradient_names->size()>0)        
+        addDOFGrad((*m_dof_names)[i],(*m_dof_gradient_names)[i]);
+
+      if(m_dof_curl_names->size()>0)            
+        addDOFCurl((*m_dof_names)[i],(*m_dof_curl_names)[i]);
+
+      if(m_dof_time_derivative_names->size()>0) 
+        addDOFTimeDerivative((*m_dof_names)[i],(*m_dof_time_derivative_names)[i]);
+    }
+  }
+
   this->m_int_rule = 
     Teuchos::rcp(new panzer::IntegrationRule(m_input_eq_set.integration_order,
 					     m_cell_data));
@@ -90,10 +124,14 @@ setupDOFs(int equation_dimension)
 						 *(this->m_int_rule)));
   
   this->m_provided_dofs.clear();
-  int index = 0;
-  for (std::vector<std::string>::const_iterator i = this->m_dof_names->begin();
-       i != this->m_dof_names->end(); ++i, ++index)
-    this->m_provided_dofs.push_back(std::make_pair((*(this->m_dof_names))[index], this->m_pure_basis));
+  this->m_dof_names->clear();
+
+  // load up the provided dofs from the descriptor map
+  for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
+      itr!=m_provided_dofs_desc.end();++itr) {
+    this->m_dof_names->push_back(itr->first); // this contains all the dof names provided by this equation set
+    this->m_provided_dofs.push_back(std::make_pair(itr->first, this->m_pure_basis));
+  }
 
   this->m_eval_plist->set("IR", this->m_int_rule);
   this->m_eval_plist->set("Basis", this->m_basis);
@@ -155,6 +193,23 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
 
   // Gather of time derivative terms
   {
+    RCP< std::vector<std::string> > dof_names = rcp(new std::vector<std::string>);   // time derivative indexer names
+    RCP< std::vector<std::string> > field_names = rcp(new std::vector<std::string>); // time derivative field names
+
+    // determine which fields need time derivatives
+    for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
+        itr!=m_provided_dofs_desc.end();++itr) {
+      std::string dofName = itr->first;
+      const DOFDescriptor & desc = itr->second;
+
+      // does this field need a time derivative?
+      if(desc.timeDerivative.first) {
+        // time derivaitive needed
+        dof_names->push_back(dofName);
+        field_names->push_back(desc.timeDerivative.second);
+      }
+    }
+
     ParameterList p("Gather");
     p.set("Basis", m_pure_basis);
     p.set("DOF Names", m_dof_time_derivative_names);
@@ -210,14 +265,19 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
 
   // Gradients of DOFs: Scalar value @ basis --> Vector value @ IP
   if(this->m_pure_basis->supportsGrad()) {
-    TEUCHOS_ASSERT(this->m_dof_names->size() == this->m_dof_gradient_names->size());
 
-    std::vector<std::string>::const_iterator dof_name = this->m_dof_names->begin();
-    std::vector<std::string>::const_iterator dof_grad_name = this->m_dof_gradient_names->begin();
-    for (;dof_grad_name != this->m_dof_gradient_names->end(); ++dof_grad_name,++dof_name) {
+    for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
+        itr!=m_provided_dofs_desc.end();++itr) {
+      // is gradient required for this variable
+      if(!itr->second.grad.first) 
+        continue; // its not required, quit the loop
+
+      const std::string dof_name =      itr->first;
+      const std::string dof_grad_name = itr->second.grad.second;
+
       ParameterList p;
-      p.set("Name", *dof_name);
-      p.set("Gradient Name", *dof_grad_name);
+      p.set("Name", dof_name);
+      p.set("Gradient Name", dof_grad_name);
       p.set("Basis", this->m_basis); 
       p.set("IR", this->m_int_rule);
       
@@ -230,14 +290,19 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
 
   // Curl of DOFs: Vector value @ basis --> Vector value @ IP (3D) or Scalar value @ IP (2D)
   if(this->m_pure_basis->supportsCurl()) {
-    TEUCHOS_ASSERT(this->m_dof_names->size() == this->m_dof_curl_names->size());
- 
-    std::vector<std::string>::const_iterator dof_name = this->m_dof_names->begin();
-    std::vector<std::string>::const_iterator dof_curl_name = this->m_dof_curl_names->begin();
-    for (;dof_curl_name != this->m_dof_curl_names->end(); ++dof_curl_name,++dof_name) {
+
+    for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
+        itr!=m_provided_dofs_desc.end();++itr) {
+      // is curl required for this variable
+      if(!itr->second.curl.first) 
+        continue; // its not required, quit the loop
+
+      const std::string dof_name =      itr->first;
+      const std::string dof_curl_name = itr->second.curl.second;
+
       ParameterList p;
-      p.set("Name", *dof_name);
-      p.set("Curl Name", *dof_curl_name);
+      p.set("Name", dof_name);
+      p.set("Curl Name", dof_curl_name);
       p.set("Basis", this->m_basis); 
       p.set("IR", this->m_int_rule);
       
@@ -249,10 +314,16 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
   }
 
   // Time derivative of DOFs: Scalar value @ basis --> Scalar value @ IP 
-  for (std::vector<std::string>::const_iterator dof_name = this->m_dof_time_derivative_names->begin();
-       dof_name != this->m_dof_time_derivative_names->end(); ++dof_name) {
+  for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
+      itr!=m_provided_dofs_desc.end();++itr) {
+    // is td required for this variable
+    if(!itr->second.timeDerivative.first) 
+      continue; // its not required, quit the loop
+
+    const std::string td_name = itr->second.timeDerivative.second;
+
     ParameterList p;
-    p.set("Name", *dof_name);
+    p.set("Name", td_name);
     p.set("Basis", this->m_basis); 
     p.set("IR", this->m_int_rule);
     
@@ -287,10 +358,10 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
      RCP<std::map<std::string,std::string> > names_map =
        rcp(new std::map<std::string,std::string>);
    
-     TEUCHOS_ASSERT(m_dof_names->size() == m_residual_names->size());
-   
-     for (std::size_t i = 0; i < m_dof_names->size(); ++i)
-       names_map->insert(std::make_pair((*m_residual_names)[i],(*m_dof_names)[i]));
+     for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
+         itr!=m_provided_dofs_desc.end();++itr) 
+       names_map->insert(std::make_pair(itr->second.residualName.second,itr->first));
+    
    
      {
        ParameterList p("Scatter");
@@ -325,14 +396,6 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				       const Teuchos::ParameterList& models,
 				       const Teuchos::ParameterList& user_data) const
 {
-/*
-  Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators = 
-    factory.getAsObject<EvalT>()->buildClosureModels(this->m_input_eq_set.model_id, this->m_input_eq_set, models,
-						     *(this->m_eval_plist), user_data, fm);
-  
-  for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators->size(); ++i)
-    fm.template registerEvaluator<EvalT>((*evaluators)[i]);
-*/
   buildAndRegisterClosureModelEvaluators(fm,dofs,factory,this->m_input_eq_set.model_id,models,user_data);
 }
 
@@ -482,6 +545,95 @@ const panzer::InputEquationSet&
 panzer::EquationSet_DefaultImpl<EvalT>::getInputEquationSet() const
 {
   return m_input_eq_set;
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
+addProvidedDOF(const std::string & dofName,
+               const std::string & residualName)
+{
+  typename std::map<std::string,DOFDescriptor>::const_iterator itr = m_provided_dofs_desc.find(dofName);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(itr!=m_provided_dofs_desc.end(),std::runtime_error,
+                             "EquationSet_DefaultImpl::addProvidedDOF: DOF \"" << dofName << "\" was previously specified "
+                             "by derived equation set \"" << m_scatter_name << "\".");
+
+  // allocate and populate a dof descriptor associated with the field "dofName"
+  DOFDescriptor & desc = m_provided_dofs_desc[dofName];
+  desc.dofName = dofName;
+  desc.residualName.first = true;
+  desc.residualName.second = residualName;
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
+addProvidedDOF(const std::string & dofName)
+{
+  typename std::map<std::string,DOFDescriptor>::const_iterator itr = m_provided_dofs_desc.find(dofName);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(itr!=m_provided_dofs_desc.end(),std::runtime_error,
+                             "EquationSet_DefaultImpl::addProvidedDOF: DOF \"" << dofName << "\" was previously specified "
+                             "by derived equation set \"" << m_scatter_name << "\".");
+
+  // allocate and populate a dof descriptor associated with the field "dofName"
+  DOFDescriptor & desc = m_provided_dofs_desc[dofName];
+  desc.dofName = dofName;
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
+addDOFGrad(const std::string & dofName,
+           const std::string & gradName)
+{
+  typename std::map<std::string,DOFDescriptor>::iterator itr = m_provided_dofs_desc.find(dofName);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(itr==m_provided_dofs_desc.end(),std::runtime_error,
+                             "EquationSet_DefaultImpl::addDOFGrad: DOF \"" << dofName << "\" has not been specified as a DOF "
+                             "by derived equation set \"" << m_scatter_name << "\".");
+
+  // allocate and populate a dof descriptor associated with the field "dofName"
+  DOFDescriptor & desc = m_provided_dofs_desc[dofName];
+  TEUCHOS_ASSERT(desc.dofName==dofName); // safety check
+  desc.grad = std::make_pair(true,gradName);
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
+addDOFCurl(const std::string & dofName,
+           const std::string & curlName)
+{
+  typename std::map<std::string,DOFDescriptor>::iterator itr = m_provided_dofs_desc.find(dofName);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(itr==m_provided_dofs_desc.end(),std::runtime_error,
+                             "EquationSet_DefaultImpl::addDOFCurl: DOF \"" << dofName << "\" has not been specified as a DOF "
+                             "by derived equation set \"" << m_scatter_name << "\".");
+
+  // allocate and populate a dof descriptor associated with the field "dofName"
+  DOFDescriptor & desc = m_provided_dofs_desc[dofName];
+  TEUCHOS_ASSERT(desc.dofName==dofName); // safety check
+  desc.curl = std::make_pair(true,curlName);
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
+addDOFTimeDerivative(const std::string & dofName,
+                              const std::string & dotName)
+{
+  typename std::map<std::string,DOFDescriptor>::iterator itr = m_provided_dofs_desc.find(dofName);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(itr==m_provided_dofs_desc.end(),std::runtime_error,
+                             "EquationSet_DefaultImpl::addDOFTimeDerivative: DOF \"" << dofName << "\" has not been specified as a DOF "
+                             "by derived equation set \"" << m_scatter_name << "\".");
+
+  // allocate and populate a dof descriptor associated with the field "dofName"
+  DOFDescriptor & desc = m_provided_dofs_desc[dofName];
+  TEUCHOS_ASSERT(desc.dofName==dofName); // safety check
+  desc.timeDerivative = std::make_pair(true,dotName);
 }
 
 // ***********************************************************************
