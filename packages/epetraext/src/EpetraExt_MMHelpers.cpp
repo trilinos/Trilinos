@@ -363,6 +363,8 @@ RemoteOnlyImport::RemoteOnlyImport(const Epetra_Import & Importer, Epetra_Map & 
     ExportLIDs_[i] = OldExportLIDs[i];
 
   // The RemoteIDs, on the other hand, do change.  So let's do this right.
+  // Note: We might be able to bypass the LID call by just indexing off the Same and Permute GIDs, but at the moment this
+  // is fast enough not to worry about it.
   RemoteLIDs_ = new int[NumRemoteIDs_];
   for(i=0; i<NumRemoteIDs_; i++) 
     RemoteLIDs_[i] = TargetMap_->LID(Importer.TargetMap().GID(OldRemoteLIDs[i]));

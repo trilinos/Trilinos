@@ -97,11 +97,7 @@ static inline int auto_resize(std::vector<int> &x,int num_new){
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#ifdef LIGHTWEIGHT_MATRIX
-  int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const LightweightCrsMatrix &Bimport, Epetra_Map*& unionmap, std::vector<int>& Cremotepids)
-#else
-    int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Epetra_CrsMatrix &Bimport, Epetra_Map*& unionmap, std::vector<int>& Cremotepids)
-#endif
+int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const LightweightCrsMatrix &Bimport, Epetra_Map*& unionmap, std::vector<int>& Cremotepids)
 {
 #ifdef HAVE_MPI
  
@@ -120,11 +116,7 @@ static inline int auto_resize(std::vector<int> &x,int num_new){
 
   const Epetra_Map & BColMap   = B.ColMap();
   const Epetra_Map & DomainMap = B.DomainMap();
-#ifdef LIGHTWEIGHT_MATRIX
   const Epetra_BlockMap & IColMap   = Bimport.ColMap_;
-#else
-  const Epetra_Map & IColMap   = Bimport.ColMap();
-#endif
 
   int Nb         = BColMap.NumMyElements();
   int Ni         = IColMap.NumMyElements();
@@ -148,16 +140,12 @@ static inline int auto_resize(std::vector<int> &x,int num_new){
   if(B.Importer()) {EPETRA_CHK_ERR(util.GetPids(*B.Importer(),Bpids,true));}
   else Bpids.assign(Nb,-1);
 
-#ifdef LIGHTWEIGHT_MATRIX
   if(Ni != (int) Bimport.ColMapOwningPIDs_.size()) {
     EPETRA_CHK_ERR(-21);
   }
   for(i=0;i<Ni;i++){
     Ipids[i] = (Bimport.ColMapOwningPIDs_[i]==MyPID)?(-1):(Bimport.ColMapOwningPIDs_[i]);    
   }
-#else
-  EPETRA_CHK_ERR(util.GetPids(*Bimport.Importer(),Ipids,true));
-#endif
 
   // **********************
   // Stage 2: Allocate memory
@@ -917,19 +905,11 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 
   std::vector<int> Bimportcol2Ccol;
   if(Bview.importMatrix){
-#ifdef LIGHTWEIGHT_MATRIX
     Bimportcol2Ccol.resize(Bview.importMatrix->ColMap_.NumMyElements());
     for(i=0;i<Bview.importMatrix->ColMap_.NumMyElements();i++){
       Bimportcol2Ccol[i]=colmap_C->LID(Bview.importMatrix->ColMap_.GID(i));
       if(Bimportcol2Ccol[i]==-1) EPETRA_CHK_ERR(-12);
     }
-#else
-    Bimportcol2Ccol.resize(Bview.importMatrix->ColMap().NumMyElements());
-    for(i=0;i<Bview.importMatrix->ColMap().NumMyElements();i++){
-      Bimportcol2Ccol[i]=colmap_C->LID(Bview.importMatrix->ColMap().GID(i));
-      if(Bimportcol2Ccol[i]==-1) EPETRA_CHK_ERR(-12);
-    }
-#endif
   }		
 
 #ifdef ENABLE_MMM_TIMINGS

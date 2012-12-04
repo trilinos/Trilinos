@@ -59,17 +59,9 @@ namespace EpetraExt {
 class LightweightCrsMatrix;
 
 
-#define LIGHTWEIGHT_MATRIX
-
 #define LIGHTWEIGHT_IMPORT
 
 #define ENABLE_MMM_TIMINGS
-
-// Sanity checking
-#if defined(LIGHTWEIGHT_IMPORT) && !defined(LIGHTWEIGHT_MATRIX)
-#error "LIGHTWEIGHT_IMPORT only works with LIGHTWEIGHT_MATRIX!"
-#endif
-
 
 // ==============================================================
 //struct that holds views of the contents of a CrsMatrix. These
@@ -94,12 +86,7 @@ public:
   const Epetra_Map* colMap;
   const Epetra_Map* domainMap;
   const Epetra_BlockMap* importColMap;
-#ifdef LIGHTWEIGHT_MATRIX
   LightweightCrsMatrix* importMatrix;
-#else
-  Epetra_CrsMatrix* importMatrix;
-#endif
-
 };
 
 int dumpCrsMatrixStruct(const CrsMatrixStruct& M);

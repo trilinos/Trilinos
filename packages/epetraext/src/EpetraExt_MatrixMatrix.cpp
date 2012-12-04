@@ -765,18 +765,12 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
     mtime->start();
 #endif
 
-#ifdef  LIGHTWEIGHT_MATRIX
     if(Mview.importMatrix) delete Mview.importMatrix;
 #ifdef LIGHTWEIGHT_IMPORT
     if(Rimporter) Mview.importMatrix = new LightweightCrsMatrix(M,*Rimporter);
     else 
 #endif
       Mview.importMatrix = new LightweightCrsMatrix(M,*importer);
-#else
-    Mview.importMatrix = new Epetra_CrsMatrix(Copy, MremoteRowMap, 1);
-    EPETRA_CHK_ERR( Mview.importMatrix->Import(M, *importer, Insert) );
-    EPETRA_CHK_ERR( Mview.importMatrix->FillComplete(M.DomainMap(), M.RangeMap()) );
-#endif
 
 #ifdef ENABLE_MMM_TIMINGS
     mtime->stop();
@@ -785,15 +779,11 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 #endif
 
     //Finally, use the freshly imported data to fill in the gaps in our views
-#ifdef LIGHTWEIGHT_MATRIX
     if(Mview.importMatrix->RowMap_.NumMyElements()) {
       rowptr = &Mview.importMatrix->rowptr_[0];
       colind = &Mview.importMatrix->colind_[0];
       vals   = &Mview.importMatrix->vals_[0];
     }
-#else
-    EPETRA_CHK_ERR( Mview.importMatrix->ExtractCrsDataPointers(rowptr,colind,vals) );
-#endif
 
     for(i=0; i<Mview.numRows; ++i) {
       if (Mview.remote[i]) {
@@ -804,11 +794,7 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
       }
     }
 
-#ifdef LIGHTWEIGHT_MATRIX
     Mview.importColMap = &(Mview.importMatrix->ColMap_);
-#else
-    Mview.importColMap = &(Mview.importMatrix->ColMap());
-#endif
     delete [] MremoteRows;
 #ifdef ENABLE_MMM_TIMINGS
     mtime->stop();
