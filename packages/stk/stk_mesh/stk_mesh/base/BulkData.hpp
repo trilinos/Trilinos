@@ -289,7 +289,7 @@ public:
    *  A parallel-local operation.
    *
    *  If the locally owned entity is shared or ghosted then
-   *  the change will be propogated to the sharing or ghosting
+   *  the change will be propagated to the sharing or ghosting
    *  processes by modification_end.
    */
   void change_entity_parts( Entity entity,
