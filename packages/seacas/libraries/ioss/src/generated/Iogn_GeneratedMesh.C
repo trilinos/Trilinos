@@ -354,8 +354,8 @@ namespace Iogn {
 		  << "\tbbox: xmin, ymin, zmin, xmax, ymax, zmax\n"
 		  << "\trotate: axis,angle,axis,angle,...\n"
 		  << "\tshell:xXyYzZ (specifies which plane to apply shell)\n"
-	          << "\tnodeset:xXyXzZ (specifies which plane to apply nodeset)\n"
-	          << "\tsideset:xXyXzZ (specifies which plane to apply sideset)\n"
+	          << "\tnodeset:xXyYzZ (specifies which plane to apply nodeset)\n"
+	          << "\tsideset:xXyYzZ (specifies which plane to apply sideset)\n"
 		  << "\tshow -- show mesh parameters\n"
 		  << "\thelp -- show this list\n\n";
       }
