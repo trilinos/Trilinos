@@ -689,6 +689,7 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
+ mtime=MM.getNewTimer("All I&X Collective-0");
   mtime->start();
 #endif
 
