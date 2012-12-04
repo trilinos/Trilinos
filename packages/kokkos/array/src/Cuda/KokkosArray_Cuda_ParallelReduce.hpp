@@ -466,7 +466,7 @@ public:
       // Thread 0 has the final reduction value
       if ( ! group_count ) {
         if ( 0 == thread_of_block ) {
-          m_reduce.finalize( shared_data );
+          m_reduce.finalize( thread_data );
         }
         break ;
       }
