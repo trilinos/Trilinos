@@ -912,24 +912,51 @@ public:
   {
     enum { Length = 1000 , Count = 8 };
 
-    typedef KokkosArray::View< T[] ,    KokkosArray::LayoutLeft , host > vector_type ;
+    typedef KokkosArray::View< T[] , KokkosArray::LayoutRight, host > vector_right_type ;
+    typedef KokkosArray::View< T[] , KokkosArray::LayoutLeft , host > vector_type ;
     typedef KokkosArray::View< T** , KokkosArray::LayoutLeft , host > multivector_type ;
 
-    typedef KokkosArray::View< const T[] ,    KokkosArray::LayoutLeft , host > const_vector_type ;
+    typedef KokkosArray::View< const T[] , KokkosArray::LayoutRight, host > const_vector_right_type ;
+    typedef KokkosArray::View< const T[] , KokkosArray::LayoutLeft , host > const_vector_type ;
     typedef KokkosArray::View< const T** , KokkosArray::LayoutLeft , host > const_multivector_type ;
 
     multivector_type mv = multivector_type( "mv" , Length , Count );
+
     vector_type v1( mv , 0 );
     vector_type v2( mv , 1 );
     vector_type v3( mv , 2 );
+
+    const_vector_type cv1( mv , 0 );
+    const_vector_type cv2( mv , 1 );
+    const_vector_type cv3( mv , 2 );
+
+    vector_right_type vr1( mv , 0 );
+    vector_right_type vr2( mv , 1 );
+    vector_right_type vr3( mv , 2 );
+
+    const_vector_right_type cvr1( mv , 0 );
+    const_vector_right_type cvr2( mv , 1 );
+    const_vector_right_type cvr3( mv , 2 );
 
     ASSERT_TRUE( & v1[0] == & mv(0,0) );
     ASSERT_TRUE( & v2[0] == & mv(0,1) );
     ASSERT_TRUE( & v3[0] == & mv(0,2) );
 
-    const_vector_type cv1( v1 );
-    typename vector_type::const_type cv2( v2 );
-    typename const_vector_type::const_type ccv2( v2 );
+    ASSERT_TRUE( & cv1[0] == & mv(0,0) );
+    ASSERT_TRUE( & cv2[0] == & mv(0,1) );
+    ASSERT_TRUE( & cv3[0] == & mv(0,2) );
+
+    ASSERT_TRUE( & vr1[0] == & mv(0,0) );
+    ASSERT_TRUE( & vr2[0] == & mv(0,1) );
+    ASSERT_TRUE( & vr3[0] == & mv(0,2) );
+
+    ASSERT_TRUE( & cvr1[0] == & mv(0,0) );
+    ASSERT_TRUE( & cvr2[0] == & mv(0,1) );
+    ASSERT_TRUE( & cvr3[0] == & mv(0,2) );
+
+    const_vector_type c_cv1( v1 );
+    typename vector_type::const_type c_cv2( v2 );
+    typename const_vector_type::const_type c_ccv2( v2 );
 
     const_multivector_type cmv( mv );
     typename multivector_type::const_type cmvX( cmv );

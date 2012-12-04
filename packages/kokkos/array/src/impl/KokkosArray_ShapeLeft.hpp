@@ -150,6 +150,27 @@ struct SubShape< Shape< LayoutLeft, ValueSize, 1, 0 > ,
   }
 };
 
+template< unsigned ValueSize , unsigned s1 >
+struct SubShape< Shape< LayoutRight, ValueSize, 1, 0 > ,
+                 Shape< LayoutLeft,  ValueSize, 2, 0,s1 > >
+{
+  typedef Shape< LayoutRight, ValueSize, 1, 0 >    DstShape ;
+  typedef Shape< LayoutLeft,  ValueSize, 2, 0,s1 > SrcShape ;
+
+  typedef SubShape type ;
+
+  DstShape shape ;
+  size_t   offset ;
+
+  SubShape( const SrcShape src , const size_t i1 )
+  {
+    assert_shape_bounds( src , 0 , i1 );
+    offset = ShapeMap<SrcShape>::offset( src , 0 , i1 );
+    shape.Stride = 1 ; // unused in rank-1 arrays
+    shape.N0     = src.N0 ;
+  }
+};
+
 //----------------------------------------------------------------------------
 
 } /* namespace Impl */
