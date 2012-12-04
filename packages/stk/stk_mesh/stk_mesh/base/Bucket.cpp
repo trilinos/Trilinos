@@ -21,8 +21,6 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/FindRestriction.hpp>
 
-#include <stk_topology/pretty_print.hpp>
-
 //----------------------------------------------------------------------
 namespace {
 inline unsigned align( size_t nb )

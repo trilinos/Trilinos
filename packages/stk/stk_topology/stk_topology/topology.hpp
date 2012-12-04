@@ -4,6 +4,7 @@
 #include <stk_topology/topology_detail/macros.hpp>
 
 #include <utility>
+#include <iosfwd>
 
 namespace stk {
 
@@ -415,6 +416,15 @@ topology operator--(topology &t,int)
   --t.m_value;
   return tmp;
 }
+
+
+//***************************************************************************
+//output operators and verbose topology printing
+//***************************************************************************
+std::ostream & operator<<(std::ostream &out, topology::rank_t r);
+std::ostream & operator<<(std::ostream &out, topology t);
+
+void verbose_print_topology(std::ostream &out, topology t);
 
 } //namespace stk
 

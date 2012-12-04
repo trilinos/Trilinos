@@ -325,6 +325,9 @@ struct topology::topology_type
     return topology_detail::lexicographical_smallest_permutation_helper( type(), nodes, only_positive_permutations, nodes[0]);
   }
 
+  STKTOPOLOGY_INLINE_FUNCTION
+  operator topology_t() const
+  { return Topology; }
 
 };
 

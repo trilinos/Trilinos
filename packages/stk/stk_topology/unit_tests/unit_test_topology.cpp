@@ -1,6 +1,5 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_topology/topology.hpp>
-#include <stk_topology/pretty_print.hpp>
 
 #include <vector>
 #include <string>

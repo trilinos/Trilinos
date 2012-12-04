@@ -7,7 +7,6 @@
 #include <stk_util/environment/OutputLog.hpp>
 #include <stk_util/diag/Env.hpp>
 #include <stk_topology/topology.hpp>
-#include <stk_topology/pretty_print.hpp>
 
 #include <iostream>
 
