@@ -257,6 +257,8 @@ public:
      */
    void getFieldOrder(std::vector<std::vector<std::string> > & fieldOrder) const;
 
+   void getFieldOrder(std::vector<std::string> & fieldOrder) const {TEUCHOS_ASSERT(false); } // what???
+
    /** \brief Find a field pattern stored for a particular block and field number. This will
      *        retrive the pattern added with <code>addField(blockId,fieldNum)</code>.
      *

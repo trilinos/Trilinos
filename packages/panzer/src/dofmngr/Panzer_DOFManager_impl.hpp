@@ -532,7 +532,8 @@ void DOFManager<LO,GO>::buildGlobalUnknowns()
 
 
 template <typename LO, typename GO>
-int DOFManager<LO,GO>::getFieldNum(const std::string & string) const{
+int DOFManager<LO,GO>::getFieldNum(const std::string & string) const
+{
   int ind=0;
   bool found=false;
   while(!found && (size_t)ind<fieldStringOrder_.size()){
@@ -542,20 +543,19 @@ int DOFManager<LO,GO>::getFieldNum(const std::string & string) const{
       ind++;
   }
   return ind;
-
 }
 
 template <typename LO, typename GO>
-void DOFManager<LO,GO>::getFieldOrder(std::vector<std::string> & fieldOrder)
+void DOFManager<LO,GO>::getFieldOrder(std::vector<std::string> & fieldOrder) const
 {
-fieldOrder.resize(fieldStringOrder_.size());
-for (size_t i = 0; i < fieldStringOrder_.size(); ++i) {
-  fieldOrder[i]=fieldStringOrder_[i];
-}
+  fieldOrder.resize(fieldStringOrder_.size());
+  for (size_t i = 0; i < fieldStringOrder_.size(); ++i)
+    fieldOrder[i]=fieldStringOrder_[i];
 }
   
 template <typename LO, typename GO>
-bool DOFManager<LO,GO>::fieldInBlock(const std::string & field, const std::string & block) const{
+bool DOFManager<LO,GO>::fieldInBlock(const std::string & field, const std::string & block) const
+{
   std::map<std::string,int>::const_iterator fitr = fieldNameToAID_.find(field);
   if(fitr==fieldNameToAID_.end())
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid field name");
@@ -616,7 +616,8 @@ void DOFManager<LO,GO>::ownedIndices(const std::vector<GO> & indices,std::vector
 }
 
 template <typename LO, typename GO>
-void DOFManager<LO,GO>::setFieldOrder(const std::vector<std::string> & fieldOrder){
+void DOFManager<LO,GO>::setFieldOrder(const std::vector<std::string> & fieldOrder)
+{
   TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
                       "DOFManager::setFieldOrder: setFieldOrder cannot be called after "
                       "buildGlobalUnknowns has been called"); 
@@ -634,7 +635,8 @@ void DOFManager<LO,GO>::setFieldOrder(const std::vector<std::string> & fieldOrde
 
 
 template <typename LO, typename GO>
-bool DOFManager<LO,GO>::validFieldOrder(const std::vector<std::string> & proposed_fieldOrder){
+bool DOFManager<LO,GO>::validFieldOrder(const std::vector<std::string> & proposed_fieldOrder)
+{
   if(fieldStringOrder_.size()!=proposed_fieldOrder.size())
     return false;
   //I'm using a not very efficient way of doing this, but there should never

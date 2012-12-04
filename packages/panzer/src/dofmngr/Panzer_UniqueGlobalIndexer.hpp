@@ -60,6 +60,10 @@ public:
      */
    virtual Teuchos::RCP<Teuchos::Comm<int> > getComm() const = 0;
 
+   /** Get the number of fields (total) stored by this DOF manager
+     */
+   virtual int getNumFields() const = 0;
+
    /** \brief Get the number used for access to this
      *        field
      *
@@ -75,6 +79,10 @@ public:
      *          a -1 is returned.
      */
    virtual int getFieldNum(const std::string & str) const = 0;
+
+   /** Get the field order used by this global indexer.
+     */
+   virtual void getFieldOrder(std::vector<std::string> & fieldOrder) const = 0;
 
    /** \brief Reverse lookup of the field string from
      *        a field number.
@@ -131,6 +139,10 @@ public:
      */
    virtual Teuchos::RCP<Teuchos::Comm<int> > getComm() const = 0;
 
+   /** Get the number of fields (total) stored by this DOF manager
+     */
+   virtual int getNumFields() const = 0;
+
    /** \brief Get the number used for access to this
      *        field
      *
@@ -146,6 +158,10 @@ public:
      *          a -1 is returned.
      */
    virtual int getFieldNum(const std::string & str) const = 0;
+
+   /** Get the field order used by this global indexer.
+     */
+   virtual void getFieldOrder(std::vector<std::string> & fieldOrder) const = 0;
 
    /** What are the blockIds included in this connection manager?
      */

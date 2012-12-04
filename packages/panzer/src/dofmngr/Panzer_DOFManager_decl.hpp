@@ -145,7 +145,7 @@ public:
 
   void setFieldOrder(const std::vector<std::string> & fieldOrder );
 
-  void getFieldOrder(std::vector<std::string> & fieldOrder);
+  void getFieldOrder(std::vector<std::string> & fieldOrder) const;
 
   bool validFieldOrder(const std::vector<std::string> & proposed_fieldOrder);
 
