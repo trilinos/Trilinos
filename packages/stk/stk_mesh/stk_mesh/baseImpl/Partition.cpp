@@ -128,7 +128,7 @@ bool Partition::add(Entity entity)
     unsigned dst_ordinal = bucket->size();
     bucket->initialize_fields(dst_ordinal);
     bucket->replace_entity(dst_ordinal, entity);
-    entity.m_entityImpl->log_modified_and_propagate();
+    entity.m_entityImpl->modified();
     entity.m_entityImpl->set_bucket_and_ordinal(bucket, dst_ordinal);
     bucket->increment_size();
     ++m_size;
@@ -166,7 +166,7 @@ void Partition::move_to(Entity entity, Partition &dst_partition)
     dst_bucket->replace_fields(dst_ordinal, *src_bucket, src_ordinal);
     remove(entity, false);
 
-    entity.m_entityImpl->log_modified_and_propagate();
+    entity.m_entityImpl->modified();
     entity.m_entityImpl->set_bucket_and_ordinal(dst_bucket, dst_ordinal);
     dst_bucket->replace_entity(dst_ordinal, entity) ;
     dst_bucket->increment_size();

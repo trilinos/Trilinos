@@ -63,8 +63,8 @@ namespace stk {
 
           msg << " owner(" << entity.owner_rank() << ")" ;
 
-          if ( EntityLogModified == entity.log_query() ) { msg << " mod" ; }
-          else if ( EntityLogDeleted == entity.log_query() ) { msg << " del" ; }
+          if ( Modified == entity.state() ) { msg << " mod" ; }
+          else if ( Deleted == entity.state() ) { msg << " del" ; }
           else { msg << "    " ; }
 
           for ( PairIterEntityComm ec = mesh.entity_comm(i->key); ! ec.empty() ; ++ec ) {

@@ -49,17 +49,17 @@ inline bool is_degenerate_relation ( const Relation &r1 , const Relation &r2 )
 
 }
 
-void EntityImpl::log_modified_and_propagate()
+void EntityImpl::modified()
 {
   TraceIfWatching("stk::mesh::impl::EntityImpl::log_modified_and_propagate", LOG_ENTITY, key());
 
   // If already in modified state, return
-  if (m_mod_log != EntityLogNoChange) {
+  if (m_state != Unchanged) {
     return;
   }
 
   // mark this entity as modified
-  m_mod_log = EntityLogModified;
+  m_state = Modified;
 
   // recurse on related entities w/ higher rank
   EntityRank rank_of_original_entity = entity_rank();
@@ -69,8 +69,8 @@ void EntityImpl::log_modified_and_propagate()
     if ( rank_of_original_entity >= entity.entity_rank() ) {
       break; //we're done
     }
-    else if ( entity.log_query() == EntityLogNoChange ) {
-      entity.m_entityImpl->log_modified_and_propagate();
+    else if ( entity.state() == Unchanged ) {
+      entity.m_entityImpl->modified();
     }
   }
 
@@ -82,12 +82,12 @@ void EntityImpl::compress_relation_capacity()
   tmp.swap(m_relation);
 }
 
-void EntityImpl::log_created_parallel_copy()
+void EntityImpl::created_parallel_copy()
 {
   TraceIfWatching("stk::mesh::impl::EntityImpl::log_created_parallel_copy", LOG_ENTITY, key());
 
-  if ( EntityLogCreated == m_mod_log ) {
-    m_mod_log = EntityLogModified ;
+  if ( Created == m_state ) {
+    m_state = Modified;
   }
 }
 
@@ -194,7 +194,7 @@ void EntityImpl::update_key(EntityKey key)
   m_key = key;
 
   std::sort(m_relation.begin(), m_relation.end(), LessRelation());
-  log_modified_and_propagate();
+  modified();
 
   for ( RelationVector::iterator i = m_relation.begin(), e = m_relation.end();
         i != e;
@@ -203,7 +203,7 @@ void EntityImpl::update_key(EntityKey key)
   {
     EntityImpl & entity = *(i->entity().m_entityImpl);
     std::sort(entity.m_relation.begin(), entity.m_relation.end(), LessRelation());
-    entity.log_modified_and_propagate();
+    entity.modified();
   }
 
 }

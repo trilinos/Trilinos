@@ -76,7 +76,7 @@ EntityCommListInfo find_entity(const BulkData& mesh,
 
 struct EntityParallelState {
   unsigned              from_proc;
-  EntityModificationLog state;
+  EntityState state;
   EntityCommListInfo    comm_info;
 
   bool operator<(const EntityParallelState& rhs) const
@@ -95,16 +95,16 @@ bool pack_entity_modification( const BulkData & mesh ,
         i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
 
     Entity entity = i->entity;
-    EntityModificationLog status = entity.is_valid() ? entity.log_query() : EntityLogDeleted;
+    EntityState status = entity.is_valid() ? entity.state() : Deleted;
 
-    if ( status == EntityLogModified || status == EntityLogDeleted ) {
+    if ( status == Modified || status == Deleted ) {
 
       for ( PairIterEntityComm ec = mesh.entity_comm(i->key); ! ec.empty() ; ++ec ) {
         const bool shared = 0 == ec->ghost_id ;
         if ( pack_shared == shared ) {
           comm.send_buffer( ec->proc )
               .pack<EntityKey>( i->key )
-              .pack<EntityModificationLog>( status );
+              .pack<EntityState>( status );
 
           flag = true ;
         }
@@ -139,12 +139,12 @@ void communicate_entity_modification( const BulkData & mesh ,
     for ( unsigned p = 0 ; p < comm.parallel_size() ; ++p ) {
       CommBuffer & buf = comm.recv_buffer( p );
       EntityKey key;
-      EntityModificationLog state;
+      EntityState state;
 
       while ( buf.remaining() ) {
 
         buf.unpack<EntityKey>( key )
-           .unpack<EntityModificationLog>( state );
+           .unpack<EntityState>( state );
 
         // search through entity_comm, should only receive info on entities
         // that are communicated.
@@ -184,7 +184,7 @@ void BulkData::internal_update_distributed_index(
 
     Entity entity = i->second ;
 
-    if ( entity.log_query() != EntityLogNoChange &&
+    if ( entity.state() != Unchanged &&
          in_owned_closure( entity , m_parallel_rank ) ) {
       // Has been changed and is in owned closure, may be shared
       local_created_or_modified.push_back( entity.key().raw_key() );
@@ -334,7 +334,7 @@ void BulkData::internal_resolve_shared_modify_delete()
     for ( ; i != remote_mod.rend() && i->comm_info.entity == entity ; ++i ) {
 
       const unsigned remote_proc    = i->from_proc ;
-      const bool remotely_destroyed = EntityLogDeleted == i->state ;
+      const bool remotely_destroyed = Deleted == i->state ;
 
       // When a shared entity is remotely modified or destroyed
       // then the local copy is also modified.  This modification
@@ -457,7 +457,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
     const EntityKey key           = i->comm_info.key;
     const unsigned remote_proc    = i->from_proc;
     const bool     local_owner    = i->comm_info.owner == m_parallel_rank ;
-    const bool remotely_destroyed = EntityLogDeleted == i->state ;
+    const bool remotely_destroyed = Deleted == i->state ;
     const bool locally_destroyed  = !entity.is_valid();
 
     if ( local_owner ) { // Sending to 'remote_proc' for ghosting
@@ -516,7 +516,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
     const bool locally_destroyed = !entity.is_valid();
     const bool locally_owned_and_modified = locally_destroyed ? false :
-      EntityLogModified == entity.log_query() &&
+      Modified == entity.state() &&
       m_parallel_rank   == i->owner ;
 
     if ( locally_destroyed || locally_owned_and_modified ) {
@@ -574,7 +574,7 @@ void BulkData::internal_resolve_parallel_create()
             i = shared_modified.begin() ; i != shared_modified.end() ; ++i ) {
       Entity entity = *i ;
       if ( entity.owner_rank() == m_parallel_rank &&
-           entity.log_query()  != EntityLogCreated ) {
+           entity.state()  != Created ) {
 
         for ( PairIterEntityComm
               jc = entity_comm_sharing(entity.key()) ; ! jc.empty() ; ++jc ) {
@@ -628,7 +628,7 @@ void BulkData::internal_resolve_parallel_create()
     Entity entity = *i ;
 
     if ( entity.owner_rank() == m_parallel_rank &&
-         entity.log_query() == EntityLogCreated ) {
+         entity.state() == Created ) {
 
       // Created and not claimed by an existing owner
 
@@ -741,7 +741,7 @@ void print_comm_list( const BulkData & mesh , bool doit )
       msg << " owner(" << i->owner << ")" ;
 
       if ( !entity.is_valid() ) { msg << " del" ; }
-      else if ( EntityLogModified == entity.log_query() ) { msg << " mod" ; }
+      else if ( Modified == entity.state() ) { msg << " mod" ; }
       else { msg << "    " ; }
 
       for ( PairIterEntityComm ec = mesh.comm_list(i->key); ! ec.empty() ; ++ec ) {

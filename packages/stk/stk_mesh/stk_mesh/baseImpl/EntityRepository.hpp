@@ -136,7 +136,7 @@ bool EntityRepository::set_entity_owner_rank( Entity e, unsigned owner_rank)
 
   bool changed = e.m_entityImpl->set_owner_rank(owner_rank);
   if ( changed ) {
-    e.m_entityImpl->log_modified_and_propagate();
+    e.m_entityImpl->modified();
   }
   return changed;
 }
@@ -146,7 +146,7 @@ void EntityRepository::log_modified( Entity e ) const
 {
   TraceIfWatching("stk::mesh::impl::EntityRepository::log_modified", LOG_ENTITY, e.key());
 
-  e.m_entityImpl->log_modified_and_propagate();
+  e.m_entityImpl->modified();
 }
 
 inline

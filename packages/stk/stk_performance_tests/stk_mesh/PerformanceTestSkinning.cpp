@@ -79,8 +79,8 @@ void update_skin( stk::mesh::BulkData & mesh, stk::mesh::Part *skin_part, Entity
       i != owned_elements.end(); ++i )
   {
     stk::mesh::Entity entity= *i;
-    if ( entity.log_query() == stk::mesh::EntityLogCreated ||
-         entity.log_query() == stk::mesh::EntityLogModified ) {
+    if ( entity.state() == stk::mesh::Created ||
+         entity.state() == stk::mesh::Modified ) {
      modified_elements.push_back(entity);
     }
   }

@@ -59,7 +59,7 @@ std::ostream& Ghosting::operator<<(std::ostream& out) const
           out << "    ";
           print_entity_key( out, MetaData::get(m_mesh), i->key );
           out << ", sending ghost to " << ec->proc << ", status is: "
-              << i->entity.log_query() << "\n";
+              << i->entity.state() << "\n";
         }
       }
     }
@@ -75,7 +75,7 @@ std::ostream& Ghosting::operator<<(std::ostream& out) const
           out << "    ";
           print_entity_key( out, MetaData::get(m_mesh), i->key );
           out << ", owner of ghost is " << i->owner
-              << ", status is: " << i->entity.log_query() << "\n";
+              << ", status is: " << i->entity.state() << "\n";
         }
       }
     }

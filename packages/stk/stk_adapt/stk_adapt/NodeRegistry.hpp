@@ -432,12 +432,12 @@ namespace stk {
                 stk::mesh::EntityId id_check = nodeIds_onSE[inode].identifier();
                 VERIFY_OP_ON(id_check, ==, id, "NodeRegistry::clear_dangling_nodes id");
 
-                //if (  stk::mesh::EntityLogDeleted == nodeIds_onSE[inode]->log_query() )
+                //if (  stk::mesh::Deleted == nodeIds_onSE[inode]->log_query() )
                 if (nodes_to_be_deleted && nodes_to_be_deleted->find(nodeIds_onSE[inode]) != nodes_to_be_deleted->end())
                   {
                     ++num_delete;
                   }
-                else if (!nodes_to_be_deleted && stk::mesh::EntityLogDeleted == nodeIds_onSE[inode].log_query() )
+                else if (!nodes_to_be_deleted && stk::mesh::Deleted == nodeIds_onSE[inode].state() )
                   {
                     ++num_delete;
                   }

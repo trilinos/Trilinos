@@ -416,7 +416,7 @@ namespace stk {
             << "\nsizeof(Bucket *) = " << sizeof(stk::mesh::Bucket *) << " "
             << "\nsizeof(unsigned) = " << sizeof(unsigned) << " "
             << "\nsizeof(size_t) = " << sizeof(size_t) << " "
-            << "\nsizeof(EntityModificationLog) = " << sizeof(stk::mesh::EntityModificationLog) << std::endl;
+            << "\nsizeof(EntityModificationLog) = " << sizeof(stk::mesh::EntityState) << std::endl;
 
         }
     }
@@ -3611,10 +3611,10 @@ namespace stk {
                   throw std::logic_error("check_db_ownership_consistency:: error #2, msg= "+msg);
                 }
 
-              if (stk::mesh::EntityLogDeleted == owning_element.log_query() )
+              if (stk::mesh::Deleted == owning_element.state() )
                 {
                   std::cout << "P[" << m_eMesh.get_rank() << "] "
-                            << " error check_db_ownership_consistency: EntityLogDeleted, msg= " << msg << " owning_elementId= " << owning_elementId << std::endl;
+                            << " error check_db_ownership_consistency: Deleted, msg= " << msg << " owning_elementId= " << owning_elementId << std::endl;
                   throw std::logic_error("check_db_ownership_consistency:: error #2.0, msg= "+msg);
                 }
 

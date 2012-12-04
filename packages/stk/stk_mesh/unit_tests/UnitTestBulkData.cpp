@@ -822,8 +822,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testModifyPropagation)
   ring_mesh.m_bulk_data.change_entity_parts( node, parts );
 
   // check that the node AND it's element are marked as modified
-  STKUNIT_ASSERT_EQUAL ( node.log_query(), stk::mesh::EntityLogModified );
-  STKUNIT_ASSERT_EQUAL ( element.log_query(), stk::mesh::EntityLogModified );
+  STKUNIT_ASSERT_EQUAL ( node.state(), stk::mesh::Modified );
+  STKUNIT_ASSERT_EQUAL ( element.state(), stk::mesh::Modified );
 
   STKUNIT_ASSERT ( ring_mesh.m_bulk_data.modification_end() );
 }

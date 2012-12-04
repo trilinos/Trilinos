@@ -475,22 +475,21 @@ public:
 
   void set_sync_count( size_t sync_count );
 
-  // Change log access:
-  EntityModificationLog log_query() const { return m_mod_log ; }
+  EntityState state() const { return m_state ; }
 
-  void log_clear();
+  void clear_state();
 
   /**
-   * Mark this entity as modified (only changes from EntityLogNoChange
-   * to EntityLogModified). Propagates the modification to higher-ranking
+   * Mark this entity as modified (only changes from Unchanged
+   * to Modified). Propagates the modification to higher-ranking
    * entities related to this entity. In other words, based on our
    * modification model, all entities that have modified_entity in their
    * closure must also be marked as modified.
    */
-  void log_modified_and_propagate();
+  void modified();
 
   /** \brief  Log that this entity was created as a parallel copy. */
-  void log_created_parallel_copy();
+  void created_parallel_copy();
 
   //set_key is only to be used for setting a key on a newly-constructed entity.
   void set_key(EntityKey key);
@@ -512,7 +511,7 @@ public:
   unsigned                m_bucket_ord ; ///< Ordinal within the bucket
   unsigned                m_owner_rank ; ///< Owner processors' rank
   size_t                  m_sync_count ; ///< Last membership change
-  EntityModificationLog   m_mod_log ;
+  EntityState             m_state ;
 
 #ifdef SIERRA_MIGRATION
  public:
@@ -613,15 +612,15 @@ class EntityRepository;
  *   - owner - The rank of the owning process
  *   - part-membership - The set of parts this entity belongs to
  *   - relations - Relationships between other Entities
- *  When any of the above changes, the Entity's log state may change
+ *  When any of the above changes, the Entity's state may change
  */
 class Entity {
 public:
 
   bool is_valid() const { return m_entityImpl != NULL; }
 
-  /** \brief  Query the current state of the entity log */
-  EntityModificationLog log_query() const { return m_entityImpl->log_query(); }
+  /** \brief  Query the current state of the entity */
+  EntityState state() const { return m_entityImpl->state(); }
 
   /** \brief  The rank of this entity. */
   EntityRank entity_rank() const { return m_entityImpl->entity_rank(); }
@@ -1162,7 +1161,7 @@ impl::EntityImpl::EntityImpl( const EntityKey & arg_key )
     m_bucket_ord(0),
     m_owner_rank(0),
     m_sync_count(0),
-    m_mod_log( EntityLogCreated )
+    m_state( Created )
 {
   TraceIfWatching("stk::mesh::impl::EntityImpl::EntityImpl", LOG_ENTITY, arg_key);
 }
@@ -1175,7 +1174,7 @@ impl::EntityImpl::EntityImpl()
     m_bucket_ord(0),
     m_owner_rank(0),
     m_sync_count(0),
-    m_mod_log( EntityLogCreated )
+    m_state( Created )
 {
 }
 
@@ -1210,11 +1209,11 @@ void impl::EntityImpl::set_sync_count( size_t sync_count )
 }
 
 inline
-void impl::EntityImpl::log_clear()
+void impl::EntityImpl::clear_state()
 {
-  TraceIfWatching("stk::mesh::impl::EntityRepository::log_clear", LOG_ENTITY, key());
+  TraceIfWatching("stk::mesh::impl::EntityRepository::clear_state", LOG_ENTITY, key());
 
-  m_mod_log = EntityLogNoChange;
+  m_state = Unchanged;
 }
 
 } // namespace mesh

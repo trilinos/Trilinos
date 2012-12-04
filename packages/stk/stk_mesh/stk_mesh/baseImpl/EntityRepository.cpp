@@ -112,7 +112,7 @@ void EntityRepository::log_created_parallel_copy( Entity entity )
 {
   TraceIfWatching("stk::mesh::impl::EntityRepository::log_created_parallel_copy", LOG_ENTITY, entity.key());
 
-  entity.m_entityImpl->log_created_parallel_copy();
+  entity.m_entityImpl->created_parallel_copy();
 }
 
 Entity EntityRepository::get_entity(const EntityKey &key) const
@@ -130,7 +130,7 @@ void EntityRepository::clean_changes()
   TraceIf("stk::mesh::impl::EntityRepository::clean_changes", LOG_ENTITY);
 
   for ( EntityMap::iterator i = m_entities.begin() ; i != m_entities.end() ; ++i ) {
-    i->second.m_entityImpl->log_clear();
+    i->second.m_entityImpl->clear_state();
   }
 }
 
@@ -143,7 +143,7 @@ void EntityRepository::change_entity_bucket( Bucket & b, Entity e,
   const bool modified_parts = ! e.m_entityImpl->is_bucket_valid() ||
                               ! b.in_same_partition( e.bucket() );
   if ( modified_parts ) {
-    e.m_entityImpl->log_modified_and_propagate();
+    e.m_entityImpl->modified();
   }
   e.m_entityImpl->set_bucket_and_ordinal( &b, ordinal);
 }
@@ -174,8 +174,8 @@ bool EntityRepository::destroy_relation( Entity e_from,
   // It is critical that the modification be done AFTER the relations are
   // changed so that the propagation can happen correctly.
   if ( caused_change_fwd ) {
-    e_to.m_entityImpl->log_modified_and_propagate();
-    e_from.m_entityImpl->log_modified_and_propagate();
+    e_to.m_entityImpl->modified();
+    e_from.m_entityImpl->modified();
   }
 
   return caused_change_fwd;
@@ -208,8 +208,8 @@ void EntityRepository::declare_relation( Entity e_from,
   // It is critical that the modification be done AFTER the relations are
   // added so that the propagation can happen correctly.
   if ( caused_change_fwd ) {
-    e_to.m_entityImpl->log_modified_and_propagate();
-    e_from.m_entityImpl->log_modified_and_propagate();
+    e_to.m_entityImpl->modified();
+    e_from.m_entityImpl->modified();
   }
 }
 

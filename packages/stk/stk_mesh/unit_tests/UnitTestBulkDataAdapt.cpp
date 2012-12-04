@@ -48,7 +48,7 @@ const EntityRank NODE_RANK = MetaData::NODE_RANK;
 void printEntity(std::ostringstream& msg, Entity entity)
 {
   BulkData& bulk = BulkData::get(entity);
-  msg << " :: " << print_entity_key(entity) << ":o[" << entity.owner_rank() << "]:l[" << entity.log_query()
+  msg << " :: " << print_entity_key(entity) << ":o[" << entity.owner_rank() << "]:l[" << entity.state()
       << "]:ec[";
   for ( PairIterEntityComm ec = bulk.entity_comm(entity.key()) ; ! ec.empty() ; ++ec ) {
     msg << "(" << ec->ghost_id << "," << ec->proc << ")";

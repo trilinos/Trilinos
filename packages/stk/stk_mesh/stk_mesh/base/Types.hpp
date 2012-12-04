@@ -75,10 +75,10 @@ typedef std::vector<Entity> EntityVector;
 /** Change log to reflect change from before 'modification_begin'
   *  to the current status.
   */
-enum EntityModificationLog { EntityLogNoChange = 0 ,
-                             EntityLogCreated  = 1 ,
-                             EntityLogModified = 2 ,
-                             EntityLogDeleted  = 3 };
+enum EntityState { Unchanged = 0 ,
+                   Created  = 1 ,
+                   Modified = 2 ,
+                   Deleted  = 3 };
 
 template< class FieldType > struct EntityArray ;
 template< class FieldType > struct BucketArray ;
