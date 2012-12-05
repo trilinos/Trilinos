@@ -92,6 +92,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+    Input(currentLevel, "A");
     Input(currentLevel, "Partition");
   }
 
@@ -100,9 +101,6 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
-
-    using Teuchos::Array;
-    using Teuchos::ArrayRCP;
 
     //TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
@@ -171,7 +169,7 @@ namespace MueLu {
       }
 
       if (!doRepartition) {
-        GetOStream(Warnings0, 0) << "No repartitioning necessary:" + msg1.str() + msg2.str() + msg3.str() + msg4.str() << std::endl;
+        GetOStream(Warnings0, 0) << "No repartitioning necessary:" + /* msg1.str() + msg2.str() +*/ msg3.str() + msg4.str() << std::endl;
         Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
         return;
       }
@@ -200,7 +198,22 @@ namespace MueLu {
     // ======================================================================================================
     // Length of vector "decomposition" is local number of DOFs.  Its entries are partition numbers each DOF belongs to.
 
-    RCP<GOVector> decomposition = Get<RCP<GOVector> >(currentLevel, "Partition");
+    RCP<GOVector> decomposition;
+    if (numPartitions == 1) {
+      // Running on one processor, so decomposition is the trivial one, all zeros.
+      // => skip call to Zoltan_Interface (There is also a short cut in Zoltan_Interface so this is mainly to avoid extra output messages)
+      // TODO: can we skip more work (ie: building the hashtable, etc.)?
+      GetOStream(Warnings0, 0) << "Only one partition: Skip call to the repartitioner." << std::endl;
+      decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(A->getRowMap(), true);
+    } else{
+      decomposition = Get<RCP<GOVector> >(currentLevel, "Partition");
+
+      if (decomposition == Teuchos::null) {
+        GetOStream(Warnings0, 0) << "No repartitioning necessary: partitions were left unchanged by the repartitioner" << std::endl;
+        Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
+        return;
+      }
+    }
 
     // Use a hashtable to record how many local rows belong to each partition.
     RCP<Teuchos::Hashtable<GO, GO> > hashTable;
