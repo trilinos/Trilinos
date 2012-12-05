@@ -193,6 +193,14 @@ namespace panzer {
       std::pair<bool,std::string> grad;
       std::pair<bool,std::string> curl;
       std::pair<bool,std::string> timeDerivative;
+
+      void print(std::ostream & os) const {
+        os << "DOF Desc = \"" << dofName << "\": "
+           << "Res = (" << residualName.first << ", \"" << residualName.second << "\"), "
+           << "Grad = (" << grad.first << ", \"" << grad.second << "\"), "
+           << "Curl = (" << curl.first << ", \"" << curl.second << "\"), "
+           << "Time = (" << timeDerivative.first << ", \"" << timeDerivative.second << "\")";
+      }
     };
 
     std::map<std::string,DOFDescriptor> m_provided_dofs_desc;

@@ -115,6 +115,11 @@ setupDOFs(int equation_dimension)
     }
   }
 
+  // for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
+  //     itr!=m_provided_dofs_desc.end();++itr) {
+  //   itr->second.print(std::cout); std::cout << std::endl;
+  // }
+
   this->m_int_rule = 
     Teuchos::rcp(new panzer::IntegrationRule(m_input_eq_set.integration_order,
 					     m_cell_data));
@@ -212,8 +217,8 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
 
     ParameterList p("Gather");
     p.set("Basis", m_pure_basis);
-    p.set("DOF Names", m_dof_time_derivative_names);
-    p.set("Indexer Names", m_dof_names);
+    p.set("DOF Names", field_names);
+    p.set("Indexer Names", dof_names);
     p.set("Use Time Derivative Solution Vector", true);
     
     RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
@@ -355,19 +360,24 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
   if(!ignoreScatter) {
      // Scatter
-     RCP<std::map<std::string,std::string> > names_map =
-       rcp(new std::map<std::string,std::string>);
+     RCP<std::map<std::string,std::string> > names_map = rcp(new std::map<std::string,std::string>);
+     RCP< std::vector<std::string> > residual_names = rcp(new std::vector<std::string>);
    
      for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
-         itr!=m_provided_dofs_desc.end();++itr) 
+         itr!=m_provided_dofs_desc.end();++itr) {
+       // sanity check to make sure a residual name was registered for each provided variable
+       TEUCHOS_ASSERT(itr->second.residualName.first);
+
        names_map->insert(std::make_pair(itr->second.residualName.second,itr->first));
+       residual_names->push_back(itr->second.residualName.second);
+     }
     
    
      {
        ParameterList p("Scatter");
        p.set("Scatter Name", this->m_scatter_name);
        p.set("Basis", this->m_pure_basis.getConst());
-       p.set("Dependent Names", this->m_residual_names);
+       p.set("Dependent Names", residual_names);
        p.set("Dependent Map", names_map);
    
        RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatter<EvalT>(p);
