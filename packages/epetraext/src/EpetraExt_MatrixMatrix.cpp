@@ -637,8 +637,8 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
     // Short Circuit: The Row and Target Maps are the Same
     for(i=0; i<Mview.numRows; ++i) {
       Mview.numEntriesPerRow[i] = rowptr[i+1]-rowptr[i];
-      Mview.indices[i]          = &colind[rowptr[i]];
-      Mview.values[i]           = &vals[rowptr[i]];
+      Mview.indices[i]          = colind + rowptr[i];
+      Mview.values[i]           = vals + rowptr[i];
       Mview.remote[i]           = false;
     }
 #ifdef ENABLE_MMM_TIMINGS
@@ -653,16 +653,16 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
     int * RemoteLIDs      = prototypeImporter->RemoteLIDs();
     for(int i=0; i<prototypeImporter->NumSameIDs();i++){    
       Mview.numEntriesPerRow[i] = rowptr[i+1]-rowptr[i];
-      Mview.indices[i]          = &colind[rowptr[i]];
-      Mview.values[i]           = &vals[rowptr[i]];
+      Mview.indices[i]          = colind + rowptr[i];
+      Mview.values[i]           = vals + rowptr[i];
       Mview.remote[i]           = false;
     }
     for(int i=0; i<prototypeImporter->NumPermuteIDs();i++){
       int to                     = PermuteToLIDs[i];
       int from                   = PermuteFromLIDs[i];
       Mview.numEntriesPerRow[to] = rowptr[from+1]-rowptr[from];
-      Mview.indices[to]          = &colind[rowptr[from]];
-      Mview.values[to]           = &vals[rowptr[from]];
+      Mview.indices[to]          = colind + rowptr[from];
+      Mview.values[to]           = vals + rowptr[from];
       Mview.remote[to]           = false;
     }
     for(int i=0; i<prototypeImporter->NumRemoteIDs();i++){
@@ -680,8 +680,8 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
       }
       else {
 	Mview.numEntriesPerRow[i] = rowptr[mlid+1]-rowptr[mlid];
-	Mview.indices[i]          = &colind[rowptr[mlid]];
-	Mview.values[i]           = &vals[rowptr[mlid]];
+	Mview.indices[i]          = colind + rowptr[mlid];
+	Mview.values[i]           = vals + rowptr[mlid];
 	Mview.remote[i]           = false;
       }
     }
@@ -745,11 +745,9 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
     RemoteOnlyImport * Rimporter=0;
     if(prototypeImporter && prototypeImporter->SourceMap().SameAs(M.RowMap()) && prototypeImporter->TargetMap().SameAs(targetMap)) {
       Rimporter = new RemoteOnlyImport(*prototypeImporter,MremoteRowMap);
-      //if(!M.Comm().MyPID()) printf("Using RemoteOnlyImport\n");
     }
     else if(!prototypeImporter) {
       importer=new Epetra_Import(MremoteRowMap, Mrowmap);
-      //      if(!M.Comm().MyPID()) printf("Using Epetra_Import\n");
     }
     else
       throw std::runtime_error("prototypeImporter->SourceMap() does not match M.RowMap()!");
@@ -782,8 +780,8 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
       if (Mview.remote[i]) {
 	int importLID = MremoteRowMap.LID(Mrows[i]);
 	Mview.numEntriesPerRow[i] = rowptr[importLID+1]-rowptr[importLID];
-	Mview.indices[i]          = &colind[rowptr[importLID]];
-	Mview.values[i]           = &vals[rowptr[importLID]];
+	Mview.indices[i]          = colind + rowptr[importLID];
+	Mview.values[i]           = vals + rowptr[importLID];
       }
     }
 
@@ -794,9 +792,7 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 #endif   
 
     // Cleanup
-#ifdef LIGHTWEIGHT_IMPORT
     delete Rimporter;
-#endif
     delete importer;
 
   }
