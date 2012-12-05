@@ -47,9 +47,12 @@
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ ) && \
-    defined( CUDA_RELEASE_VERSION ) && \
-    ( 401 <= CUDA_RELEASE_VERSION )
+#if defined( __CUDACC__ ) && \
+    defined( __CUDA_ARCH__ ) && \
+    defined( CUDA_VERSION_MAJOR ) && \
+    defined( CUDA_VERSION_MINOR ) && \
+      ( 4 <  CUDA_VERSION_MAJOR || \
+      ( 4 == CUDA_VERSION_MAJOR && 1 <= CUDA_VERSION_MINOR ) )
 
 extern "C" {
 /*  Cuda runtime function, declared in <crt/device_runtime.h>
