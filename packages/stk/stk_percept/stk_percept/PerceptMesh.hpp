@@ -392,6 +392,28 @@ namespace stk {
 
       void print(const stk::mesh::Entity entity, bool cr=true);
 
+      /////// mesh parameter ////////////////////////////////////////////////////////////////////////////////
+
+      /// compute an approximate element diameter (diameter of circumscribing sphere) by computing
+      ///   max of distance between all pairs of vertices
+      /// The average of distance between vertex pairs is returned in @param ave_pair_length_returned
+      double hmesh_approx_diameter(double min_max_ave[3]);
+
+      // element "h" based on gradient of a given field - "h" is computed by the "h" in the direction
+      //   of the field's gradient - uses the formula h = || grad u || / || J^-1 grad u ||
+      //   If || grad u || ~0, it returns approx_diameter()
+      double hmesh_grad_based_diameter(stk::mesh::FieldBase *field_for_grad,
+                                       double min_max_ave[3]);
+
+      /// compute edge length min, max and average between pairs of vertices that form element edges
+      double hmesh_edge_lengths(stk::mesh::Entity element, double min_max_ave[3]);
+
+      /// return sorted (largest first) eigenvalues of U (stretch matrix) of the polar decomposition
+      ///   of Jacobian, J = R U, where R is a rotation.  These represent stretch w.r.t. principal
+      ///   axes of the element, and are thus somewhat representative of mesh parameter.  Here, J is
+      ///   the average J from the vertex-based (corner-based) Jacobians.
+      double hmesh_stretch_eigens(double min_max_ave[3]);
+
       
 #ifndef SWIG
       //========================================================================================================================

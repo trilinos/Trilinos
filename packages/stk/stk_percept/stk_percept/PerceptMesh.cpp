@@ -8,6 +8,7 @@
 
 #include <stk_percept/Percept.hpp>
 #include <stk_percept/Util.hpp>
+#include <stk_percept/mesh/mod/smoother/JacobianUtil.hpp>
 
 #include <Ioss_NullEntity.h>
 #include <Ioss_SubSystem.h>
@@ -4259,6 +4260,49 @@ namespace stk {
           out << "rank unknown: " << entity.entity_rank();
         }
       if (cr) out << std::endl;
+    }
+
+    double PerceptMesh::hmesh_stretch_eigens(double min_max_ave[3])
+    {
+      JacobianUtil jac;
+      min_max_ave[0] = std::numeric_limits<double>::max();
+      min_max_ave[1] = -1;
+      min_max_ave[2] = 0.0;
+      double nele = 0.0;
+      int spatial_dimension = get_spatial_dim();
+
+      const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( element_rank() );
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          stk::mesh::Bucket & bucket = **k ;
+          const unsigned num_elements_in_bucket = bucket.size();
+          const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+          shards::CellTopology cell_topo(cell_topo_data);
+
+          for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+            {
+              stk::mesh::Entity element = bucket[iElement];
+              if (!isGhostElement(element))
+                {
+                  double eigens[3];
+                  jac.stretch_eigens(*this, element, eigens, get_coordinates_field(), cell_topo_data);
+                  double max_eigen = eigens[0];
+                  if (spatial_dimension == 2)
+                    max_eigen = eigens[1];
+                  min_max_ave[0] = std::min(min_max_ave[0], max_eigen);
+                  min_max_ave[1] = std::max(min_max_ave[1], max_eigen);
+                  min_max_ave[2] += max_eigen;
+                  nele += 1.0;
+                }
+            }
+        }
+      stk::all_reduce( get_bulk_data()->parallel() , ReduceMin<1>( & min_max_ave[0] ) );
+      stk::all_reduce( get_bulk_data()->parallel() , ReduceMax<1>( & min_max_ave[1] ) );
+      stk::all_reduce( get_bulk_data()->parallel() , ReduceSum<1>( & min_max_ave[2] ) );
+      stk::all_reduce( get_bulk_data()->parallel() , ReduceSum<1>( & nele ) );
+      min_max_ave[2] /= nele;
+
+      return min_max_ave[1];
     }
 
     //====================================================================================================================================

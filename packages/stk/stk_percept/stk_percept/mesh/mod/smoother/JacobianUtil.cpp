@@ -404,17 +404,30 @@ namespace stk {
                                       stk::mesh::FieldBase *coord_field ,
                                       const CellTopologyData * topology_data_in  )
     {
-      double averageJ = 0.0;
-      bool valid = this->operator()(averageJ, eMesh, element, coord_field, topology_data_in);
+      if (!topology_data_in) topology_data_in = stk::percept::PerceptMesh::get_cell_topology(element);
+      if (!coord_field) coord_field = eMesh.get_coordinates_field();
+      double averageDetJ = 0.0;
+      bool valid = this->operator()(averageDetJ, eMesh, element, coord_field, topology_data_in);
       (void)valid;
-      static DenseMatrix<3,3> A_ave;
-      A_ave.zero();
+      static DenseMatrix<3,3> Jt, Ui;
+      for (int j = 0; j < 3; j++) stretch_eigens[j] = 0.0;
       for (int i=0; i < m_num_nodes; i++)
         {
-          A_ave += m_J[i];
+          double eigen[3];
+          Jt = transpose(m_J[i]);
+          product(Jt, m_J[i], Ui);
+          eigen_3x3(Ui, eigen);
+          for (int j = 0; j < 3; j++) stretch_eigens[j] += std::sqrt(eigen[j])/double(m_num_nodes);
         }
-      A_ave /= double(m_num_nodes);
-      
+
+      for (int i = 0; i < 3; i++)
+        {
+          VERIFY_OP_ON(stretch_eigens[i], >=, 0.0, "eigens not positive");
+          if (i > 0)
+            {
+              VERIFY_OP_ON(stretch_eigens[i], <=,  stretch_eigens[i-1], "eigens not sorted");
+            }
+        }
     }
 
   }

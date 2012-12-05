@@ -13,7 +13,6 @@
 #include <stk_percept/Util.hpp>
 #include <stk_percept/ExceptionWatch.hpp>
 #include <stk_percept/fixtures/Fixture.hpp>
-#include <stk_percept/fixtures/Fixture.hpp>
 #include <stk_percept/fixtures/QuadFixture.hpp>
 
 #include <stk_util/environment/WallTime.hpp>
@@ -23,7 +22,6 @@
 
 #include <Teuchos_ScalarTraits.hpp>
 
-#include <stk_percept/fixtures/Fixture.hpp>
 #include <stk_percept/fixtures/BeamFixture.hpp>
 #include <stk_percept/fixtures/HeterogeneousFixture.hpp>
 #include <stk_percept/fixtures/QuadFixture.hpp>
