@@ -515,13 +515,11 @@ namespace stk {
             bool doPrint = false;
             std::vector<stk::mesh::Entity> nodes(8, stk::mesh::Entity());
             unsigned nsz = 0;
-            bool is_element = false;
             stk::mesh::Entity element_p = stk::mesh::Entity();
 
             if (needed_entity_rank == stk::mesh::MetaData::ELEMENT_RANK)
               {
                 EXCEPTWATCH;
-                is_element = true;
                 {
                   SDSEntityType elementId = *subDimEntity.begin();
                   //!!element_p = get_entity_element(*m_eMesh.get_bulk_data(), stk::mesh::MetaData::ELEMENT_RANK, elementId);

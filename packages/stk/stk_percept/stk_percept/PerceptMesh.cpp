@@ -3333,12 +3333,10 @@ namespace stk {
                                 const unsigned num_entities_in_bucket_1 = bucket_1.size();
                                 const unsigned num_entities_in_bucket_2 = bucket_2.size();
 
-                                bool nb12_equal = true;
                                 if (num_entities_in_bucket_2 != num_entities_in_bucket_1)
                                   {
                                     msg += "| field compare num_entities_in_bucket diff |\n";
                                     diff = true;
-                                    nb12_equal = false;
                                     continue;
                                   }
                                 bool local_local_diff = false;

@@ -650,15 +650,15 @@ void use_encr_case_1_generate_mesh(
             const int * const local_node_id = & elem_conn[ j * 8 ] ;
 
             const stk::mesh::EntityId node_id[8] = {
-              node_map[ local_node_id[0] - 1 ] ,
-              node_map[ local_node_id[1] - 1 ] ,
-              node_map[ local_node_id[2] - 1 ] ,
+              static_cast<stk::mesh::EntityId>(node_map[ local_node_id[0] - 1 ]),
+              static_cast<stk::mesh::EntityId>(node_map[ local_node_id[1] - 1 ]),
+              static_cast<stk::mesh::EntityId>(node_map[ local_node_id[2] - 1 ]),
               // TODO
-              node_map[ local_node_id[3] - 1 ] ,
-              node_map[ local_node_id[4] - 1 ] ,
-              node_map[ local_node_id[5] - 1 ] ,
-              node_map[ local_node_id[6] - 1 ] ,
-              node_map[ local_node_id[7] - 1 ]
+              static_cast<stk::mesh::EntityId>(node_map[ local_node_id[3] - 1 ]),
+              static_cast<stk::mesh::EntityId>(node_map[ local_node_id[4] - 1 ]),
+              static_cast<stk::mesh::EntityId>(node_map[ local_node_id[5] - 1 ]),
+              static_cast<stk::mesh::EntityId>(node_map[ local_node_id[6] - 1 ]),
+              static_cast<stk::mesh::EntityId>(node_map[ local_node_id[7] - 1 ])
             };
 
             const stk::mesh::EntityId elem_id = elem_map[ j ];

@@ -730,7 +730,6 @@ namespace stk {
               //if (ranks[irank] >= m_eMesh.face_rank())
               {
                 EXCEPTWATCH;
-                ElementRankTypeInfo e_info = elementRankTypeInfo[irank];
 
                 vector<NeededEntityType> needed_entity_ranks;
                 m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
@@ -775,8 +774,6 @@ namespace stk {
               unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
               {
                 EXCEPTWATCH;
-
-                ElementRankTypeInfo e_info = elementRankTypeInfo[irank];
 
                 vector<NeededEntityType> needed_entity_ranks;
                 m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
