@@ -80,7 +80,8 @@ namespace MueLu {
 
     if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_IFPACK2
-      s_ = rcp( new Ifpack2Smoother(type_, paramList_, overlap_, AFact_) );
+      s_ = rcp( new Ifpack2Smoother(type_, paramList_, overlap_) );
+      s_->SetFactory("A", AFact_);
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external library availables for preconditionning Tpetra matrices. Compile MueLu with Ifpack2.");
 #endif

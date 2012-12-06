@@ -57,8 +57,8 @@
 
 namespace MueLu {
 
-  IfpackSmoother::IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList, LO const &overlap, RCP<FactoryBase> AFact) //TODO: empty paramList valid for Ifpack??
-    : type_(type), paramList_(paramList), overlap_(overlap), AFact_(AFact)
+  IfpackSmoother::IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList, LO const &overlap)
+    : type_(type), paramList_(paramList), overlap_(overlap)
   { }
 
   IfpackSmoother::~IfpackSmoother() { }
@@ -79,14 +79,14 @@ namespace MueLu {
 
 
   void IfpackSmoother::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("A", AFact_.get());
+    this->Input(currentLevel, "A");
   }
 
   void IfpackSmoother::Setup(Level &currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
     if (SmootherPrototype::IsSetup() == true) GetOStream(Warnings0, 0) << "Warning: MueLu::IfpackSmoother::Setup(): Setup() has already been called";
 
-    A_ = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
+    A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
     if (type_ == "Chebyshev") {
       Scalar maxEigenValue = paramList_.get("chebyshev: max eigenvalue", (Scalar)-1.0);
@@ -182,7 +182,6 @@ namespace MueLu {
            << "-" << std::endl
            << "RCP<A_>: " << A_ << std::endl
            << "RCP<prec_>: " << prec_ << std::endl;
-      //TODO: add AFact_
     }
   }
 

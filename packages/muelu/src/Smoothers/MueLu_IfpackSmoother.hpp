@@ -119,7 +119,7 @@ namespace MueLu {
 
     See also Ifpack_PointRelaxation, Ifpack_Chebyshev, Ifpack_ILU.
     */
-    IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null); //TODO: empty paramList valid for Ifpack??
+    IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0); //TODO: empty paramList valid for Ifpack??
 
     //! Destructor
     virtual ~IfpackSmoother();
@@ -224,9 +224,6 @@ namespace MueLu {
     // Note: prec_ must be destroyed before A_, so declaration of prec_ appears after declaration of A_
     RCP<Ifpack_Preconditioner> prec_;
 
-    //! A Factory
-    RCP<FactoryBase> AFact_;
-
   }; // class IfpackSmoother
 
   //! Non-member templated function GetIfpackSmoother() returns a new IfpackSmoother object when <Scalar, LocalOrdinal, GlobalOrdinal> == <double, int, int>. Otherwise, an exception is thrown.
@@ -239,7 +236,9 @@ namespace MueLu {
   //
   template <>
   inline RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > GetIfpackSmoother<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>(std::string const & type, Teuchos::ParameterList const & paramList, int const &overlap, RCP<FactoryBase> AFact) {
-    return rcp( new IfpackSmoother(type, paramList, overlap, AFact) );
+    RCP<IfpackSmoother> smoother = rcp( new IfpackSmoother(type, paramList, overlap) );
+    smoother->SetFactory("A", AFact);
+    return smoother;
   }
 
 } // namespace MueLu
