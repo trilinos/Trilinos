@@ -59,54 +59,8 @@
 namespace Zoltan2
 {
 
-/*! \brief Each process sends a value to every process, an all-to-all.
- *  \param  comm   The communicator for the process group involved
- *  \param  env    The environment, required for error messages
- *  \param  sendCount The number to send to process p is in sendCount[p].
- *  \param  recvCount On return, The number received from process p 
- *                     will be in recvCount[p].
- */
-
-void AlltoAllCount(const Comm<int> &comm, const Environment &env,
- const ArrayView<const int> &sendCount, ArrayRCP<int> &recvCount)
-{
-  int nprocs = comm.getSize();
-  int rank = comm.getRank();
-
-  RCP<const int> *messages = new RCP<const int> [nprocs];
-  for (int p=0; p < nprocs; p++)
-    messages[p] = rcp(sendCount.getRawPtr()+p, false);
-
-  ArrayRCP<RCP<const int> > messageArray(messages, 0, nprocs, true);
-
-  int *counts = new int [nprocs];
-  recvCount = arcp(counts, 0, nprocs, true);
-
-  counts[rank] = sendCount[rank];
-
-#ifdef HAVE_ZOLTAN2_MPI
-
-  // I was getting hangs in Teuchos::waitAll, so I do
-  // blocking receives below.
-
-  for (int p=1; p < nprocs; p++){
-    int recvFrom = (rank + nprocs - p) % nprocs;
-    int sendTo = (rank + p) % nprocs;
-
-    try{  // non blocking send
-      Teuchos::isend<int, int>(comm, messageArray[sendTo], sendTo);
-    }
-    Z2_THROW_OUTSIDE_ERROR(env);
-
-    try{  // blocking receive for message just sent to me
-      Teuchos::receive<int, int>(comm, recvFrom, counts + recvFrom);
-    }
-    Z2_THROW_OUTSIDE_ERROR(env);
-  }
-
-  comm.barrier();
-#endif
-}
+extern void AlltoAllCount(const Comm<int> &comm, const Environment &env,
+ const ArrayView<const int> &sendCount, ArrayRCP<int> &recvCount);
 
 /*! \brief AlltoAllv sends/receives data to/from all processes.
  *
@@ -137,7 +91,7 @@ void AlltoAllCount(const Comm<int> &comm, const Environment &env,
  */
 
 template <typename T>
-void AlltoAllv(const Comm<int> &comm,
+static void AlltoAllv(const Comm<int> &comm,
               const Environment &env,  
               const ArrayView<const T> &sendBuf,
               const ArrayView<const int> &sendCount,
@@ -156,7 +110,7 @@ void AlltoAllv(const Comm<int> &comm,
   }
   else{
     try{
-      AlltoAllCount(comm, env, sendCount, recvCount);
+      Zoltan2::AlltoAllCount(comm, env, sendCount, recvCount);
     }
     Z2_FORWARD_EXCEPTIONS;
   }
@@ -249,6 +203,7 @@ void AlltoAllv(const Comm<int> &comm,
 #endif
 }
 
+/////////////////
 /* \brief Specialization for std::string.
   
     For string of char. Number of chars in a string limited to SCHAR_MAX.
@@ -417,7 +372,6 @@ void AlltoAllv(const Comm<int> &comm,
 
   recvBuf = arcp_reinterpret_cast<unsigned char>(newRecvBuf);
 }
-
-
+/////////////////
 }                   // namespace Z2
 #endif

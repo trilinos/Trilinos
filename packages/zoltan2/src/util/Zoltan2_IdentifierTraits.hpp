@@ -74,6 +74,8 @@ using Teuchos::SerializationTraits;
 
 namespace Zoltan2
 {
+extern int getHashCode(const unsigned char *a, size_t len);
+
 /*! \brief helper function to find min and max of array of user Ids
  */
 template <typename T>
@@ -89,24 +91,6 @@ template <typename T>
   return std::pair<T,T>(min,max);
 }
 
-/*! \brief helper to hash values larger than int to an int.
- *  Hash values do not need to be unique, but there should be
- *  as few overlaps as possible.
- */
-int getHashCode(const unsigned char *a, size_t len)
-{
-  int total=0;
-  unsigned char *to = reinterpret_cast<unsigned char *>(&total);
-  int c=0;
-  for (size_t i=0; i < len; i++){
-    to[c++] += a[i];
-    if (c == sizeof(int))
-      c = 0;
-  }
-  if (total < 0)
-    total *= -1;
-  return total;
-}
 
 /*! \brief Teuchos reduction operation
  *
