@@ -113,7 +113,7 @@ public:
   typedef View<       data_type, layout_type, device_type, management_type > type ;
   typedef View< const_data_type, layout_type, device_type, management_type > const_type ;
 
-  typedef View< data_type , layout_type , Host, MemoryManaged >  HostMirror ;
+  typedef View< data_type , layout_type , Host >  HostMirror ;
 
   typedef typename analysis::scalar_type               scalar_type ;
   typedef typename analysis::value_type                value_type ;
@@ -190,8 +190,8 @@ public:
   /*------------------------------------------------------------------*/
   /** \brief  Query if NULL view */
   KOKKOSARRAY_INLINE_FUNCTION
-  operator bool () const
-  { return 0 != oper_type::m_ptr_on_device ; }
+  bool is_null() const
+  { return 0 == oper_type::m_ptr_on_device ; }
 
   /** \brief  Query if view to same memory */
   KOKKOSARRAY_INLINE_FUNCTION

@@ -138,7 +138,7 @@ public:
 
   /// \brief Detect number of cores per NUMA node.
   ///
-  /// \note "NUME node" here means a single NUMA memory affinity
+  /// \note "NUMA node" here means a single NUMA memory affinity
   ///   region, and the CPU cores associated with that region.
   static size_type detect_node_core_count();
 

@@ -194,6 +194,7 @@ HostInternalHWLOC::HostInternalHWLOC()
 
   size_t node_count = 0 ;
 
+  //------------------------------------
   // Try for NUMA node knowledge
   m_node_type = HWLOC_OBJ_NODE ;
   node_count  = hwloc_get_nbobjs_by_type( m_host_topology , m_node_type );
@@ -209,6 +210,7 @@ HostInternalHWLOC::HostInternalHWLOC()
     m_node_type = HWLOC_OBJ_MACHINE ;
     node_count  = hwloc_get_nbobjs_by_type( m_host_topology , m_node_type );
   }
+  //------------------------------------
 
 #if DEBUG_PRINT
   std::cout << "HWLOC node_count = " << node_count << std::endl ;

@@ -740,15 +740,17 @@ template< typename T, class DeviceType >
 class TestViewAPI
 {
 public:
-  typedef DeviceType  device ;
-  typedef KokkosArray::Host    host ;
+  typedef DeviceType        device ;
+  typedef KokkosArray::Host host ;
 
   TestViewAPI()
   {
+    run_test_mirror();
     run_test();
     run_test_const();
     run_test_subview();
     run_test_vector();
+
     TestViewOperator< T , device >::apply();
     TestViewOperator_LeftAndRight< int[2][3][4][2][3][4][2][3] , device >::apply();
     TestViewOperator_LeftAndRight< int[2][3][4][2][3][4][2] , device >::apply();
@@ -773,6 +775,18 @@ public:
 
   typedef KokkosArray::View< T[][N1][N2][N3] , device, device, KokkosArray::MemoryUnmanaged > dView4_unmanaged ;
 
+  static void run_test_mirror()
+  {
+    typedef KokkosArray::View< int , host > view_type ;
+    typedef typename view_type::HostMirror view_host_type ;
+    typedef typename KokkosArray::Impl::StaticAssertSame< view_type , view_host_type >::type mirror_type ;
+    view_type a("a");
+    mirror_type am = KokkosArray::create_mirror_view(a);
+    ASSERT_EQ( & a() , & am() );
+
+    // const int x = a ; should not compile
+  }
+
   static void run_test()
   {
     typedef typename dView0::HostMirror  hView0 ;
@@ -784,12 +798,12 @@ public:
     dView4 dx , dy , dz ;
     hView4 hx , hy , hz ;
 
-    ASSERT_FALSE(dx);
-    ASSERT_FALSE(dy);
-    ASSERT_FALSE(dz);
-    ASSERT_FALSE(hx);
-    ASSERT_FALSE(hy);
-    ASSERT_FALSE(hz);
+    ASSERT_TRUE( dx.is_null() );
+    ASSERT_TRUE( dy.is_null() );
+    ASSERT_TRUE( dz.is_null() );
+    ASSERT_TRUE( hx.is_null() );
+    ASSERT_TRUE( hy.is_null() );
+    ASSERT_TRUE( hz.is_null() );
     ASSERT_EQ( dx.dimension(0) , 0u );
     ASSERT_EQ( dy.dimension(0) , 0u );
     ASSERT_EQ( dz.dimension(0) , 0u );
@@ -812,9 +826,9 @@ public:
     const_dView4 const_dx = dx ;
 
 
-    ASSERT_TRUE(dx);
-    ASSERT_TRUE(const_dx);
-    ASSERT_TRUE(dy);
+    ASSERT_FALSE( dx.is_null() );
+    ASSERT_FALSE( const_dx.is_null() );
+    ASSERT_FALSE( dy.is_null() );
     ASSERT_NE( dx , dy );
 
     ASSERT_EQ( dx.dimension(0) , unsigned(N0) );
@@ -853,17 +867,17 @@ public:
     dz = dy ; ASSERT_EQ( dy, dz); ASSERT_NE( dx, dz);
 
     dx = dView4();
-    ASSERT_FALSE(dx);
-    ASSERT_TRUE( dy);
-    ASSERT_TRUE( dz);
+    ASSERT_TRUE( dx.is_null() );
+    ASSERT_FALSE( dy.is_null() );
+    ASSERT_FALSE( dz.is_null() );
     dy = dView4();
-    ASSERT_FALSE(dx);
-    ASSERT_FALSE(dy);
-    ASSERT_TRUE( dz);
+    ASSERT_TRUE( dx.is_null() );
+    ASSERT_TRUE( dy.is_null() );
+    ASSERT_FALSE( dz.is_null() );
     dz = dView4();
-    ASSERT_FALSE(dx);
-    ASSERT_FALSE(dy);
-    ASSERT_FALSE(dz);
+    ASSERT_TRUE( dx.is_null() );
+    ASSERT_TRUE( dy.is_null() );
+    ASSERT_TRUE( dz.is_null() );
   }
 
   typedef T DataType[2] ;
