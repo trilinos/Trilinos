@@ -1,7 +1,7 @@
-EminPFactory
-ConstraintFactory
+CGSolver
 Constraint
+ConstraintFactory
+EminPFactory
+NullspacePresmoothFactory
 PatternFactory
 SteepestDescentSolver
-CGSolver
-NullspacePresmoothFactory

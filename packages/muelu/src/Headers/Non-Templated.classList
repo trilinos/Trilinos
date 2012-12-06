@@ -1,12 +1,12 @@
-SingleLevelFactoryBase
-TwoLevelFactoryBase
-RFactory
 AmesosSmoother
-IfpackSmoother
 Factory
 FactoryBase
 FactoryManagerBase
+IfpackSmoother
 Level
 PFactory
+RFactory
+SingleLevelFactoryBase
 TwoKeyMap
+TwoLevelFactoryBase
 VariableContainer
