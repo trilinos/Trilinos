@@ -125,7 +125,7 @@ namespace MueLu {
 
     /*! @brief Constructor
     */
-    BlockedGaussSeidelSmoother(const LocalOrdinal sweeps = 1, const Scalar omega = 1.0, RCP<FactoryBase> AFact = Teuchos::null);
+    BlockedGaussSeidelSmoother(const LocalOrdinal sweeps = 1, const Scalar omega = 1.0);
 
     //! Destructor
     virtual ~BlockedGaussSeidelSmoother();

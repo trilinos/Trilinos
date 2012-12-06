@@ -394,7 +394,8 @@ namespace MueLu {
       MUELU_COPY_PARAM(paramList, "smoother: sweeps",            int,   2, smootherParamList, "relaxation: sweeps");
       MUELU_COPY_PARAM(paramList, "smoother: damping factor", double, 1.0, smootherParamList, "relaxation: damping factor");
 
-      smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0, AFact) );
+      smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0) );
+      smooProto->SetFactory("A", AFact);
 
     } else if (type == "Chebyshev") {
 
@@ -403,7 +404,8 @@ namespace MueLu {
       MUELU_COPY_PARAM(paramList, "smoother: sweeps",          int, 2,  smootherParamList, "chebyshev: degree");
       MUELU_COPY_PARAM(paramList, "smoother: Chebyshev alpha", int, 30, smootherParamList, "chebyshev: alpha");
 
-      smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0, AFact) );
+      smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0) );
+      smooProto->SetFactory("A", AFact);
 
     } else if (type == "IFPACK") { // TODO: this option is not described in the ML Guide v5.0
 
@@ -415,7 +417,8 @@ namespace MueLu {
         MUELU_COPY_PARAM(paramList, "smoother: ifpack overlap",       int, 2,  smootherParamList, "partitioner: overlap");
 
         // TODO change to TrilinosSmoother as soon as Ifpack2 supports all preconditioners from Ifpack
-        smooProto = MueLu::GetIfpackSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(ifpackType, smootherParamList, paramList.get<int>("smoother: ifpack overlap"), AFact);
+        smooProto = MueLu::GetIfpackSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(ifpackType, smootherParamList, paramList.get<int>("smoother: ifpack overlap"));
+        smooProto->SetFactory("A", AFact);
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: unknown ML smoother type " + type + " (IFPACK) not supported by MueLu. Only ILU is supported.");
       }
@@ -438,7 +441,8 @@ namespace MueLu {
       // FIXME: MueLu should accept any Upper/Lower case. Not the case for the moment
       std::transform(solverType.begin()+1, solverType.end(), solverType.begin()+1, ::tolower);
 
-      smooProto = Teuchos::rcp( new DirectSolver(solverType, Teuchos::ParameterList(), AFact) );
+      smooProto = Teuchos::rcp( new DirectSolver(solverType, Teuchos::ParameterList()) );
+      smooProto->SetFactory("A", AFact);
 
     } else {
 

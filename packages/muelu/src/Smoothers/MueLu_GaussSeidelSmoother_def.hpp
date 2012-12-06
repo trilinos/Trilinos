@@ -65,12 +65,12 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void GaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("A", NULL); //FIXME AFact_.get());
+    this->Input(currentLevel, "A");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void GaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level & level) {
-    A_ = level.Get< RCP<Matrix> >("A", NULL); //FIXME AFact_.get());
+  void GaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level & currentLevel) {
+    A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
     SmootherPrototype::IsSetup(true);
   }
 

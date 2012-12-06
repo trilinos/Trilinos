@@ -85,7 +85,7 @@ namespace MueLu {
     //@{
 
     //! @brief Constructor
-    ProjectorSmoother(RCP<SmootherPrototype> coarseSolver, RCP<const FactoryBase> AFact = Teuchos::null);
+    ProjectorSmoother(RCP<SmootherPrototype> coarseSolver);
 
     //! Destructor
     virtual ~ProjectorSmoother();
@@ -130,8 +130,6 @@ namespace MueLu {
   private:
     RCP<MultiVector>             Borth_;
     RCP<SmootherPrototype>       coarseSolver_;
-
-    RCP<const FactoryBase>       AFact_;
 
   }; // class ProjectorSmoother
 

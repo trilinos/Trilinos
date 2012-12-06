@@ -90,7 +90,7 @@ namespace MueLu {
       Creates a MueLu interface to the direct solvers in the Amesos2 package.
       If you are using type=="", then either SuperLU or KLU2 are used by default.
     */
-    Amesos2Smoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null);
+    Amesos2Smoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList());
 
     //! Destructor
     virtual ~Amesos2Smoother();
@@ -147,9 +147,6 @@ namespace MueLu {
 
     //! pointer to Amesos2 solver object
     RCP<Amesos2::Solver<Tpetra_CrsMatrix, Tpetra_MultiVector> > prec_;
-
-    //! A Factory
-    RCP<FactoryBase> AFact_;
 
   }; // class Amesos2Smoother
 

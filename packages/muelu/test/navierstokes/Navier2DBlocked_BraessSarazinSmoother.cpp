@@ -547,7 +547,7 @@ int main(int argc, char *argv[]) {
   else {
     Teuchos::ParameterList ifpackDSList;
     std::string ifpackDSType;
-    smoProtoSC     = rcp( new DirectSolver(ifpackDSType,ifpackDSList,SFact) );
+    smoProtoSC     = rcp( new DirectSolver(ifpackDSType,ifpackDSList) ); smoProtoSC->SetFactory("A", SFact);
   }
 
   RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
