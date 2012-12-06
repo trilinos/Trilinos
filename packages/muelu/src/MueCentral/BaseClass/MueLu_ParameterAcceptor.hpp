@@ -43,52 +43,33 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_FACTORY_HPP
-#define MUELU_FACTORY_HPP
+#ifndef MUELU_PARAMETERACCEPTOR_HPP
+#define MUELU_PARAMETERACCEPTOR_HPP
 
 #include <string>
-#include <map>
 
 #include "Teuchos_RCP.hpp"
-
 #include "MueLu_ConfigDefs.hpp"
+//#include "Muelu_FactoryBase_fwd.hpp"
 #include "MueLu_FactoryBase.hpp"
-#include "MueLu_ParameterAcceptor.hpp"
 
-#include "MueLu_Level.hpp"
+// TODO See also: Teuchos::ParameterListAcceptor, Teko::Clonable
 
 namespace MueLu {
 
-  template <class Key, class T>
-  const RCP<T> mapFind(const std::map<Key, RCP<T> > & map, Key & varName) {
-    typename std::map<Key, RCP<T> >::const_iterator f = map.find(varName);
-    if (f == map.end())
-      return Teuchos::null;
-    else
-      return f->second;
-  }
-
-  class Factory : public FactoryBase, public ParameterAcceptor {
+  class ParameterAcceptor {
 
   public:
-    //@{ Constructors/Destructors.
 
-    //! Constructor.
-    Factory() { }
-
-    //! Destructor.
-    virtual ~Factory() { }
-    //@}
+    virtual ~ParameterAcceptor() { }
 
     //@{
     //! Configuration
 
     //! SetFactory is for expert users only. To change configuration of the preconditioner, use a factory manager.
-    virtual void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory);
+    virtual void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory) = 0;
 
-    const RCP<const FactoryBase> GetFactory(const std::string & varName) const {
-      return mapFind<const std::string, const FactoryBase>(factoryTable_, varName);
-    }
+    virtual const RCP<const FactoryBase> GetFactory(const std::string & varName) const = 0;
 
     // SetParameterList(...);
 
@@ -96,32 +77,9 @@ namespace MueLu {
 
     //@}
 
-  protected:
-
-    void Input(Level & level, const std::string & varName) const {
-      level.DeclareInput(varName, GetFactory(varName).get(), this);
-    }
-
-    template <class T>
-    T Get(Level & level, const std::string & varName) const {
-      return level.Get<T>(varName, GetFactory(varName).get());
-    }
-
-    template <class T>
-    void Set(Level & level, const std::string & varName, const T & data) const {
-      return level.Set<T>(varName, data, this);
-    }
-
-    bool IsAvailable(Level & level, const std::string & varName) const {
-      return level.IsAvailable(varName, GetFactory(varName).get());
-    }
-
-  private:
-    std::map<const std::string, RCP<const FactoryBase> > factoryTable_;
-
-  }; //class Factory
+  }; //class ParameterAcceptor
 
 } //namespace MueLu
 
-#define MUELU_FACTORY_SHORT
-#endif //ifndef MUELU_FACTORY_HPP
+#define MUELU_PARAMETERACCEPTOR_SHORT
+#endif //ifndef MUELU_PARAMETERACCEPTOR_HPP

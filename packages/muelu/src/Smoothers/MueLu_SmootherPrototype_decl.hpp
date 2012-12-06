@@ -104,7 +104,7 @@ namespace MueLu {
     bool IsSetup() const;
 
     //! Set the state of a smoother prototype.
-    // Developpers: this method must be called by our Setup() method.
+    // Developpers: this method must be called by your Setup() method.
     void IsSetup(bool const &ToF);
 
     //@}
