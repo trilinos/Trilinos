@@ -46,7 +46,7 @@
 /*
   Direct translation of parts of Galeri matrix generator.
 
-  Differences with Galeri1: 
+  Differences with Galeri1:
    - This function only supports mapType=Cartesian2D and Cartesian3D
    - Parameters that are not set by user but computed inside of this function are saved on the parameter list. This allows users to retrieve these parameters after the creation of the map.
      (In Galeri1, such parameters was set to -1 instead)
@@ -84,11 +84,11 @@ namespace Galeri {
     RCP<Map> CreateMap(const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
 
 #ifdef HAVE_GALERI_XPETRA
-    //! Map creation function (for Xpetra::Map with an UnderlyingLib parameter) 
+    //! Map creation function (for Xpetra::Map with an UnderlyingLib parameter)
     template <class LocalOrdinal, class GlobalOrdinal, class Node>
     RCP< ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > CreateMap(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
 #endif
-    
+
   } // namespace Xpetra
 } // namespace Galeri
 
@@ -109,6 +109,7 @@ namespace Galeri {
 
 //#include "Maps/Galeri_XpetraLinear.hpp"
 //#include "Maps/Galeri_XpetraNodeCartesian2D.hpp"
+#include "Maps/Galeri_XpetraCartesian1D.hpp"
 #include "Maps/Galeri_XpetraCartesian2D.hpp"
 #include "Maps/Galeri_XpetraCartesian3D.hpp"
 //#include "Maps/Galeri_XpetraRandom.hpp"
@@ -132,7 +133,7 @@ namespace Galeri {
     using Teuchos::RCP;
 
 #ifdef HAVE_GALERI_XPETRA
-    //! Map creation function (for Xpetra::Map with UnderlyingLib parameter) 
+    //! Map creation function (for Xpetra::Map with UnderlyingLib parameter)
     template <class LocalOrdinal, class GlobalOrdinal, class Node>
     RCP< ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > CreateMap(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
 #ifdef HAVE_XPETRA_TPETRA
@@ -145,14 +146,14 @@ namespace Galeri {
 
     }
 
-    //! Map creation function (for Xpetra::Map with UnderlyingLib parameter) 
+    //! Map creation function (for Xpetra::Map with UnderlyingLib parameter)
     template <>
     RCP< ::Xpetra::Map<int, int, Kokkos::DefaultNode::DefaultNodeType> > CreateMap<int, int, Kokkos::DefaultNode::DefaultNodeType>(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
 
       typedef int LocalOrdinal;
       typedef int GlobalOrdinal;
       typedef Kokkos::DefaultNode::DefaultNodeType Node;
-      
+
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == ::Xpetra::UseTpetra)
         return CreateMap<int, int, ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> >(mapType, comm, list);
@@ -190,16 +191,43 @@ namespace Galeri {
       {
         return(Maps::Random(comm, n));
       }
-    else 
-    */ 
-    if (mapType == "Cartesian2D")
-      {
+    else
+    */
+    if (mapType == "Cartesian1D") {
+        // Get matrix dimension
+        GlobalOrdinal nx = -1; if (list.isParameter("nx")) nx = list.get<GlobalOrdinal>("nx");
+        if (nx == -1) {
+            GlobalOrdinal n = list.get<GlobalOrdinal>("n", -1);
+            if (n <= 0)
+              throw(Exception(__FILE__, __LINE__,
+                              "If nx is not set, then n must be set"));
+
+            nx = n;
+
+            // Add computed value of 'nx' to the list. Users can retrieve the value after the creation of the map.
+            list.set("nx", nx);
+          }
+
+        list.set("n", nx); // Add computed values of 'n' to the list
+
+        // Get the number of domains
+        GlobalOrdinal mx = list.get<GlobalOrdinal>("mx", -1);
+
+        if (mx == -1) {
+            mx = (GlobalOrdinal)(comm->getSize());
+
+            // Add computed value of 'mx' to the list. Users can retrieve the value after the creation of the map.
+            list.set("mx", mx);
+          }
+        return(Maps::Cartesian1D<LocalOrdinal, GlobalOrdinal, Map>(comm, nx, mx));
+
+    } else if (mapType == "Cartesian2D") {
 
         // Get matrix dimension
         GlobalOrdinal nx = -1; if (list.isParameter("nx")) nx = list.get<GlobalOrdinal>("nx");
         GlobalOrdinal ny = -1; if (list.isParameter("ny")) ny = list.get<GlobalOrdinal>("ny");
-        
-        if (nx == -1 || ny == -1) 
+
+        if (nx == -1 || ny == -1)
           {
             GlobalOrdinal n = -1; if (list.isParameter("n")) list.get<GlobalOrdinal>("n");
             if (n <= 0)
@@ -208,28 +236,28 @@ namespace Galeri {
 
             nx = (GlobalOrdinal)sqrt((double)n);
             ny = nx;
-            if (nx * ny != n) 
+            if (nx * ny != n)
               throw(Exception(__FILE__, __LINE__,
                               "The number of global elements (n) must be",
                               "a perfect square, otherwise set nx and ny"));
-          
+
             // Add computed values of 'nx' and 'ny' to the list. Users can retrieve the values after the creation of the map.
             list.set("nx", nx);
             list.set("ny", ny);
           }
 
-        list.set("n", nx * ny); // Add computed values of 'n' to the list 
+        list.set("n", nx * ny); // Add computed values of 'n' to the list
 
         // Get the number of domains
         GlobalOrdinal mx = -1; if (list.isParameter("mx")) mx = list.get<GlobalOrdinal>("mx");
         GlobalOrdinal my = -1; if (list.isParameter("my")) my = list.get<GlobalOrdinal>("my");
 
-        if (mx == -1 || my == -1) 
+        if (mx == -1 || my == -1)
           {
             mx = (GlobalOrdinal)(sqrt((double)(comm->getSize()+.001)));
             my =  comm->getSize()/mx;
 
-            // simple attempt at trying to find an mx and my such 
+            // simple attempt at trying to find an mx and my such
             // mx*my = NumProc
 
             while ( (mx*my) != comm->getSize() ) {
@@ -240,7 +268,7 @@ namespace Galeri {
             // Add computed values of 'mx' and 'my' to the list. Users can retrieve the values after the creation of the map.
             list.set("mx", mx);
             list.set("my", my);
-          } 
+          }
         return(Maps::Cartesian2D<LocalOrdinal, GlobalOrdinal, Map>(comm, nx, ny, mx, my));
       }
     /* TODO
@@ -250,7 +278,7 @@ namespace Galeri {
         int nx = list.get("nx", -1);
         int ny = list.get("ny", -1);
 
-        if (nx == -1 || ny == -1) 
+        if (nx == -1 || ny == -1)
           {
             if (n <= 0)
               throw(Exception(__FILE__, __LINE__,
@@ -258,7 +286,7 @@ namespace Galeri {
 
             nx = (int)sqrt((double)n);
             ny = nx;
-            if (nx * ny != n) 
+            if (nx * ny != n)
               throw(Exception(__FILE__, __LINE__,
                               "The number of global elements (n) must be",
                               "a perfect square, otherwise set nx and ny"));
@@ -269,7 +297,7 @@ namespace Galeri {
         int MyNodeID = list.get("node id",-1);
         int ndx = list.get("ndx", -1);
         int ndy = list.get("ndy", -1);
-        if (ndx == -1 || ndy == -1) 
+        if (ndx == -1 || ndy == -1)
           {
             ndx = (int)(sqrt((double)(NumNodes+.001)));
             ndy = NumNodes/ndx;
@@ -277,28 +305,28 @@ namespace Galeri {
               ndx--;
               ndy = NumNodes/ndx;
             }
-          } 
+          }
 
         // Get the number of processors per node
         Epetra_comm * Nodecomm= list.get("node communicator",(Epetra_comm*)0);
         int px = list.get("px", -1);
         int py = list.get("py", -1);
-        if (px == -1 || py == -1) 
+        if (px == -1 || py == -1)
           {
             px = (int)(sqrt((double)(Nodecomm->NumProc()+.001)));
             py = Nodecomm->NumProc()/px;
 
-            // simple attempt at trying to find an ndx and ndy such 
+            // simple attempt at trying to find an ndx and ndy such
             // ndx*ndy = NumNodes
 
             while ( (px*py) != Nodecomm->NumProc() ) {
               px--;
               py = Nodecomm->NumProc()/px;
             }
-          } 
-  
+          }
+
         return(Maps::NodeCartesian2D(comm, *Nodecomm, MyNodeID, nx, ny, ndx, ndy, px,py));
-        } */ 
+        } */
     else if (mapType == "Cartesian3D")
       {
         // Get matrix dimension
@@ -306,7 +334,7 @@ namespace Galeri {
         GlobalOrdinal ny = -1; if (list.isParameter("ny")) ny = list.get<GlobalOrdinal>("ny");
         GlobalOrdinal nz = -1; if (list.isParameter("nz")) nz = list.get<GlobalOrdinal>("nz");
 
-        if (nx == -1 || ny == -1 || nz == -1) 
+        if (nx == -1 || ny == -1 || nz == -1)
           {
             GlobalOrdinal n = -1; if (list.isParameter("n")) list.get<GlobalOrdinal>("n");
             if (n <= 0)
@@ -316,7 +344,7 @@ namespace Galeri {
             nx = (int)pow((double)n, 0.333334);
             ny = nx;
             nz = nx;
-            if (nx * ny * nz != n) 
+            if (nx * ny * nz != n)
               throw(Exception(__FILE__, __LINE__,
                               "The number of global elements n (" +
                               toString(n) + ") must be",
@@ -328,14 +356,14 @@ namespace Galeri {
             list.set("nz", nz);
           }
 
-        list.set("n", nx * ny * nz); // Add computed values of 'n' to the list 
+        list.set("n", nx * ny * nz); // Add computed values of 'n' to the list
 
         // Get the number of domains
         GlobalOrdinal mx = -1; if (list.isParameter("mx")) mx = list.get<GlobalOrdinal>("mx");
         GlobalOrdinal my = -1; if (list.isParameter("my")) my = list.get<GlobalOrdinal>("my");
         GlobalOrdinal mz = -1; if (list.isParameter("mz")) mz = list.get<GlobalOrdinal>("mz");
 
-        if (mx == -1 || my == -1 || mz == -1) 
+        if (mx == -1 || my == -1 || mz == -1)
           {
             mx = (int)pow((double)comm->getSize(), 0.333334);
             my = mx;
@@ -366,17 +394,17 @@ namespace Galeri {
                   factors[jj]--;
                 }
               }
-        
+
             }
             // Add computed values of 'mx' and 'my' to the list. Users can retrieve the values after the creation of the map.
             list.set("mx", mx);
             list.set("my", my);
             list.set("mz", mz);
           }
-        else 
+        else
           {
-            if (mx * my * mz != comm->getSize()) 
-              throw(Exception(__FILE__, __LINE__, 
+            if (mx * my * mz != comm->getSize())
+              throw(Exception(__FILE__, __LINE__,
                               "mx * my * mz != number of processes!",
                               "mx = " + toString(mx) + ", my = " + toString(my)
                               + ", mz = " + toString(mz)));
@@ -384,7 +412,7 @@ namespace Galeri {
 
         return(Maps::Cartesian3D<LocalOrdinal, GlobalOrdinal, Map>(comm, nx, ny, nz, mx, my, mz));
       }
-    else 
+    else
       {
         throw(Exception(__FILE__, __LINE__,
                         "`mapType' has incorrect value (" + mapType + ")",
@@ -392,7 +420,7 @@ namespace Galeri {
                         "Check the documentation for a list of valid choices"));
       }
   } // CreateMap()
-    
+
   } // namespace Xpetra
 } // namespace Galeri
 
