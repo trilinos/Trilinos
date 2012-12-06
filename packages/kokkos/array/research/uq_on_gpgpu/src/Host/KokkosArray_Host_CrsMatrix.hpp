@@ -103,23 +103,106 @@ public:
 template< typename MatrixValue , typename VectorValue >
 class MMultiply<
   CrsMatrix< MatrixValue , Host > ,
+  KokkosArray::View< VectorValue** , LayoutLeft, Host > ,
+  KokkosArray::View< VectorValue** , LayoutLeft, Host > >
+{
+public:
+  typedef Host                                             device_type ;
+  typedef device_type::size_type                           size_type ;
+  typedef View< VectorValue** , LayoutLeft, device_type >  multi_vector_type ;
+  typedef CrsMatrix< MatrixValue , device_type >           matrix_type ;
+  typedef VectorValue                                      value_type ;
+  typedef int                                              Ordinal ;
+
+  const matrix_type  m_A ;
+  const multi_vector_type m_x ;
+  const multi_vector_type m_y ;
+  const std::vector<Ordinal> m_col_indices ;
+  const size_t num_vecs ;
+
+  MMultiply( const matrix_type & A ,
+	     const multi_vector_type & x ,
+	     const multi_vector_type & y ,
+	     const std::vector<Ordinal> & col_indices )
+  : m_A( A )
+  , m_x( x )
+  , m_y( y )
+  , m_col_indices( col_indices )
+  , num_vecs( col_indices.size() )
+  {
+    //std::cout << "num_vecs = " << num_vecs << std::endl;
+  }
+
+  //--------------------------------------------------------------------------
+
+  inline
+  void operator()( const size_type iRow ) const
+  {
+    const size_type iEntryBegin = m_A.graph.row_map[iRow];
+    const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
+    const size_t n = m_A.graph.row_map.dimension(0) - 1 ;
+
+    for (size_t j=0; j<num_vecs; j++) {
+      Ordinal col = m_col_indices[j];
+      
+      value_type y_tmp = 0.0;
+
+      for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
+	y_tmp += m_A.values(iEntry) * m_x(  m_A.graph.entries(iEntry), col );
+      }
+
+      m_y( iRow, col ) = y_tmp;
+    
+    }
+
+  }
+
+  static void apply( const matrix_type & A ,
+                     const multi_vector_type & x ,
+                     const multi_vector_type & y ,
+		     const std::vector<Ordinal> & col)
+  {
+    const size_t n = A.graph.row_map.dimension(0) - 1 ;
+    const size_t block_size = 20;
+    const size_t num_vecs = col.size();
+    const size_t num_blocks = num_vecs / block_size;
+    const size_t rem = num_vecs - num_blocks*block_size;
+    const size_t bs = block_size;
+    std::vector<Ordinal> block_col(block_size);
+    for (size_t block=0; block<num_blocks; ++block) {
+      for (size_t i=0; i<bs; ++i)
+	block_col[i] = col[block*block_size+i];
+      parallel_for( n , MMultiply(A,x,y,block_col) );
+    }
+    if (rem > 0) {
+      block_col.resize(rem);
+      for (size_t i=0; i<block_size; ++i)
+    	block_col[i] = col[num_blocks*block_size+i];
+      parallel_for( n , MMultiply(A,x,y,block_col) );
+    }
+  }
+};
+
+template< typename MatrixValue , typename VectorValue >
+class MMultiply<
+  CrsMatrix< MatrixValue , Host > ,
   KokkosArray::View< VectorValue[] , Host > ,
   KokkosArray::View< VectorValue[] , Host > >
 {
 public:
-  typedef Host                                      device_type ;
-  typedef device_type::size_type                    size_type ;
-  typedef View< VectorValue[] , device_type >       vector_type ;
-  typedef CrsMatrix< MatrixValue , device_type >    matrix_type ;
-  typedef VectorValue                               value_type ;
+  typedef Host                                             device_type ;
+  typedef device_type::size_type                           size_type ;
+  typedef View< VectorValue[] , device_type >              vector_type ;
+  typedef CrsMatrix< MatrixValue , device_type >           matrix_type ;
+  typedef VectorValue                                      value_type ;
 
   const matrix_type  m_A ;
-  const std::vector<vector_type>  m_x ;
-  const std::vector<vector_type>  m_y ;
+  const std::vector<vector_type> m_x ;
+  const std::vector<vector_type> m_y ;
 
   MMultiply( const matrix_type & A ,
-            const std::vector<vector_type> & x ,
-            const std::vector<vector_type> & y )
+	     const std::vector<vector_type> & x ,
+	     const std::vector<vector_type> & y )
   : m_A( A )
   , m_x( x )
   , m_y( y )
@@ -133,26 +216,29 @@ public:
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
     const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
+    const size_t n = m_A.graph.row_map.dimension(0) - 1 ;
     const size_t num_vecs = m_x.size();
-    
-    std::vector<double> sum(num_vecs, 0);
 
-    for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
-      double a = m_A.values(iEntry);
-      for (size_t col=0; col<num_vecs; col++) 
-	sum[col] += a * m_x[col]( m_A.graph.entries(iEntry) );
-    }
+    for (size_t j=0; j<num_vecs; j++) {
+      
+      value_type y_tmp = 0.0;
+
+      for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
+	y_tmp += m_A.values(iEntry) * m_x[j](  m_A.graph.entries(iEntry) );
+      }
+
+      m_y[j]( iRow) = y_tmp;
     
-    for (size_t col=0; col<num_vecs; col++)
-      m_y[col](iRow) = sum[col] ;
+    }
+
   }
 
   static void apply( const matrix_type & A ,
                      const std::vector<vector_type> & x ,
                      const std::vector<vector_type> & y )
   {
-    const size_t row_count = A.graph.row_map.dimension(0) - 1 ;
-    parallel_for( row_count , MMultiply(A,x,y) );
+    const size_t n = A.graph.row_map.dimension(0) - 1 ;
+    parallel_for( n , MMultiply(A,x,y) );
   }
 };
 

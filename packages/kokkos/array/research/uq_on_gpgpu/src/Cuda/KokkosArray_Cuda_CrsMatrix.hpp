@@ -180,6 +180,74 @@ public:
 template<>
 class MMultiply<
   CrsMatrix< double , KokkosArray::Cuda > ,
+  KokkosArray::View< double** , LayoutLeft, KokkosArray::Cuda > ,
+  KokkosArray::View< double** , LayoutLeft, KokkosArray::Cuda > >
+{
+public:
+  typedef KokkosArray::Cuda                           device_type ;
+  typedef device_type::size_type                      size_type ;
+  typedef View< double[] , device_type >              vector_type ;
+  typedef View< double** , LayoutLeft, device_type >  multi_vector_type ;
+  typedef CrsMatrix< double , device_type >           matrix_type ;
+  typedef int                                         Ordinal ;
+
+  //--------------------------------------------------------------------------
+
+  static void apply( const matrix_type & A ,
+                     const multi_vector_type & x ,
+                     const multi_vector_type & y ,
+		     const std::vector<Ordinal> & col_indices )
+  {
+    CudaSparseSingleton & s = CudaSparseSingleton::singleton();
+    const double alpha = 1 , beta = 0 ;
+    const int n = A.graph.row_map.dimension(0) - 1 ;
+    // const int nz = A.graph.entry_count();
+    const size_t ncol = col_indices.size();
+
+    // Copy columns of x into a contiguous vector
+    vector_type xx( "xx" , n * ncol );
+    vector_type yy( "yy" , n * ncol );
+
+    for (size_t col=0; col<ncol; col++) {
+      const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
+      const vector_type xx_view( xx , span );
+      const vector_type x_col( x, col_indices[col] );
+      KokkosArray::deep_copy(xx_view, x_col);
+    }
+
+    // Sparse matrix-times-multivector
+    cusparseStatus_t status =
+      cusparseDcsrmm( s.handle ,
+		      CUSPARSE_OPERATION_NON_TRANSPOSE ,
+		      n , ncol , n , 
+		      alpha ,
+		      s.descra ,
+		      A.values.ptr_on_device() ,
+		      A.graph.row_map.ptr_on_device() ,
+		      A.graph.entries.ptr_on_device() ,
+		      xx.ptr_on_device() , 
+		      n , 
+		      beta ,
+		      yy.ptr_on_device() ,
+		      n );
+    
+    if ( CUSPARSE_STATUS_SUCCESS != status ) {
+      throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
+    }
+    
+    // Copy columns out of continguous multivector
+    for (size_t col=0; col<ncol; col++) {
+      const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
+      const vector_type yy_view( yy , span );
+      const vector_type y_col( y, col_indices[col] );
+      KokkosArray::deep_copy(y_col, yy_view );
+    }
+  }
+};
+
+template<>
+class MMultiply<
+  CrsMatrix< double , KokkosArray::Cuda > ,
   KokkosArray::View< double[] , KokkosArray::Cuda > ,
   KokkosArray::View< double[] , KokkosArray::Cuda > >
 {

@@ -70,6 +70,68 @@
 #include <TestTensorCrsMatrix.hpp>
 #include <TestStochastic.hpp>
 
+namespace unit_test {
+
+template<>
+void performance_test_driver<KokkosArray::Cuda>(bool test_flat, bool test_orig, bool test_block)
+{
+  typedef KokkosArray::Cuda Device;
+
+  int nGrid;
+  int nIter; 
+  bool print;
+
+  // All methods compared against flat-original
+  if (test_flat) {
+    nGrid = 5 ;
+    nIter = 1 ; 
+    print = false ;
+    performance_test_driver_all<Device>( 3 , 1 ,  9 , nGrid , nIter , print ,
+    					 test_block );
+    performance_test_driver_all<Device>( 5 , 1 ,  5 , nGrid , nIter , print ,
+					 test_block );
+  }
+
+#ifdef HAVE_KOKKOSARRAY_STOKHOS
+  // Just polynomial methods compared against original
+  if (test_orig) {
+    nGrid = 32 ;
+    nIter = 1 ; 
+    print = false ;
+    performance_test_driver_poly<Device>( 3 , 1 , 12 , nGrid , nIter , print , 
+					  test_block );
+    performance_test_driver_poly<Device>( 5 , 1 ,  6 , nGrid , nIter , print ,
+					  test_block );
+  }
+#endif
+
+  //------------------------------
+
+  /*
+  std::cout << std::endl
+            << "\"CRS flat-matrix ~27 nonzeros/row (CUDA uses cusparse)\""
+            << std::endl
+	    << "\"nGrid\" , "
+            << "\"VectorSize\" , "
+            << "\"MXV-Time\""
+            << std::endl ;
+
+  for ( int n_grid = 10 ; n_grid <= 100 ; n_grid += 5 ) {
+
+    const std::pair<size_t,double> perf_flat =
+      test_flat_matrix<double,Device>( n_grid , nIter , print );
+
+    std::cout << n_grid << " , "
+	      << perf_flat.first << " , "
+              << perf_flat.second
+              << std::endl ;
+  }
+  */
+
+  //------------------------------
+}
+
+}
 
 int mainCuda(bool test_flat, bool test_orig, bool test_block)
 {

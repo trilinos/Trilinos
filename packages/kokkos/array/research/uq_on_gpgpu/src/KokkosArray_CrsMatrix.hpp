@@ -76,21 +76,51 @@ void multiply( const CrsMatrix<MatrixValueType,Device> & A ,
 
 template< typename MatrixValueType ,
           typename VectorValueType ,
+	  typename OrdinalType ,
           class Device >
 void multiply( const CrsMatrix<MatrixValueType,Device> & A ,
-               const std::vector< View<VectorValueType[],Device> >   & x ,
-               const std::vector< View<VectorValueType[],Device> >   & y,
+	       const View<VectorValueType**, LayoutLeft, Device> & x ,
+	       const View<VectorValueType**, LayoutLeft, Device> & y ,
+	       const std::vector<OrdinalType>& col_indices, 
 	       bool use_block_multiply = true)
 {
-  typedef CrsMatrix<MatrixValueType,Device>  matrix_type ;
-  typedef View<VectorValueType[],Device>     vector_type ;
+  typedef CrsMatrix<MatrixValueType,Device>           matrix_type ;
+  typedef View<VectorValueType[],Device>               vector_type ;
+  typedef View<VectorValueType**, LayoutLeft, Device> multi_vector_type ;
 
   if (use_block_multiply)
-    Impl::MMultiply<matrix_type,vector_type,vector_type>::apply( A , x , y );
-  else
-    for (size_t i=0; i<x.size(); ++i)
+    Impl::MMultiply<matrix_type,multi_vector_type,multi_vector_type>::apply( 
+      A , x , y , col_indices );
+  else {
+    for (size_t i=0; i<col_indices.size(); ++i) {
+      const vector_type x_view( x , col_indices[i] );
+      const vector_type y_view( y , col_indices[i] );
+      Impl::Multiply<matrix_type,vector_type,vector_type>::apply( 
+	A , x_view , y_view );
+    }
+  }
+}
+
+template< typename MatrixValueType ,
+          typename VectorValueType ,
+	  class Device >
+void multiply( const CrsMatrix<MatrixValueType,Device> & A ,
+	       const std::vector< View<VectorValueType[], Device> > & x ,
+	       const std::vector< View<VectorValueType[], Device> > & y ,
+	       bool use_block_multiply = true)
+{
+  typedef CrsMatrix<MatrixValueType,Device>           matrix_type ;
+  typedef View<VectorValueType[],Device>               vector_type ;
+
+  if (use_block_multiply)
+    Impl::MMultiply<matrix_type,vector_type,vector_type>::apply( 
+      A , x , y  );
+  else {
+    for (size_t i=0; i<x.size(); ++i) {
       Impl::Multiply<matrix_type,vector_type,vector_type>::apply( 
 	A , x[i] , y[i] );
+    }
+  }
 }
 
 template< typename MatrixValueType ,

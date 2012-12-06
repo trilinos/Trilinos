@@ -514,10 +514,11 @@ test_product_flat_commuted_matrix(
     }
   }
 
-  std::vector<double> perf(3);
+  std::vector<double> perf(4);
   perf[0] = outer_length * inner_length ;
   perf[1] = seconds_per_iter;
   perf[2] = flops;
+  perf[3] = flat_graph_length;
   return perf;
 }
 
@@ -690,6 +691,147 @@ test_product_flat_original_matrix(
 template< typename ScalarType , class Device >
 std::vector<double>
 test_original_matrix_free_block(
+  const std::vector<int> & var_degree ,
+  const int nGrid ,
+  const int iterCount ,
+  const bool print_flag = false ,
+  const bool test_block = false )
+{
+  typedef ScalarType value_type ;
+  typedef Stokhos::OneDOrthogPolyBasis<int,value_type> abstract_basis_type;
+  typedef Stokhos::LegendreBasis<int,value_type> basis_type;
+  typedef Stokhos::CompletePolynomialBasis<int,value_type> product_basis_type;
+  typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
+
+  using Teuchos::rcp;
+  using Teuchos::RCP;
+  using Teuchos::Array;
+
+  // Create Stochastic Galerkin basis and expansion
+  const size_t num_KL = var_degree.size();
+  Array< RCP<const abstract_basis_type> > bases(num_KL); 
+  for (size_t i=0; i<num_KL; i++)
+    bases[i] = Teuchos::rcp(new basis_type(var_degree[i],true));
+  RCP<const product_basis_type> basis = 
+    rcp(new product_basis_type(bases, 1e-12));
+  const size_t outer_length = basis->size();
+  RCP<Cijk_type> Cijk = basis->computeTripleProductTensor(outer_length);
+
+  //------------------------------
+
+  typedef KokkosArray::CrsMatrix<value_type,Device> matrix_type ;
+  typedef KokkosArray::CrsArray<int,Device,Device,int> crsarray_type ;
+
+  //------------------------------
+  // Generate FEM graph:
+
+  std::vector< std::vector<size_t> > fem_graph ;
+
+  const size_t inner_length = nGrid * nGrid * nGrid ;
+  unit_test::generate_fem_graph( nGrid , fem_graph );
+
+  //------------------------------
+  
+  typedef KokkosArray::View<value_type**, KokkosArray::LayoutLeft, Device> multi_vec_type ;
+  typedef KokkosArray::View<value_type[], Device> vec_type ;
+
+  std::vector<matrix_type> matrix( outer_length ) ;
+  multi_vec_type x( "x" , inner_length , outer_length ) ;
+  multi_vec_type y( "y" , inner_length , outer_length ) ;
+  multi_vec_type tmp( "tmp" , inner_length ,  outer_length ) ;
+
+  for (size_t block=0; block<outer_length; ++block) {
+    matrix[block].graph = KokkosArray::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
+    const size_t graph_length = matrix[block].graph.entries.dimension(0);
+    matrix[block].values = vec_type( "matrix" , graph_length );
+
+    typename vec_type::HostMirror hM =
+      KokkosArray::create_mirror( matrix[block].values );
+    for ( size_t i = 0 ; i < graph_length ; ++i ) {
+      hM(i) = 1 + i ;
+    }
+    KokkosArray::deep_copy( matrix[block].values , hM );
+  }
+  
+  typename multi_vec_type::HostMirror hx =
+    KokkosArray::create_mirror( x );
+  for (size_t block=0; block<outer_length; ++block) {
+    for ( size_t i = 0 ; i < inner_length ; ++i ) {
+      hx( i , block) = 1 + i ;
+    }
+  }
+  KokkosArray::deep_copy( x , hx );
+
+  KokkosArray::Impl::Timer clock ;
+  int n_apply = 0;
+  for ( int iter = 0 ; iter < iterCount ; ++iter ) {
+
+    // Original matrix-free multiply algorithm using a block apply
+    n_apply = 0;
+    Cijk_type::k_iterator k_begin = Cijk->k_begin();
+    Cijk_type::k_iterator k_end = Cijk->k_end();
+    for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+      int nj = Cijk->num_j(k_it);
+      if (nj > 0) {
+	int k = index(k_it);
+	Cijk_type::kj_iterator j_begin = Cijk->j_begin(k_it);
+	Cijk_type::kj_iterator j_end = Cijk->j_end(k_it);
+	std::vector<int> j_indices(nj);
+	int jdx = 0;
+	for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
+	  j_indices[jdx++] = index(j_it);
+	}
+        KokkosArray::multiply( matrix[k] , x , tmp, j_indices , test_block );
+        n_apply += nj;
+	jdx = 0;
+	for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
+	  const vec_type tmp_view( tmp , jdx++ );
+	  Cijk_type::kji_iterator i_begin = Cijk->i_begin(j_it);
+	  Cijk_type::kji_iterator i_end =  Cijk->i_end(j_it);
+	  for (Cijk_type::kji_iterator i_it = i_begin; i_it != i_end; ++i_it) {
+	    int i = index(i_it);
+	    value_type c = value(i_it);
+	    const vec_type y_view( y , i );
+	    KokkosArray::update( 1.0 , y_view , c , tmp_view );
+	  }
+	}
+      }
+    }
+
+  }
+  Device::fence();
+
+  const double seconds_per_iter = clock.seconds() / ((double) iterCount );
+  const double flops = 2.0*1.0e-9*n_apply*matrix[0].graph.entries.dimension(0);
+
+  //------------------------------
+
+  if ( print_flag ) {
+    std::cout << std::endl << "test_product_flat_matrix"
+              << std::endl ;
+    typename multi_vec_type::HostMirror hy = KokkosArray::create_mirror( y );
+    KokkosArray::deep_copy( hy , y );
+    std::cout << "hy = " << std::endl ;
+    for ( size_t i = 0 ; i < inner_length ; ++i ) {
+      for ( size_t j = 0 ; j < outer_length ; ++j ) {
+	std::cout << " " << hy(i,j);
+      }
+      std::cout << std::endl ;
+    }
+  }
+
+  std::vector<double> perf(4);
+  perf[0] = outer_length * inner_length;
+  perf[1] = seconds_per_iter ;
+  perf[2] = flops/seconds_per_iter;
+  perf[3] = flops;
+
+  return perf;
+}
+
+template< typename ScalarType , class Device >
+std::vector<double>
+test_original_matrix_free_vec(
   const std::vector<int> & var_degree ,
   const int nGrid ,
   const int iterCount ,
@@ -939,11 +1081,16 @@ void performance_test_driver_all( const int pdeg ,
 				  const bool test_block )
 {
   typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
-  typedef KokkosArray::StochasticProductTensor< double , polynomial , Device , KokkosArray::SparseProductTensor > tensor_type ;
+  typedef KokkosArray::StochasticProductTensor< double , polynomial , Device , KokkosArray::CrsProductTensor > tensor_type ;
 
   std::cout.precision(8);
 
   //------------------------------
+
+   std::vector< std::vector<size_t> > fem_graph ;
+  const size_t graph_length =
+    unit_test::generate_fem_graph( nGrid , fem_graph );
+  std::cout << std::endl << "\"FEM NNZ = " << graph_length << "\"" << std::endl;
 
   std::cout << std::endl
 	    << "\"#nGrid\" , "
@@ -955,6 +1102,7 @@ void performance_test_driver_all( const int pdeg ,
             << "\"Original-Flat MXV-GFLOPS\" , "
 	    << "\"Commuted-Flat MXV-Speedup\" , "
             << "\"Commuted-Flat MXV-GFLOPS\" , "
+    //<< "\"Commuted-Flat NNZ\" , "
 #ifdef HAVE_KOKKOSARRAY_STOKHOS
             << "\"Original-Matrix-Free-Block MXV-Speedup\" , "
             << "\"Original-Matrix-Free-Block MXV-GFLOPS\" , "
@@ -991,7 +1139,7 @@ void performance_test_driver_all( const int pdeg ,
 
 #ifdef HAVE_KOKKOSARRAY_STOKHOS
     const std::vector<double> perf_original_mat_free_block =
-      test_original_matrix_free_block<double,Device>( var_degree , nGrid , nIter , print , test_block );
+      test_original_matrix_free_vec<double,Device>( var_degree , nGrid , nIter , print , test_block );
 #endif
 
     std::cout << nGrid << " , " << nvar << " , " << pdeg << " , "
@@ -1003,6 +1151,7 @@ void performance_test_driver_all( const int pdeg ,
               << perf_flat_original[2] << " , "
 	      << perf_flat_original[1] / perf_flat_commuted[1] << " , "
               << perf_flat_commuted[2] << " , "
+      //<< perf_flat_commuted[3] << " , "
 #ifdef HAVE_KOKKOSARRAY_STOKHOS
 	      << perf_flat_original[1] / perf_original_mat_free_block[1] << " , "
               << perf_original_mat_free_block[2] << " , "
@@ -1032,11 +1181,16 @@ void performance_test_driver_poly( const int pdeg ,
 				   const bool test_block)
 {
   typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
-  typedef KokkosArray::StochasticProductTensor< double , polynomial , Device , KokkosArray::SparseProductTensor > tensor_type ;
+  typedef KokkosArray::StochasticProductTensor< double , polynomial , Device , KokkosArray::CrsProductTensor > tensor_type ;
 
   std::cout.precision(8);
 
   //------------------------------
+
+  std::vector< std::vector<size_t> > fem_graph ;
+  const size_t graph_length =
+    unit_test::generate_fem_graph( nGrid , fem_graph );
+  std::cout << std::endl << "\"FEM NNZ = " << graph_length << "\"" << std::endl;
 
   std::cout << std::endl
 	    << "\"#nGrid\" , "
@@ -1060,9 +1214,10 @@ void performance_test_driver_poly( const int pdeg ,
       test_product_tensor_matrix<double,Device,KokkosArray::CrsProductTensor>( var_degree , nGrid , nIter , print );
 
     const std::vector<double> perf_original_mat_free_block =
-      test_original_matrix_free_block<double,Device>( var_degree , nGrid , nIter , print , test_block );
+      test_original_matrix_free_vec<double,Device>( var_degree , nGrid , nIter , print , test_block );
 
-    std::cout << nGrid << " , " << nvar << " , " << pdeg << " , "
+    std::cout << nGrid << " , "
+	      << nvar << " , " << pdeg << " , "
 	      << tensor.dimension() << " , "
 	      << tensor.tensor().entry_count() << " , "
 	      << perf_original_mat_free_block[0] << " , "
@@ -1080,62 +1235,9 @@ void performance_test_driver_poly( const int pdeg ,
 }
 #endif
 
-
 template< class Device >
 void performance_test_driver(bool test_flat, bool test_orig, bool test_block)
 {
-  int nGrid;
-  int nIter; 
-  bool print;
-
-  // All methods compared against flat-original
-  if (test_flat) {
-    nGrid = 5 ;
-    nIter = 10 ; 
-    print = false ;
-    performance_test_driver_all<Device>( 3 , 1 ,  9 , nGrid , nIter , print ,
-					 test_block );
-    performance_test_driver_all<Device>( 5 , 1 ,  5 , nGrid , nIter , print ,
-					 test_block );
-  }
-
-#ifdef HAVE_KOKKOSARRAY_STOKHOS
-  // Just polynomial methods compared against original
-  if (test_orig) {
-    nGrid = 32 ;
-    nIter = 1 ; 
-    print = false ;
-    performance_test_driver_poly<Device>( 3 , 1 , 12 , nGrid , nIter , print , 
-					  test_block );
-    performance_test_driver_poly<Device>( 5 , 1 ,  6 , nGrid , nIter , print ,
-					  test_block );
-  }
-#endif
-
-  //------------------------------
-
-  /*
-  std::cout << std::endl
-            << "\"CRS flat-matrix ~27 nonzeros/row (CUDA uses cusparse)\""
-            << std::endl
-	    << "\"nGrid\" , "
-            << "\"VectorSize\" , "
-            << "\"MXV-Time\""
-            << std::endl ;
-
-  for ( int n_grid = 10 ; n_grid <= 100 ; n_grid += 5 ) {
-
-    const std::pair<size_t,double> perf_flat =
-      test_flat_matrix<double,Device>( n_grid , nIter , print );
-
-    std::cout << n_grid << " , "
-	      << perf_flat.first << " , "
-              << perf_flat.second
-              << std::endl ;
-  }
-  */
-
-  //------------------------------
 }
 
 //----------------------------------------------------------------------------
