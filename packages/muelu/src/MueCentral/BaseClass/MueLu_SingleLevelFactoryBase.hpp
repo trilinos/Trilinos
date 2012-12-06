@@ -138,3 +138,5 @@ namespace MueLu {
 
 #define MUELU_SINGLELEVELFACTORY_SHORT
 #endif //ifndef MUELU_SINGLELEVELFACTORY_HPP
+
+//TODO: code factorization between SingleLevelFactoryBase and TwoLevelFactoryBase

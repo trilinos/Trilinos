@@ -136,13 +136,6 @@ namespace MueLu {
     requestMode_ = prev;
   }
 
-  void Level::Release(const SmootherPrototypeBase& proto) {
-    RequestMode prev = requestMode_;
-    requestMode_ = RELEASE;
-    proto.DeclareInput(*this);
-    requestMode_ = prev;
-  }
-
   void Level::DeclareInput(const std::string& ename, const FactoryBase* factory, const FactoryBase* requestedBy) {
     if (requestMode_ == REQUEST) {
       Request(ename, factory, requestedBy);

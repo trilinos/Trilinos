@@ -61,7 +61,7 @@ namespace MueLu {
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class SmootherBase : public BaseClass {
+  class SmootherBase : virtual public BaseClass {
 #undef MUELU_SMOOTHERBASE_SHORT
 #include "MueLu_UseShortNames.hpp"
 
