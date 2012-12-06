@@ -573,15 +573,12 @@ void HostInternal::initialize( const unsigned gang_count ,
     if ( ! ok_inactive ) {
       msg << " : Device is already active" ;
     }
-    if ( ! ok_gang_count ) {
-      msg << " : gang_count(" << gang_count
-          << ") exceeds detect_node_count(" << m_node_count
-          << ")" ;
-    }
-    if ( ! ok_worker_count ) {
-      msg << " : worker_count(" << worker_count
-          << ") exceeds detect_node_pu_count(" << m_node_pu_count
-          << ")" ;
+    if ( ! ok_gang_count || ! ok_worker_count ) {
+      msg << " : request for threads ( "
+          << gang_count << " x " << worker_count
+          << " ) exceeds detected capacity ( "
+          << m_node_count << " x " << m_node_pu_count
+          << " )" ;
     }
     if ( ! ok_spawn_threads ) {
       msg << " : Spawning or cpu-binding the threads" ;

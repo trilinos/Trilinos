@@ -71,7 +71,7 @@ namespace MueLu {
     //! Constructor.
     TwoLevelFactoryBase()
 #ifdef HAVE_MUELU_DEBUG
-      : multipleCallCheck_(FIRSTCALL), levelIDOfLastCall_(-1)
+      : multipleCallCheck_(FIRSTCALL), lastLevel_(NULL)
 #endif
     { }
 
@@ -109,9 +109,9 @@ namespace MueLu {
     //!
     virtual void CallBuild(Level & requestedLevel) const {
 #ifdef HAVE_MUELU_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION((multipleCallCheck_ == ENABLED) && (levelIDOfLastCall_ == requestedLevel.GetLevelID()), Exceptions::RuntimeError, this->ShortClassName() << "::Build() called twice for the same level (levelID=" << requestedLevel.GetLevelID() << "). This is likely due to a configuration error.");
+      TEUCHOS_TEST_FOR_EXCEPTION((multipleCallCheck_ == ENABLED) && (lastLevel_ == &requestedLevel), Exceptions::RuntimeError, this->ShortClassName() << "::Build() called twice for the same level (levelID=" << requestedLevel.GetLevelID() << "). This is likely due to a configuration error.");
       if (multipleCallCheck_ == FIRSTCALL) multipleCallCheck_ = ENABLED;
-      levelIDOfLastCall_ = requestedLevel.GetLevelID();
+      lastLevel_ = &requestedLevel;
 #endif
 
       TEUCHOS_TEST_FOR_EXCEPTION(requestedLevel.GetPreviousLevel() == Teuchos::null, Exceptions::RuntimeError, "LevelID = " << requestedLevel.GetLevelID());
@@ -120,7 +120,13 @@ namespace MueLu {
 
     //@}
 
-    void DisableMultipleCallCheck() {
+    void EnableMultipleCallCheck() const {
+#ifdef HAVE_MUELU_DEBUG
+      multipleCallCheck_ = ENABLED;
+#endif
+    }
+
+    void DisableMultipleCallCheck() const {
 #ifdef HAVE_MUELU_DEBUG
       multipleCallCheck_ = DISABLED;
 #endif
@@ -131,7 +137,7 @@ namespace MueLu {
 
     enum multipleCallCheckEnum { ENABLED, DISABLED, FIRSTCALL };
     mutable multipleCallCheckEnum multipleCallCheck_;
-    mutable int levelIDOfLastCall_;
+    mutable Level* lastLevel_; // can be a dangling pointers. do not dereference.
 #endif
   }; //class TwoLevelFactoryBase
 

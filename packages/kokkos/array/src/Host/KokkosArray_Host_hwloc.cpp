@@ -74,6 +74,7 @@ class HostInternalHWLOC : public HostInternal {
 private:
 
   hwloc_topology_t m_host_topology ;
+  hwloc_obj_type_t m_node_type ;          // hwloc type for a "node"
   unsigned         m_node_core_count ;    // Cores per node
   unsigned         m_node_core_pu_count ; // Processing units per core per node
 
@@ -132,7 +133,7 @@ bool HostInternalHWLOC::bind_thread( const unsigned thread_rank ) const
     const unsigned pu_rank = worker_rank % m_node_core_pu_count ;
 
     const hwloc_obj_t node =
-      hwloc_get_obj_by_type( m_host_topology, HWLOC_OBJ_NODE, node_rank );
+      hwloc_get_obj_by_type( m_host_topology, m_node_type, node_rank );
 
     const hwloc_obj_t core =
       hwloc_get_obj_inside_cpuset_by_type( m_host_topology ,
@@ -184,14 +185,30 @@ bool HostInternalHWLOC::bind_thread( const unsigned thread_rank ) const
 HostInternalHWLOC::HostInternalHWLOC()
   : HostInternal()
   , m_host_topology()
+  , m_node_type( HWLOC_OBJ_TYPE_MAX )
   , m_node_core_count( 0 )
   , m_node_core_pu_count( 0 )
 {
   hwloc_topology_init( & m_host_topology );
   hwloc_topology_load( m_host_topology );
 
-  const size_t node_count =
-    hwloc_get_nbobjs_by_type( m_host_topology , HWLOC_OBJ_NODE );
+  size_t node_count = 0 ;
+
+  // Try for NUMA node knowledge
+  m_node_type = HWLOC_OBJ_NODE ;
+  node_count  = hwloc_get_nbobjs_by_type( m_host_topology , m_node_type );
+
+  if ( 0 == node_count ) {
+    // No knowledge of NUMA, try for SOCKET knowledge
+    m_node_type = HWLOC_OBJ_SOCKET ;
+    node_count  = hwloc_get_nbobjs_by_type( m_host_topology , m_node_type );
+  }
+
+  if ( 0 == node_count ) {
+    // No knowledge of NUMA or SOCKET, try for MACHINE
+    m_node_type = HWLOC_OBJ_MACHINE ;
+    node_count  = hwloc_get_nbobjs_by_type( m_host_topology , m_node_type );
+  }
 
 #if DEBUG_PRINT
   std::cout << "HWLOC node_count = " << node_count << std::endl ;
@@ -221,7 +238,7 @@ HostInternalHWLOC::HostInternalHWLOC()
     for ( size_t i = 0 ; i < node_count && node_count < node_rank ; ++i ) {
 
       const hwloc_obj_t node =
-        hwloc_get_obj_by_type( m_host_topology , HWLOC_OBJ_NODE , i );
+        hwloc_get_obj_by_type( m_host_topology , m_node_type , i );
 
       // If the process' cpu set is included in the node cpuset
       // then assumed pinned to that node.
@@ -247,7 +264,7 @@ HostInternalHWLOC::HostInternalHWLOC()
     for ( unsigned i = 0 ; i < node_count ; ++i ) {
 
       const hwloc_obj_t node =
-        hwloc_get_obj_by_type( m_host_topology , HWLOC_OBJ_NODE , i );
+        hwloc_get_obj_by_type( m_host_topology , m_node_type , i );
 
       const size_t core_count =
         hwloc_get_nbobjs_inside_cpuset_by_type( m_host_topology ,

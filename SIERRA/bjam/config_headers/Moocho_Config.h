@@ -1,6 +1,5 @@
-
-#include "Teuchos_config.h"
-
-#define HAVE_MOOCHO_QPKWIK 1
-#define HAVE_MOOCHO_FORTRAN 1
-#define HAVE_MOOCHO_THYRA 1
+/* #undef HAVE_MOOCHO_MA28 */
+#define HAVE_MOOCHO_QPKWIK
+#define HAVE_MOOCHO_FORTRAN
+/* #undef HAVE_MOOCHO_THYRA */
+#define HAVE_MPI

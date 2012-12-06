@@ -54,29 +54,39 @@
 #include "MueLu_TransPFactory_decl.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_DisableMultipleCallCheck.hpp"
 
 namespace MueLu {
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & fineLevel, Level & coarseLevel) const {
     Input(coarseLevel, "P");
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level & coarseLevel) const {
     FactoryMonitor m(*this, "Transpose P", coarseLevel);
 
-    Teuchos::OSTab tab(this->getOStream());
-    Teuchos::ParameterList matrixList;
+    // PFact might be called twice: once for P, once for R. Disabling the debug check.
+    RCP<const FactoryBase> PFact = GetFactory("P");
+    if (PFact == Teuchos::null) { PFact = coarseLevel.GetFactoryManager()->GetFactory("P"); }
+    MueLu::DisableMultipleCallCheck check(rcp_dynamic_cast<const TwoLevelFactoryBase>(PFact));
+
+    //
+    //
+    //
+
     RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
 
     //doesn't work -- bug in EpetraExt?
-    //RCP<Matrix> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrixWrap>("Identity",P->getRangeMap(),matrixList);
-    //      RCP<CrsMatrixWrap> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrixWrap>("Identity",P->getDomainMap(),matrixList);
-    //RCP<Matrix> R = Utils::TwoMatrixMultiply(P,true,I,false); //doesn't work -- bug in EpetraExt?
-    //      RCP<Matrix> R = Utils::TwoMatrixMultiply(I,false,P,true);
+    // Teuchos::ParameterList matrixList;
+    //RCP<Matrix> I = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>("Identity", P->getRangeMap(), matrixList);
+    //      RCP<CrsMatrixWrap> I = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>("Identity", P->getDomainMap(), matrixList);
+    //RCP<Matrix> R = Utils::TwoMatrixMultiply(P, true, I, false); //doesn't work -- bug in EpetraExt?
+    //      RCP<Matrix> R = Utils::TwoMatrixMultiply(I, false, P, true);
 
-    RCP<Matrix> R = Utils2::Transpose(P,true);
+    RCP<Matrix> R = Utils2::Transpose(P, true);
 
     Set(coarseLevel, "R", R);
 

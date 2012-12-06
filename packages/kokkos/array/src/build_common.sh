@@ -38,16 +38,21 @@ CUDA | Cuda | cuda )
   OPTFLAGS="${OPTFLAGS} ${HAVE_CUDA}"
   NVCC_SOURCES="${NVCC_SOURCES} ${KOKKOSARRAY}/src/Cuda/*.cu"
   #
-  # Extract release version from compiler as m0n
-  # where m == major version number
-  # where n == minor version number
+  # Extract release major and minor version from compiler
   #
-  CUDA_RELEASE_VERSION="-DCUDA_RELEASE_VERSION=`nvcc --version | sed -n -e '/release/{s/^.*release //;s/,.*$//;s/\./0/;p}'`"
+  CUDA_VERSION="`nvcc --version | sed -n -e '/release/{s/^.*release //;s/,.*$//;p}'`"
+  CUDA_VERSION_MAJOR=`echo ${CUDA_VERSION} | sed 's/\..*//'`
+  CUDA_VERSION_MINOR=`echo ${CUDA_VERSION} | sed 's/^.*\.//'`
   #
   # -x cu : process all files through the Cuda compiler as Cuda code.
   # -lib -o : produce library
   #
-  NVCC="nvcc -Xcompiler -Wall,-ansi ${CUDA_RELEASE_VERSION} -arch=sm_20 -lib -o libCuda.a -x cu"
+  NVCC="nvcc -arch=sm_20"
+  NVCC="${NVCC} -Xcompiler -Wall,-ansi"
+  NVCC="${NVCC} -DCUDA_VERSION_MAJOR=${CUDA_VERSION_MAJOR}"
+  NVCC="${NVCC} -DCUDA_VERSION_MINOR=${CUDA_VERSION_MINOR}"
+  NVCC="${NVCC} -lib -o libCuda.a -x cu"
+
   LIB="${LIB} libCuda.a -L/usr/local/cuda/lib64 -lcudart -lcuda -lcusparse"
   ;;
 #-------------------------------
@@ -63,6 +68,14 @@ GNU | gnu | g++ )
 INTEL | intel | icc )
   # -xW = use SSE and SSE2 instructions
   CXX="icc -Wall -xW"
+  LIB="${LIB} -lstdc++"
+  ;;
+#-------------------------------
+MIC | mic )
+  CXX="icpc -mmic -ansi-alias -Wall"
+  # CXX="${CXX} -mGLOB_default_function_attrs=knc_stream_store_controls=2"
+  # CXX="${CXX} -vec-report6"
+  # CXX="${CXX} -guide-vec"
   LIB="${LIB} -lstdc++"
   ;;
 #-------------------------------

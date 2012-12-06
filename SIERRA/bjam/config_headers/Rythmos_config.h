@@ -1,44 +1,17 @@
 
-#include "TrilinosPlatform_config.h"
+#define HAVE_MPI
 
-/* Define if want to build with rythmos enabled */
-#define HAVE_RYTHMOS_AMESOS 1
+/* #undef HAVE_RYTHMOS_EXPERIMENTAL */
 
-/* Define if want to build with rythmos enabled */
-#define HAVE_RYTHMOS_AZTECOO 1
+/* #undef HAVE_RYTHMOS_EXPLICIT_INSTANTIATION */
 
-/* Define if want to build with rythmos enabled */
-#define HAVE_RYTHMOS_EPETRAEXT 1
+/* #undef HAVE_RYTHMOS_DEBUG */
 
-/* Define if want to build with rythmos enabled */
-#define HAVE_RYTHMOS_NOX 1
+#define Rythmos_ENABLE_Sacado
 
-/* Define if want to build with nox enabled */
-#define HAVE_RYTHMOS_NOX_EPETRA 1
+#define Rythmos_ENABLE_NOX
 
-/* Define if want to build with rythmos enabled */
-#define HAVE_RYTHMOS_STRATIMIKOS 1
-
-/* Define if want to build with stratimikos enabled */
-#define HAVE_RYTHMOS_STRATIMIKOS_AMESOS 1
-
-/* Define if want to build with stratimikos enabled */
-#define HAVE_RYTHMOS_STRATIMIKOS_AZTECOO 1
-
-/* Define if want to build with stratimikos enabled */
-/* #undef HAVE_RYTHMOS_STRATIMIKOS_BELOS */
-
-/* Define if want to build with stratimikos enabled */
-#define HAVE_RYTHMOS_STRATIMIKOS_IFPACK 1
-
-/* Define if want to build with stratimikos enabled */
-#define HAVE_RYTHMOS_STRATIMIKOS_ML 1
-
-/* Define if want to build with thyra enabled */
-#define HAVE_RYTHMOS_THYRA_EPETRAEXT 1
-
-/* Define if want to build with experimental rythmos code enabled */
-#define HAVE_RYTHMOS_EXPERIMENTAL 1
+#define Rythmos_ENABLE_Stratimikos
 
 #ifndef RYTHMOS_FUNC_TIME_MONITOR
 #  define RYTHMOS_TEUCHOS_TIME_MONITOR

@@ -82,13 +82,22 @@ namespace MueLu {
   Build(Level &level) const
   {
     FactoryMonitor m(*this, "Build", level);
-    RCP<SubFactoryMonitor> m1;
 
     RCP<Matrix> A = Get< RCP<Matrix> >(level, "A");
+    RCP<const Map> rowMap = A->getRowMap();
+    GO numPartitions = Get<GO>(level, "number of partitions");
+
+    if (numPartitions == 1) {
+      // Running on one processor, so decomposition is the trivial one, all zeros.
+      RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
+      Set(level, "Partition", decomposition);
+      return;
+    }
+
     // Tell Zoltan what kind of local/global IDs we will use.
     // In our case, each GID is two ints and there are no local ids.
     // One can skip this step if the IDs are just single ints.
-    RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(A->getRowMap()->getComm());
+    RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(rowMap->getComm());
     float zoltanVersion_;
     Zoltan_Initialize(0, NULL, &zoltanVersion_);
     //TODO define zoltanComm_ as a subcommunicator?!;
@@ -105,14 +114,13 @@ namespace MueLu {
 
     zoltanObj_->Set_Param("debug_level", "0");
 
-    GO numPartitions_ = Get<GO>(level, "number of partitions");
     std::stringstream ss;
-    ss << numPartitions_;
-    zoltanObj_->Set_Param("num_global_partitions",ss.str());
+    ss << numPartitions;
+    zoltanObj_->Set_Param("num_global_partitions", ss.str());
 
-    //~~ if (level.IsAvailable("Coordinates",NoFactory::get()) == false) //FIXME JJH
+    //~~ if (level.IsAvailable("Coordinates", NoFactory::get()) == false) //FIXME JJH
     //~~  throw(Exceptions::HaltRepartitioning("MueLu::ZoltanInterface : no coordinates available"));
-    //RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("Coordinates",TransferFact_.get()); //FIXME JJH
+    //RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("Coordinates", TransferFact_.get()); //FIXME JJH
     //~~    RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("Coordinates");
 
     //TODO: coordinates should be const
@@ -155,8 +163,8 @@ namespace MueLu {
     //~~ size_t problemDimension_ = XYZ->getNumVectors();
     size_t problemDimension_ = XYZ.size();
 
-    zoltanObj_->Set_Num_Obj_Fn(GetLocalNumberOfRows,(void *) &*A);
-    zoltanObj_->Set_Obj_List_Fn(GetLocalNumberOfNonzeros,(void *) &*A);
+    zoltanObj_->Set_Num_Obj_Fn(GetLocalNumberOfRows, (void *) &*A);
+    zoltanObj_->Set_Obj_List_Fn(GetLocalNumberOfNonzeros, (void *) &*A);
     zoltanObj_->Set_Num_Geom_Fn(GetProblemDimension, (void *) &problemDimension_);
     //~~ zoltanObj_->Set_Geom_Multi_Fn(GetProblemGeometry, (void *) &*XYZ);
     zoltanObj_->Set_Geom_Multi_Fn(GetProblemGeometry, (void *) &XYZ);
@@ -176,21 +184,23 @@ namespace MueLu {
     int   num_gid_entries;             // Number of array entries in a global ID.
     int   num_lid_entries;
 
-    m1 = rcp(new SubFactoryMonitor(*this, "Zoltan RCB", level));
-    rv = zoltanObj_->LB_Partition(newDecomp, num_gid_entries, num_lid_entries,
-                                  num_imported, import_gids, import_lids, import_procs, import_to_part,
-                                  num_exported, export_gids, export_lids, export_procs, export_to_part);
-    if (rv == ZOLTAN_FATAL) {
-      throw(Exceptions::RuntimeError("Zoltan::LB_Partition() returned error code"));
+    {
+      SubFactoryMonitor m1(*this, "Zoltan RCB", level);
+      rv = zoltanObj_->LB_Partition(newDecomp, num_gid_entries, num_lid_entries,
+                                    num_imported, import_gids, import_lids, import_procs, import_to_part,
+                                    num_exported, export_gids, export_lids, export_procs, export_to_part);
+      if (rv == ZOLTAN_FATAL) {
+        throw(Exceptions::RuntimeError("Zoltan::LB_Partition() returned error code"));
+      }
     }
-    m1 = Teuchos::null;
 
     //TODO check that A's row map is 1-1.  Zoltan requires this.
-    RCP<const Map> rowMap = A->getRowMap();
     int mypid = rowMap->getComm()->getRank();
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition;
+    RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition;
+
+    // Note: if newDecomp == false, decomposition == Teuchos::null
     if (newDecomp) {
-      decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap,false); //Don't bother initializing, as this will just be overwritten.
+      decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, false); //Don't bother initializing, as this will just be overwritten.
       ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
       for (typename ArrayRCP<GO>::iterator i = decompEntries.begin(); i != decompEntries.end(); ++i)
         *i = mypid;
@@ -202,11 +212,9 @@ namespace MueLu {
           decompEntries[ localEl + j ] = partNum;
           //decompEntries[ rowMap->getLocalElement(export_gids[i]) + j ] = export_to_part[i];
       }
-    } else {
-      //Running on one processor, so decomposition is the trivial one, all zeros.
-      decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap,true);
-    } // if (newDecomp) ... else
-    level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition,this);
+    }
+
+    Set(level, "Partition", decomposition);
 
     zoltanObj_->LB_Free_Part(&import_gids, &import_lids, &import_procs, &import_to_part);
     zoltanObj_->LB_Free_Part(&export_gids, &export_lids, &export_procs, &export_to_part);
@@ -227,7 +235,7 @@ namespace MueLu {
     }
     *ierr = ZOLTAN_OK;
     //TODO is there a safer way to cast?
-    //Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> *A = (Matrix*) data;
+    //Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> *A = (Matrix*) data;
     Matrix *A = (Matrix*) data;
     LocalOrdinal blockSize = A->GetFixedBlockSize(); //FIXME
     if (blockSize==0) throw(Exceptions::RuntimeError("MueLu::Zoltan : Matrix has block size 0."));
@@ -260,7 +268,7 @@ namespace MueLu {
     if (blockSize == 1) {
       for (size_t i=0; i<map->getNodeNumElements(); ++i) {
         gids[i] = (ZOLTAN_ID_TYPE) map->getGlobalElement(i);
-        A->getLocalRowView(i,cols,vals);
+        A->getLocalRowView(i, cols, vals);
         weights[i] = cols.size();
       }
     } else {
@@ -269,7 +277,7 @@ namespace MueLu {
         gids[i] = (ZOLTAN_ID_TYPE) map->getGlobalElement(i*blockSize);
         LO nnz=0;
         for (LocalOrdinal j=i*blockSize; j<(i+1)*blockSize; ++j) {
-          A->getLocalRowView(j,cols,vals);
+          A->getLocalRowView(j, cols, vals);
           nnz += vals.size();
         }
         weights[i] = nnz;
@@ -313,7 +321,7 @@ namespace MueLu {
 
     //~~ if (dim != (int) XYZ->getNumVectors()) {
     if (dim != (int) XYZ.size()) { //FIXME: cast to size_t instead?
-      //FIXME I'm assuming dim should be 1,2,or 3 coming in?!
+      //FIXME I'm assuming dim should be 1, 2, or 3 coming in?!
       *ierr = ZOLTAN_FATAL;
       return;
     }

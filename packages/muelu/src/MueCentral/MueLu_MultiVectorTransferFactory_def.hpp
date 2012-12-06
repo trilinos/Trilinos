@@ -66,11 +66,11 @@ namespace MueLu {
   void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     if (fineLevel.GetLevelID() == 0) fineLevel.DeclareInput(vectorName_, MueLu::NoFactory::get(), this);
     else                             fineLevel.DeclareInput(vectorName_, this                   , this);
-    coarseLevel.DeclareInput(restrictionName_,GetFactory(restrictionName_).get(),this);
+    coarseLevel.DeclareInput(restrictionName_, GetFactory(restrictionName_).get(), this);
     /*
     //FIXME ThreeLevels unit test dies
-    fineLevel.DeclareInput(vectorName_, restrictionFact_.get(),this);
-    coarseLevel.DeclareInput(restrictionName_,restrictionFact_.get(),this);
+    fineLevel.DeclareInput(vectorName_, restrictionFact_.get(), this);
+    coarseLevel.DeclareInput(restrictionName_, restrictionFact_.get(), this);
     */
   } // DeclareInput
 
@@ -79,17 +79,17 @@ namespace MueLu {
 
     FactoryMonitor m(*this, "Build", coarseLevel);
 
-    RCP<MultiVector> vector = fineLevel.Get<RCP<MultiVector> >(vectorName_,MueLu::NoFactory::get()); //FIXME
+    RCP<MultiVector> vector = fineLevel.Get<RCP<MultiVector> >(vectorName_, MueLu::NoFactory::get()); //FIXME
 
-    RCP<Matrix> transferOp = coarseLevel.Get<RCP<Matrix> >(restrictionName_,GetFactory(restrictionName_).get());
+    RCP<Matrix> transferOp = coarseLevel.Get<RCP<Matrix> >(restrictionName_, GetFactory(restrictionName_).get());
 
-    RCP<MultiVector> result = MultiVectorFactory::Build(transferOp->getRangeMap(),vector->getNumVectors());
-    GetOStream(Runtime0,0) << "Transferring multivector \"" << vectorName_ << "\"" << std::endl;
+    RCP<MultiVector> result = MultiVectorFactory::Build(transferOp->getRangeMap(), vector->getNumVectors());
+    GetOStream(Runtime0, 0) << "Transferring multivector \"" << vectorName_ << "\"" << std::endl;
 
-    transferOp->apply(*vector,*result);
+    transferOp->apply(*vector, *result);
 
     if (vectorName_ == "Coordinates") {
-      GetOStream(Runtime0,0) << "Averaging coordinates" << std::endl;
+      GetOStream(Runtime0, 0) << "Averaging coordinates" << std::endl;
       size_t numLocalRows = transferOp->getNodeNumRows();
       Array<size_t> numEntriesPerRow(numLocalRows);
       for (size_t i=0; i<numLocalRows; ++i) {
