@@ -134,8 +134,6 @@ int main(int argc, char *argv[]) {
       Teuchos::ParameterList galeriList;
       galeriList.set("nx", pl.get("nx", nx));
       galeriList.set("ny", pl.get("ny", ny));
-      galeriList.set("mx", comm->getSize()); //mx and my are the number of domains
-      galeriList.set("my", 1);
 
       if (matrixParameters.GetMatrixType() == "Laplace1D") {
         map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
