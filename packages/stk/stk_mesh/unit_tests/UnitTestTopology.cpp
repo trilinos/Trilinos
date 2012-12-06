@@ -130,7 +130,7 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_multiple_topologies )
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
 
   fix.bulk.modification_begin();
-  Entity elem  = fix.create_entity( fix.element_rank, fix.generic_element_part );
+  fix.create_entity( fix.element_rank, fix.generic_element_part );
   PartVector add_parts;
   add_parts.push_back( &fix.element_tet_part );
   add_parts.push_back( &fix.element_wedge_part );

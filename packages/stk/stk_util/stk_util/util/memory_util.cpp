@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <sstream>
 #include <fstream>
+#include <unistd.h>
 #include <stk_util/util/memory_util.hpp>
 
 #if defined(__APPLE__)
