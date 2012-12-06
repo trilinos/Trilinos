@@ -53,7 +53,7 @@
 
 #include "Galeri_ConfigDefs.h"
 
-#ifdef HAVE_GALERI_TPETRA //TODO: this macro is not defined
+#ifdef HAVE_GALERI_TPETRA
 #include <Tpetra_Map.hpp>
 #endif
 
@@ -89,21 +89,21 @@ namespace Galeri {
 
     /* Default traits (not implemented) */
     template <class GlobalOrdinal, class Map>
-    class MapTraits 
+    class MapTraits
     {
     public:
       static Teuchos::RCP<Map> Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
       { return UndefinedMapTraits<Map>::notDefined(); }
     };
 
-#ifdef HAVE_GALERI_TPETRA //TODO: this macro is not defined
-    /* Tpetra traits */
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-    class MapTraits  <GlobalOrdinal, Tpetra::Map<LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> >
+#ifdef HAVE_GALERI_TPETRA
+    /* Specialized traits for Map = Tpetra::Map<...> */
+    template <class LocalOrdinal, class GlobalOrdinal, class Node>
+    class MapTraits < GlobalOrdinal, Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
     {
     public:
-      static Teuchos::RCP<Map> Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
-      { return rcp( new Tpetra::Map(numGlobalElements, elementList, indexBase, comm) ); }
+      static Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
+      { return rcp( new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, elementList, indexBase, comm) ); }
     };
 #endif // HAVE_GALERI_TPETRA
 
