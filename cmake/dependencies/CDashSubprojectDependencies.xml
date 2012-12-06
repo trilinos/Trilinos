@@ -152,7 +152,7 @@
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Triutils" type="ILO"/>
-    <Dependency name="Tpetra" type="ILO"/>
+    <Dependency name="Tpetra" type="LO"/>
     <Dependency name="EpetraExt" type="LO"/>
     <Dependency name="Xpetra" type="LO"/>
     <EmailAddresses>
