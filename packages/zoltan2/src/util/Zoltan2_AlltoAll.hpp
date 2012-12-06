@@ -91,7 +91,7 @@ extern void AlltoAllCount(const Comm<int> &comm, const Environment &env,
  */
 
 template <typename T>
-static void AlltoAllv(const Comm<int> &comm,
+void AlltoAllv(const Comm<int> &comm,
               const Environment &env,  
               const ArrayView<const T> &sendBuf,
               const ArrayView<const int> &sendCount,
@@ -203,7 +203,7 @@ static void AlltoAllv(const Comm<int> &comm,
 #endif
 }
 
-/////////////////
+
 /* \brief Specialization for std::string.
   
     For string of char. Number of chars in a string limited to SCHAR_MAX.
@@ -216,95 +216,9 @@ void AlltoAllv(const Comm<int> &comm,
               const Environment &env,  
               const ArrayView<const string> &sendBuf,
               const ArrayView<const int> &sendCount,
-              ArrayRCP<string> &recvBuf,  // output, allocated here
-              ArrayRCP<int> &recvCount,  // output, allocated here
-              bool countsAreUniform)
-{
-  int nprocs = comm.getSize();
-  int *newCount = new int [nprocs];
-  memset(newCount, 0, sizeof(int) * nprocs);
-  ArrayView<const int> newSendCount(newCount, nprocs);
-
-
-  size_t numStrings = sendBuf.size();
-  size_t numChars = 0;
-  bool fail=false;
-
-  for (int p=0, i=0; !fail && p < nprocs; p++){
-    for (int c=0; !fail && c < sendCount[p]; c++, i++){
-      size_t nchars = sendBuf[i].size();
-      if (nchars > SCHAR_MAX)
-        fail = true;
-      else
-        newCount[p] += nchars;
-    }
-    newCount[p] += sendCount[p];
-    numChars += newCount[p];
-  }
-
-  if (fail)
-    throw std::runtime_error("id string length exceeds SCHAR_MAX");
-
-  char *sbuf = NULL;
-  if (numChars > 0)
-    sbuf = new char [numChars];
-  char *sbufptr = sbuf;
-
-  ArrayView<const char> newSendBuf(sbuf, numChars);
-
-  for (size_t i=0; i < numStrings; i++){
-    size_t nchars = sendBuf[i].size();
-    *sbufptr++ = static_cast<char>(nchars);
-    for (size_t j=0; j < nchars; j++)
-      *sbufptr++ = sendBuf[i][j];
-  }
-
-  ArrayRCP<char> newRecvBuf;
-  ArrayRCP<int> newRecvCount;
-
-  AlltoAllv<char>(comm, env, newSendBuf, newSendCount, 
-    newRecvBuf, newRecvCount, countsAreUniform);
-
-  delete [] sbuf;
-  delete [] newCount;
-
-  char *inBuf = newRecvBuf.getRawPtr();
-
-  int numNewStrings = 0;
-  char *buf = inBuf;
-  char *endChar = inBuf + newRecvBuf.size();
-  while (buf < endChar){
-    int slen = static_cast<int>(*buf++);
-    buf += slen;
-    numNewStrings++;
-  }
-
-  // Counts to return
-  int *numStringsRecv = new int [nprocs];
-  memset(numStringsRecv, 0, sizeof(int) * nprocs);
-
-  // Data to return
-  string *newStrings = new string [numNewStrings];
-
-  buf = inBuf;
-  int next = 0;
-
-  for (int p=0; p < nprocs; p++){
-    int nchars = newRecvCount[p];
-    endChar = buf + nchars;
-    while (buf < endChar){
-      int slen = *buf++;
-      string nextString;
-      for (int i=0; i < slen; i++)
-        nextString.push_back(*buf++);
-      newStrings[next++] = nextString;
-      numStringsRecv[p]++;
-    }
-  }
-
-  recvBuf = arcp<string>(newStrings, 0, numNewStrings, true);
-  recvCount = arcp<int>(numStringsRecv, 0, nprocs, true);
-}
+              ArrayRCP<string> &recvBuf,
+              ArrayRCP<int> &recvCount,
+              bool countsAreUniform);
 
 #ifdef HAVE_ZOLTAN2_LONG_LONG
 
@@ -315,20 +229,9 @@ void AlltoAllv(const Comm<int> &comm,
               const Environment &env,  
               const ArrayView<const unsigned long long> &sendBuf,
               const ArrayView<const int> &sendCount,
-              ArrayRCP<unsigned long long> &recvBuf,  // output, allocated here
-              ArrayRCP<int> &recvCount,  // output, allocated here
-              bool countsAreUniform)
-{
-  const long long *sbuf = 
-    reinterpret_cast<const long long *>(sendBuf.getRawPtr());
-  ArrayView<const long long> newSendBuf(sbuf, sendBuf.size());
-  ArrayRCP<long long> newRecvBuf;
-
-  AlltoAllv<long long>(comm, env, newSendBuf, sendCount, 
-    newRecvBuf, recvCount, countsAreUniform);
-
-  recvBuf = arcp_reinterpret_cast<unsigned long long>(newRecvBuf);
-}
+              ArrayRCP<unsigned long long> &recvBuf,
+              ArrayRCP<int> &recvCount,
+              bool countsAreUniform);
 #endif
 
 /* \brief Specialization for unsigned short 
@@ -338,19 +241,9 @@ void AlltoAllv(const Comm<int> &comm,
               const Environment &env,  
               const ArrayView<const unsigned short> &sendBuf,
               const ArrayView<const int> &sendCount,
-              ArrayRCP<unsigned short> &recvBuf,  // output, allocated here
-              ArrayRCP<int> &recvCount,  // output, allocated here
-              bool countsAreUniform)
-{
-  const short *sbuf = reinterpret_cast<const short *>(sendBuf.getRawPtr());
-  ArrayView<const short> newSendBuf(sbuf, sendBuf.size());
-  ArrayRCP<short> newRecvBuf;
-
-  AlltoAllv<short>(comm, env, newSendBuf, sendCount, 
-    newRecvBuf, recvCount, countsAreUniform);
-
-  recvBuf = arcp_reinterpret_cast<unsigned short>(newRecvBuf);
-}
+              ArrayRCP<unsigned short> &recvBuf,
+              ArrayRCP<int> &recvCount,
+              bool countsAreUniform);
 
 /* \brief For data type unsigned char (no Teuchos::DirectSerializationTraits)
  */
@@ -359,19 +252,10 @@ void AlltoAllv(const Comm<int> &comm,
               const Environment &env,  
               const ArrayView<const unsigned char> &sendBuf,
               const ArrayView<const int> &sendCount,
-              ArrayRCP<unsigned char> &recvBuf,      // output, allocated here
-              ArrayRCP<int> &recvCount,  // output, allocated here
-              bool countsAreUniform)
-{
-  const char *sbuf = reinterpret_cast<const char *>(sendBuf.getRawPtr());
-  ArrayView<const char> newSendBuf(sbuf, sendBuf.size());
-  ArrayRCP<char> newRecvBuf;
+              ArrayRCP<unsigned char> &recvBuf,
+              ArrayRCP<int> &recvCount,
+              bool countsAreUniform);
 
-  AlltoAllv<char>(comm, env, newSendBuf, sendCount, 
-    newRecvBuf, recvCount, countsAreUniform);
 
-  recvBuf = arcp_reinterpret_cast<unsigned char>(newRecvBuf);
-}
-/////////////////
 }                   // namespace Z2
 #endif
