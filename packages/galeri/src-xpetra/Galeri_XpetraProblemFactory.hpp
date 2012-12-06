@@ -53,6 +53,8 @@
 #include "Teuchos_Assert.hpp"
 
 #include "Galeri_StencilProblems.hpp"
+#include "Galeri_Elasticity2DProblem.hpp"
+#include "Galeri_Elasticity3DProblem.hpp"
 
 #include <iostream>
 
@@ -83,6 +85,12 @@ namespace Galeri {
 
       else if (MatrixType == "Brick3D")
         P.reset(new Brick3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
+
+      else if (MatrixType == "Elasticity2D")
+        P.reset(new Elasticity2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
+
+      else if (MatrixType == "Elasticity3D")
+        P.reset(new Elasticity3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
 
       else if (MatrixType == "Identity")
         P.reset(new IdentityProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));

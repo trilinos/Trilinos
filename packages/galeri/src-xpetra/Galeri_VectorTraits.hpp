@@ -61,6 +61,8 @@
 namespace Galeri {
   
   namespace Xpetra {
+
+    using Teuchos::RCP;
     
     // Default traits
     template <class Map, class Vector>

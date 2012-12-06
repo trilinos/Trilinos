@@ -52,44 +52,53 @@
 #include <Teuchos_ParameterList.hpp>
 
 namespace Galeri {
-  
+
   namespace Xpetra {
-    
+
     // TODO nx/ny/nz == GO or global_size_t ? But what is the best to do?
 
     template<typename GO>
-    class Parameters 
+    class Parameters
       : public Teuchos::VerboseObject<Parameters<GO> >, public Teuchos::Describable
     {
 
     public:
-      
-      Parameters(Teuchos::CommandLineProcessor& clp, GO nx=16, GO ny=-1, GO nz=-1, const std::string &
-      matrixType="Laplace1D", int keepBCs=0): nx_(nx), ny_(ny), nz_(nz), matrixType_(matrixType), keepBCs_(keepBCs){
-        clp.setOption("nx", &nx_, "mesh points in x-direction.");
-        clp.setOption("ny", &ny_, "mesh points in y-direction.");
-        clp.setOption("nz", &nz_, "mesh points in z-direction.");
-        clp.setOption("matrixType", &matrixType_, "matrix type: Laplace1D, Laplace2D, Laplace3D"); //TODO: Star2D, numGlobalElements=...
-        clp.setOption("keepBCs", &keepBCs_, "keep Dirichlet boundary rows in matrix (0=false,1=true)");
+
+      Parameters(Teuchos::CommandLineProcessor& clp, GO nx=16, GO ny=-1, GO nz=-1, const std::string & matrixType="Laplace1D", int keepBCs=0,
+                 double stretchx=1.0, double stretchy=1.0, double stretchz=1.0)
+          : nx_(nx), ny_(ny), nz_(nz), stretchx_(stretchx), stretchy_(stretchy), stretchz_(stretchz), matrixType_(matrixType), keepBCs_(keepBCs) {
+        clp.setOption("nx",         &nx_,           "mesh points in x-direction.");
+        clp.setOption("ny",         &ny_,           "mesh points in y-direction.");
+        clp.setOption("nz",         &nz_,           "mesh points in z-direction.");
+        clp.setOption("stretchx",   &stretchx_,     "stretch mesh in x-direction.");
+        clp.setOption("stretchy",   &stretchy_,     "stretch mesh in y-direction.");
+        clp.setOption("stretchz",   &stretchz_,     "stretch mesh in z-direction.");
+        clp.setOption("matrixType", &matrixType_,   "matrix type: Laplace1D, Laplace2D, Laplace3D, ..."); //TODO: Star2D, numGlobalElements=...
+        clp.setOption("keepBCs",    &keepBCs_,      "keep Dirichlet boundary rows in matrix (0=false,1=true)");
       }
-      
+
       void check() const {
         //if (nx < 0) ...
       }
-      
+
       GO GetNumGlobalElements() const {
         check();
 
         GO numGlobalElements=-1;
-        if (matrixType_ == "Laplace1D")
+        if (matrixType_ == "Laplace1D") {
+          ny_ = nz_ = -1;
           numGlobalElements = static_cast<GO>(nx_);
-        else if (matrixType_ == "Laplace2D")
-          numGlobalElements = static_cast<GO>(nx_*ny_);
-        else if (matrixType_ == "Laplace3D")
-          numGlobalElements = static_cast<GO>(nx_*ny_*nz_);
-        //TODO else throw
 
-        if (numGlobalElements < 0) throw std::runtime_error("Gallery: numGlobalElements < 0 (did you forget --ny for 2D problems?)");
+        } else if (matrixType_ == "Laplace2D" || matrixType_ == "Elasticity2D") {
+          nz_ = -1;
+          numGlobalElements = static_cast<GO>(nx_*ny_);
+
+        } else if (matrixType_ == "Laplace3D" || matrixType_ == "Elasticity3D") {
+          numGlobalElements = static_cast<GO>(nx_*ny_*nz_);
+
+        } //TODO else throw
+
+        if (numGlobalElements < 0) throw std::runtime_error("Gallery: numGlobalElements < 0 (did you forget --ny (or --nz) for 2D (3D) problems?)");
 
         return numGlobalElements;
       }
@@ -104,17 +113,20 @@ namespace Galeri {
 
         check();
 
-        paramList_.set("nx", static_cast<GO>(nx_));
-        paramList_.set("ny", static_cast<GO>(ny_));
-        paramList_.set("nz", static_cast<GO>(nz_));
-        paramList_.set("keepBCs", static_cast<bool>(keepBCs_));
+        paramList_.set("nx",        static_cast<GO>(nx_));
+        paramList_.set("ny",        static_cast<GO>(ny_));
+        paramList_.set("nz",        static_cast<GO>(nz_));
+        paramList_.set("stretchx",  stretchx_);
+        paramList_.set("stretchy",  stretchy_);
+        paramList_.set("stretchz",  stretchz_);
+        paramList_.set("keepBCs",   static_cast<bool>(keepBCs_));
 
         return paramList_;
       }
 
-      //! @name Overridden from Teuchos::Describable 
+      //! @name Overridden from Teuchos::Describable
       //@{
-    
+
       //! Return a simple one-line description of this object.
       std::string description() const {
         std::ostringstream out;
@@ -122,47 +134,48 @@ namespace Galeri {
         out << "{type = "  << matrixType_ << ", size = " << GetNumGlobalElements() << "} ";
         return out.str();
       }
-    
+
       //! Print the object with some verbosity level to an FancyOStream object.
       void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const {
         using std::endl;
         int vl = (verbLevel == Teuchos::VERB_DEFAULT) ? Teuchos::VERB_LOW : verbLevel;
         if (vl == Teuchos::VERB_NONE) return;
-      
+
         if (vl == Teuchos::VERB_LOW) { out << description() << endl; } else { out << Teuchos::Describable::description() << endl; }
-      
-        if (vl ==Teuchos:: VERB_MEDIUM || vl == Teuchos::VERB_HIGH || vl == Teuchos::VERB_EXTREME) {
+
+        if (vl == Teuchos:: VERB_MEDIUM || vl == Teuchos::VERB_HIGH || vl == Teuchos::VERB_EXTREME) {
           Teuchos::OSTab tab1(out);
 
           out << "Matrix type: " << matrixType_ << endl
               << "Problem size: " << GetNumGlobalElements();
 
-          if (matrixType_ == "Laplace2D")       out << " (" << nx_ << "x" << ny_ << ")";
-          else if (matrixType_ == "Laplace3D")  out << " (" << nx_ << "x" << ny_ << "x" << nz_ << ")";
+          if      (matrixType_ == "Laplace2D" || matrixType_ == "Elasticity2D")  out << " (" << nx_ << "x" << ny_ << ")";
+          else if (matrixType_ == "Laplace3D" || matrixType_ == "Elasticity3D")  out << " (" << nx_ << "x" << ny_ << "x" << nz_ << ")";
 
           out << endl;
         }
-      
+
       }
 
       //@}
 
     private:
       // See Teuchos BUG 5249: https://software.sandia.gov/bugzilla/show_bug.cgi?id=5249
-      double nx_;
-      double ny_;
-      double nz_;
+      mutable double nx_;
+      mutable double ny_;
+      mutable double nz_;
+      mutable double stretchx_, stretchy_, stretchz_;
       // GO nx_;
       // GO ny_;
       // GO nz_;
 
       std::string matrixType_;
 
-      int keepBCs_;
+      mutable int keepBCs_;
 
       mutable Teuchos::ParameterList paramList_; // only used by GetParameterList(). It's temporary data. TODO: bad design...
     };
-  
+
   }
 }
 

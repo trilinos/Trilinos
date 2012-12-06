@@ -52,7 +52,7 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     ScalingTestParamList  #TODO: Suffix Int/LongInt when done in the source code
     SOURCES ScalingTestParamList.cpp
     COMM serial mpi
-    DEPLIBS muelu xpetra muelu-adapters
+    DEPLIBS muelu xpetra muelu-adapters galeri
     )
 
   TRIBITS_ADD_EXECUTABLE(

@@ -58,6 +58,8 @@
 #include <MueLu_Level.hpp>
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 
+#include <MueLu_Utilities.hpp>
+
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_UseShortNames.hpp>
 
@@ -92,16 +94,16 @@ int main(int argc, char *argv[]) {
   Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  std::string xmlFileName = "scalingTest.xml"; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default 'scalingTest.xml'");
-  int amgAsPrecond=1; clp.setOption("precond",&amgAsPrecond,"apply multigrid as preconditioner");
-  int amgAsSolver=0; clp.setOption("fixPoint",&amgAsSolver,"apply multigrid as solver");
-  bool printTimings=true; clp.setOption("timings","notimings",&printTimings,"print timings to screen");
+  std::string xmlFileName = "scalingTest.xml"; clp.setOption("xml",                   &xmlFileName,  "read parameters from a file. Otherwise, this example uses by default 'scalingTest.xml'");
+  int  amgAsPrecond = 1;                       clp.setOption("precond",               &amgAsPrecond, "apply multigrid as preconditioner");
+  int   amgAsSolver = 0;                       clp.setOption("fixPoint",              &amgAsSolver,  "apply multigrid as solver");
+  bool printTimings = true;                    clp.setOption("timings", "notimings",  &printTimings, "print timings to screen");
 
   switch (clp.parse(argc,argv)) {
-  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case Teuchos::CommandLineProcessor::PARSE_ERROR:
-  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
   if (comm->getRank() == 0) {
@@ -133,23 +135,23 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList galeriList;
   galeriList.set("nx", pl.get("nx",nx));
   galeriList.set("ny", pl.get("ny",ny));
+  galeriList.set("nz", pl.get("nz",nz));
   //galeriList.set("mx", comm->getSize());
   //galeriList.set("my", 1);
 
   if (matrixParameters.GetMatrixType() == "Laplace1D") {
-    map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
     coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D",map,matrixParameters.GetParameterList());
   }
-  else if (matrixParameters.GetMatrixType() == "Laplace2D" || matrixParameters.GetMatrixType() == "Star2D") {
+  else if (matrixParameters.GetMatrixType() == "Laplace2D" || matrixParameters.GetMatrixType() == "Star2D" || matrixParameters.GetMatrixType() == "Elasticity2D") {
     map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
     coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",map,matrixParameters.GetParameterList());
   }
-  else if (matrixParameters.GetMatrixType() == "Laplace3D") {
+  else if (matrixParameters.GetMatrixType() == "Laplace3D" || matrixParameters.GetMatrixType() == "Elasticity3D") {
+    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
     coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D",map,matrixParameters.GetParameterList());
-    //map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList); //TODO when available in Galeri
-    map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
   }
-
+  // Expand map to do multiple DOF per node
   if (matrixParameters.GetMatrixType() == "Elasticity2D")
     map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 2);
   if (matrixParameters.GetMatrixType() == "Elasticity3D")
@@ -163,8 +165,15 @@ int main(int argc, char *argv[]) {
               << "========================================================" << std::endl;
   }
 
+  Teuchos::ParameterList matrixParams = matrixParameters.GetParameterList();
+  matrixParams.set("mx", galeriList.get("mx", -1));
+  matrixParams.set("my", galeriList.get("my", -1));
+  matrixParams.set("mz", galeriList.get("mz", -1));
+  if (matrixParameters.GetMatrixType() == "Elasticity2D" || matrixParameters.GetMatrixType() == "Elasticity3D")
+    matrixParams.set("left boundary", "Dirichlet");
+
   RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParams);
   RCP<Matrix> A = Pr->BuildMatrix();
 
   tm = Teuchos::null;
@@ -180,14 +189,17 @@ int main(int argc, char *argv[]) {
 
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
 
-  H->GetLevel(0)->Set("A", A);
 
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map,1);
-  nullspace->putScalar( (SC) 1.0);
-
   if (matrixParameters.GetMatrixType() == "Elasticity2D" ||
-      matrixParameters.GetMatrixType() == "Elasticity3D")
+      matrixParameters.GetMatrixType() == "Elasticity3D") {
     nullspace = Pr->BuildNullspace();
+    A->SetFixedBlockSize((matrixParameters.GetMatrixType() == "Elasticity2D") ? 2 : 3);
+  } else {
+    nullspace->putScalar( (SC) 1.0);
+  }
+
+  H->GetLevel(0)->Set("A", A);
 
   H->GetLevel(0)->Set("Nullspace", nullspace);
   H->GetLevel(0)->Set("Coordinates", coordinates);

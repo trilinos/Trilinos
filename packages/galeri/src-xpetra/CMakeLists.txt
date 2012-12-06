@@ -13,12 +13,16 @@ APPEND_SET(HEADERS
 
   Galeri_XpetraProblemFactory.hpp
   Galeri_XpetraMatrixTypes.hpp
+  Galeri_StencilProblems.hpp
+  Galeri_Elasticity2DProblem.hpp
+  Galeri_Elasticity3DProblem.hpp
 
   Galeri_VectorTraits.hpp
   Galeri_MatrixTraits.hpp
   Galeri_MapTraits.hpp
 
   Galeri_XpetraMaps.hpp
+  Maps/Galeri_XpetraCartesian1D.hpp
   Maps/Galeri_XpetraCartesian2D.hpp
   Maps/Galeri_XpetraCartesian3D.hpp
   )
