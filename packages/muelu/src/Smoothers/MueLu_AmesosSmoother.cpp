@@ -61,8 +61,8 @@
 
 namespace MueLu {
 
-  AmesosSmoother::AmesosSmoother(std::string const & type, Teuchos::ParameterList const & paramList, RCP<FactoryBase> AFact)
-    : type_(type), paramList_(paramList), AFact_(AFact)
+  AmesosSmoother::AmesosSmoother(std::string const & type, Teuchos::ParameterList const & paramList)
+    : type_(type), paramList_(paramList)
   {
     // set default solver type
     if(type_ == "") {
@@ -105,14 +105,14 @@ namespace MueLu {
   AmesosSmoother::~AmesosSmoother() {}
 
   void AmesosSmoother::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("A", AFact_.get());
+    Input(currentLevel, "A");
   }
 
   void AmesosSmoother::Setup(Level &currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
     if (SmootherPrototype::IsSetup() == true) GetOStream(Warnings0, 0) << "Warning: MueLu::AmesosSmoother::Setup(): Setup() has already been called" << std::endl;
 
-    A_ = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
+    A_ = Get< RCP<Matrix> >(currentLevel, "A");
 
     RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
     linearProblem_ = rcp( new Epetra_LinearProblem() );

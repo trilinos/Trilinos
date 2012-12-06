@@ -113,7 +113,7 @@ namespace MueLu {
 
     */
 
-    AmesosSmoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null);
+    AmesosSmoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList());
 
     //! Destructor
     virtual ~AmesosSmoother();
@@ -187,9 +187,6 @@ namespace MueLu {
     //! pointer to Amesos solver object
     RCP<Amesos_BaseSolver> prec_;
 
-    //! A Factory
-    RCP<FactoryBase> AFact_;
-
   }; // class AmesosSmoother
 
   //! Non-member templated function GetAmesosSmoother() returns a new AmesosSmoother object when <Scalar, LocalOrdinal, GlobalOrdinal> == <double, int, int>. Otherwise, an exception is thrown.
@@ -202,7 +199,9 @@ namespace MueLu {
   //
   template <>
   inline RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > GetAmesosSmoother<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>(std::string const & type, Teuchos::ParameterList const & paramList, RCP<FactoryBase> AFact) {
-    return rcp( new AmesosSmoother(type, paramList, AFact) );
+    RCP<AmesosSmoother> smoo = rcp( new AmesosSmoother(type, paramList) );
+    smoo->SetFactory("A", AFact);
+    return smoo;
   }
 
 } // namespace MueLu

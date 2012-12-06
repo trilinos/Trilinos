@@ -59,8 +59,8 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ProjectorSmoother(RCP<SmootherPrototype> coarseSolver, RCP<const FactoryBase> AFact)
-    : coarseSolver_(coarseSolver), AFact_(AFact)
+  ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ProjectorSmoother(RCP<SmootherPrototype> coarseSolver)
+    : coarseSolver_(coarseSolver)
   { }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -68,7 +68,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("A",            AFact_.get());
+    this->Input(currentLevel, "A");
     currentLevel.DeclareInput("Nullspace",    NULL);
   }
 
@@ -81,7 +81,7 @@ namespace MueLu {
     if (SmootherPrototype::IsSetup() == true)
       this->GetOStream(Warnings0, 0) << "Warning: MueLu::ProjectorSmoother::Setup(): Setup() has already been called" << std::endl;
 
-    RCP<Matrix>      A = currentLevel.Get< RCP<Matrix> >           ("A",            AFact_.get());
+    RCP<Matrix>      A = Factory::Get< RCP<Matrix> >(currentLevel, "A");
     RCP<MultiVector> B = currentLevel.Get< RCP<MultiVector> >      ("Nullspace",    NULL);
 
     int m = B->getNumVectors();
@@ -170,6 +170,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
+    out0 << "";
   }
 
 } // namespace MueLu

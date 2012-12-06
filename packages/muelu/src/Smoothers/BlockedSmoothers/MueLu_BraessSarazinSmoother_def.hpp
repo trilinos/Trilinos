@@ -80,16 +80,17 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BraessSarazinSmoother(LocalOrdinal sweeps, Scalar omega, RCP<const FactoryBase> AFact)
-    : type_("Braess Sarazin"), nSweeps_(sweeps), omega_(omega), AFact_(AFact), A_(Teuchos::null)
+  BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BraessSarazinSmoother(LocalOrdinal sweeps, Scalar omega)
+    : type_("Braess Sarazin"), nSweeps_(sweeps), omega_(omega), A_(Teuchos::null)
   {
     RCP<SchurComplementFactory> SchurFact = Teuchos::rcp(new SchurComplementFactory(omega));
-    SchurFact->SetFactory("A",AFact_);
+    SchurFact->SetFactory("A", this->GetFactory("A"));
 
     // define smoother/solver for BraessSarazin
     Teuchos::ParameterList SCparams;
     std::string SCtype;
-    RCP<SmootherPrototype> smoProtoSC     = rcp( new DirectSolver(SCtype,SCparams,SchurFact) );
+    RCP<SmootherPrototype> smoProtoSC     = rcp( new DirectSolver(SCtype,SCparams) );
+    smoProtoSC->SetFactory("A", SchurFact);
 
     RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
 
@@ -110,7 +111,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("A", AFact_.get());
+    this->Input(currentLevel, "A");
     TEUCHOS_TEST_FOR_EXCEPTION(FactManager_ == Teuchos::null, Exceptions::RuntimeError, "MueLu::BraessSarazinSmoother::DeclareInput: FactManager_ must not be Teuchos::null! error.");
     currentLevel.DeclareInput("PreSmoother",FactManager_->GetFactory("PreSmoother").get());
   }
@@ -130,7 +131,7 @@ namespace MueLu {
             this->GetOStream(Warnings0, 0) << "Warning: MueLu::BreaessSarazinSmoother::Setup(): Setup() has already been called";
 
     // extract blocked operator A from current level
-    A_ = currentLevel.Get<RCP<Matrix> > ("A", AFact_.get());
+    A_ = Factory::Get<RCP<Matrix> > (currentLevel, "A");
 
     RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A_);
     TEUCHOS_TEST_FOR_EXCEPTION(bA == Teuchos::null, Exceptions::BadCast, "MueLu::BraessSarazinSmoother::Setup: input matrix A is not of type BlockedCrsMatrix! error.");

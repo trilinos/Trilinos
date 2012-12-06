@@ -98,7 +98,7 @@ namespace MueLu {
 
     /*! @brief Constructor
     */
-    BraessSarazinSmoother(const LocalOrdinal sweeps = 1, const Scalar omega = 1.0, RCP<const FactoryBase> AFact = Teuchos::null);
+    BraessSarazinSmoother(const LocalOrdinal sweeps = 1, const Scalar omega = 1.0);
 
     //! Destructor
     virtual ~BraessSarazinSmoother();

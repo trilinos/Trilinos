@@ -61,10 +61,9 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Amesos2Smoother(std::string const & type, Teuchos::ParameterList const & paramList, RCP<FactoryBase> AFact)
-    : type_(type), paramList_(paramList), AFact_(AFact)
+  Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Amesos2Smoother(std::string const & type, Teuchos::ParameterList const & paramList)
+    : type_(type), paramList_(paramList)
   {
-
     // Set default solver type
     // TODO: It would be great is Amesos2 provides directly this kind of logic for us
     if(type_ == "") {
@@ -102,7 +101,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("A", AFact_.get());
+    this->Input(currentLevel, "A");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -110,7 +109,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
     if (SmootherPrototype::IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother::Setup(): Setup() has already been called" << std::endl;
 
-    RCP<Matrix> A_ = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
+    RCP<Matrix> A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
     RCP<Tpetra_CrsMatrix> tA = Utils::Op2NonConstTpetraCrs(A_);
 

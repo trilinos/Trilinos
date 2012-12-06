@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
 //                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -35,70 +35,55 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
+// Questions? Contact Karen Devine      (kddevin@sandia.gov)
+//                    Erik Boman        (egboman@sandia.gov)
+//                    Siva Rajamanickam (srajama@sandia.gov)
 //
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_FACTORYBASE_HPP
-#define MUELU_FACTORYBASE_HPP
 
+/*! \file Zoltan2_IdentifierTraits.cpp
+   \brief Defines basic traits for user global identifiers.
+*/
+
+#include <Zoltan2_Standards.hpp>
+#include <Zoltan2_AlltoAll.hpp>
+#include <Zoltan2_IdentifierTraits.hpp>
+
+#include <Teuchos_SerializationTraits.hpp>
+#include <Teuchos_HashUtils.hpp>
+#include <Teuchos_ReductionOp.hpp>
+
+#include <utility>
+#include <iostream>
+#include <sstream>
 #include <string>
+#include <limits>
+#include <cstdlib>
 
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_BaseClass.hpp"
 
-#include "MueLu_Level_fwd.hpp"
+namespace Zoltan2
+{
 
-namespace MueLu {
+/*! \brief helper to hash values larger than int to an int.
+ *  Hash values do not need to be unique, but there should be
+ *  as few overlaps as possible.
+ */
+int getHashCode(const unsigned char *a, size_t len)
+{
+  int total=0;
+  unsigned char *to = reinterpret_cast<unsigned char *>(&total);
+  int c=0;
+  for (size_t i=0; i < len; i++){
+    to[c++] += a[i];
+    if (c == sizeof(int))
+      c = 0;
+  }
+  if (total < 0)
+    total *= -1;
+  return total;
+}
 
-  /*!
-    @class FactoryBase
-    @brief Base class for factories (e.g., R, P, and A_coarse).
-    @ingroup MueLuBaseClasses
-  */
-  class FactoryBase : virtual public BaseClass {
+} // namespace Z2
 
-  public:
-    //@{ Constructors/Destructors.
-
-    //! Constructor.
-    FactoryBase()
-      : id_(FactoryBase::GenerateUniqueId())
-    { }
-
-    //! Destructor.
-    virtual ~FactoryBase() { }
-    //@}
-
-    //@{
-    //! @name Build methods.
-
-    virtual void CallBuild(Level & requestedLevel) const = 0;
-
-    virtual void CallDeclareInput(Level & requestedLevel) const = 0;
-    //@}
-
-    //@{
-    //! @name Access factory properties
-
-    /// return unique factory id
-    int GetID() const { return id_; };
-
-    //@}
-
-  private:
-
-    static int GenerateUniqueId();
-
-    const int id_;
-
-  }; //class FactoryBase
-
-} //namespace MueLu
-
-#define MUELU_FACTORYBASE_SHORT
-#endif //ifndef MUELU_FACTORYBASE_HPP

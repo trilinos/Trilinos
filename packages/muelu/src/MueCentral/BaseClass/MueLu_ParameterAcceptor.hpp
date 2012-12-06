@@ -43,44 +43,43 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_SMOOTHERPROTOTYPEBASE_HPP
-#define MUELU_SMOOTHERPROTOTYPEBASE_HPP
+#ifndef MUELU_PARAMETERACCEPTOR_HPP
+#define MUELU_PARAMETERACCEPTOR_HPP
 
+#include <string>
 
-
+#include "Teuchos_RCP.hpp"
 #include "MueLu_ConfigDefs.hpp"
-//#include "MueLu_Level.hpp"
+//#include "Muelu_FactoryBase_fwd.hpp"
+#include "MueLu_FactoryBase.hpp"
+
+// TODO See also: Teuchos::ParameterListAcceptor, Teko::Clonable
 
 namespace MueLu {
-  class Level;
 
-  /*!
-    @class SmootherPrototypeBase
-    @brief Base class for smoother prototypes
-
-    This has the signature for the required DeclareInput.
-  */
-
-  class SmootherPrototypeBase  {
-  public:
-    //@{ Constructors/Destructors.
-    SmootherPrototypeBase() {}
-
-    virtual ~SmootherPrototypeBase() {}
-    //@}
+  class ParameterAcceptor {
 
   public:
 
-    //! @name DeclareInput methods.
+    virtual ~ParameterAcceptor() { }
+
     //@{
+    //! Configuration
 
-    //! Declare Input for smoother.
-    virtual void DeclareInput(Level &currentLevel) const = 0;
+    //! SetFactory is for expert users only. To change configuration of the preconditioner, use a factory manager.
+    virtual void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory) = 0;
+
+    virtual const RCP<const FactoryBase> GetFactory(const std::string & varName) const = 0;
+
+    // SetParameterList(...);
+
+    // GetParameterList(...);
 
     //@}
 
-  }; //class SmootherPrototypeBase
+  }; //class ParameterAcceptor
 
 } //namespace MueLu
 
-#endif //ifndef MUELU_SMOOTHERPROTOTYPEBASE_HPP
+#define MUELU_PARAMETERACCEPTOR_SHORT
+#endif //ifndef MUELU_PARAMETERACCEPTOR_HPP

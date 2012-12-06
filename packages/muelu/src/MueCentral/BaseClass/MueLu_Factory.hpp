@@ -53,6 +53,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_FactoryBase.hpp"
+#include "MueLu_ParameterAcceptor.hpp"
 
 #include "MueLu_Level.hpp"
 
@@ -67,7 +68,7 @@ namespace MueLu {
       return f->second;
   }
 
-  class Factory : public FactoryBase {
+  class Factory : public FactoryBase, public ParameterAcceptor {
 
   public:
     //@{ Constructors/Destructors.

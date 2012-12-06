@@ -60,13 +60,13 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DirectSolver(std::string const & type, Teuchos::ParameterList const & paramList, RCP<FactoryBase> AFact)
-    : type_(type), paramList_(paramList), AFact_(AFact)
+  DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DirectSolver(std::string const & type, Teuchos::ParameterList const & paramList)
+    : type_(type), paramList_(paramList)
   { }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("A", AFact_.get()); // TODO: also call Amesos or Amesos2::DeclareInput?
+    this->Input(currentLevel, "A"); // TODO: also call Amesos or Amesos2::DeclareInput?
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -75,17 +75,18 @@ namespace MueLu {
     if (SmootherPrototype::IsSetup() == true) VerboseObject::GetOStream(Warnings0, 0) << "Warning: MueLu::DirectSolver::Setup(): Setup() has already been called";
     TEUCHOS_TEST_FOR_EXCEPTION(s_ != Teuchos::null, Exceptions::RuntimeError, "IsSetup() == false but s_ != Teuchos::null. This does not make sense");
 
-    Xpetra::UnderlyingLib lib = currentLevel.Get< RCP<Matrix> >("A", AFact_.get())->getRowMap()->lib();
+    RCP<Matrix> A = Factory::Get< RCP<Matrix> >(currentLevel, "A");
+    Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
 
     if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_AMESOS2
-      s_ = rcp( new Amesos2Smoother(type_, paramList_, AFact_) );
+      s_ = rcp( new Amesos2Smoother(type_, paramList_) );
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Tpetra matrices. Compile MueLu with Amesos2");
 #endif
     } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_AMESOS
-      s_ = GetAmesosSmoother<SC,LO,GO,NO,LMO>(type_, paramList_, AFact_);
+      s_ = GetAmesosSmoother<SC,LO,GO,NO,LMO>(type_, paramList_);
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Epetra matrices. Compile MueLu with Amesos"); // add Amesos2 to the msg when support for Amesos2+Epetra is implemented.
 #endif
@@ -95,6 +96,7 @@ namespace MueLu {
 
     TEUCHOS_TEST_FOR_EXCEPTION(s_ == Teuchos::null, Exceptions::RuntimeError, "");
 
+    s_->SetFactory("A", this->GetFactory("A"));
     s_->Setup(currentLevel);
 
     SmootherPrototype::IsSetup(true);
