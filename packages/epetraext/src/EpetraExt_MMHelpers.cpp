@@ -57,7 +57,7 @@ namespace EpetraExt {
 CrsMatrixStruct::CrsMatrixStruct()
  : numRows(0), numEntriesPerRow(NULL), indices(NULL), values(NULL),
       remote(NULL), numRemote(0), rowMap(NULL), colMap(NULL),
-      domainMap(NULL), importColMap(NULL), importMatrix(NULL)
+   domainMap(NULL), importColMap(NULL), importMatrix(NULL), origMatrix(NULL)
 {
 }
 
@@ -74,7 +74,11 @@ void CrsMatrixStruct::deleteContents()
   delete [] values; values = NULL;
   delete [] remote; remote = NULL;
   numRemote = 0;
-  delete importMatrix;
+  delete importMatrix; importMatrix=0;
+  // origMatrix is not owned by me, so don't delete
+  origMatrix=0;
+  targetMapToOrigRow.resize(0);
+  targetMapToImportRow.resize(0);
 }
 
 int dumpCrsMatrixStruct(const CrsMatrixStruct& M)
@@ -383,10 +387,20 @@ RemoteOnlyImport::~RemoteOnlyImport()
 }
 
 //=========================================================================
+//=========================================================================
+//=========================================================================
 template <class GO>
 int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std::vector<GO> Gcolind)
 {
   int i,j;
+
+#ifdef ENABLE_MMM_TIMINGS
+  Teuchos::Time myTime("global");
+  Teuchos::TimeMonitor MM(myTime);
+  Teuchos::RCP<Teuchos::Time> mtime;
+  mtime=MM.getNewTimer("LWCRS C-3.1");
+  mtime->start();
+#endif
 
   // Scan all column indices and sort into two groups: 
   // Local:  those whose GID matches a GID of the domain map on this processor and
@@ -540,9 +554,21 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
   for(int i=0;i<NumRemoteColGIDs;i++)
     ColMapOwningPIDs_[NumLocalColGIDs+i] = RemoteOwningPIDs[i];
 
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=MM.getNewTimer("LWCRS C-3.2");
+  mtime->start();
+#endif
+
   // Make Column map with same element sizes as Domain map 
   Epetra_Map temp(-1, numMyBlockCols, Colindices.Values(), DomainMap_.IndexBase(), DomainMap_.Comm());
   ColMap_ = temp;
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=MM.getNewTimer("LWCRS C-3.3");
+  mtime->start();
+#endif
 
   // Low-cost reindex of the matrix
   for(i=0; i<numMyBlockRows; i++){
@@ -559,8 +585,69 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
   }
 
   assert((size_t)ColMap_.NumMyElements() == ColMapOwningPIDs_.size());
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+#endif
+
   return(0);
 }
+
+//=========================================================================
+
+
+int LightweightCrsMatrix::PackAndPrepareReverse(const Epetra_DistObject & Source, 
+						int NumExportIDs,
+						int * ExportLIDs,
+						int & LenExports,
+						char *& Exports,
+						int & SizeOfPacket,
+						int * Sizes,
+						bool & VarSizes,
+						Epetra_Distributor & Distor)
+{
+  return 0;
+}
+
+
+#ifdef LOUSY_CODE
+  if(!Source.Map().GlobalIndicesTypeMatch(RowMap_))
+    throw std::runtime_error("EpetraExt::LightweightCrsMatrix::PackAndPrepareReverse: Incoming global index type does not match the one for *this");
+  (void)Distor;	
+
+  // Rest of work can be done using RowMatrix only  
+  const Epetra_CrsMatrix & A = dynamic_cast<const Epetra_CrsMatrix &>(Source);
+  
+  // Grab the importer, if we have one
+  const Epetra_Import *MyImporter= A.Importer();
+
+  int TotalSendLength = 0;
+  int * IntSizes = 0; 
+  if( NumRemoteIDs>0 ) IntSizes = new int[NumRemoteIDs];
+  
+  int SizeofIntType = -1;
+  if(Source.Map().GlobalIndicesInt())
+    SizeofIntType = (int)sizeof(int); 
+  else if(Source.Map().GlobalIndicesLongLong())
+    SizeofIntType = (int)sizeof(long long); 
+  else
+    throw std::runtime_error("EpetraExt::LightweightCrsMatrix::PackAndPrepare: Unable to determine source global index type");
+
+  // Each segment will be packed with a list of (GID,PID) pairs indicating which GIDs have been forwarded on to which other processors.
+
+  for( int i = 0; i < NumExportIDs; ++i )
+  {    
+    int NumEntries;
+    A.NumMyRowEntries( ExportLIDs[i], NumEntries );
+    // Will have NumEntries doubles, 2*NumEntries +2 ints pack them interleaved     Sizes[i] = NumEntries;
+    // NTS: We add the owning PID as the SECOND int of the pair for each entry
+    Sizes[i] = NumEntries;
+    // NOTE: Mixing and matching Int Types would be more efficient, BUT what about variable alignment?
+    IntSizes[i] = 1 + (((2*NumEntries+2)*SizeofIntType)/(int)sizeof(double));
+    TotalSendLength += (Sizes[i]+IntSizes[i]);
+  }    
+}
+#endif
 
 //=========================================================================
 int LightweightCrsMatrix::PackAndPrepareWithOwningPIDs(const Epetra_DistObject & Source, 
@@ -574,7 +661,7 @@ int LightweightCrsMatrix::PackAndPrepareWithOwningPIDs(const Epetra_DistObject &
 						       Epetra_Distributor & Distor)
 {
   if(!Source.Map().GlobalIndicesTypeMatch(RowMap_))
-    throw std::runtime_error("EpetraExt::LightweightCrsMatrix::PackAndPrepare: Incoming global index type does not match the one for *this");
+    throw std::runtime_error("EpetraExt::LightweightCrsMatrix::PackAndPrepareWithOwningPIDs: Incoming global index type does not match the one for *this");
   
   (void)Distor;	
 

@@ -60,6 +60,8 @@ class LightweightCrsMatrix;
 
 #define ENABLE_MMM_TIMINGS
 
+#define USE_IMPORT_ONLY
+
 // ==============================================================
 //struct that holds views of the contents of a CrsMatrix. These
 //contents may be a mixture of local and remote rows of the
@@ -73,17 +75,27 @@ public:
   void deleteContents();
 
   int numRows;
+
+  // The following class members get used in the transpose modes of the MMM
+  // but not in the A*B mode.  
   int* numEntriesPerRow;
   int** indices;
   double** values;
   bool* remote;
   int numRemote;
+
+  // Maps and matrices
   const Epetra_Map* origRowMap;
   const Epetra_Map* rowMap;
   const Epetra_Map* colMap;
   const Epetra_Map* domainMap;
   const Epetra_BlockMap* importColMap;
   LightweightCrsMatrix* importMatrix;
+  const Epetra_CrsMatrix *origMatrix;
+
+  // The following class members are only used for A*B mode
+  std::vector<int> targetMapToOrigRow;
+  std::vector<int> targetMapToImportRow;
 };
 
 int dumpCrsMatrixStruct(const CrsMatrixStruct& M);
@@ -219,7 +231,22 @@ class LightweightCrsMatrix {
   // List of owning PIDs (from the DomainMap) as ordered by entries in the column map.
   std::vector<int>    ColMapOwningPIDs_;
 
+  // ExportLID/PIDs for creating the final Exports w/o additional commo.
+  std::vector<int> ExportLIDs_;
+  std::vector<int> ExportPIDs_;
+
  private: 
+
+  int PackAndPrepareReverse(const Epetra_DistObject & Source, 
+			    int NumExportIDs,
+			    int * ExportLIDs,
+			    int & LenExports,
+			    char *& Exports,
+			    int & SizeOfPacket,
+			    int * Sizes,
+			    bool & VarSizes,
+			    Epetra_Distributor & Distor);
+
 
 
   template <typename ImportType>

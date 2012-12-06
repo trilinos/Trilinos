@@ -66,6 +66,7 @@
 
 
 namespace EpetraExt {
+//=========================================================================
 //
 //Method for internal use... sparsedot forms a dot-product between two
 //sparsely-populated 'vectors'.
@@ -97,7 +98,7 @@ double sparsedot(double* u, int* u_ind, int u_len,
   return(result);
 }
 
-
+//=========================================================================
 //kernel method for computing the local portion of C = A*B^T
 int mult_A_Btrans(CrsMatrixStruct& Aview,
 		  CrsMatrixStruct& Bview,
@@ -298,6 +299,7 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
   return(returnValue);
 }
 
+//=========================================================================
 //kernel method for computing the local portion of C = A^T*B
 int mult_Atrans_B(CrsMatrixStruct& Aview,
 		  CrsMatrixStruct& Bview,
@@ -598,9 +600,9 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   mtime=MM.getNewTimer("All I&X Alloc");
   mtime->start();
 #endif
-
   Mview.deleteContents();
 
+  Mview.origMatrix          = &M;
   const Epetra_Map& Mrowmap = M.RowMap();
   int numProcs              = Mrowmap.Comm().NumProc();
   Mview.numRows             = targetMap.NumMyElements();
@@ -799,6 +801,169 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   return(0);
 }
 
+
+
+
+// ==============================================================
+int import_only(const Epetra_CrsMatrix& M,
+		const Epetra_Map& targetMap,
+		CrsMatrixStruct& Mview,
+		const Epetra_Import * prototypeImporter=0)
+{
+  // The goal of this method to populare the Mview object with ONLY the rows of M
+  // that correspond to elements in 'targetMap.'  There will be no population of the
+  // numEntriesPerRow, indices, values, remote or numRemote arrays.
+
+
+  // The prototype importer, if used, has to know who owns all of the PIDs in M's rowmap.  
+  // The typical use of this is to provide A's column map when I&XV is called for B, for
+  // a C = A * B multiply.  
+
+#ifdef ENABLE_MMM_TIMINGS
+  Teuchos::Time myTime("global");
+  Teuchos::TimeMonitor MM(myTime);
+  Teuchos::RCP<Teuchos::Time> mtime;
+  mtime=MM.getNewTimer("Ionly Setup");
+  mtime->start();
+#endif
+
+  Mview.deleteContents();
+
+  Mview.origMatrix          = &M;
+  const Epetra_Map& Mrowmap = M.RowMap();
+  int numProcs              = Mrowmap.Comm().NumProc();
+  Mview.numRows             = targetMap.NumMyElements();
+
+  Mview.origRowMap   = &(M.RowMap());
+  Mview.rowMap       = &targetMap;
+  Mview.colMap       = &(M.ColMap());
+  Mview.domainMap    = &(M.DomainMap());
+  Mview.importColMap = NULL;
+
+  int i;
+  int numRemote =0;
+  int N = Mview.rowMap->NumMyElements();
+
+  if(Mrowmap.SameAs(targetMap)) {
+    numRemote = 0;
+    Mview.targetMapToOrigRow.resize(N); 
+    for(i=0;i<N; i++) Mview.targetMapToOrigRow[i]=i;
+
+#ifdef ENABLE_MMM_TIMINGS      
+  mtime->stop();   
+#endif
+    return 0;
+  }
+  else if(prototypeImporter && prototypeImporter->SourceMap().SameAs(M.RowMap()) && prototypeImporter->TargetMap().SameAs(targetMap)){
+    numRemote = prototypeImporter->NumRemoteIDs();
+
+    Mview.targetMapToOrigRow.resize(N);    Mview.targetMapToOrigRow.assign(N,-1);
+    Mview.targetMapToImportRow.resize(N);  Mview.targetMapToImportRow.assign(N,-1);
+
+    const int * PermuteToLIDs   = prototypeImporter->PermuteToLIDs();
+    const int * PermuteFromLIDs = prototypeImporter->PermuteFromLIDs();
+    const int * RemoteLIDs      = prototypeImporter->RemoteLIDs();
+
+    for(i=0; i<prototypeImporter->NumSameIDs();i++)
+      Mview.targetMapToOrigRow[i] = i;
+
+    // NOTE: These are reversed on purpose since we're doing a revere map.
+    for(i=0; i<prototypeImporter->NumPermuteIDs();i++)
+      Mview.targetMapToOrigRow[PermuteToLIDs[i]] = PermuteFromLIDs[i];
+    
+    for(i=0; i<prototypeImporter->NumRemoteIDs();i++)
+      Mview.targetMapToImportRow[RemoteLIDs[i]] = i;
+
+  }
+  else
+    throw "import_only: This routine only works if you either have the right map or no prototypeImporter";
+
+#ifdef ENABLE_MMM_TIMINGS      
+  mtime->stop();      
+  mtime=MM.getNewTimer("Ionly Collective-0");
+  mtime->start();
+#endif
+
+  if (numProcs < 2) {
+    if (Mview.numRemote > 0) {
+      cerr << "EpetraExt::MatrixMatrix::Multiply ERROR, numProcs < 2 but "
+	   << "attempting to import remote matrix rows."<<endl;
+      return(-1);
+    }
+#ifdef ENABLE_MMM_TIMINGS      
+    mtime->stop();  
+#endif
+
+    //If only one processor we don't need to import any remote rows, so return.
+    return(0);
+  }
+
+  //
+  //Now we will import the needed remote rows of M, if the global maximum
+  //value of numRemote is greater than 0.
+  //
+
+  int globalMaxNumRemote = 0;
+  Mrowmap.Comm().MaxAll(&numRemote, &globalMaxNumRemote, 1);
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+#endif
+
+  if (globalMaxNumRemote > 0) {
+#ifdef ENABLE_MMM_TIMINGS
+    mtime=MM.getNewTimer("Ionly Import-1");
+    mtime->start();
+#endif
+    const int * RemoteLIDs = prototypeImporter->RemoteLIDs();
+
+    //Create a map that describes the remote rows of M that we need.
+    int* MremoteRows = numRemote>0 ? new int[prototypeImporter->NumRemoteIDs()] : 0;
+    for(i=0; i<prototypeImporter->NumRemoteIDs(); i++)
+      MremoteRows[i] = targetMap.GID(RemoteLIDs[i]);
+
+    Epetra_Map MremoteRowMap(-1, numRemote, MremoteRows,
+			     Mrowmap.IndexBase(), Mrowmap.Comm());
+#ifdef ENABLE_MMM_TIMINGS
+    mtime->stop();
+    mtime=MM.getNewTimer("Ionly Import-2");
+    mtime->start();
+#endif
+    //Create an importer with target-map MremoteRowMap and 
+    //source-map Mrowmap.
+    RemoteOnlyImport * Rimporter=0;
+    Rimporter = new RemoteOnlyImport(*prototypeImporter,MremoteRowMap);
+
+#ifdef ENABLE_MMM_TIMINGS
+    mtime->stop();
+    mtime=MM.getNewTimer("Ionly Import-3");
+    mtime->start();
+#endif
+
+    Mview.importMatrix = new LightweightCrsMatrix(M,*Rimporter);
+
+#ifdef ENABLE_MMM_TIMINGS
+    mtime->stop();
+    mtime=MM.getNewTimer("Ionly Import-4");
+    mtime->start();
+#endif
+
+    Mview.importColMap = &(Mview.importMatrix->ColMap_);
+
+    // Cleanup
+    delete Rimporter;
+    delete [] MremoteRows;
+#ifdef ENABLE_MMM_TIMINGS
+    mtime->stop();
+#endif      
+  }
+  return(0);
+}
+
+
+
+
+//=========================================================================
 int form_map_union(const Epetra_Map* map1,
 		   const Epetra_Map* map2,
 		   const Epetra_Map*& mapunion)
@@ -860,6 +1025,7 @@ int form_map_union(const Epetra_Map* map1,
   return(0);
 }
 
+//=========================================================================
 Epetra_Map* find_rows_containing_cols(const Epetra_CrsMatrix& M,
                                       const Epetra_Map& column_map)
 {
@@ -952,6 +1118,7 @@ Epetra_Map* find_rows_containing_cols(const Epetra_CrsMatrix& M,
   return(result_map);
 }
 
+//=========================================================================
 int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
 			   bool transposeA,
 			   const Epetra_CrsMatrix& B,
@@ -1049,6 +1216,7 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   const Epetra_Map* targetMap_B = rowmap_B;
 
 #ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
   mtime=M.getNewTimer("All I&X");
   mtime->start();
 #endif
@@ -1063,7 +1231,20 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   }
 
   //Now import any needed remote rows and populate the Aview struct.
-  EPETRA_CHK_ERR( import_and_extract_views(A, *targetMap_A, Aview));
+#ifdef USE_IMPORT_ONLY
+  if(scenario==1) {
+    EPETRA_CHK_ERR(import_only(A,*targetMap_A,Aview));
+  }
+  else  
+#endif
+    {
+      EPETRA_CHK_ERR( import_and_extract_views(A, *targetMap_A, Aview));
+    }
+
+
+  // NOTE:  Next up is to switch to import_only for B as well, and then modify the THREE SerialCores
+  // to add a Acol2Brow and Acol2Bimportrow array for in-algorithm lookups.  
+  
 
   // Make sure B's views are consistent with A even in serial.
   const Epetra_Map* colmap_op_A = NULL;
@@ -1091,7 +1272,11 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
 
   //Now import any needed remote rows and populate the Bview struct.  
   if(scenario==1) {
+#ifdef USE_IMPORT_ONLY
+    EPETRA_CHK_ERR(import_only(B,*targetMap_B,Bview,A.Importer()));
+#else
     EPETRA_CHK_ERR( import_and_extract_views(B, *targetMap_B, Bview, A.Importer() ));
+#endif
   }
   else {
     EPETRA_CHK_ERR( import_and_extract_views(B, *targetMap_B, Bview) );
@@ -1120,9 +1305,6 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
     break;
   }
 
-#ifdef ENABLE_MMM_TIMINGS
-  mtime->stop();
-#endif
 
   if (scenario != 1 && call_FillComplete_on_result) {
     //We'll call FillComplete on the C matrix before we exit, and give
@@ -1150,9 +1332,15 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   delete workmap1; workmap1 = NULL;
   delete workmap2; workmap2 = NULL;
 
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+#endif
+
+
   return(0);
 }
 
+//=========================================================================
 int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
                       bool transposeA,
                       double scalarA,
