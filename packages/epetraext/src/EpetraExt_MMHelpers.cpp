@@ -853,7 +853,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   if (!SourceMatrix.RowMap().SameAs(RowImporter.SourceMap())) 
     throw "LightweightCrsMatrix: Fused copy constructor requires Importer.SourceMap() to match SourceMatrix.RowMap()";
   
-  // Get information rom the Importer
+  // Get information from the Importer
   int NumSameIDs             = RowImporter.NumSameIDs();
   int NumPermuteIDs          = RowImporter.NumPermuteIDs();
   int NumRemoteIDs           = RowImporter.NumRemoteIDs();

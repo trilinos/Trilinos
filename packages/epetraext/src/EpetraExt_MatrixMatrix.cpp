@@ -878,12 +878,6 @@ int import_only(const Epetra_CrsMatrix& M,
   else
     throw "import_only: This routine only works if you either have the right map or no prototypeImporter";
 
-#ifdef ENABLE_MMM_TIMINGS      
-  mtime->stop();      
-  mtime=MM.getNewTimer("Ionly Collective-0");
-  mtime->start();
-#endif
-
   if (numProcs < 2) {
     if (Mview.numRemote > 0) {
       cerr << "EpetraExt::MatrixMatrix::Multiply ERROR, numProcs < 2 but "
@@ -898,65 +892,54 @@ int import_only(const Epetra_CrsMatrix& M,
     return(0);
   }
 
-  //
-  //Now we will import the needed remote rows of M, if the global maximum
-  //value of numRemote is greater than 0.
-  //
-
-  int globalMaxNumRemote = 0;
-  Mrowmap.Comm().MaxAll(&numRemote, &globalMaxNumRemote, 1);
-
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
+  mtime=MM.getNewTimer("Ionly Import-1");
+  mtime->start();
 #endif
-
-  if (globalMaxNumRemote > 0) {
-#ifdef ENABLE_MMM_TIMINGS
-    mtime=MM.getNewTimer("Ionly Import-1");
-    mtime->start();
-#endif
-    const int * RemoteLIDs = prototypeImporter->RemoteLIDs();
-
+  const int * RemoteLIDs = prototypeImporter->RemoteLIDs();
+  
     //Create a map that describes the remote rows of M that we need.
-    int* MremoteRows = numRemote>0 ? new int[prototypeImporter->NumRemoteIDs()] : 0;
-    for(i=0; i<prototypeImporter->NumRemoteIDs(); i++)
-      MremoteRows[i] = targetMap.GID(RemoteLIDs[i]);
-
-    Epetra_Map MremoteRowMap(-1, numRemote, MremoteRows,
-			     Mrowmap.IndexBase(), Mrowmap.Comm());
+  int* MremoteRows = numRemote>0 ? new int[prototypeImporter->NumRemoteIDs()] : 0;
+  for(i=0; i<prototypeImporter->NumRemoteIDs(); i++)
+    MremoteRows[i] = targetMap.GID(RemoteLIDs[i]);
+  
+  Epetra_Map MremoteRowMap(-1, numRemote, MremoteRows,
+			   Mrowmap.IndexBase(), Mrowmap.Comm());
 #ifdef ENABLE_MMM_TIMINGS
-    mtime->stop();
-    mtime=MM.getNewTimer("Ionly Import-2");
-    mtime->start();
+  mtime->stop();
+  mtime=MM.getNewTimer("Ionly Import-2");
+  mtime->start();
 #endif
-    //Create an importer with target-map MremoteRowMap and 
-    //source-map Mrowmap.
-    RemoteOnlyImport * Rimporter=0;
-    Rimporter = new RemoteOnlyImport(*prototypeImporter,MremoteRowMap);
-
+  //Create an importer with target-map MremoteRowMap and 
+  //source-map Mrowmap.
+  RemoteOnlyImport * Rimporter=0;
+  Rimporter = new RemoteOnlyImport(*prototypeImporter,MremoteRowMap);
+  
 #ifdef ENABLE_MMM_TIMINGS
-    mtime->stop();
-    mtime=MM.getNewTimer("Ionly Import-3");
-    mtime->start();
+  mtime->stop();
+  mtime=MM.getNewTimer("Ionly Import-3");
+  mtime->start();
 #endif
-
-    Mview.importMatrix = new LightweightCrsMatrix(M,*Rimporter);
-
+  
+  Mview.importMatrix = new LightweightCrsMatrix(M,*Rimporter);
+  
 #ifdef ENABLE_MMM_TIMINGS
-    mtime->stop();
-    mtime=MM.getNewTimer("Ionly Import-4");
-    mtime->start();
+  mtime->stop();
+  mtime=MM.getNewTimer("Ionly Import-4");
+  mtime->start();
 #endif
-
-    Mview.importColMap = &(Mview.importMatrix->ColMap_);
-
-    // Cleanup
-    delete Rimporter;
-    delete [] MremoteRows;
+  
+  Mview.importColMap = &(Mview.importMatrix->ColMap_);
+  
+  // Cleanup
+  delete Rimporter;
+  delete [] MremoteRows;
 #ifdef ENABLE_MMM_TIMINGS
-    mtime->stop();
+  mtime->stop();
 #endif      
-  }
+  
+
   return(0);
 }
 
