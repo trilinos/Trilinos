@@ -115,6 +115,7 @@ namespace panzer {
     }
   }
 
+/*
   template <typename Scalar,typename Array>
   template <typename NodeCoordinateArray,typename PointCoordinateArray>
   void PointValues<Scalar,Array>::
@@ -137,6 +138,7 @@ namespace panzer {
     // IP coordinates
     cell_tools.mapToPhysicalFrame(point_coords, coords_ref, node_coordinates, *(point_rule->topology));
   }
+*/
 }
 
 #endif

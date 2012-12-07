@@ -110,6 +110,6 @@ namespace panzer {
 
 } // namespace panzer
 
-#include "Panzer_BasisValues_impl.hpp"
+// #include "Panzer_BasisValues_impl.hpp"
 
 #endif
