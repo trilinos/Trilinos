@@ -44,20 +44,13 @@
      gdsjaar - Nov 14, 1991: Created.
 ***/
 
-#ifndef ENVSEP
-#if defined(MSDOS) || defined(VMS) || defined(AMIGA)
-#define ENVSEP  ';'
-#else
-#define ENVSEP	':'
-#endif
-#endif
-
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <sys/stat.h>
 
 #include <my_aprepro.h>
 extern aprepro_options ap_options;
@@ -65,7 +58,6 @@ extern aprepro_options ap_options;
 void  conv_string(char *string);
 FILE *open_file(char *file, char *mode);
 FILE *check_open_file(char *file, char *mode);
-
 /* Convert string to all lower-case and replace all spaces with '_' */
 void conv_string (char *string)
 {
@@ -157,3 +149,10 @@ char *get_temp_filename()
   close(fd);
   return template;
 }  
+
+int is_directory(char *filepath)
+{
+  struct stat s;
+  stat(filepath, &s);
+  return S_ISDIR(s.st_mode);
+}

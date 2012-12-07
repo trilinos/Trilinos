@@ -70,6 +70,7 @@ struct aprepro_options
   int debugging;
   int statistics;
   int interactive;
+  int immutable;
 };
 
 typedef struct aprepro_options aprepro_options;
@@ -81,8 +82,8 @@ struct symrec
   char *name;
   char *syntax;
   char *info;
-  int   type;
-  int   isInternal;  /* Only need a bit here; combine with type? */
+  unsigned short type;
+  unsigned short isInternal:1; 
   union {
     double var;
     double (*fnctptr)();

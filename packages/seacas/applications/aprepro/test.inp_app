@@ -16,8 +16,8 @@ Test assign statements:
 Test trigonometric functions (radians)
 {pi = d2r(180)} {atan2(0,-1)} {4*atan(1.0)} $ Three values of pi
 {_a = sin(pi/4)}	{pi-4*asin(_a)}	$ sin(pi/4)
-{b = cos(pi/4)}	{pi-4*acos(b)}	$ cos(pi/4)
-{c = tan(pi/4)}	{pi-4*atan(c)}	$ tan(pi/4)
+{_b = cos(pi/4)}	{pi-4*acos(_b)}	$ cos(pi/4)
+{_c = tan(pi/4)}	{pi-4*atan(_c)}	$ tan(pi/4)
 
 Test trigonometric functions (degrees)
 {r2d(pi)}	{pid = atan2d(0,-1)}	{4 * atand(1.0)}
@@ -80,9 +80,9 @@ $ Test int and [] (shortcut for int)
 {[5.01]}	{[-5.01]}
 
 $ Test looping - print sin, cos from 0 to 90 by 5
-{angle = -5}
+{_angle = -5}
 {Loop(19)}
-{angle += 5}	{_sa=sind(angle)}	{_ca=cosd(angle)} {hypot(_sa, _ca)} 
+{_angle += 5}	{_sa=sind(_angle)}	{_ca=cosd(_angle)} {hypot(_sa, _ca)} 
 {EndLoop}
 
 $$$$ Test formatting and string concatenation
