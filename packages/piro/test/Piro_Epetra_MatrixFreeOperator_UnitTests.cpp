@@ -102,9 +102,16 @@ RCP<Epetra_Vector> vectorFromLinOp(const Epetra_Operator &op, int col)
 
   const RCP<Epetra_Vector> rhs = vectorNew(op.OperatorDomainMap());
   const double value = 1.0;
-  // TODO: Handle more than 1 process
   const int ierr = rhs->ReplaceGlobalValues(1, &value, &col);
-  TEUCHOS_ASSERT(ierr == 0);
+  // Some processes might not hold the entry
+  TEUCHOS_ASSERT(ierr == 0 || ierr == 1);
+  {
+    const Epetra_Comm &comm = rhs->Comm();
+    int ierrLoc = ierr, ierrSum;
+    comm.SumAll(&ierrLoc, &ierrSum, 1);
+    // At least one process holds the entry
+    TEUCHOS_ASSERT(ierrSum < comm.NumProc());
+  }
 
   op.Apply(*rhs, *result);
   return result;
@@ -112,7 +119,8 @@ RCP<Epetra_Vector> vectorFromLinOp(const Epetra_Operator &op, int col)
 
 Array<double> arrayFromLinOp(const Epetra_Operator &op, int col)
 {
-  return arrayFromVector(*vectorFromLinOp(op, col));
+  const RCP<const Epetra_Vector> v = vectorFromLinOp(op, col);
+  return arrayFromVector(*v);
 }
 
 // Floating point tolerance

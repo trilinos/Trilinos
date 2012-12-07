@@ -30,7 +30,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Piro_Test_EpetraSupport.hpp
     MockModelEval_A.hpp
     MockModelEval_A.cpp
-  NUM_MPI_PROCS 1
+  NUM_MPI_PROCS 1-4
   STANDARD_PASS_OUTPUT
   )
 
