@@ -1236,12 +1236,12 @@ solver_CompressedSensing(
 
   // Setup L1 minimization problem
   // Todo:  parse options from parameter list
-  CompressedSensingTool CS;
+  Pecos::CompressedSensingTool CS;
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> AA(A, transa);
   Teuchos::SerialDenseVector<ordinal_type, value_type> bb(b);
-  RealMatrixList xx;
-  CompressedSensingOptions opts;
-  CompressedSensingOptionsList opts_list;
+  Pecos::RealMatrixList xx;
+  Pecos::CompressedSensingOptions opts;
+  Pecos::CompressedSensingOptionsList opts_list;
   CS.solve(AA, bb, xx, opts, opts_list);
   x.assign(xx[0]);
   
