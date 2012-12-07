@@ -6,8 +6,6 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifdef STK_MESH_TRACE_ENABLED
-
 #include <stk_util/util/Bootstrap.hpp>
 
 #include <stk_mesh/base/DiagWriter.hpp>
@@ -19,11 +17,14 @@
 namespace stk {
 namespace mesh {
 
+#ifdef STK_MESH_TRACE_ENABLED
+
 namespace {
 
 static stk::diag::Writer* s_diagWriter = NULL;
 
 }
+
 
 void initDiagWriter(std::ostream& stream)
 {
@@ -60,6 +61,14 @@ void bootstrap()
 //  diag::registerWriter("meshlog", meshlog, theDiagWriterParser());
 }
 
+stk::Bootstrap x(&bootstrap);
+
+} // namespace <unnamed>
+
+#else
+
+namespace {
+
 std::string log_to_str(EntityState log)
 {
   if (log == 0) {
@@ -80,7 +89,6 @@ std::string log_to_str(EntityState log)
   return "";
 }
 
-stk::Bootstrap x(&bootstrap);
 
 } // namespace <unnamed>
 
@@ -154,7 +162,6 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityProc& entit
 } // namespace mesh
 } // namespace stk
 
-#else
 int dummy_DiagWriter()
 {
   // This function is present just to put a symbol in the object

@@ -1,8 +1,6 @@
 #ifndef stk_mesh_DiagWriter_h
 #define stk_mesh_DiagWriter_h
 
-#ifdef STK_MESH_TRACE_ENABLED
-
 #include <stk_util/diag/Trace.hpp>
 #include <stk_util/diag/Writer.hpp>
 #include <stk_util/diag/WriterOStream.hpp>
@@ -16,6 +14,8 @@
 
 namespace stk {
 namespace mesh {
+
+#ifdef STK_MESH_TRACE_ENABLED
 
 // Must be called before theDiagWriter/meshlog
 void initDiagWriter(std::ostream& stream);
@@ -55,6 +55,8 @@ public:
   {}
 };
 
+#endif // STKMESH_TRACE_ENABLED
+
 // If Writer does not know how to output an object you want to trace, you
 // can address that here by defining an operator<< for that object. Note
 // that Writer handles vectors and pointers automatically.
@@ -70,6 +72,6 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityProc& entit
 } // namespace mesh
 } // namespace stk
 
-#endif // STKMESH_TRACE_ENABLED
+
 
 #endif // stk_mesh_DiagWriter_h
