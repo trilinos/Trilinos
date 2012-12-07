@@ -110,21 +110,25 @@ void DOFManager<LO,GO>::setConnManager(const Teuchos::RCP<ConnManager<LO,GO> > &
 }
 
 
-  //Adds a field to be used in creating the Global Numbering
-  //Returns the index for the field pattern
+//Adds a field to be used in creating the Global Numbering
+//Returns the index for the field pattern
 template <typename LO, typename GO>
 int DOFManager<LO,GO>::addField(const std::string & str, const Teuchos::RCP<const FieldPattern> & pattern)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
                       "DOFManager::addField: addField cannot be called after "
                       "buildGlobalUnknowns has been called"); 
+
   fieldPatterns_.push_back(pattern);
   fieldNameToAID_.insert(std::map<std::string,int>::value_type(str, numFields_));
+
   //The default values for IDs are the sequential order they are added in.
   fieldStringOrder_.push_back(str);
   fieldAIDOrder_.push_back(numFields_);
+
   //This is going to be associated with everyblock.
   FPsInAll_.push_back(numFields_);
+
   ++numFields_;
   return numFields_-1;
 }
@@ -148,6 +152,7 @@ int DOFManager<LO,GO>::addField(const std::string & blockID, const std::string &
     blocknum++;
   }
   TEUCHOS_TEST_FOR_EXCEPTION(!found,std::logic_error, "DOFManager::addField: Invalid block name.");
+
   //This will be different if the FieldPattern is already present.
   //We need to check for that.
   found=false;
@@ -182,7 +187,8 @@ Teuchos::RCP<const FieldPattern> DOFManager<LO,GO>::getFieldPattern(const std::s
 }
 
 template <typename LO, typename GO>
-void DOFManager<LO,GO>::getOwnedIndices(std::vector<GO> & indicies) const{
+void DOFManager<LO,GO>::getOwnedIndices(std::vector<GO> & indicies) const
+{
   indicies.resize(owned_.size());
   for (size_t i = 0; i < owned_.size(); ++i) {
     indicies[i]=owned_[i];
@@ -190,7 +196,8 @@ void DOFManager<LO,GO>::getOwnedIndices(std::vector<GO> & indicies) const{
 }
 
 template <typename LO, typename GO>
-void DOFManager<LO,GO>::getOwnedAndSharedIndices(std::vector<GO> & indicies) const{
+void DOFManager<LO,GO>::getOwnedAndSharedIndices(std::vector<GO> & indicies) const
+{
   indicies.resize(owned_and_ghosted_.size());
   for (size_t i = 0; i < owned_and_ghosted_.size(); ++i) {
     indicies[i]=owned_and_ghosted_[i];
@@ -221,9 +228,27 @@ void DOFManager<LO,GO>::getElementGIDs(LO localElementID, std::vector<GO> & gids
   gids = elementGIDs_[localElementID];
 }
 
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
+{
+  /* STEPS.
+   * 1.  Build GA_FP and all block's FA_FP's and place into respective data structures.
+   */
+  if(requireOrientations_){
+    fieldPatterns_.push_back(Teuchos::rcp(new NodalFieldPattern(fieldPatterns_[0]->getCellTopology())));
+  }
+  RCP<GeometricAggFieldPattern> aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern);;
+  aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern(fieldPatterns_));
+
+  connMngr_->buildConnectivity(*aggFieldPattern);
+
+  // using new geometric pattern, build global unknowns
+  buildGlobalUnknowns(aggFieldPattern);
+}
+
 //builds the global unknowns array
 template <typename LO, typename GO>
-void DOFManager<LO,GO>::buildGlobalUnknowns()
+void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern)
 {
   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
   out.setOutputToRootOnly(-1);
@@ -239,30 +264,19 @@ void DOFManager<LO,GO>::buildGlobalUnknowns()
 
   typedef Tpetra::Vector<LO,GO> Vector;
   typedef Tpetra::Export<LO,GO,Node> Export;
+
   //For now the GIDs are of type GO. I'm not sure if this is a good idea, but that's
   //the way it is
   typedef Tpetra::MultiVector<GO,LO,GO,Node> MultiVector;
   
-
   Tpetra::DefaultPlatform::DefaultPlatformType &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   RCP<const Teuchos::Comm<int> > comm = platform.getComm();
   RCP<Node> node = platform.getNode();
-  
 
   /* STEPS.
-   * 1.  Build GA_FP and all block's FA_FP's and place into respective data structures.
+   * 1.  Build all block's FA_FP's and place into respective data structures.
    */
-  //if you need orientations, be sure to extend to include nodes.
-  //
-  if(requireOrientations_){
-    //RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_TET_C1_FEM<double,FieldContainer>);
-    //RCP< const panzer::FieldPattern> first_patten = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
-    fieldPatterns_.push_back(Teuchos::rcp(new NodalFieldPattern(fieldPatterns_[0]->getCellTopology())));
-  }
-  ga_fp_ = Teuchos::rcp(new GeometricAggFieldPattern(fieldPatterns_));
-
-
-  connMngr_->buildConnectivity(*ga_fp_);
+  ga_fp_ = geomPattern;
 
   //We will iterate through all of the blocks, building a FieldAggPattern for
   //each of them.
@@ -309,7 +323,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns()
 
 
   Array<GO> overlapVector;
-  for (typename std::set<GO>::const_iterator itr = overlapset.begin(); itr!=overlapset.end(); ++itr){
+  for (typename std::set<GO>::const_iterator itr = overlapset.begin(); itr!=overlapset.end(); ++itr) {
     overlapVector.push_back(*itr);
   }
 
@@ -359,6 +373,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns()
    */
   Teuchos::RCP<MultiVector> non_overlap_mv;
   non_overlap_mv = Tpetra::createMultiVector<GO>(non_overlap_map,(size_t)numFields_);
+
  /* 8.  Create an export between the two maps.
    */
   Export e(overlapmap,non_overlap_map);
@@ -366,6 +381,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns()
  /* 9.  Export data using ABSMAX.
    */
   non_overlap_mv->doExport(*overlap_mv,e,Tpetra::ABSMAX);
+
  /* 10. Use Kokkos::DefaultArithmetic to locally sum.
    */
   typedef Kokkos::MultiVector<GO,Node> KMV;
@@ -375,6 +391,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns()
   for(int i=0;i<columnSums.size();++i){
     localsum+=columnSums[i];
   }
+
  /* 11. Create a map using local sums to generate final GIDs.
    */
   RCP<const Map> gid_map = Tpetra::createContigMapWithNode<LO,GO>(-1,localsum, comm, node);
@@ -442,14 +459,6 @@ void DOFManager<LO,GO>::buildGlobalUnknowns()
 
   // build owned vector
   {
-#if 0
-    //owned_ is made up of owned_ids.
-    Teuchos::ArrayRCP<const GO> nvals = non_overlap_mv->get1dView();
-    for (int j = 0; j < nvals.size(); ++j) {
-      if(nvals[j]!=-1)
-        owned_.push_back(nvals[j]);
-    }
-#else
     typedef boost::unordered_set<GO> HashTable;
     HashTable isOwned; // use to detect if global ID has been added to owned_and_ghosted_
     //owned_ is made up of owned_ids.
@@ -479,25 +488,12 @@ void DOFManager<LO,GO>::buildGlobalUnknowns()
         }
       }
     }
-
-#endif
   }
 
 
   // build owned and ghosted array: The old simple way led to slow
   // Jacobian assembly, the new way speeds up Jacobian assembly
   {
-#if 0
-    std::vector<GO> owned_and_ghosted;
-    // owned_and_ghosted_;in post import overlap map.
-    Teuchos::ArrayRCP<const GO> vals = overlap_mv->get1dView();
-    for (int j = 0; j < vals.size(); ++j) {
-      if(vals[j]!=-1)
-        // owned_and_ghosted_.push_back(vals[j]);
-        owned_and_ghosted.push_back(vals[j]);
-    }
-
-#else
     // loop over all elements. do greedy ordering of local values over elements for
     // building owned_and_ghosted, hopefully this gives a better layout
     // for element ordered assembly
@@ -520,7 +516,6 @@ void DOFManager<LO,GO>::buildGlobalUnknowns()
         }
       }
     }
-#endif
   }
 
   buildConnectivityRun_ = true;
@@ -583,7 +578,8 @@ bool DOFManager<LO,GO>::fieldInBlock(const std::string & field, const std::strin
 }
 
 template <typename LO, typename GO>
-const std::vector<int> & DOFManager<LO,GO>::getBlockFieldNumbers(const std::string & blockId) const{
+const std::vector<int> & DOFManager<LO,GO>::getBlockFieldNumbers(const std::string & blockId) const
+{
   TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error,"DOFManager::getBlockFieldNumbers: BuildConnectivity must be run first.");
 
   std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(blockId);
@@ -654,22 +650,12 @@ bool DOFManager<LO,GO>::validFieldOrder(const std::vector<std::string> & propose
 }
 
 template <typename LO, typename GO>
-const std::string & DOFManager<LO,GO>::getFieldString(int num) const{
+const std::string & DOFManager<LO,GO>::getFieldString(int num) const
+{
   //A reverse lookup through fieldStringOrder_.
   if(num>=(int)fieldStringOrder_.size())
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "DOFManager::getFieldString: invalid number");
   return fieldStringOrder_[num];
-//  bool found=false;
-//  size_t i=0;
-//  while(!found && i<fieldStringOrder_.size()){
-//    if(fieldStringOrder_[i]==num)
-//      found=true;
-//    else
-//      i++;
-//  }
-//  if(!found)
-//    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "DOFManager::getFieldString: invalid number");
-//  return i;
 }
 
 //Everything associated with orientation is not yeat built, but this
@@ -678,7 +664,8 @@ const std::string & DOFManager<LO,GO>::getFieldString(int num) const{
 //to this DOFManager, but the basic ideas and format should be similar.
 //
 template <typename LO, typename GO>
-void DOFManager<LO,GO>::buildUnknownsOrientation(){
+void DOFManager<LO,GO>::buildUnknownsOrientation()
+{
   orientation_.clear(); // clean up previous work
 
   std::vector<std::string> elementBlockIds;
@@ -750,6 +737,23 @@ void DOFManager<LO,GO>::getElementOrientation(LO localElmtId,std::vector<double>
    for(std::size_t i=0;i<local_o.size();i++) {
       gidsOrientation[i] = double(local_o[i]);
    }
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > DOFManager<LocalOrdinalT,GlobalOrdinalT>::resetIndices()
+{
+   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr = connMngr_;
+
+   connMngr_ = Teuchos::null;
+
+   // wipe out FEI objects
+   orientation_.clear(); // clean up previous work
+   fa_fps_.clear();
+   elementGIDs_.clear();
+   owned_.clear();
+   owned_and_ghosted_.clear();
+
+   return connMngr;
 }
 
 } /*panzer*/

@@ -110,6 +110,9 @@ public:
 
   //! builds the global unknowns array
   void buildGlobalUnknowns();
+
+  //! builds the global unknowns array
+  void buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern);
   
   int getFieldNum(const std::string & string) const;
 
@@ -163,6 +166,15 @@ public:
 
   const std::string & getFieldString(int num) const;
 
+  /** \brief Reset the indicies for this DOF manager.
+    *
+    * This method resets the indices and wipes out internal state. This method
+    * does preserve the fields and the patterns added to the object. Also the
+    * old connection manager is returned.
+    *
+    * \returns Old connection manager.
+    */
+  Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > resetIndices();
 
 protected:
   
@@ -182,7 +194,7 @@ protected:
   std::vector<int> fieldAIDOrder_; //Both of these must be updated and edited together.
   //The AID offers a simpler way to manage FPs internally.
 
-  Teuchos::RCP<panzer::GeometricAggFieldPattern> ga_fp_;
+  Teuchos::RCP<const panzer::FieldPattern> ga_fp_;
   std::vector<Teuchos::RCP<panzer::FieldAggPattern> > fa_fps_; //Ordered by blockOrder_;
 
   std::vector<GO> owned_;
@@ -198,7 +210,6 @@ protected:
 
   bool buildConnectivityRun_;
 
-//  I'm going to wait until a little later for these parts.
   bool requireOrientations_;
   std::vector<std::vector<char> > orientation_;
 };
