@@ -82,42 +82,36 @@ int main(int argc, char *argv[])
     // test of Zoltan2::AlltoAllv (different sized messages) using a Scalar type
 
     int myMsgSizeBase=rank*nprocs + 1;
-    int *outMsgSizes = new int [nprocs];
+    Array<int> sendCount(nprocs, 0);
+    Array<int> recvCount(nprocs, 0);
     long totalOut = 0;
 
     for (int p=0; p < nprocs; p++){
-      outMsgSizes[p] = myMsgSizeBase + p;
-      totalOut += outMsgSizes[p];
+      sendCount[p] = myMsgSizeBase + p;
+      totalOut += sendCount[p];
     }
-    Teuchos::ArrayView<const int> sendCount(outMsgSizes, nprocs);
   
-    int *outBuf = new int [totalOut];
+    Array<int> sendBuf(totalOut, 0);
   
-    int *out = outBuf;
+    int *out = &(sendBuf[0]);
     for (int p=0; p < nprocs; p++){
-      for (int i=0; i < outMsgSizes[p]; i++){
+      for (int i=0; i < sendCount[p]; i++){
         *out++ = p+rank;
       }
     }
-    Teuchos::ArrayView<const int> sendBuf(outBuf, totalOut);
   
-    Teuchos::ArrayRCP<int> recvCount;
     Teuchos::ArrayRCP<int> recvBuf;
     
     Zoltan2::AlltoAllv<int>(*comm, *envPtr,
-                  sendBuf,    
-                  sendCount,   
+                  sendBuf(),
+                  sendCount(),
                   recvBuf,
-                  recvCount);
+                  recvCount());
 
-    delete [] outBuf;
-    delete [] outMsgSizes;
-  
-    int *inMsgSizes = recvCount.get();
     int *inBuf = recvBuf.get();
 
     for (int p=0; p < nprocs; p++){
-      for (int i=0; i < inMsgSizes[p]; i++){
+      for (int i=0; i < recvCount[p]; i++){
         if (*inBuf++ != rank+p){
           errcode = 4;
           break;
@@ -152,15 +146,15 @@ int main(int argc, char *argv[])
 
     Teuchos::ArrayView<const string> sendBuf(sendStrings, nstrings);
     Teuchos::ArrayView<const int> sendCount(counts, nprocs);
+    Teuchos::Array<int> recvCounts(nprocs, 0);
 
     Teuchos::ArrayRCP<string> recvBuf;
-    Teuchos::ArrayRCP<int> recvCounts;
 
     Zoltan2::AlltoAllv<string>(*comm, *envPtr,
         sendBuf,    
         sendCount,   
         recvBuf,
-        recvCounts);
+        recvCounts());
 
     delete [] sendStrings;
     delete [] counts;

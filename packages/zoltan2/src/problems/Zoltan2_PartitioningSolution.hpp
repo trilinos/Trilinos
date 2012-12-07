@@ -1212,23 +1212,15 @@ template <typename Adapter>
 
       // Send the owners of these gnos their part assignments.
     
-      lno_t *tmpCount = new lno_t [nprocs];
-      memset(tmpCount, 0, sizeof(lno_t) * nprocs);
-      env_->localMemoryAssertion(__FILE__, __LINE__, nprocs, tmpCount);
-      ArrayView<int> countOutBuf(tmpCount, nprocs);
+      Array<int> countOutBuf(nprocs, 0);
+      Array<int> countInBuf(nprocs, 0);
   
-      ArrayView<gno_t> outBuf;
+      Array<gno_t> outBuf(len*2, 0);
   
       if (len > 0){
-        gno_t *tmpGno = new gno_t [len*2];
-        env_->localMemoryAssertion(__FILE__, __LINE__, len*2, tmpGno);
-        outBuf = ArrayView<gno_t>(tmpGno, len*2);
+        Array<lno_t> offsetBuf(nprocs+1, 0);
       
-        lno_t *tmpOff = new lno_t [nprocs+1];
-        env_->localMemoryAssertion(__FILE__, __LINE__, nprocs+1, tmpOff);
-        ArrayView<lno_t> offsetBuf(tmpOff, nprocs+1);
-      
-          for (size_t i=0; i < len; i++){
+        for (size_t i=0; i < len; i++){
           countOutBuf[procList[i]]+=2;
         }
       
@@ -1243,28 +1235,25 @@ template <typename Adapter>
           outBuf[off+1] = static_cast<gno_t>(partList[i]);
           offsetBuf[p]+=2;
         }
-    
-        delete [] tmpOff;
       }
     
       ArrayRCP<gno_t> inBuf;
-      ArrayRCP<int> countInBuf;
     
       try{
         AlltoAllv<gno_t>(*comm_, *env_,
-          outBuf, countOutBuf, inBuf, countInBuf);
+          outBuf(), countOutBuf(), inBuf, countInBuf());
       }
       Z2_FORWARD_EXCEPTIONS;
   
-      if (len)
-        delete [] outBuf.getRawPtr();
-  
-      delete [] countOutBuf.getRawPtr();
+      outBuf.clear();
+      countOutBuf.clear();
   
       gno_t newLen = 0;
       for (int i=0; i < nprocs; i++)
         newLen += countInBuf[i];
   
+      countInBuf.clear();
+
       newLen /= 2;
 
       ArrayRCP<partId_t> parts;
@@ -1458,12 +1447,11 @@ template <typename Adapter>
     }
   }
 
-  ArrayRCP<int> recvCounts;
-  RCP<const Environment> env = rcp(new Environment);
+  Array<int> recvCounts(numProcs, 0);
 
   try{
-    AlltoAllv<gid_t>(*comm_, *env_, gidList.view(0,localNumIds),
-      counts.view(0, numProcs), imports, recvCounts);
+    AlltoAllv<gid_t>(*comm_, *env_, gidList(),
+      counts(), imports, recvCounts());
   }
   catch (std::exception &e){
     throw std::runtime_error("alltoallv 1");
@@ -1471,13 +1459,14 @@ template <typename Adapter>
 
   if (numExtra > 0){
     try{
-      AlltoAllv<Extra>(*comm_, *env_, xtraInfo.view(0, localNumIds),
-        counts.view(0, numProcs), newXtraInfo, recvCounts);
+      AlltoAllv<Extra>(*comm_, *env_, xtraInfo(),
+        counts(), newXtraInfo, recvCounts());
     }
     catch (std::exception &e){
       throw std::runtime_error("alltoallv 2");
     }
   }
+
   env_->debug(DETAILED_STATUS, "Exiting convertSolutionToImportList");
   return imports.size();
 }

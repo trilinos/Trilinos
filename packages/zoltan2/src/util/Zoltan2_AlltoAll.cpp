@@ -44,7 +44,8 @@
 // @HEADER
 
 /*! \file Zoltan2_AlltoAll.cpp
-    \brief AlltoAll communication methods that don't require templates.
+    \brief AlltoAll communication methods that don't require templates, along
+           with specializations.
 */
 
 #include <Zoltan2_AlltoAll.hpp>
@@ -63,47 +64,60 @@ namespace Zoltan2
  *  \param  sendCount The number to send to process p is in sendCount[p].
  *  \param  recvCount On return, The number received from process p
  *                     will be in recvCount[p].
+ *
+ *  Note:  If Teuchos::Comm adds an AlltoAll method, we should use it
+ *  instead of this function.  TODO
  */
 
-void AlltoAllCount(const Comm<int> &comm, const Environment &env,
- const ArrayView<const int> &sendCount, ArrayRCP<int> &recvCount)
+void AlltoAllCount(
+  const Comm<int> &comm,      // Communicator to use for AlltoAll
+  const Environment &env,     // Needed only for error handling
+  const ArrayView<const int> &sendCount,   // Input:  # of data items to
+                                           //         send to each process
+  const ArrayView<int> &recvCount          // Output: # of data itmes to
+                                           //         receive from each process
+)
 {
   int nprocs = comm.getSize();
   int rank = comm.getRank();
 
-  RCP<const int> *messages = new RCP<const int> [nprocs];
-  for (int p=0; p < nprocs; p++)
-    messages[p] = rcp(sendCount.getRawPtr()+p, false);
+  recvCount[rank] = sendCount[rank];
 
-  ArrayRCP<RCP<const int> > messageArray(messages, 0, nprocs, true);
+  if (nprocs > 1) {
 
-  int *counts = new int [nprocs];
-  recvCount = arcp(counts, 0, nprocs, true);
+    // Post receives
+    RCP<CommRequest<int> > *requests = new RCP<CommRequest<int> > [nprocs];
+    for (int cnt = 0, i = 0; i < nprocs; i++) {
+      if (i != rank) {
+        try {
+          requests[cnt++] = Teuchos::ireceive<int,int>(comm,
+                                                     rcp(&(recvCount[i]),false),
+                                                     i);
+        }
+        Z2_THROW_OUTSIDE_ERROR(env);
+      }
+    }
 
-  counts[rank] = sendCount[rank];
+    Teuchos::barrier<int>(comm);
 
-#ifdef HAVE_ZOLTAN2_MPI
+    // Send data; can use readySend since receives are posted.
+    for (int i = 0; i < nprocs; i++) {
+      if (i != rank) {
+        try {
+          Teuchos::readySend<int,int>(comm, sendCount[i], i);
+        }
+        Z2_THROW_OUTSIDE_ERROR(env);
+      }
+    }
 
-  // I was getting hangs in Teuchos::waitAll, so I do
-  // blocking receives below.
-
-  for (int p=1; p < nprocs; p++){
-    int recvFrom = (rank + nprocs - p) % nprocs;
-    int sendTo = (rank + p) % nprocs;
-
-    try{  // non blocking send
-      Teuchos::isend<int, int>(comm, messageArray[sendTo], sendTo);
+    // Wait for messages to return.
+    try {
+      Teuchos::waitAll<int>(comm, arrayView(requests, nprocs-1));
     }
     Z2_THROW_OUTSIDE_ERROR(env);
 
-    try{  // blocking receive for message just sent to me
-      Teuchos::receive<int, int>(comm, recvFrom, counts + recvFrom);
-    }
-    Z2_THROW_OUTSIDE_ERROR(env);
+    delete [] requests;
   }
-
-  comm.barrier();
-#endif
 }
 
 /* \brief Specialization for std::string.
@@ -115,18 +129,17 @@ void AlltoAllCount(const Comm<int> &comm, const Environment &env,
  */
 template <>
 void AlltoAllv(const Comm<int> &comm,
-              const Environment &env,
-              const ArrayView<const string> &sendBuf,
-              const ArrayView<const int> &sendCount,
-              ArrayRCP<string> &recvBuf,  // output, allocated here
-              ArrayRCP<int> &recvCount,  // output, allocated here
-              bool countsAreUniform)
+               const Environment &env,
+               const ArrayView<const string> &sendBuf,
+               const ArrayView<const int> &sendCount,
+               ArrayRCP<string> &recvBuf,
+               const ArrayView<int> &recvCount
+)
 {
   int nprocs = comm.getSize();
   int *newCount = new int [nprocs];
   memset(newCount, 0, sizeof(int) * nprocs);
   ArrayView<const int> newSendCount(newCount, nprocs);
-
 
   size_t numStrings = sendBuf.size();
   size_t numChars = 0;
@@ -162,10 +175,10 @@ void AlltoAllv(const Comm<int> &comm,
   }
 
   ArrayRCP<char> newRecvBuf;
-  ArrayRCP<int> newRecvCount;
+  Array<int> newRecvCount(nprocs, 0);
 
   AlltoAllv<char>(comm, env, newSendBuf, newSendCount,
-    newRecvBuf, newRecvCount, countsAreUniform);
+                  newRecvBuf, newRecvCount());
 
   delete [] sbuf;
   delete [] newCount;
@@ -180,10 +193,6 @@ void AlltoAllv(const Comm<int> &comm,
     buf += slen;
     numNewStrings++;
   }
-
-  // Counts to return
-  int *numStringsRecv = new int [nprocs];
-  memset(numStringsRecv, 0, sizeof(int) * nprocs);
 
   // Data to return
   string *newStrings = new string [numNewStrings];
@@ -200,13 +209,14 @@ void AlltoAllv(const Comm<int> &comm,
       for (int i=0; i < slen; i++)
         nextString.push_back(*buf++);
       newStrings[next++] = nextString;
-      numStringsRecv[p]++;
+      recvCount[p]++;
     }
   }
 
   recvBuf = arcp<string>(newStrings, 0, numNewStrings, true);
-  recvCount = arcp<int>(numStringsRecv, 0, nprocs, true);
 }
+
+
 
 #ifdef HAVE_ZOLTAN2_LONG_LONG
 
@@ -218,8 +228,8 @@ void AlltoAllv(const Comm<int> &comm,
               const ArrayView<const unsigned long long> &sendBuf,
               const ArrayView<const int> &sendCount,
               ArrayRCP<unsigned long long> &recvBuf,  // output, allocated here
-              ArrayRCP<int> &recvCount,  // output, allocated here
-              bool countsAreUniform)
+              const ArrayView<int> &recvCount   // output
+)
 {
   const long long *sbuf =
     reinterpret_cast<const long long *>(sendBuf.getRawPtr());
@@ -227,10 +237,11 @@ void AlltoAllv(const Comm<int> &comm,
   ArrayRCP<long long> newRecvBuf;
 
   AlltoAllv<long long>(comm, env, newSendBuf, sendCount,
-    newRecvBuf, recvCount, countsAreUniform);
+    newRecvBuf, recvCount);
 
   recvBuf = arcp_reinterpret_cast<unsigned long long>(newRecvBuf);
 }
+
 #endif
 
 /* \brief Specialization for unsigned short
@@ -241,18 +252,19 @@ void AlltoAllv(const Comm<int> &comm,
               const ArrayView<const unsigned short> &sendBuf,
               const ArrayView<const int> &sendCount,
               ArrayRCP<unsigned short> &recvBuf,  // output, allocated here
-              ArrayRCP<int> &recvCount,  // output, allocated here
-              bool countsAreUniform)
+              const ArrayView<int> &recvCount   // output
+)
 {
   const short *sbuf = reinterpret_cast<const short *>(sendBuf.getRawPtr());
   ArrayView<const short> newSendBuf(sbuf, sendBuf.size());
   ArrayRCP<short> newRecvBuf;
 
   AlltoAllv<short>(comm, env, newSendBuf, sendCount,
-    newRecvBuf, recvCount, countsAreUniform);
+    newRecvBuf, recvCount);
 
   recvBuf = arcp_reinterpret_cast<unsigned short>(newRecvBuf);
 }
+
 
 /* \brief For data type unsigned char (no Teuchos::DirectSerializationTraits)
  */
@@ -262,18 +274,17 @@ void AlltoAllv(const Comm<int> &comm,
               const ArrayView<const unsigned char> &sendBuf,
               const ArrayView<const int> &sendCount,
               ArrayRCP<unsigned char> &recvBuf,      // output, allocated here
-              ArrayRCP<int> &recvCount,  // output, allocated here
-              bool countsAreUniform)
+              const ArrayView<int> &recvCount   // output
+)
 {
   const char *sbuf = reinterpret_cast<const char *>(sendBuf.getRawPtr());
   ArrayView<const char> newSendBuf(sbuf, sendBuf.size());
   ArrayRCP<char> newRecvBuf;
 
   AlltoAllv<char>(comm, env, newSendBuf, sendCount,
-    newRecvBuf, recvCount, countsAreUniform);
+    newRecvBuf, recvCount);
 
   recvBuf = arcp_reinterpret_cast<unsigned char>(newRecvBuf);
 }
-
 
 }                   // namespace Z2
