@@ -60,7 +60,7 @@ void bootstrap()
 //  diag::registerWriter("meshlog", meshlog, theDiagWriterParser());
 }
 
-std::string log_to_str(EntityModificationLog log)
+std::string log_to_str(EntityState log)
 {
   if (log == 0) {
     return "Not changed";
@@ -127,7 +127,7 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Entity entity)
 
   writer << "Entity[key:" << entity_key_str <<
                  ", ownership:" << ownership_info <<
-                 ", log:" << log_to_str(entity.log_query()) <<
+                 ", log:" << log_to_str(entity.state()) <<
                  ", owner:" << entity.owner_rank();
 
   // print comm info
