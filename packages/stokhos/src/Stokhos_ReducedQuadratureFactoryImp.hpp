@@ -762,10 +762,8 @@ underdetermined_solver(
     solver_GLPK(A, b, x, transa, uplo);
   else if (solver_method == "qpOASES")
     solver_qpOASES(A, b, x, transa, uplo);
-  else if (solver_method == "Basis Pursuit")
-    solver_BasisPursuit(A, b, x, transa, uplo);
-  else if (solver_method == "Orthogonal Matching Pursuit")
-    solver_OrthogonalMatchingPursuit(A, b, x, transa, uplo);
+  else if (solver_method == "Compressed Sensing")
+    solver_CompressedSensing(A, b, x, transa, uplo);
   else
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, 
@@ -1217,7 +1215,7 @@ solver_qpOASES(
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
-solver_BasisPursuit(
+solver_CompressedSensing(
   const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
   const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
   Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
@@ -1237,48 +1235,20 @@ solver_BasisPursuit(
     x.shape(n_cols, 1);
 
   // Setup L1 minimization problem
-  Pecos::CompressedSensing CS;
+  // Todo:  parse options from parameter list
+  CompressedSensingTool CS;
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> AA(A, transa);
   Teuchos::SerialDenseVector<ordinal_type, value_type> bb(b);
-  CS.BasisPursuit(AA, bb, x);
+  RealMatrixList xx;
+  CompressedSensingOptions opts;
+  CompressedSensingOptionsList opts_list;
+  CS.solve(AA, bb, xx, opts, opts_list);
+  x.assign(xx[0]);
   
 #else
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     "BasisPursuit solver called but not enabled!");
-#endif
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::ReducedQuadratureFactory<ordinal_type, value_type>::
-solver_OrthogonalMatchingPursuit(
-  const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
-  const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
-  Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
-  Teuchos::ETransp transa, Teuchos::EUplo uplo) const
-{
-#ifdef HAVE_STOKHOS_DAKOTA
-  ordinal_type m = A.numRows();
-  ordinal_type n = A.numCols();
-  ordinal_type n_cols;
-  if (transa == Teuchos::NO_TRANS) {
-    n_cols = n;
-  }
-  else {
-    n_cols = m;
-  }
-  if (x.length() < n_cols)
-    x.shape(n_cols, 1);
-
-  // Setup L1 minimization problem
-  Pecos::CompressedSensing CS;
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> AA(A, transa);
-  Teuchos::SerialDenseVector<ordinal_type, value_type> bb(b);
-  CS.OrthogonalMatchingPursuit(AA, bb, x);
-  
-#else
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     "BasisPursuit solver called but not enabled!");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    true, std::logic_error, 
+    "CompressedSensing solver called but not enabled!");
 #endif
 }
 

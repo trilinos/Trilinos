@@ -154,13 +154,7 @@ namespace Stokhos {
       Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
       Teuchos::ETransp transa, Teuchos::EUplo uplo) const;
 
-    void solver_BasisPursuit(
-      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
-      const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
-      Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
-      Teuchos::ETransp transa, Teuchos::EUplo uplo) const;
-
-    void solver_OrthogonalMatchingPursuit(
+    void solver_CompressedSensing(
       const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
       const Teuchos::SerialDenseVector<ordinal_type, value_type>& b,
       Teuchos::SerialDenseVector<ordinal_type, value_type>& x,
