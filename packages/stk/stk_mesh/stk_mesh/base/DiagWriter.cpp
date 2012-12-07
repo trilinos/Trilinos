@@ -8,6 +8,7 @@
 
 #include <stk_util/util/Bootstrap.hpp>
 
+#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/DiagWriter.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
@@ -65,9 +66,8 @@ stk::Bootstrap x(&bootstrap);
 
 } // namespace <unnamed>
 
-#else
 
-namespace {
+#endif
 
 std::string log_to_str(EntityState log)
 {
@@ -88,9 +88,6 @@ std::string log_to_str(EntityState log)
   }
   return "";
 }
-
-
-} // namespace <unnamed>
 
 stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Part& part)
 {
@@ -168,4 +165,3 @@ int dummy_DiagWriter()
   // file and eliminate a "empty object file" warning on the mac...
   return 1;
 }
-#endif // STK_MESH_TRACE_ENABLED
