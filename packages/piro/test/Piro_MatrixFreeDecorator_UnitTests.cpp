@@ -376,8 +376,8 @@ TEUCHOS_UNIT_TEST(Piro_MatrixFreeDecorator, DynamicJacobian)
   const RCP<Thyra::ModelEvaluator<double> > decorator(new MatrixFreeDecorator<double>(weakenedModel));
   const RCP<Thyra::LinearOpBase<double> > jacobian = decorator->create_W_op();
 
-  const Array<double> alphas = tuple(0.0, -1.0, 0.1, 10.0, 1.0e12, 1.0e-12);
-  const Array<double> betas = tuple(1.0, -1.0, 2.0, 10.0, 1.0e12, 1.0e-12);
+  const Array<double> alphas = tuple(0.0, -1.0, 0.1, 10.0, 1.0e-6);
+  const Array<double> betas = tuple(1.0, -1.0, 2.0, 10.0, 1.0e-6);
 
   for (Array<double>::const_iterator alphaIt = alphas.begin(); alphaIt != alphas.end(); ++alphaIt) {
     for (Array<double>::const_iterator betaIt = betas.begin(); betaIt != betas.end(); ++betaIt) {
@@ -399,7 +399,7 @@ TEUCHOS_UNIT_TEST(Piro_MatrixFreeDecorator, DynamicJacobian)
       for (int i = 0; i < jacobian->domain()->dim(); ++i) {
         const Array<double> actual = arrayFromLinOp(*jacobian, i);
         const Array<double> expected = arrayFromLinOp(*expectedJacobian, i);
-        TEST_COMPARE_FLOATING_ARRAYS(actual, expected, relaxedTol);
+        TEST_COMPARE_FLOATING_ARRAYS(actual, expected, 6.0 * relaxedTol);
       }
     }
   }
