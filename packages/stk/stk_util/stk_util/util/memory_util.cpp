@@ -107,7 +107,7 @@ void get_memory_usage(size_t & now, size_t & hwm)
 
   #else
   now = get_memory_usage_now();
-  static int s_hwm = 0;
+  static size_t s_hwm = 0;
   s_hwm = std::max(now, s_hwm);
   hwm = s_hwm;
 #endif

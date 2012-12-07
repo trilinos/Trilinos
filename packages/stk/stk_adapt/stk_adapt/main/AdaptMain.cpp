@@ -46,22 +46,15 @@
 
 #define ALLOW_MEM_TEST 1
 
-extern double s_timers[10]; // = {0,0,0,0,0,0,0,0,0,0};
-
-
 namespace stk {
 
   namespace adapt {
 
     static int s_spatialDim=0;
 
-    typedef uint64_t MemorySizeType;
-
-    BOOST_STATIC_ASSERT(sizeof(uint64_t) == sizeof(size_t));
+    typedef size_t MemorySizeType;
 
     static double MegaByte(MemorySizeType x) { return  ((double)x/1024.0/1024.0); }
-
-
 
     struct MemoryMultipliers
     {

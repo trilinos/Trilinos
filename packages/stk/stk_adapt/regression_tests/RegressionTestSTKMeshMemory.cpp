@@ -43,7 +43,7 @@ namespace stk
 
 #define DO_MEMORY_ACCOUNTING 1
 
-typedef uint64_t MemorySizeType;
+typedef size_t MemorySizeType;
 
 struct MemoryInfo
 {
