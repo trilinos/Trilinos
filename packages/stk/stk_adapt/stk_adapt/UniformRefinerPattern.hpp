@@ -2839,6 +2839,9 @@ namespace stk {
 #include "UniformRefinerPattern_Hex8_Tet4_24.hpp"
 #include "UniformRefinerPattern_Hex8_Tet4_6_12.hpp"
 
+#include "UniformRefinerPattern_Tri3_Quad4_3.hpp"
+#include "UniformRefinerPattern_Tet4_Hex8_4.hpp"
+
 // local refinement - for testing only right now
 #include "RefinerPattern_Tri3_Tri3_2.hpp"
 #include "RefinerPattern_Tri3_Tri3_N.hpp"
@@ -2902,6 +2905,9 @@ namespace stk {
     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Tetrahedron<4>,  24 >                        Hex8_Tet4_24;
     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Tetrahedron<4>,   6 >                        Hex8_Tet4_6_12;
 
+    typedef  UniformRefinerPattern<shards::Triangle<3>,      shards::Quadrilateral<4>, 3, Specialization >        Tri3_Quad4_3;
+    typedef  UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Hexahedron<8>,    4 >                        Tet4_Hex8_4;
+
     // local refinement - for testing only right now
 
     typedef  RefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,      2  >            Local_Tri3_Tri3_2;
@@ -2948,11 +2954,15 @@ enum Pattern
 	 WEDGE6_WEDGE15_1,
 	 WEDGE6_WEDGE18_1,
 	 PYRAMID5_PYRAMID13_1,
+
 	 QUAD4_TRI3_2,
 	 QUAD4_TRI3_4,
 	 QUAD4_TRI3_6,
 	 HEX8_TET4_24,
-	 HEX8_TET4_6_12
+	 HEX8_TET4_6_12,
+
+	 TRI3_QUAD4_3,
+   TET4_HEX8_4
 	};
     typedef  RefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<4>,  -1  >            Local_Tet4_Tet4_N;
 

@@ -1100,7 +1100,7 @@ namespace stk {
 
           if (!coord_in)
             {
-              std::cout << "PerceptMesh::createOrGetNode coord_in is null and node doesn't exist, node_id= " << node_id << std::endl;
+              std::cout << "P[" << get_rank() << "] "<< " PerceptMesh::createOrGetNode coord_in is null and node doesn't exist, node_id= " << node_id << std::endl;
               throw std::runtime_error("PerceptMesh::createOrGetNode coord_in is null and node doesn't exist");
             }
 

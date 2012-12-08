@@ -2018,7 +2018,19 @@ namespace stk {
         vector<stk::mesh::Entity> new_nodes;
 
         if (m_useCustomGhosting)
-          m_eMesh.createEntities( stk::mesh::MetaData::NODE_RANK, num_nodes_needed, new_nodes);
+          {
+            m_eMesh.createEntities( stk::mesh::MetaData::NODE_RANK, num_nodes_needed, new_nodes);
+
+            if (0)
+              {
+                unsigned proc_rank = m_eMesh.get_rank();
+                for (unsigned i=0; i < num_nodes_needed; i++)
+                  {
+                    std::cout << "P[" << proc_rank << "] i= " << i << " new node id = " << new_nodes[i].identifier() <<   std::endl;
+                  }
+              }
+
+          }
 
         std::vector<stk::mesh::EntityId> ids(num_nodes_needed);
 
@@ -2043,6 +2055,11 @@ namespace stk {
                 bool did_destroy = m_eMesh.get_bulk_data()->destroy_entity(new_nodes[i]);
                 VERIFY_OP_ON(did_destroy, ==, true, "createNewNodesInParallel couldn't destroy");
 #endif
+                {
+                  unsigned proc_rank = m_eMesh.get_rank();
+                  std::cout << "P[" << proc_rank << "] new node id =  " << ids[i] <<   std::endl;
+                }
+                
                 new_nodes[i] = m_eMesh.get_bulk_data()->declare_entity(m_eMesh.node_rank(), ids[i], empty_parts);
 #if PERCEPT_USE_PSEUDO_ELEMENTS
                 unsigned proc_rank = m_eMesh.get_rank();

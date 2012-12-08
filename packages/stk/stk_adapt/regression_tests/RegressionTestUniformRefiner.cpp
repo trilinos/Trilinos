@@ -44,6 +44,8 @@
 
 #include <stk_adapt/UniformRefinerPattern.hpp>
 #include <stk_adapt/UniformRefiner.hpp>
+#include <stk_adapt/UniformRefinerPattern_Tri3_Quad4_3.hpp>
+#include <stk_adapt/UniformRefinerPattern_Tet4_Hex8_4.hpp>
 #include <unit_tests/TestLocalRefiner.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 #include <stk_percept/RunEnvironment.hpp>
@@ -1092,6 +1094,35 @@ namespace stk
             breaker.doBreak();
 
             eMesh.save_as(output_files_loc+"cylinder_hex8_tet4_6_12_1.e");
+            eMesh.save_as(input_files_loc+"cylinder_tet4_hex8_4.e");
+
+            // end_demo
+          }
+
+        if (1 && (p_size == 1 || p_size == 3))
+          {
+            percept::PerceptMesh eMesh(3u);
+
+            eMesh.open(input_files_loc+"cylinder_tet4_hex8_4.e");
+
+            Tet4_Hex8_4 break_hex_to_tet(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+
+            eMesh.commit();
+            //eMesh.delete_side_sets();
+            
+            //eMesh.print_info("test",2);
+            eMesh.print_info();
+            eMesh.save_as(output_files_loc+"cylinder_tet4_hex8_4_0.e");
+
+            UNIFORM_REFINER breaker(eMesh, break_hex_to_tet, proc_rank_field);
+            //breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+            eMesh.dump_vtk(output_files_loc+"cylinder_tet4_hex8_4_1.vtk");
+
+            eMesh.save_as(output_files_loc+"cylinder_tet4_hex8_4_1.e");
 
             // end_demo
           }

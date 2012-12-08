@@ -196,6 +196,12 @@ namespace stk {
         case HEX8_TET4_6_12:
           bp = (UniformRefinerPatternBase*) new Hex8_Tet4_6_12(eMesh);
           break;
+        case TET4_HEX8_4:
+          bp = (UniformRefinerPatternBase*) new Tet4_Hex8_4(eMesh);
+          break;
+        case TRI3_QUAD4_3:
+          bp = (UniformRefinerPatternBase*) new Tri3_Quad4_3(eMesh);
+          break;
         default:
           throw std::runtime_error("Refiner::Refiner Unrecognized refinement pattern");
           break;
@@ -2737,6 +2743,9 @@ namespace stk {
       EXCEPTWATCH;
       shards::CellTopology element_topo(stk::percept::PerceptMesh::get_cell_topology(element));
       unsigned element_nsides = (unsigned)element_topo.getSideCount();
+
+      //std::cout << "tmp srk connectSidesForced element= "; m_eMesh.print(element, false); 
+      //std::cout << " side= "; m_eMesh.print(side_elem, true); 
 
       // check validity of connection
       if (side_part_map)
