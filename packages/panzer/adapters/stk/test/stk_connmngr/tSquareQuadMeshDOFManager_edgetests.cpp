@@ -157,7 +157,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager_edgetests, buildTest_quad_edge_orien
    dofManager->getOwnedIndices(total);
    TEST_EQUALITY(total.size(),12);
 
-   // dofManager->printFieldInformation(out);
+   dofManager->printFieldInformation(out);
 }
 
 }

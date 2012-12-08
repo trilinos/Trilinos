@@ -135,7 +135,7 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
    dofManager->setFieldOrder(fieldOrder);
 
    dofManager->buildGlobalUnknowns();
-   // dofManager->printFieldInformation(out);
+   dofManager->printFieldInformation(out);
 
    TEST_EQUALITY(dofManager->getFieldNum("p"),0);
    TEST_EQUALITY(dofManager->getFieldNum("ux"),1);

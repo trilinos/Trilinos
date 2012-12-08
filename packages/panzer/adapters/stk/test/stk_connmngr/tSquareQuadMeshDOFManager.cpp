@@ -136,7 +136,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
    dofManager->setFieldOrder(fieldOrder);
 
    dofManager->buildGlobalUnknowns();
-   // dofManager->printFieldInformation(out);
+   dofManager->printFieldInformation(out);
 
    TEST_EQUALITY(dofManager->getFieldNum("p"),0);
    TEST_EQUALITY(dofManager->getFieldNum("ux"),1);
@@ -246,7 +246,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, field_order)
    dofManager->setFieldOrder(fieldOrder);
 
    dofManager->buildGlobalUnknowns();
-   // dofManager->printFieldInformation(out);
+   dofManager->printFieldInformation(out);
 
    TEST_EQUALITY(dofManager->getFieldNum("uy"),0);
    TEST_EQUALITY(dofManager->getFieldNum("p"),1);
@@ -541,7 +541,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations)
    dofManager->addField("b",patternI1);
 
    dofManager->buildGlobalUnknowns();
-   // dofManager->printFieldInformation(out);
+   dofManager->printFieldInformation(out);
 
    const std::vector<int> & u_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("u"));
    const std::vector<int> & b_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("b"));
@@ -665,7 +665,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations2)
    dofManager->addField("b",patternI1);
 
    dofManager->buildGlobalUnknowns();
-   // dofManager->printFieldInformation(out);
+   dofManager->printFieldInformation(out);
 
    const std::vector<int> & b_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("b"));
 

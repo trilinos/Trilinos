@@ -80,7 +80,18 @@ public:
   Teuchos::RCP<const ConnManager<LO,GO> > getConnManager() const
   { return connMngr_; }
 
-  //! Adds a field to be used in creating the Global Numbering
+  /** \brief Add a field to the DOF manager.
+    *
+    * Add a field to the DOF manager. Immediately after
+    * adding the field the field number and field size
+    * will be available for a user to access
+    *
+    * \param[in] str Human readable name of the field
+    * \param[in] pattern Pattern defining the basis function to be used
+    *
+    * \note <code>addField</code> cannot be called after <code>buildGlobalUnknowns</code> 
+    *       or <code>registerFields</code>.
+    */
   int addField(const std::string & str, const Teuchos::RCP<const FieldPattern> & pattern);
 
   //! Adds a field with an option for specifying the block.
@@ -191,6 +202,11 @@ public:
     */
   int getElementBlockGIDCount(const std::size_t & blockIndex) const
   { return elementBlockGIDCount_[blockIndex]; }
+
+  /** Prints to an output stream the information about
+    * the aggregated field.
+    */
+  void printFieldInformation(std::ostream & os) const;
 
 protected:
 

@@ -138,8 +138,8 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
    fieldOrder.push_back("uy");
    fieldOrder.push_back("p");
    dofManager->setFieldOrder(fieldOrder);
-   dofManager->printFieldInformation(out);
    dofManager->buildGlobalUnknowns();
+   dofManager->printFieldInformation(out);
 
    if(numProcs==1) {
       std::vector<int> gids_v;

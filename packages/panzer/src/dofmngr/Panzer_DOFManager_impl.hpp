@@ -780,6 +780,25 @@ std::size_t DOFManager<LocalOrdinalT,GlobalOrdinalT>::blockIdToIndex(const std::
   return bitr->second;
 }
 
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void DOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std::ostream & os) const
+{
+  os << "DOFManagerFEI Field Information: " << std::endl;
+
+  TEUCHOS_ASSERT(blockOrder_.size()==fa_fps_.size());
+
+  for(std::size_t i=0;i<blockOrder_.size();i++) {
+    os << "Element Block = " << blockOrder_[i] << std::endl; 
+
+    // output field information
+    // Teuchos::RCP<const panzer::FieldAggPattern> agg = fa_fps_[i];
+    // const std::vector<int> & fieldIds = agg->fieldIds();
+    // for(std::size_t f=0;f<fieldIds.size();f++) {
+    //   os << "      \"" << getFieldString(fieldIds[f]) << "\" is field ID " << fieldIds[f] << std::endl;
+    // }
+  }
+}
+
 } /*panzer*/
 
 #endif
