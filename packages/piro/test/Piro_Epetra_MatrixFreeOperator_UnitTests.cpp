@@ -96,33 +96,6 @@ EpetraExt::ModelEvaluator::InArgs createDynamicNominalInArgs(const EpetraExt::Mo
   return result;
 }
 
-RCP<Epetra_Vector> vectorFromLinOp(const Epetra_Operator &op, int col)
-{
-  const RCP<Epetra_Vector> result = vectorNew(op.OperatorRangeMap());
-
-  const RCP<Epetra_Vector> rhs = vectorNew(op.OperatorDomainMap());
-  const double value = 1.0;
-  const int ierr = rhs->ReplaceGlobalValues(1, &value, &col);
-  // Some processes might not hold the entry
-  TEUCHOS_ASSERT(ierr == 0 || ierr == 1);
-  {
-    const Epetra_Comm &comm = rhs->Comm();
-    int ierrLoc = ierr, ierrSum;
-    comm.SumAll(&ierrLoc, &ierrSum, 1);
-    // At least one process holds the entry
-    TEUCHOS_ASSERT(ierrSum < comm.NumProc());
-  }
-
-  op.Apply(*rhs, *result);
-  return result;
-}
-
-Array<double> arrayFromLinOp(const Epetra_Operator &op, int col)
-{
-  const RCP<const Epetra_Vector> v = vectorFromLinOp(op, col);
-  return arrayFromVector(*v);
-}
-
 // Floating point tolerance
 const double tol = 2.0e-6;
 

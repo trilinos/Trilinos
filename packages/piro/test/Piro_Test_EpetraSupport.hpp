@@ -45,9 +45,11 @@
 #ifndef PIRO_TEST_EPETRASUPPORT_HPP
 #define PIRO_TEST_EPETRASUPPORT_HPP
 
+#include "Epetra_Comm.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Import.h"
+#include "Epetra_Operator.h"
 
 #include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
@@ -88,6 +90,33 @@ Teuchos::RCP<Epetra_MultiVector> multiVectorNew(const Epetra_BlockMap &map, cons
 {
   TEUCHOS_ASSERT(colMap.NumGlobalElements() == colMap.NumMyElements());
   return multiVectorNew(map, colMap.NumGlobalElements());
+}
+
+Teuchos::RCP<Epetra_Vector> vectorFromLinOp(const Epetra_Operator &op, int col)
+{
+  const Teuchos::RCP<Epetra_Vector> result = vectorNew(op.OperatorRangeMap());
+
+  const Teuchos::RCP<Epetra_Vector> rhs = vectorNew(op.OperatorDomainMap());
+  const double value = 1.0;
+  const int ierr = rhs->ReplaceGlobalValues(1, &value, &col);
+  // Some processes might not hold the entry
+  TEUCHOS_ASSERT(ierr == 0 || ierr == 1);
+  {
+    const Epetra_Comm &comm = rhs->Comm();
+    int ierrLoc = ierr, ierrSum;
+    comm.SumAll(&ierrLoc, &ierrSum, 1);
+    // At least one process holds the entry
+    TEUCHOS_ASSERT(ierrSum < comm.NumProc());
+  }
+
+  op.Apply(*rhs, *result);
+  return result;
+}
+
+Teuchos::Array<double> arrayFromLinOp(const Epetra_Operator &op, int col)
+{
+  const Teuchos::RCP<const Epetra_Vector> v = vectorFromLinOp(op, col);
+  return arrayFromVector(*v);
 }
 
 } // namespace Test
