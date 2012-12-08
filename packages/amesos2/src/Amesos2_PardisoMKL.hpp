@@ -43,7 +43,7 @@
 
 
 #ifndef AMESOS2_PARDISOMKL_HPP
-#define AMESOS2_PARDIOMKL_HPP
+#define AMESOS2_PARDISOMKL_HPP
 
 #include "Amesos2_PardisoMKL_decl.hpp"
 
