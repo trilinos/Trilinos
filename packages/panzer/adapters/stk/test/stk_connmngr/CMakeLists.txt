@@ -63,6 +63,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tCubeHexMeshDOFManager_FEI
+  SOURCES tCubeHexMeshDOFManager_FEI.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 2
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tSquareQuadMeshDOFManager_edgetests
   SOURCES tSquareQuadMeshDOFManager_edgetests.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1

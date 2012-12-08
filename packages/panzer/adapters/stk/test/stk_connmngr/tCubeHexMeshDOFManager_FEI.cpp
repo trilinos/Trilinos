@@ -50,7 +50,7 @@
 #include "Panzer_STK_config.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
-#include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
 
@@ -121,7 +121,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildQuadMesh(Comm,2,2,2,1,1,1);
    RCP<panzer::ConnManager<int,int> > connManager 
          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
 
    TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
@@ -137,15 +137,13 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
    fieldOrder.push_back("ux");
    fieldOrder.push_back("uy");
    fieldOrder.push_back("p");
-   dofManager->setFieldOrder(fieldOrder);
+   // dofManager->setFieldOrder(fieldOrder); // temporary until implemented properly
    dofManager->printFieldInformation(out);
    dofManager->buildGlobalUnknowns();
 
    if(numProcs==1) {
       std::vector<int> gids_v;
       int * gids = 0;
-
-      TEST_ASSERT(false);
 
       // element 0
       dofManager->getElementGIDs(0,gids_v);
