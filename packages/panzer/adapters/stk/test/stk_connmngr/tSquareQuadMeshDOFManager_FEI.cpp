@@ -50,7 +50,7 @@
 #include "Panzer_STK_config.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
-#include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
 
@@ -117,7 +117,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
          = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
 
    TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
@@ -129,14 +129,8 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
    dofManager->addField("uy",patternC1);
    dofManager->addField("p",patternC1);
 
-   std::vector<std::string> fieldOrder;
-   fieldOrder.push_back("p");
-   fieldOrder.push_back("ux");
-   fieldOrder.push_back("uy");
-   dofManager->setFieldOrder(fieldOrder);
-
    dofManager->buildGlobalUnknowns();
-   // dofManager->printFieldInformation(out);
+   dofManager->printFieldInformation(out);
 
    TEST_EQUALITY(dofManager->getFieldNum("p"),0);
    TEST_EQUALITY(dofManager->getFieldNum("ux"),1);
@@ -155,9 +149,9 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
       dofManager->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),12);
       TEST_EQUALITY(gids[0],0); TEST_EQUALITY(gids[1],1); TEST_EQUALITY(gids[2],2);
-      TEST_EQUALITY(gids[3],9); TEST_EQUALITY(gids[4],10); TEST_EQUALITY(gids[5],11);
-      TEST_EQUALITY(gids[6],15); TEST_EQUALITY(gids[7],16); TEST_EQUALITY(gids[8],17);
-      TEST_EQUALITY(gids[9],3); TEST_EQUALITY(gids[10],4); TEST_EQUALITY(gids[11],5);
+      TEST_EQUALITY(gids[3],3); TEST_EQUALITY(gids[4],4); TEST_EQUALITY(gids[5],5);
+      TEST_EQUALITY(gids[6],9); TEST_EQUALITY(gids[7],10); TEST_EQUALITY(gids[8],11);
+      TEST_EQUALITY(gids[9],6); TEST_EQUALITY(gids[10],7); TEST_EQUALITY(gids[11],8);
 
       for(std::size_t i=0;i<p_offsets.size();i++) {
          TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
@@ -167,10 +161,10 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
    
       dofManager->getElementGIDs(1,gids);
       TEST_EQUALITY(gids.size(),12);
-      TEST_EQUALITY(gids[0],3); TEST_EQUALITY(gids[1],4); TEST_EQUALITY(gids[2],5);
-      TEST_EQUALITY(gids[3],15); TEST_EQUALITY(gids[4],16); TEST_EQUALITY(gids[5],17);
-      TEST_EQUALITY(gids[6],21); TEST_EQUALITY(gids[7],22); TEST_EQUALITY(gids[8],23);
-      TEST_EQUALITY(gids[9],6); TEST_EQUALITY(gids[10],7); TEST_EQUALITY(gids[11],8);
+      TEST_EQUALITY(gids[0],6); TEST_EQUALITY(gids[1],7); TEST_EQUALITY(gids[2],8);
+      TEST_EQUALITY(gids[3],9); TEST_EQUALITY(gids[4],10); TEST_EQUALITY(gids[5],11);
+      TEST_EQUALITY(gids[6],15); TEST_EQUALITY(gids[7],16); TEST_EQUALITY(gids[8],17);
+      TEST_EQUALITY(gids[9],12); TEST_EQUALITY(gids[10],13); TEST_EQUALITY(gids[11],14);
 
       for(std::size_t i=0;i<p_offsets.size();i++) {
          TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
@@ -183,10 +177,10 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
 
       dofManager->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),12);
-      TEST_EQUALITY(gids[0],9); TEST_EQUALITY(gids[1],10); TEST_EQUALITY(gids[2],11);
-      TEST_EQUALITY(gids[3],12); TEST_EQUALITY(gids[4],13); TEST_EQUALITY(gids[5],14);
-      TEST_EQUALITY(gids[6],18); TEST_EQUALITY(gids[7],19); TEST_EQUALITY(gids[8],20);
-      TEST_EQUALITY(gids[9],15); TEST_EQUALITY(gids[10],16); TEST_EQUALITY(gids[11],17);
+      TEST_EQUALITY(gids[0],3); TEST_EQUALITY(gids[1],4); TEST_EQUALITY(gids[2],5);
+      TEST_EQUALITY(gids[3],18); TEST_EQUALITY(gids[4],19); TEST_EQUALITY(gids[5],20);
+      TEST_EQUALITY(gids[6],21); TEST_EQUALITY(gids[7],22); TEST_EQUALITY(gids[8],23);
+      TEST_EQUALITY(gids[9],9); TEST_EQUALITY(gids[10],10); TEST_EQUALITY(gids[11],11);
 
       for(std::size_t i=0;i<p_offsets.size();i++) {
          TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
@@ -196,10 +190,10 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
    
       dofManager->getElementGIDs(1,gids);
       TEST_EQUALITY(gids.size(),12);
-      TEST_EQUALITY(gids[0],15); TEST_EQUALITY(gids[1],16); TEST_EQUALITY(gids[2],17);
-      TEST_EQUALITY(gids[3],18); TEST_EQUALITY(gids[4],19); TEST_EQUALITY(gids[5],20);
+      TEST_EQUALITY(gids[0],9); TEST_EQUALITY(gids[1],10); TEST_EQUALITY(gids[2],11);
+      TEST_EQUALITY(gids[3],21); TEST_EQUALITY(gids[4],22); TEST_EQUALITY(gids[5],23);
       TEST_EQUALITY(gids[6],24); TEST_EQUALITY(gids[7],25); TEST_EQUALITY(gids[8],26);
-      TEST_EQUALITY(gids[9],21); TEST_EQUALITY(gids[10],22); TEST_EQUALITY(gids[11],23);
+      TEST_EQUALITY(gids[9],15); TEST_EQUALITY(gids[10],16); TEST_EQUALITY(gids[11],17);
 
       for(std::size_t i=0;i<p_offsets.size();i++) {
          TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
@@ -228,7 +222,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, field_order)
          = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
 
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
 
@@ -246,7 +240,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, field_order)
    dofManager->setFieldOrder(fieldOrder);
 
    dofManager->buildGlobalUnknowns();
-   // dofManager->printFieldInformation(out);
+   dofManager->printFieldInformation(out);
 
    TEST_EQUALITY(dofManager->getFieldNum("uy"),0);
    TEST_EQUALITY(dofManager->getFieldNum("p"),1);
@@ -320,7 +314,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, shared_owned_indices)
 
    // build DOF manager
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
    dofManager->addField("u",patternC1);
    dofManager->buildGlobalUnknowns();
@@ -333,44 +327,41 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, shared_owned_indices)
    glbNum->getOwnedAndSharedIndices(ownedAndShared);
 
    if(myRank==0 && numProcs==2) {
-      TEST_EQUALITY(owned.size(),3);
-      TEST_EQUALITY(ownedAndShared.size(),6);
-      bool ownedCorrect = true;
-      bool ownedAndSharedCorrect = true;
-
-      std::sort(owned.begin(),owned.end());
-      ownedCorrect &= (owned[0] == (int) 0);
-      ownedCorrect &= (owned[1] == (int) 1);
-      ownedCorrect &= (owned[2] == (int) 2);
-      TEST_ASSERT(ownedCorrect);
-
-      std::sort(ownedAndShared.begin(),ownedAndShared.end());
-      ownedAndSharedCorrect &= (ownedAndShared[0] == (int) 0);
-      ownedAndSharedCorrect &= (ownedAndShared[1] == (int) 1);
-      ownedAndSharedCorrect &= (ownedAndShared[2] == (int) 2);
-      ownedAndSharedCorrect &= (ownedAndShared[3] == (int) 3);
-      ownedAndSharedCorrect &= (ownedAndShared[4] == (int) 5);
-      ownedAndSharedCorrect &= (ownedAndShared[5] == (int) 7);
-      TEST_ASSERT(ownedAndSharedCorrect);
-   }
-   else if(myRank==1 && numProcs==2) {
       TEST_EQUALITY(owned.size(),6);
       TEST_EQUALITY(ownedAndShared.size(),6);
       bool ownedCorrect = true;
       bool ownedAndSharedCorrect = true;
 
       std::sort(owned.begin(),owned.end());
-      ownedCorrect &= (owned[0] == (int) 3);
-      ownedCorrect &= (owned[1] == (int) 4);
-      ownedCorrect &= (owned[2] == (int) 5);
-      ownedCorrect &= (owned[3] == (int) 6);
-      ownedCorrect &= (owned[4] == (int) 7);
-      ownedCorrect &= (owned[5] == (int) 8);
+      for(std::size_t i=0;i<owned.size();i++) {
+         ownedCorrect &= (owned[i] == (int) i);
+      }
       TEST_ASSERT(ownedCorrect);
 
       std::sort(ownedAndShared.begin(),ownedAndShared.end());
       for(std::size_t i=0;i<ownedAndShared.size();i++) {
-         ownedAndSharedCorrect &= (ownedAndShared[i] == (int) i+3);
+         ownedAndSharedCorrect &= (ownedAndShared[i] == (int) i);
+      }
+      TEST_ASSERT(ownedAndSharedCorrect);
+   }
+   else if(myRank==1 && numProcs==2) {
+      TEST_EQUALITY(owned.size(),3);
+      TEST_EQUALITY(ownedAndShared.size(),6);
+      bool ownedCorrect = true;
+      bool ownedAndSharedCorrect = true;
+
+      std::sort(owned.begin(),owned.end());
+      for(std::size_t i=0;i<owned.size();i++) {
+         ownedCorrect &= (owned[i] == (int) i+6);
+      }
+      TEST_ASSERT(ownedCorrect);
+
+      std::sort(ownedAndShared.begin(),ownedAndShared.end());
+      ownedAndSharedCorrect &= (ownedAndShared[0] == 1);
+      ownedAndSharedCorrect &= (ownedAndShared[1] == 3);
+      ownedAndSharedCorrect &= (ownedAndShared[2] == 5);
+      for(std::size_t i=0;i<3;i++) {
+         ownedAndSharedCorrect &= (ownedAndShared[i+3] == (int) i+6);
       }
       TEST_ASSERT(ownedAndSharedCorrect);
    }
@@ -401,14 +392,14 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, multiple_dof_managers)
 
    // build DOF manager
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager_fluids = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager_fluids = rcp(new panzer::DOFManagerFEI<int,int>());
    dofManager_fluids->setConnManager(connManager,MPI_COMM_WORLD);
    dofManager_fluids->addField("ux",patternC2);
    dofManager_fluids->addField("uy",patternC2);
    dofManager_fluids->addField("p",patternC1);
    dofManager_fluids->buildGlobalUnknowns();
 
-   RCP<panzer::DOFManager<int,int> > dofManager_temp = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager_temp = rcp(new panzer::DOFManagerFEI<int,int>());
    dofManager_temp->setConnManager(connManager,MPI_COMM_WORLD);
    dofManager_temp->addField("T",patternC1);
    dofManager_temp->buildGlobalUnknowns(dofManager_fluids->getGeometricFieldPattern());
@@ -419,33 +410,33 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, multiple_dof_managers)
       dofManager_temp->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),4);
       TEST_EQUALITY(gids[0],0); 
-      TEST_EQUALITY(gids[1],3); 
-      TEST_EQUALITY(gids[2],5);
-      TEST_EQUALITY(gids[3],1); 
+      TEST_EQUALITY(gids[1],1); 
+      TEST_EQUALITY(gids[2],3);
+      TEST_EQUALITY(gids[3],2); 
    
       dofManager_temp->getElementGIDs(1,gids);
       TEST_EQUALITY(gids.size(),4);
-      TEST_EQUALITY(gids[0],1); 
-      TEST_EQUALITY(gids[1],5); 
-      TEST_EQUALITY(gids[2],7);
-      TEST_EQUALITY(gids[3],2);
+      TEST_EQUALITY(gids[0],2); 
+      TEST_EQUALITY(gids[1],3); 
+      TEST_EQUALITY(gids[2],5);
+      TEST_EQUALITY(gids[3],4);
    }
    else if(myRank==1) {
       std::vector<int> gids;
 
       dofManager_temp->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),4);
-      TEST_EQUALITY(gids[0],3); 
-      TEST_EQUALITY(gids[1],4); 
-      TEST_EQUALITY(gids[2],6);
-      TEST_EQUALITY(gids[3],5); 
+      TEST_EQUALITY(gids[0],1); 
+      TEST_EQUALITY(gids[1],6); 
+      TEST_EQUALITY(gids[2],7);
+      TEST_EQUALITY(gids[3],3); 
    
       dofManager_temp->getElementGIDs(1,gids);
       TEST_EQUALITY(gids.size(),4);
-      TEST_EQUALITY(gids[0],5); 
-      TEST_EQUALITY(gids[1],6); 
+      TEST_EQUALITY(gids[0],3); 
+      TEST_EQUALITY(gids[1],7); 
       TEST_EQUALITY(gids[2],8);
-      TEST_EQUALITY(gids[3],7);
+      TEST_EQUALITY(gids[3],5);
    }
    else
       TEUCHOS_ASSERT(false);
@@ -528,7 +519,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations)
          = buildFieldPattern<Intrepid::Basis_HCURL_QUAD_I1_FEM<double,FieldContainer> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
 
    dofManager->setOrientationsRequired(true);
    TEST_EQUALITY(dofManager->getOrientationsRequired(),true);
@@ -541,7 +532,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations)
    dofManager->addField("b",patternI1);
 
    dofManager->buildGlobalUnknowns();
-   // dofManager->printFieldInformation(out);
+   dofManager->printFieldInformation(out);
 
    const std::vector<int> & u_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("u"));
    const std::vector<int> & b_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("b"));
@@ -653,7 +644,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations2)
          = buildFieldPattern<Intrepid::Basis_HCURL_QUAD_I1_FEM<double,FieldContainer> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
 
    dofManager->setOrientationsRequired(true);
    TEST_EQUALITY(dofManager->getOrientationsRequired(),true);
@@ -665,7 +656,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations2)
    dofManager->addField("b",patternI1);
 
    dofManager->buildGlobalUnknowns();
-   // dofManager->printFieldInformation(out);
+   dofManager->printFieldInformation(out);
 
    const std::vector<int> & b_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("b"));
 
@@ -728,7 +719,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations_fa
          = buildFieldPattern<Intrepid::Basis_HCURL_QUAD_I1_FEM<double,FieldContainer> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
 
    dofManager->setOrientationsRequired(true);
    TEST_EQUALITY(dofManager->getOrientationsRequired(),true);

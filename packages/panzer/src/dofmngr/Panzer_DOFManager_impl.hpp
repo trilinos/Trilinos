@@ -268,6 +268,16 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   //For now the GIDs are of type GO. I'm not sure if this is a good idea, but that's
   //the way it is
   typedef Tpetra::MultiVector<GO,LO,GO,Node> MultiVector;
+
+  // this is a safety check to make sure that nodes are included
+  // in the geometric field pattern when orientations are required
+  if(getOrientationsRequired()) {
+    std::size_t sz = geomPattern->getSubcellIndices(0,0).size();
+     
+    TEUCHOS_TEST_FOR_EXCEPTION(sz==0,std::logic_error,
+                               "DOFManager::buildGlobalUnknowns requires a geometric pattern including "
+                                 "the nodes when orientations are needed!");
+  }
   
   Tpetra::DefaultPlatform::DefaultPlatformType &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   RCP<const Teuchos::Comm<int> > comm = platform.getComm();
