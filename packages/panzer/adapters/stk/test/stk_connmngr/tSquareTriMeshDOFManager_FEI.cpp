@@ -50,7 +50,7 @@
 #include "Panzer_STK_config.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
-#include "Panzer_DOFManager.hpp"
+#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_STK_SquareTriMeshFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
 
@@ -116,7 +116,7 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
          = buildFieldPattern<Intrepid::Basis_HGRAD_TRI_C1_FEM<double,FieldContainer> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildTriMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
 
    TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
@@ -128,14 +128,8 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
    dofManager->addField("uy",patternC1);
    dofManager->addField("p",patternC1);
 
-   std::vector<std::string> fieldOrder;
-   fieldOrder.push_back("p");
-   fieldOrder.push_back("ux");
-   fieldOrder.push_back("uy");
-   dofManager->setFieldOrder(fieldOrder);
-
    dofManager->buildGlobalUnknowns();
-   // dofManager->printFieldInformation(out);
+   dofManager->printFieldInformation(out);
 
    TEST_EQUALITY(dofManager->getFieldNum("p"),0);
    TEST_EQUALITY(dofManager->getFieldNum("ux"),1);
@@ -154,8 +148,8 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
       dofManager->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),9);
       TEST_EQUALITY(gids[0],0); TEST_EQUALITY(gids[1],1); TEST_EQUALITY(gids[2],2);
-      TEST_EQUALITY(gids[3],9); TEST_EQUALITY(gids[4],10); TEST_EQUALITY(gids[5],11);
-      TEST_EQUALITY(gids[6],15); TEST_EQUALITY(gids[7],16); TEST_EQUALITY(gids[8],17);
+      TEST_EQUALITY(gids[3],3); TEST_EQUALITY(gids[4],4); TEST_EQUALITY(gids[5],5);
+      TEST_EQUALITY(gids[6],9); TEST_EQUALITY(gids[7],10); TEST_EQUALITY(gids[8],11);
 
       for(std::size_t i=0;i<p_offsets.size();i++) {
          TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
@@ -166,8 +160,8 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
       dofManager->getElementGIDs(1,gids);
       TEST_EQUALITY(gids.size(),9);
       TEST_EQUALITY(gids[0],0); TEST_EQUALITY(gids[1],1); TEST_EQUALITY(gids[2],2);
-      TEST_EQUALITY(gids[3],15); TEST_EQUALITY(gids[4],16); TEST_EQUALITY(gids[5],17);
-      TEST_EQUALITY(gids[6],3); TEST_EQUALITY(gids[7],4); TEST_EQUALITY(gids[8],5);
+      TEST_EQUALITY(gids[3],9); TEST_EQUALITY(gids[4],10); TEST_EQUALITY(gids[5],11);
+      TEST_EQUALITY(gids[6],6); TEST_EQUALITY(gids[7],7); TEST_EQUALITY(gids[8],8);
 
       for(std::size_t i=0;i<p_offsets.size();i++) {
          TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
@@ -177,9 +171,9 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
 
       dofManager->getElementGIDs(3,gids);
       TEST_EQUALITY(gids.size(),9);
-      TEST_EQUALITY(gids[0],3); TEST_EQUALITY(gids[1],4); TEST_EQUALITY(gids[2],5);
-      TEST_EQUALITY(gids[3],21); TEST_EQUALITY(gids[4],22); TEST_EQUALITY(gids[5],23);
-      TEST_EQUALITY(gids[6],6); TEST_EQUALITY(gids[7],7); TEST_EQUALITY(gids[8],8);
+      TEST_EQUALITY(gids[0],6); TEST_EQUALITY(gids[1],7); TEST_EQUALITY(gids[2],8);
+      TEST_EQUALITY(gids[3],15); TEST_EQUALITY(gids[4],16); TEST_EQUALITY(gids[5],17);
+      TEST_EQUALITY(gids[6],12); TEST_EQUALITY(gids[7],13); TEST_EQUALITY(gids[8],14);
 
       for(std::size_t i=0;i<p_offsets.size();i++) {
          TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
@@ -192,9 +186,9 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
 
       dofManager->getElementGIDs(0,gids);
       TEST_EQUALITY(gids.size(),9);
-      TEST_EQUALITY(gids[0],9); TEST_EQUALITY(gids[1],10); TEST_EQUALITY(gids[2],11);
-      TEST_EQUALITY(gids[3],12); TEST_EQUALITY(gids[4],13); TEST_EQUALITY(gids[5],14);
-      TEST_EQUALITY(gids[6],18); TEST_EQUALITY(gids[7],19); TEST_EQUALITY(gids[8],20);
+      TEST_EQUALITY(gids[0],3); TEST_EQUALITY(gids[1],4); TEST_EQUALITY(gids[2],5);
+      TEST_EQUALITY(gids[3],18); TEST_EQUALITY(gids[4],19); TEST_EQUALITY(gids[5],20);
+      TEST_EQUALITY(gids[6],21); TEST_EQUALITY(gids[7],22); TEST_EQUALITY(gids[8],23);
 
       for(std::size_t i=0;i<p_offsets.size();i++) {
          TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
@@ -204,9 +198,9 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
    
       dofManager->getElementGIDs(1,gids);
       TEST_EQUALITY(gids.size(),9);
-      TEST_EQUALITY(gids[0],9); TEST_EQUALITY(gids[1],10); TEST_EQUALITY(gids[2],11);
-      TEST_EQUALITY(gids[3],18); TEST_EQUALITY(gids[4],19); TEST_EQUALITY(gids[5],20);
-      TEST_EQUALITY(gids[6],15); TEST_EQUALITY(gids[7],16); TEST_EQUALITY(gids[8],17);
+      TEST_EQUALITY(gids[0],3); TEST_EQUALITY(gids[1],4); TEST_EQUALITY(gids[2],5);
+      TEST_EQUALITY(gids[3],21); TEST_EQUALITY(gids[4],22); TEST_EQUALITY(gids[5],23);
+      TEST_EQUALITY(gids[6],9); TEST_EQUALITY(gids[7],10); TEST_EQUALITY(gids[8],11);
 
       for(std::size_t i=0;i<p_offsets.size();i++) {
          TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
@@ -216,9 +210,9 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
 
       dofManager->getElementGIDs(3,gids);
       TEST_EQUALITY(gids.size(),9);
-      TEST_EQUALITY(gids[0],15); TEST_EQUALITY(gids[1],16); TEST_EQUALITY(gids[2],17);
+      TEST_EQUALITY(gids[0],9); TEST_EQUALITY(gids[1],10); TEST_EQUALITY(gids[2],11);
       TEST_EQUALITY(gids[3],24); TEST_EQUALITY(gids[4],25); TEST_EQUALITY(gids[5],26);
-      TEST_EQUALITY(gids[6],21); TEST_EQUALITY(gids[7],22); TEST_EQUALITY(gids[8],23);
+      TEST_EQUALITY(gids[6],15); TEST_EQUALITY(gids[7],16); TEST_EQUALITY(gids[8],17);
 
       for(std::size_t i=0;i<p_offsets.size();i++) {
          TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
