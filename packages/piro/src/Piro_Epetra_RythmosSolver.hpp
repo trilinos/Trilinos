@@ -111,6 +111,10 @@ public:
   Teuchos::RCP<const Epetra_Vector> get_x_init() const;
   /** \brief . */
   Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
+
+  /** \brief . */
+  Teuchos::RCP<Epetra_Operator> create_DgDp_op(int j, int l) const;
+
   /** \brief . */
   EpetraExt::ModelEvaluator::InArgs createInArgs() const;
   /** \brief . */

@@ -57,6 +57,7 @@
 
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraOperatorWrapper.hpp"
 
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_Assert.hpp"
@@ -416,6 +417,13 @@ Teuchos::RCP<const Epetra_Vector> Piro::Epetra::RythmosSolver::get_p_init(int l)
   return model->get_p_init(l);
 }
 
+Teuchos::RCP<Epetra_Operator> Piro::Epetra::RythmosSolver::create_DgDp_op(int j, int l) const
+{
+  const Teuchos::RCP<Thyra::LinearOpBase<double> > op_thyra =
+    thyraImplementation_->create_DgDp_op(j, l);
+  return Teuchos::rcp(new Thyra::EpetraOperatorWrapper(op_thyra));
+}
+
 EpetraExt::ModelEvaluator::InArgs Piro::Epetra::RythmosSolver::createInArgs() const
 {
   EpetraExt::ModelEvaluator::InArgsSetup inArgs;
@@ -443,6 +451,9 @@ EpetraExt::ModelEvaluator::OutArgs Piro::Epetra::RythmosSolver::createOutArgs() 
           const Thyra::ModelEvaluatorBase::DerivativeSupport thyra_dgdp_support =
             thyraOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
 
+          if (thyra_dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
+            dgdp_support.plus(EpetraExt::ModelEvaluator::DERIV_LINEAR_OP);
+          }
           if (thyra_dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
             dgdp_support.plus(EpetraExt::ModelEvaluator::DERIV_MV_BY_COL);
           }
@@ -487,16 +498,27 @@ void Piro::Epetra::RythmosSolver::evalModel(const InArgs& inArgs, const OutArgs&
         if (!dgdp_support.none()) {
           const EpetraExt::ModelEvaluator::Derivative dgdp_out = outArgs.get_DgDp(j, l);
           if (!dgdp_out.isEmpty()) {
-            TEUCHOS_ASSERT(Teuchos::is_null(dgdp_out.getLinearOp()));
-            const Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation mv_orient =
-              Thyra::convert(dgdp_out.getMultiVectorOrientation());
-            const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > mv_range =
-              (mv_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) ?
-              thyraImplementation_->get_g_space(j) :
-              thyraImplementation_->get_p_space(l);
-            const Teuchos::RCP<Thyra::MultiVectorBase<double> > mv_thyra =
-              Thyra::create_MultiVector(dgdp_out.getMultiVector(), mv_range);
-            thyraOutArgs.set_DgDp(j, l, Thyra::ModelEvaluatorBase::Derivative<double>(mv_thyra, mv_orient));
+            Thyra::ModelEvaluatorBase::Derivative<double> dgdp_thyra;
+            const Teuchos::RCP<Epetra_Operator> op_out = dgdp_out.getLinearOp();
+            if (Teuchos::nonnull(op_out)) {
+              const Teuchos::RCP<Thyra::EpetraOperatorWrapper> op_out_downcasted =
+                Teuchos::rcp_dynamic_cast<Thyra::EpetraOperatorWrapper>(op_out);
+              op_out_downcasted.assert_not_null();
+              const Teuchos::RCP<Thyra::LinearOpBase<double> > op_thyra =
+                Teuchos::rcp_const_cast<Thyra::LinearOpBase<double> >(op_out_downcasted->getThyraOp());
+              dgdp_thyra = op_thyra;
+            } else {
+              const Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation mv_orient =
+                Thyra::convert(dgdp_out.getMultiVectorOrientation());
+              const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > mv_range =
+                (mv_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) ?
+                thyraImplementation_->get_g_space(j) :
+                thyraImplementation_->get_p_space(l);
+              const Teuchos::RCP<Thyra::MultiVectorBase<double> > mv_thyra =
+                Thyra::create_MultiVector(dgdp_out.getMultiVector(), mv_range);
+              dgdp_thyra = Thyra::ModelEvaluatorBase::Derivative<double>(mv_thyra, mv_orient);
+            }
+            thyraOutArgs.set_DgDp(j, l, dgdp_thyra);
           }
         }
       }

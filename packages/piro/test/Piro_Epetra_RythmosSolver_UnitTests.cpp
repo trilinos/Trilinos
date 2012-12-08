@@ -316,4 +316,46 @@ TEUCHOS_UNIT_TEST(Epetra_RythmosSolver, TimeZero_NominalResponseSensitivityMvGra
     TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
   }
 }
+
+TEUCHOS_UNIT_TEST(Epetra_RythmosSolver, TimeZero_NominalResponseSensitivityOp)
+{
+  const RCP<EpetraExt::ModelEvaluator> model = epetraModelNew();
+
+  const double finalTime = 0.0;
+  const RCP<Epetra::RythmosSolver> solver = solverNew(model, finalTime);
+
+  const int parameterIndex = 0;
+  const int responseIndex = 0;
+
+  const RCP<Epetra_MultiVector> expectedResponseSensitivity =
+    multiVectorNew(*model->get_g_map(responseIndex), *model->get_p_map(parameterIndex));
+  {
+    const EpetraExt::ModelEvaluator::InArgs modelInArgs = createNominalInArgs(*model);
+
+    EpetraExt::ModelEvaluator::OutArgs modelOutArgs = model->createOutArgs();
+    modelOutArgs.set_DgDp(responseIndex, parameterIndex, expectedResponseSensitivity);
+    model->evalModel(modelInArgs, modelOutArgs);
+  }
+
+  const RCP<Epetra_Operator> responseSensitivity =
+    solver->create_DgDp_op(parameterIndex, responseIndex);
+  TEST_ASSERT(Teuchos::nonnull(responseSensitivity));
+  {
+    const EpetraExt::ModelEvaluator::InArgs inArgs = createNominalInArgs(*solver);
+
+    EpetraExt::ModelEvaluator::OutArgs outArgs = solver->createOutArgs();
+    outArgs.set_DgDp(responseIndex, parameterIndex, responseSensitivity);
+    solver->evalModel(inArgs, outArgs);
+  }
+
+  TEST_ASSERT(responseSensitivity->OperatorRangeMap().SameAs(expectedResponseSensitivity->Map()));
+  TEST_EQUALITY(
+      responseSensitivity->OperatorDomainMap().NumGlobalElements(),
+      expectedResponseSensitivity->NumVectors());
+  for (int i = 0; i < expectedResponseSensitivity->NumVectors(); ++i) {
+    const Array<double> expected = arrayFromVector(*expectedResponseSensitivity, i);
+    const Array<double> actual = arrayFromLinOp(*responseSensitivity, i);
+    TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+  }
+}
 #endif /* Piro_ENABLE_Rythmos */
