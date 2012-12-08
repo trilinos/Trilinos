@@ -71,6 +71,12 @@ public:
   EpetraOperatorWrapper(const RCP<const LinearOpBase<double> > &thyraOp);
 
   /** \brief . */
+  RCP<const LinearOpBase<double> > getThyraOp() const
+  {
+    return thyraOp_;
+  }
+
+  /** \brief . */
   void copyEpetraIntoThyra(const Epetra_MultiVector &x,
     const Ptr<VectorBase<double> > &thyraVec) const;
 
