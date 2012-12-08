@@ -137,6 +137,11 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getConnManager(),conn);
 
 
+    TEST_EQUALITY(my_DOFManager->getElementBlockGIDCount("eblock-0_0"),3*4);
+    TEST_EQUALITY(my_DOFManager->getElementBlockGIDCount("eblock-0_1"),3*4);
+    TEST_EQUALITY(my_DOFManager->getElementBlockGIDCount("eblock-1_0"),3*4);
+    TEST_EQUALITY(my_DOFManager->getElementBlockGIDCount("eblock-1_1"),3*4);
+
     TEST_EQUALITY(my_DOFManager->getFieldNum("Velocity"),0);
     TEST_EQUALITY(my_DOFManager->getFieldNum("Temperature"),1);
     TEST_EQUALITY(my_DOFManager->getFieldNum("Radiation Levels"),2);
@@ -150,7 +155,9 @@ namespace {
     TEST_EQUALITY(vel_offests.size(),tem_offests.size());
     TEST_EQUALITY(tem_offests.size(),rad_offests.size());
   }
-  TEUCHOS_UNIT_TEST( DOFManager_tests, ReorderingFields ){
+
+  TEUCHOS_UNIT_TEST( DOFManager_tests, ReorderingFields )
+  {
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",2);
@@ -302,7 +309,8 @@ namespace {
     TEST_ASSERT(all_so_far);
   }
 
-  TEUCHOS_UNIT_TEST( DOFManager_tests, myOwnedwithGhosted){
+  TEUCHOS_UNIT_TEST( DOFManager_tests, myOwnedwithGhosted)
+  {
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",2);
@@ -350,7 +358,8 @@ namespace {
     }
   }
 
-  TEUCHOS_UNIT_TEST( DOFManager_tests, gidsAreSet){
+  TEUCHOS_UNIT_TEST( DOFManager_tests, gidsAreSet) 
+  {
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",2);
@@ -403,7 +412,8 @@ namespace {
 
   }
 
-  TEUCHOS_UNIT_TEST( DOFManager_tests, gidFieldAssociations){
+  TEUCHOS_UNIT_TEST( DOFManager_tests, gidFieldAssociations)
+  {
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",1);
@@ -479,7 +489,8 @@ namespace {
 
 //=============================================================
 
-  TEUCHOS_UNIT_TEST( DOFManager_tests, 3dmyOwnedwithGhosted){
+  TEUCHOS_UNIT_TEST( DOFManager_tests, 3dmyOwnedwithGhosted)
+  {
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",1);
@@ -666,7 +677,8 @@ namespace {
   }
 
   
-  TEUCHOS_UNIT_TEST( DOFManager_tests, multiBloc){
+  TEUCHOS_UNIT_TEST( DOFManager_tests, multiBloc) 
+  {
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
     pl->set("Y Blocks",2);
@@ -700,6 +712,8 @@ namespace {
     //Now that we have created the SingleBlockDOFManager, we can ensure it was created correctly.
     TEST_EQUALITY(my_DOFManager->getConnManager(),conn);
 
+    TEST_EQUALITY(my_DOFManager->getElementBlockGIDCount("eblock-0_0"),2*4);
+    TEST_EQUALITY(my_DOFManager->getElementBlockGIDCount("eblock-0_1"),2*4);
 
     TEST_EQUALITY(my_DOFManager->getFieldNum("Velocity"),0);
     TEST_EQUALITY(my_DOFManager->getFieldNum("Temperature"),1);

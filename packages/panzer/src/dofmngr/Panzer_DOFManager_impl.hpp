@@ -302,6 +302,10 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     }
     
     fa_fps_.push_back(rcp(new FieldAggPattern(faConstruct, ga_fp_)));
+    
+    // how many global IDs are this this element block?
+    int gidsInBlock = fa_fps_[fa_fps_.size()-1]->numberIds();
+    elementBlockGIDCount_.push_back(gidsInBlock);
   }
 
   /*
@@ -752,8 +756,18 @@ Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > DOFManager<LocalOrdinal
    elementGIDs_.clear();
    owned_.clear();
    owned_and_ghosted_.clear();
+   elementBlockGIDCount_.clear();
 
    return connMngr;
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+std::size_t DOFManager<LocalOrdinalT,GlobalOrdinalT>::blockIdToIndex(const std::string & blockId) const
+{
+  std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(blockId);
+  if(bitr==blockNameToID_.end())
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid block name");
+  return bitr->second;
 }
 
 } /*panzer*/

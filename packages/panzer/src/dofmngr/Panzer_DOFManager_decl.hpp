@@ -176,7 +176,28 @@ public:
     */
   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > resetIndices();
 
+  /** \brief How any GIDs are associate with a particular element block
+    *
+    * This is a per-element count. If you have a quad element with two
+    * piecewise bi-linear fields this method returns 8.
+    */
+  int getElementBlockGIDCount(const std::string & blockId) const
+  { return getElementBlockGIDCount(blockIdToIndex(blockId)); }
+
+  /** \brief How any GIDs are associate with a particular element block.
+    *
+    * This is a per-element count. If you have a quad element with two
+    * piecewise bi-linear fields this method returns 8.
+    */
+  int getElementBlockGIDCount(const std::size_t & blockIndex) const
+  { return elementBlockGIDCount_[blockIndex]; }
+
 protected:
+
+   /** Using the natural ordering associated with the std::vector
+     * retrieved from the connection manager
+     */
+   std::size_t blockIdToIndex(const std::string & blockId) const;
   
   Teuchos::RCP<ConnManager<LO,GO> > connMngr_;
   Teuchos::RCP<Teuchos::Comm<int> > communicator_;
@@ -194,15 +215,16 @@ protected:
   std::vector<int> fieldAIDOrder_; //Both of these must be updated and edited together.
   //The AID offers a simpler way to manage FPs internally.
 
-  Teuchos::RCP<const panzer::FieldPattern> ga_fp_;
+  Teuchos::RCP<const panzer::FieldPattern> ga_fp_; // geometric aggregate field pattern
   std::vector<Teuchos::RCP<panzer::FieldAggPattern> > fa_fps_; //Ordered by blockOrder_;
 
   std::vector<GO> owned_;
   std::vector<GO> owned_and_ghosted_;
+
   //Element GIDS ordered by LID.
   std::vector<std::vector< GO > > elementGIDs_;
 
-  //Mimics the functionality of the getElemenentBlcokGIDCount in
+  //Mimics the functionality of the getElemenentBlockGIDCount in
   //the original DOFManager. Indexed according to blockOrder_.
   std::vector<int> elementBlockGIDCount_;
 
