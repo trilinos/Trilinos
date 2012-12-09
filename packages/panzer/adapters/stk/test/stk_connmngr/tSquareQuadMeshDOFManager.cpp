@@ -742,4 +742,166 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations_fa
    TEST_THROW(dofManager->buildGlobalUnknowns(patternI1),std::logic_error);
 }
 
+TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_q2q1)
+{
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
+   #else
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
+   #endif
+
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
+
+   TEUCHOS_ASSERT(numProcs==2);
+
+   // build a geometric pattern from a single basis
+   RCP<const panzer::FieldPattern> patternC1 
+         = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+   RCP<const panzer::FieldPattern> patternC2 
+         = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
+
+   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+
+   TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
+   TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
+
+   dofManager->setConnManager(connManager,MPI_COMM_WORLD);
+   TEST_EQUALITY(dofManager->getConnManager(),connManager);
+
+   dofManager->addField("ux",patternC2);
+   dofManager->addField("uy",patternC2);
+   dofManager->addField("p",patternC1);
+
+   std::vector<std::string> fieldOrder;
+   fieldOrder.push_back("ux");
+   fieldOrder.push_back("uy");
+   fieldOrder.push_back("p");
+   dofManager->setFieldOrder(fieldOrder);
+
+   dofManager->buildGlobalUnknowns();
+   dofManager->printFieldInformation(out);
+
+   const std::vector<int> & ux_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("ux"));
+   const std::vector<int> & uy_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("uy"));
+   const std::vector<int> & p_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("p"));
+
+   TEST_EQUALITY(ux_offsets.size(),9);
+   TEST_EQUALITY(ux_offsets.size(),uy_offsets.size());
+   TEST_EQUALITY(p_offsets.size(),4);
+
+   TEST_EQUALITY(ux_offsets[0],0);
+   TEST_EQUALITY(ux_offsets[1],3);
+   TEST_EQUALITY(ux_offsets[2],6);
+   TEST_EQUALITY(ux_offsets[3],9);
+   TEST_EQUALITY(ux_offsets[4],12);
+   TEST_EQUALITY(ux_offsets[5],14);
+   TEST_EQUALITY(ux_offsets[6],16);
+   TEST_EQUALITY(ux_offsets[7],18);
+   TEST_EQUALITY(ux_offsets[8],20);
+
+   TEST_EQUALITY(uy_offsets[0],1);
+   TEST_EQUALITY(uy_offsets[1],4);
+   TEST_EQUALITY(uy_offsets[2],7);
+   TEST_EQUALITY(uy_offsets[3],10);
+   TEST_EQUALITY(uy_offsets[4],13);
+   TEST_EQUALITY(uy_offsets[5],15);
+   TEST_EQUALITY(uy_offsets[6],17);
+   TEST_EQUALITY(uy_offsets[7],19);
+   TEST_EQUALITY(uy_offsets[8],21);
+
+   TEST_EQUALITY(p_offsets[0],2);
+   TEST_EQUALITY(p_offsets[1],5);
+   TEST_EQUALITY(p_offsets[2],8);
+   TEST_EQUALITY(p_offsets[3],11);
+
+   if(myRank==0) {
+      std::vector<int> gids;
+
+      dofManager->getElementGIDs(0,gids);
+      TEST_EQUALITY(gids.size(),9+9+4);
+
+      // nodes
+      TEST_EQUALITY(gids[0],0); TEST_EQUALITY(gids[1],1); TEST_EQUALITY(gids[2],2);
+      TEST_EQUALITY(gids[3],23); TEST_EQUALITY(gids[4],24); TEST_EQUALITY(gids[5],25);
+      TEST_EQUALITY(gids[6],29); TEST_EQUALITY(gids[7],30); TEST_EQUALITY(gids[8],31);
+      TEST_EQUALITY(gids[9],3); TEST_EQUALITY(gids[10],4); TEST_EQUALITY(gids[11],5);
+
+      // edges
+      TEST_EQUALITY(gids[12],9); TEST_EQUALITY(gids[13],10);
+      TEST_EQUALITY(gids[14],51); TEST_EQUALITY(gids[15],52);
+      TEST_EQUALITY(gids[16],11); TEST_EQUALITY(gids[17],12);
+      TEST_EQUALITY(gids[18],13); TEST_EQUALITY(gids[19],14);
+      TEST_EQUALITY(gids[20],19); TEST_EQUALITY(gids[21],20);
+
+      dofManager->getElementGIDs(1,gids);
+      TEST_EQUALITY(gids.size(),9+9+4);
+
+      // nodes
+      TEST_EQUALITY(gids[0],3); TEST_EQUALITY(gids[1],4); TEST_EQUALITY(gids[2],5);
+      TEST_EQUALITY(gids[3],29); TEST_EQUALITY(gids[4],30); TEST_EQUALITY(gids[5],31);
+      TEST_EQUALITY(gids[6],35); TEST_EQUALITY(gids[7],36); TEST_EQUALITY(gids[8],37);
+      TEST_EQUALITY(gids[9],6); TEST_EQUALITY(gids[10],7); TEST_EQUALITY(gids[11],8);
+
+      // edges
+      TEST_EQUALITY(gids[12],11); TEST_EQUALITY(gids[13],12);
+      TEST_EQUALITY(gids[14],53); TEST_EQUALITY(gids[15],54);
+      TEST_EQUALITY(gids[16],15); TEST_EQUALITY(gids[17],16);
+      TEST_EQUALITY(gids[18],17); TEST_EQUALITY(gids[19],18);
+      TEST_EQUALITY(gids[20],21); TEST_EQUALITY(gids[21],22);
+   }
+   else if(myRank==1) {
+      std::vector<int> gids;
+
+      dofManager->getElementGIDs(0,gids);
+      TEST_EQUALITY(gids.size(),9+9+4);
+
+      // nodes
+      TEST_EQUALITY(gids[0],23); TEST_EQUALITY(gids[1],24); TEST_EQUALITY(gids[2],25);
+      TEST_EQUALITY(gids[3],26); TEST_EQUALITY(gids[4],27); TEST_EQUALITY(gids[5],28);
+      TEST_EQUALITY(gids[6],32); TEST_EQUALITY(gids[7],33); TEST_EQUALITY(gids[8],34);
+      TEST_EQUALITY(gids[9],29); TEST_EQUALITY(gids[10],30); TEST_EQUALITY(gids[11],31);
+
+      // edges
+      TEST_EQUALITY(gids[12],41); TEST_EQUALITY(gids[13],42);
+      TEST_EQUALITY(gids[14],43); TEST_EQUALITY(gids[15],44);
+      TEST_EQUALITY(gids[16],45); TEST_EQUALITY(gids[17],46);
+      TEST_EQUALITY(gids[18],51); TEST_EQUALITY(gids[19],52);
+      TEST_EQUALITY(gids[20],55); TEST_EQUALITY(gids[21],56);
+
+      dofManager->getElementGIDs(1,gids);
+      TEST_EQUALITY(gids.size(),9+9+4);
+
+      // nodes
+      TEST_EQUALITY(gids[0],29); TEST_EQUALITY(gids[1],30); TEST_EQUALITY(gids[2],31);
+      TEST_EQUALITY(gids[3],32); TEST_EQUALITY(gids[4],33); TEST_EQUALITY(gids[5],34);
+      TEST_EQUALITY(gids[6],38); TEST_EQUALITY(gids[7],39); TEST_EQUALITY(gids[8],40);
+      TEST_EQUALITY(gids[9],35); TEST_EQUALITY(gids[10],36); TEST_EQUALITY(gids[11],37);
+
+      // edges
+      TEST_EQUALITY(gids[12],45); TEST_EQUALITY(gids[13],46);
+      TEST_EQUALITY(gids[14],47); TEST_EQUALITY(gids[15],48);
+      TEST_EQUALITY(gids[16],49); TEST_EQUALITY(gids[17],50);
+      TEST_EQUALITY(gids[18],53); TEST_EQUALITY(gids[19],54);
+      TEST_EQUALITY(gids[20],57); TEST_EQUALITY(gids[21],58);
+   }
+
+   std::vector<int> owned, ownedAndShared;
+   dofManager->getOwnedIndices(owned);
+   dofManager->getOwnedAndSharedIndices(ownedAndShared);
+
+   if(myRank==0) {
+      TEST_EQUALITY(owned.size(),23);
+      TEST_EQUALITY(ownedAndShared.size(),36);
+   }
+   else if(myRank==1) {
+      TEST_EQUALITY(owned.size(),59-23);
+      TEST_EQUALITY(ownedAndShared.size(),36);
+   }
+   else 
+      TEUCHOS_ASSERT(false);
+}
+
 }

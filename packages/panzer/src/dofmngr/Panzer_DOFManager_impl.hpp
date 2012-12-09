@@ -166,6 +166,7 @@ int DOFManager<LO,GO>::addField(const std::string & blockID, const std::string &
     //The default values for IDs are the sequential order they are added in.
     fieldStringOrder_.push_back(str);
     fieldAIDOrder_.push_back(numFields_);
+
     //This is going to be associated with blocknum.
     blockToAssociatedFP_[blocknum].push_back(numFields_);
     ++numFields_;
@@ -783,19 +784,20 @@ std::size_t DOFManager<LocalOrdinalT,GlobalOrdinalT>::blockIdToIndex(const std::
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std::ostream & os) const
 {
-  os << "DOFManagerFEI Field Information: " << std::endl;
+  os << "DOFManager Field Information: " << std::endl;
 
-  TEUCHOS_ASSERT(blockOrder_.size()==fa_fps_.size());
+  // sanity check
+  TEUCHOS_ASSERT(blockOrder_.size()==blockToAssociatedFP_.size());
 
   for(std::size_t i=0;i<blockOrder_.size();i++) {
-    os << "Element Block = " << blockOrder_[i] << std::endl; 
+    os << "   Element Block = " << blockOrder_[i] << std::endl; 
 
     // output field information
-    // Teuchos::RCP<const panzer::FieldAggPattern> agg = fa_fps_[i];
-    // const std::vector<int> & fieldIds = agg->fieldIds();
-    // for(std::size_t f=0;f<fieldIds.size();f++) {
-    //   os << "      \"" << getFieldString(fieldIds[f]) << "\" is field ID " << fieldIds[f] << std::endl;
-    // }
+    const std::vector<int> & fieldIds = blockToAssociatedFP_[i];
+    for(std::size_t f=0;f<fieldIds.size();f++)
+      os << "      \"" << getFieldString(fieldIds[f]) << "\" is field ID " << fieldIds[f] << std::endl;
+    for (size_t f = 0; f < FPsInAll_.size(); ++f)
+      os << "      \"" << getFieldString(FPsInAll_[f]) << "\" is field ID " << FPsInAll_[f] << std::endl;
   }
 }
 
