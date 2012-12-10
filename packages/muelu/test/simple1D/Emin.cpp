@@ -157,10 +157,10 @@ RCP<SmootherPrototype> gimmeCoarseProto(Xpetra::UnderlyingLib lib, const std::st
 #if defined(HAVE_MUELU_IFPACK2)
       if (rank == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
       Teuchos::ParameterList ifpack2List;
-      ifpack2List.set("fact: ilut level-of-fill",99); // TODO ??
-      ifpack2List.set("fact: drop tolerance", 0);
-      ifpack2List.set("fact: absolute threshold", 0);
-      ifpack2List.set("fact: relative threshold", 0);
+      ifpack2List.set("fact: ilut level-of-fill",(double)99); // TODO ??
+      ifpack2List.set("fact: drop tolerance", 0.0);
+      ifpack2List.set("fact: absolute threshold", 0.0);
+      ifpack2List.set("fact: relative threshold", 1.0);
       coarseProto = rcp( new Ifpack2Smoother("ILUT",ifpack2List) );
 #else
       std::cout  << "IFPACK2 not available (try --coarseSolver=amesos2)" << std::endl;
