@@ -62,7 +62,8 @@ class host : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    KokkosArray::Host::initialize( 1 , 8 );
+    const size_t gang_count = KokkosArray::Host::detect_gang_capacity();
+    KokkosArray::Host::initialize( gang_count , 8 / gang_count );
   }
 
   static void TearDownTestCase()

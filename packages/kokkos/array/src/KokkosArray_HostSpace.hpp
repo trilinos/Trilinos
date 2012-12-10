@@ -112,9 +112,6 @@ public:
 
   /** \brief  Detect cache line size, if capable */
   static size_t detect_cache_line_size();
-
-  /** \brief  Detect memory page line size, if capable */
-  static size_t detect_memory_page_size();
 };
 
 //----------------------------------------------------------------------------

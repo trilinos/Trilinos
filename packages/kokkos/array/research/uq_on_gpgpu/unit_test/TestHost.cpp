@@ -132,10 +132,10 @@ void performance_test_driver<KokkosArray::Host>(bool test_flat, bool test_orig, 
 
 int mainHost(bool test_flat, bool test_orig, bool test_block)
 {
-  const size_t node_count = KokkosArray::Host::detect_node_count();
-  const size_t node_thread_count = KokkosArray::Host::detect_node_core_count() / 2 ;
+  const size_t gang_count = KokkosArray::Host::detect_gang_capacity();
+  const size_t gang_worker_count = KokkosArray::Host::detect_gang_worker_capacity() / 2 ;
 
-  KokkosArray::Host::initialize( node_count , node_thread_count );
+  KokkosArray::Host::initialize( gang_count , gang_worker_count );
 
 //  unit_test::test_dense<KokkosArray::Host>();
 //  unit_test::test_diagonal<KokkosArray::Host>();
@@ -178,7 +178,7 @@ int mainHost(bool test_flat, bool test_orig, bool test_block)
   unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Host,long>( 100 , 10 );
 
   std::cout << std::endl << "\"Host Performance with "
-            << node_count * node_thread_count << " threads\"" << std::endl ;
+            << gang_count * gang_worker_count << " threads\"" << std::endl ;
   unit_test::performance_test_driver<KokkosArray::Host>(
     test_flat, test_orig, test_block);
 

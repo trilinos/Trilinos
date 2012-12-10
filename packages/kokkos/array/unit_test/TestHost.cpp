@@ -66,14 +66,14 @@ class host : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    const size_t node_count = KokkosArray::Host::detect_node_count();
-/*
-    const size_t node_core_count = KokkosArray::Host::detect_node_core_count();
-    std::cout << "KokkosArray::Host node_count(" << node_count
-              << ") X node_core_count(" << node_core_count
+    const size_t gang_count = KokkosArray::Host::detect_gang_capacity();
+    const size_t gang_worker_count = ( KokkosArray::Host::detect_gang_worker_capacity() + 1 ) / 2 ;
+
+    std::cout << "  KokkosArray::Host gang_count(" << gang_count
+              << ") X gang_worker_count(" << gang_worker_count
               << ")" << std::endl ;
-*/
-    KokkosArray::Host::initialize( node_count , 4 );
+
+    KokkosArray::Host::initialize( gang_count , gang_worker_count );
   }
 
   static void TearDownTestCase()

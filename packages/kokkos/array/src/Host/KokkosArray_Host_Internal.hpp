@@ -84,10 +84,13 @@ class HostInternal {
 protected:
 
   HostWorkerBlock  m_worker_block ;
-  int              m_node_rank ;     // Rank of the process' NUMA node, if set
+
   unsigned         m_node_count ;    // Count of NUMA nodes
   unsigned         m_node_pu_count ; // Assuming all nodes are equivalent
-  unsigned         m_page_size ;     //
+
+  unsigned         m_gang_capacity ;   // Maximum number of gangs
+  unsigned         m_worker_capacity ; // Maixmum number of workers per gang
+
   unsigned         m_cache_line_size ; //
   unsigned         m_thread_count ;  // Number of threads
   unsigned         m_gang_count ;    // Number of NUMA nodes used

@@ -13,34 +13,34 @@ void test_box_partition( bool print );
 void test_host_query( comm::Machine );
 
 void test_host_fixture( comm::Machine machine ,
-                        size_t numa_node_count ,
-                        size_t numa_node_thread_count ,
+                        size_t gang_count ,
+                        size_t gang_worker_count ,
                         size_t nx , size_t ny , size_t nz );
 
 void test_host_implicit( comm::Machine machine , 
-                         size_t numa_node_count ,
-                         size_t numa_node_thread_count ,
+                         size_t gang_count ,
+                         size_t gang_worker_count ,
                          size_t elem_count_begin ,
                          size_t elem_count_end ,
                          size_t count_run );
 
 void test_host_explicit( comm::Machine machine , 
-                         size_t numa_node_count ,
-                         size_t numa_node_thread_count ,
+                         size_t gang_count ,
+                         size_t gang_worker_count ,
                          size_t elem_count_begin ,
                          size_t elem_count_end ,
                          size_t count_run );
 
 void test_host_nonlinear( comm::Machine machine , 
-                          size_t numa_node_count ,
-                          size_t numa_node_thread_count ,
+                          size_t gang_count ,
+                          size_t gang_worker_count ,
                           size_t elem_count_begin ,
                           size_t elem_count_end ,
                           size_t count_run );
 
 void test_host_nonlinear_quadratic( comm::Machine machine , 
-                                    size_t numa_node_count ,
-                                    size_t numa_node_thread_count ,
+                                    size_t gang_count ,
+                                    size_t gang_worker_count ,
                                     size_t elem_count_begin ,
                                     size_t elem_count_end ,
                                     size_t count_run );
@@ -102,17 +102,17 @@ void run( const std::string & argline , comm::Machine machine )
   }
   else {
     if ( which == std::string("host") ) {
-      size_t host_node_count = 0 ;
-      size_t host_node_thread_count = 1 ;
+      size_t host_gang_count = 0 ;
+      size_t host_gang_worker_count = 1 ;
 
-      input >> host_node_count ;
-      input >> host_node_thread_count ;
+      input >> host_gang_count ;
+      input >> host_gang_worker_count ;
       input >> which ;
       if ( which == std::string("fixture") ) {
  
         size_t nx = 0 , ny = 0 , nz = 0 ;
         input >> nx >> ny >> nz ;
-        test_host_fixture( machine , host_node_count , host_node_thread_count , nx , ny , nz );
+        test_host_fixture( machine , host_gang_count , host_gang_worker_count , nx , ny , nz );
  
       }
       else if ( which == std::string("explicit") ) {
@@ -121,7 +121,7 @@ void run( const std::string & argline , comm::Machine machine )
         size_t mesh_node_end   = 300 ;
         size_t run             =   1 ;
         input >> mesh_node_begin >> mesh_node_end >> run ;
-        test_host_explicit( machine , host_node_count , host_node_thread_count , mesh_node_begin , mesh_node_end , run );
+        test_host_explicit( machine , host_gang_count , host_gang_worker_count , mesh_node_begin , mesh_node_end , run );
  
       }
       else if ( which == std::string("implicit") ) {
@@ -130,7 +130,7 @@ void run( const std::string & argline , comm::Machine machine )
         size_t mesh_node_end   = 300 ;
         size_t run             =   1 ;
         input >> mesh_node_begin >> mesh_node_end >> run ;
-        test_host_implicit( machine , host_node_count , host_node_thread_count , mesh_node_begin , mesh_node_end , run );
+        test_host_implicit( machine , host_gang_count , host_gang_worker_count , mesh_node_begin , mesh_node_end , run );
  
       }
       else if ( which == std::string("nonlinear") ) {
@@ -139,7 +139,7 @@ void run( const std::string & argline , comm::Machine machine )
         size_t mesh_node_end   = 300 ;
         size_t run             =   1 ;
         input >> mesh_node_begin >> mesh_node_end >> run ;
-        test_host_nonlinear( machine , host_node_count , host_node_thread_count , mesh_node_begin , mesh_node_end , run );
+        test_host_nonlinear( machine , host_gang_count , host_gang_worker_count , mesh_node_begin , mesh_node_end , run );
  
       }   
       else if ( which == std::string("nonlinear_quadratic") ) {
@@ -148,7 +148,7 @@ void run( const std::string & argline , comm::Machine machine )
         size_t mesh_node_end   = 300 ;
         size_t run             =   1 ;
         input >> mesh_node_begin >> mesh_node_end >> run ;
-        test_host_nonlinear_quadratic( machine , host_node_count , host_node_thread_count , mesh_node_begin , mesh_node_end , run );
+        test_host_nonlinear_quadratic( machine , host_gang_count , host_gang_worker_count , mesh_node_begin , mesh_node_end , run );
  
       }   
       else {

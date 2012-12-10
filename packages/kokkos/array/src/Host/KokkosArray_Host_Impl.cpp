@@ -208,10 +208,10 @@ HostInternal::~HostInternal() {}
 
 HostInternal::HostInternal()
   : m_worker_block()
-  , m_node_rank( -1 )
-  , m_node_count( 1 )
-  , m_node_pu_count( 0 )
-  , m_page_size( 0 )
+
+  , m_gang_capacity( 1 )
+  , m_worker_capacity( 0 )
+
   , m_cache_line_size( 64 /* default guess */ )
   , m_thread_count( 1 )
   , m_gang_count( 1 )
@@ -548,9 +548,9 @@ void HostInternal::initialize( const unsigned gang_count ,
                                const unsigned worker_count )
 {
   const bool ok_inactive     = 1 == m_thread_count ;
-  const bool ok_gang_count   = gang_count <= m_node_count ;
-  const bool ok_worker_count = ( 0 == m_node_pu_count ||
-                                 worker_count <= m_node_pu_count );
+  const bool ok_gang_count   = gang_count <= m_gang_capacity ;
+  const bool ok_worker_count = ( 0 == m_worker_capacity ||
+                                 worker_count <= m_worker_capacity );
 
   // Only try to spawn threads if input is valid.
 
@@ -577,7 +577,7 @@ void HostInternal::initialize( const unsigned gang_count ,
       msg << " : request for threads ( "
           << gang_count << " x " << worker_count
           << " ) exceeds detected capacity ( "
-          << m_node_count << " x " << m_node_pu_count
+          << m_gang_capacity << " x " << m_worker_capacity
           << " )" ;
     }
     if ( ! ok_spawn_threads ) {
@@ -604,22 +604,19 @@ void Host::finalize()
 { Impl::HostInternal::singleton().finalize(); }
 
 void Host::initialize( const Host::size_type gang_count ,
-                       const Host::size_type worker_count )
+                       const Host::size_type gang_worker_count )
 {
-  Impl::HostInternal::singleton().initialize( gang_count , worker_count );
+  Impl::HostInternal::singleton().initialize( gang_count , gang_worker_count );
 }
 
-Host::size_type Host::detect_node_count()
-{ return Impl::HostInternal::singleton().m_node_count ; }
+Host::size_type Host::detect_gang_capacity()
+{ return Impl::HostInternal::singleton().m_gang_capacity ; }
 
-Host::size_type Host::detect_node_core_count()
-{ return Impl::HostInternal::singleton().m_node_pu_count ; }
+Host::size_type Host::detect_gang_worker_capacity()
+{ return Impl::HostInternal::singleton().m_worker_capacity ; }
 
 Host::size_type Host::detect_cache_line_size()
 { return Impl::HostInternal::singleton().m_cache_line_size ; }
-
-Host::size_type Host::detect_memory_page_size()
-{ return Impl::HostInternal::singleton().m_page_size ; }
 
 /*--------------------------------------------------------------------------*/
 
