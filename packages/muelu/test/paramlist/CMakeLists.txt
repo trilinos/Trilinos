@@ -1,0 +1,24 @@
+INCLUDE(TribitsAddExecutableAndTest)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  paramlist
+  SOURCES paramlist.cpp
+  ARGS ""
+  COMM serial mpi
+  DEPLIBS muelu xpetra
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  paramlistAdv
+  SOURCES paramlistAdv.cpp
+  ARGS ""
+  COMM serial mpi
+  DEPLIBS muelu xpetra
+  )
