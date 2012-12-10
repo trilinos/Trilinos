@@ -60,23 +60,15 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetDampingFactor(Scalar dampingFactor) {
-    dampingFactor_ = dampingFactor;
-  }
+  RCP<const ParameterList> SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetDiagonalView(std::string const& diagView) {
-    diagonalView_ = diagView;
-  }
+    validParamList->set                          ("Damping factor",          4./3, "Smoothed-Aggregation damping factor");
+    validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
+    validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Tentative prolongator factory");
+    // validParamList->set                       ("Diagonal view",      "current", "Diagonal view used during the prolongator smoothing process");
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Scalar SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDampingFactor() {
-    return dampingFactor_;
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDiagonalView() {
-    return diagonalView_;
+    return validParamList;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -122,7 +114,9 @@ namespace MueLu {
     //FIXME Xpetra::Matrix should calculate/stash max eigenvalue
     //FIXME SC lambdaMax = A->GetDinvALambda();
 
-    if (dampingFactor_ != Teuchos::ScalarTraits<Scalar>::zero()) {
+    const ParameterList & pL = GetParameterList();
+    Scalar dampingFactor = pL.get<Scalar>("Damping factor");
+    if (dampingFactor != Teuchos::ScalarTraits<Scalar>::zero()) {
 
       //Teuchos::ParameterList matrixList;
       //RCP<Matrix> I = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>("Identity", Get< RCP<Matrix> >(fineLevel, "A")->getRowMap(), matrixList);
@@ -157,7 +151,7 @@ namespace MueLu {
         Magnitude stopTol = 1e-4;
         lambdaMax = Utils::PowerMethod(*A, true, (LO) 10, stopTol);
         //Scalar lambdaMax = Utils::PowerMethod(*A, true, (LO) 50, (Scalar)1e-7, true);
-        GetOStream(Statistics1, 0) << "Damping factor = " << dampingFactor_/lambdaMax << " (" << dampingFactor_ << " / " << lambdaMax << ")" << std::endl;
+        GetOStream(Statistics1, 0) << "Damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
       }
 
       {
@@ -165,9 +159,9 @@ namespace MueLu {
 
         bool doTranspose=false;
         if (AP->isFillComplete())
-          Utils2::TwoMatrixAdd(Ptent, doTranspose, Teuchos::ScalarTraits<Scalar>::one(), AP, doTranspose, -dampingFactor_/lambdaMax, finalP);
+          Utils2::TwoMatrixAdd(Ptent, doTranspose, Teuchos::ScalarTraits<Scalar>::one(), AP, doTranspose, -dampingFactor/lambdaMax, finalP);
         else {
-          Utils2::TwoMatrixAdd(Ptent, doTranspose, Teuchos::ScalarTraits<Scalar>::one(), AP, -dampingFactor_/lambdaMax);
+          Utils2::TwoMatrixAdd(Ptent, doTranspose, Teuchos::ScalarTraits<Scalar>::one(), AP, -dampingFactor/lambdaMax);
           finalP = AP;
         }
       }
@@ -204,6 +198,21 @@ namespace MueLu {
 
   } //Build()
 
+  // deprecated
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetDampingFactor(Scalar dampingFactor) {
+    SetParameter("Damping factor", ParameterEntry(dampingFactor)); // revalidate
+  }
+
+  // deprecated
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  Scalar SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDampingFactor() {
+    const ParameterList & pL = GetParameterList();
+    return pL.get<Scalar>("Damping factor");
+  }
+
 } //namespace MueLu
 
 #endif // MUELU_SAPFACTORY_DEF_HPP
+
+//TODO: restrictionMode_ should use the parameter list.

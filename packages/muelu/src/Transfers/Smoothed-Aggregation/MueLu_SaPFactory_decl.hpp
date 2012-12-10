@@ -49,6 +49,7 @@
 #include <string>
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_ParameterListAcceptor.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_SaPFactory_fwd.hpp"
 
@@ -78,31 +79,12 @@ namespace MueLu {
     /*! @brief Constructor.
       User can supply a factory for generating the tentative prolongator.
     */
-    SaPFactory() : dampingFactor_(4./3), diagonalView_("current") { }
+    SaPFactory() { }
 
     //! Destructor.
     virtual ~SaPFactory() { }
 
-    //@}
-
-    //! @name Set methods.
-    //@{
-
-    //! Set prolongator smoother damping factor.
-    void SetDampingFactor(Scalar dampingFactor);
-
-    //! Change view of diagonal.
-    void SetDiagonalView(std::string const& diagView);
-    //@}
-
-    //! @name Get methods.
-    //@{
-
-    //! Returns prolongator smoother damping factor.
-    Scalar GetDampingFactor();
-
-    //! Returns current view of diagonal.
-    std::string GetDiagonalView();
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     //@}
 
@@ -128,17 +110,26 @@ namespace MueLu {
 
     //@}
 
-    /*
-    //TODO
-    function [this] = SaPFactory(CoalesceFact,AggFact, diagonalView) //copy ctor
-    function SetDiagonalView(this, diagonalView)
-    */
+    //! @name Set methods.
+    //@{
 
-  private:
+    //! Deprecated: Set prolongator smoother damping factor.
+    void SetDampingFactor(Scalar dampingFactor);
 
-    //! Factory parameters
-    Scalar dampingFactor_;
-    std::string diagonalView_;
+    //! Deprecated: Change view of diagonal.
+    void SetDiagonalView(std::string const& diagView);
+    //@}
+
+    //! @name Get methods.
+    //@{
+
+    //! Deprecated: Returns prolongator smoother damping factor.
+    Scalar GetDampingFactor();
+
+    //! Deprecated: Returns current view of diagonal.
+    std::string GetDiagonalView();
+
+    //@}
 
   }; //class SaPFactory
 

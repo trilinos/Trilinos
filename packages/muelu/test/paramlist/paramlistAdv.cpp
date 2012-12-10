@@ -3,7 +3,7 @@
 
 #include "MueLu_ParameterListAcceptor.hpp"
 
-namespace MueLu{
+namespace MueLu {
 
   // Another version of ParameterListAcceptorImpl with conditional parameters: parameters "T" and "K" are available only according to the value of the parameter "Solver".
   //
@@ -18,42 +18,30 @@ namespace MueLu{
 
     virtual ~ParameterListAcceptorAdvImpl() { }
 
-    // This functions add *all* the extra parameters recursively using getValidParametersSimple
-    RCP<const ParameterList> getValidParameters(const ParameterList& pL = ParameterList()) const {
-      RCP<const ParameterList> validParamList = getValidParametersSimple(pL);
+    // This functions add *all* the extra parameters recursively using GetValidParameterListSimple
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& pL = ParameterList()) const {
+      RCP<const ParameterList> validParamList = GetValidParameterListSimple(pL);
 
       int numParams;
       do {
         numParams = validParamList->numParams();
-        validParamList = getValidParametersSimple(*validParamList);
+        validParamList = GetValidParameterListSimple(*validParamList);
       } while (validParamList->numParams() != numParams);
 
       return validParamList;
     }
 
-    // getValidParametersSimple only add one extra level of default parameters. Ex: if "Solver" is not set in the input list "pL",
+    // GetValidParameterListSimple only add one extra level of default parameters. Ex: if "Solver" is not set in the input list "pL",
     // extra parameters "T" or "K" are not added to the validParamList.
-    virtual RCP<const ParameterList> getValidParametersSimple(const ParameterList& pL = ParameterList()) const = 0;
+    virtual RCP<const ParameterList> GetValidParameterListSimple(const ParameterList& pL = ParameterList()) const = 0;
 
-    void setParameterList(ParameterList & paramList) {
-      // Validate and add defaults parameters.
-      paramList.validateParametersAndSetDefaults(*getValidParameters(paramList));
-
-      // Do we need to validate range of int/double parameters here? Can it be done automatically as for valid std::string using getValidParameters()?
-      paramList_ = paramList; // copy
-    }
-
-    const Teuchos::ParameterList & getParameterList() const {
-      return paramList_;
-    }
-
-    void getDocumentation(std::ostream &os) const {
-      getAdvancedDocumentation(os);
+    void GetDocumentation(std::ostream &os) const {
+      GetAdvancedDocumentation(os);
     }
 
   private:
 
-    virtual void getAdvancedDocumentation(std::ostream &os) const = 0;
+    virtual void GetAdvancedDocumentation(std::ostream &os) const = 0;
 
   };
 
@@ -67,7 +55,7 @@ namespace MueLu{
 
     virtual ~MyFactory() { }
 
-    RCP<const ParameterList> getValidParametersSimple(const ParameterList& pL = ParameterList()) const {
+    RCP<const ParameterList> GetValidParameterListSimple(const ParameterList& pL = ParameterList()) const {
       //std::cout << "MyFactory::getValidParameters()" << std::endl;
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validator_type;
 
@@ -84,9 +72,9 @@ namespace MueLu{
         // std::cout << "getValidParameters::paramList: =>" << std::cout << pL << std::endl;
 
         if (type == "ILUT") {
-          addILUTParameters(*validParamList);
+          AddILUTParameters(*validParamList);
         } else if (type == "ILUK") {
-          addILUKParameters(*validParamList);
+          AddILUKParameters(*validParamList);
         } else {
           // not a valid parameter value. What to do? Ignore. We are not validating at this point.
         }
@@ -97,41 +85,41 @@ namespace MueLu{
 
     // Main algorithm
     void Build() {
-
-      std::string type = paramList_.get<std::string>("Solver");
+      const ParameterList & pL = GetParameterList();
+      std::string type = pL.get<std::string>("Solver");
       if (type == "ILUT") {
-        paramList_.get<double>("T");
+        pL.get<double>("T");
 
       } else if (type == "ILUK") {
-        paramList_.get<int>("K");
+        pL.get<int>("K");
       }
 
     }
 
   private:
-    // Separates functions to be used by both getValidParametersSimple and getDocumentation.
-    static void addILUTParameters(ParameterList& paramList) {
+    // Separates functions to be used by both GetValidParameterListSimple and GetDocumentation.
+    static void AddILUTParameters(ParameterList& paramList) {
       paramList.set("T", 0.1, "ILUT threshold");
     }
 
-    static void addILUKParameters(ParameterList& paramList) {
+    static void AddILUKParameters(ParameterList& paramList) {
       paramList.set("K", 1, "ILUK level of fill");
     }
 
-    void getAdvancedDocumentation(std::ostream &os) const {
+    void GetAdvancedDocumentation(std::ostream &os) const {
 
       os << "## Parameters:" << std::endl;
-      printParameterListOptions(os, *getValidParametersSimple());
+      printParameterListOptions(os, *GetValidParameterListSimple());
 
       os << "# ILUT specific parameters:" << std::endl;
-      { ParameterList p; addILUKParameters(p); printParameterListOptions(os, p); }
+      { ParameterList p; AddILUKParameters(p); printParameterListOptions(os, p); }
 
 
       os << "# ILUK specific parameters:" << std::endl;
-      { ParameterList p; addILUTParameters(p); printParameterListOptions(os, p); }
+      { ParameterList p; AddILUTParameters(p); printParameterListOptions(os, p); }
 
       os << "## Fully described default method:" << std::endl;
-      getValidParameters()->print(os, 2, true, false);
+      GetValidParameterList()->print(os, 2, true, false);
       os << std::endl;
     }
 
@@ -147,7 +135,7 @@ int main(int argc, char* argv[]) {
   // Documentation
   //
   std::cout << "\n#\n# Documentation\n#\n" << std::endl;
-  MyFactory dummy; dummy.getDocumentation(std::cout);
+  MyFactory dummy; dummy.GetDocumentation(std::cout);
 
   //
 
@@ -168,7 +156,7 @@ int main(int argc, char* argv[]) {
   //
 
   MyFactory f;
-  f.setParameterList(paramList);
+  f.SetParameterList(paramList);
 
   std::cout << "# Parameter list after validation:" << std::endl;
   std::cout << paramList << std::endl << std::endl;
@@ -181,7 +169,7 @@ int main(int argc, char* argv[]) {
 
   std::cout << "# Parameter list after algorithm (flag used/unused):" << std::endl;
 
-  std::cout << f.getParameterList() << std::endl << std::endl;
+  std::cout << f.GetParameterList() << std::endl << std::endl;
 
   return 0;
 }

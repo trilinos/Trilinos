@@ -88,7 +88,7 @@ namespace MueLu {
 
 /*! class FactoryFactory
 
-    @brief Factory that can generate other factories from 
+    @brief Factory that can generate other factories from
 
 
 */
@@ -229,15 +229,43 @@ namespace MueLu {
       return factory;
     }
 
+    template <class T> // T must implement the Factory interface
+    RCP<T> Build2(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
+      // TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "T", Exceptions::RuntimeError, "");
+      RCP<T> factory = rcp(new T());
+
+      ParameterList paramListWithFactories(paramList); // copy
+      paramListWithFactories.remove("factory", false);
+
+      // Read the RCP<Factory> parameters of the class T
+      RCP<const ParameterList> validParamList = factory->GetValidParameterList();
+      for (ParameterList::ConstIterator param = validParamList->begin(); param != validParamList->end(); ++param) {
+        const string & pName = validParamList->name(param);
+        if (validParamList->isType< RCP<const FactoryBase> >(pName)) {
+          if (paramList.isParameter(pName)) {
+            // Generate or get factory described by param
+            RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry(pName), factoryMapIn);
+
+            // Replace <std::string> or sub-list entry by an RCP<Factory> in paramListWithFactories
+            paramListWithFactories.remove(pName);
+            paramListWithFactories.set(pName, generatingFact);
+          }
+        }
+      }
+
+      // Configure the factory
+      factory->SetParameterList(paramListWithFactories);
+
+      return factory;
+    }
+
 
 #define MUELU_FACTORY_PARAM2(name)                                      \
     if (paramList.isParameter(name)) { factory->SetFactory(name, BuildFactory(paramList.getEntry(name), factoryMapIn)); }
 
     //! SaPFactory
     RCP<FactoryBase> BuildSaPFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      RCP<SaPFactory> factory = Build<SaPFactory>(paramList, factoryMapIn);
-      if (paramList.isParameter("DampingFactor")) factory->SetDampingFactor(paramList.get<Scalar>("DampingFactor"));
-
+      RCP<SaPFactory> factory = Build2<SaPFactory>(paramList, factoryMapIn);
       return factory;
     }
 

@@ -27,9 +27,8 @@ namespace MueLu {
 
     virtual ~MyFactory() { }
 
-    RCP<const ParameterList> getValidParameters(const ParameterList& pL = ParameterList()) const {
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& pL = ParameterList()) const {
       //std::cout << "MyFactory::getValidParameters()" << std::endl;
-      typedef Teuchos::StringToIntegralParameterEntryValidator<int> validator_type;
 
       Teuchos::ParameterList paramList(pL); // make a copy to avoid setting [use]/[unused] flags here. Even if the input list is const, these flags are modified!
       RCP<ParameterList> validParamList = rcp(new ParameterList()); // output list
@@ -49,8 +48,8 @@ namespace MueLu {
     //  => use ParameterList::get() without the default value input parameter.
     void Build() {
 
-      if (paramList_.get<double>("ParamA") == 0.5) { } // change "[used]"/["unused"] flag
-      if (paramList_.get<double>("ParamC") == 0.5) { }
+      if (GetParameterList().get<double>("ParamA") == 0.5) { } // change "[used]"/["unused"] flag
+      if (GetParameterList().get<double>("ParamC") == 0.5) { }
 
       // statsParamList_.set(...);
 
@@ -73,7 +72,7 @@ int main(int argc, char* argv[]) {
   // Documentation
   //
   std::cout << "\n#\n# Documentation\n#\n" << std::endl;
-  MyFactory dummy; dummy.getDocumentation(std::cout);
+  MyFactory dummy; dummy.GetDocumentation(std::cout);
 
   //
 
@@ -97,11 +96,11 @@ int main(int argc, char* argv[]) {
   //
 
   MyFactory f;
-  f.setParameterList(paramList);
+  f.SetParameterList(paramList);
 
   if (0) {// if users want to keep their list untouched:
     ParameterList tmp(paramList);
-    f.setParameterList(tmp);
+    f.SetParameterList(tmp);
   }
 
   std::cout << "# Parameter list after validation:" << std::endl;
@@ -117,7 +116,7 @@ int main(int argc, char* argv[]) {
   if (0) // do not work with my design: flags used/unused are not set for the initial parameter list
     std::cout << paramList << std::endl << std::endl;
 
-  std::cout << f.getParameterList() << std::endl << std::endl;
+  std::cout << f.GetParameterList() << std::endl << std::endl;
 
   // See also ~MyFactory()
 

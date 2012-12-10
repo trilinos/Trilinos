@@ -83,8 +83,6 @@ namespace MueLuTests {
     RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
     sapFactory->SetDampingFactor( (Scalar)4/3 );
     TEST_EQUALITY(((Scalar)4/3) == sapFactory->GetDampingFactor(), true);
-    sapFactory->SetDiagonalView("roomWithAView");
-    TEST_EQUALITY( sapFactory->GetDiagonalView(), "roomWithAView");
 
   } //GetSetMethods
 

@@ -9,3 +9,12 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     DEPLIBS muelu xpetra
     )
 ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_Galeri)
+  TRIBITS_ADD_EXECUTABLE(
+    SmoothedAggregation
+    SOURCES SmoothedAggregation.cpp
+    COMM serial mpi
+    DEPLIBS muelu xpetra
+    )
+ENDIF()

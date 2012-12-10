@@ -19,7 +19,7 @@
     <ParameterList name="myProlongatorFact">
       <Parameter name="factory"  type="string" value="SaPFactory"/>
       <Parameter name="P" type="string" value="myTentativePFact"/>
-      <!--    <Parameter name="DampingFactor" type="double" value="4./3"/> -->
+      <!--    <Parameter name="Damping factor" type="double" value="4./3"/> -->
     </ParameterList>
 
     <ParameterList name="myTentativeRFact"> <!-- for projecting coordinates -->
