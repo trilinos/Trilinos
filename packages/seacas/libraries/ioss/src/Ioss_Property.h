@@ -49,13 +49,15 @@ namespace Ioss {
     Property(const std::string &name, const BasicType type,
 		  const VariableType storage, void *data,
 		  bool is_implicit = false);
-    Property(const std::string &name, const int64_t  value,
+    Property(const std::string &name, int64_t  value,
 		  bool is_implicit = false);
-    Property(const std::string &name, const int      value,
+    Property(const std::string &name, int      value,
 		  bool is_implicit = false);
-    Property(const std::string &name, const double   value,
+    Property(const std::string &name, double   value,
 		  bool is_implicit = false);
     Property(const std::string &name, const std::string &value,
+		  bool is_implicit = false);
+    Property(const std::string &name, void *value,
 		  bool is_implicit = false);
 
     // To set implicit property
