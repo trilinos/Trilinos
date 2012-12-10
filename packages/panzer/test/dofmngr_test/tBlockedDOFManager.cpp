@@ -100,8 +100,8 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<short,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
-   BlockedDOFManager<short,int> dofManager; 
+   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
+   BlockedDOFManager<int,int> dofManager; 
    dofManager.setConnManager(connManager,MPI_COMM_WORLD);
 
    TEST_ASSERT(dofManager.getComm()!=Teuchos::null);
@@ -148,8 +148,8 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<short,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
-   BlockedDOFManager<short,int> dofManager; 
+   RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
+   BlockedDOFManager<int,int> dofManager; 
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
 
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
@@ -198,7 +198,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 
    dofManager.registerFields();
    TEST_ASSERT(dofManager.fieldsRegistered());
-   const std::vector<RCP<panzer::DOFManagerFEI<short,int> > > & subManagers = 
+   const std::vector<RCP<panzer::DOFManagerFEI<int,int> > > & subManagers = 
          dofManager.getFieldDOFManagers();
    TEST_EQUALITY(subManagers.size(),fieldOrder.size());
 
@@ -276,8 +276,8 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<short,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
-   BlockedDOFManager<short,int> dofManager; 
+   RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
+   BlockedDOFManager<int,int> dofManager; 
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
 
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
@@ -306,7 +306,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 
    TEST_ASSERT(dofManager.getGeometricFieldPattern()!=Teuchos::null);
 
-   std::vector<BlockedDOFManager<short,int>::GlobalOrdinal> ownedAndShared, owned;
+   std::vector<BlockedDOFManager<int,int>::GlobalOrdinal> ownedAndShared, owned;
    std::vector<bool> ownedAndShared_bool, owned_bool;
    dofManager.getOwnedAndSharedIndices(ownedAndShared);
    dofManager.getOwnedIndices(owned);
@@ -388,8 +388,8 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<short,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
-   BlockedDOFManager<short,int> dofManager; 
+   RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
+   BlockedDOFManager<int,int> dofManager; 
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
 
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
@@ -529,7 +529,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
       const std::pair<std::vector<int>,std::vector<int> > * vec = 0;
       const std::pair<std::vector<int>,std::vector<int> > * sub_vec = 0;
 
-      Teuchos::RCP<const DOFManagerFEI<short,int> > subManager;
+      Teuchos::RCP<const DOFManagerFEI<int,int> > subManager;
    
       // block 0
       subManager = dofManager.getFieldDOFManagers()[2];

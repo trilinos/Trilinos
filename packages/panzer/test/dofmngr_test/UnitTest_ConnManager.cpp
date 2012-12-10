@@ -73,7 +73,7 @@ ConnManager::ConnManager(int rank,int procCount)
 }
 
 void GLOBAL_CONN(std::vector<std::vector<int> > & conn,
-                        short le,int a,int b,int c,int d)
+                        int le,int a,int b,int c,int d)
 { conn[le].push_back(a); conn[le].push_back(b); conn[le].push_back(c); conn[le].push_back(d); }
 
 void ConnManager::buildConnectivity(const FieldPattern & fp) 
@@ -152,7 +152,7 @@ void ConnManager::getElementBlockIds(std::vector<std::string> & elementBlockIds)
 
 const std::vector<ConnManager::LocalOrdinal> & ConnManager::getElementBlock(const std::string & blockID) const
 {
-   std::map<std::string,std::vector<short> >::const_iterator itr = elements_.find(blockID);
+   std::map<std::string,std::vector<int> >::const_iterator itr = elements_.find(blockID);
    if(itr!=elements_.end())
       return itr->second;
 
