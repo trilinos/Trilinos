@@ -130,7 +130,6 @@ public:
   static void initialize( const size_type gang_count ,
                           const size_type worker_count );
 
-
   /** \brief  Detect (if possible) the gang X gang_worker capacity.
    *          Return zero if cannot be detected.
    *

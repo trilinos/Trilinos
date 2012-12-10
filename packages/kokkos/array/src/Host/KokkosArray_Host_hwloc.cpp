@@ -193,8 +193,16 @@ bool HostInternalHWLOC::bind_thread( const unsigned thread_rank ) const
 
     const unsigned pu_rank = worker_rank % m_node_core_pu_count ;
 
+    // Use the upper range of accessible nodes.
+    // Assumes that the lower range is preferred by the operating system.
+
+    const unsigned gang_unused =
+      ( HostInternal::m_gang_capacity - HostInternal::m_gang_count ); 
+
+    const unsigned node_rank = m_node_rank[ gang_rank + gang_unused ];
+
     const hwloc_obj_t node =
-      hwloc_get_obj_by_type( m_host_topology, m_node_type, m_node_rank[ gang_rank ] );
+      hwloc_get_obj_by_type( m_host_topology, m_node_type, node_rank );
 
     const hwloc_obj_t core =
       hwloc_get_obj_inside_cpuset_by_type( m_host_topology ,
