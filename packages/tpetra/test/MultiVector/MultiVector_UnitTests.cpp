@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,30 +35,20 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
 
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_as.hpp>
+#include <Tpetra_TestingUtilities.hpp>
+
+#include <Tpetra_MultiVector.hpp>
+#include <Tpetra_Vector.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
-#include <Teuchos_Tuple.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_TypeTraits.hpp>
-
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_MultiVector.hpp"
-#include "Tpetra_Vector.hpp"
-
-#include "Tpetra_ETIHelperMacros.h"
 
 // FINISH: add test for MultiVector with a node containing zero local entries
-// FINISH: add tests for local MultiVectors 
+// FINISH: add tests for local MultiVectors
 
 namespace Teuchos {
   template <>
@@ -77,6 +67,9 @@ namespace Teuchos {
 }
 
 namespace {
+
+  using Tpetra::TestingUtilities::getNode;
+  using Tpetra::TestingUtilities::getDefaultComm;
 
   using std::endl;
   using std::copy;
@@ -137,7 +130,6 @@ namespace {
   RCP<ThrustGPUNode> thrustnode;
 #endif
 
-  bool testMpi = true;
   double errorTolSlack = 1.0e+2;
 
   TEUCHOS_STATIC_SETUP()
@@ -145,88 +137,13 @@ namespace {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
     clp.addOutputSetupOptions(true);
     clp.setOption(
-        "test-mpi", "test-serial", &testMpi,
+        "test-mpi", "test-serial", &Tpetra::TestingUtilities::testMpi,
         "Test MPI (if available) or force test of serial.  In a serial build,"
         " this option is ignored and a serial comm is always used." );
     clp.setOption(
         "error-tol-slack", &errorTolSlack,
         "Slack off of machine epsilon used to check test results" );
   }
-
-  RCP<const Comm<int> > getDefaultComm()
-  {
-    RCP<const Comm<int> > ret;
-    if (testMpi) {
-      ret = DefaultPlatform::getDefaultPlatform().getComm();
-    }
-    else {
-      ret = rcp(new Teuchos::SerialComm<int>());
-    }
-    return ret;
-  }
-
-  template <class Node>
-  RCP<Node> getNode() {
-    assert(false);
-  }
-
-  template <>
-  RCP<SerialNode> getNode<SerialNode>() {
-    if (snode == null) {
-      Teuchos::ParameterList pl;
-      snode = rcp(new SerialNode(pl));
-    }
-    return snode;
-  }
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  template <>
-  RCP<TBBNode> getNode<TBBNode>() {
-    if (tbbnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tbbnode = rcp(new TBBNode(pl));
-    }
-    return tbbnode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  template <>
-  RCP<TPINode> getNode<TPINode>() {
-    if (tpinode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tpinode = rcp(new TPINode(pl));
-    }
-    return tpinode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  template <>
-  RCP<OpenMPNode> getNode<OpenMPNode>() {
-    if (ompnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",1);
-      ompnode = rcp(new OpenMPNode(pl));
-    }
-    return ompnode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  template <>
-  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
-    if (thrustnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      pl.set<int>("Verbose",1);
-      thrustnode = rcp(new ThrustGPUNode(pl));
-    }
-    return thrustnode;
-  }
-#endif
 
   // no ScalarTraits<>::eps() for integer types
   template <class Scalar>
@@ -238,9 +155,9 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
-  //// 
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, NonMemberConstructors, LO, GO, Scalar , Node )
   {
     RCP<Node> node = getNode<Node>();
@@ -332,7 +249,7 @@ namespace {
     TEST_EQUALITY( vec->get1dViewNonConst().getRawPtr(), user_arcp.getRawPtr() )
     TEST_EQUALITY( vec->getData(0).getRawPtr(),          user_arcp.getRawPtr() )
     TEST_EQUALITY( vec->getDataNonConst(0).getRawPtr(),  user_arcp.getRawPtr() )
-    // test both view methods; this is the easiest place to test these, 
+    // test both view methods; this is the easiest place to test these,
     // because we know the pointers for the data
     TEST_EQUALITY( vec->getDataNonConst(0), vec->getDataNonConst() )
     TEST_EQUALITY( vec->getData(), vec->getDataNonConst()          )
@@ -410,7 +327,7 @@ namespace {
 #ifdef HAVE_TPETRA_DEBUG
     // too small an ArrayView (less than 4 values) is met with an exception, if debugging is on
     TEST_THROW(MV mvec(map,values(0,3),2,numVecs), std::runtime_error);
-    // it could also be too small for the given LDA: 
+    // it could also be too small for the given LDA:
     TEST_THROW(MV mvec(map,values(),2+1,numVecs), std::runtime_error);
     // too small for number of entries in a Vector
     TEST_THROW(V   vec(map,values(0,1)), std::runtime_error);
@@ -454,7 +371,7 @@ namespace {
       RCP<const MV> mvSubWeights = mvWeights.subView(inView1);
       mvOrig1.randomize();
       mvOrig2.randomize();
-      // 
+      //
       Array<Mag> nOrig2(numVecs), nOrig1(numVecs), nOrigI(numVecs), nOrigW(numVecs), nOrigW1(numVecs);
       Array<Scalar> meansOrig(numVecs), dotsOrig(numView);
       mvOrig1.norm1(nOrig1());
@@ -581,7 +498,7 @@ namespace {
         //   C = 2*A + 2*B - .5*C ->   C == B, A == 0,            update(alpha,mv,beta,mv,gamma)
         dvC->update(as<Scalar>(2),*dvA, as<Scalar>(2), *dvB, as<Scalar>(-.5));
         //   B = 0.5              ->   B = 0.5, A == 0,           putScalar(alpha)
-        dvB->putScalar( as<Scalar>(0.5) );                
+        dvB->putScalar( as<Scalar>(0.5) );
         //   C.recip(B)           ->   C = 2, B == 0.5, A == 0,   reciprocal(mv)
         dvC->reciprocal(*dvB);
         //   B = C/2              ->   A == 0, B == 1, C == 2
@@ -728,8 +645,8 @@ namespace {
     }
     // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
     {
-      RCP<const Map<LO,GO,Node> > map3n = createContigMapWithNode<LO,GO>(INVALID,3,comm,node), 
-                                  map2n = createContigMapWithNode<LO,GO>(INVALID,2,comm,node); 
+      RCP<const Map<LO,GO,Node> > map3n = createContigMapWithNode<LO,GO>(INVALID,3,comm,node),
+                                  map2n = createContigMapWithNode<LO,GO>(INVALID,2,comm,node);
       RCP<const Map<LO,GO,Node> > map2l = createLocalMapWithNode<LO,GO,Node>(2,comm,node),
                                   map3l = createLocalMapWithNode<LO,GO,Node>(3,comm,node);
       MV mv3nx2(map3n,2),
@@ -758,8 +675,8 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // create a Map
-    RCP<const Map<LO,GO,Node> > map3n = createContigMapWithNode<LO,GO>(INVALID,3,comm,node), 
-                                map2n = createContigMapWithNode<LO,GO>(INVALID,2,comm,node); 
+    RCP<const Map<LO,GO,Node> > map3n = createContigMapWithNode<LO,GO>(INVALID,3,comm,node),
+                                map2n = createContigMapWithNode<LO,GO>(INVALID,2,comm,node);
     RCP<const Map<LO,GO,Node> > lmap3 = createLocalMapWithNode<LO,GO,Node>(3,comm,node),
                                 lmap2 = createLocalMapWithNode<LO,GO,Node>(2,comm,node);
     const Scalar S1 = ScalarTraits<Scalar>::one(),
@@ -799,7 +716,7 @@ namespace {
          tmv2x2(lmap2,2),
          tmv3x3(lmap3,3);
       // fill multivectors with random, get copy of contents
-      tmv3x2.randomize();  tmv3x2.get1dCopy(tmvCopy1(),3); 
+      tmv3x2.randomize();  tmv3x2.get1dCopy(tmvCopy1(),3);
       tmv2x3.randomize();  tmv2x3.get1dCopy(tmvCopy2(),2);
       // point SerialDenseMatrices at copies
       SerialDenseMatrix<int,Scalar> sdm3x2(View,tmvCopy1.getRawPtr(),3,3,2);
@@ -849,7 +766,7 @@ namespace {
       ArrayRCP<const Scalar> tmpView;
       Teuchos::Array<Scalar> check(9,3*numImages);
       // test
-      mv2x2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx2,S0); 
+      mv2x2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx2,S0);
       tmpView = mv2x2.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
       mv2x3.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx3,S0);
       tmpView = mv2x3.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
@@ -1021,7 +938,7 @@ namespace {
     std::fill(ans.begin(), ans.end(), M0);
     TEST_COMPARE_FLOATING_ARRAYS(norms1,ans,M0);
     TEST_COMPARE_FLOATING_ARRAYS(norms1,ans,M0);
-    // replace local entries s.t. 
+    // replace local entries s.t.
     // mvec1 = [1 1]  and  mvec2 = [0 0]
     //         [0 0]               [1 1]
     // still numerically orthogonal even in finite arithmetic. norms are numImages.
@@ -1175,8 +1092,8 @@ namespace {
           // ---|-----------|-----------
           //  0 | ArrayView | ArrayView
           //  1 |  Range1D  | ArrayView
-          //  2 | ArrayView |  Range1D 
-          //  3 |  Range1D  |  Range1D 
+          //  2 | ArrayView |  Range1D
+          //  3 |  Range1D  |  Range1D
           //
           // outer grabs 5-9
           // inner grabs 1-3 of those, corresponding to 6-8
@@ -1335,7 +1252,7 @@ namespace {
       // change to A1 or A2 should change A
       // A should be zero after setting A1 to zero and A2 to zero
       for (size_t i=0; i<numVectors; ++i) {
-        TEST_EQUALITY_CONST( A_aft1[i] < A_befr[i] + tol, true ); // shrunk as A1 = 0 
+        TEST_EQUALITY_CONST( A_aft1[i] < A_befr[i] + tol, true ); // shrunk as A1 = 0
         TEST_EQUALITY_CONST( A_aft2[i] < A_aft1[i] + tol, true ); // shrunk as A2 = 0
         TEST_EQUALITY_CONST( A_aft2[i] , M0 );                    // ... to zero
         TEST_EQUALITY_CONST( A1_aft1[i] , M0 );                   // was set to zero
@@ -1443,7 +1360,7 @@ namespace {
     //                            = [1 2]
     // values(2,6) = {2, 2, 4, 4} = [2 4]
     //                            = [2 4]
-    // a multivector A constructed from the first 
+    // a multivector A constructed from the first
     // has values .5 of a multivector B constructed from the second
     // then 2*A - B = 0
     // we test both scale(), both update(), and norm()
@@ -1459,9 +1376,9 @@ namespace {
     std::fill(zeros.begin(),zeros.end(),M0);
     //
     //      [.... ....]
-    // A == [ones ones] 
+    // A == [ones ones]
     //      [.... ....]
-    // 
+    //
     //      [.... ....]
     // B == [twos twos]
     //      [.... ....]
@@ -1645,7 +1562,7 @@ namespace {
     //                      = [1]
     // values(2,2) = {2, 2} = [2]
     //                      = [2]
-    // a vector A constructed from the first 
+    // a vector A constructed from the first
     // has values .5 of a vector B constructed from the second
     // thus 2*A - B = 0
     // we test both scale(), both update(), and norm()
@@ -1661,7 +1578,7 @@ namespace {
     //      [....]
     // A == [ones]
     //      [....]
-    // 
+    //
     //      [....]
     // B == [twos]
     //      [....]
@@ -1755,7 +1672,7 @@ namespace {
       // create random MV
       MV morig(map,numVectors);
       morig.randomize();
-      // test copy constructor with 
+      // test copy constructor with
       // copy it
       MV mcopy1(morig), mcopy2(morig);
       // verify that all three have identical values
@@ -1861,7 +1778,7 @@ namespace {
   {
     RCP<Node> node = getNode<Node>();
     // this documents a usage case in Anasazi::SVQBOrthoManager, which was failing
-    // error turned out to be a neglected return in both implementations of update(), 
+    // error turned out to be a neglected return in both implementations of update(),
     // after passing the buck to scale() in the case of alpha==0 or beta==0 or gamma=0
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
@@ -2165,7 +2082,7 @@ namespace {
     }
     for (size_t j=0; j < numVectors; ++j) {
       Mag ww = ScalarTraits<Scalar>::real( ScalarTraits<Scalar>::conjugate(wvec[j]) * wvec[j] );
-      Mag expnorm = ScalarTraits<Mag>::squareroot( 
+      Mag expnorm = ScalarTraits<Mag>::squareroot(
                       ScalarTraits<Scalar>::real(dots[j]) / (as<Mag>(numImages * numLocal) * ww)
                     );
       Mag ww1 = ScalarTraits<Scalar>::real( ScalarTraits<Scalar>::conjugate(w1) * w1 );
@@ -2242,7 +2159,7 @@ namespace {
     TEST_EQUALITY_CONST( (is_same< node_type           , Node    >::value) == true, true );
   }
 
-// 
+//
 // INSTANTIATIONS
 //
 

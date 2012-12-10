@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,29 +35,28 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
 
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_Tuple.hpp>
-#include <Teuchos_CommHelpers.hpp>
-#include <Tpetra_ETIHelperMacros.h>
+#include <Tpetra_TestingUtilities.hpp>
 
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
-#include "Teuchos_as.hpp"
-#include "Tpetra_Map.hpp"
+#include <Tpetra_Map.hpp>
 
 // FINISH: add testing of operator==, operator!=, operator=, copy construct
 // put these into test_same_as and test_is_compatible
 
 namespace {
 
+  using Tpetra::TestingUtilities::getNode;
+  using Tpetra::TestingUtilities::getDefaultComm;
+
+  using Tpetra::createUniformContigMapWithNode;
+
   using Teuchos::Array;
+  using Teuchos::ArrayView;
   using Teuchos::as;
   using Teuchos::RCP;
   using Teuchos::arcp;
@@ -74,7 +73,6 @@ namespace {
   using Teuchos::OrdinalTraits;
   using Teuchos::Comm;
 
-  bool testMpi = true;
   double errorTolSlack = 1e+1;
 
 #define TEST_IS_COMPATIBLE(m1,m2,is_compat)               \
@@ -98,7 +96,7 @@ namespace {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
     clp.addOutputSetupOptions(true);
     clp.setOption(
-        "test-mpi", "test-serial", &testMpi,
+        "test-mpi", "test-serial", &Tpetra::TestingUtilities::testMpi,
         "Test MPI (if available) or force test of serial.  In a serial build,"
         " this option is ignored and a serial comm is always used." );
     clp.setOption(
@@ -106,24 +104,16 @@ namespace {
         "Slack off of machine epsilon used to check test results" );
   }
 
-  RCP<const Comm<int> > getDefaultComm()
-  {
-    if (testMpi) {
-      return DefaultPlatform::getDefaultPlatform().getComm();
-    }
-    return rcp(new Teuchos::SerialComm<int>());
-  }
-
   //
   // UNIT TESTS
-  // 
+  //
 
 #if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_ENABLE_SS_TESTING) && defined(HAVE_TPETRA_MPI)
   ////
   TEUCHOS_UNIT_TEST( Map, RogersUnsignedGOBugVerification )
   {
     typedef Map<int,size_t> M;
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     if (numImages < 2) return;
@@ -142,7 +132,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, invalidConstructor1, LO, GO )
   {
     typedef Map<LO,GO> M;
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -154,7 +144,7 @@ namespace {
       TEST_THROW(M map((myImageID == 0 ?  1 : 0),0,comm), std::invalid_argument);
       TEST_THROW(M map(0,(myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
     }
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
@@ -165,7 +155,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, invalidConstructor2, LO, GO )
   {
     typedef Map<LO,GO> M;
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -177,7 +167,7 @@ namespace {
       TEST_THROW(M map((myImageID == 0 ?  1 :  0),0,0,comm), std::invalid_argument);
       TEST_THROW(M map(0,0,(myImageID == 0 ? 0 : 1),comm), std::invalid_argument);
     }
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
@@ -188,7 +178,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, invalidConstructor3, LO, GO )
   {
     typedef Map<LO,GO> M;
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -200,7 +190,7 @@ namespace {
       TEST_THROW(M map((myImageID == 0 ? GSTI :  0),tuple<GO>(myImageID+1),1, comm), std::invalid_argument);
       TEST_THROW(M map(0, tuple<GO>(myImageID+1), (myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
     }
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
@@ -208,10 +198,10 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, compatabilityTests, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, compatibilityTests, LO, GO )
   {
     typedef Map<LO,GO> M;
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -224,12 +214,12 @@ namespace {
     // * same number of global entries, but different number of local entries on every node
     // * same number of global entries, but different number of local entries on some nodes
     // * different number of global entries, different number of local entries
-    // 
+    //
     // for each, also:
     // test symmetry   : m1.isCompatible(m2) <=> m2.isCompatible(m1)
     // test reflexivity: m1.isCompatible(m1), m2.isCompatible(m2)
     {
-      M m1(GSTI,myImageID,0,comm), 
+      M m1(GSTI,myImageID,0,comm),
         m2(GSTI,myImageID,0,comm);
       TEST_IS_COMPATIBLE( m1, m2, true );
     }
@@ -250,7 +240,7 @@ namespace {
         // image 0 and numImages-1 get map1:numLocal==[0,numImages-1] and map2:numLocal==[numImages-1,0], the others get numLocal==myImageID
         LO mynl1, mynl2;
         if (myImageID == 0) {
-          mynl1 = 0; 
+          mynl1 = 0;
           mynl2 = numImages-1;
         }
         else if (myImageID == numImages-1) {
@@ -274,7 +264,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, sameasTests, LO, GO )
   {
     typedef Map<LO,GO> M;
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -308,7 +298,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, ContigUniformMap, LO, GO )
   {
     typedef Map<LO,GO> M;
-    // create a comm  
+    // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
@@ -328,7 +318,7 @@ namespace {
     TEST_EQUALITY_CONST(map.getIndexBase(), indexBase);
     TEST_EQUALITY_CONST(map.getMinLocalIndex(), indexBase);
     TEST_EQUALITY_CONST(map.getMaxLocalIndex(), 1);
-    TEST_EQUALITY_CONST(map.getMinGlobalIndex(), myGlobal[indexBase]);
+    TEST_EQUALITY_CONST(map.getMinGlobalIndex(), myGlobal[0]);
     TEST_EQUALITY_CONST(map.getMaxGlobalIndex(), myGlobal[1]);
     TEST_EQUALITY_CONST(map.getMinAllGlobalIndex(), indexBase);
     TEST_EQUALITY_CONST(map.getMaxAllGlobalIndex(), as<GO>(numGlobalEntries-1));
@@ -352,13 +342,74 @@ namespace {
         TEST_EQUALITY_CONST( map.isNodeGlobalElement(i), true );
       }
     }
-    // All procs fail if any proc fails 
+    // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
-  // 
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, nonTrivialIndexBase, LO, GO )
+  {
+    typedef Map<LO,GO> Map;
+    // create a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
+    // create a contiguous uniform distributed map with two entries per node
+    const size_t        numLocal  = 5;
+    const global_size_t numGlobal = numImages*numLocal;
+    const GO indexBase = 10;
+    RCP<Map> map = rcp(new Map(numGlobal,indexBase,comm));
+    //
+    Array<GO> expectedGIDs(numLocal);
+    expectedGIDs[0] = indexBase + myImageID*numLocal;
+    for (size_t i=1; i<numLocal; ++i) {
+      expectedGIDs[i] = expectedGIDs[i-1]+1;
+    }
+    //
+    TEST_EQUALITY(map->getGlobalNumElements(), numGlobal);
+    TEST_EQUALITY(map->getNodeNumElements(), numLocal);
+    TEST_EQUALITY(map->getIndexBase(), indexBase);
+    TEST_EQUALITY_CONST(map->getMinLocalIndex(), 0);
+    TEST_EQUALITY(map->getMaxLocalIndex(), numLocal-1);
+    TEST_EQUALITY(map->getMinGlobalIndex(), expectedGIDs[0]);
+    TEST_EQUALITY(map->getMaxGlobalIndex(), as<GO>(expectedGIDs[0]+numLocal-1) );
+    TEST_EQUALITY(map->getMinAllGlobalIndex(), indexBase);
+    TEST_EQUALITY(map->getGlobalElement(0), expectedGIDs[0]);
+    TEST_EQUALITY_CONST((global_size_t)map->getMaxAllGlobalIndex(), indexBase+numGlobal-1);
+    ArrayView<const GO> glist = map->getNodeElementList();
+    TEST_COMPARE_ARRAYS( map->getNodeElementList(), expectedGIDs);
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, NodeConversion, LO, GO, N1, N2 )
+  {
+    typedef Map<LO,GO,N1> Map1;
+    typedef Map<LO,GO,N2> Map2;
+    // create a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    //const int myImageID = comm->getRank();
+    const size_t        numLocal  = 10;
+    const global_size_t numGlobal = numImages*numLocal;
+
+    RCP<N1> n1 = getNode<N1>();
+    RCP<N2> n2 = getNode<N2>();
+
+    // create a contiguous uniform distributed map with two entries per node
+    RCP<const Map1> map1 = createUniformContigMapWithNode<LO,GO>(numGlobal,comm,n1);
+    // RCP<Map2> map2 = Tpetra::convert<Map2>(map1);
+    // finish
+  }
+
+
+  //
   // INSTANTIATIONS
   //
 
@@ -367,10 +418,18 @@ namespace {
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor1, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor2, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor3, LO, GO ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, compatabilityTests, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, compatibilityTests, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, sameasTests, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, nonTrivialIndexBase, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ContigUniformMap, LO, GO )
 
+#define NN_TESTS(LO,GO,N1,N2) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, NodeConversion, LO, GO, N1, N2 )
+
+  TPETRA_ETI_MANGLING_TYPEDEFS()
+
   TPETRA_INSTANTIATE_LG(UNIT_TEST_GROUP)
+
+  TPETRA_INSTANTIATE_LGNN(NN_TESTS)
 
 }

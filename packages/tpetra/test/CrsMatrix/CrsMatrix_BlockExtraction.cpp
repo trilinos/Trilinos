@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,22 +34,24 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_Map.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <TpetraExt_BlockExtraction.hpp>
 #include <numeric>
 #include <algorithm>
 
-#include <Tpetra_ETIHelperMacros.h>
+#include <Tpetra_TestingUtilities.hpp>
+
+#include <Tpetra_Map.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <TpetraExt_BlockExtraction.hpp>
 
 namespace {
+
+  using Tpetra::TestingUtilities::getNode;
+  using Tpetra::TestingUtilities::getDefaultComm;
 
   using std::string;
   using Teuchos::RCP;
@@ -64,26 +66,6 @@ namespace {
   using Tpetra::RowMatrix;
   using Tpetra::global_size_t;
 
-  using Kokkos::SerialNode;
-  RCP<SerialNode> snode;
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  using Kokkos::TBBNode;
-  RCP<TBBNode> tbbnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using Kokkos::TPINode;
-  RCP<TPINode> tpinode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  using Kokkos::OpenMPNode;
-  RCP<OpenMPNode> ompnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  using Kokkos::ThrustGPUNode;
-  RCP<ThrustGPUNode> thrustnode;
-#endif
-
-  bool testMpi = true;
   // string filedir;
   // double errorTolSlack = 1e+1;
 
@@ -94,7 +76,7 @@ namespace {
     //     "filedir",&filedir,"Directory of expected matrix files.");
     clp.addOutputSetupOptions(true);
     clp.setOption(
-        "test-mpi", "test-serial", &testMpi,
+        "test-mpi", "test-serial", &Tpetra::TestingUtilities::testMpi,
         "Test MPI (if available) or force test of serial.  In a serial build,"
         " this option is ignored and a serial comm is always used." );
     // clp.setOption(
@@ -102,84 +84,10 @@ namespace {
     //     "Slack off of machine epsilon used to check test results" );
   }
 
-  RCP<const Comm<int> > getDefaultComm()
-  {
-    RCP<const Comm<int> > ret;
-    if (testMpi) {
-      ret = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-    }
-    else {
-      ret = rcp(new Teuchos::SerialComm<int>());
-    }
-    return ret;
-  }
-
-  template <class Node>
-  RCP<Node> getNode() {
-    assert(false);
-  }
-
-  template <>
-  RCP<SerialNode> getNode<SerialNode>() {
-    if (snode == null) {
-      Teuchos::ParameterList pl;
-      snode = rcp(new SerialNode(pl));
-    }
-    return snode;
-  }
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  template <>
-  RCP<TBBNode> getNode<TBBNode>() {
-    if (tbbnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tbbnode = rcp(new TBBNode(pl));
-    }
-    return tbbnode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  template <>
-  RCP<TPINode> getNode<TPINode>() {
-    if (tpinode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tpinode = rcp(new TPINode(pl));
-    }
-    return tpinode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  template <>
-  RCP<OpenMPNode> getNode<OpenMPNode>() {
-    if (ompnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      ompnode = rcp(new OpenMPNode(pl));
-    }
-    return ompnode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  template <>
-  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
-    if (thrustnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      pl.set<int>("Verbose",1);
-      thrustnode = rcp(new ThrustGPUNode(pl));
-    }
-    return thrustnode;
-  }
-#endif
 
   //
   // UNIT TESTS
-  // 
+  //
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockDiagonalExtraction, RuntimeExceptions, LO, GO, Scalar, Node )
@@ -330,7 +238,7 @@ namespace {
     Tpetra::Ext::extractBlockDiagonals<Scalar,LO,GO,Node>( *mat, block_firsts(), block_diagonals1, block_offsets1 );
     //
     // independently test first extraction
-    // 
+    //
     {
       TEST_EQUALITY( (size_t)expected_alloc_size, (size_t)block_diagonals1.size() );
       TEST_EQUALITY( (size_t)block_sizes.size(), (size_t)block_offsets1.size() );
@@ -345,13 +253,13 @@ namespace {
     //
     Teuchos::Tuple<GO,7> globalBlockIDs = Teuchos::tuple<GO>(1,2,3,4,5,6,7) ;
     RCP<const BlockMap> bmap = rcp(new BlockMap(map,globalBlockIDs,block_sizes,map->getNode()));
-    // 
+    //
     // perform second extraction
     //
     Teuchos::ArrayRCP<Scalar> block_diagonals2;
     Teuchos::ArrayRCP<LO>     block_offsets2;
     Tpetra::Ext::extractBlockDiagonals<Scalar,LO,GO,Node>( *mat, *bmap, block_diagonals2, block_offsets2 );
-    // 
+    //
     // independently test second extraction
     //
     {
@@ -384,7 +292,7 @@ namespace {
     const int myImageID = comm->getRank();
     //
     // set the block sizes
-    // try to hit the border cases: some zero block at the outside and inside, 
+    // try to hit the border cases: some zero block at the outside and inside,
     Teuchos::Tuple<int,6> block_sizes = Teuchos::tuple<int>( myImageID%2 , 2 , 0 , myImageID+1 , 3, (myImageID+1)%2 );
     const int numBlocks = (int)block_sizes.size();
     const int maxBlockSize = *std::max_element( block_sizes.begin(), block_sizes.end() );
@@ -395,7 +303,7 @@ namespace {
     RCP<const Map> map = Tpetra::createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm,node);
     //
     // fill matrix for testing
-    // 
+    //
     //
     RCP<const RowMatrix<Scalar,LO,GO,Node> > mat;
     {
@@ -417,14 +325,14 @@ namespace {
     Teuchos::Tuple<GO,6> globalBlockIDs = Teuchos::tuple<GO>(1,2,3,4,5,6);
     RCP<const BlockMap> bmap = rcp(new BlockMap(map,globalBlockIDs,block_sizes,map->getNode()));
 
-    // 
+    //
     // perform block diagonal extraction
-    // 
+    //
     Teuchos::ArrayRCP<Scalar> block_diagonals;
     Teuchos::ArrayRCP<LO>     block_offsets;
     Tpetra::Ext::extractBlockDiagonals<Scalar,LO,GO,Node>( *mat, *bmap, block_diagonals, block_offsets );
 
-    // 
+    //
     // perform block row extractions
     //
     int total_num_nonzeros_extracted = 0;
@@ -442,14 +350,14 @@ namespace {
         TEST_EQUALITY_CONST( block_entries.size() > 0, true );
         // find the diagonal, compare it against block_diagonals[b]
         bool diagFound = false;
-        for (Teuchos_Ordinal jj=0; jj < block_entries.size(); ++jj) 
+        for (Teuchos_Ordinal jj=0; jj < block_entries.size(); ++jj)
         {
           // block row partitioning is block column partitioning for this test
           // therefore, we don't need to compare global block IDs; local block IDs will suffice
-          if ( block_indices[jj] == b ) 
+          if ( block_indices[jj] == b )
           {
             // can't find the diagonal block twice
-            TEST_EQUALITY_CONST( diagFound, false ); 
+            TEST_EQUALITY_CONST( diagFound, false );
             TEST_COMPARE_ARRAYS( block_entries[jj], block_diagonals(block_offsets[b],block_sizes[b]*block_sizes[b]) );
             diagFound = true;
           }
@@ -465,7 +373,7 @@ namespace {
   }
 
 
-  // 
+  //
   // INSTANTIATIONS
   //
 

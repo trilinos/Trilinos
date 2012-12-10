@@ -33,6 +33,15 @@ IF(Tpetra_ENABLE_Thrust)
   ENDIF()
 ENDIF()
 
+SET(Tpetra_ETI_crossnodes)
+FOREACH(N1 ${Tpetra_ETI_NODES})
+  FOREACH(N2 ${Tpetra_ETI_NODES})
+    IF(NOT N1 STREQUAL N2)
+      APPEND_SET(Tpetra_ETI_crossnodes "N1=${N1} N2=${N2} S=double LO=int GO=int")
+    ENDIF()
+  ENDFOREACH()
+ENDFOREACH()
+
 ASSERT_DEFINED(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
 IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
   MESSAGE(STATUS "User/Downstream ETI set: ${Tpetra_ETI_LIBRARYSET}")
@@ -71,7 +80,7 @@ IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
     MESSAGE(STATUS "ETI set (before exclusions): ${Tpetra_ETI_LIBRARYSET}")
   ENDIF()
 ELSEIF()
-  # these macros are used only for testing
+  # no ETI: these macros are used only for testing
   TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_LIBRARYSET "S=double" 
                                                    "LO=int" 
                                                    "GO=int" 
@@ -84,32 +93,48 @@ ELSEIF()
   ENDIF()
 ENDIF()
 
-TRIBITS_ETI_GENERATE_MACROS("${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" "${Tpetra_ETI_EXCLUDE_SET}"  
-                            list_of_manglings eti_typedefs
-                            "TPETRA_INSTANTIATE_SLGN(S,LO,GO,N)"            TPETRA_ETIMACRO_SLGN 
-                            "TPETRA_INSTANTIATE_LGN(LO,GO,N)"               TPETRA_ETIMACRO_LGN
-                            "TPETRA_INSTANTIATE_SLG(S,LO,GO)"               TPETRA_ETIMACRO_SLG  
-                            "TPETRA_INSTANTIATE_LG(LO,GO)"                  TPETRA_ETIMACRO_LG 
-                            "TPETRA_INSTANTIATE_N(N)"                       TPETRA_ETIMACRO_N
-                            "TPETRA_INSTANTIATE_TSLGN(CS,DS,LO,GO,N)"       TPETRA_ETIMACRO_TSLGN 
-                            "TPETRA_INSTANTIATE_TSLG(CS,DS,LO,GO)"          TPETRA_ETIMACRO_TSLG
-                            "TPETRA_INSTANTIATE_CONVERT(SOUT,SIN,LO,GO,N)"  TPETRA_ETIMACRO_CONVERT)
-TRIBITS_ETI_GENERATE_MACROS("${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" "${Tpetra_ETI_EXCLUDE_SET};SIN=.* SOUT=.* CS=.* DS=.* S=.* LO=.* GO=.* N=Kokkos::ThrustGPUNode"  
-                            list_of_manglings eti_typedefs
-                            "TPETRA_INSTANTIATE_SLGN_NOGPU(S,LO,GO,N)"            TPETRA_ETIMACRO_SLGN_NOGPU
-                            "TPETRA_INSTANTIATE_LGN_NOGPU(LO,GO,N)"               TPETRA_ETIMACRO_LGN_NOGPU
-                            "TPETRA_INSTANTIATE_SLG_NOGPU(S,LO,GO)"               TPETRA_ETIMACRO_SLG_NOGPU
-                            "TPETRA_INSTANTIATE_LG_NOGPU(LO,GO)"                  TPETRA_ETIMACRO_LG_NOGPU
-                            "TPETRA_INSTANTIATE_N_NOGPU(N)"                       TPETRA_ETIMACRO_N_NOGPU
-                            "TPETRA_INSTANTIATE_TSLGN_NOGPU(CS,DS,LO,GO,N)"       TPETRA_ETIMACRO_TSLGN_NOGPU
-                            "TPETRA_INSTANTIATE_TSLG_NOGPU(CS,DS,LO,GO)"          TPETRA_ETIMACRO_TSLG_NOGPU
-                            "TPETRA_INSTANTIATE_CONVERT_NOGPU(SOUT,SIN,LO,GO,N)"  TPETRA_ETIMACRO_CONVERT_NOGPU)
-TRIBITS_ETI_GENERATE_MACROS("${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" "${Tpetra_ETI_EXCLUDE_SET};S=int LO=.* GO=.* N=.*;S=long LO=.* GO=.* N=.*"
-                            list_of_manglings eti_typedefs
-                            "TPETRA_INSTANTIATE_TESTMV(S,LO,GO,N)"            TPETRA_ETIMACRO_TESTMV)
-TRIBITS_ETI_GENERATE_MACROS("${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" "${Tpetra_ETI_EXCLUDE_SET};S=int LO=.* GO=.* N=.*;S=long LO=.* GO=.* N=.*;S=.* LO=.* GO=.* N=.*"
-                            list_of_manglings eti_typedefs
-                            "TPETRA_INSTANTIATE_TESTMV_NOGPU(S,LO,GO,N)"      TPETRA_ETIMACRO_TESTMV_NOGPU)
+TRIBITS_ETI_GENERATE_MACROS(
+    "${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" 
+    "${Tpetra_ETI_EXCLUDE_SET}"  
+    list_of_manglings eti_typedefs
+    "TPETRA_INSTANTIATE_SLGN(S,LO,GO,N)"            TPETRA_ETIMACRO_SLGN 
+    "TPETRA_INSTANTIATE_LGN(LO,GO,N)"               TPETRA_ETIMACRO_LGN
+    "TPETRA_INSTANTIATE_SLG(S,LO,GO)"               TPETRA_ETIMACRO_SLG  
+    "TPETRA_INSTANTIATE_LG(LO,GO)"                  TPETRA_ETIMACRO_LG 
+    "TPETRA_INSTANTIATE_N(N)"                       TPETRA_ETIMACRO_N
+    "TPETRA_INSTANTIATE_TSLGN(CS,DS,LO,GO,N)"       TPETRA_ETIMACRO_TSLGN 
+    "TPETRA_INSTANTIATE_TSLG(CS,DS,LO,GO)"          TPETRA_ETIMACRO_TSLG
+    "TPETRA_INSTANTIATE_CONVERT(SOUT,SIN,LO,GO,N)"  TPETRA_ETIMACRO_CONVERT)
+TRIBITS_ETI_GENERATE_MACROS(
+    "${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" 
+    "${Tpetra_ETI_EXCLUDE_SET};SIN=.* SOUT=.* CS=.* DS=.* S=.* LO=.* GO=.* N=Kokkos::ThrustGPUNode"  
+    list_of_manglings   eti_typedefs
+    "TPETRA_INSTANTIATE_SLGN_NOGPU(S,LO,GO,N)"            TPETRA_ETIMACRO_SLGN_NOGPU
+    "TPETRA_INSTANTIATE_LGN_NOGPU(LO,GO,N)"               TPETRA_ETIMACRO_LGN_NOGPU
+    "TPETRA_INSTANTIATE_SLG_NOGPU(S,LO,GO)"               TPETRA_ETIMACRO_SLG_NOGPU
+    "TPETRA_INSTANTIATE_LG_NOGPU(LO,GO)"                  TPETRA_ETIMACRO_LG_NOGPU
+    "TPETRA_INSTANTIATE_N_NOGPU(N)"                       TPETRA_ETIMACRO_N_NOGPU
+    "TPETRA_INSTANTIATE_TSLGN_NOGPU(CS,DS,LO,GO,N)"       TPETRA_ETIMACRO_TSLGN_NOGPU
+    "TPETRA_INSTANTIATE_TSLG_NOGPU(CS,DS,LO,GO)"          TPETRA_ETIMACRO_TSLG_NOGPU
+    "TPETRA_INSTANTIATE_CONVERT_NOGPU(SOUT,SIN,LO,GO,N)"  TPETRA_ETIMACRO_CONVERT_NOGPU)
+
+# testing macros
+TRIBITS_ETI_GENERATE_MACROS(
+    "${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" 
+    "${Tpetra_ETI_EXCLUDE_SET};S=int LO=.* GO=.* N=.*;S=long LO=.* GO=.* N=.*"
+    list_of_manglings eti_typedefs
+    "TPETRA_INSTANTIATE_TESTMV(S,LO,GO,N)"            TPETRA_ETIMACRO_TESTMV)
+TRIBITS_ETI_GENERATE_MACROS(
+    "${Tpetra_ETI_FIELDS}" "${Tpetra_ETI_LIBRARYSET}" 
+    "${Tpetra_ETI_EXCLUDE_SET};S=int LO=.* GO=.* N=.*;S=long LO=.* GO=.* N=.*;S=.* LO=.* GO=.* N=Kokkos::ThrustGPUNode"
+    list_of_manglings eti_typedefs
+    "TPETRA_INSTANTIATE_TESTMV_NOGPU(S,LO,GO,N)"      TPETRA_ETIMACRO_TESTMV_NOGPU)
+TRIBITS_ETI_GENERATE_MACROS(
+    "S|LO|GO|N1|N2" "${Tpetra_ETI_crossnodes}" "${Tpetra_ETI_EXCLUDE_SET}"
+    list_of_manglings eti_typedefs
+    "TPETRA_INSTANTIATE_SLGNN(S,LO,GO,N1,N2)"  TPETRA_ETIMACRO_SLGNN
+    "TPETRA_INSTANTIATE_LGNN(LO,GO,N1,N2)"     TPETRA_ETIMACRO_LGNN)
+
 TRIBITS_ETI_GENERATE_TYPEDEF_MACRO(TPETRA_ETI_TYPEDEFS "TPETRA_ETI_MANGLING_TYPEDEFS" "${eti_typedefs}")
 
 CONFIGURE_FILE(${Tpetra_SOURCE_DIR}/cmake/Tpetra_ETIHelperMacros.h.in ${Tpetra_BINARY_DIR}/src/Tpetra_ETIHelperMacros.h)

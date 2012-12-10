@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,29 +35,19 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
 
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_VerboseObject.hpp>
-#include <Teuchos_oblackholestream.hpp>
-#include <Teuchos_FancyOStream.hpp>
-#include <Teuchos_Tuple.hpp>
-#include <Teuchos_as.hpp>
-#include <Teuchos_TypeTraits.hpp>
-
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_CrsGraph.hpp>
-
-#include <Tpetra_ETIHelperMacros.h>
+#include <Tpetra_TestingUtilities.hpp>
 
 namespace {
+
+  using Tpetra::TestingUtilities::getNode;
+  using Tpetra::TestingUtilities::getDefaultComm;
 
   using Teuchos::as;
   using Teuchos::null;
@@ -101,77 +91,6 @@ namespace {
   using Tpetra::DynamicProfile;
   using Tpetra::Array_size_type;
 
-  using Kokkos::SerialNode;
-  RCP<SerialNode> snode;
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  using Kokkos::TBBNode;
-  RCP<TBBNode> tbbnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using Kokkos::TPINode;
-  RCP<TPINode> tpinode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  using Kokkos::OpenMPNode;
-  RCP<OpenMPNode> ompnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  using Kokkos::ThrustGPUNode;
-  RCP<ThrustGPUNode> thrustnode;
-#endif
-
-  template <class Node>
-  RCP<Node> getNode() {
-    assert(false);
-  }
-
-  template <>
-  RCP<SerialNode> getNode<SerialNode>() {
-    if (snode == null) {
-      Teuchos::ParameterList pl;
-      snode = rcp(new SerialNode(pl));
-    }
-    return snode;
-  }
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  template <>
-  RCP<TBBNode> getNode<TBBNode>() {
-    if (tbbnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tbbnode = rcp(new TBBNode(pl));
-    }
-    return tbbnode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  template <>
-  RCP<TPINode> getNode<TPINode>() {
-    if (tpinode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tpinode = rcp(new TPINode(pl));
-    }
-    return tpinode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  template <>
-  RCP<OpenMPNode> getNode<OpenMPNode>() {
-    if (ompnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      ompnode = rcp(new OpenMPNode(pl));
-    }
-    return ompnode;
-  }
-#endif
-
-
-  bool testMpi = true;
   double errorTolSlack = 1e+1;
   string filedir;
 
@@ -199,7 +118,7 @@ namespace {
         "filedir",&filedir,"Directory of expected input files.");
     clp.addOutputSetupOptions(true);
     clp.setOption(
-        "test-mpi", "test-serial", &testMpi,
+        "test-mpi", "test-serial", &Tpetra::TestingUtilities::testMpi,
         "Test MPI (if available) or force test of serial.  In a serial build,"
         " this option is ignored and a serial comm is always used." );
     clp.setOption(
@@ -207,21 +126,9 @@ namespace {
         "Slack off of machine epsilon used to check test results" );
   }
 
-  RCP<const Comm<int> > getDefaultComm()
-  {
-    RCP<const Comm<int> > ret;
-    if (testMpi) {
-      ret = DefaultPlatform::getDefaultPlatform().getComm();
-    }
-    else {
-      ret = rcp(new Teuchos::SerialComm<int>());
-    }
-    return ret;
-  }
-
   //
   // UNIT TESTS
-  // 
+  //
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, BadConst, LO, GO , Node )
@@ -462,7 +369,7 @@ namespace {
     // create a Map
     const size_t numLocal = 10;
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
-    // 
+    //
     GRAPH graph(map,map,4);
     TEST_EQUALITY_CONST(graph.isSorted(), true);
     // insert entires; shouldn't be sorted anymore
@@ -639,7 +546,7 @@ namespace {
       params->set("Optimize Storage",((T & 2) == 2));
       GRAPH trigraph(rmap,cmap, ginds.size(),pftype);   // only allocate as much room as necessary
       Array<GO> GCopy(4); Array<LO> LCopy(4);
-      ArrayView<const GO> GView; 
+      ArrayView<const GO> GView;
       ArrayView<const LO> LView;
       size_t numindices;
       // at this point, there are no global or local indices, but views and copies should succeed
@@ -955,7 +862,7 @@ namespace {
         }
         diaggraph.insertGlobalIndices(grow, tuple<GO>(grow));
         // before globalAssemble(), there should be no local entries if numImages > 1
-        ArrayView<const GO> myrow_gbl; 
+        ArrayView<const GO> myrow_gbl;
         diaggraph.getGlobalRowView(myrowind, myrow_gbl);
         TEST_EQUALITY( myrow_gbl.size(), (numImages == 1 ? 1 : 0) );
         diaggraph.globalAssemble();   // after globalAssemble(), there should be one local entry per row, corresponding to the diagonal
@@ -966,7 +873,7 @@ namespace {
         }
         diaggraph.fillComplete(params);
         // after fillComplete(), there should be a single entry on my row, corresponding to the diagonal
-        ArrayView<const LO> myrow_lcl; 
+        ArrayView<const LO> myrow_lcl;
         diaggraph.getLocalRowView(0, myrow_lcl);
         TEST_EQUALITY_CONST( myrow_lcl.size(), 1 );
         if (myrow_lcl.size() == 1) {
@@ -994,7 +901,7 @@ namespace {
         ngraph.insertGlobalIndices(grows[1],tuple<GO>(myImageID)); // add me to the graph for my neighbors
         ngraph.insertGlobalIndices(grows[2],tuple<GO>(myImageID)); // vvvvvvvvvvvvvvvvvvvvvvv
         // before globalAssemble(), there should be a single local entry on parallel runs, three on serial runs
-        ArrayView<const GO> myrow_gbl; 
+        ArrayView<const GO> myrow_gbl;
         ngraph.getGlobalRowView(myrowind, myrow_gbl);
         TEST_EQUALITY_CONST( myrow_gbl.size(), (numImages == 1 ? 3 : 1) );
         ngraph.globalAssemble();    // after globalAssemble(), storage should be maxed out
@@ -1004,7 +911,7 @@ namespace {
         }
         ngraph.fillComplete(params);
         // after fillComplete(), there should be entries for me and my neighbors on my row
-        ArrayView<const LO> myrow_lcl; 
+        ArrayView<const LO> myrow_lcl;
         ngraph.getLocalRowView(0, myrow_lcl);
         {
           // check indices on my row
@@ -1157,7 +1064,7 @@ namespace {
     TEST_EQUALITY_CONST( (is_same< rgraph_node_type           , Node>::value) == true, true );
   }
 
-  // 
+  //
   // INSTANTIATIONS
   //
 
@@ -1183,9 +1090,5 @@ namespace {
 
     TPETRA_ETI_MANGLING_TYPEDEFS()
 
-    // CGB: Something has gone wrong (and un-noticed) with ThrustGPUNode and CrsGraph/CrsMatrix
-    // disabling for now
-    // TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP )
-    TPETRA_INSTANTIATE_LGN_NOGPU( UNIT_TEST_GROUP )
-
+    TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP )
 }

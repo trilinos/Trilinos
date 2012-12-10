@@ -187,12 +187,12 @@ namespace Tpetra {
      * \param numGlobalElements [in] Number of elements in the Map
      *   (over all processes)
      *
-     * \param indexBase [in] The base of both local and global indices
-     *   in the Map.  C and C++ programmers would normally use zero,
-     *   and Fortran programmers (if you are using Tpetra from
-     *   Fortran) would use one.  For this Map constructor, the index
-     *   base will also be the smallest global ID in the Map.  (If you
-     *   don't know what this should be, use zero.)
+     * \param indexBase [in] The base of the global indices
+     *   in the Map.
+     *   This must be the same on every node in the comm.
+     *    For this Map constructor, the index
+     *   base will also be the smallest global ID in the Map.
+     *   (If you don't know what this should be, use zero.)
      *
      * \param comm [in] Communicator over which to distribute the
      *   elements.
@@ -229,12 +229,12 @@ namespace Tpetra {
      * \param numLocalElements [in] Number of elements that the
      *   calling process will own in the Map.
      *
-     * \param indexBase [in] The base of both local and global indices
-     *   in the Map.  C and C++ programmers would normally use zero,
-     *   and Fortran programmers (if you are using Tpetra from
-     *   Fortran) would use one.  For this Map constructor, the index
-     *   base will also be the smallest global ID in the Map.  (If you
-     *   don't know what this should be, use zero.)
+     * \param indexBase [in] The base of the global indices
+     *   in the Map.
+     *   This must be the same on every node in the comm.
+     *   For this Map constructor, the index
+     *   base will also be the smallest global ID in the Map. If you
+     *   don't know what this should be, use zero.
      *
      * \param comm [in] Communicator over which to distribute the
      *   elements.
@@ -272,10 +272,11 @@ namespace Tpetra {
      * \param elementList [in] List of global IDs owned by the calling
      *   process.
      *
-     * \param indexBase [in] The base of both local and global indices
-     *   in the Map.  C and C++ programmers would normally use zero,
-     *   and Fortran programmers (if you are using Tpetra from
-     *   Fortran) would use one.  (If you don't know what this should
+     * \param indexBase [in] The base of the global indices
+     *   in the Map.
+     *   This must be the same on every node in the comm.
+     *   This must be less than all of the global IDs in \c elementList.
+     *   (If you don't know what this should
      *   be, use zero.)
      *
      * \param comm [in] Communicator over which to distribute the
@@ -326,9 +327,7 @@ namespace Tpetra {
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
       else {
-        // NOTE (mfh 08 May 2012) Local indices always have zero as
-        // their index base.
-        return as<LO> (getNodeNumElements ()) - as<LO> (1);
+        return as<LO> (getNodeNumElements () - 1);
       }
     }
 

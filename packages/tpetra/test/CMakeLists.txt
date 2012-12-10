@@ -1,5 +1,8 @@
 INCLUDE(AddSubdirectories)
 
+# for TpetraTestingUtilities.hpp
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
 ADD_SUBDIRECTORIES(
   Platform
   Map

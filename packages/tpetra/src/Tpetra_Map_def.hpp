@@ -356,10 +356,7 @@ namespace Tpetra {
     // - As evenly distributed as possible (the numbers of GIDs on two
     //   different processes do not differ by more than one)
 
-    const global_size_t GST0 = OrdinalTraits<global_size_t>::zero();
-    const global_size_t GST1 = OrdinalTraits<global_size_t>::one();
     const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
-    const GO G1 = OrdinalTraits<GO>::one();
 
     std::string errPrefix = typeName (*this) +
       " constructor (numGlobalElements, indexBase, comm, lOrG, node): ";
@@ -416,7 +413,7 @@ namespace Tpetra {
       // This comparison looks funny, but it avoids compiler warnings
       // for comparing unsigned integers (numGlobalElements_in is a
       // global_size_t, which is unsigned).
-      TEUCHOS_TEST_FOR_EXCEPTION((numGlobalElements_in < GST1 && numGlobalElements_in != GST0) || numGlobalElements_in == GSTI, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION((numGlobalElements_in < 1 && numGlobalElements_in != 0) || numGlobalElements_in == GSTI, std::invalid_argument,
           errPrefix << "numGlobalElements (== " << rootNGE << ") must be >= 0.");
 
       indexBase_ = rootIB;
@@ -478,9 +475,9 @@ namespace Tpetra {
 
       // compute the min/max global IDs
       minMyGID_  = start_index + indexBase_;
-      maxMyGID_  = minMyGID_ + numLocalElements_ - G1;
+      maxMyGID_  = minMyGID_ + numLocalElements_ - 1;
       minAllGID_ = indexBase_;
-      maxAllGID_ = indexBase_ + numGlobalElements_ - G1;
+      maxAllGID_ = indexBase_ + numGlobalElements_ - 1;
       contiguous_ = true;
       distributed_ = (numImages > 1 ? true : false);
     }
@@ -490,7 +487,7 @@ namespace Tpetra {
       numGlobalElements_ = numGlobalElements_in;
       numLocalElements_  = as<size_t>(numGlobalElements_in);
       minAllGID_ = indexBase_;
-      maxAllGID_ = indexBase_ + numGlobalElements_ - G1;
+      maxAllGID_ = indexBase_ + numGlobalElements_ - 1;
       minMyGID_  = minAllGID_;
       maxMyGID_  = maxAllGID_;
       contiguous_ = true;
@@ -523,12 +520,7 @@ namespace Tpetra {
     // specified the number of elements per node, so that they are not
     // (necessarily) evenly distributed.
 
-    const size_t  L0 = OrdinalTraits<size_t>::zero();
-    const size_t  L1 = OrdinalTraits<size_t>::one();
-    const global_size_t GST0 = OrdinalTraits<global_size_t>::zero();
-    const global_size_t GST1 = OrdinalTraits<global_size_t>::one();
     const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
-    const GlobalOrdinal G1 = OrdinalTraits<GlobalOrdinal>::one();
 
     std::string errPrefix;
     errPrefix = Teuchos::typeName(*this) + "::constructor(numGlobal,numLocal,indexBase,platform): ";
@@ -556,12 +548,12 @@ namespace Tpetra {
       */
       localChecks[0] = -1;
       localChecks[1] = 0;
-      if (numLocalElements_in < L1 && numLocalElements_in != L0) {
+      if (numLocalElements_in < 1 && numLocalElements_in != 0) {
         // invalid
         localChecks[0] = myImageID;
         localChecks[1] = 1;
       }
-      else if (numGlobalElements_in < GST1 && numGlobalElements_in != GST0 && numGlobalElements_in != GSTI) {
+      else if (numGlobalElements_in < 1 && numGlobalElements_in != 0 && numGlobalElements_in != GSTI) {
         // invalid
         localChecks[0] = myImageID;
         localChecks[1] = 2;
@@ -628,9 +620,9 @@ namespace Tpetra {
     start_index -= numLocalElements_;
 
     minAllGID_ = indexBase_;
-    maxAllGID_ = indexBase_ + numGlobalElements_ - G1;
+    maxAllGID_ = indexBase_ + numGlobalElements_ - 1;
     minMyGID_ = start_index + indexBase_;
-    maxMyGID_ = minMyGID_ + numLocalElements_ - G1;
+    maxMyGID_ = minMyGID_ + numLocalElements_ - 1;
     contiguous_ = true;
     distributed_ = checkIsDist();
     setupDirectory();
@@ -660,9 +652,6 @@ namespace Tpetra {
     // nodes, via entryList.  The distribution is not necessarily
     // contiguous or equally shared over the nodes.
 
-    const size_t  L0 = Teuchos::OrdinalTraits<size_t>::zero();
-    const global_size_t GST0 = Teuchos::OrdinalTraits<global_size_t>::zero();
-    const global_size_t GST1 = Teuchos::OrdinalTraits<global_size_t>::one();
     const global_size_t GSTI = Teuchos::OrdinalTraits<global_size_t>::invalid();
 
     // The length of entryList on this node is the number of local
@@ -702,8 +691,8 @@ namespace Tpetra {
       // least one global element.  The first two clauses of the test
       // are apparently redundant, but help avoid compiler warnings
       // about comparing signed and unsigned integers.
-      if (numGlobalElements_in < GST1 &&
-          numGlobalElements_in != GST0 &&
+      if (numGlobalElements_in < 1 &&
+          numGlobalElements_in != 0 &&
           numGlobalElements_in != GSTI) {
         // Number of global elements is not the "invalid" value
         // (meaning "let the constructor compute it"), and is
@@ -801,7 +790,7 @@ namespace Tpetra {
     // numUniqueGIDs counter is a red herring; it just increases by
     // one each iteration.
     size_t numUniqueGIDs = 0;
-    if (numLocalElements_ > L0) {
+    if (numLocalElements_ > 0) {
       lgMap_ = Teuchos::arcp<GlobalOrdinal>(numLocalElements_);
       for (size_t i=0; i < numLocalElements_; i++) {
         lgMap_[numUniqueGIDs] = entryList[i];   // lgMap_:  LID to GID
@@ -1183,7 +1172,7 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 Tpetra::createUniformContigMapWithNode(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Node> &node) {
   Teuchos::RCP< Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map;
-  map = Teuchos::rcp( new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numElements,                                    // num elements, global and local
+  map = Teuchos::rcp( new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numElements,                           // num elements, global and local
                                                               Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),  // index base is zero
                                                               comm, GloballyDistributed, node) );
   return map.getConst();
@@ -1193,7 +1182,7 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 Tpetra::createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
   Teuchos::RCP< Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map;
-  map = Teuchos::rcp( new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>((Tpetra::global_size_t)numElements,                     // num elements, global and local
+  map = Teuchos::rcp( new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>((Tpetra::global_size_t)numElements,    // num elements, global and local
                                                               Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),  // index base is zero
                                                               comm, LocallyReplicated, node) );
   return map.getConst();

@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,33 +35,19 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
 
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_as.hpp>
-#include <Teuchos_Tuple.hpp>
-#include <Teuchos_VerboseObject.hpp>
-#include <Teuchos_oblackholestream.hpp>
-#include <Teuchos_FancyOStream.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_TypeTraits.hpp>
-#include <Kokkos_DefaultNode.hpp>
+#include <Tpetra_TestingUtilities.hpp>
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_CrsMatrixSolveOp.hpp>
 #include <Tpetra_CrsMatrixMultiplyOp.hpp>
 #include <TpetraExt_MatrixMatrix.hpp>
-
-#include <Tpetra_ETIHelperMacros.h>
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
@@ -94,6 +80,9 @@ namespace {
   int testingTol<int>() { return 0; }
   template <>
   long testingTol<long>() { return 0; }
+
+  using Tpetra::TestingUtilities::getNode;
+  using Tpetra::TestingUtilities::getDefaultComm;
 
   using std::endl;
   using std::swap;
@@ -162,26 +151,7 @@ namespace {
   using Tpetra::GloballyDistributed;
   using Tpetra::INSERT;
 
-  using Kokkos::SerialNode;
-  RCP<SerialNode> snode;
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  using Kokkos::TBBNode;
-  RCP<TBBNode> tbbnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using Kokkos::TPINode;
-  RCP<TPINode> tpinode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  using Kokkos::OpenMPNode;
-  RCP<OpenMPNode> ompnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  using Kokkos::ThrustGPUNode;
-  RCP<ThrustGPUNode> thrustnode;
-#endif
 
-  bool testMpi = true;
   double errorTolSlack = 1e+1;
   string filedir;
 
@@ -222,7 +192,7 @@ namespace {
         "filedir",&filedir,"Directory of expected matrix files.");
     clp.addOutputSetupOptions(true);
     clp.setOption(
-        "test-mpi", "test-serial", &testMpi,
+        "test-mpi", "test-serial", &Tpetra::TestingUtilities::testMpi,
         "Test MPI (if available) or force test of serial.  In a serial build,"
         " this option is ignored and a serial comm is always used." );
     clp.setOption(
@@ -230,84 +200,10 @@ namespace {
         "Slack off of machine epsilon used to check test results" );
   }
 
-  RCP<const Comm<int> > getDefaultComm()
-  {
-    RCP<const Comm<int> > ret;
-    if (testMpi) {
-      ret = DefaultPlatform::getDefaultPlatform().getComm();
-    }
-    else {
-      ret = rcp(new Teuchos::SerialComm<int>());
-    }
-    return ret;
-  }
-
-  template <class Node>
-  RCP<Node> getNode() {
-    assert(false);
-  }
-
-  template <>
-  RCP<SerialNode> getNode<SerialNode>() {
-    if (snode == null) {
-      Teuchos::ParameterList pl;
-      snode = rcp(new SerialNode(pl));
-    }
-    return snode;
-  }
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  template <>
-  RCP<TBBNode> getNode<TBBNode>() {
-    if (tbbnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tbbnode = rcp(new TBBNode(pl));
-    }
-    return tbbnode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  template <>
-  RCP<TPINode> getNode<TPINode>() {
-    if (tpinode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tpinode = rcp(new TPINode(pl));
-    }
-    return tpinode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  template <>
-  RCP<OpenMPNode> getNode<OpenMPNode>() {
-    if (ompnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      ompnode = rcp(new OpenMPNode(pl));
-    }
-    return ompnode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  template <>
-  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
-    if (thrustnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      pl.set<int>("Verbose",1);
-      thrustnode = rcp(new ThrustGPUNode(pl));
-    }
-    return thrustnode;
-  }
-#endif
 
   //
   // UNIT TESTS
-  // 
+  //
 
   #include "CrsMatrix_NonlocalAfterResume.hpp"
 
@@ -349,7 +245,7 @@ namespace {
       TEST_THROW(zero->apply(mv2,mv1), std::runtime_error); // MVs have different number of vectors
       TEST_THROW(zero->apply(mv2,mv3), std::runtime_error); // MVs have different number of vectors
     }
-    // test that our assumptions on the maps are correct: 
+    // test that our assumptions on the maps are correct:
     // that is, that badmap is not equal to the range, domain, row or colum map of the matrix
     const RCPMap badmap = createContigMapWithNode<LO,GO>(INVALID,1,comm,node);
     TEST_EQUALITY_CONST( badmap != zero->getRowMap(), true );
@@ -570,10 +466,10 @@ namespace {
       }
       diaggraph.fillComplete(params);
       // Bug verification:
-      //  Tpetra::CrsMatrix constructed with a graph was experiencing a seg-fault if setAllToScalar is called before 
-      //  some other call allocates memory. This was because setAllToScalar has an incorrect if-statement that is 
+      //  Tpetra::CrsMatrix constructed with a graph was experiencing a seg-fault if setAllToScalar is called before
+      //  some other call allocates memory. This was because setAllToScalar has an incorrect if-statement that is
       //  not allocating memory.
-      // This bug has been fixed. Furthermore, CrsMatrix no longer utilizes lazy allocation when constructed with a graph. 
+      // This bug has been fixed. Furthermore, CrsMatrix no longer utilizes lazy allocation when constructed with a graph.
       // However, we will leave this test in place, because it still demonstrates valid behavior.
       MAT matrix(rcpFromRef(diaggraph));
       TEST_NOTHROW( matrix.setAllToScalar( ST::one() ) );
@@ -590,9 +486,9 @@ namespace {
       TEST_EQUALITY_CONST( diaggraph.isUpperTriangular(), true );
       TEST_EQUALITY_CONST( diaggraph.isLowerTriangular(), true );
       // Bug verification:
-      // Tpetra::CrsMatrix constructed with a Optimized, Fill-Complete graph will not call fillLocalMatrix() 
+      // Tpetra::CrsMatrix constructed with a Optimized, Fill-Complete graph will not call fillLocalMatrix()
       // in optimizeStorage(), because it returns early due to picking up the storage optimized bool from the graph.
-      // As a result, the local mat-vec and mat-solve operations are never initialized, and localMultiply() and localSolve() 
+      // As a result, the local mat-vec and mat-solve operations are never initialized, and localMultiply() and localSolve()
       // fail with a complaint regarding the initialization of these objects.
       MAT matrix(rcpFromRef(diaggraph));
       TEST_NOTHROW( matrix.setAllToScalar( ST::one() ) );
@@ -659,7 +555,7 @@ namespace {
     //
     // run this test twice; once where we insert global indices and once where we insert local indices
     // both are allowed with a specified column map; however, we can only test one at a time.
-    // 
+    //
     // the first time, use const NNZ
     // the second, use NNZ array
     {
@@ -805,7 +701,7 @@ namespace {
     {
       MAT matrix(map,1,StaticProfile);
       // room for one on each row
-      for (GO r=map->getMinGlobalIndex(); r<=map->getMaxGlobalIndex(); ++r) 
+      for (GO r=map->getMinGlobalIndex(); r<=map->getMaxGlobalIndex(); ++r)
       {
         matrix.insertGlobalValues(r,tuple(r),tuple(ST::one()));
       }
@@ -817,7 +713,7 @@ namespace {
       // add too many entries globally
       MAT matrix(map,1,StaticProfile);
       // room for one on each row
-      for (GO r=map->getMinGlobalIndex(); r<=map->getMaxGlobalIndex(); ++r) 
+      for (GO r=map->getMinGlobalIndex(); r<=map->getMaxGlobalIndex(); ++r)
       {
         matrix.insertGlobalValues(r,tuple(r),tuple(ST::one()));
       }
@@ -872,7 +768,7 @@ namespace {
       TEST_EQUALITY_CONST( matrix.isStorageOptimized(), false );
       // now there is room for more
       matrix.resumeFill();
-      for (LO r=0; r<static_cast<LO>(numLocal); ++r) 
+      for (LO r=0; r<static_cast<LO>(numLocal); ++r)
       {
         matrix.insertLocalValues(r,tuple(r),tuple(ST::one()));
       }
@@ -977,7 +873,7 @@ namespace {
       TEST_NOTHROW( matrix.getGlobalRowCopy(myrowind,GCopy,SCopy,numentries) );
       TEST_COMPARE_ARRAYS( GCopy(0,numentries), ginds );
       TEST_COMPARE_ARRAYS( SCopy(0,numentries), vals  );
-      // 
+      //
       STD_TESTS(rowmatrix);
     }
     // All procs fail if any node fails
@@ -1074,26 +970,26 @@ namespace {
     //r   .  [...      ...                             ] = [A_ij], where A_ij = i+jMN
     //o   1  [2M-1     MN+2M-1                         ]
     //c   .  [...                                      ]
-    //   N-1 [(N-1)M   MN+(N-1)(M-1)                   ]    
+    //   N-1 [(N-1)M   MN+(N-1)(M-1)                   ]
     //    .  [...      ...                             ]
     //   N-1 [MN-1     MN+MN-1                         ]
-    // 
+    //
     // row map, range map is [0,M-1] [M,2M-1] [2M,3M-1] ... [MN-M,MN-1]
     // domain map will be map for X (lclmap)
-    // 
+    //
     // input multivector X is not distributed:
-    //               
+    //
     //   X = [  0    P    ...  (numVecs-1)P ]
     //       [ ...  ....  ...       ...     ] = [X_ji], where X_ij = i+jP
     //       [ P-1  2P-1  ...   numVecs*P-1 ]
     //
-    // the result of the non-transpose multiplication should be 
+    // the result of the non-transpose multiplication should be
     //                              P-1
     // (A*X)_ij = sum_k A_ik X_kj = sum (i+kMN)(k+jP) = jiP^2 + (i+jMNP)(P^2-P)/2 + MNP(P-1)(2P-1)/6
     //                              k=0
-    // 
-    // 
-    // 
+    //
+    //
+    //
     const int numVecs  = 3;
     RCP<const Map<LO,GO,Node> > rowmap = createContigMapWithNode<LO,GO>(INVALID,M,comm,node);
     RCP<const Map<LO,GO,Node> > lclmap = createLocalMapWithNode<LO,GO,Node>(P,comm,node);
@@ -1164,14 +1060,14 @@ namespace {
     //r   .  [...      ...                             ] = [A_ij], where A_ij = i+jMN
     //o   1  [2M-1     MN+2M-1                         ]
     //c   .  [...                                      ]
-    //   N-1 [(N-1)M   MN+(N-1)(M-1)                   ]    
+    //   N-1 [(N-1)M   MN+(N-1)(M-1)                   ]
     //    .  [...      ...                             ]
     //   N-1 [MN-1     MN+MN-1                         ]
-    // 
+    //
     // row map, range map is [0,M-1] [M,2M-1] [2M,3M-1] ... [MN-M,MN-1]
     // domain map will be a non-distributed map for a vector of length P
-    // 
-    // input multivector is 
+    //
+    // input multivector is
     //  col      0            1         ...        numVecs-1
     //     0 [0         MN                    (numVecs-1)MN     ]
     // p   . [...       ...                   ...               ]
@@ -1185,14 +1081,14 @@ namespace {
     //    N-1[MN-1      MN+MN-1                                 ]
     //
     // output multivector is not-distributed
-    // the result of the transpose multiplication should be 
+    // the result of the transpose multiplication should be
     //              MN-1              MN-1
-    // (A^T*X)_ij = sum_k A_ki X_kj = sum (k+iMN)(k+jMN) 
+    // (A^T*X)_ij = sum_k A_ki X_kj = sum (k+iMN)(k+jMN)
     //              k=0               k=0
     //   MN-1
     // = sum k(i+j)MN + ij(MN)(MN) + k^2 = (i+j)(MN)^2(MN-1)/2 + ij(MN)^3 + (MN)(MN-1)(2MN-1)/6
     //   k=0
-    // 
+    //
     const int numVecs  = 3;
     RCP<const Map<LO,GO,Node> > rowmap = createContigMapWithNode<LO,GO>(INVALID,M,comm,node);
     RCP<const Map<LO,GO,Node> > lclmap = createLocalMapWithNode<LO,GO,Node>(P,comm,node);
@@ -1275,8 +1171,8 @@ namespace {
     //                                   [                         ]
     //                               n-1 [2N-2 4N-2 6N-2 8N-2 10N-2]
     //                               n-1 [2N-1 4N-1 6N-1 8N-1 10N-1]
-    //                
-    //                              proc                                                 
+    //
+    //                              proc
     // output multivector will be     0  [1    4N+1  8N+1 12N+1 16N+1]                    i=0:         (i,j)+(i+1,j) = 2Nj+i+2Nj+i+1 = 4Nj+2i+1 = 4Nj+1
     //                                1  [3    6N+3 12N+3 18N+3 24N+3]                 i=2n-1: (i-1,j)+(i,j)         = 2Nj+i-1+2Nj+i = 4Nj+2i-1 = 4Nj+2(2N-1)-1 = 4N(j+1)-3
     //                                2  [6    6N+6 12N+6 18N+6 24N+6]                   else: (i-1,j)+(i,j)+(i+1,j) = 2Nj+i-1+2Nj+i+2Nj+i+1 = 6Nj+3i
@@ -1303,7 +1199,7 @@ namespace {
         tri_crs->insertGlobalValues(2*myImageID  ,cols(0,2),vals(0,2));
         tri_crs->insertGlobalValues(2*myImageID+1,cols(0,3),vals(0,3));
       }
-      else if (myImageID == numImages-1) {        
+      else if (myImageID == numImages-1) {
         Array<GO> cols( tuple<GO>(2*myImageID-1,2*myImageID,2*myImageID+1) );
         tri_crs->insertGlobalValues(2*myImageID  ,cols(0,3),vals(0,3));
         tri_crs->insertGlobalValues(2*myImageID+1,cols(1,2),vals(1,2));
@@ -1318,7 +1214,7 @@ namespace {
       tri = tri_crs;
     }
     // test the properties
-    TEST_EQUALITY(tri->getGlobalNumEntries()  , static_cast<size_t>(6*numImages-2));          
+    TEST_EQUALITY(tri->getGlobalNumEntries()  , static_cast<size_t>(6*numImages-2));
     TEST_EQUALITY(tri->getNodeNumEntries()      , (myImageID > 0 && myImageID < numImages-1) ? 6 : 5);
     TEST_EQUALITY(tri->getGlobalNumRows()      , static_cast<size_t>(2*numImages));
     TEST_EQUALITY(tri->getNodeNumRows()          , 2);
@@ -1339,12 +1235,12 @@ namespace {
       // entry (myImageID,j)
       if (myImageID==0) {
         mvexp.replaceLocalValue(0,j,static_cast<Scalar>(4*numImages*j+1));
-      }                                                                    
-      else {                                                               
+      }
+      else {
         mvexp.replaceLocalValue(0,j,static_cast<Scalar>(6*numImages*j+3*myImageID));
-      }                                                                    
+      }
       // entry (numImages+myImageID,j)
-      if (myImageID==numImages-1) {                                        
+      if (myImageID==numImages-1) {
         mvexp.replaceLocalValue(1,j,static_cast<Scalar>(4*numImages*(j+1)-3));
       }
       else {
@@ -1527,7 +1423,7 @@ namespace {
     /* Create a triangular matrix with no entries, for testing implicit diagonals.
       We test with Transpose and Non-Transpose application solve (these should be equivalent for the identity matrix)
     */
-    
+
     MV X(map,numVecs), B(map,numVecs), Xhat(map,numVecs);
     X.setObjectLabel("X");
     B.setObjectLabel("B");
@@ -1592,26 +1488,26 @@ namespace {
     Scalar SONE = static_cast<Scalar>(1.0);
 
     /* Create one of the following locally triangular matries:
-     
-    0  [1 2       ] 
-    1  [  1 3     ] 
+
+    0  [1 2       ]
+    1  [  1 3     ]
     .  [    .  .  ] = U
    n-2 [       1 n]
    n-1 [         1]
 
-    0  [1           ] 
-    1  [2 1         ] 
+    0  [1           ]
+    1  [2 1         ]
     .  [   .  .     ] = L
    n-2 [     n-1 1  ]
    n-1 [         n 1]
 
       Global matrices are diag(U,U,...,U) and diag(L,L,...,L)
-    
+
       For each of these, we test with explicit and implicit unit diagonal, Transpose and Non-Transpose application, 1D or 2D storage
       Ultimately, that is 16 combinations:
       (Upper vs. Lower)  x  (Explicit vs. Implicit diagonal)  x  (Transpose vs. Non-Transpose)  x  (Optimized vs. Non-Optimzied storage)
     */
-    
+
     MV X(map,numVecs), B(map,numVecs), Xhat(map,numVecs);
     X.setObjectLabel("X");
     B.setObjectLabel("B");
@@ -1716,7 +1612,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST( CrsMatrix, Convert )
   {
-    typedef SerialNode Node;
+    typedef Kokkos::SerialNode Node;
     RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<double> ST;
     typedef OrdinalTraits<int> LOT;
@@ -1728,7 +1624,7 @@ namespace {
 
     global_size_t numGlobal = 2*numProcs;
     RCP<const Map<int,int,Node> > map = createUniformContigMapWithNode<int,int>(numGlobal,comm,node);
-   
+
     RCP<DMat> dmatrix = createCrsMatrix<double>(map, 3);
 
     const int maxglobalrow = map->getMaxAllGlobalIndex();
@@ -1752,7 +1648,7 @@ namespace {
     RCP<IMat> imatrix = dmatrix->convert<int>();
 
     // check graphs
-    TEST_EQUALITY( dmatrix->getGraph(), imatrix->getGraph() );
+    TEST_EQUALITY( dmatrix->getGraph(),    imatrix->getGraph() );
     TEST_EQUALITY( dmatrix->getCrsGraph(), imatrix->getCrsGraph() );
     // check entries
     for (int i=map->getMinLocalIndex(); i <= map->getMaxLocalIndex(); ++i) {
@@ -1788,12 +1684,12 @@ namespace {
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,ONE,comm,node);
 
     // RCP<FancyOStream> fos = Teuchos::fancyOStream(rcp(&std::cout,false));
-    
+
     /* Create the following matrix:
     0  [2 1       ]   [2 1]
     1  [1 4 1     ]   [1 2] + [2 1]
-    2  [  1 4 1   ]           [1 2] + 
-    3  [    1     ] = 
+    2  [  1 4 1   ]           [1 2] +
+    3  [    1     ] =
        [       4 1]
    n-1 [       1 2]
     */
@@ -1895,7 +1791,7 @@ namespace {
     Z.update(alpha,X,beta,Y,ST::zero());
     // test the action: Y = alpha*I*X + beta*Y = alpha*X + beta*Y = Z
     AOp->apply(X,Y,NO_TRANS,alpha,beta);
-    // 
+    //
     Array<Mag> normY(1), normZ(1);
     Z.norm1(normZ());
     Y.norm1(normY());
@@ -2078,7 +1974,7 @@ namespace {
       TEST_THROW( matrix.replaceLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
       TEST_THROW( matrix.sumIntoLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
       TEST_THROW( matrix.setAllToScalar(SZERO),                                   std::runtime_error );
-      TEST_THROW( matrix.scale(SZERO),                                            std::runtime_error );  
+      TEST_THROW( matrix.scale(SZERO),                                            std::runtime_error );
       TEST_THROW( matrix.globalAssemble(),                                        std::runtime_error );
       TEST_THROW( matrix.fillComplete(),                                          std::runtime_error );
     }
@@ -2110,7 +2006,7 @@ namespace {
     }
   }
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node > Scalar 
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node > Scalar
     getNorm(RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > matrix)
   {
     Scalar mySum = ScalarTraits<Scalar>::zero();
@@ -2150,7 +2046,7 @@ namespace {
     RCP<const Map<LO,GO,Node> > map = createUniformContigMapWithNode<LO,GO>(numGlobal,comm,node);
     RCP<VEC> vector = createVector<Scalar, LO, GO, Node>(map);
     vector->putScalar(2);
-   
+
     RCP<MAT> matrix = createCrsMatrix<Scalar, LO, GO, Node>(map, 3);
     RCP<MAT> matrix2= createCrsMatrix<Scalar, LO, GO, Node>(map, 3);
     RCP<MAT> answerMatrix = createCrsMatrix<Scalar, LO, GO, Node>(map, 3);
@@ -2159,8 +2055,8 @@ namespace {
     Array<Scalar> answerVals = tuple<Scalar>(2,4,6);
     Array<GO> cols(3,0);
     for(
-      GO i = Teuchos::as<GO>(myRank)*4; 
-      i<(Teuchos::as<GO>(myRank)*4)+4; 
+      GO i = Teuchos::as<GO>(myRank)*4;
+      i<(Teuchos::as<GO>(myRank)*4)+4;
       ++i)
     {
       if(i==0){
@@ -2204,16 +2100,9 @@ namespace {
     TEST_COMPARE(ScalarTraits<Scalar>::imag(epsilon2), <, 1e-10)
   }
 
-
-
-
-// 
+//
 // INSTANTIATIONS
 //
-
-
-typedef std::complex<float>  ComplexFloat;
-typedef std::complex<double> ComplexDouble;
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TheEyeOfTruth, LO, GO, SCALAR, NODE )  \
@@ -2239,7 +2128,7 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EmptyTriSolve, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ActiveFill, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Typedefs,      LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, LeftRightScale,      LO, GO, SCALAR, NODE ) 
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, LeftRightScale,      LO, GO, SCALAR, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
