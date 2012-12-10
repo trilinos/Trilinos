@@ -45,6 +45,7 @@
 #include "EpetraExt_ConfigDefs.h"
 #include "Epetra_DistObject.h"
 #include "Epetra_Map.h"
+#include "Teuchos_RCP.hpp"
 
 #include <vector>
 #include <set>
@@ -61,6 +62,13 @@ class LightweightCrsMatrix;
 #define ENABLE_MMM_TIMINGS
 
 #define USE_IMPORT_ONLY
+
+#define USE_LIGHTWEIGHT_MAP
+
+#define USE_MANUAL_BOUNDARY_EXCHANGE
+
+
+//#define USE_DELAYED_MAP_CONSTRUCTION
 
 // ==============================================================
 //struct that holds views of the contents of a CrsMatrix. These
@@ -83,13 +91,13 @@ public:
   double** values;
   bool* remote;
   int numRemote;
+  const Epetra_BlockMap* importColMap;
 
-  // Maps and matrices
+  // Maps and matrices (all modes)
   const Epetra_Map* origRowMap;
   const Epetra_Map* rowMap;
   const Epetra_Map* colMap;
   const Epetra_Map* domainMap;
-  const Epetra_BlockMap* importColMap;
   LightweightCrsMatrix* importMatrix;
   const Epetra_CrsMatrix *origMatrix;
 
@@ -170,9 +178,53 @@ std::pair<int,int> get_col_range(const Epetra_CrsMatrix& mtx);
 int sort_crs_entries(int NumRows, const int *CRS_rowptr, int *CRS_colind, double *CRS_vals);
 
 // ==============================================================
+class LightweightMapData : Epetra_Data {
+  friend class LightweightMap; 
+ public:
+  LightweightMapData();
+  ~LightweightMapData();
+  int IndexBase_;
+  std::vector<int> MyGlobalElements_; 
+  Epetra_HashTable<int> * LIDHash_;
+
+  // For "copy" constructor only...
+  Epetra_Map * CopyMap_;
+  
+ };
+
+class LightweightMap {
+ public:
+  LightweightMap();
+  LightweightMap(int NumGlobalElements,int NumMyElements, const int * MyGlobalElements, int IndexBase);
+  LightweightMap(const Epetra_Map & Map);
+  LightweightMap(const LightweightMap & Map);
+  ~LightweightMap();
+
+  LightweightMap & operator=(const LightweightMap & map);
+  int LID(int GID) const;
+  int GID(int LID) const;      
+  int NumMyElements() const;
+  int* MyGlobalElements() const; 
+  int IndexBase() const {return Data_->IndexBase_;}
+
+  int MinLID() const;
+  int MaxLID() const;
+
+ private:
+  void CleanupData();
+  LightweightMapData *Data_;
+  //Epetra_BlockMapData* Data_;
+};
+
+
+// ==============================================================
 class RemoteOnlyImport {
  public:
+#ifdef USE_LIGHTWEIGHT_MAP
+  RemoteOnlyImport(const Epetra_Import & Importer, LightweightMap & RemoteOnlyTargetMap);
+#else
   RemoteOnlyImport(const Epetra_Import & Importer, Epetra_Map & RemoteOnlyTargetMap);
+#endif
   ~RemoteOnlyImport();
 
   int NumSameIDs() {return 0;}
@@ -185,6 +237,8 @@ class RemoteOnlyImport {
 
   int* ExportLIDs() {return ExportLIDs_;}
 
+  int* ExportPIDs() {return ExportPIDs_;}
+
   int* RemoteLIDs() {return RemoteLIDs_;}  
 
   int* PermuteToLIDs() {return 0;}
@@ -194,26 +248,33 @@ class RemoteOnlyImport {
   Epetra_Distributor & Distributor() {return *Distor_;}  
 
   const Epetra_BlockMap & SourceMap() const {return *SourceMap_;}
+#ifdef USE_LIGHTWEIGHT_MAP
+  const LightweightMap & TargetMap() const {return *TargetMap_;}
+#else
   const Epetra_BlockMap & TargetMap() const {return *TargetMap_;}
+#endif
 
  private:
   int NumRemoteIDs_;
   int NumExportIDs_;
   int * ExportLIDs_;
+  int * ExportPIDs_;
   int * RemoteLIDs_;
   Epetra_Distributor* Distor_;
   const Epetra_BlockMap* SourceMap_;
-  const Epetra_BlockMap* TargetMap_;
-
+#ifdef USE_LIGHTWEIGHT_MAP
+  const LightweightMap  *TargetMap_;
+#else  
+  const Epetra_BlockMap *TargetMap_;
+#endif
 };
    
-
-
 // ==============================================================
 class LightweightCrsMatrix {
  public:
   LightweightCrsMatrix(const Epetra_CrsMatrix & A, RemoteOnlyImport & RowImporter);
   LightweightCrsMatrix(const Epetra_CrsMatrix & A, Epetra_Import & RowImporter);
+  ~LightweightCrsMatrix();
 
   // Standard crs data structures
   std::vector<int>    rowptr_;
@@ -224,9 +285,17 @@ class LightweightCrsMatrix {
   std::vector<long long>   colind_LL_;
 
   // Epetra Maps
+#ifdef USE_LIGHTWEIGHT_MAP
+  bool                     use_lw;
+  LightweightMap           *RowMapLW_;
+  Epetra_BlockMap          *RowMapEP_;
+  LightweightMap           ColMap_;
+#else
   Epetra_BlockMap          RowMap_;
   Epetra_BlockMap          ColMap_;
+#endif
   Epetra_Map               DomainMap_;
+
 
   // List of owning PIDs (from the DomainMap) as ordered by entries in the column map.
   std::vector<int>    ColMapOwningPIDs_;
@@ -236,18 +305,6 @@ class LightweightCrsMatrix {
   std::vector<int> ExportPIDs_;
 
  private: 
-
-  int PackAndPrepareReverse(const Epetra_DistObject & Source, 
-			    int NumExportIDs,
-			    int * ExportLIDs,
-			    int & LenExports,
-			    char *& Exports,
-			    int & SizeOfPacket,
-			    int * Sizes,
-			    bool & VarSizes,
-			    Epetra_Distributor & Distor);
-
-
 
   template <typename ImportType>
   void Construct(const Epetra_CrsMatrix & A, ImportType & RowImporter);

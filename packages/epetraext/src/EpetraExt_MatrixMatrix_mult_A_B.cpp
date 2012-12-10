@@ -97,7 +97,11 @@ static inline int auto_resize(std::vector<int> &x,int num_new){
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
+#ifdef USE_DELAYED_MAP_CONSTRUCTION
+int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const LightweightCrsMatrix &Bimport, LightweightMap*& unionmap, std::vector<int>& Cremotepids)
+#else
 int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const LightweightCrsMatrix &Bimport, Epetra_Map*& unionmap, std::vector<int>& Cremotepids)
+#endif
 {
 #ifdef HAVE_MPI
  
@@ -116,11 +120,15 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
 
   const Epetra_Map & BColMap   = B.ColMap();
   const Epetra_Map & DomainMap = B.DomainMap();
-  const Epetra_BlockMap & IColMap   = Bimport.ColMap_;
+#ifdef USE_LIGHTWEIGHT_MAP
+  const LightweightMap & IColMap   = Bimport.ColMap_;
+#else
+  const Epetra_BlockMap & IColMap  = Bimport.ColMap_;
+#endif
 
   int Nb         = BColMap.NumMyElements();
-  int Ni         = IColMap.NumMyElements();
   int * Bgids    = BColMap.MyGlobalElements();
+  int Ni         = IColMap.NumMyElements();
   int * Igids    = IColMap.MyGlobalElements();  
 
   // Since we're getting called, we know we have to be using an MPI implementation of Epetra.  
@@ -309,7 +317,11 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
   // Stage 5: Call constructor
   // **********************
   // Make the map
+#ifdef USE_DELAYED_MAP_CONSTRUCTION
+  unionmap=new LightweightMap(-1,Cstart,&Cgids[0],B.ColMap().IndexBase());
+#else
   unionmap=new Epetra_Map(-1,Cstart,&Cgids[0],B.ColMap().IndexBase(),B.Comm());
+#endif
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
 #endif
@@ -317,7 +329,7 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
 #else
   return -1;
 #endif
-}
+  }
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -343,7 +355,11 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
 			std::vector<int> & Bcol2Ccol,
 			std::vector<int> & Bimportcol2Ccol,
 			std::vector<int>& Cremotepids,
-			Epetra_CrsMatrix& C){
+			Epetra_CrsMatrix& C
+#ifdef USE_DELAYED_MAP_CONSTRUCTION      
+			, LightweightMap *Cmap
+#endif
+){
 #ifdef ENABLE_MMM_TIMINGS
   Teuchos::Time myTime("global");
   Teuchos::TimeMonitor M(myTime);
@@ -356,10 +372,18 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
   // Improved Parallel Gustavson in Local IDs
   // *****************************
   const Epetra_Map * colmap_C = &(C.ColMap());
+
+
   int NumMyDiagonals=0; // Counter to speed up ESFC
 
   int m=A.NumMyRows();
+#ifdef USE_DELAYED_MAP_CONSTRUCTION 
+  int n;
+  if(Cmap) n=Cmap->NumMyElements();
+  else n=colmap_C->NumMyElements();
+#else
   int n=colmap_C->NumMyElements();
+#endif
   int i,j,k;
 
   // DataPointers for A
@@ -544,11 +568,29 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
   // Sort the entries
   sort_crs_entries(m, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
 
+
+#ifdef USE_DELAYED_MAP_CONSTRUCTION 
+  // Build a real map for C stick in matrix if needed
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=M.getNewTimer("Delayed Map");
+  mtime->start();
+#endif
+
+  if(Cmap) {
+    Epetra_Map RealCmap(-1,Cmap->NumMyElements(),Cmap->MyGlobalElements(),Cmap->IndexBase(),C.RowMap().Comm());
+    C.ReplaceColMap(RealCmap);
+  }
+#endif
+
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
   mtime=M.getNewTimer("Fast IE");
   mtime->start();
 #endif
+
+
 
   // Do a fast build of C's importer
   Epetra_Import * Cimport=0; 
@@ -759,11 +801,10 @@ int mult_A_B_reuse(const Epetra_CrsMatrix & A,
 
   int* bcols = Bview.colMap->MyGlobalElements();
   int* bcols_import = NULL;
-  if (Bview.importColMap != NULL) {
-    C_firstCol_import = Bview.importColMap->MinLID();
-    C_lastCol_import = Bview.importColMap->MaxLID();
-
-    bcols_import = Bview.importColMap->MyGlobalElements();
+  if (Bview.importMatrix != NULL) {
+    C_firstCol_import = Bview.importMatrix->ColMap_.MinLID();
+    C_lastCol_import = Bview.importMatrix->ColMap_.MaxLID();
+    bcols_import = Bview.importMatrix->ColMap_.MyGlobalElements();
   }
 
   int C_numCols = C_lastCol - C_firstCol + 1;
@@ -780,7 +821,6 @@ int mult_A_B_reuse(const Epetra_CrsMatrix & A,
 
   int  i, j, k;
   bool C_filled=C.Filled();
-
 
   // DataPointers for A
   int *Arowptr, *Acolind;
@@ -955,7 +995,12 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 			   bool call_FillComplete_on_result){
 
   int i,rv;
+#ifdef USE_DELAYED_MAP_CONSTRUCTION
+  LightweightMap* mapunion = 0;
+  bool use_mapunion=false;
+#else
   Epetra_Map* mapunion = 0;
+#endif
   std::vector<int> Cremotepids;
 
   // DEBUG
@@ -1009,7 +1054,11 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
   if(NewFlag){
     if(Bview.importMatrix) {
       EPETRA_CHK_ERR( aztecoo_and_ml_compatible_map_union(B,*Bview.importMatrix,mapunion,Cremotepids) );
+#ifdef USE_DELAYED_MAP_CONSTRUCTION      
+      use_mapunion=true;
+#else
       EPETRA_CHK_ERR( C.ReplaceColMap(*mapunion) );
+#endif
     }
     else 
       EPETRA_CHK_ERR( C.ReplaceColMap(B.ColMap()) );
@@ -1030,6 +1079,46 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 
   std::vector<int> Bcol2Ccol(colmap_B->NumMyElements());
 
+
+#ifdef USE_DELAYED_MAP_CONSTRUCTION      
+  if(!use_mapunion && colmap_B->SameAs(*colmap_C)){
+    // Maps are the same: Use local IDs as the hash
+    for(i=0;i<colmap_B->NumMyElements();i++)
+      Bcol2Ccol[i]=i;				
+  }
+  else if(!use_mapunion) {
+    // Maps are not the same, but no union:  Use the map's hash
+    for(i=0;i<colmap_B->NumMyElements();i++){
+      Bcol2Ccol[i]=colmap_C->LID(colmap_B->GID(i));
+      if(Bcol2Ccol[i]==-1) EPETRA_CHK_ERR(-11);
+    }
+  }
+  else {
+    // Maps are not the same and we have a union:  Use the map's hash
+    for(i=0;i<colmap_B->NumMyElements();i++){
+      Bcol2Ccol[i]=mapunion->LID(colmap_B->GID(i));
+      if(Bcol2Ccol[i]==-1) EPETRA_CHK_ERR(-11);
+    }
+  }
+
+  std::vector<int> Bimportcol2Ccol;
+  if(Bview.importMatrix){
+    Bimportcol2Ccol.resize(Bview.importMatrix->ColMap_.NumMyElements());
+
+    if(!use_mapunion) {
+      for(i=0;i<Bview.importMatrix->ColMap_.NumMyElements();i++){
+	Bimportcol2Ccol[i]=colmap_C->LID(Bview.importMatrix->ColMap_.GID(i));
+	if(Bimportcol2Ccol[i]==-1) EPETRA_CHK_ERR(-12);
+      }
+    }
+    else {
+      for(i=0;i<Bview.importMatrix->ColMap_.NumMyElements();i++){
+	Bimportcol2Ccol[i]=mapunion->LID(Bview.importMatrix->ColMap_.GID(i));
+	if(Bimportcol2Ccol[i]==-1) EPETRA_CHK_ERR(-12);
+      }
+    }    
+  }
+#else
   if(colmap_B->SameAs(*colmap_C)){
     // Maps are the same: Use local IDs as the hash
     for(i=0;i<colmap_B->NumMyElements();i++)
@@ -1050,7 +1139,10 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
       Bimportcol2Ccol[i]=colmap_C->LID(Bview.importMatrix->ColMap_.GID(i));
       if(Bimportcol2Ccol[i]==-1) EPETRA_CHK_ERR(-12);
     }
-  }		
+    
+  }
+#endif
+		
 
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
@@ -1058,9 +1150,14 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 
   // Call the appropriate core routine
   if(NewFlag) {
+#ifdef USE_DELAYED_MAP_CONSTRUCTION      
+    EPETRA_CHK_ERR(mult_A_B_newmatrix(A,B,Bview,Bcol2Ccol,Bimportcol2Ccol,Cremotepids,C,mapunion));
+#else
     EPETRA_CHK_ERR(mult_A_B_newmatrix(A,B,Bview,Bcol2Ccol,Bimportcol2Ccol,Cremotepids,C));
+#endif
   }
   else {
+    // This always has a real map
     EPETRA_CHK_ERR(mult_A_B_reuse(A,B,Bview,Bcol2Ccol,Bimportcol2Ccol,C));
   }
 
