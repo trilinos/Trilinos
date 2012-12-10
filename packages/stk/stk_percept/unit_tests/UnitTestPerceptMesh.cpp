@@ -309,6 +309,7 @@ namespace stk
                 std::string serialized_mesh_string_1 = serialized_mesh_1.str();
                 std::string serialized_mesh_string_2 = serialized_mesh_2.str();
                 std::cout << "expected_serialized_mesh_string.size()= " << expected_serialized_mesh_string.size() << std::endl;
+                std::cout << "expected_serialized_mesh_string=\n" << expected_serialized_mesh_string << std::endl;
                 std::cout << "serialized_mesh_1.size()= " << serialized_mesh_string_1.size() << std::endl;
                 std::cout << "serialized_mesh_1=\n" << serialized_mesh_string_1 << std::endl;
                 std::cout << "...serialized_mesh_1" << std::endl;

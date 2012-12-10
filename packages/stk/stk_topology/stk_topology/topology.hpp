@@ -21,8 +21,8 @@ struct topology
     , ELEM_RANK, ELEMENT_RANK = ELEM_RANK
     , CONSTRAINT_RANK
     , END_RANK
-    , INVALID_RANK = END_RANK
     , NUM_RANKS = END_RANK
+    , INVALID_RANK = ~0 //use at most 4 bits for ranks
   };
 
   //To add new topologies consult the toolkit team
@@ -199,7 +199,7 @@ struct topology
   /// fill the output ordinals with the ordinals that make up the given sub topology
   template <typename OrdinalOutputIterator>
   STKTOPOLOGY_INLINE_FUNCTION
-  void sub_topology_node_ordinals(rank_t sub_rank, int sub_ordinal, OrdinalOutputIterator output_ordinals) const
+  void sub_topology_node_ordinals(int sub_rank, int sub_ordinal, OrdinalOutputIterator output_ordinals) const
   {
     switch(sub_rank)
     {
@@ -214,20 +214,20 @@ struct topology
   /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray, typename NodeOutputIterator>
   STKTOPOLOGY_INLINE_FUNCTION
-  void sub_topology_nodes(const NodeArray & nodes, rank_t sub_rank, int sub_ordinal, NodeOutputIterator output_nodes) const
+  void sub_topology_nodes(const NodeArray & nodes, int sub_rank, int sub_ordinal, NodeOutputIterator output_nodes) const
   {
     switch(sub_rank)
     {
     case NODE_RANK: *output_nodes = nodes[sub_ordinal];                    break;
-    case EDGE_RANK: edge_node_ordinals(nodes, sub_ordinal, output_nodes);  break;
-    case FACE_RANK: face_node_ordinals(nodes, sub_ordinal, output_nodes);  break;
+    case EDGE_RANK: edge_nodes(nodes, sub_ordinal, output_nodes);  break;
+    case FACE_RANK: face_nodes(nodes, sub_ordinal, output_nodes);  break;
     default: break;
     }
   }
 
   /// how many 'sub topologies' does this topology have
   STKTOPOLOGY_INLINE_FUNCTION
-  int num_sub_topology(rank_t sub_rank) const
+  int num_sub_topology(int sub_rank) const
   {
     switch(sub_rank)
     {
@@ -243,7 +243,7 @@ struct topology
 
   /// what is the topology of the given sub topology
   STKTOPOLOGY_INLINE_FUNCTION
-  topology sub_topology(rank_t sub_rank, int sub_ordinal = 0) const
+  topology sub_topology(int sub_rank, int sub_ordinal = 0) const
   {
     switch(sub_rank)
     {
@@ -267,6 +267,11 @@ struct topology
   /// return topology_t enum type
   STKTOPOLOGY_INLINE_FUNCTION
   topology_t operator()() const
+  { return m_value; }
+
+  /// return topology_t enum type
+  STKTOPOLOGY_INLINE_FUNCTION
+  topology_t value() const
   { return m_value; }
 
   //***************************************************************************

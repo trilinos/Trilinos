@@ -73,7 +73,6 @@ const char * topology::rank_names[] =
   , "FACE_RANK"
   , "ELEMENT_RANK"
   , "CONSTRAINT_RANK"
-  , "INVALID_RANK"
 };
 
 const char * topology::topology_names[] =
@@ -124,9 +123,11 @@ const char * topology::topology_names[] =
 
 std::ostream & operator<<(std::ostream &out, topology::rank_t r)
 {
-  if ( r <= topology::END_RANK )
+  if ( r < topology::END_RANK )
     return out << topology::rank_names[r];
-  return out << static_cast<int>(r) << "_RANK";
+  else if ( r < topology::INVALID_RANK)
+    return out << "RANK_" << static_cast<int>(r);
+  return out << "INVALID_RANK";
 }
 
 std::ostream & operator<<(std::ostream &out, topology t)

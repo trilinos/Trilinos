@@ -255,7 +255,7 @@ struct topology::topology_type
   /// fill the output ordinals with the ordinals that make up the given sub topology
   template <typename OrdinalOutputIterator>
   STKTOPOLOGY_INLINE_FUNCTION
-  static void sub_topology_node_ordinals(rank_t sub_rank, int sub_ordinal, OrdinalOutputIterator output_ordinals)
+  static void sub_topology_node_ordinals(int sub_rank, int sub_ordinal, OrdinalOutputIterator output_ordinals)
   {
     switch(sub_rank)
     {
@@ -269,7 +269,7 @@ struct topology::topology_type
   /// fill the output nodes with the nodes that make up the given sub topology
   template <typename NodeArray, typename NodeOutputIterator>
   STKTOPOLOGY_INLINE_FUNCTION
-  static void sub_topology_nodes(const NodeArray & nodes, rank_t sub_rank, int sub_ordinal, NodeOutputIterator output_nodes)
+  static void sub_topology_nodes(const NodeArray & nodes, int sub_rank, int sub_ordinal, NodeOutputIterator output_nodes)
   {
     switch(sub_rank)
     {
@@ -282,7 +282,7 @@ struct topology::topology_type
 
   /// how many 'sub topologies' does this topology have
   STKTOPOLOGY_INLINE_FUNCTION
-  static int num_sub_topology(rank_t sub_rank)
+  static int num_sub_topology(int sub_rank)
   {
     switch(sub_rank)
     {
@@ -298,7 +298,7 @@ struct topology::topology_type
 
   /// what is the topology of the given sub topology
   STKTOPOLOGY_INLINE_FUNCTION
-  static topology sub_topology(rank_t sub_rank, int sub_ordinal = 0)
+  static topology sub_topology(int sub_rank, int sub_ordinal = 0)
   {
     switch(sub_rank)
     {

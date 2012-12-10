@@ -307,7 +307,7 @@ PartRepository::PartRepository(MetaData * meta)
     m_universal_part(NULL),
     m_all_parts()
 {
-  m_universal_part = new Part( m_meta_data, universal_part_name(), ~0u, 0 );
+  m_universal_part = new Part( m_meta_data, universal_part_name(), stk::topology::INVALID_RANK, 0 );
   m_all_parts.push_back(m_universal_part);
 }
 

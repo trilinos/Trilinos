@@ -99,11 +99,11 @@ public:
 
   enum
   {
-    INVALID_RANK = stk::mesh::InvalidEntityRank,
-    NODE_RANK = 0u,
-    EDGE_RANK = 1u,
-    FACE_RANK = 2u,
-    ELEMENT_RANK = 3u
+    NODE_RANK = stk::topology::NODE_RANK,
+    EDGE_RANK = stk::topology::EDGE_RANK,
+    FACE_RANK = stk::topology::FACE_RANK,
+    ELEMENT_RANK = stk::topology::ELEMENT_RANK,
+    INVALID_RANK = stk::topology::INVALID_RANK
   };
 
   inline static MetaData & get( const Part & part ) { return part.meta_data(); }
@@ -272,7 +272,14 @@ public:
    */
   EntityRank side_rank() const
   {
-    return m_spatial_dimension - 1;
+    switch (m_spatial_dimension)
+    {
+    case 1 : return stk::topology::NODE_RANK;
+    case 2 : return stk::topology::EDGE_RANK;
+    case 3 : return stk::topology::FACE_RANK;
+    default: break;
+    }
+    return stk::topology::INVALID_RANK;
   }
 
   /**
