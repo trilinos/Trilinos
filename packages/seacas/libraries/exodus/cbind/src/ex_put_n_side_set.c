@@ -130,7 +130,7 @@ int ex_put_n_side_set (int   exoid,
   }
 
   /* Check input parameters for a valid range of side numbers */
-  if (start_side_num < 0 || start_side_num > num_side_in_set) {
+  if (start_side_num < 0 || (num_sides > 0 && start_side_num > num_side_in_set)) {
     exerrval = EX_BADPARAM;
     sprintf(errmsg, "Error: Invalid input");
     ex_err("ex_put_n_side_set",errmsg,exerrval);
@@ -145,7 +145,7 @@ int ex_put_n_side_set (int   exoid,
   }
 
   /* start_side_num now starts at 1, not 0 */
-  if ((start_side_num + num_sides - 1) > num_side_in_set) {
+  if ((start_side_num + num_sides) > num_side_in_set+1) {
     exerrval = EX_BADPARAM;
     sprintf(errmsg, "Error: request larger than number of elements in set!");
     ex_err("ex_put_n_side_set",errmsg,exerrval);

@@ -138,7 +138,7 @@ int ex_put_n_side_set_df (int   exoid,
   }
 
   /* Check input parameters for a valid range of numbers */
-  if (start_num < 0 || start_num > num_df_in_set) {
+  if (start_num < 0 || (num_df_to_get > 0 && start_num > num_df_in_set)) {
     exerrval = EX_BADPARAM;
     sprintf(errmsg, "Error: Invalid input");
     ex_err("ex_put_n_side_set_df", errmsg, exerrval);
@@ -153,7 +153,7 @@ int ex_put_n_side_set_df (int   exoid,
   }
 
   /* start_num now starts at 1, not 0 */
-  if ((start_num + num_df_to_get - 1) > num_df_in_set) {
+  if ((start_num + num_df_to_get) > num_df_in_set+1) {
     exerrval = EX_BADPARAM;
     sprintf(errmsg, "Error: request larger than number of df's in set!");
     ex_err("ex_put_n_side_set_df", errmsg, exerrval);
