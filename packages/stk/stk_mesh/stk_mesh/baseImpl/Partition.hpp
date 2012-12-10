@@ -111,6 +111,8 @@ public:
     // Output including Entities.
     std::ostream &dumpit(std::ostream &os) const;
 
+    std::string dumpit() const;
+
     // Just for unit testing.  Remove after refactor.
     static BucketRepository &getRepository(stk::mesh::BulkData &mesh);
 

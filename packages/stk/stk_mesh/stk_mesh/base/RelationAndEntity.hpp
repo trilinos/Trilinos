@@ -1181,7 +1181,7 @@ impl::EntityImpl::EntityImpl()
 inline
 void impl::EntityImpl::set_bucket_and_ordinal( Bucket * in_bucket, unsigned ordinal )
 {
-  TraceIfWatching("stk::mesh::impl::EntityRepository::set_bucket_and_ordinal", LOG_ENTITY, key());
+  TraceIfWatching("stk::mesh::impl::EntityImpl::set_bucket_and_ordinal", LOG_ENTITY, key());
 
   m_bucket = in_bucket;
   m_bucket_ord = ordinal;
@@ -1191,7 +1191,7 @@ void impl::EntityImpl::set_bucket_and_ordinal( Bucket * in_bucket, unsigned ordi
 inline
 bool impl::EntityImpl::set_owner_rank( unsigned in_owner_rank )
 {
-  TraceIfWatching("stk::mesh::impl::EntityRepository::set_owner_rank", LOG_ENTITY, key());
+  TraceIfWatching("stk::mesh::impl::EntityImpl::set_owner_rank", LOG_ENTITY, key());
 
   if ( in_owner_rank != m_owner_rank ) {
     m_owner_rank = in_owner_rank;
@@ -1203,7 +1203,7 @@ bool impl::EntityImpl::set_owner_rank( unsigned in_owner_rank )
 inline
 void impl::EntityImpl::set_sync_count( size_t sync_count )
 {
-  TraceIfWatching("stk::mesh::impl::EntityRepository::set_sync_count", LOG_ENTITY, key());
+  TraceIfWatching("stk::mesh::impl::EntityImpl::set_sync_count", LOG_ENTITY, key());
 
   m_sync_count = sync_count;
 }
@@ -1211,7 +1211,7 @@ void impl::EntityImpl::set_sync_count( size_t sync_count )
 inline
 void impl::EntityImpl::clear_state()
 {
-  TraceIfWatching("stk::mesh::impl::EntityRepository::clear_state", LOG_ENTITY, key());
+  TraceIfWatching("stk::mesh::impl::EntityImpl::clear_state", LOG_ENTITY, key());
 
   m_state = Unchanged;
 }

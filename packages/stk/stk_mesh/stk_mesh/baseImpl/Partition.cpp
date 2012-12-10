@@ -85,6 +85,15 @@ std::ostream &Partition::dumpit(std::ostream &os) const
 }
 
 
+std::string Partition::dumpit() const
+{
+  std::ostringstream output;
+  dumpit(output);
+
+  return output.str();
+}
+
+
 Partition::Partition(BucketRepository *repo, EntityRank rank,
                      const std::vector<PartOrdinal> &key)
     : m_repository(repo)
@@ -116,6 +125,8 @@ BucketRepository &Partition::getRepository(stk::mesh::BulkData &mesh)
 
 bool Partition::add(Entity entity)
 {
+    TraceIfWatching("stk::mesh::impl::Partition::add", LOG_ENTITY, entity.key());
+
     if (entity.bucket_ptr())
     {
         // If an entity already belongs to a partition, it cannot be added to one.
@@ -137,20 +148,33 @@ bool Partition::add(Entity entity)
     internal_propagate_relocation(entity);
     entity.m_entityImpl->set_sync_count(m_repository->m_mesh.synchronized_count());
 
+    DiagIfWatching(LOG_ENTITY, entity.key(),
+                   " Bucket: " << *bucket << ", ordinal: " << dst_ordinal);
+
     return true;
 }
 
 
 void Partition::move_to(Entity entity, Partition &dst_partition)
 {
+    TraceIfWatching("stk::mesh::impl::Partition::move_to", LOG_ENTITY, entity.key());
+
     Bucket *src_bucket = entity.m_entityImpl->bucket_ptr();
     if (src_bucket && (src_bucket->getPartition() == &dst_partition))
+    {
+        DiagIfWatching(LOG_ENTITY, entity.key(),
+                       " Already on destination partition at bucket " << *src_bucket << ", ordinal "
+                                                            << entity.m_entityImpl->bucket_ordinal());
         return;
+    }
 
     ThrowRequireMsg(src_bucket && (src_bucket->getPartition() == this),
                     "Partition::move_to  cannot move an entity that does not belong to it.");
 
     unsigned src_ordinal = entity.m_entityImpl->bucket_ordinal();
+    DiagIfWatching(LOG_ENTITY, entity.key(),
+                  " src_bucket: " << *src_bucket << ", src_ordinal: " << src_ordinal);
+
 
     // If the last bucket is full, automatically create a new one.
     Bucket *dst_bucket = dst_partition.get_bucket_for_adds();
@@ -165,6 +189,9 @@ void Partition::move_to(Entity entity, Partition &dst_partition)
     unsigned dst_ordinal = dst_bucket->size();
     dst_bucket->replace_fields(dst_ordinal, *src_bucket, src_ordinal);
     remove(entity, false);
+
+    DiagIfWatching(LOG_ENTITY, entity.key(),
+                  " dst_bucket: " << *dst_bucket << ", dst_ordinal: " << dst_ordinal);
 
     entity.m_entityImpl->modified();
     entity.m_entityImpl->set_bucket_and_ordinal(dst_bucket, dst_ordinal);
@@ -181,6 +208,8 @@ void Partition::move_to(Entity entity, Partition &dst_partition)
 
 bool Partition::remove(Entity e_k, bool not_in_move_to)
 {
+    TraceIfWatching("stk::mesh::impl::Partition::remove", LOG_ENTITY, e_k.key());
+
     Bucket *bucket_k = e_k.bucket_ptr();
     if (!belongs(bucket_k) || empty())
     {
@@ -188,6 +217,8 @@ bool Partition::remove(Entity e_k, bool not_in_move_to)
     }
     unsigned ord_k = e_k.m_entityImpl->bucket_ordinal();
     Bucket *last = *(end() - 1);
+
+    DiagIfWatching(LOG_ENTITY, e_k.key(), "  Bucket: " << *bucket_k << ", ordinal: " << ord_k);
 
     const bool NOT_last_entity_in_last_bucket =
             (last != bucket_k) || (bucket_k->size() != ord_k + 1);
@@ -352,6 +383,12 @@ void Partition::compress(bool force)
         Bucket& old_bucket = entity.bucket();
         size_t old_ordinal = entity.bucket_ordinal();
 
+        TraceIfWatching("stk::mesh::impl::Partition::compress affects", LOG_ENTITY, entity.key());
+        DiagIfWatching(LOG_ENTITY, entity.key(),
+                       "  old_bucket: " << old_bucket << ", old_ordinal: " << old_ordinal << '\n'
+                       << dumpit()
+                       << "\n  new_bucket: " << *new_bucket << ", new_ordinal: " << new_ordinal << " of " << m_size);
+
         new_bucket->replace_fields(new_ordinal, old_bucket, old_ordinal);
         entity.m_entityImpl->set_bucket_and_ordinal(new_bucket, new_ordinal);
         new_bucket->replace_entity( new_ordinal , entity ) ;
@@ -368,6 +405,7 @@ void Partition::compress(bool force)
     m_buckets[0] = new_bucket;
     m_repository->m_need_sync_from_partitions[m_rank] = true;
     m_updated_since_compress = false;
+    m_updated_since_sort = false;
 
 #ifdef PARTITION_BABBLE
     dumpit(sierra::pout());
@@ -435,6 +473,9 @@ void Partition::sort(bool force)
             {
                 if ( current.is_valid() )
                 {
+                    TraceIfWatching("stk::mesh::impl::Partition::sort affects", LOG_ENTITY, current.key());
+                    DiagIfWatching(LOG_ENTITY, current.key(), "  old_bucket: " << j->bucket() << ", old_ordinal: " << i);
+
                     // Move current entity to the vacant spot
                     vacancy_bucket->replace_fields(vacancy_ordinal, *b, i );
                     current.m_entityImpl->set_bucket_and_ordinal(vacancy_bucket, vacancy_ordinal);
@@ -450,6 +491,9 @@ void Partition::sort(bool force)
                 j->m_entityImpl->set_bucket_and_ordinal(b, i);
                 b->replace_entity( i, *j );
                 change_this_partition = true ;
+
+                TraceIfWatching("stk::mesh::impl::Partition::sort affects", LOG_ENTITY, j->key());
+                DiagIfWatching(LOG_ENTITY, j->key(), "  new_bucket: " << *b << ", new_ordinal: " << i);
             }
 
             // Once a change has occurred then need to propagate the
