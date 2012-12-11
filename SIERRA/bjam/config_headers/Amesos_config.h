@@ -65,7 +65,7 @@
 #define HAVE_AMESOS_TRIUTILS
 
 /* Define if want to build amesos-umfpack */
-/* #undef HAVE_AMESOS_UMFPACK */
+#define HAVE_AMESOS_UMFPACK
 
 /* Define if want to build amesos-paraklete */
 /* #undef HAVE_AMESOS_CSPARSE */

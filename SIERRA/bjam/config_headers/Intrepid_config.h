@@ -4,7 +4,7 @@
 #define HAVE_INTREPID_AMESOS
 
 /* Define if want to build with amesos enabled */
-/* #undef HAVE_INTREPID_AMESOS_UMFPACK */
+#define HAVE_INTREPID_AMESOS_UMFPACK
 
 /* Define if want to build intrepid-debug */
 /* #undef HAVE_INTREPID_DEBUG */

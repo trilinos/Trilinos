@@ -20,7 +20,7 @@
 /* #undef HAVE_ASSERT_H */
 
 /* Define if you want to build AZ_lu */
-/* #undef HAVE_AZLU */
+#define HAVE_AZLU
 
 /* Define if want to build with aztecoo enabled */
 /* #undef HAVE_AZTECOO_EPETRAEXT */
