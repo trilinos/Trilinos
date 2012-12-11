@@ -57,15 +57,15 @@ namespace Galeri {
   namespace Xpetra {
 
     // =============================================  Laplace1D  =============================================
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    class Laplace1DProblem : public Problem<Map,Matrix> {
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    class Laplace1DProblem : public Problem<Map,Matrix,MultiVector> {
     public:
-      Laplace1DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix>(list, map) { }
+      Laplace1DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix,MultiVector>(list, map) { }
       Teuchos::RCP<Matrix> BuildMatrix();
     };
 
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    Teuchos::RCP<Matrix> Laplace1DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>::BuildMatrix() {
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    Teuchos::RCP<Matrix> Laplace1DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
       GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
 
       if (nx == -1)
@@ -77,15 +77,15 @@ namespace Galeri {
     }
 
     // =============================================  Laplace2D  =============================================
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    class Laplace2DProblem : public Problem<Map,Matrix> {
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    class Laplace2DProblem : public Problem<Map,Matrix,MultiVector> {
     public:
-      Laplace2DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix>(list, map) { }
+      Laplace2DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix,MultiVector>(list, map) { }
       Teuchos::RCP<Matrix> BuildMatrix();
     };
 
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    Teuchos::RCP<Matrix> Laplace2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>::BuildMatrix() {
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    Teuchos::RCP<Matrix> Laplace2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
       GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
       GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
 
@@ -103,15 +103,15 @@ namespace Galeri {
     }
 
     // =============================================  Laplace3D  =============================================
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    class Laplace3DProblem : public Problem<Map,Matrix> {
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    class Laplace3DProblem : public Problem<Map,Matrix,MultiVector> {
     public:
-      Laplace3DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix>(list, map) { }
+      Laplace3DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix,MultiVector>(list, map) { }
       Teuchos::RCP<Matrix> BuildMatrix();
     };
 
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    Teuchos::RCP<Matrix> Laplace3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>::BuildMatrix() {
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    Teuchos::RCP<Matrix> Laplace3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
       GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
       GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
       GlobalOrdinal nz = this->list_.get("nz", (GlobalOrdinal) -1);
@@ -129,15 +129,15 @@ namespace Galeri {
     }
 
     // =============================================  Star2D  =============================================
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    class Star2DProblem : public Problem<Map,Matrix> {
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    class Star2DProblem : public Problem<Map,Matrix,MultiVector> {
     public:
-      Star2DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix>(list, map) { }
+      Star2DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix,MultiVector>(list, map) { }
       Teuchos::RCP<Matrix> BuildMatrix();
     };
 
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    Teuchos::RCP<Matrix> Star2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>::BuildMatrix() {
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    Teuchos::RCP<Matrix> Star2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
       GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
       GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
 
@@ -157,15 +157,15 @@ namespace Galeri {
     }
 
     // =============================================  BigStar2D  =============================================
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    class BigStar2DProblem : public Problem<Map,Matrix> {
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    class BigStar2DProblem : public Problem<Map,Matrix,MultiVector> {
     public:
-      BigStar2DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix>(list, map) { }
+      BigStar2DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix,MultiVector>(list, map) { }
       Teuchos::RCP<Matrix> BuildMatrix();
     };
 
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    Teuchos::RCP<Matrix> BigStar2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>::BuildMatrix() {
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    Teuchos::RCP<Matrix> BigStar2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
       GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
       GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
 
@@ -189,15 +189,15 @@ namespace Galeri {
     }
 
     // =============================================  Brick3D  =============================================
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    class Brick3DProblem : public Problem<Map,Matrix> {
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    class Brick3DProblem : public Problem<Map,Matrix,MultiVector> {
     public:
-      Brick3DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix>(list, map) { }
+      Brick3DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix,MultiVector>(list, map) { }
       Teuchos::RCP<Matrix> BuildMatrix();
     };
 
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    Teuchos::RCP<Matrix> Brick3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>::BuildMatrix() {
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    Teuchos::RCP<Matrix> Brick3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
       GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
       GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
       GlobalOrdinal nz = this->list_.get("nz", (GlobalOrdinal) -1);
@@ -214,15 +214,15 @@ namespace Galeri {
     }
 
     // =============================================  Identity  =============================================
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    class IdentityProblem : public Problem<Map,Matrix> {
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    class IdentityProblem : public Problem<Map,Matrix,MultiVector> {
     public:
-      IdentityProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix>(list, map) { }
+      IdentityProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix,MultiVector>(list, map) { }
       Teuchos::RCP<Matrix> BuildMatrix();
     };
 
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    Teuchos::RCP<Matrix> IdentityProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>::BuildMatrix() {
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    Teuchos::RCP<Matrix> IdentityProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
       Scalar a = this->list_.get("a", 1.0);
       this->A_ = Identity<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, a);
       this->A_->setObjectLabel(this->getObjectLabel());

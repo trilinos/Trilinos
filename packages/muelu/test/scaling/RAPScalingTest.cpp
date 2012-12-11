@@ -159,8 +159,8 @@ int main(int argc, char *argv[]) {
                   << "========================================================" << std::endl;
       }
 
-      Teuchos::RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap> > Pr =
-          Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+      Teuchos::RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+          Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
       A = Pr->BuildMatrix();
     }
 

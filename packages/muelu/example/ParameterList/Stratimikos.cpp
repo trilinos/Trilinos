@@ -137,7 +137,8 @@ int main(int argc,char * argv[])
   //   RCP<const Epetra_Vector> b = rcp(ptrb);
 
   RCP<const Map> map = MapFactory::createUniformContigMap(lib, matrixParameters.GetNumGlobalElements(), comm);
-  RCP<Galeri::Xpetra::Problem<Map,Xpetra::EpetraCrsMatrix> > Pr = Galeri::Xpetra::BuildProblem<double, int, int, Map,  Xpetra::EpetraCrsMatrix>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Galeri::Xpetra::Problem<Map,Xpetra::EpetraCrsMatrix,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<double, int, int, Map,  Xpetra::EpetraCrsMatrix, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
   RCP<const Epetra_CrsMatrix> A = Pr->BuildMatrix()->getEpetra_CrsMatrix();
 
   //

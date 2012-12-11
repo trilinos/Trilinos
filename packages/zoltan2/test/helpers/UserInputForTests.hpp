@@ -709,10 +709,10 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
   }
 
   try{
-    RCP<Galeri::Xpetra::Problem<Tpetra::Map<lno_t, gno_t>, Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > > problem =
-        Galeri::Xpetra::BuildProblem<scalar_t, lno_t, gno_t, Tpetra::Map<lno_t, gno_t>, Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> >(params.GetMatrixType(),
-         map, params.GetParameterList());
-    M_ = problem->BuildMatrix();
+    RCP<Galeri::Xpetra::Problem<Tpetra::Map<lno_t, gno_t>, Tpetra::CrsMatrix<scalar_t, lno_t, gno_t>, Tpetra::MultiVector<scalar_t, lno_t, gno_t> > > Pr =
+        Galeri::Xpetra::BuildProblem<scalar_t, lno_t, gno_t, Tpetra::Map<lno_t, gno_t>, Tpetra::CrsMatrix<scalar_t, lno_t, gno_t>, Tpetra::MultiVector<scalar_t, lno_t, gno_t> >
+        (params.GetMatrixType(), map, params.GetParameterList());
+    M_ = Pr->BuildMatrix();
   }
   catch (std::exception &e) {    // Probably not enough memory
     TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());

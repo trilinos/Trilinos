@@ -55,19 +55,22 @@ namespace Galeri {
 
   namespace Xpetra {
 
-    template<typename Map, typename Matrix>
+    template<typename Map, typename Matrix, typename MultiVector>
     class Problem : public Teuchos::Describable {
     public:
       Problem(Teuchos::ParameterList& list) : list_(list) { };
       Problem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : list_(list) { Map_ = map; };
       virtual ~Problem() { }
 
-      virtual Teuchos::RCP<Matrix> BuildMatrix() = 0;
+      virtual Teuchos::RCP<Matrix>      BuildMatrix() = 0;
+      virtual Teuchos::RCP<MultiVector> BuildNullspace() {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Nullspace is not implemented for this problem");
+      }
 
       // Get methods
-      // Teuchos::RCP<const Map>    getMap()       const { return Map_; }
-      // Teuchos::RCP<const Matrix> getMatrix()    const { return A_; }
-      // Teuchos::RCP<const Matrix> getNullspace() const { return Nullspace_; }
+      Teuchos::RCP<const Map>         getMap()       const { return Map_; }
+      Teuchos::RCP<const Matrix>      getMatrix()    const { return A_; }
+      Teuchos::RCP<const MultiVector> getNullspace() const { return Nullspace_; }
 
       // Set methods
       // Teuchos::RCP<const Matrix> setCoords(const Teuchos::RCP<const Coords>& coords) { Coords_ = coords; }
@@ -77,8 +80,7 @@ namespace Galeri {
       Teuchos::ParameterList&                list_;
       Teuchos::RCP<const Map>                Map_;
       Teuchos::RCP<Matrix>                   A_;
-      // Teuchos::RCP<MultiVector>              Nullspace_;
-      // Teuchos::RCP<Coords>                Coords_;
+      Teuchos::RCP<MultiVector>              Nullspace_;
     };
 
   } // namespace Xpetra

@@ -73,7 +73,8 @@ namespace MueLuTests {
     // build Matrix
     Teuchos::ParameterList params;
     const RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), 20, 0, comm);
-    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap> > Pr = Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap>("Laplace1D", map, params);
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace1D", map, params);
     RCP<Matrix> Op = Pr->BuildMatrix();
 
     // a TwoKeyMap

@@ -158,7 +158,8 @@ int main(int argc, char *argv[]) {
               << "========================================================" << std::endl;
   }
 
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap> > Pr = Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
   RCP<Matrix> A = Pr->BuildMatrix();
 
   tm = Teuchos::null;
@@ -178,6 +179,7 @@ int main(int argc, char *argv[]) {
 
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map,1);
   nullspace->putScalar( (SC) 1.0);
+
   H->GetLevel(0)->Set("Nullspace", nullspace);
   H->GetLevel(0)->Set("Coordinates", coordinates);
 

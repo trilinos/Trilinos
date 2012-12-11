@@ -62,30 +62,30 @@ namespace Galeri {
 
     using Teuchos::RCP;
 
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
-    RCP<Problem<Map,Matrix> > BuildProblem(const std::string &MatrixType, const RCP<const Map>& map, Teuchos::ParameterList& list) {
-      RCP<Problem<Map,Matrix> > P;
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    RCP<Problem<Map,Matrix,MultiVector> > BuildProblem(const std::string &MatrixType, const RCP<const Map>& map, Teuchos::ParameterList& list) {
+      RCP<Problem<Map,Matrix,MultiVector> > P;
 
       if      (MatrixType == "Laplace1D")
-        P.reset(new Laplace1DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(list, map));
+        P.reset(new Laplace1DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
 
       else if (MatrixType == "Laplace2D")
-        P.reset(new Laplace2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(list, map));
+        P.reset(new Laplace2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
 
       else if (MatrixType == "Star2D")
-        P.reset(new Star2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(list, map));
+        P.reset(new Star2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
 
       else if (MatrixType == "BigStar2D")
-        P.reset(new BigStar2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(list, map));
+        P.reset(new BigStar2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
 
       else if (MatrixType == "Laplace3D")
-        P.reset(new Laplace3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(list, map));
+        P.reset(new Laplace3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
 
       else if (MatrixType == "Brick3D")
-        P.reset(new Brick3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(list, map));
+        P.reset(new Brick3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
 
       else if (MatrixType == "Identity")
-        P.reset(new IdentityProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(list, map));
+        P.reset(new IdentityProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
 
       else
         TEUCHOS_TEST_FOR_EXCEPTION(true,

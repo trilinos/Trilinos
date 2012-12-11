@@ -76,6 +76,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, Lo
   typedef Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XCrsType;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                    MapType;
   typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                    XMapType;
+  typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>     XMVectorType;
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>          VectorType;
 
   // Useful stuff
@@ -99,7 +100,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, Lo
 
   const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
   Teuchos::RCP<XMapType > xmap = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal>::Build(xpetraParameters.GetLib(), INVALID, numElementsPerProc, 0, comm);
-  Teuchos::RCP<Galeri::Xpetra::Problem<XMapType,XCrsType> > Pr = Galeri::Xpetra::BuildProblem<Scalar,LocalOrdinal,GlobalOrdinal,XMapType,XCrsType>(string("Laplace2D"),xmap,GaleriList);
+  Teuchos::RCP<Galeri::Xpetra::Problem<XMapType,XCrsType,XMVectorType> > Pr = Galeri::Xpetra::BuildProblem<Scalar,LocalOrdinal,GlobalOrdinal,XMapType,XCrsType,XMVectorType>
+      (string("Laplace2D"),xmap,GaleriList);
   Teuchos::RCP<XCrsType> XA = Pr->BuildMatrix();
   Teuchos::RCP<CrsType> A = XA->getTpetra_CrsMatrixNonConst();
 

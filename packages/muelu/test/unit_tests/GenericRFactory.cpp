@@ -105,7 +105,8 @@ namespace MueLuTests {
     Teuchos::ParameterList matrixParameters;
     matrixParameters.set("nx",nEle);
 
-    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap> > Pr = Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap>("Laplace1D", map, matrixParameters);
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace1D", map, matrixParameters);
     RCP<Matrix> Op = Pr->BuildMatrix();
 
     // build nullspace
