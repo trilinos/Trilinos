@@ -104,8 +104,8 @@ int main(int argc, char** argv)
   /* CREATE INITAL MATRIX                                                           */
   /**********************************************************************************/
   RCP<const Tpetra::Map<LO,GO> > map = rcp( new Tpetra::Map<LO,GO>(matrixParameters.GetNumGlobalElements(), 0, comm) );
-  RCP<Galeri::Xpetra::Problem> problem = Galeri::Xpetra::BuildProblem(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
-  RCP<Matrix> A = problem->BuildMatrix();
+  RCP<Galeri::Xpetra::Problem<Tpetra::Map<LO,GO>,Tpetra::CrsMatrix<SC,LO,GO> > > problem = Galeri::Xpetra::BuildProblem<SC, LO, GO, Tpetra::Map<LO,GO>, Tpetra::CrsMatrix<SC,LO,GO> >(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Tpetra::CrsMatrix<SC,LO,GO> > A = problem->BuildMatrix();
 
   /**********************************************************************************/
   /*                                                                                */

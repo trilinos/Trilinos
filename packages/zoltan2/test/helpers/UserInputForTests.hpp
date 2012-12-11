@@ -162,7 +162,7 @@ public:
    *
    * Problems can be "Laplace1D", "Laplace2D", "Star2D", "BigStar2D", 
    * "Laplace3D", "Brick3D" and "Identity".
-   * See Galeri::Xpetra::CreateCrsMatrix() for more information
+   * See Galeri::Xpetra::BuildProblem() for more information
    * about problem types.
    */
   UserInputForTests(int x, int y, int z, string matrixType,
