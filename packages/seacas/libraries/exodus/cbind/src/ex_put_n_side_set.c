@@ -175,6 +175,8 @@ int ex_put_n_side_set (int   exoid,
   /* write out the element list and side list arrays */
   start[0] = --start_side_num;
   count[0] = num_sides;
+  if (num_sides == 0)
+    start[0] = 0;
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
     status = nc_put_vara_longlong(exoid, elem_list_id, start, count, side_set_elem_list);

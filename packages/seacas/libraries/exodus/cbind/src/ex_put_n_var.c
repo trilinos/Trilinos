@@ -300,7 +300,9 @@ int ex_put_n_var (int   exoid,
     count[0] = 1;
   }
   count[1] = num_entities;
-
+  if (count[1] == 0)
+    start[1] = 0;
+  
   if (ex_comp_ws(exoid) == 4) {
     status = nc_put_vara_float(exoid, varid, start, count, var_vals);
   } else {

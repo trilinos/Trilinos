@@ -173,7 +173,9 @@ int ex_put_n_side_set_df (int   exoid,
   /* write out the distribution factors array */
   start[0] = --start_num;
   count[0] = num_df_to_get;
-
+  if (num_df_to_get == 0)
+    start[0] = 0;
+  
   if (ex_comp_ws(exoid) == 4) {
     status = nc_put_vara_float(exoid, dist_id, start, count, side_set_dist_fact);
   } else {
