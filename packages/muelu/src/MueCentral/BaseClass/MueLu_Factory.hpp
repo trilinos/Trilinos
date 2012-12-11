@@ -81,7 +81,14 @@ namespace MueLu {
       SetParameter(varName, ParameterEntry(f)); // parameter validation done in ParameterListAcceptorImpl
     }
 
+    //! Default implementation of FactoryAcceptor::GetFactory()
     const RCP<const FactoryBase> GetFactory(const std::string & varName) const {
+      if (!GetParameterList().isParameter(varName) && GetValidParameterList() == Teuchos::null) {
+        // If the parameter is not on the list and there is not validator, the defaults values for 'varName' is not set. Failback by using directly the FactoryManager
+        // Note: call to GetValidParameterList() can be costly for classes that validate parameters. But it get called only (lazy '&&' operator) if the parameter 'varName' is not on the paramlist and the parameter 'varName' is always on the list when validator is present and 'varName' is valid (at least the default value is set).
+        return Teuchos::null;
+    }
+
       return GetParameterList().get< RCP<const FactoryBase> >(varName);
     }
 
@@ -92,7 +99,7 @@ namespace MueLu {
     //@}
 
     virtual RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const {
-      return rcp(new ParameterList()); // no parameter by default - TMP
+      return Teuchos::null;  // Teuchos::null == GetValidParameterList() not implemented == skip validation and no default values (dangerous)
     }
 
   protected:

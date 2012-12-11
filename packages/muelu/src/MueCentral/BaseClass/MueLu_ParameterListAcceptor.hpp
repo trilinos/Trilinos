@@ -102,7 +102,9 @@ namespace MueLu {
 
     virtual void SetParameterList(ParameterList & paramList) {
       // Validate and add defaults parameters.
-      paramList.validateParametersAndSetDefaults(*GetValidParameterList(paramList));
+      RCP<const ParameterList> validParamList = GetValidParameterList();
+      if (validParamList != Teuchos::null) // Teuchos::null == GetValidParameterList() not implemented == skip validation and no default values (dangerous!)
+        paramList.validateParametersAndSetDefaults(*validParamList);
       paramList_ = paramList; // copy
     }
 
@@ -113,7 +115,10 @@ namespace MueLu {
         // If paramList_ is empty, set paramList_ to the default list.
         // If paramList_ is not empty, we are sure that the list has all the valid parameters defined
         // because the parameter list validation process adds the default values to the user list.
-        paramList_ = *GetValidParameterList();
+        RCP<const ParameterList> validParamList = GetValidParameterList();
+        if (validParamList != Teuchos::null) {
+          paramList_ = *validParamList;
+        }
       }
 
       return paramList_;
@@ -132,11 +137,17 @@ namespace MueLu {
     virtual void GetDocumentation(std::ostream &os) const {
       // default implementation
 
+      RCP<const ParameterList> validParamList = GetValidParameterList();
+      if (validParamList == Teuchos::null) {
+        os << "## Documentation not available:" << std::endl;
+        return;
+      }
+
       os << "## Parameters:" << std::endl;
-      printParameterListOptions(os, *GetValidParameterList());
+      printParameterListOptions(os, *validParamList);
 
       os << "## Fully described default method:" << std::endl;
-      GetValidParameterList()->print(os, 2, true, false);
+      validParamList->print(os, 2, true, false);
       os << std::endl;
     }
 
@@ -153,6 +164,7 @@ namespace MueLu {
     // Do we need that too?
 
   };
+
 
 }
 
