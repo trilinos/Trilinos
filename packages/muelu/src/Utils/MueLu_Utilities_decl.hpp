@@ -318,6 +318,8 @@ RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_C
                                 bool doFillComplete=true,
                                 bool doOptimizeStorage=true); //ScaleMatrix()
 
+   static Teuchos::ArrayRCP<double> CoalesceCoordinates(Teuchos::ArrayRCP<double> coord, LocalOrdinal blksize);
+
    static void MyOldScaleMatrix_Tpetra(RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector,
                                bool doFillComplete, bool doOptimizeStorage);
 

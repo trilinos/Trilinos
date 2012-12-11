@@ -1038,6 +1038,29 @@ namespace MueLu {
 #endif
   } //MyOldScaleMatrix_Tpetra()
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  Teuchos::ArrayRCP<double> Utils<Scalar,LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoalesceCoordinates(Teuchos::ArrayRCP<double> coord, LocalOrdinal blksize) {
+    if (blksize == 1)
+      return coord;
+
+    ArrayRCP<double> coalesceCoord(coord.size()/blksize); //TODO: how to avoid automatic initialization of the vector? using arcp()?
+
+    for(int i=0; i<coord.size(); ++i) {
+#define myDEBUG
+#ifdef myDEBUG //FIXME-> HAVE_MUELU_DEBUG
+      for(int j=1; j < blksize; ++j) {
+        TEUCHOS_TEST_FOR_EXCEPTION(coord[i*blksize + j] != coord[i*blksize], Exceptions::RuntimeError, "MueLu::ZoltanInterface: coalesceCoord problem");
+      }
+#endif
+      coalesceCoord[i] = coalesceCoord[i*blksize];
+    }
+
+    //std::cout << coord << std::endl;
+    //std::cout << coalesceCoord << std::endl;
+
+    return coalesceCoord;
+  } //CoalesceCoordinates
+
   typedef Kokkos::DefaultNode::DefaultNodeType KDNT;
   typedef Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps KDKSO;
 

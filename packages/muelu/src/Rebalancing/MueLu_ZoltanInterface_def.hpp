@@ -56,6 +56,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -148,7 +149,7 @@ namespace MueLu {
 
       RCP<MultiVector> multiVectorXYZ = Get< RCP<MultiVector> >(level, "Coordinates");
       for (int i=0; i< (int)multiVectorXYZ->getNumVectors(); i++) { //FIXME cast
-        XYZ.push_back(coalesceCoordinates(multiVectorXYZ->getDataNonConst(i), blksize)); // If blksize == 1, not copy but it's OK to leave 'open' the MultiVector until the destruction of XYZ because no communications using Xpetra
+        XYZ.push_back(Utils::CoalesceCoordinates(multiVectorXYZ->getDataNonConst(i), blksize)); // If blksize == 1, not copy but it's OK to leave 'open' the MultiVector until the destruction of XYZ because no communications using Xpetra
       }
 
       // TODO: level.Set(XCoordinates / YCoordinates / ZCoordinates as it is computed and might be needed somewhere else. But can wait for now. This code have to be moved anyway.
@@ -347,30 +348,6 @@ namespace MueLu {
     *ierr = ZOLTAN_OK;
 
   } //GetProblemGeometry
-
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayRCP<double> ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::coalesceCoordinates(ArrayRCP<double> coord, LocalOrdinal blksize) {
-    if (blksize == 1)
-      return coord;
-
-    ArrayRCP<double> coalesceCoord(coord.size()/blksize); //TODO: how to avoid automatic initialization of the vector? using arcp()?
-
-    for(int i=0; i<coord.size(); i++) {
-#define myDEBUG
-#ifdef myDEBUG //FIXME-> HAVE_MUELU_DEBUG
-      for(int j=1; j < blksize; j++) {
-        TEUCHOS_TEST_FOR_EXCEPTION(coord[i*blksize + j] != coord[i*blksize], Exceptions::RuntimeError, "MueLu::ZoltanInterface: coalesceCoord problem");
-      }
-#endif
-      coalesceCoord[i] = coalesceCoord[i*blksize];
-    }
-
-    //std::cout << coord << std::endl;
-    //std::cout << coalesceCoord << std::endl;
-
-    return coalesceCoord;
-  }
 
 } //namespace MueLu
 
