@@ -57,8 +57,7 @@ namespace Ioss {
 		  bool is_implicit = false);
     Property(const std::string &name, const std::string &value,
 		  bool is_implicit = false);
-    Property(const std::string &name, void *value,
-		  bool is_implicit = false);
+    Property(const std::string &name, void *value, bool is_implicit);
 
     // To set implicit property
     Property(const GroupingEntity* ge,
