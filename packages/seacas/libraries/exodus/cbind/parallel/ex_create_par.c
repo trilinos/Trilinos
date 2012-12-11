@@ -150,7 +150,7 @@ int ex_create_par_int (const char *path,
   float vers;
   char errmsg[MAX_ERR_LENGTH];
   char *mode_name;
-  int mode = NC_NETCDF4; /* Parallel write requires netcdf-4 (or pnetcdf) */0;
+  int mode = 0;
   char *option;
    
   int int64_status;
@@ -202,12 +202,18 @@ int ex_create_par_int (const char *path,
   /* Check parallel io mode.  Valid is NC_MPIPOSIX or NC_MPIIO or NC_PNETCDF
    * Exodus uses different flag values; map to netcdf values
    */
-  if (my_mode & EX_MPIPOSIX)
+  if (my_mode & EX_MPIPOSIX) {
     pariomode = NC_MPIPOSIX;
-  else if (my_mode & EX_MPIIO)
+    my_mode |= EX_NETCDF4;
+  }
+  else if (my_mode & EX_MPIIO) {
     pariomode = NC_MPIIO;
-  else if (my_mode & EX_PNETCDF)
+    my_mode |= EX_NETCDF4;
+  }
+  else if (my_mode & EX_PNETCDF) {
     pariomode = NC_PNETCDF;
+    mode |= NC_64BIT_OFFSET;
+  }
 
   /*
    * See if "large file" mode was specified in a ex_create my_mode. If
