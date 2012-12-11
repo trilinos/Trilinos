@@ -221,6 +221,7 @@ namespace Iopx {
     void compute_node_status() const;
 
     void create_implicit_global_map() const;
+    void output_node_map() const;
     
     // Metadata-related functions.
     void read_meta_data();
@@ -394,6 +395,12 @@ namespace Iopx {
     mutable IntVector   nodeOwningProcessor;   // Processor that owns each node on this processor
     mutable Int64Vector nodeGlobalImplicitMap; // Position of this node in the global-implicit ordering
     mutable Int64Vector elemGlobalImplicitMap; // Position of this element in the global-implicit ordering
+
+    // Contains the indices of all owned nodes in each nodeset on this processor to pull data
+    // from the global list down to the file list.
+    // NOTE: Even though map type is GroupingEntity*, it is only valid
+    // for a GroupingEntity* which is a NodeSet*
+    mutable std::map<const Ioss::GroupingEntity*,Int64Vector> nodesetOwnedNodes; 
     
     // --- Nodal/Element/Attribute Variable Names -- Maps from sierra
     // field names to index of nodal/element/attribute variable in
@@ -414,7 +421,7 @@ namespace Iopx {
     time_t timeLastFlush;
 
     mutable bool fileExists; // False if file has never been opened/created
-    mutable bool minimizeOpenFiles;
+    mutable bool metaDataWritten;
 
     mutable bool blockAdjacenciesCalculated; // True if the lazy creation of
     // block adjacencies has been calculated.

@@ -66,7 +66,6 @@ namespace Iopx {
   {
     int proc_count = 1;
     MPI_Comm_size(communicator, &proc_count);
-    // db_usage == *_RESTART not officially supported.  Here just so gdsjaar can experiment
     if (proc_count > 1) {
       return new Iopx::DatabaseIO(NULL, filename, db_usage, communicator, properties);
     } else {
