@@ -51,7 +51,7 @@ namespace stk {
                         std::string output_filename
                         )
         {
-          bool verbose = true;
+          bool verbose = false;
 
           std::vector<boost::array<double,3> > coordsLine(n_nodes_x);
           for (unsigned ix = 0; ix < n_nodes_x; ix++)
@@ -98,7 +98,7 @@ namespace stk {
           // break all of the quads into tris
           tp2.breakAllElements<shards_Quadrilateral_4, shards_Triangle_3>();
           if(verbose) std::cout << "after break quad to tri\n";
-          tp2.dump(true);
+          tp2.dump(verbose);
           //tp2.stkMeshCreate(parallel_machine);
           //tp2.writeSTKMesh("tp2-quad-tri.e");
 

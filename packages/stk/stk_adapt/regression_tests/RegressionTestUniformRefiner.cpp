@@ -46,6 +46,7 @@
 #include <stk_adapt/UniformRefiner.hpp>
 #include <stk_adapt/UniformRefinerPattern_Tri3_Quad4_3.hpp>
 #include <stk_adapt/UniformRefinerPattern_Tet4_Hex8_4.hpp>
+#include <stk_adapt/UniformRefinerPattern_Wedge6_Hex8_6.hpp>
 #include <unit_tests/TestLocalRefiner.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 #include <stk_percept/RunEnvironment.hpp>
@@ -2411,6 +2412,86 @@ namespace stk
             breaker.doBreak();
 
             eMesh.save_as(output_files_loc+"swept-wedge_1.e");
+
+          }
+        // end_demo
+        
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, wedge6_3)
+      {
+        EXCEPTWATCH;
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        MPI_Barrier( pm );
+
+        // start_demo_regr_uniformRefiner_wedge6_3
+
+        percept::PerceptMesh eMesh(3u);
+
+        unsigned p_size = eMesh.get_parallel_size();
+        unsigned p_rank = eMesh.get_parallel_size();
+        if (p_size == 1 || p_size == 3)
+          {
+
+            //         void createMesh(stk::ParallelMachine parallel_machine,
+            //                         unsigned n_nodes_x, unsigned n_nodes_y, unsigned n_nodes_z,
+            //                         double xmin, double xmax,
+            //                         double ymin, double ymax,
+            //                         double zmin, double zmax,
+            //                         std::string output_filename
+            //                         )
+            std::string file_in = "swept-wedge-hex_0.e";
+            if (p_rank == 0)
+              {
+                percept::WedgeFixture wedgeFixture;
+
+                wedgeFixture.createMesh(pm,
+                                        //4, 3, 2,
+                                        8, 6, 4,
+                                        //2, 2, 2,
+                                        0, 1,
+                                        0, 1,
+                                        0, 1,
+                                        file_in );
+              }
+            MPI_Barrier( pm );
+
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, file_in);
+              }
+
+            eMesh.open(file_in);
+
+            Wedge6_Hex8_6 break_wedge(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+
+            eMesh.commit();
+
+            if (0)
+              {
+                // delete the second element
+                eMesh.get_bulk_data()->modification_begin();
+                stk::mesh::Entity element_1 = (**(eMesh.get_bulk_data()->buckets(stk::mesh::MetaData::ELEMENT_RANK).begin()))[1];
+                if ( ! eMesh.get_bulk_data()->destroy_entity( element_1 ) )
+                  {
+                    throw std::logic_error("failed in deleting element");
+                  }
+                eMesh.get_bulk_data()->modification_end();
+              }
+
+
+            UNIFORM_REFINER breaker(eMesh, break_wedge, proc_rank_field);
+            breaker.doBreak();
+
+            eMesh.save_as(output_files_loc+"swept-wedge-hex_1.e");
 
           }
         // end_demo

@@ -199,6 +199,9 @@ namespace stk {
         case TET4_HEX8_4:
           bp = (UniformRefinerPatternBase*) new Tet4_Hex8_4(eMesh);
           break;
+        case WEDGE6_HEX8_6:
+          bp = (UniformRefinerPatternBase*) new Wedge6_Hex8_6(eMesh);
+          break;
         case TRI3_QUAD4_3:
           bp = (UniformRefinerPatternBase*) new Tri3_Quad4_3(eMesh);
           break;
