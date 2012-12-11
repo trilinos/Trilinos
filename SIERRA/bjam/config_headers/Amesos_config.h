@@ -13,7 +13,7 @@
 #define HAVE_AMESOS_EPETRAEXT
 
 /* Define if want to build with amesos enabled */
-/* #undef HAVE_AMESOS_GALERI */
+#define HAVE_AMESOS_GALERI
 
 /* Define if want to build amesos-klu */
 #define HAVE_AMESOS_KLU
@@ -55,7 +55,7 @@
 /* #undef HAVE_AMESOS_SUPERLU */
 
 /* Define if want to build amesos-superludist */
-/* #undef HAVE_AMESOS_SUPERLUDIST */
+#define HAVE_AMESOS_SUPERLUDIST
 
 /* Define if want to build amesos-taucs */
 /* #undef HAVE_AMESOS_TAUCS */

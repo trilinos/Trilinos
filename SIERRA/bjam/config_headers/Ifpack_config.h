@@ -10,7 +10,7 @@
 #define HAVE_IFPACK_EPETRAEXT
 
 /* Define if want to build with ifpack enabled */
-/* #undef HAVE_IFPACK_GALERI */
+#define HAVE_IFPACK_GALERI
 
 /* Define if you want to build Ifpack's ParameterList interface */
 /* #undef HAVE_IFPACK_METIS */

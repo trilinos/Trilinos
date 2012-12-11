@@ -63,7 +63,7 @@
 /* #undef HAVE_ML_FLOPS */
 
 /* Define if want to build with ml enabled */
-/* #undef HAVE_ML_GALERI */
+#define HAVE_ML_GALERI
 
 /* Define if want to build with ml enabled */
 #define HAVE_ML_IFPACK

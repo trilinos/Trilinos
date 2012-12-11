@@ -121,6 +121,7 @@
 #include "EdgeQM.hpp"
 #include "ElemSampleQM.hpp"
 #include "ElementMaxQM.hpp"
+#include "ElementAvgQM.hpp"
 #include "ElementPMeanP.hpp"
 #include "ElementQM.hpp"
 #include "MultiplyQualityMetric.hpp"

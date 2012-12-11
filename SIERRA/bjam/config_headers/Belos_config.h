@@ -14,7 +14,7 @@
 #define HAVE_BELOS_ML
 
 /* Define if want to build with tpetra enabled */
-/* #undef HAVE_BELOS_TPETRA */
+#define HAVE_BELOS_TPETRA
 
 /* Define whether we want to time Tpetra MultiVector operations */
 /* #undef HAVE_BELOS_TPETRA_TIMERS */
@@ -54,7 +54,7 @@
 #define HAVE_TEUCHOS_COMPLEX
 
 /* Define if we are building Belos TSQR with TSQR support */
-/* #undef HAVE_BELOS_TSQR */
+#define HAVE_BELOS_TSQR
 
 /* Define if we are building with Teuchos TimeMonitors enabled */
 #define BELOS_TEUCHOS_TIME_MONITOR

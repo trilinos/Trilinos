@@ -22,7 +22,7 @@
 /* #undef HAVE_ANASAZI_EXPERIMENTAL */
 
 /* Define if want to build with tpetra enabled */
-/* #undef HAVE_ANASAZI_TPETRA */
+#define HAVE_ANASAZI_TPETRA
 
 /* Define whether we have Tpetra MultiVector timers */
 /* #undef HAVE_ANASAZI_TPETRA_TIMERS */
@@ -57,7 +57,7 @@
 /* Define if want to build with TSQR support (depends on
    Anasazi_ENABLE_TSQR CMake configuration variable, to which the
    CMake files refer as Anasazi_ENABLE_TSQR) */
-/* #undef HAVE_ANASAZI_TSQR */
+#define HAVE_ANASAZI_TSQR
 
 #define ANASAZI_TEUCHOS_TIME_MONITOR
 
