@@ -109,7 +109,7 @@ struct topology
   /// what is the side rank of this topology
   rank_t side_rank() const;
 
-  /// what is the dimension of this topology
+  /// what is the topological dimension of this topology
   int dimension() const;
 
   /// how many nodes define this topology
@@ -130,7 +130,7 @@ struct topology
   /// how many different node permutations does this topology have
   int num_permutations() const;
 
-  /// how many different node permutations does this topology have
+  /// how many different positive node permutations does this topology have
   int num_positive_permutations() const;
 
   /// is this topology defined on the given spatial dimension
@@ -165,28 +165,33 @@ struct topology
   void permutation_node_ordinals(int permutation_ordinal, OrdinalOutputIterator output_ordinals) const;
 
   /// fill the output nodes with the nodes that make up the given edge
+  /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray, typename NodeOutputIterator>
   void edge_nodes(const NodeArray & nodes, int edge_ordinal, NodeOutputIterator output_nodes) const;
 
   /// fill the output nodes with the nodes that make up the given face
-  template <typename NodeArray, typename NodeOutputIterator>
+  /// input 'nodes' is expected to be of length num_nodes.
+ template <typename NodeArray, typename NodeOutputIterator>
   void face_nodes(const NodeArray & nodes, int face_ordinal, NodeOutputIterator output_nodes) const;
 
   /// fill the output nodes with the nodes that make up the given side
+ /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray, typename NodeOutputIterator>
   void side_nodes(const NodeArray & nodes, int side_ordinal, NodeOutputIterator output_nodes) const;
 
   /// fill the output nodes with the nodes that make up the given permutation
+  /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray, typename NodeOutputIterator>
   void permutation_nodes(const NodeArray & nodes, int permutation_ordinal, NodeOutputIterator output_nodes) const;
 
-  /// do the two arrays defined equivalent entities (same nodes, but maybe a different permutation)
+  /// do the two arrays define equivalent entities (same nodes, but maybe a different permutation)
   /// return a pair<bool, permutation_number> bool and permutation number from a to b
   template <typename NodeArrayA, typename NodeArrayB>
   std::pair<bool,int> equivalent(const NodeArrayA & a, const NodeArrayB & b) const;
 
 
   /// return the permutation index which gives the lowest lexicographical ordering of the nodes
+  /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray>
   int lexicographical_smallest_permutation(const NodeArray &nodes, bool only_positive_permutations = false) const;
 
@@ -205,6 +210,7 @@ struct topology
   }
 
   /// fill the output nodes with the nodes that make up the given sub topology
+  /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray, typename NodeOutputIterator>
   STKTOPOLOGY_INLINE_FUNCTION
   void sub_topology_nodes(const NodeArray & nodes, rank_t sub_rank, int sub_ordinal, NodeOutputIterator output_nodes) const
