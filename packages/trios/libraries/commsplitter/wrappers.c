@@ -181,7 +181,7 @@ static int commsplitter_MPI_Init(int *argc, char ***argv)
     enabled_save = commsplitter_data.enabled;
     commsplitter_data.enabled = 0;
 
-    // stop hpctoolkit sampling (sometimes causes faults)
+    /* stop hpctoolkit sampling (sometimes causes faults) */
     int sampling = SAMPLING_IS_ACTIVE();
     if (sampling) SAMPLING_STOP();
 
