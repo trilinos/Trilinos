@@ -138,10 +138,10 @@ namespace MueLu {
        @param[in] varName name of variable.
 
     */
-    const RCP<const FactoryBase> & GetFactory(const std::string & varName) const;
+    const RCP<const FactoryBase> GetFactory(const std::string & varName) const;
 
     //!
-    const RCP<const FactoryBase> & GetDefaultFactory(const std::string & varName) const;
+    const RCP<const FactoryBase> GetDefaultFactory(const std::string & varName) const;
 
     //@}
 
@@ -157,7 +157,7 @@ namespace MueLu {
      @todo TODO factory->setObjectLabel("Default " + varName + "Factory");
     */
 
-    const RCP<const FactoryBase> & SetAndReturnDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) const;
+    const RCP<const FactoryBase> SetAndReturnDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) const;
 
     //! Test if factoryTable_[varName] exists
     static bool IsAvailable(const std::string & varName, const std::map<std::string, RCP<const FactoryBase> > & factoryTable);
