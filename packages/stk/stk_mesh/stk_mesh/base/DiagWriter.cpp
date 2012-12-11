@@ -26,7 +26,6 @@ static stk::diag::Writer* s_diagWriter = NULL;
 
 }
 
-
 void initDiagWriter(std::ostream& stream)
 {
   s_diagWriter = new stk::diag::Writer(stream.rdbuf(),
@@ -97,19 +96,14 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Part& part)
 stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Entity entity)
 {
   // Get bucket of entity
-  Bucket* bucket = NULL;
-  try {
-    bucket = &(entity.bucket());
-  }
-  catch (...) {} // leave bucket as NULL if it's not found
+  Bucket* bucket = entity.bucket_ptr();
 
-  std::string ownership_info = "unregistered";
-  std::string entity_key_str;
   EntityKey key = entity.key();
   if (bucket) {
     MetaData& meta_data = MetaData::get(*bucket);
     Part &   owned  = meta_data.locally_owned_part();
     Part &   shared = meta_data.globally_shared_part();
+    std::string ownership_info = "unregistered";
     if (bucket->member(owned)) {
       ownership_info = "owned";
     }
@@ -122,27 +116,25 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Entity entity)
     else {
       ownership_info = "ghosted";
     }
-    entity_key_str = print_entity_key(meta_data, key);
-  }
-  else {
-    std::ostringstream out;
-    out << "(rank:" << key.rank() << ",id:" << key.id() << ")";
-    entity_key_str = out.str();
-  }
 
-  writer << "Entity[key:" << entity_key_str <<
-                 ", ownership:" << ownership_info <<
-                 ", log:" << log_to_str(entity.state()) <<
-                 ", owner:" << entity.owner_rank();
+    writer << "Entity[key:" << print_entity_key(meta_data, key) <<
+      ", ownership:" << ownership_info <<
+      ", log:" << log_to_str(entity.state()) <<
+      ", owner:" << entity.owner_rank();
 
-  // print comm info
-  if (entity.bucket_ptr() != NULL) {
     writer << ", COMM: ";
     PairIterEntityComm comm_itr = BulkData::get(entity).entity_comm(entity.key());
     for ( ; !comm_itr.empty(); ++comm_itr ) {
       writer << "(ghost:" << comm_itr->ghost_id << ", proc:" << comm_itr->proc << ") ";
     }
   }
+  else {
+    std::ostringstream out;
+    out << "(rank:" << key.rank() << ",id:" << key.id() << ")";
+
+    writer << "Entity[key:" << out.str() << "(NEW ENTITY)";
+  }
+
   return writer << "]";
 }
 

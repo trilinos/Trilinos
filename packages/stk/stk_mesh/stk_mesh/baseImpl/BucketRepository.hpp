@@ -49,6 +49,8 @@ public:
     */
   unsigned bucket_capacity() const { return m_bucket_capacity; }
 
+  BulkData& mesh() const { return m_mesh; }
+
   //------------------------------------
 
   /** \brief  Rotate the field data of multistate fields.

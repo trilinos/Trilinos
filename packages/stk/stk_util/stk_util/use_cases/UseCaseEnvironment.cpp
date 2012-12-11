@@ -301,10 +301,8 @@ OptionMaskParser dw_option_mask("use case diagnostic writer");
 OptionMaskParser timer_option_mask("use case timers");
 
 void
-bootstrap()
+stk_bootstrap()
 {
-  /// \todo REFACTOR  Put these program_options in a function
-  ///                 that can be called without the bootstrapping.
   dw_option_mask.mask("search", use_case::LOG_SEARCH, "log search diagnostics");
   dw_option_mask.mask("transfer", use_case::LOG_TRANSFER, "log transfer diagnostics");
   dw_option_mask.mask("timer", use_case::LOG_TIMER, "log timer diagnostics");
@@ -327,8 +325,6 @@ bootstrap()
 
   stk::get_options_description().add(desc);
 }
-
-stk::Bootstrap x(bootstrap);
 
 } // namespace <empty>
 
@@ -477,6 +473,7 @@ void UseCaseEnvironment::initialize(int* argc, char*** argv)
   stk::set_report_handler(report_handler);
 
   stk::Bootstrap::bootstrap();
+  stk_bootstrap();
 
   for (int i = 0; i < *argc; ++i) {
     const std::string s((*argv)[i]);

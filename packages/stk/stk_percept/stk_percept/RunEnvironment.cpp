@@ -373,21 +373,9 @@ namespace stk {
     void
     RunEnvironment::bootstrap()
     {
-      /// \todo REFACTOR  Put these program options in a function
-      ///                 that can be called without the bootstrapping.
-      //* dw_option_mask.mask("search", stk::percept::LOG_SEARCH, "log search diagnostics");
-      //* dw_option_mask.mask("transfer", stk::percept::LOG_TRANSFER, "log transfer diagnostics");
-      //* dw_option_mask.mask("timer", stk::percept::LOG_TIMER, "log timer diagnostics");
       dw_option_mask.mask("all", stk::percept::LOG_ALWAYS, "log all");
 
       timer_option_mask.mask("mesh", stk::percept::TIMER_MESH, "mesh operations timers");
-      //* timer_option_mask.mask("meshio", stk::percept::TIMER_MESH_IO, "mesh I/O timers");
-      //* timer_option_mask.mask("transfer", stk::percept::TIMER_TRANSFER, "transfer timers");
-      //* timer_option_mask.mask("search", stk::percept::TIMER_SEARCH, "search timers");
-
-
-      //!stk::get_options_description().add(desc);
-
     }
 
     void RunEnvironment::

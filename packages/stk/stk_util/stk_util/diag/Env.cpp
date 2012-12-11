@@ -54,7 +54,7 @@ namespace Env {
 
 namespace {
 
-void bootstrap()
+void sierra_bootstrap()
 {
   // Add my command line options to the option descriptions.
   boost::program_options::options_description desc("Runtime environment", 120);
@@ -74,8 +74,6 @@ void bootstrap()
 
   stk::get_options_description().add(desc);
 }
-
-stk::Bootstrap x(&bootstrap);
 
 struct EnvData
 {
@@ -113,19 +111,19 @@ struct EnvData
     m_execMap[EXEC_TYPE_FLUID].m_groupComm = MPI_COMM_NULL;
     stk::register_log_ostream(std::cout, "cout");
     stk::register_log_ostream(std::cerr, "cerr");
-    
+
     stk::register_ostream(sierra::out(), "out");
     stk::register_ostream(sierra::pout(), "pout");
     stk::register_ostream(sierra::dout(), "dout");
     stk::register_ostream(sierra::tout(), "tout");
-    
+
     static_cast<stk::indent_streambuf *>(sierra::dwout().rdbuf())->redirect(sierra::dout().rdbuf());
   }
 
   ~EnvData()
   {
     static_cast<stk::indent_streambuf *>(sierra::dwout().rdbuf())->redirect(std::cout.rdbuf());
-  
+
     stk::unregister_ostream(tout());
     stk::unregister_ostream(dout());
     stk::unregister_ostream(pout());
@@ -134,11 +132,11 @@ struct EnvData
     stk::unregister_log_ostream(std::cerr);
     stk::unregister_log_ostream(std::cout);
   }
-  
+
   std::string           m_productName;
 
   boost::program_options::variables_map & m_vm;
-  
+
   null_streambuf	m_nullBuf;
   std::ostream		m_outputNull;
   std::ostream *	m_outputP0;
@@ -152,13 +150,13 @@ struct EnvData
   bool                  m_checkSubCycle;
 
   MPI_Comm		m_worldComm;
-  
+
   MPI_Comm		m_parallelComm;
   int			m_parallelSize;
   int			m_parallelRank;
 
   ExecMap               m_execMap;
-  
+
   const std::string	m_emptyString;
   const std::string	m_onString;
 
@@ -186,7 +184,7 @@ executable_date()
 {
   static std::string executable_date;
 
-  if (executable_date.empty()) 
+  if (executable_date.empty())
     executable_date = ProductRegistry::instance().getProductAttribute(EnvData::instance().m_productName, ProductRegistry::BUILD_TIME);
 
   return executable_date;
@@ -395,9 +393,10 @@ bool StartupSierra(int *			  argc,
   ExecType                mpi_key,
   const std::vector<int> *peer_sizes) {
   bool returnValue = false;
- 
+
   stk::Bootstrap::bootstrap();
-  
+  sierra_bootstrap();
+
   EnvData &env_data = EnvData::instance();
 
   env_data.m_executablePath = get_program_path(*argv[0]);
@@ -421,24 +420,24 @@ bool StartupSierra(int *			  argc,
 
   // Process the broadcast command line arguments
   namespace opt = boost::program_options;
-    
+
   opt::variables_map &vm = stk::get_variables_map();
   opt::options_description &od = stk::get_options_description();
   {
     boost::program_options::options_description desc("Diagnostic writers", 120);
-    
+
     for (Diag::WriterRegistry::iterator it = Diag::getWriterRegistry().begin(); it != Diag::getWriterRegistry().end(); ++it) {
       std::ostringstream str;
       str << "Diagnostic writer " << (*it).first << std::endl;
-      (*it).second.second->describe(str);  
+      (*it).second.second->describe(str);
       desc.add_options()((*it).first.c_str(), boost::program_options::value<std::string>(), str.str().c_str());
     }
-    
+
     std::ostringstream str;
     str << "Wall and CPU time options" << std::endl;
-    Diag::theTimerParser().describe(str);  
+    Diag::theTimerParser().describe(str);
     desc.add_options()("timer", boost::program_options::value<std::string>(), str.str().c_str());
-    
+
     od.add(desc);
   }
 
@@ -508,7 +507,7 @@ bool StartupSierra(int *			  argc,
 
       if (mpi_key != EXEC_TYPE_WORLD) startup_multi_exec(startup_mpi_comm, mpi_key, peer_sizes);
     }
-    
+
     // Ready to reset the environment from NULL, we are the Lagrangian application at this point.
     MPI_Comm new_comm = mpi_key != EXEC_TYPE_WORLD ? env_data.m_execMap[mpi_key].m_groupComm : MPI_COMM_WORLD;
     reset(new_comm);
@@ -525,7 +524,7 @@ bool StartupSierra(int *			  argc,
   }
 
   parse_options(env_data.m_parallelComm, argc, argv);
-  
+
   {
     std::ostringstream output_description;
 
@@ -534,19 +533,19 @@ bool StartupSierra(int *			  argc,
 
     // On processor 1..n:
     //   [poutfile=path.n.r] [doutfile=path.n.r] out>pout pout>{null|poutfile} dout>{out|doutfile}
-    
+
     std::string out_path1 = vm["output-log"].as<std::string>();
     std::string out_path2 = vm["logfile"].as<std::string>();
 
 
-    
+
     std::string originalFileName = Env::get_param("input-deck");
     std::string modifiedFileName = originalFileName;
 
     if(originalFileName == "") {
       //
       //  If no input file specified, error out (unless just running the --version or --help option)
-      //         
+      //
       if ( get_param("version").empty() && get_param("help").empty() ) {
         if (env_data.m_inputFileRequired) {
           throw RuntimeError() << "No input file specified.  An input file must be specified with the '-i' option";
@@ -606,7 +605,7 @@ bool StartupSierra(int *			  argc,
       //
       //  If the output path contains a ".aprepro" tag get rid of it
       //
-      int apreproPos = trueOut.rfind(".aprepro"); 
+      int apreproPos = trueOut.rfind(".aprepro");
       if(apreproPos != -1) {
         trueOut.erase(apreproPos, 8);
       }
@@ -621,12 +620,12 @@ bool StartupSierra(int *			  argc,
 
 
     }
- 
+
     std::string out_path = trueOut;
 
     if (out_path == "-")
       out_path = "cout";
-    
+
     std::string out_ostream;
 
     if (!stk::get_log_ostream(out_path))
@@ -663,7 +662,7 @@ bool StartupSierra(int *			  argc,
         s << working_directory() << pout_path << "." << parallel_size() << "." << parallel_rank();
         pout_path = s.str();
       }
-      
+
       if (!stk::get_log_ostream(pout_path)) {
         output_description << " poutfile=\"" << pout_path << "\"";
         pout_ostream = "poutfile";
@@ -673,7 +672,7 @@ bool StartupSierra(int *			  argc,
     }
 
 
-    std::string dout_ostream;    
+    std::string dout_ostream;
     if (vm.count("dout")) {
       std::string dout_path = vm["dout"].as<std::string>();
       if (!dout_path.empty() && stk::is_registered_ostream(dout_path))
@@ -702,12 +701,12 @@ bool StartupSierra(int *			  argc,
 
     stk::bind_output_streams(output_description.str());
   }
-  
+
   env_data.m_outputP0 = &sierra::out();
-  
+
 #ifdef SIERRA_EXPORT_CONTROL_EAR99
   // If you are using an EAR99 export controlled version of Sierra,
-  // any attempt to modify or bypass this section of code is a 
+  // any attempt to modify or bypass this section of code is a
   // violation of U.S. Export Control Regulations and subject to
   // criminal prosecution.
   if (parallel_size() > SIERRA_EXPORT_CONTROL_EAR99) {
@@ -718,7 +717,7 @@ bool StartupSierra(int *			  argc,
     }
     MPI_Abort(env_data.m_parallelComm, MPI_ERR_OTHER);
   }
-#endif  
+#endif
 
   try {
     // Create pid file if runtest command line option specified
@@ -778,7 +777,7 @@ Startup::startup(
   m_mpiInitFlag = StartupSierra(argc, argv, product_name, build_time, mpi_key, peer_sizes);
 }
 
-          
+
 Startup::Startup(
   int *                 argc,
   char ***              argv,
@@ -826,12 +825,12 @@ void parse_options(MPI_Comm  comm,
         argv2[i][0] = '-';
         std::strcpy(&argv2[i][1], (*argv)[i]);
       }
-      else {	
-        argv2[i] = new char[std::strlen((*argv)[i]) + 1]; 
+      else {
+        argv2[i] = new char[std::strlen((*argv)[i]) + 1];
 	std::strcpy(argv2[i], (*argv)[i]);
-      }      
+      }
     }
-  
+
     // Broadcast argc and argv to all processors.
     stk::BroadcastArg b_arg(comm, *argc, argv2);
 
@@ -848,7 +847,7 @@ void parse_options(MPI_Comm  comm,
     for (Diag::WriterRegistry::iterator it = Diag::getWriterRegistry().begin(); it != Diag::getWriterRegistry().end(); ++it)
       if (vm.count((*it).first.c_str()))
         (*it).second.second->parse(vm[(*it).first.c_str()].as<std::string>().c_str());
-    
+
 
     // Must have a working directory
     const std::string &working_dir = get_param("directory");
@@ -856,7 +855,7 @@ void parse_options(MPI_Comm  comm,
       throw RuntimeError() << "working directory must be specified";
     if (working_dir[working_dir.length() - 1] != '/')
       const_cast<std::string &>(working_dir) += '/';
-    
+
   }
   catch (const std::exception &x) {
     std::cerr << "SIERRA execution failed during command line processing with the following exception:" << std::endl
@@ -868,7 +867,7 @@ void parse_options(MPI_Comm  comm,
 
     MPI_Abort(comm, MPI_ERR_OTHER);
   }
-} 
+}
 
 void
 startup_multi_exec(MPI_Comm                world_comm,
@@ -880,7 +879,7 @@ startup_multi_exec(MPI_Comm                world_comm,
   // MPI interface construction
   int world_size = -1 ;
   int world_rank = -1 ;
-      
+
   if ( MPI_Comm_size(world_comm, &world_size) != MPI_SUCCESS)
     throw RuntimeError() << "MPI_Comm_size failed";
 
@@ -895,7 +894,7 @@ startup_multi_exec(MPI_Comm                world_comm,
     int lag_master = 0;
     int lag_rank_size = -1;
     int fluid_master = 0;
-      
+
     if (world_rank == 0) {
       typedef std::map<ExecType, std::vector<int> > ExecTypeRanks;
 
@@ -910,7 +909,7 @@ startup_multi_exec(MPI_Comm                world_comm,
           throw RuntimeError() << "MPI_Recv failed";
 
         exec_type_ranks[(ExecType) proc_stat[1]].push_back(proc_stat[0]);
-      }        
+      }
 
       std::vector<int> &fluid_ranks = exec_type_ranks[EXEC_TYPE_FLUID];
       if (fluid_ranks.size())
@@ -919,7 +918,7 @@ startup_multi_exec(MPI_Comm                world_comm,
       if (MPI_Bcast(&fluid_master, 1, MPI_INTEGER, 0, world_comm) != MPI_SUCCESS)
         throw RuntimeError() << "MPI_Bcast failed";
 
-      std::vector<int> &lag_ranks = exec_type_ranks[EXEC_TYPE_LAG];      
+      std::vector<int> &lag_ranks = exec_type_ranks[EXEC_TYPE_LAG];
       if (lag_ranks.size())
         lag_master = lag_ranks.front();
 
@@ -957,7 +956,7 @@ startup_multi_exec(MPI_Comm                world_comm,
       MPI_Group lag_group;
       MPI_Group fluid_group;
 
-      if (MPI_Comm_group(world_comm, &world_group) != MPI_SUCCESS) 
+      if (MPI_Comm_group(world_comm, &world_group) != MPI_SUCCESS)
         throw RuntimeError() << "MPI_Comm_group failed";
 
       std::vector<int> lag_ranks;
@@ -995,7 +994,7 @@ startup_multi_exec(MPI_Comm                world_comm,
     // odd)
     // If peer_sizes is not NULL, then split world_comm into
     // peer_sizes.size() sub communicators with peer(i) of size
-    // peer_sizes(i). 
+    // peer_sizes(i).
 
     // Sync 'peer_sizes' across all processors if non-null
     // For now, we limit the number of peer applications to 2.
@@ -1104,7 +1103,7 @@ output_flush()
   EnvData &env_data = EnvData::instance();
 
   stk::report_deferred_messages(Env::parallel_comm());
-  
+
   stk::all_write_string(Env::parallel_comm(), *env_data.m_outputP0, env_data.m_output.str());
   env_data.m_output.str("");
 }
@@ -1146,7 +1145,7 @@ void abort() {
               << std::endl ;
     std::cerr << env_data.m_output.str();
   }
-  
+
   std::cerr.flush();
   std::cout.flush();
 
@@ -1185,7 +1184,7 @@ set_param(
 
   int argc = 1;
   char *s = std::strcpy(new char[std::strlen(option) + 1], option);
-  
+
   opt::store(opt::parse_command_line(argc, &s, od), vm);
   opt::notify(vm);
 

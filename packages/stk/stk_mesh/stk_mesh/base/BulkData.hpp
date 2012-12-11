@@ -91,6 +91,7 @@ public:
   inline static BulkData & get( const Bucket & bucket);
   inline static BulkData & get( const Entity entity);
   inline static BulkData & get( const Ghosting & ghost);
+  inline static BulkData & get( const impl::BucketRepository & bucket_repo );
 
   enum BulkDataSyncState { MODIFIABLE = 1 , SYNCHRONIZED = 2 };
 
@@ -632,6 +633,10 @@ BulkData & BulkData::get( const Entity entity) {
 
 BulkData & BulkData::get( const Ghosting & ghost) {
   return ghost.bulk_data();
+}
+
+BulkData & BulkData::get( const impl::BucketRepository & bucket_repo ) {
+  return bucket_repo.mesh();
 }
 
 /** \} */
