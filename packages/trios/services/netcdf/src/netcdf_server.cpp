@@ -1520,21 +1520,23 @@ int nc_put_vars_stub(
             fill(stride_copy, stride_copy+ndims, 1);
         }
 
-        fprintf(logger_get_file(), "start_copy = (");
-        for (i=0;i<ndims; i++) {
-            fprintf(logger_get_file(), "%s%d", !i ? "" : ", ", start_copy[i]);
+        if (logging_debug(debug_level)) {
+            fprintf(logger_get_file(), "start_copy = (");
+            for (i=0;i<ndims; i++) {
+                fprintf(logger_get_file(), "%s%d", !i ? "" : ", ", start_copy[i]);
+            }
+            fprintf(logger_get_file(), ")\n");
+            fprintf(logger_get_file(), "count_copy = (");
+            for (i=0;i<ndims; i++) {
+                fprintf(logger_get_file(), "%s%d", !i ? "" : ", ", count_copy[i]);
+            }
+            fprintf(logger_get_file(), ")\n");
+            fprintf(logger_get_file(), "stride_copy = (");
+            for (i=0;i<ndims; i++) {
+                fprintf(logger_get_file(), "%s%d", !i ? "" : ", ", stride_copy[i]);
+            }
+            fprintf(logger_get_file(), ")\n");
         }
-        fprintf(logger_get_file(), ")\n");
-        fprintf(logger_get_file(), "count_copy = (");
-        for (i=0;i<ndims; i++) {
-            fprintf(logger_get_file(), "%s%d", !i ? "" : ", ", count_copy[i]);
-        }
-        fprintf(logger_get_file(), ")\n");
-        fprintf(logger_get_file(), "stride_copy = (");
-        for (i=0;i<ndims; i++) {
-            fprintf(logger_get_file(), "%s%d", !i ? "" : ", ", stride_copy[i]);
-        }
-        fprintf(logger_get_file(), ")\n");
 
         ccount = 1;
         for (i=0;i<ndims; i++) {
