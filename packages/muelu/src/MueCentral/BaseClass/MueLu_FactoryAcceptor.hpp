@@ -43,25 +43,22 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_PARAMETERACCEPTOR_HPP
-#define MUELU_PARAMETERACCEPTOR_HPP
+#ifndef MUELU_FACTORYACCEPTOR_HPP
+#define MUELU_FACTORYACCEPTOR_HPP
 
 #include <string>
 
 #include "Teuchos_RCP.hpp"
 #include "MueLu_ConfigDefs.hpp"
-//#include "Muelu_FactoryBase_fwd.hpp"
 #include "MueLu_FactoryBase.hpp"
-
-// TODO See also: Teuchos::ParameterListAcceptor, Teko::Clonable
 
 namespace MueLu {
 
-  class ParameterAcceptor {
+  class FactoryAcceptor {
 
   public:
 
-    virtual ~ParameterAcceptor() { }
+    virtual ~FactoryAcceptor() { }
 
     //@{
     //! Configuration
@@ -77,9 +74,9 @@ namespace MueLu {
 
     //@}
 
-  }; //class ParameterAcceptor
+  }; //class FactoryAcceptor
 
 } //namespace MueLu
 
-#define MUELU_PARAMETERACCEPTOR_SHORT
-#endif //ifndef MUELU_PARAMETERACCEPTOR_HPP
+#define MUELU_FACTORYACCEPTOR_SHORT
+#endif //ifndef MUELU_FACTORYACCEPTOR_HPP

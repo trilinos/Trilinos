@@ -53,22 +53,14 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_FactoryBase.hpp"
-#include "MueLu_ParameterAcceptor.hpp"
+#include "MueLu_FactoryAcceptor.hpp"
+#include "MueLu_ParameterListAcceptor.hpp"
 
 #include "MueLu_Level.hpp"
 
 namespace MueLu {
 
-  template <class Key, class T>
-  const RCP<T> mapFind(const std::map<Key, RCP<T> > & map, Key & varName) {
-    typename std::map<Key, RCP<T> >::const_iterator f = map.find(varName);
-    if (f == map.end())
-      return Teuchos::null;
-    else
-      return f->second;
-  }
-
-  class Factory : public FactoryBase, public ParameterAcceptor {
+  class Factory : public FactoryBase, public FactoryAcceptor, public ParameterListAcceptorImpl {
 
   public:
     //@{ Constructors/Destructors.
@@ -84,10 +76,13 @@ namespace MueLu {
     //! Configuration
 
     //! SetFactory is for expert users only. To change configuration of the preconditioner, use a factory manager.
-    virtual void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory);
+    virtual void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory) {
+      RCP<const FactoryBase> f = factory;
+      SetParameter(varName, ParameterEntry(f)); // parameter validation done in ParameterListAcceptorImpl
+    }
 
     const RCP<const FactoryBase> GetFactory(const std::string & varName) const {
-      return mapFind<const std::string, const FactoryBase>(factoryTable_, varName);
+      return GetParameterList().get< RCP<const FactoryBase> >(varName);
     }
 
     // SetParameterList(...);
@@ -95,6 +90,10 @@ namespace MueLu {
     // GetParameterList(...);
 
     //@}
+
+    virtual RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const {
+      return rcp(new ParameterList()); // no parameter by default - TMP
+    }
 
   protected:
 
@@ -115,9 +114,6 @@ namespace MueLu {
     bool IsAvailable(Level & level, const std::string & varName) const {
       return level.IsAvailable(varName, GetFactory(varName).get());
     }
-
-  private:
-    std::map<const std::string, RCP<const FactoryBase> > factoryTable_;
 
   }; //class Factory
 
