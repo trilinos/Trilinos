@@ -236,6 +236,28 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
   Epetra_Map() {}
 #endif
 
+ //! Epetra_Map constructor for a user-defined arbitrary distribution of elements, where the user provides all the globals.
+  /*! \warning This method is intended for expert developer use only, and should never be called by user code.
+   */
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  Epetra_Map(long long NumGlobal_Elements, int NumMy_Elements,
+	     const long long * myGlobalElements, 
+	     int indexBase,
+	     const Epetra_Comm& comm,
+	     bool UserIsDistributedGlobal,
+	     long long UserMinAllGID, long long UserMaxAllGID);
+#endif
+  
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  Epetra_Map(int NumGlobal_Elements, int NumMy_Elements,
+	     const int * myGlobalElements, 
+	     int indexBase,
+	     const Epetra_Comm& comm,
+	     bool UserIsDistributedGlobal,
+	     int UserMinAllGID, int UserMaxAllGID);
+#endif
+
+ 
   //! Epetra_Map copy constructor.
   Epetra_Map(const Epetra_Map& map);
   

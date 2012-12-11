@@ -96,6 +96,32 @@ Epetra_Map::Epetra_Map(long long numGlobalElements, int numMyElements,
   SetLabel("Epetra::Map");
 }
 #endif
+
+//==============================================================================
+// Epetra_Map constructor for a user-defined arbitrary distribution of constant block size elements w/ user provided globals.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+Epetra_Map::Epetra_Map(int numGlobalElements, int numMyElements,
+                       const int * myGlobalElements,
+                       int indexBase, const Epetra_Comm& comm,
+		       bool UserIsDistributedGlobal,
+		       int UserMinAllGID, int UserMaxAllGID)
+  : Epetra_BlockMap(numGlobalElements, numMyElements, myGlobalElements, 1, indexBase, comm, UserIsDistributedGlobal, UserMinAllGID, UserMaxAllGID) // Map is just a special case of BlockMap
+{
+  SetLabel("Epetra::Map");
+}
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+Epetra_Map::Epetra_Map(long long numGlobalElements, int numMyElements,
+                       const long long * myGlobalElements,
+                       int indexBase, const Epetra_Comm& comm,
+		       bool UserIsDistributedGlobal,
+		       long long UserMinAllGID, long long UserMaxAllGID)
+  : Epetra_BlockMap(numGlobalElements, numMyElements, myGlobalElements, 1, indexBase, comm, UserIsDistributedGlobal, UserMinAllGID, UserMaxAllGID) // Map is just a special case of BlockMap
+{
+  SetLabel("Epetra::Map");
+}
+#endif
+
 //==============================================================================
 Epetra_Map::Epetra_Map(const Epetra_Map& map)
   : Epetra_BlockMap(map) // Map is just a special case of BlockMap

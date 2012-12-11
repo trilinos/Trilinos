@@ -445,17 +445,17 @@ LightweightMapData::~LightweightMapData(){
 LightweightMap::LightweightMap():Data_(0){;}
 
 //=========================================================================
-LightweightMap::LightweightMap(int NumGlobalElements,int NumMyElements, const int * MyGlobalElements, int IndexBase)
+LightweightMap::LightweightMap(int NumGlobalElements,int NumMyElements, const int * MyGlobalElements, int IndexBase, bool GenerateHash)
 {
   Data_=new LightweightMapData();
   Data_->MyGlobalElements_.resize(NumMyElements);
 
-  // Build the hash sable
-  Data_->LIDHash_ = new Epetra_HashTable<int>(NumMyElements + 1 );
-  for(int i=0; i < NumMyElements; ++i ) {
-    Data_->MyGlobalElements_[i]=MyGlobalElements[i];
-    Data_->LIDHash_->Add(MyGlobalElements[i], i);
-  }  
+  // Build the hash table
+  if(GenerateHash) Data_->LIDHash_ = new Epetra_HashTable<int>(NumMyElements + 1 );
+    for(int i=0; i < NumMyElements; ++i ) {
+      Data_->MyGlobalElements_[i]=MyGlobalElements[i];
+      if(GenerateHash) Data_->LIDHash_->Add(MyGlobalElements[i], i);
+    }  
 }
 
 //=========================================================================

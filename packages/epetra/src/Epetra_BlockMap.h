@@ -371,6 +371,27 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   // bit indices present.
   Epetra_BlockMap() {}
 #endif
+  //! Epetra_BlockMap constructor for a user-defined arbitrary distribution of constant size elements, where the user provides all the globals.
+  /*! \warning This method is intended for expert developer use only, and should never be called by user code.
+   */
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  Epetra_BlockMap(long long NumGlobal_Elements, int NumMy_Elements,
+		  const long long * myGlobalElements, 
+		  int ElementSize, int indexBase,
+		  const Epetra_Comm& comm,
+		  bool UserIsDistributedGlobal,
+		  long long UserMinAllGID, long long UserMaxAllGID);
+#endif
+  
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
+		 const int * myGlobalElements, 
+		 int ElementSize, int indexBase,
+		 const Epetra_Comm& comm,
+		 bool UserIsDistributedGlobal,
+		 int UserMinAllGID, int UserMaxAllGID);
+#endif
+
 
   //! Epetra_BlockMap copy constructor.
   Epetra_BlockMap(const Epetra_BlockMap& map);
@@ -750,8 +771,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   void CleanupData();
   
   Epetra_BlockMapData * BlockMapData_;
-
+  
 private:
+
 
   void ConstructAutoUniform(long long NumGlobal_Elements, int Element_Size,
       long long Index_Base, const Epetra_Comm& comm, bool IsLongLong);
@@ -770,6 +792,14 @@ private:
       const int_type * myGlobalElements,
       const int *elementSizeList, int_type indexBase,
       const Epetra_Comm& comm, bool IsLongLong);
+
+  template<typename int_type>
+  void ConstructUserConstantNoComm(int_type NumGlobal_Elements, int NumMy_Elements,
+      const int_type * myGlobalElements, 
+      int ElementSize, int indexBase,
+      const Epetra_Comm& comm, bool IsLongLong,
+      bool UserIsDistributedGlobal,
+      int_type UserMinAllGID, int_type UserMaxAllGID);
 
   template<typename int_type>
   int_type& MyGlobalElementVal(int i);

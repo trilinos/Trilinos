@@ -98,9 +98,11 @@ static inline int auto_resize(std::vector<int> &x,int num_new){
 /*****************************************************************************/
 /*****************************************************************************/
 #ifdef USE_DELAYED_MAP_CONSTRUCTION
-int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const LightweightCrsMatrix &Bimport, LightweightMap*& unionmap, std::vector<int>& Cremotepids)
+int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const LightweightCrsMatrix &Bimport, LightweightMap*& unionmap, std::vector<int>& Cremotepids,
+					std::vector<int> &Bcols2Ccols, std::vector<int> &Icols2Ccols)
 #else
-int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const LightweightCrsMatrix &Bimport, Epetra_Map*& unionmap, std::vector<int>& Cremotepids)
+int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const LightweightCrsMatrix &Bimport, Epetra_Map*& unionmap, std::vector<int>& Cremotepids,
+					std::vector<int> &Bcols2Ccols, std::vector<int> &Icols2Ccols)
 #endif
 {
 #ifdef HAVE_MPI
@@ -115,7 +117,7 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
 
  // So we need to merge the ColMap of B and the TargetMap of Bimport in an AztecOO/Ifpack/ML compliant order.
   Epetra_Util util;
-  int i,MyPID = B.Comm().MyPID(), NumProc = B.Comm().NumProc();
+  int i,j,MyPID = B.Comm().MyPID(), NumProc = B.Comm().NumProc();
   int Bstart=0, Istart=0, Cstart=0,Pstart=0;
 
   const Epetra_Map & BColMap   = B.ColMap();
@@ -130,6 +132,9 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
   int * Bgids    = BColMap.MyGlobalElements();
   int Ni         = IColMap.NumMyElements();
   int * Igids    = IColMap.MyGlobalElements();  
+
+  if((int)Bcols2Ccols.size() != Nb) Bcols2Ccols.resize(Nb);
+  if((int)Icols2Ccols.size() != Ni) Icols2Ccols.resize(Ni);
 
   // Since we're getting called, we know we have to be using an MPI implementation of Epetra.  
   // Which means we should have an MpiDistributor for both B and Bimport.  
@@ -178,6 +183,8 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
     DomainMap.MyGlobalElements(&Cgids[0]);
     Cstart=DomainMap.NumMyElements();
     Bstart=DomainMap.NumMyElements();
+
+    for(i=0; i<DomainMap.NumMyElements(); i++) Bcols2Ccols[i] = i;
   }
   else {
     // There are more entries in the DomainMap than B's ColMap.  So we stream through both B and Bimport for the copy.
@@ -187,6 +194,7 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
       int LID = BColMap.LID(GID);
       // B has this guy
       if(LID!=-1) {
+	Bcols2Ccols[LID]=Cstart;
 	Cgids[Cstart] = GID;
 	Cstart++;
 	Bstart++;
@@ -195,6 +203,7 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
 	// B import has this guy
 	LID = IColMap.LID(GID);
 	if(LID!=-1) {
+	  Icols2Ccols[LID]=Cstart;
 	  Cgids[Cstart] = GID;
 	  Cstart++;
 	}	
@@ -203,8 +212,12 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
   }
 
   // Now advance Ilast to the last owned unknown in Bimport
-  for(i=0;i<Ni && Ipids[i]==-1; i++) {}
+  for(i=0,j=0; i<Ni && Ipids[i]==-1; i++) {
+    while(Cgids[j]!=Igids[i]) j++;
+    Icols2Ccols[i]=j;
+  }
   Istart=i;
+
 
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
@@ -225,7 +238,8 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
   }
   else initial_temp_length=100;
 
-  std::vector<int> Btemp(initial_temp_length), Itemp(initial_temp_length);
+  std::vector<int> Btemp(initial_temp_length),  Itemp(initial_temp_length);
+  std::vector<int> Btemp2(initial_temp_length), Itemp2(initial_temp_length);
 
   while (Bstart < Nb || Istart < Ni) {
     int Bproc=NumProc+1, Iproc=NumProc+1, Cproc;
@@ -243,6 +257,9 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
 	// Resize C if needed
 	if(Cstart >= Csize)  Csize=auto_resize(Cgids,1);
 	if(Pstart >= Psize)  Psize=auto_resize(Cremotepids,1);
+	Bcols2Ccols[i]      = Cstart;
+	//	printf("[%d] @B2C[%2d] <= %2d\n",B.Comm().MyPID(),i,Cstart);
+
 	Cgids[Cstart]       = Bgids[i];
 	Cremotepids[Pstart] = Cproc;
 	Cstart++;
@@ -257,6 +274,9 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
 	// Resize C if needed
 	if(Cstart >= Csize)  Csize=auto_resize(Cgids,1);
 	if(Pstart >= Psize)  Psize=auto_resize(Cremotepids,1);
+	Icols2Ccols[i]      = Cstart;
+
+	//	printf("[%d] @I2C[%2d] <= %2d\n",B.Comm().MyPID(),i,Cstart);
 	Cgids[Cstart]       = Igids[i];
 	Cremotepids[Pstart] = Cproc;
 	Cstart++;
@@ -279,21 +299,33 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
       int tBsize = Bnext-Bstart;
       int tIsize = Inext-Istart;
       int tCsize = tBsize+tIsize;
-      if(Btemp.size() < (size_t)tBsize) Btemp.resize(tBsize);
-      if(Itemp.size() < (size_t)tIsize) Itemp.resize(tIsize);
+      if(Btemp.size() < (size_t)tBsize) {Btemp.resize(tBsize); Btemp2.resize(tBsize);}
+      if(Itemp.size() < (size_t)tIsize) {Itemp.resize(tIsize); Itemp2.resize(tIsize);}
 
       if(Cstart+tCsize >= Csize)  Csize=auto_resize(Cgids,Csize+tCsize-Cstart+1);
       if(Pstart+tCsize >= Psize)  Psize=auto_resize(Cremotepids,Psize+tCsize-Pstart+1);
 
-      for(i=Bstart; i<Bnext; i++) Btemp[i-Bstart]=Bgids[i];
-      for(i=Istart; i<Inext; i++) Itemp[i-Istart]=Igids[i];
+      for(i=Bstart; i<Bnext; i++) {Btemp[i-Bstart]=Bgids[i]; Btemp2[i-Bstart]=i;}
+      for(i=Istart; i<Inext; i++) {Itemp[i-Istart]=Igids[i]; Itemp2[i-Istart]=i;}
 
       // Sort & set_union
-      util.Sort(true, tBsize, &Btemp[0], 0, 0, 0, 0);
-      util.Sort(true, tIsize, &Itemp[0], 0, 0, 0, 0);
+      int *Bptr2 = &Btemp2[0]; int *Iptr2 = &Itemp2[0];
+      util.Sort(true, tBsize, &Btemp[0], 0, 0, 1, &Bptr2);
+      util.Sort(true, tIsize, &Itemp[0], 0, 0, 1, &Iptr2);
       std::vector<int>::iterator mycstart = Cgids.begin()+Cstart;
       std::vector<int>::iterator last_el=std::set_union(Btemp.begin(),Btemp.begin()+tBsize,Itemp.begin(),Itemp.begin()+tIsize,mycstart);
 
+      //      int Cnext=(last_el - mycstart) + Cstart;
+      for(i=0, j=Cstart; i<tBsize; i++){
+	while(Cgids[j] != Bgids[Btemp2[i]]) j++;
+	Bcols2Ccols[Btemp2[i]] =  j;	
+      }
+ 
+      for(i=0, j=Cstart; i<tIsize; i++){
+	while(Cgids[j] != Igids[Itemp2[i]]) j++;
+	Icols2Ccols[Itemp2[i]] =  j;	
+      }
+     
       for(i=Pstart; i<(last_el - mycstart) + Pstart; i++) Cremotepids[i]=Cproc;
       Cstart = (last_el - mycstart) + Cstart;
       Pstart = (last_el - mycstart) + Pstart;
@@ -318,9 +350,10 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
   // **********************
   // Make the map
 #ifdef USE_DELAYED_MAP_CONSTRUCTION
-  unionmap=new LightweightMap(-1,Cstart,&Cgids[0],B.ColMap().IndexBase());
+  unionmap=new LightweightMap(-1,Cstart,&Cgids[0],B.ColMap().IndexBase(),false);
 #else
-  unionmap=new Epetra_Map(-1,Cstart,&Cgids[0],B.ColMap().IndexBase(),B.Comm());
+  //  unionmap=new Epetra_Map(-1,Cstart,&Cgids[0],B.ColMap().IndexBase(),B.Comm());
+  unionmap=new Epetra_Map(-1,Cstart,&Cgids[0],B.ColMap().IndexBase(),B.Comm(),B.ColMap().DistributedGlobal(),B.ColMap().MinAllGID(),B.ColMap().MaxAllGID());
 #endif
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
@@ -1001,7 +1034,14 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 #else
   Epetra_Map* mapunion = 0;
 #endif
+  const Epetra_Map * colmap_B = &(B.ColMap());
+  const Epetra_Map * colmap_C = &(C.ColMap());
+
   std::vector<int> Cremotepids;
+  std::vector<int> Bcol2Ccol(B.ColMap().NumMyElements());
+  std::vector<int> Bimportcol2Ccol;
+  if(Bview.importMatrix) Bimportcol2Ccol.resize(Bview.importMatrix->ColMap_.NumMyElements());
+
 
   // DEBUG
 #ifdef ENABLE_MMM_TIMINGS
@@ -1050,18 +1090,21 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
   else mtime=M.getNewTimer("M5r CMap");
   mtime->start();
 #endif
+
   // If new, build & clobber a colmap for C
   if(NewFlag){
     if(Bview.importMatrix) {
-      EPETRA_CHK_ERR( aztecoo_and_ml_compatible_map_union(B,*Bview.importMatrix,mapunion,Cremotepids) );
+      EPETRA_CHK_ERR( aztecoo_and_ml_compatible_map_union(B,*Bview.importMatrix,mapunion,Cremotepids,Bcol2Ccol,Bimportcol2Ccol) );
 #ifdef USE_DELAYED_MAP_CONSTRUCTION      
       use_mapunion=true;
 #else
       EPETRA_CHK_ERR( C.ReplaceColMap(*mapunion) );
 #endif
     }
-    else 
+    else  {
       EPETRA_CHK_ERR( C.ReplaceColMap(B.ColMap()) );
+      for(i=0;i<colmap_B->NumMyElements();i++) Bcol2Ccol[i]=i;
+    }
   }
 
 #ifdef ENABLE_MMM_TIMINGS
@@ -1074,75 +1117,69 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
   // ********************************************
   // Setup Bcol2Ccol / Bimportcol2Ccol lookups
   // ********************************************
-  const Epetra_Map * colmap_B = &(B.ColMap());
-  const Epetra_Map * colmap_C = &(C.ColMap());
+  // Note: If we ran the map_union, we have this information already
 
-  std::vector<int> Bcol2Ccol(colmap_B->NumMyElements());
-
-
+  if(!NewFlag) {
 #ifdef USE_DELAYED_MAP_CONSTRUCTION      
-  if(!use_mapunion && colmap_B->SameAs(*colmap_C)){
-    // Maps are the same: Use local IDs as the hash
-    for(i=0;i<colmap_B->NumMyElements();i++)
-      Bcol2Ccol[i]=i;				
-  }
-  else if(!use_mapunion) {
-    // Maps are not the same, but no union:  Use the map's hash
-    for(i=0;i<colmap_B->NumMyElements();i++){
-      Bcol2Ccol[i]=colmap_C->LID(colmap_B->GID(i));
-      if(Bcol2Ccol[i]==-1) EPETRA_CHK_ERR(-11);
+    if(!use_mapunion && colmap_B->SameAs(*colmap_C)){
+      // Maps are the same: Use local IDs as the hash
+      for(i=0;i<colmap_B->NumMyElements();i++)
+	Bcol2Ccol[i]=i;				
     }
-  }
-  else {
-    // Maps are not the same and we have a union:  Use the map's hash
-    for(i=0;i<colmap_B->NumMyElements();i++){
-      Bcol2Ccol[i]=mapunion->LID(colmap_B->GID(i));
-      if(Bcol2Ccol[i]==-1) EPETRA_CHK_ERR(-11);
-    }
-  }
-
-  std::vector<int> Bimportcol2Ccol;
-  if(Bview.importMatrix){
-    Bimportcol2Ccol.resize(Bview.importMatrix->ColMap_.NumMyElements());
-
-    if(!use_mapunion) {
-      for(i=0;i<Bview.importMatrix->ColMap_.NumMyElements();i++){
-	Bimportcol2Ccol[i]=colmap_C->LID(Bview.importMatrix->ColMap_.GID(i));
-	if(Bimportcol2Ccol[i]==-1) EPETRA_CHK_ERR(-12);
+    else if(!use_mapunion) {
+      // Maps are not the same, but no union:  Use the map's hash
+      for(i=0;i<colmap_B->NumMyElements();i++){
+	Bcol2Ccol[i]=colmap_C->LID(colmap_B->GID(i));
+	if(Bcol2Ccol[i]==-1) EPETRA_CHK_ERR(-11);
       }
     }
     else {
-      for(i=0;i<Bview.importMatrix->ColMap_.NumMyElements();i++){
-	Bimportcol2Ccol[i]=mapunion->LID(Bview.importMatrix->ColMap_.GID(i));
-	if(Bimportcol2Ccol[i]==-1) EPETRA_CHK_ERR(-12);
+      // Maps are not the same and we have a union:  Use the map's hash
+      for(i=0;i<colmap_B->NumMyElements();i++){
+	Bcol2Ccol[i]=mapunion->LID(colmap_B->GID(i));
+	if(Bcol2Ccol[i]==-1) EPETRA_CHK_ERR(-11);
       }
-    }    
-  }
-#else
-  if(colmap_B->SameAs(*colmap_C)){
-    // Maps are the same: Use local IDs as the hash
-    for(i=0;i<colmap_B->NumMyElements();i++)
-      Bcol2Ccol[i]=i;				
-  }
-  else {
-    // Maps are not the same:  Use the map's hash
-    for(i=0;i<colmap_B->NumMyElements();i++){
-      Bcol2Ccol[i]=colmap_C->LID(colmap_B->GID(i));
-      if(Bcol2Ccol[i]==-1) EPETRA_CHK_ERR(-11);
-    }
-  }
-
-  std::vector<int> Bimportcol2Ccol;
-  if(Bview.importMatrix){
-    Bimportcol2Ccol.resize(Bview.importMatrix->ColMap_.NumMyElements());
-    for(i=0;i<Bview.importMatrix->ColMap_.NumMyElements();i++){
-      Bimportcol2Ccol[i]=colmap_C->LID(Bview.importMatrix->ColMap_.GID(i));
-      if(Bimportcol2Ccol[i]==-1) EPETRA_CHK_ERR(-12);
     }
     
+    if(Bview.importMatrix){      
+      if(!use_mapunion) {
+	for(i=0;i<Bview.importMatrix->ColMap_.NumMyElements();i++){
+	  Bimportcol2Ccol[i]=colmap_C->LID(Bview.importMatrix->ColMap_.GID(i));
+	  if(Bimportcol2Ccol[i]==-1) EPETRA_CHK_ERR(-12);
+	}
+      }
+      else {
+	for(i=0;i<Bview.importMatrix->ColMap_.NumMyElements();i++){
+	  Bimportcol2Ccol[i]=mapunion->LID(Bview.importMatrix->ColMap_.GID(i));
+	  if(Bimportcol2Ccol[i]==-1) EPETRA_CHK_ERR(-12);
+	}
+      }    
   }
+#else
+    if(colmap_B->SameAs(*colmap_C)){
+      // Maps are the same: Use local IDs as the hash
+      for(i=0;i<colmap_B->NumMyElements();i++)
+	Bcol2Ccol[i]=i;				
+    }
+    else {
+      // Maps are not the same:  Use the map's hash
+      for(i=0;i<colmap_B->NumMyElements();i++){
+	Bcol2Ccol[i]=colmap_C->LID(colmap_B->GID(i));
+	if(Bcol2Ccol[i]==-1) EPETRA_CHK_ERR(-11);
+      }
+    }
+    
+    if(Bview.importMatrix){
+      Bimportcol2Ccol.resize(Bview.importMatrix->ColMap_.NumMyElements());
+      for(i=0;i<Bview.importMatrix->ColMap_.NumMyElements();i++){
+      Bimportcol2Ccol[i]=colmap_C->LID(Bview.importMatrix->ColMap_.GID(i));
+      if(Bimportcol2Ccol[i]==-1) EPETRA_CHK_ERR(-12);
+      }
+      
+    }
 #endif
-		
+  }
+	
 
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();

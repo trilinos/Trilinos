@@ -67,7 +67,7 @@ class LightweightCrsMatrix;
 
 #define USE_MANUAL_BOUNDARY_EXCHANGE
 
-
+// Only turn this on of you don't have the "no globals" map constructor.
 //#define USE_DELAYED_MAP_CONSTRUCTION
 
 // ==============================================================
@@ -195,7 +195,7 @@ class LightweightMapData : Epetra_Data {
 class LightweightMap {
  public:
   LightweightMap();
-  LightweightMap(int NumGlobalElements,int NumMyElements, const int * MyGlobalElements, int IndexBase);
+  LightweightMap(int NumGlobalElements,int NumMyElements, const int * MyGlobalElements, int IndexBase, bool GenerateHash=true);
   LightweightMap(const Epetra_Map & Map);
   LightweightMap(const LightweightMap & Map);
   ~LightweightMap();
