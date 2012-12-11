@@ -62,6 +62,12 @@ ENDIF (CMAKE_COMPILER_IS_GNUCXX)
     NOEXEPREFIX
   )
 
+  TRIBITS_ADD_EXECUTABLE(
+    nssi-placement
+    SOURCES nssi-placement.cpp
+    DEPLIBS ${DEPLIBS}
+    NOEXEPREFIX
+  )
 
   TRIBITS_ADD_EXECUTABLE(
     ping-service
