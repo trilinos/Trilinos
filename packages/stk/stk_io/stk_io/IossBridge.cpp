@@ -899,6 +899,50 @@ void define_io_fields(Ioss::GroupingEntity *entity,
   }
 }
 
+void delete_selector_property(Ioss::Region &region)
+{
+  // Iterate all Ioss::GroupingEntity types on the io_region and
+  // if the have a property named 'selector' of type 'pointer',
+  // delete the pointer and remove the property.
+  const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
+  delete_selector_property(node_blocks[0]);
+
+  const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
+  for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
+      it != elem_blocks.end(); ++it) {
+    delete_selector_property(*it);
+  }
+
+  const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
+  for(Ioss::NodeSetContainer::const_iterator it = node_sets.begin();
+      it != node_sets.end(); ++it) {
+    delete_selector_property(*it);
+  }
+
+  const Ioss::SideSetContainer& side_sets = region.get_sidesets();
+  for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
+      it != side_sets.end(); ++it) {
+    Ioss::SideSet *sset = *it;
+    delete_selector_property(*it);
+    const Ioss::SideBlockContainer& blocks = sset->get_side_blocks();
+    for(Ioss::SideBlockContainer::const_iterator ib = blocks.begin();
+	ib != blocks.end(); ++ib) {
+      delete_selector_property(*ib);
+    }
+  }
+}
+
+void delete_selector_property(Ioss::GroupingEntity *io_entity)
+{
+  // If the Ioss::GroupingEntity has a property named 'selector' of
+  // type 'pointer', delete the pointer and remove the property.
+  if (io_entity->property_exists("selector")) {
+    mesh::Selector *select = reinterpret_cast<mesh::Selector*>(io_entity->get_property("selector").get_pointer());
+    delete select;
+    io_entity->property_erase("selector");
+  }
+}
+
 template <typename INT>
 void get_entity_list(Ioss::GroupingEntity *io_entity,
                      stk::mesh::EntityRank part_type,
@@ -921,10 +965,18 @@ void get_entity_list(Ioss::GroupingEntity *io_entity,
                      const stk::mesh::BulkData &bulk,
                      std::vector<stk::mesh::Entity> &entities)
 {
-  if (db_api_int_size(io_entity) == 4) {
-    get_entity_list(io_entity, part_type, bulk, entities, (int)0);
+  if (io_entity->get_database()->is_input()) {
+    if (db_api_int_size(io_entity) == 4) {
+      get_entity_list(io_entity, part_type, bulk, entities, (int)0);
+    } else {
+      get_entity_list(io_entity, part_type, bulk, entities, (int64_t)0);
+    }
   } else {
-    get_entity_list(io_entity, part_type, bulk, entities, (int64_t)0);
+    // Output database...
+    assert(io_entity->property_exists("selector"));
+    
+    mesh::Selector *select = reinterpret_cast<mesh::Selector*>(io_entity->get_property("selector").get_pointer());
+    get_selected_entities(*select, bulk.buckets(part_type), entities);
   }
 }
 
@@ -1012,11 +1064,13 @@ bool include_entity(const Ioss::GroupingEntity *entity)
 
 namespace {
 
-void define_side_block(stk::mesh::Part &part,
+void define_side_block(const stk::mesh::BulkData &bulk,
+		       const stk::mesh::Selector &selector,
+		       stk::mesh::Part &part,
                        Ioss::SideSet *sset,
-                       stk::mesh::EntityRank type,
-                       size_t side_count, int spatial_dimension)
+                       int spatial_dimension)
 {
+  stk::mesh::EntityRank type = part.primary_entity_rank();
   const stk::mesh::EntityRank siderank = side_rank(mesh::MetaData::get(part));
   const stk::mesh::EntityRank edgerank = edge_rank(mesh::MetaData::get(part));
   ThrowRequire(type == siderank || type == edgerank);
@@ -1042,6 +1096,8 @@ void define_side_block(stk::mesh::Part &part,
     }
   }
 
+  size_t side_count = count_selected_entities(selector, bulk.buckets(type));
+
   Ioss::SideBlock *side_block = new Ioss::SideBlock( sset->get_database() ,
                                                      part.name() ,
                                                      io_topo, element_topo_name, side_count);
@@ -1057,6 +1113,9 @@ void define_side_block(stk::mesh::Part &part,
     side_block->field_add(Ioss::Field("distribution_factors", Ioss::Field::REAL, storage_type,
                                       Ioss::Field::MESH, side_count));
   }
+
+  mesh::Selector *select = new mesh::Selector(selector);
+  side_block->property_add(Ioss::Property("selector", select, false));
 
   // Add the attribute fields.
   ioss_add_fields(part, part_primary_entity_rank(part), side_block, Ioss::Field::ATTRIBUTE);
@@ -1076,20 +1135,16 @@ void define_side_blocks(stk::mesh::Part &part,
   if (blocks.size() > 0) {
     for (size_t j = 0; j < blocks.size(); j++) {
       mesh::Part & side_block_part = *blocks[j];
-      stk::mesh::EntityRank side_rank = side_block_part.primary_entity_rank();
       mesh::Selector selector = meta.locally_owned_part() & side_block_part;
       if (anded_selector) selector &= *anded_selector;
 
-      size_t num_side = count_selected_entities(selector, bulk_data.buckets(side_rank));
-
-      define_side_block(side_block_part, sset, side_rank, num_side, spatial_dimension);
+      define_side_block(bulk_data, selector, side_block_part,
+			sset, spatial_dimension);
     }
   } else {
-    stk::mesh::EntityRank side_rank = part.primary_entity_rank();
     mesh::Selector selector = meta.locally_owned_part() & part;
     if (anded_selector) selector &= *anded_selector;
-    size_t num_side = count_selected_entities(selector, bulk_data.buckets(side_rank));
-    define_side_block(part, sset, side_rank, num_side, spatial_dimension);
+    define_side_block(bulk_data, selector, part, sset, spatial_dimension);
   }
 }
 
@@ -1124,17 +1179,26 @@ void define_node_block(stk::mesh::Part &part,
   //--------------------------------
   // Create the special universal node block:
 
-  mesh::Selector selector = meta.locally_owned_part() | meta.globally_shared_part();
-  if (anded_selector) selector &= *anded_selector;
+  mesh::Selector all_selector = meta.globally_shared_part() | meta.locally_owned_part();
+  if (anded_selector) all_selector &= *anded_selector;
 
-  size_t num_nodes = count_selected_entities(selector, bulk.buckets(node_rank(meta)));
+  mesh::Selector own_selector = meta.locally_owned_part();
+  if (anded_selector) own_selector &= *anded_selector;
+
+  int64_t all_nodes = count_selected_entities(all_selector, bulk.buckets(node_rank(meta)));
+  int64_t own_nodes = count_selected_entities(own_selector, bulk.buckets(node_rank(meta)));
 
   const std::string name("nodeblock_1");
 
   Ioss::NodeBlock * const nb = new Ioss::NodeBlock(io_region.get_database(),
-                                                   name, num_nodes, spatial_dim);
+                                                   name, all_nodes, spatial_dim);
   io_region.add( nb );
 
+  mesh::Selector *node_select = new mesh::Selector(all_selector);
+  nb->property_add(Ioss::Property("selector", node_select, false));
+  
+  // Add locally-owned property...
+  nb->property_add(Ioss::Property("locally_owned_count", own_nodes));
   // Add the attribute fields.
   ioss_add_fields(part, part_primary_entity_rank(part), nb, Ioss::Field::ATTRIBUTE);
 }
@@ -1175,6 +1239,9 @@ void define_element_block(stk::mesh::Part &part,
                                                   num_elems);
   io_region.add(eb);
 
+  mesh::Selector *select = new mesh::Selector(selector);
+  eb->property_add(Ioss::Property("selector", select, false));
+
   // Add the attribute fields.
   ioss_add_fields(part, part_primary_entity_rank(part), eb, Ioss::Field::ATTRIBUTE);
 }
@@ -1205,6 +1272,9 @@ void define_communication_maps(const stk::mesh::BulkData &bulk,
     Ioss::DatabaseIO *dbo = io_region.get_database();
     Ioss::CommSet *io_cs = new Ioss::CommSet(dbo, cs_name, "node", size);
     io_region.add(io_cs);
+
+    mesh::Selector *select = new mesh::Selector(selector);
+    io_cs->property_add(Ioss::Property("selector", select, false));
   }
 }
 
@@ -1244,15 +1314,22 @@ void define_node_set(stk::mesh::Part &part,
 {
   mesh::MetaData & meta = mesh::MetaData::get(part);
 
-  mesh::Selector selector = ( meta.locally_owned_part() | meta.globally_shared_part() ) & part;
-  if (anded_selector) selector &= *anded_selector;
+  mesh::Selector all_selector = (meta.globally_shared_part() | meta.locally_owned_part()) & part;
+  if (anded_selector) all_selector &= *anded_selector;
 
-  const size_t num_nodes =
-    count_selected_entities(selector, bulk.buckets(node_rank(meta)));
+  mesh::Selector own_selector = meta.locally_owned_part() & part;
+  if (anded_selector) own_selector &= *anded_selector;
 
-  Ioss::NodeSet * const ns =
-    new Ioss::NodeSet( io_region.get_database(), part.name(), num_nodes);
+  int64_t all_nodes = count_selected_entities(all_selector, bulk.buckets(node_rank(meta)));
+  int64_t own_nodes = count_selected_entities(own_selector, bulk.buckets(node_rank(meta)));
+
+  Ioss::NodeSet * const ns = new Ioss::NodeSet( io_region.get_database(), part.name(), all_nodes);
   io_region.add(ns);
+
+  ns->property_add(Ioss::Property("locally_owned_count", own_nodes));
+
+  mesh::Selector *select = new mesh::Selector(all_selector);
+  ns->property_add(Ioss::Property("selector", select, false));
 
   // Add the attribute fields.
   ioss_add_fields(part, part_primary_entity_rank(part), ns, Ioss::Field::ATTRIBUTE);
@@ -1480,6 +1557,14 @@ void output_node_block(Ioss::NodeBlock &nb,
     throw std::runtime_error( msg.str() );
   }
 
+  if (nb.get_database()->needs_shared_node_information()) {
+    std::vector<INT> owning_processor; owning_processor.reserve(num_nodes);
+    for(size_t i=0; i<num_nodes; ++i) {
+      owning_processor.push_back(nodes[i].owner_rank());
+    }
+    nb.put_field_data("owning_processor", owning_processor);
+  }
+
   /// \todo REFACTOR The coordinate field would typically be
   /// stored by the app and wouldn't need to be accessed via
   /// string lookup.  App infrastructure is not shown here, so
@@ -1683,6 +1768,7 @@ void write_output_db(Ioss::Region& io_region,
   int     z32 = 0;
 
   Ioss::NodeBlock & nb = *io_region.get_node_blocks()[0];
+
   if (ints64bit)
 	output_node_block(nb, meta.universal_part(), bulk, anded_selector, z64);
   else

@@ -219,6 +219,14 @@ void get_entity_list(Ioss::GroupingEntity *io_entity,
                      const stk::mesh::BulkData &bulk,
                      std::vector<stk::mesh::Entity> &entities);
 
+
+/**
+ * Delete the selector property (if it exists) which is used to get
+ * the entity list on an output database's GroupingEntitys
+ */
+void delete_selector_property(Ioss::Region &io_region);
+void delete_selector_property(Ioss::GroupingEntity *io_entity);
+
 /**
  * Fill the specified 'field' with data from the Ioss field named
  * 'io_fld_name' on the Ioss entity 'io_entity'. The mapping from

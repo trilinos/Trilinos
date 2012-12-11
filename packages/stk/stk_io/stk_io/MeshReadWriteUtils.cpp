@@ -475,6 +475,8 @@ namespace io {
 MeshData::~MeshData()
 {
   delete m_input_region;
+
+  stk::io::delete_selector_property(*m_output_region);
   delete m_output_region;
 }
 
