@@ -62,10 +62,10 @@
       <Parameter name="factory" type="string" value="RepartitionFactory"/>
       <Parameter name="A"                type="string" value="myRAPFact"/>
       <Parameter name="Partition"        type="string" value="myZoltanInterface"/>
-      <Parameter name="minRowsPerProc"   type="int"    value="800"/> <!-- default = 2000 -->
+      <Parameter name="minRowsPerProcessor"   type="int"    value="800"/> <!-- default = 2000 -->
       <Parameter name="nonzeroImbalance" type="double" value="1.1"/> <!-- default = 1.2 -->
       <Parameter name="startLevel"       type="int"    value="2"/>   <!-- default = 1 -->
-      <Parameter name="diffusive"        type="int"    value="0"/>
+      <Parameter name="diffusiveHeuristic" type="int"    value="0"/>
     </ParameterList>
 
     <ParameterList name="myRebalanceProlongatorFact">
@@ -78,7 +78,7 @@
       <Parameter name="factory" type="string" value="RebalanceTransferFactory"/>
       <Parameter name="type"               type="string" value="Restriction"/>
       <Parameter name="R"                  type="string" value="myRestrictorFact"/>
-      <Parameter name="Coordinates"        type="string" value="myTransferCoordinatesFact"/>
+<!--      <Parameter name="Coordinates"        type="string" value="myTransferCoordinatesFact"/> -->
       <Parameter name="Nullspace"          type="string" value="myTentativePFact"/>
     </ParameterList>
 

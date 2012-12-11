@@ -84,10 +84,12 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    RepartitionFactory(LO minRowsPerProcessor=1000, double nnzMaxMinRatio=1.2, GO startLevel=1, LO useDiffusiveHeuristic=0, GO minNnzPerProcessor=-1);
+    RepartitionFactory() { }
 
     //! Destructor.
-    virtual ~RepartitionFactory();
+    virtual ~RepartitionFactory() { }
+
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     //@}
 
@@ -125,50 +127,6 @@ namespace MueLu {
       @param[out] partitionOwner    An Array (fancy std::vector) such that the PID of the process that owns partition i is given by partitionOwner[i].
     */
     void DeterminePartitionPlacement(Level & currentLevel, GlobalOrdinal &myPartitionNumber, Array<int> &partitionOwner) const;
-  //! @name Get/Set methods.
-  //@{
-
-  /*! @brief Suppress any possible repartitioning until specified level.
-
-      Setting this to a very large number will prevent repartitioning from ever happening.
-  */
-  void SetStartLevel(int startLevel);
-
-  /*! @brief Set imbalance threshold, below which repartitioning is initiatied.
-
-  Imbalance is measured by \f$\max_k{N_k} / min_k{N_k}\f$, where \f$N_k\f$ is the number of nonzeros in the local matrix on process \f$k\f$.
-  */
-  void SetImbalanceThreshold(double threshold);
-
-  /*! @brief Set minimum allowable number of rows on any single process, below which repartitioning is initiated.
-
-      This option takes precedence over SetMinNnzPerProcessor.
-  */
-  void SetMinRowsPerProcessor(GO threshold);
-
-  /*! @brief Set minimum allowable number of nonzeros on any single process, below which repartitioning is initiated.
-
-      This option is ignored if SetMinRowPerProcessor is set.
-  */
-
-  /*! @brief @todo Currently does nothing.
-  */
-  void SetMinNnzPerProcessor(GO threshold);
-
-  //@}
-
-  private:
-
-    //! Minimum number of rows over all processes.  If any process falls below this, repartitioning is initiated.
-    LO     minRowsPerProcessor_;
-    //! Imbalance threshold, below which repartitioning is initiated.  Imbalance is measured by ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes.
-    double nnzMaxMinRatio_;
-    //! First level at which repartitioning can possibly occur.  Repartitioning at finer levels is suppressed.
-    int    startLevel_;
-
-    mutable LO useDiffusiveHeuristic_; //FIXME HACK!!!
-    //! Minimum number of nonzeros over all processes.  If any process falls below this, repartitioning is initiated.
-    GO     minNnzPerProcessor_;
 
   }; // class RepartitionFactory
 

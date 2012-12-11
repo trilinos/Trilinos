@@ -79,10 +79,12 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    RebalanceTransferFactory(TransferType PorR = MueLu::INTERPOLATION) : PorR_(PorR) { }
+    RebalanceTransferFactory() { }
 
     //! Destructor.
     virtual ~RebalanceTransferFactory() { }
+
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     //@}
 
@@ -106,22 +108,6 @@ namespace MueLu {
 
     //@}
 
-  private:
-    //! Indicate that the transfer factory is for interpolation or restriction.
-    TransferType     PorR_;
-
-    /*
-    //! Factory that builds the permutation matrix.
-    RCP<const FactoryBase> repartitionFact_;
-    //! Factory that builds the A matrix.
-    RCP<const FactoryBase> initialAFact_;
-    //! Factory that builds the unpermuted grid transfer operator.
-    RCP<const FactoryBase> initialTransferFact_;
-    //! Factory that builds the unpermuted nullspace.
-    RCP<const FactoryBase> nullspaceFact_;
-    //! Factory that builds the unpermuted coordinates.
-    RCP<const FactoryBase> coordinateFact_;
-    */
   }; // class RebalanceTransferFactory
 
 } // namespace MueLu

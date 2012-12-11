@@ -53,7 +53,7 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 
 #include "MueLu_Utilities.hpp"
-#include "MueLu_PermutedTransferFactory.hpp"
+#include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
@@ -74,15 +74,17 @@
 
 namespace MueLuTests {
 
-  TEUCHOS_UNIT_TEST(PermutedTransfer, Constructor)
+  TEUCHOS_UNIT_TEST(RebalanceTransfer, Constructor)
   {
     out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<PermutedTransferFactory> ptFactory = rcp(new PermutedTransferFactory);
+    RCP<RebalanceTransferFactory> ptFactory = rcp(new RebalanceTransferFactory());
     TEST_EQUALITY(ptFactory != Teuchos::null, true);
   } // Constructor test
 
-  TEUCHOS_UNIT_TEST(PermutedTransfer, Build1)
+#ifdef NEVER_TESTED_TODO
+
+  TEUCHOS_UNIT_TEST(RebalanceTransfer, Build1)
   {
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -117,17 +119,20 @@ namespace MueLuTests {
     coarseLevel.Request("R",Rtentfact.get());
     coarseLevel.Request("Coordinates",mvTransFact.get());
 
-    RCP<PermutedTransferFactory> ptFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, Pfact, MueLu::INTERPOLATION) );
+    RCP<RebalanceTransferFactory> ptFactory = rcp( new RebalanceTransferFactory(RepartitionFact, Acfact, Pfact, MueLu::INTERPOLATION) );
+    ptFactory->SetParameter("type", ParameterEntry("Interpolation"));
     coarseLevel.Request("P",ptFactory.get());
     ptFactory->Build(fineLevel,coarseLevel);
 
-    ptFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, Rfact, MueLu::RESTRICTION) );
+    ptFactory = rcp( new RebalanceTransferFactory(RepartitionFact, Acfact, Rfact, MueLu::RESTRICTION) );
     coarseLevel.Request("R",ptFactory.get());
     ptFactory->Build(fineLevel,coarseLevel);
 
 
 
   } // Constructor test
+
+#endif
 
 } // namespace MueLuTests
 

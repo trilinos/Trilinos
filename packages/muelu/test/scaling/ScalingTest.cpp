@@ -325,7 +325,7 @@ int main(int argc, char *argv[]) {
 
     {
       //
-      // Non permuted factories
+      // Non rebalanced factories
       //
 
       RCP<SaPFactory> PFact = rcp(new SaPFactory());
@@ -357,8 +357,8 @@ int main(int argc, char *argv[]) {
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN)
         // Repartitioning
 
-        // The Factory Manager will be configured to return the permuted versions of P, R, A by default.
-        // Everytime we want to use the non-permuted versions, we need to explicitly define the generating factory.
+        // The Factory Manager will be configured to return the rebalanced versions of P, R, A by default.
+        // Everytime we want to use the non-rebalanced versions, we need to explicitly define the generating factory.
         RFact->SetFactory("P", PFact);
         //
         AFact->SetFactory("P", PFact);
@@ -376,28 +376,36 @@ int main(int argc, char *argv[]) {
         ZoltanFact->SetFactory("Coordinates", TransferCoordinatesFact);
 
         // Repartitioning (creates "Importer" from "Partition")
-        RCP<Factory> RepartitionFact = rcp(new RepartitionFactory(optMinRowsPerProc, optNnzImbalance));
+        RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
+        {
+          Teuchos::ParameterList paramList;
+          paramList.set("minRowsPerProcessor", optMinRowsPerProc);
+          paramList.set("nonzeroImbalance", optNnzImbalance);
+          RepartitionFact->SetParameterList(paramList);
+        }
         RepartitionFact->SetFactory("A", AFact);
         RepartitionFact->SetFactory("Partition", ZoltanFact);
 
         // Reordering of the transfer operators
-        RCP<Factory> permPFact = rcp(new RebalanceTransferFactory(MueLu::INTERPOLATION));
-        permPFact->SetFactory("P", PFact);
+        RCP<Factory> RebalancedPFact = rcp(new RebalanceTransferFactory());
+        RebalancedPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
+        RebalancedPFact->SetFactory("P", PFact);
 
-        RCP<Factory> permRFact = rcp(new RebalanceTransferFactory(MueLu::RESTRICTION));
-        permRFact->SetFactory("R", RFact);
-        permRFact->SetFactory("Coordinates", TransferCoordinatesFact);
-        permRFact->SetFactory("Nullspace", M.GetFactory("Ptent")); // TODO
+        RCP<Factory> RebalancedRFact = rcp(new RebalanceTransferFactory());
+        RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
+        RebalancedRFact->SetFactory("R", RFact);
+        //RebalancedRFact->SetFactory("Coordinates", TransferCoordinatesFact);
+        RebalancedRFact->SetFactory("Nullspace", M.GetFactory("Ptent")); // TODO
 
-        // Compute Ac from permuted P and R
-        RCP<Factory> permAFact = rcp(new RebalanceAcFactory());
-        permAFact->SetFactory("A", AFact);
+        // Compute Ac from rebalanced P and R
+        RCP<Factory> RebalancedAFact = rcp(new RebalanceAcFactory());
+        RebalancedAFact->SetFactory("A", AFact);
 
         // Configure FactoryManager
-        M.SetFactory("A", permAFact);
-        M.SetFactory("P", permPFact);
-        M.SetFactory("R", permRFact);
-        M.SetFactory("Nullspace", permRFact);
+        M.SetFactory("A", RebalancedAFact);
+        M.SetFactory("P", RebalancedPFact);
+        M.SetFactory("R", RebalancedRFact);
+        M.SetFactory("Nullspace", RebalancedRFact);
         M.SetFactory("Importer", RepartitionFact);
 #else
         TEUCHOS_TEST_FOR_EXCEPT(true);

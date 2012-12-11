@@ -86,12 +86,12 @@
 
 namespace MueLu {
 
-/*! class FactoryFactory
+  /*! class FactoryFactory
 
-    @brief Factory that can generate other factories from
+  @brief Factory that can generate other factories from
 
 
-*/
+  */
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
   class FactoryFactory {
 #undef MUELU_FACTORYFACTORY_SHORT
@@ -137,7 +137,7 @@ namespace MueLu {
         return Build<TentativePFactory>(paramList, factoryMapIn);
       }
       if (factoryName == "SaPFactory") {
-        return BuildSaPFactory(paramList, factoryMapIn);
+        return  Build2<SaPFactory>(paramList, factoryMapIn);
       }
       if (factoryName == "TransPFactory") {
         return Build<TransPFactory>(paramList, factoryMapIn);
@@ -173,13 +173,13 @@ namespace MueLu {
 
       if (factoryName == "RepartitionFactory") {
 #ifdef HAVE_MPI
-        return BuildRepartitionFactory(paramList, factoryMapIn);
+        return Build2<RepartitionFactory>(paramList, factoryMapIn);
 #else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a RepartitionFactory object: HAVE_MPI == false.");
 #endif // HAVE_MPI
       }
       if (factoryName == "RebalanceTransferFactory") {
-        return BuildRebalanceTransferFactory(paramList, factoryMapIn);
+        return  Build2<RebalanceTransferFactory>(paramList, factoryMapIn);
       }
 
       // Use a user defined factories (in <Factories> node)
@@ -262,12 +262,6 @@ namespace MueLu {
 
 #define MUELU_FACTORY_PARAM2(name)                                      \
     if (paramList.isParameter(name)) { factory->SetFactory(name, BuildFactory(paramList.getEntry(name), factoryMapIn)); }
-
-    //! SaPFactory
-    RCP<FactoryBase> BuildSaPFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      RCP<SaPFactory> factory = Build2<SaPFactory>(paramList, factoryMapIn);
-      return factory;
-    }
 
     //! RAPFactory
     RCP<FactoryBase> BuildRAPFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
@@ -397,45 +391,6 @@ namespace MueLu {
       return factory;
     }
 
-#ifdef HAVE_MPI
-    RCP<FactoryBase> BuildRepartitionFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "RepartitionFactory", Exceptions::RuntimeError, "");
-
-      int minRowsPerProc=2000;     if(paramList.isParameter("minRowsPerProc"))   minRowsPerProc = paramList.get<int>("minRowsPerProc");
-      double nonzeroImbalance=1.2; if(paramList.isParameter("nonzeroImbalance")) nonzeroImbalance = paramList.get<double>("nonzeroImbalance");
-      int startLevel=1;            if(paramList.isParameter("startLevel"))       startLevel = paramList.get<int>("startLevel");
-      int diffusive=0;             if(paramList.isParameter("diffusive"))        diffusive = paramList.get<int>("diffusive");
-
-      RCP<Factory> factory = rcp(new RepartitionFactory(minRowsPerProc, nonzeroImbalance, startLevel, diffusive));
-
-      MUELU_FACTORY_PARAM2("A");
-      MUELU_FACTORY_PARAM2("Partition");
-
-      return factory;
-    }
-#endif
-
-    RCP<FactoryBase> BuildRebalanceTransferFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "RebalanceTransferFactory", Exceptions::RuntimeError, "");
-
-      std::string type; type = paramList.get<std::string>("type");
-      if (type == "Interpolation") {
-        RCP<Factory> factory = rcp(new RebalanceTransferFactory(MueLu::INTERPOLATION));
-        MUELU_FACTORY_PARAM2("Importer");
-        MUELU_FACTORY_PARAM2("A");
-        MUELU_FACTORY_PARAM2("P");
-        return factory;
-      } else if (type == "Restriction") {
-        RCP<Factory> factory = rcp(new RebalanceTransferFactory(MueLu::RESTRICTION));
-        MUELU_FACTORY_PARAM2("Importer");
-        MUELU_FACTORY_PARAM2("A");
-        MUELU_FACTORY_PARAM2("R");
-        MUELU_FACTORY_PARAM2("Nullspace");
-        return factory;
-      } else {
-        TEUCHOS_TEST_FOR_EXCEPT(1);
-      }
-    }
   }; // class
 
 } // namespace MueLu
@@ -443,7 +398,7 @@ namespace MueLu {
 #define MUELU_FACTORYFACTORY_SHORT
 #endif // MUELU_FACTORYFACTORY_DECL_HPP
 
-// TODO: handle factory parameters
-// TODO: parameter validator
-// TODO: static
-// TODO: default parameters should not be duplicated here and on the Factory (ex: default for overlap (=0) is defined both here and on TrilinosSmoother constructors)
+  // TODO: handle factory parameters
+  // TODO: parameter validator
+  // TODO: static
+  // TODO: default parameters should not be duplicated here and on the Factory (ex: default for overlap (=0) is defined both here and on TrilinosSmoother constructors)

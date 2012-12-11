@@ -206,7 +206,16 @@ namespace MueLuTests {
     level.Request("Partition",zoltan.get());
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
-    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(1000, 1.2, 1, 10/*useDiffusiveHeuristic*/, -1));
+
+    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
+
+    Teuchos::ParameterList paramList;
+    paramList.set("startLevel", 1);
+    paramList.set("minRowsPerProcessor", 1000);
+    paramList.set("nonzeroImbalance", 1.2);
+    paramList.set("diffusiveHeuristic", 10);
+    repart->SetParameterList(paramList);
+
     repart->SetFactory("Partition", zoltan);
 
     GO myPartitionNumber;
@@ -343,7 +352,15 @@ namespace MueLuTests {
     level.Request("Partition",zoltan.get());
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
-    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(1000, 1.2, 1, 10/*useDiffusiveHeuristic*/, -1));
+    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
+
+    Teuchos::ParameterList paramList;
+    paramList.set("startLevel", 1);
+    paramList.set("minRowsPerProcessor", 1000);
+    paramList.set("nonzeroImbalance", 1.2);
+    paramList.set("diffusiveHeuristic", 10);
+    repart->SetParameterList(paramList);
+
     repart->SetFactory("Partition", zoltan);
 
     GO myPartitionNumber;
@@ -473,7 +490,13 @@ namespace MueLuTests {
     level.Request("Partition",zoltan.get());
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
-    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(1000, 1.2, 1, 10/*useDiffusiveHeuristic*/, -1));
+    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
+    Teuchos::ParameterList paramList;
+    paramList.set("startLevel", 1);
+    paramList.set("minRowsPerProcessor", 1000);
+    paramList.set("nonzeroImbalance", 1.2);
+    paramList.set("diffusiveHeuristic", 10);
+    repart->SetParameterList(paramList);
     repart->SetFactory("Partition", zoltan);
 
     GO myPartitionNumber;
@@ -604,7 +627,13 @@ namespace MueLuTests {
     level.Request("Partition",zoltan.get());
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
-    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(1000, 1.2, 1, 10/*useDiffusiveHeuristic*/, -1));
+    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
+    Teuchos::ParameterList paramList;
+    paramList.set("startLevel", 1);
+    paramList.set("minRowsPerProcessor", 1000);
+    paramList.set("nonzeroImbalance", 1.2);
+    paramList.set("diffusiveHeuristic", 10);
+    repart->SetParameterList(paramList);
     repart->SetFactory("Partition", zoltan);
 
     GO myPartitionNumber;
@@ -735,7 +764,13 @@ namespace MueLuTests {
     level.Request("Partition",zoltan.get());
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
-    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(1000, 1.2, 1, 10/*useDiffusiveHeuristic*/, -1));
+    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
+    Teuchos::ParameterList paramList;
+    paramList.set("startLevel", 1);
+    paramList.set("minRowsPerProcessor", 1000);
+    paramList.set("nonzeroImbalance", 1.2);
+    paramList.set("diffusiveHeuristic", 10);
+    repart->SetParameterList(paramList);
     repart->SetFactory("Partition", zoltan);
     level.Request("Importer",repart.get());  // request permutation matrix
 

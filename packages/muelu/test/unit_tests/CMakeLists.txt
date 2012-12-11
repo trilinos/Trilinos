@@ -44,6 +44,7 @@ APPEND_SET(SOURCES
 # ParameterList/MLParameterListInterpreter.cpp
   ParameterList/CreateSublists.cpp
   MultiVectorTransferFactory.cpp
+  PermutedTransferFactory.cpp
 )
 
 ### Tests that require other Trilinos packages

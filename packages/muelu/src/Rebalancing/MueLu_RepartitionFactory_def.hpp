@@ -47,6 +47,7 @@
 #define MUELU_REPARTITIONFACTORY_DEF_HPP
 
 #include <iostream>
+#include <sstream>
 
 #include "MueLu_RepartitionFactory_decl.hpp" // TMP JG NOTE: before other includes, otherwise I cannot test the fwd declaration in _def
 
@@ -73,22 +74,30 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RepartitionFactory(
-                LO minRowsPerProcessor, double nnzMaxMinRatio, GO startLevel, LO useDiffusiveHeuristic, GO minNnzPerProcessor) :
-    minRowsPerProcessor_(minRowsPerProcessor),
-    nnzMaxMinRatio_(nnzMaxMinRatio),
-    startLevel_(startLevel),
-    useDiffusiveHeuristic_(useDiffusiveHeuristic),
-    minNnzPerProcessor_(minNnzPerProcessor)
-  { }
+ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+ RCP<const ParameterList> RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-  //----------------------------------------------------------------------
+    validParamList->set<int>                     ("startLevel",             1, "First level at which repartitioning can possibly occur. Repartitioning at finer levels is suppressed");
+    validParamList->set<LO>                      ("minRowsPerProcessor", 1000, "Minimum number of rows over all processes. If any process falls below this, repartitioning is initiated");
+    validParamList->set<double>                  ("nonzeroImbalance",     1.2, "Imbalance threshold, below which repartitioning is initiated. Imbalance is measured by ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes");
+    // validParamList->set<GO>                   ("minNnzPerProcessor",    -1, "Minimum number of nonzeros over all processes. If any process falls below this, repartitioning is initiated."); // FIXME: Unused; LO instead of GO?
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~RepartitionFactory() {}
+    {
+      std::stringstream docDiffusiveHeuristic;
+      docDiffusiveHeuristic << "0:   put on procs 0..N" << std::endl
+                            << "1:   use diffusive heuristic" << std::endl
+                            << "K>1: if #partitions is > K, put on procs 0..N, otherwise use diffusive heuristic" << std::endl
+                            << "-1:  put on procs 0..N the first time only, then use diffusive in remaining rounds" << std::endl;
 
-  //----------------------------------------------------------------------
+      validParamList->set<LO>                    ("diffusiveHeuristic",     0, docDiffusiveHeuristic.str());
+    }
+
+    validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >("Partition",      Teuchos::null, "Factory of the partition");
+
+    return validParamList;
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
@@ -101,6 +110,13 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
+
+    const Teuchos::ParameterList & pL = GetParameterList();
+    // Access parameters here to make sure that we set the parameter entry flag to "used" even in case of short-circuit evaluation.
+    // JG TODO: I don't really know if we want to do this.
+    const int    startLevel          = pL.get<int>   ("startLevel");
+    const LO     minRowsPerProcessor = pL.get<LO>    ("minRowsPerProcessor");
+    const double nonzeroImbalance      = pL.get<double>("nonzeroImbalance");
 
     //TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
@@ -117,8 +133,8 @@ namespace MueLu {
       // This is implemented with a short-circuit evaluation
 
       // Test1: skip partitioning if level is too big
-      std::ostringstream msg1; msg1 << std::endl << "    current level = " << currentLevel.GetLevelID() << ", first level where repartitioning can happen is " << startLevel_ << ".";
-      if (currentLevel.GetLevelID() < startLevel_) {
+      std::ostringstream msg1; msg1 << std::endl << "    current level = " << currentLevel.GetLevelID() << ", first level where repartitioning can happen is " << startLevel << ".";
+      if (currentLevel.GetLevelID() < startLevel) {
         GetOStream(Warnings0, 0) << "No repartitioning necessary:" + msg1.str() << std::endl;
         Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
         return;
@@ -140,15 +156,15 @@ namespace MueLu {
       std::ostringstream msg3, msg4, *msgDoRepartition=NULL; // msgDoRepartition == msg3 or msg4 depending on Test3 and Test4 evalution
 
       // Test3: check whether any node has too few rows
-      // Note: (!Test2) ensures that repartitionning is not done when only 1 proc and globalNumRow < minRowsPerProcessor_
-      if (minRowsPerProcessor_ > 0) { // skip test if criteria not used
+      // Note: (!Test2) ensures that repartitionning is not done when only 1 proc and globalNumRow < minRowsPerProcessor
+      if (minRowsPerProcessor > 0) { // skip test if criteria not used
         LO     minNumRows;
         size_t numMyRows = A->getNodeNumRows();
         LO LOMAX = Teuchos::OrdinalTraits<LO>::max(); // processors without rows do not participate to minAll()
         minAll(comm, (LO)((numMyRows > 0) ? numMyRows : LOMAX), minNumRows);
         TEUCHOS_TEST_FOR_EXCEPTION(minNumRows >= LOMAX, Exceptions::RuntimeError, "internal error");
-        msg3 << std::endl << "    min # rows per proc = "   << minNumRows << ", min allowable = " << minRowsPerProcessor_;
-        if (minNumRows < minRowsPerProcessor_) {
+        msg3 << std::endl << "    min # rows per proc = "   << minNumRows << ", min allowable = " << minRowsPerProcessor;
+        if (minNumRows < minRowsPerProcessor) {
           doRepartition = true;
           msgDoRepartition = &msg3;
         }
@@ -161,8 +177,8 @@ namespace MueLu {
         maxAll(comm, (GO)numMyNnz, maxNnz);
         minAll(comm, (GO)((numMyNnz > 0) ? numMyNnz : maxNnz), minNnz); // min nnz over all proc (disallow any processors with 0 nnz)
         double imbalance = ((double) maxNnz) / minNnz;
-        msg4 << std::endl << "    nonzero imbalance = " << imbalance  << ", max allowable = " << nnzMaxMinRatio_;
-        if (imbalance > nnzMaxMinRatio_) {
+        msg4 << std::endl << "    nonzero imbalance = " << imbalance  << ", max allowable = " << nonzeroImbalance;
+        if (imbalance > nonzeroImbalance) {
           doRepartition = true;
           msgDoRepartition = &msg4;
         }
@@ -185,8 +201,8 @@ namespace MueLu {
     if (currentLevel.IsAvailable("number of partitions")) {
       numPartitions = currentLevel.Get<GO>("number of partitions");
     } else {
-      if ((GO)A->getGlobalNumRows() < minRowsPerProcessor_) numPartitions = 1;
-      else                                                  numPartitions = A->getGlobalNumRows() / minRowsPerProcessor_;
+      if ((GO)A->getGlobalNumRows() < minRowsPerProcessor) numPartitions = 1;
+      else                                                 numPartitions = A->getGlobalNumRows() / minRowsPerProcessor;
       if (numPartitions > comm->getSize())
         numPartitions = comm->getSize();
       currentLevel.Set("number of partitions", numPartitions);
@@ -541,29 +557,28 @@ namespace MueLu {
     RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
     int mypid = comm->getRank();
 
-    /*
-      useDiffusiveHeuristic_ = 0      ====> always put on procs 0..N
-      useDiffusiveHeuristic_ = 1      ====> always use diffusive heuristic
-      useDiffusiveHeuristic_ = K > 1  ====> if #partitions is > K, put on procs 0..N
-                                            otherwise use diffusive
-      useDiffusiveHeuristic_ = -1     ====> put on procs 0..N this time only, then use diffusive in remaining rounds
-    */
-    if (useDiffusiveHeuristic_ != 1) {
+    const Teuchos::ParameterList & pL = GetParameterList();
+    const LO diffusiveHeuristic = pL.get<LO>("diffusiveHeuristic");
+    static bool forceDiffusive = false; // FIXME: we need a mecanism to reset this variable (if several Hierarchy::Setup() using same factories)
 
-      if (numPartitions > useDiffusiveHeuristic_) {
-        if (numPartitions==1)
-          GetOStream(Runtime0, 0) << "Placing partitions on proc. 0." << std::endl;
-        else
-          GetOStream(Runtime0, 0) << "Placing partitions on proc. 0-" << numPartitions-1 << "." << std::endl;
-        myPartitionNumber = -1;
-        for (int i=0; i<(int)numPartitions; ++i) {
-          partitionOwners.push_back(i);
-          if (i==mypid) myPartitionNumber = i;
-        }
-        if (useDiffusiveHeuristic_ == -1)
-          useDiffusiveHeuristic_ = 1;
-        return;
+    // If not diffusive, compute (partitionOwners, myPartitionNumber) and return.
+    if (diffusiveHeuristic != 1 && numPartitions > diffusiveHeuristic && !forceDiffusive) {
+
+      // if diffusiveHeuristic == -1:  put on procs 0..N the first time only, then use diffusive in remaining rounds
+      if (diffusiveHeuristic == -1) forceDiffusive = true;
+
+      if (numPartitions==1)
+        GetOStream(Runtime0, 0) << "Placing partitions on proc. 0." << std::endl;
+      else
+        GetOStream(Runtime0, 0) << "Placing partitions on proc. 0-" << numPartitions-1 << "." << std::endl;
+
+      myPartitionNumber = -1;
+      for (int i=0; i<(int)numPartitions; ++i) {
+        partitionOwners.push_back(i);
+        if (i==mypid) myPartitionNumber = i;
       }
+
+      return;
     }
 
     GetOStream(Runtime0, 0) << "Using diffusive heuristic for partition placement." << std::endl;
@@ -781,34 +796,6 @@ namespace MueLu {
     }
 
   } //DeterminePartitionPlacement
-
-  //----------------------------------------------------------------------
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetStartLevel(int startLevel) {
-    startLevel_ = startLevel;
-  }
-
-  //----------------------------------------------------------------------
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetImbalanceThreshold(double threshold) {
-    nnzMaxMinRatio_ = threshold;
-  }
-
-  //----------------------------------------------------------------------
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetMinRowsPerProcessor(GO threshold) {
-    minRowsPerProcessor_ = threshold;
-  }
-
-  //----------------------------------------------------------------------
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetMinNnzPerProcessor(GO threshold) {
-    minNnzPerProcessor_ = threshold;
-  }
 
 } // namespace MueLu
 
