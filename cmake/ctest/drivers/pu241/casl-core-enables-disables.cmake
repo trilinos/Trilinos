@@ -55,5 +55,7 @@ SET(Optika_DO_GUI_UNIT_TESTS OFF CACHE BOOL "")
 # Turn on configure timing
 SET(${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING ON CACHE BOOL "")
 
-# Don't create *Config.cmake files since they are massively expensive to create
+# Don't create *Config.cmake export makefiles since they are massively
+# expensive to create and we don't need them (yet) in VERA.
 SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES OFF CACHE BOOL "")
+SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES OFF CACHE BOOL "")
