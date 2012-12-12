@@ -629,7 +629,6 @@ namespace Tpetra {
       || 
       (params == null && default_OptimizeStorage);
 
-
     // The graph has optimized storage when indices are allocated,
     // numRowEntries_ is null, and there are more than zero rows on
     // this process.  It's impossible for the graph to have dynamic
@@ -784,6 +783,12 @@ namespace Tpetra {
       // later in this method.
       ptrs = sparse_ops_type::allocRowPtrs (getRowMap ()->getNode (), numRowEntries ());
       vals = sparse_ops_type::template allocStorage<Scalar> (getRowMap ()->getNode (), ptrs ());
+      // TODO (mfh 05 Dec 2012) We should really parallelize this copy
+      // operation.  This is not currently required in the
+      // sparse_ops_type interface.  Some implementations of that
+      // interface (such as AltSparseOps) do provide a copyStorage()
+      // method, but this does not currently cover the case of copying
+      // from 2-D to 1-D storage.
       for (size_t row=0; row < numRows; ++row) {
         const size_t numentrs = numRowEntries[row];
         std::copy (values2D_[row].begin(),
@@ -803,11 +808,23 @@ namespace Tpetra {
       // As above, we don't need to keep the "packed" row offsets
       // array ptrs here, but we do need it here temporarily, so we
       // have to allocate it.  We'll free ptrs later in this method.
+      //
+      // Note that this routine checks whether storage has already
+      // been packed.  This is a common case for solution of nonlinear
+      // PDEs using the finite element method, as long as the
+      // structure of the sparse matrix does not change between linear
+      // solves.
       if (nodeNumEntries != nodeNumAllocated) {
         // We have to pack the 1-D storage, since the user didn't fill
         // up all requested storage.
         ptrs = sparse_ops_type::allocRowPtrs (getRowMap ()->getNode (), numRowEntries ());
         vals = sparse_ops_type::template allocStorage<Scalar> (getRowMap ()->getNode (), ptrs ());
+	// TODO (mfh 05 Dec 2012) We should really parallelize this
+	// copy operation.  This is not currently required in the
+	// sparse_ops_type interface.  Some implementations of that
+	// interface (such as AltSparseOps) do provide a copyStorage()
+	// method, but I have to check whether it requires that the
+	// input have the same packed offsets as the output.
         for (size_t row=0; row < numRows; ++row) {
           const size_t numentrs = numRowEntries[row];
           std::copy (values1D_.begin() + rowPtrs[row],
@@ -857,6 +874,20 @@ namespace Tpetra {
     else {
       lclparams = sublist (params, "Local Sparse Ops");
     }
+
+    // mfh 05 Dec 2012: This is the place where the matrix's data
+    // might get reorganized into a different data structure, to match
+    // the data structure of the graph.  This is not necessarily the
+    // optimized final data structure (as used by apply() for sparse
+    // matrix-vector multiply).  That happens at the following line in fillComplete():
+    //
+    // lclMatOps_->setGraphAndMatrix (staticGraph_->getLocalGraph (), lclMatrix_);
+    //
+    // The requirement to allow the graph to be stored separately from
+    // the matrix is important for some applications.  It may save
+    // memory if multiple matrices share the same structure, and it
+    // allows the graph (and therefore the storage layout of the
+    // matrix's values) to be precomputed.
     sparse_ops_type::finalizeMatrix (*staticGraph_->getLocalGraph (), *lclMatrix_, lclparams);
   }
 
@@ -2856,6 +2887,20 @@ namespace Tpetra {
       std::invalid_argument, "importLIDs.size() = " << importLIDs.size()
       << "!= numPacketsPerLID.size() = " << numPacketsPerLID.size() << ".");
 
+    // FIXME (mfh 05 Dec 2012) Here are all the assumptions encoded in
+    // the following line of code:
+    //
+    // 1. The data (index,value) for each element are packed tightly,
+    //    with no extra space in between.
+    //
+    // 2. sizeof(Scalar) says how much data were used to represent a
+    //    Scalar in its packed form.
+    //
+    // 3. All processes and all instances of Scalar use the same
+    //    amount of data to represent a Scalar.  (GlobalOrdinal is
+    //    typically a built-in integer type, so this is generally true
+    //    for GlobalOrdinal.)
+    //
     const size_t SizeOfOrdValPair = sizeof(GlobalOrdinal)+sizeof(Scalar);
     const size_t totalNumBytes = imports.size(); // * sizeof(char), which is one.
     const size_t totalNumEntries = totalNumBytes / SizeOfOrdValPair;
@@ -2877,10 +2922,19 @@ namespace Tpetra {
         // Needs to be in here in case of zero length rows.  If not,
         // the lines following the if statement error out if the row
         // length is zero. KLN 13/06/2011
+	//
+	// mfh 05 Dec 2012: The problem to which Kurtis refers in the
+	// above comment may no longer be an issue, since
+	// ArrayView::view() (which implements ArrayView::operator())
+	// now allows views of length zero.
         if (rowSize == 0) {
           continue;
         }
-        // get import views
+	// Get views of the import (incoming data) buffers.  Again,
+	// this code assumes that sizeof(Scalar) is the number of
+	// bytes used by each Scalar.  It also assumes that
+	// Teuchos::Comm has correctly deserialized Scalar in place in
+	// avValsC.
         avIndsC = imports(curOffsetInBytes, rowSize * sizeof(GlobalOrdinal));
         avValsC = imports(curOffsetInBytes + rowSize * sizeof(GlobalOrdinal),
                           rowSize * sizeof(Scalar));
