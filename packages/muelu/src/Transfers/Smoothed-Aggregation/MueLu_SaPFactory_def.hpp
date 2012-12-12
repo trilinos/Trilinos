@@ -63,7 +63,7 @@ namespace MueLu {
   RCP<const ParameterList> SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set                          ("Damping factor",          4./3, "Smoothed-Aggregation damping factor");
+    validParamList->set< Scalar >                ("Damping factor",          4./3, "Smoothed-Aggregation damping factor");
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
     validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Tentative prolongator factory");
     // validParamList->set                       ("Diagonal view",      "current", "Diagonal view used during the prolongator smoothing process");
