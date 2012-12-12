@@ -139,7 +139,7 @@ namespace MueLuTests {
       partitionThisDofBelongsTo = decomposition->getDataNonConst(0);
 
     // Indicate the number of partitions that there should be.
-    level.Set<GO>("number of partitions",4);
+    level.Set<GO>("number of partitions", 4);
 
     /* Assign the partition that each unknown belongs to.  In this case,
 
@@ -205,22 +205,23 @@ namespace MueLuTests {
     RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
     level.Request("Partition",zoltan.get());
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
-    level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
+    level.SetLevelID(2); //partitioning by default won't happen unless level >= 1 // TODO: we should just need to change an option of the factory to do this.
 
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
-
     Teuchos::ParameterList paramList;
     paramList.set("startLevel", 1);
     paramList.set("minRowsPerProcessor", 1000);
     paramList.set("nonzeroImbalance", 1.2);
     paramList.set("diffusiveHeuristic", 10);
+    paramList.set< RCP<const FactoryBase> >("number of partitions", Teuchos::null); // use user-defined #partitions
     repart->SetParameterList(paramList);
-
     repart->SetFactory("Partition", zoltan);
 
     GO myPartitionNumber;
     Array<int> partitionOwners;
+    level.Request(*repart);
     repart->DeterminePartitionPlacement(level,myPartitionNumber,partitionOwners);
+    level.Release(*repart);
 
     TEST_EQUALITY(partitionOwners[0],1);
     TEST_EQUALITY(partitionOwners[1],3);
@@ -359,13 +360,16 @@ namespace MueLuTests {
     paramList.set("minRowsPerProcessor", 1000);
     paramList.set("nonzeroImbalance", 1.2);
     paramList.set("diffusiveHeuristic", 10);
+    paramList.set< RCP<const FactoryBase> >("number of partitions", Teuchos::null); // use user-defined #partitions
     repart->SetParameterList(paramList);
 
     repart->SetFactory("Partition", zoltan);
 
     GO myPartitionNumber;
     Array<int> partitionOwners;
+    level.Request(*repart);
     repart->DeterminePartitionPlacement(level,myPartitionNumber,partitionOwners);
+    level.Release(*repart);
 
     TEST_EQUALITY(partitionOwners[0],2);
     TEST_EQUALITY(partitionOwners[1],3);
@@ -496,12 +500,15 @@ namespace MueLuTests {
     paramList.set("minRowsPerProcessor", 1000);
     paramList.set("nonzeroImbalance", 1.2);
     paramList.set("diffusiveHeuristic", 10);
+    paramList.set< RCP<const FactoryBase> >("number of partitions", Teuchos::null); // use user-defined #partitions
     repart->SetParameterList(paramList);
     repart->SetFactory("Partition", zoltan);
 
     GO myPartitionNumber;
     Array<int> partitionOwners;
+    level.Request(*repart);
     repart->DeterminePartitionPlacement(level,myPartitionNumber,partitionOwners);
+    level.Release(*repart);
 
     TEST_EQUALITY(partitionOwners[0],3);
     TEST_EQUALITY(partitionOwners[1],0);
@@ -633,12 +640,15 @@ namespace MueLuTests {
     paramList.set("minRowsPerProcessor", 1000);
     paramList.set("nonzeroImbalance", 1.2);
     paramList.set("diffusiveHeuristic", 10);
+    paramList.set< RCP<const FactoryBase> >("number of partitions", Teuchos::null); // use user-defined #partitions
     repart->SetParameterList(paramList);
     repart->SetFactory("Partition", zoltan);
 
     GO myPartitionNumber;
     Array<int> partitionOwners;
+    level.Request(*repart);
     repart->DeterminePartitionPlacement(level,myPartitionNumber,partitionOwners);
+    level.Release(*repart);
 
     TEST_EQUALITY(partitionOwners[0],2);
     TEST_EQUALITY(partitionOwners[1],3);
@@ -770,6 +780,7 @@ namespace MueLuTests {
     paramList.set("minRowsPerProcessor", 1000);
     paramList.set("nonzeroImbalance", 1.2);
     paramList.set("diffusiveHeuristic", 10);
+    paramList.set< RCP<const FactoryBase> >("number of partitions", Teuchos::null); // use user-defined #partitions
     repart->SetParameterList(paramList);
     repart->SetFactory("Partition", zoltan);
     level.Request("Importer",repart.get());  // request permutation matrix

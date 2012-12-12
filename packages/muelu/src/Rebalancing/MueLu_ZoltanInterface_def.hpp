@@ -68,6 +68,8 @@ namespace MueLu {
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   DeclareInput(Level & currentLevel) const
   {
+    Input(currentLevel, "number of partitions");
+
     Input(currentLevel, "A");
     currentLevel.DeclareInput("Coordinates", NoFactory::get()); //FIXME JJH
     //Input(currentLevel, "Coordinates"); //FIXME JJH

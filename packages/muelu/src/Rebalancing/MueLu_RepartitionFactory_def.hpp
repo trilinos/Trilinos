@@ -90,11 +90,20 @@ namespace MueLu {
                             << "K>1: if #partitions is > K, put on procs 0..N, otherwise use diffusive heuristic" << std::endl
                             << "-1:  put on procs 0..N the first time only, then use diffusive in remaining rounds" << std::endl;
 
-      validParamList->set<LO>                    ("diffusiveHeuristic",     0, docDiffusiveHeuristic.str());
+      validParamList->set<LO>("diffusiveHeuristic",     0, docDiffusiveHeuristic.str());
     }
 
-    validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Factory of the matrix A");
-    validParamList->set< RCP<const FactoryBase> >("Partition",      Teuchos::null, "Factory of the partition");
+    validParamList->set< RCP<const FactoryBase> >("A",                   Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >("Partition",           Teuchos::null, "Factory of the partition");
+
+    // One can specify a number of partition on the level class to override what is computed internally by this class.
+    // By default, the generation factory is 'this', not Teuchos::null, which means that by default, neither user defined data nor
+    // the factory manager are used. This is unusual.
+    // To manually set a "number of partition" entry in the level, it has to either be associated with the generating factory 'this' or the generating factory of this class has to be set to Teuchos::null:
+    // Ex: level.Set("numbers of partitions"); myRepartitionFact.set< RCP<FactoryBase> >("number of partitions", Teuchos::null);
+    //  or level.Set("numbers of partitions", myRepartitionFact); and approrpiate requests
+    RCP<const FactoryBase> rcpThis = rcpFromRef(*this);
+    validParamList->set< RCP<const FactoryBase> >("number of partitions", rcpThis, "(advanced) Factory computing the number of partition. By default, an appropriate number of partition is computed internally.");
 
     return validParamList;
   }
@@ -103,6 +112,7 @@ namespace MueLu {
   void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Partition");
+    Input(currentLevel, "number of partitions");
   }
 
   //----------------------------------------------------------------------
@@ -116,7 +126,7 @@ namespace MueLu {
     // JG TODO: I don't really know if we want to do this.
     const int    startLevel          = pL.get<int>   ("startLevel");
     const LO     minRowsPerProcessor = pL.get<LO>    ("minRowsPerProcessor");
-    const double nonzeroImbalance      = pL.get<double>("nonzeroImbalance");
+    const double nonzeroImbalance    = pL.get<double>("nonzeroImbalance");
 
     //TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
@@ -198,14 +208,14 @@ namespace MueLu {
     // FIXME Quick way to figure out how many partitions there should be. (Same as what's done in ML.)
     // FIXME Should take into account nnz, maybe?  Perhaps only when user is using min #nnz per row threshold.
     GO numPartitions;
-    if (currentLevel.IsAvailable("number of partitions")) {
-      numPartitions = currentLevel.Get<GO>("number of partitions");
+    if (IsAvailable(currentLevel, "number of partitions")) {
+      numPartitions = Get<GO>(currentLevel, "number of partitions");
     } else {
       if ((GO)A->getGlobalNumRows() < minRowsPerProcessor) numPartitions = 1;
       else                                                 numPartitions = A->getGlobalNumRows() / minRowsPerProcessor;
       if (numPartitions > comm->getSize())
         numPartitions = comm->getSize();
-      currentLevel.Set("number of partitions", numPartitions);
+      Set(currentLevel, "number of partitions", numPartitions);
     }
     GetOStream(Statistics0, 0) << "Number of partitions to use = " << numPartitions << std::endl;
 

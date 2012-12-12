@@ -123,12 +123,15 @@ namespace MueLu {
 
       if (varName == "R")             return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
-//       if (varName == "Partition")     {
-//         return SetAndReturnDefaultFactory(varName, rcp(new ZoltanInterface()));
-//       }
+      if (varName == "Partition")     {
+        return SetAndReturnDefaultFactory(varName, rcp(new ZoltanInterface()));
+      }
 #endif //ifdef HAVE_MPI
       if (varName == "Importer") {
-        return SetAndReturnDefaultFactory(varName, NoFactory::getRCP()); // allows calls to IsAvailable() from RAPFActory //FIXME
+        return SetAndReturnDefaultFactory(varName, rcp(new RepartitionFactory()));
+      }
+      if (varName == "number of partitions") {
+        return GetFactory("Importer");
       }
       //JJH FIXME is this going to bite me in the backside?
 //       if (varName == "Coordinates") {
