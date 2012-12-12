@@ -89,6 +89,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
 
   bool verbose = false, proc_verbose = false;
+  bool leftprec = true;      // left preconditioning or right.
   int frequency = -1;        // frequency of status test output.
   int blocksize = 1;         // blocksize
   int numrhs = 1;            // number of right-hand sides to solve for
@@ -104,6 +105,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
   cmdp.setOption("block-size",&blocksize,"Block size used by CG.");
   cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
+  cmdp.setOption("left-prec","right-prec",&leftprec,"Left preconditioning or right.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -202,7 +204,10 @@ int main(int argc, char *argv[]) {
   //
   RCP<Belos::LinearProblem<double,MV,OP> > problem
     = rcp( new Belos::LinearProblem<double,MV,OP>( A, X, B ) );
-  problem->setLeftPrec( belosPrec );
+  if (leftprec)
+    problem->setLeftPrec( belosPrec );
+  else
+    problem->setRightPrec( belosPrec );
 
   bool set = problem->setProblem();
   if (set == false) {

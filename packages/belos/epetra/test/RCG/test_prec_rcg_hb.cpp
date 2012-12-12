@@ -55,6 +55,7 @@
 #include "Epetra_Map.h"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Ifpack.h"
 
 int main(int argc, char *argv[]) {
   //
@@ -70,6 +71,7 @@ int main(int argc, char *argv[]) {
   // Get test parameters from command-line processor
   //  
   bool verbose = false, proc_verbose = false;
+  bool leftprec = true;                // left preconditioning or right.
   int frequency = -1;                  // frequency of status test output.
   std::string filename("gr_30_30.hb"); // default input filename
   double tol = 1.0e-10;                // relative residual tolerance
@@ -81,6 +83,7 @@ int main(int argc, char *argv[]) {
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
+  cmdp.setOption("left-prec","right-prec",&leftprec,"Left preconditioning or right.");
   cmdp.setOption("filename",&filename,"Filename for test matrix.");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by the RCG solver.");
   cmdp.setOption("max-subspace",&numBlocks,"Maximum number of vectors in search space (not including recycle space).");
@@ -126,7 +129,48 @@ int main(int argc, char *argv[]) {
     MVT::MvInit( *X, 0.0 );
   }
   //
-  // ********Other information used by block solver***********
+  // ************Construct preconditioner*************
+  //
+  ParameterList ifpackList;
+
+  // allocates an IFPACK factory. No data is associated
+  // to this object (only method Create()).
+  Ifpack Factory;
+
+  // create the preconditioner. For valid PrecType values,
+  // please check the documentation
+  std::string PrecType = "ICT"; // incomplete Cholesky 
+  int OverlapLevel = 0; // must be >= 0. If Comm.NumProc() == 1,
+                        // it is ignored.
+
+  RCP<Ifpack_Preconditioner> Prec = Teuchos::rcp( Factory.Create(PrecType, &*A, OverlapLevel) );
+  assert(Prec != Teuchos::null);
+
+  // specify parameters for ICT
+  ifpackList.set("fact: drop tolerance", 1e-9);
+  ifpackList.set("fact: ict level-of-fill", 1.0);
+  // the combine mode is on the following:
+  // "Add", "Zero", "Insert", "InsertAdd", "Average", "AbsMax"
+  // Their meaning is as defined in file Epetra_CombineMode.h
+  ifpackList.set("schwarz: combine mode", "Add");
+  // sets the parameters
+  IFPACK_CHK_ERR(Prec->SetParameters(ifpackList));
+
+  // initialize the preconditioner. At this point the matrix must
+  // have been FillComplete()'d, but actual values are ignored.
+  IFPACK_CHK_ERR(Prec->Initialize());
+
+  // Builds the preconditioners, by looking for the values of
+  // the matrix.
+  IFPACK_CHK_ERR(Prec->Compute());
+
+  // Create the Belos preconditioned operator from the Ifpack preconditioner.
+  // NOTE:  This is necessary because Belos expects an operator to apply the
+  //        preconditioner with Apply() NOT ApplyInverse().
+  RCP<Belos::EpetraPrecOp> belosPrec = rcp( new Belos::EpetraPrecOp( Prec ) );
+
+  //
+  // ************Other information used by solver**************
   // *****************(can be user specified)******************
   //
   const int NumGlobalElements = B->GlobalLength();
@@ -147,9 +191,16 @@ int main(int argc, char *argv[]) {
   else
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
   //
-  // Construct an unpreconditioned linear problem instance.
+  // Construct a preconditioned linear problem instance.
   //
   Belos::LinearProblem<double,MV,OP> problem( A, X, B );
+  if (leftprec) {
+    problem.setLeftPrec( belosPrec );
+  }
+  else {
+    problem.setRightPrec( belosPrec );
+  }
+
   bool set = problem.setProblem();
   if (set == false) {
     if (proc_verbose)
