@@ -2571,7 +2571,7 @@ void ML_print_align(int int2match, char *space, int pad)
 static int ML_estimate_avg_nz_per_row_nosubmatrix(ML_Operator * matrix, int * total_nz, int * total_rows) {
   int N,row,*rowptr, *bindx, *cols;
   double * values;
-  int maxrowlen, li,lj,lk;
+  int maxrowlen, li=0,lj=0,lk=0;
   struct ML_CSR_MSRdata * ptr;
   int rv=-1;
   int first_row=0, last_row=matrix->getrow->Nrows;
@@ -2616,6 +2616,7 @@ static int ML_estimate_avg_nz_per_row_nosubmatrix(ML_Operator * matrix, int * to
     matrix->getrow->func_ptr(matrix, 1, &row, maxrowlen, cols, values, &lk);
     
     (*total_nz)=  (int) (N*(li+lj+lk)/3.0);
+
     ML_free(cols);
     ML_free(values);
     rv=0;
@@ -2633,15 +2634,16 @@ int ML_estimate_avg_nz_per_row(ML_Operator * matrix, double * avg_nz) {
   int sub_nz, sub_rows;
   int rv,total_rows=0;
   int total_nz=0;
+  (*avg_nz)=0;
 
   /* Sanity Check & Get Num Rows*/
-  if(!matrix->getrow) { (*avg_nz)=0.0; return -1;}
+  if(!matrix->getrow) return -1;
   
   /* Loop through all the submatrices, if any */
   next = matrix->sub_matrix;
   while ( (next != NULL) ) {
     rv=ML_estimate_avg_nz_per_row_nosubmatrix(next,&sub_nz,&sub_rows);
-    if(rv) {(*avg_nz)=0.0; return rv;}
+    if(rv) return rv;
     
     /* Running statistics */
     total_rows+= sub_rows;
@@ -2654,8 +2656,6 @@ int ML_estimate_avg_nz_per_row(ML_Operator * matrix, double * avg_nz) {
   total_rows += sub_rows;
   total_nz   += sub_nz;    
 
-  if(total_rows==0) (*avg_nz)=0.0;
-  else (*avg_nz)=((double)total_nz) / total_rows;
-
+  if(total_rows>0) (*avg_nz)=((double)total_nz) / total_rows;
   return 0;
 }

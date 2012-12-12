@@ -881,7 +881,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    int    max_nz_row_new = 0, total_nz = 0, index_length = 0;
    int    min_nz_row_new = 1e6;
    int    avg_nz_row_new = 0;
-   double A_avg_nz_per_row, B_avg_nz_per_row, estimated_nz_per_row;
+   double A_avg_nz_per_row=0.0, B_avg_nz_per_row=0.0, estimated_nz_per_row;
    int    A_i_allocated;
    int    flag;
    void   (*Agetrow)(ML_Operator *,int,int *,int *,int **,double **,int *,int);
@@ -1017,9 +1017,9 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    /* otherwise we probe a few rows to generate a guess.                     */
    /*------------------------------------------------------------------------*/
    ML_estimate_avg_nz_per_row(Amatrix,&A_avg_nz_per_row);
-   if (!A_avg_nz_per_row) A_avg_nz_per_row=100;
+   if (A_avg_nz_per_row < 5) A_avg_nz_per_row=100;
    ML_estimate_avg_nz_per_row(Bmatrix,&B_avg_nz_per_row);
-   if (!B_avg_nz_per_row) B_avg_nz_per_row=100;
+   if (B_avg_nz_per_row < 5) B_avg_nz_per_row=100;
 
    estimated_nz_per_row = sqrt(A_avg_nz_per_row) + sqrt(B_avg_nz_per_row) - 1.;
    estimated_nz_per_row *= estimated_nz_per_row;
