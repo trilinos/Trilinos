@@ -51,31 +51,33 @@
 
 namespace Ifpack2 {
 
-//! Ifpack2::AdditiveSchwarz: a class to define Additive Schwarz preconditioners of Tpetra::RowMatrix's.
+/** \class AdditiveSchwarz
+\brief Additive Schwarz domain decomposition for Tpetra::RowMatrix objects.
 
-/*!
-  Class  Ifpack2::AdditiveSchwarz enables the construction of Additive
-  Schwarz (one-level overlapping domain decomposition) preconditioners, 
-  for a given Tpetra::RowMatrix.
-  Ifpack2::AdditiveSchwarz is derived from Ifpack2::Preconditioner,
-  itself derived from Tpetra_Operator. An application of
-  the Additive Schwarz preconditioner can be obtained 
-  by calling method apply().
+\section Ifpack2_AdditiveSchwarz_Summary Summary
 
-  One-level overlapping domain decomposition preconditioners use 
-  local solvers, of Dirichlet type. This means that the inverse of
-  the local matrix (with minimal or wider overlap) is applied to
-  the residual to be preconditioned.
+This class implements an Additive Schwarz (one-level overlapping
+domain decomposition) preconditioner.  It operates on a given
+Tpetra::RowMatrix.  This class implements Tpetra::Operator, like all
+other Ifpack2 Preconditioner subclasses.  Thus, the apply() method
+applies the preconditioner to a multivector.
 
-  The preconditioner can be written as:
-  \f[
-  P_{AS}^{-1} = \sum_{i=1}^M P_i A_i^{-1} R_i ,
-  \f]
-  where \f$M\f$ is the number of subdomains (that is, the number of 
-  processors in
-  the computation), \f$R_i\f$ is an operator that restricts the global
-  vector to the vector lying on subdomain \f$i\f$, \f$P_i\f$ is the 
-  prolongator operator, and
+\section Ifpack2_AdditiveSchwarz_Alg Algorithm
+
+One-level overlapping domain decomposition preconditioners use local
+solvers of Dirichlet type. This means that the inverse of the local
+matrix (with minimal or wider overlap) is applied to the residual to
+be preconditioned.
+
+The preconditioner can be written as:
+\f[
+P_{AS}^{-1} = \sum_{i=1}^M P_i A_i^{-1} R_i,
+\f]
+where \f$M\f$ is the number of subdomains (that is, the number of
+processors in the computation), \f$R_i\f$ is an operator that
+restricts the global vector to the vector lying on subdomain \f$i\f$,
+\f$P_i\f$ is the prolongator operator, and
+
   \f[
   A_i = R_i A P_i.
   \f]
