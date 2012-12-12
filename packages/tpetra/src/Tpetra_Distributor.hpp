@@ -752,6 +752,13 @@ namespace Tpetra {
     // include any self message in the "actual" number of receives to
     // post.
     //
+    // QUESTION (mfh 05 Dec 2012): Does Teuchos::Comm's ireceive() do
+    // the right thing with self messages?  It should copy from the
+    // send buffer into the receive buffer; they need not (and in fact
+    // should not, according to MPI semantics) be the same.  This
+    // doesn't matter for us, because we do the copying by hand
+    // (below) rather than requiring that Teuchos::Comm handle it.
+    //
     // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
     // doesn't (re)allocate its array of requests.  That happens in
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
@@ -787,9 +794,11 @@ namespace Tpetra {
     }
 
     if (doBarrier) {
-      // Each ready-send below requires that its matching receive has
-      // already been posted, so do a barrier to ensure that all the
-      // nonblocking receives have posted first.
+      // If we are using ready sends (MPI_Rsend) below, we need to do
+      // a barrier before we post the ready sends.  This is because a
+      // ready send requires that its matching receive has already
+      // been posted before the send has been posted.  The only way to
+      // guarantee that in this case is to use a barrier.
       Teuchos::barrier (*comm_);
     }
 
@@ -829,6 +838,7 @@ namespace Tpetra {
             requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
           }
           else if (sendType == DISTRIBUTOR_SSEND) {
+	    // "ssend" means "synchronous send."
             ssend<int, Packet> (*comm_, tmpSend.size(),
                                 tmpSend.getRawPtr(), imagesTo_[p]);
 
@@ -850,6 +860,12 @@ namespace Tpetra {
       }
 
       if (selfMessage_) {
+	// This is how we "send a message to ourself": we copy from
+	// the export buffer to the import buffer.  That saves
+	// Teuchos::Comm implementations the trouble of implementing
+	// self messages correctly.  (To do this right, the
+	// Teuchos::Comm subclass instance would need internal buffer
+	// space for messages, keyed on the message's tag.)
         std::copy (exports.begin()+startsTo_[selfNum]*numPackets,
                    exports.begin()+startsTo_[selfNum]*numPackets+lengthsTo_[selfNum]*numPackets,
                    imports.begin()+selfReceiveOffset);
