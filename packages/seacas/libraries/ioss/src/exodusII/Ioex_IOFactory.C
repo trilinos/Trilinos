@@ -50,7 +50,7 @@ namespace Ioss { class DatabaseIO; }
 #if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
 namespace {
   std::string check_external_decomposition_property(MPI_Comm comm);
-  bool check_external_composition_property(MPI_Comm comm);
+  bool check_external_composition_property(MPI_Comm comm, Ioss::DatabaseUsage db_usage);
 }
 #endif
 
@@ -105,10 +105,18 @@ namespace Ioex {
 	  }
 	}
       }
-      else if (db_usage == Ioss::WRITE_RESULTS || db_usage == Ioss::WRITE_RESTART) {
-	if (properties.exists("SINGLE_FILE")) {
+      else if (db_usage == Ioss::WRITE_RESULTS) {
+	if (properties.exists("COMPOSE_RESULTS_FILE")) {
 	  decompose = true;
-	} else if (check_external_composition_property(communicator)) {
+	} else if (check_external_composition_property(communicator, db_usage)) {
+	  decompose = true;
+	}
+	decompose = true;
+      }
+      else if (db_usage == Ioss::WRITE_RESTART) {
+	if (properties.exists("COMPOSE_RESTART_FILE")) {
+	  decompose = true;
+	} else if (check_external_composition_property(communicator, db_usage)) {
 	  decompose = true;
 	}
       }
@@ -160,7 +168,7 @@ namespace {
     return decomp_method;
   }
 
-  bool check_external_composition_property(MPI_Comm comm)
+  bool check_external_composition_property(MPI_Comm comm, Ioss::DatabaseUsage db_usage)
   {
     // Check environment variable IOSS_PROPERTIES. If it exists, parse
     // the contents and see if it specifies the use of a single file for output...
@@ -177,15 +185,14 @@ namespace {
       for (size_t i=0; i < prop_val.size(); i++) {
 	std::vector<std::string> property;
 	Ioss::tokenize(prop_val[i], "=", property);
-	if (property.size() != 2) {
-	  std::ostringstream errmsg;
-	  errmsg << "ERROR: Invalid property specification found in IOSS_PROPERTIES environment variable\n"
-		 << "       Found '" << prop_val[i] << "' which is not of the correct PROPERTY=VALUE form";
-	  IOSS_ERROR(errmsg);
-	}
 	std::string prop = Ioss::Utils::uppercase(property[0]);
-	if (prop == "SINGLE_FILE") {
+	if (db_usage == Ioss::WRITE_RESULTS && prop == "COMPOSE_RESULTS_FILE") {
 	  compose = true;
+	  break;
+	}
+	else if (db_usage == Ioss::WRITE_RESTART && prop == "COMPOSE_RESTART_FILE") {
+	  compose = true;
+	  break;
 	}
       }
     }

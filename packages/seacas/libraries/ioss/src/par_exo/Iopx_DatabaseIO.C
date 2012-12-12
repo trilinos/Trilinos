@@ -191,6 +191,37 @@ namespace {
     IOSS_ERROR(errmsg);
   }
 
+  int get_parallel_io_mode(const Ioss::PropertyManager &properties)
+  {
+    static int par_mode = 0;
+    //    static int par_mode_default = EX_PNETCDF;  // Default...
+    //    static int par_mode_default = EX_MPIIO;  // Default...
+    static int par_mode_default = EX_MPIPOSIX;  // Default...
+    
+    if (par_mode == 0) {
+      if (properties.exists("PARALLEL_IO_MODE")) {
+	std::string mode_name = properties.get("PARALLEL_IO_MODE").get_string();
+	Ioss::Utils::fixup_name(mode_name);
+	if (mode_name == "pnetcdf")
+	  par_mode = EX_PNETCDF;
+	else if (mode_name == "mpiposix")
+	  par_mode = EX_MPIPOSIX;
+	else if (mode_name == "mpiio")
+	  par_mode = EX_MPIIO;
+	else {
+	  std::ostringstream errmsg;
+	  errmsg << "ERROR: Unrecognized parallel io mode setting '" << mode_name
+		 << "' in the Ioss property PARALLEL_IO_MODE.  Valid values are 'pnetcdf', 'mpiposix', or 'mpiio'";
+	    IOSS_ERROR(errmsg);
+	}
+      }
+      else {
+	par_mode = par_mode_default;
+      }
+    }
+    return par_mode;
+  }
+
   void check_non_null(void *ptr, const char *type, const std::string &name)
   {
     if (ptr == NULL) {
@@ -562,8 +593,7 @@ namespace Iopx {
     int io_word_size  = 0;
     float version;
 
-    //int par_mode = EX_MPIPOSIX;
-    int par_mode = EX_PNETCDF;
+    int par_mode = get_parallel_io_mode(properties);
     
     MPI_Info info = MPI_INFO_NULL;
     int exodus_file_ptr = ex_open_par(get_filename().c_str(), EX_READ|par_mode,
@@ -636,8 +666,7 @@ namespace Iopx {
 	mode |= EX_ALL_INT64_API;
       }
       
-      //int par_mode = EX_MPIPOSIX;
-      int par_mode = EX_PNETCDF;
+      int par_mode = get_parallel_io_mode(properties);
 
       MPI_Info info = MPI_INFO_NULL;
       if (is_input()) {
