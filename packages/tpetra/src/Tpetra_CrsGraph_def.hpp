@@ -789,7 +789,11 @@ namespace Tpetra {
     std::string tfecfFuncName("getRowInfo()");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         rowMap_->isNodeLocalElement(myRow) == false,
-        std::logic_error, ": Internal logic error. Please contact Tpetra team."
+        std::logic_error, 
+	": The given (local) row index myRow = " << myRow 
+	<< " does not belong to the graph's row Map.  "
+	"This probably indicates a bug in Tpetra::CrsGraph or Tpetra::CrsMatrix.  "
+	"Please report this to the Tpetra developers."
     )
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         hasRowInfo() == false,
