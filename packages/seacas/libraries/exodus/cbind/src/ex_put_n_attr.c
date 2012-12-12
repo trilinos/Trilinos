@@ -198,6 +198,8 @@ int ex_put_n_attr (int   exoid,
 
   count[0] = num_entity;
   count[1] = num_attr;
+  if (count[0] == 0)
+    start[0] = 0;
 
   if (ex_comp_ws(exoid) == 4) {
     status = nc_put_vara_float(exoid, attrid, start, count, attrib);

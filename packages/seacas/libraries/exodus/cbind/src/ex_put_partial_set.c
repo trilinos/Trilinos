@@ -158,6 +158,9 @@ int ex_put_partial_set (int   exoid,
 
     start[0] = offset-1;
     count[0] = num_to_put;
+    if (count[0] == 0)
+      start[0] = 0;
+
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
       status = nc_put_vara_longlong(exoid, entry_list_id, start, count, set_entry_list);
     } else {

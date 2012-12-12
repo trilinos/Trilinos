@@ -116,6 +116,8 @@ int ex_put_n_nodal_var (int   exoid,
 
     count[0] = 1;
     count[1] = num_nodes;
+    if (num_nodes == 0)
+      start[1] = 0;
   }
 
   if (ex_comp_ws(exoid) == 4) {

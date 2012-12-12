@@ -181,6 +181,8 @@ int ex_put_partial_id_map (int  exoid,
   /* write out the entity numbering map  */
   start[0] = start_entity_num-1;
   count[0] = num_entities;
+  if (num_entities == 0)
+    start[0] = 0;
 
   /* write out the entity numbering map  */
   if (ex_int64_status(exoid) & EX_MAPS_INT64_API) {

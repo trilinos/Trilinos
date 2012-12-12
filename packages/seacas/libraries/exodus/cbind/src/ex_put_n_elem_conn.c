@@ -159,6 +159,9 @@ int ex_put_n_elem_conn (int  exoid,
   count[0] = num_elems;
   count[1] = num_nod_per_elem;
 
+  if (count[0] == 0)
+    start[0] = 0;
+
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
     status = nc_put_vara_longlong(exoid, connid, start, count, connect);
   } else {
