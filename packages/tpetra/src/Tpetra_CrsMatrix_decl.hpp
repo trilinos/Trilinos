@@ -991,7 +991,18 @@ namespace Tpetra {
     ArrayView<const Scalar>    getView(RowInfo rowinfo) const;
     ArrayView<      Scalar>    getViewNonConst(RowInfo rowinfo);
     // local Kokkos objects
+
+    /// \brief Fill data into the local matrix.
+    ///
+    /// This method is only called in fillComplete(), and it is only
+    /// called if the graph's structure is already fixed (that is, if
+    /// the matrix does not own the graph).
     void fillLocalMatrix(const RCP<ParameterList> &params);
+    /// \brief Fill data into the local graph and matrix.
+    ///
+    /// This method is only called in fillComplete(), and it is only
+    /// called if the graph's structure is <i>not</i> already fixed
+    /// (that is, if the matrix <i>does</i> own the graph).
     void fillLocalGraphAndMatrix(const RCP<ParameterList> &params);
     // debugging
     void checkInternalState() const;
@@ -1015,12 +1026,23 @@ namespace Tpetra {
     RCP<sparse_ops_type>   lclMatOps_;
     RCP<local_matrix_type> lclMatrix_;
 
-    // matrix values. before allocation, both are null.
-    // after allocation, one is null.
-    // 1D == StaticAllocation, 2D == DynamicAllocation
-    // The allocation always matches that of graph_, as the graph does the allocation for the matrix.
+    /// \name Sparse matrix values.
+    ///
+    /// values1D_ represents the values assuming "1-D" compressed
+    /// sparse row storage.  values2D_ represents the values as an
+    /// array of arrays, one (inner) array per row of the sparse
+    /// matrix.
+    ///
+    /// Before allocation, both arrays are null.  After allocation,
+    /// one is null.  If static allocation, then values2D_ is null.
+    /// If dynamic allocation, then values1D_ is null.  The allocation
+    /// always matches that of graph_, as the graph does the
+    /// allocation for the matrix.
+    //@{
     ArrayRCP<Scalar>                       values1D_;
     ArrayRCP<ArrayRCP<Scalar> >            values2D_;
+    //@}
+
     // TODO: these could be allocated at resumeFill() and de-allocated at fillComplete() to make for very fast getView()/getViewNonConst()
     // ArrayRCP< typedef ArrayRCP<const Scalar>::iterator > rowPtrs_;
     // ArrayRCP< typedef ArrayRCP<      Scalar>::iterator > rowPtrsNC_;
@@ -1042,11 +1064,18 @@ namespace Tpetra {
     ///   to their owning processes.
     std::map<GlobalOrdinal, Array<std::pair<GlobalOrdinal,Scalar> > > nonlocals_;
 
-    // a wrapper around multiply, for use in apply; it contains a non-owning RCP to *this, therefore, it is not allowed
-    // to persist past the destruction of *this. therefore, WE MAY NOT SHARE THIS POINTER.
+    /// \brief A wrapper around multiply(), for use in apply.
+    ///
+    /// This object contains a non-owning RCP to <tt>*this</tt>.
+    /// Therefore, it is not allowed to persist past the destruction
+    /// of *this.  As a result, WE MAY NOT SHARE THIS POINTER.
     RCP< const CrsMatrixMultiplyOp<Scalar,Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > sameScalarMultiplyOp_;
 
-    // cached frobenius norm: -ST::one() means invalid
+    /// \brief Cached Frobenius norm of the (global) matrix.
+    ///
+    /// The value -Teuchos::ScalarTraits<Magnitude>::one() means that
+    /// the norm has not yet been computed, or that the values in the
+    /// matrix may have changed and the norm must be recomputed.
     mutable Magnitude frobNorm_;
 
     //! Whether this instance's insertGlobalValues() method has triggered an efficiency warning yet.
