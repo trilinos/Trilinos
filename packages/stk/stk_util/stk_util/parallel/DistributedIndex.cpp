@@ -432,8 +432,7 @@ void DistributedIndex::update_keys( const std::vector<KeyType> & add_new_keys )
   std::vector<DistributedIndex::KeyType> removed_keys;
   removed_keys.swap(m_removed_keys);
 
-  std::sort(removed_keys.begin(), removed_keys.end());
-  ThrowAssert(std::unique(removed_keys.begin(), removed_keys.end()) == removed_keys.end()); // should be no dups
+  sort_unique(removed_keys);
 
   update_keys(add_new_keys, removed_keys);
 }
