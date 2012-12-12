@@ -48,9 +48,6 @@
 the appropriate declaration of one will need to be added back into
 functions that include the macro:
 */
-#if defined (INTEL_CXML)
-        unsigned int one=1;
-#endif
 
 #ifdef CHAR_MACRO
 #undef CHAR_MACRO
@@ -60,6 +57,33 @@ functions that include the macro:
 #else
 #define CHAR_MACRO(char_var) &char_var
 #endif
+
+namespace {
+
+#if defined (INTEL_CXML)
+        unsigned int one=1;
+#endif
+
+// Use a warpper function to handle claling ILAENV().  This removes
+// duplicaiton and avoid name lookup problems with member functions called
+// ILAENV() trying to call nonmember functions called ILAENV() (which does not
+// work on Intel compiler on Windows, see Trilinos bug 5762).
+inline
+int ilaenv_wrapper(
+  const int* ispec, const char* name, unsigned int name_length,
+  const char* opts, unsigned int opts_length,
+  const int* N1, const int* N2, const int* N3, const int* N4 )
+{
+#if defined (INTEL_CXML)
+    return ILAENV_F77(ispec, name, name_length, opts, opts_length, N1, N2, N3, N4 );
+#else
+    return ILAENV_F77(ispec, name, opts, N1, N2, N3, N4, name_length, opts_length );
+#endif  
+}
+
+} // namespace
+
+
 
 extern "C" {
 
@@ -392,11 +416,7 @@ namespace Teuchos
       temp_NAME.replace(1,2,"sy");
     }
     unsigned int name_length = temp_NAME.length();
-#if defined (INTEL_CXML)
-    return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
-#else
-    return ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
-#endif
+    return ilaenv_wrapper(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4);
   }
 
 
@@ -796,11 +816,7 @@ namespace Teuchos
       temp_NAME.replace(1,2,"sy");
     }
     unsigned int name_length = temp_NAME.length();
-#if defined(INTEL_CXML)
-    return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
-#else
-    return ::ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
-#endif
+    return ilaenv_wrapper(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4);
   }
 
 
@@ -1186,11 +1202,7 @@ namespace Teuchos
     unsigned int opts_length = OPTS.length();
     std::string temp_NAME = "c" + NAME;
     unsigned int name_length = temp_NAME.length();
-#if defined (INTEL_CXML)
-    return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
-#else
-    return ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
-#endif
+    return ilaenv_wrapper(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4);
   }
 
   // END INT, COMPLEX<FLOAT> SPECIALIZATION IMPLEMENTATION //
@@ -1564,11 +1576,7 @@ namespace Teuchos
     unsigned int opts_length = OPTS.length();
     std::string temp_NAME = "z" + NAME;
     unsigned int name_length = temp_NAME.length();
-#if defined (INTEL_CXML)
-    return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
-#else
-    return ::ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
-#endif
+    return ilaenv_wrapper(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4);
   }
 
   // END INT, COMPLEX<DOUBLE> SPECIALIZATION IMPLEMENTATION //

@@ -46,6 +46,29 @@
 #include <vecLib/cblas.h>
 #endif
 
+
+
+/* for INTEL_CXML, the second arg may need to be changed to 'one'.  If so
+the appropriate declaration of one will need to be added back into
+functions that include the macro:
+*/
+
+namespace {
+#if defined (INTEL_CXML)
+        unsigned int one=1;
+#endif
+} // namespace
+
+#ifdef CHAR_MACRO
+#undef CHAR_MACRO
+#endif
+#if defined (INTEL_CXML)
+#define CHAR_MACRO(char_var) &char_var, one
+#else
+#define CHAR_MACRO(char_var) &char_var
+#endif
+
+
 const char Teuchos::ESideChar[] = {'L' , 'R' };
 const char Teuchos::ETranspChar[] = {'N' , 'T' , 'C' };
 const char Teuchos::EUploChar[] = {'U' , 'L' };

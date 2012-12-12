@@ -54,188 +54,23 @@
     \brief The Templated BLAS wrappers.
 */
 
-/* Define fcd (Fortran Teuchos_fcd descriptor) for non-standard situations */
 
-#if defined(CRAY_T3X) || defined(INTEL_CXML) || defined(INTEL_MKL)
+/* A) Define PREFIX and Teuchos_fcd based on platform. */
 
-
-#if defined(CRAY_T3X)
-
-#include <fortran.h>
-#define PREFIX
-#define Teuchos_fcd fcd 
-
-#define DROTG_F77   F77_BLAS_MANGLE(srotg,SROTG)
-#define DROT_F77    F77_BLAS_MANGLE(srot,SROT)
-#define DASUM_F77   F77_BLAS_MANGLE(sasum,SASUM) 
-#define DAXPY_F77   F77_BLAS_MANGLE(saxpy,SAXPY)
-#define DCOPY_F77   F77_BLAS_MANGLE(scopy,SCOPY)
-#define DDOT_F77    F77_BLAS_MANGLE(sdot,SDOT)
-#define DNRM2_F77   F77_BLAS_MANGLE(snrm2,SNRM2)
-#define DSCAL_F77   F77_BLAS_MANGLE(sscal,SSCAL)
-#define IDAMAX_F77  F77_BLAS_MANGLE(isamax,ISAMAX)
-#define DGEMV_F77   F77_BLAS_MANGLE(sgemv,SGEMV)
-#define DGER_F77    F77_BLAS_MANGLE(sger,SGER)
-#define DTRMV_F77   F77_BLAS_MANGLE(strmv,STRMV)
-#define DGEMM_F77   F77_BLAS_MANGLE(sgemm,SGEMM)
-#define DSYMM_F77   F77_BLAS_MANGLE(ssymm,SSYMM)
-#define DSYRK_F77   F77_BLAS_MANGLE(ssyrk,SSYRK)
-#define DTRMM_F77   F77_BLAS_MANGLE(strmm,STRMM)
-#define DTRSM_F77   F77_BLAS_MANGLE(strsm,STRSM)
- 
-#ifdef HAVE_TEUCHOS_COMPLEX
-
-#define ZROTG_F77   F77_BLAS_MANGLE(crotg,CROTG)
-#define ZROT_F77    F77_BLAS_MANGLE(crot,CROT)
-#define ZASUM_F77   F77_BLAS_MANGLE(scasum,SCASUM) 
-#define ZAXPY_F77   F77_BLAS_MANGLE(caxpy,CAXPY)
-#define ZCOPY_F77   F77_BLAS_MANGLE(ccopy,CCOPY)
-#define ZDOT_F77    F77_BLAS_MANGLE(cdotc,CDOTC)
-#define ZNRM2_F77   F77_BLAS_MANGLE(scnrm2,SCNRM2)
-#define ZSCAL_F77   F77_BLAS_MANGLE(cscal,CSCAL)
-#define IZAMAX_F77  F77_BLAS_MANGLE(icamax,ICAMAX)
-#define ZGEMV_F77   F77_BLAS_MANGLE(cgemv,CGEMV)
-#define ZGER_F77    F77_BLAS_MANGLE(cgeru,CGERU)
-#define ZTRMV_F77   F77_BLAS_MANGLE(ctrmv,CTRMV)
-#define ZGEMM_F77   F77_BLAS_MANGLE(cgemm,CGEMM)
-#define ZSYMM_F77   F77_BLAS_MANGLE(csymm,CSYMM)
-#define ZSYRK_F77   F77_BLAS_MANGLE(csyrk,CSYRK)
-#define ZTRMM_F77   F77_BLAS_MANGLE(ctrmm,CTRMM)
-#define ZTRSM_F77   F77_BLAS_MANGLE(ctrsm,CTRSM)
-
-#endif /* HAVE_TEUCHOS_COMPLEX */
-
-#elif defined(INTEL_CXML)
-
-#define PREFIX __stdcall 
-#define Teuchos_fcd const char *, unsigned int 
-
-#define DROTG_F77   F77_BLAS_MANGLE(drotg,DROTG)
-#define DROT_F77    F77_BLAS_MANGLE(drot,DROT)
-#define DASUM_F77   F77_BLAS_MANGLE(dasum,DASUM)
-#define DAXPY_F77   F77_BLAS_MANGLE(daxpy,DAXPY)
-#define DCOPY_F77   F77_BLAS_MANGLE(dcopy,DCOPY)
-#define DDOT_F77    F77_BLAS_MANGLE(ddot,DDOT)  
-#define DNRM2_F77   F77_BLAS_MANGLE(dnrm2,DNRM2)
-#define DSCAL_F77   F77_BLAS_MANGLE(dscal,DSCAL)
-#define IDAMAX_F77  F77_BLAS_MANGLE(idamax,IDAMAX)
-#define DGEMV_F77   F77_BLAS_MANGLE(dgemv,DGEMV)
-#define DGER_F77    F77_BLAS_MANGLE(dger,DGER)
-#define DTRMV_F77   F77_BLAS_MANGLE(dtrmv,DTRMV)
-#define DGEMM_F77   F77_BLAS_MANGLE(dgemm,DGEMM)
-#define DSYMM_F77   F77_BLAS_MANGLE(dsymm,DSYMM)
-#define DSYRK_F77   F77_BLAS_MANGLE(dsyrk,DSYRK)
-#define DTRMM_F77   F77_BLAS_MANGLE(dtrmm,DTRMM)
-#define DTRSM_F77   F77_BLAS_MANGLE(dtrsm,DTRSM)
-
-#ifdef HAVE_TEUCHOS_COMPLEX
-
-#define ZROTG_F77   F77_BLAS_MANGLE(zrotg,ZROTG)
-#define ZROT_F77    F77_BLAS_MANGLE(zrot,ZROT)
-#define ZASUM_F77   F77_BLAS_MANGLE(dzasum,DZASUM)
-#define ZAXPY_F77   F77_BLAS_MANGLE(zaxpy,ZAXPY)
-#define ZCOPY_F77   F77_BLAS_MANGLE(zcopy,ZCOPY)
-#define ZDOT_F77    F77_BLAS_MANGLE(zdotc,ZDOTC)  
-#define ZNRM2_F77   F77_BLAS_MANGLE(dznrm2,DZNRM2)
-#define ZSCAL_F77   F77_BLAS_MANGLE(zscal,ZSCAL)
-#define IZAMAX_F77  F77_BLAS_MANGLE(izamax,IZAMAX)
-#define ZGEMV_F77   F77_BLAS_MANGLE(zgemv,ZGEMV)
-#define ZGER_F77    F77_BLAS_MANGLE(zgeru,ZGERU)
-#define ZTRMV_F77   F77_BLAS_MANGLE(ztrmv,ZTRMV)
-#define ZGEMM_F77   F77_BLAS_MANGLE(zgemm,ZGEMM)
-#define ZSYMM_F77   F77_BLAS_MANGLE(zsymm,ZSYMM)
-#define ZSYRK_F77   F77_BLAS_MANGLE(zsyrk,ZSYRK)
-#define ZTRMM_F77   F77_BLAS_MANGLE(ztrmm,ZTRMM)
-#define ZTRSM_F77   F77_BLAS_MANGLE(ztrsm,ZTRSM)
-
-#endif /* HAVE_TEUCHOS_COMPLEX */
-
+#if defined(INTEL_CXML)
+#  define PREFIX __stdcall 
+#  define Teuchos_fcd const char *, unsigned int 
 #elif defined(INTEL_MKL)
-
-#define PREFIX
-#define Teuchos_fcd const char *
-
-#define DROTG_F77   F77_BLAS_MANGLE(drotg,DROTG)
-#define DROT_F77    F77_BLAS_MANGLE(drot,DROT)
-#define DASUM_F77   F77_BLAS_MANGLE(dasum,DASUM)
-#define DAXPY_F77   F77_BLAS_MANGLE(daxpy,DAXPY)
-#define DCOPY_F77   F77_BLAS_MANGLE(dcopy,DCOPY)
-#define DDOT_F77    F77_BLAS_MANGLE(ddot,DDOT)  
-#define DNRM2_F77   F77_BLAS_MANGLE(dnrm2,DNRM2)
-#define DSCAL_F77   F77_BLAS_MANGLE(dscal,DSCAL)
-#define IDAMAX_F77  F77_BLAS_MANGLE(idamax,IDAMAX)
-#define DGEMV_F77   F77_BLAS_MANGLE(dgemv,DGEMV)
-#define DGER_F77    F77_BLAS_MANGLE(dger,DGER)
-#define DTRMV_F77   F77_BLAS_MANGLE(dtrmv,DTRMV)
-#define DGEMM_F77   F77_BLAS_MANGLE(dgemm,DGEMM)
-#define DSYMM_F77   F77_BLAS_MANGLE(dsymm,DSYMM)
-#define DSYRK_F77   F77_BLAS_MANGLE(dsyrk,DSYRK)
-#define DTRMM_F77   F77_BLAS_MANGLE(dtrmm,DTRMM)
-#define DTRSM_F77   F77_BLAS_MANGLE(dtrsm,DTRSM)
-
-#ifdef HAVE_TEUCHOS_COMPLEX
-
-#define ZROTG_F77   F77_BLAS_MANGLE(zrotg,ZROTG)
-#define ZROT_F77    F77_BLAS_MANGLE(zrot,ZROT)
-#define ZASUM_F77   F77_BLAS_MANGLE(dzasum,DZASUM)
-#define ZAXPY_F77   F77_BLAS_MANGLE(zaxpy,ZAXPY)
-#define ZCOPY_F77   F77_BLAS_MANGLE(zcopy,ZCOPY)
-#define ZDOT_F77    F77_BLAS_MANGLE(zdotc,ZDOTC)  
-#define ZNRM2_F77   F77_BLAS_MANGLE(dznrm2,DZNRM2)
-#define ZSCAL_F77   F77_BLAS_MANGLE(zscal,ZSCAL)
-#define IZAMAX_F77  F77_BLAS_MANGLE(izamax,IZAMAX)
-#define ZGEMV_F77   F77_BLAS_MANGLE(zgemv,ZGEMV)
-#define ZGER_F77    F77_BLAS_MANGLE(zgeru,ZGERU)
-#define ZTRMV_F77   F77_BLAS_MANGLE(ztrmv,ZTRMV)
-#define ZGEMM_F77   F77_BLAS_MANGLE(zgemm,ZGEMM)
-#define ZSYMM_F77   F77_BLAS_MANGLE(zsymm,ZSYMM)
-#define ZSYRK_F77   F77_BLAS_MANGLE(zsyrk,ZSYRK)
-#define ZTRMM_F77   F77_BLAS_MANGLE(ztrmm,ZTRMM)
-#define ZTRSM_F77   F77_BLAS_MANGLE(ztrsm,ZTRSM)
-
-#endif /* HAVE_TEUCHOS_COMPLEX */
-
-#endif 
-
-/* All three of these machines use a simple uppercase mangling of Fortran names */
-
-/* if F77_BLAS_MANGLE is defined undefine it because we want to redefine */
-
-#ifdef F77_FUNC
-#undef F77_FUNC
+#  define PREFIX
+#  define Teuchos_fcd const char *
+#else /* Not CRAY_T3X or INTEL_CXML or INTEL_MKL */
+#  define PREFIX
+#  define Teuchos_fcd const char * 
 #endif
 
-#ifdef F77_BLAS_MANGLE
-#undef F77_BLAS_MANGLE
-#endif
 
-#define F77_FUNC(lcase,UCASE) PREFIX UCASE
-#define F77_BLAS_MANGLE(lcase,UCASE) PREFIX UCASE
+/* B) Take care of of the link name case */
 
-#else /* Define Teuchos_fcd for all other machines */
-
-#define PREFIX
-#define Teuchos_fcd const char * 
-
-#ifdef TRILINOS_NO_CONFIG_H
-
-#ifdef F77_FUNC
-#undef F77_FUNC
-#endif
-
-#ifdef F77_BLAS_MANGLE
-#undef F77_BLAS_MANGLE 
-#endif
-
-#ifdef TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE
-#  define F77_FUNC(lcase,UCASE) lcase
-#  define F77_BLAS_MANGLE(lcase,UCASE) lcase
-#else /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE not defined*/
-#  define F77_FUNC(lcase,UCASE) lcase ## _
-#  define F77_BLAS_MANGLE(lcase,UCASE) lcase ## _
-#endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
-
-#endif /* TRILINOS_NO_CONFIG_H */
 
 #define DROTG_F77   F77_BLAS_MANGLE(drotg,DROTG)
 #define DROT_F77    F77_BLAS_MANGLE(drot,DROT)
@@ -277,11 +112,6 @@
 
 #endif /* HAVE_TEUCHOS_COMPLEX */
 
-#endif
-
-
-/* Explicitly define each F77 name for all BLAS kernels */
-
 #define SROTG_F77   F77_BLAS_MANGLE(srotg,SROTG)
 #define SROT_F77    F77_BLAS_MANGLE(srot,SROT)
 #define SSCAL_F77   F77_BLAS_MANGLE(sscal,SSCAL) 
@@ -291,7 +121,6 @@
 #define SNRM2_F77   F77_BLAS_MANGLE(snrm2,SNRM2)
 #define SASUM_F77   F77_BLAS_MANGLE(sasum,SASUM)
 #define ISAMAX_F77  F77_BLAS_MANGLE(isamax,ISAMAX)
-
 #define SGEMV_F77   F77_BLAS_MANGLE(sgemv,SGEMV)
 #define SGER_F77    F77_BLAS_MANGLE(sger,SGER)
 #define STRMV_F77   F77_BLAS_MANGLE(strmv,STRMV)
@@ -322,6 +151,9 @@
 #define CTRSM_F77   F77_BLAS_MANGLE(ctrsm,CTRSM)
 
 #endif /* HAVE_TEUCHOS_COMPLEX */
+
+
+/* C) Define the function prototypes for all platforms! */
 
 #ifdef __cplusplus
 extern "C" {
@@ -503,6 +335,16 @@ void PREFIX CTRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,
 
 #ifdef __cplusplus
 }
+#endif
+
+/* Don't leave a global macros called PREFIX or Teuchos_fcd laying around */
+
+#ifdef PREFIX
+#undef PREFIX
+#endif
+
+#ifdef Teuchos_fcd
+#undef Teuchos_fcd
 #endif
 
 #endif /* end of TEUCHOS_BLAS_WRAPPERS_HPP_ */

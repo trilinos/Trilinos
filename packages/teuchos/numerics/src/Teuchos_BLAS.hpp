@@ -66,23 +66,6 @@
     This is an example of how to use the Teuchos::BLAS class.
 */
 
-/* for INTEL_CXML, the second arg may need to be changed to 'one'.  If so
-the appropriate declaration of one will need to be added back into
-functions that include the macro:
-*/
-#if defined (INTEL_CXML)
-        unsigned int one=1;
-#endif
-
-#ifdef CHAR_MACRO
-#undef CHAR_MACRO
-#endif
-#if defined (INTEL_CXML)
-#define CHAR_MACRO(char_var) &char_var, one
-#else
-#define CHAR_MACRO(char_var) &char_var
-#endif
-
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
