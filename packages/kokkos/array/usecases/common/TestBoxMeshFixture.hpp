@@ -209,6 +209,7 @@ void verify_parallel(
 
 template< class Device >
 void test_box_fixture( comm::Machine machine ,
+                       const size_t gang_count ,
                        const size_t nodes_nx ,
                        const size_t nodes_ny ,
                        const size_t nodes_nz )
@@ -226,7 +227,8 @@ void test_box_fixture( comm::Machine machine ,
   const size_t proc_local = comm::rank( machine ) ;
 
   mesh_type mesh =
-    fixture_type::create( proc_count , proc_local , nodes_nx - 1 , nodes_ny - 1 , nodes_nz - 1 );
+    fixture_type::create( proc_count , proc_local , gang_count ,
+                          nodes_nx - 1 , nodes_ny - 1 , nodes_nz - 1 );
 
   mesh.parallel_data_map.machine = machine ;
 

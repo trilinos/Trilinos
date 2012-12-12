@@ -21,10 +21,15 @@ void test_cuda_explicit( comm::Machine machine ,
   const size_t comm_rank = comm::rank( machine );
   const size_t dev_count = KokkosArray::Cuda::detect_device_count();
   const size_t dev_rank  = comm_rank % dev_count ;
+  const size_t gang_count = 0 ;
 
   KokkosArray::Cuda::SelectDevice select_device( dev_rank );
   KokkosArray::Cuda::initialize( select_device );
-  Explicit::driver<double,KokkosArray::Cuda>( "Cuda" , machine , elem_count_begin , elem_count_end , uq_count_begin , uq_count_end , count_run );
+
+  Explicit::driver<double,KokkosArray::Cuda>( "Cuda" , machine , gang_count , 
+                                              elem_count_begin , elem_count_end ,
+                                              uq_count_begin , uq_count_end ,
+                                              count_run );
   KokkosArray::Cuda::finalize();
 }
 

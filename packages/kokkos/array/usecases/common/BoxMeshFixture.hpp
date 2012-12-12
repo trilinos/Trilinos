@@ -139,13 +139,17 @@ struct BoxMeshFixture {
                              element_node_count ,
                              device_type > FEMeshType ;
 
+  typedef typename FEMeshType::node_coords_type    node_coords_type ;
+  typedef typename FEMeshType::elem_node_ids_type  elem_node_ids_type ;
+  typedef typename FEMeshType::node_elem_ids_type  node_elem_ids_type ;
+
+
   static void verify(
     const typename FEMeshType::node_coords_type::HostMirror   & node_coords ,
     const typename FEMeshType::elem_node_ids_type::HostMirror & elem_node_ids ,
     const typename FEMeshType::node_elem_ids_type::HostMirror & node_elem_ids )
   {
     typedef typename FEMeshType::size_type          size_type ;
-    typedef typename FEMeshType::node_coords_type   node_coords_type ;
     typedef typename node_coords_type::scalar_type  coords_type ;
 
     const size_type node_count_total = node_coords.dimension(0);
@@ -217,8 +221,110 @@ struct BoxMeshFixture {
     }
   }
 
+  //------------------------------------
+  // Initialize element-node connectivity:
+  // Order elements that only depend on owned nodes first.
+  // These elements could be computed while waiting for
+  // received node data.
+
+  static void layout_elements_interior_exterior(    
+    const BoxType                vertex_box_local_used ,
+    const BoxType                vertex_box_local_owned ,
+    const BoxType                node_box_local_used ,
+    const std::vector<size_t> &  node_used_id_map ,
+    const ElementSpec            element_fixture ,
+    const size_t                 elem_count_interior ,
+    const typename elem_node_ids_type::HostMirror elem_node_ids )
+  {
+    size_t elem_index_interior = 0 ;
+    size_t elem_index_boundary = elem_count_interior ;
+
+    for ( size_t iz = vertex_box_local_used[2][0] ;
+                 iz < vertex_box_local_used[2][1] - 1 ; ++iz ) {
+    for ( size_t iy = vertex_box_local_used[1][0] ;
+                 iy < vertex_box_local_used[1][1] - 1 ; ++iy ) {
+    for ( size_t ix = vertex_box_local_used[0][0] ;
+                 ix < vertex_box_local_used[0][1] - 1 ; ++ix ) {
+
+      size_t elem_index ;
+
+      // If lower and upper vertices are owned then element is interior
+      if ( contain( vertex_box_local_owned, ix,   iy,   iz ) &&
+           contain( vertex_box_local_owned, ix+1, iy+1, iz+1 ) ) {
+        elem_index = elem_index_interior++ ;
+      }
+      else {
+        elem_index = elem_index_boundary++ ;
+      }
+
+      for ( size_t nn = 0 ; nn < element_node_count ; ++nn ) {
+        unsigned coord[3] = { ix , iy , iz };  
+
+        element_fixture.elem_to_node( nn , coord );
+
+        const size_t node_local_id =
+          box_map_id( node_box_local_used ,
+                      node_used_id_map ,
+                      coord[0] , coord[1] , coord[2] );
+
+        elem_node_ids( elem_index , nn ) = node_local_id ;
+      }
+    }}}
+  }
+
+  //------------------------------------
+  // Nested partitioning of elements by number of thread 'gangs'
+
+  static void layout_elements_partitioned(    
+    const BoxType                vertex_box_local_used ,
+    const BoxType                vertex_box_local_owned ,
+    const BoxType                node_box_local_used ,
+    const std::vector<size_t> &  node_used_id_map ,
+    const ElementSpec            element_fixture ,
+    const size_t                 thread_gang_count ,
+    const typename elem_node_ids_type::HostMirror elem_node_ids )
+  {
+    std::vector< BoxType > element_box_gangs( thread_gang_count );
+
+    BoxType element_box_local_used = vertex_box_local_used ;
+
+    element_box_local_used[0][1] -= 1 ;
+    element_box_local_used[1][1] -= 1 ;
+    element_box_local_used[2][1] -= 1 ;
+
+    box_partition_rcb( element_box_local_used , element_box_gangs );
+
+    size_t elem_index = 0 ;
+
+    for ( size_t ig = 0 ; ig < thread_gang_count ; ++ig ) {
+
+      const BoxType box = element_box_gangs[ig] ;
+
+      for ( size_t iz = box[2][0] ; iz < box[2][1] ; ++iz ) {
+      for ( size_t iy = box[1][0] ; iy < box[1][1] ; ++iy ) {
+      for ( size_t ix = box[0][0] ; ix < box[0][1] ; ++ix , ++elem_index ) {
+
+        for ( size_t nn = 0 ; nn < element_node_count ; ++nn ) {
+          unsigned coord[3] = { ix , iy , iz };  
+
+          element_fixture.elem_to_node( nn , coord );
+
+          const size_t node_local_id =
+            box_map_id( node_box_local_used ,
+                        node_used_id_map ,
+                        coord[0] , coord[1] , coord[2] );
+
+          elem_node_ids( elem_index , nn ) = node_local_id ;
+        }
+      }}}
+    }
+  }
+
+  //------------------------------------
+
   static FEMeshType create( const size_t proc_count ,
                             const size_t proc_local ,
+                            const size_t gang_count ,
                             const size_t elems_x ,
                             const size_t elems_y ,
                             const size_t elems_z ,
@@ -334,10 +440,6 @@ struct BoxMeshFixture {
 
     FEMeshType mesh ;
 
-    typedef typename FEMeshType::node_coords_type    node_coords_type ;
-    typedef typename FEMeshType::elem_node_ids_type  elem_node_ids_type ;
-    typedef typename FEMeshType::node_elem_ids_type  node_elem_ids_type ;
-
     if ( node_count_total ) {
       mesh.node_coords = node_coords_type( "node_coords", node_count_total );
     }
@@ -382,44 +484,25 @@ struct BoxMeshFixture {
 
     //------------------------------------
     // Initialize element-node connectivity:
-    // Order elements that only depend on owned nodes first.
-    // These elements could be computed while waiting for
-    // received node data.
 
-    size_t elem_index_interior = 0 ;
-    size_t elem_index_boundary = elem_count_interior ;
-
-    for ( size_t iz = vertex_box_local_used[2][0] ;
-                 iz < vertex_box_local_used[2][1] - 1 ; ++iz ) {
-    for ( size_t iy = vertex_box_local_used[1][0] ;
-                 iy < vertex_box_local_used[1][1] - 1 ; ++iy ) {
-    for ( size_t ix = vertex_box_local_used[0][0] ;
-                 ix < vertex_box_local_used[0][1] - 1 ; ++ix ) {
-
-      size_t elem_index ;
-
-      // If lower and upper vertices are owned then element is interior
-      if ( contain( vertex_box_local_owned, ix,   iy,   iz ) &&
-           contain( vertex_box_local_owned, ix+1, iy+1, iz+1 ) ) {
-        elem_index = elem_index_interior++ ;
-      }
-      else {
-        elem_index = elem_index_boundary++ ;
-      }
-
-      for ( size_t nn = 0 ; nn < element_node_count ; ++nn ) {
-        unsigned coord[3] = { ix , iy , iz };  
-
-        element.elem_to_node( nn , coord );
-
-        const size_t node_local_id =
-          box_map_id( node_box_local_used ,
-                      node_used_id_map ,
-                      coord[0] , coord[1] , coord[2] );
-
-        elem_node_ids( elem_index , nn ) = node_local_id ;
-      }
-    }}}
+    if ( 1 < gang_count ) {
+      layout_elements_partitioned( vertex_box_local_used ,
+                                   vertex_box_local_owned ,
+                                   node_box_local_used ,
+                                   node_used_id_map ,
+                                   element ,
+                                   gang_count ,
+                                   elem_node_ids );
+    }
+    else {
+      layout_elements_interior_exterior( vertex_box_local_used ,
+                                         vertex_box_local_owned ,
+                                         node_box_local_used ,
+                                         node_used_id_map ,
+                                         element ,
+                                         elem_count_interior ,
+                                         elem_node_ids );
+    }
 
     //------------------------------------
     // Populate node->element connectivity:
