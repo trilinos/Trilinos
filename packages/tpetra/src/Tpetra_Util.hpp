@@ -50,19 +50,88 @@
 #include <sstream>
 
 #if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
-//! Handle an efficiency warning, according to HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS and HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
-#define TPETRA_EFFICIENCY_WARNING(throw_exception_test,Exception,msg)                                 \
-{                                                                                                     \
-  std::ostringstream errStream;                                                                       \
-  errStream << Teuchos::typeName(*this) << msg;                                                       \
-  std::string err = errStream.str();                                                                  \
-  if (TPETRA_PRINTS_EFFICIENCY_WARNINGS && (throw_exception_test)) {                                  \
-    std::cerr << err << std::endl;                                                                    \
-  }                                                                                                   \
-  TEUCHOS_TEST_FOR_EXCEPTION(TPETRA_THROWS_EFFICIENCY_WARNINGS && (throw_exception_test), Exception, err);    \
+/// \brief Print or throw an efficency warning.
+///
+/// This macro is only for use by Tpetra developers.  It is only to be
+/// used in the implementation of a Tpetra class' instance method.
+///
+/// If HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS is defined, throw an
+/// exception of type Exception, whose exception message will include
+/// \c msg (along with other useful information).  
+///
+/// If HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS is defined, print the
+/// given message to std::cerr, along with other useful information.
+///
+/// This macro must be called in an instance method of a class.
+/// (Alas, C++ gives us no way to search the scope for a list of
+/// defined names.  Otherwise, the macro could search for "this" to
+/// determine whether it is in a class' instance method.)
+///
+/// Macro arguments:
+///
+/// throw_exception_test: Boolean expression to evaluate.  If true,
+/// this macro will trigger the efficiency warning.  The test will be
+/// evaluated at most once.  Nevertheless, the test should not have
+/// side effects, since it will not be evaluated at all if neither
+/// HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS nor
+/// HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS are defined.
+///
+/// Exception: The type of exception to throw, if throw_exception_test
+/// evaluates to true and TPETRA_THROWS_EFFICIENCY_WARNINGS is
+/// defined.  The Exception should be a subclass of std::exception.
+///
+/// msg: The message to include in the warning.  The warning also
+/// includes the name of the class, and other useful information.
+///
+#define TPETRA_EFFICIENCY_WARNING(throw_exception_test,Exception,msg)  \
+{ \
+  const bool tpetraEfficiencyWarningTest = (throw_exception_test); \
+  if (tpetraEfficiencyWarningTest) { \
+    std::ostringstream errStream; \
+    errStream << Teuchos::typeName(*this) << ":" << std::endl; \
+    errStream << "Efficiency warning: " << #throw_exception_test << std::endl; \
+    errStream << msg; \
+    std::string err = errStream.str(); \
+    if (TPETRA_PRINTS_EFFICIENCY_WARNINGS && tpetraEfficiencyWarningTest) { \
+      std::cerr << err << std::endl; \
+    } \
+    TEUCHOS_TEST_FOR_EXCEPTION(TPETRA_THROWS_EFFICIENCY_WARNINGS && tpetraEfficiencyWarningTest, Exception, err); \
+  } \
 }
 #else
-//! Handle an efficiency warning, according to HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS and HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
+/// \brief Print or throw an efficency warning.
+///
+/// This macro is only for use by Tpetra developers.  It is only to be
+/// used in the implementation of a Tpetra class' instance method.
+///
+/// If HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS is defined, throw an
+/// exception of type Exception, whose exception message will include
+/// \c msg (along with other useful information).  
+///
+/// If HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS is defined, print the
+/// given message to std::cerr, along with other useful information.
+///
+/// This macro must be called in an instance method of a class.
+/// (Alas, C++ gives us no way to search the scope for a list of
+/// defined names.  Otherwise, the macro could search for "this" to
+/// determine whether it is in a class' instance method.)
+///
+/// Macro arguments:
+///
+/// throw_exception_test: Boolean expression to evaluate.  If true,
+/// this macro will trigger the efficiency warning.  The test will be
+/// evaluated at most once.  Nevertheless, the test should not have
+/// side effects, since it will not be evaluated at all if neither
+/// HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS nor
+/// HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS are defined.
+///
+/// Exception: The type of exception to throw, if throw_exception_test
+/// evaluates to true and TPETRA_THROWS_EFFICIENCY_WARNINGS is
+/// defined.  The Exception should be a subclass of std::exception.
+///
+/// msg: The message to include in the warning.  The warning also
+/// includes the name of the class, and other useful information.
+///
 #define TPETRA_EFFICIENCY_WARNING(throw_exception_test,Exception,msg)
 #endif
 
@@ -84,10 +153,35 @@
 #define TPETRA_ABUSE_WARNING(throw_exception_test,Exception,msg)
 #endif
 
-
-/** Shared test for exception
-   Just like Teuchos TEUCHOS_TEST_FOR_EXCEPTION, but with the assurance that all nodes test and throw the exception together.
- */
+/// \brief Test for exception, with reduction over the given communicator.
+///
+/// This is like Teuchos' TEUCHOS_TEST_FOR_EXCEPTION macro, except
+/// that it performs an all-reduce over the given communicator to
+/// ensure that all processes throw the exception if the test is true
+/// on at least one process.
+///
+/// Macro arguments:
+///
+/// throw_exception_test: Boolean expression to evaluate.  If true on
+/// at least one calling process in the given communicator, this macro
+/// will throw an exception of the given type on all processes in the
+/// communicator.  The exception message may differ on different
+/// processes.  The expression will only be evaluated once on each
+/// process.
+///
+/// Exception: The type of exception to throw, if throw_exception_test
+/// evaluates to true on at least one process in the given
+/// communicator.  The Exception should be a subclass of
+/// std::exception.
+///
+/// msg: The message to include in the warning.  The warning also
+/// includes the name of the class, and the maximum process rank on
+/// which the test evaluated to true.  The message may be different on
+/// different processes.
+///
+/// comm: The communicator (instance of a subclass of
+/// Teuchos::Comm<int>) over which to test.  This must evaluate to a
+/// class instance or reference, not a Teuchos::RCP of an instance.
 #define SHARED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm) \
 { \
     using Teuchos::outArg; \
