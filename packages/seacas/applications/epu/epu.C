@@ -975,7 +975,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 		size_t nodal_value = local_node_to_global[p][j];
 		if (master_nodal_values[i_out][nodal_value] != 0 &&
 		    master_nodal_values[i_out][nodal_value] != values[j]) {
-		  std::cerr << "Node " << nodal_value
+		  std::cerr << "Variable " << i+1 << ", Node " << nodal_value
 			    << ", old = " << master_nodal_values[i_out][nodal_value]
 			    << ", new = " << values[j] << std::endl;
 		}
