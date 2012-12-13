@@ -93,6 +93,8 @@ namespace MueLu {
     //! Destructor
     virtual ~CoalesceDropFactory() { }
 
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+
     //@}
 
     //! Input
@@ -101,13 +103,11 @@ namespace MueLu {
     void DeclareInput(Level &currentLevel) const;
 
     /// set predrop function
-    void SetPreDropFunction(const RCP<MueLu::PreDropFunctionBaseClass<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &predrop);
+    void SetPreDropFunction(const RCP<MueLu::PreDropFunctionBaseClass<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &predrop) { predrop_ = predrop; }
 
     //@}
 
     void Build(Level &currentLevel) const; // Build
-
-
 
   private:
 

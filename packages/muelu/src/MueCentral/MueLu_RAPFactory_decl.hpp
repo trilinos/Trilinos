@@ -79,6 +79,7 @@ namespace MueLu {
     RAPFactory();
 
     virtual ~RAPFactory() { }
+
     //@}
 
     //! @name Input

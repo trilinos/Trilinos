@@ -91,25 +91,18 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    TentativePFactory();
+    TentativePFactory() { }
 
     //! Destructor.
-    virtual ~TentativePFactory();
+    virtual ~TentativePFactory() { }
     //@}
+
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     //! Input
     //@{
 
     void DeclareInput(Level & fineLevel, Level & coarseLevel) const;
-
-    //@}
-
-    //! @name Set/Get methods.
-    //@{
-
-    void TentativeWithQR(bool value);
-
-    bool TentativeWithQR();
 
     //@}
 
@@ -165,10 +158,6 @@ namespace MueLu {
     */
     void MakeTentative(const Matrix& fineA, const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const MultiVector & fineNullspace, RCP<const Map> coarseMap, //-> INPUT
                        RCP<MultiVector> & coarseNullspace, RCP<Matrix> & Ptentative) const;                  //-> OUTPUT
-
-  private:
-
-    bool QR_; //! use QR decomposition for improving nullspace information per default
 
   }; //class TentativePFactory
 

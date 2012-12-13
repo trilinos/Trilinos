@@ -83,10 +83,12 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    AmalgamationFactory();
+    AmalgamationFactory() { }
 
     //! Destructor
     virtual ~AmalgamationFactory() { }
+
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     //@}
 

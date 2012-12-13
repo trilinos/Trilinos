@@ -79,6 +79,9 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 
     //! Destructor.
     virtual ~TransPFactory() { }
+
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+
     //@}
 
     //! Input
@@ -93,11 +96,6 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
 
     void Build(Level & fineLevel, Level & coarseLevel) const;
 
-    //@}
-
-    //! @name Set methods.
-    //@{
-    void UsePtent(bool ToF);
     //@}
 
   }; //class TransPFactory

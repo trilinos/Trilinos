@@ -83,6 +83,8 @@ namespace MueLu {
     RebalanceAcFactory() { }
 
     virtual ~RebalanceAcFactory() { }
+
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
     //@}
 
     //! @name Input

@@ -128,25 +128,25 @@ namespace MueLu {
 
       // TODO: see how Teko handles this (=> register factories).
       if (factoryName == "AmalgamationFactory") {
-        return Build<AmalgamationFactory>(paramList, factoryMapIn);
+        return Build2<AmalgamationFactory>(paramList, factoryMapIn);
       }
       if (factoryName == "CoalesceDropFactory") {
-        return Build<CoalesceDropFactory>(paramList, factoryMapIn);
+        return Build2<CoalesceDropFactory>(paramList, factoryMapIn);
       }
       if (factoryName == "TentativePFactory") {
-        return Build<TentativePFactory>(paramList, factoryMapIn);
+        return Build2<TentativePFactory>(paramList, factoryMapIn);
       }
       if (factoryName == "SaPFactory") {
         return  Build2<SaPFactory>(paramList, factoryMapIn);
       }
       if (factoryName == "TransPFactory") {
-        return Build<TransPFactory>(paramList, factoryMapIn);
+        return Build2<TransPFactory>(paramList, factoryMapIn);
       }
       if (factoryName == "RAPFactory") {
         return BuildRAPFactory(paramList, factoryMapIn);
       }
       if (factoryName == "RebalanceAcFactory") {
-        return Build<RebalanceAcFactory>(paramList, factoryMapIn);
+        return Build2<RebalanceAcFactory>(paramList, factoryMapIn);
       }
       if (factoryName == "UCAggregationFactory") {
         return BuildUCAggregationFactory(paramList, factoryMapIn);

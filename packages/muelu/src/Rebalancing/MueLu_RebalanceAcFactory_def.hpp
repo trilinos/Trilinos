@@ -59,8 +59,16 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<const ParameterList> RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
+    validParamList->set< RCP<const FactoryBase> >("A",        Teuchos::null, "Generating factory of the matrix A (before rebalancing)");
+    validParamList->set< RCP<const FactoryBase> >("Importer", Teuchos::null, "Generating factory of the importer");
+    return validParamList;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    Input(coarseLevel, "A"); // input A == before rebalancing
+    Input(coarseLevel, "A");
     Input(coarseLevel, "Importer");
   }
 
