@@ -34,8 +34,7 @@
 
     <ParameterList name="myTransferCoordinatesFact">
       <Parameter name="factory"         type="string" value="MultiVectorTransferFactory"/>
-      <Parameter name="vectorName"      type="string" value="Coordinates"/>
-      <Parameter name="restrictionName" type="string" value="R"/>
+      <Parameter name="Vector name"      type="string" value="Coordinates"/>
       <Parameter name="R"               type="string" value="myTentativeRFact"/>
     </ParameterList>
 

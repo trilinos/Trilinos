@@ -55,40 +55,49 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MultiVectorTransferFactory(
-    std::string const & vectorName,
-    std::string const & restrictionName)
-    : vectorName_(vectorName),
-      restrictionName_(restrictionName)
-  { }
+  RCP<const ParameterList> MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+    validParamList->set< std::string >           ("Vector name",   "undefined", "Name of the vector that will be transfered on the coarse grid (level key)"); // TODO: how to set a validator without default value?
+    validParamList->set< RCP<const FactoryBase> >("R",           Teuchos::null, "Factory of the transfer operator (restriction)");
+
+    return validParamList;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MultiVectorTransferFactory(std::string const & vectorName) {
+    SetParameter("Vector name", ParameterEntry(vectorName));
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    if (fineLevel.GetLevelID() == 0) fineLevel.DeclareInput(vectorName_, MueLu::NoFactory::get(), this);
-    else                             fineLevel.DeclareInput(vectorName_, this                   , this);
-    coarseLevel.DeclareInput(restrictionName_, GetFactory(restrictionName_).get(), this);
-    /*
-    //FIXME ThreeLevels unit test dies
-    fineLevel.DeclareInput(vectorName_, restrictionFact_.get(), this);
-    coarseLevel.DeclareInput(restrictionName_, restrictionFact_.get(), this);
-    */
-  } // DeclareInput
+    const ParameterList & pL = GetParameterList();
+    std::string vectorName   = pL.get<std::string>("Vector name");
+
+    if (fineLevel.GetLevelID() == 0) fineLevel.DeclareInput(vectorName, MueLu::NoFactory::get(), this);
+    else                             fineLevel.DeclareInput(vectorName, this                   , this);
+
+    Input(coarseLevel, "R");
+
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level &coarseLevel) const {
-
     FactoryMonitor m(*this, "Build", coarseLevel);
 
-    RCP<MultiVector> vector = fineLevel.Get<RCP<MultiVector> >(vectorName_, MueLu::NoFactory::get()); //FIXME
+    const ParameterList & pL = GetParameterList();
+    std::string vectorName   = pL.get<std::string>("Vector name");
 
-    RCP<Matrix> transferOp = coarseLevel.Get<RCP<Matrix> >(restrictionName_, GetFactory(restrictionName_).get());
+    RCP<MultiVector> vector = fineLevel.Get< RCP<MultiVector> >(vectorName, MueLu::NoFactory::get()); //FIXME
+
+    RCP<Matrix> transferOp = Get<RCP<Matrix> >(coarseLevel, "R");
 
     RCP<MultiVector> result = MultiVectorFactory::Build(transferOp->getRangeMap(), vector->getNumVectors());
-    GetOStream(Runtime0, 0) << "Transferring multivector \"" << vectorName_ << "\"" << std::endl;
+    GetOStream(Runtime0, 0) << "Transferring multivector \"" << vectorName << "\"" << std::endl;
 
     transferOp->apply(*vector, *result);
 
-    if (vectorName_ == "Coordinates") {
+    if (vectorName == "Coordinates") {
       GetOStream(Runtime0, 0) << "Averaging coordinates" << std::endl;
       size_t numLocalRows = transferOp->getNodeNumRows();
       Array<size_t> numEntriesPerRow(numLocalRows);
@@ -106,8 +115,8 @@ namespace MueLu {
       }
     }
 
-    coarseLevel.Set<RCP<MultiVector> >(vectorName_, result, this);
-    coarseLevel.Set<RCP<MultiVector> >(vectorName_, result); //FIXME
+    coarseLevel.Set<RCP<MultiVector> >(vectorName, result, this);
+    coarseLevel.Set<RCP<MultiVector> >(vectorName, result); //FIXME
 
   } //Build
 
@@ -124,6 +133,7 @@ namespace MueLu {
       }
     }
     return expandCoord;
+
   } // expandCoord
 
 } // namespace MueLu

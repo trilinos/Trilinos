@@ -161,7 +161,7 @@ namespace MueLu {
         return BuildDirectSolver(paramList, factoryMapIn);
       }
       if (factoryName == "MultiVectorTransferFactory") {
-        return BuildMultiVectorTransferFactory(paramList, factoryMapIn);
+        return Build2<MultiVectorTransferFactory>(paramList, factoryMapIn);
       }
       if (factoryName == "ZoltanInterface") {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
@@ -378,17 +378,6 @@ namespace MueLu {
       Teuchos::ParameterList params; if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
 
       return rcp(new SmootherFactory(rcp(new DirectSolver(type, params))));
-    }
-
-    RCP<FactoryBase> BuildMultiVectorTransferFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "MultiVectorTransferFactory", Exceptions::RuntimeError, "");
-
-      std::string vectorName="";      vectorName = paramList.get<std::string>("vectorName");
-      std::string restrictionName=""; restrictionName = paramList.get<std::string>("restrictionName");
-      RCP<Factory> factory = rcp(new MultiVectorTransferFactory(vectorName, restrictionName));
-      MUELU_FACTORY_PARAM2(restrictionName);
-
-      return factory;
     }
 
   }; // class

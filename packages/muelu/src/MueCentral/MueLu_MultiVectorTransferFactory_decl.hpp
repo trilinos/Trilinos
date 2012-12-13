@@ -79,10 +79,14 @@ namespace MueLu {
        The operator associated with <tt>projectionName</tt> will be applied to the MultiVector associated with
        <tt>vectorName</tt>.
     */
-    MultiVectorTransferFactory(std::string const & vectorName, std::string const & restrictionName);
+    MultiVectorTransferFactory() { }
+
+    MultiVectorTransferFactory(std::string const & vectorName); // deprecated
 
     //! Destructor.
     virtual ~MultiVectorTransferFactory() { }
+
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     //@}
 
@@ -107,10 +111,6 @@ namespace MueLu {
     //@}
 
   private:
-    //! name of MultiVector to be transfered.
-    std::string vectorName_;
-    //! name of Matrix that will do the transfering.
-    std::string restrictionName_;
 
     static ArrayRCP<SC> expandCoordinates(ArrayRCP<SC> coord, LocalOrdinal blksize);
 

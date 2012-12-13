@@ -365,7 +365,7 @@ int main(int argc, char *argv[]) {
         AFact->SetFactory("R", RFact);
 
         // Transfer coordinates
-        RCP<MultiVectorTransferFactory> TransferCoordinatesFact = rcp(new MultiVectorTransferFactory("Coordinates", "R"));
+        RCP<MultiVectorTransferFactory> TransferCoordinatesFact = rcp(new MultiVectorTransferFactory("Coordinates"));
         RCP<Factory> TentativeRFact = rcp(new TransPFactory()); TentativeRFact->SetFactory("P", M.GetFactory("Ptent")); // Use Ptent for coordinate projection
         TransferCoordinatesFact->SetFactory("R", TentativeRFact);
         AFact->AddTransferFactory(TransferCoordinatesFact); // FIXME REMOVE
