@@ -71,8 +71,8 @@ namespace MueLu {
     Input(currentLevel, "number of partitions");
 
     Input(currentLevel, "A");
-    currentLevel.DeclareInput("Coordinates", NoFactory::get()); //FIXME JJH
-    //Input(currentLevel, "Coordinates"); //FIXME JJH
+    Input(currentLevel, "Coordinates");
+
   } //DeclareInput()
 
   //-------------------------------------------------------------------------------------------------------------
@@ -120,11 +120,6 @@ namespace MueLu {
     ss << numPartitions;
     zoltanObj_->Set_Param("num_global_partitions", ss.str());
 
-    //~~ if (level.IsAvailable("Coordinates", NoFactory::get()) == false) //FIXME JJH
-    //~~  throw(Exceptions::HaltRepartitioning("MueLu::ZoltanInterface : no coordinates available"));
-    //RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("Coordinates", TransferFact_.get()); //FIXME JJH
-    //~~    RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("Coordinates");
-
     //TODO: coordinates should be const
 
     Array<ArrayRCP<SC> > XYZ; // Using this format because no communications needed here. No need for a map and a Xpetra::MultiVector
@@ -146,7 +141,7 @@ namespace MueLu {
 //       }
 
 //     } else
-      if (level.IsAvailable("Coordinates")) {
+    if (IsAvailable(level, "Coordinates")) {
 
       RCP<Matrix> Aloc = Get<RCP<Matrix> >(level, "A");
       LocalOrdinal blksize = Aloc->GetFixedBlockSize();

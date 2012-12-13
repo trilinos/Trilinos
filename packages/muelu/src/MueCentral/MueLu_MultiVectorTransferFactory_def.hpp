@@ -58,8 +58,9 @@ namespace MueLu {
   RCP<const ParameterList> MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< std::string >           ("Vector name",   "undefined", "Name of the vector that will be transfered on the coarse grid (level key)"); // TODO: how to set a validator without default value?
-    validParamList->set< RCP<const FactoryBase> >("R",           Teuchos::null, "Factory of the transfer operator (restriction)");
+    validParamList->set< std::string >           ("Vector name",      "undefined", "Name of the vector that will be transfered on the coarse grid (level key)"); // TODO: how to set a validator without default value?
+    validParamList->set< RCP<const FactoryBase> >("Vector factory", Teuchos::null, "Factory of the vector");
+    validParamList->set< RCP<const FactoryBase> >("R",              Teuchos::null, "Factory of the transfer operator (restriction)");
 
     return validParamList;
   }
@@ -74,11 +75,8 @@ namespace MueLu {
     const ParameterList & pL = GetParameterList();
     std::string vectorName   = pL.get<std::string>("Vector name");
 
-    if (fineLevel.GetLevelID() == 0) fineLevel.DeclareInput(vectorName, MueLu::NoFactory::get(), this);
-    else                             fineLevel.DeclareInput(vectorName, this                   , this);
-
+    fineLevel.DeclareInput(vectorName, GetFactory("Vector factory").get(), this);
     Input(coarseLevel, "R");
-
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -88,14 +86,13 @@ namespace MueLu {
     const ParameterList & pL = GetParameterList();
     std::string vectorName   = pL.get<std::string>("Vector name");
 
-    RCP<MultiVector> vector = fineLevel.Get< RCP<MultiVector> >(vectorName, MueLu::NoFactory::get()); //FIXME
+    RCP<MultiVector> fineVector = fineLevel.Get< RCP<MultiVector> >(vectorName, GetFactory("Vector factory").get());
+    RCP<Matrix>      transferOp = Get<RCP<Matrix> >(coarseLevel, "R");
 
-    RCP<Matrix> transferOp = Get<RCP<Matrix> >(coarseLevel, "R");
-
-    RCP<MultiVector> result = MultiVectorFactory::Build(transferOp->getRangeMap(), vector->getNumVectors());
+    RCP<MultiVector> coarseVector = MultiVectorFactory::Build(transferOp->getRangeMap(), fineVector->getNumVectors());
     GetOStream(Runtime0, 0) << "Transferring multivector \"" << vectorName << "\"" << std::endl;
 
-    transferOp->apply(*vector, *result);
+    transferOp->apply(*fineVector, *coarseVector);
 
     if (vectorName == "Coordinates") {
       GetOStream(Runtime0, 0) << "Averaging coordinates" << std::endl;
@@ -106,35 +103,34 @@ namespace MueLu {
         if (numEntriesPerRow[i] == 0) numEntriesPerRow[i] = 1;
       }
 
-      assert(numLocalRows == result->getLocalLength());
-      for (size_t i=0; i<result->getNumVectors(); ++i) {
-        ArrayRCP<Scalar> vals = result->getDataNonConst(i);
+      assert(numLocalRows == coarseVector->getLocalLength());
+      for (size_t i=0; i<coarseVector->getNumVectors(); ++i) {
+        ArrayRCP<Scalar> vals = coarseVector->getDataNonConst(i);
         for (size_t j=0; j<numLocalRows; ++j) {
           vals[j] /= numEntriesPerRow[j];
         }
       }
     }
 
-    coarseLevel.Set<RCP<MultiVector> >(vectorName, result, this);
-    coarseLevel.Set<RCP<MultiVector> >(vectorName, result); //FIXME
+    Set<RCP<MultiVector> >(coarseLevel, vectorName, coarseVector);
 
-  } //Build
+  } // Build
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayRCP<Scalar> MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::expandCoordinates(ArrayRCP<SC> coord, LocalOrdinal blksize) {
+  ArrayRCP<Scalar> MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::expandCoordinates(ArrayRCP<SC> coordinates, LocalOrdinal blksize) {
     if (blksize == 1)
-      return coord;
+      return coordinates;
 
-    ArrayRCP<SC> expandCoord(coord.size()*blksize); //TODO: how to avoid automatic initialization of the vector? using arcp()?
+    ArrayRCP<SC> expandCoord(coordinates.size()*blksize); //TODO: how to avoid automatic initialization of the vector? using arcp()?
 
-    for(int i=0; i<coord.size(); i++) {
+    for(int i=0; i<coordinates.size(); i++) {
       for(int j=0; j< blksize; j++) {
-        expandCoord[i*blksize + j] = coord[i];
+        expandCoord[i*blksize + j] = coordinates[i];
       }
     }
     return expandCoord;
 
-  } // expandCoord
+  } // expandCoordinates
 
 } // namespace MueLu
 

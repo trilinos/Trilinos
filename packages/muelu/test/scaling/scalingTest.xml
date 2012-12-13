@@ -34,7 +34,7 @@
 
     <ParameterList name="myTransferCoordinatesFact">
       <Parameter name="factory"         type="string" value="MultiVectorTransferFactory"/>
-      <Parameter name="Vector name"      type="string" value="Coordinates"/>
+      <Parameter name="Vector name"     type="string" value="Coordinates"/>
       <Parameter name="R"               type="string" value="myTentativeRFact"/>
     </ParameterList>
 
@@ -77,7 +77,7 @@
       <Parameter name="factory" type="string" value="RebalanceTransferFactory"/>
       <Parameter name="type"               type="string" value="Restriction"/>
       <Parameter name="R"                  type="string" value="myRestrictorFact"/>
-<!--      <Parameter name="Coordinates"        type="string" value="myTransferCoordinatesFact"/> -->
+      <Parameter name="Coordinates"        type="string" value="myTransferCoordinatesFact"/>
       <Parameter name="Nullspace"          type="string" value="myTentativePFact"/>
     </ParameterList>
 
@@ -143,17 +143,19 @@
       <Parameter name="Smoother"   type="string" value="Chebyshev"/>
       <Parameter name="Aggregates" type="string" value="myAggregationFact"/>
       <Parameter name="Nullspace"  type="string" value="myRebalanceRestrictionFact"/>
+      <Parameter name="Coordinates" type="string" value="myRebalanceRestrictionFact"/>
       <Parameter name="Importer"   type="string" value="myRepartitionFact"/>
     </ParameterList>
 
     <ParameterList name="OtherLevels">
-      <Parameter name="startLevel" type="int" value="1"/>
-      <Parameter name="A"          type="string" value="myRebalanceAFact"/>
-      <Parameter name="P"          type="string" value="myRebalanceProlongatorFact"/>
-      <Parameter name="R"          type="string" value="myRebalanceRestrictionFact"/>
-      <Parameter name="Aggregates" type="string" value="myAggregationFact"/>
-      <Parameter name="Nullspace"  type="string" value="myRebalanceRestrictionFact"/>
-      <Parameter name="Importer"   type="string" value="myRepartitionFact"/>
+      <Parameter name="startLevel"  type="int" value="1"/>
+      <Parameter name="A"           type="string" value="myRebalanceAFact"/>
+      <Parameter name="P"           type="string" value="myRebalanceProlongatorFact"/>
+      <Parameter name="R"           type="string" value="myRebalanceRestrictionFact"/>
+      <Parameter name="Aggregates"  type="string" value="myAggregationFact"/>
+      <Parameter name="Nullspace"   type="string" value="myRebalanceRestrictionFact"/>
+      <Parameter name="Coordinates" type="string" value="myRebalanceRestrictionFact"/>
+      <Parameter name="Importer"    type="string" value="myRepartitionFact"/>
     </ParameterList>
 
     <ParameterList name="CoarsestLevel">

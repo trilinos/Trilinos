@@ -365,8 +365,9 @@ int main(int argc, char *argv[]) {
         AFact->SetFactory("R", RFact);
 
         // Transfer coordinates
-        RCP<MultiVectorTransferFactory> TransferCoordinatesFact = rcp(new MultiVectorTransferFactory("Coordinates"));
+        RCP<MultiVectorTransferFactory> TransferCoordinatesFact = rcp(new MultiVectorTransferFactory());
         RCP<Factory> TentativeRFact = rcp(new TransPFactory()); TentativeRFact->SetFactory("P", M.GetFactory("Ptent")); // Use Ptent for coordinate projection
+        TransferCoordinatesFact->SetParameter("Vector name", Teuchos::ParameterEntry(std::string("Coordinates")));
         TransferCoordinatesFact->SetFactory("R", TentativeRFact);
         AFact->AddTransferFactory(TransferCoordinatesFact); // FIXME REMOVE
 
@@ -394,7 +395,7 @@ int main(int argc, char *argv[]) {
         RCP<Factory> RebalancedRFact = rcp(new RebalanceTransferFactory());
         RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
         RebalancedRFact->SetFactory("R", RFact);
-        //RebalancedRFact->SetFactory("Coordinates", TransferCoordinatesFact);
+        RebalancedRFact->SetFactory("Coordinates", TransferCoordinatesFact);
         RebalancedRFact->SetFactory("Nullspace", M.GetFactory("Ptent")); // TODO
 
         // Compute Ac from rebalanced P and R
@@ -405,8 +406,9 @@ int main(int argc, char *argv[]) {
         M.SetFactory("A", RebalancedAFact);
         M.SetFactory("P", RebalancedPFact);
         M.SetFactory("R", RebalancedRFact);
-        M.SetFactory("Nullspace", RebalancedRFact);
-        M.SetFactory("Importer", RepartitionFact);
+        M.SetFactory("Nullspace",   RebalancedRFact);
+        M.SetFactory("Coordinates", RebalancedRFact);
+        M.SetFactory("Importer",    RepartitionFact);
 #else
         TEUCHOS_TEST_FOR_EXCEPT(true);
 #endif

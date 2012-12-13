@@ -75,11 +75,10 @@ namespace MueLu {
       validParamList->set("type", "Interpolation", "Type of the transfer operator that need to be rebalanced (Interpolation or Restriction)", typeValidator);
     }
 
-    validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Factory of the prolongation operator that need to be rebalanced (only used if type=Interpolation)");
     validParamList->set< RCP<const FactoryBase> >("R",              Teuchos::null, "Factory of the restriction operator that need to be rebalanced (only used if type=Restriction)");
     validParamList->set< RCP<const FactoryBase> >("Nullspace",      Teuchos::null, "Factory of the nullspace that need to be rebalanced (only used if type=Restriction)");
-    // validParamList->set< RCP<const FactoryBase> >("Coordinates", Teuchos::null, "Factory of the coordinates that need to be rebalanced (only used if type=Restriction)");
+    validParamList->set< RCP<const FactoryBase> >("Coordinates",    Teuchos::null, "Factory of the coordinates that need to be rebalanced (only used if type=Restriction)");
     validParamList->set< RCP<const FactoryBase> >("Importer",       Teuchos::null, "Factory of the importer object used for the rebalancing");
 
     // TODO validation: "P" parameter valid only for type="Interpolation" and "R" valid only for type="Restriction".
@@ -96,6 +95,7 @@ namespace MueLu {
     } else {
       Input(coarseLevel, "R");
       Input(coarseLevel, "Nullspace");
+      Input(coarseLevel, "Coordinates");
     }
 
     Input(coarseLevel, "Importer");
@@ -231,27 +231,33 @@ namespace MueLu {
         //if(originalR->IsView("stridedMaps")) rebalancedR->CreateView("stridedMaps", originalR);
         ///////////////////////// EXPERIMENTAL
 
-        if (coarseLevel.IsAvailable("Coordinates")) //FIXME JJH
+        TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(coarseLevel, "Coordinates"), Exceptions::RuntimeError, "");
+        if (IsAvailable(coarseLevel, "Coordinates"))
           {
             SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
-            //RCP<MultiVector> coords  = Get< RCP<MultiVector> >(coarseLevel, "Coordinates"); //FIXME JJH
-            RCP<MultiVector> coords  = coarseLevel.Get< RCP<MultiVector> >("Coordinates"); //FIXME JJH
+            RCP<MultiVector> coords  = Get< RCP<MultiVector> >(coarseLevel, "Coordinates");
             RCP<MultiVector> permutedCoords  = MultiVectorFactory::Build(rebalanceImporter->getTargetMap(), coords->getNumVectors());
             permutedCoords->doImport(*coords, *rebalanceImporter, Xpetra::INSERT);
-            coarseLevel.Set("Coordinates", permutedCoords); //FIXME JJH no generating factory specified
+            Set(coarseLevel, "Coordinates", permutedCoords);
           }
         if (IsAvailable(coarseLevel, "Nullspace")) {
           SubFactoryMonitor subM(*this, "Rebalancing nullspace", coarseLevel );
           RCP<MultiVector> nullspace  = Get< RCP<MultiVector> >(coarseLevel, "Nullspace");
           RCP<MultiVector> permutedNullspace  = MultiVectorFactory::Build(rebalanceImporter->getTargetMap(), nullspace->getNumVectors());
           permutedNullspace->doImport(*nullspace, *rebalanceImporter, Xpetra::INSERT);
-          coarseLevel.Set("Nullspace", permutedNullspace); //FIXME no generating factory specified
+          Set(coarseLevel, "Nullspace", permutedNullspace);
         }
       } else {
         Set(coarseLevel, "R", originalR);
         if (IsAvailable(coarseLevel, "Nullspace")) {
           RCP<MultiVector> nullspace  = Get< RCP<MultiVector> >(coarseLevel, "Nullspace");
           Set(coarseLevel, "Nullspace", nullspace);
+        }
+
+        TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(coarseLevel, "Coordinates"), Exceptions::RuntimeError, "");
+        if (IsAvailable(coarseLevel, "Coordinates")) {
+          RCP<MultiVector> coordinates  = Get< RCP<MultiVector> >(coarseLevel, "Coordinates");
+          Set(coarseLevel, "Coordinates", coordinates);
         }
       } //if (rebalanceImporter != Teuchos::null) {...} else {...}
 

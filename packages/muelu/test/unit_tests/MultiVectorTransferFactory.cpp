@@ -144,7 +144,7 @@ namespace MueLuTests {
 
     RCP<Level> fineLevel = H->GetLevel();
     fineLevel->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-    fineLevel->Set("A",A);                      // set fine level matrix
+    fineLevel->Set("A",A);                       // set fine level matrix
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),1);
     nullSpace->putScalar( (SC) 1.0);
     fineLevel->Set("Nullspace",nullSpace);       // set null space information for finest level
@@ -156,8 +156,8 @@ namespace MueLuTests {
     UCAggFact->SetPhase3AggCreation(0.5);
 
     RCP<TentativePFactory> PFact  = rcp(new TentativePFactory()); //just using plain aggregation
-    RCP<Factory>           RFact  = rcp( new TransPFactory() );
-    RCP<RAPFactory>        AcFact = rcp( new RAPFactory() );
+    RCP<Factory>           RFact  = rcp(new TransPFactory());
+    RCP<RAPFactory>        AcFact = rcp(new RAPFactory());
     H->SetMaxCoarseSize(1);
 
     Teuchos::ParameterList smootherParamList;
@@ -183,6 +183,7 @@ namespace MueLuTests {
     fineLevel->Set("onesVector",fineOnes);
     RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO>("onesVector"));
     mvtf->SetFactory("R",RFact);
+    M.SetFactory("onesVector",mvtf);
     AcFact->AddTransferFactory(mvtf);
 
     int maxLevels = 3;
