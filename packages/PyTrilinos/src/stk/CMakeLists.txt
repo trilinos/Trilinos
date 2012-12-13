@@ -48,7 +48,6 @@ SET(PERCEPT_LIBS
    stk_search
    intrepid
    shards
-   teuchos
 )
 
 #
