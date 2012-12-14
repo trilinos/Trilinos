@@ -1087,12 +1087,11 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
 */
    ML_free(val);
    ML_free(bindx);
-   if(N_nonzeros+5 > imatrix->getrow->Nrows+1) allocated = N_nonzeros+5;
-   else allocated = imatrix->getrow->Nrows+1;
+   if(N_nonzeros+5 > imatrix->getrow->Nrows+2) allocated = N_nonzeros+5;
+   else allocated = imatrix->getrow->Nrows+2;
 
    bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
    val   = (double *)  ML_allocate( allocated*sizeof(double));
-   allocated = N_nonzeros+5;
 
    /* need extra room (2) for diagonal guy and wasted space */
   
