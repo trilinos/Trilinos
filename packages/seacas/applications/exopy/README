@@ -1,0 +1,13 @@
+## Install Steps
+
+## Make sure code has built.
+
+bake --auto-bin-dir release -o release seacas
+
+## Install Package in Local Dir
+
+python setup.py install --user
+
+## Run test
+
+python ./test/testOpen.py
