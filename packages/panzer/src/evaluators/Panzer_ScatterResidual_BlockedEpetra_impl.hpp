@@ -56,6 +56,7 @@
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
+#include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_ProductVectorBase.hpp"
@@ -306,10 +307,18 @@ template<typename Traits,typename LO,typename GO>
 void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 preEvaluate(typename Traits::PreEvalData d)
 {
+   using Teuchos::RCP;
+   using Teuchos::rcp_dynamic_cast;
+
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_),true);
+   blockedContainer_ = rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_));
+
+   if(blockedContainer_==Teuchos::null) {
+     RCP<const LOCPair_GlobalEvaluationData> gdata = rcp_dynamic_cast<const LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true);
+     blockedContainer_ = rcp_dynamic_cast<const BLOC>(gdata->getGhostedLOC());
+   }
 }
 
 // **********************************************************************

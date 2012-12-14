@@ -442,12 +442,19 @@ namespace {
     template <typename T>
     Teuchos::RCP<ResponseBase> build() const 
     { 
-      if(eBlocks_.size()>0)
-        return respFact_->template getAsBase<T>()->buildResponseObject(respName_,eBlocks_); 
-      if(sidesets_.size()>0)
-        return respFact_->template getAsBase<T>()->buildResponseObject(respName_,sidesets_); 
+      Teuchos::RCP<const panzer::ResponseEvaluatorFactoryBase> baseObj = respFact_->template getAsBase<T>();
+     
+      // only build this templated set of objects if the there is something to build them with
+      if(baseObj!=Teuchos::null) {
 
-      TEUCHOS_ASSERT(false);
+        if(eBlocks_.size()>0)
+          return baseObj->buildResponseObject(respName_,eBlocks_); 
+        if(sidesets_.size()>0)
+          return baseObj->buildResponseObject(respName_,sidesets_); 
+
+        TEUCHOS_ASSERT(false);
+      }
+
       return Teuchos::null;
     }
   };
@@ -588,6 +595,10 @@ public:
        for(typename ResponseEvaluatorFactory_TemplateManager<TraitsT>::iterator rf_itr=fact->begin();
            rf_itr!=fact->end();++rf_itr) {
 
+         // not setup for this template type, ignore it
+         if(rf_itr.rcp()==Teuchos::null) 
+           continue;
+
          // build and register evaluators, store field tag, make it required
          rf_itr->buildAndRegisterEvaluators(responseName,fm,pb,userData_);     
        }
@@ -682,8 +693,10 @@ addResponsesToInArgs(panzer::AssemblyEngineInArgs & input_args) const
    this->getResponses<EvalT>(responses);
 
    // add all responses to input args  
-   for(std::size_t i=0;i<responses.size();i++)
-     input_args.addGlobalEvaluationData(responses[i]->getLookupName(),responses[i]);
+   for(std::size_t i=0;i<responses.size();i++) {
+     if(responses[i]!=Teuchos::null)
+       input_args.addGlobalEvaluationData(responses[i]->getLookupName(),responses[i]);
+   }
 }
 
 template <typename TraitsT>
