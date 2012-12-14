@@ -1008,16 +1008,17 @@ namespace Tpetra {
     const LocalOrdinal lrow = getRowMap()->getLocalElement(globalRow);
     typename Graph::SLocalGlobalViews inds_view;
     ArrayView<const Scalar> vals_view;
-    if (lrow != LOT::invalid()) {
+    if (lrow != LOT::invalid()) { // globalRow is in our row Map.
+      //
       // We have to declare these Arrays here rather than in the
       // hasColMap() if branch, so that views to them will remain
       // valid for the whole scope.
       Array<GlobalOrdinal> filtered_indices;
       Array<Scalar>        filtered_values;
-      if (hasColMap()) {
-        // If we have a column map, use it to filter the indices and
-        // corresponding values, so that we only insert entries into
-        // the columns we own.
+      if (hasColMap()) { // We have a column Map.
+	//
+        // Use column map to filter the indices and corresponding
+        // values, so that we only insert entries into columns we own.
         typename Graph::SLocalGlobalNCViews inds_ncview;
         ArrayView<Scalar> vals_ncview;
         filtered_indices.assign(indices.begin(), indices.end());
@@ -1677,21 +1678,30 @@ namespace Tpetra {
     using Teuchos::SerialDenseMatrix;
     using std::pair;
     using std::make_pair;
+    // Iterator over nonlocals_, the nonlocal data stored by previous
+    // calls to insertGlobalValues() for nonowned rows.
     typedef typename std::map<GlobalOrdinal,Array<pair<GlobalOrdinal,Scalar> > >::const_iterator NLITER;
     typedef typename Array<pair<GlobalOrdinal,Scalar> >::const_iterator NLRITER;
+
     const int numImages = getComm()->getSize();
     const int myImageID = getComm()->getRank();
     const std::string tfecfFuncName("globalAssemble()");
 #ifdef HAVE_TPETRA_DEBUG
     Teuchos::barrier( *getRowMap()->getComm() );
-#endif
+#endif // HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false, std::runtime_error, " requires that fill is active.");
-    // Determine if any nodes have global entries to share
+
+    // Determine (via a global all-reduce) if any processes have
+    // global entries to share.
     size_t MyNonlocals = nonlocals_.size(),
            MaxGlobalNonlocals;
     Teuchos::reduceAll<int,size_t>(*getComm(),Teuchos::REDUCE_MAX,MyNonlocals,
       outArg(MaxGlobalNonlocals));
     if (MaxGlobalNonlocals == 0) return;  // no entries to share
+
+    // FIXME (mfh 14 Dec 2012) The code below reimplements an Export
+    // operation.  It would be better just to use an Export.  See
+    // Comment #34 in discussion of Bug 5782.
 
     // compute a list of NLRs from nonlocals_ and use it to compute:
     //      IdsAndRows: a vector of (id,row) pairs
