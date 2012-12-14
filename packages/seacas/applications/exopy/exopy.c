@@ -158,7 +158,7 @@ static PyObject * exopy_ex_open(PyObject *self, PyObject *args) {
     io_ws = 0;
   } else {
     PyErr_SetString(PyExc_TypeError,
-      "ref.value of argument 5 should be an int object");
+      "ref.value of argument 4 should be an int object");
     return NULL;
   }
 
