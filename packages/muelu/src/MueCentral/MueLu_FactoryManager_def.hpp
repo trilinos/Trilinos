@@ -127,8 +127,13 @@ namespace MueLu {
         return SetAndReturnDefaultFactory(varName, rcp(new ZoltanInterface()));
       }
 #endif //ifdef HAVE_MPI
+
       if (varName == "Importer") {
+#ifdef HAVE_MPI
         return SetAndReturnDefaultFactory(varName, rcp(new RepartitionFactory()));
+#else
+        return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
+#endif
       }
       if (varName == "number of partitions") {
         return GetFactory("Importer");
