@@ -85,6 +85,30 @@ namespace std {
 
 namespace Tpetra {
 
+  /// \namespace Details
+  /// \brief Implementation details of Tpetra.
+  ///
+  /// \warning Users must not rely on anything in this namespace.
+  namespace Details {
+    /// \class InvalidGlobalIndex
+    /// \brief Exception thrown by CrsMatrix on invalid global index.
+    /// \tparam GlobalOrdinal Same as the GlobalOrdinal template parameter of CrsMatrix.
+    template<class GlobalOrdinal>
+    class InvalidGlobalIndex : public std::domain_error {
+    public:
+      InvalidGlobalIndex (const std::string& msg, const GlobalOrdinal globalIndex) : 
+	std::domain_error (msg), glInd_ (globalIndex) {}
+
+      GlobalOrdinal offendingIndex () const { 
+	return glInd_;
+      }
+      
+    private:
+      //! The offending global index.
+      GlobalOrdinal glInd_; 
+    };
+  } // namespace Details
+
   //! \brief Sparse matrix that presents a compressed sparse row interface.
   /*!
    \tparam Scalar The type of the numerical entries of the matrix.
@@ -881,15 +905,20 @@ namespace Tpetra {
       using Teuchos::ArrayView;
 
       TEUCHOS_TEST_FOR_EXCEPTION(values.size() != indices.size(),
-        std::invalid_argument, "transformGlobalValues: values.size() = "
+        std::logic_error, "transformGlobalValues: values.size() = "
         << values.size() << " != indices.size() = " << indices.size() << ".");
 
       const LO lrow = this->getRowMap()->getLocalElement(globalRow);
 
-      TEUCHOS_TEST_FOR_EXCEPTION(lrow == LOT::invalid(), std::invalid_argument,
-        "transformGlobalValues: The given global row index " << globalRow
-        << " is not owned by the calling process (rank "
-        << this->getRowMap()->getComm()->getRank() << ").");
+      if (lrow == LOT::invalid()) {
+	// The exception test macro doesn't let you pass an additional
+	// argument to the exception's constructor, so we don't use it.
+	std::ostringstream os;
+        os << "transformGlobalValues: The given global row index " 
+	   << globalRow << " is not owned by the calling process (rank "
+	   << this->getRowMap()->getComm()->getRank() << ").";
+	throw Details::InvalidGlobalIndex<GO> (os.str (), globalRow);
+      }
 
       RowInfo rowInfo = staticGraph_->getRowInfo(lrow);
       if (indices.size() > 0) {

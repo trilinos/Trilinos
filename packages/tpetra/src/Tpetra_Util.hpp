@@ -189,7 +189,7 @@
     int gbl_throw; \
     Teuchos::reduceAll(comm,Teuchos::REDUCE_MAX,lcl_throw_exception,outArg(gbl_throw)); \
     TEUCHOS_TEST_FOR_EXCEPTION(gbl_throw,Exception,  \
-                       msg << " Failure on node " << gbl_throw-1 << "." << std::endl); \
+      msg << " Failure on at least one process, including process " << gbl_throw-1 << "." << std::endl); \
 }
 
 #ifdef HAVE_TEUCHOS_DEBUG

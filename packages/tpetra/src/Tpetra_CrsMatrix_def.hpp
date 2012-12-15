@@ -62,11 +62,9 @@ bool std::operator<(const Tpetra::CrsIJV<Ordinal,Scalar> &ijv1, const Tpetra::Cr
 #endif
 
 namespace Tpetra {
-
-  /// \namespace Details
-  /// \brief Implementation details of Tpetra.
-  ///
-  /// \warning Users must not rely on anything in this namespace.
+  //
+  // Users must never rely on anything in the Details namespace.
+  //
   namespace Details {
     /// \struct AbsMax
     /// \brief Functor that implements Tpetra::ABSMAX CombineMode.
@@ -80,7 +78,7 @@ namespace Tpetra {
         return std::max (STS::magnitude (x), STS::magnitude (y));
       }
     };
-  } // namespace (anonymous)
+  } // namespace Details
 
   template <class Ordinal, class Scalar>
   CrsIJV<Ordinal,Scalar>::CrsIJV() {}
@@ -995,21 +993,34 @@ namespace Tpetra {
                       const ArrayView<const Scalar>        &values)
   {
     const std::string tfecfFuncName("insertGlobalValues()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isStaticGraph(), std::runtime_error,
-      ": matrix was constructed with static graph. Cannot insert new entries.");
+
+    // mfh 14 Dec 2012: Defer test for static graph until we know that
+    // globalRow is in the row Map.  If it's not in the row Map, it
+    // doesn't matter whether or not the graph is static; the data
+    // just go into nonlocals_, for later use by globalAssemble().
+    // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    //   isStaticGraph(), std::runtime_error,
+    //   ": matrix was constructed with static graph. Cannot insert new entries.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       values.size() != indices.size(), std::runtime_error,
       ": values.size() must equal indices.size().  values.size() = "
       << values.size() << ", but indices.size() = " << indices.size() << ".");
-    if (! myGraph_->indicesAreAllocated ()) {
-      allocateValues (GlobalIndices, GraphNotYetAllocated);
-    }
+
     const LocalOrdinal lrow = getRowMap()->getLocalElement(globalRow);
-    typename Graph::SLocalGlobalViews inds_view;
-    ArrayView<const Scalar> vals_view;
+
     if (lrow != LOT::invalid()) { // globalRow is in our row Map.
-      //
+      // If the matrix has a static graph, this process is now allowed
+      // to insert into rows it owns.
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        this->isStaticGraph(), std::runtime_error,
+        ": The CrsMatrix was constructed with a static graph.  In that case, "
+	"it's forbidded to insert new entries into rows owned by the calling process.");
+      if (! myGraph_->indicesAreAllocated ()) {
+	allocateValues (GlobalIndices, GraphNotYetAllocated);
+      }
+      typename Graph::SLocalGlobalViews inds_view;
+      ArrayView<const Scalar> vals_view;
+
       // We have to declare these Arrays here rather than in the
       // hasColMap() if branch, so that views to them will remain
       // valid for the whole scope.
@@ -1180,7 +1191,16 @@ namespace Tpetra {
                        const ArrayView<const Scalar>        &values)
 
   {
-    this->template transformGlobalValues<std::plus<Scalar> > (globalRow, indices, values, std::plus<Scalar> ());
+    try {
+      this->template transformGlobalValues<std::plus<Scalar> > (globalRow, indices, values, std::plus<Scalar> ());
+    }
+    catch (Details::InvalidGlobalIndex<GlobalOrdinal>& e) {
+      // For nonlocal data, use insertGlobalValues().  Since globalRow
+      // is not in the row Map, this will put the data in nonlocals_.
+      // globalAssemble() (called during fillComplete()) will exchange
+      // that data and sum it in using sumIntoGlobalValues().
+      this->insertGlobalValues (globalRow, indices, values);
+    }
   }
 
 
@@ -1899,17 +1919,24 @@ namespace Tpetra {
     //       this requires resorting; they arrived sorted by sending node, so that entries could be non-contiguous if we received
     //       multiple entries for a particular row from different processors.
     //       it also requires restoring the data, which may make it not worth the trouble.
-    for (typename Array<CrsIJV<GlobalOrdinal,Scalar> >::const_iterator ijv = IJVRecvBuffer.begin(); ijv != IJVRecvBuffer.end(); ++ijv)
-    {
-      try {
-        insertGlobalValues(ijv->i, tuple(ijv->j), tuple(ijv->v));
+
+    if (this->isStaticGraph ()) {
+      for (typename Array<CrsIJV<GlobalOrdinal,Scalar> >::const_iterator ijv = IJVRecvBuffer.begin(); ijv != IJVRecvBuffer.end(); ++ijv) {
+	sumIntoGlobalValues (ijv->i, tuple (ijv->j), tuple (ijv->v));
       }
-      catch (std::runtime_error &e) {
-        std::ostringstream outmsg;
-        outmsg << e.what() << std::endl
-             << "caught in globalAssemble() in " << __FILE__ << ":" << __LINE__
-             << std::endl ;
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, outmsg.str());
+    }
+    else { // Dynamic graph; can use insertGlobalValues ()
+      for (typename Array<CrsIJV<GlobalOrdinal,Scalar> >::const_iterator ijv = IJVRecvBuffer.begin(); ijv != IJVRecvBuffer.end(); ++ijv) {
+	try {
+	  insertGlobalValues(ijv->i, tuple(ijv->j), tuple(ijv->v));
+	}
+	catch (std::runtime_error &e) {
+	  std::ostringstream outmsg;
+	  outmsg << e.what() << std::endl
+		 << "caught in globalAssemble() in " << __FILE__ << ":" << __LINE__
+		 << std::endl ;
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, outmsg.str());
+	}
       }
     }
 
