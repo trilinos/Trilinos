@@ -59,6 +59,16 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
+//
+// Test for Tpetra::CrsMatrix::sumIntoGlobalValues(), with nonowned
+// rows.  The test creates the CrsMatrix with a static graph, so that
+// globalAssemble() uses sumIntoGlobalValues() instead of
+// insertGlobalValues() to merge in the incoming matrix entries.  All
+// calls to sumIntoGlobalValues() in this test are for nonowned rows,
+// and all the calls are correct (that is, the processes that own
+// those rows have entries in the corresponding columns, so that
+// nonowned fill does not require creating new entries).
+//
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, NonlocalSumInto, CrsMatrixType )
 {
   using Tpetra::createContigMapWithNode;
