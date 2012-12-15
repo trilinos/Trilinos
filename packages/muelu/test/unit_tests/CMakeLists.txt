@@ -45,6 +45,7 @@ APPEND_SET(SOURCES
   ParameterList/CreateSublists.cpp
   MultiVectorTransferFactory.cpp
   PermutedTransferFactory.cpp
+  DistanceLaplacian.cpp
 )
 
 ### Tests that require other Trilinos packages

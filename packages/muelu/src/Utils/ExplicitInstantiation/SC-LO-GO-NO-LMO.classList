@@ -10,6 +10,7 @@ BraessSarazinSmoother
 CoalesceDropFactory
 CoarseMapFactory
 DirectSolver
+DistanceLaplacianFactory
 FactoryFactory
 FactoryManager
 GaussSeidelSmoother
