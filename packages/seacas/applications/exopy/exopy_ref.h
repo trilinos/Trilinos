@@ -4,6 +4,8 @@
 #include "Python.h" // must be included first
 #include "structmember.h"
 
+#define is_ref(r) ((r)->ob_type == &refType)
+
 typedef struct {
   PyObject_HEAD
   PyObject *value; /* referenced value can be any PyObject */
@@ -105,5 +107,50 @@ static PyTypeObject refType = {
     0,                                        /*tp_alloc*/
     ref_new,                                  /*tp_new*/
 };
+
+int Ref_AsInt( ref * r ) { 
+  if ( !is_ref(r) ) {
+    PyErr_SetString(PyExc_TypeError, "argument should be an exopy.ref object");
+    return -1;
+  }
+  if ( PyInt_Check(r->value) ) {
+    return PyInt_AsLong(r->value);
+  } else if ( r->value == Py_None ) {
+    return 0;
+  } else {
+    PyErr_SetString(PyExc_TypeError, "ref.value of argument should be an int object");
+    return -1;
+  }
+}
+
+float Ref_AsFloat( ref * r ) { 
+  if ( !is_ref(r) ) {
+    PyErr_SetString(PyExc_TypeError, "argument should be an exopy.ref object");
+    return -1.0;
+  }
+  if ( PyFloat_Check(r->value) ) {
+    return PyFloat_AsDouble(r->value);
+  } else if ( r->value == Py_None ) {
+    return 0.0;
+  } else {
+    PyErr_SetString(PyExc_TypeError, "ref.value of argument should be a float object");
+    return -1.0;
+  }
+}
+
+double Ref_AsDouble( ref * r ) { 
+  if ( !is_ref(r) ) {
+    PyErr_SetString(PyExc_TypeError, "argument should be an exopy.ref object");
+    return -1.0;
+  }
+  if ( PyFloat_Check(r->value) ) {
+    return PyFloat_AsDouble(r->value);
+  } else if ( r->value == Py_None ) {
+    return 0.0;
+  } else {
+    PyErr_SetString(PyExc_TypeError, "ref.value of argument should be a float object");
+    return -1.0;
+  }
+}
 
 #endif
