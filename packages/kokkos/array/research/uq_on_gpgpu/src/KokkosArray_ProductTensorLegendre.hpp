@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//    KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -35,80 +35,80 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
+// Questions? Contact H. Carter Edwards (hcedwar@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
 */
 
-#include <string>
-#include <iostream>
+#ifndef KOKKOSARRAY_PRODUCTTENSORLEGENDRE_HPP
+#define KOKKOSARRAY_PRODUCTTENSORLEGENDRE_HPP
 
-namespace unit_test {
-void product_tensor_legendre();
-};
+#include <cmath>
+#include <utility>
+#include <KokkosArray_Macros.hpp>
+#include <KokkosArray_ProductTensorIndex.hpp>
+#include <KokkosArray_LegendrePolynomial.hpp>
 
-extern int mainHost(bool test_flat, bool test_orig, bool test_block);
-extern int mainCuda(bool test_flat, bool test_orig, bool test_block);
+namespace KokkosArray {
 
-int main(int argc, char *argv[])
-{
-  // Defaults
-  bool test_host = true;
-  bool test_cuda = true;
-  bool test_block = true;
-  bool test_flat = true;
-  bool test_orig = true;
+//----------------------------------------------------------------------------
+/** \brief
+ *
+ *
+ */
+class TripleProductTensorLegendre {
+private:
+  enum { N = 8 /* MaximumPolyDegree + 1 */ };
+  enum { NONZERO_COUNT = 36 };
 
-  // Parse command line arguments
-  bool print_usage = false;
-  for (int i=1; i<argc; ++i) {
-    std::string s(argv[i]);
-    if (s == "cuda")
-      test_cuda = true;
-    else if (s == "no-cuda")
-      test_cuda = false;
-    else if (s == "host")
-      test_host = true;
-    else if (s == "no-host")
-      test_host = false;
-    else if (s == "block")
-      test_block = true;
-    else if (s == "no-block")
-      test_block = false;
-    else if (s == "flat")
-      test_flat = true;
-    else if (s == "no-flat")
-      test_flat = false;
-    else if (s == "orig")
-      test_orig = true;
-    else if (s == "no-orig")
-      test_orig = false;
-    else if (s == "-h" || s == "--help")
-      print_usage = true;
-    else {
-      std::cout << "Invalid argument:  " << s << std::endl;
-      print_usage = true;
-    }
-    if (print_usage) {
-      std::cout << "Usage:" << std::endl
-		<< "\t" << argv[0] << " [no-][cuda|host|block|flat|orig]" 
-		<< std::endl << "Defaults are all enabled." << std::endl;
-     return -1;
-    }
+  unsigned char m_map[ N * N * N ];
+  float m_terms[ NONZERO_COUNT ];
+
+  static inline
+  unsigned offset( const unsigned i , const unsigned j , const unsigned k ) 
+  { return ( i << 6 ) | ( j << 3 ) | k ; }
+
+public:
+
+  enum { MaximumPolyDegree = 7 };
+
+  TripleProductTensorLegendre();
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  float operator()( const unsigned i , const unsigned j , const unsigned k ) const
+  {
+    return m_terms[ m_map[ offset(i,j,k) ] ];
   }
 
-  unit_test::product_tensor_legendre();
-
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  double operator()( const unsigned n ,
+                     const iType * const I ,
+                     const iType * const J ,
+                     const iType * const K ) const
+  {
+    double val = 1 ;
 #if 1
-
-  if (test_host)
-    mainHost(test_flat, test_orig, test_block);
-  if (test_cuda)
-    mainCuda(test_flat, test_orig, test_block);
-
+    for ( unsigned iv = 0 ; iv < n ; ++iv ) {
+      val *= m_terms[ m_map[ offset(I[iv],J[iv],K[iv]) ] ];
+    }
+    return val ;
+#else
+    unsigned m ;
+    for ( unsigned iv = 0 ;
+          iv < n &&
+          0 != ( m = m_map[ offset(I[iv],J[iv],K[iv]) ] ) ; ++iv ) {
+      val *= m_terms[ m ];
+    }
 #endif
+    return val ;
+  }
 
-  return 0 ;
-}
+};
+
+} // namespace KokkosArray
+
+#endif /* #ifndef KOKKOSARRAY_LEGENDREPOLYNOMIALS_HPP */
+
 

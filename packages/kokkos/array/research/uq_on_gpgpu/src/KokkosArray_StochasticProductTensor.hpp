@@ -44,6 +44,7 @@
 #ifndef KOKKOSARRAY_STOCHASTICPRODUCTTENSOR_HPP
 #define KOKKOSARRAY_STOCHASTICPRODUCTTENSOR_HPP
 
+#include <ostream>
 #include <KokkosArray_ProductTensor.hpp>
 
 namespace KokkosArray {
@@ -146,6 +147,17 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION
   size_type bases_degree( const iType & iBasis , const jType & iVariable ) const
     { return m_degree_map( iBasis + 1 , iVariable ); }
+
+  void print( std::ostream & s ) const
+  {
+    for ( unsigned i = 1 ; i < m_degree_map.dimension_0() ; ++i ) {
+      s << "  bases[" << i - 1 << "] (" ;
+      for ( unsigned j = 0 ; j < m_degree_map.dimension_1() ; ++j ) {
+        s << " " << m_degree_map(i,j);
+      }
+      s << " )" << std::endl ;
+    }
+  }
 };
 
 //----------------------------------------------------------------------------

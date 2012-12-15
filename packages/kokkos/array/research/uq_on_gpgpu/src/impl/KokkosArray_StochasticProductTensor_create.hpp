@@ -166,6 +166,7 @@ private:
     // maximum degree polynomial
 
     const int rule_count = 1 + ( 3 * m_maximum_degree ) / 2 ;
+    // const int rule_count = 32 ;
 
     std::vector< double >  integral_sum( m_variable_count );
     std::vector< double >  poly_values(  m_maximum_degree + 1 );

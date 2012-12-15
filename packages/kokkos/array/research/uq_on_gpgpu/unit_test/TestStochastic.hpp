@@ -128,6 +128,23 @@ void test_triple_product_legendre_polynomial()
 
 //----------------------------------------------------------------------------
 
+template< class TensorType >
+void print_tensor_parameters( const std::string & label ,
+                              const std::vector<int> & var_degree ,
+                              const TensorType & tensor )
+{
+  std::cout << label ;
+  std::cout << " : var_degree(" ;
+  for ( unsigned i = 0 ; i < var_degree.size() ; ++i ) {
+    std::cout << " " << var_degree[i];
+  }
+  std::cout << " ) tensor{ variables(" << tensor.variable_count()
+            << ") dimension(" << tensor.dimension() 
+            << ") }" << std::endl ;
+}
+
+//----------------------------------------------------------------------------
+
 template< class Device , template< unsigned , typename , class > class TensorType >
 void test_product_tensor( const std::vector<int> & var_degree )
 {
@@ -135,6 +152,10 @@ void test_product_tensor( const std::vector<int> & var_degree )
   typedef KokkosArray::StochasticProductTensor< double , polynomial , Device , TensorType > tensor_type ;
 
   tensor_type tensor = KokkosArray::create_product_tensor< tensor_type >( var_degree );
+
+  print_tensor_parameters( "test_product_tensor" , var_degree , tensor );
+
+  tensor.print( std::cout );
 
   // Verification?
 }
@@ -180,6 +201,10 @@ test_product_tensor_matrix(
 
   const size_t inner_length      = matrix.block.dimension();
   const size_t inner_matrix_size = matrix.block.dimension();
+
+  print_tensor_parameters( "test_product_tensor_matrix" , var_degree , matrix.block );
+  std::cout << " block_dimension = " << inner_length << std::endl ;
+
 
   matrix.values = block_vector_type( "matrix" , inner_matrix_size , graph_length );
 
@@ -281,6 +306,8 @@ test_product_tensor_diagonal_matrix(
 
   const tensor_type tensor =
     KokkosArray::create_product_tensor< tensor_type >( var_degree );
+
+  print_tensor_parameters( "test_product_tensor_diagonal_matrix" , var_degree , tensor );
 
   const size_t inner_length = tensor.dimension();
 
@@ -400,6 +427,8 @@ test_product_flat_commuted_matrix(
 
   const tensor_type tensor =
     KokkosArray::create_product_tensor< tensor_type >( var_degree );
+
+  print_tensor_parameters( "test_product_flat_commuted_matrix" , var_degree , tensor );
 
   const size_t inner_length = tensor.dimension();
 
@@ -561,6 +590,8 @@ test_product_flat_original_matrix(
 
   const tensor_type tensor =
     KokkosArray::create_product_tensor< tensor_type >( var_degree );
+
+  print_tensor_parameters( "test_product_flat_original_matrix" , var_degree , tensor );
 
   const size_t inner_length = tensor.dimension();
 
