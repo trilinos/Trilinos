@@ -352,21 +352,6 @@ namespace MueLu {
           }
         }
 
-#if 0
-      std::cout << "R" << std::endl;
-      // loop over rows
-      for (size_t i=0; i<NSDim; i++) {
-        // loop over cols
-        for (size_t j=0; j<NSDim; j++) {
-          if(j>=i) { std::cout << localQR[ NSDim*j + i]; std::cout << "\t"; }
-          else
-            std::cout << "00\t";
-          //std::cout << localQR[ NSDim*j + i]; std::cout << "\t";
-        }
-        std::cout << std::endl;
-      }
-#endif
-
         // Calculate Q, the tentative prolongator.
         // The Lapack GEQRF call only works for myAggsize >= NSDim
         // special handling for very small aggregates (with myAggsize < NSDim)
@@ -380,18 +365,6 @@ namespace MueLu {
           }
         }
       } // end else (special handling for 1pt aggregates)
-
-#if 0
-      std::cout << "Q" << std::endl;
-      // loop over rows
-      for (size_t i=0; i<myAggSize; i++) {
-        // loop over cols
-        for (size_t j=0; j<NSDim; j++) {
-          std::cout << localQR[ myAggSize*j + i]; std::cout << "\t";
-        }
-        std::cout << std::endl << std::endl;
-      }
-#endif
 
       //Process each row in the local Q factor.  If the row is local to the current processor
       //according to the rowmap, insert it into Ptentative.  Otherwise, save it in ghostQ
