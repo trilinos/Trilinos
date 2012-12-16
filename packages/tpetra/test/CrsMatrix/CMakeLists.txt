@@ -71,6 +71,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+# This test only makes sense for > 1 processes.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_NonlocalSumInto_Exception
+  SOURCES
+    CrsMatrix_NonlocalSumInto_Exception
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS
+  COMM mpi
+  NUM_MPI_PROCS 2-4
+  STANDARD_PASS_OUTPUT
+  )
+
 SET(TIMING_INSTALLS "")
 
 #IF (KokkosClassic_ENABLE_TBB AND Tpetra_ENABLE_MPI)
