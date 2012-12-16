@@ -107,6 +107,27 @@ namespace Tpetra {
       //! The offending global index.
       GlobalOrdinal glInd_; 
     };
+
+    /// \class InvalidGlobalRowIndex
+    /// \brief Exception thrown by CrsMatrix on invalid global row index.
+    /// \tparam GlobalOrdinal Same as the GlobalOrdinal template parameter of CrsMatrix.
+    template<class GlobalOrdinal>
+    class InvalidGlobalRowIndex : public InvalidGlobalIndex {
+    public:
+      InvalidGlobalRowIndex (const std::string& msg, const GlobalOrdinal globalIndex) : 
+	InvalidGlobalIndex (msg, globalIndex) {}
+    };
+
+    /// \class InvalidGlobalColumnIndex
+    /// \brief Exception thrown by CrsMatrix on invalid global column index.
+    /// \tparam GlobalOrdinal Same as the GlobalOrdinal template parameter of CrsMatrix.
+    template<class GlobalOrdinal>
+    class InvalidGlobalColumnIndex : public InvalidGlobalIndex {
+    public:
+      InvalidGlobalColumnIndex (const std::string& msg, const GlobalOrdinal globalIndex) : 
+	InvalidGlobalIndex (msg, globalIndex) {}
+    };
+
   } // namespace Details
 
   //! \brief Sparse matrix that presents a compressed sparse row interface.
@@ -917,7 +938,7 @@ namespace Tpetra {
         os << "transformGlobalValues: The given global row index " 
 	   << globalRow << " is not owned by the calling process (rank "
 	   << this->getRowMap()->getComm()->getRank() << ").";
-	throw Details::InvalidGlobalIndex<GO> (os.str (), globalRow);
+	throw Details::InvalidGlobalRowIndex<GO> (os.str (), globalRow);
       }
 
       RowInfo rowInfo = staticGraph_->getRowInfo(lrow);
