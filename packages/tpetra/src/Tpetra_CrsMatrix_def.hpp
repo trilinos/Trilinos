@@ -1194,7 +1194,7 @@ namespace Tpetra {
     try {
       this->template transformGlobalValues<std::plus<Scalar> > (globalRow, indices, values, std::plus<Scalar> ());
     }
-    catch (Details::InvalidGlobalIndex<GlobalOrdinal>& e) {
+    catch (Details::InvalidGlobalRowIndex<GlobalOrdinal>& e) {
       // For nonlocal data, use insertGlobalValues().  Since globalRow
       // is not in the row Map, this will put the data in nonlocals_.
       // globalAssemble() (called during fillComplete()) will exchange
