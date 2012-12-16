@@ -50,6 +50,8 @@
 
 namespace {
 
+  using Teuchos::null;
+
   using Tpetra::TestingUtilities::getNode;
   using Tpetra::TestingUtilities::getDefaultComm;
 
@@ -121,7 +123,7 @@ namespace {
     const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
     RCP<M> m;
     TEST_NOTHROW( m = rcp(new M(GSTI, tuple<size_t>(myImageID), 0, comm)) );
-    if (m != Teuchos::null) {
+    if (m != null) {
       TEST_EQUALITY( m->getMinAllGlobalIndex(), (size_t)0 );
       TEST_EQUALITY( m->getMaxAllGlobalIndex(), (size_t)numImages-1 );
     }
@@ -404,8 +406,8 @@ namespace {
 
     // create a contiguous uniform distributed map with two entries per node
     RCP<const Map1> map1 = createUniformContigMapWithNode<LO,GO>(numGlobal,comm,n1);
-    // RCP<Map2> map2 = Tpetra::convert<Map2>(map1);
-    // finish
+    RCP<const Map2> map2 = map1->clone(n2);
+    TEST_EQUALITY( map2->getNode(), n2 );
   }
 
 

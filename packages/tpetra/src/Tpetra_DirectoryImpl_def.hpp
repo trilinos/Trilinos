@@ -126,7 +126,7 @@ namespace Tpetra {
 
       // Make room for the min global ID on each proc, plus one
       // entry at the end for the max cap.
-      allMinGIDs_.resize (comm->getSize () + 1);
+      allMinGIDs_ = arcp<GO>(comm->getSize () + 1);
       // Get my process' min global ID.
       GO minMyGID = map->getMinGlobalIndex ();
       // Gather all of the min global IDs into the first getSize()
@@ -135,8 +135,8 @@ namespace Tpetra {
                                    allMinGIDs_.getRawPtr ());
       // Put the max cap at the end.  Adding one lets us write loops
       // over the global IDs with the usual strict less-than bound.
-      allMinGIDs_.back() = map->getMaxAllGlobalIndex() +
-        Teuchos::OrdinalTraits<GO>::one();
+      allMinGIDs_[comm->getSize ()] = map->getMaxAllGlobalIndex()
+                                      + Teuchos::OrdinalTraits<GO>::one();
     }
 
     template<class LO, class GO, class NT>
@@ -339,8 +339,10 @@ namespace Tpetra {
       // invalid values, in case the user global element list does
       // fill all IDs from minAllGID to maxAllGID (e.g., allows
       // global indices to be all even integers).
-      nodeIDs_.resize (dir_numMyEntries, -1);
-      LIDs_.resize (dir_numMyEntries, LINVALID);
+      nodeIDs_ = arcp<int>(dir_numMyEntries);
+      std::fill( nodeIDs_.begin(), nodeIDs_.end(), -1 );
+      LIDs_ = arcp<LO>(dir_numMyEntries);
+      std::fill( LIDs_.begin(), LIDs_.end(), LINVALID );
 
       // Get list of process IDs that own the directory entries for the
       // Map GIDs.  These will be the targets of the sends that the

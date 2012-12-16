@@ -791,6 +791,7 @@ namespace Tpetra {
     // numUniqueGIDs counter is a red herring; it just increases by
     // one each iteration.
     size_t numUniqueGIDs = 0;
+    glMap_ = rcp(new global_to_local_table_type());
     if (numLocalElements_ > 0) {
       lgMap_ = Teuchos::arcp<GlobalOrdinal>(numLocalElements_);
 
@@ -799,8 +800,13 @@ namespace Tpetra {
       minMyGID_ = entryList[0];
       maxMyGID_ = entryList[0];
       for (size_t i=0; i < numLocalElements_; i++) {
+<<<<<<< HEAD
         lgMap_[numUniqueGIDs] = entryList[i];   // lgMap_: LID to GID
         glMap_[entryList[i]] = numUniqueGIDs;   // glMap_: GID to LID
+=======
+        lgMap_[numUniqueGIDs] = entryList[i];      // lgMap_:  LID to GID
+        (*glMap_)[entryList[i]] = numUniqueGIDs;   // glMap_: GID to LID
+>>>>>>> added convert() method and unit test for Tpetra::Map (and directories)
         numUniqueGIDs++;
 
         if (entryList[i] < minMyGID_) {
@@ -863,8 +869,8 @@ namespace Tpetra {
     }
     else {
       typedef typename global_to_local_table_type::const_iterator iter_type;
-      iter_type i = glMap_.find(globalIndex);
-      if (i == glMap_.end()) {
+      iter_type i = glMap_->find(globalIndex);
+      if (i == glMap_->end()) {
         return Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
       }
       return i->second;
@@ -899,8 +905,8 @@ namespace Tpetra {
     }
     else {
       typedef typename global_to_local_table_type::const_iterator iter_type;
-      iter_type i = glMap_.find(globalIndex);
-      return (i != glMap_.end());
+      iter_type i = glMap_->find(globalIndex);
+      return (i != glMap_->end());
     }
   }
 

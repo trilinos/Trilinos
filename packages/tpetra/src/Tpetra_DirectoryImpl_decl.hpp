@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,18 +34,20 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
 #ifndef __Tpetra_DirectoryImpl_decl_hpp
 #define __Tpetra_DirectoryImpl_decl_hpp
 
-#include <Teuchos_ArrayView.hpp>
-#include <Tpetra_Map_decl.hpp>
+#include "Tpetra_ConfigDefs.hpp"
 
 namespace Tpetra {
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node> class Map;
+
   namespace Details {
     /// \class Directory
     /// \brief Computes the local ID and process ID corresponding to given global IDs.
@@ -92,22 +94,28 @@ namespace Tpetra {
       ///   first performs input validation, then invokes
       ///   getEntriesImpl() (implemented in the subclass) to do the
       ///   work.
-      LookupStatus 
-      getEntries (const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
-		  const Teuchos::ArrayView<int> &nodeIDs, 
-		  const Teuchos::ArrayView<LocalOrdinal> &localIDs, 
-		  const bool computeLIDs) const;
+      LookupStatus
+      getEntries (const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
+                  const Teuchos::ArrayView<int> &nodeIDs,
+                  const Teuchos::ArrayView<LocalOrdinal> &localIDs,
+                  const bool computeLIDs) const;
 
     protected:
       //! Actually do the work of getEntries(), with no input validation.
-      virtual LookupStatus 
-      getEntriesImpl (const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
-		      const Teuchos::ArrayView<int> &nodeIDs, 
-		      const Teuchos::ArrayView<LocalOrdinal> &localIDs, 
-		      const bool computeLIDs) const = 0;
+      virtual LookupStatus
+      getEntriesImpl (const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
+                      const Teuchos::ArrayView<int> &nodeIDs,
+                      const Teuchos::ArrayView<LocalOrdinal> &localIDs,
+                      const bool computeLIDs) const = 0;
 
       //! Get the Map with which this object was created.
       Teuchos::RCP<const map_type> getMap () const { return map_; }
+
+      //! Set the Map for this object, for post-contructor initialization.
+      void setMap (const Teuchos::RCP<const map_type> &map) { map_ = map; }
+
+      //! Empty constructor for post-constructor initialization
+      Directory() {}
 
     private:
       //! The Map with which this object was created.
@@ -117,7 +125,7 @@ namespace Tpetra {
     /// \class ReplicatedDirectory
     /// \brief Implementation of Directory for a locally replicated Map.
     template<class LocalOrdinal, class GlobalOrdinal, class NodeType>
-    class ReplicatedDirectory : 
+    class ReplicatedDirectory :
       public Directory<LocalOrdinal, GlobalOrdinal, NodeType> {
     public:
       typedef Directory<LocalOrdinal, GlobalOrdinal, NodeType> base_type;
@@ -126,26 +134,40 @@ namespace Tpetra {
       //! Constructor.
       ReplicatedDirectory (const Teuchos::RCP<const map_type>& map);
 
+      template <class Node2>
+      RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
+      clone(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node2> > &clone_map) const
+      {
+        // this class has only the map as its data; cloning is trivial
+        return rcp(new ReplicatedDirectory<LocalOrdinal,GlobalOrdinal,Node2>(clone_map));
+      }
+
       //! @name Implementation of Teuchos::Describable.
-      //@{ 
+      //@{
 
       //! A one-line human-readable description of this object.
       std::string description () const;
       //@}
     protected:
       //! Find process IDs and (optionally) local IDs for the given global IDs.
-      LookupStatus 
-      getEntriesImpl (const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
-		      const Teuchos::ArrayView<int> &nodeIDs, 
-		      const Teuchos::ArrayView<LocalOrdinal> &localIDs, 
-		      const bool computeLIDs) const;
+      LookupStatus
+      getEntriesImpl (const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
+                      const Teuchos::ArrayView<int> &nodeIDs,
+                      const Teuchos::ArrayView<LocalOrdinal> &localIDs,
+                      const bool computeLIDs) const;
     };
 
     /// \class ReplicatedDirectory
     /// \brief Implementation of Directory for a distributed contiguous Map.
     template<class LocalOrdinal, class GlobalOrdinal, class NodeType>
-    class DistributedContiguousDirectory : 
+    class DistributedContiguousDirectory :
       public Directory<LocalOrdinal, GlobalOrdinal, NodeType> {
+    private:
+      template <class LO, class GO, class N> friend class DistributedContiguousDirectory;
+
+      //! Empty constructor for used by clone()
+      DistributedContiguousDirectory() {}
+
     public:
       typedef Directory<LocalOrdinal, GlobalOrdinal, NodeType> base_type;
       typedef typename base_type::map_type map_type;
@@ -153,19 +175,31 @@ namespace Tpetra {
       //! Constructor.
       DistributedContiguousDirectory (const Teuchos::RCP<const map_type>& map);
 
+      template <class Node2>
+      RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
+      clone(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node2> > &clone_map) const
+      {
+        typedef DistributedContiguousDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
+        RCP<Dir2> dir = rcp(new Dir2());
+        dir->setMap ( clone_map );
+        dir->allMinGIDs_ = allMinGIDs_;
+        return dir;
+      }
+
       //! @name Implementation of Teuchos::Describable.
-      //@{ 
+      //@{
 
       //! A one-line human-readable description of this object.
       std::string description () const;
       //@}
+
     protected:
       //! Find process IDs and (optionally) local IDs for the given global IDs.
-      LookupStatus 
-      getEntriesImpl (const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
-		      const Teuchos::ArrayView<int> &nodeIDs, 
-		      const Teuchos::ArrayView<LocalOrdinal> &localIDs, 
-		      const bool computeLIDs) const;
+      LookupStatus
+      getEntriesImpl (const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
+                      const Teuchos::ArrayView<int> &nodeIDs,
+                      const Teuchos::ArrayView<LocalOrdinal> &localIDs,
+                      const bool computeLIDs) const;
     private:
       /// \brief Minimum global ID for each process in the communicator.
       ///
@@ -190,34 +224,53 @@ namespace Tpetra {
       ///   if \f$N/P \gg P\f$, where N is the global number of
       ///   elements.  In this case, it would be more memory scalable to
       ///   use reductions or scans to figure out who owns what.
-      Teuchos::Array<GlobalOrdinal> allMinGIDs_; 
+      Teuchos::ArrayRCP<GlobalOrdinal> allMinGIDs_;
+
     };
 
     /// \class DistributedNoncontiguousDirectory
     /// \brief Implementation of Directory for a distributed noncontiguous Map.
     template<class LocalOrdinal, class GlobalOrdinal, class NodeType>
-    class DistributedNoncontiguousDirectory : 
+    class DistributedNoncontiguousDirectory :
       public Directory<LocalOrdinal, GlobalOrdinal, NodeType> {
+    private:
+      template <class LO, class GO, class N> friend class DistributedNoncontiguousDirectory;
+      //! Private constructor for post-contruction initialization in clone()
+      DistributedNoncontiguousDirectory() {}
+
     public:
       typedef Directory<LocalOrdinal, GlobalOrdinal, NodeType> base_type;
       typedef typename base_type::map_type map_type;
-      
+
       //! Constructor.
       DistributedNoncontiguousDirectory (const Teuchos::RCP<const map_type>& map);
 
+      template <class Node2>
+      RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
+      clone(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node2> > &clone_map) const
+      {
+        typedef DistributedNoncontiguousDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
+        RCP<Dir2> dir = rcp(new Dir2());
+        dir->setMap ( clone_map );
+        dir->directoryMap_ = directoryMap_->template clone<Node2>(clone_map->getNode());
+        dir->nodeIDs_      = nodeIDs_;
+        dir->LIDs_         = LIDs_;
+        return dir;
+      }
+
       //! @name Implementation of Teuchos::Describable.
-      //@{ 
+      //@{
 
       //! A one-line human-readable description of this object.
       std::string description () const;
       //@}
     protected:
       //! Find process IDs and (optionally) local IDs for the given global IDs.
-      LookupStatus 
-      getEntriesImpl (const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
-		      const Teuchos::ArrayView<int> &nodeIDs, 
-		      const Teuchos::ArrayView<LocalOrdinal> &localIDs, 
-		      const bool computeLIDs) const;
+      LookupStatus
+      getEntriesImpl (const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
+                      const Teuchos::ArrayView<int> &nodeIDs,
+                      const Teuchos::ArrayView<LocalOrdinal> &localIDs,
+                      const bool computeLIDs) const;
     private:
       /// \brief This Directory's Map which describes the distribution of its data.
       ///
@@ -241,12 +294,12 @@ namespace Tpetra {
       /// Array of the same length as the local number of entries in
       /// directoryMap_, containing the process IDs corresponding to the
       /// GIDs owned by the Directory Map on this process.
-      Teuchos::Array<int> nodeIDs_;
+      Teuchos::ArrayRCP<int> nodeIDs_;
 
       /// Array of the same length as the local number of entries in
       /// directoryMap_, containing the LIDs corresponding to the GIDs
       /// owned by the Directory Map on this process.
-      Teuchos::Array<LocalOrdinal> LIDs_;
+      Teuchos::ArrayRCP<LocalOrdinal> LIDs_;
     };
   } // namespace Details
 } // namespace Tpetra
