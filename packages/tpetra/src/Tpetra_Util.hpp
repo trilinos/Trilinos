@@ -42,6 +42,32 @@
 #ifndef TPETRA_UTIL_HPP
 #define TPETRA_UTIL_HPP
 
+/*! 
+  \file Tpetra_Util.hpp
+  \brief Stand-alone utility functions and macros.
+
+  Tpetra_Util contains utility functions macros that are used
+  throughout Tpetra, by many classes and functions. They are placed
+  here so that they can be updated and maintained in a single spot.
+
+  Here are some of the utility functions found in this file:
+  <ul>
+  <li>An efficientAddOrUpdate for inserting data into an std::map.
+    
+  <li>Functions for converting Ordinals to Scalars and for converting
+  Scalars to Ordinals.
+
+  <li>A templated toString function, which is mainly used to easily
+  output the contents of STL containers.
+
+  <li>A multiple-array sort function, similar to the one found in
+  Epetra_Util.  
+
+  <li>Macros for reporting efficiency warnings and synchronizing 
+  tests for exceptions over a given communicator.
+  </ul>
+*/
+
 #include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream 
 #include <iterator>
 #include <algorithm>
@@ -208,33 +234,17 @@
 
 namespace Tpetra {
 
-  /*! 
-    \file Tpetra_Util.hpp
-    \brief Stand-alone utility functions.
-
-    Tpetra_Util contains utility functions that are used throughout
-    Tpetra, by many classes and functions. They are placed here
-    so that they can be updated and maintained in a single spot.
-
-    Utility functions housed here:
-    <ul>
-    <li>An efficientAddOrUpdate for inserting data into a STL map.
-    
-    <li>Functions for converting Ordinals to Scalars and for converting
-    Scalars to Ordinals.
-
-    <li>A templated toString function, which is mainly used to easily
-    output the contents of STL containers.
-
-    <li>A multiple-array sort function, similar to the one found in
-    Epetra_Util.  
-    </ul>
-  */
-
-  /** efficientAddOrUpdate is taken from Scott Meyers' "Effective STL", Item 24.
-     if m already contains an entry with key k, use operator [].
-     if it doesn't, insert is used.
-   */
+  /// \brief Efficiently insert or replace an entry in an std::map.
+  ///
+  /// \tparam MapType Specialization of std::map
+  /// \tparam KeyArgType Type of keys of the std::map
+  /// \tparam ValueArgType Type of values of the std::map
+  ///
+  /// This function is taken from Scott Meyers' "Effective STL", Item
+  /// 24.  If the given std::map m already contains an entry with key
+  /// k, replace its value with the given value v.  Otherwise, insert
+  /// (k,v) into the std::map.  In both cases, return an iterator that
+  /// points to the inserted or updated entry.
   template<typename MapType, typename KeyArgType, typename ValueArgType>
   typename MapType::iterator efficientAddOrUpdate(MapType& m, 
                           const KeyArgType & k, 
