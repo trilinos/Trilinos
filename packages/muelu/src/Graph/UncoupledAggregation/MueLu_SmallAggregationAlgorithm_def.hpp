@@ -44,21 +44,21 @@
 //
 // @HEADER
 /*
- * MueLu_OnePtAggregationAlgorithm_def.hpp
+ * MueLu_SmallAggregationAlgorithm_def.hpp
  *
- *  Created on: Sep 18, 2012
- *      Author: Tobias Wiesner
+ *  Created on: Nov 28, 2012
+ *      Author: wiesner
  */
 
-#ifndef MUELU_ONEPTAGGREGATIONALGORITHM_DEF_HPP_
-#define MUELU_ONEPTAGGREGATIONALGORITHM_DEF_HPP_
+#ifndef MUELU_SMALLAGGREGATIONALGORITHM_DEF_HPP_
+#define MUELU_SMALLAGGREGATIONALGORITHM_DEF_HPP_
 
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
 #include <Xpetra_Vector.hpp>
 
-#include "MueLu_OnePtAggregationAlgorithm.hpp"
+#include "MueLu_SmallAggregationAlgorithm.hpp"
 
 #include "MueLu_Graph.hpp"
 #include "MueLu_Aggregates.hpp"
@@ -68,13 +68,13 @@
 namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::OnePtAggregationAlgorithm(RCP<const FactoryBase> const &graphFact)
+SmallAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SmallAggregationAlgorithm(RCP<const FactoryBase> const &graphFact)
 {
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-LocalOrdinal OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
-  Monitor m(*this, "Coarsen Uncoupled (OnePtAggregationAlgorithm)");
+LocalOrdinal SmallAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
+  Monitor m(*this, "Coarsen Uncoupled (SmallAggregationAlgorithm)");
 
   const LocalOrdinal nRows = graph.GetNodeNumVertices();
   const int myRank = graph.GetComm()->getRank();
@@ -90,12 +90,23 @@ LocalOrdinal OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
   // main loop over all local rows of grpah(A)
   while (iNode1 < nRows) {
 
-    if (aggStat[iNode1] == NodeStats::ONEPT) {
+  //std::cout << aggStat[iNode1] << std::endl;
+    if (aggStat[iNode1] == NodeStats::SMALLAGG) {
 
       aggregates.SetIsRoot(iNode1);    // mark iNode1 as root node for new aggregate 'ag'
+
       Aggregate ag;
       ag.list.push_back(iNode1);
       ag.index = nLocalAggregates++;
+
+      Teuchos::ArrayView<const LocalOrdinal> neighOfINode1 = graph.getNeighborVertices(iNode1);
+      for(typename Teuchos::ArrayView<const LocalOrdinal>::const_iterator it = neighOfINode1.begin(); it!=neighOfINode1.end(); ++it) {
+        LocalOrdinal index = *it;
+        if(graph.isLocalNeighborVertex(index) &&
+           aggStat[index] == NodeStats::SMALLAGG) {
+          ag.list.push_back(index);
+        }
+      } // loop over all columns, add potential neighbour nodes to new aggregate
 
       // finalize aggregate
       for(size_t k=0; k<ag.list.size(); k++) {
@@ -103,7 +114,7 @@ LocalOrdinal OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
         vertex2AggId[ag.list[k]] = ag.index;
         procWinner[ag.list[k]] = myRank;
       }
-    }
+    } // end if NodeStats::SMALLAGG
 
     iNode1++;
   } // end while
@@ -112,7 +123,7 @@ LocalOrdinal OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
   aggregates.SetNumAggregates(nLocalAggregates);
 
   // print aggregation information
-  this->PrintAggregationInformation("Phase 0 (1pt aggregates):", graph, aggregates, aggStat);
+  this->PrintAggregationInformation("Phase 0 (small aggregates):", graph, aggregates, aggStat);
 
   // collect some local information
   LO nLocalAggregated    = 0;
@@ -128,4 +139,5 @@ LocalOrdinal OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalM
 } // end namespace
 
 
-#endif /* MUELU_ONEPTAGGREGATIONALGORITHM_DEF_HPP_ */
+
+#endif /* MUELU_SMALLAGGREGATIONALGORITHM_DEF_HPP_ */

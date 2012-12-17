@@ -75,7 +75,7 @@ UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::U
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-LocalOrdinal UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const {
+LocalOrdinal UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
   Monitor m(*this, "Coarsen Uncoupled (UncoupledAggregationAlgorithm)");
 
   std::string orderingType;
@@ -193,7 +193,6 @@ LocalOrdinal UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, Lo
 
         for (unsigned int k=0; k<ag.list.size(); k++) {
           aggStat[ag.list[k]] = NodeStats::AGGREGATED;  // mark node as aggregated
-          //coarse_aggStat[ag.index] &= ~NODEAGGREGATED; // mark aggregate id to be a valid READY node on the next coarser grid
           vertex2AggId[ag.list[k]] = ag.index;  // fill vertex2AggId and procWinner structure with information
           procWinner[ag.list[k]] = myRank;
           if(this->GetOrdering() == GRAPH) {

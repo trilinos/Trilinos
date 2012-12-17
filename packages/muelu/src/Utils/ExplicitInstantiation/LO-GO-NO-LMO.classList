@@ -9,6 +9,7 @@ LeftoverAggregationAlgorithm
 LocalAggregationAlgorithm
 MaxLinkAggregationAlgorithm
 OnePtAggregationAlgorithm
+SmallAggregationAlgorithm
 #SubBlockAggregationFactory
 UCAggregationCommHelper
 UCAggregationFactory

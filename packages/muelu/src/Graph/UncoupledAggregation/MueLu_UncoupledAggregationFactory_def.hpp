@@ -61,6 +61,7 @@
 #include "MueLu_UncoupledAggregationFactory_decl.hpp"
 
 #include "MueLu_OnePtAggregationAlgorithm.hpp"
+#include "MueLu_SmallAggregationAlgorithm.hpp"
 #include "MueLu_UncoupledAggregationAlgorithm.hpp"
 #include "MueLu_MaxLinkAggregationAlgorithm.hpp"
 #include "MueLu_EmergencyAggregationAlgorithm.hpp"
@@ -75,11 +76,12 @@ namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UncoupledAggregationFactory(RCP<const FactoryBase> graphFact, bool bMaxLinkAggregation, bool bEmergencyAggregation)
-: bDefinitionPhase_(true), mapName_(""), mapFact_(Teuchos::null)
+: bDefinitionPhase_(true), mapOnePtName_(""), mapOnePtFact_(Teuchos::null), mapSmallAggName_(""), mapSmallAggFact_(Teuchos::null)
   {
   SetFactory("Graph", graphFact);       // for compatibility with old code
   SetFactory("DofsPerNode", graphFact); // for compatibility with old code
   algos_.push_back(Teuchos::rcp(new MueLu::OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
+  algos_.push_back(Teuchos::rcp(new MueLu::SmallAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
   algos_.push_back(Teuchos::rcp(new MueLu::UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
   if (bMaxLinkAggregation)   algos_.push_back(Teuchos::rcp(new MueLu::MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
   if (bEmergencyAggregation) algos_.push_back(Teuchos::rcp(new MueLu::EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
@@ -90,8 +92,11 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   Input(currentLevel, "Graph");
   Input(currentLevel, "DofsPerNode");
 
-  if(mapName_.length() > 0)
-    currentLevel.DeclareInput(mapName_,mapFact_.get());
+  if(mapOnePtName_.length() > 0)
+    currentLevel.DeclareInput(mapOnePtName_,mapOnePtFact_.get());
+  if(mapSmallAggName_.length() > 0)
+    currentLevel.DeclareInput(mapSmallAggName_,mapSmallAggFact_.get());
+
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -116,8 +121,12 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
     // TODO create a map of Xpetra::Maps for different
     // aggregation information (OnePtAggregegates...)
     Teuchos::RCP<const Map> OnePtMap = Teuchos::null;
-    if(mapName_.length() > 0) {
-      OnePtMap = currentLevel.Get<Teuchos::RCP<const Map> >(mapName_,mapFact_.get());
+    if(mapOnePtName_.length() > 0) {
+      OnePtMap = currentLevel.Get<Teuchos::RCP<const Map> >(mapOnePtName_,mapOnePtFact_.get());
+    }
+    Teuchos::RCP<const Map> SmallAggMap = Teuchos::null;
+    if(mapSmallAggName_.length() > 0) {
+      SmallAggMap = currentLevel.Get<Teuchos::RCP<const Map> >(mapSmallAggName_,mapSmallAggFact_.get());
     }
 
     // Build
@@ -132,22 +141,25 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
     if(nRows > 0) aggStat = Teuchos::arcp<unsigned int>(nRows);
     for(LocalOrdinal i=0; i<nRows; ++i) {
       aggStat[i] = NodeStats::READY;
+      GlobalOrdinal grid = graph->GetDomainMap()->getGlobalElement(i) * nDofsPerNode;
+      if(SmallAggMap != Teuchos::null) {
+         // reconstruct global row id (FIXME only works for contingoous maps)
+         if(SmallAggMap->isNodeGlobalElement(grid)) {
+           aggStat[i] = MueLu::NodeStats::SMALLAGG;
+         }
+       }
       if(OnePtMap != Teuchos::null) {
         // reconstruct global row id (FIXME only works for contingoous maps)
-        GlobalOrdinal grid = graph->GetDomainMap()->getGlobalElement(i) * nDofsPerNode;
         if(OnePtMap->isNodeGlobalElement(grid)) {
           aggStat[i] = MueLu::NodeStats::ONEPT;
         }
       }
     }
 
-    // TODO remove coarseAggStat
-    Teuchos::ArrayRCP<unsigned int> coarse_aggStat = Teuchos::arcp<unsigned int>(nRows);
-
     // TODO: check return values of functions
     LocalOrdinal nonAggregatedNodes = -1;
     for(size_t a = 0; a < algos_.size(); a++) {
-      nonAggregatedNodes = algos_[a]->BuildAggregates(*graph,*aggregates,aggStat,coarse_aggStat);
+      nonAggregatedNodes = algos_[a]->BuildAggregates(*graph,*aggregates,aggStat);
     }
     TEUCHOS_TEST_FOR_EXCEPTION(nonAggregatedNodes > 0,Exceptions::RuntimeError,"MueLu::UncoupledAggregationFactory::Build: Leftover nodes found! Error!");
   }

@@ -43,70 +43,16 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_UncoupledAggregationAlgorithm_decl.hpp
- *
- *  Created on: Sep 17, 2012
- *      Author: Tobias Wiesner
- */
-
-#ifndef MUELU_UNCOUPLEDAGGREGATIONALGORITHM_DECL_HPP_
-#define MUELU_UNCOUPLEDAGGREGATIONALGORITHM_DECL_HPP_
-
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_AggregationAlgorithmBase.hpp"
-#include "MueLu_UncoupledAggregationAlgorithm_fwd.hpp"
-
-#include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_Graph_fwd.hpp"
+#ifndef MUELU_SMALLAGGREGATIONALGORITHM_FWD_HPP
+#define MUELU_SMALLAGGREGATIONALGORITHM_FWD_HPP
 
 namespace MueLu {
-  /*!
-    @class UncoupledAggregationAlgorithm class.
-    @brief Algorithm for coarsening a graph with uncoupled aggregation.
-  */
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class SmallAggregationAlgorithm;
+}
 
-  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class UncoupledAggregationAlgorithm : public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
-#undef MUELU_UNCOUPLEDAGGREGATIONALGORITHM_SHORT
-#include "MueLu_UseShortNamesOrdinal.hpp"
+#ifndef MUELU_SMALLAGGREGATIONALGORITHM_SHORT
+#define MUELU_SMALLAGGREGATIONALGORITHM_SHORT
+#endif
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
-
-    //! Constructor.
-    UncoupledAggregationAlgorithm(RCP<const FactoryBase> const &graphFact = Teuchos::null);
-
-    //! Destructor.
-    virtual ~UncoupledAggregationAlgorithm() { }
-
-    //@}
-
-
-    //! @name Aggregation methods.
-    //@{
-
-    /*! @brief Local aggregation. */
-
-    LocalOrdinal BuildAggregates(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const;
-    //@}
-
-  private:
-
-    /*! @brief Utility to take a list of integers and reorder them randomly (by using a local permutation).
-      @param list On input, a bunch of integers. On output, the same integers in a different order
-      that is determined randomly.
-    */
-    void RandomReorder(Teuchos::ArrayRCP<LO> list) const;
-
-    /*! @brief Generate a random number in the range [min, max] */
-    int RandomOrdinal(int min, int max) const;
-
-  }; //class CheapAggregationAlgorithm
-
-} //namespace MueLu
-
-#define MUELU_UNCOUPLEDAGGREGATIONALGORITHM_SHORT
-#endif /* MUELU_UNCOUPLEDAGGREGATIONALGORITHM_DECL_HPP_ */
+#endif // MUELU_SMALLAGGREGATIONALGORITHM_FWD_HPP

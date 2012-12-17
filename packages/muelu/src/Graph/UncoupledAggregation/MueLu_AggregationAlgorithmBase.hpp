@@ -90,7 +90,8 @@ enum NodeState {
   AGGREGATED = 3,   /* indicates that a node has been assigned  */
   /* to an aggregate.                         */
 
-  ONEPT = 4  /* indicates that a node shall be preserved over all multigrid levels as 1 point aggregate */
+  ONEPT    = 4,  /* indicates that a node shall be preserved over all multigrid levels as 1 point aggregate */
+  SMALLAGG = 5   /* indicates that a node shall be aggregated separately from standard nodes with small aggregates (only neighbour nodes which are also marked with the SMALLAGG flag) */
 };
 } // namespace NodeStats
 
@@ -131,7 +132,7 @@ class AggregationAlgorithmBase
   //@{
 
   //! BuildAggregates routine.
-  virtual LocalOrdinal BuildAggregates(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat, Teuchos::ArrayRCP<unsigned int> & coarse_aggStat) const = 0;
+  virtual LocalOrdinal BuildAggregates(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const = 0;
   //@}
 
   //! @name Build routines

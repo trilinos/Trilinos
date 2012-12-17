@@ -64,12 +64,9 @@
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"
 
-//#include "MueLu_CheapAggregationAlgorithm.hpp"
-//#include "MueLu_CheapAggregationAlgorithm_fwd.hpp"
-
-
 #include "MueLu_AggregationAlgorithmBase.hpp"
 #include "MueLu_OnePtAggregationAlgorithm_fwd.hpp"
+#include "MueLu_SmallAggregationAlgorithm_fwd.hpp"
 #include "MueLu_UncoupledAggregationAlgorithm_fwd.hpp"
 #include "MueLu_MaxLinkAggregationAlgorithm_fwd.hpp"
 #include "MueLu_EmergencyAggregationAlgorithm_fwd.hpp"
@@ -121,8 +118,13 @@ public:
   }
   // set information about 1-node aggregates (map name and generating factory)
   void SetOnePtMapName(const std::string name, Teuchos::RCP<const FactoryBase> mapFact) {
-    mapName_ = name;
-    mapFact_ = mapFact;
+    mapOnePtName_ = name;
+    mapOnePtFact_ = mapFact;
+  }
+  // set information about small aggregates
+  void SetSmallAggMapName(const std::string name, Teuchos::RCP<const FactoryBase> mapFact) {
+    mapSmallAggName_ = name;
+    mapSmallAggFact_ = mapFact;
   }
 
   AggOptions::Ordering GetOrdering() const {
@@ -176,8 +178,12 @@ private:
   mutable bool bDefinitionPhase_;
 
   //! string für map, that defines DOFs which shall not be aggregated (so-called 1-point aggregates)
-  std::string mapName_;
-  Teuchos::RCP<const FactoryBase> mapFact_;
+  std::string mapOnePtName_;
+  Teuchos::RCP<const FactoryBase> mapOnePtFact_;
+
+  //! string für map, that defines DOFs which shall not be aggregated (small aggregates)
+  std::string mapSmallAggName_;
+  Teuchos::RCP<const FactoryBase> mapSmallAggFact_;
 
 }; // class UncoupledAggregationFactory
 
