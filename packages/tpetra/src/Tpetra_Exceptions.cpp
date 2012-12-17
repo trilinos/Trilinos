@@ -65,16 +65,37 @@ namespace Details {
   // want to clobber any existing typedef for "long long" for this
   // purpose.
 
-  template class InvalidGlobalIndex<int>;
-  template class InvalidGlobalIndex<long>;
+  ////////////////////////////////////////////////////////////////////
+  // Explicit instantiations for InvalidGlobalIndex
+  ////////////////////////////////////////////////////////////////////
+
+  //template class InvalidGlobalIndex<int>;
+  template InvalidGlobalIndex<int>::InvalidGlobalIndex (const std::string& msg, const int globalIndex);
+  template int InvalidGlobalIndex<int>::offendingIndex () const;
+
+  //template class InvalidGlobalIndex<long>;
+  template InvalidGlobalIndex<long>::InvalidGlobalIndex (const std::string& msg, const long globalIndex);
+  template long InvalidGlobalIndex<long>::offendingIndex () const;
+
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-  template class InvalidGlobalIndex<long long>;
+  //template class InvalidGlobalIndex<long long>;
+  template InvalidGlobalIndex<long long>::InvalidGlobalIndex (const std::string& msg, const long long globalIndex);
+  template long long InvalidGlobalIndex<long long>::offendingIndex () const;
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
-  template class InvalidGlobalRowIndex<int>;
-  template class InvalidGlobalRowIndex<long>;
+  ////////////////////////////////////////////////////////////////////
+  // Explicit instantiations for InvalidGlobalRowIndex
+  ////////////////////////////////////////////////////////////////////
+
+  //template class InvalidGlobalRowIndex<int>;
+  template InvalidGlobalRowIndex<int>::InvalidGlobalRowIndex (const std::string& msg, const int globalIndex);
+
+  //template class InvalidGlobalRowIndex<long>;
+  template InvalidGlobalRowIndex<long>::InvalidGlobalRowIndex (const std::string& msg, const long globalIndex);
+
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-  template class InvalidGlobalRowIndex<long long>;
+  //template class InvalidGlobalRowIndex<long long>;
+  template InvalidGlobalRowIndex<long long>::InvalidGlobalRowIndex (const std::string& msg, const long long globalIndex);
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 } // namespace Details
