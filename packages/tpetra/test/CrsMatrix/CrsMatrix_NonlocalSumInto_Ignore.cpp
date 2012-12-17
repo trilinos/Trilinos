@@ -63,10 +63,21 @@
 // Test for Tpetra::CrsMatrix::sumIntoGlobalValues(), with nonowned
 // rows.  This test is like CrsMatrix_NonlocalSumInto.cpp, except that
 // it attempts to sum into remote entries that don't exist on the
-// process that owns them.  As a result, fillComplete() (actually
-// globalAssemble()) must throw an exception.
+// process that owns them.  Currently, CrsMatrix silently ignores
+// these entries.  (This is how CrsMatrix implements Import and Export
+// when the target matrix has a fixed column Map.  Data are
+// redistributed between the two row Maps, and "filtered" by the
+// target matrix's column Map.)  This unit test verifies that behavior
+// by ensuring the following:
 //
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, NonlocalSumInto_Exception, CrsMatrixType )
+// 1. fillComplete() (actually globalAssemble()) does not throw an
+//    exception when the incoming entries don't exist on the process
+//    that owns their rows.
+//
+// 2. The ignored entries are actually ignored.  They must change
+//    neither the structure nor the values of the matrix.
+//
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, NonlocalSumInto_Ignore, CrsMatrixType )
 {
   using Tpetra::createContigMapWithNode;
   using Tpetra::createNonContigMapWithNode;
@@ -274,21 +285,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, NonlocalSumInto_Exception, CrsMatr
 
   // Attempt to sum into nonowned entries (which nevertheless exist in
   // the matrix, just not on this process) using this process' rank.
-  // This won't throw an exception here, because the calling process
-  // doesn't know which columns the remote processes own.  However, it
-  // must throw an exception in globalAssemble() (which is in turn
-  // called by fillComplete()).
+  // The sumIntoGlobalValues() calls will record the data, but the
+  // globalAssemble() method (called by fillComplete()) will silently
+  // ignore entries whose columns are not in the column Map.  The
+  // comment at the top of this test explains why this behavior is
+  // reasonable.
   //
-  // mfh 15 Dec 2012: The "delayed" exception requirements have
-  // implications for the implementation of sumIntoGlobalValues() for
-  // nonowned rows.  In particular, a one-sided communication
-  // implementation of Map::getRemoteIDList() might be able to use
-  // MPI_Get to figure out what the remote process owns without asking
-  // it or otherwise requiring synchronization.  Thus,
-  // sumIntoGlobalValues() could throw immediately on the calling
-  // process, rather than deferring the exception to the remote
-  // process in globalAssemble().  If we switch to that
-  // implementation, this unit test must be changed accordingly.
+  // mfh 15,16 Dec 2012: Silently ignoring columns not in the column
+  // Map has implications for the implementation of
+  // sumIntoGlobalValues() for nonowned rows.  In particular, a
+  // version of Map's getRemoteIDList() that uses one-sided
+  // communication could invoke MPI_Get to figure out what the remote
+  // process owns, without asking it or otherwise requiring
+  // synchronization.  Thus, sumIntoGlobalValues() could throw
+  // immediately on the calling process, rather than deferring the
+  // exception to the remote process in globalAssemble().  If we
+  // switch to that implementation, this unit test must be changed
+  // accordingly.
   if (globalMinRow > rowMap->getMinAllGlobalIndex ()) {
     // Attempt to write to the (numLocalRows-1,numLocalCols-1) local entry of the previous process.
     matrix->sumIntoGlobalValues (globalMinRow-1, tuple (globalMaxCol), tuple (as<ST> (myRank)));
@@ -389,11 +402,11 @@ typedef Tpetra::CrsMatrix<double, int, long> mat_double_int_long_type;
 // Some tests are commented out to save time.  I've aimed for an
 // orthogonal test plan over the variables (Scalar, GlobalOrdinal).
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Exception, mat_float_int_int_type )
-// TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Exception, mat_float_int_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Ignore, mat_float_int_int_type )
+// TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Ignore, mat_float_int_long_type )
 
-// TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Exception, mat_double_int_int_type )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Exception, mat_double_int_long_type )
+// TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Ignore, mat_double_int_int_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Ignore, mat_double_int_long_type )
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
@@ -403,11 +416,11 @@ typedef Tpetra::CrsMatrix<std::complex<float>, int, long> mat_complex_float_int_
 typedef Tpetra::CrsMatrix<std::complex<double>, int, int> mat_complex_double_int_int_type;
 typedef Tpetra::CrsMatrix<std::complex<double>, int, long> mat_complex_double_int_long_type;
 
-// TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Exception, mat_complex_float_int_int_type )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Exception, mat_complex_float_int_long_type )
+// TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Ignore, mat_complex_float_int_int_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Ignore, mat_complex_float_int_long_type )
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Exception, mat_complex_double_int_int_type )
-// TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Exception, mat_complex_double_int_long_type )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Ignore, mat_complex_double_int_int_type )
+// TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Ignore, mat_complex_double_int_long_type )
 
 #endif // HAVE_TEUCHOS_COMPLEX
 

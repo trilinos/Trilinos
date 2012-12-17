@@ -73,9 +73,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 # This test only makes sense for > 1 processes.
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_NonlocalSumInto_Exception
+  CrsMatrix_NonlocalSumInto_Ignore
   SOURCES
-    CrsMatrix_NonlocalSumInto_Exception
+    CrsMatrix_NonlocalSumInto_Ignore
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
   COMM mpi
