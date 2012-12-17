@@ -195,8 +195,8 @@ namespace {
   {
     static int par_mode = 0;
     //    static int par_mode_default = EX_PNETCDF;  // Default...
-    //    static int par_mode_default = EX_MPIIO;  // Default...
-    static int par_mode_default = EX_MPIPOSIX;  // Default...
+    static int par_mode_default = EX_MPIIO;  // Default...
+    //    static int par_mode_default = EX_MPIPOSIX;  // Default...
     
     if (par_mode == 0) {
       if (properties.exists("PARALLEL_IO_MODE")) {
@@ -760,7 +760,7 @@ namespace Iopx {
     qa[0][0][MAX_STR_LENGTH] = '\0';
     qa[0][1][MAX_STR_LENGTH] = '\0';
 
-    int ierr = ex_put_qa(get_file_pointer(), 1, qa);
+    int ierr = ex_put_qa(get_file_pointer(), 1, myProcessor == 0 ? qa : NULL);
     if (ierr < 0)
       exodus_error(get_file_pointer(), __LINE__, myProcessor);
   }
@@ -805,7 +805,7 @@ namespace Iopx {
       info[i][max_line_length] = '\0'; // Once more for good luck...
     }
     
-    int ierr = ex_put_info(get_file_pointer(), total_lines, info);
+    int ierr = ex_put_info(get_file_pointer(), total_lines, myProcessor == 0 ? info : NULL);
     if (ierr < 0)
       exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -3050,7 +3050,7 @@ namespace Iopx {
 	for (int i=0; i < comp_count; i++) {
 	  std::vector<double> file_data; file_data.reserve(file_count);
 	  map_data(nodeOwningProcessor, myProcessor, rdata, file_data, i, comp_count);
-	  int ierr = ex_put_n_one_attr(get_file_pointer(), type, id, proc_offset+1, file_count,
+	  int ierr = ex_put_partial_one_attr(get_file_pointer(), type, id, proc_offset+1, file_count,
 				       offset+i, TOPTR(file_data));
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -3059,7 +3059,7 @@ namespace Iopx {
 	for (size_t i=0; i < comp_count; i++) {
 	  std::vector<double> file_data; file_data.reserve(file_count);
 	  map_nodeset_data(nodesetOwnedNodes[ge], rdata, file_data, i, comp_count);
-	  int ierr = ex_put_n_one_attr(get_file_pointer(), type, id, proc_offset+1, file_count,
+	  int ierr = ex_put_partial_one_attr(get_file_pointer(), type, id, proc_offset+1, file_count,
 				       offset+i, TOPTR(file_data));
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -3074,7 +3074,7 @@ namespace Iopx {
 	    k += comp_count;
 	  }
 
-	  int ierr = ex_put_n_one_attr(get_file_pointer(), type, id, proc_offset+1, file_count, 
+	  int ierr = ex_put_partial_one_attr(get_file_pointer(), type, id, proc_offset+1, file_count, 
 				       offset+i, TOPTR(file_data));
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -3649,7 +3649,7 @@ namespace Iopx {
 	    std::vector<double> file_data; file_data.reserve(file_count);
 	    map_data(nodeOwningProcessor, myProcessor, rdata, file_data);
 	      
-	    int ierr = ex_put_n_coord(get_file_pointer(), proc_offset+1, file_count, rdata, NULL, NULL);
+	    int ierr = ex_put_partial_coord(get_file_pointer(), proc_offset+1, file_count, rdata, NULL, NULL);
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  }
@@ -3658,7 +3658,7 @@ namespace Iopx {
 	    double *rdata = static_cast<double*>(data);
 	    std::vector<double> file_data; file_data.reserve(file_count);
 	    map_data(nodeOwningProcessor, myProcessor, rdata, file_data);
-	    int ierr = ex_put_n_coord(get_file_pointer(), proc_offset+1, file_count, NULL, rdata, NULL);
+	    int ierr = ex_put_partial_coord(get_file_pointer(), proc_offset+1, file_count, NULL, rdata, NULL);
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  }
@@ -3667,7 +3667,7 @@ namespace Iopx {
 	    double *rdata = static_cast<double*>(data);
 	    std::vector<double> file_data; file_data.reserve(file_count);
 	    map_data(nodeOwningProcessor, myProcessor, rdata, file_data);
-	    int ierr = ex_put_n_coord(get_file_pointer(), proc_offset+1, file_count, NULL, NULL, rdata);
+	    int ierr = ex_put_partial_coord(get_file_pointer(), proc_offset+1, file_count, NULL, NULL, rdata);
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  }
@@ -3695,7 +3695,7 @@ namespace Iopx {
 	    if (spatialDimension == 3)
 	      map_data(nodeOwningProcessor, myProcessor, rdata, z, 2, spatialDimension);
 
-	    int ierr = ex_put_n_coord(get_file_pointer(), proc_offset+1, file_count,
+	    int ierr = ex_put_partial_coord(get_file_pointer(), proc_offset+1, file_count,
 				      TOPTR(x), TOPTR(y), TOPTR(z));
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -3775,7 +3775,7 @@ namespace Iopx {
 	      map_local_to_global_implicit((int64_t*)data, num_to_get*element_nodes, nodeGlobalImplicitMap);
 	    }
 
-	    ierr = ex_put_n_elem_conn(get_file_pointer(), id, proc_offset+1, file_count, data);
+	    ierr = ex_put_partial_elem_conn(get_file_pointer(), id, proc_offset+1, file_count, data);
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  }
@@ -3807,7 +3807,7 @@ namespace Iopx {
 	      map_local_to_global_implicit((int64_t*)data, num_to_get*element_nodes, nodeGlobalImplicitMap);
 	    }
 
-	    ierr = ex_put_n_elem_conn(get_file_pointer(), id, proc_offset+1, file_count, data);
+	    ierr = ex_put_partial_elem_conn(get_file_pointer(), id, proc_offset+1, file_count, data);
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  }
@@ -4364,7 +4364,7 @@ namespace Iopx {
 
 	  std::vector<double> file_temp; file_temp.reserve(file_count);
 	  map_data(nodeOwningProcessor, myProcessor, TOPTR(temp), file_temp);
-	  int ierr = ex_put_n_var(get_file_pointer(), step, EX_NODE_BLOCK, var_index, 0,
+	  int ierr = ex_put_partial_var(get_file_pointer(), step, EX_NODE_BLOCK, var_index, 0,
 				  proc_offset+1, file_count, TOPTR(file_temp));
 	  if (ierr < 0) {
 	    std::ostringstream errmsg;
@@ -4467,18 +4467,18 @@ namespace Iopx {
 	  int ierr;
 	  if (type == EX_SIDE_SET) {
 	    size_t offset = ge->get_property("set_offset").get_int();
-	    ierr = ex_put_n_var(get_file_pointer(), step, type, var_index, id, proc_offset+offset+1,
+	    ierr = ex_put_partial_var(get_file_pointer(), step, type, var_index, id, proc_offset+offset+1,
 				count, TOPTR(temp));
 	  } else {
 	    // Write the variable...
 	    if (type == EX_NODE_SET) {
 	      std::vector<double> file_data; file_data.reserve(file_count);
 	      map_nodeset_data(nodesetOwnedNodes[ge], TOPTR(temp), file_data);
-	      ierr = ex_put_n_var(get_file_pointer(), step, type, var_index, id,
+	      ierr = ex_put_partial_var(get_file_pointer(), step, type, var_index, id,
 				  proc_offset+1, file_count, TOPTR(file_data));
 	      
 	    } else {
-	      ierr = ex_put_n_var(get_file_pointer(), step, type, var_index, id,
+	      ierr = ex_put_partial_var(get_file_pointer(), step, type, var_index, id,
 				  proc_offset+1, file_count, TOPTR(temp));
 	    }
 	  }
@@ -4789,8 +4789,8 @@ namespace Iopx {
 	  for (size_t i = 0; i < num_to_get; i++) {
 	    real_ids[i] = static_cast<double>(ids[i]);
 	  }
-	  //	  int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id, TOPTR(real_ids));
-	  int ierr = ex_put_n_side_set_df(get_file_pointer(), id, offset+1, entity_count, TOPTR(real_ids));
+	  int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id,
+						  offset+1, entity_count, TOPTR(real_ids));
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	}
@@ -4812,7 +4812,7 @@ namespace Iopx {
 	  size_t df_offset = fb->get_property("set_df_offset").get_int();
 	  size_t proc_df_offset = fb->get_property("processor_df_offset").get_int();
 	  size_t df_count  = fb->get_property("distribution_factor_count").get_int();
-	  ierr = ex_put_n_side_set_df(get_file_pointer(), id, proc_df_offset+df_offset+1,
+	  ierr = ex_put_partial_set_dist_fact(get_file_pointer(), EX_SIDE_SET, id, proc_df_offset+df_offset+1,
 				      df_count, static_cast<double*>(data));
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -4853,7 +4853,7 @@ namespace Iopx {
 	    }
 	      
 	    map_local_to_global_implicit(TOPTR(element), num_to_get, elemGlobalImplicitMap);
-	    int ierr = ex_put_n_side_set(get_file_pointer(), id, proc_offset+offset+1, num_to_get,
+	    int ierr = ex_put_partial_set(get_file_pointer(), EX_SIDE_SET, id, proc_offset+offset+1, num_to_get,
 					 TOPTR(element), TOPTR(side));
 	    if (ierr < 0) exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  } else {
@@ -4867,7 +4867,7 @@ namespace Iopx {
 	    }
 	      
 	    map_local_to_global_implicit(TOPTR(element), num_to_get, elemGlobalImplicitMap);
-	    int ierr = ex_put_n_side_set(get_file_pointer(), id, proc_offset+offset+1, num_to_get,
+	    int ierr = ex_put_partial_set(get_file_pointer(), EX_SIDE_SET, id, proc_offset+offset+1, num_to_get,
 					 TOPTR(element), TOPTR(side));
 	    if (ierr < 0) exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  }
@@ -4899,7 +4899,7 @@ namespace Iopx {
 	      side[i]    = el_side[index++]+side_offset;
 	    }
 	      
-	    int ierr = ex_put_n_side_set(get_file_pointer(), id, offset+1, entity_count, TOPTR(element), TOPTR(side));
+	    int ierr = ex_put_partial_set(get_file_pointer(), EX_SIDE_SET, id, offset+1, entity_count, TOPTR(element), TOPTR(side));
 	    if (ierr < 0) exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  } else {
 	    Ioss::Int64Vector element(num_to_get);
@@ -4911,7 +4911,7 @@ namespace Iopx {
 	      side[i]    = el_side[index++]+side_offset;
 	    }
 	      
-	    int ierr = ex_put_n_side_set(get_file_pointer(), id, offset+1, entity_count, TOPTR(element), TOPTR(side));
+	    int ierr = ex_put_partial_set(get_file_pointer(), EX_SIDE_SET, id, offset+1, entity_count, TOPTR(element), TOPTR(side));
 	    if (ierr < 0) exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  }
 
