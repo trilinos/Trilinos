@@ -195,10 +195,6 @@ int ex_create_par_int (const char *path,
     my_mode |= EX_NETCDF4;
   }
 
-  if (! (my_mode & EX_NOCLASSIC)) {
-    mode |= NC_CLASSIC_MODEL;
-  }
-
   /* Check parallel io mode.  Valid is NC_MPIPOSIX or NC_MPIIO or NC_PNETCDF
    * Exodus uses different flag values; map to netcdf values
    */
@@ -213,6 +209,14 @@ int ex_create_par_int (const char *path,
   else if (my_mode & EX_PNETCDF) {
     pariomode = NC_PNETCDF;
     mode |= NC_64BIT_OFFSET;
+  }
+
+  if (my_mode & EX_NETCDF4) {
+    mode |= NC_NETCDF4;
+  }
+
+  if (! (my_mode & EX_NOCLASSIC)) {
+    mode |= NC_CLASSIC_MODEL;
   }
 
   /*
@@ -261,8 +265,7 @@ int ex_create_par_int (const char *path,
     return (EX_FATAL);
   }
 
-  /* turn off automatic filling of netCDF variables
-   */
+  /* turn off automatic filling of netCDF variables */
 
   if ((status = nc_set_fill (exoid, NC_NOFILL, &old_fill)) != NC_NOERR) {
     exerrval = status;
