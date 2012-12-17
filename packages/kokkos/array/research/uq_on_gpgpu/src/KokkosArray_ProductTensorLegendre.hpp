@@ -46,6 +46,7 @@
 
 #include <cmath>
 #include <utility>
+#include <vector>
 #include <KokkosArray_Macros.hpp>
 #include <KokkosArray_ProductTensorIndex.hpp>
 #include <KokkosArray_LegendrePolynomial.hpp>
@@ -53,9 +54,9 @@
 namespace KokkosArray {
 
 //----------------------------------------------------------------------------
-/** \brief
+/** \brief  Triple product tensor for the Legendre polynomial bases.
  *
- *
+ *  Hard-coded to an upper bound of P = 7.
  */
 class TripleProductTensorLegendre {
 private:
@@ -75,12 +76,14 @@ public:
 
   TripleProductTensorLegendre();
 
+  /** \brief  Value of <i,j,k> tensor entry */
   KOKKOSARRAY_INLINE_FUNCTION
   float operator()( const unsigned i , const unsigned j , const unsigned k ) const
   {
     return m_terms[ m_map[ offset(i,j,k) ] ];
   }
 
+  /** \brief  Value of Product_v < I[v] , J[v] , K[v] > */
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
   double operator()( const unsigned n ,
@@ -105,10 +108,89 @@ public:
     return val ;
   }
 
+  /** \brief  Value of Product_v < I[v] , J[v] , K[v] > is non-zero. */
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  bool is_non_zero( const unsigned n ,
+                    const iType * const I ,
+                    const iType * const J ,
+                    const iType * const K ) const
+  {
+    unsigned iv = 0 ;
+    for ( ; iv < n && m_map[ offset(I[iv],J[iv],K[iv]) ] ; ++iv );
+    return n == iv ;
+  }
 };
+
+//----------------------------------------------------------------------------
+/** \brief  Generate the bases for a set of variables of a given
+ *          polynomial degree and maximum polynomial degree.
+ *
+ *  The combinatorial-Legendre bases are ordered according to
+ *  the number of non-zeros in the triple product associated with
+ *  the bases.  Ordering is first by diagonal count (largest to smallest)
+ *  and then by off-diagonal count (largest to smallest).
+ */
+
+class TripleProductTensorLegendreCombinatorialEvaluation {
+private:
+
+  const TripleProductTensorLegendre  m_tensor ;
+  std::vector< unsigned char >       m_bases_map ;
+  unsigned                           m_variable_count ;
+  unsigned                           m_bases_count ;
+  unsigned                           m_bases_count_with_diagonal ;
+
+public:
+
+  TripleProductTensorLegendreCombinatorialEvaluation(
+    const unsigned                  maximum_polynomial_degree ,
+    const std::vector< unsigned > & variable_polynomial_degree );
+
+  inline
+  unsigned bases_count() const
+  { return m_bases_count ; }
+
+  inline
+  unsigned bases_count_with_diagonal() const
+  { return m_bases_count_with_diagonal ; }
+
+  inline
+  unsigned variable_count() const
+  { return m_variable_count ; }
+
+  /** \brief  The variable_count Legendre polynomial indices
+   *          for this basis.
+   */
+  inline
+  const unsigned char * operator[]( const unsigned i ) const
+  { return & m_bases_map[ i * m_variable_count ]; }
+
+  /** \brief  The triple product value for <i,j,k> */
+  inline
+  double operator()( const unsigned i , const unsigned j , const unsigned k ) const
+  {
+    return m_tensor( m_variable_count ,
+                     & m_bases_map[ i * m_variable_count ] ,
+                     & m_bases_map[ j * m_variable_count ] ,
+                     & m_bases_map[ k * m_variable_count ] );
+  }
+
+  /** \brief  The triple product value for <i,j,k> is nonzero. */
+  inline
+  bool is_non_zero( const unsigned i , const unsigned j , const unsigned k ) const
+  {
+    return m_tensor.is_non_zero( m_variable_count ,
+                                 & m_bases_map[ i * m_variable_count ] ,
+                                 & m_bases_map[ j * m_variable_count ] ,
+                                 & m_bases_map[ k * m_variable_count ] );
+  }
+};
+
+//----------------------------------------------------------------------------
 
 } // namespace KokkosArray
 
-#endif /* #ifndef KOKKOSARRAY_LEGENDREPOLYNOMIALS_HPP */
+#endif /* #ifndef KOKKOSARRAY_PRODUCTTENSORLEGENDRE_HPP */
 
 

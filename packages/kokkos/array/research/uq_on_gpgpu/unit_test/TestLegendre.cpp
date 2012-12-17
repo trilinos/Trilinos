@@ -264,133 +264,63 @@ void product_tensor_integration()
 
 //----------------------------------------------------------------------------
 
-void product_tensor_bases( const std::vector<unsigned> & poly_deg_var ,
-                           const unsigned poly_deg_total ,
-                           const unsigned poly_deg_target ,
-                           const unsigned ivar ,
-                           std::vector<unsigned> & iv ,
-                           std::vector<unsigned char> & bases_map )
-{
-  const unsigned nvar = poly_deg_var.size();
-  const unsigned max  = std::min( poly_deg_var[ivar] , std::min( poly_deg_total , poly_deg_target ) );
-
-  for ( int p = max ; 0 <= p ; --p ) {
-    iv[ivar] = p ;
-
-    if ( ivar + 1 < nvar ) {
-      product_tensor_bases( poly_deg_var , poly_deg_total - p , poly_deg_target , ivar + 1 , iv ,
-                            bases_map ); 
-    }
-    else if ( poly_deg_total == p ) {
-
-      // No variables exceeded poly_deg_target
-      // At least one variable must be equal to poly_deg_target
-
-      bool ok = false ;
-
-      for ( unsigned j = 0 ; j < nvar && ! ( ok = poly_deg_target == iv[j] ) ; ++j );
-
-      if ( ok ) {
-        bases_map.insert( bases_map.end() , iv.begin() , iv.end() );
-      }
-    }
-  }
-}
-
 template< bool Print >
-void product_tensor_bases( const unsigned poly_deg ,
-                           const unsigned poly_deg_max ,
-                           const unsigned nvar )
+void product_tensor_bases( const unsigned nvar ,
+                           const unsigned poly_deg ,
+                           const unsigned poly_deg_max )
 {
   std::vector<unsigned> vdeg( nvar , poly_deg );
-  std::vector<unsigned> iv( nvar , 0u );
-  std::vector<unsigned char> bases_map ;
 
-  for ( unsigned d = 0 ; d <= poly_deg_max ; ++d ) {
-    for ( unsigned p = 0 ; p <= d ; ++p ) {
-      product_tensor_bases( vdeg , d , p , 0 , iv , bases_map );
-    }
-  }
-
-  const unsigned nbases = bases_map.size() / nvar ;
-
-  std::cout << "product_tensor_bases( P = " << poly_deg
-            << " , poly_max = " << poly_deg_max 
-            << " , num_var = " << nvar
-            << " ) bases_count = " << nbases
-            << std::endl ;
-
-  if ( Print ) {
-    for ( unsigned i = 0 ; i < bases_map.size() ; ) {
-      std::cout << "  iv(" ;
-      for ( unsigned j = 0 ; j < nvar ; ++j , ++i ) {
-        std::cout << " " << (unsigned) bases_map[i] ;
-      }
-      std::cout << " )" << std::endl ;
-    }
-  }
+  KokkosArray::TripleProductTensorLegendreCombinatorialEvaluation 
+    combinatorial( poly_deg_max , vdeg );
 
   //------------------------------------
   // Triple products of the bases:
 
-  KokkosArray::TripleProductTensorLegendre tensor ;
-
-  unsigned long row_count_min  = nbases ;
-  unsigned long row_count_max  = 0 ;
-  unsigned long row_count_mean = 0 ;
-
-  for ( unsigned i = 0 ; i < nbases ; ++i ) {
-    unsigned long row_count = 0 ;
-
-    for ( unsigned j = 0 ; j < nbases ; ++j ) {
-    for ( unsigned k = j ; k < nbases ; ++k ) {
-
-      double value = tensor( nvar , & bases_map[i*nvar] ,
-                                    & bases_map[j*nvar] ,
-                                    & bases_map[k*nvar] );
-
-      if ( value != 0 ) { ++row_count ; }
-    }}
-    row_count_min = std::min( row_count_min , row_count );
-    row_count_max = std::max( row_count_max , row_count );
-    row_count_mean += row_count ;
-  }
-
-  std::cout << "triple_product_tensor_evaluation row nonzeros:"
-            << " min( " << row_count_min << " )"
-            << " mean( " << row_count_mean / nbases << " )"
-            << " max( " << row_count_max << " )"
-            << std::endl ;
-
   if ( Print ) {
-
-    for ( unsigned i = 0 ; i < nbases ; ++i ) {
-    for ( unsigned j = i ; j < nbases ; ++j ) {
-    for ( unsigned k = j ; k < nbases ; ++k ) {
-
-      double value = tensor( nvar , & bases_map[i*nvar] ,
-                                    & bases_map[j*nvar] ,
-                                    & bases_map[k*nvar] );
-
-      if ( value != 0 ) {
-        std::cout << "  <" << i << "," << j << "," << k << "> = "
-                  << value << " = " ;
-
-        for ( unsigned iv = 0 ; iv < nvar ; ++iv ) {
-          if ( iv ) { std::cout << " * " ; }
-          std::cout << tensor( bases_map[ iv + i*nvar ] ,
-                               bases_map[ iv + j*nvar ] ,
-                               bases_map[ iv + k*nvar ] );
-        }
-        std::cout << std::endl ;
-      }
-    }}}
+    std::cout << "triple_product_tensor_evaluation row nonzeros:" << std::endl ;
   }
 
-  //------------------------------------
+  unsigned count_diag = 0 ;
+  unsigned count_off_diag = 0 ;
 
+  for ( unsigned i = 0 ; i < combinatorial.bases_count() ; ++i ) {
+    const unsigned prev_count_diag = count_diag ;
+    const unsigned prev_count_off_diag = count_off_diag ;
+    count_diag = 0 ;
+    count_off_diag = 0 ;
+
+    for ( unsigned j = 0 ; j < combinatorial.bases_count() ; ++j ) {
+
+      if ( combinatorial.is_non_zero(i,j,j) ) ++count_diag ;
+
+      for ( unsigned k = j + 1 ; k < combinatorial.bases_count() ; ++k ) {
+        if ( combinatorial.is_non_zero(i,j,k) ) count_off_diag += 2 ;
+      }
+    }
+
+    if ( Print ) {
+      std::cout << "  {" ;
+      for ( unsigned j = 0 ; j < combinatorial.variable_count() ; ++j ) {
+        if ( j ) std::cout << "," ;
+        std::cout << (unsigned) combinatorial[i][j] ;
+      }
+      std::cout << "} " ;
+      std::cout << " diag_count = " << count_diag
+                << " , off_diag_count = " << count_off_diag
+                << std::endl ;
+    }
+
+    if ( i ) {
+      const bool ok = prev_count_diag     != count_diag     ? prev_count_diag     > count_diag : (
+                      prev_count_off_diag != count_off_diag ? prev_count_off_diag > count_off_diag : true );
+
+      if ( ! ok ) {
+        std::cout << "product_tensor_bases FAILED : bad ordering at " << i << std::endl ;
+      }
+    }
+  }
 }
-
 
 
 } // namespace
@@ -443,7 +373,13 @@ void product_tensor_legendre()
 
   //--------------------------------
 
-  product_tensor_bases<false>( 5 , 7 , 5 );
+  {
+    // Choose maximum degree to allow {1,1,1,1,...,1}
+    const unsigned nvar = 7 ;
+    const unsigned pdeg = 3 ;
+    const unsigned pmax = 7 ;
+    product_tensor_bases<false>( nvar , pdeg , pmax );
+  }
 }
 
 } // name unit_test
