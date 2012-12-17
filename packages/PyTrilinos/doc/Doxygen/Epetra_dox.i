@@ -1153,14 +1153,8 @@ number of processors.
 
 Pointer to a Epetra_BlockMap object. ";
 
-%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(unsigned int NumGlobalElements, int
-ElementSize, int IndexBase, const Epetra_Comm &Comm) ";
-
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
 ElementSize, int IndexBase, const Epetra_Comm &Comm) ";
-
-%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(unsigned long long NumGlobalElements,
-int ElementSize, int IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int
 NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
@@ -1197,16 +1191,8 @@ number of processors.
 
 Pointer to a Epetra_BlockMap object. ";
 
-%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(unsigned int NumGlobalElements, int
-NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
-&Comm) ";
-
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
 NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
-&Comm) ";
-
-%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(unsigned long long NumGlobalElements,
-int NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
 &Comm) ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int
@@ -1359,13 +1345,7 @@ Returns local ID of global ID, return -1 if not found on this
 processor. ";
 
 %feature("docstring")  Epetra_BlockMap::LID "int
-Epetra_BlockMap::LID(unsigned int GID) const ";
-
-%feature("docstring")  Epetra_BlockMap::LID "int
 Epetra_BlockMap::LID(long long GID) const ";
-
-%feature("docstring")  Epetra_BlockMap::LID "int
-Epetra_BlockMap::LID(unsigned long long GID) const ";
 
 %feature("docstring")  Epetra_BlockMap::GID "int
 Epetra_BlockMap::GID(int LID) const
@@ -1388,9 +1368,6 @@ Epetra_BlockMap::MyGID(int GID_in) const
 
 Returns true if the GID passed in belongs to the calling processor in
 this map, otherwise returns false. ";
-
-%feature("docstring")  Epetra_BlockMap::MyGID "bool
-Epetra_BlockMap::MyGID(unsigned int GID_in) const ";
 
 %feature("docstring")  Epetra_BlockMap::MyGID "bool
 Epetra_BlockMap::MyGID(long long GID_in) const ";
@@ -1562,7 +1539,7 @@ Epetra_BlockMap::GlobalIndicesLongLong() const
 Returns true if map create with long long NumGlobalElements. ";
 
 %feature("docstring")  Epetra_BlockMap::GlobalIndicesIsType "bool
-Epetra_BlockMap::GlobalIndicesIsType< long long >() const ";
+Epetra_BlockMap::GlobalIndicesIsType< int >() const ";
 
 %feature("docstring")  Epetra_BlockMap::GlobalIndicesTypeValid "bool
 Epetra_BlockMap::GlobalIndicesTypeValid() const ";
@@ -10133,9 +10110,6 @@ number of processors.
 
 Pointer to a Epetra_Map object. ";
 
-%feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(unsigned int NumMyElements, int
-IndexBase, const Epetra_Comm &Comm) ";
-
 %feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(long long NumMyElements, int
 IndexBase, const Epetra_Comm &Comm) ";
 
@@ -10938,14 +10912,8 @@ number of processors.
 
 Pointer to a Epetra_Map object. ";
 
-%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(unsigned int NumGlobalElements, int IndexBase,
-const Epetra_Comm &Comm) ";
-
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int IndexBase,
 const Epetra_Comm &Comm) ";
-
-%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(unsigned long long NumGlobalElements, int
-IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(int NumGlobalElements, int NumMyElements, int
 IndexBase, const Epetra_Comm &Comm)
@@ -10976,14 +10944,8 @@ number of processors.
 
 Pointer to a Epetra_Map object. ";
 
-%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(unsigned int NumGlobalElements, int
-NumMyElements, int IndexBase, const Epetra_Comm &Comm) ";
-
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int NumMyElements,
 int IndexBase, const Epetra_Comm &Comm) ";
-
-%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(unsigned long long NumGlobalElements, int
-NumMyElements, int IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(int NumGlobalElements, int NumMyElements, const
 int *MyGlobalElements, int IndexBase, const Epetra_Comm &Comm)
