@@ -112,20 +112,20 @@ namespace Tpetra {
     /// \brief Exception thrown by CrsMatrix on invalid global row index.
     /// \tparam GlobalOrdinal Same as the GlobalOrdinal template parameter of CrsMatrix.
     template<class GlobalOrdinal>
-    class InvalidGlobalRowIndex : public InvalidGlobalIndex {
+    class InvalidGlobalRowIndex : public InvalidGlobalIndex<GlobalOrdinal> {
     public:
       InvalidGlobalRowIndex (const std::string& msg, const GlobalOrdinal globalIndex) : 
-	InvalidGlobalIndex (msg, globalIndex) {}
+	InvalidGlobalIndex<GlobalOrdinal> (msg, globalIndex) {}
     };
 
     /// \class InvalidGlobalColumnIndex
     /// \brief Exception thrown by CrsMatrix on invalid global column index.
     /// \tparam GlobalOrdinal Same as the GlobalOrdinal template parameter of CrsMatrix.
     template<class GlobalOrdinal>
-    class InvalidGlobalColumnIndex : public InvalidGlobalIndex {
+    class InvalidGlobalColumnIndex : public InvalidGlobalIndex<GlobalOrdinal> {
     public:
       InvalidGlobalColumnIndex (const std::string& msg, const GlobalOrdinal globalIndex) : 
-	InvalidGlobalIndex (msg, globalIndex) {}
+	InvalidGlobalIndex<GlobalOrdinal> (msg, globalIndex) {}
     };
 
   } // namespace Details

@@ -299,16 +299,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, NonlocalSumInto_Exception, CrsMatr
   }
 
   if (myRank == 0) {
-    out << "Calling fillComplete on the matrix (SHOULD THROW)" << endl;
+    out << "Calling fillComplete on the matrix" << endl;
   }
-  TEST_THROW(matrix->fillComplete (domainMap, rangeMap), Tpetra::Details::InvalidGlobalIndex<GO>);
+  TEST_NOTHROW(matrix->fillComplete (domainMap, rangeMap)); // Tpetra::Details::InvalidGlobalIndex<GO>
 
   // mfh 15 Dec 2012: We currently don't make promises about the state
   // of the matrix if fillComplete() throws.  Later, we might like to
   // improve the exception guarantees of fillComplete().  In that
   // case, the commented-out code below should be allowed to run.
 
-#if 0
   if (myRank == 0) {
     out << "Testing the matrix values" << endl;
   }
@@ -371,7 +370,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, NonlocalSumInto_Exception, CrsMatr
   }
 
   TEST_EQUALITY_CONST(globalSuccess, true);
-#endif // 0
 }
 
 //////////////////////////////////////////////////////////////////////
