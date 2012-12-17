@@ -43,6 +43,7 @@
 #ifndef PANZER_STK_MODEL_EVALUATOR_FACTORY_HPP
 #define PANZER_STK_MODEL_EVALUATOR_FACTORY_HPP
 
+#include <iostream>
 #include <string>
 #include <map>
 
@@ -78,6 +79,9 @@ namespace panzer {
   class GlobalData;
   class UniqueGlobalIndexerBase;
   template <typename> class LinearObjFactory;
+
+  template <typename,typename> class BlockedDOFManager;
+  template <typename,typename> class DOFManagerFEI;
 }
 
 namespace panzer_stk {
@@ -203,6 +207,8 @@ namespace panzer_stk {
                                                                                 const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                                                                                 const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm);
 
+    void writeTopology(const panzer::BlockedDOFManager<int,int> & blkDofs) const;
+    void writeTopology(const panzer::DOFManagerFEI<int,int> & dofs,const std::string & block,std::ostream & os) const;
 
   private:
 

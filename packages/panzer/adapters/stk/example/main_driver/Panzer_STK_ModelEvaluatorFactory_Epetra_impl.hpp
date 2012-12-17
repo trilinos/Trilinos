@@ -88,6 +88,8 @@
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 
 #include <vector>
+#include <iostream>
+#include <fstream>
 
 // Piro solver objects
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
@@ -1063,6 +1065,14 @@ namespace panzer_stk {
             }
           }
        }
+
+       bool writeTopo = p.sublist("Options").get("Write Topology",false);
+       if(writeTopo) {
+          Teuchos::RCP<const panzer::BlockedDOFManager<int,int> > blkDofs =
+             Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,int> >(globalIndexer);
+
+          writeTopology(*blkDofs);
+       }
     }
     #endif
 
@@ -1076,6 +1086,70 @@ namespace panzer_stk {
     Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
 
     return lowsFactory;
+  }
+
+  template<typename ScalarT>
+  void ModelEvaluatorFactory_Epetra<ScalarT>::
+  writeTopology(const panzer::BlockedDOFManager<int,int> & blkDofs) const
+  {
+    using Teuchos::RCP;
+
+    // loop over each field block
+    const std::vector<RCP<panzer::DOFManagerFEI<int,int> > > & blk_dofMngrs = blkDofs.getFieldDOFManagers();
+    for(std::size_t b=0;b<blk_dofMngrs.size();b++) {
+      RCP<panzer::DOFManagerFEI<int,int> > dofMngr = blk_dofMngrs[b];
+
+      std::vector<std::string> eBlocks;
+      dofMngr->getElementBlockIds(eBlocks);
+
+      // build file name
+      std::stringstream fileName;
+      fileName << "elements_" << b;
+      std::ofstream file(fileName.str().c_str());
+
+      // loop over each element block, write out topology
+      for(std::size_t e=0;e<eBlocks.size();e++)
+        writeTopology(*dofMngr,eBlocks[e],file);
+    }
+  }
+
+  template<typename ScalarT>
+  void ModelEvaluatorFactory_Epetra<ScalarT>::
+  writeTopology(const panzer::DOFManagerFEI<int,int> & dofs,const std::string & block,std::ostream & os) const
+  {
+    std::vector<std::string> fields(dofs.getElementBlockGIDCount(block));
+
+    const std::set<int> & fieldIds = dofs.getFields(block);
+    for(std::set<int>::const_iterator itr=fieldIds.begin();itr!=fieldIds.end();++itr) {
+      std::string field = dofs.getFieldString(*itr);
+
+      // get the layout of each field
+      const std::vector<int> & fieldOffsets = dofs.getGIDFieldOffsets(block,*itr);
+      for(std::size_t f=0;f<fieldOffsets.size();f++)
+        fields[fieldOffsets[f]] = field;
+      
+    }
+
+    // print the layout of the full pattern
+    os << "#" << std::endl;
+    os << "# Element Block \"" << block << "\"" << std::endl;
+    os << "#   field pattern = [ " << fields[0];
+    for(std::size_t f=1;f<fields.size();f++)
+      os << ", " << fields[f];
+    os << " ]" << std::endl;
+    os << "#" << std::endl;
+
+    const std::vector<int> & elements = dofs.getElementBlock(block);
+    for(std::size_t e=0;e<elements.size();e++) {
+      std::vector<int> gids;
+      dofs.getElementGIDs(elements[e],gids,block);
+
+      // output gids belonging to this element
+      os << "[ " << gids[0];
+      for(std::size_t g=1;g<gids.size();g++)
+        os << ", " << gids[g];      
+      os << " ]" << std::endl;
+    }
   }
 }
 
