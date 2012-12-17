@@ -917,6 +917,37 @@ EpetraExt::LinearProblem_Reindex::LinearProblem_Reindex "EpetraExt::LinearProble
 Constructor ";
 
 
+// File: classEpetraExt_1_1LinearProblem__Reindex2.xml
+%feature("docstring") EpetraExt::LinearProblem_Reindex2 "
+
+Given and input Epetra_LinearProblem, a \"reindexed\" version will be
+returned using the given NewRowMap. If a null map is given, a
+lexigraphically indexed LP will be returned. The data in the new E_LP
+is a \"reindexed\" view of the original.
+
+C++ includes: EpetraExt_Reindex_LinearProblem2.h ";
+
+%feature("docstring")
+EpetraExt::LinearProblem_Reindex2::~LinearProblem_Reindex2 "EpetraExt::LinearProblem_Reindex2::~LinearProblem_Reindex2()
+
+Destructor ";
+
+%feature("docstring")
+EpetraExt::LinearProblem_Reindex2::LinearProblem_Reindex2 "EpetraExt::LinearProblem_Reindex2::LinearProblem_Reindex2(Epetra_Map
+*NewRowMap)
+
+Constructor ";
+
+%feature("docstring")  EpetraExt::LinearProblem_Reindex2::fwd "bool
+EpetraExt::LinearProblem_Reindex2::fwd()
+
+Forward transfer of data from orig object input in the operator()
+method call to the new object created in this same call. Returns true
+is operation is successful.
+
+Preconditions: ";
+
+
 // File: classEpetraExt_1_1LinearProblem__Scale.xml
 %feature("docstring") EpetraExt::LinearProblem_Scale "
 
@@ -3203,6 +3234,12 @@ EpetraExt::ceil31log2(int n) ";
 
 
 // File: EpetraExt__Reindex__LinearProblem_8h.xml
+
+
+// File: EpetraExt__Reindex__LinearProblem2_8cpp.xml
+
+
+// File: EpetraExt__Reindex__LinearProblem2_8h.xml
 
 
 // File: EpetraExt__Reindex__MultiVector_8cpp.xml
