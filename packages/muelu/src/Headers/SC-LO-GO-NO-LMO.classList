@@ -29,6 +29,8 @@ NullspaceFactory
 NullspacePresmoothFactory
 ParameterListInterpreter
 PatternFactory
+PermutationFactory
+PermutingSmoother
 PgPFactory
 PreDropFunctionBaseClass
 PreDropFunctionConstVal

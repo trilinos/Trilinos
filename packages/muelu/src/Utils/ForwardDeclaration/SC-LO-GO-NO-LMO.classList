@@ -31,6 +31,8 @@ NullspaceFactory
 NullspacePresmoothFactory
 ParameterListInterpreter
 PatternFactory
+PermutationFactory
+PermutingSmoother
 PgPFactory
 PreDropFunctionConstVal
 ProjectorSmoother

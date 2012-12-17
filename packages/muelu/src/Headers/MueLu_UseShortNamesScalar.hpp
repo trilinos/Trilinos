@@ -126,6 +126,14 @@ typedef MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node,L
 typedef MueLu::PatternFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PatternFactory;
 #endif
 
+#ifdef MUELU_PERMUTATIONFACTORY_SHORT
+typedef MueLu::PermutationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PermutationFactory;
+#endif
+
+#ifdef MUELU_PERMUTINGSMOOTHER_SHORT
+typedef MueLu::PermutingSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PermutingSmoother;
+#endif
+
 #ifdef MUELU_PGPFACTORY_SHORT
 typedef MueLu::PgPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PgPFactory;
 #endif

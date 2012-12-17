@@ -26,6 +26,8 @@ NullspaceFactory
 ParameterListInterpreter
 PgPFactory
 PreDropFunctionConstVal
+PermutationFactory
+PermutingSmoother
 ProjectorSmoother
 RAPFactory
 RebalanceAcFactory
