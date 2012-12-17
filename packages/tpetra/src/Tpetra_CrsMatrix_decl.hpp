@@ -51,6 +51,7 @@
 #include <Kokkos_DefaultKernels.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Exceptions.hpp"
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_CrsGraph.hpp"
@@ -59,7 +60,10 @@
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
-  // struct for i,j,v triplets
+  // Struct representing an i,j,v triplet.
+  //
+  // CrsMatrix uses this struct to communicate nonlocal sparse matrix
+  // entries in its globalAssemble() method.
   template <class Ordinal, class Scalar>
   struct CrsIJV {
     CrsIJV();
@@ -70,7 +74,15 @@ namespace Tpetra {
 }
 
 namespace Teuchos {
-  // SerializationTraits specialization for CrsIJV, using DirectSerialization
+  // SerializationTraits specialization for CrsIJV, using
+  // DirectSerialization.  This lets Teuchos::Comm send and receive
+  // CrsIJV instances.
+  //
+  // NOTE (mfh 16 Dec 2012): This won't work if Scalar does not
+  // support direct serialization ("just taking the address").  The
+  // usual Scalar types (float, double, dd_real, qd_real, or
+  // std::complex<T> for any of these types) _do_ support direct
+  // serialization.
   template <typename Ordinal, typename Scalar>
   class SerializationTraits<int,Tpetra::CrsIJV<Ordinal,Scalar> >
   : public DirectSerializationTraits<int,Tpetra::CrsIJV<Ordinal,Scalar> >
@@ -78,57 +90,14 @@ namespace Teuchos {
 }
 
 namespace std {
+  // Comparison operator for i,j,v sparse matrix entries.  Defining
+  // this lets CrsMatrix use std::sort to sort CrsIJV instances.
   template <class Ordinal, class Scalar>
   bool operator<(const Tpetra::CrsIJV<Ordinal,Scalar> &ijv1, const Tpetra::CrsIJV<Ordinal,Scalar> &ijv2);
 }
 #endif
 
 namespace Tpetra {
-
-  /// \namespace Details
-  /// \brief Implementation details of Tpetra.
-  ///
-  /// \warning Users must not rely on anything in this namespace.
-  namespace Details {
-    /// \class InvalidGlobalIndex
-    /// \brief Exception thrown by CrsMatrix on invalid global index.
-    /// \tparam GlobalOrdinal Same as the GlobalOrdinal template parameter of CrsMatrix.
-    template<class GlobalOrdinal>
-    class InvalidGlobalIndex : public std::domain_error {
-    public:
-      InvalidGlobalIndex (const std::string& msg, const GlobalOrdinal globalIndex) : 
-	std::domain_error (msg), glInd_ (globalIndex) {}
-
-      GlobalOrdinal offendingIndex () const { 
-	return glInd_;
-      }
-      
-    private:
-      //! The offending global index.
-      GlobalOrdinal glInd_; 
-    };
-
-    /// \class InvalidGlobalRowIndex
-    /// \brief Exception thrown by CrsMatrix on invalid global row index.
-    /// \tparam GlobalOrdinal Same as the GlobalOrdinal template parameter of CrsMatrix.
-    template<class GlobalOrdinal>
-    class InvalidGlobalRowIndex : public InvalidGlobalIndex<GlobalOrdinal> {
-    public:
-      InvalidGlobalRowIndex (const std::string& msg, const GlobalOrdinal globalIndex) : 
-	InvalidGlobalIndex<GlobalOrdinal> (msg, globalIndex) {}
-    };
-
-    /// \class InvalidGlobalColumnIndex
-    /// \brief Exception thrown by CrsMatrix on invalid global column index.
-    /// \tparam GlobalOrdinal Same as the GlobalOrdinal template parameter of CrsMatrix.
-    template<class GlobalOrdinal>
-    class InvalidGlobalColumnIndex : public InvalidGlobalIndex<GlobalOrdinal> {
-    public:
-      InvalidGlobalColumnIndex (const std::string& msg, const GlobalOrdinal globalIndex) : 
-	InvalidGlobalIndex<GlobalOrdinal> (msg, globalIndex) {}
-    };
-
-  } // namespace Details
 
   //! \brief Sparse matrix that presents a compressed sparse row interface.
   /*!
@@ -457,12 +426,32 @@ namespace Tpetra {
                             const ArrayView<const LocalOrdinal> &cols,
                             const ArrayView<const Scalar>       &vals);
 
-    //! Sum into multiple entries, using global IDs.
-    /** All index values must be in the global space.
-
-        \pre \c globalRow is a global row belonging to the matrix on this node.
-
-    */
+    /// \brief Sum into one or more sparse matrix entries, using global indices.
+    ///
+    /// This is a local operation; it does not involve communication.
+    /// However, if you sum into rows not owned by the calling
+    /// process, it may result in future communication in
+    /// globalAssemble() (which is called by fillComplete()).
+    ///
+    /// If globalRow is owned by the calling process, then this method
+    /// performs the sum-into operation right away.  Otherwise, if the
+    /// row is <i>not</i> owned by the calling process, this method
+    /// defers the sum-into operation until globalAssemble().  That
+    /// method communicates data for nonowned rows to the processes
+    /// that own those rows.  Then, globalAssemble() does one of the
+    /// following:
+    /// - It calls insertGlobalValues() for that data if the matrix
+    ///   has a dynamic graph.
+    /// - It calls sumIntoGlobalValues() for that data if the matrix
+    ///   has a static graph.  The matrix silently ignores
+    ///   (row,column) pairs that do not exist in the graph.
+    ///
+    /// \param globalRow [in] The global index of the row in which to
+    ///   sum into the matrix entries.  
+    /// \param cols [in] One or more column indices.
+    /// \param vals [in] One or more values corresponding to those
+    ///   column indices.  <tt>vals[k]</tt> corresponds to
+    ///   <tt>cols[k]</tt>.
     void sumIntoGlobalValues(GlobalOrdinal globalRow,
                              const ArrayView<const GlobalOrdinal> &cols,
                              const ArrayView<const Scalar>        &vals);
