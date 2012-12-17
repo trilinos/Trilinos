@@ -77,6 +77,7 @@
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_ParameterListUtils.hpp"
 
@@ -191,14 +192,30 @@ namespace MueLu {
     if (verbosityLevel >  7) eVerbLevel = Teuchos::VERB_HIGH;
     if (verbosityLevel >  9) eVerbLevel = Teuchos::VERB_EXTREME;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled", Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter::Setup(): parameter \"aggregation: type\": only 'Uncoupled' aggregation is supported.");
+    TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled" && agg_type != "Coupled", Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter::Setup(): parameter \"aggregation: type\": only 'Uncoupled' or 'Coupled' aggregation is supported.");
 
     // Create MueLu factories
     // RCP<NullspaceFactory>     nspFact = rcp(new NullspaceFactory());
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
     //dropFact->SetVerbLevel(toMueLuVerbLevel(eVerbLevel));
 
-    RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+    RCP<FactoryBase> UCAggFact = Teuchos::null;
+    if(agg_type == "Uncoupled") {
+      // Uncoupled aggregation
+      RCP<UncoupledAggregationFactory> UCAggFact2 = rcp(new UncoupledAggregationFactory());
+      UCAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
+      UCAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+      UCAggFact2->SetOrdering(MueLu::AggOptions::NATURAL);
+      UCAggFact = UCAggFact2;
+    } else {
+      // Coupled Aggregation (default)
+      RCP<UCAggregationFactory> UCAggFact2 = rcp(new UCAggregationFactory());
+      UCAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
+      UCAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+      UCAggFact2->SetOrdering(MueLu::AggOptions::NATURAL);
+      UCAggFact2->SetPhase3AggCreation(0.5);
+      UCAggFact = UCAggFact2;
+    }
     if (verbosityLevel > 3) { // TODO fix me: Setup is a static function: we cannot use GetOStream without an object...
       *out << "========================= Aggregate option summary  =========================" << std::endl;
       *out << "min Nodes per aggregate :               " << minPerAgg << std::endl;
@@ -206,10 +223,6 @@ namespace MueLu {
       *out << "aggregate ordering :                    NATURAL" << std::endl;
       *out << "=============================================================================" << std::endl;
     }
-    UCAggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
-    UCAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-    UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
-    UCAggFact->SetPhase3AggCreation(0.5);
 
     RCP<Factory> PFact;
     RCP<Factory> RFact;
