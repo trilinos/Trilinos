@@ -1,3 +1,4 @@
+/*
 // @HEADER
 // ***********************************************************************
 //
@@ -38,48 +39,45 @@
 //
 // ************************************************************************
 // @HEADER
+*/
 
-#ifndef TPETRA_EXCEPTIONS_DEF_HPP
-#define TPETRA_EXCEPTIONS_DEF_HPP
+#include "Tpetra_Exceptions.hpp"
 
-#include "Tpetra_Exceptions_decl.hpp"
+#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+
+// FIXME (mfh 16 Dec 2012) See note below.
+//#include "Tpetra_ETIHelperMacros.h"
+#include "Tpetra_Exceptions_def.hpp"
+#include "Teuchos_ConfigDefs.hpp"
 
 namespace Tpetra {
 namespace Details {
 
-  template<class GlobalOrdinal>
-  InvalidGlobalIndex<GlobalOrdinal>::
-  InvalidGlobalIndex (const std::string& msg, const GlobalOrdinal globalIndex) :
-    std::domain_error (msg), glInd_ (globalIndex) 
-  {}
+  // FIXME (mfh 16 Dec 2012) The TPETRA_INSTANTIATE_G macro (for
+  // explicit instantiations over all desired GlobalOrdinal (== G)
+  // types) does not exist yet.  Thus, rather than relying on the
+  // Tpetra explicit instantation (ETI) macro system, I just roll my
+  // own explicit instantiations for reasonable types.  I don't use
+  // the explicit instantiation macros defined in
+  // Tpetra_Exceptions_def.hpp because that would require using a
+  // typedef for "long long" (since the type has a space in its name,
+  // and the explicit instantiation macros don't like that).  I don't
+  // want to clobber any existing typedef for "long long" for this
+  // purpose.
 
-  template<class GlobalOrdinal>
-  GlobalOrdinal
-  InvalidGlobalIndex<GlobalOrdinal>::offendingIndex () const { 
-    return glInd_;
-  }
+  template class InvalidGlobalIndex<int>;
+  template class InvalidGlobalIndex<long>;
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  template class InvalidGlobalIndex<long long>;
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
-  template<class GlobalOrdinal>
-  InvalidGlobalRowIndex<GlobalOrdinal>::
-  InvalidGlobalRowIndex (const std::string& msg, const GlobalOrdinal globalIndex) :
-    InvalidGlobalIndex<GlobalOrdinal> (msg, globalIndex)
-  {}
+  template class InvalidGlobalRowIndex<int>;
+  template class InvalidGlobalRowIndex<long>;
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  template class InvalidGlobalRowIndex<long long>;
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 } // namespace Details
 } // namespace Tpetra
 
-//
-// Explicit instantiation macros
-//
-// Must be expanded from within the Tpetra::Details namespace!
-//
-
-#define TPETRA_INVALIDGLOBALINDEX_INSTANT(GO) \
-  \
-  template class InvalidGlobalIndex< GO >; 
-
-#define TPETRA_INVALIDGLOBALROWINDEX_INSTANT(GO) \
-  \
-  template class InvalidGlobalRowIndex< GO >; 
-
-#endif // TPETRA_EXCEPTIONS_DEF_HPP
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION

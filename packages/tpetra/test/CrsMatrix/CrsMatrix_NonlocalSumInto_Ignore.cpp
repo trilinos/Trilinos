@@ -42,6 +42,8 @@
 */
 
 #include <Teuchos_UnitTestHarness.hpp>
+#include <Tpetra_ConfigDefs.hpp>
+#include <Tpetra_ETIHelperMacros.h>
 
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -77,7 +79,11 @@
 // 2. The ignored entries are actually ignored.  They must change
 //    neither the structure nor the values of the matrix.
 //
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, NonlocalSumInto_Ignore, CrsMatrixType )
+// mfh 16 Dec 2012: The one-template-argument version breaks explicit
+// instantiation.  Ah well.
+//
+//TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, NonlocalSumInto_Ignore, CrsMatrixType )
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdinalType, GlobalOrdinalType, ScalarType, NodeType )
 {
   using Tpetra::createContigMapWithNode;
   using Tpetra::createNonContigMapWithNode;
@@ -101,11 +107,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, NonlocalSumInto_Ignore, CrsMatrixT
   using Teuchos::TypeNameTraits;
   using std::endl;
 
+#if 0
   // Extract typedefs from the CrsMatrix specialization.
   typedef typename CrsMatrixType::scalar_type scalar_type;
   typedef typename CrsMatrixType::local_ordinal_type local_ordinal_type;
   typedef typename CrsMatrixType::global_ordinal_type global_ordinal_type;
   typedef typename CrsMatrixType::node_type node_type;
+#endif // 0
+
+  typedef ScalarType scalar_type;
+  typedef LocalOrdinalType local_ordinal_type;
+  typedef GlobalOrdinalType global_ordinal_type;
+  typedef NodeType node_type;
 
   // Typedefs derived from the above canonical typedefs.
   typedef ScalarTraits<scalar_type> STS;
@@ -118,6 +131,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, NonlocalSumInto_Ignore, CrsMatrixT
   typedef local_ordinal_type LO;
   typedef global_ordinal_type GO;
   typedef node_type NT;
+
+  typedef Tpetra::CrsMatrix<ST, LO, GO, NT> CrsMatrixType;
 
   // CrsGraph specialization corresponding to CrsMatrixType (the
   // CrsMatrix specialization).
@@ -378,8 +393,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, NonlocalSumInto_Ignore, CrsMatrixT
       comm->barrier ();
       comm->barrier ();
     }
-    // Write the sparse matrix, just to see what happened.
-    Tpetra::MatrixMarket::Writer<CrsMatrixType>::writeSparse (out, matrix);
   }
 
   TEST_EQUALITY_CONST(globalSuccess, true);
@@ -389,6 +402,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, NonlocalSumInto_Ignore, CrsMatrixT
 // INSTANTIATE THE TEMPLATED UNIT TESTS
 //////////////////////////////////////////////////////////////////////
 
+// mfh 16 Dec 2012: The #if 0 .. #endif section only worked if
+// explicit instantiation was turned off.  See note in the comment
+// above the test.
+#if 0
 //
 // Instantiations for default Kokkos::Node type.
 //
@@ -424,3 +441,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Ignore, mat_com
 
 #endif // HAVE_TEUCHOS_COMPLEX
 
+#endif // 0
+
+
+#define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, NonlocalSumInto_Ignore, LO, GO, SCALAR, NODE )
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
