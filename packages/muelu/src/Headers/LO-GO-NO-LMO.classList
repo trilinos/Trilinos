@@ -1,8 +1,6 @@
 Aggregates
 AmalgamationInfo
-CheapAggregationAlgorithm
 EmergencyAggregationAlgorithm
-ExperimentalAggregationFactory
 Graph
 LeftoverAggregationAlgorithm
 LocalAggregationAlgorithm
