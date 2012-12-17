@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
+ * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
  * retains certain rights in this software.
  * 
@@ -33,20 +33,36 @@
  * 
  */
 
-#include "exodusII.h"
+/*****************************************************************************
+*
+* ne_pnnnm - ex_put_partial_node_num_map
+*
+* entry conditions - 
+*   input parameters:
+*	int	exoid			exodus file id
+*	int	start_ent		first entry in node_map
+*	int	num_ents		number of entries in node_map
+*       int*    node_map                node numbering map
+*
+* exit conditions - 
+*
+* revision history - 
+*
+*
+*****************************************************************************/
 
-/*!
- * \deprecated Use ex_get_partial_conn() instead.
+#include "exodusII.h"
+#include "exodusII_int.h"
+
+/*
+ * writes out the node numbering map to the database; allows node numbers
+ * to be non-contiguous
  */
 
-int ex_get_n_conn( int   exoid,
-		   ex_entity_type blk_type,
-		   ex_entity_id   blk_id,
-		   int64_t   start_num,
-		   int64_t   num_ent,
-		   void_int*  nodeconn,
-		   void_int*  edgeconn,
-		   void_int*  faceconn )
+int ex_put_partial_node_num_map (int  exoid,
+                           int64_t  start_ent,
+                           int64_t  num_ents,
+                           const void_int *node_map)
 {
-  return ex_get_partial_conn(exoid, blk_type, blk_id, start_num, num_ent, nodeconn, edgeconn, faceconn);
+  return ex_put_partial_id_map(exoid, EX_NODE_MAP, start_ent, num_ents, node_map);
 }

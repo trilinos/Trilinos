@@ -269,6 +269,26 @@ SRCS =	ex_close.c \
 	ex_put_variable_name.c \
 	ex_put_variable_names.c \
 	ex_put_variable_param.c \
+        ex_get_partial_attr.c \
+        ex_get_partial_conn.c \
+        ex_get_partial_coord.c \
+        ex_get_partial_elem_attr.c \
+        ex_get_partial_elem_num_map.c \
+        ex_get_partial_elem_var.c \
+        ex_get_partial_nodal_var.c \
+        ex_get_partial_node_set.c \
+        ex_get_partial_one_attr.c \
+        ex_get_partial_side_set.c \
+        ex_get_partial_set_dist_fact.c \
+        ex_get_partial_var.c \
+        ex_put_partial_coord.c \
+        ex_put_partial_attr.c \
+        ex_put_partial_elem_conn.c \
+        ex_put_partial_elem_num_map.c \
+        ex_put_partial_nodal_var.c \
+        ex_put_partial_one_attr.c \
+        ex_put_partial_set.c \
+        ex_put_partial_var.c \
 	ex_update.c \
 	ex_utils.c
 

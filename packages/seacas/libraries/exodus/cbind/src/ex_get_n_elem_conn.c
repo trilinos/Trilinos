@@ -56,7 +56,7 @@
 #include "exodusII.h"
 
 /*!
- * \deprecated use ex_get_n_conn()
+ * \deprecated use ex_get_partial_conn()
  * reads the connectivity array for an element block 
  */
 
@@ -66,6 +66,6 @@ int ex_get_n_elem_conn (int   exoid,
                         int64_t   num_elems,
                         void_int  *connect)
 {
-  return ex_get_n_conn(exoid, EX_ELEM_BLOCK, elem_blk_id,
-		       start_elem_num, num_elems, connect, NULL, NULL);
+  return ex_get_partial_conn(exoid, EX_ELEM_BLOCK, elem_blk_id,
+			     start_elem_num, num_elems, connect, NULL, NULL);
 }

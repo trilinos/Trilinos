@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
+ * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
  * retains certain rights in this software.
  * 
@@ -32,21 +32,40 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-
+/*****************************************************************************/
+/*****************************************************************************/
+/* Function(s) contained in this file:
+ *
+ *      ex_get_partial_elem_conn()
+ *
+ *****************************************************************************
+ *
+ *  Variable Index:
+ *
+ *      exoid               - The NetCDF ID of an already open NemesisI file.
+ *      elem_blk_id        - The element block ID.
+ *      start_elem_num     - The starting index of the elements to be
+ *                           obtained.
+ *      num_elems          - The number of FEM elements to read coords for.
+ *      connect            - Pointer to the connectivity vector.
+ *
+ */
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
 #include "exodusII.h"
 
 /*!
- * \deprecated Use ex_get_partial_conn() instead.
+ * \deprecated use ex_get_partial_conn()
+ * reads the connectivity array for an element block 
  */
 
-int ex_get_n_conn( int   exoid,
-		   ex_entity_type blk_type,
-		   ex_entity_id   blk_id,
-		   int64_t   start_num,
-		   int64_t   num_ent,
-		   void_int*  nodeconn,
-		   void_int*  edgeconn,
-		   void_int*  faceconn )
+int ex_get_partial_elem_conn (int   exoid,
+                        ex_entity_id   elem_blk_id,
+                        int64_t   start_elem_num,
+                        int64_t   num_elems,
+                        void_int  *connect)
 {
-  return ex_get_partial_conn(exoid, blk_type, blk_id, start_num, num_ent, nodeconn, edgeconn, faceconn);
+  return ex_get_partial_conn(exoid, EX_ELEM_BLOCK, elem_blk_id,
+		       start_elem_num, num_elems, connect, NULL, NULL);
 }

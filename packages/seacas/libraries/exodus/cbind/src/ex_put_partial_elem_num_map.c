@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
+ * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
  * retains certain rights in this software.
  * 
@@ -32,21 +32,37 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
+/*****************************************************************************
+*
+* ne_pennm - ex_put_partial_elem_num_map
+*
+* environment - UNIX
+*
+* entry conditions - 
+*   input parameters:
+*	int	exoid			exodus file id
+*	int	start_ent		first entry in elem_map
+*	int	num_ents		number of entries in node_map
+*       int*    elem_map                element numbering map array
+*
+* exit conditions - 
+*
+* revision history - 
+*
+*
+*****************************************************************************/
 
 #include "exodusII.h"
 
-/*!
- * \deprecated Use ex_get_partial_conn() instead.
+/*
+ * writes out a portion of the element numbering map to the database;
+ * this allows element numbers to be non-contiguous
  */
 
-int ex_get_n_conn( int   exoid,
-		   ex_entity_type blk_type,
-		   ex_entity_id   blk_id,
-		   int64_t   start_num,
-		   int64_t   num_ent,
-		   void_int*  nodeconn,
-		   void_int*  edgeconn,
-		   void_int*  faceconn )
+int ex_put_partial_elem_num_map (int  exoid,
+                           int64_t  start_ent,
+                           int64_t  num_ents,
+                           const void_int *elem_map)
 {
-  return ex_get_partial_conn(exoid, blk_type, blk_id, start_num, num_ent, nodeconn, edgeconn, faceconn);
+  return ex_put_partial_id_map(exoid, EX_ELEM_MAP, start_ent, num_ents, elem_map);
 }

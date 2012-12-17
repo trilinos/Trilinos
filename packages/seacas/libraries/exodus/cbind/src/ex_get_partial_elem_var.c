@@ -34,40 +34,47 @@
  */
 /*****************************************************************************/
 /*****************************************************************************/
+/*****************************************************************************/
 /* Function(s) contained in this file:
  *
- *      ex_get_n_elem_attr()
+ *      ex_get_partial_elem_var()
  *
  *****************************************************************************
  *
  *  Variable Index:
  *
  *      exoid               - The NetCDF ID of an already open NemesisI file.
- *      elem_blk_id        - The element block ID.
- *      start_elem_num     - The starting index of the elements to be
- *                           obtained.
- *      num_elems          - The number of FEM elements to read coords for.
- *      attrib             - Pointer to the attribute vector.
- *
+ *      time_step          - The time step to write this data to.
+ *      elem_var_index     - The index of this elemental variable.
+ *      elem_blk_id        - The ID of the element block being written to.
+ *      num_elem_this_blk  - The number of elements in this block.
+ *      start_elem_num     - The start point for outputting data.
+ *      num_elem           - The number of values to be output.
+ *      elem_var_vals      - Pointer to the vector of values to be output.
  */
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include <stdio.h>
 
 #include "exodusII.h"
-#include "exodusII_int.h"
 
-/*!
- * \deprecated Use ex_get_partial_attr() instead.
+/*
+ * reads the values of a single element variable for one element block at
+ * one time step in the database; assume the first time step and
+ * element variable index is 1
  */
 
-int ex_get_n_elem_attr (int   exoid,
-                        ex_entity_id   elem_blk_id,
-                        int64_t   start_elem_num,
-                        int64_t   num_elems,
-                        void *attrib)
-
+int ex_get_partial_elem_var (int   exoid,
+		       int   time_step,
+		       int   elem_var_index,
+		       ex_entity_id elem_blk_id,
+		       int64_t num_elem_this_blk,
+		       int64_t start_elem_num,
+		       int64_t num_elem,
+		       void *elem_var_vals)
 {
-  return ex_get_partial_attr(exoid, EX_ELEM_BLOCK, elem_blk_id, start_elem_num, num_elems, attrib);
+  return ex_get_partial_var(exoid, time_step, EX_ELEM_BLOCK,
+		      elem_var_index, elem_blk_id,
+		      start_elem_num, num_elem,
+		      elem_var_vals);
 }
