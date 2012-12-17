@@ -186,6 +186,9 @@ namespace MueLu {
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupMatrix(Matrix & Op) const {
     if(operatorList_.isParameter("PDE equations")) {
       int nPDE = operatorList_.get<int>("PDE equations");
+      if (Op.GetFixedBlockSize() != nPDE)
+        this->GetOStream(Warnings0,  0) << "Warning: setting matrix block size to " << nPDE << " (value of \"PDE equations\" parameter in the list) "
+            << "instead of " << Op.GetFixedBlockSize() << " (provided matrix)." << std::endl;
       Op.SetFixedBlockSize(nPDE);
     }
   }
