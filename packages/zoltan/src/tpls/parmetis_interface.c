@@ -359,14 +359,22 @@ int Zoltan_ParMetis(
   if (IS_LOCAL_GRAPH(gr.graph_type)) {
     /* Check for Metis routines */
     if (strcmp(alg, "PARTKWAY") == 0){
-      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS library "
-                                  "METIS_WPartGraphKway");
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS library ");
       /* Use default options for METIS */
       options[0] = 0;
+
+#if !defined(METIS_VER_MAJOR) || METIS_VER_MAJOR < 5
       METIS_WPartGraphKway (gr.vtxdist+1, gr.xadj, gr.adjncy, 
                             gr.vwgt, gr.ewgts, &wgtflag,
                             &numflag, &num_part, prt.part_sizes, 
                             options, &edgecut, prt.part);
+#else
+      METIS_PartGraphKway (gr.vtxdist+1, &ncon, gr.xadj, gr.adjncy,
+                           gr.vwgt, vsp.vsize, gr.ewgts, &num_part,
+                           prt.part_sizes, imb_tols, options,
+                           &edgecut, prt.part);
+#endif
+
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
     }
     else {
