@@ -10,6 +10,7 @@
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_PreconditionerBase.hpp"
 
 // Epetra support
 #include "Thyra_EpetraThyraWrappers.hpp"
@@ -109,6 +110,23 @@ ModelEvaluator2DSim<Scalar>::create_W_op() const
   return Thyra::nonconstEpetraLinearOp(W_epetra);
 }
 
+template<class Scalar>
+Teuchos::RCP< ::Thyra::PreconditionerBase<Scalar> >
+ModelEvaluator2DSim<Scalar>::create_W_prec() const
+{
+  Teuchos::RCP<Epetra_CrsMatrix> W_epetra =
+    Teuchos::rcp(new Epetra_CrsMatrix(::Copy,*W_graph_));
+
+  const Teuchos::RCP<Thyra::LinearOpBase< Scalar > > W_op = 
+    Thyra::nonconstEpetraLinearOp(W_epetra);
+
+  Teuchos::RCP<Thyra::DefaultPreconditioner<Scalar> > prec = 
+    Teuchos::rcp(new Thyra::DefaultPreconditioner<Scalar>);
+
+  prec->initializeRight(W_op);
+  
+  return prec;
+}
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
@@ -150,8 +168,9 @@ void ModelEvaluator2DSim<Scalar>::evalModelImpl(
 		 
   const Thyra::ConstDetachedVectorView<Scalar> x(inArgs.get_x());
 
-  const RCP< Thyra::VectorBase<Scalar> > f_out = outArgs.get_f();
-  const RCP< Thyra::LinearOpBase< Scalar > > W_out = outArgs.get_W_op();
+  const RCP<Thyra::VectorBase<Scalar> > f_out = outArgs.get_f();
+  const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
+  const RCP<Thyra::PreconditionerBase<Scalar> > W_prec_out = outArgs.get_W_prec();
 
   if (nonnull(f_out)) {
     NOX_FUNC_TIME_MONITOR("ModelEvaluator2DSim::eval f_out");
@@ -175,14 +194,39 @@ void ModelEvaluator2DSim<Scalar>::evalModelImpl(
     //
     double values[2];
     int indexes[2];
+    indexes[0] = 0;
+    indexes[1] = 1;
     // Row [0]
-    values[0] = 1.0;           indexes[0] = 0;
-    values[1] = 2.0*x[1];      indexes[1] = 1;
+    values[0] = 1.0;
+    values[1] = 2.0*x[1];
     DfDx.SumIntoGlobalValues( 0, 2, values, indexes );
     // Row [1]
-    values[0] = 2.0*d_*x[0];   indexes[0] = 0;
-    values[1] = -d_;           indexes[1] = 1;
+    values[0] = 2.0*d_*x[0];
+    values[1] = -d_;
     DfDx.SumIntoGlobalValues( 1, 2, values, indexes );
+  }
+  if (nonnull(W_prec_out)) {
+    NOX_FUNC_TIME_MONITOR("ModelEvaluator2DSim::eval W_prec_out");
+    RCP<Epetra_Operator> W_epetra= Thyra::get_Epetra_Operator(*W_prec_out->getNonconstRightPrecOp());
+    TEUCHOS_ASSERT(nonnull(W_epetra));
+    RCP<Epetra_CrsMatrix> W_epetracrs = rcp_dynamic_cast<Epetra_CrsMatrix>(W_epetra);
+    TEUCHOS_ASSERT(nonnull(W_epetracrs));
+    Epetra_CrsMatrix& M_inv = *W_epetracrs;
+    M_inv.PutScalar(0.0);
+
+    // Jacobi (block diagonal)
+    double values[2];
+    int indexes[2];
+    indexes[0] = 0;
+    indexes[1] = 1;
+    // Row [0]
+    values[0] = 1.0;
+    values[1] = 0.0;
+    M_inv.SumIntoGlobalValues( 0, 2, values, indexes );
+    // Row [1]
+    values[0] = 0.0;
+    values[1] = -1.0/d_;
+    M_inv.SumIntoGlobalValues( 1, 2, values, indexes );
   }
 
 }
@@ -243,6 +287,7 @@ ModelEvaluator2DSim<Scalar>::ModelEvaluator2DSim(const Teuchos::RCP<const Epetra
   outArgs.setModelEvalDescription(this->description());
   outArgs.setSupports(MEB::OUT_ARG_f);
   outArgs.setSupports(MEB::OUT_ARG_W_op);
+  outArgs.setSupports(MEB::OUT_ARG_W_prec);
 //   outArgs.set_W_properties(DerivativeProperties(
 // 			     DERIV_LINEARITY_NONCONST
 // 			     ,DERIV_RANK_FULL

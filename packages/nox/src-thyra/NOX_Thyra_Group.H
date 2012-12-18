@@ -365,10 +365,10 @@ namespace NOX {
       Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double> > prec_factory_;
 
       //! Residual InArgs
-      ::Thyra::ModelEvaluatorBase::InArgs<double> in_args_;
+      mutable ::Thyra::ModelEvaluatorBase::InArgs<double> in_args_;
       
       //! Residual OutArgs
-      ::Thyra::ModelEvaluatorBase::OutArgs<double> out_args_;
+      mutable ::Thyra::ModelEvaluatorBase::OutArgs<double> out_args_;
 
       /** \brief Optional wieghting vector for function scaling
 

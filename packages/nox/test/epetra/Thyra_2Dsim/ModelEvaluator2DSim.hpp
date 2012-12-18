@@ -85,7 +85,8 @@ public:
   Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
   /** \brief . */
   ::Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
-
+  /** \brief . */
+  Teuchos::RCP< ::Thyra::PreconditionerBase< Scalar > > create_W_prec() const; 
   //@}
 
 private:
