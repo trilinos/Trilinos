@@ -2407,6 +2407,7 @@ public:
 //! Convert short to std::complex<RealType>, for any RealType.
 template<class RealType>
 class ValueTypeConversionTraits<std::complex<RealType>, short> {
+public:
   inline static std::complex<RealType> convert (const short t) {
     // Let RealType handle the conversion of the zero imaginary part.
     return std::complex<RealType> (t, as<RealType> (0));
@@ -2420,6 +2421,7 @@ class ValueTypeConversionTraits<std::complex<RealType>, short> {
 //! Convert unsigned short to std::complex<RealType>, for any RealType.
 template<class RealType>
 class ValueTypeConversionTraits<std::complex<RealType>, unsigned short> {
+public:
   inline static std::complex<RealType> convert (const unsigned short t) {
     // Let RealType handle the conversion of the zero imaginary part.
     return std::complex<RealType> (t, as<RealType> (0));
@@ -2433,6 +2435,7 @@ class ValueTypeConversionTraits<std::complex<RealType>, unsigned short> {
 //! Convert int to std::complex<RealType>, for any RealType.
 template<class RealType>
 class ValueTypeConversionTraits<std::complex<RealType>, int> {
+public:
   inline static std::complex<RealType> convert (const int t) {
     // Let RealType handle the conversion of the zero imaginary part.
     return std::complex<RealType> (t, as<RealType> (0));
@@ -2446,6 +2449,7 @@ class ValueTypeConversionTraits<std::complex<RealType>, int> {
 //! Convert unsigned int to std::complex<RealType>, for any RealType.
 template<class RealType>
 class ValueTypeConversionTraits<std::complex<RealType>, unsigned int> {
+public:
   inline static std::complex<RealType> convert (const unsigned int t) {
     // Let RealType handle the conversion of the zero imaginary part.
     return std::complex<RealType> (t, as<RealType> (0));
@@ -2459,6 +2463,7 @@ class ValueTypeConversionTraits<std::complex<RealType>, unsigned int> {
 //! Convert long to std::complex<RealType>, for any RealType.
 template<class RealType>
 class ValueTypeConversionTraits<std::complex<RealType>, long> {
+public:
   inline static std::complex<RealType> convert (const long t) {
     // Let RealType handle the conversion of the zero imaginary part.
     return std::complex<RealType> (t, as<RealType> (0));
@@ -2472,6 +2477,7 @@ class ValueTypeConversionTraits<std::complex<RealType>, long> {
 //! Convert unsigned long to std::complex<RealType>, for any RealType.
 template<class RealType>
 class ValueTypeConversionTraits<std::complex<RealType>, unsigned long> {
+public:
   inline static std::complex<RealType> convert (const unsigned long t) {
     // Let RealType handle the conversion of the zero imaginary part.
     return std::complex<RealType> (t, as<RealType> (0));
@@ -2487,6 +2493,7 @@ class ValueTypeConversionTraits<std::complex<RealType>, unsigned long> {
 //! Convert long long to std::complex<RealType>, for any RealType.
 template<class RealType>
 class ValueTypeConversionTraits<std::complex<RealType>, long long> {
+public:
   inline static std::complex<RealType> convert (const long long t) {
     // Let RealType handle the conversion of the zero imaginary part.
     return std::complex<RealType> (t, as<RealType> (0));
@@ -2500,6 +2507,7 @@ class ValueTypeConversionTraits<std::complex<RealType>, long long> {
 //! Convert unsigned long long to std::complex<RealType>, for any RealType.
 template<class RealType>
 class ValueTypeConversionTraits<std::complex<RealType>, unsigned long long> {
+public:
   inline static std::complex<RealType> convert (const unsigned long long t) {
     // Let RealType handle the conversion of the zero imaginary part.
     return std::complex<RealType> (t, as<RealType> (0));
