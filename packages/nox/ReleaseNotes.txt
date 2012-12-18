@@ -1,9 +1,14 @@
 Trilinos development
 ====================
+* Added example of user defined preconditioner with a JFNK forward operator to the thyra support.
+
+* Removed all usage of EpetraExt::ModelEvaluator in favor of a direct inhertance from the Thyra::ModelEvaluator.  The EpetraExt::ModelEvaluator is being deprected.
+
+* Added support for the Thyra Group to accept user defined preconditioners and Jacobian operators.
 
 * Merged the object code for the library noxthyra into the main nox library to work around a circular dependency for the pseudo-transient solver.
 
 * Added a pseudo-transient solver based on Thyra objects.  Still under development.
 
-Trilinos 11.0
+Trilinos 11.0 
 =============

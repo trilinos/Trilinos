@@ -709,23 +709,19 @@ void NOX::Thyra::Group::updateLOWS() const
 						  prec_,
 						  shared_jacobian_->getObject(this).ptr());
     }
-/*  RPP: Uncomment this block when Ross adds W_prec support to Thyra::ME
-    else if ( nonnull(prec_) && (out_args_.supports_W_prec()) ) {
-
+    else if ( nonnull(prec_) && (out_args_.supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) ) {
       in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
-      out_args_.set_W_prec(f_vec_->getThyraRCPVector().assert_not_null());
+      out_args_.set_W_prec(prec_);
       model_->evalModel(in_args_, out_args_);
       in_args_.set_x(Teuchos::null);
       out_args_.set_W_prec(Teuchos::null);
 
-      if (out_args_.isFailed())
-  
       ::Thyra::initializePreconditionedOp<double>(*lows_factory_,
 						  lop_,
 						  prec_,
 						  shared_jacobian_->getObject(this).ptr());
+      
     }
-*/
     else {
       ::Thyra::initializeOp<double>(*lows_factory_,
 				    lop_,

@@ -87,7 +87,7 @@ namespace MueLu {
     // Import coordinates of columns indices in local rows.
     RCP<MultiVector> coordinatesWithGhostInfo = MultiVectorFactory::Build(A->getColMap(),coordinates->getNumVectors());
     RCP<const Map> rowMap = A->getRowMap();
-    RCP<const Import> importer = ImportFactory::Build(A->getColMap(), rowMap);
+    RCP<const Import> importer = ImportFactory::Build(rowMap, A->getColMap());
     coordinatesWithGhostInfo->doImport(*coordinates, *importer, Xpetra::INSERT);
 
     // Allocate proper amount of space for new matrix
@@ -101,14 +101,14 @@ namespace MueLu {
     RCP<Matrix> DL = rcp(new CrsMatrixWrap(rowMap, numEntriesPerRow, Xpetra::StaticProfile));
 
     const SC zero=Teuchos::ScalarTraits<SC>::zero();
-    ArrayRCP<const SC> xcoord = coordinates->getData(0);
+    ArrayRCP<const SC> xcoord = coordinatesWithGhostInfo->getData(0);
     ArrayRCP<const SC> ycoord, zcoord;
-    if (coordinates->getNumVectors() > 1)
-      ycoord = coordinates->getData(1);
+    if (coordinatesWithGhostInfo->getNumVectors() > 1)
+      ycoord = coordinatesWithGhostInfo->getData(1);
     else
       ycoord = ArrayRCP<SC>(xcoord.size(),zero);
-    if (coordinates->getNumVectors() > 2)
-      zcoord = coordinates->getData(2);
+    if (coordinatesWithGhostInfo->getNumVectors() > 2)
+      zcoord = coordinatesWithGhostInfo->getData(2);
     else
       zcoord = ArrayRCP<SC>(xcoord.size(),zero);
 

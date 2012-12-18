@@ -76,7 +76,7 @@ namespace MueLu {
     std::vector<Scalar> vinternal_;
     bool operator()(LocalOrdinal a, LocalOrdinal b) {
       //return vinternal_[a] < vinternal_[b];
-      return vinternal_[a] > vinternal_[b];
+      return std::abs(vinternal_[a]) > std::abs(vinternal_[b]);
     }
   };
 

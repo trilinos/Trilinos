@@ -302,7 +302,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
   Teuchos::TimeMonitor::summarize();
 }
   
-TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, JFNK_solve_no_prec)
+TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_no_prec)
 {
   Teuchos::TimeMonitor::zeroOutTimers();
 
@@ -375,6 +375,122 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, JFNK_solve_no_prec)
   // VERY IMPORTANT!!!  jfnk object needs base evaluation objects.
   // This creates a circular dependency, so use a weak pointer.
   jfnkOp->setBaseEvaluationToNOXGroup(nox_group.create_weak());
+
+  // Create the NOX status tests and the solver
+  // Create the convergence tests
+  Teuchos::RCP<NOX::StatusTest::NormF> absresid =
+    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
+  Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
+    Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-8));
+  Teuchos::RCP<NOX::StatusTest::Combo> converged =
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
+  converged->addStatusTest(absresid);
+  converged->addStatusTest(wrms);
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
+  Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
+    Teuchos::rcp(new NOX::StatusTest::FiniteValue);
+  Teuchos::RCP<NOX::StatusTest::Combo> combo =
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+  combo->addStatusTest(fv);
+  combo->addStatusTest(converged);
+  combo->addStatusTest(maxiters);
+
+  // Create nox parameter list
+  Teuchos::RCP<Teuchos::ParameterList> nl_params =
+    Teuchos::rcp(new Teuchos::ParameterList);
+  nl_params->set("Nonlinear Solver", "Line Search Based");
+
+  // Create the solver
+  Teuchos::RCP<NOX::Solver::Generic> solver = 
+    NOX::Solver::buildSolver(nox_group, combo, nl_params);
+  NOX::StatusTest::StatusType solvStatus = solver->solve();
+
+  // Final return value (0 = successfull, non-zero = failure)
+  TEST_ASSERT(solvStatus == NOX::StatusTest::Converged);
+
+  Teuchos::TimeMonitor::summarize();
+}
+  
+TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_Jacobi_prec_using_ME)
+{
+  Teuchos::TimeMonitor::zeroOutTimers();
+
+  // Create a communicator for Epetra objects
+#ifdef HAVE_MPI
+  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+#else
+  Epetra_SerialComm Comm;
+#endif
+
+  // Check we have only one processor since this problem doesn't work
+  // for more than one proc
+  TEST_ASSERT(Comm.NumProc() == 1);
+
+  // Create the model evaluator object
+  double d = 10.0;
+  double p0 = 2.0;
+  double p1 = 0.0;
+  double x00 = 0.0;
+  double x01 = 1.0;
+  Teuchos::RCP<ModelEvaluator2DSim<double> > model = 
+    modelEvaluator2DSim<double>(Teuchos::rcp(&Comm,false),d,p0,p1,x00,x01);
+
+  // Create the linear solver type with Stratimikos
+  //Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
+  //lowsFactory = rcp(new Thyra::AmesosLinearOpWithSolveFactory());
+
+  ::Stratimikos::DefaultLinearSolverBuilder builder;
+  
+  Teuchos::RCP<Teuchos::ParameterList> p = 
+    Teuchos::rcp(new Teuchos::ParameterList);
+  p->set("Linear Solver Type", "AztecOO");
+  p->sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").set("Tolerance",1.0e-1);
+  p->sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").sublist("AztecOO Settings").set("Output Frequency",1);
+//   p->set("Linear Solver Type", "Belos");
+  p->set("Preconditioner Type", "None");
+  //p->set("Enable Delayed Solver Construction", true);
+  builder.setParameterList(p);
+
+  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
+    lowsFactory = builder.createLinearSolveStrategy("");
+
+  model->set_W_factory(lowsFactory);
+
+  // Create the initial guess
+  Teuchos::RCP< ::Thyra::VectorBase<double> >
+    initial_guess = model->getNominalValues().get_x()->clone_v();
+
+  // Create the JFNK operator
+  Teuchos::ParameterList printParams;
+  Teuchos::RCP<Teuchos::ParameterList> jfnkParams = Teuchos::parameterList();
+  jfnkParams->set("Difference Type","Forward");
+  jfnkParams->set("Perturbation Algorithm","KSP NOX 2001");
+  jfnkParams->set("lambda",1.0e-4);
+  Teuchos::RCP<NOX::Thyra::MatrixFreeJacobianOperator<double> > jfnkOp = 
+    Teuchos::rcp(new NOX::Thyra::MatrixFreeJacobianOperator<double>(printParams));
+  jfnkOp->setParameterList(jfnkParams);
+  jfnkParams->print(out);
+  
+  // Wrap the model evaluator in a JFNK Model Evaluator
+  Teuchos::RCP< ::Thyra::ModelEvaluator<double> > thyraModel = 
+    Teuchos::rcp(new NOX::MatrixFreeModelEvaluatorDecorator<double>(model));
+
+  // Create the Preconditioner operator
+  Teuchos::RCP< ::Thyra::PreconditionerBase<double> > precOp = 
+    thyraModel->create_W_prec();
+
+  // Create the NOX::Thyra::Group
+  Teuchos::RCP<NOX::Thyra::Group> nox_group = 
+    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel, jfnkOp, lowsFactory, precOp, Teuchos::null));
+
+  nox_group->computeF();
+
+  // VERY IMPORTANT!!!  jfnk object needs base evaluation objects.
+  // This creates a circular dependency, so use a weak pointer.
+  jfnkOp->setBaseEvaluationToNOXGroup(nox_group.create_weak());
+
+  // Create a preconditioner
 
   // Create the NOX status tests and the solver
   // Create the convergence tests

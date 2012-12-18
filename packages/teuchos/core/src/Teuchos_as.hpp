@@ -68,11 +68,16 @@
 /// automatically defines Teuchos::as and Teuchos::asSafe for your
 /// conversion.
 
+#include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Assert.hpp"
 #include <limits>
 #include <cstdlib>
 #include <cerrno>
 #include <climits>
+
+#ifdef HAVE_TEUCHOS_COMPLEX
+#include <complex>
+#endif // HAVE_TEUCHOS_COMPLEX
 
 #ifdef HAVE_TEUCHOS_QD
 #include <qd/qd_real.h>
@@ -2392,6 +2397,129 @@ public:
   static std::string safeConvert( const char t[] )
     { return std::string(t); }
 };
+
+//
+// * Conversions from built-in integer types to std::complex<T>.
+//
+
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+//! Convert short to std::complex<RealType>, for any RealType.
+template<class RealType>
+class ValueTypeConversionTraits<std::complex<RealType>, short> {
+public:
+  inline static std::complex<RealType> convert (const short t) {
+    // Let RealType handle the conversion of the zero imaginary part.
+    return std::complex<RealType> (t, as<RealType> (0));
+  }
+  static std::complex<RealType> safeConvert (const short t) {
+    // Let RealType handle the conversion of the zero imaginary part.
+    return std::complex<RealType> (t, asSafe<RealType> (0));
+  }
+};
+
+//! Convert unsigned short to std::complex<RealType>, for any RealType.
+template<class RealType>
+class ValueTypeConversionTraits<std::complex<RealType>, unsigned short> {
+public:
+  inline static std::complex<RealType> convert (const unsigned short t) {
+    // Let RealType handle the conversion of the zero imaginary part.
+    return std::complex<RealType> (t, as<RealType> (0));
+  }
+  static std::complex<RealType> safeConvert (const unsigned short t) {
+    // Let RealType handle the conversion of the zero imaginary part.
+    return std::complex<RealType> (t, asSafe<RealType> (0));
+  }
+};
+
+//! Convert int to std::complex<RealType>, for any RealType.
+template<class RealType>
+class ValueTypeConversionTraits<std::complex<RealType>, int> {
+public:
+  inline static std::complex<RealType> convert (const int t) {
+    // Let RealType handle the conversion of the zero imaginary part.
+    return std::complex<RealType> (t, as<RealType> (0));
+  }
+  static std::complex<RealType> safeConvert (const int t) {
+    // Let RealType handle the conversion of the zero imaginary part.
+    return std::complex<RealType> (t, asSafe<RealType> (0));
+  }
+};
+
+//! Convert unsigned int to std::complex<RealType>, for any RealType.
+template<class RealType>
+class ValueTypeConversionTraits<std::complex<RealType>, unsigned int> {
+public:
+  inline static std::complex<RealType> convert (const unsigned int t) {
+    // Let RealType handle the conversion of the zero imaginary part.
+    return std::complex<RealType> (t, as<RealType> (0));
+  }
+  static std::complex<RealType> safeConvert (const unsigned int t) {
+    // Let RealType handle the conversion of the zero imaginary part.
+    return std::complex<RealType> (t, asSafe<RealType> (0));
+  }
+};
+
+//! Convert long to std::complex<RealType>, for any RealType.
+template<class RealType>
+class ValueTypeConversionTraits<std::complex<RealType>, long> {
+public:
+  inline static std::complex<RealType> convert (const long t) {
+    // Let RealType handle the conversion of the zero imaginary part.
+    return std::complex<RealType> (t, as<RealType> (0));
+  }
+  static std::complex<RealType> safeConvert (const long t) {
+    // Let RealType handle the conversion of the zero imaginary part.
+    return std::complex<RealType> (t, asSafe<RealType> (0));
+  }
+};
+
+//! Convert unsigned long to std::complex<RealType>, for any RealType.
+template<class RealType>
+class ValueTypeConversionTraits<std::complex<RealType>, unsigned long> {
+public:
+  inline static std::complex<RealType> convert (const unsigned long t) {
+    // Let RealType handle the conversion of the zero imaginary part.
+    return std::complex<RealType> (t, as<RealType> (0));
+  }
+  static std::complex<RealType> safeConvert (const unsigned long t) {
+    // Let RealType handle the conversion of the zero imaginary part.
+    return std::complex<RealType> (t, asSafe<RealType> (0));
+  }
+};
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+
+//! Convert long long to std::complex<RealType>, for any RealType.
+template<class RealType>
+class ValueTypeConversionTraits<std::complex<RealType>, long long> {
+public:
+  inline static std::complex<RealType> convert (const long long t) {
+    // Let RealType handle the conversion of the zero imaginary part.
+    return std::complex<RealType> (t, as<RealType> (0));
+  }
+  static std::complex<RealType> safeConvert (const long long t) {
+    // Let RealType handle the conversion of the zero imaginary part.
+    return std::complex<RealType> (t, asSafe<RealType> (0));
+  }
+};
+
+//! Convert unsigned long long to std::complex<RealType>, for any RealType.
+template<class RealType>
+class ValueTypeConversionTraits<std::complex<RealType>, unsigned long long> {
+public:
+  inline static std::complex<RealType> convert (const unsigned long long t) {
+    // Let RealType handle the conversion of the zero imaginary part.
+    return std::complex<RealType> (t, as<RealType> (0));
+  }
+  static std::complex<RealType> safeConvert (const unsigned long long t) {
+    // Let RealType handle the conversion of the zero imaginary part.
+    return std::complex<RealType> (t, asSafe<RealType> (0));
+  }
+};
+
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+#endif // HAVE_TEUCHOS_COMPLEX
 
 //
 // * Conversions for dd_real and qd_real

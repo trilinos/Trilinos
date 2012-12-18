@@ -135,7 +135,7 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
     GlobalOrdinal gMaxValIdx = 0;
     Scalar norm1 = 0.0;
     Scalar maxVal = 0.0;
-    for (size_t j = 0; j < indices.size(); j++) {
+    for (size_t j = 0; j < Teuchos::as<size_t>(indices.size()); j++) {
       norm1 += std::abs(vals[j]);
       if(std::abs(vals[j]) > maxVal) {
         maxVal = std::abs(vals[j]);
@@ -166,7 +166,7 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
     GlobalOrdinal gMaxValIdx = 0;
     Scalar norm1 = 0.0;
     Scalar maxVal = 0.0;
-    for (size_t j = 0; j < indices.size(); j++) {
+    for (size_t j = 0; j < Teuchos::as<size_t>(indices.size()); j++) {
       norm1 += std::abs(vals[j]);
       if(std::abs(vals[j]) > maxVal) {
         maxVal = std::abs(vals[j]);
@@ -185,27 +185,24 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
   std::vector<int> permutation;
   sortingPermutation(Weights,permutation);
 
-  /*  typedef std::vector<int>::const_iterator I;
-  for (I p = permutation.begin(); p != permutation.end(); ++p)
-    std::cout << *p << " ";
-  std::cout << "\n";*/
-
   // create new vector with exactly one possible entry for each column
 
-  // todo remove all entries with columns that are already in keepDiagonalEntries
+  // each processor which requests the global column id gcid adds 1 to gColVec
+  // gColVec will be summed up over all processors and communicated to gDomVec
+  // which is based on the non-overlapping domain map of A.
+
   Teuchos::RCP<Vector> gColVec = VectorFactory::Build(A->getColMap());
   Teuchos::RCP<Vector> gDomVec = VectorFactory::Build(A->getDomainMap());
   gColVec->putScalar(0.0);
   gDomVec->putScalar(0.0);
 
   // put in all keep diagonal entries
-  //typename std::vector<std::pair<GlobalOrdinal, GlobalOrdinal> >::const_iterator it;
   for (typename std::vector<std::pair<GlobalOrdinal, GlobalOrdinal> >::const_iterator p = keepDiagonalEntries.begin(); p != keepDiagonalEntries.end(); ++p) {
     gColVec->sumIntoGlobalValue((*p).second,1.0);
   }
 
   Teuchos::RCP<Export> exporter = ExportFactory::Build(gColVec->getMap(), gDomVec->getMap());
-  gDomVec->doExport(*gColVec,*exporter,Xpetra::ADD);
+  gDomVec->doExport(*gColVec,*exporter,Xpetra::ADD);  // communicate blocked gcolids to all procs
 
   std::vector<std::pair<GlobalOrdinal, GlobalOrdinal> > permutedDiagCandidatesFiltered; // TODO reserve memory
   std::map<GlobalOrdinal, Scalar> gColId2Weight;
@@ -219,10 +216,10 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
     LocalOrdinal lcol = A->getColMap()->getLocalElement(gcol);
     Teuchos::ArrayRCP< const Scalar > ddata = gColVec->getData(0);
     if(ddata[lcol] > 0.0){
-      continue; // column already handled by another row
+      continue; // skip lcol: column already handled by another row
     }
 
-    //gColVec->sumIntoGlobalValue(gcol,1.0); // mark column as already taken
+    // mark column as already taken
     gColVec->sumIntoLocalValue(A->getColMap()->getLocalElement(gcol),1.0);
 
     permutedDiagCandidatesFiltered.push_back(std::make_pair(grow,gcol));
@@ -236,15 +233,15 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
   // first communicate ALL global ids of column indices which are requested by more
   // than one proc to all other procs
   // detect which global col indices are requested by more than one proc
-  // and store them in multipleColRequests
-  std::vector<GlobalOrdinal> multipleColRequests; // store all global column indices from current processor that are alos
-  // requested by another processor. This is possible, since they are stored
-  // in gDomVec which is based on the nonoverlapping domain map. That is, each
-  // global col id is handled by exactly one proc.
+  // and store them in the multipleColRequests vector
+  std::vector<GlobalOrdinal> multipleColRequests; // store all global column indices from current processor that are also
+                                                  // requested by another processor. This is possible, since they are stored
+                                                  // in gDomVec which is based on the nonoverlapping domain map. That is, each
+                                                  // global col id is handled by exactly one proc.
   for(size_t sz = 0; sz<gDomVec->getLocalLength(); ++sz) {
     Teuchos::ArrayRCP< const Scalar > arrDomVec = gDomVec->getData(0);
     if(arrDomVec[sz] > 1.0) {
-      std::cout << "ERROR: arrDomVec[" << sz << "]=" << arrDomVec[sz] << std::endl;
+      GetOStream(Warnings0,0) << "ERROR in MueLu_PermutationFactory: arrDomVec[" << sz << "]=" << arrDomVec[sz] << std::endl;
       multipleColRequests.push_back(gDomVec->getMap()->getGlobalElement(sz));
     }
   }
@@ -257,6 +254,8 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
   sumAll(gDomVec->getMap()->getComm(), (LocalOrdinal)localMultColRequests, globalMultColRequests);
 
   if(globalMultColRequests > 0) {
+    // special handling: two processors request the same global column id.
+    // decide which processor gets it
     const Teuchos::RCP< const Teuchos::Comm< int > > comm = gDomVec->getMap()->getComm();
     // communicate how many interesting column indices are stored on each proc
     int numProcs = comm->getSize();
@@ -320,7 +319,7 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
           typename std::vector<std::pair<GlobalOrdinal, GlobalOrdinal> >::iterator p = permutedDiagCandidatesFiltered.begin();
           while(p != permutedDiagCandidatesFiltered.end() )
           {
-            GlobalOrdinal jk = (*p).second;
+            //GlobalOrdinal jk = (*p).second;
             if((*p).second == globColId)
               p = permutedDiagCandidatesFiltered.erase(p);
             else
@@ -333,7 +332,7 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
   } // end if globalMultColRequests > 0
 
   // put together all pairs:
-  size_t sizeRowColPairs = keepDiagonalEntries.size() + permutedDiagCandidatesFiltered.size();
+  //size_t sizeRowColPairs = keepDiagonalEntries.size() + permutedDiagCandidatesFiltered.size();
   std::vector<std::pair<GlobalOrdinal, GlobalOrdinal> > RowColPairs;
   RowColPairs.insert( RowColPairs.end(), keepDiagonalEntries.begin(), keepDiagonalEntries.end());
   RowColPairs.insert( RowColPairs.end(), permutedDiagCandidatesFiltered.begin(), permutedDiagCandidatesFiltered.end());
@@ -375,6 +374,7 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
   Teuchos::ArrayRCP< Scalar > lQpermData = Qperm->getDataNonConst(0);
   Teuchos::ArrayRCP< Scalar > lRowIndicesData = gRowIndices->getDataNonConst(0);
 
+  // run 1: mark all "identity" permutations
   typename std::vector<std::pair<GlobalOrdinal, GlobalOrdinal> >::iterator p = RowColPairs.begin();
   while(p != RowColPairs.end() )
   {
@@ -398,7 +398,7 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
       p++;
   }
 
-  // handle remaining permutations
+  // run 2: handle remaining permutations
   LocalOrdinal lNextRowIndex = 0; // remove me???
   LocalOrdinal lCurRowIndex = 0;
   p = RowColPairs.begin();
@@ -422,6 +422,7 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
       }
     }
 
+    // accept permutation
     if(lRowIndicesData[lCurRowIndex] == 0.0) {
       lRowIndicesData [lCurRowIndex] = 1.0; // use this row id
       lPpermData[A->getRowMap()->getLocalElement(ik)] = gRowIndices->getMap()->getGlobalElement(lCurRowIndex);
@@ -451,6 +452,7 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
   lCurRowIndex = 0;
   LocalOrdinal lNextColIndex = 0;
   LocalOrdinal lCurColIndex = 0;
+  // run 3: fix remaining permutations, complete operator
   for(LocalOrdinal i=0; i<Teuchos::as<LocalOrdinal>(A->getNodeNumRows()); i++) {
     if(lPpermData[i] < 0.0) {
       // search for first lRowIndicesData neq 0.0
@@ -513,11 +515,6 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
   Teuchos::RCP<Matrix> ApermQt = Utils::TwoMatrixMultiply(A, false, permQTmatrix, false);
   Teuchos::RCP<Matrix> permPApermQt = Utils::TwoMatrixMultiply(Teuchos::rcp_dynamic_cast<Matrix>(permPmatrix), false, ApermQt, false);
 
-  //bool doFillComplete=false;
-  //bool optimizeStorage=false;
-  //Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(*A);
-  //Utils::MyOldScaleMatrix(AP, diag, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
-
   /*
   MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("A.mat", *A);
   MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("permP.mat", *permPmatrix);
@@ -556,6 +553,24 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
   currentLevel.Set("permP", Teuchos::rcp_dynamic_cast<Matrix>(permPmatrix), this);
   currentLevel.Set("permQT", Teuchos::rcp_dynamic_cast<Matrix>(permQTmatrix), this);
   currentLevel.Set("permScaling", Teuchos::rcp_dynamic_cast<Matrix>(diagScalingOp), this);
+
+  //// experimental
+  // count zeros on diagonal in Q^T -> number of column permutations
+  Teuchos::RCP<Vector> diagQTVec = VectorFactory::Build(permQTmatrix->getRowMap(),true);
+  permQTmatrix->getLocalDiagCopy(*diagQTVec);
+  Teuchos::ArrayRCP< const Scalar > diagQTVecData = diagQTVec->getData(0);
+  LocalOrdinal lNumColPermutations = 0;
+  GlobalOrdinal gNumColPermutations = 0;
+  for(size_t i = 0; i<diagQTVec->getMap()->getNodeNumElements(); ++i) {
+    if(diagQTVecData[i] == 0.0) {
+      lNumColPermutations++;
+    }
+  }
+
+  // sum up all entries in multipleColRequests over all processors
+  sumAll(diagQTVec->getMap()->getComm(), (LocalOrdinal)lNumColPermutations, gNumColPermutations);
+  GetOStream(Runtime1, 0) << "#Column permutations: " << gNumColPermutations << "/" << diagQTVec->getMap()->getGlobalNumElements() << std::endl;
+
 }
 
 } // namespace MueLu
