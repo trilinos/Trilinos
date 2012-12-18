@@ -146,8 +146,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
 
   // Get the default communicator.
   RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-  const size_t numProcs = comm->getSize ();
-  const size_t myRank = comm->getRank ();
+  const int numProcs = comm->getSize ();
+  const int myRank = comm->getRank ();
 
   if (myRank == 0) {
     out << "Test with " << numProcs << " process" << (numProcs != 1 ? "es" : "") << endl;
