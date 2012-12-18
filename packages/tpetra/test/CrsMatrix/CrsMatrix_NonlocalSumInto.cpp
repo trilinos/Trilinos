@@ -383,7 +383,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto, LocalOrdinalType,
 	  localSuccess = false;
 	  failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[1] = " << indView[1] << " != globalRow = " << globalRow << endl;
 	}
-	if (numEntries > 0 && valView[0] != myRank) {
+	if (numEntries > 0 && valView[0] != as<ST> (myRank)) {
 	  localSuccess = false;
 	  failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": valView[0] = " << valView[0] << " != myRank = " << myRank << endl;
 	}
