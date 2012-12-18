@@ -281,6 +281,7 @@ RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_C
      TODO Move this to Xpetra?
    */
    static void Write(std::string const & fileName, Matrix const & Op); //Write
+   static void Write(std::string const & fileName, const MultiVector& x); // Write
 
    static void PauseForDebugger(); //PauseForDebugger
 

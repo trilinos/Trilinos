@@ -60,6 +60,7 @@
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
 #include <EpetraExt_MatrixMatrix.h>
 #include <EpetraExt_RowMatrixOut.h>
+#include <EpetraExt_MultiVectorOut.h>
 #include <Epetra_RowMatrixTransposer.h>
 #endif // HAVE_MUELU_EPETRAEXT
 
@@ -777,6 +778,40 @@ namespace MueLu {
 #endif // HAVE_MUELU_TPETRA
 
     throw(Exceptions::BadCast("Could not cast to EpetraCrsMatrix or TpetraCrsMatrix in matrix writing"));
+
+  } //Write
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(std::string const & fileName, const MultiVector& x) {
+    RCP<const MultiVector> tmp_Vec = rcpFromRef(x);
+#ifdef HAVE_MUELU_EPETRAEXT
+    const RCP<const EpetraMultiVector> &tmp_EVec = rcp_dynamic_cast<const EpetraMultiVector>(tmp_Vec);
+    if (tmp_EVec != Teuchos::null) {
+#ifdef HAVE_MUELU_EPETRAEXT
+      int rv = EpetraExt::MultiVectorToMatrixMarketFile(fileName.c_str(), *(tmp_EVec->getEpetra_MultiVector()));
+      if (rv != 0) {
+        std::ostringstream buf;
+        buf << rv;
+        std::string msg = "EpetraExt::RowMatrixToMatrixMarketFile return value of " + buf.str();
+        throw(Exceptions::RuntimeError(msg));
+      }
+#else
+      throw(Exceptions::RuntimeError("Compiled without EpetraExt"));
+#endif
+      return;
+    }
+#endif // HAVE_MUELU_EPETRAEXT
+
+#ifdef HAVE_MUELU_TPETRA
+    const RCP<const TpetraMultiVector> &tmp_TVec = rcp_dynamic_cast<const TpetraMultiVector>(tmp_Vec);
+    if (tmp_TVec != Teuchos::null) {
+      RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > TVec = tmp_TVec->getTpetra_MultiVector();
+      Tpetra::MatrixMarket::Writer<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::writeDenseFile(fileName, TVec);
+      return;
+    }
+#endif // HAVE_MUELU_TPETRA
+
+    throw(Exceptions::BadCast("Could not cast to EpetraMultiVector or TpetraMultiVector in matrix writing"));
 
   } //Write
 
