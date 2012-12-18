@@ -339,7 +339,7 @@
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="TO"/>
     <Dependency name="Tpetra" type="ILO"/>
-    <Dependency name="EpetraExt" type="TO"/>
+    <Dependency name="EpetraExt" type="LO"/>
     <Dependency name="Xpetra" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="LO"/>

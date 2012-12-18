@@ -39,7 +39,7 @@
 #ifdef HAVE_STRATIMIKOS_AMESOS
 #  include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 #endif
-#ifdef HAVE_STRATIMIKOS_AZTECOO
+#if defined(HAVE_STRATIMIKOS_EPETRAEXT) && defined(HAVE_STRATIMIKOS_AZTECOO)
 #  include "Thyra_AztecOOLinearOpWithSolveFactory.hpp"
 #endif
 #ifdef HAVE_STRATIMIKOS_BELOS
@@ -481,7 +481,7 @@ void DefaultLinearSolverBuilder::initializeDefaults()
     );
 #endif
 
-#ifdef HAVE_STRATIMIKOS_AZTECOO
+#if defined(HAVE_STRATIMIKOS_EPETRAEXT) && defined(HAVE_STRATIMIKOS_AZTECOO)
   setLinearSolveStrategyFactory(
     abstractFactoryStd<Thyra::LinearOpWithSolveFactoryBase<double>,
     Thyra::AztecOOLinearOpWithSolveFactory>(),
