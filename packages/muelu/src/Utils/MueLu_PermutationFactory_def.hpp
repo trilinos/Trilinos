@@ -59,6 +59,7 @@
 #include "MueLu_PermutationFactory_decl.hpp"
 
 #include <Xpetra_Map.hpp>
+#include <Xpetra_StridedMap.hpp>    // for nDofsPerNode...
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Matrix.hpp>
@@ -70,7 +71,7 @@
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Utilities.hpp"
-// #include "MueLu_Monitor.hpp"
+#include "MueLu_Monitor.hpp"
 
 // MPI helper
 #define sumAll(rcpComm, in, out)                                        \
@@ -99,6 +100,7 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & currentLevel) const {
+  FactoryMonitor m(*this, "Permutation Factory ", currentLevel);
 
   Teuchos::RCP<Matrix> A = Get< Teuchos::RCP<Matrix> > (currentLevel, "A");
 
@@ -107,6 +109,12 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
     permRowMap = currentLevel.Get<RCP<const Map> >(mapName_,mapFact_.get());
   } else {
     permRowMap = A->getRowMap(); // use full row map of A
+  }
+
+  size_t nDofsPerNode = 1;
+  if (A->IsView("stridedMaps")) {
+    Teuchos::RCP<const Map> permRowMapStrided = A->getRowMap("stridedMaps");
+    size_t nDofsPerNode = Teuchos::rcp_dynamic_cast<const StridedMap>(permRowMapStrided)->getFixedBlockSize();
   }
 
   GetOStream(Runtime0, 0) << "Perform generation of permutation operators on " << mapName_ << " map with " << permRowMap->getGlobalNumElements() << " elements" << std::endl;
@@ -398,6 +406,14 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
       p++;
   }
 
+  // count wide-range permutations
+  // a wide-range permutation is defined as a permutation of rows/columns which do not
+  // belong to the same node
+  LocalOrdinal lWideRangeRowPermutations = 0;
+  GlobalOrdinal gWideRangeRowPermutations = 0;
+  LocalOrdinal lWideRangeColPermutations = 0;
+  GlobalOrdinal gWideRangeColPermutations = 0;
+
   // run 2: handle remaining permutations
   LocalOrdinal lNextRowIndex = 0; // remove me???
   LocalOrdinal lCurRowIndex = 0;
@@ -428,6 +444,14 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
       lPpermData[A->getRowMap()->getLocalElement(ik)] = gRowIndices->getMap()->getGlobalElement(lCurRowIndex);
       lQpermData[A->getColMap()->getLocalElement(jk)] = gRowIndices->getMap()->getGlobalElement(lCurRowIndex);
       p = RowColPairs.erase(p);
+
+      // detect wide range permutations
+      if(floor(ik/nDofsPerNode) != floor(gRowIndices->getMap()->getGlobalElement(lCurRowIndex)/nDofsPerNode)) {
+        lWideRangeRowPermutations++;
+      }
+      if(floor(jk/nDofsPerNode) != floor(gRowIndices->getMap()->getGlobalElement(lCurRowIndex)/nDofsPerNode)) {
+        lWideRangeColPermutations++;
+      }
     }
     else
       p++;
@@ -465,6 +489,11 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
       }
       lRowIndicesData [lCurRowIndex] = 1.0; // use this row id
       lPpermData[ i ] = gRowIndices->getMap()->getGlobalElement(lCurRowIndex);
+
+      // detect wide range permutations
+      if(floor(A->getRowMap()->getGlobalElement(i)/nDofsPerNode) != floor(gRowIndices->getMap()->getGlobalElement(lCurRowIndex)/nDofsPerNode)) {
+        lWideRangeRowPermutations++;
+      }
     }
     if(lQpermData[i] < 0.0) {
       // search for first lColIndicesData neq 0.0
@@ -477,8 +506,16 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
       }
       lColIndicesData [lCurColIndex] = 1.0; // use this col id
       lQpermData[ i ] = gColIndices->getMap()->getGlobalElement(lCurColIndex);
+
+      // detect wide range permutations
+      if(floor(A->getRowMap()->getGlobalElement(i)/nDofsPerNode) != floor(gColIndices->getMap()->getGlobalElement(lCurColIndex)/nDofsPerNode)) {
+        lWideRangeColPermutations++;
+      }
     }
   }
+
+  sumAll(A->getRowMap()->getComm(), (LocalOrdinal)lWideRangeRowPermutations, gWideRangeRowPermutations);
+  sumAll(A->getRowMap()->getComm(), (LocalOrdinal)lWideRangeColPermutations, gWideRangeColPermutations);
 
   //  std::cout << "Pperm after complete" << *Pperm << std::endl;
   //  std::cout << "Qperm after complete" << *Qperm << std::endl;
@@ -569,7 +606,8 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
 
   // sum up all entries in multipleColRequests over all processors
   sumAll(diagQTVec->getMap()->getComm(), (LocalOrdinal)lNumColPermutations, gNumColPermutations);
-  GetOStream(Runtime1, 0) << "#Column permutations: " << gNumColPermutations << "/" << diagQTVec->getMap()->getGlobalNumElements() << std::endl;
+  GetOStream(Runtime1, 0) << "#Column permutations/max possible permutations: " << gNumColPermutations << "/" << diagQTVec->getMap()->getGlobalNumElements() << std::endl;
+  GetOStream(Runtime1, 0) << "#wide range row permutations: " << gWideRangeRowPermutations << " #wide range column permutations: " << gWideRangeColPermutations << std::endl;
 
 }
 

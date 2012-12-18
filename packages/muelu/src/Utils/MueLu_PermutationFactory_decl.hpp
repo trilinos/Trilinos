@@ -54,6 +54,7 @@
 #define MUELU_PERMUTATIONFACTORY_DECL_HPP_
 
 #include <Xpetra_Map_fwd.hpp>
+#include <Xpetra_StridedMap_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
