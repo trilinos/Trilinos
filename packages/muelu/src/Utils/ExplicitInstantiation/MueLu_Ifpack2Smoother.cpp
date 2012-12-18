@@ -1,7 +1,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_ExplicitInstantiation.hpp"
 
-#ifdef HAVE_MUELU_IFPACK2
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 
 #include "MueLu_Ifpack2Smoother_def.hpp"
 

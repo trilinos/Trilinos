@@ -94,12 +94,12 @@ RCP<SmootherPrototype> gimmeGaussSeidelProto(Xpetra::UnderlyingLib lib) {
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
 
   if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_IFPACK
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
     ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
     smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
 #endif
   } else if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_IFPACK2
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
     ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
     smooProto = rcp( new Ifpack2Smoother("RELAXATION", ifpackList) );
 #endif
@@ -114,25 +114,25 @@ RCP<SmootherPrototype> gimmeGaussSeidelProto(Xpetra::UnderlyingLib lib) {
 RCP<SmootherPrototype> gimmeCoarseProto(Xpetra::UnderlyingLib lib, const std::string& coarseSolver, int rank) {
   RCP<SmootherPrototype> coarseProto;
   if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_AMESOS
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
     if (rank == 0) std::cout << "CoarseGrid: AMESOS" << std::endl;
     Teuchos::ParameterList amesosList;
     amesosList.set("PrintTiming",true);
     coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
-    //#elif HAVE_MUELU_IFPACK...
+    //#elif...
 #endif
   } else if (lib == Xpetra::UseTpetra) {
     if (coarseSolver=="amesos2") {
-#ifdef HAVE_MUELU_AMESOS2
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
       if (rank == 0) std::cout << "CoarseGrid: AMESOS2" << std::endl;
       Teuchos::ParameterList paramList; //unused
       coarseProto = rcp( new Amesos2Smoother("Superlu", paramList) );
 #else
       std::cout  << "AMESOS2 not available (try --coarseSolver=ifpack2)" << std::endl;
       return Teuchos::null; // TODO test for exception //EXIT_FAILURE;
-#endif // HAVE_MUELU_AMESOS2
+#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
     } else if(coarseSolver=="ifpack2") {
-#if defined(HAVE_MUELU_IFPACK2)
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
         if (rank == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
         Teuchos::ParameterList ifpack2List;
         ifpack2List.set("fact: ilut level-of-fill",99); // TODO ??

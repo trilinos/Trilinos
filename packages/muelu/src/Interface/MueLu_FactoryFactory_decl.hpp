@@ -240,7 +240,7 @@ namespace MueLu {
       // Read the RCP<Factory> parameters of the class T
       RCP<const ParameterList> validParamList = factory->GetValidParameterList();
       for (ParameterList::ConstIterator param = validParamList->begin(); param != validParamList->end(); ++param) {
-        const string & pName = validParamList->name(param);
+        const std::string & pName = validParamList->name(param);
         if (validParamList->isType< RCP<const FactoryBase> >(pName)) {
           if (paramList.isParameter(pName)) {
             // Generate or get factory described by param

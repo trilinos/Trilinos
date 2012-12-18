@@ -170,8 +170,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
   RCP<TransPFactory> Rfact  = rcp( new TransPFactory());
   RCP<RAPFactory>    Acfact = rcp( new RAPFactory() );
 
-#ifdef HAVE_MUELU_IFPACK
-#ifdef HAVE_MUELU_AMESOS
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_AMESOS)
   RCP<SmootherPrototype> smooProto = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel", 2);
 
   RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smooProto) );
@@ -220,8 +219,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
   out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
   TEST_EQUALITY(norms[0]<1e-10, true);
 
-#endif
-#endif
+#endif // HAVE_MUELU_EPETRA && HAVE_MUELU_IFPACK && HAVE_MUELU_AMESOS
     }
 } //Iterate
 
@@ -264,8 +262,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
   Acfact->SetImplicitTranspose(true);
 
-#ifdef HAVE_MUELU_IFPACK
-#ifdef HAVE_MUELU_AMESOS
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_AMESOS)
   RCP<SmootherPrototype> smooProto = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel", 2);
 
   RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smooProto) );
@@ -317,8 +314,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
   TEST_EQUALITY(norms[0]<1e-10, true);
 
-#endif
-#endif
+#endif // HAVE_MUELU_EPETRA && HAVE_MUELU_IFPACK && HAVE_MUELU_AMESOS
     }
 } //Iterate
 
@@ -326,7 +322,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy1level)
 {
   MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
     {
-#ifdef HAVE_MUELU_AMESOS2
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
 
@@ -362,7 +358,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy1level)
 
   int iterations=10;
   H.Iterate(*RHS, iterations, *X);
-#endif
+#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
     }
 }
 
@@ -371,7 +367,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy2level)
 {
   MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
     {
-#ifdef HAVE_MUELU_AMESOS
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
 
@@ -457,7 +453,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3level)
   M2.SetFactory("A", rcp(new RAPFactory()));
   M2.SetFactory("P", rcp(new SaPFactory()));
 
-#ifdef HAVE_MUELU_AMESOS2
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 
   bool r; // cf. bug Teuchos Bug 5214
   r = H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1)); TEST_EQUALITY(r, false);
@@ -559,7 +555,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3levelFacManagers)
   M2.SetFactory("A", rcp(new RAPFactory()));
   M2.SetFactory("P", rcp(new SaPFactory()));
 
-#ifdef HAVE_MUELU_AMESOS
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
   bool r; // cf. bug Teuchos Bug 5214
   r = H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1)); TEST_EQUALITY(r, false);
   r = H.Setup(1, ptrInArg(M0), ptrInArg(M1), ptrInArg(M2));   TEST_EQUALITY(r, false);
@@ -634,7 +630,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchyTestBreakCondition)
   M1.SetFactory("A", rcp(new RAPFactory()));
   M1.SetFactory("P", rcp(new TentativePFactory()));
 
-#ifdef HAVE_MUELU_AMESOS
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
   bool r; // cf. bug Teuchos Bug 5214
   r = H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1)); TEST_EQUALITY(r, true);
   TEST_EQUALITY(H.GetNumLevels(),1);

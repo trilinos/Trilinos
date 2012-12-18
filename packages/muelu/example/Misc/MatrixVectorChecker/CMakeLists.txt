@@ -51,16 +51,14 @@ ENDIF()
 # Note: as of Oct2,2012, this test is failing on Apples.  It appears to be a problem reading in matrix header info,
 #       but the problem goes away as soon as I compile with -g -O0, grrr.  So disabling for the moment on the only
 #       nightly Apple machine.
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  IF (${PACKAGE_NAME}_ENABLE_Galeri)
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      read_MatrixMarket
-      SOURCES MueLu_read_MatrixMarket.cpp
-      COMM serial mpi
-      DEPLIBS muelu xpetra
-      XHOST s903186.sandia.gov
-      )
-  ENDIF()
+IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Galeri)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    read_MatrixMarket
+    SOURCES MueLu_read_MatrixMarket.cpp
+    COMM serial mpi
+    DEPLIBS muelu xpetra
+    XHOST s903186.sandia.gov
+    )
 ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(read_MatrixMarket_example_cp

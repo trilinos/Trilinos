@@ -7,4 +7,3 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   DEPLIBS muelu xpetra
   )
-

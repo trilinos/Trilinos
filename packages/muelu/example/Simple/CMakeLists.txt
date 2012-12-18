@@ -6,7 +6,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #
 
 IF((${PACKAGE_NAME}_ENABLE_Tpetra  AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2) OR
-    (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos))
+    (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos))
 
   #Simple
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -37,18 +37,18 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra  AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
       )
   ENDIF()
 
-  #Simple-AztecOO
-  IF(Trilinos_ENABLE_AztecOO)
-    # Use Trilinos_ENABLE_AztecOO instead of MueLu_ENABLE_AztecOO because this example requires AztecOO but MueLu doesn't.
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Simple-AztecOO
-      SOURCES Simple-AztecOO.cpp
-      NUM_MPI_PROCS 4
-      COMM serial mpi
-      DEPLIBS muelu xpetra muelu-adapters
-      )
-  ENDIF()
+ENDIF()
 
+#Simple-AztecOO
+IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Amesos  AND ${PACKAGE_NAME}_ENABLE_Ifpack AND Trilinos_ENABLE_AztecOO)
+  # Use Trilinos_ENABLE_AztecOO instead of MueLu_ENABLE_AztecOO because this example requires AztecOO but MueLu doesn't.
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Simple-AztecOO
+    SOURCES Simple-AztecOO.cpp
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    DEPLIBS muelu xpetra muelu-adapters
+    )
 ENDIF()
 
 #Simple-LongInt
@@ -94,7 +94,7 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAG
 
 ENDIF()
 
-IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos)
+IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos)
 
   #Simple-Epetra
   TRIBITS_ADD_EXECUTABLE_AND_TEST(

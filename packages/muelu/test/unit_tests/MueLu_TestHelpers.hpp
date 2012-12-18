@@ -215,7 +215,7 @@ namespace MueLuTests {
         coarseLevel.SetLevelID(1);
       }
 
-#ifdef HAVE_MUELU_IFPACK
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
       static RCP<SmootherPrototype> createSmootherPrototype(const std::string& type="Gauss-Seidel", LO sweeps=1) {
         Teuchos::ParameterList  ifpackList;
         ifpackList.set("relaxation: type", type);

@@ -57,7 +57,7 @@
 # endif
 #endif
 
-#ifdef HAVE_MUELU_EPETRAEXT
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
 #include <EpetraExt_MatrixMatrix.h>
 #include <EpetraExt_RowMatrixOut.h>
 #include <Epetra_RowMatrixTransposer.h>
@@ -81,7 +81,7 @@
 
 #include <MueLu_Utilities_decl.hpp>
 
-#ifdef HAVE_MUELU_ML
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_ML)
 #include <ml_operator.h>
 #include <ml_epetra_utils.h>
 #endif
@@ -272,7 +272,7 @@ namespace MueLu {
     switch (C->getRowMap()->lib()) {
 
       case Xpetra::UseEpetra:
-#       ifdef HAVE_MUELU_ML
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_ML)
         if (!transposeA && !transposeB) {
             RCP<Epetra_CrsMatrix> epA = Op2NonConstEpetraCrs(A);
             RCP<Epetra_CrsMatrix> epB = Op2NonConstEpetraCrs(B);
@@ -310,7 +310,7 @@ namespace MueLu {
         switch (canUseML) {
         case true:
           //if ML is not enabled, this case falls through to the EpetraExt multiply.
-#ifdef HAVE_MUELU_ML
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_ML)
           {
             RCP<Epetra_CrsMatrix> epA = Op2NonConstEpetraCrs(A);
             RCP<Epetra_CrsMatrix> epB = Op2NonConstEpetraCrs(B);
@@ -358,13 +358,13 @@ namespace MueLu {
     return C;
   } //TwoMatrixMultiply()
 
-#ifdef HAVE_MUELU_EPETRAEXT
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLTwoMatrixMultiply(const Epetra_CrsMatrix& epA,
       const Epetra_CrsMatrix& epB)
   {
-#if defined(HAVE_MUELU_ML)
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_ML)
     ML_Comm* comm;
     ML_Comm_Create(&comm);
     if (comm->ML_mypid == 0)
@@ -565,7 +565,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MatrixPrint(RCP<Matrix> const &Op, std::string const &label) {
-#ifdef HAVE_MUELU_EPETRAEXT
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
     RCP<const Epetra_CrsMatrix> epOp = Op2EpetraCrs(Op);
     int mypid = epOp->RowMap().Comm().MyPID();
     if (mypid == 0)
@@ -748,10 +748,10 @@ namespace MueLu {
   void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(std::string const & fileName, Matrix const & Op) {
     CrsMatrixWrap const & crsOp = dynamic_cast<CrsMatrixWrap const &>(Op);
     RCP<const CrsMatrix> tmp_CrsMtx = crsOp.getCrsMatrix();
-#ifdef HAVE_MUELU_EPETRAEXT
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
     const RCP<const EpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const EpetraCrsMatrix>(tmp_CrsMtx);
     if (tmp_ECrsMtx != Teuchos::null) {
-#ifdef HAVE_MUELU_EPETRAEXT
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
       RCP<const Epetra_CrsMatrix> A = tmp_ECrsMtx->getEpetra_CrsMatrix();
       int rv = EpetraExt::RowMatrixToMatrixMarketFile(fileName.c_str(), *A);
       if (rv != 0) {
@@ -838,7 +838,7 @@ namespace MueLu {
   } //simple_Transpose
 #endif // HAVE_MUELU_TPETRA
 
-#ifdef HAVE_MUELU_EPETRAEXT
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::simple_EpetraTranspose(RCP<const Epetra_CrsMatrix> const &A)
@@ -1097,13 +1097,13 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Transpose(RCP<Matrix> const &Op, bool const & optimizeTranspose)
   {
-#ifdef HAVE_MUELU_EPETRAEXT
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
     std::string TorE = "epetra";
 #else
     std::string TorE = "tpetra";
 #endif
 
-#ifdef HAVE_MUELU_EPETRAEXT
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
     RCP<Epetra_CrsMatrix> epetraOp;
     try {
       epetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstEpetraCrs(Op);

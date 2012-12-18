@@ -138,13 +138,25 @@ namespace MueLuTests {
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
-#ifdef HAVE_MUELU_AMESOS  // TODO: remove
-#ifdef HAVE_MUELU_AMESOS2 // TODO: remove
   // TEST:
   // - OP: Xpetra::Matrix
   // - MV: Xpetra::MultiVector
   TEUCHOS_UNIT_TEST(BelosAdapters, XpetraOp_XpetraMV) {
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+
+#if !defined(HAVE_MUELU_EPETRA) or !defined(HAVE_MUELU_IFPACK) or !defined(HAVE_MUELU_AMESOS)
+    if (lib == Xpetra::UseEpetra) {
+      out << "Test skipped (dependencies not available)" << std::endl;
+      return;
+    }
+#endif
+
+#if !defined(HAVE_MUELU_TPETRA) or !defined(HAVE_MUELU_IFPACK2) or !defined(HAVE_MUELU_AMESOS2)
+    if (lib == Xpetra::UseTpetra) {
+      out << "Test skipped (dependencies not available)" << std::endl;
+      return;
+    }
+#endif
 
     RCP<TestProblem<SC,LO,GO,NO,LMO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO,LMO>(lib);
 
@@ -162,15 +174,13 @@ namespace MueLuTests {
     // Tests
     TEST_EQUALITY(MueLuTests::BelosAdaptersTestResults<Scalar>(numIters, X, out, success), true);
   }
-#endif // AMESOS2
-#endif // AMESOS
 
-#ifdef HAVE_MUELU_EPETRA
-#ifdef HAVE_MUELU_AMESOS // TODO: remove
   // TEST:
   // - OP: Xpetra::Matrix
   // - MV: Epetra::MultiVector
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_AMESOS)
   TEUCHOS_UNIT_TEST(BelosAdapters, XpetraOp_EpetraMV) {
+    
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
     if (lib == Xpetra::UseEpetra) {  // Epetra specific test: run only once.
 
@@ -194,11 +204,14 @@ namespace MueLuTests {
       TEST_EQUALITY(MueLuTests::BelosAdaptersTestResults<Scalar>(numIters, X, out, success), true);
     }
   }
+#endif
 
   // TEST:
   // - OP: Belos::Operator<double>
   // - MV: Belos::MultiVec<double>
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_AMESOS)
   TEUCHOS_UNIT_TEST(BelosAdapters, BelosMultiVec_BelosMatrix) {
+
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
     if (lib == Xpetra::UseEpetra) {  // Epetra specific test: run only once.
 
@@ -229,15 +242,14 @@ namespace MueLuTests {
       //  eX->Norm2(&norm);
     }
   }
-#endif // AMESOS
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
-#ifdef HAVE_MUELU_AMESOS2 // TODO: remove
   // TEST:
   // - OP: Xpetra::Matrix
   // - MV: Tpetra::MultiVector
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
   TEUCHOS_UNIT_TEST(BelosAdapters, XpetraOp_TpetraMV) {
+
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
     if (lib == Xpetra::UseTpetra) {  // Tpetra specific test: run only once.
 
@@ -261,7 +273,6 @@ namespace MueLuTests {
       TEST_EQUALITY(MueLuTests::BelosAdaptersTestResults<Scalar>(numIters, X, out, success), true);
     }
   }
-#endif // AMESOS2
 #endif
 
   // TODO : Tpetra and Epetra are not giving the same results on the test problem. Must be changed for this test.
@@ -290,3 +301,5 @@ namespace MueLuTests {
 } // namespace MueLuTests
 
 //TODO: norm test can be factorized, using Belos Adapter Norm function.
+
+//TODO: generate an hierarchy that do not need ifpack[1,2]/amesos[1,2] and remove safeguards

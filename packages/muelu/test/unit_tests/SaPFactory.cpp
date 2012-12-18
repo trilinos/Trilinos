@@ -86,7 +86,7 @@ namespace MueLuTests {
 
   } //GetSetMethods
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK2)
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
   TEUCHOS_UNIT_TEST(SaPFactory, EpetraVsTpetra)
   {
     out << "version: " << MueLu::Version() << std::endl;

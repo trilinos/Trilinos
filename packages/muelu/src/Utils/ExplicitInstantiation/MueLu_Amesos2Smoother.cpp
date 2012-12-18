@@ -1,7 +1,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_ExplicitInstantiation.hpp"
 
-#ifdef HAVE_MUELU_AMESOS2
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 
 #include "MueLu_Amesos2Smoother_def.hpp"
 

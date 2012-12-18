@@ -43,6 +43,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     )
 ENDIF ()
 
+IF (${PACKAGE_NAME}_ENABLE_Galeri)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     simple1D-UncoupledAggregation
     SOURCES simple1D-UncoupledAggregation.cpp
@@ -50,3 +51,4 @@ ENDIF ()
     COMM serial mpi
     DEPLIBS muelu xpetra
     )
+ENDIF()

@@ -62,9 +62,9 @@
 #include <Epetra_Vector.h>
 #include <Epetra_LinearProblem.h>
 
-// EpetraExt includes
-#include <EpetraExt_CrsMatrixIn.h>
-#include <EpetraExt_VectorIn.h>
+// // EpetraExt includes
+// #include <EpetraExt_CrsMatrixIn.h>
+// #include <EpetraExt_VectorIn.h>
 
 // Thyra includes
 #include <Thyra_LinearOpWithSolveBase.hpp>

@@ -218,12 +218,12 @@ int main(int argc, char *argv[]) {
   ifpackList.set("chebyshev: zero starting solution", false);
   */
   if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_IFPACK
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
     ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
     smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
 #endif
   } else if (xpetraParameters.GetLib() == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_IFPACK2
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
     ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
     smooProto = rcp( new Ifpack2Smoother("RELAXATION",ifpackList) );
 #endif
@@ -250,25 +250,25 @@ int main(int argc, char *argv[]) {
 
   RCP<SmootherPrototype> coarseProto;
   if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_AMESOS
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
     if (comm->getRank() == 0) std::cout << "CoarseGrid: AMESOS" << std::endl;
     Teuchos::ParameterList amesosList;
     amesosList.set("PrintTiming",true);
     coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
-    //#elif HAVE_MUELU_IFPACK...
+    //#elif
 #endif
   } else if (xpetraParameters.GetLib() == Xpetra::UseTpetra) {
     if (coarseSolver=="amesos2") {
-#ifdef HAVE_MUELU_AMESOS2
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
       if (comm->getRank() == 0) std::cout << "CoarseGrid: AMESOS2" << std::endl;
       Teuchos::ParameterList paramList; //unused
       coarseProto = rcp( new Amesos2Smoother("Superlu", paramList) );
 #else
       std::cout  << "AMESOS2 not available (try --coarseSolver=ifpack2)" << std::endl;
       return EXIT_FAILURE;
-#endif // HAVE_MUELU_AMESOS2
+#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
     } else if(coarseSolver=="ifpack2") {
-#if defined(HAVE_MUELU_IFPACK2)
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
         if (comm->getRank() == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
         Teuchos::ParameterList ifpack2List;
         ifpack2List.set("fact: ilut level-of-fill",99); // TODO ??

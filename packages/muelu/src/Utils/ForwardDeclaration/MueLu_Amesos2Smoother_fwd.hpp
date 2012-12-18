@@ -2,7 +2,7 @@
 #define MUELU_AMESOS2SMOOTHER_FWDDECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_AMESOS2
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -13,5 +13,5 @@ namespace MueLu {
 #define MUELU_AMESOS2SMOOTHER_SHORT
 #endif
 
-#endif // HAVE_MUELU_AMESOS2
+#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
 #endif // MUELU_AMESOS2SMOOTHER_FWDDECL_HPP

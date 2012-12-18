@@ -43,7 +43,7 @@
 // ***********************************************************************
 //
 // @HEADER
-#include <MueLu_Utilities_def.hpp>
+#include "MueLu_Utilities_def.hpp"
 
 namespace MueLu {
 
@@ -56,15 +56,16 @@ namespace MueLu {
    typedef Kokkos::DefaultNode::DefaultNodeType Node;
    typedef Kokkos::DefaultKernels<double,int,NO>::SparseOps LocalMatOps;
 
-#ifdef HAVE_MUELU_EPETRAEXT
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
     std::string TorE = "epetra";
 #else
     std::string TorE = "tpetra";
 #endif
 
-#ifdef HAVE_MUELU_EPETRAEXT
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
     RCP<Epetra_CrsMatrix> epetraOp;
     try {
+
       epetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstEpetraCrs(Op);
     }
     catch (...) {
@@ -98,7 +99,7 @@ namespace MueLu {
       throw(Exceptions::RuntimeError("Tpetra"));
 #endif
     } else {
-#ifdef HAVE_MUELU_EPETRAEXT
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
       //epetra case
       Epetra_RowMatrixTransposer et(&*epetraOp);
       Epetra_CrsMatrix *A;
@@ -170,7 +171,7 @@ namespace MueLu {
     }
 
     if (A->getRowMap()->lib() == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRAEXT
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
       RCP<const Epetra_CrsMatrix> epA = Utils<double,int,int>::Op2EpetraCrs(A);
       RCP<Epetra_CrsMatrix> epB = Utils<double,int,int>::Op2NonConstEpetraCrs(B);
 
@@ -215,7 +216,7 @@ namespace MueLu {
       C = rcp( new Xpetra::CrsMatrixWrap<double,int,int,NO,LMO>(A->getRowMap(), 5) );
 
     if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRAEXT
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
       RCP<const Epetra_CrsMatrix> epA = Utils<double,int,int>::Op2EpetraCrs(A);
       RCP<const Epetra_CrsMatrix> epB = Utils<double,int,int>::Op2EpetraCrs(B);
       RCP<Epetra_CrsMatrix>       epC = Utils<double,int,int>::Op2NonConstEpetraCrs(C);

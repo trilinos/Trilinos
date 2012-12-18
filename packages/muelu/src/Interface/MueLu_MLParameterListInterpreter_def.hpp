@@ -49,7 +49,7 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_ML
+#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
 #include <ml_ValidateParameters.h>
 #endif
 
@@ -160,7 +160,7 @@ namespace MueLu {
       bool validate = paramList.get("ML validate parameter list", true); /* true = default in ML */
       if (validate) {
 
-#ifdef HAVE_MUELU_ML
+#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
         // Validate parameter list using ML validator
         int depth = paramList.get("ML validate depth", 5); /* 5 = default in ML */
         TEUCHOS_TEST_FOR_EXCEPTION(! ML_Epetra::ValidateMLPParameters(paramList, depth), Exceptions::RuntimeError,
@@ -422,7 +422,7 @@ namespace MueLu {
 
     } else if (type == "IFPACK") { // TODO: this option is not described in the ML Guide v5.0
 
-#ifdef HAVE_MUELU_IFPACK
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
       ifpackType = paramList.get<std::string>("smoother: ifpack type");
 
       if (ifpackType == "ILU") {
@@ -435,9 +435,9 @@ namespace MueLu {
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: unknown ML smoother type " + type + " (IFPACK) not supported by MueLu. Only ILU is supported.");
       }
-#else // HAVE_MUELU_IFPACK
+#else 
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: MueLu compiled without Ifpack support");
-#endif // HAVE_MUELU_IFPACK
+#endif
 
     } else if (type.length() > strlen("Amesos") && type.substr(0, strlen("Amesos")) == "Amesos") {  /* catch Amesos-* */
       std::string solverType = type.substr(strlen("Amesos")+1);  /* ("Amesos-KLU" -> "KLU") */

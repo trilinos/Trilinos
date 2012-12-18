@@ -961,8 +961,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegasTransP)
   TEST_EQUALITY(l2->GetKeepFlag("PreSmoother",MueLu::NoFactory::get()), MueLu::Final);
 }
 
-
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK2)
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
 TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
 {
   out << "version: " << MueLu::Version() << std::endl;

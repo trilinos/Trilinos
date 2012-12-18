@@ -43,7 +43,7 @@ ENDIF()
 # Stratimikos
 #
 
-IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
+IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Stratimikos)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/stratimikos/src)
 

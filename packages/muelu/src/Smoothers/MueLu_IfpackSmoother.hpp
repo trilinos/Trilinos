@@ -47,7 +47,7 @@
 #define MUELU_IFPACKSMOOTHER_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_IFPACK
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
 
 #include <Teuchos_ParameterList.hpp>
 #include <Xpetra_Matrix.hpp>
@@ -244,5 +244,5 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_IFPACKSMOOTHER_SHORT
-#endif // ifdef HAVE_MUELU_IFPACK
+#endif // HAVE_MUELU_EPETRA && HAVE_MUELU_IFPACK
 #endif // MUELU_IFPACKSMOOTHER_HPP

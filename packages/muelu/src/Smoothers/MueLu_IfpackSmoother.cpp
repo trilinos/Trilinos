@@ -45,7 +45,7 @@
 // @HEADER
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_IFPACK
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
 #include <Ifpack.h>
 #include "Xpetra_MultiVectorFactory.hpp"
 

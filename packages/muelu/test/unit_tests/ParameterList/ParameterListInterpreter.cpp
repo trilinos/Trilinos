@@ -63,14 +63,14 @@ namespace MueLuTests {
   {
 
     //TODO: this test can be done at compilation time
-#if !defined(HAVE_MUELU_IFPACK)  or !defined(HAVE_MUELU_AMESOS)
+#if !defined(HAVE_MUELU_EPETRA) or !defined(HAVE_MUELU_IFPACK)  or !defined(HAVE_MUELU_AMESOS)
     if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) {
       out << "Test skipped (dependencies not available)" << std::endl;
       return;
     }
 #endif
 
-#if !defined(HAVE_MUELU_IFPACK2) or !defined(HAVE_MUELU_AMESOS2)
+#if !defined(HAVE_MUELU_TPETRA) or !defined(HAVE_MUELU_IFPACK2) or !defined(HAVE_MUELU_AMESOS2)
     if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) {
       out << "Test skipped (dependencies not available)" << std::endl;
       return;

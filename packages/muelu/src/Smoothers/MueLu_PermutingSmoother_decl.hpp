@@ -50,8 +50,8 @@
  *      Author: wiesner
  */
 
-#ifndef MUELU_PERMUTINGSMOOTHER_DECL_HPP_
-#define MUELU_PERMUTINGSMOOTHER_DECL_HPP_
+#ifndef MUELU_PERMUTINGSMOOTHER_DECL_HPP
+#define MUELU_PERMUTINGSMOOTHER_DECL_HPP
 
 #include <Teuchos_ParameterList.hpp>
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
@@ -150,11 +150,11 @@ namespace MueLu {
     //! Permutation Factory
     RCP<FactoryBase> permFact_;
 
-    //! permP matrix object
-    RCP<Matrix> permP_;
-
     //! permQT matrix object
     RCP<Matrix> permQT_;
+
+    //! permP matrix object
+    RCP<Matrix> permP_;
 
     //! scaling matrix object
     Teuchos::RCP<Matrix> diagScalingOp_;
@@ -171,4 +171,4 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_PERMUTINGSMOOTHER_SHORT
-#endif /* MUELU_PERMUTINGSMOOTHER_DECL_HPP_ */
+#endif /* MUELU_PERMUTINGSMOOTHER_DECL_HPP */

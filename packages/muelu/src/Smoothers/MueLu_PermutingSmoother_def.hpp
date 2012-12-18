@@ -50,8 +50,8 @@
  *      Author: wiesner
  */
 
-#ifndef MUELU_PERMUTINGSMOOTHER_DEF_HPP_
-#define MUELU_PERMUTINGSMOOTHER_DEF_HPP_
+#ifndef MUELU_PERMUTINGSMOOTHER_DEF_HPP
+#define MUELU_PERMUTINGSMOOTHER_DEF_HPP
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_Vector.hpp>
@@ -108,8 +108,12 @@ namespace MueLu {
     // create internal smoother
     if(type_ == "ILU") {
       std::cout << "overlap=" << overlap_ << std::endl;
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
       s_ = MueLu::GetIfpackSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(type_, paramList_,overlap_,permFact_);
       //s_->SetFactory("A", permFact_);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::PermutingSmoother::Setup(): requires Epetra and Ifpack.");
+#endif
     } else {
       s_ = Teuchos::rcp(new TrilinosSmoother(type_, paramList_, overlap_, permFact_));
       //s_->SetFactory("A", permFact_); // use permuted matrix A!
@@ -159,9 +163,10 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void PermutingSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
+    out0 << ""; // avoid warning
   }
 
 } // namespace MueLu
 
 
-#endif /* MUELU_PERMUTINGSMOOTHER_DEF_HPP_ */
+#endif /* MUELU_PERMUTINGSMOOTHER_DEF_HPP */

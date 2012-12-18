@@ -48,7 +48,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_IFPACK2
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -199,5 +199,5 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#endif //ifdef HAVE_MUELU_IFPACK2
+#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_IFPACK2
 #endif // MUELU_IFPACK2SMOOTHER_DEF_HPP

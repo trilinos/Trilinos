@@ -52,7 +52,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Ifpack2Smoother_fwd.hpp"
 
-#ifdef HAVE_MUELU_IFPACK2
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 
 // Ifpack2 forward declaration
 namespace Ifpack2 {
@@ -207,5 +207,5 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_IFPACK2SMOOTHER_SHORT
-#endif //ifdef HAVE_MUELU_IFPACK2
+#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_IFPACK2
 #endif // MUELU_IFPACK2SMOOTHER_DECL_HPP

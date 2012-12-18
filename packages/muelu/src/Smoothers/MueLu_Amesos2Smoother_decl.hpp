@@ -47,7 +47,7 @@
 #define MUELU_AMESOS2SMOOTHER_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_AMESOS2
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -153,7 +153,7 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_AMESOS2SMOOTHER_SHORT
-#endif // HAVE_MUELU_AMESOS2
+#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
 #endif // MUELU_AMESOS2SMOOTHER_DECL_HPP
 
 // TODO: PARAMETER LIST NOT TAKE INTO ACCOUNT !!!

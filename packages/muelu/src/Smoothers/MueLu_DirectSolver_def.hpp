@@ -79,13 +79,13 @@ namespace MueLu {
     Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
 
     if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_AMESOS2
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
       s_ = rcp( new Amesos2Smoother(type_, paramList_) );
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Tpetra matrices. Compile MueLu with Amesos2");
 #endif
     } else if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_AMESOS
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
       s_ = GetAmesosSmoother<SC,LO,GO,NO,LMO>(type_, paramList_);
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Epetra matrices. Compile MueLu with Amesos"); // add Amesos2 to the msg when support for Amesos2+Epetra is implemented.

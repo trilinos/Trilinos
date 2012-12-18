@@ -45,7 +45,7 @@
 // @HEADER
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_AMESOS
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
 
 #include <Epetra_LinearProblem.h>
 
@@ -192,4 +192,4 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#endif
+#endif // HAVE_MUELU_EPETRA && HAVE_MUELU_AMESOS

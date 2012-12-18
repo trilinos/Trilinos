@@ -47,7 +47,7 @@
 #define MUELU_AMESOSSMOOTHER_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_AMESOS
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
 
 #include <Teuchos_ParameterList.hpp>
 #include <Xpetra_Matrix_fwd.hpp>

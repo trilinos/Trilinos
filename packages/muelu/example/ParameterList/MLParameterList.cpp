@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
     if (comm->getRank() == 0)
       std::cout << "||Residual|| = " << residualNorms << std::endl;
 
-#ifdef HAVE_MUELU_AZTECOO
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AZTECOO)
     if (xpetraParameters.GetLib() == Xpetra::UseEpetra) { //TODO: should be doable with Tpetra too
 
       // AMG as a preconditioner

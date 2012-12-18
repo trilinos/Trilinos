@@ -79,14 +79,14 @@ namespace MueLu {
     Xpetra::UnderlyingLib lib = currentLevel.Get< RCP<Matrix> >("A", AFact_.get())->getRowMap()->lib();
 
     if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_IFPACK2
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
       s_ = rcp( new Ifpack2Smoother(type_, paramList_, overlap_) );
       s_->SetFactory("A", AFact_);
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external library availables for preconditionning Tpetra matrices. Compile MueLu with Ifpack2.");
 #endif
     } else if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_IFPACK
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
       s_ = GetIfpackSmoother<SC,LO,GO,NO,LMO>(TrilinosSmoother::Ifpack2ToIfpack1Type(type_), TrilinosSmoother::Ifpack2ToIfpack1Param(paramList_), overlap_, AFact_);
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external library availables for preconditionning Epetra matrices. Compile MueLu with Ifpack.");
