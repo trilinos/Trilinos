@@ -137,6 +137,11 @@ void BulkData::require_ok_to_modify() const
 void BulkData::require_entity_owner( const Entity entity ,
                                      unsigned owner ) const
 {
+  if (parallel_size() == 1) {
+    //no error-check if running in serial
+    return;
+  }
+
   const bool error_not_owner = owner != entity.owner_rank() ;
 
   ThrowRequireMsg( !error_not_owner,
