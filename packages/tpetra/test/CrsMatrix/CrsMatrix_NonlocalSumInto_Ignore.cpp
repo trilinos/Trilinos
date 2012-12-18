@@ -179,6 +179,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
   // Number of (global) rows and columns in the matrix.
   const GO numGlobalRows = numLocalRows * numProcs;
   const GO numGlobalCols = numGlobalRows;
+  // Prevent compile warning for unused variable.
+  // (It's not really "variable" if it's const, but oh well.)
+  (void) numGlobalCols; 
 
   if (myRank == 0) {
     out << "Creating contiguous row Map" << endl;
