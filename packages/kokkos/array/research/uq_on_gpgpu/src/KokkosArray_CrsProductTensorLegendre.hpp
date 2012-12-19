@@ -69,16 +69,21 @@ struct CrsProductTensorLegendre {
   array_unsigned_type  m_coordinate ;
   array_scalar_type    m_value ;
   unsigned             m_dimension ;
+  unsigned             m_max_row_width ;
   unsigned             m_multiply_flops ;
 
   KOKKOSARRAY_INLINE_FUNCTION
   unsigned dimension() const { return m_dimension ; }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  unsigned max_row_width() const { return m_max_row_width ; }
 
   CrsProductTensorLegendre()
   : m_entry_offset()
   , m_coordinate()
   , m_value()
   , m_dimension(0)
+  , m_max_row_width(0)
   , m_multiply_flops(0)
   {}
 
@@ -87,6 +92,7 @@ struct CrsProductTensorLegendre {
   , m_coordinate(   rhs.m_coordinate )
   , m_value(        rhs.m_value )
   , m_dimension(    rhs.m_dimension )
+  , m_max_row_width(rhs.m_max_row_width )
   , m_multiply_flops(rhs.m_multiply_flops)
   {}
 
@@ -96,6 +102,7 @@ struct CrsProductTensorLegendre {
     m_coordinate   = rhs.m_coordinate ;
     m_value        = rhs.m_value ;
     m_dimension    = rhs.m_dimension ;
+    m_max_row_width= rhs.m_max_row_width ;
     m_multiply_flops=rhs.m_multiply_flops;
     return *this ;
   }
@@ -106,6 +113,7 @@ struct CrsProductTensorLegendre {
   , m_coordinate()
   , m_value()
   , m_dimension(0)
+  , m_max_row_width(0)
   , m_multiply_flops(0)
   {
     enum { Align = Impl::is_same<Device,Cuda>::value ? 32 : 1 };
@@ -126,19 +134,25 @@ struct CrsProductTensorLegendre {
 
     for ( unsigned i = 0 ; i < m_dimension ; ++i ) {
 
+      unsigned row_entry_count = 0 ;
+
       for ( unsigned j = 0 ; j < m_dimension ; ++j ) {
-        if ( combinatorial.is_non_zero(i,j,j) ) { ++entry_count ; m_multiply_flops += 3 ; }
+        if ( combinatorial.is_non_zero(i,j,j) ) { ++row_entry_count ; m_multiply_flops += 3 ; }
       }
 
-      if ( entry_count % Align ) { entry_count += Align - entry_count % Align ; }
+      if ( row_entry_count % Align ) { row_entry_count += Align - row_entry_count % Align ; }
 
       for ( unsigned j = 0 ; j < m_dimension ; ++j ) {
         for ( unsigned k = j+1 ; k < m_dimension ; ++k ) {
-          if ( combinatorial.is_non_zero(i,j,k) ) { ++entry_count ; m_multiply_flops += 5 ; }
+          if ( combinatorial.is_non_zero(i,j,k) ) { ++row_entry_count ; m_multiply_flops += 5 ; }
         }
       }
 
-      if ( entry_count % Align ) { entry_count += Align - entry_count % Align ; }
+      if ( row_entry_count % Align ) { row_entry_count += Align - row_entry_count % Align ; }
+
+      m_max_row_width = std::max( m_max_row_width , row_entry_count );
+
+      entry_count += row_entry_count ;
     }
 
     m_entry_offset = array_unsigned_type( "CrsProductTensorLegendre::entry_offset" , 2 * m_dimension + 1 );
