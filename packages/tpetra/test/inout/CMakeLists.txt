@@ -30,6 +30,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixMarket_MV_Output_Perm
   SOURCES
     MatrixMarket_MV_Output_Perm.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
   COMM serial mpi
   NUM_MPI_PROCS 1
