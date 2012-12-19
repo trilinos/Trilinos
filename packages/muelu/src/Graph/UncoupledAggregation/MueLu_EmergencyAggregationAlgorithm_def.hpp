@@ -89,6 +89,9 @@ LocalOrdinal EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, Lo
   // loop over all local rows
   for (LocalOrdinal iNode=0; iNode<nRows; iNode++) {
     if(aggStat[iNode] != NodeStats::AGGREGATED) { // find unaggregated nodes
+
+      aggregates.SetIsRoot(iNode);    // mark iNode1 as root node for new aggregate 'ag'
+
       Aggregate ag;
       ag.list.push_back(iNode);
       ag.index = nLocalAggregates++;
