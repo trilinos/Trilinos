@@ -93,6 +93,8 @@ namespace MueLu {
     virtual ~ZoltanInterface() { }
     //@}
 
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+
     //! @name Input
     //@{
     void DeclareInput(Level & level) const;

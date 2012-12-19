@@ -60,10 +60,17 @@
 
 namespace MueLu {
 
+ template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+ RCP<const ParameterList> ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-  //-------------------------------------------------------------------------------------------------------------
-  // DeclareInput
-  //-------------------------------------------------------------------------------------------------------------
+    validParamList->set< RCP<const FactoryBase> >("A",           Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >("Coordinates", Teuchos::null, "Factory of the coordinates");
+    validParamList->set< RCP<const FactoryBase> >("number of partitions", Teuchos::null, "(advanced) Factory computing the number of partition.");
+
+    return validParamList;
+  }
+
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
@@ -75,10 +82,6 @@ namespace MueLu {
     Input(currentLevel, "Coordinates");
 
   } //DeclareInput()
-
-  //-------------------------------------------------------------------------------------------------------------
-  // Build
-  //-------------------------------------------------------------------------------------------------------------
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
@@ -155,6 +158,9 @@ namespace MueLu {
       // TODO: level.Set(XCoordinates / YCoordinates / ZCoordinates as it is computed and might be needed somewhere else. But can wait for now. This code have to be moved anyway.
 
     } else {
+      std::cout << GetFactory("Coordinates") << std::endl;
+
+      level.print(*getOStream());
       throw(Exceptions::RuntimeError("MueLu::ZoltanInterface::Build(): no coordinates available"));
     }
 
