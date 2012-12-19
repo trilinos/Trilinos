@@ -85,7 +85,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Memory.hpp"
 #include "MueLu_Hierarchy.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -526,12 +526,12 @@ int main(int argc, char *argv[]) {
   dropFact11->SetFactory("A", A11Fact);
   dropFact11->SetFactory("UnAmalgamationInfo", amalgFact11);
   dropFact11->setDefaultVerbLevel(Teuchos::VERB_EXTREME);
-  RCP<UCAggregationFactory> UCAggFact11 = rcp(new UCAggregationFactory());
-  UCAggFact11->SetFactory("Graph", dropFact11);
-  UCAggFact11->SetMinNodesPerAggregate(9);
-  UCAggFact11->SetMaxNeighAlreadySelected(2);
-  UCAggFact11->SetOrdering(MueLu::AggOptions::NATURAL);
-  UCAggFact11->SetPhase3AggCreation(0.5);
+  RCP<CoupledAggregationFactory> CoupledAggFact11 = rcp(new CoupledAggregationFactory());
+  CoupledAggFact11->SetFactory("Graph", dropFact11);
+  CoupledAggFact11->SetMinNodesPerAggregate(9);
+  CoupledAggFact11->SetMaxNeighAlreadySelected(2);
+  CoupledAggFact11->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact11->SetPhase3AggCreation(0.5);
 
   ///////////////////////////////////////// define transfer ops for A11
 #if 0
@@ -552,7 +552,7 @@ int main(int argc, char *argv[]) {
   M11->SetFactory("A", A11Fact);
   M11->SetFactory("P", P11Fact);
   M11->SetFactory("R", R11Fact);
-  M11->SetFactory("Aggregates", UCAggFact11);
+  M11->SetFactory("Aggregates", CoupledAggFact11);
   M11->SetFactory("UnAmalgamationInfo", amalgFact11);
   M11->SetFactory("Nullspace", nspFact11);
   // M11->SetFactory("Ptent", P11tentFact);
@@ -574,7 +574,7 @@ int main(int argc, char *argv[]) {
   M11->SetFactory("A", A11Fact);
   M11->SetFactory("P", P11Fact);
   M11->SetFactory("R", R11Fact);
-  M11->SetFactory("Aggregates", UCAggFact11);
+  M11->SetFactory("Aggregates", CoupledAggFact11);
   M11->SetFactory("UnAmalgamationInfo", amalgFact11);
   M11->SetFactory("Nullspace", nspFact11);
   // M11->SetFactory("Ptent", P11Fact);
@@ -595,7 +595,7 @@ int main(int argc, char *argv[]) {
 #if 0
   // use PGAMG
   RCP<AmalgamationFactory> amalgFact22 = rcp(new AmalgamationFactory(A22Fact));
-  RCP<TentativePFactory> P22tentFact = rcp(new TentativePFactory(UCAggFact11, amalgFact22));
+  RCP<TentativePFactory> P22tentFact = rcp(new TentativePFactory(CoupledAggFact11, amalgFact22));
 
   RCP<SaPFactory> P22Fact = rcp(new SaPFactory(P22tentFact));
 
@@ -603,7 +603,7 @@ int main(int argc, char *argv[]) {
   RCP<TransPFactory> R22Fact = rcp(new TransPFactory(P22Fact));
 
   Teuchos::RCP<NullspaceFactory> nspFact22 = Teuchos::rcp(new NullspaceFactory("Nullspace2",P22tentFact));
-  RCP<CoarseMapFactory> coarseMapFact22 = Teuchos::rcp(new CoarseMapFactory(UCAggFact11, nspFact22));
+  RCP<CoarseMapFactory> coarseMapFact22 = Teuchos::rcp(new CoarseMapFactory(CoupledAggFact11, nspFact22));
   coarseMapFact22->setStridingData(stridingInfo);
   coarseMapFact22->setStridedBlockId(1);
 
@@ -636,7 +636,7 @@ int main(int argc, char *argv[]) {
   M22->SetFactory("A", A22Fact);
   M22->SetFactory("P", P22Fact);
   M22->SetFactory("R", R22Fact);
-  M22->SetFactory("Aggregates", UCAggFact11);
+  M22->SetFactory("Aggregates", CoupledAggFact11);
   M22->SetFactory("Nullspace", nspFact22);
   M11->SetFactory("UnAmalgamationInfo", amalgFact22);
   M22->SetFactory("Ptent", P22Fact);
@@ -659,7 +659,7 @@ int main(int argc, char *argv[]) {
   /* TODO: not available yet for BlockedRAPFactory. Need some inheritence.
   // register aggregation export factory in RAPFactory
   RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>("aggs_level%LEVELID_proc%PROCID.out"));
-  aggExpFact->SetFactory("Aggregates", UCAggFact11);
+  aggExpFact->SetFactory("Aggregates", CoupledAggFact11);
   aggExpFact->SetFactory("DofsPerNode", dropFact11);
 
   AcFact->AddTransferFactory(aggExpFact);

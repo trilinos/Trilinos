@@ -47,7 +47,7 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 
 namespace {
 
@@ -72,18 +72,18 @@ namespace {
     out << *Final_ << std::endl;
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(UCAggregationFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(CoupledAggregationFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
   {
     MUELU_TEST_EPETRA_ONLY_FOR_DOUBLE_AND_INT(Scalar, LocalOrdinal, GlobalOrdinal) {
 #include "MueLu_UseShortNames.hpp"
 
       out << "version: " << MueLu::Version() << std::endl;
-      RCP<UCAggregationFactory> aggFact = rcp(new UCAggregationFactory());
+      RCP<CoupledAggregationFactory> aggFact = rcp(new CoupledAggregationFactory());
       TEST_EQUALITY(aggFact != Teuchos::null, true);
     }
   } // Constructor
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(UCAggregationFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(CoupledAggregationFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
   {
     MUELU_TEST_EPETRA_ONLY_FOR_DOUBLE_AND_INT(Scalar, LocalOrdinal, GlobalOrdinal) {
       //    typedef double Scalar;
@@ -96,7 +96,7 @@ namespace {
 
       {
 
-        UCAggregationFactory aggFact;
+        CoupledAggregationFactory aggFact;
         aggFact.SetPrintFlag(6);
         aggFact.SetMinNodesPerAggregate(2);
         aggFact.SetMaxNeighAlreadySelected(5);
@@ -111,7 +111,7 @@ namespace {
 
       {
 
-        UCAggregationFactory aggFact;
+        CoupledAggregationFactory aggFact;
         aggFact.SetPrintFlag(6);
         aggFact.SetMinNodesPerAggregate(2);
         aggFact.SetMaxNeighAlreadySelected(5);
@@ -126,7 +126,7 @@ namespace {
 
       {
 
-        UCAggregationFactory aggFact;
+        CoupledAggregationFactory aggFact;
         aggFact.SetPrintFlag(6);
         aggFact.SetMinNodesPerAggregate(2);
         aggFact.SetMaxNeighAlreadySelected(5);
@@ -154,8 +154,8 @@ namespace {
 #endif
 
 #define UNIT_TEST_GROUP_5(SC, LO, GO, NO, LMO)                          \
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(UCAggregationFactory, Constructor, SC, LO, GO, NO, LMO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(UCAggregationFactory, Build,       SC, LO, GO, NO, LMO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(CoupledAggregationFactory, Constructor, SC, LO, GO, NO, LMO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(CoupledAggregationFactory, Build,       SC, LO, GO, NO, LMO)
 
 #define UNIT_TEST_GROUP_2(LO, GO)                                       \
   typedef Kokkos::DefaultKernels<Scalar,LO,Node>::SparseOps LMO ## LO;  \

@@ -56,7 +56,7 @@
 #include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_Graph_fwd.hpp"
 
-#include "MueLu_UCAggregationCommHelper_fwd.hpp"
+#include "MueLu_CoupledAggregationCommHelper_fwd.hpp"
 
 namespace MueLu {
 
@@ -288,7 +288,7 @@ namespace MueLu {
 
       //! @brief Attempt to clean up aggregates that are too small.
     int RemoveSmallAggs(Aggregates& aggregates, int min_size,
-                        RCP<Xpetra::Vector<double,LO,GO,NO> > & distWeights, const MueLu::UCAggregationCommHelper<LO,GO,NO,LMO> & myWidget) const; //RemoveSmallAggs
+                        RCP<Xpetra::Vector<double,LO,GO,NO> > & distWeights, const MueLu::CoupledAggregationCommHelper<LO,GO,NO,LMO> & myWidget) const; //RemoveSmallAggs
 
     //@}
 

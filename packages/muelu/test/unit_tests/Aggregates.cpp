@@ -49,7 +49,7 @@
 
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Aggregates.hpp"
@@ -71,7 +71,7 @@ namespace MueLuTests {
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
     // Setup aggregation factory (use default factory for graph)
-    RCP<UCAggregationFactory> aggFact = rcp(new UCAggregationFactory());
+    RCP<CoupledAggregationFactory> aggFact = rcp(new CoupledAggregationFactory());
     aggFact->SetFactory("Graph", dropFact);
     aggFact->SetMinNodesPerAggregate(3);
     aggFact->SetMaxNeighAlreadySelected(0);

@@ -30,7 +30,7 @@ APPEND_SET(SOURCES
   Aggregates.cpp
   CoalesceDropFactory.cpp
   Memory.cpp
-  #UCAggregationFactory.cpp
+  #CoupledAggregationFactory.cpp
   TwoKeyMap.cpp
   GenericRFactory.cpp
   ThresholdAFilterFactory.cpp

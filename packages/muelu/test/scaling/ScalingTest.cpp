@@ -76,7 +76,7 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
@@ -293,7 +293,7 @@ int main(int argc, char *argv[]) {
     //
 
     {
-      RCP<UCAggregationFactory> AggregationFact = rcp(new UCAggregationFactory());
+      RCP<CoupledAggregationFactory> AggregationFact = rcp(new CoupledAggregationFactory());
       *out << "========================= Aggregate option summary =========================" << std::endl;
       *out << "min DOFs per aggregate :                " << optMinPerAgg << std::endl;
       *out << "min # of root nbrs already aggregated : " << optMaxNbrSel << std::endl;

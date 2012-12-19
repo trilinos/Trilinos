@@ -65,7 +65,7 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 
-#include <MueLu_UCAggregationCommHelper.hpp>
+#include <MueLu_CoupledAggregationCommHelper.hpp>
 
 #include "MueLu_Utilities.hpp" // TMP JG NOTE: only for maxAll, so no _fwd in _decl
 
@@ -668,7 +668,7 @@ namespace MueLu {
                                            decomposition->getMap()->getIndexBase(),
                                            comm);
 //m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build comm helper", currentLevel));
-    MueLu::UCAggregationCommHelper<LO, GO, NO, LMO> commHelper(uniqueMap, targetMap);
+    MueLu::CoupledAggregationCommHelper<LO, GO, NO, LMO> commHelper(uniqueMap, targetMap);
     myPartitionNumber = -1;
     int doArbitrate = 1;
 //m3 = Teuchos::null;

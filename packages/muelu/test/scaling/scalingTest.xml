@@ -99,7 +99,7 @@
       <Parameter name="MaxNeighAlreadySelected" type="int"    value="0"/>
       <Parameter name="MinNodesPerAggregate"    type="int"    value="5"/>
 -->
-      <Parameter name="factory" type="string" value="UCAggregationFactory"/>
+      <Parameter name="factory" type="string" value="CoupledAggregationFactory"/>
       <Parameter name="Ordering"                type="string" value="Natural"/>
       <Parameter name="MaxNeighAlreadySelected" type="int"    value="0"/>
       <Parameter name="Phase3AggCreation"       type="double" value="0.5"/>

@@ -192,13 +192,13 @@ int main(int argc, char *argv[]) {
   Finest->Set("NullSpace",nullSpace);
   H->SetLevel(Finest);
 
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-  UCAggFact->SetMinNodesPerAggregate(3);
-  UCAggFact->SetMaxNeighAlreadySelected(0);
-  UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
-  UCAggFact->SetPhase3AggCreation(0.5);
+  RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
+  CoupledAggFact->SetMinNodesPerAggregate(3);
+  CoupledAggFact->SetMaxNeighAlreadySelected(0);
+  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetPhase3AggCreation(0.5);
 
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(CoupledAggFact));
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
   //Pfact->SetDampingFactor(0.);

@@ -84,7 +84,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Memory.hpp"
 #include "MueLu_Hierarchy.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -527,12 +527,12 @@ int main(int argc, char *argv[]) {
   RCP<CoalesceDropFactory> dropFact11 = rcp(new CoalesceDropFactory());
   dropFact11->SetFactory("A", A11Fact);
   dropFact11->SetFactory("UnAmalgamationInfo", amalgFact11);
-  RCP<UCAggregationFactory> UCAggFact11 = rcp(new UCAggregationFactory());
-  UCAggFact11->SetFactory("Graph", dropFact11);
-  UCAggFact11->SetMinNodesPerAggregate(3);
-  UCAggFact11->SetMaxNeighAlreadySelected(1);
-  UCAggFact11->SetOrdering(MueLu::AggOptions::NATURAL);
-  UCAggFact11->SetPhase3AggCreation(0.5);
+  RCP<CoupledAggregationFactory> CoupledAggFact11 = rcp(new CoupledAggregationFactory());
+  CoupledAggFact11->SetFactory("Graph", dropFact11);
+  CoupledAggFact11->SetMinNodesPerAggregate(3);
+  CoupledAggFact11->SetMaxNeighAlreadySelected(1);
+  CoupledAggFact11->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact11->SetPhase3AggCreation(0.5);
 
   ///////////////////////////////////////// define transfer ops for A11
 #if 1
@@ -556,20 +556,20 @@ int main(int argc, char *argv[]) {
   M11->SetFactory("P", P11Fact);
   M11->SetFactory("R", R11Fact);
   M11->SetFactory("Nullspace", nspFact11);
-  M11->SetFactory("Aggregates", UCAggFact11);
+  M11->SetFactory("Aggregates", CoupledAggFact11);
   M11->SetFactory("UnAmalgamationInfo", amalgFact11);
   M11->SetFactory("Ptent", P11tentFact);
   M11->SetFactory("Smoother", Smoo11Fact);
   M11->SetFactory("CoarseMap", coarseMapFact11);
 
 #else
-  RCP<TentativePFactory> P11Fact = rcp(new TentativePFactory(UCAggFact11,amalgFact11)); // check me
+  RCP<TentativePFactory> P11Fact = rcp(new TentativePFactory(CoupledAggFact11,amalgFact11)); // check me
 
   RCP<TransPFactory> R11Fact = rcp(new TransPFactory(P11Fact));
 
   Teuchos::RCP<NullspaceFactory> nspFact11 = Teuchos::rcp(new NullspaceFactory("Nullspace1",P11Fact));
 
-  RCP<CoarseMapFactory> coarseMapFact11 = Teuchos::rcp(new CoarseMapFactory(UCAggFact11, nspFact11));
+  RCP<CoarseMapFactory> coarseMapFact11 = Teuchos::rcp(new CoarseMapFactory(CoupledAggFact11, nspFact11));
   coarseMapFact11->setStridingData(stridingInfo);
   coarseMapFact11->setStridedBlockId(0);
 
@@ -608,7 +608,7 @@ int main(int argc, char *argv[]) {
 #if 0
   // use PGAMG
   RCP<AmalgamationFactory> amalgFact22 = rcp(new AmalgamationFactory(A22Fact));
-  RCP<TentativePFactory> P22tentFact = rcp(new TentativePFactory(UCAggFact11, amalgFact22)); // check me (fed with A22) wrong column GIDS!!!
+  RCP<TentativePFactory> P22tentFact = rcp(new TentativePFactory(CoupledAggFact11, amalgFact22)); // check me (fed with A22) wrong column GIDS!!!
 
   RCP<SaPFactory> P22Fact = rcp(new SaPFactory(P22tentFact));
 
@@ -617,7 +617,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::RCP<NullspaceFactory> nspFact22 = Teuchos::rcp(new NullspaceFactory("Nullspace2",P22tentFact));
 
-  RCP<CoarseMapFactory> coarseMapFact22 = Teuchos::rcp(new CoarseMapFactory(UCAggFact11, nspFact22));
+  RCP<CoarseMapFactory> coarseMapFact22 = Teuchos::rcp(new CoarseMapFactory(CoupledAggFact11, nspFact22));
   coarseMapFact22->setStridingData(stridingInfo);
   coarseMapFact22->setStridedBlockId(1);
 
@@ -652,7 +652,7 @@ int main(int argc, char *argv[]) {
   M22->SetFactory("A", A22Fact);
   M22->SetFactory("P", P22Fact);
   M22->SetFactory("R", R22Fact);
-  M22->SetFactory("Aggregates", UCAggFact11);
+  M22->SetFactory("Aggregates", CoupledAggFact11);
   M22->SetFactory("Nullspace", nspFact22);
   M22->SetFactory("Ptent", P22Fact);
   M22->SetFactory("Smoother", Smoo22Fact);

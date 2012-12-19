@@ -53,7 +53,7 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 
 #include "MueLu_Utilities.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_FactoryManager.hpp"
@@ -149,11 +149,11 @@ namespace MueLuTests {
     nullSpace->putScalar( (SC) 1.0);
     fineLevel->Set("Nullspace",nullSpace);       // set null space information for finest level
 
-    RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-    UCAggFact->SetMinNodesPerAggregate(3);
-    UCAggFact->SetMaxNeighAlreadySelected(0);
-    UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
-    UCAggFact->SetPhase3AggCreation(0.5);
+    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
+    CoupledAggFact->SetMinNodesPerAggregate(3);
+    CoupledAggFact->SetMaxNeighAlreadySelected(0);
+    CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+    CoupledAggFact->SetPhase3AggCreation(0.5);
 
     RCP<TentativePFactory> PFact  = rcp(new TentativePFactory()); //just using plain aggregation
     RCP<Factory>           RFact  = rcp(new TransPFactory());
@@ -169,7 +169,7 @@ namespace MueLuTests {
     AcFact->setVerbLevel(Teuchos::VERB_HIGH);
 
     FactoryManager M;
-    M.SetFactory("Aggregates", UCAggFact);
+    M.SetFactory("Aggregates", CoupledAggFact);
     M.SetFactory("P", PFact);
     M.SetFactory("Ptent", PFact); // for nullspace
     M.SetFactory("R", RFact);

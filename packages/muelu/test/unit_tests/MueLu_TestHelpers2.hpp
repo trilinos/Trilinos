@@ -75,7 +75,7 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_LocalAggregationAlgorithm_decl.hpp" //AggOptions
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -108,7 +108,7 @@ namespace MueLuTests {
             H_ = rcp(new Hierarchy(A_));
             RCP<Level> Finest = H_->GetLevel();
 
-            RCP<UCAggregationFactory> aggFact = rcp(new UCAggregationFactory());
+            RCP<CoupledAggregationFactory> aggFact = rcp(new CoupledAggregationFactory());
             aggFact->SetMinNodesPerAggregate(3);
             aggFact->SetMaxNeighAlreadySelected(0);
             aggFact->SetOrdering(MueLu::AggOptions::NATURAL);

@@ -54,7 +54,7 @@
 #include "MueLu_Aggregates_decl.hpp" // MUELU_UNASSIGNED macro
 #include "MueLu_Utilities_decl.hpp"  // sumAll macro
 #include "MueLu_Graph.hpp"
-#include "MueLu_UCAggregationCommHelper.hpp"
+#include "MueLu_CoupledAggregationCommHelper.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
 
@@ -80,7 +80,7 @@ namespace MueLu {
     const RCP<const Map> nonUniqueMap = aggregates.GetMap();
     const RCP<const Map> uniqueMap    = graph.GetDomainMap(); // Q: DomainMap or RowMap??
 
-    MueLu::UCAggregationCommHelper<LO,GO,NO,LMO> myWidget(uniqueMap, nonUniqueMap);
+    MueLu::CoupledAggregationCommHelper<LO,GO,NO,LMO> myWidget(uniqueMap, nonUniqueMap);
 
     RCP<Xpetra::Vector<double,LO,GO,NO> > distWeights = Xpetra::VectorFactory<double,LO,GO,NO>::Build(nonUniqueMap);
 
@@ -536,7 +536,7 @@ namespace MueLu {
             // Tentatively assign vertex to best_agg.
             if ( (best_score >= bestScoreCutoff) && (cannotLoseAllFriends)) {
 
-              TEUCHOS_TEST_FOR_EXCEPTION(best_agg == -1 || BestMark == -1, MueLu::Exceptions::RuntimeError, "MueLu::UCAggregationFactory internal error"); // should never happen
+              TEUCHOS_TEST_FOR_EXCEPTION(best_agg == -1 || BestMark == -1, MueLu::Exceptions::RuntimeError, "MueLu::CoupledAggregationFactory internal error"); // should never happen
 
               vertex2AggId[i] = best_agg;
               weights[i] = best_score;
@@ -691,7 +691,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   int LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RemoveSmallAggs(Aggregates& aggregates, int min_size,
-                      RCP<Xpetra::Vector<double,LO,GO,NO> > & distWeights, const MueLu::UCAggregationCommHelper<LO,GO,NO,LMO> & myWidget) const {
+                      RCP<Xpetra::Vector<double,LO,GO,NO> > & distWeights, const MueLu::CoupledAggregationCommHelper<LO,GO,NO,LMO> & myWidget) const {
     int myPid = aggregates.GetMap()->getComm()->getRank();
 
     LO nAggregates = aggregates.GetNumAggregates();

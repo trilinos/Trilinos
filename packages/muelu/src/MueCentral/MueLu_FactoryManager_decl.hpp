@@ -58,7 +58,7 @@
 #include "MueLu_SmootherFactory_fwd.hpp"
 #include "MueLu_TrilinosSmoother_fwd.hpp"
 #include "MueLu_DirectSolver_fwd.hpp"
-#include "MueLu_UCAggregationFactory_fwd.hpp"
+#include "MueLu_CoupledAggregationFactory_fwd.hpp"
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 #include "MueLu_CoalesceDropFactory2_fwd.hpp"
 #include "MueLu_RepartitionFactory_fwd.hpp"

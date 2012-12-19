@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_UCAGGREGATIONCOMMHELPER_DECL_HPP
-#define MUELU_UCAGGREGATIONCOMMHELPER_DECL_HPP
+#ifndef MUELU_COUPLEDAGGREGATIONCOMMHELPER_DECL_HPP
+#define MUELU_COUPLEDAGGREGATIONCOMMHELPER_DECL_HPP
 
 #include <Xpetra_Import_fwd.hpp>
 #include <Xpetra_ImportFactory_fwd.hpp>
@@ -52,24 +52,24 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
-#include "MueLu_UCAggregationCommHelper_fwd.hpp"
+#include "MueLu_CoupledAggregationCommHelper_fwd.hpp"
 
 #include "MueLu_Aggregates.hpp"
 
 namespace MueLu {
 
   /*!
-    @class UCAggregationCommHelper
+    @class CoupledAggregationCommHelper
     @brief Helper class for providing arbitrated communication across processors
 
     For more details, see the comments for the ArbitrateAndCommunicate methods.
   */
 
   template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class UCAggregationCommHelper : public BaseClass {
+  class CoupledAggregationCommHelper : public BaseClass {
 
     typedef double Scalar; // Scalar type only used for weight: always a double.
-#undef MUELU_UCAGGREGATIONCOMMHELPER_SHORT
+#undef MUELU_COUPLEDAGGREGATIONCOMMHELPER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -78,10 +78,10 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    UCAggregationCommHelper(const RCP<const Map> & uniqueMap, const RCP<const Map> & nonUniqueMap);
+    CoupledAggregationCommHelper(const RCP<const Map> & uniqueMap, const RCP<const Map> & nonUniqueMap);
 
     //! Destructor.
-    ~UCAggregationCommHelper() { }
+    ~CoupledAggregationCommHelper() { }
 
     //@}
 
@@ -242,5 +242,5 @@ namespace MueLu {
 // - procWinner is an array of proc ID -> LocalOrdinal
 // - companion == aggregates.GetVertex2AggId() == local aggregate ID -> LocalOrdinal
 
-#define MUELU_UCAGGREGATIONCOMMHELPER_SHORT
-#endif // MUELU_UCAGGREGATIONCOMMHELPER_DECL_HPP
+#define MUELU_COUPLEDAGGREGATIONCOMMHELPER_SHORT
+#endif // MUELU_COUPLEDAGGREGATIONCOMMHELPER_DECL_HPP

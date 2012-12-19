@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
   aggOptions.SetMaxNeighAlreadySelected(0);
   aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
   aggOptions.SetPhase3AggCreation(0.5);
-  UCAggregationFactory aggFact(aggOptions);
+  CoupledAggregationFactory aggFact(aggOptions);
   RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "someGraphLabel"));
   double t0 = MPI_Wtime();
   RCP<Aggregates> aggregates = aggFact.Build(*graph);

@@ -43,16 +43,18 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_UCAGGREGATIONFACTORY_FWD_HPP
-#define MUELU_UCAGGREGATIONFACTORY_FWD_HPP
+#include "MueLu_ExplicitInstantiation.hpp"
 
-namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class UCAggregationFactory;
-}
+#include "MueLu_CoupledAggregationCommHelper_def.hpp"
 
-#ifndef MUELU_UCAGGREGATIONFACTORY_SHORT
-#define MUELU_UCAGGREGATIONFACTORY_SHORT
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
+template class MueLu::CoupledAggregationCommHelper<int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
 #endif
 
-#endif // MUELU_UCAGGREGATIONFACTORY_FWD_HPP
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
+# ifdef HAVE_TEUCHOS_LONG_LONG_INT
+template class MueLu::CoupledAggregationCommHelper<int, long long int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void, int, Kokkos::DefaultNode::DefaultNodeType>::SparseOps>;
+# else
+# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
+# endif
+#endif
