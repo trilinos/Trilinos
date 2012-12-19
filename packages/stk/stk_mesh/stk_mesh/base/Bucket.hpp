@@ -144,6 +144,8 @@ public:
 
   stk::topology topology() const { return m_topology; }
 
+  void parent_topology( EntityRank parent_rank, std::vector<stk::topology> & parent_topologies) const;
+
   //--------------------------------
   // Container-like types and methods:
 

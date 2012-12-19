@@ -63,6 +63,8 @@ public:
    */
   unsigned primary_entity_rank() const { return m_partImpl.primary_entity_rank(); }
 
+  stk::topology topology() const { return m_partImpl.topology(); }
+
   /** \brief  Application-defined text name of this part */
   const std::string & name() const { return m_partImpl.name(); }
 

@@ -41,6 +41,8 @@ public:
    */
   unsigned primary_entity_rank() const { return m_entity_rank ; }
 
+  stk::topology topology() const { return m_topology; }
+
   /** \brief  Application-defined text name of this part */
   const std::string & name() const { return m_name ; }
 
@@ -93,6 +95,8 @@ public:
 
   void set_primary_entity_rank( EntityRank entity_rank );
 
+  void set_topology (stk::topology topo);
+
 private:
 
 #ifndef DOXYGEN_COMPILE
@@ -110,6 +114,7 @@ private:
   MetaData          * const m_mesh_meta_data ;
   const unsigned            m_ordinal ;
   EntityRank                m_entity_rank ;
+  stk::topology             m_topology ;
 
 #endif /* DOXYGEN_COMPILE */
 

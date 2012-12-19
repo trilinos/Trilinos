@@ -72,7 +72,8 @@ PartImpl::PartImpl( MetaData          * arg_meta_data ,
     m_subsets() , m_supersets() , m_intersect() , m_relations() ,
     m_mesh_meta_data( arg_meta_data ),
     m_ordinal( arg_ordinal ),
-    m_entity_rank( arg_rank )
+    m_entity_rank( arg_rank ),
+    m_topology(stk::topology::INVALID_TOPOLOGY)
 {
   TraceIfWatching("stk::mesh::impl::PartImpl::PartImpl", LOG_PART, arg_ordinal);
   DiagIfWatching(LOG_PART, static_cast<size_t>(m_ordinal), "Name is: " << arg_name << ", rank is : " << arg_rank );
@@ -97,6 +98,33 @@ void PartImpl::set_primary_entity_rank( EntityRank entity_rank )
 
 //----------------------------------------------------------------------
 
+void PartImpl::set_topology( stk::topology topo )
+{
+  TraceIfWatching("stk::mesh::impl::PartImpl::set_topology", LOG_PART, static_cast<size_t>(m_ordinal));
+  if ( topo == stk::topology::INVALID_TOPOLOGY || topo == m_topology ) return;
+
+  ThrowErrorMsgIf( m_topology != stk::topology::INVALID_TOPOLOGY && m_topology != topo,
+      "Error set_topology: part "
+      << name()
+      << " already defined with "
+      << m_topology
+      << " conflicts with  "
+      << topo
+  );
+
+  ThrowErrorMsgIf( static_cast<stk::topology::rank_t>(m_entity_rank) != stk::topology::INVALID_RANK
+      && static_cast<stk::topology::rank_t>(m_entity_rank) != topo.rank(),
+      "Error set_topology: part "
+      << name()
+      << " already defined with "
+      << static_cast<stk::topology::rank_t>(m_entity_rank)
+      << " conflicts with  "
+      << topo << " which has rank " << topo.rank()
+  );
+
+  m_entity_rank = topo.rank();
+  m_topology = topo;
+}
 
 
 //----------------------------------------------------------------------

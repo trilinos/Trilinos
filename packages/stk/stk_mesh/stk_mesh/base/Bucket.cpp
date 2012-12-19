@@ -536,6 +536,27 @@ void Bucket::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_src )
   }
 }
 
+void Bucket::parent_topology( EntityRank parent_rank, std::vector<stk::topology> & parent_topologies) const
+{
+  PartVector parts;
+  supersets(parts);
+
+  parent_topologies.clear();
+
+  for (size_t i=0, e=parts.size(); i<e; ++i)
+  {
+    Part const & p = *parts[i];
+    if ( (p.primary_entity_rank() == parent_rank) && p.topology().is_valid()) {
+      parent_topologies.push_back(p.topology());
+    }
+  }
+
+  std::sort(parent_topologies.begin(),parent_topologies.end());
+  std::vector<stk::topology>::iterator end = std::unique(parent_topologies.begin(), parent_topologies.end());
+
+  parent_topologies.erase(end,parent_topologies.end());
+}
+
 
 
 } // namespace mesh

@@ -21,6 +21,8 @@
 #include <stk_util/util/PairIter.hpp>
 #include <stk_util/util/NamedPair.hpp>
 
+#include <stk_topology/topology.hpp>
+
 namespace stk {
 namespace mesh {
 

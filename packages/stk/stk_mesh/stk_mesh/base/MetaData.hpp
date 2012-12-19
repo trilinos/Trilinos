@@ -501,6 +501,8 @@ private:
 
   void internal_declare_part_subset( Part & superset , Part & subset );
 
+  void assign_cell_topology( Part & part, CellTopology topo);
+
   // Members
 
   bool   m_commit ;

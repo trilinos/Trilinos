@@ -32,22 +32,6 @@ namespace mesh {
 
 namespace {
 
-void assign_cell_topology(
-  MetaData::PartCellTopologyVector & part_cell_topology_vector,
-  size_t                   part_ordinal,
-  const CellTopology       cell_topology)
-{
-  TraceIfWatching("stk::mesh::assign_cell_topology", LOG_PART, part_ordinal);
-  DiagIfWatching(LOG_PART, part_ordinal, "assigning cell topo: " << cell_topology.getName());
-
-  if (part_ordinal >= part_cell_topology_vector.size()) {
-    part_cell_topology_vector.resize(part_ordinal + 1);
-  }
-
-  part_cell_topology_vector[part_ordinal] = cell_topology;
-
-  ThrowRequireMsg(cell_topology.getCellTopologyData(), "bad topology in MetaData::assign_cell_topology");
-}
 
 bool root_part_in_subset(stk::mesh::Part & part)
 {
@@ -80,6 +64,28 @@ void find_cell_topologies_in_part_and_subsets_of_same_rank(const Part & part, En
 }
 
 } // namespace
+
+void MetaData::assign_cell_topology(
+  Part &                   part,
+  const CellTopology       cell_topology)
+{
+  const size_t part_ordinal = part.mesh_meta_data_ordinal();
+
+  TraceIfWatching("stk::mesh::assign_cell_topology", LOG_PART, part_ordinal);
+  DiagIfWatching(LOG_PART, part_ordinal, "assigning cell topo: " << cell_topology.getName());
+
+  if (part_ordinal >= m_partCellTopologyVector.size()) {
+    m_partCellTopologyVector.resize(part_ordinal + 1);
+  }
+
+  m_partCellTopologyVector[part_ordinal] = cell_topology;
+
+  stk::topology topo = get_topology(cell_topology, m_spatial_dimension);
+
+  m_part_repo.get_all_parts()[part_ordinal]->m_partImpl.set_topology(topo);
+
+  ThrowRequireMsg(cell_topology.getCellTopologyData(), "bad topology in MetaData::assign_cell_topology");
+}
 
 MetaData & MetaData::get( const BulkData & bulk_data) {
   return bulk_data.meta_data();
@@ -340,12 +346,12 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
   internal_declare_part_subset(superset,subset);
   // Update PartCellTopologyVector for "subset" and same-rank subsets, ad nauseum
   if (subset.primary_entity_rank() == superset.primary_entity_rank()) {
-    assign_cell_topology(m_partCellTopologyVector, subset.mesh_meta_data_ordinal(), superset_top);
+    assign_cell_topology( subset, superset_top);
     const PartVector & subset_parts = subset.subsets();
     for (PartVector::const_iterator it=subset_parts.begin() ; it != subset_parts.end() ; ++it) {
-      const Part & it_part = **it;
+      Part & it_part = **it;
       if (it_part.primary_entity_rank() == superset.primary_entity_rank()) {
-        assign_cell_topology(m_partCellTopologyVector, it_part.mesh_meta_data_ordinal(), superset_top);
+        assign_cell_topology( it_part, superset_top);
       }
     }
   }
@@ -603,7 +609,7 @@ void MetaData::register_cell_topology(const CellTopology cell_topology, EntityRa
     Part &part = declare_internal_part(part_name, entity_rank);
     m_cellTopologyPartEntityRankMap[cell_topology] = CellTopologyPartEntityRankMap::mapped_type(&part, entity_rank);
 
-    assign_cell_topology(m_partCellTopologyVector, part.mesh_meta_data_ordinal(), cell_topology);
+    assign_cell_topology( part, cell_topology);
   }
   //check_topo_db();
 }
