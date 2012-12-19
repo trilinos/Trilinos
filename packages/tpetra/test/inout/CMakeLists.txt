@@ -24,3 +24,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
+
+# This test only makes sense for 1 MPI process.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MatrixMarket_MV_Output_Perm
+  SOURCES
+    MatrixMarket_MV_Output_Perm.cpp
+  ARGS
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+  
