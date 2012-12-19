@@ -43,12 +43,12 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_UCAGGREGATIONFACTORY_DECL_HPP
-#define MUELU_UCAGGREGATIONFACTORY_DECL_HPP
+#ifndef MUELU_COUPLEDAGGREGATIONFACTORY_DECL_HPP
+#define MUELU_COUPLEDAGGREGATIONFACTORY_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_UCAggregationFactory_fwd.hpp"
+#include "MueLu_CoupledAggregationFactory_fwd.hpp"
 
 #include "MueLu_LocalAggregationAlgorithm.hpp"
 #include "MueLu_LeftoverAggregationAlgorithm.hpp"
@@ -59,7 +59,7 @@
 namespace MueLu {
 
   /*!
-    @class UCAggregationFactory class.
+    @class CoupledAggregationFactory class.
     @brief Factory for coarsening a graph with uncoupled aggregation.
 
     This method has two phases.  The first is a local clustering algorithm.  The second creates aggregates
@@ -79,8 +79,8 @@ namespace MueLu {
   */
 
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class UCAggregationFactory : public SingleLevelFactoryBase {
-#undef MUELU_UCAGGREGATIONFACTORY_SHORT
+  class CoupledAggregationFactory : public SingleLevelFactoryBase {
+#undef MUELU_COUPLEDAGGREGATIONFACTORY_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
@@ -88,10 +88,10 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    UCAggregationFactory();
+    CoupledAggregationFactory();
 
     //! Destructor.
-    virtual ~UCAggregationFactory() { }
+    virtual ~CoupledAggregationFactory() { }
 
     //@}
 
@@ -135,7 +135,7 @@ namespace MueLu {
     LocalAggregationAlgorithm algo1_;
     LeftoverAggregationAlgorithm algo2_;
 
-  }; // class UCAggregationFactory
+  }; // class CoupledAggregationFactory
 
 } //namespace MueLu
 
@@ -143,5 +143,5 @@ namespace MueLu {
 // - allow to choose algo
 // - base class for algorithm and options forward to algorithm as parameter list
 
-#define MUELU_UCAGGREGATIONFACTORY_SHORT
-#endif // MUELU_UCAGGREGATIONFACTORY_DECL_HPP
+#define MUELU_COUPLEDAGGREGATIONFACTORY_SHORT
+#endif // MUELU_COUPLEDAGGREGATIONFACTORY_DECL_HPP

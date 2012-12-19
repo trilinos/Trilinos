@@ -58,7 +58,7 @@
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_SmootherFactory.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
@@ -118,15 +118,15 @@ TEUCHOS_UNIT_TEST(Hierarchy, KeepAggregates)
   Hierarchy H(A);
   H.SetMaxCoarseSize(1);
 
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+  RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
   FactoryManager M;
-  M.SetFactory("Aggregates", UCAggFact);
+  M.SetFactory("Aggregates", CoupledAggFact);
 
-  H.GetLevel(0)->Keep("Aggregates", UCAggFact.get());
+  H.GetLevel(0)->Keep("Aggregates", CoupledAggFact.get());
   H.Setup(M, 0, 2);
 
   for (LocalOrdinal l=0; l<H.GetNumLevels()-1;l++) {
-    TEST_EQUALITY(H.GetLevel(l)->IsAvailable("Aggregates", UCAggFact.get()), true);
+    TEST_EQUALITY(H.GetLevel(l)->IsAvailable("Aggregates", CoupledAggFact.get()), true);
   }
 
 } //FullPopulate_KeepAggregates
@@ -157,11 +157,11 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
   Finest->Set("NullSpace", nullSpace);
   Finest->Set("A", Op);
 
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-  UCAggFact->SetMinNodesPerAggregate(3);
-  UCAggFact->SetMaxNeighAlreadySelected(0);
-  UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
-  UCAggFact->SetPhase3AggCreation(0.5);
+  RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
+  CoupledAggFact->SetMinNodesPerAggregate(3);
+  CoupledAggFact->SetMaxNeighAlreadySelected(0);
+  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetPhase3AggCreation(0.5);
 
   RCP<CoalesceDropFactory> cdFact;
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
@@ -189,7 +189,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
   M.SetFactory("R", Rfact);
   M.SetFactory("A", Acfact);
   M.SetFactory("Ptent", TentPFact);
-  M.SetFactory("Aggregates", UCAggFact);
+  M.SetFactory("Aggregates", CoupledAggFact);
   M.SetFactory("Smoother", SmooFact);
   M.SetFactory("CoarseSolver", coarseSolveFact);
 
@@ -251,11 +251,11 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   Finest->Set("A", Op);
   Finest->Set("Nullspace", nullSpace);
 
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-  UCAggFact->SetMinNodesPerAggregate(3);
-  UCAggFact->SetMaxNeighAlreadySelected(0);
-  UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
-  UCAggFact->SetPhase3AggCreation(0.5);
+  RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
+  CoupledAggFact->SetMinNodesPerAggregate(3);
+  CoupledAggFact->SetMaxNeighAlreadySelected(0);
+  CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact->SetPhase3AggCreation(0.5);
   RCP<CoalesceDropFactory> cdFact;
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
 
@@ -283,7 +283,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   M.SetFactory("R", Rfact);
   M.SetFactory("A", Acfact);
   M.SetFactory("Ptent", TentPFact);
-  M.SetFactory("Aggregates", UCAggFact);
+  M.SetFactory("Aggregates", CoupledAggFact);
   M.SetFactory("Smoother", SmooFact);
   M.SetFactory("CoarseSolver", coarseSolveFact);
 

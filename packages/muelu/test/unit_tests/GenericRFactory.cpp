@@ -65,7 +65,7 @@
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
@@ -127,11 +127,11 @@ namespace MueLuTests {
     Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
 
     // define transfer operators
-    RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-    UCAggFact->SetMinNodesPerAggregate(3);
-    UCAggFact->SetMaxNeighAlreadySelected(0);
-    UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
-    UCAggFact->SetPhase3AggCreation(0.5);
+    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
+    CoupledAggFact->SetMinNodesPerAggregate(3);
+    CoupledAggFact->SetMaxNeighAlreadySelected(0);
+    CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+    CoupledAggFact->SetPhase3AggCreation(0.5);
 
     RCP<SaPFactory>         Pfact = rcp( new SaPFactory());
     RCP<Factory>           Rfact = rcp( new GenericRFactory() );
@@ -151,7 +151,7 @@ namespace MueLuTests {
     FactoryManager M;
     M.SetFactory("P", Pfact);
     M.SetFactory("R", Rfact);
-    M.SetFactory("Aggregates", UCAggFact);
+    M.SetFactory("Aggregates", CoupledAggFact);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", coarseSolveFact);
 

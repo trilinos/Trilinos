@@ -99,7 +99,8 @@ private:
 //----------------------------------------------------------------------------
 
 namespace Impl {
-void gauss_legendre( unsigned n , double point[] , double weight[] );
+unsigned guass_legendre_available( unsigned n );
+void     gauss_legendre( unsigned n , double point[] , double weight[] );
 }
 
 //----------------------------------------------------------------------------
@@ -113,14 +114,21 @@ private:
   GaussLegendre( const GaussLegendre & );
   GaussLegendre operator = ( const GaussLegendre & );
 
-  enum { Maximum   = unsigned(20) };
-  enum { Available = unsigned(32) };
-  enum { Desired   = unsigned(1 + PolyDegree / 2) };
+  enum { Desired = unsigned( 1 + PolyDegree / 2 ) };
 
 public:
-  enum { N = unsigned(Desired) < unsigned(Maximum)
-           ? Desired
-           : ( unsigned(Desired) <= unsigned(Available) ? Available : 0 ) };
+
+  /** \brief  N = number of points and weights for available 
+   *          integration rules that satisfy the desired degree.
+   */
+
+  enum { N = 1024 < Desired ?    0 : (
+              512 < Desired ? 1024 : (
+              256 < Desired ?  512 : (
+              128 < Desired ?  256 : (
+               64 < Desired ?  128 : (
+               32 < Desired ?   64 : (
+               20 < Desired ?   32 : Desired )))))) };
 
   ~GaussLegendre() {}
   GaussLegendre() { Impl::gauss_legendre( N , points , weights ); }

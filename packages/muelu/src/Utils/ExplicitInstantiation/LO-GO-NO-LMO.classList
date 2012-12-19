@@ -9,8 +9,8 @@ MaxLinkAggregationAlgorithm
 OnePtAggregationAlgorithm
 SmallAggregationAlgorithm
 #SubBlockAggregationFactory
-UCAggregationCommHelper
-UCAggregationFactory
+CoupledAggregationCommHelper
+CoupledAggregationFactory
 UncoupledAggregationAlgorithm
 UncoupledAggregationFactory
 #Zoltan

@@ -50,12 +50,12 @@ typedef MueLu::PRFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PRFactory;
 typedef MueLu::SmallAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SmallAggregationAlgorithm;
 #endif
 
-#ifdef MUELU_UCAGGREGATIONCOMMHELPER_SHORT
-typedef MueLu::UCAggregationCommHelper<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> UCAggregationCommHelper;
+#ifdef MUELU_COUPLEDAGGREGATIONCOMMHELPER_SHORT
+typedef MueLu::CoupledAggregationCommHelper<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> CoupledAggregationCommHelper;
 #endif
 
-#ifdef MUELU_UCAGGREGATIONFACTORY_SHORT
-typedef MueLu::UCAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> UCAggregationFactory;
+#ifdef MUELU_COUPLEDAGGREGATIONFACTORY_SHORT
+typedef MueLu::CoupledAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> CoupledAggregationFactory;
 #endif
 
 #ifdef MUELU_UNCOUPLEDAGGREGATIONALGORITHM_SHORT

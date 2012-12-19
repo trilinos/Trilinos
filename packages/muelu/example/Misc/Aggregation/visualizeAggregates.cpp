@@ -80,7 +80,7 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -160,33 +160,33 @@ int main(int argc, char *argv[]) {
   Finest->Set("A",Op);
   Finest->Set("Nullspace",nullSpace);
 
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+  RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
   *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
-  UCAggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
-  UCAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+  CoupledAggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
+  CoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
   std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
   if (aggOrdering == "natural") {
     *out << "aggregate ordering :                    NATURAL" << std::endl;
-    UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+    CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
   } else if (aggOrdering == "random") {
     *out << "aggregate ordering :                    RANDOM" << std::endl;
-    UCAggFact->SetOrdering(MueLu::AggOptions::RANDOM);
+    CoupledAggFact->SetOrdering(MueLu::AggOptions::RANDOM);
   } else if (aggOrdering == "graph") {
     *out << "aggregate ordering :                    GRAPH" << std::endl;
-    UCAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
+    CoupledAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
   } else {
     std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
     throw(MueLu::Exceptions::RuntimeError(msg));
   }
-  UCAggFact->SetPhase3AggCreation(0.5);
-  Finest->Keep("Aggregates",UCAggFact.get());
+  CoupledAggFact->SetPhase3AggCreation(0.5);
+  Finest->Keep("Aggregates",CoupledAggFact.get());
   *out << "=============================================================================" << std::endl;
 
   // build transfer operators
 //   RCP<NullspaceFactory> nspFact = rcp(new NullspaceFactory()); // make sure that we can keep nullspace!!!
-//   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact,nspFact));
+//   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(CoupledAggFact,nspFact));
 //   //RCP<PgPFactory> Pfact = rcp( new PgPFactory(TentPFact) );
 //   //RCP<FactoryBase2> Rfact  = rcp( new GenericRFactory(Pfact));
 //   RCP<SaPFactory> Pfact  = rcp( new SaPFactory(TentPFact) );
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
 //   RCP<RAPFactory> Acfact = rcp( new RAPFactory(Pfact, Rfact) );
 //   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
-//   Finest->Keep("Aggregates",UCAggFact.get());
+//   Finest->Keep("Aggregates",CoupledAggFact.get());
 //   Finest->Keep("Nullspace",nspFact.get());
 
   // build level smoothers
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
     SmooFact = rcp( new SmootherFactory(smooProto) );
 
   RCP<FactoryManager> M = rcp(new FactoryManager());
-  M->SetFactory("Aggregates", UCAggFact);
+  M->SetFactory("Aggregates", CoupledAggFact);
   M->SetFactory("Smoother", SmooFact);
 
   H->Setup(*M,0,maxLevels);
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
   // print out aggregation information
   for(LocalOrdinal l=0; l<H->GetNumLevels()-1;l++) {
     RCP<Level> level = H->GetLevel((int)l);
-    ExportAggregates(level, UCAggFact.get(),comm);
+    ExportAggregates(level, CoupledAggFact.get(),comm);
   }
 
   return EXIT_SUCCESS;

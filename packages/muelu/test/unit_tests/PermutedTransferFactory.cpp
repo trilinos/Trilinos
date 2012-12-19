@@ -60,7 +60,7 @@
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_FactoryManager.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_RepartitionFactory.hpp"
@@ -101,8 +101,8 @@ namespace MueLuTests {
     fineLevel.Set("Coordinates",coordVector);
 
 
-    RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-    RCP<TentativePFactory>    Ptentfact = rcp(new TentativePFactory(UCAggFact));
+    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
+    RCP<TentativePFactory>    Ptentfact = rcp(new TentativePFactory(CoupledAggFact));
     RCP<SaPFactory>           Pfact = rcp( new SaPFactory(Ptentfact));
     RCP<Factory>             Rfact = rcp( new TransPFactory(Pfact) );
     RCP<RAPFactory>           Acfact = rcp( new RAPFactory(Pfact,Rfact) );

@@ -252,8 +252,8 @@ int main(int argc, char *argv[]) {
   Finest->Set("NullSpace",nullSpace);
   H->SetLevel(Finest);
 
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-  RCP<TentativePFactory>    TentPFact = rcp(new TentativePFactory(UCAggFact));
+  RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
+  RCP<TentativePFactory>    TentPFact = rcp(new TentativePFactory(CoupledAggFact));
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
   RCP<Factory>         Rfact = rcp( new TransPFactory() );

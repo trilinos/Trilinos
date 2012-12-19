@@ -56,7 +56,7 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"

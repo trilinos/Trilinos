@@ -54,7 +54,6 @@
 #define MUELU_PERMUTATIONFACTORY_DEF_HPP_
 
 #include <vector>
-//#include <pair>
 
 #include "MueLu_PermutationFactory_decl.hpp"
 
@@ -101,6 +100,8 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & currentLevel) const {
   FactoryMonitor m(*this, "Permutation Factory ", currentLevel);
+
+#ifndef HAVE_MUELU_INST_COMPLEX_INT_INT
 
   Teuchos::RCP<Matrix> A = Get< Teuchos::RCP<Matrix> > (currentLevel, "A");
 
@@ -608,6 +609,10 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
   sumAll(diagQTVec->getMap()->getComm(), (LocalOrdinal)lNumColPermutations, gNumColPermutations);
   GetOStream(Runtime1, 0) << "#Column permutations/max possible permutations: " << gNumColPermutations << "/" << diagQTVec->getMap()->getGlobalNumElements() << std::endl;
   GetOStream(Runtime1, 0) << "#wide range row permutations: " << gWideRangeRowPermutations << " #wide range column permutations: " << gWideRangeColPermutations << std::endl;
+
+#else
+#warning PermutationFactory not compiling/working for Scalar==complex.
+#endif // #ifndef HAVE_MUELU_INST_COMPLEX_INT_INT
 
 }
 

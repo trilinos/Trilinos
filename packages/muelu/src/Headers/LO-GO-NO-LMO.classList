@@ -9,8 +9,8 @@ OnePtAggregationAlgorithm
 PRFactory
 SmallAggregationAlgorithm
 #SubBlockAggregationFactory
-UCAggregationCommHelper
-UCAggregationFactory
+CoupledAggregationCommHelper
+CoupledAggregationFactory
 UncoupledAggregationAlgorithm
 UncoupledAggregationFactory
 ZoltanInterface

@@ -44,6 +44,10 @@
 #include <string>
 #include <iostream>
 
+namespace unit_test {
+void product_tensor_legendre();
+};
+
 extern int mainHost(bool test_flat, bool test_orig, bool test_block);
 extern int mainCuda(bool test_flat, bool test_orig, bool test_block);
 
@@ -94,10 +98,16 @@ int main(int argc, char *argv[])
     }
   }
 
+  unit_test::product_tensor_legendre();
+
+#if 1
+
   if (test_host)
     mainHost(test_flat, test_orig, test_block);
   if (test_cuda)
     mainCuda(test_flat, test_orig, test_block);
+
+#endif
 
   return 0 ;
 }

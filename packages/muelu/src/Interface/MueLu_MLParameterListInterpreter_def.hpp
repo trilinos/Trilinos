@@ -76,7 +76,7 @@
 #include "MueLu_HierarchyHelpers.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_ParameterListUtils.hpp"
@@ -199,22 +199,22 @@ namespace MueLu {
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
     //dropFact->SetVerbLevel(toMueLuVerbLevel(eVerbLevel));
 
-    RCP<FactoryBase> UCAggFact = Teuchos::null;
+    RCP<FactoryBase> CoupledAggFact = Teuchos::null;
     if(agg_type == "Uncoupled") {
       // Uncoupled aggregation
-      RCP<UncoupledAggregationFactory> UCAggFact2 = rcp(new UncoupledAggregationFactory());
-      UCAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
-      UCAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-      UCAggFact2->SetOrdering(MueLu::AggOptions::NATURAL);
-      UCAggFact = UCAggFact2;
+      RCP<UncoupledAggregationFactory> CoupledAggFact2 = rcp(new UncoupledAggregationFactory());
+      CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
+      CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+      CoupledAggFact2->SetOrdering(MueLu::AggOptions::NATURAL);
+      CoupledAggFact = CoupledAggFact2;
     } else {
       // Coupled Aggregation (default)
-      RCP<UCAggregationFactory> UCAggFact2 = rcp(new UCAggregationFactory());
-      UCAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
-      UCAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-      UCAggFact2->SetOrdering(MueLu::AggOptions::NATURAL);
-      UCAggFact2->SetPhase3AggCreation(0.5);
-      UCAggFact = UCAggFact2;
+      RCP<CoupledAggregationFactory> CoupledAggFact2 = rcp(new CoupledAggregationFactory());
+      CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
+      CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+      CoupledAggFact2->SetOrdering(MueLu::AggOptions::NATURAL);
+      CoupledAggFact2->SetPhase3AggCreation(0.5);
+      CoupledAggFact = CoupledAggFact2;
     }
     if (verbosityLevel > 3) { // TODO fix me: Setup is a static function: we cannot use GetOStream without an object...
       *out << "========================= Aggregate option summary  =========================" << std::endl;
@@ -326,7 +326,7 @@ namespace MueLu {
 
       manager->SetFactory("CoarseSolver", coarseFact); // TODO: should not be done in the loop
       manager->SetFactory("Graph", dropFact);
-      manager->SetFactory("Aggregates", UCAggFact);
+      manager->SetFactory("Aggregates", CoupledAggFact);
       manager->SetFactory("DofsPerNode", dropFact);
       manager->SetFactory("A", AcFact);
       manager->SetFactory("P", PFact);

@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include <impl/KokkosArray_Timer.hpp>
+#include <TestProductTensorLegendre.hpp>
 
 #ifdef HAVE_KOKKOSARRAY_STOKHOS
 #include "Stokhos_LegendreBasis.hpp"
@@ -128,13 +129,32 @@ void test_triple_product_legendre_polynomial()
 
 //----------------------------------------------------------------------------
 
+template< class TensorType >
+void print_tensor_parameters( const std::string & label ,
+                              const std::vector<int> & var_degree ,
+                              const TensorType & tensor )
+{
+  std::cout << label ;
+  std::cout << " : var_degree(" ;
+  for ( unsigned i = 0 ; i < var_degree.size() ; ++i ) {
+    std::cout << " " << var_degree[i];
+  }
+  std::cout << " ) tensor{ variables(" << tensor.variable_count()
+            << ") dimension(" << tensor.dimension() 
+            << ") }" << std::endl ;
+}
+
+//----------------------------------------------------------------------------
+
 template< class Device , template< unsigned , typename , class > class TensorType >
 void test_product_tensor( const std::vector<int> & var_degree )
 {
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<4> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
   typedef KokkosArray::StochasticProductTensor< double , polynomial , Device , TensorType > tensor_type ;
 
   tensor_type tensor = KokkosArray::create_product_tensor< tensor_type >( var_degree );
+
+  // tensor.print( std::cout );
 
   // Verification?
 }
@@ -155,7 +175,7 @@ test_product_tensor_matrix(
                              KokkosArray::LayoutLeft ,
                              Device > block_vector_type ;
 
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<4> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
 
   typedef KokkosArray::StochasticProductTensor< value_type , polynomial , Device , TensorType > tensor_type ;
 
@@ -254,7 +274,7 @@ test_product_tensor_diagonal_matrix(
                              KokkosArray::LayoutLeft ,
                              Device > block_vector_type ;
 
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<4> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
   typedef KokkosArray::StochasticProductTensor< value_type , polynomial , KokkosArray::Host , KokkosArray::SparseProductTensor > tensor_type ;
 
   //------------------------------
@@ -375,7 +395,7 @@ test_product_flat_commuted_matrix(
   typedef ScalarType value_type ;
   typedef KokkosArray::View< value_type[] , Device > vector_type ;
 
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<4> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
 
   typedef KokkosArray::StochasticProductTensor<
      value_type , polynomial ,
@@ -536,7 +556,7 @@ test_product_flat_original_matrix(
   typedef ScalarType value_type ;
   typedef KokkosArray::View< value_type[] , Device > vector_type ;
 
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<4> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
 
   typedef KokkosArray::StochasticProductTensor<
     value_type , polynomial ,
@@ -1128,8 +1148,11 @@ void performance_test_driver_all( const int pdeg ,
     // const std::pair<size_t,double> perf_tensor =
     //   test_product_tensor_matrix<double,Device,KokkosArray::SparseProductTensor>( var_degree , nGrid , nIter , print );
 
+    // const std::pair<size_t,double> perf_crs_tensor =
+    //   test_product_tensor_matrix<double,Device,KokkosArray::CrsProductTensor>( var_degree , nGrid , nIter , print );
+
     const std::pair<size_t,double> perf_crs_tensor =
-      test_product_tensor_matrix<double,Device,KokkosArray::CrsProductTensor>( var_degree , nGrid , nIter , print );
+      test_product_tensor_legendre<double,double,double,Device>( var_degree , nGrid , nIter , print );
 
     const std::vector<double> perf_flat_commuted =
       test_product_flat_commuted_matrix<double,Device>( var_degree , nGrid , nIter , print );

@@ -64,7 +64,7 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_FactoryManager.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 
 #include "MueLu_Exceptions.hpp"
 
@@ -168,31 +168,31 @@ int main(int argc, char *argv[]) {
 
   Finest.SetFactoryManager( rcp( new FactoryManager() ));
 
-  UCAggregationFactory UCAggFact;
-  Finest.Request(UCAggFact);
+  CoupledAggregationFactory CoupledAggFact;
+  Finest.Request(CoupledAggFact);
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
   *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
-  UCAggFact.SetMinNodesPerAggregate(minPerAgg);  //TODO should increase if run anything other than 1D
-  UCAggFact.SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+  CoupledAggFact.SetMinNodesPerAggregate(minPerAgg);  //TODO should increase if run anything other than 1D
+  CoupledAggFact.SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
   std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
   if (aggOrdering == "natural") {
        *out << "aggregate ordering :                    NATURAL" << std::endl;
-       UCAggFact.SetOrdering(MueLu::AggOptions::NATURAL);
+       CoupledAggFact.SetOrdering(MueLu::AggOptions::NATURAL);
   } else if (aggOrdering == "random") {
        *out << "aggregate ordering :                    RANDOM" << std::endl;
-       UCAggFact.SetOrdering(MueLu::AggOptions::RANDOM);
+       CoupledAggFact.SetOrdering(MueLu::AggOptions::RANDOM);
   } else if (aggOrdering == "graph") {
        *out << "aggregate ordering :                    GRAPH" << std::endl;
-       UCAggFact.SetOrdering(MueLu::AggOptions::GRAPH);
+       CoupledAggFact.SetOrdering(MueLu::AggOptions::GRAPH);
   } else {
     std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
     throw(MueLu::Exceptions::RuntimeError(msg));
   }
-  UCAggFact.SetPhase3AggCreation(0.5);
+  CoupledAggFact.SetPhase3AggCreation(0.5);
   *out << "=============================================================================" << std::endl;
 
-  UCAggFact.Build(Finest);
+  CoupledAggFact.Build(Finest);
 
   return EXIT_SUCCESS;
 }

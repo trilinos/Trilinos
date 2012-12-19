@@ -60,6 +60,7 @@
 
 #include <Cuda/KokkosArray_Cuda_SymmetricDiagonalSpec.hpp>
 #include <Cuda/KokkosArray_Cuda_ProductTensor.hpp>
+#include <Cuda/KokkosArray_Cuda_CrsProductTensorLegendre.hpp>
 #include <Cuda/KokkosArray_Cuda_StochasticProductTensor.hpp>
 #include <Cuda/KokkosArray_Cuda_BlockCrsMatrix.hpp>
 #include <Cuda/KokkosArray_Cuda_CrsMatrix.hpp>

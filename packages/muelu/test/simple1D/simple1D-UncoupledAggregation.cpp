@@ -170,16 +170,16 @@ int main(int argc, char *argv[]) {
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   // aggregation factory
-  Teuchos::RCP<UncoupledAggregationFactory> UCAggFact = Teuchos::rcp(new UncoupledAggregationFactory(dropFact));
-  //UCAggFact->SetFactory("Graph", dropFact); // UCAggFact not changed to new factory handling
-  UCAggFact->SetMinNodesPerAggregate(minPerAgg);
-  UCAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-  UCAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
+  Teuchos::RCP<UncoupledAggregationFactory> CoupledAggFact = Teuchos::rcp(new UncoupledAggregationFactory(dropFact));
+  //CoupledAggFact->SetFactory("Graph", dropFact); // CoupledAggFact not changed to new factory handling
+  CoupledAggFact->SetMinNodesPerAggregate(minPerAgg);
+  CoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+  CoupledAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
 
   Finest->Request("Graph",dropFact.get());
   Finest->Request("DofsPerNode",dropFact.get());
   Finest->Request("UnAmalgamationInfo",amalgFact.get());
-  UCAggFact->Build(*Finest);
+  CoupledAggFact->Build(*Finest);
 
   // Timer final summaries
   globalTimeMonitor = Teuchos::null; // stop this timer before summary

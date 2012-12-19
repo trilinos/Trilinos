@@ -49,7 +49,7 @@
 
 // MueLu
 #include "MueLu.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
   RCP<TentativePFactory> pFact = rcp( new TentativePFactory() );
 
   // Aggregation
-  RCP<UCAggregationFactory> aggregationFact = rcp( new UCAggregationFactory() );
+  RCP<CoupledAggregationFactory> aggregationFact = rcp( new CoupledAggregationFactory() );
   aggregationFact->SetMinNodesPerAggregate(3);
 
   // Smoothers

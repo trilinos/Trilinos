@@ -75,7 +75,7 @@
 #include "MueLu_TrilinosSmoother.hpp" //TMP
 #include "MueLu_SmootherFactory.hpp" //TMP
 #include "MueLu_TentativePFactory.hpp" //TMP
-#include "MueLu_UCAggregationFactory.hpp" //TMP
+#include "MueLu_CoupledAggregationFactory.hpp" //TMP
 #include "MueLu_UncoupledAggregationFactory.hpp" //TMP
 #include "MueLu_DirectSolver.hpp" //TMP
 #include "MueLu_Exceptions.hpp" //TMP
@@ -148,8 +148,8 @@ namespace MueLu {
       if (factoryName == "RebalanceAcFactory") {
         return Build2<RebalanceAcFactory>(paramList, factoryMapIn);
       }
-      if (factoryName == "UCAggregationFactory") {
-        return BuildUCAggregationFactory(paramList, factoryMapIn);
+      if (factoryName == "CoupledAggregationFactory") {
+        return BuildCoupledAggregationFactory(paramList, factoryMapIn);
       }
       if (factoryName == "UncoupledAggregationFactory") {
         return BuildUncoupledAggregationFactory(paramList, factoryMapIn);
@@ -278,9 +278,9 @@ namespace MueLu {
       return factory;
     }
 
-    //! UCAggregationFactory
-    RCP<FactoryBase> BuildUCAggregationFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      RCP<UCAggregationFactory> factory = Build<UCAggregationFactory>(paramList, factoryMapIn);
+    //! CoupledAggregationFactory
+    RCP<FactoryBase> BuildCoupledAggregationFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
+      RCP<CoupledAggregationFactory> factory = Build<CoupledAggregationFactory>(paramList, factoryMapIn);
 
       if(paramList.isParameter("Ordering")) {
         std::string orderingStr = paramList.get<std::string>("Ordering");
@@ -291,7 +291,7 @@ namespace MueLu {
           ordering = RANDOM;
         else if (orderingStr == "Graph")
           ordering = GRAPH;
-        else TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory::BuildUCAggregationFactory()::Unknown Ordering type");
+        else TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory::BuildCoupledAggregationFactory()::Unknown Ordering type");
 
         factory->SetOrdering(ordering);
       }

@@ -67,7 +67,7 @@
 // MueLu
 #include "MueLu_Graph.hpp"
 #include "MueLu_Aggregates.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_CoupledAggregationFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
 
   RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "Uncoupled"));
 
-  RCP<UCAggregationFactory> AggFact = rcp(new UCAggregationFactory());
+  RCP<CoupledAggregationFactory> AggFact = rcp(new CoupledAggregationFactory());
   AggFact->SetMinNodesPerAggregate(2);
   AggFact->SetMaxNeighAlreadySelected(5);
   AggFact->SetOrdering(MueLu::AggOptions::GRAPH);

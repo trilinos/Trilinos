@@ -34,6 +34,7 @@ INC_PATH="${INC_PATH} -I. -I${WORK_PATH}"
 
 CXX_SOURCES="${CXX_SOURCES} ${WORK_PATH}/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} main.cpp TestHost.cpp"
+CXX_SOURCES="${CXX_SOURCES} TestLegendre.cpp"
 
 #-----------------------------------------------------------------------------
 # Put path to Trilinos top-level build directory after "stokhos" on command
