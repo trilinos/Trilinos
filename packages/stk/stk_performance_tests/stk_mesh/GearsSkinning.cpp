@@ -349,7 +349,7 @@ Ioss::Region *create_output_mesh(
 
 } // namespace
 
-STKUNIT_UNIT_TEST( GearsDemo, skin_gear )
+STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
 {
   // Initialize IO system.  Registers all element types and storage
   // types and the exodusII default database type.
@@ -554,4 +554,3 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear )
   delete volume_out_region;  volume_out_region = NULL;
   delete surface_out_region; surface_out_region = NULL;
 }
-

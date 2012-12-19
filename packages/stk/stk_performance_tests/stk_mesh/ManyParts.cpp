@@ -1,0 +1,92 @@
+/*--------------------------------------------------------------------*/
+/*    Copyright 2009 Sandia Corporation.                              */
+/*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
+/*    non-exclusive license for use of this work by or on behalf      */
+/*    of the U.S. Government.  Export of this program may require     */
+/*    a license from the United States Government.                    */
+/*--------------------------------------------------------------------*/
+#include <stk_util/environment/CPUTime.hpp>
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+
+#include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
+
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/FieldData.hpp>
+#include <stk_mesh/base/CoordinateSystems.hpp>
+
+#include <sstream>
+
+STKUNIT_UNIT_TEST(many_parts, many_parts)
+{
+  //vector of mesh-dimensions holds the number of elements in each dimension.
+  //Hard-wired to 3. This test can run with spatial-dimension less than 3,
+  //(if generated-mesh can do that) but not greater than 3.
+  std::vector<int> mesh_dims(3);
+#ifndef NDEBUG
+  mesh_dims[0]=50; //num_elems_x
+  mesh_dims[1]=50; //num_elems_y
+  mesh_dims[2]=50; //num_elems_z
+#else
+  mesh_dims[0]=100; //num_elems_x
+  mesh_dims[1]=100; //num_elems_y
+  mesh_dims[2]=100; //num_elems_z
+#endif
+
+  std::ostringstream oss;
+  oss << mesh_dims[0] << "x" << mesh_dims[1] << "x" << mesh_dims[2];
+
+  double start_time = stk::cpu_time();
+
+  stk::io::util::Gmesh_STKmesh_Fixture fixture(MPI_COMM_WORLD, oss.str());
+  stk::mesh::MetaData& meta = fixture.getMetaData();
+
+  stk::mesh::Part& super1 = meta.declare_part("super1");
+  stk::mesh::Part& super2 = meta.declare_part("super2");
+  stk::mesh::Part& super3 = meta.declare_part("super3");
+  stk::mesh::Part& super4 = meta.declare_part("super4");
+
+  stk::mesh::Part& sub1 = meta.declare_part("sub1");
+  stk::mesh::Part& sub2 = meta.declare_part("sub2");
+  stk::mesh::Part& sub3 = meta.declare_part("sub3");
+  stk::mesh::Part& sub4 = meta.declare_part("sub4");
+
+  stk::mesh::PartVector parts;
+  unsigned num_parts = 10000;
+  for(unsigned i=0; i<num_parts; ++i) {
+    std::ostringstream ossname;
+    ossname << "part_"<<i;
+    stk::mesh::Part& part = meta.declare_part(ossname.str());
+    meta.declare_part_subset(super1, part);
+    meta.declare_part_subset(super2, part);
+    meta.declare_part_subset(super3, part);
+    meta.declare_part_subset(part, sub1);
+    meta.declare_part_subset(part, sub2);
+    meta.declare_part_subset(part, sub3);
+    parts.push_back(&part);
+  }
+
+  double part_create_time = stk::cpu_time() - start_time;
+  start_time = stk::cpu_time();
+
+  typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorField;
+  VectorField& field = meta.declare_field<VectorField>("field");
+  for(size_t i=0; i<parts.size(); ++i) {
+    const stk::mesh::Part& part = *parts[i];
+    stk::mesh::put_field(field, stk::mesh::MetaData::NODE_RANK, part, 3);
+  }
+
+  double field_reg_time = stk::cpu_time() - start_time;
+  start_time = stk::cpu_time();
+
+  for(size_t i=0; i<parts.size(); ++i) {
+    meta.declare_part_subset(super4, *parts[i]);
+    meta.declare_part_subset(*parts[i], sub4);
+  }
+
+  double part_subset_time = stk::cpu_time() - start_time;
+
+  std::cout << "Time to create "<<num_parts<<" parts: " << part_create_time << std::endl;
+  std::cout << "Time to register field on parts: " << field_reg_time << std::endl;
+  std::cout << "Time to add final superset/subset: " << part_subset_time << std::endl;
+}
+

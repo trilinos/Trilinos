@@ -21,7 +21,7 @@
 extern int* STKUNIT_ARGC;
 extern char** STKUNIT_ARGV;
 
-STKUNIT_UNIT_TEST( HeavyTest, heavytest )
+STKUNIT_UNIT_TEST( heavy_test, heavy_test )
 {
   // A performance test that stresses important parts of stk_mesh
   // (such as mesh-modification in parallel, creation of relations,
