@@ -22,7 +22,7 @@ struct topology
     , CONSTRAINT_RANK
     , END_RANK
     , NUM_RANKS = END_RANK
-    , INVALID_RANK = ~0 //use at most 4 bits for ranks
+    , INVALID_RANK = ~0
   };
 
   //To add new topologies consult the toolkit team
@@ -294,6 +294,8 @@ struct topology
   template <topology_t Topology>
   struct topology_type;
 
+  struct types;
+
   //***************************************************************************
   //used to convert from a runtime to a compile time topology
   //  Functor is of the form
@@ -434,8 +436,9 @@ void verbose_print_topology(std::ostream &out, topology t);
 } //namespace stk
 
 #include <stk_topology/topology_type.tcc>
-#include <stk_topology/apply_functor.tcc>
+#include <stk_topology/types.tcc>
 
+#include <stk_topology/apply_functor.tcc>
 #include <stk_topology/topology.tcc>
 
 #endif //STKTOPOLOGY_TOPOLOGY_HPP
