@@ -68,7 +68,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AggregateLeftovers(Graph const &graph, Aggregates &aggregates) const {
-    Monitor m(*this, "Leftovers");
+    Monitor m(*this, "AggregateLeftovers");
 
     my_size_t nVertices = graph.GetNodeNumVertices();
     int exp_nRows    = aggregates.GetMap()->getNodeNumElements(); // Tentative fix... was previously exp_nRows = nVertices + graph.GetNodeNumGhost();

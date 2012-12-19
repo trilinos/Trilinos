@@ -108,7 +108,7 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const
 {
-  FactoryMonitor m(*this, "Aggregation (Uncoupled)", currentLevel);
+  FactoryMonitor m(*this, "Build", currentLevel);
 
   bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
 

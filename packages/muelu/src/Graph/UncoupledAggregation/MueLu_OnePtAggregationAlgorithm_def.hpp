@@ -74,7 +74,7 @@ OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::OnePt
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 LocalOrdinal OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
-  Monitor m(*this, "Coarsen Uncoupled (OnePtAggregationAlgorithm)");
+  Monitor m(*this, "BuildAggregates");
 
   const LocalOrdinal nRows = graph.GetNodeNumVertices();
   const int myRank = graph.GetComm()->getRank();

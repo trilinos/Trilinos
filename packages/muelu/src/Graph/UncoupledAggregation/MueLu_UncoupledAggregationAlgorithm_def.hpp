@@ -76,7 +76,7 @@ UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::U
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 LocalOrdinal UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
-  Monitor m(*this, "Coarsen Uncoupled (UncoupledAggregationAlgorithm)");
+  Monitor m(*this, "BuildAggregates");
 
   std::string orderingType;
   switch (this->GetOrdering()) {

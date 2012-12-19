@@ -75,7 +75,7 @@ MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Max
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 LocalOrdinal MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Graph const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
-  Monitor m(*this, "Coarsen Uncoupled (MaxLinkAggregationAlgorithm)");
+  Monitor m(*this, "BuildAggregates");
 
   // vertex ids for output
   Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);

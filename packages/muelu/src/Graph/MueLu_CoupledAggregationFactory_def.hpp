@@ -70,7 +70,7 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const
   {
-    FactoryMonitor m(*this, "Aggregation", currentLevel);
+    FactoryMonitor m(*this, "Build", currentLevel);
 
     RCP<Aggregates> aggregates;
     {
