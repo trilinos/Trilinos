@@ -849,7 +849,7 @@ namespace Tpetra {
       /// column index \c ind, and returns the corresponding offset
       /// into the raw array of column indices (whether that be 1-D or
       /// 2-D storage).
-      size_t findLocalIndex (RowInfo rowinfo, LocalOrdinal ind) const;
+      size_t findLocalIndex (RowInfo rowinfo, LocalOrdinal ind, size_t hint = 0) const;
 
       /// \brief Find the column offset corresponding to the given (global) column index.
       ///
@@ -858,7 +858,7 @@ namespace Tpetra {
       /// column index \c ind, and returns the corresponding offset
       /// into the raw array of column indices (whether that be 1-D or
       /// 2-D storage).
-      size_t findGlobalIndex (RowInfo rowinfo, GlobalOrdinal ind) const;
+      size_t findGlobalIndex (RowInfo rowinfo, GlobalOrdinal ind, size_t hint = 0) const;
 
       // local Kokkos objects
       void fillLocalGraph(const RCP<ParameterList> &params);
